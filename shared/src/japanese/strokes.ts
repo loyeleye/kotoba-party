@@ -276,18 +276,29 @@ export const INK_MAX_STROKES = 12;
 export const INK_MAX_POINTS = 64;
 export const INK_MAX_TOTAL_POINTS = 400;
 
+/** Wire limits for a drawing. Ink Storm uses the defaults; free drawing (Oekaki) passes larger ones. */
+export interface InkLimits {
+  strokes: number;
+  /** Points per stroke. */
+  points: number;
+  /** Points in the whole drawing. */
+  total: number;
+}
+
+export const INK_LIMITS: InkLimits = { strokes: INK_MAX_STROKES, points: INK_MAX_POINTS, total: INK_MAX_TOTAL_POINTS };
+
 /**
  * Reads a drawing off the wire: an array of strokes, each an array of [x, y] in 0–1 (values
  * a little outside are clamped). Returns null for anything else or anything over the limits.
  */
-export function readInk(raw: unknown): InkPoint[][] | null {
-  if (!Array.isArray(raw) || raw.length === 0 || raw.length > INK_MAX_STROKES) return null;
+export function readInk(raw: unknown, limits: InkLimits = INK_LIMITS): InkPoint[][] | null {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > limits.strokes) return null;
   const out: InkPoint[][] = [];
   let total = 0;
   for (const s of raw) {
-    if (!Array.isArray(s) || s.length === 0 || s.length > INK_MAX_POINTS) return null;
+    if (!Array.isArray(s) || s.length === 0 || s.length > limits.points) return null;
     total += s.length;
-    if (total > INK_MAX_TOTAL_POINTS) return null;
+    if (total > limits.total) return null;
     const stroke: InkPoint[] = [];
     for (const p of s) {
       if (!Array.isArray(p) || p.length !== 2) return null;
@@ -305,4 +316,26 @@ export function readInk(raw: unknown): InkPoint[][] | null {
 export function thin(s: InkStroke, max: number): InkPoint[] {
   if (s.length <= max) return s.map((p) => [p[0], p[1]] as InkPoint);
   return resample(s, max).map(([x, y]) => [round(x), round(y)] as InkPoint);
+}
+
+/**
+ * Thins strokes to fit `limits` for the wire: at most `limits.strokes` strokes, each at most
+ * `limits.points` points, and `limits.total` in all, shared out by how many points each stroke
+ * has (so a long line keeps more detail than a dot).
+ */
+export function thinToLimits(strokes: readonly InkStroke[], limits: InkLimits = INK_LIMITS): InkPoint[][] {
+  const kept = strokes.filter((s) => s.length).slice(0, limits.strokes);
+  const want = kept.map((s) => Math.min(s.length, limits.points));
+  const sum = want.reduce((n, w) => n + w, 0);
+  let alloc = want;
+  if (sum > limits.total) {
+    const k = limits.total / sum;
+    alloc = want.map((w) => Math.max(Math.min(2, w), Math.floor(w * k)));
+    // The two-point floor can overshoot by a little: trim the longest until it fits.
+    for (let over = alloc.reduce((n, a) => n + a, 0) - limits.total; over > 0; over--) {
+      const i = alloc.indexOf(Math.max(...alloc));
+      alloc[i] = alloc[i]! - 1;
+    }
+  }
+  return kept.map((s, i) => thin(s, Math.max(1, alloc[i]!)));
 }

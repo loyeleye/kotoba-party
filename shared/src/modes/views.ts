@@ -7,7 +7,8 @@ import type { WordGauntletView } from './wordGauntlet/wordGauntlet.js';
 import type { ConcentrationView } from './concentration/concentration.js';
 import type { PhraseBingoView } from './phraseBingo/phraseBingo.js';
 import type { KaraokeDuelView } from './karaokeDuel/karaokeDuel.js';
+import type { OekakiView } from './oekaki/oekaki.js';
 
-export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView };
-export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | DebugView;
+export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OekakiView };
+export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OekakiView | DebugView;
 

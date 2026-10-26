@@ -1,0 +1,43 @@
+/* Oekaki phone screens (fit 320–360 px wide). Scoped under .oek; the pad's own classes come from Ink Storm. */
+.oek .oek-tag { margin: 0; color: var(--accent); font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+.oek .oek-word { display: grid; gap: 2px; text-align: center; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
+.oek .oek-word p { margin: 0; }
+.oek .oek-note { font-size: 14px; color: var(--muted); }
+.oek .oek-big { font-size: 34px; font-weight: 900; line-height: 1.2; overflow-wrap: anywhere; }
+.oek .oek-kana { font-size: 18px; color: var(--muted); }
+.oek .oek-romaji { font-size: 15px; color: var(--warn); letter-spacing: 0.04em; }
+.oek .oek-en { font-size: 18px; font-weight: 700; color: var(--good); }
+.oek .oek-good { color: var(--good); font-weight: 700; margin: 0; }
+.oek .oek-points { text-align: center; }
+.oek .oek-hide { justify-self: center; font-size: 14px; }
+
+/* The drawing pad: a little bigger than Ink Storm's, with a colour row. */
+.oek .ink-paper { width: min(100%, 360px, 50vh); background: #fbf7ee; }
+.oek .ink-paper::before, .oek .ink-paper::after { display: none; }
+.oek .ink-palette { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.oek .ink-swatch { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--line); background: var(--swatch); padding: 0; }
+.oek .ink-swatch[aria-pressed='true'] { border-color: var(--ink); box-shadow: 0 0 0 3px var(--accent); }
+
+/* Word tiles. */
+.oek .oek-tile-box { border: 1px dashed var(--line); border-radius: 12px; padding: 8px 10px; }
+.oek .oek-tile-box summary { cursor: pointer; color: var(--muted); font-size: 16px; padding: 4px 0; }
+.oek .oek-tiles-body { display: grid; gap: 10px; margin-top: 8px; }
+.oek .oek-tray { margin: 0; min-height: 34px; font-size: 22px; font-weight: 800; text-align: center; overflow-wrap: anywhere; }
+.oek .oek-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.oek .oek-tile { display: grid; gap: 2px; justify-items: center; min-height: 56px; padding: 6px; }
+.oek .oek-tile span { font-size: 18px; font-weight: 700; }
+.oek .oek-tile small { font-size: 12px; color: var(--muted); }
+.oek .oek-tile.particle { border-style: dashed; }
+.oek .oek-tile.on { border-color: var(--accent); background: rgba(255, 122, 89, 0.15); }
+.oek .oek-tile-actions { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+
+/* Voting. */
+.oek .oek-option { display: grid; gap: 2px; }
+.oek .oek-option .oek-opt { font-size: 22px; font-weight: 700; }
+.oek .oek-option small { color: var(--muted); font-size: 14px; }
+.oek .oek-own, .oek .oek-hidden { opacity: 0.55; }
+.oek .oek-vip { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 8px; }
+.oek .oek-vip summary { color: var(--muted); }
+.oek .oek-hide-opt { font-size: 15px; text-align: left; }
+.oek .oek-say { display: grid; gap: 8px; }
+.oek .oek-say .prompt { font-size: 20px; }
