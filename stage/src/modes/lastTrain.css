@@ -57,6 +57,12 @@
 .lt-track li.ghost .lt-lane-name { color: #c9d6ff; }
 .lt-lane-rank { font-weight: 900; color: var(--good); }
 
+.lt-results.two-up { grid-template-columns: 1fr 1fr; }
+.lt-results.two-up li { grid-template-columns: 1fr auto; gap: 4px 16px; }
+.lt-results.two-up li > * { grid-column: 1 / -1; }
+.lt-results.two-up .lt-r-name { grid-column: 1; grid-row: 1; }
+.lt-results.two-up .lt-r-out { grid-column: 2; grid-row: 1; }
+
 @media (max-width: 900px) {
   .lt-results li, .lt-penalty-car .lt-results li { grid-template-columns: 1fr; gap: 4px; font-size: 24px; }
   .lt-stopname.huge { font-size: 48px; }

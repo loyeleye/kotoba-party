@@ -115,7 +115,8 @@ function reveal(game: LastTrainView): HTMLElement {
     situation(game, true),
     h(
       'ul',
-      { class: 'lt-results' },
+      // Four or more riders sit two to a row, so the whole stop fits the TV without shrinking.
+      { class: `lt-results${rows.length >= 4 ? ' two-up' : ''}` },
       // Rows pull in one at a time, like carriages.
       stagger(
         rows.map((r) =>
