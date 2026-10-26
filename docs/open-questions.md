@@ -117,6 +117,7 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Word Gauntlet (v1.1) | [word-gauntlet.md](modes/word-gauntlet.md) | 18 | Pon |
 | Kotoba Concentration (v1.1) | [concentration.md](modes/concentration.md) | 15 | Fude |
 | Phrase Bingo Theater (backlog) | [phrase-bingo.md](modes/phrase-bingo.md) | 20 | Pon |
+| Karaoke Duel (backlog) | [karaoke-duel.md](modes/karaoke-duel.md) | 18 | Chōchin-san |
 
 ## Content
 

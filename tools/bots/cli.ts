@@ -18,6 +18,7 @@ import { MODES } from '../../shared/src/modes/registry.js';
 import { MODE_IDS, type ModeId } from '../../shared/src/protocol.js';
 import { Bot, Director, politeScript, type BotScript, type ModePolicy } from './bot.js';
 import { concentrationPolicy } from './policies/concentration.js';
+import { karaokeDuelPolicy } from './policies/karaokeDuel.js';
 import { kanaRaidPolicy } from './policies/kanaRaid.js';
 import { lastTrainPolicy } from './policies/lastTrain.js';
 import { oogiriPolicy } from './policies/oogiri.js';
@@ -69,6 +70,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
     case 'phrase-bingo':
       // One shared policy: audience bots "hear" what the actor bots say.
       return (sharedPhraseBingo ??= phraseBingoPolicy());
+    case 'karaoke-duel':
+      return karaokeDuelPolicy({ seed: seat });
     default:
       return undefined;
   }
