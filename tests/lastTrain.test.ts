@@ -247,6 +247,8 @@ describe('Last Train rules', () => {
     g.play('p2', { kind: 'overrule', windowId: w.id, up: true });
     g.play('p3', { kind: 'overrule', windowId: w.id, up: true });
     expect(g.view('p1').me!.status).toBe('correct');
+    // The retry p1 was given is moot now: an answer to it that crossed the overrule is stale, not a repeat.
+    expect(g.play('p1', { kind: 'answer', key: g.s.turns.p1!.task.key, utterance: { via: 'speech', text: 'さんびゃくえん' } })).toMatchObject({ error: 'wrong-phase' });
     expect(g.s.overruleLog).toHaveLength(1);
     expect(g.cues.some((c) => c.event === 'room_overrule')).toBe(true);
     g.say('p2', 'さんびゃく');

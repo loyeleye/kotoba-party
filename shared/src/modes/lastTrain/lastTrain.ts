@@ -861,7 +861,12 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         if (phase === 'answer') {
           const turn = s.turns[playerId];
           if (!turn) return moveError('not-playing');
-          if (turn.status !== 'answering' && turn.status !== 'retry') return turn.task.key === raw.key ? moveError('already-answered') : moveError('wrong-phase');
+          if (turn.status !== 'answering' && turn.status !== 'retry') {
+            // Only a task the player has an attempt on is "already answered". A retry the room's overrule made
+            // moot (the first try now counts) is a stale move, like any other that lands after its moment.
+            const tried = turn.task.key === raw.key && turn.attempts.length >= turn.task.attempt;
+            return moveError(tried ? 'already-answered' : 'wrong-phase');
+          }
           if (turn.task.key !== raw.key) return moveError('wrong-phase');
           const ok = !!u && checkUtterance(u, turn.task.item.accepted, isParticle(turn.task));
           const rec: AttemptRec = { via: u?.via ?? null, text: u?.text ?? null, ok, overruled: false, timedOut: false };
