@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "notes": "Source of truth for generated art. tools/art/generate.ts regenerates any entry from its prompt, params and post-processing.",
+  "assets": [
+    {
+      "path": "stage/assets/hosts/pon.png",
+      "what": "Host portrait: Pon, tanuki stand-up comedian, MC of Oogiri Night",
+      "generator": "gemini",
+      "model": "gemini-3-pro-image",
+      "prompt": "Pon, a chubby cheerful tanuki (Japanese raccoon dog) stand-up comedian, the MC of a comedy game show. A real tanuki, not a raccoon: soft round face, warm brown and cream fur, the dark eye patches of a tanuki, small rounded ears, round belly, short legs, a thick bushy plain brown tail with no rings. Wears a small coral-orange bow tie and holds a vintage silver stage microphone, mid-joke, eyes twinkling, a big warm good-natured laugh-ready smile, one paw open towards the audience. Square character portrait for a cozy-spooky late-night TV variety show party game set in a haunted TV studio, inspired by Japanese tsukumogami folklore (old objects that came to life) but warm, cute and friendly, never scary. Style: polished modern cartoon illustration, bold clean dark outlines, flat colours with soft cel shading, warm coral-orange (#ff7a59) stage rim light from one side and a soft mint-green (#57d9a3) glow from the other. Character centred, head and upper body filling most of the frame, facing the viewer with a big expressive friendly face. Background: plain solid very dark purple-black (#14101f) with a faint soft circular spotlight glow behind the character, nothing else. No text, no letters, no writing, no words, no logos, no watermark, no border.",
+      "params": {
+        "aspectRatio": "1:1",
+        "imageSize": "1K"
+      },
+      "post": {
+        "resize": "512x512",
+        "colors": 256
+      }
+    },
+    {
+      "path": "stage/assets/hosts/chochin.png",
+      "what": "Host portrait: Chōchin-san, paper-lantern ghost conductor, host of Last Train",
+      "generator": "gemini",
+      "model": "gemini-3-pro-image",
+      "prompt": "Chochin-san, a gentle, theatrical paper-lantern ghost (a friendly chochin-obake): a round cream-white paper lantern with thin horizontal bamboo ribs, glowing warm amber from inside, with two big kind round eyes and a wide gentle smile on the paper (the lantern paper is otherwise blank, with no writing). Wears a dapper vintage navy train conductor's cap with a small gold badge (no lettering), tilted at a theatrical angle, and white gloves on small floating hands, one hand raised as if announcing the last train of the night. A few wisps of soft mint-green ghost flame float around. Square character portrait for a cozy-spooky late-night TV variety show party game set in a haunted TV studio, inspired by Japanese tsukumogami folklore (old objects that came to life) but warm, cute and friendly, never scary. Style: polished modern cartoon illustration, bold clean dark outlines, flat colours with soft cel shading, warm coral-orange (#ff7a59) stage rim light from one side and a soft mint-green (#57d9a3) glow from the other. Character centred, head and upper body filling most of the frame, facing the viewer with a big expressive friendly face. Background: plain solid very dark purple-black (#14101f) with a faint soft circular spotlight glow behind the character, nothing else. No text, no letters, no writing, no words, no logos, no watermark, no border.",
+      "params": {
+        "aspectRatio": "1:1",
+        "imageSize": "1K"
+      },
+      "post": {
+        "resize": "512x512",
+        "colors": 256
+      }
+    },
+    {
+      "path": "stage/assets/hosts/fude.png",
+      "what": "Host portrait: Fude, excitable living calligraphy brush, battle caller of Kana Yōkai Raid",
+      "generator": "gemini",
+      "model": "gemini-3-pro-image",
+      "prompt": "Fude, an excitable living Japanese calligraphy brush: a bamboo brush handle as the body with small arms, and a big tuft of glossy black ink-soaked bristles on top like spiky wild hair, big sparkling eyes, mouth wide open in an enthusiastic battle cry like a hyped-up sports announcer, one fist pumped in the air. Dynamic energetic pose, abstract splashes and swooshes of black ink and coral-orange ink swirling around (just splashes, not characters or letters). Square character portrait for a cozy-spooky late-night TV variety show party game set in a haunted TV studio, inspired by Japanese tsukumogami folklore (old objects that came to life) but warm, cute and friendly, never scary. Style: polished modern cartoon illustration, bold clean dark outlines, flat colours with soft cel shading, warm coral-orange (#ff7a59) stage rim light from one side and a soft mint-green (#57d9a3) glow from the other. Character centred, head and upper body filling most of the frame, facing the viewer with a big expressive friendly face. Background: plain solid very dark purple-black (#14101f) with a faint soft circular spotlight glow behind the character, nothing else. No text, no letters, no writing, no words, no logos, no watermark, no border.",
+      "params": {
+        "aspectRatio": "1:1",
+        "imageSize": "1K"
+      },
+      "post": {
+        "resize": "512x512",
+        "colors": 256
+      }
+    },
+    {
+      "path": "stage/assets/studio-bg.jpg",
+      "what": "Optional stage backdrop: dark haunted late-night TV studio, low contrast for readable text",
+      "generator": "gemini",
+      "model": "gemini-3-pro-image",
+      "prompt": "Wide establishing shot of an empty late-night TV variety show studio after midnight, haunted but cosy and inviting, inspired by Japanese tsukumogami folklore. A small stage with heavy velvet curtains, an old wooden host desk at one side, a stack of old CRT television monitors glowing faintly, unlit studio spotlights on a rig overhead, a few paper lanterns giving soft warm glows, faint wisps of ghostly mist drifting across the floor, a few loose blank dictionary pages floating gently in the air. Very dark and low contrast overall, muted deep purple and indigo tones (#14101f, #1f1930) with small accents of warm coral (#ff7a59) and mint (#57d9a3) light, slightly soft focus, the centre of the image is calm, dark and empty so text can be placed over it. Painterly cartoon background art style matching a cute game. No people, no characters, no faces, no text, no letters, no signs, no logos, no watermark.",
+      "params": {
+        "aspectRatio": "16:9",
+        "imageSize": "2K"
+      },
+      "post": {
+        "resize": "1920x1080",
+        "jpegQuality": 72
+      }
+    },
+    {
+      "path": "stage/assets/yokai/yokai-blob.png",
+      "what": "Generic kana yokai body: round ghost blob (overlay a kana glyph on the belly)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, big blank flat smooth area on the front of the body for a text label, no text, no letters, no symbols, a big tall round chubby floating ghost filling most of the frame, pale lavender translucent body with soft shading, a wispy curled tail, big shiny eyes and a tiny smile near the top of the head, rosy cheeks, small stubby arms, wide plain belly",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/yokai-lantern.png",
+      "what": "Generic kana yokai body: chochin-obake paper lantern ghost",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, big blank flat smooth area on the front of the body for a text label, no text, no letters, no symbols, a paper lantern ghost (chochin-obake), cream paper lantern with horizontal ribs and a dark cap and base, warm orange inner glow, two small eyes and a smile near the top, blank paper below",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/yokai-umbrella.png",
+      "what": "Generic kana yokai body: umbrella ghost (prompted as a kasa-obake; PixelLab drew a ghost wearing a wagasa umbrella hat)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, big blank flat smooth area on the front of the body for a text label, no text, no letters, no symbols, a kasa-obake, the umbrella itself is the creature: an old closed red-orange Japanese paper umbrella (wagasa) standing upright like a cone, a single big cute eye in the middle of the paper canopy, a small playful tongue sticking out, two tiny arms, and its wooden handle is one leg ending in a wooden geta sandal, hopping, no other character",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/yokai-scroll.png",
+      "what": "Generic kana yokai body: hanging scroll ghost with blank paper",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, big blank flat smooth area on the front of the body for a text label, no text, no letters, no symbols, a living hanging paper scroll yokai: the scroll itself is the creature, wooden rods at top and bottom, cream paper with two big round friendly eyes and a small smile drawn at the top of the paper, large blank paper below the face, tiny arms waving from the sides, faint mint green ghost wisps",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/yokai-boss.png",
+      "what": "Boss sprite: the studio's old dictionary come alive (big tsukumogami book)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Boss monster sprite for a playful-spooky party game, front view, centred: a big old haunted dictionary book come alive (tsukumogami), thick worn purple leather cover with gold corners, open pages fluttering like a mouth, two glowing coral-orange eyes on the cover, loose pages floating around, mint green ghost wisps, mischievous rather than scary, no text, no letters",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "detailed shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 192,
+        "height": 192
+      },
+      "post": {}
+    }
+  ]
+}
