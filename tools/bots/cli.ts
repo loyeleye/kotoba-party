@@ -22,6 +22,7 @@ import { karaokeDuelPolicy } from './policies/karaokeDuel.js';
 import { kanaRaidPolicy } from './policies/kanaRaid.js';
 import { lastTrainPolicy } from './policies/lastTrain.js';
 import { oogiriPolicy } from './policies/oogiri.js';
+import { omiaiPolicy } from './policies/omiai.js';
 import { phraseBingoPolicy } from './policies/phraseBingo.js';
 import { wordGauntletPolicy } from './policies/wordGauntlet.js';
 
@@ -72,6 +73,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
       return (sharedPhraseBingo ??= phraseBingoPolicy());
     case 'karaoke-duel':
       return karaokeDuelPolicy({ seed: seat });
+    case 'omiai':
+      return omiaiPolicy();
     default:
       return undefined;
   }

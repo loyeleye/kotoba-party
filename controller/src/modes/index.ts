@@ -7,6 +7,7 @@ import { wordGauntletPhone } from './wordGauntlet.js';
 import { concentrationPhone } from './concentration.js';
 import { phraseBingoPhone } from './phraseBingo.js';
 import { karaokeDuelPhone } from './karaokeDuel.js';
+import { omiaiPhone } from './omiai.js';
 import type { PhoneMode } from './types.js';
 
 export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
@@ -18,4 +19,5 @@ export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
   concentration: concentrationPhone,
   'phrase-bingo': phraseBingoPhone,
   'karaoke-duel': karaokeDuelPhone,
+  omiai: omiaiPhone,
 };
