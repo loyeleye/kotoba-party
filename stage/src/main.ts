@@ -7,6 +7,7 @@ import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch,
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
+import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -46,6 +47,7 @@ let lastPhaseSeq = -1;
 const logLines: string[] = [];
 
 $('debug').hidden = !DEBUG;
+mountSoundButton(els.canvas);
 $('debug-tag').hidden = !DEBUG;
 
 // ---- the 1080p canvas, scaled to the window ----
@@ -140,6 +142,7 @@ function render(view: RoomView, v: number): void {
   if (!els.raw.hidden) els.raw.textContent = JSON.stringify(view, null, 2);
   fillMenus(view);
   showHost(view);
+  updateMusic(view);
 
   const stageMode = view.game ? STAGE_MODES[view.game.mode] : null;
   // Patched, not rebuilt: chips keep their place and a score that went up gets a fresh
@@ -253,6 +256,7 @@ function showHost(view: RoomView): void {
   );
   if (say.audioUrl) {
     const audio = new Audio(say.audioUrl);
+    duckFor(audio);
     void audio.play().catch(() => {});
   }
 }
