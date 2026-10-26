@@ -6,10 +6,11 @@
 import { DurableObject } from 'cloudflare:workers';
 import QRCode from 'qrcode';
 import debugPrompts from '../content/debug/prompts.json';
-import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, llmFromEnv, type BankLine, type HostVoice as AiHostVoice } from '../server/ai/index.js';
+import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine, type HostVoice as AiHostVoice } from '../server/ai/index.js';
 import { buildContent } from '../server/src/content.js';
 import { aiVoice, bankVoice, hostDirector, type HostVoice } from '../server/src/host.js';
 import { inkCoachDirector } from '../server/src/ink.js';
+import { suspectDirector } from '../server/src/onsen.js';
 import { Room, type RoomSocket } from '../server/src/room.js';
 import { systemClock } from '../server/src/clock.js';
 import { CLOSE, type CreateRoomResponse, type JoinRequest, type RoomInfo } from '../shared/src/protocol.js';
@@ -47,7 +48,17 @@ export class RoomObject extends DurableObject<Env> {
       },
       onPhase: (r) => r.state.phase === 'intro' && ai.newGame(r.code),
       onCues: hostDirector(roomAudio(aiVoice(ai, bankVoice(content)))),
-      onCommit: llm ? inkCoachDirector(createInkCoach({ llm }), { budget: (c) => ai.budget(c) }) : undefined,
+      // As on Node: Ink Storm's second look and the Onsen suspects' lead-ins, only with an LLM.
+      onCommit: llm
+        ? (() => {
+            const ink = inkCoachDirector(createInkCoach({ llm }), { budget: (c) => ai.budget(c) });
+            const suspects = suspectDirector(createSuspectVoice({ llm }), { budget: (c) => ai.budget(c) });
+            return (r: Room) => {
+              ink(r);
+              suspects(r);
+            };
+          })()
+        : undefined,
     });
     this.room = room;
     return room;

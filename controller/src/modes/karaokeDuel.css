@@ -1,0 +1,36 @@
+/* Karaoke Duel (phone) */
+.kdp-sing { display: grid; gap: 12px; }
+.kdp-line { display: grid; gap: 4px; text-align: center; background: #0d0a17; border: 1px solid var(--line); border-radius: 16px; padding: 10px 8px 12px; }
+.kdp-line p { margin: 0; }
+.kdp-text { color: var(--muted); font-size: 18px; }
+.kdp-morae { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; padding-top: 22px; }
+.kdp-word { display: inline-flex; gap: 1px; }
+.kdp-mora { position: relative; display: inline-grid; justify-items: center; min-width: 0.9em; }
+.kdp-kana { font-size: clamp(26px, 8.5vw, 38px); font-weight: 900; line-height: 1.1; }
+.kdp-ro { font-size: 13px; color: var(--warn); font-weight: 700; }
+.kdp-mora.timed .kdp-kana { animation: kdp-lit 120ms linear var(--d) both; }
+@keyframes kdp-lit { from { color: var(--ink); } to { color: var(--accent); } }
+.kdp-mora.timed::before { content: ''; position: absolute; top: -20px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--warn); opacity: 0; animation: kdp-hop var(--len) ease-in-out var(--d) none; }
+@keyframes kdp-hop { 0% { opacity: 1; transform: translateY(0); } 45% { opacity: 1; transform: translateY(-12px); } 100% { opacity: 1; transform: translateY(0); } }
+.kdp-en { color: var(--muted); font-size: 15px; }
+.kdp-count { position: relative; height: 0; }
+.kdp-count-n { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); font-size: 40px; font-weight: 900; color: var(--warn); opacity: 0; animation: kdp-count var(--len) linear var(--d) both; z-index: 1; }
+@keyframes kdp-count { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+.kdp-progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.kdp-progress span { display: block; height: 100%; background: var(--warn); transform-origin: left; transform: scaleX(0); animation: kdp-progress var(--len) linear var(--d) both; }
+@keyframes kdp-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.kdp-talk { padding: 34px 16px; font-size: 24px; }
+.kdp-status { margin: 0; min-height: 1.3em; font-size: 18px; overflow-wrap: anywhere; }
+.kdp-pitch { font-size: 14px; }
+.kdp-ready { margin: 0; color: #1b1430; background: var(--warn); border-radius: 12px; padding: 8px 12px; font-weight: 800; text-align: center; }
+.kdp-take { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; display: grid; gap: 2px; }
+.kdp-take p { margin: 0; }
+.kdp-take.missed { color: var(--muted); }
+.kdp-take-score strong { font-size: 30px; color: var(--good); }
+.kdp-takes { display: grid; gap: 8px; }
+.kdp-sheet { display: grid; gap: 8px; }
+.kdp-sheet-line { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+.kdp-sheet-line p { margin: 0; }
+.kdp-sheet-jp { font-size: 22px; font-weight: 800; }
+.kdp-sheet-ro { color: var(--warn); font-size: 15px; }
+.kdp-vote { font-size: 24px; font-weight: 800; text-align: center; padding: 22px; }

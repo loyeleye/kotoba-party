@@ -287,6 +287,12 @@ describe('Last Train rules', () => {
     expect(g.view('p1').me!.status).toBe('retry');
     // A late answer to the old key is a race, not an error.
     expect(g.cmd('p1', { type: 'play', move: { kind: 'answer', key: first.key, utterance: { via: 'speech', text: 'さんびゃく' } } }).error).toBe('wrong-phase');
+    // The same holds after the retry runs out too.
+    const second = g.task('p1');
+    g.now += second.limitMs;
+    g.play('p1', { kind: 'tick' });
+    expect(g.view('p1').me!.status).toBe('missed');
+    expect(g.cmd('p1', { type: 'play', move: { kind: 'answer', key: second.key, utterance: { via: 'speech', text: 'さんびゃく' } } }).error).toBe('wrong-phase');
   });
 
   it('lets a ghost haunt a living player once per stop, shaving 2 s off their next timer', () => {

@@ -1,7 +1,7 @@
-// Brush strokes as SVG, for Ink Storm's replays on the stage and the phone. Each stroke is a
-// path drawn on with a CSS animation (pathLength 1 + stroke-dashoffset), one after another in
-// stroke order. `elapsedMs` starts the animation part-way through (a negative delay), so a
-// re-render never restarts a replay that is already playing.
+// Brush strokes as SVG, for Ink Storm's replays and Oekaki's drawings on the stage and the
+// phone. Each stroke is a path drawn on with a CSS animation (pathLength 1 +
+// stroke-dashoffset), one after another in stroke order. `elapsedMs` starts the animation
+// part-way through (a negative delay), so a re-render never restarts a replay already playing.
 
 import type { InkPoint } from './japanese/strokes.js';
 
@@ -17,6 +17,10 @@ export interface InkSvgOptions {
   grid?: boolean;
   /** Mark where each stroke starts with its number. */
   numbers?: boolean;
+  /** A CSS colour per stroke (Oekaki's palette); strokes without one keep the stylesheet's ink. */
+  colors?: readonly (string | undefined)[];
+  /** Stroke width in viewBox units (the box is 100 wide); default from the stylesheet. */
+  width?: number;
 }
 
 export function inkSvg(strokes: readonly (readonly InkPoint[])[], opts: InkSvgOptions = {}): SVGSVGElement {
@@ -42,7 +46,9 @@ export function inkSvg(strokes: readonly (readonly InkPoint[])[], opts: InkSvgOp
     path.setAttribute('d', pts.map(([x, y], j) => `${j ? 'L' : 'M'}${(x * 100).toFixed(1)} ${(y * 100).toFixed(1)}`).join(''));
     path.setAttribute('pathLength', '1');
     path.setAttribute('class', 'ink-stroke');
-    path.setAttribute('style', `animation-duration:${per}ms;animation-delay:${i * per - elapsed}ms`);
+    const color = opts.colors?.[i];
+    const look = `${color ? `stroke:${color};` : ''}${opts.width ? `stroke-width:${opts.width};` : ''}`;
+    path.setAttribute('style', `${look}animation-duration:${per}ms;animation-delay:${i * per - elapsed}ms`);
     svg.append(path);
     if (opts.numbers) {
       const n = document.createElementNS(SVG, 'text');

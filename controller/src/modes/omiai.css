@@ -1,0 +1,69 @@
+/* Omiai Matchmaker (phone). Fits 360 px (328 px of content). */
+.om-guest-p { margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 18px; flex-wrap: wrap; }
+.om-guest-p small { color: var(--muted); font-weight: 400; font-size: 14px; }
+.om-guest-p-emoji { font-size: 30px; line-height: 1; }
+
+.om-q { display: grid; gap: 2px; background: #fff7fb; color: #2a1630; border-radius: 14px; padding: 12px 14px; }
+.om-q p { margin: 0; overflow-wrap: anywhere; }
+.om-q-jp { font-size: 22px; font-weight: 800; line-height: 1.35; }
+.om-q.small .om-q-jp { font-size: 18px; }
+.om-q-kana { font-size: 15px; color: #6b4a6f; }
+.om-q-romaji { font-size: 14px; color: #2b4f9a; font-style: italic; margin: 0; }
+.om-q-en { font-size: 14px; color: #6b4a6f; }
+.om-sayfirst { color: var(--good); margin: 0; }
+.om-count { color: var(--warn); font-weight: 800; text-align: center; margin: 0; }
+
+.om-preview { margin: 0; font-size: 22px; font-weight: 800; min-height: 1.4em; padding: 10px 12px; border-radius: 12px; border: 2px solid #ff8fb1; text-align: center; overflow-wrap: anywhere; }
+.om-preview.empty { color: var(--muted); font-size: 16px; font-weight: 600; border-style: dashed; }
+.om-groups { display: grid; gap: 8px; }
+.om-group { display: grid; gap: 4px; }
+.om-group-title { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.om-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.om-tile { display: grid; gap: 1px; text-align: left; min-height: 54px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.om-tile small { color: var(--muted); font-size: 12px; line-height: 1.2; }
+.om-tile .om-tile-romaji { color: #8fb3ff; font-style: italic; }
+.om-tile-jp { font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+.om-tile.on { border-color: #ff8fb1; background: #3a2236; box-shadow: 0 0 0 2px #ff8fb1; }
+
+.om-tip { display: grid; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.om-tip p { margin: 0; }
+.om-tip-head { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+.om-chip { font-weight: 800; font-size: 15px; border-radius: 999px; padding: 3px 10px; background: #2c2440; white-space: nowrap; }
+.om-chip-keigo { background: #9fd8a8; color: #10241b; }
+.om-chip-polite { background: #cfe7ff; color: #12263d; }
+.om-chip-mixed { background: var(--warn); color: #1a1426; }
+.om-chip-casual { background: #ff8fb1; color: #2a1630; }
+.om-meter-p { position: relative; height: 18px; background: #2c2440; border-radius: 999px; overflow: hidden; }
+.om-meter-p span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--warn), #9fd8a8); border-radius: 999px; }
+.om-meter-p b { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #1a1426; }
+.om-good { color: var(--good); font-size: 15px; }
+.om-casual { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 15px; }
+.om-casual small { display: block; color: var(--muted); font-size: 13px; }
+
+.om-target { display: grid; gap: 3px; background: #fff7fb; color: #2a1630; border-radius: 14px; padding: 12px 14px; }
+.om-target p { margin: 0; overflow-wrap: anywhere; }
+.om-target-label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #b23a64; margin: 0; }
+.om-target-jp { font-size: 22px; font-weight: 800; line-height: 1.35; }
+.om-target-kana { font-size: 15px; color: #6b4a6f; }
+.om-target-note { font-size: 14px; color: #6b4a6f; }
+.om-encore { display: grid; gap: 8px; }
+.om-heard { margin: 0; color: var(--warn); }
+.om-heard.ok { color: var(--good); font-weight: 800; }
+.om-hearts { margin: 0; color: #ff8fb1; font-weight: 800; }
+.om-next { margin: 0; font-size: 15px; }
+.om-next small { color: var(--muted); }
+.om-example { display: grid; gap: 2px; border-left: 4px solid #ff8fb1; padding: 4px 10px; }
+.om-example p { margin: 0; font-size: 17px; }
+.om-example small { color: var(--muted); font-size: 13px; }
+.om-example .om-target-label { color: #ff8fb1; }
+.om-keigo { display: grid; gap: 4px; }
+.om-keigo .om-target-label { color: #9fd8a8; }
+.om-keigo table { border-collapse: collapse; font-size: 16px; }
+.om-keigo th { text-align: left; color: var(--muted); font-weight: 400; font-size: 13px; padding: 2px 10px 2px 0; width: 90px; }
+.om-keigo td { font-weight: 700; padding: 2px 0; }
+.om-vip summary { color: var(--muted); cursor: pointer; }
+.om-vip .secondary { display: block; width: 100%; margin-top: 6px; text-align: left; }
+.om-accepted { text-align: center; }
+.om-accepted p { margin: 0; }
+.om-accept-big { font-size: 96px; line-height: 1; animation: om-pop 0.7s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+@keyframes om-pop { from { transform: scale(0.3); opacity: 0; } }

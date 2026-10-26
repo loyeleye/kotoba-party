@@ -4,9 +4,9 @@ A Jackbox-style party game where 1 to 8 friends learn to **speak** Japanese by l
 other's answers. A shared screen is the stage, phones are the controllers, and the server runs
 the show. Design doc: [Kotoba Party! Game Design Document](https://claude.ai/artifact/FpDS7hXjcg4dfPSY9fu1AL).
 
-## Status: v1 modes playable (draft content)
+## Status: all modes playable (draft content)
 
-Five modes run end to end on the stage and phones, each with bots and full-server tests:
+Eleven modes run end to end on the stage and phones, each with bots and full-server tests:
 
 | Mode | Host | What you practise |
 | --- | --- | --- |
@@ -15,6 +15,12 @@ Five modes run end to end on the stage and phones, each with bots and full-serve
 | Last Train (終電) | Chōchin-san | Spoken survival phrases on a trip across Japan |
 | Word Gauntlet (v1.1) | Pon | Fake kanji meanings, translation telephone, shiritori |
 | Kotoba Concentration (v1.1) | Fude | Memory pairs you keep by saying the word |
+| Murder at the Onsen (backlog) | Chōchin-san | Asking suspects questions, then naming the culprit |
+| Phrase Bingo Theater (backlog) | Pon | Slipping secret phrases into an improv scene |
+| Karaoke Duel (backlog) | Chōchin-san | Singing original beginner songs, scored on words, pitch and timing |
+| Who's the Tourist? (backlog) | Chōchin-san | Asking and answering questions to find who doesn't know the place |
+| Oekaki (backlog) | Fude | Drawing a word, then writing fake Japanese titles |
+| Omiai Matchmaker (backlog) | Pon | Polite Japanese (です/ます, keigo) on a parody matchmaking show |
 
 All content is `draft` until a fluent speaker checks it. Decisions and questions for Ladi:
 [docs/open-questions.md](docs/open-questions.md).
@@ -36,7 +42,7 @@ npm start                 # builds the pages, serves on http://localhost:3000
 
 - Stage (TV or laptop): http://localhost:3000/stage
 - Phones: scan the QR on the stage, or open the server's address and type the code.
-- Fill the room with bots: `npm run bots -- --code ABCD` (7 bots join the room on the stage).
+- Fill seats with bots: `npm run bots -- --code ABCD --bots 3`; they play whatever game the VIP picks.
 - Watch bots play on their own: `npm run bots -- --mode oogiri --bots 5`, then open the stage it
   prints (any mode id works; without `--mode` bots play the debug round).
 

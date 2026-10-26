@@ -1,4 +1,4 @@
-// The AI layer's public face: the host's voice, the typed-answer judge and the Ink Storm coach. See README.md for wiring.
+// The AI layer's public face: the host's voice, the typed-answer judge, the Ink Storm coach and the Onsen suspects' lead-ins. See README.md for wiring.
 
 export * from './types.js';
 export { HOSTS, type HostPersona, type HostVoiceConfig } from './hosts.js';
@@ -10,3 +10,4 @@ export { createJudge, judgeOffline, type Judge, type JudgeItem, type JudgeReques
 export { createInkCoach, encodePng, rasterize, type InkCoach, type InkLook } from './inkCoach.js';
 export { defaultModerator, type Moderator } from './moderation.js';
 export { nameToKana, normalizeKana, numberToKana, readNumbers } from './kana.js';
+export { createSuspectVoice, type SuspectLeadRequest, type SuspectVoice } from './suspect.js';

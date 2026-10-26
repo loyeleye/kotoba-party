@@ -1,0 +1,158 @@
+/* Murder at the Onsen (stage) */
+.om-stage { width: min(1600px, 100%); display: grid; gap: 16px; }
+.om-stage .muted { color: var(--muted); }
+.om-stage .good { color: var(--good); font-weight: 800; }
+.om-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); gap: 20px; align-items: start; }
+.om-main { display: grid; gap: 14px; min-width: 0; }
+
+.om-case { display: flex; align-items: center; gap: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 18px; }
+.om-victim { font-size: 44px; line-height: 1; }
+.om-victim.big { font-size: 120px; }
+.om-case-text { display: grid; min-width: 0; }
+.om-title { font-size: 28px; font-weight: 900; }
+.om-sub { color: var(--muted); font-size: 18px; }
+.om-item { margin-left: auto; font-size: 40px; display: grid; justify-items: center; }
+.om-item small { font-size: 14px; color: var(--muted); }
+
+.om-banner { margin: 0; font-size: 30px; font-weight: 800; }
+.om-accuse { color: var(--warn); }
+.om-reveal { font-size: 40px; color: var(--accent); }
+.om-line { margin: 0; font-size: 22px; }
+.om-say { margin: 0; font-size: 52px; font-weight: 900; color: var(--warn); }
+.om-say small { display: block; font-size: 20px; color: var(--muted); font-weight: 600; }
+.om-kicker { margin: 0; color: var(--accent); font-size: 22px; font-weight: 800; letter-spacing: 0.06em; }
+
+.om-lineup { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 14px; }
+.om-lineup.n2 { --n: 2; } .om-lineup.n3 { --n: 3; } .om-lineup.n4 { --n: 4; }
+.om-suspect { position: relative; display: grid; justify-items: center; gap: 4px; text-align: center; background: var(--panel); border: 2px solid var(--line); border-radius: 18px; padding: 12px 10px; min-width: 0; }
+.om-suspect.active { border-color: var(--warn); box-shadow: 0 0 0 3px rgba(255, 207, 90, 0.35); }
+.om-suspect.culprit { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255, 122, 89, 0.55); animation: om-pop 0.6s ease-out 0.8s both; }
+.om-suspect.dim { opacity: 0.7; }
+.om-face { font-size: clamp(44px, 7vh, 84px); line-height: 1.05; }
+.om-name { font-size: 30px; font-weight: 900; }
+.om-role { font-size: 16px; color: var(--muted); }
+.om-asked { font-size: 20px; letter-spacing: 2px; }
+.om-votes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 30px; }
+.om-voter { border-radius: 999px; padding: 2px 10px; font-size: 16px; font-weight: 800; color: #fff; }
+.om-stamp { position: absolute; top: 10px; right: -6px; transform: rotate(12deg); background: var(--accent); color: #fff; font-weight: 900; font-size: 22px; padding: 2px 10px; border-radius: 8px; animation: om-stamp 0.4s ease-out 0.9s both; }
+
+.om-bubble { position: relative; background: #fbf7ff; color: #1b1430; border-radius: 18px; padding: 12px 18px; display: grid; gap: 4px; text-align: left; }
+.om-bubble .om-en { color: #4a3f66; }
+.om-bubble .om-kana { color: #6b5c8f; }
+.om-confused { font-size: 20px; font-weight: 800; margin-top: 4px; animation: om-wobble 0.5s ease-out both; }
+.om-confused small { display: block; font-weight: 600; font-size: 14px; color: #6b5c8f; }
+
+.om-q { display: grid; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--warn); border-radius: 14px; padding: 10px 18px; }
+.om-who { color: var(--warn); font-size: 20px; font-weight: 800; }
+.om-heard { font-size: 34px; font-weight: 800; overflow-wrap: anywhere; }
+.om-natural { font-size: 20px; }
+.om-a { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.om-answer { min-height: 120px; }
+.om-answer .om-ja, .om-confession .om-ja { font-size: 40px; font-weight: 900; line-height: 1.25; }
+.om-answer .om-en, .om-confession .om-en { font-size: 24px; display: block; }
+.om-answer .om-kana { font-size: 20px; }
+.om-confession { gap: 10px; }
+.om-think { position: absolute; left: 18px; top: 10px; font-size: 48px; font-weight: 900; color: #6b5c8f; animation: om-think var(--think, 1800ms) steps(1, end) both; }
+.om-newclue { background: var(--panel); border: 2px solid var(--good); border-radius: 14px; padding: 10px 18px; font-size: 24px; font-weight: 900; color: var(--good); display: grid; gap: 4px; }
+.om-newclue .om-jp { color: var(--ink); font-weight: 600; }
+
+.om-jp { display: grid; gap: 2px; }
+.om-jp .om-ja { font-size: 26px; font-weight: 800; }
+.om-jp .om-kana { font-size: 16px; color: var(--muted); }
+.om-jp .om-en { font-size: 18px; color: var(--muted); }
+
+.om-notebook { background: #f4ecd8; color: #2b2112; border-radius: 10px; padding: 12px 16px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); background-image: repeating-linear-gradient(transparent 0 31px, rgba(80, 60, 30, 0.18) 31px 32px); max-height: 56vh; overflow: hidden; }
+.om-nb-title { margin: 0 0 6px; font-size: 22px; font-weight: 900; }
+.om-notebook .muted { color: #7a6a4f; }
+.om-clues { margin: 0; padding-left: 26px; display: grid; gap: 8px; }
+.om-clues li { font-size: 20px; }
+.om-clue-ja { display: block; font-weight: 800; }
+.om-clue-en { display: block; font-size: 15px; color: #5a4b33; }
+.om-clues li.fresh { background: rgba(87, 217, 163, 0.25); border-radius: 6px; }
+.om-clues li.key { background: rgba(255, 122, 89, 0.22); border-radius: 6px; }
+.om-empty { margin: 0; font-size: 18px; }
+
+.om-intro { justify-items: center; text-align: center; }
+.om-file { display: flex; gap: 28px; align-items: center; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px 28px; }
+.om-file .om-jp .om-ja { font-size: 30px; }
+.om-file-title .om-ja { font-size: 46px !important; color: var(--warn); }
+.om-intro .om-lineup { width: 100%; }
+
+.om-appear { animation: om-appear 0.5s ease-out both; }
+@keyframes om-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes om-think { 0% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes om-pop { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1.02); } }
+@keyframes om-stamp { from { opacity: 0; transform: rotate(12deg) scale(2.2); } to { opacity: 1; transform: rotate(12deg) scale(1); } }
+@keyframes om-wobble { 0% { transform: scale(0.8); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: none; } }
+
+/* 1280×720 and other short screens */
+@media (max-height: 820px) {
+  .om-stage { gap: 10px; }
+  .om-case { padding: 4px 14px; }
+  .om-victim { font-size: 32px; }
+  .om-victim.big { font-size: 72px; }
+  .om-title { font-size: 22px; }
+  .om-sub { font-size: 15px; }
+  .om-item { font-size: 28px; }
+  .om-banner { font-size: 22px; }
+  .om-reveal { font-size: 28px; }
+  .om-say { font-size: 34px; }
+  .om-face { font-size: 44px; }
+  .om-name { font-size: 22px; }
+  .om-role { font-size: 13px; }
+  .om-suspect { padding: 6px; }
+  .om-heard { font-size: 24px; }
+  .om-natural, .om-who { font-size: 16px; }
+  .om-answer { min-height: 80px; }
+  .om-answer .om-ja, .om-confession .om-ja { font-size: 28px; }
+  .om-answer .om-en, .om-confession .om-en { font-size: 18px; }
+  .om-confession { gap: 4px; }
+  .om-line { font-size: 17px; }
+  .om-newclue { font-size: 18px; padding: 6px 14px; }
+  .om-jp .om-ja { font-size: 20px; }
+  .om-file { padding: 10px 18px; }
+  .om-file .om-jp .om-ja { font-size: 22px; }
+  .om-file-title .om-ja { font-size: 32px !important; }
+  .om-layout { grid-template-columns: minmax(0, 1fr) minmax(260px, 330px); }
+  .om-nb-title { font-size: 18px; }
+  .om-clues li { font-size: 16px; }
+  .om-clue-en { font-size: 13px; }
+}
+
+/* The confession */
+.om-finale .om-suspect { padding: 6px 8px; }
+.om-finale .om-face { font-size: clamp(40px, 5.5vh, 60px); }
+.om-finale .om-name { font-size: 26px; }
+.om-reveal-head { display: grid; gap: 2px; }
+.om-finale .om-confession .om-ja { font-size: 30px; }
+.om-finale .om-confession .om-en { font-size: 19px; }
+.om-solution { display: grid; gap: 6px; }
+.om-solution .om-line { font-size: 19px; }
+
+/* Short screens (1280×720): tighten the shared stage chrome, for this mode only. */
+@media (max-height: 820px) {
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .bar { padding: 6px 24px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .code { font-size: 34px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .qr { width: 70px; height: 70px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .label, body[data-mode='onsen-murder']:not([data-phase='lobby']) .url { font-size: 12px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .show { padding: 8px 24px; gap: 8px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .phase { font-size: 24px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .round { font-size: 18px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .timer { font-size: 34px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host { padding: 4px 14px; gap: 10px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-portrait { width: 40px; height: 40px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-jp { font-size: 22px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-en { font-size: 16px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .player { padding: 4px 10px; font-size: 18px; }
+  .om-kicker { display: none; }
+  .om-finale .om-face { font-size: 34px; }
+  .om-finale .om-name { font-size: 18px; }
+  .om-finale .om-confession .om-ja { font-size: 22px; }
+  .om-finale .om-confession .om-en { font-size: 15px; }
+  .om-solution .om-line { font-size: 15px; }
+  .om-notebook { max-height: 48vh; }
+}
+
+@media (max-width: 1000px) {
+  .om-layout { grid-template-columns: 1fr; }
+}

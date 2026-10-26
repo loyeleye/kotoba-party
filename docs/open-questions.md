@@ -24,6 +24,12 @@ If you only have ten minutes, these are the answers that would change the build 
 - **Word Gauntlet:** a rejected shiritori challenge knocks the player out. Too harsh?
   ([word-gauntlet.md](modes/word-gauntlet.md#decisions-made-on-ladis-behalf))
 - **Last Train:** ghosts earn 50% points. Too generous? ([last-train.md](modes/last-train.md#open-questions))
+- **Phrase Bingo Theater (backlog):** saying a secret line into the phone is what scores, on the
+  honour system that it was also said in the scene. Should the audience be able to challenge it?
+  A caught actor loses nothing (only the smooth bonus). ([phrase-bingo.md](modes/phrase-bingo.md#open-questions))
+- **Omiai Matchmaker (backlog):** a rule-based manners meter (no LLM) scores politeness, the room
+  votes for charm, and the guest invites the player with the most hearts (votes + manners
+  stars) to tea for +200. Fair to funny casual answers? ([omiai.md](modes/omiai.md#open-questions))
 - **Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
   player. Is it time to add accounts or device-local saves? ([kana-raid.md](modes/kana-raid.md#open-questions))
 - **Ink Storm (kana drawing):** the drawing pad has never been tried with a thumb on a real
@@ -115,6 +121,12 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Last Train | [last-train.md](modes/last-train.md) | 15 | Chōchin-san |
 | Word Gauntlet (v1.1) | [word-gauntlet.md](modes/word-gauntlet.md) | 18 | Pon |
 | Kotoba Concentration (v1.1) | [concentration.md](modes/concentration.md) | 15 | Fude |
+| Phrase Bingo Theater (backlog) | [phrase-bingo.md](modes/phrase-bingo.md) | 20 | Pon |
+| Karaoke Duel (backlog) | [karaoke-duel.md](modes/karaoke-duel.md) | 18 | Chōchin-san |
+| Murder at the Onsen (backlog) | [onsen-murder.md](modes/onsen-murder.md) | 15 | Chōchin-san |
+| Who's the Tourist? (backlog) | [tourist.md](modes/tourist.md) | 20 | Chōchin-san |
+| Oekaki (backlog) | [oekaki.md](modes/oekaki.md) | 18 | Fude |
+| Omiai Matchmaker (backlog) | [omiai.md](modes/omiai.md) | 20 | Pon |
 
 ## Content
 
