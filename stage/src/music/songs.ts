@@ -6,8 +6,12 @@
 // note before, "." for a rest; "|" is ignored and only there to make bars readable. Drums are on a
 // 16th grid, sixteen steps a bar, repeated to fill the song: "X" accent, "x" hit, "o" ghost, "." none.
 // Bass and accompaniment are generated from the chords in the style named.
+//
+// The house theme: "ko-to-ba pa-a-ty!", D5 . D5 E5 F#5 - A5 . | G5 F#5 E5 - D5. The ident opens
+// every game with it, the recap fanfare and the synth lobby and outro quote it, so the show
+// sounds like one show whatever track plays between them.
 
-export const SONG_IDS = ['lobby', 'festive', 'quiz', 'stroll', 'rush', 'battle', 'mystery', 'gentle', 'score', 'finale', 'outro', 'fanfare', 'reveal'] as const;
+export const SONG_IDS = ['lobby', 'festive', 'quiz', 'stroll', 'rush', 'battle', 'mystery', 'gentle', 'score', 'finale', 'outro', 'fanfare', 'reveal', 'ident'] as const;
 export type SongId = (typeof SONG_IDS)[number];
 
 export type Voice = 'pulse' | 'square' | 'tri' | 'pluck' | 'flute' | 'bell';
@@ -41,7 +45,7 @@ export const SONGS: Record<SongId, Song> = {
     lead: {
       voice: 'pulse',
       notes:
-        'A4 - B4 A4 F#4 - E4 - | D4 E4 F#4 A4 B4 - A4 - | A4 B4 D5 - E5 D5 B4 A4 | F#4 - E4 - D4 - . . |' +
+        'D5 . D5 E5 F#5 - A5 . | G5 F#5 E5 - D5 - A4 - | A4 B4 D5 - E5 D5 B4 A4 | F#4 - E4 - D4 - . . |' +
         'F#4 A4 B4 - D5 - B4 A4 | B4 - A4 F#4 E4 - D4 E4 | F#4 A4 E4 - D4 E4 F#4 E4 | D4 - - - . . . .',
     },
     comp: { style: 'stab', voice: 'pluck' },
@@ -112,8 +116,16 @@ export const SONGS: Record<SongId, Song> = {
     title: 'Last Train Dash',
     bpm: 150,
     loop: true,
-    chords: ['Em', 'Em', 'C', 'D'],
-    lead: { voice: 'pulse', notes: 'E5 . E5 D5 B4 . G4 . | A4 B4 . G4 E4 . . . | E5 . G5 . E5 D5 C5 B4 | A4 . B4 . D5 - - .' },
+    // 16 bars (about 26 s): the dash, an answer to it, a climb to the B chord, the dash again.
+    chords: ['Em', 'Em', 'C', 'D', 'Em', 'Em', 'C', 'D', 'Am', 'C', 'D', 'B', 'Em', 'Em', 'C', 'D'],
+    lead: {
+      voice: 'pulse',
+      notes:
+        'E5 . E5 D5 B4 . G4 . | A4 B4 . G4 E4 . . . | E5 . G5 . E5 D5 C5 B4 | A4 . B4 . D5 - - . |' +
+        'E5 . E5 D5 B4 . G4 . | A4 B4 . G4 E4 . G4 A4 | B4 . C5 . D5 . E5 . | F#5 - E5 - D5 - . . |' +
+        'A4 . C5 . E5 - D5 C5 | G4 . C5 . E5 . G5 - | F#5 - E5 - D5 - C5 - | B4 - D#5 - F#5 - B5 . |' +
+        'E5 . E5 D5 B4 . G4 . | A4 B4 . G4 E4 . . . | E5 . G5 . E5 D5 C5 B4 | A4 . B4 . E5 - - .',
+    },
     comp: { style: 'arp', voice: 'square', gain: 0.4 },
     bass: { style: 'drive' },
     drums: {
@@ -174,8 +186,15 @@ export const SONGS: Record<SongId, Song> = {
     bpm: 132,
     swing: 0.15,
     loop: true,
-    chords: ['C', 'Am', 'F', 'G'],
-    lead: { voice: 'pulse', notes: 'G4 . C5 . E5 . G5 . | A5 G5 E5 . C5 . A4 . | F4 . A4 . C5 . A4 . | B4 . D5 . G5 - - .' },
+    chords: ['C', 'Am', 'F', 'G', 'C', 'Am', 'F', 'G', 'F', 'G', 'Em', 'Am', 'F', 'G', 'C', 'C'],
+    lead: {
+      voice: 'pulse',
+      notes:
+        'G4 . C5 . E5 . G5 . | A5 G5 E5 . C5 . A4 . | F4 . A4 . C5 . A4 . | B4 . D5 . G5 - - . |' +
+        'G4 . C5 . E5 . G5 . | A5 G5 E5 . C5 . E5 . | F5 . E5 . D5 . C5 . | B4 . C5 . D5 - - . |' +
+        'A4 . C5 . F5 - E5 . | D5 . B4 . G4 - - . | E5 . G5 . B5 - G5 . | A5 - - . E5 . C5 . |' +
+        'F5 . E5 . D5 . C5 . | B4 . D5 . G5 - F5 . | E5 . D5 . C5 - - . | C5 . E5 . G5 - - .',
+    },
     comp: { style: 'stab', voice: 'pluck' },
     bass: { style: 'octave' },
     drums: {
@@ -190,8 +209,15 @@ export const SONGS: Record<SongId, Song> = {
     title: 'Taiko Showdown',
     bpm: 120,
     loop: true,
-    chords: ['Dm', 'Dm', 'Bb', 'C'],
-    lead: { voice: 'square', notes: 'D5 - - . A4 . D5 . | F5 - E5 . D5 . C5 . | D5 - - . F5 . D5 . | E5 - - . G5 - E5 .', gain: 0.8 },
+    chords: ['Dm', 'Dm', 'Bb', 'C', 'Dm', 'Dm', 'Bb', 'C', 'Gm', 'Bb', 'C', 'A'],
+    lead: {
+      voice: 'square',
+      notes:
+        'D5 - - . A4 . D5 . | F5 - E5 . D5 . C5 . | D5 - - . F5 . D5 . | E5 - - . G5 - E5 . |' +
+        'D5 - - . A4 . D5 . | F5 - E5 . D5 . F5 . | G5 - - . F5 . D5 . | E5 - - . C5 - E5 . |' +
+        'G5 - F5 . D5 . Bb4 . | F5 - D5 . Bb4 . D5 . | E5 - G5 . C6 - G5 . | A5 - - . C#5 - E5 .',
+      gain: 0.8,
+    },
     comp: { style: 'pad', voice: 'pulse', gain: 0.35 },
     bass: { style: 'drive' },
     drums: {
@@ -208,7 +234,7 @@ export const SONGS: Record<SongId, Song> = {
     swing: 0.2,
     loop: true,
     chords: ['D', 'Bm', 'G', 'A'],
-    lead: { voice: 'pluck', notes: 'F#4 - A4 - B4 A4 F#4 - | D5 - B4 - A4 - F#4 - | E4 F#4 A4 - B4 - A4 F#4 | E4 - - - . . . .' },
+    lead: { voice: 'pluck', notes: 'D5 - D5 E5 F#5 - A5 - | B4 - A4 - F#4 - D4 - | E4 F#4 A4 - B4 - A4 F#4 | E4 - - - . . . .' },
     comp: { style: 'pad', voice: 'tri', gain: 0.6 },
     bass: { style: 'bounce' },
     drums: {
@@ -223,7 +249,8 @@ export const SONGS: Record<SongId, Song> = {
     bpm: 140,
     loop: false,
     chords: ['D', 'G A', 'D'],
-    lead: { voice: 'pulse', notes: 'A4 A4 A4 D5 - . F#5 A5 | B5 - A5 . G5 - E5 . | D6 - - - - - - .' },
+    // The house theme, then up to the top D.
+    lead: { voice: 'pulse', notes: 'D5 . D5 E5 F#5 - A5 . | B5 - A5 . G5 F#5 E5 . | D6 - - - - - - .' },
     comp: { style: 'stab', voice: 'square', gain: 0.6 },
     bass: { style: 'octave' },
     drums: {
@@ -233,6 +260,22 @@ export const SONGS: Record<SongId, Song> = {
     },
   },
   // Drum roll before a reveal: unpitched, so it sits over any loop.
+  // The house ident before every game: the theme once, quick, with a gong on the landing.
+  ident: {
+    title: 'Kotoba Party!',
+    bpm: 150,
+    loop: false,
+    chords: ['D', 'G A', 'D'],
+    lead: { voice: 'pulse', notes: 'D5 . D5 E5 F#5 - A5 . | G5 F#5 E5 - D5 - E5 - | D5 - - - . . . .' },
+    comp: { style: 'stab', voice: 'square', gain: 0.5 },
+    bass: { style: 'octave' },
+    drums: {
+      k: 'x.......x.......|x.......x.......|x...............',
+      s: '....x.......x...|....x.......xxxx|................',
+      h: 'x.x.x.x.x.x.x.x.|x.x.x.x.x.x.x.x.|................',
+      g: '................|................|X...............',
+    },
+  },
   reveal: {
     title: 'Drum Roll',
     bpm: 140,

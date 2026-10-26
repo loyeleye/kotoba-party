@@ -50,5 +50,6 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
       viewer.kind === 'player'
         ? { playerId: viewer.playerId, level: state.players.find((p) => p.id === viewer.playerId)?.level ?? 'n5' }
         : null,
+    remoteControl: state.remoteControl,
   };
 }

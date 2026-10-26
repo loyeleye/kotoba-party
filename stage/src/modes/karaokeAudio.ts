@@ -32,12 +32,12 @@ function context(): AudioContext | null {
   return getSound()?.ctx ?? null;
 }
 
-/** Where the backing track plays: the shared effects bus. */
-const out = (): AudioNode => getSound()!.sfx;
+/** Where the backing track plays: with the music's volume, but never ducked. */
+const out = (): AudioNode => getSound()!.backing;
 
 /**
- * How late the speakers are behind the audio clock (TV soundbars can add 100 ms or more): the
- * lyrics shift by this so the ball lands when the note is heard, not when it is scheduled.
+ * How late the speakers are behind the audio clock (TV soundbars can add 100 ms or more). The
+ * backing track is scheduled this much early, so it is heard on the server's beat.
  */
 export function outputLatencyMs(): number {
   const c = context();
@@ -101,8 +101,10 @@ export function playTurn(track: TurnTrack): void {
   if (!c || isMuted() || c.state !== 'running' || scheduledKey === track.key) return;
   stopAll();
   scheduledKey = track.key;
-  // Local wall-clock ms → AudioContext seconds.
-  const toAudio = (localMs: number) => c.currentTime + (localMs - Date.now()) / 1000;
+  // Local wall-clock ms → AudioContext seconds, early by the speakers' delay, so each click and note
+  // is heard on the server's beat (which the phones time the singers against), not scheduled on it.
+  const lead = outputLatencyMs();
+  const toAudio = (localMs: number) => c.currentTime + (localMs - lead - Date.now()) / 1000;
   const beat = track.beatMs;
   for (let k = 0; k < track.countInBeats; k++) click(c, toAudio(track.lineAt - (track.countInBeats - k) * beat), k === 0);
 

@@ -15,6 +15,8 @@ import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
 import { creditSummary } from './music/tracks.js';
 import { isMuted } from './sound.js';
+import { mountSettings, updateSettings } from './settings.js';
+import { tickSfx, watchSfx } from './music/sfx.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -63,6 +65,7 @@ const logLines: string[] = [];
 
 $('debug').hidden = !DEBUG;
 mountSoundButton(els.canvas);
+mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteHost });
 $('debug-tag').hidden = !DEBUG;
 document.body.dataset.watch = WATCH ? '1' : '';
 if (WATCH) {
@@ -230,6 +233,9 @@ function render(view: RoomView, v: number): void {
   fillMenus(view);
   showHost(view);
   updateMusic(view);
+  watchSfx(view);
+  updateSettings(view);
+  showCredits(view.phase === 'recap');
 
   const stageMode = view.game ? STAGE_MODES[view.game.mode] : null;
   // Patched, not rebuilt: chips keep their place and a score that went up gets a fresh
@@ -318,14 +324,29 @@ function recapScreen(view: RoomView): HTMLElement {
           ),
         )
       : null,
-    credits(),
   );
 }
 
-/** The music and voice credits their licences ask for, small at the foot of the recap. */
-function credits(): HTMLElement {
-  const voices = [...new Set(Object.values(HOSTS).map((x) => x.credit))];
-  return h('ul', { class: 'credits', 'aria-label': 'Credits' }, [...creditSummary(), `Host voices: ${voices.join(' · ')}`].map((c) => h('li', {}, `♪ ${c}`)));
+/**
+ * The music and voice credits their licences ask for: one line at a time across the foot of the
+ * screen during the recap, outside the play area so it never shrinks with the podium.
+ */
+const creditLines = [...creditSummary(), `Host voices: ${[...new Set(Object.values(HOSTS).map((x) => x.credit))].join(' · ')}`];
+const creditStrip = h('p', { class: 'credits', 'aria-live': 'off', hidden: true });
+els.canvas.append(creditStrip);
+let creditTimer: ReturnType<typeof setInterval> | null = null;
+function showCredits(on: boolean): void {
+  creditStrip.hidden = !on;
+  if (!on) {
+    if (creditTimer) clearInterval(creditTimer);
+    creditTimer = null;
+    return;
+  }
+  if (creditTimer) return;
+  let i = 0;
+  const next = () => mount(creditStrip, h('span', { 'data-key': `c${i}` }, `♪ ${creditLines[i++ % creditLines.length]}`));
+  next();
+  creditTimer = setInterval(next, 5_000);
 }
 
 /** Recap points tick up from 0 as the podium rises, instead of arriving finished. */
@@ -388,6 +409,7 @@ function showHost(view: RoomView): void {
 
 function tick(): void {
   const left = client?.remainingMs() ?? null;
+  tickSfx(client?.view ?? null, left);
   const text = formatSeconds(left);
   if (els.timer.textContent !== text) els.timer.textContent = text;
   els.timer.classList.toggle('urgent', left !== null && left > 0 && left <= 5_000);

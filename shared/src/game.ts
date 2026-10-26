@@ -37,6 +37,8 @@ export interface GameState {
   cues: HostCue[];
   phrasebook: Record<string, PhraseEntry[]>;
   recap: { standings: { playerId: string; name: string; score: number }[]; awards: Award[] } | null;
+  /** Watching stage screens may run the game too (start, skip, play again). */
+  remoteControl: boolean;
 }
 
 export interface GameContext {
@@ -76,6 +78,7 @@ export function createGame(code: string): GameState {
     cues: [],
     phrasebook: {},
     recap: null,
+    remoteControl: false,
   };
 }
 
@@ -247,6 +250,13 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (state.phase !== 'recap') return fail('wrong-phase');
       if (!isVip && !isStage) return fail('not-vip');
       resetToLobby(state);
+      return OK;
+    }
+    case 'settings': {
+      if (!isStage || actor.watch) return fail('not-allowed');
+      if (typeof cmd.remoteControl !== 'boolean') return fail('bad-command');
+      if (state.remoteControl === cmd.remoteControl) return { changed: false };
+      state.remoteControl = cmd.remoteControl;
       return OK;
     }
     default:

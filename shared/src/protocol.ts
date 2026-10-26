@@ -82,6 +82,8 @@ export interface RoomView {
   recap: RecapView | null;
   /** Only in a player's own view. */
   me: { playerId: string; level: Level } | null;
+  /** The main stage lets watching screens start, skip and replay too (its settings panel). */
+  remoteControl: boolean;
 }
 
 /** Server → client WebSocket message. */
@@ -108,7 +110,9 @@ export type Command =
   /** The lobby mic check: say こんにちは. A quiet result switches the phone to tap/type. */
   | { id: string; type: 'micCheck'; utterance: unknown }
   | { id: string; type: 'skip'; phaseSeq: number }
-  | { id: string; type: 'playAgain' };
+  | { id: string; type: 'playAgain' }
+  /** Main stage only: room settings. */
+  | { id: string; type: 'settings'; remoteControl: boolean };
 
 export type CommandType = Command['type'];
 

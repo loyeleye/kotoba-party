@@ -15,6 +15,16 @@ export const TRACK_IDS = [
   'investigations',
   'funkorama',
   'sneaky',
+  // Second themes: each game alternates between two (cues.ts MODE_THEMES).
+  'quirky-dog',
+  'life-of-riley',
+  'wallpaper',
+  'off-to-osaka',
+  'local-forecast',
+  'cipher',
+  'kool-kats',
+  'ishikari-lore',
+  'ouroboros',
 ] as const;
 export type TrackId = (typeof TRACK_IDS)[number];
 
@@ -74,6 +84,16 @@ export const TRACKS: Record<TrackId, Track> = {
   },
   funkorama: { title: 'Funkorama', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100474'), url: file('funkorama'), loop: [12.539, 193.724], gainDb: 0.7, fallback: 'quiz' },
   sneaky: { title: 'Sneaky Snitch', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100772'), url: file('sneaky-snitch'), loop: [6.293, 127.663], gainDb: 1.9, fallback: 'mystery' },
+  // Second themes (Kevin MacLeod): a game played twice in a row gets its other theme.
+  'quirky-dog': { title: 'Quirky Dog', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500053'), url: file('quirky-dog'), loop: [5.503, 135.442], gainDb: -6.7, fallback: 'festive' },
+  'life-of-riley': { title: 'Life of Riley', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1400054'), url: file('life-of-riley'), loop: [8.011, 223.004], gainDb: 2.1, fallback: 'festive' },
+  'wallpaper': { title: 'Wallpaper', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100843'), url: file('wallpaper'), loop: [15.534, 201.34], gainDb: -4.3, fallback: 'festive' },
+  'off-to-osaka': { title: 'Off to Osaka', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100128'), url: file('off-to-osaka'), loop: [8.081, 98.337], gainDb: 3.2, fallback: 'stroll' },
+  'local-forecast': { title: 'Local Forecast - Elevator', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1300012'), url: file('local-forecast'), loop: [5.735, 185.922], gainDb: 3.7, fallback: 'gentle' },
+  'cipher': { title: 'Cipher', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100844'), url: file('cipher'), loop: [4.481, 215.667], gainDb: 3.7, fallback: 'quiz' },
+  'kool-kats': { title: 'Kool Kats', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100601'), url: file('kool-kats'), loop: [6.966, 193.863], gainDb: 0.4, fallback: 'quiz' },
+  'ishikari-lore': { title: 'Ishikari Lore', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100192'), url: file('ishikari-lore'), loop: [6.641, 158.848], gainDb: 6.9, fallback: 'mystery' },
+  'ouroboros': { title: 'Ouroboros', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1400007'), url: file('ouroboros'), loop: [23.615, 158.198], gainDb: -6.1, fallback: 'battle' },
 };
 
 const CC_BY = 'https://creativecommons.org/licenses/by/4.0/';
@@ -93,13 +113,16 @@ export function creditFor(id: TrackId): string {
 export const TRACK_CREDITS: string[] = TRACK_IDS.map(creditFor);
 
 /**
- * The same credits grouped by author, short enough to read on the recap screen: titles, author,
- * where they're from and the licence with its link.
+ * The same credits grouped by author, each line short enough to read across the foot of the recap
+ * screen (an author with many tracks takes several lines): titles, author, where they're from and
+ * the licence with its link.
  */
-export function creditSummary(): string[] {
+export function creditSummary(perLine = 3): string[] {
   const by = new Map<string, TrackId[]>();
   for (const id of TRACK_IDS) by.set(TRACKS[id].author, [...(by.get(TRACKS[id].author) ?? []), id]);
-  return [...by].map(([author, ids]) => {
+  const groups: [string, TrackId[]][] = [];
+  for (const [author, ids] of by) for (let i = 0; i < ids.length; i += perLine) groups.push([author, ids.slice(i, i + perLine)]);
+  return groups.map(([author, ids]) => {
     const titles = ids.map((id) => `"${TRACKS[id].title}"`).join(', ');
     const where = author === 'Kevin MacLeod' ? 'incompetech.com' : 'OpenGameArt.org';
     if (TRACKS[ids[0]!].licence === 'CC0') return `${titles} by ${author} (${where}, CC0)`;

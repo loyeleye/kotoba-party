@@ -5,6 +5,7 @@
 // Storm wave the yōkai wear their twins' masks and the players' drawings replay in brush
 // strokes under the arena, timed the same way.
 
+import { sfx } from '../music/sfx.js';
 import { h } from '../../../shared/src/dom.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
 import type { InkShow, KanaRaidView, YokaiView } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
@@ -102,6 +103,7 @@ function arena(view: RoomView, game: KanaRaidView): HTMLElement {
   const total = game.horde.length;
   const down = game.horde.filter((y) => y.state === 'defeated').length;
   const fled = game.horde.filter((y) => y.state === 'escaped' || (y.state === 'alive' && y.escapeAt <= now)).length;
+  raidSfx(game, fled);
   const wide = game.wave === 3;
   const c = game.combo;
   const comboLeft = COMBO_WINDOW_MS - (now - c.lastAt);
@@ -132,6 +134,17 @@ function arena(view: RoomView, game: KanaRaidView): HTMLElement {
     ink ? inkStrip(view, game, now) : null,
     view.phase === 'answer' ? h('p', { class: 'raid-how' }, game.waveInfo?.how ?? '') : null,
   );
+}
+
+/** A hit thwacks, a yōkai getting away bwomps. Counted per wave, so a screen joining late stays quiet. */
+let heard = { wave: -1, lastHit: 0, fled: 0 };
+function raidSfx(game: KanaRaidView, fled: number): void {
+  const lastHit = Math.max(0, ...game.horde.map((y) => y.hitAt ?? 0));
+  if (heard.wave === game.wave) {
+    if (lastHit > heard.lastHit) sfx('hit');
+    if (fled > heard.fled) sfx('wrong');
+  }
+  heard = { wave: game.wave, lastHit, fled };
 }
 
 function names(view: RoomView): Map<string, string> {

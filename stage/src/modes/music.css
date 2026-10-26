@@ -7,5 +7,8 @@
 body[data-mode='karaoke-duel']:not([data-phase='lobby']):not([data-phase='recap']) .mu-sound { display: none; }
 @media (prefers-reduced-motion: reduce) { .mu-sound.mu-ask { animation: none; } }
 /* The now-playing credit beside the sound button, and the credits at the foot of the recap. */
-.mu-now { position: absolute; top: 14px; left: 300px; z-index: 5; max-width: 900px; color: var(--muted); font: 500 16px var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
-.credits { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; color: var(--muted); font-size: 15px; line-height: 1.35; opacity: 0.85; max-width: 1500px; }
+.mu-now { position: absolute; top: 14px; left: 470px; z-index: 5; max-width: 900px; color: var(--muted); font: 500 16px var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
+.credits { position: absolute; left: 96px; right: 96px; bottom: 4px; height: 46px; z-index: 5; margin: 0; display: grid; place-items: center; text-align: center; color: var(--muted); font: 500 18px/1.25 var(--font-body); text-wrap: balance; overflow: hidden; }
+.credits span { display: inline-block; animation: credit-in 400ms ease-out both; }
+@keyframes credit-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .credits span { animation: none; } }

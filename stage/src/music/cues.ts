@@ -1,6 +1,6 @@
 // Which music plays when: a pure function of the mode and phase, so it can be tested.
 
-import type { ModeId, Phase } from '../../../shared/src/protocol.js';
+import type { ModeId, Phase, RoomView } from '../../../shared/src/protocol.js';
 import type { Mix } from './engine.js';
 import type { SongId } from './songs.js';
 import { isTrack, type TrackId } from './tracks.js';
@@ -40,6 +40,25 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'karaoke-duel': null,
 };
 
+/** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
+export const MODE_ALT_THEMES: Partial<Record<ModeId, MusicId>> = {
+  oogiri: 'quirky-dog',
+  'phrase-bingo': 'life-of-riley',
+  oekaki: 'wallpaper',
+  tourist: 'off-to-osaka',
+  omiai: 'local-forecast',
+  'word-gauntlet': 'cipher',
+  concentration: 'kool-kats',
+  'onsen-murder': 'ishikari-lore',
+  'kana-raid': 'ouroboros',
+};
+
+/** The theme for the `game`th game of `mode` on this screen (0, 1, 2 …). */
+export function themeFor(mode: ModeId, game = 0): MusicId | null {
+  const alt = MODE_ALT_THEMES[mode];
+  return alt && game % 2 === 1 ? alt : MODE_THEMES[mode];
+}
+
 /**
  * Phases where players may be speaking into their phones, in every mode. The music goes "under":
  * low-passed, quieter and (for synth songs) without its lead, so it doesn't drown the room or
@@ -69,13 +88,21 @@ const REVEAL_ROLL: ReadonlySet<ModeId> = new Set(['oogiri', 'phrase-bingo', 'oek
 
 export const speaks = (mode: ModeId | null, phase: Phase): boolean => TALKING.has(phase) || (!!mode && !!SPEAKING_PHASES[mode]?.includes(phase));
 
-export function cueFor(mode: ModeId | null, phase: Phase): Cue {
+/**
+ * Kana Raid's listening waves (2 Echo, 3 Long and Short): players hear a kana or a word from a
+ * small phone speaker and pick what they heard, so the music drops further than for speaking.
+ */
+export const listening = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): boolean =>
+  view.mode === 'kana-raid' && view.phase === 'answer' && !!view.game && 'wave' in view.game && (view.game.wave === 2 || view.game.wave === 3);
+
+export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = false): Cue {
   if (phase === 'lobby') return { song: 'bouncing', mix: 'full' };
   // Curtain Call, then the recap tune.
   if (phase === 'recap') return { song: 'happy-dance', mix: 'full', leadIn: 'fanfare' };
-  const theme = mode ? MODE_THEMES[mode] : 'bouncing';
+  if (mode === 'karaoke-duel') return karaokeCue(phase);
+  const theme = mode ? themeFor(mode, game) : 'bouncing';
   if (theme === null) return { song: null, mix: 'full' };
-  const mix = speaks(mode, phase) ? 'under' : 'full';
+  const mix = listen ? 'listen' : speaks(mode, phase) ? 'under' : 'full';
   // A recorded theme plays on through scores and finales; restarting it every round would grate.
   let song: MusicId = theme;
   if (!isTrack(theme) && phase === 'score') song = 'score';
@@ -85,5 +112,19 @@ export function cueFor(mode: ModeId | null, phase: Phase): Cue {
   if (phase === 'reveal' && mode && REVEAL_ROLL.has(mode)) return { song, mix, sting: 'reveal' };
   // Encores are short and some modes slot them between scores: don't restart the music for one.
   if (phase === 'encore') return { song, mix, keep: true };
+  // Every game opens with the house ident.
+  if (phase === 'intro') return { song, mix, leadIn: 'ident' };
   return { song, mix };
+}
+
+/**
+ * Karaoke Duel plays its own backing track while someone sings (karaokeAudio.ts), so the music
+ * stops for `answer`. Between songs a soft synth tune keeps the room from going quiet: under
+ * through the vote and the result (the result has its own fanfare), the showdown tune at the end.
+ */
+function karaokeCue(phase: Phase): Cue {
+  if (phase === 'answer') return { song: null, mix: 'full' };
+  if (phase === 'intro') return { song: 'gentle', mix: 'full', leadIn: 'ident' };
+  if (phase === 'finale') return { song: 'finale', mix: 'full' };
+  return { song: 'gentle', mix: phase === 'prompt' ? 'full' : 'under' };
 }

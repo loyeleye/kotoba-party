@@ -62,6 +62,31 @@ describe('watching stage screens', () => {
     expect(ctx.server.rooms.get(created.code)!.state.phase).toBe('lobby');
   });
 
+  it('runs the game from a watching screen once the main stage turns on remote control', async () => {
+    const created = await createRoom(ctx.baseUrl);
+    const stage = connect(created.code, created.stageToken);
+    const watched = (await watchRoom(ctx.baseUrl, created.code)) as WatchRoomResponse;
+    const remote = connect(created.code, watched.stageToken);
+    const join = (await joinRoom(ctx.baseUrl, created.code, { name: 'Aki' })) as JoinResponse;
+    const phone = connect(created.code, join.token);
+    await until(() => remote.view?.players.length === 1, 5_000, 'player in');
+    expect(remote.view?.remoteControl).toBe(false);
+
+    // Only the main stage holds the switch.
+    expect(await remote.send({ type: 'settings', remoteControl: true })).toMatchObject({ ok: false, error: 'watch-only' });
+    expect(await phone.send({ type: 'settings', remoteControl: true })).toMatchObject({ ok: false, error: 'not-allowed' });
+    expect((await stage.send({ type: 'settings', remoteControl: true })).ok).toBe(true);
+    await until(() => remote.view?.remoteControl === true, 5_000, 'remote sees the switch');
+
+    expect((await remote.send({ type: 'start', mode: 'debug', rounds: 1 })).ok).toBe(true);
+    await until(() => stage.view?.phase === 'intro', 5_000, 'game started from the remote screen');
+    expect(await remote.send({ type: 'settings', remoteControl: false })).toMatchObject({ ok: false, error: 'watch-only' });
+
+    expect((await stage.send({ type: 'settings', remoteControl: false })).ok).toBe(true);
+    await until(() => remote.view?.remoteControl === false, 5_000, 'switch off');
+    expect(await remote.send({ type: 'skip', phaseSeq: remote.view!.phaseSeq })).toMatchObject({ ok: false, error: 'watch-only' });
+  });
+
   it('answers room-not-found for a closed room and caps the screens, forgetting closed ones first', async () => {
     const created = await createRoom(ctx.baseUrl);
     expect(await watchRoom(ctx.baseUrl, created.code === 'BCDF' ? 'BCDG' : 'BCDF')).toEqual({ error: 'room-not-found' });

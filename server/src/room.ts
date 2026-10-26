@@ -42,7 +42,9 @@ export interface RoomOptions {
   onPhase?: (room: Room) => void;
 }
 
-const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain']);
+const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'settings']);
+/** What a watching screen may send once the main stage turns on remote control. */
+const WATCH_COMMANDS = new Set<Command['type']>(['start', 'skip', 'playAgain']);
 const COMMAND_MEMORY = 128;
 /** Extra stage screens one room hands out: one per player's laptop and then some. */
 export const MAX_WATCHERS = 16;
@@ -208,7 +210,7 @@ export class Room {
     if (!viewer) return null;
     const cmd = parseCommand(raw);
     if (!cmd) return { ok: false, error: 'bad-command', v: this.version };
-    if (viewer.kind === 'stage' && viewer.watch) return { ok: false, error: 'watch-only', v: this.version };
+    if (viewer.kind === 'stage' && viewer.watch && !(this.state.remoteControl && WATCH_COMMANDS.has(cmd.type))) return { ok: false, error: 'watch-only', v: this.version };
 
     const actorKey = viewer.kind === 'player' ? viewer.playerId : `stage:${token}`;
     let log = this.commandLog.get(actorKey);

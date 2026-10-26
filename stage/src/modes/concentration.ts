@@ -4,6 +4,7 @@
 
 import { h, ruby } from '../../../shared/src/dom.js';
 import { duckForSpeech } from '../music/index.js';
+import { sfx } from '../music/sfx.js';
 import { isMuted } from '../sound.js';
 import type { ConcentrationView } from '../../../shared/src/modes/views.js';
 import type { CellView } from '../../../shared/src/modes/concentration/concentration.js';
@@ -45,7 +46,11 @@ const FLASH_MS = 3_500;
 function toast(view: RoomView, game: ConcentrationView): HTMLElement | null {
   const f = game.flash;
   if (!f) return null;
-  if (f.seq !== flashSeen.seq) flashSeen = { seq: f.seq, at: Date.now() };
+  if (f.seq !== flashSeen.seq) {
+    // A first sight of an old flash (a screen joining late) stays quiet.
+    if (flashSeen.seq) sfx(f.kind === 'missed' || f.kind === 'guess-wrong' ? 'wrong' : f.kind === 'yokai' || f.kind === 'fog' ? 'hit' : 'right');
+    flashSeen = { seq: f.seq, at: Date.now() };
+  }
   const elapsed = Date.now() - flashSeen.at;
   if (elapsed > FLASH_MS) return null;
   const who = nameOf(view, f.playerId);
