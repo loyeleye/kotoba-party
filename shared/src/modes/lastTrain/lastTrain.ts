@@ -861,7 +861,11 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         if (phase === 'answer') {
           const turn = s.turns[playerId];
           if (!turn) return moveError('not-playing');
-          if (turn.status !== 'answering' && turn.status !== 'retry') return turn.task.key === raw.key ? moveError('already-answered') : moveError('wrong-phase');
+          if (turn.status !== 'answering' && turn.status !== 'retry') {
+            // An answer that lost the race with its timer is a race, not a repeat.
+            const late = turn.status === 'away' || turn.attempts.at(-1)?.timedOut;
+            return turn.task.key === raw.key && !late ? moveError('already-answered') : moveError('wrong-phase');
+          }
           if (turn.task.key !== raw.key) return moveError('wrong-phase');
           const ok = !!u && checkUtterance(u, turn.task.item.accepted, isParticle(turn.task));
           const rec: AttemptRec = { via: u?.via ?? null, text: u?.text ?? null, ok, overruled: false, timedOut: false };
@@ -876,7 +880,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
           const pt = s.penalties[playerId];
           if (!pt) return moveError('not-in-penalty');
           if (pt.task.key !== raw.key) return moveError('wrong-phase');
-          if (pt.status !== 'answering') return moveError('already-answered');
+          if (pt.status !== 'answering') return moveError(pt.attempt?.timedOut ? 'wrong-phase' : 'already-answered');
           const ok = !!u && checkUtterance(u, pt.task.item.accepted, isParticle(pt.task));
           const rec: AttemptRec = { via: u?.via ?? null, text: u?.text ?? null, ok, overruled: false, timedOut: false };
           if (ok) {
