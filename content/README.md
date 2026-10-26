@@ -10,6 +10,7 @@ Hand-written game content for Kotoba Party v1, as typed TypeScript data. Import 
 | `src/oogiri/` | Oogiri Night prompts per pack (50 each) and Photo Caption set-phrase tiles |
 | `src/last-train/` | Last Train minigames (8) and scenarios (3) |
 | `src/hosts/` | Host profiles, written line bank for Pon, Chōchin-san and Fude, recap awards |
+| `media/photo-caption/` | Pixel-art pictures for the Photo Caption prompts (drawn by `tools/generate-caption-art.ts`) |
 | `debug/` | Phase 0 placeholder prompts (owned by the server) |
 
 Rules for every item:

@@ -204,6 +204,8 @@ export interface OogiriPrompt {
   versions: Partial<Record<Level, JpText>>;
   /** For photo-caption prompts: what the photo shows, for art or stock search. */
   photo?: string;
+  /** For photo-caption prompts: the picture, as a path relative to content/ (pixel art, no text in it). */
+  image?: string;
   /** Tiles that fit the prompt straight (word ids from the pack). */
   fitTileIds: string[];
   /** Absurd swerves (word ids, any pack). */
