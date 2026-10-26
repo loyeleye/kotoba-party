@@ -17,16 +17,22 @@ export interface PickedLine extends JpText {
   id: string;
 }
 
-/** Fills {slot} markers. A slot without a kana reading is voiced as nameToKana guesses it. */
+/**
+ * Fills {slot} markers. A slot without a kana reading is voiced as nameToKana guesses it. Plain string slots
+ * may come with `{key}_kana` and `{key}_en` siblings for the voiced and subtitle forms.
+ */
 export function fillSlots(jp: JpText, slots: Slots = {}): JpText {
-  const sub = (s: string, voiced: boolean) =>
+  const sub = (s: string, field: 'text' | 'kana' | 'en') =>
     s.replace(/\{(\w+)\}/g, (all, key: string) => {
       const v = slots[key];
       if (v === undefined) return all;
+      const sibling = field === 'text' ? undefined : slots[`${key}_${field}`];
+      if (typeof sibling === 'string') return sibling;
       const text = typeof v === 'string' ? v : v.text;
-      return voiced ? (typeof v === 'string' ? nameToKana(v) : (v.kana ?? nameToKana(v.text))) : text;
+      if (field !== 'kana') return text;
+      return typeof v === 'string' ? nameToKana(v) : (v.kana ?? nameToKana(v.text));
     });
-  return { text: sub(jp.text, false), kana: sub(jp.kana, true), en: sub(jp.en, false) };
+  return { text: sub(jp.text, 'text'), kana: sub(jp.kana, 'kana'), en: sub(jp.en, 'en') };
 }
 
 /** '{name}' or 'name' → 'name'. */
@@ -64,7 +70,12 @@ export class LineBank {
    * are skipped. Undefined only when the bank has nothing for this host and event.
    */
   pick(host: HostId, event: HostEvent, tier?: ReactionTier, slots: Slots = {}): (PickedLine & { line: BankLine }) | undefined {
-    const usable = this.candidates(host, event, tier).filter((l) => (l.slots ?? []).every((s) => slotName(s) in slots));
+    let usable = this.candidates(host, event, tier).filter((l) => (l.slots ?? []).every((s) => slotName(s) in slots));
+    // When the cue names the answer ({tile}), lines that react to it beat the ones that could follow anything.
+    if ('tile' in slots) {
+      const named = usable.filter((l) => (l.slots ?? []).some((s) => slotName(s) === 'tile'));
+      if (named.length) usable = named;
+    }
     if (!usable.length) return undefined;
     const fresh = usable.filter((l) => !this.used.has(l.id));
     const pool = fresh.length ? fresh : usable;

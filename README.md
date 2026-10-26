@@ -50,7 +50,7 @@ npm start                 # builds the pages, serves on http://localhost:3000
 
 Optional keys, from the environment only (never commit them): `ANTHROPIC_API_KEY` (or `KOTOBA_ANTHROPIC_API_KEY`, which
 wins when both are set and works in Claude Code cloud sessions) for live host
-lines, `VOICEVOX_URL` for host voices, `STT_URL` for spoken answers (our own Whisper server, see
+lines, `VOICEVOX_URL` for host voices, `STT_URL` for spoken answers (a Whisper server, see
 [docs/speech.md](docs/speech.md); without it players type), and `GEMINI_API_KEY` / `PIXELLAB_API_KEY` for art
 generation (see [docs/graphics.md](docs/graphics.md)). Everything runs without them.
 

@@ -82,8 +82,8 @@ If you only have ten minutes, these are the answers that would change the build 
 19. **New players can also join between games** (on the recap screen), not only in the lobby.
 20. **A player who picks no level starts at N5.** Levels can be changed in the lobby only.
 21. ~~Speech uses the browser's own recogniser for now.~~ **Answered (Ladi, Oct 26): no audio to
-    Google.** Speech now goes to a Whisper server we run (`STT_URL`, [speech.md](speech.md),
-    ADR 0004). Without one, phones type or tap.
+    Google.** Speech now goes to Whisper: on Cloudflare Workers AI for the live game, or a server we run
+    (`STT_URL`, [speech.md](speech.md), ADRs 0004 and 0005). Without either, phones type or tap.
 22. **Answers with kanji are read into kana on the server** (kuromoji dictionary), then compared
     leniently (long vowels, じ/ぢ, ず/づ, お/を, えい/ええ, おう/おお). Small っ and vowel length are
     never forgiven, matching the judge in server/ai.

@@ -3,7 +3,7 @@
 The stage (the TV) plays music; the phones don't, because their mics are listening. Most of it is
 recorded tracks under CC0 or CC BY licences (`stage/assets/music/`, listed in
 `stage/src/music/tracks.ts`); the rest is original tunes played by a small chiptune synth in the
-browser (`stage/src/music/songs.ts`). Licences: [commercial-blockers.md](commercial-blockers.md), row 21.
+browser (`stage/src/music/songs.ts`). Licences: [commercial-blockers.md](commercial-blockers.md), row 22.
 
 **Direction (Ladi, 2026-10-26):** after comparing samplers, bright "out with friends" pop, funk and
 swing for the lobby and the social games, mystery and quiz tracks for the quiz games and Murder at the
