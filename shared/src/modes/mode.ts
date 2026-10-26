@@ -80,6 +80,8 @@ export interface StartOptions {
 /** What a mode can see and do while handling a call. */
 export interface ModeContext {
   readonly now: number;
+  /** The room's VIP (for VIP-only moves such as hiding an answer). Optional so test contexts can leave it out. */
+  readonly vipId?: string | null;
   readonly content: ContentLibrary;
   random(): number;
   newId(): string;
