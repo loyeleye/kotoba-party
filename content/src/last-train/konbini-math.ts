@@ -5,7 +5,7 @@ import type { LastTrainMinigame } from '../types.js';
 
 export const konbiniMath: LastTrainMinigame = {
   id: 'konbini-math',
-  title: { text: 'コンビニ計算', kana: 'コンビニけいさん', en: 'Konbini Math', furigana: [['コンビニ', ''], ['計算', 'けいさん']] },
+  title: { text: 'お会計', kana: 'おかいけい', en: 'Konbini Math', furigana: [['お', ''], ['会計', 'かいけい']] },
   topic: 'numbers and prices',
   promptType: 'spoken-question',
   penalty: false,

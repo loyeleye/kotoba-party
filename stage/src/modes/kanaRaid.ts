@@ -6,7 +6,7 @@
 // strokes under the arena, timed the same way.
 
 import { sfx } from '../music/sfx.js';
-import { h, stagger } from '../../../shared/src/dom.js';
+import { h, ruby, stagger } from '../../../shared/src/dom.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
 import type { InkShow, KanaRaidView, YokaiView } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import { COMBO_WINDOW_MS, INK_WAVE } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
@@ -126,7 +126,7 @@ function arena(view: RoomView, game: KanaRaidView): HTMLElement {
     h(
       'div',
       { class: 'raid-top' },
-      h('span', { class: 'raid-wave-tag' }, `WAVE ${game.wave}`, game.waveInfo ? h('span', { lang: 'ja' }, ` ${game.waveInfo.titleJa}`) : null),
+      h('span', { class: 'raid-wave-tag' }, `WAVE ${game.wave}`, game.waveInfo ? [' ', ruby({ text: game.waveInfo.titleJa, kana: game.waveInfo.titleKana })] : null),
       h('span', { class: 'raid-count' }, `👻 ${down} caught · ${fled} fled · ${Math.max(0, total - down - fled)} left`),
       h(
         'span',
@@ -206,7 +206,7 @@ export const kanaRaidStage: StageMode<KanaRaidView> = {
           'div',
           { class: 'card raid-card raid-banner' },
           h('p', { class: 'raid-wave-big' }, game.wave > game.waves ? 'BOSS' : `WAVE ${game.wave}`),
-          game.waveInfo ? h('p', { class: 'raid-title', lang: 'ja' }, game.waveInfo.titleJa) : null,
+          game.waveInfo ? h('p', { class: 'raid-title' }, ruby({ text: game.waveInfo.titleJa, kana: game.waveInfo.titleKana })) : null,
           game.waveInfo ? h('p', { class: 'big' }, game.waveInfo.title) : null,
           game.waveInfo ? h('p', { class: 'hint' }, game.waveInfo.how) : null,
         );

@@ -64,19 +64,19 @@ const WAVE_TIMING: Record<number, { gap: number; walk: number }> = {
   4: { gap: 3_000, walk: 34_000 },
 };
 
-export const WAVE_INFO: Record<number, { title: string; titleJa: string; how: string }> = {
-  1: { title: 'Night Parade', titleJa: '百鬼夜行', how: 'Shout each yōkai’s sound, or strike it with its twin from the other alphabet.' },
-  2: { title: 'Shapeshifters', titleJa: '化け物', how: 'Look-alikes and echoes: hear the sound, tap the right kana.' },
-  3: { title: 'Long and Short', titleJa: 'のばす・つまる', how: 'Hear one word, tap it, then say it. Listen for long sounds and little pauses.' },
-  4: { title: 'Word Yōkai', titleJa: 'ことば妖怪', how: 'Break one piece each, then read the whole word together!' },
+export const WAVE_INFO: Record<number, { title: string; titleJa: string; titleKana: string; how: string }> = {
+  1: { title: 'Night Parade', titleJa: '百鬼夜行', titleKana: 'ひゃっきやこう', how: 'Shout each yōkai’s sound, or strike it with its twin from the other alphabet.' },
+  2: { title: 'Shapeshifters', titleJa: '化け物', titleKana: 'ばけもの', how: 'Look-alikes and echoes: hear the sound, tap the right kana.' },
+  3: { title: 'Long and Short', titleJa: 'のばす・つまる', titleKana: 'のばす・つまる', how: 'Hear one word, tap it, then say it. Listen for long sounds and little pauses.' },
+  4: { title: 'Word Yōkai', titleJa: 'ことば妖怪', titleKana: 'ことばようかい', how: 'Break one piece each, then read the whole word together!' },
 };
 
-export const INK_INFO = { title: 'Ink Storm', titleJa: '墨の嵐', how: 'The yōkai wear their twins’ masks. Draw each one’s true form on your phone, stroke by stroke, then say it.' };
+export const INK_INFO = { title: 'Ink Storm', titleJa: '墨の嵐', titleKana: 'すみのあらし', how: 'The yōkai wear their twins’ masks. Draw each one’s true form on your phone, stroke by stroke, then say it.' };
 
 const isInkWave = (s: RaidState) => s.ink && s.wave === INK_WAVE;
 
 /** The banner for the wave being played (the boss's is always WAVE_INFO[4]). */
-function waveInfoOf(s: RaidState): { title: string; titleJa: string; how: string } | null {
+function waveInfoOf(s: RaidState): { title: string; titleJa: string; titleKana: string; how: string } | null {
   if (isInkWave(s)) return INK_INFO;
   if (s.wave > s.waves) return s.wave === s.waves + 1 ? WAVE_INFO[4]! : null;
   return WAVE_INFO[s.wave] ?? null;
@@ -323,7 +323,7 @@ export interface KanaRaidView {
   inkAvailable: boolean;
   /** Ink Storm: the latest drawings, for the stage's replay. */
   inks: InkShow[];
-  waveInfo: { title: string; titleJa: string; how: string } | null;
+  waveInfo: { title: string; titleJa: string; titleKana: string; how: string } | null;
   at: number;
   /** The chapter list (intro only). */
   chapters: ChapterInfo[];

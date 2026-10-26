@@ -13,7 +13,7 @@ function item(id: string, level: MinigameItem['level'], prompt: JpText, accepted
 export const FALLBACK_MINIGAMES: LastTrainMinigame[] = [
   {
     id: 'konbini-math',
-    title: t('コンビニ計算', 'コンビニけいさん', 'Konbini Math'),
+    title: t('お会計', 'おかいけい', 'Konbini Math'),
     topic: 'numbers and prices',
     promptType: 'spoken-question',
     penalty: false,
