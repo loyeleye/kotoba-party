@@ -3,6 +3,7 @@
 import type { JpText, Level, OogiriPrompt, OogiriRound, TileForm } from '../../../../content/src/types.js';
 import type { AnswerStyle } from './answer.js';
 import type { Frame, Tile } from './deal.js';
+import type { AnswerShape } from './natural.js';
 
 /** One prompt in play and the players answering it: a head-to-head pair, or everyone in round 3. */
 export interface Matchup {
@@ -47,6 +48,8 @@ export interface Answer {
   english: boolean;
   formsRight: number;
   formTips: string[];
+  /** What the answer is made of, for the natural version. */
+  shape: AnswerShape;
   callback: boolean;
   hidden: boolean;
 }

@@ -81,8 +81,12 @@ read it" opts out. The phase ends early once every author has chosen.
 ### Score and tip
 
 The stage shows the winning answer and the **natural version**: the winner's own answer as a whole
-sentence, so the room shouts back the joke that won. When nobody got a vote, or the winning
-answer is English or has a wrong form, it falls back to the prompt's `exampleAnswer`. The stage
+sentence, so the room shouts back the joke that won. The winner's line is only used when it is
+good Japanese and shows the form the pattern tip teaches (`shared/src/modes/oogiri/natural.ts`):
+a plain adjective or 〜たい gets です, a noun gets でした/です when that is the tip, だ before a から of
+reason, and a noun dropped where a verb goes uses the prompt's `nounBridge` (はじめての デートで、
+かれは 大きな タコに なりました。). When nobody got a vote, the winning answer is English or has a
+wrong form, or none of that makes it fit, it falls back to the prompt's `exampleAnswer`. The stage
 also shows the prompt's grammar pattern, and the room shouts it back (`natural_version` cue). Each author privately sees their
 points, how they answered, their own answer as a whole sentence, any form corrections, Pon's
 version and the pattern.
@@ -244,8 +248,10 @@ next round's answer phase.
 
 ## Known gaps
 
-- No AI judge: the natural version is the winner's answer as given (or the prompt's
-  `exampleAnswer`), and there are no per-answer corrections beyond form picks.
+- No AI judge: the natural version is the winner's answer with rule-based repairs (or the
+  prompt's `exampleAnswer`), and there are no per-answer corrections beyond form picks.
+- Verb tiles ask for a random form, not the one the prompt's tip teaches, so a right-form verb
+  often still falls back to the example answer (〜ます under a ました tip).
 - Fading tiles ("a word used from tiles 3 times must then be said or typed") is not built; it
   needs cross-game history.
 - Encore speech is recorded and rewarded for trying, not checked against the answer.

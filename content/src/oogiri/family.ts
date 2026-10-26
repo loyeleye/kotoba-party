@@ -30,6 +30,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.robotto-soujiki', 'family.obake', 'family.shachou'],
     exampleAnswer: { text: "うちの ねこは 夜 ひとりで ロボットそうじきに のって、家の 中を さんぽします。", kana: "うちの ねこは よる ひとりで ロボットそうじきに のって、いえの なかを さんぽします。", en: "At night, our cat rides the robot vacuum and takes a walk around the house.", furigana: [['うちの ねこは ', ''], ['夜', 'よる'], [' ひとりで ロボットそうじきに のって、', ''], ['家', 'いえ'], ['の ', ''], ['中', 'なか'], ['を さんぽします。', '']] },
     pattern: 'Time word + verb ます form for a habit.',
+    nounBridge: { text: "＿＿＿と あそびます", kana: "＿＿＿と あそびます", en: "plays with ___" },
   },
   {
     id: 'family.hh.dad-sunday',
@@ -44,6 +45,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.pengin', 'family.danbooru', 'family.aidoru'],
     exampleAnswer: { text: "お父さんは 日曜日に いつも ペンギンと さんぽします。", kana: "おとうさんは にちようびに いつも ペンギンと さんぽします。", en: "On Sundays, Dad always goes for a walk with a penguin.", furigana: [['お', ''], ['父', 'とう'], ['さんは ', ''], ['日曜日', 'にちようび'], ['に いつも ペンギンと さんぽします。', '']] },
     pattern: 'に with days of the week + ます form for habits.',
+    nounBridge: { text: "＿＿＿と さんぽします", kana: "＿＿＿と さんぽします", en: "goes for a walk with ___" },
   },
   {
     id: 'family.hh.robot-vacuum-dream',
@@ -58,6 +60,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.aidoru', 'family.ousama', 'family.kappa'],
     exampleAnswer: { text: "ロボットそうじき：「そうじは もう いやです。ステージで 歌いたいです！」", kana: "ロボットそうじき：「そうじは もう いやです。ステージで うたいたいです！」", en: "Robot vacuum: \"I'm done with cleaning. I want to sing on stage!\"", furigana: [['ロボットそうじき：「そうじは もう いやです。ステージで ', ''], ['歌', 'うた'], ['いたいです！」', '']] },
     pattern: '〜たいです: say what you want to do.',
+    nounBridge: { text: "＿＿＿に なりたい", kana: "＿＿＿に なりたい", en: "become ___" },
   },
   {
     id: 'family.hh.house-ghost',
@@ -71,6 +74,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.zonbi', 'family.kappa', 'family.robotto-soujiki'],
     exampleAnswer: { text: "家の おばけは 毎日 わたしの 朝ごはんを 食べます。", kana: "いえの おばけは まいにち わたしの あさごはんを たべます。", en: "The ghost in our house eats my breakfast every day.", furigana: [['家', 'いえ'], ['の おばけは ', ''], ['毎日', 'まいにち'], [' わたしの ', ''], ['朝', 'あさ'], ['ごはんを ', ''], ['食', 'た'], ['べます。', '']] },
     pattern: '毎日 + verb ます form for a routine.',
+    nounBridge: { text: "＿＿＿を たべます", kana: "＿＿＿を たべます", en: "eats ___" },
   },
   {
     id: 'family.hh.grandpa-phone',
@@ -111,6 +115,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.shachou', 'family.ousama', 'family.robotto-soujiki'],
     exampleAnswer: { text: "うちの 犬は 会社で しゃちょうより よく 働きます。", kana: "うちの いぬは かいしゃで しゃちょうより よく はたらきます。", en: "At the office, our dog works harder than the boss.", furigana: [['うちの ', ''], ['犬', 'いぬ'], ['は ', ''], ['会社', 'かいしゃ'], ['で しゃちょうより よく ', ''], ['働', 'はたら'], ['きます。', '']] },
     pattern: 'で marks where an action happens.',
+    nounBridge: { text: "＿＿＿と はたらきます", kana: "＿＿＿と はたらきます", en: "works with ___" },
   },
   {
     id: 'family.hh.sister-room',
@@ -164,6 +169,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.danbooru', 'family.zonbi', 'family.pengin'],
     exampleAnswer: { text: "月曜日の 朝、父は ダンボールの 中から 出ません。", kana: "げつようびの あさ、ちちは ダンボールの なかから でません。", en: "On Monday morning, my dad won't come out of the cardboard box.", furigana: [['月曜日', 'げつようび'], ['の ', ''], ['朝', 'あさ'], ['、', ''], ['父', 'ちち'], ['は ダンボールの ', ''], ['中', 'なか'], ['から ', ''], ['出', 'で'], ['ません。', '']] },
     pattern: '〜ません: polite negative.',
+    nounBridge: { text: "＿＿＿の なかから でません", kana: "＿＿＿の なかから でません", en: "won't come out of ___" },
   },
   {
     id: 'family.hh.penguin-roommate',
@@ -177,6 +183,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.zonbi', 'family.kappa', 'family.ousama'],
     exampleAnswer: { text: "あたらしい ルームメイトは ペンギンです。毎晩 冷蔵庫で ねます。", kana: "あたらしい ルームメイトは ペンギンです。まいばん れいぞうこで ねます。", en: "My new roommate is a penguin. Every night, it sleeps in the fridge.", furigana: [['あたらしい ルームメイトは ペンギンです。', ''], ['毎晩', 'まいばん'], [' ', ''], ['冷蔵庫', 'れいぞうこ'], ['で ねます。', '']] },
     pattern: 'で: where you do something.',
+    nounBridge: { text: "＿＿＿の うえで ねます", kana: "＿＿＿の うえで ねます", en: "sleeps on top of ___" },
   },
   {
     id: 'family.hh.family-meeting',
@@ -255,6 +262,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.danbooru', 'family.robotto-soujiki', 'family.kappa'],
     exampleAnswer: { text: "うちの ホームステイの ゲストは うちゅうじんです。毎日 テレビを 食べます。", kana: "うちの ホームステイの ゲストは うちゅうじんです。まいにち テレビを たべます。", en: "Our homestay guest is an alien. Every day, it eats the TV.", furigana: [['うちの ホームステイの ゲストは うちゅうじんです。', ''], ['毎日', 'まいにち'], [' テレビを ', ''], ['食', 'た'], ['べます。', '']] },
     pattern: 'Nを + verb ます: を marks what you eat, drink or watch.',
+    nounBridge: { text: "＿＿＿を たべます", kana: "＿＿＿を たべます", en: "eats ___" },
   },
   {
     id: 'family.hh.dad-dinner',
@@ -281,6 +289,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.robotto-soujiki', 'family.shachou', 'family.pengin'],
     exampleAnswer: { text: "ハムスターの 日記：「きょうは ロボットそうじきに のって、家の 中を さんぽしました。」", kana: "ハムスターの にっき：「きょうは ロボットそうじきに のって、いえの なかを さんぽしました。」", en: "The hamster's diary: \"Today I rode the robot vacuum and took a walk around the house.\"", furigana: [['ハムスターの ', ''], ['日記', 'にっき'], ['：「きょうは ロボットそうじきに のって、', ''], ['家', 'いえ'], ['の ', ''], ['中', 'なか'], ['を さんぽしました。」', '']] },
     pattern: '〜ました: polite past.',
+    nounBridge: { text: "＿＿＿と あそびました", kana: "＿＿＿と あそびました", en: "played with ___" },
   },
   {
     id: 'family.hh.tadaima',
@@ -307,6 +316,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.pengin', 'family.aidoru', 'family.kappa'],
     exampleAnswer: { text: "兄：「いってきます！」…でも ほんとうは こうえんで ペンギンと 遊びます。", kana: "あに：「いってきます！」…でも ほんとうは こうえんで ペンギンと あそびます。", en: "My big brother: \"I'm off!\" ...But really, he hangs out with a penguin in the park.", furigana: [['兄', 'あに'], ['：「いってきます！」…でも ほんとうは こうえんで ペンギンと ', ''], ['遊', 'あそ'], ['びます。', '']] },
     pattern: 'Verb ます form for what someone really does.',
+    nounBridge: { text: "＿＿＿に あいに いきます", kana: "＿＿＿に あいに いきます", en: "goes to see ___" },
   },
   {
     id: 'family.hh.sister-summer',
@@ -320,6 +330,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.kappa', 'family.ousama', 'family.uchuujin'],
     exampleAnswer: { text: "妹：「夏休みに カッパと 遊びたいです！」", kana: "いもうと：「なつやすみに カッパと あそびたいです！」", en: "My little sister: \"This summer vacation, I want to play with a kappa!\"", furigana: [['妹', 'いもうと'], ['：「', ''], ['夏休', 'なつやす'], ['みに カッパと ', ''], ['遊', 'あそ'], ['びたいです！」', '']] },
     pattern: '〜たいです: say what you want to do.',
+    nounBridge: { text: "＿＿＿と あそびたい", kana: "＿＿＿と あそびたい", en: "play with ___" },
   },
   {
     id: 'family.hh.grandma-eighty',
@@ -333,6 +344,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.aidoru', 'family.ninja', 'family.zonbi'],
     exampleAnswer: { text: "祖母は 八十さいですが、毎晩 アイドルの ダンスを おどります。", kana: "そぼは はちじゅっさいですが、まいばん アイドルの ダンスを おどります。", en: "My grandma is eighty, but every night she does pop idol dances.", furigana: [['祖母', 'そぼ'], ['は ', ''], ['八十', 'はちじゅっ'], ['さいですが、', ''], ['毎晩', 'まいばん'], [' アイドルの ダンスを おどります。', '']] },
     pattern: '〜が (but) joins two sentences.',
+    nounBridge: { text: "まいばん ＿＿＿と おどります", kana: "まいばん ＿＿＿と おどります", en: "she dances with ___ every night" },
   },
   {
     id: 'family.hh.dog-interview',
@@ -398,6 +410,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.zonbi', 'family.kappa', 'family.ninja'],
     exampleAnswer: { text: "日曜日、おじいさんと いっしょに ゾンビの えいがを 見ませんか。", kana: "にちようび、おじいさんと いっしょに ゾンビの えいがを みませんか。", en: "On Sunday, why don't we watch a zombie movie with Grandpa?", furigana: [['日曜日', 'にちようび'], ['、おじいさんと いっしょに ゾンビの えいがを ', ''], ['見', 'み'], ['ませんか。', '']] },
     pattern: '〜ませんか: inviting someone.',
+    nounBridge: { text: "＿＿＿を みに いきません", kana: "＿＿＿を みに いきません", en: "go and see ___" },
   },
   {
     id: 'family.hh.sleep-talk',
@@ -411,6 +424,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.pengin', 'family.ousama', 'family.uchuujin'],
     exampleAnswer: { text: "夜、弟の ねごとは「ペンギンさん、宿題を 食べないで ください」でした。", kana: "よる、おとうとの ねごとは「ペンギンさん、しゅくだいを たべないで ください」でした。", en: "Last night my little brother said in his sleep: \"Mr Penguin, please don't eat my homework.\"", furigana: [['夜', 'よる'], ['、', ''], ['弟', 'おとうと'], ['の ねごとは「ペンギンさん、', ''], ['宿題', 'しゅくだい'], ['を ', ''], ['食', 'た'], ['べないで ください」でした。', '']] },
     pattern: '〜ないで ください: asking someone not to do something.',
+    nounBridge: { text: "＿＿＿を たべないで ください", kana: "＿＿＿を たべないで ください", en: "Please don't eat ___" },
   },
   {
     id: 'family.hh.cat-says-mom',
@@ -424,6 +438,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.robotto-soujiki', 'family.ninja', 'family.aidoru'],
     exampleAnswer: { text: "ねこ：「にんげんの お母さんは 毎朝 わたしに 歌います。」", kana: "ねこ：「にんげんの おかあさんは まいあさ わたしに うたいます。」", en: "The cat: \"Every morning, the human mom sings to me.\"", furigana: [['ねこ：「にんげんの お', ''], ['母', 'かあ'], ['さんは ', ''], ['毎朝', 'まいあさ'], [' わたしに ', ''], ['歌', 'うた'], ['います。」', '']] },
     pattern: '毎朝 + verb ます form for a routine.',
+    nounBridge: { text: "＿＿＿と はなします", kana: "＿＿＿と はなします", en: "talks to ___" },
   },
   {
     id: 'family.hh.dog-day-off',
@@ -437,6 +452,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.aidoru', 'family.shachou', 'family.kappa'],
     exampleAnswer: { text: "犬：「さんぽは もう いいです。きょうは ソファで テレビを 見たいです。」", kana: "いぬ：「さんぽは もう いいです。きょうは ソファで テレビを みたいです。」", en: "The dog: \"No more walks, thanks. Today I want to watch TV on the sofa.\"", furigana: [['犬', 'いぬ'], ['：「さんぽは もう いいです。きょうは ソファで テレビを ', ''], ['見', 'み'], ['たいです。」', '']] },
     pattern: '〜たいです: say what you want to do.',
+    nounBridge: { text: "＿＿＿と あそびたい", kana: "＿＿＿と あそびたい", en: "play with ___" },
   },
   {
     id: 'family.hh.cleaning-day',
@@ -450,6 +466,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.robotto-soujiki', 'family.danbooru', 'family.obake'],
     exampleAnswer: { text: "今日は 家族で おおそうじの 日です。でも 父は ロボットそうじきと ねました。", kana: "きょうは かぞくで おおそうじの ひです。でも ちちは ロボットそうじきと ねました。", en: "Today is the family's big cleaning day. But my dad took a nap with the robot vacuum.", furigana: [['今日', 'きょう'], ['は ', ''], ['家族', 'かぞく'], ['で おおそうじの ', ''], ['日', 'ひ'], ['です。でも ', ''], ['父', 'ちち'], ['は ロボットそうじきと ねました。', '']] },
     pattern: '〜ました / 〜ません: past and negative.',
+    nounBridge: { text: "＿＿＿と あそびました", kana: "＿＿＿と あそびました", en: "played with ___" },
   },
   {
     id: 'family.hh.my-family-of-four',
@@ -506,6 +523,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.ninja', 'family.pengin', 'family.zonbi'],
     exampleAnswer: { text: "おじいさんは 毎朝 これで 会社に 行きます。", kana: "おじいさんは まいあさ これで かいしゃに いきます。", en: "Every morning, Grandpa rides this to the office.", furigana: [['おじいさんは ', ''], ['毎朝', 'まいあさ'], [' これで ', ''], ['会社', 'かいしゃ'], ['に ', ''], ['行', 'い'], ['きます。', '']] },
     pattern: 'で marks the means: これで (with this).',
+    nounBridge: { text: "＿＿＿に あいに いきます", kana: "＿＿＿に あいに いきます", en: "go and see ___" },
   },
   {
     id: 'family.photo.dog-laptop',
@@ -521,6 +539,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.shachou', 'family.robotto-soujiki', 'family.kappa'],
     exampleAnswer: { text: "犬：「すみません。きょうは さんぽしません。仕事が あります。」", kana: "いぬ：「すみません。きょうは さんぽしません。しごとが あります。」", en: "The dog: \"Sorry. I'm not going for a walk today. I have work.\"", furigana: [['犬', 'いぬ'], ['：「すみません。きょうは さんぽしません。', ''], ['仕事', 'しごと'], ['が あります。」', '']] },
     pattern: '〜ません: polite negative.',
+    nounBridge: { text: "＿＿＿と さんぽしません", kana: "＿＿＿と さんぽしません", en: "won't go for a walk with ___" },
   },
   {
     id: 'family.photo.hamster-tv',
@@ -536,6 +555,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.ousama', 'family.zonbi', 'family.obake'],
     exampleAnswer: { text: "ハムスター：「みんな ねました。テレビは わたしの ものです。」", kana: "ハムスター：「みんな ねました。テレビは わたしの ものです。」", en: "The hamster: \"Everyone's asleep. The TV is mine now.\"" },
     pattern: '〜ました: polite past.',
+    nounBridge: { text: "＿＿＿に なりました", kana: "＿＿＿に なりました", en: "turned into ___" },
   },
   {
     id: 'family.photo.penguin-suitcase',
@@ -552,6 +572,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.ousama', 'family.aidoru', 'family.shachou'],
     exampleAnswer: { text: "ペンギン：「はじめまして。きょうから ここに 住みます。よろしくおねがいします。」", kana: "ペンギン：「はじめまして。きょうから ここに すみます。よろしくおねがいします。」", en: "The penguin: \"Nice to meet you. From today, I live here. Please treat me kindly.\"", furigana: [['ペンギン：「はじめまして。きょうから ここに ', ''], ['住', 'す'], ['みます。よろしくおねがいします。」', '']] },
     pattern: 'はじめまして… よろしくおねがいします: a self-introduction.',
+    nounBridge: { text: "＿＿＿と すみます", kana: "＿＿＿と すみます", en: "live with ___" },
   },
   {
     id: 'family.photo.grandma-dj',
@@ -567,6 +588,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.zonbi', 'family.aidoru', 'family.kappa'],
     exampleAnswer: { text: "おばあさん：「みなさん、いっしょに 歌いましょう！」", kana: "おばあさん：「みなさん、いっしょに うたいましょう！」", en: "Grandma: \"Everybody, let's sing together!\"", furigana: [['おばあさん：「みなさん、いっしょに ', ''], ['歌', 'うた'], ['いましょう！」', '']] },
     pattern: "〜ましょう: let's do something.",
+    nounBridge: { text: "＿＿＿と おどりましょう", kana: "＿＿＿と おどりましょう", en: "dance with ___" },
   },
   {
     id: 'family.photo.sister-drawing',
@@ -597,6 +619,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.robotto-soujiki', 'family.ninja', 'family.zonbi'],
     exampleAnswer: { text: "おばけ：「夜は 家族の せんたくを します。朝は ねます。」", kana: "おばけ：「よるは かぞくの せんたくを します。あさは ねます。」", en: "The ghost: \"At night I do the family's laundry. In the morning I sleep.\"", furigana: [['おばけ：「', ''], ['夜', 'よる'], ['は ', ''], ['家族', 'かぞく'], ['の せんたくを します。', ''], ['朝', 'あさ'], ['は ねます。」', '']] },
     pattern: 'は for contrast: 夜は… 朝は…',
+    nounBridge: { text: "＿＿＿と あそびます", kana: "＿＿＿と あそびます", en: "play with ___" },
   },
   {
     id: 'family.ippon.no-thanks-family',
@@ -611,6 +634,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.robotto-soujiki', 'family.zonbi', 'family.kappa'],
     exampleAnswer: { text: "こんな 家族は いやです：父が 毎朝 ロボットそうじきで 会社に 行きます。", kana: "こんな かぞくは いやです：ちちが まいあさ ロボットそうじきで かいしゃに いきます。", en: "A family I would NOT want: Dad rides the robot vacuum to work every morning.", furigana: [['こんな ', ''], ['家族', 'かぞく'], ['は いやです：', ''], ['父', 'ちち'], ['が ', ''], ['毎朝', 'まいあさ'], [' ロボットそうじきで ', ''], ['会社', 'かいしゃ'], ['に ', ''], ['行', 'い'], ['きます。', '']] },
     pattern: 'Nが + verb ます: who does what.',
+    nounBridge: { text: "＿＿＿が ごはんを つくります", kana: "＿＿＿が ごはんを つくります", en: "___ cooks dinner" },
   },
   {
     id: 'family.ippon.quietest-family',
@@ -637,6 +661,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.shachou', 'family.ousama', 'family.robotto-soujiki'],
     exampleAnswer: { text: "うちの ねこが はじめて 話しました：「晩ごはんは まだですか。」", kana: "うちの ねこが はじめて はなしました：「ばんごはんは まだですか。」", en: "Our cat spoke for the first time: \"Is dinner not ready yet?\"", furigana: [['うちの ねこが はじめて ', ''], ['話', 'はな'], ['しました：「', ''], ['晩', 'ばん'], ['ごはんは まだですか。」', '']] },
     pattern: 'まだですか: asking if something is still not done.',
+    nounBridge: { text: "＿＿＿は まだですか", kana: "＿＿＿は まだですか", en: "Isn't ___ ready yet?" },
   },
   {
     id: 'family.ippon.grandpa-secret',
@@ -650,6 +675,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.uchuujin', 'family.ninja', 'family.aidoru'],
     exampleAnswer: { text: "おじいさんの ひみつ：じつは 毎晩 カッパと カラオケで 歌います。", kana: "おじいさんの ひみつ：じつは まいばん カッパと カラオケで うたいます。", en: "Grandpa's secret: actually, every night he sings karaoke with a kappa.", furigana: [['おじいさんの ひみつ：じつは ', ''], ['毎晩', 'まいばん'], [' カッパと カラオケで ', ''], ['歌', 'うた'], ['います。', '']] },
     pattern: 'じつは: actually (revealing a secret), then a ます sentence.',
+    nounBridge: { text: "＿＿＿を かって います", kana: "＿＿＿を かって います", en: "he keeps ___ as a pet" },
   },
   {
     id: 'family.ippon.dog-human-day',
@@ -664,6 +690,7 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.shachou', 'family.aidoru', 'family.robotto-soujiki'],
     exampleAnswer: { text: "うちの 犬が 一日だけ にんげんに なりました。まず 父の ベッドで 十時間 ねました。", kana: "うちの いぬが いちにちだけ にんげんに なりました。まず ちちの ベッドで じゅうじかん ねました。", en: "Our dog became human for just one day. First, it slept ten hours in my dad's bed.", furigana: [['うちの ', ''], ['犬', 'いぬ'], ['が ', ''], ['一日', 'いちにち'], ['だけ にんげんに なりました。まず ', ''], ['父', 'ちち'], ['の ベッドで ', ''], ['十時間', 'じゅうじかん'], [' ねました。', '']] },
     pattern: 'まず + ました: what happened first.',
+    nounBridge: { text: "＿＿＿を たべました", kana: "＿＿＿を たべました", en: "ate ___" },
   },
   {
     id: 'family.ippon.family-chat',
@@ -677,5 +704,6 @@ export const familyPrompts: OogiriPrompt[] = [
     swerveTileIds: ['family.aidoru', 'family.uchuujin', 'family.zonbi'],
     exampleAnswer: { text: "家族の グループチャットに おばあさんから ひとこと：「今晩は アイドルの コンサートに 行きます。晩ごはんは ありません。」", kana: "かぞくの グループチャットに おばあさんから ひとこと：「こんばんは アイドルの コンサートに いきます。ばんごはんは ありません。」", en: "One message from Grandma in the family group chat: \"Tonight I'm going to a pop idol concert. There's no dinner.\"", furigana: [['家族', 'かぞく'], ['の グループチャットに おばあさんから ひとこと：「', ''], ['今晩', 'こんばん'], ['は アイドルの コンサートに ', ''], ['行', 'い'], ['きます。', ''], ['晩', 'ばん'], ['ごはんは ありません。」', '']] },
     pattern: 'Nに 行きます: going to a place or event.',
+    nounBridge: { text: "＿＿＿を みに いきます", kana: "＿＿＿を みに いきます", en: "I'm going to see ___" },
   },
 ];

@@ -35,6 +35,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["終電", "しゅうでん"], ["の ひみつの ルールは「かっぱの ", ""], ["前", "まえ"], ["で ", ""], ["寝", "ね"], ["ないでください」です。", ""]],
     },
     pattern: "〜てください / 〜ないでください: polite requests.",
+    nounBridge: { text: "＿＿＿と ねないで ください", kana: "＿＿＿と ねないで ください", en: "Don't sleep next to ___" },
   },
   {
     id: "travel.hh-02-vending-machine",
@@ -108,6 +109,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["駅員", "えきいん"], ["さんは ", ""], ["毎晩", "まいばん"], [" かっぱと ホームで ", ""], ["寝", "ね"], ["ます。", ""]],
     },
     pattern: "Verb ます for habits: 毎晩 〜ます.",
+    nounBridge: { text: "＿＿＿と はなします", kana: "＿＿＿と はなします", en: "talk with ___" },
   },
   {
     id: "travel.hh-05-taxi",
@@ -155,6 +157,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["旅館", "りょかん"], ["で：「すみません、たこと ", ""], ["温泉", "おんせん"], ["に ", ""], ["入", "はい"], ["っても いいですか。」「だめです！」", ""]],
     },
     pattern: "Verb て-form + も いいですか: asking permission.",
+    nounBridge: { text: "＿＿＿と おふろに はいって", kana: "＿＿＿と おふろに はいって", en: "take a bath with ___" },
   },
   {
     id: "travel.hh-07-left-on-train",
@@ -240,6 +243,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["「すみません、", ""], ["駅", "えき"], ["は どこですか。」「まっすぐ ", ""], ["行", "い"], ["って、かっぱの ", ""], ["前", "まえ"], ["で ", ""], ["右", "みぎ"], ["に ", ""], ["曲", "ま"], ["がってください。」", ""]],
     },
     pattern: "て-form links steps; 〜に 曲がってください: \"please turn …\".",
+    nounBridge: { text: "＿＿＿の まえで みぎに まがって ください", kana: "＿＿＿の まえで みぎに まがって ください", en: "please turn right in front of ___" },
   },
   {
     id: "travel.hh-10-platform",
@@ -361,6 +365,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["終電", "しゅうでん"], ["で ", ""], ["寝", "ね"], ["ました。そして、かっぱの ", ""], ["国", "くに"], ["で ", ""], ["降", "お"], ["りました。", ""]],
     },
     pattern: "Past ました to tell a story in order.",
+    nounBridge: { text: "＿＿＿が となりに すわりました", kana: "＿＿＿が となりに すわりました", en: "___ sat down next to me" },
   },
   {
     id: "travel.hh-15-next-stop",
@@ -457,6 +462,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["ゆかたを ", ""], ["着", "き"], ["て、", ""], ["温泉", "おんせん"], ["の ", ""], ["後", "あと"], ["で、ふとんの ", ""], ["上", "うえ"], ["で アイスクリームを ", ""], ["食", "た"], ["べたいです。", ""]],
     },
     pattern: "Verb stem + たいです: \"want to\".",
+    nounBridge: { text: "＿＿＿を たべたいです", kana: "＿＿＿を たべたいです", en: "I want to eat ___" },
   },
   {
     id: "travel.hh-19-where-is",
@@ -530,6 +536,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["三日", "みっか"], ["の ", ""], ["旅行", "りょこう"], ["：", ""], ["一日目", "いちにちめ"], [" ", ""], ["京都", "きょうと"], ["、", ""], ["二日目", "ふつかめ"], [" ", ""], ["大阪", "おおさか"], ["、", ""], ["三日目", "みっかめ"], [" ホテルで ずっと ", ""], ["寝", "ね"], ["ます。", ""]],
     },
     pattern: "Counting days: 一日目 (いちにちめ), 二日目 (ふつかめ), 三日目 (みっかめ).",
+    nounBridge: { text: "＿＿＿と あそびます", kana: "＿＿＿と あそびます", en: "play with ___" },
   },
   {
     id: "travel.hh-22-expensive-ticket",
@@ -559,6 +566,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["この ", ""], ["切符", "きっぷ"], ["は ", ""], ["10,000円", "いちまんえん"], ["です。でも、", ""], ["電車", "でんしゃ"], ["は ", ""], ["来", "き"], ["ません。", ""]],
     },
     pattern: "Negative ません: 来ます → 来ません.",
+    nounBridge: { text: "＿＿＿に のれません", kana: "＿＿＿に のれません", en: "you can't ride ___" },
   },
   {
     id: "travel.hh-23-station-toilet",
@@ -657,6 +665,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["雨", "あめ"], ["です。かさが ありません。だから、", ""], ["駅", "えき"], ["で ", ""], ["三時間", "さんじかん"], [" ", ""], ["待", "ま"], ["ちます。", ""]],
     },
     pattern: "だから + verb ます: \"so I'll …\".",
+    nounBridge: { text: "＿＿＿の したで まちます", kana: "＿＿＿の したで まちます", en: "I'll wait under ___" },
   },
   {
     id: "travel.hh-27-three-hours",
@@ -730,6 +739,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["コンビニの ", ""], ["店員", "てんいん"], ["さん：「ふくろは いりますか。」わたし：「いいえ、あたまの ", ""], ["上", "うえ"], ["に のせて ください。」", ""]],
     },
     pattern: "Verb て-form + ください: asking someone to do something.",
+    nounBridge: { text: "＿＿＿に いれて ください", kana: "＿＿＿に いれて ください", en: "Please put it in ___" },
   },
   {
     id: "travel.hh-30-missed-last-train",
@@ -759,6 +769,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["終電", "しゅうでん"], ["が ", ""], ["行", "い"], ["きました。わたしは ", ""], ["駅", "えき"], ["の ベンチで ペンギンと ", ""], ["朝", "あさ"], ["まで ", ""], ["待", "ま"], ["ちます。", ""]],
     },
     pattern: "Verb ます for what you will do.",
+    nounBridge: { text: "＿＿＿と あるいて かえります", kana: "＿＿＿と あるいて かえります", en: "walk home with ___" },
   },
   {
     id: "travel.hh-31-hotel-rule",
@@ -871,6 +882,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["バスの ", ""], ["運転手", "うんてんしゅ"], ["さん：「みなさん、", ""], ["今日", "きょう"], ["は いっしょに ", ""], ["海", "うみ"], ["へ ", ""], ["行", "い"], ["きませんか。」", ""]],
     },
     pattern: "Verb ませんか: a friendly invitation.",
+    nounBridge: { text: "＿＿＿に あいに いきません", kana: "＿＿＿に あいに いきません", en: "go and see ___" },
   },
   {
     id: "travel.hh-35-late",
@@ -937,6 +949,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["駅員", "えきいん"], ["の ねこ：「", ""], ["終電", "しゅうでん"], ["は もう ありません。", ""], ["帰", "かえ"], ["って ください。」", ""]],
     },
     pattern: "Verb て-form + ください: telling someone politely what to do.",
+    nounBridge: { text: "＿＿＿を みせて ください", kana: "＿＿＿を みせて ください", en: "Please show me ___" },
   },
   {
     id: "travel.ph-02-tiny-room",
@@ -1007,6 +1020,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["いぬ：「", ""], ["IC", "アイシー"], ["カードは ありません。でも、とても かわいいです。」", ""]],
     },
     pattern: "でも: \"but\" at the start of a sentence.",
+    nounBridge: { text: "＿＿＿が あります", kana: "＿＿＿が あります", en: "I have ___" },
   },
   {
     id: "travel.ph-05-ryokan-dinner",
@@ -1057,6 +1071,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["終電", "しゅうでん"], ["の ", ""], ["運転手", "うんてんしゅ"], ["さんです。どうぞ ", ""], ["乗", "の"], ["って ください。", ""], ["帰", "かえ"], ["りの ", ""], ["切符", "きっぷ"], ["は ありません。", ""]],
     },
     pattern: "Verb て-form + ください; N は ありません.",
+    nounBridge: { text: "＿＿＿に のって ください", kana: "＿＿＿に のって ください", en: "Please get on ___" },
   },
   {
     id: "travel.ph-07-pigeon",
@@ -1077,6 +1092,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["はと：「ちがいます。", ""], ["左", "ひだり"], ["に ", ""], ["曲", "ま"], ["がって ください。」", ""]],
     },
     pattern: "〜に 曲がってください: \"please turn …\".",
+    nounBridge: { text: "＿＿＿の まえで ひだりに まがって ください", kana: "＿＿＿の まえで ひだりに まがって ください", en: "Turn left in front of ___" },
   },
   {
     id: "travel.ph-08-suit-onsen",
@@ -1097,6 +1113,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["温泉", "おんせん"], ["で ", ""], ["会議", "かいぎ"], ["を して います。", ""]],
     },
     pattern: "Verb て-form + います: what someone is doing right now.",
+    nounBridge: { text: "＿＿＿と はいって います", kana: "＿＿＿と はいって います", en: "he's bathing with ___" },
   },
   {
     id: "travel.ip-01-driver-secret",
@@ -1126,6 +1143,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["終電", "しゅうでん"], ["の ", ""], ["運転手", "うんてんしゅ"], ["さんの ひみつ：", ""], ["運転", "うんてん"], ["が できません。", ""]],
     },
     pattern: "Negative ません: できます → できません.",
+    nounBridge: { text: "＿＿＿が いないと うんてんできません", kana: "＿＿＿が いないと うんてんできません", en: "he can't drive without ___" },
   },
   {
     id: "travel.ip-02-ic-card-use",
@@ -1149,6 +1167,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["IC", "アイシー"], ["カードの ", ""], ["新", "あたら"], ["しい ", ""], ["使", "つか"], ["い", ""], ["方", "かた"], ["：おにぎりを ", ""], ["半分", "はんぶん"], ["に ", ""], ["切", "き"], ["ります。", ""]],
     },
     pattern: "N を + verb ます: saying what you do with something.",
+    nounBridge: { text: "＿＿＿を かいます", kana: "＿＿＿を かいます", en: "buy ___ with it" },
   },
   {
     id: "travel.ip-03-hotel-sorry",
@@ -1172,6 +1191,7 @@ export const travelPrompts: OogiriPrompt[] = [
       furigana: [["ホテルの ", ""], ["人", "ひと"], ["：「", ""], ["本当", "ほんとう"], ["に すみません。おきゃくさまの ", ""], ["部屋", "へや"], ["は ", ""], ["今日", "きょう"], ["から かっぱの ", ""], ["部屋", "へや"], ["です。」", ""]],
     },
     pattern: "N は N です, with から for \"from (a time)\".",
+    nounBridge: { text: "おへやは きょうから ＿＿＿の へやです", kana: "おへやは きょうから ＿＿＿の へやです", en: "From today, your room belongs to ___" },
   },
   {
     id: "travel.ip-04-ghost-station",

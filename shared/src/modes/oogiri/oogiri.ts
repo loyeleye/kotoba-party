@@ -17,6 +17,7 @@ import { isUtterance } from '../../japanese/kana.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type HostCue, type Mode, type ModeContext } from '../mode.js';
 import { buildAnswer, parseAnswerMove, sentenceFor, type AnswerStyle } from './answer.js';
 import { dealFrames, dealTiles, FORM_LABELS, library, libraryFor, ROUNDS, stageVersion, versionFor, wordsIn, type Library, type Tile } from './deal.js';
+import { naturalSentence } from './natural.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type {
   Answer,
@@ -240,7 +241,8 @@ function naturalFor(s: OogiriState, m: Matchup): JpText {
   const a = star && s.answers.find((x) => x.id === star.answerId);
   // An English answer, or one with a form the player got wrong, isn't a sentence to drill.
   if (!a || a.english || a.formTips.length) return m.prompt.exampleAnswer;
-  return sentenceFor(stageVersion(m.prompt), { text: a.text, kana: a.kana, en: a.blankEn });
+  // Nor is one that isn't natural Japanese in the blank, or lacks the form the tip teaches.
+  return naturalSentence(m.prompt, { text: a.text, kana: a.kana, en: a.blankEn, shape: a.shape }) ?? m.prompt.exampleAnswer;
 }
 
 /** Every slot for this matchup is answered. */
@@ -553,6 +555,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
           english: a.english,
           formsRight: a.used.filter((u) => u.right).length,
           formTips: a.formTips,
+          shape: a.shape,
           callback: a.used.some((u) => u.tile.role === 'callback'),
           hidden: false,
         };
