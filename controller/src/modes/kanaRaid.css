@@ -1,0 +1,90 @@
+/* Kana Yōkai Raid on the phone. */
+.raid { text-align: center; }
+.raid .hint.small { font-size: 14px; }
+.raid-prompt { font-size: 20px; font-weight: 800; margin: 0; color: var(--warn); }
+.raid-chapters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; }
+.raid-chapter { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 10px; min-height: 64px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.raid-chapter.on { border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
+.raid-chapter-n { grid-row: span 2; font-size: 22px; font-weight: 900; color: var(--muted); min-width: 1.4em; text-align: center; }
+.raid-chapter.on .raid-chapter-n { color: var(--good); }
+.raid-chapter-t { font-size: 14px; font-weight: 700; }
+.raid-chapter-s { font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.raid-ready { color: var(--good); font-weight: 800; font-size: 20px; margin: 0; }
+.raid-banner .raid-wave { font-size: 56px; font-weight: 900; color: var(--accent); margin: 24px 0 0; letter-spacing: 0.08em; }
+.raid-stat { font-size: 24px; font-weight: 800; margin: 0; }
+.raid-stat small { color: var(--good); font-size: 16px; }
+
+.raid-glyph-wrap { display: grid; justify-items: center; }
+.raid-glyph { margin: 0; font-size: 120px; line-height: 1.05; font-weight: 800; color: var(--ink); text-shadow: 0 0 24px rgba(87, 217, 163, 0.35); }
+.raid-glyph.wide { font-size: 88px; }
+.raid-romaji { margin: 0; color: var(--muted); font-size: 18px; letter-spacing: 0.1em; }
+
+.raid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.raid-option { min-height: 84px; font-size: 44px; font-weight: 800; border-radius: 16px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); display: grid; place-items: center; gap: 2px; padding: 8px; }
+.raid-option:active { border-color: var(--accent); transform: scale(0.98); }
+.raid-option:disabled { opacity: 0.5; }
+.raid-option small { font-size: 14px; font-weight: 500; color: var(--muted); }
+.raid-options.small .raid-option { min-height: 60px; font-size: 30px; }
+.raid-options.pair { grid-template-columns: 1fr; }
+.raid-options.pair .raid-option { font-size: 36px; }
+.raid-options.wide { grid-template-columns: 1fr; }
+.raid-options.wide .raid-option { font-size: 20px; min-height: 60px; }
+
+.raid-listen { display: grid; gap: 8px; justify-items: center; }
+.raid-hear { font: inherit; font-size: 18px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.raid-hear.big { font-size: 22px; padding: 18px 28px; border-color: var(--good); }
+.raid-heartext { margin: 0; font-size: 56px; font-weight: 800; color: var(--warn); }
+
+.raid-last { border-radius: 12px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 18px; }
+.raid-last.ok { background: rgba(87, 217, 163, 0.15); color: var(--good); }
+.raid-last.miss { background: rgba(255, 207, 90, 0.12); color: var(--ink); text-align: left; justify-content: flex-start; }
+.raid-last-char { font-size: 36px; font-weight: 900; color: var(--warn); }
+.raid-last-tip { flex: 1; min-width: 60%; font-size: 15px; }
+.raid-last small { width: 100%; color: var(--muted); }
+.raid-combo-tag { color: var(--accent); font-weight: 900; }
+
+.raid-say { font-size: 22px; font-weight: 800; margin: 0; }
+.raid-word { display: grid; gap: 2px; }
+.raid-word span { font-size: 56px; font-weight: 900; }
+.raid-word small { color: var(--muted); font-size: 16px; }
+.raid-word.boss span { color: var(--accent); }
+
+.raid-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.raid-chip { display: inline-grid; place-items: center; min-width: 44px; height: 44px; padding: 0 8px; border-radius: 10px; font-size: 24px; font-weight: 800; background: var(--panel); border: 1px solid var(--line); }
+.raid-chip.ok { border-color: var(--good); }
+.raid-chip.miss { border-color: var(--warn); color: var(--warn); }
+.raid-subhead { font-weight: 800; margin: 8px 0 4px; }
+.raid-haunted { display: grid; gap: 8px; text-align: left; }
+.raid-haunt { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.raid-haunt-tip { font-size: 14px; color: var(--muted); }
+
+/* Ink Storm: the drawing pad (rice paper, ink brush) and the replays. */
+.raid-ink-toggle { font: inherit; font-size: 16px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); }
+.raid-ink-toggle.on { border-color: var(--accent); color: var(--ink); }
+.raid-draw-cue { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.raid-mask { font-size: 56px; font-weight: 900; line-height: 1; color: var(--warn); }
+.raid-draw-what { font-size: 18px; font-weight: 700; }
+.raid-draw-what small { color: var(--muted); font-weight: 500; }
+.ink-pad { display: grid; gap: 8px; justify-items: center; }
+.ink-paper { position: relative; width: min(100%, 340px, 52vh); aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: #f3ead6; box-shadow: inset 0 0 0 2px #d8c9a6; }
+.ink-paper::before, .ink-paper::after { content: ''; position: absolute; pointer-events: none; border: 0 dashed rgba(120, 90, 50, 0.28); }
+.ink-paper::before { left: 50%; top: 0; bottom: 0; border-left-width: 2px; }
+.ink-paper::after { top: 50%; left: 0; right: 0; border-top-width: 2px; }
+.ink-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; color: #1b1712; cursor: crosshair; }
+.ink-tools { display: flex; gap: 8px; align-items: center; justify-content: space-between; width: min(100%, 340px); }
+.ink-tools button { min-height: 44px; padding: 8px 14px; }
+.ink-count { color: var(--muted); font-size: 15px; }
+.ink-send { width: min(100%, 340px); min-height: 52px; }
+.raid-last.ink { flex-direction: column; align-items: stretch; text-align: center; }
+.raid-ink-replay { display: grid; grid-template-columns: repeat(2, minmax(0, 110px)); gap: 12px; justify-content: center; }
+.raid-ink-replay figure { margin: 0; display: grid; gap: 2px; }
+.raid-ink-replay figcaption { font-size: 13px; color: var(--muted); }
+.raid-coach { margin: 0; font-size: 15px; color: var(--ink); background: rgba(255, 122, 89, 0.12); border-radius: 10px; padding: 8px 10px; }
+.ink-svg { width: 100%; aspect-ratio: 1; background: #f3ead6; border-radius: 10px; }
+.ink-svg .ink-grid { stroke: rgba(120, 90, 50, 0.25); stroke-width: 0.6; stroke-dasharray: 2 2; fill: none; }
+.ink-svg .ink-stroke { fill: none; stroke: #1b1712; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation-name: ink-draw; animation-timing-function: ease-in-out; animation-fill-mode: forwards; }
+.ink-svg.mine .ink-stroke { stroke: #6b3b2a; }
+.ink-svg .ink-num { font-size: 9px; font-weight: 800; fill: #c0392b; opacity: 0; animation: ink-num 0.2s forwards; }
+@keyframes ink-draw { to { stroke-dashoffset: 0; } }
+@keyframes ink-num { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ink-svg .ink-stroke { animation-duration: 1ms !important; } }

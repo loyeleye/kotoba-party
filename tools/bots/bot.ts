@@ -2,7 +2,8 @@
 // so a bot exercises exactly the code path a phone does: HTTP join, WebSocket push, HTTP commands.
 
 import { RoomClient, joinRoom, newCommandId, type CommandBody } from '../../shared/src/client.js';
-import type { CommandResult, RoomView } from '../../shared/src/protocol.js';
+import type { DebugView } from '../../shared/src/modes/debug/debug.js';
+import type { CommandResult, ModeId, RoomView } from '../../shared/src/protocol.js';
 
 /**
  * What a bot does in each phase. `turn` is the room's phaseSeq when the bot acts: unique per
@@ -32,6 +33,15 @@ export const politeScript: BotScript = {
   delayMs: (turn, seat) => 300 + ((turn * 13 + seat * 29) % 1200),
 };
 
+/**
+ * How a bot plays a real mode. Called on every state the bot receives; return the moves
+ * to make now. Each move carries a key, and the bot sends a given key only once, so a
+ * policy can be written as "what should I do in this state" without tracking history.
+ */
+export interface ModePolicy {
+  act(view: RoomView, playerId: string): { key: string; move: unknown; delayMs?: number }[];
+}
+
 export interface VoteRecord {
   /** phaseSeq of the reveal phase the vote was cast in */
   revealSeq: number;
@@ -43,6 +53,9 @@ export interface BotOptions {
   code: string;
   name: string;
   script?: BotScript;
+  /** Play a real mode with this policy instead of the debug script. */
+  policy?: ModePolicy;
+  level?: 'kana' | 'n5' | 'n4';
   deviceId?: string;
   /** Called for every state the bot accepts (after version filtering). */
   onState?: (bot: Bot, view: RoomView, v: number) => void;
@@ -64,6 +77,9 @@ export class Bot {
   private readonly opts: BotOptions;
   private actedSeq = -1;
   private stopped = false;
+  private readonly sentKeys = new Set<string>();
+  /** Moves the server accepted / refused, for tests. */
+  readonly moves: { key: string; ok: boolean; error?: string }[] = [];
 
   private constructor(opts: BotOptions, playerId: string, token: string) {
     this.opts = opts;
@@ -83,7 +99,7 @@ export class Bot {
   }
 
   static async join(opts: BotOptions): Promise<Bot> {
-    const res = await joinRoom(opts.baseUrl, opts.code, { name: opts.name, deviceId: opts.deviceId ?? `bot-${opts.name}` });
+    const res = await joinRoom(opts.baseUrl, opts.code, { name: opts.name, level: opts.level, deviceId: opts.deviceId ?? `bot-${opts.name}` });
     if ('error' in res) throw new Error(`${opts.name} could not join ${opts.code}: ${res.error}`);
     const bot = new Bot(opts, res.playerId, res.token);
     bot.client.connect();
@@ -100,12 +116,29 @@ export class Bot {
   }
 
   private react(view: RoomView): void {
-    if (this.stopped || view.phaseSeq === this.actedSeq) return;
+    if (this.stopped) return;
+    if (this.opts.policy) return this.reactWithPolicy(view, this.opts.policy);
+    if (view.phaseSeq === this.actedSeq) return;
     if (view.phase !== 'answer' && view.phase !== 'reveal') return;
     this.actedSeq = view.phaseSeq;
     const turn = view.phaseSeq;
     const seat = this.seat;
     setTimeout(() => void this.act(view.phase, turn, view.round, seat), this.script.delayMs(turn, seat));
+  }
+
+  private reactWithPolicy(view: RoomView, policy: ModePolicy): void {
+    for (const { key, move, delayMs } of policy.act(view, this.playerId)) {
+      const fullKey = `${view.phaseSeq}:${key}`;
+      if (this.sentKeys.has(fullKey)) continue;
+      this.sentKeys.add(fullKey);
+      setTimeout(() => {
+        if (this.stopped) return;
+        void this.client.send({ type: 'play', move }).then(
+          (r) => this.moves.push({ key: fullKey, ok: r.ok, error: r.ok ? undefined : r.error }),
+          () => this.moves.push({ key: fullKey, ok: false, error: 'network' }),
+        );
+      }, delayMs ?? 0);
+    }
   }
 
   private async act(phase: RoomView['phase'], phaseSeq: number, round: number, seat: number): Promise<void> {
@@ -121,18 +154,19 @@ export class Bot {
         return;
       }
       if (this.script.skipAnswer(turn, seat)) return;
-      const result = await this.sendScripted({ type: 'answer', text: `${this.name}の答え ${round}` }, turn, seat);
+      const result = await this.sendScripted({ type: 'play', move: { kind: 'answer', text: `${this.name}の答え ${round}` } }, turn, seat);
       if (result.ok) this.answersSent += 1;
       return;
     }
 
     if (phase === 'reveal') {
       if (this.script.skipVote(turn, seat)) return;
-      const view = this.client.view!;
-      const options = view.reveal.map((a) => a.id).filter((id) => id !== view.me?.answerId);
+      const game = this.client.view?.game as DebugView | null;
+      if (!game) return;
+      const options = game.reveal.map((a) => a.id).filter((id) => id !== game.mine?.answerId);
       if (options.length === 0) return;
       const answerId = this.script.pickVote(turn, seat, options);
-      const result = await this.sendScripted({ type: 'vote', answerId }, turn, seat);
+      const result = await this.sendScripted({ type: 'play', move: { kind: 'vote', answerId } }, turn, seat);
       if (result.ok) this.votes.push({ revealSeq: phaseSeq, answerId });
     }
   }
@@ -162,13 +196,23 @@ export class Director {
   readonly client: RoomClient;
   private lastSeq = -1;
   private startedForSeq = -1;
-  private readonly opts: { players: number; roundsPerGame: number; totalRounds: number; onDone?: () => void };
+  private readonly opts: { players: number; roundsPerGame: number; totalRounds: number; mode?: ModeId; packId?: string; games?: number; onDone?: () => void };
 
   constructor(
     baseUrl: string,
     code: string,
     stageToken: string,
-    opts: { players: number; roundsPerGame: number; totalRounds: number; onDone?: () => void; onState?: (view: RoomView, v: number) => void },
+    opts: {
+      players: number;
+      roundsPerGame: number;
+      totalRounds: number;
+      mode?: ModeId;
+      packId?: string;
+      /** Stop after this many whole games instead of counting rounds (for real modes). */
+      games?: number;
+      onDone?: () => void;
+      onState?: (view: RoomView, v: number) => void;
+    },
   ) {
     this.opts = opts;
     this.client = new RoomClient({
@@ -186,7 +230,10 @@ export class Director {
     this.client.connect();
   }
 
+  gamesPlayed = 0;
+
   get done(): boolean {
+    if (this.opts.games !== undefined) return this.gamesPlayed >= this.opts.games;
     return this.roundsPlayed >= this.opts.totalRounds;
   }
 
@@ -203,12 +250,13 @@ export class Director {
         const seq = view.phaseSeq;
         this.startedForSeq = seq;
         const rounds = Math.min(this.opts.roundsPerGame, this.opts.totalRounds - this.roundsPlayed);
-        void this.client.send({ type: 'start', rounds }).then((r) => {
+        void this.client.send({ type: 'start', mode: this.opts.mode ?? 'debug', rounds, packId: this.opts.packId }).then((r) => {
           if (r.ok) this.gamesStarted += 1;
           else if (this.startedForSeq === seq) this.startedForSeq = -1;
         });
       }
     } else if (enteredPhase && view.phase === 'recap') {
+      this.gamesPlayed += 1;
       if (this.done) this.opts.onDone?.();
       else void this.client.send({ type: 'playAgain' });
     }

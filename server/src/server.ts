@@ -5,16 +5,20 @@ import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import QRCode from 'qrcode';
 import { WebSocketServer, type WebSocket } from 'ws';
-import { DEFAULT_DURATIONS, type PhaseDurations } from '../../shared/src/constants.js';
-import { CLOSE, type CreateRoomResponse, type JoinRequest, type Prompt, type RoomInfo } from '../../shared/src/protocol.js';
+import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
+import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type RoomInfo } from '../../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/roomCode.js';
 import { systemClock, type Clock } from './clock.js';
+import { addReadings, type Reader } from './reading.js';
 import { Room, type RoomSocket } from './room.js';
 
 export interface ServerConfig {
   clock?: Clock;
-  durations?: Partial<PhaseDurations>;
-  prompts: readonly Prompt[];
+  /** Fixed phase lengths overriding every mode's own (tests, fast bot runs). */
+  durations?: Partial<Record<Phase, number>>;
+  content: ContentLibrary;
+  /** Kana reader for answers with kanji (see reading.ts). */
+  reader?: Reader | null;
   seatHoldMs?: number;
   /** Close a room after this long with nobody connected. Default 10 minutes; 0 disables. */
   roomIdleMs?: number;
@@ -26,6 +30,12 @@ export interface ServerConfig {
   pingIntervalMs?: number;
   maxRooms?: number;
   onCommit?: (room: Room, version: number) => void;
+  onCues?: (room: Room, cues: HostCue[], phaseSeq: number) => void;
+  /** Called when a room enters a new phase (e.g. to reset the host's per-game budget on 'intro'). */
+  onPhase?: (room: Room) => void;
+  onRoomClosed?: (room: Room) => void;
+  /** Host audio by id, served at GET /audio/:id. */
+  audio?: (id: string) => { mime: string; bytes: Uint8Array } | undefined;
 }
 
 export interface KotobaServer {
@@ -48,7 +58,6 @@ const MIME: Record<string, string> = {
 
 export function createKotobaServer(config: ServerConfig): KotobaServer {
   const clock = config.clock ?? systemClock;
-  const durations: PhaseDurations = { ...DEFAULT_DURATIONS, ...config.durations };
   const rooms = new Map<string, Room>();
   const maxRooms = config.maxRooms ?? 500;
   const staticDir = config.staticDir ? resolve(config.staticDir) : undefined;
@@ -63,12 +72,17 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
     const room = new Room({
       code,
       clock,
-      durations,
-      prompts: config.prompts,
+      durations: config.durations,
+      content: config.content,
       seatHoldMs: config.seatHoldMs,
       idleMs: config.roomIdleMs ?? 10 * 60_000,
-      onClose: (r) => rooms.delete(r.code),
+      onClose: (r) => {
+        rooms.delete(r.code);
+        config.onRoomClosed?.(r);
+      },
+      onPhase: config.onPhase,
       onCommit: config.onCommit,
+      onCues: config.onCues,
     });
     rooms.set(code, room);
     return room;
@@ -83,6 +97,15 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
     const path = url.pathname;
 
     if (path === '/healthz') return send(res, 200, { ok: true, rooms: rooms.size });
+
+    const audioMatch = /^\/audio\/([^/]+)$/.exec(path);
+    if (audioMatch && req.method === 'GET') {
+      const clip = config.audio?.(decodeURIComponent(audioMatch[1]!));
+      if (!clip) return send(res, 404, { error: 'not-found' });
+      res.writeHead(200, { 'content-type': clip.mime, 'cache-control': 'public, max-age=86400' });
+      res.end(Buffer.from(clip.bytes));
+      return;
+    }
 
     if (path === '/api/rooms' && req.method === 'POST') {
       const room = createRoom();
@@ -117,6 +140,9 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       if (action === 'commands' && req.method === 'POST') {
         const token = bearer(req);
         const body = await readJson(req);
+        if (body && typeof body === 'object' && ['play', 'micCheck'].includes(String((body as { type?: unknown }).type))) {
+          addReadings(body, config.reader ?? null);
+        }
         const result = token ? room.command(token, body) : null;
         if (!result) return send(res, 401, { error: token && room.wasReleased(token) ? 'seat-released' : 'bad-token' });
         return send(res, 200, result);

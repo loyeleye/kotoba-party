@@ -1,0 +1,74 @@
+/* Word Gauntlet stage (readable from 3 m) */
+.wg { display: grid; gap: 18px; justify-items: center; }
+.wg-tag { margin: 0; color: var(--accent); font-weight: 800; font-size: 24px; text-transform: uppercase; letter-spacing: 0.08em; }
+.wg-rounds { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 14px; width: min(900px, 100%); text-align: left; }
+.wg-round { display: grid; grid-template-columns: 72px 1fr; gap: 18px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px 22px; animation: wg-in 0.5s ease both; }
+.wg-round p { margin: 0; }
+.wg-round-title { font-size: 34px; font-weight: 800; }
+.wg-num { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 36px; font-weight: 900; display: grid; place-items: center; }
+.wg-word { display: grid; gap: 8px; justify-items: center; }
+.wg-kanji { font-size: 120px; font-weight: 900; line-height: 1.3; }
+.wg-kanji rt { font-size: 34px; font-weight: 600; color: var(--muted); }
+.wg-meaning { margin: 0; font-size: 40px; font-weight: 700; color: var(--good); }
+.wg-options li { counter-increment: wg-opt; }
+.wg-golden { display: grid; gap: 4px; justify-items: center; border: 3px solid var(--warn); border-radius: 22px; padding: 12px 28px 18px; box-shadow: 0 0 40px #ffcf5a33; }
+.wg-golden p { margin: 0; }
+.wg-golden-tag { color: var(--warn); font-weight: 800; font-size: 24px; letter-spacing: 0.06em; text-transform: uppercase; }
+.wg-golden .wg-kanji { font-size: 88px; }
+
+.wg-relay { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
+.wg-hop { display: grid; gap: 4px; justify-items: center; background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 12px 18px; min-width: 120px; font-size: 26px; position: relative; }
+.wg-hop + .wg-hop::before { content: '→'; position: absolute; left: -12px; top: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 22px; }
+.wg-hop.live { border-color: var(--warn); box-shadow: 0 0 0 4px #ffcf5a44; }
+.wg-hop.done { border-color: var(--good); }
+.wg-hop.skipped { opacity: 0.45; border-style: dashed; }
+.wg-hop-name { font-weight: 800; }
+.wg-flag { font-size: 16px; font-weight: 900; letter-spacing: 0.1em; color: #14101f; background: var(--muted); border-radius: 6px; padding: 2px 8px; }
+
+.wg-drift { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; width: min(1100px, 100%); text-align: left; }
+.wg-drift-step { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 20px; animation: wg-in 0.6s ease both; }
+.wg-drift-step.start { border-color: var(--accent); }
+.wg-drift-step.skipped { opacity: 0.5; }
+.wg-drift-step.winner { border-color: var(--good); box-shadow: 0 0 0 3px var(--good); }
+.wg-drift-step p { margin: 0; }
+.wg-drift-text { font-size: 34px; font-weight: 700; }
+.wg-drift-step .hint { font-size: 20px; }
+
+.wg-rules { text-align: left; font-size: 28px; display: grid; gap: 12px; margin: 0; padding-left: 32px; width: min(1000px, 100%); }
+.wg-chain { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
+.wg-chain li { display: grid; justify-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 18px; font-size: 40px; font-weight: 800; position: relative; }
+.wg-chain li + li::before { content: '→'; position: absolute; left: -10px; top: 40%; transform: translate(-50%, -50%); font-size: 22px; color: var(--muted); }
+.wg-chain small { font-size: 16px; color: var(--muted); font-weight: 600; }
+.wg-chain .latest { border-color: var(--warn); animation: wg-in 0.4s ease both; }
+.wg-need-line { margin: 0; font-size: 34px; font-weight: 700; }
+.wg-need { font-size: 96px; font-weight: 900; color: var(--warn); vertical-align: middle; }
+.wg-challenged { color: var(--warn); font-size: 64px; }
+.wg-event { font-size: 26px; }
+.wg-event.out { color: var(--warn); }
+.wg-alive { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.wg-alive li { background: var(--panel); border: 2px solid var(--line); border-radius: 999px; padding: 8px 18px; font-size: 24px; font-weight: 700; }
+.wg-alive li.live { border-color: var(--warn); }
+.wg-alive li.out { opacity: 0.5; text-decoration: line-through; }
+.wg-alive li.winner { border-color: var(--good); }
+.wg-alive small { font-size: 16px; }
+.wg-crown { color: var(--warn); }
+/* Reveal and score screens hold more: smaller word, tighter lists. */
+.wg.compact { gap: 12px; }
+.wg.compact .wg-kanji { font-size: 72px; }
+.wg.compact .wg-kanji rt { font-size: 24px; }
+.wg.compact .wg-meaning { font-size: 30px; }
+.wg.compact .answers { margin: 4px 0; gap: 8px; width: min(1200px, 100%); }
+.wg.compact .answers li { font-size: 30px; padding: 10px 20px; }
+.wg-results { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+.wg.compact .wg-drift { gap: 6px; }
+.wg.compact .wg-drift-step { padding: 6px 16px; }
+.wg.compact .wg-drift-text { font-size: 26px; }
+.wg.compact .wg-drift-step .hint { font-size: 17px; }
+@keyframes wg-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 700px) {
+  .wg-kanji { font-size: 64px; }
+  .wg-need { font-size: 56px; }
+  .wg-chain li { font-size: 24px; }
+  .wg-rules { font-size: 18px; }
+}

@@ -13,22 +13,3 @@ export const POINTS_PER_VOTE = 100;
 /** IPPON needs every voter but the author on one answer, with at least this many voters. */
 export const IPPON_MIN_VOTERS = 3;
 export const IPPON_BONUS = 200;
-
-/** Phase lengths in ms. null means the phase waits for the VIP. */
-export interface PhaseDurations {
-  intro: number;
-  prompt: number;
-  answer: number;
-  reveal: number;
-  encore: number;
-  score: number;
-}
-
-export const DEFAULT_DURATIONS: PhaseDurations = {
-  intro: 8_000,
-  prompt: 4_000,
-  answer: 60_000,
-  reveal: 30_000,
-  encore: 6_000,
-  score: 6_000,
-};

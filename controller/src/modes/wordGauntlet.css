@@ -1,0 +1,24 @@
+/* Word Gauntlet phone screens */
+.wg-tag { margin: 0; color: var(--accent); font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+.wg-word { display: grid; gap: 4px; text-align: center; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.wg-word p { margin: 0; }
+.wg-kanji { font-size: 44px; font-weight: 900; line-height: 1.15; }
+.wg-kana { font-size: 22px; color: var(--muted); }
+.wg-romaji { font-size: 18px; color: var(--warn); letter-spacing: 0.04em; }
+.wg-en { font-size: 24px; font-weight: 700; }
+.wg-own { opacity: 0.55; }
+.wg-good { color: var(--good); font-weight: 700; margin: 0; }
+.wg-start { font-size: 18px; }
+.wg-step { display: grid; gap: 4px; animation: wg-in 0.4s ease both; }
+.wg-step small { color: var(--muted); font-size: 13px; }
+.wg-step span { font-size: 20px; }
+.wg-need { margin: 0; text-align: center; font-size: 56px; font-weight: 900; color: var(--warn); }
+.wg-yourturn { text-align: center; color: var(--good); }
+.wg-hint { display: grid; gap: 6px; padding: 12px; border: 1px dashed var(--line); border-radius: 12px; }
+.wg-hint p { margin: 0; font-size: 20px; }
+.wg-hint small { color: var(--muted); font-size: 14px; }
+.wg-rules { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 18px; }
+.wg-judge { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.wg-judge .secondary { font-size: 20px; font-weight: 800; }
+@keyframes wg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.wg-center { text-align: center; margin: 0; }

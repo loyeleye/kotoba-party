@@ -1,0 +1,27 @@
+/* Kotoba Concentration (phone) */
+.cc-mini { display: grid; gap: 6px; width: 100%; }
+.cc-m { aspect-ratio: 1; min-height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 15px; line-height: 1.05; text-align: center; overflow: hidden; overflow-wrap: anywhere; padding: 2px; border: 0; }
+.cc-mini-4 .cc-m { font-size: 18px; }
+.cc-m-down { background: linear-gradient(145deg, #3b2a63, #241a3d); border: 1px solid var(--line); }
+.cc-m-tap { cursor: pointer; border: 2px solid var(--accent); }
+.cc-m-tap:active, .cc-m-picked { background: var(--accent); }
+.cc-m-up { background: #fbf7ff; color: #1b1430; font-weight: 700; border: 2px solid var(--warn); }
+.cc-m-emoji, .cc-m-special, .cc-m-audio { font-size: 26px; }
+.cc-m-en { font-size: 12px; color: #2b4f9a; }
+.cc-m-masked { background: #2d1f4a; color: var(--warn); border: 2px dashed var(--warn); font-size: 22px; }
+.cc-m-cleared { background: rgba(255, 255, 255, 0.05); font-size: 24px; }
+.cc-m-fog { background: #5d6577; font-size: 22px; }
+.cc-cuecard { display: grid; gap: 4px; place-items: center; background: #fbf7ff; color: #1b1430; border-radius: 16px; padding: 18px 12px; text-align: center; }
+.cc-cuecard .hint { color: #5b4e7a; }
+.cc-cue-main { font-size: 44px; font-weight: 900; line-height: 1.1; overflow-wrap: anywhere; }
+.cc-cuecard.small .cc-cue-main { font-size: 30px; }
+.cc-hint { font-size: 24px; font-weight: 800; color: var(--warn); margin: 0; text-align: center; }
+.cc-miss { color: var(--warn); margin: 0; }
+.cc-guess { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.cc-guess-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cc-guess-btn { margin: 0; min-height: 64px; display: grid; gap: 2px; text-align: center; font-size: 20px; }
+.cc-guess-btn small { color: var(--muted); font-size: 13px; }
+.cc-guessed { margin: 0; color: var(--muted); }
+.cc-guessed.ok { color: var(--good); font-weight: 800; }
+.cc-chip-p { margin: 0; color: #1b1430; background: var(--warn); border-radius: 999px; padding: 4px 12px; justify-self: start; font-weight: 800; }
+.cc-foot { text-align: center; }

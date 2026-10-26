@@ -1,89 +1,81 @@
-// The round state machine. Pure game rules: no sockets, no timers, no clocks.
+// The room state machine. Pure game rules: no sockets, no timers, no clocks.
 // The server owns one GameState per room and feeds it actions one at a time (ADR 0001),
-// passing the current time in. That keeps every rule testable without a network.
+// passing the current time in. The room runs the shared loop (lobby → game → recap) and
+// hands everything inside the game to the chosen mode (shared/src/modes).
 
-import {
-  DEFAULT_ROUNDS,
-  IPPON_BONUS,
-  IPPON_MIN_VOTERS,
-  MAX_ANSWER_LENGTH,
-  MAX_NAME_LENGTH,
-  MAX_PLAYERS,
-  MAX_ROUNDS,
-  MIN_PLAYERS,
-  POINTS_PER_VOTE,
-  type PhaseDurations,
-} from './constants.js';
-import type { Command, CommandError, JoinError, Phase, Prompt, RoundResult, Viewer } from './protocol.js';
+import type { Level } from '../../content/src/types.js';
+import { MAX_NAME_LENGTH, MAX_PLAYERS } from './constants.js';
+import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry } from './modes/mode.js';
+import { MODES } from './modes/registry.js';
+import type { Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
+import { LEVELS, MODE_IDS } from './protocol.js';
+import { isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
 
 export interface PlayerState {
   id: string;
   name: string;
   seat: number;
+  level: Level;
   connected: boolean;
   score: number;
-}
-
-export interface AnswerState {
-  id: string;
-  authorId: string;
-  text: string;
+  mic: 'ok' | 'quiet' | null;
 }
 
 export interface GameState {
   code: string;
   phase: Phase;
   phaseSeq: number;
-  round: number;
-  totalRounds: number;
   deadline: number | null;
   players: PlayerState[];
   vipId: string | null;
-  prompt: Prompt | null;
-  answers: AnswerState[];
-  /** voterId → answerId */
-  votes: Record<string, string>;
-  results: RoundResult | null;
-  deck: Prompt[];
-  deckPos: number;
+  /** The mode being played (or last played, in the lobby and recap). */
+  mode: ModeId | null;
+  modeState: unknown;
+  packId: string | null;
+  host: HostSay | null;
+  /** Host cues raised by the last action; the server drains them after each dispatch. */
+  cues: HostCue[];
+  phrasebook: Record<string, PhraseEntry[]>;
+  recap: { standings: { playerId: string; name: string; score: number }[]; awards: Award[] } | null;
 }
 
 export interface GameContext {
   now: number;
-  durations: PhaseDurations;
-  prompts: readonly Prompt[];
+  content: ContentLibrary;
   newId: () => string;
   random: () => number;
+  /** Fixed phase lengths that override every mode's own (tests and bot runs). */
+  durations?: Partial<Record<Phase, number>>;
 }
 
 export type GameAction =
-  | { type: 'join'; playerId: string; name: string }
+  | { type: 'join'; playerId: string; name: string; level?: Level }
   | { type: 'release'; playerId: string }
   | { type: 'connection'; playerId: string; connected: boolean }
   | { type: 'command'; actor: Viewer; command: Command }
-  | { type: 'timeout'; phaseSeq: number };
+  | { type: 'timeout'; phaseSeq: number }
+  | { type: 'host'; say: HostSay };
 
-export type Outcome = { changed: boolean; error?: CommandError | JoinError };
+export type Outcome = { changed: boolean; error?: string };
 
 const OK: Outcome = { changed: true };
-const fail = (error: CommandError | JoinError): Outcome => ({ changed: false, error });
+const fail = (error: CommandError | JoinError | string): Outcome => ({ changed: false, error });
 
 export function createGame(code: string): GameState {
   return {
     code,
     phase: 'lobby',
     phaseSeq: 0,
-    round: 0,
-    totalRounds: DEFAULT_ROUNDS,
     deadline: null,
     players: [],
     vipId: null,
-    prompt: null,
-    answers: [],
-    votes: {},
-    results: null,
-    deck: [],
-    deckPos: 0,
+    mode: null,
+    modeState: null,
+    packId: null,
+    host: null,
+    cues: [],
+    phrasebook: {},
+    recap: null,
   };
 }
 
@@ -94,12 +86,51 @@ export function cleanName(raw: unknown): string | null {
   return name;
 }
 
+export const isLevel = (v: unknown): v is Level => typeof v === 'string' && (LEVELS as readonly string[]).includes(v);
+
 /** Can a brand-new player take a seat right now? (Rejoining a held seat skips this.) */
 export function canJoin(state: GameState, name: string): JoinError | null {
-  if (state.phase !== 'lobby') return 'game-in-progress';
+  if (state.phase !== 'lobby' && state.phase !== 'recap') return 'game-in-progress';
   if (state.players.length >= MAX_PLAYERS) return 'room-full';
   if (state.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) return 'name-taken';
   return null;
+}
+
+export function activeMode(state: GameState): Mode<unknown, { mode: ModeId }> | null {
+  return state.mode ? (MODES[state.mode] as Mode<unknown, { mode: ModeId }>) : null;
+}
+
+export const inGame = (state: GameState): boolean => state.phase !== 'lobby' && state.phase !== 'recap';
+
+/** The context a mode gets for one call. */
+export function modeContext(state: GameState, ctx: GameContext): ModeContext {
+  const asModePlayer = (p: PlayerState): ModePlayer => p;
+  return {
+    now: ctx.now,
+    content: ctx.content,
+    vipId: state.vipId,
+    random: ctx.random,
+    newId: ctx.newId,
+    players: () => state.players.map(asModePlayer),
+    player: (id) => state.players.find((p) => p.id === id),
+    connected: () => state.players.filter((p) => p.connected),
+    award(playerId, points) {
+      const p = state.players.find((x) => x.id === playerId);
+      if (p) p.score = Math.max(0, p.score + Math.round(points));
+    },
+    cue(cue) {
+      state.cues.push(cue);
+    },
+    phrase(playerId, entry) {
+      const list = (state.phrasebook[playerId] ??= []);
+      const existing = list.findIndex((e) => e.itemId === entry.itemId);
+      // Keep the most telling outcome: a miss stays a miss even if seen again later.
+      if (existing >= 0) {
+        const rank = { missed: 3, retry: 2, said: 1, seen: 0 } as const;
+        if (rank[entry.outcome] >= rank[list[existing]!.outcome]) list[existing] = entry;
+      } else list.push(entry);
+    },
+  };
 }
 
 /** Applies one action. Mutates `state` in place and reports whether anything changed. */
@@ -116,7 +147,8 @@ function applyOne(state: GameState, action: GameAction, ctx: GameContext): Outco
       if (!name) return fail('bad-name');
       const err = canJoin(state, name);
       if (err) return fail(err);
-      state.players.push({ id: action.playerId, name, seat: lowestFreeSeat(state), connected: false, score: 0 });
+      const level = isLevel(action.level) ? action.level : 'n5';
+      state.players.push({ id: action.playerId, name, seat: lowestFreeSeat(state), level, connected: false, score: 0, mic: null });
       state.players.sort((a, b) => a.seat - b.seat);
       state.vipId ??= action.playerId;
       return OK;
@@ -125,13 +157,13 @@ function applyOne(state: GameState, action: GameAction, ctx: GameContext): Outco
       const idx = state.players.findIndex((p) => p.id === action.playerId);
       if (idx < 0) return { changed: false };
       state.players.splice(idx, 1);
-      delete state.votes[action.playerId];
       if (state.vipId === action.playerId) state.vipId = state.players[0]?.id ?? null;
+      if (inGame(state)) activeMode(state)?.release?.(state.modeState, action.playerId, modeContext(state, ctx));
       if (state.players.length === 0 && state.phase !== 'lobby') resetToLobby(state);
       return OK;
     }
     case 'connection': {
-      const p = player(state, action.playerId);
+      const p = state.players.find((x) => x.id === action.playerId);
       if (!p || p.connected === action.connected) return { changed: false };
       p.connected = action.connected;
       return OK;
@@ -141,6 +173,11 @@ function applyOne(state: GameState, action: GameAction, ctx: GameContext): Outco
       advance(state, ctx);
       return OK;
     }
+    case 'host': {
+      if (action.say.phaseSeq !== state.phaseSeq) return { changed: false };
+      state.host = action.say;
+      return OK;
+    }
     case 'command':
       return applyCommand(state, action.actor, action.command, ctx);
   }
@@ -148,7 +185,7 @@ function applyOne(state: GameState, action: GameAction, ctx: GameContext): Outco
 
 function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameContext): Outcome {
   const isStage = actor.kind === 'stage';
-  const me = actor.kind === 'player' ? player(state, actor.playerId) : undefined;
+  const me = actor.kind === 'player' ? state.players.find((p) => p.id === actor.playerId) : undefined;
   if (!isStage && !me) return fail('not-allowed');
   const isVip = !!me && me.id === state.vipId;
 
@@ -156,33 +193,47 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
     case 'start': {
       if (state.phase !== 'lobby') return fail('wrong-phase');
       if (!isVip && !isStage) return fail('not-vip');
-      if (state.players.length < MIN_PLAYERS) return fail('no-players');
-      const rounds = Number.isInteger(cmd.rounds) ? (cmd.rounds as number) : DEFAULT_ROUNDS;
-      state.totalRounds = Math.min(MAX_ROUNDS, Math.max(1, rounds));
-      state.round = 0;
+      if (!(MODE_IDS as readonly string[]).includes(cmd.mode)) return fail('unknown-mode');
+      const mode = MODES[cmd.mode];
+      if (state.players.length < mode.info.minPlayers) return fail('not-enough-players');
+      if (state.players.length > mode.info.maxPlayers) return fail('too-many-players');
+      state.mode = cmd.mode;
+      state.packId = typeof cmd.packId === 'string' ? cmd.packId : null;
       for (const p of state.players) p.score = 0;
-      state.deck = shuffled(ctx.prompts, ctx.random);
-      state.deckPos = 0;
+      state.phrasebook = {};
+      state.recap = null;
+      const rounds = Number.isInteger(cmd.rounds) ? cmd.rounds : undefined;
+      state.modeState = mode.setup(modeContext(state, ctx), {
+        rounds: rounds !== undefined && rounds > 0 && rounds <= 20 ? rounds : mode.info.roundChoices[0],
+        packId: state.packId ?? undefined,
+        extra: cmd.extra && typeof cmd.extra === 'object' ? cmd.extra : undefined,
+      });
       enter(state, 'intro', ctx);
       return OK;
     }
-    case 'answer': {
+    case 'play': {
       if (!me) return fail('not-allowed');
-      if (state.phase !== 'answer') return fail('wrong-phase');
-      if (state.answers.some((a) => a.authorId === me.id)) return fail('already-answered');
-      const text = typeof cmd.text === 'string' ? cmd.text.replace(/\s+/g, ' ').trim() : '';
-      if (!text) return fail('empty-answer');
-      state.answers.push({ id: ctx.newId(), authorId: me.id, text: [...text].slice(0, MAX_ANSWER_LENGTH).join('') });
+      const mode = activeMode(state);
+      if (!mode || !inGame(state)) return fail('wrong-phase');
+      const result = mode.move(state.modeState, state.phase, me.id, cmd.move, modeContext(state, ctx));
+      return result.ok ? OK : fail(result.error);
+    }
+    case 'setLevel': {
+      if (!me) return fail('not-allowed');
+      if (!isLevel(cmd.level)) return fail('bad-level');
+      if (inGame(state)) return fail('wrong-phase');
+      if (me.level === cmd.level) return { changed: false };
+      me.level = cmd.level;
       return OK;
     }
-    case 'vote': {
+    case 'micCheck': {
       if (!me) return fail('not-allowed');
-      if (state.phase !== 'reveal') return fail('wrong-phase');
-      if (state.votes[me.id]) return fail('already-voted');
-      const answer = state.answers.find((a) => a.id === cmd.answerId);
-      if (!answer) return fail('unknown-answer');
-      if (answer.authorId === me.id) return fail('own-answer');
-      state.votes[me.id] = answer.id;
+      if (inGame(state)) return fail('wrong-phase');
+      const host = activeMode(state)?.info.host ?? 'pon';
+      // A transcript that sounds like こんにちは passes; anything else, or { quiet: true }, is the quiet path.
+      const said = isUtterance(cmd.utterance) && matchesAccepted(utteranceReading(cmd.utterance), ['こんにちは', 'こんにちわ']);
+      me.mic = said ? 'ok' : 'quiet';
+      state.cues.push({ host, event: said ? 'mic_check_ok' : 'mic_check_quiet', slots: { name: me.name } });
       return OK;
     }
     case 'skip': {
@@ -203,120 +254,61 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
   }
 }
 
-/** Moves the current phase forward by one step. */
+/** Ends the current phase and moves to whatever the mode says comes next. */
 function advance(state: GameState, ctx: GameContext): void {
-  switch (state.phase) {
-    case 'intro':
-      beginRound(state, ctx);
-      return;
-    case 'prompt':
-      enter(state, 'answer', ctx);
-      return;
-    case 'answer':
-      enter(state, 'reveal', ctx);
-      return;
-    case 'reveal':
-      state.results = scoreRound(state);
-      enter(state, 'encore', ctx);
-      return;
-    case 'encore':
-      enter(state, 'score', ctx);
-      return;
-    case 'score':
-      if (state.round < state.totalRounds) beginRound(state, ctx);
-      else enter(state, 'recap', ctx);
-      return;
-    case 'lobby':
-    case 'recap':
-      return;
-  }
+  const mode = activeMode(state);
+  if (!mode || !inGame(state)) return;
+  const mctx = modeContext(state, ctx);
+  mode.leave?.(state.modeState, state.phase, mctx);
+  const next = mode.next(state.modeState, state.phase, mctx);
+  if (next === 'recap' || next === 'lobby') finish(state, ctx);
+  else enter(state, next, ctx);
 }
 
-/** Ends answer and vote phases early once every connected player is in. */
+/** Ends phases early while the mode says everyone is in. */
 function settle(state: GameState, ctx: GameContext): void {
-  for (let guard = 0; guard < 8; guard++) {
-    if (state.phase === 'answer' && everyoneAnswered(state)) advance(state, ctx);
-    else if (state.phase === 'reveal' && everyoneVoted(state)) advance(state, ctx);
-    else return;
+  for (let guard = 0; guard < 32; guard++) {
+    const mode = activeMode(state);
+    if (!mode || !inGame(state) || !mode.done?.(state.modeState, state.phase, modeContext(state, ctx))) return;
+    advance(state, ctx);
   }
-}
-
-export function everyoneAnswered(state: GameState): boolean {
-  const here = state.players.filter((p) => p.connected);
-  return here.length > 0 && here.every((p) => state.answers.some((a) => a.authorId === p.id));
-}
-
-export function everyoneVoted(state: GameState): boolean {
-  const here = state.players.filter((p) => p.connected);
-  if (here.length === 0) return false;
-  const voters = here.filter((p) => state.answers.some((a) => a.authorId !== p.id));
-  return voters.every((p) => state.votes[p.id] !== undefined);
-}
-
-function beginRound(state: GameState, ctx: GameContext): void {
-  state.round += 1;
-  state.answers = [];
-  state.votes = {};
-  state.results = null;
-  state.prompt = state.deck.length ? state.deck[state.deckPos % state.deck.length]! : { id: 'none', text: '…' };
-  state.deckPos += 1;
-  enter(state, 'prompt', ctx);
 }
 
 function enter(state: GameState, phase: Phase, ctx: GameContext): void {
+  const mode = activeMode(state)!;
   state.phase = phase;
   state.phaseSeq += 1;
-  state.deadline = phase === 'lobby' || phase === 'recap' ? null : ctx.now + ctx.durations[phase];
+  state.host = null;
+  const mctx = modeContext(state, ctx);
+  mode.enter(state.modeState, phase, mctx);
+  const ms = ctx.durations?.[phase] ?? mode.duration(state.modeState, phase, mctx);
+  state.deadline = ctx.now + Math.max(0, ms);
+}
+
+function finish(state: GameState, ctx: GameContext): void {
+  const mode = activeMode(state);
+  state.phase = 'recap';
+  state.phaseSeq += 1;
+  state.deadline = null;
+  state.host = null;
+  state.recap = {
+    standings: [...state.players]
+      .sort((a, b) => b.score - a.score || a.seat - b.seat)
+      .map((p) => ({ playerId: p.id, name: p.name, score: p.score })),
+    awards: mode?.awards?.(state.modeState, modeContext(state, ctx)) ?? [],
+  };
+  if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award' });
 }
 
 function resetToLobby(state: GameState): void {
   state.phase = 'lobby';
   state.phaseSeq += 1;
   state.deadline = null;
-  state.round = 0;
-  state.prompt = null;
-  state.answers = [];
-  state.votes = {};
-  state.results = null;
-}
-
-export function scoreRound(state: GameState): RoundResult {
-  const multiplier = state.round === state.totalRounds ? 2 : 1;
-  const counts = new Map<string, number>();
-  for (const answerId of Object.values(state.votes)) counts.set(answerId, (counts.get(answerId) ?? 0) + 1);
-  const voters = Object.keys(state.votes);
-
-  const answers = revealOrder(state.answers).map((a) => {
-    const votes = counts.get(a.id) ?? 0;
-    // IPPON: every voter other than the author picked this answer, with enough voters.
-    const otherVoters = voters.filter((v) => v !== a.authorId).length;
-    const ippon = otherVoters >= IPPON_MIN_VOTERS && votes === otherVoters;
-    const points = (votes * POINTS_PER_VOTE + (ippon ? IPPON_BONUS : 0)) * multiplier;
-    const author = player(state, a.authorId);
-    if (author) author.score += points;
-    return { answerId: a.id, authorId: a.authorId, authorName: author?.name ?? '(left)', text: a.text, votes, points, ippon };
-  });
-  return { round: state.round, promptId: state.prompt?.id ?? 'none', answers };
-}
-
-/** Answer ids are random, so sorting by id gives an order that says nothing about who wrote what. */
-export function revealOrder<T extends { id: string }>(answers: readonly T[]): T[] {
-  return [...answers].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-}
-
-export function player(state: GameState, id: string): PlayerState | undefined {
-  return state.players.find((p) => p.id === id);
+  state.modeState = null;
+  state.host = null;
+  state.recap = null;
 }
 
 function lowestFreeSeat(state: GameState): number {
   for (let seat = 1; ; seat++) if (!state.players.some((p) => p.seat === seat)) return seat;
-}
-
-function shuffled<T>(items: readonly T[], random: () => number): T[] {
-  const out = [...items];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [out[i], out[j]] = [out[j]!, out[i]!];
-  }
-  return out;
 }

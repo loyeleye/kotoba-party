@@ -10,7 +10,7 @@
   font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+body { margin: 0; background: linear-gradient(rgba(20, 16, 31, 0.78), rgba(20, 16, 31, 0.9)), url('/stage/assets/studio-bg.jpg') center / cover fixed, var(--bg); color: var(--ink); min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
 
 .bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; border-bottom: 1px solid var(--line); gap: 24px; flex-wrap: wrap; }
 .brand { font-size: 32px; font-weight: 800; color: var(--accent); }
@@ -21,7 +21,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100vh; d
 .url { color: var(--muted); font-size: 16px; margin-top: 4px; }
 .qr { width: 132px; height: 132px; background: #fff; border-radius: 8px; padding: 4px; }
 
-.show { padding: 24px 32px; display: grid; grid-template-rows: auto 1fr auto; gap: 24px; }
+.show { padding: 24px 32px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 24px; }
 .phase-line { display: flex; align-items: baseline; gap: 24px; }
 .phase { font-size: 40px; font-weight: 800; }
 .round { font-size: 24px; color: var(--muted); }
@@ -73,3 +73,16 @@ body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100vh; d
   .big { font-size: 30px; }
   .answers li { font-size: 22px; }
 }
+
+.host { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; background: var(--panel); border-left: 6px solid var(--accent); border-radius: 12px; padding: 12px 20px; }
+.host[hidden] { display: none; }
+.host-portrait { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; align-self: center; background: var(--bg); }
+.host-name { color: var(--accent); font-weight: 800; font-size: 20px; }
+.host-jp { font-size: 32px; font-weight: 700; }
+.host-en { color: var(--muted); font-size: 22px; }
+.menu { list-style: none; padding: 0; color: var(--muted); font-size: 20px; display: grid; gap: 6px; }
+.menu strong { color: var(--ink); }
+.awards { list-style: none; padding: 0; font-size: 24px; color: var(--muted); }
+.awards strong { color: var(--warn); }
+.level { color: var(--muted); font-size: 14px; }
+.debug select { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px; }

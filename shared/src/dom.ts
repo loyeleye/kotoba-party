@@ -36,5 +36,11 @@ export const PHASE_LABELS: Record<string, string> = {
   reveal: 'Reveal & vote',
   encore: 'Encore',
   score: 'Score',
+  penalty: 'Penalty',
+  finale: 'Finale',
   recap: 'Recap',
 };
+
+export const LEVEL_LABELS: Record<string, string> = { kana: 'かな', n5: 'N5', n4: 'N4' };
+
+export const HOST_NAMES: Record<string, string> = { pon: 'ポン', chochin: 'ちょうちんさん', fude: 'フデ' };

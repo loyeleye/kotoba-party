@@ -6,6 +6,7 @@ import { RoomClient, createRoom, joinRoom } from '../shared/src/client.js';
 import type { JoinResponse } from '../shared/src/protocol.js';
 import { ManualClock } from '../server/src/clock.js';
 import type { Room } from '../server/src/room.js';
+import type { DebugView } from '../shared/src/modes/debug/debug.js';
 import { startServer, until } from './helpers.js';
 
 describe('reconnect and seat hold', () => {
@@ -46,11 +47,11 @@ describe('reconnect and seat hold', () => {
     const { room, stage, phones } = await setup(4);
     const [p1, p2, p3, p4] = phones as [(typeof phones)[0], (typeof phones)[0], (typeof phones)[0], (typeof phones)[0]];
 
-    expect((await stage.send({ type: 'start', rounds: 3 })).ok).toBe(true);
+    expect((await stage.send({ type: 'start', mode: 'debug', rounds: 3 })).ok).toBe(true);
     clock.advance(8_000 + 4_000); // intro + prompt
     expect(room.state.phase).toBe('answer');
 
-    expect((await p2.client.send({ type: 'answer', text: 'たぬきラーメン' })).ok).toBe(true);
+    expect((await p2.client.send({ type: 'play', move: { kind: 'answer', text: 'たぬきラーメン' } })).ok).toBe(true);
     const before = { ...serverPlayer(room, p2.join.playerId)! };
 
     p2.client.drop();
@@ -66,15 +67,16 @@ describe('reconnect and seat hold', () => {
     await until(() => p2.client.version === room.version, 5_000, 'latest state');
 
     expect(p2.client.view?.me?.playerId).toBe(p2.join.playerId);
-    expect(p2.client.view?.me?.answerText).toBe('たぬきラーメン');
+    expect((p2.client.view?.game as DebugView).mine?.answerText).toBe('たぬきラーメン');
     expect(p2.client.view?.players.find((p) => p.id === p2.join.playerId)).toMatchObject({ seat: before.seat, connected: true });
 
     // The round carries on with the rejoined phone in it.
-    for (const p of [p1, p3, p4]) expect((await p.client.send({ type: 'answer', text: `${p.join.playerId}!` })).ok).toBe(true);
+    for (const p of [p1, p3, p4]) expect((await p.client.send({ type: 'play', move: { kind: 'answer', text: `${p.join.playerId}!` } })).ok).toBe(true);
     expect(room.state.phase).toBe('reveal');
     await until(() => p2.client.view?.phase === 'reveal', 5_000, 'reveal pushed');
-    const target = p2.client.view!.reveal.find((a) => a.id !== p2.client.view!.me!.answerId)!;
-    expect((await p2.client.send({ type: 'vote', answerId: target.id })).ok).toBe(true);
+    const game = p2.client.view!.game as DebugView;
+    const target = game.reveal.find((a) => a.id !== game.mine!.answerId)!;
+    expect((await p2.client.send({ type: 'play', move: { kind: 'vote', answerId: target.id } })).ok).toBe(true);
   });
 
   it('a reloaded page finds its seat with its saved token, and the old socket is replaced', async () => {
@@ -141,7 +143,7 @@ describe('reconnect and seat hold', () => {
 
   it('new players cannot join mid-game, but held seats can come back', async () => {
     const { code, stage, phones, room } = await setup(2);
-    expect((await stage.send({ type: 'start' })).ok).toBe(true);
+    expect((await stage.send({ type: 'start', mode: 'debug' })).ok).toBe(true);
     const late = await joinRoom(ctx.baseUrl, code, { name: 'late' });
     expect(late).toEqual({ error: 'game-in-progress' });
     const back = await joinRoom(ctx.baseUrl, code, { name: 'phone1', token: phones[0]!.join.token });

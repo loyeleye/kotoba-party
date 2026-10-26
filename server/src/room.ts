@@ -1,15 +1,16 @@
 import { randomBytes } from 'node:crypto';
-import { SEAT_HOLD_MS, type PhaseDurations } from '../../shared/src/constants.js';
-import { apply, canJoin, cleanName, createGame, player, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
+import { SEAT_HOLD_MS } from '../../shared/src/constants.js';
+import { apply, canJoin, cleanName, createGame, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
+import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type {
   ByeReason,
   Command,
-  CommandError,
   CommandResult,
+  HostSay,
   JoinError,
   JoinRequest,
   JoinResponse,
-  Prompt,
+  Phase,
   ServerMessage,
   Viewer,
 } from '../../shared/src/protocol.js';
@@ -26,8 +27,9 @@ export interface RoomSocket {
 export interface RoomOptions {
   code: string;
   clock: Clock;
-  durations: PhaseDurations;
-  prompts: readonly Prompt[];
+  content: ContentLibrary;
+  /** Fixed phase lengths overriding every mode's own (tests, fast bot runs). */
+  durations?: Partial<Record<Phase, number>>;
   seatHoldMs?: number;
   /** Close the room after this long with nobody connected. */
   idleMs?: number;
@@ -35,9 +37,12 @@ export interface RoomOptions {
   onClose?: (room: Room) => void;
   /** Called after every state change, with the new version. Tests use it to record what each viewer should see. */
   onCommit?: (room: Room, version: number) => void;
+  /** Host cues raised by game rules, for the host pipeline to voice. It answers through `room.say`. */
+  onCues?: (room: Room, cues: HostCue[], phaseSeq: number) => void;
+  onPhase?: (room: Room) => void;
 }
 
-const COMMAND_TYPES = new Set<Command['type']>(['start', 'answer', 'vote', 'skip', 'playAgain']);
+const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain']);
 const COMMAND_MEMORY = 128;
 
 export const newToken = (): string => randomBytes(18).toString('base64url');
@@ -103,7 +108,7 @@ export class Room {
     if (err) return { error: err };
 
     const playerId = newId();
-    const outcome = this.dispatch({ type: 'join', playerId, name });
+    const outcome = this.dispatch({ type: 'join', playerId, name, level: req.level });
     if (!outcome.changed) return { error: (outcome.error as JoinError) ?? 'bad-name' };
 
     const token = newToken();
@@ -117,10 +122,28 @@ export class Room {
 
   private findHeldSeat(req: JoinRequest): string | undefined {
     const byToken = req.token ? this.tokens.get(req.token) : undefined;
-    if (byToken?.kind === 'player' && player(this.state, byToken.playerId)) return byToken.playerId;
+    if (byToken?.kind === 'player' && this.seated(byToken.playerId)) return byToken.playerId;
     const byDevice = req.deviceId ? this.devices.get(req.deviceId) : undefined;
-    if (byDevice && player(this.state, byDevice)) return byDevice;
+    if (byDevice && this.seated(byDevice)) return byDevice;
     return undefined;
+  }
+
+  private seated(playerId: string): boolean {
+    return this.state.players.some((p) => p.id === playerId);
+  }
+
+  /** A host line from the host pipeline. Ignored if the phase it was made for has passed. */
+  say(line: HostSay): void {
+    this.dispatch({ type: 'host', say: line });
+  }
+
+  /**
+   * A move the server makes on a player's behalf (the Ink Storm coach's tip on their drawing).
+   * Goes through the same dispatch as everything else; the mode decides whether to accept it.
+   */
+  inject(playerId: string, move: unknown): boolean {
+    if (!this.seated(playerId)) return false;
+    return this.dispatch({ type: 'command', actor: { kind: 'player', playerId }, command: { id: `server:${newId()}`, type: 'play', move } }).changed;
   }
 
   /** Attaches a pushed-to socket. Returns false when the token does not belong to this room. */
@@ -176,7 +199,7 @@ export class Room {
     const outcome = this.dispatch({ type: 'command', actor: viewer, command: cmd });
     const result: CommandResult = outcome.changed
       ? { ok: true, v: this.version }
-      : { ok: false, error: (outcome.error as CommandError | undefined) ?? 'bad-command', v: this.version };
+      : { ok: false, error: outcome.error ?? 'bad-command', v: this.version };
     log.set(cmd.id, result);
     if (log.size > COMMAND_MEMORY) log.delete(log.keys().next().value!);
     return result;
@@ -203,16 +226,20 @@ export class Room {
     const outcome = apply(this.state, action, {
       now: this.clock.now(),
       durations: this.opts.durations,
-      prompts: this.opts.prompts,
+      content: this.opts.content,
       newId,
       random: this.opts.random ?? Math.random,
     });
+    const cues = this.state.cues.splice(0);
+    const phaseBefore = this.timedPhaseSeq;
     if (outcome.changed) {
       this.version += 1;
       this.schedulePhaseTimer();
       this.opts.onCommit?.(this, this.version);
       this.broadcast();
     }
+    if (outcome.changed && this.state.phaseSeq !== phaseBefore) this.opts.onPhase?.(this);
+    if (cues.length) this.opts.onCues?.(this, cues, this.state.phaseSeq);
     return outcome;
   }
 
@@ -244,8 +271,12 @@ export class Room {
   }
 
   private stateMessage(viewer: Viewer): string {
-    const msg: ServerMessage = { type: 'state', v: this.version, now: this.clock.now(), view: viewFor(this.state, viewer) };
+    const msg: ServerMessage = { type: 'state', v: this.version, now: this.clock.now(), view: this.viewFor(viewer) };
     return JSON.stringify(msg);
+  }
+
+  viewFor(viewer: Viewer) {
+    return viewFor(this.state, viewer, this.opts.content);
   }
 
   private hasSocket(playerId: string): boolean {
