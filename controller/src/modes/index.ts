@@ -9,6 +9,7 @@ import { phraseBingoPhone } from './phraseBingo.js';
 import { karaokeDuelPhone } from './karaokeDuel.js';
 import { onsenMurderPhone } from './onsenMurder.js';
 import { touristPhone } from './tourist.js';
+import { oekakiPhone } from './oekaki.js';
 import type { PhoneMode } from './types.js';
 
 export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
@@ -22,4 +23,5 @@ export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
   'karaoke-duel': karaokeDuelPhone,
   'onsen-murder': onsenMurderPhone,
   tourist: touristPhone,
+  oekaki: oekakiPhone,
 };
