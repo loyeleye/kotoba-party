@@ -228,6 +228,12 @@ export interface OogiriPrompt {
   exampleAnswer: JpText;
   /** The one grammar pattern this prompt practises. */
   pattern: string;
+  /**
+   * For a blank where a verb goes: how a winning noun becomes a natural sentence with the
+   * same form as the pattern, with ＿＿＿ for the noun (＿＿＿に なりました, "turned into ___").
+   * Without one, a noun winner's natural version is the example answer.
+   */
+  nounBridge?: JpText;
 }
 
 /** Set phrases offered as tiles in the Photo Caption round. */

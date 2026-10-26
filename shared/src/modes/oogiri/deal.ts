@@ -37,6 +37,7 @@ export interface Tile {
   /** Unique within the hand. */
   key: string;
   wordId: string;
+  pos: PackWord['pos'];
   role: 'fit' | 'swerve' | 'callback';
   /** Dictionary form (what the tile face shows). */
   jp: JpText;
@@ -114,13 +115,13 @@ export function versionFor(prompt: OogiriPrompt, level: Level): JpText {
 /** The version the stage shows: N5 first, since most of the room reads it. */
 export const stageVersion = (prompt: OogiriPrompt): JpText => versionFor(prompt, 'n5');
 
-const isVerb = (w: PackWord) => w.pos === 'verb-ru' || w.pos === 'verb-u' || w.pos === 'verb-irregular';
-const isAdj = (w: PackWord) => w.pos === 'adj-i' || w.pos === 'adj-na';
+export const isVerb = (w: Pick<PackWord, 'pos'>) => w.pos === 'verb-ru' || w.pos === 'verb-u' || w.pos === 'verb-irregular';
+export const isAdj = (w: Pick<PackWord, 'pos'>) => w.pos === 'adj-i' || w.pos === 'adj-na';
 
 const stripTail = (jp: JpText, tail: RegExp): JpText => ({ ...jp, text: jp.text.replace(tail, ''), kana: jp.kana.replace(tail, ''), furigana: undefined });
 
 export function makeTile(word: PackWord, role: Tile['role'], key: string, level: Level, random: () => number): Tile {
-  const tile: Tile = { key, wordId: word.id, role, jp: word.jp };
+  const tile: Tile = { key, wordId: word.id, pos: word.pos, role, jp: word.jp };
   const forms = word.forms ?? {};
   if (forms.masu) tile.stem = stripTail(forms.masu, /ます$/);
   if (forms['te-kudasai']) tile.te = stripTail(forms['te-kudasai'], /\s*ください$/);

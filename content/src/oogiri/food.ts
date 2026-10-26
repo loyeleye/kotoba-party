@@ -72,6 +72,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.bucket-pudding", "food.dancing-ebi-fry", "food.choco-curry"],
     exampleAnswer: { text: "ポンさんは ダイエット中です。でも、毎日 バケツプリンを 食べます。", kana: "ポンさんは ダイエットちゅうです。でも、まいにち バケツプリンを たべます。", en: "Pon is on a diet. But every day, he eats a bucket of pudding.", furigana: [["ポンさんは ダイエット", ""], ["中", "ちゅう"], ["です。でも、", ""], ["毎", "まい"], ["日", "にち"], [" バケツプリンを ", ""], ["食", "た"], ["べます。", ""]] },
     pattern: "毎日 + ます-form: the ます form also describes habits.",
+    nounBridge: { text: "＿＿＿を たべます", kana: "＿＿＿を たべます", en: "eats ___" },
   },
   {
     id: "food.oogiri.menu-only",
@@ -111,6 +112,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.dancing-ebi-fry", "food.bucket-pudding", "food.giant-octopus"],
     exampleAnswer: { text: "はじめての デートで、かれは 三時間 歌いました。", kana: "はじめての デートで、かれは さんじかん うたいました。", en: "On our first date, he sang for three hours.", furigana: [["はじめての デートで、かれは ", ""], ["三", "さん"], ["時", "じ"], ["間", "かん"], [" ", ""], ["歌", "うた"], ["いました。", ""]] },
     pattern: "ました: the polite past of a verb.",
+    nounBridge: { text: "＿＿＿に なりました", kana: "＿＿＿に なりました", en: "turned into ___" },
   },
   {
     id: "food.oogiri.studio-bento",
@@ -122,7 +124,7 @@ export const foodPrompts: OogiriPrompt[] = [
     },
     fitTileIds: ["food.mazui", "food.tsumetai", "food.karai", "food.ookii"],
     swerveTileIds: ["food.ghost-ramen", "food.old-bread", "food.giant-octopus"],
-    exampleAnswer: { text: "スタジオの お弁当は いつも 大きな タコです。", kana: "スタジオの おべんとうは いつも おおきな タコです。", en: "The studio's bento is always a giant octopus.", furigana: [["スタジオの お", ""], ["弁当", "べんとう"], ["は いつも ", ""], ["大", "おお"], ["きな タコです。", ""]] },
+    exampleAnswer: { text: "スタジオの お弁当は いつも つめたいです。", kana: "スタジオの おべんとうは いつも つめたいです。", en: "The studio's bento is always cold.", furigana: [["スタジオの お", ""], ["弁当", "べんとう"], ["は いつも つめたいです。", ""]] },
     pattern: "い-adjective + です: describing something politely.",
   },
   {
@@ -151,6 +153,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.bucket-pudding", "food.giant-octopus", "food.cat-chef"],
     exampleAnswer: { text: "たんじょうびに、ほんとうは バケツプリンを 食べたいです。", kana: "たんじょうびに、ほんとうは バケツプリンを たべたいです。", en: "For my birthday, what I really want is to eat a bucket of pudding.", furigana: [["たんじょうびに、ほんとうは バケツプリンを ", ""], ["食", "た"], ["べたいです。", ""]] },
     pattern: "〜たいです: want to do (verb stem + たい).",
+    nounBridge: { text: "＿＿＿に なりたいです", kana: "＿＿＿に なりたいです", en: "become ___" },
   },
   {
     id: "food.oogiri.heat-it-up",
@@ -269,6 +272,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.giant-octopus", "food.ghost-ramen", "food.dancing-ebi-fry"],
     exampleAnswer: { text: "夜の 二時、コンビニの 店員さんが レジで ラーメンを 作りました。", kana: "よるの にじ、コンビニの てんいんさんが レジで ラーメンを つくりました。", en: "At 2 a.m., the konbini clerk made ramen at the register.", furigana: [["夜", "よる"], ["の ", ""], ["二", "に"], ["時", "じ"], ["、コンビニの ", ""], ["店", "てん"], ["員", "いん"], ["さんが レジで ラーメンを ", ""], ["作", "つく"], ["りました。", ""]] },
     pattern: "が marks who did it.",
+    nounBridge: { text: "＿＿＿を くれました", kana: "＿＿＿を くれました", en: "gave me ___" },
   },
   {
     id: "food.oogiri.vending-machine",
@@ -348,6 +352,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.bucket-pudding", "food.natto-ice-cream", "food.giant-octopus"],
     exampleAnswer: { text: "ゆうれいは ごはんを 食べません。でも、毎日 コンビニで おにぎりを 買います。", kana: "ゆうれいは ごはんを たべません。でも、まいにち コンビニで おにぎりを かいます。", en: "Ghosts don't eat meals. But every day they buy onigiri at the konbini.", furigana: [["ゆうれいは ごはんを ", ""], ["食", "た"], ["べません。でも、", ""], ["毎", "まい"], ["日", "にち"], [" コンビニで おにぎりを ", ""], ["買", "か"], ["います。", ""]] },
     pattern: "ます / ません: polite present and its negative.",
+    nounBridge: { text: "＿＿＿を たべます", kana: "＿＿＿を たべます", en: "eat ___" },
   },
   {
     id: "food.oogiri.before-bed",
@@ -361,6 +366,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.giant-octopus", "food.bucket-pudding", "food.singing-onigiri"],
     exampleAnswer: { text: "ポンさんは ねる 前に、いつも 歌う おにぎりと 歌います。", kana: "ポンさんは ねる まえに、いつも うたう おにぎりと うたいます。", en: "Before bed, Pon always sings with a singing onigiri.", furigana: [["ポンさんは ねる ", ""], ["前", "まえ"], ["に、いつも ", ""], ["歌", "うた"], ["う おにぎりと ", ""], ["歌", "うた"], ["います。", ""]] },
     pattern: "V (dictionary form) 前に: before doing V.",
+    nounBridge: { text: "＿＿＿と はなします", kana: "＿＿＿と はなします", en: "talks to ___" },
   },
   {
     id: "food.oogiri.cooking-class",
@@ -414,6 +420,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.ghost-ramen", "food.dancing-ebi-fry", "food.bucket-pudding"],
     exampleAnswer: { text: "ゆうれいの パーティーで、みんな 三時間 ねました。", kana: "ゆうれいの パーティーで、みんな さんじかん ねました。", en: "At the ghost party, everyone slept for three hours.", furigana: [["ゆうれいの パーティーで、みんな ", ""], ["三", "さん"], ["時", "じ"], ["間", "かん"], [" ねました。", ""]] },
     pattern: "で marks where an event happens.",
+    nounBridge: { text: "＿＿＿と おどりました", kana: "＿＿＿と おどりました", en: "danced with ___" },
   },
   {
     id: "food.oogiri.one-star",
@@ -454,6 +461,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.giant-octopus", "food.cat-chef", "food.singing-onigiri"],
     exampleAnswer: { text: "この ラーメン屋さんの ルール：「食べる 前に 歌って ください。」", kana: "この ラーメンやさんの ルール：「たべる まえに うたって ください。」", en: "House rule at this ramen shop: \"Please sing before you eat.\"", furigana: [["この ラーメン", ""], ["屋", "や"], ["さんの ルール：「", ""], ["食", "た"], ["べる ", ""], ["前", "まえ"], ["に ", ""], ["歌", "うた"], ["って ください。」", ""]] },
     pattern: "〜て ください: please do (て-form + ください).",
+    nounBridge: { text: "＿＿＿を たべて ください", kana: "＿＿＿を たべて ください", en: "Please eat ___" },
   },
   {
     id: "food.oogiri.100-yen-sushi",
@@ -467,6 +475,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.giant-octopus", "food.singing-onigiri", "food.cat-chef"],
     exampleAnswer: { text: "この すしは 100円です。でも、歌います。", kana: "この すしは ひゃくえんです。でも、うたいます。", en: "This sushi is 100 yen. But it sings.", furigana: [["この すしは ", ""], ["100円", "ひゃくえん"], ["です。でも、", ""], ["歌", "うた"], ["います。", ""]] },
     pattern: "でも: but (starts a new sentence).",
+    nounBridge: { text: "なかに ＿＿＿が います", kana: "なかに ＿＿＿が います", en: "there's ___ inside" },
   },
   {
     id: "food.oogiri.soy-sauce",
@@ -525,6 +534,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.grandmas-sauce", "food.old-bread", "food.cat-chef"],
     exampleAnswer: { text: "犬：「どうぞ、食べて ください。10,000円です。」", kana: "いぬ：「どうぞ、たべて ください。いちまんえんです。」", en: "Dog: \"Here you go, please eat. That's 10,000 yen.\"", furigana: [["犬", "いぬ"], ["：「どうぞ、", ""], ["食", "た"], ["べて ください。", ""], ["10,000円", "いちまんえん"], ["です。」", ""]] },
     pattern: "〜て ください: please do.",
+    nounBridge: { text: "＿＿＿を たべて ください", kana: "＿＿＿を たべて ください", en: "Please eat ___" },
   },
   {
     id: "food.oogiri.photo-octopus-konbini",
@@ -555,6 +565,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.cat-chef", "food.giant-octopus", "food.dancing-ebi-fry"],
     exampleAnswer: { text: "この 人は 今、プリンと けっこんしたいです。", kana: "この ひとは いま、プリンと けっこんしたいです。", en: "Right now, this man wants to marry the pudding.", furigana: [["この ", ""], ["人", "ひと"], ["は ", ""], ["今", "いま"], ["、プリンと けっこんしたいです。", ""]] },
     pattern: "〜たいです: want to do.",
+    nounBridge: { text: "＿＿＿と けっこんしたいです", kana: "＿＿＿と けっこんしたいです", en: "wants to marry ___" },
   },
   {
     id: "food.oogiri.photo-pon-fridge",
@@ -600,6 +611,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.man-yen-onigiri", "food.singing-onigiri", "food.bucket-pudding"],
     exampleAnswer: { text: "ゆうれい：「すみません、ちょっと 待って ください。おかねが ありません。」", kana: "ゆうれい：「すみません、ちょっと まって ください。おかねが ありません。」", en: "Ghost: \"Sorry, please wait a moment. I have no money.\"", furigana: [["ゆうれい：「すみません、ちょっと ", ""], ["待", "ま"], ["って ください。おかねが ありません。」", ""]] },
     pattern: "〜て ください: please do.",
+    nounBridge: { text: "＿＿＿を あたためて ください", kana: "＿＿＿を あたためて ください", en: "Please heat up ___" },
   },
   {
     id: "food.oogiri.ippon-scariest-food",
@@ -654,6 +666,7 @@ export const foodPrompts: OogiriPrompt[] = [
     swerveTileIds: ["food.bucket-pudding", "food.man-yen-onigiri", "food.giant-octopus"],
     exampleAnswer: { text: "あした せかいが おわります。今日、10,000円の おにぎりを 食べたいです。", kana: "あした せかいが おわります。きょう、いちまんえんの おにぎりを たべたいです。", en: "The world ends tomorrow. Today, I want to eat a 10,000-yen onigiri.", furigana: [["あした せかいが おわります。", ""], ["今日", "きょう"], ["、", ""], ["10,000円", "いちまんえん"], ["の おにぎりを ", ""], ["食", "た"], ["べたいです。", ""]] },
     pattern: "〜たいです: want to do.",
+    nounBridge: { text: "＿＿＿を たべたいです", kana: "＿＿＿を たべたいです", en: "want to eat ___" },
   },
   {
     id: "food.oogiri.ippon-pon-first-dish",

@@ -5,7 +5,8 @@ import type { JpText, OogiriRound, TileForm } from '../../../../content/src/type
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
 import { isUtterance, matchesAccepted, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { cleanText, isObject } from '../mode.js';
-import { FORM_LABELS, type Frame, type Tile } from './deal.js';
+import { FORM_LABELS, isAdj, isVerb, type Frame, type Tile } from './deal.js';
+import type { AnswerShape } from './natural.js';
 
 /**
  * How an answer was given, best first. `memory-*`: in the say-it-first window, before any
@@ -52,6 +53,8 @@ export interface BuiltAnswer {
   formTips: string[];
   /** Free text the player gave (typed or said), for callbacks. */
   freeReading: string;
+  /** What it is made of, for the natural version. */
+  shape: AnswerShape;
 }
 
 export const MAX_TILES_PER_ANSWER = 3;
@@ -132,7 +135,7 @@ export function buildAnswer(move: AnswerMove, hand: readonly Tile[], frames: rea
     const kana = move.said.reading ?? saidText;
     return {
       ok: true,
-      answer: { text: saidText, kana, en: english ? saidText : `“${saidText}”`, style, english, used: [], formTips: [], freeReading: kana },
+      answer: { text: saidText, kana, en: english ? saidText : `“${saidText}”`, style, english, used: [], formTips: [], freeReading: kana, shape: 'free' },
     };
   }
   if (memory) return { ok: false, error: 'say-it-first' };
@@ -205,7 +208,17 @@ export function buildAnswer(move: AnswerMove, hand: readonly Tile[], frames: rea
   else style = typedText ? 'typed' : 'tiles';
 
   const freeReading = [typedKana, move.said ? utteranceReading(move.said) : ''].filter(Boolean).join(' ');
-  return { ok: true, answer: { text, kana, en, style, english, used, formTips, freeReading } };
+  return { ok: true, answer: { text, kana, en, style, english, used, formTips, freeReading, shape: shapeOf(used, !!typedText, !!frame) } };
+}
+
+function shapeOf(used: BuiltAnswer['used'], typed: boolean, frame: boolean): AnswerShape {
+  if (frame) return 'phrase';
+  if (used.length === 0) return 'free';
+  if (used.length > 1 || typed) return 'mixed';
+  const u = used[0]!;
+  if (isVerb(u.tile)) return 'pred';
+  if (isAdj(u.tile)) return u.form && u.form !== 'plain' ? 'pred' : 'adj';
+  return 'noun';
 }
 
 /** True if the said utterance sounds like the answer (used for the encore). */

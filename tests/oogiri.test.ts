@@ -10,6 +10,7 @@ import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js'
 import { buildAnswer } from '../shared/src/modes/oogiri/answer.js';
 import { dealTiles, libraryFor } from '../shared/src/modes/oogiri/deal.js';
 import { FALLBACK_PACK, FALLBACK_PROMPTS } from '../shared/src/modes/oogiri/fallback.js';
+import { exampleFill, naturalSentence, wantsAdjective } from '../shared/src/modes/oogiri/natural.js';
 import { pairings, SAY_FIRST_MS, type OogiriState, type OogiriView } from '../shared/src/modes/oogiri/oogiri.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -523,5 +524,49 @@ describe('romaji for the かな level', () => {
     expect(toRomaji('わたしは ねこが すきです')).toBe('watashi wa neko ga sukidesu');
     expect(toRomaji('ねこの ゲームは たのしい')).toBe('neko no gēmu wa tanoshii');
     expect(toRomaji('こども')).toBe('kodomo');
+  });
+});
+
+describe('the natural version', () => {
+  const prompt = (id: string) => realContent.oogiriPrompts.find((p) => p.id === id)!;
+  const octopus = { text: '大きな タコ', kana: 'おおきな タコ', en: 'a giant octopus', shape: 'noun' as const };
+
+  it('turns a noun in a verb blank into a sentence with the form the tip teaches', () => {
+    // The reviewed line: 「…かれは 大きな タコ。」 under a ました tip.
+    const p = prompt('food.oogiri.first-date');
+    expect(p.pattern).toContain('ました');
+    expect(naturalSentence(p, octopus)).toEqual({
+      text: 'はじめての デートで、かれは 大きな タコに なりました。',
+      kana: 'はじめての デートで、かれは おおきな タコに なりました。',
+      en: 'On our first date, he turned into a giant octopus.',
+    });
+    expect(naturalSentence(p, { text: '歌いました', kana: 'うたいました', en: 'sang', shape: 'pred' })!.text).toBe('はじめての デートで、かれは 歌いました。');
+    // The right sentence in the wrong form for the tip: the model answer stands in.
+    expect(naturalSentence(p, { text: '歌います', kana: 'うたいます', en: 'sing', shape: 'pred' })).toBeNull();
+  });
+
+  it('adds です or でした where the tip teaches it, and だ before a から of reason', () => {
+    expect(naturalSentence(prompt('food.oogiri.date-dinner'), octopus)!.text).toBe('デートの 晩ごはんは 大きな タコでした。');
+    expect(naturalSentence(prompt('food.oogiri.birthday-wish'), { text: 'ねたい', kana: 'ねたい', en: 'sleep', shape: 'pred' })!.text).toBe('たんじょうびに、ほんとうは ねたいです。');
+    expect(naturalSentence(prompt('food.oogiri.late-excuse'), octopus)!.text).toBe('すみません、おくれました。大きな タコだから。');
+  });
+
+  it('keeps a noun in a noun blank, and turns away what does not fit', () => {
+    expect(naturalSentence(prompt('food.oogiri.dog-loves'), octopus)!.text).toBe('うちの 犬は 大きな タコが 大好きです。');
+    // An adjective before が, a noun under an い-adjective tip, several tiles side by side.
+    expect(naturalSentence(prompt('food.oogiri.dog-loves'), { text: 'あつい', kana: 'あつい', en: 'hot', shape: 'adj' })).toBeNull();
+    expect(naturalSentence(prompt('food.oogiri.studio-bento'), octopus)).toBeNull();
+    expect(naturalSentence(prompt('food.oogiri.studio-bento'), { text: 'つめたい', kana: 'つめたい', en: 'cold', shape: 'adj' })!.text).toBe('スタジオの お弁当は いつも つめたいです。');
+    expect(naturalSentence(prompt('food.oogiri.dog-loves'), { ...octopus, shape: 'mixed' })).toBeNull();
+  });
+
+  it('every prompt: the model answer passes its own check, and a noun winner is natural or falls back', () => {
+    for (const p of realContent.oogiriPrompts) {
+      const fill = exampleFill(p);
+      if (fill === null || wantsAdjective(p.pattern)) continue;
+      expect(naturalSentence(p, { text: fill, kana: fill, en: 'x', shape: 'free' }), p.id).not.toBeNull();
+    }
+    // A bridge must always give a sentence (it is only there for nouns).
+    for (const p of realContent.oogiriPrompts.filter((x) => x.nounBridge)) expect(naturalSentence(p, octopus), p.id).not.toBeNull();
   });
 });
