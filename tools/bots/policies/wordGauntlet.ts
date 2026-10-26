@@ -35,7 +35,7 @@ export function wordGauntletPolicy(content: ContentLibrary, opts: WordGauntletPo
       const f = game.fake;
       if (f?.mine) {
         if (view.phase === 'answer' && !f.mine.fake) {
-          out.push({ key: 'fake', move: { kind: 'fake', text: `${FAKE_ENDINGS[(seat + f.index) % FAKE_ENDINGS.length]} (${seat})` }, delayMs: later() });
+          out.push({ key: 'fake', move: { kind: 'fake', text: FAKE_ENDINGS[(seat + f.index) % FAKE_ENDINGS.length]! }, delayMs: later() });
         }
         if (view.phase === 'reveal' && !f.mine.pick && f.options) {
           const options = f.options.filter((o) => o.id !== f.mine!.optionId);
