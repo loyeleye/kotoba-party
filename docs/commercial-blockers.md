@@ -47,7 +47,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
 | 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
-| 22 | Music: recorded tracks (CC0, CC BY 4.0) and original synth tunes | `stage/assets/music/`, `stage/src/music/` | 🟡 | Credit the seven CC BY tracks on a credits screen (`TRACK_CREDITS`); or buy Kevin MacLeod's paid licence to drop his credits |
+| 22 | Music: recorded tracks (CC0, CC BY 4.0) and original synth tunes | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap screen and now-playing line, built 2026-10-26); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits |
 
 ## Details
 
@@ -302,14 +302,29 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Funkorama and Sneaky Snitch (Kevin MacLeod, [incompetech.com](https://incompetech.com/music/royalty-free/licenses/),
   read 2026-10-26: free under Creative Commons with credit, or a paid Standard License with no credit);
   Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY
-  allows commercial use. The credit lines are in `TRACK_CREDITS`; the credits screen isn't built yet
-  (same as the VOICEVOX credits, row 1).
+  allows commercial use, and asks for title, author, source, the licence with a link, and a note of
+  any changes.
+- **How we credit:** the stage names each recorded track, author and licence beside the sound button
+  while it plays, and the recap screen lists every track grouped by author with the licence link and
+  "looped and filtered for the game" (`creditSummary()` in `stage/src/music/tracks.ts`). Full per-track
+  lines with each track's own page are `TRACK_CREDITS`. The VOICEVOX voice credits (row 1) are on the
+  recap screen too. The public build has played these tracks since 2026-10-26, so the credits shipped
+  in the follow-up PR the same day.
+- **MacLeod's paid Standard License (❓):** incompetech points to filmmusic.io for it; that site
+  didn't load when checked on 2026-10-26, so its price and terms are unread. Don't rely on it until
+  someone reads them.
 - **Risks (⚠️, small):** OpenGameArt licences are what the uploader states; there's no proof they wrote
   the track. Holizna and HydroGene publish widely under these licences, so the risk is low. Kevin
-  MacLeod's tracks are used in many games and videos, so players may recognise them. The synth tunes
-  were AI-written with no human composer, so their copyright may be weak (like row 6).
-- **To sell:** build the credits screen with every `TRACK_CREDITS` line (or buy MacLeod's Standard
-  License and keep the CC BY credit for Take a Trip). Any new track gets its own line here.
+  MacLeod's tracks are used in many games and videos, so players may recognise them, and a streamer
+  playing the game could get an automated copyright claim if a third party has wrongly registered one
+  (not checked; a streamer mode that swaps to the synth tunes would avoid it). The synth tunes were
+  AI-written with no human composer, so their copyright may be weak (like row 6).
+- **Provenance:** files downloaded 2026-10-26 from the pages above and re-encoded to MP3 (128 kbps;
+  Determination 160 kbps). The game plays them looped between beat points and, while players speak,
+  filtered; that's the "change" the credit mentions.
+- **To sell:** keep the credits on screen in every build (store page and app credits too, if it ships
+  outside the browser), or buy MacLeod's Standard License once its terms are read and keep the CC BY
+  credit for Take a Trip. Any new track gets its own line here.
 
 ## AI art: non-commercial vs commercial
 

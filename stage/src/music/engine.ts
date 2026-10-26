@@ -14,33 +14,57 @@ interface Levels {
   bass: number;
   low: number;
   high: number;
-  /** Low-pass cutoff, Hz. */
+  /** Low-pass cutoff, Hz (two filters in a row: 24 dB an octave). */
   cutoff: number;
+  /** High-pass cutoff, Hz: under, it trims the boom that phone mics pick up and TV speakers can't play. */
+  floor: number;
   song: number;
+  /** A recording's level: it can't drop its lead, so it goes down further than a synth song. */
+  track: number;
 }
 
 // "under" keeps the low end (bass, kick, taiko) and drops the lead and most of the high drums, then
 // low-passes the lot, so the speech band (about 1–4 kHz) the phone mics need stays clear.
 const MIXES: Record<Mix, Levels> = {
-  full: { lead: 1, comp: 1, bass: 1, low: 1, high: 1, cutoff: 16_000, song: 1 },
-  under: { lead: 0, comp: 0.7, bass: 0.9, low: 0.8, high: 0.15, cutoff: 900, song: 0.7 },
+  full: { lead: 1, comp: 1, bass: 1, low: 1, high: 1, cutoff: 16_000, floor: 20, song: 1, track: 1 },
+  under: { lead: 0, comp: 0.7, bass: 0.9, low: 0.8, high: 0.15, cutoff: 750, floor: 90, song: 0.7, track: 0.35 },
 };
 
-/** Mastered recordings are much louder than the synth's parts. */
-const TRACK_LEVEL = 0.5;
+/** Recordings are normalised to about −16 LUFS (tracks.ts gainDb), which matches the synth at this level. */
+const TRACK_LEVEL = 1;
 
 const LOW_DRUMS: ReadonlySet<Drum> = new Set(['k', 't']);
 
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
-/** A bus whose low-pass and level follow the mix. */
-function mixBus(ctx: BaseAudioContext, dest: AudioNode): { input: BiquadFilterNode; out: GainNode } {
-  const out = ctx.createGain();
-  const input = ctx.createBiquadFilter();
-  input.type = 'lowpass';
-  input.Q.value = 0.7;
-  input.connect(out).connect(dest);
-  return { input, out };
+/** A bus whose filters and level follow the mix: high-pass, then two low-passes, then a gain. */
+class MixBus {
+  readonly input: BiquadFilterNode;
+  readonly out: GainNode;
+  private readonly lows: BiquadFilterNode[];
+
+  constructor(
+    private readonly ctx: BaseAudioContext,
+    dest: AudioNode,
+  ) {
+    const filter = (type: BiquadFilterType) => {
+      const f = ctx.createBiquadFilter();
+      f.type = type;
+      f.Q.value = 0.7;
+      return f;
+    };
+    this.input = filter('highpass');
+    this.lows = [filter('lowpass'), filter('lowpass')];
+    this.out = ctx.createGain();
+    this.input.connect(this.lows[0]!).connect(this.lows[1]!).connect(this.out).connect(dest);
+  }
+
+  /** Moves the filters to a mix; cutoffs sweep exponentially so the change sounds even. */
+  filters(mix: Mix, seconds: number): void {
+    const lv = MIXES[mix];
+    sweep(this.ctx, this.input.frequency, lv.floor, seconds);
+    for (const f of this.lows) sweep(this.ctx, f.frequency, lv.cutoff, seconds);
+  }
 }
 
 function ramp(ctx: BaseAudioContext, param: AudioParam, value: number, seconds: number): void {
@@ -51,13 +75,20 @@ function ramp(ctx: BaseAudioContext, param: AudioParam, value: number, seconds: 
   else param.setValueAtTime(value, now);
 }
 
+function sweep(ctx: BaseAudioContext, param: AudioParam, value: number, seconds: number): void {
+  const now = ctx.currentTime;
+  param.cancelScheduledValues(now);
+  param.setValueAtTime(Math.max(1, param.value), now);
+  if (seconds > 0) param.exponentialRampToValueAtTime(value, now + seconds);
+  else param.setValueAtTime(value, now);
+}
+
 /** One song playing (or ready to play) into `out`, with its own part buses so the mix can move. */
 export class SongVoice {
   readonly plan: Plan;
   readonly sixteenth: number;
   private readonly song: Song;
-  private readonly out: GainNode;
-  private readonly filter: BiquadFilterNode;
+  private readonly bus: MixBus;
   private readonly buses: Record<'lead' | 'comp' | 'bass' | 'low' | 'high', GainNode>;
 
   constructor(
@@ -69,12 +100,10 @@ export class SongVoice {
     this.song = song;
     this.plan = compile(song);
     this.sixteenth = 60 / song.bpm / 4;
-    const { input, out } = mixBus(ctx, dest);
-    this.filter = input;
-    this.out = out;
+    this.bus = new MixBus(ctx, dest);
     const bus = () => {
       const g = ctx.createGain();
-      g.connect(this.filter);
+      g.connect(this.bus.input);
       return g;
     };
     this.buses = { lead: bus(), comp: bus(), bass: bus(), low: bus(), high: bus() };
@@ -94,14 +123,19 @@ export class SongVoice {
     to(this.buses.bass.gain, lv.bass);
     to(this.buses.low.gain, lv.low);
     to(this.buses.high.gain, lv.high);
-    to(this.filter.frequency, lv.cutoff);
-    to(this.out.gain, lv.song);
+    this.bus.filters(mix, seconds);
+    to(this.bus.out.gain, lv.song);
   }
 
   /** Fades out and lets go of the nodes. */
   fadeOut(seconds = 0.6): void {
-    ramp(this.ctx, this.out.gain, 0, seconds);
-    setTimeout(() => this.out.disconnect(), (seconds + 2) * 1000);
+    ramp(this.ctx, this.bus.out.gain, 0, seconds);
+    setTimeout(() => this.bus.out.disconnect(), (seconds + 2) * 1000);
+  }
+
+  /** Lets scheduled notes ring out (a jingle's last bar), then lets go of the nodes. */
+  release(): void {
+    setTimeout(() => this.bus.out.disconnect(), (this.barSeconds + 2) * 1000);
   }
 
   /** Schedules bar `bar` (0-based within the song) to start at `at` (context seconds). */
@@ -128,67 +162,102 @@ export class SongVoice {
   }
 }
 
+/** Decoded tracks kept in memory. A 3-minute track decodes to about 60 MB, so only the newest few stay. */
+const KEEP_DECODED = 3;
 const buffers = new Map<string, Promise<AudioBuffer>>();
-function load(ctx: BaseAudioContext, url: string): Promise<AudioBuffer> {
+
+/** Fetches and decodes a track, or returns the one already decoded. */
+export function load(ctx: BaseAudioContext, url: string): Promise<AudioBuffer> {
   let p = buffers.get(url);
-  if (!p) {
+  if (p) {
+    // Most recently used last.
+    buffers.delete(url);
+  } else {
     p = fetch(url)
       .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${url}: ${r.status}`))))
       .then((data) => ctx.decodeAudioData(data));
     p.catch(() => buffers.delete(url));
-    buffers.set(url, p);
   }
+  buffers.set(url, p);
+  // Voices that are playing hold their own buffer, so dropping it here only stops caching it.
+  while (buffers.size > KEEP_DECODED) buffers.delete(buffers.keys().next().value!);
   return p;
 }
 
+export interface TrackOptions {
+  url: string;
+  /** Loop between these points (seconds); the whole file if missing. */
+  loop?: [number, number];
+  gainDb?: number;
+  /** Context time to start at; as soon as it's loaded if missing or past. */
+  at?: number;
+}
+
 /**
- * A recorded track looping into `out`. It can't drop its lead like a synth song, so "under" only
- * low-passes it and turns it down. Starts once the file has loaded.
+ * A recorded track looping into `out`. It can't drop its lead like a synth song, so "under"
+ * filters it harder and turns it down further. Starts once the file has loaded, fading in.
  */
 export class TrackVoice {
-  private readonly filter: BiquadFilterNode;
-  private readonly out: GainNode;
+  /** True once playing, false if the file couldn't be loaded or the voice was stopped first. */
+  readonly ready: Promise<boolean>;
+  private readonly bus: MixBus;
+  private readonly level: GainNode;
   private src: AudioBufferSourceNode | null = null;
   private stopped = false;
+  private mix: Mix;
 
   constructor(
     private readonly ctx: BaseAudioContext,
-    url: string,
+    opts: TrackOptions,
     dest: AudioNode,
     mix: Mix = 'full',
   ) {
-    const { input, out } = mixBus(ctx, dest);
-    this.filter = input;
-    this.out = out;
-    this.setMix(mix, 0);
-    load(ctx, url).then(
+    this.mix = mix;
+    this.bus = new MixBus(ctx, dest);
+    this.level = ctx.createGain();
+    this.level.gain.value = 10 ** ((opts.gainDb ?? 0) / 20);
+    this.level.connect(this.bus.input);
+    this.bus.filters(mix, 0);
+    this.bus.out.gain.value = 0;
+    this.ready = load(ctx, opts.url).then(
       (buffer) => {
-        if (this.stopped) return;
-        this.src = ctx.createBufferSource();
-        this.src.buffer = buffer;
-        this.src.loop = true;
-        this.src.connect(this.filter);
-        this.src.start(ctx.currentTime + 0.05);
+        if (this.stopped) return false;
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+        src.loop = true;
+        if (opts.loop) [src.loopStart, src.loopEnd] = opts.loop;
+        src.connect(this.level);
+        const at = Math.max(ctx.currentTime + 0.05, opts.at ?? 0);
+        src.start(at);
+        this.src = src;
+        // Fade in so a late-loading track doesn't cut in over the host.
+        const g = this.bus.out.gain;
+        g.setValueAtTime(0, at);
+        g.linearRampToValueAtTime(TRACK_LEVEL * MIXES[this.mix].track, at + 0.4);
+        return true;
       },
-      () => {
-        // No file, no music: the round carries on in silence.
-      },
+      () => false,
     );
   }
 
   setMix(mix: Mix, seconds = 0.8): void {
-    ramp(this.ctx, this.filter.frequency, MIXES[mix].cutoff, seconds);
-    ramp(this.ctx, this.out.gain, TRACK_LEVEL * (mix === 'full' ? 1 : 0.6), seconds);
+    this.mix = mix;
+    this.bus.filters(mix, seconds);
+    if (this.src) ramp(this.ctx, this.bus.out.gain, TRACK_LEVEL * MIXES[mix].track, seconds);
   }
 
-  fadeOut(seconds = 0.6): void {
+  fadeOut(seconds = 1.2): void {
     this.stopped = true;
-    ramp(this.ctx, this.out.gain, 0, seconds);
+    const g = this.bus.out.gain;
+    const now = this.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.setTargetAtTime(0, now, seconds / 4);
     const src = this.src;
     setTimeout(() => {
       src?.stop();
-      this.out.disconnect();
-    }, (seconds + 0.2) * 1000);
+      this.bus.out.disconnect();
+    }, (seconds + 0.3) * 1000);
   }
 }
 

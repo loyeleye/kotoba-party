@@ -57,6 +57,7 @@ const MIME: Record<string, string> = {
   '.json': 'application/json',
   '.map': 'application/json',
   '.png': 'image/png',
+  '.mp3': 'audio/mpeg',
 };
 
 export function createKotobaServer(config: ServerConfig): KotobaServer {
@@ -298,7 +299,9 @@ async function serveStatic(res: ServerResponse, root: string, path: string): Pro
   if (!file.startsWith(base)) return send(res, 404, { error: 'not-found' });
   try {
     const data = await readFile(file);
-    res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-cache' });
+    // Music files never change under the same name, and they're big: let the browser keep them.
+    const cache = extname(file) === '.mp3' ? 'public, max-age=604800' : 'no-cache';
+    res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', 'cache-control': cache });
     res.end(data);
   } catch {
     send(res, 404, { error: 'not-found' });
