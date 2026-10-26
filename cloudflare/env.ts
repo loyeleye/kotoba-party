@@ -13,6 +13,7 @@ export interface Env {
   READER_TOKEN?: string;
   /** Secret. Live host lines and the Ink Storm coach; without it the host uses the written line bank. */
   ANTHROPIC_API_KEY?: string;
+  KOTOBA_ANTHROPIC_API_KEY?: string;
   KOTOBA_HOST_MODEL?: string;
   KOTOBA_JUDGE_MODEL?: string;
 }

@@ -40,7 +40,8 @@ npm start                 # builds the pages, serves on http://localhost:3000
 - Watch bots play on their own: `npm run bots -- --mode oogiri --bots 5`, then open the stage it
   prints (any mode id works; without `--mode` bots play the debug round).
 
-Optional keys, from the environment only (never commit them): `ANTHROPIC_API_KEY` for live host
+Optional keys, from the environment only (never commit them): `ANTHROPIC_API_KEY` (or `KOTOBA_ANTHROPIC_API_KEY`, which
+wins when both are set and works in Claude Code cloud sessions) for live host
 lines, `VOICEVOX_URL` for host voices, and `GEMINI_API_KEY` / `PIXELLAB_API_KEY` for art
 generation (see [docs/graphics.md](docs/graphics.md)). Everything runs without them.
 

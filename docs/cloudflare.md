@@ -27,7 +27,7 @@ Routes › Edit and Zone › DNS › Edit if you add a custom domain).
 
 | Setting | How | What it does |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | `npx wrangler secret put ANTHROPIC_API_KEY` | Live host lines and the Ink Storm coach. Without it the host uses the written line bank. |
+| `ANTHROPIC_API_KEY` | `npx wrangler secret put ANTHROPIC_API_KEY` | Live host lines and the Ink Storm coach. Without it the host uses the written line bank. `KOTOBA_ANTHROPIC_API_KEY` works too. |
 | `KOTOBA_HOST_MODEL`, `KOTOBA_JUDGE_MODEL` | `vars` in `wrangler.jsonc` | Override the Claude model, as on Node. |
 | `VOICEVOX_URL` | `vars` in `wrangler.jsonc` | A VOICEVOX engine reachable from the internet, for host voices. Without it lines show as subtitles. |
 | `READER_URL`, `READER_TOKEN` | `vars` for the URL, `wrangler secret put READER_TOKEN` | The reader service for kanji answers (below). Without it answers are compared as written. |
