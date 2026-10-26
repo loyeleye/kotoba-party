@@ -4,7 +4,8 @@ Every call Claude made without asking goes here, so Ladi can review them in one 
 Each entry says what was decided, why, and what would change it. Mark an entry **OK** to accept
 it, or write your answer under it and the next build pass will act on it.
 
-Sections: Start here, Phase 0 (multiplayer), Mode engine (v1), Modes, Content, AI and voice.
+Sections: Start here, Phase 0 (multiplayer), Mode engine (v1), Modes, Content, AI and voice,
+Hosting.
 Each mode's full list of decisions (numbered per mode) lives in its own doc under `docs/modes/`.
 
 ## Start here (the questions that change the most)
@@ -62,8 +63,9 @@ If you only have ten minutes, these are the answers that would change the build 
     score 6 s. Placeholders until Phase 1 pacing work (target: Oogiri Night under 18 minutes).
 15. **QR join URL:** uses `PUBLIC_URL` when set; on localhost it swaps in the machine's LAN IP so
     a phone on the same Wi-Fi can scan it.
-16. **Hosting is undecided.** The server is one Node process with static pages, so Fly.io,
-    Render or a small VM all work. Which do you want, and on what domain?
+16. **Hosting: Cloudflare** (Ladi, Oct 26). The Node server stays for LAN play and tests; the
+    always-on version is a Cloudflare Worker with one Durable Object per room. See ADR 0003 and
+    the Hosting section below. Which domain, if any?
 17. **Phase 0 debug prompts** (`content/debug/prompts.json`) have Japanese subtitles that no
     fluent speaker has checked. They are throwaway and will be replaced by Phase 1 packs.
 
@@ -315,3 +317,30 @@ Host voice pipeline and typed-answer judge (`server/ai/`, see its README).
 18. **Wiring left to the server thread:** a `GET /audio/:id` route serving `voice.audio(id)`,
     calling `prepare()` when an answer locks in, calling `ready(remaining ms)` at the reveal,
     `warmUp()` at startup, and showing the voice credits.
+
+## Hosting
+
+Decisions for the Cloudflare version ([ADR 0003](decisions/0003-cloudflare-workers-durable-objects.md),
+[docs/cloudflare.md](cloudflare.md)).
+
+- **H1. One Worker with static assets, not Cloudflare Pages.** The pages and the API share one
+  deploy and one origin, so there is no CORS and no second project to keep in step. Pages would
+  only add a separate preview URL per branch.
+- **H2. Room state lives only in memory.** A deploy, or every device in a room dropping at
+  once, can end a game. Saving snapshots to Durable Object storage is the fix if that happens
+  in real play. Is losing a room on deploy OK for now?
+- **H3. Kanji readings need a separate reader service** (`npm run reader`), because the
+  dictionary needs about 290 MB and a Worker has 128 MB. Without it, a spoken 三百円 doesn't
+  match さんびゃくえん in Last Train and similar checks. Where should it run: your computer
+  through a tunnel when you play, or a small always-on VM next to VOICEVOX?
+- **H4. No ping-based dead-phone detection on Cloudflare.** Workers can't send WebSocket pings,
+  so a phone that vanishes without closing is noticed later than on Node (edge timeout instead
+  of 20 s). A small client heartbeat would fix it; not added yet to keep ADR 0002's "clients
+  never send" rule.
+- **H5. Bank lines aren't pre-voiced on Cloudflare.** The Node server renders every bank line
+  through VOICEVOX at start-up; per room that would repeat the work, so fallback lines are
+  subtitles only there. LLM lines are still voiced when `VOICEVOX_URL` is set.
+- **H6. No room cap on Cloudflare.** The Node server stops at 500 rooms; on Cloudflare each room
+  is its own object, and the per-game LLM budget still caps Claude spend per game. Anyone with
+  the link can open rooms, so a public link could be used to run up the Claude bill a game at a
+  time. Add a simple passcode for creating rooms?

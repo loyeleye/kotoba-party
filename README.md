@@ -46,6 +46,15 @@ generation (see [docs/graphics.md](docs/graphics.md)). Everything runs without t
 
 Set `PUBLIC_URL` when deploying so the QR code points at the public address.
 
+### On Cloudflare (always on)
+
+```sh
+npm run cf:deploy         # needs a Cloudflare account; see docs/cloudflare.md
+```
+
+Same game, hosted as a Worker with one Durable Object per room. Settings, the optional reader
+service for kanji answers, and custom domains: [docs/cloudflare.md](docs/cloudflare.md).
+
 ## Develop
 
 ```sh
@@ -59,6 +68,7 @@ npm run dev               # server restarts on change (rebuild pages with npm ru
 | Folder | What's in it |
 | --- | --- |
 | `server/` | Node HTTP + WebSocket server; one in-memory `Room` per game |
+| `cloudflare/` | The same server as a Cloudflare Worker, one Durable Object per room |
 | `stage/` | The shared-screen page; one renderer per mode in `stage/src/modes/` |
 | `controller/` | The phone page; one screen set per mode in `controller/src/modes/` |
 | `shared/` | Protocol types, the room machine, the modes' pure rules (`shared/src/modes/`), Japanese helpers, the client |
@@ -68,5 +78,6 @@ npm run dev               # server restarts on change (rebuild pages with npm ru
 | `tests/` | Rules, reconnect and gate tests, and a full-server bot game per mode |
 
 Decisions: [ADR 0001](docs/decisions/0001-authoritative-server-thin-clients.md),
-[ADR 0002](docs/decisions/0002-websocket-push-http-commands.md). Questions waiting on Ladi:
+[ADR 0002](docs/decisions/0002-websocket-push-http-commands.md),
+[ADR 0003](docs/decisions/0003-cloudflare-workers-durable-objects.md). Questions waiting on Ladi:
 [docs/open-questions.md](docs/open-questions.md).
