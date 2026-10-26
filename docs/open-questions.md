@@ -25,6 +25,9 @@ If you only have ten minutes, these are the answers that would change the build 
 - **Last Train:** ghosts earn 50% points. Too generous? ([last-train.md](modes/last-train.md#open-questions))
 - **Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
   player. Is it time to add accounts or device-local saves? ([kana-raid.md](modes/kana-raid.md#open-questions))
+- **Ink Storm (kana drawing):** the drawing pad has never been tried with a thumb on a real
+  small phone, and the pass thresholds were tuned on synthetic handwriting. Should drawings show
+  on the TV with the player's name? ([kana-raid.md](modes/kana-raid.md#open-questions))
 - **Photo Caption art (C2)** and **voice casting (C3).**
 
 ## Phase 0 (multiplayer)
