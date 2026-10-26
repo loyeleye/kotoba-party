@@ -9,6 +9,8 @@
 // Animations (model "animate-with-text-v3") come out as one horizontal sprite sheet: the shipped
 // sprite in `source` is the first frame, every frame is remapped to that sprite's colours (no
 // shimmer), and the API's closing frame is dropped so a loop or a reaction ends back on frame 0.
+// An entry with a `polish` block writes its raw sheet to `polish.from` instead; run
+// tools/art/polish.ts after it to make the shipped sheet.
 //
 // All shipped art is PixelLab pixel art. The Gemini path is kept for drafting source images that
 // PixelLab's image-to-pixelart then converts (see `source` in the manifest).
@@ -22,7 +24,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync }
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
-type Generator = 'gemini' | 'pixellab';
+/** 'polish': nothing to call; tools/art/polish.ts makes it from shipped art (lip-sync mouths). */
+type Generator = 'gemini' | 'pixellab' | 'polish';
 
 interface Post {
   /** ImageMagick geometry, e.g. "512x512". Smooth (Lanczos) resize; never used on pixel art. */
@@ -52,6 +55,8 @@ interface Asset {
   source?: string;
   params?: Record<string, unknown>;
   post?: Post;
+  /** Clean-up for an animation sheet, done by tools/art/polish.ts from the raw sheet at `from`. */
+  polish?: { from: string };
 }
 
 interface Manifest {
@@ -248,12 +253,14 @@ async function main(): Promise<void> {
   const filters = argv.filter((a) => !a.startsWith('--') && !valued.has(a));
 
   const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8')) as Manifest;
-  const todo = manifest.assets.filter((a) => filters.length === 0 || filters.some((f) => a.path.includes(f)));
+  const todo = manifest.assets.filter((a) => a.generator !== 'polish' && (filters.length === 0 || filters.some((f) => a.path.includes(f))));
   if (todo.length === 0) throw new Error(`No manifest entries match: ${filters.join(', ')}`);
 
   let failed = 0;
   for (const asset of todo) {
-    const outFile = outDir ? join(resolve(outDir), asset.path) : join(ROOT, asset.path);
+    // A polished animation's raw sheet goes to its polish.from; tools/art/polish.ts makes the shipped one.
+    const target = asset.polish?.from ?? asset.path;
+    const outFile = outDir ? join(resolve(outDir), target) : join(ROOT, target);
     if (dryRun) {
       console.log(`[dry-run] ${asset.generator}/${asset.model} -> ${outFile}`);
       continue;

@@ -45,6 +45,8 @@ export interface HostSay {
   kana: string;
   en: string;
   audioUrl?: string;
+  /** Lip sync for the audio, from VOICEVOX's timing: [shape, ms] in order (0 closed, 1 half, 2 wide). */
+  mouth?: [0 | 1 | 2, number][];
   /** How the host reacts as the line lands: the stage plays that animation once, then idles. */
   mood?: HostMood;
   /** The phase this line belongs to; a line from an earlier phase is not shown. */

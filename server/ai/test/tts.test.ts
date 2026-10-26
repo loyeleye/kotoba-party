@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AudioStore, VoicevoxTts, wavMs } from '../tts.js';
+import { AudioStore, VoicevoxTts, mouthTrack, wavMs } from '../tts.js';
 
 const speakers = [
   { name: '玄野武宏', styles: [{ name: 'ノーマル', id: 11 }, { name: '喜び', id: 39 }] },
@@ -77,5 +77,30 @@ describe.skipIf(!live)('VOICEVOX engine (live)', () => {
       expect(a.bytes.length).toBeGreaterThan(10_000);
       expect(a.ms).toBeGreaterThan(300);
     }
+  });
+});
+
+describe('lip sync from VOICEVOX timing', () => {
+  it('opens wide for あ and お, half for い, う and え, and closes for ん, pauses and lips', () => {
+    // ぽん、こんにちは at double speed: every length halves.
+    const query = {
+      speedScale: 2,
+      prePhonemeLength: 0.1,
+      postPhonemeLength: 0.2,
+      accent_phrases: [
+        { moras: [{ consonant: 'p', consonant_length: 0.06, vowel: 'o', vowel_length: 0.1 }, { vowel: 'N', vowel_length: 0.08 }], pause_mora: { vowel: 'pau', vowel_length: 0.2 } },
+        { moras: [{ consonant: 'k', consonant_length: 0.04, vowel: 'o', vowel_length: 0.1 }, { vowel: 'N', vowel_length: 0.06 }, { consonant: 'n', consonant_length: 0.04, vowel: 'i', vowel_length: 0.08 }] },
+      ],
+    };
+    expect(mouthTrack(query)).toEqual([
+      [0, 80], // pre-phoneme + p
+      [2, 50], // o
+      [0, 140], // ん + pause
+      [1, 20], // k
+      [2, 50], // o
+      [0, 30], // ん
+      [1, 60], // n + i
+      [0, 100], // post-phoneme
+    ]);
   });
 });

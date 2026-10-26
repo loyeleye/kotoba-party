@@ -75,8 +75,8 @@
 /* Caught: the hit sheet plays once and ends empty (kanaRaid.ts); the kana tag fades with it. */
 .raid-yokai.defeated .raid-tag, .raid-yokai.defeated .raid-hp, .raid-yokai.defeated .raid-leader { animation: raid-fade-out 450ms steps(3, end) forwards; }
 .raid-yokai.defeated .raid-yokai-inner { animation: none; }
-/* Some sheets end on a burst rather than a puff: the last two frames fade, so nothing pops off. */
-.raid-body > .sprite.poof, .raid-boss-art.sheet > .sprite.poof { animation: raid-fade-out 200ms steps(2, end) calc(var(--ms) * 0.78) forwards; }
+/* The boss's sheet ends on a dust cloud rather than nothing: its last two frames fade out. */
+.raid-boss-art.sheet > .sprite.poof { animation: raid-fade-out 200ms steps(2, end) calc(var(--ms) * 0.78) forwards; }
 /* Without the sheet, the still sprite fades up and out instead. */
 .raid-yokai.defeated.no-sheet .raid-yokai-inner { animation: raid-poof 900ms steps(6, end) forwards; }
 .raid-burst { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); font-size: 120px; color: var(--warn); pointer-events: none; animation: raid-burst 900ms ease-out forwards; }

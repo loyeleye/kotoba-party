@@ -1491,6 +1491,10 @@
         "frame_count": 8,
         "drift_threshold": 0,
         "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/pon-idle.png",
+        "steady": 24
       }
     },
     {
@@ -1498,12 +1502,16 @@
       "what": "Host animation: Pon happy reaction (correct answer, big laugh), 8 frames, ends on the idle pose",
       "generator": "pixellab",
       "model": "animate-with-text-v3",
-      "prompt": "laughs hard: leans back, belly shakes, eyes squeeze shut, then settles back into the starting pose",
+      "prompt": "laughs: eyes squeeze shut and the mouth opens in a big laugh, shoulders bounce once, then settles back into the starting pose; the belly keeps the same colours and shading in every frame",
       "source": "stage/assets/hosts/pon.png",
       "params": {
         "frame_count": 8,
         "drift_threshold": 0,
-        "seed": 11
+        "seed": 33
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/pon-cheer.png",
+        "steady": 24
       }
     },
     {
@@ -1517,6 +1525,10 @@
         "frame_count": 8,
         "drift_threshold": 0,
         "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/pon-oops.png",
+        "steady": 24
       }
     },
     {
@@ -1530,6 +1542,10 @@
         "frame_count": 8,
         "drift_threshold": 0,
         "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/chochin-idle.png",
+        "steady": 24
       }
     },
     {
@@ -1537,12 +1553,16 @@
       "what": "Host animation: Chōchin-san happy reaction (correct answer, big laugh), 8 frames, ends on the idle pose",
       "generator": "pixellab",
       "model": "animate-with-text-v3",
-      "prompt": "cheers: bounces up happily, inner glow brightens, gloved hands raised, then settles back into the starting pose",
+      "prompt": "cheers: bounces up happily with gloved hands raised and a big open smile, then settles back into the starting pose; the paper keeps the same colours in every frame, no glow",
       "source": "stage/assets/hosts/chochin.png",
       "params": {
         "frame_count": 8,
         "drift_threshold": 0,
-        "seed": 11
+        "seed": 33
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/chochin-cheer.png",
+        "steady": 24
       }
     },
     {
@@ -1550,12 +1570,16 @@
       "what": "Host animation: Chōchin-san oops reaction (miss, penalty), 8 frames, ends on the idle pose",
       "generator": "pixellab",
       "model": "animate-with-text-v3",
-      "prompt": "startled: jumps a little, the glow dims, eyes go wide, a sweat drop appears, then recovers into the starting pose",
+      "prompt": "startled: jumps a little, eyes go wide, a sweat drop appears, then recovers into the starting pose; the paper and eyes keep the same colours in every frame, no glow",
       "source": "stage/assets/hosts/chochin.png",
       "params": {
         "frame_count": 8,
         "drift_threshold": 0,
-        "seed": 11
+        "seed": 33
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/chochin-oops.png",
+        "steady": 24
       }
     },
     {
@@ -1569,6 +1593,10 @@
         "frame_count": 8,
         "drift_threshold": 0,
         "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/fude-idle.png",
+        "steady": 24
       }
     },
     {
@@ -1582,6 +1610,10 @@
         "frame_count": 8,
         "drift_threshold": 0,
         "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/fude-cheer.png",
+        "steady": 24
       }
     },
     {
@@ -1595,6 +1627,10 @@
         "frame_count": 8,
         "drift_threshold": 0,
         "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/fude-oops.png",
+        "steady": 24
       }
     },
     {
@@ -1609,6 +1645,17 @@
         "drift_threshold": 0,
         "loop": false,
         "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/yokai-blob-hit.png",
+        "steady": 24,
+        "frames": [
+          0,
+          1,
+          3,
+          4
+        ],
+        "poof": "stage/assets/fx/poof.png"
       }
     },
     {
@@ -1623,6 +1670,17 @@
         "drift_threshold": 0,
         "loop": false,
         "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/yokai-lantern-hit.png",
+        "steady": 24,
+        "frames": [
+          0,
+          3,
+          4,
+          5
+        ],
+        "poof": "stage/assets/fx/poof.png"
       }
     },
     {
@@ -1637,6 +1695,17 @@
         "drift_threshold": 0,
         "loop": false,
         "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/yokai-umbrella-hit.png",
+        "steady": 24,
+        "frames": [
+          0,
+          1,
+          3,
+          5
+        ],
+        "poof": "stage/assets/fx/poof.png"
       }
     },
     {
@@ -1651,6 +1720,17 @@
         "drift_threshold": 0,
         "loop": false,
         "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/yokai-scroll-hit.png",
+        "steady": 24,
+        "frames": [
+          0,
+          1,
+          3,
+          4
+        ],
+        "poof": "stage/assets/fx/poof.png"
       }
     },
     {
@@ -1665,6 +1745,86 @@
         "drift_threshold": 0,
         "loop": false,
         "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/yokai-boss-defeat.png",
+        "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/pon-talk.png",
+      "what": "Host lip sync: Pon's mouth shapes (closed, half open, wide open) for VOICEVOX timing, drawn by hand from the portrait",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/hosts/pon.png",
+        "mouth": [
+          63,
+          43,
+          16,
+          9
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/anim/chochin-talk.png",
+      "what": "Host lip sync: Chōchin-san's mouth shapes (closed, half open, wide open) for VOICEVOX timing, drawn by hand from the portrait",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/hosts/chochin.png",
+        "mouth": [
+          51,
+          64,
+          15,
+          8
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/anim/fude-talk.png",
+      "what": "Host lip sync: Fude's mouth shapes (closed, half open, wide open) for VOICEVOX timing, drawn by hand from the portrait",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/hosts/fude.png",
+        "mouth": [
+          56,
+          64,
+          17,
+          15,
+          "bottom"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/fx/poof-still.png",
+      "what": "Smoke puff for a caught yōkai (source for the poof animation)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "a single round puff of white cartoon smoke made of four or five soft round clouds, pale lavender shading, a few tiny white sparkles around it, centred, filling half the frame, pixel art game effect sprite, no text",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/fx/poof.png",
+      "what": "Poof: the smoke puff swells and breaks into wisps that fade (appended to every yōkai hit)",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "the smoke puff swells, then breaks apart into small wisps that drift outward and fade away completely, leaving nothing",
+      "source": "stage/assets/fx/poof-still.png",
+      "params": {
+        "frame_count": 6,
+        "drift_threshold": 0,
+        "loop": false,
+        "seed": 11
       }
     }
   ]

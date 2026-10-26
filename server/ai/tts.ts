@@ -22,6 +22,50 @@ export interface Audio {
   bytes: Uint8Array;
   /** Rough length, for pacing the reveal. */
   ms?: number;
+  /** Lip sync: mouth shapes in order, each [shape, ms]. 0 is closed, 1 half open, 2 wide open. */
+  mouth?: Mouth;
+}
+
+export type Mouth = [0 | 1 | 2, number][];
+
+interface VoicevoxMora {
+  consonant?: string | null;
+  consonant_length?: number | null;
+  vowel: string;
+  vowel_length: number;
+}
+interface VoicevoxQuery {
+  accent_phrases?: { moras: VoicevoxMora[]; pause_mora?: VoicevoxMora | null }[];
+  speedScale?: number;
+  prePhonemeLength?: number;
+  postPhonemeLength?: number;
+}
+
+/**
+ * The mouth track for a VOICEVOX query, from the length of every consonant and vowel it will speak:
+ * あ and お open wide, い, う and え half, ん, っ and pauses close. Lips close for p, b and m.
+ */
+export function mouthTrack(query: VoicevoxQuery): Mouth {
+  const speed = query.speedScale || 1;
+  const ms = (s: number | null | undefined) => Math.round(((s ?? 0) * 1000) / speed);
+  const track: Mouth = [];
+  const push = (shape: 0 | 1 | 2, len: number) => {
+    if (len <= 0) return;
+    const last = track.at(-1);
+    if (last && last[0] === shape) last[1] += len;
+    else track.push([shape, len]);
+  };
+  const vowel = (v: string): 0 | 1 | 2 => (v === 'a' || v === 'o' ? 2 : v === 'i' || v === 'u' || v === 'e' ? 1 : 0);
+  push(0, ms(query.prePhonemeLength));
+  for (const phrase of query.accent_phrases ?? []) {
+    for (const m of phrase.moras) {
+      if (m.consonant) push(/^[pbm]/.test(m.consonant) ? 0 : 1, ms(m.consonant_length));
+      push(vowel(m.vowel.toLowerCase()), ms(m.vowel_length));
+    }
+    if (phrase.pause_mora) push(0, ms(phrase.pause_mora.vowel_length));
+  }
+  push(0, ms(query.postPhonemeLength));
+  return track;
 }
 
 export interface TtsEngine {
@@ -128,7 +172,7 @@ export class VoicevoxTts implements TtsEngine {
       signal: req.signal,
     });
     if (!q.ok) throw new Error(`VOICEVOX /audio_query: HTTP ${q.status}`);
-    const query = (await q.json()) as Record<string, unknown>;
+    const query = (await q.json()) as Record<string, unknown> & VoicevoxQuery;
     Object.assign(query, {
       speedScale: cfg.speedScale,
       pitchScale: cfg.pitchScale,
@@ -147,7 +191,7 @@ export class VoicevoxTts implements TtsEngine {
     if (!s.ok) throw new Error(`VOICEVOX /synthesis: HTTP ${s.status}`);
     const bytes = new Uint8Array(await s.arrayBuffer());
     this.log.info('tts', { host: req.host, chars: req.kana.length, bytes: bytes.length });
-    return { id: audioId(this.name, req.host, req.kana, req.tier), mime: 'audio/wav', bytes, ms: wavMs(bytes) };
+    return { id: audioId(this.name, req.host, req.kana, req.tier), mime: 'audio/wav', bytes, ms: wavMs(bytes), mouth: mouthTrack(query) };
   }
 }
 

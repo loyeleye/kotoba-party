@@ -14,7 +14,7 @@ import { hasKanji, isSpeakableKana, normalizeKana, toHiragana } from './kana.js'
 import { LineBank, STARTER_LINES, type Slots } from './lineBank.js';
 import { LlmBudget, LlmUnavailable, type LlmClient } from './llm.js';
 import { defaultModerator, type Moderator } from './moderation.js';
-import { AudioStore, audioId, type Audio, type TtsEngine } from './tts.js';
+import { AudioStore, audioId, type Audio, type Mouth, type TtsEngine } from './tts.js';
 import {
   silentLogger,
   systemClock,
@@ -54,7 +54,7 @@ export interface VoicedLine extends JpText {
   tier?: ReactionTier;
   source: 'llm' | 'bank';
   /** Absent when the TTS is off or the bank line's audio isn't rendered yet: the stage shows subtitles only. */
-  audio?: { id: string; mime: string; ms?: number };
+  audio?: { id: string; mime: string; ms?: number; mouth?: Mouth };
 }
 
 export interface PendingLine {
@@ -209,7 +209,7 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
     return r;
   };
 
-  const audioRef = (a: Audio) => ({ id: a.id, mime: a.mime, ms: a.ms });
+  const audioRef = (a: Audio) => ({ id: a.id, mime: a.mime, ms: a.ms, mouth: a.mouth });
 
   /** TTS a line into the store; undefined when there's no engine or it fails. */
   async function render(host: HostId, kana: string, tier: ReactionTier | undefined, signal?: AbortSignal, pin = false): Promise<Audio | undefined> {

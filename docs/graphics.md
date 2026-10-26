@@ -54,15 +54,17 @@ in a web font, which keeps the kana correct and lets one body serve every kana. 
 
 ## Animation
 
-Fourteen sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
-frames, made by PixelLab's `animate-with-text-v3` from the still sprite, which goes in as both the
-first and the last frame so a loop closes on the pose it started from.
+Seventeen sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
+frames. Most are made by PixelLab's `animate-with-text-v3` from the still sprite, which goes in as
+both the first and the last frame so a loop closes on the pose it started from, then cleaned up by
+`tools/art/polish.ts` (below). The three mouth sheets are drawn from the portraits by the same tool.
 
 | Sheets | Frames | Plays |
 | --- | --- | --- |
 | `{pon,chochin,fude}-idle.png` | 8 × 128² | One breath every few seconds, then holds frame 0 |
 | `{pon,chochin,fude}-{cheer,oops}.png` | 8 × 128² | Once, when a host line has that mood, then back to idle |
-| `yokai-{blob,lantern,umbrella,scroll}-hit.png` | 9 × 128² | Once when a yōkai is caught; ends empty (the poof) |
+| `{pon,chochin,fude}-talk.png` | 3 × 128² | Lip sync: closed, half open, open, shown one at a time while the host speaks |
+| `yokai-{blob,lantern,umbrella,scroll}-hit.png` | 11 × 128² | Once when a yōkai is caught: 4 flinch frames, then the shared smoke puff; ends empty |
 | `yokai-boss-defeat.png` | 9 × 192² | Once when the boss is beaten; ends empty |
 
 The server gives each host line a `mood` from its cue (`server/src/host.ts`: a win cheers, a miss
@@ -81,6 +83,28 @@ Rules for anything that moves:
 - Calm motion (the VIP's switch on the phone, or the system's reduced-motion setting) holds every
   sprite on frame 0, stops shakes, bobs and wipes, and fades new things in. Reveal beats keep their
   timing.
+
+**Lip sync.** VOICEVOX's `audio_query` gives the length of every consonant and vowel it will say.
+The server turns that into a mouth track (`mouthTrack` in `server/ai/tts.ts`: あ and お open wide,
+い, う and え half, ん, っ, pauses and p/b/m closed) and sends it with the line (`HostSay.mouth`). The
+stage shows the matching mouth frame against the audio's own clock, so it stays in sync even if the
+audio starts late. With audio but no track the mouth flaps; with no audio (subtitles only, or the
+browser blocked autoplay) it flaps for about as long as the line takes to say. A reaction plays
+first and the mouth joins after; Calm motion keeps the mouth still.
+
+**Polish** (`npx tsx tools/art/polish.ts`, after generating). PixelLab's frames are raw: shading
+crawls between frames, some frames go off-model, and a one-shot doesn't always end cleanly. Every
+animation entry in the manifest has a `polish` block, and the tool rebuilds the shipped sheet from
+the raw one kept in `tools/art/sources/anim/`:
+
+- `frames` keeps only the good frames, in play order (each yōkai keeps 4 flinch frames).
+- `steady` gives a pixel the shipped sprite's colour when it is within that distance of it, so
+  shading holds still while real motion stays.
+- `poof` appends the shared smoke puff (`stage/assets/fx/poof.png`, PixelLab), its first frame drawn
+  over the yōkai so it turns into smoke instead of vanishing.
+- `mouth` draws the lip-sync frames from the portrait itself: in each column of the mouth box the
+  opening runs between the top and bottom outline pixel; closed keeps one lip line and paints the
+  rest with the skin colour around it, half closes it halfway. So only the mouth ever moves.
 
 The generator turns the frames into a sheet: it drops a loop's repeated last frame, remaps every
 frame to frame 0's colours (no shimmer between frames), cuts alpha to on or off, and puts each
@@ -122,7 +146,9 @@ with PixelLab (host drafts, 7 Pon attempts, conversions, 3 backdrop drafts) and 
 style comparison.
 Animation pass (2026-10-26): 28 `animate-with-text-v3` jobs (14 sheets × seeds 11 and 22, the
 better seed kept, recorded in the manifest), plus a first batch thrown away for lost transparency.
-Each job cost about 2 generations.
+Each job cost about 2 generations. Polish pass (same day): 3 smoke-puff stills, 3 poof animations,
+9 talk animations (not used: the mouths came out cleaner drawn from the portraits), and 9 retries of
+the three weakest host reactions with sharper prompts.
 
 ## Regenerate
 
