@@ -7,7 +7,9 @@ import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch,
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
+import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
+import { creditSummary } from './music/tracks.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -221,7 +223,14 @@ function recapScreen(view: RoomView): HTMLElement {
           ),
         )
       : null,
+    credits(),
   );
+}
+
+/** The music and voice credits their licences ask for, small at the foot of the recap. */
+function credits(): HTMLElement {
+  const voices = [...new Set(Object.values(HOSTS).map((x) => x.credit))];
+  return h('ul', { class: 'credits', 'aria-label': 'Credits' }, [...creditSummary(), `Host voices: ${voices.join(' · ')}`].map((c) => h('li', {}, `♪ ${c}`)));
 }
 
 function fillMenus(view: RoomView): void {
@@ -240,6 +249,7 @@ function fillMenus(view: RoomView): void {
 }
 
 let lastHostKey = '';
+let hostAudio: HTMLAudioElement | null = null;
 function showHost(view: RoomView): void {
   const say = view.host;
   els.host.hidden = !say;
@@ -254,8 +264,12 @@ function showHost(view: RoomView): void {
     portrait,
     h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, say.text), h('span', { class: 'host-en' }, say.en)),
   );
+  // A new line cuts off the last one, so two never talk over each other.
+  hostAudio?.pause();
+  hostAudio = null;
   if (say.audioUrl) {
     const audio = new Audio(say.audioUrl);
+    hostAudio = audio;
     duckFor(audio);
     void audio.play().catch(() => {});
   }

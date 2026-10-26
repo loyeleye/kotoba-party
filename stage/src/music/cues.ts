@@ -41,26 +41,49 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
 };
 
 /**
- * Phases where players may be speaking into their phones. The music goes "under": no lead,
- * low-passed and quieter, so it doesn't drown the room or confuse speech recognition.
+ * Phases where players may be speaking into their phones, in every mode. The music goes "under":
+ * low-passed, quieter and (for synth songs) without its lead, so it doesn't drown the room or
+ * confuse speech recognition. Reveals are under too: they're where hosts and suspects talk.
  */
-const TALKING: ReadonlySet<Phase> = new Set(['answer', 'encore', 'penalty', 'finale']);
+const TALKING: ReadonlySet<Phase> = new Set(['answer', 'reveal', 'encore', 'penalty', 'finale']);
+
+/** Where a mode also asks players to speak, from its doc in docs/modes/. */
+export const SPEAKING_PHASES: Partial<Record<ModeId, Phase[]>> = {
+  // "Say it first": the first 5 s of a prompt are spoken only.
+  oogiri: ['prompt'],
+  omiai: ['prompt'],
+  'onsen-murder': ['prompt'],
+  // Peek (prompt) and result (score) are a few seconds each between spoken turns: stay under
+  // rather than open and close the music every few seconds.
+  concentration: ['prompt', 'score'],
+  // "Say it together" and the golden word are spoken during score.
+  oekaki: ['score'],
+  'word-gauntlet': ['score'],
+};
+
+/**
+ * Modes whose reveal gets the drum roll. Not where the reveal is a speaking window (Concentration's
+ * "say it", Last Train's re-say) or comes round every few seconds (Onsen's answer turns, Shiritori votes).
+ */
+const REVEAL_ROLL: ReadonlySet<ModeId> = new Set(['oogiri', 'phrase-bingo', 'oekaki', 'tourist', 'omiai', 'kana-raid', 'debug']);
+
+export const speaks = (mode: ModeId | null, phase: Phase): boolean => TALKING.has(phase) || (!!mode && !!SPEAKING_PHASES[mode]?.includes(phase));
 
 export function cueFor(mode: ModeId | null, phase: Phase): Cue {
   if (phase === 'lobby') return { song: 'bouncing', mix: 'full' };
-  if (phase === 'recap') return { song: 'happy-dance', mix: 'full' };
+  // Curtain Call, then the recap tune.
+  if (phase === 'recap') return { song: 'happy-dance', mix: 'full', leadIn: 'fanfare' };
   const theme = mode ? MODE_THEMES[mode] : 'bouncing';
   if (theme === null) return { song: null, mix: 'full' };
+  const mix = speaks(mode, phase) ? 'under' : 'full';
   // A recorded theme plays on through scores and finales; restarting it every round would grate.
-  if (isTrack(theme)) {
-    if (phase === 'score') return { song: theme, mix: 'full' };
-    if (phase === 'finale') return { song: theme, mix: 'under' };
-  }
-  if (phase === 'score') return { song: 'score', mix: 'full' };
-  if (phase === 'finale') return { song: 'finale', mix: 'under' };
-  const mix = TALKING.has(phase) ? 'under' : 'full';
-  if (phase === 'reveal') return { song: theme, mix: 'under', sting: 'reveal' };
+  let song: MusicId = theme;
+  if (!isTrack(theme) && phase === 'score') song = 'score';
+  if (!isTrack(theme) && phase === 'finale') song = 'finale';
+  // The culprit banner in Onsen's finale gets the roll; it isn't a speaking moment.
+  if (mode === 'onsen-murder' && phase === 'finale') return { song, mix, sting: 'reveal' };
+  if (phase === 'reveal' && mode && REVEAL_ROLL.has(mode)) return { song, mix, sting: 'reveal' };
   // Encores are short and some modes slot them between scores: don't restart the music for one.
-  if (phase === 'encore') return { song: theme, mix: 'under', keep: true };
-  return { song: theme, mix };
+  if (phase === 'encore') return { song, mix, keep: true };
+  return { song, mix };
 }

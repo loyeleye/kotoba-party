@@ -3,6 +3,8 @@
 // confession. Suspects speak with the browser's Japanese voice, each at their own pitch.
 
 import { h } from '../../../shared/src/dom.js';
+import { duckForSpeech } from '../music/index.js';
+import { isMuted } from '../sound.js';
 import type { OnsenView } from '../../../shared/src/modes/views.js';
 import type { SuspectView } from '../../../shared/src/modes/onsenMurder/onsenMurder.js';
 import { calledName } from '../../../shared/src/modes/onsenMurder/questions.js';
@@ -26,7 +28,7 @@ function sayOnce(key: string, kana: string, voice: { pitch: number; rate: number
   if (spoken.has(key)) return;
   spoken.add(key);
   const v = jaVoice();
-  if (!v) return;
+  if (!v || isMuted()) return;
   setTimeout(
     () => {
       const u = new SpeechSynthesisUtterance(kana);
@@ -34,6 +36,7 @@ function sayOnce(key: string, kana: string, voice: { pitch: number; rate: number
       u.voice = v;
       u.pitch = Math.max(0, Math.min(2, voice.pitch));
       u.rate = Math.max(0.5, Math.min(1.5, voice.rate * 0.9));
+      duckForSpeech(u);
       speechSynthesis.cancel();
       speechSynthesis.speak(u);
     },

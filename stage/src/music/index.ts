@@ -1,22 +1,23 @@
 // Plays the right music for the room: picks a cue from the mode and phase (cues.ts), crossfades
-// between loops, moves the mix under players' voices and ducks under the host's. Also owns the
-// stage's sound button.
+// between loops, moves the mix under players' voices and ducks under the hosts'. Also owns the
+// stage's sound button and the "now playing" credit beside it.
 
 import { h, mount } from '../../../shared/src/dom.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { MUSIC_LEVEL, audioReady, audioSupported, getSound, isMuted, onAudioReady, onMuteChange, setMuted, unlockAudio } from '../sound.js';
-import { cueFor, type Cue, type MusicId } from './cues.js';
-import { SongVoice, TrackVoice } from './engine.js';
+import { MODE_THEMES, cueFor, type Cue, type MusicId } from './cues.js';
+import { SongVoice, TrackVoice, load, type Mix } from './engine.js';
 import { SONGS, type SongId } from './songs.js';
 import { TRACKS, isTrack } from './tracks.js';
 
-/** How far ahead bars are scheduled, seconds. */
-const AHEAD = 0.35;
+/** How far ahead synth bars are scheduled, seconds. A hidden tab's timers run about once a second. */
+const ahead = () => (typeof document !== 'undefined' && document.hidden ? 1.6 : 0.35);
 
 interface Playing {
   id: MusicId;
   voice: SongVoice | TrackVoice;
-  /** Context time of the next bar to schedule. */
+  mix: Mix;
+  /** Context time of the next bar to schedule (synth songs). */
   nextAt: number;
   nextBar: number;
   /** For a lead-in: the loop that follows it. */
@@ -29,12 +30,37 @@ let stingSeq = -1;
 let lastPhaseSeq = -1;
 let timer: ReturnType<typeof setInterval> | null = null;
 
-function start(id: MusicId, cue: Cue, at?: number, then?: MusicId): void {
+/**
+ * Starts `id`. The old voice fades out once the new one can sound (a track may still be loading),
+ * or rings out if it is a finished jingle. A track that can't load falls back to its synth song.
+ */
+function start(id: MusicId, mix: Mix, at?: number, then?: MusicId, ringOut = false): void {
   const sound = getSound();
   if (!sound) return;
-  playing?.voice.fadeOut();
-  const voice = isTrack(id) ? new TrackVoice(sound.ctx, TRACKS[id].url, sound.music, cue.mix) : new SongVoice(sound.ctx, SONGS[id], sound.music, cue.mix);
-  playing = { id, voice, nextAt: at ?? sound.ctx.currentTime + 0.08, nextBar: 0, then };
+  const old = playing?.voice;
+  const leave = () => {
+    if (!old) return;
+    if (ringOut && old instanceof SongVoice) old.release();
+    else old.fadeOut();
+  };
+  let voice: SongVoice | TrackVoice;
+  if (isTrack(id)) {
+    const t = TRACKS[id];
+    const track = new TrackVoice(sound.ctx, { url: t.url, loop: t.loop, gainDb: t.gainDb, at }, sound.music, mix);
+    voice = track;
+    void track.ready.then((ok) => {
+      leave();
+      if (!ok && playing?.voice === track) {
+        console.warn(`music: couldn't play ${t.url}; using the synth's ${t.fallback}`);
+        start(t.fallback, playing.mix);
+      }
+    });
+  } else {
+    voice = new SongVoice(sound.ctx, SONGS[id], sound.music, mix);
+    leave();
+  }
+  playing = { id, voice, mix, nextAt: at ?? sound.ctx.currentTime + 0.08, nextBar: 0, then };
+  showCredit(id);
   timer ??= setInterval(pump, 60);
   pump();
 }
@@ -42,22 +68,23 @@ function start(id: MusicId, cue: Cue, at?: number, then?: MusicId): void {
 function stop(): void {
   playing?.voice.fadeOut();
   playing = null;
+  showCredit(null);
   if (timer) clearInterval(timer);
   timer = null;
 }
 
-/** Schedules bars ahead of the clock; moves from a lead-in to its loop. */
+/** Schedules synth bars ahead of the clock; moves from a lead-in to its loop. */
 function pump(): void {
   const sound = getSound();
   if (!sound || !playing) return;
   const now = sound.ctx.currentTime;
   // Woken late (a background tab): skip ahead rather than pile up old bars.
   if (playing.nextAt < now - 0.5) playing.nextAt = now + 0.05;
-  while (playing && playing.voice instanceof SongVoice && playing.nextAt < now + AHEAD) {
+  while (playing && playing.voice instanceof SongVoice && playing.nextAt < now + ahead()) {
     const p = playing as Playing & { voice: SongVoice };
     const song = SONGS[p.id as SongId];
     if (p.nextBar >= p.voice.plan.bars && !song.loop) {
-      if (p.then) start(p.then, want, p.nextAt);
+      if (p.then) start(p.then, want.mix, p.nextAt, undefined, true);
       else stop();
       continue;
     }
@@ -67,13 +94,22 @@ function pump(): void {
   }
 }
 
+/** A one-shot over the music. It goes on the effects bus, so a host line starting with it doesn't duck it. */
 function sting(id: SongId): void {
   const sound = getSound();
   if (!sound) return;
-  const v = new SongVoice(sound.ctx, SONGS[id], sound.music, 'full');
+  const v = new SongVoice(sound.ctx, SONGS[id], sound.sfx, 'full');
   const at = sound.ctx.currentTime + 0.05;
   for (let b = 0; b < v.plan.bars; b++) v.scheduleBar(b, at + b * v.barSeconds);
-  setTimeout(() => v.fadeOut(0.1), (v.plan.bars * v.barSeconds + 2) * 1000);
+  v.release();
+}
+
+/** Loads the tracks the room is likely to need next, so they start on time. */
+function preload(view: RoomView): void {
+  const sound = getSound();
+  if (!sound) return;
+  const next: MusicId[] = view.phase === 'lobby' ? ['bouncing', 'happy-dance'] : [view.mode ? (MODE_THEMES[view.mode] ?? 'happy-dance') : 'happy-dance', 'happy-dance'];
+  for (const id of next) if (isTrack(id)) void load(sound.ctx, TRACKS[id].url).catch(() => {});
 }
 
 /** Call on every render: follows the room's mode and phase. */
@@ -83,6 +119,7 @@ export function updateMusic(view: RoomView): void {
   lastPhaseSeq = view.phaseSeq;
   want = cue;
   if (!audioReady() || isMuted()) return;
+  if (newPhase) preload(view);
   apply(cue, newPhase ? view.phaseSeq : -1);
 }
 
@@ -92,9 +129,13 @@ function apply(cue: Cue, phaseSeq: number): void {
     return;
   }
   const target = playing?.then ?? playing?.id;
-  if (playing && (target === cue.song || cue.keep)) playing.voice.setMix(cue.mix);
-  else if (cue.leadIn) start(cue.leadIn, { ...cue, mix: 'full' }, undefined, cue.song);
-  else start(cue.song, cue);
+  if (playing && (target === cue.song || cue.keep)) {
+    if (playing.mix !== cue.mix) {
+      playing.mix = cue.mix;
+      playing.voice.setMix(cue.mix);
+    }
+  } else if (cue.leadIn) start(cue.leadIn, 'full', undefined, cue.song);
+  else start(cue.song, cue.mix);
   if (cue.sting && phaseSeq >= 0 && phaseSeq !== stingSeq) {
     stingSeq = phaseSeq;
     sting(cue.sting);
@@ -106,28 +147,56 @@ onAudioReady(() => {
   refreshButton();
 });
 onMuteChange((muted) => {
+  if (muted && typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
   if (muted) stop();
   else if (audioReady()) apply(want, -1);
   refreshButton();
 });
 
-/** Lowers the music while the host's voice line plays. */
-export function duckFor(audio: HTMLAudioElement): void {
+// ---- ducking under voices ----
+
+/** Voices talking right now; the music comes back up only when the last one ends. */
+let talking = 0;
+
+function duck(): () => void {
   const sound = getSound();
-  if (!sound) return;
+  if (!sound) return () => {};
   const g = sound.music.gain;
-  const to = (v: number) => {
-    const now = sound.ctx.currentTime;
+  const now = sound.ctx.currentTime;
+  if (talking++ === 0) {
     g.cancelScheduledValues(now);
-    g.setTargetAtTime(v, now, 0.12);
+    g.setTargetAtTime(MUSIC_LEVEL * 0.2, now, 0.03);
+  }
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    if (--talking > 0) return;
+    const t = sound.ctx.currentTime;
+    g.cancelScheduledValues(t);
+    // Hold briefly, so the music doesn't swell between two lines.
+    g.setTargetAtTime(MUSIC_LEVEL, t + 0.15, 0.25);
   };
-  audio.addEventListener('play', () => to(MUSIC_LEVEL * 0.35));
-  for (const ev of ['ended', 'pause', 'error']) audio.addEventListener(ev, () => to(MUSIC_LEVEL));
 }
 
-// ---- the sound button ----
+/** Ducks the music for a host's voice line; call before play(). Sound off silences the line too. */
+export function duckFor(audio: HTMLAudioElement): void {
+  audio.muted = isMuted();
+  const end = duck();
+  for (const ev of ['ended', 'pause', 'error']) audio.addEventListener(ev, end);
+}
+
+/** Ducks the music for Japanese read out by the browser (Onsen suspects, Concentration cards). */
+export function duckForSpeech(u: SpeechSynthesisUtterance): void {
+  let end: (() => void) | null = null;
+  u.addEventListener('start', () => (end = duck()));
+  for (const ev of ['end', 'error'] as const) u.addEventListener(ev, () => end?.());
+}
+
+// ---- the sound button and the credit ----
 
 let button: HTMLButtonElement | null = null;
+let credit: HTMLElement | null = null;
 
 function refreshButton(): void {
   if (!button) return;
@@ -136,7 +205,15 @@ function refreshButton(): void {
   mount(button, !ready ? '🔊 Click for music' : isMuted() ? '🔇 Sound off' : '🔊 Sound on');
 }
 
-/** Puts the sound button on the stage. */
+/** Names the recorded track that's playing, with its licence: CC BY asks for the credit where it's used. */
+function showCredit(id: MusicId | null): void {
+  if (!credit) return;
+  const t = id && isTrack(id) ? TRACKS[id] : null;
+  credit.hidden = !t;
+  if (t) mount(credit, `♪ ${t.title} · ${t.author} · ${t.licence}`);
+}
+
+/** Puts the sound button and the now-playing credit on the stage. */
 export function mountSoundButton(parent: HTMLElement): void {
   if (!audioSupported()) return;
   button = h('button', { type: 'button', class: 'mu-sound' }) as HTMLButtonElement;
@@ -147,7 +224,8 @@ export function mountSoundButton(parent: HTMLElement): void {
     } else setMuted(!isMuted());
     refreshButton();
   });
-  parent.append(button);
+  credit = h('span', { class: 'mu-now', hidden: true });
+  parent.append(button, credit);
   refreshButton();
   // Some browsers let a page the player has used before start audio without a click.
   unlockAudio();
