@@ -1,0 +1,8 @@
+/* The stage's sound button (stage/src/music/index.ts). Not a mode: it lives here so the shell's
+   style.css stays as it is. Sits in the canvas's top margin, out of the title-safe area. */
+.mu-sound { position: absolute; top: 10px; left: 96px; z-index: 5; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 14px; font: 600 18px var(--font-body); cursor: pointer; }
+.mu-sound.mu-ask { background: var(--accent); color: var(--on-accent); border-color: transparent; font-weight: 800; animation: mu-nudge 2.4s ease-in-out infinite; }
+@keyframes mu-nudge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+/* Karaoke Duel has its own music button while a duel runs. */
+body[data-mode='karaoke-duel']:not([data-phase='lobby']):not([data-phase='recap']) .mu-sound { display: none; }
+@media (prefers-reduced-motion: reduce) { .mu-sound.mu-ask { animation: none; } }

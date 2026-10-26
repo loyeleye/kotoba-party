@@ -11,7 +11,9 @@ export interface Env {
   /** Reader service for kanji answers (server/src/readerMain.ts). Unset: answers are compared as written. */
   READER_URL?: string;
   READER_TOKEN?: string;
-  /** Self-hosted Whisper for spoken answers (server/src/stt.ts). Unset: phones type or tap. */
+  /** Workers AI, for Whisper when STT_URL is `workers-ai`. */
+  AI?: Ai;
+  /** `workers-ai`, or a self-hosted Whisper server's URL (server/src/stt.ts). Unset: phones type or tap. */
   STT_URL?: string;
   /** Secret, when the Whisper server sits behind a proxy that checks a Bearer token. */
   STT_TOKEN?: string;

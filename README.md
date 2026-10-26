@@ -50,7 +50,7 @@ npm start                 # builds the pages, serves on http://localhost:3000
 
 Optional keys, from the environment only (never commit them): `ANTHROPIC_API_KEY` (or `KOTOBA_ANTHROPIC_API_KEY`, which
 wins when both are set and works in Claude Code cloud sessions) for live host
-lines, `VOICEVOX_URL` for host voices, `STT_URL` for spoken answers (our own Whisper server, see
+lines, `VOICEVOX_URL` for host voices, `STT_URL` for spoken answers (a Whisper server, see
 [docs/speech.md](docs/speech.md); without it players type), and `GEMINI_API_KEY` / `PIXELLAB_API_KEY` for art
 generation (see [docs/graphics.md](docs/graphics.md)). Everything runs without them.
 
@@ -79,7 +79,7 @@ npm run dev               # server restarts on change (rebuild pages with npm ru
 | --- | --- |
 | `server/` | Node HTTP + WebSocket server; one in-memory `Room` per game |
 | `cloudflare/` | The same server as a Cloudflare Worker, one Durable Object per room |
-| `stage/` | The shared-screen page; one renderer per mode in `stage/src/modes/` |
+| `stage/` | The shared-screen page; one renderer per mode in `stage/src/modes/`, music in `stage/src/music/` ([docs/music.md](docs/music.md)) |
 | `controller/` | The phone page; one screen set per mode in `controller/src/modes/` |
 | `shared/` | Protocol types, the room machine, the modes' pure rules (`shared/src/modes/`), Japanese helpers, the client |
 | `content/` | Topic packs, kana, Oogiri prompts, Last Train scenarios, host lines (all draft) |

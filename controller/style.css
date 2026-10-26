@@ -90,6 +90,10 @@ body[data-mode] .timer { color: var(--on-accent); }
 .prompt { font-size: 24px; font-weight: 700; margin: 0; }
 .subtitle { color: var(--muted); margin: 0; }
 .hint { color: var(--muted); margin: 0; }
+/* Host asides in the dead air: a speech-bubble line in the host's voice. */
+.quip { margin-top: 18px; padding: 10px 14px; border-left: 3px solid var(--mode); background: var(--panel); border-radius: 0 10px 10px 0; }
+.quip-jp { font-family: var(--font-ja); font-size: 18px; margin: 0; }
+.quip-en { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
 .center { text-align: center; color: var(--muted); margin-top: 40vh; }
 .standings { padding-left: 24px; font-size: 20px; }
 /* Recap: my place as a big card, then everyone, then my phrasebook as cards. */
@@ -116,7 +120,7 @@ body[data-mode] .timer { color: var(--on-accent); }
 .phrase-card .pc-en { color: var(--muted); font-size: 14px; }
 .vip-start { display: grid; gap: 10px; }
 
-.banner { position: fixed; z-index: 5; top: max(10px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); background: var(--warn); color: var(--on-accent); font-weight: 700; font-size: 15px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--outline); white-space: nowrap; }
+.banner { position: fixed; z-index: 5; top: max(10px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); background: var(--warn); color: var(--on-accent); font-weight: 700; font-size: 15px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--outline); max-width: calc(100vw - 140px); text-align: center; }
 .banner.back { background: var(--good); }
 /* Errors get their own toast above the thumb zone, so they never hide the reconnect pill. */
 .toast { position: fixed; z-index: 6; left: 16px; right: 16px; bottom: calc(max(24px, env(safe-area-inset-bottom)) + 110px); max-width: 448px; margin: 0 auto; background: var(--paper); color: var(--paper-ink); font-weight: 700; padding: 12px 14px; border-radius: 12px; border: 3px solid var(--outline); box-shadow: 0 4px 0 var(--outline); text-align: center; }

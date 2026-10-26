@@ -7,7 +7,7 @@ import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import type { AnswerCard, OogiriView, PromptCard, SlotView, TileView } from '../../../shared/src/modes/oogiri/oogiri.js';
 import { canSpeak, speakBox } from '../components/speak.js';
 import { kanaPad } from '../components/kanaPad.js';
-import { waiting } from '../components/ui.js';
+import { waiting, waitQuip } from '../components/ui.js';
 import { jpView } from '../components/jp.js';
 import type { Level } from '../../../content/src/types.js';
 
@@ -400,6 +400,7 @@ export const oogiriPhone: PhoneMode<OogiriView> = {
             h('p', { class: 'big' }, 'All in! ✅'),
             h('p', { class: 'hint' }, 'Waiting for the others…'),
             (game.me?.done ?? []).map((d) => h('p', { class: 'oo-done', lang: 'ja' }, d.answer)),
+            waitQuip(),
           );
         }
         return slot.sayFirst ? sayFirst(slot, game.round, send) : builder(slot, game.round, send, game.me!.level);

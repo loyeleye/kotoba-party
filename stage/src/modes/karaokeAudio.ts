@@ -3,6 +3,8 @@
 // a quiet guide melody, all on the server's clock. Browsers only start audio after a click on
 // the page, so the stage shows a "click for music" button until then.
 
+import { getSound, isMuted, onMuteChange } from '../sound.js';
+
 export interface TurnTrack {
   /** Unique per sing turn; scheduling the same key twice does nothing. */
   key: string;
@@ -15,60 +17,38 @@ export interface TurnTrack {
   rests: boolean[];
 }
 
-type Ctor = typeof AudioContext;
-const AudioCtor: Ctor | undefined =
-  typeof window !== 'undefined' ? (window.AudioContext ?? (window as unknown as { webkitAudioContext?: Ctor }).webkitAudioContext) : undefined;
-
-let ctx: AudioContext | null = null;
 let scheduledKey = '';
 let live: AudioScheduledSourceNode[] = [];
-let muted = false;
 
 /** Guide melody volume: quiet, so phone mics mostly hear the singer (see the doc's known gaps). */
 const GUIDE_GAIN = 0.07;
 const BASS_GAIN = 0.12;
 const CLICK_GAIN = 0.25;
 
+// The context, unlocking and mute are shared with the music (../sound.ts).
+export { audioReady, audioSupported, isMuted, setMuted, unlockAudio } from '../sound.js';
+
 function context(): AudioContext | null {
-  if (!AudioCtor) return null;
-  ctx ??= new AudioCtor();
-  return ctx;
+  return getSound()?.ctx ?? null;
 }
 
-/** True once the page may play sound. */
-export function audioReady(): boolean {
-  return !!ctx && ctx.state === 'running';
-}
-
-export const audioSupported = (): boolean => !!AudioCtor;
+/** Where the backing track plays: the shared effects bus. */
+const out = (): AudioNode => getSound()!.sfx;
 
 /**
  * How late the speakers are behind the audio clock (TV soundbars can add 100 ms or more): the
  * lyrics shift by this so the ball lands when the note is heard, not when it is scheduled.
  */
 export function outputLatencyMs(): number {
-  if (!ctx || ctx.state !== 'running') return 0;
-  const s = (ctx as AudioContext & { outputLatency?: number }).outputLatency ?? ctx.baseLatency;
+  const c = context();
+  if (!c || c.state !== 'running') return 0;
+  const s = (c as AudioContext & { outputLatency?: number }).outputLatency ?? c.baseLatency;
   return Number.isFinite(s) ? Math.min(500, Math.max(0, s * 1000)) : 0;
 }
 
-/** Call from a click: unlocks audio for the rest of the session. */
-export function unlockAudio(): void {
-  const c = context();
-  void c?.resume();
-}
-
-export function setMuted(value: boolean): void {
-  muted = value;
+onMuteChange((muted) => {
   if (muted) stopAll();
-}
-
-export const isMuted = (): boolean => muted;
-
-if (typeof document !== 'undefined') {
-  // Any click on the stage (the VIP's start, a skip) unlocks audio too.
-  document.addEventListener('pointerdown', () => unlockAudio(), { capture: true });
-}
+});
 
 export function stopAll(): void {
   for (const node of live) {
@@ -95,7 +75,7 @@ function tone(c: AudioContext, at: number, dur: number, freq: number, gain: numb
   amp.gain.linearRampToValueAtTime(gain, start + 0.015);
   amp.gain.setTargetAtTime(gain * 0.6, start + 0.05, 0.1);
   amp.gain.setTargetAtTime(0, start + Math.max(0.03, dur - 0.04), 0.02);
-  osc.connect(amp).connect(c.destination);
+  osc.connect(amp).connect(out());
   osc.start(start);
   osc.stop(start + dur + 0.1);
   live.push(osc);
@@ -109,7 +89,7 @@ function click(c: AudioContext, at: number, accent: boolean): void {
   osc.frequency.setValueAtTime(accent ? 1_600 : 1_100, at);
   amp.gain.setValueAtTime(CLICK_GAIN, at);
   amp.gain.exponentialRampToValueAtTime(0.001, at + 0.06);
-  osc.connect(amp).connect(c.destination);
+  osc.connect(amp).connect(out());
   osc.start(at);
   osc.stop(at + 0.08);
   live.push(osc);
@@ -118,7 +98,7 @@ function click(c: AudioContext, at: number, accent: boolean): void {
 /** Schedules one sing turn's count-in, bass and guide melody. Safe to call on every redraw. */
 export function playTurn(track: TurnTrack): void {
   const c = context();
-  if (!c || muted || c.state !== 'running' || scheduledKey === track.key) return;
+  if (!c || isMuted() || c.state !== 'running' || scheduledKey === track.key) return;
   stopAll();
   scheduledKey = track.key;
   // Local wall-clock ms → AudioContext seconds.
@@ -141,7 +121,7 @@ export function playTurn(track: TurnTrack): void {
 /** A short "ta-da" for the duel result. */
 export function fanfare(key: string): void {
   const c = context();
-  if (!c || muted || c.state !== 'running' || scheduledKey === key) return;
+  if (!c || isMuted() || c.state !== 'running' || scheduledKey === key) return;
   stopAll();
   scheduledKey = key;
   const t = c.currentTime + 0.05;

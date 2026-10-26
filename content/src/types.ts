@@ -415,6 +415,12 @@ export type HostEvent =
   // Oogiri Night
   | 'ippon'
   | 'cushion_steal'
+  | 'vote_zero' // nobody voted for any answer
+  | 'vote_tie' // two or more answers tied for the most votes
+  | 'vote_close' // won by a single vote
+  | 'vote_landslide' // every vote went one way
+  // Word Gauntlet
+  | 'fooled' // a fake meaning fooled someone
   // Kana Yōkai Raid
   | 'raid_wave_start'
   | 'raid_hit'

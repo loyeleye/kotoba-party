@@ -7,6 +7,7 @@ import { fudeLines } from './fude.js';
 
 export { hostProfiles } from './profiles.js';
 export { hostAwards } from './awards.js';
+export { waitQuips, reconnectQuips, vipIdleQuip } from './quips.js';
 export { ponLines, chochinLines, fudeLines };
 
 export const hostLines: HostLine[] = [...ponLines, ...chochinLines, ...fudeLines];

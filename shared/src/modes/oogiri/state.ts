@@ -39,6 +39,8 @@ export interface Answer {
   kana: string;
   /** The stage subtitle: the prompt's English with the answer in it. */
   en: string;
+  /** English for just the blank, for host lines that name the answer. */
+  blankEn: string;
   /** The author's whole sentence (their prompt version, filled). */
   sentence: JpText;
   style: AnswerStyle;

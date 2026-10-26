@@ -11,6 +11,9 @@ import { LEVELS, type JoinError, type Level, type PlayerView, type RoomView } fr
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService } from './components/mic.js';
 import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
+import { quip, setQuipHost } from './components/ui.js';
+import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
+import type { HostId } from '../../content/src/types.js';
 
 const LEVEL_HINTS: Record<Level, string> = {
   kana: 'I can’t read Japanese yet',
@@ -198,6 +201,9 @@ function start(s: Session): void {
   mount(app, h('p', { class: 'center' }, 'Connecting…'));
 }
 
+/** Whose voice the reconnect banner uses: the current mode's host, Pon in the lobby. */
+let bannerHost: HostId = 'pon';
+
 // Short blips stay invisible: the pill only shows after 800 ms away, and says "Back in!" once the
 // socket returns.
 let awayTimer: ReturnType<typeof setTimeout> | undefined;
@@ -215,8 +221,9 @@ function status(st: ConnectionStatus): void {
   } else if (st === 'reconnecting' || st === 'connecting') {
     awayTimer = setTimeout(() => {
       wasAway = true;
+      const q = reconnectQuips[bannerHost];
       banner.className = 'banner away';
-      banner.textContent = 'Reconnecting… your seat is saved';
+      banner.textContent = `${q.text} ${q.en}`;
       banner.hidden = false;
     }, 800);
   }
@@ -256,6 +263,8 @@ function render(view: RoomView): void {
 
   // In a game (and its recap) the phone wears the mode's colour and host.
   const info = view.phase !== 'lobby' && view.mode ? MODES[view.mode].info : null;
+  setQuipHost(info?.host ?? null);
+  bannerHost = info?.host ?? 'pon';
   if (info) document.body.dataset.mode = info.id;
   else delete document.body.dataset.mode;
   const band = info
@@ -319,7 +328,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
     }),
   ];
   if (isVip) parts.push(vipMenu(view));
-  else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'));
+  else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), quip(vipIdleQuip));
   return h('div', { class: 'screen' }, parts);
 }
 

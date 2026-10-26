@@ -190,7 +190,7 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
    taking lines, instead of rotating one-on-one duels?
 2. **Encore from memory?** The design doc values saying it from memory. A final "sing the hook
    with the lyrics hidden" bonus would fit; not built.
-3. **Whisper on sung lines.** Words now come from our Whisper server (ADR 0004), which removed
+3. **Whisper on sung lines.** Words now come from Whisper (ADRs 0004 and 0005), which removed
    the old recogniser-vs-pitch mic conflict. Nobody has checked how well Whisper transcribes
    *sung* beginner Japanese on a real phone.
 4. **Guide melody during takes.** Keep it (helps beginners, can leak into the mic) or play the

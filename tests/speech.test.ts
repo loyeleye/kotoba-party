@@ -74,6 +74,26 @@ describe('transcripts', () => {
     expect(w.seen[0]!.body).toMatch(/filename="clip.wav"/);
   });
 
+  it('runs Whisper on Workers AI when STT_URL is workers-ai', async () => {
+    const calls: { model: string; inputs: Record<string, unknown> }[] = [];
+    const AI = { run: async (model: string, inputs: Record<string, unknown>) => (calls.push({ model, inputs }), { text: 'ご視聴ありがとうございました すしをください。' }) };
+    expect(sttFromEnv({ STT_URL: 'workers-ai' })).toBeNull(); // the Node server has no binding
+    const opts = sttFromEnv({ STT_URL: 'workers-ai', AI })!;
+    expect(opts.model).toBe('@cf/openai/whisper-large-v3-turbo');
+    const c = clip();
+    expect(await transcribe(c, opts)).toEqual({ ok: true, text: 'すしをください。' });
+    expect(calls[0]!.model).toBe('@cf/openai/whisper-large-v3-turbo');
+    expect(calls[0]!.inputs).toMatchObject({ language: 'ja', task: 'transcribe' });
+    expect(Buffer.from(calls[0]!.inputs.audio as string, 'base64').equals(Buffer.from(c))).toBe(true);
+  });
+
+  it('reports a failure when Workers AI errors or stalls', async () => {
+    const failing = { run: async () => Promise.reject(new Error('AiError')) };
+    expect(await transcribe(clip(), { url: 'workers-ai', ai: failing })).toEqual({ ok: false, error: 'stt-failed' });
+    const stalled = { run: () => new Promise<never>(() => {}) };
+    expect(await transcribe(clip(), { url: 'workers-ai', ai: stalled, timeoutMs: 20 })).toEqual({ ok: false, error: 'stt-failed' });
+  });
+
   it('reports a failure when the Whisper server errors', async () => {
     const w = await fakeWhisper(() => ({ status: 500, body: {} }));
     cleanups.push(w.close);
