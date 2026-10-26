@@ -1,21 +1,31 @@
 // The stage: the shared TV screen. It shows the room code and QR, the host, the round as the
 // server sees it and the score ribbon, on a fixed 1920×1080 canvas scaled to the window.
 // With ?debug=1 a developer panel to drive and inspect the room floats over it.
+// With ?code=XXXX it is another screen on a room that is already open (a remote player's laptop):
+// the same view, its own music and host voice, but no say over the game.
 
-import { RoomClient, createRoom, type ConnectionStatus } from '../../shared/src/client.js';
+import { RoomClient, createRoom, watchRoom, type ConnectionStatus } from '../../shared/src/client.js';
 import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch, placesOf, ruby, awardTitle, seatShape } from '../../shared/src/dom.js';
 import { icon } from '../../shared/src/art.js';
+import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
+import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
+import { creditSummary } from './music/tracks.js';
+import { isMuted } from './sound.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
 const SESSION_KEY = 'kotoba:stage';
 const base = location.origin;
-const DEBUG = new URLSearchParams(location.search).has('debug');
+const params = new URLSearchParams(location.search);
+const DEBUG = params.has('debug');
+/** The room this screen watches, from ?code=; null for the main stage, which opens its own room. */
+const WATCH = ((code) => (isRoomCode(code) ? code : null))(normalizeRoomCode(params.get('code') ?? ''));
+const WATCH_KEY = 'kotoba:stage:watch';
 
 const $ = (id: string) => document.getElementById(id)!;
 const els = {
@@ -45,6 +55,8 @@ const els = {
 };
 
 let client: RoomClient | null = null;
+/** Where people open this room's pages, as the server names it (its public URL, not this tab's). */
+let siteHost = location.host;
 let lastPhaseSeq = -1;
 let lastPhase: RoomView['phase'] | null = null;
 /** The phase's full length, as first seen: the ring timer's 100%. */
@@ -52,10 +64,10 @@ let phaseTotal: number | null = null;
 const logLines: string[] = [];
 
 // Every sprite the stage can show, fetched and decoded up front so nothing pops in half-drawn.
-const HOSTS = Object.keys(HOST_NAMES);
+const HOST_IDS = Object.keys(HOST_NAMES);
 preload([
-  ...HOSTS.map((host) => `/stage/assets/hosts/${host}.png`),
-  ...HostSprite.sheets(HOSTS),
+  ...HOST_IDS.map((host) => `/stage/assets/hosts/${host}.png`),
+  ...HostSprite.sheets(HOST_IDS),
   ...['blob', 'lantern', 'umbrella', 'scroll'].flatMap((y) => [`/stage/assets/yokai/yokai-${y}.png`, hitSheet(`yokai-${y}`).src]),
   '/stage/assets/yokai/yokai-boss.png',
   BOSS_DEFEAT.src,
@@ -66,6 +78,11 @@ const hostSprite = new HostSprite(128);
 $('debug').hidden = !DEBUG;
 mountSoundButton(els.canvas);
 $('debug-tag').hidden = !DEBUG;
+document.body.dataset.watch = WATCH ? '1' : '';
+if (WATCH) {
+  for (const b of [els.start, els.skip, els.again]) b.hidden = true;
+  els.newRoom.textContent = 'Open my own room';
+}
 
 // ---- the 1080p canvas, scaled to the window ----
 function scaleCanvas(): void {
@@ -96,10 +113,67 @@ function log(line: string): void {
   els.log.textContent = logLines.join('\n');
 }
 
+/** A full-screen message instead of the game: a watched room that is gone, or out of screens. */
+function showNotice(title: string, detail: string): void {
+  client?.close();
+  client = null;
+  document.body.dataset.phase = 'lobby';
+  document.body.dataset.notice = '1';
+  els.host.hidden = true;
+  mount(els.players);
+  patch(
+    els.fit,
+    h(
+      'div',
+      { class: 'lobby notice', 'data-key': 'notice' },
+      h('p', { class: 'big' }, title),
+      h('p', { class: 'hint' }, detail),
+      h('p', { class: 'hint' }, h('a', { href: '/stage/' }, 'Open a new room on this screen')),
+    ),
+  );
+  fitMain();
+}
+
+/** Another screen on the room in ?code=: asks the room for a watch token (or reuses this tab's). */
+async function watchOpenRoom(fresh: boolean): Promise<CreateRoomResponse | null> {
+  const code = WATCH!;
+  let session: CreateRoomResponse | null = null;
+  if (!fresh) {
+    try {
+      session = JSON.parse(sessionStorage.getItem(WATCH_KEY) ?? 'null') as CreateRoomResponse | null;
+    } catch {
+      session = null;
+    }
+    if (session?.code !== code) session = null;
+  }
+  if (session) {
+    log(`watching room ${code} again`);
+    return session;
+  }
+  const result = await watchRoom(base, code).catch(() => ({ error: 'room-not-found' as const }));
+  if ('error' in result) {
+    log(`watch ${code}: ${result.error}`);
+    if (result.error === 'too-many-screens') showNotice(`Room ${code} has all the screens it can take`, 'Close a stage screen somewhere else, then reload this page.');
+    else showNotice(`Room ${code} isn't open`, 'Check the code on the main screen, or ask whoever started the game to share their stage link.');
+    return null;
+  }
+  try {
+    sessionStorage.setItem(WATCH_KEY, JSON.stringify(result));
+  } catch {
+    // private mode: a reload just asks again
+  }
+  log(`watching room ${code}`);
+  return result;
+}
+
 async function openRoom(fresh: boolean): Promise<void> {
   client?.close();
   let session: CreateRoomResponse | null = null;
-  if (!fresh) {
+  if (WATCH) {
+    session = await watchOpenRoom(fresh);
+    if (!session) return;
+  }
+  if (!fresh && !session) {
     try {
       session = JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? 'null') as CreateRoomResponse | null;
     } catch {
@@ -125,6 +199,7 @@ async function openRoom(fresh: boolean): Promise<void> {
   els.code.textContent = session.code;
   els.qr.src = `${base}/api/rooms/${session.code}/qr.svg`;
   els.joinUrl.textContent = session.joinUrl.replace(/^https?:\/\//, '');
+  siteHost = session.joinUrl.replace(/^https?:\/\//, '').split('/')[0] || location.host;
   lastPhaseSeq = -1;
 
   client = new RoomClient({
@@ -136,7 +211,9 @@ async function openRoom(fresh: boolean): Promise<void> {
       els.status.textContent = status;
       els.status.dataset.status = status;
       log(`connection: ${status}`);
-      if (status === 'room-gone' || status === 'seat-lost') void openRoom(true);
+      // A watching screen never opens a room of its own: when the room ends, it says so.
+      if (WATCH && status === 'room-gone') showNotice(`Room ${WATCH} has closed`, 'The game on the main screen ended or was left idle.');
+      else if (status === 'room-gone' || status === 'seat-lost') void openRoom(true);
     },
   });
   client.connect();
@@ -210,6 +287,8 @@ function mainFor(view: RoomView): HTMLElement {
       { class: 'lobby' },
       h('p', { class: 'big' }, view.players.length ? 'Waiting for the VIP to pick a game' : 'Scan the code to join'),
       h('p', { class: 'hint' }, `${view.players.length} / 8 players`),
+      // Friends somewhere else open their own copy of this screen with the same code.
+      h('p', { class: 'hint watch-link' }, WATCH ? `Watching room ${view.code} · join with your phone at the code above` : ['Playing from somewhere else? Open ', h('strong', {}, `${siteHost}/stage/?code=${view.code}`), ' on a laptop']),
       h('ul', { class: 'menu' }, view.modes.map((m) => h('li', {}, h('strong', {}, m.title), ` ${m.titleJa} · `, m.blurb))),
     );
   }
@@ -259,7 +338,14 @@ function recapScreen(view: RoomView): HTMLElement {
           ),
         )
       : null,
+    credits(),
   );
+}
+
+/** The music and voice credits their licences ask for, small at the foot of the recap. */
+function credits(): HTMLElement {
+  const voices = [...new Set(Object.values(HOSTS).map((x) => x.credit))];
+  return h('ul', { class: 'credits', 'aria-label': 'Credits' }, [...creditSummary(), `Host voices: ${voices.join(' · ')}`].map((c) => h('li', {}, `♪ ${c}`)));
 }
 
 /** Recap points tick up from 0 as the podium rises, instead of arriving finished. */
@@ -348,6 +434,7 @@ function fillMenus(view: RoomView): void {
 }
 
 let lastHostKey = '';
+let hostAudio: HTMLAudioElement | null = null;
 function showHost(view: RoomView): void {
   const say = view.host;
   els.host.hidden = !say;
@@ -362,8 +449,13 @@ function showHost(view: RoomView): void {
   const old = els.host.querySelector('.host-bubble');
   if (old) old.replaceWith(bubble);
   else els.host.append(bubble);
-  if (say.audioUrl) {
+  // A new line cuts off the last one, so two never talk over each other.
+  hostAudio?.pause();
+  hostAudio = null;
+  // Every screen voices the host for whoever is in front of it; a muted screen stays quiet.
+  if (say.audioUrl && !isMuted()) {
     const audio = new Audio(say.audioUrl);
+    hostAudio = audio;
     duckFor(audio);
     void audio.play().catch(() => {});
   }
@@ -394,7 +486,7 @@ els.start.addEventListener('click', () =>
 );
 els.skip.addEventListener('click', () => client?.view && void command({ type: 'skip', phaseSeq: client.view.phaseSeq }));
 els.again.addEventListener('click', () => void command({ type: 'playAgain' }));
-els.newRoom.addEventListener('click', () => void openRoom(true));
+els.newRoom.addEventListener('click', () => (WATCH ? location.assign('/stage/') : void openRoom(true)));
 els.toggleRaw.addEventListener('click', () => {
   els.raw.hidden = !els.raw.hidden;
   if (!els.raw.hidden && client?.view) els.raw.textContent = JSON.stringify(client.view, null, 2);

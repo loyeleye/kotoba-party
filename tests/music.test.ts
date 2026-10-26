@@ -3,7 +3,8 @@ import { MODE_IDS, PHASES } from '../shared/src/protocol.js';
 import { MODE_THEMES, cueFor } from '../stage/src/music/cues.js';
 import { existsSync } from 'node:fs';
 import { SONGS, SONG_IDS, compile, leadLength, noteToMidi, parseChord, parseLead } from '../stage/src/music/songs.js';
-import { TRACKS, TRACK_IDS } from '../stage/src/music/tracks.js';
+import { TRACKS, TRACK_CREDITS, TRACK_IDS, creditSummary } from '../stage/src/music/tracks.js';
+import { execFileSync } from 'node:child_process';
 
 describe('songs', () => {
   it.each(SONG_IDS)('%s compiles, and its lead fills every bar', (id) => {
@@ -43,13 +44,42 @@ describe('songs', () => {
     const t = TRACKS[id];
     expect(existsSync(t.url.replace(/^\/stage\//, 'stage/'))).toBe(true);
     expect(t.licence).toBeTruthy();
+    expect(Number.isFinite(t.gainDb)).toBe(true);
+    if (t.loop) {
+      const [a, b] = t.loop;
+      expect(a).toBeGreaterThanOrEqual(0);
+      expect(b - a).toBeGreaterThan(20);
+      if (ffprobe) expect(b).toBeLessThanOrEqual(duration(t.url.replace(/^\/stage\//, 'stage/')));
+    }
+  });
+
+  it('credits every track with its title, author and licence', () => {
+    for (const [i, id] of TRACK_IDS.entries()) {
+      const t = TRACKS[id];
+      expect(TRACK_CREDITS[i]).toContain(`"${t.title}" by ${t.author}`);
+      if (t.licence === 'CC BY 4.0') expect(TRACK_CREDITS[i]).toMatch(/By Attribution 4\.0.*creativecommons\.org\/licenses\/by\/4\.0.*Looped and filtered/);
+    }
+    const summary = creditSummary().join('\n');
+    for (const t of Object.values(TRACKS)) expect(summary).toContain(`"${t.title}"`);
+    expect(summary).toContain('creativecommons.org/licenses/by/4.0');
+    expect(summary).toMatch(/by Kevin MacLeod \(incompetech\.com\)/);
   });
 });
+
+const ffprobe = (() => {
+  try {
+    execFileSync('ffprobe', ['-version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const duration = (file: string) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString());
 
 describe('cues', () => {
   it('plays pop in the lobby and the recap', () => {
     expect(cueFor(null, 'lobby')).toEqual({ song: 'bouncing', mix: 'full' });
-    expect(cueFor('oogiri', 'recap')).toEqual({ song: 'happy-dance', mix: 'full' });
+    expect(cueFor('oogiri', 'recap')).toEqual({ song: 'happy-dance', mix: 'full', leadIn: 'fanfare' });
   });
 
   it('keeps a recorded theme playing through the scores', () => {
@@ -58,11 +88,26 @@ describe('cues', () => {
   });
 
   it("plays each mode's theme, under the players' voices while they answer", () => {
-    expect(cueFor('onsen-murder', 'prompt')).toEqual({ song: 'sneaky', mix: 'full' });
+    expect(cueFor('word-gauntlet', 'prompt')).toEqual({ song: 'investigations', mix: 'full' });
     expect(cueFor('onsen-murder', 'answer')).toEqual({ song: 'sneaky', mix: 'under' });
     expect(cueFor('kana-raid', 'reveal')).toEqual({ song: 'raid', mix: 'under', sting: 'reveal' });
     expect(cueFor('kana-raid', 'finale')).toEqual({ song: 'raid', mix: 'under' });
     expect(cueFor('last-train', 'finale')).toEqual({ song: 'finale', mix: 'under' });
+  });
+
+  it('drops under the stage reading Japanese aloud', () => {
+    expect(cueFor('onsen-murder', 'prompt').mix).toBe('under');
+    expect(cueFor('concentration', 'prompt').mix).toBe('under');
+    expect(cueFor('oekaki', 'score').mix).toBe('under');
+    expect(cueFor('oogiri', 'prompt').mix).toBe('under');
+  });
+
+  it('only rolls a drum for a reveal that is a reveal', () => {
+    expect(cueFor('concentration', 'reveal').sting).toBeUndefined();
+    expect(cueFor('last-train', 'reveal').sting).toBeUndefined();
+    expect(cueFor('onsen-murder', 'reveal').sting).toBeUndefined();
+    expect(cueFor('onsen-murder', 'finale').sting).toBe('reveal');
+    expect(cueFor('oogiri', 'reveal').sting).toBe('reveal');
   });
 
   it("doesn't restart the music for an encore", () => {

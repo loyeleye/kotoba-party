@@ -44,6 +44,8 @@ export interface RoomOptions {
 
 const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'setMotion']);
 const COMMAND_MEMORY = 128;
+/** Extra stage screens one room hands out: one per player's laptop and then some. */
+export const MAX_WATCHERS = 16;
 
 export const newToken = (): string => randomBytes(18).toString('base64url');
 const newId = (): string => randomBytes(6).toString('base64url');
@@ -85,6 +87,23 @@ export class Room {
   createStageToken(): string {
     const token = newToken();
     this.tokens.set(token, { kind: 'stage' });
+    return token;
+  }
+
+  /**
+   * A token for another stage screen (a remote player's laptop). It gets the stage's view but
+   * no say over the game. Null once the room has handed out MAX_WATCHERS of them.
+   */
+  createWatchToken(): string | null {
+    const watching = (): string[] => [...this.tokens].filter(([, v]) => v.kind === 'stage' && v.watch).map(([t]) => t);
+    if (watching().length >= MAX_WATCHERS) {
+      // Make room by forgetting screens that have closed (their pages would ask again anyway).
+      const live = new Set(this.sockets.values());
+      for (const t of watching()) if (!live.has(this.tokens.get(t)!)) this.tokens.delete(t);
+      if (watching().length >= MAX_WATCHERS) return null;
+    }
+    const token = newToken();
+    this.tokens.set(token, { kind: 'stage', watch: true });
     return token;
   }
 
@@ -189,6 +208,7 @@ export class Room {
     if (!viewer) return null;
     const cmd = parseCommand(raw);
     if (!cmd) return { ok: false, error: 'bad-command', v: this.version };
+    if (viewer.kind === 'stage' && viewer.watch) return { ok: false, error: 'watch-only', v: this.version };
 
     const actorKey = viewer.kind === 'player' ? viewer.playerId : `stage:${token}`;
     let log = this.commandLog.get(actorKey);

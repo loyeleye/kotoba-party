@@ -287,3 +287,7 @@ body[data-motion='calm'] .main.wipe::after { animation: none !important; }
 /* Pixel art in place of emoji (shared/src/art.ts): sized by the font-size the emoji had. */
 img.pix { width: 1.3em; height: 1.3em; object-fit: contain; image-rendering: pixelated; vertical-align: middle; }
 img.pix.om-face, img.pix.om-p-face, img.pix.omi-guest-emoji, img.pix.omi-guest-p-emoji { width: 1.6em; height: 1.6em; }
+
+/* A watching screen whose room is gone: no code or QR to show, just the notice. */
+body[data-notice='1'] .join { visibility: hidden; }
+.notice a { color: var(--lantern); }

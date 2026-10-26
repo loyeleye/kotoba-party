@@ -330,6 +330,8 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   ];
   if (isVip) parts.push(vipMenu(view));
   else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), quip(vipIdleQuip));
+  // Not near the main screen? Any laptop can show its own copy of the stage for this room.
+  parts.push(h('p', { class: 'hint' }, 'Playing remotely? Open ', h('a', { href: `/stage/?code=${view.code}`, target: '_blank' }, `${location.host}/stage/?code=${view.code}`), ' on a laptop to see the stage.'));
   return h('div', { class: 'screen' }, parts);
 }
 

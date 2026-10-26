@@ -16,12 +16,12 @@ Onsen, and an anime-style battle theme for the Raid.
 | Phase | Music |
 | --- | --- |
 | Lobby | **Bouncing** (Holizna) |
-| Intro, prompt | The mode's theme, full mix |
+| Intro, prompt | The mode's theme, full mix (under where a mode speaks in its prompt: Oogiri, Omiai, the Onsen, Concentration) |
 | Answer, encore, penalty | The mode's theme, "under" (see below). Encores keep whatever is playing |
-| Reveal | Theme under, with the synth's drum roll on top |
+| Reveal | Theme under, with the synth's drum roll on top where it's a real reveal |
 | Score | A recorded theme plays on; Last Train gets the synth's **Tally Ho** |
 | Finale | A recorded theme plays on, under; Last Train gets the synth's **Taiko Showdown** |
-| Recap | **Happy Dance** (Holizna) |
+| Recap | The fanfare, then **Happy Dance** (Holizna), with the credits on screen |
 
 | Mode | Theme |
 | --- | --- |
@@ -42,19 +42,40 @@ fanfare) are kept as spares; switch a mode back to one by naming it in `MODE_THE
 
 ## Players' voices come first
 
-- **Under mix.** While players may be speaking, the music is low-passed at 900 Hz and turned down,
-  so the speech band (about 1–4 kHz) the phone mics and Whisper need stays clear. Synth songs also drop
-  their lead and most high drums; rendered offline, that cuts their energy above 1 kHz by about 24 dB.
-- **Host ducking.** The music drops to about a third while a host's voice line plays.
-- **One mute.** The sound button (top left of the stage) mutes the music and Karaoke Duel's track
-  together and is remembered in that browser. Browsers only allow sound after a click or key press on
-  the page, so until then the button reads "Click for music".
+- **Under mix.** While players may be speaking, or the stage is reading Japanese aloud, the music goes
+  through a high-pass at 90 Hz and two low-passes at 750 Hz and drops to about a third (synth songs
+  also lose their lead and most high drums). That keeps the speech band (about 1–4 kHz) the phone mics
+  and Whisper need mostly clear. It applies to recorded tracks too. The phases that count as speaking
+  are `TALKING` and `SPEAKING_PHASES` in `cues.ts`.
+- **Ducking.** The music drops to a fifth while a host's voice line or the browser's Japanese speech
+  (Murder at the Onsen's suspects, Concentration's audio cards) plays, and comes back when the last one
+  ends. A new host line cuts off the previous one.
+- **One mute.** The sound button (top left of the stage) mutes the music, the host voices, the read-aloud
+  Japanese and Karaoke Duel's track together, and is remembered in that browser. With sound off,
+  Concentration shows audio cards' kana instead. Browsers only allow sound after a tap, click or key
+  press on the page, so until then the button reads "Click for music".
+- **Stings.** The drum roll plays only on reveals that are reveals (Oogiri, Bingo, Oekaki, Tourist,
+  Omiai, the Raid) and on the Onsen's accusation; the recap opens with the fanfare.
+
+## Recorded tracks: loops, loudness, credits
+
+- **Loop points.** Each track loops between two beat-aligned points (`loop` in `tracks.ts`), found with
+  beat tracking so intros, fade-outs and silent tails never play. Determination is exactly 40 bars, so it
+  loops whole.
+- **Loudness.** `gainDb` brings each file to about −16 LUFS (measured with ffmpeg's `ebur128`), level
+  with the synth through the music bus, so switching games doesn't jump in volume.
+- **Loading.** Tracks are fetched when needed, the next likely ones ahead of time, and at most three
+  stay decoded in memory. The old music keeps playing until the new track can start; if a file can't
+  load, its synth `fallback` plays instead. The server sends MP3s with a week's cache.
+- **Credits.** The now-playing line beside the sound button names the track, author and licence; the
+  recap screen lists them all (`creditSummary()`), with the host voices' credits.
 
 ## Adding a recorded track
 
-Encode it to 128 kbps MP3 in `stage/assets/music/`, add it to `TRACKS` with its author, licence and
-source, add its row to commercial-blockers.md, and name it in `cues.ts`. CC BY tracks need their
-credit line (`TRACK_CREDITS`) on the credits screen.
+Encode it to 128 kbps MP3 in `stage/assets/music/`, add it to `TRACKS` with its author, licence,
+source, loop points, gain and fallback, add it to row 22 of commercial-blockers.md, and name it in
+`cues.ts`. `tests/music.test.ts` checks the file exists, the loop fits inside it and the credit lines
+are complete.
 
 ## Editing a synth tune
 

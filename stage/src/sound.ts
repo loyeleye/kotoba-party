@@ -102,6 +102,6 @@ export function onMuteChange(fn: (muted: boolean) => void): void {
 
 if (typeof document !== 'undefined') {
   // Any click or key on the stage (the VIP's start, a skip, the sound button) unlocks audio.
-  document.addEventListener('pointerdown', () => unlockAudio(), { capture: true });
-  document.addEventListener('keydown', () => unlockAudio(), { capture: true });
+  // Some browsers (iOS Safari among them) only count the end of a tap, so listen for both ends.
+  for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) document.addEventListener(ev, () => unlockAudio(), { capture: true });
 }

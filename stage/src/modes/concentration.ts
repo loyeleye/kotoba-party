@@ -3,6 +3,8 @@
 // Audio cards speak their word with the browser's Japanese voice when they turn over.
 
 import { h, ruby } from '../../../shared/src/dom.js';
+import { duckForSpeech } from '../music/index.js';
+import { isMuted } from '../sound.js';
 import type { ConcentrationView } from '../../../shared/src/modes/views.js';
 import type { CellView } from '../../../shared/src/modes/concentration/concentration.js';
 import type { Face } from '../../../shared/src/modes/concentration/board.js';
@@ -17,19 +19,20 @@ function jaVoice(): SpeechSynthesisVoice | null {
 }
 if (typeof speechSynthesis !== 'undefined') speechSynthesis.getVoices();
 
-/** True when the stage can voice audio cards; otherwise they show their kana. */
-const canTalk = (): boolean => jaVoice() !== null;
+/** True when the stage can voice audio cards; otherwise (no voice, or sound off) they show their kana. */
+const canTalk = (): boolean => jaVoice() !== null && !isMuted();
 
 let lastSpoken = '';
 function speakOnce(key: string, kana: string): void {
   if (key === lastSpoken) return;
   lastSpoken = key;
   const voice = jaVoice();
-  if (!voice) return;
+  if (!voice || isMuted()) return;
   const u = new SpeechSynthesisUtterance(kana);
   u.lang = 'ja-JP';
   u.voice = voice;
   u.rate = 0.85;
+  duckForSpeech(u);
   speechSynthesis.cancel();
   speechSynthesis.speak(u);
 }
