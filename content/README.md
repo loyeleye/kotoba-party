@@ -5,7 +5,7 @@ Hand-written game content for Kotoba Party v1, as typed TypeScript data. Import 
 
 | Folder | What's in it |
 |---|---|
-| `src/kana/` | Kana Yōkai Raid: all 231 kana, 13 chapters with folklore yōkai, look-alike sets, minimal pairs, boss words, memory cards |
+| `src/kana/` | Kana Yōkai Raid: all 231 kana, 13 chapters with folklore yōkai, look-alike sets, minimal pairs, boss words, memory cards, and Ink Storm stroke references (`strokes.ts`, generated from KanjiVG, CC BY-SA 3.0, by `tools/content-strokes.ts`: don't edit by hand) |
 | `src/packs/` | Topic packs (food, family, travel): words with kana readings and verb/adjective forms, phrases, baseline words for the spoken test |
 | `src/oogiri/` | Oogiri Night prompts per pack (50 each) and Photo Caption set-phrase tiles |
 | `src/last-train/` | Last Train minigames (8) and scenarios (3) |

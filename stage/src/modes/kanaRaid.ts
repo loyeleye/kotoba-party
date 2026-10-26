@@ -1,11 +1,14 @@
 // Kana Yōkai Raid on the stage: the horde marches from right to left towards the gate, each
 // yōkai a pixel-art spirit with its kana written on it, with an HP bar; the team combo meter
 // sits on top. Positions come from the yōkai's server-side spawn and escape times, played
-// as CSS animations with a negative delay, so a re-render never makes them jump.
+// as CSS animations with a negative delay, so a re-render never makes them jump. In the Ink
+// Storm wave the yōkai wear their twins' masks and the players' drawings replay in brush
+// strokes under the arena, timed the same way.
 
 import { h } from '../../../shared/src/dom.js';
-import type { KanaRaidView, YokaiView } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
-import { COMBO_WINDOW_MS } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
+import { inkSvg } from '../../../shared/src/inkSvg.js';
+import type { InkShow, KanaRaidView, YokaiView } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
+import { COMBO_WINDOW_MS, INK_WAVE } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
 
@@ -72,8 +75,27 @@ function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean): HTMLE
   );
 }
 
+/** The latest drawings, brushed on stroke by stroke (newest on the right). */
+function inkStrip(view: RoomView, game: KanaRaidView, now: number): HTMLElement {
+  const who = names(view);
+  return h(
+    'div',
+    { class: 'raid-inks' },
+    game.inks.length ? null : h('p', { class: 'hint' }, '🖌 Draw on your phones: your brush strokes appear here.'),
+    game.inks.map((ink: InkShow) =>
+      h(
+        'figure',
+        { class: `raid-ink ${ink.ok ? (ink.clean ? 'clean' : 'ok') : 'miss'}` },
+        inkSvg(ink.strokes, { strokeMs: 350, elapsedMs: Math.max(0, now - ink.at) }),
+        h('figcaption', {}, h('strong', {}, who.get(ink.playerId) ?? '?'), ink.ok ? h('span', { lang: 'ja' }, ` ${ink.char} ${ink.clean ? '✦' : '✓'}`) : ' ✗'),
+      ),
+    ),
+  );
+}
+
 function arena(view: RoomView, game: KanaRaidView): HTMLElement {
   const now = serverNow(game);
+  const ink = game.ink && game.wave === INK_WAVE;
   const total = game.horde.length;
   const down = game.horde.filter((y) => y.state === 'defeated').length;
   const fled = game.horde.filter((y) => y.state === 'escaped' || (y.state === 'alive' && y.escapeAt <= now)).length;
@@ -97,10 +119,11 @@ function arena(view: RoomView, game: KanaRaidView): HTMLElement {
     ),
     h(
       'div',
-      { class: `raid-arena${wide ? ' words' : ''}` },
+      { class: `raid-arena${wide ? ' words' : ''}${ink ? ' ink' : ''}` },
       h('div', { class: 'raid-gate', title: 'The gate: yōkai that reach it escape' }, '⛩'),
       game.horde.map((y, i) => yokaiEl(y, i, now, wide)),
     ),
+    ink ? inkStrip(view, game, now) : null,
     view.phase === 'answer' ? h('p', { class: 'raid-how' }, game.waveInfo?.how ?? '') : null,
   );
 }
@@ -145,13 +168,14 @@ export const kanaRaidStage: StageMode<KanaRaidView> = {
             { class: 'raid-picks' },
             game.picks.map((p) => h('li', { class: p.ready ? 'ready' : '' }, h('strong', {}, who.get(p.playerId) ?? '?'), ` chapters ${range(p.chapters)}`, p.ready ? ' ✓' : '')),
           ),
+          game.ink ? h('p', { class: 'hint small' }, '🖌 Tonight ends in an Ink Storm: draw kana on your phones before the boss. (The VIP can switch it off.)') : null,
           game.placeholder ? h('p', { class: 'hint small' }, 'Using the built-in practice set (content not loaded).') : null,
         );
       case 'prompt':
         return h(
           'div',
           { class: 'card raid-card raid-banner' },
-          h('p', { class: 'raid-wave-big' }, game.wave > 3 ? 'BOSS' : `WAVE ${game.wave}`),
+          h('p', { class: 'raid-wave-big' }, game.wave > game.waves ? 'BOSS' : `WAVE ${game.wave}`),
           game.waveInfo ? h('p', { class: 'raid-title', lang: 'ja' }, game.waveInfo.titleJa) : null,
           game.waveInfo ? h('p', { class: 'big' }, game.waveInfo.title) : null,
           game.waveInfo ? h('p', { class: 'hint' }, game.waveInfo.how) : null,

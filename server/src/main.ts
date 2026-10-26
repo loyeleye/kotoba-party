@@ -1,7 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import { loadContent } from './content.js';
-import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, llmFromEnv, type BankLine } from '../ai/index.js';
+import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, llmFromEnv, type BankLine } from '../ai/index.js';
 import { aiVoice, bankVoice, hostDirector } from './host.js';
+import { inkCoachDirector } from './ink.js';
 import { createReader } from './reading.js';
 import { createKotobaServer } from './server.js';
 
@@ -11,8 +12,9 @@ const content = loadContent(root);
 
 // The host: LLM lines when ANTHROPIC_API_KEY is set, VOICEVOX audio when VOICEVOX_URL is set,
 // and the written line bank otherwise (see server/ai/README.md).
+const llm = llmFromEnv();
 const ai = createHostVoice({
-  llm: llmFromEnv(),
+  llm,
   tts: process.env.VOICEVOX_URL ? new VoicevoxTts() : new SilentTts(),
   // The pipeline voices the events it knows; lines for the rest go through the plain bank voice.
   lines: content.hostLines.filter((l): l is typeof l & BankLine => (HOST_EVENTS as readonly string[]).includes(l.event)),
@@ -24,6 +26,8 @@ const server = createKotobaServer({
   onCues: hostDirector(aiVoice(ai, bankVoice(content))),
   onPhase: (room) => room.state.phase === 'intro' && ai.newGame(room.code),
   onRoomClosed: (room) => ai.closeRoom(room.code),
+  // Ink Storm's vision second look on drawings, only with an LLM; it shares the game's budget.
+  onCommit: llm ? inkCoachDirector(createInkCoach({ llm }), { budget: (code) => ai.budget(code) }) : undefined,
   audio: (id) => ai.audio(id),
   reader: await createReader(),
   staticDir: `${root}dist`,

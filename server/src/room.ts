@@ -137,6 +137,15 @@ export class Room {
     this.dispatch({ type: 'host', say: line });
   }
 
+  /**
+   * A move the server makes on a player's behalf (the Ink Storm coach's tip on their drawing).
+   * Goes through the same dispatch as everything else; the mode decides whether to accept it.
+   */
+  inject(playerId: string, move: unknown): boolean {
+    if (!this.seated(playerId)) return false;
+    return this.dispatch({ type: 'command', actor: { kind: 'player', playerId }, command: { id: `server:${newId()}`, type: 'play', move } }).changed;
+  }
+
   /** Attaches a pushed-to socket. Returns false when the token does not belong to this room. */
   attach(token: string, socket: RoomSocket): boolean {
     const viewer = this.tokens.get(token);

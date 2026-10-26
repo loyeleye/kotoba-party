@@ -4,6 +4,7 @@
 
 import type { BossWord, JpText, Kana, KanaChapter, LookAlikeSet, MinimalPair } from '../../../../content/src/types.js';
 import { normalizeReading, soundKey, toHiragana, toKatakana } from '../../japanese/kana.js';
+import type { InkStroke } from '../../japanese/strokes.js';
 import type { ContentLibrary } from '../mode.js';
 
 // ---------- placeholder fallback (used only when content is empty) ----------
@@ -53,6 +54,8 @@ export interface Deck {
   lookAlikes: readonly LookAlikeSet[];
   pairs: readonly MinimalPair[];
   bosses: readonly BossWord[];
+  /** Stroke references by kana id (Ink Storm). Empty when the content has none. */
+  strokes: ReadonlyMap<string, readonly InkStroke[]>;
   /** True when any part had to fall back to the placeholder sets. */
   placeholder: boolean;
 }
@@ -93,6 +96,8 @@ export function buildDeck(content: ContentLibrary): Deck {
   const lookAlikes = content.lookAlikeSets.filter((s) => s.kanaIds.every((id) => byId.has(id)));
   const pairs = content.minimalPairs.length ? content.minimalPairs : FALLBACK_PAIRS;
   const bosses = content.bossWords.length ? content.bossWords : FALLBACK_BOSS;
+  const strokes = new Map<string, readonly InkStroke[]>();
+  for (const k of content.kanaStrokes ?? []) if (byId.has(k.kanaId) && k.strokes.length) strokes.set(k.kanaId, k.strokes);
   return {
     kana,
     byId,
@@ -101,6 +106,7 @@ export function buildDeck(content: ContentLibrary): Deck {
     lookAlikes,
     pairs,
     bosses,
+    strokes,
     placeholder: usingFallbackKana || !content.minimalPairs.length || !content.bossWords.length,
   };
 }
@@ -112,6 +118,20 @@ export const isFighter = (k: Kana): boolean => k.kind !== 'mark' && k.kind !== '
 export function poolFor(deck: Deck, chapters: readonly number[]): Kana[] {
   const pool = deck.kana.filter((k) => chapters.includes(k.chapter) && isFighter(k));
   return pool.length ? pool : deck.kana.filter((k) => k.chapter === (deck.chapters[0]?.number ?? 1) && isFighter(k));
+}
+
+/**
+ * The kana a player can be asked to draw: their studied kana that have a stroke reference.
+ * A player whose chapters have none (only combinations, say) draws from chapters up to their
+ * top one, then from everything drawable.
+ */
+export function inkPoolFor(deck: Deck, chapters: readonly number[]): Kana[] {
+  const drawable = deck.kana.filter((k) => deck.strokes.has(k.id));
+  const mine = drawable.filter((k) => chapters.includes(k.chapter));
+  if (mine.length) return mine;
+  const top = Math.max(...chapters);
+  const below = drawable.filter((k) => k.chapter <= top);
+  return below.length ? below : drawable;
 }
 
 export function pairsFor(deck: Deck, topChapter: number): MinimalPair[] {

@@ -12,6 +12,8 @@ export interface LlmRequest<T> {
   purpose: LlmPurpose;
   system: string;
   user: string;
+  /** Images shown before the user text (the Ink Storm coach's drawing). */
+  images?: { mediaType: 'image/png'; data: string }[];
   schema: z.ZodType<T>;
   /** Give up after this long; the caller falls back. */
   timeoutMs: number;
@@ -118,7 +120,14 @@ export class ClaudeLlm implements LlmClient {
           max_tokens: this.opts.maxTokens ?? 2000,
           // A stable system prompt first, so repeated calls in a game hit the prompt cache.
           system: [{ type: 'text', text: req.system, cache_control: { type: 'ephemeral' } }],
-          messages: [{ role: 'user', content: req.user }],
+          messages: [
+            {
+              role: 'user',
+              content: req.images?.length
+                ? [...req.images.map((img) => ({ type: 'image' as const, source: { type: 'base64' as const, media_type: img.mediaType, data: img.data } })), { type: 'text' as const, text: req.user }]
+                : req.user,
+            },
+          ],
           output_config: { effort: this.opts.effort ?? 'low', format: betaZodOutputFormat(req.schema) },
           // If a safety classifier declines (false positives happen on odd joke answers), the API re-runs the
           // request on a fallback model inside the same call.

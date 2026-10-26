@@ -16,6 +16,7 @@ export type * from './types.js';
 export { kana, kanaById } from './kana/kana.js';
 export { kanaChapters, lookAlikeSets, minimalPairs, bossWords } from './kana/raid.js';
 export { kanaMnemonics } from './kana/mnemonics.js';
+export { kanaStrokes } from './kana/strokes.js';
 export { setPhraseTiles } from './oogiri/set-phrases.js';
 export { lastTrainMinigames, lastTrainScenarios } from './last-train/index.js';
 export { hostLines, hostProfiles, hostAwards } from './hosts/index.js';

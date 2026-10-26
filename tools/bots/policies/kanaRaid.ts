@@ -1,11 +1,15 @@
 // How a bot plays Kana Yōkai Raid: marks a few chapters, then attacks whatever its phone
 // shows. Mostly right, sometimes wrong (so misses, tips and retries get exercised too), and
-// a mix of shouting, typing and tapping. It works only from its own view, like a phone.
+// a mix of shouting, typing and tapping. It works only from its own view, like a phone. In
+// Ink Storm it draws the kana by "hand" from the stroke references (sometimes the wrong kana,
+// or a stroke backwards), then says it.
 
-import { normalizeReading, soundKey } from '../../../shared/src/japanese/kana.js';
+import { kanaStrokes } from '../../../content/src/kana/strokes.js';
+import { normalizeReading, soundKey, toHiragana, toKatakana } from '../../../shared/src/japanese/kana.js';
 import type { KanaRaidView } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
+import { handDraw } from '../ink.js';
 
 export interface KanaRaidPolicyOptions {
   /** Share of attacks the bot gets right (default 0.8). */
@@ -23,6 +27,14 @@ function hash(text: string): number {
 }
 
 const same = (a: string, b: string) => soundKey(a) === soundKey(b);
+
+/** A seeded random source, so a bot's drawing repeats run to run. */
+function seeded(text: string): () => number {
+  let s = Math.floor(hash(text) * 2147483646) + 1;
+  return () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
+}
+
+const STROKES = new Map(kanaStrokes.map((k) => [k.char, k.strokes]));
 
 export function kanaRaidPolicy(opts: KanaRaidPolicyOptions = {}): ModePolicy {
   const accuracy = opts.accuracy ?? 0.8;
@@ -97,6 +109,22 @@ export function kanaRaidPolicy(opts: KanaRaidPolicyOptions = {}): ModePolicy {
             const good = matching(show);
             move = tap(right ? good : wrongOption(good));
           }
+          break;
+        }
+        case 'draw': {
+          if (a.step === 'say') {
+            move = style < 0.85 ? say(right ? (a.word?.text ?? '') : 'ん') : { kind: 'attack', attackId: a.id, pass: true };
+            break;
+          }
+          // The mask is the twin: the true form is the same sound in the asked-for script.
+          const target = a.script === 'katakana' ? toKatakana(a.show ?? '') : toHiragana(a.show ?? '');
+          const random = seeded(key);
+          const ref = STROKES.get(target) ?? kanaStrokes[0]!.strokes;
+          let ink;
+          if (right) ink = handDraw(ref, random, { wobble: 0.02 });
+          else if (style < 0.5) ink = handDraw(ref, random, { reverse: ref.length - 1 });
+          else ink = handDraw(kanaStrokes[Math.floor(random() * kanaStrokes.length)]!.strokes, random);
+          move = { kind: 'attack', attackId: a.id, ink };
           break;
         }
         case 'blow':

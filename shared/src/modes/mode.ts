@@ -12,6 +12,7 @@ import type {
   HostLine,
   Kana,
   KanaChapter,
+  KanaStrokes,
   LastTrainMinigame,
   LastTrainScenario,
   Level,
@@ -30,6 +31,8 @@ export interface ContentLibrary {
   setPhraseTiles: readonly SetPhraseTile[];
   kana: readonly Kana[];
   kanaChapters: readonly KanaChapter[];
+  /** Stroke references for the Raid's Ink Storm wave (basic kana only). */
+  kanaStrokes: readonly KanaStrokes[];
   lookAlikeSets: readonly LookAlikeSet[];
   minimalPairs: readonly MinimalPair[];
   bossWords: readonly BossWord[];
@@ -47,6 +50,7 @@ export const EMPTY_CONTENT: ContentLibrary = {
   setPhraseTiles: [],
   kana: [],
   kanaChapters: [],
+  kanaStrokes: [],
   lookAlikeSets: [],
   minimalPairs: [],
   bossWords: [],
