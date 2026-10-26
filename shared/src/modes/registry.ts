@@ -6,6 +6,7 @@ import type { Mode, ModeInfo } from './mode.js';
 import { oogiriMode } from './oogiri/oogiri.js';
 import { wordGauntletMode } from './wordGauntlet/wordGauntlet.js';
 import { concentrationMode } from './concentration/concentration.js';
+import { phraseBingoMode } from './phraseBingo/phraseBingo.js';
 
 export const MODES: Record<ModeId, Mode<any, any>> = {
   oogiri: oogiriMode,
@@ -13,8 +14,9 @@ export const MODES: Record<ModeId, Mode<any, any>> = {
   'kana-raid': kanaRaidMode,
   'word-gauntlet': wordGauntletMode,
   concentration: concentrationMode,
+  'phrase-bingo': phraseBingoMode,
   debug: debugMode,
 };
 
 /** Modes on the VIP's menu, in show order (the debug round stays hidden). */
-export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info];
+export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info];

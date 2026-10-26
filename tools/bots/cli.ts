@@ -6,7 +6,7 @@
 //   npm run bots -- --mode oogiri --bots 5      # make a room and play one game of a real mode
 //
 // Options: --url (default http://localhost:3000), --code, --bots, --rounds, --drop <seconds>, --fast,
-// --mode <oogiri|last-train|kana-raid|word-gauntlet|concentration> and --games (real modes only).
+// --mode <oogiri|last-train|kana-raid|word-gauntlet|concentration|phrase-bingo> and --games (real modes only).
 
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -20,6 +20,7 @@ import { concentrationPolicy } from './policies/concentration.js';
 import { kanaRaidPolicy } from './policies/kanaRaid.js';
 import { lastTrainPolicy } from './policies/lastTrain.js';
 import { oogiriPolicy } from './policies/oogiri.js';
+import { phraseBingoPolicy } from './policies/phraseBingo.js';
 import { wordGauntletPolicy } from './policies/wordGauntlet.js';
 
 const { values } = parseArgs({
@@ -46,6 +47,8 @@ const url = values.url!.replace(/\/$/, '');
 const count = Number(values.bots ?? (values.code ? 7 : 8));
 const dropSeconds = Number(values.drop);
 
+let sharedPhraseBingo: ModePolicy | undefined;
+
 /** A fresh policy per bot, so each keeps its own memory (Concentration remembers cards). */
 function policyFor(seat: number): ModePolicy | undefined {
   const content = () => loadContent(fileURLToPath(new URL('../../', import.meta.url)));
@@ -60,6 +63,9 @@ function policyFor(seat: number): ModePolicy | undefined {
       return wordGauntletPolicy(content());
     case 'concentration':
       return concentrationPolicy();
+    case 'phrase-bingo':
+      // One shared policy: audience bots "hear" what the actor bots say.
+      return (sharedPhraseBingo ??= phraseBingoPolicy());
     default:
       return undefined;
   }
