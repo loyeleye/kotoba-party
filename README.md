@@ -24,6 +24,8 @@ Eleven modes run end to end on the stage and phones, each with bots and full-ser
 
 All content is `draft` until a fluent speaker checks it. Decisions and questions for Ladi:
 [docs/open-questions.md](docs/open-questions.md).
+Anything that would stop the game being sold is logged in
+[docs/commercial-blockers.md](docs/commercial-blockers.md).
 
 Phase 0 built the multiplayer skeleton: rooms with 4-letter codes, QR join, WebSocket push plus
 HTTP commands, reconnect with a 90 s seat hold, and headless bot players.
