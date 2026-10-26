@@ -15,7 +15,7 @@ export type { Level, HostId };
 export const PHASES = ['lobby', 'intro', 'prompt', 'answer', 'reveal', 'encore', 'score', 'penalty', 'finale', 'recap'] as const;
 export type Phase = (typeof PHASES)[number];
 
-export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'word-gauntlet', 'concentration', 'phrase-bingo', 'karaoke-duel', 'debug'] as const;
+export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'word-gauntlet', 'concentration', 'phrase-bingo', 'karaoke-duel', 'tourist', 'debug'] as const;
 export type ModeId = (typeof MODE_IDS)[number];
 
 export const LEVELS: readonly Level[] = ['kana', 'n5', 'n4'];
