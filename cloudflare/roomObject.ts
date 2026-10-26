@@ -14,7 +14,7 @@ import { suspectDirector } from '../server/src/onsen.js';
 import { Room, type RoomSocket } from '../server/src/room.js';
 import { systemClock } from '../server/src/clock.js';
 import { SttGate, isClip, sttFromEnv, transcribe } from '../server/src/stt.js';
-import { CLOSE, type CreateRoomResponse, type JoinRequest, type RoomInfo } from '../shared/src/protocol.js';
+import { CLOSE, type CreateRoomResponse, type JoinRequest, type RoomInfo, type WatchRoomResponse } from '../shared/src/protocol.js';
 import type { Env } from './env.js';
 
 // Built once per isolate and shared by every room in it; the content is read-only.
@@ -92,6 +92,12 @@ export class RoomObject extends DurableObject<Env> {
         joinable: room.state.phase === 'lobby' && room.state.players.length < 8,
       };
       return json(200, info);
+    }
+    if (action === 'watch') {
+      const stageToken = room.createWatchToken();
+      if (!stageToken) return json(409, { error: 'too-many-screens' });
+      const body: WatchRoomResponse = { code: room.code, stageToken, joinUrl: `${base}/?code=${room.code}`, watch: true };
+      return json(201, body);
     }
     if (action === 'join') {
       const body = (await req.json().catch(() => null)) as JoinRequest | null;
