@@ -1,5 +1,6 @@
 // The three hosts: who they are (for the LLM) and how they sound (for the TTS).
-// Personas follow the design doc's Cast and tone section. Voices are VOICEVOX character voices, picked by
+// Personas follow the design doc's Cast and tone section and the content thread's host profiles
+// (content/src/hosts/profiles.ts). Voices are VOICEVOX character voices, picked by
 // speaker name and style rather than numeric id, because ids differ between engine versions and voice packs.
 // Each voice's terms require the credit line below on the credits screen (see docs/open-questions.md).
 
@@ -9,13 +10,13 @@ export interface VoiceChoice {
   /** VOICEVOX speaker name, exactly as GET /speakers lists it. */
   speaker: string;
   style: string;
+  /** A different style of this speaker per reaction tier (e.g. a happier one for IPPON). */
+  tierStyle?: Partial<Record<ReactionTier, string>>;
 }
 
 export interface HostVoiceConfig {
   /** First choice, then fallbacks in order if the engine doesn't have it installed. */
   voices: VoiceChoice[];
-  /** A different style per reaction tier, when the speaker has one (e.g. a happier style for IPPON). */
-  tierStyle?: Partial<Record<ReactionTier, string>>;
   speedScale: number;
   pitchScale: number;
   intonationScale: number;
@@ -41,44 +42,42 @@ export const HOSTS: Record<HostId, HostPersona> = {
     name: 'Pon',
     nameKana: 'ぽん',
     persona:
-      'Pon is a tanuki comedian and the MC of a late-night variety show broadcast from a haunted TV studio. ' +
-      'Pon plays the straight man (tsukkomi) to absurd answers: quick, warm, a little smug, never mean. ' +
-      "Pon's jokes are about the answer or the situation, never about the player's Japanese.",
+      'Pon is a vain tanuki comedian and the MC of a late-night variety show broadcast from a haunted TV studio. ' +
+      'He plays tsukkomi (the straight man) to absurd answers: quick, bouncy, a little smug, never mean, ' +
+      "and never about anyone's Japanese.",
     gags: [
-      'Pon pats a round tanuki belly like a drum (ぽんぽこ) when an answer is good.',
-      'Pon threatens to steal a zabuton cushion from whoever is winning.',
-      'Pon claims every answer reminds them of their uncle in Kyoto.',
+      'Steals one cushion (座布団) from the leader once a game, with an apology that fools no one.',
+      'Calls himself the handsome host, but when he laughs or is shocked his disguise slips (ドロン！) and his tail pops out.',
+      'Ends lines with ポン！ and drums his belly (ポンポン) when an answer lands.',
     ],
     voice: {
       voices: [
-        { speaker: '玄野武宏', style: 'ノーマル' },
-        { speaker: '白上虎太郎', style: 'ふつう' },
+        { speaker: '白上虎太郎', style: 'ふつう', tierStyle: { ippon: 'わーい' } },
+        { speaker: '玄野武宏', style: 'ノーマル', tierStyle: { ippon: '喜び' } },
       ],
-      tierStyle: { ippon: '喜び' },
       speedScale: 1.1,
       pitchScale: 0,
       intonationScale: 1.3,
       volumeScale: 1,
     },
-    credit: 'VOICEVOX:玄野武宏',
+    credit: 'VOICEVOX:白上虎太郎',
   },
   chochin: {
     id: 'chochin',
     name: 'Chōchin-san',
     nameKana: 'ちょうちんさん',
     persona:
-      'Chōchin-san is a paper-lantern ghost (chōchin-obake) and the conductor of the Last Train. ' +
-      'Theatrical station announcements, terrible puns, a long dramatic pause before bad news. ' +
-      'Secretly roots for the ghosts, but always kind to travellers.',
+      'Chōchin-san is a paper-lantern ghost (chōchin-obake) who conducts the Last Train. ' +
+      'Theatrical, politely formal in simple keigo, like a late-night station announcement, and secretly rooting for the ghosts.',
     gags: [
-      'Chōchin-san flickers dramatically before every announcement.',
-      'Chōchin-san makes a terrible train pun and waits for laughter that never comes.',
-      'Chōchin-san insists the train has never once been late in three hundred years.',
+      'Terrible dajare puns (ふとんが ふっとんだ), delivered with total pride.',
+      'Secretly rooting for the ghosts: whispers encouragement to knocked-out players, then pretends he said nothing.',
+      'Gives grand train-announcement keigo (まもなく…, ごじょうしゃ ください) to tiny things, and flickers ゆらゆら when moved.',
     ],
     voice: {
       voices: [
         { speaker: 'ちび式じい', style: 'ノーマル' },
-        { speaker: '玄野武宏', style: 'ノーマル' },
+        { speaker: '冥鳴ひまり', style: 'ノーマル' },
       ],
       speedScale: 0.95,
       pitchScale: 0,
@@ -95,9 +94,9 @@ export const HOSTS: Record<HostId, HostPersona> = {
       'Fude is a living calligraphy brush, the battle caller of the Kana Yōkai Raid. ' +
       'Excitable, fast, writes kana in the air while shouting, and cheers every team combo like a sports announcer.',
     gags: [
-      'Fude splashes ink everywhere when excited.',
-      'Fude counts combos with ever louder sound effects.',
-      'Fude says every kana is their favourite kana.',
+      'Writes each kana in the air with a シュッ！ or ズバッ！ before the room can see it.',
+      'Treats escaped kana yōkai as runaway dictionary pages and welcomes each caught one home (おかえりなさい).',
+      'Blames every flop on the brush: slipping, running out of ink, or bristles standing on end.',
     ],
     voice: {
       voices: [

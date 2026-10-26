@@ -9,7 +9,7 @@ const lines: BankLine[] = [
   { id: 'pon.reveal_react.good.01', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'いいね！', kana: 'いいね！', en: 'Nice!' } },
   { id: 'pon.reveal_react.good.02', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'うまい！', kana: 'うまい！', en: 'Good one!' } },
   { id: 'pon.reveal_react.01', host: 'pon', event: 'reveal_react', jp: { text: 'なるほど！', kana: 'なるほど！', en: 'I see!' } },
-  { id: 'pon.mic_check_ok.01', host: 'pon', event: 'mic_check_ok', slots: ['name'], jp: { text: '{name}さん、きこえるよ！', kana: '{name}さん、きこえるよ！', en: 'I can hear you, {name}!' } },
+  { id: 'pon.mic_check_ok.01', host: 'pon', event: 'mic_check_ok', slots: ['{name}'], jp: { text: '{name}さん、きこえるよ！', kana: '{name}さん、きこえるよ！', en: 'I can hear you, {name}!' } },
 ];
 const quip = { text: 'ねこが ぎんこういん？ ぽんぽこ！', kana: 'ねこが ぎんこういん？ ぽんぽこ！', en: 'A cat bank clerk? Ponpoko!' };
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -89,6 +89,14 @@ describe('host voice', () => {
     const line = await voice.prepare('R', { host: 'pon', event: 'reveal_react', tier: 'good' }).ready(10);
     expect(line?.audio).toBeDefined();
     await tick();
+  });
+
+  it('reads a prompt with a blank as a pause', async () => {
+    const tts = new SilentTts();
+    const voice = createHostVoice({ tts });
+    const line = await voice.speak('R', 'pon', { text: 'ねこの しごとは ＿＿＿ です。', kana: 'ねこの しごとは ＿＿＿ です。', en: 'x' }).ready(100);
+    expect(line?.audio).toBeDefined();
+    expect(tts.spoken[0]?.kana).toBe('ねこの しごとは 、 です。');
   });
 
   it('reads given Japanese aloud', async () => {

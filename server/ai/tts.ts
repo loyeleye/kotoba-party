@@ -104,7 +104,7 @@ export class VoicevoxTts implements TtsEngine {
     const table = await this.speakerTable();
     const cfg = this.hosts[host];
     for (const v of cfg.voices) {
-      const tierStyle = tier && cfg.tierStyle?.[tier];
+      const tierStyle = tier && v.tierStyle?.[tier];
       const id = (tierStyle ? table.get(`${v.speaker}/${tierStyle}`) : undefined) ?? table.get(`${v.speaker}/${v.style}`);
       if (id !== undefined) return id;
     }

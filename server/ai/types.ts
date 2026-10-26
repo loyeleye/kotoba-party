@@ -6,30 +6,44 @@ export type HostId = 'pon' | 'chochin' | 'fude';
 export type Level = 'kana' | 'n5' | 'n4';
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 
-/** Every event a host speaks on. The bank has written lines for each; the LLM writes fresh ones for some. */
+/** Every event a host speaks on: the content thread's HostEvent (content/src/types.ts), kept in step by hand. */
 export const HOST_EVENTS = [
+  // shared round skeleton
   'lobby_welcome',
   'mic_check_ok',
+  'mic_check_quiet',
   'intro',
   'prompt_read',
+  'say_it_first',
   'answer_hurry',
+  'all_in',
   'reveal_react',
   'encore_invite',
+  'encore_cheer',
   'natural_version',
   'kakegoe_call',
-  'cushion_steal',
   'retry_clue',
   'miss_kind',
-  'ghost',
   'recap_award',
   'play_again',
+  // Oogiri Night
+  'ippon',
+  'cushion_steal',
+  // Kana Yōkai Raid
   'raid_wave_start',
+  'raid_hit',
   'raid_combo',
   'raid_boss',
+  'raid_catch',
+  'raid_escape',
+  // Last Train
   'train_departure',
   'train_stop',
+  'train_ghost',
+  'train_revive',
   'train_last_stop_twist',
   'platform_dash',
+  'room_overrule',
 ] as const;
 export type HostEvent = (typeof HOST_EVENTS)[number];
 
@@ -45,7 +59,7 @@ export interface JpText {
 
 /**
  * A written line from the bank (content/src/hosts/). Slots such as {name} appear verbatim in text, kana and en,
- * and are listed in `slots`. Ids are stable (e.g. 'pon.reveal_react.good.03'), so audio is cached by id.
+ * and are listed in `slots`, with or without braces ('{name}' or 'name'). Ids are stable (e.g. 'pon.reveal_react.good.03'), so audio is cached by id.
  */
 export interface BankLine {
   id: string;
@@ -54,6 +68,8 @@ export interface BankLine {
   tier?: ReactionTier;
   jp: JpText;
   slots?: string[];
+  /** Review state from the content thread ('draft' until a fluent check). Not used here. */
+  status?: string;
 }
 
 /** Same shape as server/src/clock.ts, so the skeleton's ManualClock can be passed straight in. */
