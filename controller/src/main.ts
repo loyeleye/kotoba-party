@@ -144,6 +144,7 @@ function status(st: ConnectionStatus): void {
 
 // ---- game screens ----
 function render(view: RoomView): void {
+  tickTimer();
   const me = view.players.find((p) => p.id === session?.playerId);
   const key = [
     view.phase,
@@ -283,9 +284,10 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('online', () => client?.reconnectNow());
 
-setInterval(() => {
+function tickTimer(): void {
   timerEl.textContent = formatSeconds(client?.remainingMs() ?? null);
-}, 250);
+}
+setInterval(tickTimer, 250);
 
 // Reloaded page: go straight back to the saved seat for this room.
 const saved = load<Session>('kotoba:session');

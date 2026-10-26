@@ -116,6 +116,7 @@ function render(view: RoomView, v: number): void {
     ),
   );
   mount(els.main, mainFor(view));
+  tick();
 }
 
 function mainFor(view: RoomView): HTMLElement {
