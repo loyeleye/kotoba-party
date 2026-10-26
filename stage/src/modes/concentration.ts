@@ -56,7 +56,8 @@ function toast(view: RoomView, game: ConcentrationView): HTMLElement | null {
     'guess-right': `🔍 ${who} guessed the picture!`,
     'guess-wrong': `🔍 ${who} guessed… not quite`,
   };
-  return h('div', { class: `cc-toast cc-toast-${f.kind}`, style: `animation-delay: -${elapsed}ms` }, text[f.kind]);
+  // Keyed by the flash, so a new one is a new element and its animation plays from the start.
+  return h('div', { class: `cc-toast cc-toast-${f.kind}`, style: `animation-delay: -${elapsed}ms`, 'data-key': `flash-${f.seq}` }, text[f.kind]);
 }
 
 // ---- pieces ----

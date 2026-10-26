@@ -5,7 +5,7 @@
 .wg-round { display: grid; grid-template-columns: 72px 1fr; gap: 18px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px 22px; animation: wg-in 0.5s ease both; }
 .wg-round p { margin: 0; }
 .wg-round-title { font-size: 34px; font-weight: 800; }
-.wg-num { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 36px; font-weight: 900; display: grid; place-items: center; }
+.wg-num { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 36px; font-weight: 900; display: grid; place-items: center; }
 .wg-word { display: grid; gap: 8px; justify-items: center; }
 .wg-kanji { font-size: 120px; font-weight: 900; line-height: 1.3; }
 .wg-kanji rt { font-size: 34px; font-weight: 600; color: var(--muted); }

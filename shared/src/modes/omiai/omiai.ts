@@ -19,7 +19,7 @@ import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH, POINTS_PER_VOTE } from '../../constants.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
-import { toRomaji } from '../lastTrain/check.js';
+import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { saidPhrase } from '../phraseBingo/check.js';
 import { appealQuestion, CARDS, CLOSERS, introQuestion, keigoPair, OPENERS, withName, type CharacterCard, type KeigoPair, type OmiaiQuestion } from './cards.js';

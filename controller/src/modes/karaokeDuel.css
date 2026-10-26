@@ -14,7 +14,7 @@
 @keyframes kdp-hop { 0% { opacity: 1; transform: translateY(0); } 45% { opacity: 1; transform: translateY(-12px); } 100% { opacity: 1; transform: translateY(0); } }
 .kdp-en { color: var(--muted); font-size: 15px; }
 .kdp-count { position: relative; height: 0; }
-.kdp-count-n { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); font-size: 40px; font-weight: 900; color: var(--warn); opacity: 0; animation: kdp-count var(--len) linear var(--d) both; z-index: 1; }
+.kdp-count-n { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); font-size: 40px; font-weight: 900; color: var(--warn); opacity: 0; animation: kdp-count var(--len) linear var(--d) forwards; z-index: 1; }
 @keyframes kdp-count { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
 .kdp-progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 .kdp-progress span { display: block; height: 100%; background: var(--warn); transform-origin: left; transform: scaleX(0); animation: kdp-progress var(--len) linear var(--d) both; }

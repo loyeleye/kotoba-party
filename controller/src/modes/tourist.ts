@@ -187,8 +187,8 @@ function guessPanel(ctx: Ctx, lastChance: boolean): HTMLElement {
     if (sel) {
       holder.replaceChildren(
         h('p', { class: 'tou-step' }, 'Say it out loud:'),
-        line({ text: `ここは ${sel.kana} ですか？`, kana: null, en: `Is this the ${sel.en}?`, ...(sel.romaji ? { romaji: `koko wa ${sel.romaji} desu ka?` } : {}) }, 'picked'),
-        speakBox({ label: 'Hold and say it', placeholder: 'ここは … ですか', onSend: (u) => go(u) }),
+        line({ text: `ここは ${sel.kana}ですか？`, kana: null, en: `Is this the ${sel.en}?`, ...(sel.romaji ? { romaji: `koko wa ${sel.romaji} desu ka?` } : {}) }, 'picked'),
+        speakBox({ label: 'Hold and say it', placeholder: 'ここは …ですか', onSend: (u) => go(u) }),
         h(
           'div',
           { class: 'tou-row' },

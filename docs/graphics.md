@@ -105,6 +105,14 @@ with the same seed and prompt still gave a different Chōchin-san and Fude, so t
 variant. The two `image-to-pixelart` conversions did come back the same. Look at every result before you commit it, and use `--out` to
 compare. If Node's `fetch` can't reach the APIs behind a proxy, run with `NODE_USE_ENV_PROXY=1`.
 
+## Stage layout and type
+
+- The stage is a fixed 1920×1080 canvas scaled to the window (`stage/src/main.ts`, `scaleCanvas`), with a 5% title-safe margin. Rows: header, host, play area, score ribbon. Nothing scrolls; a play area that is too tall is shrunk to fit (`#fit`).
+- Fonts: Pixelify Sans for English titles and numbers only; Noto Sans JP for all Japanese (`--font-ja`); Noto Sans for English body text and romaji (`--font-body`). Both OFL 1.1, loaded from Google Fonts (see commercial-blockers.md, row 11).
+- Japanese text is wrapped in `lang="ja"` automatically by `h()` and breaks between phrases (`word-break: auto-phrase`); a blank stays with its particle and a number with its counter.
+- Text on coral, mint or gold fills is dark (`--on-accent`), never white.
+- The developer panel is hidden; open the stage with `?debug=1` to show it.
+
 ## Licensing and terms
 
 Tracked in [commercial-blockers.md](commercial-blockers.md): row 6 (PixelLab) and row 7 (Gemini).

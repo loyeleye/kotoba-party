@@ -6,7 +6,7 @@ import { h } from '../../../shared/src/dom.js';
 import type { OekakiView } from '../../../shared/src/modes/views.js';
 import { OEKAKI_LIMITS, PALETTE } from '../../../shared/src/modes/oekaki/drawing.js';
 import { MAX_FAKE_LENGTH, MAX_FAKE_TILES } from '../../../shared/src/modes/oekaki/fakes.js';
-import { toRomaji } from '../../../shared/src/modes/oogiri/romaji.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { inkPad } from '../components/inkPad.js';
 import { speakBox } from '../components/speak.js';
@@ -243,7 +243,10 @@ function scoreScreen(ctx: Ctx): HTMLElement {
     ? ['The VIP hid this drawing: no points, but say the title anyway!']
     : m.isArtist
     ? [`${finders} player${finders === 1 ? '' : 's'} read your drawing.`]
-    : [real?.pickedBy.some((p) => p.id === me) ? 'You found the real title!' : 'Fooled this time.', fooled ? `Your fake fooled ${fooled}.` : ''];
+    : [
+        real?.pickedBy.some((p) => p.id === me) ? 'You found the real title!' : r.options.some((o) => o.pickedBy.some((p) => p.id === me)) ? 'Fooled this time.' : 'You didn’t vote this time.',
+        fooled ? `Your fake fooled ${fooled}.` : '',
+      ];
   return h(
     'div',
     { class: 'screen oek' },

@@ -27,34 +27,34 @@ const ROLE_TITLE: Record<TileView['role'], string> = { opener: 'Start', lead: ''
 function questionCard(q: QuestionView, small = false): HTMLElement {
   return h(
     'div',
-    { class: `om-q${small ? ' small' : ''}` },
-    h('p', { class: 'om-q-jp', lang: 'ja' }, q.text),
-    q.kana !== q.text ? h('p', { class: 'om-q-kana', lang: 'ja' }, q.kana) : null,
-    q.romaji ? h('p', { class: 'om-q-romaji' }, q.romaji) : null,
-    h('p', { class: 'om-q-en' }, q.en),
+    { class: `omi-q${small ? ' small' : ''}` },
+    h('p', { class: 'omi-q-jp', lang: 'ja' }, q.text),
+    q.kana !== q.text ? h('p', { class: 'omi-q-kana', lang: 'ja' }, q.kana) : null,
+    q.romaji ? h('p', { class: 'omi-q-romaji' }, q.romaji) : null,
+    h('p', { class: 'omi-q-en' }, q.en),
   );
 }
 
 function guestLine(game: OmiaiView): HTMLElement | null {
   const c = game.card;
-  return c ? h('p', { class: 'om-guest-p' }, h('span', { class: 'om-guest-p-emoji' }, c.emoji), h('span', { lang: 'ja' }, c.name.text), h('small', {}, ` ${c.name.en}`)) : null;
+  return c ? h('p', { class: 'omi-guest-p' }, h('span', { class: 'omi-guest-p-emoji' }, c.emoji), h('span', { lang: 'ja' }, c.name.text), h('small', {}, ` ${c.name.en}`)) : null;
 }
 
 function meterBar(value: number): HTMLElement {
-  return h('div', { class: 'om-meter-p', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': value, 'aria-label': 'Manners meter' }, h('span', { style: `width: ${value}%` }), h('b', {}, `${value}`));
+  return h('div', { class: 'omi-meter-p', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': value, 'aria-label': 'Manners meter' }, h('span', { style: `width: ${value}%` }), h('b', {}, `${value}`));
 }
 
 // ---- answering ----
 
 function sayFirst(ctx: Ctx, q: QuestionView, ms: number): HTMLElement {
   const { game, send } = ctx;
-  const countdown = h('p', { class: 'om-count' }, `Tiles in ${Math.round(ms / 1000)}…`);
+  const countdown = h('p', { class: 'omi-count' }, `Tiles in ${Math.round(ms / 1000)}…`);
   const el = h(
     'div',
     { class: 'screen' },
     guestLine(game),
     questionCard(q),
-    h('p', { class: 'big om-sayfirst' }, 'Say it first! 🎤'),
+    h('p', { class: 'big omi-sayfirst' }, 'Say it first! 🎤'),
     h('p', { class: 'hint' }, 'Answer from memory, politely: end with です or ます. Saying it now earns the most.'),
     speakBox({ label: 'Hold and answer the guest', placeholder: 'Type your answer', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'answer', utterance, round: game.round }) }),
     countdown,
@@ -76,8 +76,8 @@ function sayFirst(ctx: Ctx, q: QuestionView, ms: number): HTMLElement {
 function builder(ctx: Ctx, q: QuestionView, tiles: TileView[]): HTMLElement {
   const { game, send, me } = ctx;
   const picked: string[] = [];
-  const preview = h('p', { class: 'om-preview', lang: 'ja' });
-  const groups = h('div', { class: 'om-groups' });
+  const preview = h('p', { class: 'omi-preview', lang: 'ja' });
+  const groups = h('div', { class: 'omi-groups' });
   const sendBtn = h('button', { type: 'button', class: 'primary', disabled: true, onclick: () => picked.length && void send({ kind: 'answer', tiles: [...picked], round: game.round }) }, 'Send my answer') as HTMLButtonElement;
   const textOf = () =>
     picked
@@ -94,11 +94,11 @@ function builder(ctx: Ctx, q: QuestionView, tiles: TileView[]): HTMLElement {
       ...roles.map((role) =>
         h(
           'div',
-          { class: 'om-group' },
-          ROLE_TITLE[role] ? h('p', { class: 'om-group-title' }, ROLE_TITLE[role]) : null,
+          { class: 'omi-group' },
+          ROLE_TITLE[role] ? h('p', { class: 'omi-group-title' }, ROLE_TITLE[role]) : null,
           h(
             'div',
-            { class: 'om-tiles' },
+            { class: 'omi-tiles' },
             tiles
               .filter((t) => t.role === role)
               .map((t) => {
@@ -107,7 +107,7 @@ function builder(ctx: Ctx, q: QuestionView, tiles: TileView[]): HTMLElement {
                   'button',
                   {
                     type: 'button',
-                    class: `om-tile${on ? ' on' : ''}`,
+                    class: `omi-tile${on ? ' on' : ''}`,
                     'aria-pressed': on ? 'true' : 'false',
                     onclick: () => {
                       if (on) picked.splice(picked.indexOf(t.key), 1);
@@ -122,8 +122,8 @@ function builder(ctx: Ctx, q: QuestionView, tiles: TileView[]): HTMLElement {
                       draw();
                     },
                   },
-                  h('span', { class: 'om-tile-jp', lang: 'ja' }, t.text),
-                  t.romaji ? h('small', { class: 'om-tile-romaji' }, t.romaji) : null,
+                  h('span', { class: 'omi-tile-jp', lang: 'ja' }, t.text),
+                  t.romaji ? h('small', { class: 'omi-tile-romaji' }, t.romaji) : null,
                   h('small', {}, t.en),
                 );
               }),
@@ -152,23 +152,23 @@ function tipBlock(t: TipView, compact = false): HTMLElement {
   const reg = REGISTER[t.register];
   return h(
     'div',
-    { class: 'om-tip' },
-    h('div', { class: 'om-tip-head' }, h('span', { class: `om-chip om-chip-${t.register}` }, reg.label), meterBar(t.meter)),
+    { class: 'omi-tip' },
+    h('div', { class: 'omi-tip-head' }, h('span', { class: `omi-chip omi-chip-${t.register}` }, reg.label), meterBar(t.meter)),
     h('p', { class: 'hint' }, reg.line),
-    t.good.length ? h('p', { class: 'om-good' }, '✓ ', t.good.join(' · ')) : null,
-    t.casual.length && !compact ? h('ul', { class: 'om-casual' }, t.casual.map((c) => h('li', {}, h('span', { lang: 'ja' }, `${c.text} → ${c.polite}`), h('small', {}, c.note)))) : null,
+    t.good.length ? h('p', { class: 'omi-good' }, '✓ ', t.good.join(' · ')) : null,
+    t.casual.length && !compact ? h('ul', { class: 'omi-casual' }, t.casual.map((c) => h('li', {}, h('span', { lang: 'ja' }, `${c.text} → ${c.polite}`), h('small', {}, c.note)))) : null,
   );
 }
 
 function targetBlock(t: TipView['target'], label: string, note?: string): HTMLElement {
   return h(
     'div',
-    { class: 'om-target' },
-    h('p', { class: 'om-target-label' }, label),
-    h('p', { class: 'om-target-jp', lang: 'ja' }, t.text),
-    t.kana !== t.text ? h('p', { class: 'om-target-kana', lang: 'ja' }, t.kana) : null,
-    t.romaji ? h('p', { class: 'om-q-romaji' }, t.romaji) : null,
-    note ? h('p', { class: 'om-target-note' }, note) : null,
+    { class: 'omi-target' },
+    h('p', { class: 'omi-target-label' }, label),
+    h('p', { class: 'omi-target-jp', lang: 'ja' }, t.text),
+    t.kana !== t.text ? h('p', { class: 'omi-target-kana', lang: 'ja' }, t.kana) : null,
+    t.romaji ? h('p', { class: 'omi-q-romaji' }, t.romaji) : null,
+    note ? h('p', { class: 'omi-target-note' }, note) : null,
   );
 }
 
@@ -191,12 +191,12 @@ function encoreScreen(ctx: Ctx): HTMLElement {
     tipBlock(t),
     targetBlock(e.target, TARGET_LABEL[t.kind], t.note),
     e.ok
-      ? h('p', { class: 'om-heard ok' }, '🙇 Beautiful. The guest bows back.')
+      ? h('p', { class: 'omi-heard ok' }, '🙇 Beautiful. The guest bows back.')
       : e.canEncore
         ? h(
             'div',
-            { class: 'om-encore' },
-            e.heard ? h('p', { class: 'om-heard' }, `Heard “${e.heard}”. ${e.triesLeft} more ${e.triesLeft === 1 ? 'try' : 'tries'}.`) : h('p', { class: 'hint' }, 'Say it out loud (with a little bow) for a bonus.'),
+            { class: 'omi-encore' },
+            e.heard ? h('p', { class: 'omi-heard' }, `Heard “${e.heard}”. ${e.triesLeft} more ${e.triesLeft === 1 ? 'try' : 'tries'}.`) : h('p', { class: 'hint' }, 'Say it out loud (with a little bow) for a bonus.'),
             speakBox({ label: 'Hold and say it politely', placeholder: 'Type it', onSend: (utterance) => void send({ kind: 'encore', utterance, round: game.round }) }),
             h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'encore', pass: true, round: game.round }) }, 'Skip this time'),
           )
@@ -212,17 +212,17 @@ function scoreScreen(ctx: Ctx): HTMLElement {
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, t.points ? `+${t.points} this round` : 'Round over'),
-    t.votes ? h('p', { class: 'om-hearts' }, `${'❤'.repeat(Math.min(t.votes, 8))} ${t.votes} ${t.votes === 1 ? 'vote' : 'votes'}`) : null,
+    t.votes ? h('p', { class: 'omi-hearts' }, `${'❤'.repeat(Math.min(t.votes, 8))} ${t.votes} ${t.votes === 1 ? 'vote' : 'votes'}`) : null,
     h('p', { class: 'hint' }, 'You said: ', h('span', { lang: 'ja' }, t.mine)),
     tipBlock(t, true),
     t.kind === 'rewrite' || t.kind === 'upgrade' ? targetBlock(t.target, TARGET_LABEL[t.kind], t.note) : null,
-    t.next ? h('p', { class: 'om-next' }, 'Next level: ', h('span', { lang: 'ja' }, t.next.text), h('small', {}, ` ${t.next.note}`)) : null,
-    h('div', { class: 'om-example' }, h('p', { class: 'om-target-label' }, 'The textbook answer:'), h('p', { lang: 'ja' }, t.example.text), h('small', {}, t.example.en)),
+    t.next ? h('p', { class: 'omi-next' }, 'Next level: ', h('span', { lang: 'ja' }, t.next.text), h('small', {}, ` ${t.next.note}`)) : null,
+    h('div', { class: 'omi-example' }, h('p', { class: 'omi-target-label' }, 'The textbook answer:'), h('p', { lang: 'ja' }, t.example.text), h('small', {}, t.example.en)),
     t.keigo
       ? h(
           'div',
-          { class: 'om-keigo' },
-          h('p', { class: 'om-target-label' }, `Keigo corner: ${t.keigo.en}`),
+          { class: 'omi-keigo' },
+          h('p', { class: 'omi-target-label' }, `Keigo corner: ${t.keigo.en}`),
           h(
             'table',
             {},
@@ -275,7 +275,7 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
           isVip && game.answers.length
             ? h(
                 'details',
-                { class: 'om-vip' },
+                { class: 'omi-vip' },
                 h('summary', {}, 'VIP: hide an answer'),
                 game.answers.filter((a) => !a.hidden).map((a) => h('button', { type: 'button', class: 'secondary', lang: 'ja', onclick: () => void send({ kind: 'hide', answerId: a.id, round: game.round }) }, `Hide “${a.text}”`)),
               )
@@ -289,7 +289,7 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
         return scoreScreen(ctx);
       case 'finale':
         return mine?.accepted
-          ? h('div', { class: 'screen om-accepted' }, h('p', { class: 'om-accept-big' }, '🍵'), h('p', { class: 'big' }, 'You’re invited to tea!'), game.finale?.line ? h('p', { lang: 'ja' }, game.finale.line.text) : null, h('p', { class: 'hint' }, 'Say it: ありがとう ございます！'))
+          ? h('div', { class: 'screen omi-accepted' }, h('p', { class: 'omi-accept-big' }, '🍵'), h('p', { class: 'big' }, 'You’re invited to tea!'), game.finale?.line ? h('p', { lang: 'ja' }, game.finale.line.text) : null, h('p', { class: 'hint' }, 'Say it: ありがとう ございます！'))
           : waiting('The guest has chosen…', game.finale?.accepted ? 'Thank you for coming. おつかれさまでした！' : 'Tea for everyone!');
       default:
         return waiting('Look at the TV!');

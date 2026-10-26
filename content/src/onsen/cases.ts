@@ -60,7 +60,7 @@ export const snowmanCase: OnsenCase = {
         who: { jp: t('10じ50ぷんに たなかさんを みました。 おおきい なべを もって いました。', 'じゅうじごじゅっぷんに たなかさんを みました。 おおきい なべを もって いました。', 'At 10:50 I saw Tanaka. He was carrying a big pot.'), clueId: 'saw-tanaka' },
         when: { jp: t('11じに ねました。', 'じゅういちじに ねました。', 'I went to bed at 11.') },
         victim: { jp: k('しずかな ひとでした。 いつも わらって いました。', 'He was a quiet one. He was always smiling.') },
-        item: { jp: k('あかい マフラー？ やまださんの です。', "The red scarf? It's Yamada's."), clueId: 'scarf' },
+        item: { jp: k('あかい マフラー？ やまださんのです。', "The red scarf? It's Yamada's."), clueId: 'scarf' },
       },
     },
     {
@@ -130,6 +130,7 @@ export const puddingCase: OnsenCase = {
     {
       id: 'mori',
       name: k('もり', 'Mori'),
+      suffix: 'くん',
       role: k('おとこのこの おきゃくさん', 'a young guest (a boy)'),
       emoji: '👦',
       voice: { pitch: 1.6, rate: 1.15 },
@@ -222,7 +223,7 @@ export const duckCase: OnsenCase = {
         who: { jp: t('11じに タマを みました。 ロビーで ねて いました。', 'じゅういちじに タマを みました。 ロビーで ねて いました。', 'At 11 I saw Tama. She was asleep in the lobby.'), clueId: 'tama-sleep' },
         when: { jp: t('12じはんに ねました。', 'じゅうにじはんに ねました。', 'I went to bed at 12:30.') },
         victim: { jp: k('アヒルくんは うるさかったです。 ピー ピー！', 'Ahiru-kun was noisy. Squeak, squeak!') },
-        item: { jp: k('その フォーク、まつださんの です。 ばんごはんで つかって いました。', "That fork is Matsuda's. He was using it at dinner."), clueId: 'fork' },
+        item: { jp: k('その フォーク、まつださんのです。 ばんごはんで つかって いました。', "That fork is Matsuda's. He was using it at dinner."), clueId: 'fork' },
       },
     },
     {
@@ -244,6 +245,7 @@ export const duckCase: OnsenCase = {
     {
       id: 'tama',
       name: k('タマ', 'Tama'),
+      suffix: '',
       role: k('りょかんの ねこ', "the inn's cat"),
       emoji: '🐱',
       voice: { pitch: 1.8, rate: 1.0 },

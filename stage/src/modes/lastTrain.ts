@@ -2,18 +2,11 @@
 // status (never their words until the stop resolves), then everyone's answer beside the
 // natural version, the penalty car, and the Platform Dash track.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
 import type { JpText } from '../../../content/src/types.js';
 import type { LastTrainView, TravellerStatus, TravellerView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
-
-function ruby(jp: JpText): HTMLElement {
-  const el = h('span', { lang: 'ja' });
-  if (jp.furigana?.length) for (const [base, reading] of jp.furigana) el.append(reading ? h('ruby', {}, base, h('rt', {}, reading)) : base);
-  else el.append(jp.text);
-  return el;
-}
 
 const STATUS: Record<TravellerStatus, { icon: string; label: string }> = {
   waiting: { icon: '🧳', label: 'ready' },
@@ -179,7 +172,7 @@ function dash(view: RoomView, game: LastTrainView): HTMLElement {
       d.racers.map((r) =>
         h(
           'li',
-          { class: r.ghost ? 'ghost' : '' },
+          { class: r.ghost ? 'ghost' : '', 'data-key': r.playerId },
           h('span', { class: 'lt-lane-name' }, r.name),
           h(
             'span',

@@ -115,7 +115,7 @@ function lastTakeToast(view: RoomView, game: KaraokeDuelView, local: number): HT
   const pitch = t.pitchUsed ? `pitch ${pct(t.pitch)}` : 'pitch not measured';
   return h(
     'div',
-    { class: 'kd-toast', style: `animation-delay:-${Math.max(0, Math.round(since))}ms` },
+    { class: 'kd-toast', style: `animation-delay:-${Math.max(0, Math.round(since))}ms`, 'data-key': `take-${t.turnNo}` },
     h('strong', {}, `${nameOf(view, t.playerId)} ${t.quality}`),
     h('span', {}, t.via === 'typed' ? ' typed (quiet mode)' : ` words ${pct(t.pron)} · ${pitch} · timing ${pct(t.timing)}`),
   );
@@ -239,7 +239,8 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
       { class: 'kd-layout' },
       h(
         'div',
-        { class: 'kd-screen' },
+        // One element per turn: a new line starts its count-in and lyric timing afresh.
+        { class: 'kd-screen', 'data-key': `turn-${turn.no}` },
         h('p', { class: `kd-singer seat-${seatOf(view, singer)}` }, `🎤 ${nameOf(view, singer)}`, h('span', { class: 'kd-line-no' }, ` · line ${turn.line + 1} of ${song.lines.length}`)),
         countIn(song.beatMs, turn.countInBeats, elapsed),
         lyricLine(line, elapsed, game.romaji, 'now'),

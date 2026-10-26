@@ -38,8 +38,8 @@ button.pb-cell:active { background: #3a2230; }
 .pb-cell-jp { font-size: 14px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
 .pb-cell-en { font-size: 11px; color: var(--muted); line-height: 1.2; overflow-wrap: anywhere; }
 .pb-cell-buzz { font-size: 12px; font-weight: 800; color: var(--warn); }
-.pb-cell.sel { background: var(--accent); }
-.pb-cell.sel .pb-cell-en { color: #fff; }
+.pb-cell.sel { background: var(--accent); color: var(--on-accent); }
+.pb-cell.sel .pb-cell-en { color: var(--on-accent); }
 .pb-cell.buzzed { border-color: var(--warn); }
 .pb-cell.caught { border-color: var(--good); }
 .pb-cell.caught .pb-cell-buzz { color: var(--good); }

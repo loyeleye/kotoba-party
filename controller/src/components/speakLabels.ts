@@ -6,7 +6,7 @@
 // Labels the table doesn't know stay as written.
 
 import type { Level } from '../../../shared/src/protocol.js';
-import { toRomaji } from '../../../shared/src/modes/lastTrain/check.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 
 export interface LevelText {
   /** The big line. */

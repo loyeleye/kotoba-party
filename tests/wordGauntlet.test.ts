@@ -3,7 +3,7 @@ import type { TopicPack } from '../content/src/types.js';
 import { createRoom, type CommandBody } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
-import { toRomaji } from '../shared/src/modes/wordGauntlet/romaji.js';
+import { toRomaji } from '../shared/src/japanese/romaji.js';
 import { baseKana, dictionaryNoun, endsInN, follows, lastKana, startOptions, wordReading } from '../shared/src/modes/wordGauntlet/shiritori.js';
 import {
   challengeAccepted,
@@ -96,7 +96,7 @@ describe('shiritori kana rules', () => {
     expect(wordReading('林檎')).toBeNull();
     expect(wordReading('ringo')).toBeNull();
     expect(toRomaji('しゃしん')).toBe('shashin');
-    expect(toRomaji('みっかぼうず')).toBe('mikkabouzu');
+    expect(toRomaji('みっかぼうず')).toBe('mikkabōzu');
   });
 
   it('trusts the dictionary only for a single known noun', () => {

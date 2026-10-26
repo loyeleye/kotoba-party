@@ -17,7 +17,7 @@ import { isUtterance } from '../../japanese/kana.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type HostCue, type Mode, type ModeContext } from '../mode.js';
 import { buildAnswer, parseAnswerMove, sentenceFor, type AnswerStyle } from './answer.js';
 import { dealFrames, dealTiles, FORM_LABELS, library, libraryFor, ROUNDS, stageVersion, versionFor, wordsIn, type Library, type Tile } from './deal.js';
-import { toRomaji } from './romaji.js';
+import { toRomaji } from '../../japanese/romaji.js';
 import type {
   Answer,
   AnswerCard,
@@ -337,6 +337,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
     titleJa: '大喜利ナイト',
     blurb: 'Fill in the blank, vote for the funniest, say the winner out loud.',
     host: 'pon',
+    phaseLabels: { reveal: 'Vote', encore: 'Encore', score: 'Cushions' },
     minPlayers: 3,
     maxPlayers: 8,
     roundChoices: [],
@@ -639,6 +640,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         .map((a) => {
           const c: AnswerCard = { id: a.id, text: a.hidden ? '[hidden]' : a.text, en: a.hidden ? '' : a.en, hidden: a.hidden, english: a.english };
           if (me && a.authorId === me.id) c.mine = true;
+          if (romaji && !a.hidden && !a.english) c.romaji = toRomaji(a.kana);
           if (authorsShown) {
             const line = lines.get(a.id);
             c.authorId = a.authorId;
@@ -656,12 +658,12 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         id: m.index,
         index: s.matchups.filter((x) => x.index < m.index && matchupAnswers(s, x.index).length).length,
         count: s.matchups.filter((x) => matchupAnswers(s, x.index).length).length,
-        prompt: card(stageVersion(m.prompt), m.prompt.photo),
+        prompt: card(stageVersion(m.prompt), m.prompt.photo, romaji),
         answers,
         voters: voters(s, m, ctx),
         voted: Object.keys(m.votes),
         ippon: authorsShown && !!m.result?.ippon,
-        natural: phase === 'score' ? m.prompt.exampleAnswer : null,
+        natural: phase === 'score' ? { ...m.prompt.exampleAnswer, ...(romaji ? { romaji: toRomaji(m.prompt.exampleAnswer.kana) } : {}) } : null,
         pattern: phase === 'score' ? m.prompt.pattern : null,
       };
     }

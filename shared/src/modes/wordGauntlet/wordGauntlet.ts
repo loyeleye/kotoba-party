@@ -29,7 +29,7 @@ import {
   type ModeContext,
   type MoveResult,
 } from '../mode.js';
-import { toRomaji } from './romaji.js';
+import { toRomaji } from '../../japanese/romaji.js';
 import { dictionaryNoun, endsInN, follows, lastKana, repeatKey, startOptions, wordReading } from './shiritori.js';
 import { FALLBACK_STARTERS, OBSCURE_WORDS, SHIRITORI_NOUNS, type ObscureWord } from './words.js';
 
@@ -230,7 +230,7 @@ export interface WordGauntletView {
   fake: {
     index: number;
     total: number;
-    word: { text: string; kana: string; romaji: string };
+    word: { text: string; kana: string; romaji: string; furigana?: JpText['furigana'] };
     submitted: string[];
     /** Anonymous options from the reveal on. */
     options: { id: string; text: string }[] | null;
@@ -377,6 +377,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
     titleJa: 'ことばの関門',
     blurb: 'Fake meanings, a telephone of translations, then a spoken shiritori showdown.',
     host: 'pon',
+    phaseLabels: { reveal: 'Vote' },
     minPlayers: 4,
     maxPlayers: 8,
     roundChoices: [],
@@ -1027,7 +1028,7 @@ function fakeView(s: WordGauntletState, phase: Phase, me: string | null): WordGa
   return {
     index: s.fakeIndex,
     total: s.fakeDeck.length,
-    word: { text: f.word.jp.text, kana: f.word.jp.kana, romaji: toRomaji(f.word.jp.kana) },
+    word: { text: f.word.jp.text, kana: f.word.jp.kana, romaji: toRomaji(f.word.jp.kana), furigana: f.word.jp.furigana },
     submitted: f.options.flatMap((o) => o.authorIds),
     options: showOptions ? anonymousOrder(f.options).map((o) => ({ id: o.id, text: o.text })) : null,
     picked: Object.keys(f.picks),

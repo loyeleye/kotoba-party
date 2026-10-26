@@ -132,6 +132,8 @@ export interface AnswerCard {
   english: boolean;
   /** Only in the viewer's own view: this is my answer. */
   mine?: boolean;
+  /** Kana level only: romaji, so the player can read the answers out and vote. */
+  romaji?: string;
   // From the encore on:
   authorId?: string;
   authorName?: string;
@@ -156,7 +158,7 @@ export interface MatchupView {
   voted: string[];
   ippon: boolean;
   /** Score phase: the natural version (the prompt's model answer until the AI judge is wired). */
-  natural: JpText | null;
+  natural: (JpText & { romaji?: string }) | null;
   pattern: string | null;
 }
 

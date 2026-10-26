@@ -5,7 +5,7 @@
 .oek .oek-title { font-size: 96px; font-weight: 900; color: var(--warn); text-shadow: 0 0 30px #ffcf5a44; }
 .oek .oek-steps { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 12px; width: min(900px, 100%); text-align: left; }
 .oek .oek-step { display: grid; grid-template-columns: 60px 1fr; gap: 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 12px 20px; font-size: 30px; font-weight: 700; animation: oek-in 0.5s ease both; }
-.oek .oek-num { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 32px; font-weight: 900; display: grid; place-items: center; }
+.oek .oek-num { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 32px; font-weight: 900; display: grid; place-items: center; }
 .oek .oek-ja { color: var(--muted); font-weight: 600; }
 
 .oek .oek-easels { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }

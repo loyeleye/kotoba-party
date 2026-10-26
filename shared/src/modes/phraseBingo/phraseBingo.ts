@@ -15,7 +15,8 @@
 import type { JpText, Level, TopicPack } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
-import { firstMora, toRomaji } from '../lastTrain/check.js';
+import { firstMora } from '../lastTrain/check.js';
+import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { phraseKey, phraseScore, saidPhrase } from './check.js';
 import { SCENES, type Scene, type ScenePhrase } from './scenes.js';

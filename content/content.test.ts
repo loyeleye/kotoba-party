@@ -246,3 +246,10 @@ describe('host lines', () => {
       for (const e of shared) expect(hostLines.some((l) => l.host === h.id && l.event === e), `${h.id} ${e}`).toBe(true);
   });
 });
+
+describe('romaji word breaks', () => {
+  it('shared/src/japanese/wordBreaks.ts matches the content (npm run content:romaji)', async () => {
+    const { execFileSync } = await import('node:child_process');
+    expect(() => execFileSync('npx', ['tsx', 'tools/content-romaji.ts', '--check'], { cwd: fileURLToPath(new URL('..', import.meta.url)), stdio: 'pipe' })).not.toThrow();
+  });
+});

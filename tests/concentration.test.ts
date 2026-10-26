@@ -12,7 +12,7 @@ import {
   type ConcentrationState,
   type ConcentrationView,
 } from '../shared/src/modes/concentration/concentration.js';
-import { toRomaji } from '../shared/src/modes/concentration/romaji.js';
+import { toRomaji } from '../shared/src/japanese/romaji.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -190,12 +190,12 @@ describe('Kotoba Concentration: board', () => {
 
   it('turns kana into romaji for the Kana-level hint', () => {
     expect(toRomaji('みず')).toBe('mizu');
-    expect(toRomaji('コーヒー')).toBe('koohii');
+    expect(toRomaji('コーヒー')).toBe('kōhī');
     expect(toRomaji('でんしゃ')).toBe('densha');
     expect(toRomaji('きっぷ')).toBe('kippu');
-    expect(toRomaji('ぎゅうにゅう')).toBe('gyuunyuu');
+    expect(toRomaji('ぎゅうにゅう')).toBe('gyūnyū');
     expect(toRomaji('きんえん')).toBe("kin'en");
-    expect(toRomaji('ティー')).toBe('tii');
+    expect(toRomaji('ティー')).toBe('tī');
     expect(toRomaji('まっちゃ')).toBe('matcha');
   });
 });

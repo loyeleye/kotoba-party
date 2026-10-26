@@ -16,7 +16,7 @@ import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mod
 import type { Phase, Viewer } from '../../protocol.js';
 import { isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { buildBoard, planBoard, type Card, type Face, type Pair, type SpecialKind } from './board.js';
-import { toRomaji } from './romaji.js';
+import { toRomaji } from '../../japanese/romaji.js';
 import { SCENES } from './scenes.js';
 
 // ---- tuning ----

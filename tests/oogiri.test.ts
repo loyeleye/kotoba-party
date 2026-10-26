@@ -11,7 +11,7 @@ import { buildAnswer } from '../shared/src/modes/oogiri/answer.js';
 import { dealTiles, libraryFor } from '../shared/src/modes/oogiri/deal.js';
 import { FALLBACK_PACK, FALLBACK_PROMPTS } from '../shared/src/modes/oogiri/fallback.js';
 import { pairings, SAY_FIRST_MS, type OogiriState, type OogiriView } from '../shared/src/modes/oogiri/oogiri.js';
-import { toRomaji } from '../shared/src/modes/oogiri/romaji.js';
+import { toRomaji } from '../shared/src/japanese/romaji.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { Bot, Director } from '../tools/bots/bot.js';
@@ -167,8 +167,8 @@ describe('tiles', () => {
   });
 
   it('writes romaji for Kana-level training wheels', () => {
-    expect(toRomaji('ねこの ひみつの しごと')).toBe('nekono himitsuno shigoto');
-    expect(toRomaji('ラーメン')).toBe('raamen');
+    expect(toRomaji('ねこの ひみつの しごと')).toBe('neko no himitsu no shigoto');
+    expect(toRomaji('ラーメン')).toBe('rāmen');
     expect(toRomaji('きって')).toBe('kitte');
     expect(toRomaji('ちょっと')).toBe('chotto');
     expect(toRomaji('ほんや')).toBe("hon'ya");
@@ -475,5 +475,20 @@ describe('full system: bots play Oogiri Night over the network', () => {
 
     for (const b of bots) b.stop();
     director.client.close();
+  });
+});
+
+describe('romaji for the かな level', () => {
+  it('spaces words, reads particles as they sound, and uses macrons', () => {
+    expect(toRomaji('サンドイッチはよんひゃくえん、ジュースはさんびゃくえん。ぜんぶでいくら？')).toBe('Sandoitchi wa yonhyaku-en, jūsu wa sanbyaku-en. Zenbu de ikura?');
+    expect(toRomaji('たこ：「すみません、＿＿＿を ください。」')).toBe('Tako: "Sumimasen, ___ o kudasai."');
+    expect(toRomaji('おばあちゃんの ひみつの ソース')).toBe('obāchan no himitsu no sōsu');
+    expect(toRomaji('すみません、おくれました。＿＿＿から。')).toBe('Sumimasen, okuremashita. ___ kara.');
+    expect(toRomaji('おおきな タコ')).toBe('ōkina tako');
+  });
+  it('guesses word breaks for kana it has not seen', () => {
+    expect(toRomaji('わたしは ねこが すきです')).toBe('watashi wa neko ga sukidesu');
+    expect(toRomaji('ねこの ゲームは たのしい')).toBe('neko no gēmu wa tanoshii');
+    expect(toRomaji('こども')).toBe('kodomo');
   });
 });

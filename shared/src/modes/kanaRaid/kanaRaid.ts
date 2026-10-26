@@ -381,6 +381,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
     titleJa: 'かな妖怪レイド',
     blurb: 'Kana-shaped yōkai invade the studio. Shout their sounds to catch them.',
     host: 'fude',
+    phaseLabels: { intro: 'Choose your kana', prompt: 'Next wave', answer: 'Raid!', reveal: 'Wave over', score: 'Points', finale: 'Boss', encore: 'Tonight’s haul' },
     minPlayers: 1,
     maxPlayers: 8,
     roundChoices: [],

@@ -71,7 +71,7 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.reveal_react.good.03', host: 'chochin', event: 'reveal_react', tier: 'good', jp: { text: 'すばらしい おこたえです。', kana: 'すばらしい おこたえです。', en: 'A splendid answer.' }, status: 'draft' },
   { id: 'chochin.reveal_react.good.04', host: 'chochin', event: 'reveal_react', tier: 'good', jp: { text: 'つぎの えきへ、ごあんない します。', kana: 'つぎの えきへ、ごあんない します。', en: 'Allow me to guide you to the next station.' }, status: 'draft' },
   { id: 'chochin.reveal_react.good.05', host: 'chochin', event: 'reveal_react', tier: 'good', jp: { text: 'はい、きっぷ オーケーです！', kana: 'はい、きっぷ オーケーです！', en: 'Yes, your ticket is good!' }, status: 'draft' },
-  { id: 'chochin.reveal_react.good.06', host: 'chochin', event: 'reveal_react', tier: 'good', jp: { text: 'いかが ですか？ いかです！', kana: 'いかが ですか？ いかです！', en: 'How about that? Squid! (A pun.)' }, status: 'draft' },
+  { id: 'chochin.reveal_react.good.06', host: 'chochin', event: 'reveal_react', tier: 'good', jp: { text: 'いかがですか？ いかです！', kana: 'いかがですか？ いかです！', en: 'How about that? Squid! (A pun.)' }, status: 'draft' },
   { id: 'chochin.reveal_react.good.07', host: 'chochin', event: 'reveal_react', tier: 'good', jp: { text: 'ちょうちんが あかるく なりました！', kana: 'ちょうちんが あかるく なりました！', en: 'My lantern got brighter!' }, status: 'draft' },
   { id: 'chochin.reveal_react.good.08', host: 'chochin', event: 'reveal_react', tier: 'good', jp: { text: 'よろしい！ ごじょうしゃ ください！', kana: 'よろしい！ ごじょうしゃ ください！', en: 'Very good! All aboard!' }, status: 'draft' },
   // reveal_react.ippon
@@ -130,7 +130,7 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.play_again.02', host: 'chochin', event: 'play_again', jp: { text: 'つぎの しゅうでんも ありますよ。', kana: 'つぎの しゅうでんも ありますよ。', en: "There's another last train, too." }, status: 'draft' },
   { id: 'chochin.play_again.03', host: 'chochin', event: 'play_again', jp: { text: 'また のって くださいね。', kana: 'また のって くださいね。', en: 'Please ride again sometime.' }, status: 'draft' },
   { id: 'chochin.play_again.04', host: 'chochin', event: 'play_again', jp: { text: 'ちょうちんは まだ あかるいです！', kana: 'ちょうちんは まだ あかるいです！', en: 'My lantern is still bright!' }, status: 'draft' },
-  { id: 'chochin.play_again.05', host: 'chochin', event: 'play_again', jp: { text: 'もう いっぽん、いかが ですか？', kana: 'もう いっぽん、いかが ですか？', en: 'How about one more train?' }, status: 'draft' },
+  { id: 'chochin.play_again.05', host: 'chochin', event: 'play_again', jp: { text: 'もう いっぽん、いかがですか？', kana: 'もう いっぽん、いかがですか？', en: 'How about one more train?' }, status: 'draft' },
   // room_overrule
   { id: 'chochin.room_overrule.01', host: 'chochin', event: 'room_overrule', jp: { text: 'みなさまが オーケーと いいました。 せいかいです！', kana: 'みなさまが オーケーと いいました。 せいかいです！', en: 'Everyone said OK. Correct!' }, status: 'draft' },
   { id: 'chochin.room_overrule.02', host: 'chochin', event: 'room_overrule', jp: { text: 'しつれい しました！ わたしの まちがいです。', kana: 'しつれい しました！ わたしの まちがいです。', en: 'My apologies! The mistake was mine.' }, status: 'draft' },

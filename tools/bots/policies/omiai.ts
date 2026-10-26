@@ -92,7 +92,8 @@ export function omiaiPolicy(opts: OmiaiPolicyOptions = {}): ModePolicy {
         if (!slot.tiles.length) return [];
         const keys = tileAnswer(slot.tiles, r, politeChance);
         if (r('speak') < speakChance && !quiet) {
-          const text = keys.map((k) => slot.tiles.find((t) => t.key === k)!.text).join('');
+          // Spaced the way the phone joins tiles (a space after the lead), so it reads like a tile answer.
+          const text = keys.map((k) => slot.tiles.find((t) => t.key === k)!).map((t, i, all) => t.text + (t.role === 'lead' && i < all.length - 1 ? ' ' : '')).join('');
           return [{ key: `answer:${round}`, move: { kind: 'answer', utterance: { via: 'speech', text }, round }, delayMs: delay('answer') }];
         }
         return [{ key: `answer:${round}`, move: { kind: 'answer', tiles: keys, round }, delayMs: delay('answer') }];

@@ -163,8 +163,15 @@ export function joinTiles(tiles: readonly Pick<QuestionTile, 'text' | 'kind'>[])
 
 // ---- the accusation: 「はんにんは ○○さんです！」 ----
 
-export function accusationLine(s: Pick<OnsenSuspect, 'name'>): JpText {
-  return { text: `はんにんは ${s.name.text}さんです！`, kana: `はんにんは ${s.name.kana}さんです！`, en: `The culprit is ${s.name.en}!` };
+/** The name as people say it: たなかさん, もりくん, タマ. */
+export function calledName(s: Pick<OnsenSuspect, 'name' | 'suffix'>): JpText {
+  const suffix = s.suffix ?? 'さん';
+  return { text: s.name.text + suffix, kana: s.name.kana + suffix, en: s.name.en };
+}
+
+export function accusationLine(s: Pick<OnsenSuspect, 'name' | 'suffix'>): JpText {
+  const n = calledName(s);
+  return { text: `はんにんは ${n.text}です！`, kana: `はんにんは ${n.kana}です！`, en: `The culprit is ${s.name.en}!` };
 }
 
 /** Did they say the accusation for this suspect? Needs はんにん and the suspect's name, in any order. */
