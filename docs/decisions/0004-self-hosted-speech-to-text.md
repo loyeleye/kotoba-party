@@ -1,6 +1,6 @@
 # 0004: Speech to text on our own Whisper server
 
-**Status:** Accepted (Oct 26, 2026)
+**Status:** Accepted (Oct 26, 2026). Amended by [0005](0005-whisper-on-workers-ai.md): on Cloudflare, Whisper runs on Workers AI.
 
 ## Context
 

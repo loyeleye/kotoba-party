@@ -1,6 +1,6 @@
 // The phone's microphone: records a hold-to-talk clip as 16 kHz mono WAV and asks our server what was said.
-// The server passes the clip to the Whisper server we run (server/src/stt.ts), so audio never reaches
-// Google or anyone else. There is no browser recogniser fallback: with no speech server, or no mic,
+// The server passes the clip to Whisper (Workers AI on Cloudflare, or our own server; server/src/stt.ts), so
+// audio never reaches Google. There is no browser recogniser fallback: with no speech server, or no mic,
 // every spoken step is typed or tapped instead.
 
 const RATE = 16_000;
