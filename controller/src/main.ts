@@ -8,7 +8,7 @@ import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import { LEVELS, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
-import { speakBox } from './components/speak.js';
+import { setSpeakLevel, speakBox } from './components/speak.js';
 
 const LEVEL_HINTS: Record<Level, string> = {
   kana: 'I can’t read Japanese yet',
@@ -223,6 +223,7 @@ function render(view: RoomView): void {
   ].join('|');
   if (key === screenKey) return;
   screenKey = key;
+  setSpeakLevel(me.level);
 
   const header = h(
     'div',
@@ -279,6 +280,7 @@ function micCheck(me: PlayerView): HTMLElement {
     { class: 'mic-check' },
     h('p', { class: 'hint' }, 'Mic check: hold the button and say'),
     h('p', { class: 'big', lang: 'ja' }, 'こんにちは!'),
+    me.level === 'kana' ? h('p', { class: 'hint' }, '(konnichiwa: “hello”)') : null,
     speakBox({
       label: 'Hold and say こんにちは',
       placeholder: 'こんにちは',

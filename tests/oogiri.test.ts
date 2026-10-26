@@ -336,6 +336,28 @@ describe('voting, IPPON, hiding and the encore', () => {
   });
 });
 
+describe('host reactions sent ahead', () => {
+  it('sends each matchup\'s reveal reaction as it locks, matching the cue the reveal raises', () => {
+    const h = harness(['n5', 'n5', 'n5', 'n5']);
+    h.start();
+    h.until('answer');
+    h.s.cues.splice(0);
+    answerAll(h);
+    expect(h.s.phase).toBe('reveal');
+    const cues = h.s.cues.filter((c) => c.event === 'reveal_react');
+    const ahead = cues.filter((c) => c.ahead);
+    const now = cues.filter((c) => !c.ahead);
+    // One per matchup as it locked, then the later matchups again as the reveal starts.
+    const matchups = h.os().matchups.filter((m) => h.os().answers.some((a) => a.matchup === m.index)).length;
+    expect(matchups).toBeGreaterThan(1);
+    expect(now).toHaveLength(1);
+    expect(new Set(ahead.map((c) => c.prompt?.text)).size).toBe(matchups);
+    // The cue said now has the same content as one sent ahead, so the host can use the early line.
+    const { ahead: _, ...first } = ahead.find((c) => c.prompt?.text === now[0]!.prompt?.text)!;
+    expect(first).toEqual(now[0]);
+  });
+});
+
 describe('Pon steals a cushion', () => {
   it('once a game, when the leader is 3+ cushions ahead after a round', () => {
     const h = harness(['n5', 'n5', 'n5', 'n5', 'n5']);

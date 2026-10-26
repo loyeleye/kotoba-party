@@ -121,6 +121,11 @@ export interface HostCue {
   answerEn?: string;
   /** Free context for an LLM reaction. Never shown as is. */
   context?: string;
+  /**
+   * Not said now: a cue the rules expect to raise soon, sent early so the host pipeline can start writing the
+   * line. A later cue with the same content uses it. The bank voice ignores these.
+   */
+  ahead?: boolean;
 }
 
 /** One phrasebook entry for the recap. */

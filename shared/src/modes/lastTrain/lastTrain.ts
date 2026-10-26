@@ -862,9 +862,11 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
           const turn = s.turns[playerId];
           if (!turn) return moveError('not-playing');
           if (turn.status !== 'answering' && turn.status !== 'retry') {
-            // An answer that lost the race with its timer is a race, not a repeat.
+            // Only a task the player has an attempt on is "already answered". A retry the room's overrule made
+            // moot (the first try now counts), or an answer that lost the race with its timer, is a stale move.
             const late = turn.status === 'away' || turn.attempts.at(-1)?.timedOut;
-            return turn.task.key === raw.key && !late ? moveError('already-answered') : moveError('wrong-phase');
+            const tried = turn.task.key === raw.key && turn.attempts.length >= turn.task.attempt && !late;
+            return moveError(tried ? 'already-answered' : 'wrong-phase');
           }
           if (turn.task.key !== raw.key) return moveError('wrong-phase');
           const ok = !!u && checkUtterance(u, turn.task.item.accepted, isParticle(turn.task));

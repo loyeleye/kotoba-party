@@ -212,6 +212,22 @@ function cue(ctx: ModeContext, c: Omit<HostCue, 'host'>): void {
   ctx.cue({ host: 'pon', ...c });
 }
 
+/** Pon's reaction to a matchup's answers, as the reveal raises it. */
+function revealCue(s: OogiriState, m: Matchup): Omit<HostCue, 'host'> {
+  const shown = visibleAnswers(s, m.index).sort(byId);
+  return {
+    event: 'reveal_react',
+    tier: 'good',
+    prompt: promptCue(m.prompt),
+    answer: shown.map((a) => a.text).join(' / '),
+    answerEn: shown.map((a) => a.en).join(' / '),
+  };
+}
+
+/** Every slot for this matchup is answered. */
+const matchupLocked = (s: OogiriState, m: number) =>
+  Object.values(s.slots).every((slots) => slots.every((x) => x.matchup !== m || x.answerId !== null));
+
 /** Votes, IPPON and the answer bonuses for the matchup on show. Paid as the encore starts. */
 function scoreMatchup(s: OogiriState, ctx: ModeContext): void {
   const m = s.matchups[s.current];
@@ -389,14 +405,9 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         s.current = nextMatchup(s);
         const m = s.matchups[s.current];
         if (m) {
-          const shown = visibleAnswers(s, m.index).sort(byId);
-          cue(ctx, {
-            event: 'reveal_react',
-            tier: 'good',
-            prompt: promptCue(m.prompt),
-            answer: shown.map((a) => a.text).join(' / '),
-            answerEn: shown.map((a) => a.en).join(' / '),
-          });
+          cue(ctx, revealCue(s, m));
+          // The later matchups' answers are final now: start their reactions while this one plays.
+          for (const later of s.matchups.slice(s.current + 1)) if (matchupAnswers(s, later.index).length) cue(ctx, { ...revealCue(s, later), ahead: true });
         }
         break;
       }
@@ -534,6 +545,8 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
           ctx.phrase(playerId, { itemId: `oogiri:${answer.id}`, text: a.text, kana: a.kana, en: sentence.en, outcome: memory || spoken ? 'said' : 'seen' });
         }
         if (a.style === 'memory-spoken' || a.style === 'memory-typed') stats(s, playerId).brave += 1;
+        // The host's reaction takes longer to write than the reveal waits, so it starts as the matchup locks.
+        if (matchupLocked(s, m.index)) cue(ctx, { ...revealCue(s, m), ahead: true });
         const words = [...a.used.map((u) => u.tile.wordId), ...wordsIn(l, a.freeReading)];
         for (const w of words) {
           s.used = s.used.filter((x) => x !== w);

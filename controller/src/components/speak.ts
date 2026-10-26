@@ -6,7 +6,9 @@
 
 import { h } from '../../../shared/src/dom.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
+import type { Level } from '../../../shared/src/protocol.js';
 import { kanaPad } from './kanaPad.js';
+import { heardPrefix, levelText } from './speakLabels.js';
 
 interface RecognitionLike {
   lang: string;
@@ -26,6 +28,19 @@ type RecognitionCtor = new () => RecognitionLike;
 const Recognition: RecognitionCtor | undefined =
   (globalThis as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor }).SpeechRecognition ??
   (globalThis as unknown as { webkitSpeechRecognition?: RecognitionCtor }).webkitSpeechRecognition;
+
+// The phone's player level, set by main.ts before each screen draws.
+let level: Level = 'n5';
+export const setSpeakLevel = (l: Level): void => {
+  level = l;
+};
+
+/** Button content for a label, worded for the player's level (see speakLabels.ts). */
+function labelled(text: string): (HTMLElement | string)[] {
+  const t = levelText(text, level);
+  const main = h('span', { class: 'say-main', lang: t.ja ? 'ja' : 'en' }, t.main);
+  return t.sub ? [main, h('small', { class: 'say-sub', lang: t.ja ? 'en' : 'ja' }, t.sub)] : [main];
+}
 
 export const canSpeak = (): boolean => !!Recognition && localStorage.getItem('kotoba:quiet') !== '1';
 
@@ -53,7 +68,7 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
   if (canSpeak()) {
     let rec: RecognitionLike | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const talk = h('button', { type: 'button', class: 'talk' }, opts.label ?? 'Hold to talk') as HTMLButtonElement;
+    const talk = h('button', { type: 'button', class: 'talk' }, labelled(opts.label ?? 'Hold to talk')) as HTMLButtonElement;
 
     const stop = () => {
       if (timer) clearTimeout(timer);
@@ -76,7 +91,7 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
         transcript = Array.from(ev.results)
           .map((r) => r[0]?.transcript ?? '')
           .join('');
-        heard.textContent = transcript ? `Heard: ${transcript}` : '…';
+        heard.textContent = transcript ? `${heardPrefix(level)}: ${transcript}` : '…';
       };
       rec.onerror = (ev) => {
         heard.textContent = ev.error === 'not-allowed' ? 'Microphone blocked: type your answer below instead.' : 'Didn’t catch that. Try again, or type it.';
@@ -85,8 +100,8 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
         rec = null;
         if (transcript) {
           actions.replaceChildren(
-            h('button', { type: 'button', class: 'primary', onclick: () => opts.onSend({ via: 'speech', text: transcript }) }, 'Send'),
-            h('button', { type: 'button', class: 'secondary', onclick: () => ((heard.textContent = ''), actions.replaceChildren()) }, 'Say it again'),
+            h('button', { type: 'button', class: 'primary', onclick: () => opts.onSend({ via: 'speech', text: transcript }) }, labelled('Send')),
+            h('button', { type: 'button', class: 'secondary', onclick: () => ((heard.textContent = ''), actions.replaceChildren()) }, labelled('Say it again')),
           );
         } else if (heard.textContent === '…') heard.textContent = 'Didn’t catch that. Hold the button while you speak.';
       };

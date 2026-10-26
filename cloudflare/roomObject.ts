@@ -149,6 +149,7 @@ function roomAudio(voice: HostVoice): HostVoice {
       const line = await voice.speak(code, cue);
       return line?.audioUrl ? { ...line, audioUrl: `/api/rooms/${code}${line.audioUrl}` } : line;
     },
+    ahead: voice.ahead?.bind(voice),
   };
 }
 

@@ -7,7 +7,7 @@
 // so a slow voice can never show a stale line or hold up a round.
 
 import type { HostLine, Level } from '../../content/src/types.js';
-import { HOST_EVENTS, type HostEvent as AiEvent, type HostVoice as AiHostVoice } from '../ai/index.js';
+import { HOST_EVENTS, type HostEvent as AiEvent, type HostVoice as AiHostVoice, type PendingLine } from '../ai/index.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type { HostSay } from '../../shared/src/protocol.js';
 import type { Room } from './room.js';
@@ -15,6 +15,8 @@ import type { Room } from './room.js';
 export interface HostVoice {
   /** Returns the line for a cue, or null to stay quiet. May be slow; may fail. */
   speak(roomCode: string, cue: HostCue): Promise<Omit<HostSay, 'phaseSeq'> | null>;
+  /** A cue the game expects to raise soon (cue.ahead): start on its line now. Optional; nothing is said. */
+  ahead?(roomCode: string, cue: HostCue): void;
 }
 
 /** Fills {slot} placeholders. */
@@ -46,8 +48,9 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
 /** Wires a voice to a room: each cue is spoken and lands only if its phase is still current. */
 export function hostDirector(voice: HostVoice) {
   return (room: Room, cues: HostCue[], phaseSeq: number): void => {
+    for (const c of cues) if (c.ahead) voice.ahead?.(room.code, c);
     // One line per phase: the last cue raised is the most specific.
-    const cue = cues.at(-1);
+    const cue = cues.filter((c) => !c.ahead).at(-1);
     if (!cue) return;
     voice
       .speak(room.code, cue)
@@ -58,10 +61,18 @@ export function hostDirector(voice: HostVoice) {
   };
 }
 
+/** Lines started early and not yet asked for, per room. A few rounds' worth; the oldest go first. */
+const AHEAD_MAX = 12;
+
+const cueKey = (c: HostCue): string =>
+  JSON.stringify([c.host, c.event, c.tier ?? '', c.prompt?.text ?? '', c.answer ?? '', c.answerEn ?? '', c.slots ?? {}]);
+
 /**
  * The host voice thread's LLM + TTS pipeline (server/ai) behind the HostVoice interface.
  * Events the pipeline doesn't know fall back to the plain bank voice. A line is awaited for
  * at most `waitMs`; the pipeline itself falls back to a voiced bank line when the LLM is slow.
+ * An LLM line takes longer than that (2 to 6 s on Opus), so cues sent ahead start the line early
+ * and the real cue picks it up.
  */
 export function aiVoice(
   voice: AiHostVoice,
@@ -69,19 +80,40 @@ export function aiVoice(
   opts: { waitMs?: number; levelOf?: (roomCode: string) => Level } = {},
 ): HostVoice {
   const known = new Set<string>(HOST_EVENTS);
+  const early = new Map<string, Map<string, PendingLine>>();
+
+  const prepare = (roomCode: string, cue: HostCue): PendingLine =>
+    voice.prepare(roomCode, {
+      host: cue.host,
+      event: cue.event as AiEvent,
+      tier: cue.tier,
+      prompt: cue.prompt,
+      answer: cue.answer,
+      answerEn: cue.answerEn,
+      slots: cue.slots,
+      level: opts.levelOf?.(roomCode),
+    });
+
   return {
+    ahead(roomCode, cue) {
+      if (!known.has(cue.event)) return;
+      let room = early.get(roomCode);
+      if (!room) early.set(roomCode, (room = new Map()));
+      const key = cueKey(cue);
+      if (room.has(key)) return;
+      room.set(key, prepare(roomCode, cue));
+      for (const [k, p] of room) {
+        if (room.size <= AHEAD_MAX) break;
+        p.cancel();
+        room.delete(k);
+      }
+    },
     async speak(roomCode, cue) {
       if (!known.has(cue.event)) return fallback.speak(roomCode, cue);
-      const pending = voice.prepare(roomCode, {
-        host: cue.host,
-        event: cue.event as AiEvent,
-        tier: cue.tier,
-        prompt: cue.prompt,
-        answer: cue.answer,
-        answerEn: cue.answerEn,
-        slots: cue.slots,
-        level: opts.levelOf?.(roomCode),
-      });
+      const room = early.get(roomCode);
+      const key = cueKey(cue);
+      const pending = room?.get(key) ?? prepare(roomCode, cue);
+      if (room?.delete(key) && !room.size) early.delete(roomCode);
       const line = await pending.ready(opts.waitMs ?? 1500);
       if (!line) return fallback.speak(roomCode, cue);
       return {
