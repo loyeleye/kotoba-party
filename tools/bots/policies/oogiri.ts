@@ -66,26 +66,26 @@ export function oogiriPolicy(opts: OogiriPolicyOptions = {}): ModePolicy {
         const slot = me.slot;
         const tag = `${slot.index}`;
         if (slot.sayFirst) {
-          if (r(`tiles:${tag}`) < tilesChance) return [{ key: `tiles:${tag}`, move: { kind: 'tiles', slot: slot.index }, delayMs: slot.sayFirstMs ?? SAY_FIRST_MS }];
+          if (r(`tiles:${tag}`) < tilesChance) return [{ key: `tiles:${tag}`, move: { kind: 'tiles', slot: slot.index, round: game.round }, delayMs: slot.sayFirstMs ?? SAY_FIRST_MS }];
           const text = MEMORY_ANSWERS[Math.floor(r(`mem:${tag}`) * MEMORY_ANSWERS.length)]!;
           const via = r(`via:${tag}`) < 0.6 ? 'speech' : 'typed';
-          return [{ key: `answer:${tag}`, move: { kind: 'answer', slot: slot.index, said: { via, text } }, delayMs: delay(tag) }];
+          return [{ key: `answer:${tag}`, move: { kind: 'answer', slot: slot.index, round: game.round, said: { via, text } }, delayMs: delay(tag) }];
         }
-        const move = answerWithTiles(slot, r(`pick:${tag}`), r(`speak:${tag}`) < speakChance, r(`en:${tag}`) < englishChance);
+        const move = { ...(answerWithTiles(slot, r(`pick:${tag}`), r(`speak:${tag}`) < speakChance, r(`en:${tag}`) < englishChance) as object), round: game.round };
         return [{ key: `answer:${tag}`, move, delayMs: delay(tag) }];
       }
 
       if (view.phase === 'reveal' && me.canVote && game.matchup) {
         const options = game.matchup.answers.filter((a) => !a.mine && !a.hidden);
         const pick = options[Math.floor(r('vote') * options.length)];
-        if (pick) return [{ key: 'vote', move: { kind: 'vote', answerId: pick.id }, delayMs: delay('vote') }];
+        if (pick) return [{ key: 'vote', move: { kind: 'vote', answerId: pick.id, matchup: game.matchup.id }, delayMs: delay('vote') }];
       }
 
       if (view.phase === 'encore' && (me.encore === 'winner' || me.encore === 'author') && game.matchup) {
         const mine = game.matchup.answers.find((a) => a.mine);
         const chance = me.encore === 'winner' ? encoreChance : encoreChance / 2;
         const move = mine && r('encore') < chance ? { kind: 'encore', said: { via: r('encore:via') < 0.8 ? 'speech' : 'typed', text: mine.text } } : { kind: 'encore', pass: true };
-        return [{ key: 'encore', move, delayMs: delay('encore') }];
+        return [{ key: 'encore', move: { ...move, matchup: game.matchup.id }, delayMs: delay('encore') }];
       }
       return [];
     },

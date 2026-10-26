@@ -231,6 +231,8 @@ describe('say it first', () => {
     expect(h.game('p1').me!.slot!.prompt.romaji).toBeUndefined();
 
     expect(h.play('p1', { kind: 'tiles', slot: 0 })).toEqual({ changed: false, error: 'say-it-first' });
+    // A move from an earlier round that arrives late is a harmless race.
+    expect(h.play('p1', { kind: 'tiles', slot: 0, round: 0 })).toEqual({ changed: false, error: 'wrong-phase' });
     h.tick(SAY_FIRST_MS);
     expect(h.play('p1', { kind: 'tiles', slot: 0 }).changed).toBe(true);
     const tiles = h.game('p1').me!.slot!.tiles;

@@ -144,7 +144,10 @@ export interface AnswerCard {
 }
 
 export interface MatchupView {
+  /** Position among the matchups on show this round (for "2 / 4"). */
   index: number;
+  /** The matchup's id within the round; moves may echo it so a late one is ignored. */
+  id: number;
   count: number;
   prompt: PromptCard;
   answers: AnswerCard[];
@@ -166,8 +169,9 @@ export interface TileView {
   role: Tile['role'];
   ask?: { form: TileForm; label: string };
   options?: { form: TileForm; label: string; text: string; kana: string; en: string }[];
-  /** Which verb frames this tile can go into. */
-  verb?: ('verb-stem' | 'verb-te')[];
+  /** The verb's stem (for 〜たい frames) and て-form (for 〜てください frames), when it has them. */
+  stem?: string;
+  te?: string;
 }
 
 export interface SlotView {

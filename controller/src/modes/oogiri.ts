@@ -40,7 +40,7 @@ function promptCard(p: PromptCard, small = false): HTMLElement {
 
 // ---- answer: say it first ----
 
-function sayFirst(slot: SlotView, send: PhoneContext['send']): HTMLElement {
+function sayFirst(slot: SlotView, round: number, send: PhoneContext['send']): HTMLElement {
   const countdown = h('p', { class: 'oo-count' }, `Tiles in ${Math.round(slot.sayFirstMs / 1000)}…`);
   const el = h(
     'div',
@@ -53,7 +53,7 @@ function sayFirst(slot: SlotView, send: PhoneContext['send']): HTMLElement {
       label: 'Hold and say your answer',
       placeholder: 'Type what goes in the blank',
       maxLength: MAX_ANSWER_LENGTH,
-      onSend: (u) => void send({ kind: 'answer', slot: slot.index, said: u }),
+      onSend: (u) => void send({ kind: 'answer', slot: slot.index, round, said: u }),
     }),
     countdown,
   );
@@ -65,7 +65,7 @@ function sayFirst(slot: SlotView, send: PhoneContext['send']): HTMLElement {
     else {
       clearInterval(timer);
       countdown.textContent = 'Here come the tiles…';
-      void send({ kind: 'tiles', slot: slot.index });
+      void send({ kind: 'tiles', slot: slot.index, round });
     }
   }, 200);
   return el;
@@ -84,7 +84,7 @@ function pieceText(p: Piece, frameSlot: string | null): string {
   return p.tile.options?.find((o) => o.form === p.form)?.text ?? p.tile.text;
 }
 
-function builder(slot: SlotView, send: PhoneContext['send'], level: string): HTMLElement {
+function builder(slot: SlotView, round: number, send: PhoneContext['send'], level: string): HTMLElement {
   const pieces: Piece[] = [];
   let frameId: string | null = null;
   let picking: TileView | null = null;
@@ -209,6 +209,7 @@ function builder(slot: SlotView, send: PhoneContext['send'], level: string): HTM
     const move: Record<string, unknown> = {
       kind: 'answer',
       slot: slot.index,
+      round,
       tiles: pieces.map((p) => ({ key: p.tile.key, form: f && f.slot !== 'noun' ? undefined : p.form })),
     };
     if (frameId) move.frame = frameId;
@@ -274,7 +275,7 @@ function reveal(ctx: PhoneContext<OogiriView>): HTMLElement {
   const m = game.matchup!;
   const me = game.me!;
   const mine = m.answers.some((a) => a.mine);
-  const hide = isVip ? (a: AnswerCard) => void send({ kind: 'hide', answerId: a.id }) : undefined;
+  const hide = isVip ? (a: AnswerCard) => void send({ kind: 'hide', answerId: a.id, matchup: m.id }) : undefined;
   const title = me.canVote ? 'Tap the funniest' : me.votedFor ? 'Vote in! 座布団 sent' : mine ? 'Your answer is up! Stay cool…' : 'Watch the screen';
   return h(
     'div',
@@ -282,7 +283,7 @@ function reveal(ctx: PhoneContext<OogiriView>): HTMLElement {
     h('p', { class: 'oo-step' }, `${game.kind === 'ippon' ? 'IPPON Round' : `Matchup ${m.index + 1} of ${m.count}`}`),
     promptCard(m.prompt, true),
     h('p', { class: 'big' }, title),
-    answerList(m.answers, { vote: me.canVote ? (a) => void send({ kind: 'vote', answerId: a.id }) : undefined, hide, votedFor: me.votedFor }),
+    answerList(m.answers, { vote: me.canVote ? (a) => void send({ kind: 'vote', answerId: a.id, matchup: m.id }) : undefined, hide, votedFor: me.votedFor }),
     isVip ? h('p', { class: 'hint' }, 'VIP: tap Hide to take an answer off the screen.') : null,
   );
 }
@@ -303,7 +304,7 @@ function encore(ctx: PhoneContext<OogiriView>): HTMLElement {
         onclick: () =>
           box.replaceChildren(
             h('p', { class: 'hint' }, 'From memory, say your answer for the room!'),
-            speakBox({ label: 'Hold and say it 🎤', placeholder: 'Or type it', onSend: (u) => void send({ kind: 'encore', said: u }) }),
+            speakBox({ label: 'Hold and say it 🎤', placeholder: 'Or type it', onSend: (u) => void send({ kind: 'encore', said: u, matchup: m.id }) }),
           ),
       },
       winner ? 'I’ll say it! 🎤' : 'Encore too! 🎤',
@@ -315,7 +316,7 @@ function encore(ctx: PhoneContext<OogiriView>): HTMLElement {
       h('p', { class: 'big' }, winner ? (m.ippon ? 'IPPON!! 🎉' : 'You won this one! 🏆') : 'Encore?'),
       h('p', { class: 'hint' }, winner ? 'Say it out loud for a spotlight bonus.' : 'Anyone can encore. Say it for a small bonus.'),
       box,
-      h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'encore', pass: true }) }, 'Let Pon read it'),
+      h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'encore', pass: true, matchup: m.id }) }, 'Let Pon read it'),
     );
   }
   if (me.encore === 'done') return waiting('Thanks! 👏', mineCard ? `“${mineCard.text}”` : '');
@@ -390,7 +391,7 @@ export const oogiriPhone: PhoneMode<OogiriView> = {
             (game.me?.done ?? []).map((d) => h('p', { class: 'oo-done', lang: 'ja' }, d.answer)),
           );
         }
-        return slot.sayFirst ? sayFirst(slot, send) : builder(slot, send, game.me!.level);
+        return slot.sayFirst ? sayFirst(slot, game.round, send) : builder(slot, game.round, send, game.me!.level);
       }
       case 'reveal':
         return game.matchup ? reveal(ctx) : waiting('Look at the screen!');

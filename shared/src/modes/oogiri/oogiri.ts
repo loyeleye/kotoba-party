@@ -292,9 +292,6 @@ function card(jp: JpText, photo?: string, romaji = false): PromptCard {
 }
 
 function tileView(t: Tile, romaji: boolean): TileView {
-  const verb: TileView['verb'] = [];
-  if (t.stem) verb.push('verb-stem');
-  if (t.te) verb.push('verb-te');
   return {
     key: t.key,
     text: t.jp.text,
@@ -304,7 +301,8 @@ function tileView(t: Tile, romaji: boolean): TileView {
     role: t.role,
     ask: t.ask ? { form: t.ask, label: FORM_LABELS[t.ask] } : undefined,
     options: t.options?.map((o) => ({ form: o.form, label: FORM_LABELS[o.form], text: o.jp.text, kana: o.jp.kana, en: o.jp.en })),
-    verb: verb.length ? verb : undefined,
+    stem: t.stem?.text,
+    te: t.te?.text,
   };
 }
 
@@ -473,6 +471,9 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
 
   move(s, phase, playerId, raw, ctx) {
     if (!isObject(raw)) return moveError('bad-move');
+    // A move may name its round; one sent late (e.g. a delayed tiles request) lands as a harmless race.
+    if (raw.round !== undefined && raw.round !== s.round) return moveError('wrong-phase');
+    if (raw.matchup !== undefined && raw.matchup !== s.current) return moveError('wrong-phase');
     switch (raw.kind) {
       case 'tiles': {
         if (phase !== 'answer') return moveError('wrong-phase');
@@ -546,8 +547,10 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         const m = s.matchups[s.current];
         if (!m) return moveError('wrong-phase');
         if (m.votes[playerId]) return moveError('already-voted');
-        const answer = s.answers.find((a) => a.id === raw.answerId && a.matchup === m.index);
+        const answer = s.answers.find((a) => a.id === raw.answerId);
         if (!answer) return moveError('unknown-answer');
+        // A vote for an answer from an earlier matchup arrived late.
+        if (answer.matchup !== m.index) return moveError('wrong-phase');
         if (answer.authorId === playerId) return moveError('own-answer');
         if (kindOf(s) !== 'ippon' && m.authors.includes(playerId)) return moveError('author-cant-vote');
         if (answer.hidden) return moveError('hidden');
@@ -637,6 +640,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
           return c;
         });
       matchup = {
+        id: m.index,
         index: s.matchups.filter((x) => x.index < m.index && matchupAnswers(s, x.index).length).length,
         count: s.matchups.filter((x) => matchupAnswers(s, x.index).length).length,
         prompt: card(stageVersion(m.prompt), m.prompt.photo),
