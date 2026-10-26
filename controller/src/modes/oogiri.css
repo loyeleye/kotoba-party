@@ -1,0 +1,60 @@
+/* Oogiri Night (phone) */
+.oo-step { color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0; }
+.oo-prompt { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 4px; }
+.oo-prompt p { margin: 0; }
+.oo-prompt .oo-jp { font-size: 24px; font-weight: 800; line-height: 1.4; }
+.oo-prompt.small .oo-jp { font-size: 20px; }
+.oo-kana, .oo-romaji { color: var(--muted); font-size: 15px; }
+.oo-romaji { font-style: italic; }
+.oo-en { color: var(--muted); font-size: 15px; }
+.oo-photo { background: #2a2140; border: 2px dashed var(--warn); border-radius: 10px; padding: 10px; font-size: 16px; color: var(--ink); }
+.oo-sayfirst { color: var(--good); }
+.oo-count { color: var(--warn); font-weight: 800; text-align: center; margin: 0; }
+.oo-preview { font-size: 24px; font-weight: 800; min-height: 1.4em; margin: 0; padding: 12px; border-radius: 12px; border: 2px solid var(--accent); text-align: center; word-break: break-word; }
+.oo-preview.empty { color: var(--muted); font-size: 17px; font-weight: 600; border-style: dashed; }
+.oo-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.oo-tile { position: relative; display: grid; gap: 2px; text-align: left; min-height: 64px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.oo-tile small { color: var(--muted); font-size: 13px; }
+.oo-tile-jp { font-size: 20px; font-weight: 700; }
+.oo-tile.on { border-color: var(--accent); background: #3a2230; box-shadow: 0 0 0 2px var(--accent); }
+.oo-tile:disabled { opacity: 0.35; }
+.oo-tile.callback { border-style: dashed; }
+.oo-ask { justify-self: start; background: var(--warn); color: #1a1426; border-radius: 6px; padding: 0 6px; font-size: 13px; font-weight: 800; }
+.oo-cb { position: absolute; top: 6px; right: 8px; color: var(--good); font-size: 11px; }
+.oo-forms { display: grid; gap: 6px; }
+.oo-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.oo-form { display: grid; gap: 2px; padding: 12px; border-radius: 12px; border: 2px solid var(--warn); background: var(--panel); color: var(--ink); font-size: 18px; }
+.oo-form small { color: var(--muted); font-size: 12px; }
+.oo-frames { display: flex; flex-wrap: wrap; gap: 8px; }
+.oo-frame { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 17px; text-align: left; }
+.oo-frame small { color: var(--muted); font-size: 12px; }
+.oo-frame.on { border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
+.oo-typed { grid-template-columns: 1fr auto; }
+.oo-lock { display: grid; gap: 8px; margin-top: 4px; }
+.oo-quiet { width: 100%; }
+.oo-done { font-size: 20px; margin: 0; padding: 8px 12px; background: var(--panel); border-radius: 10px; }
+.oo-double { color: var(--warn); font-size: 28px; font-weight: 900; margin: 0; }
+
+.oo-answers { display: grid; gap: 10px; }
+.oo-ans { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: stretch; }
+.oo-ans-main { display: grid; gap: 4px; text-align: left; padding: 16px; min-height: 64px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; }
+button.oo-ans-main:active { border-color: var(--accent); }
+.oo-ans-jp { font-size: 22px; font-weight: 800; }
+.oo-ans small { color: var(--muted); font-size: 14px; }
+.oo-ans.mine .oo-ans-main { border-style: dashed; opacity: 0.8; }
+.oo-ans.on .oo-ans-main { border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
+.oo-ans.hidden .oo-ans-main { opacity: 0.4; }
+.oo-tag { color: var(--warn) !important; }
+.oo-hide { padding: 0 14px; border-radius: 12px; border: 1px solid var(--warn); background: transparent; color: var(--warn); font-size: 15px; font-weight: 700; }
+
+.oo-encore-box { display: grid; gap: 10px; }
+.oo-encore-go { padding: 28px 16px; font-size: 26px; }
+.oo-encore-go.small { padding: 18px 16px; font-size: 20px; }
+
+.oo-tip .big { color: var(--good); }
+.oo-label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; margin: 6px 0 0; }
+.oo-natural { background: var(--panel); border-left: 4px solid var(--good); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+.oo-natural p { margin: 0; }
+.oo-natural .oo-jp { font-size: 20px; font-weight: 700; }
+.oo-formtip { margin: 0; color: var(--warn); }
+.oo-pattern { margin: 0; color: var(--ink); }
