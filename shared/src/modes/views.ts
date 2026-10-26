@@ -10,6 +10,7 @@ import type { KaraokeDuelView } from './karaokeDuel/karaokeDuel.js';
 import type { OnsenView } from './onsenMurder/onsenMurder.js';
 import type { TouristView } from './tourist/tourist.js';
 import type { OekakiView } from './oekaki/oekaki.js';
+import type { OmiaiView } from './omiai/omiai.js';
 
-export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView };
-export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | DebugView;
+export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView };
+export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | DebugView;

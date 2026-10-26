@@ -10,6 +10,7 @@ import { karaokeDuelStage } from './karaokeDuel.js';
 import { onsenMurderStage } from './onsenMurder.js';
 import { touristStage } from './tourist.js';
 import { oekakiStage } from './oekaki.js';
+import { omiaiStage } from './omiai.js';
 import type { StageMode } from './types.js';
 
 export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
@@ -24,4 +25,5 @@ export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
   'onsen-murder': onsenMurderStage,
   tourist: touristStage,
   oekaki: oekakiStage,
+  omiai: omiaiStage,
 };

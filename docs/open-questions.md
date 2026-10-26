@@ -27,6 +27,9 @@ If you only have ten minutes, these are the answers that would change the build 
 - **Phrase Bingo Theater (backlog):** saying a secret line into the phone is what scores, on the
   honour system that it was also said in the scene. Should the audience be able to challenge it?
   A caught actor loses nothing (only the smooth bonus). ([phrase-bingo.md](modes/phrase-bingo.md#open-questions))
+- **Omiai Matchmaker (backlog):** a rule-based manners meter (no LLM) scores politeness, the room
+  votes for charm, and the guest invites the player with the most hearts (votes + manners
+  stars) to tea for +200. Fair to funny casual answers? ([omiai.md](modes/omiai.md#open-questions))
 - **Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
   player. Is it time to add accounts or device-local saves? ([kana-raid.md](modes/kana-raid.md#open-questions))
 - **Ink Storm (kana drawing):** the drawing pad has never been tried with a thumb on a real
@@ -123,6 +126,7 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Murder at the Onsen (backlog) | [onsen-murder.md](modes/onsen-murder.md) | 15 | Chōchin-san |
 | Who's the Tourist? (backlog) | [tourist.md](modes/tourist.md) | 20 | Chōchin-san |
 | Oekaki (backlog) | [oekaki.md](modes/oekaki.md) | 18 | Fude |
+| Omiai Matchmaker (backlog) | [omiai.md](modes/omiai.md) | 20 | Pon |
 
 ## Content
 
