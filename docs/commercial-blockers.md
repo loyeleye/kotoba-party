@@ -31,8 +31,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts` | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (yōkai sprites, Photo Caption pictures) | `stage/assets/yokai/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
-| 7 | AI art: Gemini (host portraits, backdrop) | `stage/assets/hosts/`, `stage/assets/studio-bg.jpg` | ❓ ⚠️ | Read Gemini API terms; paid tier; same copyright caveats |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, backdrop, Photo Caption pictures) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 7 | AI art: Gemini (source images for Pon and the backdrop) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon and the backdrop without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
 | 10 | Kana course order and links (ToKini Andy) | `content/src/kana/raid.ts` | ✅ | Links only; ask before any paid tie-in or using his name in marketing |
@@ -104,9 +104,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 6. AI art from PixelLab
 
-- **What:** Five yōkai sprites and the 24 Photo Caption pictures, all from PixelLab's `pixflux`
-  endpoint. Prompts and params are recorded in `stage/assets/manifest.json` and
-  `tools/generate-caption-art.ts`.
+- **What:** Everything on the stage: the three host portraits, five yōkai sprites, the studio backdrop
+  and the 24 Photo Caption pictures. Most come from PixelLab's `pixflux` endpoint; Pon and the
+  backdrop come from its `image-to-pixelart` endpoint (see row 7). Prompts, sources and params are
+  recorded in `stage/assets/manifest.json` and `tools/generate-caption-art.ts`.
 - **Terms (read 2026-10-26, <https://www.pixellab.ai/termsofservice>):** "You own the copyrights to your
   creations, permitting usage for both commercial and non-commercial purposes." Limits: don't train
   other models on the outputs, use only the official API, and ask before building a reselling service.
@@ -115,15 +116,18 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 7. AI art from Gemini
 
-- **What:** The three host portraits and the studio backdrop (`gemini-3-pro-image`).
+- **What:** Since 2026-10-26 no shipped file is raw Gemini output: the hosts and backdrop moved to
+  PixelLab pixel art (see [graphics.md](graphics.md)). But PixelLab drew Pon and the backdrop by
+  converting the earlier Gemini images (`gemini-3-pro-image`), kept in `tools/art/sources/` and not
+  served. So those two are derived from Gemini output and its terms still apply to them.
 - **Terms: unverified.** The Gemini API Additional Terms page was unreachable from these sessions. From
   memory, to be checked: Google doesn't claim ownership of generated content, the Generative AI
   Prohibited Use Policy applies, free-tier prompts and outputs may be used to improve Google's
   products, and in some regions (EEA, UK, Switzerland) only the paid tier may be used. Images carry an
   invisible SynthID watermark.
 - **To sell:** Read the terms and record them here. Prefer paid-tier keys for any art that ships.
-  Same copyright caveats as PixelLab. If the host style decision goes to pixel art, these files are
-  replaced and this row can close.
+  Same copyright caveats as PixelLab. Or close the row: redraw Pon and the backdrop with `pixflux`
+  from text only, or include them in the commissioned art, then delete `tools/art/sources/`.
 
 ### 8. Claude API
 
@@ -241,7 +245,8 @@ and keep the provenance in `stage/assets/manifest.json` (already done).
    provider's terms put that risk on the user. The eye check before committing covers most of it.
 
 **Decision (Ladi, 2026-10-26):** use PixelLab pixel art while the game is non-commercial, and
-commission the art before going commercial. Gemini art is on its way out (row 7).
+commission the art before going commercial. Done for the stage on 2026-10-26: the hosts and backdrop
+are now PixelLab pixel art. Only Pon's and the backdrop's Gemini source images remain (row 7).
 
 **Recommendation:** keep using AI pixel art (PixelLab) for now. Before selling, have the three hosts,
 the logo and the title screen hand-finished or commissioned, keep the AI sprites and Photo Caption

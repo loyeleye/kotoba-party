@@ -6,6 +6,9 @@
 //   npx tsx tools/art/generate.ts --out /tmp/art   # write candidates elsewhere to compare
 //   npx tsx tools/art/generate.ts --seed 42 yokai  # PixelLab seed override
 //
+// All shipped art is PixelLab pixel art. The Gemini path is kept for drafting source images that
+// PixelLab's image-to-pixelart then converts (see `source` in the manifest).
+//
 // Keys come from the environment only (GEMINI_API_KEY, PIXELLAB_API_KEY). They are sent as
 // request headers and never printed or written to disk. Post-processing (resize, palette,
 // JPEG quality) shells out to ImageMagick (`magick` or `convert`), which must be on PATH.
@@ -20,6 +23,12 @@ type Generator = 'gemini' | 'pixellab';
 interface Post {
   /** ImageMagick geometry, e.g. "512x512". Smooth (Lanczos) resize; never used on pixel art. */
   resize?: string;
+  /** Make the background transparent: flood-fill from the four corners with this fuzz (percent). */
+  removeBackground?: number;
+  /** Draw a 1px outline of this colour around the opaque pixels (after removeBackground). */
+  outline?: string;
+  /** Whole-number nearest-neighbour upscale, for pixel art that can't be scaled in CSS. */
+  scale?: number;
   /** Quantise to this many colours (PNG8, no dithering). */
   colors?: number;
   /** Write a JPEG at this quality instead of a PNG. */
@@ -32,6 +41,8 @@ interface Asset {
   generator: Generator;
   model: string;
   prompt: string;
+  /** image-to-pixelart only: repo path of the image to convert. */
+  source?: string;
   params?: Record<string, unknown>;
   post?: Post;
 }
@@ -81,17 +92,26 @@ async function gemini(asset: Asset): Promise<Buffer> {
 
 async function pixellab(asset: Asset, seed: number | undefined): Promise<Buffer> {
   const key = requireKey('PIXELLAB_API_KEY');
-  if (asset.model !== 'pixflux') throw new Error(`PixelLab model ${asset.model} is not supported by this script`);
   const { width = 128, height = 128, ...rest } = (asset.params ?? {}) as { width?: number; height?: number } & Record<string, unknown>;
-  const res = await fetch('https://api.pixellab.ai/v2/create-image-pixflux', {
+  let endpoint: string;
+  let body: Record<string, unknown>;
+  if (asset.model === 'pixflux') {
+    endpoint = 'create-image-pixflux';
+    body = { description: asset.prompt, image_size: { width, height }, ...rest };
+  } else if (asset.model === 'image-to-pixelart') {
+    // The prompt is documentation only: this endpoint takes no text, just the source image.
+    if (!asset.source) throw new Error('image-to-pixelart needs a source image');
+    const src = readFileSync(join(ROOT, asset.source));
+    const [sw, sh] = execFileSync(imageMagick(), [join(ROOT, asset.source), '-format', '%w %h', 'info:']).toString().split(' ').map(Number);
+    endpoint = 'image-to-pixelart';
+    body = { image: { base64: src.toString('base64') }, image_size: { width: sw, height: sh }, output_size: { width, height }, ...rest };
+  } else {
+    throw new Error(`PixelLab model ${asset.model} is not supported by this script`);
+  }
+  const res = await fetch(`https://api.pixellab.ai/v2/${endpoint}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      description: asset.prompt,
-      image_size: { width, height },
-      ...rest,
-      ...(seed === undefined ? {} : { seed }),
-    }),
+    body: JSON.stringify({ ...body, ...(seed === undefined ? {} : { seed }) }),
   });
   if (!res.ok) throw new Error(`PixelLab ${res.status}: ${await errorText(res)}`);
   const json = (await res.json()) as { image?: { base64?: string } };
@@ -121,6 +141,19 @@ function postProcess(raw: Buffer, asset: Asset, outFile: string): void {
     const post = asset.post ?? {};
     const args = [input, '-strip'];
     if (post.resize) args.push('-filter', 'Lanczos', '-resize', `${post.resize}^`, '-gravity', 'center', '-extent', post.resize);
+    if (post.removeBackground !== undefined) {
+      const [w = 1, h = 1] = execFileSync(im, [input, '-format', '%w %h', 'info:']).toString().split(' ').map(Number);
+      args.push('-alpha', 'set', '-fuzz', `${post.removeBackground}%`, '-fill', 'none');
+      for (const corner of [`0,0`, `${w - 1},0`, `0,${h - 1}`, `${w - 1},${h - 1}`]) args.push('-draw', `color ${corner} floodfill`);
+      args.push('-fuzz', '0');
+    }
+    if (post.outline) {
+      // Copy, turn the alpha into a 1px-dilated silhouette in the outline colour, and put it underneath.
+      args.push('(', '+clone', '-alpha', 'extract', '-threshold', '50%', '-morphology', 'Dilate', 'Diamond:1');
+      args.push('-background', post.outline, '-alpha', 'shape', ')', '+swap', '-compose', 'over', '-composite');
+      args.push('-channel', 'A', '-threshold', '50%', '+channel');
+    }
+    if (post.scale) args.push('-filter', 'point', '-resize', `${post.scale * 100}%`);
     if (post.jpegQuality !== undefined) {
       args.push('-sampling-factor', '4:2:0', '-interlace', 'JPEG', '-quality', String(post.jpegQuality), `JPG:${outFile}`);
     } else {
