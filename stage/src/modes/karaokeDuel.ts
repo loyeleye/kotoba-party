@@ -9,7 +9,7 @@ import { h, ruby } from '../../../shared/src/dom.js';
 import type { KaraokeDuelView, LineView, TakeView } from '../../../shared/src/modes/karaokeDuel/karaokeDuel.js';
 import { hasKanji } from '../../../shared/src/japanese/kana.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
-import { audioReady, audioSupported, fanfare, outputLatencyMs, isMuted, playTurn, setMuted, stopAll, unlockAudio } from './karaokeAudio.js';
+import { audioReady, audioSupported, fanfare, isMuted, playTurn, setMuted, stopAll, unlockAudio } from './karaokeAudio.js';
 import type { StageMode } from './types.js';
 
 // ---------- server clock ----------
@@ -216,7 +216,9 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
   const line = song.lines[turn.line]!;
   const off = offset(game);
   const serverNow = Date.now() + off;
-  const elapsed = serverNow - turn.lineAt - outputLatencyMs();
+  // The backing track is scheduled early by the speakers' delay (karaokeAudio.ts), so it is heard on
+  // server time and the ball follows server time too.
+  const elapsed = serverNow - turn.lineAt;
   const localLineAt = turn.lineAt - off;
   playTurn({
     key: `${view.phaseSeq}:${turn.no}`,

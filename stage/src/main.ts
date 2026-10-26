@@ -16,6 +16,9 @@ import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
 import { creditSummary } from './music/tracks.js';
 import { isMuted } from './sound.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
+import { mountSettings, updateSettings } from './settings.js';
+import { tickSfx, watchSfx } from './music/sfx.js';
+import { invite, inviteLinks } from '../../shared/src/share.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -56,7 +59,7 @@ const els = {
 
 let client: RoomClient | null = null;
 /** Where people open this room's pages, as the server names it (its public URL, not this tab's). */
-let siteHost = location.host;
+let siteOrigin = location.origin;
 let lastPhaseSeq = -1;
 let lastPhase: RoomView['phase'] | null = null;
 /** The phase's full length, as first seen: the ring timer's 100%. */
@@ -77,6 +80,7 @@ const hostSprite = new HostSprite(128);
 
 $('debug').hidden = !DEBUG;
 mountSoundButton(els.canvas);
+mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteOrigin });
 $('debug-tag').hidden = !DEBUG;
 document.body.dataset.watch = WATCH ? '1' : '';
 if (WATCH) {
@@ -199,7 +203,13 @@ async function openRoom(fresh: boolean): Promise<void> {
   els.code.textContent = session.code;
   els.qr.src = `${base}/api/rooms/${session.code}/qr.svg`;
   els.joinUrl.textContent = session.joinUrl.replace(/^https?:\/\//, '');
-  siteHost = session.joinUrl.replace(/^https?:\/\//, '').split('/')[0] || location.host;
+  siteOrigin = (() => {
+    try {
+      return new URL(session.joinUrl).origin;
+    } catch {
+      return location.origin;
+    }
+  })();
   lastPhaseSeq = -1;
 
   client = new RoomClient({
@@ -248,6 +258,9 @@ function render(view: RoomView, v: number): void {
   fillMenus(view);
   showHost(view);
   updateMusic(view);
+  watchSfx(view);
+  updateSettings(view);
+  showCredits(view.phase === 'recap');
 
   const stageMode = view.game ? STAGE_MODES[view.game.mode] : null;
   // Patched, not rebuilt: chips keep their place and a score that went up gets a fresh
@@ -288,7 +301,10 @@ function mainFor(view: RoomView): HTMLElement {
       h('p', { class: 'big' }, view.players.length ? 'Waiting for the VIP to pick a game' : 'Scan the code to join'),
       h('p', { class: 'hint' }, `${view.players.length} / 8 players`),
       // Friends somewhere else open their own copy of this screen with the same code.
-      h('p', { class: 'hint watch-link' }, WATCH ? `Watching room ${view.code} · join with your phone at the code above` : ['Playing from somewhere else? Open ', h('strong', {}, `${siteHost}/stage/?code=${view.code}`), ' on a laptop']),
+      WATCH ? h('p', { class: 'hint watch-link' }, `Watching room ${view.code} · join with your phone at the code above`) : null,
+      // Send either link to friends: the phone one for when the QR code won't scan, the stage one
+      // for friends playing from somewhere else.
+      invite(inviteLinks(siteOrigin, view.code), view.code),
       h('ul', { class: 'menu' }, view.modes.map((m) => h('li', {}, h('strong', {}, m.title), ` ${m.titleJa} · `, m.blurb))),
     );
   }
@@ -338,14 +354,29 @@ function recapScreen(view: RoomView): HTMLElement {
           ),
         )
       : null,
-    credits(),
   );
 }
 
-/** The music and voice credits their licences ask for, small at the foot of the recap. */
-function credits(): HTMLElement {
-  const voices = [...new Set(Object.values(HOSTS).map((x) => x.credit))];
-  return h('ul', { class: 'credits', 'aria-label': 'Credits' }, [...creditSummary(), `Host voices: ${voices.join(' · ')}`].map((c) => h('li', {}, `♪ ${c}`)));
+/**
+ * The music and voice credits their licences ask for: one line at a time across the foot of the
+ * screen during the recap, outside the play area so it never shrinks with the podium.
+ */
+const creditLines = [...creditSummary(), `Host voices: ${[...new Set(Object.values(HOSTS).map((x) => x.credit))].join(' · ')}`];
+const creditStrip = h('p', { class: 'credits', 'aria-live': 'off', hidden: true });
+els.canvas.append(creditStrip);
+let creditTimer: ReturnType<typeof setInterval> | null = null;
+function showCredits(on: boolean): void {
+  creditStrip.hidden = !on;
+  if (!on) {
+    if (creditTimer) clearInterval(creditTimer);
+    creditTimer = null;
+    return;
+  }
+  if (creditTimer) return;
+  let i = 0;
+  const next = () => mount(creditStrip, h('span', { 'data-key': `c${i}` }, `♪ ${creditLines[i++ % creditLines.length]}`));
+  next();
+  creditTimer = setInterval(next, 5_000);
 }
 
 /** Recap points tick up from 0 as the podium rises, instead of arriving finished. */
@@ -465,6 +496,7 @@ function showHost(view: RoomView): void {
 
 function tick(): void {
   const left = client?.remainingMs() ?? null;
+  tickSfx(client?.view ?? null, left);
   const text = formatSeconds(left);
   if (els.timer.textContent !== text) els.timer.textContent = text;
   els.timer.classList.toggle('urgent', left !== null && left > 0 && left <= 5_000);

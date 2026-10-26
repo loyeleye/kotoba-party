@@ -28,6 +28,8 @@ Commands:
 - `micCheck { utterance }`: the lobby's "say こんにちは" check.
 - `skip { phaseSeq }`: VIP or stage, timed phases.
 - `playAgain`: VIP or stage, recap.
+- `settings { remoteControl }`: main stage only (its settings panel). `remoteControl: true` lets
+  watching stages send `start`, `skip` and `playAgain` too; every view carries `remoteControl`.
 
 Refusals are short codes (`wrong-phase`, `not-your-turn`, `say-it-first` …); the phone maps them
 to wording in `controller/src/main.ts`. `wrong-phase` means the move lost a race with the clock
@@ -37,7 +39,8 @@ A retried command with the same `id` returns the first result without applying i
 
 A watching stage (`/stage/?code=XXXX`, for friends playing from somewhere else) gets the same view
 as the main stage and plays its own music and host voice, but every command it sends is refused
-with `watch-only`. The VIP's phone (or the main stage) runs the game.
+with `watch-only` unless the main stage has turned on remote control (`settings`), which lets it
+start, skip and replay. The VIP's phone (or the main stage) runs the game.
 
 ## WebSocket
 

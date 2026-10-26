@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MODE_IDS, PHASES } from '../shared/src/protocol.js';
-import { MODE_THEMES, cueFor } from '../stage/src/music/cues.js';
+import { MODE_ALT_THEMES, MODE_THEMES, cueFor, listening, themeFor } from '../stage/src/music/cues.js';
 import { existsSync } from 'node:fs';
 import { SONGS, SONG_IDS, compile, leadLength, noteToMidi, parseChord, parseLead } from '../stage/src/music/songs.js';
 import { TRACKS, TRACK_CREDITS, TRACK_IDS, creditSummary } from '../stage/src/music/tracks.js';
@@ -63,6 +63,8 @@ describe('songs', () => {
     for (const t of Object.values(TRACKS)) expect(summary).toContain(`"${t.title}"`);
     expect(summary).toContain('creativecommons.org/licenses/by/4.0');
     expect(summary).toMatch(/by Kevin MacLeod \(incompetech\.com\)/);
+    // Short enough to read across the foot of the recap.
+    for (const line of creditSummary()) expect(line.length).toBeLessThan(220);
   });
 });
 
@@ -114,8 +116,35 @@ describe('cues', () => {
     expect(cueFor('oogiri', 'encore')).toEqual({ song: 'monkeys', mix: 'under', keep: true });
   });
 
-  it('leaves Karaoke Duel to its own backing track', () => {
+  it('leaves Karaoke Duel to its own backing track while someone sings, and fills the gaps between', () => {
     expect(MODE_THEMES['karaoke-duel']).toBeNull();
-    for (const phase of PHASES.filter((p) => p !== 'lobby' && p !== 'recap')) expect(cueFor('karaoke-duel', phase).song).toBeNull();
+    expect(cueFor('karaoke-duel', 'answer').song).toBeNull();
+    expect(cueFor('karaoke-duel', 'intro')).toEqual({ song: 'gentle', mix: 'full', leadIn: 'ident' });
+    expect(cueFor('karaoke-duel', 'reveal').mix).toBe('under');
+    expect(cueFor('karaoke-duel', 'finale').song).toBe('finale');
+  });
+
+  it('opens every game with the house ident', () => {
+    for (const mode of MODE_IDS) expect(cueFor(mode, 'intro').leadIn).toBe('ident');
+  });
+
+  it('alternates each game between its two themes', () => {
+    for (const [mode, alt] of Object.entries(MODE_ALT_THEMES)) {
+      const m = mode as keyof typeof MODE_THEMES;
+      expect(themeFor(m, 0)).toBe(MODE_THEMES[m]);
+      expect(themeFor(m, 1)).toBe(alt);
+      expect(themeFor(m, 2)).toBe(MODE_THEMES[m]);
+      expect(cueFor(m, 'prompt', 1).song).toBe(alt);
+    }
+    expect(new Set(Object.values(MODE_ALT_THEMES)).size).toBe(Object.keys(MODE_ALT_THEMES).length);
+  });
+
+  it("drops further for Kana Raid's listening waves", () => {
+    const raid = (wave: number, phase: 'answer' | 'prompt' = 'answer') => ({ mode: 'kana-raid' as const, phase, game: { mode: 'kana-raid', wave } as never });
+    expect(listening(raid(1))).toBe(false);
+    expect(listening(raid(2))).toBe(true);
+    expect(listening(raid(3))).toBe(true);
+    expect(listening(raid(2, 'prompt'))).toBe(false);
+    expect(cueFor('kana-raid', 'answer', 0, true).mix).toBe('listen');
   });
 });

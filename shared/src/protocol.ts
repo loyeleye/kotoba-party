@@ -90,6 +90,8 @@ export interface RoomView {
   recap: RecapView | null;
   /** Only in a player's own view. */
   me: { playerId: string; level: Level } | null;
+  /** The main stage lets watching screens start, skip and replay too (its settings panel). */
+  remoteControl: boolean;
 }
 
 /** Server → client WebSocket message. */
@@ -118,7 +120,9 @@ export type Command =
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' }
   /** The VIP's Calm motion switch: stage and phones swap movement for fades and still frames. */
-  | { id: string; type: 'setMotion'; calm: boolean };
+  | { id: string; type: 'setMotion'; calm: boolean }
+  /** Main stage only: room settings. */
+  | { id: string; type: 'settings'; remoteControl: boolean };
 
 export type CommandType = Command['type'];
 

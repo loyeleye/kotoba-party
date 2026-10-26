@@ -8,6 +8,7 @@ import type { JpText } from '../../../content/src/types.js';
 import type { LastTrainView, TravellerStatus, TravellerView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
+import { sfx } from '../music/sfx.js';
 
 const STATUS: Record<TravellerStatus, { icon: string; label: string }> = {
   waiting: { icon: '🧳', label: 'ready' },
@@ -94,7 +95,21 @@ function prompt(game: LastTrainView): HTMLElement {
   );
 }
 
+/** Each traveller who gets it chimes, each who misses bwomps (counted per stop, so a late screen stays quiet). */
+let heard = { key: '', correct: 0, missed: 0 };
+function answerSfx(game: LastTrainView): void {
+  const key = JSON.stringify(game.travellers.map((t) => t.playerId ?? '')) + (game.stop?.index ?? '');
+  const correct = game.travellers.filter((t) => t.status === 'correct').length;
+  const missed = game.travellers.filter((t) => t.status === 'missed').length;
+  if (heard.key === key) {
+    if (correct > heard.correct) sfx('right');
+    if (missed > heard.missed) sfx('wrong');
+  }
+  heard = { key, correct, missed };
+}
+
 function answer(game: LastTrainView): HTMLElement {
+  answerSfx(game);
   const done = game.travellers.filter((t) => t.status === 'correct' || t.status === 'missed').length;
   return h(
     'div',

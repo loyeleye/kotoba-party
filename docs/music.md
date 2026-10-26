@@ -1,6 +1,7 @@
 # Music
 
-The stage (the TV) plays music; the phones don't, because their mics are listening. Most of it is
+The stage (the TV, and any friend's laptop watching the room) plays music and sound effects; the
+phones don't, because their mics are listening. Most of it is
 recorded tracks under CC0 or CC BY licences (`stage/assets/music/`, listed in
 `stage/src/music/tracks.ts`); the rest is original tunes played by a small chiptune synth in the
 browser (`stage/src/music/songs.ts`). Licences: [commercial-blockers.md](commercial-blockers.md), row 22.
@@ -16,26 +17,34 @@ Onsen, and an anime-style battle theme for the Raid.
 | Phase | Music |
 | --- | --- |
 | Lobby | **Bouncing** (Holizna) |
-| Intro, prompt | The mode's theme, full mix (under where a mode speaks in its prompt: Oogiri, Omiai, the Onsen, Concentration) |
+| Intro | The house ident (**Kotoba Party!**), then the mode's theme |
+| Prompt | The mode's theme, full mix (under where a mode speaks in its prompt: Oogiri, Omiai, the Onsen, Concentration) |
 | Answer, encore, penalty | The mode's theme, "under" (see below). Encores keep whatever is playing |
 | Reveal | Theme under, with the synth's drum roll on top where it's a real reveal |
 | Score | A recorded theme plays on; Last Train gets the synth's **Tally Ho** |
 | Finale | A recorded theme plays on, under; Last Train gets the synth's **Taiko Showdown** |
 | Recap | The fanfare, then **Happy Dance** (Holizna), with the credits on screen |
 
-| Mode | Theme |
-| --- | --- |
-| Oogiri | **Monkeys Spinning Monkeys** (Kevin MacLeod) |
-| Phrase Bingo | **Love Love Love** (Holizna) |
-| Oekaki | **Hep Cats** (Kevin MacLeod) |
-| Tourist Trouble | **Take a Trip** (genaralskar) |
-| Omiai | **Carefree** (Kevin MacLeod) |
-| Word Gauntlet | **Investigations** (Kevin MacLeod) |
-| Concentration | **Funkorama** (Kevin MacLeod) |
-| Murder at the Onsen | **Sneaky Snitch** (Kevin MacLeod) |
-| Kana Yōkai Raid | **Determination** (HydroGene) |
-| The Last Train | **Last Train Dash** (synth) |
-| Karaoke Duel | None: it plays its own backing track (`stage/src/modes/karaokeAudio.ts`) |
+Each game has two themes and alternates between them, game by game on each screen (`MODE_ALT_THEMES`
+and `themeFor` in `cues.ts`; the count is kept in the browser), so a long night doesn't loop one tune.
+
+| Mode | First theme | Second theme |
+| --- | --- | --- |
+| Oogiri | **Monkeys Spinning Monkeys** (Kevin MacLeod) | **Quirky Dog** (Kevin MacLeod) |
+| Phrase Bingo | **Love Love Love** (Holizna) | **Life of Riley** (Kevin MacLeod) |
+| Oekaki | **Hep Cats** (Kevin MacLeod) | **Wallpaper** (Kevin MacLeod) |
+| Tourist Trouble | **Take a Trip** (genaralskar) | **Off to Osaka** (Kevin MacLeod) |
+| Omiai | **Carefree** (Kevin MacLeod) | **Local Forecast - Elevator** (Kevin MacLeod) |
+| Word Gauntlet | **Investigations** (Kevin MacLeod) | **Cipher** (Kevin MacLeod) |
+| Concentration | **Funkorama** (Kevin MacLeod) | **Kool Kats** (Kevin MacLeod) |
+| Murder at the Onsen | **Sneaky Snitch** (Kevin MacLeod) | **Ishikari Lore** (Kevin MacLeod, koto) |
+| Kana Yōkai Raid | **Determination** (HydroGene) | **Ouroboros** (Kevin MacLeod) |
+| The Last Train | **Last Train Dash** (synth, 16 bars) | |
+| Karaoke Duel | Its own backing track while someone sings (`stage/src/modes/karaokeAudio.ts`); the synth's **Teacups at Two** between songs and **Taiko Showdown** at the end | |
+
+**House theme.** "Ko-to-ba pa-a-ty!" (D5 D5 E5 F#5 A5 | G5 F#5 E5 D5) is the show's signature. The ident
+plays it before every game, the recap's Curtain Call fanfare opens with it, and the synth lobby and
+outro quote it, so streamer mode sounds like the same show too.
 
 The synth's other tunes (a festival lobby, comedy, quiz, stroll, battle, mystery, music-box, outro and
 fanfare) are kept as spares; switch a mode back to one by naming it in `MODE_THEMES`.
@@ -54,8 +63,53 @@ fanfare) are kept as spares; switch a mode back to one by naming it in `MODE_THE
   Japanese and Karaoke Duel's track together, and is remembered in that browser. With sound off,
   Concentration shows audio cards' kana instead. Browsers only allow sound after a tap, click or key
   press on the page, so until then the button reads "Click for music".
+- **Listening waves.** In Kana Raid's Wave 2 (Echo) and Wave 3 (Long and Short), players pick what
+  they heard from a phone speaker, so the music drops further still: the "listen" mix (low-passed at
+  500 Hz, about a sixth of the level).
 - **Stings.** The drum roll plays only on reveals that are reveals (Oogiri, Bingo, Oekaki, Tourist,
   Omiai, the Raid) and on the Onsen's accusation; the recap opens with the fanfare.
+
+## Sound effects
+
+`stage/src/music/sfx.ts` synthesises short effects in the browser (no files, nothing to license) on
+their own bus, with their own volume:
+
+| Effect | When |
+| --- | --- |
+| Pop | A player joins the lobby |
+| Swish | A new round's prompt |
+| Tick, tock | The last five seconds of a timed phase, except while players are speaking |
+| Chime | Points go up; a Concentration pair kept or stolen; a Last Train traveller gets it |
+| Bwomp (low, below the speech band) | A miss: Concentration's "nobody said it", a wrong picture guess, a yōkai escaping, a Last Train miss |
+| Thwack | A yōkai takes a hit; a Concentration yōkai or fog card |
+| Tap | Buttons on the stage itself |
+
+A screen that joins late hears only what happens after it joins.
+
+## Settings panel
+
+The ⚙ Settings button beside the sound button opens a panel on every stage screen
+(`stage/src/settings.ts`). Each screen keeps its own settings in its browser:
+
+- **Master volume**, **Host voice volume** (VOICEVOX lines and the read-aloud Japanese), **Sound
+  effects volume** and **Background music volume** (the loops, jingles and Karaoke Duel's backing).
+- **Streamer mode**: plays only the synth's own tunes (each track's `fallback`), so a stream or video
+  of the screen can't pick up a copyright claim for the recorded tracks.
+
+The main stage's panel also has **Let other screens control the game**. With it on, a friend's
+watching screen (`/stage/?code=XXXX`) gets Start, Skip ahead and Play again in its own panel. It's a
+room setting (the `settings` command, [protocol.md](protocol.md)); only the main stage can change it.
+
+### Invite friends
+
+Every panel, the stage lobby and the phone lobby carry an **Invite friends** card
+(`shared/src/share.ts`) with the room's two links: the **Phone link** (`/?code=XXXX`, joins as a
+player; the backup when the QR code won't scan) and the **Stage screen link** (`/stage/?code=XXXX`,
+a watching screen for friends playing from somewhere else). Each has **Copy** and, where the device
+has a share sheet, **Share**. Share leads on phones; Copy leads elsewhere. The address is a
+selectable field, so it can still be copied by hand if the clipboard is refused, and a copy
+confirms on the button (and to screen readers) without moving anything. On the phone the card sits
+at the foot of the lobby in quiet colours, so the Start button stays the one orange thing.
 
 ## Recorded tracks: loops, loudness, credits
 
@@ -67,8 +121,9 @@ fanfare) are kept as spares; switch a mode back to one by naming it in `MODE_THE
 - **Loading.** Tracks are fetched when needed, the next likely ones ahead of time, and at most three
   stay decoded in memory. The old music keeps playing until the new track can start; if a file can't
   load, its synth `fallback` plays instead. The server sends MP3s with a week's cache.
-- **Credits.** The now-playing line beside the sound button names the track, author and licence; the
-  recap screen lists them all (`creditSummary()`), with the host voices' credits.
+- **Credits.** The now-playing line beside the sound button names the track, author and licence.
+  During the recap, a strip along the foot of the screen cycles through every credit (`creditSummary()`,
+  three titles a line) and the host voices' credits, outside the play area so it stays full size.
 
 ## Adding a recorded track
 

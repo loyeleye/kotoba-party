@@ -6,7 +6,8 @@
 import { compile, type Drum, type MusicEvent, type Plan, type Song, type Voice } from './songs.js';
 
 /** How the parts sit: everything, or thinned and muffled while players talk into their phones. */
-export type Mix = 'full' | 'under';
+/** full; under players' voices; listen: further down, for waves where players listen for a sound. */
+export type Mix = 'full' | 'under' | 'listen';
 
 interface Levels {
   lead: number;
@@ -28,6 +29,7 @@ interface Levels {
 const MIXES: Record<Mix, Levels> = {
   full: { lead: 1, comp: 1, bass: 1, low: 1, high: 1, cutoff: 16_000, floor: 20, song: 1, track: 1 },
   under: { lead: 0, comp: 0.7, bass: 0.9, low: 0.8, high: 0.15, cutoff: 750, floor: 90, song: 0.7, track: 0.35 },
+  listen: { lead: 0, comp: 0.4, bass: 0.7, low: 0.6, high: 0, cutoff: 500, floor: 110, song: 0.45, track: 0.18 },
 };
 
 /** Recordings are normalised to about −16 LUFS (tracks.ts gainDb), which matches the synth at this level. */
