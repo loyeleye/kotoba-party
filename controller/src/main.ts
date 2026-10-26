@@ -1,6 +1,7 @@
 // The phone controller: join with the room code, then answer and vote.
 // Everything on screen comes from the server's latest view; the phone only sends intents.
 
+import { invite, inviteLinks } from '../../shared/src/share.js';
 import { RoomClient, joinRoom, type CommandBody, type ConnectionStatus } from '../../shared/src/client.js';
 import { LEVEL_LABELS, awardTitle, formatSeconds, h, mount, placesOf, seatShape } from '../../shared/src/dom.js';
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
@@ -330,8 +331,9 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   ];
   if (isVip) parts.push(vipMenu(view));
   else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), quip(vipIdleQuip));
-  // Not near the main screen? Any laptop can show its own copy of the stage for this room.
-  parts.push(h('p', { class: 'hint' }, 'Playing remotely? Open ', h('a', { href: `/stage/?code=${view.code}`, target: '_blank' }, `${location.host}/stage/?code=${view.code}`), ' on a laptop to see the stage.'));
+  // Links to bring more people in: the phone link for when the QR code won't scan, the stage
+  // screen link for friends playing from somewhere else.
+  parts.push(invite(inviteLinks(location.origin, view.code), view.code));
   return h('div', { class: 'screen' }, parts);
 }
 

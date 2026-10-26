@@ -1,0 +1,24 @@
+/* "Invite friends" (shared/src/share.ts): the phone and stage screen links with Copy and Share,
+   as a card in the lobby (the settings panel restyles it in settings.css). Sized for reading
+   across a room: the address is a field, the lead button is the accent, and a copy confirms on
+   the button itself so nothing moves. */
+.inv { display: grid; gap: 12px; width: 100%; box-sizing: border-box; margin: 6px auto 4px; padding: 18px 26px 20px; text-align: left; background: color-mix(in srgb, var(--panel) 88%, transparent); border: 2px solid var(--line); border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+.inv-title { margin: 0; font: 700 30px var(--font-pixel); color: var(--ink); }
+.inv-lead { margin: -6px 0 2px; font-size: 22px; color: var(--muted); }
+.inv-row { display: grid; grid-template-columns: 340px minmax(0, 1fr) auto; align-items: center; gap: 18px; padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--line) 45%, transparent); }
+.inv-text { display: grid; gap: 2px; }
+.inv-label { font: 700 26px var(--font-body); color: var(--ink); }
+.inv-purpose { font-size: 19px; color: var(--muted); }
+.inv-url { min-width: 0; padding: 8px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font: 600 23px ui-monospace, 'SFMono-Regular', Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: all; }
+.inv-btns { display: flex; gap: 10px; }
+.inv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 150px; min-height: 52px; padding: 6px 22px; background: transparent; color: var(--ink); border: 2px solid var(--line); border-radius: 999px; font: 700 22px var(--font-body); cursor: pointer; transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
+.inv-btn:hover { background: color-mix(in srgb, var(--line) 22%, transparent); }
+.inv-btn:active { transform: translateY(1px); }
+.inv-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.inv-main { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.inv-main:hover { background: color-mix(in srgb, var(--accent) 85%, white); }
+.inv-done, .inv-done:hover { background: var(--good); border-color: var(--good); color: var(--on-accent); }
+.inv-fail, .inv-fail:hover { border-color: var(--bad); color: var(--bad); background: transparent; }
+.inv-icon { font-size: 0.95em; line-height: 1; }
+.inv-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .inv-btn { transition: none; } .inv-btn:active { transform: none; } }

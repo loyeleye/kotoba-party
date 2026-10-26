@@ -100,6 +100,17 @@ The main stage's panel also has **Let other screens control the game**. With it 
 watching screen (`/stage/?code=XXXX`) gets Start, Skip ahead and Play again in its own panel. It's a
 room setting (the `settings` command, [protocol.md](protocol.md)); only the main stage can change it.
 
+### Invite friends
+
+Every panel, the stage lobby and the phone lobby carry an **Invite friends** card
+(`shared/src/share.ts`) with the room's two links: the **Phone link** (`/?code=XXXX`, joins as a
+player; the backup when the QR code won't scan) and the **Stage screen link** (`/stage/?code=XXXX`,
+a watching screen for friends playing from somewhere else). Each has **Copy** and, where the device
+has a share sheet, **Share**. Share leads on phones; Copy leads elsewhere. The address is a
+selectable field, so it can still be copied by hand if the clipboard is refused, and a copy
+confirms on the button (and to screen readers) without moving anything. On the phone the card sits
+at the foot of the lobby in quiet colours, so the Start button stays the one orange thing.
+
 ## Recorded tracks: loops, loudness, credits
 
 - **Loop points.** Each track loops between two beat-aligned points (`loop` in `tracks.ts`), found with

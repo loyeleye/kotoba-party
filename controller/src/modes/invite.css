@@ -1,0 +1,21 @@
+/* "Invite friends" (shared/src/share.ts): the phone and stage screen links with Copy and Share,
+   as a card at the foot of the lobby (inviting comes after the mic check and the game pick, so
+   nothing here is orange: the Start button keeps the screen's one loud colour). Thumb-sized
+   buttons (44px and up), the address as a selectable field, and the share sheet first where the
+   phone has one. */
+.inv { display: grid; gap: 10px; padding: 14px; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.inv-title { margin: 0; font-size: 18px; font-weight: 800; }
+.inv-lead { margin: -4px 0 0; font-size: 14px; color: var(--muted); }
+.inv-row { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--line) 40%, transparent); }
+.inv-text { display: grid; gap: 2px; }
+.inv-label { font-weight: 700; }
+.inv-purpose { font-size: 14px; color: var(--muted); }
+.inv-url { min-width: 0; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font: 600 14px ui-monospace, 'SFMono-Regular', Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: all; -webkit-user-select: all; }
+.inv-btns { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+.inv-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: 700 16px var(--font-body); }
+.inv-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.inv-main { background: color-mix(in srgb, var(--line) 30%, var(--panel)); }
+.inv-done { background: var(--good); border-color: var(--good); color: var(--on-accent); }
+.inv-fail { border-color: var(--bad); color: var(--bad); }
+.inv-icon { line-height: 1; }
+.inv-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }

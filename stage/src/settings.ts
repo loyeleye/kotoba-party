@@ -4,6 +4,7 @@
 // screen; remote control belongs to the room.
 
 import { h, mount } from '../../shared/src/dom.js';
+import { invite, inviteLinks } from '../../shared/src/share.js';
 import type { ModeId, RoomView } from '../../shared/src/protocol.js';
 import { isStreamerMode, setStreamerMode } from './music/index.js';
 import { sfx } from './music/sfx.js';
@@ -87,15 +88,17 @@ function renderRoom(force: boolean): void {
   if (!force && key === roomKey) return;
   roomKey = key;
   if (!v) return void mount(room);
+  const share = h('section', { class: 'st-sec' }, h('h3', {}, 'Invite friends'), invite(inviteLinks(opts.site(), v.code), v.code, false));
   if (!opts.watch) {
     mount(
       room,
+      share,
       h(
         'section',
         { class: 'st-sec' },
         toggle(
           'Let other screens control the game',
-          `Friends watching on their own screen (${opts.site()}/stage/?code=${v.code}) can start a game, skip ahead and play again.`,
+          `Friends watching on their own screen (${inviteLinks(opts.site(), v.code).stage.replace(/^https?:\/\//, '')}) can start a game, skip ahead and play again.`,
           v.remoteControl,
           (on) => void opts!.send({ type: 'settings', remoteControl: on }),
         ),
@@ -104,7 +107,7 @@ function renderRoom(force: boolean): void {
     return;
   }
   if (!v.remoteControl) {
-    mount(room, h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), h('p', { class: 'st-help' }, "The main screen runs this game. Ask them to turn on “Let other screens control the game” in their settings.")));
+    mount(room, share, h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), h('p', { class: 'st-help' }, "The main screen runs this game. Ask them to turn on “Let other screens control the game” in their settings.")));
     return;
   }
   const send = opts.send;
@@ -115,7 +118,7 @@ function renderRoom(force: boolean): void {
   }
   if (v.deadline !== null && v.phase !== 'lobby') buttons.push(button('Skip ahead', () => send({ type: 'skip', phaseSeq: v.phaseSeq })));
   if (v.phase === 'recap') buttons.push(button('Play again', () => send({ type: 'playAgain' })));
-  mount(room, h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), buttons.length ? h('div', { class: 'st-row' }, buttons) : h('p', { class: 'st-help' }, 'Nothing to do right now.')));
+  mount(room, share, h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), buttons.length ? h('div', { class: 'st-row' }, buttons) : h('p', { class: 'st-help' }, 'Nothing to do right now.')));
 }
 
 function button(label: string, onClick: () => Promise<void>): HTMLElement {

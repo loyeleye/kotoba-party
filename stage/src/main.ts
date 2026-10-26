@@ -18,6 +18,7 @@ import { isMuted } from './sound.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
 import { tickSfx, watchSfx } from './music/sfx.js';
+import { invite, inviteLinks } from '../../shared/src/share.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -58,7 +59,7 @@ const els = {
 
 let client: RoomClient | null = null;
 /** Where people open this room's pages, as the server names it (its public URL, not this tab's). */
-let siteHost = location.host;
+let siteOrigin = location.origin;
 let lastPhaseSeq = -1;
 let lastPhase: RoomView['phase'] | null = null;
 /** The phase's full length, as first seen: the ring timer's 100%. */
@@ -79,7 +80,7 @@ const hostSprite = new HostSprite(128);
 
 $('debug').hidden = !DEBUG;
 mountSoundButton(els.canvas);
-mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteHost });
+mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteOrigin });
 $('debug-tag').hidden = !DEBUG;
 document.body.dataset.watch = WATCH ? '1' : '';
 if (WATCH) {
@@ -202,7 +203,13 @@ async function openRoom(fresh: boolean): Promise<void> {
   els.code.textContent = session.code;
   els.qr.src = `${base}/api/rooms/${session.code}/qr.svg`;
   els.joinUrl.textContent = session.joinUrl.replace(/^https?:\/\//, '');
-  siteHost = session.joinUrl.replace(/^https?:\/\//, '').split('/')[0] || location.host;
+  siteOrigin = (() => {
+    try {
+      return new URL(session.joinUrl).origin;
+    } catch {
+      return location.origin;
+    }
+  })();
   lastPhaseSeq = -1;
 
   client = new RoomClient({
@@ -294,7 +301,10 @@ function mainFor(view: RoomView): HTMLElement {
       h('p', { class: 'big' }, view.players.length ? 'Waiting for the VIP to pick a game' : 'Scan the code to join'),
       h('p', { class: 'hint' }, `${view.players.length} / 8 players`),
       // Friends somewhere else open their own copy of this screen with the same code.
-      h('p', { class: 'hint watch-link' }, WATCH ? `Watching room ${view.code} · join with your phone at the code above` : ['Playing from somewhere else? Open ', h('strong', {}, `${siteHost}/stage/?code=${view.code}`), ' on a laptop']),
+      WATCH ? h('p', { class: 'hint watch-link' }, `Watching room ${view.code} · join with your phone at the code above`) : null,
+      // Send either link to friends: the phone one for when the QR code won't scan, the stage one
+      // for friends playing from somewhere else.
+      invite(inviteLinks(siteOrigin, view.code), view.code),
       h('ul', { class: 'menu' }, view.modes.map((m) => h('li', {}, h('strong', {}, m.title), ` ${m.titleJa} · `, m.blurb))),
     );
   }
