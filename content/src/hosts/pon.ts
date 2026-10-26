@@ -106,6 +106,12 @@ export const ponLines: HostLine[] = [
   { id: 'pon.reveal_react.good.10', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'その ことば、さいこうです！', kana: 'その ことば、さいこうです！', en: 'That word is perfect!' }, status: 'draft' },
   { id: 'pon.reveal_react.good.11', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'そう きましたか！', kana: 'そう きましたか！', en: "Didn't see that coming!" }, status: 'draft' },
   { id: 'pon.reveal_react.good.12', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'これは わらいます！', kana: 'これは わらいます！', en: 'That gets a laugh!' }, status: 'draft' },
+  { id: 'pon.reveal_react.good.13', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'なんで {tile}！？', kana: 'なんで {tile}！？', en: 'Why {tile}?!' }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.reveal_react.good.14', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'ちょっと まって。 {tile}って なに！？', kana: 'ちょっと まって。 {tile}って なに！？', en: 'Hold on. What even is {tile}?!' }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.reveal_react.good.15', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'いや いや いや、{tile}は おかしいでしょう！', kana: 'いや いや いや、{tile}は おかしいでしょう！', en: 'No, no, no, {tile} makes no sense!' }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.reveal_react.good.16', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: '{tile}… ポンの いえにも あります。', kana: '{tile}… ポンの いえにも あります。', en: "{tile}\u2026 there's one at Pon's place too." }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.reveal_react.good.17', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: '{tile}！？ それは ルール いはんです！', kana: '{tile}！？ それは ルール いはんです！', en: "{tile}?! That's against the rules!" }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.reveal_react.good.18', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: '{tile}が でて きた！ だれ！？', kana: '{tile}が でて きた！ だれ！？', en: '{tile} showed up! Who did this?!' }, slots: ['{tile}'], status: 'draft' },
   // reveal_react.ippon
   { id: 'pon.reveal_react.ippon.01', host: 'pon', event: 'reveal_react', tier: 'ippon', jp: { text: 'イッポン！', kana: 'イッポン！', en: 'IPPON!' }, status: 'draft' },
   { id: 'pon.reveal_react.ippon.02', host: 'pon', event: 'reveal_react', tier: 'ippon', jp: { text: 'すごい！ ざぶとん、ぜんぶ！', kana: 'すごい！ ざぶとん、ぜんぶ！', en: 'Amazing! All the cushions!' }, status: 'draft' },
@@ -146,6 +152,10 @@ export const ponLines: HostLine[] = [
   { id: 'pon.natural_version.06', host: 'pon', event: 'natural_version', jp: { text: 'こう いうと、もっと いいですよ。', kana: 'こう いうと、もっと いいですよ。', en: 'Saying it this way is even better.' }, status: 'draft' },
   { id: 'pon.natural_version.07', host: 'pon', event: 'natural_version', jp: { text: 'プロの いいかたは こちら！', kana: 'プロの いいかたは こちら！', en: "Here's how a pro says it!" }, status: 'draft' },
   { id: 'pon.natural_version.08', host: 'pon', event: 'natural_version', jp: { text: 'おぼえて ください、この かたち！', kana: 'おぼえて ください、この かたち！', en: 'Remember this pattern!' }, status: 'draft' },
+  { id: 'pon.natural_version.09', host: 'pon', event: 'natural_version', jp: { text: '{tile}！ こんやの めいげんです。 みんなで！', kana: '{tile}！ こんやの めいげんです。 みんなで！', en: "{tile}! Tonight's famous words. Everyone!" }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.natural_version.10', host: 'pon', event: 'natural_version', jp: { text: '{tile}… ポンも いいたい！ せーの！', kana: '{tile}… ポンも いいたい！ せーの！', en: '{tile}… Pon wants to say it too! Ready, go!' }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.natural_version.11', host: 'pon', event: 'natural_version', jp: { text: '{tile}は… まあ、いいです。 みんなで いいましょう！', kana: '{tile}は… まあ、いいです。 みんなで いいましょう！', en: "{tile}\u2026 fine, whatever. Let's all say it!" }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.natural_version.12', host: 'pon', event: 'natural_version', jp: { text: '{name}さんの {tile}、みんなで いいましょう！', kana: '{name}さんの {tile}、みんなで いいましょう！', en: "{name}'s {tile}! Let's all say it!" }, slots: ['{name}', '{tile}'], status: 'draft' },
   // kakegoe_call
   { id: 'pon.kakegoe_call.01', host: 'pon', event: 'kakegoe_call', jp: { text: 'みんなで！ せーの！', kana: 'みんなで！ せーの！', en: 'Everyone! Ready, go!' }, status: 'draft' },
   { id: 'pon.kakegoe_call.02', host: 'pon', event: 'kakegoe_call', jp: { text: 'さん、はい！', kana: 'さん、はい！', en: 'One, two, go!' }, status: 'draft' },
@@ -218,4 +228,30 @@ export const ponLines: HostLine[] = [
   { id: 'pon.cushion_steal.06', host: 'pon', event: 'cushion_steal', jp: { text: '{name}さん、ざぶとん かりますね！', kana: '{name}さん、ざぶとん かりますね！', en: "{name}, I'm borrowing a cushion!" }, slots: ['{name}'], status: 'draft' },
   { id: 'pon.cushion_steal.07', host: 'pon', event: 'cushion_steal', jp: { text: '{name}さん、いちばんですね。 では、いちまい！', kana: '{name}さん、いちばんですね。 では、いちまい！', en: "{name}, you're in first. So, one cushion!" }, slots: ['{name}'], status: 'draft' },
   { id: 'pon.cushion_steal.08', host: 'pon', event: 'cushion_steal', jp: { text: '{name}さんの ざぶとん、ポンの ものです！', kana: '{name}さんの ざぶとん、ポンの ものです！', en: "{name}'s cushion belongs to Pon now!" }, slots: ['{name}'], status: 'draft' },
+  // vote_zero
+  { id: 'pon.vote_zero.01', host: 'pon', event: 'vote_zero', jp: { text: 'ゼロひょう！ でも ポンは わらいました。', kana: 'ゼロひょう！ でも ポンは わらいました。', en: 'Zero votes! But Pon laughed.' }, status: 'draft' },
+  { id: 'pon.vote_zero.02', host: 'pon', event: 'vote_zero', jp: { text: 'だれも えらびません！ しずかな よるです。', kana: 'だれも えらびません！ しずかな よるです。', en: 'Nobody picked one! A quiet night.' }, status: 'draft' },
+  { id: 'pon.vote_zero.03', host: 'pon', event: 'vote_zero', jp: { text: '{tile}… じだいが はやすぎました。', kana: '{tile}… じだいが はやすぎました。', en: '{tile}… ahead of its time.' }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.vote_zero.04', host: 'pon', event: 'vote_zero', jp: { text: 'ゼロひょう！ でも ポンは {tile}が すきです。', kana: 'ゼロひょう！ でも ポンは {tile}が すきです。', en: 'Zero votes! But Pon likes {tile}.' }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.vote_zero.05', host: 'pon', event: 'vote_zero', jp: { text: 'みんな、ねて いますか？ ポン！', kana: 'みんな、ねて いますか？ ポン！', en: 'Is everyone asleep? Pon!' }, status: 'draft' },
+  // vote_tie
+  { id: 'pon.vote_tie.01', host: 'pon', event: 'vote_tie', jp: { text: 'ひきわけ！ どうぞ、いっしょに！', kana: 'ひきわけ！ どうぞ、いっしょに！', en: 'A tie! Go ahead, together!' }, status: 'draft' },
+  { id: 'pon.vote_tie.02', host: 'pon', event: 'vote_tie', jp: { text: 'おなじ ひょうです！ ポンも えらべません！', kana: 'おなじ ひょうです！ ポンも えらべません！', en: "Same votes! Even Pon can't choose!" }, status: 'draft' },
+  { id: 'pon.vote_tie.03', host: 'pon', event: 'vote_tie', jp: { text: 'ひきわけです！ ざぶとんを はんぶんに しましょうか。', kana: 'ひきわけです！ ざぶとんを はんぶんに しましょうか。', en: "It's a tie! Shall we cut the cushion in half?" }, status: 'draft' },
+  // vote_close
+  { id: 'pon.vote_close.01', host: 'pon', event: 'vote_close', jp: { text: 'おしい！ いっぴょう さ！ {name}さん、どうぞ！', kana: 'おしい！ いっぴょう さ！ {name}さん、どうぞ！', en: 'So close! Won by one vote! {name}, take it away!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.vote_close.02', host: 'pon', event: 'vote_close', jp: { text: 'いっぴょう さで {name}さんの かち！', kana: 'いっぴょう さで {name}さんの かち！', en: '{name} wins by one vote!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.vote_close.03', host: 'pon', event: 'vote_close', jp: { text: 'ギリギリ！ {tile}の かちです！', kana: 'ギリギリ！ {tile}の かちです！', en: 'By a whisker! {tile} wins!' }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.vote_close.04', host: 'pon', event: 'vote_close', jp: { text: 'ドキドキ しました！ {name}さん、もう いちど いって！', kana: 'ドキドキ しました！ {name}さん、もう いちど いって！', en: 'That was tense! {name}, say it again!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.vote_close.05', host: 'pon', event: 'vote_close', jp: { text: '{tile}、いっぴょう さで かちました！ {name}さん、どうぞ！', kana: '{tile}、いっぴょう さで かちました！ {name}さん、どうぞ！', en: '{tile} wins by one vote! {name}, take it away!' }, slots: ['{tile}', '{name}'], status: 'draft' },
+  // vote_landslide
+  { id: 'pon.vote_landslide.01', host: 'pon', event: 'vote_landslide', jp: { text: 'あっしょう！ {name}さん、もう いちど！', kana: 'あっしょう！ {name}さん、もう いちど！', en: 'A landslide! {name}, one more time!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.vote_landslide.02', host: 'pon', event: 'vote_landslide', jp: { text: 'みんな {tile}！？ みんな へんです！', kana: 'みんな {tile}！？ みんな へんです！', en: "Everyone picked {tile}?! You're all weird!" }, slots: ['{tile}'], status: 'draft' },
+  { id: 'pon.vote_landslide.03', host: 'pon', event: 'vote_landslide', jp: { text: '{tile}の だいしょうり！ {name}さん、どうぞ！', kana: '{tile}の だいしょうり！ {name}さん、どうぞ！', en: 'A huge win for {tile}! {name}, take it away!' }, slots: ['{tile}', '{name}'], status: 'draft' },
+  { id: 'pon.vote_landslide.04', host: 'pon', event: 'vote_landslide', jp: { text: 'きまり！ {name}さんの ひとりがちです！', kana: 'きまり！ {name}さんの ひとりがちです！', en: 'Decided! {name} wins outright!' }, slots: ['{name}'], status: 'draft' },
+  // fooled (Word Gauntlet)
+  { id: 'pon.fooled.01', host: 'pon', event: 'fooled', jp: { text: '{fooled}さん、{author}さんに だまされました！ さあ、みんなで！', kana: '{fooled}さん、{author}さんに だまされました！ さあ、みんなで！', en: '{fooled} got fooled by {author}! Now, everyone!' }, slots: ['{fooled}', '{author}'], status: 'draft' },
+  { id: 'pon.fooled.02', host: 'pon', event: 'fooled', jp: { text: 'うそが かちました！ {author}さん、わるい ひと！', kana: 'うそが かちました！ {author}さん、わるい ひと！', en: "The lie won! {author}, you're terrible!" }, slots: ['{author}'], status: 'draft' },
+  { id: 'pon.fooled.03', host: 'pon', event: 'fooled', jp: { text: '{author}さんの うそ、じょうず！ {fooled}さん、ドンマイ！', kana: '{author}さんの うそ、じょうず！ {fooled}さん、ドンマイ！', en: '{author} lies so well! Never mind, {fooled}!' }, slots: ['{author}', '{fooled}'], status: 'draft' },
+  { id: 'pon.fooled.04', host: 'pon', event: 'fooled', jp: { text: 'ほんとうの いみより、うそが にんき！ さあ、みんなで！', kana: 'ほんとうの いみより、うそが にんき！ さあ、みんなで！', en: 'The lie beat the truth! Now, everyone!' }, status: 'draft' },
 ];

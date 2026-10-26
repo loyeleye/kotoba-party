@@ -318,6 +318,39 @@ describe('voting, IPPON, hiding and the encore', () => {
     expect(h.game(author).me!.tip!.natural.text).toBeTruthy();
   });
 
+  it('reacts to the vote margin, and the room shouts the winner\'s answer', () => {
+    const h = toReveal();
+    const m = h.os().matchups[h.os().current]!;
+    // Pon's reveal snap-back names the answer.
+    const reveal = h.s.cues.filter((c) => c.event === 'reveal_react' && !c.ahead).at(-1)!;
+    expect(reveal.slots).toMatchObject({ tile: 'ねこ', tile_kana: 'ねこ' });
+    const [a, b] = h.game().matchup!.answers;
+    const voters = h.players().filter((p) => !m.authors.includes(p));
+    h.play(voters[0]!, { kind: 'vote', answerId: a!.id });
+    h.play(voters[1]!, { kind: 'vote', answerId: a!.id });
+    h.play(voters[2]!, { kind: 'vote', answerId: b!.id });
+    expect(h.s.phase).toBe('encore');
+    const winner = h.os().answers.find((x) => x.id === a!.id)!;
+    const name = h.s.players.find((p) => p.id === winner.authorId)!.name;
+    expect(h.s.cues.at(-1)).toMatchObject({ event: 'vote_close', slots: { name, tile: 'ねこ' } });
+    h.timeout();
+    expect(h.s.phase).toBe('score');
+    const natural = h.game().matchup!.natural!;
+    expect(natural.text).toContain('ねこ');
+    expect(natural.text).not.toBe(m.prompt.exampleAnswer.text);
+    expect(h.s.cues.at(-1)).toMatchObject({ event: 'natural_version', answer: natural.text, slots: { name, tile: 'ねこ' } });
+  });
+
+  it('says so when nobody votes, and falls back to the example answer', () => {
+    const h = toReveal();
+    const m = h.os().matchups[h.os().current]!;
+    h.timeout();
+    expect(h.s.phase).toBe('encore');
+    expect(h.s.cues.at(-1)).toMatchObject({ event: 'vote_zero' });
+    h.timeout();
+    expect(h.game().matchup!.natural!.text).toBe(m.prompt.exampleAnswer.text);
+  });
+
   it('lets only the VIP hide an answer; hidden answers lose their votes and show [hidden]', () => {
     const h = toReveal();
     const m = h.os().matchups[h.os().current]!;

@@ -155,6 +155,9 @@ describe('Fake Kanji', () => {
     expect(score(r.s, 'p1')).toBe(POINTS_REAL_FOUND + 2 * POINTS_PER_FOOLED);
     expect(score(r.s, 'p4')).toBe(2 * POINTS_PER_FOOLED);
     expect(score(r.s, 'p2')).toBe(POINTS_PER_FOOLED);
+    // Pon names who fooled whom: the fake that fooled the most, and one player it fooled.
+    const nameOf = (id: string) => r.s.players.find((p) => p.id === id)!.name;
+    expect(r.s.cues.at(-1)).toMatchObject({ event: 'fooled', slots: { author: nameOf('p1'), fooled: nameOf('p2') } });
     const v = r.view(stage).fake!;
     expect(v.golden!.jp.text).toBe(word.jp.text);
     expect(v.results!.find((x) => x.real)!.pickedBy.map((p) => p.id)).toEqual(['p1']);

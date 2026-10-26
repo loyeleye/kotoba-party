@@ -52,3 +52,22 @@ describe('host lines sent ahead', () => {
     expect(llm.calls).toHaveLength(1);
   });
 });
+
+describe('bank lines that name the answer', () => {
+  const content = {
+    ...EMPTY_CONTENT,
+    hostLines: [
+      { id: 'pon.reveal_react.good.01', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'いいね！', kana: 'いいね！', en: 'Nice!' }, status: 'draft' },
+      { id: 'pon.reveal_react.good.13', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'なんで {tile}！？', kana: 'なんで {tile}！？', en: 'Why {tile}?!' }, slots: ['{tile}'], status: 'draft' },
+    ],
+  } as typeof EMPTY_CONTENT;
+
+  it('prefers a {tile} line, filling the reading and English from their own slots', async () => {
+    const line = await bankVoice(content).speak('ABCD', { ...cue, slots: { tile: '大きな タコ', tile_kana: 'おおきな タコ', tile_en: 'a giant octopus' } });
+    expect(line).toMatchObject({ text: 'なんで 大きな タコ！？', kana: 'なんで おおきな タコ！？', en: 'Why a giant octopus?!' });
+  });
+
+  it('uses the other lines when the cue names no answer', async () => {
+    expect((await bankVoice(content).speak('ABCD', cue))?.text).toBe('いいね！');
+  });
+});

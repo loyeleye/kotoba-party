@@ -71,6 +71,10 @@ body[data-mode] .timer { color: var(--on-accent); }
 .prompt { font-size: 24px; font-weight: 700; margin: 0; }
 .subtitle { color: var(--muted); margin: 0; }
 .hint { color: var(--muted); margin: 0; }
+/* Host asides in the dead air: a speech-bubble line in the host's voice. */
+.quip { margin-top: 18px; padding: 10px 14px; border-left: 3px solid var(--mode); background: var(--panel); border-radius: 0 10px 10px 0; }
+.quip-jp { font-family: var(--font-ja); font-size: 18px; margin: 0; }
+.quip-en { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
 .center { text-align: center; color: var(--muted); margin-top: 40vh; }
 .standings { padding-left: 24px; font-size: 20px; }
 /* Recap: my place as a big card, then everyone, then my phrasebook as cards. */

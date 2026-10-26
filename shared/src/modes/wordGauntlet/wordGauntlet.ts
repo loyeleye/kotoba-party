@@ -668,8 +668,28 @@ function enterFake(s: WordGauntletState, phase: Phase, ctx: ModeContext): void {
   if (phase === 'score') {
     scoreFake(s, ctx);
     for (const p of ctx.players()) ctx.phrase(p.id, { itemId: `wg.golden.${f.word.id}`, text: f.word.jp.text, kana: f.word.jp.kana, en: f.word.jp.en, outcome: 'seen' });
-    ctx.cue({ host: 'pon', event: 'kakegoe_call', prompt: { text: f.word.jp.text, kana: f.word.jp.kana, en: f.word.jp.en } });
+    const prompt = { text: f.word.jp.text, kana: f.word.jp.kana, en: f.word.jp.en };
+    const fooled = biggestFool(f, ctx);
+    // Who fooled whom is the Fibbage laugh; those lines end on the same call to say the word.
+    if (fooled) ctx.cue({ host: 'pon', event: 'fooled', prompt, slots: { author: name(ctx, fooled.author), fooled: name(ctx, fooled.victim) } });
+    else ctx.cue({ host: 'pon', event: 'kakegoe_call', prompt });
   }
+}
+
+/** The fake that fooled the most players this word, and one player it fooled. */
+function biggestFool(f: FakeRound, ctx: ModeContext): { author: string; victim: string } | null {
+  let best: { author: string; victim: string; n: number } | null = null;
+  for (const o of f.options) {
+    if (o.real) continue;
+    const victims = Object.entries(f.picks)
+      .filter(([id, opt]) => opt === o.id && ctx.player(id))
+      .map(([id]) => id);
+    for (const author of o.authorIds.filter((id) => ctx.player(id))) {
+      const fooled = victims.filter((v) => v !== author);
+      if (fooled.length && (!best || fooled.length > best.n)) best = { author, victim: fooled[0]!, n: fooled.length };
+    }
+  }
+  return best && { author: best.author, victim: best.victim };
 }
 
 function enterTelephone(s: WordGauntletState, phase: Phase, ctx: ModeContext): void {

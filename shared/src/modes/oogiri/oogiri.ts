@@ -212,6 +212,15 @@ function cue(ctx: ModeContext, c: Omit<HostCue, 'host'>): void {
   ctx.cue({ host: 'pon', ...c });
 }
 
+/** Longest answer Pon will name in a written snap-back ("なんで {tile}！？"); longer ones read badly in a line. */
+const TILE_MAX = 12;
+
+/** The answer Pon snaps back at: the shortest Japanese one, since tsukkomi lands best on a short noun. */
+function tileSlots(answers: Answer[]): Record<string, string> | undefined {
+  const a = answers.filter((x) => !x.english && x.text.length <= TILE_MAX).sort((x, y) => x.text.length - y.text.length || byId(x, y))[0];
+  return a ? { tile: a.text, tile_kana: a.kana, tile_en: a.blankEn } : undefined;
+}
+
 /** Pon's reaction to a matchup's answers, as the reveal raises it. */
 function revealCue(s: OogiriState, m: Matchup): Omit<HostCue, 'host'> {
   const shown = visibleAnswers(s, m.index).sort(byId);
@@ -221,7 +230,17 @@ function revealCue(s: OogiriState, m: Matchup): Omit<HostCue, 'host'> {
     prompt: promptCue(m.prompt),
     answer: shown.map((a) => a.text).join(' / '),
     answerEn: shown.map((a) => a.en).join(' / '),
+    slots: tileSlots(shown),
   };
+}
+
+/** The winning answer as the whole room shouts it back, or the prompt's example when no answer can stand in. */
+function naturalFor(s: OogiriState, m: Matchup): JpText {
+  const star = m.result?.lines.find((l) => l.ippon) ?? m.result?.lines.find((l) => l.winner);
+  const a = star && s.answers.find((x) => x.id === star.answerId);
+  // An English answer, or one with a form the player got wrong, isn't a sentence to drill.
+  if (!a || a.english || a.formTips.length) return m.prompt.exampleAnswer;
+  return sentenceFor(stageVersion(m.prompt), { text: a.text, kana: a.kana, en: a.blankEn });
 }
 
 /** Every slot for this matchup is answered. */
@@ -281,9 +300,15 @@ function scoreMatchup(s: OogiriState, ctx: ModeContext): void {
   const star = lines.find((l) => l.ippon) ?? lines.find((l) => l.winner);
   const starAnswer = star ? answers.find((a) => a.id === star.answerId) : undefined;
   const base = { prompt: promptCue(m.prompt), answer: starAnswer?.text, answerEn: starAnswer?.en };
+  const winners = lines.filter((l) => l.winner);
+  const runnerUp = Math.max(0, ...lines.filter((l) => !l.winner).map((l) => l.votes));
+  const named = { name: star?.authorName ?? '', ...tileSlots(starAnswer ? [starAnswer] : []) };
   if (star?.ippon) cue(ctx, { ...base, event: 'ippon', tier: 'ippon', slots: { name: star.authorName } });
-  else if (star) cue(ctx, { ...base, event: 'encore_invite', slots: { name: star.authorName } });
-  else cue(ctx, { prompt: base.prompt, answer: answers.map((a) => a.text).join(' / '), event: 'reveal_react', tier: 'flop' });
+  else if (!star) cue(ctx, { prompt: base.prompt, answer: answers.map((a) => a.text).join(' / '), event: 'vote_zero', slots: tileSlots(answers) });
+  else if (winners.length > 1) cue(ctx, { ...base, event: 'vote_tie' });
+  else if (answers.length > 1 && top - runnerUp === 1) cue(ctx, { ...base, event: 'vote_close', slots: named });
+  else if (answers.length > 1 && runnerUp === 0 && top >= 2) cue(ctx, { ...base, event: 'vote_landslide', slots: named });
+  else cue(ctx, { ...base, event: 'encore_invite', slots: { name: star.authorName } });
 }
 
 /** Encore spotlight bonuses, paid as the score phase starts. */
@@ -419,9 +444,12 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         scoreEncores(s, ctx);
         const m = s.matchups[s.current];
         if (m) {
-          const ex = m.prompt.exampleAnswer;
+          const ex = naturalFor(s, m);
           for (const p of ctx.players()) ctx.phrase(p.id, { itemId: `${m.prompt.id}:natural`, text: ex.text, kana: ex.kana, en: ex.en, outcome: 'seen' });
-          cue(ctx, { event: 'natural_version', prompt: promptCue(m.prompt), answer: ex.text, answerEn: ex.en });
+          const star = m.result?.lines.find((l) => l.ippon) ?? m.result?.lines.find((l) => l.winner);
+          const starAnswer = star && ex !== m.prompt.exampleAnswer ? s.answers.find((a) => a.id === star.answerId) : undefined;
+          const slots = starAnswer ? { name: star!.authorName, ...tileSlots([starAnswer]) } : undefined;
+          cue(ctx, { event: 'natural_version', prompt: promptCue(m.prompt), answer: ex.text, answerEn: ex.en, slots });
         }
         break;
       }
@@ -519,6 +547,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
           text: a.text,
           kana: a.kana,
           en: stageEn,
+          blankEn: a.en,
           sentence,
           style: a.style,
           english: a.english,
@@ -663,7 +692,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         voters: voters(s, m, ctx),
         voted: Object.keys(m.votes),
         ippon: authorsShown && !!m.result?.ippon,
-        natural: phase === 'score' ? { ...m.prompt.exampleAnswer, ...(romaji ? { romaji: toRomaji(m.prompt.exampleAnswer.kana) } : {}) } : null,
+        natural: phase === 'score' ? { ...naturalFor(s, m), ...(romaji ? { romaji: toRomaji(naturalFor(s, m).kana) } : {}) } : null,
         pattern: phase === 'score' ? m.prompt.pattern : null,
       };
     }
