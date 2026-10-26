@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kotoba Party · Stage</title>
+    <link rel="stylesheet" href="/stage/style.css" />
+  </head>
+  <body data-phase="lobby">
+    <header class="bar">
+      <div class="brand">Kotoba Party! <span class="tag">debug stage</span></div>
+      <div class="join">
+        <div>
+          <div class="label">Room code</div>
+          <div id="code" class="code">····</div>
+          <div id="join-url" class="url"></div>
+        </div>
+        <img id="qr" class="qr" alt="QR code to join this room" />
+      </div>
+    </header>
+
+    <section class="show">
+      <div class="phase-line">
+        <span id="phase" class="phase">Lobby</span>
+        <span id="round" class="round"></span>
+        <span id="timer" class="timer"></span>
+      </div>
+      <div id="main" class="main"></div>
+      <ul id="players" class="players"></ul>
+    </section>
+
+    <aside class="debug">
+      <div class="debug-row">
+        <span id="status" class="status">connecting</span>
+        <span id="version" class="version"></span>
+      </div>
+      <div class="debug-row">
+        <label>Rounds <input id="rounds" type="number" min="1" max="20" value="3" /></label>
+        <button id="btn-start">Start</button>
+        <button id="btn-skip">Skip phase</button>
+        <button id="btn-again">Play again</button>
+        <button id="btn-new">New room</button>
+        <button id="btn-raw">Raw state</button>
+      </div>
+      <pre id="raw" class="raw" hidden></pre>
+      <pre id="log" class="log"></pre>
+    </aside>
+
+    <script type="module" src="/stage/main.js"></script>
+  </body>
+</html>

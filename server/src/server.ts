@@ -1,0 +1,274 @@
+import { readFile } from 'node:fs/promises';
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { networkInterfaces } from 'node:os';
+import { extname, join, normalize, resolve } from 'node:path';
+import QRCode from 'qrcode';
+import { WebSocketServer, type WebSocket } from 'ws';
+import { DEFAULT_DURATIONS, type PhaseDurations } from '../../shared/src/constants.js';
+import { CLOSE, type CreateRoomResponse, type JoinRequest, type Prompt, type RoomInfo } from '../../shared/src/protocol.js';
+import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/roomCode.js';
+import { systemClock, type Clock } from './clock.js';
+import { Room, type RoomSocket } from './room.js';
+
+export interface ServerConfig {
+  clock?: Clock;
+  durations?: Partial<PhaseDurations>;
+  prompts: readonly Prompt[];
+  seatHoldMs?: number;
+  /** Close a room after this long with nobody connected. Default 10 minutes; 0 disables. */
+  roomIdleMs?: number;
+  /** Base URL phones should open, e.g. https://kotoba.party. Derived from the request when unset. */
+  publicUrl?: string;
+  /** Folder holding the built stage/ and controller/ pages. */
+  staticDir?: string;
+  /** WebSocket ping interval; a phone that misses two pings is treated as dropped. 0 disables. */
+  pingIntervalMs?: number;
+  maxRooms?: number;
+  onCommit?: (room: Room, version: number) => void;
+}
+
+export interface KotobaServer {
+  http: Server;
+  rooms: Map<string, Room>;
+  listen(port?: number, host?: string): Promise<string>;
+  close(): Promise<void>;
+}
+
+const MAX_BODY = 16 * 1024;
+const MIME: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.json': 'application/json',
+  '.map': 'application/json',
+  '.png': 'image/png',
+};
+
+export function createKotobaServer(config: ServerConfig): KotobaServer {
+  const clock = config.clock ?? systemClock;
+  const durations: PhaseDurations = { ...DEFAULT_DURATIONS, ...config.durations };
+  const rooms = new Map<string, Room>();
+  const maxRooms = config.maxRooms ?? 500;
+  const staticDir = config.staticDir ? resolve(config.staticDir) : undefined;
+
+  function createRoom(): Room | null {
+    if (rooms.size >= maxRooms) return null;
+    let code = randomRoomCode();
+    for (let tries = 0; rooms.has(code); tries++) {
+      if (tries > 50) return null;
+      code = randomRoomCode();
+    }
+    const room = new Room({
+      code,
+      clock,
+      durations,
+      prompts: config.prompts,
+      seatHoldMs: config.seatHoldMs,
+      idleMs: config.roomIdleMs ?? 10 * 60_000,
+      onClose: (r) => rooms.delete(r.code),
+      onCommit: config.onCommit,
+    });
+    rooms.set(code, room);
+    return room;
+  }
+
+  function joinUrl(req: IncomingMessage, code: string): string {
+    return `${baseUrl(req, config.publicUrl)}/?code=${code}`;
+  }
+
+  async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const url = new URL(req.url ?? '/', 'http://local');
+    const path = url.pathname;
+
+    if (path === '/healthz') return send(res, 200, { ok: true, rooms: rooms.size });
+
+    if (path === '/api/rooms' && req.method === 'POST') {
+      const room = createRoom();
+      if (!room) return send(res, 503, { error: 'too-many-rooms' });
+      const body: CreateRoomResponse = { code: room.code, stageToken: room.createStageToken(), joinUrl: joinUrl(req, room.code) };
+      return send(res, 201, body);
+    }
+
+    const m = /^\/api\/rooms\/([^/]+)(?:\/([a-z.]+))?$/.exec(path);
+    if (m) {
+      const code = normalizeRoomCode(decodeURIComponent(m[1]!));
+      const room = isRoomCode(code) ? rooms.get(code) : undefined;
+      if (!room) return send(res, 404, { error: 'room-not-found' });
+      const action = m[2];
+
+      if (!action && req.method === 'GET') {
+        const info: RoomInfo = {
+          code: room.code,
+          phase: room.state.phase,
+          players: room.state.players.length,
+          joinable: room.state.phase === 'lobby' && room.state.players.length < 8,
+        };
+        return send(res, 200, info);
+      }
+      if (action === 'join' && req.method === 'POST') {
+        const body = (await readJson(req)) as JoinRequest | null;
+        if (!body) return send(res, 400, { error: 'bad-request' });
+        const result = room.join(body);
+        if ('error' in result) return send(res, result.error === 'room-full' || result.error === 'game-in-progress' || result.error === 'name-taken' ? 409 : 400, result);
+        return send(res, 200, result);
+      }
+      if (action === 'commands' && req.method === 'POST') {
+        const token = bearer(req);
+        const body = await readJson(req);
+        const result = token ? room.command(token, body) : null;
+        if (!result) return send(res, 401, { error: token && room.wasReleased(token) ? 'seat-released' : 'bad-token' });
+        return send(res, 200, result);
+      }
+      if (action === 'qr.svg' && req.method === 'GET') {
+        const svg = await QRCode.toString(joinUrl(req, room.code), { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
+        res.writeHead(200, { 'content-type': MIME['.svg']!, 'cache-control': 'no-store' });
+        res.end(svg);
+        return;
+      }
+      return send(res, 404, { error: 'not-found' });
+    }
+
+    if (req.method === 'GET' && staticDir) return serveStatic(res, staticDir, path);
+    return send(res, 404, { error: 'not-found' });
+  }
+
+  const http = createServer((req, res) => {
+    handle(req, res).catch((err) => {
+      console.error(err);
+      if (!res.headersSent) send(res, 500, { error: 'server-error' });
+      else res.end();
+    });
+  });
+
+  // ---- WebSocket push (ADR 0002): the server talks, clients listen. ----
+  const wss = new WebSocketServer({ noServer: true, maxPayload: 1024 });
+  const alive = new WeakMap<WebSocket, boolean>();
+
+  http.on('upgrade', (req, socket, head) => {
+    const url = new URL(req.url ?? '/', 'http://local');
+    if (url.pathname !== '/ws') return socket.destroy();
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      const code = normalizeRoomCode(url.searchParams.get('code') ?? '');
+      const token = url.searchParams.get('token') ?? '';
+      const room = rooms.get(code);
+      if (!room) return ws.close(CLOSE.roomGone, 'room-not-found');
+      const roomSocket: RoomSocket = {
+        send: (data) => ws.send(data),
+        close: (c, reason) => ws.close(c, reason),
+      };
+      alive.set(ws, true);
+      ws.on('pong', () => alive.set(ws, true));
+      ws.on('close', () => room.detach(roomSocket));
+      ws.on('error', () => ws.terminate());
+      // Clients never need to send anything; ignore whatever they do send.
+      ws.on('message', () => {});
+      if (!room.attach(token, roomSocket)) {
+        ws.close(room.wasReleased(token) ? CLOSE.seatReleased : CLOSE.badToken, 'unknown-token');
+      }
+    });
+  });
+
+  const pingMs = config.pingIntervalMs ?? 10_000;
+  const pinger =
+    pingMs > 0
+      ? setInterval(() => {
+          for (const ws of wss.clients) {
+            if (!alive.get(ws)) {
+              ws.terminate();
+              continue;
+            }
+            alive.set(ws, false);
+            ws.ping();
+          }
+        }, pingMs)
+      : null;
+  pinger?.unref();
+
+  return {
+    http,
+    rooms,
+    listen(port = 3000, host = '0.0.0.0') {
+      return new Promise((resolveListen) => {
+        http.listen(port, host, () => {
+          const addr = http.address() as AddressInfo;
+          resolveListen(`http://${host === '0.0.0.0' ? 'localhost' : host}:${addr.port}`);
+        });
+      });
+    },
+    async close() {
+      if (pinger) clearInterval(pinger);
+      for (const room of [...rooms.values()]) room.close();
+      for (const ws of wss.clients) ws.terminate();
+      await new Promise<void>((r) => wss.close(() => r()));
+      await new Promise<void>((r) => http.close(() => r()));
+    },
+  };
+}
+
+function send(res: ServerResponse, status: number, body: unknown): void {
+  res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+  res.end(JSON.stringify(body));
+}
+
+function bearer(req: IncomingMessage): string | null {
+  const h = req.headers.authorization;
+  return h?.startsWith('Bearer ') ? h.slice(7) : null;
+}
+
+async function readJson(req: IncomingMessage): Promise<unknown> {
+  let size = 0;
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    size += (chunk as Buffer).length;
+    if (size > MAX_BODY) return null;
+    chunks.push(chunk as Buffer);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
+async function serveStatic(res: ServerResponse, root: string, path: string): Promise<void> {
+  // /stage and /stage/* come from the stage build; everything else is the phone controller.
+  let app = 'controller';
+  let rest = path;
+  if (path === '/stage' || path.startsWith('/stage/')) {
+    app = 'stage';
+    rest = path.slice('/stage'.length);
+  }
+  if (rest === '' || rest === '/') rest = '/index.html';
+  const base = join(root, app);
+  const file = normalize(join(base, rest));
+  if (!file.startsWith(base)) return send(res, 404, { error: 'not-found' });
+  try {
+    const data = await readFile(file);
+    res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-cache' });
+    res.end(data);
+  } catch {
+    send(res, 404, { error: 'not-found' });
+  }
+}
+
+/** The URL phones should open. On localhost, swap in this machine's LAN address so a QR scan works. */
+function baseUrl(req: IncomingMessage, publicUrl: string | undefined): string {
+  if (publicUrl) return publicUrl.replace(/\/$/, '');
+  const proto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0] ?? 'http';
+  const host = (req.headers['x-forwarded-host'] as string | undefined) ?? req.headers.host ?? 'localhost';
+  const [hostname, port] = host.split(':');
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    const lan = lanAddress();
+    if (lan) return `${proto}://${lan}${port ? `:${port}` : ''}`;
+  }
+  return `${proto}://${host}`;
+}
+
+function lanAddress(): string | undefined {
+  for (const list of Object.values(networkInterfaces())) {
+    for (const addr of list ?? []) if (addr.family === 'IPv4' && !addr.internal) return addr.address;
+  }
+  return undefined;
+}
