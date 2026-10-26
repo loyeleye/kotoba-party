@@ -102,7 +102,7 @@ function render(view: RoomView, v: number): void {
   document.body.dataset.phase = view.phase;
   document.body.dataset.mode = view.mode ?? '';
   const modeInfo = view.mode ? MENU_ALL.find((m) => m.id === view.mode) : undefined;
-  els.phase.textContent = view.phase === 'lobby' ? 'Lobby' : view.phase === 'recap' ? 'Recap' : `${modeInfo?.title ?? ''} · ${PHASE_LABELS[view.phase] ?? view.phase}`;
+  els.phase.textContent = view.phase === 'lobby' ? 'Lobby' : view.phase === 'recap' ? 'Recap' : `${modeInfo?.title ?? ''} · ${modeInfo?.phaseLabels?.[view.phase] ?? PHASE_LABELS[view.phase] ?? view.phase}`;
   els.round.textContent = view.round ? `Round ${view.round} / ${view.totalRounds}` : '';
   els.version.textContent = `v${v} · phase #${view.phaseSeq} · stale dropped ${client?.staleDropped ?? 0}`;
   els.start.disabled = view.phase !== 'lobby' || view.players.length === 0;

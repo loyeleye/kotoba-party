@@ -154,6 +154,8 @@ export interface ModeInfo {
   usesPack: boolean;
   /** What the recap calls the phrasebook (e.g. Last Train's "travel survival kit"). */
   phrasebookTitle?: string;
+  /** Stage header names for phases this mode uses differently (Concentration's encore is a steal). */
+  phaseLabels?: Partial<Record<Phase, string>>;
 }
 
 /**

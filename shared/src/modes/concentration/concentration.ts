@@ -330,6 +330,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
     maxPlayers: 8,
     roundChoices: [],
     usesPack: true,
+    phaseLabels: { answer: 'Turn', prompt: 'Peek', reveal: 'Say it', encore: 'Steal', score: 'Result' },
   },
 
   setup(ctx, opts) {

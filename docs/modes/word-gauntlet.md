@@ -77,7 +77,7 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 
 ## Open questions
 1. A fluent check of the 18 obscure words, the placeholder starters and the shiritori noun list (all `draft`).
-2. Should the phone's error flashes get proper wording in the shell's `ERRORS` map? The phone shows its own message after a refused move, but the shell first flashes the raw code (`too-close`, `wrong-start`, `repeat`, `not-japanese`…). Adding these to `controller/src/main.ts` would fix it.
+2. ~~Done: the shell's `ERRORS` map now has wording for these codes.~~ Should the phone's error flashes get proper wording in the shell's `ERRORS` map? The phone shows its own message after a refused move, but the shell first flashes the raw code (`too-close`, `wrong-start`, `repeat`, `not-japanese`…). Adding these to `controller/src/main.ts` would fix it.
 3. Player text (fakes, telephone steps, challenged words) should pass the moderation filter before the stage shows it, and the VIP should be able to hide one; neither hook exists for modes yet.
 4. Mode-specific host events (e.g. `gauntlet_golden_word`, `shiritori_out`) would let Pon react more precisely than the shared events used now.
 5. Should a challenged word that is accepted be added to a room-wide "house words" list for later games?

@@ -131,8 +131,8 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
 - Ghost points at 50%: too generous, or should ghosts earn nothing until revived?
 - The dash track length (6) and ghost head start (−2) need a playtest; with Kana-level
   dash content most players answer in about 3 s, so the dash lasts 20–30 s.
-- Should the recap title the phrasebook "travel survival kit" for this mode? The recap screen is
-  shared shell code, so it currently says "Tonight's phrasebook".
+- ~~Should the recap title the phrasebook "travel survival kit"?~~ Done: the recap reads
+  `ModeInfo.phrasebookTitle`, so it says "Your travel survival kit".
 - Phone audio for Station Announcement uses the device voice; the host pipeline could pre-render
   item audio instead (content notes say audio must play before text).
 - Overrule logs live in the mode state only; the false-reject metric needs them persisted.

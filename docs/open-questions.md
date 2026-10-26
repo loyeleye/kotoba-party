@@ -4,7 +4,28 @@ Every call Claude made without asking goes here, so Ladi can review them in one 
 Each entry says what was decided, why, and what would change it. Mark an entry **OK** to accept
 it, or write your answer under it and the next build pass will act on it.
 
-Sections: Phase 0 (multiplayer), Content, AI and voice. Threads add to their own section.
+Sections: Start here, Phase 0 (multiplayer), Mode engine (v1), Modes, Content, AI and voice.
+Each mode's full list of decisions (numbered per mode) lives in its own doc under `docs/modes/`.
+
+## Start here (the questions that change the most)
+
+If you only have ten minutes, these are the answers that would change the build the most.
+
+- **Fluent check (C1 below).** Every pack, host line, award title and the Word Gauntlet obscure
+  words are `draft`. Who checks them, and when?
+- **Browser speech recogniser for playtests (21).** Chrome sends audio to Google. OK until
+  server-side speech-to-text?
+- **Oogiri Night:** with 8 players Round 1 has 8 matchups (about 13 minutes per game if every
+  timer runs out). Too long? Is Pon's cushion steal funny or unfair?
+  ([oogiri.md](modes/oogiri.md#open-questions))
+- **Kotoba Concentration:** should a kept pair earn another turn, as in classic memory? Should
+  steals be spoken only? ([concentration.md](modes/concentration.md#open-questions))
+- **Word Gauntlet:** a rejected shiritori challenge knocks the player out. Too harsh?
+  ([word-gauntlet.md](modes/word-gauntlet.md#decisions-made-on-ladis-behalf))
+- **Last Train:** ghosts earn 50% points. Too generous? ([last-train.md](modes/last-train.md#open-questions))
+- **Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
+  player. Is it time to add accounts or device-local saves? ([kana-raid.md](modes/kana-raid.md#open-questions))
+- **Photo Caption art (C2)** and **voice casting (C3).**
 
 ## Phase 0 (multiplayer)
 
@@ -64,6 +85,31 @@ Sections: Phase 0 (multiplayer), Content, AI and voice. Threads add to their own
     answers lock in (design doc Phase 2).
 25. **Host audio needs a running VOICEVOX** (`VOICEVOX_URL`); without it the host shows
     subtitles only. LLM lines need `ANTHROPIC_API_KEY`; without it the written bank is used.
+26. **Modes can see who the VIP is** (`ModeContext.vipId`), so Oogiri's VIP can hide an answer.
+    That one-tap Hide is the only moderation in any mode so far; Word Gauntlet and Last Train
+    show player text unfiltered. A shared hide/moderation hook for every mode is the next step.
+27. **Modes can rename phases on the stage header** (`ModeInfo.phaseLabels`). Concentration
+    uses it (its encore is the steal window); the others keep the shared labels.
+28. **The phone shows friendly wording for every refusal code** the modes use (the `ERRORS` map
+    in `controller/src/main.ts`). Race codes such as `wrong-phase` stay silent.
+29. **`npm run bots -- --mode <id>`** plays whole games of any mode with the test bot policies,
+    so you can watch a full game on the stage without phones.
+30. **Shipping order.** v1 (Kana Yōkai Raid, Oogiri Night, Last Train) and the v1.1 backlog
+    (Word Gauntlet, Kotoba Concentration, and the Brush / Ink Storm kana drawing wave) were all
+    built tonight on one branch and go up as one pull request. They can be split if you would
+    rather review v1 first.
+
+## Modes
+
+Each mode doc has how it plays, the decisions made on your behalf and its open questions.
+
+| Mode | Doc | Decisions | Host |
+| --- | --- | --- | --- |
+| Kana Yōkai Raid | [kana-raid.md](modes/kana-raid.md) | 19 | Fude |
+| Oogiri Night | [oogiri.md](modes/oogiri.md) | 21 | Pon |
+| Last Train | [last-train.md](modes/last-train.md) | 15 | Chōchin-san |
+| Word Gauntlet (v1.1) | [word-gauntlet.md](modes/word-gauntlet.md) | 18 | Pon |
+| Kotoba Concentration (v1.1) | [concentration.md](modes/concentration.md) | 15 | Fude |
 
 ## Content
 

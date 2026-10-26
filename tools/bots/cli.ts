@@ -3,13 +3,24 @@
 //   npm run bots -- --code BCDF                 # 7 bots join the room on the debug stage
 //   npm run bots -- --bots 8 --rounds 100       # make a room, play 100 rounds, report
 //   npm run bots -- --code BCDF --drop 30       # one bot loses signal for 30 s every few rounds
+//   npm run bots -- --mode oogiri --bots 5      # make a room and play one game of a real mode
 //
-// Options: --url (default http://localhost:3000), --code, --bots, --rounds, --drop <seconds>, --fast
+// Options: --url (default http://localhost:3000), --code, --bots, --rounds, --drop <seconds>, --fast,
+// --mode <oogiri|last-train|kana-raid|word-gauntlet|concentration> and --games (real modes only).
 
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { loadContent } from '../../server/src/content.js';
 import { createRoom } from '../../shared/src/client.js';
 import type { DebugView } from '../../shared/src/modes/debug/debug.js';
-import { Bot, Director, politeScript, type BotScript } from './bot.js';
+import { MODES } from '../../shared/src/modes/registry.js';
+import { MODE_IDS, type ModeId } from '../../shared/src/protocol.js';
+import { Bot, Director, politeScript, type BotScript, type ModePolicy } from './bot.js';
+import { concentrationPolicy } from './policies/concentration.js';
+import { kanaRaidPolicy } from './policies/kanaRaid.js';
+import { lastTrainPolicy } from './policies/lastTrain.js';
+import { oogiriPolicy } from './policies/oogiri.js';
+import { wordGauntletPolicy } from './policies/wordGauntlet.js';
 
 const { values } = parseArgs({
   options: {
@@ -19,12 +30,40 @@ const { values } = parseArgs({
     rounds: { type: 'string', default: '10' },
     drop: { type: 'string', default: '0' },
     fast: { type: 'boolean', default: false },
+    mode: { type: 'string', default: 'debug' },
+    games: { type: 'string', default: '1' },
   },
 });
+
+const mode = values.mode as ModeId;
+if (!MODE_IDS.includes(mode)) {
+  console.error(`Unknown mode ${values.mode}. Pick one of: ${MODE_IDS.join(', ')}.`);
+  process.exit(1);
+}
+const realMode = mode !== 'debug';
 
 const url = values.url!.replace(/\/$/, '');
 const count = Number(values.bots ?? (values.code ? 7 : 8));
 const dropSeconds = Number(values.drop);
+
+/** A fresh policy per bot, so each keeps its own memory (Concentration remembers cards). */
+function policyFor(seat: number): ModePolicy | undefined {
+  const content = () => loadContent(fileURLToPath(new URL('../../', import.meta.url)));
+  switch (mode) {
+    case 'oogiri':
+      return oogiriPolicy();
+    case 'last-train':
+      return lastTrainPolicy({ content: content(), seed: seat });
+    case 'kana-raid':
+      return kanaRaidPolicy();
+    case 'word-gauntlet':
+      return wordGauntletPolicy(content());
+    case 'concentration':
+      return concentrationPolicy();
+    default:
+      return undefined;
+  }
+}
 
 const script: BotScript = {
   ...politeScript,
@@ -41,10 +80,11 @@ if (!code) {
   console.log(`Created room ${code}. Watch it at ${url}/stage (or join at ${room.joinUrl}).`);
   director = new Director(url, code, room.stageToken, {
     players: count,
-    roundsPerGame: 10,
-    totalRounds: Number(values.rounds),
+    roundsPerGame: realMode ? (MODES[mode].info.roundChoices[0] ?? 1) : 10,
+    totalRounds: realMode ? Number.MAX_SAFE_INTEGER : Number(values.rounds),
+    ...(realMode ? { mode, games: Number(values.games) } : {}),
     onDone: () => {
-      console.log(`Played ${director!.roundsPlayed} rounds.`);
+      console.log(realMode ? `Played ${director!.gamesPlayed} game(s) of ${MODES[mode].info.title}.` : `Played ${director!.roundsPlayed} rounds.`);
       for (const b of bots) b.stop();
       director!.client.close();
       const problems = bots.flatMap((b) => b.unexpected.map((u) => `${b.name}: ${u.cmd} → ${u.error}`));
@@ -52,6 +92,12 @@ if (!code) {
       process.exit(problems.length ? 1 : 0);
     },
     onState: (view) => {
+      if (realMode) {
+        if (view.phase === 'recap' && view.recap) {
+          console.log(view.recap.standings.map((p) => `${p.name} ${p.score}`).join(', '));
+        }
+        return;
+      }
       const game = view.game as DebugView | null;
       if (view.phase === 'score' && game?.results) {
         const top = [...game.results].sort((a, b) => b.votes - a.votes)[0];
@@ -66,7 +112,8 @@ const bots: Bot[] = [];
 for (let i = 1; i <= count; i++) {
   const name = `bot${i}`;
   try {
-    const bot = await Bot.join({ baseUrl: url, code, name, script, deviceId: `cli-${code}-${name}` });
+    const policy = policyFor(i);
+    const bot = await Bot.join({ baseUrl: url, code, name, ...(policy ? { policy } : { script }), deviceId: `cli-${code}-${name}` });
     bot.client.connect();
     bots.push(bot);
     console.log(`${name} joined ${code}`);
