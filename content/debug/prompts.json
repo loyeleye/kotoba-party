@@ -1,0 +1,18 @@
+{
+  "pack": "debug",
+  "note": "Placeholder prompts for the Phase 0 skeleton. Real topic packs (fluent-checked, with readings and pitch) arrive in Phase 1.",
+  "prompts": [
+    { "id": "dbg-01", "text": "A terrible name for a ramen shop", "subtitle": "ひどいラーメン屋の名前" },
+    { "id": "dbg-02", "text": "What the cat is really thinking", "subtitle": "ねこが本当に考えていること" },
+    { "id": "dbg-03", "text": "The worst thing to say on a first date", "subtitle": "初デートで言ってはいけないこと" },
+    { "id": "dbg-04", "text": "A new flavour of KitKat nobody asked for", "subtitle": "だれも頼んでいないキットカットの味" },
+    { "id": "dbg-05", "text": "What the vending machine says at 3 a.m.", "subtitle": "夜中の三時に自動販売機が言うこと" },
+    { "id": "dbg-06", "text": "A rule for the haunted TV studio", "subtitle": "おばけテレビ局のルール" },
+    { "id": "dbg-07", "text": "The last train announcement you never want to hear", "subtitle": "聞きたくない終電のアナウンス" },
+    { "id": "dbg-08", "text": "Why the yōkai was late today", "subtitle": "妖怪が今日遅刻した理由" },
+    { "id": "dbg-09", "text": "A souvenir that would get you in trouble", "subtitle": "もらったら困るおみやげ" },
+    { "id": "dbg-10", "text": "What Pon the tanuki orders at the konbini", "subtitle": "ポンがコンビニで買うもの" },
+    { "id": "dbg-11", "text": "A very polite way to say you're hungry", "subtitle": "とても丁寧な「おなかがすいた」" },
+    { "id": "dbg-12", "text": "The onsen's secret rule", "subtitle": "温泉のひみつのルール" }
+  ]
+}
