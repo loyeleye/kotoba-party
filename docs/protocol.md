@@ -8,9 +8,10 @@ Types live in `shared/src/protocol.ts`; this is the prose version. See ADR 0002 
 | --- | --- | --- | --- |
 | `POST /api/rooms` | stage | — | `{ code, stageToken, joinUrl }` |
 | `GET /api/rooms/:code` | anyone | — | `{ code, phase, players, joinable }` or 404 |
-| `POST /api/rooms/:code/join` | phone | `{ name, level?, deviceId?, token? }` | `{ playerId, token, rejoined }`; 409 `room-full`, `game-in-progress`, `name-taken`; 400 `bad-name` |
+| `POST /api/rooms/:code/join` | phone | `{ name, level?, deviceId?, token? }` | `{ playerId, token, rejoined, speech }` (`speech`: the server can hear spoken answers); 409 `room-full`, `game-in-progress`, `name-taken`; 400 `bad-name` |
 | `POST /api/rooms/:code/commands` | stage or phone (Bearer token) | `{ id, type, … }` | `{ ok: true, v }` or `{ ok: false, error, v }`; 401 `bad-token` / `seat-released` |
 | `GET /api/rooms/:code/qr.svg` | stage | — | QR code for the join URL |
+| `POST /api/rooms/:code/speech` | phone (Bearer token) | 16 kHz mono WAV, ≤ 512 KB | `{ text }` from our Whisper server; 401 `bad-token`, 400 `bad-clip`, 429 `busy`, 502 `stt-failed`, 503 `no-speech` ([speech.md](speech.md)) |
 | `GET /audio/:id` | stage | — | A host line's voice audio (only when VOICEVOX is set up) |
 | `GET /healthz` | ops | — | `{ ok, rooms }` |
 

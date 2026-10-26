@@ -209,7 +209,7 @@ the right line with `hearRate` (0.6), otherwise a random cell. Everyone shouts t
 
 ## Known gaps
 
-- Nothing has been tried with real phones in a real room: whether the browser recogniser picks a
+- Nothing has been tried with real phones in a real room: whether the speech recogniser picks a
   line out of a noisy scene, and whether 6-second hold-to-talk feels natural mid-improv.
 - No sound effects (the 🔔 ring, the bingo fanfare) and no TTS of the shout-back line on the stage.
 - Scene lines aren't covered by the content linter or `npm run content:readings` (they live in

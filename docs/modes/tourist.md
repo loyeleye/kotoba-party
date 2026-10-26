@@ -199,7 +199,7 @@ clues and leads; on its last chance it picks its best clue. `npm run bots -- --m
 
 ## Known gaps
 
-- Not tried with real phones in a real room: whether the browser recogniser copes with short
+- Not tried with real phones in a real room: whether the speech recogniser copes with short
   answers like ときどき, and whether the phone-logging step slows the conversation.
 - No sound effects or TTS reading of the questions on the stage.
 - Place content isn't covered by the content linter or `npm run content:readings` (decision 2).

@@ -32,12 +32,13 @@ Routes › Edit and Zone › DNS › Edit if you add a custom domain).
 | `VOICEVOX_URL` | `vars` in `wrangler.jsonc` | A VOICEVOX engine reachable from the internet, for host voices. Without it lines show as subtitles. |
 | `READER_URL`, `READER_TOKEN` | `vars` for the URL, `wrangler secret put READER_TOKEN` | The reader service for kanji answers (below). Without it answers are compared as written. |
 | `PUBLIC_URL` | `vars` in `wrangler.jsonc` | The address the QR code points at. Defaults to the address the stage was opened on. |
+| `STT_URL`, `STT_MODEL`, `STT_TOKEN` | `vars` for the URL and model, `wrangler secret put STT_TOKEN` | Our own Whisper server for spoken answers ([speech.md](speech.md)). Without it phones type or tap; audio never goes to Google. |
 
 After changing `vars`, run `npm run cf:deploy` again. Secrets take effect at once.
 
 ### The reader service
 
-Speech recognition often returns kanji (三百円), and the rules compare kana readings
+Speech to text often returns kanji (三百円), and the rules compare kana readings
 (さんびゃくえん). The dictionary that works those out doesn't fit in a Worker, so it runs as a
 small separate service on any machine with Node:
 
@@ -47,8 +48,8 @@ READER_TOKEN=pick-a-long-secret npm run reader      # listens on port 3100
 
 Give it a public https address (for example with a Cloudflare Tunnel:
 `cloudflared tunnel --url http://localhost:3100`), then set `READER_URL` to that address and
-`READER_TOKEN` to the same secret. VOICEVOX can sit on the same machine
-(`server/ai/docker-compose.voicevox.yml`).
+`READER_TOKEN` to the same secret. VOICEVOX and the Whisper server for speech
+([speech.md](speech.md)) can sit on the same machine (`server/ai/docker-compose.voicevox.yml`).
 
 ## Custom domain
 
