@@ -126,10 +126,15 @@ C1. **Who does the fluent-speaker check, and when?** The design doc says a fluen
     had that check. Suggest one native reviewer pass over the food, family and travel packs, the
     Phase 1 Last Train minigames (Konbini Math, Meet the Innkeeper) and Pon's lines before the first
     game night (about 1,000 short items; the puns flagged below first). Who should that be?
-C2. **Photo Caption needs photos.** The 24 photo prompts describe a funny photo (Bokete-style) but
-    there are no images yet. Options: commission simple illustrations, licensed stock, or generated
-    images. Recommend commissioned or generated illustrations in the show's art style, since
-    stock photos of real people raise consent and tone issues.
+C2. **Photo Caption pictures are pixel art from PixelLab** (`content/media/photo-caption/`, 24
+    images at 320×240, about 24 KB each; `tools/generate-caption-art.ts` redraws them). I picked
+    pixel art over photos so nothing shows a real person, and so the pictures match a retro
+    haunted-TV-studio look; this also sets a visual direction for the game, so say if you want a
+    different style. Gemini image generation was blocked by this session's network policy
+    (`generativelanguage.googleapis.com` isn't on the allowed list), so only PixelLab was used.
+    I redrew five that came out wrong (a fox instead of Pon the tanuki, an awake family, made-up
+    kanji on station signs) and cropped one. I checked all 24 by eye: none has made-up Japanese
+    text left (the station-cat picture has a couple of tiny Latin letter marks on its signs).
 C3. **Voice casting.** `hosts/profiles.ts` names VOICEVOX characters to audition for each host.
     Each voice's commercial-use and credit terms need checking before we pick.
 

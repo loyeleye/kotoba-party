@@ -927,6 +927,7 @@ export const travelPrompts: OogiriPrompt[] = [
       n5: { text: "駅員の ねこ：「＿＿＿。」", kana: "えきいんの ねこ：「＿＿＿。」", en: "The station-staff cat: \"＿＿＿.\"", furigana: [["駅員", "えきいん"], ["の ねこ：「＿＿＿。」", ""]] },
     },
     photo: "A cat in a tiny station-staff cap sits on a ticket-gate machine at night, glaring at the camera.",
+    image: 'media/photo-caption/travel.ph-01-station-cat.png',
     fitTileIds: ["travel.kaeru", "travel.matsu", "travel.oriru", "travel.shuuden"],
     swerveTileIds: ["travel.tako", "travel.makura", "travel.robotto"],
     exampleAnswer: {
@@ -951,6 +952,7 @@ export const travelPrompts: OogiriPrompt[] = [
       },
     },
     photo: "A tiny business-hotel room: the bed fills the whole floor and a suitcase is balanced on top of the TV.",
+    image: 'media/photo-caption/travel.ph-02-tiny-room.png',
     fitTileIds: ["travel.chikai", "travel.shizuka", "travel.benri"],
     swerveTileIds: ["travel.makura", "travel.robotto", "travel.kappa"],
     exampleAnswer: {
@@ -970,6 +972,7 @@ export const travelPrompts: OogiriPrompt[] = [
       n5: { text: "自動販売機：「＿＿＿。」", kana: "じどうはんばいき：「＿＿＿。」", en: "The vending machine: \"＿＿＿.\"", furigana: [["自動販売機", "じどうはんばいき"], ["：「＿＿＿。」", ""]] },
     },
     photo: "A single glowing vending machine standing alone in a snowy field at night, nothing else for miles.",
+    image: 'media/photo-caption/travel.ph-03-snow-vending.png',
     fitTileIds: ["travel.samui", "travel.kuru", "travel.matsu", "travel.koohii"],
     swerveTileIds: ["travel.yuufoo", "travel.tako", "travel.chouchin"],
     exampleAnswer: {
@@ -994,6 +997,7 @@ export const travelPrompts: OogiriPrompt[] = [
       },
     },
     photo: "A small dog in a yellow raincoat stands in front of a closed ticket gate, looking deeply offended.",
+    image: 'media/photo-caption/travel.ph-04-dog-at-gate.png',
     fitTileIds: ["travel.kawaii", "travel.noru", "travel.iku", "travel.kippu"],
     swerveTileIds: ["travel.pengin-ekichou", "travel.ninja", "travel.kappa"],
     exampleAnswer: {
@@ -1018,6 +1022,7 @@ export const travelPrompts: OogiriPrompt[] = [
       },
     },
     photo: "A ryokan dinner tray with twenty tiny dishes; a guest in a yukata stares at it with chopsticks frozen in mid-air.",
+    image: 'media/photo-caption/travel.ph-05-ryokan-dinner.png',
     fitTileIds: ["travel.kagi", "travel.sandoicchi", "travel.koohii"],
     swerveTileIds: ["travel.tako", "travel.makura", "travel.chouchin"],
     exampleAnswer: {
@@ -1042,6 +1047,7 @@ export const travelPrompts: OogiriPrompt[] = [
       },
     },
     photo: "An empty platform at midnight. A single paper lantern with a face floats beside the open door of the last train.",
+    image: 'media/photo-caption/travel.ph-06-lantern-platform.png',
     fitTileIds: ["travel.noru", "travel.oriru", "travel.matsu", "travel.kippu"],
     swerveTileIds: ["travel.chouchin", "travel.yuurei-ekiin", "travel.obake-densha"],
     exampleAnswer: {
@@ -1061,6 +1067,7 @@ export const travelPrompts: OogiriPrompt[] = [
       n5: { text: "はと：「＿＿＿。」", kana: "はと：「＿＿＿。」", en: "Pigeon: \"＿＿＿.\"" },
     },
     photo: "A traveller at a crossing holds a paper map upside down, while a pigeon on the traffic light seems to point the right way.",
+    image: 'media/photo-caption/travel.ph-07-pigeon.png',
     fitTileIds: ["travel.migi", "travel.hidari", "travel.magaru", "travel.massugu"],
     swerveTileIds: ["travel.yuufoo", "travel.kappa", "travel.robotto"],
     exampleAnswer: {
@@ -1080,6 +1087,7 @@ export const travelPrompts: OogiriPrompt[] = [
       n5: { text: "温泉で ＿＿＿。", kana: "おんせんで ＿＿＿。", en: "In the hot spring, ___.", furigana: [["温泉", "おんせん"], ["で ＿＿＿。", ""]] },
     },
     photo: "A man in a full business suit and tie sits up to his chest in an outdoor hot spring, holding a briefcase above the water.",
+    image: 'media/photo-caption/travel.ph-08-suit-onsen.png',
     fitTileIds: ["travel.neru", "travel.matsu", "travel.koohii"],
     swerveTileIds: ["travel.robotto", "travel.tako", "travel.kappa"],
     exampleAnswer: {

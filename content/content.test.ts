@@ -2,6 +2,8 @@
 // against a dictionary separately (npm run content:readings), because a
 // tokenizer can't settle ambiguous readings like 一日 on its own.
 
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   bossWords,
@@ -170,6 +172,13 @@ describe('Oogiri prompts', () => {
       expect(p.fitTileIds.length, p.id).toBeGreaterThanOrEqual(3);
       expect(p.swerveTileIds.length, p.id).toBeGreaterThanOrEqual(3);
     }
+  });
+
+  it('give every photo-caption prompt a picture that exists', () => {
+    const photos = oogiriPrompts.filter((p) => p.round === 'photo-caption');
+    expect(photos.filter((p) => !p.photo || !p.image).map((p) => p.id)).toEqual([]);
+    const missing = photos.filter((p) => !existsSync(fileURLToPath(new URL(p.image!, import.meta.url))));
+    expect(missing.map((p) => p.image)).toEqual([]);
   });
 
   it('give each pack 50+ hand-written prompts (the AI fallback)', () => {
