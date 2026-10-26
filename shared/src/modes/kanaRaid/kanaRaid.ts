@@ -172,6 +172,8 @@ interface PlayerRaid {
   ready: boolean;
   top: number;
   attack: Attack | null;
+  /** Attack ids replaced without the player's doing (the boss moving on): a late answer to one is a harmless race. */
+  replaced: string[];
   last: LastResult | null;
   /** The item to retry once after a miss. */
   retryNext: { itemId: string; kind: AttackKind } | null;
@@ -478,8 +480,8 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       case 'attack': {
         if (phase !== 'answer' && phase !== 'finale') return moveError('wrong-phase');
         const a = p.attack;
-        if (!a) return moveError('no-attack');
-        if (raw.attackId !== a.id) return moveError('stale-attack');
+        if (!a) return moveError(typeof raw.attackId === 'string' && p.replaced.includes(raw.attackId) ? 'wrong-phase' : 'no-attack');
+        if (raw.attackId !== a.id) return moveError(typeof raw.attackId === 'string' && p.replaced.includes(raw.attackId) ? 'wrong-phase' : 'stale-attack');
         const answer = readAnswer(raw);
         if (!answer) return moveError('bad-answer');
         s.at = ctx.now;
@@ -588,6 +590,7 @@ function newPlayer(chapters: number[]): PlayerRaid {
     ready: false,
     top: Math.max(...chapters),
     attack: null,
+    replaced: [],
     last: null,
     retryNext: null,
     tally: {},
@@ -755,6 +758,7 @@ const isAlive = (y: Yokai, now: number) => y.state === 'alive' && y.escapeAt > n
 function assignAttack(s: RaidState, playerId: string, ctx: ModeContext, deck: Deck): void {
   const p = s.players[playerId];
   if (!p) return;
+  if (p.attack) p.replaced = [...p.replaced.slice(-4), p.attack.id];
   p.attack = s.wave > WAVES ? bossAttack(s, playerId, ctx, deck) : waveAttack(s, playerId, p, ctx, deck);
 }
 

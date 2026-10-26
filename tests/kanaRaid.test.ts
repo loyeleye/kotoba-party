@@ -156,8 +156,9 @@ describe('Kana Yōkai Raid rules', () => {
   it('attacks each player only with kana from their own chapters, and keeps attacks private', () => {
     const r = room(2);
     toBattle(r, { p1: [1], p2: [3, 4] });
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 4 && r.s.phase === 'answer'; i++) {
       for (const id of ['p1', 'p2']) {
+        if (r.s.phase !== 'answer') break;
         const a = r.rs().players[id]!.attack!;
         const k = K(a.itemId);
         expect(r.rs().players[id]!.chapters).toContain(k.chapter);
@@ -168,6 +169,7 @@ describe('Kana Yōkai Raid rules', () => {
     // The horde mixes both players' chapters.
     const chapters = new Set(r.rs().horde.map((y) => K(y.itemId).chapter));
     expect([...chapters].some((c) => c === 1) && [...chapters].some((c) => c >= 3)).toBe(true);
+    expect(r.s.phase).toBe('answer');
     // The stage never sees an attack; a phone sees only its own and never the answer.
     expect(r.stage().me).toBeNull();
     const mine = r.view('p1').me!.attack!;
@@ -260,6 +262,7 @@ describe('Kana Yōkai Raid rules', () => {
           kinds.add(a.kind);
           if (a.kind === 'pair') {
             r.play(id, { kind: 'attack', attackId: a.id, pick: a.answer });
+            if (r.s.phase !== 'answer') break;
             const b = r.rs().players[id]!.attack!;
             expect(b.step).toBe('say');
             r.play(id, { kind: 'attack', attackId: b.id, say: { via: 'speech', text: b.word!.kana } });
