@@ -19,9 +19,16 @@ export interface HostVoice {
   ahead?(roomCode: string, cue: HostCue): void;
 }
 
-/** Fills {slot} placeholders. */
-function fill(text: string, slots: Record<string, string> | undefined): string {
-  return text.replace(/\{(\w+)\}/g, (m, key: string) => slots?.[key] ?? m);
+/** Fills {slot} placeholders. A `{key}_kana` or `{key}_en` slot, when given, fills that field instead of `{key}`. */
+function fill(text: string, slots: Record<string, string> | undefined, field: 'text' | 'kana' | 'en' = 'text'): string {
+  return text.replace(/\{(\w+)\}/g, (m, key: string) => (field !== 'text' ? slots?.[`${key}_${field}`] : undefined) ?? slots?.[key] ?? m);
+}
+
+/** When a cue names the answer ({tile}), the lines that react to it beat the ones that could follow anything. */
+export function preferAnswerLines<T extends { slots?: string[] }>(lines: T[], slots: Record<string, unknown> | undefined): T[] {
+  if (slots?.tile === undefined) return lines;
+  const named = lines.filter((l) => (l.slots ?? []).some((s) => s.replace(/[{}]/g, '') === 'tile'));
+  return named.length ? named : lines;
 }
 
 /** Picks a fluent-checked (or, until packs are checked, any) bank line for the cue. */
@@ -32,14 +39,17 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
         (l: HostLine) => l.host === cue.host && l.event === cue.event && (!cue.tier || !l.tier || l.tier === cue.tier),
       );
       // A line with slots we can't fill would show a raw {name}; skip those.
-      const usable = candidates.filter((l) => (l.slots ?? []).every((s) => cue.slots?.[s.replace(/[{}]/g, '')] !== undefined));
+      const usable = preferAnswerLines(
+        candidates.filter((l) => (l.slots ?? []).every((s) => cue.slots?.[s.replace(/[{}]/g, '')] !== undefined)),
+        cue.slots,
+      );
       const line = usable[Math.floor(random() * usable.length)];
       if (!line) return null;
       return {
         host: cue.host,
         text: fill(line.jp.text, cue.slots),
-        kana: fill(line.jp.kana, cue.slots),
-        en: fill(line.jp.en, cue.slots),
+        kana: fill(line.jp.kana, cue.slots, 'kana'),
+        en: fill(line.jp.en, cue.slots, 'en'),
       };
     },
   };

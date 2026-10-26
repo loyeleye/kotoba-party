@@ -80,9 +80,10 @@ read it" opts out. The phase ends early once every author has chosen.
 
 ### Score and tip
 
-The stage shows the winning answer and the **natural version**. Until the AI judge is wired, the
-natural version is the prompt's `exampleAnswer`. The stage also shows the prompt's grammar
-pattern, and the room shouts it back (`natural_version` cue). Each author privately sees their
+The stage shows the winning answer and the **natural version**: the winner's own answer as a whole
+sentence, so the room shouts back the joke that won. When nobody got a vote, or the winning
+answer is English or has a wrong form, it falls back to the prompt's `exampleAnswer`. The stage
+also shows the prompt's grammar pattern, and the room shouts it back (`natural_version` cue). Each author privately sees their
 points, how they answered, their own answer as a whole sentence, any form corrections, Pon's
 version and the pattern.
 
@@ -126,12 +127,15 @@ or more ahead of second place. This has its own short `penalty` phase and the `c
 | `intro` | Intro |
 | `prompt_read` | Each round card (with the prompt in round 3) |
 | `say_it_first` | Each answer phase with any N5+ player |
-| `reveal_react` (tier good) | Each reveal, with the prompt and the answers |
+| `reveal_react` (tier good) | Each reveal, with the prompt, the answers and `{tile}` (the shortest Japanese answer, so a bank line can snap back at it: 「なんで {tile}！？」) |
 | `ippon` | An IPPON, with the winner's name and answer |
+| `vote_tie` | Two or more answers tied for the most votes |
+| `vote_close` | Won by one vote, with `{name}` and `{tile}` |
+| `vote_landslide` | Every vote (2+) went one way, with `{name}` and `{tile}` |
 | `encore_invite` | Otherwise, with the winner's name and answer |
-| `reveal_react` (tier flop) | No votes at all |
+| `vote_zero` | No votes at all |
 | `encore_cheer` | A spoken encore |
-| `natural_version` | Each score phase |
+| `natural_version` | Each score phase, with `{name}` and `{tile}` when the winner's answer is shown |
 | `cushion_steal` | The steal |
 
 The engine adds `recap_award` at the end.
@@ -240,8 +244,8 @@ next round's answer phase.
 
 ## Known gaps
 
-- No AI judge: the natural version is the prompt's `exampleAnswer`, and there are no per-answer
-  corrections beyond form picks.
+- No AI judge: the natural version is the winner's answer as given (or the prompt's
+  `exampleAnswer`), and there are no per-answer corrections beyond form picks.
 - Fading tiles ("a word used from tiles 3 times must then be said or typed") is not built; it
   needs cross-game history.
 - Encore speech is recorded and rewarded for trying, not checked against the answer.
