@@ -160,7 +160,9 @@ export function hostUserPrompt(cue: HostCue, recent: readonly string[]): string 
 
 /** Every kana in `text` should appear, in order, in its reading. Catches a reading of some other sentence. */
 function readingMatches(text: string, kana: string): boolean {
-  const want = [...toHiragana(normalizeKana(text))].filter((c) => /[ぁ-ゖ]/.test(c));
+  // Digits are dropped first: normalizeKana would read the 4 in a name like bot4 as よん, which a reading of
+  // ぼっとふぉー doesn't contain. The kana around a number still has to match.
+  const want = [...toHiragana(normalizeKana(text.replace(/[0-9０-９]/g, ' ')))].filter((c) => /[ぁ-ゖ]/.test(c));
   const have = [...toHiragana(normalizeKana(kana))];
   let j = 0;
   for (const c of have) if (c === want[j]) j++;
