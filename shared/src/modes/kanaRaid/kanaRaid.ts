@@ -2,8 +2,10 @@
 // knocks them out from their phones. See docs/modes/kana-raid.md.
 //
 // Shape of a game: intro (chapter pick) → three waves, each prompt (banner) → answer (the
-// timed battle) → reveal (wave results) → score → finale (the Word Yōkai boss) → encore (the
-// raid's own recap: seen / correct tonight, the haunted list) → the room's recap.
+// timed battle) → reveal (wave results) → score; then the optional Ink Storm wave (draw each
+// kana on the phone, graded by shared/src/japanese/strokes.ts) → finale (the Word Yōkai
+// boss) → encore (the raid's own recap: seen / correct tonight, the haunted list) → the
+// room's recap.
 //
 // Time: yōkai have fixed spawn and escape times decided when a wave starts. The mode has no
 // timers, so an escape is settled at the next move (or when the wave ends); the stage animates
@@ -11,14 +13,16 @@
 
 import type { JpText, Kana, MinimalPair } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
+import { gradeInk, inkTipText, readInk, thin, type InkGrade, type InkPoint } from '../../japanese/strokes.js';
 import type { Phase, Viewer } from '../../protocol.js';
-import { isObject, moveError, MOVE_OK, pick, shuffled, type Award, type ContentLibrary, type Mode, type ModeContext, type MoveResult } from '../mode.js';
+import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type ContentLibrary, type Mode, type ModeContext, type MoveResult } from '../mode.js';
 import {
   buildDeck,
   chapterDifficulty,
   checkSound,
   checkWord,
   inOtherScript,
+  inkPoolFor,
   kanaTip,
   pairTip,
   pairsFor,
@@ -41,13 +45,23 @@ export const SPEAK_BONUS = 0.3;
 export const BONUS_CAP = 0.3;
 export const COMBO_WINDOW_MS = 4_000;
 export const BOSS_BONUS = 100;
+/** The three spoken waves; Ink Storm, when on, is wave 4 and the boss comes after it. */
 export const WAVES = 3;
+export const INK_WAVE = WAVES + 1;
 const CUE_GAP_MS = 2_500;
+/** Drawings the stage keeps for its ink replay. */
+const STAGE_INKS = 4;
+/** Points per stroke in the stage replay and the phone's "how it's written" replay. */
+const REPLAY_POINTS = 16;
+/** A passed drawing of a look-alike below this shape score still gets a vision second look. */
+const COACH_BELOW = 0.85;
 
 const WAVE_TIMING: Record<number, { gap: number; walk: number }> = {
   1: { gap: 1_800, walk: 26_000 },
   2: { gap: 1_500, walk: 22_000 },
   3: { gap: 2_600, walk: 26_000 },
+  // Ink Storm: drawing takes longer than tapping, so fewer, slower yōkai.
+  4: { gap: 3_000, walk: 34_000 },
 };
 
 export const WAVE_INFO: Record<number, { title: string; titleJa: string; how: string }> = {
@@ -56,6 +70,17 @@ export const WAVE_INFO: Record<number, { title: string; titleJa: string; how: st
   3: { title: 'Long and Short', titleJa: 'のばす・つまる', how: 'Hear one word, tap it, then say it. Listen for long sounds and little pauses.' },
   4: { title: 'Word Yōkai', titleJa: 'ことば妖怪', how: 'Break one piece each, then read the whole word together!' },
 };
+
+export const INK_INFO = { title: 'Ink Storm', titleJa: '墨の嵐', how: 'The yōkai wear their twins’ masks. Draw each one’s true form on your phone, stroke by stroke, then say it.' };
+
+const isInkWave = (s: RaidState) => s.ink && s.wave === INK_WAVE;
+
+/** The banner for the wave being played (the boss's is always WAVE_INFO[4]). */
+function waveInfoOf(s: RaidState): { title: string; titleJa: string; how: string } | null {
+  if (isInkWave(s)) return INK_INFO;
+  if (s.wave > s.waves) return s.wave === s.waves + 1 ? WAVE_INFO[4]! : null;
+  return WAVE_INFO[s.wave] ?? null;
+}
 
 const DURATIONS: Record<Phase, number> = {
   lobby: 0,
@@ -79,7 +104,7 @@ const MARK_OPTIONS: Record<string, { right: string; wrong: string[] }> = {
 
 // ---------- state ----------
 
-export type AttackKind = 'shout' | 'twin' | 'lookalike' | 'echo' | 'pair' | 'piece' | 'blow';
+export type AttackKind = 'shout' | 'twin' | 'lookalike' | 'echo' | 'pair' | 'draw' | 'piece' | 'blow';
 
 export interface RaidOption {
   id: string;
@@ -103,8 +128,10 @@ export interface Attack {
   /** Chapter 1 training wheels only. */
   romaji?: string;
   options: RaidOption[];
-  /** Wave 3: tap what you heard, then say it. */
-  step?: 'tap' | 'say';
+  /** Wave 3: tap what you heard, then say it. Ink Storm: draw it, then say it. */
+  step?: 'tap' | 'draw' | 'say';
+  /** Ink Storm: the script to draw it in. */
+  script?: Kana['script'];
   /** The word to say (Wave 3 say step, the boss's finishing blow). */
   word?: JpText;
   // ---- server only ----
@@ -131,6 +158,29 @@ export interface LastResult {
   splash: boolean;
   /** A retry of this item comes next. */
   retryNext: boolean;
+  /** Ink Storm: the drawing and how the kana is written, for the phone's replay. */
+  ink?: { mine: InkPoint[][]; ref: InkPoint[][]; clean: boolean; score: number };
+}
+
+/** One drawing for the stage's ink replay. */
+export interface InkShow {
+  id: string;
+  playerId: string;
+  char: string;
+  strokes: InkPoint[][];
+  ok: boolean;
+  clean: boolean;
+  at: number;
+}
+
+/** A drawing waiting for the server's optional vision second look (server only). */
+interface InkAsk {
+  key: string;
+  char: string;
+  candidates: string[];
+  strokes: InkPoint[][];
+  passed: boolean;
+  at: number;
 }
 
 export interface Yokai {
@@ -148,6 +198,8 @@ export interface Yokai {
   hitAt: number | null;
   /** The chapter leader's folklore name. */
   leader?: string;
+  /** Ink Storm: the twin's face the yōkai wears on stage (its true form is the answer). */
+  mask?: string;
 }
 
 interface Tally {
@@ -179,7 +231,11 @@ interface PlayerRaid {
   retryNext: { itemId: string; kind: AttackKind } | null;
   tally: Record<string, Tally>;
   wave: WaveStats;
-  stats: { hits: number; misses: number; shoutsSpoken: number; comboHits: number; pieces: number; defeats: number; comebacks: number; reads: number };
+  stats: { hits: number; misses: number; shoutsSpoken: number; comboHits: number; pieces: number; defeats: number; comebacks: number; reads: number; inkClean: number };
+  /** Drawings waiting for a vision second look (server only, at most two). */
+  inkAsks: InkAsk[];
+  /** The vision second look's line on the latest drawing. */
+  coach: { char: string; tip: string; at: number } | null;
 }
 
 export interface BossPiece {
@@ -211,6 +267,13 @@ export interface WaveResult {
 
 export interface RaidState {
   wave: number;
+  /** Waves before the boss: 3, or 4 with Ink Storm. */
+  waves: number;
+  /** Ink Storm is on (VIP's choice; needs stroke references in the content). */
+  ink: boolean;
+  inkAvailable: boolean;
+  /** The latest drawings, for the stage's replay. */
+  inks: InkShow[];
   /** ctx.now of the last change (the stage uses it to line its clock up with the server's). */
   at: number;
   chapters: ChapterInfo[];
@@ -246,8 +309,15 @@ export interface YokaiView {
 
 export interface KanaRaidView {
   mode: 'kana-raid';
-  /** 0 chapter pick, 1–3 waves, 4 boss, 5 recap. */
+  /** 0 chapter pick, 1…waves waves, waves + 1 boss, waves + 2 recap. */
   wave: number;
+  /** Waves before the boss: 3, or 4 when Ink Storm is on. */
+  waves: number;
+  ink: boolean;
+  /** Ink Storm can be switched on (the content has stroke references). */
+  inkAvailable: boolean;
+  /** Ink Storm: the latest drawings, for the stage's replay. */
+  inks: InkShow[];
   waveInfo: { title: string; titleJa: string; how: string } | null;
   at: number;
   /** The chapter list (intro only). */
@@ -283,6 +353,8 @@ export interface KanaRaidView {
     last: LastResult | null;
     hits: number;
     misses: number;
+    /** Ink Storm's vision second look on the latest drawing. */
+    coach: { char: string; tip: string } | null;
     recap: {
       seen: string[];
       correct: string[];
@@ -315,13 +387,20 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
     usesPack: false,
   },
 
-  setup(ctx) {
+  setup(ctx, opts) {
     const deck = deckOf(ctx);
     const first = deck.chapters[0]?.number ?? 1;
     const players: Record<string, PlayerRaid> = {};
     for (const p of ctx.players()) players[p.id] = newPlayer([first]);
+    // Ink Storm is on unless the VIP starts with { ink: false } (or turns it off at the chapter pick).
+    const inkAvailable = deck.strokes.size > 0;
+    const ink = inkAvailable && opts.extra?.ink !== false;
     return {
       wave: 0,
+      waves: ink ? INK_WAVE : WAVES,
+      ink,
+      inkAvailable,
+      inks: [],
       at: ctx.now,
       chapters: [...deck.chapters],
       players,
@@ -349,7 +428,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       case 'reveal':
         return 'score';
       case 'score':
-        return s.wave < WAVES ? 'prompt' : 'finale';
+        return s.wave < s.waves ? 'prompt' : 'finale';
       case 'finale':
         return 'encore';
       default:
@@ -365,8 +444,13 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       s.wave += 1;
       s.waveResult = null;
       s.horde = [];
+      s.inks = [];
       s.combo = { count: 0, players: [], lastAt: 0, best: 0 };
-      for (const p of Object.values(s.players)) p.wave = { base: 0, bonus: 0, hits: 0, misses: 0, spoken: 0 };
+      for (const p of Object.values(s.players)) {
+        p.wave = { base: 0, bonus: 0, hits: 0, misses: 0, spoken: 0 };
+        p.last = null;
+        p.retryNext = null;
+      }
       cue(s, ctx, 'raid_wave_start', true);
     }
     if (phase === 'answer') {
@@ -374,7 +458,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       for (const id of seatedIds(s, ctx)) assignAttack(s, id, ctx, deck);
     }
     if (phase === 'finale') {
-      s.wave = WAVES + 1;
+      s.wave = s.waves + 1;
       s.horde = [];
       s.combo = { count: 0, players: [], lastAt: 0, best: 0 };
       for (const p of Object.values(s.players)) {
@@ -387,7 +471,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       cue(s, ctx, 'raid_boss', true);
     }
     if (phase === 'encore') {
-      s.wave = WAVES + 2;
+      s.wave = s.waves + 2;
       const caught = Object.values(s.players).some((p) => p.stats.hits > 0);
       cue(s, ctx, caught ? 'raid_catch' : 'encore_cheer', true);
     }
@@ -407,7 +491,11 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
         y.endedAt = Math.min(ctx.now, y.escapeAt);
         s.escaped.push({ itemId: y.itemId, char: y.char });
       }
-      for (const p of Object.values(s.players)) p.attack = null;
+      for (const p of Object.values(s.players)) {
+        p.attack = null;
+        p.coach = null;
+        p.inkAsks = [];
+      }
       s.waveResult = {
         wave: s.wave,
         total: s.horde.length,
@@ -477,6 +565,28 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
         s.at = ctx.now;
         return MOVE_OK;
       }
+      case 'ink': {
+        // The VIP switches Ink Storm on or off at the chapter pick.
+        if (phase !== 'intro') return moveError('wrong-phase');
+        if (playerId !== ctx.vipId) return moveError('not-vip');
+        if (typeof raw.on !== 'boolean') return moveError('bad-move');
+        if (raw.on && !s.inkAvailable) return moveError('no-ink');
+        s.ink = raw.on;
+        s.waves = s.ink ? INK_WAVE : WAVES;
+        s.at = ctx.now;
+        return MOVE_OK;
+      }
+      case 'ink-tip': {
+        // The server's vision second look on a drawing (server/src/ink.ts). Only the server
+        // knows the key: it never leaves the mode state.
+        const ask = typeof raw.key === 'string' ? p.inkAsks.find((x) => x.key === raw.key) : undefined;
+        const tip = cleanText(raw.tip, 140);
+        if (!ask || !tip) return moveError('bad-move');
+        p.inkAsks = p.inkAsks.filter((x) => x !== ask);
+        p.coach = { char: ask.char, tip, at: ctx.now };
+        s.at = ctx.now;
+        return MOVE_OK;
+      }
       case 'attack': {
         if (phase !== 'answer' && phase !== 'finale') return moveError('wrong-phase');
         const a = p.attack;
@@ -502,7 +612,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
   },
 
   progress(s) {
-    return { round: Math.min(s.wave, WAVES + 1), totalRounds: WAVES + 1 };
+    return { round: Math.min(s.wave, s.waves + 1), totalRounds: s.waves + 1 };
   },
 
   view(s, phase, viewer, ctx) {
@@ -513,7 +623,11 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
     const view: KanaRaidView = {
       mode: 'kana-raid',
       wave: s.wave,
-      waveInfo: WAVE_INFO[s.wave] ?? null,
+      waves: s.waves,
+      ink: s.ink,
+      inkAvailable: s.inkAvailable,
+      inks: inBattle && isInkWave(s) ? s.inks : [],
+      waveInfo: waveInfoOf(s),
       at: s.at,
       chapters: phase === 'intro' ? s.chapters : [],
       picks: ids.map((id) => ({ playerId: id, chapters: s.players[id]!.chapters, ready: s.players[id]!.ready })),
@@ -547,6 +661,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
           last: live ? p.last : null,
           hits: p.stats.hits,
           misses: p.stats.misses,
+          coach: live && p.coach ? { char: p.coach.char, tip: p.coach.tip } : null,
           recap: phase === 'encore' ? playerRecap(p) : null,
         };
       }
@@ -595,7 +710,9 @@ function newPlayer(chapters: number[]): PlayerRaid {
     retryNext: null,
     tally: {},
     wave: { base: 0, bonus: 0, hits: 0, misses: 0, spoken: 0 },
-    stats: { hits: 0, misses: 0, shoutsSpoken: 0, comboHits: 0, pieces: 0, defeats: 0, comebacks: 0, reads: 0 },
+    stats: { hits: 0, misses: 0, shoutsSpoken: 0, comboHits: 0, pieces: 0, defeats: 0, comebacks: 0, reads: 0, inkClean: 0 },
+    inkAsks: [],
+    coach: null,
   };
 }
 
@@ -613,7 +730,8 @@ function cue(s: RaidState, ctx: ModeContext, event: Parameters<ModeContext['cue'
 function yokaiView(y: Yokai): YokaiView {
   return {
     id: y.id,
-    char: y.char,
+    // An ink yōkai shows only its mask: its true form is the answer.
+    char: y.mask ?? y.char,
     ...(y.alt ? { alt: y.alt } : {}),
     hp: y.hp,
     maxHp: y.maxHp,
@@ -628,8 +746,8 @@ function yokaiView(y: Yokai): YokaiView {
 
 function attackView(a: Attack): AttackView {
   const { answer: _a, played: _p, pieceIndex: _i, itemId: _id, ...rest } = a;
-  // The word to say is the answer while the player still has to pick it by ear.
-  if (a.kind === 'pair' && a.step === 'tap') delete rest.word;
+  // The word to say is the answer while the player still has to pick it by ear (or draw it).
+  if ((a.kind === 'pair' && a.step === 'tap') || (a.kind === 'draw' && a.step === 'draw')) delete rest.word;
   return rest;
 }
 
@@ -661,9 +779,13 @@ function playerRecap(p: PlayerRaid): NonNullable<NonNullable<KanaRaidView['me']>
   };
 }
 
-type Answer = { pick: string } | { say: Utterance } | { pass: true };
+type Answer = { pick: string } | { say: Utterance } | { pass: true } | { ink: InkPoint[][] };
 
 function readAnswer(raw: Record<string, unknown>): Answer | null {
+  if (raw.ink !== undefined) {
+    const ink = readInk(raw.ink);
+    return ink ? { ink } : null;
+  }
   if (typeof raw.pick === 'string' && raw.pick.length <= 8) return { pick: raw.pick };
   if (isUtterance(raw.say)) return { say: raw.say };
   if (raw.pass === true) return { pass: true };
@@ -678,9 +800,10 @@ function buildHorde(s: RaidState, ctx: ModeContext, deck: Deck): void {
   const ids = seatedIds(s, ctx);
   const n = ids.length || 1;
   const timing = WAVE_TIMING[s.wave] ?? WAVE_TIMING[1]!;
-  // Hits to knock one out: 1 solo, 2 for 2–3 players, 3 for 4–6, 4 for 7–8.
-  const hits = n === 1 ? 1 : 1 + Math.ceil(n / 3);
-  const count = s.wave === 3 ? Math.min(10, 3 + n) : Math.min(18, 5 + 2 * n);
+  const ink = isInkWave(s);
+  // Hits to knock one out: 1 solo, 2 for 2–3 players, 3 for 4–6, 4 for 7–8 (one fewer in Ink Storm).
+  const hits = Math.max(1, (n === 1 ? 1 : 1 + Math.ceil(n / 3)) - (ink ? 1 : 0));
+  const count = s.wave === 3 ? Math.min(10, 3 + n) : ink ? Math.min(12, 3 + n) : Math.min(18, 5 + 2 * n);
   const recent: string[] = [];
   const horde: Yokai[] = [];
   let t = ctx.now + 1_200;
@@ -690,7 +813,15 @@ function buildHorde(s: RaidState, ctx: ModeContext, deck: Deck): void {
     let itemId: string;
     let char: string;
     let alt: string | undefined;
-    if (s.wave === 3) {
+    let mask: string | undefined;
+    if (ink) {
+      const pool = inkPoolFor(deck, owner.chapters);
+      const fresh = pool.filter((k) => !recent.includes(k.id));
+      const k = pick(fresh.length ? fresh : pool, ctx.random)!;
+      itemId = k.id;
+      char = k.char;
+      mask = (k.twinId ? deck.byId.get(k.twinId)?.char : undefined) ?? inOtherScript(k.sound, k.script);
+    } else if (s.wave === 3) {
       const pairs = pairsFor(deck, owner.top);
       const fresh = pairs.filter((x) => !recent.includes(x.id));
       const pair = pick(fresh.length ? fresh : pairs, ctx.random)!;
@@ -709,7 +840,7 @@ function buildHorde(s: RaidState, ctx: ModeContext, deck: Deck): void {
     recent.push(itemId);
     if (recent.length > 3) recent.shift();
     const walk = Math.round(timing.walk * (0.9 + 0.2 * ctx.random()));
-    horde.push({ id: ctx.newId(), itemId, char, ...(alt ? { alt } : {}), hp: BASE_POINTS * hits, maxHp: BASE_POINTS * hits, spawnAt: t, escapeAt: t + walk, state: 'alive', endedAt: null, hitAt: null });
+    horde.push({ id: ctx.newId(), itemId, char, ...(alt ? { alt } : {}), ...(mask ? { mask } : {}), hp: BASE_POINTS * hits, maxHp: BASE_POINTS * hits, spawnAt: t, escapeAt: t + walk, state: 'alive', endedAt: null, hitAt: null });
     t += Math.round(timing.gap * (0.8 + 0.4 * ctx.random()));
   }
 
@@ -760,14 +891,15 @@ function assignAttack(s: RaidState, playerId: string, ctx: ModeContext, deck: De
   const p = s.players[playerId];
   if (!p) return;
   if (p.attack) p.replaced = [...p.replaced.slice(-4), p.attack.id];
-  p.attack = s.wave > WAVES ? bossAttack(s, playerId, ctx, deck) : waveAttack(s, playerId, p, ctx, deck);
+  p.attack = s.wave > s.waves ? bossAttack(s, playerId, ctx, deck) : waveAttack(s, playerId, p, ctx, deck);
 }
 
 function waveAttack(s: RaidState, playerId: string, p: PlayerRaid, ctx: ModeContext, deck: Deck): Attack | null {
   const now = ctx.now;
   const retry = p.retryNext;
   p.retryNext = null;
-  const poolIds = new Set(s.wave === 3 ? pairsFor(deck, p.top).map((x) => x.id) : poolFor(deck, p.chapters).map((k) => k.id));
+  const ink = isInkWave(s);
+  const poolIds = new Set(s.wave === 3 ? pairsFor(deck, p.top).map((x) => x.id) : (ink ? inkPoolFor : poolFor)(deck, p.chapters).map((k) => k.id));
   let itemId: string | undefined = retry?.itemId;
   let yokai: Yokai | undefined;
   if (itemId) yokai = s.horde.find((y) => y.itemId === itemId && isAlive(y, now));
@@ -791,6 +923,7 @@ function waveAttack(s: RaidState, playerId: string, p: PlayerRaid, ctx: ModeCont
   }
   const k = deck.byId.get(itemId);
   if (!k) return null;
+  if (ink) return drawAttack(base, k, deck, ctx.player(playerId)?.level === 'kana');
   const pool = poolFor(deck, p.chapters);
   let kind: AttackKind;
   if (retry) kind = retry.kind;
@@ -857,6 +990,29 @@ function kanaAttack(base: AttackBase, kind: AttackKind, k: Kana, pool: Kana[], d
   const wrong = distinct(k.confusableSounds ?? [], others, 3, (x) => x, new Set([k.sound]), ctx);
   const { options, answer } = dealOptions({ label: hearText }, wrong.map((x) => ({ label: inOtherScript(x, k.script) })), ctx);
   return { ...base, kind: 'shout', show: k.char, hear, options, answer, ...romaji };
+}
+
+/**
+ * Ink Storm: draw the kana. The phone shows its twin (the mask the yōkai wears) and the
+ * script to draw it in, voices the sound, and adds romaji for kana-level players and chapter 1
+ * (the answer is a drawing, so romaji gives nothing away).
+ */
+function drawAttack(base: AttackBase, k: Kana, deck: Deck, kanaLevel: boolean): Attack {
+  const twin = k.twinId ? deck.byId.get(k.twinId) : undefined;
+  const hearText = inOtherScript(k.sound, k.script);
+  return {
+    ...base,
+    kind: 'draw',
+    step: 'draw',
+    script: k.script,
+    show: twin?.char ?? hearText,
+    hear: k.sound,
+    hearText,
+    options: [],
+    answer: '',
+    word: { text: k.char, kana: k.sound, en: '' },
+    ...(kanaLevel || k.chapter === 1 ? { romaji: k.romaji } : {}),
+  };
 }
 
 function pairAttack(base: AttackBase, pair: MinimalPair, ctx: ModeContext): Attack {
@@ -1011,12 +1167,15 @@ function attack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ans: A
       assignAttack(s, playerId, ctx, deck);
       return MOVE_OK;
     }
+    case 'draw':
+      if (!k) return moveError('bad-attack');
+      return a.step === 'say' ? saySpell(s, playerId, p, a, k, ans, ctx, deck) : drawSpell(s, playerId, p, a, k, ans, ctx, deck);
     case 'piece':
       return pieceAttack(s, playerId, p, a, ans, ctx, deck);
     case 'blow': {
       const b = s.boss;
       if (!b) return moveError('bad-attack');
-      if ('pick' in ans) return moveError('bad-answer');
+      if (!('say' in ans) && !('pass' in ans)) return moveError('bad-answer');
       if ('pass' in ans) b.reads[playerId] = 'pass';
       else {
         const ok = checkWord(texts(ans.say), b.word, null);
@@ -1230,4 +1389,107 @@ function pieceAttack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, a
     }
   } else assignAttack(s, playerId, ctx, deck);
   return MOVE_OK;
+}
+
+// ---------- Ink Storm ----------
+
+/** Grades a drawing and lands it. A pass hits (full damage when clean, softer when messy) and asks to say it. */
+function drawSpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: Kana, ans: Answer, ctx: ModeContext, deck: Deck): MoveResult {
+  const ref = deck.strokes.get(k.id);
+  if (!ref) return moveError('bad-attack');
+  if (!('ink' in ans)) return moveError('bad-answer');
+  const g = gradeInk(ans.ink, ref);
+  const tip = g.clean ? null : inkTipText(g, k.char, ref);
+  // A messy pass (order, one stroke off) lands like a quiet Shout: full points, 70% damage.
+  const res = hitOrMiss(s, playerId, p, a, g.pass, g.clean ? 'tap' : 'quiet', ctx, { char: k.char, hear: k.sound, tip, difficulty: k.difficulty, en: kanaEn(deck, k), phrase: null });
+  const mine = ans.ink.map((x) => thin(x, REPLAY_POINTS));
+  res.tip = tip;
+  res.ink = { mine, ref: ref.map((x) => thin(x, REPLAY_POINTS)), clean: g.clean, score: g.shapeScore };
+  p.last = res;
+  if (g.clean) p.stats.inkClean += 1;
+  s.inks = [...s.inks.slice(1 - STAGE_INKS), { id: a.id, playerId, char: k.char, strokes: mine, ok: g.pass, clean: g.clean, at: ctx.now }];
+  askCoach(p, k, ans.ink, g, ctx, deck);
+  if (g.pass) {
+    // Say what you drew: the speaking bonus, from the same capped pool as every other bonus.
+    a.step = 'say';
+    a.id = ctx.newId();
+    return MOVE_OK;
+  }
+  assignAttack(s, playerId, ctx, deck);
+  return MOVE_OK;
+}
+
+/** After a drawing that landed: say the kana for the speaking bonus (or type it, or skip). */
+function saySpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: Kana, ans: Answer, ctx: ModeContext, deck: Deck): MoveResult {
+  let check: SoundCheck | undefined;
+  let spoken = false;
+  if ('say' in ans) {
+    check = checkSound(texts(ans.say), k, deck);
+    spoken = ans.say.via === 'speech';
+  } else if (!('pass' in ans)) return moveError('bad-answer');
+  const ok = !!check?.ok;
+  const base = Math.round(BASE_POINTS * levelScale(k.difficulty, p.top));
+  const bonus = ok && spoken ? payBonus(p, ctx, playerId, Math.round(base * SPEAK_BONUS)) : 0;
+  if (ok && spoken) {
+    p.wave.spoken += 1;
+    ctx.phrase(playerId, { itemId: k.id, text: k.char, kana: k.sound, en: kanaEn(deck, k), outcome: 'said' });
+  }
+  p.last = {
+    attackId: a.id,
+    ok: ok || !check,
+    kind: 'draw',
+    char: k.char,
+    hear: k.sound,
+    points: bonus,
+    damage: 0,
+    tip: check && !ok ? kanaTip(deck, k, undefined, check) : null,
+    combo: s.combo.count,
+    splash: false,
+    retryNext: false,
+  };
+  assignAttack(s, playerId, ctx, deck);
+  return MOVE_OK;
+}
+
+/**
+ * Queues a drawing for the server's optional vision second look: every miss, and passes of a
+ * look-alike that weren't clearly right. The question is closed-set: the target and the kana
+ * it is most easily drawn as (its look-alike sets, then the closest shapes by the stroke check).
+ */
+function askCoach(p: PlayerRaid, k: Kana, ink: InkPoint[][], g: InkGrade, ctx: ModeContext, deck: Deck): void {
+  const sets = deck.lookAlikes.filter((x) => x.kanaIds.includes(k.id));
+  if (g.pass && (!sets.length || g.shapeScore >= COACH_BELOW)) return;
+  const near = new Set<string>(sets.flatMap((x) => x.kanaIds).filter((id) => id !== k.id && deck.strokes.has(id)));
+  if (near.size < 3) {
+    const scored = [...deck.strokes]
+      .filter(([id]) => id !== k.id && !near.has(id) && deck.byId.get(id)?.script === k.script)
+      .map(([id, ref]) => ({ id, score: gradeInk(ink, ref).shapeScore }));
+    for (const x of scored.sort((a, b) => b.score - a.score).slice(0, 3 - near.size)) near.add(x.id);
+  }
+  const candidates = shuffled([k.char, ...[...near].slice(0, 3).map((id) => deck.byId.get(id)!.char)], ctx.random);
+  p.inkAsks = [...p.inkAsks.slice(-1), { key: ctx.newId(), char: k.char, candidates, strokes: ink, passed: g.pass, at: ctx.now }];
+}
+
+/** A drawing waiting for a vision second look, as the server's ink coach sees it. */
+export interface InkCoachRequest {
+  playerId: string;
+  /** Echo this back in the { kind: 'ink-tip' } move. */
+  key: string;
+  /** The kana the player was asked to draw. */
+  char: string;
+  /** The closed set to ask about (includes `char`, shuffled). */
+  candidates: string[];
+  strokes: InkPoint[][];
+  /** The offline check let it through. */
+  passed: boolean;
+  at: number;
+}
+
+/** Drawings waiting for the server's vision second look (read-only; the server answers with an 'ink-tip' move). */
+export function inkCoachRequests(state: unknown): InkCoachRequest[] {
+  const s = state as Partial<RaidState> | null;
+  if (!s || typeof s !== 'object' || !s.players) return [];
+  return Object.entries(s.players).flatMap(([playerId, p]) =>
+    (p.inkAsks ?? []).map((x) => ({ playerId, key: x.key, char: x.char, candidates: x.candidates, strokes: x.strokes, passed: x.passed, at: x.at })),
+  );
 }

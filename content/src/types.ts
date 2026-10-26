@@ -101,6 +101,17 @@ export interface LookAlikeSet {
   tip: string;
 }
 
+/**
+ * Ink Storm (the Raid's drawing wave): a kana's strokes in standard order. Each stroke is a
+ * simplified polyline from its start to its end, as [x, y] points in a 0–1 box (x right,
+ * y down). Generated from KanjiVG (CC BY-SA 3.0) by tools/content-strokes.ts.
+ */
+export interface KanaStrokes {
+  kanaId: string;
+  char: string;
+  strokes: [number, number][][];
+}
+
 /** Wave 3: Long and Short. Two words that differ only in length, a small っ, or a similar contrast. */
 export interface MinimalPair {
   id: string;

@@ -11,6 +11,7 @@ const KEYS = [
   'setPhraseTiles',
   'kana',
   'kanaChapters',
+  'kanaStrokes',
   'lookAlikeSets',
   'minimalPairs',
   'bossWords',

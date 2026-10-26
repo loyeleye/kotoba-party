@@ -59,6 +59,14 @@ small っ are never forgiven (おばさん ≠ おばあさん). Exact and forgi
 near misses and rejects do, and the LLM's points count only with a quote found in the answer (the Isekai'd
 checker's rule). `acceptable: null` means "can't tell": accept it with no bonus.
 
+## Ink Storm coach
+
+`createInkCoach({ llm })` (`inkCoach.ts`) takes a second look at a kana drawing the Raid's offline stroke check
+wasn't sure about: it rasterises the strokes to a 96×96 grayscale PNG (no native deps), asks the judge model a
+closed-set question ("They were asked to write ぬ. Is this drawing め, ぬ, ね?") and returns one moderated line, or
+null. `server/src/ink.ts` runs it after commits and hands the line back to the mode; it never changes a grade or
+waits. Requests may carry `images` (`LlmRequest.images`), sent as image blocks before the text.
+
 ## LLM
 
 `ClaudeLlm` uses structured outputs (Zod), effort `low`, server-side refusal fallbacks, no retries, a per-call

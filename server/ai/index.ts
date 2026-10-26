@@ -1,4 +1,4 @@
-// The AI layer's public face: the host's voice and the typed-answer judge. See README.md for wiring.
+// The AI layer's public face: the host's voice, the typed-answer judge and the Ink Storm coach. See README.md for wiring.
 
 export * from './types.js';
 export { HOSTS, type HostPersona, type HostVoiceConfig } from './hosts.js';
@@ -7,5 +7,6 @@ export { AudioStore, SilentTts, VoicevoxTts, type Audio, type TtsEngine } from '
 export { LineBank, STARTER_LINES, fillSlots, type Slots } from './lineBank.js';
 export { createHostVoice, LLM_EVENTS, type HostCue, type HostVoice, type HostVoiceOptions, type PendingLine, type VoicedLine } from './hostVoice.js';
 export { createJudge, judgeOffline, type Judge, type JudgeItem, type JudgeRequest, type RubricPoint, type Verdict } from './judge.js';
+export { createInkCoach, encodePng, rasterize, type InkCoach, type InkLook } from './inkCoach.js';
 export { defaultModerator, type Moderator } from './moderation.js';
 export { nameToKana, normalizeKana, numberToKana, readNumbers } from './kana.js';

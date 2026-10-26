@@ -1,11 +1,14 @@
 // Kana Yōkai Raid on the phone: mark your chapters, then attack the yōkai the server deals
 // you. Shout attacks use speakBox (hold-to-talk with a typed fallback) plus four tappable
 // sounds as the quiet fallback; listening attacks voice the sound with the phone's ja-JP
-// speech synthesis, or show it written when there's no Japanese voice.
+// speech synthesis, or show it written when there's no Japanese voice. Ink Storm draws on
+// inkPad, then asks to say what you drew.
 
 import { h } from '../../../shared/src/dom.js';
+import { inkSvg } from '../../../shared/src/inkSvg.js';
 import type { AttackView, KanaRaidView, LastResult } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
+import { inkPad } from '../components/inkPad.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
@@ -65,6 +68,7 @@ const PROMPTS: Record<AttackView['kind'], string> = {
   lookalike: 'Shapeshifter! Which one is this?',
   echo: 'Echo: tap the kana you hear',
   pair: 'Which word did you hear?',
+  draw: 'Ink Storm! Draw its true form',
   piece: 'Break your piece of the boss!',
   blow: 'Finishing blow: read the whole word together!',
 };
@@ -79,6 +83,8 @@ export const kanaRaidPhone: PhoneMode<KanaRaidView> = {
       me?.attack?.id,
       me?.attack?.step,
       me?.last?.attackId,
+      me?.coach?.tip,
+      game.ink,
       game.boss?.stage,
       game.waveResult ? 1 : 0,
       me?.recap ? 1 : 0,
@@ -119,7 +125,7 @@ export const kanaRaidPhone: PhoneMode<KanaRaidView> = {
   },
 };
 
-function chapterPick({ game, send }: PhoneContext<KanaRaidView>): HTMLElement {
+function chapterPick({ game, send, isVip }: PhoneContext<KanaRaidView>): HTMLElement {
   const me = game.me!;
   const chosen = new Set(me.chapters);
   const toggle = (n: number) => {
@@ -147,6 +153,16 @@ function chapterPick({ game, send }: PhoneContext<KanaRaidView>): HTMLElement {
         ),
       ),
     ),
+    isVip && game.inkAvailable
+      ? h(
+          'button',
+          { type: 'button', class: `raid-ink-toggle${game.ink ? ' on' : ''}`, 'aria-pressed': game.ink ? 'true' : 'false', onclick: () => void send({ kind: 'ink', on: !game.ink }) },
+          h('span', { lang: 'ja' }, '墨の嵐 '),
+          game.ink ? 'Ink Storm wave: on (draw kana on your phones)' : 'Ink Storm wave: off',
+        )
+      : game.ink
+        ? h('p', { class: 'hint small' }, '🖌 Tonight’s raid has an Ink Storm: you’ll draw kana on your phone.')
+        : null,
     me.ready
       ? h('p', { class: 'raid-ready' }, '✓ Ready! You can still change your chapters.')
       : h('button', { type: 'button', class: 'primary', onclick: () => void send({ kind: 'ready' }) }, 'Ready!'),
@@ -158,16 +174,38 @@ function banner(game: KanaRaidView): HTMLElement {
   return h(
     'div',
     { class: 'screen raid raid-banner' },
-    h('p', { class: 'raid-wave' }, game.wave > 3 ? 'BOSS' : `WAVE ${game.wave}`),
+    h('p', { class: 'raid-wave' }, game.wave > game.waves ? 'BOSS' : `WAVE ${game.wave}`),
     w ? h('p', { class: 'big' }, h('span', { lang: 'ja' }, w.titleJa), ' ', w.title) : null,
     w ? h('p', { class: 'hint' }, w.how) : null,
   );
 }
 
+/** Ink Storm: your drawing next to how it's written (replayed stroke by stroke). */
+function inkReplay(ink: NonNullable<LastResult['ink']>): HTMLElement {
+  return h(
+    'div',
+    { class: 'raid-ink-replay' },
+    h('figure', {}, inkSvg(ink.mine, { class: 'mine', strokeMs: 250 }), h('figcaption', {}, 'yours')),
+    h('figure', {}, inkSvg(ink.ref, { class: 'ref', grid: true, numbers: true, strokeMs: 600, elapsedMs: -300 }), h('figcaption', {}, 'how it’s written')),
+  );
+}
+
 function lastStrip(last: LastResult | null): HTMLElement | null {
   if (!last) return null;
+  if (last.kind === 'draw' && last.ink) {
+    return h(
+      'div',
+      { class: `raid-last ${last.ok ? 'ok' : 'miss'} ink` },
+      last.ok ? h('strong', {}, last.ink.clean ? 'Clean strike!' : 'Hit!') : h('span', { class: 'raid-last-char', lang: 'ja' }, last.char),
+      last.ok && last.points ? ` +${last.points}` : '',
+      last.combo >= 2 ? h('span', { class: 'raid-combo-tag' }, ` COMBO ×${last.combo}`) : null,
+      last.tip ? h('span', { class: 'raid-last-tip' }, last.tip) : null,
+      last.ink.clean ? null : inkReplay(last.ink),
+      last.retryNext ? h('small', {}, 'One more try:') : null,
+    );
+  }
   if (last.ok) {
-    const what = last.kind === 'blow' ? 'You read it!' : last.splash ? 'Splash hit!' : 'Hit!';
+    const what = last.kind === 'blow' ? 'You read it!' : last.kind === 'draw' ? (last.points ? 'Said it!' : 'On to the next!') : last.splash ? 'Splash hit!' : 'Hit!';
     return h(
       'div',
       { class: 'raid-last ok' },
@@ -228,8 +266,9 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
     const sub = boss?.stage === 'blow' ? 'Waiting for everyone to read it…' : boss ? 'Your pieces are broken! Cheer the others on.' : 'Watch the stage!';
     return h('div', { class: 'screen raid' }, head, h('p', { class: 'big' }, 'Nice work!'), h('p', { class: 'hint' }, sub));
   }
-  const prompt = a.kind === 'pair' && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? `Try again: ${PROMPTS[a.kind].toLowerCase()}` : PROMPTS[a.kind]);
-  const parts: (HTMLElement | null)[] = [head, prompt];
+  const prompt = (a.kind === 'pair' || a.kind === 'draw') && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? (a.kind === 'draw' ? 'Try again: draw its true form' : `Try again: ${PROMPTS[a.kind].toLowerCase()}`) : PROMPTS[a.kind]);
+  const coach = me.coach ? h('p', { class: 'raid-coach' }, h('span', { lang: 'ja' }, `🖌 ${me.coach.char}: `), me.coach.tip) : null;
+  const parts: (HTMLElement | null)[] = [head, coach, prompt];
   switch (a.kind) {
     case 'shout':
       parts.push(glyph(a), speak(a, send, 'Hold and shout its sound'), h('p', { class: 'hint small' }, 'Or tap its sound (hits a little softer):'), options(a, send, 'small'));
@@ -252,6 +291,26 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
           a.hear ? hearButton(a.hear) : null,
           speak(a, send, 'Hold and say it'),
           h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'attack', attackId: a.id, pass: true }) }, 'Skip saying it'),
+        );
+      break;
+    case 'draw':
+      if (a.step === 'say')
+        parts.push(
+          h('p', { class: 'raid-say' }, 'Now say what you drew!'),
+          a.word ? h('div', { class: 'raid-word', lang: 'ja' }, h('span', {}, a.word.text)) : null,
+          speak(a, send, 'Hold and say its sound'),
+          h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'attack', attackId: a.id, pass: true }) }, 'Skip: next yōkai'),
+        );
+      else
+        parts.push(
+          h(
+            'div',
+            { class: 'raid-draw-cue' },
+            h('span', { class: 'raid-mask', lang: 'ja' }, a.show ?? ''),
+            h('span', { class: 'raid-draw-what' }, `→ draw it in ${a.script === 'katakana' ? 'katakana' : 'hiragana'}`, a.romaji ? h('small', {}, ` (${a.romaji})`) : null),
+            a.hear ? hearButton(a.hear, '🔊') : null,
+          ),
+          inkPad({ key: a.id, onSend: (ink) => send({ kind: 'attack', attackId: a.id, ink }) }),
         );
       break;
     case 'piece':

@@ -22,11 +22,12 @@ Code:
 | `reveal` | Wave results: caught, escaped, best combo. | 9 s |
 | `score` | Points per player this wave, with the speaking share. | 7 s |
 | … | Waves 1–3 repeat prompt → answer → reveal → score. | |
+| … | **Wave 4, Ink Storm** (on by default; see below): draw each kana on the phone, then say it. | ≈45–60 s |
 | `finale` | **Boss: Word Yōkai.** | 75 s, or earlier when everyone has read the word |
 | `encore` | **The raid's recap**: what the team got right, the haunted list, each phone's own tally. | 25 s |
 | `recap` | The room's recap: standings, Fude's awards, the phrasebook (memory cards). | |
 
-`progress()` reports waves as rounds: 1–3, then 4 for the boss.
+`progress()` reports waves as rounds: 1–3 (1–4 with Ink Storm), then one more for the boss.
 
 ### The horde
 
@@ -126,6 +127,126 @@ Wave 3; that's the accepted cost of the fallback.
 If `ctx.content.kana` is empty the raid runs on a built-in placeholder set in `deck.ts` (the
 five vowels plus す, the pair いえ/いいえ, the boss アイス); missing chapters, look-alike sets,
 pairs or bosses fall back separately. The stage notes when the placeholder set is in use.
+
+## Ink Storm (墨の嵐): the drawing wave (v1.1, "Brush")
+
+The design doc's Brush mode, played as a fourth wave between Wave 3 and the boss. It is **on by
+default** whenever the content has stroke references; the VIP can switch it off on the chapter
+pick screen (a toggle on the VIP's phone) or start with `extra: { ink: false }`. With it off, or
+with no stroke data (test fixtures, the placeholder set), the raid is the three waves as before.
+`waves` in the view says how many waves come before the boss (3 or 4), so the boss is wave
+`waves + 1` and the raid recap `waves + 2`.
+
+Code:
+
+- Stroke references: `content/src/kana/strokes.ts` (`kanaStrokes`, in `ContentLibrary.kanaStrokes`),
+  **generated from KanjiVG** by `tools/content-strokes.ts` (`npx tsx tools/content-strokes.ts`,
+  fetches the 92 SVGs with curl, or reads them from a folder). Each stroke is a simplified
+  polyline (Ramer–Douglas–Peucker, 0–1 box, start → end). KanjiVG is © Ulrich Apel and
+  contributors, CC BY-SA 3.0 (https://kanjivg.tagaini.net); the generated file carries the
+  attribution and is shared under the same licence.
+- The offline check: `shared/src/japanese/strokes.ts` (`gradeInk`, `inkTipText`, `readInk`).
+- Mode: the `draw` attack in `kanaRaid.ts`; phone pad `controller/src/components/inkPad.ts`;
+  replays `shared/src/inkSvg.ts`; stage strip in `stage/src/modes/kanaRaid.ts`.
+- Vision coach: `server/ai/inkCoach.ts` (rasteriser, PNG encoder, closed-set question) wired by
+  `server/src/ink.ts` in `server/src/main.ts`, only when an LLM key is configured.
+- Bots draw with `tools/bots/ink.ts` (`handDraw`: the reference moved, resized, tilted and
+  wobbled). Tests: `tests/brush.test.ts`.
+
+### How it plays
+
+The yōkai walk on **wearing their twins' masks**: a ぬ yōkai's tag shows ヌ. Each phone gets the
+mask, "→ draw it in hiragana" (or katakana), a 🔊 button, and romaji for kana-level players and
+chapter-1 kana (the answer is a drawing, so romaji gives nothing away). The player draws on a
+rice-paper pad (pointer events, `touch-action: none`, Undo, Clear, "Cast it!"), and the server
+grades the strokes. The stage never sees the true form; it shows the masks, and under the arena
+the team's last four drawings brushed on stroke by stroke (✦ clean, ✓ hit, ✗ miss).
+
+| Result | What happens |
+|---|---|
+| **Clean** (right count, order and direction, shape close) | Hit: `100 × levelScale` points and the same damage. |
+| **Messy pass** (strokes out of order, or one stroke too many / too few with a clearly right shape) | Hit: full points, 70% damage (like a quiet Shout), and a tip ("ア's first stroke starts at the top-left…") with a replay of how it's written. |
+| **Miss** (wrong shape, a long stroke backwards, scribble, a tap) | No points lost. Tip, your drawing next to the numbered stroke-order replay, and one retry. |
+
+After a hit the phone asks **"Now say what you drew!"**: a spoken, correct sound (the closed-set
+`checkSound`) earns the speaking bonus (+30% of the hit's points), paid from the same pool capped
+at 30% of the player's points that wave; typing or skipping moves on with no bonus. Drawing is not
+speaking, so the drawing itself never earns the bonus.
+
+Toughness: one hit fewer per yōkai than the other waves (min 1); 3 + players yōkai (max 12); walk
+34 s, 3 s apart. Each drawing goes in the phrasebook like a tapped kana (`said` if you then said it).
+
+### The offline check (`gradeInk`)
+
+Both drawings are fitted into the same box (centred, longest side 1: size and position on the pad
+don't matter) and every stroke is resampled to 24 evenly spaced points.
+
+- **Count:** equal, or one off. One off is tried as two neighbouring strokes joined in one go
+  (き and さ are often written that way); it passes only with a shape score ≥ 0.62.
+- **Order:** every assignment of drawn strokes to reference strokes (up to 6 strokes) is tried;
+  the order is wrong when a reshuffle fits clearly better than stroke-for-stroke.
+- **Direction:** each stroke at least 0.3 long is compared forwards and backwards. A reversed long
+  stroke fails, because for ソ/ン and シ/ツ the direction *is* the letter. Dots and ticks are never
+  checked.
+- **Shape score** (0–1): half the two-way mean nearest-point distance between the inks, half the
+  matched per-stroke distance. Pass ≥ 0.5.
+- **Rejected outright:** a drawing smaller than 6% of the pad, more than 2.6× the reference's ink,
+  or 4+ strokes too many.
+
+Measured on synthetic handwriting (`handDraw`, tests): the reference with 0.025 wobble passes
+cleanly for all 92 kana; 98% pass at 0.06 wobble; every reversed long stroke is caught; random
+scribbles never pass; one kana drawn as another passes 0.8% of the time, almost all genuine
+look-alikes (ぬ/め/ね/れ/わ, は/ほ, エ/ユ/ニ, へ/ヘ), which is what the vision second look is for.
+
+Wire limits (`readInk`, validated in the mode): at most 12 strokes, 64 points per stroke, 400
+points in all, every coordinate a finite number in 0–1 (±0.1 is clamped). The phone thins its
+strokes to fit before sending.
+
+### The vision second look (optional)
+
+When `ANTHROPIC_API_KEY` is set, `server/src/ink.ts` watches commits for drawings the Raid has
+queued (every miss, and passes of a look-alike scoring under 0.85). It rasterises the strokes to a
+96×96 grayscale PNG (no native dependencies), asks the judge model through `server/ai/llm.ts`
+(same model config, same per-game budget as the host) a closed-set question — "They were asked
+to write ぬ. Is this drawing め, ぬ, ね?" — the target, its look-alike sets, then the nearest shapes
+by the stroke check — and gets back `{ looksLike, tip }`. The line (moderated, ≤ 120 characters,
+"Looks like め! …" when it read as another kana) goes back to the mode as an `ink-tip` move on the
+player's behalf (`Room.inject`) and shows on that phone only, as "🖌 ぬ: …".
+
+It never decides a hit or blocks the game: the move is graded and landed before the question is
+asked, the key the tip must echo exists only in the server's mode state (never in a view), lines
+older than 15 s are not asked for, and at most 12 looks per game. Without a key nothing changes.
+
+## Ink Storm decisions made on Ladi's behalf
+
+1. **Ink Storm is wave 4, just before the boss, and on by default.** Waves 1–3 keep their numbers; the VIP turns it off at the chapter pick (no lobby UI exists for mode options yet).
+2. **The prompt is the twin, not the sound alone.** A sound alone can't say which script to draw; the twin (ヌ for ぬ) plus "draw it in hiragana" and 🔊 does, and it's the Raid's own twin idea. The stage shows only the mask, so the TV never gives the answer away.
+3. **Romaji shows for kana-level players and chapter-1 kana** in Ink Storm, since a drawing can't be romaji'd. Elsewhere decision 10 stands.
+4. **Stroke references come from KanjiVG** (CC BY-SA 3.0), generated, not hand-authored; the counts are checked against the school table in tests.
+5. **A reversed long stroke is a miss; a wrong order is a softer hit.** Order is a habit to build; direction changes the letter (ソ/ン, シ/ツ).
+6. **One stroke too many or too few can still pass** when the shape is clearly right (joined strokes are normal handwriting), never cleanly.
+7. **Messy hits deal 70% damage**, reusing the quiet-Shout rule, with full points: fair to beginners, and the yōkai feels it.
+8. **The speaking bonus comes from a "say it" step after a hit**, paid from the usual capped pool; drawing alone earns none.
+9. **One fewer hit per yōkai and fewer, slower yōkai** in Ink Storm, tuned by eye from the time a drawing takes (~5–8 s).
+10. **The vision coach only adds a tip, never changes the result**, runs on misses and doubtful look-alikes only, and has its own cap of 12 looks per game inside the $0.10 budget.
+11. **Look-alike kana that share a shape (へ/ヘ, り/リ) both pass**: drawing へ for ヘ is right in all but name.
+12. **Phones replay the reference with numbered strokes** after any non-clean drawing, as the "one private clue" before the retry.
+
+## Ink Storm open questions
+
+- **Small phones (design doc):** the pad is `min(100%, 340px, 52vh)` and works at 320–360 px wide in headless Chromium, but nobody has drawn on a real 4-inch phone yet. Is a 300 px pad enough for ほ or ね with a thumb? Should small phones get a "draw bigger" zoom?
+- Are the thresholds right for real fingers? Synthetic handwriting is tidier than a party's. Log grades (shape score, tip) in playtests and retune `INK_PASS`.
+- Should the room see whose drawing it is on the TV? It's fun, but a bad drawing on the big screen may sting; a "hide my ink" option?
+- Should katakana and hiragana alternate, or follow the yōkai mix (now: the player's chapters, either script)?
+- Voiced kana (が, ぱ) and combinations are not drawn yet: references would be the base kana plus ゛/゜ (KanjiVG has them).
+- An on-device classifier (design doc: ETL handwriting set) to replace most LLM calls.
+
+## Ink Storm known gaps
+
+- The vision coach is wired and tested with a scripted model, not yet run against the real API.
+- No lobby control for the toggle; it lives on the VIP's chapter-pick screen.
+- Stage layout was checked at 1280×720, where the ink strip sits partly below the fold; it is laid out for 1080p TVs.
+- No stroke references for voiced, small or special kana; a player whose chapters are only those draws from the basic kana up to their top chapter.
 
 ## Decisions made on Ladi's behalf
 
