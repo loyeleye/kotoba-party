@@ -46,7 +46,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 18 | Content reviewed by a fluent speaker | All content is `draft` | ⚠️ | Not a licence issue, but a paid product needs the reviewer pass (open question C1) |
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
-| 21 | Music: original chiptune tunes, synthesised in the browser | `stage/src/music/` | ✅ ⚠️ | Nothing to license. AI-written, so copyright may be weak (like row 6); have a composer finish or replace the main themes if that matters |
+| 21 | Music: recorded tracks (CC0, CC BY 4.0) and original synth tunes | `stage/assets/music/`, `stage/src/music/` | 🟡 | Credit the seven CC BY tracks on a credits screen (`TRACK_CREDITS`); or buy Kevin MacLeod's paid licence to drop his credits |
 
 ## Details
 
@@ -262,19 +262,25 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 21. Music
 
-- **What:** Thirteen short loops and jingles (lobby, one theme per mode, scores, finale, recap fanfare,
-  reveal drum roll), written for Kotoba Party by Claude on 2026-10-26 as note data in
-  `stage/src/music/songs.ts` and played by our own Web Audio synth (`stage/src/music/engine.ts`). See
-  [music.md](music.md).
-- **Licence:** no third-party music, samples, sound fonts or audio libraries, so there are no terms
-  to read. The synth is our code; the drums are synthesised noise and oscillators.
-- **Ownership (⚠️):** the melodies were AI-written with no human composer, so, as with the AI art (point
-  2 below), copyright protection may be weak: we can use and sell them, but might not be able to stop
-  someone copying them. They are short pentatonic phrases written from scratch, not based on any song;
-  if one turns out to sound like an existing tune, rewrite it.
-- **To sell:** nothing required. If the soundtrack matters for the brand, have a composer finish or
-  replace the lobby and main themes (the same plan as the hero art). Any licensed track or sample pack
-  added later needs its own row here.
+- **What:** recorded tracks in `stage/assets/music/` (listed with author, licence and source in
+  `stage/src/music/tracks.ts`), plus original tunes played by our own Web Audio synth
+  (`stage/src/music/songs.ts`, written by Claude, no third-party samples). See [music.md](music.md).
+- **CC0, no conditions:** Determination (HydroGene,
+  [OGA](https://opengameart.org/content/determination-anime-style-music)); Bouncing, Love Love Love and
+  Happy Dance (Holizna, [OGA](https://opengameart.org/content/happy-pop-electronic-collection)).
+  Licences as stated on those pages, read 2026-10-26.
+- **CC BY 4.0, credit required (🟡):** Monkeys Spinning Monkeys, Hep Cats, Carefree, Investigations,
+  Funkorama and Sneaky Snitch (Kevin MacLeod, [incompetech.com](https://incompetech.com/music/royalty-free/licenses/),
+  read 2026-10-26: free under Creative Commons with credit, or a paid Standard License with no credit);
+  Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY
+  allows commercial use. The credit lines are in `TRACK_CREDITS`; the credits screen isn't built yet
+  (same as the VOICEVOX credits, row 1).
+- **Risks (⚠️, small):** OpenGameArt licences are what the uploader states; there's no proof they wrote
+  the track. Holizna and HydroGene publish widely under these licences, so the risk is low. Kevin
+  MacLeod's tracks are used in many games and videos, so players may recognise them. The synth tunes
+  were AI-written with no human composer, so their copyright may be weak (like row 6).
+- **To sell:** build the credits screen with every `TRACK_CREDITS` line (or buy MacLeod's Standard
+  License and keep the CC BY credit for Take a Trip). Any new track gets its own line here.
 
 ## AI art: non-commercial vs commercial
 

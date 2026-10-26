@@ -5,21 +5,22 @@
 import { h, mount } from '../../../shared/src/dom.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { MUSIC_LEVEL, audioReady, audioSupported, getSound, isMuted, onAudioReady, onMuteChange, setMuted, unlockAudio } from '../sound.js';
-import { cueFor, type Cue } from './cues.js';
-import { SongVoice } from './engine.js';
+import { cueFor, type Cue, type MusicId } from './cues.js';
+import { SongVoice, TrackVoice } from './engine.js';
 import { SONGS, type SongId } from './songs.js';
+import { TRACKS, isTrack } from './tracks.js';
 
 /** How far ahead bars are scheduled, seconds. */
 const AHEAD = 0.35;
 
 interface Playing {
-  id: SongId;
-  voice: SongVoice;
+  id: MusicId;
+  voice: SongVoice | TrackVoice;
   /** Context time of the next bar to schedule. */
   nextAt: number;
   nextBar: number;
   /** For a lead-in: the loop that follows it. */
-  then?: SongId;
+  then?: MusicId;
 }
 
 let playing: Playing | null = null;
@@ -28,11 +29,11 @@ let stingSeq = -1;
 let lastPhaseSeq = -1;
 let timer: ReturnType<typeof setInterval> | null = null;
 
-function start(id: SongId, cue: Cue, at?: number, then?: SongId): void {
+function start(id: MusicId, cue: Cue, at?: number, then?: MusicId): void {
   const sound = getSound();
   if (!sound) return;
   playing?.voice.fadeOut();
-  const voice = new SongVoice(sound.ctx, SONGS[id], sound.music, cue.mix);
+  const voice = isTrack(id) ? new TrackVoice(sound.ctx, TRACKS[id].url, sound.music, cue.mix) : new SongVoice(sound.ctx, SONGS[id], sound.music, cue.mix);
   playing = { id, voice, nextAt: at ?? sound.ctx.currentTime + 0.08, nextBar: 0, then };
   timer ??= setInterval(pump, 60);
   pump();
@@ -52,9 +53,9 @@ function pump(): void {
   const now = sound.ctx.currentTime;
   // Woken late (a background tab): skip ahead rather than pile up old bars.
   if (playing.nextAt < now - 0.5) playing.nextAt = now + 0.05;
-  while (playing && playing.nextAt < now + AHEAD) {
-    const p = playing;
-    const song = SONGS[p.id];
+  while (playing && playing.voice instanceof SongVoice && playing.nextAt < now + AHEAD) {
+    const p = playing as Playing & { voice: SongVoice };
+    const song = SONGS[p.id as SongId];
     if (p.nextBar >= p.voice.plan.bars && !song.loop) {
       if (p.then) start(p.then, want, p.nextAt);
       else stop();

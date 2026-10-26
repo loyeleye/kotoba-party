@@ -3,10 +3,14 @@
 import type { ModeId, Phase } from '../../../shared/src/protocol.js';
 import type { Mix } from './engine.js';
 import type { SongId } from './songs.js';
+import { isTrack, type TrackId } from './tracks.js';
+
+/** A synth song or a recorded track. */
+export type MusicId = SongId | TrackId;
 
 export interface Cue {
   /** The loop to play, or null for silence. */
-  song: SongId | null;
+  song: MusicId | null;
   mix: Mix;
   /** A jingle that plays once before the loop starts. */
   leadIn?: SongId;
@@ -17,18 +21,21 @@ export interface Cue {
 }
 
 /** Each mode's theme for its rounds. */
-export const MODE_THEMES: Record<ModeId, SongId | null> = {
-  oogiri: 'festive',
-  'phrase-bingo': 'festive',
-  oekaki: 'festive',
-  debug: 'festive',
-  'word-gauntlet': 'quiz',
-  concentration: 'quiz',
-  tourist: 'stroll',
+export const MODE_THEMES: Record<ModeId, MusicId | null> = {
+  // The social games: recorded pop, funk and swing.
+  oogiri: 'monkeys',
+  'phrase-bingo': 'love',
+  oekaki: 'heps',
+  tourist: 'trip',
+  omiai: 'carefree',
+  debug: 'bouncing',
+  // The quiz games and the mystery.
+  'word-gauntlet': 'investigations',
+  concentration: 'funkorama',
+  'onsen-murder': 'sneaky',
+  // Adventure: an anime battle theme for the Raid; the synth's train rush for Last Train.
+  'kana-raid': 'raid',
   'last-train': 'rush',
-  'kana-raid': 'battle',
-  'onsen-murder': 'mystery',
-  omiai: 'gentle',
   // Karaoke Duel plays its own backing track (karaokeAudio.ts).
   'karaoke-duel': null,
 };
@@ -40,10 +47,15 @@ export const MODE_THEMES: Record<ModeId, SongId | null> = {
 const TALKING: ReadonlySet<Phase> = new Set(['answer', 'encore', 'penalty', 'finale']);
 
 export function cueFor(mode: ModeId | null, phase: Phase): Cue {
-  if (phase === 'lobby') return { song: 'lobby', mix: 'full' };
-  if (phase === 'recap') return { song: 'outro', mix: 'full', leadIn: 'fanfare' };
-  const theme = mode ? MODE_THEMES[mode] : 'festive';
+  if (phase === 'lobby') return { song: 'bouncing', mix: 'full' };
+  if (phase === 'recap') return { song: 'happy-dance', mix: 'full' };
+  const theme = mode ? MODE_THEMES[mode] : 'bouncing';
   if (theme === null) return { song: null, mix: 'full' };
+  // A recorded theme plays on through scores and finales; restarting it every round would grate.
+  if (isTrack(theme)) {
+    if (phase === 'score') return { song: theme, mix: 'full' };
+    if (phase === 'finale') return { song: theme, mix: 'under' };
+  }
   if (phase === 'score') return { song: 'score', mix: 'full' };
   if (phase === 'finale') return { song: 'finale', mix: 'under' };
   const mix = TALKING.has(phase) ? 'under' : 'full';
