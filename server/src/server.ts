@@ -5,16 +5,20 @@ import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import QRCode from 'qrcode';
 import { WebSocketServer, type WebSocket } from 'ws';
-import { DEFAULT_DURATIONS, type PhaseDurations } from '../../shared/src/constants.js';
-import { CLOSE, type CreateRoomResponse, type JoinRequest, type Prompt, type RoomInfo } from '../../shared/src/protocol.js';
+import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
+import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type RoomInfo } from '../../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/roomCode.js';
 import { systemClock, type Clock } from './clock.js';
+import { addReadings, type Reader } from './reading.js';
 import { Room, type RoomSocket } from './room.js';
 
 export interface ServerConfig {
   clock?: Clock;
-  durations?: Partial<PhaseDurations>;
-  prompts: readonly Prompt[];
+  /** Fixed phase lengths overriding every mode's own (tests, fast bot runs). */
+  durations?: Partial<Record<Phase, number>>;
+  content: ContentLibrary;
+  /** Kana reader for answers with kanji (see reading.ts). */
+  reader?: Reader | null;
   seatHoldMs?: number;
   /** Close a room after this long with nobody connected. Default 10 minutes; 0 disables. */
   roomIdleMs?: number;
@@ -26,6 +30,7 @@ export interface ServerConfig {
   pingIntervalMs?: number;
   maxRooms?: number;
   onCommit?: (room: Room, version: number) => void;
+  onCues?: (room: Room, cues: HostCue[], phaseSeq: number) => void;
 }
 
 export interface KotobaServer {
@@ -48,7 +53,6 @@ const MIME: Record<string, string> = {
 
 export function createKotobaServer(config: ServerConfig): KotobaServer {
   const clock = config.clock ?? systemClock;
-  const durations: PhaseDurations = { ...DEFAULT_DURATIONS, ...config.durations };
   const rooms = new Map<string, Room>();
   const maxRooms = config.maxRooms ?? 500;
   const staticDir = config.staticDir ? resolve(config.staticDir) : undefined;
@@ -63,12 +67,13 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
     const room = new Room({
       code,
       clock,
-      durations,
-      prompts: config.prompts,
+      durations: config.durations,
+      content: config.content,
       seatHoldMs: config.seatHoldMs,
       idleMs: config.roomIdleMs ?? 10 * 60_000,
       onClose: (r) => rooms.delete(r.code),
       onCommit: config.onCommit,
+      onCues: config.onCues,
     });
     rooms.set(code, room);
     return room;
@@ -117,6 +122,9 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       if (action === 'commands' && req.method === 'POST') {
         const token = bearer(req);
         const body = await readJson(req);
+        if (body && typeof body === 'object' && (body as { type?: unknown }).type === 'play') {
+          addReadings(body, config.reader ?? null);
+        }
         const result = token ? room.command(token, body) : null;
         if (!result) return send(res, 401, { error: token && room.wasReleased(token) ? 'seat-released' : 'bad-token' });
         return send(res, 200, result);

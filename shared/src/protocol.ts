@@ -1,8 +1,24 @@
 // Wire protocol shared by the server, the stage, the phone controller and the bots.
 // See docs/protocol.md for the prose version and docs/decisions for the reasoning.
 
-export const PHASES = ['lobby', 'intro', 'prompt', 'answer', 'reveal', 'encore', 'score', 'recap'] as const;
+import type { HostId, Level } from '../../content/src/types.js';
+import type { Award, ModeInfo, PhraseEntry } from './modes/mode.js';
+import type { GameView } from './modes/views.js';
+
+export type { Level, HostId };
+
+/**
+ * The shared round skeleton. Every mode moves through these; a mode can skip phases
+ * and loop prompt → … → score as many times as it likes. `penalty` and `finale` are for
+ * modes with an extra beat (Last Train's penalty minigame and Platform Dash, the Raid's boss).
+ */
+export const PHASES = ['lobby', 'intro', 'prompt', 'answer', 'reveal', 'encore', 'score', 'penalty', 'finale', 'recap'] as const;
 export type Phase = (typeof PHASES)[number];
+
+export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'debug'] as const;
+export type ModeId = (typeof MODE_IDS)[number];
+
+export const LEVELS: readonly Level[] = ['kana', 'n5', 'n4'];
 
 /** Who a view is rendered for. */
 export type Viewer = { kind: 'stage' } | { kind: 'player'; playerId: string };
@@ -11,43 +27,28 @@ export interface PlayerView {
   id: string;
   name: string;
   seat: number;
+  level: Level;
   connected: boolean;
   isVip: boolean;
   score: number;
-  /** Answered this round (shown as a tick, never the text). */
-  answered: boolean;
-  /** Voted this round. */
-  voted: boolean;
 }
 
-export interface Prompt {
-  id: string;
+/** What the host is saying right now (shown as a subtitle, voiced if audio is ready). */
+export interface HostSay {
+  host: HostId;
   text: string;
-  /** Optional reading or translation line; topic packs fill this from Phase 1. */
-  subtitle?: string;
+  kana: string;
+  en: string;
+  audioUrl?: string;
+  /** The phase this line belongs to; a line from an earlier phase is not shown. */
+  phaseSeq: number;
 }
 
-/** An answer as shown during the vote: anonymous. */
-export interface RevealAnswer {
-  id: string;
-  text: string;
-}
-
-/** One answer after the vote, with its author. */
-export interface AnswerResult {
-  answerId: string;
-  authorId: string;
-  authorName: string;
-  text: string;
-  votes: number;
-  points: number;
-  ippon: boolean;
-}
-
-export interface RoundResult {
-  round: number;
-  promptId: string;
-  answers: AnswerResult[];
+export interface RecapView {
+  standings: { playerId: string; name: string; score: number }[];
+  awards: Award[];
+  /** Only the viewer's own phrasebook (empty on the stage). */
+  phrasebook: PhraseEntry[];
 }
 
 /**
@@ -59,20 +60,23 @@ export interface RoomView {
   phase: Phase;
   /** Increments on every phase change; commands and timers are tied to it. */
   phaseSeq: number;
-  round: number;
-  totalRounds: number;
   /** Server-clock epoch ms when the current phase ends, or null if it waits for a person. */
   deadline: number | null;
+  round: number;
+  totalRounds: number;
+  /** The mode being played, or the one last played while in the lobby. */
+  mode: ModeId | null;
+  /** Menu for the VIP (lobby only). */
+  modes: ModeInfo[];
+  /** Topic packs the VIP can pick (lobby only). */
+  packs: { id: string; title: string; titleJa: string; blurb: string }[];
   players: PlayerView[];
-  prompt: Prompt | null;
-  /** Anonymous answers, from the reveal phase on. */
-  reveal: RevealAnswer[];
-  /** Authors, votes and points, from the encore phase on. */
-  results: RoundResult | null;
-  /** Final standings in the recap phase. */
-  standings: { playerId: string; name: string; score: number }[];
+  host: HostSay | null;
+  /** The mode's own view, while a game runs. */
+  game: GameView | null;
+  recap: RecapView | null;
   /** Only in a player's own view. */
-  me: { playerId: string; answerId: string | null; answerText: string | null; votedFor: string | null } | null;
+  me: { playerId: string; level: Level } | null;
 }
 
 /** Server → client WebSocket message. */
@@ -93,28 +97,27 @@ export const CLOSE = {
 
 /** Every command carries a client-made id; a retried id returns the first result (idempotent). */
 export type Command =
-  | { id: string; type: 'start'; rounds?: number }
-  | { id: string; type: 'answer'; text: string }
-  | { id: string; type: 'vote'; answerId: string }
+  | { id: string; type: 'start'; mode: ModeId; rounds?: number; packId?: string; extra?: Record<string, unknown> }
+  | { id: string; type: 'play'; move: unknown }
+  | { id: string; type: 'setLevel'; level: Level }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' };
 
 export type CommandType = Command['type'];
 
-export type CommandResult = { ok: true; v: number } | { ok: false; error: CommandError; v: number };
+export type CommandResult = { ok: true; v: number } | { ok: false; error: string; v: number };
 
+/** Room-level errors. Modes add their own (e.g. 'own-answer'), so results carry a plain string. */
 export type CommandError =
   | 'bad-command'
   | 'wrong-phase'
   | 'not-vip'
   | 'not-allowed'
-  | 'already-answered'
-  | 'already-voted'
-  | 'own-answer'
-  | 'unknown-answer'
-  | 'empty-answer'
+  | 'unknown-mode'
+  | 'not-enough-players'
+  | 'too-many-players'
   | 'stale-phase'
-  | 'no-players';
+  | 'bad-level';
 
 export interface CreateRoomResponse {
   code: string;
@@ -124,6 +127,7 @@ export interface CreateRoomResponse {
 
 export interface JoinRequest {
   name: string;
+  level?: Level;
   /** Anonymous id kept in the phone's storage; lets a reloaded page find its seat. */
   deviceId?: string;
   /** Token from an earlier join; the surest way back to a held seat. */

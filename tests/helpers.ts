@@ -1,13 +1,11 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import type { Prompt, RoomView } from '../shared/src/protocol.js';
-import { viewFor } from '../shared/src/view.js';
+import { fileURLToPath } from 'node:url';
+import type { RoomView } from '../shared/src/protocol.js';
+import { loadContent } from '../server/src/content.js';
 import type { Room } from '../server/src/room.js';
 import { createKotobaServer, type ServerConfig } from '../server/src/server.js';
 
-export const prompts: Prompt[] = (
-  JSON.parse(readFileSync(new URL('../content/debug/prompts.json', import.meta.url), 'utf8')) as { prompts: Prompt[] }
-).prompts;
+export const content = loadContent(fileURLToPath(new URL('../', import.meta.url)));
 
 export const hashView = (view: RoomView): string => createHash('sha1').update(JSON.stringify(view)).digest('hex');
 
@@ -20,15 +18,15 @@ export class TruthRecorder {
 
   readonly onCommit = (room: Room, version: number): void => {
     const hashes = new Map<string, string>();
-    hashes.set('stage', hashView(viewFor(room.state, { kind: 'stage' })));
-    for (const p of room.state.players) hashes.set(p.id, hashView(viewFor(room.state, { kind: 'player', playerId: p.id })));
+    hashes.set('stage', hashView(room.viewFor({ kind: 'stage' })));
+    for (const p of room.state.players) hashes.set(p.id, hashView(room.viewFor({ kind: 'player', playerId: p.id })));
     this.byVersion.set(version, hashes);
   };
 }
 
 export async function startServer(config: Partial<ServerConfig> = {}) {
   const truth = new TruthRecorder();
-  const server = createKotobaServer({ prompts, pingIntervalMs: 0, roomIdleMs: 0, onCommit: truth.onCommit, ...config });
+  const server = createKotobaServer({ content, pingIntervalMs: 0, roomIdleMs: 0, onCommit: truth.onCommit, ...config });
   const baseUrl = await server.listen(0, '127.0.0.1');
   return { server, baseUrl, truth };
 }

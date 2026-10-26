@@ -17,6 +17,7 @@
     "bots": "tsx tools/bots/cli.ts"
   },
   "dependencies": {
+    "kuromoji": "^0.1.2",
     "qrcode": "^1.5.4",
     "ws": "^8.22.0"
   },
@@ -26,7 +27,6 @@
     "@types/qrcode": "^1.5.6",
     "@types/ws": "^8.18.2",
     "esbuild": "^0.28.2",
-    "kuromoji": "^0.1.2",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"

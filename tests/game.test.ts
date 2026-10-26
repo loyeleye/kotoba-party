@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_DURATIONS, IPPON_BONUS, POINTS_PER_VOTE } from '../shared/src/constants.js';
+import { IPPON_BONUS, POINTS_PER_VOTE } from '../shared/src/constants.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { CommandBody } from '../shared/src/client.js';
+import type { DebugState, DebugView } from '../shared/src/modes/debug/debug.js';
+import { EMPTY_CONTENT } from '../shared/src/modes/mode.js';
 import type { Command } from '../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../shared/src/roomCode.js';
 import { viewFor } from '../shared/src/view.js';
@@ -9,8 +11,7 @@ import { viewFor } from '../shared/src/view.js';
 let ids = 0;
 const ctx = (now = 0): GameContext => ({
   now,
-  durations: DEFAULT_DURATIONS,
-  prompts: [{ id: 'p1', text: 'prompt one' }, { id: 'p2', text: 'prompt two' }],
+  content: { ...EMPTY_CONTENT, debugPrompts: [{ id: 'p1', text: 'prompt one' }, { id: 'p2', text: 'prompt two' }] },
   newId: () => `a${String(++ids).padStart(4, '0')}`,
   random: () => 0.5,
 });
@@ -21,6 +22,7 @@ let cmdId = 0;
 const cmd = (state: GameState, actor: ReturnType<typeof as> | typeof stage, command: CommandBody) =>
   apply(state, { type: 'command', actor, command: { ...command, id: `c${++cmdId}` } as Command }, ctx());
 const act = (state: GameState, action: GameAction) => apply(state, action, ctx());
+const ds = (state: GameState) => state.modeState as DebugState;
 
 function lobby(n: number): GameState {
   const s = createGame('BCDF');
@@ -32,7 +34,7 @@ function lobby(n: number): GameState {
 }
 
 function toAnswer(s: GameState, rounds = 3) {
-  expect(cmd(s, stage, { type: 'start', rounds }).changed).toBe(true);
+  expect(cmd(s, stage, { type: 'start', mode: 'debug', rounds }).changed).toBe(true);
   act(s, { type: 'timeout', phaseSeq: s.phaseSeq }); // intro → prompt
   act(s, { type: 'timeout', phaseSeq: s.phaseSeq }); // prompt → answer
   expect(s.phase).toBe('answer');
@@ -45,7 +47,7 @@ describe('round state machine', () => {
     const seen: string[] = [s.phase];
     while (s.phase !== 'recap') {
       // One answer keeps the reveal phase alive (with no answers it is skipped).
-      if (s.phase === 'answer') cmd(s, as('p1'), { type: 'answer', text: 'hi' });
+      if (s.phase === 'answer') cmd(s, as('p1'), { type: 'play', move: { kind: 'answer', text: 'hi' } });
       act(s, { type: 'timeout', phaseSeq: s.phaseSeq });
       seen.push(s.phase);
     }
@@ -56,7 +58,7 @@ describe('round state machine', () => {
   it('ignores stale timers', () => {
     const s = lobby(2);
     toAnswer(s);
-    cmd(s, as('p1'), { type: 'answer', text: 'hi' });
+    cmd(s, as('p1'), { type: 'play', move: { kind: 'answer', text: 'hi' } });
     const seq = s.phaseSeq;
     act(s, { type: 'timeout', phaseSeq: seq });
     expect(s.phase).toBe('reveal');
@@ -68,34 +70,34 @@ describe('round state machine', () => {
     const s = lobby(3);
     toAnswer(s);
     act(s, { type: 'connection', playerId: 'p3', connected: false });
-    cmd(s, as('p1'), { type: 'answer', text: 'one' });
+    cmd(s, as('p1'), { type: 'play', move: { kind: 'answer', text: 'one' } });
     expect(s.phase).toBe('answer');
-    cmd(s, as('p2'), { type: 'answer', text: 'two' });
+    cmd(s, as('p2'), { type: 'play', move: { kind: 'answer', text: 'two' } });
     expect(s.phase).toBe('reveal');
   });
 
   it('rejects double answers, own-answer votes, double votes and wrong phases', () => {
     const s = lobby(3);
-    expect(cmd(s, as('p1'), { type: 'answer', text: 'x' }).error).toBe('wrong-phase');
+    expect(cmd(s, as('p1'), { type: 'play', move: { kind: 'answer', text: 'x' } }).error).toBe('wrong-phase');
     toAnswer(s);
-    cmd(s, as('p1'), { type: 'answer', text: 'one' });
-    expect(cmd(s, as('p1'), { type: 'answer', text: 'again' }).error).toBe('already-answered');
-    expect(cmd(s, as('p2'), { type: 'answer', text: '   ' }).error).toBe('empty-answer');
-    cmd(s, as('p2'), { type: 'answer', text: 'two' });
-    cmd(s, as('p3'), { type: 'answer', text: 'three' });
+    cmd(s, as('p1'), { type: 'play', move: { kind: 'answer', text: 'one' } });
+    expect(cmd(s, as('p1'), { type: 'play', move: { kind: 'answer', text: 'again' } }).error).toBe('already-answered');
+    expect(cmd(s, as('p2'), { type: 'play', move: { kind: 'answer', text: '   ' } }).error).toBe('empty-answer');
+    cmd(s, as('p2'), { type: 'play', move: { kind: 'answer', text: 'two' } });
+    cmd(s, as('p3'), { type: 'play', move: { kind: 'answer', text: 'three' } });
     expect(s.phase).toBe('reveal');
-    const own = s.answers.find((a) => a.authorId === 'p1')!;
-    const other = s.answers.find((a) => a.authorId === 'p2')!;
-    expect(cmd(s, as('p1'), { type: 'vote', answerId: own.id }).error).toBe('own-answer');
-    expect(cmd(s, as('p1'), { type: 'vote', answerId: 'nope' }).error).toBe('unknown-answer');
-    expect(cmd(s, as('p1'), { type: 'vote', answerId: other.id }).changed).toBe(true);
-    expect(cmd(s, as('p1'), { type: 'vote', answerId: other.id }).error).toBe('already-voted');
+    const own = ds(s).answers.find((a) => a.authorId === 'p1')!;
+    const other = ds(s).answers.find((a) => a.authorId === 'p2')!;
+    expect(cmd(s, as('p1'), { type: 'play', move: { kind: 'vote', answerId: own.id } }).error).toBe('own-answer');
+    expect(cmd(s, as('p1'), { type: 'play', move: { kind: 'vote', answerId: 'nope' } }).error).toBe('unknown-answer');
+    expect(cmd(s, as('p1'), { type: 'play', move: { kind: 'vote', answerId: other.id } }).changed).toBe(true);
+    expect(cmd(s, as('p1'), { type: 'play', move: { kind: 'vote', answerId: other.id } }).error).toBe('already-voted');
   });
 
   it('only the VIP or the stage can start and skip', () => {
     const s = lobby(2);
-    expect(cmd(s, as('p2'), { type: 'start' }).error).toBe('not-vip');
-    expect(cmd(s, as('p1'), { type: 'start' }).changed).toBe(true);
+    expect(cmd(s, as('p2'), { type: 'start', mode: 'debug' }).error).toBe('not-vip');
+    expect(cmd(s, as('p1'), { type: 'start', mode: 'debug' }).changed).toBe(true);
     expect(cmd(s, as('p2'), { type: 'skip', phaseSeq: s.phaseSeq }).error).toBe('not-vip');
     expect(cmd(s, as('p1'), { type: 'skip', phaseSeq: s.phaseSeq - 1 }).error).toBe('stale-phase');
     expect(cmd(s, stage, { type: 'skip', phaseSeq: s.phaseSeq }).changed).toBe(true);
@@ -105,10 +107,10 @@ describe('round state machine', () => {
 
 describe('scoring', () => {
   function playRound(s: GameState, votes: Record<string, string>) {
-    for (const p of s.players) cmd(s, as(p.id), { type: 'answer', text: `${p.id} says` });
+    for (const p of s.players) cmd(s, as(p.id), { type: 'play', move: { kind: 'answer', text: `${p.id} says` } });
     expect(s.phase).toBe('reveal');
-    const byAuthor = (id: string) => s.answers.find((a) => a.authorId === id)!.id;
-    for (const [voter, author] of Object.entries(votes)) cmd(s, as(voter), { type: 'vote', answerId: byAuthor(author) });
+    const byAuthor = (id: string) => ds(s).answers.find((a) => a.authorId === id)!.id;
+    for (const [voter, author] of Object.entries(votes)) cmd(s, as(voter), { type: 'play', move: { kind: 'vote', answerId: byAuthor(author) } });
   }
 
   it('scores votes, gives IPPON when every other voter agrees (3+), and doubles the last round', () => {
@@ -116,18 +118,18 @@ describe('scoring', () => {
     toAnswer(s, 2);
     playRound(s, { p2: 'p1', p3: 'p1', p4: 'p1', p1: 'p2' });
     expect(s.phase).toBe('encore');
-    const r1 = s.results!.answers;
+    const r1 = ds(s).results!;
     expect(r1.find((a) => a.authorId === 'p1')).toMatchObject({ votes: 3, ippon: true, points: 3 * POINTS_PER_VOTE + IPPON_BONUS });
     expect(r1.find((a) => a.authorId === 'p2')).toMatchObject({ votes: 1, ippon: false, points: POINTS_PER_VOTE });
 
     act(s, { type: 'timeout', phaseSeq: s.phaseSeq }); // encore → score
     act(s, { type: 'timeout', phaseSeq: s.phaseSeq }); // score → prompt, round 2
     act(s, { type: 'timeout', phaseSeq: s.phaseSeq }); // prompt → answer
-    expect(s.round).toBe(2);
+    expect(ds(s).round).toBe(2);
     playRound(s, { p1: 'p2', p3: 'p2', p4: 'p3', p2: 'p1' });
     expect(s.phase).toBe('encore');
     // Last round counts double; split votes, so no IPPON.
-    expect(s.results!.answers.find((a) => a.authorId === 'p2')).toMatchObject({ votes: 2, ippon: false, points: 2 * POINTS_PER_VOTE * 2 });
+    expect(ds(s).results!.find((a) => a.authorId === 'p2')).toMatchObject({ votes: 2, ippon: false, points: 2 * POINTS_PER_VOTE * 2 });
     expect(s.players.find((p) => p.id === 'p1')!.score).toBe(3 * POINTS_PER_VOTE + IPPON_BONUS + POINTS_PER_VOTE * 2);
   });
 
@@ -136,7 +138,7 @@ describe('scoring', () => {
     toAnswer(s);
     act(s, { type: 'timeout', phaseSeq: s.phaseSeq });
     expect(s.phase).toBe('encore');
-    expect(s.results!.answers).toEqual([]);
+    expect(ds(s).results!).toEqual([]);
   });
 
   it('a released player loses their vote but the room plays on', () => {
@@ -144,7 +146,7 @@ describe('scoring', () => {
     toAnswer(s);
     playRound(s, { p1: 'p2' });
     act(s, { type: 'release', playerId: 'p1' });
-    expect(s.votes.p1).toBeUndefined();
+    expect(ds(s).votes.p1).toBeUndefined();
     expect(s.phase).toBe('reveal');
   });
 });
@@ -170,12 +172,27 @@ describe('views', () => {
   it('keeps answers anonymous until the encore', () => {
     const s = lobby(3);
     toAnswer(s);
-    for (const p of s.players) cmd(s, as(p.id), { type: 'answer', text: `${p.id} says` });
-    const v = viewFor(s, stage);
+    for (const p of s.players) cmd(s, as(p.id), { type: 'play', move: { kind: 'answer', text: `${p.id} says` } });
+    const v = viewFor(s, stage, EMPTY_CONTENT);
+    const game = v.game as DebugView;
     expect(v.phase).toBe('reveal');
-    expect(JSON.stringify(v.reveal)).not.toContain('authorId');
-    expect(v.results).toBeNull();
-    expect(viewFor(s, as('p2')).me?.answerText).toBe('p2 says');
+    expect(JSON.stringify(game.reveal)).not.toContain('authorId');
+    expect(game.results).toBeNull();
+    expect((viewFor(s, as('p2'), EMPTY_CONTENT).game as DebugView).mine?.answerText).toBe('p2 says');
+  });
+
+  it('lets players pick a level in the lobby but not mid-game', () => {
+    const s = lobby(2);
+    expect(cmd(s, as('p1'), { type: 'setLevel', level: 'kana' }).changed).toBe(true);
+    expect(s.players[0]!.level).toBe('kana');
+    expect(cmd(s, as('p1'), { type: 'setLevel', level: 'n9' as never }).error).toBe('bad-level');
+    toAnswer(s);
+    expect(cmd(s, as('p1'), { type: 'setLevel', level: 'n4' }).error).toBe('wrong-phase');
+  });
+
+  it('refuses a mode the room is too small for', () => {
+    const s = lobby(2);
+    expect(cmd(s, stage, { type: 'start', mode: 'oogiri' }).error).toBe('not-enough-players');
   });
 });
 

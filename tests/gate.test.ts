@@ -10,7 +10,10 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createRoom } from '../shared/src/client.js';
-import type { RoomView, RoundResult } from '../shared/src/protocol.js';
+import type { DebugResult, DebugView } from '../shared/src/modes/debug/debug.js';
+import type { RoomView } from '../shared/src/protocol.js';
+
+type RoundResult = { answers: DebugResult[] };
 import { Bot, Director, type BotScript } from '../tools/bots/bot.js';
 import { hashView, startServer, until } from './helpers.js';
 
@@ -54,7 +57,7 @@ describe('Phase 0 gate: 8 bots × 100 rounds', () => {
     };
 
     const results = new Map<number, RoundResult>(); // keyed by the reveal phase's phaseSeq
-    const gameScores: { standings: RoomView['standings']; rounds: RoundResult[] }[] = [];
+    const gameScores: { standings: { playerId: string; name: string; score: number }[]; rounds: RoundResult[] }[] = [];
     let currentGame: RoundResult[] = [];
     let finished = false;
 
@@ -65,12 +68,14 @@ describe('Phase 0 gate: 8 bots × 100 rounds', () => {
       onDone: () => (finished = true),
       onState: (view, v) => {
         record('stage', view, v);
-        if (view.phase === 'encore' && view.results && !results.has(view.phaseSeq - 1)) {
-          results.set(view.phaseSeq - 1, view.results);
-          currentGame.push(view.results);
+        const game = view.game as DebugView | null;
+        if (view.phase === 'encore' && game?.results && !results.has(view.phaseSeq - 1)) {
+          const result = { answers: game.results };
+          results.set(view.phaseSeq - 1, result);
+          currentGame.push(result);
         }
-        if (view.phase === 'recap' && currentGame.length) {
-          gameScores.push({ standings: view.standings, rounds: currentGame });
+        if (view.phase === 'recap' && view.recap && currentGame.length) {
+          gameScores.push({ standings: view.recap.standings, rounds: currentGame });
           currentGame = [];
         }
       },

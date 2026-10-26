@@ -25,6 +25,7 @@
         <span id="round" class="round"></span>
         <span id="timer" class="timer"></span>
       </div>
+      <div id="host" class="host" hidden></div>
       <div id="main" class="main"></div>
       <ul id="players" class="players"></ul>
     </section>
@@ -35,7 +36,9 @@
         <span id="version" class="version"></span>
       </div>
       <div class="debug-row">
-        <label>Rounds <input id="rounds" type="number" min="1" max="20" value="3" /></label>
+        <label>Game <select id="mode"></select></label>
+        <label>Pack <select id="pack"></select></label>
+        <label>Rounds <input id="rounds" type="number" min="1" max="20" placeholder="auto" /></label>
         <button id="btn-start">Start</button>
         <button id="btn-skip">Skip phase</button>
         <button id="btn-again">Play again</button>

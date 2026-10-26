@@ -42,3 +42,41 @@ button { font: inherit; cursor: pointer; }
 
 .banner { position: sticky; top: 0; z-index: 2; background: var(--warn); color: #1a1426; font-weight: 700; padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
 .timer { position: fixed; top: max(12px, env(safe-area-inset-top)); right: 16px; font-size: 22px; font-weight: 900; color: var(--warn); font-variant-numeric: tabular-nums; }
+
+.levels { display: grid; gap: 8px; }
+.level-btn, .mode-btn { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.level-btn span, .mode-btn small { color: var(--muted); font-size: 14px; }
+.level-btn.on, .mode-btn.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.vip-start select[hidden] { display: none; }
+.secondary { font-size: 18px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.award { color: var(--warn); font-weight: 700; margin: 0; }
+.phrasebook ul { padding-left: 18px; display: grid; gap: 6px; }
+.phrasebook small { color: var(--muted); }
+.pb-missed { color: var(--warn); }
+
+.speak { display: grid; gap: 10px; }
+.talk { width: 100%; padding: 28px 16px; font-size: 22px; font-weight: 800; border-radius: 999px; border: 0; background: var(--good); color: #10241b; touch-action: none; user-select: none; -webkit-user-select: none; }
+.talk.live { background: var(--accent); color: #fff; transform: scale(0.98); }
+.heard { min-height: 1.3em; margin: 0; font-size: 20px; }
+.speak-actions { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.quiet summary { color: var(--muted); cursor: pointer; }
+.typed { display: grid; gap: 8px; margin-top: 8px; }
+.typed-row { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; }
+.typed-row input { font-size: 20px; padding: 12px; }
+
+.kana-pad { display: grid; gap: 4px; }
+.kana-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.kana-row.tools { grid-template-columns: repeat(4, 1fr) 2fr; }
+.kana-key { padding: 10px 0; font-size: 20px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.kana-key.wide { grid-column: span 1; }
+.kana-gap { display: block; }
+
+.jp { display: grid; gap: 2px; }
+.jp p { margin: 0; }
+.jp-text { font-size: 24px; font-weight: 700; }
+.jp-kana { color: var(--muted); }
+.jp-en { color: var(--muted); font-size: 15px; }
+.tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+.tile { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 18px; }
+.tile.on { border-color: var(--accent); background: #3a2230; }
+.tile small { display: block; color: var(--muted); font-size: 12px; }

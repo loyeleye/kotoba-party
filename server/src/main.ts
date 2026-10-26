@@ -1,13 +1,16 @@
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import type { Prompt } from '../../shared/src/protocol.js';
+import { loadContent } from './content.js';
+import { bankVoice, hostDirector } from './host.js';
+import { createReader } from './reading.js';
 import { createKotobaServer } from './server.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const pack = JSON.parse(readFileSync(`${root}content/debug/prompts.json`, 'utf8')) as { prompts: Prompt[] };
 
+const content = loadContent(root);
 const server = createKotobaServer({
-  prompts: pack.prompts,
+  content,
+  onCues: hostDirector(bankVoice(content)),
+  reader: await createReader(),
   staticDir: `${root}dist`,
   publicUrl: process.env.PUBLIC_URL,
 });

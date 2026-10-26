@@ -8,6 +8,7 @@
 
 import { parseArgs } from 'node:util';
 import { createRoom } from '../../shared/src/client.js';
+import type { DebugView } from '../../shared/src/modes/debug/debug.js';
 import { Bot, Director, politeScript, type BotScript } from './bot.js';
 
 const { values } = parseArgs({
@@ -51,8 +52,9 @@ if (!code) {
       process.exit(problems.length ? 1 : 0);
     },
     onState: (view) => {
-      if (view.phase === 'score' && view.results) {
-        const top = [...view.results.answers].sort((a, b) => b.votes - a.votes)[0];
+      const game = view.game as DebugView | null;
+      if (view.phase === 'score' && game?.results) {
+        const top = [...game.results].sort((a, b) => b.votes - a.votes)[0];
         console.log(`round ${view.round}/${view.totalRounds}: ${top ? `${top.authorName} wins with ${top.votes} votes` : 'no answers'}`);
       }
     },

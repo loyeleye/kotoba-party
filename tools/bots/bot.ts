@@ -2,6 +2,7 @@
 // so a bot exercises exactly the code path a phone does: HTTP join, WebSocket push, HTTP commands.
 
 import { RoomClient, joinRoom, newCommandId, type CommandBody } from '../../shared/src/client.js';
+import type { DebugView } from '../../shared/src/modes/debug/debug.js';
 import type { CommandResult, RoomView } from '../../shared/src/protocol.js';
 
 /**
@@ -121,18 +122,19 @@ export class Bot {
         return;
       }
       if (this.script.skipAnswer(turn, seat)) return;
-      const result = await this.sendScripted({ type: 'answer', text: `${this.name}の答え ${round}` }, turn, seat);
+      const result = await this.sendScripted({ type: 'play', move: { kind: 'answer', text: `${this.name}の答え ${round}` } }, turn, seat);
       if (result.ok) this.answersSent += 1;
       return;
     }
 
     if (phase === 'reveal') {
       if (this.script.skipVote(turn, seat)) return;
-      const view = this.client.view!;
-      const options = view.reveal.map((a) => a.id).filter((id) => id !== view.me?.answerId);
+      const game = this.client.view?.game as DebugView | null;
+      if (!game) return;
+      const options = game.reveal.map((a) => a.id).filter((id) => id !== game.mine?.answerId);
       if (options.length === 0) return;
       const answerId = this.script.pickVote(turn, seat, options);
-      const result = await this.sendScripted({ type: 'vote', answerId }, turn, seat);
+      const result = await this.sendScripted({ type: 'play', move: { kind: 'vote', answerId } }, turn, seat);
       if (result.ok) this.votes.push({ revealSeq: phaseSeq, answerId });
     }
   }
@@ -203,7 +205,7 @@ export class Director {
         const seq = view.phaseSeq;
         this.startedForSeq = seq;
         const rounds = Math.min(this.opts.roundsPerGame, this.opts.totalRounds - this.roundsPlayed);
-        void this.client.send({ type: 'start', rounds }).then((r) => {
+        void this.client.send({ type: 'start', mode: 'debug', rounds }).then((r) => {
           if (r.ok) this.gamesStarted += 1;
           else if (this.startedForSeq === seq) this.startedForSeq = -1;
         });
