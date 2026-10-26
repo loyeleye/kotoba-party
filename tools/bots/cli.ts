@@ -6,7 +6,7 @@
 //   npm run bots -- --mode oogiri --bots 5      # make a room and play one game of a real mode
 //
 // Options: --url (default http://localhost:3000), --code, --bots, --rounds, --drop <seconds>, --fast,
-// --mode <oogiri|last-train|kana-raid|word-gauntlet|concentration> and --games (real modes only).
+// --mode <oogiri|last-train|kana-raid|word-gauntlet|concentration|onsen-murder> and --games (real modes only).
 
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -17,6 +17,7 @@ import { MODES } from '../../shared/src/modes/registry.js';
 import { MODE_IDS, type ModeId } from '../../shared/src/protocol.js';
 import { Bot, Director, politeScript, type BotScript, type ModePolicy } from './bot.js';
 import { concentrationPolicy } from './policies/concentration.js';
+import { onsenMurderPolicy } from './policies/onsenMurder.js';
 import { kanaRaidPolicy } from './policies/kanaRaid.js';
 import { lastTrainPolicy } from './policies/lastTrain.js';
 import { oogiriPolicy } from './policies/oogiri.js';
@@ -58,6 +59,8 @@ function policyFor(seat: number): ModePolicy | undefined {
       return kanaRaidPolicy();
     case 'word-gauntlet':
       return wordGauntletPolicy(content());
+    case 'onsen-murder':
+      return onsenMurderPolicy();
     case 'concentration':
       return concentrationPolicy();
     default:

@@ -19,6 +19,7 @@ const KEYS = [
   'lastTrainScenarios',
   'hostLines',
   'hostAwards',
+  'onsenCases',
 ] as const satisfies readonly (keyof ContentLibrary)[];
 
 export function loadContent(root: string): ContentLibrary {

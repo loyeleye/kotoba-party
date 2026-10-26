@@ -113,6 +113,7 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Last Train | [last-train.md](modes/last-train.md) | 15 | Chōchin-san |
 | Word Gauntlet (v1.1) | [word-gauntlet.md](modes/word-gauntlet.md) | 18 | Pon |
 | Kotoba Concentration (v1.1) | [concentration.md](modes/concentration.md) | 15 | Fude |
+| Murder at the Onsen (backlog) | [onsen-murder.md](modes/onsen-murder.md) | 15 | Chōchin-san |
 
 ## Content
 

@@ -20,6 +20,7 @@ export { kanaStrokes } from './kana/strokes.js';
 export { setPhraseTiles } from './oogiri/set-phrases.js';
 export { lastTrainMinigames, lastTrainScenarios } from './last-train/index.js';
 export { hostLines, hostProfiles, hostAwards } from './hosts/index.js';
+export { onsenCases } from './onsen/cases.js';
 
 /** The Phase 1 topic packs, in the order the VIP's picker shows them. */
 export const packs: TopicPack[] = [foodPack, familyPack, travelPack];

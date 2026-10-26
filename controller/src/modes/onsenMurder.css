@@ -1,0 +1,60 @@
+/* Murder at the Onsen (phone). Big targets; fits a 360px screen. */
+.om-p { gap: 12px; }
+.om-p .big { margin: 4px 0 0; }
+.om-p-case { display: flex; gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.om-p-case p { margin: 0; }
+.om-p-victim { font-size: 44px; line-height: 1; }
+.om-p-title { font-size: 20px; font-weight: 800; }
+.om-p-title small { color: var(--muted); font-weight: 600; font-size: 14px; }
+
+.om-p-suspects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.om-p-suspects.n3 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+.om-p-suspect { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border-radius: 14px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); min-width: 0; }
+.om-p-suspect.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); background: #3a2230; }
+.om-p-suspect small { color: var(--muted); font-size: 13px; text-align: center; }
+.om-p-face { font-size: 38px; line-height: 1.1; }
+.om-p-name { font-size: 20px; font-weight: 800; }
+.om-p-asked { letter-spacing: 2px; }
+.om-p-change { justify-self: start; margin-top: -8px; }
+
+.om-p-miss { background: #2b2440; border-left: 4px solid var(--warn); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; }
+.om-p-miss p { margin: 0; }
+.om-p-miss small { color: var(--muted); }
+.om-p-jp { display: grid; gap: 2px; }
+.om-p-jp p { margin: 0; }
+.om-p-ja { font-size: 22px; font-weight: 800; line-height: 1.4; }
+.om-p-kana { color: var(--muted); font-size: 16px; }
+.om-p-romaji { color: var(--warn); font-style: italic; font-size: 15px; }
+.om-p-en { color: var(--muted); font-size: 15px; }
+
+.om-p-tilespanel { display: grid; }
+.om-p-builder { display: grid; gap: 8px; border: 1px dashed var(--line); border-radius: 14px; padding: 10px; }
+.om-p-preview { margin: 0; min-height: 1.5em; font-size: 22px; font-weight: 800; padding: 10px; border: 2px solid var(--accent); border-radius: 12px; text-align: center; overflow-wrap: anywhere; }
+.om-p-preview.empty { color: var(--muted); font-size: 16px; font-weight: 600; border-style: dashed; }
+.om-p-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.om-p-send:disabled { opacity: 0.45; }
+.om-p-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
+.om-p-tile { display: grid; gap: 1px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 18px; text-align: left; max-width: 100%; }
+.om-p-tile small { color: var(--muted); font-size: 11px; }
+.om-p-tile.question { border-color: var(--warn); }
+.om-p-tile.particle { border-style: dashed; }
+.om-p-tile.ending { border-color: var(--good); }
+
+.om-p-menu summary, .om-p-notebook summary { color: var(--muted); cursor: pointer; font-weight: 700; }
+.om-p-menu ul { margin: 8px 0 0; padding-left: 4px; list-style: none; display: grid; gap: 6px; }
+.om-p-menu-jp { display: block; font-weight: 700; }
+.om-p-menu-jp small { color: var(--warn); font-weight: 400; }
+.om-p-notebook { background: #f4ecd8; color: #2b2112; border-radius: 12px; padding: 10px 12px; }
+.om-p-notebook summary { color: #5a4b33; }
+.om-p-notebook ol { margin: 8px 0 0; padding-left: 22px; display: grid; gap: 6px; }
+.om-p-notebook li span { display: block; font-weight: 800; }
+.om-p-notebook li small, .om-p-notebook .hint { color: #5a4b33; }
+
+.om-p-accuse { display: grid; gap: 10px; background: var(--panel); border: 2px solid var(--warn); border-radius: 14px; padding: 12px; }
+.om-p-accuse .hint { margin: 0; }
+.om-p-missline { margin: 0; color: var(--warn); }
+
+.om-p-answer { background: #fbf7ff; color: #1b1430; border-radius: 14px; padding: 12px; animation: om-p-appear 0.5s ease-out both; }
+.om-p-answer .om-p-kana, .om-p-answer .om-p-en { color: #5b4e7a; }
+.om-p-clue { margin: 0; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--good); font-weight: 800; animation: om-p-appear 0.5s ease-out both; }
+@keyframes om-p-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
