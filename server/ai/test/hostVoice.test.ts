@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ManualClock } from '../../src/clock.js';
-import { createHostVoice } from '../hostVoice.js';
+import { createHostVoice, lineProblem } from '../hostVoice.js';
+import { defaultModerator } from '../moderation.js';
 import { LlmBudget, ScriptedLlm } from '../llm.js';
 import { SilentTts } from '../tts.js';
 import type { BankLine } from '../types.js';
@@ -105,5 +106,19 @@ describe('host voice', () => {
     const line = await voice.speak('R', 'fude', { text: '「あ」！', kana: '「あ」！', en: '"A"!' }).ready(100);
     expect(line?.audio).toBeDefined();
     expect(tts.spoken[0]?.host).toBe('fude');
+  });
+});
+
+describe('lineProblem', () => {
+  const check = (text: string, kana: string) => lineProblem({ text, kana, en: 'Say it again!' }, defaultModerator, []);
+
+  it('accepts a name with digits read the English way', () => {
+    // Seen live: the model read bot4 as ぼっとふぉー, and the 4 used to count as よん.
+    expect(check('bot4さん、もう いちど どうぞ！', 'ぼっとふぉーさん、もう いちど どうぞ！')).toBeNull();
+    expect(check('3にんで どうぞ！', 'さんにんで どうぞ！')).toBeNull();
+  });
+
+  it('still rejects a reading of another sentence', () => {
+    expect(check('bot4さん、もう いちど どうぞ！', 'ぼっとふぉーさん、ありがとう！')).toBe('reading does not match text');
   });
 });
