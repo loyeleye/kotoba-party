@@ -64,7 +64,15 @@ function toast(view: RoomView, game: ConcentrationView): HTMLElement | null {
 const nameOf = (view: RoomView, id: string | null | undefined): string => view.players.find((p) => p.id === id)?.name ?? '…';
 const seatOf = (view: RoomView, id: string | null | undefined): number => view.players.find((p) => p.id === id)?.seat ?? 0;
 
-function faceEl(face: Face, opts: { audioKey?: string } = {}): HTMLElement {
+/** Font size that fits `text` inside a card (container query units; ignored where unsupported). */
+function fit(text: string, kind: Face['kind']): string {
+  const len = [...text].length || 1;
+  if (kind === 'en') return `font-size: ${len <= 6 ? 20 : len <= 12 ? 15 : 12}cqw`;
+  return `font-size: ${Math.min(kind === 'kanji' ? 46 : 40, Math.floor(86 / len))}cqw`;
+}
+
+function faceEl(face: Face, opts: { audioKey?: string; inCell?: boolean } = {}): HTMLElement {
+  const size = (text: string) => (opts.inCell ? fit(text, face.kind) : null);
   switch (face.kind) {
     case 'emoji':
     case 'special':
@@ -79,12 +87,17 @@ function faceEl(face: Face, opts: { audioKey?: string } = {}): HTMLElement {
       );
     }
     case 'en':
-      return h('div', { class: 'cc-face cc-en' }, h('span', {}, face.text));
+      return h('div', { class: 'cc-face cc-en' }, h('span', { style: size(face.text) }, face.text));
     case 'word':
-      return h('div', { class: 'cc-face cc-word' }, h('span', { class: 'cc-jp', lang: 'ja' }, face.text), face.sub ? h('span', { class: 'cc-sub', lang: 'ja' }, face.sub) : null);
+      return h(
+        'div',
+        { class: 'cc-face cc-word' },
+        h('span', { class: 'cc-jp', lang: 'ja', style: size(face.text) }, face.text),
+        face.sub ? h('span', { class: 'cc-sub', lang: 'ja' }, face.sub) : null,
+      );
     default:
       // kana, kanji
-      return h('div', { class: `cc-face cc-${face.kind}` }, h('span', { class: 'cc-jp', lang: 'ja' }, face.text));
+      return h('div', { class: `cc-face cc-${face.kind}` }, h('span', { class: 'cc-jp', lang: 'ja', style: size(face.text) }, face.text));
   }
 }
 
@@ -104,13 +117,13 @@ function board(view: RoomView, game: ConcentrationView): HTMLElement {
     }
     if (c.state === 'up') {
       if (c.masked) return h('div', { class: 'cc-cell cc-up cc-masked' }, h('span', { class: 'cc-q' }, '？'));
-      return h('div', { class: 'cc-cell cc-up' }, c.face ? faceEl(c.face, { audioKey: `${game.turn?.no ?? 0}:${i}` }) : null);
+      return h('div', { class: 'cc-cell cc-up' }, c.face ? faceEl(c.face, { audioKey: `${game.turn?.no ?? 0}:${i}`, inCell: true }) : null);
     }
     // Face down: once the picture is solved, show it through the backs too.
     if (tile && game.picture.answer) return h('div', { class: 'cc-cell cc-down cc-solved' }, h('span', { class: 'cc-tile' }, tile));
     return h('div', { class: `cc-cell cc-down${fogged ? ' cc-fog' : ''}` }, fogged ? h('span', { class: 'cc-emoji' }, '🌫️') : h('span', { class: 'cc-back' }, '筆'));
   });
-  return h('div', { class: `cc-board cc-size-${game.cols}`, style: `grid-template-columns: repeat(${game.cols}, 1fr)` }, cells);
+  return h('div', { class: `cc-board cc-size-${game.cols}`, style: `grid-template-columns: repeat(${game.cols}, 1fr); grid-template-rows: repeat(${game.rows}, 1fr)` }, cells);
 }
 
 function banner(view: RoomView, game: ConcentrationView): HTMLElement {
@@ -213,6 +226,6 @@ export const concentrationStage: StageMode<ConcentrationView> = {
   },
 
   render(view, game) {
-    return h('div', { class: 'cc-stage' }, toast(view, game), banner(view, game), h('div', { class: 'cc-layout' }, board(view, game), side(view, game)));
+    return h('div', { class: 'cc-stage' }, banner(view, game), h('div', { class: 'cc-layout' }, h('div', { class: 'cc-board-wrap' }, board(view, game), toast(view, game)), side(view, game)));
   },
 };
