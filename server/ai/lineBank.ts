@@ -29,6 +29,9 @@ export function fillSlots(jp: JpText, slots: Slots = {}): JpText {
   return { text: sub(jp.text, false), kana: sub(jp.kana, true), en: sub(jp.en, false) };
 }
 
+/** '{name}' or 'name' → 'name'. */
+export const slotName = (s: string): string => s.replace(/^\{|\}$/g, '');
+
 export class LineBank {
   private readonly byKey = new Map<string, BankLine[]>();
   private readonly used = new Set<string>();
@@ -61,7 +64,7 @@ export class LineBank {
    * are skipped. Undefined only when the bank has nothing for this host and event.
    */
   pick(host: HostId, event: HostEvent, tier?: ReactionTier, slots: Slots = {}): (PickedLine & { line: BankLine }) | undefined {
-    const usable = this.candidates(host, event, tier).filter((l) => (l.slots ?? []).every((s) => s in slots));
+    const usable = this.candidates(host, event, tier).filter((l) => (l.slots ?? []).every((s) => slotName(s) in slots));
     if (!usable.length) return undefined;
     const fresh = usable.filter((l) => !this.used.has(l.id));
     const pool = fresh.length ? fresh : usable;

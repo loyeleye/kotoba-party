@@ -60,17 +60,20 @@ Host voice pipeline and typed-answer judge (`server/ai/`, see its README).
    `KOTOBA_JUDGE_MODEL=...`. My suggestion: Haiku for host quips now, and pick the judge model on
    the Phase 2 evaluation set (80% agreement gate). Your call; these are estimates, not measured,
    because no API key reached this session (see 16).
-2. **Voices.** Pon = 玄野武宏 (ノーマル, 喜び style for IPPON), Chōchin-san = ちび式じい (an old man's
-   voice for the lantern-ghost conductor), Fude = 春日部つむぎ (bright and fast). The design doc doesn't
-   give the hosts a gender, so these voices decide it. Listen to the samples in the project files
-   (`voice-samples/`) and swap any of them in `server/ai/hosts.ts`. Worth hearing as alternatives:
-   白上虎太郎 for Pon, ユーレイちゃん (a ghost girl) for Chōchin-san, 四国めたん for Fude.
+2. **Voices.** Pon = 白上虎太郎 (わーい style for IPPON), matching the content thread's first audition
+   pick; Chōchin-san = ちび式じい (an old man's voice for the lantern-ghost conductor); Fude = 春日部つむぎ
+   (bright and fast). Each host has a fallback voice if the engine lacks the first choice. Listen in the
+   project files: `voice-samples/` has each host in its chosen voice, and `voice-samples/auditions/` has
+   one line per candidate: Pon (白上虎太郎, 玄野武宏), Chōchin-san (ちび式じい, 冥鳴ひまり, 青山龍星,
+   ユーレイちゃん) and Fude (春日部つむぎ, ずんだもん, 四国めたん). To swap a voice, edit
+   `server/ai/hosts.ts`.
 3. **Voice licences.** Each chosen voice's terms, as the engine reports them (`/speaker_info`), allow
    commercial and non-commercial use if the credit `VOICEVOX:<name>` is shown. The credits screen
    must show `HOSTS[h].credit` for each voice. Each character also has detailed terms (linked from
    the engine) with banned uses. I haven't read those in full: someone should read them before a
-   public release. I avoided 青山龍星 because his terms need prior permission for any use involving a
-   company.
+   public release. I avoided 青山龍星 (the content thread's first pick for Chōchin-san) because, per a press
+   report I haven't checked against his terms, any use involving a company needs prior permission.
+   ずんだもん has its own separate character rules.
 4. **Engine licence.** The VOICEVOX engine's own terms (bundled in the Docker image) allow commercial
    use and redistribution, require following each voice's terms, and ban reverse engineering. We
    run the official image unmodified, as a separate container, so nothing in our code is affected.

@@ -327,9 +327,11 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
     room(roomId);
     const ctl = new AbortController();
     const base: VoicedLine = { id: `say.${audioId('text', host, jp.kana, tier)}`, host, event: 'prompt_read', tier, ...jp, source: 'bank' };
-    const ok = isSpeakableKana(jp.kana) && moderate(jp.text) && moderate(jp.kana);
+    // A prompt's blank (＿＿＿) is read as a pause.
+    const kana = jp.kana.replace(/[＿_]+/g, '、');
+    const ok = isSpeakableKana(kana) && moderate(jp.text) && moderate(kana);
     const work = ok
-      ? render(host, jp.kana, tier, ctl.signal).then((a) => (a ? { ...base, audio: audioRef(a) } : base))
+      ? render(host, kana, tier, ctl.signal).then((a) => (a ? { ...base, audio: audioRef(a) } : base))
       : Promise.resolve(moderate(jp.text) ? base : null);
     // Past the deadline the stage shows the text without audio.
     return pending(work, () => (ok || moderate(jp.text) ? base : null), ctl);

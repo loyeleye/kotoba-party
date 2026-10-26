@@ -38,7 +38,7 @@ voice.closeRoom(room.code);
   fails (a voiced bank line beats a silent fresh one).
 - **Bank lines** are picked without repeats per game; a tier with no lines falls back to the event's untiered
   lines; `{name}` slots are filled, and voiced with a reading (given, or guessed from romaji: Ladi → ラディ).
-- **Voices** (`hosts.ts`): Pon = 玄野武宏 (喜び style for IPPON), Chōchin-san = ちび式じい, Fude = 春日部つむぎ,
+- **Voices** (`hosts.ts`): Pon = 白上虎太郎 (わーい style for IPPON), Chōchin-san = ちび式じい, Fude = 春日部つむぎ,
   each with fallbacks, resolved by name through `GET /speakers`. The credits screen must show
   `HOSTS[h].credit` for each voice used.
 
