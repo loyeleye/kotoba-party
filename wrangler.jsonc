@@ -25,6 +25,11 @@
     // Optional; e.g. https://voicevox.example.com. Empty: subtitles only.
     "VOICEVOX_URL": "",
     // Optional; the reader service (npm run reader). Empty: kanji answers are compared as written.
-    "READER_URL": ""
+    "READER_URL": "",
+    // Optional; a self-hosted Whisper server's transcription endpoint, e.g. https://stt.example.com/inference.
+    // Empty: no hold-to-talk, phones type or tap. Audio never goes to Google (docs/speech.md).
+    "STT_URL": "",
+    // Optional; the `model` field for Whisper servers that host several (speaches). whisper.cpp ignores it.
+    "STT_MODEL": ""
   }
 }

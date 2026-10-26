@@ -45,6 +45,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 17 | Reference repos (job-hunt-agent, system-design-study, isekaid-into-the-cloud) | Ideas only | ✅ | Ladi's own repos; keep it to ideas, or check any third-party code they hold |
 | 18 | Content reviewed by a fluent speaker | All content is `draft` | ⚠️ | Not a licence issue, but a paid product needs the reviewer pass (open question C1) |
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
+| 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
 
 ## Details
 
@@ -211,6 +212,35 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 - There is no `LICENSE` file, so the code is all rights reserved, which is what a commercial game wants.
   If the repo is public, people can read it but have no right to reuse it. Adding an open-source licence
   later is a business decision; log it here if it happens.
+
+### 20. Speech to text (Whisper)
+
+- **What:** Spoken answers go from the phone to our game server and on to a Whisper server we run
+  (`STT_URL`, see [speech.md](speech.md) and ADR 0004). It replaced Chrome's Web Speech API, which sent
+  audio to Google.
+- **Model:** OpenAI Whisper weights, `large-v3-turbo` recommended. MIT licence on the
+  [model card](https://huggingface.co/openai/whisper-large-v3-turbo) and in
+  [openai/whisper](https://github.com/openai/whisper/blob/main/LICENSE) (read 2026-10-26, via search
+  results quoting both; the pages themselves weren't opened). The ggml conversions for whisper.cpp
+  ([ggerganov/whisper.cpp](https://huggingface.co/ggerganov/whisper.cpp)) are MIT too.
+- **Engine:** whisper.cpp ([MIT](https://github.com/ggml-org/whisper.cpp/blob/master/LICENSE)) or
+  speaches / faster-whisper / CTranslate2 (MIT). We run them unmodified as a separate service; no code
+  is copied into the game.
+- **Dataset:** none of ours. OpenAI hasn't published Whisper's training data; its MIT licence covers
+  using the weights.
+- **Avoid for a sold game, or check first:** Japanese-tuned models trained on the **ReazonSpeech**
+  corpus (kotoba-whisper, ReazonSpeech's own models). The models are Apache-2.0, but the corpus is
+  CDLA-Sharing-1.0 and reportedly limited to the research use allowed by Japan's Copyright Act article
+  30-4 ([ReazonSpeech](https://research.reazon.jp/projects/ReazonSpeech/), terms not read in full,
+  2026-10-26). ❓ until someone reads them.
+- **Privacy (⚠️, not a licence issue):** players' voices are personal data and players may be minors.
+  Audio is recorded only while the button is held, goes only to our own server, and isn't stored; only
+  the text is kept, for the game. Before a paid or public launch: a privacy notice saying so, a decision
+  on under-13/16 players (COPPA, GDPR-K parental consent), and making sure nothing in front of the
+  Whisper server (tunnel, proxy) logs request bodies.
+- **Cost:** an always-on machine with enough CPU (or a GPU) for the player count. Not a licence bar.
+- **To sell:** keep to OpenAI's weights (or check any other model's data terms first), include the MIT
+  notices if the engine is ever shipped in a download, and do the privacy items above.
 
 ## AI art: non-commercial vs commercial
 

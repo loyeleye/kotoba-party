@@ -7,6 +7,7 @@ import { suspectDirector } from './onsen.js';
 import type { Room } from './room.js';
 import { createReader } from './reading.js';
 import { createKotobaServer } from './server.js';
+import { sttFromEnv } from './stt.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 
@@ -42,6 +43,8 @@ const server = createKotobaServer({
     : undefined,
   audio: (id) => ai.audio(id),
   reader: await createReader(),
+  // Spoken answers go to a Whisper server we run (STT_URL); without one, phones type or tap.
+  stt: sttFromEnv(process.env),
   staticDir: `${root}dist`,
   publicUrl: process.env.PUBLIC_URL,
 });

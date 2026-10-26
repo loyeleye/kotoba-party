@@ -122,7 +122,7 @@ picture is showing. A yōkai shuffle wipes its position memory.
    phase deadlines wake the server, so every window is timed and skippable by the VIP.
 2. **The word card turns away during the say-it and steal windows** (after a 1.8 s peek), so
    saying it is short recall rather than reading aloud, and stealing isn't a reading race.
-3. **The say-it window is 6 s**, not exactly 5, to give the browser recogniser a second to return.
+3. **The say-it window is 6 s**, not exactly 5, to give the speech recogniser a second to return.
 4. **Two tries** for the flipper and for each stealer, so one misheard word isn't fatal.
 5. **A match does not give another turn** (classic memory does); the turn always passes,
    so 8-player games keep moving and the ⭐ bonus tile means something.

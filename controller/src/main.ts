@@ -8,6 +8,7 @@ import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import { LEVELS, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
+import { setSpeechService } from './components/mic.js';
 import { setSpeakLevel, speakBox } from './components/speak.js';
 
 const LEVEL_HINTS: Record<Level, string> = {
@@ -68,6 +69,8 @@ interface Session {
   token: string;
   playerId: string;
   name: string;
+  /** The server runs speech-to-text; without it every spoken step is typed or tapped. */
+  speech?: boolean;
 }
 
 const base = location.origin;
@@ -177,13 +180,14 @@ async function join(code: string, name: string): Promise<string | null> {
     return 'network';
   }
   if ('error' in res) return res.error;
-  start({ code, token: res.token, playerId: res.playerId, name });
+  start({ code, token: res.token, playerId: res.playerId, name, speech: !!res.speech });
   return null;
 }
 
 function start(s: Session): void {
   session = s;
   store('kotoba:session', s);
+  setSpeechService(s.speech ? { base, code: s.code, token: s.token } : null);
   history.replaceState(null, '', `/?code=${s.code}`);
   client = new RoomClient({ baseUrl: base, code: s.code, token: s.token, onState: render, onStatus: status });
   client.connect();
@@ -415,7 +419,7 @@ const saved = load<Session>('kotoba:session');
 const wanted = new URLSearchParams(location.search).get('code');
 if (saved && (!wanted || normalizeRoomCode(wanted) === saved.code)) {
   void joinRoom(base, saved.code, { name: saved.name, token: saved.token, deviceId: deviceId() })
-    .then((res) => ('error' in res ? showJoin() : start({ ...saved, token: res.token, playerId: res.playerId })))
+    .then((res) => ('error' in res ? showJoin() : start({ ...saved, token: res.token, playerId: res.playerId, speech: !!res.speech })))
     .catch(() => showJoin());
 } else {
   showJoin();

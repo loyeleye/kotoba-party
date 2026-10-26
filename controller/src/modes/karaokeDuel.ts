@@ -1,10 +1,8 @@
 // Karaoke Duel on the phone: the lyric sheet, then on your turn the line with its bouncing
-// ball and a hold-to-sing button. While the button is held the phone runs the browser's
-// recogniser (for the words) and, where it can, a pitch tracker on the mic (for the tune and
-// the timing). On release it sends the take straight away: the next singer is waiting.
-//
-// Some phones can't run the recogniser and a second mic reader at once. When that happens the
-// phone turns pitch off for good on this device, says so, and scores on words and timing.
+// ball and a hold-to-sing button. While the button is held the phone records the mic (the words
+// are worked out by our own Whisper server on release, see components/mic.ts) and a pitch tracker
+// listens to the same recording (for the tune and the timing). On release it sends the take
+// straight away: the next singer is waiting. Without a speech server the line is typed.
 // Everyone not duelling can sing along (chorus, words only) and votes for the crowd favourite.
 
 import { h } from '../../../shared/src/dom.js';
@@ -13,7 +11,8 @@ import { detectPitch, hzToMidi, rms, summarise, type PitchSample } from '../../.
 import { hasKanji, type Utterance } from '../../../shared/src/japanese/kana.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { kanaPad } from '../components/kanaPad.js';
-import { canSpeak } from '../components/speak.js';
+import { MicClip, hear } from '../components/mic.js';
+import { canSpeak, missed } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
@@ -50,51 +49,24 @@ function setPitchWanted(on: boolean): void {
     // private mode: the choice lasts for this page only
   }
 }
-const canTrackPitch = (): boolean => typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && typeof AudioContext !== 'undefined';
 
-// ---------- the recogniser (same browser API as components/speak.ts) ----------
-interface RecognitionLike {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  continuous: boolean;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-}
-type RecognitionCtor = new () => RecognitionLike;
-const Recognition: RecognitionCtor | undefined =
-  (globalThis as unknown as { SpeechRecognition?: RecognitionCtor }).SpeechRecognition ?? (globalThis as unknown as { webkitSpeechRecognition?: RecognitionCtor }).webkitSpeechRecognition;
-
-// ---------- the pitch tracker ----------
+// ---------- the pitch tracker (reads the same mic as the clip) ----------
 class PitchTracker {
   samples: PitchSample[] = [];
-  private stream: MediaStream | null = null;
-  private audio: AudioContext | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
+  private analyser: AnalyserNode | null = null;
   stopped = false;
 
   constructor(private readonly lineAtLocal: number) {}
 
-  async start(): Promise<void> {
-    // Created inside the press, so the browser lets it run.
-    this.audio = new AudioContext();
-    void this.audio.resume();
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
-    if (this.stopped) {
-      for (const t of stream.getTracks()) t.stop();
-      return;
-    }
-    this.stream = stream;
-    const source = this.audio.createMediaStreamSource(stream);
-    const analyser = this.audio.createAnalyser();
+  attach(clip: MicClip): void {
+    if (this.stopped || !clip.source) return;
+    const analyser = clip.audio.createAnalyser();
     analyser.fftSize = 2048;
-    source.connect(analyser);
+    clip.source.connect(analyser);
+    this.analyser = analyser;
     const buf = new Float32Array(analyser.fftSize);
-    const rate = this.audio.sampleRate;
+    const rate = clip.audio.sampleRate;
     this.timer = setInterval(() => {
       analyser.getFloatTimeDomainData(buf);
       const level = rms(buf);
@@ -108,10 +80,8 @@ class PitchTracker {
     this.stopped = true;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
-    for (const t of this.stream?.getTracks() ?? []) t.stop();
-    this.stream = null;
-    void this.audio?.close().catch(() => {});
-    this.audio = null;
+    this.analyser?.disconnect();
+    this.analyser = null;
   }
 }
 
@@ -190,42 +160,28 @@ function singBox(opts: SingOptions): HTMLElement {
     } else status.textContent = '✓ Sent!';
   };
 
-  if (canSpeak() && Recognition) {
-    const usePitch = opts.pitch && pitchWanted() && canTrackPitch();
-    pitchNote.textContent = !opts.pitch ? '' : usePitch ? 'Listening for words, pitch and timing.' : canTrackPitch() ? 'Pitch is off on this phone: scored on words (80%) and timing (20%).' : 'This browser can’t measure pitch: scored on words (80%) and timing (20%).';
+  if (canSpeak()) {
+    const usePitch = opts.pitch && pitchWanted();
+    pitchNote.textContent = !opts.pitch ? '' : usePitch ? 'Listening for words, pitch and timing.' : 'Pitch is off on this phone: scored on words (80%) and timing (20%).';
     const button = h('button', { type: 'button', class: 'talk kdp-talk' }, opts.label) as HTMLButtonElement;
-    let rec: RecognitionLike | null = null;
+    let clip: MicClip | null = null;
     let tracker: PitchTracker | null = null;
-    let transcript = '';
     let pressAt = 0;
-    let releaseAt = 0;
     let holding = false;
-    let delivered = true;
-    let conflict = false;
     let autoStop: ReturnType<typeof setTimeout> | null = null;
 
-    const release = () => {
+    const release = async () => {
       if (!holding) return;
       holding = false;
-      releaseAt = Date.now();
+      const releaseAt = Date.now();
       if (autoStop) clearTimeout(autoStop);
       button.classList.remove('live');
       tracker?.stop();
-      // The recogniser hands back its last words in onend, which delivers; without one, deliver now.
-      if (rec) rec.stop();
-      else deliver();
-    };
+      const c = clip!;
+      clip = null;
+      const wav = c.stop();
+      if (c.blocked) return void (status.textContent = 'Microphone blocked: type the line below instead.');
 
-    const deliver = () => {
-      if (delivered) return;
-      delivered = true;
-      if (conflict) {
-        // The recogniser lost the mic to the pitch tracker: pitch off from now on, sing again.
-        setPitchWanted(false);
-        pitchNote.textContent = 'Your phone can’t listen for words and pitch at once, so pitch is now off: scored on words and timing. Hold and sing again!';
-        status.textContent = '';
-        return;
-      }
       const lineStart = lineAtLocal;
       let timing: 'mic' | 'button' = 'button';
       let onsetMs = pressAt <= lineStart ? 0 : pressAt - lineStart;
@@ -242,65 +198,39 @@ function singBox(opts: SingOptions): HTMLElement {
       }
       onsetMs = Math.max(-5_000, Math.min(15_000, Math.round(onsetMs)));
       durMs = Math.max(0, Math.min(15_000, Math.round(durMs)));
-      void finish({ utterance: { via: 'speech', text: transcript.slice(0, 120) }, pitch, onsetMs, durMs, timing });
+
+      status.textContent = 'Listening back…';
+      const heard = await hear(wav);
+      // Nothing heard still counts (no words points); a server hiccup lets them sing it again.
+      if (!heard.ok && heard.why !== 'quiet') return void (status.textContent = `${missed(heard.why)} Hold and sing again.`);
+      void finish({ utterance: { via: 'speech', text: heard.ok ? heard.text.slice(0, 120) : '' }, pitch, onsetMs, durMs, timing });
     };
 
     button.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      if (sent || holding) return;
+      if (sent || holding || clip) return;
       holding = true;
-      delivered = false;
-      conflict = false;
-      transcript = '';
       pressAt = Date.now();
       button.classList.add('live');
       status.textContent = '🎤 Singing…';
-      const r = new Recognition();
-      rec = r;
-      r.lang = 'ja-JP';
-      r.interimResults = true;
-      r.maxAlternatives = 1;
-      r.continuous = true;
-      r.onresult = (ev) => {
-        transcript = Array.from(ev.results)
-          .map((x) => x[0]?.transcript ?? '')
-          .join('');
-        status.textContent = transcript ? `🎤 ${transcript}` : '🎤 Singing…';
-      };
-      r.onerror = (ev) => {
-        if (ev.error === 'not-allowed') status.textContent = 'Microphone blocked: type the line below instead.';
-        else if (tracker && (ev.error === 'audio-capture' || ev.error === 'aborted')) conflict = true;
-      };
-      r.onend = () => {
-        if (rec !== r) return;
-        rec = null;
-        if (holding) release();
-        deliver();
-      };
-      try {
-        r.start();
-      } catch {
-        rec = null;
-        status.textContent = 'The mic is busy. Try again.';
-      }
-      if (usePitch && pitchWanted()) {
-        tracker = new PitchTracker(lineAtLocal);
-        tracker.start().catch(() => {
-          tracker?.stop();
-          tracker = null;
-          pitchNote.textContent = 'Couldn’t open the mic for pitch: scored on words and timing this time.';
-        });
-      } else tracker = null;
+      const c = new MicClip();
+      clip = c;
+      const t = usePitch && pitchWanted() ? new PitchTracker(lineAtLocal) : null;
+      tracker = t;
+      void c.ready.then((ok) => {
+        if (ok) t?.attach(c);
+        else if (c.blocked) status.textContent = 'Microphone blocked: type the line below instead.';
+      });
       // Let go for them a beat after the line ends (or after 12 s at most).
       const lineEnd = lineAtLocal + opts.line.ms + opts.beatMs;
-      autoStop = setTimeout(release, Math.min(12_000, Math.max(1_500, lineEnd - Date.now())));
+      autoStop = setTimeout(() => void release(), Math.min(12_000, Math.max(1_500, lineEnd - Date.now())));
     });
-    button.addEventListener('pointerup', release);
-    button.addEventListener('pointercancel', release);
-    button.addEventListener('pointerleave', release);
+    button.addEventListener('pointerup', () => void release());
+    button.addEventListener('pointercancel', () => void release());
+    button.addEventListener('pointerleave', () => void release());
     button.addEventListener('contextmenu', (e) => e.preventDefault());
     box.append(button, status);
-    if (opts.pitch && canTrackPitch()) {
+    if (opts.pitch) {
       box.append(
         pitchNote,
         h(
@@ -317,12 +247,12 @@ function singBox(opts: SingOptions): HTMLElement {
           pitchWanted() ? 'Turn pitch off' : 'Turn pitch on',
         ),
       );
-    } else if (opts.pitch) box.append(pitchNote);
+    }
   } else {
-    box.append(h('p', { class: 'hint' }, canSpeak() ? 'This browser has no speech recogniser.' : 'Quiet mode is on.'));
+    box.append(h('p', { class: 'hint' }, localStorage.getItem('kotoba:quiet') === '1' ? 'Quiet mode is on.' : 'Singing needs the game’s speech server, which isn’t set up: type the line instead.'));
   }
 
-  if (opts.typed) box.append(typedFallback(opts, !(canSpeak() && Recognition), (u) => void finish({ utterance: u })));
+  if (opts.typed) box.append(typedFallback(opts, !canSpeak(), (u) => void finish({ utterance: u })));
   return box;
 }
 
@@ -429,7 +359,7 @@ function singScreen(ctx: Ctx): HTMLElement {
     );
   }
   // Audience: sing along for the chorus.
-  if (mine.canChorus && canSpeak() && Recognition) {
+  if (mine.canChorus && canSpeak()) {
     return h(
       'div',
       { class: 'screen' },
@@ -530,7 +460,6 @@ export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
           h('p', {}, 'Two singers duel through a short song. Both sing every line, taking turns.'),
           h('p', {}, 'On your turn, watch the count-in, then hold the button and sing the line. Let go when it ends.'),
           h('p', { class: 'hint' }, 'Words 60% · pitch 25% · timing 15%. Not duelling? Sing along for chorus points and vote for the crowd favourite.'),
-          canTrackPitch() ? null : h('p', { class: 'hint' }, 'This browser can’t measure pitch, so your takes count words and timing only.'),
         );
       case 'prompt': {
         const duel = game.duel;

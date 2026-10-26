@@ -99,13 +99,12 @@ along with correctly as `said`. Item ids are `karaoke.<song>.<line>`.
   autocorrelation pitch estimate (70–1 100 Hz) and loudness; on release, `summarise` turns the
   samples into the 100 ms contour, and the onset and length from loudness above the room's
   noise floor.
-- **Conflicts.** Some phones can't run the browser recogniser and a second mic reader at once.
-  If the recogniser fails with `audio-capture`/`aborted` while the tracker runs, the phone turns
-  pitch off on that device (localStorage `kotoba:karaoke-pitch`), tells the singer they'll be
-  scored on words and timing, and asks them to sing again. If the mic can't be opened for pitch,
-  that take is sent without pitch. A "Turn pitch off/on" link lets anyone choose.
+- **Words:** the hold records one clip (`components/mic.ts`); on release it goes to our own
+  Whisper server ([speech.md](../speech.md)) and the transcript is sent with the take. The pitch
+  tracker listens to the same recording, so there is no mic conflict. A "Turn pitch off/on" link
+  lets anyone choose (localStorage `kotoba:karaoke-pitch`).
 - **Quiet fallback:** "Can't sing right now? Type it" (with the kana pad), open by default when
-  there's no recogniser or quiet mode is on.
+  the server has no speech-to-text or quiet mode is on.
 - **Audience:** a sing-along button (words only, no pitch), then the crowd vote.
 
 ### The TV
@@ -191,10 +190,9 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
    taking lines, instead of rotating one-on-one duels?
 2. **Encore from memory?** The design doc values saying it from memory. A final "sing the hook
    with the lyrics hidden" bonus would fit; not built.
-3. **Recogniser + mic on real phones.** Does Android Chrome / iOS Safari let the speech
-   recogniser and `getUserMedia` run together? The fallback is built, but nobody has tried it
-   on a real phone. If it conflicts everywhere, pitch could be measured in a separate "hum the
-   tune" step, or from server-side audio once the Phase 3 speech pipeline exists.
+3. **Whisper on sung lines.** Words now come from our Whisper server (ADR 0004), which removed
+   the old recogniser-vs-pitch mic conflict. Nobody has checked how well Whisper transcribes
+   *sung* beginner Japanese on a real phone.
 4. **Guide melody during takes.** Keep it (helps beginners, can leak into the mic) or play the
    melody only on the song card and keep just the beat during takes?
 5. **Is the crowd bonus too big?** 60 (120 in the final song) can outweigh a few lines of

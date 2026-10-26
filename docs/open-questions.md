@@ -14,8 +14,6 @@ If you only have ten minutes, these are the answers that would change the build 
 
 - **Fluent check (C1 below).** Every pack, host line, award title and the Word Gauntlet obscure
   words are `draft`. Who checks them, and when?
-- **Browser speech recogniser for playtests (21).** Chrome sends audio to Google. OK until
-  server-side speech-to-text?
 - **Oogiri Night:** with 8 players Round 1 has 8 matchups (about 13 minutes per game if every
   timer runs out). Too long? Is Pon's cushion steal funny or unfair?
   ([oogiri.md](modes/oogiri.md#open-questions))
@@ -83,9 +81,9 @@ If you only have ten minutes, these are the answers that would change the build 
     mode so the 100-round gate keeps running.
 19. **New players can also join between games** (on the recap screen), not only in the lobby.
 20. **A player who picks no level starts at N5.** Levels can be changed in the lobby only.
-21. **Speech uses the browser's own recogniser for now** (Chrome and Safari have one). In
-    Chrome that sends audio to Google's servers. Server-side speech-to-text is Phase 3 in the
-    design doc. Is the browser recogniser acceptable for playtests until then?
+21. ~~Speech uses the browser's own recogniser for now.~~ **Answered (Ladi, Oct 26): no audio to
+    Google.** Speech now goes to a Whisper server we run (`STT_URL`, [speech.md](speech.md),
+    ADR 0004). Without one, phones type or tap.
 22. **Answers with kanji are read into kana on the server** (kuromoji dictionary), then compared
     leniently (long vowels, じ/ぢ, ず/づ, お/を, えい/ええ, おう/おお). Small っ and vowel length are
     never forgiven, matching the judge in server/ai.

@@ -249,7 +249,7 @@ canned memory answers (by question kind and register) or build a tile answer. Th
   - unusual verbs that aren't in the table;
   - long multi-clause answers where the tokens only describe the last word.
   The unit tests cover the common answer shapes and every card's tiles and examples.
-- Nothing has been tried with real phones: whether the browser recogniser keeps です/ます
+- Nothing has been tried with real phones: whether the speech recogniser keeps です/ます
   endings, and whether 5 s is enough to start talking.
 - No sound effects (the teacup rattle, the spotlight drum roll).
 - The VIP can't choose the guest in the UI.
