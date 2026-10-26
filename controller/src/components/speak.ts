@@ -1,7 +1,7 @@
 // "Say it to send it": hold to talk, see what was heard, then send. Every spoken step has a quiet
 // fallback (type, or tap kana on the built-in pad) per the design doc.
 //
-// Speech goes to our own server, which runs Whisper (components/mic.ts, server/src/stt.ts). There is
+// Speech goes to our own server, which passes it to Whisper (components/mic.ts, server/src/stt.ts). There is
 // no browser recogniser: Chrome's sends the audio to Google. Until a speech server is set up, phones
 // show the typed box and kana pad only.
 

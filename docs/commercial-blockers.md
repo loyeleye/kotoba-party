@@ -46,6 +46,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 18 | Content reviewed by a fluent speaker | All content is `draft` | ⚠️ | Not a licence issue, but a paid product needs the reviewer pass (open question C1) |
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
+| 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
 
 ## Details
 
@@ -258,6 +259,30 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 - **Cost:** an always-on machine with enough CPU (or a GPU) for the player count. Not a licence bar.
 - **To sell:** keep to OpenAI's weights (or check any other model's data terms first), include the MIT
   notices if the engine is ever shipped in a download, and do the privacy items above.
+
+### 21. Speech to text on Cloudflare Workers AI
+
+- **What:** On the live game, the room's Durable Object sends each spoken clip to OpenAI's
+  `whisper-large-v3-turbo` on Cloudflare Workers AI through the Worker's `AI` binding (`STT_URL` =
+  `workers-ai`, [speech.md](speech.md), ADR 0005). Replaces the need to run row 20's server.
+- **Model licence:** the same OpenAI Whisper weights as row 20 (MIT). Cloudflare says it doesn't make
+  or train the models and that each keeps its own licence.
+- **Data use:** Cloudflare's [Workers AI data usage page](https://developers.cloudflare.com/workers-ai/privacy/)
+  says prompts and outputs are Customer Content that we own, that it doesn't use them to train models
+  or improve its or third parties' services without our consent, and that they're stored only if we
+  store them in R2, KV, Durable Objects and the like. We don't store clips. (Read 2026-10-26 through
+  search results quoting the page; the page itself couldn't be opened from the build machine.)
+- **Commercial terms:** ❓ The Workers AI section of Cloudflare's
+  [service-specific terms](https://www.cloudflare.com/service-specific-terms-developer-platform/)
+  wasn't read: the page couldn't be opened 2026-10-26. Read it before selling.
+- **Cost (🟡):** $0.0005 per audio minute (46.63 neurons a minute) on the
+  [pricing page](https://developers.cloudflare.com/workers-ai/platform/pricing/), as quoted in search
+  results 2026-10-26; a free daily 10,000-neuron allowance, then $0.011 per 1,000 neurons (reported by a
+  review site, not confirmed on Cloudflare's page). Small per game, but it grows with players.
+- **Privacy (⚠️):** voices go to Cloudflare as a processor. The privacy items in row 20 apply, and the
+  notice should name Cloudflare.
+- **To sell:** read the service-specific terms, confirm pricing on a paid plan, and name Cloudflare in
+  the privacy notice. If the terms don't fit, switch `STT_URL` to a self-hosted server (row 20).
 
 ## AI art: non-commercial vs commercial
 

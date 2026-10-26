@@ -40,7 +40,7 @@ access). Without that access the dashboard still looks connected, but no build e
 | `VOICEVOX_URL` | `vars` in `wrangler.jsonc` | A VOICEVOX engine reachable from the internet, for host voices. Without it lines show as subtitles. |
 | `READER_URL`, `READER_TOKEN` | `vars` for the URL, `wrangler secret put READER_TOKEN` | The reader service for kanji answers (below). Without it answers are compared as written. |
 | `PUBLIC_URL` | `vars` in `wrangler.jsonc` | The address the QR code points at. Defaults to the address the stage was opened on. |
-| `STT_URL`, `STT_MODEL`, `STT_TOKEN` | `vars` for the URL and model, `wrangler secret put STT_TOKEN` | Our own Whisper server for spoken answers ([speech.md](speech.md)). Without it phones type or tap; audio never goes to Google. |
+| `STT_URL`, `STT_MODEL`, `STT_TOKEN` | `vars` for the URL and model, `wrangler secret put STT_TOKEN` | Spoken answers ([speech.md](speech.md)). `workers-ai` (the default here) runs Whisper on Workers AI through the `AI` binding; a URL uses a self-hosted Whisper server instead. Empty: phones type or tap. Audio never goes to Google. |
 
 After changing `vars`, run `npm run cf:deploy` again. Secrets take effect at once.
 
@@ -56,8 +56,8 @@ READER_TOKEN=pick-a-long-secret npm run reader      # listens on port 3100
 
 Give it a public https address (for example with a Cloudflare Tunnel:
 `cloudflared tunnel --url http://localhost:3100`), then set `READER_URL` to that address and
-`READER_TOKEN` to the same secret. VOICEVOX and the Whisper server for speech
-([speech.md](speech.md)) can sit on the same machine (`server/ai/docker-compose.voicevox.yml`).
+`READER_TOKEN` to the same secret. VOICEVOX and a self-hosted Whisper server, if you use one instead of Workers AI
+([speech.md](speech.md)), can sit on the same machine (`server/ai/docker-compose.voicevox.yml`).
 
 ## Custom domain
 
