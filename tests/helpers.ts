@@ -4,6 +4,8 @@ import type { RoomView } from '../shared/src/protocol.js';
 import { loadContent } from '../server/src/content.js';
 import type { Room } from '../server/src/room.js';
 import { createKotobaServer, type ServerConfig } from '../server/src/server.js';
+import { createGame } from '../shared/src/game.js';
+import { viewFor } from '../shared/src/view.js';
 
 export const content = loadContent(fileURLToPath(new URL('../', import.meta.url)));
 
@@ -17,6 +19,10 @@ export class TruthRecorder {
   readonly byVersion = new Map<number, Map<string, string>>();
 
   readonly onCommit = (room: Room, version: number): void => {
+    // v0 is a fresh, empty lobby (never committed): a screen that opened before anyone joined saw it.
+    if (version === 1) {
+      this.byVersion.set(0, new Map([['stage', hashView(viewFor(createGame(room.code), { kind: 'stage' }, content))]]));
+    }
     const hashes = new Map<string, string>();
     hashes.set('stage', hashView(room.viewFor({ kind: 'stage' })));
     for (const p of room.state.players) hashes.set(p.id, hashView(room.viewFor({ kind: 'player', playerId: p.id })));

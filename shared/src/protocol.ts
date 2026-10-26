@@ -20,8 +20,11 @@ export type ModeId = (typeof MODE_IDS)[number];
 
 export const LEVELS: readonly Level[] = ['kana', 'n5', 'n4'];
 
-/** Who a view is rendered for. */
-export type Viewer = { kind: 'stage' } | { kind: 'player'; playerId: string };
+/**
+ * Who a view is rendered for. A `watch` stage is an extra screen opened by code (a remote
+ * player's laptop): it sees exactly what the main stage sees but cannot send commands.
+ */
+export type Viewer = { kind: 'stage'; watch?: true } | { kind: 'player'; playerId: string };
 
 export interface PlayerView {
   id: string;
@@ -121,12 +124,19 @@ export type CommandError =
   | 'not-enough-players'
   | 'too-many-players'
   | 'stale-phase'
-  | 'bad-level';
+  | 'bad-level'
+  /** Sent by a watching stage screen, which can only look. */
+  | 'watch-only';
 
 export interface CreateRoomResponse {
   code: string;
   stageToken: string;
   joinUrl: string;
+}
+
+/** `POST /api/rooms/:code/watch`: a token for another stage screen on an open room. */
+export interface WatchRoomResponse extends CreateRoomResponse {
+  watch: true;
 }
 
 export interface JoinRequest {

@@ -6,7 +6,7 @@ import { extname, join, normalize, resolve } from 'node:path';
 import QRCode from 'qrcode';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
-import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type RoomInfo } from '../../shared/src/protocol.js';
+import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type RoomInfo, type WatchRoomResponse } from '../../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/roomCode.js';
 import { systemClock, type Clock } from './clock.js';
 import { addReadings, type Reader } from './reading.js';
@@ -134,6 +134,12 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
           joinable: room.state.phase === 'lobby' && room.state.players.length < 8,
         };
         return send(res, 200, info);
+      }
+      if (action === 'watch' && req.method === 'POST') {
+        const stageToken = room.createWatchToken();
+        if (!stageToken) return send(res, 409, { error: 'too-many-screens' });
+        const body: WatchRoomResponse = { code: room.code, stageToken, joinUrl: joinUrl(req, room.code), watch: true };
+        return send(res, 201, body);
       }
       if (action === 'join' && req.method === 'POST') {
         const body = (await readJson(req)) as JoinRequest | null;

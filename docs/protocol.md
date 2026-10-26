@@ -8,6 +8,7 @@ Types live in `shared/src/protocol.ts`; this is the prose version. See ADR 0002 
 | --- | --- | --- | --- |
 | `POST /api/rooms` | stage | — | `{ code, stageToken, joinUrl }` |
 | `GET /api/rooms/:code` | anyone | — | `{ code, phase, players, joinable }` or 404 |
+| `POST /api/rooms/:code/watch` | another stage screen | — | `{ code, stageToken, joinUrl, watch: true }`: a watch-only stage token (up to 16 per room; closed screens are forgotten first); 404 `room-not-found`, 409 `too-many-screens` |
 | `POST /api/rooms/:code/join` | phone | `{ name, level?, deviceId?, token? }` | `{ playerId, token, rejoined, speech }` (`speech`: the server can hear spoken answers); 409 `room-full`, `game-in-progress`, `name-taken`; 400 `bad-name` |
 | `POST /api/rooms/:code/commands` | stage or phone (Bearer token) | `{ id, type, … }` | `{ ok: true, v }` or `{ ok: false, error, v }`; 401 `bad-token` / `seat-released` |
 | `GET /api/rooms/:code/qr.svg` | stage | — | QR code for the join URL |
@@ -33,6 +34,10 @@ to wording in `controller/src/main.ts`. `wrong-phase` means the move lost a race
 and is not shown.
 
 A retried command with the same `id` returns the first result without applying it again.
+
+A watching stage (`/stage/?code=XXXX`, for friends playing from somewhere else) gets the same view
+as the main stage and plays its own music and host voice, but every command it sends is refused
+with `watch-only`. The VIP's phone (or the main stage) runs the game.
 
 ## WebSocket
 

@@ -12,6 +12,7 @@ import {
   type JoinResponse,
   type RoomView,
   type ServerMessage,
+  type WatchRoomResponse,
 } from './protocol.js';
 
 /** Distributive Omit, so each command keeps its own fields. */
@@ -38,6 +39,12 @@ export async function createRoom(baseUrl: string): Promise<CreateRoomResponse> {
   const res = await fetch(`${baseUrl}/api/rooms`, { method: 'POST' });
   if (!res.ok) throw new Error(`create room failed: ${res.status}`);
   return (await res.json()) as CreateRoomResponse;
+}
+
+/** A token for another stage screen on an open room (a remote player's laptop). */
+export async function watchRoom(baseUrl: string, code: string): Promise<WatchRoomResponse | { error: 'room-not-found' | 'too-many-screens' }> {
+  const res = await fetch(`${baseUrl}/api/rooms/${encodeURIComponent(code)}/watch`, { method: 'POST' });
+  return (await res.json()) as WatchRoomResponse | { error: 'room-not-found' | 'too-many-screens' };
 }
 
 export async function joinRoom(
@@ -155,7 +162,8 @@ export class RoomClient {
       }
       this.attempts = 0;
       if (this.status !== 'open') this.setStatus('open');
-      if (msg.v <= this.version) {
+      // A fresh room is at v0: the first view is taken even then.
+      if (msg.v <= this.version && this.view) {
         this.staleDropped += 1;
         return;
       }
