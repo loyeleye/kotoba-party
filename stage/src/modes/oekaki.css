@@ -16,7 +16,7 @@
 
 .oek-turn { width: min(1500px, 100%); }
 .oek .oek-board { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: center; width: 100%; text-align: left; }
-.oek .oek-frame { width: clamp(220px, min(54vh, 40vw), 600px); aspect-ratio: 1; border-radius: 18px; background: #fbf7ee; box-shadow: 0 0 0 8px #3b2d1d, 0 0 0 12px #c8a46a, 0 12px 40px #0008; overflow: hidden; display: grid; place-items: center; }
+.oek .oek-frame { width: clamp(200px, min(calc(100vh - 590px), 40vw), 560px); aspect-ratio: 1; border-radius: 18px; background: #fbf7ee; box-shadow: 0 0 0 8px #3b2d1d, 0 0 0 12px #c8a46a, 0 12px 40px #0008; overflow: hidden; display: grid; place-items: center; }
 .oek .oek-frame.hidden { background: repeating-linear-gradient(45deg, #2a2140 0 18px, #221a35 18px 36px); color: var(--muted); font-size: 26px; text-align: center; padding: 24px; }
 .oek .oek-frame .ink-svg { width: 100%; height: 100%; background: transparent; border-radius: 0; box-shadow: none; }
 .oek .oek-frame .ink-stroke { stroke-width: 2.4; }
@@ -38,8 +38,8 @@
 .oek .oek-real-text { font-size: 64px; font-weight: 900; line-height: 1.4; }
 .oek .oek-real-text rt { font-size: 24px; font-weight: 600; color: var(--muted); }
 .oek .oek-real-en { font-size: 30px; font-weight: 700; color: var(--good); }
+.oek .oek-found { font-size: 22px; color: var(--ink); }
 .oek .oek-results li { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 18px; }
-.oek .oek-results li.real { border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
 .oek .oek-res-title { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
 .oek .oek-res-title .oek-opt-text { font-size: 30px; }
 .oek .oek-res-title small { font-size: 18px; color: var(--muted); }
@@ -52,11 +52,12 @@
 
 /* Small stages (720p, laptops): a smaller frame and type. */
 @media (max-height: 800px) {
-  .oek .oek-frame { width: clamp(200px, 44vh, 420px); }
   .oek .oek-side .prompt { font-size: 40px; }
   .oek .oek-opt-text { font-size: 28px; }
   .oek .oek-real-text { font-size: 44px; }
-  .oek .oek-real-en { font-size: 24px; }
+  .oek .oek-real-en { font-size: 22px; }
+  .oek .oek-real-tag, .oek .oek-found { font-size: 16px; }
+  .oek .oek-real { padding: 6px 18px 8px; }
   .oek .oek-res-title .oek-opt-text { font-size: 24px; }
   .oek .oek-results li, .oek .oek-options li { padding: 6px 14px; }
   .oek .oek-title { font-size: 64px; }

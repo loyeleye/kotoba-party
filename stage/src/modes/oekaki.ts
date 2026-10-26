@@ -7,7 +7,7 @@ import { h } from '../../../shared/src/dom.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
 import type { OekakiView } from '../../../shared/src/modes/views.js';
 import { PALETTE } from '../../../shared/src/modes/oekaki/drawing.js';
-import { toRomaji } from '../../../shared/src/modes/wordGauntlet/romaji.js';
+import { toRomaji } from '../../../shared/src/modes/oogiri/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
 
@@ -127,7 +127,9 @@ function result(view: RoomView, game: OekakiView): HTMLElement {
   const r = game.result;
   if (!r) return h('div', { class: 'oek-side' });
   const real = r.real;
-  const rows = [...r.options].sort((a, b) => Number(b.real) - Number(a.real) || b.pickedBy.length - a.pickedBy.length);
+  const realOpt = r.options.find((o) => o.real);
+  const finders = realOpt?.pickedBy ?? [];
+  const rows = r.options.filter((o) => !o.real).sort((a, b) => Number(b.real) - Number(a.real) || b.pickedBy.length - a.pickedBy.length);
   return h(
     'div',
     { class: 'oek-side' },
@@ -138,6 +140,7 @@ function result(view: RoomView, game: OekakiView): HTMLElement {
       h('ruby', { class: 'oek-real-text', lang: 'ja' }, real.text, h('rt', {}, real.kana.replace(/\s/g, '') !== real.text.replace(/\s/g, '') ? real.kana : '')),
       game.kanaAtTable ? h('p', { class: 'oek-opt-romaji' }, toRomaji(real.kana)) : null,
       h('p', { class: 'oek-real-en' }, real.en),
+      game.hiddenDrawing ? null : h('p', { class: 'oek-found' }, finders.length ? `Found by ${finders.map((p) => p.name).join(', ')}` : 'Nobody found it!'),
     ),
     h(
       'ol',
@@ -145,12 +148,12 @@ function result(view: RoomView, game: OekakiView): HTMLElement {
       rows.map((o) =>
         h(
           'li',
-          { class: `${o.real ? 'real' : ''} ${o.hidden ? 'hidden' : ''}` },
-          h('span', { class: 'oek-res-title' }, ...titleLine(o.text, o.real ? '' : o.kana, false), o.en && !o.real ? h('small', {}, ` ${o.en}`) : null),
+          { class: o.hidden ? 'hidden' : '' },
+          h('span', { class: 'oek-res-title' }, ...titleLine(o.text, o.kana, false), o.en ? h('small', {}, ` ${o.en}`) : null),
           h(
             'span',
             { class: 'by' },
-            o.real ? 'REAL' : o.house ? 'Fude’s decoy' : `by ${o.authors.map((a) => a.name).join(' & ')}`,
+            o.house ? 'Fude’s decoy' : `by ${o.authors.map((a) => a.name).join(' & ')}`,
             o.pickedBy.length ? ` · picked by ${o.pickedBy.map((p) => p.name).join(', ')}` : ' · nobody picked it',
           ),
         ),

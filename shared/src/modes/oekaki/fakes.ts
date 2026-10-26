@@ -66,8 +66,12 @@ export function readUtteranceFake(raw: unknown): ReadFake {
   return { ok: true, fake: { text, kana, en: null, via: raw.via } };
 }
 
-/** A fake built from the player's tiles, by index into their hand. の joins its neighbours. */
-export function buildTileFake(raw: unknown, hand: readonly Tile[]): ReadFake {
+/**
+ * A fake built from the player's tiles, by index into their hand. の joins its neighbours.
+ * With `kanaOnly` (Kana-level writers, whose tiles show kana) the title is written in kana, so
+ * a stray kanji never gives away who wrote it.
+ */
+export function buildTileFake(raw: unknown, hand: readonly Tile[], kanaOnly = false): ReadFake {
   if (!Array.isArray(raw) || raw.length === 0) return { ok: false, error: 'empty-answer' };
   if (raw.length > MAX_FAKE_TILES) return { ok: false, error: 'too-long' };
   if (!raw.every((i) => Number.isInteger(i) && i >= 0 && i < hand.length)) return { ok: false, error: 'bad-move' };
@@ -89,7 +93,7 @@ export function buildTileFake(raw: unknown, hand: readonly Tile[]): ReadFake {
       continue;
     }
     const sep = text ? ' ' : '';
-    text += sep + t.text;
+    text += sep + (kanaOnly ? t.kana : t.text);
     kana += sep + t.kana;
     en.push(t.en);
   }

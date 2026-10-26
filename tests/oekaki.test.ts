@@ -175,6 +175,7 @@ describe('fake titles', () => {
       NO_TILE,
     ];
     expect(buildTileFake([0, 3, 1], hand)).toEqual({ ok: true, fake: { text: '魚の ケーキ', kana: 'さかなの ケーキ', en: "fish's cake", via: 'tiles' } });
+    expect(buildTileFake([0, 3, 1], hand, true)).toMatchObject({ ok: true, fake: { text: 'さかなの ケーキ' } }); // Kana-level writers write kana
     expect(buildTileFake([2, 1], hand)).toMatchObject({ ok: true, fake: { text: 'こわい ケーキ', en: 'scary cake' } });
     expect(buildTileFake([3, 1], hand)).toMatchObject({ ok: true, fake: { text: 'ケーキ' } }); // a stray の is dropped
     expect(buildTileFake([3], hand)).toEqual({ ok: false, error: 'empty-answer' });
@@ -293,6 +294,8 @@ describe('Oekaki rounds', () => {
     expect(r.s.phase).toBe('reveal');
     const options = r.view(stage).options!;
     expect(options).toHaveLength(3); // two distinct fakes + the real one
+    // The vote shows every title in kana, so the real title's kanji can't give it away.
+    for (const o of options) expect(o.text).toBe(o.kana);
     expect(JSON.stringify(r.view(stage))).not.toContain('"real"');
     const ms = r.ms().turn!;
     const realOpt = ms.options.find((o) => o.real)!;

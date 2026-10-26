@@ -17,7 +17,7 @@ import type { InkPoint } from '../../japanese/strokes.js';
 import { isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type MoveResult } from '../mode.js';
-import { toRomaji } from '../wordGauntlet/romaji.js';
+import { toRomaji } from '../oogiri/romaji.js';
 import { readDrawing } from './drawing.js';
 import { buildTileFake, readUtteranceFake, sameFake, tooClose, type Fake, type FakeVia } from './fakes.js';
 import { dealPrompt, dealTiles, decoyCandidates, markUsed, type Prompt, type Tile } from './prompts.js';
@@ -128,7 +128,7 @@ export interface TitleView {
 
 export interface OptionView {
   id: string;
-  /** "[hidden]" once the VIP hides it. */
+  /** The kana reading during the vote, the written title at the score; "[hidden]" once hidden. */
   text: string;
   kana: string;
   hidden: boolean;
@@ -286,9 +286,6 @@ export const oekakiMode: Mode<OekakiState, OekakiView> = {
 
   enter(s, phase, ctx) {
     switch (phase) {
-      case 'intro':
-        ctx.cue({ host: 'fude', event: 'intro', context: 'Oekaki: everyone draws a secret Japanese word, writes fake titles for the others’ drawings, then finds the real one.' });
-        return;
       case 'prompt':
         return enterDraw(s, ctx);
       case 'answer':
@@ -390,7 +387,9 @@ export const oekakiMode: Mode<OekakiState, OekakiView> = {
       drawing: t && viewer.kind === 'stage' && !t.sketch.hidden ? { strokes: t.sketch.strokes, colors: t.sketch.colors } : null,
       hiddenDrawing: !!t?.sketch.hidden,
       submitted: t && phase === 'answer' ? t.options.flatMap((o) => o.authorIds) : [],
-      options: showOptions ? anonymousOrder(t!.options).map((o) => optionView(o)) : null,
+      // During the vote every title is shown by its kana reading: the real title's kanji
+      // (古い カレー) would otherwise give it away next to fakes typed in kana.
+      options: showOptions ? anonymousOrder(t!.options).map((o) => optionView(o, phase === 'reveal')) : null,
       picked: t && phase === 'reveal' ? Object.keys(t.picks) : [],
       result: t && phase === 'score' ? resultView(s, t, ctx, level) : null,
       mine: me
@@ -439,7 +438,6 @@ function enterDraw(s: OekakiState, ctx: ModeContext): void {
     s.prompts[p.id] = prompt;
   }
   s.used = [...used];
-  ctx.cue({ host: 'fude', event: 'prompt_read' });
 }
 
 function enterFakes(s: OekakiState, ctx: ModeContext): void {
@@ -450,7 +448,6 @@ function enterFakes(s: OekakiState, ctx: ModeContext): void {
     if (p.id !== sketch.artistId) tiles[p.id] = dealTiles(ctx.content, s.packId, sketch.prompt, () => ctx.random());
   }
   s.turn = { sketch, options: [], via: {}, tiles, picks: {}, said: {}, scored: false, points: {}, pool: { base: 0, bonus: 0 } };
-  ctx.cue({ host: 'fude', event: 'prompt_read' });
 }
 
 function enterVote(s: OekakiState, ctx: ModeContext): void {
@@ -465,7 +462,6 @@ function enterVote(s: OekakiState, ctx: ModeContext): void {
     fakes += 1;
   }
   t.options.push({ id: ctx.newId(), text: real.text, kana: real.kana, en: real.en, authorIds: [], real: true, house: false, hidden: false });
-  ctx.cue({ host: 'fude', event: 'all_in' });
 }
 
 function enterScore(s: OekakiState, ctx: ModeContext): void {
@@ -473,6 +469,8 @@ function enterScore(s: OekakiState, ctx: ModeContext): void {
   const real = t.sketch.prompt;
   scoreTurn(s, ctx);
   for (const p of ctx.players()) ctx.phrase(p.id, { itemId: real.id, text: real.text, kana: real.kana, en: real.en, outcome: 'seen' });
+  // Fude's written bank is Raid-themed, so the only cue is the generic call-and-response
+  // ("みんなで！ せーの！"); the LLM host gets the real title to call out.
   ctx.cue({ host: 'fude', event: 'kakegoe_call', prompt: { text: real.text, kana: real.kana, en: real.en } });
 }
 
@@ -533,7 +531,7 @@ function moveFake(s: OekakiState, phase: Phase, playerId: string, raw: Record<st
   if (raw.tiles !== undefined) {
     const hand = t.tiles[playerId];
     if (!hand) return moveError('not-playing');
-    read = buildTileFake(raw.tiles, hand);
+    read = buildTileFake(raw.tiles, hand, ctx.player(playerId)?.level === 'kana');
   } else read = readUtteranceFake(raw.utterance);
   if (!read.ok) return moveError(read.error);
   const fake: Fake = read.fake;
@@ -601,8 +599,9 @@ function moveHide(s: OekakiState, phase: Phase, playerId: string, raw: Record<st
 
 // ---- views ----
 
-function optionView(o: Option): OptionView {
-  return { id: o.id, text: o.hidden ? '[hidden]' : o.text, kana: o.hidden ? '' : o.kana, hidden: o.hidden };
+function optionView(o: Option, kanaOnly = false): OptionView {
+  if (o.hidden) return { id: o.id, text: '[hidden]', kana: '', hidden: true };
+  return { id: o.id, text: kanaOnly ? o.kana : o.text, kana: o.kana, hidden: false };
 }
 
 function resultView(s: OekakiState, t: Turn, ctx: ModeContext, level: Level | null): OekakiView['result'] {
