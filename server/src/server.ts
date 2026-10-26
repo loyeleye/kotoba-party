@@ -140,7 +140,7 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       if (action === 'commands' && req.method === 'POST') {
         const token = bearer(req);
         const body = await readJson(req);
-        if (body && typeof body === 'object' && (body as { type?: unknown }).type === 'play') {
+        if (body && typeof body === 'object' && ['play', 'micCheck'].includes(String((body as { type?: unknown }).type))) {
           addReadings(body, config.reader ?? null);
         }
         const result = token ? room.command(token, body) : null;

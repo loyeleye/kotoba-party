@@ -10,7 +10,7 @@
   font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+body { margin: 0; background: linear-gradient(rgba(20, 16, 31, 0.78), rgba(20, 16, 31, 0.9)), url('/stage/assets/studio-bg.jpg') center / cover fixed, var(--bg); color: var(--ink); min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
 
 .bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 32px; border-bottom: 1px solid var(--line); gap: 24px; flex-wrap: wrap; }
 .brand { font-size: 32px; font-weight: 800; color: var(--accent); }

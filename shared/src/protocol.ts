@@ -15,7 +15,7 @@ export type { Level, HostId };
 export const PHASES = ['lobby', 'intro', 'prompt', 'answer', 'reveal', 'encore', 'score', 'penalty', 'finale', 'recap'] as const;
 export type Phase = (typeof PHASES)[number];
 
-export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'debug'] as const;
+export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'word-gauntlet', 'concentration', 'debug'] as const;
 export type ModeId = (typeof MODE_IDS)[number];
 
 export const LEVELS: readonly Level[] = ['kana', 'n5', 'n4'];
@@ -31,6 +31,8 @@ export interface PlayerView {
   connected: boolean;
   isVip: boolean;
   score: number;
+  /** Lobby mic check: 'ok' once they said こんにちは, 'quiet' if they chose tap/type. */
+  mic: 'ok' | 'quiet' | null;
 }
 
 /** What the host is saying right now (shown as a subtitle, voiced if audio is ready). */
@@ -100,6 +102,8 @@ export type Command =
   | { id: string; type: 'start'; mode: ModeId; rounds?: number; packId?: string; extra?: Record<string, unknown> }
   | { id: string; type: 'play'; move: unknown }
   | { id: string; type: 'setLevel'; level: Level }
+  /** The lobby mic check: say こんにちは. A quiet result switches the phone to tap/type. */
+  | { id: string; type: 'micCheck'; utterance: unknown }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' };
 

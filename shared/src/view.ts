@@ -36,6 +36,7 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
       connected: p.connected,
       isVip: p.id === state.vipId,
       score: p.score,
+      mic: p.mic,
     })),
     host: state.host,
     game: playing ? (mode.view(state.modeState, state.phase, viewer, modeContext(state, ctx)) as GameView) : null,

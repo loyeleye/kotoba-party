@@ -80,3 +80,8 @@ button { font: inherit; cursor: pointer; }
 .tile { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 18px; }
 .tile.on { border-color: var(--accent); background: #3a2230; }
 .tile small { display: block; color: var(--muted); font-size: 12px; }
+.mic-check { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--line); border-radius: 14px; }
+.mic-check .big { margin: 0; }
+.mic { margin: 0; color: var(--muted); }
+.mic.ok { color: var(--good); }
+.linkish { background: none; border: 0; color: var(--muted); text-decoration: underline; padding: 6px; }

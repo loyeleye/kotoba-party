@@ -10,6 +10,18 @@ export interface Utterance {
   text: string;
   /** Hiragana reading the server worked out for `text` (kanji → kana). Set by the server only. */
   reading?: string;
+  /** The server's word split of `text`, with dictionary facts. Set by the server only. */
+  tokens?: UtteranceToken[];
+}
+
+export interface UtteranceToken {
+  surface: string;
+  /** Hiragana reading. */
+  reading: string;
+  /** Part of speech from the dictionary (IPADIC: 名詞, 動詞, 形容詞, 助詞 …). */
+  pos: string;
+  /** False when the dictionary doesn't know the word (made-up words, typos). */
+  known: boolean;
 }
 
 const KATA_START = 0x30a1;
