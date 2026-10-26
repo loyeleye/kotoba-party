@@ -6,7 +6,8 @@
 // Lines arrive through room.say(), which drops any line whose phase has already passed,
 // so a slow voice can never show a stale line or hold up a round.
 
-import type { HostLine } from '../../content/src/types.js';
+import type { HostLine, Level } from '../../content/src/types.js';
+import { HOST_EVENTS, type HostEvent as AiEvent, type HostVoice as AiHostVoice } from '../ai/index.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type { HostSay } from '../../shared/src/protocol.js';
 import type { Room } from './room.js';
@@ -54,5 +55,42 @@ export function hostDirector(voice: HostVoice) {
       .catch(() => {
         // The host just stays quiet this phase.
       });
+  };
+}
+
+/**
+ * The host voice thread's LLM + TTS pipeline (server/ai) behind the HostVoice interface.
+ * Events the pipeline doesn't know fall back to the plain bank voice. A line is awaited for
+ * at most `waitMs`; the pipeline itself falls back to a voiced bank line when the LLM is slow.
+ */
+export function aiVoice(
+  voice: AiHostVoice,
+  fallback: HostVoice,
+  opts: { waitMs?: number; levelOf?: (roomCode: string) => Level } = {},
+): HostVoice {
+  const known = new Set<string>(HOST_EVENTS);
+  return {
+    async speak(roomCode, cue) {
+      if (!known.has(cue.event)) return fallback.speak(roomCode, cue);
+      const pending = voice.prepare(roomCode, {
+        host: cue.host,
+        event: cue.event as AiEvent,
+        tier: cue.tier,
+        prompt: cue.prompt,
+        answer: cue.answer,
+        answerEn: cue.answerEn,
+        slots: cue.slots,
+        level: opts.levelOf?.(roomCode),
+      });
+      const line = await pending.ready(opts.waitMs ?? 1500);
+      if (!line) return fallback.speak(roomCode, cue);
+      return {
+        host: line.host,
+        text: line.text,
+        kana: line.kana,
+        en: line.en,
+        audioUrl: line.audio ? `/audio/${encodeURIComponent(line.audio.id)}` : undefined,
+      };
+    },
   };
 }

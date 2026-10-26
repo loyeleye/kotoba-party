@@ -31,6 +31,11 @@ export interface ServerConfig {
   maxRooms?: number;
   onCommit?: (room: Room, version: number) => void;
   onCues?: (room: Room, cues: HostCue[], phaseSeq: number) => void;
+  /** Called when a room enters a new phase (e.g. to reset the host's per-game budget on 'intro'). */
+  onPhase?: (room: Room) => void;
+  onRoomClosed?: (room: Room) => void;
+  /** Host audio by id, served at GET /audio/:id. */
+  audio?: (id: string) => { mime: string; bytes: Uint8Array } | undefined;
 }
 
 export interface KotobaServer {
@@ -71,7 +76,11 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       content: config.content,
       seatHoldMs: config.seatHoldMs,
       idleMs: config.roomIdleMs ?? 10 * 60_000,
-      onClose: (r) => rooms.delete(r.code),
+      onClose: (r) => {
+        rooms.delete(r.code);
+        config.onRoomClosed?.(r);
+      },
+      onPhase: config.onPhase,
       onCommit: config.onCommit,
       onCues: config.onCues,
     });
@@ -88,6 +97,15 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
     const path = url.pathname;
 
     if (path === '/healthz') return send(res, 200, { ok: true, rooms: rooms.size });
+
+    const audioMatch = /^\/audio\/([^/]+)$/.exec(path);
+    if (audioMatch && req.method === 'GET') {
+      const clip = config.audio?.(decodeURIComponent(audioMatch[1]!));
+      if (!clip) return send(res, 404, { error: 'not-found' });
+      res.writeHead(200, { 'content-type': clip.mime, 'cache-control': 'public, max-age=86400' });
+      res.end(Buffer.from(clip.bytes));
+      return;
+    }
 
     if (path === '/api/rooms' && req.method === 'POST') {
       const room = createRoom();

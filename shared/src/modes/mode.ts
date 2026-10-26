@@ -103,7 +103,13 @@ export interface HostCue {
   tier?: HostLine['tier'];
   /** Template values, e.g. { name: 'Aki' }. */
   slots?: Record<string, string>;
-  /** Free context for an LLM reaction (the prompt, the answer, …). Never shown as is. */
+  /** The round's prompt, for an LLM reaction. */
+  prompt?: { text: string; kana: string; en: string };
+  /** The answer being reacted to (untrusted player text; the host pipeline fences it). */
+  answer?: string;
+  /** The answer's English meaning, when known. */
+  answerEn?: string;
+  /** Free context for an LLM reaction. Never shown as is. */
   context?: string;
 }
 

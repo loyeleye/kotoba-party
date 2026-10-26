@@ -39,6 +39,7 @@ export interface RoomOptions {
   onCommit?: (room: Room, version: number) => void;
   /** Host cues raised by game rules, for the host pipeline to voice. It answers through `room.say`. */
   onCues?: (room: Room, cues: HostCue[], phaseSeq: number) => void;
+  onPhase?: (room: Room) => void;
 }
 
 const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'skip', 'playAgain']);
@@ -221,12 +222,14 @@ export class Room {
       random: this.opts.random ?? Math.random,
     });
     const cues = this.state.cues.splice(0);
+    const phaseBefore = this.timedPhaseSeq;
     if (outcome.changed) {
       this.version += 1;
       this.schedulePhaseTimer();
       this.opts.onCommit?.(this, this.version);
       this.broadcast();
     }
+    if (outcome.changed && this.state.phaseSeq !== phaseBefore) this.opts.onPhase?.(this);
     if (cues.length) this.opts.onCues?.(this, cues, this.state.phaseSeq);
     return outcome;
   }
