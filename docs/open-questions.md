@@ -43,6 +43,28 @@ Sections: Phase 0 (multiplayer), Content, AI and voice. Threads add to their own
 17. **Phase 0 debug prompts** (`content/debug/prompts.json`) have Japanese subtitles that no
     fluent speaker has checked. They are throwaway and will be replaced by Phase 1 packs.
 
+## Mode engine (v1)
+
+18. **One room machine, pluggable modes.** The room owns seats, levels, VIP, scores and the
+    lobby → game → recap loop; each mode (Oogiri Night, Last Train, Kana Yōkai Raid) owns its
+    phases, moves and points (`shared/src/modes/`). The Phase 0 round stays as a hidden "debug"
+    mode so the 100-round gate keeps running.
+19. **New players can also join between games** (on the recap screen), not only in the lobby.
+20. **A player who picks no level starts at N5.** Levels can be changed in the lobby only.
+21. **Speech uses the browser's own recogniser for now** (Chrome and Safari have one). In
+    Chrome that sends audio to Google's servers. Server-side speech-to-text is Phase 3 in the
+    design doc. Is the browser recogniser acceptable for playtests until then?
+22. **Answers with kanji are read into kana on the server** (kuromoji dictionary), then compared
+    leniently (long vowels, じ/ぢ, ず/づ, お/を, えい/ええ, おう/おお). Small っ and vowel length are
+    never forgiven, matching the judge in server/ai.
+23. **The host says at most one line per phase**: if the rules raise several cues at once, the
+    last (most specific) wins. Lines that arrive after their phase ended are dropped.
+24. **The AI judge is not wired into the rules yet.** Modes are synchronous; the judge is async.
+    Oogiri's natural version uses the prompt's written example answer until the judge runs as
+    answers lock in (design doc Phase 2).
+25. **Host audio needs a running VOICEVOX** (`VOICEVOX_URL`); without it the host shows
+    subtitles only. LLM lines need `ANTHROPIC_API_KEY`; without it the written bank is used.
+
 ## Content
 
 The biggest open item first, then the rest grouped by area. All content is marked
