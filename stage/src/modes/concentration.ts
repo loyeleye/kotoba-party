@@ -2,7 +2,7 @@
 // cleared cells), whose turn it is, the say-it and steal windows, and the picture guesses.
 // Audio cards speak their word with the browser's Japanese voice when they turn over.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
 import { duckForSpeech } from '../music/index.js';
 import { isMuted } from '../sound.js';
 import type { ConcentrationView } from '../../../shared/src/modes/views.js';
@@ -167,7 +167,7 @@ function banner(view: RoomView, game: ConcentrationView): HTMLElement {
     case 'score': {
       const r = game.result;
       if (!r) return h('div', { class: 'cc-banner' });
-      const word = r.word ? h('span', { class: 'cc-word-line', lang: 'ja' }, r.word.text, r.word.kana !== r.word.text ? ` (${r.word.kana})` : '', h('span', { class: 'muted' }, ` · ${r.word.en}`)) : null;
+      const word = r.word ? h('span', { class: 'cc-word-line', lang: 'ja' }, ruby(r.word), h('span', { class: 'muted' }, ` · ${r.word.en}`)) : null;
       const lines: Record<typeof r.kind, string> = {
         claimed: `${nameOf(view, r.playerId)} keeps it! +${r.points}${r.spoken ? ' 🎤' : ''}`,
         stolen: `${nameOf(view, r.playerId)} stole it! +${r.points}${r.spoken ? ' 🎤' : ''}`,
@@ -178,13 +178,14 @@ function banner(view: RoomView, game: ConcentrationView): HTMLElement {
       return h('div', { class: `cc-banner cc-result cc-${r.kind}` }, h('p', { class: 'cc-title' }, lines[r.kind]), word);
     }
     case 'finale': {
-      const top = [...game.tally].sort((a, b) => b.points - a.points)[0];
+      const best = Math.max(0, ...game.tally.map((t) => t.points));
+      const leaders = best > 0 ? game.tally.filter((t) => t.points === best).map((t) => nameOf(view, t.playerId)) : [];
       return h(
         'div',
         { class: 'cc-banner cc-finale' },
-        h('p', { class: 'cc-title' }, game.pairsLeft === 0 ? 'Board clear! お疲れさま!' : 'Time! お疲れさま!'),
+        h('p', { class: 'cc-title' }, game.pairsLeft === 0 ? 'Board clear! お疲れさま！' : 'Time! お疲れさま！'),
         game.picture.answer ? h('p', { class: 'cc-line', lang: 'ja' }, `The picture: ${game.picture.answer.text} · ${game.picture.answer.en}`) : null,
-        top ? h('p', { class: 'cc-line' }, `Most points: ${nameOf(view, top.playerId)} (${top.points})`) : null,
+        leaders.length ? h('p', { class: 'cc-line' }, `${leaders.length > 1 ? 'Tied on top' : 'Most points'}: ${leaders.join(' & ')} (${best})`) : h('p', { class: 'cc-line' }, 'No pairs scored this time.'),
       );
     }
     default:
@@ -205,11 +206,11 @@ function side(view: RoomView, game: ConcentrationView): HTMLElement {
       { class: 'cc-picture' },
       h('p', { class: 'cc-pic-title' }, pic.answer ? 'The hidden picture' : 'What’s the hidden picture?'),
       pic.answer
-        ? h('p', { class: 'cc-pic-answer', lang: 'ja' }, pic.answer.text, h('small', {}, pic.answer.en))
+        ? h('p', { class: 'cc-pic-answer', lang: 'ja' }, ruby(pic.answer), h('small', {}, pic.answer.en))
         : h(
             'ol',
             { class: 'cc-options' },
-            pic.options.map((o) => h('li', {}, h('span', { lang: 'ja' }, o.text), h('small', {}, o.en))),
+            pic.options.map((o) => h('li', {}, ruby(o), h('small', {}, o.en))),
           ),
       pic.solvedBy ? h('p', { class: 'cc-line good' }, `${nameOf(view, pic.solvedBy)} got it!`) : null,
       !pic.answer && pic.open ? h('p', { class: 'cc-line muted' }, `Guess on your phone: +${pic.worth} now (one try each)`) : null,

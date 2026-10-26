@@ -351,8 +351,8 @@ const AWARD_FALLBACK: Record<string, { text: string; en: string }> = {
   'pon.award.cushion-tower': { text: 'ざぶとん タワー', en: 'Cushion Tower' },
   'pon.award.ippon-king': { text: 'イッポン チャンピオン', en: 'IPPON Champion' },
   'pon.award.bravest-japanese': { text: 'ゆうき ナンバーワン', en: 'Bravest Japanese' },
-  'pon.award.best-callback': { text: 'また でたしょう', en: 'Best Callback' },
-  'pon.award.cushions-stolen': { text: 'ざぶとん さようならしょう', en: 'Most Cushions Stolen' },
+  'pon.award.best-callback': { text: 'また でた賞', en: 'Best Callback' },
+  'pon.award.cushions-stolen': { text: 'ざぶとん さようなら賞', en: 'Most Cushions Stolen' },
 };
 
 export const oogiriMode: Mode<OogiriState, OogiriView> = {
@@ -669,7 +669,10 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         .map((a) => {
           const c: AnswerCard = { id: a.id, text: a.hidden ? '[hidden]' : a.text, en: a.hidden ? '' : a.en, hidden: a.hidden, english: a.english };
           if (me && a.authorId === me.id) c.mine = true;
-          if (romaji && !a.hidden && !a.english) c.romaji = toRomaji(a.kana);
+          if (romaji && !a.hidden && !a.english) {
+            c.kana = a.kana;
+            c.romaji = toRomaji(a.kana);
+          }
           if (authorsShown) {
             const line = lines.get(a.id);
             c.authorId = a.authorId;

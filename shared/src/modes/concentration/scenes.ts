@@ -21,7 +21,7 @@ export const SCENES: readonly Scene[] = [
   { id: 'gakkou', name: { text: '学校', kana: 'がっこう', en: 'school' }, clues: ['🏫', '🎒', '✏️', '📚', '🔔', '📝', '🍱', '⏰', '🧑‍🏫'] },
   { id: 'onsen', name: { text: '温泉', kana: 'おんせん', en: 'a hot spring' }, clues: ['♨️', '🐒', '🏔️', '🧖', '🌙', '🍶', '🧴', '👘', '🪵'] },
   { id: 'eki', name: { text: '駅', kana: 'えき', en: 'a train station' }, clues: ['🚉', '🚃', '🎫', '🕐', '🧳', '🍱', '🚄', '🛤️', '📢'] },
-  { id: 'tanjoubi', name: { text: 'たんじょうび', kana: 'たんじょうび', en: 'a birthday party' }, clues: ['🎂', '🎁', '🎈', '🎉', '🕯️', '🎊', '🍰', '🥳', '🎵'] },
+  { id: 'tanjoubi', name: { text: 'たんじょうび', kana: 'たんじょうび', en: 'a birthday' }, clues: ['🎂', '🎁', '🎈', '🎉', '🕯️', '🎊', '🍰', '🥳', '🎵'] },
   { id: 'doubutsuen', name: { text: 'どうぶつえん', kana: 'どうぶつえん', en: 'the zoo' }, clues: ['🦁', '🐼', '🐘', '🦒', '🐒', '🐧', '🦓', '🎟️', '🌳'] },
   { id: 'kyanpu', name: { text: 'キャンプ', kana: 'キャンプ', en: 'camping' }, clues: ['⛺', '🔥', '🌲', '🎒', '🌙', '🔦', '🍢', '🏕️', '⭐'] },
   { id: 'ramenya', name: { text: 'ラーメンや', kana: 'ラーメンや', en: 'a ramen shop' }, clues: ['🍜', '🥢', '🏮', '🥚', '🍥', '🧑‍🍳', '🍺', '🎏', '💴'] },

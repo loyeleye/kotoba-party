@@ -9,7 +9,7 @@ export const hostAwards: HostAward[] = [
   {
     id: 'pon.award.cushions-stolen',
     host: 'pon',
-    name: { text: 'ざぶとん さようならしょう', kana: 'ざぶとん さようならしょう', en: 'Most Cushions Stolen' },
+    name: { text: 'ざぶとん さようなら賞', kana: 'ざぶとん さようならしょう', en: 'Most Cushions Stolen' },
     criterion: 'The player Pon stole a cushion from (ties: the one who led for the most rounds).',
   },
   {
@@ -21,7 +21,7 @@ export const hostAwards: HostAward[] = [
   {
     id: 'pon.award.best-callback',
     host: 'pon',
-    name: { text: 'また でたしょう', kana: 'また でたしょう', en: 'Best Callback' },
+    name: { text: 'また でた賞', kana: 'また でたしょう', en: 'Best Callback' },
     criterion: 'Most votes on answers that used a callback tile (a word from earlier tonight or a caught yōkai).',
   },
   {
@@ -65,7 +65,7 @@ export const hostAwards: HostAward[] = [
   {
     id: 'fude.award.battle-cry',
     host: 'fude',
-    name: { text: 'おおごえしょう', kana: 'おおごえしょう', en: 'Battle Cry' },
+    name: { text: 'おおごえ賞', kana: 'おおごえしょう', en: 'Battle Cry' },
     criterion: 'Most Shout attacks attempted (attempts, not accuracy).',
   },
 
@@ -91,7 +91,7 @@ export const hostAwards: HostAward[] = [
   {
     id: 'chochin.award.welcome-back',
     host: 'chochin',
-    name: { text: 'おかえりなさいしょう', kana: 'おかえりなさいしょう', en: 'Welcome Back' },
+    name: { text: 'おかえりなさい賞', kana: 'おかえりなさいしょう', en: 'Welcome Back' },
     criterion: 'Revived from ghost to passenger (ties: the latest revival).',
   },
   {

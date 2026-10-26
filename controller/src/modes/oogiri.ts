@@ -2,13 +2,17 @@
 // send it, vote, encore, and read your own private tip.
 
 import { h } from '../../../shared/src/dom.js';
-import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import type { AnswerCard, OogiriView, PromptCard, SlotView, TileView } from '../../../shared/src/modes/oogiri/oogiri.js';
 import { canSpeak, speakBox } from '../components/speak.js';
 import { kanaPad } from '../components/kanaPad.js';
 import { waiting, waitQuip } from '../components/ui.js';
+import { jpView } from '../components/jp.js';
+import type { Level } from '../../../content/src/types.js';
+
+/** This phone's level, set on each render: every Japanese line follows it (components/jp.ts). */
+let level: Level | null = null;
 import type { PhoneContext, PhoneMode } from './types.js';
 
 const ROUND_INFO: Record<string, { title: string; ja: string; how: string }> = {
@@ -32,10 +36,7 @@ function promptCard(p: PromptCard, small = false): HTMLElement {
     'div',
     { class: `oo-prompt ${small ? 'small' : ''}` },
     p.photo ? h('p', { class: 'oo-photo' }, '📷 ', p.photo) : null,
-    h('p', { class: 'oo-jp', lang: 'ja' }, p.text),
-    p.kana !== p.text ? h('p', { class: 'oo-kana', lang: 'ja' }, p.kana) : null,
-    p.romaji ? h('p', { class: 'oo-romaji' }, p.romaji) : null,
-    h('p', { class: 'oo-en' }, p.en),
+    jpView(p, level, { cls: 'oo-jpv' }),
   );
 }
 
@@ -48,8 +49,10 @@ function sayFirst(slot: SlotView, round: number, send: PhoneContext['send']): HT
     { class: 'screen oo-answer' },
     h('p', { class: 'oo-step' }, `Prompt ${slot.index + 1} of ${slot.count}`),
     promptCard(slot.prompt),
-    h('p', { class: 'big oo-sayfirst' }, 'Say it first! 🎤'),
-    h('p', { class: 'hint' }, 'From memory, what goes in the blank? Saying it now earns the most.'),
+    // No mic (or quiet mode): the same memory window, but asking for a typed answer, not a shout.
+    canSpeak()
+      ? [h('p', { class: 'big oo-sayfirst' }, 'Say it first! 🎤'), h('p', { class: 'hint' }, 'From memory, what goes in the blank? Saying it now earns the most.')]
+      : [h('p', { class: 'big oo-sayfirst' }, 'From memory first! ⌨️'), h('p', { class: 'hint' }, 'Type what goes in the blank before the tiles open. That earns the most.')],
     speakBox({
       label: 'Hold and say your answer',
       placeholder: 'Type what goes in the blank',
@@ -85,7 +88,7 @@ function pieceText(p: Piece, frameSlot: string | null): string {
   return p.tile.options?.find((o) => o.form === p.form)?.text ?? p.tile.text;
 }
 
-function builder(slot: SlotView, round: number, send: PhoneContext['send'], level: string): HTMLElement {
+function builder(slot: SlotView, round: number, send: PhoneContext['send'], level: Level | null): HTMLElement {
   const pieces: Piece[] = [];
   let frameId: string | null = null;
   let picking: TileView | null = null;
@@ -141,10 +144,7 @@ function builder(slot: SlotView, round: number, send: PhoneContext['send'], leve
               draw();
             },
           },
-          h('span', { class: 'oo-tile-jp', lang: 'ja' }, t.text),
-          t.kana !== t.text ? h('small', { lang: 'ja' }, t.kana) : null,
-          t.romaji ? h('small', { class: 'oo-romaji' }, t.romaji) : null,
-          h('small', {}, t.en),
+          jpView(t, level, { as: 'tile' }),
           t.ask ? h('span', { class: 'oo-ask' }, `→ ${t.ask.label}`) : null,
           t.role === 'callback' ? h('span', { class: 'oo-cb' }, '↺ tonight') : null,
         );
@@ -261,9 +261,7 @@ function answerList(answers: AnswerCard[], opts: { vote?: (a: AnswerCard) => voi
         h(
           canVote ? 'button' : 'div',
           { type: canVote ? 'button' : null, class: 'oo-ans-main', onclick: canVote ? () => opts.vote!(a) : null },
-          h('span', { class: 'oo-ans-jp', lang: 'ja' }, a.text),
-          a.romaji ? h('small', { class: 'oo-romaji' }, a.romaji) : null,
-          a.en ? h('small', {}, a.en) : null,
+          jpView({ text: a.text, kana: a.kana, en: a.en, romaji: a.romaji }, a.english ? null : level, { as: 'tile' }),
           a.mine ? h('small', { class: 'oo-tag' }, 'yours') : null,
         ),
         opts.hide && !a.hidden ? h('button', { type: 'button', class: 'oo-hide', onclick: () => opts.hide!(a) }, 'Hide') : null,
@@ -339,10 +337,7 @@ function score(ctx: PhoneContext<OogiriView>): HTMLElement {
         ? h(
             'div',
             { class: 'oo-natural' },
-            h('p', { class: 'oo-jp', lang: 'ja' }, natural.text),
-            natural.kana !== natural.text ? h('p', { class: 'oo-kana', lang: 'ja' }, natural.kana) : null,
-            natural.romaji ? h('p', { class: 'oo-romaji' }, natural.romaji) : null,
-            h('p', { class: 'oo-en' }, natural.en),
+            jpView(natural, level),
           )
         : null,
     );
@@ -359,10 +354,7 @@ function score(ctx: PhoneContext<OogiriView>): HTMLElement {
     h(
       'div',
       { class: 'oo-natural' },
-      h('p', { class: 'oo-jp', lang: 'ja' }, tip.natural.text),
-      tip.natural.kana !== tip.natural.text ? h('p', { class: 'oo-kana', lang: 'ja' }, tip.natural.kana) : null,
-      ctx.me.level === 'kana' ? h('p', { class: 'oo-romaji' }, toRomaji(tip.natural.kana)) : null,
-      h('p', { class: 'oo-en' }, tip.natural.en),
+      jpView(tip.natural, level),
     ),
     h('p', { class: 'oo-pattern' }, '💡 ', tip.pattern),
   );
@@ -379,6 +371,7 @@ export const oogiriPhone: PhoneMode<OogiriView> = {
 
   render(ctx) {
     const { view, game, send } = ctx;
+    level = ctx.me.level;
     const info = game.kind ? ROUND_INFO[game.kind] : undefined;
     switch (view.phase) {
       case 'intro':

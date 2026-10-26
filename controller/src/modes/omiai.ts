@@ -3,12 +3,15 @@
 // charming answer; then your private manners tip and the polite version to say back.
 
 import { h } from '../../../shared/src/dom.js';
+import { guestPic } from '../../../shared/src/art.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
 import type { OmiaiView } from '../../../shared/src/modes/views.js';
 import type { QuestionView, TileView, TipView } from '../../../shared/src/modes/omiai/omiai.js';
 import type { Register } from '../../../shared/src/modes/omiai/manners.js';
-import { speakBox } from '../components/speak.js';
+import { canSpeak, speakBox } from '../components/speak.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { waiting } from '../components/ui.js';
+import { jpView } from '../components/jp.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 type Ctx = PhoneContext<OmiaiView>;
@@ -25,19 +28,13 @@ const REGISTER: Record<Register, { label: string; line: string }> = {
 const ROLE_TITLE: Record<TileView['role'], string> = { opener: 'Start', lead: '', fill: 'Answer', ending: 'Ending', closer: 'Finish' };
 
 function questionCard(q: QuestionView, small = false): HTMLElement {
-  return h(
-    'div',
-    { class: `omi-q${small ? ' small' : ''}` },
-    h('p', { class: 'omi-q-jp', lang: 'ja' }, q.text),
-    q.kana !== q.text ? h('p', { class: 'omi-q-kana', lang: 'ja' }, q.kana) : null,
-    q.romaji ? h('p', { class: 'omi-q-romaji' }, q.romaji) : null,
-    h('p', { class: 'omi-q-en' }, q.en),
-  );
+  // Romaji comes only for かな players, so it tells us the level (components/jp.ts).
+  return jpView(q, q.romaji ? 'kana' : 'n5', { cls: `omi-q${small ? ' small' : ''}` });
 }
 
 function guestLine(game: OmiaiView): HTMLElement | null {
   const c = game.card;
-  return c ? h('p', { class: 'omi-guest-p' }, h('span', { class: 'omi-guest-p-emoji' }, c.emoji), h('span', { lang: 'ja' }, c.name.text), h('small', {}, ` ${c.name.en}`)) : null;
+  return c ? h('p', { class: 'omi-guest-p' }, guestPic(c, 'omi-guest-p-emoji'), h('span', { lang: 'ja' }, c.name.text), h('small', {}, ` ${c.name.en}`)) : null;
 }
 
 function meterBar(value: number): HTMLElement {
@@ -54,8 +51,8 @@ function sayFirst(ctx: Ctx, q: QuestionView, ms: number): HTMLElement {
     { class: 'screen' },
     guestLine(game),
     questionCard(q),
-    h('p', { class: 'big omi-sayfirst' }, 'Say it first! 🎤'),
-    h('p', { class: 'hint' }, 'Answer from memory, politely: end with です or ます. Saying it now earns the most.'),
+    h('p', { class: 'big omi-sayfirst' }, canSpeak() ? 'Say it first! 🎤' : 'From memory first! ⌨️'),
+    h('p', { class: 'hint' }, canSpeak() ? 'Answer from memory, politely: end with です or ます. Saying it now earns the most.' : 'Type your answer from memory, politely: end with です or ます. That earns the most.'),
     speakBox({ label: 'Hold and answer the guest', placeholder: 'Type your answer', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'answer', utterance, round: game.round }) }),
     countdown,
   );
@@ -165,9 +162,7 @@ function targetBlock(t: TipView['target'], label: string, note?: string): HTMLEl
     'div',
     { class: 'omi-target' },
     h('p', { class: 'omi-target-label' }, label),
-    h('p', { class: 'omi-target-jp', lang: 'ja' }, t.text),
-    t.kana !== t.text ? h('p', { class: 'omi-target-kana', lang: 'ja' }, t.kana) : null,
-    t.romaji ? h('p', { class: 'omi-q-romaji' }, t.romaji) : null,
+    jpView({ ...t, en: null }, t.romaji ? 'kana' : 'n5'),
     note ? h('p', { class: 'omi-target-note' }, note) : null,
   );
 }
@@ -270,14 +265,21 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
           { class: 'screen' },
           h('p', { class: 'big' }, mine.votedFor ? 'Vote in ❤' : 'Which answer is the most charming?'),
           mine.canVote
-            ? others.map((a) => h('button', { type: 'button', class: 'option', lang: 'ja', onclick: () => void send({ kind: 'vote', answerId: a.id, round: game.round }) }, a.text))
+            ? others.map((a) =>
+                h(
+                  'button',
+                  { type: 'button', class: 'option omi-vote', onclick: () => void send({ kind: 'vote', answerId: a.id, round: game.round }) },
+                  h('span', { lang: 'ja' }, '❤ ', a.text),
+                  mine.level === 'kana' ? h('small', { class: 'omi-vote-romaji' }, toRomaji(a.text)) : null,
+                ),
+              )
             : h('p', { class: 'hint' }, mine.votedFor ? 'Waiting for the other votes…' : 'Listen to the answers on the TV.'),
           isVip && game.answers.length
             ? h(
                 'details',
                 { class: 'omi-vip' },
                 h('summary', {}, 'VIP: hide an answer'),
-                game.answers.filter((a) => !a.hidden).map((a) => h('button', { type: 'button', class: 'secondary', lang: 'ja', onclick: () => void send({ kind: 'hide', answerId: a.id, round: game.round }) }, `Hide “${a.text}”`)),
+                game.answers.filter((a) => !a.hidden).map((a) => h('button', { type: 'button', class: 'vip-hide', onclick: () => void send({ kind: 'hide', answerId: a.id, round: game.round }) }, '🚫 Hide ', h('span', { lang: 'ja' }, `“${a.text}”`))),
               )
             : null,
         );

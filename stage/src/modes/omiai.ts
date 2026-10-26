@@ -2,7 +2,8 @@
 // charm vote, the manners meters with the guest's reaction to each register, and the finale's
 // spotlight as the guest picks who to invite to tea.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
+import { guestPic } from '../../../shared/src/art.js';
 import type { OmiaiView } from '../../../shared/src/modes/views.js';
 import type { AnswerCard, CardView } from '../../../shared/src/modes/omiai/omiai.js';
 import type { Register } from '../../../shared/src/modes/omiai/manners.js';
@@ -26,13 +27,13 @@ function guest(card: CardView, size: 'big' | 'small' = 'small'): HTMLElement {
   return h(
     'div',
     { class: `omi-guest omi-guest-${size}` },
-    h('span', { class: 'omi-guest-emoji', 'aria-hidden': 'true' }, card.emoji),
+    guestPic(card, 'omi-guest-emoji'),
     h(
       'div',
       { class: 'omi-guest-text' },
-      h('p', { class: 'omi-guest-name', lang: 'ja' }, card.name.text),
+      h('p', { class: 'omi-guest-name' }, ruby(card.name)),
       h('p', { class: 'omi-guest-en' }, `${card.name.en} · ${card.job.en}`),
-      size === 'big' ? h('p', { class: 'omi-guest-hobbies', lang: 'ja' }, `しゅみ: ${card.hobbies.map((x) => x.text).join('、')}`, h('small', {}, ` (${card.hobbies.map((x) => x.en).join(', ')})`)) : null,
+      size === 'big' ? h('p', { class: 'omi-guest-hobbies', lang: 'ja' }, `しゅみ：${card.hobbies.map((x) => x.text).join('、')}`, h('small', {}, ` (${card.hobbies.map((x) => x.en).join(', ')})`)) : null,
       size === 'big' ? h('p', { class: 'omi-guest-quirk' }, card.quirk) : null,
     ),
   );
@@ -44,7 +45,7 @@ function bubble(game: OmiaiView, compact = false): HTMLElement | null {
   return h(
     'div',
     { class: `omi-bubble${compact ? ' omi-compact' : ''}` },
-    h('p', { class: 'omi-bubble-jp', lang: 'ja' }, q.text),
+    h('p', { class: 'omi-bubble-jp' }, ruby(q)),
     h('p', { class: 'omi-bubble-en' }, q.en),
   );
 }
@@ -113,7 +114,7 @@ function finale(view: RoomView, game: OmiaiView): HTMLElement {
           'div',
           { class: 'omi-invite' },
           h('p', { class: 'omi-invite-title' }, '🍵 ', h('strong', {}, nameOf(view, f.accepted)), ', will you come to tea?'),
-          f.line ? h('p', { class: 'omi-invite-jp', lang: 'ja' }, f.line.text) : null,
+          f.line ? h('p', { class: 'omi-invite-jp' }, ruby(f.line)) : null,
           f.line ? h('p', { class: 'omi-invite-en' }, f.line.en) : null,
         )
       : h('div', { class: 'omi-invite' }, h('p', { class: 'omi-invite-title' }, '🍵 Tea for everyone! The guest enjoyed meeting you all.')),
@@ -189,7 +190,7 @@ export const omiaiStage: StageMode<OmiaiView> = {
                 'div',
                 { class: 'omi-natural' },
                 h('p', { class: 'omi-natural-label' }, n.from ? `💐 ${nameOf(view, n.from)}’s answer, said politely` : 'A polite way to answer'),
-                h('p', { class: 'omi-natural-jp', lang: 'ja' }, n.text),
+                h('p', { class: 'omi-natural-jp' }, ruby(n)),
                 n.kana !== n.text ? h('p', { class: 'omi-natural-kana', lang: 'ja' }, n.kana) : null,
                 n.en ? h('p', { class: 'omi-natural-en' }, n.en) : null,
                 h('p', { class: 'omi-natural-call' }, 'Everyone, say it with a bow! 🙇'),

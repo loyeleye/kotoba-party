@@ -8,7 +8,7 @@ export const debugStage: StageMode<DebugView> = {
   render(view, game) {
     switch (view.phase) {
       case 'intro':
-        return h('div', { class: 'card' }, h('p', { class: 'big' }, 'こんばんは! Welcome to Kotoba Party'), h('p', { class: 'hint' }, 'Debug round.'));
+        return h('div', { class: 'card' }, h('p', { class: 'big' }, 'こんばんは！ Welcome to Kotoba Party'), h('p', { class: 'hint' }, 'Debug round.'));
       case 'prompt':
       case 'answer':
         return h(

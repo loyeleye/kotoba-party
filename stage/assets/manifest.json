@@ -163,6 +163,1322 @@
         "height": 192
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-konbini.png",
+      "what": "Icon: convenience store (Tourist, Bingo)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small Japanese convenience store front with a bright striped awning and glowing glass doors",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-restaurant.png",
+      "what": "Icon: restaurant",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a family restaurant table with a plate, chopsticks and a glass of water",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-ramen.png",
+      "what": "Icon: ramen shop",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a steaming bowl of ramen with noodles, a slice of chashu, an egg and a nori sheet",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-onsen.png",
+      "what": "Icon: hot spring",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round wooden hot spring tub with steam curling up and a small wooden bucket",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-airport.png",
+      "what": "Icon: airport",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small white passenger airplane taking off, seen from the side",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-park.png",
+      "what": "Icon: park",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round leafy green tree with a wooden bench beside it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-home.png",
+      "what": "Icon: home",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cosy small Japanese house with a tiled roof and a warm lit window",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-hospital.png",
+      "what": "Icon: hospital",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small white hospital building with a red cross sign",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-hotel.png",
+      "what": "Icon: hotel",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a tall hotel building with many lit windows and a canopy entrance",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-school.png",
+      "what": "Icon: school",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese school building with a clock on the front",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-station.png",
+      "what": "Icon: train station",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small Japanese train station platform with a station sign post and a lamp",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/place-supermarket.png",
+      "what": "Icon: supermarket",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a shopping cart full of vegetables and a bread loaf",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/scene-hanami.png",
+      "what": "Icon: cherry blossom viewing",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a branch of pink cherry blossoms with petals falling",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/scene-nabe.png",
+      "what": "Icon: hot pot dinner",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a clay hot pot bubbling with tofu, mushrooms and vegetables",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/scene-family.png",
+      "what": "Icon: meeting the family",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pair of hina dolls, emperor and empress, in red and gold robes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/scene-morning.png",
+      "what": "Icon: morning alarm",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round red twin-bell alarm clock ringing",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/scene-taxi.png",
+      "what": "Icon: taxi",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a yellow Japanese taxi cab with a roof light, side view",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/item-scarf.png",
+      "what": "Icon: red scarf (Onsen evidence)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a knitted red winter scarf, loosely coiled",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/item-spoon.png",
+      "what": "Icon: pink spoon",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small pink plastic dessert spoon",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/item-fork.png",
+      "what": "Icon: fork",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a shiny silver fork",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/item-shoe.png",
+      "what": "Icon: shoe",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single white canvas sneaker shoe with red laces, seen from the side, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/victim-snowman.png",
+      "what": "Icon: Mr. Snowman (Onsen victim)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a melting snowman with a bucket hat, looking dizzy",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/victim-pudding.png",
+      "what": "Icon: Purin-san (Onsen victim)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a wobbly caramel custard pudding on a plate with a sad face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/victim-duck.png",
+      "what": "Icon: Ahiru-kun (Onsen victim)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a yellow rubber bath duck floating, looking startled",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/victim-towel.png",
+      "what": "Icon: Mr. Towel (Onsen victim)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a soggy white bath towel draped over a wooden bucket",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/lt-alarm.png",
+      "what": "Icon: Last Train alarm",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red spinning siren alarm light flashing",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/lt-mic.png",
+      "what": "Icon: microphone",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a retro silver stage microphone",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/lt-train.png",
+      "what": "Icon: last train",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small green and cream Japanese commuter train car, side view, windows glowing",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/lt-door.png",
+      "what": "Icon: train door",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pair of sliding train doors closing, with a small window in each",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/trophy.png",
+      "what": "Icon: trophy",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a shiny gold trophy cup with two handles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/idea.png",
+      "what": "Icon: idea",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a glowing yellow light bulb",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/tanaka-calm.png",
+      "what": "Portrait (calm): Tanaka, the inn's cook",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a proud gruff middle-aged Japanese cook with a white chef hat and headband, sweating, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/tanaka-shock.png",
+      "what": "Portrait (shock): Tanaka, the inn's cook",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a proud gruff middle-aged Japanese cook with a white chef hat and headband, sweating, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/suzuki-calm.png",
+      "what": "Portrait (calm): Suzuki, hot-spring-loving guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cheerful pink-cheeked woman with a towel wrapped on her head and a yukata robe, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/suzuki-shock.png",
+      "what": "Portrait (shock): Suzuki, hot-spring-loving guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cheerful pink-cheeked woman with a towel wrapped on her head and a yukata robe, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/yamada-calm.png",
+      "what": "Portrait (calm): Yamada, elderly guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a kind sleepy grandmother with grey hair in a bun, round glasses, holding knitting needles, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/yamada-shock.png",
+      "what": "Portrait (shock): Yamada, elderly guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a kind sleepy grandmother with grey hair in a bun, round glasses, holding knitting needles, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/kimura-calm.png",
+      "what": "Portrait (calm): Kimura, the innkeeper",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. an elegant Japanese inn hostess in a purple kimono with her hair pinned up, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/kimura-shock.png",
+      "what": "Portrait (shock): Kimura, the innkeeper",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. an elegant Japanese inn hostess in a purple kimono with her hair pinned up, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/mori-calm.png",
+      "what": "Portrait (calm): Mori, a young boy guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. an excitable little boy with spiky hair and a striped yukata, grinning, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/mori-shock.png",
+      "what": "Portrait (shock): Mori, a young boy guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. an excitable little boy with spiky hair and a striped yukata, grinning, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/ito-calm.png",
+      "what": "Portrait (calm): Ito, the cleaner",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a sharp-eyed cleaner in a headscarf and apron, holding a broom, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/ito-shock.png",
+      "what": "Portrait (shock): Ito, the cleaner",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a sharp-eyed cleaner in a headscarf and apron, holding a broom, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/sato-calm.png",
+      "what": "Portrait (calm): Sato, a doctor guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a serious nervous man with neat hair, glasses and a stethoscope over a yukata, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/sato-shock.png",
+      "what": "Portrait (shock): Sato, a doctor guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a serious nervous man with neat hair, glasses and a stethoscope over a yukata, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/hayashi-calm.png",
+      "what": "Portrait (calm): Hayashi, a student",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a sporty bored university student holding a ping-pong paddle, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/hayashi-shock.png",
+      "what": "Portrait (shock): Hayashi, a student",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a sporty bored university student holding a ping-pong paddle, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/matsuda-calm.png",
+      "what": "Portrait (calm): Matsuda, a guitarist",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a moody long-haired musician with an acoustic guitar strap over his shoulder, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/matsuda-shock.png",
+      "what": "Portrait (shock): Matsuda, a guitarist",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a moody long-haired musician with an acoustic guitar strap over his shoulder, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/tama-calm.png",
+      "what": "Portrait (calm): Tama, the inn's cat",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a smug fluffy white and orange calico cat with half-closed eyes, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/tama-shock.png",
+      "what": "Portrait (shock): Tama, the inn's cat",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a smug fluffy white and orange calico cat with half-closed eyes, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/aoki-calm.png",
+      "what": "Portrait (calm): Aoki, a calm guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a calm young man in a blue yukata, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/aoki-shock.png",
+      "what": "Portrait (shock): Aoki, a calm guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a calm young man in a blue yukata, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/ikeda-calm.png",
+      "what": "Portrait (calm): Ikeda, a nervous guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a nervous bearded man in a grey yukata, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/ikeda-shock.png",
+      "what": "Portrait (shock): Ikeda, a nervous guest",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a nervous bearded man in a grey yukata, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/ueno-calm.png",
+      "what": "Portrait (calm): Ueno, inn staff",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a busy young woman in a staff happi coat, calm neutral expression",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/onsen/ueno-shock.png",
+      "what": "Portrait (shock): Ueno, inn staff",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a busy young woman in a staff happi coat, shocked and guilty-looking, sweat drops, wide eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/kappa-calm.png",
+      "what": "Portrait (calm): Kyuri the Kappa",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute green kappa river creature: green skin, a flat white dish on top of its head ringed by short black hair, a small yellow beak, a brown turtle shell on its back, holding a cucumber, polite gentle smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/kappa-blush.png",
+      "what": "Portrait (blush): Kyuri the Kappa",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute green kappa river creature: green skin, a flat white dish on top of its head ringed by short black hair, a small yellow beak, a brown turtle shell on its back, holding a cucumber, no hat, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/nurikabe-calm.png",
+      "what": "Portrait (calm): Kabe the Wall Spirit",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute living stone wall spirit, a big grey plaster wall with stubby arms and a shy face, polite gentle smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/nurikabe-blush.png",
+      "what": "Portrait (blush): Kabe the Wall Spirit",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute living stone wall spirit, a big grey plaster wall with stubby arms and a shy face, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/karakasa-calm.png",
+      "what": "Portrait (calm): Potsuri the Umbrella Ghost",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a closed red Japanese paper umbrella (wagasa) standing upright on one wooden leg, with one big round cartoon eye in the middle of the red canopy and a long pink tongue sticking out, umbrella spokes visible at the top, polite gentle smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/karakasa-blush.png",
+      "what": "Portrait (blush): Potsuri the Umbrella Ghost",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a closed red Japanese paper umbrella (wagasa) standing upright on one wooden leg, with one big round cartoon eye in the middle of the red canopy and a long pink tongue sticking out, umbrella spokes visible at the top, not a person, no human face, no hair: the umbrella itself is the character, delighted, two pink blush marks on the red canopy beside its one eye, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 99
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/manekineko-calm.png",
+      "what": "Portrait (calm): Fuku the Lucky Cat",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a white lucky beckoning cat (maneki-neko) with a red collar and gold bell, one paw raised, polite gentle smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/manekineko-blush.png",
+      "what": "Portrait (blush): Fuku the Lucky Cat",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a white lucky beckoning cat (maneki-neko) with a red collar and gold bell, one paw raised, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/tengu-calm.png",
+      "what": "Portrait (calm): Takahana the Tengu",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a red-faced tengu with a very long nose, a small black cap and white beard, polite gentle smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/tengu-blush.png",
+      "what": "Portrait (blush): Takahana the Tengu",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a red-faced tengu with a very long nose, a small black cap and white beard, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/yukidaruma-calm.png",
+      "what": "Portrait (calm): Shiro the Snow Daruma",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a round Japanese two-ball snowman (yukidaruma) with a red bucket hat, polite gentle smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/yukidaruma-blush.png",
+      "what": "Portrait (blush): Shiro the Snow Daruma",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a round Japanese two-ball snowman (yukidaruma) with a red bucket hat, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/daruma-calm.png",
+      "what": "Portrait (calm): Kororin the Daruma",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a round red Japanese daruma doll with a bearded face and one painted eye, polite gentle smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/daruma-blush.png",
+      "what": "Portrait (blush): Kororin the Daruma",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a round red Japanese daruma doll with a bearded face and one painted eye, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/robot-calm.png",
+      "what": "Portrait (calm): Pikapika the Robot",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute retro robot with round glowing eyes and an antenna, wearing a tiny tea ceremony apron, polite gentle smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/robot-blush.png",
+      "what": "Portrait (blush): Pikapika the Robot",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute retro robot with round glowing eyes and an antenna, wearing a tiny tea ceremony apron, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
     }
   ]
 }

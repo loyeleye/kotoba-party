@@ -11,19 +11,19 @@
 .wg-kanji rt { font-size: 34px; font-weight: 600; color: var(--muted); }
 .wg-meaning { margin: 0; font-size: 40px; font-weight: 700; color: var(--good); }
 .wg-options li { counter-increment: wg-opt; }
-.wg-golden { display: grid; gap: 4px; justify-items: center; border: 3px solid var(--warn); border-radius: 22px; padding: 12px 28px 18px; box-shadow: 0 0 40px #ffcf5a33; }
+.wg-golden { display: grid; gap: 4px; justify-items: center; border: 3px solid var(--warn); border-radius: 22px; padding: 12px 28px 18px; box-shadow: 0 0 40px #ffd23f33; }
 .wg-golden p { margin: 0; }
 .wg-golden-tag { color: var(--warn); font-weight: 800; font-size: 24px; letter-spacing: 0.06em; text-transform: uppercase; }
 .wg-golden .wg-kanji { font-size: 88px; }
 
 .wg-relay { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
 .wg-hop { display: grid; gap: 4px; justify-items: center; background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 12px 18px; min-width: 120px; font-size: 26px; position: relative; }
-.wg-hop + .wg-hop::before { content: '→'; position: absolute; left: -12px; top: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 22px; }
-.wg-hop.live { border-color: var(--warn); box-shadow: 0 0 0 4px #ffcf5a44; }
+.wg-hop + .wg-hop::before { content: '→'; position: absolute; left: -12px; top: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 24px; }
+.wg-hop.live { border-color: var(--warn); box-shadow: 0 0 0 4px #ffd23f44; }
 .wg-hop.done { border-color: var(--good); }
 .wg-hop.skipped { opacity: 0.45; border-style: dashed; }
 .wg-hop-name { font-weight: 800; }
-.wg-flag { font-size: 16px; font-weight: 900; letter-spacing: 0.1em; color: #14101f; background: var(--muted); border-radius: 6px; padding: 2px 8px; }
+.wg-flag { font-size: 24px; font-weight: 900; letter-spacing: 0.1em; color: var(--on-accent); background: var(--muted); border-radius: 6px; padding: 2px 8px; }
 
 .wg-drift { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; width: min(1100px, 100%); text-align: left; }
 .wg-drift-step { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 20px; animation: wg-in 0.6s ease both; }
@@ -32,13 +32,13 @@
 .wg-drift-step.winner { border-color: var(--good); box-shadow: 0 0 0 3px var(--good); }
 .wg-drift-step p { margin: 0; }
 .wg-drift-text { font-size: 34px; font-weight: 700; }
-.wg-drift-step .hint { font-size: 20px; }
+.wg-drift-step .hint { font-size: 24px; }
 
 .wg-rules { text-align: left; font-size: 28px; display: grid; gap: 12px; margin: 0; padding-left: 32px; width: min(1000px, 100%); }
 .wg-chain { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
 .wg-chain li { display: grid; justify-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 18px; font-size: 40px; font-weight: 800; position: relative; }
-.wg-chain li + li::before { content: '→'; position: absolute; left: -10px; top: 40%; transform: translate(-50%, -50%); font-size: 22px; color: var(--muted); }
-.wg-chain small { font-size: 16px; color: var(--muted); font-weight: 600; }
+.wg-chain li + li::before { content: '→'; position: absolute; left: -10px; top: 40%; transform: translate(-50%, -50%); font-size: 24px; color: var(--muted); }
+.wg-chain small { font-size: 24px; color: var(--muted); font-weight: 600; }
 .wg-chain .latest { border-color: var(--warn); animation: wg-in 0.4s ease both; }
 .wg-need-line { margin: 0; font-size: 34px; font-weight: 700; }
 .wg-need { font-size: 96px; font-weight: 900; color: var(--warn); vertical-align: middle; }
@@ -50,7 +50,7 @@
 .wg-alive li.live { border-color: var(--warn); }
 .wg-alive li.out { opacity: 0.5; text-decoration: line-through; }
 .wg-alive li.winner { border-color: var(--good); }
-.wg-alive small { font-size: 16px; }
+.wg-alive small { font-size: 24px; }
 .wg-crown { color: var(--warn); }
 /* Reveal and score screens hold more: smaller word, tighter lists. */
 .wg.compact { gap: 12px; }
@@ -63,12 +63,12 @@
 .wg.compact .wg-drift { gap: 6px; }
 .wg.compact .wg-drift-step { padding: 6px 16px; }
 .wg.compact .wg-drift-text { font-size: 26px; }
-.wg.compact .wg-drift-step .hint { font-size: 17px; }
+.wg.compact .wg-drift-step .hint { font-size: 24px; }
 @keyframes wg-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
 @media (max-width: 700px) {
   .wg-kanji { font-size: 64px; }
   .wg-need { font-size: 56px; }
   .wg-chain li { font-size: 24px; }
-  .wg-rules { font-size: 18px; }
+  .wg-rules { font-size: 24px; }
 }

@@ -2,7 +2,8 @@
 // status (never their words until the stop resolves), then everyone's answer beside the
 // natural version, the penalty car, and the Platform Dash track.
 
-import { h, ruby } from '../../../shared/src/dom.js';
+import { h, ruby, stagger } from '../../../shared/src/dom.js';
+import { icon } from '../../../shared/src/art.js';
 import type { JpText } from '../../../content/src/types.js';
 import type { LastTrainView, TravellerStatus, TravellerView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -114,17 +115,22 @@ function reveal(game: LastTrainView): HTMLElement {
     situation(game, true),
     h(
       'ul',
-      { class: 'lt-results' },
-      rows.map((r) =>
-        h(
-          'li',
-          { class: `o-${r.outcome}` },
-          h('span', { class: 'lt-r-name' }, r.ghost ? `👻 ${r.name}` : r.name),
-          h('span', { class: 'lt-r-q' }, ruby(r.prompt)),
-          h('span', { class: 'lt-r-said', lang: 'ja' }, r.said ? `“${r.said}”` : '—'),
-          h('span', { class: 'lt-r-model' }, ruby(r.model), h('small', {}, ` ${r.model.en}`)),
-          h('span', { class: 'lt-r-out' }, OUTCOME[r.outcome] ?? '', r.points ? ` +${r.points}` : ''),
+      // Four or more riders sit two to a row, so the whole stop fits the TV without shrinking.
+      { class: `lt-results${rows.length >= 4 ? ' two-up' : ''}` },
+      // Rows pull in one at a time, like carriages.
+      stagger(
+        rows.map((r) =>
+          h(
+            'li',
+            { class: `o-${r.outcome}` },
+            h('span', { class: 'lt-r-name' }, r.ghost ? `👻 ${r.name}` : r.name),
+            h('span', { class: 'lt-r-q' }, ruby(r.prompt)),
+            h('span', { class: 'lt-r-said', lang: 'ja' }, r.said ? `“${r.said}”` : '—'),
+            h('span', { class: 'lt-r-model' }, ruby(r.model), h('small', {}, ` ${r.model.en}`)),
+            h('span', { class: 'lt-r-out' }, OUTCOME[r.outcome] ?? '', r.points ? ` +${r.points}` : ''),
+          ),
         ),
+        450,
       ),
     ),
   );
@@ -178,8 +184,8 @@ function dash(view: RoomView, game: LastTrainView): HTMLElement {
             'span',
             { class: 'lt-lane' },
             h('span', { class: 'lt-start', style: `left:${at(0)}%` }),
-            h('span', { class: 'lt-runner', style: `left:${at(Math.min(d.track, r.pos))}%` }, r.aboard !== null ? '🚃' : r.ghost ? '👻' : '🏃'),
-            h('span', { class: 'lt-door' }, '🚪'),
+            h('span', { class: 'lt-runner', style: `left:${at(Math.min(d.track, r.pos))}%` }, r.aboard !== null ? icon('lt-train', '🚃', 'lt-runner-pic') : r.ghost ? '👻' : '🏃'),
+            icon('lt-door', '🚪', 'lt-door'),
           ),
           h('span', { class: 'lt-lane-rank' }, r.aboard !== null ? `#${r.aboard}` : ''),
         ),

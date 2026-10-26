@@ -6,7 +6,8 @@
 // state, so a redraw keeps them.
 
 import { h, mount } from '../../../shared/src/dom.js';
-import type { JpText, OnsenIntent } from '../../../content/src/types.js';
+import { suspectPic, victimPic } from '../../../shared/src/art.js';
+import type { JpText, Level, OnsenIntent } from '../../../content/src/types.js';
 import type { OnsenView } from '../../../shared/src/modes/views.js';
 import type { QuestionTile } from '../../../shared/src/modes/onsenMurder/questions.js';
 import { calledName, joinTiles } from '../../../shared/src/modes/onsenMurder/questions.js';
@@ -14,6 +15,7 @@ import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
+import { jpView } from '../components/jp.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 type Ctx = PhoneContext<OnsenView>;
@@ -42,15 +44,11 @@ function draftFor(scope: string): QuestionTile[] {
 
 const nameOf = (view: RoomView, id: string | null | undefined): string => view.players.find((p) => p.id === id)?.name ?? '…';
 
-function jpLine(t: JpText, opts: { romaji?: boolean } = {}): HTMLElement {
-  return h(
-    'div',
-    { class: 'om-p-jp' },
-    h('p', { class: 'om-p-ja', lang: 'ja' }, t.text),
-    t.kana !== t.text ? h('p', { class: 'om-p-kana', lang: 'ja' }, t.kana) : null,
-    opts.romaji ? h('p', { class: 'om-p-romaji' }, toRomaji(t.kana)) : null,
-    h('p', { class: 'om-p-en' }, t.en),
-  );
+/** This phone's level, set on each render: every Japanese line follows it (components/jp.ts). */
+let level: Level | null = null;
+
+function jpLine(t: JpText): HTMLElement {
+  return jpView(t, level, { cls: 'om-p-jp' });
 }
 
 function suspectButtons(game: OnsenView, selected: string | null, onPick: (id: string) => void): HTMLElement {
@@ -61,8 +59,9 @@ function suspectButtons(game: OnsenView, selected: string | null, onPick: (id: s
       h(
         'button',
         { type: 'button', class: `om-p-suspect${s.id === selected ? ' on' : ''}`, onclick: () => onPick(s.id) },
-        h('span', { class: 'om-p-face' }, s.emoji),
+        suspectPic(s, 'om-p-face'),
         h('span', { class: 'om-p-name', lang: 'ja' }, calledName(s).text),
+        level === 'kana' ? h('small', { class: 'om-p-romaji' }, toRomaji(calledName(s).kana)) : null,
         h('small', {}, s.role.en),
         s.asked.length ? h('small', { class: 'om-p-asked' }, s.asked.map((i) => INTENT_ICON[i]).join('')) : null,
       ),
@@ -90,7 +89,7 @@ function caseCard(game: OnsenView): HTMLElement {
   return h(
     'div',
     { class: 'om-p-case' },
-    h('span', { class: 'om-p-victim' }, c.victim.emoji),
+    victimPic(c.id, c.victim.emoji, 'om-p-victim'),
     h('div', {}, h('p', { class: 'om-p-title', lang: 'ja' }, c.title.text, h('small', {}, ` ${c.title.en}`)), h('p', { class: 'hint' }, c.victim.found.en), h('p', { class: 'hint' }, `Evidence: ${c.item.emoji} ${c.item.name.en}`)),
   );
 }
@@ -199,8 +198,8 @@ function askScreen(ctx: Ctx): HTMLElement {
         ? h(
             'div',
             { class: 'om-p-miss' },
-            h('p', {}, `${suspect.emoji} 「え？ もう いちど おねがいします。」`, h('small', {}, ` Huh? Once more, please. (heard “${mine.miss.heard}”)`)),
-            mine.miss.hint ? h('div', {}, h('p', { class: 'hint' }, 'Did you mean:'), jpLine(mine.miss.hint, { romaji: me.level === 'kana' })) : h('p', { class: 'hint' }, 'Start with a question word: どこ (where), なに (what), だれ (who), なんじ (what time), どんな (what kind).'),
+            h('p', {}, `${suspect.emoji} 「え？　もう いちど おねがいします。」`, h('small', {}, ` Huh? Once more, please. (heard “${mine.miss.heard}”)`)),
+            mine.miss.hint ? h('div', {}, h('p', { class: 'hint' }, 'Did you mean:'), jpLine(mine.miss.hint)) : h('p', { class: 'hint' }, 'Start with a question word: どこ (where), なに (what), だれ (who), なんじ (what time), どんな (what kind).'),
           )
         : null,
       speakBox({
@@ -253,7 +252,7 @@ function accuseScreen(ctx: Ctx): HTMLElement {
             'div',
             { class: 'om-p-accuse' },
             h('p', { class: 'hint' }, 'Say it out loud:'),
-            jpLine(line, { romaji: ctx.me.level === 'kana' }),
+            jpLine(line),
             mine.accuseTry && mine.accuseTry.suspectId === suspect.id ? h('p', { class: 'om-p-missline' }, `Heard “${mine.accuseTry.heard}”. Say はんにん and the name. ${mine.accuseTry.triesLeft} try left.`) : null,
             speakBox({
               label: 'Hold and accuse!',
@@ -262,7 +261,7 @@ function accuseScreen(ctx: Ctx): HTMLElement {
             }),
             h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'accuse', suspectId: suspect.id }) }, 'Vote without saying it'),
           )
-        : h('p', { class: 'hint' }, 'Pick a suspect, then say 「はんにんは ○○さんです！」 for the 🎤 bonus.'),
+        : h('p', { class: 'hint' }, 'Pick a suspect, then say 「はんにんは（name）さんです！」 for the 🎤 bonus.'),
       notebook(game, true),
     );
   };
@@ -278,6 +277,7 @@ export const onsenMurderPhone: PhoneMode<OnsenView> = {
 
   render(ctx) {
     const { view, game, me } = ctx;
+    level = ctx.me.level;
     const mine = game.mine;
     switch (view.phase) {
       case 'intro':
@@ -287,7 +287,7 @@ export const onsenMurderPhone: PhoneMode<OnsenView> = {
           h('p', { class: 'big', lang: 'ja' }, '温泉殺人事件'),
           caseCard(game),
           h('p', {}, 'Take turns questioning the suspects in Japanese. Each answer may hold a clue for the shared notebook.'),
-          h('p', {}, 'At the end, everyone names the culprit: 「はんにんは ○○さんです！」'),
+          h('p', {}, 'At the end, everyone names the culprit: 「はんにんは（name）さんです！」'),
           h('p', { class: 'hint' }, 'Ask aloud for a bonus. Typing, or building from tiles, works too.'),
         );
       case 'answer':

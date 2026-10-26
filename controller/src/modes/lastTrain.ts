@@ -8,28 +8,22 @@
 //    place, so a vote elsewhere never rebuilds the talk button mid-sentence.
 
 import { h, mount, ruby } from '../../../shared/src/dom.js';
-import type { JpText } from '../../../content/src/types.js';
+import type { JpText, Level } from '../../../content/src/types.js';
 import type { LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
+import { jpView } from '../components/jp.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 // ---- small pieces ----
 
-/** True while rendering for a かな-level phone: every Japanese line gets romaji under it. */
-let kanaLevel = false;
+/** This phone's level, set on each render: every Japanese line follows it (components/jp.ts). */
+let level: Level | null = null;
 
-function jpBlock(jp: JpText, opts: { kana?: boolean; en?: boolean; big?: boolean; romaji?: boolean } = {}): HTMLElement {
-  return h(
-    'div',
-    { class: `lt-jp${opts.big ? ' big' : ''}` },
-    h('p', { class: 'lt-jp-text' }, ruby(jp)),
-    opts.kana && jp.kana !== jp.text ? h('p', { class: 'lt-jp-kana', lang: 'ja' }, jp.kana) : null,
-    kanaLevel && opts.romaji !== false ? h('p', { class: 'lt-romaji' }, toRomaji(jp.kana)) : null,
-    opts.en !== false && jp.en ? h('p', { class: 'lt-jp-en' }, jp.en) : null,
-  );
+function jpBlock(jp: JpText, opts: { en?: boolean; big?: boolean; romaji?: boolean } = {}): HTMLElement {
+  return jpView(jp, level, { en: opts.en, romaji: opts.romaji, cls: `lt-jp${opts.big ? ' big' : ''}` });
 }
 
 // ---- personal timer ----
@@ -50,7 +44,7 @@ function countdown(task: TaskView, send: (move: unknown) => Promise<boolean>): H
     const left = Math.max(0, task.limitMs - (Date.now() - start));
     fill.style.width = `${(left / task.limitMs) * 100}%`;
     el.classList.toggle('low', left < 3000);
-    label.textContent = left > 0 ? `${Math.ceil(left / 1000)}s left` : 'Time!';
+    label.textContent = left > 0 ? `⏱ ${Math.ceil(left / 1000)}s to answer` : 'Time!';
     if (left === 0 && !ticked) {
       ticked = true;
       // Tell the server our time is up (it checks against its own clock).
@@ -108,8 +102,8 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
   const showText = !task.listen || task.attempt === 2;
   const box = speakBox({
     label: task.attempt === 2 ? 'Hold and try again' : 'Hold and say your answer',
-    placeholder: kanaLevel ? 'かなで…' : 'Type it (earns less)',
-    kanaPadOpen: kanaLevel,
+    placeholder: level === 'kana' ? 'かなで…' : 'Type it (earns less)',
+    kanaPadOpen: level === 'kana',
     onSend: (utterance) => void send({ kind: 'answer', key: task.key, utterance }),
   });
   // Keep a half-typed answer across a re-render of the same task.
@@ -125,15 +119,16 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
     h(
       'div',
       { class: 'lt-task-head' },
-      task.minigame ? h('span', { class: 'lt-chip' }, ruby(task.minigame)) : h('span', { class: 'lt-chip' }, 'ダッシュ!'),
+      task.minigame ? h('span', { class: 'lt-chip' }, ruby(task.minigame)) : h('span', { class: 'lt-chip' }, 'ダッシュ！'),
       task.attempt === 2 ? h('span', { class: 'lt-chip warn' }, 'Retry') : null,
       me.ghost ? h('span', { class: 'lt-chip ghost' }, '👻 Ghost') : null,
     ),
     countdown(task, send),
     task.listen && task.attempt === 1 ? listenBox(task) : null,
-    showText ? jpBlock(task.prompt, { kana: kanaLevel, en: kanaLevel || task.attempt === 2, big: true, romaji: false }) : null,
+    // かな players get the romaji under the prompt too, unless the task carries its own.
+    showText ? jpBlock(task.prompt, { en: level === 'kana' || task.attempt === 2, big: true, romaji: level === 'kana' && !task.romaji }) : null,
     // N5 and up read the Japanese first; the English is one tap away.
-    showText && !kanaLevel && task.attempt === 1 && task.prompt.en ? h('details', { class: 'lt-en-tap' }, h('summary', {}, 'English'), h('p', {}, task.prompt.en)) : null,
+    showText && level !== 'kana' && task.attempt === 1 && task.prompt.en ? h('details', { class: 'lt-en-tap' }, h('summary', {}, 'English'), h('p', {}, task.prompt.en)) : null,
     showText && task.romaji ? h('p', { class: 'lt-romaji' }, task.romaji) : null,
     task.visual && !task.listen ? h('p', { class: 'lt-visual' }, `👀 ${task.visual}`) : null,
     task.attempt === 2
@@ -142,7 +137,7 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
           { class: 'lt-hint' },
           task.lastHeard ? h('p', {}, 'Heard: ', h('span', { lang: 'ja' }, task.lastHeard)) : h('p', {}, 'Time ran out.'),
           task.hint ? h('p', {}, `💡 ${task.hint}`) : null,
-          task.firstKana ? h('p', {}, `It starts with ${task.firstKana}`) : null,
+          task.firstKana ? h('p', {}, `It starts with ${task.firstKana}${level === 'kana' ? ` (${toRomaji(task.firstKana)})` : ''}`) : null,
         )
       : null,
     box,
@@ -166,7 +161,7 @@ function overruleCard(w: OverruleView, send: (m: unknown) => Promise<boolean>): 
     h('p', {}, h('strong', {}, w.name), '’s answer was rejected. Was it right?'),
     w.prompt ? jpBlock(w.prompt, { en: true }) : null,
     h('p', { class: 'lt-heard' }, 'They said: ', h('span', { lang: 'ja' }, w.heard)),
-    kanaLevel && w.heard ? h('p', { class: 'lt-romaji' }, toRomaji(w.heard)) : null,
+    level === 'kana' && w.heard ? h('p', { class: 'lt-romaji' }, toRomaji(w.heard)) : null,
     w.canVote
       ? h(
           'div',
@@ -234,7 +229,7 @@ function revealScreen(game: LastTrainView, send: (m: unknown) => Promise<boolean
     h('p', { class: 'big' }, title, r.points ? h('span', { class: 'lt-points' }, ` +${r.points}`) : null),
     r.said ? h('p', { class: 'hint' }, 'You said: ', h('span', { lang: 'ja' }, r.said), r.via === 'typed' ? ' (typed)' : '') : null,
     h('p', { class: 'hint' }, 'Natural version:'),
-    jpBlock(r.model, { kana: true, big: true }),
+    jpBlock(r.model, { big: true }),
     me.canEcho
       ? h(
           'div',
@@ -292,7 +287,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
   render(ctx: PhoneContext<LastTrainView>) {
     const { view, game, send } = ctx;
     const me = game.me;
-    kanaLevel = ctx.me.level === 'kana';
+    level = ctx.me.level;
     lastLiveKey = liveKey(game);
     let main: HTMLElement;
     switch (view.phase) {
@@ -302,7 +297,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
           { class: 'screen lt-intro' },
           h('p', { class: 'lt-kicker' }, '🏮 Last Train'),
           jpBlock(game.title, { big: true }),
-          jpBlock(game.departure, { kana: me?.level === 'kana' }),
+          jpBlock(game.departure),
           h('ol', { class: 'lt-route' }, game.stops.map((s, i) => h('li', {}, ruby(s.name), h('small', {}, ` · ${s.minigame.en}`), i === game.stops.length - 1 ? h('small', {}, ' · 終点') : null))),
           h('p', { class: 'hint' }, 'Every answer is spoken. Hold the button and say it!'),
         );
@@ -312,8 +307,8 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
           'div',
           { class: 'screen lt-intro' },
           h('p', { class: 'lt-kicker' }, `Stop ${game.stopIndex + 1} of ${game.stops.length}`),
-          game.stop ? jpBlock(game.stop.name, { big: true, kana: true }) : null,
-          game.stop ? jpBlock(game.stop.minigame.intro, { kana: me?.level === 'kana' }) : null,
+          game.stop ? jpBlock(game.stop.name, { big: true }) : null,
+          game.stop ? jpBlock(game.stop.minigame.intro) : null,
           me?.ghost ? h('p', { class: 'lt-chip ghost' }, '👻 You’re a ghost: answer 2 in a row to come back') : null,
         );
         break;

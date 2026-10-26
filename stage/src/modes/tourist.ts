@@ -1,7 +1,8 @@
 // Who's the Tourist? on the TV: the places in play, the live question turn and the Q&A log with
 // English subtitles, the vote, the caught tourist's last chance, and the big reveal.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
+import { placePic } from '../../../shared/src/art.js';
 import type { TouristView } from '../../../shared/src/modes/views.js';
 import type { ExchangeView, PlaceCard, SaidView } from '../../../shared/src/modes/tourist/tourist.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -9,10 +10,6 @@ import type { StageMode } from './types.js';
 
 const nameOf = (view: RoomView, id: string | null | undefined): string => view.players.find((p) => p.id === id)?.name ?? '(left)';
 
-function ruby(p: { text: string; furigana?: [string, string][] }): (Node | string)[] {
-  if (!p.furigana?.length) return [p.text];
-  return p.furigana.map(([base, reading]) => (reading ? h('ruby', {}, base, h('rt', {}, reading)) : base));
-}
 
 function places(game: TouristView, size: 'big' | 'small', mark?: { id: string; cls: string }[]): HTMLElement {
   return h(
@@ -22,7 +19,7 @@ function places(game: TouristView, size: 'big' | 'small', mark?: { id: string; c
       h(
         'li',
         { class: `tou-place ${mark?.find((m) => m.id === p.id)?.cls ?? ''}` },
-        h('span', { class: 'tou-place-emoji' }, p.emoji),
+        placePic(p, 'tou-place-emoji'),
         h('span', { class: 'tou-place-jp', lang: 'ja' }, ruby(p)),
         h('span', { class: 'tou-place-en' }, p.en),
       ),
@@ -34,7 +31,7 @@ function said(x: SaidView, cls: string): HTMLElement {
   return h(
     'div',
     { class: `tou-said ${cls}` },
-    h('p', { class: 'tou-said-jp', lang: 'ja' }, x.text),
+    h('p', { class: 'tou-said-jp' }, ruby(x)),
     x.kana && x.kana !== x.text ? h('p', { class: 'tou-said-kana', lang: 'ja' }, x.kana) : null,
     h('p', { class: `tou-said-en${x.en ? '' : ' none'}` }, x.en ? `${x.approx ? '≈ ' : ''}${x.en}` : x.text === '[hidden]' ? '' : '(in their own words)', x.spoken ? h('span', { class: 'tou-mic' }, ' 🎤') : null),
   );
@@ -88,7 +85,7 @@ function tallyBars(view: RoomView, game: TouristView): HTMLElement | null {
       h(
         'li',
         { class: t.playerId === o.touristId ? 'tourist' : '' },
-        h('span', { class: 'tou-tally-name' }, nameOf(view, t.playerId)),
+        h('span', { class: 'tou-tally-name' }, t.playerId === o.touristId ? '🧳 ' : '', nameOf(view, t.playerId)),
         h('span', { class: 'tou-tally-bar', style: `width: ${Math.round((t.votes / max) * 100)}%` }),
         h('strong', {}, String(t.votes)),
       ),
@@ -125,7 +122,7 @@ function reveal(game: TouristView, p: PlaceCard): HTMLElement {
   return h(
     'div',
     { class: 'tou-reveal' },
-    h('span', { class: 'tou-reveal-emoji' }, p.emoji),
+    placePic(p, 'tou-reveal-emoji'),
     h('div', {}, h('p', { class: 'tou-reveal-jp', lang: 'ja' }, 'ここは ', h('strong', {}, ruby(p)), 'でした！'), h('p', { class: 'tou-reveal-en' }, `We were at the ${p.en}.`)),
     game.multiplier > 1 ? h('span', { class: 'tou-double' }, 'Final round · ×2') : null,
   );

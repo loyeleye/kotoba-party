@@ -216,7 +216,9 @@ describe('Omiai: the manners checker', () => {
     expect(kinds('なにを めしあがりますか')).toContain('honorific');
     expect(kinds('とうきょうに すんでおります')).toContain('humble');
     expect(kinds('あした まいります')).toContain('humble');
-    expect(kinds('がくせいで ございます')).toContain('humble');
+    expect(kinds('がくせいで ございます')).toContain('teinei');
+    expect(kinds('がくせいで ございます')).not.toContain('humble');
+    expect(kinds('ありがとうございます')).not.toContain('teinei');
     expect(kinds('おしごとは なんですか')).toContain('prefix');
     expect(kinds('なるほど、そうですね')).toContain('aizuchi');
     expect(kinds('しつれいですが、おなまえは？')).toContain('cushion');
@@ -338,10 +340,10 @@ describe('Omiai: the character cards', () => {
     }
   });
 
-  it('the guests model keigo: every N4 question has an honorific, humble or お/ご touch', () => {
+  it('the guests model keigo: every N4 question has an honorific, humble, ございます or お/ご touch', () => {
     for (const q of allQuestions) {
       const kinds = checkManners(q.ask.n4.kana, 'n4').hits.map((h) => h.kind);
-      expect(kinds.some((k) => k === 'honorific' || k === 'humble' || k === 'prefix'), `${q.id}: ${q.ask.n4.text}`).toBe(true);
+      expect(kinds.some((k) => k === 'honorific' || k === 'humble' || k === 'teinei' || k === 'prefix'), `${q.id}: ${q.ask.n4.text}`).toBe(true);
       expect(['polite', 'keigo'], `${q.id}: ${q.ask.n5.text}`).toContain(checkManners(q.ask.n5.kana, 'n5').register);
     }
   });
@@ -594,9 +596,9 @@ describe('Omiai: the finale and the whole game', () => {
     t.timeout();
     expect(t.s.phase).toBe('recap');
     expect(t.score('p2')).toBe(before);
-    expect(t.s.recap!.awards.map((a) => a.title)).toEqual(expect.arrayContaining(['おちゃの しょうたい', 'おもてなし しょう', 'にんきもの']));
+    expect(t.s.recap!.awards.map((a) => a.title)).toEqual(expect.arrayContaining(['おちゃの しょうたい', 'おもてなし賞', 'にんきもの']));
     expect(t.s.recap!.awards.find((a) => a.title === 'おちゃの しょうたい')!.playerId).toBe('p2');
-    expect(t.s.recap!.awards.find((a) => a.title === 'おもてなし しょう')!.playerId).toBe('p1');
+    expect(t.s.recap!.awards.find((a) => a.title === 'おもてなし賞')!.playerId).toBe('p1');
     expect(before).toBeGreaterThanOrEqual(ACCEPT_POINTS);
   });
 

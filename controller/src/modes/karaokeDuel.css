@@ -22,7 +22,7 @@
 .kdp-talk { padding: 34px 16px; font-size: 24px; }
 .kdp-status { margin: 0; min-height: 1.3em; font-size: 18px; overflow-wrap: anywhere; }
 .kdp-pitch { font-size: 14px; }
-.kdp-ready { margin: 0; color: #1b1430; background: var(--warn); border-radius: 12px; padding: 8px 12px; font-weight: 800; text-align: center; }
+.kdp-ready { margin: 0; color: var(--on-accent); background: var(--warn); border-radius: 12px; padding: 8px 12px; font-weight: 800; text-align: center; }
 .kdp-take { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; display: grid; gap: 2px; }
 .kdp-take p { margin: 0; }
 .kdp-take.missed { color: var(--muted); }

@@ -370,5 +370,5 @@ function shiritoriScreen(ctx: Ctx): HTMLElement {
 
   const won = sh.winnerId === me;
   const points = sh.points?.[me] ?? 0;
-  return waiting(won ? 'しりとり王! You won the showdown!' : `${nameOf(view, sh.winnerId)} wins the showdown!`, `+${points} this round`);
+  return waiting(won ? 'しりとり王！ You won the showdown!' : `${nameOf(view, sh.winnerId)} wins the showdown!`, `+${points} this round`);
 }

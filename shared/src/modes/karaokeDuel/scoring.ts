@@ -20,6 +20,8 @@ import { noteTimes, splitMorae, type SongLine } from './songs.js';
 export const WEIGHTS = { pron: 0.6, pitch: 0.25, timing: 0.15 } as const;
 /** The quiet fallback (typed) earns this share of its pronunciation score, and nothing else. */
 export const TYPED_SHARE = 0.5;
+/** "I sang it" with no mic and no reading: the honour system, worth a little less than a perfect typed line. */
+export const SANG_IT_QUALITY = 30;
 /** Mora similarity that already counts as perfect pronunciation, by level (forgiving by design). */
 export const PRON_FULL_AT: Record<Level, number> = { kana: 0.8, n5: 0.9, n4: 0.95 };
 /** Below this pronunciation, pitch and timing credit shrink in proportion (no words, no tune). */
@@ -64,8 +66,9 @@ const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFi
  */
 export function parseTake(raw: Record<string, unknown>): Take | { error: string } {
   const u = raw.utterance;
-  if (!isUtterance(u) || (u.via !== 'speech' && u.via !== 'typed')) return { error: 'bad-utterance' };
+  if (!isUtterance(u)) return { error: 'bad-utterance' };
   const utterance: Utterance = { via: u.via, text: u.text.slice(0, 120), ...(u.reading !== undefined ? { reading: String(u.reading).slice(0, 240) } : {}) };
+  if (u.via === 'tap') return { utterance: { via: 'tap', text: '' }, pitch: null, onsetMs: null, durMs: null, timing: null };
   if (u.via === 'typed') {
     if (!u.text.trim()) return { error: 'empty-answer' };
     return { utterance, pitch: null, onsetMs: null, durMs: null, timing: null };
@@ -213,6 +216,7 @@ export interface TakeScore {
 }
 
 export function scoreTake(line: SongLine, bpm: number, lineLength: number, take: Take, level: Level): TakeScore {
+  if (take.utterance.via === 'tap') return { quality: SANG_IT_QUALITY, pron: 0, pitch: null, timing: null, similarity: 0, pitchUsed: false };
   const { score: pron, similarity } = pronScore(line, take.utterance, level);
   if (take.utterance.via === 'typed') {
     return { quality: Math.round(100 * TYPED_SHARE * pron), pron, pitch: null, timing: null, similarity, pitchUsed: false };

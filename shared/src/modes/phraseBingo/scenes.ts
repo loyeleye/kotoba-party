@@ -70,7 +70,7 @@ export const SCENES: readonly Scene[] = [
     emoji: '🍜',
     setting: t('ラーメンやさん', 'ラーメンやさん', 'A tiny ramen shop'),
     twist: 'The chef only serves people who say the secret words. Nobody knows what they are.',
-    roles: [role('てんちょう', 'the chef'), role('おきゃくさん', 'a hungry customer'), role('グルメの ひと', 'a ramen critic'), role('となりの ひと', 'the person in the next seat')],
+    roles: [role('たいしょう', 'the chef (the boss of a ramen counter)'), role('おきゃくさん', 'a hungry customer'), role('グルメの ひと', 'a ramen critic'), role('となりの ひと', 'the person in the next seat')],
     status: 'draft',
     phrases: [
       { id: 'pb.ramen.itadakimasu', level: 'kana', from: 'food.phrase.itadakimasu', jp: t('いただきます。', 'いただきます。', "Let's eat. (said before eating)") },
@@ -166,7 +166,7 @@ export const SCENES: readonly Scene[] = [
       { id: 'pb.parents.omiyage', level: 'n5', jp: t('おみやげを 持って きました。', 'おみやげを もって きました。', 'I brought you a gift.') },
       { id: 'pb.parents.hanasemasu', level: 'n4', jp: t('日本語が 少し 話せます。', 'にほんごが すこし はなせます。', 'I can speak a little Japanese.') },
       { id: 'pb.parents.oishisou-cake', level: 'n4', jp: t('おいしそうな ケーキですね。', 'おいしそうな ケーキですね。', 'What a delicious-looking cake.') },
-      { id: 'pb.parents.mata-kitara', level: 'n4', jp: t('また 来たら うれしいです。', 'また きたら うれしいです。', "I'd be happy if you came again.") },
+      { id: 'pb.parents.mata-kitara', level: 'n4', jp: t('また 来て くれたら うれしいです。', 'また きて くれたら うれしいです。', "I'd be happy if you came again.") },
     ],
   },
   {

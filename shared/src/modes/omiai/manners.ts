@@ -9,7 +9,8 @@
 //     casual ending (じゃん, だよね, っす …)
 //   - set phrases: はじめまして, よろしくおねがいします, (name)ともうします
 //   - keigo touches: honorific verbs (いらっしゃいます, めしあがります, お〜になります …) and humble
-//     ones (もうします, まいります, いたします, おります …), でございます
+//     ones (もうします, まいります, いたします, おります …); でございます / ございます count as
+//     extra-polite (ていねい), not humble: they lower nobody, they just raise the whole register
 //   - beautifying お/ご on nouns (おしごと, ごしゅみ, おちゃ)
 //   - aizuchi and cushion words (そうですね, なるほど, しつれいですが)
 //   - casual words (うん, おれ, まじ, やばい, めっちゃ …), each with a polite swap
@@ -24,7 +25,7 @@ import { toHiragana, type Utterance, type UtteranceToken } from '../../japanese/
 
 // ---- result ----
 
-export type MannerKind = 'polite-end' | 'greeting' | 'closing' | 'name-intro' | 'honorific' | 'humble' | 'prefix' | 'aizuchi' | 'cushion';
+export type MannerKind = 'polite-end' | 'greeting' | 'closing' | 'name-intro' | 'honorific' | 'humble' | 'teinei' | 'prefix' | 'aizuchi' | 'cushion';
 
 export interface MannerHit {
   kind: MannerKind;
@@ -204,7 +205,6 @@ const HUMBLE: readonly RegExp[] = [
   /いただ[きくけ]/,
   /はいけん/,
   /ぞんじ(て|ます|あげ)/,
-  /ございま/,
   /おもち(です|でしょう|ください|に)/,
   /もうしわけ/,
   /お(?!ねがい)[^をがはにでともへ、]{2,5}(し|いたし)ます/,
@@ -475,7 +475,7 @@ const UPGRADES: readonly { from: RegExp; to: string; note: string }[] = [
 ];
 
 function upgradeFor(text: string, name: string | undefined, hits: MannerHit[]): { text: string; note: string } | null {
-  if (hits.some((h) => h.kind === 'humble' || h.kind === 'honorific')) return null;
+  if (hits.some((h) => h.kind === 'humble' || h.kind === 'honorific' || h.kind === 'teinei')) return null;
   for (const u of UPGRADES) {
     // ともうします only for the speaker's own name.
     if (u.to.includes('ともうします')) {
@@ -544,6 +544,9 @@ export function checkManners(u: Utterance | string, level: Level, opts: CheckOpt
     const m = re.exec(flat);
     if (m && !hits.some((h) => h.kind === 'honorific' && h.text.includes(m[0]))) hit('humble', m[0]);
   }
+  // ありがとう / おはよう ございます are set phrases, not a raised register.
+  const teinei = /(?<!(?:ありがとう|おはよう|おめでとう)\s?)(で)?ございま/.exec(flat);
+  if (teinei) hit('teinei', teinei[0]);
   for (const p of [...PREFIXED, ...facts.prefixes]) if (flat.includes(p)) hit('prefix', p);
   for (const a of AIZUCHI) {
     if (a === 'はい' || a === 'ええ' || a === 'へえ') {
@@ -620,7 +623,7 @@ export function checkManners(u: Utterance | string, level: Level, opts: CheckOpt
   if (hits.some((h) => h.kind === 'aizuchi')) meter += METER.aizuchi;
   if (hits.some((h) => h.kind === 'cushion')) meter += METER.cushion;
   if (hits.some((h) => h.kind === 'prefix')) meter += METER.prefix;
-  const keigo = hits.filter((h) => h.kind === 'honorific' || h.kind === 'humble').length;
+  const keigo = hits.filter((h) => h.kind === 'honorific' || h.kind === 'humble' || h.kind === 'teinei').length;
   if (keigo) meter += Math.min(METER.keigoMax, METER.keigoFirst + (keigo - 1) * METER.keigoMore);
   meter = Math.min(100, Math.round(meter * LEVEL_SCALE[level]));
 

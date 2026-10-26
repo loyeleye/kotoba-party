@@ -10,17 +10,17 @@
 .om-victim.big { font-size: 120px; }
 .om-case-text { display: grid; min-width: 0; }
 .om-title { font-size: 28px; font-weight: 900; }
-.om-sub { color: var(--muted); font-size: 18px; }
+.om-sub { color: var(--muted); font-size: 24px; }
 .om-item { margin-left: auto; font-size: 40px; display: grid; justify-items: center; }
-.om-item small { font-size: 14px; color: var(--muted); }
+.om-item small { font-size: 24px; color: var(--muted); }
 
 .om-banner { margin: 0; font-size: 30px; font-weight: 800; }
 .om-accuse { color: var(--warn); }
 .om-reveal { font-size: 40px; color: var(--accent); }
-.om-line { margin: 0; font-size: 22px; }
+.om-line { margin: 0; font-size: 24px; }
 .om-say { margin: 0; font-size: 52px; font-weight: 900; color: var(--warn); }
-.om-say small { display: block; font-size: 20px; color: var(--muted); font-weight: 600; }
-.om-kicker { margin: 0; color: var(--accent); font-size: 22px; font-weight: 800; letter-spacing: 0.06em; }
+.om-say small { display: block; font-size: 24px; color: var(--muted); font-weight: 600; }
+.om-kicker { margin: 0; color: var(--accent); font-size: 24px; font-weight: 800; letter-spacing: 0.06em; }
 
 .om-lineup { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 14px; }
 .om-lineup.n2 { --n: 2; } .om-lineup.n3 { --n: 3; } .om-lineup.n4 { --n: 4; }
@@ -30,27 +30,27 @@
 .om-suspect.dim { opacity: 0.7; }
 .om-face { font-size: clamp(44px, 7vh, 84px); line-height: 1.05; }
 .om-name { font-size: 30px; font-weight: 900; }
-.om-role { font-size: 16px; color: var(--muted); }
-.om-asked { font-size: 20px; letter-spacing: 2px; }
+.om-role { font-size: 24px; color: var(--muted); }
+.om-asked { font-size: 24px; letter-spacing: 2px; }
 .om-votes { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 30px; }
-.om-voter { border-radius: 999px; padding: 2px 10px; font-size: 16px; font-weight: 800; }
-.om-stamp { position: absolute; top: 10px; right: -6px; transform: rotate(12deg); background: var(--accent); color: var(--on-accent); font-weight: 900; font-size: 22px; padding: 2px 10px; border-radius: 8px; animation: om-stamp 0.4s ease-out 0.9s both; }
+.om-voter { border-radius: 999px; padding: 2px 10px; font-size: 24px; font-weight: 800; }
+.om-stamp { position: absolute; top: 10px; right: -6px; transform: rotate(12deg); background: var(--accent); color: var(--on-accent); font-weight: 900; font-size: 24px; padding: 2px 10px; border-radius: 8px; animation: om-stamp 0.4s ease-out 0.9s both; }
 
-.om-bubble { position: relative; background: #fbf7ff; color: #1b1430; border-radius: 18px; padding: 12px 18px; display: grid; gap: 4px; text-align: left; }
+.om-bubble { position: relative; background: var(--paper); color: var(--paper-ink); border-radius: 18px; padding: 12px 18px; display: grid; gap: 4px; text-align: left; }
 .om-bubble .om-en { color: #4a3f66; }
 .om-bubble .om-kana { color: #6b5c8f; }
-.om-confused { font-size: 20px; font-weight: 800; margin-top: 4px; animation: om-wobble 0.5s ease-out both; }
-.om-confused small { display: block; font-weight: 600; font-size: 14px; color: #6b5c8f; }
+.om-confused { font-size: 24px; font-weight: 800; margin-top: 4px; animation: om-wobble 0.5s ease-out both; }
+.om-confused small { display: block; font-weight: 600; font-size: 24px; color: #6b5c8f; }
 
 .om-q { display: grid; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-left: 6px solid var(--warn); border-radius: 14px; padding: 10px 18px; }
-.om-who { color: var(--warn); font-size: 20px; font-weight: 800; }
+.om-who { color: var(--warn); font-size: 24px; font-weight: 800; }
 .om-heard { font-size: 34px; font-weight: 800; overflow-wrap: anywhere; }
-.om-natural { font-size: 20px; }
+.om-natural { font-size: 24px; }
 .om-a { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
 .om-answer { min-height: 120px; }
 .om-answer .om-ja, .om-confession .om-ja { font-size: 40px; font-weight: 900; line-height: 1.25; }
 .om-answer .om-en, .om-confession .om-en { font-size: 24px; display: block; }
-.om-answer .om-kana { font-size: 20px; }
+.om-answer .om-kana { font-size: 24px; }
 .om-confession { gap: 10px; }
 .om-think { position: absolute; left: 18px; top: 10px; font-size: 48px; font-weight: 900; color: #6b5c8f; animation: om-think var(--think, 1800ms) steps(1, end) both; }
 .om-newclue { background: var(--panel); border: 2px solid var(--good); border-radius: 14px; padding: 10px 18px; font-size: 24px; font-weight: 900; color: var(--good); display: grid; gap: 4px; }
@@ -58,19 +58,19 @@
 
 .om-jp { display: grid; gap: 2px; }
 .om-jp .om-ja { font-size: 26px; font-weight: 800; }
-.om-jp .om-kana { font-size: 16px; color: var(--muted); }
-.om-jp .om-en { font-size: 18px; color: var(--muted); }
+.om-jp .om-kana { font-size: 24px; color: var(--muted); }
+.om-jp .om-en { font-size: 24px; color: var(--muted); }
 
 .om-notebook { background: #f4ecd8; color: #2b2112; border-radius: 10px; padding: 12px 16px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); background-image: repeating-linear-gradient(transparent 0 31px, rgba(80, 60, 30, 0.18) 31px 32px); max-height: 56vh; overflow: hidden; }
-.om-nb-title { margin: 0 0 6px; font-size: 22px; font-weight: 900; }
+.om-nb-title { margin: 0 0 6px; font-size: 24px; font-weight: 900; }
 .om-notebook .muted { color: #7a6a4f; }
 .om-clues { margin: 0; padding-left: 26px; display: grid; gap: 8px; }
-.om-clues li { font-size: 20px; }
+.om-clues li { font-size: 24px; }
 .om-clue-ja { display: block; font-weight: 800; }
-.om-clue-en { display: block; font-size: 15px; color: #5a4b33; }
+.om-clue-en { display: block; font-size: 24px; color: #5a4b33; }
 .om-clues li.fresh { background: rgba(87, 217, 163, 0.25); border-radius: 6px; }
 .om-clues li.key { background: rgba(255, 122, 89, 0.22); border-radius: 6px; }
-.om-empty { margin: 0; font-size: 18px; }
+.om-empty { margin: 0; font-size: 24px; }
 
 .om-intro { justify-items: center; text-align: center; }
 .om-file { display: flex; gap: 28px; align-items: center; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px 28px; }
@@ -91,32 +91,32 @@
   .om-case { padding: 4px 14px; }
   .om-victim { font-size: 32px; }
   .om-victim.big { font-size: 72px; }
-  .om-title { font-size: 22px; }
-  .om-sub { font-size: 15px; }
+  .om-title { font-size: 24px; }
+  .om-sub { font-size: 24px; }
   .om-item { font-size: 28px; }
-  .om-banner { font-size: 22px; }
+  .om-banner { font-size: 24px; }
   .om-reveal { font-size: 28px; }
   .om-say { font-size: 34px; }
   .om-face { font-size: 44px; }
-  .om-name { font-size: 22px; }
-  .om-role { font-size: 13px; }
+  .om-name { font-size: 24px; }
+  .om-role { font-size: 24px; }
   .om-suspect { padding: 6px; }
   .om-heard { font-size: 24px; }
-  .om-natural, .om-who { font-size: 16px; }
+  .om-natural, .om-who { font-size: 24px; }
   .om-answer { min-height: 80px; }
   .om-answer .om-ja, .om-confession .om-ja { font-size: 28px; }
-  .om-answer .om-en, .om-confession .om-en { font-size: 18px; }
+  .om-answer .om-en, .om-confession .om-en { font-size: 24px; }
   .om-confession { gap: 4px; }
-  .om-line { font-size: 17px; }
-  .om-newclue { font-size: 18px; padding: 6px 14px; }
-  .om-jp .om-ja { font-size: 20px; }
+  .om-line { font-size: 24px; }
+  .om-newclue { font-size: 24px; padding: 6px 14px; }
+  .om-jp .om-ja { font-size: 24px; }
   .om-file { padding: 10px 18px; }
-  .om-file .om-jp .om-ja { font-size: 22px; }
+  .om-file .om-jp .om-ja { font-size: 24px; }
   .om-file-title .om-ja { font-size: 32px !important; }
   .om-layout { grid-template-columns: minmax(0, 1fr) minmax(260px, 330px); }
-  .om-nb-title { font-size: 18px; }
-  .om-clues li { font-size: 16px; }
-  .om-clue-en { font-size: 13px; }
+  .om-nb-title { font-size: 24px; }
+  .om-clues li { font-size: 24px; }
+  .om-clue-en { font-size: 24px; }
 }
 
 /* The confession */
@@ -125,34 +125,51 @@
 .om-finale .om-name { font-size: 26px; }
 .om-reveal-head { display: grid; gap: 2px; }
 .om-finale .om-confession .om-ja { font-size: 30px; }
-.om-finale .om-confession .om-en { font-size: 19px; }
+.om-finale .om-confession .om-en { font-size: 24px; }
 .om-solution { display: grid; gap: 6px; }
-.om-solution .om-line { font-size: 19px; }
+.om-solution .om-line { font-size: 24px; }
 
 /* Short screens (1280×720): tighten the shared stage chrome, for this mode only. */
 @media (max-height: 820px) {
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .bar { padding: 6px 24px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .code { font-size: 34px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .qr { width: 70px; height: 70px; }
-  body[data-mode='onsen-murder']:not([data-phase='lobby']) .label, body[data-mode='onsen-murder']:not([data-phase='lobby']) .url { font-size: 12px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .label, body[data-mode='onsen-murder']:not([data-phase='lobby']) .url { font-size: 24px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .show { padding: 8px 24px; gap: 8px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .phase { font-size: 24px; }
-  body[data-mode='onsen-murder']:not([data-phase='lobby']) .round { font-size: 18px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .round { font-size: 24px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .timer { font-size: 34px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .host { padding: 4px 14px; gap: 10px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-portrait { width: 40px; height: 40px; }
-  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-jp { font-size: 22px; }
-  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-en { font-size: 16px; }
-  body[data-mode='onsen-murder']:not([data-phase='lobby']) .player { padding: 4px 10px; font-size: 18px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-jp { font-size: 24px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-en { font-size: 24px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .player { padding: 4px 10px; font-size: 24px; }
   .om-kicker { display: none; }
   .om-finale .om-face { font-size: 34px; }
-  .om-finale .om-name { font-size: 18px; }
-  .om-finale .om-confession .om-ja { font-size: 22px; }
-  .om-finale .om-confession .om-en { font-size: 15px; }
-  .om-solution .om-line { font-size: 15px; }
+  .om-finale .om-name { font-size: 24px; }
+  .om-finale .om-confession .om-ja { font-size: 24px; }
+  .om-finale .om-confession .om-en { font-size: 24px; }
+  .om-solution .om-line { font-size: 24px; }
   .om-notebook { max-height: 48vh; }
 }
 
 @media (max-width: 1000px) {
   .om-layout { grid-template-columns: 1fr; }
 }
+
+/* The name slot in 「はんにんは ＿さんです！」: a drawn box, not ○○ (which reads as "OO"). */
+.om-slot { display: inline-block; min-width: 3.2em; margin: 0 0.1em; padding: 0 0.3em; border: 3px dashed var(--warn); border-radius: 6px; color: var(--warn); text-align: center; line-height: 1.2; }
+
+/* Accusation beats: the votes drop onto the cards one by one, a spotlight sweeps the lineup, then
+   the はんにん stamp lands (its own delay) and the confession follows line by line. */
+.om-finale .om-voter { animation: om-drop 360ms cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+.om-finale .om-voter:nth-child(2) { animation-delay: 150ms; }
+.om-finale .om-voter:nth-child(3) { animation-delay: 300ms; }
+.om-finale .om-voter:nth-child(n + 4) { animation-delay: 450ms; }
+@keyframes om-drop { from { opacity: 0; transform: translateY(-40px); } }
+.om-finale .om-lineup { position: relative; }
+.om-finale .om-lineup::after { content: ''; position: absolute; inset: -20px; pointer-events: none; background: radial-gradient(ellipse 14% 70% at 50% 50%, rgba(255, 244, 220, 0.35), transparent 70%); animation: om-sweep 900ms 500ms ease-in-out both; opacity: 0; }
+@keyframes om-sweep { 0% { opacity: 1; transform: translateX(-45%); } 85% { opacity: 1; transform: translateX(45%); } 100% { opacity: 0; transform: translateX(45%); } }
+@media (prefers-reduced-motion: reduce) { .om-finale .om-voter, .om-finale .om-lineup::after { animation: none; } }
+.om-legend { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.om-chip { font-size: 24px; padding: 4px 14px; border-radius: 999px; background: var(--panel); border: 2px solid var(--line); white-space: nowrap; }

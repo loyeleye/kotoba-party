@@ -3,11 +3,13 @@
 // bingo card; tap a line you heard, pick who said it. Everyone: shout the scene's phrase back.
 
 import { h } from '../../../shared/src/dom.js';
+import { scenePic } from '../../../shared/src/art.js';
 import type { PhraseBingoView } from '../../../shared/src/modes/views.js';
 import type { CellView, PhraseCard, SecretView } from '../../../shared/src/modes/phraseBingo/phraseBingo.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
+import { jpView } from '../components/jp.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 type Ctx = PhoneContext<PhraseBingoView>;
@@ -18,20 +20,14 @@ const nameOf = (view: RoomView, id: string | null | undefined): string => view.p
 let picked: { seq: number; phraseId: string } | null = null;
 
 function phraseBlock(p: PhraseCard, big = true): HTMLElement {
-  return h(
-    'div',
-    { class: `pb-line${big ? '' : ' small'}` },
-    h('p', { class: 'pb-line-jp', lang: 'ja' }, p.text),
-    p.kana !== p.text ? h('p', { class: 'pb-line-kana', lang: 'ja' }, p.kana) : null,
-    p.romaji ? h('p', { class: 'pb-line-romaji' }, p.romaji) : null,
-    h('p', { class: 'pb-line-en' }, p.en),
-  );
+  // Romaji comes only for かな players, so it tells us the level (components/jp.ts).
+  return jpView(p, p.romaji ? 'kana' : 'n5', { cls: `pb-line${big ? '' : ' small'}` });
 }
 
 function sceneHeader(game: PhraseBingoView): HTMLElement | null {
   const sc = game.scene;
   if (!sc) return null;
-  return h('div', { class: 'pb-scene-p' }, h('span', { class: 'pb-emoji-p' }, sc.emoji), h('div', {}, h('p', { class: 'pb-setting-p', lang: 'ja' }, sc.setting.text), h('p', { class: 'hint' }, sc.setting.en)));
+  return h('div', { class: 'pb-scene-p' }, scenePic(sc, 'pb-emoji-p'), h('div', {}, h('p', { class: 'pb-setting-p', lang: 'ja' }, sc.setting.text), h('p', { class: 'hint' }, sc.setting.en)));
 }
 
 function roleLine(game: PhraseBingoView): HTMLElement | null {

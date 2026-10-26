@@ -2,9 +2,9 @@
 // them from word tiles), pick the real title, then say it with the room. The VIP can hide a
 // drawing or a title.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, hasReading, ruby } from '../../../shared/src/dom.js';
 import type { OekakiView } from '../../../shared/src/modes/views.js';
-import { OEKAKI_LIMITS, PALETTE } from '../../../shared/src/modes/oekaki/drawing.js';
+import { OEKAKI_LIMITS, PALETTE, PALETTE_NAMES } from '../../../shared/src/modes/oekaki/drawing.js';
 import { MAX_FAKE_LENGTH, MAX_FAKE_TILES } from '../../../shared/src/modes/oekaki/fakes.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -55,8 +55,9 @@ function titleCard(t: { text: string; kana: string; en: string; romaji: string |
     'div',
     { class: 'oek-word' },
     note ? h('p', { class: 'oek-note' }, note) : null,
-    h('p', { class: 'oek-big', lang: 'ja' }, kanaFirst ? t.kana : t.text),
-    !kanaFirst && !sameKana ? h('p', { class: 'oek-kana', lang: 'ja' }, t.kana) : null,
+    // Furigana above the kanji, not the reading as a second line that reads like another word.
+    h('p', { class: 'oek-big' }, kanaFirst ? h('span', { lang: 'ja' }, t.kana) : ruby(t)),
+    !kanaFirst && !sameKana && !hasReading(t) ? h('p', { class: 'oek-kana', lang: 'ja' }, t.kana) : null,
     t.romaji ? h('p', { class: 'oek-romaji' }, t.romaji) : null,
     h('p', { class: 'oek-en' }, t.en),
   );
@@ -84,6 +85,7 @@ function drawScreen(ctx: Ctx): HTMLElement {
       sendLabel: 'Send my drawing 🖼',
       limits: OEKAKI_LIMITS,
       palette: PALETTE,
+      paletteNames: PALETTE_NAMES,
       lineWidth: 0.02,
       label: 'Drawing pad: draw your secret word',
       onSend: (strokes, colors) => send({ kind: 'draw', strokes, colors }),
@@ -205,7 +207,7 @@ function voteScreen(ctx: Ctx): HTMLElement {
           'div',
           { class: 'oek-vip' },
           h('p', { class: 'hint' }, 'VIP: hide a title that shouldn’t be on the TV.'),
-          options.filter((o) => !o.hidden).map((o) => h('button', { type: 'button', class: 'secondary oek-hide-opt', onclick: () => hide(o.id) }, `Hide “${o.text}”`)),
+          options.filter((o) => !o.hidden).map((o) => h('button', { type: 'button', class: 'vip-hide oek-hide-opt', onclick: () => hide(o.id) }, '🚫 Hide ', h('span', { lang: 'ja' }, `“${o.text}”`))),
           hideDrawingButton(ctx),
         )
       : null;
@@ -276,7 +278,7 @@ function scoreScreen(ctx: Ctx): HTMLElement {
           'details',
           { class: 'oek-vip' },
           h('summary', {}, 'VIP: hide a title'),
-          r.options.filter((o) => !o.hidden && !o.real).map((o) => h('button', { type: 'button', class: 'secondary oek-hide-opt', onclick: () => void send({ kind: 'hide', optionId: o.id }) }, `Hide “${o.text}”`)),
+          r.options.filter((o) => !o.hidden && !o.real).map((o) => h('button', { type: 'button', class: 'vip-hide oek-hide-opt', onclick: () => void send({ kind: 'hide', optionId: o.id }) }, '🚫 Hide ', h('span', { lang: 'ja' }, `“${o.text}”`))),
           hideDrawingButton(ctx),
         )
       : null,

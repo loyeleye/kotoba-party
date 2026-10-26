@@ -1,10 +1,10 @@
 /* Who's the Tourist? (phone). Fits 360 px (328 px of content). Every class is tou- prefixed. */
-.tou-line { display: grid; gap: 2px; background: #fbf7ff; color: #1b1430; border-radius: 14px; padding: 12px 14px; }
+.tou-line { display: grid; gap: 2px; background: var(--paper); color: var(--paper-ink); border-radius: 14px; padding: 12px 14px; }
 .tou-line p { margin: 0; overflow-wrap: anywhere; }
 .tou-line-jp { font-size: 24px; font-weight: 800; line-height: 1.25; }
-.tou-line-kana { font-size: 15px; color: #5b4e7a; }
+.tou-line-kana { font-size: 15px; color: var(--muted); }
 .tou-line-romaji { font-size: 15px; color: #2b4f9a; font-style: italic; }
-.tou-line-en { font-size: 15px; color: #5b4e7a; }
+.tou-line-en { font-size: 15px; color: var(--muted); }
 .tou-line.small { padding: 8px 12px; }
 .tou-line.small .tou-line-jp { font-size: 18px; }
 .tou-line.answer { background: #233a30; color: var(--ink); }

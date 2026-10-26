@@ -18,12 +18,12 @@
 .tou-stage .tou-place-emoji { grid-row: 1 / 3; font-size: 64px; line-height: 1; }
 .tou-stage .tou-place-jp { font-size: 40px; font-weight: 900; }
 .tou-stage .tou-place-jp rt { font-size: 0.45em; color: var(--muted); }
-.tou-stage .tou-place-en { font-size: 22px; color: var(--muted); }
+.tou-stage .tou-place-en { font-size: 24px; color: var(--muted); }
 .tou-stage .tou-places-small { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .tou-stage .tou-places-small .tou-place { padding: 6px 10px; border-width: 1px; border-radius: 12px; column-gap: 10px; }
 .tou-stage .tou-places-small .tou-place-emoji { font-size: 34px; }
 .tou-stage .tou-places-small .tou-place-jp { font-size: 24px; }
-.tou-stage .tou-places-small .tou-place-en { font-size: 16px; }
+.tou-stage .tou-places-small .tou-place-en { font-size: 24px; }
 .tou-stage .tou-place.right { border-color: var(--good); box-shadow: 0 0 0 3px var(--good); }
 .tou-stage .tou-place.wrong { border-color: var(--accent); opacity: 0.75; }
 
@@ -31,32 +31,32 @@
 .tou-stage .tou-live { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; align-items: start; }
 .tou-stage .tou-left { display: grid; gap: 16px; align-content: start; }
 .tou-stage .tou-turn { background: var(--panel); border: 2px solid var(--warn); border-radius: 20px; padding: 18px 24px; display: grid; gap: 12px; min-height: 320px; align-content: start; }
-.tou-stage .tou-turn-n { font-size: 20px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.tou-stage .tou-turn-n { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .tou-stage .tou-turn-who { font-size: 38px; font-weight: 900; }
 .tou-stage .tou-arrow { color: var(--warn); }
 .tou-stage .tou-waiting { font-size: 30px; color: var(--muted); animation: tou-breathe 2s ease-in-out infinite; }
 @keyframes tou-breathe { 50% { opacity: 0.55; } }
 .tou-stage .tou-said { border-radius: 16px; padding: 10px 16px; display: grid; gap: 2px; animation: tou-in 0.35s ease-out; }
 @keyframes tou-in { from { opacity: 0; transform: translateY(-6px); } }
-.tou-stage .tou-said.q { background: #fbf7ff; color: #1b1430; }
+.tou-stage .tou-said.q { background: var(--paper); color: var(--paper-ink); }
 .tou-stage .tou-said.a { background: #233a30; color: var(--ink); margin-left: 40px; }
 .tou-stage .tou-said-jp { font-size: 30px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
-.tou-stage .tou-said-kana { font-size: 18px; opacity: 0.75; }
-.tou-stage .tou-said-en { font-size: 20px; opacity: 0.8; }
+.tou-stage .tou-said-kana { font-size: 24px; opacity: 0.75; }
+.tou-stage .tou-said-en { font-size: 24px; opacity: 0.8; }
 .tou-stage .tou-said-en.none { font-style: italic; opacity: 0.6; }
 .tou-stage .tou-said.big .tou-said-jp { font-size: 48px; }
 .tou-stage .tou-said.big .tou-said-kana { font-size: 24px; }
 .tou-stage .tou-said.big .tou-said-en { font-size: 28px; }
 .tou-stage .tou-mic { font-style: normal; }
 .tou-stage .tou-log { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; }
-.tou-stage .tou-panel-title { margin-bottom: 8px; font-size: 20px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.tou-stage .tou-panel-title { margin-bottom: 8px; font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .tou-stage .tou-log ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .tou-stage .tou-ex { display: grid; gap: 6px; }
-.tou-stage .tou-ex-who { font-size: 20px; color: var(--muted); font-weight: 700; }
+.tou-stage .tou-ex-who { font-size: 24px; color: var(--muted); font-weight: 700; }
 .tou-stage .tou-ex-n { color: var(--warn); margin-right: 10px; }
 .tou-stage .tou-log .tou-said-jp { font-size: 24px; }
-.tou-stage .tou-log .tou-said-en { font-size: 17px; }
-.tou-stage .tou-log .tou-said-kana { font-size: 15px; }
+.tou-stage .tou-log .tou-said-en { font-size: 24px; }
+.tou-stage .tou-log .tou-said-kana { font-size: 24px; }
 .tou-stage .tou-log .tou-said.a { margin-left: 24px; }
 
 /* vote */
@@ -72,14 +72,14 @@
 .tou-stage.tou-score .tou-big { text-align: center; }
 .tou-stage .tou-how-caught, .tou-stage .tou-how-wrong-guess { color: var(--good); }
 .tou-stage .tou-how-escaped, .tou-stage .tou-how-wrong-person, .tou-stage .tou-how-guessed { color: var(--warn); }
-.tou-stage .tou-reveal { display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; background: #fbf7ff; color: #1b1430; border-radius: 24px; padding: 18px 32px; animation: tou-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1); }
+.tou-stage .tou-reveal { display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; background: var(--paper); color: var(--paper-ink); border-radius: 24px; padding: 18px 32px; animation: tou-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1); }
 @keyframes tou-pop { from { transform: scale(0.6); opacity: 0; } }
 .tou-stage .tou-reveal-emoji { font-size: 110px; line-height: 1; }
 .tou-stage .tou-reveal-jp { font-size: 56px; font-weight: 700; }
 .tou-stage .tou-reveal-jp strong { font-weight: 900; color: #b8401f; }
-.tou-stage .tou-reveal-jp rt { font-size: 0.4em; color: #5b4e7a; }
-.tou-stage .tou-reveal-en { font-size: 28px; color: #5b4e7a; }
-.tou-stage .tou-double { align-self: start; background: var(--accent); color: var(--on-accent); font-weight: 800; border-radius: 999px; padding: 6px 16px; font-size: 22px; }
+.tou-stage .tou-reveal-jp rt { font-size: 0.4em; color: var(--muted); }
+.tou-stage .tou-reveal-en { font-size: 28px; color: var(--muted); }
+.tou-stage .tou-double { align-self: start; background: var(--accent); color: var(--on-accent); font-weight: 800; border-radius: 999px; padding: 6px 16px; font-size: 24px; }
 .tou-stage .tou-tally { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .tou-stage .tou-tally li { display: grid; grid-template-columns: 180px 1fr 40px; gap: 12px; align-items: center; font-size: 26px; }
 .tou-stage .tou-tally-bar { height: 22px; border-radius: 11px; background: var(--muted); min-width: 8px; }
@@ -93,41 +93,53 @@
 @media (max-height: 800px), (max-width: 1400px) {
   .tou-stage { gap: 10px; }
   .tou-stage .tou-title { font-size: 54px; }
-  .tou-stage .tou-steps { font-size: 22px; }
+  .tou-stage .tou-steps { font-size: 24px; }
   .tou-stage .tou-callout { font-size: 30px; }
   .tou-stage .tou-big { font-size: 36px; }
-  .tou-stage .tou-hint, .tou-stage .tou-muted { font-size: 18px; }
-  .tou-stage .tou-banner { font-size: 20px; padding: 6px 14px; }
+  .tou-stage .tou-hint, .tou-stage .tou-muted { font-size: 24px; }
+  .tou-stage .tou-banner { font-size: 24px; padding: 6px 14px; }
   .tou-stage .tou-place { padding: 8px 12px; }
   .tou-stage .tou-place-emoji { font-size: 44px; }
   .tou-stage .tou-place-jp { font-size: 28px; }
-  .tou-stage .tou-place-en { font-size: 16px; }
+  .tou-stage .tou-place-en { font-size: 24px; }
   .tou-stage .tou-places-small .tou-place-emoji { font-size: 24px; }
-  .tou-stage .tou-places-small .tou-place-jp { font-size: 18px; }
-  .tou-stage .tou-places-small .tou-place-en { font-size: 13px; }
+  .tou-stage .tou-places-small .tou-place-jp { font-size: 24px; }
+  .tou-stage .tou-places-small .tou-place-en { font-size: 24px; }
   .tou-stage .tou-turn { min-height: 0; padding: 12px 16px; gap: 8px; }
   .tou-stage .tou-turn-who { font-size: 28px; }
-  .tou-stage .tou-waiting { font-size: 22px; }
+  .tou-stage .tou-waiting { font-size: 24px; }
   .tou-stage .tou-said.big .tou-said-jp { font-size: 32px; }
-  .tou-stage .tou-said.big .tou-said-kana { font-size: 18px; }
-  .tou-stage .tou-said.big .tou-said-en { font-size: 20px; }
+  .tou-stage .tou-said.big .tou-said-kana { font-size: 24px; }
+  .tou-stage .tou-said.big .tou-said-en { font-size: 24px; }
   .tou-stage .tou-log { padding: 10px 14px; }
   .tou-stage .tou-log ul { gap: 8px; }
   .tou-stage .tou-log .tou-said { padding: 6px 10px; }
-  .tou-stage .tou-log .tou-said-jp { font-size: 18px; }
-  .tou-stage .tou-log .tou-said-en, .tou-stage .tou-log .tou-said-kana, .tou-stage .tou-ex-who { font-size: 14px; }
-  .tou-stage .tou-voters li { font-size: 22px; padding: 6px 16px; }
+  .tou-stage .tou-log .tou-said-jp { font-size: 24px; }
+  .tou-stage .tou-log .tou-said-en, .tou-stage .tou-log .tou-said-kana, .tou-stage .tou-ex-who { font-size: 24px; }
+  .tou-stage .tou-voters li { font-size: 24px; padding: 6px 16px; }
   .tou-stage .tou-reveal { padding: 10px 20px; }
   .tou-stage .tou-reveal-emoji { font-size: 72px; }
   .tou-stage .tou-reveal-jp { font-size: 38px; }
-  .tou-stage .tou-reveal-en { font-size: 20px; }
-  .tou-stage .tou-tally li { font-size: 20px; grid-template-columns: 140px 1fr 30px; }
-  .tou-stage .tou-points { font-size: 22px; gap: 4px; }
+  .tou-stage .tou-reveal-en { font-size: 24px; }
+  .tou-stage .tou-tally li { font-size: 24px; grid-template-columns: 140px 1fr 30px; }
+  .tou-stage .tou-points { font-size: 24px; gap: 4px; }
   .tou-stage .tou-points li { padding: 4px 16px; }
   .tou-stage.tou-score .tou-places { display: none; }
-  .tou-stage .tou-tally li { font-size: 18px; }
+  .tou-stage .tou-tally li { font-size: 24px; }
 }
 @media (max-width: 900px) {
   .tou-stage .tou-live { grid-template-columns: 1fr; }
   .tou-stage .tou-places { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Unmask beats on the score screen: the vote bars grow, a held breath, the tourist's name flips
+   over, then the place, then the points. */
+.tou-score .tou-tally-bar { transform-origin: left; animation: tou-grow 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.tou-score .tou-tally li:nth-child(2) .tou-tally-bar { animation-delay: 120ms; }
+.tou-score .tou-tally li:nth-child(n + 3) .tou-tally-bar { animation-delay: 240ms; }
+@keyframes tou-grow { from { transform: scaleX(0); } }
+.tou-score .tou-tally li.tourist .tou-tally-name { display: inline-block; animation: tou-unmask 600ms 1300ms cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+@keyframes tou-unmask { 0% { transform: rotateY(90deg); } 100% { transform: rotateY(0); } }
+.tou-score .tou-place-reveal, .tou-score > .tou-reveal { animation: beat-in 420ms 1900ms both; }
+.tou-score .tou-points { animation: beat-in 420ms 2500ms both; }
+@media (prefers-reduced-motion: reduce) { .tou-score * { animation: none !important; } }

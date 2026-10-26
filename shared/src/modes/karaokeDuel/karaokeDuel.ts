@@ -16,7 +16,7 @@ import type { JpText, Level } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { parseTake, pronScore, scoreTake, type TakeScore } from './scoring.js';
-import { beatMs, lineMs, noteTimes, romajiMorae, SONGS, wordsOf, type Song } from './songs.js';
+import { beatMs, lineMs, noteTimes, romajiMorae, SONGS, sungRomaji, wordsOf, type Song } from './songs.js';
 
 // ---- tuning ----
 
@@ -262,7 +262,7 @@ function lineView(song: Song, i: number): LineView {
     romaji: line.romaji,
     en: line.en,
     words: wordsOf(line),
-    romajiMorae: romajiMorae(line),
+    romajiMorae: sungRomaji(romajiMorae(line)),
     notes: noteTimes(line, song.bpm),
     ms: lineMs(line, song.bpm),
   };
@@ -541,7 +541,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       const t = tallyFor(s, playerId);
       t.takes += 1;
       t.best = Math.max(t.best, score.quality);
-      const outcome = take.utterance.via === 'typed' ? 'seen' : score.similarity >= 0.8 ? 'said' : score.similarity >= 0.5 ? 'retry' : 'missed';
+      const outcome = take.utterance.via !== 'speech' ? 'seen' : score.similarity >= 0.8 ? 'said' : score.similarity >= 0.5 ? 'retry' : 'missed';
       phraseFor(s, ctx, playerId, turn.line, outcome);
       s.at = ctx.now;
       return MOVE_OK;
@@ -629,9 +629,9 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     const take = best('best');
     if (take) out.push({ playerId: take.id, name: take.name, title: 'ベスト テイク', en: `Best Take: the night’s best line (${s.tally[take.id]!.best})` });
     const fave = best('crowd');
-    if (fave) out.push({ playerId: fave.id, name: fave.name, title: 'はくしゅ しょう', en: 'Applause Prize: most crowd-favourite votes won' });
+    if (fave) out.push({ playerId: fave.id, name: fave.name, title: 'はくしゅ賞', en: 'Applause Prize: most crowd-favourite votes won' });
     const choir = best('chorus');
-    if (choir) out.push({ playerId: choir.id, name: choir.name, title: 'コーラス しょう', en: 'Chorus Prize: sang along the most' });
+    if (choir) out.push({ playerId: choir.id, name: choir.name, title: 'コーラス賞', en: 'Chorus Prize: sang along the most' });
     return out;
   },
 };

@@ -2,6 +2,7 @@
 .oo-step { color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0; }
 .oo-prompt { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 4px; }
 .oo-prompt p { margin: 0; }
+.oo-prompt .jpv-main { font-size: 24px; font-weight: 800; }
 .oo-prompt .oo-jp { font-size: 24px; font-weight: 800; line-height: 1.4; }
 .oo-prompt.small .oo-jp { font-size: 20px; }
 .oo-kana, .oo-romaji { color: var(--muted); font-size: 15px; }
@@ -15,7 +16,6 @@
 .oo-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .oo-tile { position: relative; display: grid; gap: 2px; text-align: left; min-height: 64px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
 .oo-tile small { color: var(--muted); font-size: 13px; }
-.oo-tile-jp { font-size: 20px; font-weight: 700; }
 .oo-tile.on { border-color: var(--accent); background: #3a2230; box-shadow: 0 0 0 2px var(--accent); }
 .oo-tile:disabled { opacity: 0.35; }
 .oo-tile.callback { border-style: dashed; }
@@ -39,7 +39,6 @@
 .oo-ans { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: stretch; }
 .oo-ans-main { display: grid; gap: 4px; text-align: left; padding: 16px; min-height: 64px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; }
 button.oo-ans-main:active { border-color: var(--accent); }
-.oo-ans-jp { font-size: 22px; font-weight: 800; }
 .oo-ans small { color: var(--muted); font-size: 14px; }
 .oo-ans.mine .oo-ans-main { border-style: dashed; opacity: 0.8; }
 .oo-ans.on .oo-ans-main { border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
