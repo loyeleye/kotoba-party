@@ -276,6 +276,7 @@ export interface LastTrainMinigame {
   penalty: boolean;
   /** Build phase the minigame ships in (Phase 1 has Konbini Math and Meet the Innkeeper). */
   phase: 1 | 4 | 5;
+  status: ReviewStatus;
   /** Chōchin-san's one-line setup for the stop. */
   intro: JpText;
   items: MinigameItem[];
@@ -299,6 +300,7 @@ export interface LastTrainScenario {
   twist: JpText;
   /** Rapid-fire Platform Dash questions. */
   platformDash: MinigameItem[];
+  status: ReviewStatus;
 }
 
 // ---------------------------------------------------------------------------
@@ -367,7 +369,7 @@ export interface HostLine {
   tier?: ReactionTier;
   /** Japanese as shown with subtitles. Under 12 words. */
   jp: JpText;
-  /** Template slots used in the line, e.g. {name}. Filled by the server. */
+  /** Template slots used in the line, written with braces as they appear in the text, e.g. '{name}'. Filled by the server. */
   slots?: string[];
   status: ReviewStatus;
 }
