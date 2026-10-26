@@ -2,10 +2,12 @@
 // (server/src/server.ts, docs/protocol.md), split in two:
 //
 // - this Worker: static pages, room-code allocation, readings for kanji answers, routing;
-// - one RoomObject (a Durable Object) per room code, which runs the room itself.
+// - one RoomObject (a Durable Object) per room code, which runs the room itself (and passes
+//   spoken clips to the Whisper server, since only the room knows whose token is whose).
 
 import { CLOSE } from '../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../shared/src/roomCode.js';
+import { MAX_CLIP_BYTES } from '../server/src/stt.js';
 import { addReadingsRemote } from './reading.js';
 import type { Env } from './env.js';
 
@@ -52,6 +54,14 @@ export default {
       if (action === 'join' && req.method === 'POST') return toRoom(env, code, 'join', {}, await limited(req));
       if (action === 'qr.svg' && req.method === 'GET') return toRoom(env, code, 'qr.svg', { base }, req);
       if (action === 'audio' && m[3] && req.method === 'GET') return toRoom(env, code, 'audio', { id: decodeURIComponent(m[3]) }, req);
+      if (action === 'speech' && req.method === 'POST') {
+        const auth = req.headers.get('authorization');
+        const token = auth?.startsWith('Bearer ') ? auth.slice(7) : '';
+        if (Number(req.headers.get('content-length') ?? 0) > MAX_CLIP_BYTES) return json(400, { error: 'bad-clip' });
+        const clip = await req.arrayBuffer();
+        if (clip.byteLength > MAX_CLIP_BYTES) return json(400, { error: 'bad-clip' });
+        return toRoom(env, code, 'speech', { token }, new Request('https://room/', { method: 'POST', body: clip }));
+      }
       if (action === 'commands' && req.method === 'POST') {
         const auth = req.headers.get('authorization');
         const token = auth?.startsWith('Bearer ') ? auth.slice(7) : '';

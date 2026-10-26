@@ -87,7 +87,7 @@ describe('reconnect and seat hold', () => {
     clock.advance(30_000);
 
     const again = (await joinRoom(ctx.baseUrl, code, { name: 'whatever', token: p1.join.token })) as JoinResponse;
-    expect(again).toEqual({ playerId: p1.join.playerId, token: p1.join.token, rejoined: true });
+    expect(again).toEqual({ playerId: p1.join.playerId, token: p1.join.token, rejoined: true, speech: false });
 
     const fresh = new RoomClient({ baseUrl: ctx.baseUrl, code, token: again.token });
     clients.push(fresh);

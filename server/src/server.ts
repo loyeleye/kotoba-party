@@ -11,6 +11,7 @@ import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/
 import { systemClock, type Clock } from './clock.js';
 import { addReadings, type Reader } from './reading.js';
 import { Room, type RoomSocket } from './room.js';
+import { MAX_CLIP_BYTES, SttGate, isClip, transcribe, type SttOptions } from './stt.js';
 
 export interface ServerConfig {
   clock?: Clock;
@@ -34,6 +35,8 @@ export interface ServerConfig {
   /** Called when a room enters a new phase (e.g. to reset the host's per-game budget on 'intro'). */
   onPhase?: (room: Room) => void;
   onRoomClosed?: (room: Room) => void;
+  /** Self-hosted Whisper for spoken answers (see stt.ts). Unset: phones type or tap. */
+  stt?: SttOptions | null;
   /** Host audio by id, served at GET /audio/:id. */
   audio?: (id: string) => { mime: string; bytes: Uint8Array } | undefined;
 }
@@ -61,6 +64,7 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
   const rooms = new Map<string, Room>();
   const maxRooms = config.maxRooms ?? 500;
   const staticDir = config.staticDir ? resolve(config.staticDir) : undefined;
+  const sttGate = new SttGate();
 
   function createRoom(): Room | null {
     if (rooms.size >= maxRooms) return null;
@@ -135,7 +139,17 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
         if (!body) return send(res, 400, { error: 'bad-request' });
         const result = room.join(body);
         if ('error' in result) return send(res, result.error === 'room-full' || result.error === 'game-in-progress' || result.error === 'name-taken' ? 409 : 400, result);
-        return send(res, 200, result);
+        return send(res, 200, { ...result, speech: !!config.stt });
+      }
+      if (action === 'speech' && req.method === 'POST') {
+        const token = bearer(req);
+        if (!token || room.viewerFor(token)?.kind !== 'player') return send(res, 401, { error: 'bad-token' });
+        if (!config.stt) return send(res, 503, { error: 'no-speech' });
+        const clip = await readBytes(req, MAX_CLIP_BYTES);
+        if (!clip || !isClip(clip)) return send(res, 400, { error: 'bad-clip' });
+        const result = await sttGate.run(token, () => transcribe(clip, config.stt!));
+        if (result === 'busy') return send(res, 429, { error: 'busy' });
+        return result.ok ? send(res, 200, { text: result.text }) : send(res, 502, { error: result.error });
       }
       if (action === 'commands' && req.method === 'POST') {
         const token = bearer(req);
@@ -244,18 +258,24 @@ function bearer(req: IncomingMessage): string | null {
 }
 
 async function readJson(req: IncomingMessage): Promise<unknown> {
+  const body = await readBytes(req, MAX_BODY);
+  if (!body) return null;
+  try {
+    return JSON.parse(Buffer.from(body).toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
+async function readBytes(req: IncomingMessage, max: number): Promise<Uint8Array | null> {
   let size = 0;
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     size += (chunk as Buffer).length;
-    if (size > MAX_BODY) return null;
+    if (size > max) return null;
     chunks.push(chunk as Buffer);
   }
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
-  } catch {
-    return null;
-  }
+  return Buffer.concat(chunks);
 }
 
 async function serveStatic(res: ServerResponse, root: string, path: string): Promise<void> {

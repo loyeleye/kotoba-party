@@ -13,6 +13,7 @@ import { inkCoachDirector } from '../server/src/ink.js';
 import { suspectDirector } from '../server/src/onsen.js';
 import { Room, type RoomSocket } from '../server/src/room.js';
 import { systemClock } from '../server/src/clock.js';
+import { SttGate, isClip, sttFromEnv, transcribe } from '../server/src/stt.js';
 import { CLOSE, type CreateRoomResponse, type JoinRequest, type RoomInfo } from '../shared/src/protocol.js';
 import type { Env } from './env.js';
 
@@ -23,6 +24,7 @@ const bankLines = content.hostLines.filter((l): l is typeof l & BankLine => (HOS
 export class RoomObject extends DurableObject<Env> {
   private room: Room | null = null;
   private ai: AiHostVoice | null = null;
+  private readonly sttGate = new SttGate();
 
   /** Opens a room under this object's code. Answers 409 if one is already open here. */
   private open(code: string): Room | null {
@@ -96,7 +98,18 @@ export class RoomObject extends DurableObject<Env> {
       if (!body) return json(400, { error: 'bad-request' });
       const result = room.join(body);
       if ('error' in result) return json(result.error === 'room-full' || result.error === 'game-in-progress' || result.error === 'name-taken' ? 409 : 400, result);
-      return json(200, result);
+      return json(200, { ...result, speech: !!sttFromEnv(this.env) });
+    }
+    if (action === 'speech') {
+      const token = url.searchParams.get('token') ?? '';
+      if (room.viewerFor(token)?.kind !== 'player') return json(401, { error: 'bad-token' });
+      const stt = sttFromEnv(this.env);
+      if (!stt) return json(503, { error: 'no-speech' });
+      const clip = new Uint8Array(await req.arrayBuffer());
+      if (!isClip(clip)) return json(400, { error: 'bad-clip' });
+      const result = await this.sttGate.run(token, () => transcribe(clip, stt));
+      if (result === 'busy') return json(429, { error: 'busy' });
+      return result.ok ? json(200, { text: result.text }) : json(502, { error: result.error });
     }
     if (action === 'commands') {
       const token = url.searchParams.get('token');

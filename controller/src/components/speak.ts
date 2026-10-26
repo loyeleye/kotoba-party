@@ -1,33 +1,16 @@
-// "Say it to send it": hold to talk, see what the recogniser heard, then send. Every spoken
-// step has a quiet fallback (type, or tap kana on the built-in pad) per the design doc.
+// "Say it to send it": hold to talk, see what was heard, then send. Every spoken step has a quiet
+// fallback (type, or tap kana on the built-in pad) per the design doc.
 //
-// Speech uses the browser's recogniser where there is one (Chrome, Safari). The design doc
-// plans server-side speech-to-text for Phase 3; this is the optional fast path until then.
+// Speech goes to our own server, which runs Whisper (components/mic.ts, server/src/stt.ts). There is
+// no browser recogniser: Chrome's sends the audio to Google. Until a speech server is set up, phones
+// show the typed box and kana pad only.
 
 import { h } from '../../../shared/src/dom.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import type { Level } from '../../../shared/src/protocol.js';
 import { kanaPad } from './kanaPad.js';
+import { MicClip, hear, speechReady, type Heard } from './mic.js';
 import { heardPrefix, levelText } from './speakLabels.js';
-
-interface RecognitionLike {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  continuous: boolean;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  onend: (() => void) | null;
-}
-
-type RecognitionCtor = new () => RecognitionLike;
-
-const Recognition: RecognitionCtor | undefined =
-  (globalThis as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor }).SpeechRecognition ??
-  (globalThis as unknown as { webkitSpeechRecognition?: RecognitionCtor }).webkitSpeechRecognition;
 
 // The phone's player level, set by main.ts before each screen draws.
 let level: Level = 'n5';
@@ -42,7 +25,15 @@ function labelled(text: string): (HTMLElement | string)[] {
   return t.sub ? [main, h('small', { class: 'say-sub', lang: t.ja ? 'en' : 'ja' }, t.sub)] : [main];
 }
 
-export const canSpeak = (): boolean => !!Recognition && localStorage.getItem('kotoba:quiet') !== '1';
+export const canSpeak = (): boolean => speechReady() && localStorage.getItem('kotoba:quiet') !== '1';
+
+/** What to tell the player when nothing usable came back. */
+export function missed(why: Exclude<Heard, { ok: true }>['why'] | 'blocked'): string {
+  if (why === 'blocked') return 'Microphone blocked: type your answer below instead.';
+  if (why === 'busy') return 'Still working on the last one…';
+  if (why === 'failed') return 'Couldn’t check that just now. Try again, or type it.';
+  return 'Didn’t catch that. Hold the button while you speak.';
+}
 
 export interface SpeakOptions {
   /** Button label, e.g. "Hold and say your answer". */
@@ -63,59 +54,48 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
   const box = h('div', { class: 'speak' });
   const heard = h('p', { class: 'heard' });
   const actions = h('div', { class: 'speak-actions' });
-  let transcript = '';
 
   if (canSpeak()) {
-    let rec: RecognitionLike | null = null;
+    let clip: MicClip | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const talk = h('button', { type: 'button', class: 'talk' }, labelled(opts.label ?? 'Hold to talk')) as HTMLButtonElement;
 
-    const stop = () => {
+    const stop = async () => {
       if (timer) clearTimeout(timer);
       timer = null;
       talk.classList.remove('live');
-      rec?.stop();
+      const c = clip;
+      clip = null;
+      if (!c) return;
+      const wav = c.stop();
+      if (c.blocked) return void (heard.textContent = missed('blocked'));
+      heard.textContent = '…';
+      const r = await hear(wav);
+      if (clip) return; // pressed again while this one was being checked
+      if (!r.ok) return void (heard.textContent = missed(r.why));
+      heard.textContent = `${heardPrefix(level)}: ${r.text}`;
+      actions.replaceChildren(
+        h('button', { type: 'button', class: 'primary', onclick: () => opts.onSend({ via: 'speech', text: r.text }) }, labelled('Send')),
+        h('button', { type: 'button', class: 'secondary', onclick: () => ((heard.textContent = ''), actions.replaceChildren()) }, labelled('Say it again')),
+      );
     };
     const start = (e: Event) => {
       e.preventDefault();
-      if (rec) rec.abort();
-      transcript = '';
-      heard.textContent = '…';
+      if (clip) return;
+      heard.textContent = '';
       actions.replaceChildren();
-      rec = new Recognition!();
-      rec.lang = 'ja-JP';
-      rec.interimResults = true;
-      rec.maxAlternatives = 1;
-      rec.continuous = false;
-      rec.onresult = (ev) => {
-        transcript = Array.from(ev.results)
-          .map((r) => r[0]?.transcript ?? '')
-          .join('');
-        heard.textContent = transcript ? `${heardPrefix(level)}: ${transcript}` : '…';
-      };
-      rec.onerror = (ev) => {
-        heard.textContent = ev.error === 'not-allowed' ? 'Microphone blocked: type your answer below instead.' : 'Didn’t catch that. Try again, or type it.';
-      };
-      rec.onend = () => {
-        rec = null;
-        if (transcript) {
-          actions.replaceChildren(
-            h('button', { type: 'button', class: 'primary', onclick: () => opts.onSend({ via: 'speech', text: transcript }) }, labelled('Send')),
-            h('button', { type: 'button', class: 'secondary', onclick: () => ((heard.textContent = ''), actions.replaceChildren()) }, labelled('Say it again')),
-          );
-        } else if (heard.textContent === '…') heard.textContent = 'Didn’t catch that. Hold the button while you speak.';
-      };
+      const c = new MicClip();
+      clip = c;
       talk.classList.add('live');
-      try {
-        rec.start();
-      } catch {
-        heard.textContent = 'Speech is busy. Try again.';
-      }
-      timer = setTimeout(stop, MAX_TALK_MS);
+      void c.ready.then((ok) => {
+        if (clip === c) heard.textContent = ok ? '🎤 …' : missed(c.blocked ? 'blocked' : 'failed');
+      });
+      timer = setTimeout(() => void stop(), MAX_TALK_MS);
     };
     talk.addEventListener('pointerdown', start);
-    talk.addEventListener('pointerup', stop);
-    talk.addEventListener('pointerleave', () => talk.classList.contains('live') && stop());
+    talk.addEventListener('pointerup', () => void stop());
+    talk.addEventListener('pointercancel', () => void stop());
+    talk.addEventListener('pointerleave', () => talk.classList.contains('live') && void stop());
     talk.addEventListener('contextmenu', (e) => e.preventDefault());
     box.append(talk, heard, actions);
   }

@@ -142,6 +142,8 @@ export interface JoinResponse {
   playerId: string;
   token: string;
   rejoined: boolean;
+  /** The server can turn speech into text (POST /api/rooms/:code/speech). False: phones type or tap. */
+  speech?: boolean;
 }
 
 export type JoinError = 'room-not-found' | 'room-full' | 'game-in-progress' | 'name-taken' | 'bad-name';
