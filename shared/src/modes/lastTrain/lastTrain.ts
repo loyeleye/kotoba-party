@@ -607,7 +607,8 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
         }
       } else t.streak = 0;
     }
-    const final = turn.correctOn ? turn.attempts[turn.correctOn - 1] : turn.attempts.at(-1);
+    // Show what they actually said: the correct attempt, else the last one with words in it.
+    const final = turn.correctOn ? turn.attempts[turn.correctOn - 1] : ([...turn.attempts].reverse().find((a) => a.text) ?? turn.attempts.at(-1));
     rows.push({
       playerId: p.id,
       name: p.name,
@@ -984,7 +985,12 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
 
     const statusOf = (id: string): TravellerStatus => {
       if (phase === 'finale' || phase === 'score') return s.racers[id]?.aboard != null ? 'aboard' : 'racing';
-      if (phase === 'penalty' && s.penalties[id]) return s.penalties[id]!.status === 'answering' ? 'penalty' : s.penalties[id]!.status;
+      if (phase === 'penalty' && s.penalties[id]) {
+        const pt = s.penalties[id]!;
+        // Not settled while the room may still overrule it.
+        const voting = s.windows.some((w) => w.scope === 'penalty' && w.playerId === id && w.state === 'open');
+        return pt.status === 'answering' || voting ? 'penalty' : pt.status;
+      }
       const turn = s.turns[id];
       if ((phase === 'answer' || phase === 'reveal' || phase === 'penalty') && turn) return turn.status;
       return 'waiting';

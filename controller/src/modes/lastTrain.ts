@@ -135,7 +135,9 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
     ),
     countdown(task, send),
     task.listen && task.attempt === 1 ? listenBox(task) : null,
-    showText ? jpBlock(task.prompt, { kana: kanaLevel, en: kanaLevel || task.kind === 'dash' || task.attempt === 2, big: true }) : null,
+    showText ? jpBlock(task.prompt, { kana: kanaLevel, en: kanaLevel || task.attempt === 2, big: true }) : null,
+    // N5 and up read the Japanese first; the English is one tap away.
+    showText && !kanaLevel && task.attempt === 1 && task.prompt.en ? h('details', { class: 'lt-en-tap' }, h('summary', {}, 'English'), h('p', {}, task.prompt.en)) : null,
     showText && task.romaji ? h('p', { class: 'lt-romaji' }, task.romaji) : null,
     task.visual && !task.listen ? h('p', { class: 'lt-visual' }, `👀 ${task.visual}`) : null,
     task.attempt === 2

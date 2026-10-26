@@ -477,6 +477,8 @@ describe('Last Train with bots', () => {
     const failed = bots.flatMap((b) => b.moves.filter((m) => !m.ok && m.error !== 'wrong-phase'));
     expect(failed).toEqual([]);
     expect(bots.reduce((n, b) => n + b.moves.filter((m) => m.ok).length, 0)).toBeGreaterThan(20);
+    // The room overrule path ran over the network.
+    expect(bots.some((b) => b.moves.some((m) => m.ok && m.key.includes(':overrule:')))).toBe(true);
 
     // Scores: the recap equals the sum of the ledger the stage saw.
     const game = lastGame as LastTrainView | null;

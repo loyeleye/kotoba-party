@@ -166,6 +166,8 @@ function dash(view: RoomView, game: LastTrainView): HTMLElement {
   const d = game.dash;
   if (!d) return h('div', { class: 'card' });
   const span = d.track - d.ghostStart;
+  // Lane positions as a % of the lane, leaving room for the runner at the start and the door.
+  const at = (pos: number) => 4 + ((pos - d.ghostStart) / span) * 86;
   return h(
     'div',
     { class: 'card lt-stage' },
@@ -182,8 +184,8 @@ function dash(view: RoomView, game: LastTrainView): HTMLElement {
           h(
             'span',
             { class: 'lt-lane' },
-            h('span', { class: 'lt-start', style: `left:${((0 - d.ghostStart) / span) * 100}%` }),
-            h('span', { class: 'lt-runner', style: `left:${(Math.min(d.track, r.pos) - d.ghostStart) / span * 100}%` }, r.aboard !== null ? '🚃' : r.ghost ? '👻' : '🏃'),
+            h('span', { class: 'lt-start', style: `left:${at(0)}%` }),
+            h('span', { class: 'lt-runner', style: `left:${at(Math.min(d.track, r.pos))}%` }, r.aboard !== null ? '🚃' : r.ghost ? '👻' : '🏃'),
             h('span', { class: 'lt-door' }, '🚪'),
           ),
           h('span', { class: 'lt-lane-rank' }, r.aboard !== null ? `#${r.aboard}` : ''),
