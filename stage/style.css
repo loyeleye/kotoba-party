@@ -76,6 +76,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100vh; d
 
 .host { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; background: var(--panel); border-left: 6px solid var(--accent); border-radius: 12px; padding: 12px 20px; }
 .host[hidden] { display: none; }
+.host-portrait { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; align-self: center; background: var(--bg); }
 .host-name { color: var(--accent); font-weight: 800; font-size: 20px; }
 .host-jp { font-size: 32px; font-weight: 700; }
 .host-en { color: var(--muted); font-size: 22px; }

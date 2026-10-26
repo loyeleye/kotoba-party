@@ -179,7 +179,9 @@ function showHost(view: RoomView): void {
   const key = `${say.phaseSeq}:${say.text}`;
   if (key === lastHostKey) return;
   lastHostKey = key;
-  mount(els.host, h('span', { class: 'host-name' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, say.text), h('span', { class: 'host-en' }, say.en));
+  const portrait = h('img', { class: 'host-portrait', src: `/stage/assets/hosts/${say.host}.png`, alt: '' }) as HTMLImageElement;
+  portrait.onerror = () => portrait.remove();
+  mount(els.host, portrait, h('span', { class: 'host-name' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, say.text), h('span', { class: 'host-en' }, say.en));
   if (say.audioUrl) {
     const audio = new Audio(say.audioUrl);
     void audio.play().catch(() => {});
