@@ -6,6 +6,10 @@
 //   npx tsx tools/art/generate.ts --out /tmp/art   # write candidates elsewhere to compare
 //   npx tsx tools/art/generate.ts --seed 42 yokai  # PixelLab seed override
 //
+// Animations (model "animate-with-text-v3") come out as one horizontal sprite sheet: the shipped
+// sprite in `source` is the first frame, every frame is remapped to that sprite's colours (no
+// shimmer), and the API's closing frame is dropped so a loop or a reaction ends back on frame 0.
+//
 // All shipped art is PixelLab pixel art. The Gemini path is kept for drafting source images that
 // PixelLab's image-to-pixelart then converts (see `source` in the manifest).
 //
@@ -34,6 +38,9 @@ interface Post {
   /** Write a JPEG at this quality instead of a PNG. */
   jpegQuality?: number;
 }
+
+/** A generated image, or the frames of an animation. */
+type Raw = Buffer | Buffer[];
 
 interface Asset {
   path: string;
@@ -90,8 +97,9 @@ async function gemini(asset: Asset): Promise<Buffer> {
   return Buffer.from(data, 'base64');
 }
 
-async function pixellab(asset: Asset, seed: number | undefined): Promise<Buffer> {
+async function pixellab(asset: Asset, seed: number | undefined): Promise<Raw> {
   const key = requireKey('PIXELLAB_API_KEY');
+  if (asset.model === 'animate-with-text-v3') return animate(asset, seed, key);
   const { width = 128, height = 128, ...rest } = (asset.params ?? {}) as { width?: number; height?: number } & Record<string, unknown>;
   let endpoint: string;
   let body: Record<string, unknown>;
@@ -118,6 +126,66 @@ async function pixellab(asset: Asset, seed: number | undefined): Promise<Buffer>
   const b64 = json.image?.base64?.replace(/^data:image\/\w+;base64,/, '');
   if (!b64) throw new Error('PixelLab returned no image');
   return Buffer.from(b64, 'base64');
+}
+
+/**
+ * animate-with-text-v3: the source sprite is the first frame and, with `loop: true` (the default),
+ * the last one too, so idles loop and reactions land back on the idle pose. Asynchronous: it
+ * returns a job id that is polled until the frames are ready (30 s to a few minutes).
+ */
+async function animate(asset: Asset, seed: number | undefined, key: string): Promise<Buffer[]> {
+  if (!asset.source) throw new Error('animate-with-text-v3 needs a source sprite');
+  const first = { type: 'base64', base64: readFileSync(join(ROOT, asset.source)).toString('base64'), format: 'png' };
+  const { loop = true, ...rest } = (asset.params ?? {}) as { loop?: boolean } & Record<string, unknown>;
+  const auth = { authorization: `Bearer ${key}` };
+  const res = await fetch('https://api.pixellab.ai/v2/animate-with-text-v3', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...auth },
+    body: JSON.stringify({ first_frame: first, ...(loop ? { last_frame: first } : {}), action: asset.prompt, no_background: true, ...rest, ...(seed === undefined ? {} : { seed }) }),
+  });
+  if (!res.ok) throw new Error(`PixelLab ${res.status}: ${await errorText(res)}`);
+  const { background_job_id: id } = (await res.json()) as { background_job_id?: string };
+  if (!id) throw new Error('PixelLab returned no job id');
+  for (let tries = 0; tries < 120; tries++) {
+    await new Promise((r) => setTimeout(r, 6_000));
+    const poll = await fetch(`https://api.pixellab.ai/v2/background-jobs/${id}`, { headers: auth });
+    if (!poll.ok) continue;
+    const job = (await poll.json()) as { status?: string; last_response?: { images?: ({ base64?: string } | string)[]; detail?: string } };
+    if (job.status === 'failed') throw new Error(`PixelLab job failed: ${job.last_response?.detail ?? 'no detail'}`);
+    if (job.status !== 'completed') continue;
+    const frames = (job.last_response?.images ?? []).map((im) => (typeof im === 'string' ? im : (im.base64 ?? '')).replace(/^data:image\/\w+;base64,/, ''));
+    if (frames.length < 2) throw new Error('PixelLab returned no frames');
+    return frames.map((b) => Buffer.from(b, 'base64'));
+  }
+  throw new Error('PixelLab job timed out');
+}
+
+/** Frames → one horizontal sheet, each frame snapped to the first frame's colours. */
+function sheet(frames: Buffer[], asset: Asset, outFile: string): void {
+  const im = imageMagick();
+  const work = mkdtempSync(join(tmpdir(), 'kotoba-anim-'));
+  try {
+    // A loop's last frame repeats the first (we asked for it), so it is dropped: the sheet plays
+    // 0..n-1 and wraps cleanly. A one-shot (loop: false) keeps every frame.
+    const loop = (asset.params as { loop?: boolean } | undefined)?.loop !== false;
+    const files = (loop ? frames.slice(0, -1) : frames).map((f, i) => {
+      const file = join(work, `f${String(i).padStart(2, '0')}.png`);
+      writeFileSync(file, f);
+      return file;
+    });
+    // Every frame is remapped to frame 0's colours (no shimmer between frames), and its alpha is
+    // cut to fully on or off. The remap drops alpha, so each frame's mask is put back after it.
+    const palette = join(work, 'palette.png');
+    execFileSync(im, [files[0]!, '-alpha', 'off', '-unique-colors', palette]);
+    const fixed = files.map((file, i) => {
+      const out = join(work, `g${String(i).padStart(2, '0')}.png`);
+      execFileSync(im, [file, '-strip', '(', '+clone', '-alpha', 'extract', '-threshold', '50%', ')', '(', '-clone', '0', '-alpha', 'off', '+dither', '-remap', palette, ')', '-delete', '0', '+swap', '-alpha', 'off', '-compose', 'CopyOpacity', '-composite', `PNG32:${out}`]);
+      return out;
+    });
+    execFileSync(im, [...fixed, '+append', '+repage', '-define', 'png:compression-level=9', `PNG32:${outFile}`], { stdio: ['ignore', 'ignore', 'inherit'] });
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
 }
 
 function imageMagick(): string {
@@ -194,7 +262,8 @@ async function main(): Promise<void> {
     try {
       const raw = asset.generator === 'gemini' ? await gemini(asset) : await pixellab(asset, seed);
       mkdirSync(dirname(outFile), { recursive: true });
-      postProcess(raw, asset, outFile);
+      if (Array.isArray(raw)) sheet(raw, asset, outFile);
+      else postProcess(raw, asset, outFile);
       console.log(`${Math.round(statSync(outFile).size / 1024)} KB`);
     } catch (err) {
       failed++;

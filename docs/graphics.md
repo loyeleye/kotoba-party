@@ -52,6 +52,40 @@ The yōkai sprites are generic bodies with no kana on them. The game draws a lar
 in a web font, which keeps the kana correct and lets one body serve every kana. Scale them with
 `image-rendering: pixelated` and whole-number factors (2×, 3×, 4×). The same goes for the hosts.
 
+## Animation
+
+Fourteen sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
+frames, made by PixelLab's `animate-with-text-v3` from the still sprite, which goes in as both the
+first and the last frame so a loop closes on the pose it started from.
+
+| Sheets | Frames | Plays |
+| --- | --- | --- |
+| `{pon,chochin,fude}-idle.png` | 8 × 128² | One breath every few seconds, then holds frame 0 |
+| `{pon,chochin,fude}-{cheer,oops}.png` | 8 × 128² | Once, when a host line has that mood, then back to idle |
+| `yokai-{blob,lantern,umbrella,scroll}-hit.png` | 9 × 128² | Once when a yōkai is caught; ends empty (the poof) |
+| `yokai-boss-defeat.png` | 9 × 192² | Once when the boss is beaten; ends empty |
+
+The server gives each host line a `mood` from its cue (`server/src/host.ts`: a win cheers, a miss
+flinches). `stage/src/sprites.ts` plays the sheets: an `<img>` of the whole strip in a box that clips
+it to one frame, moved with `transform: translateX()` and `steps(n)`, so only a layer moves and every
+frame lands on whole pixels. Every sheet is preloaded and decoded when the stage opens; a sheet that
+fails to load falls back to the still sprite.
+
+Rules for anything that moves:
+
+- Sprites play at whole-number scales (1×, 2×), with `steps()`. No scale or rotate tweens on pixel
+  art, and no smooth sub-pixel floats: the yōkai bob is 0, 2, 4 px in steps.
+- Japanese that players are reading never moves: the boss's word stays still while its art bobs
+  behind it, the channel-change title cuts in and out, and no Japanese types itself out.
+- Flashes are opacity on a mask of the sprite, not `filter`.
+- Calm motion (the VIP's switch on the phone, or the system's reduced-motion setting) holds every
+  sprite on frame 0, stops shakes, bobs and wipes, and fades new things in. Reveal beats keep their
+  timing.
+
+The generator turns the frames into a sheet: it drops a loop's repeated last frame, remaps every
+frame to frame 0's colours (no shimmer between frames), cuts alpha to on or off, and puts each
+frame's mask back after the remap (an early batch lost its transparency without that step).
+
 ## How they were made
 
 **PixelLab `pixflux`** (`POST https://api.pixellab.ai/v2/create-image-pixflux`, synchronous, returns
@@ -86,6 +120,9 @@ options compared; it reads well once snapped to a 128px grid, but PixelLab was c
 Generations: first pass 4 with Gemini and 10 with PixelLab. Pixel-art pass (2026-10-26) about 21
 with PixelLab (host drafts, 7 Pon attempts, conversions, 3 backdrop drafts) and 3 with Gemini for the
 style comparison.
+Animation pass (2026-10-26): 28 `animate-with-text-v3` jobs (14 sheets × seeds 11 and 22, the
+better seed kept, recorded in the manifest), plus a first batch thrown away for lost transparency.
+Each job cost about 2 generations.
 
 ## Regenerate
 

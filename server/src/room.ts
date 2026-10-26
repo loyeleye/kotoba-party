@@ -42,7 +42,7 @@ export interface RoomOptions {
   onPhase?: (room: Room) => void;
 }
 
-const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain']);
+const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'setMotion']);
 const COMMAND_MEMORY = 128;
 /** Extra stage screens one room hands out: one per player's laptop and then some. */
 export const MAX_WATCHERS = 16;

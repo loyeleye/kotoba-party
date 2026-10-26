@@ -140,6 +140,12 @@ body[data-mode] .timer { color: var(--on-accent); }
 .speak { display: grid; gap: 10px; }
 .talk { width: 100%; padding: 28px 16px; font-size: 22px; font-weight: 800; border-radius: 999px; border: 0; background: var(--good); color: #10241b; touch-action: none; user-select: none; -webkit-user-select: none; }
 .talk.live { background: var(--accent); color: var(--on-accent); transform: scale(0.98); }
+/* The mic level meter (speak.ts sets --level): a bar along the bottom of the held button. */
+.talk { position: relative; overflow: hidden; }
+.talk::after { content: ''; position: absolute; left: 24px; right: 24px; bottom: 10px; height: 6px; border-radius: 3px; background: var(--on-accent); transform-origin: left; transform: scaleX(var(--level, 0)); opacity: 0; transition: transform 80ms linear; }
+.talk.live::after { opacity: 0.7; }
+.heard.got::before { content: '✓ '; color: var(--good); font-weight: 800; display: inline-block; animation: got 300ms steps(3, end); }
+@keyframes got { from { transform: translateY(6px); opacity: 0; } }
 .say-sub { display: block; margin-top: 4px; font-size: 14px; font-weight: 600; opacity: 0.8; }
 button .say-sub { font-size: 12px; }
 .talk .say-sub { font-size: 15px; }
@@ -216,6 +222,11 @@ body.has-dock main { padding-bottom: 120px; }
 /* A pressed button squishes a little before it lets go. */
 .primary:active, .option:active, .secondary:active, .tile:active { scale: 0.96; }
 @media (prefers-reduced-motion: reduce) { .lock-stamp { animation: none; opacity: 0.9; } }
+/* Calm motion (the VIP's switch, shared with the stage): nothing on the phone moves; new things fade. */
+body[data-motion='calm'] *, body[data-motion='calm'] *::before, body[data-motion='calm'] *::after { animation-name: calm-in !important; animation-duration: 200ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+body[data-motion='calm'] .talk.live { transform: none; }
+@keyframes calm-in { from { opacity: 0; } }
+.motion-btn { justify-self: start; }
 
 /* VIP moderation rows: dashed and red-edged, so they never pass for vote buttons. */
 .vip-hide { display: block; width: 100%; text-align: left; font-size: 16px; padding: 10px 14px; margin: 0 0 8px; border-radius: 10px; border: 2px dashed var(--bad); background: transparent; color: var(--muted); }

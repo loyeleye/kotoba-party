@@ -31,7 +31,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts` | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (all stage art: hosts, yōkai, backdrop, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, backdrop, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits, 14 host and yōkai animation sheets) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
 | 7 | AI art: Gemini (source images for Pon and the backdrop) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon and the backdrop without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
@@ -111,8 +111,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   the 24 Photo Caption pictures, and (since 2026-10-26) 31 icons in `stage/assets/icons/` (places,
   scenes, Onsen victims and evidence, Last Train, trophy) plus the 42 character portraits in
   `stage/assets/portraits/onsen/` and `portraits/omiai/` (two expressions each) that replaced emoji in
-  Murder at the Onsen, Omiai Matchmaker, Who's the Tourist? and Phrase Bingo. Text-to-image only, no
-  reference images. Most come from PixelLab's `pixflux` endpoint; Pon and the
+  Murder at the Onsen, Omiai Matchmaker, Who's the Tourist? and Phrase Bingo. Since 2026-10-26 also
+  the 14 animation sheets in `stage/assets/anim/` (host idle, cheer and oops loops; yōkai hit and
+  boss defeat), made by PixelLab's `animate-with-text-v3` endpoint from our own host and yōkai
+  sprites as the first and last frame. Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon and the
   backdrop come from its `image-to-pixelart` endpoint (see row 7). Prompts, sources and params are
   recorded in `stage/assets/manifest.json` and `tools/generate-caption-art.ts`.
 - **Terms (read 2026-10-26, <https://www.pixellab.ai/termsofservice>):** "You own the copyrights to your

@@ -129,7 +129,9 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 .host { grid-row: 2; }
 .main { grid-row: 3; }
 .players { grid-row: 4; }
-.host-portrait { width: 176px; height: 176px; margin: -24px 0 -16px; image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); animation: host-in 360ms var(--ease-pop) both; }
+.host-sprite { margin: -16px 0 -12px; filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); }
+/* A new host steps up from below in whole-pixel steps: no scaling, so the pixels stay square. */
+.host-sprite.enter { animation: host-in 320ms steps(4, end) both; }
 /* Host speech on a washi card: the Japanese people read aloud sits on paper. */
 .host-bubble { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--outline); border-radius: 6px; box-shadow: 5px 5px 0 var(--outline); padding: 14px 28px; animation: bubble-in 260ms ease-out both; }
 .host-bubble::before { content: ''; position: absolute; left: -19px; top: 50%; margin-top: -12px; border: 12px solid transparent; border-right: 16px solid var(--outline); border-left: 0; }
@@ -137,7 +139,31 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 .host-name { color: var(--lantern); font-weight: 800; font-size: 26px; }
 .host-jp { font-size: 40px; font-weight: 700; }
 .host-en { color: var(--paper-muted); font-size: 28px; }
-@keyframes host-in { from { transform: translateY(24px) scale(0.9); opacity: 0; } }
+@keyframes host-in { from { transform: translateY(32px); opacity: 0; } }
+
+/* ---- sprites (sprites.ts): a sheet of square frames, clipped to one, stepped across ---- */
+/* Sizes are whole multiples of the art (128 px frames at 128 or 256), never in between. */
+.sprite { position: relative; width: var(--size); height: var(--size); overflow: hidden; flex: none; }
+.sprite > .sprite-sheet { display: block; height: 100%; width: calc(var(--frames, 1) * 100%); max-width: none; image-rendering: pixelated; pointer-events: none; user-select: none; }
+.sprite.loop > .sprite-sheet { animation: sprite-play var(--ms) steps(var(--frames)) infinite; }
+.sprite.once > .sprite-sheet, .sprite > .sprite-sheet.run { animation: sprite-play var(--ms) steps(var(--frames)) 1; }
+/* A poof ends on the empty slot past the last frame: the yōkai is gone. */
+.sprite.poof > .sprite-sheet { animation: sprite-play var(--ms) steps(var(--frames)) 1 forwards; }
+@keyframes sprite-play { to { transform: translateX(-100%); } }
+
+/* ---- channel change: lobby → game (main.ts) ---- */
+.channel { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; overflow: hidden; background: #0c0720; cursor: pointer; animation: channel-out 1600ms steps(1, end) forwards; }
+.channel-noise { position: absolute; inset: -50%; background-size: 480px 270px; image-rendering: pixelated; opacity: 0.85; animation: noise 240ms steps(1, end) infinite; }
+/* The title card cuts in after the static and holds still: people read it. */
+.channel-band { position: relative; display: grid; justify-items: center; gap: 8px; width: 100%; padding: 36px 0; background: var(--mode); color: var(--on-accent); border-block: 6px solid var(--outline); box-shadow: 0 10px 0 rgba(0, 0, 0, 0.4); opacity: 0; animation: band-cut 1600ms steps(1, end) forwards; }
+.channel-ja { font-size: 120px; font-weight: 900; line-height: 1.1; }
+.channel-en { font-family: var(--font-pixel); font-size: 48px; font-weight: 700; }
+.channel.quiet { animation: channel-fade 1200ms ease both; }
+.channel.quiet .channel-band { opacity: 1; animation: none; }
+@keyframes noise { 0% { transform: translate(0, 0); } 25% { transform: translate(-97px, 41px); } 50% { transform: translate(53px, -77px); } 75% { transform: translate(-31px, -19px); } }
+@keyframes band-cut { 0% { opacity: 0; } 30% { opacity: 1; } }
+@keyframes channel-out { 0% { opacity: 1; } 99% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes channel-fade { 0% { opacity: 0; } 20%, 75% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes bubble-in { from { transform: translateX(-12px); opacity: 0; } }
 
 /* ---- the play area ---- */
@@ -190,8 +216,9 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 .ticks { grid-column: 2; font-size: 28px; color: var(--good); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .level { color: var(--muted); font-size: 28px; }
 .score { grid-row: 1 / 3; grid-column: 3; font-family: var(--font-pixel); font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--gold); }
-.score.up { animation: score-up 600ms var(--ease-pop); color: var(--good); }
-@keyframes score-up { 0% { transform: scale(1.5); } }
+/* A score that went up rolls to its new number (main.ts) with a hop of whole pixels. */
+.score.up { animation: score-up 480ms steps(3, end) 500ms; color: var(--good); }
+@keyframes score-up { 0% { transform: translateY(-12px); } }
 .dropped { grid-column: 2 / 4; font-size: 24px; color: var(--warn); }
 
 /* ---- recap: podium, awards, everyone else ---- */
@@ -237,11 +264,19 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 .log, .raw { margin: 0; max-height: 160px; overflow: auto; color: var(--muted); font-family: ui-monospace, monospace; font-size: 24px; white-space: pre-wrap; }
 .raw { max-height: 320px; color: var(--ink); }
 
-/* TV browsers rarely pass on the player's setting, but honour it where they do. */
+/* TV browsers rarely pass on the player's setting, but honour it where they do. The VIP's Calm
+   motion switch (body[data-motion=calm]) does the same for the whole room: sprites hold their
+   first frame, nothing shakes, slides or wipes, and new things fade in. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
-  .scene, .host-portrait, .host-bubble, .step, .award-card, .beat-in, .main.wipe::after { animation: none !important; }
+  .scene, .host-sprite, .host-bubble, .step, .award-card, .beat-in, .main.wipe::after, .sprite > .sprite-sheet, .channel-noise { animation: none !important; }
 }
+body[data-motion='calm'] *, body[data-motion='calm'] *::before, body[data-motion='calm'] *::after { animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+/* Reveals keep their beats (delays), but fade instead of moving. */
+body[data-motion='calm'] :is(.host-sprite, .host-bubble, .step, .award-card, .beat-in, .scene) { animation-name: calm-in !important; animation-duration: 300ms !important; animation-timing-function: ease !important; }
+body[data-motion='calm'] :is(.sprite > .sprite-sheet, .score.up, .timer.urgent, .crown) { animation: none !important; }
+body[data-motion='calm'] .main.wipe::after { animation: none !important; }
+@keyframes calm-in { from { opacity: 0; } }
 
 /* Washi cards: inside them the text tokens flip to dark ink, so muted glosses, furigana and
    romaji stay readable (paper-muted 7.7:1, romaji amber 6.9:1). */

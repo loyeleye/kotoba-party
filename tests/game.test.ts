@@ -103,6 +103,18 @@ describe('round state machine', () => {
     expect(cmd(s, stage, { type: 'skip', phaseSeq: s.phaseSeq }).changed).toBe(true);
     expect(s.phase).toBe('prompt');
   });
+
+  it('the VIP or the stage switches Calm motion for everyone, in any phase', () => {
+    const s = lobby(2);
+    expect(viewFor(s, as('p2'), EMPTY_CONTENT).calmMotion).toBe(false);
+    expect(cmd(s, as('p2'), { type: 'setMotion', calm: true }).error).toBe('not-vip');
+    expect(cmd(s, as('p1'), { type: 'setMotion', calm: true }).changed).toBe(true);
+    expect(viewFor(s, as('p2'), EMPTY_CONTENT).calmMotion).toBe(true);
+    expect(cmd(s, as('p1'), { type: 'start', mode: 'debug' }).changed).toBe(true);
+    expect(cmd(s, stage, { type: 'setMotion', calm: false }).changed).toBe(true);
+    expect(s.calmMotion).toBe(false);
+    expect(cmd(s, stage, { type: 'setMotion', calm: 'yes' } as unknown as CommandBody).error).toBe('bad-command');
+  });
 });
 
 describe('scoring', () => {
