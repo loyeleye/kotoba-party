@@ -5,6 +5,7 @@ import { lastTrainStage } from './lastTrain.js';
 import { oogiriStage } from './oogiri.js';
 import { wordGauntletStage } from './wordGauntlet.js';
 import { concentrationStage } from './concentration.js';
+import { karaokeDuelStage } from './karaokeDuel.js';
 import type { StageMode } from './types.js';
 
 export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
@@ -14,4 +15,5 @@ export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
   'kana-raid': kanaRaidStage,
   'word-gauntlet': wordGauntletStage,
   concentration: concentrationStage,
+  'karaoke-duel': karaokeDuelStage,
 };

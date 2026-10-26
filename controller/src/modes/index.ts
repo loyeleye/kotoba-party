@@ -5,6 +5,7 @@ import { lastTrainPhone } from './lastTrain.js';
 import { oogiriPhone } from './oogiri.js';
 import { wordGauntletPhone } from './wordGauntlet.js';
 import { concentrationPhone } from './concentration.js';
+import { karaokeDuelPhone } from './karaokeDuel.js';
 import type { PhoneMode } from './types.js';
 
 export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
@@ -14,4 +15,5 @@ export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
   'kana-raid': kanaRaidPhone,
   'word-gauntlet': wordGauntletPhone,
   concentration: concentrationPhone,
+  'karaoke-duel': karaokeDuelPhone,
 };
