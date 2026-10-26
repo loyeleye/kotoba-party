@@ -140,6 +140,7 @@ export function aiVoice(
         kana: line.kana,
         en: line.en,
         audioUrl: line.audio ? `/audio/${encodeURIComponent(line.audio.id)}` : undefined,
+        mouth: line.audio?.mouth,
       };
     },
   };

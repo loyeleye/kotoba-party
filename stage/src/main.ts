@@ -457,8 +457,10 @@ function showHost(view: RoomView): void {
     const audio = new Audio(say.audioUrl);
     hostAudio = audio;
     duckFor(audio);
-    void audio.play().catch(() => {});
-  }
+    hostSprite.talk(audio, say.mouth, say.kana);
+    // Blocked (no click yet): the mouth still moves with the subtitles.
+    void audio.play().catch(() => hostAudio === audio && hostSprite.talk(null, undefined, say.kana));
+  } else hostSprite.talk(null, undefined, say.kana);
 }
 
 function tick(): void {

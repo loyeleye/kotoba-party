@@ -81,3 +81,14 @@ describe('host moods', () => {
     expect(moodFor('prompt_read')).toBeUndefined();
   });
 });
+
+describe('lip sync on the stage', () => {
+  it('finds the mouth shape at a moment of the audio, and ends with the track', async () => {
+    const { shapeAt } = await import('../stage/src/sprites.js');
+    const track: [0 | 1 | 2, number][] = [[0, 50], [2, 100], [1, 40]];
+    expect(shapeAt(track, 0)).toBe(0);
+    expect(shapeAt(track, 60)).toBe(2);
+    expect(shapeAt(track, 160)).toBe(1);
+    expect(shapeAt(track, 190)).toBeNull();
+  });
+});
