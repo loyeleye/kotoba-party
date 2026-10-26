@@ -1,0 +1,30 @@
+// Kotoba Party on Cloudflare: see docs/cloudflare.md and ADR 0003.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kotoba-party",
+  "main": "cloudflare/worker.ts",
+  "compatibility_date": "2026-09-01",
+  // node:crypto, node:zlib and process.env for the shared server code (room tokens, the Ink Storm PNG, the Claude client).
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    // Built by `npm run build`: dist/stage and dist/controller. The Worker maps paths onto them.
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "RoomObject" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RoomObject"] }],
+  "observability": { "enabled": true },
+  "vars": {
+    // Optional; leave empty to use the request's own origin for the QR code.
+    "PUBLIC_URL": "",
+    // Optional; e.g. https://voicevox.example.com. Empty: subtitles only.
+    "VOICEVOX_URL": "",
+    // Optional; the reader service (npm run reader). Empty: kanji answers are compared as written.
+    "READER_URL": ""
+  }
+}

@@ -23,13 +23,17 @@ const KEYS = [
 ] as const satisfies readonly (keyof ContentLibrary)[];
 
 export function loadContent(root: string): ContentLibrary {
+  const debug = JSON.parse(readFileSync(`${root}content/debug/prompts.json`, 'utf8')) as { prompts: ContentLibrary['debugPrompts'] };
+  return buildContent(debug.prompts);
+}
+
+/** The library from the bundled content modules, without touching the file system (the Cloudflare Worker uses this). */
+export function buildContent(debugPrompts: ContentLibrary['debugPrompts']): ContentLibrary {
   const exported = content as unknown as Record<string, unknown>;
-  const lib = { debugPrompts: [] } as unknown as Record<string, unknown>;
+  const lib = { debugPrompts } as unknown as Record<string, unknown>;
   for (const key of KEYS) {
     const value = exported[key];
     lib[key] = Array.isArray(value) ? value : [];
   }
-  const debug = JSON.parse(readFileSync(`${root}content/debug/prompts.json`, 'utf8')) as { prompts: ContentLibrary['debugPrompts'] };
-  lib.debugPrompts = debug.prompts;
   return lib as unknown as ContentLibrary;
 }
