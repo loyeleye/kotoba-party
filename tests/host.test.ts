@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHostVoice, ScriptedLlm, type BankLine } from '../server/ai/index.js';
 import { ManualClock } from '../server/src/clock.js';
-import { aiVoice, bankVoice } from '../server/src/host.js';
+import { aiVoice, bankVoice, moodFor } from '../server/src/host.js';
 import { EMPTY_CONTENT, type HostCue } from '../shared/src/modes/mode.js';
 
 const lines: BankLine[] = [{ id: 'pon.reveal_react.good.01', host: 'pon', event: 'reveal_react', tier: 'good', jp: { text: 'いいね！', kana: 'いいね！', en: 'Nice!' } }];
@@ -69,5 +69,15 @@ describe('bank lines that name the answer', () => {
 
   it('uses the other lines when the cue names no answer', async () => {
     expect((await bankVoice(content).speak('ABCD', cue))?.text).toBe('いいね！');
+  });
+});
+
+describe('host moods', () => {
+  it('cheers a win, flinches at a miss, and otherwise just idles', () => {
+    expect(moodFor('ippon')).toBe('cheer');
+    expect(moodFor('raid_combo')).toBe('cheer');
+    expect(moodFor('raid_escape')).toBe('oops');
+    expect(moodFor('miss_kind')).toBe('oops');
+    expect(moodFor('prompt_read')).toBeUndefined();
   });
 });

@@ -9,6 +9,7 @@ import { MODES } from '../../shared/src/modes/registry.js';
 import type { CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
+import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -45,9 +46,22 @@ const els = {
 
 let client: RoomClient | null = null;
 let lastPhaseSeq = -1;
+let lastPhase: RoomView['phase'] | null = null;
 /** The phase's full length, as first seen: the ring timer's 100%. */
 let phaseTotal: number | null = null;
 const logLines: string[] = [];
+
+// Every sprite the stage can show, fetched and decoded up front so nothing pops in half-drawn.
+const HOSTS = Object.keys(HOST_NAMES);
+preload([
+  ...HOSTS.map((host) => `/stage/assets/hosts/${host}.png`),
+  ...HostSprite.sheets(HOSTS),
+  ...['blob', 'lantern', 'umbrella', 'scroll'].flatMap((y) => [`/stage/assets/yokai/yokai-${y}.png`, hitSheet(`yokai-${y}`).src]),
+  '/stage/assets/yokai/yokai-boss.png',
+  BOSS_DEFEAT.src,
+]);
+// The host sprite at 1:1 (128 px art on 128 px): stays on screen across lines.
+const hostSprite = new HostSprite(128);
 
 $('debug').hidden = !DEBUG;
 mountSoundButton(els.canvas);
@@ -129,15 +143,19 @@ async function openRoom(fresh: boolean): Promise<void> {
 }
 
 function render(view: RoomView, v: number): void {
+  document.body.dataset.motion = view.calmMotion ? 'calm' : '';
   if (view.phaseSeq !== lastPhaseSeq) {
     log(`v${v} → ${view.phase}${view.round ? ` (round ${view.round}/${view.totalRounds})` : ''}`);
+    // From the lobby into a game: the TV changes channel to the mode's title card.
+    if (lastPhase === 'lobby' && view.phase !== 'lobby' && view.phase !== 'recap' && view.mode) channelChange(view.mode);
     // A phase change in a game: curtain wipe (restarted by reflow), and the ring timer starts full.
-    if (lastPhaseSeq >= 0 && view.phase !== 'lobby') {
+    else if (lastPhaseSeq >= 0 && view.phase !== 'lobby') {
       els.main.classList.remove('wipe');
       void els.main.offsetWidth;
       els.main.classList.add('wipe');
     }
     lastPhaseSeq = view.phaseSeq;
+    lastPhase = view.phase;
     phaseTotal = client?.remainingMs() ?? null;
   }
   document.body.dataset.phase = view.phase;
@@ -160,7 +178,8 @@ function render(view: RoomView, v: number): void {
   patch(
     els.players,
     view.players.map((p) => {
-      const up = (seenScores.get(p.id) ?? p.score) < p.score;
+      const seen = seenScores.get(p.id) ?? p.score;
+      const up = seen < p.score;
       seenScores.set(p.id, p.score);
       return h(
         'li',
@@ -168,7 +187,7 @@ function render(view: RoomView, v: number): void {
         h('span', { class: 'seat', 'aria-label': `seat ${p.seat}` }, `${seatShape(p.seat)}${p.seat}`),
         h('span', { class: 'name' }, p.name, p.isVip ? h('span', { class: 'vip', title: 'VIP' }, ' ★') : null),
         h('span', { class: 'ticks' }, (view.game && stageMode?.badge?.(view.game, p.id)) || h('span', { class: 'level' }, LEVEL_LABELS[p.level])),
-        h('span', { class: `score${up ? ' up' : ''}`, 'data-key': `${p.score}` }, p.score),
+        h('span', { class: `score${up ? ' up' : ''}`, 'data-key': `${p.score}`, 'data-from': up ? seen : null }, p.score),
         p.connected ? null : h('span', { class: 'dropped' }, 'reconnecting…'),
       );
     }),
@@ -177,6 +196,7 @@ function render(view: RoomView, v: number): void {
   // update inside a phase patches the ones on screen so transitions and animations carry on.
   patch(els.fit, h('div', { class: 'scene', 'data-key': `${view.phaseSeq}` }, mainFor(view)));
   for (const el of els.fit.querySelectorAll<HTMLElement>('[data-count]:not([data-counted])')) countUp(el);
+  for (const el of els.players.querySelectorAll<HTMLElement>('.score[data-from]:not([data-rolled])')) rollScore(el);
   fitMain();
   tick();
 }
@@ -257,6 +277,61 @@ function countUp(el: HTMLElement): void {
   requestAnimationFrame(step);
 }
 
+/** A score that went up rolls from the old number to the new one, like a counter, after the rows land. */
+function rollScore(el: HTMLElement): void {
+  el.dataset.rolled = '1';
+  const from = Number(el.dataset.from);
+  const to = Number(el.textContent);
+  if (!(to > from) || calm()) return;
+  el.textContent = String(from);
+  const start = performance.now() + 500;
+  const step = (now: number) => {
+    const t = Math.min(1, Math.max(0, (now - start) / 900));
+    el.textContent = String(Math.round(from + (to - from) * (1 - (1 - t) ** 2)));
+    if (t < 1 && el.isConnected) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/**
+ * Lobby → game: a burst of TV static, the mode's title card, then a cut to the show (1.6 s).
+ * The title card doesn't move: it cuts in and out. A click skips it; Calm motion has no static.
+ */
+function channelChange(mode: ModeId): void {
+  const info = MENU_ALL.find((m) => m.id === mode);
+  if (!info) return;
+  els.canvas.querySelector('.channel')?.remove();
+  const quiet = calm();
+  const card = h(
+    'div',
+    { class: `channel${quiet ? ' quiet' : ''}`, onclick: () => card.remove() },
+    quiet ? null : h('div', { class: 'channel-noise', style: `background-image:url('${noise()}')` }),
+    h('div', { class: 'channel-band' }, h('span', { class: 'channel-ja', lang: 'ja' }, info.titleJa), h('span', { class: 'channel-en' }, info.title)),
+  );
+  els.canvas.append(card);
+  setTimeout(() => card.remove(), quiet ? 1200 : 1600);
+}
+
+let noiseUrl = '';
+/** A small tile of grey TV static, made once. */
+function noise(): string {
+  if (noiseUrl) return noiseUrl;
+  const c = document.createElement('canvas');
+  c.width = 160;
+  c.height = 90;
+  const g = c.getContext('2d');
+  if (!g) return '';
+  const img = g.createImageData(c.width, c.height);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = 40 + Math.floor(Math.random() * 200);
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  noiseUrl = c.toDataURL();
+  return noiseUrl;
+}
+
 function fillMenus(view: RoomView): void {
   if (view.phase !== 'lobby') return;
   const modes = [...view.modes, ...MENU_ALL.filter((m) => m.id === 'debug')];
@@ -280,13 +355,13 @@ function showHost(view: RoomView): void {
   const key = `${say.phaseSeq}:${say.text}`;
   if (key === lastHostKey) return;
   lastHostKey = key;
-  const portrait = h('img', { class: 'host-portrait', src: `/stage/assets/hosts/${say.host}.png`, alt: '' }) as HTMLImageElement;
-  portrait.onerror = () => portrait.remove();
-  mount(
-    els.host,
-    portrait,
-    h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, say.text), h('span', { class: 'host-en' }, say.en)),
-  );
+  // The sprite stays; only the bubble is new. The host reacts to the line, then idles.
+  if (!hostSprite.el.isConnected) els.host.prepend(hostSprite.el);
+  hostSprite.show(say.host, say.mood);
+  const bubble = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, say.text), h('span', { class: 'host-en' }, say.en));
+  const old = els.host.querySelector('.host-bubble');
+  if (old) old.replaceWith(bubble);
+  else els.host.append(bubble);
   if (say.audioUrl) {
     const audio = new Audio(say.audioUrl);
     duckFor(audio);

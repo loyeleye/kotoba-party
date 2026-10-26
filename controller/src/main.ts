@@ -245,6 +245,7 @@ function render(view: RoomView): void {
   const me = view.players.find((p) => p.id === session?.playerId);
   if (!me) return;
   const isVip = me.isVip;
+  document.body.dataset.motion = view.calmMotion ? 'calm' : '';
   const modeKey = view.game ? PHONE_MODES[view.game.mode].key(view, view.game, me.id) : '';
   const key = [
     view.phase,
@@ -393,7 +394,22 @@ function vipMenu(view: RoomView): HTMLElement {
     });
   });
   refresh();
-  return h('div', { class: 'vip-start' }, h('p', { class: 'hint' }, 'Pick tonight’s game:'), modeButtons, packSelect, roundsSelect, note, startBtn);
+  return h('div', { class: 'vip-start' }, h('p', { class: 'hint' }, 'Pick tonight’s game:'), modeButtons, packSelect, roundsSelect, note, startBtn, motionToggle(view));
+}
+
+/** The VIP's Calm motion switch: the TV and every phone swap movement for fades and still sprites. */
+function motionToggle(view: RoomView): HTMLElement {
+  const btn = h('button', { type: 'button', class: 'secondary motion-btn', 'aria-pressed': String(view.calmMotion) }) as HTMLButtonElement;
+  const label = (calm: boolean) => {
+    btn.setAttribute('aria-pressed', String(calm));
+    btn.textContent = calm ? 'Calm motion: on' : 'Calm motion: off';
+  };
+  label(view.calmMotion);
+  btn.addEventListener('click', async () => {
+    const calm = !(lastView?.calmMotion ?? view.calmMotion);
+    if (await command({ type: 'setMotion', calm })) label(calm);
+  });
+  return btn;
 }
 
 const ORDINAL = ['', '1st', '2nd', '3rd'];

@@ -84,10 +84,17 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const talk = h('button', { type: 'button', class: 'talk' }, labelled(opts.label ?? 'Hold to talk')) as HTMLButtonElement;
 
+    // While the button is held, a bar inside it follows the mic level, so the player sees it hears them.
+    const meter = (c: MicClip) => {
+      if (clip !== c) return void talk.style.setProperty('--level', '0');
+      talk.style.setProperty('--level', c.level.toFixed(2));
+      requestAnimationFrame(() => meter(c));
+    };
     const stop = async () => {
       if (timer) clearTimeout(timer);
       timer = null;
       talk.classList.remove('live');
+      talk.style.setProperty('--level', '0');
       const c = clip;
       clip = null;
       if (!c) return;
@@ -101,6 +108,10 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       if (clip) return; // pressed again while this one was being checked
       if (!r.ok) return void (heard.textContent = missed(r.why));
       heard.textContent = `${heardPrefix(level)}: ${r.text}`;
+      // A tick pops in once: we heard you.
+      heard.classList.remove('got');
+      void heard.offsetWidth;
+      heard.classList.add('got');
       actions.replaceChildren(
         h('button', { type: 'button', class: 'primary', onclick: () => opts.onSend({ via: 'speech', text: r.text }) }, labelled('Send')),
         h('button', { type: 'button', class: 'secondary', onclick: () => ((heard.textContent = ''), actions.replaceChildren()) }, labelled('Say it again')),
@@ -114,8 +125,10 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       const c = new MicClip();
       clip = c;
       talk.classList.add('live');
+      heard.classList.remove('got');
       void c.ready.then((ok) => {
         if (clip === c) heard.textContent = ok ? '🎤 …' : missed(c.blocked ? 'blocked' : 'failed');
+        if (ok) meter(c);
       });
       timer = setTimeout(() => void stop(), MAX_TALK_MS);
     };

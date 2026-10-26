@@ -42,7 +42,7 @@ export interface RoomOptions {
   onPhase?: (room: Room) => void;
 }
 
-const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain']);
+const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'setMotion']);
 const COMMAND_MEMORY = 128;
 
 export const newToken = (): string => randomBytes(18).toString('base64url');

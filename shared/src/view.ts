@@ -39,6 +39,7 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
       mic: p.mic,
     })),
     host: state.host,
+    calmMotion: state.calmMotion,
     game: playing ? (mode.view(state.modeState, state.phase, viewer, modeContext(state, ctx)) as GameView) : null,
     recap: state.recap
       ? {

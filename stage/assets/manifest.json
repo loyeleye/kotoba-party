@@ -1479,6 +1479,193 @@
         "text_guidance_scale": 8
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/anim/pon-idle.png",
+      "what": "Host animation: Pon idle loop, 8 frames, sprite sheet",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "subtle idle breathing loop, body rises and falls by one pixel, blinks once, tail sways a little, keeps the same pose and the same grin throughout",
+      "source": "stage/assets/hosts/pon.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 22
+      }
+    },
+    {
+      "path": "stage/assets/anim/pon-cheer.png",
+      "what": "Host animation: Pon happy reaction (correct answer, big laugh), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "laughs hard: leans back, belly shakes, eyes squeeze shut, then settles back into the starting pose",
+      "source": "stage/assets/hosts/pon.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      }
+    },
+    {
+      "path": "stage/assets/anim/pon-oops.png",
+      "what": "Host animation: Pon oops reaction (miss, penalty), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "flinches in surprise: eyes go wide, a sweat drop appears, then recovers into the starting pose",
+      "source": "stage/assets/hosts/pon.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      }
+    },
+    {
+      "path": "stage/assets/anim/chochin-idle.png",
+      "what": "Host animation: Chōchin-san idle loop, 8 frames, sprite sheet",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "gentle idle loop, the lantern floats up and down by one pixel and its warm inner glow flickers, blinks once, keeps the same pose and smile throughout",
+      "source": "stage/assets/hosts/chochin.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 22
+      }
+    },
+    {
+      "path": "stage/assets/anim/chochin-cheer.png",
+      "what": "Host animation: Chōchin-san happy reaction (correct answer, big laugh), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "cheers: bounces up happily, inner glow brightens, gloved hands raised, then settles back into the starting pose",
+      "source": "stage/assets/hosts/chochin.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      }
+    },
+    {
+      "path": "stage/assets/anim/chochin-oops.png",
+      "what": "Host animation: Chōchin-san oops reaction (miss, penalty), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "startled: jumps a little, the glow dims, eyes go wide, a sweat drop appears, then recovers into the starting pose",
+      "source": "stage/assets/hosts/chochin.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      }
+    },
+    {
+      "path": "stage/assets/anim/fude-idle.png",
+      "what": "Host animation: Fude idle loop, 8 frames, sprite sheet",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "subtle idle breathing loop, the brush body sways one pixel side to side, blinks once, keeps the same pose throughout, no ink splash",
+      "source": "stage/assets/hosts/fude.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 22
+      }
+    },
+    {
+      "path": "stage/assets/anim/fude-cheer.png",
+      "what": "Host animation: Fude happy reaction (correct answer, big laugh), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "cheers: pumps a fist and does a small happy hop, a few ink drops fly off the brush tip, then settles back into the starting pose",
+      "source": "stage/assets/hosts/fude.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      }
+    },
+    {
+      "path": "stage/assets/anim/fude-oops.png",
+      "what": "Host animation: Fude oops reaction (miss, penalty), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "flinches in surprise: eyes go wide, a sweat drop appears, then recovers into the starting pose",
+      "source": "stage/assets/hosts/fude.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      }
+    },
+    {
+      "path": "stage/assets/anim/yokai-blob-hit.png",
+      "what": "Kana yōkai (blob) caught: startled hit, then a smoke puff, 9 frames, one-shot",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "gets hit: flinches with wide startled eyes and an open mouth, a white impact star flashes, then it bursts into a round puff of white smoke that fades away",
+      "source": "stage/assets/yokai/yokai-blob.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "loop": false,
+        "seed": 22
+      }
+    },
+    {
+      "path": "stage/assets/anim/yokai-lantern-hit.png",
+      "what": "Kana yōkai (lantern) caught: startled hit, then a smoke puff, 9 frames, one-shot",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "gets hit: flinches with wide startled eyes and an open mouth, a white impact star flashes, then it bursts into a round puff of white smoke that fades away",
+      "source": "stage/assets/yokai/yokai-lantern.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "loop": false,
+        "seed": 22
+      }
+    },
+    {
+      "path": "stage/assets/anim/yokai-umbrella-hit.png",
+      "what": "Kana yōkai (umbrella) caught: startled hit, then a smoke puff, 9 frames, one-shot",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "gets hit: flinches with wide startled eyes and an open mouth, a white impact star flashes, then it bursts into a round puff of white smoke that fades away",
+      "source": "stage/assets/yokai/yokai-umbrella.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "loop": false,
+        "seed": 22
+      }
+    },
+    {
+      "path": "stage/assets/anim/yokai-scroll-hit.png",
+      "what": "Kana yōkai (scroll) caught: startled hit, then a smoke puff, 9 frames, one-shot",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "gets hit: flinches with wide startled eyes and an open mouth, a white impact star flashes, then it bursts into a round puff of white smoke that fades away",
+      "source": "stage/assets/yokai/yokai-scroll.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "loop": false,
+        "seed": 22
+      }
+    },
+    {
+      "path": "stage/assets/anim/yokai-boss-defeat.png",
+      "what": "Boss (the old dictionary) defeated: shudders, pages fly out, bursts into smoke, 9 frames, one-shot",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "the haunted dictionary shudders violently, loose pages fly out, then it bursts into a big puff of smoke that fades away",
+      "source": "stage/assets/yokai/yokai-boss.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "loop": false,
+        "seed": 22
+      }
     }
   ]
 }
