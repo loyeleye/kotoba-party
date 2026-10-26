@@ -234,6 +234,6 @@ export function kanaTip(deck: Deck, target: Kana, wrong?: Kana, check?: SoundChe
   const sound = inOtherScript(target.sound, target.script);
   if (target.chapter === 1) return `${target.char} says “${target.romaji}”${twin ? `, just like its twin ${twin.char}` : ''}.`;
   if (check?.heard && check.heard !== target.sound) return `That sounded like ${check.heard}. ${target.char} is ${sound}.`;
-  if (twin) return `${target.char} is ${twin.char}’s twin: it sounds like ${sound}.`;
+  if (twin) return sound === twin.char ? `${target.char} is ${twin.char}’s twin: same sound, other alphabet.` : `${target.char} is ${twin.char}’s twin: it sounds like ${sound}.`;
   return `${target.char} sounds like ${sound}.`;
 }

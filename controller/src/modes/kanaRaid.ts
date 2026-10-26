@@ -1,9 +1,293 @@
-import type { KanaRaidView } from '../../../shared/src/modes/views.js';
-import { waiting } from '../components/ui.js';
-import type { PhoneMode } from './types.js';
+// Kana Yōkai Raid on the phone: mark your chapters, then attack the yōkai the server deals
+// you. Shout attacks use speakBox (hold-to-talk with a typed fallback) plus four tappable
+// sounds as the quiet fallback; listening attacks voice the sound with the phone's ja-JP
+// speech synthesis, or show it written when there's no Japanese voice.
 
-// Placeholder until the mode is built.
-export const kanaRaidPhone: PhoneMode<KanaRaidView> = {
-  key: (view) => String(view.phaseSeq),
-  render: () => waiting('Coming soon'),
+import { h } from '../../../shared/src/dom.js';
+import type { AttackView, KanaRaidView, LastResult } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
+import type { Utterance } from '../../../shared/src/japanese/kana.js';
+import { speakBox } from '../components/speak.js';
+import { waiting } from '../components/ui.js';
+import type { PhoneContext, PhoneMode } from './types.js';
+
+// ---------- speech synthesis ----------
+
+const synth = (): SpeechSynthesis | null => (typeof speechSynthesis === 'undefined' ? null : speechSynthesis);
+
+function jaVoice(): SpeechSynthesisVoice | null {
+  return synth()?.getVoices().find((v) => v.lang.replace('_', '-').toLowerCase().startsWith('ja')) ?? null;
+}
+
+/** True unless we know there is no Japanese voice (voices load late on some phones). */
+function canVoice(): boolean {
+  const s = synth();
+  if (!s) return false;
+  const voices = s.getVoices();
+  return voices.length === 0 || !!jaVoice();
+}
+
+function say(text: string): void {
+  const s = synth();
+  if (!s || !text) return;
+  try {
+    s.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP';
+    u.rate = 0.8;
+    const v = jaVoice();
+    if (v) u.voice = v;
+    s.speak(u);
+  } catch {
+    /* no voice: the written fallback is on screen */
+  }
+}
+
+function hearButton(text: string, label = '🔊 Hear it', big = false): HTMLElement {
+  return h('button', { type: 'button', class: `raid-hear${big ? ' big' : ''}`, onclick: () => say(text) }, label);
+}
+
+/** The sound, voiced; written out too when the phone can't voice Japanese. */
+function listen(a: AttackView, auto: boolean): HTMLElement {
+  if (auto && a.hear) setTimeout(() => say(a.hear!), 250);
+  return h(
+    'div',
+    { class: 'raid-listen' },
+    a.hear ? hearButton(a.hear, '🔊 Hear it again', true) : null,
+    !canVoice() && a.hearText ? h('p', { class: 'raid-heartext', lang: 'ja' }, a.hearText) : null,
+  );
+}
+
+// ---------- screens ----------
+
+const PROMPTS: Record<AttackView['kind'], string> = {
+  shout: 'Shout its sound!',
+  twin: 'Tap its twin from the other alphabet',
+  lookalike: 'Shapeshifter! Which one is this?',
+  echo: 'Echo: tap the kana you hear',
+  pair: 'Which word did you hear?',
+  piece: 'Break your piece of the boss!',
+  blow: 'Finishing blow: read the whole word together!',
 };
+
+export const kanaRaidPhone: PhoneMode<KanaRaidView> = {
+  key: (view, game) => {
+    const me = game.me;
+    return [
+      view.phaseSeq,
+      me?.ready,
+      me?.chapters.join(','),
+      me?.attack?.id,
+      me?.attack?.step,
+      me?.last?.attackId,
+      game.boss?.stage,
+      game.waveResult ? 1 : 0,
+      me?.recap ? 1 : 0,
+    ].join('|');
+  },
+
+  render(ctx) {
+    const { view, game } = ctx;
+    const me = game.me;
+    if (!me) return waiting('Watch the stage!', 'You’re cheering this raid on.');
+    switch (view.phase) {
+      case 'intro':
+        return chapterPick(ctx);
+      case 'prompt':
+        return banner(game);
+      case 'answer':
+      case 'finale':
+        return battle(ctx);
+      case 'reveal':
+      case 'score': {
+        const mine = game.waveResult?.players.find((p) => p.playerId === ctx.me.id);
+        return h(
+          'div',
+          { class: 'screen raid' },
+          h('p', { class: 'big' }, game.waveResult ? (game.waveResult.escaped ? `Wave ${game.waveResult.wave} over!` : `Wave ${game.waveResult.wave} cleared!`) : 'Wave over'),
+          mine
+            ? h('p', { class: 'raid-stat' }, `${mine.hits} hit${mine.hits === 1 ? '' : 's'} · +${mine.points} pts`, mine.bonus ? h('small', {}, ` (+${mine.bonus} for speaking)`) : null)
+            : null,
+          mine && mine.misses ? h('p', { class: 'hint' }, `${mine.misses} miss${mine.misses === 1 ? '' : 'es'}: those go on your haunted list, no points lost.`) : null,
+          h('p', { class: 'hint' }, 'Look at the stage!'),
+        );
+      }
+      case 'encore':
+        return recap(game);
+      default:
+        return waiting('Look at the stage!');
+    }
+  },
+};
+
+function chapterPick({ game, send }: PhoneContext<KanaRaidView>): HTMLElement {
+  const me = game.me!;
+  const chosen = new Set(me.chapters);
+  const toggle = (n: number) => {
+    const next = new Set(chosen);
+    if (next.has(n)) next.delete(n);
+    else next.add(n);
+    if (next.size === 0) return;
+    void send({ kind: 'chapters', chapters: [...next].sort((a, b) => a - b) });
+  };
+  return h(
+    'div',
+    { class: 'screen raid' },
+    h('p', { class: 'big' }, 'Which chapters have you studied?'),
+    h('p', { class: 'hint' }, 'Yōkai will only attack you with kana from these. New to kana? Just keep chapter 1.'),
+    h(
+      'div',
+      { class: 'raid-chapters' },
+      game.chapters.map((c) =>
+        h(
+          'button',
+          { type: 'button', class: `raid-chapter${chosen.has(c.number) ? ' on' : ''}`, 'aria-pressed': chosen.has(c.number) ? 'true' : 'false', onclick: () => toggle(c.number) },
+          h('span', { class: 'raid-chapter-n' }, c.number),
+          h('span', { class: 'raid-chapter-t' }, c.title),
+          h('span', { class: 'raid-chapter-s', lang: 'ja' }, c.sample),
+        ),
+      ),
+    ),
+    me.ready
+      ? h('p', { class: 'raid-ready' }, '✓ Ready! You can still change your chapters.')
+      : h('button', { type: 'button', class: 'primary', onclick: () => void send({ kind: 'ready' }) }, 'Ready!'),
+  );
+}
+
+function banner(game: KanaRaidView): HTMLElement {
+  const w = game.waveInfo;
+  return h(
+    'div',
+    { class: 'screen raid raid-banner' },
+    h('p', { class: 'raid-wave' }, game.wave > 3 ? 'BOSS' : `WAVE ${game.wave}`),
+    w ? h('p', { class: 'big' }, h('span', { lang: 'ja' }, w.titleJa), ' ', w.title) : null,
+    w ? h('p', { class: 'hint' }, w.how) : null,
+  );
+}
+
+function lastStrip(last: LastResult | null): HTMLElement | null {
+  if (!last) return null;
+  if (last.ok) {
+    const what = last.kind === 'blow' ? 'You read it!' : last.splash ? 'Splash hit!' : 'Hit!';
+    return h(
+      'div',
+      { class: 'raid-last ok' },
+      h('strong', {}, what),
+      last.points ? ` +${last.points}` : '',
+      last.combo >= 2 ? h('span', { class: 'raid-combo-tag' }, ` COMBO ×${last.combo}`) : null,
+    );
+  }
+  return h(
+    'div',
+    { class: 'raid-last miss' },
+    h('span', { class: 'raid-last-char', lang: 'ja' }, last.char),
+    h('span', { class: 'raid-last-tip' }, last.tip ?? 'So close! It’ll be back.'),
+    last.hear ? hearButton(last.hear, '🔊') : null,
+    last.retryNext ? h('small', {}, 'One more try:') : null,
+  );
+}
+
+function options(a: AttackView, send: (move: unknown) => Promise<boolean>, cls = ''): HTMLElement {
+  const box = h('div', { class: `raid-options ${cls}` });
+  const buttons = a.options.map((o) =>
+    h(
+      'button',
+      {
+        type: 'button',
+        class: 'raid-option',
+        lang: 'ja',
+        onclick: () => {
+          for (const b of buttons) (b as HTMLButtonElement).disabled = true;
+          void send({ kind: 'attack', attackId: a.id, pick: o.id }).then((ok) => {
+            if (!ok) for (const b of buttons) (b as HTMLButtonElement).disabled = false;
+          });
+        },
+      },
+      h('span', {}, o.label),
+      o.sub ? h('small', {}, o.sub) : null,
+    ),
+  );
+  box.append(...buttons);
+  return box;
+}
+
+function glyph(a: AttackView): HTMLElement {
+  return h('div', { class: 'raid-glyph-wrap' }, h('p', { class: `raid-glyph${[...(a.show ?? '')].length > 1 ? ' wide' : ''}`, lang: 'ja' }, a.show ?? ''), a.romaji ? h('p', { class: 'raid-romaji' }, a.romaji) : null);
+}
+
+function speak(a: AttackView, send: (move: unknown) => Promise<boolean>, label: string): HTMLElement {
+  return speakBox({ label, placeholder: 'Type it in kana', kanaPadOpen: false, maxLength: 20, onSend: (u: Utterance) => void send({ kind: 'attack', attackId: a.id, say: u }) });
+}
+
+function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
+  const { game, send } = ctx;
+  const me = game.me!;
+  const a = me.attack;
+  const head = lastStrip(me.last);
+  if (!a) {
+    const boss = game.boss;
+    const sub = boss?.stage === 'blow' ? 'Waiting for everyone to read it…' : boss ? 'Your pieces are broken! Cheer the others on.' : 'Watch the stage!';
+    return h('div', { class: 'screen raid' }, head, h('p', { class: 'big' }, 'Nice work!'), h('p', { class: 'hint' }, sub));
+  }
+  const prompt = a.kind === 'pair' && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? `Try again: ${PROMPTS[a.kind].toLowerCase()}` : PROMPTS[a.kind]);
+  const parts: (HTMLElement | null)[] = [head, prompt];
+  switch (a.kind) {
+    case 'shout':
+      parts.push(glyph(a), speak(a, send, 'Hold and shout its sound'), h('p', { class: 'hint small' }, 'Or tap its sound (hits a little softer):'), options(a, send, 'small'));
+      break;
+    case 'twin':
+      parts.push(glyph(a), options(a, send));
+      break;
+    case 'lookalike':
+      parts.push(glyph(a), listen(a, true), options(a, send));
+      break;
+    case 'echo':
+      parts.push(listen(a, true), options(a, send));
+      break;
+    case 'pair':
+      if (a.step === 'tap') parts.push(listen(a, true), options(a, send, 'pair'));
+      else
+        parts.push(
+          h('p', { class: 'raid-say' }, 'Now say it!'),
+          a.word ? h('div', { class: 'raid-word', lang: 'ja' }, h('span', {}, a.word.kana), h('small', {}, a.word.en)) : null,
+          a.hear ? hearButton(a.hear) : null,
+          speak(a, send, 'Hold and say it'),
+          h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'attack', attackId: a.id, pass: true }) }, 'Skip saying it'),
+        );
+      break;
+    case 'piece':
+      parts.push(glyph(a));
+      if (a.hear) parts.push(speak(a, send, 'Hold and say its sound'), h('p', { class: 'hint small' }, 'Or tap its sound:'), options(a, send, 'small'));
+      else parts.push(h('p', { class: 'hint' }, `What does ${a.show} do in a word?`), options(a, send, 'wide'));
+      break;
+    case 'blow':
+      parts.push(
+        a.word ? h('div', { class: 'raid-word boss', lang: 'ja' }, h('span', {}, a.word.text), h('small', {}, a.word.en)) : null,
+        h('p', { class: 'hint' }, 'Everyone at once, out loud!'),
+        speak(a, send, 'Hold and read it aloud'),
+        h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'attack', attackId: a.id, pass: true }) }, 'Let the others read it'),
+      );
+      break;
+  }
+  return h('div', { class: `screen raid raid-${a.kind}` }, parts);
+}
+
+function recap(game: KanaRaidView): HTMLElement {
+  const r = game.me?.recap;
+  if (!r) return waiting('Raid over!', 'Look at the stage.');
+  return h(
+    'div',
+    { class: 'screen raid' },
+    h('p', { class: 'big' }, 'Tonight’s yōkai'),
+    h('p', { class: 'hint' }, `Seen ${r.seen.length} · got right ${r.correct.length}`),
+    r.correct.length ? h('div', { class: 'raid-chips', lang: 'ja' }, r.correct.map((c) => h('span', { class: 'raid-chip ok' }, c))) : null,
+    r.haunted.length
+      ? h(
+          'div',
+          { class: 'raid-haunted' },
+          h('p', { class: 'raid-subhead' }, `Haunted list (${r.haunted.length})`),
+          r.haunted.map((x) => h('div', { class: 'raid-haunt' }, h('span', { class: 'raid-chip miss', lang: 'ja' }, x.char), h('span', { class: 'raid-haunt-tip' }, x.tip ?? ''), hearButton(x.hear, '🔊'))),
+        )
+      : h('p', { class: 'hint' }, 'Nothing haunting you tonight!'),
+    h('p', { class: 'hint small' }, 'A yōkai is truly caught after 3 right answers on separate days. Saved progress is coming; for now this is tonight’s tally.'),
+  );
+}

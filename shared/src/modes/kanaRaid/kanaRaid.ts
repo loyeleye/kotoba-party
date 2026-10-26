@@ -678,7 +678,8 @@ function buildHorde(s: RaidState, ctx: ModeContext, deck: Deck): void {
   const ids = seatedIds(s, ctx);
   const n = ids.length || 1;
   const timing = WAVE_TIMING[s.wave] ?? WAVE_TIMING[1]!;
-  const hits = 1 + Math.floor((n - 1) / 3);
+  // Hits to knock one out: 1 solo, 2 for 2–3 players, 3 for 4–6, 4 for 7–8.
+  const hits = n === 1 ? 1 : 1 + Math.ceil(n / 3);
   const count = s.wave === 3 ? Math.min(10, 3 + n) : Math.min(18, 5 + 2 * n);
   const recent: string[] = [];
   const horde: Yokai[] = [];
