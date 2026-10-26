@@ -2,7 +2,7 @@
 // Everything on screen comes from the server's latest view; the phone only sends intents.
 
 import { RoomClient, joinRoom, type CommandBody, type ConnectionStatus } from '../../shared/src/client.js';
-import { LEVEL_LABELS, formatSeconds, h, mount, placesOf } from '../../shared/src/dom.js';
+import { LEVEL_LABELS, awardTitle, formatSeconds, h, mount, placesOf, seatShape } from '../../shared/src/dom.js';
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
@@ -245,7 +245,8 @@ function render(view: RoomView): void {
   const header = h(
     'div',
     { class: 'me' },
-    h('span', {}, `${me.name} · seat ${me.seat} · ${LEVEL_LABELS[me.level]}`),
+    h('span', { class: `seat-badge seat-${me.seat}`, 'aria-label': `seat ${me.seat}` }, `${seatShape(me.seat)}${me.seat}`),
+    h('span', {}, `${me.name} · ${LEVEL_LABELS[me.level]}`),
     isVip ? h('span', { class: 'vip' }, '★ VIP') : null,
     h('span', { class: 'score' }, `${me.score} pts`),
   );
@@ -290,13 +291,13 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
 }
 
 function micCheck(me: PlayerView): HTMLElement {
-  if (me.mic === 'ok') return h('p', { class: 'mic ok' }, '🎤 Mic check passed. よろしく!');
+  if (me.mic === 'ok') return h('p', { class: 'mic ok' }, '🎤 Mic check passed. よろしく！');
   if (me.mic === 'quiet') return h('p', { class: 'mic' }, '⌨️ Quiet mode: you’ll tap and type. (You can still talk any time.)');
   return h(
     'div',
     { class: 'mic-check' },
     h('p', { class: 'hint' }, 'Mic check: hold the button and say'),
-    h('p', { class: 'big', lang: 'ja' }, 'こんにちは!'),
+    h('p', { class: 'big', lang: 'ja' }, 'こんにちは！'),
     me.level === 'kana' ? h('p', { class: 'hint' }, '(konnichiwa: “hello”)') : null,
     speakBox({
       label: 'Hold and say こんにちは',
@@ -379,7 +380,7 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
       { class: 'recap-list' },
       standings.map((s, j) => h('li', { class: s.playerId === me.id ? 'me-row' : '' }, h('span', {}, `${places[j]}. ${s.name}`), h('span', { class: 'pts' }, s.score))),
     ),
-    r?.awards.filter((a) => a.playerId === me.id).map((a) => h('p', { class: 'award' }, '🏆 ', h('span', { lang: 'ja' }, a.title), ` · ${a.en}`)),
+    r?.awards.filter((a) => a.playerId === me.id).map((a) => h('p', { class: 'award' }, '🏆 ', h('span', { lang: 'ja' }, awardTitle(a.title)), ` · ${a.en}`)),
     r?.phrasebook.length
       ? h(
           'details',

@@ -2,7 +2,7 @@
 // them from word tiles), pick the real title, then say it with the room. The VIP can hide a
 // drawing or a title.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, hasReading, ruby } from '../../../shared/src/dom.js';
 import type { OekakiView } from '../../../shared/src/modes/views.js';
 import { OEKAKI_LIMITS, PALETTE } from '../../../shared/src/modes/oekaki/drawing.js';
 import { MAX_FAKE_LENGTH, MAX_FAKE_TILES } from '../../../shared/src/modes/oekaki/fakes.js';
@@ -55,8 +55,9 @@ function titleCard(t: { text: string; kana: string; en: string; romaji: string |
     'div',
     { class: 'oek-word' },
     note ? h('p', { class: 'oek-note' }, note) : null,
-    h('p', { class: 'oek-big', lang: 'ja' }, kanaFirst ? t.kana : t.text),
-    !kanaFirst && !sameKana ? h('p', { class: 'oek-kana', lang: 'ja' }, t.kana) : null,
+    // Furigana above the kanji, not the reading as a second line that reads like another word.
+    h('p', { class: 'oek-big' }, kanaFirst ? h('span', { lang: 'ja' }, t.kana) : ruby(t)),
+    !kanaFirst && !sameKana && !hasReading(t) ? h('p', { class: 'oek-kana', lang: 'ja' }, t.kana) : null,
     t.romaji ? h('p', { class: 'oek-romaji' }, t.romaji) : null,
     h('p', { class: 'oek-en' }, t.en),
   );

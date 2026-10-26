@@ -56,7 +56,7 @@ export const foodPrompts: OogiriPrompt[] = [
     },
     fitTileIds: ["food.onigiri", "food.ice-cream", "food.okashi", "food.beer"],
     swerveTileIds: ["food.man-yen-onigiri", "food.giant-octopus", "food.bucket-pudding"],
-    exampleAnswer: { text: "夜の 三時、コンビニで 一万円の おにぎりを 買いました。", kana: "よるの さんじ、コンビニで いちまんえんの おにぎりを かいました。", en: "At 3 a.m., I bought a 10,000-yen onigiri at the konbini.", furigana: [["夜", "よる"], ["の ", ""], ["三", "さん"], ["時", "じ"], ["、コンビニで ", ""], ["一", "いち"], ["万", "まん"], ["円", "えん"], ["の おにぎりを ", ""], ["買", "か"], ["いました。", ""]] },
+    exampleAnswer: { text: "夜の 三時、コンビニで 10,000円の おにぎりを 買いました。", kana: "よるの さんじ、コンビニで いちまんえんの おにぎりを かいました。", en: "At 3 a.m., I bought a 10,000-yen onigiri at the konbini.", furigana: [["夜", "よる"], ["の ", ""], ["三", "さん"], ["時", "じ"], ["、コンビニで ", ""], ["10,000円", "いちまんえん"], ["の おにぎりを ", ""], ["買", "か"], ["いました。", ""]] },
     pattern: "で marks where an action happens.",
   },
   {
@@ -321,7 +321,7 @@ export const foodPrompts: OogiriPrompt[] = [
     },
     fitTileIds: ["food.amai", "food.mazui", "food.ookii", "food.takai", "food.oishii"],
     swerveTileIds: ["food.natto-ice-cream", "food.grandmas-sauce", "food.cat-chef"],
-    exampleAnswer: { text: "きのうの パーティーの ケーキは 高かったです。百万円でした。", kana: "きのうの パーティーの ケーキは たかかったです。ひゃくまんえんでした。", en: "The cake at yesterday's party was expensive. One million yen.", furigana: [["きのうの パーティーの ケーキは ", ""], ["高", "たか"], ["かったです。", ""], ["百", "ひゃく"], ["万", "まん"], ["円", "えん"], ["でした。", ""]] },
+    exampleAnswer: { text: "きのうの パーティーの ケーキは 高かったです。1,000,000円でした。", kana: "きのうの パーティーの ケーキは たかかったです。ひゃくまんえんでした。", en: "The cake at yesterday's party was expensive. One million yen.", furigana: [["きのうの パーティーの ケーキは ", ""], ["高", "たか"], ["かったです。", ""], ["1,000,000円", "ひゃくまんえん"], ["でした。", ""]] },
     pattern: "〜かったです: the past of an い-adjective (高い → 高かったです).",
   },
   {
@@ -387,7 +387,7 @@ export const foodPrompts: OogiriPrompt[] = [
     },
     fitTileIds: ["food.natto", "food.beer", "food.onigiri", "food.okashi"],
     swerveTileIds: ["food.giant-octopus", "food.bucket-pudding", "food.man-yen-onigiri"],
-    exampleAnswer: { text: "スーパーで ポンさんの かごを 見ました。一万円の おにぎりが たくさん ありました。", kana: "スーパーで ポンさんの かごを みました。いちまんえんの おにぎりが たくさん ありました。", en: "At the supermarket I looked in Pon's basket. It had lots of 10,000-yen onigiri.", furigana: [["スーパーで ポンさんの かごを ", ""], ["見", "み"], ["ました。", ""], ["一", "いち"], ["万", "まん"], ["円", "えん"], ["の おにぎりが たくさん ありました。", ""]] },
+    exampleAnswer: { text: "スーパーで ポンさんの かごを 見ました。10,000円の おにぎりが たくさん ありました。", kana: "スーパーで ポンさんの かごを みました。いちまんえんの おにぎりが たくさん ありました。", en: "At the supermarket I looked in Pon's basket. It had lots of 10,000-yen onigiri.", furigana: [["スーパーで ポンさんの かごを ", ""], ["見", "み"], ["ました。", ""], ["10,000円", "いちまんえん"], ["の おにぎりが たくさん ありました。", ""]] },
     pattern: "たくさん: a lot (it sits right before the verb).",
   },
   {
@@ -427,7 +427,7 @@ export const foodPrompts: OogiriPrompt[] = [
     },
     fitTileIds: ["food.takai", "food.mazui", "food.karai", "food.tsumetai", "food.matsu"],
     swerveTileIds: ["food.cat-chef", "food.robot-clerk", "food.giant-octopus"],
-    exampleAnswer: { text: "この レストランは 水が 一万円ですから、星 一つです。", kana: "この レストランは みずが いちまんえんですから、ほし ひとつです。", en: "This restaurant gets one star, because the water costs 10,000 yen.", furigana: [["この レストランは ", ""], ["水", "みず"], ["が ", ""], ["一", "いち"], ["万", "まん"], ["円", "えん"], ["ですから、", ""], ["星", "ほし"], [" ", ""], ["一", "ひと"], ["つです。", ""]] },
+    exampleAnswer: { text: "この レストランは 水が 10,000円ですから、星 一つです。", kana: "この レストランは みずが いちまんえんですから、ほし ひとつです。", en: "This restaurant gets one star, because the water costs 10,000 yen.", furigana: [["この レストランは ", ""], ["水", "みず"], ["が ", ""], ["10,000円", "いちまんえん"], ["ですから、", ""], ["星", "ほし"], [" ", ""], ["一", "ひと"], ["つです。", ""]] },
     pattern: "〜から: because (the reason comes first).",
   },
   {
@@ -462,11 +462,11 @@ export const foodPrompts: OogiriPrompt[] = [
     round: "head-to-head",
     versions: {
       kana: { text: "この すしは ひゃくえんです。でも、＿＿＿。", kana: "この すしは ひゃくえんです。でも、＿＿＿。", en: "This sushi is 100 yen. But ___." },
-      n5: { text: "この すしは 百円です。でも、＿＿＿。", kana: "この すしは ひゃくえんです。でも、＿＿＿。", en: "This sushi is 100 yen. But ___.", furigana: [["この すしは ", ""], ["百", "ひゃく"], ["円", "えん"], ["です。でも、＿＿＿。", ""]] },
+      n5: { text: "この すしは 100円です。でも、＿＿＿。", kana: "この すしは ひゃくえんです。でも、＿＿＿。", en: "This sushi is 100 yen. But ___.", furigana: [["この すしは ", ""], ["100円", "ひゃくえん"], ["です。でも、＿＿＿。", ""]] },
     },
     fitTileIds: ["food.mazui", "food.tsumetai", "food.karai", "food.utau"],
     swerveTileIds: ["food.giant-octopus", "food.singing-onigiri", "food.cat-chef"],
-    exampleAnswer: { text: "この すしは 百円です。でも、歌います。", kana: "この すしは ひゃくえんです。でも、うたいます。", en: "This sushi is 100 yen. But it sings.", furigana: [["この すしは ", ""], ["百", "ひゃく"], ["円", "えん"], ["です。でも、", ""], ["歌", "うた"], ["います。", ""]] },
+    exampleAnswer: { text: "この すしは 100円です。でも、歌います。", kana: "この すしは ひゃくえんです。でも、うたいます。", en: "This sushi is 100 yen. But it sings.", furigana: [["この すしは ", ""], ["100円", "ひゃくえん"], ["です。でも、", ""], ["歌", "うた"], ["います。", ""]] },
     pattern: "でも: but (starts a new sentence).",
   },
   {
@@ -524,7 +524,7 @@ export const foodPrompts: OogiriPrompt[] = [
     image: 'media/photo-caption/food.oogiri.photo-dog-omelette.png',
     fitTileIds: ["food.taberu", "food.miru", "food.matsu", "food.wasureru"],
     swerveTileIds: ["food.grandmas-sauce", "food.old-bread", "food.cat-chef"],
-    exampleAnswer: { text: "犬：「どうぞ、食べて ください。一万円です。」", kana: "いぬ：「どうぞ、たべて ください。いちまんえんです。」", en: "Dog: \"Here you go, please eat. That's 10,000 yen.\"", furigana: [["犬", "いぬ"], ["：「どうぞ、", ""], ["食", "た"], ["べて ください。", ""], ["一", "いち"], ["万", "まん"], ["円", "えん"], ["です。」", ""]] },
+    exampleAnswer: { text: "犬：「どうぞ、食べて ください。10,000円です。」", kana: "いぬ：「どうぞ、たべて ください。いちまんえんです。」", en: "Dog: \"Here you go, please eat. That's 10,000 yen.\"", furigana: [["犬", "いぬ"], ["：「どうぞ、", ""], ["食", "た"], ["べて ください。", ""], ["10,000円", "いちまんえん"], ["です。」", ""]] },
     pattern: "〜て ください: please do.",
   },
   {
@@ -569,7 +569,7 @@ export const foodPrompts: OogiriPrompt[] = [
     image: 'media/photo-caption/food.oogiri.photo-pon-fridge.png',
     fitTileIds: ["food.cake", "food.okashi", "food.bangohan"],
     swerveTileIds: ["food.old-bread", "food.grandmas-sauce", "food.ghost-ramen"],
-    exampleAnswer: { text: "ポンさん：「これは ケーキじゃ ありません！ ゆめです！」", kana: "ポンさん：「これは ケーキじゃ ありません！ ゆめです！」", en: "Pon: \"This is not cake! It's a dream!\"" },
+    exampleAnswer: { text: "ポンさん：「これは ケーキじゃ ありません！　ゆめです！」", kana: "ポンさん：「これは ケーキじゃ ありません！　ゆめです！」", en: "Pon: \"This is not cake! It's a dream!\"" },
     pattern: "N じゃ ありません: is not N.",
   },
   {
@@ -653,7 +653,7 @@ export const foodPrompts: OogiriPrompt[] = [
     },
     fitTileIds: ["food.taberu", "food.nomu", "food.utau", "food.kau", "food.sushi"],
     swerveTileIds: ["food.bucket-pudding", "food.man-yen-onigiri", "food.giant-octopus"],
-    exampleAnswer: { text: "あした せかいが おわります。今日、一万円の おにぎりを 食べたいです。", kana: "あした せかいが おわります。きょう、いちまんえんの おにぎりを たべたいです。", en: "The world ends tomorrow. Today, I want to eat a 10,000-yen onigiri.", furigana: [["あした せかいが おわります。", ""], ["今日", "きょう"], ["、", ""], ["一", "いち"], ["万", "まん"], ["円", "えん"], ["の おにぎりを ", ""], ["食", "た"], ["べたいです。", ""]] },
+    exampleAnswer: { text: "あした せかいが おわります。今日、10,000円の おにぎりを 食べたいです。", kana: "あした せかいが おわります。きょう、いちまんえんの おにぎりを たべたいです。", en: "The world ends tomorrow. Today, I want to eat a 10,000-yen onigiri.", furigana: [["あした せかいが おわります。", ""], ["今日", "きょう"], ["、", ""], ["10,000円", "いちまんえん"], ["の おにぎりを ", ""], ["食", "た"], ["べたいです。", ""]] },
     pattern: "〜たいです: want to do.",
   },
   {

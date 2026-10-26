@@ -1116,7 +1116,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     const bestGhost = [...ts].filter((t) => t.ghostCorrect > 0).sort((a, b) => b.ghostCorrect - a.ghostCorrect)[0];
     give('best-ghost', bestGhost?.playerId, { text: 'ベスト ゆうれい', en: 'Best Ghost' });
     const revived = [...ts].filter((t) => t.revivedAt > 0).sort((a, b) => b.revivedAt - a.revivedAt)[0];
-    give('welcome-back', revived?.playerId, { text: 'おかえりなさいしょう', en: 'Welcome Back' });
+    give('welcome-back', revived?.playerId, { text: 'おかえりなさい賞', en: 'Welcome Back' });
     for (const t of ts) if (t.stopsPlayed === s.stops.length && s.stops.length > 0 && t.misses === 0) give('no-miss', t.playerId, { text: 'ノーミス じょうきゃく', en: 'Perfect Passenger' });
     return out;
   },

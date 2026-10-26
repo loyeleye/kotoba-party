@@ -273,14 +273,14 @@ export const travelPack: TopicPack = {
     },
     {
       id: "travel.hyakuen",
-      jp: { text: "百円", kana: "ひゃくえん", en: "100 yen", furigana: [["百円", "ひゃくえん"]] },
+      jp: { text: "100円", kana: "ひゃくえん", en: "100 yen", furigana: [["100円", "ひゃくえん"]] },
       pos: "number",
       level: "n5",
       tags: ["money"],
     },
     {
       id: "travel.senen",
-      jp: { text: "千円", kana: "せんえん", en: "1,000 yen", furigana: [["千円", "せんえん"]] },
+      jp: { text: "1000円", kana: "せんえん", en: "1,000 yen", furigana: [["1000円", "せんえん"]] },
       pos: "number",
       level: "n5",
       tags: ["money"],

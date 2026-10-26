@@ -70,7 +70,7 @@ export const SCENES: readonly Scene[] = [
     emoji: '🍜',
     setting: t('ラーメンやさん', 'ラーメンやさん', 'A tiny ramen shop'),
     twist: 'The chef only serves people who say the secret words. Nobody knows what they are.',
-    roles: [role('てんちょう', 'the chef'), role('おきゃくさん', 'a hungry customer'), role('グルメの ひと', 'a ramen critic'), role('となりの ひと', 'the person in the next seat')],
+    roles: [role('たいしょう', 'the chef (the boss of a ramen counter)'), role('おきゃくさん', 'a hungry customer'), role('グルメの ひと', 'a ramen critic'), role('となりの ひと', 'the person in the next seat')],
     status: 'draft',
     phrases: [
       { id: 'pb.ramen.itadakimasu', level: 'kana', from: 'food.phrase.itadakimasu', jp: t('いただきます。', 'いただきます。', "Let's eat. (said before eating)") },

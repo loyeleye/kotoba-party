@@ -23,7 +23,7 @@ export const FALLBACK_CASE: OnsenCase = {
       persona: 'A calm guest.',
       answers: {
         where: { jp: k('へやに いました。', 'I was in my room.') },
-        who: { jp: k('いけださんを みました。 おふろに いきました。', 'I saw Ikeda. He went to the bath.'), clueId: 'b-bath' },
+        who: { jp: k('いけださんを みました。おふろに いきました。', 'I saw Ikeda. He went to the bath.'), clueId: 'b-bath' },
       },
     },
     {
@@ -57,7 +57,7 @@ export const FALLBACK_CASE: OnsenCase = {
     { id: 'shoe', jp: k('くつは いけださんの。', "The shoe is Ikeda's."), key: true },
     { id: 'shoe-bath', jp: k('くつは おふろに あった。', 'The shoe was in the bath.') },
   ],
-  confession: [k('はい、わたしです。 ごめんなさい！', 'Yes, it was me. Sorry!')],
+  confession: [k('はい、わたしです。ごめんなさい！', 'Yes, it was me. Sorry!')],
   solution: 'Ikeda said he stayed in his room, but Aoki saw him go to the bath, and his shoe was there. (Placeholder case: no content loaded.)',
   shrug: k('すみません、わかりません。', "Sorry, I don't know."),
 };

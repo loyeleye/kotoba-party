@@ -629,9 +629,9 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     const take = best('best');
     if (take) out.push({ playerId: take.id, name: take.name, title: 'ベスト テイク', en: `Best Take: the night’s best line (${s.tally[take.id]!.best})` });
     const fave = best('crowd');
-    if (fave) out.push({ playerId: fave.id, name: fave.name, title: 'はくしゅ しょう', en: 'Applause Prize: most crowd-favourite votes won' });
+    if (fave) out.push({ playerId: fave.id, name: fave.name, title: 'はくしゅ賞', en: 'Applause Prize: most crowd-favourite votes won' });
     const choir = best('chorus');
-    if (choir) out.push({ playerId: choir.id, name: choir.name, title: 'コーラス しょう', en: 'Chorus Prize: sang along the most' });
+    if (choir) out.push({ playerId: choir.id, name: choir.name, title: 'コーラス賞', en: 'Chorus Prize: sang along the most' });
     return out;
   },
 };

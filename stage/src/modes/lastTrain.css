@@ -53,6 +53,7 @@
 .lt-start { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--muted); opacity: 0.5; }
 .lt-runner { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 40px; transition: left 0.3s ease; }
 .lt-door { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 36px; }
+.lt-runner-pic { font-size: 40px; }
 .lt-track li.ghost .lt-lane-name { color: #c9d6ff; }
 .lt-lane-rank { font-weight: 900; color: var(--good); }
 

@@ -4,11 +4,14 @@
 // tourist can guess the place at any time.
 
 import { h } from '../../../shared/src/dom.js';
+import { placePic } from '../../../shared/src/art.js';
 import type { TouristView } from '../../../shared/src/modes/views.js';
 import type { LineCard, PlaceCard, SaidView } from '../../../shared/src/modes/tourist/tourist.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
+import { jpView } from '../components/jp.js';
+import type { Level } from '../../../content/src/types.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 type Ctx = PhoneContext<TouristView>;
@@ -20,21 +23,17 @@ let tile: { seq: number; id: string } | null = null;
 let guessPick: { seq: number; id: string } | null = null;
 let confirmCall: number | null = null;
 
+/** This phone's level, set on each render: every Japanese line follows it (components/jp.ts). */
+let level: Level | null = null;
+
 function line(p: { text: string; kana: string | null; en: string | null; romaji?: string }, cls = ''): HTMLElement {
-  return h(
-    'div',
-    { class: `tou-line ${cls}` },
-    h('p', { class: 'tou-line-jp', lang: 'ja' }, p.text),
-    p.kana && p.kana !== p.text ? h('p', { class: 'tou-line-kana', lang: 'ja' }, p.kana) : null,
-    p.romaji ? h('p', { class: 'tou-line-romaji' }, p.romaji) : null,
-    p.en ? h('p', { class: 'tou-line-en' }, p.en) : null,
-  );
+  return jpView(p, level, { cls: `tou-line ${cls}` });
 }
 
 const saidLine = (x: SaidView, cls = '') => line({ text: x.text, kana: x.kana, en: x.en ? `${x.approx ? '≈ ' : ''}${x.en}` : '(own words)', ...(x.romaji ? { romaji: x.romaji } : {}) }, cls);
 
 function placeName(p: PlaceCard): HTMLElement {
-  return h('span', { class: 'tou-pn' }, h('span', { class: 'tou-pn-emoji' }, p.emoji), h('span', { lang: 'ja' }, p.text), p.kana !== p.text ? h('small', { lang: 'ja' }, ` ${p.kana}`) : null, h('small', {}, ` · ${p.romaji ? `${p.romaji} · ` : ''}${p.en}`));
+  return h('span', { class: 'tou-pn' }, placePic(p, 'tou-pn-emoji'), h('span', { lang: 'ja' }, p.text), p.kana !== p.text ? h('small', { lang: 'ja' }, ` ${p.kana}`) : null, h('small', {}, ` · ${p.romaji ? `${p.romaji} · ` : ''}${p.en}`));
 }
 
 function myCard(game: TouristView, open: boolean): HTMLElement | null {
@@ -208,7 +207,7 @@ function guessPanel(ctx: Ctx, lastChance: boolean): HTMLElement {
           h(
             'button',
             { type: 'button', class: 'tou-gplace', onclick: () => ((guessPick = { seq: view.phaseSeq, id: p.id }), draw()) },
-            h('span', { class: 'tou-gplace-emoji' }, p.emoji),
+            placePic(p, 'tou-gplace-emoji'),
             h('span', { class: 'tou-gplace-jp', lang: 'ja' }, p.kana),
             h('span', { class: 'tou-gplace-en' }, p.romaji ?? p.en),
           ),
@@ -308,6 +307,7 @@ export const touristPhone: PhoneMode<TouristView> = {
 
   render(ctx) {
     const { view, game } = ctx;
+    level = ctx.me.level;
     if (view.phase === 'intro') {
       return h(
         'div',

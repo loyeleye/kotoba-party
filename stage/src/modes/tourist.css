@@ -38,7 +38,7 @@
 @keyframes tou-breathe { 50% { opacity: 0.55; } }
 .tou-stage .tou-said { border-radius: 16px; padding: 10px 16px; display: grid; gap: 2px; animation: tou-in 0.35s ease-out; }
 @keyframes tou-in { from { opacity: 0; transform: translateY(-6px); } }
-.tou-stage .tou-said.q { background: #fbf7ff; color: #1b1430; }
+.tou-stage .tou-said.q { background: var(--paper); color: var(--paper-ink); }
 .tou-stage .tou-said.a { background: #233a30; color: var(--ink); margin-left: 40px; }
 .tou-stage .tou-said-jp { font-size: 30px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
 .tou-stage .tou-said-kana { font-size: 18px; opacity: 0.75; }
@@ -72,13 +72,13 @@
 .tou-stage.tou-score .tou-big { text-align: center; }
 .tou-stage .tou-how-caught, .tou-stage .tou-how-wrong-guess { color: var(--good); }
 .tou-stage .tou-how-escaped, .tou-stage .tou-how-wrong-person, .tou-stage .tou-how-guessed { color: var(--warn); }
-.tou-stage .tou-reveal { display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; background: #fbf7ff; color: #1b1430; border-radius: 24px; padding: 18px 32px; animation: tou-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1); }
+.tou-stage .tou-reveal { display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; background: var(--paper); color: var(--paper-ink); border-radius: 24px; padding: 18px 32px; animation: tou-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1); }
 @keyframes tou-pop { from { transform: scale(0.6); opacity: 0; } }
 .tou-stage .tou-reveal-emoji { font-size: 110px; line-height: 1; }
 .tou-stage .tou-reveal-jp { font-size: 56px; font-weight: 700; }
 .tou-stage .tou-reveal-jp strong { font-weight: 900; color: #b8401f; }
-.tou-stage .tou-reveal-jp rt { font-size: 0.4em; color: #5b4e7a; }
-.tou-stage .tou-reveal-en { font-size: 28px; color: #5b4e7a; }
+.tou-stage .tou-reveal-jp rt { font-size: 0.4em; color: var(--muted); }
+.tou-stage .tou-reveal-en { font-size: 28px; color: var(--muted); }
 .tou-stage .tou-double { align-self: start; background: var(--accent); color: var(--on-accent); font-weight: 800; border-radius: 999px; padding: 6px 16px; font-size: 22px; }
 .tou-stage .tou-tally { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .tou-stage .tou-tally li { display: grid; grid-template-columns: 180px 1fr 40px; gap: 12px; align-items: center; font-size: 26px; }

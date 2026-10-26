@@ -5,6 +5,7 @@
 // sends (`phaseAt`): a redraw resumes an animation where it was instead of replaying it.
 
 import { h } from '../../../shared/src/dom.js';
+import { icon } from '../../../shared/src/art.js';
 import type { AnswerCard, OogiriView, PromptCard } from '../../../shared/src/modes/oogiri/oogiri.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
@@ -67,7 +68,7 @@ function answerCard(game: OogiriView, a: AnswerCard, i: number, revealed: boolea
           cushions(a.votes ?? 0),
           a.points ? h('span', { class: 'oo-points' }, `+${a.points}`) : null,
           a.encore ? h('span', { class: 'oo-encore' }, ENCORE_TEXT[a.encore]) : null,
-          a.ippon ? h('span', { class: 'badge' }, 'IPPON!') : a.winner && maxVotes > 0 ? h('span', { class: 'badge win' }, '🏆') : null,
+          a.ippon ? h('span', { class: 'badge' }, 'IPPON!') : a.winner && maxVotes > 0 ? h('span', { class: 'badge win' }, icon('trophy', '🏆', 'oo-trophy')) : null,
         )
       : null,
   );

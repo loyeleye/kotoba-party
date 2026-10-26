@@ -1,15 +1,25 @@
 :root {
-  --bg: #14101f;
-  --panel: #1f1930;
-  --ink: #f6f1ff;
-  --muted: #b4a8d6;
-  --accent: #ff7a59;
-  /* Text on a coral, mint or gold fill: dark ink (7.3:1 on coral), never white (2.6:1). */
-  --on-accent: #14101f;
-  --good: #57d9a3;
-  --warn: #ffcf5a;
-  /* Tile, input and card edges: 3.4:1 against --panel. */
-  --line: #76689c;
+  /* "Matsuri Night", the same tokens as the stage (see stage/style.css for the ratios). */
+  --bg: #1a1440;
+  --panel: #2a2062;
+  --ink: #fff8ec;
+  --muted: #d6cbf4;
+  /* Shu vermilion. Text on any colour fill is dark ink (6.1:1 here), never white. */
+  --accent: #ff5f3c;
+  --on-accent: #160f2c;
+  --good: #48e6a4;
+  --warn: #ffd23f;
+  --bad: #ff6b8a;
+  /* Tile, input and card edges: 4.8:1 against --panel. */
+  --line: #9a8ae0;
+  --outline: #0c0720;
+  --gold: #ffcc33;
+  --paper: #fff4dc;
+  --paper-ink: #22142e;
+  --paper-muted: #5e4560;
+  --lantern: #c8213c;
+  --seat-1: #ff8a3d; --seat-2: #6ecef7; --seat-3: #ffffa3; --seat-4: #b685ff;
+  --seat-5: #bfe85e; --seat-6: #f98bcd; --seat-7: #f0c294; --seat-8: #a3ffd1;
   /* The current mode's colour (main.ts sets body[data-mode]). */
   --mode: var(--accent);
   --font-pixel: 'Pixelify Sans', 'Noto Sans JP', system-ui, sans-serif;
@@ -19,18 +29,19 @@
   font-family: var(--font-body);
   color-scheme: dark;
 }
-body[data-mode='oogiri'] { --mode: #ff7a59; }
-body[data-mode='last-train'] { --mode: #ffb35c; }
-body[data-mode='kana-raid'] { --mode: #57d9a3; }
-body[data-mode='word-gauntlet'] { --mode: #8fb0ff; }
-body[data-mode='concentration'] { --mode: #c79bff; }
-body[data-mode='phrase-bingo'] { --mode: #ff9fc0; }
-body[data-mode='karaoke-duel'] { --mode: #ff7fb8; }
-body[data-mode='onsen-murder'] { --mode: #7fd6ff; }
-body[data-mode='tourist'] { --mode: #ffd25a; }
-body[data-mode='oekaki'] { --mode: #a8e070; }
-body[data-mode='omiai'] { --mode: #ffa9c6; }
-body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--mode) 14%, var(--bg)), var(--bg) 70%) fixed; }
+/* Spread round the wheel, one hue per mode (the three pinks are now rose, magenta and sakura). */
+body[data-mode='oogiri'] { --mode: #ff6b4a; }
+body[data-mode='last-train'] { --mode: #ffa23a; }
+body[data-mode='tourist'] { --mode: #ffdd4a; }
+body[data-mode='oekaki'] { --mode: #b5e655; }
+body[data-mode='kana-raid'] { --mode: #3fd6b0; }
+body[data-mode='onsen-murder'] { --mode: #6cc8ff; }
+body[data-mode='word-gauntlet'] { --mode: #7ea6ff; }
+body[data-mode='concentration'] { --mode: #c9a6ff; }
+body[data-mode='karaoke-duel'] { --mode: #ff52d0; }
+body[data-mode='phrase-bingo'] { --mode: #ff6f91; }
+body[data-mode='omiai'] { --mode: #ffa3c0; }
+body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--mode) 22%, var(--bg)), var(--bg) 70%) fixed; }
 
 /* Japanese: break between phrases, never inside a word (see stage/style.css). */
 :lang(ja) { font-family: var(--font-ja); line-break: strict; word-break: keep-all; overflow-wrap: anywhere; }
@@ -43,7 +54,7 @@ rt { font-size: 0.5em; color: var(--muted); }
 html, body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100%; }
 body { padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); font-size: 18px; }
 main { max-width: 480px; margin: 0 auto; }
-h1 { color: var(--accent); font-family: var(--font-pixel); font-size: 40px; margin: 24px 0; text-align: center; text-shadow: 0 3px 0 #6e2a19; }
+h1 { color: var(--accent); font-family: var(--font-pixel); font-size: 40px; margin: 24px 0; text-align: center; text-shadow: 0 3px 0 var(--outline); }
 
 .join { display: grid; gap: 16px; }
 label { display: grid; gap: 6px; color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -51,8 +62,10 @@ input, select { width: 100%; font-size: 22px; padding: 14px; border-radius: 12px
 #code { text-transform: uppercase; letter-spacing: 0.3em; font-weight: 800; text-align: center; font-size: 32px; }
 
 button { font: inherit; cursor: pointer; }
-.primary { width: 100%; font-size: 22px; font-weight: 800; padding: 16px; border: 0; border-radius: 14px; background: var(--accent); color: var(--on-accent); }
-.primary:disabled { opacity: 0.5; }
+.primary { width: 100%; font-size: 22px; font-weight: 800; padding: 16px; border: 3px solid var(--outline); border-radius: 10px; background: var(--accent); color: var(--on-accent); box-shadow: 0 5px 0 var(--outline); transition: transform 80ms, box-shadow 80ms; }
+.primary:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--outline); }
+/* Waiting, not broken: dashed, with its label saying what it waits for. */
+.primary:disabled { background: var(--panel); color: var(--muted); border-style: dashed; border-color: var(--line); box-shadow: none; transform: none; }
 .option { display: block; width: 100%; text-align: left; font-size: 20px; padding: 16px; margin: 0 0 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
 .option:active { border-color: var(--accent); }
 
@@ -61,7 +74,13 @@ button { font: inherit; cursor: pointer; }
 .me .vip { color: var(--warn); }
 .me .score { margin-left: auto; color: var(--ink); font-family: var(--font-pixel); font-weight: 700; font-size: 18px; }
 /* In a game the header is a band in the mode's colour, with its host. */
-.me-band { display: flex; align-items: center; gap: 10px; margin: 0 -16px 8px; padding: 6px 72px 6px 12px; background: var(--mode); color: var(--on-accent); border-bottom: 3px solid color-mix(in srgb, var(--mode) 55%, #000); }
+.me-band { position: relative; display: flex; align-items: center; gap: 10px; margin: 0 -16px 18px; padding: 6px 72px 6px 12px; background: var(--mode); color: var(--on-accent); border-bottom: 3px solid var(--outline); }
+/* Festival bunting under the band. */
+.me-band::after { content: ''; position: absolute; left: 0; right: 0; bottom: -11px; height: 8px; background: repeating-linear-gradient(90deg, var(--lantern) 0 12px, var(--warn) 12px 24px, var(--paper) 24px 36px); mask: conic-gradient(from -45deg at 50% 100%, #000 90deg, transparent 0) 0 0 / 12px 8px repeat-x; }
+/* My seat, as on the TV: colour, shape and number. */
+.me .seat-badge { font-family: var(--font-pixel); font-weight: 700; color: var(--on-accent); background: var(--seat, var(--muted)); border: 2px solid var(--outline); border-radius: 4px; padding: 0 6px; }
+.seat-1 { --seat: var(--seat-1); } .seat-2 { --seat: var(--seat-2); } .seat-3 { --seat: var(--seat-3); } .seat-4 { --seat: var(--seat-4); }
+.seat-5 { --seat: var(--seat-5); } .seat-6 { --seat: var(--seat-6); } .seat-7 { --seat: var(--seat-7); } .seat-8 { --seat: var(--seat-8); }
 .me-host { width: 48px; height: 48px; margin: -6px 0; image-rendering: pixelated; }
 .me-title { font-family: var(--font-pixel); font-weight: 700; font-size: 20px; line-height: 1.1; }
 .me-title small { display: block; font-family: var(--font-body); font-size: 13px; font-weight: 700; opacity: 0.8; }
@@ -77,8 +96,8 @@ body[data-mode] .timer { color: var(--on-accent); }
 .place { display: grid; justify-items: center; gap: 2px; padding: 18px 12px; border-radius: 18px; border: 4px solid var(--line); background: var(--panel); text-align: center; animation: place-in 600ms cubic-bezier(0.2, 1.6, 0.4, 1) both; }
 .place-n { font-family: var(--font-pixel); font-size: 64px; font-weight: 700; line-height: 1; }
 .place-label { font-size: 16px; color: var(--muted); }
-.place.p1 { border-color: #ffcf5a; box-shadow: 0 0 24px rgba(255, 207, 90, 0.35); }
-.place.p1 .place-n { color: #ffcf5a; }
+.place.p1 { border-color: var(--gold); box-shadow: 6px 6px 0 var(--lantern); }
+.place.p1 .place-n { color: var(--gold); }
 .place.p2 { border-color: #d6dbe6; }
 .place.p2 .place-n { color: #d6dbe6; }
 .place.p3 { border-color: #e0a070; }
@@ -145,3 +164,27 @@ button .say-sub { font-size: 12px; }
 .mic { margin: 0; color: var(--muted); }
 .mic.ok { color: var(--good); }
 .linkish { background: none; border: 0; color: var(--muted); text-decoration: underline; padding: 6px; min-height: 44px; }
+
+/* Japanese by level (components/jp.ts): かな = kana, romaji, English, then the written form small. */
+.jpv { display: grid; gap: 2px; }
+.jpv p { margin: 0; }
+.jpv-main { font-size: 22px; font-weight: 700; line-height: 1.5; }
+.jpv-main:has(ruby) { line-height: 2; }
+.jpv-kana { color: var(--muted); font-size: 16px; }
+.jpv-romaji { color: var(--romaji, var(--warn)); font-size: 17px; font-weight: 600; }
+.jpv-en { color: var(--muted); font-size: 15px; }
+.jpv-written { color: var(--muted); font-size: 13px; opacity: 0.85; }
+span.jpv { display: grid; }
+span.jpv .jpv-main { font-size: 20px; }
+span.jpv .jpv-romaji, span.jpv .jpv-kana, span.jpv .jpv-en { font-size: 13px; }
+span.jpv .jpv-written { font-size: 11px; }
+
+/* Washi cards: inside them the text tokens flip to dark ink, so muted glosses, furigana and
+   romaji stay readable (paper-muted 7.7:1, romaji amber 6.9:1). */
+.paper, .cc-cue, .cc-cuecard, .cc-m-up, .cc-up, .om-bubble, .om-p-answer, .om-notebook, .om-p-notebook, .omi-bubble, .omi-invite, .omi-natural, .omi-q, .omi-target, .pb-big-phrase, .pb-line, .tou-line, .tou-reveal, .tou-said.q, .host-bubble {
+  --ink: var(--paper-ink); --muted: var(--paper-muted); --romaji: #7a4a00;
+}
+
+/* Pixel art in place of emoji (shared/src/art.ts): sized by the font-size the emoji had. */
+img.pix { width: 1.3em; height: 1.3em; object-fit: contain; image-rendering: pixelated; vertical-align: middle; }
+img.pix.om-face, img.pix.om-p-face, img.pix.omi-guest-emoji, img.pix.omi-guest-p-emoji { width: 1.6em; height: 1.6em; }

@@ -586,7 +586,7 @@ export const foodPack: TopicPack = {
     },
     {
       id: "food.man-yen-onigiri",
-      jp: { text: "一万円の おにぎり", kana: "いちまんえんの おにぎり", en: "a 10,000-yen onigiri", furigana: [["一", "いち"], ["万", "まん"], ["円", "えん"], ["の おにぎり", ""]] },
+      jp: { text: "10,000円の おにぎり", kana: "いちまんえんの おにぎり", en: "a 10,000-yen onigiri", furigana: [["10,000円", "いちまんえん"], ["の おにぎり", ""]] },
       pos: "noun",
       level: "n5",
       swerve: true,

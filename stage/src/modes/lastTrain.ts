@@ -3,6 +3,7 @@
 // natural version, the penalty car, and the Platform Dash track.
 
 import { h, ruby } from '../../../shared/src/dom.js';
+import { icon } from '../../../shared/src/art.js';
 import type { JpText } from '../../../content/src/types.js';
 import type { LastTrainView, TravellerStatus, TravellerView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -178,8 +179,8 @@ function dash(view: RoomView, game: LastTrainView): HTMLElement {
             'span',
             { class: 'lt-lane' },
             h('span', { class: 'lt-start', style: `left:${at(0)}%` }),
-            h('span', { class: 'lt-runner', style: `left:${at(Math.min(d.track, r.pos))}%` }, r.aboard !== null ? '🚃' : r.ghost ? '👻' : '🏃'),
-            h('span', { class: 'lt-door' }, '🚪'),
+            h('span', { class: 'lt-runner', style: `left:${at(Math.min(d.track, r.pos))}%` }, r.aboard !== null ? icon('lt-train', '🚃', 'lt-runner-pic') : r.ghost ? '👻' : '🏃'),
+            icon('lt-door', '🚪', 'lt-door'),
           ),
           h('span', { class: 'lt-lane-rank' }, r.aboard !== null ? `#${r.aboard}` : ''),
         ),

@@ -24,7 +24,7 @@
 .omi-roundtag { font-size: 22px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; gap: 12px; align-items: center; }
 .omi-double { background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 2px 12px; font-weight: 800; letter-spacing: 0; }
 .omi-ask { display: grid; grid-template-columns: minmax(280px, 1fr) 2fr; gap: 28px; align-items: center; }
-.omi-bubble { position: relative; background: #fff7fb; color: #2a1630; border-radius: 28px; padding: 28px 36px; display: grid; gap: 8px; }
+.omi-bubble { position: relative; background: var(--paper); color: var(--paper-ink); border-radius: 28px; padding: 28px 36px; display: grid; gap: 8px; }
 .omi-bubble::before { content: ''; position: absolute; left: -22px; top: 50%; transform: translateY(-50%); border: 14px solid transparent; border-right: 22px solid #fff7fb; border-left: 0; }
 .omi-bubble-jp { font-size: 54px; font-weight: 900; line-height: 1.25; }
 .omi-bubble-en { font-size: 26px; color: #6b4a6f; }
@@ -54,13 +54,13 @@
 .omi-reg-keigo { background: var(--omi-tea); color: #10241b; }
 .omi-reg-polite { background: #cfe7ff; color: #12263d; }
 .omi-reg-mixed { background: var(--warn); color: #1a1426; }
-.omi-reg-casual { background: var(--omi-rose); color: #2a1630; }
+.omi-reg-casual { background: var(--omi-rose); color: var(--paper-ink); }
 .omi-react { grid-column: 1 / -1; font-size: 24px; }
 .omi-react small { margin-left: 10px; font-size: 18px; color: var(--muted); }
 .omi-bowed { grid-column: 1 / -1; font-size: 18px; color: var(--good); font-weight: 700; }
 
 .omi-score { justify-items: stretch; }
-.omi-natural { background: #fff7fb; color: #2a1630; border-radius: 24px; padding: 24px 40px; display: grid; gap: 6px; text-align: center; }
+.omi-natural { background: var(--paper); color: var(--paper-ink); border-radius: 24px; padding: 24px 40px; display: grid; gap: 6px; text-align: center; }
 .omi-natural-label { font-size: 24px; color: #6b4a6f; font-weight: 700; }
 .omi-natural-jp { font-size: 64px; font-weight: 900; line-height: 1.2; }
 .omi-natural-kana, .omi-natural-en { font-size: 28px; color: #6b4a6f; }
@@ -77,10 +77,10 @@
 .omi-contestant-name { font-size: 32px; font-weight: 800; }
 .omi-contestant-hearts { font-size: 22px; color: var(--omi-rose); }
 .omi-chosen { animation: omi-sweep 0.5s ease-in-out calc(var(--i) * 0.5s) 2 alternate both, omi-chosen 0.8s ease-out 4s both; }
-@keyframes omi-chosen { to { background: var(--omi-rose); color: #2a1630; border-color: #fff; transform: scale(1.15); box-shadow: 0 0 60px rgba(255, 143, 177, 0.7); } }
+@keyframes omi-chosen { to { background: var(--omi-rose); color: var(--paper-ink); border-color: #fff; transform: scale(1.15); box-shadow: 0 0 60px rgba(255, 143, 177, 0.7); } }
 .omi-chosen .omi-contestant-hearts { animation: omi-ink 0.8s ease-out 4s both; }
-@keyframes omi-ink { to { color: #2a1630; } }
-.omi-invite { display: grid; gap: 8px; background: #fff7fb; color: #2a1630; border-radius: 24px; padding: 22px 40px; animation: omi-in 0.8s ease-out 4.6s both; }
+@keyframes omi-ink { to { color: var(--paper-ink); } }
+.omi-invite { display: grid; gap: 8px; background: var(--paper); color: var(--paper-ink); border-radius: 24px; padding: 22px 40px; animation: omi-in 0.8s ease-out 4.6s both; }
 .omi-invite-title { font-size: 40px; font-weight: 800; }
 .omi-invite-jp { font-size: 36px; font-weight: 700; }
 .omi-invite-en { font-size: 24px; color: #6b4a6f; }

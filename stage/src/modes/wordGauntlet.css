@@ -11,7 +11,7 @@
 .wg-kanji rt { font-size: 34px; font-weight: 600; color: var(--muted); }
 .wg-meaning { margin: 0; font-size: 40px; font-weight: 700; color: var(--good); }
 .wg-options li { counter-increment: wg-opt; }
-.wg-golden { display: grid; gap: 4px; justify-items: center; border: 3px solid var(--warn); border-radius: 22px; padding: 12px 28px 18px; box-shadow: 0 0 40px #ffcf5a33; }
+.wg-golden { display: grid; gap: 4px; justify-items: center; border: 3px solid var(--warn); border-radius: 22px; padding: 12px 28px 18px; box-shadow: 0 0 40px #ffd23f33; }
 .wg-golden p { margin: 0; }
 .wg-golden-tag { color: var(--warn); font-weight: 800; font-size: 24px; letter-spacing: 0.06em; text-transform: uppercase; }
 .wg-golden .wg-kanji { font-size: 88px; }
@@ -19,11 +19,11 @@
 .wg-relay { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
 .wg-hop { display: grid; gap: 4px; justify-items: center; background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 12px 18px; min-width: 120px; font-size: 26px; position: relative; }
 .wg-hop + .wg-hop::before { content: '→'; position: absolute; left: -12px; top: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 22px; }
-.wg-hop.live { border-color: var(--warn); box-shadow: 0 0 0 4px #ffcf5a44; }
+.wg-hop.live { border-color: var(--warn); box-shadow: 0 0 0 4px #ffd23f44; }
 .wg-hop.done { border-color: var(--good); }
 .wg-hop.skipped { opacity: 0.45; border-style: dashed; }
 .wg-hop-name { font-weight: 800; }
-.wg-flag { font-size: 16px; font-weight: 900; letter-spacing: 0.1em; color: #14101f; background: var(--muted); border-radius: 6px; padding: 2px 8px; }
+.wg-flag { font-size: 16px; font-weight: 900; letter-spacing: 0.1em; color: var(--on-accent); background: var(--muted); border-radius: 6px; padding: 2px 8px; }
 
 .wg-drift { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; width: min(1100px, 100%); text-align: left; }
 .wg-drift-step { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 20px; animation: wg-in 0.6s ease both; }

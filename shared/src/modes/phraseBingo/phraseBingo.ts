@@ -833,7 +833,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
     };
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
     add(best('slipped'), 'だいめいゆう', 'Star Actor: most secret phrases slipped in');
-    add(best('smooth'), 'さりげない しょう', 'Smooth Operator: most phrases nobody caught');
+    add(best('smooth'), 'さりげない賞', 'Smooth Operator: most phrases nobody caught');
     add(best('catches'), 'じごくみみ', 'Sharp Ears: most phrases caught');
     add(best('bingos'), 'ビンゴ キング', 'Bingo King: most bingo lines');
     return out;

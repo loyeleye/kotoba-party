@@ -3,7 +3,8 @@
 // With ?debug=1 a developer panel to drive and inspect the room floats over it.
 
 import { RoomClient, createRoom, type ConnectionStatus } from '../../shared/src/client.js';
-import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch, placesOf, ruby } from '../../shared/src/dom.js';
+import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch, placesOf, ruby, awardTitle, seatShape } from '../../shared/src/dom.js';
+import { icon } from '../../shared/src/art.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
@@ -151,8 +152,8 @@ function render(view: RoomView, v: number): void {
       seenScores.set(p.id, p.score);
       return h(
         'li',
-        { class: `player ${p.connected ? 'online' : 'offline'}`, 'data-key': p.id },
-        h('span', { class: 'seat' }, p.seat),
+        { class: `player seat-${p.seat} ${p.connected ? 'online' : 'offline'}`, 'data-key': p.id },
+        h('span', { class: 'seat', 'aria-label': `seat ${p.seat}` }, `${seatShape(p.seat)}${p.seat}`),
         h('span', { class: 'name' }, p.name, p.isVip ? h('span', { class: 'vip', title: 'VIP' }, ' ★') : null),
         h('span', { class: 'ticks' }, (view.game && stageMode?.badge?.(view.game, p.id)) || h('span', { class: 'level' }, LEVEL_LABELS[p.level])),
         h('span', { class: `score${up ? ' up' : ''}`, 'data-key': `${p.score}` }, p.score),
@@ -214,7 +215,7 @@ function recapScreen(view: RoomView): HTMLElement {
           'ul',
           { class: 'awards' },
           view.recap.awards.map((a, i) =>
-            h('li', { class: 'award-card', style: `animation-delay:${3200 + i * 500}ms` }, h('span', { class: 'a-ja', lang: 'ja' }, a.title), h('span', { class: 'a-en' }, a.en), h('span', { class: 'a-who' }, a.name)),
+            h('li', { class: 'award-card', style: `animation-delay:${3200 + i * 500}ms` }, icon('trophy', '🏆', 'a-trophy'), h('span', { class: 'a-ja', lang: 'ja' }, awardTitle(a.title)), h('span', { class: 'a-en' }, a.en), h('span', { class: 'a-who' }, a.name)),
           ),
         )
       : null,

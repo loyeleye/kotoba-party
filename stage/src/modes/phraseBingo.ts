@@ -1,7 +1,8 @@
 // Phrase Bingo Theater on the TV: the scene card and cast, ACTION! with a live ticker of who just
 // slipped a phrase in (never which), the secrets revealed, the shout-back phrase, and bingo.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
+import { scenePic } from '../../../shared/src/art.js';
 import type { PhraseBingoView } from '../../../shared/src/modes/views.js';
 import type { ActorView, PhraseCard, TickerItem } from '../../../shared/src/modes/phraseBingo/phraseBingo.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -16,11 +17,11 @@ function sceneCard(game: PhraseBingoView, compact = false): HTMLElement | null {
   return h(
     'div',
     { class: `pb-scene${compact ? ' pb-compact' : ''}` },
-    h('span', { class: 'pb-emoji' }, sc.emoji),
+    scenePic(sc, 'pb-emoji'),
     h(
       'div',
       { class: 'pb-scene-text' },
-      h('p', { class: 'pb-setting', lang: 'ja' }, sc.setting.text),
+      h('p', { class: 'pb-setting' }, ruby(sc.setting)),
       h('p', { class: 'pb-setting-en' }, sc.setting.en),
       h('p', { class: 'pb-twist' }, `Twist: ${sc.twist}`),
     ),
@@ -37,7 +38,7 @@ function castList(view: RoomView, game: PhraseBingoView, live: boolean): HTMLEle
         'li',
         { class: 'pb-actor' },
         h('span', { class: 'pb-actor-name' }, nameOf(view, a.playerId)),
-        h('span', { class: 'pb-role', lang: 'ja' }, a.role.text, h('small', {}, a.role.en)),
+        h('span', { class: 'pb-role' }, ruby(a.role), h('small', {}, a.role.en)),
         live
           ? h('span', { class: 'pb-bells', 'aria-label': `${a.said} of ${a.total} phrases slipped in` }, '🔔'.repeat(a.said), h('span', { class: 'pb-bells-left' }, '◌'.repeat(Math.max(0, a.total - a.said))))
           : view.phase === 'prompt'
@@ -56,7 +57,7 @@ function tickerLine(view: RoomView, item: TickerItem): HTMLElement {
       { class: 'pb-tick pb-tick-slip' },
       h('span', { class: 'pb-time' }, clock(item.atSec)),
       h('span', {}, `🔔 ${who} slipped one in!`),
-      item.phrase ? h('span', { class: 'pb-tick-phrase', lang: 'ja' }, item.phrase.text, h('small', {}, item.phrase.en)) : null,
+      item.phrase ? h('span', { class: 'pb-tick-phrase' }, ruby(item.phrase), h('small', {}, item.phrase.en)) : null,
     );
   }
   return h(
@@ -81,7 +82,7 @@ function phraseBig(p: PhraseCard): HTMLElement {
   return h(
     'div',
     { class: 'pb-big-phrase' },
-    h('p', { class: 'pb-big-jp', lang: 'ja' }, p.text),
+    h('p', { class: 'pb-big-jp' }, ruby(p)),
     p.kana !== p.text ? h('p', { class: 'pb-big-kana', lang: 'ja' }, p.kana) : null,
     h('p', { class: 'pb-big-en' }, p.en),
   );
@@ -101,7 +102,7 @@ function revealActor(view: RoomView, a: ActorView): HTMLElement {
         return h(
           'li',
           { class: `pb-secret pb-${status}` },
-          h('span', { class: 'pb-secret-jp', lang: 'ja' }, p.text),
+          ruby(p, { class: 'pb-secret-jp' }),
           h('span', { class: 'pb-secret-en' }, p.en),
           h('span', { class: 'pb-chip' }, chip, p.memory ? ' · from memory' : ''),
         );

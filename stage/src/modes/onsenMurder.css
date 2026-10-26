@@ -36,7 +36,7 @@
 .om-voter { border-radius: 999px; padding: 2px 10px; font-size: 16px; font-weight: 800; }
 .om-stamp { position: absolute; top: 10px; right: -6px; transform: rotate(12deg); background: var(--accent); color: var(--on-accent); font-weight: 900; font-size: 22px; padding: 2px 10px; border-radius: 8px; animation: om-stamp 0.4s ease-out 0.9s both; }
 
-.om-bubble { position: relative; background: #fbf7ff; color: #1b1430; border-radius: 18px; padding: 12px 18px; display: grid; gap: 4px; text-align: left; }
+.om-bubble { position: relative; background: var(--paper); color: var(--paper-ink); border-radius: 18px; padding: 12px 18px; display: grid; gap: 4px; text-align: left; }
 .om-bubble .om-en { color: #4a3f66; }
 .om-bubble .om-kana { color: #6b5c8f; }
 .om-confused { font-size: 20px; font-weight: 800; margin-top: 4px; animation: om-wobble 0.5s ease-out both; }
@@ -156,3 +156,6 @@
 @media (max-width: 1000px) {
   .om-layout { grid-template-columns: 1fr; }
 }
+
+/* The name slot in 「はんにんは ＿さんです！」: a drawn box, not ○○ (which reads as "OO"). */
+.om-slot { display: inline-block; min-width: 3.2em; margin: 0 0.1em; padding: 0 0.3em; border: 3px dashed var(--warn); border-radius: 6px; color: var(--warn); text-align: center; line-height: 1.2; }

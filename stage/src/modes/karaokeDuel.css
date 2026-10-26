@@ -36,10 +36,10 @@
 .kd-morae { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 28px; padding-top: 34px; }
 .kd-word { display: inline-flex; gap: 2px; }
 .kd-mora { position: relative; display: inline-grid; justify-items: center; min-width: 0.9em; }
-.kd-kana { font-size: clamp(48px, 7.5vh, 96px); font-weight: 900; line-height: 1.1; color: #f6f1ff; }
+.kd-kana { font-size: clamp(48px, 7.5vh, 96px); font-weight: 900; line-height: 1.1; color: var(--ink); }
 .kd-ro { font-size: clamp(16px, 2.2vh, 26px); color: var(--warn); font-weight: 700; }
 .kd-mora.timed .kd-kana { animation: kd-lit 120ms linear var(--d) both; }
-@keyframes kd-lit { from { color: #f6f1ff; } to { color: var(--accent); text-shadow: 0 0 18px rgba(255, 122, 89, 0.6); } }
+@keyframes kd-lit { from { color: var(--ink); } to { color: var(--accent); text-shadow: 0 0 18px rgba(255, 95, 60, 0.6); } }
 .kd-mora.timed::before { content: ''; position: absolute; top: -30px; left: 50%; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 14px rgba(255, 207, 90, 0.9); opacity: 0; animation: kd-hop var(--len) ease-in-out var(--d) none; }
 @keyframes kd-hop { 0% { opacity: 1; transform: translateY(0); } 45% { opacity: 1; transform: translateY(-22px); } 100% { opacity: 1; transform: translateY(0); } }
 .kd-en { margin: 0; font-size: 28px; color: var(--muted); }

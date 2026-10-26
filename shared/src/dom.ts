@@ -4,6 +4,8 @@
 // wrapped in <span lang="ja"> (so the stylesheet's phrase-aware line breaking and Japanese font
 // apply), and blanks (＿＿＿) and number + counter pairs (400円, 1枚) become unbreakable units.
 
+import { autoFurigana } from './japanese/furigana.js';
+
 type Child = Node | string | number | null | undefined | false;
 type Attrs = Record<string, string | number | boolean | EventListener | null | undefined>;
 
@@ -98,9 +100,19 @@ function wrapJa(parts: (Node | string)[], inJapanese: boolean): Node {
 }
 
 /** Japanese with furigana from `[base, reading]` pairs (reading '' for kana). */
-export function ruby(jp: { text: string; furigana?: readonly (readonly [string, string])[] }, attrs: Attrs = {}): HTMLElement {
-  if (!jp.furigana?.length) return h('span', { lang: 'ja', ...attrs }, jp.text);
-  return h('span', { lang: 'ja', ...attrs }, jp.furigana.map(([base, reading]) => (reading ? h('ruby', {}, base, h('rt', {}, reading)) : base)));
+/** Whether ruby() can put furigana on this text (hand-written, or worked out from its kana). */
+export const hasReading = (jp: { text: string; kana?: string | null; furigana?: readonly (readonly [string, string])[] }): boolean =>
+  !!(jp.furigana?.length || (jp.kana && autoFurigana(jp.text, jp.kana)));
+
+/** An award title (はくしゅ賞, しりとり王) with furigana over its 賞 / 王 / 大賞. */
+export const awardTitle = (title: string): HTMLElement =>
+  ruby({ text: title, kana: title.replace(/大賞/g, 'たいしょう').replace(/賞/g, 'しょう').replace(/王/g, 'おう') });
+
+export function ruby(jp: { text: string; kana?: string | null; furigana?: readonly (readonly [string, string])[] }, attrs: Attrs = {}): HTMLElement {
+  // No hand-written segments: work them out from the kana reading when there is one.
+  const furigana = jp.furigana?.length ? jp.furigana : jp.kana ? autoFurigana(jp.text, jp.kana) : null;
+  if (!furigana?.length) return h('span', { lang: 'ja', ...attrs }, jp.text);
+  return h('span', { lang: 'ja', ...attrs }, furigana.map(([base, reading]) => (reading ? h('ruby', {}, base, h('rt', {}, reading)) : base)));
 }
 
 // ---- mounting ----
@@ -231,6 +243,10 @@ export const PHASE_LABELS: Record<string, string> = {
   finale: 'Finale',
   recap: 'Recap',
 };
+
+/** A shape per seat, so seats are told apart by more than colour (colour-blind safe). */
+export const SEAT_SHAPES = ['●', '▲', '■', '◆', '★', '♥', '✚', '✿'] as const;
+export const seatShape = (seat: number): string => SEAT_SHAPES[(seat - 1) % SEAT_SHAPES.length] ?? '';
 
 export const LEVEL_LABELS: Record<string, string> = { kana: 'かな', n5: 'N5', n4: 'N4' };
 

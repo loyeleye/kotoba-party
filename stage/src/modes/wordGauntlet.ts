@@ -58,7 +58,7 @@ function intro(view: RoomView): HTMLElement {
     h(
       'ol',
       { class: 'wg-rounds' },
-      step(1, 'Kanji Bluff', 'ほんもの？ うそ？', 'A real but obscure word: invent a meaning for it, then find the true one.'),
+      step(1, 'Kanji Bluff', 'ほんもの？　うそ？', 'A real but obscure word: invent a meaning for it, then find the true one.'),
       step(2, 'Lost in Translation', 'でんごん', 'One sentence, passed around in Japanese and English. Double points.'),
       step(3, 'Shiritori Showdown', 'しりとり', 'Say a word from the last kana. ん and you’re out. Last one standing wins.'),
     ),
@@ -171,7 +171,7 @@ function telephone(view: RoomView, game: WordGauntletView): HTMLElement {
     h(
       'ol',
       { class: 'wg-drift' },
-      h('li', { class: 'wg-drift-step start' }, h('span', { class: 'wg-flag' }, 'JP'), h('div', {}, h('p', { class: 'wg-drift-text', lang: 'ja' }, reveal.starter.text), h('p', { class: 'hint' }, `Start · ${reveal.starter.en}`))),
+      h('li', { class: 'wg-drift-step start' }, h('span', { class: 'wg-flag' }, 'JP'), h('div', {}, h('p', { class: 'wg-drift-text' }, ruby(reveal.starter)), h('p', { class: 'hint' }, `Start · ${reveal.starter.en}`))),
       reveal.steps.map((st, i) =>
         h(
           'li',

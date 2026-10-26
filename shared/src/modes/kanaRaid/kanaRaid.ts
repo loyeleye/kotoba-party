@@ -691,7 +691,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
     };
     give('fude.award.page-hunter', { text: 'ページ ハンター', en: 'Page Hunter' }, (p) => Object.values(p.tally).filter((t) => t.correct > 0).length);
     give('fude.award.combo-champion', { text: 'コンボ チャンピオン', en: 'Combo Champion' }, (p) => p.stats.comboHits);
-    give('fude.award.battle-cry', { text: 'おおごえしょう', en: 'Battle Cry' }, (p) => p.stats.shoutsSpoken);
+    give('fude.award.battle-cry', { text: 'おおごえ賞', en: 'Battle Cry' }, (p) => p.stats.shoutsSpoken);
     give('fude.award.boss-breaker', { text: 'ボス ブレイカー', en: 'Boss Breaker' }, (p) => p.stats.pieces);
     give('fude.award.exorcist', { text: 'おはらい マスター', en: 'Exorcist' }, (p) => p.stats.comebacks);
     return out;
