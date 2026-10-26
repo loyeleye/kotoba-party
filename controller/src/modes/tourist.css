@@ -1,0 +1,53 @@
+/* Who's the Tourist? (phone). Fits 360 px (328 px of content). Every class is tou- prefixed. */
+.tou-line { display: grid; gap: 2px; background: #fbf7ff; color: #1b1430; border-radius: 14px; padding: 12px 14px; }
+.tou-line p { margin: 0; overflow-wrap: anywhere; }
+.tou-line-jp { font-size: 24px; font-weight: 800; line-height: 1.25; }
+.tou-line-kana { font-size: 15px; color: #5b4e7a; }
+.tou-line-romaji { font-size: 15px; color: #2b4f9a; font-style: italic; }
+.tou-line-en { font-size: 15px; color: #5b4e7a; }
+.tou-line.small { padding: 8px 12px; }
+.tou-line.small .tou-line-jp { font-size: 18px; }
+.tou-line.answer { background: #233a30; color: var(--ink); }
+.tou-line.answer .tou-line-kana, .tou-line.answer .tou-line-en { color: var(--muted); }
+.tou-line.picked { outline: 3px solid var(--accent); }
+
+.tou-card { display: grid; gap: 4px; border-radius: 16px; padding: 14px; }
+.tou-card p { margin: 0; }
+.tou-card.local { background: var(--panel); border: 2px solid var(--good); }
+.tou-card.tourist { background: var(--panel); border: 2px solid var(--warn); }
+.tou-card-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.tou-card-place { font-size: 22px; font-weight: 800; }
+.tou-card-role { font-size: 20px; font-weight: 700; color: var(--warn); }
+.tou-card-role small, .tou-pn small { color: var(--muted); font-weight: 400; font-size: 14px; }
+.tou-pn-emoji { margin-right: 6px; }
+
+.tou-peek { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.tou-peek > summary { cursor: pointer; font-weight: 700; color: var(--muted); }
+.tou-peek[open] > summary { margin-bottom: 10px; }
+.tou-guess-box { border-color: var(--warn); }
+.tou-guess-box > summary { color: var(--warn); }
+.tou-bluffs { display: grid; gap: 8px; }
+.tou-plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 18px; }
+
+.tou-who { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tou-who-btn { margin: 0; text-align: center; font-weight: 800; overflow-wrap: anywhere; }
+.tou-step { margin: 0; font-weight: 800; }
+.tou-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.tou-tiles-wrap { display: grid; gap: 10px; }
+.tou-tiles { display: grid; gap: 8px; }
+.tou-tile { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--accent); background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+.tou-tile:active { background: #3a2230; }
+.tou-tile-jp { font-size: 18px; font-weight: 800; overflow-wrap: anywhere; }
+.tou-tile-en { font-size: 13px; color: var(--muted); }
+
+.tou-guess { display: grid; gap: 10px; }
+.tou-gplaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tou-gplace { display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border-radius: 12px; border: 2px solid var(--warn); background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+.tou-gplace-emoji { font-size: 30px; line-height: 1; }
+.tou-gplace-jp { font-size: 18px; font-weight: 800; }
+.tou-gplace-en { font-size: 12px; color: var(--muted); text-align: center; }
+
+.tou-actions { display: grid; gap: 10px; }
+.tou-call { width: 100%; }
+.tou-note { margin: 0; color: var(--warn); font-weight: 700; }
+.tou-ok { color: var(--good); text-align: center; }

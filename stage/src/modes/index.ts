@@ -8,6 +8,7 @@ import { concentrationStage } from './concentration.js';
 import { phraseBingoStage } from './phraseBingo.js';
 import { karaokeDuelStage } from './karaokeDuel.js';
 import { onsenMurderStage } from './onsenMurder.js';
+import { touristStage } from './tourist.js';
 import type { StageMode } from './types.js';
 
 export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
@@ -20,4 +21,5 @@ export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
   'phrase-bingo': phraseBingoStage,
   'karaoke-duel': karaokeDuelStage,
   'onsen-murder': onsenMurderStage,
+  tourist: touristStage,
 };

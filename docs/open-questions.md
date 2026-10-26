@@ -119,6 +119,7 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Phrase Bingo Theater (backlog) | [phrase-bingo.md](modes/phrase-bingo.md) | 20 | Pon |
 | Karaoke Duel (backlog) | [karaoke-duel.md](modes/karaoke-duel.md) | 18 | Chōchin-san |
 | Murder at the Onsen (backlog) | [onsen-murder.md](modes/onsen-murder.md) | 15 | Chōchin-san |
+| Who's the Tourist? (backlog) | [tourist.md](modes/tourist.md) | 20 | Chōchin-san |
 
 ## Content
 

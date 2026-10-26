@@ -25,6 +25,7 @@ import { lastTrainPolicy } from './policies/lastTrain.js';
 import { oogiriPolicy } from './policies/oogiri.js';
 import { phraseBingoPolicy } from './policies/phraseBingo.js';
 import { wordGauntletPolicy } from './policies/wordGauntlet.js';
+import { touristPolicy } from './policies/tourist.js';
 
 const { values } = parseArgs({
   options: {
@@ -75,6 +76,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
       return (sharedPhraseBingo ??= phraseBingoPolicy());
     case 'karaoke-duel':
       return karaokeDuelPolicy({ seed: seat });
+    case 'tourist':
+      return touristPolicy({ seed: seat });
     default:
       return undefined;
   }

@@ -8,6 +8,7 @@ import type { ConcentrationView } from './concentration/concentration.js';
 import type { PhraseBingoView } from './phraseBingo/phraseBingo.js';
 import type { KaraokeDuelView } from './karaokeDuel/karaokeDuel.js';
 import type { OnsenView } from './onsenMurder/onsenMurder.js';
+import type { TouristView } from './tourist/tourist.js';
 
-export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView };
-export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | DebugView;
+export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView };
+export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | DebugView;
