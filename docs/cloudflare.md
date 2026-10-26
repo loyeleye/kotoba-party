@@ -23,6 +23,14 @@ Routes › Edit and Zone › DNS › Edit if you add a custom domain).
 
 **A deploy ends every game in progress** (each room restarts), so deploy between parties.
 
+### Deploy on every push to main
+
+The live Worker is connected to this repo with Workers Builds (Worker › Settings › Builds): build
+command `npm run build`, deploy command `npx wrangler deploy`, production branch `main`. Every merge
+to `main` deploys. If merges stop deploying, check that the Cloudflare Workers and Pages GitHub app
+can see this repo (GitHub › Settings › Applications › Cloudflare Workers and Pages › Repository
+access). Without that access the dashboard still looks connected, but no build ever starts.
+
 ## Optional settings
 
 | Setting | How | What it does |
