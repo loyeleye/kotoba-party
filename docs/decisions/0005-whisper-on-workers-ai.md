@@ -1,6 +1,6 @@
 # 0005: Whisper on Cloudflare Workers AI for the live game
 
-**Status:** Proposed (Oct 26, 2026), waiting for Ladi's OK. Amends [0004](0004-self-hosted-speech-to-text.md).
+**Status:** Accepted (Oct 26, 2026, Ladi OK'd sending clips to Workers AI). Amends [0004](0004-self-hosted-speech-to-text.md).
 
 ## Context
 
