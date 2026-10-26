@@ -31,7 +31,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts` | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (yōkai sprites, Photo Caption pictures) | `stage/assets/yokai/`, `content/media/photo-caption/` | ⚠️ | Allowed; weak copyright protection; storefront disclosure |
+| 6 | AI art: PixelLab (yōkai sprites, Photo Caption pictures) | `stage/assets/yokai/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
 | 7 | AI art: Gemini (host portraits, backdrop) | `stage/assets/hosts/`, `stage/assets/studio-bg.jpg` | ❓ ⚠️ | Read Gemini API terms; paid tier; same copyright caveats |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
@@ -239,6 +239,9 @@ and keep the provenance in `stage/assets/manifest.json` (already done).
    better than all-AI.
 4. **Infringement is on us.** If a generated image happens to look like someone else's character, the
    provider's terms put that risk on the user. The eye check before committing covers most of it.
+
+**Decision (Ladi, 2026-10-26):** use PixelLab pixel art while the game is non-commercial, and
+commission the art before going commercial. Gemini art is on its way out (row 7).
 
 **Recommendation:** keep using AI pixel art (PixelLab) for now. Before selling, have the three hosts,
 the logo and the title screen hand-finished or commissioned, keep the AI sprites and Photo Caption
