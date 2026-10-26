@@ -1,7 +1,13 @@
 # Graphics
 
-First art pass (2026-10-26) for the stage: three host portraits, five pixel-art kana yōkai sprites
-and an optional studio backdrop. Everything was generated; nothing is hand-drawn yet.
+Art for the stage: three host portraits, five kana yōkai sprites and a studio backdrop. Everything is
+PixelLab pixel art, matching the Photo Caption pictures. Nothing is hand-drawn yet.
+
+**Style decision (Ladi, 2026-10-26):** pixel art from PixelLab for everything, while the game is
+non-commercial. Commission the art before going commercial (see
+[commercial-blockers.md](commercial-blockers.md), row 6). The first pass had glossy Gemini host
+portraits and a painted Gemini backdrop; those were replaced the same day after a side-by-side of
+Gemini, PixelLab and Gemini-drawn pixel art.
 
 Theme: a late-night variety show broadcast from a haunted TV studio. The studio's old dictionary
 came alive and its letters are kana yōkai (tsukumogami style). Playful-spooky and warm, never
@@ -13,63 +19,73 @@ Set in the environment only. They are never written to the repo, logged or print
 
 | Env var | Provider | Used for |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | Google Gemini API (`generativelanguage.googleapis.com`) | Host portraits, studio backdrop |
-| `PIXELLAB_API_KEY` | PixelLab (`api.pixellab.ai/v2`) | Pixel-art yōkai sprites |
+| `PIXELLAB_API_KEY` | PixelLab (`api.pixellab.ai/v2`) | Everything that ships |
+| `GEMINI_API_KEY` | Google Gemini API (`generativelanguage.googleapis.com`) | Optional: drafting a source image to convert. Nothing shipped comes straight from Gemini |
 
 ## What's here
 
 `stage/assets/manifest.json` lists every file with `path`, `what`, `generator`, `model`, the full
-`prompt`, plus the `params` sent to the API and the `post` step (resize, palette, JPEG quality).
+`prompt` (or the `source` image it was converted from), plus the `params` sent to the API and the
+`post` step (background removal, outline, upscale).
 The manifest is the source of truth. Edit a prompt there, then regenerate.
 
 | File | Size | Generator / model | Notes |
 | --- | --- | --- | --- |
-| `stage/assets/hosts/pon.png` | 512², ~95 KB | Gemini `gemini-3-pro-image` | Pon, tanuki stand-up MC (Oogiri Night) |
-| `stage/assets/hosts/chochin.png` | 512², ~70 KB | Gemini `gemini-3-pro-image` | Chōchin-san, lantern-ghost conductor (Last Train) |
-| `stage/assets/hosts/fude.png` | 512², ~110 KB | Gemini `gemini-3-pro-image` | Fude, living calligraphy brush (Kana Yōkai Raid) |
-| `stage/assets/studio-bg.jpg` | 1920×1080, ~95 KB | Gemini `gemini-3-pro-image` | Optional backdrop; centre and right are kept dark for text |
+| `stage/assets/hosts/pon.png` | 128², transparent | PixelLab `image-to-pixelart` | Pon, tanuki stand-up MC (Oogiri Night). Converted from the old Gemini portrait |
+| `stage/assets/hosts/chochin.png` | 128², transparent | PixelLab `pixflux` | Chōchin-san, lantern-ghost conductor (Last Train) |
+| `stage/assets/hosts/fude.png` | 128², transparent | PixelLab `pixflux` | Fude, living calligraphy brush (Kana Yōkai Raid) |
+| `stage/assets/studio-bg.png` | 320×180 drawn, saved 6× at 1920×1080, ~45 KB | PixelLab `image-to-pixelart` | Backdrop; converted from the old Gemini backdrop. Centre kept dark for text |
 | `stage/assets/yokai/yokai-blob.png` | 128², transparent | PixelLab `pixflux` | Round ghost; glyph goes on the belly |
 | `stage/assets/yokai/yokai-lantern.png` | 128², transparent | PixelLab `pixflux` | Chōchin-obake lantern; plain paper below the face |
 | `stage/assets/yokai/yokai-umbrella.png` | 128², transparent | PixelLab `pixflux` | Umbrella ghost (see Open questions) |
 | `stage/assets/yokai/yokai-scroll.png` | 128², transparent | PixelLab `pixflux` | Hanging scroll; large blank paper for a glyph |
 | `stage/assets/yokai/yokai-boss.png` | 192², transparent | PixelLab `pixflux` | Boss: the studio's old dictionary come alive |
 
-Host portraits have no transparency. They sit on a solid `#14101f` background (the stage
-background colour) with a soft spotlight glow, so they blend into the dark stage UI. Crop them to a
-circle or rounded square if you need to.
+Host portraits are transparent 128² sprites, like the yōkai. The stage shows them at 1× (128px) in a
+rounded square on `#14101f` with `image-rendering: pixelated`. Don't crop them to a circle: it cuts off
+arms and props.
+
+The backdrop is drawn at 320×180 and saved already scaled 6× (nearest neighbour), because a CSS
+background can't be made `pixelated` without affecting every image on the page.
 
 The yōkai sprites are generic bodies with no kana on them. The game draws a large kana glyph on top
 in a web font, which keeps the kana correct and lets one body serve every kana. Scale them with
-`image-rendering: pixelated` and whole-number factors (2×, 3×, 4×).
+`image-rendering: pixelated` and whole-number factors (2×, 3×, 4×). The same goes for the hosts.
 
 ## How they were made
 
-**Gemini.** `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image:generateContent`
-with `generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio, imageSize } }`.
-Portraits were 1:1 at `1K`, the backdrop 16:9 at `2K`. All three portraits share one style
-paragraph (in each prompt): bold clean outlines, flat colours with soft cel shading, a coral
-`#ff7a59` rim light and a mint `#57d9a3` glow, a `#14101f` background, and "no text, no letters".
-That last part is there because image models garble text, and garbled kana would be worse than
-none. The images were then resized to 512² (Lanczos) and quantised to a 256-colour PNG8. The
-backdrop was saved as a 1920×1080 JPEG at quality 72.
+**PixelLab `pixflux`** (`POST https://api.pixellab.ai/v2/create-image-pixflux`, synchronous, returns
+base64 PNG) drew the yōkai, Chōchin-san and Fude from text. The calls used `no_background: true`,
+`outline: "single color black outline"`, `shading: "medium shading"` (`"detailed shading"` for the
+boss), `detail: "medium detail"`, `view: "side"` and `text_guidance_scale: 8` (10 for Chōchin-san).
+Every yōkai prompt starts with a shared preamble ("Cute friendly Japanese yokai ghost sprite …, big
+blank flat smooth area on the front of the body for a text label, no text, no letters, no symbols").
+The host prompts share another ("Pixel art character portrait for a cozy-spooky Japanese late-night
+TV game show …, no text or letters"). The PNGs are only stripped of metadata, with no resampling.
 
-Gemini models this key can reach (as of 2026-10-26): `gemini-3-pro-image`, `gemini-3-pro-image-preview`,
-`gemini-3.1-flash-image`, `gemini-3.1-flash-image-preview`, `gemini-3.1-flash-lite-image`,
-`gemini-2.5-flash-image`. The Pro model was used for quality. Flash is cheaper for iterating.
+**PixelLab `image-to-pixelart`** (`POST https://api.pixellab.ai/v2/image-to-pixelart`) converted two
+earlier Gemini images, kept in `tools/art/sources/`:
 
-**PixelLab.** `POST https://api.pixellab.ai/v2/create-image-pixflux`. This endpoint is synchronous
-and returns base64 PNG. The calls used `no_background: true`, `outline: "single color black outline"`,
-`shading: "medium shading"` (`"detailed shading"` for the boss), `detail: "medium detail"`,
-`view: "side"` and `text_guidance_scale: 8`. Every yōkai prompt starts with a shared preamble
-("Cute friendly Japanese yokai ghost sprite …, big blank flat smooth area on the front of the
-body for a text label, no text, no letters, no symbols"). The PNGs are only stripped of metadata,
-with no resampling. Full docs: <https://api.pixellab.ai/v2/llms.txt> and
-<https://api.pixellab.ai/v2/docs>. Newer endpoints (`/generate-image-v2` Pro, `/create-image-pro-flash`)
-are asynchronous: they return a job id that you poll at `/background-jobs/{id}`. The script doesn't
-use them yet.
+- **Pon.** `pixflux` drew a raccoon or a red panda (pointed ears, ringed tail) in all seven text-only
+  attempts, across two prompts that said "tanuki, not a raccoon". Converting the old Gemini Pon
+  (256², `init_image_strength: 0`) kept his tanuki look. The result comes on a dark square, so the
+  script makes the background transparent (corner flood fill, 6% fuzz) and adds a 1px `#1a0f14`
+  outline to match the other sprites.
+- **Backdrop.** The old Gemini backdrop at 384×216, converted to 320×180, then upscaled 6×.
 
-Generations used in this pass: 4 with Gemini, 10 with PixelLab (5 first drafts, 3 regenerations
-of the blob, umbrella and scroll, then 2 more umbrella attempts that were rejected).
+Full PixelLab docs: <https://api.pixellab.ai/v2/llms.txt> and <https://api.pixellab.ai/v2/docs>.
+Newer endpoints (`/generate-image-v2` Pro, `/create-image-pro-flash`, `/image-to-pixelart-pro`) are
+asynchronous: they return a job id that you poll at `/background-jobs/{id}`. The script doesn't use
+them yet.
+
+**Gemini** (`gemini-3-pro-image`) made the two source images. The script can still call it
+(`generator: "gemini"`) to draft a new source image for `image-to-pixelart`, but nothing in the
+manifest uses it now. Gemini can also draw "16-bit pixel art" itself, and that was one of the three
+options compared; it reads well once snapped to a 128px grid, but PixelLab was chosen.
+
+Generations: first pass 4 with Gemini and 10 with PixelLab. Pixel-art pass (2026-10-26) about 21
+with PixelLab (host drafts, 7 Pon attempts, conversions, 3 backdrop drafts) and 3 with Gemini for the
+style comparison.
 
 ## Regenerate
 
@@ -84,47 +100,44 @@ npx tsx tools/art/generate.ts --seed 7 yokai-boss    # PixelLab seed override
 npx tsx tools/art/generate.ts --dry-run
 ```
 
-Generation is not deterministic. Neither provider was given a seed this time, so a rerun gives a
-new variant, not the same image. Look at every result before you commit it, and use `--out` to
+Generation is not deterministic. The manifest records each PixelLab seed, but a rerun of `pixflux`
+with the same seed and prompt still gave a different Chōchin-san and Fude, so treat a rerun as a new
+variant. The two `image-to-pixelart` conversions did come back the same. Look at every result before you commit it, and use `--out` to
 compare. If Node's `fetch` can't reach the APIs behind a proxy, run with `NODE_USE_ENV_PROXY=1`.
 
 ## Licensing and terms
+
+Tracked in [commercial-blockers.md](commercial-blockers.md): row 6 (PixelLab) and row 7 (Gemini).
 
 - **PixelLab.** Its Terms of Service (<https://www.pixellab.ai/termsofservice>, read 2026-10-26)
   say: "You own the copyrights to your creations, permitting usage for both commercial and
   non-commercial purposes", and "You retain ownership of any content you create using PixelLab.
   You are free to use, modify, and distribute the outputs … except for training other models
   without our explicit permission." The user is responsible for not infringing third-party rights.
-- **Google Gemini API.** I could not verify this. The Gemini API Additional Terms page
-  (<https://ai.google.dev/gemini-api/terms>) was blocked from this session (proxy 403 / DNS). From
-  memory, and to be confirmed: Google doesn't claim ownership of generated content, the user is
-  responsible for how it's used, the Generative AI Prohibited Use Policy applies, and on the free
-  tier prompts and outputs may be used to improve Google's products (the paid tier doesn't do this).
-  Images from Gemini image models carry an invisible **SynthID** watermark. Read the current terms
-  before shipping commercially.
+- **Google Gemini API.** No shipped file is raw Gemini output any more, but Pon and the backdrop are
+  PixelLab conversions of Gemini images, so Gemini's terms still apply to those two. The source images
+  sit in `tools/art/sources/` and aren't served. The Gemini terms are still unread (row 7). Redrawing
+  Pon and the backdrop from text alone, or commissioning them, would drop Gemini entirely.
 - In many jurisdictions (including the US Copyright Office's current position), purely
-  AI-generated images may not be protected by copyright, so others may be free to reuse them. If
-  the hosts become the game's identity, consider hand-finished or commissioned final art.
+  AI-generated images may not be protected by copyright, so others may be free to reuse them. That's
+  why the plan is to commission the hosts and key art before selling.
 
 ## Open questions for Ladi
 
-1. **Style direction.** The hosts are glossy "modern cartoon" and the yōkai are pixel art. Keep this
-   mix (portraits for hosts, pixel sprites for enemies), or move everything to one style? Pixel-art
-   hosts via PixelLab, or painted yōkai via Gemini, are both possible.
+1. ~~**Style direction.**~~ Decided 2026-10-26: PixelLab pixel art for everything.
 2. **Kasa-obake.** PixelLab drew a ghost wearing a wagasa umbrella like a hat, not a true one-eyed,
    one-legged umbrella yōkai, across three prompt variants. Keep it, or try PixelLab's Pro endpoint
    or a Gemini concept turned into pixel art (`/image-to-pixelart`)?
 3. **Chōchin-san's face.** The traditional chōchin-obake has one eye and a long tongue through a
    split in the paper. I gave him two kind eyes so he reads as friendly. Is the traditional look
    preferred?
-4. **Portrait backgrounds.** Should they be transparent cut-outs instead of the solid `#14101f`
-   (needs background removal), and does the stage want them square or circular?
+4. ~~**Portrait backgrounds.**~~ Now transparent sprites, shown in a rounded square at 128px.
 5. **Expressions and poses.** Do the hosts need extra states (happy, shocked, thinking) for
    reactions? That would be about 3 more generations per host, using the existing portrait as a
    reference image for consistency.
 6. **Animation.** PixelLab can animate characters (idle bob, hit, defeat). Should the yōkai get idle
    and defeat frames for Kana Yōkai Raid?
-7. **Backdrop.** Is it wanted at all, or does a flat `#14101f` keep the stage cleaner? It is dark,
-   but the floating pages are the brightest spots, so a dark scrim behind text may still be needed.
-8. **Final art.** Is AI art acceptable for a public release, or is this placeholder until an artist
-   is hired? (See the copyright note above.)
+7. **Backdrop.** Is it wanted at all, or does a flat `#14101f` keep the stage cleaner? It sits under
+   a 78–90% dark scrim. A brighter PixelLab draft (a lit stage with red curtains and spotlights) is an
+   option if the scrim is lightened.
+8. ~~**Final art.**~~ Decided 2026-10-26: AI pixel art while non-commercial; commission before selling.
