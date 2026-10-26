@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "gate": "vitest run tests/gate.test.ts tests/reconnect.test.ts",
-    "bots": "tsx tools/bots/cli.ts"
+    "bots": "tsx tools/bots/cli.ts",
+    "content:readings": "tsx tools/content-readings.ts"
   },
   "dependencies": {
     "qrcode": "^1.5.4",
