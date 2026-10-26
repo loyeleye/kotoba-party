@@ -647,6 +647,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     maxPlayers: 8,
     roundChoices: [...RULES.stopChoices],
     usesPack: false,
+    phrasebookTitle: 'Your travel survival kit',
   },
 
   setup(ctx, opts) {
