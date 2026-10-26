@@ -1,12 +1,13 @@
 // Fill a room with headless bots.
 //
-//   npm run bots -- --code BCDF                 # 7 bots join the room on the debug stage
+//   npm run bots -- --code BCDF --bots 3        # 3 bots join your room and play whatever game the VIP picks
 //   npm run bots -- --bots 8 --rounds 100       # make a room, play 100 rounds, report
 //   npm run bots -- --code BCDF --drop 30       # one bot loses signal for 30 s every few rounds
 //   npm run bots -- --mode oogiri --bots 5      # make a room and play one game of a real mode
 //
 // Options: --url (default http://localhost:3000), --code, --bots, --rounds, --drop <seconds>, --fast,
-// --mode <oogiri|last-train|kana-raid|word-gauntlet|concentration> and --games (real modes only).
+// --mode <oogiri|last-train|kana-raid|word-gauntlet|concentration|debug> and --games (real modes only).
+// With --code and no --mode, bots play any mode; without --code they default to the debug round.
 
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -30,26 +31,28 @@ const { values } = parseArgs({
     rounds: { type: 'string', default: '10' },
     drop: { type: 'string', default: '0' },
     fast: { type: 'boolean', default: false },
-    mode: { type: 'string', default: 'debug' },
+    mode: { type: 'string' },
     games: { type: 'string', default: '1' },
   },
 });
 
-const mode = values.mode as ModeId;
+// Joining someone's room with no mode named: play whatever they start.
+const anyMode = values.code !== undefined && values.mode === undefined;
+const mode = (values.mode ?? 'debug') as ModeId;
 if (!MODE_IDS.includes(mode)) {
   console.error(`Unknown mode ${values.mode}. Pick one of: ${MODE_IDS.join(', ')}.`);
   process.exit(1);
 }
-const realMode = mode !== 'debug';
+const realMode = mode !== 'debug' || anyMode;
 
 const url = values.url!.replace(/\/$/, '');
 const count = Number(values.bots ?? (values.code ? 7 : 8));
 const dropSeconds = Number(values.drop);
 
 /** A fresh policy per bot, so each keeps its own memory (Concentration remembers cards). */
-function policyFor(seat: number): ModePolicy | undefined {
+function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
   const content = () => loadContent(fileURLToPath(new URL('../../', import.meta.url)));
-  switch (mode) {
+  switch (id) {
     case 'oogiri':
       return oogiriPolicy();
     case 'last-train':
@@ -63,6 +66,19 @@ function policyFor(seat: number): ModePolicy | undefined {
     default:
       return undefined;
   }
+}
+
+/** Plays whichever mode the room is in, with one policy per mode made on first use. */
+function anyModePolicy(seat: number): ModePolicy {
+  const policies = new Map<ModeId, ModePolicy | undefined>();
+  return {
+    act(view, playerId) {
+      const id = view.game?.mode;
+      if (!id) return [];
+      if (!policies.has(id)) policies.set(id, policyFor(seat, id));
+      return policies.get(id)?.act(view, playerId) ?? [];
+    },
+  };
 }
 
 const script: BotScript = {
@@ -112,7 +128,7 @@ const bots: Bot[] = [];
 for (let i = 1; i <= count; i++) {
   const name = `bot${i}`;
   try {
-    const policy = policyFor(i);
+    const policy = anyMode ? anyModePolicy(i) : policyFor(i);
     const bot = await Bot.join({ baseUrl: url, code, name, ...(policy ? { policy } : { script }), deviceId: `cli-${code}-${name}` });
     bot.client.connect();
     bots.push(bot);

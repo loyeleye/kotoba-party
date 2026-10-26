@@ -36,7 +36,7 @@ npm start                 # builds the pages, serves on http://localhost:3000
 
 - Stage (TV or laptop): http://localhost:3000/stage
 - Phones: scan the QR on the stage, or open the server's address and type the code.
-- Fill the room with bots: `npm run bots -- --code ABCD` (7 bots join the room on the stage).
+- Fill seats with bots: `npm run bots -- --code ABCD --bots 3`; they play whatever game the VIP picks.
 - Watch bots play on their own: `npm run bots -- --mode oogiri --bots 5`, then open the stage it
   prints (any mode id works; without `--mode` bots play the debug round).
 
