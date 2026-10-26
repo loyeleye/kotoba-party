@@ -3,12 +3,12 @@
 .omi-guest-p small { color: var(--muted); font-weight: 400; font-size: 14px; }
 .omi-guest-p-emoji { font-size: 30px; line-height: 1; }
 
-.omi-q { display: grid; gap: 2px; background: #fff7fb; color: #2a1630; border-radius: 14px; padding: 12px 14px; }
+.omi-q { display: grid; gap: 2px; background: var(--paper); color: var(--paper-ink); border-radius: 14px; padding: 12px 14px; }
 .omi-q p { margin: 0; overflow-wrap: anywhere; }
 .omi-q-jp { font-size: 22px; font-weight: 800; line-height: 1.35; }
 .omi-q.small .omi-q-jp { font-size: 18px; }
 .omi-q-kana { font-size: 15px; color: #6b4a6f; }
-.omi-q-romaji { font-size: 14px; color: #2b4f9a; font-style: italic; margin: 0; }
+.omi-q-romaji { font-size: 14px; color: var(--romaji, var(--warn)); font-style: italic; margin: 0; }
 .omi-q-en { font-size: 14px; color: #6b4a6f; }
 .omi-sayfirst { color: var(--good); margin: 0; }
 .omi-count { color: var(--warn); font-weight: 800; text-align: center; margin: 0; }
@@ -32,7 +32,7 @@
 .omi-chip-keigo { background: #9fd8a8; color: #10241b; }
 .omi-chip-polite { background: #cfe7ff; color: #12263d; }
 .omi-chip-mixed { background: var(--warn); color: #1a1426; }
-.omi-chip-casual { background: #ff8fb1; color: #2a1630; }
+.omi-chip-casual { background: #ff8fb1; color: var(--paper-ink); }
 .omi-meter-p { position: relative; height: 18px; background: #2c2440; border-radius: 999px; overflow: hidden; }
 .omi-meter-p span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--warn), #9fd8a8); border-radius: 999px; }
 .omi-meter-p b { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #1a1426; }
@@ -40,7 +40,7 @@
 .omi-casual { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 15px; }
 .omi-casual small { display: block; color: var(--muted); font-size: 13px; }
 
-.omi-target { display: grid; gap: 3px; background: #fff7fb; color: #2a1630; border-radius: 14px; padding: 12px 14px; }
+.omi-target { display: grid; gap: 3px; background: var(--paper); color: var(--paper-ink); border-radius: 14px; padding: 12px 14px; }
 .omi-target p { margin: 0; overflow-wrap: anywhere; }
 .omi-target-label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #b23a64; margin: 0; }
 .omi-target-jp { font-size: 22px; font-weight: 800; line-height: 1.35; }

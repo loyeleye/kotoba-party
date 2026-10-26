@@ -25,7 +25,31 @@ function labelled(text: string): (HTMLElement | string)[] {
   return t.sub ? [main, h('small', { class: 'say-sub', lang: t.ja ? 'en' : 'ja' }, t.sub)] : [main];
 }
 
-export const canSpeak = (): boolean => speechReady() && localStorage.getItem('kotoba:quiet') !== '1';
+// Quiet mode is the player's lobby choice ("I can't talk right now"); main.ts passes it in. A mic the
+// browser refused stays refused for the rest of the visit, so later screens lead with typing too.
+let quiet = false;
+let micBlocked = false;
+export const setQuiet = (q: boolean): void => {
+  quiet = q;
+};
+export const isQuiet = (): boolean => quiet;
+
+export const canSpeak = (): boolean => speechReady() && !quiet && !micBlocked;
+
+type MicState = 'ready' | 'quiet' | 'blocked' | 'no-service';
+const micState = (): MicState => (quiet ? 'quiet' : micBlocked ? 'blocked' : speechReady() ? 'ready' : 'no-service');
+const CHIP: Record<MicState, string> = {
+  ready: '🎤 Mic ready',
+  quiet: '⌨️ Quiet mode: type or tap',
+  blocked: '🚫 Mic blocked: type or tap',
+  'no-service': '⌨️ No speech check tonight: type or tap',
+};
+
+/** One line saying how this phone answers right now, so the copy below it never asks for the impossible. */
+export function micChip(): HTMLElement {
+  const st = micState();
+  return h('p', { class: `mic-chip mic-${st}`, role: 'status' }, CHIP[st]);
+}
 
 /** What to tell the player when nothing usable came back. */
 export function missed(why: Exclude<Heard, { ok: true }>['why'] | 'blocked'): string {
@@ -51,7 +75,7 @@ export interface SpeakOptions {
 const MAX_TALK_MS = 6_000;
 
 export function speakBox(opts: SpeakOptions): HTMLElement {
-  const box = h('div', { class: 'speak' });
+  const box = h('div', { class: 'speak' }, micChip());
   const heard = h('p', { class: 'heard' });
   const actions = h('div', { class: 'speak-actions' });
 
@@ -68,7 +92,10 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       clip = null;
       if (!c) return;
       const wav = c.stop();
-      if (c.blocked) return void (heard.textContent = missed('blocked'));
+      if (c.blocked) {
+        micBlocked = true;
+        return void (heard.textContent = missed('blocked'));
+      }
       heard.textContent = '…';
       const r = await hear(wav);
       if (clip) return; // pressed again while this one was being checked
@@ -126,6 +153,6 @@ function typedFallback(opts: SpeakOptions, collapsed: boolean): HTMLElement {
     padHolder,
   );
   if (!collapsed) return form;
-  const details = h('details', { class: 'quiet' }, h('summary', {}, 'Can’t talk right now? Type it'), form);
+  const details = h('details', { class: 'quiet' }, h('summary', {}, 'Can’t talk right now? Type it instead'), form);
   return details;
 }

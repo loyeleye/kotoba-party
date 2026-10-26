@@ -470,7 +470,7 @@ function enterScore(s: OekakiState, ctx: ModeContext): void {
   scoreTurn(s, ctx);
   for (const p of ctx.players()) ctx.phrase(p.id, { itemId: real.id, text: real.text, kana: real.kana, en: real.en, outcome: 'seen' });
   // Fude's written bank is Raid-themed, so the only cue is the generic call-and-response
-  // ("みんなで！ せーの！"); the LLM host gets the real title to call out.
+  // ("みんなで！　せーの！"); the LLM host gets the real title to call out.
   ctx.cue({ host: 'fude', event: 'kakegoe_call', prompt: { text: real.text, kana: real.kana, en: real.en } });
 }
 

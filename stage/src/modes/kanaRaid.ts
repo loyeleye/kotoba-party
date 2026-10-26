@@ -42,7 +42,7 @@ const spriteFor = (id: string): string => {
 /** Where a yōkai is (in % of the arena from the left) a fraction of the way along its walk. */
 const leftAt = (frac: number) => 100 - Math.min(1, Math.max(0, frac)) * 108;
 
-function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean): HTMLElement | null {
+function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean, who: Map<string, string>): HTMLElement | null {
   const total = Math.max(1, y.escapeAt - y.spawnAt);
   const lane = index % 3;
   const sprite = y.leader ? 'yokai-umbrella' : spriteFor(y.id);
@@ -73,6 +73,8 @@ function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean): HTMLE
       y.leader ? h('div', { class: 'raid-leader', lang: 'ja' }, `👑 ${y.leader}`) : null,
     ),
     y.state === 'defeated' ? h('div', { class: 'raid-burst' }, '✦') : null,
+    // The catch chip: who got it and what it paid, rising out of the poof.
+    y.state === 'defeated' && y.caughtBy ? h('div', { class: 'raid-catch' }, `${who.get(y.caughtBy) ?? '?'} +${y.caughtPoints ?? 0}`) : null,
   );
 }
 
@@ -88,7 +90,7 @@ function inkStrip(view: RoomView, game: KanaRaidView, now: number): HTMLElement 
         'figure',
         { class: `raid-ink ${ink.ok ? (ink.clean ? 'clean' : 'ok') : 'miss'}` },
         inkSvg(ink.strokes, { strokeMs: 350, elapsedMs: Math.max(0, now - ink.at) }),
-        h('figcaption', {}, h('strong', {}, who.get(ink.playerId) ?? '?'), ink.ok ? h('span', { lang: 'ja' }, ` ${ink.char} ${ink.clean ? '✦' : '✓'}`) : ' ✗'),
+        h('figcaption', {}, h('strong', {}, who.get(ink.playerId) ?? '?'), ink.ok ? h('span', { lang: 'ja' }, ` ${ink.char} ${ink.clean ? '◎' : '○'}`) : ' ×'),
       ),
     ),
   );
@@ -104,6 +106,7 @@ function arena(view: RoomView, game: KanaRaidView): HTMLElement {
   const c = game.combo;
   const comboLeft = COMBO_WINDOW_MS - (now - c.lastAt);
   const comboLive = c.players >= 2 && c.count >= 2 && comboLeft > 0;
+  const who = names(view);
   return h(
     'div',
     { class: 'raid-stage' },
@@ -116,13 +119,15 @@ function arena(view: RoomView, game: KanaRaidView): HTMLElement {
         'span',
         { class: `raid-combo${comboLive ? ' live' : ''}`, style: comboLive ? `--fade:${comboLeft}ms` : '' },
         comboLive ? `COMBO ×${c.count}` : c.best ? `best combo ×${c.best}` : 'combo: hit together!',
+        // Drains over the real combo window; keyed by the last hit so each hit refills it.
+        comboLive ? h('span', { class: 'raid-combo-bar', 'data-key': `${c.lastAt}`, style: `--left:${(comboLeft / COMBO_WINDOW_MS).toFixed(3)};--fade:${comboLeft}ms` }) : null,
       ),
     ),
     h(
       'div',
       { class: `raid-arena${wide ? ' words' : ''}${ink ? ' ink' : ''}` },
       h('div', { class: 'raid-gate', title: 'The gate: yōkai that reach it escape' }, '⛩'),
-      game.horde.map((y, i) => yokaiEl(y, i, now, wide)),
+      game.horde.map((y, i) => yokaiEl(y, i, now, wide, who)),
     ),
     ink ? inkStrip(view, game, now) : null,
     view.phase === 'answer' ? h('p', { class: 'raid-how' }, game.waveInfo?.how ?? '') : null,
@@ -151,7 +156,7 @@ export const kanaRaidStage: StageMode<KanaRaidView> = {
   badge: (game, id) => {
     const pick = game.picks.find((p) => p.playerId === id);
     if (!pick) return '';
-    return game.wave === 0 ? `${pick.ready ? '✓ ' : ''}ch ${range(pick.chapters)}` : '';
+    return game.wave === 0 ? `${pick.ready ? '済 ' : ''}ch ${range(pick.chapters)}` : '';
   },
 
   render(view, game) {
@@ -167,7 +172,7 @@ export const kanaRaidStage: StageMode<KanaRaidView> = {
           h(
             'ul',
             { class: 'raid-picks' },
-            game.picks.map((p) => h('li', { class: p.ready ? 'ready' : '' }, h('strong', {}, who.get(p.playerId) ?? '?'), ` chapters ${range(p.chapters)}`, p.ready ? ' ✓' : '')),
+            game.picks.map((p) => h('li', { class: p.ready ? 'ready' : '' }, h('strong', {}, who.get(p.playerId) ?? '?'), ` chapters ${range(p.chapters)}`, p.ready ? h('span', { lang: 'ja' }, ' 済') : '')),
           ),
           game.ink ? h('p', { class: 'hint small' }, '🖌 Tonight ends in an Ink Storm: draw kana on your phones before the boss. (The VIP can switch it off.)') : null,
           game.placeholder ? h('p', { class: 'hint small' }, 'Using the built-in practice set (content not loaded).') : null,
@@ -238,7 +243,7 @@ function boss(game: KanaRaidView): HTMLElement {
         'div',
         { class: 'raid-boss-word', lang: 'ja' },
         b.pieces.map((x) =>
-          h('div', { class: `raid-piece${x.broken ? ' broken' : ''}` }, h('span', { class: 'raid-piece-char' }, x.char), h('span', { class: 'raid-piece-who' }, x.broken ? `✓ ${x.by ?? ''}` : (x.owner ?? '?'))),
+          h('div', { class: `raid-piece${x.broken ? ' broken' : ''}` }, h('span', { class: 'raid-piece-char' }, x.char), h('span', { class: 'raid-piece-who' }, x.broken ? `○ ${x.by ?? ''}` : (x.owner ?? '?'))),
         ),
       ),
     ),

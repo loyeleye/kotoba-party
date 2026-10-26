@@ -338,6 +338,7 @@ const GOOD_LABELS: Record<string, string> = {
   'name-intro': 'introduced yourself',
   honorific: 'honorific keigo',
   humble: 'humble keigo',
+  teinei: 'extra-polite ございます',
   prefix: 'お / ご on a word',
   aizuchi: 'a friendly aizuchi',
   cushion: 'a cushion word',
@@ -877,10 +878,10 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     };
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
     if (s.accepted) add(ctx.player(s.accepted), 'おちゃの しょうたい', 'Invited to Tea: the guest’s choice');
-    add(best((st) => st.meterTotal), 'おもてなし しょう', 'Best Manners: highest manners meter');
+    add(best((st) => st.meterTotal), 'おもてなし賞', 'Best Manners: highest manners meter');
     add(best((st) => st.votes), 'にんきもの', 'Most Charming: most votes');
     add(best((st) => st.keigo), 'けいご マスター', 'Keigo Master: most keigo answers');
-    add(best((st) => st.brave), 'ゆうき しょう', 'Bravest: most answers from memory');
+    add(best((st) => st.brave), 'ゆうき賞', 'Bravest: most answers from memory');
     return out;
   },
 };

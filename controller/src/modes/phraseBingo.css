@@ -6,14 +6,14 @@
 .pb-role-p { margin: 0; font-size: 18px; }
 .pb-role-p strong { color: var(--warn); }
 
-.pb-line { display: grid; gap: 2px; background: #fbf7ff; color: #1b1430; border-radius: 14px; padding: 12px 14px; }
+.pb-line { display: grid; gap: 2px; background: var(--paper); color: var(--paper-ink); border-radius: 14px; padding: 12px 14px; }
 .pb-line p { margin: 0; overflow-wrap: anywhere; }
 .pb-line-jp { font-size: 26px; font-weight: 800; line-height: 1.25; }
-.pb-line-kana { font-size: 16px; color: #5b4e7a; }
-.pb-line-romaji { font-size: 15px; color: #2b4f9a; font-style: italic; }
-.pb-line-en { font-size: 15px; color: #5b4e7a; }
+.pb-line-kana { font-size: 16px; color: var(--muted); }
+.pb-line-romaji { font-size: 15px; color: var(--romaji, var(--warn)); font-style: italic; }
+.pb-line-en { font-size: 15px; color: var(--muted); }
 .pb-line.small .pb-line-jp { font-size: 21px; }
-.pb-line.hidden { background: var(--panel); color: var(--ink); border: 1px dashed var(--warn); }
+.pb-line.hidden { --ink: var(--paper); --muted: #d6cbf4; --romaji: var(--warn); background: var(--panel); color: var(--ink); border: 1px dashed var(--warn); }
 .pb-line.hidden .pb-line-en { color: var(--ink); font-size: 18px; font-weight: 700; }
 .pb-line-hint { color: var(--warn); font-size: 18px; }
 
@@ -26,7 +26,7 @@
 .pb-heard.ok { color: var(--good); font-weight: 800; }
 .pb-done { color: var(--good); text-align: center; }
 .pb-ready-p { color: var(--good); text-align: center; }
-.pb-alert { margin: 0; background: var(--warn); color: #1b1430; font-weight: 800; border-radius: 10px; padding: 8px 12px; text-align: center; animation: pb-flash 0.5s ease-out; }
+.pb-alert { margin: 0; background: var(--warn); color: var(--paper-ink); font-weight: 800; border-radius: 10px; padding: 8px 12px; text-align: center; animation: pb-flash 0.5s ease-out; }
 @keyframes pb-flash { from { transform: scale(1.06); } }
 
 /* the bingo card: 3×3, fits 360 px (328 px of content) */
@@ -45,7 +45,7 @@ button.pb-cell:active { background: #3a2230; }
 .pb-cell.caught .pb-cell-buzz { color: var(--good); }
 .pb-cell.miss .pb-cell-buzz { color: var(--muted); }
 .pb-cell.daubed { background: #4a3a12; border-color: var(--warn); }
-.pb-cell.line { background: var(--warn); color: #1b1430; }
+.pb-cell.line { background: var(--warn); color: var(--paper-ink); }
 .pb-cell.line .pb-cell-en { color: #3b2f12; }
 .pb-who { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
 .pb-who p { margin: 0; }

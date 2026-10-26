@@ -200,6 +200,9 @@ export interface Yokai {
   leader?: string;
   /** Ink Storm: the twin's face the yōkai wears on stage (its true form is the answer). */
   mask?: string;
+  /** Who landed the last hit, and what that hit paid: the stage's catch chip. */
+  caughtBy?: string;
+  caughtPoints?: number;
 }
 
 interface Tally {
@@ -305,6 +308,8 @@ export interface YokaiView {
   endedAt: number | null;
   hitAt: number | null;
   leader?: string;
+  caughtBy?: string;
+  caughtPoints?: number;
 }
 
 export interface KanaRaidView {
@@ -691,7 +696,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
     };
     give('fude.award.page-hunter', { text: 'ページ ハンター', en: 'Page Hunter' }, (p) => Object.values(p.tally).filter((t) => t.correct > 0).length);
     give('fude.award.combo-champion', { text: 'コンボ チャンピオン', en: 'Combo Champion' }, (p) => p.stats.comboHits);
-    give('fude.award.battle-cry', { text: 'おおごえしょう', en: 'Battle Cry' }, (p) => p.stats.shoutsSpoken);
+    give('fude.award.battle-cry', { text: 'おおごえ賞', en: 'Battle Cry' }, (p) => p.stats.shoutsSpoken);
     give('fude.award.boss-breaker', { text: 'ボス ブレイカー', en: 'Boss Breaker' }, (p) => p.stats.pieces);
     give('fude.award.exorcist', { text: 'おはらい マスター', en: 'Exorcist' }, (p) => p.stats.comebacks);
     return out;
@@ -742,6 +747,7 @@ function yokaiView(y: Yokai): YokaiView {
     endedAt: y.endedAt,
     hitAt: y.hitAt,
     ...(y.leader ? { leader: y.leader } : {}),
+    ...(y.caughtBy ? { caughtBy: y.caughtBy, caughtPoints: y.caughtPoints ?? 0 } : {}),
   };
 }
 
@@ -1314,6 +1320,7 @@ function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok:
     if (target.hp === 0) {
       target.state = 'defeated';
       target.endedAt = now;
+      target.caughtBy = playerId;
       p.stats.defeats += 1;
       s.defeatedTotal += 1;
       cue(s, ctx, 'raid_hit');
@@ -1333,6 +1340,7 @@ function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok:
     p.wave.spoken += 1;
   }
   phraseOf(how === 'spoken' ? 'said' : a.retry ? 'retry' : 'seen');
+  if (target?.caughtBy === playerId && target.endedAt === now) target.caughtPoints = base + bonus;
   return { attackId: a.id, ok: true, kind: a.kind, char: info.char, hear: info.hear, points: base + bonus, damage, tip: null, combo: teamCombo ? c.count : 0, splash, retryNext: false };
 }
 

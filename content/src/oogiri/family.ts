@@ -287,12 +287,12 @@ export const familyPrompts: OogiriPrompt[] = [
     packId: 'family',
     round: 'head-to-head',
     versions: {
-      kana: { text: "「ただいま。」「おかえりなさい。」…あれ？ いえに ＿＿＿が います！", kana: "「ただいま。」「おかえりなさい。」…あれ？ いえに ＿＿＿が います！", en: "\"I'm home.\" \"Welcome home.\" ...Huh? There's ___ in the house!" },
-      n5: { text: "「ただいま。」「おかえりなさい。」…あれ？ 家族は りょこうです。家に ＿＿＿が います！", kana: "「ただいま。」「おかえりなさい。」…あれ？ かぞくは りょこうです。いえに ＿＿＿が います！", en: "\"I'm home.\" \"Welcome home.\" ...Wait. My family is away on a trip. There's ___ in the house!", furigana: [['「ただいま。」「おかえりなさい。」…あれ？ ', ''], ['家族', 'かぞく'], ['は りょこうです。', ''], ['家', 'いえ'], ['に ＿＿＿が います！', '']] },
+      kana: { text: "「ただいま。」「おかえりなさい。」…あれ？　いえに ＿＿＿が います！", kana: "「ただいま。」「おかえりなさい。」…あれ？　いえに ＿＿＿が います！", en: "\"I'm home.\" \"Welcome home.\" ...Huh? There's ___ in the house!" },
+      n5: { text: "「ただいま。」「おかえりなさい。」…あれ？　家族は りょこうです。家に ＿＿＿が います！", kana: "「ただいま。」「おかえりなさい。」…あれ？　かぞくは りょこうです。いえに ＿＿＿が います！", en: "\"I'm home.\" \"Welcome home.\" ...Wait. My family is away on a trip. There's ___ in the house!", furigana: [['「ただいま。」「おかえりなさい。」…あれ？　', ''], ['家族', 'かぞく'], ['は りょこうです。', ''], ['家', 'いえ'], ['に ＿＿＿が います！', '']] },
     },
     fitTileIds: ['family.ojisan', 'family.neko', 'family.tomodachi', 'family.ojiisan'],
     swerveTileIds: ['family.obake', 'family.kappa', 'family.zonbi'],
-    exampleAnswer: { text: "「ただいま。」「おかえりなさい。」…あれ？ 家族は りょこうです。家に カッパが います！", kana: "「ただいま。」「おかえりなさい。」…あれ？ かぞくは りょこうです。いえに カッパが います！", en: "\"I'm home.\" \"Welcome home.\" ...Wait. My family is away on a trip. There's a kappa in the house!", furigana: [['「ただいま。」「おかえりなさい。」…あれ？ ', ''], ['家族', 'かぞく'], ['は りょこうです。', ''], ['家', 'いえ'], ['に カッパが います！', '']] },
+    exampleAnswer: { text: "「ただいま。」「おかえりなさい。」…あれ？　家族は りょこうです。家に カッパが います！", kana: "「ただいま。」「おかえりなさい。」…あれ？　かぞくは りょこうです。いえに カッパが います！", en: "\"I'm home.\" \"Welcome home.\" ...Wait. My family is away on a trip. There's a kappa in the house!", furigana: [['「ただいま。」「おかえりなさい。」…あれ？　', ''], ['家族', 'かぞく'], ['は りょこうです。', ''], ['家', 'いえ'], ['に カッパが います！', '']] },
     pattern: 'Nが います: someone is there.',
   },
   {
@@ -622,7 +622,7 @@ export const familyPrompts: OogiriPrompt[] = [
     },
     fitTileIds: ['family.neru', 'family.shizuka', 'family.obaasan', 'family.kazoku'],
     swerveTileIds: ['family.obake', 'family.ninja', 'family.pengin'],
-    exampleAnswer: { text: "世界で いちばん 静かな 家族。どうして？ みんな おばけですから。", kana: "せかいで いちばん しずかな かぞく。どうして？ みんな おばけですから。", en: "The quietest family in the world. Why? Because they're all ghosts.", furigana: [['世界', 'せかい'], ['で いちばん ', ''], ['静', 'しず'], ['かな ', ''], ['家族', 'かぞく'], ['。どうして？ みんな おばけですから。', '']] },
+    exampleAnswer: { text: "世界で いちばん 静かな 家族。どうして？　みんな おばけですから。", kana: "せかいで いちばん しずかな かぞく。どうして？　みんな おばけですから。", en: "The quietest family in the world. Why? Because they're all ghosts.", furigana: [['世界', 'せかい'], ['で いちばん ', ''], ['静', 'しず'], ['かな ', ''], ['家族', 'かぞく'], ['。どうして？　みんな おばけですから。', '']] },
     pattern: '〜から: because.',
   },
   {

@@ -3,10 +3,7 @@
 .lt-kicker { margin: 0; color: var(--accent); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 14px; }
 .lt-jp { display: grid; gap: 4px; }
 .lt-jp p { margin: 0; }
-.lt-jp-text { font-size: 22px; font-weight: 700; line-height: 1.6; }
-.lt-jp.big .lt-jp-text { font-size: 28px; }
-.lt-jp-kana { color: var(--muted); font-size: 17px; }
-.lt-jp-en { color: var(--muted); font-size: 15px; }
+.lt-jp.big .jpv-main { font-size: 28px; }
 .lt-jp rt { font-size: 11px; color: var(--muted); }
 .lt-romaji { margin: 0; color: var(--warn); font-size: 18px; }
 .lt-route { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 19px; }

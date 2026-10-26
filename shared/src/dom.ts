@@ -4,6 +4,8 @@
 // wrapped in <span lang="ja"> (so the stylesheet's phrase-aware line breaking and Japanese font
 // apply), and blanks (＿＿＿) and number + counter pairs (400円, 1枚) become unbreakable units.
 
+import { autoFurigana } from './japanese/furigana.js';
+
 type Child = Node | string | number | null | undefined | false;
 type Attrs = Record<string, string | number | boolean | EventListener | null | undefined>;
 
@@ -46,10 +48,13 @@ const HAS_JA = new RegExp(`[${JA_CHAR}\\uff3f]`);
  * One pass over a string: a blank with the particle and mark that follow it, a number with its
  * counter, or a run of Japanese (spaces between Japanese words stay inside the run).
  */
+// One Japanese character, unless it is an opening bracket right before a blank: that bracket rides
+// with the blank, so 「 never ends a line (行末禁則).
+const JA_ONE = `(?![「『（](?:＿|_{3}))[${JA_CHAR}]`;
 const PIECES = new RegExp(
-  `(＿+|_{3,})([ぁ-ゖ]{0,2}[。、！？」』）]?)` +
+  `([「『（]?)(＿+|_{3,})([ぁ-ゖ]{0,2}[。、！？」』）]*)` +
     `|(\\d[\\d,.]*\\s?(?:[円枚人回個本匹時分秒点番歳階杯日月年冊台]|えん|まい|ばん|にん))` +
-    `|((?:[A-Za-z]+(?=[${JA_CHAR}]))?[${JA_CHAR}]+(?:[ \\u3000]+[${JA_CHAR}]+)*)`,
+    `|((?:[A-Za-z]+(?=[${JA_CHAR}]))?(?:${JA_ONE})+(?:[ \\u3000]+(?:${JA_ONE})+)*)`,
   'g',
 );
 
@@ -62,19 +67,19 @@ export function jpNodes(text: string, inJapanese = false): (Node | string)[] {
     const at = m.index ?? 0;
     if (at > last) out.push(text.slice(last, at));
     last = at + m[0].length;
-    if (m[1] !== undefined) {
+    if (m[2] !== undefined) {
       const blank = document.createElement('span');
       blank.className = 'jp-blank';
       blank.setAttribute('aria-label', 'blank');
       blank.textContent = '＿＿＿';
-      if (!m[2]) out.push(wrapJa([blank], inJapanese));
-      else out.push(nowrap([blank, m[2]], inJapanese));
-    } else if (m[3] !== undefined) {
-      out.push(nowrap([m[3]], inJapanese));
+      if (!m[1] && !m[3]) out.push(wrapJa([blank], inJapanese));
+      else out.push(nowrap([...(m[1] ? [m[1]] : []), blank, ...(m[3] ? [m[3]] : [])], inJapanese));
+    } else if (m[4] !== undefined) {
+      out.push(nowrap([m[4]], inJapanese));
     } else if (inJapanese) {
-      out.push(m[4]!);
+      out.push(m[5]!);
     } else {
-      out.push(wrapJa([m[4]!], false));
+      out.push(wrapJa([m[5]!], false));
     }
   }
   if (last < text.length) out.push(text.slice(last));
@@ -98,9 +103,19 @@ function wrapJa(parts: (Node | string)[], inJapanese: boolean): Node {
 }
 
 /** Japanese with furigana from `[base, reading]` pairs (reading '' for kana). */
-export function ruby(jp: { text: string; furigana?: readonly (readonly [string, string])[] }, attrs: Attrs = {}): HTMLElement {
-  if (!jp.furigana?.length) return h('span', { lang: 'ja', ...attrs }, jp.text);
-  return h('span', { lang: 'ja', ...attrs }, jp.furigana.map(([base, reading]) => (reading ? h('ruby', {}, base, h('rt', {}, reading)) : base)));
+/** Whether ruby() can put furigana on this text (hand-written, or worked out from its kana). */
+export const hasReading = (jp: { text: string; kana?: string | null; furigana?: readonly (readonly [string, string])[] }): boolean =>
+  !!(jp.furigana?.length || (jp.kana && autoFurigana(jp.text, jp.kana)));
+
+/** An award title (はくしゅ賞, しりとり王) with furigana over its 賞 / 王 / 大賞. */
+export const awardTitle = (title: string): HTMLElement =>
+  ruby({ text: title, kana: title.replace(/大賞/g, 'たいしょう').replace(/賞/g, 'しょう').replace(/王/g, 'おう') });
+
+export function ruby(jp: { text: string; kana?: string | null; furigana?: readonly (readonly [string, string])[] }, attrs: Attrs = {}): HTMLElement {
+  // No hand-written segments: work them out from the kana reading when there is one.
+  const furigana = jp.furigana?.length ? jp.furigana : jp.kana ? autoFurigana(jp.text, jp.kana) : null;
+  if (!furigana?.length) return h('span', { lang: 'ja', ...attrs }, jp.text);
+  return h('span', { lang: 'ja', ...attrs }, furigana.map(([base, reading]) => (reading ? h('ruby', {}, base, h('rt', {}, reading)) : base)));
 }
 
 // ---- mounting ----
@@ -232,6 +247,24 @@ export const PHASE_LABELS: Record<string, string> = {
   recap: 'Recap',
 };
 
+/** A shape per seat, so seats are told apart by more than colour (colour-blind safe). */
+export const SEAT_SHAPES = ['●', '▲', '■', '◆', '★', '♥', '✚', '✿'] as const;
+export const seatShape = (seat: number): string => SEAT_SHAPES[(seat - 1) % SEAT_SHAPES.length] ?? '';
+
 export const LEVEL_LABELS: Record<string, string> = { kana: 'かな', n5: 'N5', n4: 'N4' };
 
 export const HOST_NAMES: Record<string, string> = { pon: 'ポン', chochin: 'ちょうちんさん', fude: 'フデ' };
+
+// ---- reveal pacing ----
+
+/** Each element enters `stepMs` after the one before it (the .beat-in animation in the stage CSS). */
+export function stagger<T extends HTMLElement>(els: T[], stepMs = 160, startMs = 0): T[] {
+  els.forEach((el, i) => {
+    el.classList.add('beat-in');
+    el.style.animationDelay = `${startMs + i * stepMs}ms`;
+  });
+  return els;
+}
+
+/** Beat n of a reveal sheet, as an inline style: things land one beat apart, not all at once. */
+export const beat = (n: number, beatMs = 700): string => `animation-delay:${n * beatMs}ms`;

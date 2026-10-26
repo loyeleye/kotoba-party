@@ -5,11 +5,11 @@
 // The stage redraws on every update, so the count-in, ball and fill are CSS animations with
 // delays computed from the server's clock: a redraw picks them up where they were.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
 import type { KaraokeDuelView, LineView, TakeView } from '../../../shared/src/modes/karaokeDuel/karaokeDuel.js';
 import { hasKanji } from '../../../shared/src/japanese/kana.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
-import { audioReady, audioSupported, fanfare, isMuted, playTurn, setMuted, stopAll, unlockAudio } from './karaokeAudio.js';
+import { audioReady, audioSupported, fanfare, outputLatencyMs, isMuted, playTurn, setMuted, stopAll, unlockAudio } from './karaokeAudio.js';
 import type { StageMode } from './types.js';
 
 // ---------- server clock ----------
@@ -54,7 +54,7 @@ function lyricLine(line: LineView, elapsed: number | null, romaji: boolean, cls 
   return h(
     'div',
     { class: `kd-line ${cls}` },
-    hasKanji(line.text) ? h('p', { class: 'kd-text', lang: 'ja' }, line.text) : null,
+    hasKanji(line.text) ? h('p', { class: 'kd-text' }, ruby(line)) : null,
     h('p', { class: 'kd-morae' }, words),
     h('p', { class: 'kd-en' }, line.en),
   );
@@ -200,7 +200,7 @@ function songCard(view: RoomView, game: KaraokeDuelView): HTMLElement {
           'div',
           { class: 'kd-sheet-line' },
           h('span', { class: 'kd-sheet-jp', lang: 'ja' }, line.kana),
-          hasKanji(line.text) ? h('span', { class: 'kd-sheet-text', lang: 'ja' }, line.text) : null,
+          hasKanji(line.text) ? ruby(line, { class: 'kd-sheet-text' }) : null,
           game.romaji ? h('span', { class: 'kd-sheet-ro' }, line.romaji) : null,
           h('span', { class: 'kd-sheet-en' }, line.en),
         ),
@@ -216,7 +216,7 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
   const line = song.lines[turn.line]!;
   const off = offset(game);
   const serverNow = Date.now() + off;
-  const elapsed = serverNow - turn.lineAt;
+  const elapsed = serverNow - turn.lineAt - outputLatencyMs();
   const localLineAt = turn.lineAt - off;
   playTurn({
     key: `${view.phaseSeq}:${turn.no}`,
@@ -308,7 +308,7 @@ function finale(view: RoomView, game: KaraokeDuelView): HTMLElement {
   return h(
     'div',
     { class: 'kd-card' },
-    h('p', { class: 'kd-title' }, '🎤 お疲れさま! That’s the show'),
+    h('p', { class: 'kd-title' }, '🎤 お疲れさま！ That’s the show'),
     h(
       'ol',
       { class: 'kd-final' },

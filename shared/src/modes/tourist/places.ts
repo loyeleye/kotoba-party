@@ -201,7 +201,7 @@ export const PLACES: readonly Place[] = [
     emoji: '🍜',
     name: { text: 'ラーメン屋', kana: 'ラーメンや', en: 'ramen shop', furigana: [['ラーメン', ''], ['屋', 'や']] },
     accepted: ['ラーメン'],
-    roles: [k('てんちょう', 'the owner'), k('アルバイト', 'the part-timer'), k('おなかが すいた ひと', 'a starving customer'), k('ラーメン マニア', 'a ramen fanatic'), k('となりの ひと', 'the person in the next seat')],
+    roles: [k('たいしょう', 'the owner (the boss of a ramen counter)'), k('アルバイト', 'the part-timer'), k('おなかが すいた ひと', 'a starving customer'), k('ラーメン マニア', 'a ramen fanatic'), k('となりの ひと', 'the person in the next seat')],
     questions: [
       ['kana', 'how', k('あついですか。', 'Is it hot?')],
       ['n5', 'yesno', t('ならびますか。', 'ならびますか。', 'Do you have to queue?')],
@@ -443,7 +443,7 @@ export const PLACES: readonly Place[] = [
       ['kana', 'how', k('せまいです。', "It's small.")],
       ['n5', 'how', t('ちょっと せまいですが、あたたかいです。', 'ちょっと せまいですが、あたたかいです。', "It's a bit small, but cosy.")],
       ['kana', 'where', k('ひみつ！', 'Secret!')],
-      ['n5', 'where', t('駅から あるいて 十分です。', 'えきから あるいて じゅっぷんです。', "It's ten minutes' walk from the station.")],
+      ['n5', 'where', t('駅から あるいて 10分です。', 'えきから あるいて じゅっぷんです。', "It's ten minutes' walk from the station.")],
     ],
   }),
   place({

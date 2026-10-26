@@ -20,10 +20,12 @@ import {
   melodyFrames,
   moraSimilarity,
   parseTake,
+  SANG_IT_QUALITY,
   pitchScore,
   pronScore,
   scoreTake,
   timingScore,
+  TYPED_SHARE,
   type Take,
 } from '../shared/src/modes/karaokeDuel/scoring.js';
 import { lineMs, romajiMorae, SONGS, splitMorae, type SongLine } from '../shared/src/modes/karaokeDuel/songs.js';
@@ -256,11 +258,21 @@ describe('Karaoke Duel: timing and the whole take', () => {
     expect(s.quality).toBe(50);
   });
 
+  it('takes an honour-system "I sang it" tap at a small fixed score', () => {
+    const take = parseTake({ utterance: { via: 'tap', text: 'ignored' } });
+    expect('error' in take).toBe(false);
+    if ('error' in take) return;
+    expect(take.utterance.text).toBe('');
+    const score = scoreTake(LINE, SONG.bpm, 4000, take, 'kana');
+    expect(score.quality).toBe(SANG_IT_QUALITY);
+    expect(score.quality).toBeLessThan(100 * TYPED_SHARE);
+  });
+
   it('refuses malformed takes outright', () => {
     const ok = { ...perfect(LINE, SONG.bpm) } as unknown as Record<string, unknown>;
     expect('error' in parseTake(ok)).toBe(false);
     const bad: Record<string, unknown>[] = [
-      { ...ok, utterance: { via: 'tap', text: 'x' } },
+      { ...ok, utterance: { via: 'shout', text: 'x' } },
       { ...ok, utterance: { via: 'speech', text: 'x'.repeat(500) } },
       { ...ok, pitch: Array(MAX_FRAMES + 1).fill(60) },
       { ...ok, pitch: [60, Number.NaN] },

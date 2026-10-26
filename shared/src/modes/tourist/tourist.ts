@@ -989,7 +989,7 @@ export const touristMode: Mode<TouristState, TouristView> = {
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
     add(best('sharpEyes'), 'めいたんてい', 'Great Detective: most votes for the real tourist');
     add(best('escaped'), 'へんそうの たつじん', 'Master of Disguise: most rounds won as the tourist');
-    add(best('spoken'), 'おしゃべり おう', 'Chatterbox: most questions and answers said out loud');
+    add(best('spoken'), 'おしゃべり王', 'Chatterbox: most questions and answers said out loud');
     return out;
   },
 };

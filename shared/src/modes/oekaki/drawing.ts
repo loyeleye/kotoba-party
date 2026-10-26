@@ -13,6 +13,8 @@ export const OEKAKI_LIMITS: InkLimits = { strokes: 48, points: 96, total: 720 };
 
 /** The phone's colours, by index. Ink first (the default). The server only ever sees indexes. */
 export const PALETTE = ['#1b1712', '#d64541', '#2f6fd6', '#2e9e5b', '#f2a516', '#8e5bd6'] as const;
+/** Swatch names, so the colours never depend on telling hues apart (くろ・あか・あお・みどり・きいろ・むらさき). */
+export const PALETTE_NAMES = ['black', 'red', 'blue', 'green', 'yellow', 'purple'] as const;
 
 /** Less ink than this (total stroke length, as a share of the pad) is a tap, not a drawing. */
 export const MIN_INK = 0.05;

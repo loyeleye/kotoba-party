@@ -35,6 +35,17 @@ function context(): AudioContext | null {
 /** Where the backing track plays: the shared effects bus. */
 const out = (): AudioNode => getSound()!.sfx;
 
+/**
+ * How late the speakers are behind the audio clock (TV soundbars can add 100 ms or more): the
+ * lyrics shift by this so the ball lands when the note is heard, not when it is scheduled.
+ */
+export function outputLatencyMs(): number {
+  const c = context();
+  if (!c || c.state !== 'running') return 0;
+  const s = (c as AudioContext & { outputLatency?: number }).outputLatency ?? c.baseLatency;
+  return Number.isFinite(s) ? Math.min(500, Math.max(0, s * 1000)) : 0;
+}
+
 onMuteChange((muted) => {
   if (muted) stopAll();
 });

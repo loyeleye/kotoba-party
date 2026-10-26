@@ -134,7 +134,8 @@ export interface AnswerCard {
   english: boolean;
   /** Only in the viewer's own view: this is my answer. */
   mine?: boolean;
-  /** Kana level only: romaji, so the player can read the answers out and vote. */
+  /** Kana level only: the reading and its romaji, so the player can read the answers out and vote. */
+  kana?: string;
   romaji?: string;
   // From the encore on:
   authorId?: string;

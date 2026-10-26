@@ -278,7 +278,7 @@ export const CARDS: readonly CharacterCard[] = [
     job: k('おみせの うけつけ', 'shop greeter'),
     hobbies: [k('てを ふる こと', 'waving'), k('おひるね', 'naps')],
     quirk: 'Has waved one paw non-stop since 1987. Says いらっしゃいませ in their sleep.',
-    greeting: k('いらっしゃいませ！ あ、しつれいしました。まねきねこの フクです。', "Welcome in! Oh, excuse me. I'm Fuku the lucky cat."),
+    greeting: k('いらっしゃいませ！　あ、しつれいしました。まねきねこの フクです。', "Welcome in! Oh, excuse me. I'm Fuku the lucky cat."),
     questions: [
       {
         id: 'manekineko.shop',
@@ -309,7 +309,7 @@ export const CARDS: readonly CharacterCard[] = [
       },
     ],
     appeal: [k('いっしょに おかいものを', 'shopping together'), k('いっしょに おひるねを', 'a nap together'), k('いっしょに てを ふる れんしゅうを', 'waving practice together')],
-    accept: k('{name}さん、また おこし ください！ ずっと てを ふって まって います。', "{name}, please come again! I'll be waving the whole time."),
+    accept: k('{name}さん、また おこし ください！　ずっと てを ふって まって います。', "{name}, please come again! I'll be waving the whole time."),
     status: 'draft',
   },
   {
@@ -341,7 +341,7 @@ export const CARDS: readonly CharacterCard[] = [
       },
       {
         id: 'tengu.travel',
-        ask: { n5: k('どこに いきたいですか。', 'Where would you like to go?'), n4: k('どちらに いらっしゃりたいですか。', 'Where would you like to go? (honorific)') },
+        ask: { n5: k('どこに いきたいですか。', 'Where would you like to go?'), n4: k('どちらへ おでかけに なりたいですか。', 'Where would you like to go? (honorific)') },
         kind: 'wh',
         fills: [k('うみに', 'to the sea'), k('きょうとに', 'to Kyoto'), k('おんせんに', 'to a hot spring'), k('つきに', 'to the moon')],
         endings: { polite: polite(k('いきたいです。', 'want to go (polite)'), [k('まいりたいです。', 'want to go (humble)'), 'n4']), casual: [{ jp: k('いきたい！', 'wanna go!') }, { jp: k('いきたいな。', 'wanna go, I think') }] },
@@ -382,7 +382,7 @@ export const CARDS: readonly CharacterCard[] = [
       },
       {
         id: 'yukidaruma.heat',
-        ask: { n5: k('あついのは だいじょうぶですか。', 'Are you OK with hot weather?'), n4: k('あつい ところは だいじょうぶで いらっしゃいますか。', 'Are you all right in hot places? (honorific)') },
+        ask: { n5: k('あついのは だいじょうぶですか。', 'Are you OK with hot weather?'), n4: k('あつい ところは おすきですか。', 'Do you like hot places? (polite)') },
         kind: 'yesno',
         fills: [k('だいじょうぶ', "I'm fine with it"), k('ちょっと にがて', "it's not for me"), k('だいすき', 'I love it')],
         endings: nounEndings(),
@@ -391,7 +391,7 @@ export const CARDS: readonly CharacterCard[] = [
       },
     ],
     appeal: [k('いっしょに ゆきあそびを', 'playing in the snow together'), k('いっしょに スキーを', 'skiing together'), k('いっしょに かまくらづくりを', 'building a snow hut together')],
-    accept: k('{name}さん、うれしくて ちょっと とけそうです！ ぜひ また あいましょう。', "{name}, I'm so happy I might melt! Let's meet again."),
+    accept: k('{name}さん、うれしくて ちょっと とけそうです！　ぜひ また あいましょう。', "{name}, I'm so happy I might melt! Let's meet again."),
     status: 'draft',
   },
   {
@@ -401,14 +401,14 @@ export const CARDS: readonly CharacterCard[] = [
     job: k('ライフコーチ', 'life coach'),
     hobbies: [k('おきあがる こと', 'getting back up'), k('ジョギング', 'jogging')],
     quirk: 'Falls down seven times, gets up eight. Only one eye is painted in: they are waiting for a wish to come true.',
-    greeting: k('はじめまして！ だるまの コロリンです。ななころび やおきです！', "Nice to meet you! I'm Kororin the daruma. Fall seven times, get up eight!"),
+    greeting: k('はじめまして！　だるまの コロリンです。ななころびやおきです！', "Nice to meet you! I'm Kororin the daruma. Fall seven times, get up eight!"),
     questions: [
       {
         id: 'daruma.dream',
         ask: { n5: k('ゆめは なんですか。', "What's your dream?"), n4: k('しょうらいの ゆめを うかがっても いいですか。', 'May I ask about your dream for the future? (humble)') },
         kind: 'wh',
         lead: k('わたしの ゆめは', 'my dream is'),
-        fills: [k('せかいりょこう', 'travelling the world'), k('にほんごの せんせい', 'being a Japanese teacher'), k('ラーメンや', 'a ramen shop'), k('うちゅうひこうし', 'being an astronaut')],
+        fills: [k('せかいりょこう', 'travelling the world'), k('にほんごの せんせい', 'being a Japanese teacher'), k('ラーメンやさん', 'running a ramen shop'), k('うちゅうひこうし', 'being an astronaut')],
         endings: nounEndings(),
         example: { kana: k('せかいりょこうです。', "It's travelling the world."), n5: k('わたしの ゆめは せかいりょこうです。', 'My dream is to travel the world.'), n4: k('そうですね、わたしの ゆめは せかいりょこうで ございます。', 'Let me see, my dream is to travel the world. (extra polite)') },
         keigo: 'kiku',
@@ -433,7 +433,7 @@ export const CARDS: readonly CharacterCard[] = [
       },
     ],
     appeal: [k('いっしょに ジョギングを', 'jogging together'), k('いっしょに たいそうを', 'exercises together'), k('いっしょに おまいりを', 'a shrine visit together')],
-    accept: k('{name}さん、もう かたほうの めも かきました！ ゆめが かないました！', "{name}, I've painted in my other eye! My wish came true!"),
+    accept: k('{name}さん、もう かたほうの めも かきました！　ゆめが かないました！', "{name}, I've painted in my other eye! My wish came true!"),
     status: 'draft',
   },
   {
@@ -474,7 +474,7 @@ export const CARDS: readonly CharacterCard[] = [
       },
     ],
     appeal: [k('いっしょに おちゃかいを', 'a tea party together'), k('いっしょに おそうじを', 'cleaning together'), k('いっしょに ダンスを', 'dancing together')],
-    accept: k('{name}さん、ピピッ！ うれしいです！ よろしく おねがいします。', '{name}, beep! I am delighted! I look forward to it.'),
+    accept: k('{name}さん、ピピッ！　うれしいです！　よろしく おねがいします。', '{name}, beep! I am delighted! I look forward to it.'),
     status: 'draft',
   },
 ];

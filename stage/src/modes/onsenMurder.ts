@@ -2,7 +2,8 @@
 // answer (held back for a beat, then the English), the shared notebook, the accusation and the
 // confession. Suspects speak with the browser's Japanese voice, each at their own pitch.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, hasReading, ruby } from '../../../shared/src/dom.js';
+import { itemPic, suspectPic, victimPic } from '../../../shared/src/art.js';
 import type { OnsenView } from '../../../shared/src/modes/views.js';
 import type { SuspectView } from '../../../shared/src/modes/onsenMurder/onsenMurder.js';
 import { calledName } from '../../../shared/src/modes/onsenMurder/questions.js';
@@ -58,7 +59,7 @@ const nameOf = (view: RoomView, id: string | null | undefined): string => view.p
 const san = (s: SuspectView): string => calledName(s).text;
 
 function jpBlock(t: JpText, cls = ''): HTMLElement {
-  return h('div', { class: `om-jp ${cls}` }, h('span', { class: 'om-ja', lang: 'ja' }, t.text), t.kana !== t.text ? h('span', { class: 'om-kana', lang: 'ja' }, t.kana) : null, h('span', { class: 'om-en' }, t.en));
+  return h('div', { class: `om-jp ${cls}` }, ruby(t, { class: 'om-ja' }), t.kana !== t.text && !hasReading(t) ? h('span', { class: 'om-kana', lang: 'ja' }, t.kana) : null, h('span', { class: 'om-en' }, t.en));
 }
 
 function suspectCard(view: RoomView, game: OnsenView, s: SuspectView, opts: { active?: boolean; confused?: boolean; votes?: string[]; culprit?: boolean; dim?: boolean } = {}): HTMLElement {
@@ -66,11 +67,11 @@ function suspectCard(view: RoomView, game: OnsenView, s: SuspectView, opts: { ac
   return h(
     'div',
     { class: cls },
-    h('span', { class: 'om-face' }, s.emoji),
+    suspectPic(s, 'om-face'),
     h('span', { class: 'om-name', lang: 'ja' }, san(s)),
     h('span', { class: 'om-role' }, `${s.name.en} · ${s.role.en}`),
     s.asked.length && !opts.votes ? h('span', { class: 'om-asked' }, s.asked.map((i) => INTENT_ICON[i]).join(' ')) : null,
-    opts.confused ? h('span', { class: 'om-bubble om-confused', lang: 'ja' }, 'え？ もう いちど おねがいします。', h('small', {}, 'Huh? Once more, please.')) : null,
+    opts.confused ? h('span', { class: 'om-bubble om-confused', lang: 'ja' }, 'え？　もう いちど おねがいします。', h('small', {}, 'Huh? Once more, please.')) : null,
     opts.votes
       ? h(
           'span',
@@ -104,7 +105,7 @@ function notebook(view: RoomView, game: OnsenView, opts: { reveal?: boolean; fre
             h(
               'li',
               { class: `${opts.reveal && c.key ? 'key' : ''} ${fresh === c.jp.text ? 'fresh om-appear' : ''}`.trim(), style: fresh === c.jp.text ? opts.freshStyle : null },
-              h('span', { class: 'om-clue-ja', lang: 'ja' }, c.jp.text),
+              ruby(c.jp, { class: 'om-clue-ja' }),
               h('span', { class: 'om-clue-en' }, c.jp.en, h('span', { class: 'muted' }, ` · ${nameOf(view, c.by)}`)),
             ),
           ),
@@ -118,9 +119,9 @@ function caseStrip(game: OnsenView): HTMLElement {
   return h(
     'div',
     { class: 'om-case' },
-    h('span', { class: 'om-victim' }, c.victim.emoji),
-    h('div', { class: 'om-case-text' }, h('span', { class: 'om-title', lang: 'ja' }, c.title.text), h('span', { class: 'om-sub' }, `${c.title.en} · ${c.victim.found.en}`)),
-    h('span', { class: 'om-item', title: c.item.name.en }, c.item.emoji, h('small', { lang: 'ja' }, c.item.name.text)),
+    victimPic(c.id, c.victim.emoji, 'om-victim'),
+    h('div', { class: 'om-case-text' }, ruby(c.title, { class: 'om-title' }), h('span', { class: 'om-sub' }, `${c.title.en} · ${c.victim.found.en}`)),
+    h('span', { class: 'om-item', title: c.item.name.en }, itemPic(c.id, c.item.emoji, 'om-item-pic'), h('small', {}, ruby(c.item.name))),
   );
 }
 
@@ -131,8 +132,8 @@ function introScreen(view: RoomView, game: OnsenView): HTMLElement {
   return h(
     'div',
     { class: 'om-stage om-intro' },
-    h('p', { class: 'om-kicker', lang: 'ja' }, '温泉殺人事件 · Murder at the Onsen'),
-    h('div', { class: 'om-file' }, h('span', { class: 'om-victim big' }, c.victim.emoji), h('div', {}, jpBlock(c.title, 'om-file-title'), jpBlock(c.setting), jpBlock({ ...c.victim.found, text: `${c.victim.name.text}は ${c.victim.found.text}`, kana: `${c.victim.name.kana}は ${c.victim.found.kana}` }))),
+    h('p', { class: 'om-kicker', lang: 'ja' }, ruby({ text: '温泉殺人事件', furigana: [['温泉', 'おんせん'], ['殺人', 'さつじん'], ['事件', 'じけん']] }), ' · Murder at the Onsen'),
+    h('div', { class: 'om-file' }, victimPic(c.id, c.victim.emoji, 'om-victim big'), h('div', {}, jpBlock(c.title, 'om-file-title'), jpBlock(c.setting), jpBlock({ ...c.victim.found, text: `${c.victim.name.text}は ${c.victim.found.text}`, kana: `${c.victim.name.kana}は ${c.victim.found.kana}` }))),
     lineup(view, game),
     h('p', { class: 'om-line' }, `Take turns questioning the suspects in Japanese, on your phone. Then name the culprit! Evidence: ${c.item.emoji} ${c.item.name.en}.`),
     game.fallback ? h('p', { class: 'muted' }, '(placeholder case: no cases loaded)') : null,
@@ -154,7 +155,7 @@ function turnScreen(view: RoomView, game: OnsenView): HTMLElement {
         { class: 'om-main' },
         h('p', { class: 'om-banner' }, `🎤 ${who}’s turn: pick a suspect and ask in Japanese`, h('span', { class: 'muted' }, ` · question ${turn?.no ?? 0} of ${turn?.total ?? 0}`)),
         lineup(view, game, { confusedId: turn?.miss?.suspectId ?? null }),
-        turn?.miss ? h('p', { class: 'om-line muted' }, `Heard “${turn.miss.heard}”. One more try…`) : h('p', { class: 'om-line muted' }, 'Asked so far: 📍 where · ❓ doing what · 👀 who they saw · 🕙 bedtime · 💬 the victim · 🔎 the evidence'),
+        turn?.miss ? h('p', { class: 'om-line muted' }, `Heard “${turn.miss.heard}”. One more try…`) : h('p', { class: 'om-line om-legend' }, h('span', { class: 'muted' }, 'Questions to ask: '), ['📍 where', '❓ doing what', '👀 who they saw', '🕙 bedtime', '💬 the victim', '🔎 the evidence'].map((t) => h('span', { class: 'om-chip' }, t))),
       ),
       notebook(view, game),
     ),
@@ -172,18 +173,18 @@ function answerScreen(view: RoomView, game: OnsenView): HTMLElement {
     { class: 'om-q' },
     h('span', { class: 'om-who' }, `${nameOf(view, cur.playerId)} → ${san(suspect)}${cur.via === 'speech' ? ' 🎤' : cur.via === 'tap' ? ' 🧩' : ''}`),
     h('span', { class: 'om-heard', lang: 'ja' }, `「${cur.heard}」`),
-    h('span', { class: 'om-natural' }, cur.guessed ? 'Best guess: ' : 'Natural: ', h('span', { lang: 'ja' }, cur.natural.text), h('span', { class: 'muted' }, ` · ${cur.natural.en}`)),
+    h('span', { class: 'om-natural' }, cur.guessed ? 'Best guess: ' : 'Natural: ', ruby(cur.natural), h('span', { class: 'muted' }, ` · ${cur.natural.en}`)),
   );
   const thinking = h('span', { class: 'om-think', style: `animation-delay: ${-elapsed}ms; --think: ${game.thinkMs}ms` }, '…');
   const answer = h(
     'div',
     { class: 'om-a' },
-    h('span', { class: 'om-face' }, suspect.emoji),
+    suspectPic(suspect, 'om-face'),
     h(
       'div',
       { class: 'om-bubble om-answer' },
       thinking,
-      h('span', { class: 'om-ja om-appear', lang: 'ja', style: appearAfter(game.thinkMs, elapsed) }, cur.answer.text),
+      ruby(cur.answer, { class: 'om-ja om-appear', style: appearAfter(game.thinkMs, elapsed) }),
       cur.answer.kana !== cur.answer.text ? h('span', { class: 'om-kana om-appear', lang: 'ja', style: appearAfter(game.thinkMs, elapsed) }, cur.answer.kana) : null,
       h('span', { class: 'om-en om-appear', style: appearAfter(game.thinkMs + game.subtitleMs, elapsed) }, cur.answer.en),
     ),
@@ -217,7 +218,7 @@ function accuseScreen(view: RoomView, game: OnsenView): HTMLElement {
         'div',
         { class: 'om-main' },
         h('p', { class: 'om-banner om-accuse' }, '🔦 Who did it? Say it on your phone:'),
-        h('p', { class: 'om-say', lang: 'ja' }, 'はんにんは ○○さんです！', h('small', {}, 'The culprit is ___!')),
+        h('p', { class: 'om-say', lang: 'ja' }, 'はんにんは ', h('span', { class: 'om-slot', 'aria-label': 'name' }, '？'), 'さんです！', h('small', {}, 'The culprit is ___!')),
         lineup(view, game),
         h(
           'p',
@@ -268,7 +269,7 @@ function finaleScreen(view: RoomView, game: OnsenView): HTMLElement {
         h(
           'div',
           { class: 'om-bubble om-confession' },
-          r.confession.map((l, i) => h('div', { class: 'om-appear', style: appearAfter(1_500 + i * 2_200, elapsed) }, h('span', { class: 'om-ja', lang: 'ja' }, l.text), h('span', { class: 'om-en' }, l.en))),
+          r.confession.map((l, i) => h('div', { class: 'om-appear', style: appearAfter(1_500 + i * 2_200, elapsed) }, ruby(l, { class: 'om-ja' }), h('span', { class: 'om-en' }, l.en))),
         ),
         h(
           'div',

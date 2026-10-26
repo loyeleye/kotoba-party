@@ -713,7 +713,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
     const thief = best('steals');
     if (thief) out.push({ playerId: thief.id, name: thief.name, title: 'よこどり キング', en: 'Steal King: most pairs stolen' });
     const voice = best('spoken');
-    if (voice) out.push({ playerId: voice.id, name: voice.name, title: 'おおごえ しょう', en: 'Big Voice: most pairs said aloud' });
+    if (voice) out.push({ playerId: voice.id, name: voice.name, title: 'おおごえ賞', en: 'Big Voice: most pairs said aloud' });
     const sleuth = s.solvedBy ? ctx.player(s.solvedBy) : undefined;
     if (sleuth) out.push({ playerId: sleuth.id, name: sleuth.name, title: 'えの たんてい', en: 'Picture Detective: guessed the hidden picture' });
     return out;
