@@ -1,0 +1,46 @@
+/* Last Train on the phone. Big targets, readable at arm's length, fine at 360px. */
+.lt-phone { display: grid; gap: 14px; }
+.lt-kicker { margin: 0; color: var(--accent); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 14px; }
+.lt-jp { display: grid; gap: 4px; }
+.lt-jp p { margin: 0; }
+.lt-jp-text { font-size: 22px; font-weight: 700; line-height: 1.6; }
+.lt-jp.big .lt-jp-text { font-size: 28px; }
+.lt-jp-kana { color: var(--muted); font-size: 17px; }
+.lt-jp-en { color: var(--muted); font-size: 15px; }
+.lt-jp rt { font-size: 11px; color: var(--muted); }
+.lt-romaji { margin: 0; color: var(--warn); font-size: 17px; font-style: italic; }
+.lt-route { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 19px; }
+.lt-route small { color: var(--muted); }
+.lt-task-head { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.lt-chip { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 15px; font-weight: 700; margin: 0; }
+.lt-chip.warn { border-color: var(--warn); color: var(--warn); }
+.lt-chip.ghost { border-color: #9fb7ff; color: #c9d6ff; }
+.lt-banner { margin: 0; padding: 10px 12px; border-radius: 12px; background: #4a1f2a; color: #ffd6d6; font-weight: 800; }
+.lt-clock { position: relative; height: 26px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+.lt-clock-fill { position: absolute; inset: 0 auto 0 0; background: var(--good); transition: width 0.2s linear; }
+.lt-clock.low .lt-clock-fill { background: var(--accent); }
+.lt-clock-label { position: relative; display: block; text-align: center; font-weight: 900; font-size: 16px; line-height: 26px; color: var(--ink); text-shadow: 0 1px 2px #000; }
+.lt-visual { margin: 0; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--line); font-size: 17px; }
+.lt-hint { padding: 10px 12px; border-radius: 12px; background: #2b2440; border-left: 4px solid var(--warn); display: grid; gap: 4px; }
+.lt-hint p { margin: 0; font-size: 17px; }
+.lt-listen { display: grid; gap: 8px; }
+.lt-listen-text[hidden] { display: none; }
+.lt-task.retry .talk { background: var(--warn); color: #2a1f05; }
+.lt-dash .talk { padding: 22px 16px; }
+.lt-live { display: grid; gap: 10px; }
+.lt-live:empty { display: none; }
+.lt-vote { display: grid; gap: 8px; padding: 12px; border-radius: 14px; border: 2px solid var(--accent); background: var(--panel); }
+.lt-vote p { margin: 0; }
+.lt-heard { font-size: 20px; }
+.lt-vote-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.lt-vote-btns .primary { padding: 14px; }
+.lt-vote-note { margin: 0; color: var(--muted); }
+.lt-vote-note.good, .lt-good { color: var(--good); font-weight: 700; margin: 0; }
+.lt-haunt { display: grid; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid #6b7cc4; background: #1b1f3a; }
+.lt-haunt p { margin: 0; }
+.lt-haunt-btns { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.lt-haunt-btns button { min-height: 48px; }
+.lt-points { color: var(--good); }
+.lt-echo { display: grid; gap: 8px; }
+.lt-dashbar { height: 18px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+.lt-dashbar-fill { height: 100%; background: linear-gradient(90deg, var(--warn), var(--good)); }
