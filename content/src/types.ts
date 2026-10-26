@@ -317,6 +317,63 @@ export interface LastTrainScenario {
 }
 
 // ---------------------------------------------------------------------------
+// Murder at the Onsen (backlog mode)
+
+/** What a question is after. Every suspect can be asked each one; see shared/src/modes/onsenMurder/questions.ts. */
+export type OnsenIntent = 'where' | 'what' | 'who' | 'when' | 'victim' | 'item';
+
+/** A suspect's scripted answer to one kind of question. */
+export interface OnsenAnswer {
+  jp: JpText;
+  /** The clue this answer puts in the notebook, if any. Two answers may point at the same clue. */
+  clueId?: string;
+}
+
+export interface OnsenSuspect {
+  /** Stable within the case, e.g. 'tanaka'. */
+  id: string;
+  /** Name without さん (the accusation adds it): { text: 'たなか', kana: 'たなか', en: 'Tanaka' }. */
+  name: JpText;
+  role: JpText;
+  emoji: string;
+  /** Pitch and rate for the stage's browser voice (1 = default), so suspects sound different. */
+  voice: { pitch: number; rate: number };
+  /** English character notes for the optional LLM lead-in. Never shown. */
+  persona: string;
+  /** Scripted answers by question. A missing one gets the case's shrug line. */
+  answers: Partial<Record<OnsenIntent, OnsenAnswer>>;
+}
+
+export interface OnsenClue {
+  id: string;
+  /** One short notebook line. */
+  jp: JpText;
+  /** Part of the solution (highlighted at the reveal). */
+  key?: boolean;
+}
+
+/** A short whodunit, hand-written, with every fact a suspect can say. */
+export interface OnsenCase {
+  id: string;
+  title: JpText;
+  /** One line that sets the scene. */
+  setting: JpText;
+  victim: { name: JpText; emoji: string; found: JpText };
+  /** The piece of evidence players can ask about ("Whose is this …?"). `keys` are kana the question matcher looks for. */
+  item: { name: JpText; emoji: string; keys: string[] };
+  suspects: OnsenSuspect[];
+  clues: OnsenClue[];
+  culpritId: string;
+  /** The culprit's confession, line by line. */
+  confession: JpText[];
+  /** How the key clues point at the culprit, in English, for the reveal. */
+  solution: string;
+  /** What a suspect says to a question they have no scripted answer for. */
+  shrug: JpText;
+  status: ReviewStatus;
+}
+
+// ---------------------------------------------------------------------------
 // Hosts
 
 export type HostId = 'pon' | 'chochin' | 'fude';
@@ -370,7 +427,13 @@ export type HostEvent =
   | 'train_revive'
   | 'train_last_stop_twist'
   | 'platform_dash'
-  | 'room_overrule';
+  | 'room_overrule'
+  // Murder at the Onsen
+  | 'onsen_case' // the case file opens
+  | 'onsen_turn' // a player's turn to question a suspect
+  | 'onsen_clue' // a question found a new clue
+  | 'onsen_accuse' // the accusation opens
+  | 'onsen_reveal'; // the culprit is revealed
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 

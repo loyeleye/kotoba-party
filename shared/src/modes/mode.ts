@@ -18,6 +18,7 @@ import type {
   Level,
   LookAlikeSet,
   MinimalPair,
+  OnsenCase,
   OogiriPrompt,
   SetPhraseTile,
   TopicPack,
@@ -40,6 +41,8 @@ export interface ContentLibrary {
   lastTrainScenarios: readonly LastTrainScenario[];
   hostLines: readonly HostLine[];
   hostAwards: readonly HostAward[];
+  /** Murder at the Onsen's hand-written cases. */
+  onsenCases: readonly OnsenCase[];
   /** Phase 0 placeholder prompts, used by the debug mode. */
   debugPrompts: readonly { id: string; text: string; subtitle?: string }[];
 }
@@ -58,6 +61,7 @@ export const EMPTY_CONTENT: ContentLibrary = {
   lastTrainScenarios: [],
   hostLines: [],
   hostAwards: [],
+  onsenCases: [],
   debugPrompts: [],
 };
 

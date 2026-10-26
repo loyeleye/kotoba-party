@@ -1,8 +1,10 @@
 import { fileURLToPath } from 'node:url';
 import { loadContent } from './content.js';
-import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, llmFromEnv, type BankLine } from '../ai/index.js';
+import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine } from '../ai/index.js';
 import { aiVoice, bankVoice, hostDirector } from './host.js';
 import { inkCoachDirector } from './ink.js';
+import { suspectDirector } from './onsen.js';
+import type { Room } from './room.js';
 import { createReader } from './reading.js';
 import { createKotobaServer } from './server.js';
 
@@ -26,8 +28,18 @@ const server = createKotobaServer({
   onCues: hostDirector(aiVoice(ai, bankVoice(content))),
   onPhase: (room) => room.state.phase === 'intro' && ai.newGame(room.code),
   onRoomClosed: (room) => ai.closeRoom(room.code),
-  // Ink Storm's vision second look on drawings, only with an LLM; it shares the game's budget.
-  onCommit: llm ? inkCoachDirector(createInkCoach({ llm }), { budget: (code) => ai.budget(code) }) : undefined,
+  // Only with an LLM, sharing the game's budget: Ink Storm's vision second look on drawings,
+  // and the Onsen suspects' in-character lead-ins.
+  onCommit: llm
+    ? (() => {
+        const ink = inkCoachDirector(createInkCoach({ llm }), { budget: (code) => ai.budget(code) });
+        const suspects = suspectDirector(createSuspectVoice({ llm }), { budget: (code) => ai.budget(code) });
+        return (room: Room) => {
+          ink(room);
+          suspects(room);
+        };
+      })()
+    : undefined,
   audio: (id) => ai.audio(id),
   reader: await createReader(),
   staticDir: `${root}dist`,

@@ -19,6 +19,7 @@ import { MODE_IDS, type ModeId } from '../../shared/src/protocol.js';
 import { Bot, Director, politeScript, type BotScript, type ModePolicy } from './bot.js';
 import { concentrationPolicy } from './policies/concentration.js';
 import { karaokeDuelPolicy } from './policies/karaokeDuel.js';
+import { onsenMurderPolicy } from './policies/onsenMurder.js';
 import { kanaRaidPolicy } from './policies/kanaRaid.js';
 import { lastTrainPolicy } from './policies/lastTrain.js';
 import { oogiriPolicy } from './policies/oogiri.js';
@@ -65,6 +66,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
       return kanaRaidPolicy();
     case 'word-gauntlet':
       return wordGauntletPolicy(content());
+    case 'onsen-murder':
+      return onsenMurderPolicy();
     case 'concentration':
       return concentrationPolicy();
     case 'phrase-bingo':

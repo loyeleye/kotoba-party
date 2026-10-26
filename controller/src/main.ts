@@ -53,6 +53,8 @@ const ERRORS: Record<string, string> = {
   'not-allowed': 'You can’t do that right now.',
   'not-eligible': 'You can’t do that right now.',
   'not-playing': 'You’re not in this game. Join the next one!',
+  'bad-suspect': 'Pick a suspect first.',
+  'already-accused': 'You already named a culprit.',
 };
 
 let lastView: RoomView | null = null;

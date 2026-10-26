@@ -173,4 +173,35 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.platform_dash.03', host: 'chochin', event: 'platform_dash', jp: { text: 'いちばんのりは だれですか？', kana: 'いちばんのりは だれですか？', en: 'Who will be first aboard?' }, status: 'draft' },
   { id: 'chochin.platform_dash.04', host: 'chochin', event: 'platform_dash', jp: { text: 'ゆうれいさんも、まだ チャンスが あります！', kana: 'ゆうれいさんも、まだ チャンスが あります！', en: 'Ghosts, you still have a chance!' }, status: 'draft' },
   { id: 'chochin.platform_dash.05', host: 'chochin', event: 'platform_dash', jp: { text: 'ドアが しまります！ はしって ください！', kana: 'ドアが しまります！ はしって ください！', en: 'The doors are closing! Run!' }, status: 'draft' },
+  // Murder at the Onsen: Chōchin-san is off duty at the inn and plays detective's narrator.
+  // onsen_case
+  { id: 'chochin.onsen_case.01', host: 'chochin', event: 'onsen_case', jp: { text: 'じけんです！ ゆらゆら。', kana: 'じけんです！ ゆらゆら。', en: 'We have a case! Flicker, flicker.' }, status: 'draft' },
+  { id: 'chochin.onsen_case.02', host: 'chochin', event: 'onsen_case', jp: { text: 'おんせんで、じけんが ありました。', kana: 'おんせんで、じけんが ありました。', en: 'Something happened at the hot spring.' }, status: 'draft' },
+  { id: 'chochin.onsen_case.03', host: 'chochin', event: 'onsen_case', jp: { text: 'はんにんは この なかに います。', kana: 'はんにんは この なかに います。', en: 'The culprit is among them.' }, status: 'draft' },
+  { id: 'chochin.onsen_case.04', host: 'chochin', event: 'onsen_case', jp: { text: 'みなさま、たんていに なって ください。', kana: 'みなさま、たんていに なって ください。', en: 'Everyone, please be detectives.' }, status: 'draft' },
+  { id: 'chochin.onsen_case.05', host: 'chochin', event: 'onsen_case', jp: { text: 'しつもんは にほんごで おねがいします。', kana: 'しつもんは にほんごで おねがいします。', en: 'Ask your questions in Japanese, please.' }, status: 'draft' },
+  // onsen_turn
+  { id: 'chochin.onsen_turn.01', host: 'chochin', event: 'onsen_turn', jp: { text: '{name}さま、しつもん どうぞ。', kana: '{name}さま、しつもん どうぞ。', en: '{name}, your question, please.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.onsen_turn.02', host: 'chochin', event: 'onsen_turn', jp: { text: '{name}さま、だれに ききますか？', kana: '{name}さま、だれに ききますか？', en: '{name}, who will you ask?' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.onsen_turn.03', host: 'chochin', event: 'onsen_turn', jp: { text: 'つぎは {name}さまの ばんです。', kana: 'つぎは {name}さまの ばんです。', en: "Next, it's {name}'s turn." }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.onsen_turn.04', host: 'chochin', event: 'onsen_turn', jp: { text: '{name}さま、なんでも きいて ください。', kana: '{name}さま、なんでも きいて ください。', en: '{name}, ask them anything.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.onsen_turn.05', host: 'chochin', event: 'onsen_turn', jp: { text: '{name}さま、ゆっくり どうぞ。 ゆらゆら。', kana: '{name}さま、ゆっくり どうぞ。 ゆらゆら。', en: '{name}, take your time. Flicker, flicker.' }, slots: ['{name}'], status: 'draft' },
+  // onsen_clue
+  { id: 'chochin.onsen_clue.01', host: 'chochin', event: 'onsen_clue', jp: { text: 'おや？ だいじな てがかりです！', kana: 'おや？ だいじな てがかりです！', en: 'Oh? An important clue!' }, status: 'draft' },
+  { id: 'chochin.onsen_clue.02', host: 'chochin', event: 'onsen_clue', jp: { text: 'それは あやしいですね…', kana: 'それは あやしいですね…', en: 'Now that is suspicious…' }, status: 'draft' },
+  { id: 'chochin.onsen_clue.03', host: 'chochin', event: 'onsen_clue', jp: { text: 'メモ しましょう！', kana: 'メモ しましょう！', en: "Let's write that down!" }, status: 'draft' },
+  { id: 'chochin.onsen_clue.04', host: 'chochin', event: 'onsen_clue', jp: { text: 'いい しつもんでした！', kana: 'いい しつもんでした！', en: 'That was a good question!' }, status: 'draft' },
+  { id: 'chochin.onsen_clue.05', host: 'chochin', event: 'onsen_clue', jp: { text: 'ゆらゆら… なにか みえて きました。', kana: 'ゆらゆら… なにか みえて きました。', en: 'Flicker… something is coming to light.' }, status: 'draft' },
+  // onsen_accuse
+  { id: 'chochin.onsen_accuse.01', host: 'chochin', event: 'onsen_accuse', jp: { text: 'はんにんは だれですか？', kana: 'はんにんは だれですか？', en: 'Who is the culprit?' }, status: 'draft' },
+  { id: 'chochin.onsen_accuse.02', host: 'chochin', event: 'onsen_accuse', jp: { text: 'おおきい こえで どうぞ！', kana: 'おおきい こえで どうぞ！', en: 'Say it nice and loud!' }, status: 'draft' },
+  { id: 'chochin.onsen_accuse.03', host: 'chochin', event: 'onsen_accuse', jp: { text: 'さあ、きめて ください。', kana: 'さあ、きめて ください。', en: 'Now, please decide.' }, status: 'draft' },
+  { id: 'chochin.onsen_accuse.04', host: 'chochin', event: 'onsen_accuse', jp: { text: 'よく かんがえて ください。 ゆらゆら。', kana: 'よく かんがえて ください。 ゆらゆら。', en: 'Think carefully. Flicker, flicker.' }, status: 'draft' },
+  { id: 'chochin.onsen_accuse.05', host: 'chochin', event: 'onsen_accuse', jp: { text: 'メモを みて ください。 はんにんは…？', kana: 'メモを みて ください。 はんにんは…？', en: 'Look at your notes. The culprit is…?' }, status: 'draft' },
+  // onsen_reveal
+  { id: 'chochin.onsen_reveal.01', host: 'chochin', event: 'onsen_reveal', jp: { text: 'はんにんは… この ひとです！', kana: 'はんにんは… この ひとです！', en: 'The culprit is… this one!' }, status: 'draft' },
+  { id: 'chochin.onsen_reveal.02', host: 'chochin', event: 'onsen_reveal', jp: { text: 'じけん かいけつです！', kana: 'じけん かいけつです！', en: 'Case closed!' }, status: 'draft' },
+  { id: 'chochin.onsen_reveal.03', host: 'chochin', event: 'onsen_reveal', jp: { text: 'ゆらゆら… ほんとうの ことを はなして ください。', kana: 'ゆらゆら… ほんとうの ことを はなして ください。', en: 'Flicker… please tell us the truth.' }, status: 'draft' },
+  { id: 'chochin.onsen_reveal.04', host: 'chochin', event: 'onsen_reveal', jp: { text: 'みなさま、おみごとでした。', kana: 'みなさま、おみごとでした。', en: 'Splendid work, everyone.' }, status: 'draft' },
+  { id: 'chochin.onsen_reveal.05', host: 'chochin', event: 'onsen_reveal', jp: { text: 'さあ、こたえあわせです！', kana: 'さあ、こたえあわせです！', en: "Now, let's check the answer!" }, status: 'draft' },
 ];

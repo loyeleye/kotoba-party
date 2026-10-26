@@ -1,0 +1,576 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Level, OnsenCase, OnsenIntent } from '../content/src/types.js';
+import { onsenCases } from '../content/src/onsen/cases.js';
+import type { CommandBody } from '../shared/src/client.js';
+import { createRoom } from '../shared/src/client.js';
+import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
+import {
+  BONUS_CAP,
+  cleanLead,
+  onsenMurderMode,
+  POINTS,
+  suspectLineRequests,
+  THINK_MS,
+  TURNS,
+  type OnsenState,
+  type OnsenView,
+} from '../shared/src/modes/onsenMurder/onsenMurder.js';
+import { accusationLine, checkAccusation, INTENTS, joinTiles, matchQuestion, questionFor, tilesFor } from '../shared/src/modes/onsenMurder/questions.js';
+import { hasKanji, normalizeReading } from '../shared/src/japanese/kana.js';
+import type { Command, RoomView } from '../shared/src/protocol.js';
+import { viewFor } from '../shared/src/view.js';
+import { createSuspectVoice, ScriptedLlm } from '../server/ai/index.js';
+import { suspectDirector } from '../server/src/onsen.js';
+import type { Room } from '../server/src/room.js';
+import { Bot, Director } from '../tools/bots/bot.js';
+import { buildQuestion, onsenMurderPolicy } from '../tools/bots/policies/onsenMurder.js';
+import { createKotobaServer, type KotobaServer } from '../server/src/server.js';
+import { content, hashView, TruthRecorder, until } from './helpers.js';
+
+const CONTENT: ContentLibrary = { ...EMPTY_CONTENT, onsenCases };
+const snowman = onsenCases.find((c) => c.id === 'snowman')!;
+
+class Table {
+  now = 1_000_000;
+  ids = 0;
+  cmdId = 0;
+  readonly s: GameState = createGame('BCDF');
+  constructor(
+    players: number,
+    readonly content: ContentLibrary = CONTENT,
+    levels: Level[] = [],
+  ) {
+    for (let i = 1; i <= players; i++) {
+      this.act({ type: 'join', playerId: `p${i}`, name: `P${i}`, level: levels[i - 1] ?? 'n5' });
+      this.act({ type: 'connection', playerId: `p${i}`, connected: true });
+    }
+  }
+  ctx(): GameContext {
+    return { now: this.now, content: this.content, newId: () => `id${++this.ids}`, random: () => 0.42 };
+  }
+  act(action: GameAction) {
+    return apply(this.s, action, this.ctx());
+  }
+  cmd(actor: string | 'stage', command: CommandBody) {
+    const who = actor === 'stage' ? ({ kind: 'stage' } as const) : ({ kind: 'player', playerId: actor } as const);
+    return apply(this.s, { type: 'command', actor: who, command: { ...command, id: `c${++this.cmdId}` } as Command }, this.ctx());
+  }
+  play(player: string, move: unknown) {
+    return this.cmd(player, { type: 'play', move });
+  }
+  timeout() {
+    this.now = Math.max(this.now, this.s.deadline ?? 0);
+    return this.act({ type: 'timeout', phaseSeq: this.s.phaseSeq });
+  }
+  get st(): OnsenState {
+    return this.s.modeState as OnsenState;
+  }
+  view(viewer: string | 'stage' = 'stage'): OnsenView {
+    return viewFor(this.s, viewer === 'stage' ? { kind: 'stage' } : { kind: 'player', playerId: viewer }, this.content).game as OnsenView;
+  }
+  score(id: string): number {
+    return this.s.players.find((p) => p.id === id)!.score;
+  }
+  start(caseId = 'snowman', rounds?: number) {
+    expect(this.cmd('stage', { type: 'start', mode: 'onsen-murder', rounds, extra: { caseId } }).changed).toBe(true);
+    expect(this.s.phase).toBe('intro');
+    this.timeout();
+    expect(this.s.phase).toBe('answer');
+  }
+  get turnPlayer(): string {
+    return this.st.turn!.playerId!;
+  }
+  ask(suspectId: string, text: string, via: 'speech' | 'typed' | 'tap' = 'speech', player = this.turnPlayer) {
+    return this.play(player, { kind: 'ask', suspectId, utterance: { via, text } });
+  }
+  /** Runs turns until the accusation. */
+  toAccuse() {
+    for (let guard = 0; guard < 100 && this.s.phase !== 'encore'; guard++) this.timeout();
+    expect(this.s.phase).toBe('encore');
+  }
+}
+
+const speech = (text: string, reading?: string) => ({ via: 'speech' as const, text, reading });
+
+// ---- questions and content ----
+
+describe('Murder at the Onsen: matching questions', () => {
+  it('maps every natural question to its own intent, for every case', () => {
+    for (const c of onsenCases) {
+      for (const intent of INTENTS) {
+        const q = questionFor(c, intent);
+        expect(matchQuestion(c, { text: q.text }).intent, `${c.id} ${intent}`).toBe(intent);
+        // Built from the tiles too (what the bots and the tile builder send).
+        expect(matchQuestion(c, { text: buildQuestion(tilesFor(c), intent) }).intent, `${c.id} tiles ${intent}`).toBe(intent);
+      }
+    }
+  });
+
+  it('is lenient: bare question words, plain forms, kanji through the reading, katakana', () => {
+    const c = snowman;
+    expect(matchQuestion(c, { text: 'どこ？' }).intent).toBe('where');
+    expect(matchQuestion(c, { text: '何時に寝ましたか', reading: 'なんじにねましたか' }).intent).toBe('when');
+    expect(matchQuestion(c, { text: 'いつ ねた？' }).intent).toBe('when');
+    expect(matchQuestion(c, { text: 'だれを みた？' }).intent).toBe('who');
+    expect(matchQuestion(c, { text: 'なにを してた？' }).intent).toBe('what');
+    expect(matchQuestion(c, { text: 'マフラーは だれの？' }).intent).toBe('item');
+    expect(matchQuestion(c, { text: 'まふらー だれの' }).intent).toBe('item');
+    expect(matchQuestion(c, { text: 'ゆきだるまさんは どんな ひと？' }).intent).toBe('victim');
+  });
+
+  it('gives no question for a mumble, but keeps the closest guess for the hint', () => {
+    expect(matchQuestion(snowman, { text: 'えっと…' })).toEqual({ intent: null, closest: null });
+    expect(matchQuestion(snowman, { text: 'して' })).toEqual({ intent: null, closest: 'what' });
+  });
+
+  it('joins tiles with particles hugging the word before', () => {
+    const tiles = tilesFor(snowman);
+    expect(buildQuestion(tiles, 'where')).toBe('どこに いましたか？');
+    expect(buildQuestion(tiles, 'item')).toBe('この あかい マフラーは だれの ですか？');
+    expect(joinTiles([])).toBe('');
+  });
+
+  it('checks the accusation: はんにん and the right name, kanji or kana', () => {
+    const tanaka = snowman.suspects.find((s) => s.id === 'tanaka')!;
+    const suzuki = snowman.suspects.find((s) => s.id === 'suzuki')!;
+    expect(accusationLine(tanaka).text).toBe('はんにんは たなかさんです！');
+    expect(checkAccusation({ text: 'はんにんは たなかさんです' }, tanaka)).toBe(true);
+    expect(checkAccusation({ text: '犯人は田中さんです', reading: 'はんにんはたなかさんです' }, tanaka)).toBe(true);
+    expect(checkAccusation({ text: 'たなかさん！' }, tanaka)).toBe(false);
+    expect(checkAccusation({ text: 'はんにんは すずきさんです' }, tanaka)).toBe(false);
+    expect(checkAccusation({ text: 'はんにんは すずきさんです' }, suzuki)).toBe(true);
+  });
+});
+
+describe('Murder at the Onsen: the cases', () => {
+  const check = (c: OnsenCase) => {
+    expect(c.status).toBe('draft');
+    expect(c.suspects.length).toBeGreaterThanOrEqual(3);
+    expect(c.suspects.length).toBeLessThanOrEqual(4);
+    expect(c.suspects.map((s) => s.id)).toContain(c.culpritId);
+    expect(new Set(c.suspects.map((s) => normalizeReading(s.name.kana))).size).toBe(c.suspects.length);
+    const clueIds = new Set(c.clues.map((x) => x.id));
+    const given = new Set<string>();
+    for (const s of c.suspects) {
+      for (const intent of INTENTS) {
+        const a = s.answers[intent];
+        expect(a, `${c.id}/${s.id}/${intent}`).toBeTruthy();
+        expect(a!.jp.kana && a!.jp.en && a!.jp.text).toBeTruthy();
+        expect(hasKanji(a!.jp.kana), `${c.id}/${s.id}/${intent} kana`).toBe(false);
+        if (a!.clueId) {
+          expect(clueIds.has(a!.clueId), a!.clueId).toBe(true);
+          given.add(a!.clueId);
+        }
+      }
+    }
+    // Every clue can be found, and at least three of them are key.
+    expect([...clueIds].filter((id) => !given.has(id))).toEqual([]);
+    expect(c.clues.filter((x) => x.key).length).toBeGreaterThanOrEqual(3);
+    // The culprit is named by the notebook's key clues more than anyone else.
+    const named = (id: string) => c.clues.filter((x) => x.key && normalizeReading(x.jp.kana).includes(normalizeReading(c.suspects.find((s) => s.id === id)!.name.kana))).length;
+    for (const s of c.suspects) if (s.id !== c.culpritId) expect(named(c.culpritId), `${c.id}: ${s.id}`).toBeGreaterThan(named(s.id));
+    for (const line of [...c.confession, c.title, c.setting, c.victim.found, c.shrug]) expect(hasKanji(line.kana)).toBe(false);
+    // The item's keys really are in its name.
+    for (const key of c.item.keys) expect(normalizeReading(c.item.name.kana)).toContain(normalizeReading(key));
+  };
+  for (const c of onsenCases) it(`${c.id} is complete and points at its culprit`, () => check(c));
+
+  it('ships three cases, served through the content library', () => {
+    expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck']);
+    expect(content.onsenCases.length).toBe(3);
+    expect(content.hostLines.filter((l) => l.event.startsWith('onsen_')).length).toBe(25);
+  });
+});
+
+// ---- rules ----
+
+describe('Murder at the Onsen: questioning', () => {
+  it('a spoken question that finds a clue earns question + clue points and the speaking bonus', () => {
+    const t = new Table(3);
+    t.start();
+    const asker = t.turnPlayer;
+    expect(t.view(asker).mine?.isTurn).toBe(true);
+    expect(t.ask('suzuki', 'だれを みましたか').error).toBeUndefined();
+    expect(t.s.phase).toBe('reveal');
+    const cur = t.view().current!;
+    expect(cur.answer.text).toContain('たなかさんを みました');
+    expect(cur.newClue).toBe(true);
+    expect(cur.natural.text).toBe('だれを みましたか？');
+    // 20 + 100 base, +40 spoken (under 3/7 of 120 = 51).
+    expect(t.score(asker)).toBe(POINTS.question + POINTS.clue + POINTS.spokenQuestion);
+    expect(t.view().notebook.map((n) => n.id)).toEqual(['saw-tanaka']);
+    expect(t.s.phrasebook[asker]?.some((e) => e.itemId === 'onsen.q.who' && e.outcome === 'said')).toBe(true);
+    // Everyone else gets the question as "seen".
+    const other = t.s.players.find((p) => p.id !== asker)!.id;
+    expect(t.s.phrasebook[other]?.some((e) => e.itemId === 'onsen.q.who' && e.outcome === 'seen')).toBe(true);
+  });
+
+  it('the speaking bonus only pays out up to 30% of the score', () => {
+    const t = new Table(1);
+    t.start();
+    // A question with no clue: 20 base, 40 bonus earned but only floor(20 × 3/7) = 8 paid.
+    t.ask('tanaka', 'だれを みましたか');
+    expect(t.score('p1')).toBe(20 + 8);
+    expect(t.st.tally.p1).toMatchObject({ base: 20, bonusEarned: 40, bonusPaid: 8 });
+    // A clue later lifts the cap and pays out more of the pool.
+    t.timeout();
+    t.ask('suzuki', 'だれを みましたか');
+    expect(t.st.tally.p1).toMatchObject({ base: 140, bonusEarned: 80, bonusPaid: 60 });
+    expect(t.score('p1')).toBe(200);
+    expect(t.st.tally.p1!.bonusPaid / t.score('p1')).toBeLessThanOrEqual(0.3);
+  });
+
+  it('a question nobody can place gets one retry with a hint, then counts as a retry', () => {
+    const t = new Table(2);
+    t.start();
+    const asker = t.turnPlayer;
+    expect(t.ask('yamada', 'して').error).toBeUndefined();
+    expect(t.s.phase).toBe('answer');
+    const mine = t.view(asker).mine!;
+    expect(mine.triesLeft).toBe(1);
+    expect(mine.miss).toMatchObject({ heard: 'して', suspectId: 'yamada', hint: { text: 'なにを して いましたか？' } });
+    expect(t.view().turn?.miss).toEqual({ suspectId: 'yamada', heard: 'して' });
+    t.ask('yamada', 'なにを していましたか');
+    expect(t.s.phase).toBe('reveal');
+    expect(t.view().current?.newClue).toBe(true);
+    expect(t.s.phrasebook[asker]?.find((e) => e.itemId === 'onsen.q.what')?.outcome).toBe('retry');
+  });
+
+  it('after two misses the suspect answers the closest question: the clue counts, the question does not', () => {
+    const t = new Table(2);
+    t.start();
+    const asker = t.turnPlayer;
+    t.ask('suzuki', 'えっと');
+    t.ask('suzuki', 'うーん');
+    expect(t.s.phase).toBe('reveal');
+    const cur = t.view().current!;
+    expect(cur.guessed).toBe(true);
+    expect(cur.intent).toBe('where');
+    expect(t.score(asker)).toBe(0);
+    expect(t.s.phrasebook[asker]?.find((e) => e.itemId === 'onsen.q.where')?.outcome).toBe('missed');
+  });
+
+  it('repeats earn nothing; tile-built questions earn points but no speaking bonus', () => {
+    const t = new Table(2);
+    t.start();
+    const a = t.turnPlayer;
+    t.ask('tanaka', 'どこに いましたか', 'tap');
+    expect(t.score(a)).toBe(POINTS.question + POINTS.clue);
+    expect(t.s.phrasebook[a]?.find((e) => e.itemId === 'onsen.q.where')?.outcome).toBe('seen');
+    t.timeout();
+    const b = t.turnPlayer;
+    expect(b).not.toBe(a);
+    t.ask('tanaka', 'どこに いましたか？');
+    expect(t.view().current).toMatchObject({ repeat: true, newClue: false, points: 0 });
+    expect(t.score(b)).toBe(0);
+    expect(t.view().suspects.find((s) => s.id === 'tanaka')?.asked).toEqual(['where']);
+  });
+
+  it('refuses moves out of turn, bad suspects and empty questions', () => {
+    const t = new Table(2);
+    t.start();
+    const other = t.s.players.find((p) => p.id !== t.turnPlayer)!.id;
+    expect(t.ask('tanaka', 'どこ', 'speech', other).error).toBe('not-your-turn');
+    expect(t.ask('nobody', 'どこ').error).toBe('bad-suspect');
+    expect(t.play(t.turnPlayer, { kind: 'ask', suspectId: 'tanaka', utterance: { via: 'speech', text: '   ' } }).error).toBe('empty-answer');
+    expect(t.play(t.turnPlayer, { kind: 'accuse', suspectId: 'tanaka' }).error).toBe('wrong-phase');
+    expect(t.play(t.turnPlayer, 'hello').error).toBe('bad-move');
+  });
+
+  it('turns go by seat, skip the disconnected, and end at once when the asker drops', () => {
+    const t = new Table(3);
+    t.start();
+    expect(t.turnPlayer).toBe('p1');
+    t.act({ type: 'connection', playerId: 'p2', connected: false });
+    t.timeout();
+    expect(t.turnPlayer).toBe('p3');
+    // The asker drops: their turn ends at once and passes on (p2 is still away).
+    t.act({ type: 'connection', playerId: 'p3', connected: false });
+    expect(t.s.phase).toBe('answer');
+    expect(t.st.turnNo).toBe(3);
+    expect(t.turnPlayer).toBe('p1');
+  });
+
+  it('plays players × questions-each turns, at least 6 and at most 14', () => {
+    const turnsFor = (players: number, rounds?: number) => {
+      const t = new Table(players);
+      t.start('snowman', rounds);
+      return t.st.totalTurns;
+    };
+    expect(turnsFor(1)).toBe(TURNS.min);
+    expect(turnsFor(4)).toBe(8);
+    expect(turnsFor(4, 3)).toBe(12);
+    expect(turnsFor(8)).toBe(TURNS.max);
+  });
+});
+
+describe('Murder at the Onsen: no spoilers', () => {
+  it('views carry no unasked answers, no culprit and no confession until the reveal', () => {
+    const t = new Table(2);
+    t.start('pudding');
+    t.ask('ito', 'だれを みましたか');
+    const views = [t.view(), t.view('p1'), t.view('p2')].map((v) => JSON.stringify(v));
+    const pudding = onsenCases.find((c) => c.id === 'pudding')!;
+    for (const json of views) {
+      expect(json).not.toContain(pudding.confession[0]!.text);
+      expect(json).not.toContain(pudding.solution);
+      expect(json).not.toContain('culpritId');
+      expect(json).not.toContain(pudding.suspects.find((s) => s.id === 'sato')!.answers.where!.jp.text);
+      expect(json).not.toContain('"key":');
+    }
+    expect(suspectLineRequests(t.st)[0]?.key).toBeTruthy();
+    for (const json of views) expect(json).not.toContain(suspectLineRequests(t.st)[0]!.key);
+  });
+});
+
+describe('Murder at the Onsen: accusation and reveal', () => {
+  function accuseGame() {
+    const t = new Table(3);
+    t.start();
+    t.toAccuse();
+    return t;
+  }
+
+  it('a spoken accusation of the culprit earns 300 and the bonus; wrong names earn nothing', () => {
+    const t = accuseGame();
+    expect(t.play('p1', { kind: 'accuse', suspectId: 'tanaka', utterance: speech('はんにんは たなかさんです！') }).error).toBeUndefined();
+    expect(t.play('p1', { kind: 'accuse', suspectId: 'suzuki' }).error).toBe('already-accused');
+    t.play('p2', { kind: 'accuse', suspectId: 'suzuki', utterance: speech('はんにんは すずきさんです') });
+    expect(t.view().accused).toEqual(['p1', 'p2']);
+    // The stage never sees whom, only who.
+    expect(JSON.stringify(t.view())).not.toContain('"suspectId":"suzuki"');
+    // p3 taps: the vote counts, no bonus. Everyone is in, so the reveal starts.
+    t.play('p3', { kind: 'accuse', suspectId: 'tanaka' });
+    expect(t.s.phase).toBe('finale');
+    expect(t.score('p1')).toBe(POINTS.accuse + POINTS.spokenAccuse);
+    expect(t.score('p2')).toBe(0);
+    expect(t.score('p3')).toBe(POINTS.accuse);
+    const r = t.view().result!;
+    expect(r.culpritId).toBe('tanaka');
+    expect(r.votes.map((v) => [v.playerId, v.correct, v.said])).toEqual([
+      ['p1', true, true],
+      ['p2', false, true],
+      ['p3', true, false],
+    ]);
+    expect(r.confession.length).toBe(3);
+    expect(t.s.phrasebook.p1?.find((e) => e.itemId === 'onsen.accuse.snowman.tanaka')).toMatchObject({ outcome: 'said', text: 'はんにんは たなかさんです！' });
+    t.timeout();
+    expect(t.s.phase).toBe('recap');
+    expect(t.s.recap?.awards.find((a) => a.title === 'みぬいた！')?.playerId).toBe('p1');
+  });
+
+  it('a garbled accusation gets one more try; out of time, the picked suspect still counts', () => {
+    const t = accuseGame();
+    t.play('p1', { kind: 'accuse', suspectId: 'tanaka', utterance: speech('えっと') });
+    expect(t.view('p1').mine?.accuseTry).toEqual({ suspectId: 'tanaka', heard: 'えっと', triesLeft: 1 });
+    expect(t.view().accused).toEqual([]);
+    t.play('p1', { kind: 'accuse', suspectId: 'tanaka', utterance: speech('はんにんは たなか') });
+    expect(t.view('p1').mine?.accusation).toEqual({ suspectId: 'tanaka', said: true });
+    t.play('p2', { kind: 'accuse', suspectId: 'tanaka', utterance: speech('うーん') });
+    t.timeout();
+    expect(t.s.phase).toBe('finale');
+    expect(t.view().result!.votes.find((v) => v.playerId === 'p2')).toMatchObject({ suspectId: 'tanaka', said: false, correct: true });
+    expect(t.score('p2')).toBe(POINTS.accuse);
+    expect(t.view().result!.votes.some((v) => v.playerId === 'p3')).toBe(false);
+  });
+});
+
+describe('Murder at the Onsen: the LLM lead-in', () => {
+  const lead = { text: 'えっ、わたしですか…', kana: 'えっ、わたしですか…', en: 'Eh, me?' };
+
+  it('takes a clean lead-in with the server key inside the thinking beat, and only then', () => {
+    const t = new Table(2);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    const req = suspectLineRequests(t.st)[0]!;
+    expect(req).toMatchObject({ playerId: t.st.asks[0]!.playerId, intent: 'where', lockAt: t.now + THINK_MS });
+    expect(t.play('p1', { kind: 'suspect-line', key: 'guess', lead }).error).toBe('bad-move');
+    expect(t.play('p1', { kind: 'suspect-line', key: req.key, lead: { ...lead, text: 'たなかです' } }).error).toBe('bad-move');
+    expect(t.play('p1', { kind: 'suspect-line', key: req.key, lead }).error).toBeUndefined();
+    expect(t.view().current?.answer.text).toBe(`えっ、わたしですか… ${snowman.suspects[0]!.answers.where!.jp.text}`);
+    // One per answer.
+    expect(t.play('p1', { kind: 'suspect-line', key: req.key, lead }).error).toBe('bad-move');
+  });
+
+  it('refuses a lead-in that arrives after the beat', () => {
+    const t = new Table(2);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    const req = suspectLineRequests(t.st)[0]!;
+    t.now += THINK_MS + 1;
+    expect(t.play('p1', { kind: 'suspect-line', key: req.key, lead }).error).toBe('too-late');
+    expect(t.view().current?.answer.text).toBe(snowman.suspects[0]!.answers.where!.jp.text);
+  });
+
+  it('cleanLead keeps facts out: no names, numbers, はんにん, kanji or long lines', () => {
+    expect(cleanLead(lead, snowman)).toEqual(lead);
+    expect(cleanLead({ ...lead, text: 'はんにん？', kana: 'はんにん？' }, snowman)).toBeNull();
+    expect(cleanLead({ ...lead, text: 'すずきさんが…', kana: 'すずきさんが…' }, snowman)).toBeNull();
+    expect(cleanLead({ ...lead, text: '10じ…', kana: 'じゅうじ' }, snowman)).toBeNull();
+    expect(cleanLead({ ...lead, text: '私ですか', kana: 'わたしですか' }, snowman)).toBeNull();
+    expect(cleanLead({ ...lead, en: 'Tanaka did it' }, snowman)).toBeNull();
+    expect(cleanLead({ ...lead, text: 'あ'.repeat(30), kana: 'あ'.repeat(30) }, snowman)).toBeNull();
+    expect(cleanLead('hi', snowman)).toBeNull();
+  });
+
+  it('the suspect voice returns a checked line, or null without an LLM or on a bad answer', async () => {
+    const req = { caseTitle: snowman.title, suspect: snowman.suspects[0]!, question: 'どこ', answer: snowman.suspects[0]!.answers.where!.jp };
+    expect(await createSuspectVoice().lead(req, 1000)).toBeNull();
+    const good = new ScriptedLlm(() => lead);
+    expect(await createSuspectVoice({ llm: good }).lead(req, 1000)).toEqual(lead);
+    expect(good.calls[0]!.user).toContain('<<<\nどこ\n>>>');
+    const kanji = new ScriptedLlm(() => ({ text: '私です', kana: 'わたしです', en: 'Me' }));
+    expect(await createSuspectVoice({ llm: kanji }).lead(req, 1000)).toBeNull();
+    expect(await createSuspectVoice({ llm: good }).lead(req, 100)).toBeNull();
+  });
+});
+
+describe('Murder at the Onsen: whole games', () => {
+  it('runs to the recap on timeouts alone, with the placeholder case when no content is loaded', () => {
+    const t = new Table(2, EMPTY_CONTENT);
+    expect(t.cmd('stage', { type: 'start', mode: 'onsen-murder' }).changed).toBe(true);
+    expect(t.st.fallback).toBe(true);
+    for (let i = 0; i < 200 && t.s.phase !== 'recap'; i++) t.timeout();
+    expect(t.s.phase).toBe('recap');
+  });
+
+  for (const c of onsenCases) {
+    it(`${c.id}: careful detectives who ask everything aloud find every key clue and solve it, bonus under 30%`, () => {
+      const t = new Table(4, CONTENT, ['kana', 'n5', 'n5', 'n4']);
+      t.start(c.id, 3);
+      // Ask the questions that give clues first, then anything left.
+      const plan: [string, OnsenIntent][] = [];
+      for (const s of c.suspects) for (const i of INTENTS) if (s.answers[i]?.clueId) plan.push([s.id, i]);
+      for (const s of c.suspects) for (const i of INTENTS) if (!s.answers[i]?.clueId) plan.push([s.id, i]);
+      for (let guard = 0; guard < 300 && t.s.phase !== 'encore'; guard++) {
+        if (t.s.phase === 'answer') {
+          const [sid, intent] = plan.shift()!;
+          t.ask(sid, questionFor(c, intent).text);
+        } else t.timeout();
+      }
+      expect(t.s.phase).toBe('encore');
+      const keys = c.clues.filter((x) => x.key).map((x) => x.id);
+      expect(keys.filter((id) => !t.st.found[id])).toEqual([]);
+      const culprit = c.suspects.find((s) => s.id === c.culpritId)!;
+      for (const p of t.s.players) t.play(p.id, { kind: 'accuse', suspectId: culprit.id, utterance: speech(accusationLine(culprit).kana) });
+      expect(t.s.phase).toBe('finale');
+      expect(t.view().result?.missed).toEqual([]);
+      t.timeout();
+      expect(t.s.phase).toBe('recap');
+      for (const p of t.s.players) {
+        const tally = t.st.tally[p.id]!;
+        expect(p.score).toBe(tally.base + tally.bonusPaid);
+        expect(tally.bonusPaid).toBeLessThanOrEqual(Math.floor(tally.base * BONUS_CAP));
+        expect(tally.bonusPaid / p.score).toBeLessThanOrEqual(0.3);
+        expect(tally.correct).toBe(true);
+      }
+      expect(t.s.recap?.awards.map((a) => a.title)).toEqual(['めいたんてい', 'こえの たんてい', 'みぬいた！']);
+    });
+  }
+});
+
+// ---- full system: bots play a whole game through the real server ----
+
+describe('Murder at the Onsen: bots play a game end to end', () => {
+  let ctx: { server: KotobaServer; baseUrl: string; truth: TruthRecorder };
+  const llm = new ScriptedLlm(() => ({ text: 'うーん…', kana: 'うーん…', en: 'Hmm…' }));
+  beforeAll(async () => {
+    // The real server, the TruthRecorder, and the LLM lead-in director with a scripted LLM.
+    const lead = suspectDirector(createSuspectVoice({ llm }));
+    const truth = new TruthRecorder();
+    const server = createKotobaServer({
+      content,
+      pingIntervalMs: 0,
+      roomIdleMs: 0,
+      durations: { intro: 20, answer: 700, reveal: 60, encore: 1_500, finale: 30 },
+      onCommit: (room: Room, v: number) => {
+        truth.onCommit(room, v);
+        lead(room);
+      },
+    });
+    ctx = { server, baseUrl: await server.listen(0, '127.0.0.1'), truth };
+  });
+  afterAll(async () => {
+    await ctx.server.close();
+  });
+
+  for (const players of [3, 5]) {
+    it(`${players} bots question the suspects and accuse, with every client in sync`, async () => {
+      const { baseUrl, truth, server } = ctx;
+      const created = await createRoom(baseUrl);
+      const room = server.rooms.get(created.code)!;
+      const seen = new Map<string, { v: number; hash: string }[]>();
+      const record = (id: string, view: RoomView, v: number) => {
+        let list = seen.get(id);
+        if (!list) seen.set(id, (list = []));
+        list.push({ v, hash: hashView(view) });
+      };
+      let finished = false;
+      let lastGame: OnsenView | null = null;
+      let recap: RoomView['recap'] = null;
+      const phases = new Set<string>();
+      const director = new Director(baseUrl, created.code, created.stageToken, {
+        players,
+        roundsPerGame: 2,
+        totalRounds: 1_000,
+        mode: 'onsen-murder',
+        games: 1,
+        onDone: () => (finished = true),
+        onState: (view, v) => {
+          record('stage', view, v);
+          phases.add(view.phase);
+          if (view.game?.mode === 'onsen-murder') lastGame = view.game;
+          if (view.phase === 'recap') recap = view.recap;
+        },
+      });
+      director.start();
+      const policy = onsenMurderPolicy({ delayMs: [5, 40], quiet: (id) => id.endsWith('2'), tiles: (id) => id.endsWith('3') });
+      const bots: Bot[] = [];
+      for (let i = 1; i <= players; i++) {
+        bots.push(
+          await Bot.join({
+            baseUrl,
+            code: created.code,
+            name: `bot${i}`,
+            policy,
+            level: i === 1 ? 'kana' : 'n5',
+            onState: (bot, view, v) => record(bot.playerId, view, v),
+          }),
+        );
+      }
+      await until(() => finished, 60_000, 'one game');
+      await until(() => [director.client, ...bots.map((b) => b.client)].every((c) => c.version === room.version), 5_000, 'quiescence');
+
+      for (const p of ['intro', 'answer', 'reveal', 'encore', 'finale', 'recap']) expect(phases, p).toContain(p);
+      const game = lastGame as OnsenView | null;
+      expect(game?.result).toBeTruthy();
+      expect(game!.log.length).toBeGreaterThanOrEqual(Math.max(TURNS.min, Math.min(TURNS.max, players * 2)) - 1);
+      expect(game!.result!.votes.length).toBe(players);
+
+      // Every accepted state matches what the server committed for that viewer.
+      for (const [id, list] of seen) {
+        for (const { v, hash } of list) expect(truth.byVersion.get(v)?.get(id), `${id} at v${v}`).toBe(hash);
+      }
+
+      // Scores add up: base + paid bonus, bonus inside the 30% cap.
+      const st = room.state.modeState as OnsenState;
+      for (const s of (recap as RoomView['recap'])!.standings) {
+        const t = st.tally[s.playerId]!;
+        expect(s.score, s.name).toBe(t.base + t.bonusPaid);
+        expect(t.bonusPaid).toBeLessThanOrEqual(Math.floor(t.base * BONUS_CAP));
+      }
+      // The scripted LLM's lead-ins landed inside the thinking beat at least once.
+      expect(llm.calls.length).toBeGreaterThan(0);
+      expect(st.asks.some((a) => a.lead?.text === 'うーん…')).toBe(true);
+
+      // No move failed except harmless races with the phase clock.
+      const bad = bots.flatMap((b) => b.moves.filter((m) => !m.ok && m.error !== 'wrong-phase'));
+      expect(bad).toEqual([]);
+      expect(bots.flatMap((b) => b.moves).filter((m) => m.ok).length).toBeGreaterThan(players);
+
+      for (const b of bots) b.stop();
+      director.client.close();
+    });
+  }
+});

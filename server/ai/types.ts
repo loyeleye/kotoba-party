@@ -44,6 +44,12 @@ export const HOST_EVENTS = [
   'train_last_stop_twist',
   'platform_dash',
   'room_overrule',
+  // Murder at the Onsen
+  'onsen_case',
+  'onsen_turn',
+  'onsen_clue',
+  'onsen_accuse',
+  'onsen_reveal',
 ] as const;
 export type HostEvent = (typeof HOST_EVENTS)[number];
 
