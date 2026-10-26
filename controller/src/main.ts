@@ -7,6 +7,7 @@ import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import { LEVELS, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
+import { speakBox } from './components/speak.js';
 
 const LEVEL_HINTS: Record<Level, string> = {
   kana: 'I can’t read Japanese yet',
@@ -180,6 +181,7 @@ function render(view: RoomView): void {
     isVip,
     me.level,
     me.score,
+    me.mic,
     view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}`).join() + view.modes.length + view.packs.length : '',
     modeKey,
   ].join('|');
@@ -221,6 +223,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   const parts: (HTMLElement | null)[] = [
     h('p', { class: 'big' }, 'You are in!'),
     h('p', {}, `${view.players.length} player${view.players.length === 1 ? '' : 's'}: ${view.players.map((p) => p.name).join(', ')}`),
+    micCheck(me),
     h('p', { class: 'hint' }, 'Your level:'),
     levelPicker(me.level, (level) => {
       store('kotoba:level', level);
@@ -230,6 +233,23 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   if (isVip) parts.push(vipMenu(view));
   else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'));
   return h('div', { class: 'screen' }, parts);
+}
+
+function micCheck(me: PlayerView): HTMLElement {
+  if (me.mic === 'ok') return h('p', { class: 'mic ok' }, '🎤 Mic check passed. よろしく!');
+  if (me.mic === 'quiet') return h('p', { class: 'mic' }, '⌨️ Quiet mode: you’ll tap and type. (You can still talk any time.)');
+  return h(
+    'div',
+    { class: 'mic-check' },
+    h('p', { class: 'hint' }, 'Mic check: hold the button and say'),
+    h('p', { class: 'big', lang: 'ja' }, 'こんにちは!'),
+    speakBox({
+      label: 'Hold and say こんにちは',
+      placeholder: 'こんにちは',
+      onSend: (utterance) => void command({ type: 'micCheck', utterance }),
+    }),
+    h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'micCheck', utterance: { via: 'tap', text: '' } }) }, 'I can’t talk right now'),
+  );
 }
 
 function vipMenu(view: RoomView): HTMLElement {

@@ -31,6 +31,8 @@ export interface PlayerView {
   connected: boolean;
   isVip: boolean;
   score: number;
+  /** Lobby mic check: 'ok' once they said こんにちは, 'quiet' if they chose tap/type. */
+  mic: 'ok' | 'quiet' | null;
 }
 
 /** What the host is saying right now (shown as a subtitle, voiced if audio is ready). */
@@ -100,6 +102,8 @@ export type Command =
   | { id: string; type: 'start'; mode: ModeId; rounds?: number; packId?: string; extra?: Record<string, unknown> }
   | { id: string; type: 'play'; move: unknown }
   | { id: string; type: 'setLevel'; level: Level }
+  /** The lobby mic check: say こんにちは. A quiet result switches the phone to tap/type. */
+  | { id: string; type: 'micCheck'; utterance: unknown }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' };
 

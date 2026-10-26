@@ -9,6 +9,7 @@ import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, Phr
 import { MODES } from './modes/registry.js';
 import type { Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { LEVELS, MODE_IDS } from './protocol.js';
+import { isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
 
 export interface PlayerState {
   id: string;
@@ -17,6 +18,7 @@ export interface PlayerState {
   level: Level;
   connected: boolean;
   score: number;
+  mic: 'ok' | 'quiet' | null;
 }
 
 export interface GameState {
@@ -145,7 +147,7 @@ function applyOne(state: GameState, action: GameAction, ctx: GameContext): Outco
       const err = canJoin(state, name);
       if (err) return fail(err);
       const level = isLevel(action.level) ? action.level : 'n5';
-      state.players.push({ id: action.playerId, name, seat: lowestFreeSeat(state), level, connected: false, score: 0 });
+      state.players.push({ id: action.playerId, name, seat: lowestFreeSeat(state), level, connected: false, score: 0, mic: null });
       state.players.sort((a, b) => a.seat - b.seat);
       state.vipId ??= action.playerId;
       return OK;
@@ -221,6 +223,16 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (inGame(state)) return fail('wrong-phase');
       if (me.level === cmd.level) return { changed: false };
       me.level = cmd.level;
+      return OK;
+    }
+    case 'micCheck': {
+      if (!me) return fail('not-allowed');
+      if (inGame(state)) return fail('wrong-phase');
+      const host = activeMode(state)?.info.host ?? 'pon';
+      // A transcript that sounds like こんにちは passes; anything else, or { quiet: true }, is the quiet path.
+      const said = isUtterance(cmd.utterance) && matchesAccepted(utteranceReading(cmd.utterance), ['こんにちは', 'こんにちわ']);
+      me.mic = said ? 'ok' : 'quiet';
+      state.cues.push({ host, event: said ? 'mic_check_ok' : 'mic_check_quiet', slots: { name: me.name } });
       return OK;
     }
     case 'skip': {

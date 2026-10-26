@@ -190,6 +190,14 @@ describe('views', () => {
     expect(cmd(s, as('p1'), { type: 'setLevel', level: 'n4' }).error).toBe('wrong-phase');
   });
 
+  it('runs the lobby mic check: こんにちは passes, anything else switches to quiet mode', () => {
+    const s = lobby(2);
+    cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'speech', text: 'コンニチハ' } });
+    cmd(s, as('p2'), { type: 'micCheck', utterance: { via: 'tap', text: '' } });
+    expect(s.players.map((p) => p.mic)).toEqual(['ok', 'quiet']);
+    expect(s.cues.map((c) => c.event)).toEqual(['mic_check_ok', 'mic_check_quiet']);
+  });
+
   it('refuses a mode the room is too small for', () => {
     const s = lobby(2);
     expect(cmd(s, stage, { type: 'start', mode: 'oogiri' }).error).toBe('not-enough-players');
