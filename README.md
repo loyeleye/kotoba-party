@@ -79,7 +79,7 @@ npm run dev               # server restarts on change (rebuild pages with npm ru
 | --- | --- |
 | `server/` | Node HTTP + WebSocket server; one in-memory `Room` per game |
 | `cloudflare/` | The same server as a Cloudflare Worker, one Durable Object per room |
-| `stage/` | The shared-screen page; one renderer per mode in `stage/src/modes/` |
+| `stage/` | The shared-screen page; one renderer per mode in `stage/src/modes/`, music in `stage/src/music/` ([docs/music.md](docs/music.md)) |
 | `controller/` | The phone page; one screen set per mode in `controller/src/modes/` |
 | `shared/` | Protocol types, the room machine, the modes' pure rules (`shared/src/modes/`), Japanese helpers, the client |
 | `content/` | Topic packs, kana, Oogiri prompts, Last Train scenarios, host lines (all draft) |

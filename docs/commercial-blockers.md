@@ -46,6 +46,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 18 | Content reviewed by a fluent speaker | All content is `draft` | ⚠️ | Not a licence issue, but a paid product needs the reviewer pass (open question C1) |
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
+| 21 | Music: original chiptune tunes, synthesised in the browser | `stage/src/music/` | ✅ ⚠️ | Nothing to license. AI-written, so copyright may be weak (like row 6); have a composer finish or replace the main themes if that matters |
 
 ## Details
 
@@ -258,6 +259,22 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 - **Cost:** an always-on machine with enough CPU (or a GPU) for the player count. Not a licence bar.
 - **To sell:** keep to OpenAI's weights (or check any other model's data terms first), include the MIT
   notices if the engine is ever shipped in a download, and do the privacy items above.
+
+### 21. Music
+
+- **What:** Thirteen short loops and jingles (lobby, one theme per mode, scores, finale, recap fanfare,
+  reveal drum roll), written for Kotoba Party by Claude on 2026-10-26 as note data in
+  `stage/src/music/songs.ts` and played by our own Web Audio synth (`stage/src/music/engine.ts`). See
+  [music.md](music.md).
+- **Licence:** no third-party music, samples, sound fonts or audio libraries, so there are no terms
+  to read. The synth is our code; the drums are synthesised noise and oscillators.
+- **Ownership (⚠️):** the melodies were AI-written with no human composer, so, as with the AI art (point
+  2 below), copyright protection may be weak: we can use and sell them, but might not be able to stop
+  someone copying them. They are short pentatonic phrases written from scratch, not based on any song;
+  if one turns out to sound like an existing tune, rewrite it.
+- **To sell:** nothing required. If the soundtrack matters for the brand, have a composer finish or
+  replace the lobby and main themes (the same plan as the hero art). Any licensed track or sample pack
+  added later needs its own row here.
 
 ## AI art: non-commercial vs commercial
 
