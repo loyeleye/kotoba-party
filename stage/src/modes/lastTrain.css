@@ -1,0 +1,64 @@
+/* Last Train on the stage: readable from 3 m. */
+.lt-stage { display: grid; gap: 18px; }
+.lt-stage .prompt rt, .lt-stage rt { font-size: 0.45em; color: var(--muted); }
+.lt-kicker { margin: 0; color: var(--accent); font-weight: 800; font-size: 24px; letter-spacing: 0.04em; }
+.lt-stopname { margin: 0; font-size: 56px; font-weight: 900; }
+.lt-stopname.huge { font-size: 88px; color: var(--warn); }
+.lt-intro-jp { margin: 0; font-size: 38px; font-weight: 700; line-height: 1.7; }
+.lt-en { margin: 0; font-size: 26px; color: var(--muted); }
+.lt-situation { display: grid; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 24px; }
+.lt-situation.compact .lt-stopname { font-size: 36px; }
+.lt-situation.compact .lt-intro-jp { font-size: 28px; }
+.lt-twist { border: 2px solid var(--accent); border-radius: 18px; padding: 14px 20px; background: #2a1426; }
+
+.lt-line { list-style: none; margin: 0; padding: 0; display: flex; gap: 0; justify-content: center; flex-wrap: wrap; }
+.lt-line li { position: relative; display: grid; justify-items: center; gap: 4px; padding: 0 18px; min-width: 120px; font-size: 24px; }
+.lt-line li::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 6px; background: var(--line); z-index: 0; }
+.lt-line li.done::before { background: var(--good); }
+.lt-dot { position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; background: var(--bg); border: 6px solid var(--line); }
+.lt-line li.done .lt-dot { border-color: var(--good); background: var(--good); }
+.lt-line li.here .lt-dot { border-color: var(--warn); background: var(--warn); box-shadow: 0 0 18px var(--warn); }
+.lt-line li.here .lt-stop-name { color: var(--warn); font-weight: 800; }
+.lt-line small { color: var(--muted); font-size: 16px; }
+
+.lt-travs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.lt-trav { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; align-items: center; text-align: left; background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 14px 18px; }
+.lt-trav-icon { grid-row: span 2; font-size: 44px; }
+.lt-trav-name { font-size: 30px; font-weight: 800; }
+.lt-trav-status { font-size: 20px; color: var(--muted); }
+.lt-trav-vote, .lt-trav-haunt { grid-column: 1 / -1; font-size: 18px; color: var(--warn); }
+.lt-trav.s-correct { border-color: var(--good); }
+.lt-trav.s-retry { border-color: var(--warn); }
+.lt-trav.s-missed { border-color: var(--accent); }
+.lt-trav.ghost { background: #1b1f3a; border-style: dashed; opacity: 0.9; }
+
+.lt-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; text-align: left; }
+.lt-results li { display: grid; grid-template-columns: 180px 1fr 1fr 1.2fr auto; gap: 16px; align-items: baseline; background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 12px 18px; font-size: 24px; }
+.lt-r-name { font-weight: 800; }
+.lt-r-q { color: var(--muted); font-size: 20px; }
+.lt-r-said { font-size: 26px; }
+.lt-r-model { font-weight: 700; }
+.lt-r-model small { color: var(--muted); font-weight: 400; font-size: 18px; }
+.lt-r-out { font-weight: 800; white-space: nowrap; }
+.lt-results .o-first, .lt-results .o-retry, .lt-results .o-passed { border-color: var(--good); }
+.lt-results .o-overruled { border-color: var(--warn); }
+.lt-results .o-missed, .lt-results .o-failed { border-color: var(--accent); }
+.lt-penalty-car { background: linear-gradient(180deg, #2a1420, transparent); border-radius: 24px; padding: 12px; }
+.lt-penalty-car .lt-results li { grid-template-columns: 180px auto 1fr 1.4fr; }
+
+.lt-track { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.lt-track li { display: grid; grid-template-columns: 160px 1fr 70px; gap: 16px; align-items: center; font-size: 26px; }
+.lt-lane-name { font-weight: 800; text-align: right; }
+.lt-lane { position: relative; height: 56px; border-radius: 12px; background: repeating-linear-gradient(90deg, var(--panel) 0 40px, #2a2240 40px 80px); border: 1px solid var(--line); }
+.lt-start { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--muted); opacity: 0.5; }
+.lt-runner { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: 40px; transition: left 0.3s ease; }
+.lt-door { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 36px; }
+.lt-track li.ghost .lt-lane-name { color: #c9d6ff; }
+.lt-lane-rank { font-weight: 900; color: var(--good); }
+
+@media (max-width: 900px) {
+  .lt-results li, .lt-penalty-car .lt-results li { grid-template-columns: 1fr; gap: 4px; font-size: 20px; }
+  .lt-stopname.huge { font-size: 48px; }
+  .lt-intro-jp { font-size: 26px; }
+  .lt-track li { grid-template-columns: 90px 1fr 40px; font-size: 18px; }
+}

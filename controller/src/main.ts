@@ -5,6 +5,7 @@ import { RoomClient, joinRoom, type CommandBody, type ConnectionStatus } from '.
 import { LEVEL_LABELS, formatSeconds, h, mount } from '../../shared/src/dom.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
+import { MODES } from '../../shared/src/modes/registry.js';
 import { LEVELS, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { speakBox } from './components/speak.js';
@@ -311,7 +312,7 @@ function recap(view: RoomView, isVip: boolean): HTMLElement {
       ? h(
           'details',
           { class: 'phrasebook', open: true },
-          h('summary', {}, `Tonight’s phrasebook (${r.phrasebook.length})`),
+          h('summary', {}, `${(view.mode && MODES[view.mode].info.phrasebookTitle) || 'Tonight’s phrasebook'} (${r.phrasebook.length})`),
           h(
             'ul',
             {},

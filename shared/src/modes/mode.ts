@@ -150,6 +150,8 @@ export interface ModeInfo {
   roundChoices: number[];
   /** True if the mode uses a topic pack. */
   usesPack: boolean;
+  /** What the recap calls the phrasebook (e.g. Last Train's "travel survival kit"). */
+  phrasebookTitle?: string;
 }
 
 /**
