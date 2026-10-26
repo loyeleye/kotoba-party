@@ -101,7 +101,12 @@ export class ClaudeLlm implements LlmClient {
 
   constructor(private readonly opts: ClaudeLlmOptions = {}) {
     // No retries: the timeout is the round's, and a retry would blow it.
-    this.client = opts.client ?? new Anthropic({ maxRetries: 0 });
+    // KOTOBA_ANTHROPIC_API_KEY wins over ANTHROPIC_API_KEY: Claude Code cloud sessions strip the standard name (and
+    // point ANTHROPIC_BASE_URL at their own proxy), so the game's own key goes straight to the public API.
+    const ownKey = process.env.KOTOBA_ANTHROPIC_API_KEY;
+    this.client =
+      opts.client ??
+      new Anthropic({ maxRetries: 0, ...(ownKey ? { apiKey: ownKey, authToken: null, baseURL: 'https://api.anthropic.com' } : {}) });
     this.models = {
       host: opts.models?.host ?? process.env.KOTOBA_HOST_MODEL ?? DEFAULT_MODEL,
       judge: opts.models?.judge ?? process.env.KOTOBA_JUDGE_MODEL ?? DEFAULT_MODEL,
@@ -155,7 +160,7 @@ export class ClaudeLlm implements LlmClient {
 
 /** A Claude client when a key is configured, otherwise undefined (the game then runs on banks and packs). */
 export function llmFromEnv(opts: ClaudeLlmOptions = {}): LlmClient | undefined {
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN && !opts.client) return undefined;
+  if (!process.env.KOTOBA_ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN && !opts.client) return undefined;
   return new ClaudeLlm(opts);
 }
 

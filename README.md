@@ -40,11 +40,21 @@ npm start                 # builds the pages, serves on http://localhost:3000
 - Watch bots play on their own: `npm run bots -- --mode oogiri --bots 5`, then open the stage it
   prints (any mode id works; without `--mode` bots play the debug round).
 
-Optional keys, from the environment only (never commit them): `ANTHROPIC_API_KEY` for live host
+Optional keys, from the environment only (never commit them): `ANTHROPIC_API_KEY` (or `KOTOBA_ANTHROPIC_API_KEY`, which
+wins when both are set and works in Claude Code cloud sessions) for live host
 lines, `VOICEVOX_URL` for host voices, and `GEMINI_API_KEY` / `PIXELLAB_API_KEY` for art
 generation (see [docs/graphics.md](docs/graphics.md)). Everything runs without them.
 
 Set `PUBLIC_URL` when deploying so the QR code points at the public address.
+
+### On Cloudflare (always on)
+
+```sh
+npm run cf:deploy         # needs a Cloudflare account; see docs/cloudflare.md
+```
+
+Same game, hosted as a Worker with one Durable Object per room. Settings, the optional reader
+service for kanji answers, and custom domains: [docs/cloudflare.md](docs/cloudflare.md).
 
 ## Develop
 
@@ -59,6 +69,7 @@ npm run dev               # server restarts on change (rebuild pages with npm ru
 | Folder | What's in it |
 | --- | --- |
 | `server/` | Node HTTP + WebSocket server; one in-memory `Room` per game |
+| `cloudflare/` | The same server as a Cloudflare Worker, one Durable Object per room |
 | `stage/` | The shared-screen page; one renderer per mode in `stage/src/modes/` |
 | `controller/` | The phone page; one screen set per mode in `controller/src/modes/` |
 | `shared/` | Protocol types, the room machine, the modes' pure rules (`shared/src/modes/`), Japanese helpers, the client |
@@ -68,5 +79,6 @@ npm run dev               # server restarts on change (rebuild pages with npm ru
 | `tests/` | Rules, reconnect and gate tests, and a full-server bot game per mode |
 
 Decisions: [ADR 0001](docs/decisions/0001-authoritative-server-thin-clients.md),
-[ADR 0002](docs/decisions/0002-websocket-push-http-commands.md). Questions waiting on Ladi:
+[ADR 0002](docs/decisions/0002-websocket-push-http-commands.md),
+[ADR 0003](docs/decisions/0003-cloudflare-workers-durable-objects.md). Questions waiting on Ladi:
 [docs/open-questions.md](docs/open-questions.md).

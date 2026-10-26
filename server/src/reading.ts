@@ -6,7 +6,8 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import kuromoji from 'kuromoji';
 import { readNumbers } from '../ai/kana.js';
-import { hasKanji, isUtterance, toHiragana } from '../../shared/src/japanese/kana.js';
+import { toHiragana } from '../../shared/src/japanese/kana.js';
+import { setReading, utterancesIn } from './utterances.js';
 
 import type { UtteranceToken } from '../../shared/src/japanese/kana.js';
 
@@ -47,14 +48,8 @@ export async function createReader(): Promise<Reader | null> {
  * Adds `reading` to every utterance inside a play command's move (any field holding
  * `{ via, text }`). Clients may not set `reading` themselves.
  */
-export function addReadings(move: unknown, reader: Reader | null, depth = 0): void {
-  if (depth > 4 || typeof move !== 'object' || move === null) return;
-  for (const value of Object.values(move as Record<string, unknown>)) {
-    if (isUtterance(value)) {
-      delete value.reading;
-      delete value.tokens;
-      if (reader && (hasKanji(value.text) || /[0-9０-９]/.test(value.text))) value.reading = reader(value.text);
-      if (reader && value.text) value.tokens = reader.tokens(value.text);
-    } else addReadings(value, reader, depth + 1);
+export function addReadings(move: unknown, reader: Reader | null): void {
+  for (const u of utterancesIn(move)) {
+    if (reader && u.text) setReading(u, reader(u.text), reader.tokens(u.text));
   }
 }
