@@ -41,6 +41,8 @@ export class MicClip {
   private length = 0;
   private stopped = false;
   blocked = false;
+  /** How loud the mic is right now, 0 to 1 (for the level meter on the talk button). */
+  level = 0;
 
   constructor() {
     this.audio = new AudioContext();
@@ -63,6 +65,10 @@ export class MicClip {
       node.onaudioprocess = (e) => {
         if (this.stopped || this.length >= limit) return;
         const data = e.inputBuffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) sum += data[i]! * data[i]!;
+        // RMS speech sits around 0.02 to 0.2: a square root spreads that across the meter.
+        this.level = Math.min(1, Math.sqrt(Math.sqrt(sum / data.length) * 5));
         this.chunks.push(new Float32Array(data));
         this.length += data.length;
       };

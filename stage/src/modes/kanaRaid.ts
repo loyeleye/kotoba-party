@@ -6,12 +6,13 @@
 // strokes under the arena, timed the same way.
 
 import { sfx } from '../music/sfx.js';
-import { h } from '../../../shared/src/dom.js';
+import { h, stagger } from '../../../shared/src/dom.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
 import type { InkShow, KanaRaidView, YokaiView } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import { COMBO_WINDOW_MS, INK_WAVE } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
+import { BOSS_DEFEAT, hitSheet, isReady, spriteEl } from '../sprites.js';
 
 // ---------- server clock ----------
 // The view carries `at`, the server time of its last change. A state arrives after it was
@@ -40,21 +41,26 @@ const spriteFor = (id: string): string => {
   return SPRITES[n % SPRITES.length]!;
 };
 
-/** Where a yōkai is (in % of the arena from the left) a fraction of the way along its walk. */
+/** Where a yōkai is (in % of the march track from the left) a fraction of the way along its walk. */
 const leftAt = (frac: number) => 100 - Math.min(1, Math.max(0, frac)) * 108;
+/** The march track is the arena less 120 px at the right (kanaRaid.css), so a yōkai enters whole. */
+const TRACK_GAP = 120;
+const trackLeft = (pct: number) => `calc(${pct}% - ${(pct * TRACK_GAP) / 100}px)`;
 
 function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean, who: Map<string, string>): HTMLElement | null {
   const total = Math.max(1, y.escapeAt - y.spawnAt);
   const lane = index % 3;
   const sprite = y.leader ? 'yokai-umbrella' : spriteFor(y.id);
   const classes = ['raid-yokai', `lane-${lane}`, artOk ? `art ${sprite}` : 'no-art', y.leader ? 'leader' : '', wide ? 'wide' : ''];
+  const poof = artOk && isReady(hitSheet(sprite).src);
   let style: string;
   if (y.state === 'alive') {
     style = `--dur:${total}ms;--delay:${y.spawnAt - now}ms`;
     classes.push('marching');
   } else if (y.state === 'defeated' && y.endedAt !== null && now - y.endedAt < 1_600) {
-    style = `left:${leftAt((y.endedAt - y.spawnAt) / total)}%`;
+    style = `left:${trackLeft(leftAt((y.endedAt - y.spawnAt) / total))}`;
     classes.push('defeated');
+    if (!poof) classes.push('no-sheet');
   } else return null;
   if (y.hitAt !== null && now - y.hitAt < 600 && y.state === 'alive') classes.push('hit');
   const hpPct = Math.round((100 * y.hp) / Math.max(1, y.maxHp));
@@ -68,7 +74,12 @@ function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean, who: M
       h('div', { class: 'raid-hp' }, h('span', { style: `width:${hpPct}%` })),
       h(
         'div',
-        { class: 'raid-body', style: artOk ? `background-image:url('/stage/assets/yokai/${sprite}.png')` : '' },
+        {
+          class: 'raid-body',
+          style: !artOk ? '' : y.state === 'defeated' && poof ? `--art:url('/stage/assets/yokai/${sprite}.png')` : `background-image:url('/stage/assets/yokai/${sprite}.png');--art:url('/stage/assets/yokai/${sprite}.png')`,
+        },
+        // Caught: the hit sheet plays once, ending empty.
+        y.state === 'defeated' && poof ? spriteEl(hitSheet(sprite), 128, 'poof') : null,
         h('span', { class: 'raid-tag', lang: 'ja' }, h('span', { class: 'raid-kana' }, y.char), y.alt ? h('span', { class: 'raid-kana alt' }, y.alt) : null),
       ),
       y.leader ? h('div', { class: 'raid-leader', lang: 'ja' }, `👑 ${y.leader}`) : null,
@@ -225,9 +236,16 @@ export const kanaRaidStage: StageMode<KanaRaidView> = {
           h(
             'ol',
             { class: 'answers results' },
-            rows.map((p) =>
-              h('li', {}, h('span', { class: 'text' }, who.get(p.playerId) ?? '?'), h('span', { class: 'by' }, `${p.hits} hits · +${p.points}${p.bonus ? ` (${p.bonus} for speaking)` : ''}`)),
-            ),
+            // One row at a time, last place first, so the top scorer lands last.
+            stagger(
+              rows
+                .map((p) =>
+                  h('li', {}, h('span', { class: 'text' }, who.get(p.playerId) ?? '?'), h('span', { class: 'by' }, `${p.hits} hits · +${p.points}${p.bonus ? ` (${p.bonus} for speaking)` : ''}`)),
+                )
+                .reverse(),
+              450,
+              300,
+            ).reverse(),
           ),
         );
       }
@@ -252,6 +270,10 @@ function boss(game: KanaRaidView): HTMLElement {
     h(
       'div',
       { class: `raid-boss ${artOk ? 'art' : 'no-art'}` },
+      // Beaten: the defeat sheet plays once behind the word, ending empty.
+      b.defeated && artOk && isReady(BOSS_DEFEAT.src)
+        ? h('div', { class: 'raid-boss-art sheet' }, spriteEl(BOSS_DEFEAT, 384, 'poof'))
+        : h('div', { class: 'raid-boss-art' }),
       h(
         'div',
         { class: 'raid-boss-word', lang: 'ja' },

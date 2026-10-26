@@ -9,7 +9,7 @@
 import type { HostLine, Level } from '../../content/src/types.js';
 import { HOST_EVENTS, type HostEvent as AiEvent, type HostVoice as AiHostVoice, type PendingLine } from '../ai/index.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
-import type { HostSay } from '../../shared/src/protocol.js';
+import type { HostMood, HostSay } from '../../shared/src/protocol.js';
 import type { Room } from './room.js';
 
 export interface HostVoice {
@@ -55,6 +55,14 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   };
 }
 
+const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok']);
+const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry']);
+
+/** The host's reaction to a cue: a cheer for a win, a flinch for a miss, otherwise just the idle loop. */
+export function moodFor(event: string): HostMood | undefined {
+  return CHEER.has(event) ? 'cheer' : OOPS.has(event) ? 'oops' : undefined;
+}
+
 /** Wires a voice to a room: each cue is spoken and lands only if its phase is still current. */
 export function hostDirector(voice: HostVoice) {
   return (room: Room, cues: HostCue[], phaseSeq: number): void => {
@@ -64,7 +72,7 @@ export function hostDirector(voice: HostVoice) {
     if (!cue) return;
     voice
       .speak(room.code, cue)
-      .then((line) => line && room.say({ ...line, phaseSeq }))
+      .then((line) => line && room.say({ ...line, mood: line.mood ?? moodFor(cue.event), phaseSeq }))
       .catch(() => {
         // The host just stays quiet this phase.
       });

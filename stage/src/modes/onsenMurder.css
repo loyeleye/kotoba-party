@@ -140,7 +140,7 @@
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .round { font-size: 24px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .timer { font-size: 34px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .host { padding: 4px 14px; gap: 10px; }
-  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-portrait { width: 40px; height: 40px; }
+  body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-sprite { width: 64px; height: 64px; margin: 0; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-jp { font-size: 24px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .host-en { font-size: 24px; }
   body[data-mode='onsen-murder']:not([data-phase='lobby']) .player { padding: 4px 10px; font-size: 24px; }

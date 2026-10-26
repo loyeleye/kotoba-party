@@ -45,9 +45,13 @@ export interface HostSay {
   kana: string;
   en: string;
   audioUrl?: string;
+  /** How the host reacts as the line lands: the stage plays that animation once, then idles. */
+  mood?: HostMood;
   /** The phase this line belongs to; a line from an earlier phase is not shown. */
   phaseSeq: number;
 }
+
+export type HostMood = 'cheer' | 'oops';
 
 export interface RecapView {
   standings: { playerId: string; name: string; score: number }[];
@@ -77,6 +81,8 @@ export interface RoomView {
   packs: { id: string; title: string; titleJa: string; blurb: string }[];
   players: PlayerView[];
   host: HostSay | null;
+  /** Calm motion is on: no sprite loops, shakes or wipes, only fades. */
+  calmMotion: boolean;
   /** The mode's own view, while a game runs. */
   game: GameView | null;
   recap: RecapView | null;
@@ -111,6 +117,8 @@ export type Command =
   | { id: string; type: 'micCheck'; utterance: unknown }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' }
+  /** The VIP's Calm motion switch: stage and phones swap movement for fades and still frames. */
+  | { id: string; type: 'setMotion'; calm: boolean }
   /** Main stage only: room settings. */
   | { id: string; type: 'settings'; remoteControl: boolean };
 

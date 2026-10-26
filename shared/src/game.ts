@@ -33,6 +33,8 @@ export interface GameState {
   modeState: unknown;
   packId: string | null;
   host: HostSay | null;
+  /** The VIP's Calm motion switch. Kept across games. */
+  calmMotion: boolean;
   /** Host cues raised by the last action; the server drains them after each dispatch. */
   cues: HostCue[];
   phrasebook: Record<string, PhraseEntry[]>;
@@ -75,6 +77,7 @@ export function createGame(code: string): GameState {
     modeState: null,
     packId: null,
     host: null,
+    calmMotion: false,
     cues: [],
     phrasebook: {},
     recap: null,
@@ -244,6 +247,13 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (cmd.phaseSeq !== state.phaseSeq) return fail('stale-phase');
       if (state.deadline === null) return fail('wrong-phase');
       advance(state, ctx);
+      return OK;
+    }
+    case 'setMotion': {
+      if (!isVip && !isStage) return fail('not-vip');
+      if (typeof cmd.calm !== 'boolean') return fail('bad-command');
+      if (state.calmMotion === cmd.calm) return { changed: false };
+      state.calmMotion = cmd.calm;
       return OK;
     }
     case 'playAgain': {

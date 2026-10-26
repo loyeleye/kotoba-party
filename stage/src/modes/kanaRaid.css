@@ -23,7 +23,7 @@
 .raid-wave-tag { font-weight: 900; color: var(--warn); letter-spacing: 0.06em; margin: 0; font-size: 28px; }
 .raid-count { color: var(--muted); }
 .raid-combo { margin-left: auto; font-weight: 900; color: var(--muted); padding: 6px 18px; border-radius: 999px; border: 2px solid var(--line); }
-.raid-combo.live { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-size: 36px; animation: raid-pulse 500ms ease-in-out infinite alternate, raid-fade var(--fade) linear forwards; }
+.raid-combo.live { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-size: 36px; animation: raid-pulse 500ms steps(1, end) infinite alternate; }
 .raid-how { color: var(--muted); font-size: 24px; text-align: center; margin: 0; }
 
 .raid-arena {
@@ -43,48 +43,69 @@
 .raid-yokai.lane-2 { top: 64%; }
 .raid-yokai.leader { top: 22%; }
 .raid-yokai { contain: layout style; }
-/* Marching: a full-width track slides by transform (GPU, no layout per frame); the yōkai sits on its left edge. */
-.raid-yokai.marching { left: 0; width: 100%; margin-left: 0; pointer-events: none; will-change: transform; animation: raid-march var(--dur) linear var(--delay) both; }
+/* Marching: a track slides by transform (GPU, no layout per frame); the yōkai sits on its left edge.
+   The track stops 120 px short of the right edge, so a yōkai walks in whole, not cut in half
+   (kanaRaid.ts places a caught one on the same track). */
+.raid-yokai.marching { left: 0; width: calc(100% - 120px); margin-left: 0; pointer-events: none; will-change: transform; animation: raid-march var(--dur) linear var(--delay) both; }
 .raid-yokai.marching > .raid-yokai-inner { width: 150px; margin-left: -75px; }
 .raid-yokai.marching.wide > .raid-yokai-inner { width: 230px; margin-left: -115px; }
-.raid-yokai-inner { display: grid; justify-items: center; gap: 4px; animation: raid-bob 1.6s ease-in-out infinite alternate; }
+.raid-yokai-inner { display: grid; justify-items: center; gap: 4px; animation: raid-bob 1.6s step-end infinite; }
 .raid-yokai.lane-1 .raid-yokai-inner { animation-delay: -0.5s; }
 .raid-yokai.lane-2 .raid-yokai-inner { animation-delay: -1.1s; }
 .raid-hp { width: 100px; height: 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.5); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.2); }
 .raid-hp span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--warn)); transition: width 200ms; }
 .raid-body { position: relative; width: 128px; height: 128px; background-size: contain; background-repeat: no-repeat; background-position: center; image-rendering: pixelated; }
-.raid-yokai.yokai-blob .raid-body { background-size: 190%; }
+/* The blob is drawn small on its canvas: shown at 2×, centred, so its pixels stay square. */
+.raid-yokai.yokai-blob .raid-body { background-size: 256px 256px; }
+.raid-body > .sprite { position: absolute; left: 50%; top: 50%; translate: -50% -50%; }
+.raid-yokai.yokai-blob .raid-body > .sprite { width: 256px; height: 256px; }
 .raid-tag { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); display: flex; gap: 8px; align-items: baseline; background: #fff7e6; color: #1a1426; border: 3px solid #1a1426; border-radius: 10px; padding: 2px 12px; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35); white-space: nowrap; }
 .raid-kana { font-size: 60px; font-weight: 900; line-height: 1.05; }
 .raid-yokai.wide .raid-kana { font-size: 40px; }
 .raid-yokai.wide .raid-kana.alt::before { content: '/ '; color: #8a7aa8; }
 .raid-leader { margin-top: 14px; font-size: 24px; font-weight: 800; color: var(--warn); background: rgba(26, 20, 64, 0.85); padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
-.raid-yokai.leader .raid-body { width: 168px; height: 168px; }
 .raid-yokai.leader .raid-kana { font-size: 76px; }
 .raid-yokai.leader .raid-tag { border-color: var(--warn); box-shadow: 0 0 18px var(--warn); }
-.raid-yokai.hit .raid-body { animation: raid-shake 300ms linear 2; filter: brightness(1.6); }
-.raid-yokai.defeated .raid-yokai-inner { animation: raid-poof 900ms ease-out forwards; }
+/* A hit: a 4 px shake in whole steps and a white flash of the sprite's own shape (a mask, not a
+   filter, so the flash is only an opacity change). */
+.raid-yokai.hit .raid-body { animation: raid-shake 300ms step-end 2; }
+.raid-body::after { content: ''; position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; mask: var(--art) center / contain no-repeat; }
+.raid-yokai.yokai-blob .raid-body::after { mask-size: 256px 256px; }
+.raid-yokai.hit .raid-body::after { animation: raid-flash 300ms step-end 2; }
+/* Caught: the hit sheet plays once and ends empty (kanaRaid.ts); the kana tag fades with it. */
+.raid-yokai.defeated .raid-tag, .raid-yokai.defeated .raid-hp, .raid-yokai.defeated .raid-leader { animation: raid-fade-out 450ms steps(3, end) forwards; }
+.raid-yokai.defeated .raid-yokai-inner { animation: none; }
+/* Some sheets end on a burst rather than a puff: the last two frames fade, so nothing pops off. */
+.raid-body > .sprite.poof, .raid-boss-art.sheet > .sprite.poof { animation: raid-fade-out 200ms steps(2, end) calc(var(--ms) * 0.78) forwards; }
+/* Without the sheet, the still sprite fades up and out instead. */
+.raid-yokai.defeated.no-sheet .raid-yokai-inner { animation: raid-poof 900ms steps(6, end) forwards; }
 .raid-burst { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); font-size: 120px; color: var(--warn); pointer-events: none; animation: raid-burst 900ms ease-out forwards; }
+.raid-yokai.defeated:not(.no-sheet) .raid-burst { display: none; }
 
 /* No art: a CSS ghost. */
 .raid-yokai.no-art .raid-body { background: radial-gradient(circle at 35% 30%, #fff 0 6%, transparent 7%), radial-gradient(circle at 65% 30%, #fff 0 6%, transparent 7%), linear-gradient(#cdbcf5, #8e74d6); border-radius: 50% 50% 18% 18% / 60% 60% 30% 30%; box-shadow: 0 0 24px rgba(142, 116, 214, 0.6); }
 
 @keyframes raid-march { 0% { transform: translateX(100%); opacity: 0; } 4% { opacity: 1; } 95% { opacity: 1; } 100% { transform: translateX(-8%); opacity: 0; } }
-@keyframes raid-bob { from { transform: translateY(-8px); } to { transform: translateY(8px); } }
-@keyframes raid-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
-@keyframes raid-poof { 0% { transform: scale(1); opacity: 1; } 40% { transform: scale(1.25) rotate(-8deg); } 100% { transform: scale(0.2) rotate(20deg); opacity: 0; } }
+/* A two-pixel hop in whole steps, not a smooth float that blurs the sprite between pixels. */
+@keyframes raid-bob { 0%, 100% { transform: translateY(0); } 25%, 75% { transform: translateY(-2px); } 50% { transform: translateY(-4px); } }
+@keyframes raid-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@keyframes raid-flash { 0% { opacity: 0.85; } 50% { opacity: 0; } }
+@keyframes raid-fade-out { to { opacity: 0; } }
+@keyframes raid-poof { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-24px); opacity: 0; } }
 @keyframes raid-burst { 0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(2.2) rotate(90deg); opacity: 0; } }
-@keyframes raid-pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
-@keyframes raid-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0.25; } }
+/* The live combo chip blinks its border (no scaling, no fading: it stays readable). */
+@keyframes raid-pulse { from { box-shadow: 0 0 0 0 var(--warn); } to { box-shadow: 0 0 0 4px var(--warn); } }
 @keyframes raid-pop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 /* ---- the boss ---- */
 .raid-boss-stage { width: 100%; display: grid; gap: 16px; justify-items: center; text-align: center; }
-.raid-boss { width: min(900px, 100%); min-height: 380px; display: grid; place-items: center; background-repeat: no-repeat; background-position: center; background-size: 380px 380px; image-rendering: pixelated; }
-.raid-boss.art { background-image: url('/stage/assets/yokai/yokai-boss.png'); }
-.raid-boss.no-art { background: radial-gradient(circle, rgba(142, 116, 214, 0.5), transparent 65%); }
-.raid-boss-stage:not(.defeated) .raid-boss { animation: raid-bob 2s ease-in-out infinite alternate; }
-.raid-boss-word { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+/* The boss art (192 px at 2×) sits behind the word and bobs on its own: the kana never move. */
+.raid-boss { position: relative; width: min(900px, 100%); min-height: 384px; display: grid; place-items: center; }
+.raid-boss-art { position: absolute; left: 50%; top: 50%; width: 384px; height: 384px; translate: -50% -50%; background: url('/stage/assets/yokai/yokai-boss.png') center / 384px 384px no-repeat; image-rendering: pixelated; }
+.raid-boss.no-art .raid-boss-art { background: radial-gradient(circle, rgba(142, 116, 214, 0.5), transparent 65%); }
+.raid-boss-stage:not(.defeated) .raid-boss-art { animation: raid-bob 2s step-end infinite; }
+.raid-boss-art.sheet { background: none; }
+.raid-boss-word { position: relative; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .raid-piece { display: grid; justify-items: center; gap: 6px; background: rgba(26, 20, 64, 0.9); border: 3px solid var(--accent); border-radius: 18px; padding: 10px 16px; min-width: 110px; }
 .raid-piece-char { font-size: 96px; font-weight: 900; line-height: 1; }
 .raid-piece-who { font-size: 24px; color: var(--muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -93,8 +114,12 @@
 .raid-piece.broken .raid-piece-who { color: var(--good); }
 .raid-blow { font-size: 56px; font-weight: 900; margin: 0; color: var(--warn); }
 .raid-blow span { font-size: 30px; color: var(--ink); font-weight: 700; }
-.raid-boss-stage.blow .raid-piece { animation: raid-pulse 400ms ease-in-out infinite alternate; }
-.raid-boss-stage.defeated .raid-boss { animation: raid-poof 1.4s ease-out 0.4s forwards; }
+.raid-boss-stage.blow .raid-piece { animation: raid-pulse 400ms steps(1, end) infinite alternate; }
+.raid-boss-stage.defeated .raid-boss-art:not(.sheet) { animation: raid-poof 1.4s steps(7, end) 0.4s forwards; }
+/* Calm motion: no bob, shake, flash or march fade; caught yōkai just fade. */
+body[data-motion='calm'] :is(.raid-yokai-inner, .raid-body, .raid-boss-art, .raid-combo.live, .raid-piece) { animation: none !important; }
+body[data-motion='calm'] .raid-body::after { display: none; }
+body[data-motion='calm'] .raid-yokai.defeated .raid-yokai-inner { animation: raid-fade-out 600ms ease forwards !important; }
 .raid-boss-stage.defeated .raid-piece { animation: none; }
 
 @media (max-width: 700px) {
