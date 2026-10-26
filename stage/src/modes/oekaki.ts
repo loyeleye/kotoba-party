@@ -78,13 +78,12 @@ function picture(view: RoomView, game: OekakiView): HTMLElement {
     return h('div', { class: 'oek-frame hidden' }, h('p', {}, game.hiddenDrawing ? 'Fude painted over this one.' : '…'));
   }
   const d = game.drawing;
-  const per = Math.max(60, Math.min(450, Math.floor(REPLAY_MS / Math.max(1, d.strokes.length))));
   // Replay while fakes are written; afterwards the picture is simply there.
   const elapsed = view.phase === 'answer' ? sincePhase(view) : 1e9;
   return h(
     'div',
     { class: 'oek-frame' },
-    inkSvg(d.strokes, { class: 'oek-ink', strokeMs: per, elapsedMs: elapsed, colors: d.colors.map((c) => PALETTE[c]), width: 2.4 }),
+    inkSvg(d.strokes, { class: 'oek-ink', totalMs: Math.min(REPLAY_MS, d.strokes.length * 450), elapsedMs: elapsed, colors: d.colors.map((c) => PALETTE[c]), width: 2.4 }),
   );
 }
 

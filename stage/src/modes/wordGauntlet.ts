@@ -151,7 +151,7 @@ function telephone(view: RoomView, game: WordGauntletView): HTMLElement {
           h(
             'li',
             { class: `wg-hop ${i === t.current && view.phase === 'answer' ? 'live' : ''} ${o.done ? 'done' : ''} ${o.skipped ? 'skipped' : ''}` },
-            h('span', { class: 'wg-hop-name' }, nameOf(view, o.playerId)),
+            h('span', { class: 'wg-hop-name' }, o.done ? '✓ ' : o.skipped ? '✗ ' : '', nameOf(view, o.playerId)),
             h('span', { class: 'wg-flag' }, o.skipped ? '–' : lang(o.to)),
           ),
         ),

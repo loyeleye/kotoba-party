@@ -8,7 +8,8 @@ import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
 import type { OmiaiView } from '../../../shared/src/modes/views.js';
 import type { QuestionView, TileView, TipView } from '../../../shared/src/modes/omiai/omiai.js';
 import type { Register } from '../../../shared/src/modes/omiai/manners.js';
-import { speakBox } from '../components/speak.js';
+import { canSpeak, speakBox } from '../components/speak.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { waiting } from '../components/ui.js';
 import { jpView } from '../components/jp.js';
 import type { PhoneContext, PhoneMode } from './types.js';
@@ -50,8 +51,8 @@ function sayFirst(ctx: Ctx, q: QuestionView, ms: number): HTMLElement {
     { class: 'screen' },
     guestLine(game),
     questionCard(q),
-    h('p', { class: 'big omi-sayfirst' }, 'Say it first! 🎤'),
-    h('p', { class: 'hint' }, 'Answer from memory, politely: end with です or ます. Saying it now earns the most.'),
+    h('p', { class: 'big omi-sayfirst' }, canSpeak() ? 'Say it first! 🎤' : 'From memory first! ⌨️'),
+    h('p', { class: 'hint' }, canSpeak() ? 'Answer from memory, politely: end with です or ます. Saying it now earns the most.' : 'Type your answer from memory, politely: end with です or ます. That earns the most.'),
     speakBox({ label: 'Hold and answer the guest', placeholder: 'Type your answer', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'answer', utterance, round: game.round }) }),
     countdown,
   );
@@ -264,14 +265,21 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
           { class: 'screen' },
           h('p', { class: 'big' }, mine.votedFor ? 'Vote in ❤' : 'Which answer is the most charming?'),
           mine.canVote
-            ? others.map((a) => h('button', { type: 'button', class: 'option', lang: 'ja', onclick: () => void send({ kind: 'vote', answerId: a.id, round: game.round }) }, a.text))
+            ? others.map((a) =>
+                h(
+                  'button',
+                  { type: 'button', class: 'option omi-vote', onclick: () => void send({ kind: 'vote', answerId: a.id, round: game.round }) },
+                  h('span', { lang: 'ja' }, '❤ ', a.text),
+                  mine.level === 'kana' ? h('small', { class: 'omi-vote-romaji' }, toRomaji(a.text)) : null,
+                ),
+              )
             : h('p', { class: 'hint' }, mine.votedFor ? 'Waiting for the other votes…' : 'Listen to the answers on the TV.'),
           isVip && game.answers.length
             ? h(
                 'details',
                 { class: 'omi-vip' },
                 h('summary', {}, 'VIP: hide an answer'),
-                game.answers.filter((a) => !a.hidden).map((a) => h('button', { type: 'button', class: 'secondary', lang: 'ja', onclick: () => void send({ kind: 'hide', answerId: a.id, round: game.round }) }, `Hide “${a.text}”`)),
+                game.answers.filter((a) => !a.hidden).map((a) => h('button', { type: 'button', class: 'vip-hide', onclick: () => void send({ kind: 'hide', answerId: a.id, round: game.round }) }, '🚫 Hide ', h('span', { lang: 'ja' }, `“${a.text}”`))),
               )
             : null,
         );

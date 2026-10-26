@@ -85,7 +85,7 @@ function tallyBars(view: RoomView, game: TouristView): HTMLElement | null {
       h(
         'li',
         { class: t.playerId === o.touristId ? 'tourist' : '' },
-        h('span', { class: 'tou-tally-name' }, nameOf(view, t.playerId)),
+        h('span', { class: 'tou-tally-name' }, t.playerId === o.touristId ? '🧳 ' : '', nameOf(view, t.playerId)),
         h('span', { class: 'tou-tally-bar', style: `width: ${Math.round((t.votes / max) * 100)}%` }),
         h('strong', {}, String(t.votes)),
       ),

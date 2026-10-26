@@ -48,10 +48,13 @@ const HAS_JA = new RegExp(`[${JA_CHAR}\\uff3f]`);
  * One pass over a string: a blank with the particle and mark that follow it, a number with its
  * counter, or a run of Japanese (spaces between Japanese words stay inside the run).
  */
+// One Japanese character, unless it is an opening bracket right before a blank: that bracket rides
+// with the blank, so 「 never ends a line (行末禁則).
+const JA_ONE = `(?![「『（](?:＿|_{3}))[${JA_CHAR}]`;
 const PIECES = new RegExp(
-  `(＿+|_{3,})([ぁ-ゖ]{0,2}[。、！？」』）]?)` +
+  `([「『（]?)(＿+|_{3,})([ぁ-ゖ]{0,2}[。、！？」』）]*)` +
     `|(\\d[\\d,.]*\\s?(?:[円枚人回個本匹時分秒点番歳階杯日月年冊台]|えん|まい|ばん|にん))` +
-    `|((?:[A-Za-z]+(?=[${JA_CHAR}]))?[${JA_CHAR}]+(?:[ \\u3000]+[${JA_CHAR}]+)*)`,
+    `|((?:[A-Za-z]+(?=[${JA_CHAR}]))?(?:${JA_ONE})+(?:[ \\u3000]+(?:${JA_ONE})+)*)`,
   'g',
 );
 
@@ -64,19 +67,19 @@ export function jpNodes(text: string, inJapanese = false): (Node | string)[] {
     const at = m.index ?? 0;
     if (at > last) out.push(text.slice(last, at));
     last = at + m[0].length;
-    if (m[1] !== undefined) {
+    if (m[2] !== undefined) {
       const blank = document.createElement('span');
       blank.className = 'jp-blank';
       blank.setAttribute('aria-label', 'blank');
       blank.textContent = '＿＿＿';
-      if (!m[2]) out.push(wrapJa([blank], inJapanese));
-      else out.push(nowrap([blank, m[2]], inJapanese));
-    } else if (m[3] !== undefined) {
-      out.push(nowrap([m[3]], inJapanese));
+      if (!m[1] && !m[3]) out.push(wrapJa([blank], inJapanese));
+      else out.push(nowrap([...(m[1] ? [m[1]] : []), blank, ...(m[3] ? [m[3]] : [])], inJapanese));
+    } else if (m[4] !== undefined) {
+      out.push(nowrap([m[4]], inJapanese));
     } else if (inJapanese) {
-      out.push(m[4]!);
+      out.push(m[5]!);
     } else {
-      out.push(wrapJa([m[4]!], false));
+      out.push(wrapJa([m[5]!], false));
     }
   }
   if (last < text.length) out.push(text.slice(last));
@@ -251,3 +254,17 @@ export const seatShape = (seat: number): string => SEAT_SHAPES[(seat - 1) % SEAT
 export const LEVEL_LABELS: Record<string, string> = { kana: 'かな', n5: 'N5', n4: 'N4' };
 
 export const HOST_NAMES: Record<string, string> = { pon: 'ポン', chochin: 'ちょうちんさん', fude: 'フデ' };
+
+// ---- reveal pacing ----
+
+/** Each element enters `stepMs` after the one before it (the .beat-in animation in the stage CSS). */
+export function stagger<T extends HTMLElement>(els: T[], stepMs = 160, startMs = 0): T[] {
+  els.forEach((el, i) => {
+    el.classList.add('beat-in');
+    el.style.animationDelay = `${startMs + i * stepMs}ms`;
+  });
+  return els;
+}
+
+/** Beat n of a reveal sheet, as an inline style: things land one beat apart, not all at once. */
+export const beat = (n: number, beatMs = 700): string => `animation-delay:${n * beatMs}ms`;

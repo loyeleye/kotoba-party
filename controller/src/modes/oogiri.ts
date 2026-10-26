@@ -49,8 +49,10 @@ function sayFirst(slot: SlotView, round: number, send: PhoneContext['send']): HT
     { class: 'screen oo-answer' },
     h('p', { class: 'oo-step' }, `Prompt ${slot.index + 1} of ${slot.count}`),
     promptCard(slot.prompt),
-    h('p', { class: 'big oo-sayfirst' }, 'Say it first! 🎤'),
-    h('p', { class: 'hint' }, 'From memory, what goes in the blank? Saying it now earns the most.'),
+    // No mic (or quiet mode): the same memory window, but asking for a typed answer, not a shout.
+    canSpeak()
+      ? [h('p', { class: 'big oo-sayfirst' }, 'Say it first! 🎤'), h('p', { class: 'hint' }, 'From memory, what goes in the blank? Saying it now earns the most.')]
+      : [h('p', { class: 'big oo-sayfirst' }, 'From memory first! ⌨️'), h('p', { class: 'hint' }, 'Type what goes in the blank before the tiles open. That earns the most.')],
     speakBox({
       label: 'Hold and say your answer',
       placeholder: 'Type what goes in the blank',

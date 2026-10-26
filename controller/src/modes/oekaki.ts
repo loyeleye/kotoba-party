@@ -4,7 +4,7 @@
 
 import { h, hasReading, ruby } from '../../../shared/src/dom.js';
 import type { OekakiView } from '../../../shared/src/modes/views.js';
-import { OEKAKI_LIMITS, PALETTE } from '../../../shared/src/modes/oekaki/drawing.js';
+import { OEKAKI_LIMITS, PALETTE, PALETTE_NAMES } from '../../../shared/src/modes/oekaki/drawing.js';
 import { MAX_FAKE_LENGTH, MAX_FAKE_TILES } from '../../../shared/src/modes/oekaki/fakes.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -85,6 +85,7 @@ function drawScreen(ctx: Ctx): HTMLElement {
       sendLabel: 'Send my drawing 🖼',
       limits: OEKAKI_LIMITS,
       palette: PALETTE,
+      paletteNames: PALETTE_NAMES,
       lineWidth: 0.02,
       label: 'Drawing pad: draw your secret word',
       onSend: (strokes, colors) => send({ kind: 'draw', strokes, colors }),
@@ -206,7 +207,7 @@ function voteScreen(ctx: Ctx): HTMLElement {
           'div',
           { class: 'oek-vip' },
           h('p', { class: 'hint' }, 'VIP: hide a title that shouldn’t be on the TV.'),
-          options.filter((o) => !o.hidden).map((o) => h('button', { type: 'button', class: 'secondary oek-hide-opt', onclick: () => hide(o.id) }, `Hide “${o.text}”`)),
+          options.filter((o) => !o.hidden).map((o) => h('button', { type: 'button', class: 'vip-hide oek-hide-opt', onclick: () => hide(o.id) }, '🚫 Hide ', h('span', { lang: 'ja' }, `“${o.text}”`))),
           hideDrawingButton(ctx),
         )
       : null;
@@ -277,7 +278,7 @@ function scoreScreen(ctx: Ctx): HTMLElement {
           'details',
           { class: 'oek-vip' },
           h('summary', {}, 'VIP: hide a title'),
-          r.options.filter((o) => !o.hidden && !o.real).map((o) => h('button', { type: 'button', class: 'secondary oek-hide-opt', onclick: () => void send({ kind: 'hide', optionId: o.id }) }, `Hide “${o.text}”`)),
+          r.options.filter((o) => !o.hidden && !o.real).map((o) => h('button', { type: 'button', class: 'vip-hide oek-hide-opt', onclick: () => void send({ kind: 'hide', optionId: o.id }) }, '🚫 Hide ', h('span', { lang: 'ja' }, `“${o.text}”`))),
           hideDrawingButton(ctx),
         )
       : null,

@@ -131,6 +131,20 @@ export function romajiMorae(line: SongLine): string[] {
   return line.romaji.split(/[\s-]+/).filter(Boolean);
 }
 
+/**
+ * The romaji as it is sung, for display only (scoring keeps romajiMorae): a long-vowel う after an
+ * o-sound is held as "o" (o-ha-yo-o), い after an e-sound as "e", and a small っ is a silent beat.
+ */
+export function sungRomaji(morae: readonly string[]): string[] {
+  return morae.map((m, i) => {
+    const prev = morae[i - 1] ?? '';
+    if (m === 'u' && prev.endsWith('o')) return 'o';
+    if (m === 'i' && prev.endsWith('e')) return 'e';
+    if (/^[kstpcg]$/.test(m)) return '·';
+    return m;
+  });
+}
+
 /** ms per beat at a tempo. */
 export const beatMs = (bpm: number): number => 60_000 / bpm;
 

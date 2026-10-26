@@ -44,6 +44,8 @@ const els = {
 
 let client: RoomClient | null = null;
 let lastPhaseSeq = -1;
+/** The phase's full length, as first seen: the ring timer's 100%. */
+let phaseTotal: number | null = null;
 const logLines: string[] = [];
 
 $('debug').hidden = !DEBUG;
@@ -127,7 +129,14 @@ async function openRoom(fresh: boolean): Promise<void> {
 function render(view: RoomView, v: number): void {
   if (view.phaseSeq !== lastPhaseSeq) {
     log(`v${v} → ${view.phase}${view.round ? ` (round ${view.round}/${view.totalRounds})` : ''}`);
+    // A phase change in a game: curtain wipe (restarted by reflow), and the ring timer starts full.
+    if (lastPhaseSeq >= 0 && view.phase !== 'lobby') {
+      els.main.classList.remove('wipe');
+      void els.main.offsetWidth;
+      els.main.classList.add('wipe');
+    }
     lastPhaseSeq = view.phaseSeq;
+    phaseTotal = client?.remainingMs() ?? null;
   }
   document.body.dataset.phase = view.phase;
   document.body.dataset.mode = view.mode ?? '';
@@ -164,6 +173,7 @@ function render(view: RoomView, v: number): void {
   // One scene per phase: a new phase builds fresh elements (and its entrance animations), an
   // update inside a phase patches the ones on screen so transitions and animations carry on.
   patch(els.fit, h('div', { class: 'scene', 'data-key': `${view.phaseSeq}` }, mainFor(view)));
+  for (const el of els.fit.querySelectorAll<HTMLElement>('[data-count]:not([data-counted])')) countUp(el);
   fitMain();
   tick();
 }
@@ -188,28 +198,35 @@ function mainFor(view: RoomView): HTMLElement {
 function recapScreen(view: RoomView): HTMLElement {
   const standings = view.recap?.standings ?? [];
   const places = placesOf(standings.map((s) => s.score));
-  const top = standings.slice(0, 3);
-  const rest = standings.slice(3);
+  // Only scorers stand on the podium; nobody is "3rd" for a 0. Shared places read "=2".
+  const scored = standings.filter((s) => s.score > 0).length;
+  const top = standings.slice(0, Math.min(3, scored));
+  const rest = standings.slice(top.length, scored);
+  const zero = standings.slice(scored);
   const tied = (i: number) => places.filter((p) => p === places[i]).length > 1;
+  const placeLabel = (i: number) => `${tied(i) ? '=' : ''}${places[i]}`;
   return h(
     'div',
     { class: 'recap' },
     h('p', { class: 'recap-title' }, ruby({ text: 'お疲れさま！', furigana: [['お', ''], ['疲', 'つか'], ['れさま！', '']] }), "Tonight's results"),
-    h(
-      'div',
-      { class: 'podium' },
-      top.map((s, i) =>
-        h(
+    top.length
+      ? h(
           'div',
-          { class: `step p${i + 1}${tied(i) ? ' tied' : ''}` },
-          places[i] === 1 ? h('span', { class: 'crown', 'aria-hidden': 'true' }, '👑') : null,
-          h('span', { class: 'who' }, s.name),
-          h('span', { class: 'pts' }, `${s.score} pts`),
-          h('span', { class: 'block' }, String(places[i])),
-        ),
-      ),
-    ),
-    rest.length ? h('p', { class: 'rest' }, rest.flatMap((s, i) => [i ? ' · ' : '', h('strong', {}, `${places[i + 3]}. ${s.name}`), ` ${s.score}`])) : null,
+          { class: 'podium' },
+          top.map((s, i) =>
+            h(
+              'div',
+              { class: `step p${i + 1}${tied(i) ? ' tied' : ''}` },
+              places[i] === 1 ? h('span', { class: 'crown', 'aria-hidden': 'true' }, '👑') : null,
+              h('span', { class: 'who' }, s.name),
+              h('span', { class: 'pts', 'data-count': s.score }, `${s.score} pts`),
+              h('span', { class: 'block' }, placeLabel(i)),
+            ),
+          ),
+        )
+      : h('p', { class: 'rest' }, 'No points tonight: a perfect tie. もう いっかい？'),
+    rest.length ? h('p', { class: 'rest' }, rest.flatMap((s, i) => [i ? ' · ' : '', h('strong', {}, `${placeLabel(i + top.length)}. ${s.name}`), ` ${s.score}`])) : null,
+    top.length && zero.length ? h('p', { class: 'rest' }, 'Also played: ', zero.map((s) => s.name).join(' · ')) : null,
     view.recap?.awards.length
       ? h(
           'ul',
@@ -220,6 +237,21 @@ function recapScreen(view: RoomView): HTMLElement {
         )
       : null,
   );
+}
+
+/** Recap points tick up from 0 as the podium rises, instead of arriving finished. */
+function countUp(el: HTMLElement): void {
+  el.dataset.counted = '1';
+  const to = Number(el.dataset.count);
+  if (!to || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const start = performance.now() + 600;
+  const step = (now: number) => {
+    const t = Math.min(1, Math.max(0, (now - start) / 1400));
+    el.textContent = `${Math.round(to * (1 - (1 - t) ** 3))} pts`;
+    if (t < 1 && el.isConnected) requestAnimationFrame(step);
+  };
+  el.textContent = '0 pts';
+  requestAnimationFrame(step);
 }
 
 function fillMenus(view: RoomView): void {
@@ -263,6 +295,8 @@ function tick(): void {
   const text = formatSeconds(left);
   if (els.timer.textContent !== text) els.timer.textContent = text;
   els.timer.classList.toggle('urgent', left !== null && left > 0 && left <= 5_000);
+  if (left !== null && (phaseTotal === null || left > phaseTotal)) phaseTotal = left;
+  els.timer.style.setProperty('--left', left !== null && phaseTotal ? String(Math.max(0, left / phaseTotal)) : '1');
 }
 
 async function command(body: Parameters<RoomClient['send']>[0]): Promise<void> {

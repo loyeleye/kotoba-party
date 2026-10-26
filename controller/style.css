@@ -116,7 +116,10 @@ body[data-mode] .timer { color: var(--on-accent); }
 .phrase-card .pc-en { color: var(--muted); font-size: 14px; }
 .vip-start { display: grid; gap: 10px; }
 
-.banner { position: sticky; top: 0; z-index: 4; background: var(--warn); color: #1a1426; font-weight: 700; padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
+.banner { position: fixed; z-index: 5; top: max(10px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); background: var(--warn); color: var(--on-accent); font-weight: 700; font-size: 15px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--outline); white-space: nowrap; }
+.banner.back { background: var(--good); }
+/* Errors get their own toast above the thumb zone, so they never hide the reconnect pill. */
+.toast { position: fixed; z-index: 6; left: 16px; right: 16px; bottom: calc(max(24px, env(safe-area-inset-bottom)) + 110px); max-width: 448px; margin: 0 auto; background: var(--paper); color: var(--paper-ink); font-weight: 700; padding: 12px 14px; border-radius: 12px; border: 3px solid var(--outline); box-shadow: 0 4px 0 var(--outline); text-align: center; }
 .timer { position: fixed; z-index: 3; top: max(12px, env(safe-area-inset-top)); right: 16px; font-family: var(--font-pixel); font-size: 26px; font-weight: 700; color: var(--warn); font-variant-numeric: tabular-nums; }
 
 .levels { display: grid; gap: 8px; }
@@ -188,3 +191,39 @@ span.jpv .jpv-written { font-size: 11px; }
 /* Pixel art in place of emoji (shared/src/art.ts): sized by the font-size the emoji had. */
 img.pix { width: 1.3em; height: 1.3em; object-fit: contain; image-rendering: pixelated; vertical-align: middle; }
 img.pix.om-face, img.pix.om-p-face, img.pix.omi-guest-emoji, img.pix.omi-guest-p-emoji { width: 1.6em; height: 1.6em; }
+
+/* Touch targets: 44 px at least, everywhere (WCAG 2.5.5). */
+button, select, summary, .option, .tile, .kana-key { min-height: 44px; }
+summary { display: flex; align-items: center; }
+
+/* How this phone answers right now (components/speak.ts micChip). */
+.mic-chip { justify-self: start; margin: 0; padding: 4px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+.mic-chip.mic-ready { color: var(--good); border-color: var(--good); }
+.mic-chip.mic-blocked { color: var(--bad); border-color: var(--bad); }
+
+/* The one talk button on a screen sits in a bottom dock, in thumb reach (main.ts adds .docked). */
+.talk.docked { position: fixed; z-index: 4; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); max-width: 448px; margin: 0 auto; width: auto; box-shadow: 0 6px 0 var(--outline), 0 0 0 4px var(--bg); }
+body.has-dock main { padding-bottom: 120px; }
+.kdp-sang { width: 100%; }
+
+/* Lock-in (main.ts lockIn): a hanko stamp that thumps down and fades. */
+.lock-stamp { position: fixed; z-index: 7; left: 50%; top: 42%; translate: -50% -50%; pointer-events: none; font-family: var(--font-ja); font-weight: 900; font-size: 64px; color: var(--lantern); border: 6px solid var(--lantern); border-radius: 14px; padding: 2px 16px; background: color-mix(in srgb, var(--paper) 85%, transparent); rotate: -8deg; animation: stamp 900ms cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes stamp { 0% { scale: 1.8; opacity: 0; } 18% { scale: 0.92; opacity: 1; } 30% { scale: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+/* A pressed button squishes a little before it lets go. */
+.primary:active, .option:active, .secondary:active, .tile:active { scale: 0.96; }
+@media (prefers-reduced-motion: reduce) { .lock-stamp { animation: none; opacity: 0.9; } }
+
+/* VIP moderation rows: dashed and red-edged, so they never pass for vote buttons. */
+.vip-hide { display: block; width: 100%; text-align: left; font-size: 16px; padding: 10px 14px; margin: 0 0 8px; border-radius: 10px; border: 2px dashed var(--bad); background: transparent; color: var(--muted); }
+.omi-vote { display: grid; gap: 2px; }
+.omi-vote-romaji { color: var(--romaji, var(--warn)); font-size: 15px; }
+
+/* Hold to confirm (components/ui.ts holdButton): the fill creeps across while held. */
+.hold { position: relative; overflow: hidden; display: grid; justify-items: center; width: 100%; }
+.hold .hold-fill { position: absolute; inset: 0; background: color-mix(in srgb, var(--accent) 45%, transparent); transform-origin: left; transform: scaleX(0); }
+.hold.holding .hold-fill { transform: scaleX(1); transition: transform var(--hold) linear; }
+.hold .hold-label, .hold .hold-sub { position: relative; }
+.hold .hold-sub { font-size: 12px; color: var(--muted); }
+
+/* Last Train has its own per-answer clock; the corner timer is the train's departure. */
+body[data-mode='last-train'] .timer:not(:empty)::before { content: '🚃 departs '; font-size: 13px; font-family: var(--font-body); }

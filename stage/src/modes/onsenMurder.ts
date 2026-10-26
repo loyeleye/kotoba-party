@@ -132,7 +132,7 @@ function introScreen(view: RoomView, game: OnsenView): HTMLElement {
   return h(
     'div',
     { class: 'om-stage om-intro' },
-    h('p', { class: 'om-kicker', lang: 'ja' }, '温泉殺人事件 · Murder at the Onsen'),
+    h('p', { class: 'om-kicker', lang: 'ja' }, ruby({ text: '温泉殺人事件', furigana: [['温泉', 'おんせん'], ['殺人', 'さつじん'], ['事件', 'じけん']] }), ' · Murder at the Onsen'),
     h('div', { class: 'om-file' }, victimPic(c.id, c.victim.emoji, 'om-victim big'), h('div', {}, jpBlock(c.title, 'om-file-title'), jpBlock(c.setting), jpBlock({ ...c.victim.found, text: `${c.victim.name.text}は ${c.victim.found.text}`, kana: `${c.victim.name.kana}は ${c.victim.found.kana}` }))),
     lineup(view, game),
     h('p', { class: 'om-line' }, `Take turns questioning the suspects in Japanese, on your phone. Then name the culprit! Evidence: ${c.item.emoji} ${c.item.name.en}.`),
@@ -155,7 +155,7 @@ function turnScreen(view: RoomView, game: OnsenView): HTMLElement {
         { class: 'om-main' },
         h('p', { class: 'om-banner' }, `🎤 ${who}’s turn: pick a suspect and ask in Japanese`, h('span', { class: 'muted' }, ` · question ${turn?.no ?? 0} of ${turn?.total ?? 0}`)),
         lineup(view, game, { confusedId: turn?.miss?.suspectId ?? null }),
-        turn?.miss ? h('p', { class: 'om-line muted' }, `Heard “${turn.miss.heard}”. One more try…`) : h('p', { class: 'om-line muted' }, 'Asked so far: 📍 where · ❓ doing what · 👀 who they saw · 🕙 bedtime · 💬 the victim · 🔎 the evidence'),
+        turn?.miss ? h('p', { class: 'om-line muted' }, `Heard “${turn.miss.heard}”. One more try…`) : h('p', { class: 'om-line om-legend' }, h('span', { class: 'muted' }, 'Questions to ask: '), ['📍 where', '❓ doing what', '👀 who they saw', '🕙 bedtime', '💬 the victim', '🔎 the evidence'].map((t) => h('span', { class: 'om-chip' }, t))),
       ),
       notebook(view, game),
     ),

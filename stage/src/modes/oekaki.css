@@ -30,20 +30,20 @@
 .oek .oek-options li::before { content: counter(oek-opt); color: var(--accent); font-weight: 900; font-size: 26px; min-width: 28px; }
 .oek .oek-options li.hidden, .oek .oek-results li.hidden { opacity: 0.45; border-style: dashed; }
 .oek .oek-opt-text { font-size: 38px; font-weight: 800; }
-.oek .oek-opt-kana { font-size: 22px; color: var(--muted); }
-.oek .oek-opt-romaji { font-size: 20px; color: var(--warn); letter-spacing: 0.04em; }
+.oek .oek-opt-kana { font-size: 24px; color: var(--muted); }
+.oek .oek-opt-romaji { font-size: 24px; color: var(--warn); letter-spacing: 0.04em; }
 
 .oek .oek-real { display: grid; gap: 2px; justify-items: center; text-align: center; border: 3px solid var(--warn); border-radius: 22px; padding: 10px 24px 14px; box-shadow: 0 0 40px #ffd23f33; animation: oek-pop 0.5s cubic-bezier(.2, 1.6, .4, 1) both; }
-.oek .oek-real-tag { color: var(--warn); font-weight: 800; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
+.oek .oek-real-tag { color: var(--warn); font-weight: 800; font-size: 24px; letter-spacing: 0.06em; text-transform: uppercase; }
 .oek .oek-real-text { font-size: 64px; font-weight: 900; line-height: 1.4; }
 .oek .oek-real-text rt { font-size: 24px; font-weight: 600; color: var(--muted); }
 .oek .oek-real-en { font-size: 30px; font-weight: 700; color: var(--good); }
-.oek .oek-found { font-size: 22px; color: var(--ink); }
+.oek .oek-found { font-size: 24px; color: var(--ink); }
 .oek .oek-results li { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 18px; }
 .oek .oek-res-title { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
 .oek .oek-res-title .oek-opt-text { font-size: 30px; }
-.oek .oek-res-title small { font-size: 18px; color: var(--muted); }
-.oek .oek-results .by { margin-left: auto; color: var(--muted); font-size: 20px; }
+.oek .oek-res-title small { font-size: 24px; color: var(--muted); }
+.oek .oek-results .by { margin-left: auto; color: var(--muted); font-size: 24px; }
 
 @keyframes oek-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes oek-pop { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: none; } }
@@ -55,13 +55,13 @@
   .oek .oek-side .prompt { font-size: 40px; }
   .oek .oek-opt-text { font-size: 28px; }
   .oek .oek-real-text { font-size: 44px; }
-  .oek .oek-real-en { font-size: 22px; }
-  .oek .oek-real-tag, .oek .oek-found { font-size: 16px; }
+  .oek .oek-real-en { font-size: 24px; }
+  .oek .oek-real-tag, .oek .oek-found { font-size: 24px; }
   .oek .oek-real { padding: 6px 18px 8px; }
   .oek .oek-res-title .oek-opt-text { font-size: 24px; }
   .oek .oek-results li, .oek .oek-options li { padding: 6px 14px; }
   .oek .oek-title { font-size: 64px; }
-  .oek .oek-step { font-size: 22px; padding: 8px 16px; }
+  .oek .oek-step { font-size: 24px; padding: 8px 16px; }
 }
 @media (max-width: 900px) {
   .oek .oek-board { grid-template-columns: 1fr; justify-items: center; }

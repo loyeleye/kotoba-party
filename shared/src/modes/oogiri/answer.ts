@@ -65,7 +65,12 @@ const BLANK_EN = /_{2,}|＿+/;
 /** Puts `fill` into a sentence's blank (or after it, if the sentence has none). */
 export function fillBlank(sentence: string, fill: string, en = false): string {
   const blank = en ? BLANK_EN : BLANK_JP;
-  return blank.test(sentence) ? sentence.replace(blank, fill) : `${sentence} ${fill}`;
+  const m = blank.exec(sentence);
+  if (!m) return `${sentence} ${fill}`;
+  const before = sentence.slice(0, m.index);
+  // A blank already inside quotes ("…__.") takes the answer bare, not “quoted” again.
+  const quoted = en && (before.split(/["“”]/).length - 1) % 2 === 1;
+  return before + (quoted ? fill.replace(/^“(.*)”$/s, '$1') : fill) + sentence.slice(m.index + m[0].length);
 }
 
 /** The player's whole sentence: their prompt version with the answer in the blank. */

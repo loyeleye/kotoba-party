@@ -10,7 +10,7 @@ import { MODES } from '../../shared/src/modes/registry.js';
 import { LEVELS, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService } from './components/mic.js';
-import { setSpeakLevel, speakBox } from './components/speak.js';
+import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
 
 const LEVEL_HINTS: Record<Level, string> = {
   kana: 'I can’t read Japanese yet',
@@ -77,6 +77,7 @@ interface Session {
 const base = location.origin;
 const app = document.getElementById('app')!;
 const banner = document.getElementById('banner')!;
+const toast = document.getElementById('toast')!;
 const timerEl = document.getElementById('timer')!;
 
 const JOIN_ERRORS: Record<JoinError | 'room-not-found' | 'network', string> = {
@@ -124,6 +125,7 @@ function showJoin(message = ''): void {
   client = null;
   screenKey = '';
   timerEl.textContent = '';
+  document.body.classList.remove('has-dock');
   const params = new URLSearchParams(location.search);
   const saved = load<Session>('kotoba:session');
   const codeInput = h('input', {
@@ -196,13 +198,34 @@ function start(s: Session): void {
   mount(app, h('p', { class: 'center' }, 'Connecting…'));
 }
 
+// Short blips stay invisible: the pill only shows after 800 ms away, and says "Back in!" once the
+// socket returns.
+let awayTimer: ReturnType<typeof setTimeout> | undefined;
+let wasAway = false;
 function status(st: ConnectionStatus): void {
-  banner.hidden = st === 'open' || st === 'connecting';
-  banner.textContent = st === 'reconnecting' ? 'Reconnecting… your seat is saved' : st;
+  clearTimeout(awayTimer);
+  if (st === 'open') {
+    if (wasAway) {
+      banner.className = 'banner back';
+      banner.textContent = 'Back in!';
+      banner.hidden = false;
+      awayTimer = setTimeout(() => (banner.hidden = true), 1200);
+    } else banner.hidden = true;
+    wasAway = false;
+  } else if (st === 'reconnecting' || st === 'connecting') {
+    awayTimer = setTimeout(() => {
+      wasAway = true;
+      banner.className = 'banner away';
+      banner.textContent = 'Reconnecting… your seat is saved';
+      banner.hidden = false;
+    }, 800);
+  }
   if (st === 'seat-lost') {
+    banner.hidden = true;
     store('kotoba:session', null);
     showJoin('You were away too long, so your seat was given up. Join again.');
   } else if (st === 'room-gone') {
+    banner.hidden = true;
     store('kotoba:session', null);
     showJoin('That room has closed.');
   }
@@ -229,6 +252,7 @@ function render(view: RoomView): void {
   if (key === screenKey) return;
   screenKey = key;
   setSpeakLevel(me.level);
+  setQuiet(me.mic === 'quiet');
 
   // In a game (and its recap) the phone wears the mode's colour and host.
   const info = view.phase !== 'lobby' && view.mode ? MODES[view.mode].info : null;
@@ -251,6 +275,15 @@ function render(view: RoomView): void {
     h('span', { class: 'score' }, `${me.score} pts`),
   );
   mount(app, band, header, screenFor(view, me, isVip));
+  dockTalk();
+}
+
+/** A screen with exactly one talk button pins it to the bottom of the phone, under the thumb. */
+function dockTalk(): void {
+  const talks = app.querySelectorAll<HTMLElement>('.talk');
+  const one = talks.length === 1 ? talks[0]! : null;
+  one?.classList.add('docked');
+  document.body.classList.toggle('has-dock', !!one);
 }
 
 function screenFor(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
@@ -361,7 +394,8 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   const standings = r?.standings ?? [];
   const places = placesOf(standings.map((s) => s.score));
   const i = standings.findIndex((s) => s.playerId === me.id);
-  const place = i >= 0 ? places[i]! : 0;
+  // A 0 isn't a place: nobody is told they came 3rd for scoring nothing.
+  const place = i >= 0 && standings[i]!.score > 0 ? places[i]! : 0;
   const tied = place > 0 && places.filter((p) => p === place).length > 1;
   const romaji = me.level === 'kana';
   return h(
@@ -374,11 +408,11 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
           h('span', { class: 'place-n' }, ORDINAL[place] ?? `${place}th`),
           h('span', { class: 'place-label' }, tied ? 'tied' : place === 1 ? 'Tonight’s winner!' : 'place'),
         )
-      : h('p', { class: 'big' }, 'Game over'),
+      : h('p', { class: 'big' }, i >= 0 ? 'No points this time. Next game!' : 'Game over'),
     h(
       'ol',
       { class: 'recap-list' },
-      standings.map((s, j) => h('li', { class: s.playerId === me.id ? 'me-row' : '' }, h('span', {}, `${places[j]}. ${s.name}`), h('span', { class: 'pts' }, s.score))),
+      standings.map((s, j) => h('li', { class: s.playerId === me.id ? 'me-row' : '' }, h('span', {}, s.score > 0 ? `${places.filter((p) => p === places[j]).length > 1 ? '=' : ''}${places[j]}. ${s.name}` : `–  ${s.name}`), h('span', { class: 'pts' }, s.score))),
     ),
     r?.awards.filter((a) => a.playerId === me.id).map((a) => h('p', { class: 'award' }, '🏆 ', h('span', { lang: 'ja' }, awardTitle(a.title)), ` · ${a.en}`)),
     r?.phrasebook.length
@@ -406,8 +440,26 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   );
 }
 
+// Moves that lock something in get a stamp and a buzz; small taps (tiles, peeks, ticks) don't.
+const LOCK_INS = new Set(['accuse', 'answer', 'call', 'draw', 'fake', 'guess', 'judge', 'pick', 'ready', 'reply', 'say', 'sing', 'vote', 'word', 'step', 'chorus', 'echo']);
+
 async function play(move: unknown): Promise<boolean> {
-  return command({ type: 'play', move });
+  const ok = await command({ type: 'play', move });
+  const kind = (move as { kind?: unknown } | null)?.kind;
+  if (ok && typeof kind === 'string' && LOCK_INS.has(kind)) lockIn();
+  return ok;
+}
+
+/** 決定: a stamp that thumps down on the phone, plus a short vibration where the phone allows it. */
+function lockIn(): void {
+  try {
+    navigator.vibrate?.(30);
+  } catch {
+    /* not allowed */
+  }
+  const stamp = h('div', { class: 'lock-stamp', 'aria-hidden': 'true', lang: 'ja' }, '決定');
+  document.body.append(stamp);
+  setTimeout(() => stamp.remove(), 900);
 }
 
 async function command(body: CommandBody): Promise<boolean> {
@@ -422,12 +474,12 @@ async function command(body: CommandBody): Promise<boolean> {
   }
 }
 
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
 function flash(text: string): void {
-  banner.hidden = false;
-  banner.textContent = text;
-  setTimeout(() => {
-    if (client?.status === 'open') banner.hidden = true;
-  }, 2500);
+  clearTimeout(toastTimer);
+  toast.hidden = false;
+  toast.textContent = text;
+  toastTimer = setTimeout(() => (toast.hidden = true), 2500);
 }
 
 async function keepAwake(): Promise<void> {

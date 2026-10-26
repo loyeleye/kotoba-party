@@ -81,7 +81,7 @@ export const snowmanCase: OnsenCase = {
     },
   ],
   clues: [
-    { id: 'kitchen', jp: t('たなかさんは 10じ〜11じ、だいどころに いた？', 'たなかさんは じゅうじから じゅういちじ、だいどころに いた？', 'Tanaka says he was in the kitchen from 10 to 11.'), key: true },
+    { id: 'kitchen', jp: t('たなかさん：「10じ〜11じ、だいどころに いました」', 'たなかさん：「じゅうじから じゅういちじ、だいどころに いました」', 'Tanaka says he was in the kitchen from 10 to 11.'), key: true },
     { id: 'hot-water', jp: k('たなかさんは おゆを たくさん わかした。', 'Tanaka boiled lots of water.'), key: true },
     { id: 'motive', jp: k('ゆきだるまさんは たなかさんの ラーメンが きらいだった。', "Mr. Snowman hated Tanaka's ramen."), key: true },
     { id: 'fine', jp: t('10じ45ふん：ゆきだるまさんは げんきだった。', 'じゅうじよんじゅうごふん、ゆきだるまさんは げんきだった。', 'At 10:45 Mr. Snowman was still fine.') },

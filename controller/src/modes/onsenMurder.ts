@@ -61,6 +61,7 @@ function suspectButtons(game: OnsenView, selected: string | null, onPick: (id: s
         { type: 'button', class: `om-p-suspect${s.id === selected ? ' on' : ''}`, onclick: () => onPick(s.id) },
         suspectPic(s, 'om-p-face'),
         h('span', { class: 'om-p-name', lang: 'ja' }, calledName(s).text),
+        level === 'kana' ? h('small', { class: 'om-p-romaji' }, toRomaji(calledName(s).kana)) : null,
         h('small', {}, s.role.en),
         s.asked.length ? h('small', { class: 'om-p-asked' }, s.asked.map((i) => INTENT_ICON[i]).join('')) : null,
       ),

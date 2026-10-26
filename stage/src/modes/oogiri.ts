@@ -212,7 +212,7 @@ export const oogiriStage: StageMode<OogiriView> = {
           game.prompt ? promptCard(game.prompt) : h('p', { class: 'big' }, 'Answer on your phones!'),
           h('p', { class: 'oo-sayfirst' }, '🎤 Say it first: from memory, before the tiles come!'),
           h('p', { class: 'hint' }, `${game.answered.length} / ${total} players done`),
-          h('div', { class: 'oo-done-row' }, view.players.map((p) => h('span', { class: `oo-done-chip ${game.answered.includes(p.id) ? 'on' : ''}` }, p.name))),
+          h('div', { class: 'oo-done-row' }, view.players.map((p) => h('span', { class: `oo-done-chip ${game.answered.includes(p.id) ? 'on' : ''}` }, game.answered.includes(p.id) ? '✓ ' : '… ', p.name))),
         );
       }
       case 'reveal':

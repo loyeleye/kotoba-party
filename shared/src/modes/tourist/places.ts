@@ -443,7 +443,7 @@ export const PLACES: readonly Place[] = [
       ['kana', 'how', k('せまいです。', "It's small.")],
       ['n5', 'how', t('ちょっと せまいですが、あたたかいです。', 'ちょっと せまいですが、あたたかいです。', "It's a bit small, but cosy.")],
       ['kana', 'where', k('ひみつ！', 'Secret!')],
-      ['n5', 'where', t('駅から あるいて 十分です。', 'えきから あるいて じゅっぷんです。', "It's ten minutes' walk from the station.")],
+      ['n5', 'where', t('駅から あるいて 10分です。', 'えきから あるいて じゅっぷんです。', "It's ten minutes' walk from the station.")],
     ],
   }),
   place({

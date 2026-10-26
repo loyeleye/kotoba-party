@@ -19,14 +19,14 @@
 .lt-line li.done .lt-dot { border-color: var(--good); background: var(--good); }
 .lt-line li.here .lt-dot { border-color: var(--warn); background: var(--warn); box-shadow: 0 0 18px var(--warn); }
 .lt-line li.here .lt-stop-name { color: var(--warn); font-weight: 800; }
-.lt-line small { color: var(--muted); font-size: 16px; }
+.lt-line small { color: var(--muted); font-size: 24px; }
 
 .lt-travs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 .lt-trav { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; align-items: center; text-align: left; background: var(--panel); border: 2px solid var(--line); border-radius: 16px; padding: 14px 18px; }
 .lt-trav-icon { grid-row: span 2; font-size: 44px; }
 .lt-trav-name { font-size: 30px; font-weight: 800; }
-.lt-trav-status { font-size: 20px; color: var(--muted); }
-.lt-trav-vote, .lt-trav-haunt { grid-column: 1 / -1; font-size: 18px; color: var(--warn); }
+.lt-trav-status { font-size: 24px; color: var(--muted); }
+.lt-trav-vote, .lt-trav-haunt { grid-column: 1 / -1; font-size: 24px; color: var(--warn); }
 .lt-trav.s-correct { border-color: var(--good); }
 .lt-trav.s-retry { border-color: var(--warn); }
 .lt-trav.s-missed { border-color: var(--accent); }
@@ -35,10 +35,10 @@
 .lt-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; text-align: left; }
 .lt-results li { display: grid; grid-template-columns: 180px 1fr 1fr 1.2fr auto; gap: 16px; align-items: baseline; background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 12px 18px; font-size: 24px; }
 .lt-r-name { font-weight: 800; }
-.lt-r-q { color: var(--muted); font-size: 20px; }
+.lt-r-q { color: var(--muted); font-size: 24px; }
 .lt-r-said { font-size: 26px; }
 .lt-r-model { font-weight: 700; }
-.lt-r-model small { color: var(--muted); font-weight: 400; font-size: 18px; }
+.lt-r-model small { color: var(--muted); font-weight: 400; font-size: 24px; }
 .lt-r-out { font-weight: 800; white-space: nowrap; }
 .lt-results .o-first, .lt-results .o-retry, .lt-results .o-passed { border-color: var(--good); }
 .lt-results .o-overruled { border-color: var(--warn); }
@@ -58,8 +58,8 @@
 .lt-lane-rank { font-weight: 900; color: var(--good); }
 
 @media (max-width: 900px) {
-  .lt-results li, .lt-penalty-car .lt-results li { grid-template-columns: 1fr; gap: 4px; font-size: 20px; }
+  .lt-results li, .lt-penalty-car .lt-results li { grid-template-columns: 1fr; gap: 4px; font-size: 24px; }
   .lt-stopname.huge { font-size: 48px; }
   .lt-intro-jp { font-size: 26px; }
-  .lt-track li { grid-template-columns: 90px 1fr 40px; font-size: 18px; }
+  .lt-track li { grid-template-columns: 90px 1fr 40px; font-size: 24px; }
 }

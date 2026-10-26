@@ -166,7 +166,7 @@ export const SCENES: readonly Scene[] = [
       { id: 'pb.parents.omiyage', level: 'n5', jp: t('おみやげを 持って きました。', 'おみやげを もって きました。', 'I brought you a gift.') },
       { id: 'pb.parents.hanasemasu', level: 'n4', jp: t('日本語が 少し 話せます。', 'にほんごが すこし はなせます。', 'I can speak a little Japanese.') },
       { id: 'pb.parents.oishisou-cake', level: 'n4', jp: t('おいしそうな ケーキですね。', 'おいしそうな ケーキですね。', 'What a delicious-looking cake.') },
-      { id: 'pb.parents.mata-kitara', level: 'n4', jp: t('また 来たら うれしいです。', 'また きたら うれしいです。', "I'd be happy if you came again.") },
+      { id: 'pb.parents.mata-kitara', level: 'n4', jp: t('また 来て くれたら うれしいです。', 'また きて くれたら うれしいです。', "I'd be happy if you came again.") },
     ],
   },
   {

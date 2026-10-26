@@ -15,7 +15,9 @@
 .oek .ink-paper { width: min(100%, 360px, 50vh); background: #fbf7ee; }
 .oek .ink-paper::before, .oek .ink-paper::after { display: none; }
 .oek .ink-palette { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-.oek .ink-swatch { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--line); background: var(--swatch); padding: 0; }
+.oek .ink-swatch { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--line); background: var(--swatch); padding: 0; margin-bottom: 18px; }
+.oek .ink-swatch-name { position: absolute; top: 100%; left: 50%; translate: -50% 2px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.oek .ink-swatch[aria-pressed='true'] .ink-swatch-name { color: var(--ink); font-weight: 700; }
 .oek .ink-swatch[aria-pressed='true'] { border-color: var(--ink); box-shadow: 0 0 0 3px var(--accent); }
 
 /* Word tiles. */

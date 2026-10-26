@@ -175,13 +175,14 @@ function banner(view: RoomView, game: ConcentrationView): HTMLElement {
       return h('div', { class: `cc-banner cc-result cc-${r.kind}` }, h('p', { class: 'cc-title' }, lines[r.kind]), word);
     }
     case 'finale': {
-      const top = [...game.tally].sort((a, b) => b.points - a.points)[0];
+      const best = Math.max(0, ...game.tally.map((t) => t.points));
+      const leaders = best > 0 ? game.tally.filter((t) => t.points === best).map((t) => nameOf(view, t.playerId)) : [];
       return h(
         'div',
         { class: 'cc-banner cc-finale' },
         h('p', { class: 'cc-title' }, game.pairsLeft === 0 ? 'Board clear! お疲れさま！' : 'Time! お疲れさま！'),
         game.picture.answer ? h('p', { class: 'cc-line', lang: 'ja' }, `The picture: ${game.picture.answer.text} · ${game.picture.answer.en}`) : null,
-        top ? h('p', { class: 'cc-line' }, `Most points: ${nameOf(view, top.playerId)} (${top.points})`) : null,
+        leaders.length ? h('p', { class: 'cc-line' }, `${leaders.length > 1 ? 'Tied on top' : 'Most points'}: ${leaders.join(' & ')} (${best})`) : h('p', { class: 'cc-line' }, 'No pairs scored this time.'),
       );
     }
     default:

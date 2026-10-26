@@ -7,21 +7,21 @@
 .omi-subtitle { font-size: 30px; color: var(--muted); }
 .omi-steps { text-align: left; font-size: 28px; line-height: 1.35; display: grid; gap: 10px; max-width: 1200px; padding-left: 40px; margin: 0; }
 .omi-greeting { font-size: 34px; font-weight: 700; }
-.omi-greeting small { display: block; font-size: 22px; color: var(--muted); font-weight: 400; }
+.omi-greeting small { display: block; font-size: 24px; color: var(--muted); font-weight: 400; }
 
 .omi-guest { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; background: var(--panel); border: 2px solid var(--omi-rose); border-radius: 24px; padding: 16px 24px; text-align: left; }
 .omi-guest-emoji { font-size: 96px; line-height: 1; }
 .omi-guest-text { display: grid; gap: 4px; }
 .omi-guest-name { font-size: 40px; font-weight: 900; }
-.omi-guest-en { font-size: 22px; color: var(--muted); }
+.omi-guest-en { font-size: 24px; color: var(--muted); }
 .omi-guest-hobbies { font-size: 24px; }
-.omi-guest-hobbies small { color: var(--muted); font-size: 18px; }
-.omi-guest-quirk { font-size: 22px; color: var(--warn); font-style: italic; }
+.omi-guest-hobbies small { color: var(--muted); font-size: 24px; }
+.omi-guest-quirk { font-size: 24px; color: var(--warn); font-style: italic; }
 .omi-guest-big { max-width: 1100px; }
 .omi-guest-big .omi-guest-emoji { font-size: 140px; }
 .omi-guest-small { align-self: start; }
 
-.omi-roundtag { font-size: 22px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; gap: 12px; align-items: center; }
+.omi-roundtag { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; display: flex; gap: 12px; align-items: center; }
 .omi-double { background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 2px 12px; font-weight: 800; letter-spacing: 0; }
 .omi-ask { display: grid; grid-template-columns: minmax(280px, 1fr) 2fr; gap: 28px; align-items: center; }
 .omi-bubble { position: relative; background: var(--paper); color: var(--paper-ink); border-radius: 28px; padding: 28px 36px; display: grid; gap: 8px; }
@@ -30,11 +30,11 @@
 .omi-bubble-en { font-size: 26px; color: #6b4a6f; }
 .omi-compact { padding: 16px 24px; }
 .omi-compact .omi-bubble-jp { font-size: 34px; }
-.omi-compact .omi-bubble-en { font-size: 20px; }
+.omi-compact .omi-bubble-en { font-size: 24px; }
 .omi-progress { font-size: 32px; font-weight: 800; }
 .omi-progress small { font-weight: 400; color: var(--muted); font-size: 24px; }
 .omi-callout { font-size: 40px; font-weight: 800; }
-.omi-callout small { font-size: 22px; font-weight: 400; color: var(--muted); }
+.omi-callout small { font-size: 24px; font-weight: 400; color: var(--muted); }
 
 .omi-answers { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .omi-answers.omi-n1, .omi-answers.omi-n2 { grid-template-columns: 1fr; }
@@ -49,15 +49,15 @@
 .omi-meter { position: relative; height: 22px; background: #2c2440; border-radius: 999px; overflow: hidden; }
 .omi-meter-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--warn), var(--omi-tea)); border-radius: 999px; animation: omi-fill 1.2s ease-out both; }
 @keyframes omi-fill { from { width: 0; } }
-.omi-meter-num { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 15px; font-weight: 800; color: #1a1426; }
-.omi-reg { font-size: 18px; font-weight: 800; border-radius: 999px; padding: 2px 12px; background: #2c2440; white-space: nowrap; }
+.omi-meter-num { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 24px; font-weight: 800; color: #1a1426; }
+.omi-reg { font-size: 24px; font-weight: 800; border-radius: 999px; padding: 2px 12px; background: #2c2440; white-space: nowrap; }
 .omi-reg-keigo { background: var(--omi-tea); color: #10241b; }
 .omi-reg-polite { background: #cfe7ff; color: #12263d; }
 .omi-reg-mixed { background: var(--warn); color: #1a1426; }
 .omi-reg-casual { background: var(--omi-rose); color: var(--paper-ink); }
 .omi-react { grid-column: 1 / -1; font-size: 24px; }
-.omi-react small { margin-left: 10px; font-size: 18px; color: var(--muted); }
-.omi-bowed { grid-column: 1 / -1; font-size: 18px; color: var(--good); font-weight: 700; }
+.omi-react small { margin-left: 10px; font-size: 24px; color: var(--muted); }
+.omi-bowed { grid-column: 1 / -1; font-size: 24px; color: var(--good); font-weight: 700; }
 
 .omi-score { justify-items: stretch; }
 .omi-natural { background: var(--paper); color: var(--paper-ink); border-radius: 24px; padding: 24px 40px; display: grid; gap: 6px; text-align: center; }
@@ -75,9 +75,9 @@
 .omi-contestant { display: grid; gap: 4px; min-width: 150px; padding: 18px 22px; border-radius: 20px; background: var(--panel); border: 2px solid var(--line); animation: omi-sweep 0.5s ease-in-out calc(var(--i) * 0.5s) 2 alternate both; }
 @keyframes omi-sweep { to { background: #4a3a5a; border-color: var(--warn); transform: translateY(-6px); } }
 .omi-contestant-name { font-size: 32px; font-weight: 800; }
-.omi-contestant-hearts { font-size: 22px; color: var(--omi-rose); }
+.omi-contestant-hearts { font-size: 24px; color: var(--omi-rose); }
 .omi-chosen { animation: omi-sweep 0.5s ease-in-out calc(var(--i) * 0.5s) 2 alternate both, omi-chosen 0.8s ease-out 4s both; }
-@keyframes omi-chosen { to { background: var(--omi-rose); color: var(--paper-ink); border-color: #fff; transform: scale(1.15); box-shadow: 0 0 60px rgba(255, 143, 177, 0.7); } }
+@keyframes omi-chosen { to { background: var(--omi-rose); color: var(--paper-ink); border-color: #fff; transform: scale(1.15); } }
 .omi-chosen .omi-contestant-hearts { animation: omi-ink 0.8s ease-out 4s both; }
 @keyframes omi-ink { to { color: var(--paper-ink); } }
 .omi-invite { display: grid; gap: 8px; background: var(--paper); color: var(--paper-ink); border-radius: 24px; padding: 22px 40px; animation: omi-in 0.8s ease-out 4.6s both; }
@@ -89,42 +89,42 @@
 @media (max-height: 800px), (max-width: 1400px) {
   .omi-stage { gap: 12px; }
   .omi-title { font-size: 50px; }
-  .omi-subtitle { font-size: 22px; }
-  .omi-steps { font-size: 20px; gap: 6px; }
+  .omi-subtitle { font-size: 24px; }
+  .omi-steps { font-size: 24px; gap: 6px; }
   .omi-greeting { font-size: 24px; }
-  .omi-greeting small { font-size: 16px; }
+  .omi-greeting small { font-size: 24px; }
   .omi-guest { padding: 10px 16px; gap: 14px; }
   .omi-guest-emoji, .omi-guest-big .omi-guest-emoji { font-size: 64px; }
   .omi-guest-name { font-size: 28px; }
-  .omi-guest-en, .omi-guest-quirk, .omi-guest-hobbies { font-size: 16px; }
-  .omi-guest-hobbies small { font-size: 14px; }
+  .omi-guest-en, .omi-guest-quirk, .omi-guest-hobbies { font-size: 24px; }
+  .omi-guest-hobbies small { font-size: 24px; }
   .omi-bubble { padding: 18px 24px; }
   .omi-bubble-jp { font-size: 38px; }
-  .omi-bubble-en { font-size: 20px; }
+  .omi-bubble-en { font-size: 24px; }
   .omi-compact .omi-bubble-jp { font-size: 26px; }
-  .omi-compact .omi-bubble-en { font-size: 16px; }
+  .omi-compact .omi-bubble-en { font-size: 24px; }
   .omi-callout { font-size: 28px; }
   .omi-progress { font-size: 24px; }
-  .omi-progress small { font-size: 18px; }
+  .omi-progress small { font-size: 24px; }
   .omi-answers { gap: 8px; }
   .omi-answer { padding: 8px 14px; gap: 4px; }
-  .omi-answer-jp { font-size: 22px; }
-  .omi-author { font-size: 18px; }
+  .omi-answer-jp { font-size: 24px; }
+  .omi-author { font-size: 24px; }
   .omi-meter { height: 16px; }
-  .omi-meter-num { font-size: 12px; }
-  .omi-reg { font-size: 14px; }
-  .omi-react { font-size: 17px; }
-  .omi-react small { font-size: 14px; }
+  .omi-meter-num { font-size: 24px; }
+  .omi-reg { font-size: 24px; }
+  .omi-react { font-size: 24px; }
+  .omi-react small { font-size: 24px; }
   .omi-natural { padding: 14px 24px; }
   .omi-natural-jp { font-size: 42px; }
-  .omi-natural-kana, .omi-natural-en, .omi-natural-label, .omi-natural-call { font-size: 18px; }
-  .omi-points { font-size: 22px; }
+  .omi-natural-kana, .omi-natural-en, .omi-natural-label, .omi-natural-call { font-size: 24px; }
+  .omi-points { font-size: 24px; }
   .omi-contestant { min-width: 110px; padding: 10px 14px; }
-  .omi-contestant-name { font-size: 22px; }
+  .omi-contestant-name { font-size: 24px; }
   .omi-invite { padding: 14px 24px; }
   .omi-invite-title { font-size: 28px; }
   .omi-invite-jp { font-size: 24px; }
-  .omi-invite-en { font-size: 18px; }
+  .omi-invite-en { font-size: 24px; }
 }
 @media (max-width: 900px) {
   .omi-ask { grid-template-columns: 1fr; }

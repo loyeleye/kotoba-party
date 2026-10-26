@@ -32,6 +32,8 @@ export interface InkPadOptions {
   limits?: InkLimits;
   /** CSS colours the player can pick between; the first is the default. Omit for one ink. */
   palette?: readonly string[];
+  /** A short name under each swatch (colour-blind players). */
+  paletteNames?: readonly string[];
   /** Line width as a share of the pad (default 0.035). */
   lineWidth?: number;
   /** Accessible label for the canvas. */
@@ -62,7 +64,7 @@ export function inkPad(opts: InkPadOptions): HTMLElement {
   const send = h('button', { type: 'button', class: 'primary ink-send' }, opts.sendLabel ?? 'Cast it! 🖌') as HTMLButtonElement;
   const count = h('span', { class: 'ink-count' });
   const swatches = palette.map((c, i) =>
-    h('button', { type: 'button', class: 'ink-swatch', style: `--swatch:${c}`, 'aria-label': `Colour ${i + 1}`, 'aria-pressed': String(i === draft.color) }) as HTMLButtonElement,
+    h('button', { type: 'button', class: 'ink-swatch', style: `--swatch:${c}`, 'aria-label': opts.paletteNames?.[i] ?? `Colour ${i + 1}`, 'aria-pressed': String(i === draft.color) }, opts.paletteNames ? h('span', { class: 'ink-swatch-name' }, opts.paletteNames[i]) : null) as HTMLButtonElement,
   );
   swatches.forEach((b, i) =>
     b.addEventListener('click', () => {
@@ -114,7 +116,7 @@ export function inkPad(opts: InkPadOptions): HTMLElement {
   const resize = () => {
     const css = canvas.getBoundingClientRect().width;
     if (!css) return;
-    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
     size = css;
     canvas.width = Math.round(css * dpr);
     canvas.height = Math.round(css * dpr);

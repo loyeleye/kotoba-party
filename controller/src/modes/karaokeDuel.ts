@@ -12,7 +12,7 @@ import { hasKanji, type Utterance } from '../../../shared/src/japanese/kana.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { kanaPad } from '../components/kanaPad.js';
 import { MicClip, hear } from '../components/mic.js';
-import { canSpeak, missed } from '../components/speak.js';
+import { canSpeak, isQuiet, missed } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
@@ -249,10 +249,13 @@ function singBox(opts: SingOptions): HTMLElement {
       );
     }
   } else {
-    box.append(h('p', { class: 'hint' }, localStorage.getItem('kotoba:quiet') === '1' ? 'Quiet mode is on.' : 'Singing needs the game’s speech server, which isn’t set up: type the line instead.'));
+    box.append(h('p', { class: 'hint' }, isQuiet() ? 'Quiet mode is on.' : 'Singing needs the game’s speech server, which isn’t set up: type the line instead.'));
   }
 
   if (opts.typed) box.append(typedFallback(opts, !canSpeak(), (u) => void finish({ utterance: u })));
+  // No mic, and 8–10 s is too short to read and type: sing out loud and tap. Honour system, small score.
+  if (opts.typed && !canSpeak())
+    box.append(h('button', { type: 'button', class: 'secondary kdp-sang', onclick: () => void finish({ utterance: { via: 'tap', text: '' } }) }, 'I sang it! 🎶'));
   return box;
 }
 
@@ -286,7 +289,7 @@ function typedFallback(opts: SingOptions, open: boolean, onSend: (u: Utterance) 
 
 function takeLine(t: TakeView & { heard?: string }): HTMLElement {
   if (t.missed) return h('p', { class: 'kdp-take missed' }, `Line ${t.line + 1}: no take`);
-  const parts = t.via === 'typed' ? 'typed' : `words ${pct(t.pron)} · ${t.pitchUsed ? `pitch ${pct(t.pitch)}` : 'pitch –'} · timing ${pct(t.timing)}`;
+  const parts = t.via === 'tap' ? 'sang it (no mic)' : t.via === 'typed' ? 'typed' : `words ${pct(t.pron)} · ${t.pitchUsed ? `pitch ${pct(t.pitch)}` : 'pitch –'} · timing ${pct(t.timing)}`;
   return h(
     'div',
     { class: 'kdp-take' },

@@ -44,7 +44,7 @@ function countdown(task: TaskView, send: (move: unknown) => Promise<boolean>): H
     const left = Math.max(0, task.limitMs - (Date.now() - start));
     fill.style.width = `${(left / task.limitMs) * 100}%`;
     el.classList.toggle('low', left < 3000);
-    label.textContent = left > 0 ? `${Math.ceil(left / 1000)}s left` : 'Time!';
+    label.textContent = left > 0 ? `⏱ ${Math.ceil(left / 1000)}s to answer` : 'Time!';
     if (left === 0 && !ticked) {
       ticked = true;
       // Tell the server our time is up (it checks against its own clock).
@@ -125,7 +125,8 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
     ),
     countdown(task, send),
     task.listen && task.attempt === 1 ? listenBox(task) : null,
-    showText ? jpBlock(task.prompt, { en: level === 'kana' || task.attempt === 2, big: true, romaji: false }) : null,
+    // かな players get the romaji under the prompt too, unless the task carries its own.
+    showText ? jpBlock(task.prompt, { en: level === 'kana' || task.attempt === 2, big: true, romaji: level === 'kana' && !task.romaji }) : null,
     // N5 and up read the Japanese first; the English is one tap away.
     showText && level !== 'kana' && task.attempt === 1 && task.prompt.en ? h('details', { class: 'lt-en-tap' }, h('summary', {}, 'English'), h('p', {}, task.prompt.en)) : null,
     showText && task.romaji ? h('p', { class: 'lt-romaji' }, task.romaji) : null,
@@ -136,7 +137,7 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
           { class: 'lt-hint' },
           task.lastHeard ? h('p', {}, 'Heard: ', h('span', { lang: 'ja' }, task.lastHeard)) : h('p', {}, 'Time ran out.'),
           task.hint ? h('p', {}, `💡 ${task.hint}`) : null,
-          task.firstKana ? h('p', {}, `It starts with ${task.firstKana}`) : null,
+          task.firstKana ? h('p', {}, `It starts with ${task.firstKana}${level === 'kana' ? ` (${toRomaji(task.firstKana)})` : ''}`) : null,
         )
       : null,
     box,

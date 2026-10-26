@@ -92,7 +92,7 @@ function revealActor(view: RoomView, a: ActorView): HTMLElement {
   return h(
     'div',
     { class: 'pb-reveal-actor' },
-    h('p', { class: 'pb-reveal-name' }, nameOf(view, a.playerId), h('span', { class: 'pb-role', lang: 'ja' }, ` ${a.role.text}`)),
+    h('p', { class: 'pb-reveal-name' }, nameOf(view, a.playerId), ' ', h('span', { class: 'pb-role', lang: 'ja' }, ruby(a.role))),
     h(
       'ul',
       {},

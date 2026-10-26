@@ -42,6 +42,16 @@ export function audioReady(): boolean {
 
 export const audioSupported = (): boolean => !!AudioCtor;
 
+/**
+ * How late the speakers are behind the audio clock (TV soundbars can add 100 ms or more): the
+ * lyrics shift by this so the ball lands when the note is heard, not when it is scheduled.
+ */
+export function outputLatencyMs(): number {
+  if (!ctx || ctx.state !== 'running') return 0;
+  const s = (ctx as AudioContext & { outputLatency?: number }).outputLatency ?? ctx.baseLatency;
+  return Number.isFinite(s) ? Math.min(500, Math.max(0, s * 1000)) : 0;
+}
+
 /** Call from a click: unlocks audio for the rest of the session. */
 export function unlockAudio(): void {
   const c = context();

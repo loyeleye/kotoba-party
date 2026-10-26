@@ -3,13 +3,14 @@
 // say it); when asked, answer out loud (or take an answer tile). Anyone can call a vote; the
 // tourist can guess the place at any time.
 
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { h } from '../../../shared/src/dom.js';
 import { placePic } from '../../../shared/src/art.js';
 import type { TouristView } from '../../../shared/src/modes/views.js';
 import type { LineCard, PlaceCard, SaidView } from '../../../shared/src/modes/tourist/tourist.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
-import { waiting } from '../components/ui.js';
+import { holdButton, waiting } from '../components/ui.js';
 import { jpView } from '../components/jp.js';
 import type { Level } from '../../../content/src/types.js';
 import type { PhoneContext, PhoneMode } from './types.js';
@@ -21,7 +22,6 @@ const nameOf = (view: RoomView, id: string | null | undefined): string => view.p
 /** Choices made on this phone only, kept across redraws within one phase. */
 let tile: { seq: number; id: string } | null = null;
 let guessPick: { seq: number; id: string } | null = null;
-let confirmCall: number | null = null;
 
 /** This phone's level, set on each render: every Japanese line follows it (components/jp.ts). */
 let level: Level | null = null;
@@ -45,7 +45,7 @@ function myCard(game: TouristView, open: boolean): HTMLElement | null {
         h('p', { class: 'tou-card-label' }, '📍 We are at'),
         h('p', { class: 'tou-card-place' }, placeName(me.card.place)),
         h('p', { class: 'tou-card-label' }, 'You are'),
-        h('p', { class: 'tou-card-role', lang: 'ja' }, me.card.role.text, h('small', {}, ` ${me.card.role.en}`)),
+        h('p', { class: 'tou-card-role', lang: 'ja' }, me.card.role.text, h('small', {}, ` ${me.card.role.kana !== me.card.role.text ? `${me.card.role.kana} · ` : ''}${toRomaji(me.card.role.kana)} · ${me.card.role.en}`)),
       )
     : h(
         'div',
@@ -226,25 +226,9 @@ function actions(ctx: Ctx): HTMLElement | null {
   if (me.canGuess) {
     parts.push(h('details', { class: 'tou-peek tou-guess-box' }, h('summary', {}, '🧳 I know where we are!'), guessPanel(ctx, false)));
   }
-  if (me.canCall) {
-    parts.push(
-      confirmCall === view.phaseSeq
-        ? h(
-            'div',
-            { class: 'tou-row' },
-            h('button', { type: 'button', class: 'primary', onclick: () => ((confirmCall = null), void send({ kind: 'call', round: game.round })) }, '🗳️ Yes, vote now'),
-            h('button', { type: 'button', class: 'secondary', onclick: () => ((confirmCall = null), rerender()) }, 'Not yet'),
-          )
-        : h('button', { type: 'button', class: 'secondary tou-call', onclick: () => ((confirmCall = view.phaseSeq), rerender()) }, '🗳️ Call a vote (once per round)'),
-    );
-  }
-  const box = h('div', { class: 'tou-actions' }, parts);
-  // The confirm toggle only changes this phone: redraw just this box.
-  function rerender() {
-    const fresh = actions(ctx);
-    box.replaceWith(fresh ?? h('div'));
-  }
-  return parts.length ? box : null;
+  // Calling a vote can't be taken back: it sits at the bottom, behind a one-second hold.
+  if (me.canCall) parts.push(holdButton('🗳️ Call a vote (once per round)', 'secondary tou-call', () => void send({ kind: 'call', round: game.round })));
+  return parts.length ? h('div', { class: 'tou-actions' }, parts) : null;
 }
 
 function watchScreen(ctx: Ctx): HTMLElement {
@@ -259,10 +243,10 @@ function watchScreen(ctx: Ctx): HTMLElement {
     t?.answer ? saidLine(t.answer, 'answer') : null,
     t?.askerId === ctx.me.id && t.question ? h('p', { class: 'hint' }, `Asked! Waiting for ${nameOf(view, t.targetId)}’s answer.`) : null,
     game.failedVote ? h('p', { class: 'tou-note' }, 'No majority in the vote. Keep asking!') : null,
-    actions(ctx),
     myCard(game, false),
     me.tourist ? bluffs(game) : null,
     placeList(game),
+    actions(ctx),
   );
 }
 

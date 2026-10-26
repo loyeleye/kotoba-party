@@ -1222,7 +1222,8 @@
         "no_background": true,
         "width": 64,
         "height": 64,
-        "text_guidance_scale": 8
+        "text_guidance_scale": 8,
+        "seed": 7
       },
       "post": {}
     },
@@ -1294,7 +1295,8 @@
         "no_background": true,
         "width": 64,
         "height": 64,
-        "text_guidance_scale": 8
+        "text_guidance_scale": 8,
+        "seed": 99
       },
       "post": {}
     },

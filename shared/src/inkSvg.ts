@@ -11,6 +11,8 @@ export interface InkSvgOptions {
   class?: string;
   /** Time per stroke, ms (default 450). */
   strokeMs?: number;
+  /** Instead of a fixed time per stroke: the whole replay in this many ms, each stroke timed by its length. */
+  totalMs?: number;
   /** How far into the replay we are, ms (default 0: start now). */
   elapsedMs?: number;
   /** Draw a faint practice grid (the 田 lines of practice paper). */
@@ -39,6 +41,11 @@ export function inkSvg(strokes: readonly (readonly InkPoint[])[], opts: InkSvgOp
   const per = opts.strokeMs ?? 450;
   const labels: [number, number][] = [];
   const elapsed = opts.elapsedMs ?? 0;
+  // Stroke timing: fixed, or by length (a long sweep takes longer than a dot, as it did to draw).
+  const lengths = strokes.map((s) => s.reduce((n, p, j) => (j ? n + Math.hypot(p[0] - s[j - 1]![0], p[1] - s[j - 1]![1]) : 0), 0));
+  const sum = lengths.reduce((a, b) => a + b, 0) || 1;
+  const durs = opts.totalMs ? lengths.map((l) => Math.max(60, (opts.totalMs! * l) / sum)) : lengths.map(() => per);
+  const starts = durs.map((_, i) => durs.slice(0, i).reduce((a, b) => a + b, 0));
   strokes.forEach((s, i) => {
     if (!s.length) return;
     const pts = s.length === 1 ? [s[0]!, [s[0]![0] + 0.004, s[0]![1] + 0.004] as const] : s;
@@ -48,7 +55,7 @@ export function inkSvg(strokes: readonly (readonly InkPoint[])[], opts: InkSvgOp
     path.setAttribute('class', 'ink-stroke');
     const color = opts.colors?.[i];
     const look = `${color ? `stroke:${color};` : ''}${opts.width ? `stroke-width:${opts.width};` : ''}`;
-    path.setAttribute('style', `${look}animation-duration:${per}ms;animation-delay:${i * per - elapsed}ms`);
+    path.setAttribute('style', `${look}animation-duration:${Math.round(durs[i]!)}ms;animation-delay:${Math.round(starts[i]! - elapsed)}ms`);
     svg.append(path);
     if (opts.numbers) {
       const n = document.createElementNS(SVG, 'text');
@@ -59,7 +66,7 @@ export function inkSvg(strokes: readonly (readonly InkPoint[])[], opts: InkSvgOp
       n.setAttribute('x', String(x));
       n.setAttribute('y', String(y));
       n.setAttribute('class', 'ink-num');
-      n.setAttribute('style', `animation-delay:${i * per - elapsed}ms`);
+      n.setAttribute('style', `animation-delay:${Math.round(starts[i]! - elapsed)}ms`);
       n.textContent = String(i + 1);
       svg.append(n);
     }

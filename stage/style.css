@@ -92,7 +92,7 @@ p:has(ruby), li:has(ruby) { line-height: 2; }
 /* ---- header: big join card in the lobby, one slim line in a game ---- */
 .bar { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 32px; }
 .brand { font-family: var(--font-pixel); font-size: 56px; font-weight: 700; color: var(--accent); line-height: 1; text-shadow: 0 4px 0 var(--outline); }
-.tag { margin-left: 16px; font-family: var(--font-body); font-size: 18px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px; vertical-align: middle; text-shadow: none; }
+.tag { margin-left: 16px; font-family: var(--font-body); font-size: 24px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px; vertical-align: middle; text-shadow: none; }
 .phase-line { display: flex; align-items: baseline; gap: 24px; min-width: 0; }
 .phase { font-family: var(--font-pixel); font-size: 44px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* In a game the mode name is a pill in the mode colour, like the phone's band. */
@@ -101,9 +101,13 @@ body[data-mode]:not([data-mode='']) .phase { background: var(--mode); color: var
 .timer { font-family: var(--font-pixel); font-size: 64px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--on-accent); background: var(--warn); border: 3px solid var(--outline); box-shadow: 4px 4px 0 var(--outline); line-height: 1; min-width: 2.4ch; padding: 4px 12px; text-align: center; }
 .timer:empty { visibility: hidden; }
 .timer.urgent { background: var(--accent); animation: beat 1s steps(1) infinite; }
+/* Ring timer: the ring empties as the phase runs down (main.ts sets --left from 1 to 0). */
+.timer { position: relative; display: grid; place-items: center; width: 120px; height: 120px; font-size: 52px; min-width: 0; padding: 0; border-radius: 50%;
+  background: radial-gradient(closest-side, var(--warn) 76%, transparent 78%), conic-gradient(var(--outline) calc((1 - var(--left, 1)) * 1turn), var(--ink) 0); }
+.timer.urgent { background: radial-gradient(closest-side, var(--accent) 76%, transparent 78%), conic-gradient(var(--outline) calc((1 - var(--left, 1)) * 1turn), var(--ink) 0); }
 @keyframes beat { 0% { transform: scale(1.15); } 30% { transform: scale(1); } }
 .join { display: flex; align-items: center; gap: 24px; }
-.label { color: var(--muted); font-size: 22px; text-transform: uppercase; letter-spacing: 0.1em; }
+.label { color: var(--muted); font-size: 24px; text-transform: uppercase; letter-spacing: 0.1em; }
 .code { font-family: var(--font-pixel); font-size: 96px; font-weight: 700; letter-spacing: 0.12em; line-height: 1; }
 .url { color: var(--muted); font-size: 24px; margin-top: 6px; }
 .qr { width: 200px; height: 200px; background: #fff; border-radius: 10px; padding: 6px; image-rendering: pixelated; }
@@ -112,7 +116,7 @@ body:not([data-phase='lobby']) .brand { font-size: 36px; }
 /* The room code as an ema plaque: washi, a lantern-red inset rule, a hard shadow. */
 body:not([data-phase='lobby']) .join { gap: 12px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--outline); outline: 3px solid var(--lantern); outline-offset: -9px; box-shadow: 5px 5px 0 var(--outline); border-radius: 4px; padding: 8px 20px; }
 body:not([data-phase='lobby']) .join .label { color: var(--lantern); font-weight: 700; }
-body:not([data-phase='lobby']) .join .label { font-size: 18px; }
+body:not([data-phase='lobby']) .join .label { font-size: 24px; }
 body:not([data-phase='lobby']) .code { font-size: 40px; }
 body:not([data-phase='lobby']) .url, body:not([data-phase='lobby']) .qr { display: none; }
 body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibility: hidden; }
@@ -139,7 +143,14 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 /* ---- the play area ---- */
 .main { position: relative; display: grid; place-items: safe center; overflow: hidden; min-height: 0; }
 .fit { width: 100%; transform-origin: top center; }
-.scene { width: 100%; display: grid; justify-items: center; animation: phase-in 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.scene { position: relative; width: 100%; display: grid; justify-items: center; animation: phase-in 360ms 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+/* Between phases a noren curtain wipes across the main area (the scene is rebuilt per phase). */
+.main::after { content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none; background: repeating-linear-gradient(90deg, var(--lantern) 0 25%, color-mix(in srgb, var(--lantern) 82%, #000) 25% 25.4%); transform: scaleX(0); transform-origin: right; }
+.main.wipe::after { animation: curtain 560ms cubic-bezier(0.6, 0, 0.3, 1) both; }
+@keyframes curtain { 0% { transform: scaleX(0); transform-origin: left; } 45% { transform: scaleX(1); transform-origin: left; } 55% { transform: scaleX(1); transform-origin: right; } 100% { transform: scaleX(0); transform-origin: right; } }
+/* Reveal pacing (dom.ts stagger/beat). */
+.beat-in { animation: beat-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes beat-in { from { opacity: 0; transform: translateY(20px) scale(0.97); } }
 @keyframes phase-in { from { opacity: 0; transform: translateY(16px); } }
 .card, .lobby { width: min(1400px, 100%); text-align: center; }
 .big { font-size: 56px; font-weight: 800; margin: 0; text-wrap: balance; }
@@ -212,7 +223,7 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 .award-card .a-who { font-size: 30px; font-weight: 700; }
 
 /* ---- developer panel (?debug=1), floating over the canvas ---- */
-.debug { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 10; max-height: 45vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; background: rgba(14, 11, 22, 0.94); font-size: 14px; }
+.debug { position: fixed; left: 8px; right: 8px; bottom: 8px; z-index: 10; max-height: 45vh; overflow: auto; border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; background: rgba(14, 11, 22, 0.94); font-size: 24px; }
 .debug[hidden] { display: none; }
 .debug-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
 .debug button { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
@@ -223,13 +234,13 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 .status[data-status='open'] { color: var(--good); }
 .status[data-status='reconnecting'] { color: var(--warn); }
 .version { color: var(--muted); font-family: ui-monospace, monospace; }
-.log, .raw { margin: 0; max-height: 160px; overflow: auto; color: var(--muted); font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
+.log, .raw { margin: 0; max-height: 160px; overflow: auto; color: var(--muted); font-family: ui-monospace, monospace; font-size: 24px; white-space: pre-wrap; }
 .raw { max-height: 320px; color: var(--ink); }
 
 /* TV browsers rarely pass on the player's setting, but honour it where they do. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
-  .scene, .host-portrait, .host-bubble, .step, .award-card { animation: none !important; }
+  .scene, .host-portrait, .host-bubble, .step, .award-card, .beat-in, .main.wipe::after { animation: none !important; }
 }
 
 /* Washi cards: inside them the text tokens flip to dark ink, so muted glosses, furigana and

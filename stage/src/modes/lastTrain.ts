@@ -2,7 +2,7 @@
 // status (never their words until the stop resolves), then everyone's answer beside the
 // natural version, the penalty car, and the Platform Dash track.
 
-import { h, ruby } from '../../../shared/src/dom.js';
+import { h, ruby, stagger } from '../../../shared/src/dom.js';
 import { icon } from '../../../shared/src/art.js';
 import type { JpText } from '../../../content/src/types.js';
 import type { LastTrainView, TravellerStatus, TravellerView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
@@ -116,16 +116,20 @@ function reveal(game: LastTrainView): HTMLElement {
     h(
       'ul',
       { class: 'lt-results' },
-      rows.map((r) =>
-        h(
-          'li',
-          { class: `o-${r.outcome}` },
-          h('span', { class: 'lt-r-name' }, r.ghost ? `👻 ${r.name}` : r.name),
-          h('span', { class: 'lt-r-q' }, ruby(r.prompt)),
-          h('span', { class: 'lt-r-said', lang: 'ja' }, r.said ? `“${r.said}”` : '—'),
-          h('span', { class: 'lt-r-model' }, ruby(r.model), h('small', {}, ` ${r.model.en}`)),
-          h('span', { class: 'lt-r-out' }, OUTCOME[r.outcome] ?? '', r.points ? ` +${r.points}` : ''),
+      // Rows pull in one at a time, like carriages.
+      stagger(
+        rows.map((r) =>
+          h(
+            'li',
+            { class: `o-${r.outcome}` },
+            h('span', { class: 'lt-r-name' }, r.ghost ? `👻 ${r.name}` : r.name),
+            h('span', { class: 'lt-r-q' }, ruby(r.prompt)),
+            h('span', { class: 'lt-r-said', lang: 'ja' }, r.said ? `“${r.said}”` : '—'),
+            h('span', { class: 'lt-r-model' }, ruby(r.model), h('small', {}, ` ${r.model.en}`)),
+            h('span', { class: 'lt-r-out' }, OUTCOME[r.outcome] ?? '', r.points ? ` +${r.points}` : ''),
+          ),
         ),
+        450,
       ),
     ),
   );
