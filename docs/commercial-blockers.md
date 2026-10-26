@@ -36,7 +36,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
 | 10 | Kana course order and links (ToKini Andy) | `content/src/kana/raid.ts` | ✅ | Links only; ask before any paid tie-in or using his name in marketing |
-| 11 | Fonts: Noto Sans JP, Pixelify Sans (Google Fonts CDN) | `stage/index.html`, `controller/index.html` | 🟡 ❓ | OFL 1.1 allows selling; ship the OFL notices. Self-host the fonts before an EU launch (the Google Fonts CDN's privacy terms weren't readable) |
+| 11 | Fonts: Noto Sans JP, Noto Sans, Pixelify Sans (Google Fonts CDN) | `stage/index.html`, `controller/index.html` | 🟡 ❓ | OFL 1.1 allows selling; ship the OFL notices. Self-host the fonts before an EU launch (the Google Fonts CDN's privacy terms weren't readable) |
 | 12 | Game formats and names (Jackbox, oogiri, Shōten) | Docs, personas | ⚠️ | Don't use "Jackbox" or TV show names in the product or marketing |
 | 13 | Karaoke Duel songs | `shared/src/modes/karaokeDuel/songs.ts` | ✅ | Keep songs original; no covers without a music licence |
 | 14 | Cloudflare Workers + Durable Objects | `wrangler.jsonc`, `cloudflare/` | ⚠️ | Paid plan once traffic grows; not a licence bar |
@@ -160,11 +160,13 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 11. Fonts
 
-- **What (since 2026-10-26):** Noto Sans JP for all Japanese and body text, and Pixelify Sans, a pixel
-  face, for English titles and numbers (room code, timer, scores). Both pages load them from the Google
+- **What (since 2026-10-26):** Noto Sans JP for all Japanese, Noto Sans for English body text and romaji
+  (Noto Sans JP lacks some macron vowels such as ō), and Pixelify Sans, a pixel face, for English
+  titles and numbers (room code, timer, scores). Both pages load them from the Google
   Fonts CDN (`fonts.googleapis.com`, `fonts.gstatic.com`), with system fonts as the fallback.
-- **Terms (read 2026-10-26):** both are under the SIL Open Font License 1.1
+- **Terms (read 2026-10-26):** all three are under the SIL Open Font License 1.1
   (<https://raw.githubusercontent.com/google/fonts/main/ofl/notosansjp/OFL.txt>,
+  <https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/OFL.txt>,
   <https://raw.githubusercontent.com/google/fonts/main/ofl/pixelifysans/OFL.txt>; licence text at
   <https://openfontlicense.org>). OFL allows commercial use, embedding and bundling; the fonts can't
   be sold on their own, and the copyright and licence notice must travel with any copy we ship.
@@ -172,7 +174,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   German court (LG München, 2022) found that a GDPR breach without consent. Google's Fonts privacy
   FAQ (<https://developers.google.com/fonts/faq/privacy>) was blocked from this session, so its
   terms are unread.
-- **To sell:** Self-host WOFF2 subsets of both fonts (no third-party request at all), and add the two
+- **To sell:** Self-host WOFF2 subsets of the three fonts (no third-party request at all), and add the
   OFL notices to the third-party notices file. Any new font gets a row here.
 
 ### 12. Game formats and names

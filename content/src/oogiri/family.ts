@@ -9,8 +9,8 @@ export const familyPrompts: OogiriPrompt[] = [
     packId: 'family',
     round: 'head-to-head',
     versions: {
-      kana: { text: "おばあさんの しゅみは ＿＿＿ です。", kana: "おばあさんの しゅみは ＿＿＿ です。", en: "Grandma's hobby is ___." },
-      n5: { text: "おばあさんの ひみつの しゅみは ＿＿＿ です。", kana: "おばあさんの ひみつの しゅみは ＿＿＿ です。", en: "Grandma's secret hobby is ___." },
+      kana: { text: "おばあさんの しゅみは ＿＿＿です。", kana: "おばあさんの しゅみは ＿＿＿です。", en: "Grandma's hobby is ___." },
+      n5: { text: "おばあさんの ひみつの しゅみは ＿＿＿です。", kana: "おばあさんの ひみつの しゅみは ＿＿＿です。", en: "Grandma's secret hobby is ___." },
     },
     fitTileIds: ['family.terebi', 'family.sumaho', 'family.ofuro', 'family.neko'],
     swerveTileIds: ['family.zonbi', 'family.aidoru', 'family.kappa'],
@@ -183,8 +183,8 @@ export const familyPrompts: OogiriPrompt[] = [
     packId: 'family',
     round: 'head-to-head',
     versions: {
-      kana: { text: "かぞくかいぎの テーマは ＿＿＿ です。", kana: "かぞくかいぎの テーマは ＿＿＿ です。", en: "The family meeting topic is ___." },
-      n5: { text: "きょうの 家族かいぎの テーマは ＿＿＿ です。", kana: "きょうの かぞくかいぎの テーマは ＿＿＿ です。", en: "Tonight's family meeting topic: ___.", furigana: [['きょうの ', ''], ['家族', 'かぞく'], ['かいぎの テーマは ＿＿＿ です。', '']] },
+      kana: { text: "かぞくかいぎの テーマは ＿＿＿です。", kana: "かぞくかいぎの テーマは ＿＿＿です。", en: "The family meeting topic is ___." },
+      n5: { text: "きょうの 家族かいぎの テーマは ＿＿＿です。", kana: "きょうの かぞくかいぎの テーマは ＿＿＿です。", en: "Tonight's family meeting topic: ___.", furigana: [['きょうの ', ''], ['家族', 'かぞく'], ['かいぎの テーマは ＿＿＿です。', '']] },
     },
     fitTileIds: ['family.shukudai', 'family.terebi', 'family.sumaho', 'family.ofuro'],
     swerveTileIds: ['family.obake', 'family.uchuujin', 'family.robotto-soujiki'],
@@ -236,8 +236,8 @@ export const familyPrompts: OogiriPrompt[] = [
     packId: 'family',
     round: 'head-to-head',
     versions: {
-      kana: { text: "うちの しゃちょうは ＿＿＿ です。", kana: "うちの しゃちょうは ＿＿＿ です。", en: "The real boss of our house is ___." },
-      n5: { text: "うちの しゃちょうは ＿＿＿ です。", kana: "うちの しゃちょうは ＿＿＿ です。", en: "The real boss of our house is ___." },
+      kana: { text: "うちの しゃちょうは ＿＿＿です。", kana: "うちの しゃちょうは ＿＿＿です。", en: "The real boss of our house is ___." },
+      n5: { text: "うちの しゃちょうは ＿＿＿です。", kana: "うちの しゃちょうは ＿＿＿です。", en: "The real boss of our house is ___." },
     },
     fitTileIds: ['family.neko', 'family.haha', 'family.sobo', 'family.hamusutaa', 'family.inu'],
     swerveTileIds: ['family.robotto-soujiki', 'family.pengin', 'family.obake'],
@@ -354,8 +354,8 @@ export const familyPrompts: OogiriPrompt[] = [
     packId: 'family',
     round: 'head-to-head',
     versions: {
-      kana: { text: "ちちの すきな ものは ＿＿＿ です。", kana: "ちちの すきな ものは ＿＿＿ です。", en: "My dad's favourite thing is ___." },
-      n5: { text: "父の いちばん すきな ものは ＿＿＿ です。", kana: "ちちの いちばん すきな ものは ＿＿＿ です。", en: "My dad's very favourite thing is ___.", furigana: [['父', 'ちち'], ['の いちばん すきな ものは ＿＿＿ です。', '']] },
+      kana: { text: "ちちの すきな ものは ＿＿＿です。", kana: "ちちの すきな ものは ＿＿＿です。", en: "My dad's favourite thing is ___." },
+      n5: { text: "父の いちばん すきな ものは ＿＿＿です。", kana: "ちちの いちばん すきな ものは ＿＿＿です。", en: "My dad's very favourite thing is ___.", furigana: [['父', 'ちち'], ['の いちばん すきな ものは ＿＿＿です。', '']] },
     },
     fitTileIds: ['family.ofuro', 'family.terebi', 'family.inu', 'family.neko'],
     swerveTileIds: ['family.robotto-soujiki', 'family.danbooru', 'family.kappa'],

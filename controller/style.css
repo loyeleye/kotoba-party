@@ -13,7 +13,9 @@
   /* The current mode's colour (main.ts sets body[data-mode]). */
   --mode: var(--accent);
   --font-pixel: 'Pixelify Sans', 'Noto Sans JP', system-ui, sans-serif;
-  --font-body: 'Noto Sans JP', system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+  /* Noto Sans first for Latin: Noto Sans JP lacks some macron vowels (ō), so romaji mixed fonts. */
+  --font-body: 'Noto Sans', 'Noto Sans JP', system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+  --font-ja: 'Noto Sans JP', system-ui, -apple-system, 'Hiragino Sans', sans-serif;
   font-family: var(--font-body);
   color-scheme: dark;
 }
@@ -31,7 +33,7 @@ body[data-mode='omiai'] { --mode: #ffa9c6; }
 body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--mode) 14%, var(--bg)), var(--bg) 70%) fixed; }
 
 /* Japanese: break between phrases, never inside a word (see stage/style.css). */
-:lang(ja) { font-family: var(--font-body); line-break: strict; word-break: keep-all; overflow-wrap: anywhere; }
+:lang(ja) { font-family: var(--font-ja); line-break: strict; word-break: keep-all; overflow-wrap: anywhere; }
 @supports (word-break: auto-phrase) { :lang(ja) { word-break: auto-phrase; overflow-wrap: normal; } }
 .nw { white-space: nowrap; }
 .jp-blank { color: transparent; text-decoration: underline 0.1em var(--ink); text-underline-offset: 0.12em; text-decoration-skip-ink: none; user-select: none; }

@@ -5,6 +5,7 @@
 import { h } from '../../../shared/src/dom.js';
 import type { OnsenView } from '../../../shared/src/modes/views.js';
 import type { SuspectView } from '../../../shared/src/modes/onsenMurder/onsenMurder.js';
+import { calledName } from '../../../shared/src/modes/onsenMurder/questions.js';
 import type { JpText, OnsenIntent } from '../../../content/src/types.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
@@ -54,7 +55,7 @@ const appearAfter = (delayMs: number, elapsed: number): string => `animation-del
 // ---- pieces ----
 
 const nameOf = (view: RoomView, id: string | null | undefined): string => view.players.find((p) => p.id === id)?.name ?? '…';
-const san = (s: SuspectView): string => `${s.name.text}さん`;
+const san = (s: SuspectView): string => calledName(s).text;
 
 function jpBlock(t: JpText, cls = ''): HTMLElement {
   return h('div', { class: `om-jp ${cls}` }, h('span', { class: 'om-ja', lang: 'ja' }, t.text), t.kana !== t.text ? h('span', { class: 'om-kana', lang: 'ja' }, t.kana) : null, h('span', { class: 'om-en' }, t.en));
@@ -259,8 +260,9 @@ function finaleScreen(view: RoomView, game: OnsenView): HTMLElement {
         { class: 'om-main' },
         h(
           'div',
-          { class: 'om-reveal-head' },
-          h('p', { class: 'om-banner om-reveal', lang: 'ja' }, `はんにんは ${san(culprit)} でした！`, h('span', { class: 'muted' }, ` The culprit was ${culprit.name.en}.`)),
+          // After the はんにん stamp lands on the culprit's card (0.9s + 0.4s).
+          { class: 'om-reveal-head om-appear', style: appearAfter(1_400, elapsed) },
+          h('p', { class: 'om-banner om-reveal', lang: 'ja' }, `はんにんは ${san(culprit)}でした！`, h('span', { class: 'muted' }, ` The culprit was ${culprit.name.en}.`)),
           h('p', { class: 'om-line good' }, right.length ? `🔍 Solved by ${right.join(', ')} (+300)` : 'Nobody named the culprit this time!'),
         ),
         h(

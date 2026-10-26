@@ -243,7 +243,10 @@ function scoreScreen(ctx: Ctx): HTMLElement {
     ? ['The VIP hid this drawing: no points, but say the title anyway!']
     : m.isArtist
     ? [`${finders} player${finders === 1 ? '' : 's'} read your drawing.`]
-    : [real?.pickedBy.some((p) => p.id === me) ? 'You found the real title!' : 'Fooled this time.', fooled ? `Your fake fooled ${fooled}.` : ''];
+    : [
+        real?.pickedBy.some((p) => p.id === me) ? 'You found the real title!' : r.options.some((o) => o.pickedBy.some((p) => p.id === me)) ? 'Fooled this time.' : 'You didn’t vote this time.',
+        fooled ? `Your fake fooled ${fooled}.` : '',
+      ];
   return h(
     'div',
     { class: 'screen oek' },

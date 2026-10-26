@@ -10,7 +10,7 @@
 .kd-song-en { font-size: 22px; font-weight: 600; color: var(--muted); }
 .kd-vs { display: flex; align-items: center; gap: 14px; margin: 0 0 0 auto; font-size: 30px; font-weight: 800; }
 .kd-vs-x { color: var(--accent); font-weight: 900; font-size: 26px; }
-.kd-name { border-radius: 999px; padding: 2px 16px; color: #fff; }
+.kd-name { border-radius: 999px; padding: 2px 16px; }
 .kd-double { background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 2px 12px; font-size: 20px; font-weight: 800; }
 .kd-sound { background: var(--accent); color: var(--on-accent); border: 0; border-radius: 999px; padding: 8px 18px; font-size: 20px; font-weight: 800; cursor: pointer; }
 .kd-sound.quiet { background: transparent; color: var(--muted); border: 1px solid var(--line); font-size: 16px; padding: 4px 12px; }
@@ -24,11 +24,11 @@
 
 .kd-layout { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 22px; align-items: start; }
 .kd-screen { position: relative; background: #0d0a17; border: 2px solid var(--line); border-radius: 22px; padding: 22px 28px 26px; display: grid; gap: 14px; min-height: 420px; align-content: start; overflow: hidden; }
-.kd-singer { margin: 0; font-size: 30px; font-weight: 900; justify-self: start; border-radius: 999px; padding: 4px 18px; color: #fff; }
+.kd-singer { margin: 0; font-size: 30px; font-weight: 900; justify-self: start; border-radius: 999px; padding: 4px 18px; }
 .kd-line-no { font-weight: 600; font-size: 20px; opacity: 0.8; }
 
 .kd-count { position: relative; height: 0; }
-.kd-count-n { position: absolute; right: 0; top: -58px; font-size: 64px; font-weight: 900; color: var(--warn); opacity: 0; animation: kd-count var(--len) linear var(--d) both; }
+.kd-count-n { position: absolute; right: 0; top: -58px; font-size: 64px; font-weight: 900; color: var(--warn); opacity: 0; animation: kd-count var(--len) linear var(--d) forwards; }
 @keyframes kd-count { 0% { opacity: 1; transform: scale(1.25); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
 
 .kd-line { display: grid; gap: 6px; text-align: center; }
@@ -63,7 +63,7 @@
 .kd-board-row.head { font-weight: 800; }
 .kd-board-row.total { border-top: 1px solid var(--line); border-radius: 0; padding-top: 8px; font-weight: 800; color: var(--muted); }
 .kd-board-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kd-who { border-radius: 999px; padding: 2px 8px; color: #fff; text-align: center; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kd-who { border-radius: 999px; padding: 2px 8px; text-align: center; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kd-total { text-align: center; font-size: 26px; color: var(--ink); }
 .kd-chip { white-space: nowrap; text-align: center; border-radius: 10px; padding: 4px 0; font-weight: 800; font-size: 22px; background: rgba(255, 255, 255, 0.06); }
 .kd-chip.empty { color: var(--muted); }
@@ -75,12 +75,13 @@
 @keyframes kd-pulse { from { opacity: 0.7; } to { opacity: 1; } }
 
 .kd-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-.kd-cand { border-radius: 20px; padding: 12px 18px; display: grid; gap: 6px; justify-items: center; color: #fff; }
+.kd-cand { border-radius: 20px; padding: 12px 18px; display: grid; gap: 6px; justify-items: center; }
 .kd-cand-name { font-size: 36px; font-weight: 900; }
 .kd-cand-pts { font-size: 44px; font-weight: 900; }
 .kd-cand-sub { font-size: 22px; opacity: 0.9; }
 .kd-cand-sub.good { font-weight: 800; }
-.kd-cand.result:not(.won) { opacity: 0.7; }
+/* The loser greys out but keeps its contrast (opacity dropped it to 2.3:1). */
+.kd-cand.result:not(.won) { filter: grayscale(0.85); transform: scale(0.94); }
 .kd-cand.won { box-shadow: 0 0 0 5px var(--warn); }
 
 .kd-final { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; width: min(900px, 100%); }

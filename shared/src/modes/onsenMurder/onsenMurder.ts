@@ -148,6 +148,7 @@ export type OnsenMove =
 export interface SuspectView {
   id: string;
   name: JpText;
+  suffix?: string;
   role: JpText;
   emoji: string;
   voice: { pitch: number; rate: number };
@@ -631,7 +632,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
     return {
       mode: 'onsen-murder',
       caseFile: { id: c.id, title: c.title, setting: c.setting, victim: c.victim, item: { name: c.item.name, emoji: c.item.emoji } },
-      suspects: c.suspects.map((x) => ({ id: x.id, name: x.name, role: x.role, emoji: x.emoji, voice: x.voice, asked: askedOf(s, x.id) })),
+      suspects: c.suspects.map((x) => ({ id: x.id, name: x.name, suffix: x.suffix, role: x.role, emoji: x.emoji, voice: x.voice, asked: askedOf(s, x.id) })),
       turn:
         s.turn && (phase === 'answer' || phase === 'reveal')
           ? { no: s.turn.no, total: s.totalTurns, playerId: s.turn.playerId, tries: s.turn.tries, miss: s.turn.miss ? { suspectId: s.turn.miss.suspectId, heard: s.turn.miss.heard } : null }

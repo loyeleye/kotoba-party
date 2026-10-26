@@ -58,8 +58,6 @@
 @keyframes cc-toast { 0% { opacity: 0; transform: translate(-50%, -12px) scale(0.9); } 8% { opacity: 1; transform: translate(-50%, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes cc-flip { from { transform: rotateY(90deg); } to { transform: rotateY(0); } }
 
-.seat-1 { background: #ff7a59; } .seat-2 { background: #57a3d9; } .seat-3 { background: #57d9a3; color: #10241b; } .seat-4 { background: #c27bff; }
-.seat-5 { background: #ffcf5a; color: #1b1430; } .seat-6 { background: #ff5a9e; } .seat-7 { background: #4fd1d9; color: #10241b; } .seat-8 { background: #9aa36b; }
 
 @media (max-width: 1000px) {
   .cc-layout { grid-template-columns: 1fr; }

@@ -43,7 +43,7 @@ export const LAST_CHANCE_POINTS = 150;
 export const ASK_BONUS = { own: { speech: 40, typed: 20 }, frame: { speech: 20, typed: 10 } } as const;
 /** Speaking bonuses: answering. From the bonus pool. */
 export const ANSWER_BONUS = { own: { speech: 30, typed: 15 }, frame: { speech: 15, typed: 5 } } as const;
-/** Saying the guess (ここは えき ですか？) rather than only tapping it. From the bonus pool. */
+/** Saying the guess (ここは えきですか？) rather than only tapping it. From the bonus pool. */
 export const GUESS_BONUS = { speech: 20, typed: 10 } as const;
 /** Every speaking bonus comes from one pool per player per round: 30% of a round's top win. */
 export const BONUS_POOL_SHARE = 0.3;

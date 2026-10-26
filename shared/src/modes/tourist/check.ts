@@ -56,7 +56,7 @@ export function hasJapanese(text: string): boolean {
   return /[ぁ-ゖァ-ヺ㐀-鿿]/.test(text);
 }
 
-/** True if the utterance names the place (anywhere in it: ここは えき ですか counts for えき). */
+/** True if the utterance names the place (anywhere in it: ここは えきですか counts for えき). */
 export function namesPlace(u: Utterance, kana: string, accepted: readonly string[] = []): boolean {
   const targets = [kana, ...accepted].map(phraseKey).filter(Boolean);
   return readings(u).some((heard) => targets.some((t) => heard.includes(t) || ([...t].length > 3 && substringDistance(t, heard) <= 1)));

@@ -332,8 +332,10 @@ export interface OnsenAnswer {
 export interface OnsenSuspect {
   /** Stable within the case, e.g. 'tanaka'. */
   id: string;
-  /** Name without さん (the accusation adds it): { text: 'たなか', kana: 'たなか', en: 'Tanaka' }. */
+  /** Name without さん (the accusation adds `suffix`): { text: 'たなか', kana: 'たなか', en: 'Tanaka' }. */
   name: JpText;
+  /** What others call them after the name: さん unless set (くん for a boy, '' for the cat). */
+  suffix?: string;
   role: JpText;
   emoji: string;
   /** Pitch and rate for the stage's browser voice (1 = default), so suspects sound different. */

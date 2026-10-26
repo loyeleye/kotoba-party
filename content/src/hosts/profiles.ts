@@ -34,7 +34,7 @@ export const hostProfiles: HostProfile[] = [
       'Rises into dramatic emphasis on "まもなく" and drops to a whisper for secrets. "ゆらゆら" is sung softly, with a flicker. ' +
       'Audition: 青山龍星 (deep, dramatic), 冥鳴ひまり (calm, eerie) as an alternative casting.',
     runningGags: [
-      'Terrible dajare puns (ふとんが ふっとんだ, いかが ですか？ いかです！), delivered with total pride.',
+      'Terrible dajare puns (ふとんが ふっとんだ, いかがですか？ いかです！), delivered with total pride.',
       'Secretly rooting for the ghosts: whispers encouragement to knocked-out players, then pretends he said nothing.',
       'Gives grand, train-announcement keigo ("まもなく…", "ごじょうしゃ ください") to tiny things, and flickers "ゆらゆら" when moved.',
     ],

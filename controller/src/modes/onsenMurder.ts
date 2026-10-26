@@ -9,7 +9,7 @@ import { h, mount } from '../../../shared/src/dom.js';
 import type { JpText, OnsenIntent } from '../../../content/src/types.js';
 import type { OnsenView } from '../../../shared/src/modes/views.js';
 import type { QuestionTile } from '../../../shared/src/modes/onsenMurder/questions.js';
-import { joinTiles } from '../../../shared/src/modes/onsenMurder/questions.js';
+import { calledName, joinTiles } from '../../../shared/src/modes/onsenMurder/questions.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
@@ -62,7 +62,7 @@ function suspectButtons(game: OnsenView, selected: string | null, onPick: (id: s
         'button',
         { type: 'button', class: `om-p-suspect${s.id === selected ? ' on' : ''}`, onclick: () => onPick(s.id) },
         h('span', { class: 'om-p-face' }, s.emoji),
-        h('span', { class: 'om-p-name', lang: 'ja' }, `${s.name.text}さん`),
+        h('span', { class: 'om-p-name', lang: 'ja' }, calledName(s).text),
         h('small', {}, s.role.en),
         s.asked.length ? h('small', { class: 'om-p-asked' }, s.asked.map((i) => INTENT_ICON[i]).join('')) : null,
       ),
@@ -193,7 +193,7 @@ function askScreen(ctx: Ctx): HTMLElement {
     }
     mount(
       root,
-      h('p', { class: 'big' }, h('span', {}, `Ask ${suspect.emoji} `), h('span', { lang: 'ja' }, `${suspect.name.text}さん`)),
+      h('p', { class: 'big' }, h('span', {}, `Ask ${suspect.emoji} `), h('span', { lang: 'ja' }, calledName(suspect).text)),
       h('button', { type: 'button', class: 'linkish om-p-change', onclick: () => ((picked = { scope, suspectId: null }), draw()) }, 'Change suspect'),
       mine.miss
         ? h(
@@ -228,7 +228,7 @@ function accuseScreen(ctx: Ctx): HTMLElement {
     return h(
       'div',
       { class: 'screen om-p' },
-      h('p', { class: 'big' }, `You accused ${s?.emoji ?? ''} ${s?.name.text ?? ''}さん`),
+      h('p', { class: 'big' }, `You accused ${s?.emoji ?? ''} ${s ? calledName(s).text : ''}`),
       h('p', { class: 'hint' }, mine.accusation.said ? 'Said like a real detective! 🎤' : 'Vote locked in.'),
       waiting('Waiting for the others…'),
       notebook(game, true),
@@ -308,7 +308,7 @@ export const onsenMurderPhone: PhoneMode<OnsenView> = {
         return h(
           'div',
           { class: 'screen om-p' },
-          h('p', { class: 'big' }, `${s?.emoji ?? ''} ${s?.name.text ?? ''}さん answers…`),
+          h('p', { class: 'big' }, `${s?.emoji ?? ''} ${s ? calledName(s).text : ''} answers…`),
           h('div', { class: 'om-p-answer', style: `animation-delay: ${game.thinkMs}ms` }, jpLine(cur.answer)),
           mineAsk ? h('p', { class: 'hint' }, cur.guessed ? `Best guess: ${cur.natural.text} (${cur.natural.en})` : `Natural: ${cur.natural.text} (${cur.natural.en})`) : null,
           cur.newClue && cur.clue ? h('p', { class: 'om-p-clue', style: `animation-delay: ${game.thinkMs + game.subtitleMs}ms` }, `📝 New clue${mineAsk ? ` +${cur.points}` : ''}: `, h('span', { lang: 'ja' }, cur.clue.text)) : null,
@@ -324,7 +324,7 @@ export const onsenMurderPhone: PhoneMode<OnsenView> = {
         return h(
           'div',
           { class: 'screen om-p' },
-          h('p', { class: 'big', lang: 'ja' }, `はんにんは ${culprit?.name.text ?? ''}さん！ ${culprit?.emoji ?? ''}`),
+          h('p', { class: 'big', lang: 'ja' }, `はんにんは ${culprit ? calledName(culprit).text : ''}！ ${culprit?.emoji ?? ''}`),
           h('p', {}, myVote ? (myVote.correct ? '🔍 You got it! +300' : 'Not this time. Look at the TV for the confession.') : 'You didn’t vote this time.'),
           h('p', { class: 'hint' }, r.solution),
         );

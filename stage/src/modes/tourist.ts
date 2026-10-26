@@ -126,7 +126,7 @@ function reveal(game: TouristView, p: PlaceCard): HTMLElement {
     'div',
     { class: 'tou-reveal' },
     h('span', { class: 'tou-reveal-emoji' }, p.emoji),
-    h('div', {}, h('p', { class: 'tou-reveal-jp', lang: 'ja' }, 'ここは ', h('strong', {}, ruby(p)), ' でした！'), h('p', { class: 'tou-reveal-en' }, `We were at the ${p.en}.`)),
+    h('div', {}, h('p', { class: 'tou-reveal-jp', lang: 'ja' }, 'ここは ', h('strong', {}, ruby(p)), 'でした！'), h('p', { class: 'tou-reveal-en' }, `We were at the ${p.en}.`)),
     game.multiplier > 1 ? h('span', { class: 'tou-double' }, 'Final round · ×2') : null,
   );
 }
@@ -206,7 +206,7 @@ export const touristStage: StageMode<TouristView> = {
           h('p', { class: 'tou-big' }, `🧳 Caught! ${nameOf(view, o?.touristId)} is the tourist!`),
           h('p', { class: 'tou-callout' }, 'Last chance: where are we?'),
           places(game, 'big'),
-          h('p', { class: 'tou-hint' }, `${nameOf(view, o?.touristId)}: say it, “ここは ＿＿ ですか？”, and pick on your phone.`),
+          h('p', { class: 'tou-hint' }, `${nameOf(view, o?.touristId)}: say it, “ここは ＿＿ですか？”, and pick on your phone.`),
         );
       }
       case 'score': {
