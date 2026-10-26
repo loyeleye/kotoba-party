@@ -7,7 +7,7 @@ import { h } from '../../../shared/src/dom.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
 import type { OekakiView } from '../../../shared/src/modes/views.js';
 import { PALETTE } from '../../../shared/src/modes/oekaki/drawing.js';
-import { toRomaji } from '../../../shared/src/modes/oogiri/romaji.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
 

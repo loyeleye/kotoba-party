@@ -13,7 +13,7 @@
 .pb-setting { font-size: 52px; font-weight: 900; }
 .pb-setting-en { font-size: 26px; color: var(--muted); }
 .pb-twist { font-size: 26px; color: var(--warn); }
-.pb-double { align-self: start; background: var(--accent); color: #fff; font-weight: 800; border-radius: 999px; padding: 6px 16px; font-size: 22px; }
+.pb-double { align-self: start; background: var(--accent); color: var(--on-accent); font-weight: 800; border-radius: 999px; padding: 6px 16px; font-size: 22px; }
 .pb-compact { padding: 10px 20px; }
 .pb-compact .pb-emoji { font-size: 56px; }
 .pb-compact .pb-setting { font-size: 34px; }

@@ -8,7 +8,7 @@
 .lt-jp-kana { color: var(--muted); font-size: 17px; }
 .lt-jp-en { color: var(--muted); font-size: 15px; }
 .lt-jp rt { font-size: 11px; color: var(--muted); }
-.lt-romaji { margin: 0; color: var(--warn); font-size: 17px; font-style: italic; }
+.lt-romaji { margin: 0; color: var(--warn); font-size: 18px; }
 .lt-route { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 19px; }
 .lt-route small { color: var(--muted); }
 .lt-task-head { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -16,10 +16,12 @@
 .lt-chip.warn { border-color: var(--warn); color: var(--warn); }
 .lt-chip.ghost { border-color: #9fb7ff; color: #c9d6ff; }
 .lt-banner { margin: 0; padding: 10px 12px; border-radius: 12px; background: #4a1f2a; color: #ffd6d6; font-weight: 800; }
-.lt-clock { position: relative; height: 26px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
+.lt-clock-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+.lt-clock { position: relative; height: 18px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }
 .lt-clock-fill { position: absolute; inset: 0 auto 0 0; background: var(--good); transition: width 0.2s linear; }
-.lt-clock.low .lt-clock-fill { background: var(--accent); }
-.lt-clock-label { position: relative; display: block; text-align: center; font-weight: 900; font-size: 16px; line-height: 26px; color: var(--ink); text-shadow: 0 1px 2px #000; }
+.lt-clock-row.low .lt-clock-fill { background: var(--accent); }
+.lt-clock-label { font-family: var(--font-pixel); font-weight: 700; font-size: 18px; color: var(--ink); font-variant-numeric: tabular-nums; min-width: 4.5em; text-align: right; }
+.lt-clock-row.low .lt-clock-label { color: var(--accent); }
 .lt-visual { margin: 0; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--line); font-size: 17px; }
 .lt-hint { padding: 10px 12px; border-radius: 12px; background: #2b2440; border-left: 4px solid var(--warn); display: grid; gap: 4px; }
 .lt-hint p { margin: 0; font-size: 17px; }
@@ -32,7 +34,7 @@
 .lt-vote { display: grid; gap: 8px; padding: 12px; border-radius: 14px; border: 2px solid var(--accent); background: var(--panel); }
 .lt-vote p { margin: 0; }
 .lt-heard { font-size: 20px; }
-.lt-vote-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+.lt-vote-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .lt-vote-btns .primary { padding: 14px; }
 .lt-vote-note { margin: 0; color: var(--muted); }
 .lt-vote-note.good, .lt-good { color: var(--good); font-weight: 700; margin: 0; }

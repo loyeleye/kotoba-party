@@ -59,7 +59,8 @@ function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean): HTMLE
   const hpPct = Math.round((100 * y.hp) / Math.max(1, y.maxHp));
   return h(
     'div',
-    { class: classes.filter(Boolean).join(' '), style },
+    // Keyed by yōkai: the same element marches, takes hits and bursts across updates.
+    { class: classes.filter(Boolean).join(' '), style, 'data-key': y.id },
     h(
       'div',
       { class: 'raid-yokai-inner' },

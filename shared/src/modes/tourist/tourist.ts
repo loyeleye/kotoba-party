@@ -17,7 +17,7 @@
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
-import { toRomaji } from '../lastTrain/check.js';
+import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { findLine, hasJapanese, matchLine, namesPlace } from './check.js';
 import { ALL_LINES, BLUFFS, PLACES, QUESTIONS, SAFE_ANSWERS, TOURIST_ROLE, type Kind, type Line, type Place } from './places.js';

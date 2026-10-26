@@ -195,7 +195,13 @@ function answerScreen(view: RoomView, game: OnsenView): HTMLElement {
         : cur.clue
           ? h('p', { class: 'om-line muted om-appear', style: appearAfter(game.thinkMs, elapsed) }, 'Already in the notebook.')
           : null;
-  return h('div', { class: 'om-stage' }, caseStrip(game), h('div', { class: 'om-layout' }, h('div', { class: 'om-main' }, asked, answer, clue), notebook(view, game, { freshStyle: appearAfter(game.thinkMs + game.subtitleMs + 600, elapsed) })));
+  // Keyed by the question, so the next one replays the think-then-answer beat from the start.
+  return h(
+    'div',
+    { class: 'om-stage', 'data-key': `ask:${cur.no}` },
+    caseStrip(game),
+    h('div', { class: 'om-layout' }, h('div', { class: 'om-main' }, asked, answer, clue), notebook(view, game, { freshStyle: appearAfter(game.thinkMs + game.subtitleMs + 600, elapsed) })),
+  );
 }
 
 function accuseScreen(view: RoomView, game: OnsenView): HTMLElement {

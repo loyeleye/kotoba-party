@@ -26,61 +26,6 @@ export function checkUtterance(u: Utterance, accepted: readonly string[], partic
   return false;
 }
 
-// ---- romaji, for Kana-level players (the design doc: romaji only at the Kana level) ----
-
-const DIGRAPHS: Record<string, string> = {
-  きゃ: 'kya', きゅ: 'kyu', きょ: 'kyo', しゃ: 'sha', しゅ: 'shu', しょ: 'sho', ちゃ: 'cha', ちゅ: 'chu', ちょ: 'cho',
-  にゃ: 'nya', にゅ: 'nyu', にょ: 'nyo', ひゃ: 'hya', ひゅ: 'hyu', ひょ: 'hyo', みゃ: 'mya', みゅ: 'myu', みょ: 'myo',
-  りゃ: 'rya', りゅ: 'ryu', りょ: 'ryo', ぎゃ: 'gya', ぎゅ: 'gyu', ぎょ: 'gyo', じゃ: 'ja', じゅ: 'ju', じょ: 'jo',
-  びゃ: 'bya', びゅ: 'byu', びょ: 'byo', ぴゃ: 'pya', ぴゅ: 'pyu', ぴょ: 'pyo', ぢゃ: 'ja', ぢゅ: 'ju', ぢょ: 'jo',
-  ふぁ: 'fa', ふぃ: 'fi', ふぇ: 'fe', ふぉ: 'fo', てぃ: 'ti', でぃ: 'di', うぃ: 'wi', うぇ: 'we', うぉ: 'wo', しぇ: 'she', じぇ: 'je', ちぇ: 'che',
-};
-
-const SINGLE: Record<string, string> = {
-  あ: 'a', い: 'i', う: 'u', え: 'e', お: 'o', か: 'ka', き: 'ki', く: 'ku', け: 'ke', こ: 'ko', さ: 'sa', し: 'shi', す: 'su', せ: 'se', そ: 'so',
-  た: 'ta', ち: 'chi', つ: 'tsu', て: 'te', と: 'to', な: 'na', に: 'ni', ぬ: 'nu', ね: 'ne', の: 'no', は: 'ha', ひ: 'hi', ふ: 'fu', へ: 'he', ほ: 'ho',
-  ま: 'ma', み: 'mi', む: 'mu', め: 'me', も: 'mo', や: 'ya', ゆ: 'yu', よ: 'yo', ら: 'ra', り: 'ri', る: 'ru', れ: 're', ろ: 'ro', わ: 'wa', を: 'o', ん: 'n',
-  が: 'ga', ぎ: 'gi', ぐ: 'gu', げ: 'ge', ご: 'go', ざ: 'za', じ: 'ji', ず: 'zu', ぜ: 'ze', ぞ: 'zo', だ: 'da', ぢ: 'ji', づ: 'zu', で: 'de', ど: 'do',
-  ば: 'ba', び: 'bi', ぶ: 'bu', べ: 'be', ぼ: 'bo', ぱ: 'pa', ぴ: 'pi', ぷ: 'pu', ぺ: 'pe', ぽ: 'po', ゔ: 'vu',
-  ぁ: 'a', ぃ: 'i', ぅ: 'u', ぇ: 'e', ぉ: 'o', ゃ: 'ya', ゅ: 'yu', ょ: 'yo', ゎ: 'wa',
-};
-
-const PUNCT: Record<string, string> = { '、': ', ', '。': '. ', '？': '? ', '！': '! ', '「': '"', '」': '"', '…': '…', '＿': '_', '・': ' ', '　': ' ' };
-
-/** Hepburn romaji for a kana string (katakana too). Anything else passes through. */
-export function toRomaji(kana: string): string {
-  const s = toHiragana(kana);
-  let out = '';
-  let geminate = false;
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i]!;
-    if (ch === 'っ') {
-      geminate = true;
-      continue;
-    }
-    if (ch === 'ー') {
-      const last = out.at(-1);
-      if (last && 'aeiou'.includes(last)) out += last;
-      continue;
-    }
-    const pair = s.slice(i, i + 2);
-    let roman = DIGRAPHS[pair];
-    if (roman) i++;
-    else roman = SINGLE[ch];
-    if (roman === undefined) {
-      out += PUNCT[ch] ?? ch;
-      geminate = false;
-      continue;
-    }
-    if (geminate) out += roman.startsWith('ch') ? 't' : roman[0]!;
-    geminate = false;
-    // ん before a vowel or y reads n' (kin'en), so it is not mistaken for な-row.
-    if (ch === 'ん' && i + 1 < s.length && /^[あいうえおやゆよ]/.test(s[i + 1]!)) roman = "n'";
-    out += roman;
-  }
-  return out.replace(/\s+/g, ' ').trim();
-}
-
 /** The first mora of a reading (with a small kana or っ attached), for a Kana-level retry. */
 export function firstMora(kana: string): string {
   const s = toHiragana(normalizeReading(kana));

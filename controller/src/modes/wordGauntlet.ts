@@ -4,7 +4,7 @@
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
 import type { WordGauntletView } from '../../../shared/src/modes/views.js';
-import { toRomaji } from '../../../shared/src/modes/wordGauntlet/romaji.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { follows, repeatKey, wordReading } from '../../../shared/src/modes/wordGauntlet/shiritori.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
@@ -67,7 +67,7 @@ function fakeScreen(ctx: Ctx): HTMLElement {
   const { view, game, send, flash } = ctx;
   const f = game.fake!;
   const romaji = isKanaLevel(ctx) ? f.word.romaji : null;
-  const title = h('p', { class: 'wg-tag' }, `Round 1 · Fake Kanji · word ${f.index} of ${f.total}`);
+  const title = h('p', { class: 'wg-tag' }, `Round 1 · Kanji Bluff · word ${f.index} of ${f.total}`);
   switch (view.phase) {
     case 'prompt':
       return h('div', { class: 'screen' }, title, word(f.word.text, f.word.kana, romaji), h('p', { class: 'hint' }, 'Nobody knows this one. Get ready to make up what it means!'));

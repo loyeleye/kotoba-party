@@ -5,6 +5,7 @@
 // inkPad, then asks to say what you drew.
 
 import { h } from '../../../shared/src/dom.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
 import type { AttackView, KanaRaidView, LastResult } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
@@ -242,6 +243,8 @@ function options(a: AttackView, send: (move: unknown) => Promise<boolean>, cls =
       },
       h('span', {}, o.label),
       o.sub ? h('small', {}, o.sub) : null,
+      // Training wheels on (chapter 1, or the かな level drawing): every choice carries its sound too.
+      a.romaji && !o.sub ? h('small', { class: 'raid-opt-romaji', lang: 'en' }, toRomaji(o.label)) : null,
     ),
   );
   box.append(...buttons);

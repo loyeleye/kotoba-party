@@ -2,7 +2,8 @@
 // shiritori chain. Nothing private is drawn: fakes stay hidden until the reveal, authors until
 // the score, telephone steps until the end.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
+import type { JpText } from '../../../content/src/types.js';
 import type { WordGauntletView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
@@ -57,7 +58,7 @@ function intro(view: RoomView): HTMLElement {
     h(
       'ol',
       { class: 'wg-rounds' },
-      step(1, 'Fake Kanji', 'にせ漢字', 'Invent a meaning for a real, obscure word. Find the true one.'),
+      step(1, 'Kanji Bluff', 'ほんもの？ うそ？', 'A real but obscure word: invent a meaning for it, then find the true one.'),
       step(2, 'Lost in Translation', 'でんごん', 'One sentence, passed around in Japanese and English. Double points.'),
       step(3, 'Shiritori Showdown', 'しりとり', 'Say a word from the last kana. ん and you’re out. Last one standing wins.'),
     ),
@@ -68,20 +69,17 @@ function tag(text: string): HTMLElement {
   return h('p', { class: 'wg-tag' }, text);
 }
 
-function bigWord(text: string, kana: string, en?: string): HTMLElement {
-  return h(
-    'div',
-    { class: 'wg-word' },
-    h('ruby', { class: 'wg-kanji', lang: 'ja' }, text, h('rt', {}, kana !== text ? kana : '')),
-    en ? h('p', { class: 'wg-meaning' }, en) : null,
-  );
+/** The word with its reading over the right characters (木[こ]漏[も]れ日[び], never spread evenly). */
+function bigWord(jp: { text: string; kana: string; furigana?: JpText['furigana'] }, en?: string): HTMLElement {
+  const furigana = jp.furigana ?? (jp.kana !== jp.text ? [[jp.text, jp.kana] as [string, string]] : undefined);
+  return h('div', { class: 'wg-word' }, ruby({ text: jp.text, furigana }, { class: 'wg-kanji' }), en ? h('p', { class: 'wg-meaning' }, en) : null);
 }
 
 // ---- Round 1 ----
 
 function fake(view: RoomView, game: WordGauntletView): HTMLElement {
   const f = game.fake!;
-  const label = tag(`Round 1 · Fake Kanji · word ${f.index} of ${f.total}`);
+  const label = tag(`Round 1 · Kanji Bluff · word ${f.index} of ${f.total}`);
   switch (view.phase) {
     case 'prompt':
     case 'answer':
@@ -89,7 +87,7 @@ function fake(view: RoomView, game: WordGauntletView): HTMLElement {
         'div',
         { class: 'card wg' },
         label,
-        bigWord(f.word.text, f.word.kana),
+        bigWord(f.word),
         h('p', { class: 'prompt small' }, 'What does it mean? Make up a meaning that sounds real.'),
         view.phase === 'answer' ? h('p', { class: 'hint' }, `${f.submitted.length} / ${view.players.length} fakes in`) : null,
       );
@@ -98,7 +96,7 @@ function fake(view: RoomView, game: WordGauntletView): HTMLElement {
         'div',
         { class: 'card wg compact' },
         label,
-        bigWord(f.word.text, f.word.kana),
+        bigWord(f.word),
         h('p', { class: 'prompt small' }, 'One of these is real. Which one?'),
         h('ol', { class: 'answers wg-options wg-results' }, (f.options ?? []).map((o) => h('li', {}, o.text))),
         h('p', { class: 'hint' }, `${f.picked.length} / ${view.players.length} picks in`),
@@ -109,7 +107,7 @@ function fake(view: RoomView, game: WordGauntletView): HTMLElement {
         'div',
         { class: 'card wg compact' },
         label,
-        f.golden ? h('div', { class: 'wg-golden' }, h('p', { class: 'wg-golden-tag' }, 'Golden word · everyone, say it!'), bigWord(f.golden.jp.text, f.golden.jp.kana, f.golden.jp.en), f.golden.literal ? h('p', { class: 'hint' }, `Literally: ${f.golden.literal}`) : null) : null,
+        f.golden ? h('div', { class: 'wg-golden' }, h('p', { class: 'wg-golden-tag' }, 'Golden word · everyone, say it!'), bigWord(f.golden.jp, f.golden.jp.en), f.golden.literal ? h('p', { class: 'hint' }, `Literally: ${f.golden.literal}`) : null) : null,
         h(
           'ol',
           { class: 'answers results wg-results' },

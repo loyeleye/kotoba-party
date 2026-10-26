@@ -17,7 +17,7 @@ import type { InkPoint } from '../../japanese/strokes.js';
 import { isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type MoveResult } from '../mode.js';
-import { toRomaji } from '../oogiri/romaji.js';
+import { toRomaji } from '../../japanese/romaji.js';
 import { readDrawing } from './drawing.js';
 import { buildTileFake, readUtteranceFake, sameFake, tooClose, type Fake, type FakeVia } from './fakes.js';
 import { dealPrompt, dealTiles, decoyCandidates, markUsed, type Prompt, type Tile } from './prompts.js';

@@ -17,13 +17,14 @@
 .raid-glyph-wrap { display: grid; justify-items: center; }
 .raid-glyph { margin: 0; font-size: 120px; line-height: 1.05; font-weight: 800; color: var(--ink); text-shadow: 0 0 24px rgba(87, 217, 163, 0.35); }
 .raid-glyph.wide { font-size: 88px; }
-.raid-romaji { margin: 0; color: var(--muted); font-size: 18px; letter-spacing: 0.1em; }
+.raid-romaji { margin: 0; color: var(--warn); font-size: 22px; font-weight: 700; letter-spacing: 0.06em; }
 
 .raid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .raid-option { min-height: 84px; font-size: 44px; font-weight: 800; border-radius: 16px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); display: grid; place-items: center; gap: 2px; padding: 8px; }
 .raid-option:active { border-color: var(--accent); transform: scale(0.98); }
 .raid-option:disabled { opacity: 0.5; }
-.raid-option small { font-size: 14px; font-weight: 500; color: var(--muted); }
+.raid-option small { font-size: 15px; font-weight: 500; color: var(--muted); }
+.raid-option .raid-opt-romaji { color: var(--warn); font-size: 16px; font-weight: 700; }
 .raid-options.small .raid-option { min-height: 60px; font-size: 30px; }
 .raid-options.pair { grid-template-columns: 1fr; }
 .raid-options.pair .raid-option { font-size: 36px; }

@@ -2,7 +2,8 @@
 // Everything on screen comes from the server's latest view; the phone only sends intents.
 
 import { RoomClient, joinRoom, type CommandBody, type ConnectionStatus } from '../../shared/src/client.js';
-import { LEVEL_LABELS, formatSeconds, h, mount } from '../../shared/src/dom.js';
+import { LEVEL_LABELS, formatSeconds, h, mount, placesOf } from '../../shared/src/dom.js';
+import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import { MODES } from '../../shared/src/modes/registry.js';
@@ -229,6 +230,18 @@ function render(view: RoomView): void {
   screenKey = key;
   setSpeakLevel(me.level);
 
+  // In a game (and its recap) the phone wears the mode's colour and host.
+  const info = view.phase !== 'lobby' && view.mode ? MODES[view.mode].info : null;
+  if (info) document.body.dataset.mode = info.id;
+  else delete document.body.dataset.mode;
+  const band = info
+    ? h(
+        'div',
+        { class: 'me-band' },
+        h('img', { class: 'me-host', src: `/stage/assets/hosts/${info.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }),
+        h('span', { class: 'me-title' }, info.title, h('small', { lang: 'ja' }, info.titleJa)),
+      )
+    : null;
   const header = h(
     'div',
     { class: 'me' },
@@ -236,12 +249,12 @@ function render(view: RoomView): void {
     isVip ? h('span', { class: 'vip' }, '★ VIP') : null,
     h('span', { class: 'score' }, `${me.score} pts`),
   );
-  mount(app, header, screenFor(view, me, isVip));
+  mount(app, band, header, screenFor(view, me, isVip));
 }
 
 function screenFor(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   if (view.phase === 'lobby') return lobby(view, me, isVip);
-  if (view.phase === 'recap' || !view.game) return recap(view, isVip);
+  if (view.phase === 'recap' || !view.game) return recap(view, me, isVip);
   return PHONE_MODES[view.game.mode].render({ view, game: view.game, me, isVip, send: play, flash });
 }
 
@@ -340,15 +353,33 @@ function vipMenu(view: RoomView): HTMLElement {
   return h('div', { class: 'vip-start' }, h('p', { class: 'hint' }, 'Pick tonight’s game:'), modeButtons, packSelect, roundsSelect, note, startBtn);
 }
 
-function recap(view: RoomView, isVip: boolean): HTMLElement {
+const ORDINAL = ['', '1st', '2nd', '3rd'];
+
+function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   const r = view.recap;
-  const place = (r?.standings.findIndex((s) => s.playerId === session?.playerId) ?? -1) + 1;
+  const standings = r?.standings ?? [];
+  const places = placesOf(standings.map((s) => s.score));
+  const i = standings.findIndex((s) => s.playerId === me.id);
+  const place = i >= 0 ? places[i]! : 0;
+  const tied = place > 0 && places.filter((p) => p === place).length > 1;
+  const romaji = me.level === 'kana';
   return h(
     'div',
     { class: 'screen' },
-    h('p', { class: 'big' }, place ? `#${place}` : 'Game over'),
-    h('ol', { class: 'standings' }, (r?.standings ?? []).map((s) => h('li', {}, `${s.name} · ${s.score}`))),
-    r?.awards.filter((a) => a.playerId === session?.playerId).map((a) => h('p', { class: 'award' }, `🏆 ${a.title} · ${a.en}`)),
+    place
+      ? h(
+          'div',
+          { class: `place${place <= 3 ? ` p${place}` : ''}` },
+          h('span', { class: 'place-n' }, ORDINAL[place] ?? `${place}th`),
+          h('span', { class: 'place-label' }, tied ? 'tied' : place === 1 ? 'Tonight’s winner!' : 'place'),
+        )
+      : h('p', { class: 'big' }, 'Game over'),
+    h(
+      'ol',
+      { class: 'recap-list' },
+      standings.map((s, j) => h('li', { class: s.playerId === me.id ? 'me-row' : '' }, h('span', {}, `${places[j]}. ${s.name}`), h('span', { class: 'pts' }, s.score))),
+    ),
+    r?.awards.filter((a) => a.playerId === me.id).map((a) => h('p', { class: 'award' }, '🏆 ', h('span', { lang: 'ja' }, a.title), ` · ${a.en}`)),
     r?.phrasebook.length
       ? h(
           'details',
@@ -356,9 +387,16 @@ function recap(view: RoomView, isVip: boolean): HTMLElement {
           h('summary', {}, `${(view.mode && MODES[view.mode].info.phrasebookTitle) || 'Tonight’s phrasebook'} (${r.phrasebook.length})`),
           h(
             'ul',
-            {},
+            { class: 'phrase-cards' },
             r.phrasebook.map((e) =>
-              h('li', { class: `pb-${e.outcome}` }, h('span', { lang: 'ja' }, e.text), e.kana !== e.text ? h('small', { lang: 'ja' }, ` ${e.kana}`) : null, h('small', {}, ` · ${e.en}`)),
+              h(
+                'li',
+                { class: `phrase-card pb-${e.outcome}` },
+                h('span', { class: 'pc-jp', lang: 'ja' }, e.text),
+                e.kana !== e.text ? h('span', { class: 'pc-kana', lang: 'ja' }, e.kana) : null,
+                romaji ? h('span', { class: 'pc-romaji' }, toRomaji(e.kana)) : null,
+                h('span', { class: 'pc-en' }, e.en),
+              ),
             ),
           ),
         )

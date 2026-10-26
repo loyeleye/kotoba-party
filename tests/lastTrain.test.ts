@@ -6,7 +6,8 @@ import type { JpText, LastTrainMinigame, LastTrainScenario, MinigameItem } from 
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
-import { checkUtterance, firstMora, toRomaji } from '../shared/src/modes/lastTrain/check.js';
+import { checkUtterance, firstMora } from '../shared/src/modes/lastTrain/check.js';
+import { toRomaji } from '../shared/src/japanese/romaji.js';
 import { buildStops, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -140,7 +141,7 @@ describe('Last Train answer checking', () => {
   it('writes romaji and finds the first sound for Kana-level help', () => {
     expect(toRomaji('さんびゃくえん')).toBe('sanbyakuen');
     expect(toRomaji('きっぷ')).toBe('kippu');
-    expect(toRomaji('コーヒー')).toBe('koohii');
+    expect(toRomaji('コーヒー')).toBe('kōhī');
     expect(toRomaji('きんえん')).toBe("kin'en");
     expect(firstMora('しゃしん')).toBe('しゃ');
     expect(firstMora('きっぷ')).toBe('き');

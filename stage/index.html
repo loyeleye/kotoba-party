@@ -4,33 +4,37 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Kotoba Party · Stage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Pixelify+Sans:wght@500;700&display=swap" />
     <link rel="stylesheet" href="/stage/style.css" />
   </head>
   <body data-phase="lobby">
-    <header class="bar">
-      <div class="brand">Kotoba Party! <span class="tag">debug stage</span></div>
-      <div class="join">
-        <div>
-          <div class="label">Room code</div>
-          <div id="code" class="code">····</div>
-          <div id="join-url" class="url"></div>
+    <!-- The stage is drawn on a fixed 1920×1080 canvas, scaled to fit the TV (main.ts). -->
+    <div id="canvas" class="canvas">
+      <header class="bar">
+        <div class="brand">Kotoba Party!<span id="debug-tag" class="tag" hidden>debug stage</span></div>
+        <div class="phase-line">
+          <span id="phase" class="phase">Lobby</span>
+          <span id="round" class="round"></span>
         </div>
-        <img id="qr" class="qr" alt="QR code to join this room" />
-      </div>
-    </header>
-
-    <section class="show">
-      <div class="phase-line">
-        <span id="phase" class="phase">Lobby</span>
-        <span id="round" class="round"></span>
         <span id="timer" class="timer"></span>
-      </div>
+        <div class="join">
+          <div class="join-text">
+            <div class="label">Room code</div>
+            <div id="code" class="code">····</div>
+            <div id="join-url" class="url"></div>
+          </div>
+          <img id="qr" class="qr" alt="QR code to join this room" />
+        </div>
+      </header>
       <div id="host" class="host" hidden></div>
-      <div id="main" class="main"></div>
+      <div id="main" class="main"><div id="fit" class="fit"></div></div>
       <ul id="players" class="players"></ul>
-    </section>
+    </div>
 
-    <aside class="debug">
+    <!-- Developer tools: only with ?debug=1 in the URL. -->
+    <aside id="debug" class="debug" hidden>
       <div class="debug-row">
         <span id="status" class="status">connecting</span>
         <span id="version" class="version"></span>

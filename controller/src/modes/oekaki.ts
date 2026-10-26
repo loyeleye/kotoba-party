@@ -6,7 +6,7 @@ import { h } from '../../../shared/src/dom.js';
 import type { OekakiView } from '../../../shared/src/modes/views.js';
 import { OEKAKI_LIMITS, PALETTE } from '../../../shared/src/modes/oekaki/drawing.js';
 import { MAX_FAKE_LENGTH, MAX_FAKE_TILES } from '../../../shared/src/modes/oekaki/fakes.js';
-import { toRomaji } from '../../../shared/src/modes/oogiri/romaji.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { inkPad } from '../components/inkPad.js';
 import { speakBox } from '../components/speak.js';

@@ -10,7 +10,7 @@ import type { JpText, OnsenIntent } from '../../../content/src/types.js';
 import type { OnsenView } from '../../../shared/src/modes/views.js';
 import type { QuestionTile } from '../../../shared/src/modes/onsenMurder/questions.js';
 import { joinTiles } from '../../../shared/src/modes/onsenMurder/questions.js';
-import { toRomaji } from '../../../shared/src/modes/lastTrain/check.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';

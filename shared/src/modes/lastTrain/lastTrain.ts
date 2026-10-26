@@ -14,7 +14,8 @@ import type { HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, Mi
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type MoveResult, type PhraseEntry } from '../mode.js';
-import { checkUtterance, firstMora, toRomaji } from './check.js';
+import { checkUtterance, firstMora } from './check.js';
+import { toRomaji } from '../../japanese/romaji.js';
 import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallback.js';
 
 // ---- tuning ----
@@ -643,6 +644,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     titleJa: '終電',
     blurb: 'Race for the last train: answer every stop out loud, or become a ghost.',
     host: 'chochin',
+    phaseLabels: { prompt: 'Next stop', answer: 'Answer', reveal: 'Stop results', penalty: 'Penalty car', finale: 'Platform dash', score: 'Platform dash' },
     minPlayers: 1,
     maxPlayers: 8,
     roundChoices: [...RULES.stopChoices],

@@ -11,8 +11,8 @@
 .kd-vs { display: flex; align-items: center; gap: 14px; margin: 0 0 0 auto; font-size: 30px; font-weight: 800; }
 .kd-vs-x { color: var(--accent); font-weight: 900; font-size: 26px; }
 .kd-name { border-radius: 999px; padding: 2px 16px; color: #fff; }
-.kd-double { background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 12px; font-size: 20px; font-weight: 800; }
-.kd-sound { background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 8px 18px; font-size: 20px; font-weight: 800; cursor: pointer; }
+.kd-double { background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 2px 12px; font-size: 20px; font-weight: 800; }
+.kd-sound { background: var(--accent); color: var(--on-accent); border: 0; border-radius: 999px; padding: 8px 18px; font-size: 20px; font-weight: 800; cursor: pointer; }
 .kd-sound.quiet { background: transparent; color: var(--muted); border: 1px solid var(--line); font-size: 16px; padding: 4px 12px; }
 
 .kd-sheet { display: grid; gap: 10px; }
@@ -68,7 +68,7 @@
 .kd-chip { white-space: nowrap; text-align: center; border-radius: 10px; padding: 4px 0; font-weight: 800; font-size: 22px; background: rgba(255, 255, 255, 0.06); }
 .kd-chip.empty { color: var(--muted); }
 .kd-chip.missed { color: var(--muted); }
-.kd-chip.live { background: var(--accent); color: #fff; animation: kd-pulse 0.9s ease-in-out infinite alternate; }
+.kd-chip.live { background: var(--accent); color: var(--on-accent); animation: kd-pulse 0.9s ease-in-out infinite alternate; }
 .kd-chip.great { background: var(--good); color: #10241b; }
 .kd-chip.good { background: #3d6f5a; }
 .kd-chip.ok { background: #4a3f66; }

@@ -16,6 +16,7 @@
     "gate": "vitest run tests/gate.test.ts tests/reconnect.test.ts",
     "bots": "tsx tools/bots/cli.ts",
     "content:readings": "tsx tools/content-readings.ts",
+    "content:romaji": "tsx tools/content-romaji.ts",
     "reader": "tsx server/src/readerMain.ts",
     "cf:dev": "npm run build && wrangler dev",
     "cf:deploy": "npm run build && wrangler deploy"

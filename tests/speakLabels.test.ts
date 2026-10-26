@@ -5,7 +5,7 @@ describe('speaking prompt wording by level', () => {
   it('stays English at kana level, with romaji instead of kana', () => {
     expect(levelText('Hold and say it 🎤', 'kana')).toEqual({ main: 'Hold and say it 🎤', ja: false });
     expect(levelText('Hold and say こんにちは', 'kana').main).toBe('Hold and say “konnichiwa”');
-    expect(levelText('Hold and say ラーメン', 'kana').main).toBe('Hold and say “raamen”');
+    expect(levelText('Hold and say ラーメン', 'kana').main).toBe('Hold and say “rāmen”');
     expect(levelText('Hold and say a word starting with しゃ', 'kana').main).toBe('Hold and say a word starting with “sha”');
   });
 

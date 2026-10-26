@@ -4,7 +4,7 @@
 .cc-mini-4 .cc-m { font-size: 18px; }
 .cc-m-down { background: linear-gradient(145deg, #3b2a63, #241a3d); border: 1px solid var(--line); }
 .cc-m-tap { cursor: pointer; border: 2px solid var(--accent); }
-.cc-m-tap:active, .cc-m-picked { background: var(--accent); }
+.cc-m-tap:active, .cc-m-picked { background: var(--accent); color: var(--on-accent); }
 .cc-m-up { background: #fbf7ff; color: #1b1430; font-weight: 700; border: 2px solid var(--warn); }
 .cc-m-emoji, .cc-m-special, .cc-m-audio { font-size: 26px; }
 .cc-m-en { font-size: 12px; color: #2b4f9a; }

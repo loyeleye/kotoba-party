@@ -2,6 +2,7 @@
 // send it, vote, encore, and read your own private tip.
 
 import { h } from '../../../shared/src/dom.js';
+import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import type { AnswerCard, OogiriView, PromptCard, SlotView, TileView } from '../../../shared/src/modes/oogiri/oogiri.js';
@@ -261,6 +262,7 @@ function answerList(answers: AnswerCard[], opts: { vote?: (a: AnswerCard) => voi
           canVote ? 'button' : 'div',
           { type: canVote ? 'button' : null, class: 'oo-ans-main', onclick: canVote ? () => opts.vote!(a) : null },
           h('span', { class: 'oo-ans-jp', lang: 'ja' }, a.text),
+          a.romaji ? h('small', { class: 'oo-romaji' }, a.romaji) : null,
           a.en ? h('small', {}, a.en) : null,
           a.mine ? h('small', { class: 'oo-tag' }, 'yours') : null,
         ),
@@ -333,7 +335,16 @@ function score(ctx: PhoneContext<OogiriView>): HTMLElement {
       'div',
       { class: 'screen' },
       h('p', { class: 'big' }, 'Shout it back! 📣'),
-      natural ? h('div', { class: 'oo-natural' }, h('p', { class: 'oo-jp', lang: 'ja' }, natural.text), natural.kana !== natural.text ? h('p', { class: 'oo-kana', lang: 'ja' }, natural.kana) : null, h('p', { class: 'oo-en' }, natural.en)) : null,
+      natural
+        ? h(
+            'div',
+            { class: 'oo-natural' },
+            h('p', { class: 'oo-jp', lang: 'ja' }, natural.text),
+            natural.kana !== natural.text ? h('p', { class: 'oo-kana', lang: 'ja' }, natural.kana) : null,
+            natural.romaji ? h('p', { class: 'oo-romaji' }, natural.romaji) : null,
+            h('p', { class: 'oo-en' }, natural.en),
+          )
+        : null,
     );
   }
   return h(
@@ -345,7 +356,14 @@ function score(ctx: PhoneContext<OogiriView>): HTMLElement {
     h('div', { class: 'oo-natural' }, h('p', { class: 'oo-jp', lang: 'ja' }, tip.mine.text), h('p', { class: 'oo-en' }, tip.mine.en)),
     tip.formTips.map((t) => h('p', { class: 'oo-formtip' }, '✏️ ', t)),
     h('p', { class: 'oo-label' }, 'Pon’s version'),
-    h('div', { class: 'oo-natural' }, h('p', { class: 'oo-jp', lang: 'ja' }, tip.natural.text), tip.natural.kana !== tip.natural.text ? h('p', { class: 'oo-kana', lang: 'ja' }, tip.natural.kana) : null, h('p', { class: 'oo-en' }, tip.natural.en)),
+    h(
+      'div',
+      { class: 'oo-natural' },
+      h('p', { class: 'oo-jp', lang: 'ja' }, tip.natural.text),
+      tip.natural.kana !== tip.natural.text ? h('p', { class: 'oo-kana', lang: 'ja' }, tip.natural.kana) : null,
+      ctx.me.level === 'kana' ? h('p', { class: 'oo-romaji' }, toRomaji(tip.natural.kana)) : null,
+      h('p', { class: 'oo-en' }, tip.natural.en),
+    ),
     h('p', { class: 'oo-pattern' }, '💡 ', tip.pattern),
   );
 }
