@@ -108,6 +108,7 @@ export function modeContext(state: GameState, ctx: GameContext): ModeContext {
   return {
     now: ctx.now,
     content: ctx.content,
+    vipId: state.vipId,
     random: ctx.random,
     newId: ctx.newId,
     players: () => state.players.map(asModePlayer),

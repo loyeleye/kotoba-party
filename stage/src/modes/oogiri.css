@@ -1,0 +1,79 @@
+/* Oogiri Night (stage). Readable from 3 m: nothing under 22px. */
+.oo-title { font-size: 64px; font-weight: 900; margin: 0; color: var(--accent); }
+.oo-head { font-size: 26px; color: var(--muted); margin: 0 0 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+.oo-x2 { color: var(--warn); font-weight: 900; }
+.oo-round-n { font-size: 30px; color: var(--muted); margin: 0; }
+.oo-round .oo-title { font-size: 88px; animation: oo-pop 600ms ease-out both; }
+.oo-placeholder { color: var(--warn); font-size: 22px; }
+
+.oo-stage-prompt { display: grid; gap: 8px; margin: 0 auto 18px; }
+.oo-stage-prompt p { margin: 0; }
+.oo-p-jp { font-size: 52px; font-weight: 800; line-height: 1.5; }
+.oo-p-jp rt, .oo-n-jp rt { font-size: 0.45em; color: var(--muted); font-weight: 600; }
+.oo-p-kana { font-size: 28px; color: var(--muted); }
+.oo-p-en { font-size: 30px; color: var(--muted); }
+.oo-photo-card { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; text-align: left; background: #f3ead8; color: #2a2033; border-radius: 10px; padding: 24px 28px; box-shadow: 0 10px 0 rgba(0, 0, 0, 0.35); transform: rotate(-1deg); font-size: 30px; font-weight: 600; }
+.oo-photo-card p { margin: 0; }
+.oo-photo-icon { font-size: 64px; }
+
+.oo-cards { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 14px; text-align: left; }
+.oo-card { background: var(--panel); border: 2px solid var(--line); border-radius: 18px; padding: 18px 28px; display: grid; gap: 6px; }
+.oo-card.reading { animation: oo-read 500ms ease-out both; }
+.oo-card-jp { font-size: 46px; font-weight: 800; }
+.oo-card-jp.en { font-style: italic; }
+.oo-card-en { font-size: 26px; color: var(--muted); }
+.oo-card-by { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; font-size: 26px; }
+.oo-card.hidden .oo-card-jp { color: var(--muted); font-style: italic; }
+.oo-card.winner { border-color: var(--good); box-shadow: 0 0 0 3px var(--good); }
+.oo-card.ippon { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent), 0 0 40px rgba(255, 122, 89, 0.5); }
+.oo-points { color: var(--good); font-weight: 900; }
+.oo-encore { color: var(--warn); font-weight: 700; }
+.badge.win { background: var(--good); color: #10241b; }
+
+.oo-cushions { display: inline-flex; align-items: flex-end; gap: 3px; }
+.oo-cushion { width: 34px; height: 14px; border-radius: 6px; background: linear-gradient(#b0457a, #7d2c58); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25); }
+.oo-cushion-n { margin-left: 8px; color: var(--muted); font-size: 22px; }
+
+.oo-ippon { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; background: radial-gradient(circle, rgba(255, 122, 89, 0.92), rgba(20, 16, 31, 0.92) 70%); z-index: 10; pointer-events: none; animation: oo-ippon 4200ms ease-in-out both; }
+.oo-ippon-word { font-size: 220px; font-weight: 900; letter-spacing: 0.06em; color: #fff; text-shadow: 0 10px 0 #8a2d18; line-height: 1; }
+.oo-ippon-ja { font-size: 96px; font-weight: 900; color: var(--warn); }
+.oo-ippon-name { font-size: 56px; font-weight: 800; color: #fff; }
+.oo-invite { font-size: 34px; font-weight: 800; color: var(--warn); }
+
+.oo-natural { background: var(--panel); border-left: 8px solid var(--good); border-radius: 16px; padding: 22px 30px; text-align: left; display: grid; gap: 8px; margin: 12px 0; }
+.oo-natural p { margin: 0; }
+.oo-label { font-size: 22px; color: var(--good); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; }
+.oo-n-jp { font-size: 54px; font-weight: 800; line-height: 1.5; }
+.oo-pattern { font-size: 26px; }
+.oo-best { font-size: 40px; font-weight: 800; margin: 0; }
+.oo-best small { color: var(--muted); font-size: 28px; }
+.oo-points-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: center; font-size: 28px; }
+.oo-points-list li { display: flex; gap: 12px; align-items: center; }
+
+.oo-sayfirst { font-size: 30px; color: var(--good); font-weight: 700; }
+.oo-done-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.oo-done-chip { font-size: 26px; padding: 6px 18px; border-radius: 999px; border: 2px solid var(--line); color: var(--muted); }
+.oo-done-chip.on { border-color: var(--good); color: var(--ink); }
+
+.oo-intro .oo-demo { background: var(--panel); border-radius: 18px; padding: 20px; margin: 18px 0; }
+.oo-intro .oo-p-jp { font-size: 40px; }
+.oo-intro .oo-card-jp { font-size: 36px; }
+.oo-rounds { list-style: none; padding: 0; font-size: 26px; display: grid; gap: 8px; text-align: left; }
+.oo-rounds strong { color: var(--accent); }
+
+.oo-steal-tanuki { font-size: 180px; margin: 0; animation: oo-steal 2200ms ease-in-out both; }
+
+@keyframes oo-read { from { opacity: 0; transform: translateY(24px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes oo-pop { from { opacity: 0; transform: scale(0.6); } 70% { transform: scale(1.06); } to { opacity: 1; transform: none; } }
+@keyframes oo-ippon { 0% { opacity: 0; transform: scale(1.6); } 12% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes oo-steal { 0% { transform: translateX(-60vw) rotate(-20deg); } 45% { transform: translateX(0) rotate(10deg); } 60% { transform: translateX(0) rotate(-10deg) scale(1.2); } 100% { transform: translateX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .oo-card.reading, .oo-round .oo-title, .oo-steal-tanuki { animation: none; }
+}
+@media (max-width: 700px) {
+  .oo-p-jp, .oo-n-jp { font-size: 28px; }
+  .oo-card-jp { font-size: 26px; }
+  .oo-title, .oo-round .oo-title { font-size: 40px; }
+  .oo-ippon-word { font-size: 96px; }
+}
