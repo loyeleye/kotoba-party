@@ -7,6 +7,7 @@ import { toRomaji } from '../shared/src/japanese/romaji.js';
 import { baseKana, dictionaryNoun, endsInN, follows, lastKana, startOptions, wordReading } from '../shared/src/modes/wordGauntlet/shiritori.js';
 import {
   challengeAccepted,
+  lexiconFor,
   POINTS_PER_FOOLED,
   POINTS_PER_TELEPHONE_VOTE,
   POINTS_REAL_FOUND,
@@ -97,6 +98,14 @@ describe('shiritori kana rules', () => {
     expect(wordReading('ringo')).toBeNull();
     expect(toRomaji('しゃしん')).toBe('shashin');
     expect(toRomaji('みっかぼうず')).toBe('mikkabōzu');
+  });
+
+  it('hints only single words, never an oogiri swerve phrase', () => {
+    const nouns = lexiconFor(realContent).nouns.map((n) => n.kana);
+    expect(nouns).not.toContain('うたうおにぎり');
+    expect(nouns).not.toContain('すたじおのれいぞうこ');
+    expect(nouns).not.toContain('うちゅういきのきっぷ');
+    expect(nouns).toContain('すし');
   });
 
   it('trusts the dictionary only for a single known noun', () => {
