@@ -23,4 +23,6 @@ export interface Env {
   KOTOBA_ANTHROPIC_API_KEY?: string;
   KOTOBA_HOST_MODEL?: string;
   KOTOBA_JUDGE_MODEL?: string;
+  /** The Onsen suspects' lead-ins; default claude-haiku-5-5, fast enough for the 1.8 s thinking beat. */
+  KOTOBA_SUSPECT_MODEL?: string;
 }

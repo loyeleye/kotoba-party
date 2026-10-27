@@ -420,6 +420,8 @@ describe('Murder at the Onsen: the LLM lead-in', () => {
     const good = new ScriptedLlm(() => lead);
     expect(await createSuspectVoice({ llm: good }).lead(req, 1000)).toEqual(lead);
     expect(good.calls[0]!.user).toContain('<<<\nどこ\n>>>');
+    // Fast enough for the thinking beat, whatever model the host's own lines use.
+    expect(good.calls[0]!.model).toBe('claude-haiku-5-5');
     const kanji = new ScriptedLlm(() => ({ text: '私です', kana: 'わたしです', en: 'Me' }));
     expect(await createSuspectVoice({ llm: kanji }).lead(req, 1000)).toBeNull();
     expect(await createSuspectVoice({ llm: good }).lead(req, 100)).toBeNull();
