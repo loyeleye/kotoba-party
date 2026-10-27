@@ -53,6 +53,7 @@ body[data-mode='concentration'] { --mode: #c9a6ff; }
 body[data-mode='karaoke-duel'] { --mode: #ff52d0; }
 body[data-mode='phrase-bingo'] { --mode: #ff6f91; }
 body[data-mode='omiai'] { --mode: #ffa3c0; }
+body[data-mode='shodo'] { --mode: #c9ced6; }
 
 /* ---- the 1920×1080 canvas ---- */
 /* Everything is laid out at 1080p and scaled to the window (main.ts sets --scale), with a 5%

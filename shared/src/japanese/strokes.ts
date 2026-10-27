@@ -161,8 +161,18 @@ function matchStrokes(mine: P[][], ref: P[][]): Match {
     }
   }
   // A reshuffle has to fit clearly better before we call the order wrong.
-  const orderOk = total(identity) - bestCost <= 0.02 * n;
-  const mapping = orderOk ? identity : best;
+  let orderOk = total(identity) - bestCost <= 0.02 * n;
+  let mapping = orderOk ? identity : best;
+  // Kanji have too many strokes to try every order: a drawn stroke that clearly fits another
+  // reference stroke better than its own counts as out of order.
+  let greedyOut: number | undefined;
+  if (n > 6) {
+    for (let i = 0; i < n && greedyOut === undefined; i++) {
+      for (let j = 0; j < n; j++) if (j !== i && cost(i, j) + 0.04 < cost(i, i) && cost(j, i) + 0.04 < cost(j, j)) greedyOut = Math.min(i, j);
+    }
+    orderOk = greedyOut === undefined;
+    mapping = identity;
+  }
   const glyph = chamfer(a.flat(), b.flat());
   const shapeScore = round(score(0.5 * glyph + 0.5 * (total(mapping) / n)));
   let reversed: number | undefined;
@@ -171,7 +181,7 @@ function matchStrokes(mine: P[][], ref: P[][]): Match {
     const { fwd, rev } = d[i]![j]!;
     if (rev + 0.03 < fwd) reversed = j;
   });
-  const outOfOrder = orderOk ? undefined : mapping.findIndex((j, i) => j !== i);
+  const outOfOrder = orderOk ? undefined : (greedyOut ?? mapping.findIndex((j, i) => j !== i));
   return { shapeScore, orderOk, ...(reversed !== undefined ? { reversed } : {}), ...(outOfOrder !== undefined ? { outOfOrder } : {}) };
 }
 
@@ -226,6 +236,39 @@ export function gradeInk(drawn: readonly InkStroke[], reference: readonly InkStr
 
 const round = (n: number) => Math.round(n * 1000) / 1000;
 
+// ---------- one stroke at a time (tracing) ----------
+
+export type StrokeCheck = 'ok' | 'reversed' | 'off';
+
+/** How far (mean point distance, share of the pad) a traced stroke may stray from its ghost. */
+export const TRACE_TOLERANCE = 0.085;
+/** The "steady hand" setting's looser tolerance. */
+export const TRACE_TOLERANCE_LOOSE = 0.125;
+/** The loosest check: Kana-level beginners with "steady hand" on, and the server's re-check. */
+export const TRACE_TOLERANCE_LOOSEST = 0.16;
+
+/** How close a traced stroke must stay: beginners (Kana level) start a step looser, "steady hand" one more. */
+export const traceTolerance = (beginner: boolean, steady: boolean): number =>
+  [TRACE_TOLERANCE, TRACE_TOLERANCE_LOOSE, TRACE_TOLERANCE_LOOSEST][(beginner ? 1 : 0) + (steady ? 1 : 0)]!;
+/** Strokes shorter than this (in the 0–1 box) are dots and ticks: their direction is never checked. */
+const DOT = 0.14;
+
+/**
+ * Checks one stroke traced over its ghost, in pad coordinates (the ghost is the reference stroke
+ * drawn where it stands in the 0–1 box, so no fitting). Used on the phone the moment a finger lifts
+ * and again on the server. A long stroke run backwards is 'reversed'; anything else too far from
+ * the ghost (or far longer than it) is 'off'.
+ */
+export function checkStroke(drawn: InkStroke, reference: InkStroke, tolerance = TRACE_TOLERANCE): StrokeCheck {
+  if (!drawn.length || !reference.length) return 'off';
+  const refLen = length(reference);
+  if (length(drawn) > 2.2 * refLen + 0.12) return 'off';
+  const { fwd, rev } = strokeDist(resample(drawn), resample(reference));
+  if (refLen < DOT) return Math.min(fwd, rev) <= tolerance * 1.3 ? 'ok' : 'off';
+  if (fwd <= tolerance) return 'ok';
+  return rev <= tolerance && rev + 0.02 < fwd ? 'reversed' : 'off';
+}
+
 // ---------- tips ----------
 
 /** Where a stroke starts and which way it heads, in words ("from the top-left down"). */
@@ -241,7 +284,7 @@ export function strokeWay(s: InkStroke): string {
   return `starts at the ${from.join('-') || 'top'} and goes ${way}`;
 }
 
-const ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'];
+const ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
 
 /** One kind line about a drawing. Never romaji. */
 export function inkTipText(g: InkGrade, char: string, reference: readonly InkStroke[]): string {
@@ -286,6 +329,9 @@ export interface InkLimits {
 }
 
 export const INK_LIMITS: InkLimits = { strokes: INK_MAX_STROKES, points: INK_MAX_POINTS, total: INK_MAX_TOTAL_POINTS };
+
+/** Kanji (Shodō Taikai): up to 20 strokes in a two-kanji word cell, with room for slips. */
+export const KANJI_LIMITS: InkLimits = { strokes: 24, points: 48, total: 900 };
 
 /**
  * Reads a drawing off the wire: an array of strokes, each an array of [x, y] in 0–1 (values

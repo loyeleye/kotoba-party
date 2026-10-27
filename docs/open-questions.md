@@ -28,6 +28,8 @@ If you only have ten minutes, these are the answers that would change the build 
 - **Omiai Matchmaker (backlog):** a rule-based manners meter (no LLM) scores politeness, the room
   votes for charm, and the guest invites the player with the most hearts (votes + manners
   stars) to tea for +200. Fair to funny casual answers? ([omiai.md](modes/omiai.md#open-questions))
+- **Shodō Taikai (backlog):** which music for the gallery round (v1 keeps the soft synth), and
+  the trace check needs a try on real phones. ([shodo.md](modes/shodo.md#open-questions))
 - **Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
   player. Is it time to add accounts or device-local saves? ([kana-raid.md](modes/kana-raid.md#open-questions))
 - **Ink Storm (kana drawing):** the drawing pad has never been tried with a thumb on a real
@@ -125,6 +127,7 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Who's the Tourist? (backlog) | [tourist.md](modes/tourist.md) | 20 | Chōchin-san |
 | Oekaki (backlog) | [oekaki.md](modes/oekaki.md) | 18 | Fude |
 | Omiai Matchmaker (backlog) | [omiai.md](modes/omiai.md) | 20 | Pon |
+| Shodō Taikai (backlog) | [shodo.md](modes/shodo.md) | 4 open | Fude |
 
 ## Content
 

@@ -25,6 +25,8 @@ export const TRACK_IDS = [
   'kool-kats',
   'ishikari-lore',
   'ouroboros',
+  // Shodō Taikai's gallery round (Ladi's pick).
+  'japanese-lofi',
 ] as const;
 export type TrackId = (typeof TRACK_IDS)[number];
 
@@ -94,6 +96,9 @@ export const TRACKS: Record<TrackId, Track> = {
   'kool-kats': { title: 'Kool Kats', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100601'), url: file('kool-kats'), loop: [6.966, 193.863], gainDb: 0.4, fallback: 'quiz' },
   'ishikari-lore': { title: 'Ishikari Lore', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100192'), url: file('ishikari-lore'), loop: [6.641, 158.848], gainDb: 6.9, fallback: 'mystery' },
   'ouroboros': { title: 'Ouroboros', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1400007'), url: file('ouroboros'), loop: [23.615, 158.198], gainDb: -6.1, fallback: 'battle' },
+  // Shodō Taikai's gallery: koto over a lo-fi hip-hop beat. 28 bars at about 75 bpm; the loop skips the
+  // intro and the fade (picked by spectral match). CC0 as uploaded; commissioned on Fiverr (row 22, ❓).
+  'japanese-lofi': { title: 'Japanese Lofi HipHop', author: 'pickentcode', licence: 'CC0', source: `${OGA}japanese-lofi-hiphop-track`, url: file('japanese-lofi-hiphop'), loop: [10.75, 100.35], gainDb: -6.2, fallback: 'gentle' },
 };
 
 const CC_BY = 'https://creativecommons.org/licenses/by/4.0/';

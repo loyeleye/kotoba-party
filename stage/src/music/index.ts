@@ -5,7 +5,7 @@
 import { h, mount } from '../../../shared/src/dom.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { MUSIC_LEVEL, audioReady, audioSupported, getSound, isAway, isMuted, onAudioReady, onAwayChange, onMuteChange, onVolumeChange, setMuted, silent, unlockAudio, voiceVolume } from '../sound.js';
-import { cueFor, listening, themeFor, type Cue, type MusicId } from './cues.js';
+import { cueFor, listening, SHODO_GALLERY, themeFor, type Cue, type MusicId } from './cues.js';
 import { SongVoice, TrackVoice, load, type Mix } from './engine.js';
 import { SONGS, type SongId } from './songs.js';
 import { TRACKS, isTrack, type TrackId } from './tracks.js';
@@ -120,6 +120,8 @@ function preload(view: RoomView): void {
   if (!sound || streamer) return;
   const theme = view.mode ? themeFor(view.mode, view.phase === 'lobby' ? (played[view.mode] ?? 0) : game) : null;
   const next: MusicId[] = view.phase === 'lobby' ? ['bouncing', ...(theme ? [theme] : [])] : [theme ?? 'happy-dance', 'happy-dance'];
+  // Shodō Taikai switches to its gallery track for round 3.
+  if (view.mode === 'shodo' && view.phase !== 'lobby') next.push(SHODO_GALLERY);
   for (const id of next) if (isTrack(id)) void load(sound.ctx, TRACKS[id].url).catch(() => {});
 }
 

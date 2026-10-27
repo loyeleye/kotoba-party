@@ -376,6 +376,8 @@ function vipMenu(view: RoomView): HTMLElement {
   const packSelect = h('select', {}, h('option', { value: '' }, 'Any topic'), view.packs.map((p) => h('option', { value: p.id }, `${p.titleJa} · ${p.title}`))) as HTMLSelectElement;
   const roundsSelect = h('select', {}) as HTMLSelectElement;
   const note = h('p', { class: 'hint' });
+  const extras = h('div', { class: 'vip-extras' });
+  const ticked = new Set<string>();
   const startBtn = h('button', { class: 'primary' }, 'Start') as HTMLButtonElement;
   const modeButtons = view.modes.map((m) =>
     h(
@@ -399,6 +401,15 @@ function vipMenu(view: RoomView): HTMLElement {
     mount(roundsSelect, chosen.roundChoices.map((n) => h('option', { value: n }, `${n} ${chosen!.id === 'last-train' ? 'stops' : 'rounds'}`)));
     roundsSelect.hidden = chosen.roundChoices.length === 0;
     packSelect.hidden = !chosen.usesPack || view.packs.length === 0;
+    ticked.clear();
+    mount(
+      extras,
+      (chosen.extras ?? []).map((x) => {
+        const box = h('input', { type: 'checkbox' }) as HTMLInputElement;
+        box.addEventListener('change', () => (box.checked ? ticked.add(x.key) : ticked.delete(x.key)));
+        return h('label', { class: 'vip-extra' }, box, ` ${x.label}`);
+      }),
+    );
     const n = view.players.length;
     const ok = n >= chosen.minPlayers && n <= chosen.maxPlayers;
     startBtn.disabled = !ok;
@@ -411,10 +422,11 @@ function vipMenu(view: RoomView): HTMLElement {
       mode: chosen.id,
       rounds: roundsSelect.hidden ? undefined : Number(roundsSelect.value),
       packId: packSelect.hidden || !packSelect.value ? undefined : packSelect.value,
+      extra: ticked.size ? Object.fromEntries([...ticked].map((k) => [k, true])) : undefined,
     });
   });
   refresh();
-  return h('div', { class: 'vip-start' }, h('p', { class: 'hint' }, 'Pick tonight’s game:'), modeButtons, packSelect, roundsSelect, note, startBtn, motionToggle(view));
+  return h('div', { class: 'vip-start' }, h('p', { class: 'hint' }, 'Pick tonight’s game:'), modeButtons, packSelect, roundsSelect, extras, note, startBtn, motionToggle(view));
 }
 
 /** The VIP's Calm motion switch: the TV and every phone swap movement for fades and still sprites. */

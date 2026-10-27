@@ -1,0 +1,59 @@
+/* Shodō Taikai on the phone: practice paper, sumi ink, red hanko. Scoped under .sho. */
+.sho .sho-tag { color: var(--mode); font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; margin: 0; }
+.sho .sho-word { display: grid; gap: 4px; justify-items: center; text-align: center; }
+.sho .sho-note { margin: 0; color: var(--muted); font-weight: 700; }
+.sho .sho-glyph { margin: 0; font-size: 72px; line-height: 1.1; font-weight: 700; }
+.sho .sho-meaning { margin: 0; font-size: 26px; font-weight: 800; }
+.sho .sho-reading { margin: 0; font-size: 28px; font-weight: 800; }
+.sho .sho-romaji { margin: 0; font-size: 32px; font-weight: 800; color: var(--warn, #ffd23f); }
+.sho .sho-mask { font-size: 28px; font-weight: 800; }
+.sho .sho-said { margin: 0; color: var(--good, #4cd07d); font-weight: 800; }
+.sho .sho-hear { font-size: 18px; padding: 10px 18px; }
+.sho .sho-hear.big { font-size: 22px; padding: 14px 26px; }
+.sho .sho-skip { justify-self: center; }
+.sho .sho-say { display: grid; gap: 8px; }
+
+/* The pad. */
+.sho .sho-pad { display: grid; gap: 8px; justify-items: center; }
+.sho .sho-paper { position: relative; width: min(100%, 360px, 54vh); aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: #f6f0e2; box-shadow: inset 0 0 0 3px #c8102e55; }
+.sho .sho-paper::before, .sho .sho-paper::after { content: ''; position: absolute; pointer-events: none; border: 0 dashed rgba(200, 16, 46, 0.3); }
+.sho .sho-paper::before { left: 50%; top: 0; bottom: 0; border-left-width: 2px; }
+.sho .sho-paper::after { top: 50%; left: 0; right: 0; border-top-width: 2px; }
+.sho .sho-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; color: #1b1712; cursor: crosshair; }
+.sho .sho-tools { display: flex; gap: 10px; align-items: center; justify-content: center; }
+.sho .sho-count { min-width: 9ch; text-align: center; color: var(--muted); font-weight: 700; }
+.sho .sho-tip { margin: 0; min-height: 1.3em; color: #ff8a8a; font-weight: 800; text-align: center; }
+.sho .sho-cell-tabs { display: flex; gap: 8px; align-items: center; }
+.sho .sho-cell-tab { min-width: 44px; min-height: 44px; border-radius: 8px; font-weight: 900; }
+.sho .sho-cell-tab[aria-pressed='true'] { background: var(--mode); color: var(--on-accent); }
+.sho .sho-cell-tab.done::after { content: ' ✓'; }
+.sho .sho-steady { display: flex; gap: 8px; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; }
+.sho .sho-steady-box { width: 22px; height: 22px; }
+
+/* Results. */
+.sho .sho-results { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.sho .sho-chip { padding: 4px 12px; border-radius: 999px; background: var(--panel); font-size: 22px; font-weight: 800; }
+.sho .sho-chip.clean { box-shadow: inset 0 0 0 2px var(--good, #4cd07d); }
+.sho .sho-verdict { margin: 0; font-size: 34px; font-weight: 900; text-align: center; }
+.sho .sho-verdict.clean { color: var(--good, #4cd07d); }
+.sho .sho-models { display: flex; gap: 8px; justify-content: center; }
+.sho .sho-model { width: min(42vw, 180px); }
+.sho .ink-brush { fill: #1b1712; }
+.sho .sho-points { margin: 0; text-align: center; font-size: 28px; font-weight: 900; color: var(--mode); }
+
+/* Stamps. */
+.sho .sho-awards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sho .sho-award { display: grid; gap: 2px; padding: 8px; border-radius: 8px; text-align: center; background: #f6f0e2; color: #3b2d1d; }
+.sho .sho-award.on { outline: 3px solid #c8102e; }
+.sho .sho-hanko { color: #c8102e; font-weight: 900; font-size: 15px; }
+.sho .sho-placed { color: var(--muted); }
+.sho .sho-sheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.sho .sho-sheet { position: relative; display: grid; gap: 4px; padding: 6px; border-radius: 6px; background: #f6f0e2; color: #1b1712; }
+.sho .sho-sheet.own { opacity: 0.55; }
+.sho .sho-thumb { display: flex; }
+.sho .sho-thumb .ink-svg { background: transparent; flex: 1; }
+.sho .sho-n { font-weight: 900; font-size: 14px; }
+.sho .sho-stamped { color: #c8102e; font-weight: 900; font-size: 13px; }
+.sho .sho-brief { margin: 0; font-size: 22px; font-weight: 800; color: var(--mode); }
+.sho .sho-other-hand { margin: 0; padding: 8px 12px; border-radius: 12px; background: #c8102e; color: #fff; font-weight: 800; text-align: center; }
+.sho .sho-won { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-weight: 800; }
