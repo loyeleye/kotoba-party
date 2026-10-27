@@ -47,11 +47,12 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
 | 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
-| 22 | Music: recorded tracks (CC0, CC BY 4.0, CC BY 3.0), including Karaoke Duel's nine instrumentals, original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes. Japanese Lofi HipHop is split out as row 25 |
+| 22 | Music: recorded tracks (CC0, CC BY 4.0, CC BY 3.0), original synth tunes (Karaoke Duel's CC instrumentals are all gone: row 26) and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes. Japanese Lofi HipHop is split out as row 25 |
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
 | 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
 | 25 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
-| 26 | Mureka (AI music generator: API credits and a Premium web plan, 2026-10-27) for Karaoke Duel backings | `stage/assets/music/night-drive-*.mp3`, `harbour-*.mp3` (tracks.ts licence `'Mureka'`); more songs to follow | ⚠️ ❓ | Paid output is ours but must be labelled AI (done in the credits). The terms also limit use of the *service* to personal, non-commercial use without Mureka's written consent: get that consent in writing, or replace the tracks with commissioned music, before selling. The API platform's own terms weren't readable |
+| 26 | Mureka (AI music generator: API credits and a Premium web plan, 2026-10-27) for Karaoke Duel backings | `stage/assets/music/night-drive-*.mp3`, `harbour-*.mp3`, `run-*.mp3`, `save-*.mp3`, `sleepless-*.mp3`, `monday-blues-*.mp3`, `self-intro-*.mp3`, `cheers-*.mp3`, `where-were-you-*.mp3`, `sparkle-idol-*.mp3` (tracks.ts licence `'Mureka'`): every grown-up song | ⚠️ ❓ | Paid output is ours but must be labelled AI (done in the credits). The terms also limit use of the *service* to personal, non-commercial use without Mureka's written consent: get that consent in writing, or replace the tracks with commissioned music, before selling. The API platform's own terms weren't readable |
+| 27 | Karaoke Duel's Cheeky lyric sets (adult party humour: drinking, bad dates, bathroom jokes, innuendo; never explicit), behind the host's Audience setting (decision, 2026-10-27) | `shared/src/modes/karaokeDuel/lyrics/*.ts` (`audience: 'cheeky'`), `stage/src/settings.ts` | ⚠️ | Not a licence issue, but it sets the game's age rating and store listing. Before selling: rate the game with Cheeky in it (IARC / ESRB / PEGI questionnaires), or ship rated builds without the cheeky sets; keep Cheeky off by default and behind its warning; have the fluent reviewer check the cheeky sets for anything cruder in Japanese than intended |
 
 ## Details
 
@@ -335,17 +336,18 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 - **Karaoke Duel instrumentals (added 2026-10-27, Ladi's request for real instrumentals):** each
   grown-up song is sung over one track, cut to the bars it uses and re-encoded ("cut and filtered
   for the game" in its credit). Licences as stated on each page, read 2026-10-27:
-  - CC0: JRPG Epic Rock Battle Theme (HydroGene,
-    [OGA](https://opengameart.org/content/jrpg-epic-rock-battle-theme-1)); Hot Springs Town (Kistol,
-    [OGA](https://opengameart.org/content/hot-springs-town)).
-  - CC BY 4.0: Hustle, Slow Jam and In Your Arms (Kevin MacLeod, incompetech, terms as
-    above); Lazy Saturday (vandalorum, from
-    [Hip Hop Old School Chill Themes](https://opengameart.org/content/hiphop-old-school-chill-themes));
-    Cheers For Starlight (Chloe Wolfe,
-    [OGA](https://opengameart.org/content/cute-bytes-ost-cheers-for-starlight)).
+  - None are in the game now: every grown-up song has two Mureka backings (row 26).
   - Nights In June (KLY, CC BY 3.0) was Night Drive's track until 2026-10-27; it was replaced by
     two Mureka backings (row 26) and its file removed. Past Sadness (Kevin MacLeod, CC BY 4.0) was
-    Harbour in the Rain's track until the same day; it went the same way.
+    Harbour in the Rain's track until the same day; it went the same way, and so did JRPG Epic Rock
+    Battle Theme (HydroGene, CC0, [OGA](https://opengameart.org/content/jrpg-epic-rock-battle-theme-1)),
+    Run!'s track, Slow Jam (Kevin MacLeod, CC BY 4.0), Sleepless Night's track, Hustle (Kevin
+    MacLeod, CC BY 4.0), Monday Blues' track, and Lazy Saturday (vandalorum, CC BY 4.0, from
+    [Hip Hop Old School Chill Themes](https://opengameart.org/content/hiphop-old-school-chill-themes)),
+    Self-Intro Rap's track. The last three went the same way on the same day: Hot Springs Town
+    (Kistol, CC0, [OGA](https://opengameart.org/content/hot-springs-town)), Cheers!'s track; In Your
+    Arms (Kevin MacLeod, CC BY 4.0), Where Were You?'s; and Cheers For Starlight (Chloe Wolfe, CC BY
+    4.0, [OGA](https://opengameart.org/content/cute-bytes-ost-cheers-for-starlight)), Sparkle Idol's.
   - Skipped as candidates: anything CC BY-SA or GPL (Cheerful Upbeat Tune, Cuddle Puzzle), because
     share-alike could reach the game itself.
   - Lyrics and melodies sung over them are ours (row 13). Before selling, Ladi plans to commission
@@ -431,7 +433,17 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Ladi). In the game: `stage/assets/music/night-drive-satnav.mp3` and `night-drive-asleep.mp3`
   (Night Drive versions A and B: Mureka task 168616599289857's two takes, model mureka-9.5), and
   `harbour-ferry.mp3` and `harbour-ticket.mp3` (Harbour in the Rain versions A and B: task
-  168620097273857's two takes, model mureka-9.5); generation records are kept in project files `tools/mureka/takes/`). Each new Mureka file must be
+  168620097273857's two takes, model mureka-9.5), `run-footsteps.mp3` and `run-melonpan.mp3`
+  (Run! versions A and B: task 168626183208962's two takes, model mureka-9.5), `sleepless-caller.mp3` and
+  `sleepless-coffee.mp3` (Sleepless Night versions A and B: task 168626718048257's takes 2 and 1,
+  model mureka-9.5), `monday-blues-1.mp3` and `monday-blues-2.mp3`
+  (Monday Blues: task 168628653850625's two takes, model mureka-9.5), and `self-intro-faster.mp3` and
+  `self-intro-questions.mp3` (Self-Intro Rap versions A and B: task 168631340105729's two takes, model
+  mureka-9.5), `cheers-toast.mp3` and `cheers-starters.mp3` (Cheers! versions A and B: task
+  168631050829825's takes 1 and 2), `where-were-you-1.mp3` and `where-were-you-2.mp3` (Where Were
+  You?: task 168631185047554's two takes) and `sparkle-idol-1.mp3` and `sparkle-idol-2.mp3`
+  (Sparkle Idol: task 168628473495553's two takes), all model mureka-9.5 and made from takes already
+  generated (no new requests); generation records are kept in project files `tools/mureka/takes/` and `tools/mureka/run/`). Each new Mureka file must be
   listed in `tracks.ts` with licence `'Mureka'` and added here.
 - **Terms read (2026-10-27):** Mureka Terms of Service, released and effective May 13, 2026
   (https://www.mureka.ai/static/terms-20260513.pdf), read in full. The API platform

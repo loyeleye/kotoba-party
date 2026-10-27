@@ -7,8 +7,8 @@ import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS } from './constants.js';
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry } from './modes/mode.js';
 import { MODES } from './modes/registry.js';
-import type { Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
-import { LEVELS, MODE_IDS } from './protocol.js';
+import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
+import { isAudience, LEVELS, MODE_IDS } from './protocol.js';
 import { isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
 
 export interface PlayerState {
@@ -41,6 +41,8 @@ export interface GameState {
   recap: { standings: { playerId: string; name: string; score: number }[]; awards: Award[] } | null;
   /** Watching stage screens may run the game too (start, skip, play again). */
   remoteControl: boolean;
+  /** The host's Audience setting: kids, family (default) or cheeky. Kept across games. */
+  audience: Audience;
 }
 
 export interface GameContext {
@@ -82,6 +84,7 @@ export function createGame(code: string): GameState {
     phrasebook: {},
     recap: null,
     remoteControl: false,
+    audience: 'family',
   };
 }
 
@@ -115,6 +118,7 @@ export function modeContext(state: GameState, ctx: GameContext): ModeContext {
     now: ctx.now,
     content: ctx.content,
     vipId: state.vipId,
+    audience: state.audience,
     random: ctx.random,
     newId: ctx.newId,
     players: () => state.players.map(asModePlayer),
@@ -264,9 +268,11 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
     }
     case 'settings': {
       if (!isStage || actor.watch) return fail('not-allowed');
-      if (typeof cmd.remoteControl !== 'boolean') return fail('bad-command');
-      if (state.remoteControl === cmd.remoteControl) return { changed: false };
-      state.remoteControl = cmd.remoteControl;
+      const { remoteControl, audience } = cmd;
+      if ((remoteControl === undefined && audience === undefined) || (remoteControl !== undefined && typeof remoteControl !== 'boolean') || (audience !== undefined && !isAudience(audience))) return fail('bad-command');
+      if ((remoteControl ?? state.remoteControl) === state.remoteControl && (audience ?? state.audience) === state.audience) return { changed: false };
+      state.remoteControl = remoteControl ?? state.remoteControl;
+      state.audience = audience ?? state.audience;
       return OK;
     }
     default:

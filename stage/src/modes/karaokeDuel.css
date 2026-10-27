@@ -109,3 +109,14 @@
   .kd-title { font-size: 32px; }
   .kd-vs { margin-left: 0; }
 }
+
+/* The room's Audience setting, when the words aren't the version's own (family) lines. */
+.kd-aud { font-size: 18px; font-weight: 800; padding: 2px 10px; border-radius: 999px; background: var(--panel, rgba(255, 255, 255, 0.1)); }
+.kd-aud.cheeky { background: rgba(220, 60, 60, 0.25); }
+/* The duel's loser picking the next song. */
+.kd-pick { display: grid; gap: 8px; justify-items: center; margin-top: 8px; }
+.kd-pick-head { margin: 0; font-size: 24px; font-weight: 800; }
+.kd-pick-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.kd-pick-song { font-size: 22px; padding: 6px 14px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.25); transition: opacity 0.3s; }
+.kd-pick-song.chosen { border-color: var(--good, #6c6); font-weight: 900; }
+.kd-pick-song.out { opacity: 0.35; }

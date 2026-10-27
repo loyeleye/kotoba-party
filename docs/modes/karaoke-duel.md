@@ -23,10 +23,28 @@ Code: `shared/src/modes/karaokeDuel/` (`karaokeDuel.ts` rules, `scoring.ts`, `pi
 | Song card | `prompt` | Song title, every line (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
 | Sing | `answer` ×8 or ×16 | **Grown-up songs are continuous** (`form` + `track`): one produced instrumental plays the whole song (intro, verse, chorus, verse 2, chorus, about 80–130 s) and the duelists trade lines on its clock, one line every two bars; each sings every chorus line once. One phase per line, ending one bar before the next line so the next singer's count-in overlaps; the next singer sees their line during it; a take counts until 10 s after its line ends (the recogniser is slow), and lines with no take are marked missed when the song ends. **Kids' songs** are four-line sing-alongs: a 0.7 s breath, a one-bar count-in, the line, then 3 s; both duelists sing every line, who goes first alternates, and a take ends the turn at once. | Continuous: the track's own timing. Sing-along: 0.7 s + 4 beats + line + 3 s |
 | Crowd vote | `reveal` | Everyone not duelling votes for the crowd favourite. Skipped when nobody is watching (2 players). Ends when every connected voter is in. | 12 s |
-| Duel result | `score` | Sung points, lines won, crowd votes, the winner. | 9 s |
+| Duel result | `score` | Sung points, lines won, crowd votes, the winner. Before every round but the last, the duel's loser picks the next song on their phone from three, or says "Surprise me". | 9 s (14 s with a pick) |
 | Finale | `finale` | Standings, then the shared recap (awards, the song sheet phrasebook). | 9 s |
 
 A 4-song game of grown-up songs runs about 10 minutes.
+
+### Which song, which take, which words
+
+The host sets the room's **Audience** in the main stage's settings: Kids, Family (the default) or
+Cheeky. Cheeky asks first, with a warning that it is grown-up humour (drinking, bad dates, bathroom
+emergencies, innuendo, never explicit) and not for children, classrooms or a stream.
+
+Each round plays the next **track** (a song, whatever its versions) from a queue shuffled at the
+start, so no song comes up twice until every one has played (grown-up songs first, children's
+sing-alongs after; in a Kids room they're mixed in). Then one of the song's two recorded takes,
+at random, and a **lyric set** for the audience: every take has kids, family and cheeky words
+(`lyrics/`, one file per song), each sung on the take's own melody and chords, mora for mora. A
+version's own lines are one of its family sets. The TV's song card marks kids' and cheeky words.
+
+**The loser's pick.** On the duel result, the loser (on a tie, either duelist) gets the next
+three songs in the queue on their phone, plus "Surprise me" (the first of them). Choosing is a
+small consolation prize; offering only the next three keeps the draw random, so nobody can always
+fall back on a favourite (Ladi, 2026-10-27). No pick, or a loser who has left, plays the next one.
 
 ### Who duels
 
@@ -177,11 +195,13 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     songs, four lines each, every line under 5 s. Five are children's-style sing-alongs
     (greetings, food, travel; `kids: true`). Nine are grown-up songs in karaoke-box genres with
     beginner words, each with a twist in the words: city pop (夜の ドライブ, two versions: the
-    sat-nav gets lost, or the passenger falls asleep), enka (雨の 港, two versions: a ten-year vow for a five-minute ferry, or waving off her own ship), an anime-opening rocker (走れ！,
-    "…starting tomorrow!"), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, "…and
-    it's only Monday"), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
+    sat-nav gets lost, or the passenger falls asleep), enka (雨の 港, two versions: a ten-year vow for a five-minute ferry, or waving off her own ship), an anime-opening rocker (走れ！, two versions: running
+    from footsteps that turn out to be Mom with your lunch, or racing for the last melon bread), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, four versions: in pyjamas on
+    the train, up early on a holiday, and two straight learning songs), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
     (自己紹介 ラップ, whose tune is the words' pitch accent), idol pop (キラキラ アイドル, "…so
-    buy a ticket!") and an R&B ballad (眠れない 夜). Tests check one note and one romaji
+    buy a ticket!"), an R&B ballad (ねられない よる, two versions: the crush finally calls back and
+    asks who's calling, or five coffees) and kawaii pixel future bass (セーブ して！,
+    two versions: Mum answers dinner with the kid's own excuse, or the cat presses the button). Tests check one note and one romaji
     syllable per mora, that every perfect take scores 100, and that every chord name parses.
     The humor writer, a songwriter and the JLPT expert reviewed the first drafts (2026-10-27,
     project files `reviews/karaoke-songs-2026-10-27/`); their agreed fixes are in: melodies
@@ -190,7 +210,7 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     words above N4 were swapped out (残業, 満員, 飛べ).
 19. **Grown-up songs first.** A game plays every grown-up song (shuffled) before any
     children's song, so a default four-song game has none. Ladi asked to move past children's
-    songs (2026-10-27).
+    songs (2026-10-27). In a Kids room they're shuffled in with the rest.
 20. **Each song has a backing style** (`style`: nursery, citypop, enka, rock, izakaya,
     blues, kayou, hiphop, idol, rnb). It sets the bass pattern, swing, light drums (kick, snare
     or claps, eighth or sixteenth hi-hats, four-on-the-floor or boom-bap) and the guide's sound;
@@ -208,7 +228,7 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     Lyrics stay at N5–N4 with one joke per song, usually the last verse line before the final
     chorus. Ladi plans to commission songs written for the game before it is sold. Picks: Nights
     In June (city pop), Past Sadness (enka, Ladi's pick), JRPG Epic Rock Battle Theme, Hot Springs
-    Town, Hustle, Lazy Saturday, Cheers For Starlight, Slow Jam and In Your Arms.
+    Town, Hustle, Lazy Saturday, Cheers For Starlight, Slow Jam (later replaced) and In Your Arms.
 22. **AI-made backings with Mureka, and song versions** (2026-10-27). Ladi found the CC tracks
     hard to sing over, so each grown-up song gets a backing made for it with the Mureka API
     (row 26 of the commercial-blockers log). Prompts ask for a soft "minus-one" accompaniment
@@ -224,7 +244,51 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     Harbour in the Rain is second: version A (the five-minute ferry, one Dm7–G7–C–Fmaj7–G7–E7–Am
     loop) and version B (she misses her own ship, a verse that ends on E7 and a chorus twice as
     fast), both at 71 bpm in A minor. Its old umbrella lyrics and Past Sadness are gone.
+    Run! is third, a soft live-band J-rock backing (Ladi sent anime-opening tutorials as references):
+    version A (Mom with the lunch, a royal-road chorus that ends on I, 132 bpm) and version B (the
+    melon-bread race, an I–IV–iii–vi–ii–V verse, 134 bpm), both in A major. Its old diet lyrics and
+    JRPG Epic Rock Battle Theme are gone.
+    Save It! (セーブ して！) is a new tenth grown-up song in Ladi's "fun and punchy" pixel
+    future-bass style (references: Snail's House, "Pixel Galaxy"; eleline, "Koto no Town"), kept
+    to half-time drums, pumping pads, koto and chiptune chords so nothing leads over the singer.
+    Version A (Mum and the kid, 141 bpm in A, royal-road chorus) and version B (100 hours, then
+    save data zero, 140 bpm in E). It uses the idol style for the synth fallback.
+    Sleepless Night is third, and Ladi's all-N5 song (every word and kanji N5; the title became
+    ねられない よる because 眠る and 夜 are N4): version A (the call back at 4 a.m., 71 bpm in C
+    minor, one Cm7–C7–Fm7–G7 loop with the chorus opening on Fm7) and version B (five coffees, 72
+    bpm in C major, a IV–iv–I chorus). Its old "it's Mum" lyrics and Slow Jam are gone. Ladi
+    asked for the title not to be sung, so its choruses hang on 電話 まってる and あさまで おきてる.
+    Monday Blues is third, with four versions over two E-minor blues takes (Ladi asked for two lyric
+    sets per take, one funny and one that only aims at songwriting and learning). Over take 1
+    (92 bpm, Em–Em–Am–D7 shuffle): B, up early on a holiday, and C, a straight workday in clock
+    times with the weekdays as its chorus. Over take 2 (94 bpm, 8-bar blues): A, late for work in
+    pyjamas, and D, a straight rainy Monday with a friend. Its old lyrics and Hustle are gone.
+    Ladi asked that the title not be sung, so each chorus opens and closes on its own hook
+    (早く 早く 早く, ああ 行きたくない, 月曜日 スタート, ゆっくり 行こうよ).
+    Self-Intro Rap is third, and it is the challenge song: verse 1 is slow (about a mora a beat,
+    entering after a rest), the chorus is sung, and verse 2 is verse 1 in double time. The rap
+    follows the Tokyo pitch accent on two notes per chord. Ladi asked for one funny and one
+    straight lyric set per take; the PR keeps take 1's funny one as version A ("Faster!": B boasts
+    of rapping every day, A calls the bluff, B runs out of breath) and take 2's straight one as
+    version B (a plain self-introduction to learn by heart). Both at 96 bpm in C major, on one
+    Dm7 G7 | Cmaj7 Am7 loop. Its old ramen lyrics and Lazy Saturday are gone. Verse lines start
+    off the beat, so its `form` adds a per-line offset to `standardForm`.
+    Cheers!, Where Were You? and Sparkle Idol are last (Ladi: keep both takes of each): Cheers! at 107
+    and 108 bpm in A major (the toast, and "beer, for starters"), Where Were You? at 88 bpm in F and
+    89 in D (the two station exits, and karaoke alone), Sparkle Idol at 128 bpm in A and 129 in D
+    (ニコニコ ハッピー, and the idol who wants to go home). Each version's own lines are its take's
+    funny set; the straight set is a second family lyric set. Hot Springs Town, In Your Arms and
+    Cheers For Starlight are gone, so every grown-up song is now on Mureka backings. The files were
+    cut from takes generated earlier: no new Mureka requests.
     The method and scripts are in project files `tools/mureka/`.
+23. **Audience lyric sets** (Ladi, 2026-10-27: "the three kid, adult family, adult cheeky
+    versions for each track"). The Audience is a room setting, not a per-song choice, like a
+    family-friendly filter: one switch, set by the host, and Cheeky is never the default. Each
+    round is random by default (take and words), with the loser's pick of three as the only
+    choice. Every set keeps each line's mora count so it fits the recorded take, and none sings
+    the song's title (`tests/karaokeLyrics.test.ts` checks both). Sleepless Night no longer has to
+    be all N5, but its kids' sets are the simplest in the game. The sets are drafts: they need
+    the fluent check, and the cheeky ones a taste check.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
     practice; the ball always runs over kana.

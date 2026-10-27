@@ -21,6 +21,14 @@ export type ModeId = (typeof MODE_IDS)[number];
 export const LEVELS: readonly Level[] = ['kana', 'n5', 'n4'];
 
 /**
+ * Who the room's content is for, set by the host in the main stage's settings: Kids, Family (the
+ * default) or Cheeky (adult party humour, behind a warning). Karaoke Duel sings the lyric set for it.
+ */
+export const AUDIENCES = ['kids', 'family', 'cheeky'] as const;
+export type Audience = (typeof AUDIENCES)[number];
+export const isAudience = (v: unknown): v is Audience => typeof v === 'string' && (AUDIENCES as readonly string[]).includes(v);
+
+/**
  * Who a view is rendered for. A `watch` stage is an extra screen opened by code (a remote
  * player's laptop): it sees exactly what the main stage sees but cannot send commands.
  */
@@ -92,6 +100,8 @@ export interface RoomView {
   me: { playerId: string; level: Level } | null;
   /** The main stage lets watching screens start, skip and replay too (its settings panel). */
   remoteControl: boolean;
+  /** The host's Audience setting (main stage settings). */
+  audience: Audience;
 }
 
 /** Server → client WebSocket message. */
@@ -122,8 +132,8 @@ export type Command =
   | { id: string; type: 'playAgain' }
   /** The VIP's Calm motion switch: stage and phones swap movement for fades and still frames. */
   | { id: string; type: 'setMotion'; calm: boolean }
-  /** Main stage only: room settings. */
-  | { id: string; type: 'settings'; remoteControl: boolean }
+  /** Main stage only: room settings (either or both). */
+  | { id: string; type: 'settings'; remoteControl?: boolean; audience?: Audience }
   /** Main stage only: ends the room for every screen and phone. */
   | { id: string; type: 'closeRoom' };
 

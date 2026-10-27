@@ -33,13 +33,22 @@ export const TRACK_IDS = [
   'night-drive-asleep',
   'harbour-ferry',
   'harbour-ticket',
-  'jrpg-rock',
-  'hot-springs',
-  'hustle',
-  'lazy-saturday',
-  'starlight',
-  'slow-jam',
-  'in-your-arms',
+  'run-footsteps',
+  'run-melonpan',
+  'save-dinner',
+  'save-cat',
+  'cheers-toast',
+  'cheers-starters',
+  'monday-blues-1',
+  'monday-blues-2',
+  'self-intro-faster',
+  'self-intro-questions',
+  'sparkle-idol-1',
+  'sparkle-idol-2',
+  'sleepless-caller',
+  'sleepless-coffee',
+  'where-were-you-1',
+  'where-were-you-2',
 ] as const;
 export type TrackId = (typeof TRACK_IDS)[number];
 
@@ -125,20 +134,40 @@ export const TRACKS: Record<TrackId, Track> = {
   // Each file is already the song's bars in order at exactly 71 bpm, A minor.
   'harbour-ferry': { title: 'Harbour in the Rain (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('harbour-ferry'), gainDb: 0.7, fallback: 'gentle' },
   'harbour-ticket': { title: 'Harbour in the Rain (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('harbour-ticket'), gainDb: 1.6, fallback: 'gentle' },
-  // Run!: anime rock, 152 bpm, F♯ minor. From 14.0 s (orig. bar 9).
-  'jrpg-rock': { title: 'JRPG Epic Rock Battle Theme', author: 'HydroGene', licence: 'CC0', source: `${OGA}jrpg-epic-rock-battle-theme-1`, url: file('jrpg-epic-rock'), gainDb: -7.2, fallback: 'battle' },
-  // Cheers!: festival tune, 120 bpm, A major. The first 33 s.
-  'hot-springs': { title: 'Hot Springs Town', author: 'Kistol', licence: 'CC0', source: `${OGA}hot-springs-town`, url: file('hot-springs-town'), gainDb: 0.3, fallback: 'festive' },
-  // Monday Blues: minor blues, 120 bpm, E minor (12-bar). From 15.0 s (orig. bar 7), before the key change.
-  hustle: { title: 'Hustle', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100793'), url: file('hustle'), gainDb: -6.1, fallback: 'mystery' },
-  // Self-Intro Rap: boom-bap, 92 bpm, A minor (a four-bar loop). From 36.0 s (orig. bar 14).
-  'lazy-saturday': { title: 'Lazy Saturday', author: 'vandalorum', licence: 'CC BY 4.0', source: `${OGA}hiphop-old-school-chill-themes`, url: file('lazy-saturday'), gainDb: -0.2, fallback: 'gentle' },
-  // Sparkle Idol: bright pop, 130 bpm, D major. From 7.0 s (orig. bar 4).
-  starlight: { title: 'Cheers For Starlight', author: 'Chloe Wolfe', licence: 'CC BY 4.0', source: `${OGA}cute-bytes-ost-cheers-for-starlight`, url: file('cheers-for-starlight'), gainDb: -6.7, fallback: 'festive' },
-  // Sleepless Night: slow jam, 75 bpm, C minor. The first 90 s.
-  'slow-jam': { title: 'Slow Jam', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1600015'), url: file('slow-jam'), gainDb: -4.7, fallback: 'gentle' },
-  // Where Were You?: 1940s swing ballad, 98 bpm, F major. The first 80 s.
-  'in-your-arms': { title: 'In Your Arms', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500042'), url: file('in-your-arms'), gainDb: -2.5, fallback: 'gentle' },
+  // Run!: two AI-made anime-rock backings (Mureka, 2026-10-27), one per version of the song. Each file is
+  // already the song's bars in order, A major: version A at exactly 132 bpm, version B at 134.
+  'run-footsteps': { title: 'Run! (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('run-footsteps'), gainDb: -1, fallback: 'battle' },
+  'run-melonpan': { title: 'Run! (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('run-melonpan'), gainDb: -1.5, fallback: 'battle' },
+  // Save It!: two AI-made kawaii future-bass backings (Mureka, 2026-10-27), one per version of the song
+  // (songs.ts). Each file is already the song's bars in order: version A at exactly 141 bpm in A major,
+  // version B at 140 bpm in E major.
+  'save-dinner': { title: 'Save It! (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('save-dinner'), gainDb: -2.1, fallback: 'gentle' },
+  'save-cat': { title: 'Save It! (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('save-cat'), gainDb: -1.9, fallback: 'gentle' },
+  // Cheers!: two AI-made izakaya-pop backings (Mureka, 2026-10-27), one per version of the song (songs.ts).
+  // Each file is already the song's bars in order, A major: version A at exactly 107 bpm, version B at 108.
+  'cheers-toast': { title: 'Cheers! (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('cheers-toast'), gainDb: -0.2, fallback: 'festive' },
+  'cheers-starters': { title: 'Cheers! (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('cheers-starters'), gainDb: -1.6, fallback: 'festive' },
+  // Monday Blues: two AI-made blues backings (Mureka, 2026-10-27), each sung over by two versions of the
+  // song. Each file is already the song's bars in order, E minor: take 1 at exactly 92 bpm, take 2 at 94.
+  'monday-blues-1': { title: 'Monday Blues (take 1)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('monday-blues-1'), gainDb: 1.8, fallback: 'gentle' },
+  'monday-blues-2': { title: 'Monday Blues (take 2)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('monday-blues-2'), gainDb: 0.1, fallback: 'gentle' },
+  // Self-Intro Rap: two AI-made boom-bap backings (Mureka, 2026-10-27), one per version of the song.
+  // Each file is already the song's bars in order at exactly 96 bpm, C major.
+  'self-intro-faster': { title: 'Self-Intro Rap (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('self-intro-faster'), gainDb: 0.2, fallback: 'gentle' },
+  'self-intro-questions': { title: 'Self-Intro Rap (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('self-intro-questions'), gainDb: -0.1, fallback: 'gentle' },
+  // Sparkle Idol: two AI-made idol-pop backings (Mureka, 2026-10-27), one per version of the song.
+  // Each file is already the song's bars in order: version A at exactly 128 bpm in A major, B at 129 bpm in D major.
+  'sparkle-idol-1': { title: 'Sparkle Idol (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('sparkle-idol-1'), gainDb: 0.8, fallback: 'festive' },
+  'sparkle-idol-2': { title: 'Sparkle Idol (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('sparkle-idol-2'), gainDb: -0.8, fallback: 'festive' },
+  // Sleepless Night: two AI-made R&B backings (Mureka, 2026-10-27), one per version of the song.
+  // Each file is already the song's bars in order: version A at exactly 71 bpm in C minor, B at 72 bpm in C major.
+  'sleepless-caller': { title: 'Sleepless Night (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('sleepless-caller'), gainDb: 1.1, fallback: 'gentle' },
+  'sleepless-coffee': { title: 'Sleepless Night (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('sleepless-coffee'), gainDb: 1.1, fallback: 'gentle' },
+  // Where Were You?: two AI-made Shōwa kayō duet backings (Mureka, 2026-10-27), one per version of the song
+  // (songs.ts). Each file is already the song's bars in order: version A at exactly 88 bpm in F major,
+  // version B at 89 bpm in D major.
+  'where-were-you-1': { title: 'Where Were You? (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('where-were-you-1'), gainDb: 0.5, fallback: 'gentle' },
+  'where-were-you-2': { title: 'Where Were You? (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('where-were-you-2'), gainDb: -0.2, fallback: 'gentle' },
 };
 
 const CC_BY = 'https://creativecommons.org/licenses/by/4.0/';

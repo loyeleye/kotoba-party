@@ -429,6 +429,32 @@ function voteScreen(ctx: Ctx): HTMLElement {
   );
 }
 
+/** The loser's choice of the next song: three titles and "Surprise me". Others see who is choosing. */
+function pickSection(ctx: Ctx): HTMLElement | null {
+  const { game, view, me, send } = ctx;
+  const pick = game.pick;
+  if (!pick) return null;
+  const titleOf = (track: string | null) => pick.options.find((x) => x.track === track)?.title;
+  if (pick.chooserId !== me.id) {
+    const who = nameOf(view, pick.chooserId);
+    const t = titleOf(pick.chosen);
+    return h('p', { class: 'hint' }, pick.decided ? (t ? `${who} picked ${t.en}` : `${who} said “Surprise me!”`) : `${who} is picking the next song…`);
+  }
+  if (!game.mine?.canPick) {
+    const t = titleOf(pick.chosen);
+    return h('p', { class: 'kdp-ready' }, t ? `Next up: ${t.en}` : '🎲 Surprise!');
+  }
+  return h(
+    'div',
+    { class: 'kdp-pick' },
+    h('p', { class: 'kdp-ready' }, 'You pick the next song!'),
+    pick.options.map((o) =>
+      h('button', { type: 'button', class: 'option kdp-pick-song', onclick: () => void send({ kind: 'pick', track: o.track }) }, h('span', { lang: 'ja' }, o.title.text), h('span', { class: 'hint' }, o.title.en)),
+    ),
+    h('button', { type: 'button', class: 'option kdp-pick-song', onclick: () => void send({ kind: 'pick', track: null }) }, '🎲 Surprise me'),
+  );
+}
+
 function resultScreen(ctx: Ctx): HTMLElement {
   const { game, view, me } = ctx;
   const r = game.result;
@@ -449,6 +475,8 @@ function resultScreen(ctx: Ctx): HTMLElement {
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, headline),
+    // The pick comes first: on a phone the takes list would push it below the fold.
+    pickSection(ctx),
     mine.role === 'duelist' ? h('div', { class: 'kdp-takes' }, mine.takes.map(takeLine)) : null,
     mine.role === 'duelist' && r.favourites.includes(me.id) ? h('p', { class: 'kdp-take' }, `👏 Crowd favourite +${r.crowdBonus}`) : null,
     mine.role === 'audience' && mine.chorusPoints ? h('p', { class: 'kdp-take' }, `🎶 Your chorus: +${mine.chorusPoints}`) : null,
@@ -473,6 +501,7 @@ export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
       game.mine?.takes.length,
       game.mine?.chorus?.points ?? '',
       game.result ? 'r' : '',
+      game.pick ? `${game.pick.decided}:${game.pick.chosen ?? ''}:${game.mine?.canPick}` : '',
       game.mine?.isMyTurn ? '' : game.takes.length,
     ].join('|');
   },

@@ -12,14 +12,21 @@
 //           trade lines, a take may land after its turn has ended, and the next singer's count-in
 //           runs at the end of the turn before.
 //   reveal  the crowd vote (skipped when nobody is watching: a 2-player game)
-//   score   the duel's result
+//   score   the duel's result; the duel's loser may pick the next song from three random ones
 // then finale after the last round.
+//
+// Songs: each round plays the next track (a song, whatever its versions) from a shuffled queue, so no
+// track comes up twice until all have played, then a random one of its recorded takes, and a lyric
+// set for the room's Audience setting (kids, family or cheeky; lyrics/). The loser's pick is optional:
+// the three choices are the next three in the queue, so nobody can always fall back on a favourite.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
+import type { Audience } from '../../protocol.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
+import { lyricSetsOf } from './lyrics/index.js';
 import { parseTake, pronScore, scoreTake, type TakeScore } from './scoring.js';
-import { beatMs, lineMs, noteTimes, romajiMorae, SONGS, sungRomaji, wordsOf, type Song, type SongStyle } from './songs.js';
+import { beatMs, lineMs, noteTimes, romajiMorae, SONGS, sungRomaji, withLyrics, wordsOf, type LyricSet, type Song, type SongStyle } from './songs.js';
 
 // ---- tuning ----
 
@@ -36,6 +43,8 @@ export const CHORUS_POINTS = 10;
 export const CHORUS_CAP = 40;
 /** Crowd favourite bonus (split on a tie). */
 export const CROWD_BONUS = 60;
+/** Songs the loser chooses between. */
+export const PICK_CHOICES = 3;
 /** Lines sung per sing-along song (they have 4). */
 export const MAX_LINES = 4;
 /** Continuous songs: a take may arrive this long after its line ends (the recogniser is slow). */
@@ -49,6 +58,8 @@ export const DURATIONS = {
   songCardKana: 10_000,
   vote: 12_000,
   score: 9_000,
+  /** The duel result while the loser picks the next song. */
+  scorePick: 14_000,
   finale: 9_000,
 } as const;
 
@@ -97,11 +108,29 @@ export interface RoundResult {
   winners: string[];
 }
 
+/** The duel's loser choosing the next song (the score phase). */
+export interface SongPick {
+  chooserId: string;
+  /** Track keys: the next ones in the queue. */
+  options: string[];
+  /** The track picked; null with `decided` is "Surprise me". */
+  chosen: string | null;
+  decided: boolean;
+}
+
 export interface KaraokeState {
   totalRounds: number;
   round: number;
+  /**
+   * The tracks still to play, in order: track keys (a song's group, or its id), each played as a
+   * random take; a version id plays that version. Refilled, reshuffled, once it runs out.
+   */
   songOrder: string[];
+  /** The version playing (a Song id). */
   songId: string | null;
+  /** The lyric set it is sung with; null for the version's own lines. */
+  lyricsId: string | null;
+  pick: SongPick | null;
   duel: { a: string; b: string } | null;
   /** The sing turns of this round, in order (`beat`: where the line starts in a continuous song). */
   turns: { line: number; singerId: string; beat?: number }[];
@@ -129,7 +158,9 @@ export interface KaraokeState {
 export type KaraokeMove =
   | { kind: 'sing'; turn: number; utterance: Utterance; pitch?: (number | null)[] | null; onsetMs?: number; durMs?: number; timing?: 'mic' | 'button' }
   | { kind: 'chorus'; turn: number; utterance: Utterance }
-  | { kind: 'vote'; playerId: string };
+  | { kind: 'vote'; playerId: string }
+  /** The duel's loser chooses the next song: a track from the choices, or null for "Surprise me". */
+  | { kind: 'pick'; track: string | null };
 
 // ---- view ----
 
@@ -162,6 +193,8 @@ export interface SongView {
   track: { id: string; start: number; segments: [number, number][] } | null;
   /** The chorus lines (shown on the song card for everyone to learn). */
   chorus: number[];
+  /** Whose words these are: the lyric set's audience, or null for the version's own lines (family). */
+  audience: Audience | null;
 }
 
 export interface TakeView {
@@ -204,6 +237,8 @@ export interface KaraokeDuelView {
   chorus: { turnNo: number; playerId: string; ok: boolean }[];
   vote: { open: boolean; voters: string[] };
   result: RoundResult | null;
+  /** The loser picking the next song (score phase). */
+  pick: { chooserId: string; options: { track: string; title: JpText; style: SongStyle }[]; chosen: string | null; decided: boolean } | null;
   tally: ({ playerId: string } & Tally)[];
   /** Somebody at the table plays at Kana level, so the stage shows romaji. */
   romaji: boolean;
@@ -221,6 +256,8 @@ export interface KaraokeDuelView {
     canChorus: boolean;
     canVote: boolean;
     voted: string | null;
+    /** I lost the duel and may pick the next song. */
+    canPick: boolean;
     /** My takes this round, with what the recogniser heard. */
     takes: (TakeView & { heard: string })[];
     /** My chorus on the current turn. */
@@ -231,16 +268,73 @@ export interface KaraokeDuelView {
 
 // ---- helpers ----
 
-const songOf = (s: KaraokeState): Song | undefined => SONGS.find((x) => x.id === s.songId);
+/** The version playing, with the round's lyric set's words. */
+const songOf = (s: KaraokeState): Song | undefined => {
+  const song = SONGS.find((x) => x.id === s.songId);
+  return song && withLyrics(song, lyricSetsOf(song.id).find((x) => x.id === s.lyricsId));
+};
 
-/** The songs a game can play: every song, but only one version (picked at random) of each group. */
-export function playableSongs(random: () => number): Song[] {
-  const pick = new Map<string, Song>();
-  for (const group of new Set(SONGS.flatMap((x) => (x.group ? [x.group] : [])))) {
-    const versions = SONGS.filter((x) => x.group === group);
-    pick.set(group, versions[Math.floor(random() * versions.length)]!);
-  }
-  return SONGS.filter((x) => !x.group || pick.get(x.group) === x);
+/** A track: one song, whatever its versions (its group, or its own id). */
+export const trackOf = (song: Song): string => song.group ?? song.id;
+export const TRACK_KEYS: readonly string[] = [...new Set(SONGS.map(trackOf))];
+const versionsOf = (track: string) => SONGS.filter((x) => trackOf(x) === track);
+const isKidsTrack = (track: string) => versionsOf(track).every((x) => x.kids);
+const pickOne = <T>(list: readonly T[], random: () => number): T => list[Math.floor(random() * list.length)]!;
+
+/**
+ * The tracks a game plays, in order. For kids everything is shuffled together; otherwise the
+ * grown-up songs come first and the children's sing-alongs only once those have all come up.
+ */
+export function songQueue(audience: Audience, random: () => number): string[] {
+  if (audience === 'kids') return shuffled([...TRACK_KEYS], random);
+  return [...shuffled(TRACK_KEYS.filter((x) => !isKidsTrack(x)), random), ...shuffled(TRACK_KEYS.filter(isKidsTrack), random)];
+}
+
+/** The words a version can be sung with for an audience: its sets for it (its own lines are a family set). */
+export function lyricChoices(song: Song, audience: Audience): (LyricSet | null)[] {
+  const sets = lyricSetsOf(song.id).filter((x) => x.audience === audience);
+  return audience === 'family' ? [null, ...sets] : sets;
+}
+
+/**
+ * What a queue entry plays: for a track key, one of its recorded takes at random (each take as likely,
+ * however many versions it has), then a version and lyric set for the audience; for a version id,
+ * that version. A version with no words for the audience (the children's sing-alongs) sings its own.
+ */
+export function pickSong(entry: string, audience: Audience, random: () => number): { songId: string; lyricsId: string | null } | null {
+  const versions = TRACK_KEYS.includes(entry) ? versionsOf(entry) : SONGS.filter((x) => x.id === entry);
+  if (!versions.length) return null;
+  const fits = versions.flatMap((song) => lyricChoices(song, audience).map((set) => ({ song, set })));
+  const pool = fits.length ? fits : versions.map((song) => ({ song, set: null }));
+  const takeOf = (song: Song) => song.track?.id ?? song.id;
+  const take = pickOne([...new Set(pool.map((x) => takeOf(x.song)))], random);
+  const { song, set } = pickOne(pool.filter((x) => takeOf(x.song) === take), random);
+  return { songId: song.id, lyricsId: set?.id ?? null };
+}
+
+/** Takes the round's track off the queue: the loser's pick, or the next one (refilling an empty queue). */
+function nextTrack(s: KaraokeState, audience: Audience, random: () => number): string | undefined {
+  topUp(s, audience, random, 1);
+  const i = s.pick?.chosen ? s.songOrder.indexOf(s.pick.chosen) : 0;
+  return s.songOrder.splice(Math.max(0, i), 1)[0];
+}
+
+/** Makes sure the queue holds `n` tracks, adding a fresh shuffle that doesn't repeat the one just played. */
+function topUp(s: KaraokeState, audience: Audience, random: () => number, n: number): void {
+  if (s.songOrder.length >= n) return;
+  const last = SONGS.find((x) => x.id === s.songId);
+  const more = songQueue(audience, random).filter((x) => !s.songOrder.includes(x));
+  if (last && more[0] === trackOf(last) && more.length > 1) more.push(more.shift()!);
+  s.songOrder.push(...more);
+}
+
+/** Who picks the next song: the duel's loser, or on a tie either duelist at random. Null if they've left. */
+function chooserOf(s: KaraokeState, ctx: ModeContext): string | null {
+  if (!s.duel || !s.result) return null;
+  const { a, b } = s.duel;
+  const winners = s.result.winners;
+  const id = winners.length === 1 ? (winners[0] === a ? b : a) : ctx.random() < 0.5 ? a : b;
+  return ctx.player(id)?.connected ? id : null;
 }
 const isDuelist = (s: KaraokeState, id: string) => !!s.duel && (s.duel.a === id || s.duel.b === id);
 const currentTurn = (s: KaraokeState) => (s.turnIdx >= 0 ? s.turns[s.turnIdx] : undefined);
@@ -342,7 +436,7 @@ function phraseFor(s: KaraokeState, ctx: ModeContext, playerId: string, line: nu
   const song = songOf(s);
   const l = song?.lines[line];
   if (!song || !l) return;
-  ctx.phrase(playerId, { itemId: `karaoke.${song.id}.${line}`, text: l.text, kana: l.kana, en: l.en, outcome });
+  ctx.phrase(playerId, { itemId: `karaoke.${s.lyricsId ?? song.id}.${line}`, text: l.text, kana: l.kana, en: l.en, outcome });
 }
 
 /** Every turn of a continuous song that has no take by the song's end counts as missed. */
@@ -414,13 +508,13 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
   setup(ctx, opts) {
     const random = () => ctx.random();
     const rounds = Math.max(1, Math.min(12, opts.rounds ?? 4));
-    const songs = playableSongs(random);
     return {
       totalRounds: rounds,
       round: 0,
-      // Grown-up songs first; the children's sing-alongs only once those have all come up.
-      songOrder: [...shuffled(songs.filter((x) => !x.kids).map((x) => x.id), random), ...shuffled(songs.filter((x) => x.kids).map((x) => x.id), random)],
+      songOrder: songQueue(ctx.audience ?? 'family', random),
       songId: null,
+      lyricsId: null,
+      pick: null,
       duel: null,
       turns: [],
       turnIdx: -1,
@@ -465,7 +559,13 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     switch (phase) {
       case 'prompt': {
         s.round += 1;
-        s.songId = s.songOrder[(s.round - 1) % s.songOrder.length] ?? null;
+        const audience = ctx.audience ?? 'family';
+        const random = () => ctx.random();
+        const next = nextTrack(s, audience, random);
+        const played = next ? pickSong(next, audience, random) : null;
+        s.songId = played?.songId ?? null;
+        s.lyricsId = played?.lyricsId ?? null;
+        s.pick = null;
         s.duel = pickDuel(ctx.players(), s.duelCount, s.lastPair, () => ctx.random());
         s.takes = [];
         s.chorus = [];
@@ -505,10 +605,17 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
         markMissing(s, ctx);
         ctx.cue({ host: 'chochin', event: 'encore_cheer' });
         break;
-      case 'score':
+      case 'score': {
         markMissing(s, ctx);
         settleRound(s, ctx);
+        // Before the next round, the loser may choose it from the next few in the queue.
+        if (isLastRound(s)) break;
+        topUp(s, ctx.audience ?? 'family', () => ctx.random(), PICK_CHOICES);
+        const chooserId = chooserOf(s, ctx);
+        const options = s.songOrder.slice(0, PICK_CHOICES);
+        if (chooserId && options.length >= 2) s.pick = { chooserId, options, chosen: null, decided: false };
         break;
+      }
       case 'finale':
         s.finished = true;
         s.turnIdx = -1;
@@ -560,7 +667,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       case 'reveal':
         return DURATIONS.vote;
       case 'score':
-        return DURATIONS.score;
+        return s.pick ? DURATIONS.scorePick : DURATIONS.score;
       case 'finale':
         return DURATIONS.finale;
       default:
@@ -657,6 +764,18 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       return MOVE_OK;
     }
 
+    if (raw.kind === 'pick') {
+      if (phase !== 'score' || !s.pick) return moveError('wrong-phase');
+      if (s.pick.chooserId !== playerId) return moveError('not-eligible');
+      if (s.pick.decided) return moveError('already-answered');
+      // A track from the choices, or null for "Surprise me" (the next in the queue).
+      if (raw.track !== null && (typeof raw.track !== 'string' || !s.pick.options.includes(raw.track))) return moveError('bad-move');
+      s.pick.chosen = raw.track;
+      s.pick.decided = true;
+      s.at = ctx.now;
+      return MOVE_OK;
+    }
+
     if (raw.kind === 'vote') {
       if (phase !== 'reveal') return moveError('wrong-phase');
       if (isDuelist(s, playerId)) return moveError('not-eligible');
@@ -709,6 +828,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
         canChorus: !!turn && !duelist && !myChorus && !s.finished,
         canVote: phase === 'reveal' && !duelist && s.votes[id] === undefined,
         voted: s.votes[id] ?? null,
+        canPick: phase === 'score' && !!s.pick && s.pick.chooserId === id && !s.pick.decided,
         takes: s.takes.filter((t) => t.playerId === id).map((t) => ({ ...takeView(t), heard: t.heard })),
         chorus: myChorus && turn ? { ok: myChorus.ok, points: myChorus.points } : null,
         chorusPoints: s.chorus.filter((c) => c.playerId === id).reduce((n, c) => n + c.points, 0),
@@ -731,6 +851,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
             continuous: isContinuous(song),
             track: song.track ? { id: song.track.id, start: song.track.start, segments: song.track.segments.map(([x, y]) => [x, y]) } : null,
             chorus: chorusLines(song),
+            audience: lyricSetsOf(song.id).find((x) => x.id === s.lyricsId)?.audience ?? null,
           }
         : null,
       duel: s.duel,
@@ -741,6 +862,18 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       chorus: s.chorus.map((c) => ({ turnNo: c.turnNo, playerId: c.playerId, ok: c.ok })),
       vote: { open: phase === 'reveal', voters: Object.keys(s.votes) },
       result: phase === 'score' || phase === 'finale' ? s.result : null,
+      pick:
+        phase === 'score' && s.pick
+          ? {
+              chooserId: s.pick.chooserId,
+              options: s.pick.options.map((track) => {
+                const song = versionsOf(track)[0] ?? SONGS.find((x) => x.id === track)!;
+                return { track, title: song.title, style: song.style };
+              }),
+              chosen: s.pick.chosen,
+              decided: s.pick.decided,
+            }
+          : null,
       tally: players.map((p) => ({ playerId: p.id, ...tallyFor(s, p.id) })),
       romaji: players.some((p) => p.level === 'kana'),
       finished: s.finished,

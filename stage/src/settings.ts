@@ -1,19 +1,20 @@
 // The stage's settings panel: the four volumes, streamer mode, background effects and, on the
 // main stage, whether watching screens (friends' laptops on ?code=) may run the game. A watching
 // screen that has been given control gets the game buttons here instead. Volumes, streamer mode
-// and background effects belong to this screen; remote control belongs to the room. The main stage
-// can also close the room, behind a second, explicit confirm.
+// and background effects belong to this screen; remote control and the Audience (who the words are
+// for: Kids, Family or Cheeky, which asks first) belong to the room. The main stage can also close
+// the room, behind a second, explicit confirm.
 
 import { h, mount } from '../../shared/src/dom.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
-import type { ModeId, RoomView } from '../../shared/src/protocol.js';
+import type { Audience, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { isAmbientOn, setAmbient } from './backdrop.js';
 import { isDanmakuOn, setDanmaku } from './danmaku.js';
 import { isStreamerMode, setStreamerMode } from './music/index.js';
 import { sfx } from './music/sfx.js';
 import { getVolumes, setVolume, type VolumeId } from './sound.js';
 
-type Send = (body: { type: 'start'; mode: ModeId; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'settings'; remoteControl: boolean } | { type: 'closeRoom' }) => Promise<void>;
+type Send = (body: { type: 'start'; mode: ModeId; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience } | { type: 'closeRoom' }) => Promise<void>;
 
 const VOLUMES: [VolumeId, string][] = [
   ['master', 'Master volume'],
@@ -30,6 +31,8 @@ let roomKey = '';
 let show: (open: boolean) => void = () => {};
 /** The close-room button has been pressed once and is asking to be sure. */
 let confirming = false;
+/** Cheeky has been pressed and the warning is showing. */
+let cheekyAsk = false;
 
 /** Puts the settings button on the stage; the panel opens over the canvas. */
 export function mountSettings(parent: HTMLElement, options: { watch: boolean; send: Send; site: () => string }): void {
@@ -63,6 +66,7 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
     panel!.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
     confirming = false;
+    cheekyAsk = false;
     if (open) renderRoom(true);
   };
   button.addEventListener('click', () => (sfx('tap'), show(panel!.hidden)));
@@ -70,8 +74,8 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || panel!.hidden) return;
     // Escape backs out of the close-room question first, then closes the panel.
-    if (confirming) {
-      confirming = false;
+    if (confirming || cheekyAsk) {
+      confirming = cheekyAsk = false;
       renderRoom(true);
     } else show(false);
   });
@@ -108,7 +112,7 @@ function toggle(label: string, help: string, on: boolean, change: (on: boolean) 
 function renderRoom(force: boolean): void {
   if (!room || !opts || !panel || panel.hidden) return;
   const v = view;
-  const key = v ? `${opts.watch}:${v.remoteControl}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.length}` : 'none';
+  const key = v ? `${opts.watch}:${v.remoteControl}:${v.audience}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.length}` : 'none';
   if (!force && key === roomKey) return;
   roomKey = key;
   if (!v) return void mount(room);
@@ -127,6 +131,7 @@ function renderRoom(force: boolean): void {
           (on) => void opts!.send({ type: 'settings', remoteControl: on }),
         ),
       ),
+      audience(v),
       closeRoom(v),
     );
     return;
@@ -144,6 +149,64 @@ function renderRoom(force: boolean): void {
   if (v.deadline !== null && v.phase !== 'lobby') buttons.push(button('Skip ahead', () => send({ type: 'skip', phaseSeq: v.phaseSeq })));
   if (v.phase === 'recap') buttons.push(button('Play again', () => send({ type: 'playAgain' })));
   mount(room, share, h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), buttons.length ? h('div', { class: 'st-row' }, buttons) : h('p', { class: 'st-help' }, 'Nothing to do right now.')));
+}
+
+const AUDIENCE_LABELS: [Audience, string, string][] = [
+  ['kids', '🧒 Kids', 'Songs for children: simple words, silly stories.'],
+  ['family', '🏠 Family', 'Grown-up jokes anyone can hear. The default.'],
+  ['cheeky', '🌶️ Cheeky', 'Adult party humour. Asks first.'],
+];
+
+/**
+ * Who the words are for (Karaoke Duel's lyrics so far). Cheeky stays off until the host says yes to a
+ * warning, and it is never the default; a game in progress sings the new words from its next song.
+ */
+function audience(v: RoomView): HTMLElement {
+  const sec = h('section', { class: 'st-sec' }, h('h3', {}, 'Audience'));
+  const set = (to: Audience) => {
+    sfx('tap');
+    cheekyAsk = false;
+    void opts?.send({ type: 'settings', audience: to });
+    renderRoom(true);
+  };
+  const row = h(
+    'div',
+    { class: 'st-row', role: 'radiogroup', 'aria-label': 'Audience' },
+    AUDIENCE_LABELS.map(([id, label]) => {
+      const on = v.audience === id;
+      const b = h('button', { type: 'button', class: `st-btn${on ? '' : ' st-btn-quiet'}`, role: 'radio', 'aria-checked': String(on) }, label) as HTMLButtonElement;
+      b.addEventListener('click', () => {
+        if (on) return;
+        if (id !== 'cheeky') return set(id);
+        sfx('tap');
+        cheekyAsk = true;
+        renderRoom(true);
+      });
+      return b;
+    }),
+  );
+  sec.append(h('p', { class: 'st-help' }, `Who the song lyrics are for. ${AUDIENCE_LABELS.find(([id]) => id === v.audience)?.[2] ?? ''}`), row);
+  if (cheekyAsk) {
+    const keep = h('button', { type: 'button', class: 'st-btn st-btn-quiet' }, 'Keep it clean') as HTMLButtonElement;
+    const yes = h('button', { type: 'button', class: 'st-btn st-btn-danger' }, 'Turn on Cheeky') as HTMLButtonElement;
+    keep.addEventListener('click', () => {
+      sfx('tap');
+      cheekyAsk = false;
+      renderRoom(true);
+    });
+    yes.addEventListener('click', () => set('cheeky'));
+    sec.append(
+      h(
+        'div',
+        { class: 'st-confirm', role: 'alertdialog', 'aria-label': 'Turn on Cheeky lyrics?' },
+        h('p', { class: 'st-label' }, 'Cheeky lyrics are for grown-ups only'),
+        h('p', { class: 'st-help' }, 'Drinking, hangovers, bad dates, bathroom emergencies and innuendo (never explicit). Not for children, classrooms or a stream. Everyone in the room will hear and sing them.'),
+        h('div', { class: 'st-row' }, keep, yes),
+      ),
+    );
+    queueMicrotask(() => keep.focus());
+  }
+  return sec;
 }
 
 /**
