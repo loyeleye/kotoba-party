@@ -2,7 +2,7 @@
 // the odd mora dropped or swapped, its pitch contour is the melody in its own key (sometimes an
 // octave down) with a little wobble, and it comes in near the beat. Some bots have phones
 // that can't measure pitch; quiet bots type. Audience bots sing along now and then and vote
-// for a duelist.
+// for a duelist; a bot that loses a duel picks the next song.
 
 import type { KaraokeDuelView } from '../../../shared/src/modes/karaokeDuel/karaokeDuel.js';
 import { FRAME_MS, MAX_FRAMES } from '../../../shared/src/modes/karaokeDuel/scoring.js';
@@ -104,6 +104,12 @@ export function karaokeDuelPolicy(opts: KaraokeBotOptions = {}): ModePolicy {
       if (view.phase === 'reveal' && mine.canVote && game.duel) {
         const pickA = rnd('vote') < 0.5;
         out.push({ key: 'vote', move: { kind: 'vote', playerId: pickA ? game.duel.a : game.duel.b }, delayMs: delay('vote') });
+      }
+      // A losing bot picks the next song, or says "Surprise me".
+      if (view.phase === 'score' && mine.canPick && game.pick) {
+        const options = game.pick.options;
+        const i = Math.floor(rnd('pick') * (options.length + 1));
+        out.push({ key: `pick-${view.phaseSeq}`, move: { kind: 'pick', track: options[i]?.track ?? null }, delayMs: delay('vote') });
       }
       return out;
     },

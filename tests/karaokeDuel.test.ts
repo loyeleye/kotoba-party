@@ -10,8 +10,11 @@ import {
   CROWD_BONUS,
   LATE_MS,
   pickDuel,
+  pickSong,
   planTurns,
-  playableSongs,
+  songQueue,
+  TRACK_KEYS,
+  trackOf,
   type KaraokeDuelView,
   type KaraokeState,
 } from '../shared/src/modes/karaokeDuel/karaokeDuel.js';
@@ -33,7 +36,8 @@ import {
 } from '../shared/src/modes/karaokeDuel/scoring.js';
 import { parseChord } from '../stage/src/music/songs.js';
 import { TRACKS, isTrack } from '../stage/src/music/tracks.js';
-import { beatMs, lineMs, romajiMorae, SONGS, splitMorae, trackBeats, type SongLine } from '../shared/src/modes/karaokeDuel/songs.js';
+import { lyricSetsOf } from '../shared/src/modes/karaokeDuel/lyrics/index.js';
+import { beatMs, lineMs, romajiMorae, SONGS, splitMorae, trackBeats, withLyrics, type SongLine } from '../shared/src/modes/karaokeDuel/songs.js';
 import { EMPTY_CONTENT, type ModePlayer } from '../shared/src/modes/mode.js';
 import { isKana } from '../shared/src/japanese/kana.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -113,7 +117,7 @@ class Table {
   /** The current line and singer. */
   get turn() {
     const v = this.view();
-    return { no: v.turn!.no, singer: v.turn!.singerId, line: v.song!.lines[v.turn!.line]!, src: SONGS.find((x) => x.id === v.song!.id)!.lines[v.turn!.line]!, bpm: v.song!.bpm };
+    return { no: v.turn!.no, singer: v.turn!.singerId, line: v.song!.lines[v.turn!.line]!, src: withLyrics(SONGS.find((x) => x.id === v.song!.id)!, lyricSetsOf(v.song!.id).find((x) => x.id === this.st.lyricsId)).lines[v.turn!.line]!, bpm: v.song!.bpm };
   }
   sing(extra: Record<string, unknown> = {}) {
     const t = this.turn;
@@ -183,16 +187,24 @@ describe('Karaoke Duel: songs', () => {
     }
   });
 
-  it('plays every grown-up song before any children’s song', () => {
+  it('plays every grown-up song before any children’s song, each track once', () => {
     const t = new Table(2);
     expect(t.cmd('stage', { type: 'start', mode: 'karaoke-duel' }).changed).toBe(true);
+    const order = [...t.st.songOrder];
+    expect(new Set(order).size).toBe(order.length);
+    expect([...order].sort()).toEqual([...TRACK_KEYS].sort());
+    const kids = (key: string) => SONGS.filter((x) => trackOf(x) === key).every((x) => x.kids);
+    const grown = order.filter((x) => !kids(x));
+    expect(order.slice(0, grown.length)).toEqual(grown);
     t.timeout();
-    const order = t.st.songOrder;
-    const playable = SONGS.filter((x) => order.includes(x.id));
-    const grown = playable.filter((x) => !x.kids).map((x) => x.id);
-    expect(order).toHaveLength(new Set(SONGS.map((x) => x.group ?? x.id)).size);
-    expect([...order.slice(0, grown.length)].sort()).toEqual([...grown].sort());
-    expect(t.view().song!.style).toBe(SONGS.find((x) => x.id === order[0])!.style);
+    expect(trackOf(SONGS.find((x) => x.id === t.st.songId)!)).toBe(order[0]);
+    expect(t.st.songOrder).toEqual(order.slice(1));
+  });
+
+  it('mixes the children’s songs in for a kids audience', () => {
+    const kidsFirst = [0.01, 0.2, 0.5, 0.8, 0.99].some((r) => SONGS.find((x) => trackOf(x) === songQueue('kids', mulberry(Math.round(r * 1000)))[0])?.kids);
+    expect(kidsFirst).toBe(true);
+    expect([...songQueue('kids', mulberry(3))].sort()).toEqual([...TRACK_KEYS].sort());
   });
 
   it.each([
@@ -202,16 +214,18 @@ describe('Karaoke Duel: songs', () => {
     ['nemurenai-yoru', 2],
     ['getsuyoubi', 4],
     ['jikoshoukai-rap', 2],
-  ])('plays one version of %s, picked at random', (group, count) => {
+  ])('plays a random version of %s', (group, count) => {
     const versions = SONGS.filter((x) => x.group === group).map((x) => x.id);
     expect(versions).toHaveLength(count);
     const seen = new Set<string>();
-    for (const r of [0, 0.3, 0.6, 0.99]) {
-      const ids = playableSongs(() => r).map((x) => x.id);
-      expect(ids.filter((id) => versions.includes(id))).toHaveLength(1);
-      for (const id of ids) seen.add(id);
-    }
+    const random = mulberry(11);
+    for (let i = 0; i < 80; i++) seen.add(pickSong(group, 'family', random)!.songId);
     for (const id of versions) expect(seen.has(id), id).toBe(true);
+  });
+
+  it('a version id plays that version', () => {
+    const id = SONGS.find((x) => x.group && x.group !== x.id)!.id;
+    expect(pickSong(id, 'family', () => 0.99)!.songId).toBe(id);
   });
 
   it('splits kana into morae: small kana join, っ ん ー stand alone', () => {
@@ -474,7 +488,8 @@ describe('Karaoke Duel: a game', () => {
   });
 
   it('a continuous song runs on its track: lines trade off on time, late takes count, misses are marked', () => {
-    const song = SONGS.find((x) => x.form)!;
+    // A version id that isn't also its song's key, so this version plays.
+    const song = SONGS.find((x) => x.form && !TRACK_KEYS.includes(x.id))!;
     const t = new Table(2);
     t.start(1, [song.id]);
     const card = t.view();
@@ -586,6 +601,85 @@ describe('Karaoke Duel: a game', () => {
 });
 
 // ---- full system: bots play a whole game through the real server ----
+
+describe('Karaoke Duel: audience and the loser’s pick', () => {
+  it('the main stage sets the room’s audience; phones and bad values can’t', () => {
+    const t = new Table(2);
+    expect(t.s.audience).toBe('family');
+    expect(t.cmd('p1', { type: 'settings', audience: 'cheeky' }).error).toBe('not-allowed');
+    expect(t.cmd('stage', { type: 'settings', audience: 'rude' as never }).error).toBe('bad-command');
+    expect(t.cmd('stage', { type: 'settings' }).error).toBe('bad-command');
+    expect(t.cmd('stage', { type: 'settings', audience: 'cheeky' }).changed).toBe(true);
+    expect(t.cmd('stage', { type: 'settings', audience: 'cheeky' }).changed).toBe(false);
+    expect(t.s.remoteControl).toBe(false);
+    expect(viewFor(t.s, { kind: 'stage' }, EMPTY_CONTENT).audience).toBe('cheeky');
+  });
+
+  it.each(['kids', 'family', 'cheeky'] as const)('a %s room sings words for its audience', (audience) => {
+    const random = mulberry(5);
+    for (const track of TRACK_KEYS) {
+      for (let i = 0; i < 6; i++) {
+        const { songId, lyricsId } = pickSong(track, audience, random)!;
+        const sets = lyricSetsOf(songId);
+        if (lyricsId) expect(sets.find((x) => x.id === lyricsId)?.audience).toBe(audience);
+        // A version's own lines are family words: only a family room (or a song with no sets for it) sings them.
+        else expect(audience === 'family' || !SONGS.filter((x) => trackOf(x) === track).some((v) => lyricSetsOf(v.id).some((x) => x.audience === audience)), `${track} ${audience}`).toBe(true);
+      }
+    }
+  });
+
+  it('the duel’s loser picks the next song from the next three; the other can’t; no pick after the last round', () => {
+    const t = new Table(2);
+    t.start(3);
+    t.timeout();
+    while (t.s.phase === 'answer') {
+      if (t.turn.singer === 'p1') t.sing();
+      else t.timeout();
+    }
+    expect(t.s.phase).toBe('score');
+    const pick = t.view('p2').pick!;
+    expect(pick.chooserId).toBe('p2');
+    expect(pick.options).toHaveLength(3);
+    expect(pick.options.map((x) => x.track)).toEqual(t.st.songOrder.slice(0, 3));
+    expect(t.view('p2').mine!.canPick).toBe(true);
+    expect(t.view('p1').mine!.canPick).toBe(false);
+    expect(t.play('p1', { kind: 'pick', track: pick.options[0]!.track }).error).toBe('not-eligible');
+    expect(t.play('p2', { kind: 'pick', track: 'nope' }).error).toBe('bad-move');
+    const chosen = pick.options[2]!.track;
+    expect(t.play('p2', { kind: 'pick', track: chosen }).error).toBeUndefined();
+    expect(t.play('p2', { kind: 'pick', track: chosen }).error).toBe('already-answered');
+    expect(t.view().pick).toMatchObject({ chosen, decided: true });
+    t.timeout();
+    expect(t.s.phase).toBe('prompt');
+    expect(trackOf(SONGS.find((x) => x.id === t.st.songId)!)).toBe(chosen);
+    expect(t.st.songOrder).not.toContain(chosen);
+    expect(t.view().pick).toBeNull();
+    // "Surprise me" plays the next in the queue.
+    t.timeout();
+    while ((t.s.phase as string) === 'answer') t.timeout();
+    const next = t.st.songOrder[0];
+    const chooser = t.view().pick!.chooserId;
+    expect(t.play(chooser, { kind: 'pick', track: null }).error).toBeUndefined();
+    t.timeout();
+    expect(trackOf(SONGS.find((x) => x.id === t.st.songId)!)).toBe(next);
+    t.timeout();
+    while ((t.s.phase as string) === 'answer') t.timeout();
+    expect(t.s.phase).toBe('score');
+    expect(t.view().pick).toBeNull();
+  });
+
+  it('never repeats a track until every one has played', () => {
+    const t = new Table(2);
+    expect(t.cmd('stage', { type: 'start', mode: 'karaoke-duel', rounds: 12 }).changed).toBe(true);
+    const seen: string[] = [];
+    for (let i = 0; i < 2000 && t.s.phase !== 'recap'; i++) {
+      if (t.s.phase === 'prompt' && seen.length < t.st.round) seen.push(trackOf(SONGS.find((x) => x.id === t.st.songId)!));
+      t.timeout();
+    }
+    expect(seen).toHaveLength(12);
+    expect(new Set(seen.slice(0, Math.min(12, TRACK_KEYS.length))).size).toBe(Math.min(12, TRACK_KEYS.length));
+  });
+});
 
 describe('Karaoke Duel: bots play a game end to end', () => {
   let ctx: Awaited<ReturnType<typeof startServer>>;

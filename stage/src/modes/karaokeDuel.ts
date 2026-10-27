@@ -183,6 +183,7 @@ function header(view: RoomView, game: KaraokeDuelView): HTMLElement | null {
       h('span', { class: `kd-name seat-${seatOf(view, duel.b)}` }, nameOf(view, duel.b)),
     ),
     game.doubled ? h('span', { class: 'kd-double' }, 'Final song: points ×2') : null,
+    song.audience === 'kids' ? h('span', { class: 'kd-aud' }, '🧒 Kids’ lyrics') : song.audience === 'cheeky' ? h('span', { class: 'kd-aud cheeky' }, '🌶️ Cheeky lyrics') : null,
     soundButton(),
   );
 }
@@ -356,6 +357,25 @@ function result(view: RoomView, game: KaraokeDuelView): HTMLElement {
       ),
     ),
     duelBoard(view, game),
+    nextPick(view, game),
+  );
+}
+
+/** The loser choosing the next song on their phone: the three choices, then the one picked. */
+function nextPick(view: RoomView, game: KaraokeDuelView): HTMLElement | null {
+  const pick = game.pick;
+  if (!pick) return null;
+  const who = nameOf(view, pick.chooserId);
+  const title = pick.decided ? (pick.options.find((x) => x.track === pick.chosen)?.title.en ?? null) : null;
+  return h(
+    'div',
+    { class: 'kd-pick' },
+    h('p', { class: 'kd-pick-head' }, pick.decided ? (title ? `${who} picked the next song` : `${who} says: surprise me! 🎲`) : `${who} is picking the next song…`),
+    h(
+      'div',
+      { class: 'kd-pick-row' },
+      pick.options.map((o) => h('span', { class: `kd-pick-song${pick.decided && pick.chosen === o.track ? ' chosen' : pick.decided ? ' out' : ''}`, lang: 'ja' }, o.title.text, h('span', { class: 'kd-song-en' }, ` ${o.title.en}`))),
+    ),
   );
 }
 

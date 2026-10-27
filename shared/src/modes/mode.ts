@@ -25,7 +25,7 @@ import type {
   TopicPack,
 } from '../../../content/src/types.js';
 import type { WriteKanji, WriteWord } from '../../../content/src/kanji/kanji.js';
-import type { ModeId, Phase, Viewer } from '../protocol.js';
+import type { Audience, ModeId, Phase, Viewer } from '../protocol.js';
 
 /** All the content a mode may draw on. Plain arrays, so tests can pass small fixtures. */
 export interface ContentLibrary {
@@ -99,6 +99,8 @@ export interface ModeContext {
   readonly now: number;
   /** The room's VIP (for VIP-only moves such as hiding an answer). Optional so test contexts can leave it out. */
   readonly vipId?: string | null;
+  /** The host's Audience setting (family when left out). */
+  readonly audience?: Audience;
   readonly content: ContentLibrary;
   random(): number;
   newId(): string;

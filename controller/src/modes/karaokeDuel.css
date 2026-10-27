@@ -33,4 +33,7 @@
 .kdp-sheet-line p { margin: 0; }
 .kdp-sheet-jp { font-size: 22px; font-weight: 800; }
 .kdp-sheet-ro { color: var(--warn); font-size: 15px; }
+.kdp-pick { display: grid; gap: 8px; }
+.kdp-pick-song { display: grid; gap: 2px; text-align: center; font-size: 20px; font-weight: 800; padding: 14px; }
+.kdp-pick-song .hint { font-size: 14px; font-weight: 400; }
 .kdp-vote { font-size: 24px; font-weight: 800; text-align: center; padding: 22px; }
