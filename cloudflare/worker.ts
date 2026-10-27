@@ -51,7 +51,7 @@ export default {
       if (!isRoomCode(code)) return json(404, { error: 'room-not-found' });
       const action = m[2];
       if (!action && req.method === 'GET') return toRoom(env, code, 'info', {}, req);
-      if (action === 'join' && req.method === 'POST') return toRoom(env, code, 'join', {}, await limited(req));
+      if (action === 'join' && req.method === 'POST') return toRoom(env, code, 'join', { base }, await limited(req));
       if (action === 'watch' && req.method === 'POST') return toRoom(env, code, 'watch', { base }, new Request('https://room/', { method: 'POST' }));
       if (action === 'qr.svg' && req.method === 'GET') return toRoom(env, code, 'qr.svg', { base }, req);
       if (action === 'audio' && m[3] && req.method === 'GET') return toRoom(env, code, 'audio', { id: decodeURIComponent(m[3]) }, req);

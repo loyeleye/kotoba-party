@@ -168,6 +168,8 @@ export interface JoinResponse {
   rejoined: boolean;
   /** The server can turn speech into text (POST /api/rooms/:code/speech). False: phones type or tap. */
   speech?: boolean;
+  /** The address to invite friends to (PUBLIC_URL, else this server's own), e.g. https://tanoshi.s.gy. */
+  site?: string;
 }
 
 export type JoinError = 'room-not-found' | 'room-full' | 'game-in-progress' | 'name-taken' | 'bad-name';

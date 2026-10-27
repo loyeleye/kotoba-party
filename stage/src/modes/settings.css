@@ -30,3 +30,5 @@
 .st-panel .inv-purpose { font-size: 16px; }
 .st-panel .inv-url { grid-column: 1 / -1; grid-row: 2; font-size: 17px; padding: 6px 10px; }
 .st-panel .inv-btn { min-width: 112px; min-height: 42px; padding: 4px 16px; font-size: 18px; }
+.st-panel .inv-pun, .st-panel .inv-pun-host { font-size: 17px; }
+.st-panel .inv-pun-jp { font-size: 22px; }

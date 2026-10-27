@@ -5,7 +5,7 @@
 // Screens re-render on every change to the room, so the "Copied" state lives here, not in the
 // button: a row drawn again within COPIED_MS of a copy still shows it.
 
-import { h } from './dom.js';
+import { h, ruby } from './dom.js';
 
 export interface InviteLinks {
   phone: string;
@@ -13,6 +13,27 @@ export interface InviteLinks {
 }
 
 const COPIED_MS = 2000;
+
+/**
+ * Short-link hosts that are also a joke when read aloud: tanoshi.s.gy is たのしすぎ, "way too
+ * fun" (s.gy read as すぎ). The invite card says it in front of the links that use one.
+ */
+const PUNS: Record<string, { jp: { text: string; furigana: [string, string][] }; en: string }> = {
+  'tanoshi.s.gy': { jp: { text: '楽しすぎ！', furigana: [['楽', 'たの'], ['しすぎ！', '']] }, en: 'Way too fun!' },
+};
+
+/** The joke for the links' host, if it has one. */
+export function pun(links: InviteLinks): HTMLElement | null {
+  let host: string;
+  try {
+    host = new URL(links.phone).host;
+  } catch {
+    return null;
+  }
+  const p = PUNS[host];
+  if (!p) return null;
+  return h('p', { class: 'inv-pun' }, h('span', { class: 'inv-pun-host', translate: 'no' }, host), h('span', { 'aria-hidden': 'true' }, ' = '), ruby(p.jp, { class: 'inv-pun-jp' }), ' ', h('span', { class: 'inv-pun-en' }, p.en));
+}
 let copied: { url: string; ok: boolean; at: number } | null = null;
 
 /** The room's links on `origin` (for example https://kotoba.party). */
@@ -62,6 +83,7 @@ export function invite(links: InviteLinks, code: string, heading = true): HTMLEl
     { class: 'inv', 'aria-label': 'Invite friends' },
     heading ? h('h3', { class: 'inv-title' }, 'Invite friends') : null,
     heading ? h('p', { class: 'inv-lead' }, 'For friends who can’t scan the code, or are playing from somewhere else.') : null,
+    pun(links),
     shareRow('Phone link', 'Joins the game as a player', links.phone, `Join my Kotoba Party game: room ${code}`),
     shareRow('Stage screen link', 'Shows the game on their own screen', links.stage, `Watch our Kotoba Party game on your own screen: room ${code}`),
     h('p', { class: 'inv-status', role: 'status', 'aria-live': 'polite' }),

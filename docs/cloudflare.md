@@ -39,7 +39,7 @@ access). Without that access the dashboard still looks connected, but no build e
 | `KOTOBA_HOST_MODEL`, `KOTOBA_JUDGE_MODEL` | `vars` in `wrangler.jsonc` | Override the Claude model, as on Node. |
 | `VOICEVOX_URL` | `vars` in `wrangler.jsonc` | A VOICEVOX engine reachable from the internet, for host voices. Without it lines show as subtitles. |
 | `READER_URL`, `READER_TOKEN` | `vars` for the URL, `wrangler secret put READER_TOKEN` | The reader service for kanji answers (below). Without it answers are compared as written. |
-| `PUBLIC_URL` | `vars` in `wrangler.jsonc` | The address the QR code points at. Defaults to the address the stage was opened on. |
+| `PUBLIC_URL` | `vars` in `wrangler.jsonc` | The address the QR code and the invite links (stage and phones) point at. Defaults to the address the stage was opened on. Set to `https://tanoshi.s.gy`, a short link that keeps the path and `?code=`, and the invite card adds its joke, 楽しすぎ！ For `npm run cf:dev`, put `PUBLIC_URL=` in `.dev.vars` so local rooms use the local address. |
 | `STT_URL`, `STT_MODEL`, `STT_TOKEN` | `vars` for the URL and model, `wrangler secret put STT_TOKEN` | Spoken answers ([speech.md](speech.md)). `workers-ai` (the default here) runs Whisper on Workers AI through the `AI` binding; a URL uses a self-hosted Whisper server instead. Empty: phones type or tap. Audio never goes to Google. |
 
 After changing `vars`, run `npm run cf:deploy` again. Secrets take effect at once.
