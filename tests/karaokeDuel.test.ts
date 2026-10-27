@@ -456,6 +456,7 @@ describe('Karaoke Duel: a game', () => {
     expect(turns).toBe(8);
     expect(t.s.phase).toBe('score');
     expect(t.view().result?.sung).toEqual({ p1: 400, p2: 400 });
+    expect(t.view().result?.at).toBeTypeOf('number');
     expect(t.view().result?.winners.sort()).toEqual(['p1', 'p2']);
     expect(t.score('p1')).toBe(400);
     t.timeout(); // round 2: the final song
