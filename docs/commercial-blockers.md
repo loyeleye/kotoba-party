@@ -51,7 +51,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
 | 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
 | 25 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
-| 26 | Mureka (AI music generator, Premium plan bought 2026-10-27) for Karaoke Duel instrumentals | Not used in the game yet; planned for new Karaoke Duel tracks | ❓ | Read Mureka's own terms (couldn't be fetched); keep the subscription active while generating, save each track's generation record, and plan to replace AI tracks with commissioned music before selling |
+| 26 | Mureka (AI music generator: API credits and a Premium web plan, 2026-10-27) for Karaoke Duel backings | `stage/assets/music/night-drive-*.mp3` (tracks.ts licence `'Mureka'`); more songs to follow | ⚠️ ❓ | Paid output is ours but must be labelled AI (done in the credits). The terms also limit use of the *service* to personal, non-commercial use without Mureka's written consent: get that consent in writing, or replace the tracks with commissioned music, before selling. The API platform's own terms weren't readable |
 
 ## Details
 
@@ -343,8 +343,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
     [Hip Hop Old School Chill Themes](https://opengameart.org/content/hiphop-old-school-chill-themes));
     Cheers For Starlight (Chloe Wolfe,
     [OGA](https://opengameart.org/content/cute-bytes-ost-cheers-for-starlight)).
-  - CC BY 3.0: Nights In June (KLY, [OGA](https://opengameart.org/content/nights-in-june)). Same
-    conditions as 4.0 for us (credit, link, note of changes); the credit links the 3.0 licence.
+  - Nights In June (KLY, CC BY 3.0) was Night Drive's track until 2026-10-27; it was replaced by
+    two Mureka backings (row 26) and its file removed.
   - Skipped as candidates: anything CC BY-SA or GPL (Cheerful Upbeat Tune, Cuddle Puzzle), because
     share-alike could reach the game itself.
   - Lyrics and melodies sung over them are ours (row 13). Before selling, Ladi plans to commission
@@ -425,24 +425,37 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 26. Mureka (AI music)
 
-- **What:** Ladi bought Mureka Premium on 2026-10-27 to make instrumentals for Karaoke Duel. No
-  Mureka audio is in the game yet. When some is added, list each file in `stage/src/music/tracks.ts`
-  and under row 22.
-- **Terms: unread (❓).** On 2026-10-27, https://www.mureka.ai/terms and the May 13, 2026 terms PDF
-  (https://www.mureka.ai/static/terms-20260513.pdf) didn't resolve from our sandbox, so nothing here
-  has been checked against Mureka's own text. Third-party summaries read the same day say:
-  - Paid-plan users own their output, and free-tier output belongs to Mureka (non-commercial only).
-  - Commercial rights may apply only to tracks made while the subscription is active.
-  - Mureka keeps a broad, irrevocable licence to user output.
-  - Copyright registration isn't guaranteed.
-  - A lawsuit over the service is reported as pending.
-- **Risks for a sold game:**
-  - Purely AI-made music generally can't be copyrighted in the US, so others could reuse it.
-  - Stores such as Steam ask for an AI-content disclosure.
-  - Don't register the tracks with Content ID, so that streamers don't get claims.
-- **To sell:** read Mureka's terms on a normal browser and record the date read. Keep each track's
-  generation record. Ladi plans to commission human-made songs before selling (see the commission
-  briefs), which would replace these tracks.
+- **What:** Ladi bought Mureka Premium (web) on 2026-10-27, then API credits (1,000 credits, 30 per
+  request, two takes each). Karaoke Duel's backings are generated through the API (prompts approved by
+  Ladi). In the game: `stage/assets/music/night-drive-satnav.mp3` and `night-drive-asleep.mp3`
+  (Night Drive versions A and B: Mureka task 168616599289857's two takes, model mureka-9.5;
+  generation records are kept in project files `tools/mureka/takes/`). Each new Mureka file must be
+  listed in `tracks.ts` with licence `'Mureka'` and added here.
+- **Terms read (2026-10-27):** Mureka Terms of Service, released and effective May 13, 2026
+  (https://www.mureka.ai/static/terms-20260513.pdf), read in full. The API platform
+  (https://platform.mureka.ai) has no separate terms page that loads without a browser, so it's
+  assumed to fall under the same terms (❓ until confirmed). What matters for us:
+  - **Ownership (§3(e)):** a user who bought credits or a paid plan owns the output, including any
+    IP in it. Free-tier output belongs to Mureka and is for non-commercial use with attribution. We
+    generate only on the paid API.
+  - **Mureka's licence to our output (§3(e)):** we grant Mureka an unrestricted, irrevocable,
+    royalty-free licence to use our output, including commercially. So Mureka could reuse or
+    publish our tracks.
+  - **AI label (§3(e)):** we must disclose or label AI-generated output where laws and platform
+    policies require it. The credits say "AI-generated music made for Kotoba Party with mureka.ai",
+    and stores such as Steam also ask for an AI-content disclosure.
+  - **Not unique and maybe not copyrightable (§3(f), (g)):** output may resemble other users'
+    tracks, and copyright registration isn't guaranteed.
+  - **⚠️ Commercial use of the service (§3(a), §5(14)):** the licence to *use the service* is "for
+    your personal, non-commercial use", and users may not use the service "for any commercial or
+    unauthorized purpose" without Mureka's express written consent. This sits awkwardly with the
+    ownership clause. For a free game it's fine; before selling, get written consent from Mureka
+    (or confirm the API terms allow it), or replace the tracks.
+- **Other risks for a sold game:** purely AI-made music generally can't be copyrighted in the US, so
+  others could reuse it. Don't register the tracks with Content ID, so that streamers don't get claims.
+- **To sell:** get Mureka's written OK for commercial use (or API terms that grant it), keep the
+  AI label and the generation records, and file the store's AI disclosure. Ladi plans to commission
+  human-made songs before selling (see the commission briefs), which would replace these tracks.
 
 ## AI art: non-commercial vs commercial
 

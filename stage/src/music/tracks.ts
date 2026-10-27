@@ -1,5 +1,6 @@
 // Recorded tracks: music files we play instead of a synth song where a real recording fits
-// better. Each one's licence is logged in docs/commercial-blockers.md (row 22).
+// better. Each one's licence is logged in docs/commercial-blockers.md (row 22; the AI-made Mureka
+// tracks in row 26).
 
 import type { SongId } from './songs.js';
 
@@ -28,7 +29,8 @@ export const TRACK_IDS = [
   // Shodō Taikai's gallery round (Ladi's pick).
   'japanese-lofi',
   // Karaoke Duel's grown-up songs: one instrumental each, sung over whole (songs.ts `track`).
-  'nights-in-june',
+  'night-drive-satnav',
+  'night-drive-asleep',
   'past-sadness',
   'jrpg-rock',
   'hot-springs',
@@ -43,7 +45,8 @@ export type TrackId = (typeof TRACK_IDS)[number];
 export interface Track {
   title: string;
   author: string;
-  licence: 'CC0' | 'CC BY 4.0' | 'CC BY 3.0';
+  /** 'Mureka': AI-generated for us on a paid Mureka plan (we own the output; it must be labelled AI). */
+  licence: 'CC0' | 'CC BY 4.0' | 'CC BY 3.0' | 'Mureka';
   /** The track's own page, for the credits. */
   source: string;
   url: string;
@@ -57,6 +60,7 @@ export interface Track {
 
 const OGA = 'https://opengameart.org/content/';
 const HOLIZNA = `${OGA}happy-pop-electronic-collection`;
+const MUREKA = 'https://www.mureka.ai';
 const macleod = (isrc: string) => `https://incompetech.com/music/royalty-free/index.html?isrc=${isrc}`;
 const file = (name: string) => `/stage/assets/music/${name}.mp3`;
 
@@ -112,8 +116,10 @@ export const TRACKS: Record<TrackId, Track> = {
   // Karaoke Duel. Each file is cut to the bars the song uses (re-encoded at 128 kbps), so `start` is
   // its first downbeat and the song's `segments` count bars from there. No loop: the duel plays
   // stretches of it back to back (karaokeAudio.ts playSong).
-  // Night Drive: city-pop groove, 120 bpm, B minor. Cut from 8.0 s (orig. bar 4) to 65.0 s.
-  'nights-in-june': { title: 'Nights In June', author: 'KLY', licence: 'CC BY 3.0', source: `${OGA}nights-in-june`, url: file('nights-in-june'), gainDb: -3.5, fallback: 'gentle' },
+  // Night Drive: two AI-made city-pop backings (Mureka, 2026-10-27), each sung over by its own version of
+  // the song (songs.ts). Each file is already the song's bars in order at exactly 100 bpm, D major.
+  'night-drive-satnav': { title: 'Night Drive (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('night-drive-satnav'), gainDb: 0.9, fallback: 'gentle' },
+  'night-drive-asleep': { title: 'Night Drive (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('night-drive-asleep'), gainDb: 0.6, fallback: 'gentle' },
   // Harbour in the Rain: slow piano, 72 bpm, A minor (a Dm7–G–Am7–C loop throughout). The first 128 s.
   // Very quiet (−28.7 LUFS), so the gain stops just short of clipping its loudest peak.
   'past-sadness': { title: 'Past Sadness', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1900007'), url: file('past-sadness'), gainDb: 11.5, fallback: 'gentle' },
@@ -144,6 +150,7 @@ export function creditFor(id: TrackId): string {
   const t = TRACKS[id];
   const who = t.author === 'Kevin MacLeod' ? 'Kevin MacLeod (incompetech.com)' : t.author;
   if (t.licence === 'CC0') return `"${t.title}" by ${who} (CC0) · ${t.source}`;
+  if (t.licence === 'Mureka') return `"${t.title}" by ${who} · AI-generated music made for Kotoba Party with mureka.ai`;
   const v = ccBy(t);
   return `"${t.title}" by ${who} · ${t.source} · Licensed under Creative Commons: By Attribution ${v.name} · ${v.url} · ${t.loop ? 'Looped and filtered' : 'Cut and filtered'} for the game`;
 }
@@ -165,6 +172,7 @@ export function creditSummary(perLine = 3): string[] {
     const titles = ids.map((id) => `"${TRACKS[id].title}"`).join(', ');
     const where = author === 'Kevin MacLeod' ? 'incompetech.com' : 'OpenGameArt.org';
     const t = TRACKS[ids[0]!];
+    if (t.licence === 'Mureka') return `${titles}: AI-generated music made for Kotoba Party with mureka.ai`;
     if (t.licence === 'CC0') return `${titles} by ${author} (${where}, CC0)`;
     const v = ccBy(t);
     return `${titles} by ${author} (${where}), licensed under Creative Commons: By Attribution ${v.name} (${v.url.replace('https://', '')}), ${t.loop ? 'looped' : 'cut'} and filtered for the game`;

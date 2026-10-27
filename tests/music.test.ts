@@ -57,7 +57,9 @@ describe('songs', () => {
     for (const [i, id] of TRACK_IDS.entries()) {
       const t = TRACKS[id];
       expect(TRACK_CREDITS[i]).toContain(`"${t.title}" by ${t.author}`);
-      if (t.licence !== 'CC0') expect(TRACK_CREDITS[i]).toMatch(/By Attribution [34]\.0.*creativecommons\.org\/licenses\/by\/[34]\.0.*(Looped|Cut) and filtered/);
+      // AI-made tracks are labelled as AI, as Mureka's terms ask.
+      if (t.licence === 'Mureka') expect(TRACK_CREDITS[i]).toContain('AI-generated');
+      else if (t.licence !== 'CC0') expect(TRACK_CREDITS[i]).toMatch(/By Attribution [34]\.0.*creativecommons\.org\/licenses\/by\/[34]\.0.*(Looped|Cut) and filtered/);
     }
     const summary = creditSummary().join('\n');
     for (const t of Object.values(TRACKS)) expect(summary).toContain(`"${t.title}"`);

@@ -11,6 +11,7 @@ import {
   LATE_MS,
   pickDuel,
   planTurns,
+  playableSongs,
   type KaraokeDuelView,
   type KaraokeState,
 } from '../shared/src/modes/karaokeDuel/karaokeDuel.js';
@@ -186,11 +187,24 @@ describe('Karaoke Duel: songs', () => {
     const t = new Table(2);
     expect(t.cmd('stage', { type: 'start', mode: 'karaoke-duel' }).changed).toBe(true);
     t.timeout();
-    const grown = SONGS.filter((x) => !x.kids).map((x) => x.id);
     const order = t.st.songOrder;
-    expect(order).toHaveLength(SONGS.length);
+    const playable = SONGS.filter((x) => order.includes(x.id));
+    const grown = playable.filter((x) => !x.kids).map((x) => x.id);
+    expect(order).toHaveLength(new Set(SONGS.map((x) => x.group ?? x.id)).size);
     expect([...order.slice(0, grown.length)].sort()).toEqual([...grown].sort());
     expect(t.view().song!.style).toBe(SONGS.find((x) => x.id === order[0])!.style);
+  });
+
+  it('plays one version of a song with versions, picked at random', () => {
+    const versions = SONGS.filter((x) => x.group === 'yoru-no-drive').map((x) => x.id);
+    expect(versions).toHaveLength(2);
+    const seen = new Set<string>();
+    for (const r of [0, 0.3, 0.6, 0.99]) {
+      const ids = playableSongs(() => r).map((x) => x.id);
+      expect(ids.filter((id) => versions.includes(id))).toHaveLength(1);
+      for (const id of ids) seen.add(id);
+    }
+    for (const id of versions) expect(seen.has(id), id).toBe(true);
   });
 
   it('splits kana into morae: small kana join, っ ん ー stand alone', () => {
