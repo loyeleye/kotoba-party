@@ -1,7 +1,10 @@
 // The stage's one AudioContext, shared by the music, the sound effects and Karaoke Duel's backing
 // track. Browsers only start audio after a click or key press on the page, so the first one unlocks
 // it. Mute is one switch for everything; it and the settings panel's volumes are remembered in this
-// browser.
+// browser. When several tabs of this browser show the same room, only one of them makes sound
+// (shared/src/audioTabs.ts): the others keep playing along silently, so a switch is seamless.
+
+import { hasTabAudio, onTabAudio } from '../../shared/src/audioTabs.js';
 
 type Ctor = typeof AudioContext;
 const AudioCtor: Ctor | undefined =
@@ -71,7 +74,7 @@ export function getSound(): Sound | null {
   if (!sound) {
     const ctx = new AudioCtor();
     const master = ctx.createGain();
-    master.gain.value = muted ? 0 : curve(volumes.master);
+    master.gain.value = silent() ? 0 : curve(volumes.master);
     // A gentle limiter so stacked parts never clip.
     const limiter = ctx.createDynamicsCompressor();
     limiter.threshold.value = -10;
@@ -122,6 +125,19 @@ export function onAudioReady(fn: () => void): void {
 
 export const isMuted = (): boolean => muted;
 
+/** True while another tab of this browser has the sound for this room. */
+export const isAway = (): boolean => !hasTabAudio();
+
+/** Nothing should be heard from this screen: muted, or another tab has the sound. */
+export const silent = (): boolean => muted || isAway();
+
+function setMaster(): void {
+  if (!sound || !masterGain) return;
+  const now = sound.ctx.currentTime;
+  masterGain.gain.cancelScheduledValues(now);
+  masterGain.gain.setTargetAtTime(silent() ? 0 : curve(volumes.master), now, 0.05);
+}
+
 export function setMuted(value: boolean): void {
   muted = value;
   try {
@@ -129,13 +145,19 @@ export function setMuted(value: boolean): void {
   } catch {
     // private mode: not remembered
   }
-  if (sound && masterGain) {
-    const now = sound.ctx.currentTime;
-    masterGain.gain.cancelScheduledValues(now);
-    masterGain.gain.setTargetAtTime(value ? 0 : curve(volumes.master), now, 0.05);
-  }
+  setMaster();
   muteListeners.forEach((f) => f(value));
 }
+
+const awayListeners: ((away: boolean) => void)[] = [];
+/** Runs `fn` when another tab takes the sound (true) or hands it back (false). */
+export function onAwayChange(fn: (away: boolean) => void): void {
+  awayListeners.push(fn);
+}
+onTabAudio((active) => {
+  setMaster();
+  awayListeners.forEach((f) => f(!active));
+});
 
 export const getVolumes = (): Volumes => ({ ...volumes });
 
@@ -147,7 +169,7 @@ export function setVolume(id: VolumeId, value: number): void {
   } catch {
     // private mode: not remembered
   }
-  const node = { master: muted ? null : masterGain, music: musicGain, sfx: sfxGain, host: null }[id];
+  const node = { master: silent() ? null : masterGain, music: musicGain, sfx: sfxGain, host: null }[id];
   if (sound && node) node.gain.setTargetAtTime(curve(volumes[id]), sound.ctx.currentTime, 0.03);
   volumeListeners.forEach((f) => f(getVolumes()));
 }
@@ -157,7 +179,7 @@ export function onVolumeChange(fn: (v: Volumes) => void): void {
 }
 
 /** The level for a host's voice line or the browser's read-aloud speech (an element's volume, 0 to 1). */
-export const voiceVolume = (): number => (muted ? 0 : curve(volumes.master) * curve(volumes.host));
+export const voiceVolume = (): number => (silent() ? 0 : curve(volumes.master) * curve(volumes.host));
 
 export function onMuteChange(fn: (muted: boolean) => void): void {
   muteListeners.push(fn);
