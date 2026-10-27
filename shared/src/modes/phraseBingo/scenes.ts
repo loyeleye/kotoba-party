@@ -1,5 +1,8 @@
 // Phrase Bingo Theater scenes: a setting, roles for the actors, a twist to spark the improv,
-// and the secret phrases actors are dealt. Three scenes per topic pack.
+// and the secret phrases actors are dealt. Three scenes per topic pack, plus one Kids and one
+// Cheeky scene per pack for the host's Audience setting. Those reuse the family scenes' phrases
+// (same ids, same text), so only the setting, roles and twist change: the Japanese drilled is
+// the same whoever is in the room.
 //
 // Draft content (status 'draft'): a fluent speaker should check every phrase, role and twist.
 // Phrases marked `from` copy a topic-pack phrase; when that pack is loaded the pack's own text
@@ -8,6 +11,7 @@
 // sentences, n4 = one N4 pattern each (〜そう, 〜たら, potential, 〜てもらえますか, 〜ほうがいい).
 
 import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
+import type { Audience } from '../../protocol.js';
 
 export interface ScenePhrase {
   /** Stable id, e.g. `pb.konbini.irasshaimase`. */
@@ -23,6 +27,8 @@ export interface ScenePhrase {
 export interface Scene {
   id: string;
   packId: 'food' | 'family' | 'travel';
+  /** Who the scene is for (family when left out). */
+  audience?: Audience;
   emoji: string;
   setting: JpText;
   /** One line to get the improv going. English, so every level gets the joke. */
@@ -36,7 +42,7 @@ export interface Scene {
 const t = (text: string, kana: string, en: string): JpText => ({ text, kana, en });
 const role = (kana: string, en: string): JpText => ({ text: kana, kana, en });
 
-export const SCENES: readonly Scene[] = [
+const FAMILY_SCENES: readonly Scene[] = [
   // ---- food ----
   {
     id: 'konbini',
@@ -275,3 +281,117 @@ export const SCENES: readonly Scene[] = [
     ],
   },
 ];
+
+const FAMILY_PHRASES = new Map(FAMILY_SCENES.flatMap((x) => x.phrases).map((p) => [p.id, p]));
+
+/** Phrases from the family scenes, by id. */
+function reuse(...ids: string[]): ScenePhrase[] {
+  return ids.map((id) => {
+    const p = FAMILY_PHRASES.get(id);
+    if (!p) throw new Error(`Phrase Bingo: no family scene phrase ${id}`);
+    return p;
+  });
+}
+
+const AUDIENCE_SCENES: readonly Scene[] = [
+  // ---- kids ----
+  {
+    id: 'kyuushoku',
+    packId: 'food',
+    audience: 'kids',
+    emoji: '🍛',
+    setting: t('がっこうの きゅうしょく', 'がっこうの きゅうしょく', 'School lunch'),
+    twist: "It's curry day, the pot is empty, and somebody has an orange moustache.",
+    roles: [role('きゅうしょく とうばん', 'the lunch monitor'), role('せんせい', 'the teacher'), role('くいしんぼう', 'the kid who is always hungry'), role('てんこうせい', 'the new kid')],
+    status: 'draft',
+    phrases: reuse(
+      'pb.dinner.itadakimasu', 'pb.dinner.gochisousama', 'pb.dinner.oishii', 'pb.dinner.dame',
+      'pb.dinner.dare', 'pb.dinner.mou-hitotsu', 'pb.dinner.yasai', 'pb.konbini.onaka', 'pb.ramen.mizu', 'pb.ramen.issho', 'pb.dinner.shukudai', 'pb.konbini.tabete-ii',
+      'pb.dinner.taberarenai', 'pb.ramen.taberaremasu', 'pb.dinner.oishisou',
+    ),
+  },
+  {
+    id: 'tanjoubi',
+    packId: 'family',
+    audience: 'kids',
+    emoji: '🎂',
+    setting: t('たんじょうび パーティー', 'たんじょうび パーティー', 'A birthday party'),
+    twist: "The candles won't blow out, and the cat is wearing the party hat.",
+    roles: [role('たんじょうびの こ', 'the birthday kid'), role('おかあさん', 'Mum'), role('ともだち', 'a friend who came early'), role('ねこ', 'the cat in the party hat')],
+    status: 'draft',
+    phrases: reuse(
+      'pb.parents.sugoi', 'pb.konbini.arigatou', 'pb.parents.douzo', 'pb.dinner.oishii',
+      'pb.parents.omiyage', 'pb.hanami.shashin', 'pb.hanami.juice', 'pb.dinner.mou-hitotsu', 'pb.dinner.ippai', 'pb.parents.inu', 'pb.parents.shumi', 'pb.hanami.okureta',
+      'pb.parents.oishisou-cake', 'pb.hanami.dare', 'pb.parents.mata-kitara',
+    ),
+  },
+  {
+    id: 'ensoku',
+    packId: 'travel',
+    audience: 'kids',
+    emoji: '🐼',
+    setting: t('どうぶつえんへ えんそく', 'どうぶつえんへ えんそく', 'A class trip to the zoo'),
+    twist: 'A panda has climbed onto the bus and wants to be in the class photo.',
+    roles: [role('せんせい', 'the teacher'), role('はんちょう', 'the group leader'), role('まいごの こ', 'the kid who keeps getting lost'), role('パンダ', 'the panda')],
+    status: 'draft',
+    phrases: reuse(
+      'pb.taxi.sugoi', 'pb.platform.abunai', 'pb.taxi.migi', 'pb.taxi.hidari', 'pb.platform.sumimasen',
+      'pb.platform.toire', 'pb.taxi.shashin', 'pb.taxi.issho-shashin', 'pb.taxi.tomete', 'pb.taxi.ikura', 'pb.platform.oriru', 'pb.ryokan.tenki',
+      'pb.platform.ikikata', 'pb.platform.kisou', 'pb.morning.furisou',
+    ),
+  },
+  // ---- cheeky ----
+  {
+    id: 'izakaya',
+    packId: 'food',
+    audience: 'cheeky',
+    emoji: '🍺',
+    setting: t('しごとの あとの いざかや', 'しごとの あとの いざかや', 'The izakaya after work'),
+    twist: 'The boss said "tonight is on me", went to the toilet, and has not come back. The bill is here.',
+    roles: [role('ぶちょう', 'the boss'), role('しんにゅうしゃいん', 'the new hire'), role('てんいん', 'the server'), role('よっぱらい', 'the one who has had a few too many')],
+    status: 'draft',
+    phrases: reuse(
+      'pb.hanami.kanpai', 'pb.ramen.umai', 'pb.konbini.sumimasen', 'pb.dinner.dame',
+      'pb.ramen.okaikei', 'pb.ramen.osusume', 'pb.ramen.mizu', 'pb.konbini.nodo', 'pb.ramen.kore-nan', 'pb.ramen.ippai', 'pb.konbini.tabete-ii', 'pb.platform.toire',
+      'pb.dinner.taberarenai', 'pb.ramen.taberaremasu', 'pb.ramen.tabetara',
+    ),
+  },
+  {
+    id: 'date',
+    packId: 'family',
+    audience: 'cheeky',
+    emoji: '💘',
+    setting: t('はじめての デート', 'はじめての デート', 'An awkward first date'),
+    twist: 'The date brought their mum along. Mum has a lot of questions.',
+    roles: [role('デートの あいて', 'the date'), role('おくれて きた ひと', 'the one who showed up late'), role('ついて きた おかあさん', 'the mum who came along'), role('てんいん', 'a waiter listening to everything')],
+    status: 'draft',
+    phrases: reuse(
+      'pb.parents.hajimemashite', 'pb.parents.yoroshiku', 'pb.parents.sugoi', 'pb.konbini.sumimasen',
+      'pb.parents.shumi', 'pb.parents.sunde', 'pb.parents.kyoudai', 'pb.parents.inu', 'pb.parents.yonin', 'pb.hanami.okureta', 'pb.hanami.suwatte', 'pb.ramen.okaikei',
+      'pb.parents.hanasemasu', 'pb.parents.mata-kitara', 'pb.hanami.dare',
+    ),
+  },
+  {
+    id: 'asagaeri',
+    packId: 'travel',
+    audience: 'cheeky',
+    emoji: '🌅',
+    setting: t('あさがえりの でんしゃ', 'あさがえりの でんしゃ', 'The first train home, the morning after'),
+    twist: 'Nobody remembers last night, someone is still holding a karaoke mic, and this train is going the wrong way.',
+    roles: [role('かいしゃいん', "an office worker in last night's suit"), role('えきいん', 'the station attendant'), role('マイクを もった ひと', 'someone still holding a karaoke mic'), role('ゆうべの ともだち', 'a best friend met last night')],
+    status: 'draft',
+    phrases: reuse(
+      'pb.platform.sumimasen', 'pb.platform.iie', 'pb.platform.hai', 'pb.morning.nemui',
+      'pb.platform.shuuden', 'pb.platform.shinjuku', 'pb.platform.eki-doko', 'pb.platform.oriru', 'pb.platform.toire', 'pb.taxi.hotel', 'pb.morning.nanji', 'pb.morning.kutsu',
+      'pb.platform.norikae', 'pb.platform.ikikata', 'pb.morning.isoida-hou',
+    ),
+  },
+];
+
+export const SCENES: readonly Scene[] = [...FAMILY_SCENES, ...AUDIENCE_SCENES];
+
+/** The scenes for an audience: Kids and Cheeky rooms get their own scenes first, then the family ones. */
+export function scenesFor(audience: Audience): { own: Scene[]; fill: Scene[] } {
+  const own = SCENES.filter((x) => (x.audience ?? 'family') === audience);
+  return { own, fill: audience === 'family' ? [] : SCENES.filter((x) => !x.audience) };
+}
