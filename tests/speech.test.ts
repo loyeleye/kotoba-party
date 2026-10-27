@@ -123,7 +123,7 @@ describe('POST /api/rooms/:code/speech', () => {
     const { joined, post, w } = await room(true);
     const res = await post(joined.token, clip());
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ text: 'こんにちは' });
+    expect(await res.json()).toEqual({ via: 'speech', text: 'こんにちは' });
     expect(w.seen).toHaveLength(1);
   });
 

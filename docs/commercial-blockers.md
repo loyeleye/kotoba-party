@@ -47,9 +47,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
 | 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
-| 22 | Music: recorded tracks (CC0, CC BY 4.0), original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes. Japanese Lofi HipHop is split out as row 24 |
+| 22 | Music: recorded tracks (CC0, CC BY 4.0), original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes. Japanese Lofi HipHop is split out as row 25 |
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
-| 24 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
+| 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
+| 25 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
 
 ## Details
 
@@ -321,7 +322,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY
   allows commercial use, and asks for title, author, source, the licence with a link, and a note of
   any changes.
-- **Japanese Lofi HipHop (pickentcode, ❓, row 24):** Shodō Taikai's gallery track, added 2026-10-27 at
+- **Japanese Lofi HipHop (pickentcode, ❓, row 25):** Shodō Taikai's gallery track, added 2026-10-27 at
   Ladi's pick. Its [OGA page](https://opengameart.org/content/japanese-lofi-hiphop-track), read
   2026-10-27, says CC0 and "Ordered from Fiverr for a project that never got finished". Fiverr's
   [commercial-use licence page](https://help.fiverr.com/hc/en-us/articles/37555186939921--For-Commercial-Use-license-details)
@@ -376,6 +377,25 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   address).
 - **To sell:** read the terms and record them here; or move the short link to a domain we own (for
   example a `tanoshi.` subdomain), so the QR codes don't depend on someone else's service.
+### 24. Reader service on Oracle Cloud
+
+- **What:** since 2026-10-27 the kanji reader (`npm run reader`, kuromoji) runs on an Oracle Cloud
+  Always Free Ampere A1 VM (US West, Phoenix) behind Caddy. The Worker reaches it at
+  `https://141-148-186-1.sslip.io` (`READER_URL`); sslip.io is a free DNS service that maps the
+  hostname to the VM's reserved IP. Setup guide: the "Set up the kanji reader on Oracle Cloud" doc in
+  the project.
+- **Terms: unread (❓).** On 2026-10-27 the Oracle Free Tier FAQ (https://www.oracle.com/cloud/free/faq/)
+  and the Always Free resources page (https://docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm)
+  refused automated reads (403 / blocked), so nothing here is checked against Oracle's own text. Not
+  known: whether Always Free may serve a commercial product, and what notice Oracle gives before
+  reclaiming or ending free resources. sslip.io's terms were not read either.
+- **Risks:** secondary sources say Oracle reclaims Always Free instances that stay idle for 7 days on
+  a free-only account, so the account is being upgraded to Pay As You Go ($0 within the free limits).
+  If the reader goes away, the game keeps working: answers with kanji are compared as written and the
+  かな "Heard:" line shows no romaji for kanji.
+- **To sell:** read Oracle's terms and record them here, or move the reader to a paid host with an SLA;
+  give it a hostname on a domain we own instead of sslip.io.
+
 ## AI art: non-commercial vs commercial
 
 Ladi asked (2026-10-26): is AI art a problem for a non-commercial game, and what if we go commercial?
