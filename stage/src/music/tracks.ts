@@ -35,7 +35,8 @@ export const TRACK_IDS = [
   'harbour-ticket',
   'jrpg-rock',
   'hot-springs',
-  'hustle',
+  'monday-blues-1',
+  'monday-blues-2',
   'lazy-saturday',
   'starlight',
   'slow-jam',
@@ -129,8 +130,10 @@ export const TRACKS: Record<TrackId, Track> = {
   'jrpg-rock': { title: 'JRPG Epic Rock Battle Theme', author: 'HydroGene', licence: 'CC0', source: `${OGA}jrpg-epic-rock-battle-theme-1`, url: file('jrpg-epic-rock'), gainDb: -7.2, fallback: 'battle' },
   // Cheers!: festival tune, 120 bpm, A major. The first 33 s.
   'hot-springs': { title: 'Hot Springs Town', author: 'Kistol', licence: 'CC0', source: `${OGA}hot-springs-town`, url: file('hot-springs-town'), gainDb: 0.3, fallback: 'festive' },
-  // Monday Blues: minor blues, 120 bpm, E minor (12-bar). From 15.0 s (orig. bar 7), before the key change.
-  hustle: { title: 'Hustle', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100793'), url: file('hustle'), gainDb: -6.1, fallback: 'mystery' },
+  // Monday Blues: two AI-made blues backings (Mureka, 2026-10-27), each sung over by two versions of the
+  // song. Each file is already the song's bars in order, E minor: take 1 at exactly 92 bpm, take 2 at 94.
+  'monday-blues-1': { title: 'Monday Blues (take 1)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('monday-blues-1'), gainDb: 1.8, fallback: 'gentle' },
+  'monday-blues-2': { title: 'Monday Blues (take 2)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('monday-blues-2'), gainDb: 0.1, fallback: 'gentle' },
   // Self-Intro Rap: boom-bap, 92 bpm, A minor (a four-bar loop). From 36.0 s (orig. bar 14).
   'lazy-saturday': { title: 'Lazy Saturday', author: 'vandalorum', licence: 'CC BY 4.0', source: `${OGA}hiphop-old-school-chill-themes`, url: file('lazy-saturday'), gainDb: -0.2, fallback: 'gentle' },
   // Sparkle Idol: bright pop, 130 bpm, D major. From 7.0 s (orig. bar 4).

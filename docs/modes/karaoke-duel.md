@@ -178,8 +178,8 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     (greetings, food, travel; `kids: true`). Nine are grown-up songs in karaoke-box genres with
     beginner words, each with a twist in the words: city pop (夜の ドライブ, two versions: the
     sat-nav gets lost, or the passenger falls asleep), enka (雨の 港, two versions: a ten-year vow for a five-minute ferry, or waving off her own ship), an anime-opening rocker (走れ！,
-    "…starting tomorrow!"), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, "…and
-    it's only Monday"), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
+    "…starting tomorrow!"), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, four versions: in pyjamas on
+    the train, up early on a holiday, and two straight learning songs), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
     (自己紹介 ラップ, whose tune is the words' pitch accent), idol pop (キラキラ アイドル, "…so
     buy a ticket!") and an R&B ballad (眠れない 夜). Tests check one note and one romaji
     syllable per mora, that every perfect take scores 100, and that every chord name parses.
@@ -224,6 +224,11 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     Harbour in the Rain is second: version A (the five-minute ferry, one Dm7–G7–C–Fmaj7–G7–E7–Am
     loop) and version B (she misses her own ship, a verse that ends on E7 and a chorus twice as
     fast), both at 71 bpm in A minor. Its old umbrella lyrics and Past Sadness are gone.
+    Monday Blues is third, with four versions over two E-minor blues takes (Ladi asked for two lyric
+    sets per take, one funny and one that only aims at songwriting and learning). Over take 1
+    (92 bpm, Em–Em–Am–D7 shuffle): B, up early on a holiday, and C, a straight workday in clock
+    times with the weekdays as its chorus. Over take 2 (94 bpm, 8-bar blues): A, late for work in
+    pyjamas, and D, a straight rainy Monday with a friend. Its old lyrics and Hustle are gone.
     The method and scripts are in project files `tools/mureka/`.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
