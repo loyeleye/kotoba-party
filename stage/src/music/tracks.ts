@@ -38,7 +38,8 @@ export const TRACK_IDS = [
   'hustle',
   'lazy-saturday',
   'starlight',
-  'slow-jam',
+  'sleepless-caller',
+  'sleepless-coffee',
   'in-your-arms',
 ] as const;
 export type TrackId = (typeof TRACK_IDS)[number];
@@ -135,8 +136,10 @@ export const TRACKS: Record<TrackId, Track> = {
   'lazy-saturday': { title: 'Lazy Saturday', author: 'vandalorum', licence: 'CC BY 4.0', source: `${OGA}hiphop-old-school-chill-themes`, url: file('lazy-saturday'), gainDb: -0.2, fallback: 'gentle' },
   // Sparkle Idol: bright pop, 130 bpm, D major. From 7.0 s (orig. bar 4).
   starlight: { title: 'Cheers For Starlight', author: 'Chloe Wolfe', licence: 'CC BY 4.0', source: `${OGA}cute-bytes-ost-cheers-for-starlight`, url: file('cheers-for-starlight'), gainDb: -6.7, fallback: 'festive' },
-  // Sleepless Night: slow jam, 75 bpm, C minor. The first 90 s.
-  'slow-jam': { title: 'Slow Jam', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1600015'), url: file('slow-jam'), gainDb: -4.7, fallback: 'gentle' },
+  // Sleepless Night: two AI-made R&B backings (Mureka, 2026-10-27), one per version of the song.
+  // Each file is already the song's bars in order: version A at exactly 71 bpm in C minor, B at 72 bpm in C major.
+  'sleepless-caller': { title: 'Sleepless Night (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('sleepless-caller'), gainDb: 1.1, fallback: 'gentle' },
+  'sleepless-coffee': { title: 'Sleepless Night (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('sleepless-coffee'), gainDb: 1.1, fallback: 'gentle' },
   // Where Were You?: 1940s swing ballad, 98 bpm, F major. The first 80 s.
   'in-your-arms': { title: 'In Your Arms', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500042'), url: file('in-your-arms'), gainDb: -2.5, fallback: 'gentle' },
 };

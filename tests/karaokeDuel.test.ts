@@ -195,7 +195,7 @@ describe('Karaoke Duel: songs', () => {
     expect(t.view().song!.style).toBe(SONGS.find((x) => x.id === order[0])!.style);
   });
 
-  it.each(['yoru-no-drive', 'ame-no-minato'])('plays one version of %s, picked at random', (group) => {
+  it.each(['yoru-no-drive', 'ame-no-minato', 'nemurenai-yoru'])('plays one version of %s, picked at random', (group) => {
     const versions = SONGS.filter((x) => x.group === group).map((x) => x.id);
     expect(versions).toHaveLength(2);
     const seen = new Set<string>();
