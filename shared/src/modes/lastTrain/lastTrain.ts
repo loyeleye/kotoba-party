@@ -724,7 +724,8 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         s.echoes = {};
         for (const t of Object.values(s.travellers)) t.hauntedThisStop = false;
         const stop = s.stops[s.stopIndex]!;
-        ctx.cue({ host: 'chochin', event: 'train_stop', slots: { stop: stop.name.text }, prompt: stop.announcement });
+        // The kana and romanised name go with it, so the voice and the subtitle never drop the station.
+        ctx.cue({ host: 'chochin', event: 'train_stop', slots: { stop: stop.name.text, stop_kana: stop.name.kana, stop_en: stop.name.en }, prompt: stop.announcement });
         if (s.stopIndex === s.stops.length - 1) ctx.cue({ host: 'chochin', event: 'train_last_stop_twist', prompt: s.scenario.twist });
         break;
       }

@@ -168,6 +168,10 @@ describe('Last Train rules', () => {
     g.timeout();
     expect(g.state.phase).toBe('prompt');
     expect(g.cues.some((c) => c.event === 'train_stop' && c.slots?.stop === '一')).toBe(true);
+    // The station's reading and English name ride along, so the voiced line never drops it.
+    const stopCue = g.cues.find((c) => c.event === 'train_stop')!;
+    expect(stopCue.slots?.stop_kana).toBeTruthy();
+    expect(stopCue.slots?.stop_en).toBeTruthy();
     g.timeout();
     expect(g.state.phase).toBe('answer');
     expect(g.view('p1').me!.task!.limitMs).toBe(10_000);
