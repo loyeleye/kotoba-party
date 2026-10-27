@@ -215,7 +215,8 @@ player's behalf (`Room.inject`) and shows on that phone only, as "🖌 ぬ: …"
 
 It never decides a hit or blocks the game: the move is graded and landed before the question is
 asked, the key the tip must echo exists only in the server's mode state (never in a view), lines
-older than 15 s are not asked for, and at most 12 looks per game. Without a key nothing changes.
+older than 15 s are not asked for, a look gets up to 12 s (from Cloudflare the vision call takes
+2–5 s), and at most 12 looks per game. Without a key nothing changes.
 
 ## Ink Storm decisions made on Ladi's behalf
 
