@@ -4,7 +4,7 @@ Design doc line: "Karaoke Duel: original beginner lyrics; pronunciation 60%, pit
 
 Two singers duel through a short, original beginner song, line by line. The TV plays a
 count-in, a soft bass and a quiet guide melody (Web Audio, no audio files) and bounces a ball
-over the lyrics mora by mora. The singer holds a button on their phone and sings; the phone
+over the lyrics mora by mora. The singer's phone mic turns on for their line and they sing; the phone
 sends what the recogniser heard plus a compact pitch contour and timing, and the server scores
 the take. Everyone else sings along for chorus points and votes for the crowd favourite.
 
@@ -64,7 +64,7 @@ The phone sends `{ kind: 'sing', turn, utterance, pitch, onsetMs, durMs, timing 
   at most 120 values (12 s), each in 24–108; or `null` when the phone can't measure pitch.
 - `onsetMs` (−5 000…15 000) and `durMs` (0…15 000): when the singing started relative to the
   first beat and how long it lasted; `timing` says whether that came from the mic's loudness
-  (`mic`) or the button hold (`button`).
+  (`mic`) or when the mic was on (`button`).
 
 `turn` is the game-wide sing-turn counter, so a take that arrives after its turn ended can't land
 in the next one. Everything is checked hard (`parseTake`): wrong types, non-finite numbers,
@@ -108,16 +108,20 @@ along with correctly as `said`. Item ids are `karaoke.<song>.<line>`.
 
 ### The phone
 
-- **Hold to sing.** Press during the count-in (or on the beat) and hold until the line is done;
-  the phone lets go a beat after the line ends (12 s at most). On release it sends the take at
+- **The mic turns itself on.** On the singer's own line the mic opens on the last beat of the
+  count-in and stops two beats (at least 1.5 s) after the line ends, 14 s at most; a "■ Done
+  singing" tap stops it sooner. "Don't turn my mic on" switches to tap-to-sing (localStorage
+  `kotoba:karaoke-automic`), and a phone whose browser won't run audio without a tap (iPhone)
+  falls back to it too. Sing-along is always tap to start. (It used to be hold to sing, which
+  cut singers off when a finger slipped off the button.) When the mic stops it sends the take at
   once (no "Send" step, unlike other modes: the next singer is waiting). The line shows the same
   bouncing ball as the TV, timed from the server's clock, with romaji under each mora at Kana
   level.
 - **Pitch tracker** (`pitch.ts`): `getUserMedia` → `AnalyserNode`, every 40 ms an
-  autocorrelation pitch estimate (70–1 100 Hz) and loudness; on release, `summarise` turns the
+  autocorrelation pitch estimate (70–1 100 Hz) and loudness; when the mic stops, `summarise` turns the
   samples into the 100 ms contour, and the onset and length from loudness above the room's
   noise floor.
-- **Words:** the hold records one clip (`components/mic.ts`); on release it goes to our own
+- **Words:** each line records one clip (`components/mic.ts`); when it stops it goes to our own
   Whisper server ([speech.md](../speech.md)) and the transcript is sent with the take. The pitch
   tracker listens to the same recording, so there is no mic conflict. A "Turn pitch off/on" link
   lets anyone choose (localStorage `kotoba:karaoke-pitch`).
