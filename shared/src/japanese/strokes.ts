@@ -244,6 +244,12 @@ export type StrokeCheck = 'ok' | 'reversed' | 'off';
 export const TRACE_TOLERANCE = 0.085;
 /** The "steady hand" setting's looser tolerance. */
 export const TRACE_TOLERANCE_LOOSE = 0.125;
+/** The loosest check: Kana-level beginners with "steady hand" on, and the server's re-check. */
+export const TRACE_TOLERANCE_LOOSEST = 0.16;
+
+/** How close a traced stroke must stay: beginners (Kana level) start a step looser, "steady hand" one more. */
+export const traceTolerance = (beginner: boolean, steady: boolean): number =>
+  [TRACE_TOLERANCE, TRACE_TOLERANCE_LOOSE, TRACE_TOLERANCE_LOOSEST][(beginner ? 1 : 0) + (steady ? 1 : 0)]!;
 /** Strokes shorter than this (in the 0–1 box) are dots and ticks: their direction is never checked. */
 const DOT = 0.14;
 

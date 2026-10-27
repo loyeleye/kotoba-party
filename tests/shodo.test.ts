@@ -7,7 +7,7 @@ import { writeKanji, writeWords } from '../content/src/kanji/kanji.js';
 import { createRoom, type CommandBody } from '../shared/src/client.js';
 import { brushPath } from '../shared/src/brush.js';
 import { apply, createGame, type GameAction, type GameContext } from '../shared/src/game.js';
-import { checkStroke, gradeInk, type InkPoint } from '../shared/src/japanese/strokes.js';
+import { checkStroke, gradeInk, traceTolerance, type InkPoint } from '../shared/src/japanese/strokes.js';
 import { buildDeck, dictationPool, practicePool } from '../shared/src/modes/shodo/deck.js';
 import { AWARDS, BONUS_SHARE, ITEMS, type ShodoState, type ShodoView } from '../shared/src/modes/shodo/shodo.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -59,6 +59,17 @@ describe('tracing one stroke at a time', () => {
     expect(checkStroke(second!, first!)).toBe('off');
     // A long scrawl over the ghost isn't a trace.
     expect(checkStroke(scribble(random, 1)[0]!, first!)).toBe('off');
+  });
+
+  it('is a step looser for Kana-level beginners, and another with steady hand', () => {
+    expect(traceTolerance(true, false)).toBeGreaterThan(traceTolerance(false, false));
+    expect(traceTolerance(true, true)).toBeGreaterThan(traceTolerance(true, false));
+    expect(traceTolerance(false, true)).toBe(traceTolerance(true, false));
+    // Off by a tenth of the pad: too far for N5 and N4, close enough for a beginner.
+    const s = ref('一')[0]!;
+    const shifted = s.map(([x, y]) => [x, y + 0.1] as InkPoint);
+    expect(checkStroke(shifted, s, traceTolerance(false, false))).toBe('off');
+    expect(checkStroke(shifted, s, traceTolerance(true, false))).toBe('ok');
   });
 
   it('ignores the direction of dots', () => {

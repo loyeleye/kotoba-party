@@ -12,7 +12,7 @@
 // Strokes in progress live here, keyed like inkPad's, so a redrawn screen keeps them.
 
 import { h } from '../../../shared/src/dom.js';
-import { checkStroke, KANJI_LIMITS, strokeWay, TRACE_TOLERANCE, TRACE_TOLERANCE_LOOSE, type InkPoint, type InkStroke } from '../../../shared/src/japanese/strokes.js';
+import { checkStroke, KANJI_LIMITS, strokeWay, traceTolerance, type InkPoint, type InkStroke } from '../../../shared/src/japanese/strokes.js';
 import { forWire } from './inkPad.js';
 
 type Stroke = InkPoint[];
@@ -36,6 +36,8 @@ export interface BrushPadOptions {
   model?: InkPoint[][][] | null;
   sendLabel?: string;
   label?: string;
+  /** Kana-level players: the trace check starts a step looser. */
+  beginner?: boolean;
   /** Called with each square's strokes and the strokes the pad had to correct. */
   onSend(cells: InkPoint[][][], corrections: number): Promise<boolean> | void;
 }
@@ -184,7 +186,7 @@ export function brushPad(opts: BrushPadOptions): HTMLElement {
   const judge = (s: Stroke) => {
     const want = ref(draft.cell)[strokes().length - 1];
     if (!want) return;
-    const verdict = checkStroke(s, want, steadyHand() ? TRACE_TOLERANCE_LOOSE : TRACE_TOLERANCE);
+    const verdict = checkStroke(s, want, traceTolerance(!!opts.beginner, steadyHand()));
     if (verdict === 'ok') {
       tip.textContent = '';
       if (full()) submit();

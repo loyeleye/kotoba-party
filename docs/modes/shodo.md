@@ -92,7 +92,9 @@ No drum roll, no score or finale tunes. Phones stay silent apart from the player
 1. **Gallery music.** Ladi's call is pending: Hot Springs Town (CC0), Senbazuru (CC BY), or keep
    the synth. v1 plays the synth.
 2. **Fluent check** of the kanji say-words (毎日 for 日, …), the gallery sentences and Fude's lines.
-3. **Real phones.** The trace tolerance (0.085 of the pad, 0.125 with "Steady hand") was tuned on
-   synthetic strokes; it needs a try on small phones and with a stylus.
+3. **Real phones.** A traced stroke must stay within 0.085 of the pad at N5 and N4. Kana-level
+   beginners get 0.125 (Ladi asked for a looser check for beginners), and "Steady hand" loosens
+   either a step more (0.125, or 0.16 for beginners); the server re-checks at 0.16. These were
+   tuned on synthetic strokes and need a try on small phones and with a stylus.
 4. **Stroke counts.** `tests/shodo.test.ts` checks a sample against school charts; KanjiVG is
    the source for the rest.

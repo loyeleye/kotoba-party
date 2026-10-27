@@ -139,7 +139,7 @@ function practiceScreen(ctx: Ctx): HTMLElement {
     { class: 'screen sho' },
     head,
     h('p', { class: 'sho-note' }, p.rep === 'trace' ? 'Follow the model, starting at the red dot.' : 'Fainter now. Same strokes, same order.'),
-    brushPad({ key, mode: p.rep, cells: 1, model: t.cells, label: `Writing pad: trace ${t.text}`, onSend: (cells, corrections) => send({ kind: 'rep', strokes: cells[0] ?? [], corrections }) }),
+    brushPad({ key, mode: p.rep, cells: 1, model: t.cells, beginner: isKana(ctx), label: `Writing pad: trace ${t.text}`, onSend: (cells, corrections) => send({ kind: 'rep', strokes: cells[0] ?? [], corrections }) }),
     steadyToggle(),
     h('button', { type: 'button', class: 'linkish sho-skip', onclick: () => void send({ kind: 'skip-trace' }) }, 'I know this one: skip the tracing'),
   );

@@ -21,7 +21,7 @@
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
-import { checkStroke, gradeInk, KANJI_LIMITS, readInk, TRACE_TOLERANCE_LOOSE, type InkGrade, type InkPoint, type InkStroke } from '../../japanese/strokes.js';
+import { checkStroke, gradeInk, KANJI_LIMITS, readInk, TRACE_TOLERANCE_LOOSEST, type InkGrade, type InkPoint, type InkStroke } from '../../japanese/strokes.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type MoveResult } from '../mode.js';
 import { buildDeck, deal, dictationPool, galleryTarget, practicePool, type ShodoDeck, type Target } from './deck.js';
@@ -767,8 +767,8 @@ function moveRep(s: ShodoState, phase: Phase, playerId: string, raw: Record<stri
     [ok, clean] = [g.pass, g.clean];
     p.points += clean ? POINTS.memoryClean : ok ? POINTS.memoryPass : 0;
   } else {
-    // The phone corrected each stroke as it went; check again, as loosely as the steadiest-hand setting.
-    ok = strokes.length === ref.length && strokes.every((st, i) => checkStroke(st, ref[i] as InkStroke, TRACE_TOLERANCE_LOOSE) === 'ok');
+    // The phone corrected each stroke as it went; check again, as loosely as its loosest setting.
+    ok = strokes.length === ref.length && strokes.every((st, i) => checkStroke(st, ref[i] as InkStroke, TRACE_TOLERANCE_LOOSEST) === 'ok');
     clean = ok;
     if (ok) p.points += rep.kind === 'trace' ? POINTS.trace : POINTS.faint;
   }
