@@ -469,8 +469,8 @@ export const SONGS: readonly Song[] = [
   },
   {
     // Sleepless Night, version A, over an AI-made slow-jam backing (Mureka; tracks.ts): one loop,
-    // Cm7 | Cm7 C7 | Fm7 | G7, with the chorus cut to open on Fm7. Every word and kanji is N5 (Ladi,
-    // 2026-10-27; 寝られない is kept as a set phrase). She calls her crush, nobody picks up, and at
+    // Cm7 | Cm7 C7 | Fm7 | G7, with the chorus cut to open on Fm7. Every word and kanji is N5, and the
+    // title isn't sung (Ladi, 2026-10-27). She calls her crush, nobody picks up, and at
     // 4 a.m. they finally call back: “Sorry, who’s calling?”
     id: 'nemurenai-yoru',
     group: 'nemurenai-yoru',
@@ -486,10 +486,10 @@ export const SONGS: readonly Song[] = [
       { text: '電話を かけた', kana: 'でんわを かけた', romaji: 'de-n-wa-o ka-ke-ta', en: 'I made a call', chords: 'Fm7 Fm7 G7 G7', melody: [[60, 0.5], [63, 0.5], [63, 1], [63, 0.5], [68, 1], [65, 0.5], [62, 3]] },
       { text: 'でも 出なかった', kana: 'でも でなかった', romaji: 'de-mo de-na-ka-t-ta', en: 'But they didn’t pick up', chords: 'C7 Cm7 C7 Gb7', melody: [[70, 0.5], [67, 0.5], [70, 0.5], [67, 1], [63, 0.5], [63, 0.5], [60, 2]] },
       { text: 'まだ まってる', kana: 'まだ まってる', romaji: 'ma-da ma-t-te-ru', en: 'I’m still waiting', chords: 'Fm7 Fm7 G7 G7', melody: [[68, 1], [65, 0.5], [68, 1], [65, 0.5], [65, 1], [62, 3]] },
-      { text: 'ねられない よる', kana: 'ねられない よる', romaji: 'ne-ra-re-na-i yo-ru', en: 'A sleepless night', chords: 'Fm7 Abmaj7 G7 Gm7', melody: [[68, 0.5], [72, 1], [72, 0.5], [72, 1.5], [72, 0.5], [74, 1.5], [67, 2]] },
+      { text: '電話 まってる', kana: 'でんわ まってる', romaji: 'de-n-wa ma-t-te-ru', en: 'Waiting for your call', chords: 'Fm7 Abmaj7 G7 Gm7', melody: [[68, 0.5], [72, 0.5], [72, 1], [72, 1], [68, 0.5], [68, 0.5], [67, 3]] },
       { text: '電話を 見てる', kana: 'でんわを みてる', romaji: 'de-n-wa-o mi-te-ru', en: 'Staring at the phone', chords: 'Cm7 Cm7 Cm7 Ebmaj7', melody: [[67, 0.5], [72, 1], [72, 1], [72, 0.5], [72, 0.5], [70, 1], [67, 2.5]] },
       { text: 'かけて かけて かけてよ', kana: 'かけて かけて かけてよ', romaji: 'ka-ke-te ka-ke-te ka-ke-te-yo', en: 'Call me, call me, call me back!', chords: 'Fm7 Fm7 G7 G7', melody: [[65, 0.5], [63, 0.5], [63, 0.5], [68, 0.5], [65, 0.5], [65, 0.5], [72, 0.5], [71, 0.5], [71, 0.5], [67, 2]] },
-      { text: 'ねられない よる', kana: 'ねられない よる', romaji: 'ne-ra-re-na-i yo-ru', en: 'A sleepless night', chords: 'Cm7 Cm7 C7 Cm7', melody: [[67, 0.5], [70, 1], [70, 0.5], [70, 1.5], [70, 0.5], [72, 1.5], [67, 2]] },
+      { text: '電話 まってる', kana: 'でんわ まってる', romaji: 'de-n-wa ma-t-te-ru', en: 'Waiting for your call', chords: 'Cm7 Cm7 C7 Cm7', melody: [[67, 0.5], [70, 0.5], [70, 1], [70, 1], [67, 0.5], [67, 0.5], [60, 3]] },
       { text: 'もう あさの 四時', kana: 'もう あさの よじ', romaji: 'mo-u a-sa-no yo-ji', en: 'It’s four a.m. already', chords: 'Cm7 Cm7 Cm7 C7', melody: [[67, 0.5], [60, 0.5], [63, 1], [60, 0.5], [60, 0.5], [67, 1], [60, 1]] },
       { text: 'あっ、あの 人だ！', kana: 'あっ あの ひとだ', romaji: 'a-t a-no hi-to-da', en: 'Oh! It’s them!', chords: 'Fm7 Fm7 G7 G7', melody: [[72, 0.5], [72, 0.5], [65, 0.5], [68, 1], [68, 0.5], [72, 1], [71, 3]] },
       { text: 'はい、もしもし', kana: 'はい もしもし', romaji: 'ha-i mo-shi-mo-shi', en: 'Yes, hello?', chords: 'C7 Cm7 C7 Gb7', melody: [[70, 1], [67, 0.5], [70, 1], [67, 0.5], [67, 1], [67, 0.5]] },
@@ -514,10 +514,10 @@ export const SONGS: readonly Song[] = [
       { text: 'あなたに 会いたい', kana: 'あなたに あいたい', romaji: 'a-na-ta-ni a-i-ta-i', en: 'I want to see you', chords: 'Dm7 G7 G7 Cmaj7', melody: [[62, 0.5], [65, 1], [62, 0.5], [62, 0.5], [62, 1], [67, 0.5], [67, 2], [64, 1]] },
       { text: 'ベッドの 中で', kana: 'ベッドの なかで', romaji: 'be-d-do-no na-ka-de', en: 'Lying in bed', chords: 'Dm7 Em7 G7 Cmaj7', melody: [[69, 0.5], [65, 0.5], [65, 0.5], [64, 0.5], [67, 1], [64, 1], [62, 1]] },
       { text: 'こんばんも また', kana: 'こんばんも また', romaji: 'ko-n-ba-n-mo ma-ta', en: 'Tonight, once again…', chords: 'Dm7 Em7 Fmaj7 Dm7', melody: [[69, 1], [65, 0.5], [65, 0.5], [64, 0.5], [64, 0.5], [64, 1], [65, 3]] },
-      { text: 'ねられない よる', kana: 'ねられない よる', romaji: 'ne-ra-re-na-i yo-ru', en: 'A sleepless night', chords: 'Fmaj7 Fm7 C C', melody: [[65, 0.5], [69, 1], [72, 0.5], [72, 1.5], [72, 0.5], [72, 2], [67, 1.5]] },
+      { text: 'あさまで おきてる', kana: 'あさまで おきてる', romaji: 'a-sa-ma-de o-ki-te-ru', en: 'Awake until morning', chords: 'Fmaj7 Fm7 C C', melody: [[72, 1], [69, 0.5], [69, 0.5], [65, 0.5], [72, 1], [65, 0.5], [67, 0.5], [64, 2.5]] },
       { text: 'あなたが すきで', kana: 'あなたが すきで', romaji: 'a-na-ta-ga su-ki-de', en: 'Because I love you', chords: 'C C C Dm7', melody: [[67, 0.5], [72, 1], [67, 0.5], [67, 0.5], [67, 0.5], [72, 0.5], [67, 2]] },
       { text: '一 二 三 四 五', kana: 'いち に さん し ご', romaji: 'i-chi ni sa-n shi go', en: 'One, two, three, four, five…', chords: 'Dm7 Fm7 Fm Fmaj7', melody: [[72, 0.5], [74, 0.5], [69, 1], [72, 0.5], [72, 0.5], [65, 1], [65, 3]] },
-      { text: 'ねられない よる', kana: 'ねられない よる', romaji: 'ne-ra-re-na-i yo-ru', en: 'A sleepless night', chords: 'Em7 Fmaj7 G C', melody: [[64, 0.5], [67, 1], [71, 0.5], [72, 1.5], [72, 0.5], [74, 2], [72, 1.5]] },
+      { text: 'あさまで おきてる', kana: 'あさまで おきてる', romaji: 'a-sa-ma-de o-ki-te-ru', en: 'Awake until morning', chords: 'Em7 Fmaj7 G C', melody: [[71, 1], [67, 0.5], [67, 0.5], [65, 0.5], [72, 1], [69, 0.5], [67, 2], [60, 1.5]] },
       { text: 'よるの 三時', kana: 'よるの さんじ', romaji: 'yo-ru-no sa-n-ji', en: 'Three in the morning', chords: 'Dm7 Em7 Fmaj7 Dm7', melody: [[65, 1], [62, 0.5], [62, 0.5], [67, 1], [64, 1], [64, 1]] },
       { text: 'まだ おきてる', kana: 'まだ おきてる', romaji: 'ma-da o-ki-te-ru', en: 'I’m still awake', chords: 'Dm7 G7 G7 Cmaj7', melody: [[65, 1], [62, 0.5], [65, 1], [62, 0.5], [62, 1], [62, 3]] },
       { text: 'あなたと 飲んだ', kana: 'あなたと のんだ', romaji: 'a-na-ta-to no-n-da', en: 'What I drank with you:', chords: 'Dm7 Em7 G7 Cmaj7', melody: [[62, 0.5], [65, 0.5], [62, 0.5], [62, 0.5], [67, 1], [64, 1], [62, 2]] },

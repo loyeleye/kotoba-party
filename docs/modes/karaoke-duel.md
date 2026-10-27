@@ -228,7 +228,8 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     Sleepless Night is third, and Ladi's all-N5 song (every word and kanji N5; the title became
     ねられない よる because 眠る and 夜 are N4): version A (the call back at 4 a.m., 71 bpm in C
     minor, one Cm7–C7–Fm7–G7 loop with the chorus opening on Fm7) and version B (five coffees, 72
-    bpm in C major, a IV–iv–I chorus). Its old "it's Mum" lyrics and Slow Jam are gone.
+    bpm in C major, a IV–iv–I chorus). Its old "it's Mum" lyrics and Slow Jam are gone. Ladi
+    asked for the title not to be sung, so its choruses hang on 電話 まってる and あさまで おきてる.
     The method and scripts are in project files `tools/mureka/`.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
