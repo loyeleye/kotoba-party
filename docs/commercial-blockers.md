@@ -48,6 +48,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
 | 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
 | 22 | Music: recorded tracks (CC0, CC BY 4.0), original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes |
+| 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
 
 ## Details
 
@@ -345,6 +346,21 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   outside the browser), or buy MacLeod's Standard License once its terms are read and keep the CC BY
   credit for Take a Trip. Any new track gets its own line here.
 
+### 23. Short link (tanoshi.s.gy)
+
+- **What:** since 2026-10-27 the QR code and every invite link use `https://tanoshi.s.gy`
+  (`PUBLIC_URL` in `wrangler.jsonc`). It sends a 302 to `https://kotoba-party.isekaid.workers.dev` and
+  keeps the path and `?code=` (checked 2026-10-27). The invite card reads it as a joke, 楽しすぎ！
+  The redirect headers say `x-powered-by: Short.io/Edge`, and `www.s.gy` sends you to short.io.
+- **Terms: unread (❓).** On 2026-10-27, `s.gy` and `short.io` were blocked from here, and
+  `www.s.gy/terms` redirects to `terms.s.gy`, which says "Domain not found". Not known: whether a free shared-domain
+  link can be used for a commercial game, whether it can expire, be taken down or show an interstitial,
+  and any click limits.
+- **Risks:** a third party owns the address on every QR code. If the link stops working, players can't
+  join from the QR code or the links until `PUBLIC_URL` is changed back (empty uses the game's own
+  address).
+- **To sell:** read the terms and record them here; or move the short link to a domain we own (for
+  example a `tanoshi.` subdomain), so the QR codes don't depend on someone else's service.
 ## AI art: non-commercial vs commercial
 
 Ladi asked (2026-10-26): is AI art a problem for a non-commercial game, and what if we go commercial?

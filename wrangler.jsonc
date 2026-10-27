@@ -22,8 +22,9 @@
   "ai": { "binding": "AI" },
   "observability": { "enabled": true },
   "vars": {
-    // Optional; leave empty to use the request's own origin for the QR code.
-    "PUBLIC_URL": "",
+    // The address on the QR code and the invite links: the short link (楽しすぎ！), which sends
+    // a 302 to this worker keeping the path and ?code=. Empty: the request's own origin.
+    "PUBLIC_URL": "https://tanoshi.s.gy",
     // Optional; e.g. https://voicevox.example.com. Empty: subtitles only.
     "VOICEVOX_URL": "",
     // Optional; the reader service (npm run reader). Empty: kanji answers are compared as written.
