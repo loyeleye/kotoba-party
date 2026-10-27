@@ -863,7 +863,7 @@ export const WORD_BREAKS: Record<string, string> = {
   "1thsx7g": '4,5,8',
   "1ti9bn": '4,j,l',
   "1tidekj": '2,d',
-  "1tk1u5d": '2',
+  "1tk1u5d": '',
   "1tk5z6a": '2,4',
   "1tlfd44": '2,3,6,l,m,u,v,z',
   "1tltv8": 'a-,c',
