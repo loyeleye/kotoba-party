@@ -72,7 +72,8 @@ waits. Requests may carry `images` (`LlmRequest.images`), sent as image blocks b
 `ClaudeLlm` uses structured outputs (Zod), effort `low`, server-side refusal fallbacks, no retries, a per-call
 timeout, and charges every call to the game's `LlmBudget` (default cap $0.10; once spent, every call fails at
 once and the game runs on banks and packs). Models default to `claude-opus-5-5`; set `KOTOBA_HOST_MODEL` /
-`KOTOBA_JUDGE_MODEL` to change (see docs/open-questions.md on cost). `llmFromEnv()` returns undefined without
+`KOTOBA_JUDGE_MODEL` to change (see docs/open-questions.md on cost). The Onsen suspects' lead-ins use
+`claude-haiku-5-5` (`KOTOBA_SUSPECT_MODEL`): they must land within a 1.8 s beat, which Opus usually misses. `llmFromEnv()` returns undefined without
 `ANTHROPIC_API_KEY`, and the pipeline then runs bank-only and offline-only.
 
 ## Running VOICEVOX
