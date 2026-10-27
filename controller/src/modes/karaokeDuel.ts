@@ -6,7 +6,7 @@
 // Everyone not duelling can sing along (chorus, words only) and votes for the crowd favourite.
 
 import { h } from '../../../shared/src/dom.js';
-import type { KaraokeDuelView, LineView, TakeView } from '../../../shared/src/modes/karaokeDuel/karaokeDuel.js';
+import { duelStats, type KaraokeDuelView, type LineView, type TakeView } from '../../../shared/src/modes/karaokeDuel/karaokeDuel.js';
 import { detectPitch, hzToMidi, rms, summarise, type PitchSample } from '../../../shared/src/modes/karaokeDuel/pitch.js';
 import { hasKanji, type Utterance } from '../../../shared/src/japanese/kana.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -455,6 +455,33 @@ function pickSection(ctx: Ctx): HTMLElement | null {
   );
 }
 
+/** A duelist's round in three bars out of 100, as on the TV, with a tip for the lowest one. */
+function myStats(takes: TakeView[], playerId: string): HTMLElement | null {
+  const stats = duelStats(takes, playerId);
+  if (!stats.takes) return null;
+  const parts = [
+    { key: 'words', ja: '発音', reading: 'はつおん', en: 'Pronunciation', value: stats.words, tip: 'Sing the kana with the bouncing ball, one by one.' },
+    { key: 'pitch', ja: '音程', reading: 'おんてい', en: 'Pitch', value: stats.pitch, tip: 'Hum the tune once, then add the words.' },
+    { key: 'timing', ja: 'リズム', reading: '', en: 'Rhythm', value: stats.timing, tip: 'Come in right after the count-in’s last beat.' },
+  ];
+  const measured = parts.filter((x) => x.value !== null);
+  const lowest = measured.length > 1 ? measured.reduce((a, b) => (b.value! < a.value! ? b : a)) : null;
+  return h(
+    'div',
+    { class: 'kdp-stats' },
+    parts.map((x) =>
+      h(
+        'div',
+        { class: `kdp-stat${x === lowest ? ' low' : ''}` },
+        h('span', { class: 'kdp-stat-label', lang: 'ja' }, x.reading ? h('ruby', {}, x.ja, h('rt', {}, x.reading)) : x.ja, h('small', {}, x.en)),
+        h('span', { class: `kdp-stat-bar${x.value === null ? ' none' : ''}` }, x.value === null ? 'not measured' : h('span', { style: `width:${x.value}%` })),
+        h('strong', {}, x.value === null ? '–' : String(x.value)),
+      ),
+    ),
+    lowest ? h('p', { class: 'hint' }, `Next time: ${lowest.tip}`) : null,
+  );
+}
+
 function resultScreen(ctx: Ctx): HTMLElement {
   const { game, view, me } = ctx;
   const r = game.result;
@@ -477,6 +504,7 @@ function resultScreen(ctx: Ctx): HTMLElement {
     h('p', { class: 'big' }, headline),
     // The pick comes first: on a phone the takes list would push it below the fold.
     pickSection(ctx),
+    mine.role === 'duelist' ? myStats(mine.takes, me.id) : null,
     mine.role === 'duelist' ? h('div', { class: 'kdp-takes' }, mine.takes.map(takeLine)) : null,
     mine.role === 'duelist' && r.favourites.includes(me.id) ? h('p', { class: 'kdp-take' }, `👏 Crowd favourite +${r.crowdBonus}`) : null,
     mine.role === 'audience' && mine.chorusPoints ? h('p', { class: 'kdp-take' }, `🎶 Your chorus: +${mine.chorusPoints}`) : null,

@@ -23,7 +23,7 @@ Code: `shared/src/modes/karaokeDuel/` (`karaokeDuel.ts` rules, `scoring.ts`, `pi
 | Song card | `prompt` | Song title, every line (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
 | Sing | `answer` ×8 or ×16 | **Grown-up songs are continuous** (`form` + `track`): one produced instrumental plays the whole song (intro, verse, chorus, verse 2, chorus, about 80–130 s) and the duelists trade lines on its clock, one line every two bars; each sings every chorus line once. One phase per line, ending one bar before the next line so the next singer's count-in overlaps; the next singer sees their line during it; a take counts until 10 s after its line ends (the recogniser is slow), and lines with no take are marked missed when the song ends. **Kids' songs** are four-line sing-alongs: a 0.7 s breath, a one-bar count-in, the line, then 3 s; both duelists sing every line, who goes first alternates, and a take ends the turn at once. | Continuous: the track's own timing. Sing-along: 0.7 s + 4 beats + line + 3 s |
 | Crowd vote | `reveal` | Everyone not duelling votes for the crowd favourite. Skipped when nobody is watching (2 players). Ends when every connected voter is in. | 12 s |
-| Duel result | `score` | Sung points, lines won, crowd votes, the winner. Before every round but the last, the duel's loser picks the next song on their phone from three, or says "Surprise me". | 9 s (14 s with a pick) |
+| Duel result | `score` | A score report: pronunciation, pitch and rhythm out of 100 head to head, lines won, crowd votes, points, the winner. Before every round but the last, the duel's loser picks the next song on their phone from three, or says "Surprise me". | 9 s (14 s with a pick) |
 | Finale | `finale` | Standings, then the shared recap (awards, the song sheet phrasebook). | 9 s |
 
 A 4-song game of grown-up songs runs about 10 minutes.
@@ -131,8 +131,19 @@ Song card; then a karaoke screen per turn: singer, line number, count-in numbers
 big kana with the ball and a fill as each mora is sung (CSS animations with delays from the
 server clock, so redraws don't jump), kanji line above when the line has kanji, English below, a
 progress bar, the next line, and a toast with the previous take's breakdown. A duel board beside
-it shows every line's take scores (⌨ for typed, — for missed). Crowd vote and duel result
-screens follow. Audio needs one click on the stage page ("🔊 Click for music"); any click (e.g.
+it shows every line's take scores (⌨ for typed, — for missed). The crowd vote follows.
+
+The duel result is a head-to-head score report. Each duelist's 発音 (pronunciation), 音程 (pitch)
+and リズム (rhythm), averaged over their takes, appear as mirrored 20-cell LED meters out of 100,
+with the better number in gold with a ▲. Pitch the phone couldn't measure is a hatched "なし" bar,
+never a zero. Below the meters is a strip of each take's score, filled in the singer's colour on
+lines they won, then the points with how they add up (sung, plus the crowd bonus), and the
+average take in 点 with an easy host line for its band (「とても 上手（じょうず）！」 Really good!).
+It reveals beat by beat from the result's server time (`result.at`): Scoring… (採点中), the three
+meters, the lines, the crowd bonus, the points, and at 5.1 s the winner with the trophy and the
+fanfare. Every animation's rest state is the finished screen, so redraws, late joiners and Calm
+motion land on it. Each duelist's phone shows the same three bars with a tip for the lowest.
+Audio needs one click on the stage page ("🔊 Click for music"); any click (e.g.
 Start) unlocks it. Music can be muted.
 
 ### Bots
