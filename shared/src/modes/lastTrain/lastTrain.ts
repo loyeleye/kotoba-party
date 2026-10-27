@@ -385,11 +385,17 @@ function resolveLibrary(ctx: ModeContext): { minigames: Record<string, LastTrain
 }
 
 function chooseScenario(ctx: ModeContext, want: number, minigames: Record<string, LastTrainMinigame>): LastTrainScenario {
-  const usable = ctx.content.lastTrainScenarios.filter((sc) => sc.stops.length > 0 && sc.stops.every((st) => minigames[st.minigameId]));
+  const ready = ctx.content.lastTrainScenarios.filter((sc) => sc.stops.length > 0 && sc.stops.every((st) => minigames[st.minigameId]));
+  // Kids and Cheeky rooms ride their own lines; family lines are the fallback when none is ready.
+  const audience = ctx.audience ?? 'family';
+  const own = ready.filter((sc) => (sc.audience ?? 'family') === audience);
+  const usable = own.length ? own : ready.filter((sc) => !sc.audience);
   const exact = usable.filter((sc) => sc.stops.length === want);
   if (exact.length) return pick(exact, () => ctx.random())!;
-  const longer = usable.filter((sc) => sc.stops.length > want).sort((a, b) => a.stops.length - b.stops.length);
-  if (longer.length) return longer[0]!;
+  // Otherwise trim the shortest longer line; ties take turns at random.
+  const longer = usable.filter((sc) => sc.stops.length > want);
+  const fit = Math.min(...longer.map((sc) => sc.stops.length));
+  if (longer.length) return pick(longer.filter((sc) => sc.stops.length === fit), () => ctx.random())!;
   const shorter = [...usable].sort((a, b) => b.stops.length - a.stops.length);
   return shorter[0] ?? FALLBACK_SCENARIO;
 }
