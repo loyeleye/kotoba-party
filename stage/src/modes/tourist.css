@@ -44,11 +44,14 @@
 .tou-stage .tou-said-kana { font-size: 24px; opacity: 0.75; }
 .tou-stage .tou-said-en { font-size: 24px; opacity: 0.8; }
 .tou-stage .tou-said-en.none { font-style: italic; opacity: 0.6; }
-.tou-stage .tou-said.big .tou-said-jp { font-size: 48px; }
-.tou-stage .tou-said.big .tou-said-kana { font-size: 24px; }
-.tou-stage .tou-said.big .tou-said-en { font-size: 28px; }
+.tou-stage .tou-said.now .tou-said-jp { font-size: 48px; }
+.tou-stage .tou-said.now .tou-said-kana { font-size: 24px; }
+.tou-stage .tou-said.now .tou-said-en { font-size: 28px; }
 .tou-stage .tou-mic { font-style: normal; }
 .tou-stage .tou-log { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; }
+/* Beside the live turn, the log is only as tall as the turn and places: older questions fade out at
+   the bottom instead of growing the scene, which the stage would then shrink to fit. */
+.tou-stage .tou-live > .tou-log { align-self: stretch; contain: size; overflow: hidden; mask-image: linear-gradient(to bottom, #000 85%, transparent); }
 .tou-stage .tou-panel-title { margin-bottom: 8px; font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .tou-stage .tou-log ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .tou-stage .tou-ex { display: grid; gap: 6px; }
@@ -61,7 +64,7 @@
 
 /* vote */
 .tou-stage.tou-vote { justify-items: center; text-align: center; }
-.tou-stage.tou-vote .tou-log { width: min(1100px, 100%); text-align: left; }
+.tou-stage.tou-vote .tou-log { width: min(1100px, 100%); text-align: left; max-height: 340px; overflow: hidden; mask-image: linear-gradient(to bottom, #000 80%, transparent); }
 .tou-stage .tou-voters { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
 .tou-stage .tou-voters li { background: var(--panel); border: 2px solid var(--line); border-radius: 999px; padding: 8px 22px; font-size: 30px; font-weight: 800; }
 .tou-stage .tou-voters li span { color: var(--muted); }
@@ -108,9 +111,9 @@
   .tou-stage .tou-turn { min-height: 0; padding: 12px 16px; gap: 8px; }
   .tou-stage .tou-turn-who { font-size: 28px; }
   .tou-stage .tou-waiting { font-size: 24px; }
-  .tou-stage .tou-said.big .tou-said-jp { font-size: 32px; }
-  .tou-stage .tou-said.big .tou-said-kana { font-size: 24px; }
-  .tou-stage .tou-said.big .tou-said-en { font-size: 24px; }
+  .tou-stage .tou-said.now .tou-said-jp { font-size: 32px; }
+  .tou-stage .tou-said.now .tou-said-kana { font-size: 24px; }
+  .tou-stage .tou-said.now .tou-said-en { font-size: 24px; }
   .tou-stage .tou-log { padding: 10px 14px; }
   .tou-stage .tou-log ul { gap: 8px; }
   .tou-stage .tou-log .tou-said { padding: 6px 10px; }
@@ -129,6 +132,7 @@
 }
 @media (max-width: 900px) {
   .tou-stage .tou-live { grid-template-columns: 1fr; }
+  .tou-stage .tou-live > .tou-log { contain: none; }
   .tou-stage .tou-places { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
