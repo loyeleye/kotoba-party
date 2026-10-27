@@ -1,6 +1,6 @@
 // Karaoke Duel (backlog): two singers duel through a short original song, line by line.
-// The TV plays the backing and guide melody and bounces a ball over the lyrics; the singer
-// holds a button on their phone and sings. Each take scores pronunciation 60%, pitch 25% and
+// The TV plays the backing and guide melody and bounces a ball over the lyrics; the singer's
+// phone mic turns on for their line and they sing. Each take scores pronunciation 60%, pitch 25% and
 // timing 15% (scoring.ts). Everyone else sings along for a small chorus bonus and votes for
 // the crowd favourite. See docs/modes/karaoke-duel.md.
 //
@@ -250,7 +250,7 @@ export interface KaraokeDuelView {
     canSing: boolean;
     /**
      * The turn my phone should be ready to sing: the current one if it's mine, else (continuous
-     * songs) the next one if it's mine, so the hold can start on its count-in. Null once sent.
+     * songs) the next one if it's mine, so the mic can open on its count-in. Null once sent.
      */
     singTurn: { no: number; index: number; line: number; lineAt: number } | null;
     canChorus: boolean;

@@ -1,7 +1,8 @@
 // Karaoke Duel on the phone: the lyric sheet, then on your turn the line with its bouncing
-// ball and a hold-to-sing button. While the button is held the phone records the mic (the words
-// are worked out by our own Whisper server on release, see components/mic.ts) and a pitch tracker
-// listens to the same recording (for the tune and the timing). On release it sends the take
+// ball and a sing button. On your own line the mic opens by itself on the last beat of the count-in
+// (or on a tap) and records until the line has ended or the singer taps Done (the words are worked
+// out by our own Whisper server, see components/mic.ts) while a pitch tracker listens to the same
+// recording (for the tune and the timing). When it stops it sends the take
 // straight away: the next singer is waiting. Without a speech server the line is typed.
 // Everyone not duelling can sing along (chorus, words only) and votes for the crowd favourite.
 
@@ -32,8 +33,8 @@ function offset(game: KaraokeDuelView): number {
 const nameOf = (view: RoomView, id: string | null | undefined): string => view.players.find((p) => p.id === id)?.name ?? '…';
 const pct = (x: number | null) => (x === null ? '–' : `${Math.round(x * 100)}`);
 
-// ---------- a hold in progress ----------
-// While a hold is recording or its take is being sent, the screen must not be redrawn (in a
+// ---------- a take in progress ----------
+// While the mic is recording or its take is being sent, the screen must not be redrawn (in a
 // continuous song the next turn starts while the last notes are still being sung). The phone key
 // pins to this turn until the take is sent.
 let busyTurn: number | null = null;
@@ -54,6 +55,37 @@ function setPitchWanted(on: boolean): void {
   } catch {
     // private mode: the choice lasts for this page only
   }
+}
+
+// ---------- auto mic setting (per device) ----------
+const AUTO_MIC_KEY = 'kotoba:karaoke-automic';
+function autoMicWanted(): boolean {
+  try {
+    return localStorage.getItem(AUTO_MIC_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+function setAutoMicWanted(on: boolean): void {
+  try {
+    if (on) localStorage.removeItem(AUTO_MIC_KEY);
+    else localStorage.setItem(AUTO_MIC_KEY, 'off');
+  } catch {
+    // private mode: the choice lasts for this page only
+  }
+}
+
+/** Under your own line: what the mic will do, and a switch for it. */
+function autoMicHint(): HTMLElement {
+  const text = () => (autoMicWanted() ? 'Your mic turns on by itself at the end of the count-in and stops when the line ends.' : 'Tap the button when the count-in ends; it stops when the line ends, or tap Done.');
+  const hint = h('span', {}, text());
+  const toggle = h('button', { type: 'button', class: 'linkish' }, autoMicWanted() ? 'Don’t turn my mic on' : 'Turn my mic on for me') as HTMLButtonElement;
+  toggle.addEventListener('click', () => {
+    setAutoMicWanted(!autoMicWanted());
+    hint.textContent = `${text()} (From your next line.)`;
+    toggle.textContent = autoMicWanted() ? 'Don’t turn my mic on' : 'Turn my mic on for me';
+  });
+  return h('p', { class: 'hint' }, hint, ' ', toggle);
 }
 
 // ---------- the pitch tracker (reads the same mic as the clip) ----------
@@ -127,10 +159,10 @@ function countIn(beatMs: number, beats: number, elapsed: number): HTMLElement {
   );
 }
 
-// ---------- hold to sing ----------
+// ---------- tap (or auto) to sing ----------
 
 interface SingOptions {
-  /** The turn this box sings (pins the screen while a hold is in progress). */
+  /** The turn this box sings (pins the screen while a take is in progress). */
   turnNo: number;
   line: LineView;
   beatMs: number;
@@ -142,6 +174,8 @@ interface SingOptions {
   /** Measure pitch (duelists); chorus only needs the words. */
   pitch: boolean;
   label: string;
+  /** Open the mic by itself when the line starts (the singer's own turn). */
+  autoStart: boolean;
   /** Show the typed quiet fallback. */
   typed: boolean;
   kanaPadOpen: boolean;
@@ -165,7 +199,7 @@ function singBox(opts: SingOptions): HTMLElement {
     busyTurn = null;
     if (!ok) {
       sent = false;
-      status.textContent = 'That didn’t go through. Hold and sing again.';
+      status.textContent = 'That didn’t go through. Tap and sing again.';
     } else status.textContent = '✓ Sent!';
   };
 
@@ -176,15 +210,16 @@ function singBox(opts: SingOptions): HTMLElement {
     let clip: MicClip | null = null;
     let tracker: PitchTracker | null = null;
     let pressAt = 0;
-    let holding = false;
+    let live = false;
     let autoStop: ReturnType<typeof setTimeout> | null = null;
 
-    const release = async () => {
-      if (!holding) return;
-      holding = false;
+    const stop = async () => {
+      if (!live) return;
+      live = false;
       const releaseAt = Date.now();
       if (autoStop) clearTimeout(autoStop);
       button.classList.remove('live');
+      button.textContent = opts.label;
       tracker?.stop();
       const c = clip!;
       clip = null;
@@ -216,35 +251,54 @@ function singBox(opts: SingOptions): HTMLElement {
       // Nothing heard still counts (no words points); a server hiccup lets them sing it again.
       if (!heard.ok && heard.why !== 'quiet') {
         busyTurn = null;
-        return void (status.textContent = `${missed(heard.why)} Hold and sing again.`);
+        return void (status.textContent = `${missed(heard.why)} Tap and sing again.`);
       }
       void finish({ utterance: { via: 'speech', text: heard.ok ? heard.text.slice(0, 120) : '' }, pitch, onsetMs, durMs, timing });
     };
 
-    button.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      if (sent || holding || clip) return;
-      holding = true;
+    /** Opens the mic until the line is over (or Stop). `auto`: the turn started it, not a tap. */
+    const start = (auto: boolean) => {
+      if (sent || live || clip || !box.isConnected) return;
+      live = true;
       busyTurn = opts.turnNo;
       pressAt = Date.now();
       button.classList.add('live');
-      status.textContent = '🎤 Singing…';
+      button.textContent = '■ Done singing';
+      status.textContent = auto ? '🎤 Mic on: sing when the ball bounces!' : '🎤 Singing…';
       const c = new MicClip();
       clip = c;
       const t = usePitch && pitchWanted() ? new PitchTracker(lineAtLocal) : null;
       tracker = t;
       void c.ready.then((ok) => {
+        if (ok && c.audio.state !== 'running' && auto) {
+          // The browser wants a tap before it lets audio run (iPhone): back to tap-to-sing.
+          live = false;
+          busyTurn = null;
+          tracker = null;
+          clip = null;
+          c.stop();
+          button.classList.remove('live');
+          button.textContent = opts.label;
+          status.textContent = 'Tap the button to turn your mic on.';
+          return;
+        }
         if (ok) t?.attach(c);
         else if (c.blocked) status.textContent = 'Microphone blocked: type the line below instead.';
       });
-      // Let go for them a beat after the line ends (or after 12 s at most).
-      const lineEnd = lineAtLocal + opts.line.ms + opts.beatMs;
-      autoStop = setTimeout(() => void release(), Math.min(12_000, Math.max(1_500, lineEnd - Date.now())));
-    });
-    button.addEventListener('pointerup', () => void release());
-    button.addEventListener('pointercancel', () => void release());
-    button.addEventListener('pointerleave', () => void release());
+      // Stop for them when the line has had time to finish: two beats after it ends, at least 1.5 s
+      // more, and inside the 15 s a clip can hold.
+      const lineEnd = lineAtLocal + opts.line.ms + Math.max(1_500, 2 * opts.beatMs);
+      autoStop = setTimeout(() => void stop(), Math.min(14_000, Math.max(2_000, lineEnd - Date.now())));
+    };
+
+    // Tap to start, tap again to stop (holding was easy to let slip and cut the line short).
+    button.addEventListener('click', () => (live ? void stop() : start(false)));
     button.addEventListener('contextmenu', (e) => e.preventDefault());
+    // On your own turn the mic opens by itself on the last beat of the count-in.
+    if (opts.autoStart && autoMicWanted()) {
+      const at = lineAtLocal - opts.beatMs;
+      if (Date.now() < lineAtLocal + opts.line.ms) setTimeout(() => start(true), Math.max(0, at - Date.now()));
+    }
     box.append(button, status);
     if (opts.pitch) {
       box.append(
@@ -257,7 +311,7 @@ function singBox(opts: SingOptions): HTMLElement {
             onclick: (e: Event) => {
               setPitchWanted(!pitchWanted());
               (e.currentTarget as HTMLElement).textContent = pitchWanted() ? 'Turn pitch off' : 'Turn pitch on (next time)';
-              pitchNote.textContent = pitchWanted() ? 'Pitch will be measured from your next hold.' : 'Pitch is off: scored on words and timing.';
+              pitchNote.textContent = pitchWanted() ? 'Pitch will be measured from your next line.' : 'Pitch is off: scored on words and timing.';
             },
           },
           pitchWanted() ? 'Turn pitch off' : 'Turn pitch on',
@@ -342,7 +396,7 @@ function singScreen(ctx: Ctx): HTMLElement {
   const off = offset(game);
   const st = mine.singTurn;
   if (st) {
-    // In a continuous song this shows from the turn before, so the hold can start on the count-in.
+    // In a continuous song this shows from the turn before, so the mic can open on the count-in.
     return h(
       'div',
       { class: 'screen' },
@@ -357,12 +411,13 @@ function singScreen(ctx: Ctx): HTMLElement {
         offset: off,
         romaji: kana,
         pitch: true,
-        label: 'Hold and sing 🎤',
+        label: 'Tap to sing 🎤',
+        autoStart: true,
         typed: true,
         kanaPadOpen: kana,
         onSend: (take) => send({ kind: 'sing', turn: st.no, ...take }),
       }),
-      h('p', { class: 'hint' }, 'Press when the count-in ends and hold until the line is done.'),
+      autoMicHint(),
     );
   }
   if (mine.isMyTurn) {
@@ -396,7 +451,8 @@ function singScreen(ctx: Ctx): HTMLElement {
         offset: off,
         romaji: kana,
         pitch: false,
-        label: 'Hold and sing along 🎶',
+        label: 'Tap to sing along 🎶',
+        autoStart: false,
         typed: false,
         kanaPadOpen: false,
         onSend: (take) => send({ kind: 'chorus', turn: turn.no, utterance: take.utterance }),
@@ -485,7 +541,7 @@ function resultScreen(ctx: Ctx): HTMLElement {
 
 export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
   key: (view, game) => {
-    // Never redraw under a hold that is recording or sending.
+    // Never redraw under a take that is recording or sending.
     if (view.phase === 'answer' && busyTurn !== null) return `busy:${busyTurn}`;
     // A continuous song's singer keeps one screen from their count-in to the take being sent.
     const st = game.mine?.singTurn;
@@ -517,7 +573,7 @@ export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
           { class: 'screen' },
           h('p', { class: 'big', lang: 'ja' }, '🎤 カラオケ対決'),
           h('p', {}, 'Two singers duel through a song, trading lines over the music. Everyone learns the chorus!'),
-          h('p', {}, 'On your turn, watch the count-in, then hold the button and sing the line. Let go when it ends.'),
+          h('p', {}, 'On your turn your mic turns on at the end of the count-in: sing the line, and it stops when the line ends (or tap Done).'),
           h('p', { class: 'hint' }, 'Words 60% · pitch 25% · timing 15%. Not duelling? Sing along for chorus points and vote for the crowd favourite.'),
         );
       case 'prompt': {
