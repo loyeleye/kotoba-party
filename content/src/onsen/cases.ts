@@ -554,10 +554,10 @@ export const toupeeCase: OnsenCase = {
       answers: {
         where: { jp: t('10じはんから、にわの ベンチで ねました。', 'じゅうじはんから、にわの ベンチで ねました。', 'From 10:30 I slept on a garden bench.') },
         what: { jp: t('2じかんの スピーチを しました。つかれました。おきたら、あたまが さむかったです。', 'にじかんの スピーチを しました。つかれました。おきたら、あたまが さむかったです。', 'I gave a two-hour speech. I was tired. When I woke up, my head was cold.'), clueId: 'cold-head' },
-        who: { jp: t('10じに もりたくんを みました。しごとの ことで おこって いました。', 'じゅうじに もりたくんを みました。しごとの ことで おこって いました。', 'At 10 I saw Morita. He was angry about work.'), clueId: 'morita-angry' },
+        who: { jp: t('10じに もりたさんを みました。しごとの ことで おこって いました。', 'じゅうじに もりたさんを みました。しごとの ことで おこって いました。', 'At 10 I saw Morita. She was angry about work.'), clueId: 'morita-angry' },
         when: { jp: t('11じに おきました。それから へやで ねました。', 'じゅういちじに おきました。それから へやで ねました。', 'I woke up at 11. Then I went to bed in my room.') },
         victim: { jp: k('カツラ？　なんの ことですか。わたしの かみは ぜんぶ ほんものです。', 'Toupee? What are you talking about? All my hair is real.') },
-        item: { jp: k('その つりざお？　もりたくんのです。しゅみは つりです。', "That fishing rod? It's Morita's. Fishing is his hobby."), clueId: 'rod' },
+        item: { jp: k('その つりざお？　もりたさんのです。しゅみは つりです。', "That fishing rod? It's Morita's. Fishing is her hobby."), clueId: 'rod' },
       },
     },
     {
@@ -566,7 +566,7 @@ export const toupeeCase: OnsenCase = {
       role: k('しゃいん', 'an employee'),
       emoji: '😤',
       voice: { pitch: 1.0, rate: 1.0 },
-      persona: 'An overworked employee whose boss takes credit for everything he does. Polite through gritted teeth; a terrible actor.',
+      persona: 'An overworked employee whose boss takes credit for everything she does. Polite through gritted teeth; a terrible actor.',
       answers: {
         where: { jp: t('10じから、へやで ねて いました。', 'じゅうじから、へやで ねて いました。', 'From 10 I was asleep in my room.'), clueId: 'morita-room' },
         what: { jp: k('なにも して いません。ねて いました。', "I didn't do anything. I was asleep.") },
@@ -586,7 +586,7 @@ export const toupeeCase: OnsenCase = {
       answers: {
         where: { jp: t('10じはんから、にわに いました。', 'じゅうじはんから、にわに いました。', 'From 10:30 I was in the garden.') },
         what: { jp: k('にわを そうじしました。しゃちょうさんは ベンチで ねて いました。', 'I swept the garden. The president was asleep on the bench.'), clueId: 'oota-bench' },
-        who: { jp: t('10じ45ふんに もりたさんを みました。にかいの ベランダに いました。', 'じゅうじよんじゅうごふんに もりたさんを みました。にかいの ベランダに いました。', 'At 10:45 I saw Morita. He was on the second-floor balcony.'), clueId: 'saw-morita' },
+        who: { jp: t('10じ45ふんに もりたさんを みました。にかいの ベランダに いました。', 'じゅうじよんじゅうごふんに もりたさんを みました。にかいの ベランダに いました。', 'At 10:45 I saw Morita. She was on the second-floor balcony.'), clueId: 'saw-morita' },
         when: { jp: t('12じに ねました。', 'じゅうにじに ねました。', 'I went to bed at 12.') },
         victim: { jp: k('カツラさんは いつも しゃちょうさんの あたまの うえに いました。', 'Katsura-san was always on top of the president’s head.') },
         item: { jp: k('つりざおは わかりません。', "The fishing rod, I don't know.") },
@@ -597,7 +597,7 @@ export const toupeeCase: OnsenCase = {
     { id: 'cold-head', jp: k('おおたしゃちょうは おきたら、あたまが さむかった。', 'When President Ōta woke up, his head was cold.') },
     { id: 'oota-bench', jp: k('おおたしゃちょうは にわの ベンチで ねて いた。', 'President Ōta was asleep on a garden bench.') },
     { id: 'morita-angry', jp: t('10じ：もりたさんは しごとの ことで おこって いた。', 'じゅうじ、もりたさんは しごとの ことで おこって いた。', 'At 10 Morita was angry about work.'), key: true },
-    { id: 'rod', jp: k('つりざおは もりたさんの。しゅみは つり。', "The fishing rod is Morita's. Fishing is his hobby."), key: true },
+    { id: 'rod', jp: k('つりざおは もりたさんの。しゅみは つり。', "The fishing rod is Morita's. Fishing is her hobby."), key: true },
     { id: 'morita-room', jp: t('もりたさん：「10じから、へやで ねて いました」', 'もりたさん、じゅうじから、へやで ねて いました。', 'Morita: "From 10 I was asleep in my room."'), key: true },
     { id: 'credit', jp: k('しゃちょうは もりたさんの しごとを「わたしの しごと」と いう。', 'The president calls Morita’s work his own.'), key: true },
     { id: 'no-fishing', jp: k('もりたさん：「つりは しません」', 'Morita: "I don’t fish."'), key: true },
@@ -608,7 +608,7 @@ export const toupeeCase: OnsenCase = {
     k('ベランダから つりざおで… つれました。', 'From the balcony, with my fishing rod… I got a bite.'),
     k('しゃちょうの カツラ、いちども じぶんで つくって いませんよね。ごめんなさい！', 'Well, the president never made that one himself either. I’m sorry!'),
   ],
-  solution: 'Morita said he was asleep in his room from 10 and never fishes, but Uchida saw him on the balcony above the garden at 10:45, and the fishing rod is his. The president always takes credit for his work, and was asleep on the bench below. Uchida was only sweeping the garden.',
+  solution: 'Morita said she was asleep in her room from 10 and never fishes, but Uchida saw her on the balcony above the garden at 10:45, and the fishing rod is hers. The president always takes credit for her work, and was asleep on the bench below. Uchida was only sweeping the garden.',
   shrug: k('その しつもんは、かいぎで はなしましょう。', "Let's take that question to a meeting."),
 };
 
