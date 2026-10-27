@@ -172,7 +172,19 @@ function showJoin(message = ''): void {
     button,
     error,
   );
-  mount(app, form);
+  // Hosting is the stage with no code: it makes a room. Left out when an invite link brought a player here.
+  const host = params.has('code')
+    ? []
+    : [
+        h('p', { class: 'or' }, 'or'),
+        h(
+          'a',
+          { class: 'host-link', href: '/stage/' },
+          h('img', { src: '/stage/assets/hosts/pon.png', alt: '', width: 48, height: 48, onerror: (e: Event) => (e.target as HTMLElement).remove() }),
+          h('span', {}, h('strong', {}, 'Host a game'), h('small', {}, 'Put the big screen on a TV or laptop.')),
+        ),
+      ];
+  mount(app, form, ...host);
   (codeInput.value ? nameInput : codeInput).focus();
 }
 
