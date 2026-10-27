@@ -16,7 +16,7 @@ import {
   type WordGauntletState,
   type WordGauntletView,
 } from '../shared/src/modes/wordGauntlet/wordGauntlet.js';
-import { OBSCURE_WORDS } from '../shared/src/modes/wordGauntlet/words.js';
+import { CHEEKY_WORDS, fakeWordPool, OBSCURE_WORDS } from '../shared/src/modes/wordGauntlet/words.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { Bot, Director } from '../tools/bots/bot.js';
@@ -127,6 +127,31 @@ describe('shiritori kana rules', () => {
     expect(OBSCURE_WORDS.length).toBeGreaterThanOrEqual(12);
     expect(OBSCURE_WORDS.length).toBeLessThanOrEqual(20);
     for (const w of OBSCURE_WORDS) expect(wordReading(w.jp.kana), w.id).not.toBeNull();
+  });
+
+  it('deals Fake Kanji words by the room\'s Audience', () => {
+    expect(CHEEKY_WORDS.length).toBeGreaterThanOrEqual(6);
+    expect(CHEEKY_WORDS.length).toBeLessThanOrEqual(8);
+    const ids = new Set([...OBSCURE_WORDS, ...CHEEKY_WORDS].map((w) => w.id));
+    expect(ids.size).toBe(OBSCURE_WORDS.length + CHEEKY_WORDS.length);
+    for (const w of CHEEKY_WORDS) {
+      expect(wordReading(w.jp.kana), w.id).not.toBeNull();
+      expect(w.kids, w.id).toBeFalsy();
+    }
+    const kids = OBSCURE_WORDS.filter((w) => w.kids);
+    expect(kids.length).toBeGreaterThanOrEqual(10);
+    const cheekyIds = new Set(CHEEKY_WORDS.map((w) => w.id));
+    for (let seed = 0; seed < 20; seed++) {
+      let n = seed;
+      const random = () => ((n = (n * 9301 + 49297) % 233280) / 233280);
+      const k = fakeWordPool('kids', random, 2);
+      expect(k).toHaveLength(2);
+      for (const w of k) expect(w.kids, w.id).toBe(true);
+      for (const w of fakeWordPool('family', random, 2)) expect(cheekyIds.has(w.id), w.id).toBe(false);
+      for (const w of fakeWordPool('cheeky', random, 2)) expect(cheekyIds.has(w.id), w.id).toBe(true);
+    }
+    // A Cheeky deal longer than the cheeky list tops up from the base list.
+    expect(fakeWordPool('cheeky', Math.random, CHEEKY_WORDS.length + 3)).toHaveLength(CHEEKY_WORDS.length + 3);
   });
 });
 
