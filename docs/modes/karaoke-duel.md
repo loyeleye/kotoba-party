@@ -23,10 +23,28 @@ Code: `shared/src/modes/karaokeDuel/` (`karaokeDuel.ts` rules, `scoring.ts`, `pi
 | Song card | `prompt` | Song title, every line (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
 | Sing | `answer` ×8 or ×16 | **Grown-up songs are continuous** (`form` + `track`): one produced instrumental plays the whole song (intro, verse, chorus, verse 2, chorus, about 80–130 s) and the duelists trade lines on its clock, one line every two bars; each sings every chorus line once. One phase per line, ending one bar before the next line so the next singer's count-in overlaps; the next singer sees their line during it; a take counts until 10 s after its line ends (the recogniser is slow), and lines with no take are marked missed when the song ends. **Kids' songs** are four-line sing-alongs: a 0.7 s breath, a one-bar count-in, the line, then 3 s; both duelists sing every line, who goes first alternates, and a take ends the turn at once. | Continuous: the track's own timing. Sing-along: 0.7 s + 4 beats + line + 3 s |
 | Crowd vote | `reveal` | Everyone not duelling votes for the crowd favourite. Skipped when nobody is watching (2 players). Ends when every connected voter is in. | 12 s |
-| Duel result | `score` | Sung points, lines won, crowd votes, the winner. | 9 s |
+| Duel result | `score` | Sung points, lines won, crowd votes, the winner. Before every round but the last, the duel's loser picks the next song on their phone from three, or says "Surprise me". | 9 s (14 s with a pick) |
 | Finale | `finale` | Standings, then the shared recap (awards, the song sheet phrasebook). | 9 s |
 
 A 4-song game of grown-up songs runs about 10 minutes.
+
+### Which song, which take, which words
+
+The host sets the room's **Audience** in the main stage's settings: Kids, Family (the default) or
+Cheeky. Cheeky asks first, with a warning that it is grown-up humour (drinking, bad dates, bathroom
+emergencies, innuendo, never explicit) and not for children, classrooms or a stream.
+
+Each round plays the next **track** (a song, whatever its versions) from a queue shuffled at the
+start, so no song comes up twice until every one has played (grown-up songs first, children's
+sing-alongs after; in a Kids room they're mixed in). Then one of the song's two recorded takes,
+at random, and a **lyric set** for the audience: every take has kids, family and cheeky words
+(`lyrics/`, one file per song), each sung on the take's own melody and chords, mora for mora. A
+version's own lines are one of its family sets. The TV's song card marks kids' and cheeky words.
+
+**The loser's pick.** On the duel result, the loser (on a tie, either duelist) gets the next
+three songs in the queue on their phone, plus "Surprise me" (the first of them). Choosing is a
+small consolation prize; offering only the next three keeps the draw random, so nobody can always
+fall back on a favourite (Ladi, 2026-10-27). No pick, or a loser who has left, plays the next one.
 
 ### Who duels
 
@@ -192,7 +210,7 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     words above N4 were swapped out (残業, 満員, 飛べ).
 19. **Grown-up songs first.** A game plays every grown-up song (shuffled) before any
     children's song, so a default four-song game has none. Ladi asked to move past children's
-    songs (2026-10-27).
+    songs (2026-10-27). In a Kids room they're shuffled in with the rest.
 20. **Each song has a backing style** (`style`: nursery, citypop, enka, rock, izakaya,
     blues, kayou, hiphop, idol, rnb). It sets the bass pattern, swing, light drums (kick, snare
     or claps, eighth or sixteenth hi-hats, four-on-the-floor or boom-bap) and the guide's sound;
@@ -256,6 +274,14 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     Dm7 G7 | Cmaj7 Am7 loop. Its old ramen lyrics and Lazy Saturday are gone. Verse lines start
     off the beat, so its `form` adds a per-line offset to `standardForm`.
     The method and scripts are in project files `tools/mureka/`.
+23. **Audience lyric sets** (Ladi, 2026-10-27: "the three kid, adult family, adult cheeky
+    versions for each track"). The Audience is a room setting, not a per-song choice, like a
+    family-friendly filter: one switch, set by the host, and Cheeky is never the default. Each
+    round is random by default (take and words), with the loser's pick of three as the only
+    choice. Every set keeps each line's mora count so it fits the recorded take, and none sings
+    the song's title (`tests/karaokeLyrics.test.ts` checks both). Sleepless Night no longer has to
+    be all N5, but its kids' sets are the simplest in the game. The sets are drafts: they need
+    the fluent check, and the cheeky ones a taste check.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
     practice; the ball always runs over kana.

@@ -28,8 +28,9 @@ Commands:
 - `micCheck { utterance }`: the lobby's "say こんにちは" check.
 - `skip { phaseSeq }`: VIP or stage, timed phases.
 - `playAgain`: VIP or stage, recap.
-- `settings { remoteControl }`: main stage only (its settings panel). `remoteControl: true` lets
-  watching stages send `start`, `skip` and `playAgain` too; every view carries `remoteControl`.
+- `settings { remoteControl?, audience? }`: main stage only (its settings panel). `remoteControl: true` lets
+  watching stages send `start`, `skip` and `playAgain` too; `audience` is `kids`, `family` (the
+  default) or `cheeky`, and picks the lyric sets Karaoke Duel sings. Every view carries both.
 - `closeRoom`: main stage only (its settings panel, after a confirm). Ends the room for everyone
   with `bye room-ended`; never allowed from a watching stage, even with remote control on.
 
