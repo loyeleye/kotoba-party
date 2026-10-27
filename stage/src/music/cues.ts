@@ -38,6 +38,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'last-train': 'rush',
   // Karaoke Duel plays its own backing track (karaokeAudio.ts).
   'karaoke-duel': null,
+  // The calligraphy contest is quiet: the soft synth tune throughout (shodoCue).
+  shodo: 'gentle',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -78,6 +80,8 @@ export const SPEAKING_PHASES: Partial<Record<ModeId, Phase[]>> = {
   // "Say it together" and the golden word are spoken during score.
   oekaki: ['score'],
   'word-gauntlet': ['score'],
+  // Say each target before tracing it, then read the scroll together.
+  shodo: ['prompt', 'score'],
 };
 
 /**
@@ -93,13 +97,16 @@ export const speaks = (mode: ModeId | null, phase: Phase): boolean => TALKING.ha
  * small phone speaker and pick what they heard, so the music drops further than for speaking.
  */
 export const listening = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): boolean =>
-  view.mode === 'kana-raid' && view.phase === 'answer' && !!view.game && 'wave' in view.game && (view.game.wave === 2 || view.game.wave === 3);
+  (view.mode === 'kana-raid' && view.phase === 'answer' && !!view.game && 'wave' in view.game && (view.game.wave === 2 || view.game.wave === 3)) ||
+  // Shodō Taikai's dictation: each phone voices its own word.
+  (view.mode === 'shodo' && view.phase === 'answer' && !!view.game && 'itemKind' in view.game && view.game.itemKind === 'dictation');
 
 export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = false): Cue {
   if (phase === 'lobby') return { song: 'bouncing', mix: 'full' };
   // Curtain Call, then the recap tune.
   if (phase === 'recap') return { song: 'happy-dance', mix: 'full', leadIn: 'fanfare' };
   if (mode === 'karaoke-duel') return karaokeCue(phase);
+  if (mode === 'shodo') return shodoCue(phase, listen);
   const theme = mode ? themeFor(mode, game) : 'bouncing';
   if (theme === null) return { song: null, mix: 'full' };
   const mix = listen ? 'listen' : speaks(mode, phase) ? 'under' : 'full';
@@ -127,4 +134,16 @@ function karaokeCue(phase: Phase): Cue {
   if (phase === 'intro') return { song: 'gentle', mix: 'full', leadIn: 'ident' };
   if (phase === 'finale') return { song: 'finale', mix: 'full' };
   return { song: 'gentle', mix: phase === 'prompt' ? 'full' : 'under' };
+}
+
+/**
+ * Shodō Taikai stays on one soft tune from start to end (the music panel): no drum roll, no score
+ * or finale tunes, and under the whole time players write, say or read, so the room stays calm.
+ * Only the stamp vote (finale) plays it full.
+ */
+function shodoCue(phase: Phase, listen: boolean): Cue {
+  const song = MODE_THEMES.shodo ?? 'gentle';
+  if (phase === 'intro') return { song, mix: 'full', leadIn: 'ident' };
+  if (phase === 'finale') return { song, mix: 'full', keep: true };
+  return { song, mix: listen ? 'listen' : 'under', keep: true };
 }

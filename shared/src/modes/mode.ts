@@ -7,6 +7,7 @@
 
 import type {
   BossWord,
+  CharStrokes,
   HostAward,
   HostId,
   HostLine,
@@ -23,6 +24,7 @@ import type {
   SetPhraseTile,
   TopicPack,
 } from '../../../content/src/types.js';
+import type { WriteKanji, WriteWord } from '../../../content/src/kanji/kanji.js';
 import type { ModeId, Phase, Viewer } from '../protocol.js';
 
 /** All the content a mode may draw on. Plain arrays, so tests can pass small fixtures. */
@@ -34,6 +36,10 @@ export interface ContentLibrary {
   kanaChapters: readonly KanaChapter[];
   /** Stroke references for the Raid's Ink Storm wave (basic kana only). */
   kanaStrokes: readonly KanaStrokes[];
+  /** Shodō Taikai's kanji (N5 and N4) and two-kanji words, with KanjiVG stroke references. */
+  writeKanji: readonly WriteKanji[];
+  writeWords: readonly WriteWord[];
+  kanjiStrokes: readonly CharStrokes[];
   lookAlikeSets: readonly LookAlikeSet[];
   minimalPairs: readonly MinimalPair[];
   bossWords: readonly BossWord[];
@@ -54,6 +60,9 @@ export const EMPTY_CONTENT: ContentLibrary = {
   kana: [],
   kanaChapters: [],
   kanaStrokes: [],
+  writeKanji: [],
+  writeWords: [],
+  kanjiStrokes: [],
   lookAlikeSets: [],
   minimalPairs: [],
   bossWords: [],

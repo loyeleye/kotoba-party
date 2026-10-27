@@ -28,7 +28,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | --- | --- | --- | --- | --- |
 | 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms |
 | 2 | VOICEVOX engine | Docker image, separate service | 🟡 | Run unmodified as a service; LGPL/core terms if ever bundled into a download |
-| 3 | KanjiVG stroke data | `content/src/kana/strokes.ts` | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
+| 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
 | 6 | AI art: PixelLab (all stage art: hosts, yōkai, backdrop and its scene layers, the Last Train carriage, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits, 14 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
@@ -82,8 +82,9 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 ### 3. KanjiVG
 
 - **Terms:** CC BY-SA 3.0, © Ulrich Apel and contributors. Commercial use is allowed.
-- **Conditions:** Attribution, and anything derived from it stays CC BY-SA. `strokes.ts` is derived, and
-  its header already says so. The share-alike applies to that data, not to the rest of the game, as long
+- **Read:** https://github.com/KanjiVG/kanjivg/blob/master/COPYING, 2026-10-27.
+- **Conditions:** Attribution, and anything derived from it stays CC BY-SA. Both `strokes.ts` files
+  (kana, and the 111 kanji Shodō Taikai uses) are derived, and their headers say so. The share-alike applies to that data, not to the rest of the game, as long
   as it stays a separate data file.
 - **To sell:** Credit KanjiVG on the credits screen and in the notices file. Accept that anyone may
   reuse the stroke data.

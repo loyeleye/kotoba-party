@@ -28,6 +28,7 @@ import { phraseBingoPolicy } from './policies/phraseBingo.js';
 import { wordGauntletPolicy } from './policies/wordGauntlet.js';
 import { touristPolicy } from './policies/tourist.js';
 import { oekakiPolicy } from './policies/oekaki.js';
+import { shodoPolicy } from './policies/shodo.js';
 
 const { values } = parseArgs({
   options: {
@@ -84,6 +85,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
       return oekakiPolicy({ seed: seat });
     case 'omiai':
       return omiaiPolicy();
+    case 'shodo':
+      return shodoPolicy({ content: content(), seed: seat });
     default:
       return undefined;
   }

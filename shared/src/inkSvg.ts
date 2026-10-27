@@ -3,6 +3,7 @@
 // stroke-dashoffset), one after another in stroke order. `elapsedMs` starts the animation
 // part-way through (a negative delay), so a re-render never restarts a replay already playing.
 
+import { brushPath } from './brush.js';
 import type { InkPoint } from './japanese/strokes.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -23,7 +24,15 @@ export interface InkSvgOptions {
   colors?: readonly (string | undefined)[];
   /** Stroke width in viewBox units (the box is 100 wide); default from the stylesheet. */
   width?: number;
+  /**
+   * Draw each stroke as a brush outline (thick landing, sweeps that taper; brush.ts) revealed by
+   * the same animation, instead of an even line. `width` is the brush's body width (default 7).
+   */
+  brush?: boolean;
 }
+
+// Mask ids must be unique in the page.
+let maskSeq = 0;
 
 export function inkSvg(strokes: readonly (readonly InkPoint[])[], opts: InkSvgOptions = {}): SVGSVGElement {
   const svg = document.createElementNS(SVG, 'svg');
@@ -56,7 +65,22 @@ export function inkSvg(strokes: readonly (readonly InkPoint[])[], opts: InkSvgOp
     const color = opts.colors?.[i];
     const look = `${color ? `stroke:${color};` : ''}${opts.width ? `stroke-width:${opts.width};` : ''}`;
     path.setAttribute('style', `${look}animation-duration:${Math.round(durs[i]!)}ms;animation-delay:${Math.round(starts[i]! - elapsed)}ms`);
-    svg.append(path);
+    if (opts.brush) {
+      // The brush shape is revealed by the animated centre line drawn into a mask.
+      const w = opts.width ?? 7;
+      const id = `ink-m${++maskSeq}`;
+      const mask = document.createElementNS(SVG, 'mask');
+      mask.setAttribute('id', id);
+      mask.setAttribute('maskUnits', 'userSpaceOnUse');
+      path.setAttribute('style', `stroke:#fff;stroke-width:${(w * 2.6).toFixed(1)};animation-duration:${Math.round(durs[i]!)}ms;animation-delay:${Math.round(starts[i]! - elapsed)}ms`);
+      mask.append(path);
+      const shape = document.createElementNS(SVG, 'path');
+      shape.setAttribute('d', brushPath(s, w));
+      shape.setAttribute('class', 'ink-brush');
+      shape.setAttribute('mask', `url(#${id})`);
+      if (color) shape.setAttribute('style', `fill:${color}`);
+      svg.append(mask, shape);
+    } else svg.append(path);
     if (opts.numbers) {
       const n = document.createElementNS(SVG, 'text');
       let [x, y] = [Math.min(92, Math.max(2, pts[0]![0] * 100 - 6)), Math.min(96, Math.max(8, pts[0]![1] * 100 - 3))];

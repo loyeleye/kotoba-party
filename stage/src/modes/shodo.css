@@ -1,0 +1,58 @@
+/* Shodō Taikai stage (readable from 3 m): washi paper, sumi ink, red hanko. Scoped under .sho. */
+.sho { display: grid; gap: 16px; justify-items: center; }
+.sho p { margin: 0; }
+.sho .sho-tag { color: var(--mode); font-weight: 800; font-size: 24px; text-transform: uppercase; letter-spacing: 0.08em; }
+.sho .sho-title { font-size: 104px; font-weight: 900; color: #f4efe3; letter-spacing: 0.1em; }
+.sho .sho-steps { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 12px; width: min(900px, 100%); text-align: left; }
+.sho .sho-step { display: grid; grid-template-columns: 60px 1fr; gap: 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 12px 20px; font-size: 30px; font-weight: 700; animation: sho-in 0.5s ease both; }
+.sho .sho-num { width: 56px; height: 56px; border-radius: 50%; background: var(--mode); color: var(--on-accent); font-size: 32px; font-weight: 900; display: grid; place-items: center; }
+.sho .sho-ja { color: var(--muted); font-weight: 600; }
+.sho .sho-motto { font-size: 40px; color: #c8102e; font-weight: 800; letter-spacing: 0.2em; }
+
+.sho .ink-svg { background: transparent; box-shadow: none; border-radius: 0; }
+.sho .ink-brush { fill: #1b1712; }
+
+/* The shared scroll: one column per player, read top to bottom, right to left. */
+.sho .sho-scroll { direction: rtl; display: flex; gap: 0; padding: 26px 30px; background: linear-gradient(90deg, #e9e0cb, #f6f0e2 6%, #f6f0e2 94%, #e9e0cb); border-block: 14px solid #5a3d24; border-radius: 6px; box-shadow: 0 14px 40px #0008; max-width: 100%; overflow: hidden; }
+.sho .sho-col { direction: ltr; display: grid; align-content: start; gap: 6px; width: clamp(90px, 10vw, 150px); padding: 0 10px; border-left: 1px solid rgba(120, 90, 50, 0.25); }
+.sho .sho-col:last-child { border-left: 0; }
+.sho .sho-char { display: grid; justify-items: center; animation: sho-in 0.6s ease both; }
+.sho .sho-char .ink-svg { width: 100%; }
+.sho .sho-char.empty { aspect-ratio: 1; place-items: center; }
+.sho .sho-wet { color: rgba(60, 50, 40, 0.4); font-size: 40px; animation: sho-breathe 2s ease-in-out infinite; }
+.sho .sho-read { color: #3b2d1d; font-size: 28px; font-weight: 800; }
+.sho .sho-read small { display: block; font-size: 20px; color: #7a6650; }
+
+/* Writing: an inkstone fills as sheets come in (never whose). */
+.sho .sho-inkstone { display: flex; gap: 14px; }
+.sho .sho-inkstone span { width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--mode); }
+.sho .sho-inkstone span.in { background: #1b1712; border-color: #f4efe3; animation: sho-drop 0.4s ease both; }
+
+/* Replay and gallery walls. */
+.sho .sho-wall { display: grid; gap: 22px; justify-content: center; grid-template-columns: repeat(4, minmax(0, 260px)); width: 100%; }
+.sho .sho-wall.n1 { grid-template-columns: minmax(0, 420px); }
+.sho .sho-wall.n2 { grid-template-columns: repeat(2, minmax(0, 380px)); }
+.sho .sho-wall.n3 { grid-template-columns: repeat(3, minmax(0, 330px)); }
+.sho .sho-wall.n5, .sho .sho-wall.n6 { grid-template-columns: repeat(3, minmax(0, 300px)); }
+.sho .sho-paper { position: relative; display: grid; gap: 6px; padding: 14px; background: #f6f0e2; color: #1b1712; border-radius: 4px; box-shadow: 0 10px 28px #0009; transform: rotate(var(--tilt, 0deg)); }
+.sho .sho-paper.clean { box-shadow: 0 0 0 4px var(--mode), 0 10px 28px #0009; }
+.sho .sho-cells { position: relative; display: flex; }
+.sho .sho-cell { flex: 1; min-width: 0; aspect-ratio: 1; background-image: linear-gradient(rgba(200, 16, 46, 0.18), rgba(200, 16, 46, 0.18)), linear-gradient(rgba(200, 16, 46, 0.18), rgba(200, 16, 46, 0.18)); background-size: 1px 100%, 100% 1px; background-position: center; background-repeat: no-repeat; }
+.sho .sho-caption { font-size: 26px; font-weight: 800; color: #3b2d1d; }
+.sho .sho-caption small { font-size: 20px; color: #7a6650; }
+.sho .sho-clean { color: #1d7a46; }
+.sho .sho-order { position: absolute; top: 10px; right: 10px; padding: 2px 10px; background: #c8102e; color: #fff; font-size: 24px; font-weight: 900; border-radius: 4px; opacity: 0; animation: sho-pop 0.3s ease forwards; }
+.sho .sho-misread { font-size: 36px; font-weight: 800; color: #f4efe3; }
+.sho .sho-n { position: absolute; top: -14px; left: -10px; background: #1b1712; color: #f4efe3; font-size: 22px; font-weight: 900; border-radius: 4px; padding: 2px 10px; }
+.sho .sho-hanamaru { position: absolute; width: 22%; aspect-ratio: 1; margin: -11% 0 0 -11%; border: 4px solid #e8384f; border-radius: 50%; box-shadow: inset 0 0 0 6px transparent, inset 0 0 0 9px #e8384f99; opacity: 0; animation: sho-pop 0.5s 0.6s ease forwards; pointer-events: none; }
+.sho .sho-stamps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 0; }
+.sho .sho-hanko { display: inline-block; padding: 2px 8px; border: 3px solid #c8102e; border-radius: 6px; color: #c8102e; font-size: 20px; font-weight: 900; transform: rotate(-4deg); animation: sho-stamp 0.35s ease both; }
+.sho .sho-claimed { font-size: 24px; font-weight: 800; color: #3b2d1d; }
+.sho .sho-seal { display: inline-grid; place-items: center; width: 34px; height: 34px; background: #c8102e; color: #fff; border-radius: 4px; font-size: 20px; }
+
+@keyframes sho-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes sho-breathe { 50% { opacity: 0.4; } }
+@keyframes sho-drop { from { transform: scale(0.4); } to { transform: none; } }
+@keyframes sho-pop { from { opacity: 0; transform: scale(1.6); } to { opacity: 1; transform: none; } }
+@keyframes sho-stamp { from { opacity: 0; transform: scale(2) rotate(-4deg); } to { opacity: 1; transform: rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) { .sho *, .sho .ink-stroke { animation-duration: 1ms !important; animation-iteration-count: 1 !important; } }

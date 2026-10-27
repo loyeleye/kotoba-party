@@ -1,4 +1,6 @@
-// Fude (brush tsukumogami): Kana Yōkai Raid, Kotoba Concentration.
+// Fude (brush tsukumogami): Kana Yōkai Raid, Kotoba Concentration, Oekaki, Shodō Taikai.
+// The shodo_* lines are Fude's quiet register: an over-serious calligraphy teacher who whispers
+// and takes the blame for slipped strokes (story panel, 2026-10-27).
 //
 // Written fallback host lines (Phase 1 host bank). All lines are kana-only so
 // kana-level players can read them; `kana` is exactly what TTS voices.
@@ -173,4 +175,45 @@ export const fudeLines: HostLine[] = [
   { id: 'fude.raid_escape.03', host: 'fude', event: 'raid_escape', jp: { text: 'まどから とんで いきました！', kana: 'まどから とんで いきました！', en: 'It flew out the window!' }, status: 'draft' },
   { id: 'fude.raid_escape.04', host: 'fude', event: 'raid_escape', jp: { text: 'つぎは つかまえます！　シュッ！', kana: 'つぎは つかまえます！　シュッ！', en: "Next time we'll catch it! Swish!" }, status: 'draft' },
   { id: 'fude.raid_escape.05', host: 'fude', event: 'raid_escape', jp: { text: 'ようかい、はやい！　でも まけません！', kana: 'ようかい、はやい！　でも まけません！', en: "Fast yōkai! But we won't lose!" }, status: 'draft' },
+  // shodo_intro
+  { id: 'fude.shodo_intro.01', host: 'fude', event: 'shodo_intro', jp: { text: 'しーっ… しょどうの じかんです。', kana: 'しーっ… しょどうの じかんです。', en: 'Shh… it\'s calligraphy time.' }, status: 'draft' },
+  { id: 'fude.shodo_intro.02', host: 'fude', event: 'shodo_intro', jp: { text: 'とめ、はね、はらい。こころを しずかに。', kana: 'とめ、はね、はらい。こころを しずかに。', en: 'Stop, flick, sweep. Calm your heart.' }, status: 'draft' },
+  { id: 'fude.shodo_intro.03', host: 'fude', event: 'shodo_intro', jp: { text: 'ふでを もって… ゆっくり いきましょう。', kana: 'ふでを もって… ゆっくり いきましょう。', en: 'Brush in hand… let\'s take it slowly.' }, status: 'draft' },
+  { id: 'fude.shodo_intro.04', host: 'fude', event: 'shodo_intro', jp: { text: 'きょうは しょどう たいかいです。おしずかに。', kana: 'きょうは しょどう たいかいです。おしずかに。', en: 'Today is the calligraphy contest. Quiet, please.' }, status: 'draft' },
+  { id: 'fude.shodo_intro.05', host: 'fude', event: 'shodo_intro', jp: { text: 'フデの おてほんを よく みて ください。', kana: 'フデの おてほんを よく みて ください。', en: 'Watch Fude\'s model closely.' }, status: 'draft' },
+  // shodo_practice
+  { id: 'fude.shodo_practice.01', host: 'fude', event: 'shodo_practice', jp: { text: 'まず なぞって… それから じぶんで。', kana: 'まず なぞって… それから じぶんで。', en: 'Trace it first… then on your own.' }, status: 'draft' },
+  { id: 'fude.shodo_practice.02', host: 'fude', event: 'shodo_practice', jp: { text: 'いっかくずつ、ていねいに。', kana: 'いっかくずつ、ていねいに。', en: 'One stroke at a time, carefully.' }, status: 'draft' },
+  { id: 'fude.shodo_practice.03', host: 'fude', event: 'shodo_practice', jp: { text: 'まちがえたら… フデの せいです。', kana: 'まちがえたら… フデの せいです。', en: 'If you slip… it\'s Fude\'s fault.' }, status: 'draft' },
+  { id: 'fude.shodo_practice.04', host: 'fude', event: 'shodo_practice', jp: { text: 'しずかに… いい ふでの おとですね。', kana: 'しずかに… いい ふでの おとですね。', en: 'Quiet… what a lovely brush sound.' }, status: 'draft' },
+  { id: 'fude.shodo_practice.05', host: 'fude', event: 'shodo_practice', jp: { text: 'とめ、はね、はらい。わすれないで。', kana: 'とめ、はね、はらい。わすれないで。', en: 'Stop, flick, sweep. Don\'t forget.' }, status: 'draft' },
+  // shodo_read
+  { id: 'fude.shodo_read.01', host: 'fude', event: 'shodo_read', jp: { text: 'みんなで よみましょう。せーの！', kana: 'みんなで よみましょう。せーの！', en: 'Let\'s read it together. Ready, go!' }, status: 'draft' },
+  { id: 'fude.shodo_read.02', host: 'fude', event: 'shodo_read', jp: { text: 'りっぱな まきものです！　せーの！', kana: 'りっぱな まきものです！　せーの！', en: 'A splendid scroll! Ready, go!' }, status: 'draft' },
+  { id: 'fude.shodo_read.03', host: 'fude', event: 'shodo_read', jp: { text: 'こえに だして よんで！　せーの！', kana: 'こえに だして よんで！　せーの！', en: 'Read it out loud! Ready, go!' }, status: 'draft' },
+  // shodo_dictation
+  { id: 'fude.shodo_dictation.01', host: 'fude', event: 'shodo_dictation', jp: { text: 'かきとりです！　いって、かいて！', kana: 'かきとりです！　いって、かいて！', en: 'Dictation! Say it, then write it!' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.02', host: 'fude', event: 'shodo_dictation', jp: { text: 'おもいだして… いって… かく！', kana: 'おもいだして… いって… かく！', en: 'Remember it… say it… write it!' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.03', host: 'fude', event: 'shodo_dictation', jp: { text: 'つぎの ことば！　いきますよ！', kana: 'つぎの ことば！　いきますよ！', en: 'Next word! Here it comes!' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.04', host: 'fude', event: 'shodo_dictation', jp: { text: 'ふでを はやく！　でも ていねいに！', kana: 'ふでを はやく！　でも ていねいに！', en: 'Quick brush! But careful!' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.05', host: 'fude', event: 'shodo_dictation', jp: { text: 'おおきな こえで いって、それから かいて！', kana: 'おおきな こえで いって、それから かいて！', en: 'Say it loudly, then write it!' }, status: 'draft' },
+  // shodo_clean
+  { id: 'fude.shodo_clean.01', host: 'fude', event: 'shodo_clean', jp: { text: 'うつくしい！　はなまるです！', kana: 'うつくしい！　はなまるです！', en: 'Beautiful! A flower circle!' }, status: 'draft' },
+  { id: 'fude.shodo_clean.02', host: 'fude', event: 'shodo_clean', jp: { text: 'すばらしい ひつじゅんです！', kana: 'すばらしい ひつじゅんです！', en: 'Wonderful stroke order!' }, status: 'draft' },
+  { id: 'fude.shodo_clean.03', host: 'fude', event: 'shodo_clean', jp: { text: 'みんな そろって います！', kana: 'みんな そろって います！', en: 'Everyone is in step!' }, status: 'draft' },
+  // shodo_misread
+  { id: 'fude.shodo_misread.01', host: 'fude', event: 'shodo_misread', jp: { text: 'フデには {char}に みえます… あれ？', kana: 'フデには {char}に みえます… あれ？', en: 'To Fude it looks like {char}… huh?' }, slots: ['{char}'], status: 'draft' },
+  { id: 'fude.shodo_misread.02', host: 'fude', event: 'shodo_misread', jp: { text: 'あれ？　{char}かな？　フデの めが わるい？', kana: 'あれ？　{char}かな？　フデの めが わるい？', en: 'Huh? Is that {char}? Are my eyes going?' }, slots: ['{char}'], status: 'draft' },
+  { id: 'fude.shodo_misread.03', host: 'fude', event: 'shodo_misread', jp: { text: '{char}…？　いえいえ、フデが すべりました。', kana: '{char}…？　いえいえ、フデが すべりました。', en: '{char}…? No, no, my brush slipped.' }, slots: ['{char}'], status: 'draft' },
+  // shodo_gallery
+  { id: 'fude.shodo_gallery.01', host: 'fude', event: 'shodo_gallery', jp: { text: 'さいごは おおきな いちまい。すきな ものを かいて ください。', kana: 'さいごは おおきな いちまい。すきな ものを かいて ください。', en: 'Last, one big sheet. Write something you love.' }, status: 'draft' },
+  { id: 'fude.shodo_gallery.02', host: 'fude', event: 'shodo_gallery', jp: { text: 'てんらんかいの じかんです。ゆっくり どうぞ。', kana: 'てんらんかいの じかんです。ゆっくり どうぞ。', en: 'Exhibition time. Take your time.' }, status: 'draft' },
+  { id: 'fude.shodo_gallery.03', host: 'fude', event: 'shodo_gallery', jp: { text: 'こころを こめて… いちまい。', kana: 'こころを こめて… いちまい。', en: 'With all your heart… one sheet.' }, status: 'draft' },
+  // shodo_vote
+  { id: 'fude.shodo_vote.01', host: 'fude', event: 'shodo_vote', jp: { text: 'すきな さくひんに はんこを おして ください！', kana: 'すきな さくひんに はんこを おして ください！', en: 'Stamp the works you like!' }, status: 'draft' },
+  { id: 'fude.shodo_vote.02', host: 'fude', event: 'shodo_vote', jp: { text: 'どれも いいですね… はんこを どうぞ！', kana: 'どれも いいですね… はんこを どうぞ！', en: 'They are all good… stamps, please!' }, status: 'draft' },
+  // shodo_claim
+  { id: 'fude.shodo_claim.01', host: 'fude', event: 'shodo_claim', jp: { text: 'じぶんの さくひんですか？　なまえを どうぞ！', kana: 'じぶんの さくひんですか？　なまえを どうぞ！', en: 'Is it yours? Sign your name!' }, status: 'draft' },
+  { id: 'fude.shodo_claim.02', host: 'fude', event: 'shodo_claim', jp: { text: 'さいごに みんなで よみましょう！　せーの！', kana: 'さいごに みんなで よみましょう！　せーの！', en: 'Finally, let\'s read them together! Ready, go!' }, status: 'draft' },
+  { id: 'fude.shodo_claim.03', host: 'fude', event: 'shodo_claim', jp: { text: 'たかく とんで！　じょうずに なりますように！', kana: 'たかく とんで！　じょうずに なりますように！', en: 'Fly high! May your writing improve!' }, status: 'draft' },
 ];

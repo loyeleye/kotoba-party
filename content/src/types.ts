@@ -112,6 +112,12 @@ export interface KanaStrokes {
   strokes: [number, number][][];
 }
 
+/** Stroke references for any character (Shodō Taikai's kanji), same format as `KanaStrokes`. */
+export interface CharStrokes {
+  char: string;
+  strokes: [number, number][][];
+}
+
 /** Wave 3: Long and Short. Two words that differ only in length, a small っ, or a similar contrast. */
 export interface MinimalPair {
   id: string;
@@ -447,7 +453,17 @@ export type HostEvent =
   | 'onsen_turn' // a player's turn to question a suspect
   | 'onsen_clue' // a question found a new clue
   | 'onsen_accuse' // the accusation opens
-  | 'onsen_reveal'; // the culprit is revealed
+  | 'onsen_reveal' // the culprit is revealed
+  // Shodō Taikai (Fude's quiet calligraphy-teacher register)
+  | 'shodo_intro'
+  | 'shodo_practice' // the お手本 warm-up starts
+  | 'shodo_read' // the room reads the shared scroll aloud together
+  | 'shodo_dictation' // a 書き取り item starts
+  | 'shodo_clean' // the synchro replay had clean writers
+  | 'shodo_misread' // a drawing read as a look-alike ({char})
+  | 'shodo_gallery' // the big gallery sheet starts
+  | 'shodo_vote' // stamping opens
+  | 'shodo_claim'; // claim your sheet, then the send-off
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 
