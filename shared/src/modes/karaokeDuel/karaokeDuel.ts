@@ -232,6 +232,16 @@ export interface KaraokeDuelView {
 // ---- helpers ----
 
 const songOf = (s: KaraokeState): Song | undefined => SONGS.find((x) => x.id === s.songId);
+
+/** The songs a game can play: every song, but only one version (picked at random) of each group. */
+export function playableSongs(random: () => number): Song[] {
+  const pick = new Map<string, Song>();
+  for (const group of new Set(SONGS.flatMap((x) => (x.group ? [x.group] : [])))) {
+    const versions = SONGS.filter((x) => x.group === group);
+    pick.set(group, versions[Math.floor(random() * versions.length)]!);
+  }
+  return SONGS.filter((x) => !x.group || pick.get(x.group) === x);
+}
 const isDuelist = (s: KaraokeState, id: string) => !!s.duel && (s.duel.a === id || s.duel.b === id);
 const currentTurn = (s: KaraokeState) => (s.turnIdx >= 0 ? s.turns[s.turnIdx] : undefined);
 export const isContinuous = (song: Song | undefined): boolean => !!song?.form;
@@ -404,11 +414,12 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
   setup(ctx, opts) {
     const random = () => ctx.random();
     const rounds = Math.max(1, Math.min(12, opts.rounds ?? 4));
+    const songs = playableSongs(random);
     return {
       totalRounds: rounds,
       round: 0,
       // Grown-up songs first; the children's sing-alongs only once those have all come up.
-      songOrder: [...shuffled(SONGS.filter((x) => !x.kids).map((x) => x.id), random), ...shuffled(SONGS.filter((x) => x.kids).map((x) => x.id), random)],
+      songOrder: [...shuffled(songs.filter((x) => !x.kids).map((x) => x.id), random), ...shuffled(songs.filter((x) => x.kids).map((x) => x.id), random)],
       songId: null,
       duel: null,
       turns: [],

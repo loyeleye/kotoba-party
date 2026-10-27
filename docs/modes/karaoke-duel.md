@@ -176,8 +176,8 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     `content/` and `ContentLibrary`, to keep engine changes at zero. Fourteen original draft
     songs, four lines each, every line under 5 s. Five are children's-style sing-alongs
     (greetings, food, travel; `kids: true`). Nine are grown-up songs in karaoke-box genres with
-    beginner words, each with a twist in the words: city pop (夜の ドライブ, which runs out of
-    gas), enka (雨の 港, crying over a forgotten umbrella), an anime-opening rocker (走れ！,
+    beginner words, each with a twist in the words: city pop (夜の ドライブ, two versions: the
+    sat-nav gets lost, or the passenger falls asleep), enka (雨の 港, two versions: a ten-year vow for a five-minute ferry, or waving off her own ship), an anime-opening rocker (走れ！,
     "…starting tomorrow!"), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, "…and
     it's only Monday"), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
     (自己紹介 ラップ, whose tune is the words' pitch accent), idol pop (キラキラ アイドル, "…so
@@ -209,6 +209,22 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     chorus. Ladi plans to commission songs written for the game before it is sold. Picks: Nights
     In June (city pop), Past Sadness (enka, Ladi's pick), JRPG Epic Rock Battle Theme, Hot Springs
     Town, Hustle, Lazy Saturday, Cheers For Starlight, Slow Jam and In Your Arms.
+22. **AI-made backings with Mureka, and song versions** (2026-10-27). Ladi found the CC tracks
+    hard to sing over, so each grown-up song gets a backing made for it with the Mureka API
+    (row 26 of the commercial-blockers log). Prompts ask for a soft "minus-one" accompaniment
+    with no lead, riff or solo competing with the singer, at a steady tempo, and Ladi approves
+    each prompt. Mureka doesn't reliably follow the requested chords, so the lyrics and melody are
+    written fresh for each take to the chords it actually plays (measured with librosa), then
+    reviewed by the humor writer, a songwriter and the Japanese expert. The cut file is already
+    the song's bars in order, time-stretched to an exact tempo, so its `track` is one segment.
+    When two takes both work, the song keeps both as **versions**: songs that share a `group`
+    are one song, and each game plays one of them at random (`playableSongs`). Night Drive is
+    first: version A (sat-nav lost, minor-iv city pop) and version B (passenger asleep,
+    IV–V–I–vi), both at 100 bpm in D major. Its old "out of gas" lyrics and Nights In June are gone.
+    Harbour in the Rain is second: version A (the five-minute ferry, one Dm7–G7–C–Fmaj7–G7–E7–Am
+    loop) and version B (she misses her own ship, a verse that ends on E7 and a chorus twice as
+    fast), both at 71 bpm in A minor. Its old umbrella lyrics and Past Sadness are gone.
+    The method and scripts are in project files `tools/mureka/`.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
     practice; the ball always runs over kana.
