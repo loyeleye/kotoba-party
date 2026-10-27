@@ -21,7 +21,7 @@
 // phase ends, capped at 30% of a player's points (design doc, Scoring).
 
 import type { JpText, Level } from '../../../../content/src/types.js';
-import { isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { awardKana, isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { checkStroke, gradeInk, KANJI_LIMITS, readInk, TRACE_TOLERANCE_LOOSEST, type InkGrade, type InkPoint, type InkStroke } from '../../japanese/strokes.js';
 import type { Phase, Viewer } from '../../protocol.js';
@@ -730,7 +730,7 @@ function enterClaim(s: ShodoState, ctx: ModeContext): void {
   if (g && award) {
     const a = AWARDS.find((x) => x.id === award)!;
     const n = g.winners[award]! + 1;
-    ctx.cue({ host: 'fude', event: 'shodo_award', slots: { award: a.ja, award_kana: a.ja.replace('賞', 'しょう'), award_en: `“${a.en}” stamp`, n: String(n), n_kana: NUMBER_KANA[n] ?? String(n) } });
+    ctx.cue({ host: 'fude', event: 'shodo_award', slots: { award: a.ja, award_kana: awardKana(a.ja), award_en: `“${a.en}” stamp`, n: String(n), n_kana: NUMBER_KANA[n] ?? String(n) } });
   }
 }
 

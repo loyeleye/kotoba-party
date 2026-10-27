@@ -9,7 +9,7 @@ import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, Phr
 import { MODES } from './modes/registry.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS } from './protocol.js';
-import { hasKanji, isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
+import { awardKana, hasKanji, isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
 
 export interface PlayerState {
   id: string;
@@ -332,8 +332,7 @@ function finish(state: GameState, ctx: GameContext): void {
  */
 function awardSlots(a: Award | undefined): Record<string, string> | undefined {
   if (!a) return undefined;
-  // 賞 is the one kanji award titles use; read aloud as しょう. Any other kanji is left to the voice.
-  const kana = a.title.replace(/賞/g, 'しょう');
+  const kana = awardKana(a.title);
   return { award: a.title, ...(hasKanji(kana) ? {} : { award_kana: kana }), award_en: a.en.replace(/\s*\(.*\)$/, ''), name: a.name };
 }
 

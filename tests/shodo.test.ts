@@ -229,7 +229,7 @@ describe('Shodō Taikai rounds', () => {
     r.tick();
     expect(r.s.phase).toBe('recap');
     // Fude presents an award: the cue names it, so a bank line can stand in for a slow LLM.
-    expect(r.s.cues.at(-1)).toMatchObject({ event: 'recap_award', slots: { award: expect.any(String), name: expect.any(String) } });
+    expect(r.s.cues.at(-1)).toMatchObject({ event: 'recap_award', slots: { award: expect.any(String), award_kana: expect.stringMatching(/^[ぁ-ゖァ-ヺー\s]+$/), name: expect.any(String) } });
     // Stamp awards go only to writers who claimed their sheet.
     const stampTitles = new Set<string>(AWARDS.map((a) => a.ja));
     const claimedWinners = (r.s.recap?.awards ?? []).filter((a) => stampTitles.has(a.title));
