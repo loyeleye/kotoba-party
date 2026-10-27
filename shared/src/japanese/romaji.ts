@@ -122,6 +122,12 @@ function word(text: string): string {
       double = true;
       continue;
     }
+    // を is only ever the particle: a word of its own, never half of a long vowel (ぼを is bo o).
+    if (ch === 'を') {
+      syllables.push(' o ');
+      double = false;
+      continue;
+    }
     if (ch === 'ー') {
       const last = syllables.at(-1);
       if (last && MACRON[last.at(-1)!]) syllables[syllables.length - 1] = last.slice(0, -1) + MACRON[last.at(-1)!];
