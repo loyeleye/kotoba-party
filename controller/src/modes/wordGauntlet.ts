@@ -311,6 +311,17 @@ function shiritoriScreen(ctx: Ctx): HTMLElement {
         lastWord ? h('p', { class: 'hint', lang: 'ja' }, `After: ${lastWord.text}`) : null,
         h('p', { class: 'wg-need', lang: 'ja' }, sh.needOptions.join(' / ')),
         needRomaji ? h('p', { class: 'wg-romaji wg-center' }, needRomaji) : null,
+        // Above the speak box: on kana level the pad is open and would push these off screen.
+        hint
+          ? h(
+              'div',
+              { class: 'wg-hint' },
+              h('p', { class: 'hint' }, hint.length ? 'Hint words:' : 'No hint words for this kana. Be brave!'),
+              hint.map((w) => h('p', { lang: 'ja' }, h('strong', {}, w.kana), isKanaLevel(ctx) ? ` (${toRomaji(w.kana)})` : '', h('small', {}, ` ${w.en}`))),
+            )
+          : (sh.mine?.tokens ?? 0) > 0
+            ? h('button', { class: 'secondary', type: 'button', onclick: () => void send({ kind: 'hint' }) }, `Use a hint token (${sh.mine?.tokens} left)`)
+            : null,
         speakBox({
           label: `Hold and say a word starting with ${sh.needOptions[0]}`,
           placeholder: `${sh.needOptions[0]}…`,
@@ -326,16 +337,6 @@ function shiritoriScreen(ctx: Ctx): HTMLElement {
             });
           },
         }),
-        hint
-          ? h(
-              'div',
-              { class: 'wg-hint' },
-              h('p', { class: 'hint' }, hint.length ? 'Hint words:' : 'No hint words for this kana. Be brave!'),
-              hint.map((w) => h('p', { lang: 'ja' }, h('strong', {}, w.kana), isKanaLevel(ctx) ? ` (${toRomaji(w.kana)})` : '', h('small', {}, ` ${w.en}`))),
-            )
-          : (sh.mine?.tokens ?? 0) > 0
-            ? h('button', { class: 'secondary', type: 'button', onclick: () => void send({ kind: 'hint' }) }, `Use a hint token (${sh.mine?.tokens} left)`)
-            : null,
       );
     }
     return h(

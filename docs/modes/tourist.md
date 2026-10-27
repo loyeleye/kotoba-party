@@ -117,9 +117,11 @@ questions and answers").
 
 ### Host cues (Chōchin-san)
 
-`intro` · `prompt_read` (no place in the cue: the line shows on the stage) · `answer_hurry` at a
-vote · `encore_invite` at the last chance · `reveal_react` at the score (ippon: the tourist guessed
-it; good: caught; flop: the tourist escaped), with the place in the cue only then.
+Chōchin-san's general bank is about the last train, so this mode has its own events, bank lines
+only (no LLM wait): `tourist_intro` · `tourist_deal` when the cards are dealt (no place in the cue)
+· `tourist_vote` at a vote · `tourist_last_chance` (`name`) at the last chance · at the score,
+`tourist_caught` (`name`) when the locals win, `tourist_escaped` (`name`) when the tourist gets away
+or names the place. No line when the tourist left.
 
 ### Awards (draft titles)
 
@@ -144,7 +146,8 @@ clues and leads; on its last chance it picks its best clue. `npm run bots -- --m
    They don't copy pack items, so the mode works with no packs loaded (tested).
 3. **The answer is logged by the answerer on their phone**, as the brief suggested: say it into the
    phone as you say it to the room (honour system, as in Phrase Bingo).
-4. **Host: Chōchin-san** (the travel host), reusing existing events; no new `HostEvent`s.
+4. **Host: Chōchin-san** (the travel host), with six `tourist_*` events of his own: his shared
+   bank talks about the last train ("each station has a question").
 5. **Called votes need a majority of voters; the final vote needs the most votes, and a tie lets the
    tourist go.** Spyfall needs unanimity for an accusation; majority is kinder to a noisy room.
 6. **One called vote per player per round** (Spyfall's rule), and it ends the current turn at once.
@@ -194,8 +197,6 @@ clues and leads; on its last chance it picks its best clue. `npm run bots -- --m
 7. **Durations** (45 s turns, 25 s vote, 6-minute cap) and the turn cap are playtest numbers.
 8. **Fluent check** of all 246 lines, 60 roles and award titles; especially casual lines (ずるずる！,
    だいすき！), N4 forms, and whether roles like おさるさん land as jokes.
-9. **Chōchin-san's line bank** is train-themed (`intro` talks about the last train). Write a small
-   set for this mode (deal, vote called, caught, escaped)?
 
 ## Known gaps
 

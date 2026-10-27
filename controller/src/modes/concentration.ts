@@ -1,7 +1,7 @@
 // Kotoba Concentration on the phone: a mini board to flip cards on your turn, the say-it
 // box when you match (or when you can steal), and the hidden-picture buzzer.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
 import type { ConcentrationView } from '../../../shared/src/modes/views.js';
 import type { CellView } from '../../../shared/src/modes/concentration/concentration.js';
 import type { Face } from '../../../shared/src/modes/concentration/board.js';
@@ -32,7 +32,8 @@ function miniBoard(ctx: Ctx, tappable: boolean): HTMLElement {
       const fogged = game.fogRow === Math.floor(i / game.cols) && c.state === 'down';
       if (c.state === 'cleared') return h('span', { class: 'cc-m cc-m-cleared' }, game.picture.tiles[i] ?? '');
       if (c.state === 'up') {
-        const face = c.masked ? '？' : c.face ? faceText(c.face) : '';
+        // A word card with kanji carries its reading, as it does on the TV.
+        const face = c.masked ? '？' : c.face?.kind === 'word' && c.face.sub ? ruby({ text: c.face.text, kana: c.face.sub }) : c.face ? faceText(c.face) : '';
         return h('span', { class: `cc-m cc-m-up cc-m-${c.face?.kind ?? 'masked'}`, lang: 'ja' }, face);
       }
       if (fogged) return h('span', { class: 'cc-m cc-m-fog' }, '🌫️');
@@ -67,7 +68,7 @@ function guessPanel(ctx: Ctx): HTMLElement | null {
   if (mine.guess) {
     return h('p', { class: `cc-guessed ${mine.guess.ok ? 'ok' : ''}` }, mine.guess.ok ? '🔍 You guessed the picture!' : '🔍 Your picture guess missed. Keep matching!');
   }
-  if (pic.solvedBy) return h('p', { class: 'hint' }, `🔍 ${nameOf(ctx.view, pic.solvedBy)} guessed the picture: ${pic.answer?.text ?? ''} (${pic.answer?.en ?? ''})`);
+  if (pic.solvedBy) return h('p', { class: 'hint' }, `🔍 ${nameOf(ctx.view, pic.solvedBy)} guessed the picture: `, pic.answer ? h('span', { lang: 'ja' }, ruby(pic.answer)) : null, ` (${pic.answer?.en ?? ''})`);
   if (!pic.open) return null;
   return h(
     'div',
@@ -77,7 +78,7 @@ function guessPanel(ctx: Ctx): HTMLElement | null {
       'div',
       { class: 'cc-guess-grid' },
       pic.options.map((o) =>
-        h('button', { type: 'button', class: 'option cc-guess-btn', onclick: () => void send({ kind: 'guess', optionId: o.id }) }, h('span', { lang: 'ja' }, o.text), h('small', {}, o.en)),
+        h('button', { type: 'button', class: 'option cc-guess-btn', onclick: () => void send({ kind: 'guess', optionId: o.id }) }, h('span', { lang: 'ja' }, ruby(o)), h('small', {}, o.en)),
       ),
     ),
   );
@@ -97,7 +98,7 @@ function sayScreen(ctx: Ctx, stealing: boolean): HTMLElement {
     last && !last.ok ? h('p', { class: 'cc-miss' }, `Not quite (heard “${last.heard}”). ${mine.attemptsLeft} ${mine.attemptsLeft === 1 ? 'try' : 'tries'} left.`) : null,
     speakBox({
       label: 'Hold and say the word',
-      placeholder: 'Type the word (kana)',
+      placeholder: 'Type it in kana',
       kanaPadOpen: me.level === 'kana',
       onSend: (utterance) => void send({ kind: 'say', utterance }),
     }),
@@ -199,7 +200,7 @@ export const concentrationPhone: PhoneMode<ConcentrationView> = {
           { class: 'screen' },
           h('p', { class: 'big' }, game.pairsLeft === 0 ? 'Board clear!' : 'Time!'),
           h('p', {}, `You kept ${tally?.pairs ?? 0} pair${tally?.pairs === 1 ? '' : 's'}${tally?.steals ? ` (${tally.steals} stolen)` : ''}.`),
-          game.picture.answer ? h('p', { class: 'hint', lang: 'ja' }, `The picture was ${game.picture.answer.text} · ${game.picture.answer.en}`) : null,
+          game.picture.answer ? h('p', { class: 'hint' }, 'The picture was ', h('span', { lang: 'ja' }, ruby(game.picture.answer)), ` · ${game.picture.answer.en}`) : null,
         );
       default:
         return waiting('Look at the TV!');

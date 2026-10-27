@@ -1,7 +1,7 @@
 // The server's host director: cues sent ahead start the LLM line early, so the reveal gets it in time.
 
 import { describe, expect, it } from 'vitest';
-import { createHostVoice, ScriptedLlm, type BankLine } from '../server/ai/index.js';
+import { createHostVoice, fillSlots, ScriptedLlm, type BankLine } from '../server/ai/index.js';
 import { ManualClock } from '../server/src/clock.js';
 import { aiVoice, bankVoice, moodFor } from '../server/src/host.js';
 import { EMPTY_CONTENT, type HostCue } from '../shared/src/modes/mode.js';
@@ -43,6 +43,29 @@ describe('host lines sent ahead', () => {
     expect(llm.calls).toHaveLength(2);
   });
 
+  it('waits as long as the cue allows for a line still being written', async () => {
+    const clock = new ManualClock();
+    const { llm, go } = slowLlm();
+    const voice = aiVoice(createHostVoice({ llm, lines, clock }), bankVoice(EMPTY_CONTENT));
+    const p = voice.speak('ABCD', { ...cue, waitMs: 4000 });
+    await tick();
+    clock.advance(3000);
+    go();
+    for (let i = 0; i < 5; i++) await tick();
+    expect((await p)?.text).toBe(quip.text);
+  });
+
+  it('waits longer for a fresh line when the cue allows it', async () => {
+    const clock = new ManualClock();
+    const { llm, go } = slowLlm();
+    const voice = aiVoice(createHostVoice({ llm, lines, clock }), bankVoice(EMPTY_CONTENT));
+    const p = voice.speak('ABCD', { ...cue, waitMs: 6000 });
+    await tick();
+    clock.advance(3000);
+    go();
+    expect((await p)?.text).toBe(quip.text);
+  });
+
   it('asks once for a cue sent ahead twice', async () => {
     const { llm } = slowLlm();
     const voice = aiVoice(createHostVoice({ llm, lines, clock: new ManualClock() }), bankVoice(EMPTY_CONTENT));
@@ -65,6 +88,13 @@ describe('bank lines that name the answer', () => {
   it('prefers a {tile} line, filling the reading and English from their own slots', async () => {
     const line = await bankVoice(content).speak('ABCD', { ...cue, slots: { tile: '大きな タコ', tile_kana: 'おおきな タコ', tile_en: 'a giant octopus' } });
     expect(line).toMatchObject({ text: 'なんで 大きな タコ！？', kana: 'なんで おおきな タコ！？', en: 'Why a giant octopus?!' });
+  });
+
+  it('capitalises an English answer that opens the line', async () => {
+    const opens = { ...EMPTY_CONTENT, hostLines: [{ id: 'pon.vote_close.01', host: 'pon', event: 'vote_close', jp: { text: '{tile}の かち！', kana: '{tile}の かち！', en: '{tile} wins! Go, {tile}!' }, slots: ['{tile}'], status: 'draft' }] } as typeof EMPTY_CONTENT;
+    const line = await bankVoice(opens).speak('ABCD', { host: 'pon', event: 'vote_close', slots: { tile: 'たこ', tile_kana: 'たこ', tile_en: 'an octopus' } });
+    expect(line?.en).toBe('An octopus wins! Go, an octopus!');
+    expect(fillSlots({ text: '{tile}！', kana: '{tile}！', en: '{tile}… fine.' }, { tile: 'たこ', tile_en: 'an octopus' }).en).toBe('An octopus… fine.');
   });
 
   it('uses the other lines when the cue names no answer', async () => {

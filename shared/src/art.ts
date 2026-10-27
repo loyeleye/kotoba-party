@@ -49,6 +49,7 @@ const PLACE: Record<string, string> = {
 const SCENE: Record<string, string> = {
   konbini: 'place-konbini', ramen: 'place-ramen', hanami: 'scene-hanami', dinner: 'scene-nabe', 'meet-parents': 'scene-family', morning: 'scene-morning',
   ryokan: 'place-onsen', platform: 'place-station', taxi: 'scene-taxi',
+  kyuushoku: 'place-school', ensoku: 'place-park', izakaya: 'place-restaurant', date: 'place-restaurant', asagaeri: 'place-station',
 };
 
 export const placePic = (p: { id: string; emoji: string }, cls: string): HTMLElement => mapped(PLACE, p.id, p.emoji, cls);

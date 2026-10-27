@@ -585,15 +585,11 @@ function resolveRound(s: TouristState, ctx: ModeContext): void {
   }
   for (const p of ctx.players()) ctx.phrase(p.id, { itemId: `tourist.place.${place.id}`, text: place.name.text, kana: place.name.kana, en: place.name.en, outcome: 'seen' });
 
-  const tier = o.how === 'guessed' || (o.how === 'caught' && o.lastChance?.right) ? 'ippon' : o.how === 'caught' || o.how === 'wrong-guess' ? 'good' : 'flop';
-  ctx.cue({
-    host: 'chochin',
-    event: 'reveal_react',
-    tier,
-    slots: { name: ctx.player(s.touristId)?.name ?? '' },
-    prompt: { text: place.name.text, kana: place.name.kana, en: place.name.en },
-    context: `Who's the Tourist?: social deduction. The secret place was ${place.name.en}; ${ctx.player(s.touristId)?.name ?? 'the tourist'} was the tourist. Outcome: ${o.how}.`,
-  });
+  // Chōchin-san's own lines for this mode: his reveal_react bank is about trains and votes on answers.
+  if (o.how !== 'left') {
+    const caught = (o.how === 'caught' && !o.lastChance?.right) || o.how === 'wrong-guess';
+    ctx.cue({ host: 'chochin', event: caught ? 'tourist_caught' : 'tourist_escaped', slots: { name: ctx.player(s.touristId)?.name ?? '' } });
+  }
 }
 
 // ---- the mode ----
@@ -690,12 +686,12 @@ export const touristMode: Mode<TouristState, TouristView> = {
     s.phaseAt = ctx.now;
     switch (phase) {
       case 'intro':
-        ctx.cue({ host: 'chochin', event: 'intro', context: "Who's the Tourist?: everyone but one player knows the secret place; ask questions in simple Japanese to find the tourist." });
+        ctx.cue({ host: 'chochin', event: 'tourist_intro' });
         break;
       case 'prompt':
         startRound(s, ctx);
         // No place in the cue: the line is shown on the stage.
-        ctx.cue({ host: 'chochin', event: 'prompt_read' });
+        ctx.cue({ host: 'chochin', event: 'tourist_deal' });
         break;
       case 'answer':
         startTurn(s, ctx);
@@ -705,11 +701,11 @@ export const touristMode: Mode<TouristState, TouristView> = {
         s.pendingVote = null;
         const voters = ctx.players().filter((p) => p.connected);
         s.vote = { kind: pending.kind, callerId: pending.callerId, voters: (voters.length ? voters : ctx.players()).map((p) => p.id), ballots: {} };
-        ctx.cue({ host: 'chochin', event: 'answer_hurry' });
+        ctx.cue({ host: 'chochin', event: 'tourist_vote' });
         break;
       }
       case 'encore':
-        ctx.cue({ host: 'chochin', event: 'encore_invite', slots: { name: ctx.player(s.touristId)?.name ?? '' } });
+        ctx.cue({ host: 'chochin', event: 'tourist_last_chance', slots: { name: ctx.player(s.touristId)?.name ?? '' } });
         break;
       case 'score':
         resolveRound(s, ctx);

@@ -122,3 +122,7 @@ export function isUtterance(v: unknown): v is Utterance {
   const u = v as Record<string, unknown>;
   return (u.via === 'speech' || u.via === 'typed' || u.via === 'tap') && typeof u.text === 'string' && u.text.length <= 200;
 }
+
+/** An award title's reading: its kana with 賞 / 王 / 大賞 / 名人 read out (the only kanji award titles use). */
+export const awardKana = (title: string): string =>
+  title.replace(/大賞/g, 'たいしょう').replace(/賞/g, 'しょう').replace(/王/g, 'おう').replace(/名人/g, 'めいじん');

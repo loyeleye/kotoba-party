@@ -204,4 +204,41 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.onsen_reveal.03', host: 'chochin', event: 'onsen_reveal', jp: { text: 'ゆらゆら… ほんとうの ことを はなして ください。', kana: 'ゆらゆら… ほんとうの ことを はなして ください。', en: 'Sway, sway… please tell us the truth.' }, status: 'draft' },
   { id: 'chochin.onsen_reveal.04', host: 'chochin', event: 'onsen_reveal', jp: { text: 'みなさま、おみごとでした。', kana: 'みなさま、おみごとでした。', en: 'Splendid work, everyone.' }, status: 'draft' },
   { id: 'chochin.onsen_reveal.05', host: 'chochin', event: 'onsen_reveal', jp: { text: 'さあ、こたえあわせです！', kana: 'さあ、こたえあわせです！', en: "Now, let's check the answer!" }, status: 'draft' },
+  // Who's the Tourist?: Chōchin-san guides the tour, and admires a good disguise.
+  // tourist_intro
+  { id: 'chochin.tourist_intro.01', host: 'chochin', event: 'tourist_intro', jp: { text: 'かんこうきゃくは だれでしょう？　ゆらゆら。', kana: 'かんこうきゃくは だれでしょう？　ゆらゆら。', en: 'Who could the tourist be? Sway, sway.' }, status: 'draft' },
+  { id: 'chochin.tourist_intro.02', host: 'chochin', event: 'tourist_intro', jp: { text: 'ひとりだけ、ばしょを しりません。', kana: 'ひとりだけ、ばしょを しりません。', en: "Only one of you doesn't know where we are." }, status: 'draft' },
+  { id: 'chochin.tourist_intro.03', host: 'chochin', event: 'tourist_intro', jp: { text: 'しつもんは にほんごで どうぞ。', kana: 'しつもんは にほんごで どうぞ。', en: 'Ask your questions in Japanese, please.' }, status: 'draft' },
+  { id: 'chochin.tourist_intro.04', host: 'chochin', event: 'tourist_intro', jp: { text: 'ばしょの なまえは、ないしょですよ。', kana: 'ばしょの なまえは、ないしょですよ。', en: "The place's name is a secret, remember." }, status: 'draft' },
+  { id: 'chochin.tourist_intro.05', host: 'chochin', event: 'tourist_intro', jp: { text: 'たびの はじまりです。ゆらゆら。', kana: 'たびの はじまりです。ゆらゆら。', en: 'Our trip begins. Sway, sway.' }, status: 'draft' },
+  // tourist_deal
+  { id: 'chochin.tourist_deal.01', host: 'chochin', event: 'tourist_deal', jp: { text: 'カードを みて ください。ないしょですよ。', kana: 'カードを みて ください。ないしょですよ。', en: "Look at your card. It's a secret." }, status: 'draft' },
+  { id: 'chochin.tourist_deal.02', host: 'chochin', event: 'tourist_deal', jp: { text: 'きょうは どこでしょう？', kana: 'きょうは どこでしょう？', en: 'Where are we today?' }, status: 'draft' },
+  { id: 'chochin.tourist_deal.03', host: 'chochin', event: 'tourist_deal', jp: { text: 'ひとりだけ、かんこうきゃくです。', kana: 'ひとりだけ、かんこうきゃくです。', en: 'Just one of you is the tourist.' }, status: 'draft' },
+  { id: 'chochin.tourist_deal.04', host: 'chochin', event: 'tourist_deal', jp: { text: 'スマホは だれにも みせないで ください。', kana: 'スマホは だれにも みせないで ください。', en: "Don't show anyone your phone." }, status: 'draft' },
+  { id: 'chochin.tourist_deal.05', host: 'chochin', event: 'tourist_deal', jp: { text: 'しずかに カードを みて ください。', kana: 'しずかに カードを みて ください。', en: 'Look at your card quietly.' }, status: 'draft' },
+  // tourist_vote
+  { id: 'chochin.tourist_vote.01', host: 'chochin', event: 'tourist_vote', jp: { text: 'とうひょうの じかんです！', kana: 'とうひょうの じかんです！', en: 'Time to vote!' }, status: 'draft' },
+  { id: 'chochin.tourist_vote.02', host: 'chochin', event: 'tourist_vote', jp: { text: 'かんこうきゃくは だれですか？', kana: 'かんこうきゃくは だれですか？', en: 'Who is the tourist?' }, status: 'draft' },
+  { id: 'chochin.tourist_vote.03', host: 'chochin', event: 'tourist_vote', jp: { text: 'あやしい ひとは だれですか？', kana: 'あやしい ひとは だれですか？', en: "Who's acting suspicious?" }, status: 'draft' },
+  { id: 'chochin.tourist_vote.04', host: 'chochin', event: 'tourist_vote', jp: { text: 'よく かんがえて ください。ゆらゆら。', kana: 'よく かんがえて ください。ゆらゆら。', en: 'Think carefully. Sway, sway.' }, status: 'draft' },
+  { id: 'chochin.tourist_vote.05', host: 'chochin', event: 'tourist_vote', jp: { text: 'さあ、えらんで ください。', kana: 'さあ、えらんで ください。', en: 'Now, please choose.' }, status: 'draft' },
+  // tourist_last_chance
+  { id: 'chochin.tourist_last_chance.01', host: 'chochin', event: 'tourist_last_chance', jp: { text: '{name}さま、ここは どこですか？', kana: '{name}さま、ここは どこですか？', en: '{name}, where are we?' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.tourist_last_chance.02', host: 'chochin', event: 'tourist_last_chance', jp: { text: '{name}さま、さいごの チャンスです！', kana: '{name}さま、さいごの チャンスです！', en: '{name}, this is your last chance!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.tourist_last_chance.03', host: 'chochin', event: 'tourist_last_chance', jp: { text: '{name}さま、ばしょを あてて ください。', kana: '{name}さま、ばしょを あてて ください。', en: '{name}, guess the place.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.tourist_last_chance.04', host: 'chochin', event: 'tourist_last_chance', jp: { text: 'まだ おわりでは ありません。{name}さま、どうぞ！', kana: 'まだ おわりでは ありません。{name}さま、どうぞ！', en: "It's not over yet. Go ahead, {name}!" }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.tourist_last_chance.05', host: 'chochin', event: 'tourist_last_chance', jp: { text: '{name}さま、ゆっくり どうぞ。ゆらゆら。', kana: '{name}さま、ゆっくり どうぞ。ゆらゆら。', en: 'Take your time, {name}. Sway, sway.' }, slots: ['{name}'], status: 'draft' },
+  // tourist_caught
+  { id: 'chochin.tourist_caught.01', host: 'chochin', event: 'tourist_caught', jp: { text: 'つかまえました！', kana: 'つかまえました！', en: 'Caught!' }, status: 'draft' },
+  { id: 'chochin.tourist_caught.02', host: 'chochin', event: 'tourist_caught', jp: { text: 'おみごと！　みなさま、めいたんていです。', kana: 'おみごと！　みなさま、めいたんていです。', en: "Splendid! You're all great detectives." }, status: 'draft' },
+  { id: 'chochin.tourist_caught.03', host: 'chochin', event: 'tourist_caught', jp: { text: '{name}さまが かんこうきゃくでした！', kana: '{name}さまが かんこうきゃくでした！', en: '{name} was the tourist!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.tourist_caught.04', host: 'chochin', event: 'tourist_caught', jp: { text: 'ゆらゆら… {name}さま、ばれて しまいましたね。', kana: 'ゆらゆら… {name}さま、ばれて しまいましたね。', en: 'Sway, sway… they found you out, {name}.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.tourist_caught.05', host: 'chochin', event: 'tourist_caught', jp: { text: 'じもとの みなさまの かちです！', kana: 'じもとの みなさまの かちです！', en: 'The locals win!' }, status: 'draft' },
+  // tourist_escaped
+  { id: 'chochin.tourist_escaped.01', host: 'chochin', event: 'tourist_escaped', jp: { text: 'かんこうきゃくの かちです！', kana: 'かんこうきゃくの かちです！', en: 'The tourist wins!' }, status: 'draft' },
+  { id: 'chochin.tourist_escaped.02', host: 'chochin', event: 'tourist_escaped', jp: { text: '{name}さま、みごとな へんそうでした。', kana: '{name}さま、みごとな へんそうでした。', en: 'A splendid disguise, {name}.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.tourist_escaped.03', host: 'chochin', event: 'tourist_escaped', jp: { text: 'ゆらゆら… だれも きづきませんでした。', kana: 'ゆらゆら… だれも きづきませんでした。', en: 'Sway, sway… nobody noticed.' }, status: 'draft' },
+  { id: 'chochin.tourist_escaped.04', host: 'chochin', event: 'tourist_escaped', jp: { text: '{name}さまに にげられました！', kana: '{name}さまに にげられました！', en: '{name} got away!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.tourist_escaped.05', host: 'chochin', event: 'tourist_escaped', jp: { text: '{name}さま、じょうずでしたね！', kana: '{name}さま、じょうずでしたね！', en: 'Nicely done, {name}!' }, slots: ['{name}'], status: 'draft' },
 ];

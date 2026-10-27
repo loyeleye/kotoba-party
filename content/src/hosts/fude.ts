@@ -237,4 +237,64 @@ export const fudeLines: HostLine[] = [
   // shodo_other_hand
   { id: 'fude.shodo_other_hand.01', host: 'fude', event: 'shodo_other_hand', jp: { text: 'こんどは… はんたいの てで かいて ください！', kana: 'こんどは… はんたいの てで かいて ください！', en: 'This time… write with your other hand!' }, status: 'draft' },
   { id: 'fude.shodo_other_hand.02', host: 'fude', event: 'shodo_other_hand', jp: { text: 'ふでを もちかえて！　はんたいの てです！', kana: 'ふでを もちかえて！　はんたいの てです！', en: 'Switch hands! Your other hand!' }, status: 'draft' },
+  // Kotoba Concentration (concentration_*): its own beats, so it no longer borrows Kana Raid lines.
+  // concentration_intro
+  { id: 'fude.concentration_intro.01', host: 'fude', event: 'concentration_intro', jp: { text: 'カードを めくって、ペアを さがしましょう！', kana: 'カードを めくって、ペアを さがしましょう！', en: "Flip the cards and find the pairs!" }, status: 'draft' },
+  { id: 'fude.concentration_intro.02', host: 'fude', event: 'concentration_intro', jp: { text: 'ペアを みつけたら、ことばを いって ください！', kana: 'ペアを みつけたら、ことばを いって ください！', en: "Found a pair? Say the word!" }, status: 'draft' },
+  { id: 'fude.concentration_intro.03', host: 'fude', event: 'concentration_intro', jp: { text: 'よく みて、よく おぼえて！　シュッ！', kana: 'よく みて、よく おぼえて！　シュッ！', en: "Look closely, remember well! Swish!" }, status: 'draft' },
+  // concentration_say_it
+  { id: 'fude.concentration_say_it.01', host: 'fude', event: 'concentration_say_it', jp: { text: '{name}さん、いって ください！', kana: '{name}さん、いって ください！', en: 'Say it, {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_say_it.02', host: 'fude', event: 'concentration_say_it', jp: { text: '{name}さん、おぼえて いますか？', kana: '{name}さん、おぼえて いますか？', en: '{name}, do you remember it?' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_say_it.03', host: 'fude', event: 'concentration_say_it', jp: { text: '{name}さんの ばんです！　どうぞ！', kana: '{name}さんの ばんです！　どうぞ！', en: "It's yours, {name}! Go!" }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_say_it.04', host: 'fude', event: 'concentration_say_it', jp: { text: '{name}さん、ことばを どうぞ！　シュッ！', kana: '{name}さん、ことばを どうぞ！　シュッ！', en: 'The word, {name}! Swish!' }, slots: ['{name}'], status: 'draft' },
+  // concentration_keep
+  { id: 'fude.concentration_keep.01', host: 'fude', event: 'concentration_keep', jp: { text: '{name}さん、ペア ゲット！　シュッ！', kana: '{name}さん、ペア ゲット！　シュッ！', en: 'A pair for {name}! Swish!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_keep.02', host: 'fude', event: 'concentration_keep', jp: { text: '{name}さん、よく おぼえました！', kana: '{name}さん、よく おぼえました！', en: 'Great memory, {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_keep.03', host: 'fude', event: 'concentration_keep', jp: { text: 'いい こえ！　{name}さんの ペアです！', kana: 'いい こえ！　{name}さんの ペアです！', en: "Nice voice! That pair is {name}'s!" }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_keep.04', host: 'fude', event: 'concentration_keep', jp: { text: '{name}さん、せいかい！　ズバッ！', kana: '{name}さん、せいかい！　ズバッ！', en: 'Right, {name}! Slash!' }, slots: ['{name}'], status: 'draft' },
+  // concentration_steal_open
+  { id: 'fude.concentration_steal_open.01', host: 'fude', event: 'concentration_steal_open', jp: { text: 'チャンス！　だれでも どうぞ！', kana: 'チャンス！　だれでも どうぞ！', en: 'Chance! Anyone, go!' }, status: 'draft' },
+  { id: 'fude.concentration_steal_open.02', host: 'fude', event: 'concentration_steal_open', jp: { text: 'よこどり タイム！　はやく！', kana: 'よこどり タイム！　はやく！', en: 'Steal time! Quick!' }, status: 'draft' },
+  { id: 'fude.concentration_steal_open.03', host: 'fude', event: 'concentration_steal_open', jp: { text: 'みんな、いって ください！', kana: 'みんな、いって ください！', en: 'Everyone, say it!' }, status: 'draft' },
+  { id: 'fude.concentration_steal_open.04', host: 'fude', event: 'concentration_steal_open', jp: { text: 'いまなら とれます！　シュッ！', kana: 'いまなら とれます！　シュッ！', en: 'You can grab it now! Swish!' }, status: 'draft' },
+  // concentration_stolen
+  { id: 'fude.concentration_stolen.01', host: 'fude', event: 'concentration_stolen', jp: { text: '{name}さん、よこどり！　ズバッ！', kana: '{name}さん、よこどり！　ズバッ！', en: '{name} stole it! Slash!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_stolen.02', host: 'fude', event: 'concentration_stolen', jp: { text: 'おっと！　{name}さんが とりました！', kana: 'おっと！　{name}さんが とりました！', en: 'Whoa! {name} took it!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_stolen.03', host: 'fude', event: 'concentration_stolen', jp: { text: '{name}さん、すばやい！', kana: '{name}さん、すばやい！', en: 'So quick, {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_stolen.04', host: 'fude', event: 'concentration_stolen', jp: { text: 'よこどり せいこう！　シュッ！', kana: 'よこどり せいこう！　シュッ！', en: 'Steal successful! Swish!' }, status: 'draft' },
+  // concentration_missed
+  { id: 'fude.concentration_missed.01', host: 'fude', event: 'concentration_missed', jp: { text: 'あれっ？　だれも いえませんでした。', kana: 'あれっ？　だれも いえませんでした。', en: 'Huh? Nobody said it.' }, status: 'draft' },
+  { id: 'fude.concentration_missed.02', host: 'fude', event: 'concentration_missed', jp: { text: 'ドンマイ！　また でて きます！', kana: 'ドンマイ！　また でて きます！', en: "Never mind! It'll come back!" }, status: 'draft' },
+  { id: 'fude.concentration_missed.03', host: 'fude', event: 'concentration_missed', jp: { text: 'むずかしい ことばでしたね！', kana: 'むずかしい ことばでしたね！', en: 'That was a hard word!' }, status: 'draft' },
+  { id: 'fude.concentration_missed.04', host: 'fude', event: 'concentration_missed', jp: { text: 'フデも わすれました！', kana: 'フデも わすれました！', en: 'Fude forgot it too!' }, status: 'draft' },
+  // concentration_mismatch
+  { id: 'fude.concentration_mismatch.01', host: 'fude', event: 'concentration_mismatch', jp: { text: 'ざんねん！　ちがう カードです。', kana: 'ざんねん！　ちがう カードです。', en: 'Too bad! Different cards.' }, status: 'draft' },
+  { id: 'fude.concentration_mismatch.02', host: 'fude', event: 'concentration_mismatch', jp: { text: 'おしい！　ばしょを おぼえて！', kana: 'おしい！　ばしょを おぼえて！', en: 'So close! Remember where they are!' }, status: 'draft' },
+  { id: 'fude.concentration_mismatch.03', host: 'fude', event: 'concentration_mismatch', jp: { text: 'あれっ？　ペアじゃ ありません。', kana: 'あれっ？　ペアじゃ ありません。', en: "Huh? That's not a pair." }, status: 'draft' },
+  { id: 'fude.concentration_mismatch.04', host: 'fude', event: 'concentration_mismatch', jp: { text: 'フデも よく まちがえます！', kana: 'フデも よく まちがえます！', en: 'Fude gets things wrong all the time!' }, status: 'draft' },
+  { id: 'fude.concentration_mismatch.05', host: 'fude', event: 'concentration_mismatch', jp: { text: 'つぎは きっと あたります！', kana: 'つぎは きっと あたります！', en: "You'll get it next time!" }, status: 'draft' },
+  // concentration_yokai
+  { id: 'fude.concentration_yokai.01', host: 'fude', event: 'concentration_yokai', jp: { text: 'ようかいだ！　カードが まざります！', kana: 'ようかいだ！　カードが まざります！', en: 'A yōkai! The cards are mixing!' }, status: 'draft' },
+  { id: 'fude.concentration_yokai.02', host: 'fude', event: 'concentration_yokai', jp: { text: 'うわっ、カードが うごきました！', kana: 'うわっ、カードが うごきました！', en: 'Whoa, the cards moved!' }, status: 'draft' },
+  { id: 'fude.concentration_yokai.03', host: 'fude', event: 'concentration_yokai', jp: { text: 'いたずら ようかい！　シャッフル！', kana: 'いたずら ようかい！　シャッフル！', en: 'A prankster yōkai! Shuffle!' }, status: 'draft' },
+  // concentration_bonus
+  { id: 'fude.concentration_bonus.01', host: 'fude', event: 'concentration_bonus', jp: { text: 'ボーナス！　{name}さん、もう いっかい！', kana: 'ボーナス！　{name}さん、もう いっかい！', en: 'Bonus! {name}, go again!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_bonus.02', host: 'fude', event: 'concentration_bonus', jp: { text: 'ラッキー！　{name}さんの ばんが つづきます！', kana: 'ラッキー！　{name}さんの ばんが つづきます！', en: "Lucky! {name}'s turn keeps going!" }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_bonus.03', host: 'fude', event: 'concentration_bonus', jp: { text: 'ほし！　{name}さん、もう いちど どうぞ！', kana: 'ほし！　{name}さん、もう いちど どうぞ！', en: 'A star! {name}, one more turn!' }, slots: ['{name}'], status: 'draft' },
+  // concentration_fog
+  { id: 'fude.concentration_fog.01', host: 'fude', event: 'concentration_fog', jp: { text: 'きりです！　つぎは みえません！', kana: 'きりです！　つぎは みえません！', en: "Fog! You can't see next turn!" }, status: 'draft' },
+  { id: 'fude.concentration_fog.02', host: 'fude', event: 'concentration_fog', jp: { text: 'あっ、きりが でました！', kana: 'あっ、きりが でました！', en: 'Oh, the fog rolled in!' }, status: 'draft' },
+  { id: 'fude.concentration_fog.03', host: 'fude', event: 'concentration_fog', jp: { text: 'しろい きり！　ひとつの れつが かくれます！', kana: 'しろい きり！　ひとつの れつが かくれます！', en: 'White fog! A row is hidden!' }, status: 'draft' },
+  // concentration_picture
+  { id: 'fude.concentration_picture.01', host: 'fude', event: 'concentration_picture', jp: { text: '{name}さん、えを あてました！', kana: '{name}さん、えを あてました！', en: '{name} guessed the picture!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_picture.02', host: 'fude', event: 'concentration_picture', jp: { text: 'せいかい！　{name}さん、めが いい！', kana: 'せいかい！　{name}さん、めが いい！', en: 'Right! Sharp eyes, {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.concentration_picture.03', host: 'fude', event: 'concentration_picture', jp: { text: '{name}さん、めいたんてい！　ズバッ！', kana: '{name}さん、めいたんてい！　ズバッ！', en: '{name}, the great detective! Slash!' }, slots: ['{name}'], status: 'draft' },
+  // concentration_clear
+  { id: 'fude.concentration_clear.01', host: 'fude', event: 'concentration_clear', jp: { text: 'ぜんぶ なくなりました！　おつかれさま！', kana: 'ぜんぶ なくなりました！　おつかれさま！', en: 'The board is clear! Well done!' }, status: 'draft' },
+  { id: 'fude.concentration_clear.02', host: 'fude', event: 'concentration_clear', jp: { text: 'カードが ゼロ！　すごい きおくです！', kana: 'カードが ゼロ！　すごい きおくです！', en: 'Zero cards left! Amazing memory!' }, status: 'draft' },
+  { id: 'fude.concentration_clear.03', host: 'fude', event: 'concentration_clear', jp: { text: 'ぜんぶの ペア、おわりました！　シュッ！', kana: 'ぜんぶの ペア、おわりました！　シュッ！', en: 'Every pair is done! Swish!' }, status: 'draft' },
+  // concentration_time
+  { id: 'fude.concentration_time.01', host: 'fude', event: 'concentration_time', jp: { text: 'じかんです！　おつかれさま！', kana: 'じかんです！　おつかれさま！', en: "Time's up! Well done!" }, status: 'draft' },
+  { id: 'fude.concentration_time.02', host: 'fude', event: 'concentration_time', jp: { text: 'はい、そこまで！　ズバッ！', kana: 'はい、そこまで！　ズバッ！', en: "That's it, stop! Slash!" }, status: 'draft' },
+  { id: 'fude.concentration_time.03', host: 'fude', event: 'concentration_time', jp: { text: 'タイムアップ！　よく がんばりました！', kana: 'タイムアップ！　よく がんばりました！', en: "Time's up! You tried hard!" }, status: 'draft' },
 ];
