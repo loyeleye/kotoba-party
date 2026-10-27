@@ -173,6 +173,9 @@ describe('tiles', () => {
     expect(toRomaji('きって')).toBe('kitte');
     expect(toRomaji('ちょっと')).toBe('chotto');
     expect(toRomaji('ほんや')).toBe("hon'ya");
+    // The dictionary reads all-kana じかん as じ・か・ん: never split it as "jika n".
+    expect(toRomaji('じかんが ありません！')).not.toMatch(/jika n/i);
+    expect(toRomaji('しーっ… しょどうの じかんです。')).not.toMatch(/jika n/i);
   });
 });
 
@@ -524,6 +527,10 @@ describe('romaji for the かな level', () => {
     expect(toRomaji('わたしは ねこが すきです')).toBe('watashi wa neko ga sukidesu');
     expect(toRomaji('ねこの ゲームは たのしい')).toBe('neko no gēmu wa tanoshii');
     expect(toRomaji('こども')).toBe('kodomo');
+  });
+  it('reads を as its own word, never as half of a long vowel', () => {
+    expect(toRomaji('いっしょに かくれんぼをしましょう。')).toBe('Isshoni kakurenbo o shimashō.');
+    expect(toRomaji('すしをたべます')).toBe('sushi o tabemasu');
   });
 });
 

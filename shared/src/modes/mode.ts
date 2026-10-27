@@ -137,6 +137,11 @@ export interface HostCue {
    * line. A later cue with the same content uses it. The bank voice ignores these.
    */
   ahead?: boolean;
+  /**
+   * How long the stage may wait for an AI-written line before it says a bank line instead (default 1.5 s).
+   * An AI line takes 2 to 6 s, so a cue that opens a long phase with nothing else to say can wait for one.
+   */
+  waitMs?: number;
 }
 
 /** One phrasebook entry for the recap. */

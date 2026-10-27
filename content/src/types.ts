@@ -476,7 +476,21 @@ export type HostEvent =
   | 'shodo_callback' // the gallery remembers a dictation misread ({char})
   | 'shodo_award' // Fude presents a stamp award ({award}, {n})
   | 'shodo_claimed' // someone claimed their sheet ({name})
-  | 'shodo_other_hand'; // the VIP's other-hand round: the big sheet with the other hand
+  | 'shodo_other_hand' // the VIP's other-hand round: the big sheet with the other hand
+  // Kotoba Concentration
+  | 'concentration_intro'
+  | 'concentration_say_it' // a match: the flipper's say-it window ({name})
+  | 'concentration_keep' // the flipper said it and keeps the pair ({name})
+  | 'concentration_steal_open' // the flipper missed: anyone may steal
+  | 'concentration_stolen' // someone else said it first ({name})
+  | 'concentration_missed' // nobody said it
+  | 'concentration_mismatch' // the two cards were not a pair
+  | 'concentration_yokai' // the yōkai tile shuffled the face-down cards ({name})
+  | 'concentration_bonus' // the bonus tile: an extra turn ({name})
+  | 'concentration_fog' // the fog tile: a row is hidden next turn ({name})
+  | 'concentration_picture' // someone guessed the hidden picture ({name})
+  | 'concentration_clear' // the board is clear
+  | 'concentration_time'; // the game ran out of time with pairs left
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 

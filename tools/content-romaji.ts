@@ -123,7 +123,11 @@ function breaksFor(text: string, kana: string): string[] | null {
     const t = tokens[j];
     if (!t || j === 0) return false;
     const particle = (t.pos === '助詞' && COMMON_PARTICLES.has(t.surface_form)) || (t.pos === '助動詞' && COPULA.has(t.basic_form));
-    return particle && known(tokens[j - 1]) && !isPunct(tokens[j - 1]!) && (tokens[j - 1]!.surface_form.length >= 2 || tokens[j - 1]!.pos === '助動詞') && known(tokens[j + 1]);
+    const prev = tokens[j - 1]!;
+    // A one-kana 助動詞 can end a word (ありません|か) but never start one: じかんが reads as じ・か・ん・が.
+    const prevStart = spans[j - 1]?.[0];
+    const opensChunk = prevStart !== undefined && prevStart === chunkStart(kana, prevStart);
+    return particle && known(prev) && !isPunct(prev) && (prev.surface_form.length >= 2 || (prev.pos === '助動詞' && !opensChunk)) && known(tokens[j + 1]);
   };
   const out: string[] = [];
   const add = (i: number, how: 'new' | 'hyphen') => {
