@@ -137,11 +137,71 @@ body[data-mode] .timer { color: var(--on-accent); }
 .toast { position: fixed; z-index: 6; left: 16px; right: 16px; bottom: calc(max(24px, env(safe-area-inset-bottom)) + 110px); max-width: 448px; margin: 0 auto; background: var(--paper); color: var(--paper-ink); font-weight: 700; padding: 12px 14px; border-radius: 12px; border: 3px solid var(--outline); box-shadow: 0 4px 0 var(--outline); text-align: center; }
 .timer { position: fixed; z-index: 3; top: max(12px, env(safe-area-inset-top)); right: 16px; font-family: var(--font-pixel); font-size: 26px; font-weight: 700; color: var(--warn); font-variant-numeric: tabular-nums; }
 
-.levels { display: grid; gap: 8px; }
-.level-btn, .mode-btn { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
-.level-btn span, .mode-btn small { color: var(--muted); font-size: 14px; }
-.level-btn.on, .mode-btn.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.vip-start select[hidden] { display: none; }
+/* Your level: one segmented row, the chosen level's hint under it. */
+.levels { display: grid; gap: 6px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; gap: 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
+.seg-btn { font-size: 18px; font-weight: 800; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
+.seg-btn.on { background: var(--accent); color: var(--on-accent); box-shadow: inset 0 -3px 0 var(--outline); }
+.seg-btn:focus-visible { outline: 3px solid var(--warn); outline-offset: 1px; }
+.hint.small { font-size: 14px; }
+
+/* The VIP's game picker (main.ts vipMenu): tonight's game as one card that opens a sheet. */
+.gp-current, .gp-row { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.gp-current { border: 2px solid var(--accent); box-shadow: 0 4px 0 var(--outline); }
+.gp-current:focus-visible, .gp-row:focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; }
+.gp-host { width: 44px; height: 44px; object-fit: contain; image-rendering: pixelated; align-self: start; }
+.gp-text { display: grid; gap: 2px; min-width: 0; }
+.gp-text strong { font-size: 18px; }
+.gp-ja { font-family: var(--font-ja); font-size: 15px; color: var(--muted); }
+.gp-text small { color: var(--muted); font-size: 14px; }
+.gp-current .gp-kicker { font-family: var(--font-pixel); color: var(--accent); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+.gp-change { align-self: center; font-size: 14px; font-weight: 800; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); white-space: nowrap; }
+.gp-change::after { content: ' ▾'; }
+.gp-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.gp-fields:not(:has(.gp-field:not([hidden]))) { display: none; }
+.gp-field { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+.gp-field[hidden] { display: none; }
+.gp-field select { font-size: 17px; padding: 10px 12px; }
+.vip-start .hint:empty { display: none; }
+
+/* The picker sheet rises from the bottom, in thumb reach; it scrolls inside, the page stays put. */
+.gp-sheet { position: fixed; inset: auto 0 0 0; margin: 0 auto; width: 100%; max-width: 480px; max-height: 85dvh; padding: 0; border: 3px solid var(--outline); border-bottom: 0; border-radius: 18px 18px 0 0; background: var(--bg); color: var(--ink); box-shadow: 0 -4px 0 var(--line); display: none; flex-direction: column; }
+.gp-sheet[open] { display: flex; animation: sheet-up 220ms steps(4, end); }
+.gp-sheet::backdrop { background: rgb(12 7 32 / 0.7); }
+@keyframes sheet-up { from { transform: translateY(40%); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gp-sheet[open] { animation: none; } }
+.gp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
+.gp-head h2 { margin: 0; font-family: var(--font-pixel); font-size: 22px; color: var(--accent); }
+.gp-close { width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 18px; }
+.gp-list { display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 12px 16px max(16px, env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
+.gp-row .gp-players { align-self: start; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.gp-row { flex: none; }
+.gp-row.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.gp-row.on .gp-players::before { content: '✓ '; color: var(--accent); font-weight: 800; }
+.gp-row.gp-nofit { opacity: 0.6; }
+.gp-row.gp-nofit .gp-players { color: var(--warn); }
+
+/* Folded panels (invite links, room settings): one line until opened. */
+.fold { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.fold > summary { list-style: none; cursor: pointer; padding: 10px 14px; gap: 10px; justify-content: space-between; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary::after { content: '▸'; color: var(--muted); }
+.fold[open] > summary::after { content: '▾'; }
+.fold > summary:focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; border-radius: 12px; }
+.fold-title { display: grid; gap: 1px; font-weight: 700; }
+.fold-title small { font-weight: 400; color: var(--muted); font-size: 13px; }
+.fold-body { padding: 0 14px 14px; }
+.fold-body .inv { border: 0; padding: 0; background: none; box-shadow: none; }
+
+/* An on/off setting as a full-width row with a switch at the thumb end. */
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 8px 0; border: 0; background: none; color: var(--ink); font-size: 17px; font-weight: 700; }
+.switch-text { display: grid; gap: 2px; }
+.switch-text small { font-weight: 400; color: var(--muted); font-size: 13px; }
+.switch { flex: none; position: relative; width: 52px; height: 30px; border-radius: 999px; border: 2px solid var(--line); background: var(--bg); }
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 4px; background: var(--muted); transition: translate 120ms; }
+.switch-row[aria-checked='true'] .switch { background: var(--good); border-color: var(--outline); }
+.switch-row[aria-checked='true'] .switch::after { translate: 22px 0; background: var(--outline); }
+.switch-row:focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; border-radius: 8px; }
 .secondary { font-size: 18px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
 .award { color: var(--warn); font-weight: 700; margin: 0; }
 .phrasebook ul { padding-left: 18px; display: grid; gap: 6px; }
@@ -237,7 +297,6 @@ body.has-dock main { padding-bottom: 120px; }
 body[data-motion='calm'] *, body[data-motion='calm'] *::before, body[data-motion='calm'] *::after { animation-name: calm-in !important; animation-duration: 200ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 body[data-motion='calm'] .talk.live { transform: none; }
 @keyframes calm-in { from { opacity: 0; } }
-.motion-btn { justify-self: start; }
 
 /* VIP moderation rows: dashed and red-edged, so they never pass for vote buttons. */
 .vip-hide { display: block; width: 100%; text-align: left; font-size: 16px; padding: 10px 14px; margin: 0 0 8px; border-radius: 10px; border: 2px dashed var(--bad); background: transparent; color: var(--muted); }
