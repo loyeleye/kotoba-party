@@ -51,6 +51,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
 | 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
 | 25 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
+| 26 | Mureka (AI music generator, Premium plan bought 2026-10-27) for Karaoke Duel instrumentals | Not used in the game yet; planned for new Karaoke Duel tracks | ❓ | Read Mureka's own terms (couldn't be fetched); keep the subscription active while generating, save each track's generation record, and plan to replace AI tracks with commissioned music before selling |
 
 ## Details
 
@@ -421,6 +422,27 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   かな "Heard:" line shows no romaji for kanji.
 - **To sell:** read Oracle's terms and record them here, or move the reader to a paid host with an SLA;
   give it a hostname on a domain we own instead of sslip.io.
+
+### 26. Mureka (AI music)
+
+- **What:** Ladi bought Mureka Premium on 2026-10-27 to make instrumentals for Karaoke Duel. No
+  Mureka audio is in the game yet. When some is added, list each file in `stage/src/music/tracks.ts`
+  and under row 22.
+- **Terms: unread (❓).** On 2026-10-27, https://www.mureka.ai/terms and the May 13, 2026 terms PDF
+  (https://www.mureka.ai/static/terms-20260513.pdf) didn't resolve from our sandbox, so nothing here
+  has been checked against Mureka's own text. Third-party summaries read the same day say:
+  - Paid-plan users own their output, and free-tier output belongs to Mureka (non-commercial only).
+  - Commercial rights may apply only to tracks made while the subscription is active.
+  - Mureka keeps a broad, irrevocable licence to user output.
+  - Copyright registration isn't guaranteed.
+  - A lawsuit over the service is reported as pending.
+- **Risks for a sold game:**
+  - Purely AI-made music generally can't be copyrighted in the US, so others could reuse it.
+  - Stores such as Steam ask for an AI-content disclosure.
+  - Don't register the tracks with Content ID, so that streamers don't get claims.
+- **To sell:** read Mureka's terms on a normal browser and record the date read. Keep each track's
+  generation record. Ladi plans to commission human-made songs before selling (see the commission
+  briefs), which would replace these tracks.
 
 ## AI art: non-commercial vs commercial
 
