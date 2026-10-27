@@ -48,7 +48,7 @@ body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in s
 
 /* Japanese: break between phrases, never inside a word (see stage/style.css). */
 :lang(ja) { font-family: var(--font-ja); line-break: strict; word-break: keep-all; overflow-wrap: anywhere; }
-@supports (word-break: auto-phrase) { :lang(ja) { word-break: auto-phrase; overflow-wrap: normal; } }
+@supports (word-break: auto-phrase) { :lang(ja) { word-break: auto-phrase; } }
 .nw { white-space: nowrap; }
 .jp-blank { color: transparent; text-decoration: underline 0.1em var(--ink); text-underline-offset: 0.12em; text-decoration-skip-ink: none; user-select: none; }
 ruby { ruby-position: over; }
