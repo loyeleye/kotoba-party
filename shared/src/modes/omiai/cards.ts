@@ -7,10 +7,16 @@
 // gender matters: the show is a formal "meet the family" introduction, so the prize is an
 // invitation to tea, not a date.
 //
+// The room's Audience setting picks the guest: Family guests (the first eight) by default, Kids guests
+// who want to make a friend and invite you to play, or Cheeky guests with dating-show energy (still
+// only a cup of tea, never a date). The keigo pairs, shared tiles and manners meter are the same
+// for everyone.
+//
 // Round 1 is always the self-introduction and the last round is always the closing appeal
 // (both built from the card below); the rounds between ask the card's own questions in order.
 
 import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
+import type { Audience } from '../../protocol.js';
 
 export interface KeigoPair {
   id: string;
@@ -63,6 +69,8 @@ export interface CharacterCard {
   appeal: JpText[];
   /** What they say when they accept someone ({name} is filled in). */
   accept: JpText;
+  /** Who this guest is for (the room's Audience setting). Kids guests invite you to play, not to tea. */
+  audience: Audience;
   status: ReviewStatus;
 }
 
@@ -187,6 +195,7 @@ export const CARDS: readonly CharacterCard[] = [
     ],
     appeal: [k('いっしょに すもうを', 'sumo together'), k('いっしょに さんぽを', 'a walk together'), k('いっしょに つりを', 'fishing together')],
     accept: k('{name}さん、こんど いっしょに きゅうりを たべましょう！', "{name}, let's eat cucumbers together sometime!"),
+    audience: 'family',
     status: 'draft',
   },
   {
@@ -228,6 +237,7 @@ export const CARDS: readonly CharacterCard[] = [
     ],
     appeal: [k('いっしょに ペンキぬりを', 'wall painting together'), k('いっしょに かくれんぼを', 'hide and seek together'), k('いっしょに おさんぽを', 'a stroll together')],
     accept: k('{name}さん、わたしの いえに ぜひ あそびに きて ください。', '{name}, please do come and visit my house.'),
+    audience: 'family',
     status: 'draft',
   },
   {
@@ -269,6 +279,7 @@ export const CARDS: readonly CharacterCard[] = [
     ],
     appeal: [k('いっしょに あまやどりを', 'sheltering from the rain together'), k('いっしょに さんぽを', 'a walk together'), k('いっしょに てるてるぼうずづくりを', 'making rain charms together')],
     accept: k('{name}さん、あめの ひも はれの ひも、よろしく おねがいします！', '{name}, rain or shine, I look forward to it!'),
+    audience: 'family',
     status: 'draft',
   },
   {
@@ -310,6 +321,7 @@ export const CARDS: readonly CharacterCard[] = [
     ],
     appeal: [k('いっしょに おかいものを', 'shopping together'), k('いっしょに おひるねを', 'a nap together'), k('いっしょに てを ふる れんしゅうを', 'waving practice together')],
     accept: k('{name}さん、また おこし ください！　ずっと てを ふって まって います。', "{name}, please come again! I'll be waving the whole time."),
+    audience: 'family',
     status: 'draft',
   },
   {
@@ -351,6 +363,7 @@ export const CARDS: readonly CharacterCard[] = [
     ],
     appeal: [k('いっしょに やまのぼりを', 'mountain climbing together'), k('いっしょに ハイキングを', 'hiking together'), k('いっしょに おちゃを', 'tea together')],
     accept: k('{name}さん、こんど いっしょに やまに のぼりましょう。ゆっくり おねがいします。', "{name}, let's climb a mountain together sometime. Slowly, please."),
+    audience: 'family',
     status: 'draft',
   },
   {
@@ -392,6 +405,7 @@ export const CARDS: readonly CharacterCard[] = [
     ],
     appeal: [k('いっしょに ゆきあそびを', 'playing in the snow together'), k('いっしょに スキーを', 'skiing together'), k('いっしょに かまくらづくりを', 'building a snow hut together')],
     accept: k('{name}さん、うれしくて ちょっと とけそうです！　ぜひ また あいましょう。', "{name}, I'm so happy I might melt! Let's meet again."),
+    audience: 'family',
     status: 'draft',
   },
   {
@@ -434,6 +448,7 @@ export const CARDS: readonly CharacterCard[] = [
     ],
     appeal: [k('いっしょに ジョギングを', 'jogging together'), k('いっしょに たいそうを', 'exercises together'), k('いっしょに おまいりを', 'a shrine visit together')],
     accept: k('{name}さん、もう かたほうの めも かきました！　ゆめが かないました！', "{name}, I've painted in my other eye! My wish came true!"),
+    audience: 'family',
     status: 'draft',
   },
   {
@@ -475,9 +490,273 @@ export const CARDS: readonly CharacterCard[] = [
     ],
     appeal: [k('いっしょに おちゃかいを', 'a tea party together'), k('いっしょに おそうじを', 'cleaning together'), k('いっしょに ダンスを', 'dancing together')],
     accept: k('{name}さん、ピピッ！　うれしいです！　よろしく おねがいします。', '{name}, beep! I am delighted! I look forward to it.'),
+    audience: 'family',
+    status: 'draft',
+  },
+  // ---- Kids: the guest wants to make a friend, and invites you to play ----
+
+  {
+    id: 'zashiki',
+    emoji: '🎎',
+    name: k('ざしきわらしの ワラシちゃん', 'Warashi the House Spirit'),
+    job: k('おうちの まもりがみ', 'guardian of the house'),
+    hobbies: [k('かくれんぼ', 'hide and seek'), k('おてだま', 'juggling beanbags')],
+    quirk: 'A little house spirit who brings good luck to whoever plays with them. Hides in cupboards and giggles.',
+    greeting: k('こんにちは！　ざしきわらしの ワラシです。', "Hello! I'm Warashi the house spirit."),
+    questions: [
+      {
+        id: 'zashiki.play',
+        ask: { n5: k('すきな あそびは なんですか。', "What's your favourite game to play?"), n4: k('どんな あそびを よく なさいますか。', 'What games do you often play? (honorific)') },
+        kind: 'wh',
+        fills: [k('おにごっこ', 'tag'), k('かくれんぼ', 'hide and seek'), k('なわとび', 'jump rope'), k('ゲーム', 'video games')],
+        endings: nounEndings(false),
+        example: { kana: k('おにごっこです。', "It's tag."), n5: k('そうですね、おにごっこが すきです。', 'Let me see, I like tag.'), n4: k('そうですね、よく おにごっこを いたします。', 'Let me see, I often play tag. (humble)') },
+        keigo: 'suru',
+      },
+      {
+        id: 'zashiki.snack',
+        ask: { n5: k('すきな おやつは なんですか。', "What's your favourite snack?"), n4: k('どんな おやつを よく めしあがりますか。', 'What snacks do you usually have? (honorific)') },
+        kind: 'wh',
+        fills: [k('プリン', 'pudding'), k('ドーナツ', 'doughnuts'), k('おにぎり', 'rice balls'), k('わたあめ', 'candy floss')],
+        endings: nounEndings(false),
+        example: { kana: k('プリンです。', "It's pudding."), n5: k('そうですね、プリンが すきです。', 'Let me see, I like pudding.'), n4: k('そうですね、プリンを よく いただきます。', 'Let me see, I often have pudding. (humble)') },
+        keigo: 'taberu',
+      },
+      {
+        id: 'zashiki.school',
+        ask: { n5: k('がっこうは すきですか。', 'Do you like school?'), n4: k('がっこうは おすきですか。', 'Are you fond of school? (with お)') },
+        kind: 'yesno',
+        fills: [k('だいすき', 'I love it'), k('すき', 'I like it'), k('やすみじかんが すき', 'I like break time')],
+        endings: nounEndings(false),
+        example: { kana: k('はい、すきです。', 'Yes, I like it.'), n5: k('はい、がっこうが すきです。', 'Yes, I like school.'), n4: k('ええ、がっこうは とても たのしいです。', 'Oh yes, school is a lot of fun.') },
+        keigo: 'da',
+      },
+    ],
+    appeal: [k('いっしょに かくれんぼを', 'hide and seek together'), k('いっしょに おにごっこを', 'tag together'), k('いっしょに おえかきを', 'drawing together')],
+    accept: k('{name}さん、きょうから ともだちです！　いっしょに あそびましょう！', "{name}, we're friends from today! Let's play together!"),
+    audience: 'kids',
+    status: 'draft',
+  },
+  {
+    id: 'ryu',
+    emoji: '🐉',
+    name: k('りゅうの タツくん', 'Tatsu the Little Dragon'),
+    job: k('そらを とぶ れんしゅうちゅう', 'still learning to fly'),
+    hobbies: [k('えほん', 'picture books'), k('たんけん', 'exploring')],
+    quirk: 'A very small dragon. Sneezes little sparks when excited, and mostly hops instead of flying.',
+    greeting: k('はじめまして！　りゅうの タツです。まだ ちいさい りゅうです。', "Nice to meet you! I'm Tatsu the dragon. I'm still a little dragon."),
+    questions: [
+      {
+        id: 'ryu.animal',
+        ask: { n5: k('すきな どうぶつは なんですか。', "What's your favourite animal?"), n4: k('どんな どうぶつが おすきですか。', 'What animals are you fond of? (with お)') },
+        kind: 'wh',
+        fills: [k('いぬ', 'dogs'), k('ねこ', 'cats'), k('パンダ', 'pandas'), k('きょうりゅう', 'dinosaurs')],
+        endings: nounEndings(false),
+        example: { kana: k('いぬです。', 'Dogs.'), n5: k('そうですね、いぬが すきです。', 'Let me see, I like dogs.'), n4: k('そうですね、いぬが いちばん すきです。', 'Let me see, I like dogs best.') },
+        keigo: 'da',
+      },
+      {
+        id: 'ryu.breakfast',
+        ask: { n5: k('あさごはんは なにを たべますか。', 'What do you eat for breakfast?'), n4: k('あさごはんは なにを めしあがりますか。', 'What do you have for breakfast? (honorific)') },
+        kind: 'wh',
+        fills: [k('パンを', 'bread'), k('ごはんを', 'rice'), k('たまごを', 'eggs'), k('ケーキを', 'cake')],
+        endings: { polite: polite(k('たべます。', 'eat (polite)'), [k('いただきます。', 'eat (humble)'), 'n4']), casual: [{ jp: k('たべる。', 'eat (plain)') }, { jp: k('たべるよ。', 'eat, you know') }] },
+        example: { kana: k('パンを たべます。', 'I eat bread.'), n5: k('ええと、まいあさ パンを たべます。', 'Um, I eat bread every morning.'), n4: k('ええと、まいあさ パンを いただきます。', 'Um, I have bread every morning. (humble)') },
+        keigo: 'taberu',
+      },
+      {
+        id: 'ryu.outing',
+        ask: { n5: k('やすみの ひは どこに いきますか。', 'Where do you go on your days off?'), n4: k('おやすみの ひは どちらへ いらっしゃいますか。', 'Where do you go on your days off? (honorific)') },
+        kind: 'wh',
+        fills: [k('こうえんに', 'to the park'), k('うみに', 'to the sea'), k('どうぶつえんに', 'to the zoo'), k('おばあちゃんの いえに', "to Grandma's house")],
+        endings: { polite: polite(k('いきます。', 'go (polite)'), [k('まいります。', 'go (humble)'), 'n4']), casual: [{ jp: k('いく。', 'go (plain)') }, { jp: k('いくよ。', 'go, you know') }] },
+        example: { kana: k('こうえんに いきます。', 'I go to the park.'), n5: k('そうですね、よく こうえんに いきます。', 'Let me see, I often go to the park.'), n4: k('そうですね、よく こうえんに まいります。', 'Let me see, I often go to the park. (humble)') },
+        keigo: 'iku',
+      },
+    ],
+    appeal: [k('いっしょに たんけんを', 'exploring together'), k('いっしょに ボールあそびを', 'playing ball together'), k('いっしょに すなあそびを', 'playing in the sand together')],
+    accept: k('{name}さん、きょうから ともだちです！　こんど せなかに のせて あげますね。', "{name}, we're friends from today! Next time I'll give you a ride on my back."),
+    audience: 'kids',
+    status: 'draft',
+  },
+  {
+    id: 'usagi',
+    emoji: '🐰',
+    name: k('つきの うさぎの モチちゃん', 'Mochi the Moon Rabbit'),
+    job: k('おもちやさん', 'rice-cake maker'),
+    hobbies: [k('もちつき', 'pounding rice cakes'), k('ジャンプ', 'jumping')],
+    quirk: 'Lives on the moon and pounds mochi all night. Has hopped down for the day and is a little bit lost.',
+    greeting: k('こんにちは。つきから きました、うさぎの モチです。', "Hello. I'm Mochi the rabbit, and I've come from the moon."),
+    questions: [
+      {
+        id: 'usagi.friends',
+        ask: { n5: k('ともだちは なんにん いますか。', 'How many friends do you have?'), n4: k('おともだちは なんにん いらっしゃいますか。', 'How many friends do you have? (honorific)') },
+        kind: 'wh',
+        fills: [k('ひとり', 'one'), k('さんにん', 'three'), k('じゅうにん', 'ten'), k('ひゃくにん', 'a hundred')],
+        endings: { polite: polite(k('います。', 'there are (polite)'), [k('おります。', 'there are (humble)'), 'n4']), casual: [{ jp: k('いる。', 'there are (plain)') }, { jp: k('いるよ。', 'there are, you know') }] },
+        example: { kana: k('さんにん います。', 'I have three.'), n5: k('ええと、ともだちが さんにん います。', 'Um, I have three friends.'), n4: k('ええと、ともだちが さんにん おります。', 'Um, I have three friends. (humble)') },
+        keigo: 'iru',
+      },
+      {
+        id: 'usagi.sport',
+        ask: { n5: k('スポーツは すきですか。', 'Do you like sports?'), n4: k('スポーツは なさいますか。', 'Do you play any sports? (honorific)') },
+        kind: 'yesno',
+        fills: [k('だいすき', 'I love them'), k('すき', 'I like them'), k('ちょっと にがて', 'not really my thing')],
+        endings: nounEndings(false),
+        example: { kana: k('はい、すきです。', 'Yes, I like them.'), n5: k('はい、スポーツが すきです。', 'Yes, I like sports.'), n4: k('はい、ときどき サッカーを いたします。', 'Yes, I play football now and then. (humble)') },
+        keigo: 'suru',
+      },
+      {
+        id: 'usagi.mochi',
+        ask: { n5: k('おもちは すきですか。', 'Do you like mochi?'), n4: k('おもちは よく めしあがりますか。', 'Do you often have mochi? (honorific)') },
+        kind: 'yesno',
+        fills: [k('だいすき', 'I love it'), k('すき', 'I like it'), k('あんこの ほうが すき', 'I prefer the bean paste')],
+        endings: nounEndings(false),
+        example: { kana: k('はい、だいすきです。', 'Yes, I love it.'), n5: k('はい、おもちが だいすきです。', 'Yes, I love mochi.'), n4: k('はい、おしょうがつに よく いただきます。', 'Yes, I often have it at New Year. (humble)') },
+        keigo: 'taberu',
+      },
+    ],
+    appeal: [k('いっしょに もちつきを', 'pounding mochi together'), k('いっしょに おつきみを', 'moon-viewing together'), k('いっしょに なわとびを', 'jump rope together')],
+    accept: k('{name}さん、つきに あそびに きて ください！　おもちを たくさん つくって まって います。', "{name}, please come and play on the moon! I'll make lots of mochi and wait for you."),
+    audience: 'kids',
+    status: 'draft',
+  },
+
+  // ---- Cheeky: dating-show energy, grown-up questions, still only a cup of tea ----
+
+  {
+    id: 'tokkuri',
+    emoji: '🍶',
+    name: k('とっくりの トックリさん', 'Tokkuri the Sake Flask'),
+    job: k('いざかやの てんちょう', 'izakaya manager'),
+    hobbies: [k('カラオケ', 'karaoke'), k('はしござけ', 'bar hopping')],
+    quirk: 'A sake flask who knows every izakaya in town. Says "just one more" (もう いっぱい) and means five.',
+    greeting: k('はじめまして。とっくりの トックリです。もう いっぱい いかがですか。', "Nice to meet you. I'm Tokkuri the sake flask. How about one more?"),
+    questions: [
+      {
+        id: 'tokkuri.drink',
+        ask: { n5: k('すきな のみものは なんですか。', "What's your favourite drink?"), n4: k('どんな おさけを よく めしあがりますか。', 'What do you usually like to drink? (honorific)') },
+        kind: 'wh',
+        fills: [k('ビール', 'beer'), k('にほんしゅ', 'sake'), k('ハイボール', 'whisky highballs'), k('おみず', 'water, honestly')],
+        endings: nounEndings(),
+        example: { kana: k('ビールです。', "It's beer."), n5: k('そうですね、ビールが すきです。', 'Let me see, I like beer.'), n4: k('そうですね、にほんしゅを よく いただきます。', 'Let me see, I often have sake. (humble)') },
+        keigo: 'nomu',
+      },
+      {
+        id: 'tokkuri.howmany',
+        ask: { n5: k('いつも なんばい のみますか。', 'How many drinks do you usually have?'), n4: k('いつも なんばいぐらい めしあがりますか。', 'About how many do you usually have? (honorific)') },
+        kind: 'wh',
+        fills: [k('いっぱい だけ', 'just the one'), k('にはい', 'two'), k('ごはい', 'five'), k('ボトル いっぽん', 'a whole bottle')],
+        endings: { polite: polite(k('のみます。', 'drink (polite)'), [k('いただきます。', 'drink (humble)'), 'n4']), casual: [{ jp: k('のむ。', 'drink (plain)') }, { jp: k('のむよ。', 'drink, you know') }] },
+        example: { kana: k('にはい のみます。', 'I have two.'), n5: k('ええと、いつも にはい のみます。', 'Um, I usually have two.'), n4: k('ええと、いつも にはいほど いただきます。', 'Um, I usually have about two. (humble)') },
+        keigo: 'nomu',
+      },
+      {
+        id: 'tokkuri.morning',
+        ask: { n5: k('のんだ つぎの ひは なんじに おきますか。', 'What time do you get up the morning after drinking?'), n4: k('のんだ つぎの ひは なんじに おきに なりますか。', 'What time do you get up the morning after? (honorific)') },
+        kind: 'wh',
+        fills: [k('しちじに', 'at seven'), k('じゅうじに', 'at ten'), k('おひるに', 'at noon'), k('ゆうがたに', 'in the evening')],
+        endings: { polite: polite(k('おきます。', 'get up (polite)')), casual: [{ jp: k('おきる。', 'get up (plain)') }, { jp: k('おきるよ。', 'get up, you know') }] },
+        example: { kana: k('じゅうじに おきます。', 'I get up at ten.'), n5: k('ええと、たいてい じゅうじに おきます。', 'Um, I usually get up at ten.'), n4: k('ええと、たいてい じゅうじに おきて おります。', 'Um, I usually get up at ten. (humble)') },
+        keigo: 'okiru',
+      },
+    ],
+    appeal: [k('いっしょに かんぱいを', 'a toast together'), k('いっしょに カラオケを', 'karaoke together'), k('いっしょに はしござけを', 'bar hopping together')],
+    accept: k('{name}さん、かんぱい！　こんどは わたしの おごりです……たぶん。', "{name}, cheers! Next round's on me… probably."),
+    audience: 'cheeky',
+    status: 'draft',
+  },
+  {
+    id: 'noppera',
+    emoji: '😶',
+    name: k('のっぺらぼうの ノッペさん', 'Noppe the Faceless'),
+    job: k('マッチングアプリの ユーザー', 'dating-app regular'),
+    hobbies: [k('じぶんさがし', 'finding myself'), k('ヨガ', 'yoga')],
+    quirk: 'Has no face, so every dating-app photo is the back of their head. Swears they have a great personality.',
+    greeting: k('はじめまして。のっぺらぼうの ノッペです。しゃしんより じつぶつの ほうが いいですよ。', "Nice to meet you. I'm Noppe the faceless. I'm better in person than in my photos."),
+    questions: [
+      {
+        id: 'noppera.habit',
+        ask: { n5: k('わるい くせは なんですか。', "What's your worst habit?"), n4: k('なにか わるい くせは ございますか。', 'Do you have any bad habits? (extra polite)') },
+        kind: 'wh',
+        fills: [k('ねぼう', 'oversleeping'), k('むだづかい', 'wasting money'), k('ながでんわ', 'endless phone calls'), k('いびき', 'snoring')],
+        endings: nounEndings(),
+        example: { kana: k('ねぼうです。', "It's oversleeping."), n5: k('ええと、ねぼうです。すみません。', "Um, it's oversleeping. Sorry."), n4: k('おはずかしいですが、ねぼうで ございます。', "I'm embarrassed to say it's oversleeping. (extra polite)") },
+        keigo: 'aru',
+      },
+      {
+        id: 'noppera.date',
+        ask: { n5: k('さいきん デートを しましたか。', 'Have you been on a date lately?'), n4: k('さいきん デートは なさいましたか。', 'Have you been on a date lately? (honorific)') },
+        kind: 'yesno',
+        fills: [k('きのう', 'yesterday'), k('せんしゅう', 'last week'), k('きょねん', 'last year'), k('じゅうねん まえに', 'ten years ago')],
+        endings: { polite: polite(k('しました。', 'did (polite)'), [k('いたしました。', 'did (humble)'), 'n4']), casual: [{ jp: k('した。', 'did (plain)') }, { jp: k('したよ。', 'did, you know') }] },
+        example: { kana: k('はい、せんしゅう しました。', 'Yes, last week.'), n5: k('はい、せんしゅう デートを しました。', 'Yes, I went on a date last week.'), n4: k('ええ、せんしゅう いたしました。', 'Yes, last week. (humble)') },
+        keigo: 'suru',
+      },
+      {
+        id: 'noppera.type',
+        ask: { n5: k('どんな ひとが タイプですか。', "What's your type?"), n4: k('どのような かたが おすきですか。', 'What sort of person are you fond of? (with お)') },
+        kind: 'wh',
+        fills: [k('やさしい ひと', 'someone kind'), k('おもしろい ひと', 'someone funny'), k('おかねもち', 'someone rich'), k('かおが ある ひと', 'someone with a face')],
+        endings: nounEndings(false),
+        example: { kana: k('やさしい ひとです。', 'Someone kind.'), n5: k('そうですね、やさしい ひとが タイプです。', 'Let me see, kind people are my type.'), n4: k('そうですね、やさしい かたが すきです。', 'Let me see, I like kind people.') },
+        keigo: 'da',
+      },
+    ],
+    appeal: [k('いっしょに おちゃを', 'tea together'), k('いっしょに ヨガを', 'yoga together'), k('いっしょに ドライブを', 'a drive together')],
+    accept: k('{name}さん、かおは ないけど、むねが ドキドキして います！', "{name}, I don't have a face, but my heart is pounding!"),
+    audience: 'cheeky',
+    status: 'draft',
+  },
+  {
+    id: 'rokuro',
+    emoji: '💼',
+    name: k('ろくろくびの ノビさん', 'Nobi the Long-Necked'),
+    job: k('かいしゃいん（ざんぎょうちゅう）', 'office worker (on overtime)'),
+    hobbies: [k('サウナ', 'sauna'), k('ざんぎょう', 'overtime, apparently')],
+    quirk: 'Works so late their neck has stretched from watching the clock. Checks work email under the table.',
+    greeting: k('はじめまして。ろくろくびの ノビです。きょうも ざんぎょうでした。', "Nice to meet you. I'm Nobi the long-necked. Overtime again today."),
+    questions: [
+      {
+        id: 'rokuro.overtime',
+        ask: { n5: k('ざんぎょうは よく しますか。', 'Do you work overtime a lot?'), n4: k('ざんぎょうは よく なさいますか。', 'Do you often work overtime? (honorific)') },
+        kind: 'yesno',
+        fills: [k('まいにち', 'every day'), k('ときどき', 'sometimes'), k('しゅうまつも', 'weekends too')],
+        endings: { polite: polite(k('します。', 'do (polite)'), [k('いたします。', 'do (humble)'), 'n4']), casual: [{ jp: k('する。', 'do (plain)') }, { jp: k('するよ。', 'do, you know') }] },
+        example: { kana: k('はい、ときどき します。', 'Yes, sometimes.'), n5: k('はい、ときどき ざんぎょうを します。', 'Yes, I work overtime sometimes.'), n4: k('はい、ときどき いたします。', 'Yes, now and then. (humble)') },
+        keigo: 'suru',
+      },
+      {
+        id: 'rokuro.boss',
+        ask: { n5: k('じょうしは どんな ひとですか。', "What's your boss like?"), n4: k('じょうしは どのような かたで いらっしゃいますか。', 'What sort of person is your boss? (honorific)') },
+        kind: 'wh',
+        fills: [k('やさしい ひと', 'a kind person'), k('こわい ひと', 'a scary person'), k('いつも ねむい ひと', 'always sleepy'), k('ねこ', 'a cat')],
+        endings: nounEndings(false),
+        example: { kana: k('やさしい ひとです。', 'A kind person.'), n5: k('そうですね、とても やさしい ひとです。', 'Let me see, a very kind person.'), n4: k('そうですね、たいへん やさしい ひとです。', 'Let me see, a most kind person.') },
+        keigo: 'da',
+      },
+      {
+        id: 'rokuro.stress',
+        ask: { n5: k('ストレスが ある とき、なにを しますか。', 'What do you do when you are stressed?'), n4: k('ストレスが ある とき、なにを なさいますか。', 'What do you do when you are stressed? (honorific)') },
+        kind: 'wh',
+        fills: [k('カラオケを', 'karaoke'), k('ジョギングを', 'jogging'), k('やけぐいを', 'stress-eating'), k('かいものを', 'shopping')],
+        endings: { polite: polite(k('します。', 'do (polite)'), [k('いたします。', 'do (humble)'), 'n4']), casual: [{ jp: k('する。', 'do (plain)') }, { jp: k('するよ。', 'do, you know') }] },
+        example: { kana: k('カラオケを します。', 'I do karaoke.'), n5: k('そうですね、よく カラオケを します。', 'Let me see, I often do karaoke.'), n4: k('そうですね、よく カラオケを いたします。', 'Let me see, I often do karaoke. (humble)') },
+        keigo: 'suru',
+      },
+    ],
+    appeal: [k('いっしょに のみかいを', 'a drinks night together'), k('いっしょに カラオケを', 'karaoke together'), k('いっしょに ずるやすみを', 'skiving off work together')],
+    accept: k('{name}さん、あした ゆうきゅうを とります！　いっしょに おちゃを のみましょう。', "{name}, I'm taking tomorrow off! Let's have tea together."),
+    audience: 'cheeky',
     status: 'draft',
   },
 ];
+
+/** The guests a game can draw for the room's Audience setting (Family when there are none). */
+export function cardsFor(audience: Audience): readonly CharacterCard[] {
+  const mine = CARDS.filter((c) => c.audience === audience);
+  return mine.length ? mine : CARDS.filter((c) => c.audience === 'family');
+}
 
 /** Fills {name} in a line. */
 export function withName(jp: JpText, name: string): JpText {

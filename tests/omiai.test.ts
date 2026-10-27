@@ -5,13 +5,14 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
-import { appealQuestion, CARDS, CLOSERS, introQuestion, KEIGO_PAIRS, keigoPair, OPENERS, withName } from '../shared/src/modes/omiai/cards.js';
+import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, KEIGO_PAIRS, keigoPair, OPENERS, withName } from '../shared/src/modes/omiai/cards.js';
 import { checkManners, METER, restoreScript, verbForms } from '../shared/src/modes/omiai/manners.js';
 import {
   ACCEPT_POINTS,
   BONUS_POOL_SHARE,
   dealTiles,
   ENCORE_SHARE,
+  invitation,
   joinTiles,
   questionFor,
   SAY_FIRST_MS,
@@ -321,8 +322,11 @@ describe('Omiai: the checker with real kuromoji tokens', () => {
 describe('Omiai: the character cards', () => {
   const allQuestions = CARDS.flatMap((c) => [introQuestion(c), ...c.questions, appealQuestion(c)]);
 
-  it('has 8 draft cards, kana only, 3 questions each, with unique ids and known keigo pairs', () => {
-    expect(CARDS.length).toBe(8);
+  it('has 8 Family, 3 Kids and 3 Cheeky draft cards, kana only, 3 questions each, with unique ids and known keigo pairs', () => {
+    expect(cardsFor('family').length).toBe(8);
+    expect(cardsFor('kids').length).toBe(3);
+    expect(cardsFor('cheeky').length).toBe(3);
+    expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
     const ids = new Set<string>();
     for (const c of CARDS) {
       expect(c.status).toBe('draft');
@@ -639,6 +643,34 @@ describe('Omiai: the finale and the whole game', () => {
     }
     expect(asked.length).toBe(5);
     expect(new Set(asked).size).toBe(5);
+  });
+
+  it.each(['kids', 'family', 'cheeky'] as const)('a %s room meets a guest for its audience', (audience) => {
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const t = new Table(2, [], REAL_CONTENT, seed);
+      t.cmd('stage', { type: 'settings', audience });
+      expect(t.cmd('stage', { type: 'start', mode: 'omiai' }).changed).toBe(true);
+      expect(cardsFor(audience).map((c) => c.id)).toContain(t.st.cardId);
+      expect(t.view().card!.audience).toBe(audience);
+    }
+  });
+
+  it('a Kids guest invites someone to play, not to tea', () => {
+    expect(invitation({ audience: 'kids' }).award.title).toBe('あそびの しょうたい');
+    expect(invitation({ audience: 'cheeky' }).award.title).toBe('おちゃの しょうたい');
+    const t = new Table(3, [], REAL_CONTENT, 3);
+    t.cmd('stage', { type: 'settings', audience: 'kids' });
+    t.cmd('stage', { type: 'start', mode: 'omiai' });
+    for (let i = 0; i < 80 && t.s.phase !== 'recap'; i++) {
+      if (t.s.phase === 'answer') t.answer({ p1: 'はじめまして。P1です。よろしく おねがいします。', p2: 'P2です', p3: 'P3だよ' });
+      else if (t.s.phase === 'reveal') {
+        for (const p of ['p2', 'p3']) t.play(p, { kind: 'vote', answerId: t.st.current!.answers.find((a) => a.authorId === 'p1')!.id });
+        t.timeout();
+      } else t.timeout();
+    }
+    const titles = t.s.recap!.awards.map((a) => a.title);
+    expect(titles).toContain('あそびの しょうたい');
+    expect(titles).not.toContain('おちゃの しょうたい');
   });
 
   it('survives players leaving mid-round', () => {

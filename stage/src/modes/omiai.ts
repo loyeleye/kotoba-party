@@ -1,11 +1,11 @@
 // Omiai Matchmaker on the TV: the guest's card, their question in a speech bubble, the anonymous
 // charm vote, the manners meters with the guest's reaction to each register, and the finale's
-// spotlight as the guest picks who to invite to tea.
+// spotlight as the guest picks who to invite to tea (or, for a Kids guest, to play).
 
 import { h, ruby } from '../../../shared/src/dom.js';
 import { guestPic } from '../../../shared/src/art.js';
 import type { OmiaiView } from '../../../shared/src/modes/views.js';
-import type { AnswerCard, CardView } from '../../../shared/src/modes/omiai/omiai.js';
+import { invitation, type AnswerCard, type CardView } from '../../../shared/src/modes/omiai/omiai.js';
 import type { Register } from '../../../shared/src/modes/omiai/manners.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
@@ -92,6 +92,7 @@ function points(view: RoomView, game: OmiaiView): HTMLElement | null {
 function finale(view: RoomView, game: OmiaiView): HTMLElement {
   const f = game.finale;
   const card = game.card!;
+  const invite = invitation(card);
   const contestants = view.players.filter((p) => game.hearts[p.id] !== undefined);
   return h(
     'div',
@@ -113,11 +114,11 @@ function finale(view: RoomView, game: OmiaiView): HTMLElement {
       ? h(
           'div',
           { class: 'omi-invite' },
-          h('p', { class: 'omi-invite-title' }, '🍵 ', h('strong', {}, nameOf(view, f.accepted)), ', will you come to tea?'),
+          h('p', { class: 'omi-invite-title' }, `${invite.emoji} `, h('strong', {}, nameOf(view, f.accepted)), `, ${invite.ask}`),
           f.line ? h('p', { class: 'omi-invite-jp' }, ruby(f.line)) : null,
           f.line ? h('p', { class: 'omi-invite-en' }, f.line.en) : null,
         )
-      : h('div', { class: 'omi-invite' }, h('p', { class: 'omi-invite-title' }, '🍵 Tea for everyone! The guest enjoyed meeting you all.')),
+      : h('div', { class: 'omi-invite' }, h('p', { class: 'omi-invite-title' }, `${invite.emoji} ${invite.all}`)),
   );
 }
 
@@ -145,7 +146,7 @@ export const omiaiStage: StageMode<OmiaiView> = {
             h('li', {}, h('strong', {}, '🙇 Our guest asks a question.'), ' Answer in Japanese on your phone: say it, type it, or build it from tiles.'),
             h('li', {}, h('strong', {}, '🍵 Manners matter.'), ' です / ます, はじめまして, keigo: the family notices every one.'),
             h('li', {}, h('strong', {}, '❤ Vote'), ' for the most charming answer (not your own).'),
-            h('li', {}, h('strong', {}, '💐 At the end,'), ' the guest invites one contestant to tea.'),
+            h('li', {}, h('strong', {}, '💐 At the end,'), ` the guest invites one contestant ${invitation(card).to}.`),
           ),
         );
       case 'prompt':
