@@ -1,11 +1,12 @@
-// The stage's settings panel: the four volumes, streamer mode and, on the main stage, whether
-// watching screens (friends' laptops on ?code=) may run the game. A watching screen that has been
-// given control gets the game buttons here instead. Volumes and streamer mode belong to this
-// screen; remote control belongs to the room.
+// The stage's settings panel: the four volumes, streamer mode, background effects and, on the
+// main stage, whether watching screens (friends' laptops on ?code=) may run the game. A watching
+// screen that has been given control gets the game buttons here instead. Volumes, streamer mode
+// and background effects belong to this screen; remote control belongs to the room.
 
 import { h, mount } from '../../shared/src/dom.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import type { ModeId, RoomView } from '../../shared/src/protocol.js';
+import { isAmbientOn, setAmbient } from './backdrop.js';
 import { isStreamerMode, setStreamerMode } from './music/index.js';
 import { sfx } from './music/sfx.js';
 import { getVolumes, setVolume, type VolumeId } from './sound.js';
@@ -40,6 +41,11 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
       'section',
       { class: 'st-sec' },
       toggle('Streamer mode', "Plays only the game's own music, so a stream or video of this screen doesn't pick up copyright claims.", isStreamerMode(), (on) => setStreamerMode(on)),
+    ),
+    h(
+      'section',
+      { class: 'st-sec' },
+      toggle('Background effects', 'Mist, spotlights and confetti behind the game. Off shows a still set. Calm motion on the VIP’s phone also holds them still.', isAmbientOn(), (on) => setAmbient(on)),
     ),
     room,
   );

@@ -60,7 +60,7 @@
     },
     {
       "path": "stage/assets/studio-bg.png",
-      "what": "Stage backdrop: dark haunted late-night TV studio, low contrast for readable text (pixel art converted from the earlier Gemini backdrop)",
+      "what": "Stage backdrop: dark haunted late-night TV studio, low contrast for readable text (pixel art converted from the earlier Gemini backdrop). No longer drawn on the stage: it is the source the scene layers in stage/assets/scenes/ were cut from.",
       "generator": "pixellab",
       "model": "image-to-pixelart",
       "prompt": "(image-to-pixelart takes no prompt.) Converted from the earlier Gemini backdrop, kept in tools/art/sources/. Its prompt: Wide establishing shot of an empty late-night TV variety show studio after midnight, haunted but cosy and inviting, inspired by Japanese tsukumogami folklore. A small stage with heavy velvet curtains, an old wooden host desk at one side, a stack of old CRT television monitors glowing faintly, unlit studio spotlights on a rig overhead, a few paper lanterns giving soft warm glows, faint wisps of ghostly mist drifting across the floor, a few loose blank dictionary pages floating gently in the air. Very dark and low contrast overall, muted deep purple and indigo tones (#14101f, #1f1930) with small accents of warm coral (#ff7a59) and mint (#57d9a3) light, slightly soft focus, the centre of the image is calm, dark and empty so text can be placed over it. Painterly cartoon background art style matching a cute game. No people, no characters, no faces, no text, no letters, no signs, no logos, no watermark.",
@@ -73,6 +73,88 @@
         "scale": 6
       },
       "source": "tools/art/sources/studio-bg-gemini.png"
+    },
+    {
+      "path": "stage/assets/scenes/studio-far.png",
+      "what": "Backdrop far layer, 320×180 at 1×: the studio with the desk, lantern, TVs and floating pages painted out, so the centre behind the text is empty",
+      "generator": "polish",
+      "model": "inpaint",
+      "prompt": "PixelLab /inpaint on studio-bg.png at 1× (sampled down 6×), in two 200×180 crops because the endpoint takes at most 200 px wide. Crop x 0–200, mask over the desk/TV cluster (x 80–157, y 14–114) and two pages, seed 9: \"empty dark haunted TV studio at night, plain dark navy back wall and dark empty stage floor, nothing in the middle, no furniture, no screens, no papers, no text\" (negative: desk, monitors, tv screens, lantern, paper, text, letters). Then crop x 120–320 of that result, mask over the two right-hand pages, seed 9: \"empty dark haunted TV studio at night, dark back wall with stage lighting rig, dark empty stage floor, no papers, no text\" (negative: paper, note, card, text, letters). Both with text_guidance_scale 6 and color_image = the 1× backdrop, so the palette stays the same.",
+      "params": {
+        "width": 320,
+        "height": 180,
+        "seed": 9
+      },
+      "post": {},
+      "source": "stage/assets/studio-bg.png"
+    },
+    {
+      "path": "stage/assets/scenes/studio-props.png",
+      "what": "Backdrop props layer: the host desk, hanging lantern and CRT stack cut from studio-bg.png (pixels that differ from studio-far.png), transparent, drawn at the right edge of the stage",
+      "generator": "polish",
+      "model": "cut-out",
+      "prompt": "No generation. Pixels of studio-bg.png at 1× inside x 80–157, y 14–114 that differ from studio-far.png, kept only inside the desk, lantern and TV boxes (the purple glow and floor mist dropped), then the lantern cord redrawn as one continuous 1 px line to the top edge.",
+      "params": {},
+      "post": {},
+      "source": "stage/assets/studio-bg.png"
+    },
+    {
+      "path": "stage/assets/scenes/page-1.png",
+      "what": "Backdrop sprite: floating dictionary page 1, cut from studio-bg.png (at 47,81 at 1×) so it can drift on its own",
+      "generator": "polish",
+      "model": "cut-out",
+      "prompt": "No generation. The page's pixels from studio-bg.png at 1× that differ from studio-far.png.",
+      "params": {},
+      "post": {},
+      "source": "stage/assets/studio-bg.png"
+    },
+    {
+      "path": "stage/assets/scenes/page-2.png",
+      "what": "Backdrop sprite: floating dictionary page 2, cut from studio-bg.png (at 162,67 at 1×) so it can drift on its own",
+      "generator": "polish",
+      "model": "cut-out",
+      "prompt": "No generation. The page's pixels from studio-bg.png at 1× that differ from studio-far.png.",
+      "params": {},
+      "post": {},
+      "source": "stage/assets/studio-bg.png"
+    },
+    {
+      "path": "stage/assets/scenes/page-3.png",
+      "what": "Backdrop sprite: floating dictionary page 3, cut from studio-bg.png (at 251,62 at 1×) so it can drift on its own",
+      "generator": "polish",
+      "model": "cut-out",
+      "prompt": "No generation. The page's pixels from studio-bg.png at 1× that differ from studio-far.png.",
+      "params": {},
+      "post": {},
+      "source": "stage/assets/studio-bg.png"
+    },
+    {
+      "path": "stage/assets/scenes/page-4.png",
+      "what": "Backdrop sprite: floating dictionary page 4, cut from studio-bg.png (at 263,111 at 1×) so it can drift on its own",
+      "generator": "polish",
+      "model": "cut-out",
+      "prompt": "No generation. The page's pixels from studio-bg.png at 1× that differ from studio-far.png.",
+      "params": {},
+      "post": {},
+      "source": "stage/assets/studio-bg.png"
+    },
+    {
+      "path": "stage/assets/scenes/train-carriage.png",
+      "what": "Last Train set: inside a local commuter train at night, three windows cut out to show the town scrolling past (drawn in code)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×180, seed 4: \"pixel art background, interior of an empty Japanese local commuter train carriage late at night, side view facing the long side wall, three large plain black windows in a row across the upper half, long blue cushioned bench seat along the bottom, silver hand straps hanging from a rail at the top, warm dim ceiling light, dark navy and purple colours, cozy and slightly spooky, no people, no text, no letters, no signs\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Seed 8 was dropped: it drew a sign with fake text. Then the three black window panes were flood-filled to transparent from their centres (pixels with R+G+B < 60). Marked polish because tools/art/generate.ts doesn't do the cut-out; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 180,
+        "seed": 4,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8
+      },
+      "post": {}
     },
     {
       "path": "stage/assets/yokai/yokai-blob.png",

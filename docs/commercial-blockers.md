@@ -31,7 +31,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts` | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (all stage art: hosts, yōkai, backdrop, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits, 14 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, backdrop and its scene layers, the Last Train carriage, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits, 14 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
 | 7 | AI art: Gemini (source images for Pon and the backdrop) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon and the backdrop without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
@@ -118,6 +118,12 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   mouth sheets are edited from our own host portraits by `tools/art/polish.ts` (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon and the
   backdrop come from its `image-to-pixelart` endpoint (see row 7). Prompts, sources and params are
   recorded in `stage/assets/manifest.json` and `tools/generate-caption-art.ts`.
+  Since 2026-10-27 the stage draws its backdrop as layers in `stage/assets/scenes/`
+  ([graphics.md](graphics.md#backdrop)). `studio-far.png` is the backdrop with its props painted
+  out by PixelLab's `inpaint` endpoint, and the props and four pages are cut from the old backdrop
+  with no new generation, so all of these still trace back to the Gemini source (row 7).
+  `train-carriage.png` is a new text-only `pixflux` image. The effects (mist, spotlights, rain,
+  confetti, steam, the town past the train windows) are drawn by our own code, not generated.
 - **Terms (read 2026-10-26, <https://www.pixellab.ai/termsofservice>):** "You own the copyrights to your
   creations, permitting usage for both commercial and non-commercial purposes." Limits: don't train
   other models on the outputs, use only the official API, and ask before building a reselling service.

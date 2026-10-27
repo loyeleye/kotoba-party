@@ -19,6 +19,7 @@ import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
 import { tickSfx, watchSfx } from './music/sfx.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
+import { mountBackdrop, updateBackdrop } from './backdrop.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -79,6 +80,7 @@ preload([
 const hostSprite = new HostSprite(128);
 
 $('debug').hidden = !DEBUG;
+mountBackdrop(els.canvas, () => client?.remainingMs() ?? null);
 mountSoundButton(els.canvas);
 mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteOrigin });
 $('debug-tag').hidden = !DEBUG;
@@ -231,6 +233,7 @@ async function openRoom(fresh: boolean): Promise<void> {
 
 function render(view: RoomView, v: number): void {
   document.body.dataset.motion = view.calmMotion ? 'calm' : '';
+  updateBackdrop(view);
   if (view.phaseSeq !== lastPhaseSeq) {
     log(`v${v} → ${view.phase}${view.round ? ` (round ${view.round}/${view.totalRounds})` : ''}`);
     // From the lobby into a game: the TV changes channel to the mode's title card.
