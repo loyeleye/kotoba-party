@@ -5,6 +5,7 @@
 // - one RoomObject (a Durable Object) per room code, which runs the room itself (and passes
 //   spoken clips to the Whisper server, since only the room knows whose token is whose).
 
+import type { Utterance } from '../shared/src/japanese/kana.js';
 import { CLOSE } from '../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../shared/src/roomCode.js';
 import { MAX_CLIP_BYTES } from '../server/src/stt.js';
@@ -61,7 +62,12 @@ export default {
         if (Number(req.headers.get('content-length') ?? 0) > MAX_CLIP_BYTES) return json(400, { error: 'bad-clip' });
         const clip = await req.arrayBuffer();
         if (clip.byteLength > MAX_CLIP_BYTES) return json(400, { error: 'bad-clip' });
-        return toRoom(env, code, 'speech', { token }, new Request('https://room/', { method: 'POST', body: clip }));
+        const res = await toRoom(env, code, 'speech', { token }, new Request('https://room/', { method: 'POST', body: clip }));
+        if (!res.ok) return res;
+        // With the reading and word split, a かな phone can show what it heard in romaji.
+        const heard = (await res.json()) as Utterance;
+        await addReadingsRemote({ heard }, env.READER_URL ? { url: env.READER_URL, token: env.READER_TOKEN } : null);
+        return json(200, heard);
       }
       if (action === 'commands' && req.method === 'POST') {
         const auth = req.headers.get('authorization');

@@ -5,6 +5,7 @@ import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import QRCode from 'qrcode';
 import { WebSocketServer, type WebSocket } from 'ws';
+import type { Utterance } from '../../shared/src/japanese/kana.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type RoomInfo, type WatchRoomResponse } from '../../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/roomCode.js';
@@ -156,7 +157,11 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
         if (!clip || !isClip(clip)) return send(res, 400, { error: 'bad-clip' });
         const result = await sttGate.run(token, () => transcribe(clip, config.stt!));
         if (result === 'busy') return send(res, 429, { error: 'busy' });
-        return result.ok ? send(res, 200, { text: result.text }) : send(res, 502, { error: result.error });
+        if (!result.ok) return send(res, 502, { error: result.error });
+        // With the reading and word split, a かな phone can show what it heard in romaji.
+        const heard: Utterance = { via: 'speech', text: result.text };
+        addReadings({ heard }, config.reader ?? null);
+        return send(res, 200, heard);
       }
       if (action === 'commands' && req.method === 'POST') {
         const token = bearer(req);

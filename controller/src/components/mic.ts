@@ -3,6 +3,8 @@
 // audio never reaches Google. There is no browser recogniser fallback: with no speech server, or no mic,
 // every spoken step is typed or tapped instead.
 
+import type { Utterance } from '../../../shared/src/japanese/kana.js';
+
 const RATE = 16_000;
 /** The server refuses longer clips (stt.ts MAX_CLIP_BYTES); the hold buttons let go before this. */
 const MAX_SECONDS = 15;
@@ -24,7 +26,7 @@ const hasMic = (): boolean => typeof navigator !== 'undefined' && !!navigator.me
 /** Hold-to-talk works on this phone in this room. */
 export const speechReady = (): boolean => !!service && hasMic();
 
-export type Heard = { ok: true; text: string } | { ok: false; why: 'quiet' | 'blocked' | 'failed' | 'busy' };
+export type Heard = ({ ok: true } & Pick<Utterance, 'text' | 'tokens'>) | { ok: false; why: 'quiet' | 'blocked' | 'failed' | 'busy' };
 
 /**
  * One hold of the button. Create it inside the press (so the browser lets audio start), call stop() on release.
@@ -124,8 +126,8 @@ export async function hear(clip: Uint8Array<ArrayBuffer> | null): Promise<Heard>
     });
     if (res.status === 429) return { ok: false, why: 'busy' };
     if (!res.ok) return { ok: false, why: 'failed' };
-    const { text } = (await res.json()) as { text?: string };
-    return text ? { ok: true, text } : { ok: false, why: 'quiet' };
+    const { text, tokens } = (await res.json()) as Partial<Utterance>;
+    return text ? { ok: true, text, tokens: Array.isArray(tokens) ? tokens : undefined } : { ok: false, why: 'quiet' };
   } catch {
     return { ok: false, why: 'failed' };
   }
