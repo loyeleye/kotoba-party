@@ -192,15 +192,15 @@ export const fudeLines: HostLine[] = [
   { id: 'fude.shodo_read.02', host: 'fude', event: 'shodo_read', jp: { text: 'りっぱな まきものです！　せーの！', kana: 'りっぱな まきものです！　せーの！', en: 'A splendid scroll! Ready, go!' }, status: 'draft' },
   { id: 'fude.shodo_read.03', host: 'fude', event: 'shodo_read', jp: { text: 'こえに だして よんで！　せーの！', kana: 'こえに だして よんで！　せーの！', en: 'Read it out loud! Ready, go!' }, status: 'draft' },
   // shodo_dictation
-  { id: 'fude.shodo_dictation.01', host: 'fude', event: 'shodo_dictation', jp: { text: 'かきとりです！　いって、かいて！', kana: 'かきとりです！　いって、かいて！', en: 'Dictation! Say it, then write it!' }, status: 'draft' },
-  { id: 'fude.shodo_dictation.02', host: 'fude', event: 'shodo_dictation', jp: { text: 'おもいだして… いって… かく！', kana: 'おもいだして… いって… かく！', en: 'Remember it… say it… write it!' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.01', host: 'fude', event: 'shodo_dictation', jp: { text: 'かきとりです！　よく みて、よく きいて、かいて！', kana: 'かきとりです！　よく みて、よく きいて、かいて！', en: 'Dictation! Look closely, listen closely, write!' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.02', host: 'fude', event: 'shodo_dictation', jp: { text: 'ゆっくり… ていねいに… かく！', kana: 'ゆっくり… ていねいに… かく！', en: 'Slowly… carefully… write!' }, status: 'draft' },
   { id: 'fude.shodo_dictation.03', host: 'fude', event: 'shodo_dictation', jp: { text: 'つぎの ことば！　いきますよ！', kana: 'つぎの ことば！　いきますよ！', en: 'Next word! Here it comes!' }, status: 'draft' },
-  { id: 'fude.shodo_dictation.04', host: 'fude', event: 'shodo_dictation', jp: { text: 'ふでを はやく！　でも ていねいに！', kana: 'ふでを はやく！　でも ていねいに！', en: 'Quick brush! But careful!' }, status: 'draft' },
-  { id: 'fude.shodo_dictation.05', host: 'fude', event: 'shodo_dictation', jp: { text: 'おおきな こえで いって、それから かいて！', kana: 'おおきな こえで いって、それから かいて！', en: 'Say it loudly, then write it!' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.04', host: 'fude', event: 'shodo_dictation', jp: { text: 'あわてない、あわてない。フデは まって います。', kana: 'あわてない、あわてない。フデは まって います。', en: 'No rush, no rush. Fude is waiting.' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.05', host: 'fude', event: 'shodo_dictation', jp: { text: 'いちまい いちまい、こころを こめて。', kana: 'いちまい いちまい、こころを こめて。', en: 'One sheet at a time, with all your heart.' }, status: 'draft' },
   // shodo_clean
   { id: 'fude.shodo_clean.01', host: 'fude', event: 'shodo_clean', jp: { text: 'うつくしい！　はなまるです！', kana: 'うつくしい！　はなまるです！', en: 'Beautiful! A flower circle!' }, status: 'draft' },
   { id: 'fude.shodo_clean.02', host: 'fude', event: 'shodo_clean', jp: { text: 'すばらしい ひつじゅんです！', kana: 'すばらしい ひつじゅんです！', en: 'Wonderful stroke order!' }, status: 'draft' },
-  { id: 'fude.shodo_clean.03', host: 'fude', event: 'shodo_clean', jp: { text: 'みんな そろって います！', kana: 'みんな そろって います！', en: 'Everyone is in step!' }, status: 'draft' },
+  { id: 'fude.shodo_clean.03', host: 'fude', event: 'shodo_clean', jp: { text: 'フデ、かんどうして ふるえて います。', kana: 'フデ、かんどうして ふるえて います。', en: 'Fude is trembling with emotion.' }, status: 'draft' },
   // shodo_misread
   { id: 'fude.shodo_misread.01', host: 'fude', event: 'shodo_misread', jp: { text: 'フデには {char}に みえます… あれ？', kana: 'フデには {char}に みえます… あれ？', en: 'To Fude it looks like {char}… huh?' }, slots: ['{char}'], status: 'draft' },
   { id: 'fude.shodo_misread.02', host: 'fude', event: 'shodo_misread', jp: { text: 'あれ？　{char}かな？　フデの めが わるい？', kana: 'あれ？　{char}かな？　フデの めが わるい？', en: 'Huh? Is that {char}? Are my eyes going?' }, slots: ['{char}'], status: 'draft' },
@@ -215,5 +215,5 @@ export const fudeLines: HostLine[] = [
   // shodo_claim
   { id: 'fude.shodo_claim.01', host: 'fude', event: 'shodo_claim', jp: { text: 'じぶんの さくひんですか？　なまえを どうぞ！', kana: 'じぶんの さくひんですか？　なまえを どうぞ！', en: 'Is it yours? Sign your name!' }, status: 'draft' },
   { id: 'fude.shodo_claim.02', host: 'fude', event: 'shodo_claim', jp: { text: 'さいごに みんなで よみましょう！　せーの！', kana: 'さいごに みんなで よみましょう！　せーの！', en: 'Finally, let\'s read them together! Ready, go!' }, status: 'draft' },
-  { id: 'fude.shodo_claim.03', host: 'fude', event: 'shodo_claim', jp: { text: 'たかく とんで！　じょうずに なりますように！', kana: 'たかく とんで！　じょうずに なりますように！', en: 'Fly high! May your writing improve!' }, status: 'draft' },
+  { id: 'fude.shodo_claim.03', host: 'fude', event: 'shodo_claim', jp: { text: 'かいた ひとは… だれかな？', kana: 'かいた ひとは… だれかな？', en: 'And who wrote it…?' }, status: 'draft' },
 ];

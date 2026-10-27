@@ -136,14 +136,20 @@ function karaokeCue(phase: Phase): Cue {
   return { song: 'gentle', mix: phase === 'prompt' ? 'full' : 'under' };
 }
 
+/** Shodō Taikai's gallery track (encore → finale → penalty), Ladi's pick. */
+export const SHODO_GALLERY: TrackId = 'japanese-lofi';
+
 /**
- * Shodō Taikai stays on one soft tune from start to end (the music panel): no drum roll, no score
- * or finale tunes, and under the whole time players write, say or read, so the room stays calm.
- * Only the stamp vote (finale) plays it full.
+ * Shodō Taikai is calm throughout (the music panel): no drum roll, no score or finale tunes. The
+ * writing rounds keep the soft synth tune, under while players write, say or read (a recorded koto
+ * track turns to a dull hum in the under mix). The gallery switches to a recorded koto lo-fi track, full while
+ * the big sheets are written and stamped, under for the claim and the read-aloud send-off.
  */
 function shodoCue(phase: Phase, listen: boolean): Cue {
   const song = MODE_THEMES.shodo ?? 'gentle';
   if (phase === 'intro') return { song, mix: 'full', leadIn: 'ident' };
-  if (phase === 'finale') return { song, mix: 'full', keep: true };
+  if (phase === 'encore') return { song: SHODO_GALLERY, mix: 'full' };
+  if (phase === 'finale') return { song: SHODO_GALLERY, mix: 'full', keep: true };
+  if (phase === 'penalty') return { song: SHODO_GALLERY, mix: 'under', keep: true };
   return { song, mix: listen ? 'listen' : 'under', keep: true };
 }

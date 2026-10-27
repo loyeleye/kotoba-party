@@ -74,9 +74,12 @@ it after the most corrected strokes). No "worst" award anywhere.
 
 ## Music and sound
 
-One soft synth tune (`gentle`) throughout, under the whole time players write, say or read, and at
-the listening level during dictation (each phone voices its own word). Full only for the stamp vote.
-No drum roll, no score or finale tunes. Phones stay silent apart from the player's own 🔊 tap.
+The soft synth tune (`gentle`) for the writing rounds, under the whole time players write, say or
+read, and at the listening level during dictation (each phone voices its own word). The gallery
+switches to Japanese Lofi HipHop (pickentcode, koto over a lo-fi beat; Ladi's pick, 2026-10-27):
+full while the big sheets are written and stamped, under for the claim and the read-aloud. No drum
+roll, no score or finale tunes. Phones stay silent apart from the player's own 🔊 tap. The track's
+rights are ❓ (commissioned on Fiverr; commercial blockers row 22); streamer mode plays the synth.
 
 ## Deferred from v1
 
@@ -89,8 +92,8 @@ No drum roll, no score or finale tunes. Phones stay silent apart from the player
 
 ## Open questions
 
-1. **Gallery music.** Ladi's call is pending: Hot Springs Town (CC0), Senbazuru (CC BY), or keep
-   the synth. v1 plays the synth.
+1. **Gallery music rights.** The chosen track was commissioned on Fiverr and uploaded as CC0; confirm
+   the rights before selling, or fall back to Senbazuru (CC BY).
 2. **Fluent check** of the kanji say-words (毎日 for 日, …), the gallery sentences and Fude's lines.
 3. **Real phones.** A traced stroke must stay within 0.085 of the pad at N5 and N4. Kana-level
    beginners get 0.125 (Ladi asked for a looser check for beginners), and "Steady hand" loosens

@@ -316,6 +316,15 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY
   allows commercial use, and asks for title, author, source, the licence with a link, and a note of
   any changes.
+- **Japanese Lofi HipHop (pickentcode, ❓):** Shodō Taikai's gallery track, added 2026-10-27 at
+  Ladi's pick. Its [OGA page](https://opengameart.org/content/japanese-lofi-hiphop-track), read
+  2026-10-27, says CC0 and "Ordered from Fiverr for a project that never got finished". Fiverr's
+  [commercial-use licence page](https://help.fiverr.com/hc/en-us/articles/37555186939921--For-Commercial-Use-license-details)
+  says a delivery's IP is assigned to the buyer unless the gig says otherwise, so the buyer could
+  release it as CC0. Not verified: that the uploader is the buyer, that the gig didn't keep rights,
+  and that the seller used no licensed samples. **To sell:** ask pickentcode for the Fiverr order
+  and the seller's name and confirm, or swap the gallery to Senbazuru (Kevin MacLeod, CC BY 4.0, the
+  runner-up) or the synth.
 - **How we credit:** the stage names each recorded track, author and licence beside the sound button
   while it plays, and during the recap a strip along the foot of the screen cycles through every track
   grouped by author with the licence link and "looped and filtered for the game" (`creditSummary()` in
