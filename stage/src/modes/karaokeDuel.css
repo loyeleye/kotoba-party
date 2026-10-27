@@ -120,3 +120,90 @@
 .kd-pick-song { font-size: 22px; padding: 6px 14px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.25); transition: opacity 0.3s; }
 .kd-pick-song.chosen { border-color: var(--good, #6c6); font-weight: 900; }
 .kd-pick-song.out { opacity: 0.35; }
+
+/* ---- The duel result: a head-to-head score report ----
+   Each revealed piece carries --at (ms after the result); the root carries --since (ms already
+   gone). Delays are their difference, filled backwards, so a redraw or a late joiner picks the
+   reveal up where it is, and every animation's rest state is the finished screen. */
+.kd-res-title { display: grid; justify-items: center; }
+.kd-res-title > * { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 14px; }
+.kd-res-title ruby rt { font-size: 22px; color: var(--muted); }
+.kd-res-trophy { width: 64px; height: 64px; image-rendering: pixelated; font-size: 52px; }
+/* "Scoring…" holds until the winner beat, then the winner line takes its place. */
+.kd-res-wait { opacity: 0; animation: kd-hold var(--at) linear calc(0ms - var(--since)) backwards; }
+@keyframes kd-hold { from, to { opacity: 1; } }
+.kd-res-win, .kd-res-say, .kd-res-crown, .kd-res-side.won::before { animation: kd-pop 500ms var(--ease-pop) calc(var(--at, 0ms) - var(--since, 0ms)) backwards; }
+.kd-stat-v, .kd-strip-chip, .kd-res-pts, .kd-res-sum { animation: kd-pop 400ms var(--ease-pop) calc(var(--at, 0ms) - var(--since, 0ms)) backwards; }
+.kd-res-pick, .kd-led.none .kd-led-none { animation: kd-fade 400ms ease-out calc(var(--at, 0ms) - var(--since, 0ms)) backwards; }
+@keyframes kd-pop { from { opacity: 0; transform: scale(0.6); } }
+@keyframes kd-fade { from { opacity: 0; } }
+
+.kd-res { width: min(1560px, 100%); justify-self: center; display: grid; gap: 10px; background: rgba(13, 10, 23, 0.92); border: 4px solid #3a2d6e; box-shadow: 0 0 0 4px var(--outline), 8px 8px 0 4px var(--outline); padding: 14px 32px 16px; }
+.kd-res-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 32px; }
+.kd-res-vs { display: grid; justify-items: center; font-family: var(--font-pixel); font-size: 44px; color: var(--mode); }
+.kd-res-vs small { font-family: var(--font-body); font-size: 24px; font-weight: 800; background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 0 12px; white-space: nowrap; }
+.kd-res-side { position: relative; display: grid; gap: 4px; padding: 6px 18px; }
+.kd-res-side.l { justify-items: end; text-align: right; }
+.kd-res-side.r { justify-items: start; text-align: left; }
+.kd-res-side.won::before { content: ''; position: absolute; inset: -4px; border: 4px solid var(--gold); box-shadow: 0 0 22px rgba(255, 204, 51, 0.45); pointer-events: none; }
+.kd-res-name { display: inline-flex; align-items: center; gap: 10px; font-size: 40px; font-weight: 900; background: var(--seat); color: var(--on-accent); border-radius: 999px; padding: 0 22px; }
+.kd-res-crown { width: 40px; height: 40px; image-rendering: pixelated; font-size: 32px; }
+.kd-res-pts { font-family: var(--font-code); font-size: 56px; line-height: 1.05; color: var(--warn); }
+.kd-res-side:not(.won) .kd-res-pts { color: var(--muted); }
+.kd-res-pts small { font-family: var(--font-body); font-size: 26px; font-weight: 800; color: var(--muted); }
+.kd-res-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 24px; font-weight: 700; color: var(--muted); }
+
+.kd-res-rows { display: grid; gap: 8px; }
+.kd-stat { display: grid; grid-template-columns: 150px minmax(0, 1fr) 330px minmax(0, 1fr) 150px; align-items: center; gap: 14px; }
+.kd-stat-label { display: flex; align-items: baseline; justify-content: center; gap: 12px; text-align: center; font-size: 34px; font-weight: 900; line-height: 1.1; }
+.kd-stat-label rt { font-size: 22px; color: var(--muted); font-weight: 700; }
+.kd-stat-label small { font-size: 24px; font-weight: 700; color: var(--muted); }
+.kd-stat-v { font-family: var(--font-code); font-size: 30px; text-align: center; white-space: nowrap; }
+.kd-stat-v.best { color: var(--gold); }
+.kd-stat-v.none { color: var(--muted); }
+.kd-stat-lines { border-top: 2px dashed #3a2d6e; padding-top: 10px; }
+
+/* A 20-cell LED meter: the seat colour scaled to the value in 5-point steps, under a fixed
+   grid of cell gaps. Only transform animates. */
+.kd-led { position: relative; height: 38px; background: #1c1638; overflow: hidden; }
+.kd-led-fill { position: absolute; inset: 0; background: var(--seat); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.25), inset 0 4px 0 rgba(255, 255, 255, 0.35); transform: scaleX(var(--v)); animation: kd-fill 600ms steps(20, end) calc(var(--at, 0ms) - var(--since, 0ms)) backwards; }
+.kd-led.l .kd-led-fill { transform-origin: right; }
+.kd-led.r .kd-led-fill { transform-origin: left; }
+.kd-led::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(5% - 5px), #0d0a17 calc(5% - 5px) 5%); }
+.kd-led.l::after { transform: scaleX(-1); }
+.kd-led.best { box-shadow: 0 0 18px var(--seat); }
+@keyframes kd-fill { from { transform: scaleX(0); } }
+/* Pitch the phone couldn't measure: hatched, never a zero. */
+.kd-led.none { display: grid; place-items: center; background: repeating-linear-gradient(45deg, #3a3156 0 10px, #241d40 10px 20px); }
+.kd-led.none::after { content: none; }
+.kd-led-none { font-size: 24px; font-weight: 800; color: var(--muted); background: #0d0a17; padding: 0 12px; }
+
+/* Lines: one chip per take, filled in the singer's colour on lines they won. */
+.kd-strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.kd-strip.l { justify-content: flex-end; }
+.kd-strip-chip { min-width: 58px; text-align: center; font-size: 24px; font-weight: 800; line-height: 1.2; padding: 2px 4px; border: 2px solid rgba(255, 255, 255, 0.25); color: var(--ink); }
+.kd-strip-chip.won { background: var(--seat); border-color: var(--seat); color: var(--on-accent); }
+.kd-strip-chip.missed { color: var(--muted); }
+
+.kd-res-fav { font-size: 24px; font-weight: 800; background: var(--good); color: #10241b; border-radius: 999px; padding: 0 12px; }
+
+/* The host's word for each duelist: the average take in 点, and an easy line to read. */
+.kd-res-says { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; border-top: 2px dashed #3a2d6e; padding-top: 10px; }
+.kd-res-say { display: flex; align-items: center; gap: 18px; }
+.kd-res-say.l { justify-content: flex-end; text-align: right; }
+.kd-res-say > span:last-child { display: grid; }
+.kd-res-avg { font-family: var(--font-code); font-size: 40px; color: var(--warn); }
+.kd-res-avg small { font-family: var(--font-ja); font-size: 30px; font-weight: 900; }
+.kd-res-jp { font-size: 34px; font-weight: 900; }
+.kd-res-jp rt { font-size: 20px; color: var(--muted); }
+.kd-res-en { font-size: 24px; color: var(--muted); }
+
+.kd-result .kd-pick { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 16px; margin: 0; }
+.kd-result .kd-pick-head { font-size: 28px; }
+.kd-result .kd-pick-song { font-size: 26px; background: rgba(13, 10, 23, 0.85); }
+
+@media (max-width: 1400px) {
+  .kd-stat { grid-template-columns: 130px minmax(0, 1fr) 300px minmax(0, 1fr) 130px; }
+}
+.kd-res-side.l .kd-res-sum { justify-content: flex-end; }
+.kd-stat-lines .kd-stat-label { display: grid; justify-items: center; gap: 0; }
