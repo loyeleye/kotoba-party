@@ -7,6 +7,7 @@ import { toRomaji } from '../shared/src/japanese/romaji.js';
 import { baseKana, dictionaryNoun, endsInN, follows, lastKana, startOptions, wordReading } from '../shared/src/modes/wordGauntlet/shiritori.js';
 import {
   challengeAccepted,
+  lexiconFor,
   POINTS_PER_FOOLED,
   POINTS_PER_TELEPHONE_VOTE,
   POINTS_REAL_FOUND,
@@ -97,6 +98,18 @@ describe('shiritori kana rules', () => {
     expect(wordReading('ringo')).toBeNull();
     expect(toRomaji('しゃしん')).toBe('shashin');
     expect(toRomaji('みっかぼうず')).toBe('mikkabōzu');
+    // A lone next kana is a sound, not the particle: へ / べ / ぺ reads he / be / pe.
+    expect(['へ', 'べ', 'ぺ'].map(toRomaji)).toEqual(['he', 'be', 'pe']);
+    expect(toRomaji('は')).toBe('ha');
+    expect(toRomaji('わたしは ねこ')).toBe('watashi wa neko');
+  });
+
+  it('hints only single words, never an oogiri swerve phrase', () => {
+    const nouns = lexiconFor(realContent).nouns.map((n) => n.kana);
+    expect(nouns).not.toContain('うたうおにぎり');
+    expect(nouns).not.toContain('すたじおのれいぞうこ');
+    expect(nouns).not.toContain('うちゅういきのきっぷ');
+    expect(nouns).toContain('すし');
   });
 
   it('trusts the dictionary only for a single known noun', () => {

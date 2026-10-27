@@ -87,6 +87,8 @@ function splitParticle(word: string): string {
 
 /** Hepburn romaji, spaced by word. Text that isn't kana passes through. */
 export function toRomaji(kana: string): string {
+  // A lone kana is its own sound (shiritori's next kana, a Kana Raid tile), not the particle.
+  if (/^\s*[はへ]\s*$/.test(kana)) return word(kana.trim());
   const spaced = spaceWords(kana.normalize('NFC'));
   const sentence = /[。！？.!?]/.test(kana);
   const words = spaced.split(/(\s+|-|[、，。．？！：；…〜・「」『』（）　]|＿+|_+)/);
