@@ -35,18 +35,22 @@ export interface Song {
 }
 
 export const SONGS: Record<SongId, Song> = {
-  // Lobby: a summer-festival walk-in, D major pentatonic over a bouncing octave bass.
+  // Lobby: a summer-festival walk-in, D major pentatonic over a bouncing octave bass. Sixteen
+  // bars that never come to rest: the A section's cadence runs on into a B section, whose last
+  // bar sits on A with a pickup and a taiko fill, so the loop lands back on the house theme.
   lobby: {
     title: 'Natsu Matsuri Walk-in',
     bpm: 116,
     swing: 0.12,
     loop: true,
-    chords: ['D', 'G', 'A', 'D', 'Bm', 'G', 'A', 'D'],
+    chords: ['D', 'G', 'A', 'D', 'Bm', 'G', 'A', 'D', 'G', 'A', 'F#m', 'Bm', 'G', 'A', 'D', 'A'],
     lead: {
       voice: 'pulse',
       notes:
         'D5 . D5 E5 F#5 - A5 . | G5 F#5 E5 - D5 - A4 - | A4 B4 D5 - E5 D5 B4 A4 | F#4 - E4 - D4 - . . |' +
-        'F#4 A4 B4 - D5 - B4 A4 | B4 - A4 F#4 E4 - D4 E4 | F#4 A4 E4 - D4 E4 F#4 E4 | D4 - - - . . . .',
+        'F#4 A4 B4 - D5 - B4 A4 | B4 - A4 F#4 E4 - D4 E4 | F#4 A4 E4 - D4 E4 F#4 E4 | D4 - F#4 A4 D5 - . . |' +
+        'B4 . B4 D5 E5 - D5 B4 | C#5 - A4 - E5 - C#5 - | A4 . A4 C#5 F#5 - E5 C#5 | D5 - B4 - F#4 - . . |' +
+        'G4 A4 B4 - D5 - B4 G4 | A4 - B4 C#5 E5 - C#5 A4 | D5 - A4 - F#4 - A4 - | E5 - C#5 - A4 B4 C#5 E5',
     },
     comp: { style: 'stab', voice: 'pluck' },
     bass: { style: 'octave' },
@@ -54,7 +58,8 @@ export const SONGS: Record<SongId, Song> = {
       k: 'x.......x.......',
       s: '....x.......x...',
       h: '..o...o...o...o.',
-      t: 'X..........x....',
+      // A crash at the top of the loop only, and a fill in the last bar to lead back into it.
+      t: 'X..........x....' + '...........x....'.repeat(14) + '........x.x.xxxx',
       g: 'x.o.x...x.o.x...',
     },
   },

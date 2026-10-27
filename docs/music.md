@@ -8,7 +8,8 @@ browser (`stage/src/music/songs.ts`). Licences: [commercial-blockers.md](commerc
 
 **Direction (Ladi, 2026-10-26):** after comparing samplers, bright "out with friends" pop, funk and
 swing for the lobby and the social games, mystery and quiz tracks for the quiz games and Murder at the
-Onsen, and an anime-style battle theme for the Raid.
+Onsen, and an anime-style battle theme for the Raid. On 2026-10-27 Ladi brought back the synth lobby
+tune in place of Bouncing, which sounded too goofy for the lobby.
 
 ## What plays when
 
@@ -16,7 +17,7 @@ Onsen, and an anime-style battle theme for the Raid.
 
 | Phase | Music |
 | --- | --- |
-| Lobby | **Bouncing** (Holizna) |
+| Lobby | The synth lobby tune: a summer-festival walk-in that quotes the house theme (`lobby` in `songs.ts`) |
 | Intro | The house ident (**Kotoba Party!**), then the mode's theme |
 | Prompt | The mode's theme, full mix (under where a mode speaks in its prompt: Oogiri, Omiai, the Onsen, Concentration) |
 | Answer, encore, penalty | The mode's theme, "under" (see below). Encores keep whatever is playing |
@@ -46,7 +47,7 @@ and `themeFor` in `cues.ts`; the count is kept in the browser), so a long night 
 plays it before every game, the recap's Curtain Call fanfare opens with it, and the synth lobby and
 outro quote it, so streamer mode sounds like the same show too.
 
-The synth's other tunes (a festival lobby, comedy, quiz, stroll, battle, mystery, music-box, outro and
+The synth's other tunes (comedy, quiz, stroll, battle, mystery, music-box, outro and
 fanfare) are kept as spares; switch a mode back to one by naming it in `MODE_THEMES`.
 
 ## Players' voices come first
