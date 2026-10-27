@@ -224,6 +224,14 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     Harbour in the Rain is second: version A (the five-minute ferry, one Dm7–G7–C–Fmaj7–G7–E7–Am
     loop) and version B (she misses her own ship, a verse that ends on E7 and a chorus twice as
     fast), both at 71 bpm in A minor. Its old umbrella lyrics and Past Sadness are gone.
+    Self-Intro Rap is third, and it is the challenge song: verse 1 is slow (about a mora a beat,
+    entering after a rest), the chorus is sung, and verse 2 is verse 1 in double time. The rap
+    follows the Tokyo pitch accent on two notes per chord. Ladi asked for one funny and one
+    straight lyric set per take; the PR keeps take 1's funny one as version A ("Faster!": B boasts
+    of rapping every day, A calls the bluff, B runs out of breath) and take 2's straight one as
+    version B (a plain self-introduction to learn by heart). Both at 96 bpm in C major, on one
+    Dm7 G7 | Cmaj7 Am7 loop. Its old ramen lyrics and Lazy Saturday are gone. Verse lines start
+    off the beat, so its `form` adds a per-line offset to `standardForm`.
     The method and scripts are in project files `tools/mureka/`.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading

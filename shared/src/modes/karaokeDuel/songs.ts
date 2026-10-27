@@ -414,30 +414,63 @@ export const SONGS: readonly Song[] = [
     ],
   },
   {
-    // Over "Lazy Saturday" (vandalorum, CC BY 4.0): a boom-bap beat whose four-bar loop runs under
-    // the whole song. Rap is near-spoken, so the melodies keep close to two notes; every note is half a
-    // beat or more. The chorus is the questions everyone asks in Japan, and the crowd shouts ラーメン！
+    // Self-Intro Rap, version A: the challenge song, over an AI-made boom-bap backing (Mureka, take 1;
+    // tracks.ts) on a two-bar loop, Dm7 G7 | Cmaj7 Am7, at 96 bpm in C major. The rap follows the
+    // pitch accent on two notes a half-bar. Verse 1 is slow, after a rest on beat 1; the chorus is sung
+    // and keeps shouting もっと 速く！; verse 2 is verse 1 in double time (eighth notes). B boasts of
+    // rapping every day, A calls the bluff, and after a tacet B gasps …疲れた.
     id: 'jikoshoukai-rap',
+    group: 'jikoshoukai-rap',
     title: { text: '自己紹介 ラップ', kana: 'じこしょうかい ラップ', en: 'Self-Intro Rap' },
-    bpm: 92,
+    bpm: 96,
     style: 'hiphop',
     level: 'kana',
     status: 'draft',
-    form: standardForm(16, 8),
-    track: { id: 'lazy-saturday', start: 0.566, segments: [[0, 4], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8]] },
+    // Verse lines start after the beat (a rest, or half a beat in double time); the punchline waits two.
+    form: standardForm(16, 8).map((p) => ({ ...p, beat: p.beat + [1, 1, 1, 1, 0, 0, 0, 0, 0.5, 0.5, 0.5, 2][p.line]! })),
+    track: { id: 'self-intro-faster', start: 0, segments: [[0, 39]] },
     lines: [
-      { text: 'はじめまして', kana: 'はじめまして', romaji: 'ha-ji-me-ma-shi-te', en: 'Nice to meet you', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 1], [64, 0.5], [64, 1.5]] },
-      { text: '趣味は カラオケ', kana: 'しゅみは カラオケ', romaji: 'shu-mi-wa ka-ra-o-ke', en: 'My hobby is karaoke', chords: 'Dm Em', melody: [[67, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [67, 0.5], [67, 0.5], [64, 1.5]] },
-      { text: '日本語 勉強中', kana: 'にほんご べんきょうちゅう', romaji: 'ni-ho-n-go be-n-kyo-u-chu-u', en: 'Studying Japanese right now', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [69, 0.5], [69, 1.5]] },
-      { text: 'よろしく！ よろしく！', kana: 'よろしく よろしく', romaji: 'yo-ro-shi-ku yo-ro-shi-ku', en: 'Nice to know you! Nice to know you!', chords: 'Dm Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [69, 0.5], [69, 0.5], [67, 1.5]] },
-      { text: 'お名前は？', kana: 'おなまえは', romaji: 'o-na-ma-e-wa', en: 'What’s your name?', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [72, 2]] },
-      { text: '出身は？', kana: 'しゅっしんは', romaji: 'shu-s-shi-n-wa', en: 'Where are you from?', chords: 'Dm Em', melody: [[67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [72, 2]] },
-      { text: '好きな 食べ物は？', kana: 'すきな たべものは', romaji: 'su-ki-na ta-be-mo-no-wa', en: 'Favourite food?', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [72, 2]] },
-      { text: 'ラーメン！', kana: 'ラーメン', romaji: 'ra-a-me-n', en: 'Ramen!', chords: 'Dm Em', melody: [[76, 1], [76, 1], [72, 1], [69, 2]] },
-      { text: '好きな 色は 赤', kana: 'すきな いろは あか', romaji: 'su-ki-na i-ro-wa a-ka', en: 'My favourite colour is red', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [69, 1.5]] },
-      { text: '誕生日は 三月', kana: 'たんじょうびは さんがつ', romaji: 'ta-n-jo-u-bi-wa sa-n-ga-tsu', en: 'My birthday’s in March', chords: 'Dm Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [69, 0.5], [67, 0.5], [67, 0.5], [64, 1.5]] },
-      { text: 'それから 年は', kana: 'それから としは', romaji: 'so-re-ka-ra to-shi-wa', en: 'And my age is…', chords: 'F Em', melody: [[67, 0.5], [67, 0.5], [64, 0.5], [64, 0.5], [67, 1], [67, 0.5], [69, 2]] },
-      { text: 'ひみつ です！', kana: 'ひみつ です', romaji: 'hi-mi-tsu de-su', en: '…a secret!', chords: 'Dm Em', melody: [[69, 1], [72, 1], [69, 1], [67, 0.5], [64, 2]] },
+      { text: 'はじめまして', kana: 'はじめまして', romaji: 'ha-ji-me-ma-shi-te', en: 'Nice to meet you', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 1], [65, 1], [65, 0.5], [65, 0.5], [64, 0.5], [64, 2]] },
+      { text: '聞いて 聞いて', kana: 'きいて きいて', romaji: 'ki-i-te ki-i-te', en: 'Listen, listen', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 0.5], [65, 0.5], [65, 1], [62, 0.5], [65, 0.5], [67, 1]] },
+      { text: '趣味は ラップ', kana: 'しゅみは ラップ', romaji: 'shu-mi-wa ra-p-pu', en: 'My hobby is rap', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[65, 1], [62, 0.5], [62, 0.5], [65, 1], [64, 0.5], [64, 0.5]] },
+      { text: '毎日 ラップ', kana: 'まいにち ラップ', romaji: 'ma-i-ni-chi ra-p-pu', en: 'I rap every day', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[65, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [65, 1], [64, 0.5], [64, 0.5]] },
+      { text: '自己紹介', kana: 'じこしょうかい', romaji: 'ji-ko-sho-u-ka-i', en: 'Introduce yourself', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[69, 0.5], [72, 1], [72, 0.5], [71, 1.5], [67, 0.5], [67, 1]] },
+      { text: 'ラップで どうぞ', kana: 'ラップで どうぞ', romaji: 'ra-p-pu-de do-u-zo', en: 'in a rap, go on', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[72, 1], [69, 0.5], [69, 0.5], [67, 0.5], [71, 1], [67, 0.5], [64, 2]] },
+      { text: 'もっと 速く！', kana: 'もっと はやく', romaji: 'mo-t-to ha-ya-ku', en: 'Faster!', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[72, 1], [72, 0.5], [69, 0.5], [74, 1], [71, 1.5], [67, 1]] },
+      { text: '自己紹介 ラップ', kana: 'じこしょうかい ラップ', romaji: 'ji-ko-sho-u-ka-i ra-p-pu', en: 'Self-intro rap!', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[69, 0.5], [72, 1], [72, 0.5], [71, 1.5], [67, 0.5], [67, 1], [72, 1], [67, 0.5], [64, 0.5]] },
+      { text: 'はじめまして 聞いて 聞いて', kana: 'はじめまして きいて きいて', romaji: 'ha-ji-me-ma-shi-te ki-i-te ki-i-te', en: 'Nice to meet you, listen, listen', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 0.5], [65, 0.5], [65, 0.5], [65, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [67, 1]] },
+      { text: '趣味は ラップ 毎日 ラップ', kana: 'しゅみは ラップ まいにち ラップ', romaji: 'shu-mi-wa ra-p-pu ma-i-ni-chi ra-p-pu', en: 'My hobby is rap, I rap every day', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[65, 0.5], [62, 0.5], [62, 0.5], [65, 0.5], [62, 0.5], [62, 0.5], [65, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [67, 0.5], [64, 0.5], [64, 1]] },
+      { text: '毎日？ じゃあ もっと 速く！', kana: 'まいにち じゃあ もっと はやく', romaji: 'ma-i-ni-chi ja-a mo-t-to ha-ya-ku', en: 'Every day? Then go faster!', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[65, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [65, 0.5], [62, 0.5], [65, 0.5], [64, 0.5], [64, 0.5], [67, 0.5], [64, 0.5], [64, 1]] },
+      { text: '…疲れた', kana: 'つかれた', romaji: 'tsu-ka-re-ta', en: '…I’m worn out.', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 0.5], [65, 1.5], [67, 1], [60, 2.5]] },
+    ],
+  },
+  {
+    // Self-Intro Rap, version B, over the other Mureka take: the same Dm7 G7 | Cmaj7 Am7 loop and
+    // tempo. No joke: a plain self-introduction to learn by heart (name, where from, hobby, favourite
+    // food). The chorus asks the questions the verses answer, verse 2 is verse 1 in double time, and
+    // the last line hands the mic to the partner.
+    id: 'jikoshoukai-rap-b',
+    group: 'jikoshoukai-rap',
+    title: { text: '自己紹介 ラップ', kana: 'じこしょうかい ラップ', en: 'Self-Intro Rap' },
+    bpm: 96,
+    style: 'hiphop',
+    level: 'kana',
+    status: 'draft',
+    form: standardForm(16, 8).map((p) => ({ ...p, beat: p.beat + [1, 1, 1, 1, 0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5][p.line]! })),
+    track: { id: 'self-intro-questions', start: 0, segments: [[0, 38]] },
+    lines: [
+      { text: 'はじめまして', kana: 'はじめまして', romaji: 'ha-ji-me-ma-shi-te', en: 'Nice to meet you', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 0.5], [65, 0.5], [65, 0.5], [65, 1], [62, 0.5], [60, 2.5]] },
+      { text: 'カナダから 来た', kana: 'カナダから きた', romaji: 'ka-na-da-ka-ra ki-ta', en: 'I came from Canada', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[65, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [65, 0.5], [64, 2.5]] },
+      { text: '趣味は ダンス', kana: 'しゅみは ダンス', romaji: 'shu-mi-wa da-n-su', en: 'My hobby is dancing', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[65, 1], [62, 0.5], [62, 0.5], [65, 1], [64, 2], [64, 0.5]] },
+      { text: 'すしが 一番', kana: 'すしが いちばん', romaji: 'su-shi-ga i-chi-ba-n', en: 'and sushi is my favourite', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 0.5], [65, 1], [62, 0.5], [62, 0.5], [65, 0.5], [64, 0.5], [64, 2]] },
+      { text: '自己紹介', kana: 'じこしょうかい', romaji: 'ji-ko-sho-u-ka-i', en: 'A self-introduction:', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[69, 0.5], [72, 1], [72, 0.5], [71, 1.5], [67, 0.5], [67, 1]] },
+      { text: 'どこから 来たの？', kana: 'どこから きたの', romaji: 'do-ko-ka-ra ki-ta-no', en: 'Where are you from?', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[72, 0.5], [69, 0.5], [69, 0.5], [69, 0.5], [71, 0.5], [67, 0.5], [67, 1.5]] },
+      { text: '趣味は 何？', kana: 'しゅみは なに', romaji: 'shu-mi-wa na-ni', en: 'What are your hobbies?', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[74, 1], [69, 0.5], [69, 0.5], [71, 1], [67, 1.5]] },
+      { text: '自己紹介 ラップ', kana: 'じこしょうかい ラップ', romaji: 'ji-ko-sho-u-ka-i ra-p-pu', en: 'Self-intro rap!', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[69, 0.5], [72, 1], [72, 0.5], [71, 1.5], [67, 0.5], [67, 1], [72, 1], [67, 0.5], [64, 0.5]] },
+      { text: 'はじめまして カナダから 来た', kana: 'はじめまして カナダから きた', romaji: 'ha-ji-me-ma-shi-te ka-na-da-ka-ra ki-ta', en: 'Nice to meet you, I came from Canada', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 0.5], [65, 0.5], [65, 0.5], [65, 0.5], [62, 0.5], [62, 0.5], [65, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [67, 0.5], [64, 0.5]] },
+      { text: '趣味は ダンス すしが 大好き', kana: 'しゅみは ダンス すしが だいすき', romaji: 'shu-mi-wa da-n-su su-shi-ga da-i-su-ki', en: 'I dance, and I love sushi', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[65, 0.5], [62, 0.5], [62, 0.5], [65, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [64, 0.5], [64, 0.5], [64, 0.5]] },
+      { text: '日本の アニメも よく 見ます', kana: 'にほんの アニメも よく みます', romaji: 'ni-ho-n-no a-ni-me-mo yo-ku mi-ma-su', en: 'I watch a lot of Japanese anime, too', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 0.5], [65, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [65, 0.5], [65, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [64, 0.5], [67, 0.5], [64, 0.5]] },
+      { text: 'あなたの ことも 教えて', kana: 'あなたの ことも おしえて', romaji: 'a-na-ta-no ko-to-mo o-shi-e-te', en: 'Now tell me about you', chords: 'Dm7 G7 Cmaj7 Am7', melody: [[62, 0.5], [65, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [65, 0.5], [62, 0.5], [60, 0.5], [67, 0.5], [67, 0.5], [67, 1]] },
     ],
   },
   {

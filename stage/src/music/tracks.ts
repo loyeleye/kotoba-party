@@ -36,7 +36,8 @@ export const TRACK_IDS = [
   'jrpg-rock',
   'hot-springs',
   'hustle',
-  'lazy-saturday',
+  'self-intro-faster',
+  'self-intro-questions',
   'starlight',
   'slow-jam',
   'in-your-arms',
@@ -131,8 +132,10 @@ export const TRACKS: Record<TrackId, Track> = {
   'hot-springs': { title: 'Hot Springs Town', author: 'Kistol', licence: 'CC0', source: `${OGA}hot-springs-town`, url: file('hot-springs-town'), gainDb: 0.3, fallback: 'festive' },
   // Monday Blues: minor blues, 120 bpm, E minor (12-bar). From 15.0 s (orig. bar 7), before the key change.
   hustle: { title: 'Hustle', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100793'), url: file('hustle'), gainDb: -6.1, fallback: 'mystery' },
-  // Self-Intro Rap: boom-bap, 92 bpm, A minor (a four-bar loop). From 36.0 s (orig. bar 14).
-  'lazy-saturday': { title: 'Lazy Saturday', author: 'vandalorum', licence: 'CC BY 4.0', source: `${OGA}hiphop-old-school-chill-themes`, url: file('lazy-saturday'), gainDb: -0.2, fallback: 'gentle' },
+  // Self-Intro Rap: two AI-made boom-bap backings (Mureka, 2026-10-27), one per version of the song.
+  // Each file is already the song's bars in order at exactly 96 bpm, C major.
+  'self-intro-faster': { title: 'Self-Intro Rap (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('self-intro-faster'), gainDb: 0.2, fallback: 'gentle' },
+  'self-intro-questions': { title: 'Self-Intro Rap (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('self-intro-questions'), gainDb: -0.1, fallback: 'gentle' },
   // Sparkle Idol: bright pop, 130 bpm, D major. From 7.0 s (orig. bar 4).
   starlight: { title: 'Cheers For Starlight', author: 'Chloe Wolfe', licence: 'CC BY 4.0', source: `${OGA}cute-bytes-ost-cheers-for-starlight`, url: file('cheers-for-starlight'), gainDb: -6.7, fallback: 'festive' },
   // Sleepless Night: slow jam, 75 bpm, C minor. The first 90 s.
