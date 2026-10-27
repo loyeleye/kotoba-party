@@ -497,8 +497,9 @@ export const SONGS: readonly Song[] = [
   {
     // Save It!, version A, over an AI-made kawaii future-bass backing (Mureka; tracks.ts), 141 bpm in A:
     // verse D | C#m F#m | Bm | A C#m (twice, the second ending Bm C#m | A Bm, open), chorus the royal road
-    // D C#m | F#m A three times, then Bm D | A. Mum calls the kid to dinner: "after I save!" Verse 2 the
-    // kid calls Mum, who answers with the kid's own line, so the last chorus is Mum's excuse.
+    // D C#m | F#m A three times, then Bm D | A. Mum calls the kid to dinner: "it's at a good part!" Verse 2 the
+    // kid calls Mum, who answers with the kid's own line, so the last chorus is Mum's excuse. The title
+    // is never sung (Ladi): the chorus hook is the gamer's excuse いま いい ところ.
     id: 'save-shite',
     group: 'save-shite',
     title: { text: 'セーブ して！', kana: 'セーブ して', en: 'Save It!' },
@@ -513,10 +514,10 @@ export const SONGS: readonly Song[] = [
       { text: 'いま ボスの まえ', kana: 'いま ボスの まえ', romaji: 'i-ma bo-su-no ma-e', en: 'I’m at the boss right now', chords: 'Bm Bm A C#m', melody: [[66, 1], [62, 0.5], [66, 1], [62, 0.5], [62, 0.5], [66, 1], [64, 1.5]] },
       { text: 'みんな 待ってるよ', kana: 'みんな まってるよ', romaji: 'mi-n-na ma-t-te-ru-yo', en: 'Everyone’s waiting', chords: 'D D C#m F#m', melody: [[66, 0.5], [69, 0.5], [69, 1], [69, 1], [69, 0.5], [66, 0.5], [64, 0.5], [64, 1.5]] },
       { text: 'ちょっと 待って！', kana: 'ちょっと まって', romaji: 'cho-t-to ma-t-te', en: 'Wait a second!', chords: 'Bm C#m A Bm', melody: [[66, 1], [66, 0.5], [62, 0.5], [68, 1.5], [68, 0.5], [64, 2]] },
-      { text: 'セーブ してから？', kana: 'セーブ してから', romaji: 'se-e-bu shi-te-ka-ra', en: 'After you save?', chords: 'D C#m F#m A', melody: [[74, 1], [74, 1], [73, 1], [68, 0.5], [68, 0.5], [66, 1], [69, 2]] },
+      { text: 'いま いい ところ？', kana: 'いま いい ところ', romaji: 'i-ma i-i to-ko-ro', en: 'It’s at a good part?', chords: 'D C#m F#m A', melody: [[74, 1], [69, 1], [73, 1], [68, 0.5], [66, 0.5], [69, 1], [69, 2]] },
       { text: 'あと ちょっと だけ', kana: 'あと ちょっと だけ', romaji: 'a-to cho-t-to da-ke', en: 'Just a little more', chords: 'D C#m F#m A', melody: [[74, 1], [69, 1], [73, 1], [68, 0.5], [68, 0.5], [66, 1], [66, 2]] },
       { text: 'ボスに 勝ったら？', kana: 'ボスに かったら', romaji: 'bo-su-ni ka-t-ta-ra', en: 'Once you beat the boss?', chords: 'D C#m F#m A', melody: [[69, 0.5], [66, 0.5], [66, 1], [73, 1.5], [73, 0.5], [69, 1], [69, 2]] },
-      { text: 'セーブ してから！', kana: 'セーブ してから', romaji: 'se-e-bu shi-te-ka-ra', en: 'After I save!', chords: 'Bm D A A', melody: [[74, 1], [74, 1], [69, 1], [66, 0.5], [66, 0.5], [64, 1], [69, 2]] },
+      { text: 'いま いい ところ！', kana: 'いま いい ところ', romaji: 'i-ma i-i to-ko-ro', en: 'It’s at a good part!', chords: 'Bm D A A', melody: [[74, 1], [71, 1], [74, 1], [66, 0.5], [66, 0.5], [69, 1], [69, 2]] },
       { text: 'お母さん ごはん！', kana: 'おかあさん ごはん', romaji: 'o-ka-a-sa-n go-ha-n', en: 'Mum, dinner!', chords: 'D D C#m F#m', melody: [[62, 0.5], [69, 0.5], [66, 1], [66, 0.5], [66, 0.5], [69, 1], [64, 1], [64, 1]] },
       { text: 'はいはい 待って', kana: 'はいはい まって', romaji: 'ha-i-ha-i ma-t-te', en: 'Yeah, yeah, wait', chords: 'Bm Bm A C#m', melody: [[66, 1], [62, 0.5], [66, 1], [62, 0.5], [66, 1], [66, 0.5], [64, 1.5]] },
       { text: 'なに してるの？', kana: 'なに してるの', romaji: 'na-ni shi-te-ru-no', en: 'What are you doing?', chords: 'D D C#m F#m', melody: [[69, 1], [66, 0.5], [66, 0.5], [69, 1], [69, 1], [73, 1]] },
@@ -526,8 +527,8 @@ export const SONGS: readonly Song[] = [
   {
     // Save It!, version B, over the other Mureka take, 140 bpm in E: one loop throughout, A G#m | C#m B |
     // F#m G#m | C#m B (IV iii | vi V | ii iii | vi V), so verse and chorus share chords. Two friends beat
-    // the last boss after 100 hours ("save it! press the button!"); verse 2 the screen goes black because
-    // the cat was playing with the button: save data zero.
+    // the last boss after 100 hours ("hurry, hurry! press the button!"); verse 2 the screen goes black because
+    // the cat was playing with the button: save data zero. The title is never sung; the hook is はやく はやく.
     id: 'save-shite-b',
     group: 'save-shite',
     title: { text: 'セーブ して！', kana: 'セーブ して', en: 'Save It!' },
@@ -542,10 +543,10 @@ export const SONGS: readonly Song[] = [
       { text: 'ボスの ステージ', kana: 'ボスの ステージ', romaji: 'bo-su-no su-te-e-ji', en: 'The boss’s stage', chords: 'F#m G#m C#m B', melody: [[69, 1], [66, 0.5], [66, 0.5], [63, 0.5], [68, 1.5], [64, 2], [63, 1]] },
       { text: '二人で 勝った', kana: 'ふたりで かった', romaji: 'fu-ta-ri-de ka-t-ta', en: 'We won it together', chords: 'A G#m C#m B', melody: [[64, 0.5], [69, 1], [69, 0.5], [68, 1], [71, 1], [71, 0.5], [68, 1.5]] },
       { text: 'あとは セーブ だけ', kana: 'あとは セーブ だけ', romaji: 'a-to-wa se-e-bu da-ke', en: 'All that’s left is to save', chords: 'F#m G#m C#m B', melody: [[69, 1], [66, 0.5], [66, 0.5], [71, 1], [68, 1], [68, 0.5], [64, 1.5], [66, 1]] },
-      { text: 'セーブ して！', kana: 'セーブ して', romaji: 'se-e-bu shi-te', en: 'Save it!', chords: 'A G#m C#m B', melody: [[73, 2], [71, 1], [71, 1], [68, 0.5], [68, 1.5]] },
+      { text: 'はやく はやく！', kana: 'はやく はやく', romaji: 'ha-ya-ku ha-ya-ku', en: 'Hurry, hurry!', chords: 'A G#m C#m B', melody: [[73, 1], [69, 0.5], [69, 0.5], [71, 1.5], [68, 0.5], [68, 1]] },
       { text: 'ボタン おして', kana: 'ボタン おして', romaji: 'bo-ta-n o-shi-te', en: 'Press the button', chords: 'F#m G#m C#m B', melody: [[69, 1], [71, 1], [71, 1], [68, 1], [68, 0.5], [68, 1.5]] },
       { text: '百時間の ゲーム', kana: 'ひゃくじかんの ゲーム', romaji: 'hya-ku-ji-ka-n-no ge-e-mu', en: 'A hundred hours of game', chords: 'A G#m C#m B', melody: [[69, 0.5], [73, 1], [73, 0.5], [71, 1], [68, 0.5], [68, 0.5], [73, 1], [68, 1], [66, 1]] },
-      { text: 'セーブ して！', kana: 'セーブ して', romaji: 'se-e-bu shi-te', en: 'Save it!', chords: 'F#m G#m C#m E', melody: [[73, 2], [71, 1], [71, 1], [68, 0.5], [64, 2]] },
+      { text: 'はやく はやく！', kana: 'はやく はやく', romaji: 'ha-ya-ku ha-ya-ku', en: 'Hurry, hurry!', chords: 'F#m G#m C#m E', melody: [[73, 1], [69, 0.5], [69, 0.5], [71, 1.5], [68, 0.5], [64, 1]] },
       { text: 'あっ！ まっくろ', kana: 'あっ まっくろ', romaji: 'a-t ma-k-ku-ro', en: 'Oh! It’s all black', chords: 'A G#m C#m B', melody: [[69, 1], [69, 0.5], [68, 0.5], [71, 0.5], [71, 1.5], [68, 2]] },
       { text: 'ねこが にこにこ', kana: 'ねこが にこにこ', romaji: 'ne-ko-ga ni-ko-ni-ko', en: 'The cat is all smiles', chords: 'F#m G#m C#m B', melody: [[69, 1], [66, 0.5], [66, 0.5], [68, 1], [63, 1], [64, 0.5], [64, 1.5]] },
       { text: 'ボタンで あそぶ', kana: 'ボタンで あそぶ', romaji: 'bo-ta-n-de a-so-bu', en: 'Playing with the button', chords: 'A G#m C#m B', melody: [[64, 0.5], [69, 1], [69, 0.5], [68, 1], [63, 0.5], [68, 0.5], [68, 1]] },
