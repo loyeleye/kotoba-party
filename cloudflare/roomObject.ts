@@ -14,6 +14,7 @@ import { suspectDirector } from '../server/src/onsen.js';
 import { Room, type RoomSocket } from '../server/src/room.js';
 import { systemClock } from '../server/src/clock.js';
 import { SttGate, isClip, sttFromEnv, transcribe } from '../server/src/stt.js';
+import { ROOM_STALE_MS } from '../shared/src/constants.js';
 import { CLOSE, type CreateRoomResponse, type JoinRequest, type RoomInfo, type WatchRoomResponse } from '../shared/src/protocol.js';
 import type { Env } from './env.js';
 
@@ -41,6 +42,7 @@ export class RoomObject extends DurableObject<Env> {
       clock: systemClock,
       content,
       idleMs: 10 * 60_000,
+      staleMs: ROOM_STALE_MS,
       onClose: () => {
         ai.closeRoom(code);
         if (this.room === room) {

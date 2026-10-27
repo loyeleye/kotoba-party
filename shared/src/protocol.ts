@@ -99,7 +99,8 @@ export type ServerMessage =
   | { type: 'state'; v: number; now: number; view: RoomView }
   | { type: 'bye'; reason: ByeReason };
 
-export type ByeReason = 'seat-released' | 'room-closed' | 'replaced';
+/** room-idle: closed after a long stretch with no joins or commands (a screen left on). */
+export type ByeReason = 'seat-released' | 'room-closed' | 'room-idle' | 'replaced';
 
 /** WebSocket close codes the server uses (4000–4999 is the application range). */
 export const CLOSE = {

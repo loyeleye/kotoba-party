@@ -8,6 +8,7 @@ import { RoomClient, createRoom, watchRoom, type ConnectionStatus } from '../../
 import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch, placesOf, ruby, awardTitle, seatShape } from '../../shared/src/dom.js';
 import { icon } from '../../shared/src/art.js';
 import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
+import { ROOM_STALE_MS } from '../../shared/src/constants.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import type { CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
@@ -219,17 +220,22 @@ async function openRoom(fresh: boolean): Promise<void> {
   })();
   lastPhaseSeq = -1;
 
+  const code = session.code;
+  let idleClosed = false;
   client = new RoomClient({
     baseUrl: base,
-    code: session.code,
+    code,
     token: session.stageToken,
     onState: render,
+    onBye: (reason) => (idleClosed = reason === 'room-idle'),
     onStatus: (status: ConnectionStatus) => {
       els.status.textContent = status;
       els.status.dataset.status = status;
       log(`connection: ${status}`);
       // A watching screen never opens a room of its own: when the room ends, it says so.
       if (WATCH && status === 'room-gone') showNotice(`Room ${WATCH} has closed`, 'The game on the main screen ended or was left idle.');
+      // Closed because nobody played for a long while: opening another room would just keep a forgotten TV busy.
+      else if (status === 'room-gone' && idleClosed) showNotice(`Room ${code} has closed`, `Nobody played for ${ROOM_STALE_MS / 60_000} minutes.`);
       else if (status === 'room-gone' || status === 'seat-lost') void openRoom(true);
     },
   });
