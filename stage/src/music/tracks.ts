@@ -33,6 +33,8 @@ export const TRACK_IDS = [
   'night-drive-asleep',
   'harbour-ferry',
   'harbour-ticket',
+  'save-dinner',
+  'save-cat',
   'jrpg-rock',
   'hot-springs',
   'hustle',
@@ -125,6 +127,11 @@ export const TRACKS: Record<TrackId, Track> = {
   // Each file is already the song's bars in order at exactly 71 bpm, A minor.
   'harbour-ferry': { title: 'Harbour in the Rain (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('harbour-ferry'), gainDb: 0.7, fallback: 'gentle' },
   'harbour-ticket': { title: 'Harbour in the Rain (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('harbour-ticket'), gainDb: 1.6, fallback: 'gentle' },
+  // Save It!: two AI-made kawaii future-bass backings (Mureka, 2026-10-27), one per version of the song
+  // (songs.ts). Each file is already the song's bars in order: version A at exactly 141 bpm in A major,
+  // version B at 140 bpm in E major.
+  'save-dinner': { title: 'Save It! (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('save-dinner'), gainDb: -2.1, fallback: 'gentle' },
+  'save-cat': { title: 'Save It! (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('save-cat'), gainDb: -1.9, fallback: 'gentle' },
   // Run!: anime rock, 152 bpm, F♯ minor. From 14.0 s (orig. bar 9).
   'jrpg-rock': { title: 'JRPG Epic Rock Battle Theme', author: 'HydroGene', licence: 'CC0', source: `${OGA}jrpg-epic-rock-battle-theme-1`, url: file('jrpg-epic-rock'), gainDb: -7.2, fallback: 'battle' },
   // Cheers!: festival tune, 120 bpm, A major. The first 33 s.
