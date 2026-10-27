@@ -119,7 +119,7 @@ const RECENT = 12;
 export const AUDIENCE_RULE: Record<Audience, string> = {
   kids: '- The room is set to Kids: children are playing. Simple, silly and gentle: animals, snacks, school, toys, monsters that are more cute than scary. Nothing scary, gross-out mean, romantic or grown-up (no drinking, no dating). No real people, no politics, no religion.',
   family: '- Family friendly. No real people, no politics, no religion.',
-  cheeky: '- The room is set to Cheeky: grown-ups who asked for adult party humour. You may tease about drinking, hangovers, bad dates, the boss and office life, and use mild innuendo, but never explicit, never crude words, never about anyone\'s body. No real people, no politics, no religion.',
+  cheeky: '- The room is set to Cheeky: grown-ups who asked for adult party humour, like a late-night variety show. Tease about bad dates and not getting dates (モテない), from anyone\'s side, not just the man\'s; married life, both ways (a scary wife, a useless husband, tiny pocket money), the boss and the senpai pecking order, payday, getting older, and only now and then drinking. Mild innuendo at most: never explicit, never crude words, never about anyone\'s body. No real people, no politics, no religion.',
 };
 
 export function hostSystemPrompt(host: HostId, audience: Audience = 'family'): string {

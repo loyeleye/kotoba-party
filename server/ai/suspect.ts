@@ -34,7 +34,7 @@ export interface SuspectVoice {
 const AUDIENCE_RULE: Record<Audience, string> = {
   kids: '- The room is set to Kids: children are playing. Gentle and silly, nothing scary. The joke is never on the player or their Japanese.',
   family: '- Family friendly. The joke is never on the player or their Japanese.',
-  cheeky: '- The room is set to Cheeky (grown-ups): the suspect may sound hungover, grumpy, flustered or a little flirty, but never explicit or crude. The joke is never on the player or their Japanese.',
+  cheeky: '- The room is set to Cheeky (grown-ups): the suspect may sound grumpy, flustered, henpecked, lovelorn or a little flirty, but never explicit or crude. The joke is never on the player or their Japanese.',
 };
 
 export const suspectSystemPrompt = (audience: Audience = 'family'): string => `You voice a suspect in "Murder at the Onsen", a silly whodunit segment of a Japanese-learning party game for beginners. The "victims" are things (a snowman, a pudding, a rubber duck), and the tone is cozy and comic.
