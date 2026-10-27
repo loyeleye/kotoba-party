@@ -11,7 +11,8 @@
 // point at one culprit, who lies about one thing. Two answers may give the same clue.
 //
 // A case with an `audience` plays only in a room set to it: the ice cream case is a shorter,
-// sillier one for Kids, and the sake case (hangovers, a boss's karaoke) is for Cheeky rooms.
+// sillier one for Kids; the sake, smartphone and toupee cases (a hangover, a bad date, a boss
+// who takes the credit) are for Cheeky rooms.
 
 import type { JpText, OnsenCase } from '../types.js';
 
@@ -447,4 +448,168 @@ export const sakeCase: OnsenCase = {
   shrug: k('すみません、ちょっと よっぱらって います。', "Sorry, I'm a little drunk."),
 };
 
-export const onsenCases: OnsenCase[] = [snowmanCase, puddingCase, duckCase, iceCreamCase, sakeCase];
+export const phoneCase: OnsenCase = {
+  id: 'phone',
+  audience: 'cheeky',
+  status: 'draft',
+  title: k('スマホ じけん', 'The Smartphone Case'),
+  setting: k('はじめての デート、りょかん「こいごころ」の よる。', 'A first date: night at the Koigokoro ("Lovesick") inn.'),
+  victim: {
+    name: k('スマホくん', "Sumaho-kun, Kenta's smartphone"),
+    emoji: '📱',
+    found: t('10じに、おんせんで しずんで いました。', 'じゅうじに、おんせんで しずんで いました。', 'At 10 pm he was found drowned in the hot spring.'),
+  },
+  item: { name: k('イヤリング', 'earring'), emoji: '💎', keys: ['いやりんぐ'] },
+  culpritId: 'miki',
+  suspects: [
+    {
+      id: 'kenta',
+      name: k('けんた', 'Kenta'),
+      role: k('スマホの もちぬし', 'the phone’s owner'),
+      emoji: '🤳',
+      voice: { pitch: 1.05, rate: 1.1 },
+      persona: 'A vain, oblivious guy who took 200 selfies at dinner and kept swiping a dating app during his own date. Thinks the date went great.',
+      answers: {
+        where: { jp: t('9じはんまで、おんせんに いました。', 'くじはんまで、おんせんに いました。', 'I was in the hot spring until 9:30.') },
+        what: { jp: k('おんせんで しゃしんを とりました。スマホは おんせんの そばに おきました。', 'I took photos in the hot spring. I left my phone by the bath.'), clueId: 'phone-bath' },
+        who: { jp: k('おがわさんを みました。フロントに いました。', 'I saw Ogawa. He was at the front desk.'), clueId: 'ogawa-desk' },
+        when: { jp: t('12じに ねました。デートは たのしかったです！', 'じゅうにじに ねました。デートは たのしかったです！', 'I went to bed at 12. The date was great!') },
+        victim: { jp: k('スマホくんは ぼくの いちばんの ともだちです。ぼくの しゃしんが 500まい…', 'Sumaho-kun is my best friend. 500 photos of me…') },
+        item: { jp: k('イヤリング？　ぼくのじゃ ありません。', "An earring? It's not mine.") },
+      },
+    },
+    {
+      id: 'miki',
+      name: k('みき', 'Miki'),
+      role: k('けんたさんの デートの あいて', "Kenta's date"),
+      emoji: '💃',
+      voice: { pitch: 1.3, rate: 1.0 },
+      persona: 'Kenta’s date: sweet on the surface, very tired of him underneath. Smiles politely and answers a little too fast.',
+      answers: {
+        where: { jp: k('ずっと ロビーに いました。', 'I was in the lobby the whole time.'), clueId: 'miki-lobby' },
+        what: { jp: k('ざっしを よみました。とても おもしろかったです。', 'I read a magazine. It was very interesting.') },
+        who: { jp: k('だれも みませんでした。', "I didn't see anyone.") },
+        when: { jp: t('11じに ねました。ひとりで。', 'じゅういちじに ねました。ひとりで。', 'I went to bed at 11. Alone.') },
+        victim: { jp: k('スマホくん？　けんたさんは わたしより スマホくんが すきでした。', 'Sumaho-kun? Kenta liked him more than me.'), clueId: 'miki-jealous' },
+        item: { jp: k('イヤリング？　しりません。', "An earring? I don't know.") },
+      },
+    },
+    {
+      id: 'ogawa',
+      name: k('おがわ', 'Ogawa'),
+      role: k('フロントの ひと', 'the front desk clerk'),
+      emoji: '🛎️',
+      voice: { pitch: 0.85, rate: 0.9 },
+      persona: 'A calm, worldly front desk clerk who has watched a thousand bad dates cross the lobby and quietly judges every one of them.',
+      answers: {
+        where: { jp: k('ずっと フロントに いました。しごとです。', 'I was at the front desk the whole time. Work.') },
+        what: { jp: k('でんわに でました。みきさんは ロビーで つまらなそうでした。', 'I answered the phone. Miki looked bored in the lobby.') },
+        who: { jp: t('9じ45ふんに みきさんを みました。ロビーから おんせんに いきました。', 'くじよんじゅうごふんに みきさんを みました。ロビーから おんせんに いきました。', 'At 9:45 I saw Miki. She went from the lobby to the hot spring.'), clueId: 'saw-miki' },
+        when: { jp: t('12じに ねました。', 'じゅうにじに ねました。', 'I went to bed at 12.') },
+        victim: { jp: k('ばんごはんの とき、けんたさんは ずっと スマホを みて いました。', 'All through dinner, Kenta was looking at his phone.'), clueId: 'kenta-phone' },
+        item: { jp: k('その イヤリング、みきさんのです。ロビーで つけて いました。', "That earring is Miki's. She was wearing it in the lobby."), clueId: 'earring' },
+      },
+    },
+  ],
+  clues: [
+    { id: 'phone-bath', jp: k('スマホくんは おんせんの そばに あった。', 'Sumaho-kun was left by the hot spring.') },
+    { id: 'ogawa-desk', jp: k('おがわさんは フロントに いた。', 'Ogawa was at the front desk.') },
+    { id: 'kenta-phone', jp: k('けんたさんは デートで ずっと スマホを みて いた。', 'Kenta looked at his phone all through the date.') },
+    { id: 'miki-lobby', jp: k('みきさん：「ずっと ロビーに いました」', 'Miki: "I was in the lobby the whole time."'), key: true },
+    { id: 'miki-jealous', jp: k('みきさん：「けんたさんは わたしより スマホくんが すき」', 'Miki: "Kenta liked Sumaho-kun more than me."'), key: true },
+    { id: 'saw-miki', jp: t('9じ45ふん：みきさんが おんせんに いった。', 'くじよんじゅうごふん、みきさんが おんせんに いった。', 'At 9:45 Miki went to the hot spring.'), key: true },
+    { id: 'earring', jp: k('イヤリングは みきさんの。', "The earring is Miki's."), key: true },
+  ],
+  confession: [
+    k('はい… わたしです。', 'Yes… it was me.'),
+    k('デートの あいだ、けんたさんは ずっと スマホくんを みて いました。', 'The whole date, Kenta only looked at Sumaho-kun.'),
+    k('だから おんせんに… ポチャン。ごめんなさい！', 'So into the hot spring he went… plop. I’m sorry!'),
+  ],
+  solution: 'Miki said she never left the lobby, but Ogawa saw her go to the hot spring at 9:45, and the earring by the bath is hers. Kenta looked at his phone all through their date, and she felt he liked it more than her. Kenta left the phone by the bath, and Ogawa was at the front desk.',
+  shrug: k('すみません、デートの はなしは ちょっと…', "Sorry, I'd rather not talk about the date…"),
+};
+
+export const toupeeCase: OnsenCase = {
+  id: 'toupee',
+  audience: 'cheeky',
+  status: 'draft',
+  title: k('カツラ じけん', 'The Toupee Case'),
+  setting: k('かいしゃの けんしゅう、りょかん「つるつる」の よる。', 'The company training retreat: night at the Tsurutsuru ("Shiny") inn.'),
+  victim: {
+    name: k('カツラさん', "Katsura-san, the president's toupee"),
+    emoji: '💇',
+    found: t('11じに、にわの いけに ういて いました。', 'じゅういちじに、にわの いけに ういて いました。', 'At 11 pm he was found floating in the garden pond.'),
+  },
+  item: { name: k('つりざお', 'fishing rod'), emoji: '🎣', keys: ['つりざお'] },
+  culpritId: 'morita',
+  suspects: [
+    {
+      id: 'oota',
+      name: k('おおた', 'Ōta'),
+      suffix: 'しゃちょう',
+      role: k('しゃちょう', 'the company president'),
+      emoji: '🧑‍💼',
+      voice: { pitch: 0.7, rate: 0.85 },
+      persona: 'A pompous company president who loves the sound of his own speeches and insists, with great dignity, that all his hair is real. Never says the word toupee.',
+      answers: {
+        where: { jp: t('10じはんから、にわの ベンチで ねました。', 'じゅうじはんから、にわの ベンチで ねました。', 'From 10:30 I slept on a garden bench.') },
+        what: { jp: t('2じかんの スピーチを しました。つかれました。おきたら、あたまが さむかったです。', 'にじかんの スピーチを しました。つかれました。おきたら、あたまが さむかったです。', 'I gave a two-hour speech. I was tired. When I woke up, my head was cold.'), clueId: 'cold-head' },
+        who: { jp: t('10じに もりたくんを みました。しごとの ことで おこって いました。', 'じゅうじに もりたくんを みました。しごとの ことで おこって いました。', 'At 10 I saw Morita. He was angry about work.'), clueId: 'morita-angry' },
+        when: { jp: t('11じに おきました。それから へやで ねました。', 'じゅういちじに おきました。それから へやで ねました。', 'I woke up at 11. Then I went to bed in my room.') },
+        victim: { jp: k('カツラ？　なんの ことですか。わたしの かみは ぜんぶ ほんものです。', 'Toupee? What are you talking about? All my hair is real.') },
+        item: { jp: k('その つりざお？　もりたくんのです。しゅみは つりです。', "That fishing rod? It's Morita's. Fishing is his hobby."), clueId: 'rod' },
+      },
+    },
+    {
+      id: 'morita',
+      name: k('もりた', 'Morita'),
+      role: k('しゃいん', 'an employee'),
+      emoji: '😤',
+      voice: { pitch: 1.0, rate: 1.0 },
+      persona: 'An overworked employee whose boss takes credit for everything he does. Polite through gritted teeth; a terrible actor.',
+      answers: {
+        where: { jp: t('10じから、へやで ねて いました。', 'じゅうじから、へやで ねて いました。', 'From 10 I was asleep in my room.'), clueId: 'morita-room' },
+        what: { jp: k('なにも して いません。ねて いました。', "I didn't do anything. I was asleep.") },
+        who: { jp: k('だれも みませんでした。', "I didn't see anyone.") },
+        when: { jp: t('10じに ねました。', 'じゅうじに ねました。', 'I went to bed at 10.') },
+        victim: { jp: k('しゃちょうは いつも わたしの しごとを「わたしの しごと」と いいます。…あ、カツラの はなし？', 'The president always calls my work "my work". …Oh, we\'re talking about the toupee?'), clueId: 'credit' },
+        item: { jp: k('つりざお？　しりません。つりは しません。', "A fishing rod? I don't know. I don't fish."), clueId: 'no-fishing' },
+      },
+    },
+    {
+      id: 'uchida',
+      name: k('うちだ', 'Uchida'),
+      role: k('りょかんの ひと', 'an inn worker'),
+      emoji: '🛎️',
+      voice: { pitch: 1.25, rate: 1.05 },
+      persona: 'A brisk, unflappable inn worker who has hosted a hundred company retreats and is unimpressed by all of them.',
+      answers: {
+        where: { jp: t('10じはんから、にわに いました。', 'じゅうじはんから、にわに いました。', 'From 10:30 I was in the garden.') },
+        what: { jp: k('にわを そうじしました。しゃちょうさんは ベンチで ねて いました。', 'I swept the garden. The president was asleep on the bench.'), clueId: 'oota-bench' },
+        who: { jp: t('10じ45ふんに もりたさんを みました。にかいの ベランダに いました。', 'じゅうじよんじゅうごふんに もりたさんを みました。にかいの ベランダに いました。', 'At 10:45 I saw Morita. He was on the second-floor balcony.'), clueId: 'saw-morita' },
+        when: { jp: t('12じに ねました。', 'じゅうにじに ねました。', 'I went to bed at 12.') },
+        victim: { jp: k('カツラさんは いつも しゃちょうさんの あたまの うえに いました。', 'Katsura-san was always on top of the president’s head.') },
+        item: { jp: k('つりざおは わかりません。', "The fishing rod, I don't know.") },
+      },
+    },
+  ],
+  clues: [
+    { id: 'cold-head', jp: k('おおたしゃちょうは おきたら、あたまが さむかった。', 'When President Ōta woke up, his head was cold.') },
+    { id: 'oota-bench', jp: k('おおたしゃちょうは にわの ベンチで ねて いた。', 'President Ōta was asleep on a garden bench.') },
+    { id: 'morita-angry', jp: t('10じ：もりたさんは しごとの ことで おこって いた。', 'じゅうじ、もりたさんは しごとの ことで おこって いた。', 'At 10 Morita was angry about work.'), key: true },
+    { id: 'rod', jp: k('つりざおは もりたさんの。しゅみは つり。', "The fishing rod is Morita's. Fishing is his hobby."), key: true },
+    { id: 'morita-room', jp: t('もりたさん：「10じから、へやで ねて いました」', 'もりたさん、じゅうじから、へやで ねて いました。', 'Morita: "From 10 I was asleep in my room."'), key: true },
+    { id: 'credit', jp: k('しゃちょうは もりたさんの しごとを「わたしの しごと」と いう。', 'The president calls Morita’s work his own.'), key: true },
+    { id: 'no-fishing', jp: k('もりたさん：「つりは しません」', 'Morita: "I don’t fish."'), key: true },
+    { id: 'saw-morita', jp: t('10じ45ふん：もりたさんが にかいの ベランダに いた。', 'じゅうじよんじゅうごふん、もりたさんが にかいの ベランダに いた。', 'At 10:45 Morita was on the second-floor balcony.'), key: true },
+  ],
+  confession: [
+    k('…はい、わたしです。', '…Yes. It was me.'),
+    k('ベランダから つりざおで… つれました。', 'From the balcony, with my fishing rod… I got a bite.'),
+    k('しゃちょうの カツラ、いちども じぶんで つくって いませんよね。ごめんなさい！', 'Well, the president never made that one himself either. I’m sorry!'),
+  ],
+  solution: 'Morita said he was asleep in his room from 10 and never fishes, but Uchida saw him on the balcony above the garden at 10:45, and the fishing rod is his. The president always takes credit for his work, and was asleep on the bench below. Uchida was only sweeping the garden.',
+  shrug: k('その しつもんは、かいぎで はなしましょう。', "Let's take that question to a meeting."),
+};
+
+export const onsenCases: OnsenCase[] = [snowmanCase, puddingCase, duckCase, iceCreamCase, sakeCase, phoneCase, toupeeCase];

@@ -177,18 +177,20 @@ describe('Murder at the Onsen: the cases', () => {
   };
   for (const c of onsenCases) it(`${c.id} is complete and points at its culprit`, () => check(c));
 
-  it('ships three cases for everyone plus a Kids and a Cheeky case, served through the content library', () => {
-    expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck', 'ice-cream', 'sake']);
-    expect(onsenCases.map((c) => c.audience ?? null)).toEqual([null, null, null, 'kids', 'cheeky']);
-    expect(content.onsenCases.length).toBe(5);
+  it('ships three cases for everyone, one Kids and three Cheeky, served through the content library', () => {
+    expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck', 'ice-cream', 'sake', 'phone', 'toupee']);
+    expect(onsenCases.map((c) => c.audience ?? null)).toEqual([null, null, null, 'kids', 'cheeky', 'cheeky', 'cheeky']);
+    expect(content.onsenCases.length).toBe(7);
     expect(content.hostLines.filter((l) => l.event.startsWith('onsen_')).length).toBe(25);
   });
 
-  it('picks by the room’s Audience: a family room never gets the Kids or Cheeky case, the others get theirs half the time', () => {
+  it('picks by the room’s Audience: a family room never gets the Kids or Cheeky case, the others get their own half the time', () => {
     const seen = (audience: Audience) => {
       const ids = new Map<string, number>();
+      // An even spread: the first draw (own case or not) walks 0.00…0.99, the second picks within.
       for (let i = 0; i < 100; i++) {
-        const c = caseFor(onsenCases, audience, () => ((i * 7 + 3) % 100) / 100)!;
+        const draws = [i / 100, ((i * 37) % 100) / 100];
+        const c = caseFor(onsenCases, audience, () => draws.shift() ?? 0)!;
         ids.set(c.id, (ids.get(c.id) ?? 0) + 1);
       }
       return ids;
@@ -197,9 +199,10 @@ describe('Murder at the Onsen: the cases', () => {
     expect([...family.keys()].sort()).toEqual(['duck', 'pudding', 'snowman']);
     const kids = seen('kids');
     expect(kids.get('ice-cream')).toBe(50);
-    expect(kids.has('sake')).toBe(false);
+    expect(['sake', 'phone', 'toupee'].some((id) => kids.has(id))).toBe(false);
     const cheeky = seen('cheeky');
-    expect(cheeky.get('sake')).toBe(50);
+    expect(['sake', 'phone', 'toupee'].map((id) => cheeky.get(id) ?? 0).reduce((a, b) => a + b)).toBe(50);
+    expect(['sake', 'phone', 'toupee'].every((id) => cheeky.has(id))).toBe(true);
     expect(cheeky.has('ice-cream')).toBe(false);
     // Nothing that suits the room: the placeholder, never another audience's case.
     expect(caseFor(onsenCases.filter((c) => c.audience === 'cheeky'), 'kids', () => 0.1)).toBeUndefined();
