@@ -22,7 +22,7 @@ import { mountSettings, updateSettings } from './settings.js';
 import { tickSfx, watchSfx } from './music/sfx.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import { mountBackdrop, updateBackdrop } from './backdrop.js';
-import { startDanmaku, stopDanmaku } from './danmaku.js';
+import { isDanmakuOn, onDanmakuToggle, startDanmaku, stopDanmaku } from './danmaku.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -295,8 +295,9 @@ function render(view: RoomView, v: number): void {
   );
   // One scene per phase: a new phase builds fresh elements (and its entrance animations), an
   // update inside a phase patches the ones on screen so transitions and animations carry on.
+  document.body.classList.toggle('flying', view.phase === 'lobby' && flying());
   patch(els.fit, h('div', { class: 'scene', 'data-key': `${view.phaseSeq}` }, mainFor(view)));
-  if (view.phase === 'lobby' && !calm() && view.modes.length) startDanmaku(els.main, view.modes);
+  if (view.phase === 'lobby' && flying() && view.modes.length) startDanmaku(els.canvas, els.main, view.modes);
   else stopDanmaku();
   for (const el of els.fit.querySelectorAll<HTMLElement>('[data-count]:not([data-counted])')) countUp(el);
   for (const el of els.players.querySelectorAll<HTMLElement>('.score[data-from]:not([data-rolled])')) rollScore(el);
@@ -308,48 +309,74 @@ const seenScores = new Map<string, number>();
 
 function mainFor(view: RoomView): HTMLElement {
   if (view.phase === 'lobby') {
+    const waiting = view.players.length ? 'Waiting for the VIP to pick a game' : 'Scan the code to join';
+    // Flying titles: a compact panel low on the screen, under lanes of titles, with one game in the
+    // spotlight. Still: the full list, as the lobby always was.
+    if (flying())
+      return h(
+        'div',
+        { class: 'lobby lobby-panel' },
+        h('div', { class: 'lp-head' }, h('p', { class: 'lp-title' }, waiting), h('span', { class: 'lp-count' }, `${view.players.length} / 8 players`)),
+        WATCH ? h('p', { class: 'hint watch-link' }, `Watching room ${view.code} · join with your phone at the code above`) : null,
+        invite(inviteLinks(siteOrigin, view.code), view.code, false),
+        spotlight(view),
+      );
     return h(
       'div',
       { class: 'lobby' },
-      h('p', { class: 'big' }, view.players.length ? 'Waiting for the VIP to pick a game' : 'Scan the code to join'),
+      h('p', { class: 'big' }, waiting),
       h('p', { class: 'hint' }, `${view.players.length} / 8 players`),
       // Friends somewhere else open their own copy of this screen with the same code.
       WATCH ? h('p', { class: 'hint watch-link' }, `Watching room ${view.code} · join with your phone at the code above`) : null,
       // Send either link to friends: the phone one for when the QR code won't scan, the stage one
       // for friends playing from somewhere else.
       invite(inviteLinks(siteOrigin, view.code), view.code),
-      // With motion, the titles fly behind this panel and one game at a time is featured here;
-      // with calm motion, the still list.
-      calm() ? h('ul', { class: 'menu' }, view.modes.map((m) => h('li', {}, h('strong', {}, m.title), ` ${m.titleJa} · `, m.blurb))) : featured(view),
+      h('ul', { class: 'menu' }, view.modes.map((m) => h('li', {}, h('strong', {}, m.title), ` ${m.titleJa} · `, m.blurb))),
     );
   }
   if (view.phase === 'recap' || !view.game) return recapScreen(view);
   return STAGE_MODES[view.game.mode].render(view, view.game);
 }
 
-const FEATURE_MS = 6000;
-let featureIdx = 0;
-let featureTimer: ReturnType<typeof setInterval> | null = null;
+/** The lobby's titles fly unless the room has Calm motion on or this screen switched them off. */
+const flying = (): boolean => !calm() && isDanmakuOn();
+onDanmakuToggle(() => lastView && render(lastView, -1));
 
-/** One game's card in the lobby panel, turning to the next every few seconds. */
-function featured(view: RoomView): HTMLElement {
-  const card = (m: ModeInfo) =>
-    h(
-      'div',
-      { class: 'featured', 'data-mode': m.id, 'data-key': m.id },
-      h('img', { class: 'featured-host', src: `/stage/assets/hosts/${m.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }),
-      h('div', { class: 'featured-text' }, h('p', { class: 'featured-title' }, m.title, ' ', h('span', { lang: 'ja' }, m.titleJa)), h('p', { class: 'featured-blurb' }, m.blurb)),
-    );
-  const slot = h('div', { class: 'featured-slot', 'aria-live': 'off' }, card(view.modes[featureIdx % view.modes.length]!));
-  if (!featureTimer)
-    featureTimer = setInterval(() => {
+const SPOTLIGHT_MS = 6000;
+let spotIdx = 0;
+let spotTimer: ReturnType<typeof setInterval> | null = null;
+
+const spotCard = (m: ModeInfo) =>
+  h(
+    'div',
+    { class: 'spot', 'data-mode': m.id },
+    h('img', { class: 'spot-host', src: `/stage/assets/hosts/${m.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }),
+    h('div', { class: 'spot-text' }, h('p', { class: 'spot-title' }, h('span', { class: 'spot-chip' }, m.title), ' ', h('span', { lang: 'ja' }, m.titleJa)), h('p', { class: 'spot-blurb' }, m.blurb)),
+  );
+
+/**
+ * One game at a time with its blurb, turning to the next every few seconds. It is a spotlight,
+ * not the VIP's pick, so it says where the pick happens.
+ */
+function spotlight(view: RoomView): HTMLElement {
+  const m = view.modes[spotIdx % view.modes.length]!;
+  const slot = h('div', { class: 'spot-slot', 'data-key': 'spot' }, spotCard(m));
+  if (!spotTimer)
+    spotTimer = setInterval(() => {
       const modes = lastView?.modes ?? [];
-      const live = document.querySelector('.featured-slot');
+      const live = document.querySelector('.spot-slot');
       if (lastView?.phase !== 'lobby' || !modes.length || !live) return;
-      featureIdx = (featureIdx + 1) % modes.length;
-      live.replaceChildren(card(modes[featureIdx]!));
-    }, FEATURE_MS);
-  return slot;
+      spotIdx = (spotIdx + 1) % modes.length;
+      // The new card wipes in over the old one, which goes once it is covered: no empty frame.
+      const card = spotCard(modes[spotIdx]!);
+      card.classList.add('spot-in');
+      const old = [...live.children];
+      live.append(card);
+      const done = () => old.forEach((c) => c.remove());
+      card.addEventListener('animationend', done, { once: true });
+      setTimeout(done, 800);
+    }, SPOTLIGHT_MS);
+  return h('div', { class: 'spot-wrap' }, h('p', { class: 'spot-label' }, 'Spotlight', h('span', {}, ' · the VIP picks the game on their phone')), slot);
 }
 
 /** Tonight's results: a podium for the top three (third rises first), award cards, everyone else. */
