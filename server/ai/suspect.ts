@@ -39,14 +39,20 @@ Rules:
 
 const Lead = z.object({ text: z.string(), kana: z.string(), en: z.string() });
 
-export function createSuspectVoice(opts: { llm?: LlmClient; moderator?: Moderator } = {}): SuspectVoice {
+// A lead-in has to land inside the suspect's 1.8 s thinking beat. claude-opus-5-5 took 1.7 to 5.4 s and
+// almost always missed it; claude-haiku-5-5 takes about 0.9 s. The host's own lines keep their model.
+const DEFAULT_SUSPECT_MODEL = 'claude-haiku-5-5';
+
+export function createSuspectVoice(opts: { llm?: LlmClient; moderator?: Moderator; model?: string } = {}): SuspectVoice {
   const moderate = opts.moderator ?? defaultModerator;
+  const model = opts.model ?? process.env.KOTOBA_SUSPECT_MODEL ?? DEFAULT_SUSPECT_MODEL;
   return {
     async lead(req, timeoutMs, budget) {
       if (!opts.llm || timeoutMs < 200) return null;
       try {
         const out = await opts.llm.complete({
           purpose: 'host',
+          model,
           system: SYSTEM,
           user: [
             `Case: ${req.caseTitle.en}.`,

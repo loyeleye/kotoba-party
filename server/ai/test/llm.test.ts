@@ -42,6 +42,12 @@ describe('Claude client', () => {
     expect(budget.byPurpose.host.calls).toBe(1);
   });
 
+  it("uses a request's own model over the purpose's", async () => {
+    const { client, bodies } = fakeClaude(line);
+    await new ClaudeLlm({ client }).complete({ purpose: 'host', model: 'claude-haiku-5-5', system: 's', user: 'u', schema: HostLineSchema, timeoutMs: 1000 });
+    expect(bodies[0]!.model).toBe('claude-haiku-5-5');
+  });
+
   it('turns a refusal or a spent budget into LlmUnavailable', async () => {
     const { client } = fakeClaude(line, 'refusal');
     await expect(new ClaudeLlm({ client }).complete({ purpose: 'host', system: 's', user: 'u', schema: HostLineSchema, timeoutMs: 1000 })).rejects.toMatchObject({ reason: 'refusal' });

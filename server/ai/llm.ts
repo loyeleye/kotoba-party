@@ -10,6 +10,8 @@ export type LlmPurpose = 'host' | 'judge';
 
 export interface LlmRequest<T> {
   purpose: LlmPurpose;
+  /** A model for this call only, instead of the purpose's (the Onsen suspects' lead-ins need a fast one). */
+  model?: string;
   system: string;
   user: string;
   /** Images shown before the user text (the Ink Storm coach's drawing). */
@@ -115,7 +117,7 @@ export class ClaudeLlm implements LlmClient {
 
   async complete<T>(req: LlmRequest<T>): Promise<T> {
     if (req.budget?.exhausted) throw new LlmUnavailable('budget', 'Game LLM budget spent');
-    const model = this.models[req.purpose];
+    const model = req.model ?? this.models[req.purpose];
     const started = Date.now();
     let usd = 0;
     try {
