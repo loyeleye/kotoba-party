@@ -9,7 +9,7 @@ import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, Phr
 import { MODES } from './modes/registry.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS } from './protocol.js';
-import { isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
+import { hasKanji, isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
 
 export interface PlayerState {
   id: string;
@@ -323,7 +323,18 @@ function finish(state: GameState, ctx: GameContext): void {
       .map((p) => ({ playerId: p.id, name: p.name, score: p.score })),
     awards: mode?.awards?.(state.modeState, modeContext(state, ctx)) ?? [],
   };
-  if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award' });
+  if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award', slots: awardSlots(state.recap.awards[0]) });
+}
+
+/**
+ * The first award, for the host to present: every recap_award line names {award} and {name}, so
+ * a cue without them has no bank line to fall back on when the LLM is slow, and the host says nothing.
+ */
+function awardSlots(a: Award | undefined): Record<string, string> | undefined {
+  if (!a) return undefined;
+  // 賞 is the one kanji award titles use; read aloud as しょう. Any other kanji is left to the voice.
+  const kana = a.title.replace(/賞/g, 'しょう');
+  return { award: a.title, ...(hasKanji(kana) ? {} : { award_kana: kana }), award_en: a.en.replace(/\s*\(.*\)$/, ''), name: a.name };
 }
 
 function resetToLobby(state: GameState): void {
