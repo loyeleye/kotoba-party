@@ -146,7 +146,7 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
         if (!body) return send(res, 400, { error: 'bad-request' });
         const result = room.join(body);
         if ('error' in result) return send(res, result.error === 'room-full' || result.error === 'game-in-progress' || result.error === 'name-taken' ? 409 : 400, result);
-        return send(res, 200, { ...result, speech: !!config.stt });
+        return send(res, 200, { ...result, speech: !!config.stt, site: baseUrl(req, config.publicUrl) });
       }
       if (action === 'speech' && req.method === 'POST') {
         const token = bearer(req);
