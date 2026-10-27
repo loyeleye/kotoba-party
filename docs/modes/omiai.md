@@ -73,7 +73,7 @@ a coin flip. If nobody has a heart, nobody is invited.
   😶 (your worst habit, your last date, your type) and an overworked long-necked office worker 💼
   (overtime, your boss, stress).
 
-The new guests have no portraits yet, so the stage shows their emoji. Each card has 3 questions (N5 and N4 asks, a yes/no or wh kind, fills, polite and casual
+Each card has 3 questions (N5 and N4 asks, a yes/no or wh kind, fills, polite and casual
 endings, a stock polite answer per level, and a keigo pair), 3 appeal activities for the last
 round, and an invitation line. `cards.ts` also holds 14 keigo pairs (いる, いく, くる, たべる, のむ,
 する, いう, みる, きく, すむ, もつ, おきる, だ, ある). Each pair has plain → polite → honorific

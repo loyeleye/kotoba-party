@@ -12,6 +12,7 @@ export const AUDIENCE_CONTENT: Partial<Record<ModeId, { name: string; what: stri
   'word-gauntlet': { name: 'Word Gauntlet', what: 'Fake Kanji words' },
   'last-train': { name: 'Last Train', what: 'the line' },
   'onsen-murder': { name: 'Murder at the Onsen', what: 'cases' },
+  omiai: { name: 'Omiai Matchmaker', what: 'guests' },
 };
 
 /** "Karaoke Duel (song lyrics), Oogiri Night (prompts)": for the settings panel. */
