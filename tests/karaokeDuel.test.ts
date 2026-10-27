@@ -149,8 +149,8 @@ describe('Karaoke Duel: songs', () => {
           expect(midi).toBeLessThanOrEqual(84);
           expect(beats).toBeGreaterThan(0);
         }
-        // Short enough to sing in one breath: under 5 s.
-        expect(lineMs(line, song.bpm)).toBeLessThan(5_000);
+        // Short enough to sing in one breath: under 5 s, or about 6 s in a slow ballad (Ladi, 2026-10-27).
+        expect(lineMs(line, song.bpm), `${song.id}: ${line.kana}`).toBeLessThan(song.bpm < 85 ? 6_500 : 5_000);
         // A perfect take scores 100: no sung note is too short for the phone's 100 ms pitch frames.
         expect(scoreTake(line, song.bpm, lineMs(line, song.bpm), perfect(line, song.bpm), 'n5').quality, `${song.id}: ${line.kana}`).toBe(100);
         for (const chord of line.chords?.split(/\s+/) ?? []) expect(() => parseChord(chord), chord).not.toThrow();
@@ -195,8 +195,8 @@ describe('Karaoke Duel: songs', () => {
     expect(t.view().song!.style).toBe(SONGS.find((x) => x.id === order[0])!.style);
   });
 
-  it('plays one version of a song with versions, picked at random', () => {
-    const versions = SONGS.filter((x) => x.group === 'yoru-no-drive').map((x) => x.id);
+  it.each(['yoru-no-drive', 'ame-no-minato'])('plays one version of %s, picked at random', (group) => {
+    const versions = SONGS.filter((x) => x.group === group).map((x) => x.id);
     expect(versions).toHaveLength(2);
     const seen = new Set<string>();
     for (const r of [0, 0.3, 0.6, 0.99]) {

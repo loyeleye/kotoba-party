@@ -31,7 +31,8 @@ export const TRACK_IDS = [
   // Karaoke Duel's grown-up songs: one instrumental each, sung over whole (songs.ts `track`).
   'night-drive-satnav',
   'night-drive-asleep',
-  'past-sadness',
+  'harbour-ferry',
+  'harbour-ticket',
   'jrpg-rock',
   'hot-springs',
   'hustle',
@@ -120,9 +121,10 @@ export const TRACKS: Record<TrackId, Track> = {
   // the song (songs.ts). Each file is already the song's bars in order at exactly 100 bpm, D major.
   'night-drive-satnav': { title: 'Night Drive (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('night-drive-satnav'), gainDb: 0.9, fallback: 'gentle' },
   'night-drive-asleep': { title: 'Night Drive (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('night-drive-asleep'), gainDb: 0.6, fallback: 'gentle' },
-  // Harbour in the Rain: slow piano, 72 bpm, A minor (a Dm7–G–Am7–C loop throughout). The first 128 s.
-  // Very quiet (−28.7 LUFS), so the gain stops just short of clipping its loudest peak.
-  'past-sadness': { title: 'Past Sadness', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1900007'), url: file('past-sadness'), gainDb: 11.5, fallback: 'gentle' },
+  // Harbour in the Rain: two AI-made enka backings (Mureka, 2026-10-27), one per version of the song.
+  // Each file is already the song's bars in order at exactly 71 bpm, A minor.
+  'harbour-ferry': { title: 'Harbour in the Rain (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('harbour-ferry'), gainDb: 0.7, fallback: 'gentle' },
+  'harbour-ticket': { title: 'Harbour in the Rain (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('harbour-ticket'), gainDb: 1.6, fallback: 'gentle' },
   // Run!: anime rock, 152 bpm, F♯ minor. From 14.0 s (orig. bar 9).
   'jrpg-rock': { title: 'JRPG Epic Rock Battle Theme', author: 'HydroGene', licence: 'CC0', source: `${OGA}jrpg-epic-rock-battle-theme-1`, url: file('jrpg-epic-rock'), gainDb: -7.2, fallback: 'battle' },
   // Cheers!: festival tune, 120 bpm, A major. The first 33 s.
