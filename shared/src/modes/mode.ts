@@ -132,6 +132,8 @@ export interface HostCue {
   answerEn?: string;
   /** Free context for an LLM reaction. Never shown as is. */
   context?: string;
+  /** The room's Audience setting. Modes leave it out: the server fills it in from the room before the host speaks. */
+  audience?: Audience;
   /**
    * Not said now: a cue the rules expect to raise soon, sent early so the host pipeline can start writing the
    * line. A later cue with the same content uses it. The bank voice ignores these.

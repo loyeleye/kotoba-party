@@ -21,6 +21,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import { readDrawing } from './drawing.js';
 import { buildTileFake, readUtteranceFake, sameFake, tooClose, type Fake, type FakeVia } from './fakes.js';
 import { dealPrompt, dealTiles, decoyCandidates, markUsed, type Prompt, type Tile } from './prompts.js';
+import { playerTextAllowed } from '../../moderation.js';
 
 // ---- tuning ----
 
@@ -535,6 +536,7 @@ function moveFake(s: OekakiState, phase: Phase, playerId: string, raw: Record<st
   } else read = readUtteranceFake(raw.utterance);
   if (!read.ok) return moveError(read.error);
   const fake: Fake = read.fake;
+  if (!playerTextAllowed(fake.text, ctx.audience)) return moveError('kids-words');
   if (tooClose(fake, t.sketch.prompt)) return moveError('too-close');
   const same = t.options.find((o) => sameFake(o, fake));
   if (same) same.authorIds.push(playerId);

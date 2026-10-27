@@ -5,6 +5,7 @@
 // for: Kids, Family or Cheeky, which asks first) belong to the room. The main stage can also close
 // the room, behind a second, explicit confirm.
 
+import { audienceContentList } from '../../shared/src/audience.js';
 import { h, mount } from '../../shared/src/dom.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import type { Audience, ModeId, RoomView } from '../../shared/src/protocol.js';
@@ -152,14 +153,15 @@ function renderRoom(force: boolean): void {
 }
 
 const AUDIENCE_LABELS: [Audience, string, string][] = [
-  ['kids', '🧒 Kids', 'Songs for children: simple words, silly stories.'],
+  ['kids', '🧒 Kids', 'For children: simple words, silly stories, and stricter checks on what players type.'],
   ['family', '🏠 Family', 'Grown-up jokes anyone can hear. The default.'],
   ['cheeky', '🌶️ Cheeky', 'Adult party humour. Asks first.'],
 ];
 
 /**
- * Who the words are for (Karaoke Duel's lyrics so far). Cheeky stays off until the host says yes to a
- * warning, and it is never the default; a game in progress sings the new words from its next song.
+ * Who the words are for. The hosts follow it in every mode; the modes in AUDIENCE_CONTENT (shared/src/audience.ts)
+ * also swap their own content, and the rest play Family. Cheeky stays off until the host says yes to a warning,
+ * and it is never the default; a game in progress picks up the change from its next round or song.
  */
 function audience(v: RoomView): HTMLElement {
   const sec = h('section', { class: 'st-sec' }, h('h3', {}, 'Audience'));
@@ -185,7 +187,11 @@ function audience(v: RoomView): HTMLElement {
       return b;
     }),
   );
-  sec.append(h('p', { class: 'st-help' }, `Who the song lyrics are for. ${AUDIENCE_LABELS.find(([id]) => id === v.audience)?.[2] ?? ''}`), row);
+  sec.append(
+    h('p', { class: 'st-help' }, `Who the words are for. ${AUDIENCE_LABELS.find(([id]) => id === v.audience)?.[2] ?? ''}`),
+    row,
+    h('p', { class: 'st-help' }, `The hosts follow it in every mode. Kids and Cheeky content so far: ${audienceContentList()}. Other modes play their Family content.`),
+  );
   if (cheekyAsk) {
     const keep = h('button', { type: 'button', class: 'st-btn st-btn-quiet' }, 'Keep it clean') as HTMLButtonElement;
     const yes = h('button', { type: 'button', class: 'st-btn st-btn-danger' }, 'Turn on Cheeky') as HTMLButtonElement;
@@ -198,9 +204,9 @@ function audience(v: RoomView): HTMLElement {
     sec.append(
       h(
         'div',
-        { class: 'st-confirm', role: 'alertdialog', 'aria-label': 'Turn on Cheeky lyrics?' },
-        h('p', { class: 'st-label' }, 'Cheeky lyrics are for grown-ups only'),
-        h('p', { class: 'st-help' }, 'Drinking, hangovers, bad dates, bathroom emergencies and innuendo (never explicit). Not for children, classrooms or a stream. Everyone in the room will hear and sing them.'),
+        { class: 'st-confirm', role: 'alertdialog', 'aria-label': 'Turn on Cheeky?' },
+        h('p', { class: 'st-label' }, 'Cheeky is for grown-ups only'),
+        h('p', { class: 'st-help' }, 'The hosts (and the songs) joke about drinking, hangovers, bad dates, bathroom emergencies and innuendo (never explicit). Not for children, classrooms or a stream. Everyone in the room will hear it.'),
         h('div', { class: 'st-row' }, keep, yes),
       ),
     );

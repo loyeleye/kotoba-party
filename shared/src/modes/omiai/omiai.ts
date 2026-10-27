@@ -24,6 +24,7 @@ import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mod
 import { saidPhrase } from '../phraseBingo/check.js';
 import { appealQuestion, CARDS, CLOSERS, introQuestion, keigoPair, OPENERS, withName, type CharacterCard, type KeigoPair, type OmiaiQuestion } from './cards.js';
 import { analysisText, checkManners, type CasualHit, type MannersResult, type Register } from './manners.js';
+import { playerTextAllowed } from '../../moderation.js';
 
 // ---- tuning ----
 
@@ -664,6 +665,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
           const spoken = u.via === 'speech';
           style = memory ? (spoken ? 'memory-spoken' : 'memory-typed') : spoken ? 'spoken' : u.via === 'tap' ? 'tiles' : 'typed';
         }
+        if (!playerTextAllowed(u.text, ctx.audience)) return moveError('kids-words');
         const english = !hasJapanese(u.text);
         const manners = checkManners(u, player.level, { name: player.name });
         const answer: Answer = {

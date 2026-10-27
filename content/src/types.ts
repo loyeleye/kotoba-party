@@ -511,6 +511,8 @@ export interface HostLine {
   jp: JpText;
   /** Template slots used in the line, written with braces as they appear in the text, e.g. '{name}'. Filled by the server. */
   slots?: string[];
+  /** Only for this Audience setting (Kids or Cheeky). Untagged lines play in every room. */
+  audience?: 'kids' | 'cheeky';
   status: ReviewStatus;
 }
 

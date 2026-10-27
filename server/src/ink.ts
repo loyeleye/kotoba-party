@@ -38,7 +38,7 @@ export function inkCoachDirector(coach: InkCoach, opts: InkCoachDirectorOptions 
       if (g.calls >= max || now() - req.at > maxAge) continue;
       g.calls++;
       void coach
-        .look({ char: req.char, candidates: req.candidates, strokes: req.strokes, passed: req.passed }, opts.budget?.(room.code))
+        .look({ char: req.char, candidates: req.candidates, strokes: req.strokes, passed: req.passed, audience: room.state.audience }, opts.budget?.(room.code))
         .then((tip) => {
           if (tip && !room.closed) room.inject(req.playerId, { kind: 'ink-tip', key: req.key, tip });
         })

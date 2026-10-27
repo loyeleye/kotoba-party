@@ -38,6 +38,7 @@ const ERRORS: Record<string, string> = {
   'not-english': 'Write this step in English.',
   'not-kana': 'Use kana for this one.',
   'too-close': 'Too close to the real meaning. Make it a fake!',
+  'kids-words': 'This room is set to Kids. Try other words!',
   'wrong-start': 'Your word has to start with the last sound.',
   repeat: 'That word was already used.',
   'not-the-word': 'Not quite. Try saying it again.',
