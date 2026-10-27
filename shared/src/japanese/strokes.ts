@@ -271,17 +271,30 @@ export function checkStroke(drawn: InkStroke, reference: InkStroke, tolerance = 
 
 // ---------- tips ----------
 
-/** Where a stroke starts and which way it heads, in words ("from the top-left down"). */
-export function strokeWay(s: InkStroke): string {
+/** Which way a stroke heads, in words ("down and to the left"). */
+export function strokeHeading(s: InkStroke): string {
   const a = s[0];
   const b = s.at(-1);
   if (!a || !b) return '';
   const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
   const vert = Math.abs(dy) > 0.5 * Math.abs(dx) ? (dy > 0 ? 'down' : 'up') : '';
   const horiz = Math.abs(dx) > 0.5 * Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : '';
-  const from = [dy > 0 ? 'top' : dy < 0 ? 'bottom' : '', dx > 0 ? 'left' : dx < 0 ? 'right' : ''].filter(Boolean);
-  const way = vert && horiz ? `${vert} and to the ${horiz}` : vert || `to the ${horiz}`;
-  return `starts at the ${from.join('-') || 'top'} and goes ${way}`;
+  return vert && horiz ? `${vert} and to the ${horiz}` : vert || `to the ${horiz}`;
+}
+
+/** Where in the box a stroke starts, by thirds ("the top-left", "the middle"). */
+export function strokeStart(s: InkStroke): string {
+  const a = s[0];
+  if (!a) return '';
+  const third = (v: number, lo: string, hi: string) => (v < 0.38 ? lo : v > 0.62 ? hi : '');
+  const at = [third(a[1], 'top', 'bottom'), third(a[0], 'left', 'right')].filter(Boolean).join('-');
+  return `the ${at || 'middle'}`;
+}
+
+/** Where a stroke starts and which way it heads, in words ("starts at the top-left and goes down"). */
+export function strokeWay(s: InkStroke): string {
+  if (!s.length) return '';
+  return `starts at ${strokeStart(s)} and goes ${strokeHeading(s)}`;
 }
 
 const ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];

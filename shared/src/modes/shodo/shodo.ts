@@ -172,6 +172,8 @@ export interface ShodoState {
   stats: { clean: Record<string, number>; corrections: Record<string, number> };
   /** Look-alikes Fude misread this game, for a callback in the gallery. */
   misreads: string[];
+  /** Ink not yet handed in (dictation and the big sheet), handed in for the player when time runs out. */
+  drafts: Record<string, InkPoint[][][]>;
   /** The VIP's other-hand option: the big sheet is written with the other hand. */
   otherHand: boolean;
 }
@@ -184,6 +186,8 @@ export type ShodoMove =
   | { kind: 'rep'; strokes: InkPoint[][]; corrections?: number }
   | { kind: 'skip-trace' }
   | { kind: 'sheet'; cells: InkPoint[][][] }
+  /** The sheet so far, sent as each stroke lands: handed in for the player if time runs out. */
+  | { kind: 'draft'; cells: InkPoint[][][] }
   | { kind: 'stamp'; award: AwardId; sheet: number }
   | { kind: 'claim' };
 
@@ -317,7 +321,8 @@ function targetView(t: Target, level: Level | null, withStrokes: boolean): Targe
     kind: t.kind,
     count: t.cells.length,
     say: t.say,
-    romaji: level === 'kana' ? toRomaji(t.say.kana) : null,
+    // "umi desu", not "umidesu" (Japanese panel).
+    romaji: level === 'kana' ? toRomaji(t.say.kana.replace(/(\S)です$/, '$1 です')) : null,
     meaning: t.meaning,
     cells: withStrokes ? t.cells.map((c) => c.map((s) => s.map((p) => [p[0], p[1]] as InkPoint))) : null,
     mask: t.mask ?? null,
@@ -432,6 +437,7 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
       pending: {},
       stats: { clean: {}, corrections: {} },
       misreads: [],
+      drafts: {},
       otherHand: opts.extra?.otherHand === true,
     };
   },
@@ -491,6 +497,7 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
       // Round 1's points land once, at the end: a chime per stroke would fill a quiet round.
       for (const [id, p] of Object.entries(s.practice)) give(s, ctx, id, p.points);
     }
+    if (phase === 'answer' || phase === 'encore') handInDrafts(s, phase, ctx);
     if (phase === 'answer') {
       const item = s.items.at(-1);
       if (item) for (const sheet of Object.values(item.sheets)) give(s, ctx, sheet.playerId, sheet.points);
@@ -562,6 +569,8 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
         return moveSkipTrace(s, phase, playerId);
       case 'sheet':
         return moveSheet(s, phase, playerId, raw.cells, ctx);
+      case 'draft':
+        return moveDraft(s, phase, playerId, raw.cells);
       case 'stamp':
         return moveStamp(s, phase, playerId, raw.award, raw.sheet);
       case 'claim':
@@ -671,7 +680,8 @@ function enterItem(s: ShodoState, ctx: ModeContext): void {
   }
   s.used = [...used];
   s.items.push({ kind, targets, sheets: {}, said: {}, tries: {}, shown: {} });
-  ctx.cue({ host: 'fude', event: 'shodo_dictation' });
+  // Not on dictation items: Fude's line would play over every phone voicing its word (music panel).
+  if (kind === 'recall') ctx.cue({ host: 'fude', event: 'shodo_dictation' });
 }
 
 function enterReplay(s: ShodoState, ctx: ModeContext): void {
@@ -873,11 +883,7 @@ function moveSheet(s: ShodoState, phase: Phase, playerId: string, raw: unknown, 
     if (item.kind === 'recall' && !item.shown[playerId]) return moveError('say-first');
     const cells = readCells(raw, t.cells.length);
     if (!cells) return moveError('bad-drawing');
-    const sheet = gradeSheet(deck, playerId, t, cells);
-    const k = strokeScale(t);
-    sheet.points = Math.round((sheet.clean ? POINTS.writeClean : sheet.pass ? POINTS.writePass : 0) * k);
-    if (sheet.clean) s.stats.clean[playerId] = (s.stats.clean[playerId] ?? 0) + 1;
-    item.sheets[playerId] = sheet;
+    handInItem(s, deck, item, playerId, cells);
     return MOVE_OK;
   }
   if (phase === 'encore') {
@@ -887,11 +893,54 @@ function moveSheet(s: ShodoState, phase: Phase, playerId: string, raw: unknown, 
     if (g.sheets.some((x) => x.playerId === playerId)) return moveError('already-answered');
     const cells = readCells(raw, t.cells.length);
     if (!cells) return moveError('bad-drawing');
-    g.sheets.push(gradeSheet(deck, playerId, t, cells));
-    ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: 'seen' });
+    handInGallery(s, deck, g, playerId, cells, ctx);
     return MOVE_OK;
   }
   return moveError('wrong-phase');
+}
+
+function handInItem(s: ShodoState, deck: ShodoDeck, item: Item, playerId: string, cells: InkPoint[][][]): void {
+  const t = item.targets[playerId]!;
+  const sheet = gradeSheet(deck, playerId, t, cells);
+  sheet.points = Math.round((sheet.clean ? POINTS.writeClean : sheet.pass ? POINTS.writePass : 0) * strokeScale(t));
+  if (sheet.clean) s.stats.clean[playerId] = (s.stats.clean[playerId] ?? 0) + 1;
+  item.sheets[playerId] = sheet;
+  delete s.drafts[playerId];
+}
+
+function handInGallery(s: ShodoState, deck: ShodoDeck, g: Gallery, playerId: string, cells: InkPoint[][][], ctx: ModeContext): void {
+  const t = g.targets[playerId]!;
+  g.sheets.push(gradeSheet(deck, playerId, t, cells));
+  delete s.drafts[playerId];
+  ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: 'seen' });
+}
+
+/** Keeps the ink so far (a square may still be empty), so time running out doesn't lose it. */
+function moveDraft(s: ShodoState, phase: Phase, playerId: string, raw: unknown): MoveResult {
+  const t = phase === 'answer' ? s.items.at(-1)?.targets[playerId] : phase === 'encore' ? s.gallery?.targets[playerId] : undefined;
+  if (!t) return moveError('wrong-phase');
+  if (!Array.isArray(raw) || raw.length !== t.cells.length) return moveError('bad-drawing');
+  const cells: InkPoint[][][] = [];
+  for (const c of raw) {
+    const ink = Array.isArray(c) && c.length === 0 ? [] : readInk(c, KANJI_LIMITS);
+    if (!ink) return moveError('bad-drawing');
+    cells.push(ink);
+  }
+  s.drafts[playerId] = cells;
+  return MOVE_OK;
+}
+
+/** Time's up: a sheet with ink on it is handed in as it stands (UX panel). */
+function handInDrafts(s: ShodoState, phase: Phase, ctx: ModeContext): void {
+  const deck = deckFor(ctx);
+  const item = phase === 'answer' ? s.items.at(-1) : undefined;
+  const g = phase === 'encore' ? s.gallery : null;
+  for (const [id, cells] of Object.entries(s.drafts)) {
+    if (!ctx.player(id) || !cells.some((c) => c.length)) continue;
+    if (item?.targets[id] && !item.sheets[id] && (item.kind === 'dictation' || item.shown[id])) handInItem(s, deck, item, id, cells);
+    else if (g?.targets[id] && !g.sheets.some((x) => x.playerId === id)) handInGallery(s, deck, g, id, cells, ctx);
+  }
+  s.drafts = {};
 }
 
 function moveStamp(s: ShodoState, phase: Phase, playerId: string, award: unknown, sheet: unknown): MoveResult {

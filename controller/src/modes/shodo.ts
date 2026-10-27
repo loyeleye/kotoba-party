@@ -185,7 +185,8 @@ function itemScreen(ctx: Ctx): HTMLElement {
     );
   }
   const dictation = game.itemKind === 'dictation';
-  if (dictation) setTimeout(() => say(t.say.kana), 300);
+  // Every phone voices its own word: in seat order, a beat apart, so they don't all speak at once.
+  if (dictation) setTimeout(() => say(t.say.kana), 300 + (ctx.me.seat - 1) * 1200);
   return h(
     'div',
     { class: 'screen sho' },
@@ -202,7 +203,7 @@ function itemScreen(ctx: Ctx): HTMLElement {
       t.kind !== 'kana' ? h('p', { class: 'sho-meaning' }, t.meaning) : null,
       it.said ? h('p', { class: 'sho-said' }, it.said === 'speech' ? 'Said from memory! ✨' : 'Typed it ✓') : null,
     ),
-    brushPad({ key: `sho-item-${view.phaseSeq}`, mode: 'free', cells: t.count, label: 'Writing pad: write it', onSend: (cells) => send({ kind: 'sheet', cells }) }),
+    brushPad({ key: `sho-item-${view.phaseSeq}`, mode: 'free', cells: t.count, label: 'Writing pad: write it', onDraft: (cells) => void send({ kind: 'draft', cells }), onSend: (cells) => send({ kind: 'sheet', cells }) }),
   );
 }
 
@@ -237,10 +238,9 @@ function galleryScreen(ctx: Ctx): HTMLElement {
       tag('展覧会 · Your big sheet'),
       ctx.game.brief ? h('p', { class: 'sho-brief' }, h('span', { lang: 'ja' }, `おだい: ${ctx.game.brief.kana}`), ` · make it look ${ctx.game.brief.en}!`) : null,
       ctx.game.otherHand ? h('p', { class: 'sho-other-hand' }, '✋ Other hand! Switch the phone to your other hand.') : null,
-      h('p', { class: 'sho-glyph', lang: 'ja' }, t.text),
-      h('p', { class: 'sho-meaning' }, t.meaning),
-      h('p', { class: 'sho-note' }, 'No model this time: it’s all your own brush. It goes in the gallery, with no name on it.'),
-      brushPad({ key: `sho-gal-${view.phaseSeq}`, mode: 'free', cells: t.count, sendLabel: 'Hang it in the gallery 🖼', label: `Writing pad: write ${t.text}`, onSend: (cells) => send({ kind: 'sheet', cells }) }),
+      h('div', { class: 'sho-target-row' }, h('p', { class: 'sho-glyph', lang: 'ja' }, t.text), h('p', { class: 'sho-meaning' }, t.meaning)),
+      h('p', { class: 'sho-note' }, 'No model: all your own brush. It hangs with no name on it.'),
+      brushPad({ key: `sho-gal-${view.phaseSeq}`, mode: 'free', cells: t.count, sendLabel: 'Hang it in the gallery 🖼', label: `Writing pad: write ${t.text}`, onDraft: (cells) => void send({ kind: 'draft', cells }), onSend: (cells) => send({ kind: 'sheet', cells }) }),
     );
   }
   if (g.said === undefined) {
@@ -281,7 +281,7 @@ function stampScreen(ctx: Ctx): HTMLElement {
         'button',
         { type: 'button', class: `sho-sheet${own ? ' own' : ''}`, disabled: own, 'aria-label': own ? `Sheet ${s.n}: yours` : `Sheet ${s.n}`, onclick: () => void send({ kind: 'stamp', award: picking.award, sheet: i }) },
         h('span', { class: 'sho-n' }, own ? 'yours' : `#${s.n}`),
-        h('div', { class: 'sho-thumb' }, s.cells.map((c) => inkSvg(c, { brush: true, width: 6, class: 'sho-thumb-svg', elapsedMs: 1e9 }))),
+        h('div', { class: `sho-thumb n${Math.min(3, s.cells.length)}` }, s.cells.map((c) => inkSvg(c, { brush: true, width: 6, class: 'sho-thumb-svg', elapsedMs: 1e9 }))),
         here.length ? h('span', { class: 'sho-stamped', lang: 'ja' }, here.map((a) => a.ja.slice(0, 2)).join(' ')) : null,
       );
     }),

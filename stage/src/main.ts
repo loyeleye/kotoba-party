@@ -366,7 +366,12 @@ function recapScreen(view: RoomView): HTMLElement {
  * The music and voice credits their licences ask for: one line at a time across the foot of the
  * screen during the recap, outside the play area so it never shrinks with the podium.
  */
-const creditLines = [...creditSummary(), `Host voices: ${[...new Set(Object.values(HOSTS).map((x) => x.credit))].join(' · ')}`];
+const creditLines = [
+  ...creditSummary(),
+  `Host voices: ${[...new Set(Object.values(HOSTS).map((x) => x.credit))].join(' · ')}`,
+  // CC BY-SA: Kana Raid's ink and Shodō Taikai's models and checks use KanjiVG's strokes.
+  'Stroke order data: KanjiVG, © Ulrich Apel and contributors, CC BY-SA 3.0 (kanjivg.tagaini.net)',
+];
 const creditStrip = h('p', { class: 'credits', 'aria-live': 'off', hidden: true });
 els.canvas.append(creditStrip);
 let creditTimer: ReturnType<typeof setInterval> | null = null;

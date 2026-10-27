@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MODE_IDS, PHASES } from '../shared/src/protocol.js';
-import { MODE_ALT_THEMES, MODE_THEMES, cueFor, listening, themeFor } from '../stage/src/music/cues.js';
+import { MODE_ALT_THEMES, MODE_THEMES, cueFor, listening, saying, themeFor } from '../stage/src/music/cues.js';
 import { existsSync } from 'node:fs';
 import { SONGS, SONG_IDS, compile, leadLength, noteToMidi, parseChord, parseLead } from '../stage/src/music/songs.js';
 import { TRACKS, TRACK_CREDITS, TRACK_IDS, creditSummary } from '../stage/src/music/tracks.js';
@@ -127,7 +127,11 @@ describe('cues', () => {
   it('keeps Shodō Taikai calm, with a recorded track for the gallery', () => {
     for (const phase of ['prompt', 'score', 'answer', 'reveal'] as const) expect(cueFor('shodo', phase)).toEqual({ song: 'gentle', mix: 'under', keep: true });
     expect(cueFor('shodo', 'answer', 0, true).mix).toBe('listen');
+    // Full while the big sheets are written, under once players start saying their sentence.
     expect(cueFor('shodo', 'encore')).toEqual({ song: 'japanese-lofi', mix: 'full' });
+    expect(cueFor('shodo', 'encore', 0, false, true)).toEqual({ song: 'japanese-lofi', mix: 'under' });
+    expect(saying({ mode: 'shodo', phase: 'encore', game: { mode: 'shodo', finished: 0 } } as never)).toBe(false);
+    expect(saying({ mode: 'shodo', phase: 'encore', game: { mode: 'shodo', finished: 1 } } as never)).toBe(true);
     expect(cueFor('shodo', 'finale')).toEqual({ song: 'japanese-lofi', mix: 'full', keep: true });
     expect(cueFor('shodo', 'penalty').mix).toBe('under');
     expect(cueFor('shodo', 'reveal').sting).toBeUndefined();

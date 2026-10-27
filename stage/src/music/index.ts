@@ -5,7 +5,7 @@
 import { h, mount } from '../../../shared/src/dom.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { MUSIC_LEVEL, audioReady, audioSupported, getSound, isAway, isMuted, onAudioReady, onAwayChange, onMuteChange, onVolumeChange, setMuted, silent, unlockAudio, voiceVolume } from '../sound.js';
-import { cueFor, listening, SHODO_GALLERY, themeFor, type Cue, type MusicId } from './cues.js';
+import { cueFor, listening, saying, SHODO_GALLERY, themeFor, type Cue, type MusicId } from './cues.js';
 import { SongVoice, TrackVoice, load, type Mix } from './engine.js';
 import { SONGS, type SongId } from './songs.js';
 import { TRACKS, isTrack, type TrackId } from './tracks.js';
@@ -156,7 +156,7 @@ function countGame(view: RoomView): void {
 /** Call on every render: follows the room's mode and phase. */
 export function updateMusic(view: RoomView): void {
   countGame(view);
-  const cue = cueFor(view.mode, view.phase, game, listening(view));
+  const cue = cueFor(view.mode, view.phase, game, listening(view), saying(view));
   const newPhase = view.phaseSeq !== lastPhaseSeq;
   lastPhaseSeq = view.phaseSeq;
   want = cue;

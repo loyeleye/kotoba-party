@@ -7,7 +7,7 @@ import { writeKanji, writeWords } from '../content/src/kanji/kanji.js';
 import { createRoom, type CommandBody } from '../shared/src/client.js';
 import { brushPath } from '../shared/src/brush.js';
 import { apply, createGame, type GameAction, type GameContext } from '../shared/src/game.js';
-import { checkStroke, gradeInk, traceTolerance, type InkPoint } from '../shared/src/japanese/strokes.js';
+import { checkStroke, gradeInk, strokeStart, strokeWay, traceTolerance, type InkPoint } from '../shared/src/japanese/strokes.js';
 import { buildDeck, dictationPool, practicePool } from '../shared/src/modes/shodo/deck.js';
 import { AWARDS, BONUS_SHARE, ITEMS, type ShodoState, type ShodoView } from '../shared/src/modes/shodo/shodo.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -83,6 +83,12 @@ describe('tracing one stroke at a time', () => {
     const swapped = gradeInk(handDraw(shape, random, { swap: [0, 1] }), shape);
     expect(swapped.pass).toBe(true);
     expect(swapped.orderOk).toBe(false);
+  });
+
+  it('says where a stroke starts by where it is, not which way it goes', () => {
+    // 人's second stroke starts mid-way down the first, not at the top-left.
+    expect(strokeStart(ref('人')[1]!)).not.toBe('the top-left');
+    expect(strokeWay(ref('一')[0]!)).toBe('starts at the left and goes to the right');
   });
 
   it('draws a brush outline for every stroke', () => {
@@ -233,6 +239,26 @@ describe('Shodō Taikai rounds', () => {
     expect(sheet.pass && sheet.outOfOrder !== null).toBe(true);
     if (sheet.misread) expect(r.s.cues.at(-1)).toMatchObject({ event: 'shodo_misread', slots: { target: t.text } });
     else if (sheet.outOfOrder !== null) expect(r.s.cues.at(-1)?.event).toBe('shodo_synchro_break');
+  });
+
+  it('hands in unsent ink when time runs out, and keeps Fude quiet over dictation', () => {
+    const r = room(['n5', 'n5']);
+    r.cmd(stage, { type: 'start', mode: 'shodo' } as CommandBody);
+    for (let guard = 0; guard < 5 && r.s.phase !== 'answer'; guard++) r.tick();
+    const item = r.ms().items.at(-1)!;
+    expect(item.kind).toBe('recall');
+    r.play('p1', { kind: 'say-skip' });
+    const t = item.targets.p1!;
+    // A draft with a square still empty is fine; p2 never showed the reading, so has no pad.
+    expect(r.play('p1', { kind: 'draft', cells: t.cells.map((c) => handDraw(c, random)) }).error).toBeUndefined();
+    expect(r.play('p2', { kind: 'draft', cells: [[]] }).error).toBeUndefined();
+    r.tick();
+    expect(r.s.phase).toBe('reveal');
+    expect(item.sheets.p1?.pass).toBe(true);
+    expect(item.sheets.p2).toBeUndefined();
+    r.tick();
+    expect(r.ms().items.at(-1)!.kind).toBe('dictation');
+    expect(r.s.cues.at(-1)?.event).not.toBe('shodo_dictation');
   });
 
   it('makes the big sheet an other-hand round when the VIP ticks it', () => {

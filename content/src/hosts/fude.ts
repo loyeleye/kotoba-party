@@ -192,7 +192,7 @@ export const fudeLines: HostLine[] = [
   { id: 'fude.shodo_read.02', host: 'fude', event: 'shodo_read', jp: { text: 'りっぱな まきものです！　せーの！', kana: 'りっぱな まきものです！　せーの！', en: 'A splendid scroll! Ready, go!' }, status: 'draft' },
   { id: 'fude.shodo_read.03', host: 'fude', event: 'shodo_read', jp: { text: 'こえに だして よんで！　せーの！', kana: 'こえに だして よんで！　せーの！', en: 'Read it out loud! Ready, go!' }, status: 'draft' },
   // shodo_dictation
-  { id: 'fude.shodo_dictation.01', host: 'fude', event: 'shodo_dictation', jp: { text: 'かきとりです！　よく みて、よく きいて、かいて！', kana: 'かきとりです！　よく みて、よく きいて、かいて！', en: 'Dictation! Look closely, listen closely, write!' }, status: 'draft' },
+  { id: 'fude.shodo_dictation.01', host: 'fude', event: 'shodo_dictation', jp: { text: 'かきとりです！　よく おもいだして、かいて！', kana: 'かきとりです！　よく おもいだして、かいて！', en: 'Dictation! Remember it, then write!' }, status: 'draft' },
   { id: 'fude.shodo_dictation.02', host: 'fude', event: 'shodo_dictation', jp: { text: 'ゆっくり… ていねいに… かく！', kana: 'ゆっくり… ていねいに… かく！', en: 'Slowly… carefully… write!' }, status: 'draft' },
   { id: 'fude.shodo_dictation.03', host: 'fude', event: 'shodo_dictation', jp: { text: 'つぎの ことば！　いきますよ！', kana: 'つぎの ことば！　いきますよ！', en: 'Next word! Here it comes!' }, status: 'draft' },
   { id: 'fude.shodo_dictation.04', host: 'fude', event: 'shodo_dictation', jp: { text: 'あわてない、あわてない。フデは まって います。', kana: 'あわてない、あわてない。フデは まって います。', en: 'No rush, no rush. Fude is waiting.' }, status: 'draft' },
