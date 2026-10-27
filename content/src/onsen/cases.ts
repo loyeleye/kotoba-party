@@ -9,6 +9,9 @@
 // How a case is built: each suspect answers the six questions (where / what / who / when /
 // victim / item). Some answers put a clue in the shared notebook; the key clues together
 // point at one culprit, who lies about one thing. Two answers may give the same clue.
+//
+// A case with an `audience` plays only in a room set to it: the ice cream case is a shorter,
+// sillier one for Kids, and the sake case (hangovers, a boss's karaoke) is for Cheeky rooms.
 
 import type { JpText, OnsenCase } from '../types.js';
 
@@ -277,4 +280,171 @@ export const duckCase: OnsenCase = {
   shrug: SHRUG,
 };
 
-export const onsenCases: OnsenCase[] = [snowmanCase, puddingCase, duckCase];
+export const iceCreamCase: OnsenCase = {
+  id: 'ice-cream',
+  audience: 'kids',
+  status: 'draft',
+  title: k('アイス じけん', 'The Ice Cream Case'),
+  setting: k('なつの ひる、りょかん「すいか」。', 'A summer afternoon at the Suika inn.'),
+  victim: {
+    name: k('アイスくん', 'Aisu-kun, the ice cream'),
+    emoji: '🍦',
+    found: t('3じに、テーブルから いなく なりました。', 'さんじに、テーブルから いなく なりました。', 'At 3 pm he vanished from the table.'),
+  },
+  item: { name: k('ボール', 'ball'), emoji: '⚽', keys: ['ぼーる'] },
+  culpritId: 'pochi',
+  suspects: [
+    {
+      id: 'pochi',
+      name: k('ポチ', 'Pochi'),
+      suffix: '',
+      role: k('りょかんの いぬ', "the inn's dog"),
+      emoji: '🐶',
+      voice: { pitch: 1.5, rate: 1.1 },
+      persona: 'The inn’s bouncy, greedy puppy. Ends sentences with ワン. A very bad liar who licks his lips.',
+      answers: {
+        where: { jp: k('にわで ねて いました。ワン。', 'I was asleep in the garden. Woof.'), clueId: 'pochi-garden' },
+        what: { jp: k('ずっと ねて いました。ワン。', 'I was asleep the whole time. Woof.') },
+        who: { jp: k('だれも みませんでした。ワン。', "I didn't see anyone. Woof.") },
+        when: { jp: t('8じに ねました。ワン。', 'はちじに ねました。ワン。', 'I went to bed at 8. Woof.') },
+        victim: { jp: k('つめたくて、あまくて… いえ、しりません！　ワン！', "Cold and sweet… I mean, I don't know him! Woof!"), clueId: 'pochi-sweet' },
+        item: { jp: k('ボール？　ぼくのじゃ ありません。ワン。', "A ball? It's not mine. Woof.") },
+      },
+    },
+    {
+      id: 'hana',
+      name: k('はな', 'Hana'),
+      suffix: 'ちゃん',
+      role: k('おんなのこの おきゃくさん', 'a young guest (a girl)'),
+      emoji: '👧',
+      voice: { pitch: 1.7, rate: 1.1 },
+      persona: 'A cheerful little girl who has been swimming all day and wants to tell everyone about it.',
+      answers: {
+        where: { jp: t('2じから 3じまで、プールに いました。', 'にじから さんじまで、プールに いました。', 'From 2 to 3 I was at the pool.'), clueId: 'hana-pool' },
+        what: { jp: k('およぎました。たのしかったです！', 'I went swimming. It was fun!') },
+        who: { jp: t('2じはんに ポチを みました。しょくどうに いました。', 'にじはんに ポチを みました。しょくどうに いました。', 'At 2:30 I saw Pochi. He was in the dining room.'), clueId: 'saw-pochi' },
+        when: { jp: t('8じに ねました。', 'はちじに ねました。', 'I went to bed at 8.') },
+        victim: { jp: k('アイスくん、だいすきでした。かなしいです。', 'I loved Aisu-kun. I am sad.') },
+        item: { jp: k('その ボール、ポチのです。いつも あそんで います。', "That ball is Pochi's. He always plays with it."), clueId: 'ball' },
+      },
+    },
+    {
+      id: 'fujii',
+      name: k('ふじい', 'Fujii'),
+      role: k('アイスやさん', 'the ice cream maker'),
+      emoji: '🍨',
+      voice: { pitch: 0.9, rate: 0.95 },
+      persona: 'A gentle, round ice cream maker who is very proud of Aisu-kun and cries easily.',
+      answers: {
+        where: { jp: t('2じまで、しょくどうに いました。', 'にじまで、しょくどうに いました。', 'I was in the dining room until 2.') },
+        what: { jp: t('2じに、アイスくんを テーブルに おきました。', 'にじに、アイスくんを テーブルに おきました。', 'At 2 I put Aisu-kun on the table.'), clueId: 'table-2' },
+        who: { jp: k('はなちゃんを みました。プールに いきました。', 'I saw Hana. She went to the pool.'), clueId: 'hana-pool' },
+        when: { jp: t('10じに ねました。', 'じゅうじに ねました。', 'I went to bed at 10.') },
+        victim: { jp: k('わたしの いちばんの アイスでした。うう…', 'He was my best ice cream ever. Sniff…') },
+        item: { jp: k('ボール？　わかりません。', "A ball? I don't know.") },
+      },
+    },
+  ],
+  clues: [
+    { id: 'table-2', jp: t('2じ：アイスくんは テーブルに いた。', 'にじ、アイスくんは テーブルに いた。', 'At 2 Aisu-kun was on the table.') },
+    { id: 'hana-pool', jp: k('はなちゃんは プールに いた。', 'Hana was at the pool.') },
+    { id: 'pochi-garden', jp: k('ポチ：「にわで ねて いました」', 'Pochi: "I was asleep in the garden."'), key: true },
+    { id: 'saw-pochi', jp: t('2じはん：ポチは しょくどうに いた。', 'にじはん、ポチは しょくどうに いた。', 'At 2:30 Pochi was in the dining room.'), key: true },
+    { id: 'ball', jp: k('ボールは ポチの。', "The ball is Pochi's."), key: true },
+    { id: 'pochi-sweet', jp: k('ポチは アイスくんが「あまい」と しって いた。', 'Pochi knew Aisu-kun was "sweet".'), key: true },
+  ],
+  confession: [
+    k('ワン… ぼくです。', 'Woof… it was me.'),
+    k('アイスくんは つめたくて、あまくて…', 'Aisu-kun was so cold, so sweet…'),
+    k('ペロッと たべました。ごめんなさい！　ワン！', 'I gobbled him up in one lick. I’m sorry! Woof!'),
+  ],
+  solution: 'Pochi said he slept in the garden, but Hana saw him in the dining room at 2:30. The ball by the table is his, and he knew Aisu-kun was sweet. Hana was at the pool, and Fujii only put Aisu-kun on the table.',
+  shrug: k('ええと… わかりません。', "Umm… I don't know."),
+};
+
+export const sakeCase: OnsenCase = {
+  id: 'sake',
+  audience: 'cheeky',
+  status: 'draft',
+  title: k('おさけ じけん', 'The Sake Case'),
+  setting: k('かいしゃの りょこう、りょかん「よいどれ」の よる。', 'A company trip: night at the Yoidore ("Tipsy") inn.'),
+  victim: {
+    name: k('とっくりさん', 'Tokkuri-san, the sake flask'),
+    emoji: '🍶',
+    found: t('12じに、えんかいの へやで からっぽでした。', 'じゅうにじに、えんかいの へやで からっぽでした。', 'At midnight he was found empty in the party room.'),
+  },
+  item: { name: k('ネクタイ', 'necktie'), emoji: '👔', keys: ['ねくたい'] },
+  culpritId: 'nishimura',
+  suspects: [
+    {
+      id: 'kuroda',
+      name: k('くろだ', 'Kuroda'),
+      suffix: 'ぶちょう',
+      role: k('ぶちょう', 'the department boss'),
+      emoji: '🎤',
+      voice: { pitch: 0.75, rate: 0.95 },
+      persona: 'A loud, red-faced boss who loves enka karaoke far more than anyone loves hearing it. Treasures his sake.',
+      answers: {
+        where: { jp: t('11じまで、カラオケの へやに いました。', 'じゅういちじまで、カラオケの へやに いました。', 'I was in the karaoke room until 11.') },
+        what: { jp: k('うたを たくさん うたいました。えんかです。', 'I sang lots of songs. Enka.') },
+        who: { jp: t('11じに にしむらくんを みました。カラオケで うたいました。かおが あかかったです。', 'じゅういちじに にしむらくんを みました。カラオケで うたいました。かおが あかかったです。', 'At 11 I saw Nishimura. He sang karaoke. His face was red.'), clueId: 'red-face' },
+        when: { jp: t('12じはんに ねました。', 'じゅうにじはんに ねました。', 'I went to bed at 12:30.') },
+        victim: { jp: k('とっくりさんは わたしの おさけです！　「のまないで」と いいました！', 'Tokkuri-san was MY sake! I said "don’t drink it"!'), clueId: 'boss-sake' },
+        item: { jp: k('その ネクタイ？　にしむらくんのです。よっぱらうと、あたまに まきます。', "That necktie? It's Nishimura's. When he's drunk he ties it round his head."), clueId: 'tie' },
+      },
+    },
+    {
+      id: 'nishimura',
+      name: k('にしむら', 'Nishimura'),
+      suffix: 'くん',
+      role: k('あたらしい しゃいん', 'a new employee'),
+      emoji: '🙇',
+      voice: { pitch: 1.1, rate: 0.85 },
+      persona: 'A very polite, very hungover new hire who keeps insisting he never drinks. Speaks quietly and holds his head.',
+      answers: {
+        where: { jp: t('11じから、へやで ねて いました。', 'じゅういちじから、へやで ねて いました。', 'From 11 I was asleep in my room.'), clueId: 'nishimura-room' },
+        what: { jp: k('なにも して いません。おさけは のみません。', "I didn't do anything. I don't drink."), clueId: 'no-drink' },
+        who: { jp: k('だれも みませんでした。', "I didn't see anyone.") },
+        when: { jp: t('11じに ねました。…あたまが いたいです。', 'じゅういちじに ねました。…あたまが いたいです。', 'I went to bed at 11. …My head hurts.'), clueId: 'headache' },
+        victim: { jp: t('ぶちょうの おさけですね。…ぶちょうの カラオケは まいばん 2じかんです。', 'ぶちょうの おさけですね。…ぶちょうの カラオケは まいばん にじかんです。', "The boss's sake, right. …The boss's karaoke goes on two hours every night."), clueId: 'grudge' },
+        item: { jp: k('ネクタイ？　ぼくのじゃ ありません。…たぶん。', "A necktie? It's not mine. …Probably.") },
+      },
+    },
+    {
+      id: 'kobayashi',
+      name: k('こばやし', 'Kobayashi'),
+      role: k('かいけいの ひと', 'the accountant'),
+      emoji: '🧾',
+      voice: { pitch: 1.2, rate: 1.05 },
+      persona: 'A stingy, precise accountant who tallies every drink on the bill and sighs at the cost of everything.',
+      answers: {
+        where: { jp: t('11じはんに、えんかいの へやに いました。', 'じゅういちじはんに、えんかいの へやに いました。', 'At 11:30 I was in the party room.') },
+        what: { jp: k('おかねを けいさんしました。のみものが たかいです！', 'I was adding up the bill. The drinks are expensive!') },
+        who: { jp: t('11じはんに にしむらくんを みました。とっくりさんを もって いました。', 'じゅういちじはんに にしむらくんを みました。とっくりさんを もって いました。', 'At 11:30 I saw Nishimura. He was holding Tokkuri-san.'), clueId: 'saw-nishimura' },
+        when: { jp: t('1じに ねました。', 'いちじに ねました。', 'I went to bed at 1.') },
+        victim: { jp: t('とっくりさんは 5000えんでした。たかい ひとでした。', 'とっくりさんは ごせんえんでした。たかい ひとでした。', 'Tokkuri-san cost 5,000 yen. An expensive guy.'), clueId: 'price' },
+        item: { jp: k('ネクタイは わかりません。おかねじゃ ありませんから。', "The necktie, I don't know. It isn't money, after all.") },
+      },
+    },
+  ],
+  clues: [
+    { id: 'red-face', jp: t('11じ：にしむらくんは カラオケで うたった。かおが あかかった。', 'じゅういちじ、にしむらくんは カラオケで うたった。かおが あかかった。', 'At 11 Nishimura sang karaoke. His face was red.'), key: true },
+    { id: 'boss-sake', jp: k('とっくりさんは くろだぶちょうの おさけ。', "Tokkuri-san was Boss Kuroda's sake.") },
+    { id: 'tie', jp: k('ネクタイは にしむらくんの。よっぱらうと、あたまに まく。', 'The necktie is Nishimura’s. He ties it round his head when he’s drunk.'), key: true },
+    { id: 'nishimura-room', jp: t('にしむらくん：「11じから、へやで ねて いました」', 'にしむらくん、じゅういちじから、へやで ねて いました。', 'Nishimura: "From 11 I was asleep in my room."'), key: true },
+    { id: 'no-drink', jp: k('にしむらくん：「おさけは のみません」', 'Nishimura: "I don’t drink."'), key: true },
+    { id: 'headache', jp: k('にしむらくんは きょう あたまが いたい。', 'Nishimura has a headache today.'), key: true },
+    { id: 'grudge', jp: t('ぶちょうの カラオケは まいばん 2じかん。にしむらくんは つかれて いる。', 'ぶちょうの カラオケは まいばん にじかん。にしむらくんは つかれて いる。', "The boss's karaoke goes on two hours every night. Nishimura is worn out.") },
+    { id: 'saw-nishimura', jp: t('11じはん：にしむらくんが とっくりさんを もって いた。', 'じゅういちじはん、にしむらくんが とっくりさんを もって いた。', 'At 11:30 Nishimura was holding Tokkuri-san.'), key: true },
+    { id: 'price', jp: t('とっくりさんは 5000えん。', 'とっくりさんは ごせんえん。', 'Tokkuri-san cost 5,000 yen.') },
+  ],
+  confession: [
+    k('…はい、ぼくが のみました。', '…Yes. I drank him.'),
+    t('ぶちょうの カラオケ、まいばん 2じかん… もう むりでした。', 'ぶちょうの カラオケ、まいばん にじかん… もう むりでした。', 'The boss’s karaoke, two hours every night… I couldn’t take any more.'),
+    k('とっくりさん、おいしかったです。あたまが いたいです。ごめんなさい！', 'Tokkuri-san was delicious. My head hurts. I’m sorry!'),
+  ],
+  solution: 'Nishimura said he was asleep in his room from 11 and never drinks, but the boss saw him singing red-faced at 11 and Kobayashi saw him holding Tokkuri-san at 11:30. The necktie is the one he ties round his head when drunk, and today he has a headache. The boss only wanted his sake back.',
+  shrug: k('すみません、ちょっと よっぱらって います。', "Sorry, I'm a little drunk."),
+};
+
+export const onsenCases: OnsenCase[] = [snowmanCase, puddingCase, duckCase, iceCreamCase, sakeCase];
