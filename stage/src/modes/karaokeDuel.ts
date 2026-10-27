@@ -1,6 +1,7 @@
 // Karaoke Duel on the TV: the song card, then each sing turn as a karaoke screen (count-in,
 // a ball bouncing over the lyrics mora by mora, the next line underneath), the duel board of
-// takes, the crowd vote and the result. The backing track comes from karaokeAudio.ts.
+// takes, the crowd vote and the result. The backing comes from karaokeAudio.ts: a continuous
+// song's instrumental plays straight through, from the song's first turn to its end.
 //
 // The stage redraws on every update, so the count-in, ball and fill are CSS animations with
 // delays computed from the server's clock: a redraw picks them up where they were.
@@ -9,7 +10,7 @@ import { h, ruby } from '../../../shared/src/dom.js';
 import type { KaraokeDuelView, LineView, TakeView } from '../../../shared/src/modes/karaokeDuel/karaokeDuel.js';
 import { hasKanji } from '../../../shared/src/japanese/kana.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
-import { audioReady, audioSupported, fanfare, isMuted, playTurn, setMuted, stopAll, unlockAudio } from './karaokeAudio.js';
+import { audioReady, audioSupported, fanfare, isMuted, playSong, playTurn, setMuted, songPlaying, stopAll, unlockAudio } from './karaokeAudio.js';
 import type { StageMode } from './types.js';
 
 // ---------- server clock ----------
@@ -89,7 +90,7 @@ function duelBoard(view: RoomView, game: KaraokeDuelView): HTMLElement | null {
   const total = (id: string) => game.takes.filter((t) => t.playerId === id).reduce((n, t) => n + t.points, 0);
   return h(
     'div',
-    { class: 'kd-board' },
+    { class: `kd-board${song.lines.length > 6 ? ' long' : ''}` },
     h('div', { class: 'kd-board-row head' }, h('span', {}, ''), ids.map((id) => h('span', { class: `kd-who seat-${seatOf(view, id)}` }, nameOf(view, id)))),
     song.lines.map((line, i) =>
       h(
@@ -98,7 +99,10 @@ function duelBoard(view: RoomView, game: KaraokeDuelView): HTMLElement | null {
         h('span', { class: 'kd-board-line', lang: 'ja' }, `${i + 1}. ${line.kana}`),
         ids.map((id) => {
           const now = current?.line === i && current.singerId === id;
-          return now ? h('span', { class: 'kd-chip live' }, '🎤') : chip(game.takes.find((t) => t.line === i && t.playerId === id));
+          if (now) return h('span', { class: 'kd-chip live' }, '🎤');
+          // A continuous song's verse lines are sung by one duelist only.
+          if (!game.order.some((t) => t.line === i && t.singerId === id)) return h('span', { class: 'kd-chip none' }, '');
+          return chip(game.takes.find((t) => t.line === i && t.playerId === id));
         }),
       ),
     ),
@@ -108,7 +112,18 @@ function duelBoard(view: RoomView, game: KaraokeDuelView): HTMLElement | null {
 
 function lastTakeToast(view: RoomView, game: KaraokeDuelView, local: number): HTMLElement | null {
   const t = game.takes.filter((x) => !x.missed).at(-1);
-  if (!t || !game.turn || t.turnNo !== game.turn.no - 1) return null;
+  if (!t || !game.turn) return null;
+  // A continuous song's takes land while the next line is sung: show the latest for that turn.
+  if (game.song?.continuous) {
+    if (t.turnNo < game.turn.no - 1) return null;
+    return h(
+      'div',
+      { class: 'kd-toast', 'data-key': `take-${t.turnNo}` },
+      h('strong', {}, `${nameOf(view, t.playerId)} ${t.quality}`),
+      h('span', {}, t.via === 'typed' ? ' typed (quiet mode)' : ` words ${pct(t.pron)} · ${t.pitchUsed ? `pitch ${pct(t.pitch)}` : 'pitch not measured'} · timing ${pct(t.timing)}`),
+    );
+  }
+  if (t.turnNo !== game.turn.no - 1) return null;
   // Shown for the first few seconds of the next turn (the count-in).
   const since = local - (game.turn.lineAt - game.turn.countInBeats * (game.song?.beatMs ?? 600));
   if (since > 3_500) return null;
@@ -188,6 +203,31 @@ function intro(): HTMLElement {
 
 function songCard(view: RoomView, game: KaraokeDuelView): HTMLElement {
   const song = game.song!;
+  if (song.continuous) {
+    // A whole song is too much to read in a few seconds: everyone learns the chorus, which comes twice.
+    return h(
+      'div',
+      { class: 'kd-stage' },
+      header(view, game),
+      h('p', { class: 'kd-title' }, 'Learn the chorus! 🎶'),
+      h(
+        'div',
+        { class: 'kd-sheet' },
+        song.chorus.map((i) => {
+          const line = song.lines[i]!;
+          return h(
+            'div',
+            { class: 'kd-sheet-line' },
+            h('span', { class: 'kd-sheet-jp', lang: 'ja' }, line.kana),
+            hasKanji(line.text) ? ruby(line, { class: 'kd-sheet-text' }) : null,
+            game.romaji ? h('span', { class: 'kd-sheet-ro' }, line.romaji) : null,
+            h('span', { class: 'kd-sheet-en' }, line.en),
+          );
+        }),
+      ),
+      h('p', { class: 'kd-say muted' }, 'The singers trade lines through the verses and the chorus. Everyone: sing the chorus with them!'),
+    );
+  }
   return h(
     'div',
     { class: 'kd-stage' },
@@ -220,17 +260,24 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
   // server time and the ball follows server time too.
   const elapsed = serverNow - turn.lineAt;
   const localLineAt = turn.lineAt - off;
-  playTurn({
-    key: `${view.phaseSeq}:${turn.no}`,
-    lineAt: localLineAt,
-    beatMs: song.beatMs,
-    countInBeats: turn.countInBeats,
-    notes: line.notes,
-    rests: line.words.flat().map((m) => m === 'っ' || m === 'ッ'),
-    style: song.style,
-    chords: line.chords,
-  });
-  const next = song.lines[turn.line + 1];
+  const songKey = `${game.round}:${game.songAt}`;
+  if (song.continuous && song.track && game.songAt) playSong({ key: songKey, trackId: song.track.id, start: song.track.start, segments: song.track.segments, barS: (4 * song.beatMs) / 1000, songAt: game.songAt - off });
+  playTurn(
+    {
+      key: `${view.phaseSeq}:${turn.no}`,
+      lineAt: localLineAt,
+      beatMs: song.beatMs,
+      countInBeats: turn.countInBeats,
+      notes: line.notes,
+      rests: line.words.flat().map((m) => m === 'っ' || m === 'ッ'),
+      style: song.style,
+      chords: line.chords,
+      continuous: song.continuous,
+    },
+    song.continuous && songPlaying(songKey),
+  );
+  const nextTurn = song.continuous ? game.order[turn.index + 1] : undefined;
+  const next = song.continuous ? (nextTurn ? song.lines[nextTurn.line] : undefined) : song.lines[turn.line + 1];
   const singer = turn.singerId;
   const took = game.takes.some((t) => t.turnNo === turn.no);
   const chorus = game.chorus.filter((c) => c.turnNo === turn.no && c.ok).length;
@@ -245,11 +292,16 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
         'div',
         // One element per turn: a new line starts its count-in and lyric timing afresh.
         { class: 'kd-screen', 'data-key': `turn-${turn.no}` },
-        h('p', { class: `kd-singer seat-${seatOf(view, singer)}` }, `🎤 ${nameOf(view, singer)}`, h('span', { class: 'kd-line-no' }, ` · line ${turn.line + 1} of ${song.lines.length}`)),
+        h(
+          'p',
+          { class: `kd-singer seat-${seatOf(view, singer)}` },
+          `🎤 ${nameOf(view, singer)}`,
+          h('span', { class: 'kd-line-no' }, song.continuous ? ` · line ${turn.index + 1} of ${game.order.length}${song.chorus.includes(turn.line) ? ' · chorus: everyone sing!' : ''}` : ` · line ${turn.line + 1} of ${song.lines.length}`),
+        ),
         countIn(song.beatMs, turn.countInBeats, elapsed),
         lyricLine(line, elapsed, game.romaji, 'now'),
         h('div', { class: 'kd-progress' }, h('span', { style: `--d:${Math.round(-elapsed)}ms;--len:${line.ms}ms` })),
-        next ? h('div', { class: 'kd-next' }, h('span', { class: 'kd-next-label' }, 'next'), h('span', { lang: 'ja' }, next.kana)) : null,
+        next ? h('div', { class: 'kd-next' }, h('span', { class: 'kd-next-label' }, nextTurn ? `next: ${nameOf(view, nextTurn.singerId)}` : 'next'), h('span', { lang: 'ja' }, next.kana)) : null,
         took ? h('p', { class: 'kd-in' }, '✓ Take in!') : null,
         chorus ? h('p', { class: 'kd-chorus' }, `🎶 Chorus: ${chorus} singing along`) : null,
         lastTakeToast(view, game, Date.now() + off),

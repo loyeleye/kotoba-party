@@ -6,7 +6,9 @@ import { apply, createGame, type GameAction, type GameContext, type GameState } 
 import {
   CHORUS_CAP,
   CHORUS_POINTS,
+  chorusLines,
   CROWD_BONUS,
+  LATE_MS,
   pickDuel,
   planTurns,
   type KaraokeDuelView,
@@ -29,7 +31,8 @@ import {
   type Take,
 } from '../shared/src/modes/karaokeDuel/scoring.js';
 import { parseChord } from '../stage/src/music/songs.js';
-import { lineMs, romajiMorae, SONGS, splitMorae, type SongLine } from '../shared/src/modes/karaokeDuel/songs.js';
+import { TRACKS, isTrack } from '../stage/src/music/tracks.js';
+import { beatMs, lineMs, romajiMorae, SONGS, splitMorae, trackBeats, type SongLine } from '../shared/src/modes/karaokeDuel/songs.js';
 import { EMPTY_CONTENT, type ModePlayer } from '../shared/src/modes/mode.js';
 import { isKana } from '../shared/src/japanese/kana.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -99,8 +102,10 @@ class Table {
   view(viewer: string | 'stage' = 'stage'): KaraokeDuelView {
     return viewFor(this.s, viewer === 'stage' ? { kind: 'stage' } : { kind: 'player', playerId: viewer }, EMPTY_CONTENT).game as KaraokeDuelView;
   }
-  start(rounds?: number) {
+  /** Starts a game; `songs` fixes the song order (by default the short sing-along songs). */
+  start(rounds?: number, songs: string[] = SONGS.filter((x) => !x.form).map((x) => x.id)) {
     expect(this.cmd('stage', { type: 'start', mode: 'karaoke-duel', rounds }).changed).toBe(true);
+    this.st.songOrder = songs;
     this.timeout(); // intro → song card
     expect(this.s.phase).toBe('prompt');
   }
@@ -112,6 +117,9 @@ class Table {
   sing(extra: Record<string, unknown> = {}) {
     const t = this.turn;
     return this.play(t.singer, { kind: 'sing', turn: t.no, ...perfect(t.src, t.bpm), ...extra });
+  }
+  turns() {
+    return this.st.turns;
   }
   score(id: string) {
     return this.s.players.find((p) => p.id === id)!.score;
@@ -128,7 +136,8 @@ describe('Karaoke Duel: songs', () => {
     expect(new Set(SONGS.map((s) => s.id)).size).toBe(SONGS.length);
     for (const song of SONGS) {
       expect(song.status).toBe('draft');
-      expect(song.lines.length).toBe(4);
+      // A sing-along is four lines; a continuous song two verses and a chorus of four.
+      expect(song.lines.length).toBe(song.form ? 12 : 4);
       for (const line of song.lines) {
         const morae = splitMorae(line.kana);
         expect(isKana(line.kana), line.kana).toBe(true);
@@ -148,9 +157,35 @@ describe('Karaoke Duel: songs', () => {
     }
   });
 
+  it('continuous songs fit their track: every line placed, in time, with room for each count-in', () => {
+    const continuous = SONGS.filter((x) => x.form);
+    expect(continuous.length).toBeGreaterThan(0);
+    for (const song of continuous) {
+      const form = song.form!;
+      expect(song.track && isTrack(song.track.id), song.id).toBe(true);
+      expect(song.track!.start).toBeGreaterThanOrEqual(0);
+      for (const [a, b] of song.track!.segments) expect(b).toBeGreaterThan(a);
+      // Every line is sung; the first has a bar of count-in after the track starts.
+      expect(new Set(form.map((p) => p.line))).toEqual(new Set(song.lines.map((_, i) => i)));
+      expect(form[0]!.beat).toBeGreaterThanOrEqual(4);
+      for (const [k, p] of form.entries()) {
+        const beats = song.lines[p.line]!.melody.reduce((n, [, b]) => n + b, 0);
+        // Each line ends before the next starts, and the last before the track ends.
+        const next = form[k + 1]?.beat ?? trackBeats(song.track!);
+        expect(p.beat + beats, `${song.id} line ${p.line}`).toBeLessThanOrEqual(next);
+        if (k > 0) expect(p.beat).toBeGreaterThan(form[k - 1]!.beat);
+      }
+      // The duelists trade lines, and each sings every chorus line once.
+      for (const line of chorusLines(song)) expect(form.filter((p) => p.line === line).map((p) => p.by).sort()).toEqual(['A', 'B']);
+      expect(chorusLines(song).length).toBeGreaterThan(0);
+      expect(TRACKS[song.track!.id as keyof typeof TRACKS].licence).toBeTruthy();
+    }
+  });
+
   it('plays every grown-up song before any children’s song', () => {
     const t = new Table(2);
-    t.start();
+    expect(t.cmd('stage', { type: 'start', mode: 'karaoke-duel' }).changed).toBe(true);
+    t.timeout();
     const grown = SONGS.filter((x) => !x.kids).map((x) => x.id);
     const order = t.st.songOrder;
     expect(order).toHaveLength(SONGS.length);
@@ -415,6 +450,48 @@ describe('Karaoke Duel: a game', () => {
     // The first singer's late take for the old turn doesn't count for the new one.
     expect(t.play(first.singer, { kind: 'sing', turn: first.no, ...perfect(first.src, first.bpm) }).error).toBe('wrong-phase');
     expect(t.sing().error).toBeUndefined();
+  });
+
+  it('a continuous song runs on its track: lines trade off on time, late takes count, misses are marked', () => {
+    const song = SONGS.find((x) => x.form)!;
+    const t = new Table(2);
+    t.start(1, [song.id]);
+    const card = t.view();
+    expect(card.song).toMatchObject({ id: song.id, continuous: true, track: { id: song.track!.id } });
+    expect(card.song!.lines).toHaveLength(12);
+    t.timeout(); // song card → the first line
+    const songAt = t.st.songAt;
+    expect(songAt).toBeGreaterThan(t.now);
+    const order = t.view().order!;
+    expect(order).toHaveLength(song.form!.length);
+    expect(order[1]!.at).toBe(songAt + Math.round(song.form![1]!.beat * beatMs(song.bpm)));
+    const no0 = t.view().turn!.no;
+    const [a, b] = [t.turns()[0]!.singerId, t.turns()[1]!.singerId];
+    expect(a).not.toBe(b);
+    // The next singer already sees their line, so they can get ready on the count-in.
+    expect(t.view(b).mine!.singTurn).toMatchObject({ no: no0 + 1, index: 1 });
+    // A's perfect take doesn't end the line early: the track keeps time.
+    t.now = t.view().order![0]!.at! + 4_000;
+    expect(t.play(a, { kind: 'sing', turn: no0, ...perfect(song.lines[song.form![0]!.line]!, song.bpm) }).error).toBeUndefined();
+    expect(t.st.turnIdx).toBe(0);
+    // B may not sing two lines ahead.
+    expect(t.play(b, { kind: 'sing', turn: no0 + 3, ...perfect(song.lines[song.form![3]!.line]!, song.bpm) }).error).toBe('wrong-phase');
+    t.timeout(); // B's line
+    expect(t.st.turnIdx).toBe(1);
+    t.timeout(); // A's next line, with B's take still to come
+    // B's take for line 1 lands late (the recogniser was slow): it still counts.
+    t.now = t.view().order![1]!.at! + 6_000;
+    expect(t.play(b, { kind: 'sing', turn: no0 + 1, ...perfect(song.lines[song.form![1]!.line]!, song.bpm) }).error).toBeUndefined();
+    expect(t.st.takes.find((x) => x.turnNo === no0 + 1)).toMatchObject({ playerId: b, missed: false });
+    // Too late is refused.
+    t.now = t.view().order![2]!.at! + 20_000;
+    expect(t.play(a, { kind: 'sing', turn: no0 + 2, ...perfect(song.lines[song.form![2]!.line]!, song.bpm) }).error).toBe('wrong-phase');
+    for (let i = 0; i < 40 && t.s.phase === 'answer'; i++) t.timeout();
+    expect(t.s.phase).toBe('score');
+    // Every turn has a take: two sung, the rest missed.
+    expect(t.st.takes).toHaveLength(song.form!.length);
+    expect(t.st.takes.filter((x) => !x.missed)).toHaveLength(2);
+    expect(t.view().result?.sung).toEqual({ [a]: 200, [b]: 200 });
   });
 
   it('a duelist who drops is skipped', () => {

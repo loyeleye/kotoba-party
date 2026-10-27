@@ -66,10 +66,12 @@ export function karaokeDuelPolicy(opts: KaraokeBotOptions = {}): ModePolicy {
       const out: { key: string; move: unknown; delayMs?: number }[] = [];
 
       if (view.phase === 'answer' && game.turn && game.song) {
-        const turn = game.turn;
+        const st = mine.singTurn;
+        // The line this bot sings (in a continuous song possibly the next one), else the one being sung.
+        const turn = st ? { no: st.no, line: st.line } : game.turn;
         const line = game.song.lines[turn.line]!;
         const morae = line.words.flat();
-        if (mine.canSing) {
+        if (st) {
           if (flag(opts.quiet, me)) {
             out.push({ key: `sing-${turn.no}`, move: { kind: 'sing', turn: turn.no, utterance: { via: 'typed', text: line.kana } }, delayMs: delay('typed') });
           } else {

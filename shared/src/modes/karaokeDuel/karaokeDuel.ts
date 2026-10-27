@@ -6,8 +6,11 @@
 //
 // Phases, per round (one song, one duel):
 //   prompt  the song card: title, lyrics and English, who is duelling
-//   answer  one sing turn: count-in, then one singer sings one line (both duelists sing every
-//           line, taking turns to go first)
+//   answer  one sing turn: one singer sings one line. In a sing-along song each turn has its own
+//           count-in and both duelists sing every line, taking turns to go first. In a continuous
+//           song the track plays straight through and each turn is one line of it: the duelists
+//           trade lines, a take may land after its turn has ended, and the next singer's count-in
+//           runs at the end of the turn before.
 //   reveal  the crowd vote (skipped when nobody is watching: a 2-player game)
 //   score   the duel's result
 // then finale after the last round.
@@ -33,8 +36,12 @@ export const CHORUS_POINTS = 10;
 export const CHORUS_CAP = 40;
 /** Crowd favourite bonus (split on a tie). */
 export const CROWD_BONUS = 60;
-/** Lines sung per song (all v1 songs have 4). */
+/** Lines sung per sing-along song (they have 4). */
 export const MAX_LINES = 4;
+/** Continuous songs: a take may arrive this long after its line ends (the recogniser is slow). */
+export const LATE_MS = 10_000;
+/** Continuous songs: after the last line, time for the last take before the song ends. */
+export const SONG_TAIL_MS = 5_000;
 
 export const DURATIONS = {
   intro: 12_000,
@@ -96,13 +103,17 @@ export interface KaraokeState {
   songOrder: string[];
   songId: string | null;
   duel: { a: string; b: string } | null;
-  /** The sing turns of this round, in order. */
-  turns: { line: number; singerId: string }[];
+  /** The sing turns of this round, in order (`beat`: where the line starts in a continuous song). */
+  turns: { line: number; singerId: string; beat?: number }[];
   turnIdx: number;
   /** Counts every sing turn of the game; moves name it so a late take can't land in the next turn. */
   turnNo: number;
   /** Server time the current line's first beat falls on. */
   lineAt: number;
+  /** Continuous songs: server time of the song's beat 0 (0 until it starts). */
+  songAt: number;
+  /** Continuous songs: the turn number of the song's first turn (turn k is firstTurnNo + k). */
+  firstTurnNo: number;
   takes: TakeRecord[];
   chorus: ChorusRecord[];
   votes: Record<string, string>;
@@ -145,6 +156,12 @@ export interface SongView {
   beatMs: number;
   style: SongStyle;
   lines: LineView[];
+  /** The whole song plays as one track and the duelists trade lines. */
+  continuous: boolean;
+  /** The produced instrumental: its id in the stage's tracks, its bar 0 in the file, and the stretches played. */
+  track: { id: string; start: number; segments: [number, number][] } | null;
+  /** The chorus lines (shown on the song card for everyone to learn). */
+  chorus: number[];
 }
 
 export interface TakeView {
@@ -170,8 +187,10 @@ export interface KaraokeDuelView {
   doubled: boolean;
   song: SongView | null;
   duel: { a: string; b: string } | null;
-  /** The round's sing turns, in order. */
-  order: { line: number; singerId: string }[];
+  /** The round's sing turns, in order (`at`: server time the line starts, continuous songs). */
+  order: { line: number; singerId: string; at: number | null }[];
+  /** Continuous songs: server time of beat 0 of the track (0 before it starts). */
+  songAt: number;
   turn: {
     no: number;
     index: number;
@@ -194,6 +213,11 @@ export interface KaraokeDuelView {
     level: Level;
     isMyTurn: boolean;
     canSing: boolean;
+    /**
+     * The turn my phone should be ready to sing: the current one if it's mine, else (continuous
+     * songs) the next one if it's mine, so the hold can start on its count-in. Null once sent.
+     */
+    singTurn: { no: number; index: number; line: number; lineAt: number } | null;
     canChorus: boolean;
     canVote: boolean;
     voted: string | null;
@@ -210,6 +234,12 @@ export interface KaraokeDuelView {
 const songOf = (s: KaraokeState): Song | undefined => SONGS.find((x) => x.id === s.songId);
 const isDuelist = (s: KaraokeState, id: string) => !!s.duel && (s.duel.a === id || s.duel.b === id);
 const currentTurn = (s: KaraokeState) => (s.turnIdx >= 0 ? s.turns[s.turnIdx] : undefined);
+export const isContinuous = (song: Song | undefined): boolean => !!song?.form;
+const barMs = (song: Song) => COUNT_IN_BEATS * beatMs(song.bpm);
+/** Continuous songs: the server time turn k's line starts. */
+const turnAt = (s: KaraokeState, song: Song, k: number) => s.songAt + Math.round((s.turns[k]?.beat ?? 0) * beatMs(song.bpm));
+/** The turn number of turn index k this round. */
+const turnNoOf = (s: KaraokeState, song: Song | undefined, k: number) => (isContinuous(song) ? s.firstTurnNo + k : s.turnNo);
 const isLastRound = (s: KaraokeState) => s.round === s.totalRounds;
 
 function tallyFor(s: KaraokeState, id: string): Tally {
@@ -245,6 +275,18 @@ export function pickDuel(players: readonly ModePlayer[], duelCount: Record<strin
   // Seat order decides who goes first on line 1, so it doesn't depend on the shuffle.
   if (a.seat > b.seat) [a, b] = [b, a];
   return { a: a.id, b: b.id };
+}
+
+/** The lines sung more than once in a continuous song: its chorus. */
+export function chorusLines(song: Song): number[] {
+  const count = new Map<number, number>();
+  for (const p of song.form ?? []) count.set(p.line, (count.get(p.line) ?? 0) + 1);
+  return [...count].filter(([, n]) => n > 1).map(([line]) => line);
+}
+
+/** A continuous song's turns: its placements, with A and B as the duel's first and second seat. */
+export function planForm(duel: { a: string; b: string }, song: Song): { line: number; singerId: string; beat: number }[] {
+  return (song.form ?? []).map((p) => ({ line: p.line, singerId: p.by === 'A' ? duel.a : duel.b, beat: p.beat }));
 }
 
 /** Both duelists sing every line; who goes first alternates by line (A B, B A, A B …). */
@@ -293,6 +335,19 @@ function phraseFor(s: KaraokeState, ctx: ModeContext, playerId: string, line: nu
   ctx.phrase(playerId, { itemId: `karaoke.${song.id}.${line}`, text: l.text, kana: l.kana, en: l.en, outcome });
 }
 
+/** Every turn of a continuous song that has no take by the song's end counts as missed. */
+function markMissing(s: KaraokeState, ctx: ModeContext): void {
+  const song = songOf(s);
+  if (!isContinuous(song) || s.turnIdx < 0) return;
+  s.turns.forEach((turn, k) => {
+    const turnNo = turnNoOf(s, song, k);
+    if (k > s.turnIdx || s.takes.some((t) => t.turnNo === turnNo)) return;
+    s.takes.push({ turnNo, line: turn.line, playerId: turn.singerId, via: null, heard: '', score: { quality: 0, pron: 0, pitch: null, timing: null, similarity: 0, pitchUsed: false }, points: 0, missed: true });
+    if (ctx.player(turn.singerId)) phraseFor(s, ctx, turn.singerId, turn.line, 'seen');
+  });
+  s.at = ctx.now;
+}
+
 function settleRound(s: KaraokeState, ctx: ModeContext): void {
   const duel = s.duel;
   if (!duel) return;
@@ -300,7 +355,8 @@ function settleRound(s: KaraokeState, ctx: ModeContext): void {
   const sung: Record<string, number> = { [duel.a]: 0, [duel.b]: 0 };
   const linesWon: Record<string, number> = { [duel.a]: 0, [duel.b]: 0 };
   for (const t of s.takes) sung[t.playerId] = (sung[t.playerId] ?? 0) + t.points;
-  const lines = new Set(s.takes.map((t) => t.line));
+  // Lines both duelists sing (in a continuous song only the chorus lines).
+  const lines = new Set(s.turns.map((t) => t.line).filter((line) => s.turns.some((t) => t.line === line && t.singerId === duel.a) && s.turns.some((t) => t.line === line && t.singerId === duel.b)));
   for (const line of lines) {
     const qa = s.takes.find((t) => t.line === line && t.playerId === duel.a)?.score.quality ?? 0;
     const qb = s.takes.find((t) => t.line === line && t.playerId === duel.b)?.score.quality ?? 0;
@@ -359,6 +415,8 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       turnIdx: -1,
       turnNo: 0,
       lineAt: 0,
+      songAt: 0,
+      firstTurnNo: 0,
       takes: [],
       chorus: [],
       votes: {},
@@ -403,8 +461,9 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
         s.votes = {};
         s.result = null;
         s.turnIdx = -1;
+        s.songAt = 0;
         const song = songOf(s);
-        s.turns = s.duel && song ? planTurns(s.duel, Math.min(MAX_LINES, song.lines.length)) : [];
+        s.turns = s.duel && song ? (isContinuous(song) ? planForm(s.duel, song) : planTurns(s.duel, Math.min(MAX_LINES, song.lines.length))) : [];
         if (s.duel) {
           for (const id of [s.duel.a, s.duel.b]) {
             s.duelCount[id] = (s.duelCount[id] ?? 0) + 1;
@@ -421,13 +480,22 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
         s.turnIdx += 1;
         s.turnNo += 1;
         const song = songOf(s);
-        s.lineAt = ctx.now + PRE_ROLL_MS + (song ? Math.round(COUNT_IN_BEATS * beatMs(song.bpm)) : 0);
+        if (song && isContinuous(song)) {
+          // The track starts with the first turn and runs on: every line's time comes from it.
+          if (s.turnIdx === 0) {
+            s.songAt = ctx.now + PRE_ROLL_MS;
+            s.firstTurnNo = s.turnNo;
+          }
+          s.lineAt = turnAt(s, song, s.turnIdx);
+        } else s.lineAt = ctx.now + PRE_ROLL_MS + (song ? Math.round(COUNT_IN_BEATS * beatMs(song.bpm)) : 0);
         break;
       }
       case 'reveal':
+        markMissing(s, ctx);
         ctx.cue({ host: 'chochin', event: 'encore_cheer' });
         break;
       case 'score':
+        markMissing(s, ctx);
         settleRound(s, ctx);
         break;
       case 'finale':
@@ -439,6 +507,11 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
 
   leave(s, phase, ctx) {
     if (phase !== 'answer') return;
+    if (isContinuous(songOf(s))) {
+      // Takes may still land for the line just sung; misses are counted when the song ends.
+      if (s.turnIdx === s.turns.length - 1) markMissing(s, ctx);
+      return;
+    }
     const turn = currentTurn(s);
     if (!turn || s.takes.some((t) => t.turnNo === s.turnNo)) return;
     s.takes.push({
@@ -466,7 +539,12 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       }
       case 'answer': {
         const turn = currentTurn(s);
-        return song && turn ? turnMs(song, turn.line) : 5_000;
+        if (!song || !turn) return 5_000;
+        if (!isContinuous(song)) return turnMs(song, turn.line);
+        // Up to the next singer's count-in (one bar before their line), or the song's end.
+        const k = s.turnIdx;
+        const end = k + 1 < s.turns.length ? turnAt(s, song, k + 1) - barMs(song) : turnAt(s, song, k) + lineMs(song.lines[turn.line]!, song.bpm) + SONG_TAIL_MS;
+        return Math.max(300, end - ctx.now);
       }
       case 'reveal':
         return DURATIONS.vote;
@@ -487,6 +565,11 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       case 'answer': {
         const turn = currentTurn(s);
         if (!turn) return true;
+        if (isContinuous(songOf(s))) {
+          // The track runs on whatever happens; only the last line can end the song early.
+          if (s.turnIdx < s.turns.length - 1) return false;
+          return s.turns.every((_, k) => s.takes.some((t) => t.turnNo === s.firstTurnNo + k));
+        }
         if (s.takes.some((t) => t.turnNo === s.turnNo)) return true;
         const singer = ctx.player(turn.singerId);
         return (!singer || !singer.connected) && anyoneHere;
@@ -509,23 +592,34 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     if (raw.kind === 'sing' || raw.kind === 'chorus') {
       if (phase !== 'answer') return moveError('wrong-phase');
       if (typeof raw.turn !== 'number' || !Number.isInteger(raw.turn)) return moveError('bad-move');
-      // A take from an earlier turn arriving late: a harmless race with the clock.
-      if (raw.turn !== s.turnNo) return moveError('wrong-phase');
-      const turn = currentTurn(s);
       const song = songOf(s);
-      if (!turn || !song) return moveError('wrong-phase');
+      if (!song) return moveError('wrong-phase');
+      let k = s.turnIdx;
+      if (isContinuous(song)) {
+        // The track doesn't wait: a take can be sung on the next turn's count-in, which starts at
+        // the end of this turn, and can land after its turn has ended (the recogniser is slow).
+        k = raw.turn - s.firstTurnNo;
+        const lineEnd = k >= 0 && k < s.turns.length ? turnAt(s, song, k) + lineMs(song.lines[s.turns[k]!.line]!, song.bpm) : 0;
+        if (k < 0 || k >= s.turns.length || k > s.turnIdx + (raw.kind === 'sing' ? 1 : 0) || ctx.now > lineEnd + LATE_MS) return moveError('wrong-phase');
+      } else if (raw.turn !== s.turnNo) {
+        // A take from an earlier turn arriving late: a harmless race with the clock.
+        return moveError('wrong-phase');
+      }
+      const turn = s.turns[k];
+      if (!turn) return moveError('wrong-phase');
+      const turnNo = turnNoOf(s, song, k);
       const line = song.lines[turn.line]!;
 
       if (raw.kind === 'chorus') {
         if (isDuelist(s, playerId)) return moveError('not-eligible');
-        if (s.chorus.some((c) => c.turnNo === s.turnNo && c.playerId === playerId)) return moveError('already-answered');
+        if (s.chorus.some((c) => c.turnNo === turnNo && c.playerId === playerId)) return moveError('already-answered');
         const u = raw.utterance;
         if (!isUtterance(u) || u.via !== 'speech') return moveError('bad-utterance');
         const { score } = pronScore(line, u, me.level);
         const ok = score >= CHORUS_PASS;
         const used = s.chorus.filter((c) => c.playerId === playerId).reduce((n, c) => n + c.points, 0);
         const points = ok ? Math.max(0, Math.min(CHORUS_POINTS, CHORUS_CAP - used)) : 0;
-        s.chorus.push({ turnNo: s.turnNo, playerId, ok, points });
+        s.chorus.push({ turnNo, playerId, ok, points });
         give(s, ctx, playerId, points);
         if (ok) {
           tallyFor(s, playerId).chorus += points;
@@ -536,12 +630,12 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       }
 
       if (turn.singerId !== playerId) return moveError('not-your-turn');
-      if (s.takes.some((t) => t.turnNo === s.turnNo)) return moveError('already-answered');
+      if (s.takes.some((t) => t.turnNo === turnNo)) return moveError('already-answered');
       const take = parseTake(raw);
       if ('error' in take) return moveError(take.error);
       const score = scoreTake(line, song.bpm, lineMs(line, song.bpm), take, me.level);
       const points = score.quality * (isLastRound(s) ? 2 : 1);
-      s.takes.push({ turnNo: s.turnNo, line: turn.line, playerId, via: take.utterance.via, heard: take.utterance.text, score, points, missed: false });
+      s.takes.push({ turnNo, line: turn.line, playerId, via: take.utterance.via, heard: take.utterance.text, score, points, missed: false });
       give(s, ctx, playerId, points);
       const t = tallyFor(s, playerId);
       t.takes += 1;
@@ -583,13 +677,24 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       const me = ctx.player(id);
       const duelist = isDuelist(s, id);
       const myTurn = !!turn && turn.singerId === id;
-      const took = s.takes.some((t) => t.turnNo === s.turnNo);
       const myChorus = s.chorus.find((c) => c.turnNo === s.turnNo && c.playerId === id);
+      // The current turn if it's mine, or in a continuous song the next one, while it has no take.
+      let singTurn: NonNullable<KaraokeDuelView['mine']>['singTurn'] = null;
+      if (turn && song && !s.finished) {
+        for (const k of isContinuous(song) ? [s.turnIdx, s.turnIdx + 1] : [s.turnIdx]) {
+          const t = s.turns[k];
+          const no = turnNoOf(s, song, k);
+          if (t?.singerId !== id || s.takes.some((x) => x.turnNo === no)) continue;
+          singTurn = { no, index: k, line: t.line, lineAt: isContinuous(song) ? turnAt(s, song, k) : s.lineAt };
+          break;
+        }
+      }
       mine = {
         role: duelist ? 'duelist' : 'audience',
         level: me?.level ?? 'n5',
         isMyTurn: myTurn,
-        canSing: myTurn && !took && !s.finished,
+        canSing: !!singTurn,
+        singTurn,
         canChorus: !!turn && !duelist && !myChorus && !s.finished,
         canVote: phase === 'reveal' && !duelist && s.votes[id] === undefined,
         voted: s.votes[id] ?? null,
@@ -605,10 +710,21 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       totalRounds: s.totalRounds,
       doubled: isLastRound(s),
       song: song
-        ? { id: song.id, title: song.title, bpm: song.bpm, beatMs: beatMs(song.bpm), style: song.style, lines: song.lines.slice(0, MAX_LINES).map((_, i) => lineView(song, i)) }
+        ? {
+            id: song.id,
+            title: song.title,
+            bpm: song.bpm,
+            beatMs: beatMs(song.bpm),
+            style: song.style,
+            lines: song.lines.slice(0, isContinuous(song) ? song.lines.length : MAX_LINES).map((_, i) => lineView(song, i)),
+            continuous: isContinuous(song),
+            track: song.track ? { id: song.track.id, start: song.track.start, segments: song.track.segments.map(([x, y]) => [x, y]) } : null,
+            chorus: chorusLines(song),
+          }
         : null,
       duel: s.duel,
-      order: s.turns,
+      order: s.turns.map((t, k) => ({ line: t.line, singerId: t.singerId, at: song && isContinuous(song) && s.songAt ? turnAt(s, song, k) : null })),
+      songAt: s.songAt,
       turn: turn ? { no: s.turnNo, index: s.turnIdx, line: turn.line, singerId: turn.singerId, lineAt: s.lineAt, countInBeats: COUNT_IN_BEATS } : null,
       takes: s.takes.map(takeView),
       chorus: s.chorus.map((c) => ({ turnNo: c.turnNo, playerId: c.playerId, ok: c.ok })),

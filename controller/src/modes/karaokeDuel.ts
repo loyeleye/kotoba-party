@@ -32,6 +32,12 @@ function offset(game: KaraokeDuelView): number {
 const nameOf = (view: RoomView, id: string | null | undefined): string => view.players.find((p) => p.id === id)?.name ?? '…';
 const pct = (x: number | null) => (x === null ? '–' : `${Math.round(x * 100)}`);
 
+// ---------- a hold in progress ----------
+// While a hold is recording or its take is being sent, the screen must not be redrawn (in a
+// continuous song the next turn starts while the last notes are still being sung). The phone key
+// pins to this turn until the take is sent.
+let busyTurn: number | null = null;
+
 // ---------- pitch setting (per device) ----------
 const PITCH_KEY = 'kotoba:karaoke-pitch';
 function pitchWanted(): boolean {
@@ -124,6 +130,8 @@ function countIn(beatMs: number, beats: number, elapsed: number): HTMLElement {
 // ---------- hold to sing ----------
 
 interface SingOptions {
+  /** The turn this box sings (pins the screen while a hold is in progress). */
+  turnNo: number;
   line: LineView;
   beatMs: number;
   countInBeats: number;
@@ -154,6 +162,7 @@ function singBox(opts: SingOptions): HTMLElement {
     sent = true;
     status.textContent = 'Sending…';
     const ok = await opts.onSend(take);
+    busyTurn = null;
     if (!ok) {
       sent = false;
       status.textContent = 'That didn’t go through. Hold and sing again.';
@@ -180,7 +189,10 @@ function singBox(opts: SingOptions): HTMLElement {
       const c = clip!;
       clip = null;
       const wav = c.stop();
-      if (c.blocked) return void (status.textContent = 'Microphone blocked: type the line below instead.');
+      if (c.blocked) {
+        busyTurn = null;
+        return void (status.textContent = 'Microphone blocked: type the line below instead.');
+      }
 
       const lineStart = lineAtLocal;
       let timing: 'mic' | 'button' = 'button';
@@ -202,7 +214,10 @@ function singBox(opts: SingOptions): HTMLElement {
       status.textContent = 'Listening back…';
       const heard = await hear(wav);
       // Nothing heard still counts (no words points); a server hiccup lets them sing it again.
-      if (!heard.ok && heard.why !== 'quiet') return void (status.textContent = `${missed(heard.why)} Hold and sing again.`);
+      if (!heard.ok && heard.why !== 'quiet') {
+        busyTurn = null;
+        return void (status.textContent = `${missed(heard.why)} Hold and sing again.`);
+      }
       void finish({ utterance: { via: 'speech', text: heard.ok ? heard.text.slice(0, 120) : '' }, pitch, onsetMs, durMs, timing });
     };
 
@@ -210,6 +225,7 @@ function singBox(opts: SingOptions): HTMLElement {
       e.preventDefault();
       if (sent || holding || clip) return;
       holding = true;
+      busyTurn = opts.turnNo;
       pressAt = Date.now();
       button.classList.add('live');
       status.textContent = '🎤 Singing…';
@@ -324,23 +340,27 @@ function singScreen(ctx: Ctx): HTMLElement {
   const line = song.lines[turn.line]!;
   const kana = mine.level === 'kana';
   const off = offset(game);
-  if (mine.canSing) {
+  const st = mine.singTurn;
+  if (st) {
+    // In a continuous song this shows from the turn before, so the hold can start on the count-in.
     return h(
       'div',
       { class: 'screen' },
-      h('p', { class: 'big' }, `Your turn! Line ${turn.line + 1}`),
+      h('p', { class: 'big' }, song.continuous ? `🎤 Your line! (${st.index + 1} of ${game.order.length})` : `Your turn! Line ${st.line + 1}`),
+      song.continuous && song.chorus.includes(st.line) ? h('p', { class: 'hint' }, 'Chorus: the room sings it with you.') : null,
       singBox({
-        line,
+        turnNo: st.no,
+        line: song.lines[st.line]!,
         beatMs: song.beatMs,
         countInBeats: turn.countInBeats,
-        lineAt: turn.lineAt,
+        lineAt: st.lineAt,
         offset: off,
         romaji: kana,
         pitch: true,
         label: 'Hold and sing 🎤',
         typed: true,
         kanaPadOpen: kana,
-        onSend: (take) => send({ kind: 'sing', turn: turn.no, ...take }),
+        onSend: (take) => send({ kind: 'sing', turn: st.no, ...take }),
       }),
       h('p', { class: 'hint' }, 'Press when the count-in ends and hold until the line is done.'),
     );
@@ -350,7 +370,7 @@ function singScreen(ctx: Ctx): HTMLElement {
     return h('div', { class: 'screen' }, h('p', { class: 'big' }, 'Nice!'), t ? takeLine(t) : null);
   }
   if (mine.role === 'duelist') {
-    const nextMine = game.order[turn.index + 1]?.singerId === me.id;
+    const nextMine = !song.continuous && game.order[turn.index + 1]?.singerId === me.id;
     const last = mine.takes.at(-1);
     return h(
       'div',
@@ -368,6 +388,7 @@ function singScreen(ctx: Ctx): HTMLElement {
       { class: 'screen' },
       h('p', { class: 'big' }, `Sing along with ${nameOf(view, turn.singerId)}!`),
       singBox({
+        turnNo: turn.no,
         line,
         beatMs: song.beatMs,
         countInBeats: turn.countInBeats,
@@ -435,8 +456,13 @@ function resultScreen(ctx: Ctx): HTMLElement {
 }
 
 export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
-  key: (view, game) =>
-    [
+  key: (view, game) => {
+    // Never redraw under a hold that is recording or sending.
+    if (view.phase === 'answer' && busyTurn !== null) return `busy:${busyTurn}`;
+    // A continuous song's singer keeps one screen from their count-in to the take being sent.
+    const st = game.mine?.singTurn;
+    if (view.phase === 'answer' && st && game.song?.continuous) return `sing:${st.no}`;
+    return [
       view.phaseSeq,
       game.turn?.no ?? '',
       game.mine?.role,
@@ -448,7 +474,8 @@ export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
       game.mine?.chorus?.points ?? '',
       game.result ? 'r' : '',
       game.mine?.isMyTurn ? '' : game.takes.length,
-    ].join('|'),
+    ].join('|');
+  },
 
   render(ctx) {
     const { view, game, me } = ctx;

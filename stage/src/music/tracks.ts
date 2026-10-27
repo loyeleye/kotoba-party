@@ -27,13 +27,15 @@ export const TRACK_IDS = [
   'ouroboros',
   // Shodō Taikai's gallery round (Ladi's pick).
   'japanese-lofi',
+  // Karaoke Duel's grown-up songs: one instrumental each, sung over whole (songs.ts `track`).
+  'nights-in-june',
 ] as const;
 export type TrackId = (typeof TRACK_IDS)[number];
 
 export interface Track {
   title: string;
   author: string;
-  licence: 'CC0' | 'CC BY 4.0';
+  licence: 'CC0' | 'CC BY 4.0' | 'CC BY 3.0';
   /** The track's own page, for the credits. */
   source: string;
   url: string;
@@ -99,9 +101,15 @@ export const TRACKS: Record<TrackId, Track> = {
   // Shodō Taikai's gallery: koto over a lo-fi hip-hop beat. 28 bars at about 75 bpm; the loop skips the
   // intro and the fade (picked by spectral match). CC0 as uploaded; commissioned on Fiverr (row 22, ❓).
   'japanese-lofi': { title: 'Japanese Lofi HipHop', author: 'pickentcode', licence: 'CC0', source: `${OGA}japanese-lofi-hiphop-track`, url: file('japanese-lofi-hiphop'), loop: [10.75, 100.35], gainDb: -6.2, fallback: 'gentle' },
+  // Karaoke Duel. Each file is cut to the bars the song uses (re-encoded at 128 kbps), so `start` is
+  // its first downbeat and the song's `segments` count bars from there. No loop: the duel plays
+  // stretches of it back to back (karaokeAudio.ts playSong).
+  // Night Drive: city-pop groove, 120 bpm, B minor. Cut from 8.0 s (orig. bar 4) to 65.0 s.
+  'nights-in-june': { title: 'Nights In June', author: 'KLY', licence: 'CC BY 3.0', source: `${OGA}nights-in-june`, url: file('nights-in-june'), gainDb: -3.5, fallback: 'gentle' },
 };
 
 const CC_BY = 'https://creativecommons.org/licenses/by/4.0/';
+const ccBy = (t: Track) => (t.licence === 'CC BY 3.0' ? { name: '3.0', url: 'https://creativecommons.org/licenses/by/3.0/' } : { name: '4.0', url: CC_BY });
 
 /**
  * The credit line for a track, in the form CC BY 4.0 and incompetech ask for: title, author, source,
@@ -111,7 +119,8 @@ export function creditFor(id: TrackId): string {
   const t = TRACKS[id];
   const who = t.author === 'Kevin MacLeod' ? 'Kevin MacLeod (incompetech.com)' : t.author;
   if (t.licence === 'CC0') return `"${t.title}" by ${who} (CC0) · ${t.source}`;
-  return `"${t.title}" by ${who} · ${t.source} · Licensed under Creative Commons: By Attribution 4.0 · ${CC_BY} · Looped and filtered for the game`;
+  const v = ccBy(t);
+  return `"${t.title}" by ${who} · ${t.source} · Licensed under Creative Commons: By Attribution ${v.name} · ${v.url} · ${t.loop ? 'Looped and filtered' : 'Cut and filtered'} for the game`;
 }
 
 /** Every track's full credit line, for docs/music.md and the tests. */
@@ -130,8 +139,10 @@ export function creditSummary(perLine = 3): string[] {
   return groups.map(([author, ids]) => {
     const titles = ids.map((id) => `"${TRACKS[id].title}"`).join(', ');
     const where = author === 'Kevin MacLeod' ? 'incompetech.com' : 'OpenGameArt.org';
-    if (TRACKS[ids[0]!].licence === 'CC0') return `${titles} by ${author} (${where}, CC0)`;
-    return `${titles} by ${author} (${where}), licensed under Creative Commons: By Attribution 4.0 (${CC_BY.replace('https://', '')}), looped and filtered for the game`;
+    const t = TRACKS[ids[0]!];
+    if (t.licence === 'CC0') return `${titles} by ${author} (${where}, CC0)`;
+    const v = ccBy(t);
+    return `${titles} by ${author} (${where}), licensed under Creative Commons: By Attribution ${v.name} (${v.url.replace('https://', '')}), ${t.loop ? 'looped' : 'cut'} and filtered for the game`;
   });
 }
 

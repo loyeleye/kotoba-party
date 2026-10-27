@@ -37,12 +37,65 @@ export interface SongLine {
 /** How the stage's backing track sounds (karaokeAudio.ts). */
 export type SongStyle = 'nursery' | 'citypop' | 'enka' | 'rock' | 'izakaya' | 'blues' | 'kayou' | 'hiphop' | 'idol' | 'rnb';
 
+/**
+ * A produced instrumental the song is sung over. The file and its credit live with the stage's
+ * recorded tracks (stage/src/music/tracks.ts, under this id); the licence is in
+ * docs/commercial-blockers.md.
+ */
+export interface SongTrack {
+  id: string;
+  /** Seconds into the file where its bar 0 starts (the downbeat its bar grid counts from). */
+  start: number;
+  /**
+   * The song as stretches of the file, in its bars ([from, to), 4 beats a bar at the song's tempo),
+   * played back to back: e.g. the intro, then the main groove looped to the song's length. Beat 0 of
+   * the song is the start of the first stretch. Cuts fall on the start of the file's chord loop, so
+   * they are seamless.
+   */
+  segments: readonly (readonly [from: number, to: number])[];
+}
+
+/** A song's length in beats when it plays a track (the sum of its stretches). */
+export const trackBeats = (track: SongTrack): number => track.segments.reduce((n, [a, b]) => n + 4 * (b - a), 0);
+
+/** Where a line is sung in a continuous song: its first beat (from beat 0) and who sings it. */
+export interface Placement {
+  line: number;
+  beat: number;
+  /** The duelist who opens the song (A) or the other one (B). */
+  by: 'A' | 'B';
+}
+
+/**
+ * The usual shape of a continuous song: an intro, verse 1 (lines 0–3), the chorus (4–7), verse 2
+ * (8–11) and the chorus again, one line every `every` beats, with `breakBeats` of instrumental
+ * between the first chorus and verse 2. The duelists trade lines (A B A B), and swap for the second
+ * half so that each sings every chorus line once.
+ */
+export function standardForm(introBeats: number, every = 8, breakBeats = 0): Placement[] {
+  const out: Placement[] = [];
+  const order = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 4, 5, 6, 7];
+  order.forEach((line, k) => {
+    const beat = introBeats + k * every + (k >= 8 ? breakBeats : 0);
+    out.push({ line, beat, by: (k + Math.floor(k / 8)) % 2 === 0 ? 'A' : 'B' });
+  });
+  return out;
+}
+
 export interface Song {
   id: string;
   title: JpText;
-  /** Beats per minute. */
+  /** Beats per minute (the track's own tempo, when it has one). */
   bpm: number;
   style: SongStyle;
+  /**
+   * A continuous song: the whole song plays as one track and the duelists trade lines as placed
+   * here. Without it the song is a short sing-along: every line sung by both duelists in turn,
+   * each turn with its own count-in.
+   */
+  form?: readonly Placement[];
+  /** The produced instrumental (continuous songs). Without one the synth plays the backing. */
+  track?: SongTrack;
   /** A children's-style sing-along: played only after the grown-up songs have all come up. */
   kids?: boolean;
   /** The lowest level the song suits. Every song so far is Kana-level friendly (romaji guide). */
@@ -128,17 +181,30 @@ export const SONGS: readonly Song[] = [
     ],
   },
   {
+    // Over "Nights In June" (KLY, CC BY 3.0): a four-bar intro, then the groove. Lines start on its
+    // Gmaj7 bar, two bars each, so even lines sit on Gmaj7 Dmaj7 | Em7 F#7 and odd ones on
+    // Em7 F#7 | Bm7 A7. The joke waits for the last verse line, just before the final chorus.
     id: 'yoru-no-drive',
     title: { text: '夜の ドライブ', kana: 'よるの ドライブ', en: 'Night Drive' },
-    bpm: 104,
+    bpm: 120,
     style: 'citypop',
     level: 'kana',
     status: 'draft',
+    form: standardForm(20, 8),
+    track: { id: 'nights-in-june', start: 0.152, segments: [[0, 4], [4, 28], [4, 12], [4, 8]] },
     lines: [
-      { text: '窓を 開けて', kana: 'まどを あけて', romaji: 'ma-do-o a-ke-te', en: 'Roll the window down', chords: 'Bbmaj7 Am7', melody: [[72, 1], [69, 0.5], [69, 1], [65, 0.5], [67, 0.5], [69, 2.5]] },
-      { text: '街の 光 きれいだね', kana: 'まちの ひかり きれいだね', romaji: 'ma-chi-no hi-ka-ri ki-re-i-da-ne', en: 'The city lights are beautiful, aren’t they', chords: 'Bbmaj7 Am7 Dm7', melody: [[67, 0.5], [72, 0.5], [69, 0.5], [67, 0.5], [72, 0.5], [72, 1], [76, 1], [74, 0.5], [74, 0.5], [72, 0.5], [69, 1.5]] },
-      { text: '海まで ドライブ', kana: 'うみまで ドライブ', romaji: 'u-mi-ma-de do-ra-i-bu', en: 'A drive all the way to the sea', chords: 'Gm7 C Fmaj7', melody: [[72, 1], [69, 0.5], [67, 0.5], [65, 0.5], [67, 0.5], [74, 1.5], [72, 0.5], [65, 2]] },
-      { text: 'ガソリンが ない', kana: 'ガソリンが ない', romaji: 'ga-so-ri-n-ga na-i', en: '…and we’re out of gas', chords: 'Gm7 C', melody: [[72, 0.5], [74, 0.5], [74, 0.5], [74, 0.5], [72, 0.5], [69, 1], [65, 2.5]] },
+      { text: '窓を 開けて', kana: 'まどを あけて', romaji: 'ma-do-o a-ke-te', en: 'Roll the window down', chords: 'Gmaj7 Dmaj7 Em7 F#7', melody: [[71, 1], [69, 0.5], [66, 1], [64, 0.5], [66, 0.5], [71, 2.5]] },
+      { text: '君の 好きな 歌', kana: 'きみの すきな うた', romaji: 'ki-mi-no su-ki-na u-ta', en: 'Your favourite song', chords: 'Em7 F#7 Bm7 A7', melody: [[64, 0.5], [67, 0.5], [67, 1], [66, 0.5], [73, 1], [71, 0.5], [69, 0.5], [74, 2]] },
+      { text: '街の 光 きれいだね', kana: 'まちの ひかり きれいだね', romaji: 'ma-chi-no hi-ka-ri ki-re-i-da-ne', en: 'The city lights are beautiful, aren’t they', chords: 'Gmaj7 Dmaj7 Em7 F#7', melody: [[71, 0.5], [74, 0.5], [74, 0.5], [71, 0.5], [74, 0.5], [74, 0.5], [76, 1], [71, 0.5], [71, 0.5], [67, 0.5], [66, 1.5]] },
+      { text: 'ラジオも 歌ってる', kana: 'ラジオも うたってる', romaji: 'ra-ji-o-mo u-ta-t-te-ru', en: 'The radio’s singing too', chords: 'Em7 F#7 Bm7 A7', melody: [[71, 0.5], [67, 0.5], [67, 0.5], [66, 0.5], [66, 0.5], [73, 1], [73, 0.5], [71, 1], [69, 2]] },
+      { text: '夜の ドライブ', kana: 'よるの ドライブ', romaji: 'yo-ru-no do-ra-i-bu', en: 'Night drive', chords: 'Gmaj7 Dmaj7 Em7 F#7', melody: [[74, 1], [71, 0.5], [71, 0.5], [69, 0.5], [76, 1.5], [74, 0.5], [71, 2]] },
+      { text: 'どこまでも 行こう', kana: 'どこまでも いこう', romaji: 'do-ko-ma-de-mo i-ko-u', en: 'Let’s go as far as the road goes', chords: 'Em7 F#7 Bm7 A7', melody: [[74, 0.5], [71, 0.5], [71, 0.5], [67, 0.5], [66, 1], [66, 0.5], [71, 1], [74, 2]] },
+      { text: '海まで ドライブ', kana: 'うみまで ドライブ', romaji: 'u-mi-ma-de do-ra-i-bu', en: 'A drive all the way to the sea', chords: 'Gmaj7 Dmaj7 Em7 F#7', melody: [[74, 0.5], [71, 0.5], [71, 0.5], [71, 0.5], [69, 0.5], [76, 1.5], [74, 0.5], [71, 2]] },
+      { text: '二人だけの 道', kana: 'ふたりだけの みち', romaji: 'fu-ta-ri-da-ke-no mi-chi', en: 'A road just for the two of us', chords: 'Em7 F#7 Bm7 A7', melody: [[66, 0.5], [67, 0.5], [71, 0.5], [71, 0.5], [73, 0.5], [70, 0.5], [66, 1], [71, 3]] },
+      { text: 'コンビニで コーヒー', kana: 'コンビニで コーヒー', romaji: 'ko-n-bi-ni-de ko-o-hi-i', en: 'Coffee from the convenience store', chords: 'Gmaj7 Dmaj7 Em7 F#7', melody: [[67, 0.5], [71, 0.5], [71, 0.5], [71, 0.5], [69, 0.5], [66, 0.5], [69, 0.5], [74, 1], [71, 1.5]] },
+      { text: 'もう 二時だよ', kana: 'もう にじだよ', romaji: 'mo-u ni-ji-da-yo', en: 'It’s already two a.m.', chords: 'Em7 F#7 Bm7 A7', melody: [[71, 1], [67, 0.5], [71, 1], [66, 0.5], [66, 0.5], [71, 3]] },
+      { text: '眠く ない？', kana: 'ねむく ない', romaji: 'ne-mu-ku na-i', en: 'Aren’t you sleepy?', chords: 'Gmaj7 Dmaj7 Em7 F#7', melody: [[71, 0.5], [74, 1], [71, 0.5], [69, 1], [76, 2]] },
+      { text: 'ガソリンが ない', kana: 'ガソリンが ない', romaji: 'ga-so-ri-n-ga na-i', en: '…and we’re out of gas', chords: 'Em7 F#7 Bm7 A7', melody: [[71, 0.5], [74, 0.5], [74, 0.5], [74, 0.5], [73, 0.5], [73, 1], [66, 3]] },
     ],
   },
   {

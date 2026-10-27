@@ -1,11 +1,16 @@
-// Karaoke Duel's backing track: a tiny Web Audio synth, so no audio files are needed. For each
-// sing turn it schedules a one-bar count-in (woodblock clicks), a soft bass, light drums and a
-// quiet guide melody, all on the server's clock. Each song's style (STYLES) sets the bass
-// pattern, the swing, the drums and the guide's sound. Browsers only start audio after a click on
+// Karaoke Duel's backing. A continuous song plays its produced instrumental straight through
+// (playSong) with a quiet synth guide melody on each line (playTurn, guide only). A sing-along
+// song, or a continuous one whose track can't play (it failed to load, or streamer mode), gets a
+// tiny Web Audio synth instead: for each sing turn a one-bar count-in (woodblock clicks), a soft
+// bass, light drums and the guide melody, all on the server's clock. Each song's style (STYLES)
+// sets the bass pattern, the swing, the drums and the guide's sound. Browsers only start audio after a click on
 // the page, so the stage shows a "click for music" button until then.
 
 import type { SongStyle } from '../../../shared/src/modes/karaokeDuel/songs.js';
+import { load } from '../music/engine.js';
+import { isStreamerMode } from '../music/index.js';
 import { parseChord } from '../music/songs.js';
+import { TRACKS, isTrack } from '../music/tracks.js';
 import { getSound, isMuted, onMuteChange } from '../sound.js';
 
 export interface TurnTrack {
@@ -21,6 +26,11 @@ export interface TurnTrack {
   style: SongStyle;
   /** Chord names spread evenly over the line; the bass plays their roots. Empty: follow the melody. */
   chords: string[];
+  /**
+   * A continuous song: earlier turns' notes ring on (they overlap this turn's count-in), and when its
+   * track is playing only the guide melody plays.
+   */
+  continuous?: boolean;
 }
 
 interface Style {
@@ -57,6 +67,9 @@ const STYLES: Record<SongStyle, Style> = {
 let scheduledKey = '';
 let live: AudioScheduledSourceNode[] = [];
 
+/** The continuous song playing now: its key, the file's source, and its own gain for the fade. */
+let song: { key: string; srcs: AudioBufferSourceNode[]; gain: GainNode; failed: boolean } | null = null;
+
 /** Guide melody volume: quiet, so phone mics mostly hear the singer (see the doc's known gaps). */
 const GUIDE_GAIN = 0.07;
 const BASS_GAIN = 0.12;
@@ -89,6 +102,11 @@ onMuteChange((muted) => {
 });
 
 export function stopAll(): void {
+  stopSong();
+  stopTurn();
+}
+
+function stopTurn(): void {
   for (const node of live) {
     try {
       node.stop();
@@ -215,20 +233,106 @@ function chordRoot(name: string): number | null {
   }
 }
 
+export interface SongPlay {
+  /** Unique per song played; calling again with the same key does nothing. */
+  key: string;
+  /** The track's id in the stage's recorded tracks. */
+  trackId: string;
+  /** Seconds into the file where its bar 0 starts. */
+  start: number;
+  /** The stretches of the file to play back to back, in its bars. */
+  segments: [number, number][];
+  /** Seconds per bar. */
+  barS: number;
+  /** Local epoch ms of beat 0 (the start of the first stretch). */
+  songAt: number;
+}
+
+/** True while a continuous song's own track is (or will be) playing, so the synth plays only the guide. */
+export const songPlaying = (key: string): boolean => !!song && song.key === key && !song.failed;
+
+/**
+ * Plays a continuous song's instrumental from beat 0 at `songAt` (or from where it has got to, for a
+ * stage that joins late), through the backing bus. Safe to call on every redraw.
+ */
+export function playSong(play: SongPlay): void {
+  const c = context();
+  if (!c || isMuted() || c.state !== 'running' || song?.key === play.key) return;
+  stopSong();
+  const t = isTrack(play.trackId) ? TRACKS[play.trackId] : null;
+  const gain = c.createGain();
+  gain.gain.value = t ? 10 ** (t.gainDb / 20) : 1;
+  gain.connect(out());
+  const mine = { key: play.key, srcs: [] as AudioBufferSourceNode[], gain, failed: !t || isStreamerMode() };
+  song = mine;
+  if (mine.failed) return;
+  load(c, t!.url).then(
+    (buffer) => {
+      if (song !== mine) return;
+      const lead = outputLatencyMs();
+      let at = c.currentTime + (play.songAt - lead - Date.now()) / 1000;
+      for (const [x, y] of play.segments) {
+        const from = play.start + x * play.barS;
+        const len = (y - x) * play.barS;
+        // A stage that loads late joins the song where it has got to.
+        const skip = Math.max(0, c.currentTime - at);
+        if (skip < len) {
+          const src = c.createBufferSource();
+          src.buffer = buffer;
+          src.connect(gain);
+          src.start(Math.max(at, c.currentTime), from + skip, len - skip);
+          mine.srcs.push(src);
+        }
+        at += len;
+      }
+      // The last bars fade out.
+      gain.gain.setValueAtTime(gain.gain.value, Math.max(c.currentTime, at - 4));
+      gain.gain.linearRampToValueAtTime(0, Math.max(c.currentTime, at));
+    },
+    () => {
+      mine.failed = true;
+    },
+  );
+}
+
+/** Fades the continuous song out. */
+export function stopSong(fade = 1.2): void {
+  const c = context();
+  const s = song;
+  song = null;
+  if (!s || !c) return;
+  s.gain.gain.cancelScheduledValues(c.currentTime);
+  s.gain.gain.setTargetAtTime(0, c.currentTime, fade / 4);
+  for (const src of s.srcs) {
+    try {
+      src.stop(c.currentTime + fade);
+    } catch {
+      // already stopped
+    }
+  }
+}
+
 /** Schedules one sing turn's count-in, bass and guide melody. Safe to call on every redraw. */
-export function playTurn(track: TurnTrack): void {
+export function playTurn(track: TurnTrack, guideOnly = false): void {
   const c = context();
   if (!c || isMuted() || c.state !== 'running' || scheduledKey === track.key) return;
-  stopAll();
+  if (!track.continuous) stopTurn();
   scheduledKey = track.key;
   // Local wall-clock ms → AudioContext seconds, early by the speakers' delay, so each click and note
   // is heard on the server's beat (which the phones time the singers against), not scheduled on it.
   const lead = outputLatencyMs();
   const toAudio = (localMs: number) => c.currentTime + (localMs - lead - Date.now()) / 1000;
   const beat = track.beatMs;
+  const style = STYLES[track.style] ?? STYLES.nursery;
+  const guideGain = style.guide === 'square' ? GUIDE_GAIN * 0.5 : GUIDE_GAIN;
+  const guide = () =>
+    track.notes.forEach((n, i) => {
+      if (track.rests[i]) return;
+      tone(c, toAudio(track.lineAt + n.startMs), (n.ms / 1000) * 0.95, hz(n.midi), guideGain, style.guide, style.vibrato && n.ms >= 1.5 * beat);
+    });
+  if (guideOnly) return guide();
   for (let k = 0; k < track.countInBeats; k++) click(c, toAudio(track.lineAt - (track.countInBeats - k) * beat), k === 0);
 
-  const style = STYLES[track.style] ?? STYLES.nursery;
   const end = track.notes.reduce((n, x) => Math.max(n, x.startMs + x.ms), 0);
   // Bass, in the style's pattern: the root of the chord at each beat, or (a song without chords)
   // the melody note sounding then, two octaves down. Bright waves play quieter so they sit at the
@@ -245,11 +349,7 @@ export function playTurn(track: TurnTrack): void {
     });
     drums(c, toAudio(track.lineAt + t), n, beat / 1000, style);
   }
-  const guideGain = style.guide === 'square' ? GUIDE_GAIN * 0.5 : GUIDE_GAIN;
-  track.notes.forEach((n, i) => {
-    if (track.rests[i]) return;
-    tone(c, toAudio(track.lineAt + n.startMs), (n.ms / 1000) * 0.95, hz(n.midi), guideGain, style.guide, style.vibrato && n.ms >= 1.5 * beat);
-  });
+  guide();
 }
 
 /** A short "ta-da" for the duel result. */
