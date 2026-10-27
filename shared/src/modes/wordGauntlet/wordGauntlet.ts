@@ -32,6 +32,7 @@ import {
 import { toRomaji } from '../../japanese/romaji.js';
 import { dictionaryNoun, endsInN, follows, lastKana, repeatKey, startOptions, wordReading } from './shiritori.js';
 import { FALLBACK_STARTERS, OBSCURE_WORDS, SHIRITORI_NOUNS, type ObscureWord } from './words.js';
+import { playerTextAllowed } from '../../moderation.js';
 
 // ---- tuning ----
 
@@ -734,6 +735,7 @@ function moveFake(s: WordGauntletState, phase: Phase, playerId: string, raw: unk
   if (f.options.some((o) => o.authorIds.includes(playerId))) return moveError('already-answered');
   const text = cleanText(raw, MAX_ANSWER_LENGTH);
   if (!text) return moveError('empty-answer');
+  if (!playerTextAllowed(text, ctx.audience)) return moveError('kids-words');
   const n = normEn(text);
   if (!n) return moveError('empty-answer');
   const real = normEn(f.word.jp.en);

@@ -37,7 +37,7 @@ export function suspectDirector(voice: SuspectVoice, opts: SuspectDirectorOption
       if (g.calls >= max || timeoutMs < 200) continue;
       g.calls++;
       void voice
-        .lead({ caseTitle: req.caseTitle, suspect: req.suspect, question: req.question, answer: req.answer }, timeoutMs, opts.budget?.(room.code))
+        .lead({ caseTitle: req.caseTitle, suspect: req.suspect, question: req.question, answer: req.answer, audience: room.state.audience }, timeoutMs, opts.budget?.(room.code))
         .then((lead) => {
           if (lead && !room.closed) room.inject(req.playerId, { kind: 'suspect-line', key: req.key, lead });
         })

@@ -90,6 +90,8 @@ export interface BankLine {
   tier?: ReactionTier;
   jp: JpText;
   slots?: string[];
+  /** Only for this Audience setting (Kids or Cheeky). Untagged lines play in every room. */
+  audience?: 'kids' | 'cheeky';
   /** Review state from the content thread ('draft' until a fluent check). Not used here. */
   status?: string;
 }

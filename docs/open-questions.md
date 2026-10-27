@@ -299,9 +299,13 @@ Host voice pipeline and typed-answer judge (`server/ai/`, see its README).
    subtitle words; it passes moderation; it doesn't repeat this game's lines. If any check fails, a
    bank line is used. If the LLM line is fine but the TTS fails, a voiced bank line wins over a
    silent fresh one.
-9. **Moderation is a placeholder blocklist** (`server/ai/moderation.ts`). It includes ばか and あほ,
-   which also blocks a playful 「ばかな！」 from the host. The real moderation layer, with family
-   mode, is separate work.
+9. **Moderation is a placeholder blocklist** (`shared/src/moderation.ts`, used by
+   `server/ai/moderation.ts`). It includes ばか and あほ, which also blocks a playful 「ばかな！」 from the
+   host. Since 2026-10-27 a Kids room adds a stricter list (mild swearing, rude insults, body and dating
+   words, alcohol, smoking) to the host's lines and to what players type in Oogiri, Oekaki, Word
+   Gauntlet and Omiai (refused with `kids-words`, so it never reaches the stage). うんこ is allowed on
+   purpose. Family and Cheeky rooms still leave player text to the VIP's Hide. A real moderation
+   service is separate work.
 10. **Players' names are spoken from a romaji guess** (Ladi → ラディ, Ken → ケン). Should the join
     screen offer an optional "how do you say your name" kana field? The pipeline already takes one.
 11. **Judge: what counts as the same answer.** Accepted: kanji, kana or digits for the same reading;

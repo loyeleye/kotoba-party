@@ -7,7 +7,7 @@
 // so a slow voice can never show a stale line or hold up a round.
 
 import type { HostLine, Level } from '../../content/src/types.js';
-import { HOST_EVENTS, type HostEvent as AiEvent, type HostVoice as AiHostVoice, type PendingLine } from '../ai/index.js';
+import { HOST_EVENTS, fitsAudience, type HostEvent as AiEvent, type HostVoice as AiHostVoice, type PendingLine } from '../ai/index.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type { HostMood, HostSay } from '../../shared/src/protocol.js';
 import type { Room } from './room.js';
@@ -36,7 +36,7 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   return {
     async speak(_room, cue) {
       const candidates = content.hostLines.filter(
-        (l: HostLine) => l.host === cue.host && l.event === cue.event && (!cue.tier || !l.tier || l.tier === cue.tier),
+        (l: HostLine) => l.host === cue.host && l.event === cue.event && (!cue.tier || !l.tier || l.tier === cue.tier) && fitsAudience(l, cue.audience),
       );
       // A line with slots we can't fill would show a raw {name}; skip those.
       const usable = preferAnswerLines(
@@ -63,9 +63,13 @@ export function moodFor(event: string): HostMood | undefined {
   return CHEER.has(event) ? 'cheer' : OOPS.has(event) ? 'oops' : undefined;
 }
 
-/** Wires a voice to a room: each cue is spoken and lands only if its phase is still current. */
+/**
+ * Wires a voice to a room: each cue is spoken and lands only if its phase is still current. Cues pick up the
+ * room's Audience setting here, so the host follows it in every mode.
+ */
 export function hostDirector(voice: HostVoice) {
-  return (room: Room, cues: HostCue[], phaseSeq: number): void => {
+  return (room: Room, raised: HostCue[], phaseSeq: number): void => {
+    const cues = raised.map((c) => ({ ...c, audience: room.state.audience }));
     for (const c of cues) if (c.ahead) voice.ahead?.(room.code, c);
     // One line per phase: the last cue raised is the most specific.
     const cue = cues.filter((c) => !c.ahead).at(-1);
@@ -83,7 +87,7 @@ export function hostDirector(voice: HostVoice) {
 const AHEAD_MAX = 12;
 
 const cueKey = (c: HostCue): string =>
-  JSON.stringify([c.host, c.event, c.tier ?? '', c.prompt?.text ?? '', c.answer ?? '', c.answerEn ?? '', c.slots ?? {}]);
+  JSON.stringify([c.host, c.event, c.tier ?? '', c.prompt?.text ?? '', c.answer ?? '', c.answerEn ?? '', c.slots ?? {}, c.audience ?? '']);
 
 /**
  * The host voice thread's LLM + TTS pipeline (server/ai) behind the HostVoice interface.
@@ -110,6 +114,7 @@ export function aiVoice(
       answerEn: cue.answerEn,
       slots: cue.slots,
       level: opts.levelOf?.(roomCode),
+      audience: cue.audience,
     });
 
   return {

@@ -35,6 +35,7 @@ import type {
   SlotView,
   TileView,
 } from './state.js';
+import { playerTextAllowed } from '../../moderation.js';
 
 export type * from './state.js';
 
@@ -539,6 +540,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         const built = buildAnswer(move, slot.tiles, slot.frames, !slot.tilesShown, kindOf(s)!);
         if (!built.ok) return moveError(built.error);
         const a = built.answer;
+        if (!playerTextAllowed(a.text, ctx.audience)) return moveError('kids-words');
         const sentence = sentenceFor(slot.version, a);
         const m = s.matchups[slot.matchup]!;
         const stageEn = sentenceFor(stageVersion(m.prompt), a).en;

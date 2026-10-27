@@ -1,6 +1,7 @@
 // The written line bank: the host's voice when the LLM is slow, over budget, or off. Lines come from the content
 // thread (content/src/hosts/), keyed by host, event and tier. Picking avoids repeating a line within a game.
 
+import type { Audience } from '../../shared/src/protocol.js';
 import { nameToKana } from './kana.js';
 import type { BankLine, HostEvent, HostId, JpText, ReactionTier } from './types.js';
 
@@ -35,6 +36,9 @@ export function fillSlots(jp: JpText, slots: Slots = {}): JpText {
   return { text: sub(jp.text, 'text'), kana: sub(jp.kana, 'kana'), en: sub(jp.en, 'en') };
 }
 
+/** Untagged lines play in every room; a Kids or Cheeky line only in a room with that Audience setting. */
+export const fitsAudience = (line: { audience?: string }, audience: Audience = 'family'): boolean => !line.audience || line.audience === audience;
+
 /** '{name}' or 'name' → 'name'. */
 export const slotName = (s: string): string => s.replace(/^\{|\}$/g, '');
 
@@ -67,10 +71,11 @@ export class LineBank {
 
   /**
    * A line nobody has heard this game, if there is one; otherwise any. Lines whose slots aren't all supplied
-   * are skipped. Undefined only when the bank has nothing for this host and event.
+   * are skipped, and so are other audiences' lines. In a Kids or Cheeky room that audience's own fresh lines
+   * come first. Undefined only when the bank has nothing for this host and event.
    */
-  pick(host: HostId, event: HostEvent, tier?: ReactionTier, slots: Slots = {}): (PickedLine & { line: BankLine }) | undefined {
-    let usable = this.candidates(host, event, tier).filter((l) => (l.slots ?? []).every((s) => slotName(s) in slots));
+  pick(host: HostId, event: HostEvent, tier?: ReactionTier, slots: Slots = {}, audience: Audience = 'family'): (PickedLine & { line: BankLine }) | undefined {
+    let usable = this.candidates(host, event, tier).filter((l) => fitsAudience(l, audience) && (l.slots ?? []).every((s) => slotName(s) in slots));
     // When the cue names the answer ({tile}), lines that react to it beat the ones that could follow anything.
     if ('tile' in slots) {
       const named = usable.filter((l) => (l.slots ?? []).some((s) => slotName(s) === 'tile'));
@@ -78,7 +83,8 @@ export class LineBank {
     }
     if (!usable.length) return undefined;
     const fresh = usable.filter((l) => !this.used.has(l.id));
-    const pool = fresh.length ? fresh : usable;
+    const own = fresh.filter((l) => l.audience === audience);
+    const pool = own.length ? own : fresh.length ? fresh : usable;
     const line = pool[Math.floor(this.random() * pool.length)] ?? pool[0]!;
     this.used.add(line.id);
     return { id: line.id, ...fillSlots(line.jp, slots), line };
