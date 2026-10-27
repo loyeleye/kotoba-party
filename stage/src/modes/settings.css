@@ -32,3 +32,14 @@
 .st-panel .inv-btn { min-width: 112px; min-height: 42px; padding: 4px 16px; font-size: 18px; }
 .st-panel .inv-pun, .st-panel .inv-pun-host { font-size: 17px; }
 .st-panel .inv-pun-jp { font-size: 22px; }
+
+/* Closing the room: quiet outline until pressed, then a framed question with "Keep playing" first. */
+.st-end { margin-top: 6px; }
+.st-btn-quiet { background: transparent; color: var(--ink); border: 2px solid var(--line); }
+.st-btn-danger-quiet { background: transparent; color: var(--bad); border: 2px solid var(--bad); }
+.st-btn-danger-quiet:hover { background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.st-btn-danger { background: var(--bad); color: var(--on-accent); border: 2px solid var(--bad); }
+.st-btn:disabled { opacity: 0.5; cursor: default; }
+.st-confirm { display: grid; gap: 8px; padding: 16px 18px; border: 2px solid var(--bad); border-radius: 10px; background: color-mix(in srgb, var(--bad) 10%, var(--panel)); }
+.st-confirm p { margin: 0; }
+.st-confirm .st-row { margin-top: 6px; }

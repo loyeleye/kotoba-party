@@ -70,3 +70,32 @@ describe('room lifetime', () => {
     expect(room.closed).toBe(true);
   });
 });
+
+describe('closing a room from the stage', () => {
+  it('the main stage can close it, and everyone hears why', () => {
+    const { room, closedCount } = makeRoom();
+    const stageToken = room.createStageToken();
+    const stage = fakeSocket();
+    room.attach(stageToken, stage.socket);
+    const join = room.join({ name: 'Aki' }) as JoinResponse;
+    const phone = fakeSocket();
+    room.attach(join.token, phone.socket);
+
+    expect(room.command(stageToken, { id: 'c1', type: 'closeRoom' })).toMatchObject({ ok: true });
+    expect(room.closed).toBe(true);
+    expect(closedCount()).toBe(1);
+    for (const s of [stage, phone]) {
+      expect(s.sent.at(-1)).toBe(JSON.stringify({ type: 'bye', reason: 'room-ended' }));
+      expect(s.closed).toEqual([{ code: CLOSE.roomGone, reason: 'room-ended' }]);
+    }
+  });
+
+  it('players and watching screens cannot close it', () => {
+    const { room } = makeRoom();
+    const join = room.join({ name: 'Aki' }) as JoinResponse;
+    expect(room.command(join.token, { id: 'c1', type: 'closeRoom' })).toMatchObject({ ok: false, error: 'not-allowed' });
+    const watch = room.createWatchToken()!;
+    expect(room.command(watch, { id: 'c2', type: 'closeRoom' })).toMatchObject({ ok: false, error: 'watch-only' });
+    expect(room.closed).toBe(false);
+  });
+});

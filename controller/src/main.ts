@@ -8,7 +8,7 @@ import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import { MODES } from '../../shared/src/modes/registry.js';
-import { LEVELS, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
+import { LEVELS, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService } from './components/mic.js';
 import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
@@ -212,7 +212,8 @@ function start(s: Session): void {
   setSpeechService(s.speech ? { base, code: s.code, token: s.token } : null);
   joinAudioTabs('phone', s.code);
   history.replaceState(null, '', `/?code=${s.code}`);
-  client = new RoomClient({ baseUrl: base, code: s.code, token: s.token, onState: render, onStatus: status });
+  closedAs = null;
+  client = new RoomClient({ baseUrl: base, code: s.code, token: s.token, onState: render, onStatus: status, onBye: (reason) => (closedAs = reason) });
   client.connect();
   void keepAwake();
   mount(app, h('p', { class: 'center' }, 'Connecting…'));
@@ -225,6 +226,8 @@ let bannerHost: HostId = 'pon';
 // socket returns.
 let awayTimer: ReturnType<typeof setTimeout> | undefined;
 let wasAway = false;
+/** Why the room said goodbye, so the join screen can tell a host's goodbye from a timeout. */
+let closedAs: ByeReason | null = null;
 function status(st: ConnectionStatus): void {
   clearTimeout(awayTimer);
   if (st === 'open') {
@@ -251,7 +254,7 @@ function status(st: ConnectionStatus): void {
   } else if (st === 'room-gone') {
     banner.hidden = true;
     store('kotoba:session', null);
-    showJoin('That room has closed.');
+    showJoin(closedAs === 'room-ended' ? 'The host closed the room. おつかれさまでした！ Thanks for playing.' : 'That room has closed.');
   }
 }
 
