@@ -1,7 +1,8 @@
 // Karaoke Duel songs: short ORIGINAL beginner songs (no borrowed lyrics or tunes), written for
 // this game. The first five are simple sing-alongs (`kids: true`); the rest are grown-up songs in
 // the styles a real karaoke box is full of (city pop, enka, an anime opening, an izakaya chant,
-// salaryman blues), still with beginner words, and they come up first. Each line carries its kana (what is scored), hyphenated romaji with one syllable
+// salaryman blues, a Shōwa duet, a self-intro rap, idol pop, an R&B ballad), still with beginner words, and they
+// come up first. Their melodies follow the words' pitch accent where they can. Each line carries its kana (what is scored), hyphenated romaji with one syllable
 // per mora (the Kana-level guide), English, and a melody of one note per mora.
 //
 // Melodies are MIDI note numbers (60 = middle C) with lengths in beats; the stage plays them
@@ -26,10 +27,15 @@ export interface SongLine {
   en: string;
   /** One note per mora of `kana`. */
   melody: readonly Note[];
+  /**
+   * The backing's chords, spread evenly over the line ("Bbmaj7 Am7"); the bass plays their roots.
+   * Without chords the bass follows the melody (the kids' songs).
+   */
+  chords?: string;
 }
 
 /** How the stage's backing track sounds (karaokeAudio.ts). */
-export type SongStyle = 'nursery' | 'citypop' | 'enka' | 'rock' | 'izakaya' | 'blues';
+export type SongStyle = 'nursery' | 'citypop' | 'enka' | 'rock' | 'izakaya' | 'blues' | 'kayou' | 'hiphop' | 'idol' | 'rnb';
 
 export interface Song {
   id: string;
@@ -129,10 +135,10 @@ export const SONGS: readonly Song[] = [
     level: 'kana',
     status: 'draft',
     lines: [
-      { text: '窓を 開けて', kana: 'まどを あけて', romaji: 'ma-do-o a-ke-te', en: 'Roll the window down', melody: [[69, 0.5], [67, 0.5], [65, 0.5], [67, 0.5], [69, 0.5], [72, 1.5]] },
-      { text: '君の 好きな 歌', kana: 'きみの すきな うた', romaji: 'ki-mi-no su-ki-na u-ta', en: 'The song you love', melody: [[72, 0.5], [74, 0.5], [72, 0.5], [69, 0.5], [67, 0.5], [69, 0.5], [72, 0.5], [76, 2]] },
-      { text: '街の 光 きれいだね', kana: 'まちの ひかり きれいだね', romaji: 'ma-chi-no hi-ka-ri ki-re-i-da-ne', en: 'The city lights are beautiful, aren’t they', melody: [[76, 0.5], [74, 0.5], [72, 0.5], [74, 0.5], [72, 0.5], [69, 0.5], [67, 0.5], [69, 0.5], [69, 0.5], [67, 0.5], [65, 1.5]] },
-      { text: '海まで 行こう', kana: 'うみまで いこう', romaji: 'u-mi-ma-de i-ko-u', en: 'Let’s drive all the way to the sea', melody: [[65, 0.5], [67, 0.5], [69, 0.5], [72, 0.5], [74, 0.5], [72, 0.5], [77, 2]] },
+      { text: '窓を 開けて', kana: 'まどを あけて', romaji: 'ma-do-o a-ke-te', en: 'Roll the window down', chords: 'Bbmaj7 Am7', melody: [[72, 1], [69, 0.5], [69, 1], [65, 0.5], [67, 0.5], [69, 2.5]] },
+      { text: '街の 光 きれいだね', kana: 'まちの ひかり きれいだね', romaji: 'ma-chi-no hi-ka-ri ki-re-i-da-ne', en: 'The city lights are beautiful, aren’t they', chords: 'Bbmaj7 Am7 Dm7', melody: [[67, 0.5], [72, 0.5], [69, 0.5], [67, 0.5], [72, 0.5], [72, 1], [76, 1], [74, 0.5], [74, 0.5], [72, 0.5], [69, 1.5]] },
+      { text: '海まで ドライブ', kana: 'うみまで ドライブ', romaji: 'u-mi-ma-de do-ra-i-bu', en: 'A drive all the way to the sea', chords: 'Gm7 C Fmaj7', melody: [[72, 1], [69, 0.5], [67, 0.5], [65, 0.5], [67, 0.5], [74, 1.5], [72, 0.5], [65, 2]] },
+      { text: 'ガソリンが ない', kana: 'ガソリンが ない', romaji: 'ga-so-ri-n-ga na-i', en: '…and we’re out of gas', chords: 'Gm7 C', melody: [[72, 0.5], [74, 0.5], [74, 0.5], [74, 0.5], [72, 0.5], [69, 1], [65, 2.5]] },
     ],
   },
   {
@@ -143,10 +149,10 @@ export const SONGS: readonly Song[] = [
     level: 'kana',
     status: 'draft',
     lines: [
-      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', melody: [[65, 0.5], [64, 0.5], [64, 0.5], [69, 1], [71, 0.5], [69, 2]] },
-      { text: 'あなたは 来ない', kana: 'あなたは こない', romaji: 'a-na-ta-wa ko-na-i', en: 'You aren’t coming', melody: [[72, 0.5], [71, 0.5], [69, 0.5], [65, 0.5], [64, 0.5], [65, 0.5], [64, 2]] },
-      { text: '一人で 飲む お酒', kana: 'ひとりで のむ おさけ', romaji: 'hi-to-ri-de no-mu o-sa-ke', en: 'Sake I drink alone', melody: [[60, 0.5], [64, 0.5], [65, 0.5], [64, 0.5], [69, 0.5], [71, 0.5], [69, 0.5], [65, 0.5], [64, 1.25]] },
-      { text: 'さよなら あなた', kana: 'さよなら あなた', romaji: 'sa-yo-na-ra a-na-ta', en: 'Goodbye, my love', melody: [[69, 0.5], [72, 0.5], [71, 0.5], [69, 0.5], [65, 0.5], [64, 0.5], [57, 2.5]] },
+      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', chords: 'Am E', melody: [[64, 1], [60, 0.5], [60, 0.5], [60, 0.5], [65, 1], [64, 2]] },
+      { text: 'あなたは 来ない', kana: 'あなたは こない', romaji: 'a-na-ta-wa ko-na-i', en: 'You aren’t coming, my love', chords: 'Dm Am', melody: [[64, 0.5], [69, 1], [65, 0.5], [64, 0.5], [69, 1], [65, 0.5], [64, 1.5]] },
+      { text: '一人で 飲む お酒', kana: 'ひとりで のむ おさけ', romaji: 'hi-to-ri-de no-mu o-sa-ke', en: 'Sake I drink alone', chords: 'F E', melody: [[64, 0.5], [69, 0.5], [65, 0.5], [64, 0.5], [72, 1], [69, 0.5], [64, 0.5], [69, 0.5], [71, 1]] },
+      { text: '傘も 忘れた', kana: 'かさも わすれた', romaji: 'ka-sa-mo wa-su-re-ta', en: '…and I forgot my umbrella', chords: 'Dm E Am', melody: [[69, 0.5], [64, 0.5], [64, 1], [69, 0.5], [71, 0.5], [72, 0.5], [69, 2]] },
     ],
   },
   {
@@ -157,10 +163,10 @@ export const SONGS: readonly Song[] = [
     level: 'kana',
     status: 'draft',
     lines: [
-      { text: 'もっと 速く', kana: 'もっと はやく', romaji: 'mo-t-to ha-ya-ku', en: 'Faster, faster', melody: [[64, 0.5], [64, 0.5], [67, 0.5], [69, 0.5], [71, 0.5], [74, 1.5]] },
-      { text: '夢に 向かって', kana: 'ゆめに むかって', romaji: 'yu-me-ni mu-ka-t-te', en: 'Toward my dream', melody: [[74, 0.5], [76, 0.5], [74, 0.5], [71, 0.5], [74, 0.75], [74, 0.25], [76, 2]] },
-      { text: '負けない 心', kana: 'まけない こころ', romaji: 'ma-ke-na-i ko-ko-ro', en: 'A heart that won’t give in', melody: [[76, 0.5], [74, 0.5], [72, 0.5], [71, 0.5], [72, 0.5], [74, 0.5], [71, 2]] },
-      { text: '今だ 飛べ！', kana: 'いまだ とべ', romaji: 'i-ma-da to-be', en: 'Now — fly!', melody: [[71, 0.5], [74, 0.5], [76, 1], [79, 1], [79, 3]] },
+      { text: '走れ 走れ！', kana: 'はしれ はしれ', romaji: 'ha-shi-re ha-shi-re', en: 'Run, run!', chords: 'D Bm', melody: [[67, 1], [71, 1], [69, 1], [67, 1], [74, 1], [71, 2]] },
+      { text: '夢に 向かって', kana: 'ゆめに むかって', romaji: 'yu-me-ni mu-ka-t-te', en: 'Toward my dream', chords: 'G A', melody: [[69, 1], [74, 1], [71, 1], [71, 1], [74, 1], [74, 1], [76, 2]] },
+      { text: '負けない 心', kana: 'まけない こころ', romaji: 'ma-ke-na-i ko-ko-ro', en: 'A heart that won’t give in', chords: 'Bm G', melody: [[71, 1], [74, 1], [74, 1], [74, 1], [71, 1], [76, 1], [74, 2]] },
+      { text: '明日から！', kana: 'あしたから', romaji: 'a-shi-ta-ka-ra', en: '…starting tomorrow!', chords: 'G A D', melody: [[71, 1], [74, 1], [78, 2], [76, 1], [74, 3]] },
     ],
   },
   {
@@ -171,10 +177,10 @@ export const SONGS: readonly Song[] = [
     level: 'kana',
     status: 'draft',
     lines: [
-      { text: '仕事が 終わった', kana: 'しごとが おわった', romaji: 'shi-go-to-ga o-wa-t-ta', en: 'Work is over', melody: [[67, 0.5], [67, 0.5], [69, 0.5], [67, 0.5], [64, 0.5], [62, 0.5], [62, 0.25], [60, 1.75]] },
-      { text: 'とりあえず ビール', kana: 'とりあえず ビール', romaji: 'to-ri-a-e-zu bi-i-ru', en: 'A beer to start with', melody: [[64, 0.5], [64, 0.5], [67, 0.5], [64, 0.5], [62, 0.5], [69, 1], [69, 0.5], [67, 1.5]] },
-      { text: '乾杯 乾杯！', kana: 'かんぱい かんぱい', romaji: 'ka-n-pa-i ka-n-pa-i', en: 'Cheers, cheers!', melody: [[72, 0.5], [72, 0.5], [69, 0.5], [67, 0.5], [72, 0.5], [72, 0.5], [69, 0.5], [67, 1.5]] },
-      { text: 'もう 一杯！', kana: 'もう いっぱい', romaji: 'mo-u i-p-pa-i', en: 'One more round!', melody: [[67, 0.5], [69, 0.5], [72, 0.75], [72, 0.25], [74, 1], [72, 2]] },
+      { text: '仕事が 終わった', kana: 'しごとが おわった', romaji: 'shi-go-to-ga o-wa-t-ta', en: 'Work is over', chords: 'C G', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [69, 0.5], [67, 0.5], [72, 1], [72, 0.5], [72, 1.5]] },
+      { text: 'とりあえず ビール', kana: 'とりあえず ビール', romaji: 'to-ri-a-e-zu bi-i-ru', en: 'Beer, for starters. Obviously.', chords: 'F G', melody: [[67, 0.5], [69, 0.5], [69, 0.5], [67, 0.5], [64, 0.5], [72, 1], [72, 0.5], [67, 1.5]] },
+      { text: '乾杯 乾杯！', kana: 'かんぱい かんぱい', romaji: 'ka-n-pa-i ka-n-pa-i', en: 'Cheers, cheers!', chords: 'C F', melody: [[67, 0.5], [72, 0.5], [72, 0.5], [72, 0.5], [69, 0.5], [74, 0.5], [74, 0.5], [74, 1.5]] },
+      { text: 'もう 一杯！', kana: 'もう いっぱい', romaji: 'mo-u i-p-pa-i', en: 'One more glass!', chords: 'G C', melody: [[74, 1], [72, 0.5], [76, 1], [76, 0.5], [72, 0.5], [72, 1.5]] },
     ],
   },
   {
@@ -185,10 +191,66 @@ export const SONGS: readonly Song[] = [
     level: 'kana',
     status: 'draft',
     lines: [
-      { text: '朝の 満員電車', kana: 'あさの まんいんでんしゃ', romaji: 'a-sa-no ma-n-i-n-de-n-sha', en: 'The packed morning train', melody: [[57, 0.5], [60, 0.5], [62, 0.5], [63, 0.5], [64, 0.5], [64, 0.5], [62, 0.5], [60, 0.5], [60, 0.5], [57, 1.5]] },
-      { text: '部長は 怒ってる', kana: 'ぶちょうは おこってる', romaji: 'bu-cho-u-wa o-ko-t-te-ru', en: 'The boss is angry', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [63, 0.5], [62, 0.5], [62, 0.25], [60, 0.75], [57, 1.5]] },
-      { text: '残業 今日も', kana: 'ざんぎょう きょうも', romaji: 'za-n-gyo-u kyo-u-mo', en: 'Overtime again today', melody: [[69, 0.5], [69, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [64, 0.5], [62, 2]] },
-      { text: '早く 帰りたい', kana: 'はやく かえりたい', romaji: 'ha-ya-ku ka-e-ri-ta-i', en: 'I just want to go home', melody: [[60, 0.5], [62, 0.5], [63, 0.5], [64, 1], [67, 0.5], [64, 0.5], [62, 0.5], [57, 2]] },
+      { text: '朝の 電車は いっぱい', kana: 'あさの でんしゃは いっぱい', romaji: 'a-sa-no de-n-sha-wa i-p-pa-i', en: 'The morning train is packed', chords: 'A7', melody: [[64, 0.5], [60, 0.5], [60, 0.5], [60, 0.5], [63, 0.5], [64, 0.5], [64, 0.5], [60, 0.5], [60, 0.5], [63, 0.5], [64, 1.5]] },
+      { text: '部長は 怒ってる', kana: 'ぶちょうは おこってる', romaji: 'bu-cho-u-wa o-ko-t-te-ru', en: 'The boss is angry', chords: 'D7 A7', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 1], [67, 0.5], [63, 0.5], [60, 1.5]] },
+      { text: '早く 帰りたい', kana: 'はやく かえりたい', romaji: 'ha-ya-ku ka-e-ri-ta-i', en: 'I want to go home already', chords: 'E7 D7', melody: [[67, 1], [64, 0.5], [60, 0.5], [60, 0.5], [62, 0.5], [63, 0.5], [64, 1], [57, 1.5]] },
+      { text: 'まだ 月曜日', kana: 'まだ げつようび', romaji: 'ma-da ge-tsu-yo-u-bi', en: '…and it’s only Monday', chords: 'A7', melody: [[64, 1], [60, 0.5], [57, 0.5], [60, 0.5], [63, 1], [62, 0.5], [57, 2.5]] },
+    ],
+  },
+  {
+    id: 'doko-itteta',
+    title: { text: 'どこ 行ってたの？', kana: 'どこ いってたの', en: 'Where Were You?' },
+    bpm: 84,
+    style: 'kayou',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: 'どこ 行ってたの？', kana: 'どこ いってたの', romaji: 'do-ko i-t-te-ta-no', en: 'Where were you?', chords: 'C Am', melody: [[67, 1], [64, 0.5], [64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [69, 1.5]] },
+      { text: 'コンビニ だよ', kana: 'コンビニ だよ', romaji: 'ko-n-bi-ni da-yo', en: 'Just the konbini', chords: 'F G', melody: [[60, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [60, 2]] },
+      { text: '三時間も？', kana: 'さんじかんも', romaji: 'sa-n-ji-ka-n-mo', en: 'For three hours?', chords: 'Am E7', melody: [[64, 0.5], [69, 0.5], [69, 1], [64, 0.5], [64, 0.5], [69, 2]] },
+      { text: 'ごめんね ダーリン', kana: 'ごめんね ダーリン', romaji: 'go-me-n-ne da-a-ri-n', en: 'Sorry, darling', chords: 'F G C', melody: [[67, 0.5], [67, 0.5], [65, 0.5], [64, 0.5], [69, 1.5], [67, 0.5], [64, 0.5], [60, 1.5]] },
+    ],
+  },
+  {
+    id: 'jikoshoukai-rap',
+    title: { text: '自己紹介 ラップ', kana: 'じこしょうかい ラップ', en: 'Self-Intro Rap' },
+    bpm: 92,
+    style: 'hiphop',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: 'はじめまして', kana: 'はじめまして', romaji: 'ha-ji-me-ma-shi-te', en: 'Nice to meet you', chords: 'Cm7 Fm7', melody: [[60, 0.5], [63, 0.5], [63, 0.5], [63, 1], [60, 0.5], [60, 1]] },
+      { text: '趣味は カラオケ', kana: 'しゅみは カラオケ', romaji: 'shu-mi-wa ka-ra-o-ke', en: 'My hobby is karaoke', chords: 'Cm7 Fm7', melody: [[63, 0.5], [60, 0.5], [60, 0.5], [60, 0.5], [63, 0.5], [63, 0.5], [63, 1]] },
+      { text: '日本語 勉強中', kana: 'にほんご べんきょうちゅう', romaji: 'ni-ho-n-go be-n-kyo-u-chu-u', en: 'Studying Japanese right now', chords: 'Cm7 Fm7', melody: [[60, 0.5], [63, 0.5], [63, 0.5], [63, 0.5], [60, 0.5], [63, 0.5], [63, 0.5], [63, 0.5], [65, 0.5], [65, 1]] },
+      { text: 'よろしく！ よろしく！', kana: 'よろしく よろしく', romaji: 'yo-ro-shi-ku yo-ro-shi-ku', en: 'Nice to know you! Nice to know you!', chords: 'Cm7 Fm7', melody: [[60, 0.5], [63, 0.5], [63, 0.5], [63, 0.5], [60, 0.5], [65, 0.5], [65, 0.5], [63, 1.5]] },
+    ],
+  },
+  {
+    id: 'kirakira-idol',
+    title: { text: 'キラキラ アイドル', kana: 'キラキラ アイドル', en: 'Sparkle Idol' },
+    bpm: 168,
+    style: 'idol',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: 'みんな 元気？', kana: 'みんな げんき', romaji: 'mi-n-na ge-n-ki', en: 'Everybody doing OK?', chords: 'G A', melody: [[69, 1], [71, 1], [71, 1], [74, 1], [71, 1], [76, 2]] },
+      { text: '好き 好き 大好き', kana: 'すき すき だいすき', romaji: 'su-ki su-ki da-i-su-ki', en: 'I love you, love you, love you!', chords: 'F#m Bm', melody: [[69, 1], [74, 1], [69, 1], [74, 1], [78, 1], [76, 1], [74, 1], [74, 2]] },
+      { text: 'ずっと 一緒', kana: 'ずっと いっしょ', romaji: 'zu-t-to i-s-sho', en: 'Together forever', chords: 'G A', melody: [[66, 1], [66, 1], [69, 1], [67, 1], [67, 1], [71, 2]] },
+      { text: 'チケット 買ってね', kana: 'チケット かってね', romaji: 'chi-ke-t-to ka-t-te-ne', en: '…so buy a ticket!', chords: 'G A D', melody: [[71, 1], [76, 1], [76, 1], [74, 1], [71, 1], [71, 1], [74, 1], [74, 3]] },
+    ],
+  },
+  {
+    id: 'nemurenai-yoru',
+    title: { text: '眠れない 夜', kana: 'ねむれない よる', en: 'Sleepless Night' },
+    bpm: 70,
+    style: 'rnb',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: '眠れない 夜', kana: 'ねむれない よる', romaji: 'ne-mu-re-na-i yo-ru', en: 'A night I can’t sleep', chords: 'Abmaj7 Gm7', melody: [[63, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [65, 0.5], [70, 1], [67, 1.5]] },
+      { text: '電話 待ってる', kana: 'でんわ まってる', romaji: 'de-n-wa ma-t-te-ru', en: 'I’m waiting for your call', chords: 'Fm7 Bb', melody: [[63, 0.5], [67, 0.5], [67, 0.75], [70, 0.75], [70, 0.5], [65, 0.5], [63, 1.5]] },
+      { text: '会いたい 気持ち', kana: 'あいたい きもち', romaji: 'a-i-ta-i ki-mo-chi', en: 'How much I miss you', chords: 'Abmaj7 Gm7', melody: [[67, 0.5], [70, 0.5], [72, 0.75], [70, 0.75], [67, 0.5], [70, 0.5], [72, 1.5]] },
+      { text: '今 すぐ 来て', kana: 'いま すぐ きて', romaji: 'i-ma su-gu ki-te', en: 'Come over right now', chords: 'Fm7 Bb Cm', melody: [[72, 1], [67, 0.5], [70, 0.75], [65, 0.75], [67, 0.5], [60, 1.5]] },
     ],
   },
 ];

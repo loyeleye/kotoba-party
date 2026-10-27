@@ -5,6 +5,7 @@
 // the page, so the stage shows a "click for music" button until then.
 
 import type { SongStyle } from '../../../shared/src/modes/karaokeDuel/songs.js';
+import { parseChord } from '../music/songs.js';
 import { getSound, isMuted, onMuteChange } from '../sound.js';
 
 export interface TurnTrack {
@@ -18,6 +19,8 @@ export interface TurnTrack {
   /** Morae that are rests (small っ). */
   rests: boolean[];
   style: SongStyle;
+  /** Chord names spread evenly over the line; the bass plays their roots. Empty: follow the melody. */
+  chords: string[];
 }
 
 interface Style {
@@ -27,19 +30,28 @@ interface Style {
   bassWave: OscillatorType;
   /** Where the off-beat falls: 0.5 straight, 2/3 swung. */
   swing: number;
-  /** Kick on beats 1 and 3, snare (or claps) on 2 and 4, hi-hat on and off the beat. */
-  drums: 'none' | 'soft' | 'rock' | 'claps';
-  /** A slow wobble on long guide notes (enka's held notes). */
+  /**
+   * Kick on beats 1 and 3, snare (or claps) on 2 and 4, hi-hat on and off the beat. `four`: a kick
+   * on every beat (idol pop); `boom`: boom-bap, an extra kick just after beat 2.
+   */
+  drums: 'none' | 'soft' | 'rock' | 'claps' | 'four' | 'boom';
+  /** Hi-hats per beat: 2 (eighths) or 4 (sixteenths: city pop, R&B). */
+  hats: 2 | 4;
+  /** A slow wobble on held guide notes (1.5 beats or more: enka's long ends). */
   vibrato: boolean;
 }
 
 const STYLES: Record<SongStyle, Style> = {
-  nursery: { guide: 'triangle', bass: [[0, 0]], bassWave: 'sine', swing: 0.5, drums: 'none', vibrato: false },
-  citypop: { guide: 'sine', bass: [[0, 0], [0.75, 12]], bassWave: 'triangle', swing: 0.5, drums: 'soft', vibrato: false },
-  enka: { guide: 'sine', bass: [[0, 0]], bassWave: 'sine', swing: 0.5, drums: 'none', vibrato: true },
-  rock: { guide: 'square', bass: [[0, 0], [0.5, 0]], bassWave: 'sawtooth', swing: 0.5, drums: 'rock', vibrato: false },
-  izakaya: { guide: 'triangle', bass: [[0, 0], [2 / 3, 7]], bassWave: 'triangle', swing: 2 / 3, drums: 'claps', vibrato: false },
-  blues: { guide: 'triangle', bass: [[0, 0], [2 / 3, 7]], bassWave: 'sine', swing: 2 / 3, drums: 'soft', vibrato: false },
+  nursery: { guide: 'triangle', bass: [[0, 0]], bassWave: 'sine', swing: 0.5, drums: 'none', hats: 2, vibrato: false },
+  citypop: { guide: 'sine', bass: [[0, 0], [0.5, 12], [0.75, 0]], bassWave: 'triangle', swing: 0.5, drums: 'soft', hats: 4, vibrato: false },
+  enka: { guide: 'sine', bass: [[0, 0]], bassWave: 'sine', swing: 0.5, drums: 'none', hats: 2, vibrato: true },
+  rock: { guide: 'square', bass: [[0, 0], [0.5, 0]], bassWave: 'sawtooth', swing: 0.5, drums: 'rock', hats: 2, vibrato: false },
+  izakaya: { guide: 'triangle', bass: [[0, 0], [2 / 3, 7]], bassWave: 'triangle', swing: 2 / 3, drums: 'claps', hats: 2, vibrato: false },
+  blues: { guide: 'triangle', bass: [[0, 0], [2 / 3, 7]], bassWave: 'sine', swing: 2 / 3, drums: 'soft', hats: 2, vibrato: false },
+  kayou: { guide: 'triangle', bass: [[0, 0], [2 / 3, 7]], bassWave: 'sine', swing: 2 / 3, drums: 'soft', hats: 2, vibrato: true },
+  hiphop: { guide: 'square', bass: [[0, 0]], bassWave: 'sine', swing: 0.58, drums: 'boom', hats: 2, vibrato: false },
+  rnb: { guide: 'sine', bass: [[0, 0], [0.75, 0]], bassWave: 'sine', swing: 0.5, drums: 'soft', hats: 4, vibrato: false },
+  idol: { guide: 'square', bass: [[0, 0], [0.5, 12]], bassWave: 'triangle', swing: 0.5, drums: 'four', hats: 2, vibrato: false },
 };
 
 let scheduledKey = '';
@@ -97,7 +109,7 @@ function tone(c: AudioContext, at: number, dur: number, freq: number, gain: numb
   const amp = c.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(freq, start);
-  if (vibrato && dur > 0.6) {
+  if (vibrato) {
     // Hold the note straight, then let it wobble (about a quarter-tone, 5.5 times a second).
     const lfo = c.createOscillator();
     const depth = c.createGain();
@@ -181,12 +193,26 @@ function kick(c: AudioContext, at: number, gain: number): void {
 function drums(c: AudioContext, at: number, n: number, beatS: number, style: Style): void {
   if (style.drums === 'none') return;
   const backbeat = n % 2 === 1;
-  const loud = style.drums === 'rock' ? 1.4 : 1;
-  if (!backbeat) kick(c, at, DRUM_GAIN * 1.5 * loud);
-  else if (style.drums === 'claps') [0, 0.012, 0.025].forEach((d) => hiss(c, at + d, 1_200, 0.08, DRUM_GAIN * 0.7));
-  else hiss(c, at, 1_500, style.drums === 'rock' ? 0.16 : 0.07, DRUM_GAIN * (style.drums === 'rock' ? 1.2 : 0.5));
+  const loud = style.drums === 'rock' || style.drums === 'four' ? 1.4 : 1;
+  if (!backbeat || style.drums === 'four') kick(c, at, DRUM_GAIN * 1.5 * loud);
+  if (style.drums === 'boom' && n % 4 === 1) kick(c, at + 0.5 * beatS, DRUM_GAIN * 1.2);
+  if (backbeat && style.drums === 'claps') [0, 0.012, 0.025].forEach((d) => hiss(c, at + d, 1_200, 0.08, DRUM_GAIN * 0.7));
+  else if (backbeat) {
+    const crack = style.drums !== 'soft';
+    hiss(c, at, 1_500, crack ? 0.16 : 0.07, DRUM_GAIN * (crack ? 1.2 : 0.5));
+  }
   hiss(c, at, 7_000, 0.03, DRUM_GAIN * 0.35);
-  hiss(c, at + style.swing * beatS, 7_000, 0.03, DRUM_GAIN * 0.25);
+  if (style.hats === 4) for (const q of [0.25, 0.5, 0.75]) hiss(c, at + q * beatS, 7_000, 0.025, DRUM_GAIN * (q === 0.5 ? 0.25 : 0.15));
+  else hiss(c, at + style.swing * beatS, 7_000, 0.03, DRUM_GAIN * 0.25);
+}
+
+/** A chord's root as a bass note (MIDI 33–44, A1 to G♯2). */
+function chordRoot(name: string): number | null {
+  try {
+    return 33 + ((parseChord(name).root - 9 + 12) % 12);
+  } catch {
+    return null;
+  }
 }
 
 /** Schedules one sing turn's count-in, bass and guide melody. Safe to call on every redraw. */
@@ -204,21 +230,25 @@ export function playTurn(track: TurnTrack): void {
 
   const style = STYLES[track.style] ?? STYLES.nursery;
   const end = track.notes.reduce((n, x) => Math.max(n, x.startMs + x.ms), 0);
-  // Bass: the melody note sounding on each beat, two octaves down, in the style's pattern. Bright
-  // waves play quieter so they sit at the same loudness as a sine.
+  // Bass, in the style's pattern: the root of the chord at each beat, or (a song without chords)
+  // the melody note sounding then, two octaves down. Bright waves play quieter so they sit at the
+  // same loudness as a sine.
   const bassGain = style.bassWave === 'sine' ? BASS_GAIN : BASS_GAIN * 0.5;
+  const roots = track.chords.map(chordRoot);
   for (let t = 0, n = 0; t < end; t += beat, n++) {
     const note = track.notes.find((x) => t >= x.startMs && t < x.startMs + x.ms) ?? track.notes[0];
+    const root = roots.length ? roots[Math.min(roots.length - 1, Math.floor((t / end) * roots.length))] : null;
+    const base = root ?? (note ? note.midi - 24 : null);
     style.bass.forEach(([at, up], i) => {
       const len = ((style.bass[i + 1]?.[0] ?? 1) - at) * 0.9;
-      if (note) tone(c, toAudio(track.lineAt + t + at * beat), (beat / 1000) * len, hz(note.midi - 24 + up), bassGain, style.bassWave);
+      if (base !== null) tone(c, toAudio(track.lineAt + t + at * beat), (beat / 1000) * len, hz(base + up), bassGain, style.bassWave);
     });
     drums(c, toAudio(track.lineAt + t), n, beat / 1000, style);
   }
   const guideGain = style.guide === 'square' ? GUIDE_GAIN * 0.5 : GUIDE_GAIN;
   track.notes.forEach((n, i) => {
     if (track.rests[i]) return;
-    tone(c, toAudio(track.lineAt + n.startMs), (n.ms / 1000) * 0.95, hz(n.midi), guideGain, style.guide, style.vibrato);
+    tone(c, toAudio(track.lineAt + n.startMs), (n.ms / 1000) * 0.95, hz(n.midi), guideGain, style.guide, style.vibrato && n.ms >= 1.5 * beat);
   });
 }
 

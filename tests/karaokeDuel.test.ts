@@ -28,6 +28,7 @@ import {
   TYPED_SHARE,
   type Take,
 } from '../shared/src/modes/karaokeDuel/scoring.js';
+import { parseChord } from '../stage/src/music/songs.js';
 import { lineMs, romajiMorae, SONGS, splitMorae, type SongLine } from '../shared/src/modes/karaokeDuel/songs.js';
 import { EMPTY_CONTENT, type ModePlayer } from '../shared/src/modes/mode.js';
 import { isKana } from '../shared/src/japanese/kana.js';
@@ -140,6 +141,9 @@ describe('Karaoke Duel: songs', () => {
         }
         // Short enough to sing in one breath: under 5 s.
         expect(lineMs(line, song.bpm)).toBeLessThan(5_000);
+        // A perfect take scores 100: no sung note is too short for the phone's 100 ms pitch frames.
+        expect(scoreTake(line, song.bpm, lineMs(line, song.bpm), perfect(line, song.bpm), 'n5').quality, `${song.id}: ${line.kana}`).toBe(100);
+        for (const chord of line.chords?.split(/\s+/) ?? []) expect(() => parseChord(chord), chord).not.toThrow();
       }
     }
   });

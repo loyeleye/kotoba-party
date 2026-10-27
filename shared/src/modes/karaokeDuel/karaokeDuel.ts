@@ -134,6 +134,8 @@ export interface LineView {
   /** One per mora: start and length in ms from the line's first beat, and the MIDI note. */
   notes: { startMs: number; ms: number; midi: number }[];
   ms: number;
+  /** The backing's chords, spread evenly over the line; empty when the bass follows the melody. */
+  chords: string[];
 }
 
 export interface SongView {
@@ -266,6 +268,7 @@ function lineView(song: Song, i: number): LineView {
     romajiMorae: sungRomaji(romajiMorae(line)),
     notes: noteTimes(line, song.bpm),
     ms: lineMs(line, song.bpm),
+    chords: line.chords?.split(/\s+/).filter(Boolean) ?? [],
   };
 }
 

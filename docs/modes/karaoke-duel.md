@@ -173,18 +173,30 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 13. **Guide melody is quiet** (triangle at low gain) with a soft bass on each beat, so phones
     mostly hear the singer.
 14. **Songs live in the mode folder** (`songs.ts`, like Concentration's scenes), not in
-    `content/` and `ContentLibrary`, to keep engine changes at zero. Ten original draft songs,
-    four lines each, every line under 5 s. Five are children's-style sing-alongs (greetings,
-    food, travel; `kids: true`). Five are grown-up songs in karaoke-box genres with beginner
-    words: city pop (夜の ドライブ), enka (雨の 港), an anime-opening rocker (走れ！), an izakaya
-    chant (乾杯！) and salaryman blues (月曜日 ブルース). Tests check one note and one romaji
-    syllable per mora, and that every perfect take scores 100.
+    `content/` and `ContentLibrary`, to keep engine changes at zero. Fourteen original draft
+    songs, four lines each, every line under 5 s. Five are children's-style sing-alongs
+    (greetings, food, travel; `kids: true`). Nine are grown-up songs in karaoke-box genres with
+    beginner words, each with a twist in the words: city pop (夜の ドライブ, which runs out of
+    gas), enka (雨の 港, crying over a forgotten umbrella), an anime-opening rocker (走れ！,
+    "…starting tomorrow!"), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, "…and
+    it's only Monday"), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
+    (自己紹介 ラップ, whose tune is the words' pitch accent), idol pop (キラキラ アイドル, "…so
+    buy a ticket!") and an R&B ballad (眠れない 夜). Tests check one note and one romaji
+    syllable per mora, that every perfect take scores 100, and that every chord name parses.
+    The humor writer, a songwriter and the JLPT expert reviewed the first drafts (2026-10-27,
+    project files `reviews/karaoke-songs-2026-10-27/`); their agreed fixes are in: melodies
+    follow pitch accent (もう 一杯 drops after い, so it means "one more glass", not "full"),
+    sung notes are at least ~200 ms, each song spans an octave or less, the title is sung, and
+    words above N4 were swapped out (残業, 満員, 飛べ).
 19. **Grown-up songs first.** A game plays every grown-up song (shuffled) before any
     children's song, so a default four-song game has none. Ladi asked to move past children's
     songs (2026-10-27).
 20. **Each song has a backing style** (`style`: nursery, citypop, enka, rock, izakaya,
-    blues). It sets the bass pattern, swing, light drums (kick, snare or claps, hi-hat) and the
-    guide's sound; enka's held notes get vibrato. Sung notes are at least half a beat, because
+    blues, kayou, hiphop, idol, rnb). It sets the bass pattern, swing, light drums (kick, snare
+    or claps, eighth or sixteenth hi-hats, four-on-the-floor or boom-bap) and the guide's sound;
+    enka and kayou get vibrato on held notes (1.5 beats or more). Grown-up lines carry chords
+    (`chords: 'Bbmaj7 Am7'`, spread evenly over the line) and the bass plays their roots, so
+    there is harmony; the kids' songs have none and the bass follows the melody. Sung notes are at least half a beat, because
     the phone's 100 ms pitch frames can't measure shorter notes.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
@@ -210,9 +222,17 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 6. **Chōchin-san needs karaoke lines** (intro, song card, a great take) in his bank; the
    content thread would write them.
 7. **Fluent check:** lyrics, English, award titles. **Musician check:** do the melodies fit
-   the words' pitch accent (e.g. あめ vs あめ)? Draft melodies ignore accent.
+   the words' pitch accent (e.g. あめ vs あめ)? The kids' songs ignore accent; the grown-up
+   songs were written to follow it.
 8. **Pitch accent**: the design doc doesn't score pitch accent in v1, and this mode's pitch is
    the tune, not accent. Fine to leave it that way?
+9. **Ideas from the song review, not built:** a crowd-vote question per song ("Who cried
+   hardest?" for the enka), a one-line stage direction on the song card ("fist to chest"),
+   song-card notes (君 and あなた are for songs; 一杯 vs いっぱい), Chōchin-san karaoke lines
+   (「スポットライトは わたくしです」), A/B voice labels for the duet, playing 乾杯！ first, and a
+   pickup beat before a line.
+10. **Fluent check on accents** the reviewers weren't sure of: とりあえず, ガソリン, げつようび,
+    ごめん, はじめまして, ねむれない, みんな, チケット.
 
 ## Known gaps
 
@@ -227,6 +247,6 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 - Stage audio needs a click on the stage page first (browser autoplay rules).
 - Headless smoke test only (Chromium, 1920×1080 / 1280×720 stage, 360 px phones, typed takes):
   no real microphone, recogniser or speakers.
-- Ten songs: a long night repeats them (they cycle: grown-up songs first, then the kids' songs).
+- Fourteen songs: a long night repeats them (they cycle: grown-up songs first, then the kids' songs).
 - The drums are synthesised noise and a sine kick. Kept quiet, but the phone mic may hear them;
   the words gate limits the damage, as with the guide melody.
