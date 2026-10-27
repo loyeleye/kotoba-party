@@ -57,7 +57,7 @@ export const TRACKS: Record<TrackId, Track> = {
   // Kana Yōkai Raid: anime-style rock battle theme. The file is exactly 40 bars at 140 bpm, so it loops whole.
   raid: { title: 'Determination', author: 'HydroGene', licence: 'CC0', source: `${OGA}determination-anime-style-music`, url: file('determination'), gainDb: -7, fallback: 'battle' },
   // The lobby and the social games: bright pop, funk and swing.
-  bouncing: { title: 'Bouncing', author: 'Holizna', licence: 'CC0', source: HOLIZNA, url: file('bouncing'), loop: [12.539, 76.556], gainDb: -6.5, fallback: 'lobby' },
+  bouncing: { title: 'Bouncing', author: 'Holizna', licence: 'CC0', source: HOLIZNA, url: file('bouncing'), loop: [12.539, 76.539], gainDb: -6.5, fallback: 'lobby' },
   monkeys: {
     title: 'Monkeys Spinning Monkeys',
     author: 'Kevin MacLeod',
@@ -68,8 +68,8 @@ export const TRACKS: Record<TrackId, Track> = {
     gainDb: 1.8,
     fallback: 'festive',
   },
-  love: { title: 'Love Love Love', author: 'Holizna', licence: 'CC0', source: HOLIZNA, url: file('love-love-love'), loop: [21.432, 154.993], gainDb: -6.7, fallback: 'festive' },
-  heps: { title: 'Hep Cats', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500022'), url: file('hep-cats'), loop: [3.738, 243.717], gainDb: 0.7, fallback: 'festive' },
+  love: { title: 'Love Love Love', author: 'Holizna', licence: 'CC0', source: HOLIZNA, url: file('love-love-love'), loop: [21.432, 154.9972], gainDb: -6.7, fallback: 'festive' },
+  heps: { title: 'Hep Cats', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500022'), url: file('hep-cats'), loop: [3.738, 243.7381], gainDb: 0.7, fallback: 'festive' },
   trip: { title: 'Take a Trip', author: 'genaralskar', licence: 'CC BY 4.0', source: `${OGA}take-a-trip`, url: file('take-a-trip'), loop: [6.85, 137.485], gainDb: -0.5, fallback: 'stroll' },
   carefree: { title: 'Carefree', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1400037'), url: file('carefree'), loop: [7.872, 198.182], gainDb: 4.6, fallback: 'gentle' },
   'happy-dance': { title: 'Happy Dance', author: 'Holizna', licence: 'CC0', source: HOLIZNA, url: file('happy-dance'), loop: [13.537, 149.537], gainDb: -2.6, fallback: 'outro' },
@@ -93,8 +93,8 @@ export const TRACKS: Record<TrackId, Track> = {
   'off-to-osaka': { title: 'Off to Osaka', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100128'), url: file('off-to-osaka'), loop: [8.081, 98.337], gainDb: 3.2, fallback: 'stroll' },
   'local-forecast': { title: 'Local Forecast - Elevator', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1300012'), url: file('local-forecast'), loop: [5.735, 185.922], gainDb: 3.7, fallback: 'gentle' },
   'cipher': { title: 'Cipher', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100844'), url: file('cipher'), loop: [4.481, 215.667], gainDb: 3.7, fallback: 'quiz' },
-  'kool-kats': { title: 'Kool Kats', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100601'), url: file('kool-kats'), loop: [6.966, 193.863], gainDb: 0.4, fallback: 'quiz' },
-  'ishikari-lore': { title: 'Ishikari Lore', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100192'), url: file('ishikari-lore'), loop: [6.641, 158.848], gainDb: 6.9, fallback: 'mystery' },
+  'kool-kats': { title: 'Kool Kats', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100601'), url: file('kool-kats'), loop: [6.966, 193.8688], gainDb: 0.4, fallback: 'quiz' },
+  'ishikari-lore': { title: 'Ishikari Lore', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100192'), url: file('ishikari-lore'), loop: [6.641, 158.8361], gainDb: 6.9, fallback: 'mystery' },
   'ouroboros': { title: 'Ouroboros', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1400007'), url: file('ouroboros'), loop: [23.615, 158.198], gainDb: -6.1, fallback: 'battle' },
   // Shodō Taikai's gallery: koto over a lo-fi hip-hop beat. 28 bars at about 75 bpm; the loop skips the
   // intro and the fade (picked by spectral match). CC0 as uploaded; commissioned on Fiverr (row 22, ❓).

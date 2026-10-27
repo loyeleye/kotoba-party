@@ -24,10 +24,11 @@ export interface Cue {
 export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   // The social games: recorded pop, funk and swing.
   oogiri: 'monkeys',
-  'phrase-bingo': 'love',
+  'phrase-bingo': 'carefree',
   oekaki: 'heps',
   tourist: 'trip',
-  omiai: 'carefree',
+  // Omiai's first date: Love Love Love (Ladi, 2026-10-27).
+  omiai: 'love',
   debug: 'bouncing',
   // The quiz games and the mystery.
   'word-gauntlet': 'investigations',
@@ -109,7 +110,7 @@ export const saying = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): boolean
   view.mode === 'shodo' && view.phase === 'encore' && view.game?.mode === 'shodo' && view.game.finished > 0;
 
 export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = false, say = false): Cue {
-  if (phase === 'lobby') return { song: 'lobby', mix: 'full' };
+  if (phase === 'lobby') return { song: 'bouncing', mix: 'full' };
   // Curtain Call, then the recap tune.
   if (phase === 'recap') return { song: 'happy-dance', mix: 'full', leadIn: 'fanfare' };
   if (mode === 'karaoke-duel') return karaokeCue(phase);
