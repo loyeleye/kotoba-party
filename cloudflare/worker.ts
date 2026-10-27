@@ -22,7 +22,13 @@ export default {
     const path = url.pathname;
     const base = (env.PUBLIC_URL || url.origin).replace(/\/$/, '');
 
-    if (path === '/healthz') return json(200, { ok: true });
+    // `ai`: whether the Worker can see an Anthropic key, as a binding and through process.env (which
+    // server/ai reads). Booleans only, never the key.
+    if (path === '/healthz') {
+      const bound = !!(env.KOTOBA_ANTHROPIC_API_KEY || env.ANTHROPIC_API_KEY);
+      const processEnv = !!(process.env.KOTOBA_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY);
+      return json(200, { ok: true, ai: { bound, processEnv } });
+    }
 
     if (path === '/ws') {
       if (req.headers.get('upgrade')?.toLowerCase() !== 'websocket') return json(426, { error: 'websocket-only' });
