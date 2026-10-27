@@ -312,8 +312,7 @@ function sayAttempt(s: ConcentrationState, ctx: ModeContext, phase: Phase, playe
   ctx.phrase(playerId, { itemId: pair.word.id, text: pair.word.jp.text, kana: pair.word.jp.kana, en: pair.word.jp.en, outcome: used === 0 ? 'said' : 'retry' });
   flash(s, stealing ? 'stolen' : 'claimed', playerId);
   const slots = { name: player?.name ?? '' };
-  if (stealing) ctx.cue({ host: 'fude', event: 'raid_catch', slots, answer: heard, answerEn: pair.word.jp.en });
-  else ctx.cue({ host: 'fude', event: 'reveal_react', tier: 'good', slots, answer: heard, answerEn: pair.word.jp.en });
+  ctx.cue({ host: 'fude', event: stealing ? 'concentration_stolen' : 'concentration_keep', slots, answer: heard, answerEn: pair.word.jp.en });
   return MOVE_OK;
 }
 
@@ -405,7 +404,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
   enter(s, phase, ctx) {
     switch (phase) {
       case 'intro':
-        ctx.cue({ host: 'fude', event: 'intro' });
+        ctx.cue({ host: 'fude', event: 'concentration_intro' });
         break;
       case 'answer': {
         s.turnNo += 1;
@@ -423,17 +422,17 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
         break;
       }
       case 'prompt':
-        ctx.cue({ host: 'fude', event: 'say_it_first', slots: { name: ctx.player(s.claim?.claimerId ?? '')?.name ?? '' } });
+        ctx.cue({ host: 'fude', event: 'concentration_say_it', slots: { name: ctx.player(s.claim?.claimerId ?? '')?.name ?? '' } });
         break;
       case 'encore':
-        ctx.cue({ host: 'fude', event: 'answer_hurry' });
+        ctx.cue({ host: 'fude', event: 'concentration_steal_open' });
         break;
       case 'finale':
         s.finished = true;
         s.claim = null;
         s.turn = null;
         s.fogRow = null;
-        ctx.cue({ host: 'fude', event: pairsLeft(s) === 0 ? 'all_in' : 'encore_cheer' });
+        ctx.cue({ host: 'fude', event: pairsLeft(s) === 0 ? 'concentration_clear' : 'concentration_time' });
         break;
     }
   },
@@ -446,7 +445,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
       if (turn?.outcome === 'mismatch') {
         s.pendingFlipDown = [...turn.flips];
         s.result = { kind: 'mismatch', playerId: turn.playerId, word: null, points: 0, spoken: false };
-        ctx.cue({ host: 'fude', event: 'reveal_react', tier: 'flop' });
+        ctx.cue({ host: 'fude', event: 'concentration_mismatch' });
       }
       s.fogRow = null;
     }
@@ -463,7 +462,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
           s.result = { kind: 'missed', playerId: null, word: pair.word.jp, points: 0, spoken: false };
         }
         flash(s, 'missed', null);
-        ctx.cue({ host: 'fude', event: 'miss_kind' });
+        ctx.cue({ host: 'fude', event: 'concentration_missed' });
       }
     }
     if (phase === 'score') {
@@ -548,15 +547,15 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
         if (special === 'yokai') {
           shuffleFaceDown(s, ctx);
           flash(s, 'yokai', playerId);
-          ctx.cue({ host: 'fude', event: 'raid_escape', slots: { name } });
+          ctx.cue({ host: 'fude', event: 'concentration_yokai', slots: { name } });
         } else if (special === 'bonus') {
           s.extraTurnFor = playerId;
           flash(s, 'bonus', playerId);
-          ctx.cue({ host: 'fude', event: 'raid_combo', slots: { name } });
+          ctx.cue({ host: 'fude', event: 'concentration_bonus', slots: { name } });
         } else {
           s.pendingFog = pickFogRow(s, ctx);
           flash(s, 'fog', playerId, s.pendingFog ?? undefined);
-          ctx.cue({ host: 'fude', event: 'raid_wave_start', slots: { name } });
+          ctx.cue({ host: 'fude', event: 'concentration_fog', slots: { name } });
         }
         if (pickable(s).length === 0) s.fogRow = null;
         return MOVE_OK;
@@ -596,7 +595,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
         give(s, ctx, playerId, guessWorth(s));
         s.solvedBy = playerId;
         flash(s, 'guess-right', playerId);
-        ctx.cue({ host: 'fude', event: 'reveal_react', tier: 'ippon', slots: { name }, answer: s.scene.name.text, answerEn: s.scene.name.en });
+        ctx.cue({ host: 'fude', event: 'concentration_picture', slots: { name }, answer: s.scene.name.text, answerEn: s.scene.name.en });
       } else flash(s, 'guess-wrong', playerId);
       return MOVE_OK;
     }
