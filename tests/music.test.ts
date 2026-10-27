@@ -79,8 +79,8 @@ const ffprobe = (() => {
 const duration = (file: string) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString());
 
 describe('cues', () => {
-  it('plays pop in the lobby and the recap', () => {
-    expect(cueFor(null, 'lobby')).toEqual({ song: 'bouncing', mix: 'full' });
+  it('plays the synth lobby tune in the lobby and pop in the recap', () => {
+    expect(cueFor(null, 'lobby')).toEqual({ song: 'lobby', mix: 'full' });
     expect(cueFor('oogiri', 'recap')).toEqual({ song: 'happy-dance', mix: 'full', leadIn: 'fanfare' });
   });
 
