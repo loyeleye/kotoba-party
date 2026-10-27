@@ -4,7 +4,7 @@ Design doc line: "Karaoke Duel: original beginner lyrics; pronunciation 60%, pit
 
 Two singers duel through a short, original beginner song, line by line. The TV plays a
 count-in, a soft bass and a quiet guide melody (Web Audio, no audio files) and bounces a ball
-over the lyrics mora by mora. The singer holds a button on their phone and sings; the phone
+over the lyrics mora by mora. The singer's phone mic turns on for their line and they sing; the phone
 sends what the recogniser heard plus a compact pitch contour and timing, and the server scores
 the take. Everyone else sings along for chorus points and votes for the crowd favourite.
 
@@ -23,7 +23,7 @@ Code: `shared/src/modes/karaokeDuel/` (`karaokeDuel.ts` rules, `scoring.ts`, `pi
 | Song card | `prompt` | Song title, every line (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
 | Sing | `answer` ×8 or ×16 | **Grown-up songs are continuous** (`form` + `track`): one produced instrumental plays the whole song (intro, verse, chorus, verse 2, chorus, about 80–130 s) and the duelists trade lines on its clock, one line every two bars; each sings every chorus line once. One phase per line, ending one bar before the next line so the next singer's count-in overlaps; the next singer sees their line during it; a take counts until 10 s after its line ends (the recogniser is slow), and lines with no take are marked missed when the song ends. **Kids' songs** are four-line sing-alongs: a 0.7 s breath, a one-bar count-in, the line, then 3 s; both duelists sing every line, who goes first alternates, and a take ends the turn at once. | Continuous: the track's own timing. Sing-along: 0.7 s + 4 beats + line + 3 s |
 | Crowd vote | `reveal` | Everyone not duelling votes for the crowd favourite. Skipped when nobody is watching (2 players). Ends when every connected voter is in. | 12 s |
-| Duel result | `score` | Sung points, lines won, crowd votes, the winner. Before every round but the last, the duel's loser picks the next song on their phone from three, or says "Surprise me". | 9 s (14 s with a pick) |
+| Duel result | `score` | A score report: pronunciation, pitch and rhythm out of 100 head to head, lines won, crowd votes, points, the winner. Before every round but the last, the duel's loser picks the next song on their phone from three, or says "Surprise me". | 9 s (14 s with a pick) |
 | Finale | `finale` | Standings, then the shared recap (awards, the song sheet phrasebook). | 9 s |
 
 A 4-song game of grown-up songs runs about 10 minutes.
@@ -64,7 +64,7 @@ The phone sends `{ kind: 'sing', turn, utterance, pitch, onsetMs, durMs, timing 
   at most 120 values (12 s), each in 24–108; or `null` when the phone can't measure pitch.
 - `onsetMs` (−5 000…15 000) and `durMs` (0…15 000): when the singing started relative to the
   first beat and how long it lasted; `timing` says whether that came from the mic's loudness
-  (`mic`) or the button hold (`button`).
+  (`mic`) or when the mic was on (`button`).
 
 `turn` is the game-wide sing-turn counter, so a take that arrives after its turn ended can't land
 in the next one. Everything is checked hard (`parseTake`): wrong types, non-finite numbers,
@@ -108,16 +108,20 @@ along with correctly as `said`. Item ids are `karaoke.<song>.<line>`.
 
 ### The phone
 
-- **Hold to sing.** Press during the count-in (or on the beat) and hold until the line is done;
-  the phone lets go a beat after the line ends (12 s at most). On release it sends the take at
+- **The mic turns itself on.** On the singer's own line the mic opens on the last beat of the
+  count-in and stops two beats (at least 1.5 s) after the line ends, 14 s at most; a "■ Done
+  singing" tap stops it sooner. "Don't turn my mic on" switches to tap-to-sing (localStorage
+  `kotoba:karaoke-automic`), and a phone whose browser won't run audio without a tap (iPhone)
+  falls back to it too. Sing-along is always tap to start. (It used to be hold to sing, which
+  cut singers off when a finger slipped off the button.) When the mic stops it sends the take at
   once (no "Send" step, unlike other modes: the next singer is waiting). The line shows the same
   bouncing ball as the TV, timed from the server's clock, with romaji under each mora at Kana
   level.
 - **Pitch tracker** (`pitch.ts`): `getUserMedia` → `AnalyserNode`, every 40 ms an
-  autocorrelation pitch estimate (70–1 100 Hz) and loudness; on release, `summarise` turns the
+  autocorrelation pitch estimate (70–1 100 Hz) and loudness; when the mic stops, `summarise` turns the
   samples into the 100 ms contour, and the onset and length from loudness above the room's
   noise floor.
-- **Words:** the hold records one clip (`components/mic.ts`); on release it goes to our own
+- **Words:** each line records one clip (`components/mic.ts`); when it stops it goes to our own
   Whisper server ([speech.md](../speech.md)) and the transcript is sent with the take. The pitch
   tracker listens to the same recording, so there is no mic conflict. A "Turn pitch off/on" link
   lets anyone choose (localStorage `kotoba:karaoke-pitch`).
@@ -131,8 +135,19 @@ Song card; then a karaoke screen per turn: singer, line number, count-in numbers
 big kana with the ball and a fill as each mora is sung (CSS animations with delays from the
 server clock, so redraws don't jump), kanji line above when the line has kanji, English below, a
 progress bar, the next line, and a toast with the previous take's breakdown. A duel board beside
-it shows every line's take scores (⌨ for typed, — for missed). Crowd vote and duel result
-screens follow. Audio needs one click on the stage page ("🔊 Click for music"); any click (e.g.
+it shows every line's take scores (⌨ for typed, — for missed). The crowd vote follows.
+
+The duel result is a head-to-head score report. Each duelist's 発音 (pronunciation), 音程 (pitch)
+and リズム (rhythm), averaged over their takes, appear as mirrored 20-cell LED meters out of 100,
+with the better number in gold with a ▲. Pitch the phone couldn't measure is a hatched "なし" bar,
+never a zero. Below the meters is a strip of each take's score, filled in the singer's colour on
+lines they won, then the points with how they add up (sung, plus the crowd bonus), and the
+average take in 点 with an easy host line for its band (「とても 上手（じょうず）！」 Really good!).
+It reveals beat by beat from the result's server time (`result.at`): Scoring… (採点中), the three
+meters, the lines, the crowd bonus, the points, and at 5.1 s the winner with the trophy and the
+fanfare. Every animation's rest state is the finished screen, so redraws, late joiners and Calm
+motion land on it. Each duelist's phone shows the same three bars with a tip for the lowest.
+Audio needs one click on the stage page ("🔊 Click for music"); any click (e.g.
 Start) unlocks it. Music can be muted.
 
 ### Bots

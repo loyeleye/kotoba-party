@@ -1,6 +1,6 @@
 // Karaoke Duel (backlog): two singers duel through a short original song, line by line.
-// The TV plays the backing and guide melody and bounces a ball over the lyrics; the singer
-// holds a button on their phone and sings. Each take scores pronunciation 60%, pitch 25% and
+// The TV plays the backing and guide melody and bounces a ball over the lyrics; the singer's
+// phone mic turns on for their line and they sing. Each take scores pronunciation 60%, pitch 25% and
 // timing 15% (scoring.ts). Everyone else sings along for a small chorus bonus and votes for
 // the crowd favourite. See docs/modes/karaoke-duel.md.
 //
@@ -106,6 +106,8 @@ export interface RoundResult {
   crowdBonus: number;
   /** Duel winner(s) by sung points plus crowd bonus; both on a tie. */
   winners: string[];
+  /** Server time the result was settled: the stage times its reveal from it. */
+  at: number;
 }
 
 /** The duel's loser choosing the next song (the score phase). */
@@ -250,7 +252,7 @@ export interface KaraokeDuelView {
     canSing: boolean;
     /**
      * The turn my phone should be ready to sing: the current one if it's mine, else (continuous
-     * songs) the next one if it's mine, so the hold can start on its count-in. Null once sent.
+     * songs) the next one if it's mine, so the mic can open on its count-in. Null once sent.
      */
     singTurn: { no: number; index: number; line: number; lineAt: number } | null;
     canChorus: boolean;
@@ -432,6 +434,46 @@ const takeView = (t: TakeRecord): TakeView => ({
   missed: t.missed,
 });
 
+/** A duelist's round in three numbers out of 100, plus the average take; null where nothing was measured. */
+export interface DuelStats {
+  words: number | null;
+  pitch: number | null;
+  timing: number | null;
+  /** The average take score (missed lines count 0), as the host judges the winner. */
+  average: number;
+  takes: number;
+}
+
+const mean = (xs: number[]): number | null => (xs.length ? Math.round((100 * xs.reduce((n, x) => n + x, 0)) / xs.length) : null);
+
+/**
+ * Each part averaged over the takes that measured it: a missed line counts 0 for the words, a
+ * typed take has words only, and "I sang it" (tap) measures nothing.
+ */
+export function duelStats(takes: readonly TakeView[], playerId: string): DuelStats {
+  const mine = takes.filter((t) => t.playerId === playerId);
+  const heard = mine.filter((t) => t.via !== 'tap');
+  return {
+    words: mean(heard.map((t) => t.pron)),
+    pitch: mean(heard.filter((t) => t.pitchUsed && t.pitch !== null).map((t) => t.pitch!)),
+    timing: mean(heard.filter((t) => t.timing !== null).map((t) => t.timing!)),
+    average: mine.length ? Math.round(mine.reduce((n, t) => n + t.quality, 0) / mine.length) : 0,
+    takes: mine.length,
+  };
+}
+
+/** The host's one-liner for an average take score: easy Japanese, its kanji read, and English. */
+export function scoreComment(average: number, takes: number): JpText {
+  const line = (furigana: [string, string][], en: string): JpText => ({ text: furigana.map(([base]) => base).join(''), kana: furigana.map(([base, reading]) => reading || base).join(''), furigana, en });
+  if (!takes || average <= 0) return line([['声', 'こえ'], ['が きこえなかった よ', '']], 'I couldn’t hear you!');
+  if (average >= 90) return line([['すごい！ プロ みたい！', '']], 'Amazing! Like a pro!');
+  if (average >= 80) return line([['とても ', ''], ['上手', 'じょうず'], ['！', '']], 'Really good!');
+  if (average >= 70) return line([['いい かんじ！', '']], 'Sounding good!');
+  if (average >= 50) return line([['その ', ''], ['調子', 'ちょうし'], ['！', '']], 'Keep it up!');
+  if (average >= 30) return line([['もう すこし！', '']], 'Almost there!');
+  return line([['次', 'つぎ'], ['は がんばろう！', '']], 'Go for it next time!');
+}
+
 function phraseFor(s: KaraokeState, ctx: ModeContext, playerId: string, line: number, outcome: 'said' | 'retry' | 'missed' | 'seen'): void {
   const song = songOf(s);
   const l = song?.lines[line];
@@ -480,7 +522,7 @@ function settleRound(s: KaraokeState, ctx: ModeContext): void {
   const best = Math.max(...ids.map(final));
   const winners = best > 0 ? ids.filter((id) => final(id) === best) : [];
   for (const id of winners) tallyFor(s, id).wins += 1;
-  s.result = { sung, linesWon, votes, favourites, crowdBonus, winners };
+  s.result = { sung, linesWon, votes, favourites, crowdBonus, winners, at: ctx.now };
 
   const winner = winners.length === 1 ? ctx.player(winners[0]!) : undefined;
   const avg = winner ? s.takes.filter((t) => t.playerId === winner.id).reduce((n, t) => n + t.score.quality, 0) / Math.max(1, s.takes.filter((t) => t.playerId === winner.id).length) : 0;

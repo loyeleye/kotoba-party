@@ -6,6 +6,8 @@
 // placeholders, used only when the night's topic pack is missing or too thin.
 
 import type { JpText, ReviewStatus } from '../../../../content/src/types.js';
+import type { Audience } from '../../protocol.js';
+import { shuffled } from '../mode.js';
 
 export interface ObscureWord {
   id: string;
@@ -15,6 +17,8 @@ export interface ObscureWord {
   literal?: string;
   /** Phrases that give the truth away: a fake containing one is refused as "too close to the truth". */
   close: string[];
+  /** Kids rooms deal only words marked true; Family and Cheeky deal them all. */
+  kids?: boolean;
 }
 
 export const OBSCURE_WORDS_STATUS: ReviewStatus = 'draft';
@@ -29,36 +33,42 @@ export const OBSCURE_WORDS: readonly ObscureWord[] = [
     jp: { text: '木漏れ日', kana: 'こもれび', en: 'Sunlight filtering through the leaves of trees', furigana: [['木', 'こ'], ['漏', 'も'], ['れ', ''], ['日', 'び']] },
     literal: 'tree-leak-sun',
     close: ['through the leaves', 'through the trees', 'through leaves', 'through trees'],
+    kids: true,
   },
   {
     id: 'tsundoku',
     jp: { text: '積ん読', kana: 'つんどく', en: 'Buying books and leaving them piled up, unread', furigana: [['積', 'つ'], ['ん', ''], ['読', 'どく']] },
     literal: 'pile-up-read',
     close: ['unread book', 'books unread', 'not reading them', 'never read'],
+    kids: true,
   },
   {
     id: 'nekojita',
     jp: { text: '猫舌', kana: 'ねこじた', en: "Not being able to handle hot food or drinks", furigana: [['猫', 'ねこ'], ['舌', 'じた']] },
     literal: 'cat tongue',
     close: ['hot food', 'hot drink', 'hot things'],
+    kids: true,
   },
   {
     id: 'kuchisabishii',
     jp: { text: '口寂しい', kana: 'くちさびしい', en: 'Wanting something in your mouth (snacking out of boredom)', furigana: [['口', 'くち'], ['寂', 'さび'], ['しい', '']] },
     literal: 'lonely mouth',
     close: ['in your mouth', 'out of boredom', 'bored eating', 'boredom snack'],
+    kids: true,
   },
   {
     id: 'nekoze',
     jp: { text: '猫背', kana: 'ねこぜ', en: 'A hunched, slouching posture', furigana: [['猫', 'ねこ'], ['背', 'ぜ']] },
     literal: 'cat back',
     close: ['slouch', 'hunch'],
+    kids: true,
   },
   {
     id: 'nidone',
     jp: { text: '二度寝', kana: 'にどね', en: 'Going back to sleep after you have already woken up', furigana: [['二', 'に'], ['度', 'ど'], ['寝', 'ね']] },
     literal: 'second sleep',
     close: ['back to sleep', 'sleep again', 'second sleep'],
+    kids: true,
   },
   {
     id: 'kuidaore',
@@ -71,24 +81,28 @@ export const OBSCURE_WORDS: readonly ObscureWord[] = [
     jp: { text: '腹八分目', kana: 'はらはちぶんめ', en: 'Eating only until you are 80% full', furigana: [['腹', 'はら'], ['八', 'はち'], ['分', 'ぶん'], ['目', 'め']] },
     literal: 'belly eight-tenths',
     close: ['80%', '80 percent', 'eighty percent'],
+    kids: true,
   },
   {
     id: 'tanukineiri',
     jp: { text: '狸寝入り', kana: 'たぬきねいり', en: 'Pretending to be asleep', furigana: [['狸', 'たぬき'], ['寝', 'ね'], ['入', 'い'], ['り', '']] },
     literal: 'tanuki falling asleep',
     close: ['pretend to sleep', 'pretending to sleep', 'pretend to be asleep', 'pretending to be asleep', 'fake sleep', 'faking sleep'],
+    kids: true,
   },
   {
     id: 'nekonohitai',
     jp: { text: '猫の額', kana: 'ねこのひたい', en: 'A tiny piece of land (a very small garden or yard)', furigana: [['猫', 'ねこ'], ['の', ''], ['額', 'ひたい']] },
     literal: "a cat's forehead",
     close: ['piece of land', 'tiny garden', 'small garden', 'tiny yard', 'small yard'],
+    kids: true,
   },
   {
     id: 'mikkabouzu',
     jp: { text: '三日坊主', kana: 'みっかぼうず', en: 'Someone who gives up on new things after a few days', furigana: [['三日', 'みっか'], ['坊', 'ぼう'], ['主', 'ず']] },
     literal: 'three-day monk',
     close: ['give up', 'gives up', 'giving up', 'quitter'],
+    kids: true,
   },
   {
     id: 'sabawoyomu',
@@ -101,18 +115,21 @@ export const OBSCURE_WORDS: readonly ObscureWord[] = [
     jp: { text: '案山子', kana: 'かかし', en: 'A scarecrow', furigana: [['案山子', 'かかし']] },
     literal: 'the kanji are an old Chinese word; the reading ignores them',
     close: ['scarecrow', 'scare crow'],
+    kids: true,
   },
   {
     id: 'neguse',
     jp: { text: '寝癖', kana: 'ねぐせ', en: 'Bed hair (hair messed up from sleeping)', furigana: [['寝', 'ね'], ['癖', 'ぐせ']] },
     literal: 'sleep habit',
     close: ['bed hair', 'bedhead', 'bed head'],
+    kids: true,
   },
   {
     id: 'madoromu',
     jp: { text: '微睡む', kana: 'まどろむ', en: 'To doze off lightly', furigana: [['微睡', 'まどろ'], ['む', '']] },
     literal: 'faint sleep',
     close: ['doze', 'dozing'],
+    kids: true,
   },
   {
     id: 'abatamoekubo',
@@ -125,14 +142,87 @@ export const OBSCURE_WORDS: readonly ObscureWord[] = [
     jp: { text: '森林浴', kana: 'しんりんよく', en: 'Forest bathing: relaxing by spending time among trees', furigana: [['森', 'しん'], ['林', 'りん'], ['浴', 'よく']] },
     literal: 'forest bath',
     close: ['forest bath'],
+    kids: true,
   },
   {
     id: 'miyagebanashi',
     jp: { text: '土産話', kana: 'みやげばなし', en: 'Stories you bring home from a trip', furigana: [['土産', 'みやげ'], ['話', 'ばなし']] },
     literal: 'souvenir talk',
     close: ['travel stories', 'stories from a trip', 'trip stories', 'stories from your trip', 'travel tales'],
+    kids: true,
   },
 ];
+
+export const CHEEKY_WORDS_STATUS: ReviewStatus = 'draft';
+
+/**
+ * Cheeky-only words (drinking, nights out, office life, a little flirting; never explicit), dealt
+ * when the room's Audience is Cheeky. Meanings checked against dictionary senses (Daijisen, Daijirin, Jisho,
+ * Weblio, Kotobank); still needs the
+ * fluent sign-off and Ladi's taste check.
+ */
+export const CHEEKY_WORDS: readonly ObscureWord[] = [
+  {
+    id: 'futsukayoi',
+    jp: { text: '二日酔い', kana: 'ふつかよい', en: 'A hangover', furigana: [['二日', 'ふつか'], ['酔', 'よ'], ['い', '']] },
+    literal: 'two-day drunk',
+    close: ['hangover', 'hung over', 'hungover'],
+  },
+  {
+    id: 'chidoriashi',
+    jp: { text: '千鳥足', kana: 'ちどりあし', en: 'The wobbly, zigzag walk of someone who is drunk', furigana: [['千', 'ち'], ['鳥', 'どり'], ['足', 'あし']] },
+    literal: 'plover feet',
+    close: ['drunk walk', 'walking drunk', 'stagger', 'zigzag', 'totter', 'wobbly walk'],
+  },
+  {
+    id: 'asagaeri',
+    jp: { text: '朝帰り', kana: 'あさがえり', en: 'Getting home in the morning after staying out all night', furigana: [['朝', 'あさ'], ['帰', 'がえ'], ['り', '']] },
+    literal: 'morning return',
+    close: ['all night', 'home in the morning', 'home at dawn', 'stayed out', 'staying out'],
+  },
+  {
+    id: 'gozensama',
+    jp: { text: '午前様', kana: 'ごぜんさま', en: 'Someone who gets home after midnight from a night out', furigana: [['午', 'ご'], ['前', 'ぜん'], ['様', 'さま']] },
+    literal: 'Mr. A.M.',
+    close: ['after midnight', 'past midnight', 'home late'],
+  },
+  {
+    id: 'hashigozake',
+    jp: { text: '梯子酒', kana: 'はしござけ', en: 'Bar hopping: drinking at one place after another', furigana: [['梯子', 'はしご'], ['酒', 'ざけ']] },
+    literal: 'ladder sake',
+    close: ['bar hop', 'bar-hop', 'pub crawl', 'one bar to another', 'bar to bar'],
+  },
+  {
+    id: 'nakijougo',
+    jp: { text: '泣き上戸', kana: 'なきじょうご', en: 'Someone who starts crying when they get drunk', furigana: [['泣', 'な'], ['き', ''], ['上', 'じょう'], ['戸', 'ご']] },
+    literal: 'crying drinker',
+    close: ['cries when drunk', 'cry when drunk', 'crying drunk', 'weepy drunk', 'sad drunk'],
+  },
+  {
+    id: 'hananoshitawonobasu',
+    jp: { text: '鼻の下を伸ばす', kana: 'はなのしたをのばす', en: 'To make a dopey, lovestruck face at someone attractive (ogling)', furigana: [['鼻', 'はな'], ['の', ''], ['下', 'した'], ['を', ''], ['伸', 'の'], ['ばす', '']] },
+    literal: 'to stretch the bit under your nose',
+    close: ['lovestruck', 'smitten', 'infatuated', 'besotted', 'ogle'],
+  },
+  {
+    id: 'madogiwazoku',
+    jp: { text: '窓際族', kana: 'まどぎわぞく', en: 'Office workers pushed aside with nothing to do (given a desk by the window)', furigana: [['窓', 'まど'], ['際', 'ぎわ'], ['族', 'ぞく']] },
+    literal: 'the window-seat tribe',
+    close: ['nothing to do', 'sidelined', 'pushed aside', 'by the window'],
+  },
+];
+
+/**
+ * The words a game can deal for this Audience. Kids get the gentle subset; Cheeky gets its own
+ * words first, topped up with the rest so a short list never leaves a round empty. Family is the
+ * whole base list.
+ */
+export function fakeWordPool(audience: Audience, random: () => number, count: number): ObscureWord[] {
+  const shuffle = (xs: readonly ObscureWord[]) => shuffled(xs, random);
+  if (audience === 'kids') return shuffle(OBSCURE_WORDS.filter((w) => w.kids)).slice(0, count);
+  if (audience === 'cheeky') return [...shuffle(CHEEKY_WORDS), ...shuffle(OBSCURE_WORDS)].slice(0, count);
+  return shuffle(OBSCURE_WORDS).slice(0, count);
+}
 
 /** Placeholder telephone starters (N5), used only when the pack has no phrases. */
 export const FALLBACK_STARTERS: readonly { id: string; jp: JpText }[] = [

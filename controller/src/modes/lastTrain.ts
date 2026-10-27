@@ -139,7 +139,8 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
           { class: 'lt-hint' },
           task.lastHeard ? h('p', {}, 'Heard: ', h('span', { lang: 'ja' }, task.lastHeard)) : h('p', {}, 'Time ran out.'),
           task.hint ? h('p', {}, `💡 ${task.hint}`) : null,
-          task.firstKana ? h('p', {}, `It starts with ${task.firstKana}${level === 'kana' ? ` (${toRomaji(task.firstKana)})` : ''}`) : null,
+          // The server already adds the romaji: "お (o)".
+          task.firstKana ? h('p', {}, `It starts with ${task.firstKana}`) : null,
         )
       : null,
     box,

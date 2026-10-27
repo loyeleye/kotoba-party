@@ -26,8 +26,10 @@
 .raid-combo.live { color: var(--on-accent); background: var(--accent); border-color: var(--accent); font-size: 36px; animation: raid-pulse 500ms steps(1, end) infinite alternate; }
 .raid-how { color: var(--muted); font-size: 24px; text-align: center; margin: 0; }
 
+/* Fixed heights, not vh: the stage is a 1080p canvas scaled to the window (style.css), so vh would
+   shrink the arena in a smaller window while the yōkai keep their size. */
 .raid-arena {
-  position: relative; height: clamp(380px, 46vh, 520px); overflow: hidden; border-radius: 24px; border: 1px solid var(--line);
+  position: relative; height: 497px; overflow: hidden; border-radius: 24px; border: 1px solid var(--line);
   background:
     radial-gradient(ellipse at 50% 120%, rgba(87, 217, 163, 0.18), transparent 60%),
     repeating-linear-gradient(90deg, transparent 0 120px, rgba(169, 156, 201, 0.05) 120px 122px),
@@ -39,9 +41,10 @@
 .raid-yokai { position: absolute; width: 150px; margin-left: -75px; z-index: 1; }
 .raid-yokai.wide { width: 230px; margin-left: -115px; }
 .raid-yokai.lane-0 { top: 2%; }
-.raid-yokai.lane-1 { top: 33%; }
-.raid-yokai.lane-2 { top: 64%; }
-.raid-yokai.leader { top: 22%; }
+.raid-yokai.lane-1 { top: calc(50% - 76px); }
+/* Pinned to the bottom so the kana tag (which hangs 10 px below the sprite) is never cut off. */
+.raid-yokai.lane-2 { top: auto; bottom: 14px; }
+.raid-yokai.leader { top: 22%; bottom: auto; }
 .raid-yokai { contain: layout style; }
 /* Marching: a track slides by transform (GPU, no layout per frame); the yōkai sits on its left edge.
    The track stops 120 px short of the right edge, so a yōkai walks in whole, not cut in half
@@ -148,7 +151,7 @@ body[data-motion='calm'] .raid-yokai.defeated .raid-yokai-inner { animation: rai
 .ink-svg .ink-grid { stroke: rgba(120, 90, 50, 0.25); stroke-width: 0.6; stroke-dasharray: 2 2; fill: none; }
 .ink-svg .ink-stroke { fill: none; stroke: #1b1712; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation-name: ink-draw; animation-timing-function: ease-in-out; animation-fill-mode: forwards; }
 @keyframes ink-draw { to { stroke-dashoffset: 0; } }
-.raid-arena.ink { height: clamp(300px, 38vh, 440px); }
+.raid-arena.ink { height: 410px; }
 
 /* Combo window: a bar under the pill that drains to empty as the window closes. */
 .raid-combo { position: relative; }

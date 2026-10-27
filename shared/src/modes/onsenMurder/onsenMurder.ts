@@ -18,7 +18,7 @@
 
 import type { JpText, OnsenCase, OnsenIntent, OnsenSuspect } from '../../../../content/src/types.js';
 import { hasKanji, isKana, isUtterance, soundKey, type Utterance } from '../../japanese/kana.js';
-import type { Phase, Viewer } from '../../protocol.js';
+import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, type Award, type Mode, type ModeContext, type ModePlayer, type PhraseEntry } from '../mode.js';
 import { FALLBACK_CASE } from './fallback.js';
 import { accusationLine, bareName, checkAccusation, INTENTS, matchQuestion, questionFor, tilesFor, type QuestionTile } from './questions.js';
@@ -272,7 +272,20 @@ function chooseCase(ctx: ModeContext, opts: { extra?: Record<string, unknown> })
   const cases = ctx.content.onsenCases.filter((c) => c.suspects.length >= 2 && c.suspects.some((x) => x.id === c.culpritId));
   if (!cases.length) return { c: FALLBACK_CASE, fallback: true };
   const wanted = typeof opts.extra?.caseId === 'string' ? cases.find((c) => c.id === opts.extra!.caseId) : undefined;
-  return { c: wanted ?? pick(cases, () => ctx.random())!, fallback: false };
+  if (wanted) return { c: wanted, fallback: false };
+  const c = caseFor(cases, ctx.audience ?? 'family', () => ctx.random());
+  return c ? { c, fallback: false } : { c: FALLBACK_CASE, fallback: true };
+}
+
+/**
+ * Picks a case for the room's Audience. Cases with no audience play in every room; a Kids or
+ * Cheeky room also gets its own cases, and plays one of them half the time.
+ */
+export function caseFor(cases: readonly OnsenCase[], audience: Audience, random: () => number): OnsenCase | undefined {
+  const shared = cases.filter((c) => !c.audience);
+  const own = cases.filter((c) => c.audience && c.audience === audience);
+  if (own.length && (!shared.length || random() < 0.5)) return pick(own, random);
+  return pick(shared, random);
 }
 
 /** Joins a lead-in to an answer. */

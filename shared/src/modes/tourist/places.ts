@@ -214,7 +214,7 @@ export const PLACES: readonly Place[] = [
       ['n5', 'when', t('のみかいの あとで 行きます。', 'のみかいの あとで いきます。', 'I go after a night out.')],
       ['n4', 'when', t('さむく なったら 行きたく なります。', 'さむく なったら いきたく なります。', 'When it gets cold, I want to go.')],
       ['kana', 'who', k('ひとりで！', 'Alone!')],
-      ['n5', 'who', t('かいしゃの 人と 行きます。', 'かいしゃの ひとと いきます。', 'I go with people from work.')],
+      ['n5', 'who', { ...t('かいしゃの 人と 行きます。', 'かいしゃの ひとと いきます。', 'I go with people from work.'), furigana: [['かいしゃの ', ''], ['人', 'ひと'], ['と ', ''], ['行', 'い'], ['きます。', '']] }],
       ['kana', 'like', k('だいすき！', 'I love it!')],
       ['n5', 'like', t('しょうゆあじが いちばん すきです。', 'しょうゆあじが いちばん すきです。', 'I like soy-sauce flavour best.')],
       ['kana', 'how', k('うるさいです。', "It's loud.")],
