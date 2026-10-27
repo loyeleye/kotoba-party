@@ -16,7 +16,7 @@ import type { JpText, Level } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { parseTake, pronScore, scoreTake, type TakeScore } from './scoring.js';
-import { beatMs, lineMs, noteTimes, romajiMorae, SONGS, sungRomaji, wordsOf, type Song } from './songs.js';
+import { beatMs, lineMs, noteTimes, romajiMorae, SONGS, sungRomaji, wordsOf, type Song, type SongStyle } from './songs.js';
 
 // ---- tuning ----
 
@@ -141,6 +141,7 @@ export interface SongView {
   title: JpText;
   bpm: number;
   beatMs: number;
+  style: SongStyle;
   lines: LineView[];
 }
 
@@ -347,7 +348,8 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     return {
       totalRounds: rounds,
       round: 0,
-      songOrder: shuffled(SONGS.map((x) => x.id), random),
+      // Grown-up songs first; the children's sing-alongs only once those have all come up.
+      songOrder: [...shuffled(SONGS.filter((x) => !x.kids).map((x) => x.id), random), ...shuffled(SONGS.filter((x) => x.kids).map((x) => x.id), random)],
       songId: null,
       duel: null,
       turns: [],
@@ -600,7 +602,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       totalRounds: s.totalRounds,
       doubled: isLastRound(s),
       song: song
-        ? { id: song.id, title: song.title, bpm: song.bpm, beatMs: beatMs(song.bpm), lines: song.lines.slice(0, MAX_LINES).map((_, i) => lineView(song, i)) }
+        ? { id: song.id, title: song.title, bpm: song.bpm, beatMs: beatMs(song.bpm), style: song.style, lines: song.lines.slice(0, MAX_LINES).map((_, i) => lineView(song, i)) }
         : null,
       duel: s.duel,
       order: s.turns,

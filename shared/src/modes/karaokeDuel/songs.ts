@@ -1,5 +1,7 @@
 // Karaoke Duel songs: short ORIGINAL beginner songs (no borrowed lyrics or tunes), written for
-// this game. Each line carries its kana (what is scored), hyphenated romaji with one syllable
+// this game. The first five are simple sing-alongs (`kids: true`); the rest are grown-up songs in
+// the styles a real karaoke box is full of (city pop, enka, an anime opening, an izakaya chant,
+// salaryman blues), still with beginner words, and they come up first. Each line carries its kana (what is scored), hyphenated romaji with one syllable
 // per mora (the Kana-level guide), English, and a melody of one note per mora.
 //
 // Melodies are MIDI note numbers (60 = middle C) with lengths in beats; the stage plays them
@@ -26,12 +28,18 @@ export interface SongLine {
   melody: readonly Note[];
 }
 
+/** How the stage's backing track sounds (karaokeAudio.ts). */
+export type SongStyle = 'nursery' | 'citypop' | 'enka' | 'rock' | 'izakaya' | 'blues';
+
 export interface Song {
   id: string;
   title: JpText;
   /** Beats per minute. */
   bpm: number;
-  /** The lowest level the song suits. All v1 songs are Kana-level friendly. */
+  style: SongStyle;
+  /** A children's-style sing-along: played only after the grown-up songs have all come up. */
+  kids?: boolean;
+  /** The lowest level the song suits. Every song so far is Kana-level friendly (romaji guide). */
   level: Level;
   lines: readonly SongLine[];
   status: ReviewStatus;
@@ -42,6 +50,8 @@ export const SONGS: readonly Song[] = [
     id: 'ohayou',
     title: { text: 'おはようソング', kana: 'おはようソング', en: 'Good Morning Song' },
     bpm: 104,
+    style: 'nursery',
+    kids: true,
     level: 'kana',
     status: 'draft',
     lines: [
@@ -55,6 +65,8 @@ export const SONGS: readonly Song[] = [
     id: 'neko',
     title: { text: 'ねこの ひるね', kana: 'ねこの ひるね', en: 'The Cat’s Nap' },
     bpm: 92,
+    style: 'nursery',
+    kids: true,
     level: 'kana',
     status: 'draft',
     lines: [
@@ -68,6 +80,8 @@ export const SONGS: readonly Song[] = [
     id: 'densha',
     title: { text: 'でんしゃで ゴー', kana: 'でんしゃで ゴー', en: 'Go by Train' },
     bpm: 112,
+    style: 'nursery',
+    kids: true,
     level: 'kana',
     status: 'draft',
     lines: [
@@ -81,6 +95,8 @@ export const SONGS: readonly Song[] = [
     id: 'ramen',
     title: { text: 'ラーメン ブルース', kana: 'ラーメン ブルース', en: 'Ramen Blues' },
     bpm: 84,
+    style: 'blues',
+    kids: true,
     level: 'kana',
     status: 'draft',
     lines: [
@@ -94,6 +110,8 @@ export const SONGS: readonly Song[] = [
     id: 'mata-ashita',
     title: { text: 'また あした', kana: 'また あした', en: 'See You Tomorrow' },
     bpm: 96,
+    style: 'nursery',
+    kids: true,
     level: 'kana',
     status: 'draft',
     lines: [
@@ -101,6 +119,76 @@ export const SONGS: readonly Song[] = [
       { text: '今日も 楽しかった', kana: 'きょうも たのしかった', romaji: 'kyo-u-mo ta-no-shi-ka-t-ta', en: 'Today was fun again', melody: [[64, 0.5], [64, 0.5], [65, 0.5], [67, 0.5], [69, 0.5], [67, 0.5], [65, 0.5], [64, 0.25], [62, 1.75]] },
       { text: 'また あした 会いましょう', kana: 'また あした あいましょう', romaji: 'ma-ta a-shi-ta a-i-ma-sho-u', en: 'Let’s meet again tomorrow', melody: [[60, 0.5], [62, 0.5], [64, 0.5], [65, 0.5], [67, 1], [69, 0.5], [67, 0.5], [65, 0.5], [64, 0.5], [62, 1]] },
       { text: 'おやすみなさい', kana: 'おやすみなさい', romaji: 'o-ya-su-mi-na-sa-i', en: 'Good night', melody: [[64, 0.5], [62, 0.5], [60, 0.5], [62, 0.5], [64, 0.5], [62, 0.5], [60, 2]] },
+    ],
+  },
+  {
+    id: 'yoru-no-drive',
+    title: { text: '夜の ドライブ', kana: 'よるの ドライブ', en: 'Night Drive' },
+    bpm: 104,
+    style: 'citypop',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: '窓を 開けて', kana: 'まどを あけて', romaji: 'ma-do-o a-ke-te', en: 'Roll the window down', melody: [[69, 0.5], [67, 0.5], [65, 0.5], [67, 0.5], [69, 0.5], [72, 1.5]] },
+      { text: '君の 好きな 歌', kana: 'きみの すきな うた', romaji: 'ki-mi-no su-ki-na u-ta', en: 'The song you love', melody: [[72, 0.5], [74, 0.5], [72, 0.5], [69, 0.5], [67, 0.5], [69, 0.5], [72, 0.5], [76, 2]] },
+      { text: '街の 光 きれいだね', kana: 'まちの ひかり きれいだね', romaji: 'ma-chi-no hi-ka-ri ki-re-i-da-ne', en: 'The city lights are beautiful, aren’t they', melody: [[76, 0.5], [74, 0.5], [72, 0.5], [74, 0.5], [72, 0.5], [69, 0.5], [67, 0.5], [69, 0.5], [69, 0.5], [67, 0.5], [65, 1.5]] },
+      { text: '海まで 行こう', kana: 'うみまで いこう', romaji: 'u-mi-ma-de i-ko-u', en: 'Let’s drive all the way to the sea', melody: [[65, 0.5], [67, 0.5], [69, 0.5], [72, 0.5], [74, 0.5], [72, 0.5], [77, 2]] },
+    ],
+  },
+  {
+    id: 'ame-no-minato',
+    title: { text: '雨の 港', kana: 'あめの みなと', en: 'Harbour in the Rain' },
+    bpm: 76,
+    style: 'enka',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', melody: [[65, 0.5], [64, 0.5], [64, 0.5], [69, 1], [71, 0.5], [69, 2]] },
+      { text: 'あなたは 来ない', kana: 'あなたは こない', romaji: 'a-na-ta-wa ko-na-i', en: 'You aren’t coming', melody: [[72, 0.5], [71, 0.5], [69, 0.5], [65, 0.5], [64, 0.5], [65, 0.5], [64, 2]] },
+      { text: '一人で 飲む お酒', kana: 'ひとりで のむ おさけ', romaji: 'hi-to-ri-de no-mu o-sa-ke', en: 'Sake I drink alone', melody: [[60, 0.5], [64, 0.5], [65, 0.5], [64, 0.5], [69, 0.5], [71, 0.5], [69, 0.5], [65, 0.5], [64, 1.25]] },
+      { text: 'さよなら あなた', kana: 'さよなら あなた', romaji: 'sa-yo-na-ra a-na-ta', en: 'Goodbye, my love', melody: [[69, 0.5], [72, 0.5], [71, 0.5], [69, 0.5], [65, 0.5], [64, 0.5], [57, 2.5]] },
+    ],
+  },
+  {
+    id: 'hashire',
+    title: { text: '走れ！', kana: 'はしれ', en: 'Run!' },
+    bpm: 152,
+    style: 'rock',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: 'もっと 速く', kana: 'もっと はやく', romaji: 'mo-t-to ha-ya-ku', en: 'Faster, faster', melody: [[64, 0.5], [64, 0.5], [67, 0.5], [69, 0.5], [71, 0.5], [74, 1.5]] },
+      { text: '夢に 向かって', kana: 'ゆめに むかって', romaji: 'yu-me-ni mu-ka-t-te', en: 'Toward my dream', melody: [[74, 0.5], [76, 0.5], [74, 0.5], [71, 0.5], [74, 0.75], [74, 0.25], [76, 2]] },
+      { text: '負けない 心', kana: 'まけない こころ', romaji: 'ma-ke-na-i ko-ko-ro', en: 'A heart that won’t give in', melody: [[76, 0.5], [74, 0.5], [72, 0.5], [71, 0.5], [72, 0.5], [74, 0.5], [71, 2]] },
+      { text: '今だ 飛べ！', kana: 'いまだ とべ', romaji: 'i-ma-da to-be', en: 'Now — fly!', melody: [[71, 0.5], [74, 0.5], [76, 1], [79, 1], [79, 3]] },
+    ],
+  },
+  {
+    id: 'kanpai',
+    title: { text: '乾杯！', kana: 'かんぱい', en: 'Cheers!' },
+    bpm: 120,
+    style: 'izakaya',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: '仕事が 終わった', kana: 'しごとが おわった', romaji: 'shi-go-to-ga o-wa-t-ta', en: 'Work is over', melody: [[67, 0.5], [67, 0.5], [69, 0.5], [67, 0.5], [64, 0.5], [62, 0.5], [62, 0.25], [60, 1.75]] },
+      { text: 'とりあえず ビール', kana: 'とりあえず ビール', romaji: 'to-ri-a-e-zu bi-i-ru', en: 'A beer to start with', melody: [[64, 0.5], [64, 0.5], [67, 0.5], [64, 0.5], [62, 0.5], [69, 1], [69, 0.5], [67, 1.5]] },
+      { text: '乾杯 乾杯！', kana: 'かんぱい かんぱい', romaji: 'ka-n-pa-i ka-n-pa-i', en: 'Cheers, cheers!', melody: [[72, 0.5], [72, 0.5], [69, 0.5], [67, 0.5], [72, 0.5], [72, 0.5], [69, 0.5], [67, 1.5]] },
+      { text: 'もう 一杯！', kana: 'もう いっぱい', romaji: 'mo-u i-p-pa-i', en: 'One more round!', melody: [[67, 0.5], [69, 0.5], [72, 0.75], [72, 0.25], [74, 1], [72, 2]] },
+    ],
+  },
+  {
+    id: 'getsuyoubi',
+    title: { text: '月曜日 ブルース', kana: 'げつようび ブルース', en: 'Monday Blues' },
+    bpm: 88,
+    style: 'blues',
+    level: 'kana',
+    status: 'draft',
+    lines: [
+      { text: '朝の 満員電車', kana: 'あさの まんいんでんしゃ', romaji: 'a-sa-no ma-n-i-n-de-n-sha', en: 'The packed morning train', melody: [[57, 0.5], [60, 0.5], [62, 0.5], [63, 0.5], [64, 0.5], [64, 0.5], [62, 0.5], [60, 0.5], [60, 0.5], [57, 1.5]] },
+      { text: '部長は 怒ってる', kana: 'ぶちょうは おこってる', romaji: 'bu-cho-u-wa o-ko-t-te-ru', en: 'The boss is angry', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [63, 0.5], [62, 0.5], [62, 0.25], [60, 0.75], [57, 1.5]] },
+      { text: '残業 今日も', kana: 'ざんぎょう きょうも', romaji: 'za-n-gyo-u kyo-u-mo', en: 'Overtime again today', melody: [[69, 0.5], [69, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [64, 0.5], [62, 2]] },
+      { text: '早く 帰りたい', kana: 'はやく かえりたい', romaji: 'ha-ya-ku ka-e-ri-ta-i', en: 'I just want to go home', melody: [[60, 0.5], [62, 0.5], [63, 0.5], [64, 1], [67, 0.5], [64, 0.5], [62, 0.5], [57, 2]] },
     ],
   },
 ];

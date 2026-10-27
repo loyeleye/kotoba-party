@@ -41,7 +41,7 @@ and `themeFor` in `cues.ts`; the count is kept in the browser), so a long night 
 | Murder at the Onsen | **Sneaky Snitch** (Kevin MacLeod) | **Ishikari Lore** (Kevin MacLeod, koto) |
 | Kana Yōkai Raid | **Determination** (HydroGene) | **Ouroboros** (Kevin MacLeod) |
 | The Last Train | **Last Train Dash** (synth, 16 bars) | |
-| Karaoke Duel | Its own backing track while someone sings (`stage/src/modes/karaokeAudio.ts`); the synth's **Teacups at Two** between songs and **Taiko Showdown** at the end | |
+| Karaoke Duel | Its own backing track while someone sings (`stage/src/modes/karaokeAudio.ts`; each song has a style: nursery, city pop, enka, rock, izakaya, blues); the synth's **Teacups at Two** between songs and **Taiko Showdown** at the end | |
 
 **House theme.** "Ko-to-ba pa-a-ty!" (D5 D5 E5 F#5 A5 | G5 F#5 E5 D5) is the show's signature. The ident
 plays it before every game, the recap's Curtain Call fanfare opens with it, and the synth lobby and

@@ -173,9 +173,19 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 13. **Guide melody is quiet** (triangle at low gain) with a soft bass on each beat, so phones
     mostly hear the singer.
 14. **Songs live in the mode folder** (`songs.ts`, like Concentration's scenes), not in
-    `content/` and `ContentLibrary`, to keep engine changes at zero. Five original draft songs,
-    four lines each, every line under 5 s, all Kana-level vocabulary (greetings, food, travel).
-    Tests check one note and one romaji syllable per mora.
+    `content/` and `ContentLibrary`, to keep engine changes at zero. Ten original draft songs,
+    four lines each, every line under 5 s. Five are children's-style sing-alongs (greetings,
+    food, travel; `kids: true`). Five are grown-up songs in karaoke-box genres with beginner
+    words: city pop (夜の ドライブ), enka (雨の 港), an anime-opening rocker (走れ！), an izakaya
+    chant (乾杯！) and salaryman blues (月曜日 ブルース). Tests check one note and one romaji
+    syllable per mora, and that every perfect take scores 100.
+19. **Grown-up songs first.** A game plays every grown-up song (shuffled) before any
+    children's song, so a default four-song game has none. Ladi asked to move past children's
+    songs (2026-10-27).
+20. **Each song has a backing style** (`style`: nursery, citypop, enka, rock, izakaya,
+    blues). It sets the bass pattern, swing, light drums (kick, snare or claps, hi-hat) and the
+    guide's sound; enka's held notes get vibrato. Sung notes are at least half a beat, because
+    the phone's 100 ms pitch frames can't measure shorter notes.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
     practice; the ball always runs over kana.
@@ -217,4 +227,6 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 - Stage audio needs a click on the stage page first (browser autoplay rules).
 - Headless smoke test only (Chromium, 1920×1080 / 1280×720 stage, 360 px phones, typed takes):
   no real microphone, recogniser or speakers.
-- Five songs: a long night repeats them (they cycle in a shuffled order).
+- Ten songs: a long night repeats them (they cycle: grown-up songs first, then the kids' songs).
+- The drums are synthesised noise and a sine kick. Kept quiet, but the phone mic may hear them;
+  the words gate limits the damage, as with the guide melody.

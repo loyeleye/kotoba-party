@@ -120,9 +120,10 @@ class Table {
 // ---- songs ----
 
 describe('Karaoke Duel: songs', () => {
-  it('has 4–6 original draft songs whose every line has one note and one romaji syllable per mora', () => {
+  it('has original draft songs whose every line has one note and one romaji syllable per mora', () => {
     expect(SONGS.length).toBeGreaterThanOrEqual(4);
-    expect(SONGS.length).toBeLessThanOrEqual(6);
+    // At least four grown-up songs, so a default four-song game has no children's songs.
+    expect(SONGS.filter((s) => !s.kids).length).toBeGreaterThanOrEqual(4);
     expect(new Set(SONGS.map((s) => s.id)).size).toBe(SONGS.length);
     for (const song of SONGS) {
       expect(song.status).toBe('draft');
@@ -141,6 +142,16 @@ describe('Karaoke Duel: songs', () => {
         expect(lineMs(line, song.bpm)).toBeLessThan(5_000);
       }
     }
+  });
+
+  it('plays every grown-up song before any children’s song', () => {
+    const t = new Table(2);
+    t.start();
+    const grown = SONGS.filter((x) => !x.kids).map((x) => x.id);
+    const order = t.st.songOrder;
+    expect(order).toHaveLength(SONGS.length);
+    expect([...order.slice(0, grown.length)].sort()).toEqual([...grown].sort());
+    expect(t.view().song!.style).toBe(SONGS.find((x) => x.id === order[0])!.style);
   });
 
   it('splits kana into morae: small kana join, っ ん ー stand alone', () => {

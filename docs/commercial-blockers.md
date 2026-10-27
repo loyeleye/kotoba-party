@@ -211,7 +211,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 13. Karaoke Duel songs
 
-- Songs are original. Any real song (even a nursery song still in copyright, or a well-known
+- Songs are original, lyrics and melodies alike, including the five grown-up songs added on
+  2026-10-27. They borrow genres (city pop, enka, anime rock, izakaya chant, blues), never a
+  real song's tune or words. Keep it that way: no "in the style of <artist>" melodies.
+- Any real song (even a nursery song still in copyright, or a well-known
   arrangement) needs a music licence. Old folk songs (e.g. さくらさくら) are public domain, but a
   specific recording or arrangement may not be.
 

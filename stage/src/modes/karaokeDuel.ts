@@ -227,6 +227,7 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
     countInBeats: turn.countInBeats,
     notes: line.notes,
     rests: line.words.flat().map((m) => m === 'っ' || m === 'ッ'),
+    style: song.style,
   });
   const next = song.lines[turn.line + 1];
   const singer = turn.singerId;
