@@ -269,10 +269,10 @@ export const SONGS: readonly Song[] = [
       { text: '船が 出て行く', kana: 'ふねが でていく', romaji: 'fu-ne-ga de-te-i-ku', en: 'Your ship is sailing away', chords: 'C Fmaj7', melody: [[64, 1], [60, 0.5], [60, 0.5], [64, 1.5], [60, 0.5], [60, 1], [57, 2]] },
       { text: '冷たい 雨に', kana: 'つめたい あめに', romaji: 'tsu-me-ta-i a-me-ni', en: 'In the cold rain', chords: 'G7 E7', melody: [[59, 0.5], [62, 0.5], [62, 2], [62, 1], [64, 1.5], [62, 0.5], [59, 1]] },
       { text: '一人 泣くの', kana: 'ひとり なくの', romaji: 'hi-to-ri na-ku-no', en: 'I cry alone', chords: 'Am Am7', melody: [[60, 0.5], [64, 1], [60, 0.5], [60, 1], [64, 1], [64, 3]] },
-      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', chords: 'Dm7 G7', melody: [[69, 1.5], [64, 0.5], [60, 1], [60, 0.5], [64, 0.5], [67, 3]] },
+      { text: 'いつまでも ここで', kana: 'いつまでも ここで', romaji: 'i-tsu-ma-de-mo ko-ko-de', en: 'Here, forever', chords: 'Dm7 G7', melody: [[69, 1.5], [64, 0.5], [60, 0.5], [60, 0.5], [60, 1], [59, 0.5], [62, 0.5], [67, 2]] },
       { text: 'あなたを 待つわ', kana: 'あなたを まつわ', romaji: 'a-na-ta-o ma-tsu-wa', en: 'I’ll wait for you', chords: 'C Fmaj7', melody: [[67, 1.5], [69, 0.5], [67, 1], [64, 0.5], [67, 0.5], [64, 0.5], [64, 2.5]] },
       { text: '十年でも 待つわ', kana: 'じゅうねんでも まつわ', romaji: 'ju-u-ne-n-de-mo ma-tsu-wa', en: 'I’ll wait ten years if I must', chords: 'G7 E7', melody: [[71, 1], [71, 1], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [71, 1], [68, 0.5], [64, 1.5]] },
-      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', chords: 'Am Am7', melody: [[69, 1.5], [64, 0.5], [60, 1], [60, 0.5], [64, 0.5], [69, 3]] },
+      { text: 'いつまでも ここで', kana: 'いつまでも ここで', romaji: 'i-tsu-ma-de-mo ko-ko-de', en: 'Here, forever', chords: 'Am Am7', melody: [[69, 1.5], [64, 0.5], [60, 0.5], [60, 0.5], [60, 1], [60, 0.5], [64, 0.5], [69, 2]] },
       { text: 'あれ？ あの 船', kana: 'あれ あの ふね', romaji: 'a-re a-no fu-ne', en: 'Huh? That ship…', chords: 'Dm7 G7', melody: [[57, 0.5], [60, 1.5], [57, 0.5], [60, 0.5], [62, 1], [59, 3]] },
       { text: 'おかえり あなた', kana: 'おかえり あなた', romaji: 'o-ka-e-ri a-na-ta', en: 'Welcome home, my love', chords: 'C Fmaj7', melody: [[60, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [60, 1], [64, 1], [60, 3]] },
       { text: 'となりの 町まで', kana: 'となりの まちまで', romaji: 'to-na-ri-no ma-chi-ma-de', en: 'To the town next door', chords: 'G7 E7', melody: [[59, 0.5], [62, 0.5], [62, 0.5], [62, 0.5], [59, 1], [62, 1], [59, 1], [59, 1]] },
@@ -282,7 +282,7 @@ export const SONGS: readonly Song[] = [
   {
     // Harbour in the Rain, version B, over the other Mureka take: verse Dm7 G | C Fmaj7 | G7 | E E7,
     // ending on the dominant; chorus twice as fast, Dm7 G C Fmaj7 | G7 E Am7. She waves the nine
-    // o'clock ship a tearful goodbye, then finds its ticket in her pocket: it was her ship.
+    // o'clock ship a tearful goodbye (いってらっしゃい), then finds its ticket in her pocket: it was her ship.
     id: 'ame-no-minato-b',
     group: 'ame-no-minato',
     title: { text: '雨の 港', kana: 'あめの みなと', en: 'Harbour in the Rain' },
@@ -297,10 +297,10 @@ export const SONGS: readonly Song[] = [
       { text: '九時の 船が 出る', kana: 'くじの ふねが でる', romaji: 'ku-ji-no fu-ne-ga de-ru', en: 'The nine o’clock ship sets sail', chords: 'C Fmaj7', melody: [[64, 1], [60, 0.5], [60, 0.5], [64, 1], [60, 0.5], [60, 0.5], [64, 1], [60, 2]] },
       { text: 'ゆっくり 海へ', kana: 'ゆっくり うみへ', romaji: 'yu-k-ku-ri u-mi-e', en: 'Slowly out to sea', chords: 'G7 G7', melody: [[59, 0.5], [62, 0.5], [62, 0.5], [59, 0.5], [62, 1.5], [59, 1.5], [59, 2]] },
       { text: '私は 見てる', kana: 'わたしは みてる', romaji: 'wa-ta-shi-wa mi-te-ru', en: 'And I watch it go', chords: 'E E7', melody: [[59, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [68, 1.5], [64, 0.5], [59, 3]] },
-      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', chords: 'Dm7 G C Fmaj7', melody: [[69, 1.5], [65, 0.5], [62, 1], [62, 0.5], [67, 0.5], [67, 3]] },
+      { text: 'いってらっしゃい', kana: 'いってらっしゃい', romaji: 'i-t-te-ra-s-sha-i', en: 'Have a good trip!', chords: 'Dm7 G C Fmaj7', melody: [[62, 0.5], [65, 0.5], [65, 1], [67, 1], [67, 0.5], [71, 1.5], [67, 2]] },
       { text: 'さようなら 船よ', kana: 'さようなら ふねよ', romaji: 'sa-yo-u-na-ra fu-ne-yo', en: 'Goodbye, ship', chords: 'G7 E Am7 Am7', melody: [[67, 1.5], [71, 0.5], [71, 1], [71, 0.5], [68, 0.5], [69, 0.5], [64, 0.5], [64, 2]] },
       { text: '遠くへ 行くのね', kana: 'とおくへ いくのね', romaji: 'to-o-ku-e i-ku-no-ne', en: 'You’re going far away', chords: 'Dm7 G C Fmaj7', melody: [[69, 0.5], [72, 1], [72, 0.5], [67, 1], [67, 0.5], [71, 0.5], [72, 1], [67, 2]] },
-      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', chords: 'G7 E Am7 Am7', melody: [[71, 1.5], [67, 0.5], [64, 1], [64, 0.5], [68, 0.5], [69, 3]] },
+      { text: 'いってらっしゃい', kana: 'いってらっしゃい', romaji: 'i-t-te-ra-s-sha-i', en: 'Have a good trip!', chords: 'G7 E Am7 Am7', melody: [[59, 0.5], [62, 0.5], [62, 1], [64, 1], [64, 0.5], [71, 1.5], [69, 2]] },
       { text: 'ポケットに 切符', kana: 'ポケットに きっぷ', romaji: 'po-ke-t-to-ni ki-p-pu', en: 'There’s a ticket in my pocket', chords: 'Dm7 G', melody: [[62, 0.5], [65, 0.5], [65, 0.5], [62, 0.5], [62, 1], [60, 0.5], [62, 0.5], [62, 3]] },
       { text: '九時の 切符', kana: 'くじの きっぷ', romaji: 'ku-ji-no ki-p-pu', en: 'A ticket for nine o’clock', chords: 'C Fmaj7', melody: [[67, 1], [64, 1], [60, 1], [60, 0.5], [64, 0.5], [64, 3]] },
       { text: 'あれ？ 待って', kana: 'あれ まって', romaji: 'a-re ma-t-te', en: 'Huh? Wait…', chords: 'G7 G7', melody: [[59, 0.5], [62, 1.5], [65, 1], [65, 0.5], [62, 1.5]] },
