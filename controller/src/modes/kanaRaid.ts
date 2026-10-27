@@ -7,6 +7,7 @@
 import { h, ruby } from '../../../shared/src/dom.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
+import { hasTabAudio } from '../../../shared/src/audioTabs.js';
 import type { AttackView, KanaRaidView, LastResult } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import { inkPad } from '../components/inkPad.js';
@@ -32,7 +33,7 @@ function canVoice(): boolean {
 
 function say(text: string): void {
   const s = synth();
-  if (!s || !text) return;
+  if (!s || !text || !hasTabAudio()) return;
   try {
     s.cancel();
     const u = new SpeechSynthesisUtterance(text);

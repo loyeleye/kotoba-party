@@ -63,6 +63,14 @@ fanfare) are kept as spares; switch a mode back to one by naming it in `MODE_THE
   Japanese and Karaoke Duel's track together, and is remembered in that browser. With sound off,
   Concentration shows audio cards' kana instead. Browsers only allow sound after a tap, click or key
   press on the page, so until then the button reads "Click for music".
+- **One tab plays.** When several tabs of one browser show the same room, only one makes sound
+  (`shared/src/audioTabs.ts`): the tab you switch to or click into takes it, over a BroadcastChannel.
+  The others keep the music running silently, so the switch is seamless, and their button reads
+  "Sound in another tab". If you leave for a tab that isn't the game, the last game tab keeps playing;
+  closing it passes the sound to another game tab. Stage tabs and phone tabs are elected separately
+  (clicking into your phone tab doesn't stop the stage's music), and other devices are never affected.
+  Phones follow the same rule for Kana Raid's and Last Train's read-aloud Japanese. Mute and volumes
+  stay as they are; a tab handing over doesn't change them.
 - **Listening waves.** In Kana Raid's Wave 2 (Echo) and Wave 3 (Long and Short), players pick what
   they heard from a phone speaker, so the music drops further still: the "listen" mix (low-passed at
   500 Hz, about a sixth of the level).

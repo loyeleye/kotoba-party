@@ -7,7 +7,7 @@
 // come from watching the view (watchSfx); modes add their own right and wrong moments with sfx().
 
 import type { RoomView } from '../../../shared/src/protocol.js';
-import { audioReady, getSound, isMuted } from '../sound.js';
+import { audioReady, getSound, silent } from '../sound.js';
 import { speaks } from './cues.js';
 
 export type SfxId = 'tap' | 'join' | 'round' | 'tick' | 'tock' | 'right' | 'wrong' | 'hit';
@@ -19,7 +19,7 @@ const lastAt: Partial<Record<SfxId, number>> = {};
 /** Plays one effect now (or `delay` seconds from now). Silent until audio is unlocked, and when muted. */
 export function sfx(id: SfxId, delay = 0): void {
   const sound = getSound();
-  if (!sound || !audioReady() || isMuted()) return;
+  if (!sound || !audioReady() || silent()) return;
   const nowMs = performance.now();
   if (nowMs - (lastAt[id] ?? -1e9) < (MIN_GAP_MS[id] ?? 0)) return;
   lastAt[id] = nowMs;

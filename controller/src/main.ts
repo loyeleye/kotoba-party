@@ -68,6 +68,7 @@ const ERRORS: Record<string, string> = {
 
 let lastView: RoomView | null = null;
 import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
+import { hasTabAudio, joinAudioTabs, onTabAudio } from '../../shared/src/audioTabs.js';
 
 interface Session {
   code: string;
@@ -197,6 +198,7 @@ function start(s: Session): void {
   session = s;
   store('kotoba:session', s);
   setSpeechService(s.speech ? { base, code: s.code, token: s.token } : null);
+  joinAudioTabs('phone', s.code);
   history.replaceState(null, '', `/?code=${s.code}`);
   client = new RoomClient({ baseUrl: base, code: s.code, token: s.token, onState: render, onStatus: status });
   client.connect();
@@ -528,6 +530,10 @@ document.addEventListener('visibilitychange', () => {
     client.reconnectNow();
     if (!wakeLock) void keepAwake();
   }
+});
+// Two tabs of this phone on the room: only the one in front reads Japanese aloud (audioTabs.ts).
+onTabAudio((active) => {
+  if (!active && typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
 });
 window.addEventListener('online', () => client?.reconnectNow());
 

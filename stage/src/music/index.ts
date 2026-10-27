@@ -4,7 +4,7 @@
 
 import { h, mount } from '../../../shared/src/dom.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
-import { MUSIC_LEVEL, audioReady, audioSupported, getSound, isMuted, onAudioReady, onMuteChange, onVolumeChange, setMuted, unlockAudio, voiceVolume } from '../sound.js';
+import { MUSIC_LEVEL, audioReady, audioSupported, getSound, isAway, isMuted, onAudioReady, onAwayChange, onMuteChange, onVolumeChange, setMuted, silent, unlockAudio, voiceVolume } from '../sound.js';
 import { cueFor, listening, themeFor, type Cue, type MusicId } from './cues.js';
 import { SongVoice, TrackVoice, load, type Mix } from './engine.js';
 import { SONGS, type SongId } from './songs.js';
@@ -199,6 +199,16 @@ onMuteChange((muted) => {
   else if (audioReady()) apply(want, -1);
   refreshButton();
 });
+// Another tab took the sound: the music plays on here silently (sound.ts), so taking it back is
+// seamless, but a line already being read aloud stops and host lines go quiet.
+onAwayChange((away) => {
+  if (away && typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  for (const a of voices) {
+    a.muted = silent();
+    a.volume = voiceVolume();
+  }
+  refreshButton();
+});
 
 /** Streamer mode plays only the game's own synth tunes (no recorded tracks), on this screen. */
 export const isStreamerMode = (): boolean => streamer;
@@ -243,7 +253,7 @@ function duck(): () => void {
 
 /** Ducks the music for a host's voice line; call before play(). Sound off silences the line too. */
 export function duckFor(audio: HTMLAudioElement): void {
-  audio.muted = isMuted();
+  audio.muted = silent();
   audio.volume = voiceVolume();
   voices.add(audio);
   const end = duck();
@@ -273,7 +283,7 @@ function refreshButton(): void {
   if (!button) return;
   const ready = audioReady();
   button.classList.toggle('mu-ask', !ready);
-  mount(button, !ready ? '🔊 Click for music' : isMuted() ? '🔇 Sound off' : '🔊 Sound on');
+  mount(button, !ready ? '🔊 Click for music' : isMuted() ? '🔇 Sound off' : isAway() ? '🔈 Sound in another tab' : '🔊 Sound on');
 }
 
 /** Names the recorded track that's playing, with its licence: CC BY asks for the credit where it's used. */
