@@ -23,16 +23,21 @@ export interface PickedLine extends JpText {
  */
 export function fillSlots(jp: JpText, slots: Slots = {}): JpText {
   const sub = (s: string, field: 'text' | 'kana' | 'en') =>
-    s.replace(/\{(\w+)\}/g, (all, key: string) => {
+    s.replace(/\{(\w+)\}/g, (all, key: string, at: number) => {
       const v = slots[key];
       if (v === undefined) return all;
       const sibling = field === 'text' ? undefined : slots[`${key}_${field}`];
-      if (typeof sibling === 'string') return sibling;
+      if (typeof sibling === 'string') return field === 'en' ? capitalizeAtStart(sibling, s, at) : sibling;
       const text = typeof v === 'string' ? v : v.text;
       if (field !== 'kana') return text;
       return typeof v === 'string' ? nameToKana(v) : (v.kana ?? nameToKana(v.text));
     });
   return { text: sub(jp.text, 'text'), kana: sub(jp.kana, 'kana'), en: sub(jp.en, 'en') };
+}
+
+/** An English gloss that opens a sentence ("{tile} wins!") starts with a capital: "An octopus wins!". */
+export function capitalizeAtStart(value: string, line: string, at: number): string {
+  return /^\W*$|[.!?…]\s+$/.test(line.slice(0, at)) ? value.replace(/^(\W*)([a-z])/, (_, pre: string, c: string) => pre + c.toUpperCase()) : value;
 }
 
 /** '{name}' or 'name' → 'name'. */

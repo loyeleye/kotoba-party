@@ -70,7 +70,7 @@ function tag(text: string): HTMLElement {
 
 /** What the target says, for this player's level (the written form only once it's allowed). */
 function sayCard(t: TargetView, ctx: Ctx, note?: string): HTMLElement {
-  return h('div', { class: 'sho-word' }, note ? h('p', { class: 'sho-note' }, note) : null, jpView({ text: t.say.text || t.say.kana, kana: t.say.kana, en: t.say.en }, ctx.me.level));
+  return h('div', { class: 'sho-word' }, note ? h('p', { class: 'sho-note' }, note) : null, jpView({ text: t.say.text || t.say.kana, kana: t.say.kana, en: t.say.en, ...(t.romaji ? { romaji: t.romaji } : {}) }, ctx.me.level));
 }
 
 /** Saying it, with a quiet way past (typing works; skipping costs only the bonus). */

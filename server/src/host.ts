@@ -7,6 +7,7 @@
 // so a slow voice can never show a stale line or hold up a round.
 
 import type { HostLine, Level } from '../../content/src/types.js';
+import { capitalizeAtStart } from '../ai/lineBank.js';
 import { HOST_EVENTS, type HostEvent as AiEvent, type HostVoice as AiHostVoice, type PendingLine } from '../ai/index.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type { HostMood, HostSay } from '../../shared/src/protocol.js';
@@ -21,7 +22,11 @@ export interface HostVoice {
 
 /** Fills {slot} placeholders. A `{key}_kana` or `{key}_en` slot, when given, fills that field instead of `{key}`. */
 function fill(text: string, slots: Record<string, string> | undefined, field: 'text' | 'kana' | 'en' = 'text'): string {
-  return text.replace(/\{(\w+)\}/g, (m, key: string) => (field !== 'text' ? slots?.[`${key}_${field}`] : undefined) ?? slots?.[key] ?? m);
+  return text.replace(/\{(\w+)\}/g, (m, key: string, at: number) => {
+    const sibling = field !== 'text' ? slots?.[`${key}_${field}`] : undefined;
+    if (sibling !== undefined) return field === 'en' ? capitalizeAtStart(sibling, text, at) : sibling;
+    return slots?.[key] ?? m;
+  });
 }
 
 /** When a cue names the answer ({tile}), the lines that react to it beat the ones that could follow anything. */
@@ -55,8 +60,8 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   };
 }
 
-const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok']);
-const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry']);
+const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear']);
+const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai']);
 
 /** The host's reaction to a cue: a cheer for a win, a flinch for a miss, otherwise just the idle loop. */
 export function moodFor(event: string): HostMood | undefined {
@@ -132,7 +137,7 @@ export function aiVoice(
       const key = cueKey(cue);
       const pending = room?.get(key) ?? prepare(roomCode, cue);
       if (room?.delete(key) && !room.size) early.delete(roomCode);
-      const line = await pending.ready(opts.waitMs ?? 1500);
+      const line = await pending.ready(cue.waitMs ?? opts.waitMs ?? 1500);
       if (!line) return fallback.speak(roomCode, cue);
       return {
         host: line.host,

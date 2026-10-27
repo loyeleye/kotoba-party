@@ -570,16 +570,18 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
           h(
             'ul',
             { class: 'phrase-cards' },
-            r.phrasebook.map((e) =>
-              h(
+            r.phrasebook.map((e) => {
+              const ro = romaji ? toRomaji(e.kana) : '';
+              return h(
                 'li',
                 { class: `phrase-card pb-${e.outcome}` },
                 h('span', { class: 'pc-jp', lang: 'ja' }, e.text),
                 e.kana !== e.text ? h('span', { class: 'pc-kana', lang: 'ja' }, e.kana) : null,
-                romaji ? h('span', { class: 'pc-romaji' }, toRomaji(e.kana)) : null,
-                h('span', { class: 'pc-en' }, e.en),
-              ),
-            ),
+                ro ? h('span', { class: 'pc-romaji' }, ro) : null,
+                // A kana's English is its romaji (ま · ma): once is enough.
+                e.en !== ro ? h('span', { class: 'pc-en' }, e.en) : null,
+              );
+            }),
           ),
         )
       : null,

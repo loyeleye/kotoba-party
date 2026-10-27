@@ -196,7 +196,7 @@ function intro(): HTMLElement {
     { class: 'kd-card' },
     h('p', { class: 'kd-title', lang: 'ja' }, '🎤 カラオケ対決'),
     h('p', { class: 'kd-say' }, 'Two singers duel through a short Japanese song, line by line.'),
-    h('p', { class: 'kd-say' }, 'Hold the button on your phone and sing when the ball starts bouncing.'),
+    h('p', { class: 'kd-say' }, 'Your phone’s mic turns on for your line: sing when the ball starts bouncing.'),
     h('p', { class: 'kd-say muted' }, 'Scored on words 60% · pitch 25% · timing 15%. Everyone else: sing along for chorus points, then vote for the crowd favourite!'),
     soundButton(),
   );

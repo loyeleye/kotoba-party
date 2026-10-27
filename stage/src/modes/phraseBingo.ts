@@ -64,7 +64,7 @@ function tickerLine(view: RoomView, item: TickerItem): HTMLElement {
     'li',
     { class: `pb-tick pb-tick-buzz${item.buzz ? (item.buzz.ok ? ' ok' : ' miss') : ''}` },
     h('span', { class: 'pb-time' }, clock(item.atSec)),
-    h('span', {}, item.buzz ? `🫵 ${who} → ${nameOf(view, item.buzz.actorId)}: ` : `🫵 ${who} buzzed!`, item.buzz ? h('span', { lang: 'ja' }, item.buzz.phrase) : null, item.buzz ? (item.buzz.ok ? ' ✓' : ' ✗') : null),
+    h('span', {}, item.buzz ? `🫵 ${who} → ${nameOf(view, item.buzz.actorId)}: ` : `🫵 ${who} buzzed!`, item.buzz?.phrase ? ruby(item.buzz.phrase) : null, item.buzz ? (item.buzz.ok ? ' ✓' : ' ✗') : null),
   );
 }
 

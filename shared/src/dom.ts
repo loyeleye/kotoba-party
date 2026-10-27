@@ -5,6 +5,7 @@
 // apply), and blanks (＿＿＿) and number + counter pairs (400円, 1枚) become unbreakable units.
 
 import { autoFurigana } from './japanese/furigana.js';
+import { awardKana } from './japanese/kana.js';
 
 type Child = Node | string | number | null | undefined | false;
 type Attrs = Record<string, string | number | boolean | EventListener | null | undefined>;
@@ -107,9 +108,7 @@ function wrapJa(parts: (Node | string)[], inJapanese: boolean): Node {
 export const hasReading = (jp: { text: string; kana?: string | null; furigana?: readonly (readonly [string, string])[] }): boolean =>
   !!(jp.furigana?.length || (jp.kana && autoFurigana(jp.text, jp.kana)));
 
-/** An award title's reading: its kana with 賞 / 王 / 大賞 / 名人 read out (the only kanji award titles use). */
-export const awardKana = (title: string): string =>
-  title.replace(/大賞/g, 'たいしょう').replace(/賞/g, 'しょう').replace(/王/g, 'おう').replace(/名人/g, 'めいじん');
+export { awardKana };
 
 /** An award title (はくしゅ賞, しりとり王, うそつき名人) with furigana over its kanji. */
 export const awardTitle = (title: string): HTMLElement => ruby({ text: title, kana: awardKana(title) });

@@ -31,7 +31,7 @@ import {
 } from '../mode.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { dictionaryNoun, endsInN, follows, lastKana, repeatKey, startOptions, wordReading } from './shiritori.js';
-import { FALLBACK_STARTERS, OBSCURE_WORDS, SHIRITORI_NOUNS, type ObscureWord } from './words.js';
+import { CHEEKY_WORDS, FALLBACK_STARTERS, OBSCURE_WORDS, SHIRITORI_NOUNS, fakeWordPool, type ObscureWord } from './words.js';
 
 // ---- tuning ----
 
@@ -304,10 +304,14 @@ export function lexiconFor(content: ContentLibrary): Lexicon {
     if (noun && !endsInN(reading) && !nouns.some((n) => repeatKey(n.kana) === key)) nouns.push({ kana: reading, en, text, itemId });
   };
   for (const pack of content.packs) {
-    for (const w of pack.words as PackWord[]) add(w.jp.kana, w.jp.en, w.id, w.jp.text, 'pack', w.pos === 'noun');
+    for (const w of pack.words as PackWord[]) {
+      // Oogiri swerves like うたう おにぎり are phrases, not words: never offer them as hints.
+      const phrase = /\s/.test(w.jp.kana) || (!!w.swerve && w.jp.kana.includes('の'));
+      add(w.jp.kana, w.jp.en, w.id, w.jp.text, 'pack', w.pos === 'noun' && !phrase);
+    }
   }
   for (const n of SHIRITORI_NOUNS) add(n.kana, n.en, `wg.shiritori.${n.kana}`, n.kana, 'list', true);
-  for (const w of OBSCURE_WORDS) add(w.jp.kana, w.jp.en, `wg.golden.${w.id}`, w.jp.text, 'list', false);
+  for (const w of [...OBSCURE_WORDS, ...CHEEKY_WORDS]) add(w.jp.kana, w.jp.en, `wg.golden.${w.id}`, w.jp.text, 'list', false);
   const lex = { byKey, nouns };
   lexicons.set(content, lex);
   return lex;
@@ -390,7 +394,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       packId,
       round: 0,
       segment: null,
-      fakeDeck: shuffled(OBSCURE_WORDS, () => ctx.random()).slice(0, FAKE_WORDS_PER_GAME),
+      fakeDeck: fakeWordPool(ctx.audience ?? 'family', () => ctx.random(), FAKE_WORDS_PER_GAME),
       fakeIndex: 0,
       fake: null,
       telephone: null,

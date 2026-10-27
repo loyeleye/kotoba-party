@@ -53,7 +53,7 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 しりとり王 (showdown winner), うそつき名人 (fooled the most players), ほんやく大賞 (most telephone votes).
 
 ### Content
-`words.ts` holds the mode's own **draft** content (`OBSCURE_WORDS_STATUS = 'draft'`): 18 real obscure words with meanings checked against standard dictionary senses (needs a fluent sign-off before shipping), plus placeholder N5 telephone starters and ~150 common hiragana nouns used only as a shiritori dictionary, hint pool and bot vocabulary. With no topic packs at all the mode still runs end to end.
+`words.ts` holds the mode's own **draft** content (`OBSCURE_WORDS_STATUS = 'draft'`): 18 real obscure words with meanings checked against standard dictionary senses (needs a fluent sign-off before shipping), 15 of them marked `kids` as the gentle set, 8 Cheeky-only words (`CHEEKY_WORDS`: 二日酔い, 千鳥足, 朝帰り, 午前様, 梯子酒, 泣き上戸, 鼻の下を伸ばす, 窓際族), plus placeholder N5 telephone starters and ~150 common hiragana nouns used only as a shiritori dictionary, hint pool and bot vocabulary. With no topic packs at all the mode still runs end to end.
 
 ## Decisions made on Ladi's behalf
 1. Round 1 plays two obscure words, not one: one word felt too short for a Fibbage round and two keep the game near 15 minutes.
@@ -74,9 +74,10 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 16. Shiritori accepts any topic-pack word (any part of speech), not only nouns, as the brief says; hints and bots use nouns only.
 17. The dictionary is trusted only for a single known noun of 2+ kana; one-kana words and split words go to the judges.
 18. A 60-turn cap ends a showdown that never ends (most words, then points, wins).
+19. Fake Kanji follows the room's Audience setting: Kids deals only the 15 gentle words (no lying about your age, pockmarks or going broke), Family deals the 18-word base list, and Cheeky deals its own 8 words first (topped up from the base list). Shiritori and Telephone stay the same in every audience.
 
 ## Open questions
-1. A fluent check of the 18 obscure words, the placeholder starters and the shiritori noun list (all `draft`).
+1. A fluent check of the 18 obscure words and the 8 Cheeky words (plus Ladi's taste check on the Cheeky ones), the placeholder starters and the shiritori noun list (all `draft`).
 2. ~~Done: the shell's `ERRORS` map now has wording for these codes.~~ Should the phone's error flashes get proper wording in the shell's `ERRORS` map? The phone shows its own message after a refused move, but the shell first flashes the raw code (`too-close`, `wrong-start`, `repeat`, `not-japanese`…). Adding these to `controller/src/main.ts` would fix it.
 3. Player text (fakes, telephone steps, challenged words) should pass the moderation filter before the stage shows it, and the VIP should be able to hide one; neither hook exists for modes yet.
 4. Mode-specific host events (e.g. `gauntlet_golden_word`, `shiritori_out`) would let Pon react more precisely than the shared events used now.
