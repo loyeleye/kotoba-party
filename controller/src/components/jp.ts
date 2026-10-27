@@ -32,9 +32,11 @@ export function jpView(t: JpLike, level: Level | null | undefined, opts: JpViewO
   const tile = opts.as === 'tile';
   const part = (cls: string, ...kids: (Node | string | null)[]) => h(tile ? 'span' : 'p', { class: cls }, ...kids);
   const kana = t.kana || t.text;
-  const en = opts.en !== false && t.en ? part('jpv-en', t.en) : null;
+  let en = opts.en !== false && t.en ? part('jpv-en', t.en) : null;
   if (level === 'kana') {
     const romaji = opts.romaji !== false ? (t.romaji ?? toRomaji(kana)) : '';
+    // A kana's English is its romaji (つ · tsu): once is enough.
+    if (romaji && t.en === romaji) en = null;
     return h(
       tile ? 'span' : 'div',
       { class: `jpv kana ${opts.cls ?? ''}` },

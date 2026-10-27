@@ -138,8 +138,9 @@ export interface HostCue {
    */
   ahead?: boolean;
   /**
-   * How long the host may take to write this line before a written one stands in (default 1.5 s). A reaction that
-   * follows the answers being read out can wait for them; one that opens a phase can't.
+   * How long the host may take to write this line before a bank line stands in (default 1.5 s). An AI line takes
+   * 2 to 6 s, so a reaction that follows the answers being read out, or a cue that opens a long phase with nothing
+   * else to say, can wait for one; a cue that opens a short phase can't.
    */
   waitMs?: number;
 }

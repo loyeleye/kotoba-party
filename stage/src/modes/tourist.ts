@@ -68,9 +68,9 @@ function liveTurn(view: RoomView, game: TouristView): HTMLElement {
     h('p', { class: 'tou-turn-n' }, `Question ${Math.min(t.n, t.cap)} of ${t.cap}`),
     h('p', { class: 'tou-turn-who' }, `🎤 ${asker}`, target ? h('span', { class: 'tou-arrow' }, ' → ') : null, target ? `${target}` : null),
     t.question
-      ? said(t.question, 'q big')
+      ? said(t.question, 'q now')
       : h('p', { class: 'tou-waiting' }, target ? `${asker}, ask ${target} a question in Japanese!` : `${asker} is choosing who to ask…`),
-    t.question ? (t.answer ? said(t.answer, 'a big') : h('p', { class: 'tou-waiting' }, `${target}, answer out loud!`)) : null,
+    t.question ? (t.answer ? said(t.answer, 'a now') : h('p', { class: 'tou-waiting' }, `${target}, answer out loud!`)) : null,
   );
 }
 
@@ -114,7 +114,8 @@ function headline(view: RoomView, game: TouristView): string {
     case 'wrong-guess':
       return `${who} was the tourist, and guessed wrong!`;
     case 'left':
-      return `${who} (the tourist) left the game.`;
+      // Their seat is gone by now, so there's no name to show.
+      return 'The tourist left the game.';
   }
 }
 

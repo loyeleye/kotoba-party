@@ -55,6 +55,17 @@ describe('host lines sent ahead', () => {
     expect((await p)?.text).toBe(quip.text);
   });
 
+  it('waits longer for a fresh line when the cue allows it', async () => {
+    const clock = new ManualClock();
+    const { llm, go } = slowLlm();
+    const voice = aiVoice(createHostVoice({ llm, lines, clock }), bankVoice(EMPTY_CONTENT));
+    const p = voice.speak('ABCD', { ...cue, waitMs: 6000 });
+    await tick();
+    clock.advance(3000);
+    go();
+    expect((await p)?.text).toBe(quip.text);
+  });
+
   it('asks once for a cue sent ahead twice', async () => {
     const { llm } = slowLlm();
     const voice = aiVoice(createHostVoice({ llm, lines, clock: new ManualClock() }), bankVoice(EMPTY_CONTENT));

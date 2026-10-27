@@ -22,6 +22,7 @@
 .sho .sho-wet { color: rgba(60, 50, 40, 0.4); font-size: 40px; animation: sho-breathe 2s ease-in-out infinite; }
 .sho .sho-read { color: #3b2d1d; font-size: 28px; font-weight: 800; }
 .sho .sho-read small { display: block; font-size: 20px; color: #7a6650; }
+.sho .sho-read .sho-word { display: block; font-size: 22px; font-weight: 700; }
 
 /* Writing: an inkstone fills as sheets come in (never whose). */
 .sho .sho-inkstone { display: flex; gap: 14px; }

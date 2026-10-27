@@ -2,7 +2,7 @@
 // to talk and slip each one in (peeking at the Japanese costs the memory bonus). Audience: a 3×3
 // bingo card; tap a line you heard, pick who said it. Everyone: shout the scene's phrase back.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
 import { scenePic } from '../../../shared/src/art.js';
 import type { PhraseBingoView } from '../../../shared/src/modes/views.js';
 import type { CellView, PhraseCard, SecretView } from '../../../shared/src/modes/phraseBingo/phraseBingo.js';
@@ -22,6 +22,11 @@ let picked: { seq: number; phraseId: string } | null = null;
 function phraseBlock(p: PhraseCard, big = true): HTMLElement {
   // Romaji comes only for かな players, so it tells us the level (components/jp.ts).
   return jpView(p, p.romaji ? 'kana' : 'n5', { cls: `pb-line${big ? '' : ' small'}` });
+}
+
+/** A line on the bingo card: kana at the Kana level (romaji under it), else furigana over the kanji. */
+function cellText(cell: PhraseCard): Node {
+  return cell.romaji ? document.createTextNode(cell.kana) : ruby(cell);
 }
 
 function sceneHeader(game: PhraseBingoView): HTMLElement | null {
@@ -45,7 +50,7 @@ function card(ctx: Ctx, mode: 'show' | 'play' | 'result'): HTMLElement {
     const sel = selected();
     const cls = ['pb-cell', cell.daubed ? 'daubed' : '', line.has(i) ? 'line' : '', cell.buzz ? `buzzed ${cell.buzz.result ?? ''}` : '', sel === cell.id ? 'sel' : ''].filter(Boolean).join(' ');
     const body = [
-      h('span', { class: 'pb-cell-jp', lang: 'ja' }, cell.text),
+      h('span', { class: 'pb-cell-jp', lang: 'ja' }, cellText(cell)),
       h('span', { class: 'pb-cell-en' }, cell.romaji ?? cell.en),
       cell.buzz ? h('span', { class: 'pb-cell-buzz' }, `${cell.buzz.result === 'caught' ? '🎯' : cell.buzz.result === 'miss' ? '✗' : '🫵'} ${nameOf(view, cell.buzz.actorId)}`) : null,
     ];
@@ -74,7 +79,7 @@ function card(ctx: Ctx, mode: 'show' | 'play' | 'result'): HTMLElement {
     return h(
       'div',
       { class: 'pb-who' },
-      h('p', {}, 'Who said ', h('strong', { lang: 'ja' }, `「${cell.text}」`), '?'),
+      h('p', {}, 'Who said ', h('strong', { lang: 'ja' }, '「', cellText(cell), '」'), '?'),
       h(
         'div',
         { class: 'pb-who-grid' },

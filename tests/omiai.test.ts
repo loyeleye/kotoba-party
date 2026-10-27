@@ -17,6 +17,7 @@ import {
   SAY_FIRST_MS,
   STAR_METER,
   STYLE_SHARE,
+  tipFor,
   type OmiaiState,
   type OmiaiView,
 } from '../shared/src/modes/omiai/omiai.js';
@@ -245,6 +246,17 @@ describe('Omiai: the manners checker', () => {
     // Katakana words are nouns (モデル is not モ + でる).
     expect(checkManners('モデル', 'n5').rewrite?.text).toBe('モデルです。');
     expect(checkManners('あした', 'n5').rewrite?.text).toBe('あしたです。');
+  });
+
+  it('keeps word spaces and katakana in the reading Kana players see, so the romaji splits into words', () => {
+    // A tile answer: spaced, with a katakana word.
+    const tiles: Utterance = { via: 'tap', text: 'えっとね、いっしょに ペンキぬりを しましょう。' };
+    expect(checkManners(tiles, 'kana').rewrite).toEqual({ text: 'ええと、いっしょに ペンキぬりを しましょう。', kana: 'ええと、いっしょに ペンキぬりを しましょう。' });
+    expect(checkManners({ via: 'tap', text: 'うみの ちかくに すんでる。' }, 'kana').rewrite?.kana).toBe('うみの ちかくに すんでいます。');
+    // An answer that is already polite is said back as it was written.
+    const q = CARDS[0]!.questions[0]!;
+    const polite: Utterance = { via: 'tap', text: 'そうですね、おおきい いえです。' };
+    expect(tipFor(checkManners(polite, 'kana'), polite, q, 'kana', 'Kana', false).target.kana).toBe('そうですね、おおきい いえです。');
   });
 
   it('offers a keigo step up for an answer that is already polite', () => {

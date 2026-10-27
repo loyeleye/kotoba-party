@@ -358,7 +358,10 @@ export function tipFor(m: MannersResult, u: Utterance | string, q: OmiaiQuestion
   if (!polite) return stock;
   if (m.upgrade && level === 'n4') return { kind: 'upgrade', target: { text: m.upgrade.text, kana: m.upgrade.kana }, note: m.upgrade.note, example, next: null };
   const own = analysisText(u);
-  const target = isKanaOnly(own) ? { text: typeof u === 'string' ? u : u.text, kana: own } : { text: example.text, kana: example.kana };
+  const said = typeof u === 'string' ? u : u.text;
+  // When the answer is its own reading, keep its word spaces and katakana, so romaji splits into words.
+  const kana = analysisText(said) === own ? said.normalize('NFKC') : own;
+  const target = isKanaOnly(own) ? { text: said, kana } : { text: example.text, kana: example.kana };
   return {
     kind: 'perfect',
     target,

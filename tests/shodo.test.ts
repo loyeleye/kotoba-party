@@ -8,10 +8,11 @@ import { createRoom, type CommandBody } from '../shared/src/client.js';
 import { brushPath } from '../shared/src/brush.js';
 import { apply, createGame, type GameAction, type GameContext } from '../shared/src/game.js';
 import { checkStroke, gradeInk, strokeStart, strokeWay, traceTolerance, type InkPoint } from '../shared/src/japanese/strokes.js';
-import { buildDeck, dictationPool, practicePool } from '../shared/src/modes/shodo/deck.js';
+import { buildDeck, dictationPool, KANJI_LOOKALIKES, LOOKALIKE_KANA, practicePool } from '../shared/src/modes/shodo/deck.js';
 import { AWARDS, BONUS_SHARE, ITEMS, type ShodoState, type ShodoView } from '../shared/src/modes/shodo/shodo.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
+import { toRomaji } from '../shared/src/japanese/romaji.js';
 import { Bot, Director } from '../tools/bots/bot.js';
 import { handDraw, scribble } from '../tools/bots/ink.js';
 import { shodoPolicy, traceOver } from '../tools/bots/policies/shodo.js';
@@ -31,6 +32,15 @@ describe('kanji data', () => {
     for (const k of writeKanji) expect(ref(k.char)?.length, k.char).toBeGreaterThan(0);
     const counts: Record<string, number> = { 一: 1, 二: 2, 三: 3, 山: 3, 川: 3, 木: 4, 日: 4, 右: 5, 左: 5, 本: 5, 女: 3, 子: 3, 書: 10, 歩: 8, 雨: 8, 車: 7 };
     for (const [c, n] of Object.entries(counts)) expect(ref(c)?.length, c).toBe(n);
+  });
+
+  it('romanizes a lone kana as itself, not as a particle', () => {
+    expect([toRomaji('へ'), toRomaji('は'), toRomaji('ヘ')]).toEqual(['he', 'ha', 'he']);
+    expect(toRomaji('がっこうへ いきます')).toBe('gakkō e ikimasu');
+  });
+
+  it('gives every look-alike kanji a kana name, so Fude can voice a misreading', () => {
+    for (const c of KANJI_LOOKALIKES.flat()) expect(LOOKALIKE_KANA[c], c).toMatch(/^[ぁ-ゖ]+$/);
   });
 
   it('only lists words whose kanji all have strokes, and points stay in the box', () => {
@@ -209,6 +219,8 @@ describe('Shodō Taikai rounds', () => {
     const announced = r.s.cues.at(-1)!;
     expect(announced.event).toBe('shodo_award');
     expect(winners.map((w) => String(w.n))).toContain(announced.slots!.n);
+    // The voice reads only kana: the number comes with its reading, or "1ばん" is voiced "ばん".
+    expect(announced.slots!.n_kana).toMatch(/^[ぁ-ゖ]+$/);
     r.play('p2', { kind: 'claim' });
     expect(r.s.cues.at(-1)).toMatchObject({ event: 'shodo_claimed', slots: { name: 'P2' } });
     r.play('p3', { kind: 'claim' });
@@ -216,6 +228,8 @@ describe('Shodō Taikai rounds', () => {
     expect(r.view(stage).sheets!.filter((x) => x.name === 'P2').length).toBe(1);
     r.tick();
     expect(r.s.phase).toBe('recap');
+    // Fude presents an award: the cue names it, so a bank line can stand in for a slow LLM.
+    expect(r.s.cues.at(-1)).toMatchObject({ event: 'recap_award', slots: { award: expect.any(String), award_kana: expect.stringMatching(/^[ぁ-ゖァ-ヺー\s]+$/), name: expect.any(String) } });
     // Stamp awards go only to writers who claimed their sheet.
     const stampTitles = new Set<string>(AWARDS.map((a) => a.ja));
     const claimedWinners = (r.s.recap?.awards ?? []).filter((a) => stampTitles.has(a.title));
