@@ -7,6 +7,7 @@ import { apply, createGame, type GameAction, type GameContext, type GameState } 
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import {
   BONUS_CAP,
+  caseFor,
   cleanLead,
   onsenMurderMode,
   POINTS,
@@ -18,7 +19,7 @@ import {
 } from '../shared/src/modes/onsenMurder/onsenMurder.js';
 import { accusationLine, checkAccusation, INTENTS, joinTiles, matchQuestion, questionFor, tilesFor } from '../shared/src/modes/onsenMurder/questions.js';
 import { hasKanji, normalizeReading } from '../shared/src/japanese/kana.js';
-import type { Command, RoomView } from '../shared/src/protocol.js';
+import type { Audience, Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { createSuspectVoice, ScriptedLlm } from '../server/ai/index.js';
 import { suspectDirector } from '../server/src/onsen.js';
@@ -176,10 +177,42 @@ describe('Murder at the Onsen: the cases', () => {
   };
   for (const c of onsenCases) it(`${c.id} is complete and points at its culprit`, () => check(c));
 
-  it('ships three cases, served through the content library', () => {
-    expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck']);
-    expect(content.onsenCases.length).toBe(3);
+  it('ships three cases for everyone, one Kids and four Cheeky, served through the content library', () => {
+    expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck', 'ice-cream', 'sake', 'phone', 'toupee', 'candle']);
+    expect(onsenCases.map((c) => c.audience ?? null)).toEqual([null, null, null, 'kids', 'cheeky', 'cheeky', 'cheeky', 'cheeky']);
+    expect(content.onsenCases.length).toBe(8);
     expect(content.hostLines.filter((l) => l.event.startsWith('onsen_')).length).toBe(25);
+  });
+
+  it('picks by the room’s Audience: a family room never gets the Kids or Cheeky case, the others get their own half the time', () => {
+    const seen = (audience: Audience) => {
+      const ids = new Map<string, number>();
+      // An even spread: the first draw (own case or not) walks 0.00…0.99, the second picks within.
+      for (let i = 0; i < 100; i++) {
+        const draws = [i / 100, ((i * 37) % 100) / 100];
+        const c = caseFor(onsenCases, audience, () => draws.shift() ?? 0)!;
+        ids.set(c.id, (ids.get(c.id) ?? 0) + 1);
+      }
+      return ids;
+    };
+    const family = seen('family');
+    expect([...family.keys()].sort()).toEqual(['duck', 'pudding', 'snowman']);
+    const kids = seen('kids');
+    expect(kids.get('ice-cream')).toBe(50);
+    expect(['sake', 'phone', 'toupee', 'candle'].some((id) => kids.has(id))).toBe(false);
+    const cheeky = seen('cheeky');
+    expect(['sake', 'phone', 'toupee', 'candle'].map((id) => cheeky.get(id) ?? 0).reduce((a, b) => a + b)).toBe(50);
+    expect(['sake', 'phone', 'toupee', 'candle'].every((id) => cheeky.has(id))).toBe(true);
+    expect(cheeky.has('ice-cream')).toBe(false);
+    // Nothing that suits the room: the placeholder, never another audience's case.
+    expect(caseFor(onsenCases.filter((c) => c.audience === 'cheeky'), 'kids', () => 0.1)).toBeUndefined();
+  });
+
+  it('a game started in a Kids room plays the Kids case when the dice say so', () => {
+    const t = new Table(2);
+    t.s.audience = 'kids';
+    expect(t.cmd('stage', { type: 'start', mode: 'onsen-murder' }).changed).toBe(true);
+    expect(t.st.case.id).toBe('ice-cream');
   });
 });
 

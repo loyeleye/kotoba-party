@@ -4,8 +4,8 @@ Host: Chōchin-san, off duty at the inn. 1–8 players. The VIP picks 2, 3 or 1 
 (`roundChoices`). Mode id `onsen-murder`.
 
 Code: `shared/src/modes/onsenMurder/` (rules; `questions.ts` question matching, tiles and the
-accusation line; `fallback.ts` placeholder case), `content/src/onsen/cases.ts` (3 draft N5
-cases), `stage/src/modes/onsenMurder.ts` (+ `.css`), `controller/src/modes/onsenMurder.ts`
+accusation line; `fallback.ts` placeholder case), `content/src/onsen/cases.ts` (8 draft N5
+cases: 3 for everyone, 1 Kids, 4 Cheeky), `stage/src/modes/onsenMurder.ts` (+ `.css`), `controller/src/modes/onsenMurder.ts`
 (+ `.css`), `tools/bots/policies/onsenMurder.ts`, `server/ai/suspect.ts` and
 `server/src/onsen.ts` (optional LLM lead-ins), `tests/onsenMurder.test.ts`.
 
@@ -91,8 +91,17 @@ on the LLM. At most 16 lead-ins per game.
     swapped later.
 12. **Chōchin-san hosts**, with five new host events (`onsen_case`, `onsen_turn`, `onsen_clue`,
     `onsen_accuse`, `onsen_reveal`) and 25 draft lines.
-13. **Case choice:** a random case from `content.onsenCases`, or `extra.caseId` if given; with no
-    content, the placeholder towel case in `fallback.ts`.
+13. **Case choice:** a random case from `content.onsenCases` that suits the room's Audience, or
+    `extra.caseId` if given; with no content, the placeholder towel case in `fallback.ts`. Cases
+    without an `audience` play everywhere. A Kids room also gets the ice cream case (shorter, the
+    inn's puppy did it) and a Cheeky room four grown-up cases: sake (a hungover new hire who
+    "never drinks" and the boss's two-hour karaoke), smartphone (a first date who drowns her
+    phone-obsessed date's phone), toupee (an employee fishes the credit-stealing president's
+    toupee off his head) and candle, the spooky one (on a night of 100 ghost stories, a horror
+    writer who is scared of everything blows out the 100th candle so the inn's real ghost can't
+    appear; the ghost is a suspect, and innocent). Ladi asked that only one lean on drinking. A
+    Kids or Cheeky room plays one of its own cases half the time, and a Family room never sees
+    them (2026-10-27).
 14. **English comes 2.5 s after the Japanese on the stage**; Kana-level phones also see kana and
     romaji.
 15. **Phrasebook entries**: each intent asked (`onsen.q.<intent>`) and the player's accusation
@@ -112,7 +121,9 @@ on the LLM. At most 16 lead-ins per game.
 
 ## Known gaps
 
-- All three cases and the 25 host lines are `status: 'draft'` and need the fluent-speaker check
+- The ice cream, sake, smartphone, toupee and candle cases have no pixel art yet: their suspects, victim and item show
+  emoji until portraits and icons are made.
+- All eight cases and the 25 host lines are `status: 'draft'` and need the fluent-speaker check
   (C1), especially the confessions and the lenient matching keys.
 - Bot accusations are naive: with chance `sleuth` (default 0.75) a bot votes for the
   suspect named most in the notebook, otherwise for a random hunch.

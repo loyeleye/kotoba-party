@@ -384,6 +384,11 @@ export interface OnsenCase {
   solution: string;
   /** What a suspect says to a question they have no scripted answer for. */
   shrug: JpText;
+  /**
+   * The room Audience this case was written for. Left out, it suits everyone and plays in every
+   * room; a Kids or Cheeky case plays only when the host picks that Audience.
+   */
+  audience?: 'kids' | 'cheeky';
   status: ReviewStatus;
 }
 
