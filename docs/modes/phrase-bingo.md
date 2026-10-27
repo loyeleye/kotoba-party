@@ -77,6 +77,12 @@ phrasebook ("Your lines").
   4–5 roles, a twist and 15 lines (4–5 Kana, 7–8 N5, 3 N4). Lines marked `from` copy a topic-pack
   phrase; when that pack is loaded the pack's text (and furigana) is used, so the fluent check
   of the packs carries over.
+- **Kids and Cheeky scenes** follow the host's Audience setting (main stage settings), one per
+  topic pack each. Kids: school lunch, a birthday party, a class trip to the zoo. Cheeky: the
+  izakaya after work, an awkward first date, the first train home the morning after. They reuse
+  the family scenes' lines (same ids and text, 15 per scene), so only the setting, roles and
+  twist are new and every audience drills the same Japanese. A Kids or Cheeky room plays its 3
+  scenes first (the night's pack leading), then family scenes; a Family room never sees them.
 
 ### The check
 
@@ -183,6 +189,8 @@ the right line with `hearRate` (0.6), otherwise a random cell. Everyone shouts t
 17. **The night's pack plays first** (its 3 scenes), then scenes from the other packs; with no pack
     picked, one is chosen at random. The scenes carry their own lines, so the mode works with no
     pack content loaded (tested).
+    A Kids or Cheeky room plays its own 3 scenes before the family ones, so a 4-scene game ends on
+    a family scene (the double-points one); with only 3 per audience, that beat repeating one.
 18. **Host lines reuse Pon's existing events** (`intro`, `prompt_read`, `reveal_react`,
     `kakegoe_call`); no new `HostEvent`s or line-bank entries.
 19. **Awards are mode-local draft titles** (Pon's award bank is Oogiri-themed).
@@ -204,7 +212,9 @@ the right line with `hearRate` (0.6), otherwise a random cell. Everyone shouts t
    and `prompt_read` says お題. Write a small set (scene start, ACTION!, caught, bingo) as new host
    events?
 7. **Fluent check** of all 135 scene lines, roles, twists and award titles, especially the N4 lines
-   and casual forms (うまい！, よろしく！).
+   and casual forms (うまい！, よろしく！), plus the 6 Kids and Cheeky settings and roles
+   (きゅうしょく とうばん, しんにゅうしゃいん, あさがえりの でんしゃ …). Ladi to taste-check the
+   Cheeky twists.
 8. **Audience-only spectators** (the design doc's up-to-8 audience) would be perfect bingo players
    here; the room doesn't support non-seated players yet.
 

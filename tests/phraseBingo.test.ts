@@ -139,17 +139,30 @@ describe('Phrase Bingo: the lenient phrase check', () => {
   });
 
   it('every scene phrase is self-consistent: kana-only reading that matches itself, unique ids', () => {
-    const ids = new Set<string>();
+    const ids = new Map<string, unknown>();
+    expect(new Set(SCENES.map((sc) => sc.id)).size).toBe(SCENES.length);
     for (const sc of SCENES) {
       expect(sc.status).toBe('draft');
       expect(sc.roles.length).toBeGreaterThanOrEqual(4);
       for (const level of ['kana', 'n5', 'n4'] as const) expect(sc.phrases.filter((p) => p.level === level).length, `${sc.id} ${level}`).toBeGreaterThanOrEqual(3);
+      expect(new Set(sc.phrases.map((p) => p.id)).size, sc.id).toBe(sc.phrases.length);
       for (const p of sc.phrases) {
-        expect(ids.has(p.id), p.id).toBe(false);
-        ids.add(p.id);
+        // An id seen in another scene is the same phrase (Kids and Cheeky scenes reuse the family ones).
+        if (ids.has(p.id)) expect(ids.get(p.id), p.id).toBe(p);
+        ids.set(p.id, p);
         expect(phraseKey(p.jp.kana), p.id).toMatch(/^[ぁ-ゖ]+$/);
         expect(saidPhrase(speech(p.jp.kana), p.jp.kana, p.accepted, p.level)).toBe(true);
       }
+    }
+  });
+
+  it('has a Kids and a Cheeky scene for every topic pack, all built from family-scene phrases', () => {
+    const family = SCENES.filter((sc) => !sc.audience);
+    const familyIds = new Set(family.flatMap((sc) => sc.phrases.map((p) => p.id)));
+    for (const audience of ['kids', 'cheeky'] as const) {
+      const own = SCENES.filter((sc) => sc.audience === audience);
+      expect(own.map((sc) => sc.packId).sort(), audience).toEqual(['family', 'food', 'travel']);
+      for (const p of own.flatMap((sc) => sc.phrases)) expect(familyIds.has(p.id), p.id).toBe(true);
     }
   });
 
@@ -436,6 +449,35 @@ describe('Phrase Bingo: the scene', () => {
     expect(t.s.phase).toBe('recap');
     expect(t.s.recap!.awards.some((a) => a.title === 'だいめいゆう')).toBe(true);
   });
+});
+
+describe('Phrase Bingo: the Audience setting', () => {
+  const audienceOf = (id: string) => SCENES.find((sc) => sc.id === id)!.audience ?? 'family';
+
+  it('a family room plays only family scenes, the chosen pack first', () => {
+    const t = new Table(4);
+    t.start(undefined, 'travel');
+    expect(t.st.order).toHaveLength(SCENES.filter((sc) => !sc.audience).length);
+    expect(t.st.order.every((id) => audienceOf(id) === 'family')).toBe(true);
+    expect(t.st.scene!.packId).toBe('travel');
+  });
+
+  for (const audience of ['kids', 'cheeky'] as const) {
+    it(`a ${audience} room plays its own scenes first, its pack's leading, then family ones`, () => {
+      const t = new Table(4);
+      expect(t.cmd('stage', { type: 'settings', audience }).changed).toBe(true);
+      t.start(undefined, 'family');
+      const order = t.st.order;
+      expect(order.slice(0, 3).map(audienceOf)).toEqual([audience, audience, audience]);
+      expect(order.slice(3).every((id) => audienceOf(id) === 'family')).toBe(true);
+      expect(order.some((id) => audienceOf(id) === (audience === 'kids' ? 'cheeky' : 'kids'))).toBe(false);
+      expect(t.st.scene!.audience).toBe(audience);
+      expect(t.st.scene!.packId).toBe('family');
+      // The fourth (double-points) scene is a family one.
+      for (let i = 0; i < 100 && t.s.phase !== 'recap'; i++) t.timeout();
+      expect(t.s.phase).toBe('recap');
+    });
+  }
 });
 
 describe('Phrase Bingo: robustness', () => {
