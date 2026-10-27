@@ -308,30 +308,60 @@ export const SONGS: readonly Song[] = [
     ],
   },
   {
-    // Over "JRPG Epic Rock Battle Theme" (HydroGene, CC0): verses on its F♯m riff, the chorus on its
-    // A–B–G♯m climb. Every note is a beat or longer: at 152 bpm a half-beat is too short to score. The
-    // hero’s big chorus ends "…starting tomorrow!", and verse 2 shows why.
+    // Run!, version A, over an AI-made anime-rock backing (Mureka; tracks.ts). The lines fit the chords it
+    // really plays: verse D | D | C♯m | F♯m | Bm | C♯m | F♯m | E, ending open on V; chorus on the royal
+    // road D–E | C♯m–F♯m, closing on A. Something is chasing the singer to school; verse 2 looks back and it
+    // is Mom with the forgotten lunch, so the last chorus is Mom shouting her child out of the door.
     id: 'hashire',
+    group: 'hashire',
     title: { text: '走れ！', kana: 'はしれ', en: 'Run!' },
-    bpm: 152,
+    bpm: 132,
     style: 'rock',
     level: 'kana',
     status: 'draft',
-    form: songForm([16, 64, 112, 160]),
-    track: { id: 'jrpg-rock', start: 0.263, segments: [[0, 28], [40, 63]] },
+    form: standardForm(16, 8),
+    track: { id: 'run-footsteps', start: 0, segments: [[0, 38]] },
     lines: [
-      { text: '走れ 走れ！', kana: 'はしれ はしれ', romaji: 'ha-shi-re ha-shi-re', en: 'Run, run!', chords: 'F#m F#m', melody: [[73, 1], [73, 1], [69, 1], [73, 1], [73, 1], [76, 2]] },
-      { text: '夢に 向かって', kana: 'ゆめに むかって', romaji: 'yu-me-ni mu-ka-t-te', en: 'Toward my dream', chords: 'F#m G#7', melody: [[69, 1], [71, 1], [73, 1], [73, 1], [71, 1], [71, 1], [68, 2]] },
-      { text: '負けない 心', kana: 'まけない こころ', romaji: 'ma-ke-na-i ko-ko-ro', en: 'A heart that won’t give in', chords: 'F#m F#m', melody: [[69, 1], [71, 1], [73, 1], [73, 1], [76, 1], [73, 1], [71, 2]] },
-      { text: 'もっと 速く！', kana: 'もっと はやく', romaji: 'mo-t-to ha-ya-ku', en: 'Faster!', chords: 'F#m F#m', melody: [[73, 1], [73, 1], [76, 1], [78, 1], [76, 1], [73, 2]] },
-      { text: '空を 見て', kana: 'そらを みて', romaji: 'so-ra-o mi-te', en: 'Look up at the sky', chords: 'A B', melody: [[76, 1], [73, 1], [73, 1], [76, 1], [78, 3]] },
-      { text: '手を のばせ', kana: 'てを のばせ', romaji: 'te-o no-ba-se', en: 'Reach for it', chords: 'G#m A', melody: [[75, 1], [71, 1], [71, 1], [73, 1], [76, 3]] },
-      { text: '今だ 飛べ！', kana: 'いまだ とべ', romaji: 'i-ma-da to-be', en: 'Now — fly!', chords: 'A B', melody: [[76, 1], [78, 1], [76, 1], [78, 1], [81, 3]] },
-      { text: '明日から！', kana: 'あしたから', romaji: 'a-shi-ta-ka-ra', en: '…starting tomorrow!', chords: 'F#m E D C#', melody: [[78, 1], [78, 1], [81, 1], [81, 1], [80, 3]] },
-      { text: '六時に 起きて', kana: 'ろくじに おきて', romaji: 'ro-ku-ji-ni o-ki-te', en: 'Up at six', chords: 'F#m F#m', melody: [[73, 1], [73, 1], [69, 1], [69, 1], [71, 1], [73, 1], [76, 2]] },
-      { text: 'ジムに 行って', kana: 'ジムに いって', romaji: 'ji-mu-ni i-t-te', en: 'Off to the gym', chords: 'F#m G#7', melody: [[73, 1], [71, 1], [69, 1], [75, 1], [75, 1], [72, 2]] },
-      { text: 'ダイエット！', kana: 'ダイエット', romaji: 'da-i-e-t-to', en: 'On a diet!', chords: 'F#m F#m', melody: [[73, 1], [73, 1], [76, 1], [76, 1], [78, 3]] },
-      { text: 'でも ケーキ', kana: 'でも ケーキ', romaji: 'de-mo ke-e-ki', en: '…but, cake.', chords: 'F#m F#m', melody: [[78, 1], [76, 1], [73, 1], [73, 1], [66, 3]] },
+      { text: '後ろから 来る', kana: 'うしろから くる', romaji: 'u-shi-ro-ka-ra ku-ru', en: 'Something’s coming from behind', chords: 'D D', melody: [[69, 0.5], [74, 0.5], [74, 0.5], [74, 0.5], [74, 1], [74, 1], [69, 2]] },
+      { text: '大きな 足音', kana: 'おおきな あしおと', romaji: 'o-o-ki-na a-shi-o-to', en: 'Loud footsteps', chords: 'C#m F#m', melody: [[73, 0.5], [71, 0.5], [68, 0.5], [68, 0.5], [68, 0.5], [73, 0.5], [73, 1], [69, 2]] },
+      { text: '後ろを 見ないで', kana: 'うしろを みないで', romaji: 'u-shi-ro-o mi-na-i-de', en: 'Don’t look back', chords: 'Bm C#m', melody: [[66, 0.5], [71, 0.5], [71, 0.5], [71, 0.5], [74, 1], [71, 0.5], [68, 0.5], [68, 1.5]] },
+      { text: '逃げろ 逃げろ！', kana: 'にげろ にげろ', romaji: 'ni-ge-ro ni-ge-ro', en: 'Run for it! Run for it!', chords: 'F#m E', melody: [[69, 1], [73, 1], [69, 1], [69, 1], [71, 1], [68, 1]] },
+      { text: '走れ 走れ！', kana: 'はしれ はしれ', romaji: 'ha-shi-re ha-shi-re', en: 'Run! Run!', chords: 'D E C#m F#m', melody: [[69, 1], [74, 1], [71, 1.5], [71, 0.5], [76, 1], [73, 1]] },
+      { text: '学校まで', kana: 'がっこうまで', romaji: 'ga-k-ko-u-ma-de', en: 'All the way to school', chords: 'Bm F#m F#m E', melody: [[66, 1], [71, 1], [73, 1.5], [73, 0.5], [73, 1], [73, 1]] },
+      { text: '止まらないで', kana: 'とまらないで', romaji: 'to-ma-ra-na-i-de', en: 'Don’t stop', chords: 'D E C#m F#m', melody: [[69, 1], [74, 0.5], [74, 0.5], [76, 1.5], [76, 0.5], [76, 1.5]] },
+      { text: '走れ 走れ！', kana: 'はしれ はしれ', romaji: 'ha-shi-re ha-shi-re', en: 'Run! Run!', chords: 'Bm D A A', melody: [[69, 1], [74, 1], [69, 1.5], [71, 0.5], [76, 1], [73, 1]] },
+      { text: 'はあ はあ 止まって', kana: 'はあ はあ とまって', romaji: 'ha-a ha-a to-ma-t-te', en: 'Huff, puff… I stop', chords: 'D D', melody: [[74, 0.5], [69, 0.5], [74, 0.5], [69, 0.5], [69, 1], [74, 1], [74, 0.5], [74, 1.5]] },
+      { text: '後ろを 見たら', kana: 'うしろを みたら', romaji: 'u-shi-ro-o mi-ta-ra', en: 'I look behind me…', chords: 'C#m F#m', melody: [[68, 0.5], [73, 0.5], [73, 0.5], [73, 0.5], [76, 1], [73, 1], [69, 2]] },
+      { text: 'お母さん！？', kana: 'おかあさん', romaji: 'o-ka-a-sa-n', en: 'Mom!?', chords: 'Bm C#m', melody: [[71, 1], [74, 1], [71, 1], [71, 1], [68, 2]] },
+      { text: '「お弁当 忘れたよ！」', kana: 'おべんとう わすれたよ', romaji: 'o-be-n-to-u wa-su-re-ta-yo', en: '“You forgot your lunch!”', chords: 'F#m E', melody: [[69, 0.5], [73, 0.5], [73, 0.5], [73, 0.5], [73, 0.5], [69, 0.5], [71, 0.5], [71, 0.5], [71, 1], [71, 1]] },
+    ],
+  },
+  {
+    // Run!, version B, over the other Mureka take: verse A | D | C♯m F♯m | Bm E (I–IV–iii–vi–ii–V); chorus
+    // D | F♯m | Bm | F♯m E, opening on IV. A lunchtime race for the school's one melon bread, which the
+    // teacher is already eating. The title peaks on F♯5. Each game plays one of the two versions.
+    id: 'hashire-b',
+    group: 'hashire',
+    title: { text: '走れ！', kana: 'はしれ', en: 'Run!' },
+    bpm: 134,
+    style: 'rock',
+    level: 'kana',
+    status: 'draft',
+    form: standardForm(16, 8),
+    track: { id: 'run-melonpan', start: 0, segments: [[0, 38]] },
+    lines: [
+      { text: 'お昼の チャイム', kana: 'おひるの チャイム', romaji: 'o-hi-ru-no cha-i-mu', en: 'The lunch bell', chords: 'A D', melody: [[69, 1], [74, 0.5], [69, 0.5], [69, 1], [73, 0.5], [69, 0.5], [69, 2]] },
+      { text: 'メロンパンは 一つ', kana: 'メロンパンは ひとつ', romaji: 'me-ro-n-pa-n-wa hi-to-tsu', en: 'There’s only one melon bread', chords: 'C#m F#m Bm E7', melody: [[68, 0.5], [73, 0.5], [73, 0.5], [69, 0.5], [69, 0.5], [69, 0.5], [69, 1], [74, 1], [71, 1]] },
+      { text: 'みんなが 走る', kana: 'みんなが はしる', romaji: 'mi-n-na-ga ha-shi-ru', en: 'Everyone is running', chords: 'A D', melody: [[69, 0.5], [73, 0.5], [73, 1], [69, 1], [69, 1], [74, 1], [69, 1]] },
+      { text: '負けないぞ！', kana: 'まけないぞ', romaji: 'ma-ke-na-i-zo', en: 'I won’t lose!', chords: 'C#m Bm Bm E7', melody: [[68, 1], [73, 1], [74, 1], [74, 1], [74, 2]] },
+      { text: '走れ 走れ！', kana: 'はしれ はしれ', romaji: 'ha-shi-re ha-shi-re', en: 'Run! Run!', chords: 'Dmaj7 C#m F#m C#m', melody: [[69, 1], [74, 1], [73, 1.5], [73, 0.5], [78, 1], [69, 1]] },
+      { text: '風に なって', kana: 'かぜに なって', romaji: 'ka-ze-ni na-t-te', en: 'Become the wind', chords: 'Bm F#m F#m E', melody: [[66, 1], [71, 1], [73, 0.5], [73, 1.5], [73, 0.5], [69, 1.5]] },
+      { text: 'パンは わたしの！', kana: 'パンは わたしの', romaji: 'pa-n-wa wa-ta-shi-no', en: 'The bread is mine!', chords: 'Dmaj7 C#m C#m F#m', melody: [[74, 1], [69, 0.5], [69, 0.5], [68, 1], [73, 0.5], [76, 0.5], [76, 2]] },
+      { text: '走れ 走れ！', kana: 'はしれ はしれ', romaji: 'ha-shi-re ha-shi-re', en: 'Run! Run!', chords: 'Bm D D D', melody: [[69, 1], [74, 1], [73, 1.5], [73, 0.5], [78, 1], [69, 1]] },
+      { text: '一番に 着いた', kana: 'いちばんに ついた', romaji: 'i-chi-ba-n-ni tsu-i-ta', en: 'I got there first', chords: 'A D', melody: [[69, 0.5], [73, 0.5], [69, 0.5], [69, 0.5], [69, 1], [73, 1], [69, 1], [69, 1]] },
+      { text: 'あった！ メロンパン', kana: 'あった メロンパン', romaji: 'a-t-ta me-ro-n-pa-n', en: 'There it is! Melon bread!', chords: 'C#m F#m Bm E7', melody: [[73, 1], [69, 0.5], [69, 0.5], [69, 0.5], [73, 0.5], [73, 1], [71, 1], [71, 1]] },
+      { text: '手を 出したら', kana: 'てを だしたら', romaji: 'te-o da-shi-ta-ra', en: 'I reached out, and…', chords: 'A D', melody: [[73, 1], [69, 1], [73, 1], [69, 0.5], [69, 0.5], [69, 2]] },
+      { text: '先生が 食べてる', kana: 'せんせいが たべてる', romaji: 'se-n-se-i-ga ta-be-te-ru', en: '…the teacher is eating it.', chords: 'C#m Bm Bm E7', melody: [[68, 0.5], [73, 0.5], [73, 0.5], [71, 0.5], [71, 0.5], [71, 1], [74, 0.5], [71, 0.5], [71, 1]] },
     ],
   },
   {

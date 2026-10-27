@@ -33,7 +33,8 @@ export const TRACK_IDS = [
   'night-drive-asleep',
   'harbour-ferry',
   'harbour-ticket',
-  'jrpg-rock',
+  'run-footsteps',
+  'run-melonpan',
   'hot-springs',
   'hustle',
   'lazy-saturday',
@@ -125,8 +126,10 @@ export const TRACKS: Record<TrackId, Track> = {
   // Each file is already the song's bars in order at exactly 71 bpm, A minor.
   'harbour-ferry': { title: 'Harbour in the Rain (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('harbour-ferry'), gainDb: 0.7, fallback: 'gentle' },
   'harbour-ticket': { title: 'Harbour in the Rain (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('harbour-ticket'), gainDb: 1.6, fallback: 'gentle' },
-  // Run!: anime rock, 152 bpm, F♯ minor. From 14.0 s (orig. bar 9).
-  'jrpg-rock': { title: 'JRPG Epic Rock Battle Theme', author: 'HydroGene', licence: 'CC0', source: `${OGA}jrpg-epic-rock-battle-theme-1`, url: file('jrpg-epic-rock'), gainDb: -7.2, fallback: 'battle' },
+  // Run!: two AI-made anime-rock backings (Mureka, 2026-10-27), one per version of the song. Each file is
+  // already the song's bars in order, A major: version A at exactly 132 bpm, version B at 134.
+  'run-footsteps': { title: 'Run! (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('run-footsteps'), gainDb: -1, fallback: 'battle' },
+  'run-melonpan': { title: 'Run! (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('run-melonpan'), gainDb: -1.5, fallback: 'battle' },
   // Cheers!: festival tune, 120 bpm, A major. The first 33 s.
   'hot-springs': { title: 'Hot Springs Town', author: 'Kistol', licence: 'CC0', source: `${OGA}hot-springs-town`, url: file('hot-springs-town'), gainDb: 0.3, fallback: 'festive' },
   // Monday Blues: minor blues, 120 bpm, E minor (12-bar). From 15.0 s (orig. bar 7), before the key change.
