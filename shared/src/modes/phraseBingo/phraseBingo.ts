@@ -19,7 +19,7 @@ import { firstMora } from '../lastTrain/check.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { phraseKey, phraseScore, saidPhrase } from './check.js';
-import { SCENES, type Scene, type ScenePhrase } from './scenes.js';
+import { SCENES, scenesFor, type Scene, type ScenePhrase } from './scenes.js';
 
 // ---- tuning ----
 
@@ -511,19 +511,23 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
     const random = () => ctx.random();
     const packIds = [...new Set(SCENES.map((x) => x.packId))] as string[];
     const packId = opts.packId && packIds.includes(opts.packId) ? opts.packId : packIds[Math.floor(random() * packIds.length)]!;
-    const mine = shuffled(
-      SCENES.filter((x) => x.packId === packId),
-      random,
-    );
-    const rest = shuffled(
-      SCENES.filter((x) => x.packId !== packId),
-      random,
-    );
+    // The pack's scenes first, then the rest; a Kids or Cheeky room plays its own scenes before the family ones.
+    const order = (scenes: Scene[]) => [
+      ...shuffled(
+        scenes.filter((x) => x.packId === packId),
+        random,
+      ),
+      ...shuffled(
+        scenes.filter((x) => x.packId !== packId),
+        random,
+      ),
+    ];
+    const { own, fill } = scenesFor(ctx.audience ?? 'family');
     const statsAll: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) statsAll[p.id] = blankStats();
     return {
       packId,
-      order: [...mine, ...rest].map((x) => x.id),
+      order: [...order(own), ...order(fill)].map((x) => x.id),
       round: 0,
       totalRounds: Math.max(1, Math.min(20, opts.rounds ?? TOTAL_SCENES)),
       scene: null,
