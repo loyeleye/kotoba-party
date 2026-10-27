@@ -158,7 +158,7 @@ export const foodPack: TopicPack = {
       jp: { text: "ビール", kana: "ビール", en: "beer" },
       pos: "noun",
       level: "n5",
-      tags: ["drink"],
+      tags: ["drink", "grown-up"],
     },
     {
       id: "food.bento",

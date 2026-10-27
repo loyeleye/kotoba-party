@@ -1,6 +1,7 @@
 // Oogiri Night state and view types.
 
 import type { JpText, Level, OogiriPrompt, OogiriRound, TileForm } from '../../../../content/src/types.js';
+import type { Audience } from '../../protocol.js';
 import type { AnswerStyle } from './answer.js';
 import type { Frame, Tile } from './deal.js';
 import type { AnswerShape } from './natural.js';
@@ -95,6 +96,8 @@ export interface LedgerEntry {
 
 export interface OogiriState {
   packId: string;
+  /** The room's Audience when the game started: which prompts it deals (family when left out). */
+  audience?: Audience;
   placeholder: boolean;
   /** 1–3; 0 before the first round. */
   round: number;

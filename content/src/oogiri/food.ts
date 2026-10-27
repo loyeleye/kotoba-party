@@ -49,6 +49,7 @@ export const foodPrompts: OogiriPrompt[] = [
     id: "food.oogiri.konbini-3am",
     packId: "food",
     round: "head-to-head",
+    audiences: ["family", "cheeky"],
     versions: {
       kana: { text: "よる、コンビニで ＿＿＿を かいました。", kana: "よる、コンビニで ＿＿＿を かいました。", en: "Late at night, I bought ___ at the konbini." },
       n5: { text: "夜の 三時、コンビニで ＿＿＿を 買いました。", kana: "よるの さんじ、コンビニで ＿＿＿を かいました。", en: "At 3 a.m., I bought ___ at the konbini.", furigana: [["夜", "よる"], ["の ", ""], ["三", "さん"], ["時", "じ"], ["、コンビニで ＿＿＿を ", ""], ["買", "か"], ["いました。", ""]] },
@@ -63,6 +64,7 @@ export const foodPrompts: OogiriPrompt[] = [
     id: "food.oogiri.pon-diet",
     packId: "food",
     round: "head-to-head",
+    audiences: ["family", "cheeky"],
     versions: {
       kana: { text: "ポンさんは ダイエットちゅうです。でも、まいにち ＿＿＿。", kana: "ポンさんは ダイエットちゅうです。でも、まいにち ＿＿＿。", en: "Pon is on a diet. But every day, he ___." },
       n5: { text: "ポンさんは ダイエット中です。でも、毎日 ＿＿＿。", kana: "ポンさんは ダイエットちゅうです。でも、まいにち ＿＿＿。", en: "Pon is on a diet. But every day, he ___.", furigana: [["ポンさんは ダイエット", ""], ["中", "ちゅう"], ["です。でも、", ""], ["毎", "まい"], ["日", "にち"], [" ＿＿＿。", ""]] },
@@ -104,6 +106,7 @@ export const foodPrompts: OogiriPrompt[] = [
     id: "food.oogiri.first-date",
     packId: "food",
     round: "head-to-head",
+    audiences: ["family", "cheeky"],
     versions: {
       kana: { text: "はじめての デートで、かれは ＿＿＿。", kana: "はじめての デートで、かれは ＿＿＿。", en: "On our first date, he ___." },
       n5: { text: "はじめての デートで、かれは ＿＿＿。", kana: "はじめての デートで、かれは ＿＿＿。", en: "On our first date, he ___." },
@@ -211,6 +214,7 @@ export const foodPrompts: OogiriPrompt[] = [
     id: "food.oogiri.baby-first-word",
     packId: "food",
     round: "head-to-head",
+    audiences: ["family", "cheeky"],
     versions: {
       kana: { text: "あかちゃんの はじめての ことばは「＿＿＿」でした。", kana: "あかちゃんの はじめての ことばは「＿＿＿」でした。", en: "The baby's first word was \"___\"." },
       n5: { text: "あかちゃんの はじめての ことばは「＿＿＿」でした。", kana: "あかちゃんの はじめての ことばは「＿＿＿」でした。", en: "The baby's first word was \"___\"." },
@@ -440,6 +444,7 @@ export const foodPrompts: OogiriPrompt[] = [
     id: "food.oogiri.date-dinner",
     packId: "food",
     round: "head-to-head",
+    audiences: ["family", "cheeky"],
     versions: {
       kana: { text: "デートの ばんごはんは ＿＿＿。", kana: "デートの ばんごはんは ＿＿＿。", en: "Dinner on our date was ___." },
       n5: { text: "デートの 晩ごはんは ＿＿＿。", kana: "デートの ばんごはんは ＿＿＿。", en: "Dinner on our date was ___.", furigana: [["デートの ", ""], ["晩", "ばん"], ["ごはんは ＿＿＿。", ""]] },

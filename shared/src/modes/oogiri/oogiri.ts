@@ -16,7 +16,7 @@ import type { Phase, Viewer } from '../../protocol.js';
 import { isUtterance } from '../../japanese/kana.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type HostCue, type Mode, type ModeContext } from '../mode.js';
 import { buildAnswer, parseAnswerMove, sentenceFor, type AnswerStyle } from './answer.js';
-import { dealFrames, dealTiles, FORM_LABELS, library, libraryFor, ROUNDS, stageVersion, versionFor, wordsIn, type Library, type Tile } from './deal.js';
+import { dealFrames, dealTiles, FORM_LABELS, library, libraryFor, ownPrompt, ROUNDS, stageVersion, versionFor, wordsIn, type Library, type Tile } from './deal.js';
 import { naturalSentence } from './natural.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type {
@@ -95,16 +95,16 @@ function pay(s: OogiriState, ctx: ModeContext, playerId: string, points: number,
   s.ledger.push({ playerId, round: s.round, points: p, why });
 }
 
-const lib = (s: OogiriState, ctx: ModeContext): Library => libraryFor(ctx.content, s.packId);
+const lib = (s: OogiriState, ctx: ModeContext): Library => libraryFor(ctx.content, s.packId, s.audience ?? 'family');
 
 function drawPrompt(s: OogiriState, ctx: ModeContext, l: Library, round: OogiriRound, avoid: Set<string>): OogiriPrompt {
   const all = l.prompts[round];
   let deck = s.decks[round];
   if (!deck.some((id) => !avoid.has(id))) {
-    deck = s.decks[round] = shuffled(
-      all.map((p) => p.id),
-      () => ctx.random(),
-    );
+    // A Kids or Cheeky room gets its own prompts first, then the shared ones.
+    const own = all.filter((p) => ownPrompt(p, l.audience)).map((p) => p.id);
+    const shared = all.filter((p) => !ownPrompt(p, l.audience)).map((p) => p.id);
+    deck = s.decks[round] = [...shuffled(own, () => ctx.random()), ...shuffled(shared, () => ctx.random())];
   }
   const idx = Math.max(0, deck.findIndex((id) => !avoid.has(id)));
   const id = deck.splice(idx, 1)[0];
@@ -390,11 +390,12 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
   },
 
   setup(ctx, opts) {
-    const l = library(ctx.content, opts.packId, () => ctx.random());
+    const l = library(ctx.content, opts.packId, () => ctx.random(), ctx.audience ?? 'family');
     const stats: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) stats[p.id] = blankStats();
     return {
       packId: l.packId,
+      audience: l.audience,
       placeholder: l.placeholder,
       round: 0,
       decks: { 'head-to-head': [], 'photo-caption': [], ippon: [] },
