@@ -99,8 +99,8 @@ export type ServerMessage =
   | { type: 'state'; v: number; now: number; view: RoomView }
   | { type: 'bye'; reason: ByeReason };
 
-/** room-idle: closed after a long stretch with no joins or commands (a screen left on). */
-export type ByeReason = 'seat-released' | 'room-closed' | 'room-idle' | 'replaced';
+/** room-idle: closed after a long stretch with no joins or commands (a screen left on). room-ended: the main stage closed it. */
+export type ByeReason = 'seat-released' | 'room-closed' | 'room-idle' | 'room-ended' | 'replaced';
 
 /** WebSocket close codes the server uses (4000–4999 is the application range). */
 export const CLOSE = {
@@ -123,7 +123,9 @@ export type Command =
   /** The VIP's Calm motion switch: stage and phones swap movement for fades and still frames. */
   | { id: string; type: 'setMotion'; calm: boolean }
   /** Main stage only: room settings. */
-  | { id: string; type: 'settings'; remoteControl: boolean };
+  | { id: string; type: 'settings'; remoteControl: boolean }
+  /** Main stage only: ends the room for every screen and phone. */
+  | { id: string; type: 'closeRoom' };
 
 export type CommandType = Command['type'];
 

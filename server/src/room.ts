@@ -47,7 +47,7 @@ export interface RoomOptions {
   onPhase?: (room: Room) => void;
 }
 
-const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'setMotion', 'settings']);
+const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'setMotion', 'settings', 'closeRoom']);
 /** What a watching screen may send once the main stage turns on remote control. */
 const WATCH_COMMANDS = new Set<Command['type']>(['start', 'skip', 'playAgain']);
 const COMMAND_MEMORY = 128;
@@ -227,6 +227,12 @@ export class Room {
     const earlier = log.get(cmd.id);
     if (earlier) return earlier;
 
+    // Not game state: the room itself ends, so it never reaches the rules.
+    if (cmd.type === 'closeRoom') {
+      if (viewer.kind !== 'stage' || viewer.watch) return { ok: false, error: 'not-allowed', v: this.version };
+      this.close('room-ended');
+      return { ok: true, v: this.version };
+    }
     const outcome = this.dispatch({ type: 'command', actor: viewer, command: cmd });
     const result: CommandResult = outcome.changed
       ? { ok: true, v: this.version }

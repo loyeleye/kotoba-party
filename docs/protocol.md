@@ -30,6 +30,8 @@ Commands:
 - `playAgain`: VIP or stage, recap.
 - `settings { remoteControl }`: main stage only (its settings panel). `remoteControl: true` lets
   watching stages send `start`, `skip` and `playAgain` too; every view carries `remoteControl`.
+- `closeRoom`: main stage only (its settings panel, after a confirm). Ends the room for everyone
+  with `bye room-ended`; never allowed from a watching stage, even with remote control on.
 
 Refusals are short codes (`wrong-phase`, `not-your-turn`, `say-it-first` …); the phone maps them
 to wording in `controller/src/main.ts`. `wrong-phase` means the move lost a race with the clock
@@ -49,7 +51,9 @@ start, skip and replay. The VIP's phone (or the main stage) runs the game.
 - `{ type: 'state', v, now, view }`: the whole `RoomView` for this viewer at version `v`. `now`
   is the server clock, for countdowns.
 - `{ type: 'bye', reason }`: `replaced` (the same seat connected from another tab),
-  `room-closed`.
+  `room-closed`, `room-idle` (30 minutes with no joins or commands) or `room-ended` (the main
+  stage closed it). The socket then closes with 4404; stages show a goodbye instead of opening a
+  new room for the last two.
 
 Close codes: `4401` unknown token, `4404` room gone, `4410` seat released after 90 s.
 

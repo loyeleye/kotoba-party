@@ -11,7 +11,7 @@ import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
 import { ROOM_STALE_MS } from '../../shared/src/constants.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
-import type { CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
+import type { ByeReason, CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
 import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
@@ -221,13 +221,13 @@ async function openRoom(fresh: boolean): Promise<void> {
   lastPhaseSeq = -1;
 
   const code = session.code;
-  let idleClosed = false;
+  let closedAs: ByeReason | null = null;
   client = new RoomClient({
     baseUrl: base,
     code,
     token: session.stageToken,
     onState: render,
-    onBye: (reason) => (idleClosed = reason === 'room-idle'),
+    onBye: (reason) => (closedAs = reason),
     onStatus: (status: ConnectionStatus) => {
       els.status.textContent = status;
       els.status.dataset.status = status;
@@ -235,7 +235,9 @@ async function openRoom(fresh: boolean): Promise<void> {
       // A watching screen never opens a room of its own: when the room ends, it says so.
       if (WATCH && status === 'room-gone') showNotice(`Room ${WATCH} has closed`, 'The game on the main screen ended or was left idle.');
       // Closed because nobody played for a long while: opening another room would just keep a forgotten TV busy.
-      else if (status === 'room-gone' && idleClosed) showNotice(`Room ${code} has closed`, `Nobody played for ${ROOM_STALE_MS / 60_000} minutes.`);
+      else if (status === 'room-gone' && closedAs === 'room-idle') showNotice(`Room ${code} has closed`, `Nobody played for ${ROOM_STALE_MS / 60_000} minutes.`);
+      // Closed from Settings on purpose: a goodbye, not a fresh room.
+      else if (status === 'room-gone' && closedAs === 'room-ended') showNotice('おつかれさまでした！', `Room ${code} is closed. Thanks for playing.`);
       else if (status === 'room-gone' || status === 'seat-lost') void openRoom(true);
     },
   });
