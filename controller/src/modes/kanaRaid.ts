@@ -7,49 +7,17 @@
 import { h, ruby } from '../../../shared/src/dom.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
-import { hasTabAudio } from '../../../shared/src/audioTabs.js';
 import type { AttackView, KanaRaidView, LastResult } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import { inkPad } from '../components/inkPad.js';
 import { speakBox } from '../components/speak.js';
+import { canVoice, hearButton as voiceButton, say } from '../components/voice.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 // ---------- speech synthesis ----------
 
-const synth = (): SpeechSynthesis | null => (typeof speechSynthesis === 'undefined' ? null : speechSynthesis);
-
-function jaVoice(): SpeechSynthesisVoice | null {
-  return synth()?.getVoices().find((v) => v.lang.replace('_', '-').toLowerCase().startsWith('ja')) ?? null;
-}
-
-/** True unless we know there is no Japanese voice (voices load late on some phones). */
-function canVoice(): boolean {
-  const s = synth();
-  if (!s) return false;
-  const voices = s.getVoices();
-  return voices.length === 0 || !!jaVoice();
-}
-
-function say(text: string): void {
-  const s = synth();
-  if (!s || !text || !hasTabAudio()) return;
-  try {
-    s.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ja-JP';
-    u.rate = 0.8;
-    const v = jaVoice();
-    if (v) u.voice = v;
-    s.speak(u);
-  } catch {
-    /* no voice: the written fallback is on screen */
-  }
-}
-
-function hearButton(text: string, label = '🔊 Hear it', big = false): HTMLElement {
-  return h('button', { type: 'button', class: `raid-hear${big ? ' big' : ''}`, onclick: () => say(text) }, label);
-}
+const hearButton = (text: string, label = '🔊 Hear it', big = false): HTMLElement => voiceButton(text, label, `raid-hear${big ? ' big' : ''}`);
 
 /** The sound, voiced; written out too when the phone can't voice Japanese. */
 function listen(a: AttackView, auto: boolean): HTMLElement {

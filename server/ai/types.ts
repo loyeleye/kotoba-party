@@ -50,6 +50,22 @@ export const HOST_EVENTS = [
   'onsen_clue',
   'onsen_accuse',
   'onsen_reveal',
+  // Shodō Taikai
+  'shodo_intro',
+  'shodo_practice',
+  'shodo_read',
+  'shodo_dictation',
+  'shodo_clean',
+  'shodo_misread',
+  'shodo_gallery',
+  'shodo_vote',
+  'shodo_claim',
+  'shodo_synchro_break',
+  'shodo_gallery_reveal',
+  'shodo_callback',
+  'shodo_award',
+  'shodo_claimed',
+  'shodo_other_hand',
 ] as const;
 export type HostEvent = (typeof HOST_EVENTS)[number];
 

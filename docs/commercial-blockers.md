@@ -28,7 +28,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | --- | --- | --- | --- | --- |
 | 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms |
 | 2 | VOICEVOX engine | Docker image, separate service | 🟡 | Run unmodified as a service; LGPL/core terms if ever bundled into a download |
-| 3 | KanjiVG stroke data | `content/src/kana/strokes.ts` | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
+| 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
 | 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits, 14 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
@@ -49,6 +49,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
 | 22 | Music: recorded tracks (CC0, CC BY 4.0), original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes |
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
+| 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
 
 ## Details
 
@@ -83,8 +84,9 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 ### 3. KanjiVG
 
 - **Terms:** CC BY-SA 3.0, © Ulrich Apel and contributors. Commercial use is allowed.
-- **Conditions:** Attribution, and anything derived from it stays CC BY-SA. `strokes.ts` is derived, and
-  its header already says so. The share-alike applies to that data, not to the rest of the game, as long
+- **Read:** https://github.com/KanjiVG/kanjivg/blob/master/COPYING, 2026-10-27.
+- **Conditions:** Attribution, and anything derived from it stays CC BY-SA. Both `strokes.ts` files
+  (kana, and the 111 kanji Shodō Taikai uses) are derived, and their headers say so. The share-alike applies to that data, not to the rest of the game, as long
   as it stays a separate data file.
 - **To sell:** Credit KanjiVG on the credits screen and in the notices file. Accept that anyone may
   reuse the stroke data.
@@ -317,6 +319,15 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY
   allows commercial use, and asks for title, author, source, the licence with a link, and a note of
   any changes.
+- **Japanese Lofi HipHop (pickentcode, ❓):** Shodō Taikai's gallery track, added 2026-10-27 at
+  Ladi's pick. Its [OGA page](https://opengameart.org/content/japanese-lofi-hiphop-track), read
+  2026-10-27, says CC0 and "Ordered from Fiverr for a project that never got finished". Fiverr's
+  [commercial-use licence page](https://help.fiverr.com/hc/en-us/articles/37555186939921--For-Commercial-Use-license-details)
+  says a delivery's IP is assigned to the buyer unless the gig says otherwise, so the buyer could
+  release it as CC0. Not verified: that the uploader is the buyer, that the gig didn't keep rights,
+  and that the seller used no licensed samples. **To sell:** ask pickentcode for the Fiverr order
+  and the seller's name and confirm, or swap the gallery to Senbazuru (Kevin MacLeod, CC BY 4.0, the
+  runner-up) or the synth.
 - **How we credit:** the stage names each recorded track, author and licence beside the sound button
   while it plays, and during the recap a strip along the foot of the screen cycles through every track
   grouped by author with the licence link and "looped and filtered for the game" (`creditSummary()` in
@@ -361,6 +372,25 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   address).
 - **To sell:** read the terms and record them here; or move the short link to a domain we own (for
   example a `tanoshi.` subdomain), so the QR codes don't depend on someone else's service.
+### 24. Reader service on Oracle Cloud
+
+- **What:** since 2026-10-27 the kanji reader (`npm run reader`, kuromoji) runs on an Oracle Cloud
+  Always Free Ampere A1 VM (US West, Phoenix) behind Caddy. The Worker reaches it at
+  `https://141-148-186-1.sslip.io` (`READER_URL`); sslip.io is a free DNS service that maps the
+  hostname to the VM's reserved IP. Setup guide: the "Set up the kanji reader on Oracle Cloud" doc in
+  the project.
+- **Terms: unread (❓).** On 2026-10-27 the Oracle Free Tier FAQ (https://www.oracle.com/cloud/free/faq/)
+  and the Always Free resources page (https://docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm)
+  refused automated reads (403 / blocked), so nothing here is checked against Oracle's own text. Not
+  known: whether Always Free may serve a commercial product, and what notice Oracle gives before
+  reclaiming or ending free resources. sslip.io's terms were not read either.
+- **Risks:** secondary sources say Oracle reclaims Always Free instances that stay idle for 7 days on
+  a free-only account, so the account is being upgraded to Pay As You Go ($0 within the free limits).
+  If the reader goes away, the game keeps working: answers with kanji are compared as written and the
+  かな "Heard:" line shows no romaji for kanji.
+- **To sell:** read Oracle's terms and record them here, or move the reader to a paid host with an SLA;
+  give it a hostname on a domain we own instead of sslip.io.
+
 ## AI art: non-commercial vs commercial
 
 Ladi asked (2026-10-26): is AI art a problem for a non-commercial game, and what if we go commercial?

@@ -124,6 +124,17 @@ describe('cues', () => {
     expect(cueFor('karaoke-duel', 'finale').song).toBe('finale');
   });
 
+  it('keeps Shodō Taikai calm, with a recorded track for the gallery', () => {
+    for (const phase of ['prompt', 'score', 'answer', 'reveal'] as const) expect(cueFor('shodo', phase)).toEqual({ song: 'gentle', mix: 'under', keep: true });
+    expect(cueFor('shodo', 'answer', 0, true).mix).toBe('listen');
+    expect(cueFor('shodo', 'encore')).toEqual({ song: 'japanese-lofi', mix: 'full' });
+    expect(cueFor('shodo', 'finale')).toEqual({ song: 'japanese-lofi', mix: 'full', keep: true });
+    expect(cueFor('shodo', 'penalty').mix).toBe('under');
+    expect(cueFor('shodo', 'reveal').sting).toBeUndefined();
+    expect(listening({ mode: 'shodo', phase: 'answer', game: { mode: 'shodo', itemKind: 'dictation' } } as never)).toBe(true);
+    expect(listening({ mode: 'shodo', phase: 'answer', game: { mode: 'shodo', itemKind: 'recall' } } as never)).toBe(false);
+  });
+
   it('opens every game with the house ident', () => {
     for (const mode of MODE_IDS) expect(cueFor(mode, 'intro').leadIn).toBe('ident');
   });

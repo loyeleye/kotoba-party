@@ -412,6 +412,8 @@ function vipMenu(view: RoomView): HTMLElement {
   const packField = h('label', { class: 'gp-field' }, h('span', {}, 'Topic'), packSelect);
   const roundsField = h('label', { class: 'gp-field' }, h('span', {}, 'Length'), roundsSelect);
   const note = h('p', { class: 'hint', role: 'status' });
+  const extras = h('div', { class: 'vip-extras' });
+  const ticked = new Set<string>();
   const startBtn = h('button', { class: 'primary' }, 'Start') as HTMLButtonElement;
   const current = h('button', { type: 'button', class: 'gp-current', 'aria-haspopup': 'dialog' }) as HTMLButtonElement;
 
@@ -472,6 +474,15 @@ function vipMenu(view: RoomView): HTMLElement {
     if (m.roundChoices.includes(menu.rounds)) roundsSelect.value = String(menu.rounds);
     roundsField.hidden = m.roundChoices.length === 0;
     packField.hidden = !m.usesPack || view.packs.length === 0;
+    ticked.clear();
+    mount(
+      extras,
+      (m.extras ?? []).map((x) => {
+        const box = h('input', { type: 'checkbox' }) as HTMLInputElement;
+        box.addEventListener('change', () => (box.checked ? ticked.add(x.key) : ticked.delete(x.key)));
+        return h('label', { class: 'vip-extra' }, box, ` ${x.label}`);
+      }),
+    );
     const ok = fits(m, n);
     startBtn.disabled = !ok;
     startBtn.textContent = ok ? `Start ${m.title}` : 'Start';
@@ -484,6 +495,7 @@ function vipMenu(view: RoomView): HTMLElement {
       mode: chosen.id,
       rounds: roundsField.hidden ? undefined : Number(roundsSelect.value),
       packId: packField.hidden || !packSelect.value ? undefined : packSelect.value,
+      extra: ticked.size ? Object.fromEntries([...ticked].map((k) => [k, true])) : undefined,
     });
   });
   refresh();
@@ -494,6 +506,7 @@ function vipMenu(view: RoomView): HTMLElement {
     { class: 'vip-start' },
     current,
     h('div', { class: 'gp-fields' }, packField, roundsField),
+    extras,
     note,
     startBtn,
     fold('settings', 'Room settings', 'Calm motion', motionToggle(view)),

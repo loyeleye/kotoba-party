@@ -41,6 +41,7 @@ body[data-mode='concentration'] { --mode: #c9a6ff; }
 body[data-mode='karaoke-duel'] { --mode: #ff52d0; }
 body[data-mode='phrase-bingo'] { --mode: #ff6f91; }
 body[data-mode='omiai'] { --mode: #ffa3c0; }
+body[data-mode='shodo'] { --mode: #c9ced6; }
 body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--mode) 22%, var(--bg)), var(--bg) 70%) fixed; }
 
 /* Japanese: break between phrases, never inside a word (see stage/style.css). */
@@ -202,6 +203,10 @@ body[data-mode] .timer { color: var(--on-accent); }
 .switch-row[aria-checked='true'] .switch { background: var(--good); border-color: var(--outline); }
 .switch-row[aria-checked='true'] .switch::after { translate: 22px 0; background: var(--outline); }
 .switch-row:focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; border-radius: 8px; }
+.vip-extras { display: grid; gap: 6px; }
+.vip-extras:empty { display: none; }
+.vip-extra { display: flex; gap: 8px; align-items: center; font-size: 18px; }
+.vip-extra input { width: 22px; height: 22px; }
 .secondary { font-size: 18px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
 .award { color: var(--warn); font-weight: 700; margin: 0; }
 .phrasebook ul { padding-left: 18px; display: grid; gap: 6px; }

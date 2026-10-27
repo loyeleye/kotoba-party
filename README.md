@@ -21,6 +21,7 @@ Eleven modes run end to end on the stage and phones, each with bots and full-ser
 | Who's the Tourist? (backlog) | Chōchin-san | Asking and answering questions to find who doesn't know the place |
 | Oekaki (backlog) | Fude | Drawing a word, then writing fake Japanese titles |
 | Omiai Matchmaker (backlog) | Pon | Polite Japanese (です/ます, keigo) on a parody matchmaking show |
+| Shodō Taikai (backlog) | Fude | Handwriting: tracing and writing kana and kanji with stroke order, said aloud first |
 
 All content is `draft` until a fluent speaker checks it. Decisions and questions for Ladi:
 [docs/open-questions.md](docs/open-questions.md).

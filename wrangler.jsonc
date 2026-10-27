@@ -27,8 +27,9 @@
     "PUBLIC_URL": "https://tanoshi.s.gy",
     // Optional; e.g. https://voicevox.example.com. Empty: subtitles only.
     "VOICEVOX_URL": "",
-    // Optional; the reader service (npm run reader). Empty: kanji answers are compared as written.
-    "READER_URL": "",
+    // Optional; the reader service (npm run reader), here on an Oracle Cloud VM. Empty: kanji answers
+    // are compared as written. READER_TOKEN is a secret (wrangler secret put READER_TOKEN).
+    "READER_URL": "https://141-148-186-1.sslip.io",
     // Speech to text: "workers-ai" runs Whisper on Cloudflare Workers AI through the AI binding above, or a
     // self-hosted Whisper server's endpoint, e.g. https://stt.example.com/inference.
     // Empty: no hold-to-talk, phones type or tap. Audio never goes to Google (docs/speech.md).
