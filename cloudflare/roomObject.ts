@@ -6,7 +6,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import QRCode from 'qrcode';
 import debugPrompts from '../content/debug/prompts.json';
-import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine, type HostVoice as AiHostVoice } from '../server/ai/index.js';
+import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine, type LlmClient, type HostVoice as AiHostVoice } from '../server/ai/index.js';
 import { buildContent } from '../server/src/content.js';
 import { aiVoice, bankVoice, hostDirector, type HostVoice } from '../server/src/host.js';
 import { inkCoachDirector } from '../server/src/ink.js';
@@ -30,7 +30,7 @@ export class RoomObject extends DurableObject<Env> {
   /** Opens a room under this object's code. Answers 409 if one is already open here. */
   private open(code: string): Room | null {
     if (this.room) return null;
-    const llm = llmFromEnv();
+    const llm = logFailures(llmFromEnv());
     const ai = createHostVoice({
       llm,
       tts: this.env.VOICEVOX_URL ? new VoicevoxTts({ baseUrl: this.env.VOICEVOX_URL }) : new SilentTts(),
@@ -176,4 +176,16 @@ function roomAudio(voice: HostVoice): HostVoice {
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
+}
+
+/** Logs each failed Claude call's reason (never the key) to Workers Logs; the game still falls back as before. */
+function logFailures(llm: LlmClient | undefined): LlmClient | undefined {
+  if (!llm) return undefined;
+  return {
+    complete: (req) =>
+      llm.complete(req).catch((e: unknown) => {
+        console.warn(`llm ${req.purpose} failed: ${e instanceof Error ? e.message : String(e)}`);
+        throw e;
+      }),
+  };
 }
