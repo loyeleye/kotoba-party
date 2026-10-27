@@ -214,6 +214,9 @@ describe('Karaoke Duel: songs', () => {
     ['nemurenai-yoru', 2],
     ['getsuyoubi', 4],
     ['jikoshoukai-rap', 2],
+    ['kanpai', 2],
+    ['doko-itteta', 2],
+    ['kirakira-idol', 2],
   ])('plays a random version of %s', (group, count) => {
     const versions = SONGS.filter((x) => x.group === group).map((x) => x.id);
     expect(versions).toHaveLength(count);

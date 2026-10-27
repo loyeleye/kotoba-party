@@ -273,6 +273,13 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     version B (a plain self-introduction to learn by heart). Both at 96 bpm in C major, on one
     Dm7 G7 | Cmaj7 Am7 loop. Its old ramen lyrics and Lazy Saturday are gone. Verse lines start
     off the beat, so its `form` adds a per-line offset to `standardForm`.
+    Cheers!, Where Were You? and Sparkle Idol are last (Ladi: keep both takes of each): Cheers! at 107
+    and 108 bpm in A major (the toast, and "beer, for starters"), Where Were You? at 88 bpm in F and
+    89 in D (the two station exits, and karaoke alone), Sparkle Idol at 128 bpm in A and 129 in D
+    (ニコニコ ハッピー, and the idol who wants to go home). Each version's own lines are its take's
+    funny set; the straight set is a second family lyric set. Hot Springs Town, In Your Arms and
+    Cheers For Starlight are gone, so every grown-up song is now on Mureka backings. The files were
+    cut from takes generated earlier: no new Mureka requests.
     The method and scripts are in project files `tools/mureka/`.
 23. **Audience lyric sets** (Ladi, 2026-10-27: "the three kid, adult family, adult cheeky
     versions for each track"). The Audience is a room setting, not a per-song choice, like a
