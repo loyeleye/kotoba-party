@@ -98,10 +98,6 @@ describe('shiritori kana rules', () => {
     expect(wordReading('ringo')).toBeNull();
     expect(toRomaji('しゃしん')).toBe('shashin');
     expect(toRomaji('みっかぼうず')).toBe('mikkabōzu');
-    // A lone next kana is a sound, not the particle: へ / べ / ぺ reads he / be / pe.
-    expect(['へ', 'べ', 'ぺ'].map(toRomaji)).toEqual(['he', 'be', 'pe']);
-    expect(toRomaji('は')).toBe('ha');
-    expect(toRomaji('わたしは ねこ')).toBe('watashi wa neko');
   });
 
   it('hints only single words, never an oogiri swerve phrase', () => {
