@@ -73,13 +73,21 @@ export interface Placement {
  * half so that each sings every chorus line once.
  */
 export function standardForm(introBeats: number, every = 8, breakBeats = 0): Placement[] {
-  const out: Placement[] = [];
-  const order = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 4, 5, 6, 7];
-  order.forEach((line, k) => {
-    const beat = introBeats + k * every + (k >= 8 ? breakBeats : 0);
-    out.push({ line, beat, by: (k + Math.floor(k / 8)) % 2 === 0 ? 'A' : 'B' });
-  });
-  return out;
+  return songForm([introBeats, introBeats + 4 * every, introBeats + 8 * every + breakBeats, introBeats + 12 * every + breakBeats], every);
+}
+
+/**
+ * The same shape with each section placed on its own beat (verse 1, chorus, verse 2, chorus), for a
+ * track whose sections have instrumental bars between them.
+ */
+export function songForm(starts: readonly [verse1: number, chorus: number, verse2: number, chorus2: number], every = 8): Placement[] {
+  const sections = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [4, 5, 6, 7]] as const;
+  return sections.flatMap((lines, sec) =>
+    lines.map((line, i) => {
+      const k = sec * 4 + i;
+      return { line, beat: starts[sec]! + i * every, by: (k + Math.floor(k / 8)) % 2 === 0 ? ('A' as const) : ('B' as const) };
+    }),
+  );
 }
 
 export interface Song {
@@ -208,115 +216,217 @@ export const SONGS: readonly Song[] = [
     ],
   },
   {
+    // Over "Past Sadness" (Kevin MacLeod, CC BY 4.0, Ladi's pick): slow piano on a Dm7–G–Am7–C
+    // loop, so even lines sit on Dm7 G and odd ones on Am7 C. At 72 bpm each line stays under 5 s.
+    // Two jokes: the umbrella at the end of each chorus, and what the last letter really said.
     id: 'ame-no-minato',
     title: { text: '雨の 港', kana: 'あめの みなと', en: 'Harbour in the Rain' },
-    bpm: 76,
+    bpm: 72,
     style: 'enka',
     level: 'kana',
     status: 'draft',
+    form: standardForm(16, 8),
+    track: { id: 'past-sadness', start: 0.044, segments: [[0, 38]] },
     lines: [
-      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', chords: 'Am E', melody: [[64, 1], [60, 0.5], [60, 0.5], [60, 0.5], [65, 1], [64, 2]] },
-      { text: 'あなたは 来ない', kana: 'あなたは こない', romaji: 'a-na-ta-wa ko-na-i', en: 'You aren’t coming, my love', chords: 'Dm Am', melody: [[64, 0.5], [69, 1], [65, 0.5], [64, 0.5], [69, 1], [65, 0.5], [64, 1.5]] },
-      { text: '一人で 飲む お酒', kana: 'ひとりで のむ おさけ', romaji: 'hi-to-ri-de no-mu o-sa-ke', en: 'Sake I drink alone', chords: 'F E', melody: [[64, 0.5], [69, 0.5], [65, 0.5], [64, 0.5], [72, 1], [69, 0.5], [64, 0.5], [69, 0.5], [71, 1]] },
-      { text: '傘も 忘れた', kana: 'かさも わすれた', romaji: 'ka-sa-mo wa-su-re-ta', en: '…and I forgot my umbrella', chords: 'Dm E Am', melody: [[69, 0.5], [64, 0.5], [64, 1], [69, 0.5], [71, 0.5], [72, 0.5], [69, 2]] },
+      { text: '雨の 港', kana: 'あめの みなと', romaji: 'a-me-no mi-na-to', en: 'The harbour in the rain', chords: 'Dm7 G', melody: [[64, 1], [60, 0.5], [60, 0.5], [60, 0.5], [65, 1], [64, 2]] },
+      { text: '船が 出る', kana: 'ふねが でる', romaji: 'fu-ne-ga de-ru', en: 'A ship sets sail', chords: 'Am7 C', melody: [[62, 1], [65, 1], [64, 0.5], [62, 0.5], [64, 2.5]] },
+      { text: 'あなたは 来ない', kana: 'あなたは こない', romaji: 'a-na-ta-wa ko-na-i', en: 'You aren’t coming, my love', chords: 'Dm7 G', melody: [[64, 0.5], [67, 1], [64, 0.5], [64, 0.5], [65, 1], [62, 0.5], [62, 1.5]] },
+      { text: 'ああ 冷たい 雨', kana: 'ああ つめたい あめ', romaji: 'a-a tsu-me-ta-i a-me', en: 'Ah, the cold rain', chords: 'Am7 C', melody: [[69, 1], [67, 0.5], [64, 0.5], [64, 0.5], [65, 0.5], [65, 0.5], [64, 0.5], [64, 1.5]] },
+      { text: '泣かないで', kana: 'なかないで', romaji: 'na-ka-na-i-de', en: 'Don’t cry', chords: 'Dm7 G', melody: [[64, 1], [69, 1], [67, 0.5], [64, 0.5], [64, 2.5]] },
+      { text: 'もう 泣かない', kana: 'もう なかない', romaji: 'mo-u na-ka-na-i', en: 'I won’t cry any more', chords: 'Am7 C', melody: [[69, 1], [67, 0.5], [64, 0.5], [65, 1], [62, 0.5], [62, 2]] },
+      { text: '一人で 飲む お酒', kana: 'ひとりで のむ おさけ', romaji: 'hi-to-ri-de no-mu o-sa-ke', en: 'Sake I drink alone', chords: 'Dm7 G', melody: [[57, 0.5], [60, 0.5], [64, 0.5], [64, 0.5], [64, 1], [62, 0.5], [59, 0.5], [59, 0.5], [64, 1]] },
+      { text: '傘も 忘れた', kana: 'かさも わすれた', romaji: 'ka-sa-mo wa-su-re-ta', en: '…and I forgot my umbrella', chords: 'Am7 C', melody: [[64, 0.5], [64, 0.5], [60, 1], [62, 0.5], [65, 0.5], [64, 0.5], [57, 2]] },
+      { text: 'あなたの 手紙', kana: 'あなたの てがみ', romaji: 'a-na-ta-no te-ga-mi', en: 'Your letter', chords: 'Dm7 G', melody: [[59, 0.5], [64, 1], [62, 0.5], [59, 0.5], [64, 0.5], [60, 0.5], [57, 2]] },
+      { text: '何度も 読んだ', kana: 'なんども よんだ', romaji: 'na-n-do-mo yo-n-da', en: 'I read it again and again', chords: 'Am7 C', melody: [[57, 0.5], [60, 0.5], [60, 0.5], [60, 0.5], [62, 1], [65, 0.5], [64, 2]] },
+      { text: '最後の 言葉', kana: 'さいごの ことば', romaji: 'sa-i-go-no ko-to-ba', en: 'Its last words:', chords: 'Dm7 G', melody: [[64, 1], [64, 0.5], [67, 0.5], [64, 0.5], [65, 1], [62, 0.5], [62, 1.5]] },
+      { text: '「お金 返して」', kana: 'おかね かえして', romaji: 'o-ka-ne ka-e-shi-te', en: '“Pay me back.”', chords: 'Am7 C', melody: [[62, 0.5], [65, 0.5], [65, 1], [64, 0.5], [64, 0.5], [67, 0.5], [64, 2]] },
     ],
   },
   {
+    // Over "JRPG Epic Rock Battle Theme" (HydroGene, CC0): verses on its F♯m riff, the chorus on its
+    // A–B–G♯m climb. Every note is a beat or longer: at 152 bpm a half-beat is too short to score. The
+    // hero’s big chorus ends "…starting tomorrow!", and verse 2 shows why.
     id: 'hashire',
     title: { text: '走れ！', kana: 'はしれ', en: 'Run!' },
     bpm: 152,
     style: 'rock',
     level: 'kana',
     status: 'draft',
+    form: songForm([16, 64, 112, 160]),
+    track: { id: 'jrpg-rock', start: 0.263, segments: [[0, 28], [40, 63]] },
     lines: [
-      { text: '走れ 走れ！', kana: 'はしれ はしれ', romaji: 'ha-shi-re ha-shi-re', en: 'Run, run!', chords: 'D Bm', melody: [[67, 1], [71, 1], [69, 1], [67, 1], [74, 1], [71, 2]] },
-      { text: '夢に 向かって', kana: 'ゆめに むかって', romaji: 'yu-me-ni mu-ka-t-te', en: 'Toward my dream', chords: 'G A', melody: [[69, 1], [74, 1], [71, 1], [71, 1], [74, 1], [74, 1], [76, 2]] },
-      { text: '負けない 心', kana: 'まけない こころ', romaji: 'ma-ke-na-i ko-ko-ro', en: 'A heart that won’t give in', chords: 'Bm G', melody: [[71, 1], [74, 1], [74, 1], [74, 1], [71, 1], [76, 1], [74, 2]] },
-      { text: '明日から！', kana: 'あしたから', romaji: 'a-shi-ta-ka-ra', en: '…starting tomorrow!', chords: 'G A D', melody: [[71, 1], [74, 1], [78, 2], [76, 1], [74, 3]] },
+      { text: '走れ 走れ！', kana: 'はしれ はしれ', romaji: 'ha-shi-re ha-shi-re', en: 'Run, run!', chords: 'F#m F#m', melody: [[73, 1], [73, 1], [69, 1], [73, 1], [73, 1], [76, 2]] },
+      { text: '夢に 向かって', kana: 'ゆめに むかって', romaji: 'yu-me-ni mu-ka-t-te', en: 'Toward my dream', chords: 'F#m G#7', melody: [[69, 1], [71, 1], [73, 1], [73, 1], [71, 1], [71, 1], [68, 2]] },
+      { text: '負けない 心', kana: 'まけない こころ', romaji: 'ma-ke-na-i ko-ko-ro', en: 'A heart that won’t give in', chords: 'F#m F#m', melody: [[69, 1], [71, 1], [73, 1], [73, 1], [76, 1], [73, 1], [71, 2]] },
+      { text: 'もっと 速く！', kana: 'もっと はやく', romaji: 'mo-t-to ha-ya-ku', en: 'Faster!', chords: 'F#m F#m', melody: [[73, 1], [73, 1], [76, 1], [78, 1], [76, 1], [73, 2]] },
+      { text: '空を 見て', kana: 'そらを みて', romaji: 'so-ra-o mi-te', en: 'Look up at the sky', chords: 'A B', melody: [[76, 1], [73, 1], [73, 1], [76, 1], [78, 3]] },
+      { text: '手を のばせ', kana: 'てを のばせ', romaji: 'te-o no-ba-se', en: 'Reach for it', chords: 'G#m A', melody: [[75, 1], [71, 1], [71, 1], [73, 1], [76, 3]] },
+      { text: '今だ 飛べ！', kana: 'いまだ とべ', romaji: 'i-ma-da to-be', en: 'Now — fly!', chords: 'A B', melody: [[76, 1], [78, 1], [76, 1], [78, 1], [81, 3]] },
+      { text: '明日から！', kana: 'あしたから', romaji: 'a-shi-ta-ka-ra', en: '…starting tomorrow!', chords: 'F#m E D C#', melody: [[78, 1], [78, 1], [81, 1], [81, 1], [80, 3]] },
+      { text: '六時に 起きて', kana: 'ろくじに おきて', romaji: 'ro-ku-ji-ni o-ki-te', en: 'Up at six', chords: 'F#m F#m', melody: [[73, 1], [73, 1], [69, 1], [69, 1], [71, 1], [73, 1], [76, 2]] },
+      { text: 'ジムに 行って', kana: 'ジムに いって', romaji: 'ji-mu-ni i-t-te', en: 'Off to the gym', chords: 'F#m G#7', melody: [[73, 1], [71, 1], [69, 1], [75, 1], [75, 1], [72, 2]] },
+      { text: 'ダイエット！', kana: 'ダイエット', romaji: 'da-i-e-t-to', en: 'On a diet!', chords: 'F#m F#m', melody: [[73, 1], [73, 1], [76, 1], [76, 1], [78, 3]] },
+      { text: 'でも ケーキ', kana: 'でも ケーキ', romaji: 'de-mo ke-e-ki', en: '…but, cake.', chords: 'F#m F#m', melody: [[78, 1], [76, 1], [73, 1], [73, 1], [66, 3]] },
     ],
   },
   {
+    // Over "Hot Springs Town" (Kistol, CC0): a festival tune whose 16-bar theme plays twice, verse then
+    // chorus. Lines a learner will really say at an izakaya, then the bill.
     id: 'kanpai',
     title: { text: '乾杯！', kana: 'かんぱい', en: 'Cheers!' },
     bpm: 120,
     style: 'izakaya',
     level: 'kana',
     status: 'draft',
+    form: standardForm(16, 8),
+    track: { id: 'hot-springs', start: 0.048, segments: [[12, 16], [0, 16], [0, 16], [0, 4]] },
     lines: [
-      { text: '仕事が 終わった', kana: 'しごとが おわった', romaji: 'shi-go-to-ga o-wa-t-ta', en: 'Work is over', chords: 'C G', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [69, 0.5], [67, 0.5], [72, 1], [72, 0.5], [72, 1.5]] },
-      { text: 'とりあえず ビール', kana: 'とりあえず ビール', romaji: 'to-ri-a-e-zu bi-i-ru', en: 'Beer, for starters. Obviously.', chords: 'F G', melody: [[67, 0.5], [69, 0.5], [69, 0.5], [67, 0.5], [64, 0.5], [72, 1], [72, 0.5], [67, 1.5]] },
-      { text: '乾杯 乾杯！', kana: 'かんぱい かんぱい', romaji: 'ka-n-pa-i ka-n-pa-i', en: 'Cheers, cheers!', chords: 'C F', melody: [[67, 0.5], [72, 0.5], [72, 0.5], [72, 0.5], [69, 0.5], [74, 0.5], [74, 0.5], [74, 1.5]] },
-      { text: 'もう 一杯！', kana: 'もう いっぱい', romaji: 'mo-u i-p-pa-i', en: 'One more glass!', chords: 'G C', melody: [[74, 1], [72, 0.5], [76, 1], [76, 0.5], [72, 0.5], [72, 1.5]] },
+      { text: '仕事が 終わった', kana: 'しごとが おわった', romaji: 'shi-go-to-ga o-wa-t-ta', en: 'Work is done!', chords: 'A A D D', melody: [[69, 0.5], [71, 0.5], [73, 0.5], [73, 0.5], [76, 1], [74, 0.5], [74, 0.5], [78, 2]] },
+      { text: 'お疲れさま！', kana: 'おつかれさま', romaji: 'o-tsu-ka-re-sa-ma', en: 'Good work today!', chords: 'E C#m F#m F#m', melody: [[71, 0.5], [76, 0.5], [76, 0.5], [76, 0.5], [78, 1], [73, 2]] },
+      { text: 'とりあえず ビール', kana: 'とりあえず ビール', romaji: 'to-ri-a-e-zu bi-i-ru', en: 'Beer. For starters. Obviously.', chords: 'D D A A', melody: [[74, 0.5], [74, 0.5], [78, 1], [76, 0.5], [74, 0.5], [73, 0.5], [73, 0.5], [69, 2]] },
+      { text: '枝豆 ください', kana: 'えだまめ ください', romaji: 'e-da-ma-me ku-da-sa-i', en: 'Edamame, please!', chords: 'E E A C#m', melody: [[71, 0.5], [71, 0.5], [71, 0.5], [71, 0.5], [76, 0.5], [76, 0.5], [73, 1], [73, 2]] },
+      { text: '乾杯 乾杯！', kana: 'かんぱい かんぱい', romaji: 'ka-n-pa-i ka-n-pa-i', en: 'Cheers! Cheers!', chords: 'A A D E7', melody: [[69, 0.5], [71, 0.5], [73, 0.5], [73, 0.5], [69, 0.5], [71, 0.5], [73, 0.5], [76, 1.5]] },
+      { text: 'みんなで 乾杯！', kana: 'みんなで かんぱい', romaji: 'mi-n-na-de ka-n-pa-i', en: 'Cheers, everyone!', chords: 'A C#m F#m F#m', melody: [[73, 0.5], [73, 0.5], [73, 0.5], [71, 0.5], [73, 0.5], [76, 0.5], [78, 0.5], [78, 1.5]] },
+      { text: 'グラスを 上げて', kana: 'グラスを あげて', romaji: 'gu-ra-su-o a-ge-te', en: 'Glasses up!', chords: 'D D D A', melody: [[78, 0.5], [78, 0.5], [76, 0.5], [74, 0.5], [76, 1], [78, 0.5], [81, 2]] },
+      { text: 'もう 一杯！', kana: 'もう いっぱい', romaji: 'mo-u i-p-pa-i', en: 'One more glass!', chords: 'E C#m A A', melody: [[76, 0.5], [76, 0.5], [81, 1], [81, 0.5], [76, 1], [76, 2]] },
+      { text: '焼き鳥 二本', kana: 'やきとり にほん', romaji: 'ya-ki-to-ri ni-ho-n', en: 'Two yakitori skewers', chords: 'A A D D', melody: [[69, 0.5], [73, 0.5], [73, 0.5], [73, 0.5], [74, 1], [74, 0.5], [78, 2]] },
+      { text: 'からあげ 一つ', kana: 'からあげ ひとつ', romaji: 'ka-ra-a-ge hi-to-tsu', en: 'One fried chicken', chords: 'E C#m F#m F#m', melody: [[71, 0.5], [76, 0.5], [76, 0.5], [76, 0.5], [78, 1], [76, 0.5], [73, 2]] },
+      { text: 'お会計は…', kana: 'おかいけいは', romaji: 'o-ka-i-ke-i-wa', en: 'And the bill is…', chords: 'D D A A', melody: [[74, 0.5], [78, 0.5], [78, 0.5], [78, 0.5], [78, 0.5], [76, 2]] },
+      { text: '一万円！？', kana: 'いちまんえん', romaji: 'i-chi-ma-n-e-n', en: '…ten thousand yen!?', chords: 'E E A C#m', melody: [[81, 0.5], [81, 0.5], [81, 0.5], [81, 0.5], [80, 0.5], [76, 2.5]] },
     ],
   },
   {
+    // Over "Hustle" (Kevin MacLeod, CC BY 4.0): a 12-bar minor blues, three two-line phrases a
+    // chorus. It stops before the track changes key. The joke is how slowly the day goes.
     id: 'getsuyoubi',
     title: { text: '月曜日 ブルース', kana: 'げつようび ブルース', en: 'Monday Blues' },
-    bpm: 88,
+    bpm: 120,
     style: 'blues',
     level: 'kana',
     status: 'draft',
+    form: standardForm(16, 8),
+    track: { id: 'hustle', start: 0.796, segments: [[0, 4], [4, 28], [12, 20], [20, 24]] },
     lines: [
-      { text: '朝の 電車は いっぱい', kana: 'あさの でんしゃは いっぱい', romaji: 'a-sa-no de-n-sha-wa i-p-pa-i', en: 'The morning train is packed', chords: 'A7', melody: [[64, 0.5], [60, 0.5], [60, 0.5], [60, 0.5], [63, 0.5], [64, 0.5], [64, 0.5], [60, 0.5], [60, 0.5], [63, 0.5], [64, 1.5]] },
-      { text: '部長は 怒ってる', kana: 'ぶちょうは おこってる', romaji: 'bu-cho-u-wa o-ko-t-te-ru', en: 'The boss is angry', chords: 'D7 A7', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 1], [67, 0.5], [63, 0.5], [60, 1.5]] },
-      { text: '早く 帰りたい', kana: 'はやく かえりたい', romaji: 'ha-ya-ku ka-e-ri-ta-i', en: 'I want to go home already', chords: 'E7 D7', melody: [[67, 1], [64, 0.5], [60, 0.5], [60, 0.5], [62, 0.5], [63, 0.5], [64, 1], [57, 1.5]] },
-      { text: 'まだ 月曜日', kana: 'まだ げつようび', romaji: 'ma-da ge-tsu-yo-u-bi', en: '…and it’s only Monday', chords: 'A7', melody: [[64, 1], [60, 0.5], [57, 0.5], [60, 0.5], [63, 1], [62, 0.5], [57, 2.5]] },
+      { text: '月曜日の 朝', kana: 'げつようびの あさ', romaji: 'ge-tsu-yo-u-bi-no a-sa', en: 'Monday morning', chords: 'Em Em', melody: [[74, 1], [71, 0.5], [71, 0.5], [69, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 2]] },
+      { text: '電車は いっぱい', kana: 'でんしゃは いっぱい', romaji: 'de-n-sha-wa i-p-pa-i', en: 'The train is packed', chords: 'Em Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [69, 0.5], [69, 0.5], [71, 1], [71, 2]] },
+      { text: '部長は 怒ってる', kana: 'ぶちょうは おこってる', romaji: 'bu-cho-u-wa o-ko-t-te-ru', en: 'The boss is angry', chords: 'Am Am', melody: [[69, 0.5], [72, 0.5], [72, 0.5], [69, 0.5], [72, 1], [74, 0.5], [74, 0.5], [72, 0.5], [69, 2]] },
+      { text: 'コーヒー ください', kana: 'コーヒー ください', romaji: 'ko-o-hi-i ku-da-sa-i', en: 'Coffee, please', chords: 'Em Em', melody: [[71, 0.5], [71, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [69, 1], [64, 2]] },
+      { text: 'ああ 月曜日', kana: 'ああ げつようび', romaji: 'a-a ge-tsu-yo-u-bi', en: 'Oh, Monday', chords: 'Bm Am', melody: [[78, 1.5], [76, 0.5], [74, 0.5], [71, 0.5], [71, 0.5], [69, 0.5], [69, 2]] },
+      { text: '早く 帰りたい', kana: 'はやく かえりたい', romaji: 'ha-ya-ku ka-e-ri-ta-i', en: 'I just want to go home', chords: 'Em Em', melody: [[71, 0.5], [74, 0.5], [71, 0.5], [70, 0.5], [69, 0.5], [67, 0.5], [67, 0.5], [64, 2.5]] },
+      { text: '眠い 眠い', kana: 'ねむい ねむい', romaji: 'ne-mu-i ne-mu-i', en: 'So sleepy, so sleepy', chords: 'Em Em', melody: [[71, 0.5], [74, 1], [71, 1], [71, 0.5], [74, 1], [71, 2]] },
+      { text: 'まだ 月曜日', kana: 'まだ げつようび', romaji: 'ma-da ge-tsu-yo-u-bi', en: '…and it’s only Monday', chords: 'Em Em', melody: [[67, 0.5], [67, 0.5], [71, 1], [69, 0.5], [67, 0.5], [64, 0.5], [64, 2.5]] },
+      { text: 'お昼は おにぎり', kana: 'おひるは おにぎり', romaji: 'o-hi-ru-wa o-ni-gi-ri', en: 'Lunch is a rice ball', chords: 'Am Am', melody: [[69, 0.5], [72, 0.5], [72, 0.5], [72, 0.5], [69, 0.5], [72, 0.5], [74, 0.5], [72, 2]] },
+      { text: '今日も 仕事だ', kana: 'きょうも しごとだ', romaji: 'kyo-u-mo shi-go-to-da', en: 'Work again today', chords: 'Em Em', melody: [[71, 0.5], [71, 0.5], [71, 0.5], [74, 0.5], [71, 0.5], [69, 0.5], [67, 2]] },
+      { text: '時計を 見たら', kana: 'とけいを みたら', romaji: 'to-ke-i-o mi-ta-ra', en: 'I look at the clock…', chords: 'Bm Am', melody: [[74, 0.5], [74, 0.5], [74, 0.5], [74, 0.5], [78, 1], [76, 0.5], [72, 2]] },
+      { text: 'まだ 十時', kana: 'まだ じゅうじ', romaji: 'ma-da ju-u-ji', en: '…it’s only ten.', chords: 'Em Em', melody: [[71, 1], [71, 1], [67, 1], [67, 0.5], [64, 3]] },
     ],
   },
   {
+    // Over "In Your Arms" (Kevin MacLeod, CC BY 4.0), a 1940s ballad: a lovers’ quarrel, each line
+    // answering the last. Its 16-bar theme plays twice, so verse 2 and the last chorus sit on the same
+    // chords as the first ones. The quarrel ends with a birthday cake.
     id: 'doko-itteta',
     title: { text: 'どこ 行ってたの？', kana: 'どこ いってたの', en: 'Where Were You?' },
-    bpm: 84,
+    bpm: 98,
     style: 'kayou',
     level: 'kana',
     status: 'draft',
+    form: standardForm(16, 8),
+    track: { id: 'in-your-arms', start: 0.412, segments: [[12, 16], [0, 32], [0, 4]] },
     lines: [
-      { text: 'どこ 行ってたの？', kana: 'どこ いってたの', romaji: 'do-ko i-t-te-ta-no', en: 'Where were you?', chords: 'C Am', melody: [[67, 1], [64, 0.5], [64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [69, 1.5]] },
-      { text: 'コンビニ だよ', kana: 'コンビニ だよ', romaji: 'ko-n-bi-ni da-yo', en: 'Just the konbini', chords: 'F G', melody: [[60, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [60, 2]] },
-      { text: '三時間も？', kana: 'さんじかんも', romaji: 'sa-n-ji-ka-n-mo', en: 'For three hours?', chords: 'Am E7', melody: [[64, 0.5], [69, 0.5], [69, 1], [64, 0.5], [64, 0.5], [69, 2]] },
-      { text: 'ごめんね ダーリン', kana: 'ごめんね ダーリン', romaji: 'go-me-n-ne da-a-ri-n', en: 'Sorry, darling', chords: 'F G C', melody: [[67, 0.5], [67, 0.5], [65, 0.5], [64, 0.5], [69, 1.5], [67, 0.5], [64, 0.5], [60, 1.5]] },
+      { text: 'どこ 行ってたの？', kana: 'どこ いってたの', romaji: 'do-ko i-t-te-ta-no', en: 'Where were you?', chords: 'F F Am Dm', melody: [[72, 1], [69, 0.5], [69, 0.5], [72, 0.5], [72, 0.5], [74, 0.5], [74, 2]] },
+      { text: 'コンビニ だよ', kana: 'コンビニ だよ', romaji: 'ko-n-bi-ni da-yo', en: 'Just the konbini', chords: 'C7 Gm Bb C7', melody: [[67, 0.5], [70, 0.5], [70, 0.5], [70, 0.5], [72, 1], [67, 2]] },
+      { text: '三時間も？', kana: 'さんじかんも', romaji: 'sa-n-ji-ka-n-mo', en: 'For three hours?', chords: 'C7 Am Am D7', melody: [[72, 0.5], [76, 0.5], [76, 1], [72, 0.5], [72, 0.5], [74, 2]] },
+      { text: '道に 迷った', kana: 'みちに まよった', romaji: 'mi-chi-ni ma-yo-t-ta', en: 'I got lost', chords: 'Bb Dm Dm C7', melody: [[70, 0.5], [74, 0.5], [74, 0.5], [72, 0.5], [70, 0.5], [70, 0.5], [67, 2]] },
+      { text: 'ごめんね ダーリン', kana: 'ごめんね ダーリン', romaji: 'go-me-n-ne da-a-ri-n', en: 'Sorry, darling', chords: 'F F Am Dm', melody: [[72, 0.5], [77, 1], [76, 0.5], [74, 0.5], [77, 1], [74, 0.5], [72, 0.5], [74, 1.5]] },
+      { text: '許して ダーリン', kana: 'ゆるして ダーリン', romaji: 'yu-ru-shi-te da-a-ri-n', en: 'Forgive me, darling', chords: 'C7 Bb Bb C7', melody: [[72, 0.5], [76, 1], [74, 0.5], [72, 0.5], [76, 1], [74, 0.5], [72, 0.5], [72, 1.5]] },
+      { text: '愛してる', kana: 'あいしてる', romaji: 'a-i-shi-te-ru', en: 'I love you', chords: 'Am Am Am D7', melody: [[76, 1], [77, 0.5], [76, 0.5], [74, 0.5], [72, 3]] },
+      { text: '…本当に？', kana: 'ほんとうに', romaji: 'ho-n-to-u-ni', en: '…Really?', chords: 'Bb Gm C7 F', melody: [[70, 1], [74, 0.5], [74, 0.5], [74, 0.5], [77, 3]] },
+      { text: 'その 袋は？', kana: 'その ふくろは', romaji: 'so-no fu-ku-ro-wa', en: 'What’s in that bag?', chords: 'F F Am Dm', melody: [[72, 1], [72, 0.5], [74, 0.5], [72, 0.5], [72, 0.5], [74, 2]] },
+      { text: 'ただの 牛乳', kana: 'ただの ぎゅうにゅう', romaji: 'ta-da-no gyu-u-nyu-u', en: 'Just milk', chords: 'C7 Gm Bb C7', melody: [[67, 0.5], [70, 0.5], [70, 0.5], [72, 1], [72, 0.5], [70, 0.5], [67, 2]] },
+      { text: 'なぜ ケーキが？', kana: 'なぜ ケーキが', romaji: 'na-ze ke-e-ki-ga', en: 'Then why is there a cake?', chords: 'C7 Am Am D7', melody: [[72, 1], [76, 0.5], [76, 0.5], [74, 0.5], [72, 0.5], [74, 2]] },
+      { text: '…君の 誕生日', kana: 'きみの たんじょうび', romaji: 'ki-mi-no ta-n-jo-u-bi', en: '…It’s your birthday.', chords: 'Bb Dm Dm C7', melody: [[70, 0.5], [74, 0.5], [74, 0.5], [72, 0.5], [72, 0.5], [70, 0.5], [70, 0.5], [67, 2]] },
     ],
   },
   {
+    // Over "Lazy Saturday" (vandalorum, CC BY 4.0): a boom-bap beat whose four-bar loop runs under
+    // the whole song. Rap is near-spoken, so the melodies keep close to two notes; every note is half a
+    // beat or more. The chorus is the questions everyone asks in Japan, and the crowd shouts ラーメン！
     id: 'jikoshoukai-rap',
     title: { text: '自己紹介 ラップ', kana: 'じこしょうかい ラップ', en: 'Self-Intro Rap' },
     bpm: 92,
     style: 'hiphop',
     level: 'kana',
     status: 'draft',
+    form: standardForm(16, 8),
+    track: { id: 'lazy-saturday', start: 0.566, segments: [[0, 4], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8], [4, 8]] },
     lines: [
-      { text: 'はじめまして', kana: 'はじめまして', romaji: 'ha-ji-me-ma-shi-te', en: 'Nice to meet you', chords: 'Cm7 Fm7', melody: [[60, 0.5], [63, 0.5], [63, 0.5], [63, 1], [60, 0.5], [60, 1]] },
-      { text: '趣味は カラオケ', kana: 'しゅみは カラオケ', romaji: 'shu-mi-wa ka-ra-o-ke', en: 'My hobby is karaoke', chords: 'Cm7 Fm7', melody: [[63, 0.5], [60, 0.5], [60, 0.5], [60, 0.5], [63, 0.5], [63, 0.5], [63, 1]] },
-      { text: '日本語 勉強中', kana: 'にほんご べんきょうちゅう', romaji: 'ni-ho-n-go be-n-kyo-u-chu-u', en: 'Studying Japanese right now', chords: 'Cm7 Fm7', melody: [[60, 0.5], [63, 0.5], [63, 0.5], [63, 0.5], [60, 0.5], [63, 0.5], [63, 0.5], [63, 0.5], [65, 0.5], [65, 1]] },
-      { text: 'よろしく！ よろしく！', kana: 'よろしく よろしく', romaji: 'yo-ro-shi-ku yo-ro-shi-ku', en: 'Nice to know you! Nice to know you!', chords: 'Cm7 Fm7', melody: [[60, 0.5], [63, 0.5], [63, 0.5], [63, 0.5], [60, 0.5], [65, 0.5], [65, 0.5], [63, 1.5]] },
+      { text: 'はじめまして', kana: 'はじめまして', romaji: 'ha-ji-me-ma-shi-te', en: 'Nice to meet you', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 1], [64, 0.5], [64, 1.5]] },
+      { text: '趣味は カラオケ', kana: 'しゅみは カラオケ', romaji: 'shu-mi-wa ka-ra-o-ke', en: 'My hobby is karaoke', chords: 'Dm Em', melody: [[67, 0.5], [64, 0.5], [64, 0.5], [64, 0.5], [67, 0.5], [67, 0.5], [64, 1.5]] },
+      { text: '日本語 勉強中', kana: 'にほんご べんきょうちゅう', romaji: 'ni-ho-n-go be-n-kyo-u-chu-u', en: 'Studying Japanese right now', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [69, 0.5], [69, 1.5]] },
+      { text: 'よろしく！ よろしく！', kana: 'よろしく よろしく', romaji: 'yo-ro-shi-ku yo-ro-shi-ku', en: 'Nice to know you! Nice to know you!', chords: 'Dm Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [69, 0.5], [69, 0.5], [67, 1.5]] },
+      { text: 'お名前は？', kana: 'おなまえは', romaji: 'o-na-ma-e-wa', en: 'What’s your name?', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [72, 2]] },
+      { text: '出身は？', kana: 'しゅっしんは', romaji: 'shu-s-shi-n-wa', en: 'Where are you from?', chords: 'Dm Em', melody: [[67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [72, 2]] },
+      { text: '好きな 食べ物は？', kana: 'すきな たべものは', romaji: 'su-ki-na ta-be-mo-no-wa', en: 'Favourite food?', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [72, 2]] },
+      { text: 'ラーメン！', kana: 'ラーメン', romaji: 'ra-a-me-n', en: 'Ramen!', chords: 'Dm Em', melody: [[76, 1], [76, 1], [72, 1], [69, 2]] },
+      { text: '好きな 色は 赤', kana: 'すきな いろは あか', romaji: 'su-ki-na i-ro-wa a-ka', en: 'My favourite colour is red', chords: 'F Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [69, 1.5]] },
+      { text: '誕生日は 三月', kana: 'たんじょうびは さんがつ', romaji: 'ta-n-jo-u-bi-wa sa-n-ga-tsu', en: 'My birthday’s in March', chords: 'Dm Em', melody: [[64, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [64, 0.5], [69, 0.5], [67, 0.5], [67, 0.5], [64, 1.5]] },
+      { text: 'それから 年は', kana: 'それから としは', romaji: 'so-re-ka-ra to-shi-wa', en: 'And my age is…', chords: 'F Em', melody: [[67, 0.5], [67, 0.5], [64, 0.5], [64, 0.5], [67, 1], [67, 0.5], [69, 2]] },
+      { text: 'ひみつ です！', kana: 'ひみつ です', romaji: 'hi-mi-tsu de-su', en: '…a secret!', chords: 'Dm Em', melody: [[69, 1], [72, 1], [69, 1], [67, 0.5], [64, 2]] },
     ],
   },
   {
+    // Over "Cheers For Starlight" (Chloe Wolfe, CC BY 4.0): bright pop on a D–A–Bm–G loop; the
+    // chorus uses its fullest section. Shout ハイ！ after each line. The idol’s sweet chorus is a sales
+    // pitch, and verse 2 is the merch table.
     id: 'kirakira-idol',
     title: { text: 'キラキラ アイドル', kana: 'キラキラ アイドル', en: 'Sparkle Idol' },
-    bpm: 168,
+    bpm: 130,
     style: 'idol',
     level: 'kana',
     status: 'draft',
+    form: standardForm(16, 8),
+    track: { id: 'starlight', start: 0.433, segments: [[0, 12], [32, 40], [12, 20], [32, 40], [40, 43]] },
     lines: [
-      { text: 'みんな 元気？', kana: 'みんな げんき', romaji: 'mi-n-na ge-n-ki', en: 'Everybody doing OK?', chords: 'G A', melody: [[69, 1], [71, 1], [71, 1], [74, 1], [71, 1], [76, 2]] },
-      { text: '好き 好き 大好き', kana: 'すき すき だいすき', romaji: 'su-ki su-ki da-i-su-ki', en: 'I love you, love you, love you!', chords: 'F#m Bm', melody: [[69, 1], [74, 1], [69, 1], [74, 1], [78, 1], [76, 1], [74, 1], [74, 2]] },
-      { text: 'ずっと 一緒', kana: 'ずっと いっしょ', romaji: 'zu-t-to i-s-sho', en: 'Together forever', chords: 'G A', melody: [[66, 1], [66, 1], [69, 1], [67, 1], [67, 1], [71, 2]] },
-      { text: 'チケット 買ってね', kana: 'チケット かってね', romaji: 'chi-ke-t-to ka-t-te-ne', en: '…so buy a ticket!', chords: 'G A D', melody: [[71, 1], [76, 1], [76, 1], [74, 1], [71, 1], [71, 1], [74, 1], [74, 3]] },
+      { text: 'みんな 元気？', kana: 'みんな げんき', romaji: 'mi-n-na ge-n-ki', en: 'Everybody doing OK?', chords: 'D A', melody: [[74, 0.5], [74, 0.5], [76, 1], [78, 0.5], [76, 0.5], [76, 2]] },
+      { text: '今日も ありがとう', kana: 'きょうも ありがとう', romaji: 'kyo-u-mo a-ri-ga-to-u', en: 'Thank you for coming!', chords: 'Bm G', melody: [[74, 0.5], [74, 0.5], [74, 0.5], [78, 0.5], [78, 0.5], [76, 0.5], [74, 1], [74, 2]] },
+      { text: 'ペンライト 振って！', kana: 'ペンライト ふって', romaji: 'pe-n-ra-i-to fu-t-te', en: 'Wave your penlights!', chords: 'D A', melody: [[78, 0.5], [78, 0.5], [78, 1], [81, 0.5], [78, 0.5], [76, 1], [76, 0.5], [73, 1.5]] },
+      { text: '声を 聞かせて！', kana: 'こえを きかせて', romaji: 'ko-e-o ki-ka-se-te', en: 'Let me hear you!', chords: 'Bm G', melody: [[71, 0.5], [74, 0.5], [74, 0.5], [78, 0.5], [78, 0.5], [79, 1], [78, 2]] },
+      { text: '好き 好き 大好き', kana: 'すき すき だいすき', romaji: 'su-ki su-ki da-i-su-ki', en: 'I love you, love you, love you!', chords: 'D A', melody: [[78, 1], [81, 1], [78, 1], [81, 1], [83, 1], [81, 0.5], [78, 0.5], [76, 1.5]] },
+      { text: 'ずっと 一緒', kana: 'ずっと いっしょ', romaji: 'zu-t-to i-s-sho', en: 'Together forever', chords: 'Bm G', melody: [[78, 0.5], [78, 0.5], [78, 1], [79, 0.5], [79, 0.5], [74, 2.5]] },
+      { text: 'キラキラ ハート', kana: 'キラキラ ハート', romaji: 'ki-ra-ki-ra ha-a-to', en: 'A sparkly heart', chords: 'D A', melody: [[74, 0.5], [78, 0.5], [74, 0.5], [78, 0.5], [81, 1], [81, 0.5], [76, 2]] },
+      { text: 'チケット 買ってね', kana: 'チケット かってね', romaji: 'chi-ke-t-to ka-t-te-ne', en: '…so buy a ticket!', chords: 'Bm G', melody: [[78, 0.5], [83, 0.5], [83, 0.5], [81, 0.5], [79, 0.5], [79, 0.5], [78, 1], [74, 2]] },
+      { text: 'グッズも あるよ', kana: 'グッズも あるよ', romaji: 'gu-z-zu-mo a-ru-yo', en: 'There’s merch, too', chords: 'D A', melody: [[74, 0.5], [74, 0.5], [74, 0.5], [76, 0.5], [78, 0.5], [76, 0.5], [73, 2]] },
+      { text: 'うちわ 千円', kana: 'うちわ せんえん', romaji: 'u-chi-wa se-n-e-n', en: 'Fans: a thousand yen', chords: 'Bm G', melody: [[71, 0.5], [74, 0.5], [74, 0.5], [78, 0.5], [78, 0.5], [76, 0.5], [74, 2]] },
+      { text: 'CD 二千円', kana: 'シーディー にせんえん', romaji: 'shi-i-di-i ni-se-n-e-n', en: 'CDs: two thousand yen', chords: 'D A', melody: [[74, 0.5], [74, 0.5], [78, 0.5], [78, 0.5], [81, 0.5], [78, 0.5], [78, 0.5], [76, 0.5], [76, 1.5]] },
+      { text: 'ぜんぶ 買って！', kana: 'ぜんぶ かって', romaji: 'ze-n-bu ka-t-te', en: 'Buy it all!', chords: 'Bm G', melody: [[83, 1], [81, 0.5], [78, 0.5], [79, 0.5], [79, 0.5], [79, 2.5]] },
     ],
   },
   {
+    // Over "Slow Jam" (Kevin MacLeod, CC BY 4.0): verses on its quiet Cm–Fm groove, the chorus on
+    // the full band. At 75 bpm two bars are 6.4 s, so each line stays under 5 s and leaves a breath.
+    // The call finally comes in verse 2. It’s Mum.
     id: 'nemurenai-yoru',
     title: { text: '眠れない 夜', kana: 'ねむれない よる', en: 'Sleepless Night' },
-    bpm: 70,
+    bpm: 75,
     style: 'rnb',
     level: 'kana',
     status: 'draft',
+    form: standardForm(16, 8),
+    track: { id: 'slow-jam', start: 0.044, segments: [[0, 12], [16, 24], [4, 12], [16, 28]] },
     lines: [
-      { text: '眠れない 夜', kana: 'ねむれない よる', romaji: 'ne-mu-re-na-i yo-ru', en: 'A night I can’t sleep', chords: 'Abmaj7 Gm7', melody: [[63, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [65, 0.5], [70, 1], [67, 1.5]] },
-      { text: '電話 待ってる', kana: 'でんわ まってる', romaji: 'de-n-wa ma-t-te-ru', en: 'I’m waiting for your call', chords: 'Fm7 Bb', melody: [[63, 0.5], [67, 0.5], [67, 0.75], [70, 0.75], [70, 0.5], [65, 0.5], [63, 1.5]] },
-      { text: '会いたい 気持ち', kana: 'あいたい きもち', romaji: 'a-i-ta-i ki-mo-chi', en: 'How much I miss you', chords: 'Abmaj7 Gm7', melody: [[67, 0.5], [70, 0.5], [72, 0.75], [70, 0.75], [67, 0.5], [70, 0.5], [72, 1.5]] },
-      { text: '今 すぐ 来て', kana: 'いま すぐ きて', romaji: 'i-ma su-gu ki-te', en: 'Come over right now', chords: 'Fm7 Bb Cm', melody: [[72, 1], [67, 0.5], [70, 0.75], [65, 0.75], [67, 0.5], [60, 1.5]] },
+      { text: '眠れない 夜', kana: 'ねむれない よる', romaji: 'ne-mu-re-na-i yo-ru', en: 'A night I can’t sleep', chords: 'Cm7 Fm', melody: [[63, 0.5], [67, 0.5], [67, 0.5], [67, 0.5], [65, 0.5], [70, 1], [67, 1.5]] },
+      { text: '電話 待ってる', kana: 'でんわ まってる', romaji: 'de-n-wa ma-t-te-ru', en: 'I’m waiting for your call', chords: 'Cm7 Fm', melody: [[63, 0.5], [67, 0.5], [67, 0.75], [70, 0.75], [70, 0.5], [65, 0.5], [63, 1.5]] },
+      { text: '時計の 音', kana: 'とけいの おと', romaji: 'to-ke-i-no o-to', en: 'The ticking of the clock', chords: 'Cm7 Fm', melody: [[67, 0.5], [70, 0.5], [70, 0.5], [68, 0.5], [67, 1], [63, 2]] },
+      { text: '一人の 部屋', kana: 'ひとりの へや', romaji: 'hi-to-ri-no he-ya', en: 'My room, alone', chords: 'Cm7 Fm', melody: [[63, 0.5], [67, 0.5], [67, 0.5], [65, 0.5], [63, 1], [60, 2]] },
+      { text: '会いたい 会いたい', kana: 'あいたい あいたい', romaji: 'a-i-ta-i a-i-ta-i', en: 'I miss you, I miss you', chords: 'Cm Abmaj7 Cm Abmaj7', melody: [[72, 0.5], [75, 0.5], [75, 0.5], [72, 0.5], [72, 0.5], [75, 0.5], [77, 0.5], [75, 1.5]] },
+      { text: '今 すぐ 来て', kana: 'いま すぐ きて', romaji: 'i-ma su-gu ki-te', en: 'Come over right now', chords: 'Cm Abmaj7 Fm Fm', melody: [[72, 1], [67, 0.5], [70, 0.75], [65, 0.75], [67, 0.5], [60, 1.5]] },
+      { text: '声が 聞きたい', kana: 'こえが ききたい', romaji: 'ko-e-ga ki-ki-ta-i', en: 'I want to hear your voice', chords: 'Cm Abmaj7 Cm Abmaj7', melody: [[72, 0.5], [75, 0.5], [75, 0.5], [77, 0.5], [75, 0.5], [72, 0.5], [75, 2]] },
+      { text: 'ベイビー 好きだよ', kana: 'ベイビー すきだよ', romaji: 'be-i-bi-i su-ki-da-yo', en: 'Baby, I love you', chords: 'Cm Abmaj7 Fm Fm', melody: [[79, 0.5], [77, 0.5], [75, 0.5], [75, 0.5], [72, 0.5], [75, 0.5], [72, 0.5], [72, 1.5]] },
+      { text: 'やっと 電話が', kana: 'やっと でんわが', romaji: 'ya-t-to de-n-wa-ga', en: 'At last, the phone…', chords: 'Cm7 Fm', melody: [[67, 0.5], [67, 0.5], [70, 0.5], [67, 0.5], [67, 0.5], [65, 0.5], [63, 1.5]] },
+      { text: '鳴った！ もしもし？', kana: 'なった もしもし', romaji: 'na-t-ta mo-shi-mo-shi', en: '…rings! Hello?', chords: 'Cm7 Fm', melody: [[72, 0.5], [72, 0.5], [72, 1], [67, 0.5], [70, 0.5], [67, 0.5], [72, 1.5]] },
+      { text: '「お母さん です」', kana: 'おかあさん です', romaji: 'o-ka-a-sa-n de-su', en: '“It’s Mum.”', chords: 'Cm7 Fm', melody: [[60, 0.5], [63, 0.5], [63, 0.5], [63, 0.5], [63, 0.5], [60, 0.5], [60, 1.5]] },
+      { text: '「早く 寝なさい」', kana: 'はやく ねなさい', romaji: 'ha-ya-ku ne-na-sa-i', en: '“Go to sleep.”', chords: 'Cm7 Fm', melody: [[63, 0.5], [63, 0.5], [63, 0.5], [67, 0.5], [65, 0.5], [63, 0.5], [60, 2]] },
     ],
   },
 ];

@@ -487,7 +487,7 @@ export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
           'div',
           { class: 'screen' },
           h('p', { class: 'big', lang: 'ja' }, '🎤 カラオケ対決'),
-          h('p', {}, 'Two singers duel through a short song. Both sing every line, taking turns.'),
+          h('p', {}, 'Two singers duel through a song, trading lines over the music. Everyone learns the chorus!'),
           h('p', {}, 'On your turn, watch the count-in, then hold the button and sing the line. Let go when it ends.'),
           h('p', { class: 'hint' }, 'Words 60% · pitch 25% · timing 15%. Not duelling? Sing along for chorus points and vote for the crowd favourite.'),
         );

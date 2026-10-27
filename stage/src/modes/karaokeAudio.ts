@@ -8,7 +8,7 @@
 
 import type { SongStyle } from '../../../shared/src/modes/karaokeDuel/songs.js';
 import { load } from '../music/engine.js';
-import { isStreamerMode } from '../music/index.js';
+import { creditTrack, isStreamerMode } from '../music/index.js';
 import { parseChord } from '../music/songs.js';
 import { TRACKS, isTrack } from '../music/tracks.js';
 import { getSound, isMuted, onMuteChange } from '../sound.js';
@@ -285,6 +285,7 @@ export function playSong(play: SongPlay): void {
         }
         at += len;
       }
+      creditTrack(play.trackId);
       // The last bars fade out.
       gain.gain.setValueAtTime(gain.gain.value, Math.max(c.currentTime, at - 4));
       gain.gain.linearRampToValueAtTime(0, Math.max(c.currentTime, at));
@@ -300,6 +301,7 @@ export function stopSong(fade = 1.2): void {
   const c = context();
   const s = song;
   song = null;
+  if (s) creditTrack(null);
   if (!s || !c) return;
   s.gain.gain.cancelScheduledValues(c.currentTime);
   s.gain.gain.setTargetAtTime(0, c.currentTime, fade / 4);

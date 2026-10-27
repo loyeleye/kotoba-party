@@ -20,13 +20,13 @@ Code: `shared/src/modes/karaokeDuel/` (`karaokeDuel.ts` rules, `scoring.ts`, `pi
 | Phase | Shared name | What happens | Length |
 | --- | --- | --- | --- |
 | Intro | `intro` | Rules on the TV and phones. | 12 s |
-| Song card | `prompt` | Song title, all four lines (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
-| Sing | `answer` ×8 | One turn per singer per line: a 0.7 s breath, a one-bar count-in, the line, then 3 s for the recogniser. Both duelists sing every line; who goes first alternates (A B, B A, A B, B A). A take ends the turn at once. | 0.7 s + 4 beats + line + 3 s (about 8–10 s) |
+| Song card | `prompt` | Song title, every line (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
+| Sing | `answer` ×8 or ×16 | **Grown-up songs are continuous** (`form` + `track`): one produced instrumental plays the whole song (intro, verse, chorus, verse 2, chorus, about 80–130 s) and the duelists trade lines on its clock, one line every two bars; each sings every chorus line once. One phase per line, ending one bar before the next line so the next singer's count-in overlaps; the next singer sees their line during it; a take counts until 10 s after its line ends (the recogniser is slow), and lines with no take are marked missed when the song ends. **Kids' songs** are four-line sing-alongs: a 0.7 s breath, a one-bar count-in, the line, then 3 s; both duelists sing every line, who goes first alternates, and a take ends the turn at once. | Continuous: the track's own timing. Sing-along: 0.7 s + 4 beats + line + 3 s |
 | Crowd vote | `reveal` | Everyone not duelling votes for the crowd favourite. Skipped when nobody is watching (2 players). Ends when every connected voter is in. | 12 s |
 | Duel result | `score` | Sung points, lines won, crowd votes, the winner. | 9 s |
 | Finale | `finale` | Standings, then the shared recap (awards, the song sheet phrasebook). | 9 s |
 
-A 4-song game with 3+ players runs about 7–8 minutes if every timer runs out.
+A 4-song game of grown-up songs runs about 10 minutes.
 
 ### Who duels
 
@@ -198,6 +198,17 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     (`chords: 'Bbmaj7 Am7'`, spread evenly over the line) and the bass plays their roots, so
     there is harmony; the kids' songs have none and the bass follows the melody. Sung notes are at least half a beat, because
     the phone's 100 ms pitch frames can't measure shorter notes.
+21. **Grown-up songs are whole songs over real instrumentals** (Ladi, 2026-10-27: "Real songs,
+    real instrumentals… giving credit where necessary"). Each has 12 original lines (verse 1,
+    chorus, verse 2; the chorus comes back at the end) sung over a CC0 or CC BY track from
+    OpenGameArt or incompetech (row 22 of the commercial-blockers log). Each file is cut to the
+    bars the song uses; `track.segments` stitches its intro and sections back to back on bar
+    lines, from tempo, bar and chord maps made with librosa. Line chords come from those maps, so
+    the synth fallback (streamer mode, or a file that won't load) still plays in the same key.
+    Lyrics stay at N5–N4 with one joke per song, usually the last verse line before the final
+    chorus. Ladi plans to commission songs written for the game before it is sold. Picks: Nights
+    In June (city pop), Past Sadness (enka, Ladi's pick), JRPG Epic Rock Battle Theme, Hot Springs
+    Town, Hustle, Lazy Saturday, Cheers For Starlight, Slow Jam and In Your Arms.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
     practice; the ball always runs over kana.
@@ -247,6 +258,9 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 - Stage audio needs a click on the stage page first (browser autoplay rules).
 - Headless smoke test only (Chromium, 1920×1080 / 1280×720 stage, 360 px phones, typed takes):
   no real microphone, recogniser or speakers.
+- The new lyrics and melodies (2026-10-27) haven't been through the review panel or a fluent
+  check, and the tracks' chords come from automatic chord detection, so a line can clash with its
+  track here and there.
 - Fourteen songs: a long night repeats them (they cycle: grown-up songs first, then the kids' songs).
 - The drums are synthesised noise and a sine kick. Kept quiet, but the phone mic may hear them;
   the words gate limits the damage, as with the guide melody.

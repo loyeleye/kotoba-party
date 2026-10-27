@@ -246,7 +246,7 @@ function songCard(view: RoomView, game: KaraokeDuelView): HTMLElement {
         ),
       ),
     ),
-    h('p', { class: 'kd-say muted' }, 'Both singers sing every line, taking turns to go first. Read along now!'),
+    h('p', { class: 'kd-say muted' }, song.continuous ? 'One song, start to finish: the singers trade lines, and each sings the chorus once. Read along now!' : 'Both singers sing every line, taking turns to go first. Read along now!'),
   );
 }
 
