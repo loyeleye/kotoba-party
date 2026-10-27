@@ -319,18 +319,23 @@ function screenFor(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement 
   return PHONE_MODES[view.game.mode].render({ view, game: view.game, me, isVip, send: play, flash });
 }
 
+/** The three levels as one segmented row; the chosen level's "I can…" line sits under it. */
 function levelPicker(current: Level, onPick: (level: Level) => void): HTMLElement {
   return h(
     'div',
     { class: 'levels' },
-    LEVELS.map((l) =>
-      h(
-        'button',
-        { type: 'button', class: `level-btn ${l === current ? 'on' : ''}`, onclick: () => onPick(l) },
-        h('strong', {}, LEVEL_LABELS[l]),
-        h('span', {}, LEVEL_HINTS[l]),
+    h(
+      'div',
+      { class: 'seg', role: 'radiogroup', 'aria-label': 'Your level' },
+      LEVELS.map((l) =>
+        h(
+          'button',
+          { type: 'button', role: 'radio', 'aria-checked': String(l === current), class: `seg-btn ${l === current ? 'on' : ''}`, title: LEVEL_HINTS[l], onclick: () => onPick(l) },
+          LEVEL_LABELS[l],
+        ),
       ),
     ),
+    h('p', { class: 'hint small' }, LEVEL_HINTS[current]),
   );
 }
 
@@ -339,7 +344,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
     h('p', { class: 'big' }, 'You are in!'),
     h('p', {}, `${view.players.length} player${view.players.length === 1 ? '' : 's'}: ${view.players.map((p) => p.name).join(', ')}`),
     micCheck(me),
-    h('p', { class: 'hint' }, 'Your level:'),
+    h('p', { class: 'hint' }, 'Your level'),
     levelPicker(me.level, (level) => {
       store('kotoba:level', level);
       void command({ type: 'setLevel', level });
@@ -349,7 +354,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), quip(vipIdleQuip));
   // Links to bring more people in: the phone link for when the QR code won't scan, the stage
   // screen link for friends playing from somewhere else.
-  parts.push(invite(inviteLinks(session?.site ?? location.origin, view.code), view.code));
+  parts.push(fold('invite', 'Invite friends', 'Links for friends who can’t scan the code', invite(inviteLinks(session?.site ?? location.origin, view.code), view.code, false)));
   return h('div', { class: 'screen' }, parts);
 }
 
@@ -371,71 +376,153 @@ function micCheck(me: PlayerView): HTMLElement {
   );
 }
 
+// What the VIP has set up on the menu. The lobby redraws whenever someone joins or changes
+// level, so the picks (and which panels are open) live here rather than in the elements.
+const menu = { mode: '', packId: '', rounds: 0, sheetOpen: false, folds: new Set<string>() };
+
+/** A collapsed panel with a one-line summary; it remembers being open across redraws. */
+function fold(id: string, title: string, sub: string, ...body: HTMLElement[]): HTMLElement {
+  const el = h(
+    'details',
+    { class: 'fold', open: menu.folds.has(id) },
+    h('summary', {}, h('span', { class: 'fold-title' }, title, h('small', {}, sub))),
+    h('div', { class: 'fold-body' }, body),
+  ) as HTMLDetailsElement;
+  el.addEventListener('toggle', () => (el.open ? menu.folds.add(id) : menu.folds.delete(id)));
+  return el;
+}
+
+const fits = (m: ModeInfo, n: number) => n >= m.minPlayers && n <= m.maxPlayers;
+const playersLabel = (m: ModeInfo) => (m.minPlayers === m.maxPlayers ? `${m.minPlayers} players` : `${m.minPlayers}–${m.maxPlayers} players`);
+const hostIcon = (m: ModeInfo) => h('img', { class: 'gp-host', src: `/stage/assets/hosts/${m.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() });
+
+/**
+ * The VIP's menu: tonight's game as one card that opens a picker sheet, topic and rounds side
+ * by side, then Start. Calm motion lives in a folded settings panel under it.
+ */
 function vipMenu(view: RoomView): HTMLElement {
-  let chosen: ModeInfo | undefined = view.modes[0];
-  const packSelect = h('select', {}, h('option', { value: '' }, 'Any topic'), view.packs.map((p) => h('option', { value: p.id }, `${p.titleJa} · ${p.title}`))) as HTMLSelectElement;
-  const roundsSelect = h('select', {}) as HTMLSelectElement;
-  const note = h('p', { class: 'hint' });
+  const n = view.players.length;
+  // Keep the VIP's pick across redraws; the first game that fits the room is the default.
+  let chosen = view.modes.find((m) => m.id === menu.mode) ?? view.modes.find((m) => fits(m, n)) ?? view.modes[0];
+  const packSelect = h('select', { 'aria-label': 'Topic' }, h('option', { value: '' }, 'Any topic'), view.packs.map((p) => h('option', { value: p.id }, `${p.titleJa} · ${p.title}`))) as HTMLSelectElement;
+  packSelect.value = menu.packId;
+  packSelect.addEventListener('change', () => (menu.packId = packSelect.value));
+  const roundsSelect = h('select', { 'aria-label': 'Length' }) as HTMLSelectElement;
+  roundsSelect.addEventListener('change', () => (menu.rounds = Number(roundsSelect.value)));
+  const packField = h('label', { class: 'gp-field' }, h('span', {}, 'Topic'), packSelect);
+  const roundsField = h('label', { class: 'gp-field' }, h('span', {}, 'Length'), roundsSelect);
+  const note = h('p', { class: 'hint', role: 'status' });
   const extras = h('div', { class: 'vip-extras' });
   const ticked = new Set<string>();
   const startBtn = h('button', { class: 'primary' }, 'Start') as HTMLButtonElement;
-  const modeButtons = view.modes.map((m) =>
+  const current = h('button', { type: 'button', class: 'gp-current', 'aria-haspopup': 'dialog' }) as HTMLButtonElement;
+
+  const rows = view.modes.map((m) =>
     h(
       'button',
       {
         type: 'button',
-        class: 'mode-btn',
+        class: `gp-row ${fits(m, n) ? '' : 'gp-nofit'}`,
         onclick: () => {
           chosen = m;
+          menu.mode = m.id;
+          menu.rounds = 0;
           refresh();
+          closeSheet();
         },
       },
-      h('strong', {}, `${m.title} `),
-      h('span', { lang: 'ja' }, m.titleJa),
-      h('small', {}, m.blurb),
+      hostIcon(m),
+      h('span', { class: 'gp-text' }, h('strong', {}, m.title), h('span', { class: 'gp-ja', lang: 'ja' }, m.titleJa), h('small', {}, m.blurb)),
+      h('span', { class: 'gp-players' }, playersLabel(m)),
     ),
   );
-  const refresh = () => {
-    view.modes.forEach((m, i) => modeButtons[i]!.classList.toggle('on', m === chosen));
+  const sheet = h(
+    'dialog',
+    { class: 'gp-sheet', 'aria-labelledby': 'gp-sheet-title' },
+    h('div', { class: 'gp-head' }, h('h2', { id: 'gp-sheet-title' }, 'Pick tonight’s game'), h('button', { type: 'button', class: 'gp-close', 'aria-label': 'Close', onclick: () => closeSheet() }, '✕')),
+    h('div', { class: 'gp-list' }, rows),
+  ) as HTMLDialogElement;
+  // A tap on the dimmed backdrop (the dialog itself, outside its content) closes the sheet.
+  sheet.addEventListener('click', (e) => e.target === sheet && closeSheet());
+  sheet.addEventListener('close', () => {
+    menu.sheetOpen = false;
+    if (sheet.isConnected) current.focus();
+  });
+  const openSheet = () => {
+    menu.sheetOpen = true;
+    if (!sheet.open) sheet.showModal();
+    rows[view.modes.indexOf(chosen!)]?.focus();
+  };
+  const closeSheet = () => sheet.open && sheet.close();
+  current.addEventListener('click', openSheet);
+
+  function refresh(): void {
+    view.modes.forEach((m, i) => {
+      rows[i]!.classList.toggle('on', m === chosen);
+      rows[i]!.setAttribute('aria-current', String(m === chosen));
+    });
     if (!chosen) return;
-    mount(roundsSelect, chosen.roundChoices.map((n) => h('option', { value: n }, `${n} ${chosen!.id === 'last-train' ? 'stops' : 'rounds'}`)));
-    roundsSelect.hidden = chosen.roundChoices.length === 0;
-    packSelect.hidden = !chosen.usesPack || view.packs.length === 0;
+    const m = chosen;
+    mount(
+      current,
+      hostIcon(m),
+      h('span', { class: 'gp-text' }, h('small', { class: 'gp-kicker' }, 'Tonight’s game'), h('strong', {}, m.title), h('span', { class: 'gp-ja', lang: 'ja' }, m.titleJa), h('small', {}, m.blurb)),
+      h('span', { class: 'gp-change' }, 'Change'),
+    );
+    current.setAttribute('aria-label', `Tonight’s game: ${m.title}. Change game`);
+    mount(roundsSelect, m.roundChoices.map((r) => h('option', { value: r }, `${r} ${m.id === 'last-train' ? 'stops' : 'rounds'}`)));
+    if (m.roundChoices.includes(menu.rounds)) roundsSelect.value = String(menu.rounds);
+    roundsField.hidden = m.roundChoices.length === 0;
+    packField.hidden = !m.usesPack || view.packs.length === 0;
     ticked.clear();
     mount(
       extras,
-      (chosen.extras ?? []).map((x) => {
+      (m.extras ?? []).map((x) => {
         const box = h('input', { type: 'checkbox' }) as HTMLInputElement;
         box.addEventListener('change', () => (box.checked ? ticked.add(x.key) : ticked.delete(x.key)));
         return h('label', { class: 'vip-extra' }, box, ` ${x.label}`);
       }),
     );
-    const n = view.players.length;
-    const ok = n >= chosen.minPlayers && n <= chosen.maxPlayers;
+    const ok = fits(m, n);
     startBtn.disabled = !ok;
-    note.textContent = ok ? '' : `${chosen.title} needs ${chosen.minPlayers}–${chosen.maxPlayers} players.`;
-  };
+    startBtn.textContent = ok ? `Start ${m.title}` : 'Start';
+    note.textContent = ok ? '' : `${m.title} needs ${playersLabel(m)}. Tonight there ${n === 1 ? 'is 1' : `are ${n}`}.`;
+  }
   startBtn.addEventListener('click', () => {
     if (!chosen) return;
     void command({
       type: 'start',
       mode: chosen.id,
-      rounds: roundsSelect.hidden ? undefined : Number(roundsSelect.value),
-      packId: packSelect.hidden || !packSelect.value ? undefined : packSelect.value,
+      rounds: roundsField.hidden ? undefined : Number(roundsSelect.value),
+      packId: packField.hidden || !packSelect.value ? undefined : packSelect.value,
       extra: ticked.size ? Object.fromEntries([...ticked].map((k) => [k, true])) : undefined,
     });
   });
   refresh();
-  return h('div', { class: 'vip-start' }, h('p', { class: 'hint' }, 'Pick tonight’s game:'), modeButtons, packSelect, roundsSelect, extras, note, startBtn, motionToggle(view));
+  // Reopen the sheet if a redraw (someone joined) replaced it while the VIP was choosing.
+  if (menu.sheetOpen) queueMicrotask(() => sheet.isConnected && openSheet());
+  return h(
+    'div',
+    { class: 'vip-start' },
+    current,
+    h('div', { class: 'gp-fields' }, packField, roundsField),
+    extras,
+    note,
+    startBtn,
+    fold('settings', 'Room settings', 'Calm motion', motionToggle(view)),
+    sheet,
+  );
 }
 
 /** The VIP's Calm motion switch: the TV and every phone swap movement for fades and still sprites. */
 function motionToggle(view: RoomView): HTMLElement {
-  const btn = h('button', { type: 'button', class: 'secondary motion-btn', 'aria-pressed': String(view.calmMotion) }) as HTMLButtonElement;
-  const label = (calm: boolean) => {
-    btn.setAttribute('aria-pressed', String(calm));
-    btn.textContent = calm ? 'Calm motion: on' : 'Calm motion: off';
-  };
+  const btn = h(
+    'button',
+    { type: 'button', role: 'switch', class: 'switch-row motion-btn' },
+    h('span', { class: 'switch-text' }, 'Calm motion', h('small', {}, 'Fades and still sprites instead of movement, on the TV and every phone.')),
+    h('span', { class: 'switch', 'aria-hidden': 'true' }),
+  ) as HTMLButtonElement;
+  const label = (calm: boolean) => btn.setAttribute('aria-checked', String(calm));
   label(view.calmMotion);
   btn.addEventListener('click', async () => {
     const calm = !(lastView?.calmMotion ?? view.calmMotion);
