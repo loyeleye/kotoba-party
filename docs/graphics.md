@@ -34,7 +34,7 @@ The manifest is the source of truth. Edit a prompt there, then regenerate.
 | `stage/assets/hosts/pon.png` | 128², transparent | PixelLab `image-to-pixelart` | Pon, tanuki stand-up MC (Oogiri Night). Converted from the old Gemini portrait |
 | `stage/assets/hosts/chochin.png` | 128², transparent | PixelLab `pixflux` | Chōchin-san, lantern-ghost conductor (Last Train) |
 | `stage/assets/hosts/fude.png` | 128², transparent | PixelLab `pixflux` | Fude, living calligraphy brush (Kana Yōkai Raid) |
-| `stage/assets/studio-bg.png` | 320×180 drawn, saved 6× at 1920×1080, ~45 KB | PixelLab `image-to-pixelart` | Backdrop; converted from the old Gemini backdrop. Centre kept dark for text |
+| `stage/assets/studio-bg.png` | 320×180 drawn, saved 6× at 1920×1080, ~45 KB | PixelLab `image-to-pixelart` | The old backdrop, converted from the Gemini one. No longer drawn: the source of the layers in `scenes/` (see Backdrop) |
 | `stage/assets/yokai/yokai-blob.png` | 128², transparent | PixelLab `pixflux` | Round ghost; glyph goes on the belly |
 | `stage/assets/yokai/yokai-lantern.png` | 128², transparent | PixelLab `pixflux` | Chōchin-obake lantern; plain paper below the face |
 | `stage/assets/yokai/yokai-umbrella.png` | 128², transparent | PixelLab `pixflux` | Umbrella ghost (see Open questions) |
@@ -109,6 +109,59 @@ the raw one kept in `tools/art/sources/anim/`:
 The generator turns the frames into a sheet: it drops a loop's repeated last frame, remaps every
 frame to frame 0's colours (no shimmer between frames), cuts alpha to on or off, and puts each
 frame's mask back after the remap (an early batch lost its transparency without that step).
+
+## Backdrop
+
+Since 2026-10-27 the stage draws its set as layers into one 320×180 `<canvas>` behind everything
+(`stage/src/backdrop.ts`), scaled 6× with `image-rendering: pixelated`, under the scrim (`.scrim` in
+`stage/style.css`). This follows the art panel's review of parallax backgrounds (26 Oct 2026).
+
+| Layer | File | Notes |
+| --- | --- | --- |
+| Far | `stage/assets/scenes/studio-far.png` | The studio with its props painted out (PixelLab `inpaint`), so the centre behind the text is empty |
+| Props | `scenes/studio-props.png` | Desk, lantern and TVs, cut from the old backdrop and moved to the right edge |
+| Pages | `scenes/page-1.png` … `page-4.png` | The floating pages, cut out so they bob on their own, at the sides |
+| Last Train set | `scenes/train-carriage.png` | A commuter train at night (PixelLab `pixflux`), windows cut out |
+| Effects | drawn in code | Floor mist, two rig spotlights, confetti, rain, steam and the rest below |
+
+`stage/assets/studio-bg.png` is no longer drawn; it is the source the layers were cut from.
+
+Per mode:
+
+- **Studio (lobby and most games):** floor mist drifting both ways, two spotlights from the rig whose
+  pools sweep the floor, the pages bobbing a pixel or two. Oogiri, Phrase Bingo and Karaoke get
+  brighter spotlights; Karaoke adds mirror-ball dots on the side walls, stepping once a bar.
+- **Kana Raid:** will-o'-wisps (鬼火) in the side lanes and thicker mist. No pages: drifting paper
+  would look like yōkai to catch.
+- **Murder at the Onsen:** steam (湯気) rising from the bottom corners. **Omiai:** a few 桜 petals.
+- **Last Train:** the carriage. A night town (far skyline and near poles, drawn in code) scrolls past
+  the windows during the intro and the first 1.5 s of each "next stop", then the train pulls in and
+  holds; rain (秋雨) runs on the glass, and the straps sway while it moves.
+- **Who's the Tourist?** stays on the plain studio: a themed set would tell the tourist the place.
+- **Confetti (紙吹雪):** one burst in gold and washi colours in the side lanes when a round's scores
+  or the recap appear.
+
+Rules:
+
+- Nothing is drawn inside the text area (art px x 56–264, y 22–150), except the floor mist below it.
+  Effects never use the right/wrong colours (`--good`, `--bad`) or seat colours.
+- Effects run full in the lobby, intros and the recap, low (35% speed) through prompts, reveals and
+  waits, and ease to a stop over about 400 ms while anyone speaks (`speaks()` in
+  `stage/src/music/cues.ts`), while Kana Raid's yōkai are out, and in a timer's last 5 seconds.
+- The camera steps 1 art px every 120 ms to a new mark on each phase change (props move 1×, pages 2×,
+  the far layer not at all); in the lobby it drifts slowly between two marks. No zoom or shake.
+- Light is flat layers at one opacity each, not dithered (a dithered beam reads as a grid at 6×), and
+  nothing flashes more than twice a second.
+- Calm motion and `prefers-reduced-motion` draw one still frame (a still confetti scatter in the
+  recap). **Background effects** off in the stage's Settings shows the set with no effects. Both
+  are per screen.
+- About 12 frames a second, paused while the tab is hidden. No filters or blend modes.
+
+How the layers were made: see each entry in the manifest. The far layer is two 200×180 `inpaint`
+calls (the endpoint takes at most 200 px wide) with the old backdrop as the palette; the props and
+pages are its pixels that differ from the far layer. The carriage is one `pixflux` call with its
+black window panes flood-filled to transparent. All three steps were run by hand, so the manifest
+marks them `polish` and `tools/art/generate.ts` skips them.
 
 ## How they were made
 
@@ -208,7 +261,5 @@ Tracked in [commercial-blockers.md](commercial-blockers.md): row 6 (PixelLab) an
    reference image for consistency.
 6. **Animation.** PixelLab can animate characters (idle bob, hit, defeat). Should the yōkai get idle
    and defeat frames for Kana Yōkai Raid?
-7. **Backdrop.** Is it wanted at all, or does a flat `#14101f` keep the stage cleaner? It sits under
-   a 78–90% dark scrim. A brighter PixelLab draft (a lit stage with red curtains and spotlights) is an
-   option if the scrim is lightened.
+7. ~~**Backdrop.**~~ Decided 2026-10-26: keep it, as layers with effects (see [Backdrop](#backdrop)).
 8. ~~**Final art.**~~ Decided 2026-10-26: AI pixel art while non-commercial; commission before selling.

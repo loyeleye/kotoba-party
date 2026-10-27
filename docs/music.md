@@ -95,6 +95,7 @@ The ⚙ Settings button beside the sound button opens a panel on every stage scr
   effects volume** and **Background music volume** (the loops, jingles and Karaoke Duel's backing).
 - **Streamer mode**: plays only the synth's own tunes (each track's `fallback`), so a stream or video
   of the screen can't pick up a copyright claim for the recorded tracks.
+- **Background effects**: the mist, spotlights and confetti behind the game ([graphics.md](graphics.md#backdrop)). Off shows a still set.
 
 The main stage's panel also has **Let other screens control the game**. With it on, a friend's
 watching screen (`/stage/?code=XXXX`) gets Start, Skip ahead and Play again in its own panel. It's a

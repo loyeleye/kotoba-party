@@ -4,7 +4,7 @@
 // speech synthesis, or show it written when there's no Japanese voice. Ink Storm draws on
 // inkPad, then asks to say what you drew.
 
-import { h } from '../../../shared/src/dom.js';
+import { h, ruby } from '../../../shared/src/dom.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
 import type { AttackView, KanaRaidView, LastResult } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
@@ -176,7 +176,7 @@ function banner(game: KanaRaidView): HTMLElement {
     'div',
     { class: 'screen raid raid-banner' },
     h('p', { class: 'raid-wave' }, game.wave > game.waves ? 'BOSS' : `WAVE ${game.wave}`),
-    w ? h('p', { class: 'big' }, h('span', { lang: 'ja' }, w.titleJa), ' ', w.title) : null,
+    w ? h('p', { class: 'big' }, ruby({ text: w.titleJa, kana: w.titleKana }), ' ', w.title) : null,
     w ? h('p', { class: 'hint' }, w.how) : null,
   );
 }
