@@ -280,7 +280,7 @@ function scoreScreen(ctx: Ctx): HTMLElement {
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, o?.how === 'left' ? 'Round over' : won ? (pts ? `🎉 +${pts} this round` : '🎉 You won the round') : pts ? `+${pts} this round` : 'Not this time!'),
-    o ? h('p', {}, me.tourist ? 'You were the tourist 🧳' : `The tourist was ${nameOf(view, o.touristId)}.`) : null,
+    o ? h('p', {}, me.tourist ? 'You were the tourist 🧳' : o.how === 'left' ? 'The tourist left the game.' : `The tourist was ${nameOf(view, o.touristId)}.`) : null,
     o?.place ? h('p', { class: 'tou-card-place' }, 'We were at ', placeName(o.place)) : null,
     h('p', { class: 'hint' }, game.round < game.totalRounds ? 'Next round coming up…' : 'That’s the last round!'),
   );
