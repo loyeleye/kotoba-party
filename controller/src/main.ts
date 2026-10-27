@@ -141,7 +141,7 @@ function showJoin(message = ''): void {
     autocomplete: 'off',
     autocapitalize: 'characters',
     maxlength: 4,
-    placeholder: 'ABCD',
+    placeholder: 'KMTP',
     value: params.get('code') ?? saved?.code ?? '',
   }) as HTMLInputElement;
   const nameInput = h('input', { id: 'name', autocomplete: 'nickname', maxlength: MAX_NAME_LENGTH, placeholder: 'Your name', value: saved?.name ?? '' }) as HTMLInputElement;

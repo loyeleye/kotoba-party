@@ -219,6 +219,8 @@ describe('views', () => {
 describe('room codes', () => {
   it('are 4 letters from the safe alphabet', () => {
     for (let i = 0; i < 200; i++) expect(isRoomCode(randomRoomCode())).toBe(true);
+    for (let i = 0; i < 200; i++) expect(randomRoomCode()).not.toMatch(/[BGQSZ]/); // look like 8, 6, O, 5, 2
+    expect(isRoomCode('MGZG')).toBe(true); // older codes still join
     expect(normalizeRoomCode(' bc df ')).toBe('BCDF');
     expect(isRoomCode('ABCD')).toBe(false); // A is a vowel
   });

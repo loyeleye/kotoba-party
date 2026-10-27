@@ -226,7 +226,7 @@ compare. If Node's `fetch` can't reach the APIs behind a proxy, run with `NODE_U
 ## Stage layout and type
 
 - The stage is a fixed 1920×1080 canvas scaled to the window (`stage/src/main.ts`, `scaleCanvas`), with a 5% title-safe margin. Rows: header, host, play area, score ribbon. Nothing scrolls; a play area that is too tall is shrunk to fit (`#fit`).
-- Fonts: Pixelify Sans for English titles and numbers only; Noto Sans JP for all Japanese (`--font-ja`); Noto Sans for English body text and romaji (`--font-body`). Both OFL 1.1, loaded from Google Fonts (see commercial-blockers.md, row 11).
+- Fonts: Pixelify Sans for English titles and numbers only; Press Start 2P for the room code (`--font-code`), whose letters must survive a glance across the room; Noto Sans JP for all Japanese (`--font-ja`); Noto Sans for English body text and romaji (`--font-body`). Both OFL 1.1, loaded from Google Fonts (see commercial-blockers.md, row 11).
 - Japanese text is wrapped in `lang="ja"` automatically by `h()` and breaks between phrases (`word-break: auto-phrase`); a blank stays with its particle and a number with its counter.
 - Text on coral, mint or gold fills is dark (`--on-accent`), never white.
 - The developer panel is hidden; open the stage with `?debug=1` to show it.
