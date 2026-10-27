@@ -690,7 +690,7 @@ export const WORD_BREAKS: Record<string, string> = {
   "1nn2cnr": '5',
   "1noaxy9": '',
   "1npmd5n": '2,6',
-  "1nqul11": '5,9',
+  "1nqul11": '5',
   "1nu6r53": '3',
   "1num7gg": '2-,4,b,g',
   "1nuyj0t": '4-,6',
