@@ -35,3 +35,16 @@ describe('Karaoke Duel result stats', () => {
     }
   });
 });
+
+describe('Karaoke Duel host line on the result', () => {
+  it('waits for the winner beat, then speaks at once', async () => {
+    const { karaokeDuelStage } = await import('../stage/src/modes/karaokeDuel.js');
+    const now = Date.now();
+    const game = (resultAt: number) => ({ at: now, result: { at: resultAt } }) as never;
+    const hold = (phase: string, resultAt: number) => karaokeDuelStage.hostHoldMs!({ phase } as never, game(resultAt));
+    expect(hold('score', now)).toBeGreaterThan(4_500);
+    expect(hold('score', now)).toBeLessThanOrEqual(5_100);
+    expect(hold('score', now - 6_000)).toBe(0);
+    expect(hold('reveal', now)).toBe(0);
+  });
+});

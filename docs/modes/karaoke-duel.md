@@ -146,7 +146,8 @@ average take in 点 with an easy host line for its band (「とても 上手（�
 It reveals beat by beat from the result's server time (`result.at`): Scoring… (採点中), the three
 meters, the lines, the crowd bonus, the points, and at 5.1 s the winner with the trophy and the
 fanfare. Every animation's rest state is the finished screen, so redraws, late joiners and Calm
-motion land on it. Each duelist's phone shows the same three bars with a tip for the lowest.
+motion land on it. The host's line about the winner waits for that beat too (the bubble shows
+「…」 until then; `hostHoldMs` on the stage mode). Each duelist's phone shows the same three bars with a tip for the lowest.
 Audio needs one click on the stage page ("🔊 Click for music"); any click (e.g.
 Start) unlocks it. Music can be muted.
 

@@ -561,12 +561,32 @@ function fillMenus(view: RoomView): void {
 
 let lastHostKey = '';
 let hostAudio: HTMLAudioElement | null = null;
+let hostHold: ReturnType<typeof setTimeout> | null = null;
 function showHost(view: RoomView): void {
   const say = view.host;
   els.host.hidden = !say;
   if (!say) return;
   const key = `${say.phaseSeq}:${say.text}`;
   if (key === lastHostKey) return;
+  // A mode mid-reveal (the Karaoke Duel winner) holds the line: the host waits with "…" in the
+  // bubble, which keeps the play area's size, and speaks once the reveal gets there.
+  const hold = view.game ? (STAGE_MODES[view.game.mode].hostHoldMs?.(view, view.game) ?? 0) : 0;
+  if (hold > 0) {
+    if (hostHold === null) {
+      hostHold = setTimeout(() => {
+        hostHold = null;
+        if (client?.view) showHost(client.view);
+      }, hold);
+      if (!hostSprite.el.isConnected) els.host.prepend(hostSprite.el);
+      hostAudio?.pause();
+      hostAudio = null;
+      const wait = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, '…'));
+      const old = els.host.querySelector('.host-bubble');
+      if (old) old.replaceWith(wait);
+      else els.host.append(wait);
+    }
+    return;
+  }
   lastHostKey = key;
   // The sprite stays; only the bubble is new. The host reacts to the line, then idles.
   if (!hostSprite.el.isConnected) els.host.prepend(hostSprite.el);
