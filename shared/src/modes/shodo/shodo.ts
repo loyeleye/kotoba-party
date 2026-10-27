@@ -21,12 +21,12 @@
 // phase ends, capped at 30% of a player's points (design doc, Scoring).
 
 import type { JpText, Level } from '../../../../content/src/types.js';
-import { isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { awardKana, isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { checkStroke, gradeInk, KANJI_LIMITS, readInk, TRACE_TOLERANCE_LOOSEST, type InkGrade, type InkPoint, type InkStroke } from '../../japanese/strokes.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type MoveResult } from '../mode.js';
-import { BRIEFS, buildDeck, deal, dictationPool, galleryTarget, practicePool, type ShodoDeck, type Target } from './deck.js';
+import { BRIEFS, buildDeck, LOOKALIKE_KANA, deal, dictationPool, galleryTarget, practicePool, type ShodoDeck, type Target } from './deck.js';
 
 // ---- tuning ----
 
@@ -277,6 +277,10 @@ export interface ShodoView {
 // ---- helpers ----
 
 const nameOf = (ctx: ModeContext, id: string): string => ctx.player(id)?.name ?? '(left)';
+/** A misread character as Fude says it: a kana reads as itself, a kanji by its name. */
+const misreadKana = (c: string): string => LOOKALIKE_KANA[c] ?? c;
+/** Sheet numbers as Fude says them ("1ばん" is いちばん): the voice reads only kana. */
+const NUMBER_KANA = ['ゼロ', 'いち', 'に', 'さん', 'よん', 'ご', 'ろく', 'なな', 'はち', 'きゅう', 'じゅう'];
 const decks = new WeakMap<object, ShodoDeck>();
 function deckFor(ctx: ModeContext): ShodoDeck {
   let d = decks.get(ctx.content);
@@ -484,7 +488,7 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
         s.stage = 'vote';
         ctx.cue({ host: 'fude', event: 'shodo_vote' });
         // The sheets brush on as the vote opens: Fude reacts to them, or calls back a misreading.
-        if (s.misreads.length) ctx.cue({ host: 'fude', event: 'shodo_callback', slots: { char: s.misreads.at(-1)! } });
+        if (s.misreads.length) ctx.cue({ host: 'fude', event: 'shodo_callback', slots: { char: s.misreads.at(-1)!, char_kana: misreadKana(s.misreads.at(-1)!) } });
         else ctx.cue({ host: 'fude', event: 'shodo_gallery_reveal' });
         return;
       case 'penalty':
@@ -634,7 +638,7 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
     if (g) {
       for (const a of AWARDS) {
         const owner = g.sheets[g.winners[a.id] ?? -1]?.playerId;
-        if (owner && g.claimed.includes(owner) && ctx.player(owner)) out.push({ playerId: owner, name: nameOf(ctx, owner), title: a.ja, en: `${a.en} (the most ${a.ja} stamps)` });
+        if (owner && g.claimed.includes(owner) && ctx.player(owner)) out.push({ playerId: owner, name: nameOf(ctx, owner), title: a.ja, en: `“${a.en}” stamp (the most of them)` });
       }
     }
     const clean = top(s.stats.clean);
@@ -693,7 +697,7 @@ function enterReplay(s: ShodoState, ctx: ModeContext): void {
   const misread = sheets.find((x) => x.misread);
   if (misread) {
     const t = misread.target;
-    ctx.cue({ host: 'fude', event: 'shodo_misread', slots: { char: misread.misread!, target: t.text, target_kana: t.say.kana, target_en: t.meaning } });
+    ctx.cue({ host: 'fude', event: 'shodo_misread', slots: { char: misread.misread!, char_kana: misreadKana(misread.misread!), target: t.text, target_kana: t.say.kana, target_en: t.meaning } });
   } else if (sheets.some((x) => x.outOfOrder !== null)) ctx.cue({ host: 'fude', event: 'shodo_synchro_break' });
   else if (sheets.some((x) => x.clean)) ctx.cue({ host: 'fude', event: 'shodo_clean' });
   for (const sheet of sheets) {
@@ -725,7 +729,8 @@ function enterClaim(s: ShodoState, ctx: ModeContext): void {
   const award = ANNOUNCE.find((a) => g?.winners[a] !== undefined);
   if (g && award) {
     const a = AWARDS.find((x) => x.id === award)!;
-    ctx.cue({ host: 'fude', event: 'shodo_award', slots: { award: a.ja, award_kana: a.ja.replace('賞', 'しょう'), award_en: a.en, n: String(g.winners[award]! + 1) } });
+    const n = g.winners[award]! + 1;
+    ctx.cue({ host: 'fude', event: 'shodo_award', slots: { award: a.ja, award_kana: awardKana(a.ja), award_en: `“${a.en}” stamp`, n: String(n), n_kana: NUMBER_KANA[n] ?? String(n) } });
   }
 }
 
