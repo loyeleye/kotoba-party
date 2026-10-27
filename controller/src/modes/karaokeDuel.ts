@@ -475,10 +475,11 @@ function resultScreen(ctx: Ctx): HTMLElement {
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, headline),
+    // The pick comes first: on a phone the takes list would push it below the fold.
+    pickSection(ctx),
     mine.role === 'duelist' ? h('div', { class: 'kdp-takes' }, mine.takes.map(takeLine)) : null,
     mine.role === 'duelist' && r.favourites.includes(me.id) ? h('p', { class: 'kdp-take' }, `👏 Crowd favourite +${r.crowdBonus}`) : null,
     mine.role === 'audience' && mine.chorusPoints ? h('p', { class: 'kdp-take' }, `🎶 Your chorus: +${mine.chorusPoints}`) : null,
-    pickSection(ctx),
   );
 }
 
