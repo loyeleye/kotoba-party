@@ -177,10 +177,10 @@ describe('Murder at the Onsen: the cases', () => {
   };
   for (const c of onsenCases) it(`${c.id} is complete and points at its culprit`, () => check(c));
 
-  it('ships three cases for everyone, one Kids and three Cheeky, served through the content library', () => {
-    expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck', 'ice-cream', 'sake', 'phone', 'toupee']);
-    expect(onsenCases.map((c) => c.audience ?? null)).toEqual([null, null, null, 'kids', 'cheeky', 'cheeky', 'cheeky']);
-    expect(content.onsenCases.length).toBe(7);
+  it('ships three cases for everyone, one Kids and four Cheeky, served through the content library', () => {
+    expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck', 'ice-cream', 'sake', 'phone', 'toupee', 'candle']);
+    expect(onsenCases.map((c) => c.audience ?? null)).toEqual([null, null, null, 'kids', 'cheeky', 'cheeky', 'cheeky', 'cheeky']);
+    expect(content.onsenCases.length).toBe(8);
     expect(content.hostLines.filter((l) => l.event.startsWith('onsen_')).length).toBe(25);
   });
 
@@ -199,10 +199,10 @@ describe('Murder at the Onsen: the cases', () => {
     expect([...family.keys()].sort()).toEqual(['duck', 'pudding', 'snowman']);
     const kids = seen('kids');
     expect(kids.get('ice-cream')).toBe(50);
-    expect(['sake', 'phone', 'toupee'].some((id) => kids.has(id))).toBe(false);
+    expect(['sake', 'phone', 'toupee', 'candle'].some((id) => kids.has(id))).toBe(false);
     const cheeky = seen('cheeky');
-    expect(['sake', 'phone', 'toupee'].map((id) => cheeky.get(id) ?? 0).reduce((a, b) => a + b)).toBe(50);
-    expect(['sake', 'phone', 'toupee'].every((id) => cheeky.has(id))).toBe(true);
+    expect(['sake', 'phone', 'toupee', 'candle'].map((id) => cheeky.get(id) ?? 0).reduce((a, b) => a + b)).toBe(50);
+    expect(['sake', 'phone', 'toupee', 'candle'].every((id) => cheeky.has(id))).toBe(true);
     expect(cheeky.has('ice-cream')).toBe(false);
     // Nothing that suits the room: the placeholder, never another audience's case.
     expect(caseFor(onsenCases.filter((c) => c.audience === 'cheeky'), 'kids', () => 0.1)).toBeUndefined();

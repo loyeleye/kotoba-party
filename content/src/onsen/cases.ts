@@ -11,8 +11,8 @@
 // point at one culprit, who lies about one thing. Two answers may give the same clue.
 //
 // A case with an `audience` plays only in a room set to it: the ice cream case is a shorter,
-// sillier one for Kids; the sake, smartphone and toupee cases (a hangover, a bad date, a boss
-// who takes the credit) are for Cheeky rooms.
+// sillier one for Kids; the sake, smartphone, toupee and candle cases (a hangover, a bad date,
+// a boss who takes the credit, a ghost-story night) are for Cheeky rooms.
 
 import type { JpText, OnsenCase } from '../types.js';
 
@@ -612,4 +612,87 @@ export const toupeeCase: OnsenCase = {
   shrug: k('その しつもんは、かいぎで はなしましょう。', "Let's take that question to a meeting."),
 };
 
-export const onsenCases: OnsenCase[] = [snowmanCase, puddingCase, duckCase, iceCreamCase, sakeCase, phoneCase, toupeeCase];
+export const candleCase: OnsenCase = {
+  id: 'candle',
+  audience: 'cheeky',
+  status: 'draft',
+  title: k('ろうそく じけん', 'The Candle Case'),
+  setting: k('ひゃくものがたりの よる、ふるい りょかん「やなぎ」。', 'A night of 100 ghost stories at the old Yanagi ("Willow") inn.'),
+  victim: {
+    name: k('ろうそくさん', 'Rōsoku-san, the 100th candle'),
+    emoji: '🕯️',
+    found: t('12じに、99ばんめの はなしの あとで きえて いました。', 'じゅうにじに、きゅうじゅうきゅうばんめの はなしの あとで きえて いました。', 'At midnight he was found blown out, right after the 99th story.'),
+  },
+  item: { name: k('うちわ', 'paper fan'), emoji: '🪭', keys: ['うちわ'] },
+  culpritId: 'kudo',
+  suspects: [
+    {
+      id: 'oyuki',
+      name: k('おゆき', 'Oyuki'),
+      role: k('ふるい おきゃくさん', 'a guest from long ago'),
+      emoji: '👻',
+      voice: { pitch: 0.6, rate: 0.7 },
+      persona: 'A pale, very polite ghost in an old kimono who has stayed in room 4 since 1926. Complains that modern guests are rude and nobody bows any more. Was looking forward to appearing after the 100th story.',
+      answers: {
+        where: { jp: t('4ばんの へやに いました。100ねん ずっと です。', 'よんばんの へやに いました。ひゃくねん ずっと です。', 'I was in room 4. For a hundred years now.') },
+        what: { jp: k('ろうかを あるきました。あしは ありませんが。', 'I walked the hallway. Not that I have feet.'), clueId: 'no-feet' },
+        who: { jp: t('11じ50ぷんに くどうさんを みました。ろうそくの へやに いきました。ふるえて いました。', 'じゅういちじごじゅっぷんに くどうさんを みました。ろうそくの へやに いきました。ふるえて いました。', 'At 11:50 I saw Kudō. He went to the candle room. He was shaking.'), clueId: 'saw-kudo' },
+        when: { jp: k('ゆうれいは ねません。', "Ghosts don't sleep.") },
+        victim: { jp: t('100ばんめの あとは、わたしが でる ばんでした。ざんねんです。', 'ひゃくばんめの あとは、わたしが でる ばんでした。ざんねんです。', 'After the 100th, it was my turn to appear. Such a shame.'), clueId: 'oyuki-wanted' },
+        item: { jp: k('うちわ？　いまの ひとは、おじぎも しません。', "A fan? People these days don't even bow.") },
+      },
+    },
+    {
+      id: 'kudo',
+      name: k('くどう', 'Kudō'),
+      role: k('ホラーの さっか', 'a horror writer'),
+      emoji: '✍️',
+      voice: { pitch: 0.95, rate: 1.15 },
+      persona: 'A horror writer whose books terrify millions and who is scared of absolutely everything: the dark, creaky floors, his own stories. Insists he is never scared. Talks fast and jumps at small noises.',
+      answers: {
+        where: { jp: t('11じから 12じまで、へやで しごとを して いました。', 'じゅういちじから じゅうにじまで、へやで しごとを して いました。', 'From 11 to 12 I was working in my room.'), clueId: 'kudo-room' },
+        what: { jp: k('こわい はなしを かきました。ぼくは こわく ありません。', "I was writing a scary story. I'm not scared."), clueId: 'not-scared' },
+        who: { jp: k('だれも みませんでした。だれも いません。…いませんよね？', "I didn't see anyone. Nobody's here. …Right?") },
+        when: { jp: t('12じに ねました。でんきを つけて。', 'じゅうにじに ねました。でんきを つけて。', 'I went to bed at 12. With the light on.'), clueId: 'light-on' },
+        victim: { jp: k('ろうそくさんは… げんきでしたよ。たぶん。', 'Rōsoku-san was… doing fine. Probably.') },
+        item: { jp: k('うちわ？　ぼくのじゃ ありません。なつじゃ ありませんから。', "A fan? It's not mine. It isn't summer, after all.") },
+      },
+    },
+    {
+      id: 'sugimoto',
+      name: k('すぎもと', 'Sugimoto'),
+      role: k('りょかんの おかみさん', 'the innkeeper'),
+      emoji: '🗝️',
+      voice: { pitch: 1.15, rate: 1.0 },
+      persona: 'The brisk innkeeper who runs the ghost-story night every year and treats the resident ghost like a long-staying regular.',
+      answers: {
+        where: { jp: t('11じはんまで、ろうそくの へやに いました。', 'じゅういちじはんまで、ろうそくの へやに いました。', 'I was in the candle room until 11:30.') },
+        what: { jp: t('11じはんに、99ばんめの ろうそくを けしました。ろうそくさんは げんきでした。', 'じゅういちじはんに、きゅうじゅうきゅうばんめの ろうそくを けしました。ろうそくさんは げんきでした。', 'At 11:30 I put out the 99th candle. Rōsoku-san was fine.'), clueId: 'fine-1130' },
+        who: { jp: t('おゆきさんを みました。1926ねんからの おきゃくさんです。', 'おゆきさんを みました。せんきゅうひゃくにじゅうろくねんからの おきゃくさんです。', "I saw Oyuki. She's been a guest since 1926."), clueId: 'oyuki-1926' },
+        when: { jp: t('1じに ねました。', 'いちじに ねました。', 'I went to bed at 1.') },
+        victim: { jp: t('100ばんめの だいじな ろうそくでした。', 'ひゃくばんめの だいじな ろうそくでした。', 'He was the precious 100th candle.') },
+        item: { jp: k('その うちわ、くどうさんの へやの うちわです。', "That fan is from Kudō's room."), clueId: 'fan' },
+      },
+    },
+  ],
+  clues: [
+    { id: 'fine-1130', jp: t('11じはん：ろうそくさんは げんきだった。', 'じゅういちじはん、ろうそくさんは げんきだった。', 'At 11:30 Rōsoku-san was still burning.') },
+    { id: 'no-feet', jp: k('おゆきさんには あしが ない。', 'Oyuki has no feet.') },
+    { id: 'oyuki-1926', jp: t('おゆきさんは 1926ねんからの おきゃくさん。', 'おゆきさんは せんきゅうひゃくにじゅうろくねんからの おきゃくさん。', 'Oyuki has been a guest since 1926.') },
+    { id: 'oyuki-wanted', jp: t('おゆきさんは 100ばんめの あとに でたかった。', 'おゆきさんは ひゃくばんめの あとに でたかった。', 'Oyuki wanted to appear after the 100th story.') },
+    { id: 'saw-kudo', jp: t('11じ50ぷん：くどうさんが ふるえて ろうそくの へやに いった。', 'じゅういちじごじゅっぷん、くどうさんが ふるえて ろうそくの へやに いった。', 'At 11:50 Kudō went to the candle room, shaking.'), key: true },
+    { id: 'kudo-room', jp: t('くどうさん：「11じから 12じまで、へやに いました」', 'くどうさん、じゅういちじから じゅうにじまで、へやに いました。', 'Kudō: "From 11 to 12 I was in my room."'), key: true },
+    { id: 'not-scared', jp: k('くどうさん：「ぼくは こわく ありません」', 'Kudō: "I\'m not scared."'), key: true },
+    { id: 'light-on', jp: k('くどうさんは でんきを つけて ねる。', 'Kudō sleeps with the light on.'), key: true },
+    { id: 'fan', jp: k('うちわは くどうさんの へやの もの。', "The fan is from Kudō's room."), key: true },
+  ],
+  confession: [
+    k('…はい、ぼくです。', '…Yes. It was me.'),
+    t('100ばんめの あとは、ほんものの おばけが でます。こわかったです！', 'ひゃくばんめの あとは、ほんものの おばけが でます。こわかったです！', 'After the 100th story, a real ghost appears. I was terrified!'),
+    k('だから うちわで… ふっ。ごめんなさい！', 'So with a fan… whoosh. I’m sorry!'),
+  ],
+  solution: 'Kudō said he was in his room from 11 to 12, but Oyuki saw him go to the candle room at 11:50, shaking, and the fan came from his room. He says he is never scared, yet sleeps with the light on: he blew the candle out so the ghost would not appear. Oyuki really is a ghost (no feet, a guest since 1926), but she wanted the 100th story to finish.',
+  shrug: k('…いま、なにか きこえませんでしたか？', '…Did you just hear something?'),
+};
+
+export const onsenCases: OnsenCase[] = [snowmanCase, puddingCase, duckCase, iceCreamCase, sakeCase, phoneCase, toupeeCase, candleCase];
