@@ -36,10 +36,6 @@
     "STT_URL": "workers-ai",
     // Optional; the Workers AI model (default @cf/openai/whisper-large-v3-turbo), or the `model` field for
     // self-hosted servers that host several (speaches). whisper.cpp ignores it.
-    "STT_MODEL": "",
-    // The Claude model for the host's lines and the Onsen suspects' lead-ins. A suspect's lead-in has to
-    // arrive within its 1.8 s thinking beat: claude-opus-5-5 (the default) took 1.7 to 5.4 s and missed it,
-    // claude-haiku-5-5 took about 0.9 s. The answer judge keeps the default (KOTOBA_JUDGE_MODEL).
-    "KOTOBA_HOST_MODEL": "claude-haiku-5-5"
+    "STT_MODEL": ""
   }
 }
