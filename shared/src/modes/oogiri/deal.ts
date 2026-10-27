@@ -3,6 +3,7 @@
 // the content library is thin, so a game always runs end to end.
 
 import type { JpText, Level, OogiriPrompt, OogiriRound, PackWord, SetPhraseTile, TileForm } from '../../../../content/src/types.js';
+import type { Audience } from '../../protocol.js';
 import { normalizeReading } from '../../japanese/kana.js';
 import { shuffled, type ContentLibrary } from '../mode.js';
 import { FALLBACK_PACK, FALLBACK_PROMPTS, FALLBACK_SET_PHRASES } from './fallback.js';
@@ -63,33 +64,46 @@ export interface Library {
   words: Map<string, PackWord>;
   /** Words dealt as filler and fallback callbacks: the pack minus its untaught baseline. */
   pool: PackWord[];
+  /** The room's Audience when the library was built. */
+  audience: Audience;
+  /** Prompts the audience may be dealt, per round. */
   prompts: Record<OogiriRound, OogiriPrompt[]>;
   frames: SetPhraseTile[];
   /** True when any part came from the placeholder set. */
   placeholder: boolean;
 }
 
-export function library(content: ContentLibrary, wantedPackId: string | undefined, random: () => number): Library {
+/** Whether a prompt may be dealt to an audience (an untagged prompt suits everyone). */
+export const suits = (p: Pick<OogiriPrompt, 'audiences'>, audience: Audience): boolean => !p.audiences || p.audiences.includes(audience);
+
+/** A prompt written for this audience alone (a Kids or Cheeky prompt): dealt before the shared ones. */
+export const ownPrompt = (p: Pick<OogiriPrompt, 'audiences'>, audience: Audience): boolean => p.audiences?.length === 1 && p.audiences[0] === audience;
+
+/** Pack words kept out of a Kids hand (beer). */
+const grownUp = (w: PackWord) => w.tags?.includes('grown-up') === true;
+
+export function library(content: ContentLibrary, wantedPackId: string | undefined, random: () => number, audience: Audience = 'family'): Library {
   const promptPacks = new Set(content.oogiriPrompts.map((p) => p.packId));
   const usable = content.packs.filter((p) => promptPacks.has(p.id));
   const pack = usable.find((p) => p.id === wantedPackId) ?? (usable.length ? usable[Math.floor(random() * usable.length)]! : undefined);
-  return libraryFor(content, pack?.id ?? FALLBACK_PACK.id);
+  return libraryFor(content, pack?.id ?? FALLBACK_PACK.id, audience);
 }
 
 /** The library for a pack id that was picked earlier (deterministic: no randomness). */
-export function libraryFor(content: ContentLibrary, packId: string): Library {
+export function libraryFor(content: ContentLibrary, packId: string, audience: Audience = 'family'): Library {
   const words = new Map<string, PackWord>();
   for (const p of content.packs) for (const w of p.words) words.set(w.id, w);
   for (const w of FALLBACK_PACK.words) if (!words.has(w.id)) words.set(w.id, w);
   const pack = content.packs.find((p) => p.id === packId);
   const baseline = new Set(pack?.baselineWordIds ?? []);
   let placeholder = !pack;
-  const pool = (pack ?? FALLBACK_PACK).words.filter((w) => !baseline.has(w.id));
+  const pool = (pack ?? FALLBACK_PACK).words.filter((w) => !baseline.has(w.id) && !(audience === 'kids' && grownUp(w)));
 
   const prompts = {} as Record<OogiriRound, OogiriPrompt[]>;
   for (const round of ROUNDS) {
-    let list = content.oogiriPrompts.filter((p) => p.packId === packId && p.round === round);
-    if (!list.length) list = content.oogiriPrompts.filter((p) => p.round === round);
+    const usable = content.oogiriPrompts.filter((p) => p.round === round && suits(p, audience));
+    let list = usable.filter((p) => p.packId === packId);
+    if (!list.length) list = usable;
     if (!list.length) {
       list = FALLBACK_PROMPTS.filter((p) => p.round === round);
       placeholder = true;
@@ -101,7 +115,7 @@ export function libraryFor(content: ContentLibrary, packId: string): Library {
     frames = FALLBACK_SET_PHRASES;
     placeholder = true;
   }
-  return { packId, words, pool: pool.length ? pool : FALLBACK_PACK.words, prompts, frames, placeholder };
+  return { packId, words, pool: pool.length ? pool : FALLBACK_PACK.words, audience, prompts, frames, placeholder };
 }
 
 /** The prompt version a player sees: their level, N4 falling back to N5, anything as a last resort. */
@@ -145,7 +159,7 @@ export function makeTile(word: PackWord, role: Tile['role'], key: string, level:
 /**
  * Deals a hand for one prompt: 3 that fit, 3 swerves, 2 callbacks (a word used earlier
  * tonight), or 3 / 2 / 1 for Kana-level players. Short slots are filled from the pack.
- * At most one stereotype word per hand.
+ * At most one stereotype word per hand, and no grown-up word (beer) for a Kids audience.
  */
 export function dealTiles(lib: Library, prompt: OogiriPrompt, level: Level, usedWordIds: readonly string[], random: () => number): Tile[] {
   const want = level === 'kana' ? { fit: 3, swerve: 2, callback: 1 } : { fit: 3, swerve: 3, callback: 2 };
@@ -153,6 +167,7 @@ export function dealTiles(lib: Library, prompt: OogiriPrompt, level: Level, used
   let stereotypes = 0;
   const ok = (w: PackWord | undefined): w is PackWord => {
     if (!w || taken.has(w.id)) return false;
+    if (lib.audience === 'kids' && grownUp(w)) return false;
     if (w.stereotype && stereotypes >= 1) return false;
     return true;
   };

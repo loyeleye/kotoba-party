@@ -210,10 +210,18 @@ export interface TopicPack {
 export type OogiriRound = 'head-to-head' | 'photo-caption' | 'ippon';
 
 /** A prompt with a blank, written once per level. */
+/** Who a prompt's joke is for: the room's Audience setting (shared/src/protocol.ts AUDIENCES). */
+export type PromptAudience = 'kids' | 'family' | 'cheeky';
+
 export interface OogiriPrompt {
   id: string;
   packId: string;
   round: OogiriRound;
+  /**
+   * The audiences it may be dealt to; every audience when left out. Kids and Cheeky prompts
+   * list just their own and are dealt before the shared ones (oogiri/kids.ts, oogiri/cheeky.ts).
+   */
+  audiences?: PromptAudience[];
   /**
    * One version per level. Use ＿＿＿ for the blank. The N4 version is
    * optional in v1: N4 players get the N5 version with no tiles.

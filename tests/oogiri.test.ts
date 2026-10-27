@@ -8,7 +8,7 @@ import { POINTS_PER_VOTE } from '../shared/src/constants.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import { buildAnswer, fillBlank } from '../shared/src/modes/oogiri/answer.js';
-import { dealTiles, libraryFor } from '../shared/src/modes/oogiri/deal.js';
+import { dealTiles, libraryFor, ownPrompt, suits } from '../shared/src/modes/oogiri/deal.js';
 import { FALLBACK_PACK, FALLBACK_PROMPTS } from '../shared/src/modes/oogiri/fallback.js';
 import { exampleFill, naturalSentence, wantsAdjective } from '../shared/src/modes/oogiri/natural.js';
 import { pairings, revealWaitMs, SAY_FIRST_MS, tileSlots, type OogiriState, type OogiriView } from '../shared/src/modes/oogiri/oogiri.js';
@@ -455,6 +455,27 @@ describe('real content', () => {
       expect(slot.prompt.text).toMatch(/＿/);
     }
     expect(h.game().placeholder).toBe(false);
+  });
+
+  it.each(['kids', 'family', 'cheeky'] as const)('a %s room deals prompts for its audience, its own first', (audience) => {
+    const h = harness(['n5', 'n5', 'n5', 'n5'], realContent);
+    h.s.audience = audience;
+    h.start();
+    h.until('answer');
+    expect(h.os().audience).toBe(audience);
+    for (const m of h.os().matchups) {
+      expect(suits(m.prompt, audience), m.prompt.id).toBe(true);
+      if (audience !== 'family') expect(ownPrompt(m.prompt, audience), m.prompt.id).toBe(true);
+      else expect(m.prompt.audiences ?? ['family'], m.prompt.id).toContain('family');
+    }
+  });
+
+  it('keeps grown-up words (beer) out of a Kids hand', () => {
+    const lib = libraryFor(realContent, 'food', 'kids');
+    expect(lib.pool.some((w) => w.id === 'food.beer')).toBe(false);
+    const beerPrompts = realContent.oogiriPrompts.filter((p) => p.fitTileIds.includes('food.beer'));
+    expect(beerPrompts.length).toBeGreaterThan(0);
+    for (const p of beerPrompts) for (let i = 0; i < 20; i++) expect(dealTiles(lib, p, 'n5', ['food.beer'], Math.random).map((t) => t.wordId)).not.toContain('food.beer');
   });
 });
 
