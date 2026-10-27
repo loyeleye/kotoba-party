@@ -35,6 +35,8 @@ export const TRACK_IDS = [
   'harbour-ticket',
   'run-footsteps',
   'run-melonpan',
+  'save-dinner',
+  'save-cat',
   'hot-springs',
   'hustle',
   'lazy-saturday',
@@ -130,6 +132,11 @@ export const TRACKS: Record<TrackId, Track> = {
   // already the song's bars in order, A major: version A at exactly 132 bpm, version B at 134.
   'run-footsteps': { title: 'Run! (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('run-footsteps'), gainDb: -1, fallback: 'battle' },
   'run-melonpan': { title: 'Run! (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('run-melonpan'), gainDb: -1.5, fallback: 'battle' },
+  // Save It!: two AI-made kawaii future-bass backings (Mureka, 2026-10-27), one per version of the song
+  // (songs.ts). Each file is already the song's bars in order: version A at exactly 141 bpm in A major,
+  // version B at 140 bpm in E major.
+  'save-dinner': { title: 'Save It! (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('save-dinner'), gainDb: -2.1, fallback: 'gentle' },
+  'save-cat': { title: 'Save It! (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('save-cat'), gainDb: -1.9, fallback: 'gentle' },
   // Cheers!: festival tune, 120 bpm, A major. The first 33 s.
   'hot-springs': { title: 'Hot Springs Town', author: 'Kistol', licence: 'CC0', source: `${OGA}hot-springs-town`, url: file('hot-springs-town'), gainDb: 0.3, fallback: 'festive' },
   // Monday Blues: minor blues, 120 bpm, E minor (12-bar). From 15.0 s (orig. bar 7), before the key change.

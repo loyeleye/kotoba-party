@@ -181,7 +181,8 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     from footsteps that turn out to be Mom with your lunch, or racing for the last melon bread), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, "…and
     it's only Monday"), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
     (自己紹介 ラップ, whose tune is the words' pitch accent), idol pop (キラキラ アイドル, "…so
-    buy a ticket!") and an R&B ballad (眠れない 夜). Tests check one note and one romaji
+    buy a ticket!"), an R&B ballad (眠れない 夜) and kawaii pixel future bass (セーブ して！,
+    two versions: Mum answers dinner with the kid's own excuse, or the cat presses the button). Tests check one note and one romaji
     syllable per mora, that every perfect take scores 100, and that every chord name parses.
     The humor writer, a songwriter and the JLPT expert reviewed the first drafts (2026-10-27,
     project files `reviews/karaoke-songs-2026-10-27/`); their agreed fixes are in: melodies
@@ -228,6 +229,11 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     version A (Mom with the lunch, a royal-road chorus that ends on I, 132 bpm) and version B (the
     melon-bread race, an I–IV–iii–vi–ii–V verse, 134 bpm), both in A major. Its old diet lyrics and
     JRPG Epic Rock Battle Theme are gone.
+    Save It! (セーブ して！) is a new tenth grown-up song in Ladi's "fun and punchy" pixel
+    future-bass style (references: Snail's House, "Pixel Galaxy"; eleline, "Koto no Town"), kept
+    to half-time drums, pumping pads, koto and chiptune chords so nothing leads over the singer.
+    Version A (Mum and the kid, 141 bpm in A, royal-road chorus) and version B (100 hours, then
+    save data zero, 140 bpm in E). It uses the idol style for the synth fallback.
     The method and scripts are in project files `tools/mureka/`.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
