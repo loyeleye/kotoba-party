@@ -41,7 +41,7 @@ and `themeFor` in `cues.ts`; the count is kept in the browser), so a long night 
 | Murder at the Onsen | **Sneaky Snitch** (Kevin MacLeod) | **Ishikari Lore** (Kevin MacLeod, koto) |
 | Kana Yōkai Raid | **Determination** (HydroGene) | **Ouroboros** (Kevin MacLeod) |
 | The Last Train | **Last Train Dash** (synth, 16 bars) | |
-| Karaoke Duel | Its own backing track while someone sings (`stage/src/modes/karaokeAudio.ts`); the synth's **Teacups at Two** between songs and **Taiko Showdown** at the end | |
+| Karaoke Duel | Each grown-up song is sung over one recorded instrumental (`track` in `songs.ts`; files listed with the other tracks in `tracks.ts`): Nights In June (KLY), Past Sadness, Hustle, Slow Jam and In Your Arms (Kevin MacLeod), JRPG Epic Rock Battle Theme (HydroGene), Hot Springs Town (Kistol), Lazy Saturday (vandalorum) and Cheers For Starlight (Chloe Wolfe), with a quiet synth guide melody on top. Kids' songs, streamer mode and files that won't load get the synth backing (`stage/src/modes/karaokeAudio.ts`; each song has a style: nursery, city pop, enka, rock, izakaya, blues, kayō, hip hop, idol, R&B, and grown-up songs carry chords for the bass); the synth's **Teacups at Two** between songs and **Taiko Showdown** at the end | |
 
 **House theme.** "Ko-to-ba pa-a-ty!" (D5 D5 E5 F#5 A5 | G5 F#5 E5 D5) is the show's signature. The ident
 plays it before every game, the recap's Curtain Call fanfare opens with it, and the synth lobby and

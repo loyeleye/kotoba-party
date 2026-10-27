@@ -27,13 +27,23 @@ export const TRACK_IDS = [
   'ouroboros',
   // Shodō Taikai's gallery round (Ladi's pick).
   'japanese-lofi',
+  // Karaoke Duel's grown-up songs: one instrumental each, sung over whole (songs.ts `track`).
+  'nights-in-june',
+  'past-sadness',
+  'jrpg-rock',
+  'hot-springs',
+  'hustle',
+  'lazy-saturday',
+  'starlight',
+  'slow-jam',
+  'in-your-arms',
 ] as const;
 export type TrackId = (typeof TRACK_IDS)[number];
 
 export interface Track {
   title: string;
   author: string;
-  licence: 'CC0' | 'CC BY 4.0';
+  licence: 'CC0' | 'CC BY 4.0' | 'CC BY 3.0';
   /** The track's own page, for the credits. */
   source: string;
   url: string;
@@ -99,9 +109,32 @@ export const TRACKS: Record<TrackId, Track> = {
   // Shodō Taikai's gallery: koto over a lo-fi hip-hop beat. 28 bars at about 75 bpm; the loop skips the
   // intro and the fade (picked by spectral match). CC0 as uploaded; commissioned on Fiverr (row 22, ❓).
   'japanese-lofi': { title: 'Japanese Lofi HipHop', author: 'pickentcode', licence: 'CC0', source: `${OGA}japanese-lofi-hiphop-track`, url: file('japanese-lofi-hiphop'), loop: [10.75, 100.35], gainDb: -6.2, fallback: 'gentle' },
+  // Karaoke Duel. Each file is cut to the bars the song uses (re-encoded at 128 kbps), so `start` is
+  // its first downbeat and the song's `segments` count bars from there. No loop: the duel plays
+  // stretches of it back to back (karaokeAudio.ts playSong).
+  // Night Drive: city-pop groove, 120 bpm, B minor. Cut from 8.0 s (orig. bar 4) to 65.0 s.
+  'nights-in-june': { title: 'Nights In June', author: 'KLY', licence: 'CC BY 3.0', source: `${OGA}nights-in-june`, url: file('nights-in-june'), gainDb: -3.5, fallback: 'gentle' },
+  // Harbour in the Rain: slow piano, 72 bpm, A minor (a Dm7–G–Am7–C loop throughout). The first 128 s.
+  // Very quiet (−28.7 LUFS), so the gain stops just short of clipping its loudest peak.
+  'past-sadness': { title: 'Past Sadness', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1900007'), url: file('past-sadness'), gainDb: 11.5, fallback: 'gentle' },
+  // Run!: anime rock, 152 bpm, F♯ minor. From 14.0 s (orig. bar 9).
+  'jrpg-rock': { title: 'JRPG Epic Rock Battle Theme', author: 'HydroGene', licence: 'CC0', source: `${OGA}jrpg-epic-rock-battle-theme-1`, url: file('jrpg-epic-rock'), gainDb: -7.2, fallback: 'battle' },
+  // Cheers!: festival tune, 120 bpm, A major. The first 33 s.
+  'hot-springs': { title: 'Hot Springs Town', author: 'Kistol', licence: 'CC0', source: `${OGA}hot-springs-town`, url: file('hot-springs-town'), gainDb: 0.3, fallback: 'festive' },
+  // Monday Blues: minor blues, 120 bpm, E minor (12-bar). From 15.0 s (orig. bar 7), before the key change.
+  hustle: { title: 'Hustle', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100793'), url: file('hustle'), gainDb: -6.1, fallback: 'mystery' },
+  // Self-Intro Rap: boom-bap, 92 bpm, A minor (a four-bar loop). From 36.0 s (orig. bar 14).
+  'lazy-saturday': { title: 'Lazy Saturday', author: 'vandalorum', licence: 'CC BY 4.0', source: `${OGA}hiphop-old-school-chill-themes`, url: file('lazy-saturday'), gainDb: -0.2, fallback: 'gentle' },
+  // Sparkle Idol: bright pop, 130 bpm, D major. From 7.0 s (orig. bar 4).
+  starlight: { title: 'Cheers For Starlight', author: 'Chloe Wolfe', licence: 'CC BY 4.0', source: `${OGA}cute-bytes-ost-cheers-for-starlight`, url: file('cheers-for-starlight'), gainDb: -6.7, fallback: 'festive' },
+  // Sleepless Night: slow jam, 75 bpm, C minor. The first 90 s.
+  'slow-jam': { title: 'Slow Jam', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1600015'), url: file('slow-jam'), gainDb: -4.7, fallback: 'gentle' },
+  // Where Were You?: 1940s swing ballad, 98 bpm, F major. The first 80 s.
+  'in-your-arms': { title: 'In Your Arms', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500042'), url: file('in-your-arms'), gainDb: -2.5, fallback: 'gentle' },
 };
 
 const CC_BY = 'https://creativecommons.org/licenses/by/4.0/';
+const ccBy = (t: Track) => (t.licence === 'CC BY 3.0' ? { name: '3.0', url: 'https://creativecommons.org/licenses/by/3.0/' } : { name: '4.0', url: CC_BY });
 
 /**
  * The credit line for a track, in the form CC BY 4.0 and incompetech ask for: title, author, source,
@@ -111,7 +144,8 @@ export function creditFor(id: TrackId): string {
   const t = TRACKS[id];
   const who = t.author === 'Kevin MacLeod' ? 'Kevin MacLeod (incompetech.com)' : t.author;
   if (t.licence === 'CC0') return `"${t.title}" by ${who} (CC0) · ${t.source}`;
-  return `"${t.title}" by ${who} · ${t.source} · Licensed under Creative Commons: By Attribution 4.0 · ${CC_BY} · Looped and filtered for the game`;
+  const v = ccBy(t);
+  return `"${t.title}" by ${who} · ${t.source} · Licensed under Creative Commons: By Attribution ${v.name} · ${v.url} · ${t.loop ? 'Looped and filtered' : 'Cut and filtered'} for the game`;
 }
 
 /** Every track's full credit line, for docs/music.md and the tests. */
@@ -130,8 +164,10 @@ export function creditSummary(perLine = 3): string[] {
   return groups.map(([author, ids]) => {
     const titles = ids.map((id) => `"${TRACKS[id].title}"`).join(', ');
     const where = author === 'Kevin MacLeod' ? 'incompetech.com' : 'OpenGameArt.org';
-    if (TRACKS[ids[0]!].licence === 'CC0') return `${titles} by ${author} (${where}, CC0)`;
-    return `${titles} by ${author} (${where}), licensed under Creative Commons: By Attribution 4.0 (${CC_BY.replace('https://', '')}), looped and filtered for the game`;
+    const t = TRACKS[ids[0]!];
+    if (t.licence === 'CC0') return `${titles} by ${author} (${where}, CC0)`;
+    const v = ccBy(t);
+    return `${titles} by ${author} (${where}), licensed under Creative Commons: By Attribution ${v.name} (${v.url.replace('https://', '')}), ${t.loop ? 'looped' : 'cut'} and filtered for the game`;
   });
 }
 

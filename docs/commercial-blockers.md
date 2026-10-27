@@ -47,10 +47,11 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
 | 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
-| 22 | Music: recorded tracks (CC0, CC BY 4.0), original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes. Japanese Lofi HipHop is split out as row 25 |
+| 22 | Music: recorded tracks (CC0, CC BY 4.0, CC BY 3.0), including Karaoke Duel's nine instrumentals, original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes. Japanese Lofi HipHop is split out as row 25 |
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
 | 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
 | 25 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
+| 26 | Mureka (AI music generator, Premium plan bought 2026-10-27) for Karaoke Duel instrumentals | Not used in the game yet; planned for new Karaoke Duel tracks | ❓ | Read Mureka's own terms (couldn't be fetched); keep the subscription active while generating, save each track's generation record, and plan to replace AI tracks with commissioned music before selling |
 
 ## Details
 
@@ -211,7 +212,13 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 13. Karaoke Duel songs
 
-- Songs are original. Any real song (even a nursery song still in copyright, or a well-known
+- Songs are original, lyrics and melodies alike, including the nine grown-up songs added on
+  2026-10-27 and their full-length versions (verse, chorus, verse 2) written the same day. Those
+  are sung over licensed instrumentals (row 22); the vocal lines on top are ours. They borrow genres (city pop, enka, anime rock, izakaya chant, blues, Shōwa duet,
+  rap, idol pop, R&B), never a real song's tune or words. The enka's さよなら あなた was
+  dropped because it is also the hook of a well-known hit. Chord progressions are common stock
+  patterns. Keep it that way: no "in the style of <artist>" melodies.
+- Any real song (even a nursery song still in copyright, or a well-known
   arrangement) needs a music licence. Old folk songs (e.g. さくらさくら) are public domain, but a
   specific recording or arrangement may not be.
 
@@ -325,6 +332,23 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY
   allows commercial use, and asks for title, author, source, the licence with a link, and a note of
   any changes.
+- **Karaoke Duel instrumentals (added 2026-10-27, Ladi's request for real instrumentals):** each
+  grown-up song is sung over one track, cut to the bars it uses and re-encoded ("cut and filtered
+  for the game" in its credit). Licences as stated on each page, read 2026-10-27:
+  - CC0: JRPG Epic Rock Battle Theme (HydroGene,
+    [OGA](https://opengameart.org/content/jrpg-epic-rock-battle-theme-1)); Hot Springs Town (Kistol,
+    [OGA](https://opengameart.org/content/hot-springs-town)).
+  - CC BY 4.0: Hustle, Slow Jam, In Your Arms and Past Sadness (Kevin MacLeod, incompetech, terms as
+    above); Lazy Saturday (vandalorum, from
+    [Hip Hop Old School Chill Themes](https://opengameart.org/content/hiphop-old-school-chill-themes));
+    Cheers For Starlight (Chloe Wolfe,
+    [OGA](https://opengameart.org/content/cute-bytes-ost-cheers-for-starlight)).
+  - CC BY 3.0: Nights In June (KLY, [OGA](https://opengameart.org/content/nights-in-june)). Same
+    conditions as 4.0 for us (credit, link, note of changes); the credit links the 3.0 licence.
+  - Skipped as candidates: anything CC BY-SA or GPL (Cheerful Upbeat Tune, Cuddle Puzzle), because
+    share-alike could reach the game itself.
+  - Lyrics and melodies sung over them are ours (row 13). Before selling, Ladi plans to commission
+    songs written for the game; until then these tracks need the same credits as the other CC BY music.
 - **Japanese Lofi HipHop (pickentcode, ❓, row 25):** Shodō Taikai's gallery track, added 2026-10-27 at
   Ladi's pick. Its [OGA page](https://opengameart.org/content/japanese-lofi-hiphop-track), read
   2026-10-27, says CC0 and "Ordered from Fiverr for a project that never got finished". Fiverr's
@@ -398,6 +422,27 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   かな "Heard:" line shows no romaji for kanji.
 - **To sell:** read Oracle's terms and record them here, or move the reader to a paid host with an SLA;
   give it a hostname on a domain we own instead of sslip.io.
+
+### 26. Mureka (AI music)
+
+- **What:** Ladi bought Mureka Premium on 2026-10-27 to make instrumentals for Karaoke Duel. No
+  Mureka audio is in the game yet. When some is added, list each file in `stage/src/music/tracks.ts`
+  and under row 22.
+- **Terms: unread (❓).** On 2026-10-27, https://www.mureka.ai/terms and the May 13, 2026 terms PDF
+  (https://www.mureka.ai/static/terms-20260513.pdf) didn't resolve from our sandbox, so nothing here
+  has been checked against Mureka's own text. Third-party summaries read the same day say:
+  - Paid-plan users own their output, and free-tier output belongs to Mureka (non-commercial only).
+  - Commercial rights may apply only to tracks made while the subscription is active.
+  - Mureka keeps a broad, irrevocable licence to user output.
+  - Copyright registration isn't guaranteed.
+  - A lawsuit over the service is reported as pending.
+- **Risks for a sold game:**
+  - Purely AI-made music generally can't be copyrighted in the US, so others could reuse it.
+  - Stores such as Steam ask for an AI-content disclosure.
+  - Don't register the tracks with Content ID, so that streamers don't get claims.
+- **To sell:** read Mureka's terms on a normal browser and record the date read. Keep each track's
+  generation record. Ladi plans to commission human-made songs before selling (see the commission
+  briefs), which would replace these tracks.
 
 ## AI art: non-commercial vs commercial
 

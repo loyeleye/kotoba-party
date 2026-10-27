@@ -20,13 +20,13 @@ Code: `shared/src/modes/karaokeDuel/` (`karaokeDuel.ts` rules, `scoring.ts`, `pi
 | Phase | Shared name | What happens | Length |
 | --- | --- | --- | --- |
 | Intro | `intro` | Rules on the TV and phones. | 12 s |
-| Song card | `prompt` | Song title, all four lines (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
-| Sing | `answer` ×8 | One turn per singer per line: a 0.7 s breath, a one-bar count-in, the line, then 3 s for the recogniser. Both duelists sing every line; who goes first alternates (A B, B A, A B, B A). A take ends the turn at once. | 0.7 s + 4 beats + line + 3 s (about 8–10 s) |
+| Song card | `prompt` | Song title, every line (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
+| Sing | `answer` ×8 or ×16 | **Grown-up songs are continuous** (`form` + `track`): one produced instrumental plays the whole song (intro, verse, chorus, verse 2, chorus, about 80–130 s) and the duelists trade lines on its clock, one line every two bars; each sings every chorus line once. One phase per line, ending one bar before the next line so the next singer's count-in overlaps; the next singer sees their line during it; a take counts until 10 s after its line ends (the recogniser is slow), and lines with no take are marked missed when the song ends. **Kids' songs** are four-line sing-alongs: a 0.7 s breath, a one-bar count-in, the line, then 3 s; both duelists sing every line, who goes first alternates, and a take ends the turn at once. | Continuous: the track's own timing. Sing-along: 0.7 s + 4 beats + line + 3 s |
 | Crowd vote | `reveal` | Everyone not duelling votes for the crowd favourite. Skipped when nobody is watching (2 players). Ends when every connected voter is in. | 12 s |
 | Duel result | `score` | Sung points, lines won, crowd votes, the winner. | 9 s |
 | Finale | `finale` | Standings, then the shared recap (awards, the song sheet phrasebook). | 9 s |
 
-A 4-song game with 3+ players runs about 7–8 minutes if every timer runs out.
+A 4-song game of grown-up songs runs about 10 minutes.
 
 ### Who duels
 
@@ -173,9 +173,42 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 13. **Guide melody is quiet** (triangle at low gain) with a soft bass on each beat, so phones
     mostly hear the singer.
 14. **Songs live in the mode folder** (`songs.ts`, like Concentration's scenes), not in
-    `content/` and `ContentLibrary`, to keep engine changes at zero. Five original draft songs,
-    four lines each, every line under 5 s, all Kana-level vocabulary (greetings, food, travel).
-    Tests check one note and one romaji syllable per mora.
+    `content/` and `ContentLibrary`, to keep engine changes at zero. Fourteen original draft
+    songs, four lines each, every line under 5 s. Five are children's-style sing-alongs
+    (greetings, food, travel; `kids: true`). Nine are grown-up songs in karaoke-box genres with
+    beginner words, each with a twist in the words: city pop (夜の ドライブ, which runs out of
+    gas), enka (雨の 港, crying over a forgotten umbrella), an anime-opening rocker (走れ！,
+    "…starting tomorrow!"), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, "…and
+    it's only Monday"), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
+    (自己紹介 ラップ, whose tune is the words' pitch accent), idol pop (キラキラ アイドル, "…so
+    buy a ticket!") and an R&B ballad (眠れない 夜). Tests check one note and one romaji
+    syllable per mora, that every perfect take scores 100, and that every chord name parses.
+    The humor writer, a songwriter and the JLPT expert reviewed the first drafts (2026-10-27,
+    project files `reviews/karaoke-songs-2026-10-27/`); their agreed fixes are in: melodies
+    follow pitch accent (もう 一杯 drops after い, so it means "one more glass", not "full"),
+    sung notes are at least ~200 ms, each song spans an octave or less, the title is sung, and
+    words above N4 were swapped out (残業, 満員, 飛べ).
+19. **Grown-up songs first.** A game plays every grown-up song (shuffled) before any
+    children's song, so a default four-song game has none. Ladi asked to move past children's
+    songs (2026-10-27).
+20. **Each song has a backing style** (`style`: nursery, citypop, enka, rock, izakaya,
+    blues, kayou, hiphop, idol, rnb). It sets the bass pattern, swing, light drums (kick, snare
+    or claps, eighth or sixteenth hi-hats, four-on-the-floor or boom-bap) and the guide's sound;
+    enka and kayou get vibrato on held notes (1.5 beats or more). Grown-up lines carry chords
+    (`chords: 'Bbmaj7 Am7'`, spread evenly over the line) and the bass plays their roots, so
+    there is harmony; the kids' songs have none and the bass follows the melody. Sung notes are at least half a beat, because
+    the phone's 100 ms pitch frames can't measure shorter notes.
+21. **Grown-up songs are whole songs over real instrumentals** (Ladi, 2026-10-27: "Real songs,
+    real instrumentals… giving credit where necessary"). Each has 12 original lines (verse 1,
+    chorus, verse 2; the chorus comes back at the end) sung over a CC0 or CC BY track from
+    OpenGameArt or incompetech (row 22 of the commercial-blockers log). Each file is cut to the
+    bars the song uses; `track.segments` stitches its intro and sections back to back on bar
+    lines, from tempo, bar and chord maps made with librosa. Line chords come from those maps, so
+    the synth fallback (streamer mode, or a file that won't load) still plays in the same key.
+    Lyrics stay at N5–N4 with one joke per song, usually the last verse line before the final
+    chorus. Ladi plans to commission songs written for the game before it is sold. Picks: Nights
+    In June (city pop), Past Sadness (enka, Ladi's pick), JRPG Epic Rock Battle Theme, Hot Springs
+    Town, Hustle, Lazy Saturday, Cheers For Starlight, Slow Jam and In Your Arms.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
     practice; the ball always runs over kana.
@@ -200,9 +233,17 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 6. **Chōchin-san needs karaoke lines** (intro, song card, a great take) in his bank; the
    content thread would write them.
 7. **Fluent check:** lyrics, English, award titles. **Musician check:** do the melodies fit
-   the words' pitch accent (e.g. あめ vs あめ)? Draft melodies ignore accent.
+   the words' pitch accent (e.g. あめ vs あめ)? The kids' songs ignore accent; the grown-up
+   songs were written to follow it.
 8. **Pitch accent**: the design doc doesn't score pitch accent in v1, and this mode's pitch is
    the tune, not accent. Fine to leave it that way?
+9. **Ideas from the song review, not built:** a crowd-vote question per song ("Who cried
+   hardest?" for the enka), a one-line stage direction on the song card ("fist to chest"),
+   song-card notes (君 and あなた are for songs; 一杯 vs いっぱい), Chōchin-san karaoke lines
+   (「スポットライトは わたくしです」), A/B voice labels for the duet, playing 乾杯！ first, and a
+   pickup beat before a line.
+10. **Fluent check on accents** the reviewers weren't sure of: とりあえず, ガソリン, げつようび,
+    ごめん, はじめまして, ねむれない, みんな, チケット.
 
 ## Known gaps
 
@@ -217,4 +258,9 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 - Stage audio needs a click on the stage page first (browser autoplay rules).
 - Headless smoke test only (Chromium, 1920×1080 / 1280×720 stage, 360 px phones, typed takes):
   no real microphone, recogniser or speakers.
-- Five songs: a long night repeats them (they cycle in a shuffled order).
+- The new lyrics and melodies (2026-10-27) haven't been through the review panel or a fluent
+  check, and the tracks' chords come from automatic chord detection, so a line can clash with its
+  track here and there.
+- Fourteen songs: a long night repeats them (they cycle: grown-up songs first, then the kids' songs).
+- The drums are synthesised noise and a sine kick. Kept quiet, but the phone mic may hear them;
+  the words gate limits the damage, as with the guide melody.

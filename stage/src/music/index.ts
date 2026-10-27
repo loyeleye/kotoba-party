@@ -296,6 +296,14 @@ function showCredit(id: MusicId | null): void {
   if (t) mount(credit, `♪ ${t.title} · ${t.author} · ${t.licence}`);
 }
 
+/**
+ * Credits a track something else is playing (Karaoke Duel's song), or with null goes back to
+ * crediting the music playing here.
+ */
+export function creditTrack(id: string | null): void {
+  showCredit(id && isTrack(id) ? id : (playing?.id ?? null));
+}
+
 /** Puts the sound button and the now-playing credit on the stage. */
 export function mountSoundButton(parent: HTMLElement): void {
   if (!audioSupported()) return;
