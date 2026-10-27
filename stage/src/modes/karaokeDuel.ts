@@ -501,6 +501,12 @@ export const karaokeDuelStage: StageMode<KaraokeDuelView> = {
     return `${singing}${duelling}${t?.wins ? `🏆${t.wins}` : ''}`;
   },
 
+  // The host's reaction names the winner, so it waits for the result's winner beat.
+  hostHoldMs(view, game) {
+    if (view.phase !== 'score' || !game.result) return 0;
+    return Math.max(0, game.result.at + REVEAL.winner - (Date.now() + offset(game)));
+  },
+
   render(view, game) {
     if (view.phase !== 'answer') {
       // Leaving a sing turn cuts its track (a skip, or the take came in early).
