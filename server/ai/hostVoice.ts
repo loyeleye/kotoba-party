@@ -151,6 +151,8 @@ export function hostUserPrompt(cue: HostCue, recent: readonly string[]): string 
   if (cue.answerEn) parts.push(`It means roughly: ${cue.answerEn.slice(0, 200)}`);
   const name = cue.slots?.name;
   if (name !== undefined) parts.push(`Player name: ${typeof name === 'string' ? name : name.text}`);
+  const award = cue.slots?.award;
+  if (typeof award === 'string') parts.push(`Award: ${award} (read ${cue.slots?.award_kana ?? award}; ${cue.slots?.award_en ?? ''})`);
   parts.push(`Lowest player level in the room: ${cue.level ?? 'n5'}.`);
   if (recent.length) parts.push(`Lines already used this game (say something different):\n${recent.map((l) => `- ${l}`).join('\n')}`);
   return parts.join('\n\n');

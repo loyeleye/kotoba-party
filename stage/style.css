@@ -89,7 +89,7 @@ body { margin: 0; overflow: hidden; background: #110b26; color: var(--ink); }
    browser has it (Chrome and Edge 119+); elsewhere break only at spaces and punctuation and
    wrap a too-long run only when it would overflow. */
 :lang(ja) { line-break: strict; word-break: keep-all; overflow-wrap: anywhere; }
-@supports (word-break: auto-phrase) { :lang(ja) { word-break: auto-phrase; overflow-wrap: normal; } }
+@supports (word-break: auto-phrase) { :lang(ja) { word-break: auto-phrase; } }
 .nw { white-space: nowrap; }
 .jp-blank { color: transparent; text-decoration: underline 0.1em var(--ink); text-underline-offset: 0.12em; text-decoration-skip-ink: none; user-select: none; }
 ruby { ruby-position: over; ruby-align: center; }

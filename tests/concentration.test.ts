@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { fudeLines } from '../content/src/hosts/fude.js';
+import { HOST_EVENTS } from '../server/ai/types.js';
 import type { PackWord, TopicPack } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
@@ -190,6 +193,9 @@ describe('Kotoba Concentration: board', () => {
 
   it('turns kana into romaji for the Kana-level hint', () => {
     expect(toRomaji('みず')).toBe('mizu');
+    // The は fused into a greeting is read わ, with or without a full stop after it.
+    expect(toRomaji('こんばんは。')).toBe('Konbanwa.');
+    expect(toRomaji('こんにちは')).toBe('konnichiwa');
     expect(toRomaji('コーヒー')).toBe('kōhī');
     expect(toRomaji('でんしゃ')).toBe('densha');
     expect(toRomaji('きっぷ')).toBe('kippu');
@@ -538,4 +544,22 @@ describe('Kotoba Concentration: bots play a game end to end', () => {
       director.client.close();
     });
   }
+});
+
+describe('Kotoba Concentration: host lines', () => {
+  // Every event the mode cues, read from its source.
+  const source = readFileSync(new URL('../shared/src/modes/concentration/concentration.ts', import.meta.url), 'utf8');
+  const events = [...new Set([...source.matchAll(/event: (?:[^']*\? )?'(\w+)'(?: : '(\w+)')?/g)].flatMap((m) => [m[1]!, m[2]].filter(Boolean) as string[]))];
+
+  it("uses its own beats, not Kana Raid's yōkai lines", () => {
+    expect(events.length).toBeGreaterThan(10);
+    for (const e of events) expect(e, e).toMatch(/^concentration_/);
+  });
+
+  it('has Fude lines for every beat, voiced by the AI host pipeline', () => {
+    for (const e of events) {
+      expect(fudeLines.some((l) => l.event === e), e).toBe(true);
+      expect(HOST_EVENTS as readonly string[], e).toContain(e);
+    }
+  });
 });

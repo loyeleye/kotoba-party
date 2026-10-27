@@ -33,8 +33,9 @@ const ENDINGS: [Ending, RegExp][] = [
 
 /** The marker a tip names when it teaches each ending. です is checked on its own (not たいです etc.). */
 const MARKERS: Record<Ending, RegExp> = {
-  'masen-deshita': /ませんでした/,
-  masen: /ません/,
+  // すみません is an apology, not the ません form: a prompt that opens with it doesn't already show a ません tip.
+  'masen-deshita': /(?<!すみ)ませんでした/,
+  masen: /(?<!すみ)ません/,
   mashita: /ました/,
   mashou: /ましょう/,
   masu: /ます/,

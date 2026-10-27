@@ -53,6 +53,28 @@ export const KANJI_LOOKALIKES: readonly string[][] = [
   ['牛', '午'],
 ];
 
+/**
+ * How Fude names a look-alike kanji aloud when he misreads a sheet as it ("フデには 犬に みえます"):
+ * the voice reads only kana, and the kanji alone has no say word of its own to borrow. Draft:
+ * the common name for the character on its own, until a fluent speaker checks it.
+ */
+export const LOOKALIKE_KANA: Readonly<Record<string, string>> = {
+  大: 'だい', 犬: 'いぬ', 天: 'てん', 太: 'ふと',
+  日: 'ひ', 目: 'め', 白: 'しろ', 田: 'た', 百: 'ひゃく', 口: 'くち',
+  木: 'き', 本: 'ほん', 休: 'きゅう', 水: 'みず',
+  人: 'ひと', 八: 'はち', 入: 'にゅう',
+  土: 'つち', 上: 'うえ', 工: 'こう', 士: 'し',
+  右: 'みぎ', 左: 'ひだり', 石: 'いし',
+  九: 'きゅう', 力: 'ちから',
+  千: 'せん', 干: 'かん', 十: 'じゅう',
+  子: 'こ', 字: 'じ',
+  母: 'はは', 毎: 'まい',
+  見: 'けん', 貝: 'かい',
+  王: 'おう', 玉: 'たま', 主: 'しゅ',
+  夕: 'ゆう', 名: 'な',
+  牛: 'うし', 午: 'ご',
+};
+
 /** The gallery's shared theme, "something I love", one glyph per level (the Japanese panel's picks). */
 export const GALLERY: Record<Level, JpText[]> = {
   kana: [

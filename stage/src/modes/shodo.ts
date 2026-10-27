@@ -92,7 +92,8 @@ function scroll(view: RoomView, game: ShodoView): HTMLElement {
                   'div',
                   { class: 'sho-char' },
                   glyph(ch.strokes),
-                  reading ? h('span', { class: 'sho-read', lang: 'ja' }, ch.say.kana, game.kanaAtTable ? h('small', {}, toRomaji(ch.say.kana)) : null) : null,
+                  // A kanji is read by its say word (土 by 土曜日), so the word goes over its reading.
+                  reading ? h('span', { class: 'sho-read', lang: 'ja' }, ch.say.text !== ch.text ? h('span', { class: 'sho-word' }, ch.say.text) : null, ch.say.kana, game.kanaAtTable ? h('small', {}, toRomaji(ch.say.kana)) : null) : null,
                 ),
               )
             : h('div', { class: 'sho-char empty' }, h('span', { class: 'sho-wet' }, '…')),

@@ -50,6 +50,13 @@ export const HOST_EVENTS = [
   'onsen_clue',
   'onsen_accuse',
   'onsen_reveal',
+  // Who's the Tourist?
+  'tourist_intro',
+  'tourist_deal',
+  'tourist_vote',
+  'tourist_last_chance',
+  'tourist_caught',
+  'tourist_escaped',
   // Shodō Taikai
   'shodo_intro',
   'shodo_practice',
@@ -66,6 +73,20 @@ export const HOST_EVENTS = [
   'shodo_award',
   'shodo_claimed',
   'shodo_other_hand',
+  // Kotoba Concentration
+  'concentration_intro',
+  'concentration_say_it',
+  'concentration_keep',
+  'concentration_steal_open',
+  'concentration_stolen',
+  'concentration_missed',
+  'concentration_mismatch',
+  'concentration_yokai',
+  'concentration_bonus',
+  'concentration_fog',
+  'concentration_picture',
+  'concentration_clear',
+  'concentration_time',
 ] as const;
 export type HostEvent = (typeof HOST_EVENTS)[number];
 

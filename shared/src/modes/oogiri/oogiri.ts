@@ -217,10 +217,23 @@ function cue(ctx: ModeContext, c: Omit<HostCue, 'host'>): void {
 const TILE_MAX = 12;
 
 /** The answer Pon snaps back at: the shortest Japanese one, since tsukkomi lands best on a short noun. */
-function tileSlots(answers: Answer[]): Record<string, string> | undefined {
+export function tileSlots(answers: Pick<Answer, 'id' | 'text' | 'kana' | 'blankEn' | 'english' | 'shape'>[]): Record<string, string> | undefined {
   const a = answers.filter((x) => !x.english && x.text.length <= TILE_MAX).sort((x, y) => x.text.length - y.text.length || byId(x, y))[0];
-  return a ? { tile: a.text, tile_kana: a.kana, tile_en: a.blankEn } : undefined;
+  if (!a) return undefined;
+  // A set phrase brings its own ！ (右が大好きです！); the line adds its own punctuation after {tile}.
+  const bare = (t: string) => t.replace(/[！？!?。]+$/, '');
+  // Lines name the answer as a noun (「{name}さんの {tile}」, "Why {tile}?!"). A noun or a free answer fits as it is.
+  // A verb, adjective or phrase is quoted, in both languages: 「あそびました」の かち, not あそびましたの かち, and
+  // “あそびました” wins, not "(I) played wins".
+  if (a.shape === 'noun' || a.shape === 'free') return { tile: bare(a.text), tile_kana: bare(a.kana), tile_en: a.blankEn };
+  return { tile: `「${bare(a.text)}」`, tile_kana: `「${bare(a.kana)}」`, tile_en: `“${bare(a.text)}”` };
 }
+
+/** The stage shows the reveal's answers this far apart, the first 0.4 s in (READ_GAP_MS in stage/src/modes/oogiri.ts). */
+const READ_GAP_MS = 1_600;
+
+/** How long Pon's reveal line may wait for the AI: until the stage has shown every answer, at most 5 s. */
+export const revealWaitMs = (answers: number): number => Math.min(5000, Math.max(1500, 400 + answers * READ_GAP_MS));
 
 /** Pon's reaction to a matchup's answers, as the reveal raises it. */
 function revealCue(s: OogiriState, m: Matchup): Omit<HostCue, 'host'> {
@@ -232,6 +245,10 @@ function revealCue(s: OogiriState, m: Matchup): Omit<HostCue, 'host'> {
     answer: shown.map((a) => a.text).join(' / '),
     answerEn: shown.map((a) => a.en).join(' / '),
     slots: tileSlots(shown),
+    // Pon reacts once the stage has shown every answer, so an AI line that is still being written can take that
+    // long. Without this, the matchup that locks last (always the IPPON round's) gets the default 1.5 s, and Opus
+    // takes 2 to 6 s, so it never got an AI line.
+    waitMs: revealWaitMs(shown.length),
   };
 }
 

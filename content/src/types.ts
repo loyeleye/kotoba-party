@@ -459,6 +459,13 @@ export type HostEvent =
   | 'onsen_clue' // a question found a new clue
   | 'onsen_accuse' // the accusation opens
   | 'onsen_reveal' // the culprit is revealed
+  // Who's the Tourist?
+  | 'tourist_intro'
+  | 'tourist_deal' // the secret cards are dealt
+  | 'tourist_vote' // a vote is called, or the final vote
+  | 'tourist_last_chance' // a caught tourist may still guess the place ({name})
+  | 'tourist_caught' // the locals caught the tourist ({name})
+  | 'tourist_escaped' // the tourist got away or guessed the place ({name})
   // Shodō Taikai (Fude's quiet calligraphy-teacher register)
   | 'shodo_intro'
   | 'shodo_practice' // the お手本 warm-up starts
@@ -474,7 +481,21 @@ export type HostEvent =
   | 'shodo_callback' // the gallery remembers a dictation misread ({char})
   | 'shodo_award' // Fude presents a stamp award ({award}, {n})
   | 'shodo_claimed' // someone claimed their sheet ({name})
-  | 'shodo_other_hand'; // the VIP's other-hand round: the big sheet with the other hand
+  | 'shodo_other_hand' // the VIP's other-hand round: the big sheet with the other hand
+  // Kotoba Concentration
+  | 'concentration_intro'
+  | 'concentration_say_it' // a match: the flipper's say-it window ({name})
+  | 'concentration_keep' // the flipper said it and keeps the pair ({name})
+  | 'concentration_steal_open' // the flipper missed: anyone may steal
+  | 'concentration_stolen' // someone else said it first ({name})
+  | 'concentration_missed' // nobody said it
+  | 'concentration_mismatch' // the two cards were not a pair
+  | 'concentration_yokai' // the yōkai tile shuffled the face-down cards ({name})
+  | 'concentration_bonus' // the bonus tile: an extra turn ({name})
+  | 'concentration_fog' // the fog tile: a row is hidden next turn ({name})
+  | 'concentration_picture' // someone guessed the hidden picture ({name})
+  | 'concentration_clear' // the board is clear
+  | 'concentration_time'; // the game ran out of time with pairs left
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 
