@@ -137,6 +137,11 @@ export interface HostCue {
    * line. A later cue with the same content uses it. The bank voice ignores these.
    */
   ahead?: boolean;
+  /**
+   * How long the host may take to write this line before a written one stands in (default 1.5 s). A reaction that
+   * follows the answers being read out can wait for them; one that opens a phase can't.
+   */
+  waitMs?: number;
 }
 
 /** One phrasebook entry for the recap. */
