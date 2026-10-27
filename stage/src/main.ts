@@ -9,6 +9,7 @@ import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch,
 import { icon } from '../../shared/src/art.js';
 import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
 import { MODES } from '../../shared/src/modes/registry.js';
+import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import type { CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
 import { HOSTS } from '../../server/ai/hosts.js';
@@ -21,6 +22,7 @@ import { mountSettings, updateSettings } from './settings.js';
 import { tickSfx, watchSfx } from './music/sfx.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import { mountBackdrop, updateBackdrop } from './backdrop.js';
+import { startDanmaku, stopDanmaku } from './danmaku.js';
 
 const MENU_ALL = Object.values(MODES).map((m) => m.info);
 
@@ -127,6 +129,7 @@ function showNotice(title: string, detail: string): void {
   document.body.dataset.phase = 'lobby';
   document.body.dataset.notice = '1';
   els.host.hidden = true;
+  stopDanmaku();
   mount(els.players);
   patch(
     els.fit,
@@ -233,7 +236,10 @@ async function openRoom(fresh: boolean): Promise<void> {
   client.connect();
 }
 
+let lastView: RoomView | null = null;
+
 function render(view: RoomView, v: number): void {
+  lastView = view;
   document.body.dataset.motion = view.calmMotion ? 'calm' : '';
   updateBackdrop(view);
   if (view.phaseSeq !== lastPhaseSeq) {
@@ -290,6 +296,8 @@ function render(view: RoomView, v: number): void {
   // One scene per phase: a new phase builds fresh elements (and its entrance animations), an
   // update inside a phase patches the ones on screen so transitions and animations carry on.
   patch(els.fit, h('div', { class: 'scene', 'data-key': `${view.phaseSeq}` }, mainFor(view)));
+  if (view.phase === 'lobby' && !calm() && view.modes.length) startDanmaku(els.main, view.modes);
+  else stopDanmaku();
   for (const el of els.fit.querySelectorAll<HTMLElement>('[data-count]:not([data-counted])')) countUp(el);
   for (const el of els.players.querySelectorAll<HTMLElement>('.score[data-from]:not([data-rolled])')) rollScore(el);
   fitMain();
@@ -310,11 +318,38 @@ function mainFor(view: RoomView): HTMLElement {
       // Send either link to friends: the phone one for when the QR code won't scan, the stage one
       // for friends playing from somewhere else.
       invite(inviteLinks(siteOrigin, view.code), view.code),
-      h('ul', { class: 'menu' }, view.modes.map((m) => h('li', {}, h('strong', {}, m.title), ` ${m.titleJa} · `, m.blurb))),
+      // With motion, the titles fly behind this panel and one game at a time is featured here;
+      // with calm motion, the still list.
+      calm() ? h('ul', { class: 'menu' }, view.modes.map((m) => h('li', {}, h('strong', {}, m.title), ` ${m.titleJa} · `, m.blurb))) : featured(view),
     );
   }
   if (view.phase === 'recap' || !view.game) return recapScreen(view);
   return STAGE_MODES[view.game.mode].render(view, view.game);
+}
+
+const FEATURE_MS = 6000;
+let featureIdx = 0;
+let featureTimer: ReturnType<typeof setInterval> | null = null;
+
+/** One game's card in the lobby panel, turning to the next every few seconds. */
+function featured(view: RoomView): HTMLElement {
+  const card = (m: ModeInfo) =>
+    h(
+      'div',
+      { class: 'featured', 'data-mode': m.id, 'data-key': m.id },
+      h('img', { class: 'featured-host', src: `/stage/assets/hosts/${m.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }),
+      h('div', { class: 'featured-text' }, h('p', { class: 'featured-title' }, m.title, ' ', h('span', { lang: 'ja' }, m.titleJa)), h('p', { class: 'featured-blurb' }, m.blurb)),
+    );
+  const slot = h('div', { class: 'featured-slot', 'aria-live': 'off' }, card(view.modes[featureIdx % view.modes.length]!));
+  if (!featureTimer)
+    featureTimer = setInterval(() => {
+      const modes = lastView?.modes ?? [];
+      const live = document.querySelector('.featured-slot');
+      if (lastView?.phase !== 'lobby' || !modes.length || !live) return;
+      featureIdx = (featureIdx + 1) % modes.length;
+      live.replaceChildren(card(modes[featureIdx]!));
+    }, FEATURE_MS);
+  return slot;
 }
 
 /** Tonight's results: a podium for the top three (third rises first), award cards, everyone else. */

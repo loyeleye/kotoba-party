@@ -42,18 +42,18 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body { margin: 0; overflow: hidden; background: #110b26; color: var(--ink); }
-body[data-mode='oogiri'] { --mode: #ff6b4a; }
-body[data-mode='last-train'] { --mode: #ffa23a; }
-body[data-mode='tourist'] { --mode: #ffdd4a; }
-body[data-mode='oekaki'] { --mode: #b5e655; }
-body[data-mode='kana-raid'] { --mode: #3fd6b0; }
-body[data-mode='onsen-murder'] { --mode: #6cc8ff; }
-body[data-mode='word-gauntlet'] { --mode: #7ea6ff; }
-body[data-mode='concentration'] { --mode: #c9a6ff; }
-body[data-mode='karaoke-duel'] { --mode: #ff52d0; }
-body[data-mode='phrase-bingo'] { --mode: #ff6f91; }
-body[data-mode='omiai'] { --mode: #ffa3c0; }
-body[data-mode='shodo'] { --mode: #c9ced6; }
+[data-mode='oogiri'] { --mode: #ff6b4a; }
+[data-mode='last-train'] { --mode: #ffa23a; }
+[data-mode='tourist'] { --mode: #ffdd4a; }
+[data-mode='oekaki'] { --mode: #b5e655; }
+[data-mode='kana-raid'] { --mode: #3fd6b0; }
+[data-mode='onsen-murder'] { --mode: #6cc8ff; }
+[data-mode='word-gauntlet'] { --mode: #7ea6ff; }
+[data-mode='concentration'] { --mode: #c9a6ff; }
+[data-mode='karaoke-duel'] { --mode: #ff52d0; }
+[data-mode='phrase-bingo'] { --mode: #ff6f91; }
+[data-mode='omiai'] { --mode: #ffa3c0; }
+[data-mode='shodo'] { --mode: #c9ced6; }
 
 /* ---- the 1920×1080 canvas ---- */
 /* Everything is laid out at 1080p and scaled to the window (main.ts sets --scale), with a 5%
@@ -298,3 +298,21 @@ img.pix.om-face, img.pix.om-p-face, img.pix.omi-guest-emoji, img.pix.omi-guest-p
 /* A watching screen whose room is gone: no code or QR to show, just the notice. */
 body[data-notice='1'] .join { visibility: hidden; }
 .notice a { color: var(--lantern); }
+
+/* Lobby 弾幕 (danmaku.ts): game titles fly behind the centre panel, each in its game's colour. */
+.danmaku { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.main > .fit { position: relative; z-index: 1; }
+.dm-item { position: absolute; left: 0; display: flex; align-items: baseline; gap: 0.4em; white-space: nowrap; will-change: transform; color: var(--mode); line-height: 1; opacity: 0.92; text-shadow: 3px 0 0 var(--outline), -3px 0 0 var(--outline), 0 3px 0 var(--outline), 0 -3px 0 var(--outline), 3px 3px 0 var(--outline), -3px 3px 0 var(--outline), 3px -3px 0 var(--outline), -3px -3px 0 var(--outline); }
+.dm-en { font-family: var(--font-pixel); font-weight: 700; }
+.dm-ja { font-family: var(--font-ja); font-weight: 900; font-size: 0.8em; color: var(--ink); }
+.dm-0 { opacity: 0.8; }
+/* The lobby's centre panel: solid, so the titles read as passing behind it. */
+body[data-phase='lobby']:not([data-motion='calm']) .lobby:not(.notice) { width: min(940px, 100%); box-sizing: border-box; padding: 20px 32px 24px; background: var(--bg); border: 3px solid var(--outline); border-radius: 18px; box-shadow: 0 0 0 3px var(--line), 0 14px 0 rgba(0, 0, 0, 0.35); }
+.featured-slot { min-height: 128px; display: grid; }
+.featured { display: grid; grid-template-columns: 96px 1fr; gap: 20px; align-items: center; text-align: left; padding: 14px 22px; border-radius: 14px; background: var(--panel); border: 3px solid var(--mode); box-shadow: 6px 6px 0 var(--outline); animation: featured-in 420ms steps(4, end) both; }
+.featured-host { width: 96px; height: 96px; object-fit: contain; image-rendering: pixelated; }
+.featured-title { margin: 0; font-family: var(--font-pixel); font-size: 40px; color: var(--mode); }
+.featured-title [lang='ja'] { font-family: var(--font-ja); font-size: 30px; color: var(--ink); }
+.featured-blurb { margin: 4px 0 0; font-size: 28px; color: var(--muted); }
+@keyframes featured-in { from { opacity: 0; transform: translateX(40px); } }
+@media (prefers-reduced-motion: reduce) { .danmaku { display: none; } }
