@@ -34,6 +34,44 @@ export interface SongLine {
   chords?: string;
 }
 
+/** Who a room's lyrics are for: the host's Audience setting (room settings). Family is the default. */
+export const AUDIENCES = ['kids', 'family', 'cheeky'] as const;
+export type Audience = (typeof AUDIENCES)[number];
+
+/** One line of a lyric set: new words over the version's line. */
+export interface LyricLine {
+  text: string;
+  kana: string;
+  romaji: string;
+  en: string;
+  /**
+   * Only when the words need a different rhythm: one note per mora, the same beats in total as the
+   * version's line (so it fits the backing). Otherwise the version's own melody is sung.
+   */
+  melody?: readonly Note[];
+}
+
+/**
+ * Another set of words for one version of a song, for one audience: kids, family (clean grown-up
+ * jokes) or cheeky (Jackbox-style adult humour, never explicit). One line per line of the version,
+ * sung over its track and chords. A version's own lines count as one of its family sets.
+ */
+export interface LyricSet {
+  /** `<version id>:<audience>` (plus `-2`, `-3` … if a version has more than one for an audience). */
+  id: string;
+  audience: Audience;
+  /** The joke in one line, for reviewers and the docs. */
+  about: string;
+  status: ReviewStatus;
+  lines: readonly LyricLine[];
+}
+
+/** A version sung with a lyric set's words: the set's text and the version's chords and melody. */
+export function withLyrics(song: Song, set: LyricSet | null | undefined): Song {
+  if (!set) return song;
+  return { ...song, lines: song.lines.map((line, i) => ({ ...line, ...set.lines[i]!, melody: set.lines[i]!.melody ?? line.melody, chords: line.chords })), status: set.status };
+}
+
 /** How the stage's backing track sounds (karaokeAudio.ts). */
 export type SongStyle = 'nursery' | 'citypop' | 'enka' | 'rock' | 'izakaya' | 'blues' | 'kayou' | 'hiphop' | 'idol' | 'rnb';
 
