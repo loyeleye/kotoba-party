@@ -90,6 +90,8 @@ export function toRomaji(kana: string): string {
   const spaced = spaceWords(kana.normalize('NFC'));
   const sentence = /[。！？.!?]/.test(kana);
   const words = spaced.split(/(\s+|-|[、，。．？！：；…〜・「」『』（）　]|＿+|_+)/);
+  // A kana on its own is that kana, not a particle: へ alone is "he" (Shodō's practice sheets).
+  const alone = words.filter((w) => /[\u3041-\u30ff]/.test(w)).length === 1;
   let out = '';
   for (const w of words) {
     if (!w) continue;
@@ -97,7 +99,7 @@ export function toRomaji(kana: string): string {
     else if (w === '-') out += '-';
     else if (/^[＿_]+$/.test(w)) out += '___';
     else if (PUNCT[w] !== undefined) out += PUNCT[w];
-    else out += SOUNDS_AS[w] ?? word(w);
+    else out += (alone ? undefined : SOUNDS_AS[w]) ?? word(w);
   }
   out = out
     .replace(/\s*([,.!?:;)…])/g, '$1')
