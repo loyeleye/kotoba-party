@@ -51,7 +51,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
 | 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
 | 25 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
-| 26 | Mureka (AI music generator: API credits and a Premium web plan, 2026-10-27) for Karaoke Duel backings | `stage/assets/music/night-drive-*.mp3`, `harbour-*.mp3`, `run-*.mp3`, `save-*.mp3`, `sleepless-*.mp3`, `monday-blues-*.mp3` (tracks.ts licence `'Mureka'`); more songs to follow | ⚠️ ❓ | Paid output is ours but must be labelled AI (done in the credits). The terms also limit use of the *service* to personal, non-commercial use without Mureka's written consent: get that consent in writing, or replace the tracks with commissioned music, before selling. The API platform's own terms weren't readable |
+| 26 | Mureka (AI music generator: API credits and a Premium web plan, 2026-10-27) for Karaoke Duel backings | `stage/assets/music/night-drive-*.mp3`, `harbour-*.mp3`, `run-*.mp3`, `save-*.mp3`, `sleepless-*.mp3`, `monday-blues-*.mp3`, `self-intro-*.mp3` (tracks.ts licence `'Mureka'`); more songs to follow | ⚠️ ❓ | Paid output is ours but must be labelled AI (done in the credits). The terms also limit use of the *service* to personal, non-commercial use without Mureka's written consent: get that consent in writing, or replace the tracks with commissioned music, before selling. The API platform's own terms weren't readable |
 
 ## Details
 
@@ -337,16 +337,16 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   for the game" in its credit). Licences as stated on each page, read 2026-10-27:
   - CC0: Hot Springs Town (Kistol, [OGA](https://opengameart.org/content/hot-springs-town)).
   - CC BY 4.0: In Your Arms (Kevin MacLeod, incompetech, terms as
-    above); Lazy Saturday (vandalorum, from
-    [Hip Hop Old School Chill Themes](https://opengameart.org/content/hiphop-old-school-chill-themes));
-    Cheers For Starlight (Chloe Wolfe,
+    above); Cheers For Starlight (Chloe Wolfe,
     [OGA](https://opengameart.org/content/cute-bytes-ost-cheers-for-starlight)).
   - Nights In June (KLY, CC BY 3.0) was Night Drive's track until 2026-10-27; it was replaced by
     two Mureka backings (row 26) and its file removed. Past Sadness (Kevin MacLeod, CC BY 4.0) was
     Harbour in the Rain's track until the same day; it went the same way, and so did JRPG Epic Rock
     Battle Theme (HydroGene, CC0, [OGA](https://opengameart.org/content/jrpg-epic-rock-battle-theme-1)),
-    Run!'s track, Slow Jam (Kevin MacLeod, CC BY 4.0), Sleepless Night's track, and Hustle (Kevin
-    MacLeod, CC BY 4.0), Monday Blues' track.
+    Run!'s track, Slow Jam (Kevin MacLeod, CC BY 4.0), Sleepless Night's track, Hustle (Kevin
+    MacLeod, CC BY 4.0), Monday Blues' track, and Lazy Saturday (vandalorum, CC BY 4.0, from
+    [Hip Hop Old School Chill Themes](https://opengameart.org/content/hiphop-old-school-chill-themes)),
+    Self-Intro Rap's track.
   - Skipped as candidates: anything CC BY-SA or GPL (Cheerful Upbeat Tune, Cuddle Puzzle), because
     share-alike could reach the game itself.
   - Lyrics and melodies sung over them are ours (row 13). Before selling, Ladi plans to commission
@@ -435,8 +435,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   168620097273857's two takes, model mureka-9.5), `run-footsteps.mp3` and `run-melonpan.mp3`
   (Run! versions A and B: task 168626183208962's two takes, model mureka-9.5), `sleepless-caller.mp3` and
   `sleepless-coffee.mp3` (Sleepless Night versions A and B: task 168626718048257's takes 2 and 1,
-  model mureka-9.5), and `monday-blues-1.mp3` and `monday-blues-2.mp3`
-  (Monday Blues: task 168628653850625's two takes, model mureka-9.5); generation records are kept in project files `tools/mureka/takes/` and `tools/mureka/run/`). Each new Mureka file must be
+  model mureka-9.5), `monday-blues-1.mp3` and `monday-blues-2.mp3`
+  (Monday Blues: task 168628653850625's two takes, model mureka-9.5), and `self-intro-faster.mp3` and
+  `self-intro-questions.mp3` (Self-Intro Rap versions A and B: task 168631340105729's two takes, model
+  mureka-9.5); generation records are kept in project files `tools/mureka/takes/` and `tools/mureka/run/`). Each new Mureka file must be
   listed in `tracks.ts` with licence `'Mureka'` and added here.
 - **Terms read (2026-10-27):** Mureka Terms of Service, released and effective May 13, 2026
   (https://www.mureka.ai/static/terms-20260513.pdf), read in full. The API platform

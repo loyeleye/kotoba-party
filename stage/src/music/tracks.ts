@@ -40,7 +40,8 @@ export const TRACK_IDS = [
   'hot-springs',
   'monday-blues-1',
   'monday-blues-2',
-  'lazy-saturday',
+  'self-intro-faster',
+  'self-intro-questions',
   'starlight',
   'sleepless-caller',
   'sleepless-coffee',
@@ -145,8 +146,10 @@ export const TRACKS: Record<TrackId, Track> = {
   // song. Each file is already the song's bars in order, E minor: take 1 at exactly 92 bpm, take 2 at 94.
   'monday-blues-1': { title: 'Monday Blues (take 1)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('monday-blues-1'), gainDb: 1.8, fallback: 'gentle' },
   'monday-blues-2': { title: 'Monday Blues (take 2)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('monday-blues-2'), gainDb: 0.1, fallback: 'gentle' },
-  // Self-Intro Rap: boom-bap, 92 bpm, A minor (a four-bar loop). From 36.0 s (orig. bar 14).
-  'lazy-saturday': { title: 'Lazy Saturday', author: 'vandalorum', licence: 'CC BY 4.0', source: `${OGA}hiphop-old-school-chill-themes`, url: file('lazy-saturday'), gainDb: -0.2, fallback: 'gentle' },
+  // Self-Intro Rap: two AI-made boom-bap backings (Mureka, 2026-10-27), one per version of the song.
+  // Each file is already the song's bars in order at exactly 96 bpm, C major.
+  'self-intro-faster': { title: 'Self-Intro Rap (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('self-intro-faster'), gainDb: 0.2, fallback: 'gentle' },
+  'self-intro-questions': { title: 'Self-Intro Rap (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('self-intro-questions'), gainDb: -0.1, fallback: 'gentle' },
   // Sparkle Idol: bright pop, 130 bpm, D major. From 7.0 s (orig. bar 4).
   starlight: { title: 'Cheers For Starlight', author: 'Chloe Wolfe', licence: 'CC BY 4.0', source: `${OGA}cute-bytes-ost-cheers-for-starlight`, url: file('cheers-for-starlight'), gainDb: -6.7, fallback: 'festive' },
   // Sleepless Night: two AI-made R&B backings (Mureka, 2026-10-27), one per version of the song.
