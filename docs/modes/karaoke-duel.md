@@ -181,7 +181,8 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     from footsteps that turn out to be Mom with your lunch, or racing for the last melon bread), an izakaya chant (乾杯！), salaryman blues (月曜日 ブルース, "…and
     it's only Monday"), a Shōwa couple's-quarrel duet (どこ 行ってたの？), a self-intro rap
     (自己紹介 ラップ, whose tune is the words' pitch accent), idol pop (キラキラ アイドル, "…so
-    buy a ticket!"), an R&B ballad (眠れない 夜) and kawaii pixel future bass (セーブ して！,
+    buy a ticket!"), an R&B ballad (ねられない よる, two versions: the crush finally calls back and
+    asks who's calling, or five coffees) and kawaii pixel future bass (セーブ して！,
     two versions: Mum answers dinner with the kid's own excuse, or the cat presses the button). Tests check one note and one romaji
     syllable per mora, that every perfect take scores 100, and that every chord name parses.
     The humor writer, a songwriter and the JLPT expert reviewed the first drafts (2026-10-27,
@@ -209,7 +210,7 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     Lyrics stay at N5–N4 with one joke per song, usually the last verse line before the final
     chorus. Ladi plans to commission songs written for the game before it is sold. Picks: Nights
     In June (city pop), Past Sadness (enka, Ladi's pick), JRPG Epic Rock Battle Theme, Hot Springs
-    Town, Hustle, Lazy Saturday, Cheers For Starlight, Slow Jam and In Your Arms.
+    Town, Hustle, Lazy Saturday, Cheers For Starlight, Slow Jam (later replaced) and In Your Arms.
 22. **AI-made backings with Mureka, and song versions** (2026-10-27). Ladi found the CC tracks
     hard to sing over, so each grown-up song gets a backing made for it with the Mureka API
     (row 26 of the commercial-blockers log). Prompts ask for a soft "minus-one" accompaniment
@@ -234,6 +235,11 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     to half-time drums, pumping pads, koto and chiptune chords so nothing leads over the singer.
     Version A (Mum and the kid, 141 bpm in A, royal-road chorus) and version B (100 hours, then
     save data zero, 140 bpm in E). It uses the idol style for the synth fallback.
+    Sleepless Night is third, and Ladi's all-N5 song (every word and kanji N5; the title became
+    ねられない よる because 眠る and 夜 are N4): version A (the call back at 4 a.m., 71 bpm in C
+    minor, one Cm7–C7–Fm7–G7 loop with the chorus opening on Fm7) and version B (five coffees, 72
+    bpm in C major, a IV–iv–I chorus). Its old "it's Mum" lyrics and Slow Jam are gone. Ladi
+    asked for the title not to be sung, so its choruses hang on 電話 まってる and あさまで おきてる.
     The method and scripts are in project files `tools/mureka/`.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
