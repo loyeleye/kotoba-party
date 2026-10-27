@@ -31,8 +31,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts` | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (all stage art: hosts, yōkai, backdrop and its scene layers, the Last Train carriage, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits, 14 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
-| 7 | AI art: Gemini (source images for Pon and the backdrop) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon and the backdrop without a Gemini source |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits, 14 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 7 | AI art: Gemini (source image for Pon) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
 | 10 | Kana course order and links (ToKini Andy) | `content/src/kana/raid.ts` | ✅ | Links only; ask before any paid tie-in or using his name in marketing |
@@ -107,7 +107,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 6. AI art from PixelLab
 
-- **What:** Everything on the stage: the three host portraits, five yōkai sprites, the studio backdrop
+- **What:** Everything on the stage: the three host portraits, five yōkai sprites, the backdrop sets,
   the 24 Photo Caption pictures, and (since 2026-10-26) 31 icons in `stage/assets/icons/` (places,
   scenes, Onsen victims and evidence, Last Train, trophy) plus the 42 character portraits in
   `stage/assets/portraits/onsen/` and `portraits/omiai/` (two expressions each) that replaced emoji in
@@ -115,14 +115,14 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   the 14 animation sheets in `stage/assets/anim/` (host idle, cheer and oops loops; yōkai hit and
   boss defeat), made by PixelLab's `animate-with-text-v3` endpoint from our own host and yōkai
   sprites as the first and last frame, and the smoke puff in `stage/assets/fx/`. The three lip-sync
-  mouth sheets are edited from our own host portraits by `tools/art/polish.ts` (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon and the
-  backdrop come from its `image-to-pixelart` endpoint (see row 7). Prompts, sources and params are
+  mouth sheets are edited from our own host portraits by `tools/art/polish.ts` (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon
+  comes from its `image-to-pixelart` endpoint (see row 7). Prompts, sources and params are
   recorded in `stage/assets/manifest.json` and `tools/generate-caption-art.ts`.
-  Since 2026-10-27 the stage draws its backdrop as layers in `stage/assets/scenes/`
-  ([graphics.md](graphics.md#backdrop)). `studio-far.png` is the backdrop with its props painted
-  out by PixelLab's `inpaint` endpoint, and the props and four pages are cut from the old backdrop
-  with no new generation, so all of these still trace back to the Gemini source (row 7).
-  `train-carriage.png` is a new text-only `pixflux` image. The effects (mist, spotlights, rain,
+  Since 2026-10-27 the stage draws one of six sets from `stage/assets/scenes/`
+  ([graphics.md](graphics.md#backdrop)): the studio, comedy stage, karaoke box, onsen inn, tea room
+  and train carriage. All six are text-only `pixflux` images, so the backdrop no longer traces back
+  to Gemini; the old converted backdrop and its Gemini source were deleted. The three page sprites
+  are drawn by hand, with no generator. The effects (mist, spotlights, rain,
   confetti, steam, the town past the train windows) are drawn by our own code, not generated.
 - **Terms (read 2026-10-26, <https://www.pixellab.ai/termsofservice>):** "You own the copyrights to your
   creations, permitting usage for both commercial and non-commercial purposes." Limits: don't train
@@ -133,17 +133,18 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 ### 7. AI art from Gemini
 
 - **What:** Since 2026-10-26 no shipped file is raw Gemini output: the hosts and backdrop moved to
-  PixelLab pixel art (see [graphics.md](graphics.md)). But PixelLab drew Pon and the backdrop by
-  converting the earlier Gemini images (`gemini-3-pro-image`), kept in `tools/art/sources/` and not
-  served. So those two are derived from Gemini output and its terms still apply to them.
+  PixelLab pixel art (see [graphics.md](graphics.md)). But PixelLab drew Pon by converting an earlier
+  Gemini image (`gemini-3-pro-image`), kept in `tools/art/sources/` and not served. So Pon is derived
+  from Gemini output and its terms still apply to him. The backdrop was redrawn from text alone on
+  2026-10-27 and its Gemini source deleted.
 - **Terms: unverified.** The Gemini API Additional Terms page was unreachable from these sessions. From
   memory, to be checked: Google doesn't claim ownership of generated content, the Generative AI
   Prohibited Use Policy applies, free-tier prompts and outputs may be used to improve Google's
   products, and in some regions (EEA, UK, Switzerland) only the paid tier may be used. Images carry an
   invisible SynthID watermark.
 - **To sell:** Read the terms and record them here. Prefer paid-tier keys for any art that ships.
-  Same copyright caveats as PixelLab. Or close the row: redraw Pon and the backdrop with `pixflux`
-  from text only, or include them in the commissioned art, then delete `tools/art/sources/`.
+  Same copyright caveats as PixelLab. Or close the row: redraw Pon with `pixflux` from text only, or
+  include him in the commissioned art, then delete `tools/art/sources/pon-gemini.png`.
 
 ### 8. Claude API
 
@@ -374,7 +375,8 @@ and keep the provenance in `stage/assets/manifest.json` (already done).
 
 **Decision (Ladi, 2026-10-26):** use PixelLab pixel art while the game is non-commercial, and
 commission the art before going commercial. Done for the stage on 2026-10-26: the hosts and backdrop
-are now PixelLab pixel art. Only Pon's and the backdrop's Gemini source images remain (row 7).
+are now PixelLab pixel art. Only Pon's Gemini source image remains (row 7); the backdrop's was
+dropped on 2026-10-27.
 
 **Recommendation:** keep using AI pixel art (PixelLab) for now. Before selling, have the three hosts,
 the logo and the title screen hand-finished or commissioned, keep the AI sprites and Photo Caption

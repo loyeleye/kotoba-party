@@ -1,7 +1,7 @@
 # Graphics
 
-Art for the stage: three host portraits, five kana yōkai sprites and a studio backdrop. Everything is
-PixelLab pixel art, matching the Photo Caption pictures. Nothing is hand-drawn yet.
+Art for the stage: three host portraits, five kana yōkai sprites and the backdrop sets. Everything is
+PixelLab pixel art, matching the Photo Caption pictures, except three tiny hand-drawn page sprites.
 
 **Style decision (Ladi, 2026-10-26):** pixel art from PixelLab for everything, while the game is
 non-commercial. Commission the art before going commercial (see
@@ -34,7 +34,6 @@ The manifest is the source of truth. Edit a prompt there, then regenerate.
 | `stage/assets/hosts/pon.png` | 128², transparent | PixelLab `image-to-pixelart` | Pon, tanuki stand-up MC (Oogiri Night). Converted from the old Gemini portrait |
 | `stage/assets/hosts/chochin.png` | 128², transparent | PixelLab `pixflux` | Chōchin-san, lantern-ghost conductor (Last Train) |
 | `stage/assets/hosts/fude.png` | 128², transparent | PixelLab `pixflux` | Fude, living calligraphy brush (Kana Yōkai Raid) |
-| `stage/assets/studio-bg.png` | 320×180 drawn, saved 6× at 1920×1080, ~45 KB | PixelLab `image-to-pixelart` | The old backdrop, converted from the Gemini one. No longer drawn: the source of the layers in `scenes/` (see Backdrop) |
 | `stage/assets/yokai/yokai-blob.png` | 128², transparent | PixelLab `pixflux` | Round ghost; glyph goes on the belly |
 | `stage/assets/yokai/yokai-lantern.png` | 128², transparent | PixelLab `pixflux` | Chōchin-obake lantern; plain paper below the face |
 | `stage/assets/yokai/yokai-umbrella.png` | 128², transparent | PixelLab `pixflux` | Umbrella ghost (see Open questions) |
@@ -44,9 +43,6 @@ The manifest is the source of truth. Edit a prompt there, then regenerate.
 Host portraits are transparent 128² sprites, like the yōkai. The stage shows them at 1× (128px) in a
 rounded square on `#14101f` with `image-rendering: pixelated`. Don't crop them to a circle: it cuts off
 arms and props.
-
-The backdrop is drawn at 320×180 and saved already scaled 6× (nearest neighbour), because a CSS
-background can't be made `pixelated` without affecting every image on the page.
 
 The yōkai sprites are generic bodies with no kana on them. The game draws a large kana glyph on top
 in a web font, which keeps the kana correct and lets one body serve every kana. Scale them with
@@ -112,28 +108,34 @@ frame's mask back after the remap (an early batch lost its transparency without 
 
 ## Backdrop
 
-Since 2026-10-27 the stage draws its set as layers into one 320×180 `<canvas>` behind everything
+Since 2026-10-27 the stage draws its set into one 320×180 `<canvas>` behind everything
 (`stage/src/backdrop.ts`), scaled 6× with `image-rendering: pixelated`, under the scrim (`.scrim` in
 `stage/style.css`). This follows the art panel's review of parallax backgrounds (26 Oct 2026).
 
-| Layer | File | Notes |
+| Set | File | Games |
 | --- | --- | --- |
-| Far | `stage/assets/scenes/studio-far.png` | The studio with its props painted out (PixelLab `inpaint`), so the centre behind the text is empty |
-| Props | `scenes/studio-props.png` | Desk, lantern and TVs, cut from the old backdrop and moved to the right edge |
-| Pages | `scenes/page-1.png` … `page-4.png` | The floating pages, cut out so they bob on their own, at the sides |
-| Last Train set | `scenes/train-carriage.png` | A commuter train at night (PixelLab `pixflux`), windows cut out |
-| Effects | drawn in code | Floor mist, two rig spotlights, confetti, rain, steam and the rest below |
+| Studio | `stage/assets/scenes/studio.png` | Lobby, Kana Raid, Word Gauntlet, Concentration, Oekaki, Who's the Tourist? |
+| Comedy stage | `scenes/comedy-stage.png` | Oogiri Night, Phrase Bingo Theater |
+| Karaoke box | `scenes/karaoke-box.png` | Karaoke Duel |
+| Onsen inn | `scenes/onsen-inn.png` | Murder at the Onsen |
+| Tea room | `scenes/tea-room.png` | Omiai Matchmaker |
+| Train carriage | `scenes/train-carriage.png` | Last Train (windows cut out) |
+| Pages | `scenes/page-a.png` … `page-c.png` | The loose dictionary pages floating in the studio's side lanes |
 
-`stage/assets/studio-bg.png` is no longer drawn; it is the source the layers were cut from.
+Every set is a text-only PixelLab `pixflux` image drawn as pixel art from the start, with its bright
+props at the sides and a dark, plain centre for the text. The first studio (2026-10-26) was converted
+from a painted Gemini image, and its edges smeared into blobs at 6×; it was replaced on 2026-10-27.
+The pages are hand-drawn, pixel by pixel, so they stay crisp. Effects are drawn in code.
 
 Per mode:
 
-- **Studio (lobby and most games):** floor mist drifting both ways, two spotlights from the rig whose
-  pools sweep the floor, the pages bobbing a pixel or two. Oogiri, Phrase Bingo and Karaoke get
-  brighter spotlights; Karaoke adds mirror-ball dots on the side walls, stepping once a bar.
-- **Kana Raid:** will-o'-wisps (鬼火) in the side lanes and thicker mist. No pages: drifting paper
-  would look like yōkai to catch.
-- **Murder at the Onsen:** steam (湯気) rising from the bottom corners. **Omiai:** a few 桜 petals.
+- **Studio (lobby and most games):** floor mist drifting both ways, two spotlights whose pools sweep
+  the floor, the pages bobbing a pixel or two.
+- **Kana Raid:** the studio with will-o'-wisps (鬼火) in the side lanes and thicker mist. No pages:
+  drifting paper would look like yōkai to catch.
+- **Comedy stage:** brighter spotlights and a little stage smoke. **Karaoke box:** mirror-ball dots
+  on the side walls, stepping once a bar. **Onsen inn:** steam (湯気) rising from the bottom
+  corners. **Tea room:** a few 桜 petals.
 - **Last Train:** the carriage. A night town (far skyline and near poles, drawn in code) scrolls past
   the windows during the intro and the first 1.5 s of each "next stop", then the train pulls in and
   holds; rain (秋雨) runs on the glass, and the straps sway while it moves.
@@ -148,8 +150,8 @@ Rules:
 - Effects run full in the lobby, intros and the recap, low (35% speed) through prompts, reveals and
   waits, and ease to a stop over about 400 ms while anyone speaks (`speaks()` in
   `stage/src/music/cues.ts`), while Kana Raid's yōkai are out, and in a timer's last 5 seconds.
-- The camera steps 1 art px every 120 ms to a new mark on each phase change (props move 1×, pages 2×,
-  the far layer not at all); in the lobby it drifts slowly between two marks. No zoom or shake.
+- The camera steps 1 art px every 120 ms to a new mark on each phase change (the pages move 2×, the
+  set not at all); in the lobby it drifts slowly between two marks. No zoom or shake.
 - Light is flat layers at one opacity each, not dithered (a dithered beam reads as a grid at 6×), and
   nothing flashes more than twice a second.
 - Calm motion and `prefers-reduced-motion` draw one still frame (a still confetti scatter in the
@@ -157,11 +159,10 @@ Rules:
   are per screen.
 - About 12 frames a second, paused while the tab is hidden. No filters or blend modes.
 
-How the layers were made: see each entry in the manifest. The far layer is two 200×180 `inpaint`
-calls (the endpoint takes at most 200 px wide) with the old backdrop as the palette; the props and
-pages are its pixels that differ from the far layer. The carriage is one `pixflux` call with its
-black window panes flood-filled to transparent. All three steps were run by hand, so the manifest
-marks them `polish` and `tools/art/generate.ts` skips them.
+How the sets were made: see each entry in the manifest. `pixflux` letterboxes a 320×180 request
+with black bars, so each set was drawn at 320×224 and cropped to 180 rows. The carriage's black
+window panes were flood-filled to transparent. Both steps were done by hand, so the manifest marks
+the sets `polish` and `tools/art/generate.ts` skips them.
 
 ## How they were made
 
@@ -182,14 +183,15 @@ earlier Gemini images, kept in `tools/art/sources/`:
   (256², `init_image_strength: 0`) kept his tanuki look. The result comes on a dark square, so the
   script makes the background transparent (corner flood fill, 6% fuzz) and adds a 1px `#1a0f14`
   outline to match the other sprites.
-- **Backdrop.** The old Gemini backdrop at 384×216, converted to 320×180, then upscaled 6×.
+- **Backdrop** (removed 2026-10-27). The old Gemini backdrop at 384×216, converted to 320×180. Its
+  smeared edges are why the sets are now drawn with `pixflux` instead.
 
 Full PixelLab docs: <https://api.pixellab.ai/v2/llms.txt> and <https://api.pixellab.ai/v2/docs>.
 Newer endpoints (`/generate-image-v2` Pro, `/create-image-pro-flash`, `/image-to-pixelart-pro`) are
 asynchronous: they return a job id that you poll at `/background-jobs/{id}`. The script doesn't use
 them yet.
 
-**Gemini** (`gemini-3-pro-image`) made the two source images. The script can still call it
+**Gemini** (`gemini-3-pro-image`) made the two source images (only Pon's is left). The script can still call it
 (`generator: "gemini"`) to draft a new source image for `image-to-pixelart`, but nothing in the
 manifest uses it now. Gemini can also draw "16-bit pixel art" itself, and that was one of the three
 options compared; it reads well once snapped to a 128px grid, but PixelLab was chosen.
@@ -238,10 +240,11 @@ Tracked in [commercial-blockers.md](commercial-blockers.md): row 6 (PixelLab) an
   non-commercial purposes", and "You retain ownership of any content you create using PixelLab.
   You are free to use, modify, and distribute the outputs … except for training other models
   without our explicit permission." The user is responsible for not infringing third-party rights.
-- **Google Gemini API.** No shipped file is raw Gemini output any more, but Pon and the backdrop are
-  PixelLab conversions of Gemini images, so Gemini's terms still apply to those two. The source images
-  sit in `tools/art/sources/` and aren't served. The Gemini terms are still unread (row 7). Redrawing
-  Pon and the backdrop from text alone, or commissioning them, would drop Gemini entirely.
+- **Google Gemini API.** No shipped file is raw Gemini output any more, but Pon is a PixelLab
+  conversion of a Gemini image, so Gemini's terms still apply to him. The source image sits in
+  `tools/art/sources/` and isn't served. The Gemini terms are still unread (row 7). Since 2026-10-27
+  the backdrop no longer comes from Gemini. Redrawing Pon from text alone, or commissioning him,
+  would drop Gemini entirely.
 - In many jurisdictions (including the US Copyright Office's current position), purely
   AI-generated images may not be protected by copyright, so others may be free to reuse them. That's
   why the plan is to commission the hosts and key art before selling.
@@ -261,5 +264,6 @@ Tracked in [commercial-blockers.md](commercial-blockers.md): row 6 (PixelLab) an
    reference image for consistency.
 6. **Animation.** PixelLab can animate characters (idle bob, hit, defeat). Should the yōkai get idle
    and defeat frames for Kana Yōkai Raid?
-7. ~~**Backdrop.**~~ Decided 2026-10-26: keep it, as layers with effects (see [Backdrop](#backdrop)).
+7. ~~**Backdrop.**~~ Decided 2026-10-26: keep it, with effects. On 2026-10-27 it became a set per
+   game (see [Backdrop](#backdrop)).
 8. ~~**Final art.**~~ Decided 2026-10-26: AI pixel art while non-commercial; commission before selling.
