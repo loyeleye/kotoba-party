@@ -61,8 +61,9 @@ phrasebook ("Your lines").
 - **Cast size**: 3–4 players → 2 actors, 5–7 → 3, 8 → 4. There is always at least one person in
   the audience. Connected players first; whoever has acted least goes next, avoiding last scene's
   actors, so in a 4-player, 4-scene game everyone acts exactly twice (tested).
-- **Lines per actor**: 3, or 2 at the Kana level or in a four-actor scene (so a 3×3 card always
-  holds every secret line).
+- **Lines per actor**: 3 in a two-actor scene, else 2 (and always 2 at the Kana level), so a 3×3
+  card holds every secret line and still has decoys (three actors with 3 lines each would fill
+  all nine cells, and every card would hit bingo).
 - **Levels**: Kana actors get short set phrases (おいしい！, すみません！, いらっしゃいませ！);
   N5 actors get です/ます sentences (ふくろは いりません。); N4 actors get one N4 pattern per line
   (〜そう, 〜たら, potential, 〜てもらえますか, 〜ほうがいい), falling back to N5. A scene that

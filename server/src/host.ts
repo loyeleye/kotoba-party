@@ -132,7 +132,7 @@ export function aiVoice(
       const key = cueKey(cue);
       const pending = room?.get(key) ?? prepare(roomCode, cue);
       if (room?.delete(key) && !room.size) early.delete(roomCode);
-      const line = await pending.ready(opts.waitMs ?? 1500);
+      const line = await pending.ready(cue.waitMs ?? opts.waitMs ?? 1500);
       if (!line) return fallback.speak(roomCode, cue);
       return {
         host: line.host,

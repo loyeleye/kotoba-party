@@ -39,6 +39,8 @@ export const ECHO_BONUS = { speech: 20, typed: 10 } as const;
 /** Every speaking bonus comes from one pool: at most 30% of the points a player had at stake. */
 export const BONUS_POOL_SHARE = 0.3;
 const COMEBACK = 1.5;
+/** How long Pon's reactions may wait for an AI-written line (reveal 14 s, bingo 9 s; the AI gives up at 6 s). */
+export const REACT_WAIT_MS = 6_000;
 /** Buzzes per audience member per scene. A wrong buzz costs nothing but a buzz. */
 export const BUZZES = 3;
 /** A buzz counts if the phrase reached the server no later than this after the buzz (recogniser lag). */
@@ -187,14 +189,17 @@ export interface ActorView {
   phrases: ResultPhrase[] | null;
 }
 
+/** A line on the stage ticker, with its reading so the stage can put furigana over the kanji. */
+export type TickerPhrase = Pick<JpText, 'text' | 'kana' | 'en' | 'furigana'>;
+
 export interface TickerItem {
   kind: 'slip' | 'buzz';
   playerId: string;
   atSec: number;
   /** The phrase, once the scene is over (slips only). */
-  phrase?: { text: string; en: string };
+  phrase?: TickerPhrase;
   /** Who the buzz named and whether it was right, once the scene is over. */
-  buzz?: { actorId: string; ok: boolean; phrase: string };
+  buzz?: { actorId: string; ok: boolean; phrase: TickerPhrase | null };
 }
 
 export interface SecretView {
@@ -257,9 +262,13 @@ export function castSize(players: number): number {
   return Math.max(1, Math.min(n, players - 1));
 }
 
-/** Secret phrases per actor: 2 at the Kana level or in a four-actor scene (so the card holds them all), else 3. */
+/**
+ * Secret phrases per actor: 3 in a two-actor scene, else 2 (and 2 at the Kana level), so the
+ * 3×3 card holds every secret with room for decoys: three actors with 3 lines each would fill
+ * all nine cells, and every card would hit bingo once the lines were said.
+ */
 export function secretsFor(level: Level, cast: number): number {
-  return cast >= 4 || level === 'kana' ? 2 : 3;
+  return cast >= 3 || level === 'kana' ? 2 : 3;
 }
 
 /** The scene phrase, with the topic pack's text when the pack has the phrase it copies. */
@@ -299,6 +308,10 @@ const meanScore = (ctx: ModeContext) => {
 
 function phraseCard(p: Phrase, romaji: boolean): PhraseCard {
   return { id: p.id, text: p.jp.text, kana: p.jp.kana, en: p.jp.en, ...(p.jp.furigana ? { furigana: p.jp.furigana } : {}), ...(romaji ? { romaji: toRomaji(p.jp.kana) } : {}) };
+}
+
+function tickerPhrase(p: Phrase): TickerPhrase {
+  return { text: p.jp.text, kana: p.jp.kana, en: p.jp.en, ...(p.jp.furigana ? { furigana: p.jp.furigana } : {}) };
 }
 
 function hintFor(p: Phrase, romaji: boolean): string {
@@ -469,6 +482,8 @@ function resolveScene(s: PhraseBingoState, ctx: ModeContext): void {
     answer: shown.map((x) => x.text).join(' / ') || undefined,
     answerEn: shown.map((x) => x.en).join(' / ') || undefined,
     context: 'Phrase Bingo Theater: improv scene; actors slipped in secret phrases, the audience tried to catch them.',
+    // The secrets stay up for the whole reveal, so Pon can take the time to write a real reaction.
+    waitMs: REACT_WAIT_MS,
   });
 }
 
@@ -577,7 +592,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
         const p = s.highlight ? s.pool[s.highlight] : undefined;
         if (p) for (const player of ctx.players()) if (!s.echoes[player.id]?.ok) ctx.phrase(player.id, { itemId: p.id, text: p.jp.text, kana: p.jp.kana, en: p.jp.en, outcome: 'seen' });
         const bingo = Object.entries(s.cards).find(([, c]) => c.line)?.[0];
-        if (bingo) ctx.cue({ host: 'pon', event: 'reveal_react', tier: 'ippon', slots: { name: nameOf(ctx, bingo) } });
+        if (bingo) ctx.cue({ host: 'pon', event: 'reveal_react', tier: 'ippon', slots: { name: nameOf(ctx, bingo) }, waitMs: REACT_WAIT_MS });
         break;
       }
     }
@@ -740,13 +755,13 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
         ? [
             ...s.slips.map((x): TickerItem => {
               const p = s.pool[x.phraseId]!;
-              return { kind: 'slip', playerId: x.actorId, atSec: secSince(s, x.at), ...(over ? { phrase: { text: p.jp.text, en: p.jp.en } } : {}) };
+              return { kind: 'slip', playerId: x.actorId, atSec: secSince(s, x.at), ...(over ? { phrase: tickerPhrase(p) } : {}) };
             }),
             ...s.buzzes.map((b): TickerItem => ({
               kind: 'buzz',
               playerId: b.playerId,
               atSec: secSince(s, b.at),
-              ...(over ? { buzz: { actorId: b.actorId, ok: b.result === 'caught', phrase: s.pool[b.phraseId]?.jp.text ?? '' } } : {}),
+              ...(over ? { buzz: { actorId: b.actorId, ok: b.result === 'caught', phrase: s.pool[b.phraseId] ? tickerPhrase(s.pool[b.phraseId]!) : null } } : {}),
             })),
           ].sort((a, b) => a.atSec - b.atSec || (a.kind === b.kind ? 0 : a.kind === 'slip' ? -1 : 1))
         : [];

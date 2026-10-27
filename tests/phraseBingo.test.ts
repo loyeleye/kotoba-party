@@ -171,8 +171,17 @@ describe('Phrase Bingo: casting and dealing', () => {
     expect([3, 4, 5, 6, 7, 8].map(castSize)).toEqual([2, 2, 3, 3, 3, 4]);
     expect(castSize(2)).toBe(1);
     expect(secretsFor('n5', 2)).toBe(3);
-    expect(secretsFor('kana', 3)).toBe(2);
+    expect(secretsFor('kana', 2)).toBe(2);
+    expect(secretsFor('n5', 3)).toBe(2);
     expect(secretsFor('n4', 4)).toBe(2);
+  });
+
+  it('leaves decoys on the card in a three-actor N5 scene', () => {
+    const t = new Table(5, REAL_CONTENT, 3, ['n5', 'n5', 'n5', 'n5', 'n5']);
+    t.start();
+    const secrets = t.st.cast.flatMap((a) => a.secrets.map((x) => x.phraseId));
+    expect(secrets.length).toBe(6);
+    for (const id of t.audience) expect(t.st.cards[id]!.cells.filter((c) => !secrets.includes(c)).length).toBe(3);
   });
 
   it('deals level-matched secrets with no clashes, and a 9-cell card holding every secret', () => {
