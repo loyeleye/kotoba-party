@@ -173,6 +173,9 @@ describe('tiles', () => {
     expect(toRomaji('きって')).toBe('kitte');
     expect(toRomaji('ちょっと')).toBe('chotto');
     expect(toRomaji('ほんや')).toBe("hon'ya");
+    // The dictionary reads all-kana じかん as じ・か・ん: never split it as "jika n".
+    expect(toRomaji('じかんが ありません！')).not.toMatch(/jika n/i);
+    expect(toRomaji('しーっ… しょどうの じかんです。')).not.toMatch(/jika n/i);
   });
 });
 

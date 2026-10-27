@@ -305,7 +305,11 @@ export function lexiconFor(content: ContentLibrary): Lexicon {
     if (noun && !endsInN(reading) && !nouns.some((n) => repeatKey(n.kana) === key)) nouns.push({ kana: reading, en, text, itemId });
   };
   for (const pack of content.packs) {
-    for (const w of pack.words as PackWord[]) add(w.jp.kana, w.jp.en, w.id, w.jp.text, 'pack', w.pos === 'noun');
+    for (const w of pack.words as PackWord[]) {
+      // Oogiri swerves like うたう おにぎり are phrases, not words: never offer them as hints.
+      const phrase = /\s/.test(w.jp.kana) || (!!w.swerve && w.jp.kana.includes('の'));
+      add(w.jp.kana, w.jp.en, w.id, w.jp.text, 'pack', w.pos === 'noun' && !phrase);
+    }
   }
   for (const n of SHIRITORI_NOUNS) add(n.kana, n.en, `wg.shiritori.${n.kana}`, n.kana, 'list', true);
   for (const w of OBSCURE_WORDS) add(w.jp.kana, w.jp.en, `wg.golden.${w.id}`, w.jp.text, 'list', false);

@@ -55,8 +55,8 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   };
 }
 
-const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok']);
-const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry']);
+const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear']);
+const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai']);
 
 /** The host's reaction to a cue: a cheer for a win, a flinch for a miss, otherwise just the idle loop. */
 export function moodFor(event: string): HostMood | undefined {
@@ -137,7 +137,7 @@ export function aiVoice(
       const key = cueKey(cue);
       const pending = room?.get(key) ?? prepare(roomCode, cue);
       if (room?.delete(key) && !room.size) early.delete(roomCode);
-      const line = await pending.ready(opts.waitMs ?? 1500);
+      const line = await pending.ready(cue.waitMs ?? opts.waitMs ?? 1500);
       if (!line) return fallback.speak(roomCode, cue);
       return {
         host: line.host,
