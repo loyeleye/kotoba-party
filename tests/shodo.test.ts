@@ -158,12 +158,27 @@ describe('Shodō Taikai rounds', () => {
       r.tick();
     }
     expect(r.s.phase).toBe('encore');
+    // One silly brief for the room; the big sheet shows its word but no model under the pad.
+    const brief = r.ms().gallery!.brief;
+    expect(r.view(stage).brief).toEqual(brief);
+    for (const id of ['p1', 'p2', 'p3', 'p4']) {
+      const mine = r.view(as(id)).me!.gallery!.target;
+      expect(mine.cells).toBeNull();
+      expect(mine.text.length).toBeGreaterThan(0);
+      expect(mine.say.kana).toMatch(new RegExp(`^${brief.kana} .+です$`));
+    }
     for (const id of ['p1', 'p2', 'p3', 'p4']) {
       const t = r.ms().gallery!.targets[id]!;
       r.play(id, { kind: 'sheet', cells: t.cells.map((c) => handDraw(c, random)) });
-      r.play(id, { kind: 'say-skip' });
+      // The sentence without です counts, and so does the word on its own.
+      if (id === 'p1') expect(r.play(id, { kind: 'say', utterance: { via: 'typed', text: t.say.kana.replace(/です$/, '') } }).error).toBeUndefined();
+      else if (id === 'p2') expect(r.play(id, { kind: 'say', utterance: { via: 'typed', text: t.word!.kana } }).error).toBeUndefined();
+      else r.play(id, { kind: 'say-skip' });
     }
     expect(r.s.phase).toBe('finale');
+    // The sheets brush on as the vote opens, and Fude reacts (or calls back a misreading).
+    expect(r.view(stage).slotMs).toBeGreaterThan(0);
+    expect(['shodo_gallery_reveal', 'shodo_callback']).toContain(r.s.cues.at(-1)?.event);
     // Stamps: never on your own sheet, at most three, movable.
     const sheets = r.ms().gallery!.sheets;
     const own = sheets.findIndex((x) => x.playerId === 'p1');
@@ -181,13 +196,56 @@ describe('Shodō Taikai rounds', () => {
     const gal = r.view(stage).sheets!;
     expect(gal.some((x) => Object.keys(x.stamps).length)).toBe(true);
     expect(gal.every((x) => x.name === null)).toBe(true);
+    // Fude reads out a winner by number; the TV lists each stamp's winner, unnamed until claimed.
+    const winners = r.view(stage).winners!;
+    expect(winners.length).toBeGreaterThan(0);
+    expect(winners.every((w) => w.name === null)).toBe(true);
+    const announced = r.s.cues.at(-1)!;
+    expect(announced.event).toBe('shodo_award');
+    expect(winners.map((w) => String(w.n))).toContain(announced.slots!.n);
     r.play('p2', { kind: 'claim' });
+    expect(r.s.cues.at(-1)).toMatchObject({ event: 'shodo_claimed', slots: { name: 'P2' } });
+    r.play('p3', { kind: 'claim' });
+    expect(r.s.cues.filter((c) => c.event === 'shodo_claimed').length).toBe(1);
     expect(r.view(stage).sheets!.filter((x) => x.name === 'P2').length).toBe(1);
     r.tick();
     expect(r.s.phase).toBe('recap');
+    // Stamp awards go only to writers who claimed their sheet.
+    const stampTitles = new Set<string>(AWARDS.map((a) => a.ja));
+    const claimedWinners = (r.s.recap?.awards ?? []).filter((a) => stampTitles.has(a.title));
+    expect(claimedWinners.every((a) => a.playerId === 'p2' || a.playerId === 'p3')).toBe(true);
     const st = r.ms();
     for (const id of ['p1', 'p2', 'p3', 'p4']) expect(st.bonus[id] ?? 0).toBeLessThanOrEqual(((st.base[id] ?? 0) * BONUS_SHARE) / (1 - BONUS_SHARE) + 1);
     for (const p of r.s.players) expect(p.score).toBe(st.earned[p.id] ?? 0);
+  });
+
+  it('gives a stroke out of step its own line at the replay', () => {
+    const r = room(['n5']);
+    r.cmd(stage, { type: 'start', mode: 'shodo' } as CommandBody);
+    for (let guard = 0; guard < 5 && r.s.phase !== 'answer'; guard++) r.tick();
+    const item = r.ms().items.at(-1)!;
+    const t = item.targets.p1!;
+    r.play('p1', { kind: 'say-skip' });
+    const swapped = t.cells.map((c) => handDraw(c, random, c.length > 1 ? { swap: [0, 1] } : {}));
+    r.play('p1', { kind: 'sheet', cells: swapped });
+    const sheet = item.sheets.p1!;
+    expect(r.s.phase).toBe('reveal');
+    expect(sheet.pass && sheet.outOfOrder !== null).toBe(true);
+    if (sheet.misread) expect(r.s.cues.at(-1)).toMatchObject({ event: 'shodo_misread', slots: { target: t.text } });
+    else if (sheet.outOfOrder !== null) expect(r.s.cues.at(-1)?.event).toBe('shodo_synchro_break');
+  });
+
+  it('makes the big sheet an other-hand round when the VIP ticks it', () => {
+    const r = room(['n5', 'kana']);
+    r.cmd(stage, { type: 'start', mode: 'shodo', extra: { otherHand: true } } as CommandBody);
+    expect(r.ms().otherHand).toBe(true);
+    for (let guard = 0; guard < 20 && r.s.phase !== 'encore'; guard++) r.tick();
+    expect(r.s.phase).toBe('encore');
+    expect(r.view(stage).otherHand).toBe(true);
+    expect(r.s.cues.at(-1)?.event).toBe('shodo_other_hand');
+    const plain = room(['n5']);
+    plain.cmd(stage, { type: 'start', mode: 'shodo' } as CommandBody);
+    expect(plain.ms().otherHand).toBe(false);
   });
 
   it('never shows the answer on the phone before it is written', () => {

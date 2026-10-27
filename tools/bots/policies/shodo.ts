@@ -44,7 +44,9 @@ export function shodoPolicy(opts: ShodoPolicyOptions): ModePolicy {
   const traced = new Map<string, InkPoint[][][]>();
   /** The target a blanked view stands for: same kind, meaning and (when shown) reading. */
   const lookup = (t: TargetView): Target | undefined => all.find((x) => x.kind === t.kind && x.meaning === t.meaning && (!t.say.kana || x.say.kana === t.say.kana));
-  const write = (t: TargetView): InkPoint[][][] => (t.cells ?? lookup(t)?.cells ?? Array.from({ length: t.count }, () => [])).map((c) => handDraw(c, random, { wobble: 0.01 }));
+  /** The big sheet shows its written form but no model: the bot knows the strokes anyway. */
+  const byText = (t: TargetView): (readonly InkStroke[])[] | null => (t.text ? [...t.text].map((c) => deck.strokesOf(c) ?? []) : null);
+  const write = (t: TargetView): InkPoint[][][] => (t.cells ?? byText(t) ?? lookup(t)?.cells ?? Array.from({ length: t.count }, () => [])).map((c) => handDraw(c, random, { wobble: 0.01 }));
   const via = (seat: number) => (seat % 3 === 1 ? 'speech' : 'typed');
 
   return {

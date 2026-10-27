@@ -463,7 +463,13 @@ export type HostEvent =
   | 'shodo_misread' // a drawing read as a look-alike ({char})
   | 'shodo_gallery' // the big gallery sheet starts
   | 'shodo_vote' // stamping opens
-  | 'shodo_claim'; // claim your sheet, then the send-off
+  | 'shodo_claim' // claim your sheet, then the send-off
+  | 'shodo_synchro_break' // the replay had a sheet out of step with the rest
+  | 'shodo_gallery_reveal' // the big sheets brush on, one stroke at a time
+  | 'shodo_callback' // the gallery remembers a dictation misread ({char})
+  | 'shodo_award' // Fude presents a stamp award ({award}, {n})
+  | 'shodo_claimed' // someone claimed their sheet ({name})
+  | 'shodo_other_hand'; // the VIP's other-hand round: the big sheet with the other hand
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 

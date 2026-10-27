@@ -178,6 +178,8 @@ export interface ModeInfo {
   phrasebookTitle?: string;
   /** Stage header names for phases this mode uses differently (Concentration's encore is a steal). */
   phaseLabels?: Partial<Record<Phase, string>>;
+  /** On/off options the VIP can tick before starting, sent as `extra[key] = true`. */
+  extras?: { key: string; label: string }[];
 }
 
 /**

@@ -60,6 +60,12 @@ export const HOST_EVENTS = [
   'shodo_gallery',
   'shodo_vote',
   'shodo_claim',
+  'shodo_synchro_break',
+  'shodo_gallery_reveal',
+  'shodo_callback',
+  'shodo_award',
+  'shodo_claimed',
+  'shodo_other_hand',
 ] as const;
 export type HostEvent = (typeof HOST_EVENTS)[number];
 

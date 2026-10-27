@@ -5,8 +5,9 @@
 //   書き取り  how many sheets are in, then the synchro replay: every sheet brushes on at once,
 //            stroke by stroke, a little askew like real paper; "順 ×" marks a stroke written
 //            out of order. Only clean writers are named.
-//   展覧会    the gallery: every big sheet, numbered, with Fude's はなまる on its best stroke;
-//            stamps show once the vote is in, and names only for sheets their writers claim.
+//   展覧会    the brief, then the gallery: every big sheet, numbered, brushing on together as the
+//            vote opens, with Fude's はなまる on its best stroke; stamps and each stamp's winner
+//            show once the vote is in, and names only for sheets their writers claim.
 
 import { h } from '../../../shared/src/dom.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
@@ -37,7 +38,7 @@ export const shodoStage: StageMode<ShodoView> = {
       case 'reveal':
         return replay(view, game);
       case 'encore':
-        return writing(game, 'すきな もの · Write something you love, as beautifully as you can');
+        return writing(game, briefLine(game), game.otherHand ? '✋ はんたいの てで! · With your other hand!' : null);
       case 'finale':
       case 'penalty':
         return gallery(view, game);
@@ -102,13 +103,21 @@ function scroll(view: RoomView, game: ShodoView): HTMLElement {
   );
 }
 
-function writing(game: ShodoView, line: string): HTMLElement {
+/** The gallery brief: "ねむい ＿" · "Something sleepy". */
+function briefLine(game: ShodoView): HTMLElement {
+  const b = game.brief;
+  if (!b) return h('span', {}, 'Your best sheet, as beautifully as you can');
+  return h('span', {}, h('span', { class: 'sho-brief', lang: 'ja' }, `おだい: ${b.kana} ＿`), ` · Something ${b.en}`);
+}
+
+function writing(game: ShodoView, line: string | HTMLElement, note: string | null = null): HTMLElement {
   const label = game.item ? `書き取り · ${game.item} / ${game.items}` : '展覧会';
   return h(
     'div',
     { class: 'card sho' },
     h('p', { class: 'sho-tag' }, label),
     h('p', { class: 'prompt' }, line),
+    note ? h('p', { class: 'sho-other-hand' }, note) : null,
     h('div', { class: 'sho-inkstone', 'aria-hidden': 'true' }, Array.from({ length: game.writers }, (_, i) => h('span', { class: i < game.finished ? 'in' : '' }))),
     h('p', { class: 'hint' }, `${game.finished} / ${game.writers} sheets in`),
   );
@@ -118,14 +127,16 @@ function writing(game: ShodoView, line: string): HTMLElement {
 const tilt = (n: number) => `--tilt:${(((n * 37) % 7) - 3) * 0.6}deg`;
 
 /** Each cell of a sheet, timed as one run of strokes across the cells. */
-function sheetCells(sheet: SheetView, slotMs: number, elapsedMs: number): HTMLElement[] {
+function sheetCells(sheet: SheetView, slotMs: number, elapsedMs: number, width?: number): HTMLElement[] {
   let before = 0;
   return sheet.cells.map((c) => {
-    const svg = glyph(c, { strokeMs: slotMs, elapsedMs: elapsedMs - before * slotMs });
+    const svg = glyph(c, { strokeMs: slotMs, elapsedMs: elapsedMs - before * slotMs, ...(width ? { width } : {}) });
     before += c.length;
     return h('div', { class: 'sho-cell' }, svg);
   });
 }
+
+const done = (s: SheetView) => s.cells.reduce((n, c) => n + c.length, 0);
 
 function replay(view: RoomView, game: ShodoView): HTMLElement {
   const sheets = game.sheets ?? [];
@@ -145,31 +156,48 @@ function replay(view: RoomView, game: ShodoView): HTMLElement {
           h('div', { class: 'sho-cells' }, sheetCells(s, game.slotMs, elapsed)),
           s.outOfOrder !== null ? h('span', { class: 'sho-order', lang: 'ja', style: `animation-delay:${Math.max(0, s.outOfOrder * game.slotMs - elapsed)}ms` }, '順 ×') : null,
           h('p', { class: 'sho-caption', lang: 'ja' }, s.text, s.clean ? h('span', { class: 'sho-clean' }, ` ◎ ${s.name ?? ''}`) : null),
+          // Fude's misreading, under the sheet it's about, once that sheet has finished.
+          s === misread ? h('p', { class: 'sho-misread', lang: 'ja', style: `animation-delay:${Math.max(0, done(s) * game.slotMs - elapsed)}ms` }, `…${s.misread}かな?`) : null,
         ),
       ),
     ),
-    misread ? h('p', { class: 'sho-misread', lang: 'ja' }, `フデ: 「${misread.misread}」…かな? (It was ${misread.text}.)`) : null,
   );
 }
 
-/** Fude's はなまる, a red swirl round the sheet's best stroke. */
-function hanamaru(sheet: SheetView): HTMLElement | null {
+/** Fude's はなまる, a red swirl round the sheet's best stroke, once `delayMs` has passed. */
+function hanamaru(sheet: SheetView, delayMs = 0): HTMLElement | null {
   const [c, i] = sheet.best;
   const s = sheet.cells[c]?.[i];
   if (!s?.length) return null;
   const mid = s[Math.floor(s.length / 2)]!;
   const left = ((c + mid[0]) / sheet.cells.length) * 100;
-  return h('span', { class: 'sho-hanamaru', style: `left:${left}%;top:${mid[1] * 100}%`, 'aria-hidden': 'true' });
+  return h('span', { class: 'sho-hanamaru', style: `left:${left}%;top:${mid[1] * 100}%${delayMs > 0 ? `;animation-delay:${600 + delayMs}ms` : ''}`, 'aria-hidden': 'true' });
 }
 
 function gallery(view: RoomView, game: ShodoView): HTMLElement {
   const sheets = game.sheets ?? [];
   const voting = view.phase === 'finale';
+  // The vote opens with every sheet brushing on together; the send-off shows them finished.
+  const elapsed = voting ? sincePhase(view) : 1e9;
+  const most = Math.max(0, ...sheets.map(done));
+  const winners = game.winners ?? [];
   return h(
     'div',
     { class: 'card sho' },
     h('p', { class: 'sho-tag' }, voting ? '展覧会 · give your hanko stamps on your phone' : '展覧会 · the send-off'),
     h('p', { class: 'prompt', lang: 'ja' }, voting ? 'どれが すき?' : 'みんなで よみましょう'),
+    game.brief && voting ? h('p', { class: 'sho-note-line' }, h('span', { lang: 'ja' }, `おだい: ${game.brief.kana} ＿`), ` · something ${game.brief.en}`) : null,
+    winners.length
+      ? h(
+          'ul',
+          { class: 'sho-winners' },
+          winners.map((w, i) => {
+            const a = AWARDS.find((x) => x.id === w.award)!;
+            return h('li', { style: `animation-delay:${i * 700}ms` }, h('span', { class: 'sho-hanko', lang: 'ja' }, a.ja), ` #${w.n} `, w.name ? h('strong', {}, w.name) : h('span', { class: 'sho-anon' }, '?'));
+          }),
+        )
+      : null,
+    winners.some((w) => !w.name) ? h('p', { class: 'sho-note-line', lang: 'ja' }, 'かいた ひとは… しって いますね。') : null,
     h(
       'div',
       { class: `sho-wall gallery n${Math.min(8, sheets.length)}` },
@@ -178,7 +206,7 @@ function gallery(view: RoomView, game: ShodoView): HTMLElement {
           'div',
           { class: 'sho-paper sho-large', style: tilt(s.n) },
           h('span', { class: 'sho-n' }, `#${s.n}`),
-          h('div', { class: 'sho-cells' }, s.cells.map((c) => h('div', { class: 'sho-cell' }, glyph(c, { width: 8 }))), hanamaru(s)),
+          h('div', { class: 'sho-cells' }, voting ? sheetCells(s, game.slotMs, elapsed, 8) : s.cells.map((c) => h('div', { class: 'sho-cell' }, glyph(c, { width: 8 }))), hanamaru(s, voting ? Math.max(0, most * game.slotMs - elapsed) : 0)),
           h(
             'div',
             { class: 'sho-stamps' },

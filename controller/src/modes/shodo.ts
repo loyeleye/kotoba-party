@@ -235,14 +235,16 @@ function galleryScreen(ctx: Ctx): HTMLElement {
       'div',
       { class: 'screen sho' },
       tag('展覧会 · Your big sheet'),
-      h('p', { class: 'sho-note' }, 'Theme: something I love. Take your time: this one goes in the gallery.'),
+      ctx.game.brief ? h('p', { class: 'sho-brief' }, h('span', { lang: 'ja' }, `おだい: ${ctx.game.brief.kana}`), ` · make it look ${ctx.game.brief.en}!`) : null,
+      ctx.game.otherHand ? h('p', { class: 'sho-other-hand' }, '✋ Other hand! Switch the phone to your other hand.') : null,
       h('p', { class: 'sho-glyph', lang: 'ja' }, t.text),
       h('p', { class: 'sho-meaning' }, t.meaning),
-      brushPad({ key: `sho-gal-${view.phaseSeq}`, mode: 'free', cells: t.count, model: t.cells, sendLabel: 'Hang it in the gallery 🖼', label: `Writing pad: write ${t.text}`, onSend: (cells) => send({ kind: 'sheet', cells }) }),
+      h('p', { class: 'sho-note' }, 'No model this time: it’s all your own brush. It goes in the gallery, with no name on it.'),
+      brushPad({ key: `sho-gal-${view.phaseSeq}`, mode: 'free', cells: t.count, sendLabel: 'Hang it in the gallery 🖼', label: `Writing pad: write ${t.text}`, onSend: (cells) => send({ kind: 'sheet', cells }) }),
     );
   }
   if (g.said === undefined) {
-    return h('div', { class: 'screen sho' }, tag('展覧会 · Say it'), sayCard(t, ctx, 'Now say why it’s up there:'), sayBox(ctx, 'Hold and say it', 'Skip'));
+    return h('div', { class: 'screen sho' }, tag('展覧会 · Say it'), sayCard(t, ctx, 'Now say what you drew:'), sayBox(ctx, 'Hold and say it', 'Skip'));
   }
   return h('div', { class: 'screen sho' }, tag('展覧会'), waiting('Your sheet is hanging! 🖼', `${ctx.game.finished} / ${ctx.game.writers} in. Nobody knows which one is yours.`));
 }
@@ -296,12 +298,15 @@ function claimScreen(ctx: Ctx): HTMLElement {
   const g = ctx.game.me?.gallery;
   const sheet = g?.sheet;
   if (!g || !sheet) return waiting('The send-off!', 'Read every sheet aloud together.');
-  if (g.claimed) return h('div', { class: 'screen sho' }, tag('Claim it'), waiting(`Sheet #${sheet} is yours, and now everyone knows! 🎉`, 'Read them all aloud together.'));
+  const won = (ctx.game.winners ?? []).filter((w) => w.n === sheet).map((w) => AWARDS.find((a) => a.id === w.award)!);
+  const prize = won.length ? h('p', { class: 'sho-won' }, 'It won ', won.map((a) => h('span', { class: 'sho-hanko', lang: 'ja', title: a.en }, a.ja)), '!') : null;
+  if (g.claimed) return h('div', { class: 'screen sho' }, tag('Claim it'), prize, waiting(`Sheet #${sheet} is yours, and now everyone knows! 🎉`, 'Read them all aloud together.'));
   return h(
     'div',
     { class: 'screen sho' },
     tag('Claim it'),
     h('p', { class: 'big' }, `Sheet #${sheet} is yours.`),
+    prize,
     h('p', { class: 'hint' }, 'Want your name on it? Only if you like.'),
     h('button', { type: 'button', class: 'primary', onclick: () => void ctx.send({ kind: 'claim' }) }, 'That one’s mine! 🙋'),
   );

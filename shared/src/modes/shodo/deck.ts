@@ -28,6 +28,8 @@ export interface Target {
   strokes: number;
   /** A kanji's step in the writing order (content/src/kanji/kanji.ts). */
   step?: number;
+  /** The gallery only: the word on its own, without the brief ("やま" in "ねむい やまです"). */
+  word?: JpText;
 }
 
 /**
@@ -78,8 +80,26 @@ export const GALLERY: Record<Level, JpText[]> = {
   ],
 };
 
-/** The gallery sentence: "I like ___" (が すきです), said aloud after writing. */
-export const gallerySentence = (word: JpText): JpText => ({ text: `${word.text}が すきです`, kana: `${word.kana}が すきです`, en: `I like ${word.en.replace(/^(a|an|the) /, '')}.` });
+/**
+ * The gallery's brief (humor review): one silly adjective for the whole room, so every sheet is
+ * "a sleepy ___" and the gallery is a set of sleepy mountains and sleepy cats. Words that sit naturally
+ * before a noun (feelings in the た form: おこった, not うれしい), kept in kana so every level reads them.
+ */
+export const BRIEFS: readonly JpText[] = [
+  { text: 'ねむい', kana: 'ねむい', en: 'sleepy' },
+  { text: 'おこった', kana: 'おこった', en: 'angry' },
+  { text: 'つかれた', kana: 'つかれた', en: 'tired' },
+  { text: 'こわい', kana: 'こわい', en: 'scary' },
+  { text: 'げんきな', kana: 'げんきな', en: 'lively' },
+  { text: 'おなかが すいた', kana: 'おなかが すいた', en: 'hungry' },
+];
+
+/** The gallery sentence: "It's a sleepy ___" (ねむい ＿です), said aloud after writing. */
+export function gallerySentence(brief: JpText, word: JpText): JpText {
+  const noun = word.en.replace(/^(a|an|the) /, '');
+  const a = /^[aeiou]/.test(brief.en) ? 'an' : 'a';
+  return { text: `${brief.text} ${word.text}です`, kana: `${brief.kana} ${word.kana}です`, en: `It's ${a} ${brief.en} ${noun}.` };
+}
 
 export interface ShodoDeck {
   kana: Target[];
@@ -168,13 +188,13 @@ export function deal(pool: readonly Target[], n: number, used: ReadonlySet<strin
   return [...fresh, ...stale].slice(0, n);
 }
 
-/** The gallery target for a level: the theme glyph as a target with strokes, or null without data. */
-export function galleryTarget(deck: ShodoDeck, level: Level, random: () => number): Target | null {
+/** The gallery target for a level and the room's brief: the theme glyph with strokes, or null without data. */
+export function galleryTarget(deck: ShodoDeck, level: Level, brief: JpText, random: () => number): Target | null {
   const options = shuffled(GALLERY[level], random);
   for (const word of options) {
     const cells = [...word.text].map((c) => deck.strokesOf(c));
     if (cells.every((c): c is readonly InkStroke[] => !!c)) {
-      return { id: `gal-${word.text}`, kind: cells.length > 1 ? (level === 'kana' ? 'kana' : 'word') : level === 'kana' ? 'kana' : 'kanji', text: word.text, cells, say: gallerySentence(word), meaning: word.en, strokes: cells.reduce((n, c) => n + c.length, 0) };
+      return { id: `gal-${word.text}`, kind: cells.length > 1 ? (level === 'kana' ? 'kana' : 'word') : level === 'kana' ? 'kana' : 'kanji', text: word.text, cells, say: gallerySentence(brief, word), meaning: word.en, strokes: cells.reduce((n, c) => n + c.length, 0), word };
     }
   }
   return null;

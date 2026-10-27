@@ -199,21 +199,42 @@ export const fudeLines: HostLine[] = [
   { id: 'fude.shodo_dictation.05', host: 'fude', event: 'shodo_dictation', jp: { text: 'いちまい いちまい、こころを こめて。', kana: 'いちまい いちまい、こころを こめて。', en: 'One sheet at a time, with all your heart.' }, status: 'draft' },
   // shodo_clean
   { id: 'fude.shodo_clean.01', host: 'fude', event: 'shodo_clean', jp: { text: 'うつくしい！　はなまるです！', kana: 'うつくしい！　はなまるです！', en: 'Beautiful! A flower circle!' }, status: 'draft' },
-  { id: 'fude.shodo_clean.02', host: 'fude', event: 'shodo_clean', jp: { text: 'すばらしい ひつじゅんです！', kana: 'すばらしい ひつじゅんです！', en: 'Wonderful stroke order!' }, status: 'draft' },
+  { id: 'fude.shodo_clean.02', host: 'fude', event: 'shodo_clean', jp: { text: 'とめ、はね、はらい… かんぺきです。', kana: 'とめ、はね、はらい… かんぺきです。', en: 'Stop, flick, sweep… perfect.' }, status: 'draft' },
   { id: 'fude.shodo_clean.03', host: 'fude', event: 'shodo_clean', jp: { text: 'フデ、かんどうして ふるえて います。', kana: 'フデ、かんどうして ふるえて います。', en: 'Fude is trembling with emotion.' }, status: 'draft' },
   // shodo_misread
-  { id: 'fude.shodo_misread.01', host: 'fude', event: 'shodo_misread', jp: { text: 'フデには {char}に みえます… あれ？', kana: 'フデには {char}に みえます… あれ？', en: 'To Fude it looks like {char}… huh?' }, slots: ['{char}'], status: 'draft' },
+  { id: 'fude.shodo_misread.01', host: 'fude', event: 'shodo_misread', jp: { text: 'フデには {char}に みえます… {target}は どこ？', kana: 'フデには {char}に みえます… {target}は どこ？', en: 'To Fude it looks like {char}… where did {target} go?' }, slots: ['{char}', '{target}'], status: 'draft' },
   { id: 'fude.shodo_misread.02', host: 'fude', event: 'shodo_misread', jp: { text: 'あれ？　{char}かな？　フデの めが わるい？', kana: 'あれ？　{char}かな？　フデの めが わるい？', en: 'Huh? Is that {char}? Are my eyes going?' }, slots: ['{char}'], status: 'draft' },
   { id: 'fude.shodo_misread.03', host: 'fude', event: 'shodo_misread', jp: { text: '{char}…？　いえいえ、フデが すべりました。', kana: '{char}…？　いえいえ、フデが すべりました。', en: '{char}…? No, no, my brush slipped.' }, slots: ['{char}'], status: 'draft' },
   // shodo_gallery
-  { id: 'fude.shodo_gallery.01', host: 'fude', event: 'shodo_gallery', jp: { text: 'さいごは おおきな いちまい。すきな ものを かいて ください。', kana: 'さいごは おおきな いちまい。すきな ものを かいて ください。', en: 'Last, one big sheet. Write something you love.' }, status: 'draft' },
+  { id: 'fude.shodo_gallery.01', host: 'fude', event: 'shodo_gallery', jp: { text: 'さいごは おおきな いちまい。おだいを よく みて！', kana: 'さいごは おおきな いちまい。おだいを よく みて！', en: 'Last, one big sheet. Read your brief closely!' }, status: 'draft' },
   { id: 'fude.shodo_gallery.02', host: 'fude', event: 'shodo_gallery', jp: { text: 'てんらんかいの じかんです。ゆっくり どうぞ。', kana: 'てんらんかいの じかんです。ゆっくり どうぞ。', en: 'Exhibition time. Take your time.' }, status: 'draft' },
   { id: 'fude.shodo_gallery.03', host: 'fude', event: 'shodo_gallery', jp: { text: 'こころを こめて… いちまい。', kana: 'こころを こめて… いちまい。', en: 'With all your heart… one sheet.' }, status: 'draft' },
   // shodo_vote
-  { id: 'fude.shodo_vote.01', host: 'fude', event: 'shodo_vote', jp: { text: 'すきな さくひんに はんこを おして ください！', kana: 'すきな さくひんに はんこを おして ください！', en: 'Stamp the works you like!' }, status: 'draft' },
+  { id: 'fude.shodo_vote.01', host: 'fude', event: 'shodo_vote', jp: { text: 'どれが どうぶつに みえますか？　はんこを どうぞ。', kana: 'どれが どうぶつに みえますか？　はんこを どうぞ。', en: 'Which one looks like an animal? Stamps, please.' }, status: 'draft' },
   { id: 'fude.shodo_vote.02', host: 'fude', event: 'shodo_vote', jp: { text: 'どれも いいですね… はんこを どうぞ！', kana: 'どれも いいですね… はんこを どうぞ！', en: 'They are all good… stamps, please!' }, status: 'draft' },
   // shodo_claim
   { id: 'fude.shodo_claim.01', host: 'fude', event: 'shodo_claim', jp: { text: 'じぶんの さくひんですか？　なまえを どうぞ！', kana: 'じぶんの さくひんですか？　なまえを どうぞ！', en: 'Is it yours? Sign your name!' }, status: 'draft' },
   { id: 'fude.shodo_claim.02', host: 'fude', event: 'shodo_claim', jp: { text: 'さいごに みんなで よみましょう！　せーの！', kana: 'さいごに みんなで よみましょう！　せーの！', en: 'Finally, let\'s read them together! Ready, go!' }, status: 'draft' },
   { id: 'fude.shodo_claim.03', host: 'fude', event: 'shodo_claim', jp: { text: 'かいた ひとは… だれかな？', kana: 'かいた ひとは… だれかな？', en: 'And who wrote it…?' }, status: 'draft' },
+  // shodo_synchro_break
+  { id: 'fude.shodo_synchro_break.01', host: 'fude', event: 'shodo_synchro_break', jp: { text: 'シンクロ！　…あれ？　ひとり ちがう ほうへ。', kana: 'シンクロ！　…あれ？　ひとり ちがう ほうへ。', en: 'Synchro! …huh? One went the other way.' }, status: 'draft' },
+  { id: 'fude.shodo_synchro_break.02', host: 'fude', event: 'shodo_synchro_break', jp: { text: 'みんな そろって… あっ、ひとり おさきに！', kana: 'みんな そろって… あっ、ひとり おさきに！', en: 'All together… oh, one ran ahead!' }, status: 'draft' },
+  { id: 'fude.shodo_synchro_break.03', host: 'fude', event: 'shodo_synchro_break', jp: { text: 'ひつじゅんの まいごが いますね。', kana: 'ひつじゅんの まいごが いますね。', en: 'Looks like a stroke got lost.' }, status: 'draft' },
+  // shodo_gallery_reveal
+  { id: 'fude.shodo_gallery_reveal.01', host: 'fude', event: 'shodo_gallery_reveal', jp: { text: 'おお… おお？　おおおお！', kana: 'おお… おお？　おおおお！', en: 'Oh… oh? OHHH!' }, status: 'draft' },
+  { id: 'fude.shodo_gallery_reveal.02', host: 'fude', event: 'shodo_gallery_reveal', jp: { text: 'いち… に… さん… これは なんでしょう？', kana: 'いち… に… さん… これは なんでしょう？', en: 'One… two… three… what could this be?' }, status: 'draft' },
+  { id: 'fude.shodo_gallery_reveal.03', host: 'fude', event: 'shodo_gallery_reveal', jp: { text: 'フデ、ドキドキして います。', kana: 'フデ、ドキドキして います。', en: 'Fude\'s heart is pounding.' }, status: 'draft' },
+  // shodo_callback
+  { id: 'fude.shodo_callback.01', host: 'fude', event: 'shodo_callback', jp: { text: 'こんどは {char}じゃ ないですね。', kana: 'こんどは {char}じゃ ないですね。', en: 'Not {char} this time, I see.' }, slots: ['{char}'], status: 'draft' },
+  { id: 'fude.shodo_callback.02', host: 'fude', event: 'shodo_callback', jp: { text: '{char}は… もう いませんね？　よかった。', kana: '{char}は… もう いませんね？　よかった。', en: 'No {char} in here… right? Phew.' }, slots: ['{char}'], status: 'draft' },
+  // shodo_award
+  { id: 'fude.shodo_award.01', host: 'fude', event: 'shodo_award', jp: { text: '{award}は… {n}ばん！', kana: '{award}は… {n}ばん！', en: 'The {award} goes to… number {n}!' }, slots: ['{award}', '{n}'], status: 'draft' },
+  { id: 'fude.shodo_award.02', host: 'fude', event: 'shodo_award', jp: { text: 'はんこの けっかです。{award}、{n}ばん！', kana: 'はんこの けっかです。{award}、{n}ばん！', en: 'The stamps are in. {award}: number {n}!' }, slots: ['{award}', '{n}'], status: 'draft' },
+  { id: 'fude.shodo_award.03', host: 'fude', event: 'shodo_award', jp: { text: '{n}ばんに {award}！　かいた ひとは… しって いますね。', kana: '{n}ばんに {award}！　かいた ひとは… しって いますね。', en: '{award} for number {n}! The artist knows who they are.' }, slots: ['{award}', '{n}'], status: 'draft' },
+  // shodo_claimed
+  { id: 'fude.shodo_claimed.01', host: 'fude', event: 'shodo_claimed', jp: { text: '{name}さんの さくひん でした！　はくしゅ！', kana: '{name}さんの さくひん でした！　はくしゅ！', en: 'It was {name}\'s work! Applause!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.shodo_claimed.02', host: 'fude', event: 'shodo_claimed', jp: { text: 'おお、{name}さん！　いい ふでですね。', kana: 'おお、{name}さん！　いい ふでですね。', en: 'Oh, {name}! What a brush.' }, slots: ['{name}'], status: 'draft' },
+  // shodo_other_hand
+  { id: 'fude.shodo_other_hand.01', host: 'fude', event: 'shodo_other_hand', jp: { text: 'こんどは… はんたいの てで かいて ください！', kana: 'こんどは… はんたいの てで かいて ください！', en: 'This time… write with your other hand!' }, status: 'draft' },
+  { id: 'fude.shodo_other_hand.02', host: 'fude', event: 'shodo_other_hand', jp: { text: 'ふでを もちかえて！　はんたいの てです！', kana: 'ふでを もちかえて！　はんたいの てです！', en: 'Switch hands! Your other hand!' }, status: 'draft' },
 ];

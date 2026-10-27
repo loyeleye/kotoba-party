@@ -11,9 +11,11 @@
 //   2. 書き取り (answer → reveal, three items): "say it, then write it" (English shown, say the
 //      word from memory, then write it) alternating with dictation (hear it, write it). Each item
 //      ends in a synchro replay on the TV: every sheet brushes on together, stroke by stroke.
-//   3. 展覧会 (encore → finale → penalty): one big sheet from a shared theme, then say a sentence
-//      about it; the TV hangs every sheet anonymously and players give hanko stamps (never a
-//      "worst"); then anyone may claim their sheet and the room reads them all as a send-off.
+//   3. 展覧会 (encore → finale → penalty): one big sheet with no model under it, from a shared
+//      silly brief ("a sleepy ___"), then say the sentence; the TV brushes every sheet on at once,
+//      anonymously, and players give hanko stamps (never a "worst"); Fude reads out the winner of
+//      each stamp by number, then anyone may claim their sheet and the room reads them all.
+//      The VIP can make the big sheet an other-hand round.
 //
 // Writing never earns the speaking bonus; only saying does. Speaking bonuses are settled when a
 // phase ends, capped at 30% of a player's points (design doc, Scoring).
@@ -24,7 +26,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import { checkStroke, gradeInk, KANJI_LIMITS, readInk, TRACE_TOLERANCE_LOOSEST, type InkGrade, type InkPoint, type InkStroke } from '../../japanese/strokes.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type MoveResult } from '../mode.js';
-import { buildDeck, deal, dictationPool, galleryTarget, practicePool, type ShodoDeck, type Target } from './deck.js';
+import { BRIEFS, buildDeck, deal, dictationPool, galleryTarget, practicePool, type ShodoDeck, type Target } from './deck.js';
 
 // ---- tuning ----
 
@@ -74,6 +76,8 @@ export const AWARDS = [
 ] as const;
 export type AwardId = (typeof AWARDS)[number]['id'];
 const AWARD_IDS = new Set<string>(AWARDS.map((a) => a.id));
+/** The award Fude reads out at the send-off, funniest first (humor review). */
+const ANNOUNCE: readonly AwardId[] = ['doubutsu', 'sumi', 'oshii', 'tappitsu'];
 
 /** One synchro-replay stroke slot: 3.6 s for the whole character, 180–450 ms a stroke (motion panel). */
 export const replaySlotMs = (strokes: number): number => Math.round(Math.min(450, Math.max(180, 3600 / Math.max(1, strokes))));
@@ -139,6 +143,8 @@ export interface Item {
 }
 
 export interface Gallery {
+  /** The room's shared brief ("sleepy"), one per game. */
+  brief: JpText;
   targets: Record<string, Target>;
   /** In hand-in order while writing; shuffled for the show. */
   sheets: Sheet[];
@@ -147,6 +153,8 @@ export interface Gallery {
   stamps: Record<string, Partial<Record<AwardId, number>>>;
   claimed: string[];
   scored: boolean;
+  /** Per award, the sheet with the most of its stamps (once scored). */
+  winners: Partial<Record<AwardId, number>>;
 }
 
 export interface ShodoState {
@@ -161,7 +169,11 @@ export interface ShodoState {
   bonus: Record<string, number>;
   /** Bonuses earned this phase, paid (capped) when it ends. */
   pending: Record<string, number>;
-  stats: { clean: Record<string, number>; corrections: Record<string, number>; tappitsu: Record<string, number> };
+  stats: { clean: Record<string, number>; corrections: Record<string, number> };
+  /** Look-alikes Fude misread this game, for a callback in the gallery. */
+  misreads: string[];
+  /** The VIP's other-hand option: the big sheet is written with the other hand. */
+  otherHand: boolean;
 }
 
 // ---- moves ----
@@ -228,6 +240,11 @@ export interface ShodoView {
   slotMs: number;
   /** Players can vote (3 or more). */
   voting: boolean;
+  /** The gallery's brief, from the big sheet on. */
+  brief: JpText | null;
+  otherHand: boolean;
+  /** The send-off: each stamp's winning sheet, named only if claimed. */
+  winners: { award: AwardId; n: number; name: string | null }[] | null;
   me: {
     practice: {
       target: TargetView | null;
@@ -399,10 +416,24 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
     usesPack: false,
     phrasebookTitle: 'Practice sheets',
     phaseLabels: { prompt: 'お手本 · Trace and write', score: 'Read the scroll', answer: '書き取り · Dictation', reveal: 'Synchro replay', encore: '展覧会 · Your big sheet', finale: 'Hanko stamps', penalty: 'Claim it' },
+    extras: [{ key: 'otherHand', label: 'Big sheet with the other hand' }],
   },
 
-  setup() {
-    return { stage: 'practice', practice: {}, items: [], gallery: null, used: [], earned: {}, base: {}, bonus: {}, pending: {}, stats: { clean: {}, corrections: {}, tappitsu: {} } };
+  setup(_ctx, opts) {
+    return {
+      stage: 'practice',
+      practice: {},
+      items: [],
+      gallery: null,
+      used: [],
+      earned: {},
+      base: {},
+      bonus: {},
+      pending: {},
+      stats: { clean: {}, corrections: {} },
+      misreads: [],
+      otherHand: opts.extra?.otherHand === true,
+    };
   },
 
   next(s, from, ctx) {
@@ -446,12 +477,12 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
       case 'finale':
         s.stage = 'vote';
         ctx.cue({ host: 'fude', event: 'shodo_vote' });
+        // The sheets brush on as the vote opens: Fude reacts to them, or calls back a misreading.
+        if (s.misreads.length) ctx.cue({ host: 'fude', event: 'shodo_callback', slots: { char: s.misreads.at(-1)! } });
+        else ctx.cue({ host: 'fude', event: 'shodo_gallery_reveal' });
         return;
       case 'penalty':
-        s.stage = 'claim';
-        scoreGallery(s, ctx);
-        ctx.cue({ host: 'fude', event: 'shodo_claim' });
-        return;
+        return enterClaim(s, ctx);
     }
   },
 
@@ -574,8 +605,11 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
       writers,
       scroll: (phase === 'prompt' || phase === 'score') && viewer.kind === 'stage' ? scrollView(s, ctx) : null,
       sheets: phase === 'reveal' && item && viewer.kind === 'stage' ? replayView(item, ctx) : showGallery ? galleryView(g!, ctx, me) : null,
-      slotMs: item ? replaySlotMs(Math.max(1, ...Object.values(item.sheets).map((x) => flat(x.cells).length))) : 0,
+      slotMs: item ? replaySlotMs(Math.max(1, ...Object.values(item.sheets).map((x) => flat(x.cells).length))) : showGallery ? replaySlotMs(Math.max(1, ...g!.sheets.map((x) => flat(x.cells).length))) : 0,
       voting: players.length >= MIN_VOTERS,
+      brief: g && (phase === 'encore' || showGallery) ? g.brief : null,
+      otherHand: s.otherHand,
+      winners: g && phase === 'penalty' ? winnersView(g, ctx) : null,
       me: me ? mineView(s, phase, me, level, ctx) : null,
     };
   },
@@ -586,8 +620,14 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
       Object.entries(rec)
         .filter(([id, n]) => n > 0 && ctx.player(id))
         .sort((a, b) => b[1] - a[1] || ctx.player(a[0])!.seat - ctx.player(b[0])!.seat)[0]?.[0];
-    const brush = top(s.stats.tappitsu);
-    if (brush) out.push({ playerId: brush, name: nameOf(ctx, brush), title: 'たっぴつ', en: 'Fine Brush (the most たっぴつ stamps)' });
+    // Each stamp's winner, if they owned up to the sheet.
+    const g = s.gallery;
+    if (g) {
+      for (const a of AWARDS) {
+        const owner = g.sheets[g.winners[a.id] ?? -1]?.playerId;
+        if (owner && g.claimed.includes(owner) && ctx.player(owner)) out.push({ playerId: owner, name: nameOf(ctx, owner), title: a.ja, en: `${a.en} (the most ${a.ja} stamps)` });
+      }
+    }
     const clean = top(s.stats.clean);
     if (clean) out.push({ playerId: clean, name: nameOf(ctx, clean), title: 'かきとり めいじん', en: 'Dictation Master (the most clean sheets)' });
     const effort = top(s.stats.corrections);
@@ -638,8 +678,13 @@ function enterReplay(s: ShodoState, ctx: ModeContext): void {
   s.stage = 'replay';
   const item = s.items.at(-1)!;
   const sheets = Object.values(item.sheets);
+  for (const x of sheets) if (x.misread) s.misreads.push(x.misread);
+  // One line: a misreading beats a stroke out of step, which beats a clean sheet.
   const misread = sheets.find((x) => x.misread);
-  if (misread) ctx.cue({ host: 'fude', event: 'shodo_misread', slots: { char: misread.misread! } });
+  if (misread) {
+    const t = misread.target;
+    ctx.cue({ host: 'fude', event: 'shodo_misread', slots: { char: misread.misread!, target: t.text, target_kana: t.say.kana, target_en: t.meaning } });
+  } else if (sheets.some((x) => x.outOfOrder !== null)) ctx.cue({ host: 'fude', event: 'shodo_synchro_break' });
   else if (sheets.some((x) => x.clean)) ctx.cue({ host: 'fude', event: 'shodo_clean' });
   for (const sheet of sheets) {
     const t = sheet.target;
@@ -650,13 +695,28 @@ function enterReplay(s: ShodoState, ctx: ModeContext): void {
 function enterGallery(s: ShodoState, ctx: ModeContext): void {
   s.stage = 'gallery';
   const deck = deckFor(ctx);
+  const brief = BRIEFS[Math.floor(ctx.random() * BRIEFS.length)] ?? BRIEFS[0]!;
   const targets: Record<string, Target> = {};
   for (const p of ctx.players()) {
-    const t = galleryTarget(deck, p.level, () => ctx.random());
+    const t = galleryTarget(deck, p.level, brief, () => ctx.random());
     if (t) targets[p.id] = t;
   }
-  s.gallery = { targets, sheets: [], said: {}, stamps: {}, claimed: [], scored: false };
+  s.gallery = { brief, targets, sheets: [], said: {}, stamps: {}, claimed: [], scored: false, winners: {} };
   ctx.cue({ host: 'fude', event: 'shodo_gallery' });
+  if (s.otherHand) ctx.cue({ host: 'fude', event: 'shodo_other_hand' });
+}
+
+function enterClaim(s: ShodoState, ctx: ModeContext): void {
+  s.stage = 'claim';
+  scoreGallery(s, ctx);
+  ctx.cue({ host: 'fude', event: 'shodo_claim' });
+  // Fude reads out one winner by number (the funniest stamp given); the TV lists them all.
+  const g = s.gallery;
+  const award = ANNOUNCE.find((a) => g?.winners[a] !== undefined);
+  if (g && award) {
+    const a = AWARDS.find((x) => x.id === award)!;
+    ctx.cue({ host: 'fude', event: 'shodo_award', slots: { award: a.ja, award_kana: a.ja.replace('賞', 'しょう'), award_en: a.en, n: String(g.winners[award]! + 1) } });
+  }
 }
 
 function scoreGallery(s: ShodoState, ctx: ModeContext): void {
@@ -664,13 +724,20 @@ function scoreGallery(s: ShodoState, ctx: ModeContext): void {
   if (!g || g.scored) return;
   g.scored = true;
   const received = new Map<number, number>();
+  const byAward = new Map<AwardId, number[]>();
   for (const [voter, stamps] of Object.entries(g.stamps)) {
     if (!ctx.player(voter)) continue;
     for (const [award, n] of Object.entries(stamps)) {
       received.set(n!, (received.get(n!) ?? 0) + 1);
-      const owner = g.sheets[n!]?.playerId;
-      if (award === 'tappitsu' && owner) s.stats.tappitsu[owner] = (s.stats.tappitsu[owner] ?? 0) + 1;
+      const counts = byAward.get(award as AwardId) ?? g.sheets.map(() => 0);
+      counts[n!] = (counts[n!] ?? 0) + 1;
+      byAward.set(award as AwardId, counts);
     }
+  }
+  // Each award's winner: the most of its stamps, the earlier sheet on a tie (show order is shuffled).
+  for (const [award, counts] of byAward) {
+    const most = Math.max(...counts);
+    if (most > 0) g.winners[award] = counts.indexOf(most);
   }
   g.sheets.forEach((sheet, i) => {
     const stamps = Math.min(POINTS.stampCap, (received.get(i) ?? 0) * POINTS.stamp);
@@ -718,8 +785,9 @@ function moveSay(s: ShodoState, phase: Phase, playerId: string, u: unknown, ctx:
     if (!g || !t) return moveError('not-playing');
     if (!g.sheets.some((x) => x.playerId === playerId)) return moveError('write-first');
     if (g.said[playerId] !== undefined) return moveError('already-answered');
-    // The sentence ("やまが すきです"), or at least the word in it.
-    if (!matchesAccepted(heard, [t.say.kana, t.say.kana.replace(/が すきです$/, '')])) return moveError('not-the-word');
+    // The sentence ("ねむい やまです"), without the です, or at least the word in it.
+    const word = t.word?.kana ?? t.say.kana;
+    if (!matchesAccepted(heard, [t.say.kana, t.say.kana.replace(/です$/, ''), word])) return moveError('not-the-word');
     g.said[playerId] = u.via;
     owe(s, playerId, u.via === 'speech' ? SAY_BONUS.speech : u.via === 'typed' ? SAY_BONUS.typed : 0);
     return MOVE_OK;
@@ -820,7 +888,7 @@ function moveSheet(s: ShodoState, phase: Phase, playerId: string, raw: unknown, 
     const cells = readCells(raw, t.cells.length);
     if (!cells) return moveError('bad-drawing');
     g.sheets.push(gradeSheet(deck, playerId, t, cells));
-    ctx.phrase(playerId, { itemId: t.id, text: t.text, kana: t.say.kana.replace(/が すきです$/, ''), en: t.meaning, outcome: 'seen' });
+    ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: 'seen' });
     return MOVE_OK;
   }
   return moveError('wrong-phase');
@@ -843,7 +911,11 @@ function moveClaim(s: ShodoState, phase: Phase, playerId: string, ctx: ModeConte
   const g = s.gallery;
   if (phase !== 'penalty' || !g) return moveError('wrong-phase');
   if (!g.sheets.some((x) => x.playerId === playerId)) return moveError('not-playing');
-  if (!g.claimed.includes(playerId) && ctx.player(playerId)) g.claimed.push(playerId);
+  if (!g.claimed.includes(playerId) && ctx.player(playerId)) {
+    g.claimed.push(playerId);
+    // The first artist to own up gets the applause line.
+    if (g.claimed.length === 1) ctx.cue({ host: 'fude', event: 'shodo_claimed', slots: { name: nameOf(ctx, playerId) } });
+  }
   return MOVE_OK;
 }
 
@@ -900,6 +972,13 @@ function galleryView(g: Gallery, ctx: ModeContext, me: string | null): SheetView
   }));
 }
 
+function winnersView(g: Gallery, ctx: ModeContext): NonNullable<ShodoView['winners']> {
+  return AWARDS.filter((a) => g.winners[a.id] !== undefined).map((a) => {
+    const owner = g.sheets[g.winners[a.id]!]!.playerId;
+    return { award: a.id, n: g.winners[a.id]! + 1, name: g.claimed.includes(owner) ? nameOf(ctx, owner) : null };
+  });
+}
+
 function mineView(s: ShodoState, phase: Phase, me: string, level: Level | null, ctx: ModeContext): NonNullable<ShodoView['me']> {
   const out: NonNullable<ShodoView['me']> = { practice: null, item: null, gallery: null, stamps: s.gallery?.stamps[me] ?? {} };
   const p = s.practice[me];
@@ -938,8 +1017,8 @@ function mineView(s: ShodoState, phase: Phase, me: string, level: Level | null, 
   if (g && gt && (phase === 'encore' || phase === 'finale' || phase === 'penalty')) {
     const at = g.sheets.findIndex((x) => x.playerId === me);
     out.gallery = {
-      // The gallery glyph is shown with a faint model: it's about the beauty of the sheet.
-      target: targetView(gt, level, true),
+      // The written form is shown, but no model under the pad: the big sheet is all your own hand.
+      target: targetView(gt, level, false),
       handedIn: at >= 0,
       said: g.said[me],
       sheet: phase === 'encore' || at < 0 ? null : at + 1,

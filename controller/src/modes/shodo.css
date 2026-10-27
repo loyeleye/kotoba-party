@@ -54,3 +54,6 @@
 .sho .sho-thumb .ink-svg { background: transparent; flex: 1; }
 .sho .sho-n { font-weight: 900; font-size: 14px; }
 .sho .sho-stamped { color: #c8102e; font-weight: 900; font-size: 13px; }
+.sho .sho-brief { margin: 0; font-size: 22px; font-weight: 800; color: var(--mode); }
+.sho .sho-other-hand { margin: 0; padding: 8px 12px; border-radius: 12px; background: #c8102e; color: #fff; font-weight: 800; text-align: center; }
+.sho .sho-won { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-weight: 800; }

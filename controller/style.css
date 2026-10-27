@@ -132,6 +132,10 @@ body[data-mode] .timer { color: var(--on-accent); }
 .level-btn span, .mode-btn small { color: var(--muted); font-size: 14px; }
 .level-btn.on, .mode-btn.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .vip-start select[hidden] { display: none; }
+.vip-extras { display: grid; gap: 6px; }
+.vip-extras:empty { display: none; }
+.vip-extra { display: flex; gap: 8px; align-items: center; font-size: 18px; }
+.vip-extra input { width: 22px; height: 22px; }
 .secondary { font-size: 18px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
 .award { color: var(--warn); font-weight: 700; margin: 0; }
 .phrasebook ul { padding-left: 18px; display: grid; gap: 6px; }
