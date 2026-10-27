@@ -153,7 +153,7 @@ function replay(view: RoomView, game: ShodoView): HTMLElement {
         h(
           'div',
           { class: `sho-paper${s.clean ? ' clean' : ''}`, style: tilt(s.n) },
-          h('div', { class: 'sho-cells' }, sheetCells(s, game.slotMs, elapsed)),
+          h('div', { class: cellsClass(s) }, sheetCells(s, game.slotMs, elapsed)),
           s.outOfOrder !== null ? h('span', { class: 'sho-order', lang: 'ja', style: `animation-delay:${Math.max(0, s.outOfOrder * game.slotMs - elapsed)}ms` }, '順 ×') : null,
           h('p', { class: 'sho-caption', lang: 'ja' }, s.text, s.clean ? h('span', { class: 'sho-clean' }, ` ◎ ${s.name ?? ''}`) : null),
           // Fude's misreading, under the sheet it's about, once that sheet has finished.
@@ -164,14 +164,26 @@ function replay(view: RoomView, game: ShodoView): HTMLElement {
   );
 }
 
+/**
+ * A sheet is a 3:4 sheet of paper with its characters stacked top to bottom, as kakizome is
+ * written (art and Japanese panels): one square fills the width, two or three shrink to fit.
+ */
+const cellsClass = (s: SheetView) => `sho-cells n${Math.min(3, s.cells.length)}`;
+/** A square's width as a share of the sheet's, by how many characters are stacked. */
+const cellShare = (n: number) => (n <= 1 ? 1 : n === 2 ? 2 / 3 : 4 / 9);
+
 /** Fude's はなまる, a red swirl round the sheet's best stroke, once `delayMs` has passed. */
 function hanamaru(sheet: SheetView, delayMs = 0): HTMLElement | null {
   const [c, i] = sheet.best;
   const s = sheet.cells[c]?.[i];
   if (!s?.length) return null;
   const mid = s[Math.floor(s.length / 2)]!;
-  const left = ((c + mid[0]) / sheet.cells.length) * 100;
-  return h('span', { class: 'sho-hanamaru', style: `left:${left}%;top:${mid[1] * 100}%${delayMs > 0 ? `;animation-delay:${600 + delayMs}ms` : ''}`, 'aria-hidden': 'true' });
+  const n = Math.min(3, sheet.cells.length);
+  const f = cellShare(n);
+  // Squares are centred on the sheet: across the width, and down its 4/3 height.
+  const left = ((1 - f) / 2 + mid[0] * f) * 100;
+  const top = ((4 / 3 - n * f) / 2 + (c + mid[1]) * f) / (4 / 3) * 100;
+  return h('span', { class: 'sho-hanamaru', style: `left:${left}%;top:${top}%${delayMs > 0 ? `;animation-delay:${600 + delayMs}ms` : ''}`, 'aria-hidden': 'true' });
 }
 
 function gallery(view: RoomView, game: ShodoView): HTMLElement {
@@ -206,13 +218,13 @@ function gallery(view: RoomView, game: ShodoView): HTMLElement {
           'div',
           { class: 'sho-paper sho-large', style: tilt(s.n) },
           h('span', { class: 'sho-n' }, `#${s.n}`),
-          h('div', { class: 'sho-cells' }, voting ? sheetCells(s, game.slotMs, elapsed, 8) : s.cells.map((c) => h('div', { class: 'sho-cell' }, glyph(c, { width: 8 }))), hanamaru(s, voting ? Math.max(0, most * game.slotMs - elapsed) : 0)),
+          h('div', { class: cellsClass(s) }, voting ? sheetCells(s, game.slotMs, elapsed, 8) : s.cells.map((c) => h('div', { class: 'sho-cell' }, glyph(c, { width: 8 }))), hanamaru(s, voting ? Math.max(0, most * game.slotMs - elapsed) : 0)),
           h(
             'div',
             { class: 'sho-stamps' },
             AWARDS.filter((a) => s.stamps[a.id]).map((a) => h('span', { class: 'sho-hanko', lang: 'ja', title: a.en }, a.ja, s.stamps[a.id]! > 1 ? ` ×${s.stamps[a.id]}` : '')),
           ),
-          voting ? null : h('p', { class: 'sho-caption', lang: 'ja' }, s.say.kana, game.kanaAtTable ? h('small', {}, ` ${toRomaji(s.say.kana)}`) : null),
+          voting ? null : h('p', { class: 'sho-caption', lang: 'ja' }, s.say.kana, game.kanaAtTable ? h('small', {}, ` ${toRomaji(s.say.kana.replace(/(\S)です$/, '$1 です'))}`) : null),
           s.name && s.name !== 'you' ? h('p', { class: 'sho-claimed' }, h('span', { class: 'sho-seal', lang: 'ja' }, '印'), ` ${s.name}`) : null,
         ),
       ),

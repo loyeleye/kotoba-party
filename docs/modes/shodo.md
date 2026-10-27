@@ -70,6 +70,19 @@ Recap awards: each stamp's winner, if they claimed their sheet (たっぴつ賞,
 すみだらけで賞), かきとり めいじん (the most clean sheets), どりょく賞 (kept at it after the most corrected
 strokes). No "worst" award anywhere; an unclaimed winner stays anonymous (「かいた ひとは… しって いますね」).
 
+## Sheets and the pad
+
+- A sheet is a 3:4 sheet of paper with its characters stacked top to bottom, as kakizome is written:
+  one square fills the width, two shrink to two thirds (art and Japanese panels).
+- Free pads send the ink so far a moment after each stroke (a `draft` move). When time runs out, a
+  dictation or big sheet with ink on it is handed in as it stands; recall still needs the reading
+  shown first (UX panel).
+- Hand-in sits right under the paper, above Undo and Clear, so it fits on a 390×844 phone.
+- Finished strokes on the phone are drawn with the same brush outline as the TV.
+- A wrong traced stroke's tip says where to go: "Start at the red dot and go down and to the left",
+  or "Other way: this stroke goes …". `strokeWay` now names where a stroke starts by its place in the
+  box (thirds), not by its direction.
+
 ## Privacy
 
 - The phone never gets the written form before the sheet is graded: memory reps and items carry
@@ -83,7 +96,10 @@ strokes). No "worst" award anywhere; an unclaimed winner stays anonymous (「か
 The soft synth tune (`gentle`) for the writing rounds, under the whole time players write, say or
 read, and at the listening level during dictation (each phone voices its own word). The gallery
 switches to Japanese Lofi HipHop (pickentcode, koto over a lo-fi beat; Ladi's pick, 2026-10-27):
-full while the big sheets are written and stamped, under for the claim and the read-aloud. No drum
+full while the big sheets are written, under once the first is in (players say their sentence into
+the phone), full for the stamps, under for the claim and the read-aloud. Fude stays quiet on
+dictation items, and the phones voice their words in seat order, 1.2 s apart, so nothing talks over
+the word (music panel). No drum
 roll, no score or finale tunes. Phones stay silent apart from the player's own 🔊 tap. The track's
 rights are ❓ (commissioned on Fiverr; commercial blockers row 22); streamer mode plays the synth.
 

@@ -28,7 +28,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | --- | --- | --- | --- | --- |
 | 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms |
 | 2 | VOICEVOX engine | Docker image, separate service | 🟡 | Run unmodified as a service; LGPL/core terms if ever bundled into a download |
-| 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credit KanjiVG; keep the derived data CC BY-SA 3.0 |
+| 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
 | 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 42 Onsen and Omiai character portraits, 14 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
@@ -47,9 +47,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 19 | Repo licence | No `LICENSE` file | ✅ | All rights reserved by default. Keep it that way unless you choose to open-source |
 | 20 | Speech to text: self-hosted Whisper (OpenAI weights, whisper.cpp or speaches) | `server/src/stt.ts`, separate service | ✅ ⚠️ | Ship MIT notices if ever bundled; stay on OpenAI's weights; privacy notice and a plan for under-13s before launch |
 | 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
-| 22 | Music: recorded tracks (CC0, CC BY 4.0), original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes |
+| 22 | Music: recorded tracks (CC0, CC BY 4.0), original synth tunes and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes. Japanese Lofi HipHop is split out as row 25 |
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
 | 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
+| 25 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
 
 ## Details
 
@@ -88,8 +89,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 - **Conditions:** Attribution, and anything derived from it stays CC BY-SA. Both `strokes.ts` files
   (kana, and the 111 kanji Shodō Taikai uses) are derived, and their headers say so. The share-alike applies to that data, not to the rest of the game, as long
   as it stays a separate data file.
-- **To sell:** Credit KanjiVG on the credits screen and in the notices file. Accept that anyone may
-  reuse the stroke data.
+- **Credited:** since 2026-10-27 the stage's recap credits strip includes "Stroke order data:
+  KanjiVG, © Ulrich Apel and contributors, CC BY-SA 3.0" (`creditLines` in `stage/src/main.ts`).
+- **To sell:** Keep that credit, add it to the notices file, and accept that anyone may reuse the
+  stroke data.
 
 ### 4. kuromoji and IPADIC
 
@@ -319,15 +322,17 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY
   allows commercial use, and asks for title, author, source, the licence with a link, and a note of
   any changes.
-- **Japanese Lofi HipHop (pickentcode, ❓):** Shodō Taikai's gallery track, added 2026-10-27 at
+- **Japanese Lofi HipHop (pickentcode, ❓, row 25):** Shodō Taikai's gallery track, added 2026-10-27 at
   Ladi's pick. Its [OGA page](https://opengameart.org/content/japanese-lofi-hiphop-track), read
   2026-10-27, says CC0 and "Ordered from Fiverr for a project that never got finished". Fiverr's
   [commercial-use licence page](https://help.fiverr.com/hc/en-us/articles/37555186939921--For-Commercial-Use-license-details)
   says a delivery's IP is assigned to the buyer unless the gig says otherwise, so the buyer could
   release it as CC0. Not verified: that the uploader is the buyer, that the gig didn't keep rights,
-  and that the seller used no licensed samples. **To sell:** ask pickentcode for the Fiverr order
-  and the seller's name and confirm, or swap the gallery to Senbazuru (Kevin MacLeod, CC BY 4.0, the
-  runner-up) or the synth.
+  and that the seller used no licensed or third-party samples. **To sell:** ask pickentcode for the
+  Fiverr order and the seller's name and confirm, or swap the gallery to Senbazuru (Kevin MacLeod, CC BY
+  4.0, the runner-up) or the synth. In code its stand-in (streamer mode, or a file that won't load) is
+  the `gentle` synth tune, not Senbazuru: swapping for sale means changing `SHODO_GALLERY` in
+  `stage/src/music/cues.ts`.
 - **How we credit:** the stage names each recorded track, author and licence beside the sound button
   while it plays, and during the recap a strip along the foot of the screen cycles through every track
   grouped by author with the licence link and "looped and filtered for the game" (`creditSummary()` in

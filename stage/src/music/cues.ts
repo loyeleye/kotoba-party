@@ -101,12 +101,19 @@ export const listening = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): bool
   // Shodō Taikai's dictation: each phone voices its own word.
   (view.mode === 'shodo' && view.phase === 'answer' && !!view.game && 'itemKind' in view.game && view.game.itemKind === 'dictation');
 
-export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = false): Cue {
+/**
+ * Shodō Taikai's big sheet: once the first sheet is in, players start saying their sentence into
+ * the phone, so the gallery track drops under (the music panel).
+ */
+export const saying = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): boolean =>
+  view.mode === 'shodo' && view.phase === 'encore' && view.game?.mode === 'shodo' && view.game.finished > 0;
+
+export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = false, say = false): Cue {
   if (phase === 'lobby') return { song: 'bouncing', mix: 'full' };
   // Curtain Call, then the recap tune.
   if (phase === 'recap') return { song: 'happy-dance', mix: 'full', leadIn: 'fanfare' };
   if (mode === 'karaoke-duel') return karaokeCue(phase);
-  if (mode === 'shodo') return shodoCue(phase, listen);
+  if (mode === 'shodo') return shodoCue(phase, listen, say);
   const theme = mode ? themeFor(mode, game) : 'bouncing';
   if (theme === null) return { song: null, mix: 'full' };
   const mix = listen ? 'listen' : speaks(mode, phase) ? 'under' : 'full';
@@ -142,13 +149,14 @@ export const SHODO_GALLERY: TrackId = 'japanese-lofi';
 /**
  * Shodō Taikai is calm throughout (the music panel): no drum roll, no score or finale tunes. The
  * writing rounds keep the soft synth tune, under while players write, say or read (a recorded koto
- * track turns to a dull hum in the under mix). The gallery switches to a recorded koto lo-fi track, full while
- * the big sheets are written and stamped, under for the claim and the read-aloud send-off.
+ * track turns to a dull hum in the under mix). The gallery switches to a recorded koto lo-fi track: full
+ * while the big sheets are written, under once the first is in (players say their sentence), full
+ * again for the stamps, under for the claim and the read-aloud send-off.
  */
-function shodoCue(phase: Phase, listen: boolean): Cue {
+function shodoCue(phase: Phase, listen: boolean, say: boolean): Cue {
   const song = MODE_THEMES.shodo ?? 'gentle';
   if (phase === 'intro') return { song, mix: 'full', leadIn: 'ident' };
-  if (phase === 'encore') return { song: SHODO_GALLERY, mix: 'full' };
+  if (phase === 'encore') return { song: SHODO_GALLERY, mix: say ? 'under' : 'full' };
   if (phase === 'finale') return { song: SHODO_GALLERY, mix: 'full', keep: true };
   if (phase === 'penalty') return { song: SHODO_GALLERY, mix: 'under', keep: true };
   return { song, mix: listen ? 'listen' : 'under', keep: true };

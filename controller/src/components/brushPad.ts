@@ -11,8 +11,9 @@
 //
 // Strokes in progress live here, keyed like inkPad's, so a redrawn screen keeps them.
 
+import { brushPath } from '../../../shared/src/brush.js';
 import { h } from '../../../shared/src/dom.js';
-import { checkStroke, KANJI_LIMITS, strokeWay, traceTolerance, type InkPoint, type InkStroke } from '../../../shared/src/japanese/strokes.js';
+import { checkStroke, KANJI_LIMITS, strokeHeading, traceTolerance, type InkPoint, type InkStroke } from '../../../shared/src/japanese/strokes.js';
 import { forWire } from './inkPad.js';
 
 type Stroke = InkPoint[];
@@ -38,6 +39,8 @@ export interface BrushPadOptions {
   label?: string;
   /** Kana-level players: the trace check starts a step looser. */
   beginner?: boolean;
+  /** Free pads: the sheet so far, a moment after each change, so time running out doesn't lose it. */
+  onDraft?(cells: InkPoint[][][]): void;
   /** Called with each square's strokes and the strokes the pad had to correct. */
   onSend(cells: InkPoint[][][], corrections: number): Promise<boolean> | void;
 }
@@ -81,8 +84,9 @@ export function brushPad(opts: BrushPadOptions): HTMLElement {
     tabs.length ? h('div', { class: 'sho-cell-tabs', role: 'group', 'aria-label': 'Which character' }, h('span', { class: 'hint' }, 'Character'), tabs) : null,
     h('div', { class: 'sho-paper' }, canvas),
     tip,
-    checking ? h('div', { class: 'sho-tools' }, count, clear) : h('div', { class: 'sho-tools' }, undo, count, clear),
+    // Hand-in sits right under the paper, above Undo / Clear, so it stays above the fold (UX panel).
     checking ? null : send,
+    checking ? h('div', { class: 'sho-tools' }, count, clear) : h('div', { class: 'sho-tools' }, undo, count, clear),
   );
 
   let ctx: CanvasRenderingContext2D | null = null;
@@ -148,7 +152,12 @@ export function brushPad(opts: BrushPadOptions): HTMLElement {
     } else if (model.length) {
       model.forEach((s) => line(s, size * 0.075, 'rgba(60, 50, 40, 0.06)'));
     }
-    strokes().forEach((s) => line(s, Math.max(4, size * 0.045), ink));
+    // Finished strokes in the same brush as the TV; the one under the finger stays a quick line.
+    strokes().forEach((s) => {
+      if (s === current || typeof Path2D === 'undefined') return line(s, Math.max(4, size * 0.045), ink);
+      ctx!.fillStyle = ink;
+      ctx!.fill(new Path2D(brushPath(s, Math.max(5, size * 0.06), size)));
+    });
     if (wrong) line(wrong, Math.max(4, size * 0.045), 'rgba(200, 16, 46, 0.55)');
   };
 
@@ -170,9 +179,19 @@ export function brushPad(opts: BrushPadOptions): HTMLElement {
     return [clamp((e.clientX - r.left) / r.width), clamp((e.clientY - r.top) / r.height)];
   };
 
+  let draftTimer: ReturnType<typeof setTimeout> | null = null;
+  const saveDraft = () => {
+    if (!opts.onDraft || checking) return;
+    if (draftTimer) clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      if (!sending) opts.onDraft?.(draft.cells.map((c) => (c.length ? forWire(c, KANJI_LIMITS) : [])));
+    }, 400);
+  };
+
   const submit = () => {
     if (sending) return;
     sending = true;
+    if (draftTimer) clearTimeout(draftTimer);
     refresh();
     const cells = draft.cells.map((c) => forWire(c, KANJI_LIMITS));
     void Promise.resolve(opts.onSend(cells, draft.corrections)).then((ok) => {
@@ -201,7 +220,7 @@ export function brushPad(opts: BrushPadOptions): HTMLElement {
       paint();
     }, 600);
     navigator.vibrate?.(30);
-    tip.textContent = verdict === 'reversed' ? `Other way: ${strokeWay(want)}.` : `Start at the red dot, ${strokeWay(want)}.`;
+    tip.textContent = verdict === 'reversed' ? `Other way: this stroke goes ${strokeHeading(want)}.` : `Start at the red dot and go ${strokeHeading(want)}.`;
   };
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -237,6 +256,7 @@ export function brushPad(opts: BrushPadOptions): HTMLElement {
     }
     current = null;
     if (s && checking) judge(s);
+    else saveDraft();
     paint();
     refresh();
   };
@@ -245,12 +265,14 @@ export function brushPad(opts: BrushPadOptions): HTMLElement {
 
   undo.addEventListener('click', () => {
     strokes().pop();
+    saveDraft();
     paint();
     refresh();
   });
   clear.addEventListener('click', () => {
     strokes().length = 0;
     tip.textContent = '';
+    saveDraft();
     paint();
     refresh();
   });
