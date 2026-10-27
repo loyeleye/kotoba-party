@@ -33,6 +33,11 @@ export interface RoomOptions {
   seatHoldMs?: number;
   /** Close the room after this long with nobody connected. */
   idleMs?: number;
+  /**
+   * Close the room after this long with no joins or commands, even with screens still
+   * connected: a TV left on the stage, or a phone awake on a charger, would otherwise keep it open forever.
+   */
+  staleMs?: number;
   random?: () => number;
   onClose?: (room: Room) => void;
   /** Called after every state change, with the new version. Tests use it to record what each viewer should see. */
@@ -76,6 +81,7 @@ export class Room {
   private phaseTimer: unknown = null;
   private timedPhaseSeq = -1;
   private idleTimer: unknown = null;
+  private staleTimer: unknown = null;
 
   constructor(opts: RoomOptions) {
     this.opts = opts;
@@ -84,6 +90,7 @@ export class Room {
     this.seatHoldMs = opts.seatHoldMs ?? SEAT_HOLD_MS;
     this.state = createGame(opts.code);
     this.armIdleTimer();
+    this.armStaleTimer();
   }
 
   createStageToken(): string {
@@ -120,6 +127,7 @@ export class Room {
 
   /** Joins a new player, or hands a held seat back to the phone that had it. */
   join(req: JoinRequest): JoinResponse | { error: JoinError } {
+    this.armStaleTimer();
     const held = this.findHeldSeat(req);
     if (held) return { playerId: held, token: this.playerTokens.get(held)!, rejoined: true };
 
@@ -210,6 +218,7 @@ export class Room {
     if (!viewer) return null;
     const cmd = parseCommand(raw);
     if (!cmd) return { ok: false, error: 'bad-command', v: this.version };
+    this.armStaleTimer();
     if (viewer.kind === 'stage' && viewer.watch && !(this.state.remoteControl && WATCH_COMMANDS.has(cmd.type))) return { ok: false, error: 'watch-only', v: this.version };
 
     const actorKey = viewer.kind === 'player' ? viewer.playerId : `stage:${token}`;
@@ -231,15 +240,17 @@ export class Room {
     return this.sockets.size;
   }
 
-  close(): void {
+  close(reason: ByeReason = 'room-closed'): void {
     if (this.closed) return;
     this.closed = true;
-    for (const socket of this.sockets.keys()) bye(socket, 'room-closed', CLOSE.roomGone);
+    for (const socket of this.sockets.keys()) bye(socket, reason, CLOSE.roomGone);
     this.sockets.clear();
     for (const t of this.holdTimers.values()) this.clock.clearTimeout(t);
     this.holdTimers.clear();
     this.clock.clearTimeout(this.phaseTimer);
     this.cancelIdleTimer();
+    this.clock.clearTimeout(this.staleTimer);
+    this.staleTimer = null;
     this.opts.onClose?.(this);
   }
 
@@ -337,6 +348,12 @@ export class Room {
     this.cancelIdleTimer();
     if (!this.opts.idleMs) return;
     this.idleTimer = this.clock.setTimeout(() => this.close(), this.opts.idleMs);
+  }
+
+  private armStaleTimer(): void {
+    if (!this.opts.staleMs || this.closed) return;
+    if (this.staleTimer !== null) this.clock.clearTimeout(this.staleTimer);
+    this.staleTimer = this.clock.setTimeout(() => this.close('room-idle'), this.opts.staleMs);
   }
 
   private cancelIdleTimer(): void {

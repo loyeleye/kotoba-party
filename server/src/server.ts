@@ -5,6 +5,7 @@ import { networkInterfaces } from 'node:os';
 import { extname, join, normalize, resolve } from 'node:path';
 import QRCode from 'qrcode';
 import { WebSocketServer, type WebSocket } from 'ws';
+import { ROOM_STALE_MS } from '../../shared/src/constants.js';
 import type { Utterance } from '../../shared/src/japanese/kana.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type RoomInfo, type WatchRoomResponse } from '../../shared/src/protocol.js';
@@ -24,6 +25,8 @@ export interface ServerConfig {
   seatHoldMs?: number;
   /** Close a room after this long with nobody connected. Default 10 minutes; 0 disables. */
   roomIdleMs?: number;
+  /** Close a room after this long with no joins or commands, even with screens connected. Default 30 minutes; 0 disables. */
+  roomStaleMs?: number;
   /** Base URL phones should open, e.g. https://kotoba.party. Derived from the request when unset. */
   publicUrl?: string;
   /** Folder holding the built stage/ and controller/ pages. */
@@ -82,6 +85,7 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       content: config.content,
       seatHoldMs: config.seatHoldMs,
       idleMs: config.roomIdleMs ?? 10 * 60_000,
+      staleMs: config.roomStaleMs ?? ROOM_STALE_MS,
       onClose: (r) => {
         rooms.delete(r.code);
         config.onRoomClosed?.(r);

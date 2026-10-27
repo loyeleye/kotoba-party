@@ -56,6 +56,9 @@ Option 1, with the room logic shared, not ported:
 - Bank lines' audio is not pre-rendered (the Node server's `warmUp`), because each room would
   repeat it against VOICEVOX. Fallback bank lines are subtitles only on Cloudflare.
 - No global room cap; Cloudflare's own limits and the per-game LLM budget bound the cost.
+- An open WebSocket keeps its object in memory and billed, so a room also closes after 30 minutes
+  with no joins or commands (`ROOM_STALE_MS`), even with a screen still connected. The stage then
+  says the room closed instead of opening a new one, so a TV left on doesn't keep a room going.
 
 ## Revisit when
 
