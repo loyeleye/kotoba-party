@@ -8,8 +8,8 @@ browser (`stage/src/music/songs.ts`). Licences: [commercial-blockers.md](commerc
 
 **Direction (Ladi, 2026-10-26):** after comparing samplers, bright "out with friends" pop, funk and
 swing for the lobby and the social games, mystery and quiz tracks for the quiz games and Murder at the
-Onsen, and an anime-style battle theme for the Raid. On 2026-10-27 Ladi brought back the synth lobby
-tune in place of Bouncing, which sounded too goofy for the lobby.
+Onsen, and an anime-style battle theme for the Raid. On 2026-10-27 Ladi kept Bouncing in the lobby
+with its loop seam fixed, and moved Love Love Love to Omiai.
 
 ## What plays when
 
@@ -17,7 +17,7 @@ tune in place of Bouncing, which sounded too goofy for the lobby.
 
 | Phase | Music |
 | --- | --- |
-| Lobby | The synth lobby tune: a summer-festival walk-in that quotes the house theme (`lobby` in `songs.ts`) |
+| Lobby | **Bouncing** (Holizna); the synth lobby tune (`lobby` in `songs.ts`) stands in when it can't load |
 | Intro | The house ident (**Kotoba Party!**), then the mode's theme |
 | Prompt | The mode's theme, full mix (under where a mode speaks in its prompt: Oogiri, Omiai, the Onsen, Concentration) |
 | Answer, encore, penalty | The mode's theme, "under" (see below). Encores keep whatever is playing |
@@ -32,10 +32,10 @@ and `themeFor` in `cues.ts`; the count is kept in the browser), so a long night 
 | Mode | First theme | Second theme |
 | --- | --- | --- |
 | Oogiri | **Monkeys Spinning Monkeys** (Kevin MacLeod) | **Quirky Dog** (Kevin MacLeod) |
-| Phrase Bingo | **Love Love Love** (Holizna) | **Life of Riley** (Kevin MacLeod) |
+| Phrase Bingo | **Carefree** (Kevin MacLeod) | **Life of Riley** (Kevin MacLeod) |
 | Oekaki | **Hep Cats** (Kevin MacLeod) | **Wallpaper** (Kevin MacLeod) |
 | Tourist Trouble | **Take a Trip** (genaralskar) | **Off to Osaka** (Kevin MacLeod) |
-| Omiai | **Carefree** (Kevin MacLeod) | **Local Forecast - Elevator** (Kevin MacLeod) |
+| Omiai | **Love Love Love** (Holizna) | **Local Forecast - Elevator** (Kevin MacLeod) |
 | Word Gauntlet | **Investigations** (Kevin MacLeod) | **Cipher** (Kevin MacLeod) |
 | Concentration | **Funkorama** (Kevin MacLeod) | **Kool Kats** (Kevin MacLeod) |
 | Murder at the Onsen | **Sneaky Snitch** (Kevin MacLeod) | **Ishikari Lore** (Kevin MacLeod, koto) |

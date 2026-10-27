@@ -119,7 +119,7 @@ function preload(view: RoomView): void {
   if (!sound) return;
   if (!sound || streamer) return;
   const theme = view.mode ? themeFor(view.mode, view.phase === 'lobby' ? (played[view.mode] ?? 0) : game) : null;
-  const next: MusicId[] = view.phase === 'lobby' ? (theme ? [theme] : []) : [theme ?? 'happy-dance', 'happy-dance'];
+  const next: MusicId[] = view.phase === 'lobby' ? ['bouncing', ...(theme ? [theme] : [])] : [theme ?? 'happy-dance', 'happy-dance'];
   // Shodō Taikai switches to its gallery track for round 3.
   if (view.mode === 'shodo' && view.phase !== 'lobby') next.push(SHODO_GALLERY);
   for (const id of next) if (isTrack(id)) void load(sound.ctx, TRACKS[id].url).catch(() => {});
