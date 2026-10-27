@@ -68,6 +68,7 @@ const ERRORS: Record<string, string> = {
 
 let lastView: RoomView | null = null;
 import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
+import { hasTabAudio, joinAudioTabs, onTabAudio } from '../../shared/src/audioTabs.js';
 
 interface Session {
   code: string;
@@ -76,6 +77,8 @@ interface Session {
   name: string;
   /** The server runs speech-to-text; without it every spoken step is typed or tapped. */
   speech?: boolean;
+  /** The address to invite friends to: the server's public one, which may be a short link. */
+  site?: string;
 }
 
 const base = location.origin;
@@ -169,7 +172,19 @@ function showJoin(message = ''): void {
     button,
     error,
   );
-  mount(app, form);
+  // Hosting is the stage with no code: it makes a room. Left out when an invite link brought a player here.
+  const host = params.has('code')
+    ? []
+    : [
+        h('p', { class: 'or' }, 'or'),
+        h(
+          'a',
+          { class: 'host-link', href: '/stage/' },
+          h('img', { src: '/stage/assets/hosts/pon.png', alt: '', width: 48, height: 48, onerror: (e: Event) => (e.target as HTMLElement).remove() }),
+          h('span', {}, h('strong', {}, 'Host a game'), h('small', {}, 'Put the big screen on a TV or laptop.')),
+        ),
+      ];
+  mount(app, form, ...host);
   (codeInput.value ? nameInput : codeInput).focus();
 }
 
@@ -187,7 +202,7 @@ async function join(code: string, name: string): Promise<string | null> {
     return 'network';
   }
   if ('error' in res) return res.error;
-  start({ code, token: res.token, playerId: res.playerId, name, speech: !!res.speech });
+  start({ code, token: res.token, playerId: res.playerId, name, speech: !!res.speech, site: res.site });
   return null;
 }
 
@@ -195,6 +210,7 @@ function start(s: Session): void {
   session = s;
   store('kotoba:session', s);
   setSpeechService(s.speech ? { base, code: s.code, token: s.token } : null);
+  joinAudioTabs('phone', s.code);
   history.replaceState(null, '', `/?code=${s.code}`);
   client = new RoomClient({ baseUrl: base, code: s.code, token: s.token, onState: render, onStatus: status });
   client.connect();
@@ -333,7 +349,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), quip(vipIdleQuip));
   // Links to bring more people in: the phone link for when the QR code won't scan, the stage
   // screen link for friends playing from somewhere else.
-  parts.push(invite(inviteLinks(location.origin, view.code), view.code));
+  parts.push(invite(inviteLinks(session?.site ?? location.origin, view.code), view.code));
   return h('div', { class: 'screen' }, parts);
 }
 
@@ -539,6 +555,10 @@ document.addEventListener('visibilitychange', () => {
     if (!wakeLock) void keepAwake();
   }
 });
+// Two tabs of this phone on the room: only the one in front reads Japanese aloud (audioTabs.ts).
+onTabAudio((active) => {
+  if (!active && typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+});
 window.addEventListener('online', () => client?.reconnectNow());
 
 function tickTimer(): void {
@@ -551,7 +571,7 @@ const saved = load<Session>('kotoba:session');
 const wanted = new URLSearchParams(location.search).get('code');
 if (saved && (!wanted || normalizeRoomCode(wanted) === saved.code)) {
   void joinRoom(base, saved.code, { name: saved.name, token: saved.token, deviceId: deviceId() })
-    .then((res) => ('error' in res ? showJoin() : start({ ...saved, token: res.token, playerId: res.playerId, speech: !!res.speech })))
+    .then((res) => ('error' in res ? showJoin() : start({ ...saved, token: res.token, playerId: res.playerId, speech: !!res.speech, site: res.site })))
     .catch(() => showJoin());
 } else {
   showJoin();

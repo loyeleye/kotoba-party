@@ -2,6 +2,7 @@
 // Shodō Taikai's dictation). Nothing plays unless the player's own tap (or the screen that tap
 // opened) asks for it; phones without a Japanese voice show the reading written instead.
 
+import { hasTabAudio } from '../../../shared/src/audioTabs.js';
 import { h } from '../../../shared/src/dom.js';
 
 const synth = (): SpeechSynthesis | null => (typeof speechSynthesis === 'undefined' ? null : speechSynthesis);
@@ -20,7 +21,8 @@ export function canVoice(): boolean {
 
 export function say(text: string): void {
   const s = synth();
-  if (!s || !text) return;
+  // Another tab of this game in this browser has the sound.
+  if (!s || !text || !hasTabAudio()) return;
   try {
     s.cancel();
     const u = new SpeechSynthesisUtterance(text);

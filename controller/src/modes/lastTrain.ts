@@ -15,6 +15,7 @@ import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
 import { jpView } from '../components/jp.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
+import { hasTabAudio } from '../../../shared/src/audioTabs.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 // ---- small pieces ----
@@ -64,6 +65,7 @@ function countdown(task: TaskView, send: (move: unknown) => Promise<boolean>): H
 function speakJa(text: string): boolean {
   const synth = globalThis.speechSynthesis;
   if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return false;
+  if (!hasTabAudio()) return true; // another tab of this phone reads it out
   synth.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'ja-JP';

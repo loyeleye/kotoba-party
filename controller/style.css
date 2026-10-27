@@ -60,6 +60,17 @@ h1 { color: var(--accent); font-family: var(--font-pixel); font-size: 40px; marg
 .join { display: grid; gap: 16px; }
 label { display: grid; gap: 6px; color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
 input, select { width: 100%; font-size: 22px; padding: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+/* The way in for whoever runs the TV: under the join form and quieter than Join, which most visitors want. */
+.or { display: flex; align-items: center; gap: 12px; margin: 20px 0 12px; color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
+.or::before, .or::after { content: ''; flex: 1; border-top: 2px dotted var(--line); }
+.host-link { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 16px 8px 10px; border: 3px solid var(--outline); border-radius: 10px; background: var(--panel); color: var(--ink); text-decoration: none; box-shadow: 0 5px 0 var(--outline), inset 0 0 0 1px var(--line); transition: transform 80ms, box-shadow 80ms; }
+.host-link:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--outline), inset 0 0 0 1px var(--line); }
+.host-link:focus-visible, .primary:focus-visible { outline: 3px solid var(--warn); outline-offset: 3px; }
+.host-link img { flex: none; width: 48px; height: 48px; image-rendering: pixelated; }
+.host-link span { display: grid; gap: 2px; }
+.host-link strong { font-family: var(--font-pixel); font-size: 22px; font-weight: 700; color: var(--gold); }
+.host-link small { color: var(--muted); font-size: 14px; }
+.host-link::after { content: '›'; margin-left: auto; font-family: var(--font-pixel); font-size: 28px; color: var(--muted); }
 #code { text-transform: uppercase; letter-spacing: 0.3em; font-weight: 800; text-align: center; font-size: 32px; }
 
 button { font: inherit; cursor: pointer; }

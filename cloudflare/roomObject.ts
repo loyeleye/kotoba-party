@@ -104,7 +104,7 @@ export class RoomObject extends DurableObject<Env> {
       if (!body) return json(400, { error: 'bad-request' });
       const result = room.join(body);
       if ('error' in result) return json(result.error === 'room-full' || result.error === 'game-in-progress' || result.error === 'name-taken' ? 409 : 400, result);
-      return json(200, { ...result, speech: !!sttFromEnv(this.env) });
+      return json(200, { ...result, speech: !!sttFromEnv(this.env), site: base || undefined });
     }
     if (action === 'speech') {
       const token = url.searchParams.get('token') ?? '';

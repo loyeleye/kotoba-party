@@ -6,6 +6,10 @@
 .inv { display: grid; gap: 10px; padding: 14px; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
 .inv-title { margin: 0; font-size: 18px; font-weight: 800; }
 .inv-lead { margin: -4px 0 0; font-size: 14px; color: var(--muted); }
+/* The short link's joke (tanoshi.s.gy = 楽しすぎ！). */
+.inv-pun { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; margin: 0; font-size: 14px; color: var(--muted); }
+.inv-pun-host { font: 600 14px ui-monospace, 'SFMono-Regular', Menlo, monospace; color: var(--ink); }
+.inv-pun-jp { font-size: 20px; font-weight: 800; color: var(--gold); }
 .inv-row { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--line) 40%, transparent); }
 .inv-text { display: grid; gap: 2px; }
 .inv-label { font-weight: 700; }

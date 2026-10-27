@@ -59,84 +59,121 @@
       "post": {}
     },
     {
-      "path": "stage/assets/studio-bg.png",
-      "what": "Stage backdrop: dark haunted late-night TV studio, low contrast for readable text (pixel art converted from the earlier Gemini backdrop). No longer drawn on the stage: it is the source the scene layers in stage/assets/scenes/ were cut from.",
-      "generator": "pixellab",
-      "model": "image-to-pixelart",
-      "prompt": "(image-to-pixelart takes no prompt.) Converted from the earlier Gemini backdrop, kept in tools/art/sources/. Its prompt: Wide establishing shot of an empty late-night TV variety show studio after midnight, haunted but cosy and inviting, inspired by Japanese tsukumogami folklore. A small stage with heavy velvet curtains, an old wooden host desk at one side, a stack of old CRT television monitors glowing faintly, unlit studio spotlights on a rig overhead, a few paper lanterns giving soft warm glows, faint wisps of ghostly mist drifting across the floor, a few loose blank dictionary pages floating gently in the air. Very dark and low contrast overall, muted deep purple and indigo tones (#14101f, #1f1930) with small accents of warm coral (#ff7a59) and mint (#57d9a3) light, slightly soft focus, the centre of the image is calm, dark and empty so text can be placed over it. Painterly cartoon background art style matching a cute game. No people, no characters, no faces, no text, no letters, no signs, no logos, no watermark.",
+      "path": "stage/assets/scenes/studio.png",
+      "what": "Backdrop set for the lobby and the studio games: an empty late-night TV studio, curtains at the sides, spotlight rig, CRT stack and lantern at the right",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, an empty Japanese late-night TV variety show studio after midnight, front view, heavy purple velvet curtains at the left and right edges, an unlit spotlight rig across the top, a wooden host desk with a stack of old glowing CRT televisions at the far right edge, a round red paper lantern hanging at the far left, wooden stage floor along the bottom, faint ghostly mist on the floor, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Generated taller than the stage because pixflux letterboxes a 320×180 request with black bars; rows 30–209 kept. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
       "params": {
         "width": 320,
-        "height": 180,
-        "seed": 7
+        "height": 224,
+        "seed": 7,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8
       },
-      "post": {
-        "scale": 6
-      },
-      "source": "tools/art/sources/studio-bg-gemini.png"
+      "post": {}
     },
     {
-      "path": "stage/assets/scenes/studio-far.png",
-      "what": "Backdrop far layer, 320×180 at 1×: the studio with the desk, lantern, TVs and floating pages painted out, so the centre behind the text is empty",
+      "path": "stage/assets/scenes/onsen-inn.png",
+      "what": "Backdrop set for Murder at the Onsen: an outdoor rock bath at a hot spring inn at night",
       "generator": "polish",
-      "model": "inpaint",
-      "prompt": "PixelLab /inpaint on studio-bg.png at 1× (sampled down 6×), in two 200×180 crops because the endpoint takes at most 200 px wide. Crop x 0–200, mask over the desk/TV cluster (x 80–157, y 14–114) and two pages, seed 9: \"empty dark haunted TV studio at night, plain dark navy back wall and dark empty stage floor, nothing in the middle, no furniture, no screens, no papers, no text\" (negative: desk, monitors, tv screens, lantern, paper, text, letters). Then crop x 120–320 of that result, mask over the two right-hand pages, seed 9: \"empty dark haunted TV studio at night, dark back wall with stage lighting rig, dark empty stage floor, no papers, no text\" (negative: paper, note, card, text, letters). Both with text_guidance_scale 6 and color_image = the 1× backdrop, so the palette stays the same.",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, inside a traditional Japanese hot spring inn at night, wide view from a wooden veranda onto an outdoor rock hot spring bath, tall bamboo fence behind, two glowing paper lanterns at the sides, wisps of steam over the water, dark wooden pillars at the left and right edges, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Generated taller than the stage because pixflux letterboxes a 320×180 request with black bars; rows 28–207 kept. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
       "params": {
         "width": 320,
-        "height": 180,
-        "seed": 9
+        "height": 224,
+        "seed": 7,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8
       },
-      "post": {},
-      "source": "stage/assets/studio-bg.png"
+      "post": {}
     },
     {
-      "path": "stage/assets/scenes/studio-props.png",
-      "what": "Backdrop props layer: the host desk, hanging lantern and CRT stack cut from studio-bg.png (pixels that differ from studio-far.png), transparent, drawn at the right edge of the stage",
+      "path": "stage/assets/scenes/karaoke-box.png",
+      "what": "Backdrop set for Karaoke Duel: a small karaoke box room with a sofa, neon strip and screen",
       "generator": "polish",
-      "model": "cut-out",
-      "prompt": "No generation. Pixels of studio-bg.png at 1× inside x 80–157, y 14–114 that differ from studio-far.png, kept only inside the desk, lantern and TV boxes (the purple glow and floor mist dropped), then the lantern cord redrawn as one continuous 1 px line to the top edge.",
-      "params": {},
-      "post": {},
-      "source": "stage/assets/studio-bg.png"
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 13: \"pixel art background, inside a small Japanese karaoke box room at night, side view, long purple sofa along the bottom, small table with microphones and drinks at the bottom left, a glowing TV screen and speakers at the far right edge, neon pink and blue strip lights along the ceiling, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Generated taller than the stage because pixflux letterboxes a 320×180 request with black bars; rows 26–205 kept. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "seed": 13,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8
+      },
+      "post": {}
     },
     {
-      "path": "stage/assets/scenes/page-1.png",
-      "what": "Backdrop sprite: floating dictionary page 1, cut from studio-bg.png (at 47,81 at 1×) so it can drift on its own",
+      "path": "stage/assets/scenes/comedy-stage.png",
+      "what": "Backdrop set for Oogiri Night and Phrase Bingo Theater: a traditional comedy stage with curtains, lanterns and floor cushions",
       "generator": "polish",
-      "model": "cut-out",
-      "prompt": "No generation. The page's pixels from studio-bg.png at 1× that differ from studio-far.png.",
-      "params": {},
-      "post": {},
-      "source": "stage/assets/studio-bg.png"
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 3: \"pixel art background, a traditional Japanese comedy television stage, front view, red and white striped curtain at the back, gold folding screens at the left and right sides, a row of purple floor cushions along the wooden stage floor at the bottom, paper lanterns hanging at the top corners, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Generated taller than the stage because pixflux letterboxes a 320×180 request with black bars; rows 34–213 kept. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "seed": 3,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8
+      },
+      "post": {}
     },
     {
-      "path": "stage/assets/scenes/page-2.png",
-      "what": "Backdrop sprite: floating dictionary page 2, cut from studio-bg.png (at 162,67 at 1×) so it can drift on its own",
+      "path": "stage/assets/scenes/tea-room.png",
+      "what": "Backdrop set for Omiai Matchmaker: a quiet tea room at night with shoji, a blank scroll and a round moon window",
       "generator": "polish",
-      "model": "cut-out",
-      "prompt": "No generation. The page's pixels from studio-bg.png at 1× that differ from studio-far.png.",
-      "params": {},
-      "post": {},
-      "source": "stage/assets/studio-bg.png"
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 3: \"pixel art background, inside a quiet traditional Japanese tea room at night, front view, tatami mat floor, softly glowing paper shoji screens at the back, a tokonoma alcove with a blank hanging scroll and a small flower arrangement at the left edge, a low wooden table at the bottom, a round window with moonlight at the right, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Generated taller than the stage because pixflux letterboxes a 320×180 request with black bars; rows 26–205 kept. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "seed": 3,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8
+      },
+      "post": {}
     },
     {
-      "path": "stage/assets/scenes/page-3.png",
-      "what": "Backdrop sprite: floating dictionary page 3, cut from studio-bg.png (at 251,62 at 1×) so it can drift on its own",
+      "path": "stage/assets/scenes/page-a.png",
+      "what": "Backdrop sprite: a loose dictionary page that floats in the studio's side lanes",
       "generator": "polish",
-      "model": "cut-out",
-      "prompt": "No generation. The page's pixels from studio-bg.png at 1× that differ from studio-far.png.",
+      "model": "hand-drawn",
+      "prompt": "Drawn by hand, pixel by pixel (cream page, two shades of edge, black-purple outline, faint lines of print), so it stays crisp at 6×. No generator.",
       "params": {},
-      "post": {},
-      "source": "stage/assets/studio-bg.png"
+      "post": {}
     },
     {
-      "path": "stage/assets/scenes/page-4.png",
-      "what": "Backdrop sprite: floating dictionary page 4, cut from studio-bg.png (at 263,111 at 1×) so it can drift on its own",
+      "path": "stage/assets/scenes/page-b.png",
+      "what": "Backdrop sprite: a loose dictionary page that floats in the studio's side lanes",
       "generator": "polish",
-      "model": "cut-out",
-      "prompt": "No generation. The page's pixels from studio-bg.png at 1× that differ from studio-far.png.",
+      "model": "hand-drawn",
+      "prompt": "Drawn by hand, pixel by pixel (cream page, two shades of edge, black-purple outline, faint lines of print), so it stays crisp at 6×. No generator.",
       "params": {},
-      "post": {},
-      "source": "stage/assets/studio-bg.png"
+      "post": {}
+    },
+    {
+      "path": "stage/assets/scenes/page-c.png",
+      "what": "Backdrop sprite: a loose dictionary page that floats in the studio's side lanes",
+      "generator": "polish",
+      "model": "hand-drawn",
+      "prompt": "Drawn by hand, pixel by pixel (cream page, two shades of edge, black-purple outline, faint lines of print), so it stays crisp at 6×. No generator.",
+      "params": {},
+      "post": {}
     },
     {
       "path": "stage/assets/scenes/train-carriage.png",

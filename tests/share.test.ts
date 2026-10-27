@@ -12,4 +12,8 @@ describe('invite links', () => {
   it('ignores a trailing slash on the origin', () => {
     expect(inviteLinks('http://localhost:8787/', 'WXYZ').stage).toBe('http://localhost:8787/stage/?code=WXYZ');
   });
+
+  it('builds the links on a short-link host the same way', () => {
+    expect(inviteLinks('https://tanoshi.s.gy', 'ABCD').phone).toBe('https://tanoshi.s.gy/?code=ABCD');
+  });
 });

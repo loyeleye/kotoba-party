@@ -15,6 +15,7 @@ import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
 import { creditSummary } from './music/tracks.js';
 import { isMuted } from './sound.js';
+import { joinAudioTabs } from '../../shared/src/audioTabs.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
 import { tickSfx, watchSfx } from './music/sfx.js';
@@ -203,6 +204,7 @@ async function openRoom(fresh: boolean): Promise<void> {
   }
 
   els.code.textContent = session.code;
+  joinAudioTabs('stage', session.code);
   els.qr.src = `${base}/api/rooms/${session.code}/qr.svg`;
   els.joinUrl.textContent = session.joinUrl.replace(/^https?:\/\//, '');
   siteOrigin = (() => {

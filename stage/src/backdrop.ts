@@ -1,11 +1,11 @@
-// The set behind the show: layered pixel art and the effects that live in it (mist, spotlights,
-// drifting pages, confetti, rain past the train windows), drawn into one 320×180 canvas that CSS
+// The set behind the show: a pixel-art set per game and the effects that live in it (mist,
+// spotlights, drifting pages, confetti, rain past the train windows), drawn into one 320×180 canvas that CSS
 // scales 6× with nearest-neighbour, so every move lands on a whole art pixel. It sits under the
 // scrim, so the room's text keeps its contrast whatever moves.
 //
 // Rules (art panel, 26 Oct 2026; docs/graphics.md "Backdrop"):
 // - Nothing moves in the text area: effects are clipped out of the centre box, except the floor
-//   mist below it. The bright studio props sit at the right edge.
+//   mist below it. Each set keeps its bright props at the sides.
 // - Effects play in the lobby, intros and the recap, run low through prompts and waits, and ease to
 //   a stop while anyone speaks, while Kana Raid's yōkai are out, and in a timer's last 5 seconds.
 // - Each effect means something: confetti fires once for a round's scores or the winner, the train's
@@ -32,7 +32,15 @@ const WINDOWS = [
 
 const ASSET = '/stage/assets/scenes/';
 const art: Record<string, HTMLImageElement> = {};
-for (const name of ['studio-far', 'studio-props', 'page-1', 'page-2', 'page-3', 'page-4', 'train-carriage']) {
+/** The set for each game: the studio unless the game has a place of its own. */
+const SETS: Partial<Record<ModeId, string>> = {
+  'onsen-murder': 'onsen-inn',
+  'karaoke-duel': 'karaoke-box',
+  oogiri: 'comedy-stage',
+  'phrase-bingo': 'comedy-stage',
+  omiai: 'tea-room',
+};
+for (const name of ['studio', ...new Set(Object.values(SETS)), 'page-a', 'page-b', 'page-c', 'train-carriage']) {
   const img = new Image();
   img.src = `${ASSET}${name}.png`;
   img.onload = () => draw();
@@ -182,6 +190,7 @@ function draw(): void {
   const mode = view?.mode ?? null;
   const effects = ambientOn;
   if (mode === 'last-train') drawTrain(g, effects);
+  else if (mode && SETS[mode]) drawSet(g, mode, SETS[mode]!, effects);
   else drawStudio(g, mode, effects);
   if (!effects) return;
   g.save();
@@ -198,22 +207,16 @@ function clipOutSafe(g: CanvasRenderingContext2D): void {
 }
 
 const pageSpots: [string, number, number, number][] = [
-  // [sprite, x, y, bob phase]: the four pages from the old backdrop, moved out to the sides.
-  ['page-1', 14, 88, 0],
-  ['page-2', 34, 30, 1.7],
-  ['page-3', 280, 120, 0.9],
-  ['page-4', 18, 132, 2.6],
+  // [sprite, x, y, bob phase]: loose dictionary pages floating in the side lanes.
+  ['page-a', 12, 84, 0],
+  ['page-b', 30, 34, 1.7],
+  ['page-c', 290, 118, 0.9],
+  ['page-a', 20, 128, 2.6],
 ];
 
 function drawStudio(g: CanvasRenderingContext2D, mode: ModeId | null, effects: boolean): void {
-  if (ready('studio-far')) g.drawImage(art['studio-far']!, 0, 0);
-  const stage = mode === 'oogiri' || mode === 'phrase-bingo' || mode === 'karaoke-duel';
-  if (effects) {
-    spotlights(g, stage ? 0.16 : 0.1);
-    if (mode === 'karaoke-duel') mirrorBall(g);
-  }
-  // The desk, lantern and TVs: the brightest things in the room, at the right edge.
-  if (ready('studio-props')) g.drawImage(art['studio-props']!, 245 + cam, 0);
+  if (ready('studio')) g.drawImage(art['studio']!, 0, 0);
+  if (effects) spotlights(g, 0.1);
   // Kana Raid has no paper in the air: drifting slips would look like yōkai to catch.
   if (mode !== 'kana-raid') {
     for (const [name, x, y, ph] of pageSpots) {
@@ -226,10 +229,23 @@ function drawStudio(g: CanvasRenderingContext2D, mode: ModeId | null, effects: b
   g.save();
   clipOutSafe(g);
   if (mode === 'kana-raid') onibi(g);
+  g.restore();
+  mist(g, mode === 'kana-raid' ? 0.55 : 0.35);
+}
+
+/** A game with a place of its own: its set, and the one effect that belongs there. */
+function drawSet(g: CanvasRenderingContext2D, mode: ModeId, set: string, effects: boolean): void {
+  if (ready(set)) g.drawImage(art[set]!, 0, 0);
+  if (!effects) return;
+  if (set === 'comedy-stage') spotlights(g, 0.16);
+  g.save();
+  clipOutSafe(g);
+  if (mode === 'karaoke-duel') mirrorBall(g);
   if (mode === 'onsen-murder') steam(g);
   if (mode === 'omiai') petals(g);
   g.restore();
-  mist(g, mode === 'kana-raid' || mode === 'onsen-murder' ? 0.55 : 0.35);
+  // Stage smoke on the boards; a karaoke box or a tea room has none.
+  if (set === 'comedy-stage') mist(g, 0.25);
 }
 
 // A 4×4 ordered-dither threshold, so light and mist are drawn as pixel patterns, not alpha ramps.
