@@ -196,8 +196,8 @@ export const SONGS: readonly Song[] = [
   {
     // Night Drive, version A, over an AI-made city-pop backing (Mureka, take 2; tracks.ts). The lines fit
     // the chords it really plays: verse D | D, Bm | Bm, Em | Gm (a minor iv), D | A7; chorus D | Em,
-    // A7 | D, B7 | Em, Gm | A7. The title comes twice a chorus, the second time up to F♯5 on ラ. Verse 2
-    // goes round in circles, and then the sat-nav is lost too, so the last chorus means "lost forever".
+    // A7 | D, B7 | Em, Gm | A7. The chorus never sings the title; its peak is F♯5 on 月が きれい ("the moon is
+    // beautiful", the old way to say "I love you"). Verse 2 goes round in circles, and then the sat-nav is lost too, so the last chorus means "lost forever".
     id: 'yoru-no-drive',
     group: 'yoru-no-drive',
     title: { text: '夜の ドライブ', kana: 'よるの ドライブ', en: 'Night Drive' },
@@ -212,9 +212,9 @@ export const SONGS: readonly Song[] = [
       { text: '君と 二人', kana: 'きみと ふたり', romaji: 'ki-mi-to fu-ta-ri', en: 'Just you and me', chords: 'Bm7 Bm7', melody: [[66, 0.5], [71, 0.5], [71, 1], [66, 0.5], [71, 0.5], [74, 3]] },
       { text: '街が きれいだね', kana: 'まちが きれいだね', romaji: 'ma-chi-ga ki-re-i-da-ne', en: 'The city is so pretty, isn’t it', chords: 'Em7 Gm', melody: [[67, 0.5], [71, 0.5], [67, 1], [74, 1], [71, 0.5], [71, 0.5], [67, 1], [67, 2]] },
       { text: '今から 海へ', kana: 'いまから うみへ', romaji: 'i-ma-ka-ra u-mi-e', en: 'Off to the sea, right now', chords: 'Dmaj7 A7', melody: [[74, 1], [69, 0.5], [69, 0.5], [66, 1], [74, 0.5], [73, 0.5], [73, 2]] },
-      { text: '夜の ドライブ', kana: 'よるの ドライブ', romaji: 'yo-ru-no do-ra-i-bu', en: 'Night drive', chords: 'Dmaj7 Em7', melody: [[74, 1], [69, 0.5], [69, 0.5], [69, 1], [74, 1], [71, 0.5], [67, 2.5]] },
+      { text: 'ラジオ つけて', kana: 'ラジオ つけて', romaji: 'ra-ji-o tsu-ke-te', en: 'Turn the radio on', chords: 'Dmaj7 Em7', melody: [[74, 1], [69, 0.5], [69, 0.5], [69, 1], [74, 1], [67, 3]] },
       { text: 'どこまでも 行こう', kana: 'どこまでも いこう', romaji: 'do-ko-ma-de-mo i-ko-u', en: 'Let’s go as far as the road goes', chords: 'A7 Dmaj7', melody: [[76, 1], [73, 0.5], [73, 0.5], [69, 0.5], [69, 0.5], [69, 0.5], [74, 0.5], [74, 2.5]] },
-      { text: '夜の ドライブ', kana: 'よるの ドライブ', romaji: 'yo-ru-no do-ra-i-bu', en: 'Night drive', chords: 'B7 Em7', melody: [[71, 1], [66, 0.5], [66, 0.5], [71, 1], [78, 1], [76, 0.5], [71, 2.5]] },
+      { text: '月が きれい', kana: 'つきが きれい', romaji: 'tsu-ki-ga ki-re-i', en: 'The moon is beautiful', chords: 'B7 Em7', melody: [[66, 1], [71, 0.5], [66, 0.5], [78, 2], [76, 0.5], [71, 2.5]] },
       { text: '二人だけの 道', kana: 'ふたりだけの みち', romaji: 'fu-ta-ri-da-ke-no mi-chi', en: 'A road just for the two of us', chords: 'Gm A7', melody: [[67, 0.5], [69, 0.5], [74, 1.5], [69, 0.5], [69, 0.5], [67, 0.5], [69, 0.5], [73, 2.5]] },
       { text: 'あれ？ この 道', kana: 'あれ この みち', romaji: 'a-re ko-no mi-chi', en: 'Huh? This road…', chords: 'Dmaj7 Dmaj7', melody: [[66, 0.5], [69, 1.5], [66, 0.5], [69, 0.5], [69, 0.5], [74, 2.5]] },
       { text: '前にも 見た', kana: 'まえにも みた', romaji: 'ma-e-ni-mo mi-ta', en: 'I’ve seen it before', chords: 'Bm7 Bm7', melody: [[74, 1], [71, 0.5], [71, 0.5], [66, 1], [74, 1], [66, 2.5]] },
@@ -240,10 +240,10 @@ export const SONGS: readonly Song[] = [
       { text: '車で 行くよ', kana: 'くるまで いくよ', romaji: 'ku-ru-ma-de i-ku-yo', en: 'I’m coming by car', chords: 'Dmaj7 Bm7', melody: [[66, 0.5], [69, 0.5], [69, 1], [69, 1], [66, 0.5], [71, 0.5], [74, 3]] },
       { text: '星が きれいだね', kana: 'ほしが きれいだね', romaji: 'ho-shi-ga ki-re-i-da-ne', en: 'The stars are beautiful, aren’t they', chords: 'Gmaj7 A7', melody: [[67, 0.5], [71, 0.5], [71, 1], [74, 1], [71, 0.5], [71, 0.5], [69, 1], [69, 2]] },
       { text: 'やさしい 歌を', kana: 'やさしい うたを', romaji: 'ya-sa-shi-i u-ta-o', en: 'Something gentle on the stereo', chords: 'Dmaj7 Bm7', melody: [[66, 0.5], [69, 0.5], [69, 0.5], [69, 0.5], [69, 1], [74, 1], [71, 2]] },
-      { text: '夜の ドライブ', kana: 'よるの ドライブ', romaji: 'yo-ru-no do-ra-i-bu', en: 'Night drive', chords: 'Dmaj7 B7', melody: [[74, 1], [69, 0.5], [69, 0.5], [69, 1], [74, 1], [71, 0.5], [66, 2.5]] },
+      { text: '二人の 夜', kana: 'ふたりの よる', romaji: 'fu-ta-ri-no yo-ru', en: 'Our night', chords: 'Dmaj7 B7', melody: [[69, 0.5], [74, 0.5], [74, 1], [69, 1], [74, 1], [66, 3]] },
       { text: '君と ドライブ', kana: 'きみと ドライブ', romaji: 'ki-mi-to do-ra-i-bu', en: 'A drive with you', chords: 'Em7 A7', melody: [[67, 0.5], [71, 0.5], [71, 1], [67, 1], [74, 1], [73, 0.5], [69, 2.5]] },
       { text: '海まで 行こう', kana: 'うみまで いこう', romaji: 'u-mi-ma-de i-ko-u', en: 'Let’s go all the way to the sea', chords: 'Dmaj7 B7', melody: [[74, 1], [69, 0.5], [69, 0.5], [66, 1], [66, 0.5], [71, 0.5], [71, 2.5]] },
-      { text: '夜の ドライブ', kana: 'よるの ドライブ', romaji: 'yo-ru-no do-ra-i-bu', en: 'Night drive', chords: 'Em7 A7', melody: [[76, 1], [71, 0.5], [71, 0.5], [71, 1], [76, 1], [73, 0.5], [69, 2.5]] },
+      { text: '朝まで ずっと', kana: 'あさまで ずっと', romaji: 'a-sa-ma-de zu-t-to', en: 'All the way till morning', chords: 'Em7 A7', melody: [[76, 1], [71, 0.5], [71, 0.5], [69, 1], [69, 0.75], [69, 0.25], [73, 2.5]] },
       { text: 'ねえ 聞いてる？', kana: 'ねえ きいてる', romaji: 'ne-e ki-i-te-ru', en: 'Hey, are you listening?', chords: 'Gmaj7 A7', melody: [[74, 1], [71, 1], [67, 0.5], [71, 0.5], [74, 1], [76, 2]] },
       { text: '隣を 見たら', kana: 'となりを みたら', romaji: 'to-na-ri-o mi-ta-ra', en: 'I look over, and', chords: 'Dmaj7 Bm7', melody: [[66, 0.5], [69, 0.5], [69, 0.5], [69, 0.5], [74, 1], [69, 0.5], [66, 2.5]] },
       { text: '星も 見ないで', kana: 'ほしも みないで', romaji: 'ho-shi-mo mi-na-i-de', en: 'Not even looking at the stars,', chords: 'Gmaj7 A7', melody: [[67, 0.5], [71, 0.5], [71, 1], [74, 1], [71, 0.5], [71, 0.5], [69, 2]] },
