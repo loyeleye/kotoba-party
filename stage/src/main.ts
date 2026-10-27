@@ -301,6 +301,7 @@ function render(view: RoomView, v: number): void {
       );
     }),
   );
+  els.players.classList.toggle('two-rows', view.players.length > 4);
   // One scene per phase: a new phase builds fresh elements (and its entrance animations), an
   // update inside a phase patches the ones on screen so transitions and animations carry on.
   document.body.classList.toggle('flying', view.phase === 'lobby' && flying());
@@ -309,11 +310,21 @@ function render(view: RoomView, v: number): void {
   else stopDanmaku();
   for (const el of els.fit.querySelectorAll<HTMLElement>('[data-count]:not([data-counted])')) countUp(el);
   for (const el of els.players.querySelectorAll<HTMLElement>('.score[data-from]:not([data-rolled])')) rollScore(el);
+  fitNames();
   fitMain();
   tick();
 }
 
 const seenScores = new Map<string, number>();
+
+/** A name too wide for its card steps down in size (to 22px) before it falls back to an ellipsis. */
+function fitNames(): void {
+  for (const el of els.players.querySelectorAll<HTMLElement>('.name')) {
+    el.style.fontSize = '';
+    for (let px = 28; px >= 22 && el.scrollWidth > el.clientWidth + 1; px -= 2) el.style.fontSize = `${px}px`;
+  }
+}
+void document.fonts?.ready.then(fitNames);
 
 function mainFor(view: RoomView): HTMLElement {
   if (view.phase === 'lobby') {
