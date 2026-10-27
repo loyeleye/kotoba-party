@@ -42,18 +42,18 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body { margin: 0; overflow: hidden; background: #110b26; color: var(--ink); }
-body[data-mode='oogiri'] { --mode: #ff6b4a; }
-body[data-mode='last-train'] { --mode: #ffa23a; }
-body[data-mode='tourist'] { --mode: #ffdd4a; }
-body[data-mode='oekaki'] { --mode: #b5e655; }
-body[data-mode='kana-raid'] { --mode: #3fd6b0; }
-body[data-mode='onsen-murder'] { --mode: #6cc8ff; }
-body[data-mode='word-gauntlet'] { --mode: #7ea6ff; }
-body[data-mode='concentration'] { --mode: #c9a6ff; }
-body[data-mode='karaoke-duel'] { --mode: #ff52d0; }
-body[data-mode='phrase-bingo'] { --mode: #ff6f91; }
-body[data-mode='omiai'] { --mode: #ffa3c0; }
-body[data-mode='shodo'] { --mode: #c9ced6; }
+[data-mode='oogiri'] { --mode: #ff6b4a; }
+[data-mode='last-train'] { --mode: #ffa23a; }
+[data-mode='tourist'] { --mode: #ffdd4a; }
+[data-mode='oekaki'] { --mode: #b5e655; }
+[data-mode='kana-raid'] { --mode: #3fd6b0; }
+[data-mode='onsen-murder'] { --mode: #6cc8ff; }
+[data-mode='word-gauntlet'] { --mode: #7ea6ff; }
+[data-mode='concentration'] { --mode: #c9a6ff; }
+[data-mode='karaoke-duel'] { --mode: #ff52d0; }
+[data-mode='phrase-bingo'] { --mode: #ff6f91; }
+[data-mode='omiai'] { --mode: #ffa3c0; }
+[data-mode='shodo'] { --mode: #c9ced6; }
 
 /* ---- the 1920×1080 canvas ---- */
 /* Everything is laid out at 1080p and scaled to the window (main.ts sets --scale), with a 5%
@@ -298,3 +298,44 @@ img.pix.om-face, img.pix.om-p-face, img.pix.omi-guest-emoji, img.pix.omi-guest-p
 /* A watching screen whose room is gone: no code or QR to show, just the notice. */
 body[data-notice='1'] .join { visibility: hidden; }
 .notice a { color: var(--lantern); }
+
+/* Lobby 弾幕 (danmaku.ts): game titles fly across the stage, each in its game's colour, the
+   Japanese (with furigana) over the English. The layer spans the canvas's full width at the main
+   area's height, behind the lobby panel; it fades in once the fonts are in and titles are placed. */
+.danmaku { position: absolute; left: 0; right: 0; z-index: 0; overflow: hidden; pointer-events: none; contain: strict; opacity: 0; transition: opacity 300ms; }
+.danmaku.on { opacity: 1; }
+.main > .fit { position: relative; z-index: 1; }
+.players, .bar { position: relative; z-index: 2; }
+.dm-item { position: absolute; left: 0; display: grid; justify-items: start; white-space: nowrap; will-change: transform; line-height: 1.15; --o: 2px; text-shadow: var(--o) 0 0 var(--outline), calc(-1 * var(--o)) 0 0 var(--outline), 0 var(--o) 0 var(--outline), 0 calc(-1 * var(--o)) 0 var(--outline), var(--o) var(--o) 0 var(--outline), calc(-1 * var(--o)) var(--o) 0 var(--outline), var(--o) calc(-1 * var(--o)) 0 var(--outline), calc(-1 * var(--o)) calc(-1 * var(--o)) 0 var(--outline); }
+.dm-ja { font-family: var(--font-ja); font-weight: 700; color: var(--ink); }
+.dm-ja rt { font-size: 0.42em; font-weight: 700; color: var(--paper); letter-spacing: 0.04em; }
+.dm-en { font-family: var(--font-pixel); font-weight: 700; font-size: 0.62em; color: var(--mode); }
+/* Beside the panel the titles are background: smaller and dimmer. */
+.dm-small { opacity: 0.6; --o: 1.5px; }
+
+/* The lobby panel while titles fly: compact, docked low, framed like the rest of the set. */
+body.flying[data-phase='lobby'] .main { place-items: end center; }
+.lobby-panel { width: min(1000px, 100%); box-sizing: border-box; margin-bottom: 8px; display: grid; gap: 12px; padding: 0 28px 22px; text-align: left; background: var(--bg); border: 3px solid var(--outline); border-radius: 4px; box-shadow: inset 0 0 0 3px var(--line), 8px 8px 0 var(--outline); }
+.lp-head { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; margin: 0 -28px; padding: 12px 28px; background: var(--lantern); border-bottom: 3px solid var(--outline); }
+.lp-title { margin: 0; font-family: var(--font-pixel); font-size: 40px; color: var(--paper); text-shadow: 0 3px 0 var(--outline); }
+.lp-count { font-size: 26px; font-weight: 700; color: var(--paper); white-space: nowrap; }
+/* Invite links flattened into rows, the address in full. */
+.lobby-panel .inv { margin: 0; padding: 0; gap: 6px; background: none; border: 0; box-shadow: none; }
+.lobby-panel .inv-row { grid-template-columns: 230px minmax(0, 1fr) auto; gap: 14px; padding-top: 6px; border-top: 2px dashed color-mix(in srgb, var(--line) 50%, transparent); }
+.lobby-panel .inv-purpose { display: none; }
+.lobby-panel .inv-label { font-size: 22px; }
+.lobby-panel .inv-url { font-size: 20px; padding: 6px 12px; text-overflow: clip; }
+.lobby-panel .inv-btn { min-width: 120px; min-height: 44px; font-size: 20px; }
+.lobby-panel .inv-pun { font-size: 18px; }
+.spot-wrap { display: grid; gap: 6px; }
+.spot-label { margin: 0; font-family: var(--font-pixel); font-size: 22px; color: var(--gold); }
+.spot-label span { font-family: var(--font-body); font-size: 20px; color: var(--muted); }
+.spot-slot { display: grid; min-height: 136px; }
+.spot { grid-area: 1 / 1; display: grid; grid-template-columns: 128px 1fr; gap: 20px; align-items: center; padding: 4px 18px 4px 4px; border-radius: 4px; background: var(--panel); border: 3px solid var(--outline); box-shadow: inset 6px 0 0 var(--mode); }
+.spot-in { animation: spot-wipe 360ms steps(4, jump-start) both; }
+@keyframes spot-wipe { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
+.spot-host { width: 128px; height: 128px; object-fit: contain; image-rendering: pixelated; }
+.spot-title { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.spot-chip { font-family: var(--font-pixel); font-size: 34px; padding: 0 12px; background: var(--mode); color: var(--on-accent); border: 3px solid var(--outline); border-radius: 4px; }
+.spot-title [lang='ja'] { font-family: var(--font-ja); font-weight: 700; font-size: 30px; color: var(--ink); }
+.spot-blurb { margin: 6px 0 0; font-size: 26px; color: var(--muted); }

@@ -7,6 +7,7 @@ import { h, mount } from '../../shared/src/dom.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import type { ModeId, RoomView } from '../../shared/src/protocol.js';
 import { isAmbientOn, setAmbient } from './backdrop.js';
+import { isDanmakuOn, setDanmaku } from './danmaku.js';
 import { isStreamerMode, setStreamerMode } from './music/index.js';
 import { sfx } from './music/sfx.js';
 import { getVolumes, setVolume, type VolumeId } from './sound.js';
@@ -46,6 +47,11 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
       'section',
       { class: 'st-sec' },
       toggle('Background effects', 'Mist, spotlights and confetti behind the game. Off shows a still set. Calm motion on the VIP’s phone also holds them still.', isAmbientOn(), (on) => setAmbient(on)),
+    ),
+    h(
+      'section',
+      { class: 'st-sec' },
+      toggle('Flying titles', 'Game titles drifting across the lobby. Off shows the still list of games. Calm motion on the VIP’s phone also stops them.', isDanmakuOn(), (on) => setDanmaku(on)),
     ),
     room,
   );
