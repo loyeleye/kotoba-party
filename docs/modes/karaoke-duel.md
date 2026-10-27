@@ -229,6 +229,8 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
     (92 bpm, Em–Em–Am–D7 shuffle): B, up early on a holiday, and C, a straight workday in clock
     times with the weekdays as its chorus. Over take 2 (94 bpm, 8-bar blues): A, late for work in
     pyjamas, and D, a straight rainy Monday with a friend. Its old lyrics and Hustle are gone.
+    Ladi asked that the title not be sung, so each chorus opens and closes on its own hook
+    (早く 早く 早く, ああ 行きたくない, 月曜日 スタート, ゆっくり 行こうよ).
     The method and scripts are in project files `tools/mureka/`.
 15. **Romaji** shows under each mora on a Kana-level player's phone, and on the TV when anyone
     at the table plays at Kana level. Kanji lines show kanji above the kana for N5+ reading
