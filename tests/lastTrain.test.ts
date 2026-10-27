@@ -3,6 +3,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { JpText, LastTrainMinigame, LastTrainScenario, MinigameItem } from '../content/src/types.js';
+import { lastTrainScenarios } from '../content/src/last-train/index.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
@@ -428,6 +429,42 @@ describe('Last Train rules', () => {
 });
 
 // ---- full system: bots over the network ----
+
+describe('Last Train and the room\'s Audience', () => {
+  const line = (id: string, audience?: LastTrainScenario['audience']): LastTrainScenario => ({ ...SCENARIO, id, ...(audience ? { audience } : {}) });
+  const content = (...lines: LastTrainScenario[]): ContentLibrary => ({ ...CONTENT, lastTrainScenarios: lines });
+  const rideWith = (lib: ContentLibrary, audience?: 'kids' | 'family' | 'cheeky') => {
+    const t = new Table(lib, 2);
+    if (audience) expect(t.cmd('stage', { type: 'settings', audience }).error).toBeUndefined();
+    t.start();
+    return t.s.scenario.id;
+  };
+
+  it('rides the Kids or Cheeky line in a room set to it, and only family lines otherwise', () => {
+    const lib = content(line('family-line'), line('kids-line', 'kids'), line('cheeky-line', 'cheeky'));
+    expect(rideWith(lib)).toBe('family-line');
+    expect(rideWith(lib, 'family')).toBe('family-line');
+    expect(rideWith(lib, 'kids')).toBe('kids-line');
+    expect(rideWith(lib, 'cheeky')).toBe('cheeky-line');
+  });
+
+  it('falls back to a family line when the room\'s audience has none', () => {
+    expect(rideWith(content(line('family-line'), line('kids-line', 'kids')), 'cheeky')).toBe('family-line');
+  });
+
+  it('picks among lines of the same length instead of always the first', () => {
+    const six = (id: string): LastTrainScenario => ({ ...line(id, 'cheeky'), stops: [...SCENARIO.stops, ...SCENARIO.stops.slice(0, 2)].map((st, i) => ({ ...st, id: `${id}.${i}` })) });
+    const lib = content(line('family-line'), six('cheeky-a'), six('cheeky-b'));
+    // The table's random() is 0.5, so a fair pick of two lands on the second.
+    expect(rideWith(lib, 'cheeky')).toBe('cheeky-b');
+  });
+
+  it('gives the real content one Kids line and two Cheeky lines', () => {
+    expect(lastTrainScenarios.filter((sc) => sc.audience === 'kids').map((sc) => sc.id)).toEqual(['school-trip-line']);
+    expect(lastTrainScenarios.filter((sc) => sc.audience === 'cheeky').map((sc) => sc.id)).toEqual(['horoyoi-line', 'kisaragi-line']);
+    for (const sc of lastTrainScenarios.filter((x) => x.audience)) expect(sc.stops.length, sc.id).toBe(6);
+  });
+});
 
 describe('Last Train with bots', () => {
   let ctx: Awaited<ReturnType<typeof startServer>>;

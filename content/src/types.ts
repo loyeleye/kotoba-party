@@ -325,6 +325,8 @@ export interface LastTrainScenario {
   twist: JpText;
   /** Rapid-fire Platform Dash questions. */
   platformDash: MinigameItem[];
+  /** Rooms with this Audience setting ride this line (family when left out); see chooseScenario. */
+  audience?: 'kids' | 'cheeky';
   status: ReviewStatus;
 }
 
