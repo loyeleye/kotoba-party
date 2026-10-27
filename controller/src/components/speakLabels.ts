@@ -6,6 +6,7 @@
 // Labels the table doesn't know stay as written.
 
 import type { Level } from '../../../shared/src/protocol.js';
+import { hasKanji, type Utterance } from '../../../shared/src/japanese/kana.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 
 export interface LevelText {
@@ -83,3 +84,28 @@ export function levelText(text: string, level: Level): LevelText {
 
 /** "Heard: …" line under the button. */
 export const heardPrefix = (level: Level): string => (level === 'kana' ? 'Heard' : level === 'n5' ? 'きこえた' : '聞こえた');
+
+// Endings that join the word before them: ます and た after a verb (たべ・まし・た → tabemashita), て after a verb
+// (いっ・て → itte). です after a noun stays its own word (gakusei desu).
+const JOINS_VERB = new Set(['動詞', '形容詞', '助動詞']);
+const joinsPrevious = (pos: string, surface: string, prev: string | undefined): boolean =>
+  pos === '記号' || (!!prev && JOINS_VERB.has(prev) && (pos === '助動詞' || (pos === '助詞' && ['て', 'で', 'ば'].includes(surface))));
+
+/**
+ * Romaji for what the mic heard, for かな players: "Heard: こんにちは (konnichiwa)". Uses the server's word split
+ * (with readings for any kanji) when it sent one. Undefined when kanji are left that nothing read.
+ */
+export function heardRomaji(heard: Pick<Utterance, 'text' | 'tokens'>): string | undefined {
+  let kana = heard.text;
+  if (heard.tokens?.length) {
+    kana = '';
+    heard.tokens.forEach((t, i) => {
+      const said = t.pos === '記号' ? t.surface : t.reading;
+      kana += (i && !joinsPrevious(t.pos, t.surface, heard.tokens![i - 1]!.pos) ? ' ' : '') + said;
+    });
+  }
+  if (hasKanji(kana)) return undefined;
+  // Greetings whose は is read わ.
+  const out = toRomaji(kana.replace(/(こんにち|こんばん)は/g, '$1わ'));
+  return /[a-zA-Zāīūēō]/.test(out) ? out : undefined;
+}

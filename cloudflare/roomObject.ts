@@ -115,7 +115,7 @@ export class RoomObject extends DurableObject<Env> {
       if (!isClip(clip)) return json(400, { error: 'bad-clip' });
       const result = await this.sttGate.run(token, () => transcribe(clip, stt));
       if (result === 'busy') return json(429, { error: 'busy' });
-      return result.ok ? json(200, { text: result.text }) : json(502, { error: result.error });
+      return result.ok ? json(200, { via: 'speech', text: result.text }) : json(502, { error: result.error });
     }
     if (action === 'commands') {
       const token = url.searchParams.get('token');

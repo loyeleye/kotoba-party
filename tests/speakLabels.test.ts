@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { levelText } from '../controller/src/components/speakLabels.js';
+import { createReader } from '../server/src/reading.js';
+import { heardRomaji, levelText } from '../controller/src/components/speakLabels.js';
 
 describe('speaking prompt wording by level', () => {
   it('stays English at kana level, with romaji instead of kana', () => {
@@ -22,5 +23,28 @@ describe('speaking prompt wording by level', () => {
 
   it('leaves unknown labels alone', () => {
     expect(levelText('Hold and say Tokyo', 'n4')).toEqual({ main: 'Hold and say Tokyo', ja: false });
+  });
+});
+
+describe('romaji after "Heard:" for かな players', () => {
+  it('reads kana straight, with greetings said as they sound', () => {
+    expect(heardRomaji({ text: 'こんにちは' })).toBe('konnichiwa');
+    expect(heardRomaji({ text: 'こんばんは。' })).toBe('Konbanwa.');
+    expect(heardRomaji({ text: 'ラーメン' })).toBe('rāmen');
+  });
+
+  it('uses the server word split, so kanji get read and words get spaced', async () => {
+    const reader = (await createReader())!;
+    const romaji = (text: string) => heardRomaji({ text, tokens: reader.tokens(text) });
+    expect(romaji('こんにちは。')).toBe('Konnichiwa.');
+    expect(romaji('私は学生です。')).toBe('Watashi wa gakusei desu.');
+    expect(romaji('昨日すしを食べました')).toBe('kinō sushi o tabemashita');
+    expect(romaji('ありがとうございます')).toBe('arigatō gozaimasu');
+    expect(romaji('行ってきます')).toBe('itte kimasu');
+  }, 20_000);
+
+  it('leaves it out when kanji are left that nothing read', () => {
+    expect(heardRomaji({ text: '学生です' })).toBeUndefined();
+    expect(heardRomaji({ text: '...' })).toBeUndefined();
   });
 });

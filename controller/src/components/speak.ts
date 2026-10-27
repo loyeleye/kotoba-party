@@ -10,7 +10,7 @@ import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import type { Level } from '../../../shared/src/protocol.js';
 import { kanaPad } from './kanaPad.js';
 import { MicClip, hear, speechReady, type Heard } from './mic.js';
-import { heardPrefix, levelText } from './speakLabels.js';
+import { heardPrefix, heardRomaji, levelText } from './speakLabels.js';
 
 // The phone's player level, set by main.ts before each screen draws.
 let level: Level = 'n5';
@@ -107,7 +107,8 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       const r = await hear(wav);
       if (clip) return; // pressed again while this one was being checked
       if (!r.ok) return void (heard.textContent = missed(r.why));
-      heard.textContent = `${heardPrefix(level)}: ${r.text}`;
+      const romaji = level === 'kana' ? heardRomaji(r) : undefined;
+      heard.textContent = `${heardPrefix(level)}: ${r.text}${romaji ? ` (${romaji})` : ''}`;
       // A tick pops in once: we heard you.
       heard.classList.remove('got');
       void heard.offsetWidth;
