@@ -71,9 +71,13 @@ export function fillBlank(sentence: string, fill: string, en = false): string {
   const m = blank.exec(sentence);
   if (!m) return `${sentence} ${fill}`;
   const before = sentence.slice(0, m.index);
+  let after = sentence.slice(m.index + m[0].length);
   // A blank already inside quotes ("…__.") takes the answer bare, not “quoted” again.
   const quoted = en && (before.split(/["“”]/).length - 1) % 2 === 1;
-  return before + (quoted ? fill.replace(/^“(.*)”$/s, '$1') : fill) + sentence.slice(m.index + m[0].length);
+  const inner = quoted ? fill.replace(/^“(.*)”$/s, '$1') : fill;
+  // An answer that ends its own sentence (a set phrase like ＿をください！) drops the prompt's full stop: 「ねこをください！」, not ！。
+  if (/[！？!?。.]$/.test(inner)) after = after.replace(/^[。.]/, '');
+  return before + inner + after;
 }
 
 /** The player's whole sentence: their prompt version with the answer in the blank. */

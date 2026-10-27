@@ -7,6 +7,7 @@
 // so a slow voice can never show a stale line or hold up a round.
 
 import type { HostLine, Level } from '../../content/src/types.js';
+import { capitalizeAtStart } from '../ai/lineBank.js';
 import { HOST_EVENTS, type HostEvent as AiEvent, type HostVoice as AiHostVoice, type PendingLine } from '../ai/index.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type { HostMood, HostSay } from '../../shared/src/protocol.js';
@@ -21,7 +22,11 @@ export interface HostVoice {
 
 /** Fills {slot} placeholders. A `{key}_kana` or `{key}_en` slot, when given, fills that field instead of `{key}`. */
 function fill(text: string, slots: Record<string, string> | undefined, field: 'text' | 'kana' | 'en' = 'text'): string {
-  return text.replace(/\{(\w+)\}/g, (m, key: string) => (field !== 'text' ? slots?.[`${key}_${field}`] : undefined) ?? slots?.[key] ?? m);
+  return text.replace(/\{(\w+)\}/g, (m, key: string, at: number) => {
+    const sibling = field !== 'text' ? slots?.[`${key}_${field}`] : undefined;
+    if (sibling !== undefined) return field === 'en' ? capitalizeAtStart(sibling, text, at) : sibling;
+    return slots?.[key] ?? m;
+  });
 }
 
 /** When a cue names the answer ({tile}), the lines that react to it beat the ones that could follow anything. */
