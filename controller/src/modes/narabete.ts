@@ -69,6 +69,12 @@ function miniLine(ctx: Ctx): HTMLElement {
 
 // ---- your card ----
 
+/** A ready answer's pixel picture at 1× (64 px), or its emoji if the picture can't load. */
+function offerPicture(src: string, emoji: string): HTMLElement {
+  const img = h('img', { class: 'nb-offer-pic', src, alt: '', draggable: 'false' }) as HTMLImageElement;
+  img.onerror = () => img.replaceWith(emoji);
+  return img;
+}
 /** Your card's pixel picture, or its emoji if the picture can't load. */
 function picture(src: string, emoji: string): HTMLElement {
   const box = h('span', { class: 'nb-mycard-emoji', 'aria-hidden': 'true' });
@@ -161,7 +167,7 @@ function sayFeel(ctx: Ctx, me: Me): HTMLElement {
             h(
               'button',
               { type: 'button', class: 'option nb-offer', onclick: () => void send({ kind: 'ready', key: o.key, round: game.round }) },
-              h('span', { class: 'nb-offer-emoji', 'aria-hidden': 'true' }, o.emoji),
+              h('span', { class: 'nb-offer-emoji', 'aria-hidden': 'true' }, offerPicture(o.picture, o.emoji)),
               h('span', { class: 'nb-offer-jp', lang: 'ja' }, o.text),
               o.romaji ? h('small', { class: 'nb-offer-romaji' }, o.romaji) : null,
               h('small', {}, o.en),

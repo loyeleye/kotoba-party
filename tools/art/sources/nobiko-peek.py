@@ -89,12 +89,9 @@ for i, (dx, dy, flip) in enumerate(OFFSETS):
 sheet.save(sys.argv[2])
 
 # The long reach (stage/src/reach.ts) draws her neck live, so it takes her parts on their own: frame 0 is the
-# body without its neck, frame 1 the mirrored head glancing right. The neck meets the head at (60, 63), under the left of the jaw so it never pokes out past the chin.
-if len(sys.argv) > 3:
-    parts = Image.new('RGBA', (256, 128))
-    parts.alpha_composite(body)
-    parts.alpha_composite(glance(FLIPPED, 2, FLIPPED_EYES), (128, 0))
-    parts.save(sys.argv[3])
+# body without its neck, frame 1 the mirrored head glancing right, frame 2 the mirrored head wincing. The neck meets the head at (60, 63), under the left of the jaw so it never pokes out past the chin.
+# Frame 2 is the same head wincing (Narabete!'s knots); 3–5 blink and talk. Built further down, after the faces.
+REACH_AT = len(sys.argv) > 3
 
 # Her chorus dance (stage/src/modes/karaokeDuel.ts): 8 frames of 128x128 over two beats. Her body stays put and
 # her neck bends to carry her head over to the left on the first beat and the right on the second, dipping a
@@ -143,6 +140,45 @@ def smile():
 
 def wry():
     return face_from(sys.argv[1].replace('hosts/nobiko.png', 'anim/nobiko-oops.png'), 7, -4, 2)[0]
+
+def wince():
+    """Eyes squeezed shut (> <) and teeth clenched in a grimace: a knot pulled tight in her neck."""
+    out = head.copy()
+    for x0, y0, x1, y1 in LIDS:
+        for y in range(y0, y1):
+            for x in range(x0, x1):
+                if out.getpixel((x, y))[:3] not in SKINS: out.putpixel((x, y), SKIN)
+    def line(a, b):
+        n = max(abs(b[0] - a[0]), abs(b[1] - a[1]))
+        for k in range(n + 1):
+            x = round(a[0] + (b[0] - a[0]) * k / n); y = round(a[1] + (b[1] - a[1]) * k / n)
+            out.putpixel((x, y), INK); out.putpixel((x, y + 1), INK)
+    for a, b, c in (((54, 44), (62, 47), (54, 50)), ((87, 45), (79, 48), (87, 51))):
+        line(a, b); line(b, c)
+    for y in range(54, 63):
+        for x in range(62, 78):
+            if out.getpixel((x, y))[:3] not in SKINS: out.putpixel((x, y), SKIN)
+    TEETH = (255, 250, 240, 255)
+    for y in range(56, 61):
+        for x in range(65, 75):
+            edge = y in (56, 60) or x in (65, 74)
+            out.putpixel((x, y), INK if edge or y == 58 or x in (68, 71) else TEETH)
+    return out
+
+if REACH_AT:
+    # 3: blinking; 4 and 5: mouth shut and half open, from her lip-sync sheet (its open frame is the portrait's), so
+    # the head on Narabete!'s ruler can talk and blink for her while her portrait's plate is empty.
+    talk = Image.open(sys.argv[1].replace('hosts/nobiko.png', 'anim/nobiko-talk.png')).convert('RGBA')
+    def mouth(k):
+        out = head.copy()
+        for y in range(56, 64):
+            for x in range(62, 78): out.putpixel((x, y), talk.getpixel((k * 128 + x, y)))
+        return out
+    mirrored = lambda im, k=2: glance(im.transpose(Image.FLIP_LEFT_RIGHT), k, FLIPPED_EYES)
+    frames = [body, mirrored(head), wince().transpose(Image.FLIP_LEFT_RIGHT), blink(head).transpose(Image.FLIP_LEFT_RIGHT), mirrored(mouth(0)), mirrored(mouth(1))]
+    parts = Image.new('RGBA', (128 * len(frames), 128))
+    for i, f in enumerate(frames): parts.alpha_composite(f, (128 * i, 0))
+    parts.save(sys.argv[3])
 
 if len(sys.argv) > 4:
     faces = [(head, True), (blink(head), False), (smile(), True), (smile(), False), (wry(), True), (wry(), False)]

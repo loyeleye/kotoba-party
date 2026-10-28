@@ -3291,6 +3291,2134 @@
         "seed": 15838
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/answers/smelly.0.png",
+      "what": "Narabete! ready answer picture: smelly.0 (a flower)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single pink cherry blossom flower with five petals and a green leaf",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/smelly.1.png",
+      "what": "Narabete! ready answer picture: smelly.1 (soap)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a bar of white soap with a few round soap bubbles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/smelly.2.png",
+      "what": "Narabete! ready answer picture: smelly.2 (bread)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a loaf of golden brown bread",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/smelly.3.png",
+      "what": "Narabete! ready answer picture: smelly.3 (a dog)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute brown shiba inu dog sitting",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/smelly.4.png",
+      "what": "Narabete! ready answer picture: smelly.4 (natto)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small white styrofoam pack of sticky brown fermented natto soybeans with long sticky threads, held up by wooden chopsticks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/smelly.5.png",
+      "what": "Narabete! ready answer picture: smelly.5 (a bin)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a dented metal rubbish bin overflowing with trash and green stink lines",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/smelly.6.png",
+      "what": "Narabete! ready answer picture: smelly.6 (old shoes)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pair of battered dirty old brown sneakers with holes, frayed laces and wavy green stink lines",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/smelly.7.png",
+      "what": "Narabete! ready answer picture: smelly.7 (Pon's socks)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pair of smelly brown and cream striped ankle socks with wavy green stink lines",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/ghost-scary.0.png",
+      "what": "Narabete! ready answer picture: ghost-scary.0 (a dark room)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an open doorway into a pitch black room with a sliver of light on the floor",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/ghost-scary.1.png",
+      "what": "Narabete! ready answer picture: ghost-scary.1 (a cat)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a black cat with an arched back and puffed up tail, hissing",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/ghost-scary.2.png",
+      "what": "Narabete! ready answer picture: ghost-scary.2 (the lights)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a glowing yellow light bulb shining bright rays",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/ghost-scary.3.png",
+      "what": "Narabete! ready answer picture: ghost-scary.3 (a police officer)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese police officer in a navy blue uniform and cap, saluting",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/ghost-scary.4.png",
+      "what": "Narabete! ready answer picture: ghost-scary.4 (a vacuum cleaner)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red canister vacuum cleaner with a long hose and nozzle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/ghost-scary.5.png",
+      "what": "Narabete! ready answer picture: ghost-scary.5 (the sun)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a big bright smiling yellow sun with rays",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/ghost-scary.6.png",
+      "what": "Narabete! ready answer picture: ghost-scary.6 (the dentist)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a dentist's drill and a small round dental mirror crossed over a white tooth",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/ghost-scary.7.png",
+      "what": "Narabete! ready answer picture: ghost-scary.7 (Mum)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cheerful Japanese mother in an apron holding a wooden ladle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/pon-ate.0.png",
+      "what": "Narabete! ready answer picture: pon-ate.0 (an apple)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a shiny red apple with a green leaf",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/pon-ate.1.png",
+      "what": "Narabete! ready answer picture: pon-ate.1 (cake)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a triangular slice of Japanese strawberry shortcake with white cream and one red strawberry on top, on a small plate",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/pon-ate.2.png",
+      "what": "Narabete! ready answer picture: pon-ate.2 (my snack)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small pile of round chocolate chip cookies",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/pon-ate.3.png",
+      "what": "Narabete! ready answer picture: pon-ate.3 (the teacher's bento)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an open Japanese bento box with rice, a pickled plum, tamagoyaki and sausages",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/pon-ate.4.png",
+      "what": "Narabete! ready answer picture: pon-ate.4 (homework)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a blue school exercise notebook with a pencil on top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/pon-ate.5.png",
+      "what": "Narabete! ready answer picture: pon-ate.5 (the TV remote)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a long thin black handheld TV remote control with many small round colourful buttons, lying diagonally",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/pon-ate.6.png",
+      "what": "Narabete! ready answer picture: pon-ate.6 (Grandma's false teeth)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a set of pink and white false teeth dentures",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/pon-ate.7.png",
+      "what": "Narabete! ready answer picture: pon-ate.7 (the moon)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pale cream full moon with grey craters, glowing softly",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/grandma-shock.0.png",
+      "what": "Narabete! ready answer picture: grandma-shock.0 (a cat photo)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a polaroid instant photo with a white frame, the picture shows a cute cat",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/grandma-shock.1.png",
+      "what": "Narabete! ready answer picture: grandma-shock.1 (new shoes)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pair of shiny brand new red sneakers with sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/grandma-shock.2.png",
+      "what": "Narabete! ready answer picture: grandma-shock.2 (pink hair)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a wig of bright pink spiky punk hair",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/grandma-shock.3.png",
+      "what": "Narabete! ready answer picture: grandma-shock.3 (my room)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a messy bedroom bed piled with clothes, books and junk",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/grandma-shock.4.png",
+      "what": "Narabete! ready answer picture: grandma-shock.4 (my test score)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a sheet of paper school test covered in red pen marks, crumpled at the corner, with a red pencil",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/grandma-shock.5.png",
+      "what": "Narabete! ready answer picture: grandma-shock.5 (a robot boyfriend)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute silver robot holding a red heart",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/grandma-shock.6.png",
+      "what": "Narabete! ready answer picture: grandma-shock.6 (a tattoo)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a muscular arm with a big green Japanese dragon tattoo",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/grandma-shock.7.png",
+      "what": "Narabete! ready answer picture: grandma-shock.7 (my bank book)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small dark blue Japanese bank passbook with a few coins next to it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/flea-market.0.png",
+      "what": "Narabete! ready answer picture: flea-market.0 (a used tissue)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a crumpled scrunched-up white paper tissue lying flat, with soft wrinkles, next to a small tissue box",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/flea-market.1.png",
+      "what": "Narabete! ready answer picture: flea-market.1 (one sock)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single lonely striped sock",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/flea-market.2.png",
+      "what": "Narabete! ready answer picture: flea-market.2 (an old phone)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an old cracked flip phone",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/flea-market.3.png",
+      "what": "Narabete! ready answer picture: flea-market.3 (Grandpa's hat)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an old grey felt fedora hat with a black band, just the hat on its own",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/flea-market.4.png",
+      "what": "Narabete! ready answer picture: flea-market.4 (a guitar)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an orange acoustic guitar",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/flea-market.5.png",
+      "what": "Narabete! ready answer picture: flea-market.5 (Pon's tail)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a long fluffy bushy brown fox-like tail with black rings, lying on its own on a folded cloth, with a little paper price tag tied on, no animal body",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/flea-market.6.png",
+      "what": "Narabete! ready answer picture: flea-market.6 (a photo of a ghost)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a polaroid photo showing a little white ghost",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/flea-market.7.png",
+      "what": "Narabete! ready answer picture: flea-market.7 (a real gold coin)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a shiny oval Japanese koban gold coin with engraved horizontal lines, no face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/hard-morning.0.png",
+      "what": "Narabete! ready answer picture: hard-morning.0 (my birthday)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a birthday cake with lit candles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/hard-morning.1.png",
+      "what": "Narabete! ready answer picture: hard-morning.1 (a trip)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red rolling suitcase with travel stickers",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/hard-morning.2.png",
+      "what": "Narabete! ready answer picture: hard-morning.2 (Saturday)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cool smiling yellow face wearing black sunglasses",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/hard-morning.3.png",
+      "what": "Narabete! ready answer picture: hard-morning.3 (school)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red Japanese school randoseru backpack",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/hard-morning.4.png",
+      "what": "Narabete! ready answer picture: hard-morning.4 (work)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a brown leather office briefcase",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/hard-morning.5.png",
+      "what": "Narabete! ready answer picture: hard-morning.5 (a rainy Monday)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a grey rain cloud with heavy blue raindrops",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/hard-morning.6.png",
+      "what": "Narabete! ready answer picture: hard-morning.6 (the dentist)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a dentist's drill and a small round dental mirror crossed over a white tooth",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/hard-morning.7.png",
+      "what": "Narabete! ready answer picture: hard-morning.7 (a test)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a test paper sheet with a pencil and an eraser",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/late-excuse.0.png",
+      "what": "Narabete! ready answer picture: late-excuse.0 (The train was late.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a short green and cream Japanese commuter train car seen from the front, whole train visible, with a round station clock",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/late-excuse.1.png",
+      "what": "Narabete! ready answer picture: late-excuse.1 (My cat was asleep on my lap.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a fat orange cat curled up asleep on a person's lap",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/late-excuse.2.png",
+      "what": "Narabete! ready answer picture: late-excuse.2 (I fell asleep on the train and rode to the end.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a sleeping salaryman in a suit slumped on a train bench seat, eyes closed, head drooping",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/late-excuse.3.png",
+      "what": "Narabete! ready answer picture: late-excuse.3 (My hair wouldn't sit right.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a wild messy hairstyle sticking up with a comb stuck in it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/late-excuse.4.png",
+      "what": "Narabete! ready answer picture: late-excuse.4 (A ghost was using my shower.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a little white ghost happily taking a shower under a shower head",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/late-excuse.5.png",
+      "what": "Narabete! ready answer picture: late-excuse.5 (I drank too much and lost my shoes.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a tipped over beer mug next to a pair of bare feet",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/late-excuse.6.png",
+      "what": "Narabete! ready answer picture: late-excuse.6 (I was taken by aliens.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a green alien flying saucer beaming a person up with a light beam",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/late-excuse.7.png",
+      "what": "Narabete! ready answer picture: late-excuse.7 (I didn't know what day it was.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a tear-off daily calendar block with blank pages flying away in the wind",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/dating-profile.0.png",
+      "what": "Narabete! ready answer picture: dating-profile.0 (I keep five snakes.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. five colourful snakes coiled together in a pile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/dating-profile.1.png",
+      "what": "Narabete! ready answer picture: dating-profile.1 (I live with my mum.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a smiling Japanese mother in an apron hugging her grown-up son, both happy, warm light",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/dating-profile.2.png",
+      "what": "Narabete! ready answer picture: dating-profile.2 (Cup noodles every day.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cup noodle cup with steam and chopsticks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/dating-profile.3.png",
+      "what": "Narabete! ready answer picture: dating-profile.3 (I like sleeping.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a smiling person fast asleep in a cosy Japanese futon, eyes closed",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/dating-profile.4.png",
+      "what": "Narabete! ready answer picture: dating-profile.4 (I have a dog.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a happy golden retriever dog with its tongue out",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/dating-profile.5.png",
+      "what": "Narabete! ready answer picture: dating-profile.5 (I'm a good cook.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a frying pan with a sizzling fried egg and a chef's hat",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/dating-profile.6.png",
+      "what": "Narabete! ready answer picture: dating-profile.6 (I can speak Japanese.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a rounded white speech bubble containing a red circle like the Japanese flag",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/dating-profile.7.png",
+      "what": "Narabete! ready answer picture: dating-profile.7 (My room is always tidy.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a sparkling clean tidy room with a neat bed and shining sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/midnight-message.0.png",
+      "what": "Narabete! ready answer picture: midnight-message.0 (\"What time tomorrow?\")",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round alarm clock",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/midnight-message.1.png",
+      "what": "Narabete! ready answer picture: midnight-message.1 (\"Forgot my keys.\")",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single golden house key on a ring",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/midnight-message.2.png",
+      "what": "Narabete! ready answer picture: midnight-message.2 (\"You up?\")",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a glowing smartphone in the dark with a crescent moon",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/midnight-message.3.png",
+      "what": "Narabete! ready answer picture: midnight-message.3 (\"I'm nearby right now.\")",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a plain red map location pin marker with a white dot in the middle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/midnight-message.4.png",
+      "what": "Narabete! ready answer picture: midnight-message.4 (\"Want a penguin?\")",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute penguin with a red ribbon bow like a gift",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/midnight-message.5.png",
+      "what": "Narabete! ready answer picture: midnight-message.5 (\"Keep this a secret.\")",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute little white ghost holding one finger to its lips, shushing",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/midnight-message.6.png",
+      "what": "Narabete! ready answer picture: midnight-message.6 (\"Got a shovel?\")",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a dirty garden shovel stuck in a mound of earth",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/midnight-message.7.png",
+      "what": "Narabete! ready answer picture: midnight-message.7 (\"Karaoke?\")",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a karaoke microphone with musical notes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/parents-saw.0.png",
+      "what": "Narabete! ready answer picture: parents-saw.0 (my homework)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a blue school exercise notebook with a pencil on top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/parents-saw.1.png",
+      "what": "Narabete! ready answer picture: parents-saw.1 (my games)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a handheld video game controller gamepad with a d-pad and colourful buttons",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/parents-saw.2.png",
+      "what": "Narabete! ready answer picture: parents-saw.2 (my room)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a messy bedroom bed piled with clothes, books and junk",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/parents-saw.3.png",
+      "what": "Narabete! ready answer picture: parents-saw.3 (my browser history)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an open laptop with a glowing screen",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/parents-saw.4.png",
+      "what": "Narabete! ready answer picture: parents-saw.4 (my diary)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pink diary with a small padlock",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/parents-saw.5.png",
+      "what": "Narabete! ready answer picture: parents-saw.5 (last night's photos)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a camera with a flash bursting",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/parents-saw.6.png",
+      "what": "Narabete! ready answer picture: parents-saw.6 (my credit card bill)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a long paper receipt bill next to a gold credit card",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/parents-saw.7.png",
+      "what": "Narabete! ready answer picture: parents-saw.7 (my tattoo)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a muscular arm with a big green Japanese dragon tattoo",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/morning-regret.0.png",
+      "what": "Narabete! ready answer picture: morning-regret.0 (I drank water.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a clear glass of water with a blue water drop",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/morning-regret.1.png",
+      "what": "Narabete! ready answer picture: morning-regret.1 (I ate ramen.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a steaming bowl of ramen with chashu, a soft egg and chopsticks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/morning-regret.2.png",
+      "what": "Narabete! ready answer picture: morning-regret.2 (I sang karaoke.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a karaoke microphone with musical notes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/morning-regret.3.png",
+      "what": "Narabete! ready answer picture: morning-regret.3 (I fell asleep in a taxi.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a yellow Japanese taxi with a sleeping passenger in the back seat",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/morning-regret.4.png",
+      "what": "Narabete! ready answer picture: morning-regret.4 (I danced with the boss.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a disco mirror ball with sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/morning-regret.5.png",
+      "what": "Narabete! ready answer picture: morning-regret.5 (I called my ex.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an old phone handset with a broken red heart",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/morning-regret.6.png",
+      "what": "Narabete! ready answer picture: morning-regret.6 (I called the boss \"Mum\".)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pale salaryman in a suit and tie screaming in horror with both hands on his cheeks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/morning-regret.7.png",
+      "what": "Narabete! ready answer picture: morning-regret.7 (I got a weird tattoo.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a muscular arm with a silly pink cartoon tattoo of a fish",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-kids.0.png",
+      "what": "Narabete! ready answer picture: worst-day-kids.0 (My socks got wet.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a soggy blue sock dripping water in a puddle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-kids.1.png",
+      "what": "Narabete! ready answer picture: worst-day-kids.1 (I dropped my ice cream.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an ice cream cone dropped upside down splattered on the ground",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-kids.2.png",
+      "what": "Narabete! ready answer picture: worst-day-kids.2 (I forgot my homework.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an open empty red school backpack with nothing inside and a big blue sweat drop",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-kids.3.png",
+      "what": "Narabete! ready answer picture: worst-day-kids.3 (The cat ran away.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an orange cat running away fast with dust clouds",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-kids.4.png",
+      "what": "Narabete! ready answer picture: worst-day-kids.4 (The teacher got angry.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an angry Japanese school teacher with glasses and a red face, steam puffing from his head, pointing",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-kids.5.png",
+      "what": "Narabete! ready answer picture: worst-day-kids.5 (Pon ate my snack.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a raccoon dog tanuki eating a cookie with crumbs",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-kids.6.png",
+      "what": "Narabete! ready answer picture: worst-day-kids.6 (The house was full of ghosts.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small house with many little white ghosts popping out of the windows and roof",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-kids.7.png",
+      "what": "Narabete! ready answer picture: worst-day-kids.7 (A dinosaur came.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute green t-rex dinosaur roaring",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day.0.png",
+      "what": "Narabete! ready answer picture: worst-day.0 (My coffee was cold.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a coffee mug with ice cubes and a blue frost",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day.1.png",
+      "what": "Narabete! ready answer picture: worst-day.1 (I forgot my umbrella.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a closed red umbrella forgotten by itself",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day.2.png",
+      "what": "Narabete! ready answer picture: worst-day.2 (The trains stopped.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a short single Japanese commuter train car stopped in front of a red stop signal, whole train visible",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day.3.png",
+      "what": "Narabete! ready answer picture: worst-day.3 (I dropped my wallet.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a brown leather wallet falling with coins spilling out",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day.4.png",
+      "what": "Narabete! ready answer picture: worst-day.4 (I fell asleep in a meeting.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a tired office worker in a white shirt asleep with head on a desk next to a laptop and coffee cup",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day.5.png",
+      "what": "Narabete! ready answer picture: worst-day.5 (The dog ate my homework.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a dog chewing a torn notebook",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day.6.png",
+      "what": "Narabete! ready answer picture: worst-day.6 (My house was gone.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a lone wooden front door still standing by itself on an empty patch of grass, the house around it gone",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day.7.png",
+      "what": "Narabete! ready answer picture: worst-day.7 (Aliens came.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a green alien flying saucer UFO with a light beam",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-cheeky.0.png",
+      "what": "Narabete! ready answer picture: worst-day-cheeky.0 (Terrible bed hair.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a head with crazy messy bed hair sticking up everywhere",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-cheeky.1.png",
+      "what": "Narabete! ready answer picture: worst-day-cheeky.1 (The person next to me slept on me.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two commuters on a red train bench seat, one asleep with head leaning on the other's shoulder, the other annoyed",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-cheeky.2.png",
+      "what": "Narabete! ready answer picture: worst-day-cheeky.2 (I emailed the boss by mistake.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white envelope flying away with a panicked sweat drop",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-cheeky.3.png",
+      "what": "Narabete! ready answer picture: worst-day-cheeky.3 (I ran into my ex.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red heart broken in two pieces",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-cheeky.4.png",
+      "what": "Narabete! ready answer picture: worst-day-cheeky.4 (My trousers split.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pair of blue trousers with a big rip in the seat",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-cheeky.5.png",
+      "what": "Narabete! ready answer picture: worst-day-cheeky.5 (It was my ex's wedding.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white wedding cake with a broken heart topper",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-cheeky.6.png",
+      "what": "Narabete! ready answer picture: worst-day-cheeky.6 (A penguin turned up at the meeting.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a penguin wearing a necktie standing at a meeting table",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/answers/worst-day-cheeky.7.png",
+      "what": "Narabete! ready answer picture: worst-day-cheeky.7 (It was all a dream. It's still Monday.)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a ringing red alarm clock sitting on a white pillow",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
     }
   ]
 }

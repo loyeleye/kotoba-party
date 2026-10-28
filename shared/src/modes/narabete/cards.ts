@@ -501,6 +501,8 @@ export const FEEL_THEMES: FeelTheme[] = [
 /** Time Line sets for an audience. */
 /** A Time Line card's picture: 64² pixel art (stage/assets/cards, PixelLab; see docs/graphics.md). Its emoji stands in if it fails to load. */
 export const cardPicture = (id: string): string => `/stage/assets/cards/${id}.png`;
+/** A Feelings ready answer's picture: 64² pixel art (stage/assets/answers, PixelLab), named by theme and index. Its emoji stands in if it fails to load. */
+export const answerPicture = (themeId: string, i: number): string => `/stage/assets/answers/${themeId}.${i}.png`;
 
 export const timeSetsFor = (a: Audience): TimeSet[] => TIME_SETS.filter((s) => s.audiences.includes(a));
 

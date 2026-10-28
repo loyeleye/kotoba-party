@@ -216,6 +216,34 @@ const SETTLE_MS = 700;
 let drawing = 0;
 let neckSize = { w: 0, h: 0 };
 let lastDraw: { knotsAt: { after: number; at: number }[]; calm: boolean; until: number } | null = null;
+/** The knots she has already winced at this flip (by the card they follow), so a re-render doesn't wince again. */
+const winced = new Set<number>();
+/** How long she winces when a knot ties: her squeezed-shut face (nobiko-reach.png frame 2), shaking a pixel each way. */
+const WINCE_MS = 600;
+function wince(head: HTMLElement, still: boolean): void {
+  const face = { backgroundPosition: '-512px 0' };
+  const shake = still ? [0, 0, 0, 0, 0] : [0, 4, -4, 2, 0];
+  head.animate(
+    shake.map((x, i) => ({ ...face, translate: `${x}px 0`, offset: i / (shake.length - 1), easing: 'step-end' })),
+    { duration: WINCE_MS },
+  );
+}
+/** Her breath: the neck's droop deepens a pixel and lifts again, this many ms each way. */
+const BREATH_MS = 1400;
+// Her head on the ruler (nobiko-reach.png frames: 1 her face, 3 a blink, 4 and 5 mouth shut and half open) stands
+// in for her portrait, whose plate is empty during a round: it blinks now and then, and mouths her lines in step
+// with the portrait's own lip sync (sprites.ts), which still runs out of sight.
+const HEAD_FRAME = { face: 1, blink: 3, shut: 4, half: 5 };
+let nextBlink = 0;
+function headFrame(now: number): number {
+  const talk = document.querySelector<HTMLImageElement>('.host-sprite > img.sprite-sheet[src*="-talk.png"]');
+  if (talk) {
+    const shape = Math.round((-parseFloat(/translateX\((-?[\d.]+)%\)/.exec(talk.style.transform)?.[1] ?? '0') * 3) / 100);
+    return [HEAD_FRAME.shut, HEAD_FRAME.half, HEAD_FRAME.face][shape] ?? HEAD_FRAME.face;
+  }
+  if (now > nextBlink + 140) nextBlink = now + 2500 + Math.random() * 3000;
+  return now > nextBlink ? HEAD_FRAME.blink : HEAD_FRAME.face;
+}
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** `until`: keep drawing at least this long (ms), e.g. while her head hops at a perfect line. */
@@ -264,16 +292,27 @@ function drawNeck(knotsAt: { after: number; at: number }[], calm: boolean, until
       if (t < k.at) continue;
       const f = still ? 2 : Math.min(2, Math.floor((t - k.at) / KNOT_FRAME_MS));
       knots.push({ x: mid(k.after), frame: f as Knot['frame'] });
+      // Each knot hurts once, as it pulls tight (not when a re-render finds it already tied).
+      if (f === 2 && !winced.has(k.after)) {
+        winced.add(k.after);
+        if (t - k.at < 3 * KNOT_FRAME_MS + 100) wince(head, still);
+      }
     }
-    const key = JSON.stringify([base, chin, cards, knots]);
+    if (!knotsAt.length) winced.clear();
+    const breath = still ? 0 : Math.floor(now / BREATH_MS) % 2;
+    const face = still ? HEAD_FRAME.face : headFrame(now);
+    const pos = face === HEAD_FRAME.face ? '' : `${-256 * face}px 0`;
+    if (head.style.backgroundPosition !== pos) head.style.backgroundPosition = pos;
+    const key = JSON.stringify([base, chin, cards, knots, breath]);
     if (key !== drawn) {
       drawn = key;
       // The ticks sit on the neck between their two cards.
       for (const tick of ruler.querySelectorAll<HTMLElement>('.nb-ok[data-after]')) tick.style.left = `${mid(Number(tick.dataset.after)) * 2 + canvas.offsetLeft}px`;
-      drawRuler(canvas.getContext('2d')!, { collar: base, chin, line, pegs: cards, knots }, neckArt);
+      drawRuler(canvas.getContext('2d')!, { collar: base, chin, line, pegs: cards, knots, breath }, neckArt);
     }
     const pending = knotsAt.some((k) => t < k.at + 3 * KNOT_FRAME_MS);
-    if (pending || t < Math.max(SETTLE_MS, until)) requestAnimationFrame(frame);
+    // Calm motion stops once everything is in place; otherwise she keeps breathing, blinking and talking.
+    if (pending || t < Math.max(SETTLE_MS, until) || !still) requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 }

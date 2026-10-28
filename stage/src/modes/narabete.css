@@ -2,7 +2,7 @@
    at the low end, her neck along the bottom, her head at the high end (nobiko-reach.png at a whole
    2×). A round keeps one layout from deal to flip (head, ruler, foot), sized to fit the play area at
    full scale, so the neck never moves between phases. */
-.nb-stage { width: min(1720px, 100%); display: grid; gap: 12px; align-content: start; text-align: left; --nb-ink: #0b0605; --nb-shade: #9b625e; --nb-skin: #fbdebe; --nb-gold: #ffd36b; --nb-good: #3fd68a; }
+.nb-stage { overflow-x: clip; width: min(1720px, 100%); display: grid; gap: 6px; align-content: start; text-align: left; --nb-ink: #0b0605; --nb-shade: #9b625e; --nb-skin: #fbdebe; --nb-gold: #ffd36b; --nb-good: #3fd68a; }
 .nb-stage p { margin: 0; }
 .nb-stage [lang='ja'], .nb-title, .nb-text, .nb-sentence, .nb-story-text { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
 .nb-intro { justify-items: center; text-align: center; gap: 22px; }
@@ -10,10 +10,10 @@
 .nb-subtitle { font-size: 32px; color: var(--muted); }
 .nb-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1200px; padding-left: 40px; margin: 0; }
 
-.nb-head { display: grid; gap: 4px; min-height: 122px; align-content: start; }
+.nb-head { display: grid; gap: 2px; min-height: 112px; align-content: start; }
 .nb-tag { font-size: 20px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .nb-tag span { text-transform: none; letter-spacing: 0; color: var(--mode); font-weight: 800; }
-.nb-title { font-size: 46px; font-weight: 900; line-height: 1.15; text-wrap: balance; }
+.nb-title { font-size: 46px; font-weight: 900; line-height: 1.05; text-wrap: balance; }
 .nb-title small { font-size: 24px; font-weight: 400; color: var(--muted); margin-left: 16px; word-break: normal; }
 .nb-call { font-size: 28px; font-weight: 800; }
 
@@ -25,7 +25,7 @@
    her collar to her chin, with a peg where each card's string meets it and knots tied in it. It runs a
    little past the box so a knot's loop has room to hang below the line. */
 .nb-neck-art { position: absolute; left: -60px; right: -60px; top: -60px; bottom: -60px; width: calc(100% + 120px); height: calc(100% + 120px); image-rendering: pixelated; pointer-events: none; }
-.nb-collar, .nb-nobiko { position: absolute; z-index: 1; width: 256px; height: 256px; background: url(/stage/assets/anim/nobiko-reach.png) no-repeat; background-size: 512px 256px; image-rendering: pixelated; pointer-events: none; }
+.nb-collar, .nb-nobiko { position: absolute; z-index: 1; width: 256px; height: 256px; background: url(/stage/assets/anim/nobiko-reach.png) no-repeat; background-size: 1536px 256px; image-rendering: pixelated; pointer-events: none; }
 .nb-collar { left: -44px; top: -124px; background-position: 0 0; }
 .nb-nobiko { right: -40px; top: -74px; background-position: -256px 0; scale: -1 1; } /* her head turned back along her neck, to the cards */
 .nb-hop .nb-nobiko { animation: nb-hop 0.5s steps(4) var(--r) 2 alternate both; }
@@ -34,7 +34,7 @@
 body[data-mode='narabete'] .host-sprite > .sprite-sheet { transition: visibility 0s 380ms; }
 body:has(.nb-stage .nb-neck) .host-sprite > .sprite-sheet { visibility: hidden; }
 @keyframes nb-hop { to { transform: translateY(-24px); } }
-.nb-ends { margin-top: 28px; display: flex; justify-content: space-between; font-size: 28px; font-weight: 800; padding: 0 200px 0 190px; min-height: 38px; }
+.nb-ends { margin-top: 18px; display: flex; justify-content: space-between; font-size: 28px; font-weight: 800; padding: 0 200px 0 190px; min-height: 38px; }
 .nb-ends small { font-size: 20px; font-weight: 400; color: var(--muted); margin: 0 8px; }
 .nb-anchor { color: var(--nb-gold); }
 
@@ -77,8 +77,15 @@ body:has(.nb-stage .nb-neck) .host-sprite > .sprite-sheet { visibility: hidden; 
 .nb-n6 .nb-sentence, .nb-n7 .nb-sentence, .nb-n8 .nb-sentence { font-size: 21px; }
 .nb-en { font-size: 16px; color: #6b4a6f; line-height: 1.15; }
 .nb-n6 .nb-en, .nb-n7 .nb-en, .nb-n8 .nb-en { display: none; }
+/* Narrow cards: smaller times (a long one like 12:00 midnight breaks at its space) and the sentence keeps to three lines. */
+.nb-n6 .nb-value { font-size: 42px; }
+.nb-n7 .nb-value, .nb-n8 .nb-value { font-size: 30px; letter-spacing: -0.02em; }
+.nb-n6 .nb-value { white-space: nowrap; }
+.nb-n7 .nb-sentence, .nb-n8 .nb-sentence { font-size: 18px; max-width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .nb-back .nb-pic { position: absolute; top: 8px; right: 8px; } /* the card's picture as a sticker on its back, so you can still find "the duck card" */
 .nb-back .nb-pic img { width: 64px; height: 64px; box-shadow: 0 0 0 2px var(--nb-ink); }
+/* A Feelings card shows its answer too, so its picture goes 1× above the words. */
+.nb-face:has(.nb-text) .nb-pic img { width: 64px; height: 64px; }
 .nb-back:has(.nb-pic) .nb-value { font-size: 44px; padding-right: 64px; } /* keep the time clear of the sticker */
 .nb-back-foot { display: flex; gap: 10px; align-items: center; }
 .nb-back .nb-name { font-size: 22px; color: var(--paper-ink); }
@@ -137,3 +144,14 @@ body:has(.nb-stage .nb-neck) .host-sprite > .sprite-sheet { visibility: hidden; 
 .nb-now .nb-soshite { color: #b23a64; }
 .nb-now .nb-name { color: #6b4a6f; }
 .nb-later { opacity: 0.45; }
+
+/* Pixel art only stays crisp at 1:1, so the round must fit the play area without the stage's shrink-to-fit
+   (main.ts fitMain). overflow-x above keeps her body, head and neck canvas, which hang past the line's edges, from
+   counting as width. With 7 or 8 players the score ribbon goes to one line per player and the round tightens up. */
+body[data-mode='narabete'] .players.two-rows { gap: 8px 12px; }
+body[data-mode='narabete'] .players.two-rows .player { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-rows: auto; padding: 4px 14px; border-top-width: 6px; font-size: 26px; }
+body[data-mode='narabete'] .players.two-rows .seat { grid-row: 1; font-size: 22px; min-width: 34px; }
+body[data-mode='narabete'] .players.two-rows .name { grid-column: 2; }
+body[data-mode='narabete'] .players.two-rows .ticks, body[data-mode='narabete'] .players.two-rows .level { grid-row: 1; grid-column: 3; font-size: 24px; }
+body[data-mode='narabete'] .players.two-rows .score { grid-row: 1; grid-column: 4; font-size: 30px; }
+
