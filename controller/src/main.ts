@@ -589,7 +589,9 @@ function vipMenu(view: RoomView): HTMLElement {
         ? `No game fits ${n} player${n === 1 ? '' : 's'} yet.`
         : `${m.title} needs ${playersLabel(m)}. Tonight there ${n === 1 ? 'is 1' : `are ${n}`}.`
       : isSurprise(m)
-        ? `Rolls between ${fitCount(n)} game${fitCount(n) === 1 ? '' : 's'} for ${n} player${n === 1 ? '' : 's'}, each with its usual length.`
+        ? fitCount(n) === 1
+          ? `Chooses the only game available for ${n} player${n === 1 ? '' : 's'}.`
+          : `Randomly chooses one of the ${fitCount(n)} games available for ${n} player${n === 1 ? '' : 's'}.`
         : '';
   }
   startBtn.addEventListener('click', () => {
