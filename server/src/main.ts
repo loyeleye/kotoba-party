@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { loadContent } from './content.js';
-import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine } from '../ai/index.js';
+import { HOST_EVENTS, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine } from '../ai/index.js';
 import { aiVoice, bankVoice, hostDirector } from './host.js';
 import { inkCoachDirector } from './ink.js';
 import { suspectDirector } from './onsen.js';
@@ -18,7 +18,7 @@ const content = loadContent(root);
 const llm = llmFromEnv();
 const ai = createHostVoice({
   llm,
-  tts: process.env.VOICEVOX_URL ? new VoicevoxTts() : new SilentTts(),
+  tts: process.env.VOICEVOX_URL ? new VoicevoxTts() : undefined,
   // The pipeline voices the events it knows; lines for the rest go through the plain bank voice.
   lines: content.hostLines.filter((l): l is typeof l & BankLine => (HOST_EVENTS as readonly string[]).includes(l.event)),
 });

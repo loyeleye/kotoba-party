@@ -54,7 +54,8 @@ Option 1, with the room logic shared, not ported:
   noticed when the connection times out at the edge, not after two missed 10 s pings. Its seat
   hold starts later, and early phase ends wait for it a little longer.
 - Bank lines' audio is not pre-rendered (the Node server's `warmUp`), because each room would
-  repeat it against VOICEVOX. Fallback bank lines are subtitles only on Cloudflare.
+  repeat it against VOICEVOX. Instead a bank line is voiced when it is picked, and plays with that
+  audio if VOICEVOX answers before the host's deadline (2026-10-28).
 - No global room cap; Cloudflare's own limits and the per-game LLM budget bound the cost.
 - An open WebSocket keeps its object in memory and billed, so a room also closes after 30 minutes
   with no joins or commands (`ROOM_STALE_MS`), even with a screen still connected. The stage then

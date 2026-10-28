@@ -17,6 +17,7 @@ import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
 import { creditSummary } from './music/tracks.js';
 import { isMuted } from './sound.js';
+import { canSpeakHost, speakHost, stopHostSpeech } from './hostSpeech.js';
 import { joinAudioTabs } from '../../shared/src/audioTabs.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
@@ -588,6 +589,7 @@ function showHost(view: RoomView): void {
       if (!hostSprite.el.isConnected) els.host.prepend(hostSprite.el);
       hostAudio?.pause();
       hostAudio = null;
+      stopHostSpeech();
       const wait = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, '…'));
       const old = els.host.querySelector('.host-bubble');
       if (old) old.replaceWith(wait);
@@ -614,7 +616,12 @@ function showHost(view: RoomView): void {
     hostSprite.talk(audio, say.mouth, say.kana);
     // Blocked (no click yet): the mouth still moves with the subtitles.
     void audio.play().catch(() => hostAudio === audio && hostSprite.talk(null, undefined, say.kana));
-  } else hostSprite.talk(null, undefined, say.kana);
+  } else {
+    // No VOICEVOX on the server: the browser's Japanese voice reads the kana instead.
+    if (canSpeakHost()) speakHost(say.host, say.kana);
+    else stopHostSpeech();
+    hostSprite.talk(null, undefined, say.kana);
+  }
 }
 
 function tick(): void {

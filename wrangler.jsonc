@@ -25,7 +25,8 @@
     // The address on the QR code and the invite links: the short link (楽しすぎ！), which sends
     // a 302 to this worker keeping the path and ?code=. Empty: the request's own origin.
     "PUBLIC_URL": "https://tanoshi.s.gy",
-    // Optional; e.g. https://voicevox.example.com. Empty: subtitles only.
+    // Optional; e.g. https://voicevox.example.com (docs/cloudflare.md; VOICEVOX_TOKEN is a secret).
+    // Empty: the TV reads host lines with the browser's Japanese voice.
     "VOICEVOX_URL": "",
     // Optional; the reader service (npm run reader), here on an Oracle Cloud VM. Empty: kanji answers
     // are compared as written. READER_TOKEN is a secret (wrangler secret put READER_TOKEN).

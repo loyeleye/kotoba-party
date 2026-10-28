@@ -92,6 +92,16 @@ describe('host voice', () => {
     await tick();
   });
 
+  it('voices a bank line on the spot when nothing was pre-rendered (Cloudflare)', async () => {
+    const tts = new SilentTts();
+    const voice = createHostVoice({ tts, lines });
+    const line = await voice.prepare('R', { host: 'pon', event: 'reveal_react', tier: 'good', llm: false }).ready(100);
+    expect(line?.source).toBe('bank');
+    expect(line?.audio).toBeDefined();
+    expect(voice.audio(line!.audio!.id)).toBeDefined();
+    expect(tts.spoken).toHaveLength(1);
+  });
+
   it('reads a prompt with a blank as a pause', async () => {
     const tts = new SilentTts();
     const voice = createHostVoice({ tts });
