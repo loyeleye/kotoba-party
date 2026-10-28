@@ -22,6 +22,8 @@ export interface PlayerState {
   /** Party points across the night: earned by where they finished each game (see PARTY_POINTS). */
   total: number;
   mic: 'ok' | 'quiet' | null;
+  /** Mic lines the host has already said for this player, so spamming the mic switch gets each one once. */
+  micCued?: { ok?: boolean; quiet?: boolean };
 }
 
 export interface GameState {
@@ -302,7 +304,12 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       }
       if (!quiet && !matchesAccepted(utteranceReading(cmd.utterance), ['こんにちは', 'こんにちわ'])) return fail('not-konnichiwa');
       me.mic = quiet ? 'quiet' : 'ok';
-      state.cues.push({ host, event: quiet ? 'mic_check_quiet' : 'mic_check_ok', slots: { name: me.name } });
+      // The host says each mic line once per player: flipping the switch on and off doesn't repeat it.
+      const cued = (me.micCued ??= {});
+      if (!cued[me.mic]) {
+        cued[me.mic] = true;
+        state.cues.push({ host, event: quiet ? 'mic_check_quiet' : 'mic_check_ok', slots: { name: me.name } });
+      }
       return OK;
     }
     case 'skip': {
