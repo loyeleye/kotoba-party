@@ -198,6 +198,17 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   bento_vs_sendback: 'Bento Haus VS: a customer sent a sloppy box back for a refund and is offering the order to {team} instead: perfect earns a big tip, anything else nothing. Call it out loudly and dare them to take it.',
   bento_vs_final: 'Bento Haus VS: the last shift is over and {team} won the whole game (most tips over all three shifts). Crown them champions.',
   bento_vs_tie: 'Bento Haus VS: the shift is over and both kitchens earned the same tips. Call it a draw.',
+  hajime_intro: "Nice to Meet You! starts: your late-night guest corner. Each guest writes one true thing about themselves; the other cards are lies, tanuki in disguise. Welcome everyone.",
+  hajime_guest: 'Nice to Meet You!: introduce tonight\'s guest ({name}) like a talk-show host and ask for applause.',
+  hajime_write: 'Nice to Meet You!: everyone writes in silence: the guest one truth, the tanuki one lie each.',
+  hajime_introduce: 'Nice to Meet You!: call {name} up to introduce the guest by reading the cards aloud.',
+  hajime_read: 'Nice to Meet You!: read this line of the introduction exactly as given: {line}',
+  hajime_rank: 'Nice to Meet You!: the room now ranks the cards from surely true to surely a lie. You are sure every card is a lie.',
+  hajime_known: 'Nice to Meet You!: the room picked the guest\'s truth first. "That is so {name}!"',
+  hajime_top_lie: 'Nice to Meet You!: a lie by {author} was the room\'s favourite card. Admire the disguise, a little jealous.',
+  hajime_pon_win: 'Nice to Meet You!: one of your own lies fooled the room. Gloat.',
+  hajime_truth: 'Nice to Meet You!: the truth was not the room\'s first pick. Be shocked it was true; your tail pops out.',
+  hajime_recall: 'Nice to Meet You!: the last round: everyone says what is true about everyone else. Do you remember?',
 };
 
 export function hostUserPrompt(cue: HostCue, recent: readonly string[]): string {

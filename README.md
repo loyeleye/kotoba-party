@@ -26,6 +26,7 @@ Eleven modes run end to end on the stage and phones, each with bots and full-ser
 | Bento Haus VS (おべんとうハウス VS, backlog) | Pon | The same kitchen, two teams racing for the same customers: first good box gets the tips |
 | Happyōkai! (はっぴょうかい！, backlog) | Chōchin-san | A surprise talk: several sentences in a row about slides you've never seen, picked by your assistant; then a question from the room |
 | Shodō Taikai (backlog) | Fude | Handwriting: tracing and writing kana and kanji with stroke order, said aloud first |
+| Nice to Meet You! (はじめまして！, backlog) | Pon | Self-introductions and introducing a friend (他己紹介): one truth, three tanuki lies, read aloud and ranked |
 
 All content is `draft` until a fluent speaker checks it. Decisions and questions for Ladi:
 [docs/open-questions.md](docs/open-questions.md).

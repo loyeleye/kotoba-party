@@ -40,6 +40,9 @@ const ERRORS: Record<string, string> = {
   'not-kana': 'Use kana for this one.',
   'too-close': 'Too close to the real meaning. Make it a fake!',
   'kids-words': 'This room is set to Kids. Try other words!',
+  'tiles-only': 'Pick one of your tiles for this card.',
+  'not-katakana': 'Write your name in katakana (カタカナ).',
+  'already-read': 'That card has already been read out.',
   'wrong-start': 'Your word has to start with the last sound.',
   repeat: 'That word was already used.',
   'not-the-word': 'Not quite. Try saying it again.',
@@ -697,7 +700,7 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
 }
 
 // Moves that lock something in get a stamp and a buzz; small taps (tiles, peeks, ticks) don't.
-const LOCK_INS = new Set(['accuse', 'answer', 'call', 'draw', 'fake', 'guess', 'judge', 'pick', 'ready', 'reply', 'say', 'sing', 'vote', 'word', 'step', 'chorus', 'echo']);
+const LOCK_INS = new Set(['accuse', 'answer', 'call', 'draw', 'fake', 'guess', 'judge', 'pick', 'ready', 'reply', 'say', 'sing', 'vote', 'word', 'step', 'chorus', 'echo', 'rank', 'wish']);
 
 async function play(move: unknown): Promise<boolean> {
   const ok = await command({ type: 'play', move });

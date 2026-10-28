@@ -33,6 +33,7 @@ import { narabetePolicy } from './policies/narabete.js';
 import { dubClubPolicy } from './policies/dubClub.js';
 import { happyokaiPolicy } from './policies/happyokai.js';
 import { bentoHausPolicy } from './policies/bentoHaus.js';
+import { hajimemashitePolicy } from './policies/hajimemashite.js';
 
 const { values } = parseArgs({
   options: {
@@ -102,6 +103,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
     case 'dub-club':
       // One shared policy: guessers "hear" the card each actor is playing.
       return (sharedDubClub ??= dubClubPolicy());
+    case 'hajimemashite':
+      return hajimemashitePolicy();
     case 'happyokai':
       return happyokaiPolicy();
     default:

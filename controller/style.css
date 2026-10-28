@@ -49,6 +49,7 @@ body[data-mode='phrase-bingo'] { --mode: #ff6f91; }
 body[data-mode='omiai'] { --mode: #ffa3c0; }
 body[data-mode='shodo'] { --mode: #c9ced6; }
 body[data-mode='narabete'] { --mode: #ffc29a; }
+body[data-mode='hajimemashite'] { --mode: #7fdc8c; }
 body[data-mode='bento-haus'], body[data-mode='bento-haus-vs'] { --mode: #ff9f6b; }
 body[data-mode='happyokai'] { --mode: #ffd27a; }
 body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--mode) 22%, var(--bg)), var(--bg) 70%) fixed; }
@@ -305,7 +306,8 @@ summary { display: flex; align-items: center; }
 
 /* The one talk button on a screen sits in a bottom dock, in thumb reach (main.ts adds .docked). */
 .talk.docked { position: fixed; z-index: 4; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); max-width: 448px; margin: 0 auto; width: auto; box-shadow: 0 6px 0 var(--outline), 0 0 0 4px var(--bg); }
-body.has-dock main { padding-bottom: 120px; }
+/* Room under the content for the dock itself (about 140 px with its shadow) and a little air. */
+body.has-dock main { padding-bottom: 168px; }
 .kdp-sang { width: 100%; }
 
 /* Lock-in (main.ts lockIn): a hanko stamp that thumps down and fades. */

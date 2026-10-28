@@ -28,6 +28,9 @@ If you only have ten minutes, these are the answers that would change the build 
 - **Omiai Matchmaker (backlog):** a rule-based manners meter (no LLM) scores politeness, the room
   votes for charm, and the guest invites the player with the most hearts (votes + manners
   stars) to tea for +200. Fair to funny casual answers? ([omiai.md](modes/omiai.md#open-questions))
+- **Nice to Meet You! (backlog):** each lie a ranker puts above the truth pays its tanuki 60, and the
+  guest scores only when some but not all rankers find their truth. Does that feel fair at a real
+  table? ([hajimemashite.md](modes/hajimemashite.md#open-questions))
 - **Narabete! (backlog):** co-op: every pair in order pays everyone, and saying your card out loud
   adds a bonus. Is a flat team score fun enough, or should the Poker Face (the card that fooled the
   room most) earn points too? ([narabete.md](modes/narabete.md#open-questions))
@@ -139,6 +142,7 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Shodō Taikai (backlog) | [shodo.md](modes/shodo.md) | 4 open | Fude |
 | Narabete! (backlog) | [narabete.md](modes/narabete.md) | 5 open | Nobiko-san |
 | Bento Haus (backlog) | [bento-haus.md](modes/bento-haus.md) | 7 open | Pon |
+| Nice to Meet You! (backlog) | [hajimemashite.md](modes/hajimemashite.md) | 6 open | Pon |
 
 ## Content
 

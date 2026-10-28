@@ -1,0 +1,45 @@
+/* はじめまして！ (phone). Fits 360 px (328 px of content). */
+.hj-ja { margin: 0; font-size: 22px; font-weight: 800; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
+.hj-ja.big { font-size: 40px; }
+.hj-romaji { margin: 0; color: #ffd36b; font-style: italic; font-size: 15px; }
+.hj-line-p, .hj-script-p { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: var(--paper); color: var(--paper-ink); border: 3px solid #0b0605; box-shadow: 0 4px 0 #0b0605; }
+.hj-line-p .hj-romaji, .hj-script-p .hj-romaji { color: #8a5a00; }
+.hj-script-p .hint { color: #6b4a6f; }
+.hj-ok { margin: 0; color: var(--good); font-weight: 800; }
+.hj-cardname { margin: 0; color: var(--muted); font-size: 15px; }
+.hj-cardname span { color: var(--mode); font-weight: 800; }
+.hj-frame-p { margin: 0; font-size: 22px; font-weight: 800; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
+.hj-blank-p { display: inline-block; min-width: 3em; padding: 0 6px; margin: 0 4px; border-bottom: 3px solid var(--mode); color: var(--muted); text-align: center; }
+.hj-blank-p.on { color: var(--mode); }
+.hj-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.hj-tile { display: grid; gap: 0; justify-items: center; text-align: center; margin: 0; padding: 10px 6px; min-height: 84px; }
+.hj-tile.on, .hj-rank-opt.on { border: 3px solid var(--mode); background: #1f3b2a; }
+.hj-tile-emoji { font-size: 28px; line-height: 1; }
+.hj-tile-jp { font-size: 19px; font-weight: 800; word-break: keep-all; overflow-wrap: anywhere; }
+.hj-tile-jp.long { font-size: 16px; }
+.hj-tile small { color: var(--muted); font-size: 13px; }
+.hj-own summary, .hj-veto summary, .hj-argue summary, .hj-refute summary { font-weight: 800; padding: 8px 0; }
+.hj-type { margin-top: 6px; }
+.hj-steps-p { margin: 0; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; font-size: 14px; }
+.hj-help { width: 100%; }
+.hj-heard { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.hj-heard li { display: flex; gap: 10px; align-items: baseline; font-size: 20px; font-weight: 800; padding: 8px 12px; border-radius: 10px; background: var(--panel); }
+.hj-lab { font-weight: 900; color: var(--mode); min-width: 1.4em; }
+.hj-veto button { width: 100%; margin-top: 6px; border-color: var(--bad, #ff6b6b); }
+.hj-status { display: grid; }
+.hj-help { font-size: 15px; }
+.hj-ends { margin: 0; font-weight: 800; color: var(--muted); }
+.hj-rank { list-style: none; margin: 0; padding: 0; }
+.hj-rank-opt { display: flex; gap: 10px; align-items: center; }
+.hj-rank-n { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--mode); color: #0b0605; font-weight: 900; flex: none; }
+.hj-rank-opt:not(.on) .hj-rank-n { background: transparent; border: 2px dashed var(--line); color: var(--muted); }
+.hj-argue-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.hj-argue .chip { border-radius: 18px; padding: 8px 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 16px; }
+.hj-say { display: grid; gap: 6px; margin: 8px 0; }
+.hj-say.done { opacity: 0.7; }
+.hj-turning { margin: 0; color: var(--muted); animation: hj-gone 0.2s linear var(--d) forwards; }
+@keyframes hj-gone { to { opacity: 0; visibility: hidden; } }
+.hj-after { display: grid; gap: 10px; animation: hj-in 0.3s ease-out var(--d) both; }
+@keyframes hj-in { from { opacity: 0; transform: translateY(8px); } }
+.hj-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 17px; }
+.hj-total { font-weight: 900; color: var(--mode); font-size: 20px; }

@@ -49,6 +49,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'bento-haus-vs': 'feelin-good',
   // Dub Club: its own cheap anime opening, and silence whenever a voice is recorded or played (dubCue).
   'dub-club': 'dub-opening',
+  // Pon's guest corner: a light talk-show tune the room can chat over.
+  hajimemashite: 'local-forecast',
   // Happyōkai!: the conference-hall lounge Talking Points parodies, quiet enough to talk over.
   happyokai: 'lobby-time',
 };
@@ -67,6 +69,7 @@ export const MODE_ALT_THEMES: Partial<Record<ModeId, MusicId>> = {
   narabete: 'easy-lemon',
   'bento-haus': 'feelin-good',
   'bento-haus-vs': 'kawai-kitsune',
+  hajimemashite: 'carefree',
   happyokai: 'pamgaea',
 };
 
@@ -119,6 +122,8 @@ export const listening = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): bool
   (view.mode === 'shodo' && view.phase === 'answer' && !!view.game && 'itemKind' in view.game && view.game.itemKind === 'dictation') ||
   // Narabete!'s say phase is a listening game: everyone has to hear everyone's card.
   (view.mode === 'narabete' && view.phase === 'answer') ||
+  // はじめまして！'s introduction: the room has to hear each card read out.
+  (view.mode === 'hajimemashite' && view.phase === 'reveal') ||
   // Happyōkai!'s talk and question time: one person speaks at a time, and the whole room has to hear them.
   (view.mode === 'happyokai' && (view.phase === 'answer' || view.phase === 'encore'));
 

@@ -1,0 +1,350 @@
+// はじめまして！'s cards (おだい): what each turn's guest tells the truth about and the tanuki lie about.
+// See docs/modes/hajimemashite.md. All Japanese is draft until the fluent check.
+//
+// A card is a frame with one blank (＿), said in the first person by its writer and in the third
+// person by the introducer ({name} is the guest's katakana name). Frames that can't take someone
+// else as their subject (〜たい, こわい) are noun sentences: 「アキさんの いきたい ところは ＿です」,
+// never 「アキさんは ＿に いきたいです」. Each card has 16 tiles to fill the blank: the guest sees them
+// all, each tanuki a private hand of four. Kana only, katakana for loanwords, so a typed card and a
+// tile look the same on the TV. `pon` is Pon's own in-frame lie, used once a game in a 3-player room.
+
+import type { JpText } from '../../../../content/src/types.js';
+import type { Audience } from '../../protocol.js';
+
+export interface Tile {
+  id: string;
+  /** The blank's word, as the TV shows it. */
+  kana: string;
+  en: string;
+  emoji: string;
+}
+
+export interface IntroCard {
+  id: string;
+  title: JpText;
+  /** First person, with ＿ for the blank. */
+  first: string;
+  /** Third person, with {name} and ＿. */
+  third: string;
+  /** The frame in English, with ___ for the blank. */
+  en: string;
+  /** The same about someone else, with {name} (what the tanuki and the introducer see). */
+  enThird: string;
+  /** N4 cards go only to N4 guests. A chunk card is N4 grammar used as a fixed phrase. */
+  level: 'n5' | 'n4';
+  audiences: readonly Audience[];
+  tiles: Tile[];
+  pon: Tile;
+}
+
+const ALL: readonly Audience[] = ['kids', 'family', 'cheeky'];
+const KF: readonly Audience[] = ['kids', 'family'];
+const CHEEKY: readonly Audience[] = ['cheeky'];
+
+/** Tiles from [kana, en, emoji] rows; ids are the card's id and the row number. */
+function tiles(card: string, rows: [string, string, string][]): Tile[] {
+  return rows.map(([kana, en, emoji], i) => ({ id: `${card}.${String(i + 1).padStart(2, '0')}`, kana, en, emoji }));
+}
+const ponTile = (card: string, kana: string, en: string): Tile => ({ id: `${card}.pon`, kana, en, emoji: '🍃' });
+
+export const INTRO_CARDS: IntroCard[] = [
+  {
+    id: 'suki',
+    title: { text: 'すきな たべもの', kana: 'すきな たべもの', en: 'Favourite food' },
+    first: '＿が だいすきです',
+    third: '{name}さんは ＿が だいすきです',
+    en: 'I love ___',
+    enThird: '{name} loves ___',
+    level: 'n5',
+    audiences: ALL,
+    tiles: tiles('suki', [
+      ['すし', 'sushi', '🍣'], ['なっとう', 'nattō', '🫘'], ['カレー', 'curry', '🍛'], ['ピザ', 'pizza', '🍕'],
+      ['ラーメン', 'ramen', '🍜'], ['うめぼし', 'pickled plums', '🟣'], ['チョコレート', 'chocolate', '🍫'], ['たこやき', 'takoyaki', '🐙'],
+      ['からあげ', 'fried chicken', '🍗'], ['アイスクリーム', 'ice cream', '🍦'], ['ブロッコリー', 'broccoli', '🥦'], ['ドーナツ', 'doughnuts', '🍩'],
+      ['ギョーザ', 'gyōza', '🥟'], ['おにぎり', 'rice balls', '🍙'], ['わさび', 'wasabi', '🌿'], ['パクチー', 'coriander', '🌱'],
+    ]),
+    pon: ponTile('suki', 'はっぱ', 'leaves'),
+  },
+  {
+    id: 'kirai',
+    title: { text: 'きらいな たべもの', kana: 'きらいな たべもの', en: 'Food you hate' },
+    first: '＿が きらいです',
+    third: '{name}さんは ＿が きらいです',
+    en: 'I hate ___',
+    enThird: '{name} hates ___',
+    level: 'n5',
+    audiences: ALL,
+    tiles: tiles('kirai', [
+      ['ピーマン', 'green peppers', '🫑'], ['なっとう', 'nattō', '🫘'], ['セロリ', 'celery', '🥬'], ['トマト', 'tomatoes', '🍅'],
+      ['わさび', 'wasabi', '🌿'], ['しいたけ', 'shiitake', '🍄'], ['にんじん', 'carrots', '🥕'], ['なす', 'aubergine', '🍆'],
+      ['うめぼし', 'pickled plums', '🟣'], ['パクチー', 'coriander', '🌱'], ['レバー', 'liver', '🥩'], ['グリンピース', 'peas', '🟢'],
+      ['チーズ', 'cheese', '🧀'], ['たまねぎ', 'onions', '🧅'], ['オクラ', 'okra', '🌶'], ['きのこ', 'mushrooms', '🍄'],
+    ]),
+    pon: ponTile('kirai', 'ポンの りょうり', "Pon's cooking"),
+  },
+  {
+    id: 'shumi',
+    title: { text: 'しゅみ', kana: 'しゅみ', en: 'Hobby' },
+    first: 'しゅみは ＿です',
+    third: '{name}さんの しゅみは ＿です',
+    en: 'My hobby is ___',
+    enThird: "{name}'s hobby is ___",
+    level: 'n5',
+    audiences: ALL,
+    tiles: tiles('shumi', [
+      ['カラオケ', 'karaoke', '🎤'], ['つり', 'fishing', '🎣'], ['ダンス', 'dancing', '💃'], ['ゲーム', 'video games', '🎮'],
+      ['りょうり', 'cooking', '🍳'], ['さんぽ', 'going for walks', '🚶'], ['ヨガ', 'yoga', '🧘'], ['しゃしん', 'photography', '📷'],
+      ['ねること', 'sleeping', '😴'], ['まんがを よむこと', 'reading manga', '📚'], ['サッカー', 'football', '⚽'], ['ギター', 'guitar', '🎸'],
+      ['キャンプ', 'camping', '⛺'], ['おかしづくり', 'baking sweets', '🧁'], ['ボルダリング', 'bouldering', '🧗'], ['ガーデニング', 'gardening', '🪴'],
+    ]),
+    pon: ponTile('shumi', 'ポンの ものまね', 'doing Pon impressions'),
+  },
+  {
+    id: 'ikitai',
+    title: { text: 'いきたい ところ', kana: 'いきたい ところ', en: 'Where you want to go' },
+    first: 'いきたい ところは ＿です',
+    third: '{name}さんの いきたい ところは ＿です',
+    en: 'The place I want to go is ___',
+    enThird: 'The place {name} wants to go is ___',
+    level: 'n5',
+    audiences: ALL,
+    tiles: tiles('ikitai', [
+      ['ほっかいどう', 'Hokkaidō', '❄'], ['おきなわ', 'Okinawa', '🏝'], ['きょうと', 'Kyoto', '⛩'], ['パリ', 'Paris', '🗼'],
+      ['ハワイ', 'Hawaii', '🌺'], ['つき', 'the moon', '🌕'], ['エジプト', 'Egypt', '🐫'], ['アイスランド', 'Iceland', '🌋'],
+      ['ディズニーランド', 'Disneyland', '🏰'], ['ふじさん', 'Mount Fuji', '🗻'], ['ブラジル', 'Brazil', '🇧🇷'], ['なんきょく', 'the South Pole', '🐧'],
+      ['オーストラリア', 'Australia', '🦘'], ['イタリア', 'Italy', '🍝'], ['おばけやしき', 'a haunted house', '👻'], ['うちゅう', 'space', '🚀'],
+    ]),
+    pon: ponTile('ikitai', 'たぬきの むら', 'the tanuki village'),
+  },
+  {
+    id: 'dekiru',
+    title: { text: 'できること', kana: 'できること', en: 'Something you can do' },
+    first: '＿が できます',
+    third: '{name}さんは ＿が できます',
+    en: 'I can do ___',
+    enThird: '{name} can do ___',
+    level: 'n5',
+    audiences: ALL,
+    tiles: tiles('dekiru', [
+      ['ピアノ', 'piano', '🎹'], ['スキー', 'skiing', '⛷'], ['おりがみ', 'origami', '🦢'], ['けんだま', 'kendama', '🪀'],
+      ['いちりんしゃ', 'a unicycle', '🚲'], ['ジャグリング', 'juggling', '🤹'], ['スケートボード', 'skateboarding', '🛹'], ['さかだち', 'a handstand', '🙃'],
+      ['くちぶえ', 'whistling', '😗'], ['バイオリン', 'violin', '🎻'], ['サーフィン', 'surfing', '🏄'], ['からて', 'karate', '🥋'],
+      ['あやとり', "cat's cradle", '🧶'], ['ものまね', 'impressions', '🎭'], ['ブレイクダンス', 'breakdancing', '🕺'], ['そろばん', 'the abacus', '🧮'],
+    ]),
+    pon: ponTile('dekiru', 'へんしん', 'shapeshifting'),
+  },
+  {
+    id: 'kowai',
+    title: { text: 'こわい もの', kana: 'こわい もの', en: "Something you're scared of" },
+    first: 'こわい ものは ＿です',
+    third: '{name}さんの こわい ものは ＿です',
+    en: "The thing I'm scared of is ___",
+    enThird: 'The thing {name} is scared of is ___',
+    level: 'n5',
+    audiences: ALL,
+    tiles: tiles('kowai', [
+      ['クモ', 'spiders', '🕷'], ['おばけ', 'ghosts', '👻'], ['ピエロ', 'clowns', '🤡'], ['かみなり', 'thunder', '⚡'],
+      ['はいしゃさん', 'the dentist', '🦷'], ['たかい ところ', 'heights', '🏔'], ['ヘビ', 'snakes', '🐍'], ['ゴキブリ', 'cockroaches', '🪳'],
+      ['にんぎょう', 'dolls', '🪆'], ['ジェットコースター', 'roller coasters', '🎢'], ['ひこうき', 'planes', '✈'], ['くらい ところ', 'the dark', '🌑'],
+      ['ハチ', 'bees', '🐝'], ['ちゅうしゃ', 'injections', '💉'], ['うみ', 'the sea', '🌊'], ['ねこ', 'cats', '🐈'],
+    ]),
+    pon: ponTile('kowai', 'かがみ', 'mirrors'),
+  },
+  {
+    id: 'asa',
+    title: { text: 'まいあさ のむ もの', kana: 'まいあさ のむ もの', en: 'What you drink every morning' },
+    first: 'まいあさ ＿を のみます',
+    third: '{name}さんは まいあさ ＿を のみます',
+    en: 'Every morning I drink ___',
+    enThird: 'Every morning {name} drinks ___',
+    level: 'n5',
+    audiences: ALL,
+    tiles: tiles('asa', [
+      ['コーヒー', 'coffee', '☕'], ['おちゃ', 'green tea', '🍵'], ['ぎゅうにゅう', 'milk', '🥛'], ['オレンジジュース', 'orange juice', '🍊'],
+      ['こうちゃ', 'black tea', '🫖'], ['みず', 'water', '💧'], ['スムージー', 'a smoothie', '🥤'], ['ココア', 'hot chocolate', '🍫'],
+      ['コーラ', 'cola', '🥤'], ['みそしる', 'miso soup', '🥣'], ['エナジードリンク', 'energy drinks', '⚡'], ['やさいジュース', 'vegetable juice', '🥕'],
+      ['プロテイン', 'protein shakes', '💪'], ['おゆ', 'hot water', '♨'], ['レモンティー', 'lemon tea', '🍋'], ['のむヨーグルト', 'drinking yoghurt', '🥛'],
+    ]),
+    pon: ponTile('asa', 'はっぱの おちゃ', 'leaf tea'),
+  },
+  {
+    id: 'petto',
+    title: { text: 'かいたい ペット', kana: 'かいたい ペット', en: 'The pet you want' },
+    first: 'かいたい ペットは ＿です',
+    third: '{name}さんの かいたい ペットは ＿です',
+    en: 'The pet I want is ___',
+    enThird: 'The pet {name} wants is ___',
+    level: 'n5',
+    audiences: KF,
+    tiles: tiles('petto', [
+      ['ねこ', 'a cat', '🐈'], ['いぬ', 'a dog', '🐕'], ['うさぎ', 'a rabbit', '🐇'], ['ハムスター', 'a hamster', '🐹'],
+      ['カメ', 'a turtle', '🐢'], ['ヘビ', 'a snake', '🐍'], ['インコ', 'a budgie', '🦜'], ['きんぎょ', 'a goldfish', '🐠'],
+      ['ハリネズミ', 'a hedgehog', '🦔'], ['フェレット', 'a ferret', '🦦'], ['カピバラ', 'a capybara', '🦫'], ['ペンギン', 'a penguin', '🐧'],
+      ['トカゲ', 'a lizard', '🦎'], ['ミニブタ', 'a micro pig', '🐖'], ['アルパカ', 'an alpaca', '🦙'], ['クワガタ', 'a stag beetle', '🪲'],
+    ]),
+    pon: ponTile('petto', 'たぬき', 'a tanuki'),
+  },
+  {
+    id: 'yume',
+    title: { text: 'こどもの ころの ゆめ', kana: 'こどもの ころの ゆめ', en: 'Your childhood dream' },
+    first: 'こどもの ころの ゆめは ＿でした',
+    third: '{name}さんの こどもの ころの ゆめは ＿でした',
+    en: 'My childhood dream was to be ___',
+    enThird: "{name}'s childhood dream was to be ___",
+    level: 'n5',
+    audiences: ALL,
+    tiles: tiles('yume', [
+      ['ケーキやさん', 'a cake-shop owner', '🎂'], ['うちゅうひこうし', 'an astronaut', '👩‍🚀'], ['サッカーせんしゅ', 'a footballer', '⚽'], ['にんじゃ', 'a ninja', '🥷'],
+      ['けいさつかん', 'a police officer', '👮'], ['おいしゃさん', 'a doctor', '🩺'], ['アイドル', 'a pop idol', '🌟'], ['パイロット', 'a pilot', '✈'],
+      ['せんせい', 'a teacher', '🧑‍🏫'], ['ユーチューバー', 'a YouTuber', '📹'], ['まほうつかい', 'a wizard', '🪄'], ['しょうぼうし', 'a firefighter', '🚒'],
+      ['パンやさん', 'a baker', '🥐'], ['きょうりゅう', 'a dinosaur', '🦖'], ['おひめさま', 'a princess', '👸'], ['やきゅうせんしゅ', 'a baseball player', '⚾'],
+    ]),
+    pon: ponTile('yume', 'たぬき', 'a tanuki'),
+  },
+  {
+    id: 'neru',
+    title: { text: 'ねる まえに', kana: 'ねる まえに', en: 'Before bed' },
+    first: 'ねる まえに ＿',
+    third: '{name}さんは ねる まえに ＿',
+    en: 'Before bed, I ___',
+    enThird: 'Before bed, {name} ___',
+    level: 'n5',
+    audiences: KF,
+    tiles: tiles('neru', [
+      ['ほんを よみます', 'read a book', '📖'], ['はを みがきます', 'brush my teeth', '🪥'], ['ストレッチを します', 'stretch', '🤸'], ['ゲームを します', 'play games', '🎮'],
+      ['おふろに はいります', 'take a bath', '🛁'], ['ミルクを のみます', 'drink milk', '🥛'], ['にっきを かきます', 'write a diary', '📔'], ['ぬいぐるみと はなします', 'talk to my teddy', '🧸'],
+      ['うたを うたいます', 'sing a song', '🎶'], ['おいのりを します', 'say a prayer', '🙏'], ['スマホを みます', 'look at my phone', '📱'], ['おかしを たべます', 'eat snacks', '🍪'],
+      ['ラジオを ききます', 'listen to the radio', '📻'], ['ダンスを します', 'dance', '💃'], ['なきます', 'cry', '😢'], ['ねこと あそびます', 'play with the cat', '🐈'],
+    ]),
+    pon: ponTile('neru', 'おなかを たたきます', 'drum my belly'),
+  },
+  {
+    id: 'tabeta',
+    title: { text: 'たべた ことが ある もの', kana: 'たべた ことが ある もの', en: "Something you've eaten" },
+    first: '＿を たべた ことが あります',
+    third: '{name}さんは ＿を たべた ことが あります',
+    en: "I've eaten ___",
+    enThird: '{name} has eaten ___',
+    level: 'n4',
+    audiences: ALL,
+    tiles: tiles('tabeta', [
+      ['ふぐ', 'pufferfish', '🐡'], ['カエル', 'frog', '🐸'], ['むし', 'insects', '🦗'], ['ドリアン', 'durian', '🍈'],
+      ['ワニ', 'crocodile', '🐊'], ['うなぎ', 'eel', '🐍'], ['うに', 'sea urchin', '🟠'], ['なまたまご', 'raw egg', '🥚'],
+      ['いなご', 'locusts', '🦗'], ['かたつむり', 'snails', '🐌'], ['カンガルー', 'kangaroo', '🦘'], ['しかの にく', 'venison', '🦌'],
+      ['くさや', 'kusaya (smelly fish)', '🐟'], ['ハチのこ', 'bee larvae', '🐝'], ['ザリガニ', 'crayfish', '🦞'], ['サボテン', 'cactus', '🌵'],
+    ]),
+    pon: ponTile('tabeta', 'はっぱ', 'leaves'),
+  },
+  {
+    id: 'itta',
+    title: { text: 'いった ことが ある ところ', kana: 'いった ことが ある ところ', en: "Somewhere you've been" },
+    first: '＿に いった ことが あります',
+    third: '{name}さんは ＿に いった ことが あります',
+    en: "I've been to ___",
+    enThird: '{name} has been to ___',
+    level: 'n4',
+    audiences: ALL,
+    tiles: tiles('itta', [
+      ['ふじさん', 'Mount Fuji', '🗻'], ['ハワイ', 'Hawaii', '🌺'], ['こうばん', 'a police box', '👮'], ['おきなわ', 'Okinawa', '🏝'],
+      ['ほっかいどう', 'Hokkaidō', '❄'], ['エジプト', 'Egypt', '🐫'], ['ディズニーランド', 'Disneyland', '🏰'], ['なんきょく', 'the South Pole', '🐧'],
+      ['おんせん', 'a hot spring', '♨'], ['スカイツリー', 'Skytree', '🗼'], ['ペルー', 'Peru', '🦙'], ['ラスベガス', 'Las Vegas', '🎰'],
+      ['むじんとう', 'a desert island', '🏝'], ['きょうと', 'Kyoto', '⛩'], ['グランドキャニオン', 'the Grand Canyon', '🏜'], ['おばけやしき', 'a haunted house', '👻'],
+    ]),
+    pon: ponTile('itta', 'たぬきの むら', 'the tanuki village'),
+  },
+  // ---- Cheeky: written for everyone in the room (both ex tiles, both partners' homes) ----
+  {
+    id: 'date',
+    title: { text: 'はつデート', kana: 'はつデート', en: 'Your first date' },
+    first: 'はつデートは ＿でした',
+    third: '{name}さんの はつデートは ＿でした',
+    en: 'My first date was at ___',
+    enThird: "{name}'s first date was at ___",
+    level: 'n5',
+    audiences: CHEEKY,
+    tiles: tiles('date', [
+      ['カラオケ', 'karaoke', '🎤'], ['こうえん', 'a park', '🌳'], ['コンビニ', 'a convenience store', '🏪'], ['おはかまいり', 'a family grave visit', '🪦'],
+      ['えいがかん', 'the cinema', '🎬'], ['すいぞくかん', 'an aquarium', '🐠'], ['ゆうえんち', 'a theme park', '🎡'], ['ファミレス', 'a family diner', '🍽'],
+      ['いざかや', 'an izakaya', '🏮'], ['どうぶつえん', 'the zoo', '🦒'], ['としょかん', 'the library', '📚'], ['ボウリング', 'bowling', '🎳'],
+      ['ラーメンや', 'a ramen shop', '🍜'], ['かれの いえ', "his place", '🏠'], ['かのじょの いえ', 'her place', '🏡'], ['ゲームセンター', 'an arcade', '🕹'],
+    ]),
+    pon: ponTile('date', 'ポンの ばんぐみ', "Pon's show"),
+  },
+  {
+    id: 'yopparau',
+    title: { text: 'よっぱらうと', kana: 'よっぱらうと', en: 'When you get drunk' },
+    first: 'よっぱらうと ＿',
+    third: '{name}さんは よっぱらうと ＿',
+    en: 'When I get drunk, I ___',
+    enThird: 'When {name} gets drunk, they ___',
+    level: 'n5',
+    audiences: CHEEKY,
+    tiles: tiles('yopparau', [
+      ['なきます', 'cry', '😭'], ['おどります', 'dance', '💃'], ['もとカレに でんわします', 'call my ex-boyfriend', '📞'], ['もとカノに でんわします', 'call my ex-girlfriend', '📞'],
+      ['うたいます', 'sing', '🎤'], ['ねます', 'fall asleep', '😴'], ['くつを ぬぎます', 'take my shoes off', '👠'], ['えいごで はなします', 'speak English', '🗣'],
+      ['だれとでも ともだちに なります', 'make friends with everyone', '🤝'], ['ラーメンを たべます', 'eat ramen', '🍜'], ['おこります', 'get angry', '😤'], ['ずっと わらいます', 'laugh nonstop', '🤣'],
+      ['ははに でんわします', 'call my mum', '☎'], ['ネットで かいものします', 'shop online', '🛒'], ['じどりを します', 'take selfies', '🤳'], ['はだしで かえります', 'walk home barefoot', '🦶'],
+    ]),
+    pon: ponTile('yopparau', 'たぬきに なります', 'turn into a tanuki'),
+  },
+  {
+    id: 'sumaho',
+    title: { text: 'スマホの しゃしん', kana: 'スマホの しゃしん', en: 'The photos on your phone' },
+    first: 'スマホには ＿の しゃしんが たくさん あります',
+    third: '{name}さんの スマホには ＿の しゃしんが たくさん あります',
+    en: 'My phone is full of photos of ___',
+    enThird: "{name}'s phone is full of photos of ___",
+    level: 'n5',
+    audiences: CHEEKY,
+    tiles: tiles('sumaho', [
+      ['ねこ', 'cats', '🐈'], ['じぶん', 'myself', '🤳'], ['ごはん', 'food', '🍱'], ['もとカレ', 'my ex-boyfriend', '💔'],
+      ['もとカノ', 'my ex-girlfriend', '💔'], ['いぬ', 'dogs', '🐕'], ['そら', 'the sky', '☁'], ['イケメンの はいゆう', 'hot actors', '😍'],
+      ['アイドル', 'pop idols', '🌟'], ['あかちゃん', 'babies', '👶'], ['けしき', 'scenery', '🏞'], ['おさけ', 'drinks', '🍶'],
+      ['くるま', 'cars', '🚗'], ['ネイル', 'my nails', '💅'], ['きんにく', 'my muscles', '💪'], ['ともだちの ねがお', "friends' sleeping faces", '😪'],
+    ]),
+    pon: ponTile('sumaho', 'ポン', 'Pon'),
+  },
+  {
+    id: 'jitsuwa',
+    title: { text: 'じつは すき', kana: 'じつは すき', en: 'A secret love' },
+    first: 'じつは ＿が すきです',
+    third: '{name}さんは じつは ＿が すきです',
+    en: 'Actually, I secretly love ___',
+    enThird: 'Actually, {name} secretly loves ___',
+    level: 'n5',
+    audiences: CHEEKY,
+    tiles: tiles('jitsuwa', [
+      ['ホラーえいが', 'horror films', '🧟'], ['ひとりカラオケ', 'karaoke alone', '🎤'], ['アイドル', 'pop idols', '🌟'], ['かんこくドラマ', 'K-dramas', '📺'],
+      ['ラブソング', 'love songs', '💘'], ['ジャンクフード', 'junk food', '🍔'], ['こいばな', 'gossip about love lives', '💬'], ['うらない', 'fortune-telling', '🔮'],
+      ['プロレス', 'pro wrestling', '🤼'], ['しょうじょまんが', 'romance manga', '💖'], ['ひとりで のむこと', 'drinking alone', '🍷'], ['リアリティショー', 'reality TV', '🌹'],
+      ['くまの ぬいぐるみ', 'teddy bears', '🧸'], ['ダサい ふく', 'tacky clothes', '👕'], ['ねぐせ', 'bed hair', '💇'], ['ゴシップ', 'gossip', '🗞'],
+    ]),
+    pon: ponTile('jitsuwa', 'ポン', 'Pon'),
+  },
+];
+
+export const introCardOf = (id: string): IntroCard | undefined => INTRO_CARDS.find((c) => c.id === id);
+
+/** Every tile, by id (Pon's own included). */
+export function tileOf(id: string): Tile | undefined {
+  for (const c of INTRO_CARDS) {
+    if (c.pon.id === id) return c.pon;
+    const t = c.tiles.find((x) => x.id === id);
+    if (t) return t;
+  }
+  return undefined;
+}
+
+/** The cards a turn can draw for this guest: the room's audience, and N4 cards only for N4 guests. */
+export function cardsFor(audience: Audience, level: 'kana' | 'n5' | 'n4'): IntroCard[] {
+  return INTRO_CARDS.filter((c) => c.audiences.includes(audience) && (c.level === 'n5' || level === 'n4'));
+}
+
+/** Cheeky cards (and every card in a Kids room) take tiles only from the tanuki: no typed lies about a real person there. */
+export const tilesOnly = (card: IntroCard, audience: Audience): boolean => audience === 'kids' || (card.audiences.length === 1 && card.audiences[0] === 'cheeky');
+
+/** Fills a frame: ＿ with the word, {name} with the guest's name, and a 。 at the end. */
+export function fillFrame(frame: string, word: string, name = ''): string {
+  const t = frame.replace('＿', word).replace('{name}', name);
+  return /[。！？]$/.test(t) ? t : `${t}。`;
+}
