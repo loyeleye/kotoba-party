@@ -71,18 +71,18 @@
 .hj-true .hj-verdict { font-size: 40px; color: #fff; background: var(--lantern); border: 4px solid var(--hj-ink); padding: 2px 14px; transform: rotate(-7deg); box-shadow: 4px 4px 0 var(--hj-ink); }
 .hj-en { font-size: 26px; color: var(--paper-muted); }
 /* A lie: navy, with its tanuki's seat colour as a band across the top. */
-.hj-lie { background: var(--panel); border-top: 22px solid var(--seat, var(--hj-leaf)); }
-.hj-lie .hj-verdict { font-size: 34px; color: var(--paper); }
+.hj-lie { background: var(--panel); border-top: 22px solid var(--seat, var(--hj-leaf)); padding-top: 12px; gap: 2px; }
+.hj-lie .hj-verdict { font-size: 30px; color: var(--paper); }
 .hj-lie .hj-word { text-decoration: line-through 4px rgba(255, 255, 255, 0.5); }
 /* While the flip runs, the cards still waiting are dimmed, so the turned ones read first. */
-.hj-flip-on .hj-card:not(.hj-flipping) .hj-face { filter: brightness(0.6) saturate(0.7); }
-.hj-tanuki { font-size: 74px; line-height: 1; animation: hj-pop 0.5s var(--ease-pop) calc(var(--d, 0ms) + 350ms) both; }
+.hj-flip-on .hj-face { filter: brightness(0.6) saturate(0.7); }
+.hj-tanuki { font-size: 56px; line-height: 1; animation: hj-pop 0.5s var(--ease-pop) calc(var(--d, 0ms) + 350ms) both; }
 .hj-puff { position: absolute; inset: 20px; background: url(/stage/assets/fx/poof-still.png) center / contain no-repeat; image-rendering: pixelated; opacity: 0; animation: hj-puff 0.9s ease-out calc(var(--d, 0ms) + 250ms) both; pointer-events: none; }
 @keyframes hj-puff { 0% { opacity: 0; transform: scale(0.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
 .hj-author { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; font-size: 26px; font-weight: 800; }
 .hj-who { color: var(--seat, var(--ink)); }
 .hj-seat { font-family: var(--font-pixel); margin-right: 4px; }
-.hj-firsts { font-size: 26px; font-weight: 800; color: var(--paper); }
+.hj-firsts { font-size: 22px; font-weight: 800; color: var(--paper); }
 
 .hj-call { font-size: 30px; font-weight: 700; margin-top: 8px; }
 .hj-call strong { color: var(--seat, var(--mode)); }
