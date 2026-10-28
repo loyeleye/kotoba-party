@@ -136,7 +136,7 @@ body[data-mode] .timer { color: var(--on-accent); }
 .phrase-cards { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
 .phrase-card { color: var(--ink); display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--good); }
 .phrase-card.pb-missed { border-left-color: var(--warn); }
-.phrase-card .pc-jp { font-size: 19px; font-weight: 700; }
+.phrase-card .pc-jp { font-size: 19px; font-weight: 700; word-break: keep-all; overflow-wrap: anywhere; }
 .phrase-card .pc-kana { color: var(--muted); font-size: 15px; }
 .phrase-card .pc-romaji { color: var(--warn); font-size: 15px; }
 .phrase-card .pc-en { color: var(--muted); font-size: 14px; }
@@ -332,3 +332,9 @@ body[data-motion='calm'] .talk.live { transform: none; }
 
 /* Last Train has its own per-answer clock; the corner timer is the train's departure. */
 body[data-mode='last-train'] .timer:not(:empty)::before { content: '🚃 departs '; font-size: 13px; font-family: var(--font-body); }
+/* The recap's team result (Bento Haus VS), in the team's colour, above the list. */
+.recap-team-p { display: grid; gap: 6px; text-align: center; padding: 12px; border-radius: 12px; border: 3px solid var(--team-colour); background: color-mix(in srgb, var(--team-colour) 14%, var(--panel)); }
+.recap-team-p .big { color: var(--team-colour); margin: 0; }
+.recap-team-p p { margin: 0; }
+.recap-team-p.team-0 { --team-colour: #ff5a5f; }
+.recap-team-p.team-1 { --team-colour: #4f9dff; }

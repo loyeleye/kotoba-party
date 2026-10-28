@@ -50,6 +50,7 @@ const ERRORS: Record<string, string> = {
   'no-customer': 'No customer yet: wait for the phone to ring.',
   'empty-box': 'The box is empty: call your team for the food first.',
   'too-late': 'Too late: that customer has gone.',
+  beaten: 'Too late: the other kitchen served that customer first.',
   'already-solved': 'Someone already got it.',
   'already-hinted': 'You already used a hint.',
   'already-encored': 'You already did an encore.',
@@ -589,19 +590,39 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   const romaji = me.level === 'kana';
   // A team game leads with the team: everyone shared its points, so a place would only rank bonuses.
   const total = standings.reduce((a, s) => a + s.score, 0);
+  // A team game (Bento Haus VS) leads with how your team did; places come after.
+  const teams = r?.teams ?? [];
+  const mine = teams.findIndex((t) => t.members.includes(me.id));
+  const rank = (t: (typeof teams)[number]) => t.wins * 1000 + t.tips;
+  const teamResult =
+    mine >= 0
+      ? h(
+          'div',
+          { class: `recap-team-p team-${mine}` },
+          h(
+            'p',
+            { class: 'big', lang: 'ja' },
+            teams.every((t) => rank(t) === rank(teams[mine]!)) ? 'ひきわけ！' : teams.every((t) => rank(t) <= rank(teams[mine]!)) ? `${teams[mine]!.ja}の かち！` : `${teams[mine]!.ja}… ざんねん！`,
+          ),
+          h('p', {}, teams.map((t, j) => `${t.ja}${j === mine ? ' (you)' : ''}: ${t.wins} ${t.wins === 1 ? 'shift' : 'shifts'}, ${t.tips} ${t.tips === 1 ? 'tip' : 'tips'}`).join(' · ')),
+        )
+      : null;
   return h(
     'div',
     { class: 'screen' },
+    teamResult,
     r?.coop
       ? h('div', { class: 'place p1' }, h('span', { class: 'place-n' }, `${total}`), h('span', { class: 'place-label' }, '🤝 points together'))
-      : place
+      : place && mine < 0
       ? h(
           'div',
           { class: `place${place <= 3 ? ` p${place}` : ''}` },
           h('span', { class: 'place-n' }, ORDINAL[place] ?? `${place}th`),
           h('span', { class: 'place-label' }, tied ? 'tied' : place === 1 ? 'Tonight’s winner!' : 'place'),
         )
-      : h('p', { class: 'big' }, i >= 0 ? 'No points this time. Next game!' : 'Game over'),
+      : mine >= 0
+        ? null
+        : h('p', { class: 'big' }, i >= 0 ? 'No points this time. Next game!' : 'Game over'),
     i >= 0 && standings[i]!.total ? h('p', { class: 'party' }, standings[i]!.earned ? `★ +${standings[i]!.earned} party points · ${standings[i]!.total} tonight` : `★ ${standings[i]!.total} party points tonight`) : null,
     h(
       'ol',

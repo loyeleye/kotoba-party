@@ -5,7 +5,7 @@
 
 import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS } from './constants.js';
-import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry } from './modes/mode.js';
+import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam } from './modes/mode.js';
 import { MODES } from './modes/registry.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS } from './protocol.js';
@@ -40,7 +40,7 @@ export interface GameState {
   /** Host cues raised by the last action; the server drains them after each dispatch. */
   cues: HostCue[];
   phrasebook: Record<string, PhraseEntry[]>;
-  recap: { standings: { playerId: string; name: string; score: number; earned: number; total: number }[]; awards: Award[]; coop?: boolean } | null;
+  recap: { standings: { playerId: string; name: string; score: number; earned: number; total: number }[]; awards: Award[]; coop?: boolean; teams?: RecapTeam[] } | null;
   /** Watching stage screens may run the game too (start, skip, play again). */
   remoteControl: boolean;
   /** The host's Audience setting: kids, family (default) or cheeky. Kept across games. */
@@ -363,6 +363,7 @@ function finish(state: GameState, ctx: GameContext): void {
     }),
     awards: mode?.awards?.(state.modeState, modeContext(state, ctx)) ?? [],
     ...(mode?.info.coop ? { coop: true } : {}),
+    ...(mode?.recapTeams ? { teams: mode.recapTeams(state.modeState, modeContext(state, ctx)) } : {}),
   };
   if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award', slots: awardSlots(state.recap.awards[0]) });
 }
@@ -374,7 +375,7 @@ function finish(state: GameState, ctx: GameContext): void {
 function awardSlots(a: Award | undefined): Record<string, string> | undefined {
   if (!a) return undefined;
   const kana = awardKana(a.title);
-  return { award: a.title, ...(hasKanji(kana) ? {} : { award_kana: kana }), award_en: a.en.replace(/\s*\(.*\)$/, ''), name: a.name };
+  return { award: a.title, ...(hasKanji(kana) ? {} : { award_kana: kana }), award_en: a.en.replace(/\s*\(.*\)$/, ''), name: a.spoken ?? a.name, ...(a.spoken ? { name_en: a.name } : {}) };
 }
 
 function resetToLobby(state: GameState): void {

@@ -13,22 +13,35 @@ import { speaks } from './cues.js';
 export type SfxId =
   | 'tap' | 'join' | 'round' | 'tick' | 'tock' | 'right' | 'wrong' | 'hit'
   // Bento Haus: the shop's own noises.
-  | 'ring' | 'ticket' | 'send' | 'serve' | 'toss' | 'leave' | 'static' | 'poof' | 'munch' | 'lastorder';
+  | 'ring' | 'ticket' | 'send' | 'serve' | 'toss' | 'leave' | 'static' | 'poof' | 'munch' | 'lastorder'
+  // Bento Haus VS: a わけあり box handed over, a box sent back, a drawn shift.
+  | 'wakeari' | 'sendback';
 
 /** The same effect twice within this many ms plays once (several screens of state arrive together). */
 const MIN_GAP_MS: Partial<Record<SfxId, number>> = { right: 250, wrong: 250, hit: 70, tick: 500, join: 150, ring: 600, ticket: 150, send: 150, serve: 300, toss: 150, leave: 400, static: 400 };
-const lastAt: Partial<Record<SfxId, number>> = {};
+const lastAt: Record<string, number> = {};
 
-/** Plays one effect now (or `delay` seconds from now). Silent until audio is unlocked, and when muted. */
-export function sfx(id: SfxId, delay = 0): void {
+/**
+ * Plays one effect now (or `delay` seconds from now). Silent until audio is unlocked, and when muted.
+ * `pan` (-1 left to 1 right) places it, as Bento Haus VS does with the red kitchen left and the blue
+ * right; repeats are only merged on the same side.
+ */
+export function sfx(id: SfxId, delay = 0, pan = 0): void {
   const sound = getSound();
   if (!sound || !audioReady() || silent()) return;
   const nowMs = performance.now();
-  if (nowMs - (lastAt[id] ?? -1e9) < (MIN_GAP_MS[id] ?? 0)) return;
-  lastAt[id] = nowMs;
+  const key = pan ? `${id}:${pan}` : id;
+  if (nowMs - (lastAt[key] ?? -1e9) < (MIN_GAP_MS[id] ?? 0)) return;
+  lastAt[key] = nowMs;
   const ctx = sound.ctx;
   const t = ctx.currentTime + 0.01 + delay;
-  const out = sound.sfx;
+  let out: AudioNode = sound.sfx;
+  if (pan && typeof ctx.createStereoPanner === 'function') {
+    const p = ctx.createStereoPanner();
+    p.pan.value = pan;
+    p.connect(sound.sfx);
+    out = p;
+  }
   switch (id) {
     case 'tap':
       return blip(ctx, out, t, 'triangle', 1400, 1100, 0.05, 0.18);
@@ -83,6 +96,14 @@ export function sfx(id: SfxId, delay = 0): void {
       // ラストオーダー: a two-note chime, G5 then E5.
       bell(ctx, out, t, 784, 0.6, 0.18);
       return bell(ctx, out, t + 0.28, 659.3, 0.8, 0.18);
+    case 'wakeari':
+      // The わけあり sticker: a low wooden thunk, under the speech band.
+      return blip(ctx, out, t, 'triangle', 200, 120, 0.18, 0.2, 900);
+    case 'sendback':
+      // つきかえし: two falling notes, then the bwomp.
+      blip(ctx, out, t, 'square', 660, 640, 0.1, 0.1, 2400);
+      blip(ctx, out, t + 0.14, 'square', 494, 470, 0.12, 0.1, 2400);
+      return blip(ctx, out, t + 0.3, 'sawtooth', 180, 110, 0.32, 0.16, 900);
   }
 }
 

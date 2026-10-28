@@ -50,7 +50,7 @@ function pic(src: string, emoji: string, cls: string): HTMLElement {
   return img;
 }
 const foodPic = (id: string, emoji: string, cls: string) => pic(`/stage/assets/bento/food/${id}.png`, emoji, cls);
-const MOOD = { waiting: 'calm', served: 'happy', left: 'cross' } as const;
+const MOOD = { waiting: 'calm', offered: 'cross', served: 'happy', left: 'cross' } as const;
 const customerPic = (id: string, state: keyof typeof MOOD, emoji: string, cls: string) => pic(`/stage/assets/bento/customers/${id}-${MOOD[state]}.png`, emoji, cls);
 const buzz = (ms: number | number[] = 60) => {
   try {
@@ -89,8 +89,47 @@ function foodLabel(id: string | null, level: Me['level']): HTMLElement {
   );
 }
 
+/** VS: a sent-back order from the other kitchen, on offer: take it on (perfect for 5 tips, or nothing) or not. */
+function offerCard(ctx: Ctx, t: Me['taking'][number], ringing: boolean): HTMLElement {
+  const { game, send } = ctx;
+  const visit = game.visits.find((v) => v.id === t.visitId);
+  const now = serverNow(game);
+  const total = visit ? visit.leaveAt - visit.arriveAt : 1;
+  const gone = visit ? Math.min(total, Math.max(0, now - visit.arriveAt)) : 0;
+  return h(
+    'section',
+    { class: `bh-taking bh-offer${ringing ? ' ring' : ''}`, 'data-key': `offer-${t.visitId}` },
+    h(
+      'div',
+      { class: 'bh-taking-head' },
+      visit ? customerPic(visit.customerId, 'offered', visit.emoji, 'bh-cust-p') : null,
+      h('span', { class: 'bh-who-p', lang: 'ja' }, `🔁 ${visit?.name ?? ''}`),
+    ),
+    h('div', { class: 'bh-patience-p', style: `--total: ${total}ms; --gone-delay: -${gone}ms;` }, h('span', {})),
+    h('p', { class: 'bh-order-words', lang: 'ja' }, 'となりの おみせ、だめでした。　つくって くれますか？'),
+    h('p', { class: 'hint' }, 'The other kitchen’s box was sent back. Take the order on? A perfect box earns 5 tips; anything else earns 0.'),
+    h(
+      'div',
+      { class: 'bh-offer-btns' },
+      h(
+        'button',
+        { type: 'button', class: 'bh-serve', onclick: () => (buzz(60), void send({ kind: 'accept', visitId: t.visitId })) },
+        h('span', { lang: 'ja' }, '⭕ うけます'),
+        h('small', {}, ' Take it on'),
+      ),
+      h(
+        'button',
+        { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'refuse', visitId: t.visitId }) },
+        h('span', { lang: 'ja' }, '✕ ことわります'),
+        h('small', {}, ' No thanks'),
+      ),
+    ),
+  );
+}
+
 function orderCard(ctx: Ctx, me: Me, t: Me['taking'][number], ringing: boolean): HTMLElement {
   const { game, send } = ctx;
+  if (t.offer) return offerCard(ctx, t, ringing);
   const visit = game.visits.find((v) => v.id === t.visitId);
   const now = serverNow(game);
   const shownFor = Math.max(0, now - t.at);
@@ -110,6 +149,7 @@ function orderCard(ctx: Ctx, me: Me, t: Me['taking'][number], ringing: boolean):
       hearButton(t.text, '🔊', 'secondary bh-hear'),
     ),
     visit ? h('div', { class: 'bh-patience-p', style: `--total: ${total}ms; --gone-delay: -${gone}ms;` }, h('span', {})) : null,
+    t.steal ? h('p', { class: 'bh-steal-p', lang: 'ja' }, '🔁 ぴったりなら +5 💰', h('small', {}, ' Perfect for 5 tips, anything else 0')) : null,
     words,
     // The fade is explained on the first shift; after that it's known.
     t.fades ? (game.round === 1 ? h('p', { class: 'hint bh-fade-hint' }, 'The words fade: 🔊 hears it again.') : null) : h('p', { class: 'hint' }, t.en),
@@ -124,11 +164,12 @@ function orderCard(ctx: Ctx, me: Me, t: Me['taking'][number], ringing: boolean):
           ),
         )
       : null,
+    rivalBox(game, t.visitId, visit?.slots ?? 0),
     h(
       'div',
-      { class: 'bh-box-p', 'aria-label': 'In the box' },
+      { class: `bh-box-p${empty ? ' empty' : ''}`, 'aria-label': 'In the box' },
       empty
-        ? h('span', { class: 'hint' }, 'The box is empty: call the kitchen!')
+        ? h('span', { class: 'hint' }, '🍱 Empty for now: call your team for each food.')
         : visit!.box.map((b) =>
             h(
               'span',
@@ -169,7 +210,7 @@ function ticketCard(ctx: Ctx, me: Me, t: TicketView, readback: boolean): HTMLEle
       'p',
       { class: `bh-ticket-done ${t.state}`, 'data-key': t.id },
       h('span', { lang: 'ja' }, `${f?.emoji ?? ''} ${f?.kana ?? ''} ${t.reading ?? ''}`),
-      t.state === 'sent' ? ' ✓ できました' : ' ✗ not needed',
+      t.state === 'sent' ? ' ✓ できました' : lostRace(ctx.game, t.customer?.visitId) ? ' ✗ the other kitchen served first' : ' ✗ not needed',
     );
   if (t.n === null)
     return h(
@@ -189,6 +230,15 @@ function ticketCard(ctx: Ctx, me: Me, t: TicketView, readback: boolean): HTMLEle
   return h(
     'div',
     { class: `bh-ticket open${t.readback ? ' heard' : ''}`, 'data-key': t.id },
+    t.customer
+      ? h(
+          'span',
+          { class: 'bh-ticket-for', lang: 'ja' },
+          customerPic(t.customer.id, 'waiting', t.customer.emoji, 'bh-ticket-cust'),
+          `${t.customer.name}`,
+          t.customer.rush ? h('b', { class: 'bh-rush-p' }, 'いそいで！') : null,
+        )
+      : null,
     foodLabel(t.foodId, me.level),
     h('b', { class: 'bh-reading', lang: 'ja' }, t.reading ?? '', h('small', {}, ` (${t.n})`)),
     t.readback
@@ -221,6 +271,41 @@ function ticketCard(ctx: Ctx, me: Me, t: TicketView, readback: boolean): HTMLEle
       h('span', { lang: 'ja' }, 'できました！'),
       h('small', {}, ' Send'),
     ),
+  );
+}
+
+/** VS: how full the other kitchen's box for this customer is, a slot per food ordered. */
+function rivalBox(game: BentoView, visitId: string, slots: number): HTMLElement | null {
+  const vs = game.vs;
+  if (!vs || vs.myTeam === null || !slots) return null;
+  const other = vs.teams.find((t) => t.id !== vs.myTeam);
+  const v = other?.visits.find((x) => x.id === visitId);
+  if (!other || !v) return null;
+  const filled = Math.min(slots, v.box.length);
+  return h(
+    'p',
+    { class: `bh-rival-p team-${other.id}`, 'aria-label': `${other.en}'s box: ${filled} of ${slots}` },
+    pip(other.id),
+    h('span', { lang: 'ja' }, `${SHORT[other.id]}の はこ`),
+    h('span', { class: 'bh-rival-slots' }, Array.from({ length: slots }, (_, i) => h('i', { class: i < filled ? 'on' : '' }))),
+  );
+}
+
+/** VS: the customer this kitchen lost because the other one served first. */
+function lostRace(game: BentoView, visitId: string | undefined): boolean {
+  const vs = game.vs;
+  if (!vs || vs.myTeam === null || !visitId) return false;
+  return vs.teams.some((t) => t.id !== vs.myTeam && t.visits.some((v) => v.id === visitId && (v.state === 'served' || v.sentBack)));
+}
+
+/** Tickets waiting below an order card: a pill that jumps down to them. */
+function ticketPill(me: Me): HTMLElement | null {
+  const n = me.tickets.filter((t) => t.state === 'open').length;
+  if (!n || !me.taking.length) return null;
+  return h(
+    'button',
+    { type: 'button', class: 'bh-ticket-pill', onclick: () => document.querySelector('.bh-tickets')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+    `🎫 ${n} ${n === 1 ? 'ticket' : 'tickets'} ↓`,
   );
 }
 
@@ -334,29 +419,81 @@ function shelf(me: Me, own: boolean): HTMLElement {
   );
 }
 
-const TEAM_MARK = ['🔴', '🔵'] as const;
+type VsTeam = NonNullable<BentoView['vs']>['teams'][number];
+/** A team's badge: red round, blue diamond, so they differ without colour too. */
+const pip = (id: number) => h('span', { class: `bh-pip team-${id}`, 'aria-hidden': 'true' });
+const tipsWord = (n: number) => (n === 1 ? 'tip' : 'tips');
+const SHORT = ['あか', 'あお'] as const;
 
-/** VS: whose kitchen this phone is in, and the race so far. */
+/** VS: whose kitchen this phone is in, the race this shift (your team first) and your mistake meter. */
 function teamBar(game: BentoView): HTMLElement | null {
   const vs = game.vs;
   if (!vs || vs.myTeam === null) return null;
   const mine = vs.teams[vs.myTeam]!;
+  const order = [mine, ...vs.teams.filter((t) => t !== mine)];
   return h(
-    'p',
+    'div',
     { class: `bh-team-p team-${mine.id}` },
-    h('b', { lang: 'ja' }, `${TEAM_MARK[mine.id]} ${mine.ja}`),
-    vs.teams.map((t) => h('span', { class: `bh-team-score team-${t.id}` }, `${TEAM_MARK[t.id]} 💰${t.tips}`)),
+    h('b', { lang: 'ja' }, pip(mine.id), mine.ja),
+    h(
+      'span',
+      { class: 'bh-team-race', 'data-key': `race-${order.map((t) => t.tips).join('-')}` },
+      h('small', {}, 'this shift '),
+      order.flatMap((t, i) => [i ? ' – ' : '', h('span', { class: `bh-team-score team-${t.id}`, lang: 'ja' }, pip(t.id), `${SHORT[t.id]} ${t.tips}`)]),
+      game.round > 1 ? h('small', {}, ` · game ${order.map((t) => t.total).join('–')}`) : null,
+    ),
+    h(
+      'span',
+      { class: `bh-meter-p${mine.meter >= 60 ? ' hot' : ''}`, role: 'img', 'aria-label': `Mistake meter ${mine.meter}%`, style: `--m: ${mine.meter}%` },
+      h('span', { lang: 'ja' }, 'ミス'),
+      h('i', {}),
+    ),
   );
+}
+
+/** VS: what just happened to an order this phone took: won, lost to the other kitchen, or sent back. */
+function raceNote(game: BentoView, me: string): HTMLElement | null {
+  const vs = game.vs;
+  if (!vs || vs.myTeam === null) return null;
+  const mine = vs.teams[vs.myTeam]!;
+  const other: VsTeam | undefined = vs.teams.find((t) => t !== mine);
+  const now = serverNow(game);
+  const v = game.visits
+    .filter((x) => x.takerId === me && x.state !== 'waiting' && x.state !== 'offered' && x.endedAt !== null && now - x.endedAt < 2_600)
+    .sort((a, b) => (b.endedAt ?? 0) - (a.endedAt ?? 0))[0];
+  if (!v) return null;
+  // The other kitchen served first (even if its box then came straight back).
+  const otherServed = !!other?.visits.some((x) => x.id === v.id && (x.state === 'served' || x.sentBack));
+  let cls = 'lost';
+  let text: (string | HTMLElement)[];
+  if (v.sentBack) text = ['↩ つきかえし！ ', h('small', {}, 'Your ミス meter was full: refund, 0 tips')];
+  else if (v.steal) [cls, text] = v.state === 'served' && v.tips ? ['won', ['🔁 ぴったり！ +5 💰']] : ['lost', [v.state === 'served' ? '🔁 ざんねん… 0 💰' : '🔁 ことわりました']];
+  else if (v.state === 'served') [cls, text] = ['won', [pip(mine.id), `${mine.ja}が さきに だした！ +${v.tips} 💰`]];
+  else if (otherServed && other) text = [pip(other.id), `${other.ja}が さきに だした…`, v.tips ? ` わけあり +${v.tips}` : ''];
+  else text = ['💨 ', v.tips ? `わけあり +${v.tips}` : 'かえりました'];
+  return h('p', { class: `bh-race-p ${cls}`, lang: 'ja', 'data-key': `race-${v.id}` }, text);
+}
+
+// Each order this phone took buzzes once when it ends: a long one if it was lost.
+let ended = new Set<string>();
+function feelEnd(game: BentoView, me: string): void {
+  const v = game.visits.find((x) => x.takerId === me && x.endedAt !== null && !ended.has(x.id));
+  if (!v || !game.vs) return;
+  ended.add(v.id);
+  buzz(v.state === 'served' && v.tips && !v.sentBack ? [60, 40, 60] : 300);
 }
 
 function kitchen(ctx: Ctx): HTMLElement {
   const me = ctx.game.me!;
   const ringing = feel(ctx.game, me);
   const idle = !me.taking.length && !me.tickets.some((t) => t.state === 'open');
+  feelEnd(ctx.game, ctx.me.id);
   return h(
     'div',
     { class: 'screen bh-kitchen' },
     teamBar(ctx.game),
+    raceNote(ctx.game, ctx.me.id),
+    ticketPill(me),
     me.taking.map((t) => orderCard(ctx, me, t, ringing.has(t.visitId))),
     me.taking.length ? callBox(ctx, me) : null,
     tickets(ctx, me),
@@ -379,13 +516,30 @@ function closing(ctx: Ctx): HTMLElement {
   const vs = game.vs;
   if (vs) {
     const mine = vs.myTeam;
-    const won = vs.winner !== null && vs.winner === mine;
+    const w = vs.winner;
+    const won = w !== null && w === mine;
+    // The result waits for the TV to stamp it, then buzzes: won, lost or a draw.
+    const reveal = 400 + Math.min(vs.teams[0]?.visits.length ?? 0, 8) * 300 + 300;
+    if (closingBuzzed !== game.round) {
+      closingBuzzed = game.round;
+      setTimeout(() => buzz(w === null ? [100, 100, 100] : won ? [80, 60, 80, 60, 200] : 400), reveal);
+    }
+    const order = mine === null ? vs.teams : [vs.teams[mine]!, ...vs.teams.filter((t) => t.id !== mine)];
     return h(
       'div',
-      { class: 'screen bh-closing' },
-      h('p', { class: `bh-vs-p${won ? ' won' : ''}`, lang: 'ja' }, vs.winner === null ? 'ひきわけ！' : `${TEAM_MARK[vs.winner]} ${vs.teams[vs.winner]!.ja}の かち！`),
-      h('p', { class: 'bh-vs-tips' }, vs.teams.map((t) => h('span', { class: `team-${t.id}` }, `${TEAM_MARK[t.id]} ${t.tips} tips`))),
-      h('p', { class: 'bh-points' }, `+${game.teamPoints} each`, me && me.bonus ? ` · +${me.bonus} for speaking` : ''),
+      { class: `screen bh-closing bh-vs-close${mine !== null ? ` team-${mine}` : ''}`, style: `--reveal: ${reveal}ms` },
+      h(
+        'p',
+        { class: `bh-vs-p${won ? ' won' : ''}${w !== null ? ` team-${w}` : ''}`, lang: 'ja' },
+        w === null ? 'ひきわけ！' : [pip(w), `${vs.teams[w]!.ja}の かち！`],
+        h('small', {}, mine === null ? '' : w === null ? 'A draw' : won ? 'Your team wins the shift!' : 'The other team wins this one.'),
+      ),
+      h(
+        'p',
+        { class: 'bh-vs-tips' },
+        order.map((t) => h('span', { class: `team-${t.id}` }, pip(t.id), `${t.ja}${t.id === mine ? ' (you)' : ''}: ${t.tips} ${tipsWord(t.tips)}`)),
+      ),
+      h('p', { class: 'bh-points' }, `+${game.teamPoints} points each on your team`, me && me.bonus ? ` · +${me.bonus} for speaking` : ''),
       h('p', { class: 'hint' }, 'Look at the TV!'),
     );
   }
@@ -403,8 +557,16 @@ function closing(ctx: Ctx): HTMLElement {
   );
 }
 
+let closingBuzzed = -1;
+
+/** An example call from tonight's menu: 「からあげ みっつ」. */
+function example(game: BentoView): string {
+  const f = foodOf(game.menu[0] ?? 'karaage') ?? foodOf('karaage')!;
+  return `${f.kana} ${countWord(f, 3, game.ownCounter)}`;
+}
+
 export const bentoHausPhone: PhoneMode<BentoView> = {
-  key(view, game) {
+  key(view, game, playerId) {
     const me = game.me;
     const boxes = game.visits.filter((v) => me?.taking.some((t) => t.visitId === v.id)).map((v) => [v.id, v.box, v.state]);
     return JSON.stringify([
@@ -416,7 +578,9 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
       me?.calls.map((c) => [c.id, c.state]),
       me?.shelf,
       game.stars,
-      game.vs?.teams.map((t) => t.tips),
+      game.vs?.teams.map((t) => [t.tips, t.meter, t.visits.filter((v) => me?.taking.some((x) => x.visitId === v.id)).map((v) => v.box.length)]),
+      me?.taking.map((t) => t.offer ?? 0),
+      game.visits.filter((v) => v.takerId === playerId && v.state !== 'waiting').map((v) => [v.id, v.state]),
       game.vs?.winner,
       me?.bonus,
       picked,
@@ -438,8 +602,8 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
           teamBar(game),
           game.vs && game.vs.myTeam !== null ? h('p', { class: 'hint' }, 'Call your own team only: the other kitchen can’t hear your phone. Serve first to win the customer.') : null,
           game.me.shelf.length ? shelf(game.me, game.ownCounter) : null,
-          h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, '「いなり みっつ、おねがいします！」')),
-          h('p', { class: 'hint' }, '🎫 Ticket? Read it back ', h('span', { lang: 'ja' }, '「はい、いなり みっつですね！」'), ' and send it.'),
+          h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, `「${example(game)}、おねがいします！」`)),
+          h('p', { class: 'hint' }, '🎫 Ticket? Read it back ', h('span', { lang: 'ja' }, `「はい、${example(game)}ですね！」`), ' and send it.'),
         );
       case 'answer':
         return kitchen(ctx);

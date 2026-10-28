@@ -55,6 +55,12 @@ export function bentoHausPolicy(opts: BentoPolicyOptions = {}): ModePolicy {
 
       // Order-takers: call what's missing, toss what doesn't belong, serve when it matches.
       for (const o of me.taking) {
+        // VS: a sent-back order on offer. Take it on more often than not.
+        if (o.offer) {
+          const kind = hash(playerId, o.visitId, 'offer') < 0.65 ? 'accept' : 'refuse';
+          out.push({ key: `${kind}:${o.visitId}`, move: { kind, visitId: o.visitId }, delayMs: delay(`offer${o.visitId}`, think) });
+          continue;
+        }
         const visit = game.visits.find((v) => v.id === o.visitId);
         if (!visit) continue;
         const lines = o.lines.map((l) => ({ foodId: l.foodId ?? riddleFood(l.riddle ?? '') ?? '', n: l.n, riddle: false })).filter((l) => l.foodId);

@@ -5,7 +5,7 @@
 // the same view, its own music and host voice, but no say over the game.
 
 import { RoomClient, createRoom, watchRoom, type ConnectionStatus } from '../../shared/src/client.js';
-import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch, placesOf, ruby, awardTitle, seatShape } from '../../shared/src/dom.js';
+import { HOST_NAMES, LEVEL_LABELS, PHASE_LABELS, formatSeconds, h, mount, patch, placesOf, ruby, hasReading, awardTitle, seatShape } from '../../shared/src/dom.js';
 import { icon } from '../../shared/src/art.js';
 import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
 import { ROOM_STALE_MS } from '../../shared/src/constants.js';
@@ -304,9 +304,10 @@ function render(view: RoomView, v: number): void {
       const seen = seenScores.get(p.id) ?? p.score;
       const up = seen < p.score;
       seenScores.set(p.id, p.score);
+      const team = view.game ? (stageMode?.team?.(view.game, p.id) ?? null) : null;
       return h(
         'li',
-        { class: `player seat-${p.seat} ${p.connected ? 'online' : 'offline'}`, 'data-key': p.id },
+        { class: `player seat-${p.seat} ${p.connected ? 'online' : 'offline'}${team !== null ? ` on-team team-${team}` : ''}`, 'data-key': p.id, style: team !== null ? `order: ${team * 100 + p.seat}` : null },
         h('span', { class: 'seat', 'aria-label': `seat ${p.seat}` }, `${seatShape(p.seat)}${p.seat}`),
         h('span', { class: 'name' }, p.name, p.isVip ? h('span', { class: 'vip', title: 'VIP' }, ' ★') : null),
         h('span', { class: 'ticks' }, (view.game && stageMode?.badge?.(view.game, p.id)) || h('span', { class: 'level' }, LEVEL_LABELS[p.level], !view.game && p.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, ` · ★${p.total}`) : null)),
@@ -450,10 +451,29 @@ function recapScreen(view: RoomView): HTMLElement {
         h('p', { class: 'rest' }, standings.flatMap((s, i) => [i ? ' · ' : '', h('strong', {}, s.name), ` ${s.score}`])),
       )
     : null;
+  // Team games (Bento Haus VS): which team won, by rounds and tips, above the players.
+  const teams = view.recap?.teams ?? [];
+  const best = teams.length ? Math.max(...teams.map((t) => t.wins * 1000 + t.tips)) : 0;
+  const teamLine = teams.length
+    ? h(
+        'div',
+        { class: 'recap-teams' },
+        teams.map((t, i) =>
+          h(
+            'p',
+            { class: `recap-team team-${i}${t.wins * 1000 + t.tips === best && teams.filter((x) => x.wins * 1000 + x.tips === best).length === 1 ? ' won' : ''}` },
+            h('span', { class: 'rt-name', lang: 'ja' }, t.ja),
+            h('span', { class: 'rt-score' }, `${t.wins} ${t.wins === 1 ? 'shift' : 'shifts'} · 💰 ${t.tips}`),
+            h('span', { class: 'rt-who' }, t.members.map((id) => view.players.find((p) => p.id === id)?.name ?? '').join(' · ')),
+          ),
+        ),
+      )
+    : null;
   return h(
     'div',
     { class: `recap${coop ? ' coop' : ''}` },
     h('p', { class: 'recap-title' }, ruby({ text: 'お疲れさま！', furigana: [['お', ''], ['疲', 'つか'], ['れさま！', '']] }), "Tonight's results"),
+    teamLine,
     team,
     coop
       ? null
@@ -637,6 +657,9 @@ function playHostAudio(say: HostSay & { audioUrl: string }): void {
   // Blocked (no click yet): the mouth still moves with the subtitles.
   void audio.play().catch(() => hostAudio === audio && hostSprite.talk(null, undefined, say.kana));
 }
+/** A host's line, with furigana over any kanji (はんじょう賞) when it can be worked out from the line's kana. */
+const hostJp = (say: HostSay): string | HTMLElement => (/\p{Script=Han}/u.test(say.text) && hasReading({ text: say.text, kana: say.kana }) ? ruby({ text: say.text, kana: say.kana }) : say.text);
+
 function showHost(view: RoomView): void {
   const say = view.host;
   els.host.hidden = !say;
@@ -675,7 +698,7 @@ function showHost(view: RoomView): void {
   // The sprite stays; only the bubble is new. The host reacts to the line, then idles.
   if (!hostSprite.el.isConnected) els.host.prepend(hostSprite.el);
   hostSprite.show(say.host, say.mood);
-  const bubble = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, say.text), h('span', { class: 'host-en' }, say.en));
+  const bubble = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, hostJp(say)), h('span', { class: 'host-en' }, say.en));
   const old = els.host.querySelector('.host-bubble');
   if (old) old.replaceWith(bubble);
   else els.host.append(bubble);

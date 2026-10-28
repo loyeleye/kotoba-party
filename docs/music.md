@@ -42,7 +42,7 @@ and `themeFor` in `cues.ts`; the count is kept in the browser), so a long night 
 | Kana Yōkai Raid | **Determination** (HydroGene) | **Ouroboros** (Kevin MacLeod) |
 | Narabete! | **Daily Beetle** (Kevin MacLeod, ukulele and marimba) | **Easy Lemon** (Kevin MacLeod) |
 | Bento Haus | **Kawai Kitsune** (Kevin MacLeod) | **Feelin Good** (Kevin MacLeod) |
-| Bento Haus VS | **Feelin Good** (Kevin MacLeod) | **Kawai Kitsune** (Kevin MacLeod) |
+| Bento Haus VS | **Feelin Good** (Kevin MacLeod) | **Kawai Kitsune** (Kevin MacLeod); after a Co-op game, whichever theme it didn't play |
 | The Last Train | **Last Train Dash** (synth, 16 bars) | |
 | Karaoke Duel | Each grown-up song is sung over a recorded instrumental (`track` in `songs.ts`; files listed with the other tracks in `tracks.ts`): two AI-made Mureka backings per song (one per take: Night Drive, Harbour in the Rain, Run!, Save It!, Sleepless Night, Monday Blues, Self-Intro Rap, Cheers!, Where Were You? and Sparkle Idol, credited as AI-generated), with a quiet synth guide melody on top. Kids' songs, streamer mode and files that won't load get the synth backing (`stage/src/modes/karaokeAudio.ts`; each song has a style: nursery, city pop, enka, rock, izakaya, blues, kayō, hip hop, idol, R&B, and grown-up songs carry chords for the bass); the synth's **Teacups at Two** between songs and **Taiko Showdown** at the end | |
 
@@ -80,6 +80,14 @@ fanfare) are kept as spares; switch a mode back to one by naming it in `MODE_THE
   500 Hz, about a sixth of the level).
 - **Stings.** The drum roll plays only on reveals that are reveals (Oogiri, Bingo, Oekaki, Tourist,
   Omiai, the Raid) and on the Onsen's accusation; the recap opens with the fanfare.
+- **Bento Haus VS jingles** (synth, `songs.ts`, played by `jingle()` in `stage/src/music/index.ts`).
+  The shift winner's jingle plays from their side as the result is stamped: **Aka no Kachi** for red
+  (left; the house theme on a festival band, taiko and gong) or **Ao no Kachi** for blue (right; the
+  same theme as a wave of bells). Each is about 2.7 s, and the music drops to the listening mix under
+  it, since it's in the house key whatever track is playing. A draw gets **Hikiwake**, a taiko hit and
+  a bell that stop on an open chord. When the teams are 3 tips or fewer apart at last orders, **Kiwadoi**
+  runs under the last 20 seconds: a quiet taiko heartbeat and woodblock clock, unpitched so it fits
+  any track, busier in its last two bars, and faded out if the shift ends first.
 
 ## Sound effects
 
@@ -95,7 +103,7 @@ their own bus, with their own volume:
 | Bwomp (low, below the speech band) | A miss: Concentration's "nobody said it", a wrong picture guess, a yōkai escaping, a Last Train miss |
 | Thwack | A yōkai takes a hit; a Concentration yōkai or fog card |
 | Tap | Buttons on the stage itself |
-| Bento Haus shop noises (quiet, short) | A phone trill when an order rings; a ticket tick when a call comes through (static when it doesn't); a send; the counter bell on a serve, then a bell per tip up the track's scale; a toss; a low sigh when a customer walks out; Pon's ドロン (disguise) and もぐもぐ (taste test); a two-note last-orders chime 20 s before close; star bells at closing time instead of the points chime |
+| Bento Haus shop noises (quiet, short) | A phone trill when an order rings; a ticket tick when a call comes through (static when it doesn't); a send; the counter bell on a serve, then a bell per tip up the track's scale; a toss; a low sigh when a customer walks out; Pon's ドロン (disguise) and もぐもぐ (taste test); a two-note last-orders chime 20 s before close; star bells at closing time instead of the points chime. VS: red's sounds on the left speaker and blue's on the right, a low thunk for a わけあり box, a falling sting for a sent-back box, and two rings of the last-orders chime in a close race (see Stings for the jingles) |
 
 A screen that joins late hears only what happens after it joins.
 

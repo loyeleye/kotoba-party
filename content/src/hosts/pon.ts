@@ -302,7 +302,7 @@ export const ponLines: HostLine[] = [
   // bento_ajimi
   { id: 'pon.bento_ajimi.01', host: 'pon', event: 'bento_ajimi', jp: { text: 'あじみ します！　もぐもぐ… あれ？　{food}が たりない。', kana: 'あじみ します！　もぐもぐ… あれ？　{food}が たりない。', en: 'Taste test! Munch munch… huh? We\'re short of {food}.' }, slots: ['{food}'], status: 'draft' },
   { id: 'pon.bento_ajimi.02', host: 'pon', event: 'bento_ajimi', jp: { text: '{food}、おいしい！　…あ、たべちゃった。', kana: '{food}、おいしい！　…あ、たべちゃった。', en: '{food}, delicious! …Oops, I ate it.' }, slots: ['{food}'], status: 'draft' },
-  { id: 'pon.bento_ajimi.03', host: 'pon', event: 'bento_ajimi', jp: { text: 'てんちょうの しごとです。あじみ！　…{food}、もう いちど よんでね。', kana: 'てんちょうの しごとです。あじみ！　…{food}、もう いちど よんでね。', en: 'Manager\'s duty: taste test! …Call the {food} again.' }, slots: ['{food}'], status: 'draft' },
+  { id: 'pon.bento_ajimi.03', host: 'pon', event: 'bento_ajimi', jp: { text: 'てんちょうの しごとです。あじみ！　…{food}、もう いっかい たのんでね。', kana: 'てんちょうの しごとです。あじみ！　…{food}、もう いっかい たのんでね。', en: 'Manager\'s duty: taste test! …Order the {food} again.' }, slots: ['{food}'], status: 'draft' },
   { id: 'pon.bento_ajimi.04', host: 'pon', event: 'bento_ajimi', jp: { text: 'もぐもぐ… {food}、おかわり ください！', kana: 'もぐもぐ… {food}、おかわり ください！', en: 'Munch munch… more {food}, please!' }, slots: ['{food}'], status: 'draft' },
   // bento_stars
   { id: 'pon.bento_stars.01', host: 'pon', event: 'bento_stars', jp: { text: 'きょうの ほしは {stars}！　おつかれさまでした！', kana: 'きょうの ほしは {stars}！　おつかれさまでした！', en: 'Tonight\'s stars: {stars}! Good work!' }, slots: ['{stars}'], status: 'draft' },
@@ -316,12 +316,22 @@ export const ponLines: HostLine[] = [
   { id: 'pon.bento_vs_intro.04', host: 'pon', event: 'bento_vs_intro', jp: { text: 'じぶんの チームに こえを かけて ください！', kana: 'じぶんの チームに こえを かけて ください！', en: 'Call out to your own team!' }, status: 'draft' },
   // bento_vs_win
   { id: 'pon.bento_vs_win.01', host: 'pon', event: 'bento_vs_win', jp: { text: 'この シフトは {team}の かち！', kana: 'この シフトは {team}の かち！', en: 'This shift goes to the {team}!' }, slots: ['{team}'], status: 'draft' },
-  { id: 'pon.bento_vs_win.02', host: 'pon', event: 'bento_vs_win', jp: { text: '{team}、チップが いちばん おおい！　ポン！', kana: '{team}、チップが いちばん おおい！　ポン！', en: '{team}, the most tips! Pon!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_win.02', host: 'pon', event: 'bento_vs_win', jp: { text: '{team}の ほうが チップが おおい！　ポン！', kana: '{team}の ほうが チップが おおい！　ポン！', en: 'The {team} has more tips! Pon!' }, slots: ['{team}'], status: 'draft' },
   { id: 'pon.bento_vs_win.03', host: 'pon', event: 'bento_vs_win', jp: { text: 'へいてんです！　かったのは {team}！', kana: 'へいてんです！　かったのは {team}！', en: 'Closing time! The winner: the {team}!' }, slots: ['{team}'], status: 'draft' },
-  { id: 'pon.bento_vs_win.04', host: 'pon', event: 'bento_vs_win', jp: { text: '{team}、おみごと！　もう ひとつの キッチンも がんばって！', kana: '{team}、おみごと！　もう ひとつの キッチンも がんばって！', en: 'Well done, {team}! Come on, other kitchen!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_win.04', host: 'pon', event: 'bento_vs_win', jp: { text: '{team}、おみごと！　どっちも よく がんばりました！', kana: '{team}、おみごと！　どっちも よく がんばりました！', en: 'Well done, {team}! Both kitchens worked hard!' }, slots: ['{team}'], status: 'draft' },
+  // bento_vs_sendback
+  { id: 'pon.bento_vs_sendback.01', host: 'pon', event: 'bento_vs_sendback', jp: { text: 'つきかえし！　{team}、チャンスです！', kana: 'つきかえし！　{team}、チャンスです！', en: 'Sent back! {team}, here\'s your chance!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_sendback.02', host: 'pon', event: 'bento_vs_sendback', jp: { text: 'おきゃくさんが もどって きた！　{team}、うけますか？', kana: 'おきゃくさんが もどって きた！　{team}、うけますか？', en: 'The customer\'s come back! {team}, will you take it?' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_sendback.03', host: 'pon', event: 'bento_vs_sendback', jp: { text: 'かんぺきなら チップが たくさん！　{team}、どうする？', kana: 'かんぺきなら チップが たくさん！　{team}、どうする？', en: 'Make it perfect for a big tip! {team}, what will you do?' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_sendback.04', host: 'pon', event: 'bento_vs_sendback', jp: { text: 'あっ、かえされた！　{team}、いまです！', kana: 'あっ、かえされた！　{team}、いまです！', en: 'Oh, it\'s been sent back! {team}, now\'s your chance!' }, slots: ['{team}'], status: 'draft' },
+  // bento_vs_final
+  { id: 'pon.bento_vs_final.01', host: 'pon', event: 'bento_vs_final', jp: { text: 'きょうの ゆうしょうは {team}！', kana: 'きょうの ゆうしょうは {team}！', en: 'Tonight\'s champions: the {team}!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_final.02', host: 'pon', event: 'bento_vs_final', jp: { text: 'ゆうしょうは {team}！　おめでとう！', kana: 'ゆうしょうは {team}！　おめでとう！', en: 'The champions are the {team}! Congratulations!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_final.03', host: 'pon', event: 'bento_vs_final', jp: { text: 'さいごまで よく がんばりました！　ゆうしょうは {team}！', kana: 'さいごまで よく がんばりました！　ゆうしょうは {team}！', en: 'You all worked hard to the end! The champions: the {team}!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_final.04', host: 'pon', event: 'bento_vs_final', jp: { text: 'おべんとうハウスの いちばんは {team}です！', kana: 'おべんとうハウスの いちばんは {team}です！', en: 'The best kitchen at the Bento Haus: the {team}!' }, slots: ['{team}'], status: 'draft' },
   // bento_vs_tie
   { id: 'pon.bento_vs_tie.01', host: 'pon', event: 'bento_vs_tie', jp: { text: 'チップが おなじ！　ひきわけです！', kana: 'チップが おなじ！　ひきわけです！', en: 'The same tips! It\'s a draw!' }, status: 'draft' },
   { id: 'pon.bento_vs_tie.02', host: 'pon', event: 'bento_vs_tie', jp: { text: 'どっちも おなじ…　ポンも びっくり！', kana: 'どっちも おなじ…　ポンも びっくり！', en: 'Both the same… even Pon is surprised!' }, status: 'draft' },
-  { id: 'pon.bento_vs_tie.03', host: 'pon', event: 'bento_vs_tie', jp: { text: 'ひきわけ！　つぎの シフトで きめましょう！', kana: 'ひきわけ！　つぎの シフトで きめましょう！', en: 'A draw! Let\'s settle it next shift!' }, status: 'draft' },
+  { id: 'pon.bento_vs_tie.03', host: 'pon', event: 'bento_vs_tie', jp: { text: 'ひきわけ！　どっちの キッチンも すごい！', kana: 'ひきわけ！　どっちの キッチンも すごい！', en: 'A draw! Both kitchens were amazing!' }, status: 'draft' },
   { id: 'pon.bento_vs_tie.04', host: 'pon', event: 'bento_vs_tie', jp: { text: 'あかも あおも、おなじ チップ！　すごい！', kana: 'あかも あおも、おなじ チップ！　すごい！', en: 'Red and blue, the same tips! Amazing!' }, status: 'draft' },
 ];

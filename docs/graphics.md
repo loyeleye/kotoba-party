@@ -142,7 +142,25 @@ pixflux missed them three times), shown at 64 on menu tiles, 48 (32 with four cu
 box, and 32 on phones. `stage/assets/bento/customers/<id>-<mood>.png`: the 10 yōkai customers as 64²
 busts in three moods: `calm` while waiting, `happy` when served, `cross` when they walk out (the
 moods share seed 7). Shown at 128 (2×) at the counter, 64 with four customers. Both fall back to the
-food's or customer's emoji if a file doesn't load. The box, counter and lid are CSS.
+food's or customer's emoji if a file doesn't load. The box and counter are CSS.
+
+Bento Haus VS (2026-10-28), in `stage/assets/bento/vs/`, all PixelLab `pixflux`, prompts and seeds in
+the manifest:
+
+| File | Size | Use |
+| --- | --- | --- |
+| `crest-red.png`, `crest-blue.png` | 32² | Team crests (a red noren, a blue seigaiha wave), at text size wherever the CSS pip was: lanes, box tabs, rosters, the closing split, phones. Shape and colour both tell the teams apart |
+| `lid.png` | 106×53 (trimmed) | The lacquer lid with a red ribbon over a served box, on a dark backdrop so the box below doesn't show through |
+| `sticker-wakeari.png` | 74×38 (trimmed) | The paper sticker under わけあり; the word is HTML text on top |
+| `stamp-henkin.png` | 34×33 (trimmed) | The red ink ring of the へんきん refund stamp, on a CSS paper disc with the word as text |
+| `pon-flags.png` | 128² | Pon waving a red noren flag and a blue wave flag, beside the VS logo and at closing time |
+
+Pon with flags is `pixflux` with an `init_image`: `tools/art/sources/pon-flags-sketch.py` paints the
+microphone out of the shipped Pon and adds two flags on poles, and pixflux redraws that at strength
+150 (seed 8; seed 21 gave him a ringed raccoon tail and was thrown out). The red flag came back with a
+plain block for a mark, so `tools/art/sources/pon-flags-touchup.py` repaints it as a noren; run it
+after a regeneration. The stamp, lid and sticker use the manifest's new `trim` step, so CSS sizes the
+drawing and not the empty canvas around it.
 
 ## Backdrop
 

@@ -164,6 +164,8 @@ export interface Award {
   /** Award title, e.g. Pon's 座布団王. */
   title: string;
   en: string;
+  /** What the host says for {name} when it isn't just the name (the lines add the last さん). */
+  spoken?: string;
 }
 
 export type MoveResult = { ok: true } | { ok: false; error: string };
@@ -227,6 +229,19 @@ export interface Mode<S = unknown, V extends { mode: ModeId } = { mode: ModeId }
   view(s: S, phase: Phase, viewer: Viewer, ctx: ModeContext): V;
   /** Awards for the recap. */
   awards?(s: S, ctx: ModeContext): Award[];
+  /** Team games: each team's result, shown above the recap's podium. */
+  recapTeams?(s: S, ctx: ModeContext): RecapTeam[];
+}
+
+/** One team's result for the recap (Bento Haus VS). */
+export interface RecapTeam {
+  ja: string;
+  en: string;
+  /** Player ids. */
+  members: string[];
+  /** Rounds (shifts) won, and the game's tips. */
+  wins: number;
+  tips: number;
 }
 
 // ---- small helpers modes share ----

@@ -81,7 +81,7 @@ Code: `shared/src/modes/bentoHaus/bentoHausVs.ts` (mode `bento-haus-vs`), the VS
 `stage/src/modes/bentoHaus.ts` and `controller/src/modes/bentoHaus.ts`, `tests/bentoHausVs.test.ts`.
 Each team is a whole Co-op kitchen; the two share only the customers.
 
-- **Teams.** あかチーム 🔴 and あおチーム 🔵, dealt at the start by level (strongest first, snaking
+- **Teams.** あかチーム (red, a noren crest) and あおチーム (blue, a wave crest), dealt at the start by level (strongest first, snaking
   A B B A), so each gets a similar mix of Kana, N5 and N4; kept for the game. Anyone who joins later
   goes to the smaller team. 4–8 players; with 5 or 7 the teams are one apart.
 - **Kitchens.** Both have the same menu, spread across each team's own phones. A call only makes
@@ -94,18 +94,51 @@ Each team is a whole Co-op kitchen; the two share only the customers.
   effort is never wasted. A box can't be served empty. Moves on a customer who has gone come back
   "too late". A customer who runs out of patience leaves both kitchens (わけあり 1 tip each for a
   part-filled box).
+- **Mistake meter (ミス).** Each kitchen has one, shown on the TV beside its tip jar and on its
+  phones' team bar. A sloppy box fills it: +10 with one thing off, +25 with two, +40 worse; a perfect
+  box (or Pon's disguise) adds nothing. It empties at the start of each shift. When it reaches 100,
+  that box is sent back: the customer asks for a refund (its tips are taken back, 0) and the meter
+  empties.
+- **Sent-back orders.** The customer then phones the other kitchen with the order changed a little
+  (one food's count up or down by one; no riddles, no rush), and Pon calls it out
+  (`bento_vs_sendback`). That kitchen's next order-taker has 25 s to accept (うけます) or refuse
+  (ことわります); no answer is a refusal. Accepted, they have 35 s: a perfect box earns 5 tips,
+  anything else 0 (no わけあり). It never fills the meter. It isn't offered to a kitchen already 8 or
+  more tips ahead over the game, or within 25 s of last orders.
 - **Pay.** Each tip is 50 points to everyone in that kitchen, plus the same capped speaking bonus as
   Co-op. The shift goes to the kitchen with more tips (Pon names it; a tie is a draw).
-- **TV.** One counter: each customer once, with a red and a blue box filling side by side under
-  them and each team's order-taker. The served box gets the lid and a gold ring; the other is
-  stamped わけあり. Two tip jars at the top, one call feed per team. Closing time names the shift's
-  winner and shows each order's tips for both teams.
-- **Phone.** The Co-op kitchen, with a team bar (your team, both teams' tips). Closing shows who won
-  the shift.
-- **Recap.** A podium of players (teammates tie, and ties stand level). はんじょう賞 goes to the kitchen
-  with the most tips, beside the Co-op awards.
+- **TV.** One counter: each customer once, picture and name beside their line (no English name, to
+  keep the card short enough to show at full size), with a red and a blue box filling side by side
+  under them. Each box has a solid team tab with its order-taker. The served box gets the lid, then
+  a gold ring, then 「〜が さき！」; the other box fades and gets a わけあり paper sticker. A sent-back
+  box gets a へんきん (refund) sticker; a sent-back order shows only the kitchen it's offered to, with
+  a 🔁 banner (うけますか？ / ぴったりなら +5). One lane per team above the counter: tip jar, mistake
+  meter and the last two calls. Pon's taste test names the team. Closing time names the shift's
+  winner beside both jars (the winner's ringed) and shows each order's tips for both teams. Player
+  tiles sit red then blue, with a team band along the bottom, and Pon's row keeps one height during a
+  shift so the counter doesn't jump when he talks. With three at the counter the bubble's English goes.
+- **Phone.** The Co-op kitchen, with a team bar (your team, this shift's tips with yours first, your
+  mistake meter). An order you took ends with a short note: your team served first, the other did
+  (わけあり +1), or it was sent back; it buzzes short for a win and long for a loss. A sent-back
+  order on offer shows うけます / ことわります; once accepted, the order card says it's perfect or
+  nothing. The order card shows how full the other team's box is (a slot per food), each ticket says
+  which customer it's for (and a 🎫 pill jumps down to them), a ticket voided because the other team
+  served first says so, and serving a lost customer says the other kitchen served first. The team
+  bar adds the game's totals from shift 2. Closing leads with whether your team won, then both teams' tips, and buzzes when the TV
+  stamps the result.
+- **Sound.** Red's sounds come from the left speaker and blue's from the right, the わけあり box gets
+  a low thunk just after the serve, a sent-back box a falling sting. The shift winner gets their own jingle from their side (taiko for
+  red, bells for blue), a draw gets its own, and a close race (3 tips or fewer apart) gets a quiet
+  heartbeat under the last 20 seconds. Art: PixelLab team crests, the lacquer lid, the わけあり sticker,
+  the へんきん stamp and Pon waving both flags (see [graphics.md](../graphics.md#bento-haus)).
+  Pon names the order-takers only for the shift's first customer, so he doesn't talk over them.
+- **Recap.** A team line above the podium (each team's shifts won and tips, the winner ringed; the
+  phone leads with your team's result), then a podium of players (teammates tie, and ties stand
+  level). After the last shift Pon crowns the game's champions (`bento_vs_final`) instead of naming
+  the shift's winner. はんじょう賞 goes to the kitchen with the most tips, beside the Co-op awards.
 - **Music.** The same two themes the other way round: Feelin Good opens the shifts, Kawai Kitsune is
-  the second theme.
+  the second theme. Across both modes a screen plays whichever of the two the last Bento game didn't.
+  Last orders rings twice when the teams are within 3 tips.
 
 ## Open questions
 
@@ -114,5 +147,7 @@ Each team is a whole Co-op kitchen; the two share only the customers.
 3. Is the personal bonus cap right, or does the team pay drown it out?
 4. Kana players see pictures of the order: enough, or should they also get romaji?
 5. Pon's disguise and taste-test: funny, or frustrating in a rush?
-6. VS: should the slower team's half-made box really earn 1 tip, or is that too soft?
-7. VS: is first-served-wins right, or should a perfect box beat an earlier sloppy one?
+6. VS: is first-served-wins right, or should a perfect box beat an earlier sloppy one? (The mistake
+   meter now punishes a run of sloppy boxes; Ladi kept the わけあり tip for the slower box, 2026-10-28.)
+7. VS: are the meter steps (+10 / +25 / +40), the 5-tip sent-back order and the 8-tip lead limit
+   right, once played?

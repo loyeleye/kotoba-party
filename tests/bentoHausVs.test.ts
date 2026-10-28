@@ -5,7 +5,7 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import { TIP_POINTS, TIPS, type BentoView, type Round, type Visit } from '../shared/src/modes/bentoHaus/bentoHaus.js';
-import { dealTeams, type VsState } from '../shared/src/modes/bentoHaus/bentoHausVs.js';
+import { dealTeams, METER, OFFER_MS, STEAL_MAX_LEAD, type VsState } from '../shared/src/modes/bentoHaus/bentoHausVs.js';
 import { COUNTS, foodOf } from '../shared/src/modes/bentoHaus/menu.js';
 import type { ModePlayer } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -90,6 +90,24 @@ class Table {
     const id = this.k(0).visits.find((v) => v.state === 'waiting')!.id;
     return this.st.kitchens.map((k) => k.visits.find((v) => v.id === id)!);
   }
+  /** One kitchen adds a food the customer didn't order: one thing off. */
+  extra(team: number, v: Visit) {
+    // Pon's taste test (on the third send) would eat the extra: he's had his already.
+    this.k(team).ajimi ??= { visitId: '', foodId: '', at: -1e9 };
+    const id = this.k(team).menu.find((x) => !v.lines.some((l) => l.foodId === x))!;
+    expect(this.play(v.takerId, { kind: 'call', utterance: speech(`${foodOf(id)!.kana} ひとつ、おねがいします`) }).error).toBeUndefined();
+    const t = this.k(team).tickets.at(-1)!;
+    expect(this.play(t.stationId!, { kind: 'send', ticketId: t.id }).error).toBeUndefined();
+  }
+  /** The red kitchen serves a box with one thing off while its meter is nearly full: sent back. */
+  sendBack(meter = 95): { first: Visit[]; steal: Visit | undefined } {
+    const first = this.customer();
+    this.st.teams[0]!.meter = meter;
+    this.fill(0, first[0]!);
+    this.extra(0, first[0]!);
+    expect(this.play(first[0]!.takerId, { kind: 'serve', visitId: first[0]!.id }).error).toBeUndefined();
+    return { first, steal: this.k(1).visits.find((v) => v.steal) };
+  }
   /** One kitchen fills its copy of an order exactly. */
   fill(team: number, v: Visit, opts: { only?: string } = {}) {
     for (const l of v.lines) {
@@ -126,7 +144,7 @@ describe('Bento Haus VS: the teams', () => {
   });
 
   it('every VS host event has four Pon lines, and slots match', () => {
-    for (const e of ['bento_vs_intro', 'bento_vs_win', 'bento_vs_tie']) {
+    for (const e of ['bento_vs_intro', 'bento_vs_win', 'bento_vs_tie', 'bento_vs_sendback', 'bento_vs_final']) {
       const lines = ponLines.filter((l) => l.event === e);
       expect(lines.length, e).toBe(4);
       for (const l of lines) for (const slot of l.jp.text.match(/\{\w+\}/g) ?? []) expect(l.slots ?? [], l.id).toContain(slot);
@@ -186,7 +204,7 @@ describe('Bento Haus VS: a shift', () => {
     expect(vb!.state).toBe('left');
     expect(vb!.tips).toBe(TIPS.wakeari);
     expect(t.k(1).tips).toBe(TIPS.wakeari);
-    expect(t.play(vb!.takerId, { kind: 'serve', visitId: vb!.id }).error).toBe('too-late');
+    expect(t.play(vb!.takerId, { kind: 'serve', visitId: vb!.id }).error).toBe('beaten');
     const stage = t.view();
     expect(stage.vs!.teams.map((x) => x.tips)).toEqual([TIPS.perfect * rush, TIPS.wakeari]);
   });
@@ -224,9 +242,14 @@ describe('Bento Haus VS: a shift', () => {
       t.timeout();
       t.timeout();
     }
+    expect(t.s.cues.some((c) => c.event === 'bento_vs_final' && c.slots?.team === 'あかチーム')).toBe(true);
     t.timeout();
     expect(t.s.phase).toBe('recap');
     expect(t.s.recap!.awards.map((a) => a.title)).toContain('はんじょう賞');
+    expect(t.s.recap!.teams!.map((x) => [x.ja, x.wins, x.tips])).toEqual([
+      ['あかチーム', 1, tipsA],
+      ['あおチーム', 0, 0],
+    ]);
     expect(t.s.recap!.coop).toBeFalsy();
   });
 
@@ -239,6 +262,108 @@ describe('Bento Haus VS: a shift', () => {
     t.act({ type: 'release', playerId: gone });
     expect(va!.takerId).toBe(mate);
     expect(Object.values(t.k(0).holders).every((id) => id === mate)).toBe(true);
+  });
+});
+
+describe('Bento Haus VS: the mistake meter and sent-back orders', () => {
+  it('a sloppy box fills the meter by how far off it is; a perfect one leaves it alone', () => {
+    const t = new Table(4);
+    t.start();
+    const [va] = t.customer();
+    t.fill(0, va!);
+    t.extra(0, va!);
+    t.play(va!.takerId, { kind: 'serve', visitId: va!.id });
+    expect(va!.tips).toBe(TIPS.close * (va!.rush ? 2 : 1));
+    expect(t.st.teams[0]!.meter).toBe(METER.close);
+    expect(t.view().vs!.teams.map((x) => x.meter)).toEqual([METER.close, 0]);
+    expect(t.view(va!.takerId).vs!.teams[0]!.meter).toBe(METER.close);
+  });
+
+  it('a full meter sends the box back for a refund and offers a changed order to the other kitchen', () => {
+    const t = new Table(4);
+    t.start();
+    const { first, steal } = t.sendBack();
+    const [va, vb] = first;
+    expect(va!.sentBack).toBe(true);
+    expect(va!.state).toBe('left');
+    expect(va!.tips).toBe(0);
+    expect(t.k(0).tips).toBe(0);
+    expect(t.st.teams[0]!.meter).toBe(0);
+    // The other kitchen lost the customer as usual (its box was empty), and the customer phones it again.
+    expect(vb!.state).toBe('left');
+    expect(steal).toBeDefined();
+    expect(steal!.state).toBe('offered');
+    expect(steal!.customerId).toBe(va!.customerId);
+    expect(t.st.teams[1]!.members).toContain(steal!.takerId);
+    expect(steal!.lines).not.toEqual(va!.lines);
+    expect(steal!.lines.map((l) => l.foodId)).toEqual(va!.lines.map((l) => l.foodId));
+    expect(t.s.cues.some((c) => c.event === 'bento_vs_sendback' && c.slots?.team === 'あおチーム')).toBe(true);
+    // The order-taker sees an offer, without the order; the TV sees the sent-back order on that side only.
+    const offer = t.view(steal!.takerId).me!.taking.find((x) => x.visitId === steal!.id)!;
+    expect(offer.offer).toBe(steal!.leaveAt);
+    expect(offer.text).toBe('');
+    expect(t.view().vs!.teams[1]!.visits.some((v) => v.id === steal!.id && v.steal)).toBe(true);
+    expect(t.view().vs!.teams[0]!.visits.some((v) => v.id === steal!.id)).toBe(false);
+    // Only the order-taker answers, and serving needs an accepted order.
+    const mate = t.st.teams[1]!.members.find((id) => id !== steal!.takerId)!;
+    expect(t.play(mate, { kind: 'accept', visitId: steal!.id }).error).toBe('bad-move');
+    expect(t.play(va!.takerId, { kind: 'accept', visitId: steal!.id }).error).toBe('bad-move');
+  });
+
+  it('accepted and perfect earns the super tip; anything else earns nothing', () => {
+    for (const perfect of [true, false]) {
+      const t = new Table(4);
+      t.start();
+      const { steal } = t.sendBack();
+      expect(t.play(steal!.takerId, { kind: 'accept', visitId: steal!.id }).error).toBeUndefined();
+      expect(steal!.state).toBe('waiting');
+      expect(t.view(steal!.takerId).me!.taking.find((x) => x.visitId === steal!.id)!.text).toContain('となりの おみせ');
+      const before = t.k(1).tips;
+      t.fill(1, steal!);
+      if (!perfect) t.extra(1, steal!);
+      expect(t.play(steal!.takerId, { kind: 'serve', visitId: steal!.id, utterance: speech('おまたせしました') }).error).toBeUndefined();
+      expect(steal!.state).toBe('served');
+      expect(steal!.tips).toBe(perfect ? TIPS.steal : 0);
+      expect(t.k(1).tips - before).toBe(perfect ? TIPS.steal : 0);
+      // It never touches the meter.
+      expect(t.st.teams[1]!.meter).toBe(0);
+    }
+  });
+
+  it('a refused or unanswered offer goes away for nothing, and an accepted one not served in time pays 0', () => {
+    const t = new Table(4);
+    t.start();
+    const { steal } = t.sendBack();
+    expect(t.play(steal!.takerId, { kind: 'refuse', visitId: steal!.id }).error).toBeUndefined();
+    expect(steal!.state).toBe('left');
+    expect(t.play(steal!.takerId, { kind: 'accept', visitId: steal!.id }).error).toBe('too-late');
+
+    const u = new Table(4);
+    u.start();
+    const s2 = u.sendBack().steal!;
+    u.now = s2.arriveAt + OFFER_MS;
+    u.wake();
+    expect(s2.state).toBe('left');
+    expect(s2.tips).toBe(0);
+
+    const w = new Table(4);
+    w.start();
+    const s3 = w.sendBack().steal!;
+    w.play(s3.takerId, { kind: 'accept', visitId: s3.id });
+    w.fill(1, s3, { only: s3.lines[0]!.foodId });
+    w.now = s3.leaveAt;
+    w.wake();
+    expect(s3.state).toBe('left');
+    expect(s3.tips).toBe(0);
+  });
+
+  it('isn’t offered to a kitchen already well ahead', () => {
+    const t = new Table(4);
+    t.start();
+    t.st.teams[1]!.banked = STEAL_MAX_LEAD;
+    const { first, steal } = t.sendBack();
+    expect(first[0]!.sentBack).toBe(true);
+    expect(steal).toBeUndefined();
   });
 });
 
@@ -300,7 +425,7 @@ describe('Bento Haus VS: bots end to end', () => {
       for (const [id, list] of seen) for (const { v, hash } of list) expect(truth.byVersion.get(v)?.get(id), `${id} at v${v}`).toBe(hash);
       const standings = (recap as RoomView['recap'])!.standings;
       expect(standings.length).toBe(players);
-      const bad = bots.flatMap((b) => b.moves.filter((m) => !m.ok && !['wrong-phase', 'no-customer', 'too-late'].includes(m.error ?? '')));
+      const bad = bots.flatMap((b) => b.moves.filter((m) => !m.ok && !['wrong-phase', 'no-customer', 'too-late', 'beaten'].includes(m.error ?? '')));
       expect(bad).toEqual([]);
       for (const b of bots) b.stop();
       director.client.close();
