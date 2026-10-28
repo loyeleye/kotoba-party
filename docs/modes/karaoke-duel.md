@@ -172,7 +172,8 @@ neck bends to swing her head left on one beat and right on the next, from the li
 (`nobiko-sway.png`, stepped through by `sway` in `stage/src/modes/karaokeDuel.ts` on the line's own clock so it
 stays on the backing track). She blinks on two random beats in every eight. Her face follows the latest take
 (`danceFace`): a big laughing smile when the words were mostly right (80%+) and the timing good (70%+), a wry,
-unimpressed look at a missed line or one under 50% words, and her own face otherwise. Calm and reduced motion
+unimpressed look at a missed line, or at words under 50% from an N4 singer or under 30% from an N5 (never at a kana
+player), and her own face otherwise. Calm and reduced motion
 keep her still.
 
 ### Awards

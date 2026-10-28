@@ -283,12 +283,15 @@ function sway(key: string, lineAt: number, beatMs: number): void {
 
 /**
  * Her face while she dances, from the latest take in (this line's, or the last line's until this one's lands): a big
- * smile when the words were mostly right and the timing good, a wry look at a missed or garbled line, else her own.
+ * smile when the words were mostly right and the timing good, else her own. Like her Omiai tease, the wry look at a
+ * missed or garbled line is only for N5 and N4 singers, never a kana player, and she is easier on N5s.
  */
-function danceFace(game: KaraokeDuelView, turnNo: number): 'smile' | 'wry' | null {
+function danceFace(view: RoomView, game: KaraokeDuelView, turnNo: number): 'smile' | 'wry' | null {
   const t = game.takes.filter((x) => x.turnNo >= turnNo - 1).at(-1);
   if (!t || t.via === 'typed') return null;
-  if (t.missed || t.pron < 0.5) return 'wry';
+  const level = view.players.find((p) => p.id === t.playerId)?.level;
+  const wryUnder = level === 'n4' ? 0.5 : level === 'n5' ? 0.3 : 0; // the words score below which she looks wry
+  if (wryUnder && (t.missed || t.pron < wryUnder)) return 'wry';
   return t.pron >= 0.8 && (t.timing ?? 1) >= 0.7 ? 'smile' : null;
 }
 
@@ -351,7 +354,7 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
         chorus ? h('p', { class: 'kd-chorus' }, `🎶 Chorus: ${chorus} singing along`) : null,
         lastTakeToast(view, game, Date.now() + off),
         dancing
-          ? h('div', { class: `kd-dancer${still ? ' still' : ''}`, 'data-face': danceFace(game, turn.no) ?? '', 'aria-hidden': 'true' }, h('img', { src: still ? '/stage/assets/hosts/nobiko.png' : '/stage/assets/anim/nobiko-sway.png', alt: '', draggable: 'false' }))
+          ? h('div', { class: `kd-dancer${still ? ' still' : ''}`, 'data-face': danceFace(view, game, turn.no) ?? '', 'aria-hidden': 'true' }, h('img', { src: still ? '/stage/assets/hosts/nobiko.png' : '/stage/assets/anim/nobiko-sway.png', alt: '', draggable: 'false' }))
           : null,
       ),
       duelBoard(view, game),
