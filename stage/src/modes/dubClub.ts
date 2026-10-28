@@ -36,7 +36,6 @@ const BG = (bg: string): string => `/stage/assets/dub/bg-${bg}.png`;
 /** The character's still, and its mouth sheet (closed, half, open) when it has one. */
 function charArt(char: string): { still: string; talk: string | null } {
   if (char === 'pon') return { still: '/stage/assets/hosts/pon.png', talk: '/stage/assets/anim/pon-talk.png' };
-  if (char === 'monster') return { still: '/stage/assets/dub/char-monster.png', talk: null };
   return { still: `/stage/assets/dub/char-${char}.png`, talk: `/stage/assets/dub/char-${char}-talk.png` };
 }
 

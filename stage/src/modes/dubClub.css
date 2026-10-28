@@ -17,7 +17,7 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 .dub-char.sheet { background-size: 300% 100%; background-position: 0 0; background-repeat: no-repeat; }
 .dub-char.sheet[data-m='1'] { background-position: 50% 0; }
 .dub-char.sheet[data-m='2'] { background-position: 100% 0; }
-/* No mouth sheet (the monster): it heaves with the voice instead. */
+/* A character with no mouth sheet heaves with the voice instead. */
 .dub-char.still { transform-origin: 50% 100%; transition: transform 60ms; }
 .dub-char.still[data-m='1'] { transform: translateX(-50%) scale(1.02, 1.04); }
 .dub-char.still[data-m='2'] { transform: translateX(-50%) scale(1.04, 1.08); }

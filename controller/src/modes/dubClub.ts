@@ -172,6 +172,89 @@ function armAutoSend(ctx: Ctx, view: RoomView): void {
   );
 }
 
+// ---- listening back: a pixel play button and the take's waveform ----
+
+const ICON = (name: string) => `/stage/assets/dub/ui-${name}.png`;
+const WAVE_BARS = 36;
+const peaksCache = new WeakMap<Uint8Array, number[]>();
+/** The take's loudness in WAVE_BARS slices, 0–1 (16-bit mono PCM after the 44-byte header). */
+function peaksOf(wav: Uint8Array): number[] {
+  const hit = peaksCache.get(wav);
+  if (hit) return hit;
+  const view = new DataView(wav.buffer, wav.byteOffset, wav.byteLength);
+  const samples = Math.floor((wav.length - 44) / 2);
+  const per = Math.max(1, Math.floor(samples / WAVE_BARS));
+  const peaks: number[] = [];
+  for (let b = 0; b < WAVE_BARS; b++) {
+    let max = 0;
+    for (let i = b * per; i < Math.min(samples, (b + 1) * per); i++) max = Math.max(max, Math.abs(view.getInt16(44 + i * 2, true)));
+    peaks.push(max / 32768);
+  }
+  const top = Math.max(...peaks) || 1;
+  const out = peaks.map((p) => p / top);
+  peaksCache.set(wav, out);
+  return out;
+}
+
+let preview: HTMLAudioElement | null = null;
+let previewUrl = '';
+function showProgress(): void {
+  const p = preview && preview.duration ? preview.currentTime / preview.duration : 0;
+  for (const wave of document.querySelectorAll<HTMLElement>('.dc-wave')) {
+    const on = wave.dataset.url === previewUrl && preview && !preview.paused;
+    wave.querySelectorAll('i').forEach((bar, i) => bar.classList.toggle('on', !!on && i / WAVE_BARS < p));
+  }
+  for (const img of document.querySelectorAll<HTMLImageElement>('.dc-play img')) {
+    const playing = img.closest<HTMLElement>('.dc-player')?.dataset.url === previewUrl && preview && !preview.paused;
+    img.src = ICON(playing ? 'stop' : 'play');
+  }
+}
+function togglePreview(url: string): void {
+  if (!preview) {
+    preview = new Audio();
+    preview.addEventListener('timeupdate', showProgress);
+    preview.addEventListener('ended', showProgress);
+    preview.addEventListener('pause', showProgress);
+  }
+  if (previewUrl === url && !preview.paused) {
+    preview.pause();
+    preview.currentTime = 0;
+  } else {
+    previewUrl = url;
+    preview.src = url;
+    void preview.play().catch(() => {});
+  }
+  showProgress();
+}
+
+function takePlayer(d: Draft): HTMLElement {
+  return h(
+    'div',
+    { class: 'dc-player', 'data-url': d.url },
+    h('button', { type: 'button', class: 'dc-play', 'aria-label': 'Play your take', onclick: () => togglePreview(d.url) }, h('img', { src: ICON('play'), alt: '', draggable: 'false' })),
+    h('span', { class: 'dc-wave', 'data-url': d.url, 'aria-hidden': 'true' }, peaksOf(d.wav).map((p) => h('i', { style: `--h:${Math.max(1, Math.round(p * 8))}` }))),
+    h('span', { class: 'dc-dur' }, `${(d.durMs / 1000).toFixed(1)} s`),
+  );
+}
+
+// The mic level meter while recording: eight pixel bars that follow the mic, on their own frame loop.
+let metering = false;
+function startMeter(): void {
+  if (metering || typeof requestAnimationFrame === 'undefined') return;
+  metering = true;
+  const tick = () => {
+    const els = document.querySelectorAll<HTMLElement>('.dc-meter');
+    if (!els.length || !rec) {
+      metering = false;
+      return;
+    }
+    const lit = Math.round(rec.clip.level * 8);
+    for (const el of els) el.querySelectorAll('i').forEach((bar, i) => bar.classList.toggle('on', i < lit));
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 // ---- playing my own take (when it stayed on this phone) ----
 
 let playedKey = '';
@@ -309,12 +392,14 @@ function actScreen(ctx: Ctx, me: Me): HTMLElement {
   const live = rec?.round === game.round ? rec : null;
   const seconds = Math.round(me.limitMs / 1000);
   const review = d && !live ? d : null;
+  if (live?.started != null) startMeter();
   const recBtn = live
     ? h(
         'button',
         { type: 'button', class: `dc-rec on${live.started === null ? ' opening' : ''}`, style: live.started !== null ? `--len:${me.limitMs}ms; --into:-${Date.now() - live.started}ms` : null, onclick: () => stopRecording(ctx) },
         h('span', { class: 'dc-rec-bar', 'aria-hidden': 'true' }),
         h('span', { class: 'dc-rec-label' }, live.started === null ? 'Opening the mic…' : '● REC · tap to stop'),
+        live.started !== null ? h('span', { class: 'dc-meter', 'aria-hidden': 'true' }, h('img', { src: ICON('mic'), alt: '' }), [1, 2, 3, 4, 5, 6, 7, 8].map(() => h('i', {}))) : null,
       )
     : h('button', { type: 'button', class: `dc-rec${d ? ' again' : ''}`, disabled: sending, onclick: () => startRecording(ctx, me) }, h('span', { class: 'dc-rec-label' }, d ? '● Record again' : '● Record'));
   return h(
@@ -329,7 +414,7 @@ function actScreen(ctx: Ctx, me: Me): HTMLElement {
           'div',
           { class: 'dc-review' },
           h('p', { class: 'hint' }, 'Listen back, then send it to the TV.'),
-          h('audio', { controls: true, controlslist: 'nodownload', src: review.url, preload: 'auto' }),
+          takePlayer(review),
           h('button', { type: 'button', class: 'primary dc-send', disabled: sending, onclick: () => void sendTake(ctx) }, sending ? 'Sending…' : '📤 Send this take'),
           h('p', { class: 'hint dc-autosend' }, '⏱ Not sent by the end? It goes in by itself.'),
         )
@@ -348,7 +433,7 @@ function sentScreen(ctx: Ctx, me: Me): HTMLElement {
     { class: 'screen' },
     h('p', { class: 'big' }, '🎬 Take sent!'),
     me.direction ? cardFace(me.direction, { cls: 'small' }) : null,
-    d ? h('audio', { controls: true, src: d.url }) : null,
+    d ? takePlayer(d) : null,
     waitingOn.length ? h('p', { class: 'hint' }, `Waiting for ${waitingOn.join(', ')}…`) : null,
   );
 }

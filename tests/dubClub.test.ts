@@ -49,6 +49,8 @@ describe('Dub Club: the content', () => {
         const char = sc.char === 'pon' ? 'stage/assets/hosts/pon.png' : `stage/assets/dub/char-${sc.char}.png`;
         expect(existsSync(bg), bg).toBe(true);
         expect(existsSync(char), char).toBe(true);
+        // Every character lip-syncs: a mouth sheet of three frames (Pon's is anim/pon-talk.png).
+        if (sc.char !== 'pon') expect(existsSync(`stage/assets/dub/char-${sc.char}-talk.png`), `${sc.char} talk`).toBe(true);
       }
     }
   });
@@ -56,6 +58,7 @@ describe('Dub Club: the content', () => {
   it('every direction card has its pixel icon, and the episode has its title, end and credits art', () => {
     for (const d of DIRECTIONS) expect(existsSync(`stage/assets/dub/cards/${d.id}.png`), d.id).toBe(true);
     for (const n of ['title', 'end', 'credits']) expect(existsSync(`stage/assets/dub/ep-${n}.png`), n).toBe(true);
+    for (const n of ['play', 'stop', 'mic']) expect(existsSync(`stage/assets/dub/ui-${n}.png`), n).toBe(true);
   });
 
   it('every audience gets episodes and a deck of several sound families; Cheeky never reaches Kids', () => {
