@@ -145,7 +145,7 @@ export type Command =
   | { id: string; type: 'start'; mode: ModeId | typeof SURPRISE; rounds?: number; packId?: string; extra?: Record<string, unknown> }
   | { id: string; type: 'play'; move: unknown }
   | { id: string; type: 'setLevel'; level: Level }
-  /** The lobby mic check: say こんにちは. A quiet result switches the phone to tap/type. */
+  /** The lobby mic check: say こんにちは. A tap ("I can't talk right now") switches the phone to tap/type; null turns the mic back on. */
   | { id: string; type: 'micCheck'; utterance: unknown }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' }

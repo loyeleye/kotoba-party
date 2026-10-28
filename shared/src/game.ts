@@ -283,10 +283,18 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (!me) return fail('not-allowed');
       if (inGame(state)) return fail('wrong-phase');
       const host = activeMode(state)?.info.host ?? 'pon';
-      // A transcript that sounds like こんにちは passes; anything else, or { quiet: true }, is the quiet path.
-      const said = isUtterance(cmd.utterance) && matchesAccepted(utteranceReading(cmd.utterance), ['こんにちは', 'こんにちわ']);
-      me.mic = said ? 'ok' : 'quiet';
-      state.cues.push({ host, event: said ? 'mic_check_ok' : 'mic_check_quiet', slots: { name: me.name } });
+      // null turns the mic back on (the check shows again). Only the "I can't talk right now" tap is the
+      // quiet path: a miss, said or typed, leaves the mic on to try again, so typing never locks it out.
+      if (cmd.utterance === null) {
+        if (me.mic === null) return { changed: false };
+        me.mic = null;
+        return OK;
+      }
+      if (!isUtterance(cmd.utterance)) return fail('bad-command');
+      const quiet = cmd.utterance.via === 'tap';
+      if (!quiet && !matchesAccepted(utteranceReading(cmd.utterance), ['こんにちは', 'こんにちわ'])) return fail('not-konnichiwa');
+      me.mic = quiet ? 'quiet' : 'ok';
+      state.cues.push({ host, event: quiet ? 'mic_check_quiet' : 'mic_check_ok', slots: { name: me.name } });
       return OK;
     }
     case 'skip': {
