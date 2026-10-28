@@ -1898,6 +1898,50 @@
       }
     },
     {
+      "path": "stage/assets/anim/pon-think.png",
+      "what": "Host animation: Pon thinking (players are answering or voting), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "thinks it over: tilts his head, raises one paw to his chin and looks up to one side with a puzzled little frown, taps his chin, then settles back into the starting pose; the belly keeps the same colours and shading in every frame",
+      "source": "stage/assets/hosts/pon.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/pon-think.png",
+        "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/pon-shock.png",
+      "what": "Host animation: Pon shocked reaction (a twist: a steal, an upset, a reveal), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "shocked: jumps back with a jolt, eyes pop wide open, jaw drops into a big round open mouth, fur and tail puff out, then calms back into the starting pose; the belly keeps the same colours and shading in every frame",
+      "source": "stage/assets/hosts/pon.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/pon-shock.png",
+        "steady": 24,
+        "frames": [
+          0,
+          1,
+          2,
+          2,
+          2,
+          2,
+          1,
+          7
+        ]
+      }
+    },
+    {
       "path": "stage/assets/anim/chochin-idle.png",
       "what": "Host animation: Chōchin-san idle loop, 8 frames, sprite sheet",
       "generator": "pixellab",
@@ -1945,6 +1989,40 @@
       },
       "polish": {
         "from": "tools/art/sources/anim/chochin-oops.png",
+        "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/chochin-think.png",
+      "what": "Host animation: Chōchin-san thinking (players are answering or voting), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "thinks it over: tilts the whole lantern to one side, raises one gloved hand to the bottom of his face and looks up with narrowed thoughtful eyes, then settles back into the starting pose; the paper keeps the same colours in every frame, no glow",
+      "source": "stage/assets/hosts/chochin.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/chochin-think.png",
+        "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/chochin-shock.png",
+      "what": "Host animation: Chōchin-san shocked reaction (a twist: a steal, an upset, a reveal), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "shocked: the lantern jolts upward, eyes pop huge, the mouth drops open in a big round gasp, both gloved hands fly up beside his face, then he settles back into the starting pose; the paper keeps the same colours in every frame, no glow",
+      "source": "stage/assets/hosts/chochin.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/chochin-shock.png",
         "steady": 24
       }
     },
@@ -2000,6 +2078,40 @@
       }
     },
     {
+      "path": "stage/assets/anim/fude-think.png",
+      "what": "Host animation: Fude thinking (players are answering or voting), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "thinks it over: leans to one side, taps his chin with one hand and looks up with a puzzled frown, then settles back into the starting pose, no ink splash",
+      "source": "stage/assets/hosts/fude.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/fude-think.png",
+        "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/fude-shock.png",
+      "what": "Host animation: Fude shocked reaction (a twist: a steal, an upset, a reveal), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "shocked: jolts back stiffly, eyes pop wide open, jaw drops into a big round open mouth, the bristle tip stands straight up, then calms back into the starting pose, no ink splash",
+      "source": "stage/assets/hosts/fude.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/fude-shock.png",
+        "steady": 24
+      }
+    },
+    {
       "path": "stage/assets/anim/nobiko-idle.png",
       "what": "Host animation: Nobiko-san idle loop, 8 frames, sprite sheet",
       "generator": "pixellab",
@@ -2048,6 +2160,50 @@
       "polish": {
         "from": "tools/art/sources/anim/nobiko-oops.png",
         "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/nobiko-think.png",
+      "what": "Host animation: Nobiko-san thinking (players are answering or voting), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "thinks it over: her long neck tilts so her head leans to one side, she taps her chin with the closed fan and looks up thoughtfully, then the neck straightens back into the starting pose; keeps the same face and kimono colours in every frame",
+      "source": "stage/assets/hosts/nobiko.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/nobiko-think.png",
+        "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/nobiko-shock.png",
+      "what": "Host animation: Nobiko-san shocked reaction (a twist: a steal, an upset, a reveal), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "shocked: her long neck shoots straight up so her head jerks high, eyes pop wide open and her mouth drops open in a gasp, the fan flies up, then the neck lowers back into the starting pose; keeps the same face and kimono colours in every frame",
+      "source": "stage/assets/hosts/nobiko.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/nobiko-shock.png",
+        "steady": 24,
+        "frames": [
+          0,
+          1,
+          2,
+          2,
+          5,
+          5,
+          6,
+          7
+        ]
       }
     },
     {

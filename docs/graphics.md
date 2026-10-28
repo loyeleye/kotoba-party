@@ -53,7 +53,7 @@ in a web font, which keeps the kana correct and lets one body serve every kana. 
 
 ## Animation
 
-Twenty-five sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
+Thirty-three sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026; thinking and shocked added 28 Oct). Each is one row of square
 frames (Nobiko-san's peek is twice as wide). Most are made by PixelLab's `animate-with-text-v3` from the still sprite, which goes in as
 both the first and the last frame so a loop closes on the pose it started from, then cleaned up by
 `tools/art/polish.ts` (below). The three mouth sheets are drawn from the portraits by the same tool.
@@ -62,6 +62,8 @@ both the first and the last frame so a loop closes on the pose it started from, 
 | --- | --- | --- |
 | `{pon,chochin,fude,nobiko}-idle.png` | 8 × 128² | One breath every few seconds, then holds frame 0 |
 | `{pon,chochin,fude,nobiko}-{cheer,oops}.png` | 8 × 128² | Once, when a host line has that mood, then back to idle |
+| `{pon,chochin,fude,nobiko}-shock.png` | 8 × 128² | Once, at a twist (`shock`): a cushion steal, a stolen Concentration pair or a yōkai card, Last Train's last-stop twist, the tourist escaping, the Onsen culprit revealed, a lie ranked top in Nice to Meet You!, a broken Shodō synchro. Bigger than `oops`, which stays for plain misses: the jaw drops and the eyes pop. Pon's holds his gasp (raw frames 0,1,2,2,2,2,1,7, dropping three with a smeared belly) and Nobiko-san's skips the two where her fan flew off (0,1,2,2,5,5,6,7) |
+| `{pon,chochin,fude,nobiko}-think.png` | 8 × 128² | Once, over 1.6 s, as players start to answer or vote (`think`: `say_it_first` for every host but Nobiko-san, who peeks instead; Nice to Meet You!'s write and rank, Who's the Tourist? and Shodō votes, the Onsen accusation, Happyōkai!'s question, Concentration's steal): a hand to the chin and a look up |
 | `{pon,chochin,fude,nobiko}-talk.png` | 3 × 128² | Lip sync: closed, half open, open, shown one at a time while the host speaks |
 | `nobiko-peek.png` | 10 × 256×128 | Once, as players answer (`say_it_first`) and as answers are revealed (`reveal_react`): her neck stretches out over the speech bubble, has a look and springs back. Built by `tools/art/sources/nobiko-peek.py`, which cuts her portrait into head and body and redraws only the neck, so her face stays on model |
 | `nobiko-reach.png` | 6 × 128² | Not played: her body without its neck, and her mirrored head (frames 2–5: wincing, blinking, mouth shut and half open, for Narabete!'s ruler). `stage/src/reach.ts` draws her long reach from them on a canvas over the stage: when she invites the winner of an Omiai round to say it politely (`encore_invite`), her neck snakes all the way to the winning card (the one marked `.host-target`) and her head peers over its top edge |
@@ -74,7 +76,7 @@ both the first and the last frame so a loop closes on the pose it started from, 
 | `yokai-boss-defeat.png` | 9 × 192² | Once when the boss is beaten; ends empty |
 
 The server gives each host line a `mood` from its cue (`server/src/host.ts`: a win cheers, a miss
-flinches). `stage/src/sprites.ts` plays the sheets: an `<img>` of the whole strip in a box that clips
+flinches, a twist shocks, an answer phase thinks). `stage/src/sprites.ts` plays the sheets: an `<img>` of the whole strip in a box that clips
 it to one frame, moved with `transform: translateX()` and `steps(n)`, so only a layer moves and every
 frame lands on whole pixels. Every sheet is preloaded and decoded when the stage opens; a sheet that
 fails to load falls back to the still sprite.
@@ -274,6 +276,8 @@ better seed kept, recorded in the manifest), plus a first batch thrown away for 
 Each job cost about 2 generations. Polish pass (same day): 3 smoke-puff stills, 3 poof animations,
 9 talk animations (not used: the mouths came out cleaner drawn from the portraits), and 9 retries of
 the three weakest host reactions with sharper prompts.
+Expressions pass (2026-10-28): 16 `animate-with-text-v3` jobs (8 think and shock sheets × seeds 11
+and 22, the better seed kept, recorded in the manifest), about 32 generations.
 
 ## Regenerate
 
@@ -329,9 +333,8 @@ Tracked in [commercial-blockers.md](commercial-blockers.md): row 6 (PixelLab) an
    split in the paper. I gave him two kind eyes so he reads as friendly. Is the traditional look
    preferred?
 4. ~~**Portrait backgrounds.**~~ Now transparent sprites, shown in a rounded square at 128px.
-5. **Expressions and poses.** Do the hosts need extra states (happy, shocked, thinking) for
-   reactions? That would be about 3 more generations per host, using the existing portrait as a
-   reference image for consistency.
+5. ~~**Expressions and poses.**~~ Decided 2026-10-28: yes. Happy is the existing `cheer`; each host
+   got a `think` and a `shock` sheet, animated from their own portrait (see [Animation](#animation)).
 6. **Animation.** PixelLab can animate characters (idle bob, hit, defeat). Should the yōkai get idle
    and defeat frames for Kana Yōkai Raid?
 7. ~~**Backdrop.**~~ Decided 2026-10-26: keep it, with effects. On 2026-10-27 it became a set per

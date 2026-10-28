@@ -128,6 +128,14 @@ describe('host moods', () => {
     expect(moodFor({ host: 'pon', event: 'prompt_read' })).toBeUndefined();
   });
 
+  it('gasps at a twist and thinks while players answer or vote', () => {
+    expect(moodFor({ host: 'pon', event: 'cushion_steal' })).toBe('shock');
+    expect(moodFor({ host: 'chochin', event: 'train_last_stop_twist' })).toBe('shock');
+    expect(moodFor({ host: 'fude', event: 'concentration_stolen' })).toBe('shock');
+    expect(moodFor({ host: 'chochin', event: 'tourist_vote' })).toBe('think');
+    expect(moodFor({ host: 'pon', event: 'say_it_first' })).toBe('think');
+  });
+
   it('gives only Nobiko-san the neck-stretch peek, as answers come in and are revealed', () => {
     expect(moodFor({ host: 'nobiko', event: 'say_it_first' })).toBe('peek');
     expect(moodFor({ host: 'nobiko', event: 'reveal_react', tier: 'good' })).toBe('peek');
