@@ -11,7 +11,7 @@ import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
 import { ROOM_STALE_MS } from '../../shared/src/constants.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
-import type { ByeReason, CreateRoomResponse, ModeId, RoomView } from '../../shared/src/protocol.js';
+import type { ByeReason, CreateRoomResponse, HostSay, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
 import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
@@ -571,12 +571,35 @@ function fillMenus(view: RoomView): void {
 let lastHostKey = '';
 let hostAudio: HTMLAudioElement | null = null;
 let hostHold: ReturnType<typeof setTimeout> | null = null;
+/** A line whose audio is still being made: the browser reads it only if the audio doesn't come in time. */
+let hostWait: { key: string; timer: ReturnType<typeof setTimeout> } | null = null;
+const LATE_AUDIO_MS = 4000;
+function stopHostWait(): void {
+  if (hostWait) clearTimeout(hostWait.timer);
+  hostWait = null;
+}
+function playHostAudio(say: HostSay & { audioUrl: string }): void {
+  const audio = new Audio(say.audioUrl);
+  hostAudio = audio;
+  duckFor(audio);
+  hostSprite.talk(audio, say.mouth, say.kana);
+  // Blocked (no click yet): the mouth still moves with the subtitles.
+  void audio.play().catch(() => hostAudio === audio && hostSprite.talk(null, undefined, say.kana));
+}
 function showHost(view: RoomView): void {
   const say = view.host;
   els.host.hidden = !say;
   if (!say) return;
   const key = `${say.phaseSeq}:${say.text}`;
-  if (key === lastHostKey) return;
+  if (key === lastHostKey) {
+    // The line's audio, late: it plays if the browser hasn't started reading the line instead.
+    if (hostWait?.key === key && say.audioUrl) {
+      stopHostWait();
+      if (!isMuted()) playHostAudio({ ...say, audioUrl: say.audioUrl });
+    }
+    return;
+  }
+  stopHostWait();
   // A mode mid-reveal (the Karaoke Duel winner) holds the line: the host waits with "…" in the
   // bubble, which keeps the play area's size, and speaks once the reveal gets there.
   const hold = view.game ? (STAGE_MODES[view.game.mode].hostHoldMs?.(view, view.game) ?? 0) : 0;
@@ -609,17 +632,22 @@ function showHost(view: RoomView): void {
   hostAudio?.pause();
   hostAudio = null;
   // Every screen voices the host for whoever is in front of it; a muted screen stays quiet.
-  if (say.audioUrl && !isMuted()) {
-    const audio = new Audio(say.audioUrl);
-    hostAudio = audio;
-    duckFor(audio);
-    hostSprite.talk(audio, say.mouth, say.kana);
-    // Blocked (no click yet): the mouth still moves with the subtitles.
-    void audio.play().catch(() => hostAudio === audio && hostSprite.talk(null, undefined, say.kana));
+  stopHostSpeech();
+  if (say.audioUrl && !isMuted()) playHostAudio({ ...say, audioUrl: say.audioUrl });
+  else if (say.audioPending && !isMuted()) {
+    // VOICEVOX is still making it: wait a little, then read it with the browser's voice after all.
+    hostWait = {
+      key,
+      timer: setTimeout(() => {
+        hostWait = null;
+        if (lastHostKey !== key) return;
+        if (canSpeakHost()) speakHost(say.host, say.kana);
+        hostSprite.talk(null, undefined, say.kana);
+      }, LATE_AUDIO_MS),
+    };
   } else {
     // No VOICEVOX on the server: the browser's Japanese voice reads the kana instead.
     if (canSpeakHost()) speakHost(say.host, say.kana);
-    else stopHostSpeech();
     hostSprite.talk(null, undefined, say.kana);
   }
 }

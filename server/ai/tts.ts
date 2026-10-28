@@ -176,6 +176,7 @@ export class VoicevoxTts implements TtsEngine {
   }
 
   async speak(req: SpeechRequest): Promise<Audio> {
+    const started = Date.now();
     const speaker = await this.styleId(req.host, req.tier);
     const cfg = this.hosts[req.host];
     const q = await this.fetch(`${this.base}/audio_query?${new URLSearchParams({ text: req.kana, speaker: String(speaker) })}`, {
@@ -201,7 +202,7 @@ export class VoicevoxTts implements TtsEngine {
     });
     if (!s.ok) throw new Error(`VOICEVOX /synthesis: HTTP ${s.status}`);
     const bytes = new Uint8Array(await s.arrayBuffer());
-    this.log.info('tts', { host: req.host, chars: req.kana.length, bytes: bytes.length });
+    this.log.info('tts', { host: req.host, chars: req.kana.length, bytes: bytes.length, ms: Date.now() - started });
     return { id: audioId(this.name, req.host, req.kana, req.tier), mime: 'audio/wav', bytes, ms: wavMs(bytes), mouth: mouthTrack(query) };
   }
 }
