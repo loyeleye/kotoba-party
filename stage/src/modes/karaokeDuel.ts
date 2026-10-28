@@ -257,24 +257,20 @@ function songCard(view: RoomView, game: KaraokeDuelView): HTMLElement {
 const swaying = new WeakMap<Element, string>();
 
 /**
- * Nobiko-san dances in the corner of the lyrics while everyone sings a chorus line: two art pixels left on one
- * beat, right on the next, starting on the line's first beat. The sway runs on the document timeline from the
- * line's own clock, so it stays on the backing track's beat however often the stage re-renders.
+ * Nobiko-san dances in the corner of the lyrics while everyone sings a chorus line: her body stays put and her
+ * neck bends to carry her head left on one beat and right on the next (nobiko-sway.png, 8 frames over two beats,
+ * built by tools/art/sources/nobiko-peek.py), starting on the line's first beat. The sway runs on the document
+ * timeline from the line's own clock, so it stays on the backing track's beat however often the stage re-renders.
  */
 function sway(key: string, lineAt: number, beatMs: number): void {
-  const el = document.querySelector<HTMLElement>('.kd-dancer');
-  if (!el || calm() || swaying.get(el) === key || typeof el.animate !== 'function') return;
+  const el = document.querySelector<HTMLElement>('.kd-dancer > img');
+  if (!el || swaying.get(el) === key || typeof el.animate !== 'function') return;
   swaying.set(el, key);
-  const lean = `${el.offsetWidth / 64}px`;
-  const anim = el.animate(
-    [
-      { offset: 0, translate: `-${lean} 0` },
-      { offset: 0.5, translate: `-${lean} 0` },
-      { offset: 0.5, translate: `${lean} 0` },
-      { offset: 1, translate: `${lean} 0` },
-    ],
-    { duration: 2 * beatMs, iterations: Infinity },
-  );
+  const anim = el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-100%)' }], {
+    duration: 2 * beatMs,
+    iterations: Infinity,
+    easing: 'steps(8, end)',
+  });
   anim.startTime = lineAt - performance.timeOrigin;
 }
 
@@ -310,7 +306,8 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
   const took = game.takes.some((t) => t.turnNo === turn.no);
   const chorus = game.chorus.filter((c) => c.turnNo === turn.no && c.ok).length;
   const dancing = song.chorus.includes(turn.line);
-  if (dancing) requestAnimationFrame(() => sway(`${view.phaseSeq}:${turn.no}`, localLineAt, song.beatMs));
+  const still = calm();
+  if (dancing && !still) requestAnimationFrame(() => sway(`${view.phaseSeq}:${turn.no}`, localLineAt, song.beatMs));
   return h(
     'div',
     { class: 'kd-stage' },
@@ -335,7 +332,9 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
         took ? h('p', { class: 'kd-in' }, '✓ Take in!') : null,
         chorus ? h('p', { class: 'kd-chorus' }, `🎶 Chorus: ${chorus} singing along`) : null,
         lastTakeToast(view, game, Date.now() + off),
-        dancing ? h('img', { class: 'kd-dancer', src: '/stage/assets/hosts/nobiko.png', alt: '', 'aria-hidden': 'true', draggable: 'false' }) : null,
+        dancing
+          ? h('div', { class: `kd-dancer${still ? ' still' : ''}`, 'aria-hidden': 'true' }, h('img', { src: still ? '/stage/assets/hosts/nobiko.png' : '/stage/assets/anim/nobiko-sway.png', alt: '', draggable: 'false' }))
+          : null,
       ),
       duelBoard(view, game),
     ),

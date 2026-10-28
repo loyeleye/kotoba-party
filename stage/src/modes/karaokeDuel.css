@@ -28,7 +28,10 @@
 .kd-line-no { font-weight: 600; font-size: 24px; opacity: 0.8; }
 /* Nobiko-san dancing to the chorus (karaokeDuel.ts sway), behind the lyrics in the screen's bottom-left corner, at
    the host's whole-pixel size. She steps up in whole-pixel jumps as the chorus line comes round. */
-.kd-dancer { position: absolute; left: 12px; bottom: -6px; z-index: -1; width: var(--host-size, 128px); height: var(--host-size, 128px); image-rendering: pixelated; pointer-events: none; animation: host-in 320ms steps(4, end) both; }
+.kd-dancer { position: absolute; left: 12px; bottom: -6px; z-index: -1; width: var(--host-size, 128px); height: var(--host-size, 128px); overflow: hidden; pointer-events: none; animation: host-in 320ms steps(4, end) both; }
+/* Her sway sheet: 8 frames side by side, stepped across by the beat (karaokeDuel.ts). */
+.kd-dancer > img { display: block; width: 800%; height: 100%; image-rendering: pixelated; }
+.kd-dancer.still > img { width: 100%; }
 
 .kd-count { position: relative; height: 0; }
 .kd-count-n { position: absolute; right: 0; top: -58px; font-size: 64px; font-weight: 900; color: var(--warn); opacity: 0; animation: kd-count var(--len) linear var(--d) forwards; }
