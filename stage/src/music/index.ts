@@ -113,6 +113,38 @@ function sting(id: SongId): void {
   v.release();
 }
 
+/**
+ * A jingle over the music, `delay` seconds from now: from one side of the room (`pan`, -1 left to
+ * 1 right) and at `gain`. `hush` drops the music to the listening mix while it plays, for a jingle
+ * in the house key over a track in another. Returns a function that fades it out early.
+ */
+export function jingle(id: SongId, delay = 0, opts: { pan?: number; gain?: number; hush?: boolean } = {}): () => void {
+  const sound = getSound();
+  if (!sound || !audioReady() || silent()) return () => {};
+  const ctx = sound.ctx;
+  const level = ctx.createGain();
+  level.gain.value = opts.gain ?? 1;
+  let out: AudioNode = level;
+  if (opts.pan && typeof ctx.createStereoPanner === 'function') {
+    const p = ctx.createStereoPanner();
+    p.pan.value = opts.pan;
+    level.connect(p);
+    out = p;
+  }
+  out.connect(sound.backing);
+  const v = new SongVoice(ctx, SONGS[id], level, 'full');
+  const at = ctx.currentTime + 0.05 + delay;
+  for (let b = 0; b < v.plan.bars; b++) v.scheduleBar(b, at + b * v.barSeconds);
+  const length = v.plan.bars * v.barSeconds;
+  if (opts.hush) setTimeout(() => hushFor(length * 1000), delay * 1000);
+  const done = setTimeout(() => out.disconnect(), (delay + length + 2) * 1000);
+  return () => {
+    v.fadeOut(0.4);
+    clearTimeout(done);
+    setTimeout(() => out.disconnect(), 1500);
+  };
+}
+
 /** Loads the tracks the room is likely to need next, so they start on time. */
 function preload(view: RoomView): void {
   const sound = getSound();

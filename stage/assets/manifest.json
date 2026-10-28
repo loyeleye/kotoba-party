@@ -6251,6 +6251,125 @@
         "seed": 7919
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/bento/vs/crest-red.png",
+      "what": "Bento Haus VS team crest: red kitchen (noren)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. a small red Japanese shop entrance curtain (noren) hanging from a short wooden rod, split into three cloth panels with gaps between them, crimson red cloth, flat front view",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 32,
+        "height": 32,
+        "seed": 3
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/vs/crest-blue.png",
+      "what": "Bento Haus VS team crest: blue kitchen (wave)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. a small round blue badge with a white Japanese seigaiha ocean wave pattern, flat front view, deep blue",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/vs/lid.png",
+      "what": "Bento Haus VS closed box: lacquer lid tied with a red ribbon",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. the lid of a black and red Japanese lacquer bento box seen from the front and slightly above, wide rectangle, glossy black top with a red rim, tied with a red ribbon in a bow in the middle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 64
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/bento/vs/sticker-wakeari.png",
+      "what": "Bento Haus VS sticker under the わけあり label: a cream paper discount sticker (text added in HTML)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. a blank cream-coloured paper price sticker, wide rounded rectangle, slightly tilted, peeling corner, thin orange border, empty middle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 96,
+        "height": 48
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/bento/vs/stamp-henkin.png",
+      "what": "Bento Haus VS refund stamp behind the へんきん label: a red ink hanko ring (text added in HTML)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. a flat 2D red ink stamp print on paper, Japanese hanko seal impression, a single thin oval ring of red ink with rough faded uneven ink texture, empty inside, completely flat, no 3D, no shadow",
+      "params": {
+        "outline": "lineless",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 96,
+        "height": 48,
+        "seed": 3
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/bento/vs/pon-flags.png",
+      "what": "Bento Haus VS: Pon waving the red and blue team flags (VS intro and closing). Redrawn from a layout sketch on the shipped Pon (tools/art/sources/pon-flags-sketch.png)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, full body, front view, cute chubby mascot style, warm colours, clear readable silhouette, no text or letters. Pon, a Japanese tanuki (raccoon dog, not a raccoon: round ears, dark eye mask, no rings on the tail) in an orange bow tie, grinning, waving a red flag on a wooden pole in his right hand and a blue flag with a white wave pattern in his left hand",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128,
+        "init_image_strength": 150,
+        "seed": 8
+      },
+      "post": {},
+      "source": "tools/art/sources/pon-flags-sketch.png"
     }
   ]
 }

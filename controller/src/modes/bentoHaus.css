@@ -98,9 +98,10 @@ img.bh-cust-p { width: 48px; height: 48px; flex: none; }
 /* Bento Haus VS: whose kitchen this is, the race this shift, and the mistake meter. */
 .team-0 { --team: #ff5a5f; }
 .team-1 { --team: #4f9dff; }
-.bh-pip { display: inline-block; width: 0.75em; height: 0.75em; margin-right: 0.3em; background: var(--team); border: 2px solid #0b0605; vertical-align: -0.05em; flex: none; }
-.bh-pip.team-0 { border-radius: 50%; }
-.bh-pip.team-1 { border-radius: 2px; transform: rotate(45deg) scale(0.85); }
+/* Team crests: red noren, blue wave (the stage's PixelLab art). */
+.bh-pip { display: inline-block; width: 1.05em; height: 1.05em; margin-right: 0.25em; background: center / contain no-repeat; image-rendering: pixelated; vertical-align: -0.18em; flex: none; }
+.bh-pip.team-0 { background-image: url('/stage/assets/bento/vs/crest-red.png'); }
+.bh-pip.team-1 { background-image: url('/stage/assets/bento/vs/crest-blue.png'); }
 .bh-team-p { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--team) 16%, var(--panel)); border: 3px solid var(--team); font-size: 16px; }
 .bh-team-p b { font-size: 18px; color: var(--team); margin-right: auto; display: inline-flex; align-items: center; }
 .bh-team-race { white-space: nowrap; font-weight: 800; }

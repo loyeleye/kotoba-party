@@ -18,7 +18,7 @@ import { LAST_ORDER_MS, LINGER_MS, starsFor, type FeedItem, type VisitView } fro
 import { countWord, foodOf } from '../../../shared/src/modes/bentoHaus/menu.js';
 import type { BentoView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
-import { bellTonic } from '../music/index.js';
+import { bellTonic, jingle } from '../music/index.js';
 import { flipChord, sfx, tipBells } from '../music/sfx.js';
 import type { StageMode } from './types.js';
 
@@ -288,6 +288,8 @@ let wakeariPans = new Map<string, number>();
 let lastOrderTimer: ReturnType<typeof setTimeout> | null = null;
 /** VS: the latest tips, so last orders can tell a close race (rung twice) from a runaway. */
 let tipsNow: number[] = [];
+/** VS: fades out the neck-and-neck heartbeat if the shift ends before it does. */
+let stopNeck: () => void = () => {};
 
 function listen(view: RoomView, game: BentoView): void {
   const prev = heard;
@@ -301,11 +303,13 @@ function listen(view: RoomView, game: BentoView): void {
   if (fresh) {
     if (lastOrderTimer) clearTimeout(lastOrderTimer);
     lastOrderTimer = null;
-    // VS: the shift's winner gets the chord from their side as the result is stamped; a draw gets its own.
+    stopNeck();
+    // VS: the shift's winner gets their jingle from their side as the result is stamped; a draw gets its own.
     if (view.phase === 'score' && game.vs) {
       const at = starsAt(game.visits.length) / 1000;
-      if (game.vs.winner === null) sfx('tie', at);
-      else flipChord(at, bellTonic());
+      const w = game.vs.winner;
+      if (w === null) jingle('draw', at, { hush: true });
+      else jingle(w === 0 ? 'win-red' : 'win-blue', at, { pan: TEAM_PAN[w] ?? 0, hush: true });
     }
     if (view.phase === 'score' && game.stars !== null) {
       const at = starsAt(game.visits.length) / 1000;
@@ -317,7 +321,11 @@ function listen(view: RoomView, game: BentoView): void {
       if (wait > 0)
         lastOrderTimer = setTimeout(() => {
           sfx('lastorder');
-          if (tipsNow.length === 2 && Math.abs(tipsNow[0]! - tipsNow[1]!) <= 3) sfx('lastorder', 0.9);
+          // A close race: last orders rings twice, and a heartbeat runs under the last 20 seconds.
+          if (tipsNow.length === 2 && Math.abs(tipsNow[0]! - tipsNow[1]!) <= 3) {
+            sfx('lastorder', 0.9);
+            stopNeck = jingle('neck', 0.9, { gain: 0.7 });
+          }
         }, wait);
     }
     if (prev) return;
@@ -435,7 +443,7 @@ function teamBox(view: RoomView, game: BentoView, t: VsTeam, id: string, winner:
     ),
     v ? box(game, v) : h('div', { class: 'bh-box' }),
     wakeari ? h('span', { class: 'bh-wakeari', lang: 'ja' }, 'わけあり') : null,
-    v?.sentBack ? h('span', { class: 'bh-wakeari bh-refund', lang: 'ja' }, '↩ へんきん') : null,
+    v?.sentBack ? h('span', { class: 'bh-wakeari bh-refund', lang: 'ja' }, 'へんきん') : null,
   );
 }
 
@@ -573,6 +581,8 @@ function vsKitchen(view: RoomView, game: BentoView, teams: readonly VsTeam[]): H
   );
 }
 
+const ponFlags = () => h('img', { class: 'bh-vs-pon', src: '/stage/assets/bento/vs/pon-flags.png', alt: '', draggable: 'false' });
+
 function teamRoster(view: RoomView, t: VsTeam): HTMLElement {
   return h('div', { class: `bh-vs-roster team-${t.id}` }, h('p', {}, teamName(t), h('small', {}, ` ${t.en}`)), h('p', {}, t.members.map((id) => seatChip(view, id))));
 }
@@ -582,7 +592,7 @@ function vsIntro(view: RoomView, game: BentoView): HTMLElement {
   return h(
     'div',
     { class: 'bh-stage bh-intro bh-vs' },
-    h('p', { class: 'bh-logo', lang: 'ja' }, 'おべんとうハウス VS'),
+    h('div', { class: 'bh-vs-logo' }, ponFlags(), h('p', { class: 'bh-logo', lang: 'ja' }, 'おべんとうハウス VS')),
     h('p', { class: 'bh-subtitle' }, 'Bento Haus VS · two kitchens, the same customers · red on the left, blue on the right'),
     h('div', { class: 'bh-vs-rosters' }, teams.map((t) => teamRoster(view, t))),
     h(
@@ -616,6 +626,7 @@ function vsClosing(game: BentoView): HTMLElement {
     h(
       'div',
       { class: `bh-vs-result${w === null ? ' tie' : ` team-${w}`}` },
+      ponFlags(),
       h('p', { class: 'bh-result-big', lang: 'ja' }, w === null ? 'ひきわけ！' : [teamName(teams[w]!, 'bh-vs-winner'), 'の かち！'], h('small', {}, w === null ? 'A draw' : `${teams[w]!.en} wins the shift`)),
       h(
         'div',

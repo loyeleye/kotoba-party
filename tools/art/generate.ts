@@ -34,6 +34,8 @@ interface Post {
   removeBackground?: number;
   /** Draw a 1px outline of this colour around the opaque pixels (after removeBackground). */
   outline?: string;
+  /** Crop to the opaque pixels, so CSS can size the drawing rather than its empty canvas. */
+  trim?: boolean;
   /** Whole-number nearest-neighbour upscale, for pixel art that can't be scaled in CSS. */
   scale?: number;
   /** Quantise to this many colours (PNG8, no dithering). */
@@ -228,6 +230,7 @@ function postProcess(raw: Buffer, asset: Asset, outFile: string): void {
       args.push('-background', post.outline, '-alpha', 'shape', ')', '+swap', '-compose', 'over', '-composite');
       args.push('-channel', 'A', '-threshold', '50%', '+channel');
     }
+    if (post.trim) args.push('-trim', '+repage');
     if (post.scale) args.push('-filter', 'point', '-resize', `${post.scale * 100}%`);
     if (post.jpegQuality !== undefined) {
       args.push('-sampling-factor', '4:2:0', '-interlace', 'JPEG', '-quality', String(post.jpegQuality), `JPG:${outFile}`);

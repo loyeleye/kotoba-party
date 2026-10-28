@@ -11,7 +11,7 @@
 // every game with it, the recap fanfare and the synth lobby and outro quote it, so the show
 // sounds like one show whatever track plays between them.
 
-export const SONG_IDS = ['lobby', 'festive', 'quiz', 'stroll', 'rush', 'battle', 'mystery', 'gentle', 'score', 'finale', 'outro', 'fanfare', 'reveal', 'ident'] as const;
+export const SONG_IDS = ['lobby', 'festive', 'quiz', 'stroll', 'rush', 'battle', 'mystery', 'gentle', 'score', 'finale', 'outro', 'fanfare', 'reveal', 'ident', 'win-red', 'win-blue', 'draw', 'neck'] as const;
 export type SongId = (typeof SONG_IDS)[number];
 
 export type Voice = 'pulse' | 'square' | 'tri' | 'pluck' | 'flute' | 'bell';
@@ -292,6 +292,61 @@ export const SONGS: Record<SongId, Song> = {
       s: 'ooooxxxxxxxxXX..',
       t: '............X...',
       g: '............X...',
+    },
+  },
+  // Bento Haus VS: the shift winner's jingle, played from their side of the room (red left, blue
+  // right). Both are the house theme, so either sounds like the show, but they're told apart by
+  // more than pitch: red is a festival band (taiko and gong), blue a wave of bells.
+  'win-red': {
+    title: 'Aka no Kachi',
+    bpm: 180,
+    loop: false,
+    chords: ['D G', 'A D'],
+    lead: { voice: 'pulse', notes: 'D5 . D5 E5 F#5 - A5 . | B5 A5 F#5 A5 D6 - - .' },
+    comp: { style: 'stab', voice: 'square', gain: 0.6 },
+    bass: { style: 'octave' },
+    drums: {
+      t: 'X...x...X...x.x.|X.x.x.x.X.......',
+      g: '................|........X.......',
+    },
+  },
+  'win-blue': {
+    title: 'Ao no Kachi',
+    bpm: 180,
+    loop: false,
+    chords: ['D Bm', 'G D'],
+    lead: { voice: 'bell', notes: 'A4 D5 F#5 A5 F#5 D5 F#5 A5 | B5 A5 F#5 A5 D6 - - .' },
+    comp: { style: 'arp', voice: 'tri', gain: 0.6 },
+    bass: { style: 'long' },
+    drums: {
+      h: 'x.x.x.x.x.x.x.x.|x.x.x.x.x.......',
+    },
+  },
+  // A drawn shift: a taiko hit and a bell answer each other, and it stops on an open chord.
+  draw: {
+    title: 'Hikiwake',
+    bpm: 112,
+    loop: false,
+    chords: ['G Asus4'],
+    lead: { voice: 'bell', notes: '. . D5 . . . E5 -' },
+    comp: { style: 'pad', voice: 'tri', gain: 0.5 },
+    bass: { style: 'long', gain: 0.6 },
+    drums: {
+      t: 'X...............',
+    },
+  },
+  // Bento Haus VS, the last 20 seconds of a close shift (3 tips or fewer apart): a quiet heartbeat
+  // under the music, unpitched so it fits any track, getting busier for the last two bars.
+  neck: {
+    title: 'Kiwadoi',
+    bpm: 100,
+    loop: false,
+    chords: ['C', 'C', 'C', 'C', 'C', 'C', 'C', 'C'],
+    comp: { style: 'none', voice: 'tri' },
+    bass: { style: 'long', gain: 0 },
+    drums: {
+      t: 'X..x............|X..x............|X..x............|X..x............|X..x............|X..x............|X..x....X..x....|X..x....X..x.x.x',
+      w: '........x.......|........x.......|....x.......x...|....x.......x...|....x.......x...|....x.......x...|..x...x...x...x.|.x.x.x.x.x.x.x.x',
     },
   },
 };

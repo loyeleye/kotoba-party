@@ -15,7 +15,7 @@ export type SfxId =
   // Bento Haus: the shop's own noises.
   | 'ring' | 'ticket' | 'send' | 'serve' | 'toss' | 'leave' | 'static' | 'poof' | 'munch' | 'lastorder'
   // Bento Haus VS: a わけあり box handed over, a box sent back, a drawn shift.
-  | 'wakeari' | 'sendback' | 'tie';
+  | 'wakeari' | 'sendback';
 
 /** The same effect twice within this many ms plays once (several screens of state arrive together). */
 const MIN_GAP_MS: Partial<Record<SfxId, number>> = { right: 250, wrong: 250, hit: 70, tick: 500, join: 150, ring: 600, ticket: 150, send: 150, serve: 300, toss: 150, leave: 400, static: 400 };
@@ -104,10 +104,6 @@ export function sfx(id: SfxId, delay = 0, pan = 0): void {
       blip(ctx, out, t, 'square', 660, 640, 0.1, 0.1, 2400);
       blip(ctx, out, t + 0.14, 'square', 494, 470, 0.12, 0.1, 2400);
       return blip(ctx, out, t + 0.3, 'sawtooth', 180, 110, 0.32, 0.16, 900);
-    case 'tie':
-      // ひきわけ: the same note twice, from both sides.
-      bell(ctx, out, t, 1046.5, 0.5, 0.18);
-      return bell(ctx, out, t + 0.22, 1046.5, 0.6, 0.18);
   }
 }
 

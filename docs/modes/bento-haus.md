@@ -81,7 +81,7 @@ Code: `shared/src/modes/bentoHaus/bentoHausVs.ts` (mode `bento-haus-vs`), the VS
 `stage/src/modes/bentoHaus.ts` and `controller/src/modes/bentoHaus.ts`, `tests/bentoHausVs.test.ts`.
 Each team is a whole Co-op kitchen; the two share only the customers.
 
-- **Teams.** あかチーム (red, a round badge) and あおチーム (blue, a diamond badge), dealt at the start by level (strongest first, snaking
+- **Teams.** あかチーム (red, a noren crest) and あおチーム (blue, a wave crest), dealt at the start by level (strongest first, snaking
   A B B A), so each gets a similar mix of Kana, N5 and N4; kept for the game. Anyone who joins later
   goes to the smaller team. 4–8 players; with 5 or 7 the teams are one apart.
 - **Kitchens.** Both have the same menu, spread across each team's own phones. A call only makes
@@ -127,7 +127,10 @@ Each team is a whole Co-op kitchen; the two share only the customers.
   bar adds the game's totals from shift 2. Closing leads with whether your team won, then both teams' tips, and buzzes when the TV
   stamps the result.
 - **Sound.** Red's sounds come from the left speaker and blue's from the right, the わけあり box gets
-  a low thunk just after the serve, a sent-back box a falling sting, and a drawn shift its own sting.
+  a low thunk just after the serve, a sent-back box a falling sting. The shift winner gets their own jingle from their side (taiko for
+  red, bells for blue), a draw gets its own, and a close race (3 tips or fewer apart) gets a quiet
+  heartbeat under the last 20 seconds. Art: PixelLab team crests, the lacquer lid, the わけあり sticker,
+  the へんきん stamp and Pon waving both flags (see [graphics.md](../graphics.md#bento-haus)).
   Pon names the order-takers only for the shift's first customer, so he doesn't talk over them.
 - **Recap.** A team line above the podium (each team's shifts won and tips, the winner ringed; the
   phone leads with your team's result), then a podium of players (teammates tie, and ties stand

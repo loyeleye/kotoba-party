@@ -81,7 +81,7 @@
 .bh-part.baked { border: 3px dashed var(--bh-gold); position: relative; }
 .bh-part.baked .bh-pieces { filter: hue-rotate(25deg) saturate(0.7) drop-shadow(2px 2px 0 var(--bh-ink)); }
 .bh-leaf { position: absolute; top: -6px; right: 6px; font-size: 30px; transform: rotate(20deg); }
-.bh-box.closed::after { content: '🎀'; position: absolute; inset: -6px; display: grid; place-items: center; font-size: 56px; border-radius: 12px; background: linear-gradient(90deg, transparent 47%, #c0392b 47% 53%, transparent 53%), linear-gradient(0deg, transparent 42%, #c0392b 42% 58%, transparent 58%), linear-gradient(160deg, rgba(255, 255, 255, 0.18) 0 18%, transparent 18% 100%), #2a0f0c; border: 6px solid var(--bh-lacquer); box-shadow: inset 0 0 0 3px #d4a23a; animation: bh-lid 0.35s var(--ease-pop) both; }
+.bh-box.closed::after { content: ''; position: absolute; inset: -6px; border-radius: 12px; background: url('/stage/assets/bento/vs/lid.png') center / contain no-repeat, rgba(20, 8, 8, 0.88); image-rendering: pixelated; animation: bh-lid 0.35s var(--ease-pop) both; }
 @keyframes bh-lid { from { transform: translateY(-30px); opacity: 0; } }
 .bh-taker { font-size: 26px; color: var(--muted); display: flex; align-items: center; gap: 8px; min-height: 36px; }
 .bh-chip { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--ink); }
@@ -158,9 +158,10 @@ img.bh-piece { width: 48px; height: 48px; }
 .bh-vs .team-0 { --team: var(--team-0); }
 .bh-vs .team-1 { --team: var(--team-1); }
 /* A team's badge: red round, blue diamond, so they differ without colour too. */
-.bh-pip { display: inline-block; width: 0.72em; height: 0.72em; margin-right: 0.3em; background: var(--team); border: 3px solid var(--bh-ink); vertical-align: -0.04em; flex: none; }
-.bh-pip.team-0 { border-radius: 50%; }
-.bh-pip.team-1 { border-radius: 3px; transform: rotate(45deg) scale(0.88); }
+/* Team crests: red noren, blue wave (PixelLab, 32²). Shape and colour both tell the teams apart. */
+.bh-pip { display: inline-block; width: 1.15em; height: 1.15em; margin-right: 0.25em; background: center / contain no-repeat; image-rendering: pixelated; vertical-align: -0.14em; flex: none; }
+.bh-pip.team-0 { background-image: url('/stage/assets/bento/vs/crest-red.png'); }
+.bh-pip.team-1 { background-image: url('/stage/assets/bento/vs/crest-blue.png'); }
 .bh-vs-board { display: flex; gap: 14px; flex-wrap: nowrap; }
 .bh-vs-jar { white-space: nowrap; display: flex; flex: none; align-items: baseline; gap: 10px; padding: 4px 16px; border-radius: 14px; background: var(--panel); border: 4px solid var(--team); animation: bh-pop 0.4s var(--ease-pop) both; }
 .bh-vs-jar b { font-size: 40px; font-weight: 900; color: var(--bh-gold); }
@@ -195,7 +196,6 @@ img.bh-piece { width: 48px; height: 48px; }
 .bh-vs-boxes.one { grid-template-columns: minmax(0, 1fr); }
 .bh-vs-box { position: relative; display: grid; gap: 6px; padding: 0 8px 8px; border-radius: 14px; border: 4px solid var(--team); background: rgba(0, 0, 0, 0.18); min-width: 0; overflow: visible; }
 .bh-vs-boxhead { margin: 0 -8px; padding: 4px 10px; border-radius: 9px 9px 0 0; background: var(--team); color: var(--bh-ink); font-size: 24px; font-weight: 900; display: flex; align-items: center; gap: 6px; min-height: 44px; }
-.bh-vs-boxhead .bh-pip { border-color: var(--bh-ink); background: #fff; }
 .bh-vs-boxhead .bh-taker { margin-left: auto; font-size: 22px; min-height: 0; color: var(--bh-ink); }
 .bh-vs-boxhead .bh-chip { color: var(--bh-ink); }
 .bh-vs-boxhead .bh-tips { margin-left: auto; font-size: 28px; color: var(--bh-ink); animation: bh-pop 0.4s var(--ease-pop) 0.95s both; }
@@ -205,9 +205,10 @@ img.bh-piece { width: 48px; height: 48px; }
 .bh-vs-box.won { box-shadow: 0 0 0 6px var(--bh-gold), 0 0 28px 8px rgba(255, 211, 107, 0.45); animation: bh-ring 0.5s ease-out 0.22s both; }
 @keyframes bh-ring { from { box-shadow: 0 0 0 0 var(--bh-gold); } }
 .bh-vs-box.lost .bh-box, .bh-vs-box.sentback .bh-box { filter: grayscale(0.7) brightness(0.8); opacity: 0.7; transition: filter 0.3s 0.5s, opacity 0.3s 0.5s; }
-/* わけあり: a paper sticker slapped across the middle of the handed-over box. */
-.bh-wakeari { position: absolute; left: 50%; top: 60%; padding: 4px 18px; border: 3px dashed var(--bh-ink); border-radius: 6px; color: var(--bh-ink); background: var(--paper); font-size: 30px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 0 var(--bh-ink); transform: translate(-50%, -50%) rotate(-6deg); z-index: 1; animation: bh-sticker 0.35s var(--ease-pop) 0.75s both; }
-.bh-refund { background: var(--bh-warn); }
+/* わけあり: a paper sticker slapped across the middle of the handed-over box; へんきん: a red refund
+   stamp. The art is PixelLab; the words are text on top, so they stay sharp. */
+.bh-wakeari { position: absolute; left: 50%; top: 60%; padding: 10px 26px 14px; color: var(--bh-ink); background: url('/stage/assets/bento/vs/sticker-wakeari.png') center / 100% 100% no-repeat; image-rendering: pixelated; font-size: 30px; font-weight: 900; white-space: nowrap; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.5)); transform: translate(-50%, -50%) rotate(-6deg); z-index: 1; animation: bh-sticker 0.35s var(--ease-pop) 0.75s both; }
+.bh-refund { display: grid; place-items: center; width: 150px; height: 150px; padding: 0; color: #c22a33; background: url('/stage/assets/bento/vs/stamp-henkin.png') center / contain no-repeat, radial-gradient(circle, #fff3dc 0 58%, transparent 59%); image-rendering: pixelated; font-size: 27px; letter-spacing: -0.04em; }
 @keyframes bh-sticker { from { transform: translate(-50%, -50%) rotate(-6deg) scale(2); opacity: 0; } }
 .bh-vs-counter img.bh-piece { width: 48px; height: 48px; }
 /* Three at the counter (Rush Hour): the bubble's English goes, so the Japanese stays big enough for the sofa. */
@@ -226,7 +227,7 @@ img.bh-piece { width: 48px; height: 48px; }
 .bh-vs-roster { display: grid; gap: 8px; padding: 12px 22px; border-radius: 16px; background: var(--panel); border: 4px solid var(--team); min-width: 420px; }
 .bh-vs-roster small { font-size: 22px; font-weight: 400; color: var(--muted); }
 .bh-vs-roster p:last-child { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 26px; }
-.bh-vs-result { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px 28px; padding: 12px 22px; border-radius: 18px; background: var(--panel); border: 4px solid var(--team, var(--bh-gold)); }
+.bh-vs-result { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px 28px; padding: 12px 22px; border-radius: 18px; background: var(--panel); border: 4px solid var(--team, var(--bh-gold)); }
 .bh-vs-result .bh-result-big { font-size: 56px; color: var(--team, var(--bh-gold)); display: flex; align-items: center; flex-wrap: wrap; animation: bh-stamp 0.4s var(--ease-pop) var(--stars-delay, 0ms) both; }
 .bh-vs-result .bh-result-big small { display: block; flex-basis: 100%; font-size: 26px; color: var(--muted); font-weight: 400; }
 .bh-vs-winner { font-size: 56px; font-weight: 900; color: var(--team); white-space: nowrap; }
@@ -234,6 +235,10 @@ img.bh-piece { width: 48px; height: 48px; }
 .bh-vs-split { display: flex; gap: 14px; font-size: 28px; font-weight: 900; white-space: nowrap; }
 .bh-vs-split span { color: var(--muted); display: inline-flex; align-items: center; }
 .bh-vs-split .won { color: var(--team); }
+/* Pon waving both team flags (PixelLab, 128²), on the VS intro and at closing time. */
+.bh-vs-pon { width: 256px; height: 256px; image-rendering: pixelated; }
+.bh-vs-result .bh-vs-pon { width: 160px; height: 160px; animation: bh-pop 0.4s var(--ease-pop) var(--stars-delay, 0ms) both; }
+.bh-vs-logo { display: flex; align-items: center; gap: 24px; }
 .bh-calm .bh-wakeari, .bh-calm .bh-vs-result .bh-result-big, .bh-calm .bh-vs-jar, .bh-calm .bh-vs-head, .bh-calm .bh-vs-steal, .bh-calm .bh-vs-box.won, .bh-calm .bh-meter-bar i, .bh-calm .bh-vs-boxhead .bh-tips { animation: none; transition: none; }
 @media (prefers-reduced-motion: reduce) {
   .bh-wakeari, .bh-vs-result .bh-result-big, .bh-vs-jar, .bh-vs-head, .bh-vs-steal, .bh-vs-box.won, .bh-meter-bar i, .bh-vs-boxhead .bh-tips { animation: none; transition: none; }
