@@ -38,7 +38,7 @@ export interface GameState {
   /** Host cues raised by the last action; the server drains them after each dispatch. */
   cues: HostCue[];
   phrasebook: Record<string, PhraseEntry[]>;
-  recap: { standings: { playerId: string; name: string; score: number }[]; awards: Award[] } | null;
+  recap: { standings: { playerId: string; name: string; score: number }[]; awards: Award[]; coop?: boolean } | null;
   /** Watching stage screens may run the game too (start, skip, play again). */
   remoteControl: boolean;
   /** The host's Audience setting: kids, family (default) or cheeky. Kept across games. */
@@ -60,6 +60,8 @@ export type GameAction =
   | { type: 'connection'; playerId: string; connected: boolean }
   | { type: 'command'; actor: Viewer; command: Command }
   | { type: 'timeout'; phaseSeq: number }
+  /** A mode's timed event inside a phase (see `wakeAt`). */
+  | { type: 'wake'; phaseSeq: number }
   | { type: 'host'; say: HostSay };
 
 export type Outcome = { changed: boolean; error?: string };
@@ -183,6 +185,12 @@ function applyOne(state: GameState, action: GameAction, ctx: GameContext): Outco
       advance(state, ctx);
       return OK;
     }
+    case 'wake': {
+      const mode = activeMode(state);
+      if (action.phaseSeq !== state.phaseSeq || !mode?.wake || !inGame(state)) return { changed: false };
+      mode.wake(state.modeState, state.phase, modeContext(state, ctx));
+      return OK;
+    }
     case 'host': {
       if (action.say.phaseSeq !== state.phaseSeq) return { changed: false };
       state.host = action.say;
@@ -291,6 +299,16 @@ function advance(state: GameState, ctx: GameContext): void {
   else enter(state, next, ctx);
 }
 
+/**
+ * When the mode next needs a `wake` action inside the current phase (a customer arriving or giving
+ * up), or null. The server asks after every change and sets a timer for it.
+ */
+export function wakeAt(state: GameState, ctx: GameContext): number | null {
+  const mode = activeMode(state);
+  if (!mode?.wakeAt || !inGame(state)) return null;
+  return mode.wakeAt(state.modeState, state.phase, modeContext(state, ctx));
+}
+
 /** Ends phases early while the mode says everyone is in. */
 function settle(state: GameState, ctx: GameContext): void {
   for (let guard = 0; guard < 32; guard++) {
@@ -322,6 +340,7 @@ function finish(state: GameState, ctx: GameContext): void {
       .sort((a, b) => b.score - a.score || a.seat - b.seat)
       .map((p) => ({ playerId: p.id, name: p.name, score: p.score })),
     awards: mode?.awards?.(state.modeState, modeContext(state, ctx)) ?? [],
+    ...(mode?.info.coop ? { coop: true } : {}),
   };
   if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award', slots: awardSlots(state.recap.awards[0]) });
 }

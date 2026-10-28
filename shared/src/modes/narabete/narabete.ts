@@ -488,6 +488,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     roundChoices: [],
     usesPack: false,
     phrasebookTitle: 'Your lines',
+    coop: true,
     phaseLabels: { prompt: 'Secret cards', answer: 'Say it', reveal: 'Line up', encore: 'Defence', score: 'Cards over', finale: 'Worst day ever' },
   },
 

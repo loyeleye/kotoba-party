@@ -31,6 +31,9 @@ If you only have ten minutes, these are the answers that would change the build 
 - **Narabete! (backlog):** co-op: every pair in order pays everyone, and saying your card out loud
   adds a bonus. Is a flat team score fun enough, or should the Poker Face (the card that fooled the
   room most) earn points too? ([narabete.md](modes/narabete.md#open-questions))
+- **Bento Haus (backlog):** co-op only for now; the VS version (two kitchens, character bentos)
+  comes next. Customers' patience doesn't pause while someone is mid-sentence: does a shift feel fair
+  on real phones with real speech recognition? ([bento-haus.md](modes/bento-haus.md#open-questions))
 - **Shodō Taikai (backlog):** which music for the gallery round (v1 keeps the soft synth), and
   the trace check needs a try on real phones. ([shodo.md](modes/shodo.md#open-questions))
 - **Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
@@ -133,6 +136,7 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Omiai Matchmaker (backlog) | [omiai.md](modes/omiai.md) | 20 | Pon |
 | Shodō Taikai (backlog) | [shodo.md](modes/shodo.md) | 4 open | Fude |
 | Narabete! (backlog) | [narabete.md](modes/narabete.md) | 5 open | Nobiko-san |
+| Bento Haus (backlog) | [bento-haus.md](modes/bento-haus.md) | 5 open | Pon |
 
 ## Content
 

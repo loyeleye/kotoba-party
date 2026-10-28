@@ -164,6 +164,17 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   narabete_perfect: 'Narabete!: the line flipped over in perfect order. Celebrate.',
   narabete_knot: 'Narabete!: the line flipped over with some cards out of order. Sympathise, kindly.',
   narabete_story: 'Narabete!: the players now read the Worst Day Ever story aloud, in order.',
+  bento_intro: 'Bento Haus starts: you are Manager Pon of a bento shop for yōkai customers. The players are one kitchen; orders come by phone and they must call out to each other in Japanese.',
+  bento_round: 'Bento Haus: a new shift starts ({round} is its name). Open the shop with energy.',
+  bento_customer: 'Bento Haus: a yōkai customer is phoning in; {name} is taking the order. Tell them to pick up and listen.',
+  bento_static: 'Bento Haus: a kitchen call did not come through. Blame ghosts on the radio, never the player, and ask for it again.',
+  bento_perfect: 'Bento Haus: a box was served perfectly. Thank the customer like a shopkeeper (まいど).',
+  bento_close: 'Bento Haus: a box was served with one thing off. Encourage, kindly.',
+  bento_meh: 'Bento Haus: a box was served with several things off. Be kind and funny about it.',
+  bento_leave: 'Bento Haus: a customer gave up waiting and left. Shrug it off; the next one is coming.',
+  bento_bake: 'Bento Haus: you (a tanuki) shape-shift into the missing {food} to save a box. Ask nobody to look at you.',
+  bento_ajimi: 'Bento Haus: you "taste-tested" one {food} from a box, so it must be called again. Be cheeky about it.',
+  bento_stars: 'Bento Haus: the shift is over and the kitchen earned {stars} stars. Thank the team.',
 };
 
 export function hostUserPrompt(cue: HostCue, recent: readonly string[]): string {

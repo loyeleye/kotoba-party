@@ -29,6 +29,9 @@ export const TRACK_IDS = [
   // Narabete!: a light ukulele-and-marimba pair for lining things up.
   'daily-beetle',
   'easy-lemon',
+  // Bento Haus: a busy, cheerful kitchen.
+  'kawai-kitsune',
+  'feelin-good',
   // Shodō Taikai's gallery round (Ladi's pick).
   'japanese-lofi',
   // Karaoke Duel's grown-up songs: one instrumental each, sung over whole (songs.ts `track`).
@@ -128,6 +131,10 @@ export const TRACKS: Record<TrackId, Track> = {
   // Narabete!: Daily Beetle (D major, so its bells end on D6) is 80 bars at 100 bpm after its intro (the file is cut just after the loop);
   // Easy Lemon (A major: bells end on A5) loops whole bars from just after its pickup to just before the ending.
   'daily-beetle': { title: 'Daily Beetle', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500025'), url: file('daily-beetle'), loop: [21.06, 213.066], gainDb: 0, fallback: 'gentle', bellTonic: 86 },
+  // Bento Haus: Kawai Kitsune (116 bpm) loops 88 bars after its intro (the file is cut just after the loop);
+  // Feelin Good (131 bpm) loops 64 bars from its first downbeat, cut at 130 s. Both re-encoded at 128 kbps.
+  'kawai-kitsune': { title: 'Kawai Kitsune', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500059'), url: file('kawai-kitsune'), loop: [37.036, 219.103], gainDb: -0.4, fallback: 'festive', bellTonic: 91 },
+  'feelin-good': { title: 'Feelin Good', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100475'), url: file('feelin-good'), loop: [9.683, 126.943], gainDb: 2.3, fallback: 'festive', bellTonic: 91 },
   'easy-lemon': { title: 'Easy Lemon', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1200076'), url: file('easy-lemon'), loop: [3.019, 109.087], gainDb: 0.2, fallback: 'gentle', bellTonic: 81 },
   // Shodō Taikai's gallery: koto over a lo-fi hip-hop beat. 28 bars at about 75 bpm; the loop skips the
   // intro and the fade (picked by spectral match). CC0 as uploaded; commissioned on Fiverr (row 22, ❓).

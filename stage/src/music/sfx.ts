@@ -10,10 +10,13 @@ import type { RoomView } from '../../../shared/src/protocol.js';
 import { audioReady, getSound, silent } from '../sound.js';
 import { speaks } from './cues.js';
 
-export type SfxId = 'tap' | 'join' | 'round' | 'tick' | 'tock' | 'right' | 'wrong' | 'hit';
+export type SfxId =
+  | 'tap' | 'join' | 'round' | 'tick' | 'tock' | 'right' | 'wrong' | 'hit'
+  // Bento Haus: the shop's own noises.
+  | 'ring' | 'ticket' | 'send' | 'serve' | 'toss' | 'leave' | 'static' | 'poof' | 'munch' | 'lastorder';
 
 /** The same effect twice within this many ms plays once (several screens of state arrive together). */
-const MIN_GAP_MS: Partial<Record<SfxId, number>> = { right: 250, wrong: 250, hit: 70, tick: 500, join: 150 };
+const MIN_GAP_MS: Partial<Record<SfxId, number>> = { right: 250, wrong: 250, hit: 70, tick: 500, join: 150, ring: 600, ticket: 150, send: 150, serve: 300, toss: 150, leave: 400, static: 400 };
 const lastAt: Partial<Record<SfxId, number>> = {};
 
 /** Plays one effect now (or `delay` seconds from now). Silent until audio is unlocked, and when muted. */
@@ -50,6 +53,36 @@ export function sfx(id: SfxId, delay = 0): void {
     case 'hit':
       swish(ctx, out, t, 0.12, 3000, 800, 0.12);
       return blip(ctx, out, t, 'square', 520, 260, 0.08, 0.1, 2400);
+    case 'ring':
+      // A phone's trill, quiet: two short bursts alternating 940 and 1180 Hz.
+      for (let i = 0; i < 8; i++) blip(ctx, out, t + i * 0.045 + (i >= 4 ? 0.12 : 0), 'square', i % 2 ? 1180 : 940, i % 2 ? 1180 : 940, 0.04, 0.05, 3000);
+      return;
+    case 'ticket':
+      // A ticket printing: a quick paper tick.
+      return woodblock(ctx, out, t, 2400, 0.12);
+    case 'send':
+      return blip(ctx, out, t, 'triangle', 700, 1400, 0.09, 0.14);
+    case 'serve':
+      // The counter bell.
+      return bell(ctx, out, t, 2093, 0.9, 0.18);
+    case 'toss':
+      return swish(ctx, out, t, 0.18, 2500, 400, 0.1);
+    case 'leave':
+      // A customer gives up: a sigh downwards, under the speech band.
+      return blip(ctx, out, t, 'sine', 330, 160, 0.45, 0.16, 1200);
+    case 'static':
+      return swish(ctx, out, t, 0.3, 6000, 5000, 0.06);
+    case 'poof':
+      // Pon's disguise: ドロン.
+      swish(ctx, out, t, 0.35, 400, 3000, 0.14);
+      return blip(ctx, out, t + 0.1, 'sine', 300, 600, 0.2, 0.12);
+    case 'munch':
+      for (let i = 0; i < 3; i++) blip(ctx, out, t + i * 0.13, 'square', 240, 160, 0.06, 0.08, 900);
+      return;
+    case 'lastorder':
+      // ラストオーダー: a two-note chime, G5 then E5.
+      bell(ctx, out, t, 784, 0.6, 0.18);
+      return bell(ctx, out, t + 0.28, 659.3, 0.8, 0.18);
   }
 }
 
@@ -77,6 +110,14 @@ export function flipNote(step: number, cards: number, delay: number, knot: boole
     blip(sound.ctx, sound.sfx, at, 'sine', f, f * 0.944, 0.45, 0.2);
     blip(sound.ctx, sound.sfx, t + FLIP_KNOT_MS / 1000, 'sawtooth', 330, 150, 0.3, 0.22, 1400);
   } else bell(sound.ctx, sound.sfx, at, f, 0.45, 0.2);
+}
+
+/** Bento Haus tips: one bell per tip, up the theme's major scale from its tonic. */
+export function tipBells(tips: number, delay: number, tonic: number): void {
+  const sound = getSound();
+  if (!sound || !audioReady() || silent()) return;
+  const t = sound.ctx.currentTime + 0.01 + delay;
+  for (let i = 0; i < tips; i++) bell(sound.ctx, sound.sfx, t + i * 0.1, midiHz(tonic + [0, 4, 7, 12][Math.min(3, i)]!), 0.5, 0.16);
 }
 
 /** A perfect line: the tonic chord, strummed. */
@@ -172,7 +213,8 @@ export function watchSfx(view: RoomView): void {
     if (view.phase === 'prompt') sfx('round');
   }
   // Points going up: one chime, however many players scored at once.
-  if (view.phase !== 'lobby' && [...scores].some(([id, s]) => s > (prev.scores.get(id) ?? s))) sfx('right');
+  // (Bento Haus rings its own bells for the stars at closing time.)
+  if (view.phase !== 'lobby' && view.mode !== 'bento-haus' && [...scores].some(([id, s]) => s > (prev.scores.get(id) ?? s))) sfx('right');
 }
 
 /** Call about once a second with the time left: ticks through the last five seconds. */

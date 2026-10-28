@@ -30,6 +30,7 @@ import { touristPolicy } from './policies/tourist.js';
 import { oekakiPolicy } from './policies/oekaki.js';
 import { shodoPolicy } from './policies/shodo.js';
 import { narabetePolicy } from './policies/narabete.js';
+import { bentoHausPolicy } from './policies/bentoHaus.js';
 
 const { values } = parseArgs({
   options: {
@@ -92,6 +93,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
     case 'narabete':
       // One shared policy: the bots "hear" each other's cards.
       return (sharedNarabete ??= narabetePolicy());
+    case 'bento-haus':
+      return bentoHausPolicy();
     default:
       return undefined;
   }
