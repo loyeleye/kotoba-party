@@ -223,6 +223,27 @@ describe('views', () => {
     expect(cmd(s, as('p1'), { type: 'micCheck', utterance: 42 }).error).toBe('bad-command');
   });
 
+  it('has the host acknowledge a player’s mic change once, however often they flip the switch', () => {
+    const s = lobby(2);
+    const tap = { via: 'tap', text: '' };
+    for (let i = 0; i < 5; i++) {
+      expect(cmd(s, as('p1'), { type: 'micCheck', utterance: tap }).changed).toBe(true);
+      expect(s.players[0]!.mic).toBe('quiet');
+      expect(cmd(s, as('p1'), { type: 'micCheck', utterance: null }).changed).toBe(true);
+      expect(s.players[0]!.mic).toBe(null);
+    }
+    cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'speech', text: 'こんにちは' } });
+    cmd(s, as('p1'), { type: 'micCheck', utterance: tap });
+    cmd(s, as('p1'), { type: 'micCheck', utterance: null });
+    cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'speech', text: 'こんにちは' } });
+    cmd(s, as('p2'), { type: 'micCheck', utterance: tap });
+    expect(s.cues.map((c) => `${c.slots?.name}:${c.event}`)).toEqual([
+      `${s.players[0]!.name}:mic_check_quiet`,
+      `${s.players[0]!.name}:mic_check_ok`,
+      `${s.players[1]!.name}:mic_check_quiet`,
+    ]);
+  });
+
   it('lets the header mic switch turn quiet mode on and off mid-game, without a host line', () => {
     const s = lobby(2);
     toAnswer(s);
