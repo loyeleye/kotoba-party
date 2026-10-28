@@ -323,6 +323,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
     id: 'concentration',
     title: 'Kotoba Concentration',
     titleJa: 'ことば神経衰弱',
+    titleKana: 'ことばしんけいすいじゃく',
     blurb: 'Flip pairs, then say the word to keep them. Anyone can steal.',
     host: 'fude',
     minPlayers: 2,

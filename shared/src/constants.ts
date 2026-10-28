@@ -15,3 +15,7 @@ export const POINTS_PER_VOTE = 100;
 /** IPPON needs every voter but the author on one answer, with at least this many voters. */
 export const IPPON_MIN_VOTERS = 3;
 export const IPPON_BONUS = 200;
+
+/** Surprise Me!'s wheel: how long it spins, and how long the whole reveal covers the stage (spin, the pick, the fade). */
+export const SURPRISE_SPIN_MS = 4_600;
+export const SURPRISE_REVEAL_MS = 7_200;

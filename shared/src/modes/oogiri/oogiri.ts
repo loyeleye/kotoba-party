@@ -380,6 +380,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
     id: 'oogiri',
     title: 'Oogiri Night',
     titleJa: '大喜利ナイト',
+    titleKana: 'おおぎりナイト',
     blurb: 'Fill in the blank, vote for the funniest, say the winner out loud.',
     host: 'pon',
     phaseLabels: { reveal: 'Vote', encore: 'Encore', score: 'Cushions' },

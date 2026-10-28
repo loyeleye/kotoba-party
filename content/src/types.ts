@@ -576,7 +576,9 @@ export type HostEvent =
   | 'hajime_pon_win' // one of Pon's own lies was the room's favourite
   | 'hajime_truth' // the truth was hidden well: it wasn't the room's first pick
   | 'hajime_recall' // おぼえてる？ say everyone's truth
-  | 'omiai_tease'; // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
+  | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
+  | 'surprise_spin' // Surprise Me!: the wheel starts to spin
+  | 'surprise_pick'; // Surprise Me!: the wheel stops on tonight's game ({game})
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 

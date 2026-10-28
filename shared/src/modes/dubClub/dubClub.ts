@@ -541,6 +541,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
     id: 'dub-club',
     title: 'Dub Club',
     titleJa: 'アフレコ部',
+    titleKana: 'アフレコぶ',
     blurb: 'Voice-act an anime line the way your secret card says. The room guesses how each dub was directed.',
     host: 'fude',
     minPlayers: 3,

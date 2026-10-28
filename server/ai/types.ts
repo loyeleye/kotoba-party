@@ -83,6 +83,9 @@ export const HOST_EVENTS = [
   'hajime_pon_win',
   'hajime_truth',
   'hajime_recall',
+  // Surprise Me!
+  'surprise_spin',
+  'surprise_pick',
   // Oogiri Night
   'ippon',
   'cushion_steal',

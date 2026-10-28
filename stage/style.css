@@ -470,3 +470,8 @@ body.flying[data-phase='lobby'] .main { place-items: end center; }
 .roulette-tv .roulette-foot { min-height: 180px; }
 .roulette-tv .roulette-banner { min-width: 0; padding: 12px 56px 16px; border-width: 5px; outline-width: 4px; outline-offset: -13px; }
 .roulette-tv .wheel-confetti i { width: 18px; height: 28px; }
+/* While the wheel is up, Pon stays on top of it in the host row to call the spin; the wheel sits below. */
+.canvas.spinning-wheel .host { position: relative; z-index: 22; }
+.canvas.spinning-wheel .roulette-tv { --wheel: 470px; align-content: start; padding-top: 318px; }
+.canvas.spinning-wheel .roulette-tv .roulette-foot { min-height: 150px; }
+.canvas.spinning-wheel .roulette-tv .roulette-kicker { display: none; }

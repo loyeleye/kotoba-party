@@ -417,6 +417,7 @@ export const shodoMode: Mode<ShodoState, ShodoView> = {
     id: 'shodo',
     title: 'Shodō Taikai',
     titleJa: '書道大会',
+    titleKana: 'しょどうたいかい',
     blurb: 'Fude’s calligraphy contest: say it, trace it, write it from memory, then hang your best sheet in the gallery.',
     host: 'fude',
     minPlayers: 1,
