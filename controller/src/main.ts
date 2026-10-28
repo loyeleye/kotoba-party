@@ -15,6 +15,7 @@ import { setSpeechService } from './components/mic.js';
 import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
 import { quip, setQuipHost } from './components/ui.js';
 import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
+import { account, accountPanel } from './account.js';
 import type { HostId } from '../../content/src/types.js';
 
 const LEVEL_HINTS: Record<Level, string> = {
@@ -96,6 +97,8 @@ interface Session {
   speech?: boolean;
   /** The address to invite friends to: the server's public one, which may be a short link. */
   site?: string;
+  /** Joined signed in: the room saves this player's games. */
+  account?: boolean;
 }
 
 const base = location.origin;
@@ -189,6 +192,9 @@ function showJoin(message = ''): void {
     button,
     error,
   );
+  // Optional sign-in, right under Join (docs/accounts.md). Never needed to play.
+  if (!nameInput.value && account()) nameInput.value = account()!.name;
+  const signIn = accountPanel(nameInput, { app, back: () => showJoin() });
   // Hosting is the stage with no code: it makes a room. Left out when an invite link brought a player here.
   const host = params.has('code')
     ? []
@@ -201,7 +207,7 @@ function showJoin(message = ''): void {
           h('span', {}, h('strong', {}, 'Host a game'), h('small', {}, 'Put the big screen on a TV or laptop.')),
         ),
       ];
-  mount(app, form, ...host);
+  mount(app, form, signIn, ...host);
   (codeInput.value ? nameInput : codeInput).focus();
 }
 
@@ -214,12 +220,13 @@ async function join(code: string, name: string): Promise<string | null> {
       level: load<Level>('kotoba:level') ?? undefined,
       deviceId: deviceId(),
       token: saved?.code === code ? saved.token : undefined,
+      account: account()?.token,
     });
   } catch {
     return 'network';
   }
   if ('error' in res) return res.error;
-  start({ code, token: res.token, playerId: res.playerId, name, speech: !!res.speech, site: res.site });
+  start({ code, token: res.token, playerId: res.playerId, name, speech: !!res.speech, site: res.site, account: !!account() });
   return null;
 }
 
@@ -621,6 +628,12 @@ function motionToggle(view: RoomView): HTMLElement {
 
 const ORDINAL = ['', '1st', '2nd', '3rd'];
 
+/** Signed in when they joined: this game went into their saved progress. */
+function savedNote(): HTMLElement | null {
+  const a = account();
+  return a && session?.account ? h('p', { class: 'acct-saved' }, `✓ Saved to ${a.name}’s progress`) : null;
+}
+
 function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   const r = view.recap;
   const standings = r?.standings ?? [];
@@ -695,6 +708,7 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
           ),
         )
       : null,
+    savedNote(),
     isVip ? h('button', { class: 'primary', onclick: () => void command({ type: 'playAgain' }) }, 'Back to the menu') : h('p', { class: 'hint' }, 'The VIP can start another game.'),
   );
 }

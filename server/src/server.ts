@@ -10,6 +10,7 @@ import type { Utterance } from '../../shared/src/japanese/kana.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type RoomInfo, type WatchRoomResponse } from '../../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/roomCode.js';
+import { Accounts, MemoryAccountStorage } from './accounts.js';
 import { systemClock, type Clock } from './clock.js';
 import { addReadings, type Reader } from './reading.js';
 import { Room, wavDurationMs, type RoomSocket } from './room.js';
@@ -41,6 +42,8 @@ export interface ServerConfig {
   onRoomClosed?: (room: Room) => void;
   /** Self-hosted Whisper for spoken answers (see stt.ts). Unset: phones type or tap. */
   stt?: SttOptions | null;
+  /** Optional sign-in and saved progress (docs/accounts.md). Default: kept in memory. Null turns sign-in off. */
+  accounts?: Accounts | null;
   /** Host audio by id, served at GET /audio/:id. */
   audio?: (id: string) => { mime: string; bytes: Uint8Array } | undefined;
 }
@@ -70,6 +73,7 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
   const maxRooms = config.maxRooms ?? 500;
   const staticDir = config.staticDir ? resolve(config.staticDir) : undefined;
   const sttGate = new SttGate();
+  const accounts = config.accounts === undefined ? new Accounts(new MemoryAccountStorage()) : config.accounts;
 
   function createRoom(): Room | null {
     if (rooms.size >= maxRooms) return null;
@@ -93,6 +97,7 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       onPhase: config.onPhase,
       onCommit: config.onCommit,
       onCues: config.onCues,
+      onResults: accounts ? (results) => void accounts.recordResults(results).catch((err) => console.error('saving results failed', err)) : undefined,
     });
     rooms.set(code, room);
     return room;
@@ -114,6 +119,19 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       if (!clip) return send(res, 404, { error: 'not-found' });
       res.writeHead(200, { 'content-type': clip.mime, 'cache-control': 'public, max-age=86400' });
       res.end(Buffer.from(clip.bytes));
+      return;
+    }
+
+    const accountMatch = /^\/api\/account\/([a-z]+(?:\/[a-z]+)?)$/.exec(path);
+    if (accountMatch) {
+      if (!accounts) return send(res, 404, { error: 'no-accounts' });
+      const body = req.method === 'POST' ? await readBytes(req, MAX_BODY) : null;
+      if (req.method === 'POST' && !body) return send(res, 400, { error: 'bad-request' });
+      const headers = new Headers();
+      if (req.headers.authorization) headers.set('authorization', req.headers.authorization);
+      const out = await accounts.handle(new Request(`http://local${req.url}`, { method: req.method, headers, body: body ? Buffer.from(body) : undefined }), accountMatch[1]!, pageOrigin(req));
+      res.writeHead(out.status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+      res.end(await out.text());
       return;
     }
 
@@ -341,6 +359,13 @@ async function serveStatic(res: ServerResponse, root: string, path: string): Pro
   } catch {
     send(res, 404, { error: 'not-found' });
   }
+}
+
+/** The origin the phone's page was loaded from, as the passkey sees it (not the LAN swap below). */
+function pageOrigin(req: IncomingMessage): string {
+  const proto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0] ?? 'http';
+  const host = (req.headers['x-forwarded-host'] as string | undefined) ?? req.headers.host ?? 'localhost';
+  return `${proto}://${host}`;
 }
 
 /** The URL phones should open. On localhost, swap in this machine's LAN address so a QR scan works. */

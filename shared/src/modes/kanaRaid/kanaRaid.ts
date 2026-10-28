@@ -14,6 +14,7 @@
 import type { JpText, Kana, MinimalPair } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import { gradeInk, inkTipText, readInk, thin, type InkGrade, type InkPoint } from '../../japanese/strokes.js';
+import type { PracticeItem } from '../../progress.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type ContentLibrary, type Mode, type ModeContext, type MoveResult } from '../mode.js';
 import {
@@ -212,6 +213,10 @@ interface Tally {
   correct: number;
   missed: number;
   tip: string | null;
+  /** Right from memory (said, typed or drawn, not picked): what moves a saved yōkai card up. */
+  recalled: number;
+  /** The saved yōkai card this counts towards (the kana's id), or null for a pair word. */
+  card: { id: string; en: string } | null;
 }
 
 interface WaveStats {
@@ -676,6 +681,22 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
     return view;
   },
 
+  practice(s, playerId) {
+    const p = s.players[playerId];
+    if (!p) return [];
+    // One card per kana: the same kana met as a horde yōkai and as a boss piece adds up.
+    const out = new Map<string, PracticeItem>();
+    for (const t of Object.values(p.tally)) {
+      if (!t.card) continue;
+      const item = out.get(t.card.id) ?? { itemId: t.card.id, char: t.char, hear: t.hear, en: t.card.en, seen: 0, recalled: 0, missed: 0 };
+      item.seen += t.seen;
+      item.recalled += t.recalled;
+      item.missed += t.missed;
+      out.set(t.card.id, item);
+    }
+    return [...out.values()];
+  },
+
   awards(s, ctx) {
     const ids = seatedIds(s, ctx);
     const out: Award[] = [];
@@ -1120,7 +1141,7 @@ function attack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ans: A
       if ('pick' in ans) return settle(s, playerId, p, a, ans.pick === a.answer, 'quiet', ctx, deck, { kana: k, wrongLabel: a.options.find((o) => o.id === ans.pick)?.label });
       if ('say' in ans) {
         const check = checkSound(texts(ans.say), k, deck);
-        return settle(s, playerId, p, a, check.ok, ans.say.via === 'speech' ? 'spoken' : 'quiet', ctx, deck, { kana: k, check, spoke: ans.say.via === 'speech' });
+        return settle(s, playerId, p, a, check.ok, ans.say.via === 'speech' ? 'spoken' : 'quiet', ctx, deck, { kana: k, check, spoke: ans.say.via === 'speech', recalled: true });
       }
       return moveError('bad-answer');
     }
@@ -1215,6 +1236,8 @@ interface SettleInfo {
   check?: SoundCheck;
   wrongLabel?: string;
   spoke?: boolean;
+  /** Said or typed, not picked from options. */
+  recalled?: boolean;
 }
 
 /** Settles a kana attack (waves 1 and 2). */
@@ -1226,7 +1249,7 @@ function settle(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok: bo
     tip = kanaTip(deck, k, wrong && wrong.id !== k.id ? wrong : undefined, info.check);
   }
   if (a.kind === 'shout' && info.spoke) p.stats.shoutsSpoken += 1;
-  p.last = hitOrMiss(s, playerId, p, a, ok, how, ctx, { char: k.char, hear: k.sound, tip, difficulty: k.difficulty, en: kanaEn(deck, k), phrase: null });
+  p.last = hitOrMiss(s, playerId, p, a, ok, how, ctx, { char: k.char, hear: k.sound, tip, difficulty: k.difficulty, en: kanaEn(deck, k), phrase: null, card: k.id, recalled: !!info.recalled });
   assignAttack(s, playerId, ctx, deck);
   return MOVE_OK;
 }
@@ -1263,10 +1286,13 @@ interface HitInfo {
   /** A word to put in the phrasebook instead of the kana, with its phrasebook id. */
   phrase: JpText | null;
   phraseId?: string;
+  /** The kana's id, for the saved yōkai card; pair words have none. */
+  card?: string;
+  recalled?: boolean;
 }
 
 function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok: boolean, how: 'spoken' | 'quiet' | 'tap', ctx: ModeContext, info: HitInfo): LastResult {
-  const t = (p.tally[a.itemId] ??= { char: info.char, hear: info.hear, seen: 0, correct: 0, missed: 0, tip: null });
+  const t = (p.tally[a.itemId] ??= { char: info.char, hear: info.hear, seen: 0, correct: 0, missed: 0, tip: null, recalled: 0, card: info.card ? { id: info.card, en: info.en } : null });
   t.seen += 1;
   const phraseOf = (outcome: 'said' | 'retry' | 'missed' | 'seen') =>
     ctx.phrase(playerId, info.phrase ? { itemId: info.phraseId ?? a.itemId, text: info.phrase.text, kana: info.phrase.kana, en: info.phrase.en, outcome } : { itemId: a.itemId, text: info.char, kana: info.hear, en: info.en, outcome });
@@ -1335,6 +1361,7 @@ function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok:
   p.stats.hits += 1;
   if (t.missed > 0) p.stats.comebacks += 1;
   t.correct += 1;
+  if (info.recalled) t.recalled += 1;
   let bonus = 0;
   if (how === 'spoken') {
     bonus = payBonus(p, ctx, playerId, Math.round(base * SPEAK_BONUS));
@@ -1364,7 +1391,7 @@ function pieceAttack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, a
     how = ans.say.via === 'speech' ? 'spoken' : 'quiet';
   } else return moveError('bad-answer');
 
-  const t = (p.tally[a.itemId] ??= { char: piece.char, hear: piece.sound, seen: 0, correct: 0, missed: 0, tip: null });
+  const t = (p.tally[a.itemId] ??= { char: piece.char, hear: piece.sound, seen: 0, correct: 0, missed: 0, tip: null, recalled: 0, card: k ? { id: k.id, en: kanaEn(deck, k) } : null });
   t.seen += 1;
   if (!ok) {
     const tip = MARK_OPTIONS[piece.char] ? `${piece.char} means: ${MARK_OPTIONS[piece.char]!.right.toLowerCase()}.` : k ? kanaTip(deck, k, undefined, check) : `${piece.char} sounds like ${piece.sound}.`;
@@ -1386,6 +1413,7 @@ function pieceAttack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, a
     p.stats.hits += 1;
     if (!splash) p.stats.pieces += 1;
     t.correct += 1;
+    if ('say' in ans) t.recalled += 1;
     const bonus = how === 'spoken' ? payBonus(p, ctx, playerId, Math.round(base * SPEAK_BONUS)) : 0;
     if (k) ctx.phrase(playerId, { itemId: k.id, text: k.char, kana: k.sound, en: kanaEn(deck, k), outcome: how === 'spoken' ? 'said' : 'seen' });
     p.last = { attackId: a.id, ok: true, kind: 'piece', char: piece.char, hear: piece.sound, points: base + bonus, damage: base, tip: null, combo: 0, splash, retryNext: false };
@@ -1411,7 +1439,7 @@ function drawSpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: 
   const g = gradeInk(ans.ink, ref);
   const tip = g.clean ? null : inkTipText(g, k.char, ref);
   // A messy pass (order, one stroke off) lands like a quiet Shout: full points, 70% damage.
-  const res = hitOrMiss(s, playerId, p, a, g.pass, g.clean ? 'tap' : 'quiet', ctx, { char: k.char, hear: k.sound, tip, difficulty: k.difficulty, en: kanaEn(deck, k), phrase: null });
+  const res = hitOrMiss(s, playerId, p, a, g.pass, g.clean ? 'tap' : 'quiet', ctx, { char: k.char, hear: k.sound, tip, difficulty: k.difficulty, en: kanaEn(deck, k), phrase: null, card: k.id, recalled: true });
   const mine = ans.ink.map((x) => thin(x, REPLAY_POINTS));
   res.tip = tip;
   res.ink = { mine, ref: ref.map((x) => thin(x, REPLAY_POINTS)), clean: g.clean, score: g.shapeScore };

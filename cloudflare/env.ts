@@ -1,8 +1,11 @@
+import type { AccountsObject } from './accountsObject.js';
 import type { RoomObject } from './roomObject.js';
 
 /** Bindings and settings from wrangler.jsonc, plus secrets set with `wrangler secret put`. */
 export interface Env {
   ROOMS: DurableObjectNamespace<RoomObject>;
+  /** Optional sign-in and saved progress: one object for every account (docs/accounts.md). */
+  ACCOUNTS: DurableObjectNamespace<AccountsObject>;
   ASSETS: Fetcher;
   /** Base URL phones should open (for the QR code). Defaults to the request's own origin. */
   PUBLIC_URL?: string;

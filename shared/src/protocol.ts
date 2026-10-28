@@ -193,6 +193,8 @@ export interface JoinRequest {
   deviceId?: string;
   /** Token from an earlier join; the surest way back to a held seat. */
   token?: string;
+  /** A signed-in player's account session (docs/accounts.md): each game they finish is saved to it. */
+  account?: string;
 }
 
 export interface JoinResponse {

@@ -7,6 +7,7 @@ import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS, SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } from './constants.js';
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam, ModeInfo } from './modes/mode.js';
 import { MODES, surprisePool } from './modes/registry.js';
+import type { GameResult } from './progress.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS, SURPRISE } from './protocol.js';
 import { awardKana, hasKanji, isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
@@ -410,6 +411,32 @@ function awardSlots(a: Award | undefined): Record<string, string> | undefined {
   if (!a) return undefined;
   const kana = awardKana(a.title);
   return { award: a.title, ...(hasKanji(kana) ? {} : { award_kana: kana }), award_en: a.en.replace(/\s*\(.*\)$/, ''), name: a.spoken ?? a.name, ...(a.spoken ? { name_en: a.name } : {}) };
+}
+
+/**
+ * Each player's result from the game that just finished (in the recap), for the saved progress of
+ * players who are signed in: score, place, awards and what the mode says they practised.
+ */
+export function gameResults(state: GameState, now: number): Map<string, GameResult> {
+  const out = new Map<string, GameResult>();
+  const mode = activeMode(state);
+  if (state.phase !== 'recap' || !state.recap || !mode || !state.mode) return out;
+  const { standings, awards } = state.recap;
+  const coop = !!mode.info.coop;
+  for (const s of standings) {
+    out.set(s.playerId, {
+      mode: state.mode,
+      at: now,
+      score: s.score,
+      // As the phone's recap counts it: ties share a place, and a 0 isn't one.
+      place: s.score > 0 ? standings.filter((o) => o.score > s.score).length + 1 : 0,
+      players: standings.length,
+      coop,
+      awards: awards.filter((a) => a.playerId === s.playerId).map((a) => ({ title: a.title, en: a.en })),
+      cards: mode.practice?.(state.modeState, s.playerId) ?? [],
+    });
+  }
+  return out;
 }
 
 function resetToLobby(state: GameState): void {

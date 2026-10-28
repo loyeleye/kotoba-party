@@ -10,9 +10,11 @@ import { CLOSE } from '../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../shared/src/roomCode.js';
 import { MAX_CLIP_BYTES } from '../server/src/stt.js';
 import { addReadingsRemote } from './reading.js';
+import { ACCOUNTS_NAME } from './accountsObject.js';
 import type { Env } from './env.js';
 
 export { RoomObject } from './roomObject.js';
+export { AccountsObject } from './accountsObject.js';
 
 const MAX_BODY = 16 * 1024;
 
@@ -40,6 +42,18 @@ export default {
         return new Response(null, { status: 101, webSocket: client });
       }
       return toRoom(env, code, 'ws', { token: url.searchParams.get('token') ?? '' }, req);
+    }
+
+    // Optional sign-in (docs/accounts.md). The passkey belongs to the host the phone opened, so the
+    // object is told the request's own origin, not PUBLIC_URL (a short link that redirects here).
+    const account = /^\/api\/account\/([a-z]+(?:\/[a-z]+)?)$/.exec(path);
+    if (account) {
+      if (Number(req.headers.get('content-length') ?? 0) > MAX_BODY) return json(400, { error: 'bad-request' });
+      const target = new URL(`https://accounts/api/${account[1]}`);
+      target.searchParams.set('origin', url.origin);
+      const tz = url.searchParams.get('tz');
+      if (tz) target.searchParams.set('tz', tz);
+      return env.ACCOUNTS.get(env.ACCOUNTS.idFromName(ACCOUNTS_NAME)).fetch(new Request(target, req));
     }
 
     if (path === '/api/rooms' && req.method === 'POST') {

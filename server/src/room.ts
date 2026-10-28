@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { SEAT_HOLD_MS } from '../../shared/src/constants.js';
-import { apply, wakeAt, canJoin, clipsInUse, cleanName, createGame, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
+import { apply, wakeAt, canJoin, clipsInUse, cleanName, createGame, gameResults, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
+import type { GameResult } from '../../shared/src/progress.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type {
   ByeReason,
@@ -45,6 +46,14 @@ export interface RoomOptions {
   /** Host cues raised by game rules, for the host pipeline to voice. It answers through `room.say`. */
   onCues?: (room: Room, cues: HostCue[], phaseSeq: number) => void;
   onPhase?: (room: Room) => void;
+  /** A game ended: the results of the players who joined signed in, for their saved progress (docs/accounts.md). */
+  onResults?: (results: AccountResult[]) => void;
+}
+
+/** One signed-in player's finished game, with the account session they joined with. */
+export interface AccountResult {
+  account: string;
+  result: GameResult;
 }
 
 const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'endGame', 'setMotion', 'settings', 'closeRoom']);
@@ -92,6 +101,8 @@ export class Room {
   private readonly tokens = new Map<string, Viewer>();
   private readonly playerTokens = new Map<string, string>();
   private readonly devices = new Map<string, string>();
+  /** Signed-in players' account sessions, by player id. Never shown to anyone; only passed back to the account service. */
+  private readonly accounts = new Map<string, string>();
   private readonly sockets = new Map<RoomSocket, Viewer>();
   private readonly holdTimers = new Map<string, unknown>();
   private readonly releasedTokens = new Set<string>();
@@ -199,7 +210,10 @@ export class Room {
   join(req: JoinRequest): JoinResponse | { error: JoinError } {
     this.armStaleTimer();
     const held = this.findHeldSeat(req);
-    if (held) return { playerId: held, token: this.playerTokens.get(held)!, rejoined: true };
+    if (held) {
+      this.setAccount(held, req.account);
+      return { playerId: held, token: this.playerTokens.get(held)!, rejoined: true };
+    }
 
     const name = cleanName(req.name);
     if (!name) return { error: 'bad-name' };
@@ -214,9 +228,16 @@ export class Room {
     this.tokens.set(token, { kind: 'player', playerId });
     this.playerTokens.set(playerId, token);
     if (req.deviceId) this.devices.set(req.deviceId, playerId);
+    this.setAccount(playerId, req.account);
     // The seat is held from the moment of joining until the phone's socket arrives.
     this.armHoldTimer(playerId);
     return { playerId, token, rejoined: false };
+  }
+
+  /** Signing in (or out) between games takes effect from the next one. */
+  private setAccount(playerId: string, account: unknown): void {
+    if (typeof account === 'string' && account.length > 0 && account.length <= 200) this.accounts.set(playerId, account);
+    else this.accounts.delete(playerId);
   }
 
   private findHeldSeat(req: JoinRequest): string | undefined {
@@ -353,9 +374,20 @@ export class Room {
     if (outcome.changed && this.state.phaseSeq !== phaseBefore) {
       this.pruneClips();
       this.opts.onPhase?.(this);
+      if (this.state.phase === 'recap') this.saveResults();
     }
     if (cues.length) this.opts.onCues?.(this, cues, this.state.phaseSeq);
     return outcome;
+  }
+
+  private saveResults(): void {
+    if (!this.accounts.size || !this.opts.onResults) return;
+    const results: AccountResult[] = [];
+    for (const [playerId, result] of gameResults(this.state, this.clock.now())) {
+      const account = this.accounts.get(playerId);
+      if (account) results.push({ account, result });
+    }
+    if (results.length) this.opts.onResults(results);
   }
 
   private schedulePhaseTimer(): void {
@@ -440,6 +472,7 @@ export class Room {
     }
     this.playerTokens.delete(playerId);
     for (const [device, id] of this.devices) if (id === playerId) this.devices.delete(device);
+    this.accounts.delete(playerId);
     this.commandLog.delete(playerId);
     this.dispatch({ type: 'release', playerId });
   }

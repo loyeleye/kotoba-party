@@ -15,9 +15,16 @@
     "not_found_handling": "none"
   },
   "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "RoomObject" }]
+    "bindings": [
+      { "name": "ROOMS", "class_name": "RoomObject" },
+      // Optional sign-in and saved progress: one object holds every account (docs/accounts.md).
+      { "name": "ACCOUNTS", "class_name": "AccountsObject" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RoomObject"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["RoomObject"] },
+    { "tag": "v2", "new_sqlite_classes": ["AccountsObject"] }
+  ],
   // Workers AI, for speech to text (STT_URL "workers-ai", docs/speech.md). `wrangler dev` calls it remotely and is billed.
   "ai": { "binding": "AI" },
   "observability": { "enabled": true },

@@ -4,7 +4,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { BossWord, Kana, LookAlikeSet, MinimalPair } from '../content/src/types.js';
 import { createRoom } from '../shared/src/client.js';
-import { apply, createGame, type GameContext, type GameState } from '../shared/src/game.js';
+import { apply, createGame, gameResults, type GameContext, type GameState } from '../shared/src/game.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { buildDeck, checkSound, checkWord } from '../shared/src/modes/kanaRaid/deck.js';
 import { BASE_POINTS, BONUS_CAP, levelScale, type KanaRaidView, type RaidState } from '../shared/src/modes/kanaRaid/kanaRaid.js';
@@ -311,6 +311,15 @@ describe('Kana Yōkai Raid rules', () => {
     expect(r.s.recap!.awards.length).toBeGreaterThan(0);
     expect(r.s.phrasebook.p1!.length).toBeGreaterThan(0);
     expect(r.s.phrasebook.p1!.some((e) => e.text === 'アイス' && e.outcome === 'said')).toBe(true);
+
+    // What a signed-in player's yōkai cards get: one card per kana, spoken Shouts recalled, taps not.
+    const p1 = gameResults(r.s, now).get('p1')!;
+    expect(p1).toMatchObject({ mode: 'kana-raid', players: 3, coop: false });
+    expect(p1.cards.length).toBeGreaterThan(0);
+    expect(new Set(p1.cards.map((c) => c.itemId)).size).toBe(p1.cards.length);
+    for (const c of p1.cards) expect(deck.byId.has(c.itemId)).toBe(true);
+    expect(p1.cards.some((c) => c.recalled > 0)).toBe(true);
+    expect(p1.cards.some((c) => c.seen > c.recalled + c.missed)).toBe(true);
   });
 
   it('runs end to end on the built-in placeholder set when content is empty', () => {
