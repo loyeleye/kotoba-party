@@ -2257,6 +2257,1040 @@
         "loop": false,
         "seed": 11
       }
+    },
+    {
+      "path": "stage/assets/cards/pon-diet.wake.png",
+      "what": "Narabete! card picture: pon-diet.wake",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a rumpled futon with the blanket thrown off and a pillow",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/pon-diet.salad.png",
+      "what": "Narabete! card picture: pon-diet.salad",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a bowl of fresh green salad with cherry tomatoes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/pon-diet.jog.png",
+      "what": "Narabete! card picture: pon-diet.jog",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single red running shoe kicking up a puff of dust",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/pon-diet.lunch.png",
+      "what": "Narabete! card picture: pon-diet.lunch",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a plate with a few lettuce leaves and a big heap of round knobbly golden karaage fried chicken lumps",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/pon-diet.snack.png",
+      "what": "Narabete! card picture: pon-diet.snack",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a heaped plate of round knobbly golden Japanese karaage fried chicken lumps, not fries, not sticks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/pon-diet.cake.png",
+      "what": "Narabete! card picture: pon-diet.cake",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a slice of strawberry shortcake with cream on a small plate",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/pon-diet.ramen.png",
+      "what": "Narabete! card picture: pon-diet.ramen",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a steaming bowl of ramen with chashu, a soft egg and chopsticks resting on top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/pon-diet.tomorrow.png",
+      "what": "Narabete! card picture: pon-diet.tomorrow",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white bathroom weighing scale with a pink donut sitting on top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/ghost-day.wake.png",
+      "what": "Narabete! card picture: ghost-day.wake",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a little white ghost sitting up in a Japanese futon, yawning, with a white triangle headband on its forehead",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/ghost-day.shower.png",
+      "what": "Narabete! card picture: ghost-day.shower",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a chrome shower head spraying blue water drops",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/ghost-day.breakfast.png",
+      "what": "Narabete! card picture: ghost-day.breakfast",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a black frying pan with a sunny side up fried egg",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/ghost-day.school.png",
+      "what": "Narabete! card picture: ghost-day.school",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a long two storey Japanese school building with a clock in the middle, cream walls, many windows, at night",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/ghost-day.scare.png",
+      "what": "Narabete! card picture: ghost-day.scare",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white sheet ghost with arms raised high, mouth open, spooky glow",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/ghost-day.ice.png",
+      "what": "Narabete! card picture: ghost-day.ice",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a swirled vanilla soft serve ice cream in a waffle cone",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/ghost-day.karaoke.png",
+      "what": "Narabete! card picture: ghost-day.karaoke",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pink karaoke microphone with musical notes floating around it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/ghost-day.sunrise.png",
+      "what": "Narabete! card picture: ghost-day.sunrise",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a little white ghost with a white triangle headband, turning see-through and fading away, wearing sunglasses",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/konbini.gum.png",
+      "what": "Narabete! card picture: konbini.gum",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small flat pack of mint chewing gum with three silver wrapped sticks sliding out, bright blue and white",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/konbini.onigiri.png",
+      "what": "Narabete! card picture: konbini.onigiri",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white triangular Japanese rice ball onigiri with a black nori seaweed band across the bottom, no face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/konbini.tea.png",
+      "what": "Narabete! card picture: konbini.tea",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a clear plastic PET bottle of green tea with a pale green label and a green cap",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/konbini.ice.png",
+      "what": "Narabete! card picture: konbini.ice",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cup of ice cream with a flat wooden spoon",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/konbini.karaage.png",
+      "what": "Narabete! card picture: konbini.karaage",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. Japanese karaage: five round knobbly golden fried chicken nuggets in a small white paper cup with a wooden pick, not fries",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/konbini.bento.png",
+      "what": "Narabete! card picture: konbini.bento",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese bento box with rice, grilled fish, egg and a pickled plum",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/konbini.battery.png",
+      "what": "Narabete! card picture: konbini.battery",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two big chunky AA batteries standing side by side, copper and black",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/konbini.umbrella.png",
+      "what": "Narabete! card picture: konbini.umbrella",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. kasa-obake, a Japanese umbrella yokai: a closed purple paper umbrella with one big eye, a long red tongue and a single leg hopping",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/calendar.mochi.png",
+      "what": "Narabete! card picture: calendar.mochi",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. kagami mochi: two flat round white rice cakes stacked, the smaller on top, a small orange on top, on a little wooden stand with white paper",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/calendar.choco.png",
+      "what": "Narabete! card picture: calendar.choco",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an empty open heart shaped chocolate box",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/calendar.lie.png",
+      "what": "Narabete! card picture: calendar.lie",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a wooden puppet head with a very long pointy nose and a cheeky grin",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/calendar.koinobori.png",
+      "what": "Narabete! card picture: calendar.koinobori",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. Japanese koinobori: three carp-shaped windsocks, black, red and blue fish with big eyes and scales, flying sideways from a tall bamboo pole",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/calendar.tanabata.png",
+      "what": "Narabete! card picture: calendar.tanabata",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a green bamboo branch hung with colourful paper wish strips",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/calendar.homework.png",
+      "what": "Narabete! card picture: calendar.homework",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a tall wobbly stack of school notebooks with a pencil on top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/calendar.halloween.png",
+      "what": "Narabete! card picture: calendar.halloween",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a glowing carved jack o lantern pumpkin",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/calendar.cake.png",
+      "what": "Narabete! card picture: calendar.cake",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round Japanese Christmas cake with white whipped cream and red strawberries on top and a small fork",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/nobiko-night.dinner.png",
+      "what": "Narabete! card picture: nobiko-night.dinner",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a clay hot pot of stew with steam rising and a ladle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/nobiko-night.bath.png",
+      "what": "Narabete! card picture: nobiko-night.bath",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a square wooden Japanese bathtub, hinoki, full of steaming water, a small yellow rubber duck floating in it, a wooden bucket beside it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/nobiko-night.drama.png",
+      "what": "Narabete! card picture: nobiko-night.drama",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an old boxy television showing a pink heart on its screen",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/nobiko-night.bed.png",
+      "what": "Narabete! card picture: nobiko-night.bed",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese futon laid out on a tatami mat, white pillow, pink quilt folded back",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/nobiko-night.neck.png",
+      "what": "Narabete! card picture: nobiko-night.neck",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute giraffe with a very long neck stretching up",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/nobiko-night.peek.png",
+      "what": "Narabete! card picture: nobiko-night.peek",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a light wooden fence with two curious round eyes peeking over the top, lit by a warm paper lantern",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/nobiko-night.back.png",
+      "what": "Narabete! card picture: nobiko-night.back",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a big curved U-turn arrow, bright orange, bending back on itself",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/nobiko-night.nothing.png",
+      "what": "Narabete! card picture: nobiko-night.nothing",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a newspaper held up open with two round eye holes cut in it, spy style",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/first-date.meet.png",
+      "what": "Narabete! card picture: first-date.meet",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese station ticket gate with a flap and a small red light",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/first-date.name.png",
+      "what": "Narabete! card picture: first-date.name",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a blank white name tag sticker with a big red question mark beside it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/first-date.wine.png",
+      "what": "Narabete! card picture: first-date.wine",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two glasses of red wine clinking together",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/first-date.home.png",
+      "what": "Narabete! card picture: first-date.home",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small Japanese house with a warm lit window and a front door left wide open",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/first-date.karaoke.png",
+      "what": "Narabete! card picture: first-date.karaoke",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two karaoke microphones crossed with musical notes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/first-date.midnight.png",
+      "what": "Narabete! card picture: first-date.midnight",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a smartphone with its screen glowing, lots of little speech bubbles popping out of it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/first-date.train.png",
+      "what": "Narabete! card picture: first-date.train",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small red and cream train car seen from behind, glowing red tail lights, nothing behind it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/first-date.breakfast.png",
+      "what": "Narabete! card picture: first-date.breakfast",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two cups of coffee beside a plate of toast with a fried egg",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/boss.arrive.png",
+      "what": "Narabete! card picture: boss.arrive",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a grey office building with rows of lit windows",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/boss.coffee.png",
+      "what": "Narabete! card picture: boss.coffee",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white mug of hot coffee with steam",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/boss.meeting.png",
+      "what": "Narabete! card picture: boss.meeting",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an office worker in a suit asleep face down on a desk with a big snot bubble from his nose",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/boss.lunch.png",
+      "what": "Narabete! card picture: boss.lunch",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a big bowl of ramen next to a tall glass of beer",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/boss.golf.png",
+      "what": "Narabete! card picture: boss.golf",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a golf ball on a tee beside a red flag on a green",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/boss.busy.png",
+      "what": "Narabete! card picture: boss.busy",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red megaphone with sound waves",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/boss.pack.png",
+      "what": "Narabete! card picture: boss.pack",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a black leather business briefcase with a gold clasp, nothing behind it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/cards/boss.done.png",
+      "what": "Narabete! card picture: boss.done",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a loosened red necktie draped over a frosty glass of beer",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
     }
   ]
 }

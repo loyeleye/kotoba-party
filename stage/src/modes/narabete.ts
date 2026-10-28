@@ -17,6 +17,7 @@ import { FLIP_LEAD_MS, FLIP_STEP_MS, flipMs, joiner, type LineCard } from '../..
 import type { NarabeteView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { bellTonic, hushFor } from '../music/index.js';
+import { drawRuler, type Knot } from '../neck.js';
 import { flipChord, flipNote } from '../music/sfx.js';
 import type { StageMode } from './types.js';
 
@@ -106,6 +107,13 @@ function head(game: NarabeteView, view: RoomView): HTMLElement {
   );
 }
 
+/** A Time Line card's pixel picture at 2×, or its emoji if the picture can't load. */
+function picture(src: string, emoji: string): HTMLElement {
+  const box = h('span', { class: 'nb-pic', 'aria-hidden': 'true' });
+  box.append(h('img', { src, alt: '', draggable: 'false', onerror: () => box.replaceChildren(h('span', { class: 'nb-emoji' }, emoji)) }));
+  return box;
+}
+
 /** The value printed on a flipped card: the clock or price for a Time card, the secret number for Feelings. */
 const valueOf = (c: LineCard): string => c.label ?? String(c.value ?? '');
 
@@ -119,26 +127,35 @@ function card(view: RoomView, game: NarabeteView, c: LineCard, i: number, elapse
     { class: 'nb-face' },
     slot
       ? h('span', { class: 'nb-emoji nb-ear', 'aria-hidden': 'true' }, c.said ? '🔊' : '…')
-      : c.emoji
-        ? h('span', { class: 'nb-emoji', 'aria-hidden': 'true' }, c.emoji)
-        : game.kind === 'time'
-          ? h('span', { class: 'nb-emoji nb-ear', 'aria-hidden': 'true' }, '🔊')
-          : null,
+      : c.picture
+        ? picture(c.picture, c.emoji ?? '')
+        : c.emoji
+          ? h('span', { class: 'nb-emoji', 'aria-hidden': 'true' }, c.emoji)
+          : game.kind === 'time'
+            ? h('span', { class: 'nb-emoji nb-ear', 'aria-hidden': 'true' }, '🔊')
+            : null,
     c.text && game.kind !== 'time' && !slot ? h('p', { class: `nb-text${c.hidden ? ' nb-hidden' : ''}`, lang: 'ja' }, c.text) : null,
-    owner(view, c.ownerId),
-    view.phase === 'reveal'
-      ? h(
-          'p',
-          { class: 'nb-flags' },
-          c.locked ? h('span', { class: 'nb-lock', lang: 'ja', 'data-key': 'lock' }, '🔒 きめた') : null,
-          c.again ? h('span', { class: 'nb-again', 'data-key': `again-${c.again}` }, `🙋 ${c.again}`) : null,
-        )
-      : null,
+    // Name and flags on one row, so the picture keeps its whole 2× size.
+    h(
+      'div',
+      { class: 'nb-who' },
+      owner(view, c.ownerId),
+      view.phase === 'reveal'
+        ? h(
+            'p',
+            { class: 'nb-flags' },
+            c.locked ? h('span', { class: 'nb-lock', lang: 'ja', 'data-key': 'lock' }, '🔒', h('span', { class: 'nb-lock-word' }, ' きめた')) : null,
+            c.again ? h('span', { class: 'nb-again', 'data-key': `again-${c.again}` }, `🙋 ${c.again}`) : null,
+          )
+        : null,
+    ),
   );
   const back = flipped
     ? h(
         'div',
         { class: 'nb-back' },
+        // Up to five cards there's room for the picture as a sticker in the corner.
+        c.picture && game.line.length <= 5 ? picture(c.picture, c.emoji ?? '') : null,
         h('p', { class: 'nb-value' }, valueOf(c)),
         c.text && game.kind === 'time' ? h('p', { class: 'nb-sentence', lang: 'ja' }, c.text) : null,
         c.text && game.kind !== 'time' ? h('p', { class: `nb-sentence${c.hidden ? ' nb-hidden' : ''}`, lang: 'ja' }, c.text) : null,
@@ -158,15 +175,113 @@ function card(view: RoomView, game: NarabeteView, c: LineCard, i: number, elapse
   );
 }
 
-/** Marks between neighbours, on the neck: a knot where they're out of order, a tick where they're fine. */
+/** When the joint after card `i` shows, in ms from now: once both its cards have turned. */
+function jointAt(game: NarabeteView, i: number, elapsed: number): number {
+  const c = game.line[i]!;
+  const next = game.line[i + 1]!;
+  return flipAt(Math.max(c.flip ?? 0, next.flip ?? 0)) + KNOT_MS - elapsed;
+}
+
+/** Ticks between neighbours in order, on the neck. Knots, where they're out of order, are drawn into her neck (drawNeck). */
 function joints(game: NarabeteView, elapsed: number): HTMLElement[] {
   if (!game.flip) return [];
-  return game.line.slice(0, -1).map((c, i) => {
-    const next = game.line[i + 1]!;
-    const at = flipAt(Math.max(c.flip ?? 0, next.flip ?? 0)) + KNOT_MS - elapsed;
-    return h('span', { class: `nb-joint ${c.knotAfter ? 'nb-knot' : 'nb-ok'}`, style: `--d: ${Math.round(at)}ms; --x: ${i + 1}`, 'aria-hidden': 'true' }, c.knotAfter ? '🪢' : '✓');
-  });
+  return game.line.slice(0, -1).flatMap((c, i) =>
+    c.knotAfter ? [] : [h('span', { class: 'nb-joint nb-ok', style: `--d: ${Math.round(jointAt(game, i, elapsed))}ms`, 'data-after': String(i), 'aria-hidden': 'true' }, '✓')],
+  );
 }
+
+// ---------- her neck, drawn ----------
+// The ruler's neck is drawn on a canvas at her art-pixel size (2 CSS px each), from her collar to her chin,
+// with a peg where each card hangs and a knot tied in it between two cards out of order. The stage
+// redraws on every update, so each render gets a new canvas; it draws while cards slide or knots tie.
+
+const KNOT_ART = '/stage/assets/anim/nobiko-knot.png';
+const PEG_ART = '/stage/assets/fx/peg.png';
+let neckArt: { knot: HTMLImageElement; peg: HTMLImageElement } | null = null;
+const loaded = (img: HTMLImageElement) => img.complete && img.naturalWidth > 0;
+function preloadNeck(): void {
+  if (neckArt || typeof Image === 'undefined') return;
+  const img = (src: string) => Object.assign(new Image(), { src });
+  neckArt = { knot: img(KNOT_ART), peg: img(PEG_ART) };
+}
+/** Knot frames: a loose loop, cinching, then tied, this many ms apart. */
+const KNOT_FRAME_MS = 110;
+/** How long a fresh canvas keeps redrawing, for cards that slide into place. */
+const SETTLE_MS = 700;
+
+// The stage patches each render into the live page, so the canvas drawn on is the one on screen, found
+// after the patch; a newer render's loop takes over from an older one. patch() drops the canvas's size
+// attributes (the render doesn't know them), so each render passes the last size back in. A frame only
+// repaints when something on the neck has changed.
+let drawing = 0;
+let neckSize = { w: 0, h: 0 };
+let lastDraw: { knotsAt: { after: number; at: number }[]; calm: boolean; until: number } | null = null;
+const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** `until`: keep drawing at least this long (ms), e.g. while her head hops at a perfect line. */
+function drawNeck(knotsAt: { after: number; at: number }[], calm: boolean, until = 0): void {
+  preloadNeck();
+  lastDraw = { knotsAt, calm, until };
+  const start = performance.now();
+  const run = ++drawing;
+  let drawn = '';
+  const still = calm || reducedMotion();
+  const frame = (now: number) => {
+    const canvas = document.querySelector<HTMLCanvasElement>('.nb-stage .nb-neck-art');
+    if (run !== drawing || !canvas) return;
+    const ruler = canvas.closest<HTMLElement>('.nb-ruler');
+    const collar = ruler?.querySelector<HTMLElement>('.nb-collar');
+    const head = ruler?.querySelector<HTMLElement>('.nb-nobiko');
+    const box = canvas.parentElement;
+    if (!ruler || !collar || !head || !box || !neckArt || !loaded(neckArt.knot) || !loaded(neckArt.peg)) {
+      if (now - start < 3000) requestAnimationFrame(frame);
+      return;
+    }
+    // Exactly 2 CSS px per art pixel, like her sprites (the box runs 60 px past the neck's box each way).
+    const w = Math.ceil((box.offsetWidth + 120) / 2);
+    const hgt = Math.ceil((box.offsetHeight + 120) / 2);
+    if (canvas.width !== w || canvas.height !== hgt) {
+      Object.assign(canvas, { width: w, height: hgt });
+      Object.assign(canvas.style, { width: `${w * 2}px`, height: `${hgt * 2}px` });
+      neckSize = { w, h: hgt };
+      drawn = '';
+    }
+    const c = canvas.getBoundingClientRect();
+    const a = c.width / w; // screen px per art pixel
+    const at = (r: DOMRect, x: number, y: number) => ({ x: Math.round((r.left - c.left) / a + x), y: Math.round((r.top - c.top) / a + y) });
+    // Where the neck leaves her collar (nobiko-reach.png frame 0) and meets her chin (frame 1, mirrored back by CSS).
+    const base = at(collar.getBoundingClientRect(), 42, 88);
+    const chin = at(head.getBoundingClientRect(), 68, 63);
+    const line = base.y;
+    const cards = [...ruler.querySelectorAll<HTMLElement>('.nb-line > .nb-card')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return Math.round((r.left + r.width / 2 - c.left) / a);
+    });
+    const mid = (i: number) => Math.round(((cards[i] ?? 0) + (cards[i + 1] ?? 0)) / 2);
+    const t = now - start;
+    const knots: Knot[] = [];
+    for (const k of knotsAt) {
+      if (t < k.at) continue;
+      const f = still ? 2 : Math.min(2, Math.floor((t - k.at) / KNOT_FRAME_MS));
+      knots.push({ x: mid(k.after), frame: f as Knot['frame'] });
+    }
+    const key = JSON.stringify([base, chin, cards, knots]);
+    if (key !== drawn) {
+      drawn = key;
+      // The ticks sit on the neck between their two cards.
+      for (const tick of ruler.querySelectorAll<HTMLElement>('.nb-ok[data-after]')) tick.style.left = `${mid(Number(tick.dataset.after)) * 2 + canvas.offsetLeft}px`;
+      drawRuler(canvas.getContext('2d')!, { collar: base, chin, line, pegs: cards, knots }, neckArt);
+    }
+    const pending = knotsAt.some((k) => t < k.at + 3 * KNOT_FRAME_MS);
+    if (pending || t < Math.max(SETTLE_MS, until)) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+// A resize moves everything: draw again from the last render's state.
+if (typeof addEventListener !== 'undefined')
+  addEventListener('resize', () => {
+    if (lastDraw) drawNeck(lastDraw.knotsAt, lastDraw.calm, 0);
+  });
 
 function ends(game: NarabeteView): HTMLElement {
   // Feelings rounds name the scale's anchors: your secret number sits between them.
@@ -182,11 +297,14 @@ function ends(game: NarabeteView): HTMLElement {
 function neck(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement {
   const n = Math.max(1, game.line.length);
   const result = game.flip && view.phase === 'score' ? flipMs(game.flip.steps) - elapsed : null;
+  const knots = game.flip ? game.line.slice(0, -1).flatMap((c, i) => (c.knotAfter ? [{ after: i, at: jointAt(game, i, elapsed) }] : [])) : [];
+  // At a perfect line her head hops twice; the neck follows it.
+  drawNeck(knots, !!view.calmMotion, result !== null && game.flip?.perfect ? result + 1200 : 0);
   return h(
     'div',
     { class: `nb-ruler nb-n${Math.min(n, 8)}${result !== null && game.flip?.perfect ? ' nb-hop' : ''}`, style: `--n: ${n}; --r: ${Math.round(result ?? 0)}ms` },
     h('ol', { class: 'nb-line' }, game.line.map((c, i) => card(view, game, c, i, elapsed))),
-    h('div', { class: 'nb-neck' }, h('span', { class: 'nb-collar', 'aria-hidden': 'true' }), h('span', { class: 'nb-band', 'aria-hidden': 'true' }), h('span', { class: 'nb-nobiko', 'aria-hidden': 'true' }), ...joints(game, elapsed)),
+    h('div', { class: 'nb-neck' }, h('span', { class: 'nb-collar', 'aria-hidden': 'true' }), h('canvas', { class: 'nb-neck-art', 'aria-hidden': 'true', ...(neckSize.w ? { width: neckSize.w, height: neckSize.h, style: `width: ${neckSize.w * 2}px; height: ${neckSize.h * 2}px` } : {}) }), h('span', { class: 'nb-nobiko', 'aria-hidden': 'true' }), ...joints(game, elapsed)),
     ends(game),
   );
 }

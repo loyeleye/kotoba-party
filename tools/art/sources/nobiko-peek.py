@@ -17,6 +17,7 @@ for y in range(128):
     for x in range(128):
         p = src.getpixel((x, y))
         if not p[3]: continue
+        if 66 <= y <= 72 and 40 <= x < 56 and (sum(p[:3]) > 450 or p[:3] == SKIN[:3] or sum(p[:3]) < 60): continue  # a stub of her neck under the hair: redrawn
         if y <= 64 or (y <= 72 and (x < 56 or x > 78)): head.putpixel((x, y), p)  # face, bun and the hair below the chin
         elif y >= 84 or x < 26: body.putpixel((x, y), p)  # kimono, hands and the fan; the neck between is redrawn
 BASE, CHIN = (42, 88), (67, 63)
