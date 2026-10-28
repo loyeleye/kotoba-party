@@ -1,0 +1,86 @@
+/* はじめまして！ (stage). Everything is scoped under .hj-stage: Pon's guest corner, a テロップ caption
+   for the guest, the card's frame once as a banner, and the cards showing only the blank's word, big. */
+.hj-stage { width: min(1720px, 100%); display: grid; gap: 18px; align-content: start; justify-items: center; text-align: center; --hj-ink: #0b0605; --hj-leaf: #7fdc8c; --hj-true: #ffd36b; }
+.hj-stage p { margin: 0; }
+.hj-stage [lang='ja'] { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.hj-intro, .hj-recall { gap: 22px; }
+.hj-logo { font-size: 110px; font-weight: 900; color: var(--mode); letter-spacing: 0.04em; text-shadow: 6px 6px 0 var(--hj-ink); }
+.hj-subtitle { font-size: 32px; color: var(--muted); }
+.hj-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1240px; padding-left: 40px; margin: 0; }
+
+/* ---- the caption and the banner ---- */
+.hj-head { display: grid; gap: 14px; justify-items: center; width: 100%; }
+.hj-telop { display: inline-flex; align-items: baseline; gap: 22px; padding: 10px 34px 12px; background: var(--paper); color: var(--paper-ink); border: 4px solid var(--hj-ink); border-left: 22px solid var(--seat, var(--mode)); box-shadow: 6px 6px 0 var(--hj-ink); transform: skewX(-8deg); animation: hj-slide 0.5s var(--ease-pop) both; }
+.hj-telop > * { transform: skewX(8deg); }
+.hj-telop-tag { font-size: 26px; font-weight: 800; color: var(--lantern); }
+.hj-telop-name { font-size: 58px; font-weight: 900; }
+.hj-telop-turn { font-size: 22px; color: var(--paper-muted); }
+@keyframes hj-slide { from { opacity: 0; transform: skewX(-8deg) translateX(-80px); } }
+.hj-banner { display: grid; gap: 4px; }
+.hj-card-title { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.hj-card-title span { text-transform: none; letter-spacing: 0; color: var(--mode); font-weight: 800; margin-right: 12px; }
+.hj-card-title small { font-size: 22px; }
+.hj-frame { font-size: 48px; font-weight: 900; line-height: 1.2; }
+.hj-blank { display: inline-block; min-width: 3.2em; margin: 0 0.15em; border-bottom: 6px solid var(--mode); color: var(--mode); }
+
+/* ---- guest and write: the name tag ---- */
+.hj-tag-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 40px; align-items: center; width: 100%; max-width: 1400px; min-height: 320px; }
+.hj-nametag { width: 460px; background: var(--paper); color: var(--paper-ink); border: 5px solid var(--hj-ink); border-radius: 16px; box-shadow: 8px 8px 0 var(--hj-ink); overflow: hidden; animation: hj-pop 0.6s var(--ease-pop) 0.2s both; }
+.hj-nametag-top { background: var(--seat, var(--mode)); color: var(--hj-ink); font-size: 44px; font-weight: 900; padding: 12px 0; }
+.hj-nametag-name { font-size: 84px; font-weight: 900; padding: 24px 12px 0; }
+.hj-nametag-en { font-size: 26px; color: var(--paper-muted); padding: 0 0 20px; }
+@keyframes hj-pop { from { opacity: 0; transform: scale(0.7) rotate(-6deg); } }
+
+.hj-bubbles { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-content: center; min-height: 64px; }
+.hj-bubble { display: inline-flex; gap: 10px; align-items: baseline; background: var(--panel); border: 3px solid var(--seat, var(--line)); border-radius: 22px; padding: 8px 18px; font-size: 30px; font-weight: 700; box-shadow: 4px 4px 0 var(--outline); animation: hj-pop 0.4s var(--ease-pop) both; }
+.hj-bubble-name { font-size: 20px; color: var(--seat, var(--muted)); font-weight: 800; }
+
+/* ---- the cards ---- */
+.hj-cards { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 340px)); gap: 26px; justify-content: center; width: 100%; perspective: 1400px; }
+.hj-n4 { --n: 4; } .hj-n5 { --n: 5; gap: 20px; } .hj-n3 { --n: 3; }
+.hj-card { position: relative; height: 300px; animation: hj-pop 0.45s var(--ease-pop) both; }
+.hj-inner { position: relative; height: 100%; transform-style: preserve-3d; }
+.hj-face, .hj-back { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 8px; padding: 46px 12px 16px; border: 5px solid var(--hj-ink); border-radius: 16px; box-shadow: 0 8px 0 var(--hj-ink); backface-visibility: hidden; overflow: hidden; }
+.hj-face { background: rgba(42, 32, 98, 0.6); border-style: dashed; }
+.hj-up .hj-face { background: var(--paper); color: var(--paper-ink); border-style: solid; animation: hj-stamp 0.35s var(--ease-pop) both; }
+@keyframes hj-stamp { from { transform: scale(1.25) rotate(-4deg); } }
+.hj-reading .hj-face { outline: 6px solid var(--mode); outline-offset: 4px; animation: hj-glow 1.2s ease-in-out infinite alternate; }
+@keyframes hj-glow { to { outline-color: transparent; } }
+.hj-label { position: absolute; top: 8px; left: 14px; font-family: var(--font-pixel); font-size: 34px; font-weight: 900; color: var(--mode); text-shadow: 2px 2px 0 var(--hj-ink); }
+.hj-up .hj-label, .hj-back .hj-label { color: var(--lantern); text-shadow: none; }
+.hj-word { font-size: 60px; font-weight: 900; line-height: 1.1; text-wrap: balance; }
+.hj-n5 .hj-word { font-size: 52px; }
+.hj-word.hj-len6 { font-size: 48px; }
+.hj-word.hj-len8 { font-size: 38px; }
+.hj-word.hj-len10 { font-size: 30px; }
+.hj-word.hj-small { font-size: 36px; }
+.hj-hidden { color: var(--paper-muted); font-size: 30px; }
+.hj-ear { font-size: 72px; opacity: 0.55; }
+.hj-paw { position: absolute; right: 12px; bottom: 10px; font-size: 40px; transform: rotate(14deg); opacity: 0.8; }
+
+/* The flip: the face turns away and the back turns in, at --d. */
+.hj-flipping .hj-inner { animation: hj-flip 0.7s ease-in-out var(--d, 0ms) both; }
+@keyframes hj-flip { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
+.hj-back { transform: rotateY(180deg); background: var(--panel); }
+.hj-true { background: var(--paper); color: var(--paper-ink); border-color: var(--hj-true); box-shadow: 0 0 0 6px var(--hj-ink), 0 0 40px 10px rgba(255, 211, 107, 0.6); }
+.hj-true .hj-verdict { font-size: 44px; color: var(--lantern); }
+.hj-en { font-size: 22px; color: var(--paper-muted); }
+.hj-lie { background: #2f5a3a; }
+.hj-lie .hj-verdict { font-size: 34px; color: var(--hj-leaf); }
+.hj-tanuki { font-size: 74px; line-height: 1; animation: hj-pop 0.5s var(--ease-pop) calc(var(--d, 0ms) + 350ms) both; }
+.hj-puff { position: absolute; inset: 20px; background: url(/stage/assets/fx/poof-still.png) center / contain no-repeat; image-rendering: pixelated; opacity: 0; animation: hj-puff 0.9s ease-out calc(var(--d, 0ms) + 250ms) both; pointer-events: none; }
+@keyframes hj-puff { 0% { opacity: 0; transform: scale(0.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
+.hj-author { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; font-size: 26px; font-weight: 800; }
+.hj-who { color: var(--seat, var(--ink)); }
+.hj-seat { font-family: var(--font-pixel); margin-right: 4px; }
+.hj-firsts { font-size: 20px; color: var(--muted); }
+
+.hj-call { font-size: 30px; font-weight: 700; margin-top: 8px; }
+.hj-call strong { color: var(--seat, var(--mode)); }
+.hj-script { color: var(--muted); font-weight: 400; }
+.hj-result { font-size: 32px; font-weight: 700; display: grid; gap: 6px; animation: hj-pop 0.5s var(--ease-pop) var(--d, 0ms) both; }
+.hj-faces { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; font-size: 30px; font-weight: 800; }
+.hj-faces li { background: var(--panel); border: 3px solid var(--seat, var(--line)); border-radius: 8px; padding: 8px 18px; }
+
+/* Calm motion: every animation lands at once, still at its moment (the flip keeps its --d). */
+.hj-calm *, .hj-calm *::before { animation-duration: 1ms !important; }

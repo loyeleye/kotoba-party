@@ -41,6 +41,7 @@ and `themeFor` in `cues.ts`; the count is kept in the browser), so a long night 
 | Murder at the Onsen | **Sneaky Snitch** (Kevin MacLeod) | **Ishikari Lore** (Kevin MacLeod, koto) |
 | Kana Yōkai Raid | **Determination** (HydroGene) | **Ouroboros** (Kevin MacLeod) |
 | Narabete! | **Daily Beetle** (Kevin MacLeod, ukulele and marimba) | **Easy Lemon** (Kevin MacLeod) |
+| Nice to Meet You! | **Local Forecast - Elevator** (Kevin MacLeod) | **Carefree** (Kevin MacLeod) |
 | Bento Haus | **Kawai Kitsune** (Kevin MacLeod) | **Feelin Good** (Kevin MacLeod) |
 | Bento Haus VS | **Feelin Good** (Kevin MacLeod) | **Kawai Kitsune** (Kevin MacLeod); after a Co-op game, whichever theme it didn't play |
 | The Last Train | **Last Train Dash** (synth, 16 bars) | |

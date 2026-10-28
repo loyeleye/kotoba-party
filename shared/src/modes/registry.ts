@@ -17,6 +17,7 @@ import { bentoHausMode } from './bentoHaus/bentoHaus.js';
 import { bentoHausVsMode } from './bentoHaus/bentoHausVs.js';
 import { shodoMode } from './shodo/shodo.js';
 import { dubClubMode } from './dubClub/dubClub.js';
+import { hajimemashiteMode } from './hajimemashite/hajimemashite.js';
 
 export const MODES: Record<ModeId, Mode<any, any>> = {
   oogiri: oogiriMode,
@@ -35,11 +36,12 @@ export const MODES: Record<ModeId, Mode<any, any>> = {
   'bento-haus-vs': bentoHausVsMode,
   shodo: shodoMode,
   'dub-club': dubClubMode,
+  hajimemashite: hajimemashiteMode,
   debug: debugMode,
 };
 
 /** Modes on the VIP's menu, in show order (the debug round stays hidden). */
-export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info, narabeteMode.info, bentoHausMode.info, bentoHausVsMode.info, dubClubMode.info];
+export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, hajimemashiteMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info, narabeteMode.info, bentoHausMode.info, bentoHausVsMode.info, dubClubMode.info];
 
 /** The menu games a room of `players` can start: what Surprise Me! rolls between. */
 export const surprisePool = (players: number): ModeInfo[] => MENU.filter((m) => players >= m.minPlayers && players <= m.maxPlayers);

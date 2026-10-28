@@ -61,6 +61,7 @@ body { margin: 0; overflow: hidden; background: #110b26; color: var(--ink); }
 [data-mode='omiai'] { --mode: #ffa3c0; }
 [data-mode='shodo'] { --mode: #c9ced6; }
 [data-mode='narabete'] { --mode: #ffc29a; }
+[data-mode='hajimemashite'] { --mode: #7fdc8c; }
 [data-mode='bento-haus'], [data-mode='bento-haus-vs'] { --mode: #ff9f6b; }
 
 /* ---- the 1920×1080 canvas ---- */

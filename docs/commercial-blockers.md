@@ -37,7 +37,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
 | 10 | Kana course order and links (ToKini Andy) | `content/src/kana/raid.ts` | ✅ | Links only; ask before any paid tie-in or using his name in marketing |
 | 11 | Fonts: Noto Sans JP, Noto Sans, Pixelify Sans, Press Start 2P (Google Fonts CDN); Kotoba Five, our modified Pixelify digit 5 (self-hosted) | `stage/index.html`, `controller/index.html`, `stage/assets/fonts/` | 🟡 ❓ | OFL 1.1 allows selling; ship the OFL notices. Self-host the fonts before an EU launch (the Google Fonts CDN's privacy terms weren't readable) |
-| 12 | Game formats and names (Jackbox, oogiri, Shōten) | Docs, personas | ⚠️ | Don't use "Jackbox" or TV show names in the product or marketing |
+| 12 | Game formats and names (Jackbox, oogiri, Shōten, ito, Overcooked, Rank5) | Docs, personas, borrowed mechanics | ⚠️ ❓ | Don't use "Jackbox" or TV show names in the product or marketing |
 | 13 | Karaoke Duel songs | `shared/src/modes/karaokeDuel/songs.ts` | ✅ | Keep songs original; no covers without a music licence |
 | 14 | Cloudflare Workers + Durable Objects | `wrangler.jsonc`, `cloudflare/` | ⚠️ | Paid plan once traffic grows; not a licence bar |
 | 15 | ETL Character Database (handwriting grader) | Planned, Kana Yōkai Raid ML parts | 🕓 ⛔ | Likely research-only: don't train a shipped model on it without AIST's permission |
@@ -241,6 +241,15 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   and The Mind: secret numbers, opinion themes, ordering by talk. Game mechanics aren't protected by
   copyright, but the names, card text and art are. Our themes, cards and the neck ruler are our own;
   don't use "ito" or "The Mind" in the product, store page or marketing.
+- Nice to Meet You! / はじめまして！ (added 2026-10-28) merges the classroom activity 他己紹介 (introducing
+  someone else; a teaching staple, no owner) with the ranking idea of **Rank5** (rank5.io): one player
+  per turn is the subject, and everyone ranks cards about them. Our twist (one true card, the rest lies
+  that score when ranked above it), the cards, tiles, Pon's lines and the look are our own. ❓ Rank5's
+  terms are **unread**: rank5.io was blocked from this session (2026-10-28). Only its "How to Play" and
+  FAQ pages, uploaded by Ladi, were read (2026-10-28), and they say nothing about licensing. Before
+  launch, read rank5.io's terms and check whether "Rank5" is a registered mark. Either way, don't use
+  "Rank5" in the product, store page or marketing. Music: two Kevin MacLeod tracks the game already
+  uses (Local Forecast - Elevator, Carefree; see row 22), so nothing new there.
 - Bento Haus (added 2026-10-28) borrows the idea of Overcooked (Ghost Town Games / Team17): a co-op
   kitchen where the team has to talk to fill orders against the clock. Bento Haus VS (2026-10-28)
   is the same idea with two teams racing; nothing new is borrowed. Only the idea; the menu,

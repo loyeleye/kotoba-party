@@ -15,6 +15,7 @@ import { shodoStage } from './shodo.js';
 import { narabeteStage } from './narabete.js';
 import { bentoHausStage, bentoHausVsStage } from './bentoHaus.js';
 import { dubClubStage } from './dubClub.js';
+import { hajimemashiteStage } from './hajimemashite.js';
 import type { StageMode } from './types.js';
 
 export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
@@ -35,4 +36,5 @@ export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
   'bento-haus': bentoHausStage,
   'bento-haus-vs': bentoHausVsStage,
   'dub-club': dubClubStage,
+  hajimemashite: hajimemashiteStage,
 };

@@ -49,6 +49,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'bento-haus-vs': 'feelin-good',
   // Dub Club: its own cheap anime opening, and silence whenever a voice is recorded or played (dubCue).
   'dub-club': 'dub-opening',
+  // Pon's guest corner: a light talk-show tune the room can chat over.
+  hajimemashite: 'local-forecast',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -65,6 +67,7 @@ export const MODE_ALT_THEMES: Partial<Record<ModeId, MusicId>> = {
   narabete: 'easy-lemon',
   'bento-haus': 'feelin-good',
   'bento-haus-vs': 'kawai-kitsune',
+  hajimemashite: 'carefree',
 };
 
 /** The theme for the `game`th game of `mode` on this screen (0, 1, 2 …). */
@@ -113,7 +116,9 @@ export const listening = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): bool
   // Shodō Taikai's dictation: each phone voices its own word.
   (view.mode === 'shodo' && view.phase === 'answer' && !!view.game && 'itemKind' in view.game && view.game.itemKind === 'dictation') ||
   // Narabete!'s say phase is a listening game: everyone has to hear everyone's card.
-  (view.mode === 'narabete' && view.phase === 'answer');
+  (view.mode === 'narabete' && view.phase === 'answer') ||
+  // はじめまして！'s introduction: the room has to hear each card read out.
+  (view.mode === 'hajimemashite' && view.phase === 'reveal');
 
 /**
  * Shodō Taikai's big sheet: once the first sheet is in, players start saying their sentence into

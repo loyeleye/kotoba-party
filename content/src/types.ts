@@ -545,6 +545,18 @@ export type HostEvent =
   | 'dub_notes' // cast notes after a scene; {name} got the most hearts
   | 'dub_episode' // tonight's episode plays ({title})
   | 'dub_sequel' // over the credits: Fude pitches a sequel ({title})
+  // はじめまして！
+  | 'hajime_intro' // Pon opens his guest corner: one truth per guest, the rest are tanuki
+  | 'hajime_guest' // a new guest comes on ({name})
+  | 'hajime_write' // everyone writes in silence: the guest the truth, the tanuki a lie
+  | 'hajime_introduce' // the introducer ({name}) is called up to read the cards
+  | 'hajime_read' // Pon reads a line of the introduction himself ({line}: the line, as is)
+  | 'hajime_rank' // the room ranks the cards from true to lie
+  | 'hajime_known' // the room put the truth first ({name}: the guest)
+  | 'hajime_top_lie' // a tanuki's lie was the room's favourite ({author})
+  | 'hajime_pon_win' // one of Pon's own lies was the room's favourite
+  | 'hajime_truth' // the truth was hidden well: it wasn't the room's first pick
+  | 'hajime_recall' // おぼえてる？ say everyone's truth
   | 'omiai_tease'; // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';
