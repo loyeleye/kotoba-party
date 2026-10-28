@@ -11,7 +11,7 @@ import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
 import { ROOM_STALE_MS } from '../../shared/src/constants.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
-import type { ByeReason, CreateRoomResponse, HostSay, ModeId, RecapView, RoomView } from '../../shared/src/protocol.js';
+import { SURPRISE, type ByeReason, type CreateRoomResponse, type HostSay, type ModeId, type RecapView, type RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
 import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
@@ -21,8 +21,9 @@ import { canSpeakHost, speakHost, stopHostSpeech } from './hostSpeech.js';
 import { joinAudioTabs } from '../../shared/src/audioTabs.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
-import { tickSfx, watchSfx } from './music/sfx.js';
 import { setClipSource } from './modes/dubAudio.js';
+import { sfx, tickSfx, watchSfx } from './music/sfx.js';
+import { playRoulette } from '../../shared/src/roulette.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import { mountBackdrop, updateBackdrop } from './backdrop.js';
 import { isDanmakuOn, onDanmakuToggle, startDanmaku, stopDanmaku } from './danmaku.js';
@@ -265,7 +266,12 @@ function render(view: RoomView, v: number): void {
   if (view.phaseSeq !== lastPhaseSeq) {
     log(`v${v} → ${view.phase}${view.round ? ` (round ${view.round}/${view.totalRounds})` : ''}`);
     // From the lobby into a game: the TV changes channel to the mode's title card.
-    if (lastPhase === 'lobby' && view.phase !== 'lobby' && view.phase !== 'recap' && view.mode) channelChange(view.mode);
+    // A Surprise Me! game spins for its pick first, then changes channel to it.
+    if (lastPhase === 'lobby' && view.phase !== 'lobby' && view.phase !== 'recap' && view.mode) {
+      const mode = view.mode;
+      if (view.surprise?.length) surpriseRoll(view.surprise, mode, () => channelChange(mode));
+      else channelChange(mode);
+    }
     // A phase change in a game: curtain wipe (restarted by reflow), and the ring timer starts full.
     // Not between Karaoke Duel's sing turns: each line is a phase, and the curtain would hide the
     // next line on its count-in. Nor within a Narabete! round, or between its story lines.
@@ -589,6 +595,14 @@ function channelChange(mode: ModeId): void {
   setTimeout(() => card.remove(), quiet ? 1200 : 1600);
 }
 
+/** Surprise Me!: the roulette over the stage, ticking as it slows, then `then` once it lands. */
+function surpriseRoll(ids: readonly ModeId[], mode: ModeId, then: () => void): void {
+  const pool = ids.map((id) => MENU_ALL.find((m) => m.id === id)).filter((m): m is ModeInfo => !!m);
+  const pick = pool.find((m) => m.id === mode);
+  if (!pick) return then();
+  playRoulette(els.canvas, pool, pick, { calm: calm(), size: 'roulette-tv', onTick: () => sfx('tap'), onLand: () => sfx('right'), onDone: then });
+}
+
 /** A stage curtain over the whole screen (1 s): closes from both sides, holds, opens. Calm motion skips it. */
 function stageCurtain(): void {
   els.canvas.querySelector('.stage-curtain')?.remove();
@@ -630,7 +644,7 @@ function fillMenus(view: RoomView): void {
   const modeKey = modes.map((m) => m.id).join();
   if (els.mode.dataset.key !== modeKey) {
     els.mode.dataset.key = modeKey;
-    mount(els.mode, modes.map((m) => h('option', { value: m.id }, m.title)));
+    mount(els.mode, modes.map((m) => h('option', { value: m.id }, m.title)), h('option', { value: SURPRISE }, '🎲 Surprise Me!'));
   }
   const packKey = view.packs.map((p) => p.id).join();
   if (els.pack.dataset.key !== packKey) {
@@ -748,7 +762,7 @@ async function command(body: Parameters<RoomClient['send']>[0]): Promise<void> {
 els.start.addEventListener('click', () =>
   void command({
     type: 'start',
-    mode: els.mode.value as ModeId,
+    mode: els.mode.value as ModeId | typeof SURPRISE,
     rounds: Number(els.rounds.value) || undefined,
     packId: els.pack.value || undefined,
   }),

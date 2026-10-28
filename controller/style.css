@@ -338,3 +338,67 @@ body[data-mode='last-train'] .timer:not(:empty)::before { content: '🚃 departs
 .recap-team-p p { margin: 0; }
 .recap-team-p.team-0 { --team-colour: #ff5a5f; }
 .recap-team-p.team-1 { --team-colour: #4f9dff; }
+
+/* Surprise Me!'s reveal (shared/src/roulette.ts): a festival prize wheel under lantern light, a
+   ticking pointer flap at the top, and a washi banner for the pick. */
+.roulette { --wheel: min(86vw, 380px); position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; overflow: hidden; cursor: pointer; animation: roulette-in 220ms ease-out;
+  background:
+    radial-gradient(closest-side at 50% 46%, rgba(255, 170, 70, 0.30), transparent 85%),
+    radial-gradient(120% 90% at 50% 40%, #2a2062 0%, #1a1440 55%, #0c0720 100%); }
+/* Festival bunting along the top, as on the stage. */
+.roulette::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; background: repeating-linear-gradient(90deg, var(--accent) 0 48px, var(--gold) 48px 96px, var(--paper) 96px 144px, var(--seat-2) 144px 192px); mask: conic-gradient(from -45deg at 50% 100%, #000 90deg, transparent 0) 0 0 / 48px 14px repeat-x; }
+.roulette.roulette-out { opacity: 0; transition: opacity 300ms ease; }
+.roulette-card { position: relative; display: grid; justify-items: center; gap: 14px; width: min(100%, calc(var(--wheel) + 40px)); }
+.roulette-kicker { display: grid; justify-items: center; gap: 2px; margin: 0; text-align: center; }
+.roulette-kicker-ja { font-family: var(--font-ja); font-weight: 900; font-size: calc(var(--wheel) * 0.1); line-height: 1; color: var(--gold); text-shadow: 0 3px 0 var(--outline), 0 0 18px rgba(255, 204, 51, 0.45); }
+.roulette-kicker-en { font-family: var(--font-pixel); font-size: calc(var(--wheel) * 0.05); letter-spacing: 0.08em; color: var(--paper); }
+
+.wheel { position: relative; width: var(--wheel); aspect-ratio: 1; margin-top: calc(var(--wheel) * 0.09); }
+.wheel-rays { position: absolute; inset: -22%; border-radius: 50%; pointer-events: none; opacity: 0.5;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 214, 120, 0.22) 0 7deg, transparent 7deg 18deg);
+  mask: radial-gradient(closest-side, #000 45%, transparent 100%); animation: wheel-rays 24s linear infinite; }
+.wheel-spin, .wheel-still { position: absolute; inset: 0; }
+.wheel-spin { will-change: transform; filter: drop-shadow(0 10px 0 rgba(0, 0, 0, 0.45)); }
+.wheel-disc, .wheel-frame { display: block; width: 100%; height: 100%; overflow: visible; }
+.wheel-frame { filter: drop-shadow(0 8px 0 rgba(12, 7, 32, 0.7)); }
+.wheel-wedge path { stroke: none; }
+.wheel-wedge text { fill: var(--on-accent); font-family: var(--font-body); font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+.wheel-wedge image { image-rendering: pixelated; }
+.wheel-lines line { stroke: #b9781c; stroke-width: 2; }
+.wheel-pegs circle { fill: #fff1a8; stroke: #8a5a12; stroke-width: 2; }
+.bulb { fill: #fff6d6; stroke: #8a5a12; stroke-width: 1.5; }
+.roulette.spinning .bulb.odd { animation: bulb 360ms steps(1, end) infinite; }
+.roulette.spinning .bulb.even { animation: bulb 360ms steps(1, end) -180ms infinite; }
+.roulette.landed .bulb { animation: bulb 240ms steps(1, end) 6; }
+.wheel-hub-host { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: 13%; height: 13%; object-fit: contain; image-rendering: pixelated; pointer-events: none; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.5)); }
+.wheel-pointer { position: absolute; left: 50%; top: calc(var(--wheel) * -0.085); width: calc(var(--wheel) * 0.12); translate: -50% 0; transform-origin: 50% 30%; filter: drop-shadow(0 4px 0 var(--outline)); }
+.wheel-pointer svg { display: block; width: 100%; height: auto; }
+.wheel-pointer.flick { animation: flick 140ms ease-out; }
+.roulette.landed .wheel-wedge:not(.won) { filter: saturate(0.4) brightness(0.55); transition: filter 400ms ease; }
+.roulette.landed .wheel-wedge.won path { animation: won 500ms ease-in-out 3 alternate; }
+.roulette.landed .wheel-hub-host { animation: pop 460ms cubic-bezier(0.3, 1.6, 0.5, 1); }
+
+.roulette-foot { display: grid; place-items: center; width: 100%; min-height: calc(var(--wheel) * 0.3); }
+.roulette-foot > * { grid-area: 1 / 1; }
+.roulette-status { margin: 0; color: var(--muted); font-size: calc(var(--wheel) * 0.045); text-align: center; }
+.roulette.landed .roulette-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.roulette-banner { display: grid; justify-items: center; gap: 2px; min-width: 78%; padding: 10px 26px 12px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--outline); outline: 3px solid var(--lantern); outline-offset: -9px; box-shadow: 0 6px 0 var(--outline); border-radius: 6px; text-align: center; opacity: 0; transform: translateY(12px) scale(0.9); }
+.roulette.landed .roulette-banner { opacity: 1; transform: none; transition: opacity 260ms ease, transform 420ms cubic-bezier(0.3, 1.6, 0.5, 1); }
+.roulette-banner-kicker { font-family: var(--font-pixel); color: var(--lantern); font-size: calc(var(--wheel) * 0.038); letter-spacing: 0.08em; text-transform: uppercase; }
+.roulette-banner-ja { font-size: calc(var(--wheel) * 0.082); line-height: 1.15; font-weight: 900; }
+.roulette-banner-en { font-weight: 800; color: var(--paper-muted); font-size: calc(var(--wheel) * 0.048); }
+
+.wheel-confetti { position: absolute; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none; }
+.wheel-confetti i { position: absolute; width: 10px; height: 16px; border-radius: 2px; animation: confetti 1500ms cubic-bezier(0.2, 0.7, 0.4, 1) var(--d) forwards; opacity: 0; }
+
+@keyframes roulette-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wheel-rays { to { rotate: 360deg; } }
+@keyframes bulb { 0% { fill: #fff6d6; } 50% { fill: #ffb43c; } }
+@keyframes flick { 0% { rotate: 0deg; } 35% { rotate: -16deg; } 100% { rotate: 0deg; } }
+@keyframes won { from { filter: brightness(1); } to { filter: brightness(1.25); } }
+@keyframes pop { 0% { scale: 0.4; } 60% { scale: 1.2; } 100% { scale: 1; } }
+@keyframes confetti { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), calc(var(--y) + 60vmin)) rotate(var(--r)); } }
+@media (prefers-reduced-motion: reduce) { .wheel-rays, .bulb { animation: none !important; } }
+.roulette.quiet .wheel-rays { animation: none; }
+.gp-dice { display: grid; place-items: center; width: 44px; height: 44px; font-size: 30px; }
+.gp-row.gp-surprise { border-style: dashed; border-color: var(--warn); }

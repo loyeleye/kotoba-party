@@ -7,8 +7,9 @@ import { LEVEL_LABELS, awardTitle, formatSeconds, h, mount, placesOf, seatShape 
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
-import { MODES } from '../../shared/src/modes/registry.js';
-import { LEVELS, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
+import { MODES, surprisePool } from '../../shared/src/modes/registry.js';
+import { playRoulette } from '../../shared/src/roulette.js';
+import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService } from './components/mic.js';
 import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
@@ -267,6 +268,11 @@ function status(st: ConnectionStatus): void {
 // ---- game screens ----
 function render(view: RoomView): void {
   tickTimer();
+  // A Surprise Me! game: the phone spins for it too, the moment the room leaves the lobby.
+  if (view.surprise?.length && view.mode && lastView?.phase === 'lobby' && view.phase !== 'lobby') {
+    const pool = view.surprise.map((id) => MODES[id].info);
+    playRoulette(document.body, pool, MODES[view.mode].info, { calm: view.calmMotion || matchMedia('(prefers-reduced-motion: reduce)').matches });
+  }
   lastView = view;
   const me = view.players.find((p) => p.id === session?.playerId);
   if (!me) return;
@@ -438,9 +444,27 @@ function fold(id: string, title: string, sub: string, ...body: HTMLElement[]): H
   return el;
 }
 
-const fits = (m: ModeInfo, n: number) => n >= m.minPlayers && n <= m.maxPlayers;
-const playersLabel = (m: ModeInfo) => (m.minPlayers === m.maxPlayers ? `${m.minPlayers} players` : `${m.minPlayers}–${m.maxPlayers} players`);
-const hostIcon = (m: ModeInfo) => h('img', { class: 'gp-host', src: `/stage/assets/hosts/${m.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() });
+/** Surprise Me! on the menu: not a game of its own, the room rolls one of the games that fit. */
+const SURPRISE_ENTRY: ModeInfo = {
+  id: SURPRISE as ModeInfo['id'],
+  title: 'Surprise Me!',
+  titleJa: 'おまかせ',
+  blurb: 'Can’t decide? Spin for a random game that everyone here can play.',
+  host: 'pon',
+  minPlayers: 1,
+  maxPlayers: 8,
+  roundChoices: [],
+  usesPack: false,
+};
+const isSurprise = (m: ModeInfo) => (m.id as string) === SURPRISE;
+const fitCount = (n: number) => surprisePool(n).length;
+const fits = (m: ModeInfo, n: number) => (isSurprise(m) ? fitCount(n) > 0 : n >= m.minPlayers && n <= m.maxPlayers);
+const playersLabel = (m: ModeInfo, n = 0) =>
+  isSurprise(m) ? `${fitCount(n)} game${fitCount(n) === 1 ? '' : 's'} fit` : m.minPlayers === m.maxPlayers ? `${m.minPlayers} players` : `${m.minPlayers}–${m.maxPlayers} players`;
+const hostIcon = (m: ModeInfo) =>
+  isSurprise(m)
+    ? h('span', { class: 'gp-host gp-dice', 'aria-hidden': 'true' }, '🎲')
+    : h('img', { class: 'gp-host', src: `/stage/assets/hosts/${m.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() });
 
 /**
  * The VIP's menu: tonight's game as one card that opens a picker sheet, topic and rounds side
@@ -448,8 +472,10 @@ const hostIcon = (m: ModeInfo) => h('img', { class: 'gp-host', src: `/stage/asse
  */
 function vipMenu(view: RoomView): HTMLElement {
   const n = view.players.length;
+  // Surprise Me! sits first on the list; it rolls among the games below it.
+  const entries = view.modes.length ? [SURPRISE_ENTRY, ...view.modes] : [];
   // Keep the VIP's pick across redraws; the first game that fits the room is the default.
-  let chosen = view.modes.find((m) => m.id === menu.mode) ?? view.modes.find((m) => fits(m, n)) ?? view.modes[0];
+  let chosen = entries.find((m) => m.id === menu.mode) ?? view.modes.find((m) => fits(m, n)) ?? view.modes[0];
   const packSelect = h('select', { 'aria-label': 'Topic' }, h('option', { value: '' }, 'Any topic'), view.packs.map((p) => h('option', { value: p.id }, `${p.titleJa} · ${p.title}`))) as HTMLSelectElement;
   packSelect.value = menu.packId;
   packSelect.addEventListener('change', () => (menu.packId = packSelect.value));
@@ -463,12 +489,12 @@ function vipMenu(view: RoomView): HTMLElement {
   const startBtn = h('button', { class: 'primary' }, 'Start') as HTMLButtonElement;
   const current = h('button', { type: 'button', class: 'gp-current', 'aria-haspopup': 'dialog' }) as HTMLButtonElement;
 
-  const rows = view.modes.map((m) =>
+  const rows = entries.map((m) =>
     h(
       'button',
       {
         type: 'button',
-        class: `gp-row ${fits(m, n) ? '' : 'gp-nofit'}`,
+        class: `gp-row ${fits(m, n) ? '' : 'gp-nofit'}${isSurprise(m) ? ' gp-surprise' : ''}`,
         onclick: () => {
           chosen = m;
           menu.mode = m.id;
@@ -479,7 +505,7 @@ function vipMenu(view: RoomView): HTMLElement {
       },
       hostIcon(m),
       h('span', { class: 'gp-text' }, h('strong', {}, m.title), h('span', { class: 'gp-ja', lang: 'ja' }, m.titleJa), h('small', {}, m.blurb)),
-      h('span', { class: 'gp-players' }, playersLabel(m)),
+      h('span', { class: 'gp-players' }, playersLabel(m, n)),
     ),
   );
   const sheet = h(
@@ -497,13 +523,13 @@ function vipMenu(view: RoomView): HTMLElement {
   const openSheet = () => {
     menu.sheetOpen = true;
     if (!sheet.open) sheet.showModal();
-    rows[view.modes.indexOf(chosen!)]?.focus();
+    rows[entries.indexOf(chosen!)]?.focus();
   };
   const closeSheet = () => sheet.open && sheet.close();
   current.addEventListener('click', openSheet);
 
   function refresh(): void {
-    view.modes.forEach((m, i) => {
+    entries.forEach((m, i) => {
       rows[i]!.classList.toggle('on', m === chosen);
       rows[i]!.setAttribute('aria-current', String(m === chosen));
     });
@@ -531,8 +557,14 @@ function vipMenu(view: RoomView): HTMLElement {
     );
     const ok = fits(m, n);
     startBtn.disabled = !ok;
-    startBtn.textContent = ok ? `Start ${m.title}` : 'Start';
-    note.textContent = ok ? '' : `${m.title} needs ${playersLabel(m)}. Tonight there ${n === 1 ? 'is 1' : `are ${n}`}.`;
+    startBtn.textContent = !ok ? 'Start' : isSurprise(m) ? '🎲 Spin for a game!' : `Start ${m.title}`;
+    note.textContent = !ok
+      ? isSurprise(m)
+        ? `No game fits ${n} player${n === 1 ? '' : 's'} yet.`
+        : `${m.title} needs ${playersLabel(m)}. Tonight there ${n === 1 ? 'is 1' : `are ${n}`}.`
+      : isSurprise(m)
+        ? `Rolls between ${fitCount(n)} game${fitCount(n) === 1 ? '' : 's'} for ${n} player${n === 1 ? '' : 's'}, each with its usual length.`
+        : '';
   }
   startBtn.addEventListener('click', () => {
     if (!chosen) return;

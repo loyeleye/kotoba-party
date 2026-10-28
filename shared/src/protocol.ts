@@ -17,6 +17,8 @@ export type Phase = (typeof PHASES)[number];
 
 export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'word-gauntlet', 'concentration', 'phrase-bingo', 'karaoke-duel', 'onsen-murder', 'tourist', 'oekaki', 'omiai', 'shodo', 'narabete', 'bento-haus', 'bento-haus-vs', 'dub-club', 'debug'] as const;
 export type ModeId = (typeof MODE_IDS)[number];
+/** Start's "Surprise Me!" pick: the room rolls a random menu game that fits tonight's player count. */
+export const SURPRISE = 'surprise';
 
 export const LEVELS: readonly Level[] = ['kana', 'n5', 'n4'];
 
@@ -115,6 +117,8 @@ export interface RoomView {
   remoteControl: boolean;
   /** The host's Audience setting (main stage settings). */
   audience: Audience;
+  /** This game was a Surprise Me! roll: the games it rolled between, for the reveal. Null otherwise. */
+  surprise: ModeId[] | null;
 }
 
 /** Server → client WebSocket message. */
@@ -136,7 +140,7 @@ export const CLOSE = {
 
 /** Every command carries a client-made id; a retried id returns the first result (idempotent). */
 export type Command =
-  | { id: string; type: 'start'; mode: ModeId; rounds?: number; packId?: string; extra?: Record<string, unknown> }
+  | { id: string; type: 'start'; mode: ModeId | typeof SURPRISE; rounds?: number; packId?: string; extra?: Record<string, unknown> }
   | { id: string; type: 'play'; move: unknown }
   | { id: string; type: 'setLevel'; level: Level }
   /** The lobby mic check: say こんにちは. A quiet result switches the phone to tap/type. */
