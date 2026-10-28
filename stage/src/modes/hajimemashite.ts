@@ -106,8 +106,8 @@ function card(view: RoomView, game: HajimeView, f: FactView, elapsed: number): H
     'div',
     { class: 'hj-face' },
     h('span', { class: 'hj-label' }, f.label),
-    f.word ? h('p', { class: `hj-word${sizeOf(f.word)}${f.hidden ? ' hj-hidden' : ''}`, lang: 'ja' }, f.word) : h('img', { class: 'hj-ear', src: '/stage/assets/icons/lt-mic.png', alt: 'not read yet' }),
-    f.read === 'pon' && f.word ? h('span', { class: 'hj-paw', title: 'Pon read this one' }, '🐾') : null,
+    f.word ? h('p', { class: `hj-word${sizeOf(f.word)}${f.hidden ? ' hj-hidden' : ''}`, lang: 'ja' }, f.word) : h('img', { class: 'hj-ear', src: '/stage/assets/fx/card-medallion.png', alt: 'not read yet' }),
+    f.read === 'pon' && f.word ? h('img', { class: 'hj-paw', src: '/stage/assets/fx/paw-hanko.png', alt: 'Pon read this one' }) : null,
   );
   const back = flipped
     ? f.kind === 'truth'

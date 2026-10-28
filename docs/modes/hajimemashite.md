@@ -106,7 +106,8 @@ the truth.
 10. Music: the Art Director preferred Wallpaper as the second theme, but each mode's second theme must
     be unique and Wallpaper is Oekaki's, so it stays Carefree.
 11. Each lie turns into a pixel tanuki with a leaf on its head (`stage/assets/fx/tanuki-doron.png`), cut
-    from Pon's own sprite, not the 🦝 emoji (a raccoon). The paw hanko and card-back art are still to do.
+    from Pon's own sprite, not the 🦝 emoji (a raccoon). Pon's paw stamp is a red ink paw hanko and face-down
+    cards show a gold leaf medallion (both PixelLab, Ladi's call).
 
 ## Open questions
 
