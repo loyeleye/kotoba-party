@@ -267,7 +267,7 @@ function stamps(ctx: Ctx): HTMLElement {
   };
   pad.append(
     ...STAMP_BUTTONS.filter((s) => s.kind !== 'hakushu' || close).map((s) => {
-      const btn: HTMLElement = h('button', { type: 'button', class: `hk-stamp-btn ${s.kind}`, onclick: () => tap(s.kind, btn) }, h('b', {}, s.emoji), h('span', { lang: 'ja' }, s.kana), h('small', {}, s.en));
+      const btn: HTMLElement = h('button', { type: 'button', class: `hk-stamp-btn ${s.kind}`, onclick: () => tap(s.kind, btn) }, h('img', { src: `/stage/assets/icons/hk-stamp-${s.kind}.png`, alt: s.emoji, draggable: 'false' }), h('span', { lang: 'ja' }, s.kana), h('small', {}, s.en));
       return btn;
     }),
   );

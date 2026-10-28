@@ -108,7 +108,8 @@ funny) has four strands, never explicit:
 Every picture is a
 320×240 PixelLab `pixflux` image with no text in it (row 6), drawn on the TV at exactly 2× (a 640×480
 screen) so the pixels stay even. The grade flowers (`stage/assets/icons/hk-flower-{0..3}.png`, 24×24) are
-drawn in code by a small PIL script, not by PixelLab.
+drawn in code by a small PIL script, not by PixelLab. The stamps (`icons/hk-stamp-*.png`), the candle and its flame, and Chōchin-san's bow
+(`anim/chochin-bow.png`, tipped forward in CSS) are PixelLab sprites in the manifest.
 
 **Music.** Lobby Time (theme) and Pamgaea (second theme), Kevin MacLeod, CC BY 4.0. Backstage the
 music sits under (the presenter rehearses aloud); during the talk and question time it drops to the
