@@ -23,6 +23,11 @@ export const waitQuips: Record<HostId, JpText[]> = {
     { text: 'フデは けを とかして います。', kana: 'フデは けを とかして います。', en: 'Fude is combing its bristles.' },
     { text: 'シュッ… シュッ… まだかな？', kana: 'シュッ… シュッ… まだかな？', en: 'Swish… swish… not yet?' },
   ],
+  nobiko: [
+    { text: 'くびを ながく して まって います…', kana: 'くびを ながく して まって います…', en: 'Waiting with my neck stretched out…' },
+    { text: 'おちゃを いれて います。', kana: 'おちゃを いれて います。', en: 'Pouring the tea.' },
+    { text: 'だんなは まだ こたつで ねて います。', kana: 'だんなは まだ こたつで ねて います。', en: 'My husband is still asleep in the kotatsu.' },
+  ],
 };
 
 /** The reconnect banner, in the host's voice. The English says the seat is safe. */
@@ -30,6 +35,7 @@ export const reconnectQuips: Record<HostId, JpText> = {
   pon: { text: 'ドロン！ ポンが さがして います！', kana: 'ドロン！ ポンが さがして います！', en: 'Poof! Pon is looking for you. Reconnecting, your seat is saved.' },
   chochin: { text: 'ゆうれいに なりかけて います…', kana: 'ゆうれいに なりかけて います…', en: "You're turning into a ghost… Reconnecting, your seat is saved." },
   fude: { text: 'すみが きれました！', kana: 'すみが きれました！', en: 'Out of ink! Reconnecting, your seat is saved.' },
+  nobiko: { text: 'にゅーっ！ くびを のばして さがして います！', kana: 'にゅーっ！ くびを のばして さがして います！', en: 'Stretching my neck to find you! Reconnecting, your seat is saved.' },
 };
 
 /** Under "Waiting for the VIP to pick a game" in the lobby (Pon hosts the lobby). */

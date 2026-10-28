@@ -87,7 +87,7 @@ describe('written lines', () => {
   });
 
   it('cover intro, IPPON, flop and awards for every host in both audiences', () => {
-    for (const host of ['pon', 'chochin', 'fude'] as const)
+    for (const host of ['pon', 'chochin', 'fude', 'nobiko'] as const)
       for (const audience of ['kids', 'cheeky'] as const) {
         const mine = audienceHostLines.filter((l) => l.host === host && l.audience === audience);
         expect(mine.length, `${host} ${audience}`).toBeGreaterThanOrEqual(12);

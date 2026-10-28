@@ -14,7 +14,8 @@
 //           half open and as drawn, for lip sync. In each column the opening runs from the top
 //           to the bottom outline pixel. Closed keeps only the top one (the upper lip) and paints
 //           the rest with the skin around it (a fifth value 'bottom' keeps the lower lip instead,
-//           for a grin whose upper lip would read as a frown); half closes it halfway down.
+//           for a grin whose upper lip would read as a frown, and 'fill' takes every non-skin pixel
+//           as the opening, for a mouth drawn with no outline); half closes it halfway down.
 //   poof    a sheet of the same frame size whose frames are appended; its first frame is drawn over
 //           the last kept frame, so the yōkai turns into the puff instead of vanishing
 //
@@ -28,7 +29,7 @@ interface Polish {
   frames?: number[];
   steady?: number;
   only?: [number, number, number, number];
-  mouth?: [number, number, number, number] | [number, number, number, number, 'bottom'];
+  mouth?: [number, number, number, number] | [number, number, number, number, 'bottom' | 'fill'];
   poof?: string;
 }
 
@@ -142,11 +143,13 @@ function mouthShapes(base: Uint8Array<ArrayBufferLike>, size: number, [bx, by, b
         ink = [base[i]!, base[i + 1]!, base[i + 2]!, 255];
       }
     }
+  // 'fill': a mouth drawn with no outline (a solid red opening), so every non-skin pixel is the opening.
+  const isSkin = (i: number) => base[i + 3]! <= 127 || ((base[i]! << 16) | (base[i + 1]! << 8) | base[i + 2]!) === skinKey;
   const shape = (keep: (depth: number) => number) => {
     const f = new Uint8Array(base);
     for (let x = bx; x < bx + bw; x++) {
       const ys: number[] = [];
-      for (let y = by; y < by + bh; y++) if (dark(at(x, y))) ys.push(y);
+      for (let y = by; y < by + bh; y++) if (lip === 'fill' ? !isSkin(at(x, y)) : dark(at(x, y))) ys.push(y);
       if (ys.length < 2) continue;
       const top = ys[0]!;
       const bottom = ys.at(-1)!;

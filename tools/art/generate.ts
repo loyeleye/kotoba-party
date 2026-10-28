@@ -51,7 +51,7 @@ interface Asset {
   generator: Generator;
   model: string;
   prompt: string;
-  /** image-to-pixelart only: repo path of the image to convert. */
+  /** image-to-pixelart: repo path of the image to convert. pixflux: a layout sketch to start from. animate: the first frame. */
   source?: string;
   params?: Record<string, unknown>;
   post?: Post;
@@ -111,6 +111,8 @@ async function pixellab(asset: Asset, seed: number | undefined): Promise<Raw> {
   if (asset.model === 'pixflux') {
     endpoint = 'create-image-pixflux';
     body = { description: asset.prompt, image_size: { width, height }, ...rest };
+    // A `source` here is a rough layout sketch that pixflux redraws (see init_image_strength in params).
+    if (asset.source) body.init_image = { type: 'base64', base64: readFileSync(join(ROOT, asset.source)).toString('base64'), format: 'png' };
   } else if (asset.model === 'image-to-pixelart') {
     // The prompt is documentation only: this endpoint takes no text, just the source image.
     if (!asset.source) throw new Error('image-to-pixelart needs a source image');

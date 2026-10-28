@@ -8,7 +8,7 @@ over the lyrics mora by mora. The singer holds a button on their phone and sings
 sends what the recogniser heard plus a compact pitch contour and timing, and the server scores
 the take. Everyone else sings along for chorus points and votes for the crowd favourite.
 
-Host: **Chōchin-san** (see decision 1). Players: 2–8. Rounds (songs): 4 by default, or 2 / 6.
+Host: **Nobiko-san** (see decision 1). Players: 2–8. Rounds (songs): 4 by default, or 2 / 6.
 
 Code: `shared/src/modes/karaokeDuel/` (`karaokeDuel.ts` rules, `scoring.ts`, `pitch.ts`,
 `songs.ts`), `stage/src/modes/karaokeDuel.ts` + `karaokeAudio.ts` + `.css`,
@@ -20,7 +20,7 @@ Code: `shared/src/modes/karaokeDuel/` (`karaokeDuel.ts` rules, `scoring.ts`, `pi
 | Phase | Shared name | What happens | Length |
 | --- | --- | --- | --- |
 | Intro | `intro` | Rules on the TV and phones. | 12 s |
-| Song card | `prompt` | Song title, every line (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Chōchin-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
+| Song card | `prompt` | Song title, every line (kana, kanji where used, romaji if anyone is at Kana level, English), who duels. Nobiko-san hands the first singer the mic. | 8 s (10 s if a duelist is Kana level) |
 | Sing | `answer` ×8 or ×16 | **Grown-up songs are continuous** (`form` + `track`): one produced instrumental plays the whole song (intro, verse, chorus, verse 2, chorus, about 80–130 s) and the duelists trade lines on its clock, one line every two bars; each sings every chorus line once. One phase per line, ending one bar before the next line so the next singer's count-in overlaps; the next singer sees their line during it; a take counts until 10 s after its line ends (the recogniser is slow), and lines with no take are marked missed when the song ends. **Kids' songs** are four-line sing-alongs: a 0.7 s breath, a one-bar count-in, the line, then 3 s; both duelists sing every line, who goes first alternates, and a take ends the turn at once. | Continuous: the track's own timing. Sing-along: 0.7 s + 4 beats + line + 3 s |
 | Crowd vote | `reveal` | Everyone not duelling votes for the crowd favourite. Skipped when nobody is watching (2 players). Ends when every connected voter is in. | 12 s |
 | Duel result | `score` | Sung points, lines won, crowd votes, the winner. Before every round but the last, the duel's loser picks the next song on their phone from three, or says "Surprise me". | 9 s (14 s with a pick) |
@@ -144,7 +144,7 @@ wobble, sampled the way a phone would; onset −0.36 to +0.54 s; length 85–115
 button timing and no contour; `quiet` bots type. Audience bots sing along half the time and vote
 at random.
 
-### Host cues (Chōchin-san)
+### Host cues (Nobiko-san)
 
 `encore_invite` with the first singer's name on the song card ("{name}, the microphone is
 yours"), `encore_cheer` at the crowd vote, `reveal_react` (good/ippon by the winner's average
@@ -157,11 +157,11 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
 
 ## Decisions made on Ladi's behalf
 
-1. **Host: Chōchin-san.** The theatrical lantern-ghost announcer fits a late-night karaoke
-   stage (a paper lantern is the stage light), and he had one segment to Pon's and Fude's two.
-   His written bank is train-themed, so cues stick to events whose lines read generically
-   (`encore_invite`, `encore_cheer`, `reveal_react`, `miss_kind`); no `intro` or `prompt_read`
-   cue ("A question for our passengers").
+1. **Host: Nobiko-san** (2026-10-27, when she joined the cast). Chōchin-san hosted it first; he
+   now has Last Train, Murder at the Onsen and Who's the Tourist?, so the new host took karaoke to
+   even out the segments. Her bank is matchmaker-flavoured, so cues stick to events whose lines
+   read generically (`encore_invite`, `encore_cheer`, `reveal_react`, `miss_kind`); no `intro` or
+   `prompt_read` cue.
 2. **One-on-one duels, rotating, not two teams.** Both duelists sing every line (so the room
    hears each line twice: hear it, then say it) and who goes first alternates, so neither always
    gets to copy. Teams (紅白-style) are an open question.
@@ -310,7 +310,7 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
    melody only on the song card and keep just the beat during takes?
 5. **Is the crowd bonus too big?** 60 (120 in the final song) can outweigh a few lines of
    singing. Intended, but worth a playtest.
-6. **Chōchin-san needs karaoke lines** (intro, song card, a great take) in his bank; the
+6. **Nobiko-san needs karaoke lines** (intro, song card, a great take) in her bank; the
    content thread would write them.
 7. **Fluent check:** lyrics, English, award titles. **Musician check:** do the melodies fit
    the words' pitch accent (e.g. あめ vs あめ)? The kids' songs ignore accent; the grown-up
@@ -319,7 +319,7 @@ crowd-favourite wins), コーラス しょう (most chorus points). Each needs a
    the tune, not accent. Fine to leave it that way?
 9. **Ideas from the song review, not built:** a crowd-vote question per song ("Who cried
    hardest?" for the enka), a one-line stage direction on the song card ("fist to chest"),
-   song-card notes (君 and あなた are for songs; 一杯 vs いっぱい), Chōchin-san karaoke lines
+   song-card notes (君 and あなた are for songs; 一杯 vs いっぱい), Nobiko-san karaoke lines
    (「スポットライトは わたくしです」), A/B voice labels for the duet, playing 乾杯！ first, and a
    pickup beat before a line.
 10. **Fluent check on accents** the reviewers weren't sure of: とりあえず, ガソリン, げつようび,

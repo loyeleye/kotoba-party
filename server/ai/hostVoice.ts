@@ -363,7 +363,7 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
     },
     closeRoom: (roomId) => void rooms.delete(roomId),
     budget: (roomId) => room(roomId).budget,
-    async warmUp(hosts = ['pon', 'chochin', 'fude']) {
+    async warmUp(hosts = ['pon', 'chochin', 'fude', 'nobiko']) {
       let rendered = 0, failed = 0;
       if (!opts.tts) return { rendered, failed };
       for (const l of lines) {

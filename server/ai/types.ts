@@ -2,7 +2,7 @@
 // Names match the Phase 0 skeleton (shared/src/protocol.ts) and the content thread's host line bank.
 // This package imports nothing from server/src or shared/src, so it can be wired in from either side.
 
-export type HostId = 'pon' | 'chochin' | 'fude';
+export type HostId = 'pon' | 'chochin' | 'fude' | 'nobiko';
 export type Level = 'kana' | 'n5' | 'n4';
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 

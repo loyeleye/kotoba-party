@@ -5,6 +5,7 @@ const speakers = [
   { name: '玄野武宏', styles: [{ name: 'ノーマル', id: 11 }, { name: '喜び', id: 39 }] },
   { name: 'ちび式じい', styles: [{ name: 'ノーマル', id: 42 }] },
   { name: '春日部つむぎ', styles: [{ name: 'ノーマル', id: 8 }] },
+  { name: 'No.7', styles: [{ name: 'ノーマル', id: 29 }, { name: 'アナウンス', id: 30 }] },
 ];
 
 function fakeEngine() {
@@ -72,7 +73,7 @@ describe.skipIf(!live)('VOICEVOX engine (live)', () => {
   it('voices a line for every host', async () => {
     const tts = new VoicevoxTts({ baseUrl: live });
     expect(await tts.check()).toEqual({ ok: true });
-    for (const host of ['pon', 'chochin', 'fude'] as const) {
+    for (const host of ['pon', 'chochin', 'fude', 'nobiko'] as const) {
       const a = await tts.speak({ host, kana: 'いっぽん！すごい！', tier: 'ippon' });
       expect(a.bytes.length).toBeGreaterThan(10_000);
       expect(a.ms).toBeGreaterThan(300);
