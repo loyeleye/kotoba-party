@@ -135,7 +135,7 @@ export const TIME_SETS: TimeSet[] = [
     audiences: ['kids', 'family', 'cheeky'],
     cards: [
       t('calendar.mochi', 1, 'Jan 1', '🎍', 'いちがつ ついたちに おもちを たべすぎます。', 'Eats too much mochi on January 1.', ['いちがつついたち']),
-      t('calendar.choco', 45, 'Feb 14', '🍫', 'にがつ じゅうよっかに チョコを もらいません。', "Doesn't get any chocolate on February 14.", ['にがつじゅうよっか']),
+      t('calendar.choco', 45, 'Feb 14', '🍫', 'にがつ じゅうよっかに チョコを もらえません。', "Can't get any chocolate on February 14.", ['にがつじゅうよっか']),
       t('calendar.lie', 91, 'Apr 1', '🤥', 'しがつ ついたちに うそを つきます。', 'Tells a lie on April 1.', ['しがつついたち']),
       t('calendar.koinobori', 125, 'May 5', '🎏', 'ごがつ いつかに こいのぼりに なります。', 'Turns into a carp streamer on May 5.', ['ごがついつか']),
       t('calendar.tanabata', 188, 'Jul 7', '🎋', 'しちがつ なのかに ねがいごとを かきます。', 'Writes a wish on July 7.', ['しちがつなのか']),
