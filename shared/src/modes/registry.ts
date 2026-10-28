@@ -14,6 +14,7 @@ import { oekakiMode } from './oekaki/oekaki.js';
 import { omiaiMode } from './omiai/omiai.js';
 import { narabeteMode } from './narabete/narabete.js';
 import { bentoHausMode } from './bentoHaus/bentoHaus.js';
+import { bentoHausVsMode } from './bentoHaus/bentoHausVs.js';
 import { shodoMode } from './shodo/shodo.js';
 
 export const MODES: Record<ModeId, Mode<any, any>> = {
@@ -30,9 +31,10 @@ export const MODES: Record<ModeId, Mode<any, any>> = {
   omiai: omiaiMode,
   narabete: narabeteMode,
   'bento-haus': bentoHausMode,
+  'bento-haus-vs': bentoHausVsMode,
   shodo: shodoMode,
   debug: debugMode,
 };
 
 /** Modes on the VIP's menu, in show order (the debug round stays hidden). */
-export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info, narabeteMode.info, bentoHausMode.info];
+export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info, narabeteMode.info, bentoHausMode.info, bentoHausVsMode.info];

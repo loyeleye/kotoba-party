@@ -21,7 +21,7 @@
 
 import type { Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
-import { isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
+import { isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type ModePlayer, type MoveResult } from '../mode.js';
 import { COUNTS, countWord, KANJI_SPELLINGS, customerOf, customersFor, FOODS, foodOf, MAX_COUNT, RIDDLE_EN, RIDDLES, type Customer, type Food, type JpLine } from './menu.js';
 
 // ---- tuning ----
@@ -199,8 +199,26 @@ export interface TakingView {
   fades: boolean;
 }
 
+/** Bento Haus VS: one of the two kitchens, as the TV sees it. */
+export interface VsTeamView {
+  id: number;
+  ja: string;
+  en: string;
+  /** Player ids, by seat. */
+  members: string[];
+  /** Tips this shift, and over the whole game so far. */
+  tips: number;
+  total: number;
+  /** Shifts this kitchen won. */
+  wins: number;
+  /** This kitchen's copy of each customer at the counter (the same ids in both kitchens). */
+  visits: VisitView[];
+  feed: FeedItem[];
+  ajimi: { foodId: string; at: number } | null;
+}
+
 export interface BentoView {
-  mode: 'bento-haus';
+  mode: 'bento-haus' | 'bento-haus-vs';
   round: number;
   totalRounds: number;
   /** ctx.now when this view was made, to line the phone's and TV's clocks up with the server's. */
@@ -219,6 +237,8 @@ export interface BentoView {
   feed: FeedItem[];
   ajimi: { foodId: string; at: number } | null;
   me: { level: Level; taking: TakingView[]; shelf: string[]; tickets: TicketView[]; calls: TicketView[]; bonus: number } | null;
+  /** VS only: both kitchens, and which one this phone cooks in. The fields above are that kitchen's (the red one's on the TV). */
+  vs?: { myTeam: number | null; teams: VsTeamView[]; winner: number | null };
 }
 
 export type BentoMove =
@@ -232,8 +252,11 @@ export type BentoMove =
 
 // ---- helpers ----
 
-const blankStats = (): PlayerStats => ({ calls: 0, readbacks: 0, perfect: 0 });
-const stats = (s: BentoState, id: string) => (s.stats[id] ??= blankStats());
+/** What a shop keeps across its kitchens: who did what, and when Pon last spoke. */
+export type Shop = Pick<BentoState, 'stats' | 'lastCueAt'>;
+
+export const blankStats = (): PlayerStats => ({ calls: 0, readbacks: 0, perfect: 0 });
+const stats = (s: Shop, id: string) => (s.stats[id] ??= blankStats());
 /** Round 1 counts everything with ひとつ, ふたつ; later rounds use each food's own counter. */
 export const ownCounter = (round: number): boolean => round >= 2;
 // Pon keeps quiet for a while after each line, so he doesn't talk over the kitchen calls.
@@ -412,25 +435,25 @@ export function starsFor(tips: number, maxTips: number): number {
   return r >= 0.75 ? 3 : r >= 0.45 ? 2 : 1;
 }
 
-function cue(s: BentoState, ctx: ModeContext, event: Parameters<ModeContext['cue']>[0]['event'], slots?: Record<string, string>, force = false): void {
+export function cue(s: Shop, ctx: ModeContext, event: Parameters<ModeContext['cue']>[0]['event'], slots?: Record<string, string>, force = false): void {
   if (!force && ctx.now - s.lastCueAt < CUE_GAP_MS) return;
   s.lastCueAt = ctx.now;
   ctx.cue({ host: 'pon', event, slots });
 }
 
-const waiting = (r: Round) => r.visits.filter((v) => v.state === 'waiting');
-const lastOrderAt = (r: Round) => r.shiftEnd - LAST_ORDER_MS;
+export const waiting = (r: Round) => r.visits.filter((v) => v.state === 'waiting');
+export const lastOrderAt = (r: Round) => r.shiftEnd - LAST_ORDER_MS;
 
-function setupRound(s: BentoState, ctx: ModeContext): Round {
-  const players = ctx.players();
-  const menu = shuffled(
+/** A new round's kitchen: the menu, spread across these players' phones. */
+export function setupRound(s: Pick<BentoState, 'round'>, ctx: ModeContext, players: readonly ModePlayer[] = ctx.players(), menu?: string[]): Round {
+  menu ??= shuffled(
     FOODS.map((f) => f.id),
     ctx.random,
   ).slice(0, menuSize(players.length));
   // Spread the food across every phone, round-robin from a shuffled seat order.
   const order = shuffled(players, ctx.random);
   const holders: Record<string, string> = {};
-  menu.forEach((id, i) => (holders[id] = order[i % order.length]!.id));
+  if (order.length) menu.forEach((id, i) => (holders[id] = order[i % order.length]!.id));
   return {
     index: s.round,
     menu,
@@ -454,7 +477,7 @@ function setupRound(s: BentoState, ctx: ModeContext): Round {
 }
 
 /** The next order-taker: everyone in turn, skipping whoever is already taking an order if anyone else is free. */
-function nextTaker(s: BentoState, r: Round, players: readonly ModePlayer[]): ModePlayer {
+export function nextTaker(s: { takerTurn: number }, r: Round, players: readonly ModePlayer[]): ModePlayer {
   const busy = new Set(waiting(r).map((v) => v.takerId));
   for (let i = 0; i < players.length; i++) {
     const p = players[(s.takerTurn + i) % players.length]!;
@@ -468,9 +491,8 @@ function nextTaker(s: BentoState, r: Round, players: readonly ModePlayer[]): Mod
   return p;
 }
 
-function arrive(s: BentoState, r: Round, at: number, ctx: ModeContext): void {
-  const players = ctx.players();
-  if (!players.length) return;
+/** The next customer through the door: one whose rule fits tonight's menu, not one already waiting. */
+export function pickCustomer(s: Pick<BentoState, 'usedCustomers'>, r: Round, ctx: ModeContext): Customer {
   const audience = ctx.audience ?? 'family';
   // A customer whose rule needs food that isn't on tonight's menu stays home.
   const fits = customersFor(audience).filter((c) =>
@@ -488,6 +510,13 @@ function arrive(s: BentoState, r: Round, at: number, ctx: ModeContext): void {
   const customer = pick(fresh.length ? fresh : fits.filter((c) => !waiting(r).some((v) => v.customerId === c.id)), ctx.random) ?? fits[0]!;
   if (!fresh.length) s.usedCustomers = [];
   s.usedCustomers.push(customer.id);
+  return customer;
+}
+
+function arrive(s: BentoState, r: Round, at: number, ctx: ModeContext): void {
+  const players = ctx.players();
+  if (!players.length) return;
+  const customer = pickCustomer(s, r, ctx);
   const taker = nextTaker(s, r, players);
   const order = makeOrder(r.index, r.menu, customer, taker.level, ctx.random);
   const patience = patienceFor(order.lines, order.rush, players.length);
@@ -513,14 +542,14 @@ function arrive(s: BentoState, r: Round, at: number, ctx: ModeContext): void {
 }
 
 /** Fills free counter places: the next customer comes a little after a place frees up. */
-function planArrival(r: Round, from: number, players: number): void {
+export function planArrival(r: Round, from: number, players: number): void {
   if (r.nextArriveAt !== null) return;
   if (waiting(r).length >= counterSlots(r.index, players)) return;
   const at = from + ARRIVE_GAP_MS;
   if (at < lastOrderAt(r)) r.nextArriveAt = at;
 }
 
-function giveUp(s: BentoState, r: Round, v: Visit, at: number, ctx: ModeContext): void {
+export function giveUp(s: Shop, r: Round, v: Visit, at: number, ctx: ModeContext, quiet = false): void {
   v.state = 'left';
   v.endedAt = at;
   const any = Object.values(v.box).some((n) => n > 0);
@@ -529,7 +558,7 @@ function giveUp(s: BentoState, r: Round, v: Visit, at: number, ctx: ModeContext)
   v.reaction = any ? WAKEARI : customerOf(v.customerId)!.leave;
   r.tips += v.tips;
   for (const t of r.tickets) if (t.visitId === v.id && t.state === 'open') t.state = 'void';
-  cue(s, ctx, 'bento_leave');
+  if (!quiet) cue(s, ctx, 'bento_leave');
 }
 
 /** Runs the shift's clock up to `now`: customers who gave up leave, and new ones come in, in time order. */
@@ -553,9 +582,9 @@ function runClock(s: BentoState, r: Round, now: number, ctx: ModeContext): void 
 }
 
 /** The shift is over early: nobody waiting and no one else coming. */
-const shiftDone = (r: Round, now: number) => r.started && waiting(r).length === 0 && (r.nextArriveAt === null || r.nextArriveAt >= lastOrderAt(r)) && now >= r.shiftStart + FIRST_ARRIVAL_MS;
+export const shiftDone = (r: Round, now: number) => r.started && waiting(r).length === 0 && (r.nextArriveAt === null || r.nextArriveAt >= lastOrderAt(r)) && now >= r.shiftStart + FIRST_ARRIVAL_MS;
 
-function openTicket(s: BentoState, r: Round, by: string, via: Utterance['via'], heard: string, foodId: string | null, n: number | null, ctx: ModeContext): Ticket {
+function openTicket(s: Shop, r: Round, by: string, via: Utterance['via'], heard: string, foodId: string | null, n: number | null, ctx: ModeContext): Ticket {
   const mine = waiting(r).find((v) => v.takerId === by);
   const visit = mine ?? waiting(r).sort((a, b) => a.arriveAt - b.arriveAt)[0] ?? null;
   const t: Ticket = {
@@ -578,7 +607,7 @@ function openTicket(s: BentoState, r: Round, by: string, via: Utterance['via'], 
 
 const addBonus = (r: Round, id: string, points: number) => (r.bonus[id] = (r.bonus[id] ?? 0) + points);
 
-function serve(s: BentoState, r: Round, v: Visit, by: string, ctx: ModeContext): void {
+export function serve(s: Shop, r: Round, v: Visit, by: string, ctx: ModeContext): void {
   const off = compareBox(v.lines, v.box);
   const customer = customerOf(v.customerId)!;
   const any = Object.values(v.box).some((n) => n > 0);
@@ -614,19 +643,202 @@ function serve(s: BentoState, r: Round, v: Visit, by: string, ctx: ModeContext):
   for (const t of r.tickets) if (t.visitId === v.id && t.state === 'open') t.state = 'void';
 }
 
-function payRound(s: BentoState, r: Round, ctx: ModeContext): void {
+/** Pays a kitchen's round: every tip to each of its players, plus their speaking bonus up to the cap. */
+export function payRound(r: Round, ctx: ModeContext, players: readonly ModePlayer[] = ctx.players()): void {
   r.stars = starsFor(r.tips, r.maxTips);
   r.teamPoints = r.tips * TIP_POINTS;
   const cap = Math.round(r.teamPoints * BONUS_POOL_SHARE);
-  for (const p of ctx.players()) {
+  for (const p of players) {
     const bonus = Math.min(cap, r.bonus[p.id] ?? 0);
     r.paid[p.id] = r.teamPoints + bonus;
     ctx.award(p.id, r.teamPoints + bonus);
   }
 }
 
-function utteranceOk(raw: unknown): raw is Utterance {
+export function utteranceOk(raw: unknown): raw is Utterance {
   return isUtterance(raw) && raw.text.trim().length > 0;
+}
+
+/** A kitchen move other than serving: calling, reading back, asking how many, sending, tossing. */
+export function kitchenMove(s: Shop, r: Round, playerId: string, raw: Record<string, unknown>, ctx: ModeContext): MoveResult {
+  switch (raw.kind) {
+    case 'call': {
+      if (!waiting(r).length) return moveError('no-customer');
+      if (typeof raw.foodId === 'string') {
+        const n = raw.n;
+        if (!r.menu.includes(raw.foodId) || typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > MAX_COUNT) return moveError('bad-move');
+        openTicket(s, r, playerId, 'tap', '', raw.foodId, n, ctx);
+        return MOVE_OK;
+      }
+      if (!utteranceOk(raw.utterance)) return moveError('bad-move');
+      const u = raw.utterance;
+      const heard = u.text.slice(0, 80);
+      const asked = parseCall(u, r.menu);
+      if (!asked.length) {
+        // Nothing on the menu came through: radio static, with no name on the TV.
+        openTicket(s, r, playerId, u.via, heard, null, null, ctx);
+        cue(s, ctx, 'bento_static');
+        return MOVE_OK;
+      }
+      for (const a of asked) {
+        openTicket(s, r, playerId, u.via, heard, a.foodId, a.n, ctx);
+        if (a.n !== null) {
+          addBonus(r, playerId, u.via === 'speech' ? BONUS.callSpoken : BONUS.callTyped);
+          if (u.via === 'speech') stats(s, playerId).calls += 1;
+          const f = foodOf(a.foodId)!;
+          const say = `${f.kana} ${countWord(f, a.n, ownCounter(r.index))}、おねがいします`;
+          ctx.phrase(playerId, { itemId: `bento:${a.foodId}:${a.n}`, text: say, kana: say, en: `${a.n} ${f.en}, please`, outcome: u.via === 'speech' ? 'said' : 'seen' });
+        } else cue(s, ctx, 'bento_static');
+      }
+      return MOVE_OK;
+    }
+    case 'readback': {
+      const t = r.tickets.find((x) => x.id === raw.ticketId);
+      if (t && t.state !== 'open') return moveError('too-late');
+      if (!t || t.stationId !== playerId || t.state !== 'open' || t.foodId === null || t.n === null) return moveError('bad-move');
+      if (!utteranceOk(raw.utterance)) return moveError('bad-move');
+      if (t.readback) return MOVE_OK;
+      if (!readbackOk(raw.utterance, t.foodId, t.n)) return moveError('readback-mismatch');
+      t.readback = true;
+      if (raw.utterance.via === 'speech') {
+        addBonus(r, playerId, BONUS.readback);
+        stats(s, playerId).readbacks += 1;
+      }
+      return MOVE_OK;
+    }
+    case 'ask': {
+      const t = r.tickets.find((x) => x.id === raw.ticketId);
+      if (t && t.state !== 'open') return moveError('too-late');
+      if (!t || t.state !== 'open' || t.foodId === null || t.stationId !== playerId) return moveError('bad-move');
+      if (!t.asked && utteranceOk(raw.utterance) && raw.utterance.via === 'speech') addBonus(r, playerId, BONUS.ask);
+      t.asked = true;
+      return MOVE_OK;
+    }
+    case 'send': {
+      const t = r.tickets.find((x) => x.id === raw.ticketId);
+      if (t && t.state !== 'open') return moveError('too-late');
+      if (!t || t.stationId !== playerId || t.state !== 'open' || t.foodId === null || t.n === null) return moveError('bad-move');
+      const visit = r.visits.find((v) => v.id === t.visitId && v.state === 'waiting') ?? waiting(r).sort((a, b) => a.arriveAt - b.arriveAt)[0];
+      if (!visit) {
+        t.state = 'void';
+        return MOVE_OK;
+      }
+      t.state = 'sent';
+      t.visitId = visit.id;
+      visit.box[t.foodId] = (visit.box[t.foodId] ?? 0) + t.n;
+      r.sends += 1;
+      // あじみ: once a round, Pon "tastes" one of the third thing sent. It has to be called again.
+      if (!r.ajimi && r.sends === 3 && visit.box[t.foodId]! > 0) {
+        visit.box[t.foodId]! -= 1;
+        if (!visit.box[t.foodId]) delete visit.box[t.foodId];
+        r.ajimi = { visitId: visit.id, foodId: t.foodId, at: ctx.now };
+        cue(s, ctx, 'bento_ajimi', { food: foodOf(t.foodId)!.kana }, true);
+      }
+      return MOVE_OK;
+    }
+    case 'toss': {
+      const v = r.visits.find((x) => x.id === raw.visitId);
+      if (v && v.state !== 'waiting') return moveError('too-late');
+      if (!v || v.takerId !== playerId || typeof raw.foodId !== 'string' || !v.box[raw.foodId]) return moveError('bad-move');
+      delete v.box[raw.foodId];
+      return MOVE_OK;
+    }
+    default:
+      return moveError('bad-move');
+  }
+}
+
+/** Speaking bonus for saying おまたせしました！ out loud when serving. */
+export function serveBonus(r: Round, playerId: string, utterance: unknown): void {
+  if (utteranceOk(utterance) && utterance.via === 'speech') addBonus(r, playerId, BONUS.serve);
+}
+
+/** The customers at a kitchen's counter: everyone waiting, and whoever just left, for a moment. */
+export function visitsView(r: Round | null, scoring: boolean, ctx: ModeContext): VisitView[] {
+  return (r?.visits ?? [])
+    .filter((v) => scoring || v.state === 'waiting' || (v.endedAt !== null && ctx.now - v.endedAt < LINGER_MS))
+    .map((v) => {
+      const c = customerOf(v.customerId)!;
+      return {
+        id: v.id,
+        customerId: v.customerId,
+        name: c.name,
+        nameEn: c.nameEn,
+        emoji: c.emoji,
+        takerId: v.takerId,
+        hello: c.hello,
+        rush: v.rush,
+        arriveAt: v.arriveAt,
+        leaveAt: v.leaveAt,
+        state: v.state,
+        endedAt: v.endedAt,
+        box: Object.entries(v.box).map(([foodId, n]) => ({ foodId, n })),
+        tips: v.tips,
+        reaction: v.reaction,
+        baked: v.baked,
+        slots: new Set(v.lines.map((l) => l.foodId)).size,
+        ...(scoring ? { order: { text: v.text, en: v.en } } : {}),
+      };
+    });
+}
+
+/** The last few kitchen calls, for the TV. */
+export const feedView = (r: Round | null): FeedItem[] => (r?.tickets ?? []).slice(-5).map((t) => ({ id: t.id, foodId: t.foodId, n: t.n, state: t.state, readback: t.readback, at: t.at }));
+
+export const ajimiView = (r: Round | null, ctx: ModeContext): BentoView['ajimi'] => (r?.ajimi && ctx.now - r.ajimi.at < AJIMI_MS ? { foodId: r.ajimi.foodId, at: r.ajimi.at } : null);
+
+/** One phone's part of a kitchen: the orders it's taking, its shelf, its tickets and its calls. */
+export function meView(r: Round | null, me: ModePlayer | undefined, own: boolean, ctx: ModeContext): BentoView['me'] {
+  if (!me) return null;
+  if (!r) return { level: me.level, taking: [], shelf: [], tickets: [], calls: [], bonus: 0 };
+  const reading = (t: Ticket): string | null => (t.foodId && t.n ? countWord(foodOf(t.foodId)!, t.n, own) : null);
+  const ticketView = (t: Ticket, withHeard = false): TicketView => ({
+    id: t.id,
+    foodId: t.foodId,
+    n: t.n,
+    reading: reading(t),
+    state: t.state,
+    readback: t.readback,
+    asked: t.asked,
+    at: t.at,
+    ...(withHeard ? { heard: t.heard } : {}),
+  });
+  return {
+    level: me.level,
+    taking: waiting(r)
+      .filter((v) => v.takerId === me.id)
+      .map((v) => ({
+        visitId: v.id,
+        text: v.text,
+        en: v.en,
+        lines: v.lines.map((l) => ({ foodId: l.riddle ? null : l.foodId, riddle: l.riddle ? RIDDLES[l.foodId]! : null, n: l.n })),
+        at: v.arriveAt,
+        fades: me.level !== 'kana',
+      })),
+    shelf: r.menu.filter((id) => r.holders[id] === me.id),
+    tickets: r.tickets.filter((t) => t.stationId === me.id && (t.state === 'open' || ctx.now - t.at < 4_000)).map((t) => ticketView(t)),
+    calls: r.tickets
+      .filter((t) => t.by === me.id)
+      .slice(-3)
+      .map((t) => ticketView(t, true)),
+    bonus: r.paid[me.id] !== undefined ? Math.max(0, r.paid[me.id]! - r.teamPoints) : Math.min(r.bonus[me.id] ?? 0, Math.round(r.tips * TIP_POINTS * BONUS_POOL_SHARE)),
+  };
+}
+
+/** The kitchen's awards: most calls said out loud, most read-backs, most perfect boxes. */
+export function shopAwards(s: Shop, ctx: ModeContext): Award[] {
+  const out: Award[] = [];
+  const best = (key: keyof PlayerStats): ModePlayer | undefined => {
+    const ps = ctx.players().filter((p) => (s.stats[p.id]?.[key] ?? 0) > 0);
+    return ps.sort((a, b) => (s.stats[b.id]![key] ?? 0) - (s.stats[a.id]![key] ?? 0) || a.seat - b.seat)[0];
+  };
+  const caller = best('calls');
+  if (caller) out.push({ playerId: caller.id, name: caller.name, title: 'こえかけ賞', en: 'Best Caller (most calls said out loud)' });
+  const reader = best('readbacks');
+  if (reader) out.push({ playerId: reader.id, name: reader.name, title: 'おへんじ賞', en: 'Best Reply (most read-backs)' });
+  const packer = best('perfect');
+  if (packer) out.push({ playerId: packer.id, name: packer.name, title: 'かんぺき賞', en: 'Perfect Boxes (most served without a slip)' });
+  return out;
 }
 
 // ---- the mode ----
@@ -636,7 +848,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     id: 'bento-haus',
     title: 'Bento Haus',
     titleJa: 'おべんとうハウス',
-    blurb: 'A co-op kitchen in Japanese. Yōkai phone in bento orders; the food is spread across your phones, so call out to each other to fill the box in time.',
+    blurb: 'Run a yōkai bento shop as one kitchen. The food is on your phones, so call the orders out in Japanese.',
     host: 'pon',
     minPlayers: 1,
     maxPlayers: 8,
@@ -689,7 +901,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       r.nextArriveAt = ctx.now + FIRST_ARRIVAL_MS;
     }
     if (phase === 'score') {
-      payRound(s, r, ctx);
+      payRound(r, ctx);
       cue(s, ctx, 'bento_stars', { stars: ['ゼロ', 'ひとつ', 'ふたつ', 'みっつ'][r.stars ?? 0]!, stars_en: String(r.stars ?? 0) }, true);
     }
   },
@@ -741,95 +953,16 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     const player = ctx.player(playerId);
     if (!player) return moveError('not-allowed');
 
-    switch (raw.kind) {
-      case 'call': {
-        if (!waiting(r).length) return moveError('no-customer');
-        if (typeof raw.foodId === 'string') {
-          const n = raw.n;
-          if (!r.menu.includes(raw.foodId) || typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > MAX_COUNT) return moveError('bad-move');
-          openTicket(s, r, playerId, 'tap', '', raw.foodId, n, ctx);
-          return MOVE_OK;
-        }
-        if (!utteranceOk(raw.utterance)) return moveError('bad-move');
-        const u = raw.utterance;
-        const heard = u.text.slice(0, 80);
-        const asked = parseCall(u, r.menu);
-        if (!asked.length) {
-          // Nothing on the menu came through: radio static, with no name on the TV.
-          openTicket(s, r, playerId, u.via, heard, null, null, ctx);
-          cue(s, ctx, 'bento_static');
-          return MOVE_OK;
-        }
-        for (const a of asked) {
-          openTicket(s, r, playerId, u.via, heard, a.foodId, a.n, ctx);
-          if (a.n !== null) {
-            addBonus(r, playerId, u.via === 'speech' ? BONUS.callSpoken : BONUS.callTyped);
-            if (u.via === 'speech') stats(s, playerId).calls += 1;
-            const f = foodOf(a.foodId)!;
-            const say = `${f.kana} ${countWord(f, a.n, ownCounter(r.index))}、おねがいします`;
-            ctx.phrase(playerId, { itemId: `bento:${a.foodId}:${a.n}`, text: say, kana: say, en: `${a.n} ${f.en}, please`, outcome: u.via === 'speech' ? 'said' : 'seen' });
-          } else cue(s, ctx, 'bento_static');
-        }
-        return MOVE_OK;
-      }
-      case 'readback': {
-        const t = r.tickets.find((x) => x.id === raw.ticketId);
-        if (!t || t.stationId !== playerId || t.state !== 'open' || t.foodId === null || t.n === null) return moveError('bad-move');
-        if (!utteranceOk(raw.utterance)) return moveError('bad-move');
-        if (t.readback) return MOVE_OK;
-        if (!readbackOk(raw.utterance, t.foodId, t.n)) return moveError('readback-mismatch');
-        t.readback = true;
-        if (raw.utterance.via === 'speech') {
-          addBonus(r, playerId, BONUS.readback);
-          stats(s, playerId).readbacks += 1;
-        }
-        return MOVE_OK;
-      }
-      case 'ask': {
-        const t = r.tickets.find((x) => x.id === raw.ticketId);
-        if (!t || t.state !== 'open' || t.foodId === null || t.stationId !== playerId) return moveError('bad-move');
-        if (!t.asked && utteranceOk(raw.utterance) && raw.utterance.via === 'speech') addBonus(r, playerId, BONUS.ask);
-        t.asked = true;
-        return MOVE_OK;
-      }
-      case 'send': {
-        const t = r.tickets.find((x) => x.id === raw.ticketId);
-        if (!t || t.stationId !== playerId || t.state !== 'open' || t.foodId === null || t.n === null) return moveError('bad-move');
-        const visit = r.visits.find((v) => v.id === t.visitId && v.state === 'waiting') ?? waiting(r).sort((a, b) => a.arriveAt - b.arriveAt)[0];
-        if (!visit) {
-          t.state = 'void';
-          return MOVE_OK;
-        }
-        t.state = 'sent';
-        t.visitId = visit.id;
-        visit.box[t.foodId] = (visit.box[t.foodId] ?? 0) + t.n;
-        r.sends += 1;
-        // あじみ: once a round, Pon "tastes" one of the third thing sent. It has to be called again.
-        if (!r.ajimi && r.sends === 3 && visit.box[t.foodId]! > 0) {
-          visit.box[t.foodId]! -= 1;
-          if (!visit.box[t.foodId]) delete visit.box[t.foodId];
-          r.ajimi = { visitId: visit.id, foodId: t.foodId, at: ctx.now };
-          cue(s, ctx, 'bento_ajimi', { food: foodOf(t.foodId)!.kana }, true);
-        }
-        return MOVE_OK;
-      }
-      case 'toss': {
-        const v = r.visits.find((x) => x.id === raw.visitId);
-        if (!v || v.state !== 'waiting' || v.takerId !== playerId || typeof raw.foodId !== 'string' || !v.box[raw.foodId]) return moveError('bad-move');
-        delete v.box[raw.foodId];
-        return MOVE_OK;
-      }
-      case 'serve': {
-        const v = r.visits.find((x) => x.id === raw.visitId);
-        if (!v || v.state !== 'waiting' || v.takerId !== playerId) return moveError('bad-move');
-        if (utteranceOk(raw.utterance) && raw.utterance.via === 'speech') addBonus(r, playerId, BONUS.serve);
-        serve(s, r, v, playerId, ctx);
-        planArrival(r, ctx.now, ctx.players().length);
-        return MOVE_OK;
-      }
-      default:
-        return moveError('bad-move');
+    if (raw.kind === 'serve') {
+      const v = r.visits.find((x) => x.id === raw.visitId);
+      if (v && v.state !== 'waiting') return moveError('too-late');
+      if (!v || v.takerId !== playerId) return moveError('bad-move');
+      serveBonus(r, playerId, raw.utterance);
+      serve(s, r, v, playerId, ctx);
+      planArrival(r, ctx.now, ctx.players().length);
+      return MOVE_OK;
     }
+    return kitchenMove(s, r, playerId, raw, ctx);
   },
 
   release(s, playerId, ctx) {
@@ -853,43 +986,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     const info = s.round ? ROUND_INFO[s.round - 1]! : null;
     const own = ownCounter(s.round);
     const scoring = phase === 'score';
-    const visits: VisitView[] = (r?.visits ?? [])
-      .filter((v) => scoring || v.state === 'waiting' || (v.endedAt !== null && ctx.now - v.endedAt < LINGER_MS))
-      .map((v) => {
-        const c = customerOf(v.customerId)!;
-        return {
-          id: v.id,
-          customerId: v.customerId,
-          name: c.name,
-          nameEn: c.nameEn,
-          emoji: c.emoji,
-          takerId: v.takerId,
-          hello: c.hello,
-          rush: v.rush,
-          arriveAt: v.arriveAt,
-          leaveAt: v.leaveAt,
-          state: v.state,
-          endedAt: v.endedAt,
-          box: Object.entries(v.box).map(([foodId, n]) => ({ foodId, n })),
-          tips: v.tips,
-          reaction: v.reaction,
-          baked: v.baked,
-          slots: new Set(v.lines.map((l) => l.foodId)).size,
-          ...(scoring ? { order: { text: v.text, en: v.en } } : {}),
-        };
-      });
-    const reading = (t: Ticket): string | null => (t.foodId && t.n ? countWord(foodOf(t.foodId)!, t.n, own) : null);
-    const ticketView = (t: Ticket, withHeard = false): TicketView => ({
-      id: t.id,
-      foodId: t.foodId,
-      n: t.n,
-      reading: reading(t),
-      state: t.state,
-      readback: t.readback,
-      asked: t.asked,
-      at: t.at,
-      ...(withHeard ? { heard: t.heard } : {}),
-    });
+    const visits = visitsView(r, scoring, ctx);
     const me = viewer.kind === 'player' ? ctx.player(viewer.playerId) : undefined;
     return {
       mode: 'bento-haus',
@@ -906,48 +1003,13 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       stars: r?.stars ?? null,
       teamPoints: r?.teamPoints ?? 0,
       visits,
-      feed: (r?.tickets ?? []).slice(-5).map((t) => ({ id: t.id, foodId: t.foodId, n: t.n, state: t.state, readback: t.readback, at: t.at })),
-      ajimi: r?.ajimi && ctx.now - r.ajimi.at < AJIMI_MS ? { foodId: r.ajimi.foodId, at: r.ajimi.at } : null,
-      me:
-        me && r
-          ? {
-              level: me.level,
-              taking: waiting(r)
-                .filter((v) => v.takerId === me.id)
-                .map((v) => ({
-                  visitId: v.id,
-                  text: v.text,
-                  en: v.en,
-                  lines: v.lines.map((l) => ({ foodId: l.riddle ? null : l.foodId, riddle: l.riddle ? RIDDLES[l.foodId]! : null, n: l.n })),
-                  at: v.arriveAt,
-                  fades: me.level !== 'kana',
-                })),
-              shelf: r.menu.filter((id) => r.holders[id] === me.id),
-              tickets: r.tickets.filter((t) => t.stationId === me.id && (t.state === 'open' || ctx.now - t.at < 4_000)).map((t) => ticketView(t)),
-              calls: r.tickets
-                .filter((t) => t.by === me.id)
-                .slice(-3)
-                .map((t) => ticketView(t, true)),
-              bonus: r.paid[me.id] !== undefined ? Math.max(0, r.paid[me.id]! - r.teamPoints) : Math.min(r.bonus[me.id] ?? 0, Math.round(r.tips * TIP_POINTS * BONUS_POOL_SHARE)),
-            }
-          : me
-            ? { level: me.level, taking: [], shelf: [], tickets: [], calls: [], bonus: 0 }
-            : null,
+      feed: feedView(r),
+      ajimi: ajimiView(r, ctx),
+      me: meView(r, me, own, ctx),
     };
   },
 
   awards(s, ctx) {
-    const out: Award[] = [];
-    const best = (key: keyof PlayerStats): ModePlayer | undefined => {
-      const ps = ctx.players().filter((p) => (s.stats[p.id]?.[key] ?? 0) > 0);
-      return ps.sort((a, b) => (s.stats[b.id]![key] ?? 0) - (s.stats[a.id]![key] ?? 0) || a.seat - b.seat)[0];
-    };
-    const caller = best('calls');
-    if (caller) out.push({ playerId: caller.id, name: caller.name, title: 'こえかけ賞', en: 'Best Caller (most calls said out loud)' });
-    const reader = best('readbacks');
-    if (reader) out.push({ playerId: reader.id, name: reader.name, title: 'おへんじ賞', en: 'Best Reply (most read-backs)' });
-    const packer = best('perfect');
-    if (packer) out.push({ playerId: packer.id, name: packer.name, title: 'かんぺき賞', en: 'Perfect Boxes (most served without a slip)' });
-    return out;
+    return shopAwards(s, ctx);
   },
 };

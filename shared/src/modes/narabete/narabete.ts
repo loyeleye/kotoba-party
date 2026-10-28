@@ -481,7 +481,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     id: 'narabete',
     title: 'Narabete!',
     titleJa: 'ならべて！',
-    blurb: 'Line them up! Everyone holds a secret card: say yours, listen to the others, and put them in order along Nobiko-san’s neck.',
+    blurb: 'Everyone holds a secret card. Say yours, listen, and line them up along Nobiko-san’s neck.',
     host: 'nobiko',
     minPlayers: 2,
     maxPlayers: 8,

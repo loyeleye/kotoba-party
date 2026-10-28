@@ -48,6 +48,8 @@ const ERRORS: Record<string, string> = {
   'already-guessed': 'You already guessed.',
   'readback-mismatch': 'That didn’t match the ticket: say the food and the number on it.',
   'no-customer': 'No customer yet: wait for the phone to ring.',
+  'empty-box': 'The box is empty: call your team for the food first.',
+  'too-late': 'Too late: that customer has gone.',
   'already-solved': 'Someone already got it.',
   'already-hinted': 'You already used a hint.',
   'already-encored': 'You already did an encore.',

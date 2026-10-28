@@ -35,7 +35,7 @@ export function bentoHausPolicy(opts: BentoPolicyOptions = {}): ModePolicy {
   return {
     act(view: RoomView, playerId: string) {
       const game = view.game as BentoView | null;
-      if (!game || game.mode !== 'bento-haus' || !game.me || view.phase !== 'answer') return [];
+      if (!game || (game.mode !== 'bento-haus' && game.mode !== 'bento-haus-vs') || !game.me || view.phase !== 'answer') return [];
       const me = game.me;
       const out: { key: string; move: unknown; delayMs?: number }[] = [];
       const delay = (what: string, extra = 0) => Math.floor(think * (0.5 + hash(playerId, what, 'delay')) + extra);

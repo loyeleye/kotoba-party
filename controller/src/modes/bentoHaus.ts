@@ -334,6 +334,21 @@ function shelf(me: Me, own: boolean): HTMLElement {
   );
 }
 
+const TEAM_MARK = ['🔴', '🔵'] as const;
+
+/** VS: whose kitchen this phone is in, and the race so far. */
+function teamBar(game: BentoView): HTMLElement | null {
+  const vs = game.vs;
+  if (!vs || vs.myTeam === null) return null;
+  const mine = vs.teams[vs.myTeam]!;
+  return h(
+    'p',
+    { class: `bh-team-p team-${mine.id}` },
+    h('b', { lang: 'ja' }, `${TEAM_MARK[mine.id]} ${mine.ja}`),
+    vs.teams.map((t) => h('span', { class: `bh-team-score team-${t.id}` }, `${TEAM_MARK[t.id]} 💰${t.tips}`)),
+  );
+}
+
 function kitchen(ctx: Ctx): HTMLElement {
   const me = ctx.game.me!;
   const ringing = feel(ctx.game, me);
@@ -341,6 +356,7 @@ function kitchen(ctx: Ctx): HTMLElement {
   return h(
     'div',
     { class: 'screen bh-kitchen' },
+    teamBar(ctx.game),
     me.taking.map((t) => orderCard(ctx, me, t, ringing.has(t.visitId))),
     me.taking.length ? callBox(ctx, me) : null,
     tickets(ctx, me),
@@ -360,6 +376,19 @@ function kitchen(ctx: Ctx): HTMLElement {
 function closing(ctx: Ctx): HTMLElement {
   const { game } = ctx;
   const me = game.me;
+  const vs = game.vs;
+  if (vs) {
+    const mine = vs.myTeam;
+    const won = vs.winner !== null && vs.winner === mine;
+    return h(
+      'div',
+      { class: 'screen bh-closing' },
+      h('p', { class: `bh-vs-p${won ? ' won' : ''}`, lang: 'ja' }, vs.winner === null ? 'ひきわけ！' : `${TEAM_MARK[vs.winner]} ${vs.teams[vs.winner]!.ja}の かち！`),
+      h('p', { class: 'bh-vs-tips' }, vs.teams.map((t) => h('span', { class: `team-${t.id}` }, `${TEAM_MARK[t.id]} ${t.tips} tips`))),
+      h('p', { class: 'bh-points' }, `+${game.teamPoints} each`, me && me.bonus ? ` · +${me.bonus} for speaking` : ''),
+      h('p', { class: 'hint' }, 'Look at the TV!'),
+    );
+  }
   const n = game.stars ?? 0;
   return h(
     'div',
@@ -387,6 +416,8 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
       me?.calls.map((c) => [c.id, c.state]),
       me?.shelf,
       game.stars,
+      game.vs?.teams.map((t) => t.tips),
+      game.vs?.winner,
       me?.bonus,
       picked,
     ]);
@@ -404,6 +435,8 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
           { class: 'screen' },
           h('h2', { class: 'big', lang: 'ja' }, game.info?.ja ?? ''),
           h('p', {}, game.info?.en ?? '', ': ', game.info?.what ?? ''),
+          teamBar(game),
+          game.vs && game.vs.myTeam !== null ? h('p', { class: 'hint' }, 'Call your own team only: the other kitchen can’t hear your phone. Serve first to win the customer.') : null,
           game.me.shelf.length ? shelf(game.me, game.ownCounter) : null,
           h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, '「いなり みっつ、おねがいします！」')),
           h('p', { class: 'hint' }, '🎫 Ticket? Read it back ', h('span', { lang: 'ja' }, '「はい、いなり みっつですね！」'), ' and send it.'),
@@ -415,5 +448,17 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
       default:
         return waiting('Watch the TV!');
     }
+  },
+};
+
+/** VS is the same kitchen on the phone, with a team bar and a race result. */
+export const bentoHausVsPhone: PhoneMode<BentoView> = {
+  key: bentoHausPhone.key,
+  render(ctx) {
+    if (ctx.view.phase === 'intro' && ctx.game.vs) {
+      const vs = ctx.game.vs;
+      return h('div', { class: 'screen' }, h('h2', { class: 'big', lang: 'ja' }, 'おべんとうハウス VS'), teamBar(ctx.game), vs.myTeam === null ? null : h('p', {}, 'Two kitchens, the same customers. Watch the TV!'));
+    }
+    return bentoHausPhone.render(ctx);
   },
 };
