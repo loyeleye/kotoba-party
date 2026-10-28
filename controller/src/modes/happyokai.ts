@@ -11,7 +11,7 @@
 
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
-import type { StampKind } from '../../../shared/src/modes/happyokai/happyokai.js';
+import { STAMP_GAP_MS, type StampKind } from '../../../shared/src/modes/happyokai/happyokai.js';
 import type { HappyokaiView } from '../../../shared/src/modes/views.js';
 import { speakBox, canSpeak } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
@@ -37,7 +37,7 @@ const STAMP_BUTTONS: { kind: StampKind; emoji: string; kana: string; en: string 
   { kind: 'sugoi', emoji: '✨', kana: 'すごい！', en: 'Amazing!' },
   { kind: 'naruhodo', emoji: '🤔', kana: 'なるほど', en: 'I see' },
   { kind: 'ee', emoji: '😱', kana: 'えーっ？', en: 'What?!' },
-  { kind: 'hakushu', emoji: '👏', kana: 'はくしゅ', en: 'Applause' },
+  { kind: 'hakushu', emoji: '👏', kana: 'パチパチ！', en: 'Applause' },
 ];
 
 const CHOICE_LABEL = { fit: '🙂 ぴったり', random: '🎲 ランダム', wild: '🤪 むちゃぶり' } as const;
@@ -45,6 +45,12 @@ const CHOICE_EN = { fit: 'Fits the title', random: 'Random', wild: 'Something wi
 
 /** Which question card this phone picked, so it survives a redraw. */
 let pickedCard = { seq: -1, key: -1 };
+/** Cue cards this assistant has sent on this slide (shown as ✓ Sent). */
+let sentCues = { at: '', keys: new Set<number>() };
+/** The last stamp this phone sent: the room takes one a second, so the pad cools down in between. */
+let lastStamp = 0;
+/** The grade flowers, as the TV draws them. */
+const flowerImg = (n: number): HTMLElement => h('img', { class: 'hk-flower', src: `/stage/assets/icons/hk-flower-${n}.png`, alt: '', draggable: 'false' });
 
 // ---- the presenter ----
 
@@ -91,7 +97,7 @@ function myLines(ctx: Ctx, me: Me): HTMLElement | null {
         'li',
         { class: l.hidden ? 'hidden' : '' },
         h('span', { lang: 'ja' }, l.text),
-        l.hidden ? h('small', {}, ' hidden') : h('button', { type: 'button', class: 'linkish', 'aria-label': 'Take this off the TV', onclick: () => void ctx.send({ kind: 'hide', lineId: l.id }) }, '🙈'),
+        l.hidden ? h('small', {}, ' hidden') : h('button', { type: 'button', class: 'linkish hk-hide', 'aria-label': 'Take this off the TV', onclick: () => void ctx.send({ kind: 'hide', lineId: l.id }) }, '🙈 Hide'),
       ),
     ),
   );
@@ -113,7 +119,7 @@ function nextButton(ctx: Ctx, me: Me): HTMLElement {
   const last = ctx.game.slide?.kind === 'close';
   return h(
     'button',
-    { type: 'button', class: `primary hk-next${me.canNext ? '' : ' dim'}`, onclick: () => (buzz(), void ctx.send({ kind: 'next' })) },
+    { type: 'button', class: `secondary hk-next${me.canNext ? '' : ' dim'}`, onclick: () => (buzz(), void ctx.send({ kind: 'next' })) },
     last ? '🙇 Finish the talk' : '▶ Next slide',
   );
 }
@@ -121,6 +127,8 @@ function nextButton(ctx: Ctx, me: Me): HTMLElement {
 function presenting(ctx: Ctx, me: Me): HTMLElement {
   const { game, send } = ctx;
   const slide = game.slide;
+  const kanpe = me.ready.find((r) => r.key === me.kanpe);
+  const others = me.ready.filter((r) => r !== kanpe);
   const head = h('p', { class: 'hk-step' }, `Slide ${game.step + 1} of ${game.steps}`, slide?.mishap ? h('span', { lang: 'ja' }, ` · ${slide.mishap.emoji} ${slide.mishap.name.text}!`) : null);
   if (me.script) {
     return h(
@@ -129,9 +137,8 @@ function presenting(ctx: Ctx, me: Me): HTMLElement {
       head,
       h('p', { class: 'hk-label-p' }, slide?.mishap ? 'Uh-oh! Keep going. Try:' : 'Say:'),
       jpView(me.script, me.level, { cls: 'hk-script' }),
-      talkBox(ctx, me, me.script.kana),
       myLines(ctx, me),
-      nextButton(ctx, me),
+      dock(ctx, me, me.script.kana),
     );
   }
   return h(
@@ -140,25 +147,32 @@ function presenting(ctx: Ctx, me: Me): HTMLElement {
     head,
     me.word ? h('div', { class: 'hk-word' }, h('span', { class: 'hk-label-p' }, 'Look at the TV! It’s:'), jpView(me.word, me.level, { cls: 'hk-word-jp' })) : null,
     me.frames.length ? h('ul', { class: 'hk-frames', lang: 'ja' }, me.frames.map((f) => h('li', {}, f))) : null,
-    talkBox(ctx, me, me.frames[0] ?? '〜です。'),
-    me.ready.length
+    kanpe ? h('div', { class: 'hk-ready-list' }, readyButton(ctx, me, kanpe)) : null,
+    others.length
       ? h(
-          'div',
-          { class: 'hk-ready-list' },
-          h('p', { class: 'hk-label-p' }, 'Stuck? Read one out (or tap it):'),
-          me.ready.map((r) =>
-            h(
-              'button',
-              { type: 'button', class: `hk-ready-btn${me.kanpe === r.key ? ' kanpe' : ''}`, onclick: () => (buzz(), void send({ kind: 'ready', key: r.key })) },
-              me.kanpe === r.key ? h('span', { class: 'hk-kanpe-tag' }, '📋 from your assistant') : null,
-              jpView({ text: r.text, kana: null, en: r.en, romaji: r.romaji }, me.level, { as: 'tile' }),
-            ),
-          ),
+          'details',
+          { class: 'hk-ready-list hk-stuck' },
+          h('summary', {}, `Stuck? ${others.length} sentences to read out (or tap)`),
+          others.map((r) => readyButton(ctx, me, r)),
         )
       : null,
     myLines(ctx, me),
-    nextButton(ctx, me),
+    dock(ctx, me, me.frames[0] ?? '〜です。'),
   );
+}
+
+function readyButton(ctx: Ctx, me: Me, r: Me['ready'][number]): HTMLElement {
+  return h(
+    'button',
+    { type: 'button', class: `hk-ready-btn${me.kanpe === r.key ? ' kanpe' : ''}`, onclick: () => (buzz(), void ctx.send({ kind: 'ready', key: r.key })) },
+    me.kanpe === r.key ? h('span', { class: 'hk-kanpe-tag' }, '📋 from your assistant') : null,
+    jpView({ text: r.text, kana: null, en: r.en, romaji: r.romaji }, me.level, { as: 'tile' }),
+  );
+}
+
+/** The talk button and Next, pinned to the bottom of the phone so they never scroll away. */
+function dock(ctx: Ctx, me: Me, placeholder: string): HTMLElement {
+  return h('div', { class: 'hk-dock' }, talkBox(ctx, me, placeholder), nextButton(ctx, me));
 }
 
 // ---- the assistant ----
@@ -166,6 +180,11 @@ function presenting(ctx: Ctx, me: Me): HTMLElement {
 function assisting(ctx: Ctx, me: Me): HTMLElement {
   const { game, send } = ctx;
   const presenter = nameOf(ctx, game.presenterId);
+  const at = `${ctx.view.phaseSeq}:${game.step}`;
+  if (sentCues.at !== at) sentCues = { at, keys: new Set() };
+  const pickedSlide = me.choices.find((c) => c.id === me.picked);
+  const pickedMishap = me.mishaps.find((m) => m.id === me.picked);
+  const picked = pickedSlide ? `“${pickedSlide.word?.en ?? 'Your slide'}”` : pickedMishap ? `${pickedMishap.emoji} ${pickedMishap.name.en}` : null;
   return h(
     'div',
     { class: 'screen hk-a' },
@@ -192,19 +211,37 @@ function assisting(ctx: Ctx, me: Me): HTMLElement {
       : h('p', { class: 'hint' }, game.slide?.kind === 'close' ? 'That’s the last slide. Get ready to clap!' : 'Next slide coming…'),
     me.mishaps.length
       ? h(
-          'details',
+          'div',
           { class: 'hk-mishaps' },
-          h('summary', {}, '😈 Or play a mishap (once per talk)'),
+          h('p', { class: 'hk-label-p' }, '😈 Or play a mishap instead (once per talk)'),
           h('div', { class: 'hk-mishap-row' }, me.mishaps.map((m) => h('button', { type: 'button', class: `secondary${me.picked === m.id ? ' on' : ''}`, onclick: () => (buzz(), void send({ kind: 'pick', mishapId: m.id })) }, `${m.emoji} `, h('span', { lang: 'ja' }, m.name.text), h('small', {}, ` ${m.name.en}`)))),
         )
       : null,
-    me.picked ? h('p', { class: 'hk-ok' }, '✓ Picked. It goes up when they press Next (or the candle burns out).') : null,
+    picked ? h('p', { class: 'hk-ok' }, `✓ ${picked} goes up when ${presenter} taps Next (or the candle burns out).`) : null,
     me.cueCards.length
       ? h(
-          'div',
+          'details',
           { class: 'hk-cues' },
-          h('p', { class: 'hk-label-p' }, `📋 Help ${presenter}: send a cue card to their phone`),
-          me.cueCards.map((c) => h('button', { type: 'button', class: 'secondary hk-cue', onclick: () => (buzz(), void send({ kind: 'kanpe', key: c.key })) }, h('span', { lang: 'ja' }, c.text), h('small', {}, ` ${c.en}`))),
+          h('summary', {}, `📋 Help ${presenter}: send a cue card to their phone`),
+          me.cueCards.map((c) => {
+            const sent = sentCues.keys.has(c.key);
+            return h(
+              'button',
+              {
+                type: 'button',
+                class: `secondary hk-cue${sent ? ' sent' : ''}`,
+                onclick: () => {
+                  buzz();
+                  sentCues.keys.add(c.key);
+                  void send({ kind: 'kanpe', key: c.key });
+                  ctx.redraw();
+                },
+              },
+              sent ? h('b', {}, '✓ Sent ') : null,
+              h('span', { lang: 'ja' }, c.text),
+              h('small', {}, c.en),
+            );
+          }),
         )
       : null,
   );
@@ -214,19 +251,27 @@ function assisting(ctx: Ctx, me: Me): HTMLElement {
 
 function stamps(ctx: Ctx): HTMLElement {
   const close = ctx.view.phase === 'encore' || ctx.game.slide?.kind === 'close';
-  return h(
-    'div',
-    { class: 'hk-stamp-pad' },
-    STAMP_BUTTONS.filter((s) => s.kind !== 'hakushu' || close).map((s) =>
-      h(
-        'button',
-        { type: 'button', class: `hk-stamp-btn ${s.kind}`, onclick: () => (buzz(20), void ctx.send({ kind: 'stamp', stamp: s.kind })) },
-        h('b', {}, s.emoji),
-        h('span', { lang: 'ja' }, s.kana),
-        h('small', {}, s.en),
-      ),
-    ),
+  const pad = h('div', { class: 'hk-stamp-pad' });
+  const tap = (kind: StampKind, btn: HTMLElement) => {
+    const t = Date.now();
+    if (t - lastStamp < STAMP_GAP_MS) return;
+    lastStamp = t;
+    buzz(20);
+    void ctx.send({ kind: 'stamp', stamp: kind });
+    // The tap shows at once: a +1 on the button, and the pad cools down until the room takes another.
+    btn.classList.remove('sent');
+    void btn.offsetWidth;
+    btn.classList.add('sent');
+    pad.classList.add('cool');
+    setTimeout(() => pad.classList.remove('cool'), STAMP_GAP_MS);
+  };
+  pad.append(
+    ...STAMP_BUTTONS.filter((s) => s.kind !== 'hakushu' || close).map((s) => {
+      const btn: HTMLElement = h('button', { type: 'button', class: `hk-stamp-btn ${s.kind}`, onclick: () => tap(s.kind, btn) }, h('b', {}, s.emoji), h('span', { lang: 'ja' }, s.kana), h('small', {}, s.en));
+      return btn;
+    }),
   );
+  return pad;
 }
 
 /** The VIP can take any caption off the TV (a mis-hearing, or something rude). */
@@ -236,7 +281,7 @@ function vipCaptions(ctx: Ctx): HTMLElement | null {
     'details',
     { class: 'hk-vip' },
     h('summary', {}, '★ VIP: hide a caption'),
-    h('ul', { class: 'hk-mylines' }, ctx.game.captions.filter((c) => !c.hidden).map((c) => h('li', {}, h('span', { lang: 'ja' }, c.text), h('button', { type: 'button', class: 'linkish', onclick: () => void ctx.send({ kind: 'hide', lineId: c.id }) }, '🙈')))),
+    h('ul', { class: 'hk-mylines' }, ctx.game.captions.filter((c) => !c.hidden).map((c) => h('li', {}, h('span', { lang: 'ja' }, c.text), h('button', { type: 'button', class: 'linkish hk-hide', onclick: () => void ctx.send({ kind: 'hide', lineId: c.id }) }, '🙈 Hide')))),
   );
 }
 
@@ -284,7 +329,8 @@ function asking(ctx: Ctx, me: Me): HTMLElement {
     ),
     key >= 0 || me.asked
       ? speakBox({
-          label: 'Hold and say it',
+          label: 'Tap to ask it out loud',
+          toggle: true,
           speechOnly: true,
           onSend: (utterance) => void send({ kind: 'ask', key: key >= 0 ? key : Math.max(0, me.questions.findIndex((q) => q.text === me.asked)), utterance }),
         })
@@ -324,20 +370,20 @@ function questionTime(ctx: Ctx, me: Me): HTMLElement {
 }
 
 function grade(ctx: Ctx, me: Me): HTMLElement {
-  if (me.role === 'presenter') return waiting('💮 The room is grading your talk…', 'Deep breaths.');
+  if (me.role === 'presenter') return waiting('🌸 The room is grading your talk…', 'Deep breaths.');
   if (me.graded !== null) return waiting('✓ Graded. Thank you, sensei!', 'Look at the TV.');
   if (!me.canGrade) return waiting('Look at the TV!');
   const opts = [
-    { n: 1, emoji: '🌼', ja: 'よく できました', en: 'Well done' },
-    { n: 2, emoji: '🌸', ja: 'たいへん よく できました', en: 'Very well done' },
-    { n: 3, emoji: '💮', ja: 'はなまる', en: 'Top marks!' },
+    { n: 1, ja: 'よく できました', en: 'Well done' },
+    { n: 2, ja: 'たいへん よく できました', en: 'Very well done' },
+    { n: 3, ja: 'はなまる', en: 'Top marks!' },
   ];
   return h(
     'div',
     { class: 'screen hk-w' },
     h('p', { class: 'big' }, `Grade ${nameOf(ctx, ctx.game.presenterId)}’s talk`),
     h('p', { class: 'hint' }, 'Did they keep talking? Did you understand? Did it make you laugh?'),
-    h('div', { class: 'hk-grades' }, opts.map((o) => h('button', { type: 'button', class: `hk-grade g${o.n}`, onclick: () => (buzz(), void ctx.send({ kind: 'grade', n: o.n })) }, h('b', {}, o.emoji), h('span', { lang: 'ja' }, o.ja), h('small', {}, o.en)))),
+    h('div', { class: 'hk-grades' }, opts.map((o) => h('button', { type: 'button', class: `hk-grade g${o.n}`, onclick: () => (buzz(), void ctx.send({ kind: 'grade', n: o.n })) }, h('b', {}, flowerImg(o.n)), h('span', { lang: 'ja' }, o.ja), h('small', {}, o.en)))),
   );
 }
 
@@ -374,7 +420,7 @@ function voting(ctx: Ctx, me: Me): HTMLElement {
             { type: 'button', class: 'hk-q-btn', onclick: () => (buzz(), void ctx.send({ kind: 'vote', talk: t.index })) },
             h('b', {}, nameOf(ctx, t.presenterId)),
             h('span', { lang: 'ja' }, t.title ? ` 「${t.title.text}」` : ''),
-            t.quote ? h('small', { lang: 'ja' }, ` “${t.quote}”`) : null,
+            t.quote ? h('small', { lang: 'ja' }, ` 「${t.quote}」`) : null,
           ),
         ),
     ),

@@ -44,6 +44,8 @@ export interface Slide {
   tags: readonly Tag[];
   /** In the むちゃぶり (impossible ask) pool: the assistant's third, odd choice. */
   wild?: true;
+  /** An event, not an object (さくら, かいぎ): no "how much was it?" question. */
+  event?: true;
   audiences: readonly Audience[];
 }
 
@@ -131,6 +133,7 @@ const na = (text: string, en: string): Adjective => ({ text, en, kind: 'na' });
 interface SlideOpts {
   did?: [string, string];
   wild?: true;
+  event?: true;
   audiences?: readonly Audience[];
 }
 const slide = (id: string, word: string, en: string, emoji: string, kind: WordKind, adj: Adjective, tags: Tag[], o: SlideOpts = {}): Slide => ({
@@ -143,6 +146,7 @@ const slide = (id: string, word: string, en: string, emoji: string, kind: WordKi
   audiences: o.audiences ?? ALL,
   ...(o.did ? { did: jp(o.did[0], o.did[1]) } : {}),
   ...(o.wild ? { wild: true as const } : {}),
+  ...(o.event ? { event: true as const } : {}),
 });
 
 export const SLIDES: Slide[] = [
@@ -153,7 +157,7 @@ export const SLIDES: Slide[] = [
   slide('shinkansen', 'しんかんせん', 'bullet train', '🚄', 'thing', i('はやい', 'fast'), ['travel'], { did: ['しんかんせんに のりました', 'I rode the bullet train'] }),
   slide('kotatsu', 'こたつ', 'kotatsu', '🍊', 'thing', i('あたたかい', 'warm'), ['home'], { did: ['こたつで ねました', 'I slept in the kotatsu'] }),
   slide('ekiben', 'えきべん', 'station bento', '🍱', 'food', i('おいしい', 'tasty'), ['food', 'travel']),
-  slide('sakura', 'さくら', 'cherry blossoms', '🌸', 'thing', na('きれい', 'beautiful'), ['travel', 'fun', 'love'], { did: ['さくらを みました', 'I saw the cherry blossoms'] }),
+  slide('sakura', 'さくら', 'cherry blossoms', '🌸', 'thing', na('きれい', 'beautiful'), ['travel', 'fun', 'love'], { did: ['さくらを みました', 'I saw the cherry blossoms'], event: true }),
   slide('oden', 'おでん', 'oden', '🍢', 'food', i('あつい', 'hot'), ['food', 'work']),
   slide('sento', 'せんとう', 'public bath', '🛁', 'place', i('ひろい', 'big'), ['travel', 'home', 'place']),
   slide('ramen', 'ラーメン', 'ramen', '🍜', 'food', i('おいしい', 'tasty'), ['food', 'travel']),
@@ -163,7 +167,7 @@ export const SLIDES: Slide[] = [
   slide('school', 'がっこう', 'school', '🏫', 'place', i('ふるい', 'old'), ['school', 'place']),
   slide('konbini', 'コンビニ', 'konbini', '🏪', 'place', i('あかるい', 'bright'), ['food', 'work', 'place']),
   slide('onsen', 'おんせん', 'hot spring', '♨️', 'place', i('あつい', 'hot'), ['travel', 'place']),
-  slide('fuji', 'ふじさん', 'Mount Fuji', '🗻', 'place', i('たかい', 'tall'), ['travel', 'place']),
+  slide('fuji', 'ふじさん', 'Mount Fuji', '🗻', 'place', i('たかい', 'tall'), ['travel', 'place'], { did: ['ふじさんに のぼりました', 'I climbed Mount Fuji'] }),
   slide('sea', 'うみ', 'the sea', '🌊', 'place', na('きれい', 'beautiful'), ['travel', 'place', 'love']),
   slide('shiba', 'いぬ', 'dog', '🐕', 'living', i('かしこい', 'clever'), ['animal', 'home']),
   slide('cat', 'ねこ', 'cat', '🐱', 'living', i('かわいい', 'cute'), ['animal', 'home']),
@@ -181,18 +185,18 @@ export const SLIDES: Slide[] = [
   slide('tanuki', 'たぬき', 'tanuki', '🦝', 'living', i('かなしい', 'sad'), ['animal', 'yokai', 'fun'], { wild: true }),
   slide('ghost', 'おばけ', 'ghost', '👻', 'living', i('かわいい', 'cute'), ['yokai', 'travel'], { wild: true }),
   slide('dragon', 'ドラゴン', 'dragon', '🐉', 'living', i('あつい', 'hot'), ['animal', 'yokai', 'food'], { wild: true }),
-  slide('octopus', 'たこ', 'octopus', '🐙', 'living', i('こわい', 'scared'), ['animal', 'food', 'work'], { wild: true }),
+  slide('octopus', 'たこ', 'octopus', '🐙', 'living', i('こわい', 'scary'), ['animal', 'food', 'work'], { wild: true }),
   slide('pudding', 'プリン', 'pudding', '🍮', 'food', i('おおきい', 'huge'), ['food'], { wild: true }),
   slide('ufo', 'ユーフォー', 'UFO', '🛸', 'thing', na('ふしぎ', 'mysterious'), ['space', 'thing'], { did: ['ユーフォーを みました', 'I saw a UFO'], wild: true }),
   slide('dinosaur', 'きょうりゅう', 'dinosaur', '🦖', 'living', i('おおきい', 'big'), ['animal', 'work', 'travel'], { wild: true }),
-  slide('penguin', 'ペンギン', 'penguin', '🐧', 'living', i('さむい', 'cold'), ['animal', 'travel'], { wild: true }),
+  slide('penguin', 'ペンギン', 'penguin', '🐧', 'living', na('さむがり', 'sensitive to the cold'), ['animal', 'travel'], { wild: true }),
   slide('robot', 'ロボット', 'robot', '🤖', 'thing', na('ていねい', 'polite'), ['thing', 'work'], { wild: true }),
   slide('alien', 'うちゅうじん', 'alien', '👽', 'living', na('しんせつ', 'kind'), ['space', 'person', 'food'], { wild: true }),
   slide('pants', 'パンツ', 'underpants', '🩲', 'thing', i('おおきい', 'big'), ['home', 'fun'], { wild: true }),
   slide('toilet', 'トイレ', 'toilet', '🚽', 'place', i('むずかしい', 'complicated'), ['home', 'place', 'thing'], { wild: true }),
   slide('panda', 'パンダ', 'panda', '🐼', 'living', i('おもい', 'heavy'), ['animal', 'travel'], { wild: true }),
   slide('daruma', 'だるま', 'daruma doll', '🔴', 'thing', i('あかい', 'red'), ['thing', 'fun'], { did: ['だるまを かいました', 'I bought a daruma'], wild: true }),
-  slide('mochi', 'おもち', 'mochi', '🍡', 'food', i('ながい', 'long'), ['food', 'home'], { wild: true }),
+  slide('mochi', 'おもち', 'mochi', '🍡', 'food', i('やわらかい', 'soft'), ['food', 'home'], { wild: true }),
   slide('pigeon', 'はと', 'pigeon', '🐦', 'living', na('まじめ', 'serious'), ['animal', 'travel', 'work'], { wild: true }),
   slide('fridge', 'れいぞうこ', 'fridge', '🧊', 'thing', i('つめたい', 'cold'), ['food', 'home'], { did: ['れいぞうこを あけました', 'I opened the fridge'], wild: true }),
   slide('remote', 'リモコン', 'TV remote', '📺', 'thing', i('ちいさい', 'small'), ['home', 'thing'], { did: ['リモコンを さがしました', 'I looked for the remote'], wild: true }),
@@ -201,9 +205,9 @@ export const SLIDES: Slide[] = [
   slide('karaoke', 'カラオケ', 'karaoke', '🎤', 'place', i('うるさい', 'loud'), ['fun', 'place', 'work'], { audiences: FC, wild: true }),
   slide('ring', 'ゆびわ', 'ring', '💍', 'thing', i('たかい', 'expensive'), ['love', 'thing', 'food'], { audiences: FC, wild: true }),
   // Cheeky: awkward grown-up moments, never explicit.
-  slide('balcony', 'ベランダ', 'balcony', '🩳', 'place', i('さむい', 'cold'), ['home', 'love'], { audiences: C, wild: true }),
+  slide('balcony', 'ベランダ', 'balcony', '🩳', 'place', i('さむい', 'cold'), ['home', 'love'], { audiences: C, did: ['ベランダに でました', 'I went out on the balcony'], wild: true }),
   slide('drunk', 'よっぱらい', 'drunk salaryman', '🍶', 'living', i('うるさい', 'loud'), ['work', 'person', 'fun'], { audiences: C, wild: true }),
-  slide('meeting', 'かいぎ', 'meeting', '😴', 'thing', i('ながい', 'long'), ['work'], { audiences: C, did: ['かいぎに でました', 'I went to a meeting'], wild: true }),
+  slide('meeting', 'かいぎ', 'meeting', '😴', 'thing', i('ながい', 'long'), ['work'], { audiences: C, did: ['かいぎに でました', 'I went to a meeting'], wild: true, event: true }),
   slide('groom', 'しんろう', 'groom', '🤵', 'living', na('まじめ', 'earnest'), ['love', 'person'], { audiences: C, wild: true }),
   slide('you-up', 'メッセージ', 'message', '📱', 'thing', i('こわい', 'scary'), ['love', 'thing'], { audiences: C, did: ['メッセージを よみました', 'I read a message'], wild: true }),
   slide('beer', 'ビール', 'beer', '🍺', 'food', i('つめたい', 'cold'), ['food', 'work', 'fun'], { audiences: C, did: ['ビールを のみました', 'I drank beer'] }),
@@ -211,7 +215,7 @@ export const SLIDES: Slide[] = [
   slide('love-letter', 'ラブレター', 'love letter', '💌', 'thing', i('はずかしい', 'embarrassing'), ['love', 'school', 'work'], { audiences: C, did: ['ラブレターを かきました', 'I wrote a love letter'], wild: true }),
   slide('heel', 'ハイヒール', 'high heel', '👠', 'thing', i('たかい', 'high'), ['love', 'travel'], { audiences: C, wild: true }),
   slide('fish-photo', 'さかな', 'fish', '🐟', 'food', i('おおきい', 'big'), ['love', 'food', 'fun'], { audiences: C, wild: true }),
-  slide('capsule', 'カプセルホテル', 'capsule hotel', '🛌', 'place', i('せまい', 'cramped'), ['travel', 'work', 'place'], { audiences: C, wild: true }),
+  slide('capsule', 'カプセルホテル', 'capsule hotel', '🛌', 'place', i('せまい', 'cramped'), ['travel', 'work', 'place'], { audiences: C, did: ['カプセルホテルに とまりました', 'I stayed in a capsule hotel'], wild: true }),
   // Cheeky from women's side.
   slide('bouquet', 'ブーケ', 'bouquet', '💐', 'thing', na('きれい', 'pretty'), ['love', 'fun'], { audiences: C, did: ['ブーケを とりました', 'I caught the bouquet'], wild: true }),
   slide('joshikai', 'じょしかい', "girls' night", '🥂', 'thing', i('たのしい', 'fun'), ['fun', 'love', 'person'], { audiences: C, did: ['じょしかいに いきました', "I went to a girls' night"] }),
@@ -222,10 +226,10 @@ export const SLIDES: Slide[] = [
   slide('shopping', 'かいもの', 'shopping', '🛍️', 'thing', i('たのしい', 'fun'), ['fun', 'love', 'travel'], { audiences: C, did: ['かいものを しました', 'I went shopping'], wild: true }),
   slide('cake', 'ケーキ', 'cake', '🍰', 'food', i('あまい', 'sweet'), ['food', 'home', 'love'], { audiences: C, wild: true }),
   // College life.
-  slide('all-nighter', 'てつや', 'all-nighter', '🥱', 'thing', i('ねむい', 'sleepy'), ['school', 'fun'], { audiences: C, did: ['てつやしました', 'I pulled an all-nighter'], wild: true }),
+  slide('all-nighter', 'てつや', 'all-nighter', '🥱', 'thing', i('ねむい', 'sleepy'), ['school', 'fun'], { audiences: C, did: ['てつやしました', 'I pulled an all-nighter'], wild: true, event: true }),
   slide('cup-noodle', 'カップラーメン', 'cup noodles', '🍜', 'food', i('やすい', 'cheap'), ['food', 'school', 'home'], { audiences: C }),
-  slide('nomikai', 'のみかい', 'drinking party', '🍻', 'thing', i('うるさい', 'loud'), ['school', 'fun', 'food'], { audiences: C, did: ['のみかいに いきました', 'I went to a drinking party'], wild: true }),
-  slide('lecture', 'じゅぎょう', 'lecture', '💤', 'thing', i('ながい', 'long'), ['school'], { audiences: C, did: ['じゅぎょうで ねました', 'I slept in class'], wild: true }),
+  slide('nomikai', 'のみかい', 'drinking party', '🍻', 'thing', i('うるさい', 'loud'), ['school', 'fun', 'food'], { audiences: C, did: ['のみかいに いきました', 'I went to a drinking party'], wild: true, event: true }),
+  slide('lecture', 'じゅぎょう', 'lecture', '💤', 'thing', i('ながい', 'long'), ['school'], { audiences: C, did: ['じゅぎょうで ねました', 'I slept in class'], wild: true, event: true }),
   slide('kigurumi', 'きぐるみ', 'mascot costume', '🐔', 'thing', i('あつい', 'hot'), ['work', 'fun'], { audiences: C, did: ['きぐるみを きました', 'I wore a mascot costume'], wild: true }),
   // Yakuza who really shouldn't be yakuza.
   slide('kid-boss', 'くみちょう', 'gang boss', '🎒', 'living', i('こわい', 'scary'), ['school', 'person', 'fun'], { audiences: C, wild: true }),
@@ -251,11 +255,14 @@ export const messageFor = (audience: Audience): { from: JpText; text: JpText } =
 
 // ---- the presenter's lines ----
 
+/** "The mystery of…" mid-sentence: "the mystery of…". */
+const lower = (en: string): string => en.replace(/^(The|A|An) /, (m) => m.toLowerCase());
+
 /** The opening line, by level: the ritual of every Japanese presentation. */
 export function openingFor(level: Level, name: string, t: JpText): JpText {
   if (level === 'kana') return jp(`みなさん、こんにちは。${name}です。タイトルは 「${t.text}」です。`, `Hello everyone. I'm ${name}. The title is "${t.en}".`);
-  if (level === 'n5') return jp(`はじめまして。${name}です。きょうは ${t.text}に ついて はなします。よろしく おねがいします。`, `Nice to meet you. I'm ${name}. Today I'll talk about ${t.en}. Thank you in advance.`);
-  return jp(`みなさん、こんばんは。${name}と もうします。きょうは ${t.text}に ついて はなしたいと おもいます。よろしく おねがいします。`, `Good evening, everyone. My name is ${name}. Today I'd like to talk about ${t.en}. Thank you in advance.`);
+  if (level === 'n5') return jp(`みなさん、こんばんは。${name}です。きょうは ${t.text}に ついて はなします。よろしく おねがいします。`, `Good evening, everyone. I'm ${name}. Today I'll talk about ${lower(t.en)}. Thank you in advance.`);
+  return jp(`みなさん、こんばんは。${name}と もうします。きょうは ${t.text}に ついて はなしたいと おもいます。よろしく おねがいします。`, `Good evening, everyone. My name is ${name}. Today I'd like to talk about ${lower(t.en)}. Thank you in advance.`);
 }
 
 export function closingFor(level: Level): JpText {
@@ -274,6 +281,8 @@ export function framesFor(level: Level, s: Slide): string[] {
   return ['＿は 〜そうですね。', '〜ので、〜。', '〜たら、〜。', '〜と おもいます。', 'じつは、〜んです。', '〜た ことが あります。'];
 }
 
+/** English with its article: "a dog", "an octopus", "cherry blossoms". */
+const a = (en: string): string => (/s$|^[A-Z]/.test(en) ? en : /^[aeiou]/i.test(en) ? `an ${en}` : `a ${en}`);
 const polite = (a: Adjective): string => `${a.text}です`;
 const te = (a: Adjective): string => (a.kind === 'i' ? (a.text === 'いい' ? 'よくて' : `${a.text.slice(0, -1)}くて`) : `${a.text}で`);
 const didOf = (s: Slide): JpText => {
@@ -293,12 +302,12 @@ const didOf = (s: Slide): JpText => {
 export function readySentences(s: Slide, level: Level, topic: JpText | null): JpText[] {
   const w = s.word.text;
   const en = s.word.en;
-  const t = topic ?? jp('これ', 'this');
+  const t = topic ?? jp('ともだち', 'my friend');
   const did = didOf(s);
-  if (level === 'kana') return [jp(`これは ${w}です。`, `This is a ${en}.`), jp(`これが ${t.text}です！`, `THIS is ${t.en}!`)];
+  if (level === 'kana') return [jp(`これは ${w}です。`, `This is ${a(en)}.`), jp(`これが ${t.text}です！`, `THIS is ${t.en}!`)];
   if (level === 'n5')
     return [
-      jp(`これは ${w}です。とても ${polite(s.adj)}。`, `This is a ${en}. It's very ${s.adj.en}.`),
+      jp(`これは ${w}です。とても ${polite(s.adj)}。`, `This is ${a(en)}. It's very ${s.adj.en}.`),
       jp(`きのう、${did.text}。${t.text}も いっしょでした。`, `Yesterday ${did.en}. ${cap(t.en)} came too.`),
     ];
   return [
@@ -373,7 +382,7 @@ export function questionsFor(level: Level, word: Slide | null, topic: JpText | n
   const w = word?.word ?? jp('それ', 'it');
   const t = topic ?? jp('それ', 'it');
   const pool = QUESTIONS.filter(
-    (q) => LEVELS.indexOf(q.level) <= LEVELS.indexOf(level) && (!q.kinds || (word && q.kinds.includes(word.kind))) && (!q.audiences || q.audiences.includes(audience)) && (word || !q.text.includes('{word}')),
+    (q) => LEVELS.indexOf(q.level) <= LEVELS.indexOf(level) && (!q.kinds || (word && q.kinds.includes(word.kind) && !(q.id === 'price' && word.event))) && (!q.audiences || q.audiences.includes(audience)) && (word || !q.text.includes('{word}')),
   );
   // Each player's three: one at their level if there is one, the rest at random.
   const top = pool.filter((q) => q.level === level);
@@ -408,7 +417,7 @@ export const GRADE_STAMPS: Record<1 | 2 | 3, JpText> = {
 export function teacherComment(best: Slide | null, mishap: boolean, topic: JpText | null): JpText {
   if (mishap) return jp('ハプニングにも まけませんでした。', "Didn't let the mishap win.");
   if (best) return jp(`${best.word.text}の はなしが よかったです。`, `The bit about the ${best.word.en} was great.`);
-  if (topic) return jp(`${topic.text}に あいたく なりました。`, `Now I want to meet ${topic.en}.`);
+  if (topic) return jp(`${topic.text}の ことが もっと しりたく なりました。`, `Now I want to know more about ${topic.en}.`);
   return jp('また ききたいです。', "I'd like to hear it again.");
 }
 

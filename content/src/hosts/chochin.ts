@@ -243,7 +243,7 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.tourist_escaped.05', host: 'chochin', event: 'tourist_escaped', jp: { text: '{name}さま、じょうずでしたね！', kana: '{name}さま、じょうずでしたね！', en: 'Nicely done, {name}!' }, slots: ['{name}'], status: 'draft' },
   // Happyōkai! (the recital: Chōchin-san is its MC; silent during talks except a word after a mishap)
   // happyokai_intro
-  { id: 'chochin.happyokai_intro.01', host: 'chochin', event: 'happyokai_intro', jp: { text: 'こよいは ようこそ、ゆうれい スタジオの はっぴょうかいへ。', kana: 'こよいは ようこそ、ゆうれい スタジオの はっぴょうかいへ。', en: 'Welcome tonight to the haunted studio\'s recital.' }, status: 'draft' },
+  { id: 'chochin.happyokai_intro.01', host: 'chochin', event: 'happyokai_intro', jp: { text: 'こよいは ゆうれいスタジオの はっぴょうかいへ ようこそ。', kana: 'こよいは ゆうれいスタジオの はっぴょうかいへ ようこそ。', en: 'Welcome tonight to the haunted studio\'s recital.' }, status: 'draft' },
   { id: 'chochin.happyokai_intro.02', host: 'chochin', event: 'happyokai_intro', jp: { text: 'まもなく、はっぴょうかいが はじまります。ゆらゆら。', kana: 'まもなく、はっぴょうかいが はじまります。ゆらゆら。', en: 'The recital will begin shortly. Sway, sway.' }, status: 'draft' },
   { id: 'chochin.happyokai_intro.03', host: 'chochin', event: 'happyokai_intro', jp: { text: 'はっぴょうかい… ハッピー ようかい！　…しつれい いたしました。', kana: 'はっぴょうかい… ハッピー ようかい！　…しつれい いたしました。', en: 'Happyōkai… happy yōkai! …My apologies.' }, status: 'draft' },
   { id: 'chochin.happyokai_intro.04', host: 'chochin', event: 'happyokai_intro', jp: { text: 'けいたいでんわの でんげんを… いえ、きらないで ください！', kana: 'けいたいでんわの でんげんを… いえ、きらないで ください！', en: 'Please switch off your phones… no, wait, don’t!' }, status: 'draft' },
@@ -261,7 +261,7 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.happyokai_call_last.01', host: 'chochin', event: 'happyokai_call_last', jp: { text: 'さいごは… トリです！　{name}さま！', kana: 'さいごは… トリです！　{name}さま！', en: 'And last of all… our headliner! {name}!' }, slots: ['{name}'], status: 'draft' },
   { id: 'chochin.happyokai_call_last.02', host: 'chochin', event: 'happyokai_call_last', jp: { text: 'こよいの トリは {name}さまで ございます！', kana: 'こよいの トリは {name}さまで ございます！', en: 'Tonight’s headliner is {name}!' }, slots: ['{name}'], status: 'draft' },
   // happyokai_title
-  { id: 'chochin.happyokai_title.01', host: 'chochin', event: 'happyokai_title', jp: { text: 'ほんじつの テーマは…「{title}」で ございます！', kana: 'ほんじつの テーマは…「{title}」で ございます！', en: 'Tonight’s theme is… "{title}"!' }, slots: ['{title}'], status: 'draft' },
+  { id: 'chochin.happyokai_title.01', host: 'chochin', event: 'happyokai_title', jp: { text: 'つぎの はっぴょうは…「{title}」で ございます！', kana: 'つぎの はっぴょうは…「{title}」で ございます！', en: 'The next talk is… "{title}"!' }, slots: ['{title}'], status: 'draft' },
   { id: 'chochin.happyokai_title.02', host: 'chochin', event: 'happyokai_title', jp: { text: '「{title}」…なんと ふかい テーマでしょう。', kana: '「{title}」…なんと ふかい テーマでしょう。', en: '"{title}"… What a profound theme.' }, slots: ['{title}'], status: 'draft' },
   { id: 'chochin.happyokai_title.03', host: 'chochin', event: 'happyokai_title', jp: { text: '「{title}」。ノーベルしょうの においが します。', kana: '「{title}」。ノーベルしょうの においが します。', en: '"{title}". I can smell a Nobel Prize.' }, slots: ['{title}'], status: 'draft' },
   { id: 'chochin.happyokai_title.04', host: 'chochin', event: 'happyokai_title', jp: { text: 'わたくし、メモの じゅんびを いたします。', kana: 'わたくし、メモの じゅんびを いたします。', en: 'I shall get my notebook ready.' }, status: 'draft' },

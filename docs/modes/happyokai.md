@@ -49,8 +49,8 @@ Everyone presents. 3 players: two talks each, 3 picture slides. 4: two each, 2 s
    - **Closing slide** (12 s): say the closing. Applause (👏) opens here.
    - The presenter taps ▶ Next after saying something (or after 5 s); a slide whose candle burns out
      moves on by itself. The phone talks by tap-to-start, tap-to-stop (up to 15 s), not hold.
-   - The room stamps all the while: おもしろい！ へえー！ すごい！ なるほど えーっ？ (and はくしゅ at the
-     end). They rise up the side of the TV; at most one per second per player.
+   - The room stamps all the while: おもしろい！ へえー！ すごい！ なるほど えーっ？ (and パチパチ！, applause, at the
+     end). They rise as paper stickers in the TV's side panel, one lane per kind (a burst of the same stamp shows once, ×N); at most one per second per player, and the phone's pad cools down in between.
    - Captions: what the presenter said shows under the slide; if they read a sentence off the phone,
      the TV shows that sentence, so a mis-hearing never shows. The presenter can hide their own
      caption, the VIP any caption.
@@ -59,7 +59,7 @@ Everyone presents. 3 players: two talks each, 3 picture slides. 4: two each, 2 s
    and answers it.
 4. **はなまる** (`reveal`, 12 s). The audience grades the talk: 🌼 よく できました, 🌸 たいへん よく
    できました or 💮 はなまる. The assistant grades too in a 3-player game.
-5. **Report card** (`score`, 9 s). Flowers, a hanko stamp, a teacher's comment about the slide that got
+5. **Report card** (`score`, 9 s). Flowers, the grade in red pen (a drawn はなまる for top marks), Chōchin-san's seal, a teacher's comment about the slide that got
    the most stamps (or the mishap), the number of sentences and the longest run, and the points.
 
 **The best talk** (`finale`, 20 s, when there were two talks or more): everyone votes for a talk that
@@ -77,8 +77,8 @@ isn't their own.
 - **Questions.** 15 for asking out loud, 5 tapped, +35 if the presenter chose yours.
 - **Best talk.** 100 a vote to the presenter, 50 to their assistant.
 
-**Awards.** プレゼンおう賞 (the room's favourite talk; はなまる breaks ties), めいアシスタント賞 (most
-assistant points), ノンストップ賞 (most sentences on one slide), しつもんおう賞 (most questions asked out
+**Awards.** ベストプレゼン賞 (the room's favourite talk; はなまる breaks ties), めいアシスタント賞 (most
+assistant points), ノンストップ賞 (most sentences on one slide), ベストしつもん賞 (most questions asked out
 loud), ハプニング賞 (most laughs on a mishap).
 
 **Phrasebook.** The presenter's opening, closing and recovery lines, and every あいづち a player
@@ -106,7 +106,9 @@ funny) has four strands, never explicit:
   ceremony, a shiba-inu godfather, a yakuza maid café; and solo karaoke and the 3 a.m. konbini.
 
 Every picture is a
-320×240 PixelLab `pixflux` image with no text in it (row 6).
+320×240 PixelLab `pixflux` image with no text in it (row 6), drawn on the TV at exactly 2× (a 640×480
+screen) so the pixels stay even. The grade flowers (`stage/assets/icons/hk-flower-{0..3}.png`, 24×24) are
+drawn in code by a small PIL script, not by PixelLab.
 
 **Music.** Lobby Time (theme) and Pamgaea (second theme), Kevin MacLeod, CC BY 4.0. Backstage the
 music sits under (the presenter rehearses aloud); during the talk and question time it drops to the
@@ -115,6 +117,10 @@ static for a blackout, a phone trill for the message, a bwomp for the other mish
 the hanko.
 
 ## Not built yet
+
+- **Kanji for N5 and N4.** Every line is kana with spaces at every level. The art panel's Japanese seat
+  asks for N5 kanji with furigana at N5, and N5+N4 kanji at N4, as the other modes do. The templated
+  sentences need building from segments for that.
 
 - A private correction after each talk (an AI teacher's one-line note on one sentence).
 - Speech-to-text confidence: a line that was misheard can only be hidden, not fixed.

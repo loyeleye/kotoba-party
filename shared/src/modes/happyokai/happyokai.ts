@@ -1202,10 +1202,10 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
     };
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
     // Best-talk votes first, then the はなまる average to break ties.
-    add(best((st) => st.votes * 10 + (st.talks ? st.hanamaru / st.talks : 0)), 'プレゼンおう賞', 'Best Presenter: the room’s favourite talk');
+    add(best((st) => st.votes * 10 + (st.talks ? st.hanamaru / st.talks : 0)), 'ベストプレゼン賞', 'Best Presenter: the room’s favourite talk');
     add(best((st) => st.assistPoints), 'めいアシスタント賞', 'Best Assistant: their slides got the most said');
     add(best((st) => st.best), 'ノンストップ賞', 'Non-stop: the most sentences on one slide');
-    add(best((st) => st.askedAloud), 'しつもんおう賞', 'Best Questioner: asked out loud the most');
+    add(best((st) => st.askedAloud), 'ベストしつもん賞', 'Best Questioner: asked out loud the most');
     add(best((st) => st.mishapLaughs), 'ハプニング賞', 'Mishap Award: the biggest laugh after a mishap');
     return out;
   },

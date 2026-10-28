@@ -38,8 +38,21 @@ export const STAMP_FACES: Record<StampKind, { emoji: string; kana: string }> = {
   sugoi: { emoji: '✨', kana: 'すごい！' },
   naruhodo: { emoji: '🤔', kana: 'なるほど' },
   ee: { emoji: '😱', kana: 'えーっ？' },
-  hakushu: { emoji: '👏', kana: 'はくしゅ' },
+  hakushu: { emoji: '👏', kana: 'パチパチ！' },
 };
+
+/** The grade flowers as pixel art (24×24): よく できました, たいへん よく できました, はなまる; 0 is a grey blank. */
+export const flowerIcon = (n: number): string => `/stage/assets/icons/hk-flower-${n}.png`;
+const flower = (n: number, cls = 'hk-flower'): HTMLElement => h('img', { class: cls, src: flowerIcon(n), alt: '', draggable: 'false' });
+
+const STAMP_LANES: StampKind[] = ['omoshiroi', 'hee', 'sugoi', 'naruhodo', 'ee', 'hakushu'];
+/** Stamps live this long on the TV. */
+const STAMP_MS = 3_600;
+/** The same stamp again within this long joins the one already rising, as ×N. */
+const STAMP_JOIN_MS = 600;
+
+/** The longest unbreakable run in a spaced title, so a long word shrinks the font instead of splitting. */
+const chunk = (text: string): string => `--chunk: ${Math.max(4, ...text.split(/[\s　]+/).map((w) => w.length + 2))};`;
 
 const playerOf = (view: RoomView, id: string | null | undefined) => view.players.find((p) => p.id === id);
 
@@ -75,14 +88,14 @@ function intro(): HTMLElement {
       h('li', {}, h('strong', {}, '🎤 Pick a title backstage'), ' and rehearse your opening: ', h('span', { lang: 'ja' }, '「タイトルは〜です」')),
       h('li', {}, h('strong', {}, '🖼️ Your assistant picks each slide.'), ' You see it when the room does. Say something about it, any way you can.'),
       h('li', {}, h('strong', {}, '😂 Everyone else stamps'), ' as you talk, then asks you one question.'),
-      h('li', {}, h('strong', {}, '💮 はなまる:'), ' the room grades the talk. Every sentence counts, read or your own.'),
+      h('li', {}, h('strong', {}, flower(3, 'hk-flower inline'), ' はなまる:'), ' the room grades the talk. Every sentence counts, read or your own.'),
     ),
   );
 }
 
 function backstage(view: RoomView, game: HappyokaiView): HTMLElement {
   const b = game.backstage;
-  const photo = b?.photo ? h('figure', { class: 'hk-screen hk-photo', 'data-key': `photo-${b.photo}` }, picture(b.picture, '🏮'), h('figcaption', { lang: 'ja' }, `チョーチンの なつやすみ ${b.photo}/3`)) : null;
+  const photo = b?.photo ? h('figure', { class: 'hk-screen hk-photo', 'data-key': `photo-${b.photo}` }, picture(b.picture, '🏮'), h('figcaption', { lang: 'ja' }, `ちょうちんさんの りょこう ${b.photo}/3`)) : null;
   return h(
     'div',
     { class: 'hk-stage hk-backstage' },
@@ -94,7 +107,7 @@ function backstage(view: RoomView, game: HappyokaiView): HTMLElement {
       game.assistantId ? h('p', {}, h('span', { class: 'hk-label' }, 'Assistant'), chip(view, game.assistantId)) : null,
     ),
     game.title
-      ? h('p', { class: 'hk-title-card', lang: 'ja', 'data-key': 'title' }, h('small', {}, 'タイトル'), `「${game.title.text}」`, h('span', { class: 'hk-en' }, game.title.en))
+      ? h('p', { class: 'hk-title-card', lang: 'ja', 'data-key': 'title', style: chunk(game.title.text) }, h('small', {}, 'タイトル'), `「${game.title.text}」`, h('span', { class: 'hk-en' }, game.title.en))
       : h('p', { class: 'hk-waiting' }, 'Choosing a title… ', h('span', { lang: 'ja' }, 'どれに しようかな'), ' 🤔'),
     photo,
     h('p', { class: `hk-ready${b?.ready ? ' on' : ''}` }, b?.ready ? '🙋 Ready! Lights down…' : '📄 Rehearsing the opening on their phone'),
@@ -107,7 +120,8 @@ function candle(game: HappyokaiView, slide: SlideView): HTMLElement {
   return h(
     'span',
     { class: 'hk-candle', 'aria-hidden': 'true', 'data-key': `candle-${game.step}`, style: `--total: ${slide.ms}ms; --burn-delay: ${-gone}ms;` },
-    h('span', { class: 'hk-wax' }, h('span', { class: 'hk-flame' })),
+    h('span', { class: 'hk-wax' }),
+    h('span', { class: 'hk-flame' }),
   );
 }
 
@@ -117,19 +131,19 @@ function mishapFace(slide: SlideView, game: HappyokaiView, view: RoomView): HTML
     case 'blackout':
       return h('div', { class: 'hk-slide hk-blackout' }, h('span', { class: 'hk-blink', lang: 'ja' }, 'NO SIGNAL'));
     case 'wrong':
-      return h('div', { class: 'hk-slide hk-wrong' }, picture(slide.picture, '🏮'), h('p', { class: 'hk-stamp-label', lang: 'ja' }, 'チョーチンの なつやすみ'));
+      return h('div', { class: 'hk-slide hk-wrong' }, picture(slide.picture, '🏮'), h('p', { class: 'hk-stamp-label', lang: 'ja' }, 'ちょうちんさんの りょこう'));
     case 'graph': {
       const up = slide.up !== false;
       return h(
         'div',
         { class: `hk-slide hk-graph ${up ? 'up' : 'down'}` },
-        h('p', { class: 'hk-graph-title', lang: 'ja' }, slide.word ? `${slide.word.kana} の にんき` : 'にんき', h('small', {}, slide.word ? ` popularity of ${slide.word.en}` : ' popularity')),
+        h('p', { class: 'hk-graph-title', lang: 'ja' }, slide.word ? `${slide.word.kana}の にんき` : 'にんき', h('small', {}, slide.word ? ` popularity of ${slide.word.en}` : ' popularity')),
         h(
           'div',
           { class: 'hk-bars', 'aria-hidden': 'true' },
-          (up ? [22, 30, 26, 55, 70, 98] : [98, 80, 86, 45, 30, 8]).map((n, i) => h('span', { style: `--h: ${n}%; --i: ${i}` })),
+          (up ? [20, 28, 24, 50, 64, 86] : [86, 70, 76, 40, 26, 8]).map((n, i) => h('span', { style: `--h: ${n}%; --i: ${i}` })),
         ),
-        h('p', { class: 'hk-graph-arrow' }, up ? '📈' : '📉'),
+        h('p', { class: 'hk-graph-arrow', 'aria-hidden': 'true' }, up ? '↗' : '↘'),
       );
     }
     case 'upside':
@@ -151,7 +165,7 @@ function slideFace(view: RoomView, game: HappyokaiView, slide: SlideView): HTMLE
     return h(
       'div',
       { class: 'hk-slide hk-title-slide' },
-      h('p', { class: 'hk-slide-title', lang: 'ja' }, game.title?.text ?? ''),
+      h('p', { class: 'hk-slide-title', lang: 'ja', style: chunk(game.title?.text ?? '') }, game.title?.text ?? ''),
       h('p', { class: 'hk-slide-en' }, game.title?.en ?? ''),
       h('p', { class: 'hk-slide-by' }, chip(view, game.presenterId)),
     );
@@ -172,19 +186,25 @@ function captionStrip(captions: readonly CaptionView[], empty: string): HTMLElem
 
 function stampColumn(game: HappyokaiView): HTMLElement {
   const now = serverNow(game);
+  // One lane per kind; a burst of the same stamp shows once, with a count.
+  const shown: { id: number; kind: StampKind; at: number; n: number }[] = [];
+  for (const s of game.stamps) {
+    if (now - s.at >= STAMP_MS) continue;
+    const same = shown.find((o) => o.kind === s.kind && s.at - o.at < STAMP_JOIN_MS);
+    if (same) same.n += 1;
+    else shown.push({ id: s.id, kind: s.kind, at: s.at, n: 1 });
+  }
   return h(
     'div',
     { class: 'hk-stamps', 'aria-hidden': 'true' },
-    game.stamps
-      .filter((s) => now - s.at < 4_000)
-      .map((s) =>
-        h(
-          'span',
-          { class: `hk-stamp ${s.kind}`, 'data-key': `s${s.id}`, style: `--rise-delay: ${-(now - s.at)}ms; --x: ${(s.id * 67) % 170}px;` },
-          h('b', {}, STAMP_FACES[s.kind].emoji),
-          h('span', { lang: 'ja' }, STAMP_FACES[s.kind].kana),
-        ),
+    shown.map((s) =>
+      h(
+        'span',
+        { class: `hk-stamp ${s.kind}`, 'data-key': `s${s.id}`, style: `--rise-delay: ${-(now - s.at)}ms; --x: ${STAMP_LANES.indexOf(s.kind) * 16.5}%; --r: ${((s.id * 7) % 11) - 5}deg;` },
+        h('b', {}, STAMP_FACES[s.kind].emoji),
+        h('span', { lang: 'ja' }, s.n > 1 ? `${STAMP_FACES[s.kind].kana} ×${s.n}` : STAMP_FACES[s.kind].kana),
       ),
+    ),
   );
 }
 
@@ -196,18 +216,28 @@ function stampTally(game: HappyokaiView): HTMLElement {
   );
 }
 
-/** The hall: the projector on the left, what's being said and the room's stamps on the right. */
-function hall(view: RoomView, game: HappyokaiView, body: HTMLElement, side: HTMLElement): HTMLElement {
+/** The hall: the projector on the left; on the right a panel with who's talking, the room's stamps and
+ *  what's being said. */
+function hall(view: RoomView, game: HappyokaiView, body: HTMLElement, side: HTMLElement[]): HTMLElement {
   return h(
     'div',
     { class: 'hk-stage hk-hall' },
     h(
       'div',
-      { class: 'hk-head' },
-      h('p', { class: 'hk-tag' }, `Talk ${game.talk} of ${game.totalTalks} · `, h('span', { lang: 'ja' }, game.title ? `「${game.title.text}」` : '')),
-      h('p', { class: 'hk-who' }, chip(view, game.presenterId, '🎤'), game.assistantId ? chip(view, game.assistantId, '🖱️') : null),
+      { class: 'hk-room' },
+      body,
+      h(
+        'div',
+        { class: 'hk-side' },
+        h(
+          'div',
+          { class: 'hk-side-head' },
+          h('p', { class: 'hk-tag' }, `Talk ${game.talk} of ${game.totalTalks} `, h('span', { lang: 'ja' }, game.title ? `「${game.title.text}」` : '')),
+          h('p', { class: 'hk-who' }, chip(view, game.presenterId, '🎤'), game.assistantId ? chip(view, game.assistantId, '🖱️') : null),
+        ),
+        side,
+      ),
     ),
-    h('div', { class: 'hk-room' }, body, side),
   );
 }
 
@@ -231,7 +261,7 @@ function talk(view: RoomView, game: HappyokaiView): HTMLElement {
     view,
     game,
     h('div', { class: 'hk-projector' }, screen, h('div', { class: 'hk-under' }, dots, candle(game, slide))),
-    h('div', { class: 'hk-side' }, stampColumn(game), captionStrip(game.captions, tail), stampTally(game)),
+    [stampColumn(game), captionStrip(game.captions, tail), stampTally(game)],
   );
 }
 
@@ -250,7 +280,7 @@ function questions(view: RoomView, game: HappyokaiView): HTMLElement {
         : h('p', { class: 'hk-hands' }, (q?.askers ?? []).length ? (q?.askers ?? []).map((id) => h('span', { 'data-key': id }, '🙋', chip(view, id))) : h('span', { class: 'hk-quiet' }, 'Pick a question on your phone and ask it out loud')),
     ),
   );
-  return hall(view, game, body, h('div', { class: 'hk-side' }, stampColumn(game), captionStrip(game.captions, q?.chosen ? '「〜から です」' : '🙋 …'), stampTally(game)));
+  return hall(view, game, body, [stampColumn(game), captionStrip(game.captions, q?.chosen ? '「〜からです」' : '🙋 …'), stampTally(game)]);
 }
 
 function grading(view: RoomView, game: HappyokaiView): HTMLElement {
@@ -259,11 +289,14 @@ function grading(view: RoomView, game: HappyokaiView): HTMLElement {
     'div',
     { class: 'hk-stage hk-grading' },
     h('p', { class: 'hk-tag' }, `Talk ${game.talk} of ${game.totalTalks} · grading`),
-    h('p', { class: 'hk-big', lang: 'ja' }, '💮 はなまる？'),
+    h('p', { class: 'hk-big', lang: 'ja' }, flower(3, 'hk-flower big'), ' はなまる？'),
     h('p', { class: 'hk-subtitle' }, 'Grade ', chip(view, game.presenterId), '’s talk on your phone. One to three flowers.'),
-    h('p', { class: 'hk-count' }, Array.from({ length: g.needed }, (_, i) => h('span', { class: i < g.count ? 'in' : '' }, i < g.count ? '🌸' : '·')), h('small', {}, ` ${g.count} / ${g.needed}`)),
+    h('p', { class: 'hk-count' }, Array.from({ length: g.needed }, (_, i) => h('span', { class: i < g.count ? 'in' : '', 'data-key': `c${i}-${i < g.count}` }, flower(i < g.count ? 2 : 0))), h('small', {}, ` ${g.count} / ${g.needed}`)),
   );
 }
+
+/** When the hanko lands on the report card: after the phase wipe settles and each flower has popped. */
+const hankoMs = (flowers: number): number => 900 + flowers * 300;
 
 function reportCard(view: RoomView, game: HappyokaiView): HTMLElement {
   const c = game.card;
@@ -275,13 +308,17 @@ function reportCard(view: RoomView, game: HappyokaiView): HTMLElement {
     h('p', { class: 'hk-tag' }, `Report card · talk ${game.talk} of ${game.totalTalks}`),
     h(
       'div',
-      { class: 'hk-card' },
+      { class: 'hk-card', style: `--card-thud: ${hankoMs(c.flowers.length) + 270}ms` },
       h('p', { class: 'hk-card-head', lang: 'ja' }, 'つうしんぼ', h('small', {}, ` ${presenter?.name ?? ''}`)),
       h('p', { class: 'hk-card-title', lang: 'ja' }, game.title ? `「${game.title.text}」` : ''),
-      h('p', { class: 'hk-flowers', 'aria-label': `${c.flowers.length} grades` }, c.flowers.map((n, i) => h('span', { class: `f${n}`, style: `--i: ${i}` }, n === 3 ? '💮' : n === 2 ? '🌸' : '🌼'))),
+      h('p', { class: 'hk-flowers', 'aria-label': `${c.flowers.length} grades` }, c.flowers.map((n, i) => h('span', { class: `f${n}`, style: `--i: ${i}` }, flower(n)))),
       h('dl', { class: 'hk-facts' }, h('dt', {}, 'Sentences'), h('dd', {}, `${c.sentences}`), h('dt', {}, 'Longest run'), h('dd', {}, `${c.best}`), c.loudest ? [h('dt', {}, 'Loudest'), h('dd', {}, `${STAMP_FACES[c.loudest.kind].emoji} ×${c.loudest.n}`)] : null),
       h('p', { class: 'hk-comment', lang: 'ja' }, h('span', {}, c.comment.text), h('small', {}, c.comment.en)),
-      h('p', { class: 'hk-hanko', lang: 'ja', style: `--stamp-delay: ${600 + c.flowers.length * 250}ms` }, c.stamp.text, h('small', {}, c.stamp.en)),
+      // The grade goes on in red pen (a はなまる is drawn, not stamped); the teacher's seal sits in the corner.
+      c.stamp.text === 'はなまる'
+        ? h('p', { class: 'hk-hanko maru', style: `--stamp-delay: ${hankoMs(c.flowers.length)}ms`, 'aria-label': 'はなまる' }, flower(3, 'hk-flower maru'))
+        : h('p', { class: 'hk-hanko', lang: 'ja', style: `--stamp-delay: ${hankoMs(c.flowers.length)}ms` }, c.stamp.text),
+      h('p', { class: 'hk-seal', lang: 'ja', 'aria-hidden': 'true' }, 'ちょうちん'),
       h('p', { class: 'hk-points' }, `🎤 +${c.presenterPoints + c.speakPoints}`, game.assistantId ? h('span', {}, ` · 🖱️ +${c.assistantPoints}`) : null),
     ),
   );
@@ -293,19 +330,19 @@ function vote(view: RoomView, game: HappyokaiView): HTMLElement {
   return h(
     'div',
     { class: 'hk-stage hk-vote' },
-    h('p', { class: 'hk-big', lang: 'ja' }, '🏆 ベスト はっぴょう'),
+    h('p', { class: 'hk-big', lang: 'ja' }, h('img', { class: 'hk-trophy', src: '/stage/assets/icons/trophy.png', alt: '', draggable: 'false' }), ' ベスト はっぴょう'),
     h('p', { class: 'hk-subtitle' }, `Vote for the best talk on your phone (not your own) · ${v.count} / ${v.needed}`),
     h(
       'ol',
       { class: `hk-talks${v.talks.length > 4 ? ' many' : ''}`, style: `--n: ${v.talks.length}` },
-      v.talks.map((t) =>
+      v.talks.map((t, i) =>
         h(
           'li',
-          { 'data-key': `t${t.index}` },
-          h('p', { class: 'hk-talk-title', lang: 'ja' }, t.title ? `「${t.title.text}」` : '…'),
+          { 'data-key': `t${t.index}`, style: `--i: ${i}` },
+          h('p', { class: 'hk-talk-title', lang: 'ja' }, t.title ? `『${t.title.text}』` : '…'),
           h('p', {}, chip(view, t.presenterId, '🎤'), t.assistantId && v.talks.length <= 4 ? chip(view, t.assistantId, '🖱️') : null),
-          t.quote ? h('p', { class: 'hk-quote', lang: 'ja' }, `“${t.quote}”`) : null,
-          h('p', { class: 'hk-votes' }, t.votes ? '🌸'.repeat(t.votes) : ''),
+          t.quote ? h('p', { class: 'hk-quote', lang: 'ja' }, `「${t.quote}」`) : null,
+          h('p', { class: 'hk-votes' }, Array.from({ length: t.votes }, (_, k) => h('span', { 'data-key': `v${k}` }, flower(2)))),
         ),
       ),
     ),
@@ -314,15 +351,24 @@ function vote(view: RoomView, game: HappyokaiView): HTMLElement {
 
 // ---- sounds: a slide change, a mishap, the hanko ----
 
-let heard: { phaseSeq: number; step: number; mishap: string | null } | null = null;
+let heard: { phaseSeq: number; step: number; mishap: string | null; stampId: number } | null = null;
+let lastStampSound = 0;
+/** A soft pop when stamps land (at most a few a second, so a room of tappers isn't a drum roll). */
+function stampSound(game: HappyokaiView): void {
+  const t = Date.now();
+  if (t - lastStampSound < 250) return;
+  lastStampSound = t;
+  sfx(game.stamps.at(-1)?.kind === 'hakushu' ? 'hit' : 'poof');
+}
 function listen(view: RoomView, game: HappyokaiView): void {
   const prev = heard;
-  heard = { phaseSeq: view.phaseSeq, step: game.step, mishap: game.slide?.mishap?.id ?? null };
+  heard = { phaseSeq: view.phaseSeq, step: game.step, mishap: game.slide?.mishap?.id ?? null, stampId: game.stamps.at(-1)?.id ?? -1 };
   if (!prev) return;
   if (prev.phaseSeq !== view.phaseSeq) {
-    if (view.phase === 'score') sfx('right', 0.6 + (game.card?.flowers.length ?? 0) * 0.25);
+    if (view.phase === 'score') sfx('right', (hankoMs(game.card?.flowers.length ?? 0) + 270) / 1000);
     return;
   }
+  if (game.stamps.length && (prev.stampId ?? -1) < game.stamps[game.stamps.length - 1]!.id) stampSound(game);
   if (view.phase !== 'answer' || prev.step === game.step) return;
   const m = game.slide?.mishap?.id;
   if (m === 'message') sfx('ring');
