@@ -64,6 +64,17 @@ unseeded, prompts in the manifest.
 | `stage/assets/icons/speaker.png` | 51×47, trimmed | *Hear it* on the phone's review and phrase practice |
 | `stage/assets/icons/phrasebook.png` | 38×50, trimmed | The stage's *Phrasebook* button (asked for a red notebook; PixelLab drew it indigo, which reads on the gold button) |
 
+**Stage Phrasebook pass** (Ladi said yes to the art panel's asks, 2026-10-28):
+
+| File | Size | What |
+| --- | --- | --- |
+| `stage/assets/icons/mode-<game>.png` | 64² canvas, trimmed | One icon per game for the Phrasebook cards (16 games; Last Train keeps `lt-train.png`, Bento Haus VS shares Bento Haus's). Narabete! took two tries (the first was a face); Word Gauntlet's second try is a knight's helm and scroll |
+| `stage/assets/icons/stamp-again.png` | trimmed | A red ink ring; もう一回 ("once more") is set over it as text on cards someone missed |
+
+A Fude-holding-a-notebook pose for the empty Phrasebook didn't come out in two tries (from his portrait at
+`init_image_strength` 150 and 60, he never held the book), so the empty state uses his existing
+portrait. 21 generations in this pass.
+
 The phone's award line uses the existing `icons/trophy.png`. Generations: 15 planned plus 3 retries,
 and 26 wasted on a filter typo that matched every existing icon (written to a scratch folder, nothing
 replaced).

@@ -8425,6 +8425,346 @@
       "post": {
         "trim": true
       }
+    },
+    {
+      "path": "stage/assets/icons/mode-oogiri.png",
+      "what": "Game icon for oogiri (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a stack of three plump purple Japanese zabuton floor cushions with gold tassels at the corners",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-kana-raid.png",
+      "what": "Game icon for kana-raid (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute small round lavender ghost yokai with big eyes and a tiny red headband, floating",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-word-gauntlet.png",
+      "what": "Game icon for word-gauntlet (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a medieval knight's shiny silver metal gauntlet glove, fingers closed in a fist, holding a rolled cream paper scroll with a red ribbon, clean simple shape",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-concentration.png",
+      "what": "Game icon for concentration (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two playing cards with an indigo back and a gold flower pattern, one standing tilted as if flipping over",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-phrase-bingo.png",
+      "what": "Game icon for phrase-bingo (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a square cream bingo card with a grid of empty squares, three of them stamped with round red ink dots in a line",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-karaoke-duel.png",
+      "what": "Game icon for karaoke-duel (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a retro silver karaoke microphone with a coiled cord and a pink music note sparkle beside it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-onsen-murder.png",
+      "what": "Game icon for onsen-murder (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small wooden onsen bucket with a folded white towel on the rim, steam rising, and a brass magnifying glass leaning on it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-tourist.png",
+      "what": "Game icon for tourist (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a chunky retro camera with a red neck strap on top of a folded paper map",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-oekaki.png",
+      "what": "Game icon for oekaki (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a wooden artist paint palette with blobs of red, blue and yellow paint and a small paintbrush",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-omiai.png",
+      "what": "Game icon for omiai (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small green tea cup on a wooden saucer with one pink sakura blossom beside it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-narabete.png",
+      "what": "Game icon for narabete (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a horizontal brown rope washing line across the frame with four small blank white paper cards hanging from it, each held by a small wooden clothes peg, no face, no character",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-bento-haus.png",
+      "what": "Game icon for bento-haus (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an open red lacquer bento box with white rice, a rolled yellow tamagoyaki, a red umeboshi and green leaf",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-happyokai.png",
+      "what": "Game icon for happyokai (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small wooden lectern podium with a microphone on a stand",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-shodo.png",
+      "what": "Game icon for shodo (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese calligraphy brush resting on a black ink stone with a pool of ink",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-dub-club.png",
+      "what": "Game icon for dub-club (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a black and white film clapperboard, open, with a small pink star sparkle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/mode-hajimemashite.png",
+      "what": "Game icon for hajimemashite (stage Phrasebook cards)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white blank name tag badge with a red border and a gold safety pin",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/stamp-again.png",
+      "what": "Practise stamp on a stage Phrasebook card someone missed; もう一回 is drawn over it as text",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, no text, no letters, no numbers. a flat round vermilion red ink stamp impression on paper: a thick rough circular red ring with an empty blank middle, uneven faded hanko ink texture, completely flat, no 3D, no shadow, no characters inside",
+      "params": {
+        "outline": "lineless",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
     }
   ]
 }

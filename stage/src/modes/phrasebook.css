@@ -54,10 +54,18 @@ body:has(.spb-open:not([hidden])) .mu-now { left: 660px; max-width: 710px; }
 .spb-page:disabled { background: transparent; color: var(--muted); border: 2px dashed var(--line); box-shadow: none; cursor: default; }
 .spb-where { min-width: 150px; text-align: center; color: var(--ink); font: 700 24px var(--font-body); font-variant-numeric: tabular-nums; }
 .spb-empty { display: grid; gap: 8px; padding: 60px 0; text-align: center; }
-.spb-empty > p:first-child { margin: 0; font-size: 34px; font-weight: 700; }
+.spb-empty > p:first-of-type { margin: 0; font-size: 34px; font-weight: 700; }
 .spb-empty .spb-hint { justify-content: center; }
 .spb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* Nothing moves behind the panel while it's up. */
 body.spb-up .danmaku, body.spb-up .danmaku * { animation-play-state: paused !important; }
 body[data-motion='calm'] .spb-panel { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .spb-panel { animation: none; } }
+/* Pixel art from the art panel's second pass (2026-10-28). */
+.spb-card { position: relative; }
+.spb-mode { display: flex; align-items: center; gap: 8px; }
+.spb-mode-icon { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; flex: none; }
+/* もう一回 on a red ink ring, tilted like a hand-pressed stamp. */
+.spb-again { position: absolute; top: 10px; right: 12px; display: grid; place-content: center; width: 76px; height: 76px; background: url('/stage/assets/icons/stamp-again.png') center / 100% 100% no-repeat; image-rendering: pixelated; color: var(--lantern); font: 900 15px/1.05 var(--font-ja); text-align: center; rotate: -10deg; opacity: 0.92; }
+.spb-card.practise .spb-jp { padding-right: 80px; }
+.spb-empty-art { justify-self: center; width: 192px; height: 192px; image-rendering: pixelated; }
