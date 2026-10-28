@@ -88,7 +88,9 @@ button { font: inherit; cursor: pointer; }
 .me .score { margin-left: auto; color: var(--ink); font-family: var(--font-pixel); font-weight: 700; font-size: 18px; }
 /* The mic switch (main.ts micSwitch): a small round icon at the end of the header row. */
 .me .mic-switch { flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; margin: -8px 0; border-radius: 999px; border: 2px solid var(--good); background: var(--panel); font-size: 17px; line-height: 1; }
-.me .mic-switch.off { border-color: var(--line); opacity: 0.85; }
+.me .mic-switch { position: relative; }
+.me .mic-switch.off { border-color: var(--bad); }
+.me .mic-switch.off::after { content: ''; position: absolute; left: 50%; top: 50%; width: 40px; height: 2px; background: var(--bad); translate: -50% -50%; rotate: 45deg; pointer-events: none; }
 /* In a game the header is a band in the mode's colour, with its host. */
 .me-band { position: relative; display: flex; align-items: center; gap: 10px; margin: 0 -16px 18px; padding: 6px 72px 6px 12px; background: var(--mode); color: var(--on-accent); border-bottom: 3px solid var(--outline); }
 /* Festival bunting under the band. */

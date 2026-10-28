@@ -446,7 +446,8 @@ function micSwitch(me: PlayerView): HTMLElement | null {
       title: label,
       onclick: () => void command({ type: 'micCheck', utterance: quiet ? null : { via: 'tap', text: '' } }),
     },
-    quiet ? '🔇' : '🎤',
+    // Quiet: the same mic, struck through (style.css .mic-switch.off::after).
+    '🎤',
   );
 }
 
