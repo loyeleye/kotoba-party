@@ -291,7 +291,7 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
    first frame, nothing shakes, slides or wipes, and new things fade in. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
-  .scene, .host-sprite, .host-bubble, .step, .award-card, .beat-in, .main.wipe::after, .sprite > .sprite-sheet, .channel-noise { animation: none !important; }
+  .scene, .host-sprite, .kd-dancer, .host-bubble, .step, .award-card, .beat-in, .main.wipe::after, .sprite > .sprite-sheet, .channel-noise { animation: none !important; }
 }
 body[data-motion='calm'] *, body[data-motion='calm'] *::before, body[data-motion='calm'] *::after { animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 /* Reveals keep their beats (delays), but fade instead of moving. */

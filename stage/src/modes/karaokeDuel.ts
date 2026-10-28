@@ -13,6 +13,7 @@ import { hasKanji } from '../../../shared/src/japanese/kana.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { audioReady, audioSupported, fanfare, isMuted, playSong, playTurn, setMuted, songPlaying, stopAll, unlockAudio } from './karaokeAudio.js';
 import type { StageMode } from './types.js';
+import { calm } from '../sprites.js';
 
 // ---------- server clock ----------
 // `at` is the server time of the view's last change; a state arrives after it was made, so
@@ -252,6 +253,48 @@ function songCard(view: RoomView, game: KaraokeDuelView): HTMLElement {
   );
 }
 
+/** The dancer each chorus line's sway has started on, so a re-render doesn't start it twice. */
+const swaying = new WeakMap<Element, string>();
+
+/**
+ * Nobiko-san dances in the corner of the lyrics while everyone sings a chorus line: her body stays put and her
+ * neck bends to carry her head left on one beat and right on the next (nobiko-sway.png, 8 frames over two beats,
+ * built by tools/art/sources/nobiko-peek.py), starting on the line's first beat. Now and then, on a beat picked at
+ * random for the line, she blinks for a quarter of a beat (each face's second row). Both run on the document
+ * timeline from the line's own clock, so they stay on the backing track's beat however often the stage re-renders.
+ */
+function sway(key: string, lineAt: number, beatMs: number): void {
+  const el = document.querySelector<HTMLElement>('.kd-dancer > img');
+  if (!el || swaying.get(el) === key || typeof el.animate !== 'function') return;
+  swaying.set(el, key);
+  const start = lineAt - performance.timeOrigin;
+  const steps = el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-100%)' }], {
+    duration: 2 * beatMs,
+    iterations: Infinity,
+    easing: 'steps(8, end)',
+  });
+  steps.startTime = start;
+  // Two blinks every eight beats, on different beats; each holds the blink row for a quarter beat.
+  const beats = [0, 1, 2, 3, 4, 5, 6, 7].sort(() => Math.random() - 0.5).slice(0, 2);
+  const eyes = Array.from({ length: 33 }, (_, q) => ({ translate: beats.includes(q / 4) ? `0 -${100 / 6}%` : '0 0' }));
+  const blinks = el.animate(eyes, { duration: 8 * beatMs, iterations: Infinity, easing: 'steps(32, end)' });
+  blinks.startTime = start;
+}
+
+/**
+ * Her face while she dances, from the latest take in (this line's, or the last line's until this one's lands): a big
+ * smile when the words were mostly right and the timing good, else her own. Like her Omiai tease, the wry look at a
+ * missed or garbled line is only for N5 and N4 singers, never a kana player, and she is easier on N5s.
+ */
+function danceFace(view: RoomView, game: KaraokeDuelView, turnNo: number): 'smile' | 'wry' | null {
+  const t = game.takes.filter((x) => x.turnNo >= turnNo - 1).at(-1);
+  if (!t || t.via === 'typed') return null;
+  const level = view.players.find((p) => p.id === t.playerId)?.level;
+  const wryUnder = level === 'n4' ? 0.5 : level === 'n5' ? 0.3 : 0; // the words score below which she looks wry
+  if (wryUnder && (t.missed || t.pron < wryUnder)) return 'wry';
+  return t.pron >= 0.8 && (t.timing ?? 1) >= 0.7 ? 'smile' : null;
+}
+
 function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
   const song = game.song!;
   const turn = game.turn!;
@@ -283,6 +326,9 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
   const singer = turn.singerId;
   const took = game.takes.some((t) => t.turnNo === turn.no);
   const chorus = game.chorus.filter((c) => c.turnNo === turn.no && c.ok).length;
+  const dancing = song.chorus.includes(turn.line);
+  const still = calm();
+  if (dancing && !still) requestAnimationFrame(() => sway(`${view.phaseSeq}:${turn.no}`, localLineAt, song.beatMs));
   return h(
     'div',
     { class: 'kd-stage' },
@@ -307,6 +353,9 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
         took ? h('p', { class: 'kd-in' }, '✓ Take in!') : null,
         chorus ? h('p', { class: 'kd-chorus' }, `🎶 Chorus: ${chorus} singing along`) : null,
         lastTakeToast(view, game, Date.now() + off),
+        dancing
+          ? h('div', { class: `kd-dancer${still ? ' still' : ''}`, 'data-face': danceFace(view, game, turn.no) ?? '', 'aria-hidden': 'true' }, h('img', { src: still ? '/stage/assets/hosts/nobiko.png' : '/stage/assets/anim/nobiko-sway.png', alt: '', draggable: 'false' }))
+          : null,
       ),
       duelBoard(view, game),
     ),

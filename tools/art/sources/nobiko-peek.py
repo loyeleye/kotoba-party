@@ -1,7 +1,7 @@
 # Builds stage/assets/anim/nobiko-peek.png, Nobiko-san's nosy peek: her neck stretches out to the right
 # (over the speech bubble, towards the answers), holds for a look, and springs back.
 # Usage: python3 tools/art/sources/nobiko-peek.py stage/assets/hosts/nobiko.png stage/assets/anim/nobiko-peek.png \
-#   stage/assets/anim/nobiko-reach.png
+#   stage/assets/anim/nobiko-reach.png stage/assets/anim/nobiko-sway.png
 #
 # Unlike the other sheets this one isn't PixelLab: it cuts her portrait into head and body, keeps both exactly
 # as drawn, and redraws only the neck between them, so the head stays on model in every frame. Frames are
@@ -61,6 +61,13 @@ def disc(im, cx, cy, r, colour):
             if 0 <= x < im.width and 0 <= y < im.height and (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= r * r:
                 im.putpixel((x, y), colour)
 
+def draw_neck(pts, size):
+    neck = Image.new('RGBA', size)
+    for x, y in pts: disc(neck, x, y, 6.2, INK)
+    for x, y in pts: disc(neck, x, y, 5.2, SHADE)
+    for x, y in pts: disc(neck, x - 0.4, y - 0.9, 4.2, SKIN)
+    return neck
+
 sheet = Image.new('RGBA', (W * len(OFFSETS), H))
 for i, (dx, dy, flip) in enumerate(OFFSETS):
     f = Image.new('RGBA', (W, H))
@@ -72,11 +79,7 @@ for i, (dx, dy, flip) in enumerate(OFFSETS):
     # Up out of the collar, then a long S out to the chin; the dip sags lower the further she reaches.
     sag = min(14, dx / 6)
     pts = list(bezier(BASE, (BASE[0] + 2, BASE[1] - 22), (chin[0] - 12 - dx / 3, chin[1] + 10 + sag), chin, 80))
-    neck = Image.new('RGBA', (W, H))
-    for x, y in pts: disc(neck, x, y, 6.2, INK)
-    for x, y in pts: disc(neck, x, y, 5.2, SHADE)
-    for x, y in pts: disc(neck, x - 0.4, y - 0.9, 4.2, SKIN)
-    f.alpha_composite(neck)
+    f.alpha_composite(draw_neck(pts, (W, H)))
     f.alpha_composite(body)  # over the neck, so it disappears into the collar
     k = 1 if dx < 40 else 2  # she looks where she's going
     if flip: f.alpha_composite(glance(FLIPPED, k, FLIPPED_EYES), (dx + FLIP_SHIFT, dy))
@@ -91,3 +94,64 @@ if len(sys.argv) > 3:
     parts.alpha_composite(body)
     parts.alpha_composite(glance(FLIPPED, 2, FLIPPED_EYES), (128, 0))
     parts.save(sys.argv[3])
+
+# Her chorus dance (stage/src/modes/karaokeDuel.ts): 8 frames of 128x128 over two beats. Her body stays put and
+# her neck bends to carry her head over to the left on the first beat and the right on the second, dipping a
+# pixel at each end of the swing, with her eyes leading the way. The neck is redrawn in every frame, the same way
+# as the peek, so it bends rather than the whole of her sliding. Rows come in pairs, one pair per face, the second
+# of each pair for blinks: her own face (and a blink), a big smile (the cheer sheet's laughing eyes with its widest
+# open mouth; already shut, so no blink) and a wry, unimpressed look (from the oops sheet; already half shut). The
+# smile and the wry look are pasted onto her portrait head from those sheets' frames.
+SWAY = [(-6, 1), (-4, 0), (0, 0), (4, 0), (6, 1), (4, 0), (0, 0), (-4, 0)]  # head offset x, y per frame
+LIDS = [(52, 43, 66, 52), (73, 44, 90, 53)]  # around each eye, wider than EYES to take in the lashes
+# Each closed eye: a lash line arcing down (x0, x1, y), drawn two pixels thick in the middle.
+LASHES = [[(54, 54, 47), (55, 63, 48), (64, 64, 47), (57, 61, 49)], [(75, 75, 48), (76, 87, 49), (88, 88, 48), (78, 85, 50)]]
+FACE = (51, 36, 92, 65)  # the face pasted between expressions: x0, y0, x1, y1 (exclusive)
+
+def blink(im):
+    out = im.copy()
+    for (x0, y0, x1, y1), lash in zip(LIDS, LASHES):
+        for y in range(y0, y1):
+            for x in range(x0, x1):
+                if out.getpixel((x, y))[:3] not in SKINS: out.putpixel((x, y), SKIN)
+        for a, b, y in lash:
+            for x in range(a, b + 1): out.putpixel((x, y), INK)
+    return out
+
+def face_from(sheet, i, dx, dy):
+    """Her head with the face of frame i of another sheet, where that frame's head sits (dx, dy) from the portrait's."""
+    src = Image.open(sheet).convert('RGBA').crop((i * 128, 0, i * 128 + 128, 128))
+    out = head.copy()
+    x0, y0, x1, y1 = FACE
+    for y in range(y0, y1):
+        for x in range(x0, x1): out.putpixel((x, y), src.getpixel((x + dx, y + dy)))
+    return out, src
+
+def smile():
+    """Cheer frame 1's laughing eyes, with the wide-open mouth of cheer frame 3 (a few rows dropped to fit her chin)."""
+    sheet = sys.argv[1].replace('hosts/nobiko.png', 'anim/nobiko-cheer.png')
+    out, _ = face_from(sheet, 1, 3, 0)
+    wide = Image.open(sheet).convert('RGBA').crop((384, 0, 512, 128))
+    for y in range(55, 63):
+        for x in range(64, 75): out.putpixel((x, y), SKIN)  # her small open mouth
+    for k, y in enumerate((54, 55, 56, 57, 59, 61, 62, 63, 64)):
+        for x in range(71, 85):
+            p = wide.getpixel((x, y))
+            if p[:3] not in SKINS: out.putpixel((x - 8, 55 + k), p)
+    return out
+
+def wry():
+    return face_from(sys.argv[1].replace('hosts/nobiko.png', 'anim/nobiko-oops.png'), 7, -4, 2)[0]
+
+if len(sys.argv) > 4:
+    faces = [(head, True), (blink(head), False), (smile(), True), (smile(), False), (wry(), True), (wry(), False)]
+    sway = Image.new('RGBA', (128 * len(SWAY), 128 * len(faces)))
+    for row, (face, looks) in enumerate(faces):
+        for i, (dx, dy) in enumerate(SWAY):
+            f = Image.new('RGBA', (128, 128))
+            chin = (CHIN[0] + dx, CHIN[1] + dy)
+            f.alpha_composite(draw_neck(list(bezier(BASE, (BASE[0] + 2, BASE[1] - 22), (chin[0] - 12, chin[1] + 10), chin, 80)), (128, 128)))
+            f.alpha_composite(body)
+            f.alpha_composite(glance(face, (dx > 0) - (dx < 0)) if looks and row == 0 else face, (dx, dy))
+            sway.alpha_composite(f, (i * 128, row * 128))
+    sway.save(sys.argv[4])
