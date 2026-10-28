@@ -9,6 +9,8 @@ export interface PhoneContext<G extends GameView = GameView> {
   /** Sends a move to the mode. Errors other than 'wrong-phase' flash on screen. */
   send(move: unknown): Promise<boolean>;
   flash(text: string): void;
+  /** Works the screen key out again (for a hold that ends on a timer, see `hold`). */
+  redraw(): void;
 }
 
 /** How one mode draws the phone. */
@@ -18,5 +20,10 @@ export interface PhoneMode<G extends GameView = GameView> {
    * unrelated update. Include everything the screen shows.
    */
   key(view: RoomView, game: G, playerId: string): string;
+  /**
+   * While this returns a key, the screen is pinned to it: a new phase doesn't redraw it either
+   * (a karaoke line being sung outlasts its phase). `null` goes back to `key`.
+   */
+  hold?(view: RoomView, game: G, playerId: string): string | null;
   render(ctx: PhoneContext<G>): HTMLElement;
 }

@@ -267,8 +267,10 @@ function render(view: RoomView): void {
   if (!me) return;
   const isVip = me.isVip;
   document.body.dataset.motion = view.calmMotion ? 'calm' : '';
-  const modeKey = view.game ? PHONE_MODES[view.game.mode].key(view, view.game, me.id) : '';
-  const key = [
+  const mode = view.game ? PHONE_MODES[view.game.mode] : null;
+  const hold = view.game ? (mode!.hold?.(view, view.game, me.id) ?? null) : null;
+  const modeKey = view.game ? mode!.key(view, view.game, me.id) : '';
+  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, hold].join('|') : [
     view.phase,
     view.phaseSeq,
     isVip,
@@ -320,7 +322,7 @@ function dockTalk(): void {
 function screenFor(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   if (view.phase === 'lobby') return lobby(view, me, isVip);
   if (view.phase === 'recap' || !view.game) return recap(view, me, isVip);
-  return PHONE_MODES[view.game.mode].render({ view, game: view.game, me, isVip, send: play, flash });
+  return PHONE_MODES[view.game.mode].render({ view, game: view.game, me, isVip, send: play, flash, redraw });
 }
 
 /** The three levels as one segmented row; the chosen level's "I can…" line sits under it. */
@@ -625,6 +627,10 @@ async function command(body: CommandBody): Promise<boolean> {
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
+function redraw(): void {
+  if (lastView) render(lastView);
+}
+
 function flash(text: string): void {
   clearTimeout(toastTimer);
   toast.hidden = false;
