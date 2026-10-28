@@ -31,7 +31,7 @@ import {
 } from '../mode.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { dictionaryNoun, endsInN, follows, lastKana, repeatKey, startOptions, wordReading } from './shiritori.js';
-import { FALLBACK_STARTERS, OBSCURE_WORDS, SHIRITORI_NOUNS, type ObscureWord } from './words.js';
+import { CHEEKY_WORDS, FALLBACK_STARTERS, OBSCURE_WORDS, SHIRITORI_NOUNS, fakeWordPool, type ObscureWord } from './words.js';
 import { playerTextAllowed } from '../../moderation.js';
 
 // ---- tuning ----
@@ -312,7 +312,7 @@ export function lexiconFor(content: ContentLibrary): Lexicon {
     }
   }
   for (const n of SHIRITORI_NOUNS) add(n.kana, n.en, `wg.shiritori.${n.kana}`, n.kana, 'list', true);
-  for (const w of OBSCURE_WORDS) add(w.jp.kana, w.jp.en, `wg.golden.${w.id}`, w.jp.text, 'list', false);
+  for (const w of [...OBSCURE_WORDS, ...CHEEKY_WORDS]) add(w.jp.kana, w.jp.en, `wg.golden.${w.id}`, w.jp.text, 'list', false);
   const lex = { byKey, nouns };
   lexicons.set(content, lex);
   return lex;
@@ -395,7 +395,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       packId,
       round: 0,
       segment: null,
-      fakeDeck: shuffled(OBSCURE_WORDS, () => ctx.random()).slice(0, FAKE_WORDS_PER_GAME),
+      fakeDeck: fakeWordPool(ctx.audience ?? 'family', () => ctx.random(), FAKE_WORDS_PER_GAME),
       fakeIndex: 0,
       fake: null,
       telephone: null,

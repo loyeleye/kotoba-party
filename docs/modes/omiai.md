@@ -59,9 +59,21 @@ a coin flip. If nobody has a heart, nobody is invited.
 
 ### The guests
 
-8 draft cards, all kana: a kappa cucumber farmer 🥒, a nurikabe wall 🧱, a karakasa umbrella ☂️, a
-manekineko shopkeeper 🐱, a proud tengu 👺, a yukidaruma snowman ⛄, a daruma 🔴 and a retired robot
-vacuum 🤖. Each card has 3 questions (N5 and N4 asks, a yes/no or wh kind, fills, polite and casual
+14 draft cards, all kana. The room's Audience setting picks which ones a game draws from:
+
+- **Family** (the default, 8): a kappa cucumber farmer 🥒, a nurikabe wall 🧱, a karakasa umbrella ☂️,
+  a manekineko shopkeeper 🐱, a proud tengu 👺, a yukidaruma snowman ⛄, a daruma 🔴 and a retired
+  robot vacuum 🤖.
+- **Kids** (3), framed as making a friend: a zashiki-warashi house spirit 🎎, a little dragon who
+  can't fly yet 🐉 and a moon rabbit who makes mochi 🐰. They ask about games, snacks, school, pets,
+  breakfast and friends, and the finale invites someone **to play** (🎈, あそびの しょうたい) instead
+  of to tea.
+- **Cheeky** (3), with dating-show energy but still only a cup of tea: a sake flask izakaya
+  manager 🍶 (how many drinks, what time you get up the morning after), a faceless dating-app regular
+  😶 (your worst habit, your last date, your type) and an overworked long-necked office worker 💼
+  (overtime, your boss, stress).
+
+Each card has 3 questions (N5 and N4 asks, a yes/no or wh kind, fills, polite and casual
 endings, a stock polite answer per level, and a keigo pair), 3 appeal activities for the last
 round, and an invitation line. `cards.ts` also holds 14 keigo pairs (いる, いく, くる, たべる, のむ,
 する, いう, みる, きく, すむ, もつ, おきる, だ, ある). Each pair has plain → polite → honorific

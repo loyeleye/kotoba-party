@@ -50,6 +50,13 @@ export const HOST_EVENTS = [
   'onsen_clue',
   'onsen_accuse',
   'onsen_reveal',
+  // Who's the Tourist?
+  'tourist_intro',
+  'tourist_deal',
+  'tourist_vote',
+  'tourist_last_chance',
+  'tourist_caught',
+  'tourist_escaped',
   // Shodō Taikai
   'shodo_intro',
   'shodo_practice',

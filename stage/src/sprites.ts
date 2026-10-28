@@ -77,22 +77,54 @@ export const spriteStyle = (sheet: Sheet, size: number): string => `--size:${siz
  */
 export class HostSprite {
   readonly el: HTMLElement;
-  private readonly img: HTMLImageElement;
+  /** The sheet on show. Each sheet keeps its own <img> (see `use`). */
+  private img: HTMLImageElement;
+  private readonly imgs = new Map<string, HTMLImageElement>();
   private host = '';
   private kind: 'idle' | HostMood = 'idle';
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly size: number) {
-    this.img = h('img', { class: 'sprite-sheet', alt: '', draggable: 'false' }) as HTMLImageElement;
+    this.img = this.sheetImg('');
     this.el = h('div', { class: 'sprite host-sprite', 'aria-hidden': 'true' }, this.img);
-    this.img.addEventListener('animationend', () => this.ended());
-    this.img.onerror = () => this.still();
+  }
+
+  /**
+   * One <img> per sheet, made once and kept. Swapping a single <img>'s src showed the old sheet
+   * with the new sheet's frame count (three squeezed hosts, or half a frame) until the new src
+   * loaded, and the live site revalidates every image (max-age=0), so that took a round trip each
+   * time. An <img> that keeps its src keeps its picture, so the frames always match.
+   */
+  private sheetImg(src: string): HTMLImageElement {
+    let img = this.imgs.get(src);
+    if (!img) {
+      const made = h('img', { class: 'sprite-sheet', alt: '', draggable: 'false' }) as HTMLImageElement;
+      made.addEventListener('animationend', () => made === this.img && this.ended());
+      made.onerror = () => made === this.img && this.still();
+      if (src) made.src = src;
+      this.imgs.set(src, (img = made));
+    }
+    return img;
+  }
+
+  /** Shows `src` in a box styled for it. */
+  private use(src: string, style: string): void {
+    const img = this.sheetImg(src);
+    this.el.setAttribute('style', style);
+    if (img === this.img) return;
+    this.img.classList.remove('run');
+    this.img.style.transform = '';
+    this.img.replaceWith(img);
+    this.img = img;
   }
 
   /** Shows `host`, reacting with `mood` if the line has one. */
   show(host: string, mood?: HostMood): void {
     if (host !== this.host) {
       this.host = host;
+      // Start loading this host's sheets now, so each is ready before it's first shown.
+      for (const k of ['idle', 'cheer', 'oops'] as const) this.sheetImg(hostSheet(host, k).src);
+      this.sheetImg(talkSheet(host).src);
       this.el.classList.remove('enter');
       void this.el.offsetWidth;
       this.el.classList.add('enter');
@@ -143,8 +175,7 @@ export class HostSprite {
       this.idleTimer = null;
       this.img.classList.remove('run');
       this.el.classList.remove('still');
-      this.el.setAttribute('style', spriteStyle(sheet, this.size));
-      this.img.src = sheet.src;
+      this.use(sheet.src, spriteStyle(sheet, this.size));
     }
     this.img.style.transform = `translateX(${(-100 * shape) / sheet.frames}%)`;
   }
@@ -173,8 +204,7 @@ export class HostSprite {
       return this.still();
     }
     this.el.classList.remove('still');
-    this.el.setAttribute('style', spriteStyle(sheet, this.size));
-    if (this.img.getAttribute('src') !== sheet.src) this.img.src = sheet.src;
+    this.use(sheet.src, spriteStyle(sheet, this.size));
     this.img.classList.remove('run');
     if (wait) return this.later();
     void this.img.offsetWidth;
@@ -183,9 +213,7 @@ export class HostSprite {
 
   private still(): void {
     this.el.classList.add('still');
-    this.el.setAttribute('style', `--size:${this.size}px;--frames:1`);
-    const src = `/stage/assets/hosts/${this.host}.png`;
-    if (this.img.getAttribute('src') !== src) this.img.src = src;
+    this.use(`/stage/assets/hosts/${this.host}.png`, `--size:${this.size}px;--frames:1`);
   }
 
   private ended(): void {

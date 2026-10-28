@@ -3,7 +3,7 @@ import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
-import { hasKanji } from '../shared/src/japanese/kana.js';
+import { hasKanji, toHiragana } from '../shared/src/japanese/kana.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import { hasJapanese, matchLine, namesPlace } from '../shared/src/modes/tourist/check.js';
 import { ALL_LINES, BLUFFS, KINDS, PLACES, QUESTIONS, SAFE_ANSWERS } from '../shared/src/modes/tourist/places.js';
@@ -174,6 +174,42 @@ describe("Who's the Tourist?: content", () => {
     }
     expect(QUESTIONS.filter((q) => q.level === 'kana').length).toBeGreaterThanOrEqual(5);
     expect(BLUFFS.every((b) => b.kind === 'any')).toBe(true);
+  });
+
+  it('furigana: a line whose reading lines up with its kanji more than one way carries hand-written segments', () => {
+    // かいしゃの 人と 行きます / ひとと いきます also lines up as 人=ひ, 行=とい; autoFurigana takes the first.
+    const read = (s: string) => hasKanji(s) || /[0-9０-９]/.test(s); // what autoFurigana reads from the kana
+    const ways = (text: string, kana: string): number => {
+      const runs = [...text].reduce<string[]>((rs, ch) => {
+        const last = rs.at(-1);
+        if (last !== undefined && read(last[0]!) === read(ch)) rs[rs.length - 1] = last + ch;
+        else rs.push(ch);
+        return rs;
+      }, []);
+      const norm = (s: string) => toHiragana(s).replace(/[\s　]/g, '');
+      const reading = norm(kana);
+      const count = (r: number, p: number): number => {
+        if (r === runs.length) return p === reading.length ? 1 : 0;
+        const run = runs[r]!;
+        if (!read(run)) return reading.startsWith(norm(run), p) ? count(r + 1, p + norm(run).length) : 0;
+        let n = 0;
+        for (let len = 1; len <= Math.min(reading.length - p, run.length * 4); len++) n += count(r + 1, p + len);
+        return n;
+      };
+      return count(0, 0);
+    };
+    const all = [...ALL_LINES.map((l) => [l.id, l.jp] as const), ...PLACES.flatMap((p) => [[p.id, p.name] as const, ...p.roles.map((r) => [p.id, r] as const)])];
+    for (const [id, jp] of all) if (hasKanji(jp.text) && !jp.furigana?.length) expect(ways(jp.text, jp.kana), `${id}: ${jp.text}`).toBe(1);
+    const work = ALL_LINES.find((l) => l.jp.text === 'かいしゃの 人と 行きます。')!;
+    expect(work.jp.furigana?.filter(([, r]) => r)).toEqual([['人', 'ひと'], ['行', 'い']]);
+  });
+
+  it("Chōchin-san has his own lines for this mode, none about trains", () => {
+    const lines = REAL_CONTENT.hostLines.filter((l) => l.event.startsWith('tourist_'));
+    for (const event of ['tourist_intro', 'tourist_deal', 'tourist_vote', 'tourist_last_chance', 'tourist_caught', 'tourist_escaped']) {
+      expect(lines.filter((l) => l.event === event && l.host === 'chochin').length, event).toBe(5);
+    }
+    for (const l of lines) expect(l.jp.en, l.id).not.toMatch(/train|station|ticket|ghost|passenger/i);
   });
 
   it('matches what was said to a known frame, kindly, but never a tiny frame inside a long sentence', () => {

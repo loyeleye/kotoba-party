@@ -238,7 +238,7 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
     const sub = boss?.stage === 'blow' ? 'Waiting for everyone to read it…' : boss ? 'Your pieces are broken! Cheer the others on.' : 'Watch the stage!';
     return h('div', { class: 'screen raid' }, head, h('p', { class: 'big' }, 'Nice work!'), h('p', { class: 'hint' }, sub));
   }
-  const prompt = (a.kind === 'pair' || a.kind === 'draw') && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? (a.kind === 'draw' ? 'Try again: draw its true form' : `Try again: ${PROMPTS[a.kind].toLowerCase()}`) : PROMPTS[a.kind]);
+  const prompt = (a.kind === 'pair' || a.kind === 'draw') && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? (a.kind === 'draw' ? 'Try again: draw its true form' : `Try again! ${PROMPTS[a.kind]}`) : PROMPTS[a.kind]);
   const coach = me.coach ? h('p', { class: 'raid-coach' }, h('span', { lang: 'ja' }, `🖌 ${me.coach.char}: `), me.coach.tip) : null;
   const parts: (HTMLElement | null)[] = [head, coach, prompt];
   switch (a.kind) {

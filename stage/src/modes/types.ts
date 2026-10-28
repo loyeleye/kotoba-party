@@ -7,4 +7,6 @@ export interface StageMode<G extends GameView = GameView> {
   render(view: RoomView, game: G): HTMLElement;
   /** A small badge next to a player's name (answered, ghost, HP …). */
   badge?(game: G, playerId: string): string;
+  /** How long the host's new line should wait, in ms (a reveal still running would be spoiled). */
+  hostHoldMs?(view: RoomView, game: G): number;
 }

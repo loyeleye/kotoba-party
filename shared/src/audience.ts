@@ -8,10 +8,12 @@ import type { ModeId } from './protocol.js';
 /** Mode → its name and what changes with the setting, as the settings panel says it. */
 export const AUDIENCE_CONTENT: Partial<Record<ModeId, { name: string; what: string }>> = {
   'karaoke-duel': { name: 'Karaoke Duel', what: 'song lyrics' },
+  oogiri: { name: 'Oogiri Night', what: 'prompts' },
   'phrase-bingo': { name: 'Phrase Bingo', what: 'scenes' },
   'word-gauntlet': { name: 'Word Gauntlet', what: 'Fake Kanji words' },
   'last-train': { name: 'Last Train', what: 'the line' },
   'onsen-murder': { name: 'Murder at the Onsen', what: 'cases' },
+  omiai: { name: 'Omiai Matchmaker', what: 'guests' },
 };
 
 /** "Karaoke Duel (song lyrics), Oogiri Night (prompts)": for the settings panel. */

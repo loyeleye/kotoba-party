@@ -1621,6 +1621,232 @@
       "post": {}
     },
     {
+      "path": "stage/assets/portraits/omiai/zashiki-calm.png",
+      "what": "Portrait (calm): Warashi the House Spirit",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute zashiki-warashi child house spirit: a small round-faced yokai child with a black bob haircut with straight bangs, a red kimono with a white flower pattern, rosy cheeks, holding a small beanbag, cheeky giggling grin",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/zashiki-blush.png",
+      "what": "Portrait (blush): Warashi the House Spirit",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute zashiki-warashi child house spirit: a small round-faced yokai child with a black bob haircut with straight bangs, a red kimono with a white flower pattern, rosy cheeks, holding a small beanbag, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/ryu-calm.png",
+      "what": "Portrait (calm): Tatsu the Little Dragon",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute tiny chubby green Japanese dragon: round body, small yellow stubby horns, big shiny eyes, long whiskers, tiny golden wings too small to fly, no fire, a small puff of sparks from its nose, excited happy smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 9
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/ryu-blush.png",
+      "what": "Portrait (blush): Tatsu the Little Dragon",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute tiny green Japanese dragon: round chubby body, small stubby horns, big shiny eyes, little whiskers, tiny wings that are too small to fly, a little puff of sparks from its nose, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/usagi-calm.png",
+      "what": "Portrait (calm): Mochi the Moon Rabbit",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute white moon rabbit: long upright ears, round fluffy face, soft gentle happy eyes, a small yellow crescent moon behind its head, holding a white mochi rice cake, gentle shy smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 4
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/usagi-blush.png",
+      "what": "Portrait (blush): Mochi the Moon Rabbit",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute white moon rabbit: long upright ears, round fluffy face, red eyes, a small yellow crescent moon behind its head, holding a white mochi rice cake, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/tokkuri-calm.png",
+      "what": "Portrait (calm): Tokkuri the Sake Flask",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute tsukumogami sake flask yokai: a round white ceramic tokkuri sake bottle with a blue wave pattern, a friendly face painted on the bottle, little arms holding a tiny ochoko sake cup, a red happi coat over its shoulders, jolly welcoming grin",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/tokkuri-blush.png",
+      "what": "Portrait (blush): Tokkuri the Sake Flask",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute tsukumogami sake flask yokai: a round white ceramic tokkuri sake bottle with a blue wave pattern, a friendly face painted on the bottle, little arms holding a tiny ochoko sake cup, a red happi coat over its shoulders, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/noppera-calm.png",
+      "what": "Portrait (calm): Noppe the Faceless",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a noppera-bo faceless ghost: its face is a featureless blank white oval like a smooth egg or a mannequin, absolutely no eyes, no eyebrows, no nose, no mouth, neat short black hair, a navy blazer over a striped shirt, holding a smartphone",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/noppera-blush.png",
+      "what": "Portrait (blush): Noppe the Faceless",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a noppera-bo faceless ghost: its face is a featureless blank white oval like a smooth egg or a mannequin, absolutely no eyes, no eyebrows, no nose, no mouth, neat short black hair, a navy blazer over a striped shirt, holding a smartphone, little pink hearts floating around its head",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/rokuro-calm.png",
+      "what": "Portrait (calm): Nobi the Long-Necked",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a rokurokubi yokai office worker: a giraffe-long thin neck stretching up from the shirt collar, the small head at the very top of the image, the neck taking up most of the picture, short messy black hair, tired face with dark circles under the eyes, white shirt with a loosened blue necktie, weary polite smile",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/portraits/omiai/rokuro-blush.png",
+      "what": "Portrait (blush): Nobi the Long-Necked",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a rokurokubi yokai office worker: a giraffe-long thin neck stretching up from the shirt collar, the small head at the very top of the image, the neck taking up most of the picture, short messy black hair, tired face with dark circles under the eyes, white shirt with a loosened blue necktie, delighted, blushing pink cheeks, little hearts",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
       "path": "stage/assets/anim/pon-idle.png",
       "what": "Host animation: Pon idle loop, 8 frames, sprite sheet",
       "generator": "pixellab",

@@ -193,6 +193,9 @@ describe('Kotoba Concentration: board', () => {
 
   it('turns kana into romaji for the Kana-level hint', () => {
     expect(toRomaji('みず')).toBe('mizu');
+    // The は fused into a greeting is read わ, with or without a full stop after it.
+    expect(toRomaji('こんばんは。')).toBe('Konbanwa.');
+    expect(toRomaji('こんにちは')).toBe('konnichiwa');
     expect(toRomaji('コーヒー')).toBe('kōhī');
     expect(toRomaji('でんしゃ')).toBe('densha');
     expect(toRomaji('きっぷ')).toBe('kippu');

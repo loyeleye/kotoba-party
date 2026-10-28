@@ -641,9 +641,9 @@ export function checkManners(u: Utterance | string, level: Level, opts: CheckOpt
     casual,
     clauses,
     politeClauses,
-    rewrite: rewrite ? { text: restoreScript(rewrite, u), kana: rewrite } : null,
+    rewrite: rewrite ? { text: restoreScript(rewrite, u), kana: restoreScript(rewrite, u, false) } : null,
     note,
-    upgrade: up ? { text: restoreScript(up.text, u), kana: up.text, note: up.note } : null,
+    upgrade: up ? { text: restoreScript(up.text, u), kana: restoreScript(up.text, u, false), note: up.note } : null,
   };
 }
 
@@ -654,15 +654,16 @@ function escape(s: string): string {
 }
 
 /**
- * Puts the speaker's own spelling back into a kana rewrite: katakana words (ゲーム) and, when the
- * server's tokens say how a kanji word reads, the kanji (明日は休みです, 食べます).
+ * Puts the speaker's own spelling back into a kana rewrite: word spaces, katakana words (ゲーム)
+ * and, when the server's tokens say how a kanji word reads, the kanji (明日は休みです, 食べます).
+ * Without kanji it is the reading Kana players see (and get romaji for), spaced like the answer.
  */
-export function restoreScript(kana: string, u: Utterance | string): string {
+export function restoreScript(kana: string, u: Utterance | string, kanji = true): string {
   const raw = (typeof u === 'string' ? u : u.text).normalize('NFKC');
   kana = restoreSpaces(kana, typeof u === 'string' ? u : (u.reading ?? u.text));
   const pairs: [string, string][] = [];
   for (const run of raw.match(/[ァ-ヺー]{2,}/g) ?? []) pairs.push([toHiragana(run), run]);
-  if (typeof u !== 'string') {
+  if (kanji && typeof u !== 'string') {
     for (const t of u.tokens ?? []) {
       if (!/[一-鿿々]/.test(t.surface)) continue;
       // 食べる / たべる: keep the kanji stem plus the first kana after it (食べ / たべ), so a
@@ -721,5 +722,5 @@ function restoreSpaces(rewrite: string, original: string): string {
     else j++;
   }
   const out = chars.map((ch, i) => (spaceAt.has(i) && i < n - 1 ? `${ch} ` : ch)).join('');
-  return out.replace(/ +/g, ' ').replace(/ ([、。！？])/g, '$1');
+  return out.replace(/ +/g, ' ').replace(/ ?([、。！？]) ?/g, '$1');
 }

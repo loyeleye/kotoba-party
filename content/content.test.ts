@@ -181,6 +181,16 @@ describe('Oogiri prompts', () => {
     expect(missing.map((p) => p.image)).toEqual([]);
   });
 
+  it('give each pack about 15 Kids and 15 Cheeky prompts, each tagged for its own audience only', () => {
+    for (const pack of packs)
+      for (const audience of ['kids', 'cheeky'] as const) {
+        const own = oogiriPrompts.filter((p) => p.packId === pack.id && p.id.startsWith(`${pack.id}.${audience}.`));
+        expect(own.length, `${pack.id} ${audience}`).toBeGreaterThanOrEqual(15);
+        for (const p of own) expect(p.audiences, p.id).toEqual([audience]);
+        for (const round of ['head-to-head', 'photo-caption', 'ippon'] as const) expect(own.some((p) => p.round === round), `${pack.id} ${audience} ${round}`).toBe(true);
+      }
+  });
+
   it('give each pack 50+ hand-written prompts (the AI fallback)', () => {
     for (const pack of packs) expect(oogiriPrompts.filter((p) => p.packId === pack.id).length).toBeGreaterThanOrEqual(50);
   });

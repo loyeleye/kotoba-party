@@ -11,18 +11,18 @@
 //           privately shows a more polite version of its own answer; say it for a bonus
 //   score   points, and the winning answer's polite version on the stage
 // After the last round (the closing appeal, ×2), the finale: the guest invites one contestant to
-// tea (most hearts: votes received plus a star for each round with good manners).
+// tea, or to play for a Kids guest (most hearts: votes received plus a star for each round with good manners).
 //
 // The manners meter is the pure rule-based checker in manners.ts. Nothing here waits on an LLM.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH, POINTS_PER_VOTE } from '../../constants.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
-import type { Phase, Viewer } from '../../protocol.js';
+import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { saidPhrase } from '../phraseBingo/check.js';
-import { appealQuestion, CARDS, CLOSERS, introQuestion, keigoPair, OPENERS, withName, type CharacterCard, type KeigoPair, type OmiaiQuestion } from './cards.js';
+import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, keigoPair, OPENERS, withName, type CharacterCard, type KeigoPair, type OmiaiQuestion } from './cards.js';
 import { analysisText, checkManners, type CasualHit, type MannersResult, type Register } from './manners.js';
 import { playerTextAllowed } from '../../moderation.js';
 
@@ -158,6 +158,15 @@ export interface CardView {
   job: JpText;
   hobbies: JpText[];
   quirk: string;
+  /** Who the guest is for: a Kids guest invites someone to play, everyone else to tea. */
+  audience: Audience;
+}
+
+/** How the finale's invitation reads on the stage and phones: tea, or for a Kids guest, play. */
+export function invitation(card: Pick<CardView, 'audience'> | null | undefined) {
+  return card?.audience === 'kids'
+    ? { emoji: '🎈', to: 'to play', ask: 'will you come and play?', you: 'You’re invited to play!', all: 'Playtime for everyone! The guest made lots of friends.', award: { title: 'あそびの しょうたい', en: 'Invited to Play: the guest’s new friend' } }
+    : { emoji: '🍵', to: 'to tea', ask: 'will you come to tea?', you: 'You’re invited to tea!', all: 'Tea for everyone! The guest enjoyed meeting you all.', award: { title: 'おちゃの しょうたい', en: 'Invited to Tea: the guest’s choice' } };
 }
 
 export interface QuestionView {
@@ -359,7 +368,10 @@ export function tipFor(m: MannersResult, u: Utterance | string, q: OmiaiQuestion
   if (!polite) return stock;
   if (m.upgrade && level === 'n4') return { kind: 'upgrade', target: { text: m.upgrade.text, kana: m.upgrade.kana }, note: m.upgrade.note, example, next: null };
   const own = analysisText(u);
-  const target = isKanaOnly(own) ? { text: typeof u === 'string' ? u : u.text, kana: own } : { text: example.text, kana: example.kana };
+  const said = typeof u === 'string' ? u : u.text;
+  // When the answer is its own reading, keep its word spaces and katakana, so romaji splits into words.
+  const kana = analysisText(said) === own ? said.normalize('NFKC') : own;
+  const target = isKanaOnly(own) ? { text: said, kana } : { text: example.text, kana: example.kana };
   return {
     kind: 'perfect',
     target,
@@ -505,7 +517,8 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
 
   setup(ctx, opts) {
     const wanted = typeof opts.extra?.cardId === 'string' ? opts.extra.cardId : null;
-    const card = CARDS.find((c) => c.id === wanted) ?? CARDS[Math.floor(ctx.random() * CARDS.length)]!;
+    const pool = cardsFor(ctx.audience ?? 'family');
+    const card = CARDS.find((c) => c.id === wanted) ?? pool[Math.floor(ctx.random() * pool.length)]!;
     const all: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) all[p.id] = blankStats();
     return {
@@ -854,7 +867,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       totalRounds: s.totalRounds,
       multiplier: multiplierFor(s),
       phaseAt: s.phaseAt,
-      card: { id: card.id, emoji: card.emoji, name: card.name, job: card.job, hobbies: card.hobbies, quirk: card.quirk },
+      card: { id: card.id, emoji: card.emoji, name: card.name, job: card.job, hobbies: card.hobbies, quirk: card.quirk, audience: card.audience },
       greeting: phase === 'intro' || s.round <= 1 ? card.greeting : null,
       question: r && phase !== 'intro' && phase !== 'finale' ? questionView(r.question, 'stage') : null,
       roundKind: kind,
@@ -882,7 +895,8 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       return top;
     };
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
-    if (s.accepted) add(ctx.player(s.accepted), 'おちゃの しょうたい', 'Invited to Tea: the guest’s choice');
+    const invite = invitation(cardOf(s)).award;
+    if (s.accepted) add(ctx.player(s.accepted), invite.title, invite.en);
     add(best((st) => st.meterTotal), 'おもてなし賞', 'Best Manners: highest manners meter');
     add(best((st) => st.votes), 'にんきもの', 'Most Charming: most votes');
     add(best((st) => st.keigo), 'けいご マスター', 'Keigo Master: most keigo answers');

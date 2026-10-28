@@ -210,10 +210,18 @@ export interface TopicPack {
 export type OogiriRound = 'head-to-head' | 'photo-caption' | 'ippon';
 
 /** A prompt with a blank, written once per level. */
+/** Who a prompt's joke is for: the room's Audience setting (shared/src/protocol.ts AUDIENCES). */
+export type PromptAudience = 'kids' | 'family' | 'cheeky';
+
 export interface OogiriPrompt {
   id: string;
   packId: string;
   round: OogiriRound;
+  /**
+   * The audiences it may be dealt to; every audience when left out. Kids and Cheeky prompts
+   * list just their own and are dealt before the shared ones (oogiri/kids.ts, oogiri/cheeky.ts).
+   */
+  audiences?: PromptAudience[];
   /**
    * One version per level. Use ＿＿＿ for the blank. The N4 version is
    * optional in v1: N4 players get the N5 version with no tiles.
@@ -325,6 +333,8 @@ export interface LastTrainScenario {
   twist: JpText;
   /** Rapid-fire Platform Dash questions. */
   platformDash: MinigameItem[];
+  /** Rooms with this Audience setting ride this line (family when left out); see chooseScenario. */
+  audience?: 'kids' | 'cheeky';
   status: ReviewStatus;
 }
 
@@ -384,6 +394,11 @@ export interface OnsenCase {
   solution: string;
   /** What a suspect says to a question they have no scripted answer for. */
   shrug: JpText;
+  /**
+   * The room Audience this case was written for. Left out, it suits everyone and plays in every
+   * room; a Kids or Cheeky case plays only when the host picks that Audience.
+   */
+  audience?: 'kids' | 'cheeky';
   status: ReviewStatus;
 }
 
@@ -454,6 +469,13 @@ export type HostEvent =
   | 'onsen_clue' // a question found a new clue
   | 'onsen_accuse' // the accusation opens
   | 'onsen_reveal' // the culprit is revealed
+  // Who's the Tourist?
+  | 'tourist_intro'
+  | 'tourist_deal' // the secret cards are dealt
+  | 'tourist_vote' // a vote is called, or the final vote
+  | 'tourist_last_chance' // a caught tourist may still guess the place ({name})
+  | 'tourist_caught' // the locals caught the tourist ({name})
+  | 'tourist_escaped' // the tourist got away or guessed the place ({name})
   // Shodō Taikai (Fude's quiet calligraphy-teacher register)
   | 'shodo_intro'
   | 'shodo_practice' // the お手本 warm-up starts

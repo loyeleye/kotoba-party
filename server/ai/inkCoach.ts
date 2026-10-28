@@ -149,7 +149,10 @@ export function createInkCoach(opts: InkCoachOptions = {}): InkCoach {
           user: `They were asked to write ${req.char}. Is this drawing ${list}? Answer with one of: ${list}, unclear.${req.passed ? ' (It passed the stroke check.)' : ' (It did not pass the stroke check.)'}`,
           images: [{ mediaType: 'image/png', data: png.toString('base64') }],
           schema: Answer,
-          timeoutMs: opts.timeoutMs ?? 5_000,
+          // Nothing waits on the tip (the drawing is already graded) and the phone shows it until the
+          // wave ends, so give the vision call room: from the Workers runtime it took 1.8 to 5 s, and
+          // at 5 s live phones got no tips at all.
+          timeoutMs: opts.timeoutMs ?? 12_000,
           budget,
         });
         const tip = out.tip.replace(/\s+/g, ' ').trim();

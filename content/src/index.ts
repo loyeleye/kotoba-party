@@ -8,6 +8,8 @@ import { travelPack } from './packs/travel.js';
 import { foodPrompts } from './oogiri/food.js';
 import { familyPrompts } from './oogiri/family.js';
 import { travelPrompts } from './oogiri/travel.js';
+import { kidsPrompts } from './oogiri/kids.js';
+import { cheekyPrompts } from './oogiri/cheeky.js';
 import { lastTrainMinigames } from './last-train/index.js';
 import { hostLines } from './hosts/index.js';
 
@@ -28,7 +30,7 @@ export { onsenCases } from './onsen/cases.js';
 /** The Phase 1 topic packs, in the order the VIP's picker shows them. */
 export const packs: TopicPack[] = [foodPack, familyPack, travelPack];
 
-export const oogiriPrompts: OogiriPrompt[] = [...foodPrompts, ...familyPrompts, ...travelPrompts];
+export const oogiriPrompts: OogiriPrompt[] = [...foodPrompts, ...familyPrompts, ...travelPrompts, ...kidsPrompts, ...cheekyPrompts];
 
 export function getPack(id: string): TopicPack | undefined {
   return packs.find((p) => p.id === id);

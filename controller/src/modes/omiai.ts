@@ -6,7 +6,7 @@ import { h } from '../../../shared/src/dom.js';
 import { guestPic } from '../../../shared/src/art.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
 import type { OmiaiView } from '../../../shared/src/modes/views.js';
-import type { QuestionView, TileView, TipView } from '../../../shared/src/modes/omiai/omiai.js';
+import { invitation, type QuestionView, type TileView, type TipView } from '../../../shared/src/modes/omiai/omiai.js';
 import type { Register } from '../../../shared/src/modes/omiai/manners.js';
 import { canSpeak, speakBox } from '../components/speak.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
@@ -245,7 +245,7 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
           guestLine(game),
           game.card ? h('p', { class: 'hint' }, game.card.quirk) : null,
           h('p', {}, '🙇 The guest asks everyone a question. Answer in Japanese, as politely as you can: です / ます, はじめまして, よろしく おねがいします.'),
-          h('p', {}, '❤ Then vote for the most charming answer. At the end, the guest invites one of you to tea.'),
+          h('p', {}, `❤ Then vote for the most charming answer. At the end, the guest invites one of you ${invitation(game.card).to}.`),
           h('p', { class: 'hint' }, 'Casual answers never lose points. You just get a tip for next time.'),
         );
       case 'prompt':
@@ -291,8 +291,8 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
         return scoreScreen(ctx);
       case 'finale':
         return mine?.accepted
-          ? h('div', { class: 'screen omi-accepted' }, h('p', { class: 'omi-accept-big' }, '🍵'), h('p', { class: 'big' }, 'You’re invited to tea!'), game.finale?.line ? h('p', { lang: 'ja' }, game.finale.line.text) : null, h('p', { class: 'hint' }, 'Say it: ありがとう ございます！'))
-          : waiting('The guest has chosen…', game.finale?.accepted ? 'Thank you for coming. おつかれさまでした！' : 'Tea for everyone!');
+          ? h('div', { class: 'screen omi-accepted' }, h('p', { class: 'omi-accept-big' }, invitation(game.card).emoji), h('p', { class: 'big' }, invitation(game.card).you), game.finale?.line ? h('p', { lang: 'ja' }, game.finale.line.text) : null, h('p', { class: 'hint' }, 'Say it: ありがとう ございます！'))
+          : waiting('The guest has chosen…', game.finale?.accepted ? 'Thank you for coming. おつかれさまでした！' : invitation(game.card).all);
       default:
         return waiting('Look at the TV!');
     }

@@ -7,11 +7,11 @@ import { createRoom } from '../shared/src/client.js';
 import { POINTS_PER_VOTE } from '../shared/src/constants.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
-import { buildAnswer } from '../shared/src/modes/oogiri/answer.js';
-import { dealTiles, libraryFor } from '../shared/src/modes/oogiri/deal.js';
+import { buildAnswer, fillBlank } from '../shared/src/modes/oogiri/answer.js';
+import { dealTiles, libraryFor, ownPrompt, suits } from '../shared/src/modes/oogiri/deal.js';
 import { FALLBACK_PACK, FALLBACK_PROMPTS } from '../shared/src/modes/oogiri/fallback.js';
 import { exampleFill, naturalSentence, wantsAdjective } from '../shared/src/modes/oogiri/natural.js';
-import { pairings, SAY_FIRST_MS, type OogiriState, type OogiriView } from '../shared/src/modes/oogiri/oogiri.js';
+import { pairings, revealWaitMs, SAY_FIRST_MS, tileSlots, type OogiriState, type OogiriView } from '../shared/src/modes/oogiri/oogiri.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -373,6 +373,14 @@ describe('voting, IPPON, hiding and the encore', () => {
   });
 });
 
+describe('filling the blank', () => {
+  it('drops the prompt\'s full stop after a set phrase that ends its own sentence', () => {
+    expect(fillBlank('犬：「すみません。きょうは ＿＿＿。」', 'ねこをください！')).toBe('犬：「すみません。きょうは ねこをください！」');
+    expect(fillBlank('The dog: "Sorry. Today I ___."', 'cat, please!', true)).toBe('The dog: "Sorry. Today I cat, please!"');
+    expect(fillBlank('わたしは ＿＿＿。', 'ねます')).toBe('わたしは ねます。');
+  });
+});
+
 describe('host reactions sent ahead', () => {
   it('sends each matchup\'s reveal reaction as it locks, matching the cue the reveal raises', () => {
     const h = harness(['n5', 'n5', 'n5', 'n5']);
@@ -392,6 +400,22 @@ describe('host reactions sent ahead', () => {
     // The cue said now has the same content as one sent ahead, so the host can use the early line.
     const { ahead: _, ...first } = ahead.find((c) => c.prompt?.text === now[0]!.prompt?.text)!;
     expect(first).toEqual(now[0]);
+  });
+
+  it('lets Pon\'s reveal line wait until the stage has shown every answer, up to 5 s', () => {
+    expect(revealWaitMs(1)).toBe(2000);
+    expect(revealWaitMs(2)).toBe(3600);
+    expect(revealWaitMs(8)).toBe(5000);
+  });
+
+  it('names a noun answer as it is, and quotes any other answer', () => {
+    const a = (text: string, blankEn: string, shape: 'noun' | 'pred' | 'phrase' | 'free') => [{ id: 'a', text, kana: text, blankEn, english: false, shape }];
+    expect(tileSlots(a('たこ', 'an octopus', 'noun'))).toMatchObject({ tile: 'たこ', tile_en: 'an octopus' });
+    expect(tileSlots(a('ふるい くつした', '“ふるい くつした”', 'free'))).toMatchObject({ tile: 'ふるい くつした', tile_en: '“ふるい くつした”' });
+    // 「bot1さんの 遊びました」 and "bot1's (I) played!" were the lines before.
+    expect(tileSlots(a('遊びました', '(I) played', 'pred'))).toMatchObject({ tile: '「遊びました」', tile_kana: '「遊びました」', tile_en: '“遊びました”' });
+    // A set phrase's own ！ is left to the line: みんな {tile}！？, not 右が大好きです！！？
+    expect(tileSlots(a('右が大好きです！', 'I love right!', 'phrase'))).toMatchObject({ tile: '「右が大好きです」', tile_en: '“右が大好きです”' });
   });
 });
 
@@ -431,6 +455,27 @@ describe('real content', () => {
       expect(slot.prompt.text).toMatch(/＿/);
     }
     expect(h.game().placeholder).toBe(false);
+  });
+
+  it.each(['kids', 'family', 'cheeky'] as const)('a %s room deals prompts for its audience, its own first', (audience) => {
+    const h = harness(['n5', 'n5', 'n5', 'n5'], realContent);
+    h.s.audience = audience;
+    h.start();
+    h.until('answer');
+    expect(h.os().audience).toBe(audience);
+    for (const m of h.os().matchups) {
+      expect(suits(m.prompt, audience), m.prompt.id).toBe(true);
+      if (audience !== 'family') expect(ownPrompt(m.prompt, audience), m.prompt.id).toBe(true);
+      else expect(m.prompt.audiences ?? ['family'], m.prompt.id).toContain('family');
+    }
+  });
+
+  it('keeps grown-up words (beer) out of a Kids hand', () => {
+    const lib = libraryFor(realContent, 'food', 'kids');
+    expect(lib.pool.some((w) => w.id === 'food.beer')).toBe(false);
+    const beerPrompts = realContent.oogiriPrompts.filter((p) => p.fitTileIds.includes('food.beer'));
+    expect(beerPrompts.length).toBeGreaterThan(0);
+    for (const p of beerPrompts) for (let i = 0; i < 20; i++) expect(dealTiles(lib, p, 'n5', ['food.beer'], Math.random).map((t) => t.wordId)).not.toContain('food.beer');
   });
 });
 
@@ -528,6 +573,10 @@ describe('romaji for the かな level', () => {
     expect(toRomaji('ねこの ゲームは たのしい')).toBe('neko no gēmu wa tanoshii');
     expect(toRomaji('こども')).toBe('kodomo');
   });
+  it('reads を as its own word, never as half of a long vowel', () => {
+    expect(toRomaji('いっしょに かくれんぼをしましょう。')).toBe('Isshoni kakurenbo o shimashō.');
+    expect(toRomaji('すしをたべます')).toBe('sushi o tabemasu');
+  });
 });
 
 describe('the natural version', () => {
@@ -546,6 +595,10 @@ describe('the natural version', () => {
     expect(naturalSentence(p, { text: '歌いました', kana: 'うたいました', en: 'sang', shape: 'pred' })!.text).toBe('はじめての デートで、かれは 歌いました。');
     // The right sentence in the wrong form for the tip: the model answer stands in.
     expect(naturalSentence(p, { text: '歌います', kana: 'うたいます', en: 'sing', shape: 'pred' })).toBeNull();
+    // すみません in the prompt is not the ません the tip teaches: a ましょう answer doesn't show it.
+    const dog = prompt('family.photo.dog-laptop');
+    expect(naturalSentence(dog, { text: 'いっしょにさんぽしましょう！', kana: 'いっしょにさんぽしましょう！', en: "Let's go for a walk together!", shape: 'phrase' })).toBeNull();
+    expect(naturalSentence(dog, { text: 'さんぽしません', kana: 'さんぽしません', en: "won't go for a walk", shape: 'pred' })!.text).toBe('犬：「すみません。きょうは さんぽしません。」');
   });
 
   it('adds です or でした where the tip teaches it, and だ before a から of reason', () => {

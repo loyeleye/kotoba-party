@@ -7,7 +7,8 @@
 // delays computed from the server's clock: a redraw picks them up where they were.
 
 import { h, ruby } from '../../../shared/src/dom.js';
-import type { KaraokeDuelView, LineView, TakeView } from '../../../shared/src/modes/karaokeDuel/karaokeDuel.js';
+import { icon } from '../../../shared/src/art.js';
+import { duelStats, scoreComment, type DuelStats, type KaraokeDuelView, type LineView, type TakeView } from '../../../shared/src/modes/karaokeDuel/karaokeDuel.js';
 import { hasKanji } from '../../../shared/src/japanese/kana.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { audioReady, audioSupported, fanfare, isMuted, playSong, playTurn, setMuted, songPlaying, stopAll, unlockAudio } from './karaokeAudio.js';
@@ -196,7 +197,7 @@ function intro(): HTMLElement {
     { class: 'kd-card' },
     h('p', { class: 'kd-title', lang: 'ja' }, '🎤 カラオケ対決'),
     h('p', { class: 'kd-say' }, 'Two singers duel through a short Japanese song, line by line.'),
-    h('p', { class: 'kd-say' }, 'Hold the button on your phone and sing when the ball starts bouncing.'),
+    h('p', { class: 'kd-say' }, 'Your phone’s mic turns on for your line: sing when the ball starts bouncing.'),
     h('p', { class: 'kd-say muted' }, 'Scored on words 60% · pitch 25% · timing 15%. Everyone else: sing along for chorus points, then vote for the crowd favourite!'),
     soundButton(),
   );
@@ -331,33 +332,132 @@ function crowdVote(view: RoomView, game: KaraokeDuelView): HTMLElement {
   );
 }
 
+// ---------- the result ----------
+// A head-to-head score report: the three parts of singing as mirrored LED meters, the lines each
+// duelist won, the crowd vote, then the points and the winner. It is revealed beat by beat from
+// the result's server time, so a redraw or a late joiner lands on the same frame; the rest
+// state of every animation is the finished screen.
+
+/** When each part of the result lands, ms after the result. */
+const REVEAL = { words: 400, pitch: 1_100, timing: 1_800, lines: 2_600, crowd: 3_300, totals: 3_900, winner: 5_100, pick: 5_600 } as const;
+let fanfareTimer: ReturnType<typeof setTimeout> | null = null;
+let fanfareFor = '';
+
+const at = (ms: number) => `--at:${ms}ms`;
+/** A seat's colour as --seat, without the .seat-N class (which also paints a background). */
+const seatVar = (seat: number) => `--seat:var(--seat-${seat})`;
+
+/** A 20-cell LED meter for a 0–100 value, filling away from the centre line. */
+function meter(value: number | null, side: 'l' | 'r', seat: number, best: boolean, ms: number): HTMLElement {
+  if (value === null) return h('span', { class: `kd-led ${side} none`, style: at(ms) }, h('span', { class: 'kd-led-none' }, 'なし · not measured'));
+  return h('span', { class: `kd-led ${side}${best ? ' best' : ''}`, style: `${at(ms)};${seatVar(seat)};--v:${Math.max(0, Math.min(100, value)) / 100}` }, h('span', { class: 'kd-led-fill' }));
+}
+
+/** One part of singing, head to head: the better number in gold with a ▲ (not colour alone). */
+function statRow(seats: [number, number], label: HTMLElement, en: string, a: number | null, b: number | null, ms: number): HTMLElement {
+  const both = a !== null && b !== null;
+  const bestA = both && a > b;
+  const bestB = both && b > a;
+  const value = (v: number | null, best: boolean) => h('span', { class: `kd-stat-v${best ? ' best' : ''}${v === null ? ' none' : ''}`, style: at(ms + 600) }, v === null ? '–' : `${best ? '▲' : ''}${v}`);
+  return h(
+    'div',
+    { class: 'kd-stat' },
+    value(a, bestA),
+    meter(a, 'l', seats[0], bestA, ms),
+    h('span', { class: 'kd-stat-label' }, label, h('small', {}, en)),
+    meter(b, 'r', seats[1], bestB, ms),
+    value(b, bestB),
+  );
+}
+
+/** One chip per line the duelist sang: the take's score, filled in their colour on lines they won. */
+function lineStrip(game: KaraokeDuelView, id: string, other: string, side: 'l' | 'r', seat: number): HTMLElement {
+  const takes = game.takes.filter((t) => t.playerId === id).sort((x, y) => x.turnNo - y.turnNo);
+  return h(
+    'span',
+    { class: `kd-strip ${side}`, style: seatVar(seat) },
+    takes.map((t, k) => {
+      const rival = game.takes.find((x) => x.line === t.line && x.playerId === other);
+      const won = rival !== undefined && t.quality > rival.quality;
+      return h('span', { class: `kd-strip-chip${won ? ' won' : ''}${t.missed ? ' missed' : ''}`, style: at(REVEAL.lines + k * 50) }, t.missed ? '—' : String(t.quality));
+    }),
+  );
+}
+
 function result(view: RoomView, game: KaraokeDuelView): HTMLElement {
   const r = game.result;
   const duel = game.duel;
   if (!r || !duel) return h('div', { class: 'kd-card' }, h('p', { class: 'kd-title' }, 'No duel this round'));
-  fanfare(`${view.phaseSeq}:score`);
-  const winnerText = r.winners.length === 1 ? `🏆 ${nameOf(view, r.winners[0])} wins the duel!` : r.winners.length === 2 ? '🤝 A tie!' : 'No winner this time';
+  const since = Math.max(0, Date.now() + offset(game) - r.at);
+  // The fanfare plays on the winner beat, once per result.
+  const key = `${view.phaseSeq}:score`;
+  if (fanfareFor !== key) {
+    fanfareFor = key;
+    if (fanfareTimer) clearTimeout(fanfareTimer);
+    fanfareTimer = setTimeout(() => fanfare(key), Math.max(0, REVEAL.winner - since));
+  }
+  const ids = [duel.a, duel.b] as const;
+  const [sa, sb] = ids.map((id) => duelStats(game.takes, id)) as [DuelStats, DuelStats];
+  const won = (id: string) => r.winners.includes(id);
+  const total = (id: string) => (r.sung[id] ?? 0) + (r.favourites.includes(id) ? r.crowdBonus : 0);
+  const winnerText = r.winners.length === 1 ? `${nameOf(view, r.winners[0])} wins the duel!` : r.winners.length === 2 ? 'A tie!' : 'No winner this time';
+  const contested = new Set(game.takes.filter((t) => t.playerId === duel.a && game.takes.some((x) => x.line === t.line && x.playerId === duel.b)).map((t) => t.line)).size;
+
+  const seats: [number, number] = [seatOf(view, duel.a), seatOf(view, duel.b)];
+  const audience = view.players.length > 2;
+  const side = (id: string, s: 'l' | 'r') => {
+    const crowd = r.favourites.includes(id);
+    return h(
+      'div',
+      { class: `kd-res-side ${s}${won(id) ? ' won' : ''}`, style: `${at(REVEAL.winner)};${seatVar(seatOf(view, id))}` },
+      h('span', { class: 'kd-res-name' }, nameOf(view, id), won(id) ? icon('trophy', '🏆', 'kd-res-crown') : null),
+      h('span', { class: 'kd-res-pts', style: at(REVEAL.totals) }, String(total(id)), h('small', {}, ' pts')),
+      h(
+        'span',
+        { class: 'kd-res-sum', style: at(REVEAL.crowd) },
+        `sang ${r.sung[id] ?? 0}`,
+        crowd ? h('span', { class: 'kd-res-fav' }, `👏 +${r.crowdBonus}`) : null,
+        audience && r.votes[id] ? `· ${r.votes[id]} vote${r.votes[id] === 1 ? '' : 's'}` : null,
+      ),
+    );
+  };
+  const comment = (stats: DuelStats, s: 'l' | 'r') => {
+    const c = scoreComment(stats.average, stats.takes);
+    return h('span', { class: `kd-res-say ${s}`, style: at(REVEAL.winner) }, h('span', { class: 'kd-res-avg' }, `${stats.average}`, h('small', { lang: 'ja' }, '点')), h('span', {}, ruby(c, { class: 'kd-res-jp' }), h('span', { class: 'kd-res-en' }, c.en)));
+  };
+
   return h(
     'div',
-    { class: 'kd-stage' },
-    header(view, game),
-    h('p', { class: 'kd-title' }, winnerText),
+    { class: 'kd-stage kd-result', style: `--since:${Math.round(since)}ms` },
+    h(
+      'p',
+      { class: 'kd-title kd-res-title' },
+      h('span', { class: 'kd-res-wait', style: at(REVEAL.winner) }, h('ruby', { lang: 'ja' }, '採点中', h('rt', {}, 'さいてんちゅう')), ' Scoring…'),
+      h('span', { class: 'kd-res-win', style: at(REVEAL.winner) }, r.winners.length === 1 ? icon('trophy', '🏆', 'kd-res-trophy') : r.winners.length === 2 ? '🤝 ' : null, winnerText),
+    ),
     h(
       'div',
-      { class: 'kd-pair' },
-      [duel.a, duel.b].map((id) =>
+      { class: 'kd-res' },
+      h('div', { class: 'kd-res-top' }, side(duel.a, 'l'), h('span', { class: 'kd-res-vs' }, 'VS', game.doubled ? h('small', {}, 'final song ×2') : null), side(duel.b, 'r')),
+      h(
+        'div',
+        { class: 'kd-res-rows' },
+        statRow(seats, h('ruby', { lang: 'ja' }, '発音', h('rt', {}, 'はつおん')), 'Pronunciation', sa.words, sb.words, REVEAL.words),
+        statRow(seats, h('ruby', { lang: 'ja' }, '音程', h('rt', {}, 'おんてい')), 'Pitch', sa.pitch, sb.pitch, REVEAL.pitch),
+        statRow(seats, h('span', { lang: 'ja' }, 'リズム'), 'Rhythm', sa.timing, sb.timing, REVEAL.timing),
         h(
           'div',
-          { class: `kd-cand result${r.winners.includes(id) ? ' won' : ''} seat-${seatOf(view, id)}` },
-          h('span', { class: 'kd-cand-name' }, nameOf(view, id)),
-          h('span', { class: 'kd-cand-pts' }, `${(r.sung[id] ?? 0) + (r.favourites.includes(id) ? r.crowdBonus : 0)}`),
-          h('span', { class: 'kd-cand-sub' }, `sang ${r.sung[id] ?? 0} · ${r.linesWon[id] ?? 0} lines won`),
-          r.favourites.includes(id) ? h('span', { class: 'kd-cand-sub good' }, `👏 crowd favourite +${r.crowdBonus} (${r.votes[id]} vote${r.votes[id] === 1 ? '' : 's'})`) : r.votes[id] ? h('span', { class: 'kd-cand-sub' }, `${r.votes[id]} vote${r.votes[id] === 1 ? '' : 's'}`) : null,
+          { class: 'kd-stat kd-stat-lines' },
+          h('span', { class: 'kd-stat-v', style: at(REVEAL.lines) }, String(r.linesWon[duel.a] ?? 0)),
+          lineStrip(game, duel.a, duel.b, 'l', seats[0]),
+          h('span', { class: 'kd-stat-label' }, 'Lines won', h('small', {}, contested ? `of ${contested} shared` : 'none shared')),
+          lineStrip(game, duel.b, duel.a, 'r', seats[1]),
+          h('span', { class: 'kd-stat-v', style: at(REVEAL.lines) }, String(r.linesWon[duel.b] ?? 0)),
         ),
       ),
+      h('div', { class: 'kd-res-says' }, comment(sa, 'l'), comment(sb, 'r')),
     ),
-    duelBoard(view, game),
-    nextPick(view, game),
+    h('div', { class: 'kd-res-pick', style: at(REVEAL.pick) }, nextPick(view, game)),
   );
 }
 
@@ -399,6 +499,12 @@ export const karaokeDuelStage: StageMode<KaraokeDuelView> = {
     const singing = game.turn?.singerId === playerId ? '🎤 ' : '';
     const duelling = game.duel && (game.duel.a === playerId || game.duel.b === playerId) && !singing ? '⚔️ ' : '';
     return `${singing}${duelling}${t?.wins ? `🏆${t.wins}` : ''}`;
+  },
+
+  // The host's reaction names the winner, so it waits for the result's winner beat.
+  hostHoldMs(view, game) {
+    if (view.phase !== 'score' || !game.result) return 0;
+    return Math.max(0, game.result.at + REVEAL.winner - (Date.now() + offset(game)));
   },
 
   render(view, game) {
