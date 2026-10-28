@@ -73,7 +73,9 @@ const PEEK = new Set(['say_it_first', 'reveal_react']);
 export function moodFor(cue: Pick<HostCue, 'host' | 'event' | 'tier'>): HostMood | undefined {
   if (CHEER.has(cue.event)) return 'cheer';
   if (OOPS.has(cue.event)) return 'oops';
-  if (cue.host !== 'nobiko' || !PEEK.has(cue.event)) return undefined;
+  if (cue.host !== 'nobiko') return undefined;
+  if (cue.event === 'encore_invite') return 'reach'; // to the winning answer's card (a peek-sized look where there is none)
+  if (!PEEK.has(cue.event)) return undefined;
   return cue.tier === 'ippon' ? 'cheer' : 'peek'; // a top Karaoke take gets her cheer instead
 }
 

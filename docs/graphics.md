@@ -64,6 +64,7 @@ both the first and the last frame so a loop closes on the pose it started from, 
 | `{pon,chochin,fude,nobiko}-{cheer,oops}.png` | 8 × 128² | Once, when a host line has that mood, then back to idle |
 | `{pon,chochin,fude,nobiko}-talk.png` | 3 × 128² | Lip sync: closed, half open, open, shown one at a time while the host speaks |
 | `nobiko-peek.png` | 10 × 256×128 | Once, as players answer (`say_it_first`) and as answers are revealed (`reveal_react`): her neck stretches out over the speech bubble, has a look and springs back. Built by `tools/art/sources/nobiko-peek.py`, which cuts her portrait into head and body and redraws only the neck, so her face stays on model |
+| `nobiko-reach.png` | 2 × 128² | Not played: her body without its neck, and her mirrored head. `stage/src/reach.ts` draws her long reach from them on a canvas over the stage: when she invites the winner of an Omiai round to say it politely (`encore_invite`), her neck snakes all the way to the winning card (the one marked `.host-target`) and her head peers over its top edge |
 | `yokai-{blob,lantern,umbrella,scroll}-hit.png` | 11 × 128² | Once when a yōkai is caught: 4 flinch frames, then the shared smoke puff; ends empty |
 | `yokai-boss-defeat.png` | 9 × 192² | Once when the boss is beaten; ends empty |
 

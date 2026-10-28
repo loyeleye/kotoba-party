@@ -61,8 +61,11 @@ export interface HostSay {
   phaseSeq: number;
 }
 
-/** A cheer for a win, a flinch for a miss; `peek` is Nobiko-san stretching her neck out to look (only she has it). */
-export type HostMood = 'cheer' | 'oops' | 'peek';
+/**
+ * A cheer for a win, a flinch for a miss. Only Nobiko-san has the other two: `peek` stretches her neck out
+ * over the speech bubble, and `reach` sends it all the way to the card the stage marks `.host-target`.
+ */
+export type HostMood = 'cheer' | 'oops' | 'peek' | 'reach';
 
 export interface RecapView {
   standings: { playerId: string; name: string; score: number }[];

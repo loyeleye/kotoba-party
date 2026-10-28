@@ -143,6 +143,10 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
    row grows only a little. A lit plate behind it (a soft disc of lantern light with a paper rim)
    lifts every host off the dark sets. */
 .host-sprite { --plate: color-mix(in srgb, var(--paper) 22%, transparent); --rim: color-mix(in srgb, var(--paper) 55%, transparent); margin: calc(-16px - (var(--host-size, 128px) - 128px) * 0.6) 0 calc(-12px - (var(--host-size, 128px) - 128px) * 0.1); z-index: 1; filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); background: radial-gradient(circle at 50% 56%, var(--plate) 0 41%, var(--rim) 41.5% 43.5%, transparent 44%) left / var(--size) 100% no-repeat; }
+/* Nobiko-san's reach is drawn on a canvas over the whole stage (reach.ts), body included, so the box keeps
+   only its plate meanwhile. */
+.host-sprite.reaching > .sprite-sheet { visibility: hidden; }
+.host-reach { position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); }
 /* Nobiko-san's peek is twice as wide: the extra half hangs over the speech bubble without moving it. */
 .host-sprite[style*='--wide:2'] { margin-right: calc(var(--size) * -1); }
 /* A new host steps up from below in whole-pixel steps: no scaling, so the pixels stay square. */
