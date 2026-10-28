@@ -22,6 +22,11 @@ function setup(players: number, random: () => number = Math.random) {
 }
 
 describe('Surprise Me!', () => {
+  it('lists the menu by fewest players needed, then A–Z by title', () => {
+    const sorted = [...MENU].sort((a, b) => a.minPlayers - b.minPlayers || a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }));
+    expect(MENU.map((m) => m.id)).toEqual(sorted.map((m) => m.id));
+  });
+
   it('only ever rolls a menu game that fits the room', () => {
     for (let n = 1; n <= 8; n++) {
       const pool = surprisePool(n);
