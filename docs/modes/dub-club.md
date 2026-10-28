@@ -61,6 +61,13 @@ the audience is about half women) and a really cheap idol who drops the act back
 
 Fude's lines: `content/src/hosts/fude.ts`, events `dub_*`.
 
+## Art
+
+PixelLab pixel art in `stage/assets/dub/`: 13 sets, 14 characters, each with a three-frame mouth sheet
+(`char-*-talk.png`; the monster's is built from its own still by `tools/art/sources/monster-talk.py`),
+33 direction-card icons (`cards/`), the episode's title, つづく and credits backdrops (`ep-*.png`), and the
+phone's play, stop and mic icons (`ui-*.png`) for listening back and the recording level meter.
+
 ## Clips and privacy
 
 A take is posted to `POST /api/rooms/:code/clip` and kept in the room's memory only while the mode

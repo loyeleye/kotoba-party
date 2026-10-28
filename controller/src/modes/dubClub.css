@@ -95,3 +95,22 @@ body[data-motion='calm'] .dc-rec-bar { animation: dc-rec-run var(--len, 10s) lin
 
 .dc-notes { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 6px; font-size: 18px; }
 .dc-total { margin: 0; font-size: 40px; font-weight: 900; color: var(--warn); text-align: center; }
+
+/* Listening back: a pixel play button (a little TV) and the take's waveform, which lights up as it plays. */
+.dc-player { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 14px; border: 2px solid var(--line); background: var(--panel); }
+.dc-play { flex: none; width: 64px; height: 64px; padding: 0; border: 0; background: none; touch-action: manipulation; }
+.dc-play img { width: 64px; height: 64px; image-rendering: pixelated; }
+.dc-wave { flex: 1; display: flex; align-items: center; gap: 2px; height: 48px; }
+.dc-wave i { flex: 1; height: calc(var(--h) * 6px); min-height: 4px; background: var(--muted); }
+.dc-wave i.on { background: var(--mode); }
+.dc-dur { flex: none; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The mic meter on the record button: the mic and eight blocks, green to red. */
+.dc-meter { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 3px; margin-top: 6px; height: 32px; }
+.dc-meter img { width: 32px; height: 32px; image-rendering: pixelated; margin-right: 6px; }
+.dc-meter i { width: 10px; height: calc(8px + var(--b, 0) * 2px); background: rgba(255, 255, 255, 0.2); }
+.dc-meter i:nth-of-type(1) { --b: 1; } .dc-meter i:nth-of-type(2) { --b: 2; } .dc-meter i:nth-of-type(3) { --b: 3; } .dc-meter i:nth-of-type(4) { --b: 4; }
+.dc-meter i:nth-of-type(5) { --b: 5; } .dc-meter i:nth-of-type(6) { --b: 6; } .dc-meter i:nth-of-type(7) { --b: 7; } .dc-meter i:nth-of-type(8) { --b: 8; }
+.dc-meter i.on { background: var(--good); }
+.dc-meter i.on:nth-of-type(n + 6) { background: var(--warn); }
+.dc-meter i.on:nth-of-type(n + 8) { background: #ff5a5a; }
+.dc-rec.on { min-height: 120px; display: grid; place-content: center; }

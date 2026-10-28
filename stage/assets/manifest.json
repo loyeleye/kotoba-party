@@ -8108,6 +8108,63 @@
         "seed": 7
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/dub/ui-play.png",
+      "what": "Dub Club phone: play button for listening back to a take (a little TV)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a chunky bright green play button triangle pointing right, like on an old video cassette player",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/ui-stop.png",
+      "what": "Dub Club phone: stop button while a take plays",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a chunky red square stop button, like on an old cassette player",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/ui-mic.png",
+      "what": "Dub Club phone: the mic beside the recording level meter",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a retro silver studio microphone on a short stand, front view",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
     }
   ]
 }
