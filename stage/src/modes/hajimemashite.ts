@@ -12,7 +12,7 @@
 //   おぼえてる？ everyone says what's true about everyone; the TV shows the guests and the count.
 
 import { h, seatShape } from '../../../shared/src/dom.js';
-import { DURATIONS, flipMs, type FactView } from '../../../shared/src/modes/hajimemashite/hajimemashite.js';
+import { flipAt, flipMs, type FactView } from '../../../shared/src/modes/hajimemashite/hajimemashite.js';
 import type { HajimeView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { sfx } from '../music/sfx.js';
@@ -41,7 +41,6 @@ function since(view: RoomView): number {
   if (shown.seq !== view.phaseSeq) shown = { seq: view.phaseSeq, at: performance.now() };
   return performance.now() - shown.at;
 }
-const flipAt = (step: number): number => DURATIONS.scoreLead + step * DURATIONS.scoreStep;
 
 // Each card's sound plays once per flip, however often the screen redraws.
 let sounded = -1;
@@ -49,8 +48,9 @@ function playFlip(view: RoomView, game: HajimeView, elapsed: number): void {
   if (sounded === view.phaseSeq || !game.result) return;
   sounded = view.phaseSeq;
   for (const f of game.facts) {
-    const at = flipAt(f.flip ?? 0) - elapsed;
-    if (at >= 0) sfx(f.kind === 'truth' ? 'right' : 'poof', at / 1000);
+    const at = flipAt(f.flip ?? 0, game.facts.length) - elapsed;
+    // The puff lands as the face turns away, about 300 ms into the flip.
+    if (at >= 0) sfx(f.kind === 'truth' ? 'right' : 'poof', (at + 300) / 1000);
   }
 }
 
@@ -101,12 +101,12 @@ function bubbles(view: RoomView, game: HajimeView): HTMLElement {
 function card(view: RoomView, game: HajimeView, f: FactView, elapsed: number): HTMLElement {
   const reading = game.line?.factId === f.id;
   const flipped = f.flip !== undefined;
-  const at = flipped ? flipAt(f.flip ?? 0) - elapsed : 0;
+  const at = flipped ? flipAt(f.flip ?? 0, game.facts.length) - elapsed : 0;
   const face = h(
     'div',
     { class: 'hj-face' },
     h('span', { class: 'hj-label' }, f.label),
-    f.word ? h('p', { class: `hj-word${sizeOf(f.word)}${f.hidden ? ' hj-hidden' : ''}`, lang: 'ja' }, f.word) : h('p', { class: 'hj-ear', 'aria-label': 'not read yet' }, '🔊'),
+    f.word ? h('p', { class: `hj-word${sizeOf(f.word)}${f.hidden ? ' hj-hidden' : ''}`, lang: 'ja' }, f.word) : h('img', { class: 'hj-ear', src: '/stage/assets/icons/lt-mic.png', alt: 'not read yet' }),
     f.read === 'pon' && f.word ? h('span', { class: 'hj-paw', title: 'Pon read this one' }, '🐾') : null,
   );
   const back = flipped
@@ -114,7 +114,7 @@ function card(view: RoomView, game: HajimeView, f: FactView, elapsed: number): H
       ? h('div', { class: 'hj-back hj-true' }, h('span', { class: 'hj-label' }, f.label), h('p', { class: `hj-word${sizeOf(f.word ?? '')}`, lang: 'ja' }, f.word ?? ''), h('p', { class: 'hj-verdict', lang: 'ja' }, 'ほんとう！'), f.en ? h('p', { class: 'hj-en' }, f.en) : null)
       : h(
           'div',
-          { class: 'hj-back hj-lie' },
+          { class: 'hj-back hj-lie', style: f.kind === 'pon' ? '' : seatStyle(view, f.authors?.[0] ?? null) },
           h('span', { class: 'hj-puff', 'aria-hidden': 'true' }),
           h('span', { class: 'hj-tanuki', 'aria-hidden': 'true' }, '🦝'),
           h('p', { class: 'hj-word hj-small', lang: 'ja' }, f.word ?? ''),
@@ -135,7 +135,7 @@ function card(view: RoomView, game: HajimeView, f: FactView, elapsed: number): H
 }
 
 function cards(view: RoomView, game: HajimeView, elapsed: number): HTMLElement {
-  return h('ol', { class: `hj-cards hj-n${game.facts.length}` }, game.facts.map((f) => card(view, game, f, elapsed)));
+  return h('ol', { class: `hj-cards hj-n${game.facts.length}${view.phase === 'score' ? ' hj-flip-on' : ''}` }, game.facts.map((f) => card(view, game, f, elapsed)));
 }
 
 /** The line below the cards: what's happening now, and who's on. */

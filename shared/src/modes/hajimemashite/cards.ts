@@ -28,6 +28,8 @@ export interface IntroCard {
   third: string;
   /** The frame in English, with ___ for the blank. */
   en: string;
+  /** The same about someone else, with {name} (what the tanuki and the introducer see). */
+  enThird: string;
   /** N4 cards go only to N4 guests. A chunk card is N4 grammar used as a fixed phrase. */
   level: 'n5' | 'n4';
   audiences: readonly Audience[];
@@ -52,6 +54,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: '＿が だいすきです',
     third: '{name}さんは ＿が だいすきです',
     en: 'I love ___',
+    enThird: '{name} loves ___',
     level: 'n5',
     audiences: ALL,
     tiles: tiles('suki', [
@@ -68,6 +71,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: '＿が きらいです',
     third: '{name}さんは ＿が きらいです',
     en: 'I hate ___',
+    enThird: '{name} hates ___',
     level: 'n5',
     audiences: ALL,
     tiles: tiles('kirai', [
@@ -84,6 +88,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'しゅみは ＿です',
     third: '{name}さんの しゅみは ＿です',
     en: 'My hobby is ___',
+    enThird: "{name}'s hobby is ___",
     level: 'n5',
     audiences: ALL,
     tiles: tiles('shumi', [
@@ -100,6 +105,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'いきたい ところは ＿です',
     third: '{name}さんの いきたい ところは ＿です',
     en: 'The place I want to go is ___',
+    enThird: 'The place {name} wants to go is ___',
     level: 'n5',
     audiences: ALL,
     tiles: tiles('ikitai', [
@@ -116,6 +122,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: '＿が できます',
     third: '{name}さんは ＿が できます',
     en: 'I can do ___',
+    enThird: '{name} can do ___',
     level: 'n5',
     audiences: ALL,
     tiles: tiles('dekiru', [
@@ -132,10 +139,11 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'こわい ものは ＿です',
     third: '{name}さんの こわい ものは ＿です',
     en: "The thing I'm scared of is ___",
+    enThird: 'The thing {name} is scared of is ___',
     level: 'n5',
     audiences: ALL,
     tiles: tiles('kowai', [
-      ['くも', 'spiders', '🕷'], ['おばけ', 'ghosts', '👻'], ['ピエロ', 'clowns', '🤡'], ['かみなり', 'thunder', '⚡'],
+      ['クモ', 'spiders', '🕷'], ['おばけ', 'ghosts', '👻'], ['ピエロ', 'clowns', '🤡'], ['かみなり', 'thunder', '⚡'],
       ['はいしゃさん', 'the dentist', '🦷'], ['たかい ところ', 'heights', '🏔'], ['ヘビ', 'snakes', '🐍'], ['ゴキブリ', 'cockroaches', '🪳'],
       ['にんぎょう', 'dolls', '🪆'], ['ジェットコースター', 'roller coasters', '🎢'], ['ひこうき', 'planes', '✈'], ['くらい ところ', 'the dark', '🌑'],
       ['ハチ', 'bees', '🐝'], ['ちゅうしゃ', 'injections', '💉'], ['うみ', 'the sea', '🌊'], ['ねこ', 'cats', '🐈'],
@@ -148,6 +156,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'まいあさ ＿を のみます',
     third: '{name}さんは まいあさ ＿を のみます',
     en: 'Every morning I drink ___',
+    enThird: 'Every morning {name} drinks ___',
     level: 'n5',
     audiences: ALL,
     tiles: tiles('asa', [
@@ -164,13 +173,14 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'かいたい ペットは ＿です',
     third: '{name}さんの かいたい ペットは ＿です',
     en: 'The pet I want is ___',
+    enThird: 'The pet {name} wants is ___',
     level: 'n5',
     audiences: KF,
     tiles: tiles('petto', [
       ['ねこ', 'a cat', '🐈'], ['いぬ', 'a dog', '🐕'], ['うさぎ', 'a rabbit', '🐇'], ['ハムスター', 'a hamster', '🐹'],
       ['カメ', 'a turtle', '🐢'], ['ヘビ', 'a snake', '🐍'], ['インコ', 'a budgie', '🦜'], ['きんぎょ', 'a goldfish', '🐠'],
       ['ハリネズミ', 'a hedgehog', '🦔'], ['フェレット', 'a ferret', '🦦'], ['カピバラ', 'a capybara', '🦫'], ['ペンギン', 'a penguin', '🐧'],
-      ['トカゲ', 'a lizard', '🦎'], ['ブタ', 'a pig', '🐖'], ['アルパカ', 'an alpaca', '🦙'], ['クワガタ', 'a stag beetle', '🪲'],
+      ['トカゲ', 'a lizard', '🦎'], ['ミニブタ', 'a micro pig', '🐖'], ['アルパカ', 'an alpaca', '🦙'], ['クワガタ', 'a stag beetle', '🪲'],
     ]),
     pon: ponTile('petto', 'たぬき', 'a tanuki'),
   },
@@ -180,6 +190,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'こどもの ころの ゆめは ＿でした',
     third: '{name}さんの こどもの ころの ゆめは ＿でした',
     en: 'My childhood dream was to be ___',
+    enThird: "{name}'s childhood dream was to be ___",
     level: 'n5',
     audiences: ALL,
     tiles: tiles('yume', [
@@ -196,6 +207,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'ねる まえに ＿',
     third: '{name}さんは ねる まえに ＿',
     en: 'Before bed, I ___',
+    enThird: 'Before bed, {name} ___',
     level: 'n5',
     audiences: KF,
     tiles: tiles('neru', [
@@ -212,13 +224,14 @@ export const INTRO_CARDS: IntroCard[] = [
     first: '＿を たべた ことが あります',
     third: '{name}さんは ＿を たべた ことが あります',
     en: "I've eaten ___",
+    enThird: '{name} has eaten ___',
     level: 'n4',
     audiences: ALL,
     tiles: tiles('tabeta', [
       ['ふぐ', 'pufferfish', '🐡'], ['カエル', 'frog', '🐸'], ['むし', 'insects', '🦗'], ['ドリアン', 'durian', '🍈'],
       ['ワニ', 'crocodile', '🐊'], ['うなぎ', 'eel', '🐍'], ['うに', 'sea urchin', '🟠'], ['なまたまご', 'raw egg', '🥚'],
       ['いなご', 'locusts', '🦗'], ['かたつむり', 'snails', '🐌'], ['カンガルー', 'kangaroo', '🦘'], ['しかの にく', 'venison', '🦌'],
-      ['くさや', 'kusaya (smelly fish)', '🐟'], ['ハチの こ', 'bee larvae', '🐝'], ['ザリガニ', 'crayfish', '🦞'], ['サボテン', 'cactus', '🌵'],
+      ['くさや', 'kusaya (smelly fish)', '🐟'], ['ハチのこ', 'bee larvae', '🐝'], ['ザリガニ', 'crayfish', '🦞'], ['サボテン', 'cactus', '🌵'],
     ]),
     pon: ponTile('tabeta', 'はっぱ', 'leaves'),
   },
@@ -228,6 +241,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: '＿に いった ことが あります',
     third: '{name}さんは ＿に いった ことが あります',
     en: "I've been to ___",
+    enThird: '{name} has been to ___',
     level: 'n4',
     audiences: ALL,
     tiles: tiles('itta', [
@@ -245,6 +259,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'はつデートは ＿でした',
     third: '{name}さんの はつデートは ＿でした',
     en: 'My first date was at ___',
+    enThird: "{name}'s first date was at ___",
     level: 'n5',
     audiences: CHEEKY,
     tiles: tiles('date', [
@@ -261,6 +276,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'よっぱらうと ＿',
     third: '{name}さんは よっぱらうと ＿',
     en: 'When I get drunk, I ___',
+    enThird: 'When {name} gets drunk, they ___',
     level: 'n5',
     audiences: CHEEKY,
     tiles: tiles('yopparau', [
@@ -274,9 +290,10 @@ export const INTRO_CARDS: IntroCard[] = [
   {
     id: 'sumaho',
     title: { text: 'スマホの しゃしん', kana: 'スマホの しゃしん', en: 'The photos on your phone' },
-    first: 'わたしの スマホには ＿の しゃしんが たくさん あります',
+    first: 'スマホには ＿の しゃしんが たくさん あります',
     third: '{name}さんの スマホには ＿の しゃしんが たくさん あります',
     en: 'My phone is full of photos of ___',
+    enThird: "{name}'s phone is full of photos of ___",
     level: 'n5',
     audiences: CHEEKY,
     tiles: tiles('sumaho', [
@@ -293,6 +310,7 @@ export const INTRO_CARDS: IntroCard[] = [
     first: 'じつは ＿が すきです',
     third: '{name}さんは じつは ＿が すきです',
     en: 'Actually, I secretly love ___',
+    enThird: 'Actually, {name} secretly loves ___',
     level: 'n5',
     audiences: CHEEKY,
     tiles: tiles('jitsuwa', [

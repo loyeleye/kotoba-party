@@ -75,8 +75,10 @@ export const DURATIONS = {
   promptName: 18_000,
   answer: 40_000,
   encore: 30_000,
-  scoreLead: 2_000,
-  scoreStep: 3_500,
+  scoreLead: 1_200,
+  scoreStep: 2_200,
+  /** A held breath before the truth turns. */
+  scoreHold: 1_000,
   scoreTail: 6_000,
   finale: 40_000,
 } as const;
@@ -218,7 +220,7 @@ export interface HajimeView {
   introducerId: string | null;
   /** The guest's name in katakana (or as typed, before they've written it). */
   guestName: string;
-  card: { title: JpText; first: string; third: string; en: string; level: 'n5' | 'n4' } | null;
+  card: { title: JpText; first: string; third: string; en: string; enThird: string; level: 'n5' | 'n4' } | null;
   facts: FactView[];
   /** The introduction's line now being read. */
   line: { index: number; total: number; kind: Line['kind']; factId: string | null; at: number; ms: number } | null;
@@ -456,7 +458,7 @@ const bubble = (t: Turn, playerId: string, text: string, now: number) => {
 const lineText = (s: HajimeState, t: Turn, line: Line, ctx: ModeContext): string => {
   const name = nameFor(s, ctx.player(t.guestId));
   if (line.kind === 'open') return `こちらは ${name}さんです。`;
-  if (line.kind === 'close') return 'みなさん、どうぞ よろしく おねがいします！';
+  if (line.kind === 'close') return `${name}さんを どうぞ よろしく おねがいします！`;
   const f = line.factId ? factOf(t, line.factId) : undefined;
   return f ? fillFrame(cardOf(t).third, f.word, name) : '';
 };
@@ -545,7 +547,7 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
     }
     if (p.id === t.introducerId && truth) {
       const line = fillFrame(card.third, truth.word, name);
-      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: `${card.en.replace(/^I /, `${ctx.player(t.guestId)?.name ?? 'They'} `)} (introducing someone: 〜さんは …)`, outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen' });
+      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen' });
     }
   }
 }
@@ -553,7 +555,9 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
 const hostName = (s: HajimeState, ctx: ModeContext, id: string | null | undefined) => (id ? nameFor(s, ctx.player(id)) : '');
 
 /** How long the flip takes on the TV: a lead-in, then one card every step. */
-export const flipMs = (cards: number): number => DURATIONS.scoreLead + DURATIONS.scoreStep * cards;
+export const flipMs = (cards: number): number => DURATIONS.scoreLead + DURATIONS.scoreStep * cards + DURATIONS.scoreHold;
+/** When card number `step` (0 first) of `cards` turns: the lies at a steady pace, then a held breath, then the truth. */
+export const flipAt = (step: number, cards: number): number => DURATIONS.scoreLead + DURATIONS.scoreStep * step + (step >= cards - 1 ? DURATIONS.scoreHold : 0);
 
 // ---- the mode ----
 
@@ -898,7 +902,7 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
         t.claims[playerId] = said ? 'said' : 'tap';
         ctx.award(playerId, said ? SAY.claim.said : SAY.claim.tap);
         spoken(u);
-        bubble(t, playerId, 'ドロン！ わたしでした！', ctx.now);
+        bubble(t, playerId, 'ドロン！　わたしでした！', ctx.now);
         return MOVE_OK;
       }
       case 'refute': {
@@ -912,7 +916,7 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
         t.refutes[f.id] = said ? 'said' : 'tap';
         ctx.award(playerId, said ? SAY.refute.said : SAY.refute.tap);
         spoken(u);
-        bubble(t, playerId, `${f.word}？ ちがいます！`, ctx.now);
+        bubble(t, playerId, `${f.word}？　ちがいます！`, ctx.now);
         return MOVE_OK;
       }
       case 'truth': {
@@ -987,6 +991,7 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
     const linesShown = phase === 'reveal' || phase === 'encore' || phase === 'score';
     const lineOf = (id: string) => t?.lines.find((l) => l.factId === id);
 
+    const showOrder = t?.result ? [...t.result.order].reverse().filter((id) => factOf(t, id)?.kind !== 'truth') : [];
     const facts: FactView[] =
       t && linesShown
         ? t.facts.map((f, i) => {
@@ -998,8 +1003,8 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
               v.authors = f.authors;
               v.en = f.en;
               v.place = place;
-              // Least believed first, the most believed last.
-              v.flip = t.result.order.length - 1 - place;
+              // The lies from least to most believed, then the truth, always last.
+              v.flip = f.kind === 'truth' ? t.facts.length - 1 : showOrder.indexOf(f.id);
               v.firsts = Object.values(t.ballots).filter((b) => b[0] === f.id).length;
               v.claimed = f.authors.some((a) => !!t.claims[a]);
               v.refuted = !!t.refutes[f.id];
@@ -1019,7 +1024,7 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
       waitingOn = here.filter((p) => p.id !== t.guestId && !t.ballots[p.id]).length;
     }
 
-    const recent = t ? t.bubbles.filter((b) => ctx.now - b.at < 6_000).map((b) => ({ playerId: b.playerId, text: b.text })) : [];
+    const recent = t ? t.bubbles.filter((b) => b.at >= s.phaseAt && ctx.now - b.at < 6_000).slice(-4).map((b) => ({ playerId: b.playerId, text: b.text })) : [];
     const recallTotal = s.past.length ? here.reduce((a, p) => a + s.past.filter((pt) => pt.guestId !== p.id && ctx.player(pt.guestId)).length, 0) : 0;
     const recallDone = here.reduce((a, p) => a + Object.keys(s.recall[p.id] ?? {}).length, 0);
 
@@ -1090,7 +1095,7 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
       guestId: t?.guestId ?? null,
       introducerId: t?.introducerId ?? null,
       guestName,
-      card: card ? { title: card.title, first: card.first, third: card.third.replace('{name}', guestName), en: card.en, level: card.level } : null,
+      card: card ? { title: card.title, first: card.first, third: card.third.replace('{name}', guestName), en: card.en, enThird: card.enThird.replace('{name}', guest?.name ?? guestName), level: card.level } : null,
       facts,
       line:
         t && phase === 'reveal' && t.line < t.lines.length
@@ -1120,7 +1125,7 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
     add(best((st) => st.liePts), 'たぬき賞', 'Best Tanuki: the most points from lies');
     add(best((st) => st.found), 'めいたんてい賞', 'Great Detective: picked the most truths first');
-    add(best((st) => st.knownShare), 'らしい賞', 'So You: the guest the room knew best');
+    add(best((st) => st.knownShare), 'らしさ賞', 'So You: the guest the room knew best');
     add(best((st) => st.truthPlace), 'なぞの ゲスト賞', 'Mystery Guest: the truth nobody believed');
     add(best((st) => st.spoken), 'いいこえ賞', 'Best Voice: the most lines said out loud');
     return out;

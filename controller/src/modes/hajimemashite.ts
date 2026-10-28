@@ -15,7 +15,7 @@
 
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
-import { flipMs, MAX_WORD } from '../../../shared/src/modes/hajimemashite/hajimemashite.js';
+import { flipAt, flipMs, MAX_WORD } from '../../../shared/src/modes/hajimemashite/hajimemashite.js';
 import { fillFrame } from '../../../shared/src/modes/hajimemashite/cards.js';
 import type { HajimeView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -102,16 +102,18 @@ function guestScreen(ctx: Ctx, me: Me): HTMLElement {
 }
 
 function welcomeScreen(ctx: Ctx, me: Me): HTMLElement {
-  const reply = me.level === 'kana' ? 'よろしく！' : 'こちらこそ、よろしく おねがいします！';
+  const reply = me.level === 'kana' ? 'こちらこそ！' : 'こちらこそ、よろしく おねがいします！';
   return h(
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, `Tonight’s guest: ${ctx.game.guestName}さん`),
     h('p', {}, 'Answer their greeting:'),
     line(reply, me.level),
-    h('p', { class: 'hint' }, me.level === 'kana' ? 'Nice to meet you!' : 'Likewise, nice to meet you. (こちらこそ: “the same from me”)'),
+    h('p', { class: 'hint' }, me.level === 'kana' ? 'Likewise! (こちらこそ: “the same from me”)' : 'Likewise, nice to meet you. (こちらこそ: “the same from me”)'),
     me.kochira
       ? h('p', { class: 'hj-ok' }, '✓ Said!')
+      : !me.greeted
+        ? h('p', { class: 'hint' }, `👂 Wait for ${ctx.game.guestName}さん’s はじめまして, then answer.`)
       : h(
           'div',
           {},
@@ -148,7 +150,7 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
     h('p', { class: 'hint' }, copy.sub),
     card ? h('p', { class: 'hj-cardname' }, h('span', { lang: 'ja' }, card.title.text), ` · ${card.title.en}`) : null,
     h('p', { class: 'hj-frame-p', lang: 'ja' }, before ?? '', h('span', { class: `hj-blank-p${word ? ' on' : ''}` }, word ?? '＿＿'), after ?? ''),
-    me.level !== 'n4' && card ? h('p', { class: 'hint' }, role === 'guest' ? card.en : card.en.replace(/^I /, `${game.guestName}さん `).replace(/^My /, `${game.guestName}さんの `)) : null,
+    me.level !== 'n4' && card ? h('p', { class: 'hint' }, role === 'guest' ? card.en : card.enThird) : null,
     me.level === 'kana' && frame ? h('p', { class: 'hj-romaji' }, toRomaji(fillFrame(frame, word ?? '＿', game.guestName))) : null,
     h(
       'div',
@@ -158,7 +160,7 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
           'button',
           { type: 'button', class: `option hj-tile${me.written?.tileId === t.id ? ' on' : ''}`, onclick: () => write({ kind: 'write', tileId: t.id }) },
           h('span', { class: 'hj-tile-emoji', 'aria-hidden': 'true' }, t.emoji),
-          h('span', { class: 'hj-tile-jp', lang: 'ja' }, t.kana),
+          h('span', { class: `hj-tile-jp${[...t.kana].length >= 7 ? ' long' : ''}`, lang: 'ja' }, t.kana),
           t.romaji ? h('small', { class: 'hj-romaji' }, toRomaji(t.kana)) : null,
           t.en ? h('small', {}, t.en) : null,
         ),
@@ -205,8 +207,8 @@ function introducerScreen(ctx: Ctx, me: Me): HTMLElement {
     h('p', { class: 'big' }, '🎤 You’re introducing!'),
     h('p', { class: 'hj-steps-p' }, cur.kind === 'open' ? 'Opening line' : cur.kind === 'close' ? 'Closing line' : `Card ${cardNo} of ${total}`),
     prompt,
-    h('p', { class: 'hint' }, 'The card goes up on the TV when you’ve read it. Read every card the same way: you don’t know which is true either!'),
-    h('button', { type: 'button', class: 'secondary hj-help', onclick: () => void send(ctx, { kind: 'read', pon: true }) }, h('span', { lang: 'ja' }, 'ポン、たすけて！'), ' Pon reads this one'),
+    h('p', { class: 'hint' }, 'The card goes up on the TV when you’ve read it. After 12 seconds Pon reads it for you. Read every card the same way: you don’t know which is true either!'),
+    h('button', { type: 'button', class: 'linkish hj-help', onclick: () => void send(ctx, { kind: 'read', pon: true }) }, '🐾 ', h('span', { lang: 'ja' }, 'ポン、たすけて！'), ' Pon reads this one (no points for it)'),
     speakBox({ label: 'Hold and read it', placeholder: 'Type it', autoSend: true, kanaPadOpen: me.level === 'kana', draftKey: `hj-read-${ctx.game.turn}-${at}`, onSend: (utterance) => void send(ctx, { kind: 'read', utterance }) }),
   );
 }
@@ -222,7 +224,7 @@ function listenScreen(ctx: Ctx, me: Me): HTMLElement {
     me.vetoable.length
       ? h(
           'details',
-          { class: 'hj-veto' },
+          { class: 'hj-veto', open: true },
           h('summary', {}, '🙅 A lie about you that you don’t want read out?'),
           h('p', { class: 'hint' }, 'Only you see this. Pon swaps it for one of his own.'),
           me.vetoable.map((v) => h('button', { type: 'button', class: 'secondary', onclick: () => void send(ctx, { kind: 'veto', factId: v.id }) }, '🙅 ', h('span', { lang: 'ja' }, v.word))),
@@ -247,11 +249,16 @@ function argueBox(ctx: Ctx, me: Me): HTMLElement {
   );
 }
 
+/** The order being tapped, kept across redraws (an argue bubble redraws the screen) until the phase ends. */
+let rankDraft: { seq: number; picks: string[] } = { seq: -1, picks: [] };
+
 function rankScreen(ctx: Ctx, me: Me): HTMLElement {
   const cards = me.rankable;
-  let picks: string[] = me.ballot ? [...me.ballot] : [];
+  const seq = ctx.view.phaseSeq;
+  if (rankDraft.seq !== seq) rankDraft = { seq, picks: me.ballot ? [...me.ballot] : [] };
+  let picks = rankDraft.picks;
   const list = h('ol', { class: 'hj-rank' });
-  const status = h('p', { class: 'hint' });
+  const status = h('div', { class: 'hj-status' });
   const draw = () => {
     list.replaceChildren(
       ...cards.map((c) => {
@@ -267,7 +274,7 @@ function rankScreen(ctx: Ctx, me: Me): HTMLElement {
               onclick: () => {
                 picks = at >= 0 ? picks.slice(0, at) : [...picks, c.id];
                 if (picks.length === cards.length - 1) picks.push(cards.find((x) => !picks.includes(x.id))!.id);
-                if (picks.length === cards.length) void send(ctx, { kind: 'rank', order: picks });
+                rankDraft.picks = picks;
                 draw();
               },
             },
@@ -279,7 +286,15 @@ function rankScreen(ctx: Ctx, me: Me): HTMLElement {
         );
       }),
     );
-    status.textContent = picks.length === cards.length ? '🔒 きめた！ Tap a card to change from there.' : picks.length ? `Next: your #${picks.length + 1}` : 'Tap the card you’re surest is TRUE first.';
+    const full = picks.length === cards.length;
+    const locked = full && !!me.ballot && me.ballot.join() === picks.join();
+    status.replaceChildren(
+      locked
+        ? h('p', { class: 'hj-ok' }, '🔒 Locked in. Tap a card to change from there.')
+        : full
+          ? h('button', { type: 'button', class: 'primary', onclick: () => void send(ctx, { kind: 'rank', order: picks }) }, h('span', { lang: 'ja' }, 'きめた！'), ' Lock it in')
+          : h('p', { class: 'hint' }, picks.length ? `Next: your #${picks.length + 1}` : 'Tap the card you’re surest is TRUE first.'),
+    );
   };
   draw();
   return h(
@@ -287,6 +302,7 @@ function rankScreen(ctx: Ctx, me: Me): HTMLElement {
     { class: 'screen' },
     h('p', { class: 'big' }, '📱 Rank them'),
     h('p', { class: 'hj-ends' }, h('span', { lang: 'ja' }, '1 ぜったい ほんとう'), ' → ', h('span', { lang: 'ja' }, 'ぜったい うそ')),
+    ctx.game.facts.length > cards.length ? h('p', { class: 'hint' }, 'Your own tanuki isn’t on your list.') : null,
     list,
     status,
     argueBox(ctx, me),
@@ -323,14 +339,21 @@ function truthScreen(ctx: Ctx, me: Me): HTMLElement {
   const total = me.points.reduce((a, p) => a + p.pts, 0);
   // One line at a time, so there is only ever one talk button: claim your tanuki; or, as the guest,
   // wave away each lie and then say the truth.
-  type Step = { label: string; line: string; move: (u: Utterance) => Record<string, unknown> };
+  // Each line comes up as its card turns on the TV (a beat after the flip starts).
+  const elapsed = since(ctx.view);
+  const turnsAt = (factId: string | undefined): number => {
+    const f = game.facts.find((x) => x.id === factId);
+    return f?.flip === undefined ? 0 : flipAt(f.flip, game.facts.length) + 700;
+  };
+  type Step = { label: string; line: string; at: number; move: (u: Utterance) => Record<string, unknown> };
+  const truthId = game.facts.find((f) => f.kind === 'truth')?.id;
   const steps: Step[] = [
-    ...(me.claim && !me.claim.done ? [{ label: 'Your tanuki is out! Claim it:', line: 'ドロン！ わたしでした！', move: (u: Utterance) => ({ kind: 'claim', utterance: u }) }] : []),
+    ...(me.claim && !me.claim.done ? [{ label: 'Your tanuki is out! Claim it:', line: 'ドロン！　わたしでした！', at: turnsAt(me.claim.factId), move: (u: Utterance) => ({ kind: 'claim', utterance: u }) }] : []),
     ...me.refute
       .filter((r) => !r.done)
-      .map((r) => ({ label: `Wave away a lie (${me.refute.length - me.refute.filter((x) => !x.done).length + 1} of ${me.refute.length}):`, line: `${r.word}？ ちがいます！`, move: (u: Utterance) => ({ kind: 'refute', factId: r.factId, utterance: u }) })),
-    ...(me.truth && !me.truth.done ? [{ label: 'Now tell them the truth:', line: me.truth.line, move: (u: Utterance) => ({ kind: 'truth', utterance: u }) }] : []),
-  ];
+      .map((r) => ({ label: 'That one’s not you! Wave it away:', line: `${r.word}？　ちがいます！`, at: turnsAt(r.factId), move: (u: Utterance) => ({ kind: 'refute', factId: r.factId, utterance: u }) })),
+    ...(me.truth && !me.truth.done ? [{ label: 'Now tell them the truth:', line: me.truth.line, at: turnsAt(truthId), move: (u: Utterance) => ({ kind: 'truth', utterance: u }) }] : []),
+  ].sort((a, b) => a.at - b.at);
   const next = steps[0];
   const said = !!me.claim?.done || !!me.truth?.done;
   return h(
@@ -342,8 +365,12 @@ function truthScreen(ctx: Ctx, me: Me): HTMLElement {
       'div',
       { class: 'hj-after', style: `--d: ${Math.round(Math.max(0, left))}ms` },
       me.points.length ? h('ul', { class: 'hj-points' }, me.points.map((p) => h('li', {}, `+${p.pts} `, p.label)), h('li', { class: 'hj-total' }, `+${total} this turn`)) : h('p', { class: 'hint' }, 'No points this turn. Next one!'),
-      next ? h('div', {}, h('p', {}, next.label), sayOrTap('Hold and say it', next.line, false, me.level, (utterance) => void send(ctx, next.move(utterance)))) : said ? h('p', { class: 'hj-ok' }, '✓ Said!') : null,
     ),
+    next
+      ? h('div', { class: 'hj-after', style: `--d: ${Math.round(Math.max(0, next.at - elapsed))}ms` }, h('p', {}, next.label), sayOrTap('Hold and say it', next.line, false, me.level, (utterance) => void send(ctx, next.move(utterance))))
+      : said
+        ? h('p', { class: 'hj-ok' }, '✓ Said!')
+        : null,
   );
 }
 

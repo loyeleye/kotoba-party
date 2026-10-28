@@ -41,11 +41,12 @@
 .hj-card { position: relative; height: 300px; animation: hj-pop 0.45s var(--ease-pop) both; }
 .hj-inner { position: relative; height: 100%; transform-style: preserve-3d; }
 .hj-face, .hj-back { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 8px; padding: 46px 12px 16px; border: 5px solid var(--hj-ink); border-radius: 16px; box-shadow: 0 8px 0 var(--hj-ink); backface-visibility: hidden; overflow: hidden; }
-.hj-face { background: rgba(42, 32, 98, 0.6); border-style: dashed; }
+.hj-face { background: repeating-linear-gradient(135deg, #2c2270 0 14px, #33287e 14px 28px); border-color: var(--hj-ink); }
 .hj-up .hj-face { background: var(--paper); color: var(--paper-ink); border-style: solid; animation: hj-stamp 0.35s var(--ease-pop) both; }
 @keyframes hj-stamp { from { transform: scale(1.25) rotate(-4deg); } }
-.hj-reading .hj-face { outline: 6px solid var(--mode); outline-offset: 4px; animation: hj-glow 1.2s ease-in-out infinite alternate; }
-@keyframes hj-glow { to { outline-color: transparent; } }
+/* The card being read: a steady gold outline, lifted (no fading pulse: calm mode would strobe it). */
+.hj-reading { transform: translateY(-10px); transition: transform 0.25s var(--ease-pop); }
+.hj-reading .hj-face { outline: 6px solid var(--hj-true); outline-offset: 4px; }
 .hj-label { position: absolute; top: 8px; left: 14px; font-family: var(--font-pixel); font-size: 34px; font-weight: 900; color: var(--mode); text-shadow: 2px 2px 0 var(--hj-ink); }
 .hj-up .hj-label, .hj-back .hj-label { color: var(--lantern); text-shadow: none; }
 .hj-word { font-size: 60px; font-weight: 900; line-height: 1.1; text-wrap: balance; }
@@ -55,25 +56,33 @@
 .hj-word.hj-len10 { font-size: 30px; }
 .hj-word.hj-small { font-size: 36px; }
 .hj-hidden { color: var(--paper-muted); font-size: 30px; }
-.hj-ear { font-size: 72px; opacity: 0.55; }
+.hj-ear { width: 96px; height: 96px; image-rendering: pixelated; }
 .hj-paw { position: absolute; right: 12px; bottom: 10px; font-size: 40px; transform: rotate(14deg); opacity: 0.8; }
 
 /* The flip: the face turns away and the back turns in, at --d. */
 .hj-flipping .hj-inner { animation: hj-flip 0.7s ease-in-out var(--d, 0ms) both; }
 @keyframes hj-flip { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
 .hj-back { transform: rotateY(180deg); background: var(--panel); }
-.hj-true { background: var(--paper); color: var(--paper-ink); border-color: var(--hj-true); box-shadow: 0 0 0 6px var(--hj-ink), 0 0 40px 10px rgba(255, 211, 107, 0.6); }
-.hj-true .hj-verdict { font-size: 44px; color: var(--lantern); }
-.hj-en { font-size: 22px; color: var(--paper-muted); }
-.hj-lie { background: #2f5a3a; }
-.hj-lie .hj-verdict { font-size: 34px; color: var(--hj-leaf); }
+.hj-verdict { font-weight: 900; }
+/* The truth: gold, lifted, with ほんとう！ as a red hanko stamp. */
+.hj-true { background: #fff0b8; color: var(--paper-ink); border-color: var(--hj-ink); box-shadow: 0 8px 0 var(--hj-ink), 0 0 48px 12px rgba(255, 211, 107, 0.7); }
+.hj-flipping:has(.hj-true) { animation: hj-lift 0.4s var(--ease-pop) calc(var(--d, 0ms) + 700ms) both; }
+@keyframes hj-lift { to { transform: translateY(-14px) scale(1.04); } }
+.hj-true .hj-verdict { font-size: 40px; color: #fff; background: var(--lantern); border: 4px solid var(--hj-ink); padding: 2px 14px; transform: rotate(-7deg); box-shadow: 4px 4px 0 var(--hj-ink); }
+.hj-en { font-size: 26px; color: var(--paper-muted); }
+/* A lie: navy, with its tanuki's seat colour as a band across the top. */
+.hj-lie { background: var(--panel); border-top: 22px solid var(--seat, var(--hj-leaf)); }
+.hj-lie .hj-verdict { font-size: 34px; color: var(--paper); }
+.hj-lie .hj-word { text-decoration: line-through 4px rgba(255, 255, 255, 0.5); }
+/* While the flip runs, the cards still waiting are dimmed, so the turned ones read first. */
+.hj-flip-on .hj-card:not(.hj-flipping) .hj-face { filter: brightness(0.6) saturate(0.7); }
 .hj-tanuki { font-size: 74px; line-height: 1; animation: hj-pop 0.5s var(--ease-pop) calc(var(--d, 0ms) + 350ms) both; }
 .hj-puff { position: absolute; inset: 20px; background: url(/stage/assets/fx/poof-still.png) center / contain no-repeat; image-rendering: pixelated; opacity: 0; animation: hj-puff 0.9s ease-out calc(var(--d, 0ms) + 250ms) both; pointer-events: none; }
 @keyframes hj-puff { 0% { opacity: 0; transform: scale(0.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
 .hj-author { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; font-size: 26px; font-weight: 800; }
 .hj-who { color: var(--seat, var(--ink)); }
 .hj-seat { font-family: var(--font-pixel); margin-right: 4px; }
-.hj-firsts { font-size: 20px; color: var(--muted); }
+.hj-firsts { font-size: 26px; font-weight: 800; color: var(--paper); }
 
 .hj-call { font-size: 30px; font-weight: 700; margin-top: 8px; }
 .hj-call strong { color: var(--seat, var(--mode)); }
@@ -83,4 +92,7 @@
 .hj-faces li { background: var(--panel); border: 3px solid var(--seat, var(--line)); border-radius: 8px; padding: 8px 18px; }
 
 /* Calm motion: every animation lands at once, still at its moment (the flip keeps its --d). */
-.hj-calm *, .hj-calm *::before { animation-duration: 1ms !important; }
+.hj-calm *, .hj-calm *::before { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .hj-stage *, .hj-stage *::before { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+}

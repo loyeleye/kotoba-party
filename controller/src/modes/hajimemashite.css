@@ -16,6 +16,7 @@
 .hj-tile.on, .hj-rank-opt.on { border: 3px solid var(--mode); background: #1f3b2a; }
 .hj-tile-emoji { font-size: 28px; line-height: 1; }
 .hj-tile-jp { font-size: 19px; font-weight: 800; word-break: keep-all; overflow-wrap: anywhere; }
+.hj-tile-jp.long { font-size: 16px; }
 .hj-tile small { color: var(--muted); font-size: 13px; }
 .hj-own summary, .hj-veto summary, .hj-argue summary, .hj-refute summary { font-weight: 800; padding: 8px 0; }
 .hj-type { margin-top: 6px; }
@@ -24,7 +25,9 @@
 .hj-heard { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .hj-heard li { display: flex; gap: 10px; align-items: baseline; font-size: 20px; font-weight: 800; padding: 8px 12px; border-radius: 10px; background: var(--panel); }
 .hj-lab { font-weight: 900; color: var(--mode); min-width: 1.4em; }
-.hj-veto button { width: 100%; margin-top: 6px; }
+.hj-veto button { width: 100%; margin-top: 6px; border-color: var(--bad, #ff6b6b); }
+.hj-status { display: grid; }
+.hj-help { font-size: 15px; }
 .hj-ends { margin: 0; font-weight: 800; color: var(--muted); }
 .hj-rank { list-style: none; margin: 0; padding: 0; }
 .hj-rank-opt { display: flex; gap: 10px; align-items: center; }
@@ -34,8 +37,8 @@
 .hj-argue .chip { border-radius: 18px; padding: 8px 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 16px; }
 .hj-say { display: grid; gap: 6px; margin: 8px 0; }
 .hj-say.done { opacity: 0.7; }
-.hj-turning { margin: 0; color: var(--muted); animation: hj-gone 0.2s linear var(--d) both; }
-@keyframes hj-gone { to { opacity: 0; height: 0; } }
+.hj-turning { margin: 0; color: var(--muted); animation: hj-gone 0.2s linear var(--d) forwards; }
+@keyframes hj-gone { to { opacity: 0; visibility: hidden; } }
 .hj-after { display: grid; gap: 10px; animation: hj-in 0.3s ease-out var(--d) both; }
 @keyframes hj-in { from { opacity: 0; transform: translateY(8px); } }
 .hj-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 17px; }

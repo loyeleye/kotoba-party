@@ -45,9 +45,10 @@ screenshots in `hajimemashite/shots/`.
    closer. The guest can veto an unread lie (it's swapped for one of Pon's).
 4. **Rank it** (`encore`, 30 s). Everyone but the guest taps the cards in order (a tanuki's own card
    isn't on their list) and can argue out loud; the guest picks the lie they wish were true.
-5. **The truth** (`score`, 2 s + 3.5 s a card + 6 s). Cards flip from least to most believed; lies puff
-   into tanuki with their writer's name, the truth glows ほんとう！. The phones take the claims, the
-   guest's refutations and the truth one line at a time.
+5. **The truth** (`score`, 1.2 s + 2.2 s a card + a 1 s held breath + 6 s). The lies flip from least to
+   most believed, each puffing into a tanuki with its writer's seat colour and name; then a beat, and
+   the truth turns last, gold with a red ほんとう！ stamp. Each phone's line comes up as its card turns:
+   the tanuki's 「ドロン！　わたしでした！」, the guest's 「〇〇？　ちがいます！」, then the guest's truth.
 
 After the last turn, **おぼえてる？** (`finale`, 40 s): say what's true about each other guest (or tap
 it), then the recap.
@@ -69,7 +70,7 @@ Speaking (said / tried / tapped): greeting 40/20/12, こちらこそ 10/3, each 
 (Pon's lines 0), claim 20/6, each refutation 25/8, the truth 45/25/14, argue 10 (two a turn), recall
 50 said / 20 tapped plus 20 to the guest remembered.
 
-Awards: たぬき賞, めいたんてい賞, らしい賞, なぞの ゲスト賞, いいこえ賞.
+Awards: たぬき賞, めいたんてい賞, らしさ賞, なぞの ゲスト賞, いいこえ賞.
 
 VIP extras: みじかめ (4 guests only) and 5まい (five cards a turn).
 
@@ -97,6 +98,13 @@ the truth.
 5. Points are paid when the score phase ends, after the flip; speaking bonuses are paid at once.
 6. The guest's tanuki claim, refutations and truth come one line at a time on the phone, so there is
    only ever one talk button.
+7. The truth always turns last (the art panel's call, for suspense), not in the room's belief order as
+   the design doc had it.
+8. Ranking locks with an explicit きめた！ button, not on the last tap.
+9. The kana-level reply is 「こちらこそ！」, and the introducer closes with 「〇〇さんを どうぞ よろしく
+   おねがいします！」, the usual end of a 他己紹介 (the Japanese panel's notes).
+10. Music: the Art Director preferred Wallpaper as the second theme, but each mode's second theme must
+    be unique and Wallpaper is Oekaki's, so it stays Carefree.
 
 ## Open questions
 
@@ -104,6 +112,6 @@ the truth.
 2. Should the last turn pay double (ラストゲスト) to keep the end close?
 3. Is 60 a ballot for a lie above the truth the right size next to 200 for finding the truth?
 4. Pon reads a line after 12 s of silence: too long for the room, too short for a nervous reader?
-5. The romaji on Kana phones runs particles together (かみなりです → kaminaridesu); worth a word-break
-   pass for these frames.
+5. Pon's English captions show a guest's name in katakana (マット… even better than Pon); host-line slots
+   carry one value for both languages.
 6. Fluent check of every frame, tile, Pon line and argue phrase.

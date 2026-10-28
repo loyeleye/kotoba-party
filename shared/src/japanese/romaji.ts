@@ -35,7 +35,7 @@ const PUNCT: Record<string, string> = {
   '「': '"', '」': '"', '『': '"', '』': '"', '（': '(', '）': ')', '　': ' ',
 };
 const MACRON: Record<string, string> = { a: 'ā', i: 'ī', u: 'ū', e: 'ē', o: 'ō' };
-const SOUNDS_AS: Record<string, string> = { は: 'wa', へ: 'e', を: 'o' };
+const SOUNDS_AS: Record<string, string> = { は: 'wa', へ: 'e', を: 'o', には: 'ni wa', では: 'de wa', とは: 'to wa', へは: 'e wa' };
 /** Greetings that end in a fused は, read わ: こんにちは → konnichiwa, こんばんは → konbanwa. */
 const FUSED_WA = /(こんにち|こんばん|コンニチ|コンバン)[はハ]$/;
 
@@ -73,11 +73,24 @@ export function spaceWords(kana: string): string {
     .join('');
 }
 
+const HIRAGANA_ONLY = /^[\u3041-\u309f]+$/;
+/** A copula a word may end in, split off as its own word (かみなりです → かみなり です). */
+const COPULA = /^(.{2,}?)(でした|です)$/;
+
 function splitParticle(word: string): string {
+  // A katakana name with さん: アキさん → アキ-さん (Aki-san).
+  const san = /^([\u30a1-\u30ff]+)さん(.*)$/.exec(word);
+  if (san) return `${san[1]}-さん${san[2] ? ` ${san[2]}` : ''}`;
+  const cop = COPULA.exec(word);
+  if (cop && !/[\u3041-\u309f]$/.test(cop[1]!.slice(-1)) ) return `${splitParticle(cop[1]!)} ${cop[2]}`;
+  if (cop && HIRAGANA_ONLY.test(word) && cop[1]!.length >= 3) return `${splitParticle(cop[1]!)} ${cop[2]}`;
   const hira = toHiragana(word);
-  if (NOT_PARTICLE.test(hira)) return word;
+  // The "not a particle" endings are hiragana words (ピーマンが is ピーマン + が, not まんが).
+  if (HIRAGANA_ONLY.test(word) && NOT_PARTICLE.test(hira)) return word;
   for (const p of PARTICLES) {
     if (hira.length - p.length < 2 || !hira.endsWith(p)) continue;
+    // A particle is written in hiragana: トマト, ピアノ and ペット don't end in と, の or と.
+    if (!HIRAGANA_ONLY.test(word.slice(-p.length))) continue;
     // After katakana or kanji any particle is clear; an all-hiragana word only loses the ones
     // that rarely end a word (しごと, まど and こども end in と, で and も).
     const stem = word.slice(0, word.length - p.length);

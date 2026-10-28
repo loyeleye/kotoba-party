@@ -101,6 +101,35 @@ export function nameToKatakana(name: string): string {
   if (!t) return '';
   if (/[ぁ-ゖァ-ヺー一-鿿]/.test(t)) return toKatakana(t);
   if (!isRomaji(t)) return t;
-  const kata = toKatakana(romajiToHiragana(t.replace(/-/g, ' ').replace(/ee/gi, 'i-').replace(/(ii|aa|oo|uu)/gi, (m) => `${m[0]}-`)).replace(/\s+/g, '・'));
+  const known = t.split(/[\s-]+/).map((w) => COMMON_NAMES[w.toLowerCase()]);
+  if (known.every(Boolean)) return known.join('・');
+  // A few English spellings first (Sarah, Jack, Philip, Lucy), then the rest as romaji.
+  const spelled = t
+    .replace(/([aeiou])h\b/gi, '$1')
+    .replace(/ck/gi, 'k')
+    .replace(/ph/gi, 'f')
+    .replace(/([^aeiou\s-])y\b/gi, '$1ii');
+  const kata = toKatakana(romajiToHiragana(spelled.replace(/-/g, ' ').replace(/ee/gi, 'i-').replace(/(ii|aa|oo|uu)/gi, (m) => `${m[0]}-`)).replace(/\s+/g, '・'));
   return kata.replace(/(.)ー/g, '$1ー').replace(/ーー+/g, 'ー');
 }
+
+/**
+ * Common English names, the way Japanese writes them: English spelling doesn't read as romaji
+ * (Mike isn't ミケ, Kate isn't カテ). Anything else goes through the romaji rules, and the player fixes it.
+ */
+const COMMON_NAMES: Record<string, string> = {
+  john: 'ジョン', mike: 'マイク', michael: 'マイケル', sarah: 'サラ', sara: 'サラ', kate: 'ケイト', katie: 'ケイティ', lucy: 'ルーシー',
+  chris: 'クリス', james: 'ジェームズ', david: 'デイビッド', dave: 'デイブ', emma: 'エマ', emily: 'エミリー', olivia: 'オリビア',
+  sophie: 'ソフィー', sophia: 'ソフィア', jessica: 'ジェシカ', jess: 'ジェス', daniel: 'ダニエル', dan: 'ダン', tom: 'トム', thomas: 'トーマス',
+  ben: 'ベン', sam: 'サム', alex: 'アレックス', anna: 'アナ', hannah: 'ハンナ', laura: 'ローラ', rachel: 'レイチェル', rebecca: 'レベッカ',
+  charlotte: 'シャーロット', grace: 'グレース', chloe: 'クロエ', amy: 'エイミー', jack: 'ジャック', harry: 'ハリー', george: 'ジョージ',
+  william: 'ウィリアム', will: 'ウィル', peter: 'ピーター', paul: 'ポール', mark: 'マーク', steve: 'スティーブ', steven: 'スティーブン',
+  andrew: 'アンドリュー', andy: 'アンディ', matthew: 'マシュー', matt: 'マット', josh: 'ジョシュ', joshua: 'ジョシュア', ryan: 'ライアン',
+  kevin: 'ケビン', brian: 'ブライアン', jennifer: 'ジェニファー', jen: 'ジェン', lisa: 'リサ', mary: 'メアリー', elizabeth: 'エリザベス',
+  liz: 'リズ', kim: 'キム', nicole: 'ニコール', megan: 'ミーガン', claire: 'クレア', zoe: 'ゾーイ', ella: 'エラ', mia: 'ミア',
+  isabella: 'イザベラ', lily: 'リリー', ruby: 'ルビー', jake: 'ジェイク', luke: 'ルーク', adam: 'アダム', nick: 'ニック', joe: 'ジョー',
+  rob: 'ロブ', robert: 'ロバート', richard: 'リチャード', michelle: 'ミシェル', jane: 'ジェーン', kelly: 'ケリー', kathy: 'キャシー',
+  siobhan: 'シボーン', lee: 'リー', jean: 'ジーン', helen: 'ヘレン', ellen: 'エレン', sean: 'ショーン', shaun: 'ショーン',
+  aisha: 'アイシャ', fatima: 'ファティマ', omar: 'オマール', ahmed: 'アフメド', priya: 'プリヤ', maria: 'マリア', carlos: 'カルロス',
+  jose: 'ホセ', juan: 'フアン', luis: 'ルイス', ana: 'アナ', sofia: 'ソフィア', chen: 'チェン', wei: 'ウェイ', min: 'ミン',
+};
