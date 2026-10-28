@@ -29,9 +29,12 @@
 /* Nobiko-san dancing to the chorus (karaokeDuel.ts sway), behind the lyrics in the screen's bottom-left corner, at
    the host's whole-pixel size. She steps up in whole-pixel jumps as the chorus line comes round. */
 .kd-dancer { position: absolute; left: 12px; bottom: -6px; z-index: -1; width: var(--host-size, 128px); height: var(--host-size, 128px); overflow: hidden; pointer-events: none; animation: host-in 320ms steps(4, end) both; }
-/* Her sway sheet: 8 frames side by side, stepped across by the beat (karaokeDuel.ts). */
-.kd-dancer > img { display: block; width: 800%; height: 100%; image-rendering: pixelated; }
-.kd-dancer.still > img { width: 100%; }
+/* Her sway sheet: 8 frames side by side, stepped across by the beat, in two rows per face (the second for blinks),
+   so a face is a jump of two rows (karaokeDuel.ts). */
+.kd-dancer > img { display: block; width: 800%; height: 600%; image-rendering: pixelated; }
+.kd-dancer[data-face='smile'] > img { margin-top: calc(-2 * var(--host-size, 128px)); }
+.kd-dancer[data-face='wry'] > img { margin-top: calc(-4 * var(--host-size, 128px)); }
+.kd-dancer.still > img { width: 100%; height: 100%; margin-top: 0; }
 
 .kd-count { position: relative; height: 0; }
 .kd-count-n { position: absolute; right: 0; top: -58px; font-size: 64px; font-weight: 900; color: var(--warn); opacity: 0; animation: kd-count var(--len) linear var(--d) forwards; }

@@ -170,7 +170,10 @@ neck out to look (the `peek` mood); on an ippon she cheers.
 While everyone sings a chorus line she dances in the lyrics' bottom-left corner: her body stays put and her
 neck bends to swing her head left on one beat and right on the next, from the line's first beat
 (`nobiko-sway.png`, stepped through by `sway` in `stage/src/modes/karaokeDuel.ts` on the line's own clock so it
-stays on the backing track). Calm and reduced motion keep her still.
+stays on the backing track). She blinks on two random beats in every eight. Her face follows the latest take
+(`danceFace`): a big laughing smile when the words were mostly right (80%+) and the timing good (70%+), a wry,
+unimpressed look at a missed line or one under 50% words, and her own face otherwise. Calm and reduced motion
+keep her still.
 
 ### Awards
 

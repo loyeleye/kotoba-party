@@ -259,19 +259,37 @@ const swaying = new WeakMap<Element, string>();
 /**
  * Nobiko-san dances in the corner of the lyrics while everyone sings a chorus line: her body stays put and her
  * neck bends to carry her head left on one beat and right on the next (nobiko-sway.png, 8 frames over two beats,
- * built by tools/art/sources/nobiko-peek.py), starting on the line's first beat. The sway runs on the document
- * timeline from the line's own clock, so it stays on the backing track's beat however often the stage re-renders.
+ * built by tools/art/sources/nobiko-peek.py), starting on the line's first beat. Now and then, on a beat picked at
+ * random for the line, she blinks for a quarter of a beat (each face's second row). Both run on the document
+ * timeline from the line's own clock, so they stay on the backing track's beat however often the stage re-renders.
  */
 function sway(key: string, lineAt: number, beatMs: number): void {
   const el = document.querySelector<HTMLElement>('.kd-dancer > img');
   if (!el || swaying.get(el) === key || typeof el.animate !== 'function') return;
   swaying.set(el, key);
-  const anim = el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-100%)' }], {
+  const start = lineAt - performance.timeOrigin;
+  const steps = el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-100%)' }], {
     duration: 2 * beatMs,
     iterations: Infinity,
     easing: 'steps(8, end)',
   });
-  anim.startTime = lineAt - performance.timeOrigin;
+  steps.startTime = start;
+  // Two blinks every eight beats, on different beats; each holds the blink row for a quarter beat.
+  const beats = [0, 1, 2, 3, 4, 5, 6, 7].sort(() => Math.random() - 0.5).slice(0, 2);
+  const eyes = Array.from({ length: 33 }, (_, q) => ({ translate: beats.includes(q / 4) ? `0 -${100 / 6}%` : '0 0' }));
+  const blinks = el.animate(eyes, { duration: 8 * beatMs, iterations: Infinity, easing: 'steps(32, end)' });
+  blinks.startTime = start;
+}
+
+/**
+ * Her face while she dances, from the latest take in (this line's, or the last line's until this one's lands): a big
+ * smile when the words were mostly right and the timing good, a wry look at a missed or garbled line, else her own.
+ */
+function danceFace(game: KaraokeDuelView, turnNo: number): 'smile' | 'wry' | null {
+  const t = game.takes.filter((x) => x.turnNo >= turnNo - 1).at(-1);
+  if (!t || t.via === 'typed') return null;
+  if (t.missed || t.pron < 0.5) return 'wry';
+  return t.pron >= 0.8 && (t.timing ?? 1) >= 0.7 ? 'smile' : null;
 }
 
 function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
@@ -333,7 +351,7 @@ function singTurn(view: RoomView, game: KaraokeDuelView): HTMLElement {
         chorus ? h('p', { class: 'kd-chorus' }, `🎶 Chorus: ${chorus} singing along`) : null,
         lastTakeToast(view, game, Date.now() + off),
         dancing
-          ? h('div', { class: `kd-dancer${still ? ' still' : ''}`, 'aria-hidden': 'true' }, h('img', { src: still ? '/stage/assets/hosts/nobiko.png' : '/stage/assets/anim/nobiko-sway.png', alt: '', draggable: 'false' }))
+          ? h('div', { class: `kd-dancer${still ? ' still' : ''}`, 'data-face': danceFace(game, turn.no) ?? '', 'aria-hidden': 'true' }, h('img', { src: still ? '/stage/assets/hosts/nobiko.png' : '/stage/assets/anim/nobiko-sway.png', alt: '', draggable: 'false' }))
           : null,
       ),
       duelBoard(view, game),
