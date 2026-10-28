@@ -76,7 +76,7 @@
 .hj-lie .hj-word { text-decoration: line-through 4px rgba(255, 255, 255, 0.5); }
 /* While the flip runs, the cards still waiting are dimmed, so the turned ones read first. */
 .hj-flip-on .hj-face { filter: brightness(0.6) saturate(0.7); }
-.hj-tanuki { font-size: 56px; line-height: 1; animation: hj-pop 0.5s var(--ease-pop) calc(var(--d, 0ms) + 350ms) both; }
+.hj-tanuki { width: 64px; height: 64px; image-rendering: pixelated; animation: hj-pop 0.5s var(--ease-pop) calc(var(--d, 0ms) + 350ms) both; }
 .hj-puff { position: absolute; inset: 20px; background: url(/stage/assets/fx/poof-still.png) center / contain no-repeat; image-rendering: pixelated; opacity: 0; animation: hj-puff 0.9s ease-out calc(var(--d, 0ms) + 250ms) both; pointer-events: none; }
 @keyframes hj-puff { 0% { opacity: 0; transform: scale(0.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
 .hj-author { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; font-size: 26px; font-weight: 800; }

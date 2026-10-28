@@ -32,7 +32,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
 | 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 17 host and yōkai animation sheets, a smoke-puff effect, 56 Narabete! card pictures, 112 Narabete! answer pictures, 6 Bento Haus VS pieces, Dub Club's 13 anime sets, 14 characters and their 13 mouth sheets, and 83 Happyōkai! slide pictures) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
-| 7 | AI art: Gemini (source image for Pon) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon without a Gemini source |
+| 7 | AI art: Gemini (source image for Pon and the lie tanuki cut from him) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
 | 10 | Kana course order and links (ToKini Andy) | `content/src/kana/raid.ts` | ✅ | Links only; ask before any paid tie-in or using his name in marketing |
@@ -140,6 +140,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   へんきん stamp and Pon with flags (`stage/assets/bento/vs/`, 2026-10-28, `pixflux`; Pon with flags
   starts from a layout sketch painted onto our own Pon sprite, and its red flag is touched up by hand). Narabete!'s knot
   sheet and clothes peg are hand-drawn by `tools/art/sources/narabete-art.py` (no model, no PixelLab).
+  Nice to Meet You!'s lie tanuki (`stage/assets/fx/tanuki-doron.png`, 2026-10-28) is Pon's head cut from his
+  idle sheet with a hand-drawn leaf by `tools/art/sources/tanuki-doron.py` (no new model), so it carries Pon's row 7 caveat.
   The four lip-sync
   mouth sheets are edited from our own host portraits by `tools/art/polish.ts`, and Nobiko-san's neck-stretch sheet (2026-10-28) is cut from her portrait by `tools/art/sources/nobiko-peek.py` with a hand-drawn neck, as are the body and head the stage draws her long reach from and her chorus sway sheet (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon
   comes from its `image-to-pixelart` endpoint (see row 7). Nobiko-san (2026-10-27) is `pixflux` with
@@ -164,7 +166,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 - **What:** Since 2026-10-26 no shipped file is raw Gemini output: the hosts and backdrop moved to
   PixelLab pixel art (see [graphics.md](graphics.md)). But PixelLab drew Pon by converting an earlier
   Gemini image (`gemini-3-pro-image`), kept in `tools/art/sources/` and not served. So Pon is derived
-  from Gemini output and its terms still apply to him. The backdrop was redrawn from text alone on
+  from Gemini output and its terms still apply to him, and to the lie tanuki cut from his sheet
+  (`stage/assets/fx/tanuki-doron.png`). The backdrop was redrawn from text alone on
   2026-10-27 and its Gemini source deleted.
 - **Terms: unverified.** The Gemini API Additional Terms page was unreachable from these sessions. From
   memory, to be checked: Google doesn't claim ownership of generated content, the Generative AI
