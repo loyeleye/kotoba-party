@@ -1,6 +1,7 @@
 // Every account on one Durable Object (docs/accounts.md). Sign-ins and saved games are rare next to
 // room traffic, so one object is plenty, and it makes each change to an account happen one at a time.
-// The Worker sends it `/api/account/*`; rooms send it finished games at `/results`.
+// The Worker sends it `/api/account/*`; rooms send it finished games at `/results` and ask for the
+// stage's Phrasebook at `/phrasebooks`.
 
 import { DurableObject } from 'cloudflare:workers';
 import { Accounts, type AccountStorage } from '../server/src/accounts.js';
@@ -30,6 +31,9 @@ export class AccountsObject extends DurableObject<Env> {
       if (url.pathname === '/results' && req.method === 'POST') {
         await this.accounts.recordResults((await req.json()) as AccountResult[]);
         return new Response(null, { status: 204 });
+      }
+      if (url.pathname === '/phrasebooks' && req.method === 'POST') {
+        return Response.json(await this.accounts.phrasebooks((await req.json()) as { playerId: string; account: string }[]));
       }
       const action = url.pathname.replace(/^\/api\//, '');
       return this.accounts.handle(req, action, url.searchParams.get('origin') ?? '');

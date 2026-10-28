@@ -50,7 +50,24 @@ export interface GameState {
   beforeGame: { scores: Record<string, number>; phrasebook: Record<string, PhraseEntry[]> } | null;
   /** This game came from Surprise Me!: the games it rolled between, so the screens can show the roll. */
   surprise: ModeId[] | null;
+  /** The room's phrasebook from every game finished tonight, for the stage's Phrasebook (newest first). */
+  tonight: TonightPhrase[];
 }
+
+/** One phrase from tonight's games, with who said it and who missed it. */
+export interface TonightPhrase {
+  itemId: string;
+  text: string;
+  kana: string;
+  en: string;
+  mode: ModeId;
+  /** Player names. */
+  said: string[];
+  missed: string[];
+}
+
+/** Tonight's phrasebook keeps this many phrases. */
+export const MAX_TONIGHT = 300;
 
 export interface GameContext {
   now: number;
@@ -96,6 +113,7 @@ export function createGame(code: string): GameState {
     audience: 'family',
     beforeGame: null,
     surprise: null,
+    tonight: [],
   };
 }
 
@@ -401,6 +419,23 @@ function finish(state: GameState, ctx: GameContext): void {
     ...(mode?.recapTeams ? { teams: mode.recapTeams(state.modeState, modeContext(state, ctx)) } : {}),
   };
   if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award', slots: awardSlots(state.recap.awards[0]) });
+  if (state.mode) addTonight(state, state.mode);
+}
+
+/** Adds the finished game's phrasebooks to tonight's: one row per phrase, with who said and who missed it. */
+function addTonight(state: GameState, mode: ModeId): void {
+  const rows = new Map<string, TonightPhrase>();
+  for (const p of state.players) {
+    for (const e of state.phrasebook[p.id] ?? []) {
+      const row = rows.get(e.itemId) ?? { itemId: e.itemId, text: e.text, kana: e.kana, en: e.en, mode, said: [], missed: [] };
+      if (e.outcome === 'said' || e.outcome === 'retry') row.said.push(p.name);
+      else if (e.outcome === 'missed') row.missed.push(p.name);
+      rows.set(e.itemId, row);
+    }
+  }
+  // A phrase met again tonight moves to the top with this game's names.
+  const fresh = new Set(rows.keys());
+  state.tonight = [...rows.values(), ...state.tonight.filter((t) => !fresh.has(t.itemId))].slice(0, MAX_TONIGHT);
 }
 
 /**
@@ -434,6 +469,7 @@ export function gameResults(state: GameState, now: number): Map<string, GameResu
       coop,
       awards: awards.filter((a) => a.playerId === s.playerId).map((a) => ({ title: a.title, en: a.en })),
       cards: mode.practice?.(state.modeState, s.playerId) ?? [],
+      phrases: state.phrasebook[s.playerId] ?? [],
     });
   }
   return out;

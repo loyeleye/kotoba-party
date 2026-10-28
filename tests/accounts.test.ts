@@ -5,14 +5,51 @@ import { describe, expect, it } from 'vitest';
 import { Accounts, MemoryAccountStorage, type Passkeys } from '../server/src/accounts.js';
 import { ManualClock } from '../server/src/clock.js';
 import { Room, type AccountResult } from '../server/src/room.js';
-import { addGame, CATCH_DAYS, dayOf, dueCards, emptyProgress, rightSound, type AccountView, type GameResult, type PracticeItem } from '../shared/src/progress.js';
+import { addGame, CATCH_DAYS, dayOf, dueCards, duePhrases, emptyProgress, reviewPhrase, rightSound, type AccountView, type GameResult, type PracticeItem } from '../shared/src/progress.js';
+import type { PhraseEntry } from '../shared/src/modes/mode.js';
 import { content } from './helpers.js';
 
 const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 9, 28, 12);
 
 const item = (over: Partial<PracticeItem> = {}): PracticeItem => ({ itemId: 'h-ka', char: 'か', hear: 'か', en: 'ka', seen: 1, recalled: 0, missed: 0, ...over });
-const game = (at: number, cards: PracticeItem[], over: Partial<GameResult> = {}): GameResult => ({ mode: 'kana-raid', at, score: 300, place: 1, players: 3, coop: false, awards: [], cards, ...over });
+const game = (at: number, cards: PracticeItem[], over: Partial<GameResult> = {}): GameResult => ({ mode: 'kana-raid', at, score: 300, place: 1, players: 3, coop: false, awards: [], cards, phrases: [], ...over });
+
+const phrase = (itemId: string, outcome: PhraseEntry['outcome']): PhraseEntry => ({ itemId, text: 'お願いします', kana: 'おねがいします', en: 'please', outcome });
+
+describe('saved phrasebook', () => {
+  it('saves phrases from any game: said moves up, a retry or miss comes back tomorrow, seen only adds', () => {
+    const p = emptyProgress();
+    addGame(p, game(T0, [], { mode: 'last-train', phrases: [phrase('a', 'said'), phrase('b', 'retry'), phrase('c', 'missed'), phrase('d', 'seen')] }), 0);
+    expect(p.phrases!['a']).toMatchObject({ box: 1, due: T0 + DAY, said: 1, mode: 'last-train', last: 'said' });
+    expect(p.phrases!['b']).toMatchObject({ box: 1, due: T0 + DAY, missed: 0, last: 'retry' });
+    expect(p.phrases!['c']).toMatchObject({ box: 1, due: T0 + DAY, missed: 1 });
+    expect(p.phrases!['d']).toMatchObject({ box: 0, due: T0 });
+    expect(duePhrases(p, T0).map((c) => c.itemId)).toEqual(['d']);
+    expect(duePhrases(p, T0 + DAY).map((c) => c.itemId)).toEqual(['d', 'a', 'b', 'c']);
+  });
+
+  it('leaves Kana Raid’s kana to the yōkai cards', () => {
+    const p = emptyProgress();
+    addGame(p, game(T0, [item()], { phrases: [{ ...phrase('h-ka', 'said'), text: 'か', kana: 'か' }, phrase('x', 'said')] }), 0);
+    expect(Object.keys(p.phrases!)).toEqual(['x']);
+  });
+
+  it('a self-marked review: knew it waits longer, not yet comes back tomorrow', () => {
+    const p = emptyProgress();
+    addGame(p, game(T0, [], { phrases: [phrase('a', 'said')] }), 0);
+    expect(reviewPhrase(p, 'a', true, T0 + DAY)).toMatchObject({ box: 2, due: T0 + DAY + 3 * DAY, said: 2 });
+    expect(reviewPhrase(p, 'a', false, T0 + 4 * DAY)).toMatchObject({ box: 1, due: T0 + 5 * DAY, missed: 1, last: 'missed' });
+    expect(reviewPhrase(p, 'nope', true, T0)).toBeNull();
+  });
+
+  it('copes with a save from before phrases existed', () => {
+    const p = { cards: {}, games: [] };
+    expect(duePhrases(p, T0)).toEqual([]);
+    addGame(p, game(T0, [], { phrases: [phrase('a', 'seen')] }), 0);
+    expect(Object.keys((p as { phrases?: object }).phrases!)).toEqual(['a']);
+  });
+});
 
 describe('yōkai cards', () => {
   it('only a right answer from memory moves a card up; three different days catch it', () => {
@@ -59,7 +96,10 @@ describe('yōkai cards', () => {
     expect(rightSound({ hear: 'ふ' }, 'hu')).toBe(true);
     expect(rightSound({ hear: 'お' }, 'wo')).toBe(true); // を and お sound the same
     expect(rightSound({ hear: 'ん' }, 'n')).toBe(true);
-    expect(rightSound({ hear: 'てぃ' }, 'ti')).toBe(false); // ti is ち
+    expect(rightSound({ hear: 'てぃ' }, 'ti')).toBe(true); // the card shows ティ as "ti"
+    expect(rightSound({ hear: 'ぱーてぃー' }, 'paatii')).toBe(true);
+    expect(rightSound({ hear: 'ぱーてぃー' }, 'pati')).toBe(true);
+    expect(rightSound({ hear: 'し' }, 'chi')).toBe(false);
     expect(rightSound({ hear: 'か' }, 'か')).toBe(false); // romaji only: copying the kana isn't recall
     expect(rightSound({ hear: 'か' }, '')).toBe(false);
   });
@@ -168,6 +208,20 @@ describe('account service', () => {
     expect((await s.call('review', { itemId: 'h-ka', answer: 'ka' })).status).toBe(401);
   });
 
+  it('reviews a saved phrase and lists phrasebooks for the stage', async () => {
+    const s = service();
+    const token = (await s.register()).data.token!;
+    await s.accounts.recordResults([{ account: token, result: game(T0, [], { mode: 'last-train', phrases: [phrase('a', 'missed'), phrase('b', 'said')] }) }]);
+    const me = (await s.call('me', undefined, token)).data.account!;
+    expect(me.phrases.map((p) => p.itemId).sort()).toEqual(['a', 'b']);
+    expect((await s.call('review', { kind: 'phrase', itemId: 'a', knew: true }, token)).data).toMatchObject({ phrase: { itemId: 'a', box: 2 } });
+    expect((await s.call('review', { kind: 'phrase', itemId: 'zz', knew: true }, token)).status).toBe(404);
+    const books = await s.accounts.phrasebooks([{ playerId: 'p1', account: token }, { playerId: 'p2', account: 'not-a-session' }]);
+    expect(books).toHaveLength(1);
+    expect(books[0]).toMatchObject({ playerId: 'p1', name: 'Aki' });
+    expect(books[0]!.phrases.map((p) => p.itemId).sort()).toEqual(['a', 'b']);
+  });
+
   it('deletes everything: the save, its passkeys and every sign-in', async () => {
     const s = service();
     const token = (await s.register()).data.token!;
@@ -191,10 +245,19 @@ describe('a room saves signed-in players’ games', () => {
     // Phones on the line, so their seats aren't given up while the clock runs.
     for (const t of [aki.token, ben.token]) room.attach(t, { send: () => {}, close: () => {} });
     expect(room.command(stage, { id: 's1', type: 'start', mode: 'debug', rounds: 1 })).toMatchObject({ ok: true });
+    expect(room.signedIn()).toEqual([{ playerId: aki.playerId, account: 'session-aki' }]);
+    room.state.phrasebook[aki.playerId] = [phrase('a', 'said'), phrase('b', 'missed')];
+    room.state.phrasebook[ben.playerId] = [phrase('a', 'missed')];
     for (let i = 0; i < 50 && room.state.phase !== 'recap'; i++) clock.advance(60_000);
     expect(room.state.phase).toBe('recap');
+    // Tonight's phrasebook for the stage: who said and who missed each phrase.
+    expect(room.state.tonight).toEqual([
+      expect.objectContaining({ itemId: 'a', mode: 'debug', said: ['Aki'], missed: ['Ben'] }),
+      expect.objectContaining({ itemId: 'b', said: [], missed: ['Aki'] }),
+    ]);
     expect(saved).toHaveLength(1);
     expect(saved[0]).toHaveLength(1);
+    expect(saved[0]![0]!.result.phrases).toHaveLength(2);
     expect(saved[0]![0]).toMatchObject({ account: 'session-aki', result: { mode: 'debug', players: 2 } });
     expect(saved[0]![0]!.result.at).toBeGreaterThan(T0);
 

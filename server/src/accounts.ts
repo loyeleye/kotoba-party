@@ -15,7 +15,7 @@ import {
   type RegistrationResponseJSON,
 } from '@simplewebauthn/server';
 import { cleanName } from '../../shared/src/game.js';
-import { addGame, bests, dueCards, emptyProgress, reviewCard, rightSound, type AccountView, type Progress } from '../../shared/src/progress.js';
+import { addGame, bests, dueCards, duePhrases, emptyProgress, reviewCard, reviewPhrase, rightSound, type AccountView, type PhraseCard, type Progress } from '../../shared/src/progress.js';
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import type { AccountResult } from './room.js';
 
@@ -64,6 +64,21 @@ const SESSION_MS = 365 * 86_400_000;
 const MAX_SESSIONS = 20;
 /** Games shown on the scores page. */
 const RECENT_GAMES = 30;
+/** Saved phrases sent to the phone's Phrasebook tab, and to the stage per player. */
+const PHONE_PHRASES = 200;
+const STAGE_PHRASES = 40;
+
+/** One signed-in player's saved phrases, as the stage shows them. */
+export interface SavedPhrasebook {
+  playerId: string;
+  name: string;
+  phrases: Pick<PhraseCard, 'itemId' | 'text' | 'kana' | 'en' | 'mode'>[];
+}
+
+const recentPhrases = (p: Progress, n: number): PhraseCard[] =>
+  Object.values(p.phrases ?? {})
+    .sort((a, b) => b.lastAt - a.lastAt)
+    .slice(0, n);
 
 /** A copy on its own ArrayBuffer, as SimpleWebAuthn's types want. */
 function bytes(b: Uint8Array): Uint8Array<ArrayBuffer> {
@@ -201,6 +216,13 @@ export class Accounts {
         const user = await this.userFor(req);
         if (!user) return json(401, { error: 'signed-out' });
         const itemId = typeof body.itemId === 'string' ? body.itemId : '';
+        if (body.kind === 'phrase') {
+          // Said out loud, then marked by the player (see reviewPhrase).
+          const phrase = reviewPhrase(user.progress, itemId, body.knew === true, this.now());
+          if (!phrase) return json(404, { error: 'no-card' });
+          await this.storage.put(`user:${user.id}`, user);
+          return json(200, { phrase });
+        }
         const card = user.progress.cards[itemId];
         if (!card) return json(404, { error: 'no-card' });
         const right = typeof body.answer === 'string' && rightSound(card, body.answer);
@@ -243,9 +265,32 @@ export class Accounts {
     }
   }
 
+  /**
+   * The saved phrasebooks of the signed-in players in a room, for the stage's Phrasebook: each
+   * player's most recently met phrases (no misses or boxes: the TV is for the whole room).
+   */
+  async phrasebooks(accounts: { playerId: string; account: string }[]): Promise<SavedPhrasebook[]> {
+    const out: SavedPhrasebook[] = [];
+    for (const { playerId, account } of accounts) {
+      const user = await this.userForToken(account);
+      if (!user) continue;
+      const phrases = recentPhrases(user.progress, STAGE_PHRASES).map(({ itemId, text, kana, en, mode }) => ({ itemId, text, kana, en, mode }));
+      out.push({ playerId, name: user.name, phrases });
+    }
+    return out;
+  }
+
   private view(user: User): AccountView {
     const now = this.now();
-    return { name: user.name, cards: Object.values(user.progress.cards), due: dueCards(user.progress, now), games: user.progress.games.slice(0, RECENT_GAMES), bests: bests(user.progress) };
+    return {
+      name: user.name,
+      cards: Object.values(user.progress.cards),
+      due: dueCards(user.progress, now),
+      games: user.progress.games.slice(0, RECENT_GAMES),
+      bests: bests(user.progress),
+      phrases: recentPhrases(user.progress, PHONE_PHRASES),
+      duePhrases: duePhrases(user.progress, now),
+    };
   }
 
   private async newSession(user: User): Promise<string> {

@@ -8,7 +8,7 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { ROOM_STALE_MS } from '../../shared/src/constants.js';
 import type { Utterance } from '../../shared/src/japanese/kana.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
-import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type RoomInfo, type WatchRoomResponse } from '../../shared/src/protocol.js';
+import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type PhrasebookResponse, type RoomInfo, type WatchRoomResponse } from '../../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/roomCode.js';
 import { Accounts, MemoryAccountStorage } from './accounts.js';
 import { systemClock, type Clock } from './clock.js';
@@ -220,6 +220,12 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
         const result = token ? room.command(token, body) : null;
         if (!result) return send(res, 401, { error: token && room.wasReleased(token) ? 'seat-released' : 'bad-token' });
         return send(res, 200, result);
+      }
+      if (action === 'phrasebook' && req.method === 'GET') {
+        // The stage's Phrasebook: tonight's phrases, and what the signed-in players have saved.
+        if (room.viewerFor(bearer(req) ?? '')?.kind !== 'stage') return send(res, 401, { error: 'bad-token' });
+        const body: PhrasebookResponse = { tonight: room.state.tonight, saved: accounts ? await accounts.phrasebooks(room.signedIn()) : [] };
+        return send(res, 200, body);
       }
       if (action === 'qr.svg' && req.method === 'GET') {
         const svg = await QRCode.toString(joinUrl(req, room.code), { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });

@@ -15,7 +15,7 @@ import { Room, wavDurationMs, type RoomSocket } from '../server/src/room.js';
 import { systemClock } from '../server/src/clock.js';
 import { SttGate, isClip, sttFromEnv, transcribe } from '../server/src/stt.js';
 import { ROOM_STALE_MS } from '../shared/src/constants.js';
-import { CLOSE, type CreateRoomResponse, type JoinRequest, type RoomInfo, type WatchRoomResponse } from '../shared/src/protocol.js';
+import { CLOSE, type CreateRoomResponse, type JoinRequest, type PhrasebookResponse, type RoomInfo, type WatchRoomResponse } from '../shared/src/protocol.js';
 import { ACCOUNTS_NAME } from './accountsObject.js';
 import type { Env } from './env.js';
 
@@ -161,6 +161,19 @@ export class RoomObject extends DurableObject<Env> {
       const result = token ? room.command(token, body) : null;
       if (!result) return json(401, { error: token && room.wasReleased(token) ? 'seat-released' : 'bad-token' });
       return json(200, result);
+    }
+    if (action === 'phrasebook') {
+      // The stage's Phrasebook: tonight's phrases, and what the signed-in players have saved.
+      if (room.viewerFor(url.searchParams.get('token') ?? '')?.kind !== 'stage') return json(401, { error: 'bad-token' });
+      const signedIn = room.signedIn();
+      let saved: PhrasebookResponse['saved'] = [];
+      if (signedIn.length) {
+        const accounts = this.env.ACCOUNTS.get(this.env.ACCOUNTS.idFromName(ACCOUNTS_NAME));
+        const res = await accounts.fetch(new Request('https://accounts/phrasebooks', { method: 'POST', body: JSON.stringify(signedIn) })).catch(() => null);
+        if (res?.ok) saved = (await res.json()) as PhrasebookResponse['saved'];
+      }
+      const body: PhrasebookResponse = { tonight: room.state.tonight, saved };
+      return json(200, body);
     }
     if (action === 'qr.svg') {
       const svg = await QRCode.toString(`${base}/?code=${room.code}`, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });

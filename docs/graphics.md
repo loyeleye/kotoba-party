@@ -51,6 +51,23 @@ The yōkai sprites are generic bodies with no kana on them. The game draws a lar
 in a web font, which keeps the kana correct and lets one body serve every kana. Scale them with
 `image-rendering: pixelated` and whole-number factors (2×, 3×, 4×). The same goes for the hosts.
 
+## Phone: yōkai book and sign-in icons
+
+Ladi approved new PixelLab art on 2026-10-28 after the art panel's sign-in review. All `pixflux`,
+unseeded, prompts in the manifest.
+
+| File | Size | What |
+| --- | --- | --- |
+| `stage/assets/yokai/book/yokai-{daruma,dobin,hitodama,kappa,kitsunebi,kodama,nekomata,tsurube,bakezori,toro}.png` | 128², transparent | Ten more yōkai for the phone's yōkai book, so the kana aren't shared among four faces. Same yōkai preamble as the Raid's, without the blank label area. Bakezōri took two tries (the first drew a ghost); ittan-momen drew a plain ghost twice and was swapped for a stone tōrō lantern. Kitsunebi and kodama are drawn small on their canvas, so the phone shows them at 2× |
+| `stage/assets/icons/key.png` | 21×56, trimmed | The sign-in chip's key, in place of the 🔑 emoji |
+| `stage/assets/icons/hanko.png` | 53×54, trimmed | A red seal impression behind the 封印 stamp on a caught yōkai (the characters are text, left white) |
+| `stage/assets/icons/speaker.png` | 51×47, trimmed | *Hear it* on the phone's review and phrase practice |
+| `stage/assets/icons/phrasebook.png` | 38×50, trimmed | The stage's *Phrasebook* button (asked for a red notebook; PixelLab drew it indigo, which reads on the gold button) |
+
+The phone's award line uses the existing `icons/trophy.png`. Generations: 15 planned plus 3 retries,
+and 26 wasted on a filter typo that matched every existing icon (written to a scratch folder, nothing
+replaced).
+
 ## Animation
 
 Thirty-three sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026; thinking and shocked added 28 Oct). Each is one row of square
