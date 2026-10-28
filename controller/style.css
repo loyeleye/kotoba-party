@@ -81,8 +81,12 @@ button { font: inherit; cursor: pointer; }
 .option:active { border-color: var(--accent); }
 
 .error { color: var(--warn); min-height: 1.4em; margin: 0; }
-.me { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 15px; padding-right: 56px; margin-bottom: 16px; }
+.me { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 15px; margin-bottom: 16px; }
 .me .vip { color: var(--warn); }
+/* Two round buttons (phrasebook, mic) share the row: text stays on one line and the name gives way
+   first, with an ellipsis, so the buttons are never squeezed off the edge. */
+.me > span { flex: none; white-space: nowrap; }
+.me > .me-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .me .tonight { color: var(--warn); font-family: var(--font-pixel); font-weight: 700; }
 .party { margin: 0 0 12px; text-align: center; color: var(--warn); font-weight: 700; }
 .me .score { margin-left: auto; color: var(--ink); font-family: var(--font-pixel); font-weight: 700; font-size: 18px; }
