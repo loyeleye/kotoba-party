@@ -63,9 +63,18 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
 const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear']);
 const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai']);
 
-/** The host's reaction to a cue: a cheer for a win, a flinch for a miss, otherwise just the idle loop. */
-export function moodFor(event: string): HostMood | undefined {
-  return CHEER.has(event) ? 'cheer' : OOPS.has(event) ? 'oops' : undefined;
+/** Nobiko-san cranes her neck out to look as players answer and as their answers are revealed. */
+const PEEK = new Set(['say_it_first', 'reveal_react']);
+
+/**
+ * The host's reaction to a cue: a cheer for a win, a flinch for a miss, Nobiko-san's nosy peek,
+ * otherwise just the idle loop.
+ */
+export function moodFor(cue: Pick<HostCue, 'host' | 'event' | 'tier'>): HostMood | undefined {
+  if (CHEER.has(cue.event)) return 'cheer';
+  if (OOPS.has(cue.event)) return 'oops';
+  if (cue.host !== 'nobiko' || !PEEK.has(cue.event)) return undefined;
+  return cue.tier === 'ippon' ? 'cheer' : 'peek'; // a top Karaoke take gets her cheer instead
 }
 
 /**
@@ -81,7 +90,7 @@ export function hostDirector(voice: HostVoice) {
     if (!cue) return;
     voice
       .speak(room.code, cue)
-      .then((line) => line && room.say({ ...line, mood: line.mood ?? moodFor(cue.event), phaseSeq }))
+      .then((line) => line && room.say({ ...line, mood: line.mood ?? moodFor(cue), phaseSeq }))
       .catch(() => {
         // The host just stays quiet this phase.
       });
