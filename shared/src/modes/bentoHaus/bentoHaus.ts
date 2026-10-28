@@ -636,7 +636,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     id: 'bento-haus',
     title: 'Bento Haus',
     titleJa: 'おべんとうハウス',
-    blurb: 'A co-op kitchen in Japanese. Yōkai phone in bento orders; the food is spread across your phones, so call out to each other to fill the box in time.',
+    blurb: 'Run a yōkai bento shop as one kitchen. The food is on your phones, so call the orders out in Japanese.',
     host: 'pon',
     minPlayers: 1,
     maxPlayers: 8,
