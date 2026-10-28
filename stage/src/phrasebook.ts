@@ -5,6 +5,7 @@
 // Six cards a page, turned with big buttons or the arrow keys, since a host on a phone or a remote
 // can't scroll (art panel, 2026-10-28).
 
+import { modeIconSrc } from '../../shared/src/art.js';
 import { h, mount, ruby, seatShape } from '../../shared/src/dom.js';
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MODES } from '../../shared/src/modes/registry.js';
@@ -13,9 +14,6 @@ import { TITLE_KANA } from './danmaku.js';
 import { sfx } from './music/sfx.js';
 
 const PAGE = 6;
-/** Each game's pixel icon on its cards (stage/assets/icons/). */
-const modeIcon = (mode: ModeId): string =>
-  mode === 'last-train' ? 'lt-train' : mode === 'bento-haus-vs' ? 'mode-bento-haus' : `mode-${mode}`;
 /** Fude cheering the room on, for a phrasebook with nothing in it yet. */
 const fudeEmpty = () => h('img', { class: 'spb-empty-art', src: '/stage/assets/hosts/fude.png', alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() });
 
@@ -241,6 +239,6 @@ function card(p: { text: string; kana: string; en: string; mode: ModeId }, said:
     p.en ? h('p', { class: 'spb-en' }, p.en) : null,
     said.length ? who(said, 'said') : null,
     missed.length ? who(missed, 'practise') : null,
-    h('p', { class: 'spb-mode' }, h('img', { class: 'spb-mode-icon', src: `/stage/assets/icons/${modeIcon(p.mode)}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }), info?.titleJa ? ruby({ text: info.titleJa, kana: info.titleKana ?? TITLE_KANA[p.mode] ?? null }) : null, info?.titleJa ? ' · ' : null, info?.title ?? p.mode),
+    h('p', { class: 'spb-mode' }, h('img', { class: 'spb-mode-icon', src: modeIconSrc(p.mode), alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }), info?.titleJa ? ruby({ text: info.titleJa, kana: info.titleKana ?? TITLE_KANA[p.mode] ?? null }) : null, info?.titleJa ? ' · ' : null, info?.title ?? p.mode),
   );
 }

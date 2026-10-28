@@ -163,16 +163,17 @@ export class RoomObject extends DurableObject<Env> {
       return json(200, result);
     }
     if (action === 'phrasebook') {
-      // The stage's Phrasebook: tonight's phrases, and what the signed-in players have saved.
-      if (room.viewerFor(url.searchParams.get('token') ?? '')?.kind !== 'stage') return json(401, { error: 'bad-token' });
-      const signedIn = room.signedIn();
+      // The Phrasebook: the stage's (tonight's phrases and every signed-in player's save), or a phone's own.
+      const book = room.phrasebookFor(url.searchParams.get('token') ?? '');
+      if (!book) return json(401, { error: 'bad-token' });
+      const signedIn = book.signedIn;
       let saved: PhrasebookResponse['saved'] = [];
       if (signedIn.length) {
         const accounts = this.env.ACCOUNTS.get(this.env.ACCOUNTS.idFromName(ACCOUNTS_NAME));
         const res = await accounts.fetch(new Request('https://accounts/phrasebooks', { method: 'POST', body: JSON.stringify(signedIn) })).catch(() => null);
         if (res?.ok) saved = (await res.json()) as PhrasebookResponse['saved'];
       }
-      const body: PhrasebookResponse = { tonight: room.state.tonight, saved };
+      const body: PhrasebookResponse = { tonight: book.tonight, saved };
       return json(200, body);
     }
     if (action === 'qr.svg') {
