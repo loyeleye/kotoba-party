@@ -192,7 +192,7 @@ function cardFace(c: DubCard, opts: { tip?: boolean; cls?: string } = {}): HTMLE
   return h(
     'span',
     { class: `dc-card ${opts.cls ?? ''}` },
-    h('span', { class: 'dc-card-emoji', 'aria-hidden': 'true' }, c.emoji),
+    h('img', { class: 'dc-card-emoji', src: `/stage/assets/dub/cards/${c.id}.png`, alt: '', draggable: 'false' }),
     h('span', { class: 'dc-card-jp', lang: 'ja' }, c.jp.text),
     c.romaji ? h('span', { class: 'dc-card-ro' }, c.romaji) : null,
     h('span', { class: 'dc-card-en' }, c.jp.en),

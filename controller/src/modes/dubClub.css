@@ -20,15 +20,15 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 
 /* A direction card: the emoji, the Japanese, romaji at Kana level, the English, and how to act it. */
 .dc-card { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; text-align: left; }
-.dc-card-emoji { grid-row: span 4; font-size: 34px; line-height: 1; }
+.dc-card-emoji { grid-row: span 4; width: 48px; height: 48px; image-rendering: pixelated; }
 .dc-card-jp { font-size: 20px; font-weight: 800; word-break: keep-all; overflow-wrap: anywhere; }
 .dc-card-ro { color: #8fb3ff; font-style: italic; font-size: 14px; }
 .dc-card-en { color: var(--muted); font-size: 14px; }
 .dc-card-tip { color: var(--ink); font-size: 14px; margin-top: 2px; }
 .dc-card.big { padding: 14px; border-radius: 16px; background: var(--panel); border: 3px solid var(--mode); }
-.dc-card.big .dc-card-emoji { font-size: 52px; }
+.dc-card.big .dc-card-emoji { width: 64px; height: 64px; }
 .dc-card.big .dc-card-jp { font-size: 26px; }
-.dc-card.small .dc-card-emoji { font-size: 26px; }
+.dc-card.small .dc-card-emoji { width: 32px; height: 32px; }
 
 .dc-pick { display: grid; gap: 10px; }
 .dc-pick-btn { display: block; width: 100%; padding: 12px; border-radius: 14px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); }
@@ -36,7 +36,7 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 .dc-pick-btn.on .dc-card-jp::after { content: ' ✓'; color: var(--mode); }
 .dc-pick.small { grid-template-columns: 1fr 1fr; gap: 6px; }
 .dc-pick.small .dc-pick-btn { padding: 6px 8px; }
-.dc-pick.small .dc-card-emoji { font-size: 22px; grid-row: span 2; }
+.dc-pick.small .dc-card-emoji { width: 32px; height: 32px; grid-row: span 2; }
 .dc-pick.small .dc-card-jp { font-size: 15px; }
 .dc-pick.small .dc-card-ro, .dc-pick.small .dc-card-tip { display: none; }
 .dc-strip { display: grid; gap: 4px; }
@@ -76,7 +76,7 @@ body[data-motion='calm'] .dc-rec-bar { animation: dc-rec-run var(--len, 10s) lin
 .dc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .dc-guess { display: block; min-height: 84px; padding: 8px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); }
 .dc-guess .dc-card { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 2px; }
-.dc-guess .dc-card-emoji { grid-row: auto; font-size: 30px; }
+.dc-guess .dc-card-emoji { grid-row: auto; width: 48px; height: 48px; }
 .dc-guess .dc-card-jp { font-size: 15px; line-height: 1.25; word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
 .dc-guess .dc-card-en { font-size: 13px; }
 .dc-guess.on { border: 3px solid var(--mode); background: color-mix(in srgb, var(--mode) 18%, var(--panel)); }
