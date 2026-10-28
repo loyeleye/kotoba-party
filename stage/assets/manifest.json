@@ -7106,6 +7106,171 @@
       "post": {
         "trim": true
       }
+    },
+    {
+      "path": "stage/assets/icons/hk-stamp-omoshiroi.png",
+      "what": "Happyōkai! stamp icon: laughing",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round yellow face laughing hard with eyes squeezed shut and big tears of laughter",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/hk-stamp-hee.png",
+      "what": "Happyōkai! stamp icon: impressed",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round yellow smiley face, astonished and delighted: eyebrows raised high, big sparkling eyes, small round 'oh' mouth, rosy cheeks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/hk-stamp-sugoi.png",
+      "what": "Happyōkai! stamp icon: amazing",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. one big shining golden five-pointed star with small white sparkles around it, no face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/hk-stamp-naruhodo.png",
+      "what": "Happyōkai! stamp icon: I see",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round yellow smiley face nodding thoughtfully, eyes half closed, one finger raised beside it like 'I see!'",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/hk-stamp-ee.png",
+      "what": "Happyōkai! stamp icon: what?!",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round yellow face shocked, hands on cheeks, mouth wide open, pale blue at the top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/hk-stamp-hakushu.png",
+      "what": "Happyōkai! stamp icon: applause",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two cartoon hands clapping, palms pressed together, light skin colour, short yellow motion lines either side",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/hk-candle.png",
+      "what": "Happyōkai! slide timer: a tall white candle in a brass holder, no flame (the flame is its own sprite; the wax is clipped down from the top as the slide's time runs out)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game sprite for a cozy-spooky Japanese late-night TV party game, a single tall plain white wax candle standing straight up in a small round brass candle holder, the wick is black and NOT lit, there is no fire, centred, front view, thick dark outline, plain background, no shadow, no text",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 128,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/hk-flame.png",
+      "what": "Happyōkai! candle flame",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game sprite, a single small candle flame, teardrop shaped, yellow and orange with a white core, centred, thick dark outline, no text",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 32,
+        "height": 32,
+        "text_guidance_scale": 8
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/anim/chochin-bow.png",
+      "what": "Host animation: Chōchin-san bows deeply at the end of a talk (ごせいちょう ありがとう ございました), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "bows deeply: the whole lantern body tips forward about forty-five degrees from the bottom like a polite Japanese bow, eyes closed, holds the bow, then tips back upright into the starting pose; the paper keeps the same colours in every frame, no glow",
+      "source": "stage/assets/hosts/chochin.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 33
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/chochin-bow.png",
+        "steady": 24
+      }
     }
   ]
 }

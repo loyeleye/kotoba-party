@@ -71,7 +71,7 @@
 .hk-stamp-pad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .hk-stamp-btn { display: grid; justify-items: center; gap: 0; padding: 10px 4px; border-radius: 16px; background: var(--panel); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--outline); touch-action: manipulation; }
 .hk-stamp-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--outline); }
-.hk-stamp-btn b { font-size: 36px; line-height: 1.1; }
+.hk-stamp-btn img { width: 48px; height: 48px; image-rendering: pixelated; }
 .hk-stamp-btn span { font-size: 15px; font-weight: 800; }
 .hk-stamp-btn small { font-size: 13px; color: var(--muted); }
 /* Five stamps sit 3 + 2 centred; はくしゅ makes six. */

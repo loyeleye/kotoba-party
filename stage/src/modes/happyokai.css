@@ -56,7 +56,8 @@
 .hk-slide-en { font-size: 30px; color: #5e4560; }
 .hk-slide-by .hk-chip { background: var(--hk-screen); color: var(--hk-screen-ink); }
 .hk-slide-no { position: absolute; right: 10px; bottom: 8px; padding: 0 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 22px; font-weight: 800; font-family: var(--font-pixel); }
-.hk-bow { font-size: 120px; }
+.hk-bow { margin-top: 4px; transform-origin: 50% 90%; animation: hk-bow-tip 1.6s ease-in-out 0.4s infinite; }
+@keyframes hk-bow-tip { 0%, 15% { transform: none; } 40%, 70% { transform: rotate(-24deg) translateY(10px); } 95%, 100% { transform: none; } }
 .hk-title-slide { background: linear-gradient(180deg, #fff9ec, #f1e6cc); }
 .hk-title-slide .hk-slide-title { font-size: min(84px, calc(600px / var(--chunk, 8))); overflow-wrap: normal; }
 
@@ -93,13 +94,14 @@
 
 /* The candle: wax shrinks over the slide's time; the flame rides down on top of it, and the candle glows
    red for the last quarter. */
-.hk-candle { position: relative; display: inline-flex; align-items: flex-end; width: 40px; height: 150px; margin-top: 30px; }
-.hk-wax { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; border-radius: 4px 4px 2px 2px; background: #fff4dc; border: 3px solid var(--outline); transform-origin: bottom; animation: hk-burn var(--total) linear var(--burn-delay) both; }
-.hk-flame { position: absolute; left: 50%; bottom: 100%; width: 20px; height: 32px; margin-left: -10px; border-radius: 50% 50% 40% 40%; background: var(--hk-flame); box-shadow: 0 0 14px var(--hk-flame); animation: hk-ride var(--total) linear var(--burn-delay) both, hk-flicker 0.3s ease-in-out infinite alternate; }
-@keyframes hk-ride { to { translate: 0 132px; } }
+.hk-candle { position: relative; display: inline-flex; align-items: flex-end; width: 64px; height: 178px; margin-top: 50px; }
+/* The candle sprite (32×89 at 2×) melts from the top: clipped, not squashed, so its pixels stay square. */
+.hk-wax { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; image-rendering: pixelated; animation: hk-burn var(--total) linear var(--burn-delay) both; }
+.hk-flame { position: absolute; left: 50%; bottom: calc(100% - 4px); width: 28px; height: 44px; margin-left: -14px; image-rendering: pixelated; filter: drop-shadow(0 0 10px var(--hk-flame)); transform-origin: 50% 100%; animation: hk-ride var(--total) linear var(--burn-delay) both, hk-flicker 0.3s ease-in-out infinite alternate; }
+@keyframes hk-ride { to { translate: 0 126px; } }
 .hk-candle::after { content: ''; position: absolute; inset: -14px -18px; border-radius: 50%; background: radial-gradient(rgba(255, 70, 70, 0.55), transparent 70%); opacity: 0; animation: hk-warn 0.6s ease-in-out calc(var(--burn-delay) + var(--total) * 0.75) infinite alternate; }
 @keyframes hk-warn { from { opacity: 0.1; } to { opacity: 1; } }
-@keyframes hk-burn { from { transform: scaleY(1); } to { transform: scaleY(0.12); } }
+@keyframes hk-burn { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(71% 0 0 0); } }
 @keyframes hk-flicker { to { transform: scaleY(0.85) translateX(1px); } }
 
 /* Captions, beside the screen: the newest bright and big at the bottom, older ones above it, fading. */
@@ -121,7 +123,8 @@
 .hk-stamps { position: absolute; inset: 70px 12px 110px 12px; overflow: hidden; }
 .hk-stamp { position: absolute; bottom: 0; left: var(--x); display: grid; justify-items: center; gap: 2px; padding: 4px 10px 6px; border-radius: 14px; background: var(--paper); color: var(--paper-ink); border: 4px solid var(--outline); box-shadow: 0 5px 0 var(--outline); font-size: 22px; font-weight: 900; white-space: nowrap; rotate: var(--r); animation: hk-rise 4s ease-out var(--rise-delay) both; }
 .hk-stamp.sugoi, .hk-stamp.hakushu { background: var(--mode); }
-.hk-stamp b { font-size: 56px; line-height: 1; }
+.hk-stamp-icon { width: 64px; height: 64px; image-rendering: pixelated; }
+.hk-tally .hk-stamp-icon, .hk-facts .hk-stamp-icon { width: 32px; height: 32px; vertical-align: -6px; }
 @keyframes hk-rise { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 10% { transform: translateY(-30px) scale(1.1); opacity: 1; } 70% { opacity: 1; } 100% { transform: translateY(-300px) scale(1); opacity: 0; } }
 .hk-tally { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; font-size: 30px; font-weight: 800; min-height: 44px; }
 .hk-tally span { padding: 2px 14px; border-radius: 999px; background: var(--panel); border: 3px solid var(--line); }
@@ -187,7 +190,7 @@
 
 body[data-motion='calm'] .hk-stamp { animation: hk-fade 2s ease-out var(--rise-delay) both !important; }
 @keyframes hk-fade { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
-body[data-motion='calm'] :is(.hk-blink, .hk-screen) { animation: none !important; }
+body[data-motion='calm'] :is(.hk-blink, .hk-screen, .hk-bow) { animation: none !important; }
 body[data-motion='calm'] .hk-screen::after, body[data-motion='calm'] .hk-candle::after, body[data-motion='calm'] .hk-hanko::after { animation: none !important; opacity: 0; }
 body[data-motion='calm'] .hk-flame { animation: hk-ride var(--total) linear var(--burn-delay) both !important; }
 body[data-motion='calm'] .hk-wax { animation: hk-burn var(--total) linear var(--burn-delay) both !important; animation-iteration-count: 1 !important; }
@@ -195,7 +198,7 @@ body[data-motion='calm'] :is(.hk-hanko, .hk-title-card, .hk-question, .hk-hands 
 @keyframes hk-fade-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .hk-stamp { animation: hk-fade 2s ease-out var(--rise-delay) both !important; }
-  :is(.hk-blink, .hk-screen) { animation: none !important; }
+  :is(.hk-blink, .hk-screen, .hk-bow) { animation: none !important; }
   .hk-screen::after, .hk-candle::after, .hk-hanko::after { animation: none !important; opacity: 0; }
   .hk-flame { animation: hk-ride var(--total) linear var(--burn-delay) both !important; }
   :is(.hk-hanko, .hk-title-card, .hk-question, .hk-hands > span, .hk-talks li, .hk-toast, .hk-flowers span, .hk-renzoku, .hk-votes span, .hk-upside .hk-pic, .hk-card) { animation: hk-fade-in 0.3s ease-out both !important; }

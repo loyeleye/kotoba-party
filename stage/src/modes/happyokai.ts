@@ -19,6 +19,7 @@ import type { CaptionView, SlideView, StampKind } from '../../../shared/src/mode
 import type { HappyokaiView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { sfx } from '../music/sfx.js';
+import { spriteEl } from '../sprites.js';
 import type { StageMode } from './types.js';
 
 let clockOffset = Number.NEGATIVE_INFINITY;
@@ -40,6 +41,10 @@ export const STAMP_FACES: Record<StampKind, { emoji: string; kana: string }> = {
   ee: { emoji: '😱', kana: 'えーっ？' },
   hakushu: { emoji: '👏', kana: 'パチパチ！' },
 };
+
+/** The stamps as PixelLab icons (64×64); the emoji stays as the alt text. */
+export const stampIcon = (kind: StampKind): string => `/stage/assets/icons/hk-stamp-${kind}.png`;
+const stampImg = (kind: StampKind): HTMLElement => h('img', { class: 'hk-stamp-icon', src: stampIcon(kind), alt: STAMP_FACES[kind].emoji, draggable: 'false' });
 
 /** The grade flowers as pixel art (24×24): よく できました, たいへん よく できました, はなまる; 0 is a grey blank. */
 export const flowerIcon = (n: number): string => `/stage/assets/icons/hk-flower-${n}.png`;
@@ -120,8 +125,8 @@ function candle(game: HappyokaiView, slide: SlideView): HTMLElement {
   return h(
     'span',
     { class: 'hk-candle', 'aria-hidden': 'true', 'data-key': `candle-${game.step}`, style: `--total: ${slide.ms}ms; --burn-delay: ${-gone}ms;` },
-    h('span', { class: 'hk-wax' }),
-    h('span', { class: 'hk-flame' }),
+    h('img', { class: 'hk-wax', src: '/stage/assets/icons/hk-candle.png', alt: '', draggable: 'false' }),
+    h('img', { class: 'hk-flame', src: '/stage/assets/icons/hk-flame.png', alt: '', draggable: 'false' }),
   );
 }
 
@@ -170,7 +175,7 @@ function slideFace(view: RoomView, game: HappyokaiView, slide: SlideView): HTMLE
       h('p', { class: 'hk-slide-by' }, chip(view, game.presenterId)),
     );
   if (slide.kind === 'close')
-    return h('div', { class: 'hk-slide hk-close-slide' }, h('p', { class: 'hk-slide-title', lang: 'ja' }, 'ごせいちょう ありがとう ございました'), h('p', { class: 'hk-slide-en' }, 'Thank you for listening'), h('p', { class: 'hk-bow', 'aria-hidden': 'true' }, '🙇'));
+    return h('div', { class: 'hk-slide hk-close-slide' }, h('p', { class: 'hk-slide-title', lang: 'ja' }, 'ごせいちょう ありがとう ございました'), h('p', { class: 'hk-slide-en' }, 'Thank you for listening'), spriteEl({ src: '/stage/assets/anim/chochin-bow.png', frames: 8, ms: 1600 }, 128, 'loop', 'hk-bow'));
   return h('div', { class: 'hk-slide hk-picture-slide' }, picture(slide.picture, slide.emoji), h('span', { class: 'hk-slide-no' }, `${game.step}`));
 }
 
@@ -201,7 +206,7 @@ function stampColumn(game: HappyokaiView): HTMLElement {
       h(
         'span',
         { class: `hk-stamp ${s.kind}`, 'data-key': `s${s.id}`, style: `--rise-delay: ${-(now - s.at)}ms; --x: ${STAMP_LANES.indexOf(s.kind) * 16.5}%; --r: ${((s.id * 7) % 11) - 5}deg;` },
-        h('b', {}, STAMP_FACES[s.kind].emoji),
+        stampImg(s.kind),
         h('span', { lang: 'ja' }, s.n > 1 ? `${STAMP_FACES[s.kind].kana} ×${s.n}` : STAMP_FACES[s.kind].kana),
       ),
     ),
@@ -212,7 +217,7 @@ function stampTally(game: HappyokaiView): HTMLElement {
   return h(
     'p',
     { class: 'hk-tally' },
-    (Object.keys(STAMP_FACES) as StampKind[]).filter((k) => game.stampCount[k] > 0).map((k) => h('span', { 'data-key': k }, `${STAMP_FACES[k].emoji} ${game.stampCount[k]}`)),
+    (Object.keys(STAMP_FACES) as StampKind[]).filter((k) => game.stampCount[k] > 0).map((k) => h('span', { 'data-key': k }, stampImg(k), ` ${game.stampCount[k]}`)),
   );
 }
 
@@ -312,7 +317,7 @@ function reportCard(view: RoomView, game: HappyokaiView): HTMLElement {
       h('p', { class: 'hk-card-head', lang: 'ja' }, 'つうしんぼ', h('small', {}, ` ${presenter?.name ?? ''}`)),
       h('p', { class: 'hk-card-title', lang: 'ja' }, game.title ? `「${game.title.text}」` : ''),
       h('p', { class: 'hk-flowers', 'aria-label': `${c.flowers.length} grades` }, c.flowers.map((n, i) => h('span', { class: `f${n}`, style: `--i: ${i}` }, flower(n)))),
-      h('dl', { class: 'hk-facts' }, h('dt', {}, 'Sentences'), h('dd', {}, `${c.sentences}`), h('dt', {}, 'Longest run'), h('dd', {}, `${c.best}`), c.loudest ? [h('dt', {}, 'Loudest'), h('dd', {}, `${STAMP_FACES[c.loudest.kind].emoji} ×${c.loudest.n}`)] : null),
+      h('dl', { class: 'hk-facts' }, h('dt', {}, 'Sentences'), h('dd', {}, `${c.sentences}`), h('dt', {}, 'Longest run'), h('dd', {}, `${c.best}`), c.loudest ? [h('dt', {}, 'Loudest'), h('dd', {}, stampImg(c.loudest.kind), ` ×${c.loudest.n}`)] : null),
       h('p', { class: 'hk-comment', lang: 'ja' }, h('span', {}, c.comment.text), h('small', {}, c.comment.en)),
       // The grade goes on in red pen (a はなまる is drawn, not stamped); the teacher's seal sits in the corner.
       c.stamp.text === 'はなまる'
