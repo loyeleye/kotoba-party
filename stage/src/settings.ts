@@ -10,14 +10,14 @@ import { audienceContentList } from '../../shared/src/audience.js';
 import { h, mount } from '../../shared/src/dom.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
-import type { Audience, ModeId, RoomView } from '../../shared/src/protocol.js';
+import { SURPRISE, type Audience, type ModeId, type RoomView } from '../../shared/src/protocol.js';
 import { isAmbientOn, setAmbient } from './backdrop.js';
 import { isDanmakuOn, setDanmaku } from './danmaku.js';
 import { isStreamerMode, setStreamerMode } from './music/index.js';
 import { sfx } from './music/sfx.js';
 import { getVolumes, setVolume, type VolumeId } from './sound.js';
 
-type Send = (body: { type: 'start'; mode: ModeId; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'endGame' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience } | { type: 'closeRoom' }) => Promise<void>;
+type Send = (body: { type: 'start'; mode: ModeId | typeof SURPRISE; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'endGame' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience } | { type: 'closeRoom' }) => Promise<void>;
 
 const VOLUMES: [VolumeId, string][] = [
   ['master', 'Master volume'],
@@ -155,8 +155,9 @@ function renderRoom(force: boolean): void {
   const send = opts.send;
   const buttons: HTMLElement[] = [];
   if (v.phase === 'lobby' && v.modes.length) {
-    const pick = h('select', { 'aria-label': 'Game' }, v.modes.map((m) => h('option', { value: m.id }, m.title))) as HTMLSelectElement;
-    buttons.push(pick, button('Start', () => send({ type: 'start', mode: pick.value as ModeId })));
+    const pick = h('select', { 'aria-label': 'Game' }, h('option', { value: SURPRISE }, '🎲 Surprise Me!'), v.modes.map((m) => h('option', { value: m.id }, m.title))) as HTMLSelectElement;
+    pick.value = v.modes[0]?.id ?? SURPRISE;
+    buttons.push(pick, button('Start', () => send({ type: 'start', mode: pick.value as ModeId | typeof SURPRISE })));
   }
   if (v.deadline !== null && v.phase !== 'lobby') buttons.push(button('Skip ahead', () => send({ type: 'skip', phaseSeq: v.phaseSeq })));
   if (v.phase === 'recap') buttons.push(button('Play again', () => send({ type: 'playAgain' })));

@@ -40,3 +40,6 @@ export const MODES: Record<ModeId, Mode<any, any>> = {
 
 /** Modes on the VIP's menu, in show order (the debug round stays hidden). */
 export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info, narabeteMode.info, bentoHausMode.info, bentoHausVsMode.info, dubClubMode.info];
+
+/** The menu games a room of `players` can start: what Surprise Me! rolls between. */
+export const surprisePool = (players: number): ModeInfo[] => MENU.filter((m) => players >= m.minPlayers && players <= m.maxPlayers);

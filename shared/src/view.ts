@@ -54,5 +54,6 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
         : null,
     remoteControl: state.remoteControl,
     audience: state.audience,
+    surprise: state.surprise,
   };
 }

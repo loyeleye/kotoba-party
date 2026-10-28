@@ -6,9 +6,9 @@
 import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS } from './constants.js';
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam } from './modes/mode.js';
-import { MODES } from './modes/registry.js';
+import { MODES, surprisePool } from './modes/registry.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
-import { isAudience, LEVELS, MODE_IDS } from './protocol.js';
+import { isAudience, LEVELS, MODE_IDS, SURPRISE } from './protocol.js';
 import { awardKana, hasKanji, isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
 
 export interface PlayerState {
@@ -47,6 +47,8 @@ export interface GameState {
   audience: Audience;
   /** Scores and phrasebooks as they were just before this game started, so ending it early can put them back. */
   beforeGame: { scores: Record<string, number>; phrasebook: Record<string, PhraseEntry[]> } | null;
+  /** This game came from Surprise Me!: the games it rolled between, so the screens can show the roll. */
+  surprise: ModeId[] | null;
 }
 
 export interface GameContext {
@@ -92,6 +94,7 @@ export function createGame(code: string): GameState {
     remoteControl: false,
     audience: 'family',
     beforeGame: null,
+    surprise: null,
   };
 }
 
@@ -216,21 +219,26 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
     case 'start': {
       if (state.phase !== 'lobby') return fail('wrong-phase');
       if (!isVip && !isStage) return fail('not-vip');
-      if (!(MODE_IDS as readonly string[]).includes(cmd.mode)) return fail('unknown-mode');
-      const mode = MODES[cmd.mode];
+      // Surprise Me!: roll one of the menu's games that fits the room, with its default length and any topic.
+      const surprise = cmd.mode === SURPRISE ? surprisePool(state.players.length).map((m) => m.id) : null;
+      if (surprise && !surprise.length) return fail('not-enough-players');
+      const id = surprise ? surprise[Math.floor(ctx.random() * surprise.length)]! : cmd.mode;
+      if (!(MODE_IDS as readonly string[]).includes(id)) return fail('unknown-mode');
+      const mode = MODES[id as ModeId];
       if (state.players.length < mode.info.minPlayers) return fail('not-enough-players');
       if (state.players.length > mode.info.maxPlayers) return fail('too-many-players');
-      state.mode = cmd.mode;
-      state.packId = typeof cmd.packId === 'string' ? cmd.packId : null;
+      state.mode = id as ModeId;
+      state.surprise = surprise;
+      state.packId = !surprise && typeof cmd.packId === 'string' ? cmd.packId : null;
       state.beforeGame = { scores: Object.fromEntries(state.players.map((p) => [p.id, p.score])), phrasebook: state.phrasebook };
       for (const p of state.players) p.score = 0;
       state.phrasebook = {};
       state.recap = null;
-      const rounds = Number.isInteger(cmd.rounds) ? cmd.rounds : undefined;
+      const rounds = !surprise && Number.isInteger(cmd.rounds) ? cmd.rounds : undefined;
       state.modeState = mode.setup(modeContext(state, ctx), {
         rounds: rounds !== undefined && rounds > 0 && rounds <= 20 ? rounds : mode.info.roundChoices[0],
         packId: state.packId ?? undefined,
-        extra: cmd.extra && typeof cmd.extra === 'object' ? cmd.extra : undefined,
+        extra: !surprise && cmd.extra && typeof cmd.extra === 'object' ? cmd.extra : undefined,
       });
       enter(state, 'intro', ctx);
       return OK;
@@ -396,6 +404,7 @@ function resetToLobby(state: GameState): void {
   state.host = null;
   state.recap = null;
   state.beforeGame = null;
+  state.surprise = null;
 }
 
 /**

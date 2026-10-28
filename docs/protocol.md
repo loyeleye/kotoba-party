@@ -20,7 +20,10 @@ Commands:
 
 - `start { mode, rounds?, packId?, extra? }`: VIP or stage, lobby only. `mode` is one of
   `kana-raid`, `oogiri`, `last-train`, `word-gauntlet`, `concentration` (or the hidden `debug`
-  round). Each mode validates its own `extra`.
+  round). Each mode validates its own `extra`. `mode: 'surprise'` (Surprise Me!) rolls a random
+  menu game that fits the room's player count, with its default length, any topic and no extras,
+  and sets the view's `surprise` to the ids it rolled between (cleared back in the lobby) so the
+  stage and phones can play the reveal.
 - `play { move }`: a move in the current game. The mode validates the move's shape. Any
   utterance (`{ via: 'speech' | 'typed' | 'tap', text }`) inside the move gets a server-side
   `reading` (kana) and `tokens` (word split) before the mode sees it.
