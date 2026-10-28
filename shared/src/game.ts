@@ -4,8 +4,8 @@
 // hands everything inside the game to the chosen mode (shared/src/modes).
 
 import type { Level } from '../../content/src/types.js';
-import { MAX_NAME_LENGTH, MAX_PLAYERS } from './constants.js';
-import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam } from './modes/mode.js';
+import { MAX_NAME_LENGTH, MAX_PLAYERS, SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } from './constants.js';
+import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam, ModeInfo } from './modes/mode.js';
 import { MODES, surprisePool } from './modes/registry.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS, SURPRISE } from './protocol.js';
@@ -240,7 +240,9 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
         packId: state.packId ?? undefined,
         extra: !surprise && cmd.extra && typeof cmd.extra === 'object' ? cmd.extra : undefined,
       });
+      const raised = state.cues.length;
       enter(state, 'intro', ctx);
+      if (surprise) spinCues(state, mode.info, raised);
       return OK;
     }
     case 'play': {
@@ -352,6 +354,20 @@ function settle(state: GameState, ctx: GameContext): void {
     if (!mode || !inGame(state) || !mode.done?.(state.modeState, state.phase, modeContext(state, ctx))) return;
     advance(state, ctx);
   }
+}
+
+/**
+ * Surprise Me!: the wheel covers the stage for the first few seconds of the intro, so the intro runs that much
+ * longer. Pon calls the spin, names the pick as the wheel stops, and the game's own intro lines (raised from
+ * `from` on) wait until the wheel has gone.
+ */
+function spinCues(state: GameState, info: ModeInfo, from: number): void {
+  if (state.deadline !== null) state.deadline += SURPRISE_REVEAL_MS;
+  const intro = state.cues.slice(from).filter((c) => !c.ahead).at(-1);
+  if (intro) intro.atMs = SURPRISE_REVEAL_MS;
+  const game = { game: info.titleJa, game_kana: info.titleKana ?? info.titleJa, game_en: info.title };
+  state.cues.push({ host: 'pon', event: 'surprise_pick', slots: game, atMs: SURPRISE_SPIN_MS + 100, waitMs: SURPRISE_SPIN_MS });
+  state.cues.push({ host: 'pon', event: 'surprise_spin' });
 }
 
 function enter(state: GameState, phase: Phase, ctx: GameContext): void {

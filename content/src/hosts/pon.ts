@@ -363,4 +363,16 @@ export const ponLines: HostLine[] = [
   { id: 'pon.hajime_recall.01', host: 'pon', event: 'hajime_recall', jp: { text: 'おぼえてる？　みんなの ほんとうの ことを いって ください！', kana: 'おぼえてる？　みんなの ほんとうの ことを いって ください！', en: 'Do you remember? Say everyone\'s truth!' }, status: 'draft' },
   { id: 'pon.hajime_recall.02', host: 'pon', event: 'hajime_recall', jp: { text: 'さいごの テスト！　だれの ほんとう、おぼえてる？', kana: 'さいごの テスト！　だれの ほんとう、おぼえてる？', en: 'The final test! Whose truth do you remember?' }, status: 'draft' },
   { id: 'pon.hajime_recall.03', host: 'pon', event: 'hajime_recall', jp: { text: 'みんな、もう ともだちですね！　ポン！', kana: 'みんな、もう ともだちですね！　ポン！', en: 'You\'re all friends now! Pon!' }, status: 'draft' },
+  // surprise_spin (Surprise Me!: the wheel starts)
+  { id: 'pon.surprise_spin.01', host: 'pon', event: 'surprise_spin', jp: { text: 'まわすよ！', kana: 'まわすよ！', en: 'Here it goes!' }, status: 'draft' },
+  { id: 'pon.surprise_spin.02', host: 'pon', event: 'surprise_spin', jp: { text: 'ポンに おまかせ！　まわすよ！', kana: 'ポンに おまかせ！　まわすよ！', en: 'Leave it to Pon! Spinning!' }, status: 'draft' },
+  { id: 'pon.surprise_spin.03', host: 'pon', event: 'surprise_spin', jp: { text: 'なにが でるかな？　まわすよ！', kana: 'なにが でるかな？　まわすよ！', en: 'What will it be? Spinning!' }, status: 'draft' },
+  { id: 'pon.surprise_spin.04', host: 'pon', event: 'surprise_spin', jp: { text: 'それっ、まわすよ〜！', kana: 'それっ、まわすよ〜！', en: 'And… spin!' }, status: 'draft' },
+  { id: 'pon.surprise_spin.05', host: 'pon', event: 'surprise_spin', jp: { text: 'ぐるぐる〜！　どれに なるかな？', kana: 'ぐるぐる〜！　どれに なるかな？', en: 'Round and round! Which one will it be?' }, status: 'draft' },
+  // surprise_pick (Surprise Me!: the wheel stops on {game})
+  { id: 'pon.surprise_pick.01', host: 'pon', event: 'surprise_pick', jp: { text: 'きまり！　こんやは {game}！', kana: 'きまり！　こんやは {game}！', en: "Decided! Tonight it's {game}!" }, slots: ['{game}'], status: 'draft' },
+  { id: 'pon.surprise_pick.02', host: 'pon', event: 'surprise_pick', jp: { text: 'でました！　{game}です！', kana: 'でました！　{game}です！', en: 'And it’s… {game}!' }, slots: ['{game}'], status: 'draft' },
+  { id: 'pon.surprise_pick.03', host: 'pon', event: 'surprise_pick', jp: { text: '{game}に けってい！', kana: '{game}に けってい！', en: '{game} it is!' }, slots: ['{game}'], status: 'draft' },
+  { id: 'pon.surprise_pick.04', host: 'pon', event: 'surprise_pick', jp: { text: 'おおっ、{game}！　やりましょう！', kana: 'おおっ、{game}！　やりましょう！', en: "Ooh, {game}! Let's play!" }, slots: ['{game}'], status: 'draft' },
+  { id: 'pon.surprise_pick.05', host: 'pon', event: 'surprise_pick', jp: { text: 'こんやの ゲームは {game}です！', kana: 'こんやの ゲームは {game}です！', en: "Tonight's game is {game}!" }, slots: ['{game}'], status: 'draft' },
 ];

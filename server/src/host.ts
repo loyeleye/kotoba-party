@@ -96,26 +96,35 @@ export function hostDirector(voice: HostVoice) {
   return (room: Room, raised: HostCue[], phaseSeq: number): void => {
     const cues = raised.map((c) => ({ ...c, audience: room.state.audience }));
     for (const c of cues) if (c.ahead) voice.ahead?.(room.code, c);
-    // One line per phase: the last cue raised is the most specific.
-    const cue = cues.filter((c) => !c.ahead).at(-1);
-    if (!cue) return;
-    voice
-      .speak(room.code, cue)
-      .then((line) => {
-        if (!line) return;
-        const { later, ...rest } = line;
-        const say: HostSay = { ...rest, mood: rest.mood ?? moodFor(cue), phaseSeq };
-        room.say(say);
-        // Late audio joins the line it belongs to, if the stage is still showing it.
-        void later
-          ?.then((a) => {
-            if (a && room.state.host === say) room.say({ ...say, audioPending: undefined, audioUrl: a.audioUrl, mouth: a.mouth });
-          })
-          .catch(() => {});
-      })
-      .catch(() => {
-        // The host just stays quiet this phase.
-      });
+    const start = Date.now();
+    const say = (cue: HostCue, atMs: number): void => {
+      voice
+        .speak(room.code, cue)
+        .then((line) => {
+          if (!line) return;
+          const { later, ...rest } = line;
+          const out: HostSay = { ...rest, mood: rest.mood ?? moodFor(cue), phaseSeq };
+          const land = () => {
+            room.say(out);
+            // Late audio joins the line it belongs to, if the stage is still showing it.
+            void later
+              ?.then((a) => {
+                if (a && room.state.host === out) room.say({ ...out, audioPending: undefined, audioUrl: a.audioUrl, mouth: a.mouth });
+              })
+              .catch(() => {});
+          };
+          const wait = atMs - (Date.now() - start);
+          if (wait > 0) setTimeout(land, wait);
+          else land();
+        })
+        .catch(() => {
+          // The host just stays quiet this phase.
+        });
+    };
+    // One line per phase: the last cue raised is the most specific. A cue timed for later in the phase gets its own then.
+    for (const c of cues) if (!c.ahead && c.atMs !== undefined) say(c, c.atMs);
+    const cue = cues.filter((c) => !c.ahead && c.atMs === undefined).at(-1);
+    if (cue) say(cue, 0);
   };
 }
 

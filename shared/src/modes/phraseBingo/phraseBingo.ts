@@ -497,6 +497,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
     id: 'phrase-bingo',
     title: 'Phrase Bingo Theater',
     titleJa: 'フレーズビンゴ劇場',
+    titleKana: 'フレーズビンゴげきじょう',
     blurb: 'Act out a scene and secretly slip in your phrases. The audience plays bingo to catch them.',
     host: 'pon',
     minPlayers: 3,

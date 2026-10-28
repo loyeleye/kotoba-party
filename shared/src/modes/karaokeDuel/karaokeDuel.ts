@@ -537,6 +537,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     id: 'karaoke-duel',
     title: 'Karaoke Duel',
     titleJa: 'カラオケ対決',
+    titleKana: 'カラオケたいけつ',
     blurb: 'Sing short Japanese songs head to head. Words, tune and timing all count.',
     host: 'nobiko',
     minPlayers: 2,

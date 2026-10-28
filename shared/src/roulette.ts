@@ -3,15 +3,17 @@
 // stops on the game the room rolled, then a banner names it. The stage and the phones each play it
 // on their own when a Surprise Me! game opens; the game itself was already picked by the room (game.ts).
 
+import { SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } from './constants.js';
 import { h } from './dom.js';
 import type { ModeInfo } from './modes/mode.js';
 
-/** How long the wheel spins, and how many whole turns it makes before it settles. */
-const SPIN_MS = 4600;
+/** How long the wheel spins (the room times Pon's lines and the intro by it), and how many whole turns it makes. */
+const SPIN_MS = SURPRISE_SPIN_MS;
 const TURNS = 6;
-/** How long the landed game stays up before the wheel goes. */
-const HOLD_MS = 2200;
-const CALM_HOLD_MS = 2400;
+const FADE_MS = 300;
+/** How long the landed game stays up before the wheel goes, so the reveal lasts SURPRISE_REVEAL_MS in all. */
+const HOLD_MS = SURPRISE_REVEAL_MS - SPIN_MS - 100 - FADE_MS;
+const CALM_HOLD_MS = SURPRISE_REVEAL_MS - FADE_MS;
 /** Bulbs round the rim (they chase while it spins, then flash). */
 const BULBS = 24;
 
@@ -160,6 +162,7 @@ export function playRoulette(parent: HTMLElement, pool: readonly ModeInfo[], pic
     ),
   );
   parent.append(card);
+  parent.classList.add('spinning-wheel');
   const timers: ReturnType<typeof setTimeout>[] = [];
   const later = (fn: () => void, ms: number) => timers.push(setTimeout(fn, ms));
   let raf = 0;
@@ -168,7 +171,8 @@ export function playRoulette(parent: HTMLElement, pool: readonly ModeInfo[], pic
     cancelAnimationFrame(raf);
     if (!card.isConnected) return;
     card.classList.add('roulette-out');
-    setTimeout(() => card.remove(), 320);
+    parent.classList.remove('spinning-wheel');
+    setTimeout(() => card.remove(), FADE_MS + 20);
     opts.onDone?.();
   };
   card.addEventListener('click', close);

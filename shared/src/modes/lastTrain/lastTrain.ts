@@ -648,6 +648,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     id: 'last-train',
     title: 'Last Train',
     titleJa: '終電',
+    titleKana: 'しゅうでん',
     blurb: 'Race for the last train: answer every stop out loud, or become a ghost.',
     host: 'chochin',
     phaseLabels: { prompt: 'Next stop', answer: 'Answer', reveal: 'Stop results', penalty: 'Penalty car', finale: 'Platform dash', score: 'Platform dash' },

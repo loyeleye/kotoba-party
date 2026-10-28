@@ -7066,6 +7066,48 @@
       "post": {}
     },
     {
+      "path": "stage/assets/fx/paw-hanko.png",
+      "what": "Nice to Meet You!'s paw stamp on a card Pon read for the reader: a red ink tanuki paw print, like a hanko",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, no text, no letters, no numbers. a flat 2D red ink stamp print on paper, a tanuki paw print: one big round pad and four small toe pads, Japanese hanko seal ink with rough faded uneven ink texture, completely flat, no 3D, no shadow",
+      "params": {
+        "outline": "lineless",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 64,
+        "height": 64,
+        "seed": 22
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/fx/card-medallion.png",
+      "what": "Nice to Meet You!'s face-down card back: a round gold medallion with a green tanuki leaf, in place of the mic icon until the card is read",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. a round flat gold medallion emblem with a raised rim, a single green leaf in the centre like the leaf a Japanese tanuki puts on its head to shape-shift, ornate but simple, flat front view, no 3D perspective",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 96,
+        "height": 96,
+        "seed": 3
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
       "path": "stage/assets/icons/hk-stamp-omoshiroi.png",
       "what": "Happyōkai! stamp icon: laughing",
       "generator": "pixellab",

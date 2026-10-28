@@ -241,6 +241,7 @@ export const oekakiMode: Mode<OekakiState, OekakiView> = {
     id: 'oekaki',
     title: 'Oekaki',
     titleJa: 'お絵かき',
+    titleKana: 'おえかき',
     blurb: 'Draw a secret Japanese word, write fake titles for the others’ drawings, then find the real one.',
     host: 'fude',
     minPlayers: 3,
