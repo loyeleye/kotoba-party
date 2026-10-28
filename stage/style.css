@@ -142,7 +142,9 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
    256 at 1080p). The negative margins let most of the extra height overlap the header, so the host
    row grows only a little. A lit plate behind it (a soft disc of lantern light with a paper rim)
    lifts every host off the dark sets. */
-.host-sprite { --plate: color-mix(in srgb, var(--paper) 22%, transparent); --rim: color-mix(in srgb, var(--paper) 55%, transparent); margin: calc(-16px - (var(--host-size, 128px) - 128px) * 0.6) 0 calc(-12px - (var(--host-size, 128px) - 128px) * 0.1); filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); background: radial-gradient(circle at 50% 56%, var(--plate) 0 41%, var(--rim) 41.5% 43.5%, transparent 44%); }
+.host-sprite { --plate: color-mix(in srgb, var(--paper) 22%, transparent); --rim: color-mix(in srgb, var(--paper) 55%, transparent); margin: calc(-16px - (var(--host-size, 128px) - 128px) * 0.6) 0 calc(-12px - (var(--host-size, 128px) - 128px) * 0.1); z-index: 1; filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); background: radial-gradient(circle at 50% 56%, var(--plate) 0 41%, var(--rim) 41.5% 43.5%, transparent 44%) left / var(--size) 100% no-repeat; }
+/* Nobiko-san's peek is twice as wide: the extra half hangs over the speech bubble without moving it. */
+.host-sprite[style*='--wide:2'] { margin-right: calc(var(--size) * -1); }
 /* A new host steps up from below in whole-pixel steps: no scaling, so the pixels stay square. */
 .host-sprite.enter { animation: host-in 320ms steps(4, end) both; }
 /* Host speech on a washi card: the Japanese people read aloud sits on paper. */
@@ -156,7 +158,7 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 
 /* ---- sprites (sprites.ts): a sheet of square frames, clipped to one, stepped across ---- */
 /* Sizes are whole multiples of the art (128 px frames at 128 or 256), never in between. */
-.sprite { position: relative; width: var(--size); height: var(--size); overflow: hidden; flex: none; }
+.sprite { position: relative; width: calc(var(--size) * var(--wide, 1)); height: var(--size); overflow: hidden; flex: none; }
 .sprite > .sprite-sheet { display: block; height: 100%; width: calc(var(--frames, 1) * 100%); max-width: none; image-rendering: pixelated; pointer-events: none; user-select: none; }
 .sprite.loop > .sprite-sheet { animation: sprite-play var(--ms) steps(var(--frames)) infinite; }
 .sprite.once > .sprite-sheet, .sprite > .sprite-sheet.run { animation: sprite-play var(--ms) steps(var(--frames)) 1; }

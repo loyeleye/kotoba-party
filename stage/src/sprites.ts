@@ -12,10 +12,17 @@ export interface Sheet {
   frames: number;
   /** One pass through every frame. */
   ms: number;
+  /** Frame width as a multiple of its height, for sheets wider than square (default 1). */
+  wide?: number;
 }
 
 const ANIM = '/stage/assets/anim';
-export const hostSheet = (host: string, kind: 'idle' | HostMood): Sheet => ({ src: `${ANIM}/${host}-${kind}.png`, frames: 8, ms: kind === 'idle' ? 1600 : 900 });
+export const hostSheet = (host: string, kind: 'idle' | HostMood): Sheet =>
+  kind === 'peek'
+    ? { src: `${ANIM}/${host}-peek.png`, frames: 10, ms: 1800, wide: 2 }
+    : { src: `${ANIM}/${host}-${kind}.png`, frames: 8, ms: kind === 'idle' ? 1600 : 900 };
+/** Each host's sheets. Only Nobiko-san has the peek: her neck stretches out over the speech bubble (tools/art/sources/nobiko-peek.py). */
+const hostKinds = (host: string): ('idle' | HostMood)[] => (host === 'nobiko' ? ['idle', 'cheer', 'oops', 'peek'] : ['idle', 'cheer', 'oops']);
 /** Lip sync: three mouth shapes, closed, half open, wide open. Shown one at a time, not played. */
 export const talkSheet = (host: string): Sheet => ({ src: `${ANIM}/${host}-talk.png`, frames: 3, ms: 0 });
 /** A caught yōkai: its flinch, then the shared smoke puff (tools/art/polish.ts), at 10 frames a second. */
@@ -67,7 +74,7 @@ export function spriteEl(sheet: Sheet, size: number, how: 'once' | 'loop' | 'poo
   return h('div', { class: `sprite ${how} ${cls}`.trim(), style: spriteStyle(sheet, size), 'aria-hidden': 'true' }, img);
 }
 
-export const spriteStyle = (sheet: Sheet, size: number): string => `--size:${size}px;--frames:${sheet.frames};--ms:${sheet.ms}ms`;
+export const spriteStyle = (sheet: Sheet, size: number): string => `--size:${size}px;--frames:${sheet.frames};--ms:${sheet.ms}ms;--wide:${sheet.wide ?? 1}`;
 
 // ---------- the host ----------
 /**
@@ -123,7 +130,7 @@ export class HostSprite {
     if (host !== this.host) {
       this.host = host;
       // Start loading this host's sheets now, so each is ready before it's first shown.
-      for (const k of ['idle', 'cheer', 'oops'] as const) this.sheetImg(hostSheet(host, k).src);
+      for (const k of hostKinds(host)) this.sheetImg(hostSheet(host, k).src);
       this.sheetImg(talkSheet(host).src);
       this.el.classList.remove('enter');
       void this.el.offsetWidth;
@@ -141,7 +148,7 @@ export class HostSprite {
 
   /** Every host's sheets, to preload. */
   static sheets(hosts: string[]): string[] {
-    return hosts.flatMap((host) => [...(['idle', 'cheer', 'oops'] as const).map((k) => hostSheet(host, k).src), talkSheet(host).src]);
+    return hosts.flatMap((host) => [...hostKinds(host).map((k) => hostSheet(host, k).src), talkSheet(host).src]);
   }
 
   /**

@@ -164,7 +164,8 @@ at random.
 
 `encore_invite` with the first singer's name on the song card ("{name}, the microphone is
 yours"), `encore_cheer` at the crowd vote, `reveal_react` (good/ippon by the winner's average
-take) or `miss_kind` at the result, and the shared `recap_award`.
+take) or `miss_kind` at the result, and the shared `recap_award`. On a good result she stretches her
+neck out to look (the `peek` mood); on an ippon she cheers.
 
 ### Awards
 

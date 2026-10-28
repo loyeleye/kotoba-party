@@ -179,6 +179,9 @@ The score screen also shows the stock example and, for N4, the round's keigo pai
 `encore_invite` (the vote winner) or `miss_kind` (no votes) · `encore_cheer` (a spoken encore,
 and the invitation) · `natural_version` (the stock answer).
 
+On `say_it_first` and `reveal_react` she stretches her neck out over the speech bubble to have a look
+(the `peek` mood, only hers; `server/src/host.ts`).
+
 ### Awards (draft titles)
 
 おちゃの しょうたい *Invited to Tea* (the guest's choice), おもてなし しょう *Best Manners*

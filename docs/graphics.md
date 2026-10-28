@@ -53,8 +53,8 @@ in a web font, which keeps the kana correct and lets one body serve every kana. 
 
 ## Animation
 
-Twenty-one sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
-frames. Most are made by PixelLab's `animate-with-text-v3` from the still sprite, which goes in as
+Twenty-two sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
+frames (Nobiko-san's peek is twice as wide). Most are made by PixelLab's `animate-with-text-v3` from the still sprite, which goes in as
 both the first and the last frame so a loop closes on the pose it started from, then cleaned up by
 `tools/art/polish.ts` (below). The three mouth sheets are drawn from the portraits by the same tool.
 
@@ -63,6 +63,7 @@ both the first and the last frame so a loop closes on the pose it started from, 
 | `{pon,chochin,fude,nobiko}-idle.png` | 8 × 128² | One breath every few seconds, then holds frame 0 |
 | `{pon,chochin,fude,nobiko}-{cheer,oops}.png` | 8 × 128² | Once, when a host line has that mood, then back to idle |
 | `{pon,chochin,fude,nobiko}-talk.png` | 3 × 128² | Lip sync: closed, half open, open, shown one at a time while the host speaks |
+| `nobiko-peek.png` | 10 × 256×128 | Once, as players answer (`say_it_first`) and as answers are revealed (`reveal_react`): her neck stretches out over the speech bubble, has a look and springs back. Built by `tools/art/sources/nobiko-peek.py`, which cuts her portrait into head and body and redraws only the neck, so her face stays on model |
 | `yokai-{blob,lantern,umbrella,scroll}-hit.png` | 11 × 128² | Once when a yōkai is caught: 4 flinch frames, then the shared smoke puff; ends empty |
 | `yokai-boss-defeat.png` | 9 × 192² | Once when the boss is beaten; ends empty |
 

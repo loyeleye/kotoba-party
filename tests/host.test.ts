@@ -104,11 +104,18 @@ describe('bank lines that name the answer', () => {
 
 describe('host moods', () => {
   it('cheers a win, flinches at a miss, and otherwise just idles', () => {
-    expect(moodFor('ippon')).toBe('cheer');
-    expect(moodFor('raid_combo')).toBe('cheer');
-    expect(moodFor('raid_escape')).toBe('oops');
-    expect(moodFor('miss_kind')).toBe('oops');
-    expect(moodFor('prompt_read')).toBeUndefined();
+    expect(moodFor({ host: 'pon', event: 'ippon' })).toBe('cheer');
+    expect(moodFor({ host: 'pon', event: 'raid_combo' })).toBe('cheer');
+    expect(moodFor({ host: 'pon', event: 'raid_escape' })).toBe('oops');
+    expect(moodFor({ host: 'nobiko', event: 'miss_kind' })).toBe('oops');
+    expect(moodFor({ host: 'pon', event: 'prompt_read' })).toBeUndefined();
+  });
+
+  it('gives only Nobiko-san the neck-stretch peek, as answers come in and are revealed', () => {
+    expect(moodFor({ host: 'nobiko', event: 'say_it_first' })).toBe('peek');
+    expect(moodFor({ host: 'nobiko', event: 'reveal_react', tier: 'good' })).toBe('peek');
+    expect(moodFor({ host: 'nobiko', event: 'reveal_react', tier: 'ippon' })).toBe('cheer');
+    expect(moodFor({ host: 'pon', event: 'reveal_react', tier: 'good' })).toBeUndefined();
   });
 });
 
