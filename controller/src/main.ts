@@ -11,7 +11,7 @@ import { MODES, surprisePool } from '../../shared/src/modes/registry.js';
 import { playRoulette } from '../../shared/src/roulette.js';
 import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
-import { setSpeechService } from './components/mic.js';
+import { setSpeechService, speechReady } from './components/mic.js';
 import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
 import { quip, setQuipHost } from './components/ui.js';
 import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
@@ -337,6 +337,7 @@ function render(view: RoomView): void {
     isVip ? h('span', { class: 'vip' }, '★ VIP') : null,
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
+    micSwitch(me),
   );
   mount(app, band, header, screenFor(view, me, isVip));
   dockTalk();
@@ -425,6 +426,28 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   // screen link for friends playing from somewhere else.
   parts.push(fold('invite', 'Invite friends', 'Links for friends who can’t scan the code', invite(inviteLinks(session?.site ?? location.origin, view.code), view.code, false)));
   return h('div', { class: 'screen' }, parts);
+}
+
+/**
+ * The header's mic switch: turns quiet mode on or off at any time, in the lobby or mid-game. It sits at
+ * the end of the header row, so it never covers a game's screen. Hidden when there's no mic to switch to.
+ */
+function micSwitch(me: PlayerView): HTMLElement | null {
+  const quiet = me.mic === 'quiet';
+  if (!quiet && !speechReady()) return null;
+  const label = quiet ? 'Quiet mode is on: tap to use your mic' : 'Mic is on: tap for quiet mode';
+  return h(
+    'button',
+    {
+      type: 'button',
+      class: `mic-switch${quiet ? ' off' : ''}`,
+      'aria-label': label,
+      'aria-pressed': String(!quiet),
+      title: label,
+      onclick: () => void command({ type: 'micCheck', utterance: quiet ? null : { via: 'tap', text: '' } }),
+    },
+    quiet ? '🔇' : '🎤',
+  );
 }
 
 function micCheck(me: PlayerView): HTMLElement {
