@@ -48,7 +48,7 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   // VS opens on the other Bento theme, so the race sounds different from the co-op shift.
   'bento-haus-vs': 'feelin-good',
   // Dub Club: its own cheap anime opening, and silence whenever a voice is recorded or played (dubCue).
-  'dub-club': 'anime-op',
+  'dub-club': 'dub-opening',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -184,13 +184,13 @@ function shodoCue(phase: Phase, listen: boolean, say: boolean): Cue {
  * the ending song over the credits. The stage plays the eyecatch jingle itself, on the end card.
  */
 function dubCue(phase: Phase, step?: string): Cue {
-  if (phase === 'intro') return { song: 'anime-op', mix: 'full', leadIn: 'ident' };
+  if (phase === 'intro') return { song: 'dub-opening', mix: 'full', leadIn: 'ident' };
   if (phase === 'prompt') return { song: 'gentle', mix: 'listen' };
   if (phase === 'answer' || phase === 'reveal') return { song: null, mix: 'full' };
   if (phase === 'score') return { song: 'score', mix: 'full' };
   if (phase === 'finale') {
-    if (step === 'title') return { song: 'anime-op', mix: 'full' };
-    if (step === 'credits') return { song: 'anime-end', mix: 'full' };
+    if (step === 'title') return { song: 'dub-opening', mix: 'full' };
+    if (step === 'credits') return { song: 'dub-ending', mix: 'full' };
     return { song: null, mix: 'full' };
   }
   return { song: 'gentle', mix: 'under' };
