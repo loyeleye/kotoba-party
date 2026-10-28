@@ -43,6 +43,7 @@
 .nb-ready .hint { margin: 6px 0; }
 .nb-offer { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; }
 .nb-offer-emoji { grid-row: span 3; font-size: 28px; }
+.nb-offer-pic { display: block; width: 64px; height: 64px; image-rendering: pixelated; background: #2a2150; border-radius: 8px; box-shadow: 0 0 0 2px #0b0605; }
 .nb-offer-jp { font-weight: 800; }
 .nb-offer small { color: var(--muted); font-size: 13px; }
 .nb-offer .nb-offer-romaji, .nb-vote .nb-offer-romaji { color: #8fb3ff; font-style: italic; }

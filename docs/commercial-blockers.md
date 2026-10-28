@@ -31,7 +31,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 17 host and yōkai animation sheets, a smoke-puff effect and 56 Narabete! card pictures) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 17 host and yōkai animation sheets, a smoke-puff effect, 56 Narabete! card pictures and 112 Narabete! answer pictures) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
 | 7 | AI art: Gemini (source image for Pon) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
@@ -130,7 +130,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   the 17 animation sheets in `stage/assets/anim/` (host idle, cheer and oops loops; yōkai hit and
   boss defeat; Nobiko-san's three added 2026-10-27), made by PixelLab's `animate-with-text-v3` endpoint from our own host and yōkai
   sprites as the first and last frame, and the smoke puff in `stage/assets/fx/`. Since 2026-10-28 also the 56 Narabete! card pictures in
-  `stage/assets/cards/` (`pixflux`, text only, prompts and seeds in the manifest), and Bento Haus's
+  `stage/assets/cards/` and the 112 Feelings answer pictures in `stage/assets/answers/` (`pixflux`, text
+  only, prompts and seeds in the manifest), and Bento Haus's
   food sprites and 10 customers in three moods (`stage/assets/bento/`, `pixflux`, text only; のり and
   うめぼし are drawn in our own code). Narabete!'s knot
   sheet and clothes peg are hand-drawn by `tools/art/sources/narabete-art.py` (no model, no PixelLab).

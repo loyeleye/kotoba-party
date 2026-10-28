@@ -64,10 +64,10 @@ export function paintNeck(ctx: CanvasRenderingContext2D, path: Pt[]): void {
 /**
  * Narabete!'s ruler: her neck rises out of the collar at `collar`, runs level along `line` (the y the
  * cards hang from) and ends under her chin at `chin`. Between pegs it droops a little, as if the cards
- * pull it down; the droop is deepest halfway between two pegs. Returns the points, so the caller can
- * hang pegs and knots on the same pixels.
+ * pull it down; the droop is deepest halfway between two pegs, and `breath` (0 or 1) deepens it a pixel as she
+ * breathes. Returns the points, so the caller can hang pegs and knots on the same pixels.
  */
-export function rulerPoints(collar: Pt, chin: Pt, line: number, pegs: number[]): Pt[] {
+export function rulerPoints(collar: Pt, chin: Pt, line: number, pegs: number[], breath = 0): Pt[] {
   // Out of the collar and into the chin on short curves, so the ends meet her body and head at any height.
   const left = collar.x + 12;
   const right = chin.x - 12;
@@ -78,7 +78,7 @@ export function rulerPoints(collar: Pt, chin: Pt, line: number, pegs: number[]):
   for (let k = 1; k < stops.length; k++) {
     const a = stops[k - 1]!;
     const b = stops[k]!;
-    const sag = Math.min(3, (b - a) / 30);
+    const sag = Math.min(3, (b - a) / 30) + (b - a > 60 ? breath : 0);
     for (let x = a; x < b; x += 0.66) {
       const t = (x - a) / (b - a);
       mid.push({ x, y: line + 4 * sag * t * (1 - t) });
@@ -105,13 +105,13 @@ export const PEG = { w: 10, h: 17, spring: 7 };
  */
 export function drawRuler(
   ctx: CanvasRenderingContext2D,
-  r: { collar: Pt; chin: Pt; line: number; pegs: number[]; knots: Knot[] },
+  r: { collar: Pt; chin: Pt; line: number; pegs: number[]; knots: Knot[]; breath?: number },
   art: { knot: HTMLImageElement; peg: HTMLImageElement },
 ): void {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   // Level under each knot's straight tails too, so the sprite meets the neck with no step.
   const stops = [...r.pegs, ...r.knots.flatMap((k) => [k.x - KNOT.w / 2, k.x, k.x + KNOT.w / 2])].map(Math.round);
-  paintNeck(ctx, rulerPoints(r.collar, r.chin, r.line, stops));
+  paintNeck(ctx, rulerPoints(r.collar, r.chin, r.line, stops, r.breath));
   for (const k of r.knots) {
     ctx.drawImage(art.knot, k.frame * KNOT.w, 0, KNOT.w, KNOT.h, Math.round(k.x - KNOT.w / 2), r.line - KNOT.line, KNOT.w, KNOT.h);
   }

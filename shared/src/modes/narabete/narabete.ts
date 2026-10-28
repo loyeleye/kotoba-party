@@ -20,7 +20,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
+import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
 
 // ---- tuning ----
 
@@ -156,7 +156,7 @@ export interface LineCard {
   text: string | null;
   en: string | null;
   emoji: string | null;
-  /** Time Line: the card's picture (cardPicture), shown with `emoji` as its fallback. */
+  /** The card's picture (a Time Line card's, or a Feelings ready answer's), shown with `emoji` as its fallback. */
   picture?: string;
   said: boolean;
   locked: boolean;
@@ -177,6 +177,7 @@ export interface OfferView {
   text: string;
   en: string;
   emoji: string;
+  picture: string;
   romaji?: string;
 }
 
@@ -791,6 +792,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
               hidden: c.hidden,
             };
             if (tc && lineShown) card.picture = cardPicture(tc.id);
+            else if (ready && theme && lineShown && !c.hidden) card.picture = answerPicture(theme.id, c.said!.ready!);
             if (me && c.ownerId === me.id) card.mine = true;
             if (flipped && r.flip) {
               card.value = c.value;
@@ -824,7 +826,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
           c && theme && phase === 'answer'
             ? c.offers.map((i) => {
                 const a = theme.ready[i]!;
-                return { key: i, text: a.jp.text, en: a.jp.en, emoji: a.emoji, ...(romaji ? { romaji: toRomaji(a.jp.kana) } : {}) };
+                return { key: i, text: a.jp.text, en: a.jp.en, emoji: a.emoji, picture: answerPicture(theme.id, i), ...(romaji ? { romaji: toRomaji(a.jp.kana) } : {}) };
               })
             : [],
         frames: theme && phase === 'answer' ? theme.frames : [],

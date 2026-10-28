@@ -64,9 +64,9 @@ both the first and the last frame so a loop closes on the pose it started from, 
 | `{pon,chochin,fude,nobiko}-{cheer,oops}.png` | 8 × 128² | Once, when a host line has that mood, then back to idle |
 | `{pon,chochin,fude,nobiko}-talk.png` | 3 × 128² | Lip sync: closed, half open, open, shown one at a time while the host speaks |
 | `nobiko-peek.png` | 10 × 256×128 | Once, as players answer (`say_it_first`) and as answers are revealed (`reveal_react`): her neck stretches out over the speech bubble, has a look and springs back. Built by `tools/art/sources/nobiko-peek.py`, which cuts her portrait into head and body and redraws only the neck, so her face stays on model |
-| `nobiko-reach.png` | 2 × 128² | Not played: her body without its neck, and her mirrored head. `stage/src/reach.ts` draws her long reach from them on a canvas over the stage: when she invites the winner of an Omiai round to say it politely (`encore_invite`), her neck snakes all the way to the winning card (the one marked `.host-target`) and her head peers over its top edge |
+| `nobiko-reach.png` | 6 × 128² | Not played: her body without its neck, and her mirrored head (frames 2–5: wincing, blinking, mouth shut and half open, for Narabete!'s ruler). `stage/src/reach.ts` draws her long reach from them on a canvas over the stage: when she invites the winner of an Omiai round to say it politely (`encore_invite`), her neck snakes all the way to the winning card (the one marked `.host-target`) and her head peers over its top edge |
 | `nobiko-sway.png` | 8 × 6 × 128² | Looped over two beats while everyone sings a Karaoke Duel chorus line (`sway` in `stage/src/modes/karaokeDuel.ts`): her body stays put and her neck bends to carry her head left on the first beat and right on the second. Two rows per face (the second for blinks on random beats): her own face, a big smile for a good take, and a wry look for an N5 or N4 singer's missed or garbled one; the smile and the wry look are pasted from the cheer and oops sheets. Built by `tools/art/sources/nobiko-peek.py` from the same cut head and body, with the neck redrawn each frame |
-| `nobiko-knot.png` | 3 × 72×50 | Narabete!'s knots. `stage/src/neck.ts` draws Nobiko-san's neck as the ruler the cards hang from (`drawRuler`, on a canvas behind the cards, at 2 screen px per art px): out of her collar, level along the line with a little droop between pegs, and into her chin, painted with the same three passes as her sheets. At the flip a knot ties between each pair out of order: a loose loop, cinching, then tied with a 💢 cramp mark, 110 ms a frame (calm motion shows it tied). The loop hangs below the neck, so the cards above stay clear. Hand-drawn by `tools/art/sources/narabete-art.py` (no model), which also draws `stage/assets/fx/peg.png` (10×17), the clothes peg each card hangs from on a string in its player's colour |
+| `nobiko-knot.png` | 3 × 72×50 | Narabete!'s knots. `stage/src/neck.ts` draws Nobiko-san's neck as the ruler the cards hang from (`drawRuler`, on a canvas behind the cards, at 2 screen px per art px): out of her collar, level along the line with a little droop between pegs, and into her chin, painted with the same three passes as her sheets. At the flip a knot ties between each pair out of order: a loose loop, cinching, then tied with a 💢 cramp mark, 110 ms a frame (calm motion shows it tied). The loop hangs below the neck, so the cards above stay clear. As each knot pulls tight her head on the ruler winces (`nobiko-reach.png` frame 2) with a one-pixel shake. While the ruler is up her portrait's plate is empty, so the head stands in for it: it blinks every few seconds and mouths her lines in step with the portrait's lip sync, and the neck breathes (its droop between pegs deepens a pixel and lifts every 1.4 s). Calm motion holds all of it still. Hand-drawn by `tools/art/sources/narabete-art.py` (no model), which also draws `stage/assets/fx/peg.png` (10×17), the clothes peg each card hangs from on a string in its player's colour |
 | `yokai-{blob,lantern,umbrella,scroll}-hit.png` | 11 × 128² | Once when a yōkai is caught: 4 flinch frames, then the shared smoke puff; ends empty |
 | `yokai-boss-defeat.png` | 9 × 192² | Once when the boss is beaten; ends empty |
 
@@ -125,7 +125,14 @@ centres each picture on its visible pixels.
 The TV shows a card's picture at 2× (128 px) on a navy tile while the line is face down, 64 px with
 seven or more cards, and as a 64 px sticker in the corner once the card flips (five cards or fewer).
 The phone shows the dealt card's picture at 3× (192 px). A picture that fails to load falls back to
-the card's emoji. Feelings rounds have no pictures yet (their ready answers still use emoji).
+the card's emoji.
+
+`stage/assets/answers/` holds one 64² picture per Feelings ready answer (112, named by theme id and
+index, for example `smelly.0.png`; `answerPicture` in `cards.ts`), made the same way. 27 were redrawn
+by picking the best of several seeds; a few stay loose metaphors (Pon's tail, a used tissue). A
+card whose author used a ready answer shows its picture at 1× above the answer on the TV, and the
+phone shows each offered ready answer with its picture at 1×. Answers typed or said freely have no
+picture.
 
 ## Bento Haus
 
