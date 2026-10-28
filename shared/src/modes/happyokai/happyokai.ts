@@ -1049,6 +1049,9 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         if (t.chosen) return MOVE_OK;
         if (typeof raw.playerId !== 'string' || !t.asked.some((a) => a.playerId === raw.playerId)) return moveError('bad-move');
         t.chosen = raw.playerId;
+        // Chōchin-san reads the question out, so the whole room hears what the presenter is answering.
+        const q = t.asked.find((a) => a.playerId === raw.playerId)!;
+        ctx.cue({ host: 'chochin', event: 'happyokai_ask', slots: { name: ctx.player(q.playerId)?.name ?? '', question: q.text, question_kana: q.kana, question_en: q.en } });
         return MOVE_OK;
       }
       case 'grade': {

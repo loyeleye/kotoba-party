@@ -284,6 +284,9 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.happyokai_question.01', host: 'chochin', event: 'happyokai_question', jp: { text: 'しつもん タイムで ございます。どうぞ！', kana: 'しつもん タイムで ございます。どうぞ！', en: 'It is now question time. Go ahead!' }, status: 'draft' },
   { id: 'chochin.happyokai_question.02', host: 'chochin', event: 'happyokai_question', jp: { text: 'するどい しつもんを おねがい いたします。', kana: 'するどい しつもんを おねがい いたします。', en: 'A sharp question, if you please.' }, status: 'draft' },
   { id: 'chochin.happyokai_question.03', host: 'chochin', event: 'happyokai_question', jp: { text: 'みなさま、しつもんは ございますか？', kana: 'みなさま、しつもんは ございますか？', en: 'Does anyone have a question?' }, status: 'draft' },
+  // happyokai_ask
+  { id: 'chochin.happyokai_ask.01', host: 'chochin', event: 'happyokai_ask', jp: { text: '{name}さまからの しつもんです。「{question}」', kana: '{name}さまからの しつもんです。「{question}」', en: 'A question from {name}: "{question}"' }, slots: ['{name}', '{question}'], status: 'draft' },
+  { id: 'chochin.happyokai_ask.02', host: 'chochin', event: 'happyokai_ask', jp: { text: 'しつもんが まいりました。{name}さま より、「{question}」', kana: 'しつもんが まいりました。{name}さま より、「{question}」', en: 'A question has arrived. From {name}: "{question}"' }, slots: ['{name}', '{question}'], status: 'draft' },
   // happyokai_stall
   { id: 'chochin.happyokai_stall.01', host: 'chochin', event: 'happyokai_stall', jp: { text: 'でました！「いい しつもんですね」！　プロですね。', kana: 'でました！「いい しつもんですね」！　プロですね。', en: 'There it is! "Good question!" A true professional.' }, status: 'draft' },
   // happyokai_grade
