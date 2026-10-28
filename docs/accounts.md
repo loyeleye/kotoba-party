@@ -49,7 +49,7 @@ Decided by Ladi on 2026-10-28 (the Kana Raid saved-progress question in
 In the lobby and the recap a *Phrasebook* button sits beside *⚙ Settings*. It opens a panel (ことば帳)
 with a *Tonight* tab, every phrase from tonight's finished games (newest first, up to 300) with who
 said it (✓) and who should practise it (↻), and one tab per signed-in player with their 40 most recent
-saved phrases. It reads `GET /api/rooms/:code/phrasebook` with the stage token each time it opens and
+saved phrases. Each card carries its game's pixel icon, and a phrase someone missed gets a もう一回 stamp. It reads `GET /api/rooms/:code/phrasebook` with the stage token each time it opens and
 closes itself when a game starts. Watching screens don't show it. Tonight's list lives in the room
 (`GameState.tonight`), so it works for everyone, signed in or not.
 
