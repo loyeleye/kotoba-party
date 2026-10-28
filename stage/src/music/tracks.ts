@@ -55,6 +55,9 @@ export const TRACK_IDS = [
   'sleepless-coffee',
   'where-were-you-1',
   'where-were-you-2',
+  // Dub Club's episode: an AI-made cheap anime opening and ending (Mureka).
+  'dub-opening',
+  'dub-ending',
 ] as const;
 export type TrackId = (typeof TRACK_IDS)[number];
 
@@ -173,6 +176,10 @@ export const TRACKS: Record<TrackId, Track> = {
   'self-intro-questions': { title: 'Self-Intro Rap (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('self-intro-questions'), gainDb: -0.1, fallback: 'gentle' },
   // Sparkle Idol: two AI-made idol-pop backings (Mureka, 2026-10-27), one per version of the song.
   // Each file is already the song's bars in order: version A at exactly 128 bpm in A major, B at 129 bpm in D major.
+  // Dub Club (Mureka, 2026-10-28): the opening under the title card, the ending ballad under the
+  // credits. Cut from bar 1 to a whole number of bars at 152 bpm, faded out; they play once, then loop.
+  'dub-opening': { title: 'Afureko Opening', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('dub-opening'), gainDb: -4.8, fallback: 'anime-op' },
+  'dub-ending': { title: 'Afureko Ending', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('dub-ending'), gainDb: -3.1, fallback: 'anime-end' },
   'sparkle-idol-1': { title: 'Sparkle Idol (version A)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('sparkle-idol-1'), gainDb: 0.8, fallback: 'festive' },
   'sparkle-idol-2': { title: 'Sparkle Idol (version B)', author: 'Mureka AI', licence: 'Mureka', source: MUREKA, url: file('sparkle-idol-2'), gainDb: -0.8, fallback: 'festive' },
   // Sleepless Night: two AI-made R&B backings (Mureka, 2026-10-27), one per version of the song.

@@ -69,11 +69,11 @@ it. See [speech.md](../speech.md#dub-clubs-kept-clips) and commercial-blockers r
 
 ## Music and sound
 
-The music panel's rules (stage/src/music/cues.ts `dubCue`): the ident, then the original
-synth anime opening (`anime-op`); the scene card under the listening mix so the table read is heard;
+The music panel's rules (stage/src/music/cues.ts `dubCue`): the ident, then the anime
+opening (`dub-opening`, made with Mureka; the synth `anime-op` if it can't load); the scene card under the listening mix so the table read is heard;
 **silence** while phones record and while dubs play (a voice over music is mush on a TV speaker); the
 tally tune for cast notes; in the episode, the opening under the title, nothing under each dub, the
-`eyecatch` jingle on つづく, and the `anime-end` ballad over the credits. No recap fanfare after it: the
+`eyecatch` jingle on つづく, and the ending ballad (`dub-ending`, Mureka; synth `anime-end` as fallback) over the credits. No recap fanfare after it: the
 episode was the ending. Clips are levelled on the TV (to one loudness, clamped −6…+15 dB, so a whisper
 stays quieter than a shout), high-passed at 100 Hz, and played on their own voices bus through the
 master limiter. Fude never talks over a dub (`hostHoldMs`).
