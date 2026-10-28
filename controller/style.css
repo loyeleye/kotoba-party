@@ -92,6 +92,8 @@ button { font: inherit; cursor: pointer; }
 .error { color: var(--warn); min-height: 1.4em; margin: 0; }
 .me { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 15px; padding-right: 56px; margin-bottom: 16px; }
 .me .vip { color: var(--warn); }
+.me .tonight { color: var(--warn); font-family: var(--font-pixel); font-weight: 700; }
+.party { margin: 0 0 12px; text-align: center; color: var(--warn); font-weight: 700; }
 .me .score { margin-left: auto; color: var(--ink); font-family: var(--font-pixel); font-weight: 700; font-size: 18px; }
 /* In a game the header is a band in the mode's colour, with its host. */
 .me-band { position: relative; display: flex; align-items: center; gap: 10px; margin: 0 -16px 18px; padding: 6px 72px 6px 12px; background: var(--mode); color: var(--on-accent); border-bottom: 3px solid var(--outline); }

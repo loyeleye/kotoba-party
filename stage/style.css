@@ -287,6 +287,9 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 @keyframes step-in { from { opacity: 0; transform: translateY(60px); } }
 @keyframes crown { to { transform: translateY(-8px) rotate(-6deg); } }
 .rest { margin: 0; font-size: 30px; color: var(--muted); }
+.party-label { color: var(--gold, var(--accent)); font-weight: 700; }
+.party-earned { color: var(--good); font-weight: 700; }
+.tonight { color: var(--gold, var(--accent)); }
 .rest strong { color: var(--ink); }
 .awards { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
 .award-card { width: 420px; background: var(--panel); border: 3px solid var(--gold); border-radius: 6px; box-shadow: 6px 6px 0 var(--lantern); padding: 14px 20px; display: grid; justify-items: center; gap: 4px; animation: step-in 600ms var(--ease-pop) both; }

@@ -309,6 +309,7 @@ function render(view: RoomView): void {
     h('span', { class: `seat-badge seat-${me.seat}`, 'aria-label': `seat ${me.seat}` }, `${seatShape(me.seat)}${me.seat}`),
     h('span', {}, `${me.name} · ${LEVEL_LABELS[me.level]}`),
     isVip ? h('span', { class: 'vip' }, '★ VIP') : null,
+    !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
   );
   mount(app, band, header, screenFor(view, me, isVip));
@@ -599,6 +600,7 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
           h('span', { class: 'place-label' }, tied ? 'tied' : place === 1 ? 'Tonight’s winner!' : 'place'),
         )
       : h('p', { class: 'big' }, i >= 0 ? 'No points this time. Next game!' : 'Game over'),
+    i >= 0 && standings[i]!.total ? h('p', { class: 'party' }, standings[i]!.earned ? `★ +${standings[i]!.earned} party points · ${standings[i]!.total} tonight` : `★ ${standings[i]!.total} party points tonight`) : null,
     h(
       'ol',
       { class: 'recap-list' },

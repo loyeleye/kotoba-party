@@ -18,6 +18,8 @@ export interface PlayerState {
   level: Level;
   connected: boolean;
   score: number;
+  /** Party points across the night: earned by where they finished each game (see PARTY_POINTS). */
+  total: number;
   mic: 'ok' | 'quiet' | null;
 }
 
@@ -38,7 +40,7 @@ export interface GameState {
   /** Host cues raised by the last action; the server drains them after each dispatch. */
   cues: HostCue[];
   phrasebook: Record<string, PhraseEntry[]>;
-  recap: { standings: { playerId: string; name: string; score: number }[]; awards: Award[]; coop?: boolean } | null;
+  recap: { standings: { playerId: string; name: string; score: number; earned: number; total: number }[]; awards: Award[]; coop?: boolean } | null;
   /** Watching stage screens may run the game too (start, skip, play again). */
   remoteControl: boolean;
   /** The host's Audience setting: kids, family (default) or cheeky. Kept across games. */
@@ -163,7 +165,7 @@ function applyOne(state: GameState, action: GameAction, ctx: GameContext): Outco
       const err = canJoin(state, name);
       if (err) return fail(err);
       const level = isLevel(action.level) ? action.level : 'n5';
-      state.players.push({ id: action.playerId, name, seat: lowestFreeSeat(state), level, connected: false, score: 0, mic: null });
+      state.players.push({ id: action.playerId, name, seat: lowestFreeSeat(state), level, connected: false, score: 0, total: 0, mic: null });
       state.players.sort((a, b) => a.seat - b.seat);
       state.vipId ??= action.playerId;
       return OK;
@@ -351,10 +353,14 @@ function finish(state: GameState, ctx: GameContext): void {
   state.phaseSeq += 1;
   state.deadline = null;
   state.host = null;
+  const ranked = [...state.players].sort((a, b) => b.score - a.score || a.seat - b.seat);
+  const coop = !!mode?.info.coop;
   state.recap = {
-    standings: [...state.players]
-      .sort((a, b) => b.score - a.score || a.seat - b.seat)
-      .map((p) => ({ playerId: p.id, name: p.name, score: p.score })),
+    standings: ranked.map((p) => {
+      const earned = partyPoints(p.score, ranked.filter((o) => o.score > p.score).length + 1, coop);
+      p.total += earned;
+      return { playerId: p.id, name: p.name, score: p.score, earned, total: p.total };
+    }),
     awards: mode?.awards?.(state.modeState, modeContext(state, ctx)) ?? [],
     ...(mode?.info.coop ? { coop: true } : {}),
   };
@@ -379,6 +385,19 @@ function resetToLobby(state: GameState): void {
   state.host = null;
   state.recap = null;
   state.beforeGame = null;
+}
+
+/**
+ * Every game scores on its own scale (hundreds in Kana Raid, a handful in Oogiri), so the night's
+ * running total counts places, not points: 1st 5, 2nd 3, 3rd 2, anyone else who scored 1. Ties
+ * share the place. A team game is won or lost together, so everyone gets the same.
+ */
+export const PARTY_POINTS = { places: [5, 3, 2], scored: 1, coop: 2 } as const;
+
+export function partyPoints(score: number, place: number, coop: boolean): number {
+  if (coop) return PARTY_POINTS.coop;
+  if (score <= 0) return 0;
+  return PARTY_POINTS.places[place - 1] ?? PARTY_POINTS.scored;
 }
 
 function lowestFreeSeat(state: GameState): number {

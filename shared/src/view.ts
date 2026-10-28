@@ -36,6 +36,7 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
       connected: p.connected,
       isVip: p.id === state.vipId,
       score: p.score,
+      total: p.total,
       mic: p.mic,
     })),
     host: state.host,
