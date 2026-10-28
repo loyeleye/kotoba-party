@@ -117,6 +117,11 @@ describe('host moods', () => {
     expect(moodFor({ host: 'nobiko', event: 'reveal_react', tier: 'ippon' })).toBe('cheer');
     expect(moodFor({ host: 'pon', event: 'reveal_react', tier: 'good' })).toBeUndefined();
   });
+
+  it('sends Nobiko-san’s neck all the way to the winning answer when she invites its author', () => {
+    expect(moodFor({ host: 'nobiko', event: 'encore_invite' })).toBe('reach');
+    expect(moodFor({ host: 'pon', event: 'encore_invite' })).toBeUndefined();
+  });
 });
 
 describe('lip sync on the stage', () => {

@@ -6,6 +6,7 @@
 
 import { h } from '../../shared/src/dom.js';
 import type { HostMood, HostSay } from '../../shared/src/protocol.js';
+import { preloadReach, reach } from './reach.js';
 
 export interface Sheet {
   src: string;
@@ -17,12 +18,14 @@ export interface Sheet {
 }
 
 const ANIM = '/stage/assets/anim';
-export const hostSheet = (host: string, kind: 'idle' | HostMood): Sheet =>
+/** The moods drawn from a sheet; Nobiko-san's `reach` is drawn live (reach.ts). */
+type SheetKind = 'idle' | Exclude<HostMood, 'reach'>;
+export const hostSheet = (host: string, kind: SheetKind): Sheet =>
   kind === 'peek'
     ? { src: `${ANIM}/${host}-peek.png`, frames: 10, ms: 1800, wide: 2 }
     : { src: `${ANIM}/${host}-${kind}.png`, frames: 8, ms: kind === 'idle' ? 1600 : 900 };
 /** Each host's sheets. Only Nobiko-san has the peek: her neck stretches out over the speech bubble (tools/art/sources/nobiko-peek.py). */
-const hostKinds = (host: string): ('idle' | HostMood)[] => (host === 'nobiko' ? ['idle', 'cheer', 'oops', 'peek'] : ['idle', 'cheer', 'oops']);
+const hostKinds = (host: string): SheetKind[] => (host === 'nobiko' ? ['idle', 'cheer', 'oops', 'peek'] : ['idle', 'cheer', 'oops']);
 /** Lip sync: three mouth shapes, closed, half open, wide open. Shown one at a time, not played. */
 export const talkSheet = (host: string): Sheet => ({ src: `${ANIM}/${host}-talk.png`, frames: 3, ms: 0 });
 /** A caught yōkai: its flinch, then the shared smoke puff (tools/art/polish.ts), at 10 frames a second. */
@@ -131,6 +134,7 @@ export class HostSprite {
       this.host = host;
       // Start loading this host's sheets now, so each is ready before it's first shown.
       for (const k of hostKinds(host)) this.sheetImg(hostSheet(host, k).src);
+      if (host === 'nobiko') preloadReach();
       this.sheetImg(talkSheet(host).src);
       this.el.classList.remove('enter');
       void this.el.offsetWidth;
@@ -203,12 +207,27 @@ export class HostSprite {
     if (this.kind === 'idle') this.play('idle', true);
   }
 
+  /** Stops Nobiko-san's reach early, while it plays. */
+  private stopReach: (() => void) | null = null;
+
   private play(kind: 'idle' | HostMood, wait: boolean): void {
     if (this.idleTimer !== null) clearTimeout(this.idleTimer);
     this.idleTimer = null;
+    this.stopReach?.();
+    this.stopReach = null;
     if (this.talking) {
       this.talking = false;
       this.img.style.transform = '';
+    }
+    if (kind === 'reach') {
+      // Her neck goes all the way to the marked card; with none on screen she just idles.
+      this.kind = 'reach';
+      this.stopReach = reach(this.el, this.size, () => {
+        this.stopReach = null;
+        this.play('idle', true);
+      });
+      if (!this.stopReach) this.play('idle', true);
+      return;
     }
     this.kind = kind;
     const sheet = hostSheet(this.host, kind);
@@ -232,7 +251,7 @@ export class HostSprite {
 
   private ended(): void {
     this.img.classList.remove('run');
-    if (this.talking) return;
+    if (this.talking || this.kind === 'reach') return;
     if (this.kind !== 'idle') this.play('idle', true);
     else this.later();
   }

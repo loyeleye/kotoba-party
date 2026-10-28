@@ -129,7 +129,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   the 17 animation sheets in `stage/assets/anim/` (host idle, cheer and oops loops; yōkai hit and
   boss defeat; Nobiko-san's three added 2026-10-27), made by PixelLab's `animate-with-text-v3` endpoint from our own host and yōkai
   sprites as the first and last frame, and the smoke puff in `stage/assets/fx/`. The four lip-sync
-  mouth sheets are edited from our own host portraits by `tools/art/polish.ts`, and Nobiko-san's neck-stretch sheet (2026-10-28) is cut from her portrait by `tools/art/sources/nobiko-peek.py` with a hand-drawn neck (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon
+  mouth sheets are edited from our own host portraits by `tools/art/polish.ts`, and Nobiko-san's neck-stretch sheet (2026-10-28) is cut from her portrait by `tools/art/sources/nobiko-peek.py` with a hand-drawn neck, as are the body and head the stage draws her long reach from (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon
   comes from its `image-to-pixelart` endpoint (see row 7). Nobiko-san (2026-10-27) is `pixflux` with
   an `init_image`: a layout sketch (`tools/art/sources/nobiko-sketch.png`, made by
   `nobiko-sketch.py`) cut and rearranged from another of our own `pixflux` outputs with a hand-drawn

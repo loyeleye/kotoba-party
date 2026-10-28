@@ -181,6 +181,8 @@ and the invitation) · `natural_version` (the stock answer).
 
 On `say_it_first` and `reveal_react` she stretches her neck out over the speech bubble to have a look
 (the `peek` mood, only hers; `server/src/host.ts`).
+On `encore_invite` her neck goes all the way to the winning answer's card and she peers over its top
+edge (the `reach` mood, `stage/src/reach.ts`): praise, not mockery, and only once the answer has been read.
 
 ### Awards (draft titles)
 

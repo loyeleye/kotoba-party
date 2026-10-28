@@ -1,6 +1,7 @@
 # Builds stage/assets/anim/nobiko-peek.png, Nobiko-san's nosy peek: her neck stretches out to the right
 # (over the speech bubble, towards the answers), holds for a look, and springs back.
-# Usage: python3 tools/art/sources/nobiko-peek.py stage/assets/hosts/nobiko.png stage/assets/anim/nobiko-peek.png
+# Usage: python3 tools/art/sources/nobiko-peek.py stage/assets/hosts/nobiko.png stage/assets/anim/nobiko-peek.png \
+#   stage/assets/anim/nobiko-reach.png
 #
 # Unlike the other sheets this one isn't PixelLab: it cuts her portrait into head and body, keeps both exactly
 # as drawn, and redraws only the neck between them, so the head stays on model in every frame. Frames are
@@ -82,3 +83,11 @@ for i, (dx, dy, flip) in enumerate(OFFSETS):
     else: f.alpha_composite(glance(head, k), (dx, dy))
     sheet.alpha_composite(f, (i * W, 0))
 sheet.save(sys.argv[2])
+
+# The long reach (stage/src/reach.ts) draws her neck live, so it takes her parts on their own: frame 0 is the
+# body without its neck, frame 1 the mirrored head glancing right. The neck meets the head at (60, 63), under the left of the jaw so it never pokes out past the chin.
+if len(sys.argv) > 3:
+    parts = Image.new('RGBA', (256, 128))
+    parts.alpha_composite(body)
+    parts.alpha_composite(glance(FLIPPED, 2, FLIPPED_EYES), (128, 0))
+    parts.save(sys.argv[3])

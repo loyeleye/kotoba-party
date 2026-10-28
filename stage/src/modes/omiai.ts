@@ -63,7 +63,7 @@ function answerCard(view: RoomView, a: AnswerCard, i: number): HTMLElement {
   const shown = a.authorId !== undefined;
   return h(
     'li',
-    { class: `omi-answer${a.winner ? ' omi-win' : ''}${a.hidden ? ' omi-hidden' : ''}`, style: `animation-delay: ${Math.min(i, 8) * 120}ms` },
+    { class: `omi-answer${a.winner ? ' omi-win host-target' : ''}${a.hidden ? ' omi-hidden' : ''}`, style: `animation-delay: ${Math.min(i, 8) * 120}ms` },
     h('p', { class: 'omi-answer-jp', lang: 'ja' }, a.text),
     shown
       ? h(
