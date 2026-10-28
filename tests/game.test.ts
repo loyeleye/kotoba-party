@@ -210,6 +210,19 @@ describe('views', () => {
     expect(s.cues.map((c) => c.event)).toEqual(['mic_check_ok', 'mic_check_quiet']);
   });
 
+  it('only the "can’t talk" tap turns quiet mode on: a typed or misheard check keeps the mic, and null turns it back on', () => {
+    const s = lobby(2);
+    expect(cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'typed', text: 'hello' } }).error).toBe('not-konnichiwa');
+    expect(cmd(s, as('p2'), { type: 'micCheck', utterance: { via: 'speech', text: 'こんばんは' } }).error).toBe('not-konnichiwa');
+    expect(s.players.map((p) => p.mic)).toEqual([null, null]);
+    expect(s.cues).toEqual([]);
+    cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'tap', text: '' } });
+    expect(s.players[0]!.mic).toBe('quiet');
+    expect(cmd(s, as('p1'), { type: 'micCheck', utterance: null }).changed).toBe(true);
+    expect(s.players[0]!.mic).toBe(null);
+    expect(cmd(s, as('p1'), { type: 'micCheck', utterance: 42 }).error).toBe('bad-command');
+  });
+
   it('refuses a mode the room is too small for', () => {
     const s = lobby(2);
     expect(cmd(s, stage, { type: 'start', mode: 'oogiri' }).error).toBe('not-enough-players');

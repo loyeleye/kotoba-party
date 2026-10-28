@@ -257,6 +257,7 @@ button .say-sub { font-size: 12px; }
 .mic-check { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--line); border-radius: 14px; }
 .mic-check .big { margin: 0; }
 .mic { margin: 0; color: var(--muted); }
+.mic-quiet { display: grid; gap: 4px; justify-items: start; }
 .mic.ok { color: var(--good); }
 .linkish { background: none; border: 0; color: var(--muted); text-decoration: underline; padding: 6px; min-height: 44px; }
 

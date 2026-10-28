@@ -33,6 +33,7 @@ const ERRORS: Record<string, string> = {
   'own-answer': 'You can’t vote for your own answer.',
   'not-your-turn': 'It’s not your turn yet.',
   'empty-answer': 'Type or say something first.',
+  'not-konnichiwa': 'That didn’t sound like こんにちは. Try again!',
   'too-long': 'That’s too long. Keep it short.',
   'say-it-first': 'Try saying it first. The tiles open in a moment.',
   'japanese-only': 'This round is Japanese only.',
@@ -428,7 +429,14 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
 
 function micCheck(me: PlayerView): HTMLElement {
   if (me.mic === 'ok') return h('p', { class: 'mic ok' }, '🎤 Mic check passed. よろしく！');
-  if (me.mic === 'quiet') return h('p', { class: 'mic' }, '⌨️ Quiet mode: you’ll tap and type. (You can still talk any time.)');
+  if (me.mic === 'quiet') {
+    return h(
+      'div',
+      { class: 'mic-quiet' },
+      h('p', { class: 'mic' }, '⌨️ Quiet mode: you’ll tap and type.'),
+      h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'micCheck', utterance: null }) }, '🎤 Use my mic after all'),
+    );
+  }
   return h(
     'div',
     { class: 'mic-check' },
@@ -438,6 +446,8 @@ function micCheck(me: PlayerView): HTMLElement {
     speakBox({
       label: 'Hold and say こんにちは',
       placeholder: 'こんにちは',
+      // The check is for the mic, so no typed box beside it (speakBox still shows one when there's no mic to check).
+      speechOnly: true,
       onSend: (utterance) => void command({ type: 'micCheck', utterance }),
     }),
     h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'micCheck', utterance: { via: 'tap', text: '' } }) }, 'I can’t talk right now'),
