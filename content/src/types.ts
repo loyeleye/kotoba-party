@@ -405,7 +405,7 @@ export interface OnsenCase {
 // ---------------------------------------------------------------------------
 // Hosts
 
-export type HostId = 'pon' | 'chochin' | 'fude';
+export type HostId = 'pon' | 'chochin' | 'fude' | 'nobiko';
 
 export interface HostProfile {
   id: HostId;

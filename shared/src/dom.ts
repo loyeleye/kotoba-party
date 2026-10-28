@@ -255,7 +255,7 @@ export const seatShape = (seat: number): string => SEAT_SHAPES[(seat - 1) % SEAT
 
 export const LEVEL_LABELS: Record<string, string> = { kana: 'かな', n5: 'N5', n4: 'N4' };
 
-export const HOST_NAMES: Record<string, string> = { pon: 'ポン', chochin: 'ちょうちんさん', fude: 'フデ' };
+export const HOST_NAMES: Record<string, string> = { pon: 'ポン', chochin: 'ちょうちんさん', fude: 'フデ', nobiko: 'のびこさん' };
 
 // ---- reveal pacing ----
 

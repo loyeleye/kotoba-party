@@ -123,6 +123,7 @@ export class VoicevoxTts implements TtsEngine {
       pon: opts.hosts?.pon ?? HOSTS.pon.voice,
       chochin: opts.hosts?.chochin ?? HOSTS.chochin.voice,
       fude: opts.hosts?.fude ?? HOSTS.fude.voice,
+      nobiko: opts.hosts?.nobiko ?? HOSTS.nobiko.voice,
     };
     this.log = opts.logger ?? silentLogger;
   }

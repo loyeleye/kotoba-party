@@ -26,12 +26,12 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 | # | Item | Where | Status | What it takes to sell |
 | --- | --- | --- | --- | --- |
-| 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms |
+| 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, No.7, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms |
 | 2 | VOICEVOX engine | Docker image, separate service | 🟡 | Run unmodified as a service; LGPL/core terms if ever bundled into a download |
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 14 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 17 host and yōkai animation sheets and a smoke-puff effect) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
 | 7 | AI art: Gemini (source image for Pon) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
@@ -62,7 +62,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 ### 1. VOICEVOX voices
 
 - **What:** Each host is a VOICEVOX character voice. Pon = 白上虎太郎 (fallback 玄野武宏), Chōchin-san =
-  ちび式じい (fallback 冥鳴ひまり), Fude = 春日部つむぎ. Auditioned but not chosen: 青山龍星, ユーレイちゃん,
+  ちび式じい (fallback 冥鳴ひまり), Fude = 春日部つむぎ, Nobiko-san = No.7 (fallback 九州そら, added
+  2026-10-27). No.7's and 九州そら's terms pages (voicevox.hiroshiba.jp/product/no7/ and the
+  character's own site) were unreachable from the session that added them on 2026-10-27, so their
+  terms are unread ❓, like the others'. Auditioned but not chosen: 青山龍星, ユーレイちゃん,
   ずんだもん, 四国めたん.
 - **Terms:** The short policies the engine reports (`/speaker_info`, read 2026-10-26 by the AI thread)
   allow commercial and non-commercial use if the credit `VOICEVOX:<name>` is shown. Each character also
@@ -118,16 +121,19 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 ### 6. AI art from PixelLab
 
-- **What:** Everything on the stage: the three host portraits, five yōkai sprites, the backdrop sets,
+- **What:** Everything on the stage: the four host portraits, five yōkai sprites, the backdrop sets,
   the 24 Photo Caption pictures, and (since 2026-10-26) 31 icons in `stage/assets/icons/` (places,
   scenes, Onsen victims and evidence, Last Train, trophy) plus the 42 character portraits in
   `stage/assets/portraits/onsen/` and `portraits/omiai/` (two expressions each) that replaced emoji in
   Murder at the Onsen, Omiai Matchmaker, Who's the Tourist? and Phrase Bingo. Since 2026-10-26 also
-  the 14 animation sheets in `stage/assets/anim/` (host idle, cheer and oops loops; yōkai hit and
-  boss defeat), made by PixelLab's `animate-with-text-v3` endpoint from our own host and yōkai
-  sprites as the first and last frame, and the smoke puff in `stage/assets/fx/`. The three lip-sync
+  the 17 animation sheets in `stage/assets/anim/` (host idle, cheer and oops loops; yōkai hit and
+  boss defeat; Nobiko-san's three added 2026-10-27), made by PixelLab's `animate-with-text-v3` endpoint from our own host and yōkai
+  sprites as the first and last frame, and the smoke puff in `stage/assets/fx/`. The four lip-sync
   mouth sheets are edited from our own host portraits by `tools/art/polish.ts` (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon
-  comes from its `image-to-pixelart` endpoint (see row 7). Prompts, sources and params are
+  comes from its `image-to-pixelart` endpoint (see row 7). Nobiko-san (2026-10-27) is `pixflux` with
+  an `init_image`: a layout sketch (`tools/art/sources/nobiko-sketch.png`, made by
+  `nobiko-sketch.py`) cut and rearranged from another of our own `pixflux` outputs with a hand-drawn
+  neck, so she traces back only to PixelLab and our own edits. Prompts, sources and params are
   recorded in `stage/assets/manifest.json` and `tools/generate-caption-art.ts`.
   Since 2026-10-27 the stage draws one of six sets from `stage/assets/scenes/`
   ([graphics.md](graphics.md#backdrop)): the studio, comedy stage, karaoke box, onsen inn, tea room

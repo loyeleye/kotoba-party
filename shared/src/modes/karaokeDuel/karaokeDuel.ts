@@ -526,8 +526,8 @@ function settleRound(s: KaraokeState, ctx: ModeContext): void {
 
   const winner = winners.length === 1 ? ctx.player(winners[0]!) : undefined;
   const avg = winner ? s.takes.filter((t) => t.playerId === winner.id).reduce((n, t) => n + t.score.quality, 0) / Math.max(1, s.takes.filter((t) => t.playerId === winner.id).length) : 0;
-  if (winner && avg >= 45) ctx.cue({ host: 'chochin', event: 'reveal_react', tier: avg >= 85 ? 'ippon' : 'good', slots: { name: winner.name } });
-  else ctx.cue({ host: 'chochin', event: 'miss_kind' });
+  if (winner && avg >= 45) ctx.cue({ host: 'nobiko', event: 'reveal_react', tier: avg >= 85 ? 'ippon' : 'good', slots: { name: winner.name } });
+  else ctx.cue({ host: 'nobiko', event: 'miss_kind' });
 }
 
 // ---- the mode ----
@@ -538,7 +538,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     title: 'Karaoke Duel',
     titleJa: 'カラオケ対決',
     blurb: 'Sing short Japanese songs head to head. Words, tune and timing all count.',
-    host: 'chochin',
+    host: 'nobiko',
     minPlayers: 2,
     maxPlayers: 8,
     roundChoices: [4, 2, 6],
@@ -624,9 +624,9 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
           }
           s.lastPair = [s.duel.a, s.duel.b].sort().join('|');
         }
-        // Chōchin-san hands the first singer the mic (his bank has no song lines yet: see the doc).
+        // Nobiko-san hands the first singer the mic (her bank has no song lines yet: see the doc).
         const first = s.turns[0] ? ctx.player(s.turns[0].singerId) : undefined;
-        if (song && first) ctx.cue({ host: 'chochin', event: 'encore_invite', slots: { name: first.name }, prompt: { text: song.title.text, kana: song.title.kana, en: song.title.en } });
+        if (song && first) ctx.cue({ host: 'nobiko', event: 'encore_invite', slots: { name: first.name }, prompt: { text: song.title.text, kana: song.title.kana, en: song.title.en } });
         break;
       }
       case 'answer': {
@@ -645,7 +645,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
       }
       case 'reveal':
         markMissing(s, ctx);
-        ctx.cue({ host: 'chochin', event: 'encore_cheer' });
+        ctx.cue({ host: 'nobiko', event: 'encore_cheer' });
         break;
       case 'score': {
         markMissing(s, ctx);

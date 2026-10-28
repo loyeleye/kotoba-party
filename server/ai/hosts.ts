@@ -1,4 +1,4 @@
-// The three hosts: who they are (for the LLM) and how they sound (for the TTS).
+// The four hosts: who they are (for the LLM) and how they sound (for the TTS).
 // Personas follow the design doc's Cast and tone section and the content thread's host profiles
 // (content/src/hosts/profiles.ts). Voices are VOICEVOX character voices, picked by
 // speaker name and style rather than numeric id, because ids differ between engine versions and voice packs.
@@ -109,5 +109,30 @@ export const HOSTS: Record<HostId, HostPersona> = {
       volumeScale: 1,
     },
     credit: 'VOICEVOX:春日部つむぎ',
+  },
+  nobiko: {
+    id: 'nobiko',
+    name: 'Nobiko-san',
+    nameKana: 'のびこさん',
+    persona:
+      'Nobiko-san is a rokurokubi (a long-necked yōkai) and the nosy, warm-hearted matchmaking auntie of the show; she hosts Omiai Matchmaker and Karaoke Duel. ' +
+      'She talks like a chatty おばちゃん (あらまあ, 〜わよ, 〜わね), is delighted by everyone, sizes up every answer as marriage material, ' +
+      "and is never unkind about anyone's Japanese.",
+    gags: [
+      'Her neck stretches across the stage (にゅーっ！) to eavesdrop on answers, and shrinks or tangles when one flops.',
+      'Her husband is a living kotatsu who never leaves the house (うちの だんなは… ねてる). Jokes about him are fond, never cruel.',
+      'Matchmakes everyone (おにあいね！) and keeps a matchmaking photo album she threatens to put good answers in.',
+    ],
+    voice: {
+      voices: [
+        { speaker: 'No.7', style: 'ノーマル', tierStyle: { ippon: 'アナウンス' } },
+        { speaker: '九州そら', style: 'あまあま' },
+      ],
+      speedScale: 1.05,
+      pitchScale: 0,
+      intonationScale: 1.35,
+      volumeScale: 1,
+    },
+    credit: 'VOICEVOX:No.7',
   },
 };

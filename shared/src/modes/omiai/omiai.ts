@@ -1,12 +1,12 @@
 // Omiai Matchmaker (おみあい マッチメーカー): a formal "meet the family" introduction show,
-// scored on politeness. Host: Pon, as the matchmaker (なこうど). See docs/modes/omiai.md.
+// scored on politeness. Host: Nobiko-san, as the matchmaker (なこうど). See docs/modes/omiai.md.
 //
 // One guest per game (a character card: a kappa cucumber farmer, a retired robot vacuum …).
 // Each round the guest asks everyone one question, and everyone answers in Japanese:
 //   prompt  the guest asks (N4 players hear the keigo version)
 //   answer  say it first (N5/N4, 5 s), then answer tiles appear: polite and casual endings side
 //           by side, so even a tile answer is a register choice. Speak, type or tap.
-//   reveal  Pon reads every answer anonymously; everyone votes for the most charming one
+//   reveal  Nobiko-san reads every answer anonymously; everyone votes for the most charming one
 //   encore  authors and manners meters revealed; the guest reacts to each register. Every phone
 //           privately shows a more polite version of its own answer; say it for a bonus
 //   score   points, and the winning answer's polite version on the stage
@@ -442,8 +442,8 @@ function scoreRound(s: OmiaiState, ctx: ModeContext): void {
   const star = r.result.find((l) => l.winner);
   const winner = star ? answers.find((a) => a.id === star.answerId) : undefined;
   const q = r.question.ask.n5;
-  if (winner) ctx.cue({ host: 'pon', event: 'encore_invite', slots: { name: ctx.player(winner.authorId)?.name ?? '' }, prompt: { text: q.text, kana: q.kana, en: q.en }, answer: winner.text });
-  else ctx.cue({ host: 'pon', event: 'miss_kind' });
+  if (winner) ctx.cue({ host: 'nobiko', event: 'encore_invite', slots: { name: ctx.player(winner.authorId)?.name ?? '' }, prompt: { text: q.text, kana: q.kana, en: q.en }, answer: winner.text });
+  else ctx.cue({ host: 'nobiko', event: 'miss_kind' });
 }
 
 /** Encore bonuses, paid as the score phase starts; and the phrasebook. */
@@ -481,7 +481,7 @@ function decide(s: OmiaiState, ctx: ModeContext): void {
   const pickIdx = Math.floor(ctx.random() * finalists.length);
   s.accepted = finalists[pickIdx]!.playerId;
   pay(ctx, s.accepted, ACCEPT_POINTS);
-  ctx.cue({ host: 'pon', event: 'encore_cheer', slots: { name: ctx.player(s.accepted)?.name ?? '' } });
+  ctx.cue({ host: 'nobiko', event: 'encore_cheer', slots: { name: ctx.player(s.accepted)?.name ?? '' } });
 }
 
 function rankHearts(s: OmiaiState, ctx: ModeContext): { playerId: string; hearts: number }[] {
@@ -506,7 +506,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     title: 'Omiai Matchmaker',
     titleJa: 'おみあい マッチメーカー',
     blurb: 'Meet a very formal guest. Answer their questions politely, vote for the most charming, and see who gets invited to tea.',
-    host: 'pon',
+    host: 'nobiko',
     minPlayers: 2,
     maxPlayers: 8,
     roundChoices: [TOTAL_ROUNDS, 5, 3],
@@ -554,15 +554,18 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
   enter(s, phase, ctx) {
     s.phaseAt = ctx.now;
     switch (phase) {
+      case 'intro':
+        ctx.cue({ host: 'nobiko', event: 'intro' });
+        break;
       case 'prompt': {
         startRound(s, ctx);
         const q = s.current!.question.ask.n5;
-        ctx.cue({ host: 'pon', event: 'prompt_read', prompt: { text: q.text, kana: q.kana, en: q.en } });
+        ctx.cue({ host: 'nobiko', event: 'prompt_read', prompt: { text: q.text, kana: q.kana, en: q.en } });
         break;
       }
       case 'answer':
         for (const slot of Object.values(s.current?.slots ?? {})) slot.openedAt = ctx.now;
-        if (ctx.players().some((p) => p.level !== 'kana')) ctx.cue({ host: 'pon', event: 'say_it_first' });
+        if (ctx.players().some((p) => p.level !== 'kana')) ctx.cue({ host: 'nobiko', event: 'say_it_first' });
         break;
       case 'reveal': {
         const r = s.current!;
@@ -572,7 +575,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         );
         const shown = visible(r).sort(byOrder(r));
         const q = r.question.ask.n5;
-        ctx.cue({ host: 'pon', event: 'reveal_react', tier: 'good', prompt: { text: q.text, kana: q.kana, en: q.en }, answer: shown.map((a) => a.text).join(' / ') });
+        ctx.cue({ host: 'nobiko', event: 'reveal_react', tier: 'good', prompt: { text: q.text, kana: q.kana, en: q.en }, answer: shown.map((a) => a.text).join(' / ') });
         break;
       }
       case 'encore':
@@ -589,7 +592,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
             const pair = keigoPair(r.question.keigo);
             if (pair && p.level === 'n4') ctx.phrase(p.id, { itemId: `keigo:${pair.id}`, text: `${pair.polite} → ${pair.honorific} / ${pair.humble}`, kana: `${pair.polite} ${pair.honorific} ${pair.humble}`, en: `${pair.en}: polite → honorific (them) / humble (you)`, outcome: 'seen' });
           }
-          ctx.cue({ host: 'pon', event: 'natural_version', answer: ex.text, answerEn: ex.en });
+          ctx.cue({ host: 'nobiko', event: 'natural_version', answer: ex.text, answerEn: ex.en });
         }
         break;
       }
@@ -737,7 +740,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         e.via = raw.utterance.via;
         const st = stats(s, playerId);
         st.echoes += 1;
-        if (raw.utterance.via === 'speech') ctx.cue({ host: 'pon', event: 'encore_cheer', slots: { name: player.name } });
+        if (raw.utterance.via === 'speech') ctx.cue({ host: 'nobiko', event: 'encore_cheer', slots: { name: player.name } });
         return MOVE_OK;
       }
       default:

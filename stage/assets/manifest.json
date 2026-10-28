@@ -59,6 +59,27 @@
       "post": {}
     },
     {
+      "path": "stage/assets/hosts/nobiko.png",
+      "what": "Host portrait: Nobiko-san, rokurokubi matchmaking auntie, host of Omiai Matchmaker and Karaoke Duel. Drawn from a layout sketch (tools/art/sources/nobiko-sketch.png) because pixflux never drew the long neck from text alone. The open mouth was redrawn by hand to 7×5 px so lip sync reads on a TV",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, full body, front view, cute chubby chibi mascot style with a very big head, warm colours, clear readable silhouette, no text or letters. Nobiko-san, a rokurokubi yokai: a plump cheerful middle-aged Japanese auntie whose long stretchy neck rises out of her kimono collar in an S-curve so her big round head leans up and to the right, as if eavesdropping. Full rosy cheeks, eyes open with a sly nosy glance, knowing grin, black hair in a wide married-woman bun with a red cloth band. Bright rose-pink kimono with white flowers, gold obi, one hand holding a folded paper fan",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 128,
+        "height": 128,
+        "text_guidance_scale": 8,
+        "seed": 21,
+        "init_image_strength": 80
+      },
+      "post": {},
+      "source": "tools/art/sources/nobiko-sketch.png"
+    },
+    {
       "path": "stage/assets/scenes/studio.png",
       "what": "Backdrop set for the lobby and the studio games: an empty late-night TV studio, curtains at the sides, spotlight rig, CRT stack and lantern at the right",
       "generator": "polish",
@@ -1979,6 +2000,57 @@
       }
     },
     {
+      "path": "stage/assets/anim/nobiko-idle.png",
+      "what": "Host animation: Nobiko-san idle loop, 8 frames, sprite sheet",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "gentle idle loop, her long neck sways slowly so her head bobs one pixel, she blinks once, keeps the same pose, face and smile throughout",
+      "source": "stage/assets/hosts/nobiko.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 22
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/nobiko-idle.png",
+        "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/nobiko-cheer.png",
+      "what": "Host animation: Nobiko-san happy reaction (correct answer, big laugh), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "delighted: her long neck stretches out further so her head swings up and to the right with a big open smile, she flaps the fan, then the neck pulls back into the starting pose; the kimono keeps the same colours in every frame",
+      "source": "stage/assets/hosts/nobiko.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 33
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/nobiko-cheer.png",
+        "steady": 24
+      }
+    },
+    {
+      "path": "stage/assets/anim/nobiko-oops.png",
+      "what": "Host animation: Nobiko-san oops reaction (miss, penalty), 8 frames, ends on the idle pose",
+      "generator": "pixellab",
+      "model": "animate-with-text-v3",
+      "prompt": "scandalised: her neck jolts back and droops so her head dips, eyes go wide, she covers her mouth with the fan, then recovers into the starting pose; keeps the same face and colours",
+      "source": "stage/assets/hosts/nobiko.png",
+      "params": {
+        "frame_count": 8,
+        "drift_threshold": 0,
+        "seed": 11
+      },
+      "polish": {
+        "from": "tools/art/sources/anim/nobiko-oops.png",
+        "steady": 24
+      }
+    },
+    {
       "path": "stage/assets/anim/yokai-blob-hit.png",
       "what": "Kana yōkai (blob) caught: startled hit, then a smoke puff, 9 frames, one-shot",
       "generator": "pixellab",
@@ -2136,6 +2208,20 @@
           17,
           15,
           "bottom"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/anim/nobiko-talk.png",
+      "what": "Host lip sync: Nobiko-san's mouth shapes (closed, half open, wide open) for VOICEVOX timing, drawn by hand from the portrait",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/hosts/nobiko.png",
+        "mouth": [
+          65,
+          56,
+          9,
+          7
         ]
       }
     },

@@ -1,6 +1,6 @@
 # Omiai Matchmaker (おみあい マッチメーカー), backlog
 
-Host: Pon, as the matchmaker (なこうど). 2–8 players. Kana–N4. A very formal "meet the family"
+Host: Nobiko-san, as the matchmaker (なこうど). 2–8 players. Kana–N4. A very formal "meet the family"
 introduction show: one guest (a kappa cucumber farmer, a retired robot vacuum …) asks everyone the
 same question each round, everyone answers in Japanese, the room votes for the most charming
 answer, and a manners meter scores how polite it was. At the end the guest invites one
@@ -173,12 +173,11 @@ The score screen also shows the stock example and, for N4, the round's keigo pai
 - Say it first: the first 5 s reward recall over recognition.
 - Tiles always offer a casual ending next to the polite one, so tapping is still a choice.
 
-### Host cues (Pon)
+### Host cues (Nobiko-san)
 
-`prompt_read` (the question) · `say_it_first` · `reveal_react` (the answers) ·
+`intro` (the guest card) · `prompt_read` (the question) · `say_it_first` · `reveal_react` (the answers) ·
 `encore_invite` (the vote winner) or `miss_kind` (no votes) · `encore_cheer` (a spoken encore,
-and the invitation) · `natural_version` (the stock answer). There's no `intro` cue (see decision
-2).
+and the invitation) · `natural_version` (the stock answer).
 
 ### Awards (draft titles)
 
@@ -196,10 +195,11 @@ canned memory answers (by question kind and register) or build a tile answer. Th
 
 ## Decisions made on Ladi's behalf
 
-1. **Pon is the matchmaker.** His lively, theatrical voice suits a show host. Chōchin-san (Last
-   Train) and Fude (kana) fit less well.
-2. **No `intro` cue.** Pon's intro lines in the bank are about Oogiri and cushions. The mode uses
-   only his generic events, so there are no new `HostEvent`s or line-bank entries.
+1. **Nobiko-san is the matchmaker** (Ladi, 2026-10-27). She was added as the show's first female
+   host: a rokurokubi matchmaking auntie (お見合いおばさん), which is exactly the omiai figure. Pon
+   hosted the mode before her.
+2. **An `intro` cue, no new events.** Her bank's intro lines introduce her as the matchmaker, so the
+   mode cues `intro` when the guest card opens. Everything else uses the shared events.
 3. **Guests, questions and keigo pairs live in the mode folder** (`cards.ts`, `status: 'draft'`).
    That keeps the mode free of content-loader and linter changes, as with Phrase Bingo's scenes.
 4. **All card content is kana.** Kana–N4 players can all read it, the checker works best on kana,
@@ -241,8 +241,8 @@ canned memory answers (by question kind and register) or build a tile answer. Th
 2. **Hearts mix two scales.** Six votes beat three stars, but with 8 players votes swamp stars.
    Should stars count double?
 3. **The invitation (+200)**: too big a swing for the last moment, or just the right drama?
-4. **Pon's line bank** has no matchmaker lines. Write a small set of new host events (intro, the
-   guest arrives, the invitation)?
+4. **Nobiko-san's bank** covers the shared events. Should she get her own events (the guest
+   arrives, the invitation to tea)?
 5. **Should the VIP pick the guest** in the lobby? Today it's random (or `extra.cardId` from the
    debug tools).
 6. **Fluent check** of all 8 cards, the 14 keigo pairs, the swaps and their notes, the reactions

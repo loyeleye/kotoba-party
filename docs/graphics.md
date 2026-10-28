@@ -34,14 +34,17 @@ The manifest is the source of truth. Edit a prompt there, then regenerate.
 | `stage/assets/hosts/pon.png` | 128², transparent | PixelLab `image-to-pixelart` | Pon, tanuki stand-up MC (Oogiri Night). Converted from the old Gemini portrait |
 | `stage/assets/hosts/chochin.png` | 128², transparent | PixelLab `pixflux` | Chōchin-san, lantern-ghost conductor (Last Train) |
 | `stage/assets/hosts/fude.png` | 128², transparent | PixelLab `pixflux` | Fude, living calligraphy brush (Kana Yōkai Raid) |
+| `stage/assets/hosts/nobiko.png` | 128², transparent | PixelLab `pixflux` + sketch | Nobiko-san, rokurokubi matchmaking auntie (Omiai, Karaoke Duel). Text alone never drew the long neck (12 tries), so pixflux redrew a layout sketch (`init_image`, see below) |
 | `stage/assets/yokai/yokai-blob.png` | 128², transparent | PixelLab `pixflux` | Round ghost; glyph goes on the belly |
 | `stage/assets/yokai/yokai-lantern.png` | 128², transparent | PixelLab `pixflux` | Chōchin-obake lantern; plain paper below the face |
 | `stage/assets/yokai/yokai-umbrella.png` | 128², transparent | PixelLab `pixflux` | Umbrella ghost (see Open questions) |
 | `stage/assets/yokai/yokai-scroll.png` | 128², transparent | PixelLab `pixflux` | Hanging scroll; large blank paper for a glyph |
 | `stage/assets/yokai/yokai-boss.png` | 192², transparent | PixelLab `pixflux` | Boss: the studio's old dictionary come alive |
 
-Host portraits are transparent 128² sprites, like the yōkai. The stage shows them at 1× (128px) in a
-rounded square on `#14101f` with `image-rendering: pixelated`. Don't crop them to a circle: it cuts off
+Host portraits are transparent 128² sprites, like the yōkai. The stage shows them with `image-rendering: pixelated`
+at a whole multiple of their pixels on the real screen (1× at 720p, 2× at 1080p, 3× at 4K, so 192 to
+256 canvas px; see `scaleCanvas` in `stage/src/main.ts`), on a lit plate: a soft disc of lantern
+light with a paper rim that lifts each host off the dark sets. Don't crop them to a circle: it cuts off
 arms and props.
 
 The yōkai sprites are generic bodies with no kana on them. The game draws a large kana glyph on top
@@ -50,16 +53,16 @@ in a web font, which keeps the kana correct and lets one body serve every kana. 
 
 ## Animation
 
-Seventeen sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
+Twenty-one sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
 frames. Most are made by PixelLab's `animate-with-text-v3` from the still sprite, which goes in as
 both the first and the last frame so a loop closes on the pose it started from, then cleaned up by
 `tools/art/polish.ts` (below). The three mouth sheets are drawn from the portraits by the same tool.
 
 | Sheets | Frames | Plays |
 | --- | --- | --- |
-| `{pon,chochin,fude}-idle.png` | 8 × 128² | One breath every few seconds, then holds frame 0 |
-| `{pon,chochin,fude}-{cheer,oops}.png` | 8 × 128² | Once, when a host line has that mood, then back to idle |
-| `{pon,chochin,fude}-talk.png` | 3 × 128² | Lip sync: closed, half open, open, shown one at a time while the host speaks |
+| `{pon,chochin,fude,nobiko}-idle.png` | 8 × 128² | One breath every few seconds, then holds frame 0 |
+| `{pon,chochin,fude,nobiko}-{cheer,oops}.png` | 8 × 128² | Once, when a host line has that mood, then back to idle |
+| `{pon,chochin,fude,nobiko}-talk.png` | 3 × 128² | Lip sync: closed, half open, open, shown one at a time while the host speaks |
 | `yokai-{blob,lantern,umbrella,scroll}-hit.png` | 11 × 128² | Once when a yōkai is caught: 4 flinch frames, then the shared smoke puff; ends empty |
 | `yokai-boss-defeat.png` | 9 × 192² | Once when the boss is beaten; ends empty |
 
@@ -174,6 +177,17 @@ Every yōkai prompt starts with a shared preamble ("Cute friendly Japanese yokai
 blank flat smooth area on the front of the body for a text label, no text, no letters, no symbols").
 The host prompts share another ("Pixel art character portrait for a cozy-spooky Japanese late-night
 TV game show …, no text or letters"). The PNGs are only stripped of metadata, with no resampling.
+
+**Nobiko-san** (2026-10-27, redrawn 2026-10-28) is `pixflux` too, but from a sketch. A rokurokubi's
+long neck is the whole joke, and text alone drew a normal-necked lady in all 12 tries over two
+prompts. So `tools/art/sources/nobiko-sketch.py` cuts a text-only auntie (`nobiko-body.png`, seed 8)
+into head and body, shrinks them (head 0.9, body 0.75), and joins them with a hand-drawn S-curved
+neck; `generate.ts` sends that sketch as `init_image` when a `pixflux` entry has a `source`. The
+first version kept the sketch too closely (strength 300) and looked flatter than the other hosts,
+so the redraw uses strength 80 (seed 21), which lets pixflux repaint it at full detail. Her
+lip-sync mouth is hand-painted (an outlined 7×5 opening), so `polish.ts` uses the normal outline
+mode; its `'fill'` mode (every non-skin pixel in the box is the opening) is there for mouths with no
+outline.
 
 **PixelLab `image-to-pixelart`** (`POST https://api.pixellab.ai/v2/image-to-pixelart`) converted two
 earlier Gemini images, kept in `tools/art/sources/`:

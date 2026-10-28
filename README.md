@@ -17,10 +17,10 @@ Eleven modes run end to end on the stage and phones, each with bots and full-ser
 | Kotoba Concentration (v1.1) | Fude | Memory pairs you keep by saying the word |
 | Murder at the Onsen (backlog) | Chōchin-san | Asking suspects questions, then naming the culprit |
 | Phrase Bingo Theater (backlog) | Pon | Slipping secret phrases into an improv scene |
-| Karaoke Duel (backlog) | Chōchin-san | Singing original beginner songs, scored on words, pitch and timing |
+| Karaoke Duel (backlog) | Nobiko-san | Singing original beginner songs, scored on words, pitch and timing |
 | Who's the Tourist? (backlog) | Chōchin-san | Asking and answering questions to find who doesn't know the place |
 | Oekaki (backlog) | Fude | Drawing a word, then writing fake Japanese titles |
-| Omiai Matchmaker (backlog) | Pon | Polite Japanese (です/ます, keigo) on a parody matchmaking show |
+| Omiai Matchmaker (backlog) | Nobiko-san | Polite Japanese (です/ます, keigo) on a parody matchmaking show |
 | Shodō Taikai (backlog) | Fude | Handwriting: tracing and writing kana and kanji with stroke order, said aloud first |
 
 All content is `draft` until a fluent speaker checks it. Decisions and questions for Ladi:
