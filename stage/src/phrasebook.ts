@@ -13,6 +13,11 @@ import { TITLE_KANA } from './danmaku.js';
 import { sfx } from './music/sfx.js';
 
 const PAGE = 6;
+/** Each game's pixel icon on its cards (stage/assets/icons/). */
+const modeIcon = (mode: ModeId): string =>
+  mode === 'last-train' ? 'lt-train' : mode === 'bento-haus-vs' ? 'mode-bento-haus' : `mode-${mode}`;
+/** Fude cheering the room on, for a phrasebook with nothing in it yet. */
+const fudeEmpty = () => h('img', { class: 'spb-empty-art', src: '/stage/assets/hosts/fude.png', alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() });
 
 let source: { base: string; code: string; token: string } | null = null;
 let button: HTMLButtonElement | null = null;
@@ -187,7 +192,7 @@ function render(): void {
       body,
       rows.length
         ? [h('p', { class: 'spb-lede' }, 'Tonight’s phrases, newest first. ', legend()), h('ul', { class: 'spb-grid' }, rows.slice(from, from + PAGE).map((r) => card(r, r.said, r.missed))), pager(rows.length)]
-        : h('div', { class: 'spb-empty' }, h('p', {}, 'Nothing yet tonight.'), h('p', { class: 'spb-hint' }, 'Every game adds the phrases people said, retried and missed.')),
+        : h('div', { class: 'spb-empty' }, fudeEmpty(), h('p', {}, 'Nothing yet tonight.'), h('p', { class: 'spb-hint' }, 'Every game adds the phrases people said, retried and missed.')),
       data.saved.length ? null : h('p', { class: 'spb-hint' }, 'Sign in on your phone (under Join) to keep your phrases after tonight.'),
     );
     return;
@@ -196,7 +201,7 @@ function render(): void {
   mount(
     body,
     h('p', { class: 'spb-lede' }, `${mine.name}’s saved phrases, most recent first. They practise these on their phone.`),
-    mine.phrases.length ? [h('ul', { class: 'spb-grid' }, mine.phrases.slice(from, from + PAGE).map((p) => card(p))), pager(mine.phrases.length)] : h('div', { class: 'spb-empty' }, h('p', {}, 'No saved phrases yet.')),
+    mine.phrases.length ? [h('ul', { class: 'spb-grid' }, mine.phrases.slice(from, from + PAGE).map((p) => card(p))), pager(mine.phrases.length)] : h('div', { class: 'spb-empty' }, fudeEmpty(), h('p', {}, 'No saved phrases yet.')),
   );
 }
 
@@ -228,12 +233,14 @@ function card(p: { text: string; kana: string; en: string; mode: ModeId }, said:
   return h(
     'li',
     { class: `spb-card${missed.length ? ' practise' : said.length ? ' said' : ''}` },
+    // Someone missed it: a もう一回 ("once more") stamp in the corner.
+    missed.length ? h('span', { class: 'spb-again', lang: 'ja', 'aria-hidden': 'true' }, h('span', {}, 'もう'), h('span', {}, '一回')) : null,
     h('p', { class: 'spb-jp', lang: 'ja' }, p.text),
     p.kana !== p.text ? h('p', { class: 'spb-kana', lang: 'ja' }, p.kana) : null,
     h('p', { class: 'spb-romaji' }, toRomaji(p.kana)),
     p.en ? h('p', { class: 'spb-en' }, p.en) : null,
     said.length ? who(said, 'said') : null,
     missed.length ? who(missed, 'practise') : null,
-    h('p', { class: 'spb-mode' }, info?.titleJa ? ruby({ text: info.titleJa, kana: info.titleKana ?? TITLE_KANA[p.mode] ?? null }) : null, info?.titleJa ? ' · ' : null, info?.title ?? p.mode),
+    h('p', { class: 'spb-mode' }, h('img', { class: 'spb-mode-icon', src: `/stage/assets/icons/${modeIcon(p.mode)}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }), info?.titleJa ? ruby({ text: info.titleJa, kana: info.titleKana ?? TITLE_KANA[p.mode] ?? null }) : null, info?.titleJa ? ' · ' : null, info?.title ?? p.mode),
   );
 }

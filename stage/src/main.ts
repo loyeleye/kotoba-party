@@ -648,7 +648,7 @@ function fillMenus(view: RoomView): void {
   const modeKey = modes.map((m) => m.id).join();
   if (els.mode.dataset.key !== modeKey) {
     els.mode.dataset.key = modeKey;
-    mount(els.mode, modes.map((m) => h('option', { value: m.id }, m.title)), h('option', { value: SURPRISE }, '🎲 Surprise Me!'));
+    mount(els.mode, h('option', { value: SURPRISE }, '🎲 Surprise Me!'), modes.map((m) => h('option', { value: m.id }, m.title)));
   }
   const packKey = view.packs.map((p) => p.id).join();
   if (els.pack.dataset.key !== packKey) {
