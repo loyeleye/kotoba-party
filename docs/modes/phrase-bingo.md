@@ -227,3 +227,25 @@ the right line with `hearRate` (0.6), otherwise a random cell. Everyone shouts t
   the mode folder; see decision 2).
 - Pon's `intro` and `prompt_read` lines are Oogiri-flavoured (see open question 6).
 - The bingo moment on the stage lists names but doesn't draw the winning cards.
+
+## Backlog: Ninja Mission (おしのび) variant
+
+Ladi put this on the backlog on 2026-10-28. It came from the Impractical Jokers' earpiece pranks.
+It is close enough to Phrase Bingo Theater to be a variant of this mode rather than a new one:
+the same scenes, secret lines said aloud in the scene, the same line check. What changes:
+
+- **Two actors, one mission.** A clerk-and-customer style scene for two. Only one of them (the
+  ninja) has secret lines; the other plays it straight and doesn't know which lines are planted.
+- **The room writes the lines.** During the scene card each audience member picks or types one
+  short line for the ninja, from tiles at their level (「じつは にんじゃです」, 「ねこが だいすきです」 …).
+  Pon takes three, so the mission is a surprise to the ninja too, which makes it funnier and keeps
+  the ninja improvising rather than reciting.
+- **The partner catches.** Instead of bingo cards, the scene partner taps 🥷 when they think a
+  line was planted. A planted line said aloud and not caught scores for the ninja; a correct catch
+  scores for the partner; a wrong catch costs the partner a little, so they can't tap on every
+  sentence.
+- **Everyone else listens** and votes for the smoothest plant at the end, as in the shout-back.
+
+Open before building: whether audience-written lines need a filter (tiles only for kana and N5,
+free text for N4 with the usual content check), and whether the partner's catch should pause the
+scene or ring silently on the stage.
