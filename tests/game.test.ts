@@ -223,6 +223,18 @@ describe('views', () => {
     expect(cmd(s, as('p1'), { type: 'micCheck', utterance: 42 }).error).toBe('bad-command');
   });
 
+  it('lets the header mic switch turn quiet mode on and off mid-game, without a host line', () => {
+    const s = lobby(2);
+    toAnswer(s);
+    const cues = s.cues.length;
+    expect(cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'tap', text: '' } }).changed).toBe(true);
+    expect(s.players[0]!.mic).toBe('quiet');
+    expect(cmd(s, as('p1'), { type: 'micCheck', utterance: null }).changed).toBe(true);
+    expect(s.players[0]!.mic).toBe(null);
+    expect(cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'speech', text: 'こんにちは' } }).error).toBe('wrong-phase');
+    expect(s.cues.length).toBe(cues);
+  });
+
   it('refuses a mode the room is too small for', () => {
     const s = lobby(2);
     expect(cmd(s, stage, { type: 'start', mode: 'oogiri' }).error).toBe('not-enough-players');

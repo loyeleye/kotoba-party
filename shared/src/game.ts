@@ -281,10 +281,11 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
     }
     case 'micCheck': {
       if (!me) return fail('not-allowed');
-      if (inGame(state)) return fail('wrong-phase');
       const host = activeMode(state)?.info.host ?? 'pon';
-      // null turns the mic back on (the check shows again). Only the "I can't talk right now" tap is the
-      // quiet path: a miss, said or typed, leaves the mic on to try again, so typing never locks it out.
+      // null turns the mic back on (in the lobby the check shows again). Only the "I can't talk right now"
+      // tap is the quiet path: a miss, said or typed, leaves the mic on to try again, so typing never locks
+      // it out. The phone's header mic switch sends null or the tap at any time, mid-game too.
+      const game = inGame(state);
       if (cmd.utterance === null) {
         if (me.mic === null) return { changed: false };
         me.mic = null;
@@ -292,6 +293,13 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       }
       if (!isUtterance(cmd.utterance)) return fail('bad-command');
       const quiet = cmd.utterance.via === 'tap';
+      if (game && !quiet) return fail('wrong-phase');
+      if (game) {
+        // Mid-game the host doesn't stop the round to comment.
+        if (me.mic === 'quiet') return { changed: false };
+        me.mic = 'quiet';
+        return OK;
+      }
       if (!quiet && !matchesAccepted(utteranceReading(cmd.utterance), ['こんにちは', 'こんにちわ'])) return fail('not-konnichiwa');
       me.mic = quiet ? 'quiet' : 'ok';
       state.cues.push({ host, event: quiet ? 'mic_check_quiet' : 'mic_check_ok', slots: { name: me.name } });
