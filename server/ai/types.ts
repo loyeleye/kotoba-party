@@ -29,6 +29,7 @@ export const HOST_EVENTS = [
   // Omiai Matchmaker
   'omiai_tease',
   // Narabete!
+  'narabete_intro',
   'narabete_deal',
   'narabete_say',
   'narabete_order',

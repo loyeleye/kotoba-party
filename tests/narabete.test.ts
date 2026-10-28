@@ -327,14 +327,17 @@ describe('Narabete!: the Time Line round', () => {
     const team = 3 * PAIR_POINTS + PERFECT_POINTS;
     const cap = Math.round((BONUS_POOL_SHARE * team) / 5) * 5;
     const bonus = (share: number) => Math.round((cap * share) / 5) * 5;
-    expect(t.score('p1')).toBe(team + bonus(SAY_SHARE.memory));
-    expect(t.score('p2')).toBe(team + bonus(SAY_SHARE.helped));
-    expect(t.score('p3')).toBe(team + bonus(SAY_SHARE.typed));
-    expect(t.score('p4')).toBe(team + bonus(SAY_SHARE.tried));
+    // Nothing is paid while the cards are still face down: the flip pays at its end.
+    expect(t.ids_().map((id) => t.score(id))).toEqual([0, 0, 0, 0]);
     const v = t.view();
     expect(v.flip).toMatchObject({ perfect: true, pairs: 3, teamPoints: team });
     expect(v.line.every((c) => c.label && c.text)).toBe(true);
     expect(t.s.cues.at(-1)).toMatchObject({ host: 'nobiko', event: 'narabete_perfect' });
+    t.timeout();
+    expect(t.score('p1')).toBe(team + bonus(SAY_SHARE.memory));
+    expect(t.score('p2')).toBe(team + bonus(SAY_SHARE.helped));
+    expect(t.score('p3')).toBe(team + bonus(SAY_SHARE.typed));
+    expect(t.score('p4')).toBe(team + bonus(SAY_SHARE.tried));
   });
 
   it('a knotted line still pays the pairs in order; mistakes never cost points', () => {
@@ -406,7 +409,7 @@ describe('Narabete!: the Feelings Line and the Worst Day Ever', () => {
     expect(t.play('p2', { kind: 'defend', pass: true }).error).toBe('not-yours');
     expect(t.play('p1', { kind: 'defend', utterance: speech('ぜんぜん くさくない から です') }).error).toBeUndefined();
     expect(t.s.phase).toBe('score');
-    expect(t.view().defence?.text).toBe('ぜんぜん くさくない から です');
+    expect(t.view().defence?.text).toBe('ぜんぜん くさくない からです。');
     const flipPay = t.r.flip!.teamPoints;
     expect(t.r.flip!.bonus.p1).toBeGreaterThan(t.r.flip!.bonus.p2!); // the defence share
     expect(DEFENCE_SHARE).toBeGreaterThan(0);
@@ -414,8 +417,9 @@ describe('Narabete!: the Feelings Line and the Worst Day Ever', () => {
     expect(t.play('p2', { kind: 'vote', cardId: p1.id }).error).toBeUndefined();
     expect(t.play('p2', { kind: 'vote', cardId: p1.id }).error).toBe('already-voted');
     const before = t.score('p1');
+    const myBonus = t.r.flip!.bonus.p1!;
     t.timeout();
-    expect(t.score('p1')).toBe(before + VOTE_POINTS);
+    expect(t.score('p1')).toBe(before + flipPay + myBonus + VOTE_POINTS);
     expect(flipPay).toBeGreaterThanOrEqual(0);
   });
 
@@ -453,7 +457,7 @@ describe('Narabete!: the Feelings Line and the Worst Day Ever', () => {
       expect(t.score(c.ownerId)).toBe(before + PERFORM_POINTS);
     }
     expect(t.s.phase).toBe('recap');
-    expect(t.s.recap?.awards.some((a) => a.title === 'いい こえ賞')).toBe(true);
+    expect(t.s.recap?.awards.some((a) => a.title === 'いいこえ賞')).toBe(true);
   });
 
   it.each(['kids', 'family', 'cheeky'] as const)('a %s room plays content for its audience', (audience) => {

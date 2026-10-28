@@ -113,24 +113,28 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.omiai_tease.03', host: 'nobiko', event: 'omiai_tease', jp: { text: 'ちょっと、これ だれ？　おかあさんに いいつけるわよ。', kana: 'ちょっと、これ だれ？　おかあさんに いいつけるわよ。', en: "Excuse me, whose is this? I'm telling your mother." }, audience: 'cheeky', status: 'draft' },
   { id: 'nobiko.omiai_tease.04', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらあら、ともだちと はなしてるんじゃ ないのよ？', kana: 'あらあら、ともだちと はなしてるんじゃ ないのよ？', en: "Oh dear, you're not chatting with your friends, you know?" }, audience: 'cheeky', status: 'draft' },
   { id: 'nobiko.omiai_tease.05', host: 'nobiko', event: 'omiai_tease', jp: { text: 'くびを のばして みちゃった。…あらまあ。', kana: 'くびを のばして みちゃった。…あらまあ。', en: "I stretched my neck for a look… oh my." }, audience: 'cheeky', status: 'draft' },
+  // narabete_intro
+  { id: 'nobiko.narabete_intro.01', host: 'nobiko', event: 'narabete_intro', jp: { text: 'きょうは わたしの くびに ならべる ゲームよ！', kana: 'きょうは わたしの くびに ならべる ゲームよ！', en: 'Tonight we line things up along my neck!' }, status: 'draft' },
+  { id: 'nobiko.narabete_intro.02', host: 'nobiko', event: 'narabete_intro', jp: { text: 'みんな なかまよ。いっしょに ならべてね。', kana: 'みんな なかまよ。いっしょに ならべてね。', en: "You're all one team. Line them up together." }, status: 'draft' },
+  { id: 'nobiko.narabete_intro.03', host: 'nobiko', event: 'narabete_intro', jp: { text: 'くびを ながーく して まってたわ。さあ、ならべて！', kana: 'くびを ながーく して まってたわ。さあ、ならべて！', en: "I've waited with my neck stretched out. Line them up!" }, status: 'draft' },
   // narabete_deal
   { id: 'nobiko.narabete_deal.01', host: 'nobiko', event: 'narabete_deal', jp: { text: 'カードを くばるわよ。だれにも みせないでね！', kana: 'カードを くばるわよ。だれにも みせないでね！', en: "Dealing the cards. Don't show anyone!" }, status: 'draft' },
-  { id: 'nobiko.narabete_deal.02', host: 'nobiko', event: 'narabete_deal', jp: { text: 'はい、カード。こっそり みてね。', kana: 'はい、カード。こっそり みてね。', en: 'Here are your cards. Take a sneaky look.' }, status: 'draft' },
+  { id: 'nobiko.narabete_deal.02', host: 'nobiko', event: 'narabete_deal', jp: { text: 'はい、カード。こっそり みてね。', kana: 'はい、カード。こっそり みてね。', en: "Here's your card. Take a sneaky look." }, status: 'draft' },
   { id: 'nobiko.narabete_deal.03', host: 'nobiko', event: 'narabete_deal', jp: { text: 'くびを のばしても みないわよ。たぶん。', kana: 'くびを のばしても みないわよ。たぶん。', en: "I won't peek, even with my neck. Probably." }, status: 'draft' },
   { id: 'nobiko.narabete_deal.04', host: 'nobiko', event: 'narabete_deal', jp: { text: 'あらまあ、たのしい おだいね！', kana: 'あらまあ、たのしい おだいね！', en: 'Oh my, what a fun theme!' }, status: 'draft' },
   // narabete_say
   { id: 'nobiko.narabete_say.01', host: 'nobiko', event: 'narabete_say', jp: { text: 'じぶんの カード、こえに だして いってね。', kana: 'じぶんの カード、こえに だして いってね。', en: 'Say your card out loud.' }, status: 'draft' },
   { id: 'nobiko.narabete_say.02', host: 'nobiko', event: 'narabete_say', jp: { text: 'さあ、ひとりずつ どうぞ。きいてるわよ。', kana: 'さあ、ひとりずつ どうぞ。きいてるわよ。', en: "Go on, one at a time. I'm listening." }, status: 'draft' },
   { id: 'nobiko.narabete_say.03', host: 'nobiko', event: 'narabete_say', jp: { text: 'ちいさい こえでも いいのよ。', kana: 'ちいさい こえでも いいのよ。', en: 'A quiet voice is fine too.' }, status: 'draft' },
-  { id: 'nobiko.narabete_say.04', host: 'nobiko', event: 'narabete_say', jp: { text: 'あらまあ、みんな なにを もってるの？', kana: 'あらまあ、みんな なにを もってるの？', en: "Oh my, what's everyone holding?" }, status: 'draft' },
+  { id: 'nobiko.narabete_say.04', host: 'nobiko', event: 'narabete_say', jp: { text: 'ねえねえ、みんな なにを もってるの？', kana: 'ねえねえ、みんな なにを もってるの？', en: "Oh my, what's everyone holding?" }, status: 'draft' },
   // narabete_order
   { id: 'nobiko.narabete_order.01', host: 'nobiko', event: 'narabete_order', jp: { text: 'ならべて！　じぶんの カードを うごかしてね。', kana: 'ならべて！　じぶんの カードを うごかしてね。', en: 'Line them up! Move your own card.' }, status: 'draft' },
-  { id: 'nobiko.narabete_order.02', host: 'nobiko', event: 'narabete_order', jp: { text: 'ひくい ほうは こっち、たかい ほうは あっち！', kana: 'ひくい ほうは こっち、たかい ほうは あっち！', en: 'Low goes this way, high goes that way!' }, status: 'draft' },
+  { id: 'nobiko.narabete_order.02', host: 'nobiko', event: 'narabete_order', jp: { text: 'ひだりから じゅんばんに ならべてね！', kana: 'ひだりから じゅんばんに ならべてね！', en: 'Line them up in order, starting from the left!' }, status: 'draft' },
   { id: 'nobiko.narabete_order.03', host: 'nobiko', event: 'narabete_order', jp: { text: 'わたしの くびが ものさしよ。', kana: 'わたしの くびが ものさしよ。', en: 'My neck is the ruler.' }, status: 'draft' },
-  { id: 'nobiko.narabete_order.04', host: 'nobiko', event: 'narabete_order', jp: { text: 'そうだん して いいのよ。', kana: 'そうだん して いいのよ。', en: 'You can talk it over.' }, status: 'draft' },
+  { id: 'nobiko.narabete_order.04', host: 'nobiko', event: 'narabete_order', jp: { text: 'そうだん しても いいのよ。', kana: 'そうだん しても いいのよ。', en: 'You can talk it over.' }, status: 'draft' },
   // narabete_defence
   { id: 'nobiko.narabete_defence.01', host: 'nobiko', event: 'narabete_defence', jp: { text: '{name}さん、なんで そこなの？　おしえて！', kana: '{name}さん、なんで そこなの？　おしえて！', en: '{name}, why there? Tell me!' }, slots: ['{name}'], status: 'draft' },
-  { id: 'nobiko.narabete_defence.02', host: 'nobiko', event: 'narabete_defence', jp: { text: 'あらまあ、{name}さんの カード、よく うごいたわね。', kana: 'あらまあ、{name}さんの カード、よく うごいたわね。', en: "Oh my, {name}'s card moved a lot." }, slots: ['{name}'], status: 'draft' },
+  { id: 'nobiko.narabete_defence.02', host: 'nobiko', event: 'narabete_defence', jp: { text: '{name}さんの カード、ずいぶん うごいたわね。', kana: '{name}さんの カード、ずいぶん うごいたわね。', en: "Oh my, {name}'s card moved a lot." }, slots: ['{name}'], status: 'draft' },
   { id: 'nobiko.narabete_defence.03', host: 'nobiko', event: 'narabete_defence', jp: { text: '{name}さん、ひとこと どうぞ！', kana: '{name}さん、ひとこと どうぞ！', en: '{name}, a word, please!' }, slots: ['{name}'], status: 'draft' },
   { id: 'nobiko.narabete_defence.04', host: 'nobiko', event: 'narabete_defence', jp: { text: 'ちょっと {name}さん、いいわけ きかせて。', kana: 'ちょっと {name}さん、いいわけ きかせて。', en: "Now then, {name}, let's hear your excuse." }, slots: ['{name}'], status: 'draft' },
   // narabete_perfect

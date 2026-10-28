@@ -10,6 +10,8 @@
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
 import type { NarabeteView } from '../../../shared/src/modes/views.js';
+import { flipMs, joiner } from '../../../shared/src/modes/narabete/narabete.js';
+import type { RoomView } from '../../../shared/src/protocol.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { speakBox, canSpeak } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
@@ -21,6 +23,24 @@ type Me = NonNullable<NarabeteView['me']>;
 
 const nameOf = (ctx: Ctx, id: string | null | undefined): string => ctx.view.players.find((p) => p.id === id)?.name ?? '';
 
+/** What to type, by the round's unit: a pattern, never one card's answer. */
+const PLACEHOLDER: Record<string, string> = { time: '〜じに 〜ます。', price: '〜は 〜えんです。', date: '〜がつ 〜かに 〜ます。' };
+
+// The flip is timed from when this phone first saw the phase, so the result waits for the TV's last card.
+let shown = { seq: -1, at: 0 };
+function since(view: RoomView): number {
+  if (shown.seq !== view.phaseSeq) shown = { seq: view.phaseSeq, at: performance.now() };
+  return performance.now() - shown.at;
+}
+
+const buzz = (ms = 60) => {
+  try {
+    navigator.vibrate?.(ms);
+  } catch {
+    // no vibration here
+  }
+};
+
 function themeLine(game: NarabeteView, level: Me['level']): HTMLElement | null {
   if (!game.title) return null;
   return jpView(game.title, level, { cls: 'nb-theme' });
@@ -29,17 +49,32 @@ function themeLine(game: NarabeteView, level: Me['level']): HTMLElement | null {
 /** The ends of the line, so the player knows which way is up. */
 function ends(game: NarabeteView): HTMLElement | null {
   if (!game.low || !game.high) return null;
-  return h('p', { class: 'nb-ends-p' }, h('span', { lang: 'ja' }, `◀ ${game.low.text}`), h('small', {}, ` ${game.low.en} … ${game.high.en} `), h('span', { lang: 'ja' }, `${game.high.text} ▶`));
+  const feel = game.unit === 'feel';
+  return h(
+    'div',
+    { class: 'nb-ends-p' },
+    h('p', { class: 'nb-end' }, h('span', { lang: 'ja' }, `◀ ${game.low.text}`), h('small', {}, `${feel ? '1 · ' : ''}${game.low.en}`)),
+    h('p', { class: 'nb-end hi' }, h('span', { lang: 'ja' }, `${game.high.text} ▶`), h('small', {}, `${game.high.en}${feel ? ' · 100' : ''}`)),
+  );
+}
+
+/** The line as it stands, names only, with your card marked: where you are among the others. */
+function miniLine(ctx: Ctx): HTMLElement {
+  return h(
+    'ol',
+    { class: 'nb-mini', 'aria-label': 'The line, low end first' },
+    ctx.game.line.map((c) => h('li', { class: `${c.mine ? 'me' : ''}${c.locked ? ' locked' : ''}` }, c.mine ? 'YOU' : nameOf(ctx, c.ownerId), c.locked ? ' 🔒' : '')),
+  );
 }
 
 // ---- your card ----
 
-function timeCard(me: Me): HTMLElement | null {
+function timeCard(me: Me, compact = false): HTMLElement | null {
   const t = me.time;
   if (!t) return null;
   return h(
     'div',
-    { class: 'nb-mycard' },
+    { class: `nb-mycard${compact ? ' compact' : ''}` },
     h('span', { class: 'nb-mycard-emoji', 'aria-hidden': 'true' }, t.emoji),
     h('p', { class: 'nb-mycard-clock' }, t.label),
     h('p', { class: 'nb-mycard-en' }, t.en),
@@ -83,7 +118,7 @@ function sayTime(ctx: Ctx, me: Me): HTMLElement {
         : h('p', { class: 'hint' }, canSpeak() ? 'Say what happens, and when, in Japanese. Out loud: the others need to hear it.' : 'Type what happens, and when, in Japanese.'),
     said?.ok
       ? null
-      : speakBox({ label: 'Hold and say it', placeholder: 'ごご よじはんに …', maxLength: MAX_ANSWER_LENGTH, kanaPadOpen: me.level === 'kana', onSend: (utterance) => void send({ kind: 'say', utterance, round: game.round }) }),
+      : speakBox({ label: 'Hold and say it', placeholder: PLACEHOLDER[game.unit ?? ''] ?? '〜ます。', maxLength: MAX_ANSWER_LENGTH, kanaPadOpen: me.level === 'kana', onSend: (utterance) => void send({ kind: 'say', utterance, round: game.round }) }),
     !me.time?.jp && !said?.ok ? h('button', { type: 'button', class: 'secondary nb-hint', onclick: () => void send({ kind: 'hint', round: game.round }) }, '💡 Show me the Japanese') : null,
   );
 }
@@ -106,7 +141,7 @@ function sayFeel(ctx: Ctx, me: Me): HTMLElement {
           said.warn ? h('p', { class: 'nb-warn-p' }, '🤫 That sounds like a number! Say it another way?') : h('p', { class: 'nb-ok-p' }, '✓ Sent. You can still change it.'),
         )
       : h('p', { class: 'hint' }, 'Say something that fits your number. Never the number itself!'),
-    me.frames.length ? h('div', { class: 'nb-frames' }, me.frames.map((f) => h('span', { class: 'nb-frame', lang: 'ja' }, f, romaji ? h('small', {}, toRomaji(f)) : null))) : null,
+    me.frames.length ? h('div', { class: 'nb-frames' }, h('span', { class: 'nb-frames-label' }, 'Patterns:'), me.frames.map((f) => h('span', { class: 'nb-frame', lang: 'ja' }, f, romaji ? h('small', {}, toRomaji(f)) : null))) : null,
     me.swerve.length ? h('p', { class: 'nb-swerve' }, 'Or try: ', ...me.swerve.map((w) => h('span', { class: 'nb-swerve-word' }, h('span', { lang: 'ja' }, w.text), h('small', {}, ` ${w.en}`)))) : null,
     speakBox({ label: 'Hold and say your answer', placeholder: 'Type your answer', maxLength: MAX_ANSWER_LENGTH, kanaPadOpen: romaji, onSend: (utterance) => void send({ kind: 'say', utterance, round: game.round }) }),
     me.offers.length
@@ -136,26 +171,15 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
   const { game, send, isVip } = ctx;
   const n = game.line.length;
   const others = game.line.filter((c) => !c.mine);
-  const move = (dir: -1 | 1) => () => void send({ kind: 'move', dir, round: game.round });
+  const move = (dir: -1 | 1) => () => {
+    buzz(30);
+    void send({ kind: 'move', dir, round: game.round });
+  };
+  const before = game.line[me.position - 1];
+  if (me.againFrom.length) buzz(80);
   return h(
     'div',
     { class: 'screen' },
-    ends(game),
-    timeCard(me) ?? (me.secret !== null ? secret(me) : null),
-    me.said && game.kind !== 'time' ? h('p', { class: 'hint' }, 'Your answer: ', h('span', { lang: 'ja' }, me.said.text)) : null,
-    h('p', { class: 'nb-pos' }, `Your card is ${me.position + 1} of ${n}`),
-    h(
-      'div',
-      { class: 'nb-arrows' },
-      h('button', { type: 'button', class: 'nb-arrow', disabled: !me.canMove.left, 'aria-label': 'Move my card towards the low end', onclick: move(-1) }, '◀'),
-      h('button', { type: 'button', class: 'nb-arrow', disabled: !me.canMove.right, 'aria-label': 'Move my card towards the high end', onclick: move(1) }, '▶'),
-    ),
-    h(
-      'button',
-      { type: 'button', class: `primary nb-lock${me.locked ? ' on' : ''}`, 'aria-pressed': me.locked ? 'true' : 'false', onclick: () => void send({ kind: 'lock', locked: !me.locked, round: game.round }) },
-      me.locked ? h('span', {}, '🔒 ', h('span', { lang: 'ja' }, 'きめた！'), ' (tap to unlock)') : h('span', {}, h('span', { lang: 'ja' }, 'きめた！'), ' Happy with my spot'),
-    ),
-    h('p', { class: 'hint' }, 'Talk it over out loud. Moving a card unlocks it and its neighbour.'),
     me.againFrom.length
       ? h(
           'div',
@@ -164,6 +188,31 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
           speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'say', utterance, round: game.round }) }),
         )
       : null,
+    ends(game),
+    timeCard(me, true) ?? (me.secret !== null ? secret(me) : null),
+    me.said && game.kind !== 'time' ? h('p', { class: 'hint' }, 'Your answer: ', h('span', { lang: 'ja' }, me.said.text)) : null,
+    miniLine(ctx),
+    h('p', { class: 'nb-pos' }, `Your card: ${me.position + 1} of ${n}`, before ? ` · after ${nameOf(ctx, before.ownerId)}` : ' · at the low end'),
+    h(
+      'div',
+      { class: 'nb-arrows' },
+      h('button', { type: 'button', class: 'nb-arrow', disabled: !me.canMove.left, 'aria-label': 'Move my card towards the low end', onclick: move(-1) }, '◀'),
+      h('button', { type: 'button', class: 'nb-arrow', disabled: !me.canMove.right, 'aria-label': 'Move my card towards the high end', onclick: move(1) }, '▶'),
+    ),
+    h(
+      'button',
+      {
+        type: 'button',
+        class: `primary nb-lock${me.locked ? ' on' : ''}`,
+        'aria-pressed': me.locked ? 'true' : 'false',
+        onclick: () => {
+          buzz(40);
+          void send({ kind: 'lock', locked: !me.locked, round: game.round });
+        },
+      },
+      me.locked ? h('span', {}, '🔒 ', h('span', { lang: 'ja' }, 'きめた！'), ' (tap to unlock)') : h('span', {}, h('span', { lang: 'ja' }, 'きめた！'), ' Happy with my spot'),
+    ),
+    h('p', { class: 'hint' }, 'Talk it over out loud. Moving a card unlocks it and its neighbour.'),
     game.kind === 'time' && others.length
       ? h(
           'details',
@@ -196,10 +245,17 @@ function scoreScreen(ctx: Ctx, me: Me): HTMLElement {
   const { game, send, isVip } = ctx;
   const f = game.flip;
   const others = game.line.filter((c) => !c.mine && c.text && !c.hidden);
+  // Nothing here until the TV's last card is over: the phone mustn't spoil the flip.
+  const left = f ? flipMs(f.steps) - since(ctx.view) : 0;
+  const voted = game.line.find((c) => c.id === me.votedFor);
   return h(
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, 'Look at the TV! 🪢'),
+    left > 0 ? h('p', { class: 'nb-turning', style: `--d: ${Math.round(left)}ms` }, 'Nobiko-san is turning the cards over…') : null,
+    h(
+      'div',
+      { class: 'nb-after', style: `--d: ${Math.round(Math.max(0, left))}ms` },
     f ? h('p', { class: 'nb-points' }, `+${f.teamPoints} team`, me.bonus ? h('span', {}, ` · +${me.bonus} for saying it`) : null) : null,
     me.canVote
       ? h(
@@ -207,30 +263,59 @@ function scoreScreen(ctx: Ctx, me: Me): HTMLElement {
           { class: 'nb-vote' },
           h('p', { class: 'nb-vote-title' }, '❤ The funniest answer?'),
           others.map((c) =>
-            h('button', { type: 'button', class: 'option', onclick: () => void send({ kind: 'vote', cardId: c.id, round: game.round }) }, '❤ ', h('span', { lang: 'ja' }, c.text ?? ''), me.level === 'kana' && c.text ? h('small', { class: 'nb-offer-romaji' }, ` ${toRomaji(c.text)}`) : null),
+            h(
+              'button',
+              { type: 'button', class: 'option nb-vote-opt', onclick: () => void send({ kind: 'vote', cardId: c.id, round: game.round }) },
+              h('span', { lang: 'ja' }, '❤ ', c.text ?? ''),
+              me.level === 'kana' && c.text ? h('small', { class: 'nb-offer-romaji' }, toRomaji(c.text)) : null,
+              h('small', {}, nameOf(ctx, c.ownerId)),
+            ),
           ),
         )
-      : me.votedFor
-        ? h('p', { class: 'hint' }, 'Vote in ❤')
+      : voted
+        ? h('p', { class: 'hint' }, `❤ Sent: ${nameOf(ctx, voted.ownerId)}’s answer`)
         : null,
-    game.kind !== 'time' ? h('p', { class: 'nb-phrase' }, 'Arguing tip: ', h('span', { lang: 'ja' }, 'Aさんの ほうが ひどい！'), h('small', {}, ' A’s is worse!')) : null,
+    game.more ? h('p', { class: 'nb-phrase' }, 'Arguing tip: ', h('span', { lang: 'ja' }, `Aさんの ほうが ${game.more.text}！`), h('small', {}, ` A’s is ${game.more.en}!`)) : null,
+    ),
     isVip && game.kind !== 'time' ? vipHide(ctx) : null,
   );
 }
 
+const JOIN_EN: Record<string, string> = { 'そして…': 'and then', 'それから…': 'after that', 'しかも…': 'on top of that', 'さいごに…': 'and finally' };
+
 function storyScreen(ctx: Ctx, me: Me): HTMLElement {
   const { game, send } = ctx;
-  if (!me.performing) return waiting('Listen to the story 📖', game.story?.current ? `${nameOf(ctx, game.line.find((c) => c.id === game.story!.current)?.ownerId)} is reading…` : '');
-  const first = game.story?.index === 0;
+  const st = game.story;
+  if (!me.performing) {
+    const cur = st?.current ? game.line.find((c) => c.id === st.current) : undefined;
+    if (!cur) return waiting('Listen to the story 📖');
+    return h(
+      'div',
+      { class: 'screen' },
+      h('p', { class: 'big' }, 'Listen to the story 📖'),
+      h('p', {}, `${nameOf(ctx, cur.ownerId)} is reading:`),
+      h('p', { class: 'nb-story-p', lang: 'ja' }, joiner(st!.index, st!.order.length), h('strong', {}, cur.text ?? '')),
+    );
+  }
+  const first = st?.index === 0;
+  const join = st ? joiner(st.index, st.order.length).trim() : '';
   return h(
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, '🎤 Your line!'),
-    h('p', { class: 'nb-story-p', lang: 'ja' }, first ? '' : 'そして… ', h('strong', {}, me.performing.text)),
-    h('p', { class: 'hint' }, first ? 'You start the story. Read it out with feeling!' : 'Start with そして (“and then…”), and read it out with feeling.'),
+    h('p', { class: 'nb-story-p', lang: 'ja' }, first ? '' : `${join} `, h('strong', {}, me.performing.text)),
+    h('p', { class: 'hint' }, first ? 'You start the story. Read it out with feeling!' : `Start with ${join.replace('…', '')} (${JOIN_EN[join] ?? 'and then'}…), and read it out with feeling.`),
     speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'perform', utterance, round: game.round }) }),
     h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'perform', pass: true, round: game.round }) }, 'Skip my line'),
   );
+}
+
+function defenceSpot(ctx: Ctx, me: Me): string {
+  const line = ctx.game.line;
+  const i = line.findIndex((c) => c.mine);
+  const l = line[i - 1];
+  const r = line[i + 1];
+  return l && r ? `Between ${nameOf(ctx, l.ownerId)} and ${nameOf(ctx, r.ownerId)}` : l ? `At the high end, after ${nameOf(ctx, l.ownerId)}` : r ? `At the low end, before ${nameOf(ctx, r.ownerId)}` : '';
 }
 
 export const narabetePhone: PhoneMode<NarabeteView> = {
@@ -271,7 +356,10 @@ export const narabetePhone: PhoneMode<NarabeteView> = {
             { class: 'screen' },
             h('p', { class: 'big' }, '🎤 Defend your card!'),
             h('p', {}, 'It moved the most. Say why it belongs there.'),
-            h('p', { class: 'nb-frame', lang: 'ja' }, '〜から です。', h('small', {}, ' It’s because …')),
+            me.said ? h('p', { class: 'hint' }, 'Your answer: ', h('span', { lang: 'ja' }, me.said.text)) : null,
+            secret(me),
+            h('p', { class: 'nb-pos' }, defenceSpot(ctx, me)),
+            h('p', { class: 'nb-frame', lang: 'ja' }, '〜からです。', h('small', {}, ' It’s because …')),
             speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'defend', utterance, round: game.round }) }),
             h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Pass'),
           );

@@ -185,6 +185,8 @@ export interface NarabeteView {
   kind: RoundKind | null;
   phaseAt: number;
   title: JpText | null;
+  /** Feelings: the theme's adjective for arguing, 「Aさんの ほうが 〜！」. */
+  more: JpText | null;
   low: JpText | null;
   high: JpText | null;
   unit: TimeSet['unit'] | 'feel' | null;
@@ -235,6 +237,16 @@ const round5 = (n: number) => Math.round(n / 5) * 5;
 const blankStats = (): PlayerStats => ({ spoken: 0, poker: 0, votes: 0, again: 0 });
 const stats = (s: NarabeteState, id: string) => (s.stats[id] ??= blankStats());
 const hasJapanese = (t: string) => /[ぁ-ゖァ-ヺ一-鿿]/.test(t);
+
+/**
+ * A player's answer as the TV shows it: です, ます and final particles joined to the word before
+ * (one bunsetsu, so です never falls onto a line of its own), and a 。 if a Japanese sentence lacks one.
+ */
+export function tidyJa(text: string): string {
+  let t = text.trim().replace(/\s+(です|でした|ます|ました|ません|ませんでした|か|ね|よ)(?=[。！？!?、\s]|$)/g, '$1');
+  if (/[ぁ-ゖァ-ヺー一-鿿]$/.test(t)) t += '。';
+  return t;
+}
 
 export const roundKind = (round: number): RoundKind => (round <= 1 ? 'time' : round >= TOTAL_ROUNDS ? 'story' : 'feel');
 
@@ -382,7 +394,6 @@ function score(s: NarabeteState, ctx: ModeContext): void {
     let share = c ? sayShare(c, r.kind, p.level) : 0;
     if (r.defence?.playerId === p.id && r.defence.ok) share += DEFENCE_SHARE;
     bonus[p.id] = Math.min(cap, round5(cap * share));
-    if (teamPoints + bonus[p.id]!) ctx.award(p.id, teamPoints + bonus[p.id]!);
     if (c?.said?.via === 'speech') stats(s, p.id).spoken += 1;
   }
   r.flip = { ...f, teamPoints, bonus };
@@ -412,9 +423,22 @@ function phrases(s: NarabeteState, r: Round, ctx: ModeContext): void {
       }
     }
   }
-  if (r.kind === 'feel')
-    for (const p of ctx.players())
-      ctx.phrase(p.id, { itemId: 'narabete:hou-ga', text: 'Aさんの ほうが ひどい！', kana: 'Aさんの ほうが ひどい！', en: "A's is worse! (〜の ほうが: comparing two things)", outcome: 'seen' });
+  const more = r.kind !== 'time' ? themeOf(r.setId)?.more : undefined;
+  if (more)
+    for (const p of ctx.players()) {
+      const line = `Aさんの ほうが ${more.text}！`;
+      ctx.phrase(p.id, { itemId: `narabete:hou-ga:${more.text}`, text: line, kana: line, en: `A's is ${more.en}! (〜の ほうが: comparing two things)`, outcome: 'seen' });
+    }
+}
+
+/** Pays the flip once the last card is over (at the end of `score`), so no score moves while cards are still face down. */
+function payFlip(r: Round, ctx: ModeContext): void {
+  const f = r.flip;
+  if (!f) return;
+  for (const p of ctx.players()) {
+    const n = f.teamPoints + (f.bonus[p.id] ?? 0);
+    if (n) ctx.award(p.id, n);
+  }
 }
 
 function payVotes(s: NarabeteState, r: Round, ctx: ModeContext): void {
@@ -442,6 +466,9 @@ function flipSteps(r: Round): number {
   return r.line.length;
 }
 
+/** The Worst Day Ever's connectors, so the day gets worse and worse: そして… それから… しかも… さいごに… */
+export const joiner = (i: number, n: number): string => (i === 0 ? '' : i === n - 1 ? 'さいごに… ' : (['そして… ', 'それから… ', 'しかも… '][(i - 1) % 3] ?? 'そして… '));
+
 /** How long the TV takes to flip the line (the stage holds the host's line until it's done). */
 export const flipMs = (cards: number): number => FLIP_LEAD_MS + FLIP_STEP_MS * cards;
 
@@ -459,7 +486,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     roundChoices: [],
     usesPack: false,
     phrasebookTitle: 'Your lines',
-    phaseLabels: { prompt: 'Your secret card', answer: 'Say it', reveal: 'Line them up', encore: 'One defence', score: 'The flip', finale: 'The worst day ever' },
+    phaseLabels: { prompt: 'Secret cards', answer: 'Say it', reveal: 'Line up', encore: 'Defence', score: 'Cards over', finale: 'Worst day ever' },
   },
 
   setup(ctx) {
@@ -496,7 +523,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     const r = s.current;
     switch (phase) {
       case 'intro':
-        ctx.cue({ host: 'nobiko', event: 'intro' });
+        ctx.cue({ host: 'nobiko', event: 'narabete_intro' });
         break;
       case 'prompt': {
         startRound(s, ctx);
@@ -529,6 +556,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     if (!r) return;
     if (phase === 'reveal') r.defence = pickDefence(r, ctx);
     if (phase === 'score') {
+      payFlip(r, ctx);
       payVotes(s, r, ctx);
       if (r.kind === 'story') {
         const order = [...r.cards]
@@ -616,7 +644,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         } else {
           const theme = themeOf(r.setId)!;
           const ready = mine.offers.find((i) => normalizeReading(theme.ready[i]!.jp.kana) === normalizeReading(utteranceReading(u)) || normalizeReading(theme.ready[i]!.jp.kana) === normalizeReading(text));
-          mine.said = { text, via: u.via, ok: hasJapanese(text), warn: soundsLikeNumber(u), ready: ready ?? null };
+          mine.said = { text: tidyJa(text), via: u.via, ok: hasJapanese(text), warn: soundsLikeNumber(u), ready: ready ?? null };
         }
         return MOVE_OK;
       }
@@ -679,7 +707,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         if (!isUtterance(raw.utterance)) return moveError('bad-utterance');
         const text = cleanText(raw.utterance.text, MAX_ANSWER_LENGTH);
         if (!text || !playerTextAllowed(text, ctx.audience)) return MOVE_OK;
-        r.defence.text = text;
+        r.defence.text = tidyJa(text);
         r.defence.ok = raw.utterance.via === 'speech' && hasJapanese(text);
         return MOVE_OK;
       }
@@ -817,6 +845,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       kind,
       phaseAt: s.phaseAt,
       title: set?.title ?? theme?.ask ?? null,
+      more: theme?.more ?? null,
       low: set?.low ?? theme?.low ?? null,
       high: set?.high ?? theme?.high ?? null,
       unit: set ? set.unit : theme ? 'feel' : null,
@@ -845,8 +874,8 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
     add(best((st) => st.poker), 'ポーカーフェイス賞', 'Poker Face: made a big number sound small');
     add(best((st) => st.votes), 'おもしろ賞', 'Funniest: most votes for an answer');
-    add(best((st) => st.spoken), 'いい こえ賞', 'Best Voice: said the most cards out loud');
-    add(best((st) => st.again), 'みみ賞', 'Good Ears: asked to hear it again the most');
+    add(best((st) => st.spoken), 'いいこえ賞', 'Best Voice: said the most cards out loud');
+    add(best((st) => st.again), 'ききじょうず賞', 'Good Listener: asked to hear it again the most');
     return out;
   },
 };

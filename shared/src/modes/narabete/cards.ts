@@ -48,6 +48,8 @@ export interface FeelTheme {
   id: string;
   /** The question on the TV. */
   ask: JpText;
+  /** The theme's adjective for arguing about order: 「Aさんの ほうが 〜！」 */
+  more: JpText;
   low: JpText;
   high: JpText;
   audiences: readonly Audience[];
@@ -120,7 +122,7 @@ export const TIME_SETS: TimeSet[] = [
       t('konbini.ice', 300, '¥300', '🍦', 'アイスは さんびゃくえんです。', 'Ice cream is 300 yen.', ['さんびゃくえん']),
       t('konbini.karaage', 450, '¥450', '🍗', 'からあげは よんひゃくごじゅうえんです。', 'Karaage is 450 yen.', ['よんひゃくごじゅうえん']),
       t('konbini.bento', 600, '¥600', '🍱', 'おべんとうは ろっぴゃくえんです。', 'A bento is 600 yen.', ['ろっぴゃくえん']),
-      t('konbini.notebook', 800, '¥800', '📒', 'ノートは はっぴゃくえんです。', 'A notebook is 800 yen.', ['はっぴゃくえん']),
+      t('konbini.battery', 800, '¥800', '🔋', 'でんちは はっぴゃくえんです。', 'Batteries are 800 yen.', ['はっぴゃくえん']),
       t('konbini.umbrella', 1980, '¥1,980', '☂️', 'ゆうれいの かさは せんきゅうひゃくはちじゅうえんです。', "A ghost's umbrella is 1,980 yen.", ['せんきゅうひゃくはちじゅうえん']),
     ],
   },
@@ -169,12 +171,12 @@ export const TIME_SETS: TimeSet[] = [
     audiences: ['cheeky'],
     cards: [
       t('first-date.meet', 18 * H, '6:00 pm', '🚉', 'ごご ろくじに えきで まちあわせを します。', 'Meets up at the station at 6 p.m.', ['ろくじ']),
-      t('first-date.name', 18 * H + 10, '6:10 pm', '😅', 'ろくじ じゅっぷんに なまえを わすれます。', "At 6:10, forgets their name.", ['ろくじじゅっぷん', 'ろくじじっぷん']),
+      t('first-date.name', 18 * H + 10, '6:10 pm', '😅', 'ろくじ じゅっぷんに あいての なまえを わすれます。', "At 6:10, forgets their date's name.", ['ろくじじゅっぷん', 'ろくじじっぷん']),
       t('first-date.wine', 19 * H, '7:00 pm', '🍷', 'よる しちじに ワインを のみます。', 'Drinks wine at 7 p.m.', ['しちじ']),
       t('first-date.home', 21 * H, '9:00 pm', '🏃', 'よる くじに かえりたく なります。', 'At 9 p.m., wants to go home.', ['くじ']),
       t('first-date.karaoke', 22 * H + 30, '10:30 pm', '🎤', 'よる じゅうじはんに カラオケに いきます。', 'Goes to karaoke at 10:30 p.m.', ['じゅうじはん', 'じゅうじさんじゅっぷん', 'じゅうじさんじっぷん']),
       t('first-date.midnight', 24 * H, '12:00 midnight', '🌙', 'よなかの じゅうにじ、まだ かえって いません。', 'Midnight: still not home.', ['じゅうにじ']),
-      t('first-date.taxi', 26 * H, '2:00 am', '🚕', 'ごぜん にじ、タクシーが ありません。', '2 a.m.: no taxis.', ['にじ']),
+      t('first-date.train', 26 * H, '2:00 am', '🚃', 'ごぜん にじ、もう でんしゃが ありません。', "2 a.m.: the last train's gone.", ['にじ']),
       t('first-date.breakfast', 31 * H, '7:00 am', '🍳', 'ごぜん しちじに あさごはんも いっしょに たべます。', 'At 7 a.m., they have breakfast together too.', ['しちじ']),
     ],
   },
@@ -211,6 +213,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'smelly',
     ask: jp('どのくらい くさい？', 'How smelly is it?'),
+    more: jp('くさい', 'smellier'),
     low: jp('いい におい', 'smells nice'),
     high: jp('ポンの くつした', "Pon's socks"),
     audiences: ['kids', 'family'],
@@ -229,7 +232,8 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'ghost-scary',
-    ask: jp('おばけが みたら、どのくらい こわい？', 'How scary would a ghost find it?'),
+    ask: jp('おばけが みたら、どのくらい こわがる？', 'How scary would a ghost find it?'),
+    more: jp('こわい', 'scarier'),
     low: jp('ぜんぜん こわくない', 'not scary at all'),
     high: jp('ぎゃー！', 'AAAH!'),
     audiences: ['kids', 'family'],
@@ -249,6 +253,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'pon-ate',
     ask: jp('ポンが たべたら、どのくらい たいへん？', 'If Pon ate it, how much trouble?'),
+    more: jp('たいへん', 'worse'),
     low: jp('だいじょうぶ', "it's fine"),
     high: jp('たいへん！', 'disaster!'),
     audiences: ['kids', 'family'],
@@ -269,6 +274,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'grandma-shock',
     ask: jp('おばあちゃんに みせたら、どのくらい びっくりする？', 'How shocked would Grandma be?'),
+    more: jp('びっくりする', 'more shocking'),
     low: jp('ふーん', '"Hmm."'),
     high: jp('きゅうきゅうしゃ！', 'call an ambulance!'),
     audiences: ['family', 'cheeky'],
@@ -288,6 +294,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'flea-market',
     ask: jp('フリマで いくらで うれる？', 'How much would it sell for at a flea market?'),
+    more: jp('たかい', 'pricier'),
     low: jp('ゼロえん', '0 yen'),
     high: jp('ひゃくまんえん', 'a million yen'),
     audiences: ['kids', 'family', 'cheeky'],
@@ -306,7 +313,8 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'hard-morning',
-    ask: jp('あさ おきるのが どのくらい つらい？', 'How hard is getting up for it?'),
+    ask: jp('その ひの あさ、おきるのが どのくらい つらい？', 'How hard is getting up on that day?'),
+    more: jp('つらい', 'harder'),
     low: jp('すぐ おきる', 'up at once'),
     high: jp('むり', 'impossible'),
     audiences: ['kids', 'family', 'cheeky'],
@@ -327,6 +335,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'late-excuse',
     ask: jp('ちこくの いいわけ、どのくらい ひどい？', 'How bad is this excuse for being late?'),
+    more: jp('ひどい', 'worse'),
     low: jp('まあ、ゆるせる', 'fair enough'),
     high: jp('ぜったい アウト', 'totally unforgivable'),
     audiences: ['cheeky'],
@@ -346,6 +355,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'dating-profile',
     ask: jp('マッチングアプリに かいたら、どのくらい モテる？', 'How popular would this make your dating profile?'),
+    more: jp('モテる', 'more popular'),
     low: jp('ブロック', 'blocked'),
     high: jp('モテモテ', 'swipes galore'),
     audiences: ['cheeky'],
@@ -364,18 +374,19 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'midnight-message',
-    ask: jp('よるの じゅうにじすぎの メッセージ、どのくらい あやしい？', 'How suspicious is this message after midnight?'),
+    ask: jp('よなかの メッセージ、どのくらい あやしい？', 'How suspicious is this midnight message?'),
+    more: jp('あやしい', 'more suspicious'),
     low: jp('ふつう', 'normal'),
     high: jp('あやしすぎる', 'way too suspicious'),
     audiences: ['cheeky'],
-    frames: ['「〜」', '「おきてる？」', '「〜、いい？」'],
+    frames: ['「〜」', '「〜 しない？」', '「〜、いい？」'],
     swerve: [jp('カラオケ', 'karaoke'), jp('ペンギン', 'a penguin')],
     ready: [
       r('「あした なんじ？」', '"What time tomorrow?"', '🕐', 5),
       r('「かぎ わすれた」', '"Forgot my keys."', '🔑', 20),
       r('「おきてる？」', '"You up?"', '🌙', 60),
       r('「いま、ちかくに いる」', '"I\'m nearby right now."', '📍', 75),
-      r('「ペンギン かえる？」', '"Can you keep a penguin?"', '🐧', 80),
+      r('「ペンギン、ほしい？」', '"Want a penguin?"', '🐧', 80),
       r('「ないしょに して」', '"Keep this a secret."', '🤫', 88),
       r('「シャベル ある？」', '"Got a shovel?"', '⛏️', 98),
       r('「カラオケ いく？」', '"Karaoke?"', '🎤', 45),
@@ -384,18 +395,19 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'parents-saw',
     ask: jp('おやに みられたら、どのくらい まずい？', 'How bad if your parents saw it?'),
+    more: jp('まずい', 'worse'),
     low: jp('セーフ', 'safe'),
     high: jp('かぞく かいぎ', 'family meeting'),
     audiences: ['cheeky'],
     frames: FRAMES.thing,
-    swerve: [jp('にっき', 'my diary'), jp('きのうの しゃしん', "last night's photos")],
+    swerve: [jp('にっき', 'my diary'), jp('きのうの よるの しゃしん', "last night's photos")],
     ready: [
       r('しゅくだい', 'my homework', '📓', 3),
       r('ゲーム', 'my games', '🎮', 15),
       r('へやの なか', 'my room', '🛏️', 35),
       r('ネットの りれき', 'my browser history', '💻', 80),
       r('にっき', 'my diary', '📔', 70),
-      r('きのうの しゃしん', "last night's photos", '📸', 90),
+      r('きのうの よるの しゃしん', "last night's photos", '📸', 90),
       r('クレジットカードの めいさい', 'my credit card bill', '💳', 85),
       r('タトゥー', 'my tattoo', '🐉', 95),
     ],
@@ -403,6 +415,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'morning-regret',
     ask: jp('のみかいの つぎの あさ、どのくらい こうかいする？', 'How much would you regret it the next morning?'),
+    more: jp('はずかしい', 'more embarrassing'),
     low: jp('へいき', 'no regrets'),
     high: jp('きえたい', 'want to vanish'),
     audiences: ['cheeky'],
@@ -423,6 +436,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   {
     id: 'worst-day-kids',
     ask: jp('きょう あった こと、どのくらい たいへん？', 'What happened today, and how bad was it?'),
+    more: jp('たいへん', 'worse'),
     low: jp('ちょっと', 'a bit'),
     high: jp('さいあく！', 'the worst!'),
     audiences: ['kids'],
@@ -442,7 +456,8 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'worst-day',
-    ask: jp('きょう あった こと、どのくらい さいあく？', 'What happened today, and how bad was it?'),
+    ask: jp('きょう あった こと、どのくらい ひどい？', 'What happened today, and how bad was it?'),
+    more: jp('ひどい', 'worse'),
     low: jp('まあまあ', 'meh'),
     high: jp('さいあく！', 'the worst!'),
     audiences: ['family'],
@@ -462,7 +477,8 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'worst-day-cheeky',
-    ask: jp('きょう あった こと、どのくらい さいあく？', 'What happened today, and how bad was it?'),
+    ask: jp('きょう あった こと、どのくらい ひどい？', 'What happened today, and how bad was it?'),
+    more: jp('ひどい', 'worse'),
     low: jp('まあまあ', 'meh'),
     high: jp('じんせい おわり', 'life over'),
     audiences: ['cheeky'],
@@ -471,12 +487,12 @@ export const FEEL_THEMES: FeelTheme[] = [
     swerve: [jp('もとカレ', 'my ex'), jp('ペンギン', 'a penguin')],
     ready: [
       r('ねぐせが ひどかったです。', 'Terrible bed hair.', '💇', 5),
-      r('でんしゃで となりの ひとが ねました。', 'The person next to me slept on me.', '🚃', 20),
-      r('ぶちょうに メールを まちがえました。', 'I sent an email to the boss by mistake.', '📧', 45),
+      r('でんしゃで となりの ひとが わたしの かたで ねました。', 'The person next to me slept on me.', '🚃', 20),
+      r('まちがえて ぶちょうに メールしました。', 'I emailed the boss by mistake.', '📧', 45),
       r('もとカレに あいました。', 'I ran into my ex.', '💔', 55),
       r('ズボンが やぶれました。', 'My trousers split.', '👖', 70),
       r('もとカレの けっこんしきでした。', "It was my ex's wedding.", '💒', 82),
-      r('かいぎで ペンギンが でました。', 'A penguin turned up at the meeting.', '🐧', 90),
+      r('かいぎに ペンギンが きました。', 'A penguin turned up at the meeting.', '🐧', 90),
       r('ぜんぶ ゆめでした。まだ げつようびです。', "It was all a dream. It's still Monday.", '📅', 99),
     ],
   },

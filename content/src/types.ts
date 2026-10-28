@@ -507,6 +507,7 @@ export type HostEvent =
   | 'concentration_clear' // the board is clear
   | 'concentration_time' // the game ran out of time with pairs left
   // Narabete!
+  | 'narabete_intro' // Nobiko-san opens the game: one team, lining things up along her neck
   | 'narabete_deal' // the cards are dealt for a round
   | 'narabete_say' // say your card out loud
   | 'narabete_order' // the line is open: move your own card

@@ -1,25 +1,42 @@
-// Narabete! on the TV. The line runs along Nobiko-san's neck, low end on the left, her head at the
-// high end. Nothing here shows a secret before the flip:
+// Narabete! on the TV. The line runs along Nobiko-san's neck: her body at the low end, her neck along
+// the bottom, her head at the high end. One layout for the whole round, so the neck never jumps:
 //
-//   deal     the round's title and the neck's two ends; "look at your phone".
-//   say      who has said their card (a 🔊 on their chip), never what it was.
-//   order    the cards on the neck in the room's order: Time Line cards show their picture, Feelings
-//            cards their answer; 🔒 when the owner is happy, 🙋 when someone asked to hear it again.
-//   defence  the most-moved card lifts off the neck and its author says why it belongs there.
-//   flip     Nobiko-san turns the cards over from the low end, one per step, a rising note each; a
-//            knot ties in her neck between two cards out of order; the biggest surprise flips last.
-//   story    round 3's answers, low to high, read out in turn with 「そして…」 between them.
+//   deal     the round's title and the neck's two ends; an empty dashed slot per player.
+//   say      a 🔊 on each slot whose player has said their card, never what it was.
+//   order    the cards on the neck in the room's order, each in its owner's seat colour: Time Line
+//            cards show their picture, Feelings cards their answer; きめた when locked, 🙋 when someone
+//            asked to hear it again. A card that moves slides to its new place.
+//   defence  the most-moved card lifts off the neck, and its author says why it belongs there.
+//   flip     Nobiko-san turns the cards over from the low end, one per step, a bell a step up the
+//            theme's scale as each face shows; a knot ties in her neck between two cards out of order;
+//            the biggest surprise wobbles and turns last, on the scale's home note.
+//   story    round 3's answers, low to high, read out in turn: そして… それから… しかも… さいごに…
 
-import { h, ruby } from '../../../shared/src/dom.js';
-import { FLIP_LEAD_MS, FLIP_STEP_MS, flipMs, type LineCard } from '../../../shared/src/modes/narabete/narabete.js';
+import { h, ruby, seatShape } from '../../../shared/src/dom.js';
+import { FLIP_LEAD_MS, FLIP_STEP_MS, flipMs, joiner, type LineCard } from '../../../shared/src/modes/narabete/narabete.js';
 import type { NarabeteView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
-import { flipNote } from '../music/sfx.js';
+import { bellTonic, hushFor } from '../music/index.js';
+import { flipChord, flipNote } from '../music/sfx.js';
 import type { StageMode } from './types.js';
 
-const KIND = { time: 'Time Line · じかんの ならび', feel: 'Feelings Line · きもちの ならび', story: 'The Worst Day Ever · さいあくの いちにち' } as const;
+/** What the round asks, in the words players say: なんじ？ for times, いくら？ for prices … */
+const ASK: Record<string, string> = { time: 'なんじ？', price: 'いくら？', date: 'いつ？', feel: 'どのくらい？' };
+const KIND = { time: 'Time Line', feel: 'Feelings Line', story: 'The Worst Day Ever' } as const;
 
-const nameOf = (view: RoomView, id: string | null | undefined): string => view.players.find((p) => p.id === id)?.name ?? '(left)';
+
+const playerOf = (view: RoomView, id: string | null | undefined) => view.players.find((p) => p.id === id);
+const nameOf = (view: RoomView, id: string | null | undefined): string => playerOf(view, id)?.name ?? '(left)';
+
+/** A player's seat shape, number and name: the same badge as their chip in the strip. */
+function owner(view: RoomView, id: string): HTMLElement {
+  const seat = playerOf(view, id)?.seat ?? 0;
+  return h('p', { class: 'nb-name' }, seat ? h('span', { class: 'nb-seat' }, `${seatShape(seat)}${seat}`) : null, nameOf(view, id));
+}
+const seatStyle = (view: RoomView, id: string): string => {
+  const seat = playerOf(view, id)?.seat;
+  return seat ? `--seat: var(--seat-${seat});` : '';
+};
 
 // The stage redraws on every update, so the flip is timed from when this phase first showed: a
 // re-render (a vote coming in) picks the animation up where it was rather than starting again.
@@ -29,16 +46,26 @@ function since(view: RoomView): number {
   return performance.now() - shown.at;
 }
 
-// The rising scale plays once per flip, however many times the screen redraws.
+/** When card `step` of the flip starts to turn, in ms from the phase start. */
+const flipAt = (step: number): number => FLIP_LEAD_MS + step * FLIP_STEP_MS;
+/** The card's face shows (and its bell rings) this long into its turn; a knot ties a little later. */
+const FACE_MS = 300;
+const KNOT_MS = 650;
+
+// The bells and the hush play once per flip, however many times the screen redraws.
 let scaled = -1;
-function playScale(view: RoomView, game: NarabeteView, elapsed: number): void {
+function playFlip(view: RoomView, game: NarabeteView, elapsed: number): void {
   if (scaled === view.phaseSeq || !game.flip) return;
   scaled = view.phaseSeq;
+  const total = flipMs(game.flip.steps);
+  hushFor(Math.max(0, total - elapsed));
+  const tonic = bellTonic();
   const byFlip = [...game.line].sort((a, b) => (a.flip ?? 0) - (b.flip ?? 0));
   byFlip.forEach((c, step) => {
-    const at = FLIP_LEAD_MS + step * FLIP_STEP_MS - elapsed;
-    if (at >= 0) flipNote(step, at / 1000, knotted(game, c));
+    const at = flipAt(step) - elapsed;
+    if (at >= 0) flipNote(step, byFlip.length, at / 1000, knotted(game, c), tonic);
   });
+  if (game.flip.perfect && total - elapsed >= 0) flipChord((total - elapsed) / 1000, tonic);
 }
 
 /** Did this card's flip tie a knot (it sits out of order with a neighbour already turned)? */
@@ -49,13 +76,33 @@ function knotted(game: NarabeteView, c: LineCard): boolean {
   return (!!left?.knotAfter && (left.flip ?? 0) < (c.flip ?? 0)) || (!!c.knotAfter && !!right && (right.flip ?? 0) < (c.flip ?? 0));
 }
 
+// Cards slide to a new place instead of jumping: each render remembers where each card sat, and a
+// card that moved starts from its old place.
+const lastLeft = new Map<string, number>();
+function slideCards(): void {
+  requestAnimationFrame(() => {
+    for (const el of document.querySelectorAll<HTMLElement>('.nb-card[data-key]')) {
+      const key = el.dataset.key!;
+      const left = el.offsetLeft;
+      const before = lastLeft.get(key);
+      lastLeft.set(key, left);
+      if (before !== undefined && before !== left && document.body.dataset.motion !== 'calm') {
+        el.animate([{ transform: `translateX(${before - left}px)` }, { transform: 'none' }], { duration: 280, easing: 'cubic-bezier(0.2, 1.2, 0.4, 1)' });
+      }
+    }
+  });
+}
+
 function head(game: NarabeteView, view: RoomView): HTMLElement {
+  const ask = game.unit ? ASK[game.unit] : '';
   return h(
     'div',
     { class: 'nb-head' },
-    h('p', { class: 'nb-tag' }, `${game.kind ? KIND[game.kind] : ''} · round ${game.round} of ${game.totalRounds}`),
+    h('p', { class: 'nb-tag' }, game.kind ? KIND[game.kind] : '', ask ? h('span', { lang: 'ja' }, ` · ${ask}`) : null, ` · round ${game.round} of ${game.totalRounds}`),
     game.title ? h('p', { class: 'nb-title' }, ruby(game.title), h('small', {}, game.title.en)) : null,
     view.phase === 'prompt' ? h('p', { class: 'nb-call' }, '🤫 Look at your phone: a secret card for you!') : null,
+    view.phase === 'answer' ? h('p', { class: 'nb-call' }, game.kind === 'time' ? '🔊 Say your card out loud, from memory!' : '🔊 Say your answer out loud. Not the number!') : null,
+    view.phase === 'reveal' ? h('p', { class: 'nb-call' }, `◀ ▶ Move your own card · きめた ${game.locked.length} of ${game.line.length}`) : null,
   );
 }
 
@@ -64,16 +111,28 @@ const valueOf = (c: LineCard): string => c.label ?? String(c.value ?? '');
 
 function card(view: RoomView, game: NarabeteView, c: LineCard, i: number, elapsed: number): HTMLElement {
   const flipped = c.flip !== undefined;
-  const at = flipped ? FLIP_LEAD_MS + (c.flip ?? 0) * FLIP_STEP_MS - elapsed : 0;
+  const at = flipped ? flipAt(c.flip ?? 0) - elapsed : 0;
+  const slot = view.phase === 'prompt' || view.phase === 'answer';
   const defending = game.defence?.playerId === c.ownerId && view.phase === 'encore';
   const face = h(
     'div',
     { class: 'nb-face' },
-    c.emoji ? h('span', { class: 'nb-emoji', 'aria-hidden': 'true' }, c.emoji) : game.kind === 'time' ? h('span', { class: 'nb-emoji nb-ear', 'aria-hidden': 'true' }, '🔊') : null,
-    c.text && game.kind !== 'time' ? h('p', { class: `nb-text${c.hidden ? ' nb-hidden' : ''}`, lang: 'ja' }, c.text) : null,
-    h('p', { class: 'nb-name' }, nameOf(view, c.ownerId)),
+    slot
+      ? h('span', { class: 'nb-emoji nb-ear', 'aria-hidden': 'true' }, c.said ? '🔊' : '…')
+      : c.emoji
+        ? h('span', { class: 'nb-emoji', 'aria-hidden': 'true' }, c.emoji)
+        : game.kind === 'time'
+          ? h('span', { class: 'nb-emoji nb-ear', 'aria-hidden': 'true' }, '🔊')
+          : null,
+    c.text && game.kind !== 'time' && !slot ? h('p', { class: `nb-text${c.hidden ? ' nb-hidden' : ''}`, lang: 'ja' }, c.text) : null,
+    owner(view, c.ownerId),
     view.phase === 'reveal'
-      ? h('p', { class: 'nb-flags' }, c.locked ? h('span', { class: 'nb-lock' }, '🔒') : null, c.again ? h('span', { class: 'nb-again' }, `🙋 ${c.again}`) : null)
+      ? h(
+          'p',
+          { class: 'nb-flags' },
+          c.locked ? h('span', { class: 'nb-lock', lang: 'ja', 'data-key': 'lock' }, '🔒 きめた') : null,
+          c.again ? h('span', { class: 'nb-again', 'data-key': `again-${c.again}` }, `🙋 ${c.again}`) : null,
+        )
       : null,
   );
   const back = flipped
@@ -82,16 +141,17 @@ function card(view: RoomView, game: NarabeteView, c: LineCard, i: number, elapse
         { class: 'nb-back' },
         h('p', { class: 'nb-value' }, valueOf(c)),
         c.text && game.kind === 'time' ? h('p', { class: 'nb-sentence', lang: 'ja' }, c.text) : null,
-        c.text && game.kind !== 'time' ? h('p', { class: `nb-text${c.hidden ? ' nb-hidden' : ''}`, lang: 'ja' }, c.text) : null,
+        c.text && game.kind !== 'time' ? h('p', { class: `nb-sentence${c.hidden ? ' nb-hidden' : ''}`, lang: 'ja' }, c.text) : null,
         c.en && !c.hidden ? h('p', { class: 'nb-en' }, c.en) : null,
-        h('p', { class: 'nb-name' }, nameOf(view, c.ownerId), c.votes ? h('span', { class: 'nb-votes' }, ` ❤ ${c.votes}`) : null),
+        h('div', { class: 'nb-back-foot' }, owner(view, c.ownerId), c.votes ? h('span', { class: 'nb-votes' }, `❤ ${c.votes}`) : null),
       )
     : null;
   return h(
     'li',
     {
-      class: `nb-card${flipped ? ' nb-flipping' : ''}${c.last ? ' nb-last' : ''}${defending ? ' nb-defending host-target' : ''}`,
-      style: `--d: ${Math.round(at)}ms; --i: ${i}`,
+      class: `nb-card${slot ? ' nb-slot' : ''}${slot && c.said ? ' nb-said' : ''}${c.locked && view.phase === 'reveal' ? ' nb-locked' : ''}${flipped ? ' nb-flipping' : ''}${c.last ? ' nb-last' : ''}${defending ? ' nb-defending' : ''}`,
+      style: `${seatStyle(view, c.ownerId)} --d: ${Math.round(at)}ms; --i: ${i}`,
+      'data-key': c.id,
     },
     h('div', { class: 'nb-inner' }, face, back),
   );
@@ -102,56 +162,56 @@ function joints(game: NarabeteView, elapsed: number): HTMLElement[] {
   if (!game.flip) return [];
   return game.line.slice(0, -1).map((c, i) => {
     const next = game.line[i + 1]!;
-    const at = FLIP_LEAD_MS + Math.max(c.flip ?? 0, next.flip ?? 0) * FLIP_STEP_MS + 450 - elapsed;
-    return h('span', { class: `nb-joint ${c.knotAfter ? 'nb-knot' : 'nb-ok'}`, style: `--d: ${Math.round(at)}ms; --x: ${i + 1}`, 'aria-hidden': 'true' }, c.knotAfter ? '' : '✓');
+    const at = flipAt(Math.max(c.flip ?? 0, next.flip ?? 0)) + KNOT_MS - elapsed;
+    return h('span', { class: `nb-joint ${c.knotAfter ? 'nb-knot' : 'nb-ok'}`, style: `--d: ${Math.round(at)}ms; --x: ${i + 1}`, 'aria-hidden': 'true' }, c.knotAfter ? '🪢' : '✓');
   });
+}
+
+function ends(game: NarabeteView): HTMLElement {
+  // Feelings rounds name the scale's anchors: your secret number sits between them.
+  const feel = game.unit === 'feel';
+  return h(
+    'div',
+    { class: 'nb-ends' },
+    game.low ? h('p', { class: 'nb-low' }, '◀ ', ruby(game.low), feel ? h('b', { class: 'nb-anchor' }, ' (1)') : null, h('small', {}, game.low.en)) : h('p', {}),
+    game.high ? h('p', { class: 'nb-high' }, ruby(game.high), feel ? h('b', { class: 'nb-anchor' }, ' (100)') : null, h('small', {}, game.high.en), ' ▶') : h('p', {}),
+  );
 }
 
 function neck(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement {
   const n = Math.max(1, game.line.length);
+  const result = game.flip && view.phase === 'score' ? flipMs(game.flip.steps) - elapsed : null;
   return h(
     'div',
-    { class: `nb-ruler nb-n${Math.min(n, 8)}`, style: `--n: ${n}` },
+    { class: `nb-ruler nb-n${Math.min(n, 8)}${result !== null && game.flip?.perfect ? ' nb-hop' : ''}`, style: `--n: ${n}; --r: ${Math.round(result ?? 0)}ms` },
     h('ol', { class: 'nb-line' }, game.line.map((c, i) => card(view, game, c, i, elapsed))),
-    h(
-      'div',
-      { class: 'nb-neck' },
-      h('span', { class: 'nb-collar', 'aria-hidden': 'true' }),
-      h('span', { class: 'nb-band', 'aria-hidden': 'true' }),
-      h('span', { class: 'nb-nobiko', 'aria-hidden': 'true' }),
-      ...joints(game, elapsed),
-    ),
-    h(
-      'div',
-      { class: 'nb-ends' },
-      game.low ? h('p', { class: 'nb-low' }, '◀ ', ruby(game.low), h('small', {}, game.low.en)) : null,
-      game.high ? h('p', { class: 'nb-high' }, ruby(game.high), h('small', {}, game.high.en), ' ▶') : null,
-    ),
+    h('div', { class: 'nb-neck' }, h('span', { class: 'nb-collar', 'aria-hidden': 'true' }), h('span', { class: 'nb-band', 'aria-hidden': 'true' }), h('span', { class: 'nb-nobiko', 'aria-hidden': 'true' }), ...joints(game, elapsed)),
+    ends(game),
   );
 }
 
-function chips(view: RoomView, game: NarabeteView): HTMLElement {
-  const playing = game.line.map((c) => c.ownerId);
-  return h(
-    'ul',
-    { class: 'nb-chips' },
-    playing.map((id) => h('li', { class: `nb-chip${game.said.includes(id) ? ' nb-said' : ''}` }, game.said.includes(id) ? '🔊 ' : '… ', nameOf(view, id))),
-  );
-}
-
-function result(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement | null {
+/** Under the neck: the defence, or the flip's result once the last card is over (space kept either way). */
+function foot(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement {
+  const d = game.defence;
+  if (view.phase === 'encore' && d)
+    return h(
+      'div',
+      { class: 'nb-foot' },
+      h('p', { class: 'nb-defence-call' }, `🎤 ${nameOf(view, d.playerId)}, your card moved the most. Why is it there?`, h('small', { lang: 'ja' }, ' 「〜からです。」')),
+      d.text ? h('p', { class: 'nb-defence', lang: 'ja' }, `「${d.text}」`) : null,
+    );
   const f = game.flip;
-  if (!f) return null;
-  const at = flipMs(f.steps) - elapsed;
-  return h(
-    'div',
-    { class: `nb-result${f.perfect ? ' nb-perfect' : ''}`, style: `--d: ${Math.round(at)}ms` },
-    f.perfect
-      ? h('p', { class: 'nb-result-big' }, h('span', { lang: 'ja' }, 'ぴったり！'), ` Perfect line! +${f.teamPoints} each`)
-      : h('p', { class: 'nb-result-big' }, `${f.pairs} of ${f.maxPairs} pairs in order · +${f.teamPoints} each`),
-    f.poker ? h('p', { class: 'nb-poker' }, `🃏 Poker face: ${nameOf(view, f.poker)}’s card fooled the room the most`) : null,
-    game.kind !== 'time' ? h('p', { class: 'nb-vote-call' }, '❤ On your phone: vote for the funniest answer') : null,
-  );
+  if (view.phase === 'score' && f) {
+    const at = flipMs(f.steps) - elapsed;
+    return h(
+      'div',
+      { class: `nb-foot nb-result${f.perfect ? ' nb-perfect' : ''}`, style: `--d: ${Math.round(at)}ms` },
+      f.perfect ? h('p', { class: 'nb-result-big' }, h('span', { lang: 'ja' }, 'ぴったり！'), ` Perfect line! +${f.teamPoints} each`) : h('p', { class: 'nb-result-big' }, `${f.pairs} of ${f.maxPairs} pairs in order · +${f.teamPoints} each`),
+      f.poker ? h('p', { class: 'nb-poker' }, `🃏 Poker face: ${nameOf(view, f.poker)}’s card fooled the room the most`) : null,
+      game.kind !== 'time' ? h('p', { class: 'nb-vote-call' }, '❤ On your phone: vote for the funniest answer') : null,
+    );
+  }
+  return h('div', { class: 'nb-foot' });
 }
 
 function story(view: RoomView, game: NarabeteView): HTMLElement {
@@ -170,14 +230,14 @@ function story(view: RoomView, game: NarabeteView): HTMLElement {
         const now = i === st.index;
         return h(
           'li',
-          { class: `nb-story-line${now ? ' nb-now host-target' : ''}${i < st.index ? ' nb-done' : ''}${i > st.index ? ' nb-later' : ''}` },
-          i > 0 ? h('span', { class: 'nb-soshite', lang: 'ja' }, 'そして… ') : null,
-          h('span', { class: 'nb-story-text', lang: 'ja' }, i <= st.index ? (c?.text ?? '') : '・・・'),
-          h('span', { class: 'nb-story-who' }, nameOf(view, c?.ownerId)),
+          { class: `nb-story-line${now ? ' nb-now' : ''}${i < st.index ? ' nb-done' : ''}${i > st.index ? ' nb-later' : ''}`, style: c ? seatStyle(view, c.ownerId) : '', 'data-key': `line-${id}` },
+          h('span', { class: 'nb-soshite', lang: 'ja' }, joiner(i, st.order.length)),
+          h('span', { class: 'nb-story-text', lang: 'ja', 'data-key': i <= st.index ? 'said' : 'later' }, i <= st.index ? (c?.text ?? '') : '・・・'),
+          c ? owner(view, c.ownerId) : null,
         );
       }),
     ),
-    h('p', { class: 'nb-call' }, st.current ? `🎤 ${nameOf(view, byId.get(st.current)?.ownerId)}, read your line!` : 'おしまい! The end.'),
+    h('p', { class: 'nb-call' }, st.current ? `🎤 ${nameOf(view, byId.get(st.current)?.ownerId)}, read your line!` : 'おしまい！ The end.'),
   );
 }
 
@@ -186,14 +246,14 @@ function intro(): HTMLElement {
     'div',
     { class: 'nb-stage nb-intro' },
     h('p', { class: 'nb-logo', lang: 'ja' }, 'ならべて！'),
-    h('p', { class: 'nb-subtitle' }, 'Line them up! Everyone holds a secret card.'),
+    h('p', { class: 'nb-subtitle' }, 'Line them up! One team, one secret card each.'),
     h(
       'ol',
       { class: 'nb-steps' },
       h('li', {}, h('strong', {}, '🤫 Your card is secret.'), ' Only your phone shows it.'),
       h('li', {}, h('strong', {}, '🔊 Say it out loud.'), ' Listen to everyone else’s.'),
       h('li', {}, h('strong', {}, '◀ ▶ Move your own card'), ' along Nobiko-san’s neck, low to high. Talk it over!'),
-      h('li', {}, h('strong', {}, '🪢 The flip:'), ' every pair in order scores for the whole team.'),
+      h('li', {}, h('strong', {}, '🪢 Cards over:'), ' every pair in order scores for the whole team.'),
     ),
   );
 }
@@ -213,42 +273,18 @@ export const narabeteStage: StageMode<NarabeteView> = {
 
   render(view, game) {
     const elapsed = since(view);
+    const calm = view.calmMotion ? ' nb-calm' : '';
     switch (view.phase) {
       case 'intro':
         return intro();
       case 'prompt':
       case 'answer':
-        return h(
-          'div',
-          { class: 'nb-stage' },
-          head(game, view),
-          view.phase === 'answer'
-            ? h('div', { class: 'nb-say' }, h('p', { class: 'nb-call' }, game.kind === 'time' ? '🔊 Say your card out loud, from memory!' : '🔊 Say your answer out loud. Not the number!'), chips(view, game))
-            : null,
-          h('div', { class: 'nb-ruler nb-empty' }, h('div', { class: 'nb-neck' }, h('span', { class: 'nb-collar' }), h('span', { class: 'nb-band' }), h('span', { class: 'nb-nobiko' })), h('div', { class: 'nb-ends' }, game.low ? h('p', { class: 'nb-low' }, '◀ ', ruby(game.low), h('small', {}, game.low.en)) : null, game.high ? h('p', { class: 'nb-high' }, ruby(game.high), h('small', {}, game.high.en), ' ▶') : null)),
-        );
       case 'reveal':
-        return h(
-          'div',
-          { class: 'nb-stage' },
-          head(game, view),
-          h('p', { class: 'nb-call' }, `◀ ▶ Move your own card · 🔒 ${game.locked.length} of ${game.line.length} happy`, game.kind === 'time' ? h('small', {}, ' · Tap 🙋 on your phone to hear a card again') : null),
-          neck(view, game, elapsed),
-        );
-      case 'encore': {
-        const d = game.defence;
-        return h(
-          'div',
-          { class: 'nb-stage' },
-          head(game, view),
-          d ? h('p', { class: 'nb-call' }, `🎤 ${nameOf(view, d.playerId)}, your card moved the most. Why is it there?`, h('small', { lang: 'ja' }, ' 「〜から です。」')) : null,
-          d?.text ? h('p', { class: 'nb-defence', lang: 'ja' }, `「${d.text}」`) : null,
-          neck(view, game, elapsed),
-        );
-      }
+      case 'encore':
       case 'score':
-        playScale(view, game, elapsed);
-        return h('div', { class: `nb-stage${view.calmMotion ? ' nb-calm' : ''}` }, head(game, view), neck(view, game, elapsed), result(view, game, elapsed));
+        if (view.phase === 'score') playFlip(view, game, elapsed);
+        slideCards();
+        return h('div', { class: `nb-stage nb-round${calm}` }, head(game, view), neck(view, game, elapsed), foot(view, game, elapsed));
       case 'finale':
         return game.story ? story(view, game) : h('div', { class: 'nb-stage' });
       default:

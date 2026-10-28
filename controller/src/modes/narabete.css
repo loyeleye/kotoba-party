@@ -3,8 +3,11 @@
 .nb-theme p { margin: 0; }
 .nb-theme .jpv-main { font-size: 22px; font-weight: 800; line-height: 1.3; }
 .nb-theme .jpv-en, .nb-theme .jpv-kana { font-size: 14px; color: var(--muted); }
-.nb-ends-p { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-weight: 800; font-size: 16px; flex-wrap: wrap; }
-.nb-ends-p small { color: var(--muted); font-weight: 400; font-size: 13px; }
+.nb-ends-p { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.nb-end { display: grid; gap: 0; padding: 6px 8px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-weight: 800; font-size: 16px; overflow-wrap: anywhere; }
+.nb-end small { color: var(--muted); font-weight: 400; font-size: 13px; }
+.nb-end b { color: #ffd36b; font-size: 18px; }
+.nb-end.hi { text-align: right; }
 
 .nb-mycard { display: grid; justify-items: center; gap: 4px; text-align: center; padding: 16px; border-radius: 16px; background: var(--paper); color: var(--paper-ink); border: 3px solid #0b0605; box-shadow: 0 5px 0 #0b0605; }
 .nb-mycard p { margin: 0; }
@@ -60,3 +63,25 @@
 .nb-phrase { margin: 0; font-size: 15px; color: var(--muted); }
 .nb-phrase span { color: var(--ink); font-weight: 800; }
 .nb-story-p { margin: 0; font-size: 24px; line-height: 1.4; padding: 12px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); overflow-wrap: anywhere; }
+
+/* The line as you see it: your card and its neighbours, locked ones ticked. */
+.nb-mini { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; justify-content: center; }
+.nb-mini li { min-width: 34px; height: 34px; display: grid; place-items: center; border-radius: 8px; background: var(--panel); border: 2px solid var(--line); font-size: 13px; font-weight: 800; color: var(--muted); }
+.nb-mini li.me { background: var(--mode); color: #0b0605; border-color: #0b0605; }
+.nb-mini li.locked { border-color: var(--good); }
+.nb-mycard.compact { grid-template-columns: auto 1fr; justify-items: start; text-align: left; padding: 10px 12px; gap: 2px 10px; }
+.nb-mycard.compact .nb-mycard-emoji { font-size: 40px; grid-row: span 3; }
+.nb-mycard.compact .nb-mycard-clock { font-size: 26px; }
+.nb-frames-label { margin: 0; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.nb-frame { border: 2px dashed #6b4a6f; }
+.nb-ready summary, .nb-ask summary, .nb-vip summary { list-style: none; display: block; padding: 12px; min-height: 48px; border-radius: 12px; border: 2px solid var(--outline); background: var(--panel); color: var(--ink); font-weight: 800; text-align: center; cursor: pointer; }
+.nb-ready summary::-webkit-details-marker, .nb-ask summary::-webkit-details-marker, .nb-vip summary::-webkit-details-marker { display: none; }
+.nb-ready[open] summary, .nb-ask[open] summary, .nb-vip[open] summary { color: var(--muted); }
+
+/* After the flip: the phone holds the result until the TV has turned every card (--d). */
+.nb-after { display: grid; gap: 10px; animation: nb-show 0.3s ease var(--d, 0ms) both; }
+@keyframes nb-show { from { opacity: 0; visibility: hidden; } }
+.nb-turning { margin: 0; text-align: center; font-size: 18px; font-weight: 800; color: var(--muted); animation: nb-gone 0.01s linear var(--d, 0ms) both; }
+@keyframes nb-gone { to { opacity: 0; height: 0; visibility: hidden; } }
+.nb-vote-opt { display: grid; gap: 2px; text-align: left; }
+.nb-vote-opt small { color: var(--muted); font-size: 13px; }

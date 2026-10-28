@@ -151,6 +151,7 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   mic_check_ok: 'The player just said こんにちは into their phone for the mic check. Greet them by name.',
   recap_award: 'Present an end-of-game award to this player, in character.',
   encore_invite: 'Invite the winner to say their answer aloud for the room.',
+  narabete_intro: 'Narabete! starts: a co-op game where the players line secret cards up along your long neck. Welcome them as one team.',
   narabete_deal: 'Narabete!: secret cards are being dealt for this round. Tease the players not to show anyone.',
   narabete_say: 'Narabete!: everyone now says their card out loud for the others to hear.',
   narabete_order: 'Narabete!: the players now move their own cards to put the line in order, low to high.',

@@ -53,19 +53,38 @@ export function sfx(id: SfxId, delay = 0): void {
   }
 }
 
-/** The C major scale from C6, for Narabete!'s flip: one step up per card turned over. */
-const SCALE = [1046.5, 1174.66, 1318.51, 1396.91, 1567.98, 1760, 1975.53, 2093];
+/** Semitones of the major scale, an octave up to the tonic. */
+const MAJOR = [0, 2, 4, 5, 7, 9, 11, 12];
+const midiHz = (m: number) => 440 * 2 ** ((m - 69) / 12);
+
+/** Narabete!'s flip, after the card starts to turn: the bell as its face shows, the bwomp as a knot ties. */
+export const FLIP_FACE_MS = 300;
+export const FLIP_KNOT_MS = 650;
 
 /**
- * One card of Narabete!'s flip, `delay` seconds from now: the next note up the scale, or, where it
- * ties a knot, the note with a low "bwomp" under it.
+ * One card of Narabete!'s flip, `delay` seconds from now: a bell one step up the theme's major scale,
+ * counted so the last of `cards` lands on the tonic (the playing track's key, `tonic` as MIDI). A
+ * card that ties a knot bends its note down a semitone, with a "bwomp" as the knot appears.
  */
-export function flipNote(step: number, delay: number, knot: boolean): void {
+export function flipNote(step: number, cards: number, delay: number, knot: boolean, tonic: number): void {
   const sound = getSound();
   if (!sound || !audioReady() || silent()) return;
   const t = sound.ctx.currentTime + 0.01 + delay;
-  bell(sound.ctx, sound.sfx, t, SCALE[Math.min(step, SCALE.length - 1)]!, 0.45, 0.2);
-  if (knot) blip(sound.ctx, sound.sfx, t + 0.12, 'sawtooth', 180, 110, 0.32, 0.14, 900);
+  const idx = Math.max(0, Math.min(MAJOR.length - 1, MAJOR.length - Math.min(cards, MAJOR.length) + step));
+  const f = midiHz(tonic - 12 + MAJOR[idx]!);
+  const at = t + FLIP_FACE_MS / 1000;
+  if (knot) {
+    blip(sound.ctx, sound.sfx, at, 'sine', f, f * 0.944, 0.45, 0.2);
+    blip(sound.ctx, sound.sfx, t + FLIP_KNOT_MS / 1000, 'sawtooth', 330, 150, 0.3, 0.22, 1400);
+  } else bell(sound.ctx, sound.sfx, at, f, 0.45, 0.2);
+}
+
+/** A perfect line: the tonic chord, strummed. */
+export function flipChord(delay: number, tonic: number): void {
+  const sound = getSound();
+  if (!sound || !audioReady() || silent()) return;
+  const t = sound.ctx.currentTime + 0.01 + delay;
+  [0, 4, 7, 12].forEach((n, i) => bell(sound.ctx, sound.sfx, t + i * 0.06, midiHz(tonic - 12 + n), 1.1, 0.16));
 }
 
 function envGain(ctx: AudioContext, out: AudioNode, t: number, dur: number, peak: number): GainNode {

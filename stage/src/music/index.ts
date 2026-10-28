@@ -153,10 +153,30 @@ function countGame(view: RoomView): void {
   }
 }
 
+// A mode can hush the music for a moment (Narabete!'s flip): the listening mix until then.
+let hushUntil = 0;
+let hushTimer: ReturnType<typeof setTimeout> | undefined;
+let lastView: RoomView | null = null;
+
+/** Drops the music to the listening mix for `ms`, then lets the cue's own mix back in. */
+export function hushFor(ms: number): void {
+  hushUntil = performance.now() + ms;
+  clearTimeout(hushTimer);
+  hushTimer = setTimeout(() => lastView && updateMusic(lastView), ms + 20);
+  if (lastView) updateMusic(lastView);
+}
+
+/** The MIDI note the playing theme's bells resolve to: its key, or F6 for a synth tune. */
+export function bellTonic(): number {
+  const id = playing?.then ?? playing?.id;
+  return (id && isTrack(id) && TRACKS[id].bellTonic) || 89;
+}
+
 /** Call on every render: follows the room's mode and phase. */
 export function updateMusic(view: RoomView): void {
+  lastView = view;
   countGame(view);
-  const cue = cueFor(view.mode, view.phase, game, listening(view), saying(view));
+  const cue = cueFor(view.mode, view.phase, game, listening(view) || performance.now() < hushUntil, saying(view));
   const newPhase = view.phaseSeq !== lastPhaseSeq;
   lastPhaseSeq = view.phaseSeq;
   want = cue;

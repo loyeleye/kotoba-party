@@ -1,89 +1,121 @@
 /* Narabete! (stage). Everything is scoped under .nb-stage. The ruler is Nobiko-san herself: her body
-   at the low end, her neck along the bottom, her head at the high end (nobiko-reach.png, drawn at 1.5×
-   on whole pixels). */
-.nb-stage { width: min(1700px, 100%); display: grid; gap: 22px; align-content: start; text-align: left; --nb-ink: #0b0605; --nb-shade: #9b625e; --nb-skin: #fbdebe; --nb-gold: #ffd36b; }
+   at the low end, her neck along the bottom, her head at the high end (nobiko-reach.png at a whole
+   2×). A round keeps one layout from deal to flip (head, ruler, foot), sized to fit the play area at
+   full scale, so the neck never moves between phases. */
+.nb-stage { width: min(1720px, 100%); display: grid; gap: 12px; align-content: start; text-align: left; --nb-ink: #0b0605; --nb-shade: #9b625e; --nb-skin: #fbdebe; --nb-gold: #ffd36b; --nb-good: #3fd68a; }
 .nb-stage p { margin: 0; }
-.nb-intro { justify-items: center; text-align: center; }
+.nb-stage [lang='ja'], .nb-title, .nb-text, .nb-sentence, .nb-story-text { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.nb-intro { justify-items: center; text-align: center; gap: 22px; }
 .nb-logo { font-size: 110px; font-weight: 900; color: var(--mode); letter-spacing: 0.04em; }
 .nb-subtitle { font-size: 32px; color: var(--muted); }
 .nb-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1200px; padding-left: 40px; margin: 0; }
 
-.nb-head { display: grid; gap: 8px; }
-.nb-tag { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-.nb-title { font-size: 64px; font-weight: 900; line-height: 1.2; }
-.nb-title small { display: block; font-size: 28px; font-weight: 400; color: var(--muted); }
-.nb-call { font-size: 34px; font-weight: 800; }
-.nb-call small { font-size: 26px; font-weight: 400; color: var(--muted); }
-.nb-say { display: grid; gap: 16px; }
-.nb-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
-.nb-chip { font-size: 28px; font-weight: 700; padding: 8px 20px; border-radius: 999px; background: var(--panel); border: 2px solid var(--line); color: var(--muted); }
-.nb-said { color: var(--ink); border-color: var(--mode); animation: nb-pop 0.4s var(--ease-pop) both; }
-@keyframes nb-pop { from { transform: scale(0.8); } }
-.nb-defence { font-size: 40px; font-weight: 800; color: var(--nb-gold); }
+.nb-head { display: grid; gap: 4px; min-height: 122px; align-content: start; }
+.nb-tag { font-size: 20px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.nb-tag span { text-transform: none; letter-spacing: 0; color: var(--mode); font-weight: 800; }
+.nb-title { font-size: 46px; font-weight: 900; line-height: 1.15; text-wrap: balance; }
+.nb-title small { font-size: 24px; font-weight: 400; color: var(--muted); margin-left: 16px; word-break: normal; }
+.nb-call { font-size: 28px; font-weight: 800; }
 
 /* ---- the ruler ---- */
-.nb-ruler { position: relative; display: grid; gap: 10px; padding-top: 30px; }
-.nb-line { list-style: none; margin: 0; padding: 0 150px 0 110px; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; align-items: end; perspective: 1400px; }
-.nb-neck { position: relative; height: 150px; margin-top: -22px; }
-.nb-band { position: absolute; left: 110px; right: 150px; top: 82px; height: 34px; background: var(--nb-skin); border: 6px solid var(--nb-ink); border-bottom-width: 6px; box-shadow: inset 0 -9px 0 var(--nb-shade); border-radius: 6px; }
-.nb-collar, .nb-nobiko { position: absolute; width: 192px; height: 192px; background: url(/stage/assets/anim/nobiko-reach.png) no-repeat; background-size: 384px 192px; image-rendering: pixelated; }
-.nb-collar { left: -40px; top: -42px; background-position: 0 0; }
-.nb-nobiko { right: -40px; top: -6px; background-position: -192px 0; }
-.nb-ends { display: flex; justify-content: space-between; font-size: 30px; font-weight: 800; padding: 0 20px; }
-.nb-ends small { font-size: 22px; font-weight: 400; color: var(--muted); margin-left: 8px; }
-.nb-high small { margin-right: 8px; }
-.nb-empty .nb-neck { margin-top: 80px; }
+.nb-ruler { position: relative; display: grid; }
+.nb-line { list-style: none; margin: 0; padding: 0 200px 0 70px; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; align-items: end; }
+.nb-neck { position: relative; height: 96px; }
+/* Her neck, 24 px thick like her drawn neck at 2×: it runs from her collar to her chin, so it reads
+   as one body. */
+.nb-band { position: absolute; left: 40px; right: 80px; top: 40px; height: 24px; background: var(--nb-skin); border-top: 4px solid var(--nb-ink); border-bottom: 4px solid var(--nb-ink); box-shadow: inset 0 -6px 0 var(--nb-shade); }
+.nb-collar, .nb-nobiko { position: absolute; z-index: 1; width: 256px; height: 256px; background: url(/stage/assets/anim/nobiko-reach.png) no-repeat; background-size: 512px 256px; image-rendering: pixelated; pointer-events: none; }
+.nb-collar { left: -44px; top: -124px; background-position: 0 0; }
+.nb-nobiko { right: -40px; top: -74px; background-position: -256px 0; }
+.nb-hop .nb-nobiko { animation: nb-hop 0.5s steps(4) var(--r) 2 alternate both; }
+@keyframes nb-hop { to { transform: translateY(-24px); } }
+.nb-ends { display: flex; justify-content: space-between; font-size: 28px; font-weight: 800; padding: 0 200px 0 190px; min-height: 38px; }
+.nb-ends small { font-size: 20px; font-weight: 400; color: var(--muted); margin: 0 8px; }
+.nb-anchor { color: var(--nb-gold); }
 
-/* ---- the cards ---- */
-.nb-card { position: relative; height: 270px; animation: nb-in 0.45s var(--ease-pop) both; animation-delay: calc(var(--i) * 70ms); }
+/* ---- the cards: each in its owner's seat colour ---- */
+.nb-card { position: relative; height: 220px; animation: nb-in 0.45s var(--ease-pop) both; animation-delay: calc(var(--i) * 70ms); }
+.nb-card::after { content: ''; position: absolute; left: calc(50% - 3px); bottom: -14px; width: 6px; height: 16px; background: var(--nb-ink); }
 @keyframes nb-in { from { opacity: 0; transform: translateY(-24px); } }
 .nb-inner { position: relative; height: 100%; transform-style: preserve-3d; }
-.nb-face, .nb-back { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 6px; padding: 12px; text-align: center; border-radius: 18px; backface-visibility: hidden; border: 4px solid var(--nb-ink); box-shadow: 0 6px 0 var(--nb-ink); }
-.nb-face { background: var(--panel); outline: 2px solid var(--mode); outline-offset: -8px; }
-.nb-back { background: var(--paper); color: var(--paper-ink); transform: rotateY(180deg); }
-.nb-emoji { font-size: 76px; line-height: 1; }
-.nb-ear { opacity: 0.6; }
-.nb-text { font-size: 30px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.nb-face, .nb-back { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 6px; padding: 18px 10px 10px; text-align: center; border-radius: 14px; backface-visibility: hidden; border: 4px solid var(--nb-ink); border-top: 14px solid var(--seat, var(--mode)); box-shadow: 0 6px 0 var(--nb-ink); overflow: hidden; }
+.nb-face { background: var(--panel); }
+.nb-back { background: var(--paper); color: var(--paper-ink); transform: rotateY(180deg); gap: 4px; }
+.nb-slot .nb-face { background: rgba(42, 32, 98, 0.5); border-style: dashed; border-top-style: solid; box-shadow: none; }
+.nb-said .nb-face { background: var(--panel); }
+.nb-locked .nb-face { outline: 4px solid var(--nb-good); outline-offset: 2px; }
+.nb-emoji { font-size: 84px; line-height: 1; }
+.nb-ear { opacity: 0.55; font-size: 64px; }
+.nb-said .nb-ear { opacity: 1; animation: nb-pop 0.4s var(--ease-pop) both; }
+@keyframes nb-pop { from { transform: scale(0.6); } }
+.nb-text { font-size: 30px; font-weight: 800; line-height: 1.25; text-wrap: balance; }
+.nb-n7 .nb-text, .nb-n8 .nb-text { font-size: 24px; }
 .nb-hidden { color: var(--muted); font-weight: 400; }
-.nb-name { font-size: 22px; font-weight: 800; color: var(--mode); }
-.nb-back .nb-name { color: #6b4a6f; }
-.nb-flags { display: flex; gap: 10px; font-size: 26px; min-height: 30px; }
-.nb-again { color: var(--nb-gold); font-weight: 800; }
-.nb-value { font-size: 56px; font-weight: 900; line-height: 1; color: #b23a64; }
-.nb-sentence { font-size: 20px; font-weight: 700; line-height: 1.3; }
-.nb-en { font-size: 18px; color: #6b4a6f; line-height: 1.2; }
-.nb-votes { color: #d14a7c; }
+.nb-name { font-size: 26px; font-weight: 800; display: flex; gap: 8px; align-items: center; justify-content: center; }
+.nb-seat { font-family: var(--font-pixel); font-size: 20px; padding: 0 6px; border: 2px solid var(--nb-ink); border-radius: 4px; background: var(--seat, var(--mode)); color: var(--on-accent); }
+.nb-flags { display: flex; gap: 8px; font-size: 22px; min-height: 30px; }
+.nb-lock { background: var(--nb-good); color: #0b2416; font-weight: 800; border-radius: 999px; padding: 0 10px; animation: nb-pop 0.35s var(--ease-pop) both; }
+.nb-again { color: var(--nb-gold); font-weight: 900; font-size: 30px; animation: nb-ask 0.6s ease-out both; }
+@keyframes nb-ask { from { transform: scale(1.6); text-shadow: 0 0 18px var(--nb-gold); } }
+.nb-value { font-size: 60px; font-weight: 900; line-height: 1; color: #b23a64; }
+.nb-sentence { font-size: 26px; font-weight: 800; line-height: 1.25; text-wrap: balance; }
+.nb-n6 .nb-sentence, .nb-n7 .nb-sentence, .nb-n8 .nb-sentence { font-size: 21px; }
+.nb-en { font-size: 18px; color: #6b4a6f; line-height: 1.15; }
+.nb-n6 .nb-en, .nb-n7 .nb-en, .nb-n8 .nb-en { display: none; }
+.nb-back-foot { display: flex; gap: 10px; align-items: center; }
+.nb-back .nb-name { font-size: 22px; color: var(--paper-ink); }
+.nb-votes { color: #d14a7c; font-weight: 900; font-size: 22px; }
 .nb-defending { z-index: 2; animation: nb-lift 0.6s var(--ease-pop) both; }
-@keyframes nb-lift { to { transform: translateY(-26px) scale(1.06); } }
-.nb-defending .nb-face { outline-color: var(--nb-gold); outline-width: 4px; }
+@keyframes nb-lift { to { transform: translateY(-20px) scale(1.06); } }
+.nb-defending .nb-face { outline: 5px solid var(--nb-gold); outline-offset: 2px; }
 
-/* The flip: each card turns at its own time (--d, negative once it's past). The biggest surprise
-   wobbles first. */
-.nb-flipping .nb-inner { animation: nb-flip 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) var(--d) both; }
-@keyframes nb-flip { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
-.nb-last .nb-inner { animation: nb-wobble 0.25s ease-in-out calc(var(--d) - 1000ms) 4 alternate, nb-flip 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) var(--d) both; }
-@keyframes nb-wobble { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
-.nb-joint { position: absolute; top: 74px; left: calc(110px + (100% - 260px) * var(--x) / var(--n)); transform: translateX(-50%); animation: nb-tie 0.45s var(--ease-pop) var(--d) both; }
-@keyframes nb-tie { from { transform: translateX(-50%) scale(0); opacity: 0; } }
-.nb-ok { top: 70px; font-size: 40px; font-weight: 900; color: var(--good); text-shadow: 0 0 4px var(--nb-ink), 0 0 2px var(--nb-ink); }
-/* A knot: a loop of neck tied over the band. */
-.nb-knot { width: 58px; height: 58px; top: 70px; border-radius: 50%; background: radial-gradient(circle at 50% 50%, transparent 0 11px, var(--nb-ink) 11px 17px, var(--nb-skin) 17px 23px, var(--nb-ink) 23px); box-shadow: inset 0 -6px 0 var(--nb-shade); }
+/* The flip: each card turns at its own time (--d, negative once it's past), lifting as it turns.
+   The biggest surprise wobbles for a second first. */
+.nb-flipping .nb-inner { animation: nb-flip 0.8s cubic-bezier(0.3, 1.3, 0.5, 1) var(--d) both; }
+@keyframes nb-flip {
+  from { transform: perspective(900px) rotateY(0); }
+  45% { transform: perspective(900px) translateY(-34px) scale(1.08) rotateY(90deg); }
+  to { transform: perspective(900px) rotateY(180deg); }
+}
+.nb-last { transform-origin: 50% 100%; animation: nb-in 0.45s var(--ease-pop) both, nb-wobble 160ms ease-in-out calc(var(--d) - 1000ms) 6 alternate; }
+@keyframes nb-wobble { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.nb-joint { position: absolute; z-index: 2; top: 52px; left: calc(40px + (100% - 120px) * var(--x) / var(--n)); transform: translate(-50%, -50%); animation: nb-tie 0.5s var(--ease-pop) var(--d) both; }
+@keyframes nb-tie { from { transform: translate(-50%, -50%) scale(0) rotate(-180deg); opacity: 0; } 70% { transform: translate(-50%, -50%) scale(1.5); } }
+.nb-ok { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--nb-good); border: 3px solid var(--nb-ink); color: var(--nb-ink); font-size: 26px; font-weight: 900; }
+.nb-knot { font-size: 64px; line-height: 1; filter: drop-shadow(3px 3px 0 var(--nb-ink)); }
+.nb-knot::after { content: ''; position: absolute; inset: 6px; border: 4px solid #ff5a5a; border-radius: 50%; }
 
-.nb-result { display: grid; gap: 8px; justify-items: center; text-align: center; animation: nb-in 0.5s var(--ease-pop) var(--d) both; }
-.nb-result-big { font-size: 46px; font-weight: 900; }
+/* Under the neck: the defence or the result, in a row kept the same height. */
+.nb-foot { min-height: 74px; display: grid; gap: 4px; justify-items: center; text-align: center; align-content: start; }
+.nb-defence-call { font-size: 32px; font-weight: 800; color: var(--nb-gold); }
+.nb-defence-call small { font-size: 24px; color: var(--muted); font-weight: 400; }
+.nb-defence { font-size: 34px; font-weight: 800; }
+.nb-result { animation: nb-in 0.5s var(--ease-pop) var(--d) both; }
+.nb-result-big { font-size: 40px; font-weight: 900; }
 .nb-perfect .nb-result-big { color: var(--nb-gold); }
-.nb-poker { font-size: 28px; font-weight: 700; }
-.nb-vote-call { font-size: 26px; color: var(--muted); }
+.nb-poker { font-size: 24px; font-weight: 700; }
+.nb-vote-call { font-size: 22px; color: var(--muted); }
 
-.nb-calm .nb-inner, .nb-calm .nb-joint, .nb-calm .nb-result { animation-duration: 0.01s !important; }
-.nb-calm .nb-last .nb-inner { animation: nb-flip 0.01s linear var(--d) both; }
+/* Calm motion: no lifts, spins or wobbles; a card's back fades in over its face at its turn. */
+.nb-calm .nb-card, .nb-calm .nb-last, .nb-calm .nb-defending { animation: nb-fade 0.3s ease both; transform: none; }
+.nb-calm .nb-flipping .nb-inner { animation: none; }
+.nb-calm .nb-back { transform: none; animation: nb-fade 0.3s ease var(--d) both; }
+.nb-calm .nb-joint { animation: nb-fade 0.3s ease var(--d) both; transform: translate(-50%, -50%); }
+.nb-calm .nb-hop .nb-nobiko { animation: none; }
+@keyframes nb-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .nb-card, .nb-last, .nb-defending { animation: nb-fade 0.3s ease both; transform: none; }
+  .nb-flipping .nb-inner { animation: none; }
+  .nb-back { transform: none; animation: nb-fade 0.3s ease var(--d) both; }
+}
 
 /* ---- the Worst Day Ever ---- */
-.nb-story-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.nb-story-line { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: baseline; font-size: 38px; padding: 12px 24px; border-radius: 16px; background: var(--panel); }
+.nb-story-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.nb-story-line { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; font-size: 36px; padding: 10px 22px; border-radius: 14px; background: var(--panel); border-left: 12px solid var(--seat, var(--mode)); transition: background 0.3s, color 0.3s, opacity 0.3s; }
 .nb-soshite { color: var(--muted); font-weight: 700; }
-.nb-story-text { font-weight: 800; }
-.nb-story-who { font-size: 24px; color: var(--mode); font-weight: 800; }
-.nb-now { background: var(--paper); color: var(--paper-ink); transform: scale(1.02); }
+.nb-story-text { font-weight: 800; animation: nb-fade 0.4s ease 0.25s both; }
+.nb-story-line .nb-name { font-size: 22px; }
+.nb-now { background: var(--paper); color: var(--paper-ink); outline: 4px solid var(--nb-gold); }
 .nb-now .nb-soshite { color: #b23a64; }
+.nb-now .nb-name { color: #6b4a6f; }
 .nb-later { opacity: 0.45; }
