@@ -22,11 +22,11 @@ BASE, CHIN = (42, 88), (67, 63)
 EYES = [(53, 45, 65, 51), (75, 45, 89, 51)]  # her eyes in the portrait: x0, y0, x1, y1 (exclusive)
 SKINS = {SKIN[:3], (250, 154, 182)}  # skin and blush
 
-def glance(im, k):
+def glance(im, k, eyes=EYES):
     """Her eyes look k pixels to the right: in each row the iris and its highlights slide over inside the
     eye's outline, and white sclera fills in behind. Ink within two pixels of skin is the (two-pixel) outline and stays put."""
     out = im.copy()
-    for x0, y0, x1, y1 in EYES:
+    for x0, y0, x1, y1 in eyes:
         def skin(x, y): return im.getpixel((x, y))[:3] in SKINS
         def inside(x, y):
             if skin(x, y): return False
@@ -39,8 +39,14 @@ def glance(im, k):
                 out.putpixel((x, y), im.getpixel((x - k, y)) if x - k in xs else (250, 249, 249, 255))
     return out
 
-# (head offset x, y) per frame: out, a look, a second lean in, then a spring back to the idle pose.
-OFFSETS = [(0, 0), (20, -1), (48, -2), (80, -2), (100, -1), (100, 0), (104, -1), (100, 0), (56, -1), (24, 0)]
+# (head offset x, y, head flipped) per frame: out, a turn to face the middle of the screen, a look, a second lean
+# in, then a turn back and a spring back to the idle pose. Her face is drawn turned a little to the left, so the
+# mirrored head faces right, towards the bubble and the answers.
+OFFSETS = [(0, 0, False), (20, -1, False), (48, -2, True), (80, -2, True), (100, -1, True), (100, 0, True),
+           (104, -1, True), (100, 0, True), (56, -1, True), (24, 0, False)]
+FLIPPED = head.transpose(Image.FLIP_LEFT_RIGHT)
+FLIPPED_EYES = [(128 - x1, y0, 128 - x0, y1) for x0, y0, x1, y1 in EYES]
+FLIP_SHIFT = 2 * CHIN[0] - 127  # keeps the mirrored chin on the end of the neck
 
 def bezier(p0, p1, p2, p3, n):
     for i in range(n + 1):
@@ -55,13 +61,13 @@ def disc(im, cx, cy, r, colour):
                 im.putpixel((x, y), colour)
 
 sheet = Image.new('RGBA', (W * len(OFFSETS), H))
-for i, (dx, dy) in enumerate(OFFSETS):
+for i, (dx, dy, flip) in enumerate(OFFSETS):
     f = Image.new('RGBA', (W, H))
-    if (dx, dy) == (0, 0):  # at rest she is the portrait itself, so the sheet starts on the idle pose
+    if dx == 0:  # at rest she is the portrait itself, so the sheet starts on the idle pose
         f.alpha_composite(src)
         sheet.alpha_composite(f, (i * W, 0))
         continue
-    chin = (CHIN[0] + dx, CHIN[1] + dy)
+    chin = (CHIN[0] + dx - (8 if flip else 0), CHIN[1] + dy)  # the mirrored jaw is shorter on the right: end the neck under it
     # Up out of the collar, then a long S out to the chin; the dip sags lower the further she reaches.
     sag = min(14, dx / 6)
     pts = list(bezier(BASE, (BASE[0] + 2, BASE[1] - 22), (chin[0] - 12 - dx / 3, chin[1] + 10 + sag), chin, 80))
@@ -71,6 +77,8 @@ for i, (dx, dy) in enumerate(OFFSETS):
     for x, y in pts: disc(neck, x - 0.4, y - 0.9, 4.2, SKIN)
     f.alpha_composite(neck)
     f.alpha_composite(body)  # over the neck, so it disappears into the collar
-    f.alpha_composite(glance(head, 1 if dx < 40 else 2), (dx, dy))  # she looks where she's going
+    k = 1 if dx < 40 else 2  # she looks where she's going
+    if flip: f.alpha_composite(glance(FLIPPED, k, FLIPPED_EYES), (dx + FLIP_SHIFT, dy))
+    else: f.alpha_composite(glance(head, k), (dx, dy))
     sheet.alpha_composite(f, (i * W, 0))
 sheet.save(sys.argv[2])
