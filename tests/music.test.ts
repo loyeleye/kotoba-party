@@ -141,6 +141,13 @@ describe('cues', () => {
     expect(listening({ mode: 'shodo', phase: 'answer', game: { mode: 'shodo', itemKind: 'recall' } } as never)).toBe(false);
   });
 
+  it("alternates Dub Club's two opening takes game by game, and keeps the one ending", () => {
+    expect(cueFor('dub-club', 'intro', 0).song).toBe('dub-opening');
+    expect(cueFor('dub-club', 'intro', 1).song).toBe('dub-opening-b');
+    expect(cueFor('dub-club', 'finale', 1, false, false, 'title').song).toBe('dub-opening-b');
+    expect(cueFor('dub-club', 'finale', 1, false, false, 'credits').song).toBe('dub-ending');
+  });
+
   it('opens every game with the house ident', () => {
     for (const mode of MODE_IDS) expect(cueFor(mode, 'intro').leadIn).toBe('ident');
   });

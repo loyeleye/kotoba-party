@@ -77,7 +77,7 @@ it. See [speech.md](../speech.md#dub-clubs-kept-clips) and commercial-blockers r
 ## Music and sound
 
 The music panel's rules (stage/src/music/cues.ts `dubCue`): the ident, then the anime
-opening (`dub-opening`, made with Mureka; the synth `anime-op` if it can't load); the scene card under the listening mix so the table read is heard;
+opening (`dub-opening` and `dub-opening-b`, two Mureka takes that alternate game by game; the synth `anime-op` if it can't load); the scene card under the listening mix so the table read is heard;
 **silence** while phones record and while dubs play (a voice over music is mush on a TV speaker); the
 tally tune for cast notes; in the episode, the opening under the title, nothing under each dub, the
 `eyecatch` jingle on つづく, and the ending ballad (`dub-ending`, Mureka; synth `anime-end` as fallback) over the credits. No recap fanfare after it: the
