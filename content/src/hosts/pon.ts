@@ -347,7 +347,7 @@ export const ponLines: HostLine[] = [
   { id: 'pon.hajime_introduce.01', host: 'pon', event: 'hajime_introduce', jp: { text: 'では {name}さん、たこしょうかいを どうぞ！', kana: 'では {name}さん、たこしょうかいを どうぞ！', en: 'Over to you, {name}, for the introduction!' }, slots: ['{name}'], status: 'draft' },
   { id: 'pon.hajime_introduce.02', host: 'pon', event: 'hajime_introduce', jp: { text: '{name}さん、しょうかい おねがいします！', kana: '{name}さん、しょうかい おねがいします！', en: '{name}, introduce our guest, please!' }, slots: ['{name}'], status: 'draft' },
   { id: 'pon.hajime_introduce.03', host: 'pon', event: 'hajime_introduce', jp: { text: 'たこしょうかい！　たこじゃない、たぬきです！', kana: 'たこしょうかい！　たこじゃない、たぬきです！', en: 'Tako-shōkai! Not an octopus, a tanuki!' }, status: 'draft' },
-  { id: 'pon.hajime_read.01', host: 'pon', event: 'hajime_read', jp: { text: '{line}', kana: '{line}', en: '(Pon reads the line out.)' }, slots: ['{line}'], status: 'draft' },
+  { id: 'pon.hajime_read.01', host: 'pon', event: 'hajime_read', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   { id: 'pon.hajime_rank.01', host: 'pon', event: 'hajime_rank', jp: { text: 'うそだ！　ぜったい うそ！', kana: 'うそだ！　ぜったい うそ！', en: 'A lie! Definitely a lie!' }, status: 'draft' },
   { id: 'pon.hajime_rank.02', host: 'pon', event: 'hajime_rank', jp: { text: 'どれが ほんとう？　はなして ください！', kana: 'どれが ほんとう？　はなして ください！', en: 'Which one\'s true? Talk it over!' }, status: 'draft' },
   { id: 'pon.hajime_rank.03', host: 'pon', event: 'hajime_rank', jp: { text: 'ポンは ぜんぶ うそだと おもいます！', kana: 'ポンは ぜんぶ うそだと おもいます！', en: 'Pon thinks they\'re all lies!' }, status: 'draft' },

@@ -715,7 +715,7 @@ function showHost(view: RoomView): void {
   // The sprite stays; only the bubble is new. The host reacts to the line, then idles.
   if (!hostSprite.el.isConnected) els.host.prepend(hostSprite.el);
   hostSprite.show(say.host, say.mood);
-  const bubble = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, hostJp(say)), h('span', { class: 'host-en' }, say.en));
+  const bubble = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, hostJp(say)), say.en && say.en !== say.text ? h('span', { class: 'host-en' }, say.en) : null); // a line read out as is (Pon reading for the introducer) has no translation to show
   const old = els.host.querySelector('.host-bubble');
   if (old) old.replaceWith(bubble);
   else els.host.append(bubble);
