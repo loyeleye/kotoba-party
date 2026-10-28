@@ -157,36 +157,79 @@ img.bh-piece { width: 48px; height: 48px; }
 .bh-vs { --team-0: #ff5a5f; --team-1: #4f9dff; }
 .bh-vs .team-0 { --team: var(--team-0); }
 .bh-vs .team-1 { --team: var(--team-1); }
-.bh-vs-board { display: flex; gap: 14px; }
-.bh-vs-jar { white-space: nowrap; display: flex; align-items: baseline; gap: 10px; padding: 6px 18px; border-radius: 14px; background: var(--panel); border: 4px solid var(--team); }
+/* A team's badge: red round, blue diamond, so they differ without colour too. */
+.bh-pip { display: inline-block; width: 0.72em; height: 0.72em; margin-right: 0.3em; background: var(--team); border: 3px solid var(--bh-ink); vertical-align: -0.04em; flex: none; }
+.bh-pip.team-0 { border-radius: 50%; }
+.bh-pip.team-1 { border-radius: 3px; transform: rotate(45deg) scale(0.88); }
+.bh-vs-board { display: flex; gap: 14px; flex-wrap: nowrap; }
+.bh-vs-jar { white-space: nowrap; display: flex; flex: none; align-items: baseline; gap: 10px; padding: 4px 16px; border-radius: 14px; background: var(--panel); border: 4px solid var(--team); animation: bh-pop 0.4s var(--ease-pop) both; }
 .bh-vs-jar b { font-size: 40px; font-weight: 900; color: var(--bh-gold); }
 .bh-vs-jar small { font-size: 22px; color: var(--muted); }
-.bh-vs-name { font-size: 30px; font-weight: 900; color: var(--team); }
+.bh-vs-jar.won { box-shadow: 0 0 0 6px var(--bh-gold), 0 0 24px 6px rgba(255, 211, 107, 0.45); }
+.bh-vs-name { font-size: 30px; font-weight: 900; color: var(--team); white-space: nowrap; }
+/* Each team's lane: tip jar and mistake meter, then its last two calls. */
 .bh-vs-feeds { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.bh-vs-feeds .bh-feed { padding: 6px 12px; border-radius: 14px; border-left: 8px solid var(--team); background: rgba(0, 0, 0, 0.18); }
+.bh-vs-lane { display: grid; gap: 8px; padding: 8px 12px; border-radius: 14px; border-left: 10px solid var(--team); background: rgba(0, 0, 0, 0.22); }
+.bh-vs-lane ol { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent); }
+.bh-vs-lanehead { display: flex; align-items: center; gap: 16px; }
+.bh-vs-lanehead .bh-vs-jar { border: 0; padding: 0; background: none; }
+/* The mistake meter: segments that fill amber, then red; it isn't the patience bar, so it's chunky and labelled. */
+.bh-meter { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: 24px; font-weight: 900; color: var(--muted); white-space: nowrap; }
+.bh-meter-bar { position: relative; width: 200px; height: 22px; border-radius: 4px; background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0 18px, transparent 18px 20px); border: 3px solid var(--bh-ink); overflow: hidden; }
+.bh-meter-bar i { position: absolute; inset: 0 auto 0 0; width: var(--m); background: repeating-linear-gradient(90deg, var(--bh-gold) 0 18px, transparent 18px 20px); transition: width 0.5s var(--ease-pop); }
+.bh-meter.hot { color: var(--bh-warn); }
+.bh-meter.hot .bh-meter-bar i { background: repeating-linear-gradient(90deg, var(--bh-warn) 0 18px, transparent 18px 20px); animation: bh-throb 0.9s ease-in-out infinite; }
+@keyframes bh-throb { 50% { filter: brightness(1.4); } }
+/* A VS customer is short: picture and name beside the bubble, no English name, the taker in the box's tab. */
+.bh-vs-counter.bh-n1 { max-width: 1400px; }
+.bh-vs-customer { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: none; column-gap: 16px; }
+.bh-vs-customer > * { grid-column: 1 / -1; }
+.bh-vs-customer > .bh-who { grid-column: 1; }
+.bh-vs-customer > .bh-bubble { grid-column: 2; align-self: center; }
+.bh-vs-customer .bh-who { display: grid; justify-items: center; gap: 4px; }
+.bh-vs-customer .bh-cname { font-size: 26px; }
+.bh-vs-customer .bh-cname small { display: none; }
+.bh-vs-head { font-size: 40px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; animation: bh-pop 0.4s var(--ease-pop) 0.3s both; }
+.bh-vs-head .bh-vs-name { font-size: 40px; }
 .bh-vs-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
-.bh-vs-box { position: relative; display: grid; gap: 6px; padding: 8px; border-radius: 14px; border: 4px solid var(--team); background: rgba(0, 0, 0, 0.18); min-width: 0; }
-.bh-vs-boxhead { font-size: 24px; font-weight: 900; color: var(--team); display: flex; justify-content: space-between; gap: 6px; }
-.bh-vs-boxhead .bh-tips { font-size: 26px; }
+.bh-vs-boxes.one { grid-template-columns: minmax(0, 1fr); }
+.bh-vs-box { position: relative; display: grid; gap: 6px; padding: 0 8px 8px; border-radius: 14px; border: 4px solid var(--team); background: rgba(0, 0, 0, 0.18); min-width: 0; overflow: visible; }
+.bh-vs-boxhead { margin: 0 -8px; padding: 4px 10px; border-radius: 9px 9px 0 0; background: var(--team); color: var(--bh-ink); font-size: 24px; font-weight: 900; display: flex; align-items: center; gap: 6px; min-height: 44px; }
+.bh-vs-boxhead .bh-pip { border-color: var(--bh-ink); background: #fff; }
+.bh-vs-boxhead .bh-taker { margin-left: auto; font-size: 22px; min-height: 0; color: var(--bh-ink); }
+.bh-vs-boxhead .bh-chip { color: var(--bh-ink); }
+.bh-vs-boxhead .bh-tips { margin-left: auto; font-size: 28px; color: var(--bh-ink); animation: bh-pop 0.4s var(--ease-pop) 0.95s both; }
 .bh-vs-box .bh-box { grid-template-columns: repeat(min(var(--parts), 2), minmax(0, 1fr)); }
 .bh-vs-box .bh-part { min-height: 88px; }
-.bh-vs-box .bh-taker { font-size: 22px; min-height: 30px; }
-.bh-vs-box.won { box-shadow: 0 0 0 4px var(--bh-gold); }
-.bh-vs-box.lost { opacity: 0.75; }
-.bh-wakeari { position: absolute; right: 10px; top: 44px; padding: 2px 12px; border: 3px solid var(--bh-warn); border-radius: 6px; color: var(--bh-warn); background: rgba(11, 6, 5, 0.85); font-size: 24px; font-weight: 900; transform: rotate(8deg); animation: bh-pop 0.4s var(--ease-pop) both; }
-.bh-vs-counter img.bh-piece { width: 40px; height: 40px; }
-.bh-vs-counter .bh-pieces img.bh-piece + img.bh-piece { margin-left: -16px; }
+.bh-vs-box .bh-part-label { display: grid; white-space: nowrap; font-size: 20px; }
+.bh-vs-box.won { box-shadow: 0 0 0 6px var(--bh-gold), 0 0 28px 8px rgba(255, 211, 107, 0.45); animation: bh-ring 0.5s ease-out 0.22s both; }
+@keyframes bh-ring { from { box-shadow: 0 0 0 0 var(--bh-gold); } }
+.bh-vs-box.lost .bh-box, .bh-vs-box.sentback .bh-box { filter: grayscale(0.7) brightness(0.8); opacity: 0.7; transition: filter 0.3s 0.5s, opacity 0.3s 0.5s; }
+/* わけあり: a paper sticker slapped across the middle of the handed-over box. */
+.bh-wakeari { position: absolute; left: 50%; top: 60%; padding: 4px 18px; border: 3px dashed var(--bh-ink); border-radius: 6px; color: var(--bh-ink); background: var(--paper); font-size: 30px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 0 var(--bh-ink); transform: translate(-50%, -50%) rotate(-6deg); z-index: 1; animation: bh-sticker 0.35s var(--ease-pop) 0.75s both; }
+.bh-refund { background: var(--bh-warn); }
+@keyframes bh-sticker { from { transform: translate(-50%, -50%) rotate(-6deg) scale(2); opacity: 0; } }
+.bh-vs-counter img.bh-piece { width: 48px; height: 48px; }
+.bh-vs-counter .bh-pieces img.bh-piece + img.bh-piece { margin-left: -20px; }
+/* A sent-back order on offer, or taken on: only the kitchen it's for, with a loud banner. */
+.bh-vs-customer.steal { border-color: var(--bh-gold); }
+.bh-vs-steal { font-size: 34px; font-weight: 900; color: var(--bh-gold); display: flex; align-items: center; flex-wrap: wrap; gap: 4px; animation: bh-pop 0.4s var(--ease-pop) both; }
+.bh-vs-steal small { flex-basis: 100%; font-size: 22px; font-weight: 400; color: var(--muted); }
+.bh-vs-steal .bh-vs-name { font-size: 34px; }
+.bh-vs .bh-ajimi { bottom: auto; top: 150px; border-color: var(--team); box-shadow: 0 6px 0 var(--team); font-size: 32px; }
 .bh-vs-rosters { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
 .bh-vs-roster { display: grid; gap: 8px; padding: 12px 22px; border-radius: 16px; background: var(--panel); border: 4px solid var(--team); min-width: 420px; }
 .bh-vs-roster small { font-size: 22px; font-weight: 400; color: var(--muted); }
 .bh-vs-roster p:last-child { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 26px; }
-.bh-vs-result { display: grid; justify-items: start; gap: 14px; padding: 12px 22px; border-radius: 18px; background: var(--panel); border: 4px solid var(--team, var(--bh-gold)); }
-.bh-vs-result .bh-result-big { font-size: 56px; color: var(--team, var(--bh-gold)); animation: bh-stamp 0.4s var(--ease-pop) var(--stars-delay, 0ms) both; }
-.bh-vs-result .bh-result-big small { font-size: 26px; color: var(--muted); font-weight: 400; }
-.bh-vs-split { display: flex; gap: 14px; font-size: 28px; font-weight: 900; }
-.bh-vs-split span { color: var(--muted); }
+.bh-vs-result { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px 28px; padding: 12px 22px; border-radius: 18px; background: var(--panel); border: 4px solid var(--team, var(--bh-gold)); }
+.bh-vs-result .bh-result-big { font-size: 56px; color: var(--team, var(--bh-gold)); display: flex; align-items: center; flex-wrap: wrap; animation: bh-stamp 0.4s var(--ease-pop) var(--stars-delay, 0ms) both; }
+.bh-vs-result .bh-result-big small { display: block; flex-basis: 100%; font-size: 26px; color: var(--muted); font-weight: 400; }
+.bh-vs-winner { font-size: 56px; font-weight: 900; color: var(--team); white-space: nowrap; }
+.bh-vs-result .bh-vs-jar { animation: bh-pop 0.4s var(--ease-pop) var(--stars-delay, 0ms) both; }
+.bh-vs-split { display: flex; gap: 14px; font-size: 28px; font-weight: 900; white-space: nowrap; }
+.bh-vs-split span { color: var(--muted); display: inline-flex; align-items: center; }
 .bh-vs-split .won { color: var(--team); }
-.bh-calm .bh-wakeari, .bh-calm .bh-vs-result .bh-result-big { animation: none; }
+.bh-calm .bh-wakeari, .bh-calm .bh-vs-result .bh-result-big, .bh-calm .bh-vs-jar, .bh-calm .bh-vs-head, .bh-calm .bh-vs-steal, .bh-calm .bh-vs-box.won, .bh-calm .bh-meter-bar i, .bh-calm .bh-vs-boxhead .bh-tips { animation: none; transition: none; }
 @media (prefers-reduced-motion: reduce) {
-  .bh-wakeari, .bh-vs-result .bh-result-big { animation: none; }
+  .bh-wakeari, .bh-vs-result .bh-result-big, .bh-vs-jar, .bh-vs-head, .bh-vs-steal, .bh-vs-box.won, .bh-meter-bar i, .bh-vs-boxhead .bh-tips { animation: none; transition: none; }
 }

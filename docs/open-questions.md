@@ -32,7 +32,8 @@ If you only have ten minutes, these are the answers that would change the build 
   adds a bonus. Is a flat team score fun enough, or should the Poker Face (the card that fooled the
   room most) earn points too? ([narabete.md](modes/narabete.md#open-questions))
 - **Bento Haus (backlog):** Co-op and VS (two kitchens race for the same customers). In VS, should
-  the slower team's box still earn 1 tip, and should a perfect box beat an earlier sloppy one?
+  a perfect box beat an earlier sloppy one, and are the mistake meter and 5-tip sent-back orders
+  tuned right?
   Customers' patience doesn't pause while someone is mid-sentence: does a shift feel fair
   on real phones with real speech recognition? ([bento-haus.md](modes/bento-haus.md#open-questions))
 - **Shodō Taikai (backlog):** which music for the gallery round (v1 keeps the soft synth), and

@@ -374,7 +374,7 @@ function finish(state: GameState, ctx: GameContext): void {
 function awardSlots(a: Award | undefined): Record<string, string> | undefined {
   if (!a) return undefined;
   const kana = awardKana(a.title);
-  return { award: a.title, ...(hasKanji(kana) ? {} : { award_kana: kana }), award_en: a.en.replace(/\s*\(.*\)$/, ''), name: a.name };
+  return { award: a.title, ...(hasKanji(kana) ? {} : { award_kana: kana }), award_en: a.en.replace(/\s*\(.*\)$/, ''), name: a.spoken ?? a.name, ...(a.spoken ? { name_en: a.name } : {}) };
 }
 
 function resetToLobby(state: GameState): void {

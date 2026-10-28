@@ -95,7 +95,7 @@ their own bus, with their own volume:
 | Bwomp (low, below the speech band) | A miss: Concentration's "nobody said it", a wrong picture guess, a yōkai escaping, a Last Train miss |
 | Thwack | A yōkai takes a hit; a Concentration yōkai or fog card |
 | Tap | Buttons on the stage itself |
-| Bento Haus shop noises (quiet, short) | A phone trill when an order rings; a ticket tick when a call comes through (static when it doesn't); a send; the counter bell on a serve, then a bell per tip up the track's scale; a toss; a low sigh when a customer walks out; Pon's ドロン (disguise) and もぐもぐ (taste test); a two-note last-orders chime 20 s before close; star bells at closing time instead of the points chime |
+| Bento Haus shop noises (quiet, short) | A phone trill when an order rings; a ticket tick when a call comes through (static when it doesn't); a send; the counter bell on a serve, then a bell per tip up the track's scale; a toss; a low sigh when a customer walks out; Pon's ドロン (disguise) and もぐもぐ (taste test); a two-note last-orders chime 20 s before close; star bells at closing time instead of the points chime. VS: red's sounds on the left speaker and blue's on the right, a low thunk for a わけあり box, a falling sting for a sent-back box, and two even bells for a draw |
 
 A screen that joins late hears only what happens after it joins.
 

@@ -30,7 +30,7 @@ export const TOTAL_ROUNDS = 3;
 /** Each tip pays everyone (co-op). */
 export const TIP_POINTS = 50;
 /** Tips per box: perfect, one thing off, at least it's food. A rush order doubles them. */
-export const TIPS = { perfect: 3, close: 2, meh: 1, wakeari: 1 } as const;
+export const TIPS = { perfect: 3, close: 2, meh: 1, wakeari: 1, steal: 5 } as const;
 /** Speaking bonuses: per step, from one pool capped at 30% of the round's team points. */
 export const BONUS_POOL_SHARE = 0.3;
 export const BONUS = { callSpoken: 30, callTyped: 12, readback: 15, ask: 10, serve: 15 } as const;
@@ -75,9 +75,14 @@ export interface Visit {
   arriveAt: number;
   leaveAt: number;
   box: Record<string, number>;
-  state: 'waiting' | 'served' | 'left';
+  /** VS: 'offered' is a sent-back order the other kitchen hasn't accepted yet. */
+  state: 'waiting' | 'served' | 'left' | 'offered';
   endedAt: number | null;
   tips: number;
+  /** VS: a sent-back order offered to the other kitchen (perfect or nothing). */
+  steal?: boolean;
+  /** VS: served, then sent back for a refund when the kitchen's mistake meter filled. */
+  sentBack?: boolean;
   /** The customer's line as they go. */
   reaction: JpLine | null;
   /** Pon shape-shifted into this missing food (once a round). */
@@ -161,6 +166,8 @@ export interface VisitView {
   baked: string | null;
   /** How many different foods were ordered: the box's compartments. */
   slots: number;
+  steal?: boolean;
+  sentBack?: boolean;
   /** Score phase only: what was ordered. */
   order?: { text: string; en: string };
 }
@@ -197,6 +204,10 @@ export interface TakingView {
   at: number;
   /** N5 and N4: the words fade after a few seconds, so the order is mostly heard. */
   fades: boolean;
+  /** VS: a sent-back order on offer, until this time: accept (うけます) or refuse (ことわります). */
+  offer?: number;
+  /** VS: a sent-back order this kitchen took on: perfect or nothing. */
+  steal?: boolean;
 }
 
 /** Bento Haus VS: one of the two kitchens, as the TV sees it. */
@@ -211,6 +222,8 @@ export interface VsTeamView {
   total: number;
   /** Shifts this kitchen won. */
   wins: number;
+  /** The mistake meter, 0–100: sloppy boxes fill it, and at 100 the customer sends one back. */
+  meter: number;
   /** This kitchen's copy of each customer at the counter (the same ids in both kitchens). */
   visits: VisitView[];
   feed: FeedItem[];
@@ -552,8 +565,9 @@ export function planArrival(r: Round, from: number, players: number): void {
 export function giveUp(s: Shop, r: Round, v: Visit, at: number, ctx: ModeContext, quiet = false): void {
   v.state = 'left';
   v.endedAt = at;
-  const any = Object.values(v.box).some((n) => n > 0);
-  // A half-made box still sells, as a わけあり (slightly flawed) bento to a thrifty grandma ghost.
+  // A half-made box still sells, as a わけあり (slightly flawed) bento to a thrifty grandma ghost. A VS
+  // sent-back order is perfect or nothing.
+  const any = !v.steal && Object.values(v.box).some((n) => n > 0);
   v.tips = any ? TIPS.wakeari : 0;
   v.reaction = any ? WAKEARI : customerOf(v.customerId)!.leave;
   r.tips += v.tips;
@@ -756,7 +770,7 @@ export function serveBonus(r: Round, playerId: string, utterance: unknown): void
 /** The customers at a kitchen's counter: everyone waiting, and whoever just left, for a moment. */
 export function visitsView(r: Round | null, scoring: boolean, ctx: ModeContext): VisitView[] {
   return (r?.visits ?? [])
-    .filter((v) => scoring || v.state === 'waiting' || (v.endedAt !== null && ctx.now - v.endedAt < LINGER_MS))
+    .filter((v) => scoring || v.state === 'waiting' || v.state === 'offered' || (v.endedAt !== null && ctx.now - v.endedAt < LINGER_MS))
     .map((v) => {
       const c = customerOf(v.customerId)!;
       return {
@@ -776,6 +790,8 @@ export function visitsView(r: Round | null, scoring: boolean, ctx: ModeContext):
         tips: v.tips,
         reaction: v.reaction,
         baked: v.baked,
+        ...(v.steal ? { steal: true } : {}),
+        ...(v.sentBack ? { sentBack: true } : {}),
         slots: new Set(v.lines.map((l) => l.foodId)).size,
         ...(scoring ? { order: { text: v.text, en: v.en } } : {}),
       };
@@ -805,16 +821,22 @@ export function meView(r: Round | null, me: ModePlayer | undefined, own: boolean
   });
   return {
     level: me.level,
-    taking: waiting(r)
-      .filter((v) => v.takerId === me.id)
-      .map((v) => ({
-        visitId: v.id,
-        text: v.text,
-        en: v.en,
-        lines: v.lines.map((l) => ({ foodId: l.riddle ? null : l.foodId, riddle: l.riddle ? RIDDLES[l.foodId]! : null, n: l.n })),
-        at: v.arriveAt,
-        fades: me.level !== 'kana',
-      })),
+    taking: r.visits
+      .filter((v) => (v.state === 'waiting' || v.state === 'offered') && v.takerId === me.id)
+      .map((v) =>
+        v.state === 'offered'
+          ? // A sent-back order on offer: the order itself comes once it's accepted.
+            { visitId: v.id, text: '', en: '', lines: [], at: v.arriveAt, fades: false, offer: v.leaveAt, steal: true }
+          : {
+              visitId: v.id,
+              text: v.text,
+              en: v.en,
+              lines: v.lines.map((l) => ({ foodId: l.riddle ? null : l.foodId, riddle: l.riddle ? RIDDLES[l.foodId]! : null, n: l.n })),
+              at: v.arriveAt,
+              fades: me.level !== 'kana',
+              ...(v.steal ? { steal: true } : {}),
+            },
+      ),
     shelf: r.menu.filter((id) => r.holders[id] === me.id),
     tickets: r.tickets.filter((t) => t.stationId === me.id && (t.state === 'open' || ctx.now - t.at < 4_000)).map((t) => ticketView(t)),
     calls: r.tickets

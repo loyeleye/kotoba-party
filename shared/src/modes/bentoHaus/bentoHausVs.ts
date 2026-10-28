@@ -8,6 +8,13 @@
 // rush order); the other team's box goes as a わけあり (slightly off) bento for 1 tip if it has
 // anything in it, so the effort is never wasted. A box can't be served empty.
 //
+// The mistake meter: each sloppy box a kitchen serves fills its meter (+10 for one thing off, +25 for
+// two, +40 for worse). When it reaches 100 the customer sends that box back for a refund (0 tips) and
+// the meter empties. The customer then phones the other kitchen with the order changed a little; that
+// kitchen's order-taker has OFFER_MS to accept (うけます) or refuse (ことわります). Accepted, it's
+// perfect or nothing: a perfect box is a super tip (TIPS.steal), anything else gets 0. It's only
+// offered when the other kitchen isn't already well ahead (STEAL_MAX_LEAD).
+//
 // Teams are dealt by level (each gets a similar mix of Kana, N5 and N4) and kept for the game; anyone
 // who joins later goes to the smaller team. Each tip is worth the same points as in Co-op, paid to
 // every player in that kitchen, so the team with the most tips is on top of the recap.
@@ -21,6 +28,7 @@ import {
   AJIMI_MS,
   ARRIVE_GAP_MS,
   blankStats,
+  compareBox,
   counterSlots,
   cue,
   DURATIONS,
@@ -34,6 +42,7 @@ import {
   meView,
   menuSize,
   nextTaker,
+  orderText,
   ownCounter,
   patienceFor,
   payRound,
@@ -56,7 +65,7 @@ import {
   type Visit,
   type VsTeamView,
 } from './bentoHaus.js';
-import { FOODS } from './menu.js';
+import { FOODS, MAX_COUNT } from './menu.js';
 
 export const TEAMS = [
   { ja: 'あかチーム', en: 'Red team' },
@@ -70,6 +79,8 @@ export interface VsTeam {
   /** Tips from the shifts before this one. */
   banked: number;
   wins: number;
+  /** The mistake meter, 0–100, for this shift. */
+  meter: number;
 }
 
 export interface VsState {
@@ -84,6 +95,14 @@ export interface VsState {
   /** The last shift's winner (a team id), or null for a tie. */
   winner: number | null;
 }
+
+/** How much each sloppy box fills the mistake meter: one thing off, two things off, worse. */
+export const METER = { close: 10, two: 25, worse: 40, full: 100 } as const;
+/** How long the other kitchen's order-taker has to accept a sent-back order, and then to make it. */
+export const OFFER_MS = 25_000;
+export const STEAL_MS = 35_000;
+/** A sent-back order isn't offered to a kitchen this many tips (or more) ahead. */
+export const STEAL_MAX_LEAD = 8;
 
 const LEVEL_RANK = { kana: 0, n5: 1, n4: 2 } as const;
 
@@ -137,8 +156,81 @@ function arrive(s: VsState, at: number, ctx: ModeContext): void {
     });
     k.maxTips += TIPS.perfect * (order.rush ? 2 : 1);
   });
+  // Pon names the order-takers for the shift's first customer only, so he doesn't talk over them.
   const names = takers.filter((p): p is ModePlayer => !!p).map((p) => p.name);
-  if (names.length) cue(s, ctx, 'bento_customer', { name: names.join('さんと '), name_en: names.join(' and ') });
+  if (names.length && lead.visits.length === 1) cue(s, ctx, 'bento_customer', { name: names.join('さんと '), name_en: names.join(' and ') });
+}
+
+const totalOf = (s: VsState, t: VsTeam): number => t.banked + (s.kitchens[t.id]?.tips ?? 0);
+
+/** A sloppy box fills the kitchen's meter; when it's full the customer sends the box back for a refund,
+ *  and phones the other kitchen with a changed order. */
+function fillMeter(s: VsState, team: VsTeam, v: Visit, off: number, base: number, ctx: ModeContext): void {
+  const k = s.kitchens[team.id]!;
+  team.meter += base >= TIPS.perfect ? 0 : base === TIPS.close ? METER.close : off === 2 ? METER.two : METER.worse;
+  if (team.meter < METER.full) return;
+  team.meter = 0;
+  k.tips -= v.tips;
+  v.tips = 0;
+  v.sentBack = true;
+  v.state = 'left';
+  v.reaction = { text: 'やっぱり かえします！　おかね、かえして ください。', en: "Actually, I'm sending it back! Refund, please." };
+  const other = s.teams.find((t) => t !== team);
+  const ok = s.kitchens[other?.id ?? -1];
+  const ps = other ? membersOf(other, ctx) : [];
+  const lead = clock(s)!;
+  if (!other || !ok || !ps.length || totalOf(s, other) - totalOf(s, team) >= STEAL_MAX_LEAD || ctx.now + OFFER_MS > lastOrderAt(lead)) return;
+  // The same customer, one thing changed: one food's count goes up or down by one.
+  const lines = v.lines.map((l) => ({ ...l, riddle: false }));
+  const i = Math.floor(ctx.random() * lines.length);
+  const l = lines[i]!;
+  l.n = l.n >= MAX_COUNT ? l.n - 1 : l.n === 1 ? 2 : ctx.random() < 0.5 ? l.n - 1 : l.n + 1;
+  const said = orderText(lines, ownCounter(s.round));
+  const taker = nextTaker(other, ok, ps);
+  ok.visits.push({
+    id: ctx.newId(),
+    customerId: v.customerId,
+    takerId: taker.id,
+    lines,
+    text: `となりの おみせ、だめでした。　${said.text}`,
+    en: `The shop next door got it wrong. ${said.en}`,
+    rush: false,
+    arriveAt: ctx.now,
+    leaveAt: ctx.now + OFFER_MS,
+    box: {},
+    state: 'offered',
+    endedAt: null,
+    tips: 0,
+    reaction: null,
+    baked: null,
+    steal: true,
+  });
+  cue(s, ctx, 'bento_vs_sendback', { team: TEAMS[other.id]!.ja, team_en: TEAMS[other.id]!.en }, true);
+}
+
+/** A sent-back order: perfect for the super tip, or nothing. */
+function serveSteal(s: VsState, k: Round, v: Visit, by: string, ctx: ModeContext): void {
+  const perfect = compareBox(v.lines, v.box).length === 0;
+  v.tips = perfect ? TIPS.steal : 0;
+  v.reaction = perfect ? { text: 'これです！　ありがとう！', en: "That's it! Thank you!" } : { text: 'うーん… これも ちがいます。', en: "Hmm… this one's wrong too." };
+  if (perfect) (s.stats[by] ??= blankStats()).perfect += 1;
+  v.state = 'served';
+  v.endedAt = ctx.now;
+  k.tips += v.tips;
+  for (const t of k.tickets) if (t.visitId === v.id && t.state === 'open') t.state = 'void';
+}
+
+/** Sent-back orders run on their own clock, in their own kitchen: an unanswered offer is refused, and an
+ *  accepted one not served in time goes for nothing. */
+function runSteals(s: VsState, now: number, ctx: ModeContext): void {
+  for (const k of s.kitchens)
+    for (const v of k.visits) {
+      if (!v.steal || v.leaveAt > now) continue;
+      if (v.state === 'offered') {
+        v.state = 'left';
+        v.endedAt = v.leaveAt;
+      } else if (v.state === 'waiting') giveUp(s, k, v, v.leaveAt, ctx, true);
+    }
 }
 
 /** The other kitchen lost the customer: its box goes as a わけあり bento if it has anything in it. */
@@ -156,9 +248,10 @@ function lose(r: Round, v: Visit, at: number): void {
 function runClock(s: VsState, now: number, ctx: ModeContext): void {
   const lead = clock(s);
   if (!lead) return;
+  runSteals(s, now, ctx);
   for (let guard = 0; guard < 64; guard++) {
     const due = waiting(lead)
-      .filter((v) => v.leaveAt <= now)
+      .filter((v) => !v.steal && v.leaveAt <= now)
       .sort((a, b) => a.leaveAt - b.leaveAt)[0];
     const arrival = lead.nextArriveAt !== null && lead.nextArriveAt <= now ? lead.nextArriveAt : null;
     if (due && (arrival === null || due.leaveAt <= arrival)) {
@@ -189,6 +282,7 @@ function teamView(s: VsState, t: VsTeam, scoring: boolean, ctx: ModeContext): Vs
     tips: k?.tips ?? 0,
     total: t.banked + (k?.tips ?? 0),
     wins: t.wins,
+    meter: t.meter,
     visits: visitsView(k, scoring, ctx),
     feed: feedView(k),
     ajimi: ajimiView(k, ctx),
@@ -217,7 +311,7 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
     return {
       round: 0,
       totalRounds: TOTAL_ROUNDS,
-      teams: dealt.map((members, id) => ({ id, members, takerTurn: 0, banked: 0, wins: 0 })),
+      teams: dealt.map((members, id) => ({ id, members, takerTurn: 0, banked: 0, wins: 0, meter: 0 })),
       kitchens: [],
       stats,
       usedCustomers: [],
@@ -247,7 +341,10 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
       return;
     }
     if (phase === 'prompt') {
-      for (const t of s.teams) t.banked += s.kitchens[t.id]?.tips ?? 0;
+      for (const t of s.teams) {
+        t.banked += s.kitchens[t.id]?.tips ?? 0;
+        t.meter = 0;
+      }
       s.round += 1;
       s.winner = null;
       // Anyone who joined since goes to the smaller team.
@@ -294,7 +391,14 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
     if (!lead || phase !== 'answer') return;
     runClock(s, ctx.now, ctx);
     // Closing time: whoever is still waiting takes their boxes as they are.
-    for (const k of s.kitchens) for (const v of waiting(k)) giveUp(s, k, v, ctx.now, ctx, true);
+    for (const k of s.kitchens)
+      for (const v of k.visits) {
+        if (v.state === 'waiting') giveUp(s, k, v, ctx.now, ctx, true);
+        else if (v.state === 'offered') {
+          v.state = 'left';
+          v.endedAt = ctx.now;
+        }
+      }
     lead.nextArriveAt = null;
   },
 
@@ -318,6 +422,7 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
     if (phase !== 'answer' || !lead?.started) return null;
     const times = [...waiting(lead).map((v) => v.leaveAt), ...(lead.nextArriveAt !== null ? [lead.nextArriveAt] : [])];
     for (const k of s.kitchens) {
+      for (const v of k.visits) if (v.steal && (v.state === 'offered' || v.state === 'waiting')) times.push(v.leaveAt);
       for (const v of k.visits) if (v.endedAt !== null && v.endedAt + LINGER_MS > now) times.push(v.endedAt + LINGER_MS);
       if (k.ajimi && k.ajimi.at + AJIMI_MS > now) times.push(k.ajimi.at + AJIMI_MS);
     }
@@ -337,13 +442,34 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
     if (!ctx.player(playerId) || !team) return moveError('not-allowed');
     const k = s.kitchens[team.id]!;
     const m = raw as Record<string, unknown>;
+    if (m.kind === 'accept' || m.kind === 'refuse') {
+      const v = k.visits.find((x) => x.id === m.visitId);
+      if (v && v.state !== 'offered') return moveError('too-late');
+      if (!v || v.takerId !== playerId) return moveError('bad-move');
+      if (m.kind === 'refuse') {
+        v.state = 'left';
+        v.endedAt = ctx.now;
+        v.reaction = { text: 'そうですか… ざんねん。', en: 'Oh… what a shame.' };
+      } else {
+        v.state = 'waiting';
+        v.arriveAt = ctx.now;
+        v.leaveAt = ctx.now + STEAL_MS;
+      }
+      return MOVE_OK;
+    }
     if (m.kind === 'serve') {
       const v = k.visits.find((x) => x.id === m.visitId);
       if (v && v.state !== 'waiting') return moveError('too-late');
       if (!v || v.takerId !== playerId) return moveError('bad-move');
       if (!servable(v)) return moveError('empty-box');
       serveBonus(k, playerId, m.utterance);
+      if (v.steal) {
+        serveSteal(s, k, v, playerId, ctx);
+        return MOVE_OK;
+      }
+      const off = compareBox(v.lines, v.box).length;
       serve(s, k, v, playerId, ctx);
+      fillMeter(s, team, v, off, v.rush ? v.tips / 2 : v.tips, ctx);
       // First served wins the customer: the other kitchen's copy goes.
       for (const other of s.kitchens) {
         if (other === k) continue;
@@ -410,7 +536,7 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
     if (totals[0] !== totals[1]) {
       const win = s.teams[totals[0]! > totals[1]! ? 0 : 1]!;
       const ps = membersOf(win, ctx);
-      if (ps.length) out.push({ playerId: ps[0]!.id, name: ps.map((p) => p.name).join('・'), title: 'はんじょう賞', en: `Busiest Kitchen (${TEAMS[win.id]!.en}, most tips)` });
+      if (ps.length) out.push({ playerId: ps[0]!.id, name: ps.map((p) => p.name).join('・'), spoken: ps.map((p) => p.name).join('さんと '), title: 'はんじょう賞', en: `Busiest Kitchen (${TEAMS[win.id]!.en}, most tips)` });
     }
     return [...out, ...shopAwards(s, ctx)];
   },

@@ -164,6 +164,8 @@ export interface Award {
   /** Award title, e.g. Pon's 座布団王. */
   title: string;
   en: string;
+  /** What the host says for {name} when it isn't just the name (the lines add the last さん). */
+  spoken?: string;
 }
 
 export type MoveResult = { ok: true } | { ok: false; error: string };

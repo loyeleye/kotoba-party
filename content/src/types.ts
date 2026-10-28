@@ -529,6 +529,7 @@ export type HostEvent =
   | 'bento_stars' // the shift's stars ({stars})
   | 'bento_vs_intro' // Bento Haus VS opens: two kitchens race for the same customers
   | 'bento_vs_win' // a VS shift is over and {team} earned more tips
+  | 'bento_vs_sendback' // a VS box is sent back and offered to the other kitchen ({team})
   | 'bento_vs_tie' // a VS shift ends level
   | 'omiai_tease'; // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
 
