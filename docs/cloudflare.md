@@ -59,6 +59,13 @@ Give it a public https address (for example with a Cloudflare Tunnel:
 `READER_TOKEN` to the same secret. VOICEVOX and a self-hosted Whisper server, if you use one instead of Workers AI
 ([speech.md](speech.md)), can sit on the same machine (`server/ai/docker-compose.voicevox.yml`).
 
+### Saved progress
+
+Optional sign-in ([accounts.md](accounts.md)) keeps every save on one Durable Object, `AccountsObject`
+(binding `ACCOUNTS`, created by the `v2` migration on the next deploy). There is nothing to set up.
+Passkeys are tied to the address phones open, so choose the final domain before players sign in:
+moving it means everyone makes a new passkey.
+
 ## Custom domain
 
 With a domain on Cloudflare, add it in `wrangler.jsonc` and deploy again:

@@ -103,10 +103,12 @@ raid recap), `recap_award` (the room).
 
 ### Recap
 
-The design doc says a yōkai is truly *caught* after 3 correct answers on separate days. There
-is no persistence yet, so the raid recap shows **seen tonight / right tonight** per player, the
+The design doc says a yōkai is truly *caught* after 3 correct answers on separate days. Catching
+lives in a signed-in player's saved yōkai cards ([accounts.md](../accounts.md)): `practice` gives
+one card per kana with how often it was seen, recalled from memory (said, typed or drawn, never
+picked) and missed. The raid recap itself shows **seen tonight / right tonight** per player, the
 team's correct kana with counts, and the **haunted list** (kana missed and yōkai that
-escaped), with a note that catching across days comes with saved progress. Every attacked
+escaped), with a note that the cards were saved (or that signing in keeps them). Every attacked
 kana, pair word and the boss word go into the phrasebook (`ctx.phrase`) as memory cards:
 `said` when spoken right, `seen` when tapped or typed, `retry` when right on the retry,
 `missed` otherwise.
@@ -273,7 +275,7 @@ older than 15 s are not asked for, a look gets up to 12 s (from Cloudflare the v
 
 ## Open questions
 
-- Persistence: true catching (3 right answers on separate days), the Leitner queue and the yōkai book need saved progress per player.
+- ~~Persistence~~: done with optional sign-in ([accounts.md](../accounts.md)). Signed-in players keep their yōkai cards: catching (right from memory on 3 different days), the Leitner queue, a review on the phone and the yōkai book. Signed-out players still get tonight's tally.
 - Should the horde slow down for a team of first-timers (adaptive speed), or should a solo player face fewer yōkai?
 - Server-side speech-to-text (design doc Phase 3) should replace the browser recogniser for single kana; the closed-set check is ready for it.
 - The Wave 3 no-voice fallback shows the word in text, which turns listening into reading. Pre-rendered audio for pair words would fix it.

@@ -41,8 +41,10 @@ If you only have ten minutes, these are the answers that would change the build 
   on real phones with real speech recognition? ([bento-haus.md](modes/bento-haus.md#open-questions))
 - **Shodō Taikai (backlog):** which music for the gallery round (v1 keeps the soft synth), and
   the trace check needs a try on real phones. ([shodo.md](modes/shodo.md#open-questions))
-- **Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
-  player. Is it time to add accounts or device-local saves? ([kana-raid.md](modes/kana-raid.md#open-questions))
+- ~~**Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
+  player. Is it time to add accounts or device-local saves?~~ **Decided (Ladi, 2026-10-28):**
+  optional sign-in with a passkey, under Join on the phone; never needed to play. Signed-in players
+  keep their yōkai cards (review and catching) and scores from every game. See [accounts.md](accounts.md).
 - **Ink Storm (kana drawing):** the drawing pad has never been tried with a thumb on a real
   small phone, and the pass thresholds were tuned on synthetic handwriting. Should drawings show
   on the TV with the player's name? ([kana-raid.md](modes/kana-raid.md#open-questions))

@@ -25,6 +25,7 @@ import type {
   TopicPack,
 } from '../../../content/src/types.js';
 import type { WriteKanji, WriteWord } from '../../../content/src/kanji/kanji.js';
+import type { PracticeItem } from '../progress.js';
 import type { Audience, ModeId, Phase, Viewer } from '../protocol.js';
 
 /** All the content a mode may draw on. Plain arrays, so tests can pass small fixtures. */
@@ -243,6 +244,8 @@ export interface Mode<S = unknown, V extends { mode: ModeId } = { mode: ModeId }
   awards?(s: S, ctx: ModeContext): Award[];
   /** Team games: each team's result, shown above the recap's podium. */
   recapTeams?(s: S, ctx: ModeContext): RecapTeam[];
+  /** What a player practised, for their saved yōkai cards when they're signed in (Kana Raid). */
+  practice?(s: S, playerId: string): PracticeItem[];
 }
 
 /** One team's result for the recap (Bento Haus VS). */

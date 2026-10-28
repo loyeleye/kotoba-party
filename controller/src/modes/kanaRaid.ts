@@ -14,6 +14,7 @@ import { speakBox } from '../components/speak.js';
 import { canVoice, hearButton as voiceButton, say } from '../components/voice.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
+import { account } from '../account.js';
 
 // ---------- speech synthesis ----------
 
@@ -319,6 +320,12 @@ function recap(game: KanaRaidView): HTMLElement {
           r.haunted.map((x) => h('div', { class: 'raid-haunt' }, h('span', { class: 'raid-chip miss', lang: 'ja' }, x.char), h('span', { class: 'raid-haunt-tip' }, x.tip ?? ''), hearButton(x.hear, '🔊'))),
         )
       : h('p', { class: 'hint' }, 'Nothing haunting you tonight!'),
-    h('p', { class: 'hint small' }, 'A yōkai is truly caught after 3 right answers on separate days. Saved progress is coming; for now this is tonight’s tally.'),
+    h(
+      'p',
+      { class: 'hint small' },
+      account()
+        ? 'A yōkai is caught after 3 right answers from memory on separate days. Tonight’s went into your yōkai cards: review them under My progress.'
+        : 'A yōkai is caught after 3 right answers from memory on separate days. Sign in on the join screen to keep your yōkai cards between games.',
+    ),
   );
 }

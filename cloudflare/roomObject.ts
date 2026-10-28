@@ -16,6 +16,7 @@ import { systemClock } from '../server/src/clock.js';
 import { SttGate, isClip, sttFromEnv, transcribe } from '../server/src/stt.js';
 import { ROOM_STALE_MS } from '../shared/src/constants.js';
 import { CLOSE, type CreateRoomResponse, type JoinRequest, type RoomInfo, type WatchRoomResponse } from '../shared/src/protocol.js';
+import { ACCOUNTS_NAME } from './accountsObject.js';
 import type { Env } from './env.js';
 
 // Built once per isolate and shared by every room in it; the content is read-only.
@@ -56,6 +57,16 @@ export class RoomObject extends DurableObject<Env> {
       },
       onPhase: (r) => r.state.phase === 'intro' && ai.newGame(r.code),
       onCues: hostDirector(roomAudio(aiVoice(ai, bankVoice(content)))),
+      // Signed-in players' finished games, to their saved progress (docs/accounts.md).
+      onResults: (results) => {
+        const accounts = this.env.ACCOUNTS.get(this.env.ACCOUNTS.idFromName(ACCOUNTS_NAME));
+        this.ctx.waitUntil(
+          accounts
+            .fetch(new Request('https://accounts/results', { method: 'POST', body: JSON.stringify(results) }))
+            .then((res) => void (res.ok || workerLog.warn(`saving results failed: ${res.status}`)))
+            .catch((err: unknown) => workerLog.warn(`saving results failed: ${String(err)}`)),
+        );
+      },
       // As on Node: Ink Storm's second look and the Onsen suspects' lead-ins, only with an LLM.
       onCommit: llm
         ? (() => {

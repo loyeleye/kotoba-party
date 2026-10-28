@@ -59,6 +59,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 31 | Browser speech synthesis (the device's own ja-JP voices, Web Speech API) for host lines when VOICEVOX isn't set up or is late, as already used for Onsen suspects, Concentration cards and listening prompts | `stage/src/hostSpeech.ts`, `stage/src/modes/onsenMurder.ts`, `stage/src/modes/concentration.ts`, `controller/src/components/voice.ts` | 🟡 ❓ | Nothing is shipped: the voices belong to the player's OS or browser. Chrome's "Google" voices send the text to Google, so the host fallback prefers on-device voices. Read Google's terms for Chrome's network voices and mention it in the privacy notice, or require on-device voices |
 | 32 | Dub Club plays players' recorded voices back on the TV: each acted take is kept in the room's memory (Node, or the Cloudflare Durable Object) while the game needs it, then dropped; never written to disk | `server/src/room.ts` (`keepClip`), `server/src/server.ts`, `cloudflare/roomObject.ts`, `controller/src/modes/dubClub.ts` | ⚠️ ❓ | Privacy, not a licence: a voice played to the room is still personal data, and some players may be children. Before selling: say it in the privacy notice, decide on under-13/16 players (COPPA, GDPR-K: rules not read for this, ❓), keep the "play from my phone" option, and check Cloudflare's Durable Object terms for in-memory personal data (not read, ❓) |
 | 33 | Dub Club's Cheeky episodes and cards (office overtime, a first date, Girls' Night, a cheap idol off stage, and the drunk, sexy, host-club, gyaru and mother-in-law cards), behind the host's Audience setting (decision, 2026-10-28) | `shared/src/modes/dubClub/scenes.ts` (`audience: 'cheeky'`) | ⚠️ | Same as rows 29 and 30: no licence issue, but it adds to the age rating. Include it in the rating questionnaires or leave it out of rated builds; have the fluent reviewer check the Cheeky lines |
+| 34 | Optional sign-in: passkeys through SimpleWebAuthn (`@simplewebauthn/server` and `/browser`, MIT, plus MIT, Apache-2.0, 0BSD and BSD-3 dependencies), and each signed-in player's save (save name, game scores, kana practised) kept on one Cloudflare Durable Object (decision, 2026-10-28) | `server/src/accounts.ts`, `cloudflare/accountsObject.ts`, `controller/src/account.ts`, `shared/src/progress.ts` | 🟡 ⚠️ ❓ | Ship the MIT and Apache-2.0 notices (row 5). Privacy, not licence: a privacy notice for saves, a decision on under-13/16 players (COPPA, GDPR-K: not read, ❓), and Cloudflare's Durable Object storage named as a processor. Deleting a save is already in the game |
 
 ## Details
 
@@ -600,4 +601,24 @@ pictures if they still look right, and add the Steam/itch disclosure.
   of the table, per Ladi's note that the audience is about half women, and Idol, Backstage) and five Cheeky direction cards.
   One drinking joke at most (the よっぱらって card); nothing explicit.
 - **Status:** ⚠️, same as rows 29 and 30: it adds to the age rating, nothing to license.
+
+### 34. Optional sign-in and saved progress
+
+- **What:** Players can sign in with a passkey (no email, no password) to keep their yōkai cards and the
+  scores of the games they finish ([accounts.md](accounts.md)). The phone uses `@simplewebauthn/browser`
+  14.0.0 and the server `@simplewebauthn/server` 14.0.3, both MIT (© 2020 Matthew Miller), read in their
+  `LICENSE.md` and at https://github.com/MasterKale/SimpleWebAuthn/blob/master/LICENSE.md on 2026-10-28.
+  The server package pulls in `@peculiar/*`, `@hexagon/base64`, `@levischuck/tiny-cbor`, `pvtsutils`,
+  `pvutils` and `tsyringe` (MIT), `asn1js` (BSD-3-Clause), `reflect-metadata` (Apache-2.0) and `tslib`
+  (0BSD), per their `package.json` licence fields (read 2026-10-28).
+- **What's stored:** the save name the player types, their passkey's public key, hashed sign-in tokens,
+  each finished game (mode, date, score, place, awards) and each kana's review state. It lives on one
+  Cloudflare Durable Object (`AccountsObject`). No email, real name, address, voice or IP is stored with it.
+  A player can delete the whole save from the phone.
+- **Status:** 🟡 for the libraries (notices only). ⚠️ ❓ for privacy: this is the game's first lasting
+  personal data, and some players may be children. The COPPA and GDPR-K rules weren't read for this
+  decision (2026-10-28), nor Cloudflare's terms for personal data stored in Durable Objects: ❓.
+- **To sell:** a privacy notice covering saves (what's kept, where, how to delete it); a decision on
+  under-13/16 players (parental consent, or no saves for them); name Cloudflare as a processor; ship the
+  notices with the third-party list (row 5).
 
