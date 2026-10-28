@@ -35,9 +35,27 @@ const pct = (x: number | null) => (x === null ? '–' : `${Math.round(x * 100)}`
 
 // ---------- a take in progress ----------
 // While the mic is recording or its take is being sent, the screen must not be redrawn (in a
-// continuous song the next turn starts while the last notes are still being sung). The phone key
-// pins to this turn until the take is sent.
+// continuous song the next singer's count-in, a new phase, starts a bar before this line ends).
+// The phone holds this turn until the take is sent.
 let busyTurn: number | null = null;
+let busyAt = 0;
+// Your own line stays up until it has been sung, mic or not: until the mic would stop by itself.
+let linger: { no: number; until: number } | null = null;
+let lingerTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Local time the mic stops by itself: two beats after the line ends, at least 1.5 s more. */
+const singEnd = (lineAtLocal: number, line: LineView, beatMs: number) => lineAtLocal + line.ms + Math.max(1_500, 2 * beatMs);
+
+function lingerOn(no: number, until: number, redraw: () => void): void {
+  if (until <= Date.now()) return;
+  linger = { no, until };
+  if (lingerTimer) clearTimeout(lingerTimer);
+  lingerTimer = setTimeout(() => {
+    lingerTimer = null;
+    if (linger?.no === no) linger = null;
+    redraw();
+  }, until - Date.now() + 50);
+}
 
 // ---------- pitch setting (per device) ----------
 const PITCH_KEY = 'kotoba:karaoke-pitch';
@@ -178,6 +196,8 @@ interface SingOptions {
   autoStart: boolean;
   /** Show the typed quiet fallback. */
   typed: boolean;
+  /** Redraws the phone (when the line has lingered long enough). */
+  redraw(): void;
   kanaPadOpen: boolean;
   onSend(take: { utterance: Utterance; pitch?: (number | null)[] | null; onsetMs?: number; durMs?: number; timing?: 'mic' | 'button' }): Promise<boolean>;
 }
@@ -191,6 +211,9 @@ function singBox(opts: SingOptions): HTMLElement {
 
   const box = h('div', { class: 'kdp-sing' }, countIn(opts.beatMs, opts.countInBeats, elapsed), lyricLine(opts.line, elapsed, opts.romaji), h('div', { class: 'kdp-progress' }, h('span', { style: `--d:${Math.round(-elapsed)}ms;--len:${opts.line.ms}ms` })));
 
+  // Your own line stays on screen until it's been sung (the next phase starts before then).
+  if (opts.autoStart) lingerOn(opts.turnNo, singEnd(lineAtLocal, opts.line, opts.beatMs), opts.redraw);
+
   const finish = async (take: Parameters<SingOptions['onSend']>[0]) => {
     if (sent) return;
     sent = true;
@@ -200,7 +223,11 @@ function singBox(opts: SingOptions): HTMLElement {
     if (!ok) {
       sent = false;
       status.textContent = 'That didn’t go through. Tap and sing again.';
-    } else status.textContent = '✓ Sent!';
+    } else {
+      status.textContent = '✓ Sent!';
+      // Sung (or Done tapped): the next update may move the screen on.
+      if (linger?.no === opts.turnNo) linger = null;
+    }
   };
 
   if (canSpeak()) {
@@ -261,6 +288,7 @@ function singBox(opts: SingOptions): HTMLElement {
       if (sent || live || clip || !box.isConnected) return;
       live = true;
       busyTurn = opts.turnNo;
+      busyAt = Date.now();
       pressAt = Date.now();
       button.classList.add('live');
       button.textContent = '■ Done singing';
@@ -287,7 +315,7 @@ function singBox(opts: SingOptions): HTMLElement {
       });
       // Stop for them when the line has had time to finish: two beats after it ends, at least 1.5 s
       // more, and inside the 15 s a clip can hold.
-      const lineEnd = lineAtLocal + opts.line.ms + Math.max(1_500, 2 * opts.beatMs);
+      const lineEnd = singEnd(lineAtLocal, opts.line, opts.beatMs);
       autoStop = setTimeout(() => void stop(), Math.min(14_000, Math.max(2_000, lineEnd - Date.now())));
     };
 
@@ -387,7 +415,7 @@ function sheet(game: KaraokeDuelView, romaji: boolean): HTMLElement {
 }
 
 function singScreen(ctx: Ctx): HTMLElement {
-  const { game, view, me, send } = ctx;
+  const { game, view, me, send, redraw } = ctx;
   const turn = game.turn!;
   const song = game.song!;
   const mine = game.mine!;
@@ -414,6 +442,7 @@ function singScreen(ctx: Ctx): HTMLElement {
         label: 'Tap to sing 🎤',
         autoStart: true,
         typed: true,
+        redraw,
         kanaPadOpen: kana,
         onSend: (take) => send({ kind: 'sing', turn: st.no, ...take }),
       }),
@@ -454,6 +483,7 @@ function singScreen(ctx: Ctx): HTMLElement {
         label: 'Tap to sing along 🎶',
         autoStart: false,
         typed: false,
+        redraw,
         kanaPadOpen: false,
         onSend: (take) => send({ kind: 'chorus', turn: turn.no, utterance: take.utterance }),
       }),
@@ -568,13 +598,19 @@ function resultScreen(ctx: Ctx): HTMLElement {
 }
 
 export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
-  key: (view, game) => {
-    // Never redraw under a take that is recording or sending.
-    if (view.phase === 'answer' && busyTurn !== null) return `busy:${busyTurn}`;
+  hold: (view, game) => {
+    if (view.phase !== 'answer') return null;
+    // Never redraw under a take that is recording or sending, or under your line still being sung.
+    // (A clip holds 15 s: a take still not sent 30 s after the mic opened has stalled, so let go.)
+    if (busyTurn !== null && Date.now() < busyAt + 30_000) return `sing:${busyTurn}`;
+    if (linger && linger.until > Date.now()) return `sing:${linger.no}`;
     // A continuous song's singer keeps one screen from their count-in to the take being sent.
     const st = game.mine?.singTurn;
-    if (view.phase === 'answer' && st && game.song?.continuous) return `sing:${st.no}`;
-    return [
+    return st && game.song?.continuous ? `sing:${st.no}` : null;
+  },
+
+  key: (view, game) =>
+    [
       view.phaseSeq,
       game.turn?.no ?? '',
       game.mine?.role,
@@ -587,8 +623,7 @@ export const karaokeDuelPhone: PhoneMode<KaraokeDuelView> = {
       game.result ? 'r' : '',
       game.pick ? `${game.pick.decided}:${game.pick.chosen ?? ''}:${game.mine?.canPick}` : '',
       game.mine?.isMyTurn ? '' : game.takes.length,
-    ].join('|');
-  },
+    ].join('|'),
 
   render(ctx) {
     const { view, game, me } = ctx;
