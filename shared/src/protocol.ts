@@ -68,10 +68,11 @@ export interface HostSay {
 }
 
 /**
- * A cheer for a win, a flinch for a miss. Only Nobiko-san has the other two: `peek` stretches her neck out
- * over the speech bubble, and `reach` sends it all the way to the card the stage marks `.host-target`.
+ * A cheer for a win, a flinch for a miss, a gasp at a twist (`shock`), a hand to the chin while players
+ * answer (`think`). Only Nobiko-san has the other two: `peek` stretches her neck out over the speech
+ * bubble, and `reach` sends it all the way to the card the stage marks `.host-target`.
  */
-export type HostMood = 'cheer' | 'oops' | 'peek' | 'reach';
+export type HostMood = 'cheer' | 'oops' | 'shock' | 'think' | 'peek' | 'reach';
 
 export interface RecapView {
   /** `earned`: party points from this game; `total`: the night's running total after it. */

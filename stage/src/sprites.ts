@@ -23,9 +23,9 @@ type SheetKind = 'idle' | Exclude<HostMood, 'reach'>;
 export const hostSheet = (host: string, kind: SheetKind): Sheet =>
   kind === 'peek'
     ? { src: `${ANIM}/${host}-peek.png`, frames: 10, ms: 1800, wide: 2 }
-    : { src: `${ANIM}/${host}-${kind}.png`, frames: 8, ms: kind === 'idle' ? 1600 : 900 };
+    : { src: `${ANIM}/${host}-${kind}.png`, frames: 8, ms: kind === 'idle' || kind === 'think' ? 1600 : 900 };
 /** Each host's sheets. Only Nobiko-san has the peek: her neck stretches out over the speech bubble (tools/art/sources/nobiko-peek.py). */
-const hostKinds = (host: string): SheetKind[] => (host === 'nobiko' ? ['idle', 'cheer', 'oops', 'peek'] : ['idle', 'cheer', 'oops']);
+const hostKinds = (host: string): SheetKind[] => ['idle', 'cheer', 'oops', 'shock', 'think', ...(host === 'nobiko' ? ['peek' as const] : [])];
 /** Lip sync: three mouth shapes, closed, half open, wide open. Shown one at a time, not played. */
 export const talkSheet = (host: string): Sheet => ({ src: `${ANIM}/${host}-talk.png`, frames: 3, ms: 0 });
 /** A caught yōkai: its flinch, then the shared smoke puff (tools/art/polish.ts), at 10 frames a second. */
