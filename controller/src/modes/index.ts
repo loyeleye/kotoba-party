@@ -16,6 +16,7 @@ import { narabetePhone } from './narabete.js';
 import { bentoHausPhone, bentoHausVsPhone } from './bentoHaus.js';
 import { dubClubPhone } from './dubClub.js';
 import { hajimemashitePhone } from './hajimemashite.js';
+import { happyokaiPhone } from './happyokai.js';
 import type { PhoneMode } from './types.js';
 
 export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
@@ -37,4 +38,5 @@ export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
   'bento-haus-vs': bentoHausVsPhone,
   'dub-club': dubClubPhone,
   hajimemashite: hajimemashitePhone,
+  happyokai: happyokaiPhone,
 };

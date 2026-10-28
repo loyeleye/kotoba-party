@@ -68,8 +68,8 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   };
 }
 
-const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect', 'bento_perfect', 'bento_bake', 'hajime_known', 'hajime_pon_win']);
-const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai', 'narabete_knot', 'bento_leave', 'bento_static', 'hajime_truth']);
+const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect', 'bento_perfect', 'bento_bake', 'hajime_known', 'hajime_pon_win', 'happyokai_great', 'happyokai_stall', 'happyokai_vote']);
+const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai', 'narabete_knot', 'bento_leave', 'bento_static', 'hajime_truth', 'happyokai_mishap_blackout', 'happyokai_mishap_wrong', 'happyokai_mishap_graph', 'happyokai_mishap_upside', 'happyokai_mishap_message']);
 
 /** Nobiko-san cranes her neck out to look as players answer and as their answers are revealed. */
 const PEEK = new Set(['say_it_first', 'reveal_react']);

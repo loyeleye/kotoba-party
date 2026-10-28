@@ -31,6 +31,7 @@ import { oekakiPolicy } from './policies/oekaki.js';
 import { shodoPolicy } from './policies/shodo.js';
 import { narabetePolicy } from './policies/narabete.js';
 import { dubClubPolicy } from './policies/dubClub.js';
+import { happyokaiPolicy } from './policies/happyokai.js';
 import { bentoHausPolicy } from './policies/bentoHaus.js';
 import { hajimemashitePolicy } from './policies/hajimemashite.js';
 
@@ -104,6 +105,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
       return (sharedDubClub ??= dubClubPolicy());
     case 'hajimemashite':
       return hajimemashitePolicy();
+    case 'happyokai':
+      return happyokaiPolicy();
     default:
       return undefined;
   }

@@ -51,6 +51,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'dub-club': 'dub-opening',
   // Pon's guest corner: a light talk-show tune the room can chat over.
   hajimemashite: 'local-forecast',
+  // Happyōkai!: the conference-hall lounge Talking Points parodies, quiet enough to talk over.
+  happyokai: 'lobby-time',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -68,6 +70,7 @@ export const MODE_ALT_THEMES: Partial<Record<ModeId, MusicId>> = {
   'bento-haus': 'feelin-good',
   'bento-haus-vs': 'kawai-kitsune',
   hajimemashite: 'carefree',
+  happyokai: 'pamgaea',
 };
 
 /** The theme for the `game`th game of `mode` on this screen (0, 1, 2 …). */
@@ -97,6 +100,8 @@ export const SPEAKING_PHASES: Partial<Record<ModeId, Phase[]>> = {
   'word-gauntlet': ['score'],
   // Say each target before tracing it, then read the scroll together.
   shodo: ['prompt', 'score'],
+  // Backstage: the presenter rehearses the opening out loud.
+  happyokai: ['prompt'],
 };
 
 /**
@@ -118,7 +123,9 @@ export const listening = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): bool
   // Narabete!'s say phase is a listening game: everyone has to hear everyone's card.
   (view.mode === 'narabete' && view.phase === 'answer') ||
   // はじめまして！'s introduction: the room has to hear each card read out.
-  (view.mode === 'hajimemashite' && view.phase === 'reveal');
+  (view.mode === 'hajimemashite' && view.phase === 'reveal') ||
+  // Happyōkai!'s talk and question time: one person speaks at a time, and the whole room has to hear them.
+  (view.mode === 'happyokai' && (view.phase === 'answer' || view.phase === 'encore'));
 
 /**
  * Shodō Taikai's big sheet: once the first sheet is in, players start saying their sentence into

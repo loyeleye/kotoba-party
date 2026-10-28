@@ -16,6 +16,7 @@ import type { NarabeteView } from './narabete/narabete.js';
 import type { BentoView } from './bentoHaus/bentoHaus.js';
 import type { DubView } from './dubClub/dubClub.js';
 import type { HajimeView } from './hajimemashite/hajimemashite.js';
+import type { HappyokaiView } from './happyokai/happyokai.js';
 
-export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView, ShodoView, NarabeteView, BentoView, DubView, HajimeView };
-export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | ShodoView | NarabeteView | BentoView | DubView | HajimeView | DebugView;
+export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView, ShodoView, NarabeteView, BentoView, DubView, HajimeView, HappyokaiView };
+export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | ShodoView | NarabeteView | BentoView | DubView | HajimeView | HappyokaiView | DebugView;

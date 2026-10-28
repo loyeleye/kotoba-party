@@ -15,7 +15,7 @@ export type { Level, HostId };
 export const PHASES = ['lobby', 'intro', 'prompt', 'answer', 'reveal', 'encore', 'score', 'penalty', 'finale', 'recap'] as const;
 export type Phase = (typeof PHASES)[number];
 
-export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'word-gauntlet', 'concentration', 'phrase-bingo', 'karaoke-duel', 'onsen-murder', 'tourist', 'oekaki', 'omiai', 'shodo', 'narabete', 'bento-haus', 'bento-haus-vs', 'dub-club', 'hajimemashite', 'debug'] as const;
+export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'word-gauntlet', 'concentration', 'phrase-bingo', 'karaoke-duel', 'onsen-murder', 'tourist', 'oekaki', 'omiai', 'shodo', 'narabete', 'bento-haus', 'bento-haus-vs', 'dub-club', 'hajimemashite', 'happyokai', 'debug'] as const;
 export type ModeId = (typeof MODE_IDS)[number];
 /** Start's "Surprise Me!" pick: the room rolls a random menu game that fits tonight's player count. */
 export const SURPRISE = 'surprise';

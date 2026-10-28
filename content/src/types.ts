@@ -515,6 +515,25 @@ export type HostEvent =
   | 'narabete_perfect' // the flip came out in order
   | 'narabete_knot' // the flip has knots in it
   | 'narabete_story' // the Worst Day Ever story is read in order
+  // Happyōkai!
+  | 'happyokai_intro' // Happyōkai opens: the studio's late-night recital, the players give surprise talks
+  | 'happyokai_photo_1' // backstage: Chōchin-san shows "one slide of his own" (a dark station platform)
+  | 'happyokai_photo_2' // backstage: his second holiday photo (eyes in the dark)
+  | 'happyokai_photo_3' // backstage: his last holiday photo (a group photo of everyone)
+  | 'happyokai_call' // call the next presenter up ({name})
+  | 'happyokai_call_last' // call up the last presenter, the headliner (トリ) ({name})
+  | 'happyokai_title' // react to the talk's title ({title})
+  | 'happyokai_mishap_blackout' // mishap: your own flame went out and the slide is dark (two words, before the presenter recovers)
+  | 'happyokai_mishap_wrong' // mishap: your holiday photo came up instead of the slide
+  | 'happyokai_mishap_graph' // mishap: a graph came up
+  | 'happyokai_mishap_upside' // mishap: the slide is upside down
+  | 'happyokai_mishap_message' // mishap: a message popped up on the presenter's slide
+  | 'happyokai_question' // question time: the audience asks
+  | 'happyokai_stall' // the presenter said "いい しつもんですね" (the classic stall)
+  | 'happyokai_grade' // the audience gives はなまる
+  | 'happyokai_card' // the report card is shown ({name})
+  | 'happyokai_great' // a report card full of はなまる ({name})
+  | 'happyokai_vote' // the room votes for the best talk of the night
   // Bento Haus
   | 'bento_intro' // Pon opens his bento shop: one kitchen, call out to each other
   | 'bento_round' // a new shift starts ({round}: its name)
