@@ -40,6 +40,8 @@ const EXACT: Record<string, Phrase> = {
   'Hold and say it in Japanese': { n5: 'おしながら にほんごで いって', n4: '押しながら日本語で言って' },
   'Hold and say it to send it': { n5: 'おしながら いうと おくれるよ', n4: '押しながら言うと送れるよ' },
   'Hold and try again': { n5: 'おしながら もういちど', n4: '押しながらもう一度' },
+  'Tap to talk': { n5: 'タップして はなす', n4: 'タップして話す' },
+  'Tap to stop': { n5: 'タップして とめる', n4: 'タップして止める' },
   Send: { n5: 'おくる', n4: '送る' },
   'Say it again': { n5: 'もういちど', n4: 'もう一度' },
 };

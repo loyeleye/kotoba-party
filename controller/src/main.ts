@@ -71,6 +71,13 @@ const ERRORS: Record<string, string> = {
   'bad-drawing': 'Fude couldn’t read that drawing. Draw a bit more and send it again.',
   'your-drawing': 'That’s your drawing! Sit back and keep a straight face.',
   hidden: 'The VIP hid that one.',
+  // Happyōkai!
+  'own-talk': 'Vote for someone else’s talk.',
+  'pick-a-title': 'Pick a title first.',
+  'say-something': 'Say something about this slide first (or wait a moment).',
+  'pick-a-question': 'Choose a question first.',
+  'question-chosen': 'A question was already chosen.',
+  'not-yet': 'Save the applause for the last slide!',
 };
 
 let lastView: RoomView | null = null;

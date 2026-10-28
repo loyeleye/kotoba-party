@@ -24,6 +24,7 @@ Eleven modes run end to end on the stage and phones, each with bots and full-ser
 | Narabete! (ならべて！, backlog) | Nobiko-san | Saying times, prices and opinions out loud, then lining everyone's secret cards up by ear |
 | Bento Haus (おべんとうハウス, backlog) | Pon | Co-op bento shop: hearing a yokai's order, calling it to the kitchen with the right counter, and reading tickets back |
 | Bento Haus VS (おべんとうハウス VS, backlog) | Pon | The same kitchen, two teams racing for the same customers: first good box gets the tips |
+| Happyōkai! (はっぴょうかい！, backlog) | Chōchin-san | A surprise talk: several sentences in a row about slides you've never seen, picked by your assistant; then a question from the room |
 | Shodō Taikai (backlog) | Fude | Handwriting: tracing and writing kana and kanji with stroke order, said aloud first |
 
 All content is `draft` until a fluent speaker checks it. Decisions and questions for Ladi:

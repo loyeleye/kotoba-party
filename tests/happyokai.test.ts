@@ -1,0 +1,454 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { Level } from '../content/src/types.js';
+import type { CommandBody } from '../shared/src/client.js';
+import { createRoom } from '../shared/src/client.js';
+import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import type { Utterance } from '../shared/src/japanese/kana.js';
+import {
+  closingFor,
+  framesFor,
+  MISHAPS,
+  openingFor,
+  questionsFor,
+  readySentences,
+  recoveryFor,
+  SLIDES,
+  slidesFor,
+  TITLES,
+  titlesFor,
+} from '../shared/src/modes/happyokai/content.js';
+import {
+  ASK,
+  averageGrade,
+  dealChoices,
+  hanamaruPoints,
+  HANAMARU_POINTS,
+  presenterOrder,
+  showPlan,
+  speakPoints,
+  SPEAK_CAP,
+  type HappyokaiState,
+  type HappyokaiView,
+  type Line,
+  type Step,
+  type Talk,
+} from '../shared/src/modes/happyokai/happyokai.js';
+import type { Command, RoomView } from '../shared/src/protocol.js';
+import { viewFor } from '../shared/src/view.js';
+import { Bot, Director } from '../tools/bots/bot.js';
+import { happyokaiPolicy } from '../tools/bots/policies/happyokai.js';
+import { content as REAL_CONTENT, hashView, startServer, until } from './helpers.js';
+
+// ---- fixtures ----
+
+function mulberry(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+class Table {
+  now = 1_000_000;
+  ids = 0;
+  cmdId = 0;
+  readonly random: () => number;
+  readonly s: GameState = createGame('BCDF');
+  constructor(players: number, levels: Level[] = [], seed = 7) {
+    this.random = mulberry(seed);
+    for (let i = 1; i <= players; i++) {
+      this.act({ type: 'join', playerId: `p${i}`, name: `P${i}`, level: levels[i - 1] ?? 'n5' });
+      this.act({ type: 'connection', playerId: `p${i}`, connected: true });
+    }
+  }
+  ctx(): GameContext {
+    return { now: this.now, content: REAL_CONTENT, newId: () => `id${++this.ids}`, random: this.random };
+  }
+  act(action: GameAction) {
+    return apply(this.s, action, this.ctx());
+  }
+  cmd(actor: string | 'stage', command: CommandBody) {
+    const who = actor === 'stage' ? ({ kind: 'stage' } as const) : ({ kind: 'player', playerId: actor } as const);
+    return apply(this.s, { type: 'command', actor: who, command: { ...command, id: `c${++this.cmdId}` } as Command }, this.ctx());
+  }
+  play(player: string, move: unknown) {
+    return this.cmd(player, { type: 'play', move });
+  }
+  timeout() {
+    this.now = Math.max(this.now, this.s.deadline ?? 0);
+    return this.act({ type: 'timeout', phaseSeq: this.s.phaseSeq });
+  }
+  get st(): HappyokaiState {
+    return this.s.modeState as HappyokaiState;
+  }
+  get t(): Talk {
+    return this.st.talk!;
+  }
+  view(viewer: string | 'stage' = 'stage'): HappyokaiView {
+    return viewFor(this.s, viewer === 'stage' ? { kind: 'stage' } : { kind: 'player', playerId: viewer }, REAL_CONTENT).game as HappyokaiView;
+  }
+  score(id: string): number {
+    return this.s.players.find((p) => p.id === id)!.score;
+  }
+  start(audience?: 'kids' | 'family' | 'cheeky') {
+    if (audience) this.cmd('stage', { type: 'settings', audience });
+    expect(this.cmd('stage', { type: 'start', mode: 'happyokai' }).changed).toBe(true);
+    expect(this.s.phase).toBe('intro');
+    this.timeout();
+    expect(this.s.phase).toBe('prompt');
+  }
+  /** Backstage: the presenter picks the first title and says they're ready. */
+  backstage() {
+    expect(this.play(this.t.presenterId, { kind: 'title', key: 0 }).error).toBeUndefined();
+    expect(this.play(this.t.presenterId, { kind: 'go' }).error).toBeUndefined();
+    expect(this.s.phase).toBe('answer');
+  }
+  say(text: string, via: Utterance['via'] = 'speech') {
+    return this.play(this.t.presenterId, { kind: 'say', utterance: { via, text } });
+  }
+  next() {
+    return this.play(this.t.presenterId, { kind: 'next' });
+  }
+}
+
+const speech = (text: string): Utterance => ({ via: 'speech', text });
+
+// ---- content ----
+
+describe('Happyōkai!: content', () => {
+  it('has titles and slides for every audience, and Cheeky never reaches a Kids room', () => {
+    for (const a of ['kids', 'family', 'cheeky'] as const) {
+      expect(titlesFor(a).length, a).toBeGreaterThanOrEqual(10);
+      expect(slidesFor(a).length, a).toBeGreaterThanOrEqual(30);
+      expect(slidesFor(a).filter((s) => s.wild).length, `${a} wild`).toBeGreaterThanOrEqual(8);
+      expect(slidesFor(a).filter((s) => !s.wild).length, `${a} straight`).toBeGreaterThanOrEqual(15);
+    }
+    for (const x of [...titlesFor('kids'), ...slidesFor('kids')]) expect(x.audiences, x.id).toContain('kids');
+    expect(new Set(TITLES.map((t) => t.id)).size).toBe(TITLES.length);
+    expect(new Set(SLIDES.map((s) => s.id)).size).toBe(SLIDES.length);
+  });
+
+  it('every slide has its picture', () => {
+    const dir = fileURLToPath(new URL('../stage/assets/slides/', import.meta.url));
+    for (const s of SLIDES) expect(existsSync(`${dir}${s.id}.png`), s.id).toBe(true);
+    for (const n of [1, 2, 3]) expect(existsSync(`${dir}chochin-holiday-${n}.png`)).toBe(true);
+  });
+
+  it('every slide has frames, ready sentences, recoveries and questions at every level', () => {
+    for (const level of ['kana', 'n5', 'n4'] as const) {
+      for (const s of SLIDES) {
+        expect(framesFor(level, s).length, `${s.id} ${level}`).toBeGreaterThan(0);
+        const ready = readySentences(s, level, TITLES[0]!.topic);
+        expect(ready.length, `${s.id} ${level}`).toBeGreaterThanOrEqual(2);
+        for (const r of ready) expect(r.kana, `${s.id} ${level}`).not.toMatch(/〔|undefined|null/);
+        for (const a of ['kids', 'family', 'cheeky'] as const) {
+          const qs = questionsFor(level, s, TITLES[0]!.topic, a, mulberry(1));
+          expect(qs.length).toBe(3);
+          expect(new Set(qs.map((q) => q.text)).size).toBe(3);
+        }
+      }
+      for (const m of MISHAPS) for (const up of [true, false]) expect(recoveryFor(m.id, level, SLIDES[0]!.word, up).kana).not.toMatch(/undefined|null/);
+      // The opening fits every title: 「タイトルは「〜」です」 never doubles up its punctuation.
+      for (const t of TITLES) expect(openingFor(level, 'Ladi', t.jp).text, t.id).not.toMatch(/。」|undefined/);
+      expect(closingFor(level).text).toMatch(/ありがとう/);
+    }
+  });
+});
+
+// ---- rules ----
+
+describe('Happyōkai!: the show plan', () => {
+  it('everyone presents, and small rooms present twice', () => {
+    for (let n = 3; n <= 8; n++) {
+      const players = Array.from({ length: n }, (_, i) => ({ id: `p${i}` }));
+      const order = presenterOrder(players as never, mulberry(n));
+      const plan = showPlan(n);
+      expect(order.length, `${n}`).toBe(n * plan.laps);
+      for (const p of players) expect(order.filter((x) => x === p.id).length).toBe(plan.laps);
+      // Never the same presenter twice in a row.
+      for (let i = 1; i < order.length; i++) expect(order[i]).not.toBe(order[i - 1]);
+      expect(plan.pictures).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('deals one choice that fits the title, one random, one wild', () => {
+    const pool = slidesFor('family');
+    for (let seed = 1; seed < 30; seed++) {
+      const c = dealChoices(pool, [], ['food'], mulberry(seed));
+      expect(c.map((x) => x.kind)).toEqual(['fit', 'random', 'wild']);
+      expect(new Set(c.map((x) => x.slideId)).size).toBe(3);
+      expect(pool.find((s) => s.id === c[2]!.slideId)!.wild).toBe(true);
+    }
+  });
+});
+
+describe('Happyōkai!: scoring', () => {
+  const steps: Step[] = [
+    { kind: 'title', slideId: null, mishapId: null, pickedBy: null, at: 0, ms: 0 },
+    { kind: 'picture', slideId: 'ramen', mishapId: null, pickedBy: 'fit', at: 0, ms: 0 },
+    { kind: 'close', slideId: null, mishapId: null, pickedBy: null, at: 0, ms: 0 },
+  ];
+  const line = (step: number, text: string, kind: Line['kind'], sentences = 1): Line => ({ id: text, step, text, shown: text, kind, sentences, hidden: false });
+
+  it('own words beat reading out, which beats typing and tapping', () => {
+    const own = speakPoints({ steps, lines: [line(1, 'ラーメンが だいすきです。', 'own')] }, 'n5');
+    const read = speakPoints({ steps, lines: [line(1, 'ラーメンが だいすきです。', 'read')] }, 'n5');
+    const typed = speakPoints({ steps, lines: [line(1, 'ラーメンが だいすきです。', 'typed')] }, 'n5');
+    const tap = speakPoints({ steps, lines: [line(1, 'ラーメンが だいすきです。', 'tap')] }, 'n5');
+    expect(own).toBeGreaterThan(read);
+    expect(read).toBeGreaterThan(typed);
+    expect(typed).toBeGreaterThan(tap);
+    expect(tap).toBeGreaterThan(0);
+  });
+
+  it('a sentence said twice counts once; the ritual counts once; the total is capped', () => {
+    const once = speakPoints({ steps, lines: [line(1, 'ラーメンです。', 'own')] }, 'n5');
+    const twice = speakPoints({ steps, lines: [line(1, 'ラーメンです。', 'own'), line(1, 'ラーメンです。', 'own')] }, 'n5');
+    expect(twice).toBe(once);
+    const open = speakPoints({ steps, lines: [line(0, 'はじめまして。', 'own'), line(0, 'はじめまして。', 'own')] }, 'n5');
+    expect(open).toBe(speakPoints({ steps, lines: [line(0, 'はじめまして。', 'own')] }, 'n5'));
+    const many = Array.from({ length: 40 }, (_, i) => line(1, `${'あいうえおかきくけこさしすせそ'.slice(i % 10, (i % 10) + 3)}${i}です。`, 'own'));
+    const big = { steps: [...steps.slice(0, 2), ...Array.from({ length: 10 }, () => steps[1]!), steps[2]!], lines: many.map((l, i) => ({ ...l, step: 1 + (i % 10) })) };
+    expect(speakPoints(big, 'n5')).toBeLessThanOrEqual(SPEAK_CAP);
+  });
+
+  it('はなまる pays by the average of the grades given', () => {
+    expect(hanamaruPoints(3)).toBe(HANAMARU_POINTS);
+    expect(hanamaruPoints(1)).toBe(0);
+    expect(hanamaruPoints(2)).toBe(HANAMARU_POINTS / 2);
+    expect(averageGrade({})).toBe(2);
+    expect(averageGrade({ a: 3, b: 2 })).toBe(2.5);
+  });
+});
+
+describe('Happyōkai!: a talk', () => {
+  it('runs backstage → slides → questions → grades → report card, and pays everyone', () => {
+    const table = new Table(4, ['kana', 'n5', 'n4', 'n5']);
+    table.start();
+    const presenter = table.t.presenterId;
+    const assistant = table.t.assistantId!;
+    expect(assistant).toBeTruthy();
+    expect(assistant).not.toBe(presenter);
+    // Only the presenter sees the titles; the TV doesn't show one until it's picked.
+    expect(table.view(presenter).me!.titleChoices.length).toBe(2);
+    expect(table.view(assistant).me!.titleChoices.length).toBe(0);
+    expect(table.view().title).toBeNull();
+    table.backstage();
+
+    // Title slide: the opening is on the presenter's phone, and reading it out counts as read.
+    const opening = table.view(presenter).me!.script!;
+    expect(opening.text).toContain(table.s.players.find((p) => p.id === presenter)!.name);
+    expect(table.say(opening.kana).error).toBeUndefined();
+    expect(table.t.lines.at(-1)!.kind).toBe('read');
+    expect(table.next().error).toBeUndefined();
+
+    // Picture slides: the assistant picks the next one while the presenter talks.
+    let pictures = 0;
+    while (table.t.steps.at(-1)!.kind !== 'close') {
+      const st = table.t.steps.at(-1)!;
+      expect(st.kind).toBe('picture');
+      pictures++;
+      const me = table.view(presenter).me!;
+      expect(me.word).not.toBeNull();
+      expect(me.frames.length).toBeGreaterThan(0);
+      const a = table.view(assistant).me!;
+      if (a.choices.length) expect(table.play(assistant, { kind: 'pick', slideId: a.choices[2]!.id }).error).toBeUndefined();
+      expect(table.say(`これは ${me.word!.kana} です。とても すきです。`).error).toBeUndefined();
+      expect(table.play(presenter, { kind: 'ready', key: 0 }).error).toBeUndefined();
+      // The room stamps; the presenter can't.
+      expect(table.play(presenter, { kind: 'stamp', stamp: 'sugoi' }).error).toBe('not-yours');
+      const audience = table.s.players.map((p) => p.id).filter((id) => id !== presenter);
+      // Applause waits for the closing slide.
+      expect(table.play(audience[0]!, { kind: 'stamp', stamp: 'hakushu' }).error).toBe('not-yet');
+      for (const id of audience) table.play(id, { kind: 'stamp', stamp: 'omoshiroi' });
+      const wild = a.choices[2]?.id;
+      expect(table.next().error).toBeUndefined();
+      if (wild && table.t.steps.at(-1)!.kind === 'picture') expect(table.t.steps.at(-1)!.slideId).toBe(wild);
+    }
+    expect(pictures).toBe(showPlan(4).pictures);
+    expect(table.view().stampCount.omoshiroi).toBeGreaterThan(0);
+    // Closing slide.
+    expect(table.say(table.view(presenter).me!.script!.kana).error).toBeUndefined();
+    expect(table.next().error).toBeUndefined();
+    expect(table.s.phase).toBe('encore');
+
+    // Question time: everyone else gets three cards; one asks out loud, one taps.
+    const askers = table.s.players.map((p) => p.id).filter((id) => id !== presenter);
+    for (const id of askers) expect(table.view(id).me!.questions.length).toBe(3);
+    expect(table.view(presenter).me!.questions.length).toBe(0);
+    expect(table.play(askers[0]!, { kind: 'ask', key: 0, utterance: speech(table.view(askers[0]!).me!.questions[0]!.text) }).error).toBeUndefined();
+    expect(table.play(askers[1]!, { kind: 'ask', key: 1 }).error).toBeUndefined();
+    // The TV knows who has a hand up, but not what they'll ask.
+    expect(table.view().question!.askers.length).toBe(2);
+    expect(table.view().question!.chosen).toBeNull();
+    expect(table.play(presenter, { kind: 'choose', playerId: askers[0]! }).error).toBeUndefined();
+    expect(table.view().question!.chosen!.playerId).toBe(askers[0]);
+    expect(table.view(presenter).me!.answerFrames.length).toBeGreaterThan(0);
+    expect(table.say('いい しつもんですね。ラーメンが すき だから です。').error).toBeUndefined();
+    expect(table.s.phase).toBe('reveal');
+
+    // Grades: the audience (not the assistant, with 4 players).
+    const graders = table.t.graders;
+    expect(graders).not.toContain(presenter);
+    expect(graders).not.toContain(assistant);
+    for (const id of graders) expect(table.play(id, { kind: 'grade', n: 3 }).error).toBeUndefined();
+    expect(table.s.phase).toBe('score');
+    const card = table.view().card!;
+    expect(card.flowers.every((f) => f === 3)).toBe(true);
+    expect(card.presenterPoints).toBe(HANAMARU_POINTS);
+    expect(card.speakPoints).toBeGreaterThan(0);
+    expect(card.assistantPoints).toBeGreaterThan(0);
+    expect(table.view(presenter).me!.report!.sentences).toBeGreaterThan(0);
+
+    const before = table.score(presenter);
+    table.timeout();
+    expect(table.score(presenter) - before).toBe(card.presenterPoints + card.speakPoints);
+    expect(table.score(assistant)).toBeGreaterThan(0);
+    // Asked out loud and chosen, before any assistant points.
+    expect(table.score(askers[0]!)).toBeGreaterThanOrEqual(ASK.said + ASK.picked);
+    // On to the next talk, with someone else presenting.
+    expect(table.s.phase).toBe('prompt');
+    expect(table.t.presenterId).not.toBe(presenter);
+  });
+
+  it('a mishap replaces one slide, puts its recovery line on the presenter’s phone, and is used once', () => {
+    const table = new Table(4);
+    table.start();
+    table.backstage();
+    const presenter = table.t.presenterId;
+    const assistant = table.t.assistantId!;
+    table.say('はじめまして。');
+    table.next();
+    expect(table.play(assistant, { kind: 'pick', mishapId: 'graph' }).error).toBeUndefined();
+    table.say('これは ねこ です。');
+    table.next();
+    const st = table.t.steps.at(-1)!;
+    expect(st.kind).toBe('mishap');
+    expect(st.mishapId).toBe('graph');
+    expect(table.view().slide!.mishap!.id).toBe('graph');
+    expect(table.view(presenter).me!.script!.text.length).toBeGreaterThan(0);
+    expect(table.view(assistant).me!.mishaps.length).toBe(0);
+  });
+
+  it('the presenter can take a caption off the TV; others can’t unless VIP', () => {
+    const table = new Table(4);
+    table.start();
+    table.backstage();
+    const presenter = table.t.presenterId;
+    table.say('はじめまして。');
+    const id = table.t.lines[0]!.id;
+    const other = table.s.players.map((p) => p.id).find((x) => x !== presenter && x !== table.s.vipId)!;
+    expect(table.play(other, { kind: 'hide', lineId: id }).error).toBe('not-vip');
+    expect(table.play(presenter, { kind: 'hide', lineId: id }).error).toBeUndefined();
+    expect(table.view().captions[0]!.text).toBe('');
+    expect(table.view(presenter).me!.lines[0]!.text).toBe('はじめまして。');
+  });
+
+  it('Next waits for a sentence or a few seconds, and the slide moves on by itself when its time runs out', () => {
+    const table = new Table(3);
+    table.start();
+    table.backstage();
+    expect(table.next().error).toBe('say-something');
+    const st = table.t.steps.at(-1)!;
+    table.now = st.at + st.ms + 1;
+    table.act({ type: 'wake', phaseSeq: table.s.phaseSeq });
+    expect(table.t.steps.length).toBe(2);
+  });
+
+  it('a presenter who leaves ends their talk', () => {
+    const table = new Table(4);
+    table.start();
+    table.backstage();
+    const presenter = table.t.presenterId;
+    table.act({ type: 'release', playerId: presenter });
+    expect(table.t.done || table.s.phase !== 'answer').toBe(true);
+  });
+
+  it('Kids titles and slides only in a Kids room; Cheeky ones only in Cheeky', () => {
+    for (const audience of ['kids', 'cheeky'] as const) {
+      const table = new Table(3, [], 3);
+      table.start(audience);
+      for (const id of table.t.titleChoices) expect(TITLES.find((t) => t.id === id)!.audiences).toContain(audience);
+      table.backstage();
+      for (const c of table.t.choices) expect(SLIDES.find((s) => s.id === c.slideId)!.audiences).toContain(audience);
+    }
+  });
+});
+
+// ---- full system: bots play a whole game through the real server ----
+
+describe('Happyōkai!: bots play a game end to end', () => {
+  let ctx: Awaited<ReturnType<typeof startServer>>;
+  beforeAll(async () => {
+    ctx = await startServer({ durations: { intro: 20, prompt: 2_000, answer: 20_000, encore: 2_000, reveal: 2_000, score: 30, finale: 2_000 } });
+  });
+  afterAll(async () => {
+    await ctx.server.close();
+  });
+
+  for (const players of [3, 5]) {
+    it(`${players} bots give every talk with every client in sync`, async () => {
+      const { baseUrl, truth, server } = ctx;
+      const created = await createRoom(baseUrl);
+      const room = server.rooms.get(created.code)!;
+      const seen = new Map<string, { v: number; hash: string }[]>();
+      const record = (id: string, view: RoomView, v: number) => {
+        let list = seen.get(id);
+        if (!list) seen.set(id, (list = []));
+        list.push({ v, hash: hashView(view) });
+      };
+      let finished = false;
+      let recap: RoomView['recap'] = null;
+      const phases = new Set<string>();
+      const director = new Director(baseUrl, created.code, created.stageToken, {
+        players,
+        roundsPerGame: 3,
+        totalRounds: 1_000,
+        mode: 'happyokai',
+        games: 1,
+        onDone: () => (finished = true),
+        onState: (view, v) => {
+          record('stage', view, v);
+          phases.add(view.phase);
+          if (view.phase === 'recap') recap = view.recap;
+        },
+      });
+      director.start();
+      const policy = happyokaiPolicy({ thinkMs: 40 });
+      const bots: Bot[] = [];
+      for (let i = 1; i <= players; i++) {
+        bots.push(
+          await Bot.join({
+            baseUrl,
+            code: created.code,
+            name: `bot${i}`,
+            policy,
+            level: i === 1 ? 'kana' : i === 3 ? 'n4' : 'n5',
+            onState: (bot, view, v) => record(bot.playerId, view, v),
+          }),
+        );
+      }
+      await until(() => finished, 90_000, 'one game');
+      await until(() => [director.client, ...bots.map((b) => b.client)].every((c) => c.version === room.version), 5_000, 'quiescence');
+
+      for (const p of ['intro', 'prompt', 'answer', 'encore', 'reveal', 'score', 'finale', 'recap']) expect(phases, p).toContain(p);
+      for (const [id, list] of seen) {
+        for (const { v, hash } of list) expect(truth.byVersion.get(v)?.get(id), `${id} at v${v}`).toBe(hash);
+      }
+      const standings = (recap as RoomView['recap'])!.standings;
+      expect(standings.length).toBe(players);
+      for (const s of standings) expect(s.score, s.name).toBeGreaterThan(0);
+      const bad = bots.flatMap((b) => b.moves.filter((m) => !m.ok && !['wrong-phase', 'say-something', 'question-chosen'].includes(m.error ?? '')));
+      expect(bad).toEqual([]);
+
+      for (const b of bots) b.stop();
+      director.client.close();
+    }, 120_000);
+  }
+});

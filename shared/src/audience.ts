@@ -16,6 +16,7 @@ export const AUDIENCE_CONTENT: Partial<Record<ModeId, { name: string; what: stri
   omiai: { name: 'Omiai Matchmaker', what: 'guests' },
   narabete: { name: 'Narabete!', what: 'themes' },
   'bento-haus': { name: 'Bento Haus (Co-op and VS)', what: 'customers' },
+  happyokai: { name: 'Happyōkai!', what: 'titles and slides' },
 };
 
 /** "Karaoke Duel (song lyrics), Oogiri Night (prompts)": for the settings panel. */

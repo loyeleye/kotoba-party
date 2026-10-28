@@ -241,4 +241,63 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.tourist_escaped.03', host: 'chochin', event: 'tourist_escaped', jp: { text: 'ゆらゆら… だれも きづきませんでした。', kana: 'ゆらゆら… だれも きづきませんでした。', en: 'Sway, sway… nobody noticed.' }, status: 'draft' },
   { id: 'chochin.tourist_escaped.04', host: 'chochin', event: 'tourist_escaped', jp: { text: '{name}さまに にげられました！', kana: '{name}さまに にげられました！', en: '{name} got away!' }, slots: ['{name}'], status: 'draft' },
   { id: 'chochin.tourist_escaped.05', host: 'chochin', event: 'tourist_escaped', jp: { text: '{name}さま、じょうずでしたね！', kana: '{name}さま、じょうずでしたね！', en: 'Nicely done, {name}!' }, slots: ['{name}'], status: 'draft' },
+  // Happyōkai! (the recital: Chōchin-san is its MC; silent during talks except a word after a mishap)
+  // happyokai_intro
+  { id: 'chochin.happyokai_intro.01', host: 'chochin', event: 'happyokai_intro', jp: { text: 'こよいは ゆうれいスタジオの はっぴょうかいへ ようこそ。', kana: 'こよいは ゆうれいスタジオの はっぴょうかいへ ようこそ。', en: 'Welcome tonight to the haunted studio\'s recital.' }, status: 'draft' },
+  { id: 'chochin.happyokai_intro.02', host: 'chochin', event: 'happyokai_intro', jp: { text: 'まもなく、はっぴょうかいが はじまります。ゆらゆら。', kana: 'まもなく、はっぴょうかいが はじまります。ゆらゆら。', en: 'The recital will begin shortly. Sway, sway.' }, status: 'draft' },
+  { id: 'chochin.happyokai_intro.03', host: 'chochin', event: 'happyokai_intro', jp: { text: 'はっぴょうかい… ハッピー ようかい！　…しつれい いたしました。', kana: 'はっぴょうかい… ハッピー ようかい！　…しつれい いたしました。', en: 'Happyōkai… happy yōkai! …My apologies.' }, status: 'draft' },
+  { id: 'chochin.happyokai_intro.04', host: 'chochin', event: 'happyokai_intro', jp: { text: 'けいたいでんわの でんげんを… いえ、きらないで ください！', kana: 'けいたいでんわの でんげんを… いえ、きらないで ください！', en: 'Please switch off your phones… no, wait, don’t!' }, status: 'draft' },
+  // happyokai_photo_1
+  { id: 'chochin.happyokai_photo_1.01', host: 'chochin', event: 'happyokai_photo_1', jp: { text: 'では、わたくしも いちまいだけ。…えきです。くらいですね。', kana: 'では、わたくしも いちまいだけ。…えきです。くらいですね。', en: 'Now, just one slide of my own. …A station. Rather dark.' }, status: 'draft' },
+  // happyokai_photo_2
+  { id: 'chochin.happyokai_photo_2.01', host: 'chochin', event: 'happyokai_photo_2', jp: { text: 'もう いちまいだけ。…えきの ともだちです。', kana: 'もう いちまいだけ。…えきの ともだちです。', en: 'Just one more. …A friend from the station.' }, status: 'draft' },
+  // happyokai_photo_3
+  { id: 'chochin.happyokai_photo_3.01', host: 'chochin', event: 'happyokai_photo_3', jp: { text: 'さいごの いちまい。…みなさまです。ゆらゆら。', kana: 'さいごの いちまい。…みなさまです。ゆらゆら。', en: 'One last slide. …It’s all of you. Sway, sway.' }, status: 'draft' },
+  // happyokai_call
+  { id: 'chochin.happyokai_call.01', host: 'chochin', event: 'happyokai_call', jp: { text: 'おまたせ いたしました。つぎの はっぴょうしゃは… {name}さまです！', kana: 'おまたせ いたしました。つぎの はっぴょうしゃは… {name}さまです！', en: 'Thank you for waiting. Our next presenter is… {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.happyokai_call.02', host: 'chochin', event: 'happyokai_call', jp: { text: '{name}さま、ライトは こちらです。ゆらゆら。', kana: '{name}さま、ライトは こちらです。ゆらゆら。', en: '{name}, the light is over here. Sway, sway.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.happyokai_call.03', host: 'chochin', event: 'happyokai_call', jp: { text: 'はくしゅで おむかえ ください！　{name}さまです！', kana: 'はくしゅで おむかえ ください！　{name}さまです！', en: 'Please welcome them with applause! {name}!' }, slots: ['{name}'], status: 'draft' },
+  // happyokai_call_last
+  { id: 'chochin.happyokai_call_last.01', host: 'chochin', event: 'happyokai_call_last', jp: { text: 'さいごは… トリです！　{name}さま！', kana: 'さいごは… トリです！　{name}さま！', en: 'And last of all… our headliner! {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.happyokai_call_last.02', host: 'chochin', event: 'happyokai_call_last', jp: { text: 'こよいの トリは {name}さまで ございます！', kana: 'こよいの トリは {name}さまで ございます！', en: 'Tonight’s headliner is {name}!' }, slots: ['{name}'], status: 'draft' },
+  // happyokai_title
+  { id: 'chochin.happyokai_title.01', host: 'chochin', event: 'happyokai_title', jp: { text: 'つぎの はっぴょうは…「{title}」で ございます！', kana: 'つぎの はっぴょうは…「{title}」で ございます！', en: 'The next talk is… "{title}"!' }, slots: ['{title}'], status: 'draft' },
+  { id: 'chochin.happyokai_title.02', host: 'chochin', event: 'happyokai_title', jp: { text: '「{title}」…なんと ふかい テーマでしょう。', kana: '「{title}」…なんと ふかい テーマでしょう。', en: '"{title}"… What a profound theme.' }, slots: ['{title}'], status: 'draft' },
+  { id: 'chochin.happyokai_title.03', host: 'chochin', event: 'happyokai_title', jp: { text: '「{title}」。ノーベルしょうの においが します。', kana: '「{title}」。ノーベルしょうの においが します。', en: '"{title}". I can smell a Nobel Prize.' }, slots: ['{title}'], status: 'draft' },
+  { id: 'chochin.happyokai_title.04', host: 'chochin', event: 'happyokai_title', jp: { text: 'わたくし、メモの じゅんびを いたします。', kana: 'わたくし、メモの じゅんびを いたします。', en: 'I shall get my notebook ready.' }, status: 'draft' },
+  // happyokai_mishap_blackout
+  { id: 'chochin.happyokai_mishap_blackout.01', host: 'chochin', event: 'happyokai_mishap_blackout', jp: { text: 'あっ… わたくしの ひが！', kana: 'あっ… わたくしの ひが！', en: 'Oh… my flame!' }, status: 'draft' },
+  { id: 'chochin.happyokai_mishap_blackout.02', host: 'chochin', event: 'happyokai_mishap_blackout', jp: { text: 'ふっ… きえました。', kana: 'ふっ… きえました。', en: 'Pff… it went out.' }, status: 'draft' },
+  // happyokai_mishap_wrong
+  { id: 'chochin.happyokai_mishap_wrong.01', host: 'chochin', event: 'happyokai_mishap_wrong', jp: { text: 'あっ！　わたくしの しゃしん！', kana: 'あっ！　わたくしの しゃしん！', en: 'Oh! My photo!' }, status: 'draft' },
+  { id: 'chochin.happyokai_mishap_wrong.02', host: 'chochin', event: 'happyokai_mishap_wrong', jp: { text: 'おや、わたくしの りょこうの しゃしんが…', kana: 'おや、わたくしの りょこうの しゃしんが…', en: 'Oh dear, my holiday photo…' }, status: 'draft' },
+  // happyokai_mishap_graph
+  { id: 'chochin.happyokai_mishap_graph.01', host: 'chochin', event: 'happyokai_mishap_graph', jp: { text: 'グラフです！　わたくし、グラフに よわいのです。', kana: 'グラフです！　わたくし、グラフに よわいのです。', en: 'A graph! I’m terrible with graphs.' }, status: 'draft' },
+  { id: 'chochin.happyokai_mishap_graph.02', host: 'chochin', event: 'happyokai_mishap_graph', jp: { text: 'おお、グラフで ございます。', kana: 'おお、グラフで ございます。', en: 'Oh, a graph.' }, status: 'draft' },
+  // happyokai_mishap_upside
+  { id: 'chochin.happyokai_mishap_upside.01', host: 'chochin', event: 'happyokai_mishap_upside', jp: { text: 'おや？　さかさまで ございます。', kana: 'おや？　さかさまで ございます。', en: 'Oh? It’s upside down.' }, status: 'draft' },
+  { id: 'chochin.happyokai_mishap_upside.02', host: 'chochin', event: 'happyokai_mishap_upside', jp: { text: 'ゆらゆら… あたまが いたい。', kana: 'ゆらゆら… あたまが いたい。', en: 'Sway, sway… my head hurts.' }, status: 'draft' },
+  // happyokai_mishap_message
+  { id: 'chochin.happyokai_mishap_message.01', host: 'chochin', event: 'happyokai_mishap_message', jp: { text: 'おや、メッセージが…　みて おりません。', kana: 'おや、メッセージが…　みて おりません。', en: 'Oh, a message… I’m not looking.' }, status: 'draft' },
+  { id: 'chochin.happyokai_mishap_message.02', host: 'chochin', event: 'happyokai_mishap_message', jp: { text: 'わたくしは なにも みて おりません。', kana: 'わたくしは なにも みて おりません。', en: 'I have seen nothing.' }, status: 'draft' },
+  // happyokai_question
+  { id: 'chochin.happyokai_question.01', host: 'chochin', event: 'happyokai_question', jp: { text: 'しつもん タイムで ございます。どうぞ！', kana: 'しつもん タイムで ございます。どうぞ！', en: 'It is now question time. Go ahead!' }, status: 'draft' },
+  { id: 'chochin.happyokai_question.02', host: 'chochin', event: 'happyokai_question', jp: { text: 'するどい しつもんを おねがい いたします。', kana: 'するどい しつもんを おねがい いたします。', en: 'A sharp question, if you please.' }, status: 'draft' },
+  { id: 'chochin.happyokai_question.03', host: 'chochin', event: 'happyokai_question', jp: { text: 'みなさま、しつもんは ございますか？', kana: 'みなさま、しつもんは ございますか？', en: 'Does anyone have a question?' }, status: 'draft' },
+  // happyokai_stall
+  { id: 'chochin.happyokai_stall.01', host: 'chochin', event: 'happyokai_stall', jp: { text: 'でました！「いい しつもんですね」！　プロですね。', kana: 'でました！「いい しつもんですね」！　プロですね。', en: 'There it is! "Good question!" A true professional.' }, status: 'draft' },
+  // happyokai_grade
+  { id: 'chochin.happyokai_grade.01', host: 'chochin', event: 'happyokai_grade', jp: { text: 'みなさま、はなまるを おねがい いたします。', kana: 'みなさま、はなまるを おねがい いたします。', en: 'Everyone, your hanamaru, please.' }, status: 'draft' },
+  { id: 'chochin.happyokai_grade.02', host: 'chochin', event: 'happyokai_grade', jp: { text: 'つうしんぼの じかんです。ドキドキ…', kana: 'つうしんぼの じかんです。ドキドキ…', en: 'Report card time. Heart pounding…' }, status: 'draft' },
+  // happyokai_card
+  { id: 'chochin.happyokai_card.01', host: 'chochin', event: 'happyokai_card', jp: { text: '{name}さま、ありがとう ございました！　おおきな はくしゅを！', kana: '{name}さま、ありがとう ございました！　おおきな はくしゅを！', en: 'Thank you, {name}! A big round of applause!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.happyokai_card.02', host: 'chochin', event: 'happyokai_card', jp: { text: 'みなさまの はなまる、はいけん いたします。', kana: 'みなさまの はなまる、はいけん いたします。', en: 'Allow me to inspect your hanamaru.' }, status: 'draft' },
+  { id: 'chochin.happyokai_card.03', host: 'chochin', event: 'happyokai_card', jp: { text: '{name}さま、おつかれさまで ございました。', kana: '{name}さま、おつかれさまで ございました。', en: 'Well done, {name}.' }, slots: ['{name}'], status: 'draft' },
+  // happyokai_great
+  { id: 'chochin.happyokai_great.01', host: 'chochin', event: 'happyokai_great', jp: { text: 'ブラボー！　{name}さま、はなまるです！', kana: 'ブラボー！　{name}さま、はなまるです！', en: 'Bravo! Top marks, {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.happyokai_great.02', host: 'chochin', event: 'happyokai_great', jp: { text: 'わたくし、ないて います。かみの かおが ぬれて しまいます。', kana: 'わたくし、ないて います。かみの かおが ぬれて しまいます。', en: 'I’m crying. My paper face is getting wet.' }, status: 'draft' },
+  { id: 'chochin.happyokai_great.03', host: 'chochin', event: 'happyokai_great', jp: { text: 'すばらしい！　ほのおが おおきく なりました！', kana: 'すばらしい！　ほのおが おおきく なりました！', en: 'Splendid! My flame just grew!' }, status: 'draft' },
+  // happyokai_vote
+  { id: 'chochin.happyokai_vote.01', host: 'chochin', event: 'happyokai_vote', jp: { text: 'さいごに、いちばんの はっぴょうを えらんで ください。', kana: 'さいごに、いちばんの はっぴょうを えらんで ください。', en: 'Finally, please choose the best talk.' }, status: 'draft' },
+  { id: 'chochin.happyokai_vote.02', host: 'chochin', event: 'happyokai_vote', jp: { text: 'こよいの いちばんは… みなさまが きめて ください。', kana: 'こよいの いちばんは… みなさまが きめて ください。', en: 'Tonight’s best… is yours to decide.' }, status: 'draft' },
 ];

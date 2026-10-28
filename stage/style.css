@@ -62,6 +62,7 @@ body { margin: 0; overflow: hidden; background: #110b26; color: var(--ink); }
 [data-mode='shodo'] { --mode: #c9ced6; }
 [data-mode='narabete'] { --mode: #ffc29a; }
 [data-mode='bento-haus'], [data-mode='bento-haus-vs'] { --mode: #ff9f6b; }
+[data-mode='happyokai'] { --mode: #ffd27a; }
 
 /* ---- the 1920×1080 canvas ---- */
 /* Everything is laid out at 1080p and scaled to the window (main.ts sets --scale), with a 5%
