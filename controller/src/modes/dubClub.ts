@@ -277,7 +277,7 @@ function marks(me: Me): HTMLElement | null {
   if (!reh?.marks.length) return null;
   return h(
     'p',
-    { class: 'dc-marks', lang: 'ja', 'aria-label': 'Sounds that came through are green' },
+    { class: 'dc-marks', lang: 'ja', 'aria-label': 'Sounds that came through are filled; lost ones are dashed' },
     reh.marks.map((m) => h('span', { class: m.ok ? 'ok' : 'miss' }, m.m)),
   );
 }
@@ -287,7 +287,7 @@ function rehearseScreen(ctx: Ctx, me: Me): HTMLElement {
   const reh = me.rehearsal;
   const again = !reh || (stepOf.retry && reh.left > 0);
   const sim = reh?.similarity ?? 0;
-  const verdict = !reh ? null : reh.marks.every((m) => m.ok) ? 'Crisp! Every sound came through.' : sim >= 0.5 ? 'Nearly! The grey sounds got lost.' : 'Hard to hear. Slow down and say every sound.';
+  const verdict = !reh ? null : reh.marks.every((m) => m.ok) ? 'Crisp! Every sound came through.' : sim >= 0.5 ? 'Nearly! Try the dashed sounds again.' : 'Hard to hear. Slow down and say every sound.';
   return h(
     'div',
     { class: 'screen' },
@@ -308,31 +308,33 @@ function actScreen(ctx: Ctx, me: Me): HTMLElement {
   const d = drafts.get(game.round);
   const live = rec?.round === game.round ? rec : null;
   const seconds = Math.round(me.limitMs / 1000);
+  const review = d && !live ? d : null;
   const recBtn = live
     ? h(
         'button',
-        { type: 'button', class: `dc-rec on${live.started === null ? ' opening' : ''}`, style: live.started !== null ? `--len:${me.limitMs}ms` : null, onclick: () => stopRecording(ctx) },
+        { type: 'button', class: `dc-rec on${live.started === null ? ' opening' : ''}`, style: live.started !== null ? `--len:${me.limitMs}ms; --into:-${Date.now() - live.started}ms` : null, onclick: () => stopRecording(ctx) },
         h('span', { class: 'dc-rec-bar', 'aria-hidden': 'true' }),
-        h('span', { class: 'dc-rec-label' }, live.started === null ? 'Opening the mic…' : '■ Stop'),
+        h('span', { class: 'dc-rec-label' }, live.started === null ? 'Opening the mic…' : '● REC · tap to stop'),
       )
-    : h('button', { type: 'button', class: 'dc-rec', disabled: sending, onclick: () => startRecording(ctx, me) }, h('span', { class: 'dc-rec-label' }, d ? '● Record again' : '● Record'));
+    : h('button', { type: 'button', class: `dc-rec${d ? ' again' : ''}`, disabled: sending, onclick: () => startRecording(ctx, me) }, h('span', { class: 'dc-rec-label' }, d ? '● Record again' : '● Record'));
   return h(
     'div',
     { class: 'screen' },
     h('p', { class: 'dc-step' }, me.rehearsal || canSpeak() ? 'Step 2 of 2 · act it!' : 'Act it!'),
-    me.direction ? cardFace(me.direction, { tip: true, cls: 'big' }) : null,
-    me.offered.length > 1 ? offeredStrip(ctx, me) : null,
+    me.direction ? cardFace(me.direction, { tip: !review, cls: review ? 'small' : 'big' }) : null,
+    me.offered.length > 1 && !review ? offeredStrip(ctx, me) : null,
     lineBox(me, 'small'),
-    h('p', { class: 'hint' }, `Say the line the way your card says, up to ${seconds} seconds. Don’t say the card!`),
-    recBtn,
-    d && !live
+    review
       ? h(
           'div',
           { class: 'dc-review' },
-          h('audio', { controls: true, src: d.url, preload: 'auto' }),
-          h('button', { type: 'button', class: 'primary', disabled: sending, onclick: () => void sendTake(ctx) }, sending ? 'Sending…' : '📤 Send this take'),
+          h('p', { class: 'hint' }, 'Listen back, then send it to the TV.'),
+          h('audio', { controls: true, controlslist: 'nodownload', src: review.url, preload: 'auto' }),
+          h('button', { type: 'button', class: 'primary dc-send', disabled: sending, onclick: () => void sendTake(ctx) }, sending ? 'Sending…' : '📤 Send this take'),
+          h('p', { class: 'hint dc-autosend' }, '⏱ Not sent by the end? It goes in by itself.'),
         )
-      : null,
+      : h('p', { class: 'hint' }, `Say the line the way your card says, up to ${seconds} seconds. Don’t say the card!`),
+    recBtn,
     problem ? h('p', { class: 'dc-warn' }, problem) : null,
     !me.rehearsal && canSpeak() ? h('button', { type: 'button', class: 'linkish', onclick: () => setStep(ctx, { act: false }) }, '← Back to the plain read') : null,
   );
@@ -488,7 +490,7 @@ export const dubClubPhone: PhoneMode<DubView> = {
         return h(
           'div',
           { class: 'screen' },
-          h('p', { class: 'big', lang: 'ja' }, 'アフレコ部'),
+          h('p', { class: 'big', lang: 'ja' }, 'アフレコ', h('ruby', {}, '部', h('rt', {}, 'ぶ'))),
           h('p', {}, '🎬 You’re the voice cast of a very cheap anime.'),
           h('p', {}, '🤫 Each scene, you get a secret card: how to say your line (sadly, like a robot…).'),
           h('p', {}, '🎤 Read the line plainly, then record it in character. The TV plays every dub; guess how each was directed!'),

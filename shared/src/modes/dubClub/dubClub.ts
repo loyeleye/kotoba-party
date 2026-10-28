@@ -581,7 +581,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
     s.phaseAt = ctx.now;
     switch (phase) {
       case 'intro':
-        ctx.cue({ host: 'fude', event: 'dub_intro', slots: { title: episodeOfState(s).title.kana, title_en: episodeOfState(s).title.en } });
+        ctx.cue({ host: 'fude', event: 'dub_intro', slots: { title: episodeOfState(s).title.text, title_en: episodeOfState(s).title.en } });
         break;
       case 'prompt': {
         startScene(s, ctx);
@@ -608,7 +608,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
         break;
       case 'finale':
         s.episode = { step: 0, at: ctx.now + 1_000 };
-        ctx.cue({ host: 'fude', event: 'dub_episode', slots: { title: episodeOfState(s).title.kana, title_en: episodeOfState(s).title.en } });
+        ctx.cue({ host: 'fude', event: 'dub_episode', slots: { title: episodeOfState(s).title.text, title_en: episodeOfState(s).title.en } });
         break;
     }
   },
@@ -682,7 +682,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
     else if (phase === 'finale' && s.episode) {
       s.episode = { step: s.episode.step + 1, at: ctx.now };
       const kind = episodeSteps(s)[s.episode.step]?.kind;
-      if (kind === 'credits') ctx.cue({ host: 'fude', event: 'dub_sequel', slots: { title: episodeOfState(s).title.kana, title_en: episodeOfState(s).title.en } });
+      if (kind === 'credits') ctx.cue({ host: 'fude', event: 'dub_sequel', slots: { title: episodeOfState(s).title.text, title_en: episodeOfState(s).title.en } });
     }
   },
 
@@ -973,10 +973,10 @@ export const dubClubMode: Mode<DubState, DubView> = {
       return top;
     };
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
-    add(best((st) => st.hearts), 'しゅえん しょう', 'Best Actor: the most-loved dubs');
-    add(best((st) => st.guessed), 'めいえんぎ しょう', 'Clearest Acting: the room read your card the most');
-    add(best((st) => st.rightGuesses), 'ききじょうず しょう', 'Good Listener: the most cards guessed right');
-    add(best((st) => (st.rehearsed ? st.words / st.rehearsed : 0)), 'かつぜつ しょう', 'Crisp Diction: the clearest words in rehearsal');
+    add(best((st) => st.hearts), 'しゅえんしょう', 'Best Actor: most hearts');
+    add(best((st) => st.guessed), 'めいえんぎしょう', 'Clearest Acting: card read most often');
+    add(best((st) => st.rightGuesses), 'ききじょうずしょう', 'Good Listener: most cards guessed');
+    add(best((st) => (st.rehearsed ? st.words / st.rehearsed : 0)), 'かつぜつしょう', 'Crisp Diction: clearest plain reads');
     return out;
   },
 };

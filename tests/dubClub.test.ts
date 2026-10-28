@@ -45,7 +45,7 @@ describe('Dub Club: the content', () => {
         for (const lines of [sc.lines, sc.cheeky].filter(Boolean)) for (const l of LEVELS) expect(lines![l].kana.length, `${sc.id} ${l}`).toBeGreaterThan(0);
         // Kana lines are long enough to act: at least four morae.
         expect(soundMorae(sc.lines.kana.kana).length, sc.id).toBeGreaterThanOrEqual(4);
-        const bg = sc.bg === 'studio' ? 'stage/assets/scenes/studio.png' : `stage/assets/dub/bg-${sc.bg}.png`;
+        const bg = `stage/assets/dub/bg-${sc.bg}.png`;
         const char = sc.char === 'pon' ? 'stage/assets/hosts/pon.png' : `stage/assets/dub/char-${sc.char}.png`;
         expect(existsSync(bg), bg).toBe(true);
         expect(existsSync(char), char).toBe(true);

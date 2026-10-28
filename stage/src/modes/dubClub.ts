@@ -32,7 +32,7 @@ function badge(view: RoomView, id: string): HTMLElement {
 
 // ---- art ----
 
-const BG = (bg: string): string => (bg === 'studio' ? '/stage/assets/scenes/studio.png' : `/stage/assets/dub/bg-${bg}.png`);
+const BG = (bg: string): string => `/stage/assets/dub/bg-${bg}.png`;
 /** The character's still, and its mouth sheet (closed, half, open) when it has one. */
 function charArt(char: string): { still: string; talk: string | null } {
   if (char === 'pon') return { still: '/stage/assets/hosts/pon.png', talk: '/stage/assets/anim/pon-talk.png' };
@@ -96,7 +96,7 @@ function intro(view: RoomView, game: DubView): HTMLElement {
   return h(
     'div',
     { class: 'dub-stage dub-intro' },
-    h('p', { class: 'dub-logo', lang: 'ja' }, 'アフレコ部'),
+    h('p', { class: 'dub-logo', lang: 'ja' }, 'アフレコ', h('ruby', {}, '部', h('rt', {}, 'ぶ'))),
     h('p', { class: 'dub-subtitle' }, 'Dub Club · tonight’s episode: ', h('span', { lang: 'ja' }, game.episode.title.text), ` (${game.episode.title.en})`),
     h(
       'ol',
@@ -148,6 +148,8 @@ function screening(view: RoomView, game: DubView): HTMLElement {
   const sc = game.scene!;
   const now = game.now;
   let overlay: HTMLElement | null = null;
+  // The guess and the card go in the side column, so the face stays clear.
+  let panel: HTMLElement | null = null;
   let live = false;
   let caption: JpText | null = null;
   let nameCard: HTMLElement | null = h('p', { class: 'dub-namecard' }, h('span', { lang: 'ja' }, sc.who.text));
@@ -169,9 +171,9 @@ function screening(view: RoomView, game: DubView): HTMLElement {
     } else if (now.step === 'guess' || now.step === 'regroup') {
       caption = now.line;
       const left = Math.max(0, now.at + (now.step === 'guess' ? 4_500 : 3_000) - serverNow());
-      overlay = h(
+      panel = h(
         'div',
-        { class: 'dub-over dub-ask' },
+        { class: 'dub-panel dub-ask' },
         h('p', {}, 'How was it directed?'),
         h('p', { class: 'dub-count' }, `${now.guessed} / ${now.guessers} guessed`),
         now.again ? h('p', { class: 'dub-again' }, h('span', { lang: 'ja' }, 'もう いっかい'), ` 🙋 ×${now.again}`) : null,
@@ -180,9 +182,9 @@ function screening(view: RoomView, game: DubView): HTMLElement {
     } else if (now.step === 'reveal' && now.card) {
       onceFor(`flip:${key}`, () => sfx('flip'));
       caption = now.line;
-      overlay = h(
+      panel = h(
         'div',
-        { class: 'dub-over dub-reveal' },
+        { class: 'dub-panel dub-reveal' },
         cardFace(now.card, 'flip'),
         now.spoiler
           ? h('p', { class: 'dub-spoil' }, h('span', { lang: 'ja' }, 'ネタバレ！'), ' The card was said out loud: no acting points.')
@@ -199,6 +201,7 @@ function screening(view: RoomView, game: DubView): HTMLElement {
       { class: 'dub-side' },
       h('p', { class: 'dub-tag' }, `Scene ${game.round} · the screening`),
       h('p', { class: 'dub-line', lang: 'ja' }, ruby(sc.line)),
+      panel,
       game.done.length
         ? h(
             'ul',

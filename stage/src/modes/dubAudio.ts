@@ -161,10 +161,18 @@ export function mouth(): 0 | 1 | 2 {
   const ctx = sound.ctx;
   const latency = (ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0;
   const t = ctx.currentTime - latency - playing.start;
+  // Changes at most every MOUTH_HOLD seconds (about 12 a second, like hand-drawn anime), with a
+  // little hysteresis so a voice hovering on a threshold doesn't flicker the mouth.
+  if (lastMouth.key === playing.key && Math.abs(t - lastMouth.t) < MOUTH_HOLD) return lastMouth.m;
   const f = Math.floor(t / FRAME);
   const v = f >= 0 ? (playing.clip.env[f] ?? 0) : 0;
-  return v > 0.5 ? 2 : v > 0.18 ? 1 : 0;
+  const prev = lastMouth.key === playing.key ? lastMouth.m : 0;
+  const m: 0 | 1 | 2 = v > (prev === 2 ? 0.4 : 0.55) ? 2 : v > (prev >= 1 ? 0.12 : 0.18) ? 1 : 0;
+  lastMouth = { key: playing.key, t, m };
+  return m;
 }
+const MOUTH_HOLD = 0.083;
+let lastMouth: { key: string; t: number; m: 0 | 1 | 2 } = { key: '', t: 0, m: 0 };
 
 // The lip sync runs on its own frame loop: the stage redraws only on updates.
 let looping = false;

@@ -48,8 +48,8 @@ the first sent.
 
 Words are capped low on purpose: careful reading should never beat bold acting.
 
-Awards: しゅえん しょう (most hearts), めいえんぎ しょう (card read most), ききじょうず しょう (best guesser),
-かつぜつ しょう (clearest plain reads).
+Awards: しゅえんしょう (most hearts), めいえんぎしょう (card read most), ききじょうずしょう (best guesser),
+かつぜつしょう (clearest plain reads).
 
 ## Content
 

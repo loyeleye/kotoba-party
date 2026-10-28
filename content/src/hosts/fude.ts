@@ -299,10 +299,10 @@ export const fudeLines: HostLine[] = [
   { id: 'fude.concentration_time.03', host: 'fude', event: 'concentration_time', jp: { text: 'タイムアップ！　よく がんばりました！', kana: 'タイムアップ！　よく がんばりました！', en: "Time's up! You tried hard!" }, status: 'draft' },
   // Dub Club: Fude-kantoku, a broke but proud anime director (humor and JLPT panels, 2026-10-28)
   // dub_intro
-  { id: 'fude.dub_intro.01', host: 'fude', event: 'dub_intro', jp: { text: '{title}、さつえい かいし！　かんとくの フデです！', kana: '{title}、さつえい かいし！　かんとくの フデです！', en: '{title}: shooting starts! I\'m the director, Fude!' }, slots: ['{title}'], status: 'draft' },
+  { id: 'fude.dub_intro.01', host: 'fude', event: 'dub_intro', jp: { text: '{title}、しゅうろく かいし！　かんとくの フデです！', kana: '{title}、しゅうろく かいし！　かんとくの フデです！', en: '{title}: recording starts! I\'m the director, Fude!' }, slots: ['{title}'], status: 'draft' },
   { id: 'fude.dub_intro.02', host: 'fude', event: 'dub_intro', jp: { text: 'よーい、スタート！　こんやの アニメは {title}！', kana: 'よーい、スタート！　こんやの アニメは {title}！', en: 'Ready, action! Tonight\'s anime is {title}!' }, slots: ['{title}'], status: 'draft' },
   { id: 'fude.dub_intro.03', host: 'fude', event: 'dub_intro', jp: { text: 'よさんは ゼロ！　でも こえは あります！', kana: 'よさんは ゼロ！　でも こえは あります！', en: 'The budget is zero! But we have voices!' }, status: 'draft' },
-  { id: 'fude.dub_intro.04', host: 'fude', event: 'dub_intro', jp: { text: 'みなさんが こえの しゅつえんしゃ です！', kana: 'みなさんが こえの しゅつえんしゃ です！', en: 'You are the voice cast!' }, status: 'draft' },
+  { id: 'fude.dub_intro.04', host: 'fude', event: 'dub_intro', jp: { text: 'みなさんが せいゆう です！', kana: 'みなさんが せいゆう です！', en: 'You are the voice cast!' }, status: 'draft' },
   // dub_scene
   { id: 'fude.dub_scene.01', host: 'fude', event: 'dub_scene', jp: { text: 'まず、よみあわせ です。「{line}」', kana: 'まず、よみあわせ です。「{line}」', en: 'First, the table read. "{line}"' }, slots: ['{line}'], status: 'draft' },
   { id: 'fude.dub_scene.02', host: 'fude', event: 'dub_scene', jp: { text: 'つぎの シーン！　「{line}」', kana: 'つぎの シーン！　「{line}」', en: 'Next scene! "{line}"' }, slots: ['{line}'], status: 'draft' },

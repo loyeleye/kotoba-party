@@ -7028,6 +7028,42 @@
           "fill"
         ]
       }
+    },
+    {
+      "path": "stage/assets/dub/bg-studio.png",
+      "what": "Dub Club anime set: an empty TV studio at night (the Studio Ghost episode)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, inside an empty old television studio at night, front view, a big dark camera on a tripod at the left edge, a hanging spotlight with a cold blue beam, a folding director's chair at the right, cables on the floor, eerie green glow from a monitor, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-gakuya.png",
+      "what": "Dub Club anime set: a backstage dressing room (がくや, the idol episode)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, a small Japanese backstage dressing room, front view, a long mirror along the back wall framed with round light bulbs, a counter with makeup, a cup noodle and a water bottle at the bottom, a sparkly stage costume on a hanger at the right edge, a folding chair, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
     }
   ]
 }

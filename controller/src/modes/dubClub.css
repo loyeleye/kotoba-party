@@ -21,7 +21,7 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 /* A direction card: the emoji, the Japanese, romaji at Kana level, the English, and how to act it. */
 .dc-card { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; text-align: left; }
 .dc-card-emoji { grid-row: span 4; font-size: 34px; line-height: 1; }
-.dc-card-jp { font-size: 20px; font-weight: 800; }
+.dc-card-jp { font-size: 20px; font-weight: 800; word-break: keep-all; overflow-wrap: anywhere; }
 .dc-card-ro { color: #8fb3ff; font-style: italic; font-size: 14px; }
 .dc-card-en { color: var(--muted); font-size: 14px; }
 .dc-card-tip { color: var(--ink); font-size: 14px; margin-top: 2px; }
@@ -50,20 +50,26 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 /* The rehearsal's private feedback: sounds that came through are green, lost ones grey. */
 .dc-marks { margin: 0; display: flex; flex-wrap: wrap; gap: 3px; font-size: 22px; font-weight: 800; }
 .dc-marks span { padding: 2px 4px; border-radius: 6px; }
-.dc-marks .ok { background: color-mix(in srgb, var(--good) 25%, transparent); color: var(--good); }
-.dc-marks .miss { background: var(--panel); color: var(--muted); text-decoration: underline dotted; }
+.dc-marks .ok { background: var(--good); color: #0b0605; border: 2px solid var(--good); }
+.dc-marks .miss { background: transparent; color: var(--ink); border: 2px dashed var(--warn, #ffb347); text-decoration: underline wavy var(--warn, #ffb347); }
 .dc-retry { width: 100%; }
 
 /* Tap to record, tap to stop: a bar runs down the take's time. */
 .dc-rec { position: relative; overflow: hidden; width: 100%; min-height: 96px; border-radius: 999px; border: 4px solid #0b0605; background: #e8344e; color: #fff; font-size: 26px; font-weight: 900; box-shadow: 0 6px 0 #0b0605; touch-action: manipulation; }
 .dc-rec:disabled { opacity: 0.5; }
 .dc-rec.on { background: #2a0b12; }
+.dc-rec.on .dc-rec-bar { background: #b0263b; }
 .dc-rec.opening { background: var(--panel); }
 .dc-rec-label { position: relative; }
-.dc-rec-bar { position: absolute; inset: 0; background: #e8344e; transform-origin: left; animation: dc-rec-run var(--len, 10s) linear forwards; }
+.dc-rec-bar { position: absolute; inset: 0; background: #e8344e; transform-origin: left; animation: dc-rec-run var(--len, 10s) linear var(--into, 0ms) forwards; }
+/* The bar is the time left to record, so calm motion keeps it (it's not decoration). */
+body[data-motion='calm'] .dc-rec-bar { animation: dc-rec-run var(--len, 10s) linear var(--into, 0ms) forwards !important; }
 .dc-rec.opening .dc-rec-bar { display: none; }
-@keyframes dc-rec-run { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes dc-rec-run { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .dc-review { display: grid; gap: 10px; }
+.dc-send { min-height: 72px; font-size: 24px; }
+.dc-autosend { font-size: 14px; text-align: center; }
+.dc-rec.again { min-height: 52px; font-size: 18px; background: transparent; color: var(--ink); border-color: var(--line); box-shadow: none; }
 .dc-review audio, .screen > audio { width: 100%; }
 
 .dc-now { margin: 0; font-weight: 800; color: var(--mode); }
@@ -71,8 +77,8 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 .dc-guess { display: block; min-height: 84px; padding: 8px; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); }
 .dc-guess .dc-card { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 2px; }
 .dc-guess .dc-card-emoji { grid-row: auto; font-size: 30px; }
-.dc-guess .dc-card-jp { font-size: 16px; line-height: 1.25; }
-.dc-guess .dc-card-en { font-size: 12px; }
+.dc-guess .dc-card-jp { font-size: 15px; line-height: 1.25; word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.dc-guess .dc-card-en { font-size: 13px; }
 .dc-guess.on { border: 3px solid var(--mode); background: color-mix(in srgb, var(--mode) 18%, var(--panel)); }
 .dc-guess:disabled:not(.on) { opacity: 0.55; }
 .dc-again { width: 100%; }

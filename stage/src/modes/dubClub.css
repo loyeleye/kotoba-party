@@ -38,13 +38,17 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 .dub-over { min-width: 360px; max-width: 900px; position: absolute; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -60%); display: grid; justify-items: center; gap: 6px; padding: 18px 30px; border-radius: 14px; border: 4px solid var(--dub-ink); background: rgba(18, 13, 38, 0.92); color: #fff; text-align: center; }
 .dub-over p { font-size: 40px; font-weight: 900; }
 .dub-over small { font-size: 20px; color: #b8b0d8; }
-.dub-curtain p, .dub-cut p, .dub-best p { font-size: 64px; color: var(--dub-gold); }
+.dub-curtain p, .dub-cut p { font-size: 64px; color: var(--dub-gold); }
+.dub-best p { font-size: 44px; color: var(--dub-gold); }
 .dub-clapper { background: #fff; color: var(--dub-ink); animation: dub-clap 420ms ease-out both; }
-.dub-clapper p { font-size: 46px; }
+.dub-clapper p { font-size: 40px; }
 .dub-clapper .dub-who { font-size: 34px; }
-@keyframes dub-clap { from { transform: translate(-50%, -60%) rotate(-8deg) scale(0.8); opacity: 0; } to { transform: translate(-50%, -60%); opacity: 1; } }
+@keyframes dub-clap { from { transform: rotate(-8deg) scale(0.8); opacity: 0; } to { transform: none; opacity: 1; } }
 .dub-phone { position: absolute; z-index: 3; top: 52px; left: 50%; transform: translateX(-50%); padding: 6px 16px; border-radius: 999px; background: rgba(0, 0, 0, 0.75); color: #fff; font-size: 24px; font-weight: 800; }
-.dub-ask, .dub-reveal { top: 52px; transform: translateX(-50%); }
+.dub-panel { display: grid; justify-items: center; gap: 6px; padding: 16px 24px; border-radius: 14px; border: 4px solid var(--dub-ink); background: rgba(18, 13, 38, 0.92); color: #fff; text-align: center; }
+.dub-panel p { font-size: 36px; font-weight: 900; }
+.dub-clapper { left: auto; right: 14px; top: 52px; transform: none; padding: 10px 18px; }
+.dub-best { left: auto; right: 14px; top: 52px; transform: rotate(4deg); padding: 10px 22px; }
 .dub-count { font-size: 30px !important; color: var(--mode); }
 .dub-again { font-size: 26px !important; color: var(--dub-gold); }
 .dub-timer { display: block; width: 320px; height: 10px; border-radius: 5px; background: var(--mode); transform-origin: left; animation: dub-run var(--d) linear forwards; }
@@ -53,7 +57,7 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 .dub-card-text { display: flex; flex-direction: column; gap: 2px; }
 .dub-card-emoji { flex: none; font-size: 64px; line-height: 1; }
 .dub-card-jp { font-size: 44px; font-weight: 900; color: var(--dub-gold); white-space: nowrap; }
-.dub-card-en { font-size: 22px; color: #d8d0f0; }
+.dub-card-en { font-size: 26px; color: #d8d0f0; }
 .dub-card.flip { animation: dub-flip 500ms ease-out both; }
 @keyframes dub-flip { from { transform: perspective(800px) rotateY(90deg); opacity: 0; } 40% { opacity: 1; } to { transform: perspective(800px) rotateY(0); } }
 .dub-got { font-size: 28px !important; color: #48e6a4; }
@@ -61,13 +65,13 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 
 /* ---- the side panel ---- */
 .dub-side { display: grid; gap: 12px; align-content: start; min-width: 0; }
-.dub-tag { font-size: 22px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.dub-tag { font-size: 26px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .dub-setup { font-size: 28px; line-height: 1.3; }
 .dub-line { font-size: 44px; font-weight: 900; line-height: 1.5; padding: 12px 18px; border-radius: 14px; background: var(--paper, #fff4dc); color: var(--paper-ink, #22142e); border: 4px solid var(--dub-ink); box-shadow: 0 6px 0 var(--dub-ink); }
 .dub-line rt { font-size: 18px; }
 .dub-line-en { font-size: 24px; color: var(--muted); }
 .dub-call, .dub-quiet { font-size: 28px; font-weight: 800; color: var(--mode); }
-.dub-hint { font-size: 22px; color: var(--muted); }
+.dub-hint { font-size: 26px; color: var(--muted); }
 .dub-cast, .dub-done { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .dub-cast li, .dub-done li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-radius: 10px; background: var(--panel); font-size: 26px; }
 .dub-cast li.sent { box-shadow: inset 0 0 0 3px #48e6a4; }
@@ -86,6 +90,7 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 /* ---- intro and the episode ---- */
 .dub-intro { justify-items: center; text-align: center; gap: 22px; }
 .dub-logo { font-size: 120px; font-weight: 900; color: var(--mode); letter-spacing: 0.06em; text-shadow: 6px 6px 0 var(--dub-ink); }
+.dub-logo rt { font-size: 0.3em; text-shadow: none; }
 .dub-subtitle { font-size: 32px; color: var(--muted); }
 .dub-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1300px; margin: 0; }
 .dub-titlecard { display: grid; place-content: center; justify-items: center; gap: 16px; background: radial-gradient(circle at 50% 45%, #3b2a8a, #0d0820 70%); color: #fff; text-align: center; }
@@ -101,7 +106,7 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 .dub-roll-head { font-size: 26px; letter-spacing: 0.3em; color: var(--dub-gold); margin-top: 20px !important; }
 .dub-roll-row { display: grid; grid-template-columns: 360px 360px; gap: 30px; font-size: 34px; align-items: baseline; }
 .dub-roll-row > :first-child { text-align: right; color: #b8b0d8; }
-.dub-roll-row small { grid-column: 2; font-size: 22px; color: #8f86b8; }
+.dub-roll-row small { grid-column: 2; font-size: 28px; color: #8f86b8; }
 @keyframes dub-roll { from { transform: translateY(0); } to { transform: translateY(calc(-100% - 760px)); } }
 
 .dub-gate { position: fixed; z-index: 20; left: 50%; bottom: 140px; transform: translateX(-50%); padding: 16px 28px; border-radius: 14px; border: 4px solid var(--dub-ink); background: var(--dub-gold); color: var(--dub-ink); font-size: 28px; font-weight: 900; cursor: pointer; animation: dub-pulse 1.4s ease-in-out infinite; }
@@ -109,3 +114,6 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 
 body[data-motion='calm'] .dub-stage *, body[data-motion='calm'] .dub-gate { animation-duration: 1ms !important; }
 body[data-motion='calm'] .dub-roll { animation-duration: var(--d) !important; }
+
+/* Tonight's episode is a premiere: the host and the score bar step aside so the screen is all show. */
+body[data-mode='dub-club'][data-phase='finale'] :is(.host, .players) { display: none; }
