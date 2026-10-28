@@ -237,7 +237,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   copyright, but the names, card text and art are. Our themes, cards and the neck ruler are our own;
   don't use "ito" or "The Mind" in the product, store page or marketing.
 - Bento Haus (added 2026-10-28) borrows the idea of Overcooked (Ghost Town Games / Team17): a co-op
-  kitchen where the team has to talk to fill orders against the clock. Only the idea; the menu,
+  kitchen where the team has to talk to fill orders against the clock. Bento Haus VS (2026-10-28)
+  is the same idea with two teams racing; nothing new is borrowed. Only the idea; the menu,
   yokai customers, counters, riddles, look and every line are our own. Don't use "Overcooked" in the
   product, store page or marketing ("a co-op cooking party game" is enough).
 

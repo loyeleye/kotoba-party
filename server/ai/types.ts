@@ -48,6 +48,9 @@ export const HOST_EVENTS = [
   'bento_bake',
   'bento_ajimi',
   'bento_stars',
+  'bento_vs_intro',
+  'bento_vs_win',
+  'bento_vs_tie',
   // Oogiri Night
   'ippon',
   'cushion_steal',

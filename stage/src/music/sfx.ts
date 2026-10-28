@@ -214,7 +214,7 @@ export function watchSfx(view: RoomView): void {
   }
   // Points going up: one chime, however many players scored at once.
   // (Bento Haus rings its own bells for the stars at closing time.)
-  if (view.phase !== 'lobby' && view.mode !== 'bento-haus' && [...scores].some(([id, s]) => s > (prev.scores.get(id) ?? s))) sfx('right');
+  if (view.phase !== 'lobby' && view.mode !== 'bento-haus' && view.mode !== 'bento-haus-vs' && [...scores].some(([id, s]) => s > (prev.scores.get(id) ?? s))) sfx('right');
 }
 
 /** Call about once a second with the time left: ticks through the last five seconds. */

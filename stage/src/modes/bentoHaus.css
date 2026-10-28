@@ -152,3 +152,41 @@ img.bh-piece { width: 48px; height: 48px; }
 .bh-pieces img.bh-piece + img.bh-piece { margin-left: -18px; }
 .bh-tight img.bh-piece { width: 32px; height: 32px; }
 .bh-tight .bh-pieces img.bh-piece + img.bh-piece { margin-left: -12px; }
+
+/* ---- Bento Haus VS: two kitchens, one counter ---- */
+.bh-vs { --team-0: #ff5a5f; --team-1: #4f9dff; }
+.bh-vs .team-0 { --team: var(--team-0); }
+.bh-vs .team-1 { --team: var(--team-1); }
+.bh-vs-board { display: flex; gap: 14px; }
+.bh-vs-jar { white-space: nowrap; display: flex; align-items: baseline; gap: 10px; padding: 6px 18px; border-radius: 14px; background: var(--panel); border: 4px solid var(--team); }
+.bh-vs-jar b { font-size: 40px; font-weight: 900; color: var(--bh-gold); }
+.bh-vs-jar small { font-size: 22px; color: var(--muted); }
+.bh-vs-name { font-size: 30px; font-weight: 900; color: var(--team); }
+.bh-vs-feeds { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.bh-vs-feeds .bh-feed { padding: 6px 12px; border-radius: 14px; border-left: 8px solid var(--team); background: rgba(0, 0, 0, 0.18); }
+.bh-vs-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.bh-vs-box { position: relative; display: grid; gap: 6px; padding: 8px; border-radius: 14px; border: 4px solid var(--team); background: rgba(0, 0, 0, 0.18); min-width: 0; }
+.bh-vs-boxhead { font-size: 24px; font-weight: 900; color: var(--team); display: flex; justify-content: space-between; gap: 6px; }
+.bh-vs-boxhead .bh-tips { font-size: 26px; }
+.bh-vs-box .bh-box { grid-template-columns: repeat(min(var(--parts), 2), minmax(0, 1fr)); }
+.bh-vs-box .bh-part { min-height: 88px; }
+.bh-vs-box .bh-taker { font-size: 22px; min-height: 30px; }
+.bh-vs-box.won { box-shadow: 0 0 0 4px var(--bh-gold); }
+.bh-vs-box.lost { opacity: 0.75; }
+.bh-wakeari { position: absolute; right: 10px; top: 44px; padding: 2px 12px; border: 3px solid var(--bh-warn); border-radius: 6px; color: var(--bh-warn); background: rgba(11, 6, 5, 0.85); font-size: 24px; font-weight: 900; transform: rotate(8deg); animation: bh-pop 0.4s var(--ease-pop) both; }
+.bh-vs-counter img.bh-piece { width: 40px; height: 40px; }
+.bh-vs-counter .bh-pieces img.bh-piece + img.bh-piece { margin-left: -16px; }
+.bh-vs-rosters { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+.bh-vs-roster { display: grid; gap: 8px; padding: 12px 22px; border-radius: 16px; background: var(--panel); border: 4px solid var(--team); min-width: 420px; }
+.bh-vs-roster small { font-size: 22px; font-weight: 400; color: var(--muted); }
+.bh-vs-roster p:last-child { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 26px; }
+.bh-vs-result { display: grid; justify-items: start; gap: 14px; padding: 12px 22px; border-radius: 18px; background: var(--panel); border: 4px solid var(--team, var(--bh-gold)); }
+.bh-vs-result .bh-result-big { font-size: 56px; color: var(--team, var(--bh-gold)); animation: bh-stamp 0.4s var(--ease-pop) var(--stars-delay, 0ms) both; }
+.bh-vs-result .bh-result-big small { font-size: 26px; color: var(--muted); font-weight: 400; }
+.bh-vs-split { display: flex; gap: 14px; font-size: 28px; font-weight: 900; }
+.bh-vs-split span { color: var(--muted); }
+.bh-vs-split .won { color: var(--team); }
+.bh-calm .bh-wakeari, .bh-calm .bh-vs-result .bh-result-big { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .bh-wakeari, .bh-vs-result .bh-result-big { animation: none; }
+}

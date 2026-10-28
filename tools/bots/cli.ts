@@ -94,6 +94,7 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
       // One shared policy: the bots "hear" each other's cards.
       return (sharedNarabete ??= narabetePolicy());
     case 'bento-haus':
+    case 'bento-haus-vs':
       return bentoHausPolicy();
     default:
       return undefined;

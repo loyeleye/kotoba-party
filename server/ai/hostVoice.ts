@@ -175,6 +175,9 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   bento_bake: 'Bento Haus: you (a tanuki) shape-shift into the missing {food} to save a box. Ask nobody to look at you.',
   bento_ajimi: 'Bento Haus: you "taste-tested" one {food} from a box, so it must be called again. Be cheeky about it.',
   bento_stars: 'Bento Haus: the shift is over and the kitchen earned {stars} stars. Thank the team.',
+  bento_vs_intro: 'Bento Haus VS starts: you are Manager Pon. Two kitchens, the red team and the blue team, race to serve the same yōkai customers; the first good box gets the tips. Players must call out to their own team in Japanese.',
+  bento_vs_win: 'Bento Haus VS: the shift is over and {team} earned more tips. Congratulate them and egg the other kitchen on.',
+  bento_vs_tie: 'Bento Haus VS: the shift is over and both kitchens earned the same tips. Call it a draw.',
 };
 
 export function hostUserPrompt(cue: HostCue, recent: readonly string[]): string {

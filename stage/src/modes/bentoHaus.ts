@@ -290,6 +290,8 @@ function listen(view: RoomView, game: BentoView): void {
   if (fresh) {
     if (lastOrderTimer) clearTimeout(lastOrderTimer);
     lastOrderTimer = null;
+    // VS: the shift's winner gets the chord, after the orders.
+    if (view.phase === 'score' && game.vs && game.vs.winner !== null) flipChord(starsAt(game.visits.length) / 1000, bellTonic());
     if (view.phase === 'score' && game.stars !== null) {
       const at = starsAt(game.visits.length) / 1000;
       if (game.stars >= 3) flipChord(at, bellTonic());
@@ -350,6 +352,252 @@ export const bentoHausStage: StageMode<BentoView> = {
         el = h('div', { class: 'bh-stage' });
     }
     if (calm) el.classList.add('bh-calm');
+    return el;
+  },
+};
+
+// ---- Bento Haus VS: two kitchens, one counter ----
+//
+// The same customers phone both kitchens, so the counter shows each customer once with two boxes under
+// them, あかチーム's and あおチーム's, filling side by side. The first box served gets the lid and the
+// tips; the other is handed over as a わけあり bento (1 tip if it has anything in it).
+
+type VsTeam = NonNullable<BentoView['vs']>['teams'][number];
+const TEAM_MARK = ['🔴', '🔵'] as const;
+
+/** One customer as both kitchens see them: the copy that was served, if one was. */
+function merged(teams: readonly VsTeam[], id: string): VisitView | undefined {
+  const copies = teams.map((t) => t.visits.find((v) => v.id === id)).filter((v): v is VisitView => !!v);
+  return copies.find((v) => v.state === 'served') ?? copies[0];
+}
+
+function teamBox(view: RoomView, game: BentoView, t: VsTeam, id: string, winner: number | null): HTMLElement {
+  const v = t.visits.find((x) => x.id === id);
+  const lost = winner !== null && winner !== t.id;
+  return h(
+    'div',
+    { class: `bh-vs-box team-${t.id}${winner === t.id ? ' won' : ''}${lost ? ' lost' : ''}`, 'data-key': `box-${t.id}` },
+    h('p', { class: 'bh-vs-boxhead', lang: 'ja' }, `${TEAM_MARK[t.id]} ${t.ja}`, v && v.state !== 'waiting' ? h('b', { class: `bh-tips t${v.tips}` }, v.tips ? ` +${v.tips} 💰` : '') : null),
+    v ? box(game, v) : h('div', { class: 'bh-box' }),
+    lost && v?.tips ? h('span', { class: 'bh-wakeari', lang: 'ja' }, 'わけあり') : null,
+    h('p', { class: 'bh-taker' }, v?.state === 'waiting' && v.takerId ? ['📞 ', seatChip(view, v.takerId)] : null),
+  );
+}
+
+function vsCustomer(view: RoomView, game: BentoView, teams: readonly VsTeam[], id: string, now: number): HTMLElement {
+  const v = merged(teams, id)!;
+  const done = v.state !== 'waiting';
+  const winner = v.state === 'served' ? (teams.find((t) => t.visits.some((x) => x.id === id && x.state === 'served'))?.id ?? null) : null;
+  const total = v.leaveAt - v.arriveAt;
+  const gone = Math.min(total, Math.max(0, now - v.arriveAt));
+  const line = done ? v.reaction : v.hello;
+  const timing = done
+    ? `--exit-delay: ${Math.round((v.endedAt ?? now) + LINGER_MS - 450 - now)}ms;`
+    : `--total: ${total}ms; --gone-delay: -${gone}ms; --fidget-delay: ${Math.round(total * 0.75 - gone)}ms;`;
+  return h(
+    'div',
+    { class: `bh-customer bh-vs-customer ${v.state}${v.rush ? ' rush' : ''}`, 'data-key': v.id, style: timing },
+    v.rush ? h('span', { class: 'bh-rush', lang: 'ja' }, 'いそいで！ ×2') : null,
+    h('div', { class: 'bh-who' }, customerPic(v.customerId, v.state, v.emoji, 'bh-yokai'), h('p', { class: 'bh-cname', lang: 'ja' }, h('span', {}, v.name), h('small', {}, v.nameEn))),
+    line ? h('p', { class: 'bh-bubble', lang: 'ja' }, line.text, h('small', {}, line.en)) : null,
+    done
+      ? h('p', { class: `bh-tips ${v.state}` }, winner !== null ? `${TEAM_MARK[winner]} ${teams[winner]!.ja}が さき！` : '💨 Gone')
+      : h('div', { class: 'bh-patience', role: 'img', 'aria-label': 'patience' }, h('span', {}), h('i', {})),
+    h(
+      'div',
+      { class: 'bh-vs-boxes' },
+      teams.map((t) => teamBox(view, game, t, id, winner)),
+    ),
+  );
+}
+
+function vsCounter(view: RoomView, game: BentoView, teams: readonly VsTeam[], now: number): HTMLElement {
+  // Same rule as Co-op: everyone waiting gets a seat; a finished customer keeps one only while it's free.
+  const visits = (teams[0]?.visits ?? []).map((v) => merged(teams, v.id)!);
+  const waitingNow = visits.filter((v) => v.state === 'waiting');
+  const cols = Math.min(3, Math.max(1, game.seats, waitingNow.length));
+  const leaving = visits
+    .filter((v) => v.state !== 'waiting')
+    .sort((a, b) => (b.endedAt ?? 0) - (a.endedAt ?? 0))
+    .slice(0, Math.max(0, cols - waitingNow.length));
+  const shown = new Set([...waitingNow.slice(0, cols), ...leaving].map((v) => v.id));
+  const live = visits.filter((v) => shown.has(v.id));
+  return h(
+    'div',
+    { class: `bh-counter bh-vs-counter${cols === 1 ? ' bh-n1' : ''}${cols >= 3 ? ' bh-tight' : ''}`, style: `--n: ${cols}` },
+    live.map((v) => vsCustomer(view, game, teams, v.id, now)),
+    Array.from({ length: Math.max(0, cols - live.length) }, (_, i) =>
+      h('div', { class: 'bh-customer empty', 'data-key': `seat-${i}` }, h('p', { class: 'bh-quiet', lang: 'ja' }, i === 0 && !live.length ? 'つぎの おきゃくさんを まって います…' : '')),
+    ),
+  );
+}
+
+function scoreboard(teams: readonly VsTeam[], shift: boolean): HTMLElement {
+  return h(
+    'div',
+    { class: 'bh-vs-board' },
+    teams.map((t) =>
+      h(
+        'p',
+        { class: `bh-vs-jar team-${t.id}`, 'data-key': `jar-${t.id}` },
+        h('span', { class: 'bh-vs-name', lang: 'ja' }, `${TEAM_MARK[t.id]} ${t.ja}`),
+        h('b', {}, `💰 ${shift ? t.tips : t.total}`),
+        h('small', {}, shift ? ` tips · ${t.total} in all` : ' tips in all'),
+      ),
+    ),
+  );
+}
+
+function vsFeeds(game: BentoView, teams: readonly VsTeam[]): HTMLElement {
+  return h(
+    'div',
+    { class: 'bh-vs-feeds' },
+    teams.map((t) =>
+      h(
+        'div',
+        { class: `bh-feed team-${t.id}`, 'data-key': `feed-${t.id}` },
+        h('p', { class: 'bh-feed-title', lang: 'ja' }, `${TEAM_MARK[t.id]} 📣`),
+        h(
+          'ol',
+          {},
+          t.feed.length
+            ? [...t.feed]
+                .reverse()
+                .slice(0, 3)
+                .map((f) => feedLine(game, f))
+            : h('li', { class: 'bh-call idle' }, h('span', { lang: 'ja' }, '「〜 ふたつ、おねがいします！」')),
+        ),
+      ),
+    ),
+  );
+}
+
+function vsKitchen(view: RoomView, game: BentoView, teams: readonly VsTeam[]): HTMLElement {
+  const now = serverNow(game);
+  const tasting = teams.find((t) => t.ajimi);
+  return h(
+    'div',
+    { class: 'bh-stage bh-shift bh-vs' },
+    h(
+      'div',
+      { class: 'bh-head' },
+      h('p', { class: 'bh-tag' }, `Shift ${game.round} of ${game.totalRounds} · `, h('span', { lang: 'ja' }, game.info?.ja ?? ''), ` ${game.info?.en ?? ''}`),
+      scoreboard(teams, true),
+    ),
+    vsFeeds(game, teams),
+    vsCounter(view, game, teams, now),
+    tasting?.ajimi
+      ? h(
+          'p',
+          { class: 'bh-ajimi', lang: 'ja', 'data-key': `ajimi-${tasting.id}-${tasting.ajimi.at}` },
+          h('img', { src: '/stage/assets/hosts/pon.png', alt: '', draggable: 'false' }),
+          `${tasting.ja}の `,
+          ajimiLine(tasting.ajimi.foodId, game.ownCounter),
+        )
+      : null,
+  );
+}
+
+function teamRoster(view: RoomView, t: VsTeam): HTMLElement {
+  return h('div', { class: `bh-vs-roster team-${t.id}` }, h('p', { class: 'bh-vs-name', lang: 'ja' }, `${TEAM_MARK[t.id]} ${t.ja}`, h('small', {}, ` ${t.en}`)), h('p', {}, t.members.map((id) => seatChip(view, id))));
+}
+
+function vsIntro(view: RoomView, game: BentoView): HTMLElement {
+  const teams = game.vs?.teams ?? [];
+  return h(
+    'div',
+    { class: 'bh-stage bh-intro bh-vs' },
+    h('p', { class: 'bh-logo', lang: 'ja' }, 'おべんとうハウス VS'),
+    h('p', { class: 'bh-subtitle' }, 'Bento Haus VS · two kitchens, the same customers'),
+    h('div', { class: 'bh-vs-rosters' }, teams.map((t) => teamRoster(view, t))),
+    h(
+      'ol',
+      { class: 'bh-steps' },
+      h('li', {}, h('strong', {}, '📞 The phone rings in both kitchens.'), ' One of each team hears the same order.'),
+      h('li', {}, h('strong', {}, '📣 Call your own team.'), ' The food is on your teammates’ phones: ', h('span', { lang: 'ja' }, '「からあげ ふたつ、おねがいします！」')),
+      h('li', {}, h('strong', {}, '🛎️ Serve first'), ' and the customer’s tips are yours. The other box goes as a わけあり bento for 1 tip.'),
+    ),
+  );
+}
+
+function vsPrompt(view: RoomView, game: BentoView): HTMLElement {
+  const el = prompt(game);
+  el.classList.add('bh-vs');
+  el.querySelector('.bh-menu-label')!.textContent = 'Tonight’s menu · both kitchens have all of it, spread across each team’s phones';
+  el.insertBefore(h('div', { class: 'bh-vs-rosters' }, (game.vs?.teams ?? []).map((t) => teamRoster(view, t))), el.querySelector('.bh-menu-label'));
+  return el;
+}
+
+function vsClosing(game: BentoView): HTMLElement {
+  const vs = game.vs!;
+  const teams = vs.teams;
+  const visits = (teams[0]?.visits ?? []).map((v) => v.id);
+  const winnerOf = (id: string) => teams.find((t) => t.visits.some((v) => v.id === id && v.state === 'served'))?.id ?? null;
+  return h(
+    'div',
+    { class: 'bh-stage bh-score bh-vs', style: `--stars-delay: ${starsAt(visits.length)}ms` },
+    h('p', { class: 'bh-tag' }, `Closing time · shift ${game.round} of ${game.totalRounds}`),
+    h(
+      'div',
+      { class: `bh-vs-result${vs.winner === null ? ' tie' : ` team-${vs.winner}`}` },
+      h('p', { class: 'bh-result-big', lang: 'ja' }, vs.winner === null ? 'ひきわけ！' : `${TEAM_MARK[vs.winner]} ${teams[vs.winner]!.ja}の かち！`, h('small', {}, vs.winner === null ? ' A draw' : ` ${teams[vs.winner]!.en} wins the shift`)),
+      scoreboard(teams, true),
+    ),
+    h(
+      'ul',
+      { class: 'bh-orders' },
+      visits.map((id, i) => {
+        const v = merged(teams, id)!;
+        const w = winnerOf(id);
+        return h(
+          'li',
+          { class: `bh-order ${v.state}`, 'data-key': id, style: `--row-delay: ${400 + i * 300}ms` },
+          customerPic(v.customerId, v.state, v.emoji, 'bh-yokai'),
+          h('div', {}, h('p', { class: 'bh-order-text', lang: 'ja' }, v.order?.text ?? ''), h('p', { class: 'bh-order-en' }, v.order?.en ?? '')),
+          h('p', { class: 'bh-vs-split' }, teams.map((t) => h('span', { class: `team-${t.id}${w === t.id ? ' won' : ''}` }, `${TEAM_MARK[t.id]} ${t.visits.find((x) => x.id === id)?.tips ?? 0}`))),
+        );
+      }),
+    ),
+  );
+}
+
+/** Both kitchens as one shop, for the shop's noises: each customer once, every call from both teams. */
+function vsHeard(game: BentoView): BentoView {
+  const teams = game.vs?.teams ?? [];
+  return {
+    ...game,
+    visits: (teams[0]?.visits ?? []).map((v) => merged(teams, v.id)!),
+    feed: teams.flatMap((t) => t.feed),
+    ajimi: teams.find((t) => t.ajimi)?.ajimi ?? null,
+  };
+}
+
+export const bentoHausVsStage: StageMode<BentoView> = {
+  badge(game, playerId) {
+    return (game.vs?.teams ?? []).some((t) => t.visits.some((v) => v.state === 'waiting' && v.takerId === playerId)) ? '📞' : '';
+  },
+
+  render(view, game) {
+    listen(view, vsHeard(game));
+    const teams = game.vs?.teams ?? [];
+    let el: HTMLElement;
+    switch (view.phase) {
+      case 'intro':
+        el = vsIntro(view, game);
+        break;
+      case 'prompt':
+        el = vsPrompt(view, game);
+        break;
+      case 'answer':
+        el = vsKitchen(view, game, teams);
+        break;
+      case 'score':
+        el = game.vs ? vsClosing(game) : h('div', { class: 'bh-stage' });
+        break;
+      default:
+        el = h('div', { class: 'bh-stage' });
+    }
+    if (view.calmMotion) el.classList.add('bh-calm');
     return el;
   },
 };
