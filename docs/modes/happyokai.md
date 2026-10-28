@@ -32,7 +32,14 @@ keeps it possible at every level, and the scoring pays most for the presenter's 
 ## How a game goes
 
 Everyone presents. 3 players: two talks each, 3 picture slides. 4: two each, 2 slides. 5–6: one each,
-3 slides. 7–8: one each, 2 slides. The intro (16 s) explains it. Each talk:
+3 slides. 7–8: one each, 2 slides. A Kana presenter's talk has one picture slide fewer (at least one), because
+each slide is a bigger climb for them. The intro (16 s) explains it. Each talk:
+
+**Kanji.** The content is written with kanji and their readings in brackets (`猫[ねこ]の 仕事[しごと]`, in
+`content.ts`), and `ruby.ts` shows it at each player's level: kana only at Kana, N5 kanji with furigana at
+N5, N5 and N4 kanji at N4. Any other kanji goes back to its kana. The TV shows the talk at the presenter's
+level. Sentence patterns (frames) and answer patterns stay in kana. Speech is matched on the kana, so
+reading a line aloud counts the same at every level.
 
 1. **Backstage** (`prompt`, 30 s at Kana, 25 s otherwise). The presenter picks one of two titles (one
    about a creature or a thing, one about people) and taps 🙋 when ready. The TV shows who's up and
@@ -93,7 +100,7 @@ kappa at the laundrette…) and grown-up ones for Family and Cheeky rooms. Kids 
 48 slides; Cheeky rooms see all of them.
 
 The Cheeky set (Ladi, 2026-10-28: the audience is half women; and add sets late-night adults find
-funny) has four strands, never explicit:
+funny) has four strands, never explicit. Ladi kept its tone as it is (2026-10-28):
 
 - **Office and dating**, from both sides: the boss's karaoke, a ring in the ramen, locked out on the
   balcony, a 2 a.m. おきてる？, the dating-app fish photo.
@@ -119,10 +126,6 @@ the hanko.
 
 ## Not built yet
 
-- **Kanji for N5 and N4.** Every line is kana with spaces at every level. The art panel's Japanese seat
-  asks for N5 kanji with furigana at N5, and N5+N4 kanji at N4, as the other modes do. The templated
-  sentences need building from segments for that.
-
 - A private correction after each talk (an AI teacher's one-line note on one sentence).
 - Speech-to-text confidence: a line that was misheard can only be hidden, not fixed.
 - Nobiko-san's cameo and the ぷう mishap from the humor review.
@@ -130,5 +133,4 @@ the hanko.
 
 ## Open questions
 
-- Is 15–30 s a slide right for Kana players, or should Kana talks have one picture fewer?
 - Should the room hear the questions read aloud by the host voice before the presenter answers?

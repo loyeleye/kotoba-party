@@ -19,6 +19,7 @@ import {
   TITLES,
   titlesFor,
 } from '../shared/src/modes/happyokai/content.js';
+import { forLevel, rb } from '../shared/src/modes/happyokai/ruby.js';
 import {
   ASK,
   averageGrade,
@@ -159,6 +160,24 @@ describe('Happyōkai!: content', () => {
       expect(closingFor(level).text).toMatch(/ありがとう/);
     }
   });
+
+  it('writes every kanji with its reading, and shows each level only the kanji it knows', () => {
+    const HAN = /\p{Script=Han}/u;
+    const bare = (j: { text: string; furigana?: [string, string][] }) => (j.furigana ?? [[j.text, '']]).filter(([b, r]) => !r && HAN.test(b)).map(([b]) => b);
+    for (const t of TITLES) expect([...bare(t.jp), ...bare(t.topic)], t.id).toEqual([]);
+    for (const s of SLIDES) expect([...bare(s.word), ...(s.did ? bare(s.did) : []), ...bare(rb(s.adj.text, s.adj.en))], s.id).toEqual([]);
+    for (const level of ['kana', 'n5', 'n4'] as const)
+      for (const s of SLIDES) for (const r of readySentences(s, level, TITLES[0]!.topic)) expect(bare(r), `${s.id} ${level}`).toEqual([]);
+    // かな is kana only; N5 keeps N5 kanji (今日) and drops N4 ones (仕事); N4 keeps both.
+    const cat = TITLES.find((t) => t.id === 'cat-job')!.jp;
+    expect(forLevel(cat, 'kana').text).toBe('ねこの しごと');
+    expect(forLevel(cat, 'n5').text).toBe('ねこの しごと');
+    expect(forLevel(cat, 'n4').text).toBe('ねこの 仕事');
+    expect(forLevel(cat, 'n4').furigana).toEqual([['ねこ', ''], ['の ', ''], ['仕事', 'しごと']]);
+    expect(openingFor('kana', 'Ladi', cat).text).not.toMatch(HAN);
+    expect(openingFor('n5', 'Ladi', cat).text).toContain('今日は ねこの しごとに ついて 話します');
+    expect(openingFor('n4', 'Ladi', cat).kana).toContain('きょうは ねこの しごとに ついて はなしたいと おもいます');
+  });
 });
 
 // ---- rules ----
@@ -228,6 +247,15 @@ describe('Happyōkai!: scoring', () => {
 });
 
 describe('Happyōkai!: a talk', () => {
+  it('gives a かな presenter one picture fewer', () => {
+    const kana = new Table(4, ['kana', 'kana', 'kana', 'kana']);
+    kana.start();
+    expect(kana.t.pictures).toBe(showPlan(4).pictures - 1);
+    const n5 = new Table(4);
+    n5.start();
+    expect(n5.t.pictures).toBe(showPlan(4).pictures);
+  });
+
   it('runs backstage → slides → questions → grades → report card, and pays everyone', () => {
     const table = new Table(4, ['kana', 'n5', 'n4', 'n5']);
     table.start();

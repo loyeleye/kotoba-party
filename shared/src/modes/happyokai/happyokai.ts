@@ -44,6 +44,7 @@ import {
   type Slide,
   type Title,
 } from './content.js';
+import { forLevel } from './ruby.js';
 
 // ---- tuning ----
 
@@ -127,6 +128,8 @@ export interface Line {
   text: string;
   /** What the TV shows: the phone's sentence when it was read out (so a mis-hearing never shows), else `text`. */
   shown: string;
+  /** Furigana for `shown`, when it's the phone's sentence. */
+  furigana?: [string, string][];
   kind: LineKind;
   sentences: number;
   hidden: boolean;
@@ -142,6 +145,8 @@ export interface Stamp {
 export interface Asked {
   playerId: string;
   text: string;
+  kana: string;
+  furigana?: [string, string][];
   en: string;
   via: Utterance['via'];
 }
@@ -244,6 +249,7 @@ export interface CaptionView {
   id: string;
   step: number;
   text: string;
+  furigana?: [string, string][];
   kind: LineKind;
   hidden: boolean;
 }
@@ -294,7 +300,7 @@ export interface HappyokaiView {
     script: (JpText & { romaji?: string }) | null;
     word: JpText | null;
     frames: string[];
-    ready: { key: number; text: string; en: string; romaji?: string }[];
+    ready: (JpText & { key: number; romaji?: string })[];
     kanpe: number | null;
     canNext: boolean;
     lines: CaptionView[];
@@ -303,11 +309,11 @@ export interface HappyokaiView {
     mishaps: { id: MishapId; name: JpText; emoji: string }[];
     picked: string | null;
     /** The presenter's ready sentences, for the assistant's cue card. */
-    cueCards: { key: number; text: string; en: string }[];
+    cueCards: (JpText & { key: number })[];
     /** Question time: my cards (audience), or the questions to choose from (presenter). */
-    questions: { key: number; text: string; en: string; romaji?: string }[];
+    questions: (JpText & { key: number; romaji?: string })[];
     asked: string | null;
-    pickQuestion: { playerId: string; text: string; en: string }[];
+    pickQuestion: (JpText & { playerId: string })[];
     answerFrames: string[];
     canGrade: boolean;
     graded: number | null;
@@ -566,7 +572,8 @@ function startTalk(s: HappyokaiState, ctx: ModeContext): void {
     index,
     presenterId,
     assistantId: pickAssistant(s, presenterId, ctx.players()),
-    pictures: s.pictures,
+    // A Kana presenter gets one picture fewer: their sentences are short and each slide is a bigger climb.
+    pictures: ctx.player(presenterId)?.level === 'kana' ? Math.max(1, s.pictures - 1) : s.pictures,
     titleChoices,
     titleId: null,
     ready: false,
@@ -627,7 +634,7 @@ function phrases(t: Talk, ctx: ModeContext): void {
   }
   for (const a of t.asked) {
     if (!ctx.player(a.playerId)) continue;
-    ctx.phrase(a.playerId, { itemId: `happyokai:q:${a.text}`, text: a.text, kana: a.text, en: a.en, outcome: a.via === 'speech' ? 'said' : 'seen' });
+    ctx.phrase(a.playerId, { itemId: `happyokai:q:${a.text}`, text: a.text, kana: a.kana, en: a.en, outcome: a.via === 'speech' ? 'said' : 'seen' });
   }
 }
 
@@ -639,24 +646,25 @@ const AIZUCHI: Partial<Record<StampKind, JpText>> = {
   ee: { text: 'えーっ？', kana: 'えーっ？', en: 'What?! (disbelief)' },
 };
 
-function slideView(st: Step, t: Talk, audience: Audience): SlideView {
+function slideView(st: Step, t: Talk, audience: Audience, level: Level): SlideView {
   const slide = st.slideId ? slideOf(st.slideId) : undefined;
   const m = st.mishapId ? mishapOf(st.mishapId) : undefined;
   const title = titleFor(t)?.jp ?? null;
+  const at = (j: JpText | null | undefined): JpText | null => (j ? forLevel(j, level) : null);
   const view: SlideView = {
     kind: st.kind,
     id: st.slideId,
-    word: slide?.word ?? (st.kind === 'title' || st.kind === 'close' ? title : null),
+    word: at(slide?.word ?? (st.kind === 'title' || st.kind === 'close' ? title : null)),
     emoji: slide?.emoji ?? m?.emoji ?? (st.kind === 'close' ? '🙇' : '🎤'),
     picture: slide ? slidePicture(slide.id) : st.mishapId === 'wrong' ? holidayPicture(1) : null,
-    mishap: m ? { id: m.id, name: m.name, emoji: m.emoji } : null,
+    mishap: m ? { id: m.id, name: at(m.name)!, emoji: m.emoji } : null,
     choice: st.pickedBy,
     at: st.at,
     ms: st.ms,
   };
   if (m?.id === 'graph') {
     view.up = graphUp(t);
-    view.word = talkWord(t)?.word ?? null;
+    view.word = at(talkWord(t)?.word);
   }
   if (m?.id === 'upside' || m?.id === 'message') {
     // The upside-down slide, and the one the message pops up over, is the last picture shown.
@@ -664,16 +672,22 @@ function slideView(st: Step, t: Talk, audience: Audience): SlideView {
     const shown = prev?.slideId ? slideOf(prev.slideId) : undefined;
     if (shown) Object.assign(view, { id: shown.id, word: shown.word, emoji: shown.emoji, picture: slidePicture(shown.id) });
   }
-  if (m?.id === 'message') view.message = messageFor(audience);
+  if (m?.id === 'message') {
+    const msg = messageFor(audience);
+    view.message = { from: at(msg.from)!, text: at(msg.text)! };
+  }
   return view;
 }
 
-function choiceView(c: { slideId: string; kind: ChoiceKind }): SlideView & { choice: ChoiceKind } {
+function choiceView(c: { slideId: string; kind: ChoiceKind }, level: Level): SlideView & { choice: ChoiceKind } {
   const slide = slideOf(c.slideId)!;
-  return { kind: 'picture', id: c.slideId, word: slide.word, emoji: slide.emoji, picture: slidePicture(c.slideId), mishap: null, at: 0, ms: 0, choice: c.kind };
+  return { kind: 'picture', id: c.slideId, word: forLevel(slide.word, level), emoji: slide.emoji, picture: slidePicture(c.slideId), mishap: null, at: 0, ms: 0, choice: c.kind };
 }
 
-const captionOf = (l: Line, own = false): CaptionView => ({ id: l.id, step: l.step, text: l.hidden && !own ? '' : own ? l.text : l.shown, kind: l.kind, hidden: l.hidden });
+const captionOf = (l: Line, own = false): CaptionView => {
+  const text = l.hidden && !own ? '' : own ? l.text : l.shown;
+  return { id: l.id, step: l.step, text, ...(l.furigana && text === l.shown ? { furigana: l.furigana } : {}), kind: l.kind, hidden: l.hidden };
+};
 
 /** The longest caption said on a picture slide, for the best-talk vote. */
 function quoteOf(t: Talk): string | null {
@@ -761,8 +775,8 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         deal(s, t, ctx);
         const beat = photoBeat(t.index, s.order.length);
         // On a photo beat the call-up waited for the photo gag; it comes now, with the title.
-        const title = titleFor(t)?.jp;
-        if (title) ctx.cue({ host: 'chochin', event: beat ? 'happyokai_call' : 'happyokai_title', slots: { name: ctx.player(t.presenterId)?.name ?? '', title: title.text }, prompt: { text: title.text, kana: title.kana, en: title.en } });
+        const title = titleFor(t) ? forLevel(titleFor(t)!.jp, presenterLevel(t, ctx)) : undefined;
+        if (title) ctx.cue({ host: 'chochin', event: beat ? 'happyokai_call' : 'happyokai_title', slots: { name: ctx.player(t.presenterId)?.name ?? '', title: title.kana }, prompt: { text: title.text, kana: title.kana, en: title.en } });
         break;
       }
       case 'encore': {
@@ -927,8 +941,8 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         if (t.titleId !== id) {
           t.titleId = id;
           if (!photoBeat(t.index, s.order.length)) {
-            const title = titleOf(id)!.jp;
-            ctx.cue({ host: 'chochin', event: 'happyokai_title', slots: { name: ctx.player(playerId)?.name ?? '', title: title.text }, prompt: { text: title.text, kana: title.kana, en: title.en } });
+            const title = forLevel(titleOf(id)!.jp, presenterLevel(t, ctx));
+            ctx.cue({ host: 'chochin', event: 'happyokai_title', slots: { name: ctx.player(playerId)?.name ?? '', title: title.kana }, prompt: { text: title.text, kana: title.kana, en: title.en } });
           }
         }
         return MOVE_OK;
@@ -953,7 +967,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         const script = phase === 'answer' && u.via === 'speech' ? readFrom(u, scriptsFor(t, ctx)) : null;
         const kind: LineKind = u.via === 'speech' ? (script ? 'read' : 'own') : u.via === 'tap' ? 'tap' : 'typed';
         const step = phase === 'encore' ? -1 : stepIndex(t);
-        t.lines.push({ id: ctx.newId(), step, text, shown: script?.text ?? text, kind, sentences: sentenceCount(text), hidden: false });
+        t.lines.push({ id: ctx.newId(), step, text, shown: script?.text ?? text, ...(script?.furigana ? { furigana: script.furigana } : {}), kind, sentences: sentenceCount(text), hidden: false });
         if (phase === 'encore' && /いいしつもん/.test(soundKey(normalizeReading(utteranceReading(u))))) ctx.cue({ host: 'chochin', event: 'happyokai_stall' });
         return MOVE_OK;
       }
@@ -962,7 +976,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         if (!presenter) return moveError('not-yours');
         const line = typeof raw.key === 'number' ? scriptsFor(t, ctx)[raw.key] : undefined;
         if (!line) return moveError('bad-move');
-        t.lines.push({ id: ctx.newId(), step: stepIndex(t), text: line.text, shown: line.text, kind: 'tap', sentences: Math.max(1, sentenceCount(line.text)), hidden: false });
+        t.lines.push({ id: ctx.newId(), step: stepIndex(t), text: line.text, shown: line.text, ...(line.furigana ? { furigana: line.furigana } : {}), kind: 'tap', sentences: Math.max(1, sentenceCount(line.text)), hidden: false });
         return MOVE_OK;
       }
       case 'next': {
@@ -1026,7 +1040,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         // A question said out loud is never replaced by a tapped one.
         if (prev && (prev.via === 'speech' || via !== 'speech')) return MOVE_OK;
         t.asked = t.asked.filter((a) => a.playerId !== playerId);
-        t.asked.push({ playerId, text: q.text, en: q.en, via });
+        t.asked.push({ playerId, text: q.text, kana: q.kana, ...(q.furigana ? { furigana: q.furigana } : {}), en: q.en, via });
         return MOVE_OK;
       }
       case 'choose': {
@@ -1102,23 +1116,23 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
       mine = {
         role,
         level: me.level,
-        titleChoices: t && role === 'presenter' && phase === 'prompt' ? t.titleChoices.map((id, key) => ({ key, jp: titleOf(id)!.jp, ...(romaji ? { romaji: toRomaji(titleOf(id)!.jp.kana) } : {}) })) : [],
+        titleChoices: t && role === 'presenter' && phase === 'prompt' ? t.titleChoices.map((id, key) => ({ key, jp: forLevel(titleOf(id)!.jp, me.level), ...(romaji ? { romaji: toRomaji(titleOf(id)!.jp.kana) } : {}) })) : [],
         rehearse: t && title && role === 'presenter' && phase === 'prompt' ? { opening: withRomaji(openingFor(me.level, me.name, title.jp)), closing: withRomaji(closingFor(me.level)) } : null,
         script: role === 'presenter' && !picture && scripts[0] ? withRomaji(scripts[0]) : null,
-        word: role === 'presenter' && slide ? slide.word : null,
+        word: role === 'presenter' && slide ? forLevel(slide.word, me.level) : null,
         frames: role === 'presenter' && slide ? framesFor(me.level, slide) : [],
-        ready: role === 'presenter' && picture ? scripts.map((x, key) => ({ key, text: x.text, en: x.en, ...(romaji ? { romaji: toRomaji(x.kana) } : {}) })) : [],
+        ready: role === 'presenter' && picture ? scripts.map((x, key) => ({ key, ...x, ...(romaji ? { romaji: toRomaji(x.kana) } : {}) })) : [],
         kanpe: role === 'presenter' && t?.kanpe && t.kanpe.step === step ? t.kanpe.key : null,
         // Views have no clock: before MIN_NEXT_MS with nothing said, Next is refused with say-something.
         canNext: !!t && role === 'presenter' && phase === 'answer' && !!st && !t.done && (linesOn(t, step).length > 0 || s.now - st.at >= MIN_NEXT_MS),
         lines: t && role === 'presenter' ? t.lines.filter((l) => (qa ? l.step === -1 : l.step === step)).map((l) => captionOf(l, true)) : [],
-        choices: t && role === 'assistant' && phase === 'answer' ? t.choices.map(choiceView) : [],
-        mishaps: t && role === 'assistant' && phase === 'answer' && !t.mishapUsed && t.choices.length ? MISHAPS.map((m) => ({ id: m.id, name: m.name, emoji: m.emoji })) : [],
+        choices: t && role === 'assistant' && phase === 'answer' ? t.choices.map((c) => choiceView(c, me.level)) : [],
+        mishaps: t && role === 'assistant' && phase === 'answer' && !t.mishapUsed && t.choices.length ? MISHAPS.map((m) => ({ id: m.id, name: forLevel(m.name, me.level), emoji: m.emoji })) : [],
         picked: t?.pick ? ('slideId' in t.pick ? t.pick.slideId : t.pick.mishapId) : null,
-        cueCards: t && role === 'assistant' && picture ? scripts.map((x, key) => ({ key, text: x.text, en: x.en })) : [],
-        questions: t && phase === 'encore' && t.cards[me.id] && !t.chosen ? t.cards[me.id]!.map((q, key) => ({ key, text: q.text, en: q.en, ...(romaji ? { romaji: toRomaji(q.kana) } : {}) })) : [],
+        cueCards: t && role === 'assistant' && picture ? scripts.map((x, key) => ({ key, ...x })) : [],
+        questions: t && phase === 'encore' && t.cards[me.id] && !t.chosen ? t.cards[me.id]!.map((q, key) => ({ key, ...q, ...(romaji ? { romaji: toRomaji(q.kana) } : {}) })) : [],
         asked: asked?.text ?? null,
-        pickQuestion: t && role === 'presenter' && phase === 'encore' && !t.chosen ? t.asked.map((a) => ({ playerId: a.playerId, text: a.text, en: a.en })) : [],
+        pickQuestion: t && role === 'presenter' && phase === 'encore' && !t.chosen ? t.asked.map((a) => ({ playerId: a.playerId, text: a.text, kana: a.kana, ...(a.furigana ? { furigana: a.furigana } : {}), en: a.en })) : [],
         answerFrames: role === 'presenter' && phase === 'encore' && t?.chosen ? answerFrames(me.level) : [],
         canGrade: !!t && phase === 'reveal' && t.graders.includes(me.id) && t.grades[me.id] === undefined,
         graded: t?.grades[me.id] ?? null,
@@ -1148,7 +1162,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         ...t.result,
         flowers,
         stamp: GRADE_STAMPS[grade],
-        comment: teacherComment(topSlide ?? null, mishapLaugh, title?.topic ?? null),
+        comment: teacherComment(topSlide ?? null, mishapLaugh, title?.topic ?? null, level),
         loudest: loud && loud[1] > 0 ? { kind: loud[0], n: loud[1] } : null,
       };
     }
@@ -1162,12 +1176,12 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
       phaseAt: s.phaseAt,
       presenterId: t?.presenterId ?? null,
       assistantId: t?.assistantId ?? null,
-      title: title?.jp && (phase !== 'prompt' || t?.titleId) ? title.jp : null,
-      topic: title?.topic ?? null,
+      title: title?.jp && (phase !== 'prompt' || t?.titleId) ? forLevel(title.jp, level) : null,
+      topic: title ? forLevel(title.topic, level) : null,
       backstage: t && phase === 'prompt' ? { photo: beat, picture: beat ? holidayPicture(beat) : null, ready: t.ready, last: t.index === s.order.length - 1 } : null,
       step,
       steps: t ? closeStep(t) + 1 : 0,
-      slide: st && t && talking ? slideView(st, t, audience) : null,
+      slide: st && t && talking ? slideView(st, t, audience, level) : null,
       captions: visible.slice(-CAPTION_KEEP).map((l) => captionOf(l)),
       stamps: t && (phase === 'answer' || phase === 'encore') ? t.stamps.slice(-STAMP_KEEP).map((x) => ({ id: x.id, kind: x.kind, at: x.at })) : [],
       stampCount: t?.stampCount ?? blankCount(),
@@ -1179,7 +1193,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
       vote:
         phase === 'finale'
           ? {
-              talks: s.done.map((r) => ({ index: r.index, presenterId: r.presenterId, assistantId: r.assistantId, title: r.titleId ? (titleOf(r.titleId)?.jp ?? null) : null, quote: r.quote, votes: Object.values(s.votes).filter((v) => v === r.index).length })),
+              talks: s.done.map((r) => ({ index: r.index, presenterId: r.presenterId, assistantId: r.assistantId, title: r.titleId && titleOf(r.titleId) ? forLevel(titleOf(r.titleId)!.jp, ctx.player(r.presenterId)?.level ?? 'n5') : null, quote: r.quote, votes: Object.values(s.votes).filter((v) => v === r.index).length })),
               count: Object.keys(s.votes).length,
               needed: ctx.connected().filter((p) => s.done.some((r) => r.presenterId !== p.id)).length,
             }
