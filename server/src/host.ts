@@ -60,8 +60,8 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   };
 }
 
-const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear']);
-const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai']);
+const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect']);
+const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai', 'narabete_knot']);
 
 /** Nobiko-san cranes her neck out to look as players answer and as their answers are revealed. */
 const PEEK = new Set(['say_it_first', 'reveal_react']);
@@ -75,7 +75,7 @@ export function moodFor(cue: Pick<HostCue, 'host' | 'event' | 'tier'>): HostMood
   if (OOPS.has(cue.event)) return 'oops';
   if (cue.host !== 'nobiko') return undefined;
   // To the card the stage marks: the winning answer, or the one she's teasing. She idles where there is none.
-  if (cue.event === 'encore_invite' || cue.event === 'omiai_tease') return 'reach';
+  if (cue.event === 'encore_invite' || cue.event === 'omiai_tease' || cue.event === 'narabete_defence') return 'reach';
   if (!PEEK.has(cue.event)) return undefined;
   return cue.tier === 'ippon' ? 'cheer' : 'peek'; // a top Karaoke take gets her cheer instead
 }

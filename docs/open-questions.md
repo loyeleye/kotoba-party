@@ -28,6 +28,9 @@ If you only have ten minutes, these are the answers that would change the build 
 - **Omiai Matchmaker (backlog):** a rule-based manners meter (no LLM) scores politeness, the room
   votes for charm, and the guest invites the player with the most hearts (votes + manners
   stars) to tea for +200. Fair to funny casual answers? ([omiai.md](modes/omiai.md#open-questions))
+- **Narabete! (backlog):** co-op: every pair in order pays everyone, and saying your card out loud
+  adds a bonus. Is a flat team score fun enough, or should the Poker Face (the card that fooled the
+  room most) earn points too? ([narabete.md](modes/narabete.md#open-questions))
 - **Shodō Taikai (backlog):** which music for the gallery round (v1 keeps the soft synth), and
   the trace check needs a try on real phones. ([shodo.md](modes/shodo.md#open-questions))
 - **Kana Yōkai Raid:** catching, the Leitner queue and the yōkai book need saved progress per
@@ -129,6 +132,7 @@ Each mode doc has how it plays, the decisions made on your behalf and its open q
 | Oekaki (backlog) | [oekaki.md](modes/oekaki.md) | 18 | Fude |
 | Omiai Matchmaker (backlog) | [omiai.md](modes/omiai.md) | 20 | Pon |
 | Shodō Taikai (backlog) | [shodo.md](modes/shodo.md) | 4 open | Fude |
+| Narabete! (backlog) | [narabete.md](modes/narabete.md) | 5 open | Nobiko-san |
 
 ## Content
 

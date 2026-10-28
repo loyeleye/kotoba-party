@@ -26,6 +26,9 @@ export const TRACK_IDS = [
   'kool-kats',
   'ishikari-lore',
   'ouroboros',
+  // Narabete!: a light ukulele-and-marimba pair for lining things up.
+  'daily-beetle',
+  'easy-lemon',
   // Shodō Taikai's gallery round (Ladi's pick).
   'japanese-lofi',
   // Karaoke Duel's grown-up songs: one instrumental each, sung over whole (songs.ts `track`).
@@ -120,6 +123,10 @@ export const TRACKS: Record<TrackId, Track> = {
   'kool-kats': { title: 'Kool Kats', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100601'), url: file('kool-kats'), loop: [6.966, 193.8688], gainDb: 0.4, fallback: 'quiz' },
   'ishikari-lore': { title: 'Ishikari Lore', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100192'), url: file('ishikari-lore'), loop: [6.641, 158.8361], gainDb: 6.9, fallback: 'mystery' },
   'ouroboros': { title: 'Ouroboros', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1400007'), url: file('ouroboros'), loop: [23.615, 158.198], gainDb: -6.1, fallback: 'battle' },
+  // Narabete!: Daily Beetle is 80 bars at 100 bpm after its intro (the file is cut just after the loop);
+  // Easy Lemon loops whole bars from just after its pickup to just before the ending.
+  'daily-beetle': { title: 'Daily Beetle', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500025'), url: file('daily-beetle'), loop: [21.06, 213.066], gainDb: 0, fallback: 'gentle' },
+  'easy-lemon': { title: 'Easy Lemon', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1200076'), url: file('easy-lemon'), loop: [3.019, 109.087], gainDb: 0.2, fallback: 'gentle' },
   // Shodō Taikai's gallery: koto over a lo-fi hip-hop beat. 28 bars at about 75 bpm; the loop skips the
   // intro and the fade (picked by spectral match). CC0 as uploaded; commissioned on Fiverr (row 22, ❓).
   'japanese-lofi': { title: 'Japanese Lofi HipHop', author: 'pickentcode', licence: 'CC0', source: `${OGA}japanese-lofi-hiphop-track`, url: file('japanese-lofi-hiphop'), loop: [10.75, 100.35], gainDb: -6.2, fallback: 'gentle' },

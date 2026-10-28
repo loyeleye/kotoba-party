@@ -28,6 +28,14 @@ export const HOST_EVENTS = [
   'play_again',
   // Omiai Matchmaker
   'omiai_tease',
+  // Narabete!
+  'narabete_deal',
+  'narabete_say',
+  'narabete_order',
+  'narabete_defence',
+  'narabete_perfect',
+  'narabete_knot',
+  'narabete_story',
   // Oogiri Night
   'ippon',
   'cushion_steal',

@@ -1,0 +1,94 @@
+# Narabete! (ならべて！ "Line them up!"), backlog
+
+Host: Nobiko-san. 2–8 players. Kana–N4. Co-op. Everyone holds a secret card: say yours out loud,
+listen to everyone else's, and line the cards up along Nobiko-san's neck, low end to high. Then she
+flips them over one by one, and every neighbouring pair in order scores for the whole team.
+
+Code: `shared/src/modes/narabete/` (rules and views in `narabete.ts`, the draft Time Line sets and
+Feelings themes in `cards.ts`), `stage/src/modes/narabete.{ts,css}`,
+`controller/src/modes/narabete.{ts,css}`, `tools/bots/policies/narabete.ts`, `tests/narabete.test.ts`.
+Design: the Bento Haus and Narabe! design doc (v0.2) and its panel reviews.
+
+## Why it works for speaking
+
+The cards are secret, so the only way the team learns them is by hearing them. Round 1 makes every
+player say a full sentence with a time, price or date in it (the numbers learners trip on most:
+よじはん, さんびゃくえん, ここのか), and makes everyone else listen for it. Rounds 2 and 3 make them
+say an opinion that fits a secret number without saying the number, then argue about order
+(「Aさんの ほうが ひどい！」). Mistakes never cost points: a line full of knots still pays every pair
+that is in order.
+
+## How a game goes
+
+Three rounds. The intro (15 s) explains it. Each round:
+
+1. **Deal** (`prompt`, 9 s). The TV shows the round's title and the neck's two ends (おきる … ねる,
+   ふーん … きゅうきゅうしゃ！). Each phone shows its secret card.
+2. **Say it** (`answer`, 60 s; ends early when everyone has said theirs). The TV shows a 🔊 on each
+   player who has said theirs, never what it was.
+   - **Time Line** (round 1): the phone shows a picture, a clock and the English (Wakes up at
+     4:30 p.m.). Say the sentence from memory; 💡 shows the Japanese (Kana players always see it, with
+     romaji). It counts when the time, price or date comes through, checked as kana from the
+     server's reading (4時半 and よじはん both count; 30分 can be さんじゅっぷん or さんじゅうふん). A
+     try that misses still counts as said, and a good saying is never replaced by a worse one.
+   - **Feelings Line** (round 2): a secret number 1–100 (hold to peek), an opinion theme (how shocked
+     would Grandma be?), sentence frames, two swerve words (one that fits, one absurd) and ready
+     answers to tap or read out (Kana players get four, others three; one is always near the number).
+     Say anything that fits your number. If it sounds like a number (digits, number kanji, じゅう or
+     ひゃく), the phone warns and lets you change it; it is never refused.
+3. **Line them up** (`reveal`, 90 s; ends when every card is locked). The cards sit along the neck in
+   a shuffled order. Each player moves **only their own card**, ◀ ▶, one place at a time (it swaps
+   with its neighbour, and both cards unlock), then locks it (きめた！). In the Time Line the TV
+   shows each card's picture; 🙋 on a phone asks someone to say theirs again (もう いちど
+   おねがいします), and their phone shows who asked. In Feelings rounds the TV shows the answers. The
+   VIP can hide an answer.
+4. **One defence** (`encore`, 12 s, Feelings rounds only): the author of the card that moved the most
+   says why it belongs there (〜から です。). Said out loud, it tops their bonus up.
+5. **The flip** (`score`, the flip plus 9 s, or 14 s with the vote). Nobiko-san turns the cards over
+   from the low end, one every 1.3 s after a 1.8 s lead-in, a bell a step up the scale for each. A
+   knot ties in her neck between each pair out of order; the card furthest from its true place
+   wobbles and flips last. Her line waits until the last card is over. In Feelings rounds everyone
+   then votes for the funniest answer (not their own).
+
+**Round 3, the Worst Day Ever** is a last Feelings Line on "what happened today, and how bad was
+it?". After its flip, one `finale` turn per card, lowest first: the TV shows the story so far, and
+the reader says their line, starting with 「そして…」 (and then…).
+
+## Scoring (co-op)
+
+- **The team**: 100 per neighbouring pair in order, +300 when the whole line is in order. Everyone
+  gets the same.
+- **Saying it**: a bonus per player from a pool capped at 30% of the team points at stake: said
+  from memory 70% of the cap, with help (the hint, or a ready answer read out) 50%, typed 35%, a ready
+  answer tapped 15%, a Time card said with the time missing 20%. A spoken defence adds 30%.
+- **Votes**: 50 per vote. **The story**: 50 for reading your line out loud.
+- **Awards**: ポーカーフェイス賞 (the card that fooled the room the most, Feelings rounds),
+  おもしろ賞 (most votes), いい こえ賞 (most cards said out loud), みみ賞 (asked to hear a card again
+  the most).
+
+## Content
+
+All draft, all kana, until the fluent check. Seven Time Line sets of 8 cards (a ghost's day, Pon's
+diet, konbini prices, Pon's calendar; Nobiko's night out and a boss's schedule for Family and
+Cheeky; a first date for Cheeky). Each is a tiny story whose last card is the punchline, which is
+always dealt. Feelings themes: three Kids, three Family and five Cheeky (late excuses, dating
+profiles, a midnight message, what your parents saw, the morning after), plus a Worst Day Ever theme
+per audience. Opinion, never fact: "how big is this animal" has a right answer, so nobody argues.
+
+## Music and sound
+
+**Daily Beetle** (first theme) and **Easy Lemon** (second), both Kevin MacLeod, CC BY 4.0 (row 22 of
+the [commercial blockers](../commercial-blockers.md)). The music goes under while players talk and
+during the flip and vote (`SPEAKING_PHASES`). The flip's bells run C6 up the major scale, above the
+speech band; a knot adds a low "bwomp" below it.
+
+## Open questions
+
+1. **Is a flat team score fun enough?** Everyone gets the same team points; only the speaking bonus,
+   votes and the story differ. Should the Poker Face card earn points too?
+2. **Three rounds, fixed.** Should the VIP be able to pick 2–5 (more Feelings rounds)?
+3. **The Time Line's TV pictures** help the room remember who said what. Do they give too much away
+   (a 🍦 at a konbini is likely late at night)?
+4. **Moving only your own card** keeps the TV calm and makes people talk, but a shy player can stall
+   the line. Should the VIP be able to nudge any card in the last 15 s?
+5. **Fluent check** of every card sentence, theme, ready answer, frame and Nobiko-san's lines.

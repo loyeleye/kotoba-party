@@ -41,6 +41,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'karaoke-duel': null,
   // The calligraphy contest is quiet: the soft synth tune throughout (shodoCue).
   shodo: 'gentle',
+  // Lining things up: ukulele and marimba, light enough to talk over.
+  narabete: 'daily-beetle',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -54,6 +56,7 @@ export const MODE_ALT_THEMES: Partial<Record<ModeId, MusicId>> = {
   concentration: 'kool-kats',
   'onsen-murder': 'ishikari-lore',
   'kana-raid': 'ouroboros',
+  narabete: 'easy-lemon',
 };
 
 /** The theme for the `game`th game of `mode` on this screen (0, 1, 2 …). */
@@ -83,6 +86,8 @@ export const SPEAKING_PHASES: Partial<Record<ModeId, Phase[]>> = {
   'word-gauntlet': ['score'],
   // Say each target before tracing it, then read the scroll together.
   shodo: ['prompt', 'score'],
+  // The flip and the vote: a hush under the bells, between spoken turns.
+  narabete: ['score'],
 };
 
 /**

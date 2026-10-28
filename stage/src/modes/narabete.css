@@ -1,0 +1,89 @@
+/* Narabete! (stage). Everything is scoped under .nb-stage. The ruler is Nobiko-san herself: her body
+   at the low end, her neck along the bottom, her head at the high end (nobiko-reach.png, drawn at 1.5×
+   on whole pixels). */
+.nb-stage { width: min(1700px, 100%); display: grid; gap: 22px; align-content: start; text-align: left; --nb-ink: #0b0605; --nb-shade: #9b625e; --nb-skin: #fbdebe; --nb-gold: #ffd36b; }
+.nb-stage p { margin: 0; }
+.nb-intro { justify-items: center; text-align: center; }
+.nb-logo { font-size: 110px; font-weight: 900; color: var(--mode); letter-spacing: 0.04em; }
+.nb-subtitle { font-size: 32px; color: var(--muted); }
+.nb-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1200px; padding-left: 40px; margin: 0; }
+
+.nb-head { display: grid; gap: 8px; }
+.nb-tag { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.nb-title { font-size: 64px; font-weight: 900; line-height: 1.2; }
+.nb-title small { display: block; font-size: 28px; font-weight: 400; color: var(--muted); }
+.nb-call { font-size: 34px; font-weight: 800; }
+.nb-call small { font-size: 26px; font-weight: 400; color: var(--muted); }
+.nb-say { display: grid; gap: 16px; }
+.nb-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.nb-chip { font-size: 28px; font-weight: 700; padding: 8px 20px; border-radius: 999px; background: var(--panel); border: 2px solid var(--line); color: var(--muted); }
+.nb-said { color: var(--ink); border-color: var(--mode); animation: nb-pop 0.4s var(--ease-pop) both; }
+@keyframes nb-pop { from { transform: scale(0.8); } }
+.nb-defence { font-size: 40px; font-weight: 800; color: var(--nb-gold); }
+
+/* ---- the ruler ---- */
+.nb-ruler { position: relative; display: grid; gap: 10px; padding-top: 30px; }
+.nb-line { list-style: none; margin: 0; padding: 0 150px 0 110px; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; align-items: end; perspective: 1400px; }
+.nb-neck { position: relative; height: 150px; margin-top: -22px; }
+.nb-band { position: absolute; left: 110px; right: 150px; top: 82px; height: 34px; background: var(--nb-skin); border: 6px solid var(--nb-ink); border-bottom-width: 6px; box-shadow: inset 0 -9px 0 var(--nb-shade); border-radius: 6px; }
+.nb-collar, .nb-nobiko { position: absolute; width: 192px; height: 192px; background: url(/stage/assets/anim/nobiko-reach.png) no-repeat; background-size: 384px 192px; image-rendering: pixelated; }
+.nb-collar { left: -40px; top: -42px; background-position: 0 0; }
+.nb-nobiko { right: -40px; top: -6px; background-position: -192px 0; }
+.nb-ends { display: flex; justify-content: space-between; font-size: 30px; font-weight: 800; padding: 0 20px; }
+.nb-ends small { font-size: 22px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+.nb-high small { margin-right: 8px; }
+.nb-empty .nb-neck { margin-top: 80px; }
+
+/* ---- the cards ---- */
+.nb-card { position: relative; height: 270px; animation: nb-in 0.45s var(--ease-pop) both; animation-delay: calc(var(--i) * 70ms); }
+@keyframes nb-in { from { opacity: 0; transform: translateY(-24px); } }
+.nb-inner { position: relative; height: 100%; transform-style: preserve-3d; }
+.nb-face, .nb-back { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 6px; padding: 12px; text-align: center; border-radius: 18px; backface-visibility: hidden; border: 4px solid var(--nb-ink); box-shadow: 0 6px 0 var(--nb-ink); }
+.nb-face { background: var(--panel); outline: 2px solid var(--mode); outline-offset: -8px; }
+.nb-back { background: var(--paper); color: var(--paper-ink); transform: rotateY(180deg); }
+.nb-emoji { font-size: 76px; line-height: 1; }
+.nb-ear { opacity: 0.6; }
+.nb-text { font-size: 30px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.nb-hidden { color: var(--muted); font-weight: 400; }
+.nb-name { font-size: 22px; font-weight: 800; color: var(--mode); }
+.nb-back .nb-name { color: #6b4a6f; }
+.nb-flags { display: flex; gap: 10px; font-size: 26px; min-height: 30px; }
+.nb-again { color: var(--nb-gold); font-weight: 800; }
+.nb-value { font-size: 56px; font-weight: 900; line-height: 1; color: #b23a64; }
+.nb-sentence { font-size: 20px; font-weight: 700; line-height: 1.3; }
+.nb-en { font-size: 18px; color: #6b4a6f; line-height: 1.2; }
+.nb-votes { color: #d14a7c; }
+.nb-defending { z-index: 2; animation: nb-lift 0.6s var(--ease-pop) both; }
+@keyframes nb-lift { to { transform: translateY(-26px) scale(1.06); } }
+.nb-defending .nb-face { outline-color: var(--nb-gold); outline-width: 4px; }
+
+/* The flip: each card turns at its own time (--d, negative once it's past). The biggest surprise
+   wobbles first. */
+.nb-flipping .nb-inner { animation: nb-flip 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) var(--d) both; }
+@keyframes nb-flip { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
+.nb-last .nb-inner { animation: nb-wobble 0.25s ease-in-out calc(var(--d) - 1000ms) 4 alternate, nb-flip 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) var(--d) both; }
+@keyframes nb-wobble { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.nb-joint { position: absolute; top: 74px; left: calc(110px + (100% - 260px) * var(--x) / var(--n)); transform: translateX(-50%); animation: nb-tie 0.45s var(--ease-pop) var(--d) both; }
+@keyframes nb-tie { from { transform: translateX(-50%) scale(0); opacity: 0; } }
+.nb-ok { top: 70px; font-size: 40px; font-weight: 900; color: var(--good); text-shadow: 0 0 4px var(--nb-ink), 0 0 2px var(--nb-ink); }
+/* A knot: a loop of neck tied over the band. */
+.nb-knot { width: 58px; height: 58px; top: 70px; border-radius: 50%; background: radial-gradient(circle at 50% 50%, transparent 0 11px, var(--nb-ink) 11px 17px, var(--nb-skin) 17px 23px, var(--nb-ink) 23px); box-shadow: inset 0 -6px 0 var(--nb-shade); }
+
+.nb-result { display: grid; gap: 8px; justify-items: center; text-align: center; animation: nb-in 0.5s var(--ease-pop) var(--d) both; }
+.nb-result-big { font-size: 46px; font-weight: 900; }
+.nb-perfect .nb-result-big { color: var(--nb-gold); }
+.nb-poker { font-size: 28px; font-weight: 700; }
+.nb-vote-call { font-size: 26px; color: var(--muted); }
+
+.nb-calm .nb-inner, .nb-calm .nb-joint, .nb-calm .nb-result { animation-duration: 0.01s !important; }
+.nb-calm .nb-last .nb-inner { animation: nb-flip 0.01s linear var(--d) both; }
+
+/* ---- the Worst Day Ever ---- */
+.nb-story-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.nb-story-line { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: baseline; font-size: 38px; padding: 12px 24px; border-radius: 16px; background: var(--panel); }
+.nb-soshite { color: var(--muted); font-weight: 700; }
+.nb-story-text { font-weight: 800; }
+.nb-story-who { font-size: 24px; color: var(--mode); font-weight: 800; }
+.nb-now { background: var(--paper); color: var(--paper-ink); transform: scale(1.02); }
+.nb-now .nb-soshite { color: #b23a64; }
+.nb-later { opacity: 0.45; }

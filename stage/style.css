@@ -56,6 +56,7 @@ body { margin: 0; overflow: hidden; background: #110b26; color: var(--ink); }
 [data-mode='phrase-bingo'] { --mode: #ff6f91; }
 [data-mode='omiai'] { --mode: #ffa3c0; }
 [data-mode='shodo'] { --mode: #c9ced6; }
+[data-mode='narabete'] { --mode: #ffc29a; }
 
 /* ---- the 1920×1080 canvas ---- */
 /* Everything is laid out at 1080p and scaled to the window (main.ts sets --scale), with a 5%

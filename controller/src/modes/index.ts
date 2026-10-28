@@ -12,6 +12,7 @@ import { touristPhone } from './tourist.js';
 import { oekakiPhone } from './oekaki.js';
 import { omiaiPhone } from './omiai.js';
 import { shodoPhone } from './shodo.js';
+import { narabetePhone } from './narabete.js';
 import type { PhoneMode } from './types.js';
 
 export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
@@ -28,4 +29,5 @@ export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
   oekaki: oekakiPhone,
   omiai: omiaiPhone,
   shodo: shodoPhone,
+  narabete: narabetePhone,
 };

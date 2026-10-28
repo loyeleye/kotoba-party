@@ -12,6 +12,7 @@ import { touristStage } from './tourist.js';
 import { oekakiStage } from './oekaki.js';
 import { omiaiStage } from './omiai.js';
 import { shodoStage } from './shodo.js';
+import { narabeteStage } from './narabete.js';
 import type { StageMode } from './types.js';
 
 export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
@@ -28,4 +29,5 @@ export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
   oekaki: oekakiStage,
   omiai: omiaiStage,
   shodo: shodoStage,
+  narabete: narabeteStage,
 };

@@ -53,6 +53,21 @@ export function sfx(id: SfxId, delay = 0): void {
   }
 }
 
+/** The C major scale from C6, for Narabete!'s flip: one step up per card turned over. */
+const SCALE = [1046.5, 1174.66, 1318.51, 1396.91, 1567.98, 1760, 1975.53, 2093];
+
+/**
+ * One card of Narabete!'s flip, `delay` seconds from now: the next note up the scale, or, where it
+ * ties a knot, the note with a low "bwomp" under it.
+ */
+export function flipNote(step: number, delay: number, knot: boolean): void {
+  const sound = getSound();
+  if (!sound || !audioReady() || silent()) return;
+  const t = sound.ctx.currentTime + 0.01 + delay;
+  bell(sound.ctx, sound.sfx, t, SCALE[Math.min(step, SCALE.length - 1)]!, 0.45, 0.2);
+  if (knot) blip(sound.ctx, sound.sfx, t + 0.12, 'sawtooth', 180, 110, 0.32, 0.14, 900);
+}
+
 function envGain(ctx: AudioContext, out: AudioNode, t: number, dur: number, peak: number): GainNode {
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.0001, t);
