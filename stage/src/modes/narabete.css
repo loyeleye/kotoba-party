@@ -21,21 +21,26 @@
 .nb-ruler { position: relative; display: grid; }
 .nb-line { list-style: none; margin: 0; padding: 0 200px 0 70px; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 14px; align-items: end; }
 .nb-neck { position: relative; height: 96px; }
-/* Her neck, 24 px thick like her drawn neck at 2×: it runs from her collar to her chin, so it reads
-   as one body. */
-.nb-band { position: absolute; left: 40px; right: 80px; top: 40px; height: 24px; background: var(--nb-skin); border-top: 4px solid var(--nb-ink); border-bottom: 4px solid var(--nb-ink); box-shadow: inset 0 -6px 0 var(--nb-shade); }
+/* Her neck is drawn on a canvas at her art-pixel size (drawNeck in narabete.ts, drawRuler in neck.ts), from
+   her collar to her chin, with a peg where each card's string meets it and knots tied in it. It runs a
+   little past the box so a knot's loop has room to hang below the line. */
+.nb-neck-art { position: absolute; left: -60px; right: -60px; top: -60px; bottom: -60px; width: calc(100% + 120px); height: calc(100% + 120px); image-rendering: pixelated; pointer-events: none; }
 .nb-collar, .nb-nobiko { position: absolute; z-index: 1; width: 256px; height: 256px; background: url(/stage/assets/anim/nobiko-reach.png) no-repeat; background-size: 512px 256px; image-rendering: pixelated; pointer-events: none; }
 .nb-collar { left: -44px; top: -124px; background-position: 0 0; }
-.nb-nobiko { right: -40px; top: -74px; background-position: -256px 0; }
+.nb-nobiko { right: -40px; top: -74px; background-position: -256px 0; scale: -1 1; } /* her head turned back along her neck, to the cards */
 .nb-hop .nb-nobiko { animation: nb-hop 0.5s steps(4) var(--r) 2 alternate both; }
+/* While her neck is the ruler she is already on screen, so the corner keeps only her empty plate. She swaps places
+   while the stage curtain (stageCurtain in main.ts) is closed. */
+body[data-mode='narabete'] .host-sprite > .sprite-sheet { transition: visibility 0s 380ms; }
+body:has(.nb-stage .nb-neck) .host-sprite > .sprite-sheet { visibility: hidden; }
 @keyframes nb-hop { to { transform: translateY(-24px); } }
-.nb-ends { display: flex; justify-content: space-between; font-size: 28px; font-weight: 800; padding: 0 200px 0 190px; min-height: 38px; }
+.nb-ends { margin-top: 28px; display: flex; justify-content: space-between; font-size: 28px; font-weight: 800; padding: 0 200px 0 190px; min-height: 38px; }
 .nb-ends small { font-size: 20px; font-weight: 400; color: var(--muted); margin: 0 8px; }
 .nb-anchor { color: var(--nb-gold); }
 
 /* ---- the cards: each in its owner's seat colour ---- */
 .nb-card { position: relative; height: 206px; animation: nb-in 0.45s var(--ease-pop) both; animation-delay: calc(var(--i) * 70ms); }
-.nb-card::after { content: ''; position: absolute; left: calc(50% - 3px); bottom: -14px; width: 6px; height: 16px; background: var(--nb-ink); }
+.nb-card::after { content: ''; position: absolute; left: calc(50% - 2px); bottom: -42px; width: 4px; height: 44px; background: var(--seat, var(--mode)); box-shadow: 0 0 0 2px var(--nb-ink); } /* its string, in its owner's colour, down to the peg on her neck */
 @keyframes nb-in { from { opacity: 0; transform: translateY(-24px); } }
 .nb-inner { position: relative; height: 100%; transform-style: preserve-3d; }
 .nb-face, .nb-back { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 6px; padding: 18px 10px 10px; text-align: center; border-radius: 14px; backface-visibility: hidden; border: 4px solid var(--nb-ink); border-top: 14px solid var(--seat, var(--mode)); box-shadow: 0 6px 0 var(--nb-ink); overflow: hidden; }
@@ -49,6 +54,12 @@
 /* A card with an answer on it keeps its picture small so the name and lock still fit. */
 .nb-face:has(.nb-text) .nb-emoji { font-size: 52px; }
 .nb-face:has(.nb-text) { gap: 4px; }
+/* 64² at a whole 2×, on a lighter tile so dark pictures don't sink into the card. */
+.nb-pic img { display: block; width: 128px; height: 128px; image-rendering: pixelated; background: #5a4ca8; box-shadow: 0 0 0 4px var(--nb-ink); border-radius: 4px; }
+/* Six or more cards: the lock drops its word to fit on the name's row; seven or more show the picture at 1×. */
+.nb-n6 .nb-lock-word, .nb-n7 .nb-lock-word, .nb-n8 .nb-lock-word { display: none; }
+.nb-n7 .nb-pic img, .nb-n8 .nb-pic img { width: 64px; height: 64px; }
+.nb-face:has(.nb-pic) { padding-top: 12px; gap: 2px; } /* room for the whole 2× picture */
 .nb-said .nb-ear { opacity: 1; animation: nb-pop 0.4s var(--ease-pop) both; }
 @keyframes nb-pop { from { transform: scale(0.6); } }
 .nb-text { font-size: 30px; font-weight: 800; line-height: 1.25; text-wrap: balance; }
@@ -56,6 +67,7 @@
 .nb-hidden { color: var(--muted); font-weight: 400; }
 .nb-name { font-size: 26px; font-weight: 800; display: flex; gap: 8px; align-items: center; justify-content: center; }
 .nb-seat { font-family: var(--font-pixel); font-size: 20px; padding: 0 6px; border: 2px solid var(--nb-ink); border-radius: 4px; background: var(--seat, var(--mode)); color: var(--on-accent); }
+.nb-who { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; justify-content: center; }
 .nb-flags { display: flex; gap: 8px; font-size: 22px; min-height: 30px; }
 .nb-lock { background: var(--nb-good); color: #0b2416; font-weight: 800; border-radius: 999px; padding: 0 10px; animation: nb-pop 0.35s var(--ease-pop) both; }
 .nb-again { color: var(--nb-gold); font-weight: 900; font-size: 30px; animation: nb-ask 0.6s ease-out both; }
@@ -65,11 +77,14 @@
 .nb-n6 .nb-sentence, .nb-n7 .nb-sentence, .nb-n8 .nb-sentence { font-size: 21px; }
 .nb-en { font-size: 16px; color: #6b4a6f; line-height: 1.15; }
 .nb-n6 .nb-en, .nb-n7 .nb-en, .nb-n8 .nb-en { display: none; }
+.nb-back .nb-pic { position: absolute; top: 8px; right: 8px; } /* the card's picture as a sticker on its back, so you can still find "the duck card" */
+.nb-back .nb-pic img { width: 64px; height: 64px; box-shadow: 0 0 0 2px var(--nb-ink); }
+.nb-back:has(.nb-pic) .nb-value { font-size: 44px; padding-right: 64px; } /* keep the time clear of the sticker */
 .nb-back-foot { display: flex; gap: 10px; align-items: center; }
 .nb-back .nb-name { font-size: 22px; color: var(--paper-ink); }
 .nb-votes { color: #d14a7c; font-weight: 900; font-size: 22px; }
 .nb-defending { z-index: 2; animation: nb-lift 0.6s var(--ease-pop) both; }
-@keyframes nb-lift { to { transform: translateY(-20px) scale(1.06); } }
+@keyframes nb-lift { to { transform: translateY(-20px); } } /* no scale: the picture stays on whole pixels */
 .nb-defending .nb-face { outline: 5px solid var(--nb-gold); outline-offset: 2px; }
 
 /* The flip: each card turns at its own time (--d, negative once it's past), lifting as it turns.
@@ -80,16 +95,14 @@
   45% { transform: perspective(900px) translateY(-34px) scale(1.08) rotateY(90deg); }
   to { transform: perspective(900px) rotateY(180deg); }
 }
-.nb-last { transform-origin: 50% 100%; animation: nb-in 0.45s var(--ease-pop) both, nb-wobble 160ms ease-in-out calc(var(--d) - 1000ms) 6 alternate; }
-@keyframes nb-wobble { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
-.nb-joint { position: absolute; z-index: 2; top: 52px; left: calc(40px + (100% - 120px) * var(--x) / var(--n)); transform: translate(-50%, -50%); animation: nb-tie 0.5s var(--ease-pop) var(--d) both; }
+.nb-last { transform-origin: 50% 100%; animation: nb-in 0.45s var(--ease-pop) both, nb-wobble 160ms steps(3, jump-none) calc(var(--d) - 1000ms) 6 alternate; }
+@keyframes nb-wobble { from { transform: translateX(-6px); } to { transform: translateX(6px); } } /* a jitter, not a rotation, so the pixel picture stays square */
+.nb-joint { position: absolute; z-index: 2; top: 52px; transform: translate(-50%, -50%); animation: nb-tie 0.5s var(--ease-pop) var(--d) both; }
 @keyframes nb-tie { from { transform: translate(-50%, -50%) scale(0) rotate(-180deg); opacity: 0; } 70% { transform: translate(-50%, -50%) scale(1.5); } }
 .nb-ok { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--nb-good); border: 3px solid var(--nb-ink); color: var(--nb-ink); font-size: 26px; font-weight: 900; }
-.nb-knot { font-size: 64px; line-height: 1; filter: drop-shadow(3px 3px 0 var(--nb-ink)); }
-.nb-knot::after { content: ''; position: absolute; inset: 6px; border: 4px solid #ff5a5a; border-radius: 50%; }
 
 /* Under the neck: the defence or the result, in a row kept the same height. */
-.nb-foot { min-height: 74px; display: grid; gap: 0; justify-items: center; text-align: center; align-content: start; }
+.nb-foot { min-height: 46px; display: grid; gap: 0; justify-items: center; text-align: center; align-content: start; }
 .nb-defence-call { font-size: 32px; font-weight: 800; color: var(--nb-gold); }
 .nb-defence-call small { font-size: 24px; color: var(--muted); font-weight: 400; }
 .nb-defence { font-size: 34px; font-weight: 800; }
@@ -110,6 +123,8 @@
   .nb-card, .nb-last, .nb-defending { animation: nb-fade 0.3s ease both; transform: none; }
   .nb-flipping .nb-inner { animation: none; }
   .nb-back { transform: none; animation: nb-fade 0.3s ease var(--d) both; }
+  .nb-joint { animation: nb-fade 0.3s ease var(--d) both; transform: translate(-50%, -50%); }
+  .nb-hop .nb-nobiko { animation: none; }
 }
 
 /* ---- the Worst Day Ever ---- */

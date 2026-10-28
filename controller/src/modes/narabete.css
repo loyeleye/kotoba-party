@@ -12,6 +12,9 @@
 .nb-mycard { display: grid; justify-items: center; gap: 4px; text-align: center; padding: 16px; border-radius: 16px; background: var(--paper); color: var(--paper-ink); border: 3px solid #0b0605; box-shadow: 0 5px 0 #0b0605; }
 .nb-mycard p { margin: 0; }
 .nb-mycard-emoji { font-size: 64px; line-height: 1; }
+/* 64² at a whole 3× in a navy window, so pale pictures (a white ghost) don't vanish on the cream card. */
+.nb-mycard-pic { display: block; width: 192px; height: 192px; image-rendering: pixelated; background: #2a2150; border-radius: 12px; box-shadow: 0 0 0 3px #0b0605; }
+.nb-mycard.compact .nb-mycard-pic { width: 64px; height: 64px; border-radius: 6px; }
 .nb-mycard-clock { font-size: 34px; font-weight: 900; color: #b23a64; }
 .nb-mycard-en { font-size: 16px; color: #6b4a6f; }
 .nb-mycard-jp { display: grid; gap: 2px; margin-top: 4px; }

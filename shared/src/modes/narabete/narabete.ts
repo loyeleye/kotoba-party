@@ -20,7 +20,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
+import { cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
 
 // ---- tuning ----
 
@@ -156,6 +156,8 @@ export interface LineCard {
   text: string | null;
   en: string | null;
   emoji: string | null;
+  /** Time Line: the card's picture (cardPicture), shown with `emoji` as its fallback. */
+  picture?: string;
   said: boolean;
   locked: boolean;
   again: number;
@@ -199,7 +201,7 @@ export interface NarabeteView {
   me: {
     level: Level;
     cardId: string | null;
-    time: { emoji: string; label: string; en: string; jp: JpText | null; romaji?: string } | null;
+    time: { emoji: string; picture: string; label: string; en: string; jp: JpText | null; romaji?: string } | null;
     secret: number | null;
     offers: OfferView[];
     frames: string[];
@@ -787,6 +789,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
               again: c.again.length,
               hidden: c.hidden,
             };
+            if (tc && lineShown) card.picture = cardPicture(tc.id);
             if (me && c.ownerId === me.id) card.mine = true;
             if (flipped && r.flip) {
               card.value = c.value;
@@ -814,7 +817,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       mine = {
         level: me.level,
         cardId: c?.id ?? null,
-        time: tc ? { emoji: tc.emoji, label: tc.label, en: tc.jp.en, jp: showJp ? tc.jp : null, ...(showJp && romaji ? { romaji: toRomaji(tc.jp.kana) } : {}) } : null,
+        time: tc ? { emoji: tc.emoji, picture: cardPicture(tc.id), label: tc.label, en: tc.jp.en, jp: showJp ? tc.jp : null, ...(showJp && romaji ? { romaji: toRomaji(tc.jp.kana) } : {}) } : null,
         secret: c && r.kind !== 'time' ? c.value : null,
         offers:
           c && theme && phase === 'answer'

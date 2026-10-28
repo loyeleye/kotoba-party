@@ -5,7 +5,7 @@ listen to everyone else's, and line the cards up along Nobiko-san's neck, low en
 flips them over one by one, and every neighbouring pair in order scores for the whole team.
 
 Code: `shared/src/modes/narabete/` (rules and views in `narabete.ts`, the draft Time Line sets and
-Feelings themes in `cards.ts`), `stage/src/modes/narabete.{ts,css}`,
+Feelings themes in `cards.ts`), `stage/src/modes/narabete.{ts,css}`, `stage/src/neck.ts` (the neck ruler and its knots),
 `controller/src/modes/narabete.{ts,css}`, `tools/bots/policies/narabete.ts`, `tests/narabete.test.ts`.
 Design: the Bento Haus and Narabe! design doc (v0.2) and its panel reviews.
 
@@ -47,11 +47,12 @@ Three rounds. The intro (15 s) explains it. Each round:
    call under Nobiko-san's neck, so the line stays where it is.
 5. **Cards over** (`score`, the flip plus 9 s, or 14 s with the vote). Nobiko-san turns the cards over
    from the low end, one every 1.3 s after a 1.8 s lead-in, a bell a step up the scale for each. A
-   knot ties in her neck between each pair out of order; the card furthest from its true place
+   knot ties in her neck between each pair out of order (a loop that cinches tight, with a 💢); the card furthest from its true place
    wobbles and flips last. Her line waits until the last card is over, and phones hold the result
    ("Nobiko-san is turning the cards over…") until then so nobody's phone spoils it. In Feelings
    rounds everyone then votes for the funniest answer (not their own).
 
+While her neck is on screen, the host corner shows only her empty plate, so there is never a second Nobiko-san. A stage curtain closes over the whole screen as she swaps places (into the first deal, and out to the story).
 A round keeps one TV layout from the deal to the flip: the cards stay in place, empty slots fill
 with 🔊 as players say theirs, and moved cards slide. There is no curtain between its phases.
 

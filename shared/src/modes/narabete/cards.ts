@@ -499,6 +499,9 @@ export const FEEL_THEMES: FeelTheme[] = [
 ];
 
 /** Time Line sets for an audience. */
+/** A Time Line card's picture: 64² pixel art (stage/assets/cards, PixelLab; see docs/graphics.md). Its emoji stands in if it fails to load. */
+export const cardPicture = (id: string): string => `/stage/assets/cards/${id}.png`;
+
 export const timeSetsFor = (a: Audience): TimeSet[] => TIME_SETS.filter((s) => s.audiences.includes(a));
 
 /** Feelings Line themes for an audience: the round 2 ones, or the Worst Day Ever for round 3. */

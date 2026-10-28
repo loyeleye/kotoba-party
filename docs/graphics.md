@@ -53,7 +53,7 @@ in a web font, which keeps the kana correct and lets one body serve every kana. 
 
 ## Animation
 
-Twenty-two sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
+Twenty-five sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026). Each is one row of square
 frames (Nobiko-san's peek is twice as wide). Most are made by PixelLab's `animate-with-text-v3` from the still sprite, which goes in as
 both the first and the last frame so a loop closes on the pose it started from, then cleaned up by
 `tools/art/polish.ts` (below). The three mouth sheets are drawn from the portraits by the same tool.
@@ -66,6 +66,7 @@ both the first and the last frame so a loop closes on the pose it started from, 
 | `nobiko-peek.png` | 10 × 256×128 | Once, as players answer (`say_it_first`) and as answers are revealed (`reveal_react`): her neck stretches out over the speech bubble, has a look and springs back. Built by `tools/art/sources/nobiko-peek.py`, which cuts her portrait into head and body and redraws only the neck, so her face stays on model |
 | `nobiko-reach.png` | 2 × 128² | Not played: her body without its neck, and her mirrored head. `stage/src/reach.ts` draws her long reach from them on a canvas over the stage: when she invites the winner of an Omiai round to say it politely (`encore_invite`), her neck snakes all the way to the winning card (the one marked `.host-target`) and her head peers over its top edge |
 | `nobiko-sway.png` | 8 × 6 × 128² | Looped over two beats while everyone sings a Karaoke Duel chorus line (`sway` in `stage/src/modes/karaokeDuel.ts`): her body stays put and her neck bends to carry her head left on the first beat and right on the second. Two rows per face (the second for blinks on random beats): her own face, a big smile for a good take, and a wry look for an N5 or N4 singer's missed or garbled one; the smile and the wry look are pasted from the cheer and oops sheets. Built by `tools/art/sources/nobiko-peek.py` from the same cut head and body, with the neck redrawn each frame |
+| `nobiko-knot.png` | 3 × 72×50 | Narabete!'s knots. `stage/src/neck.ts` draws Nobiko-san's neck as the ruler the cards hang from (`drawRuler`, on a canvas behind the cards, at 2 screen px per art px): out of her collar, level along the line with a little droop between pegs, and into her chin, painted with the same three passes as her sheets. At the flip a knot ties between each pair out of order: a loose loop, cinching, then tied with a 💢 cramp mark, 110 ms a frame (calm motion shows it tied). The loop hangs below the neck, so the cards above stay clear. Hand-drawn by `tools/art/sources/narabete-art.py` (no model), which also draws `stage/assets/fx/peg.png` (10×17), the clothes peg each card hangs from on a string in its player's colour |
 | `yokai-{blob,lantern,umbrella,scroll}-hit.png` | 11 × 128² | Once when a yōkai is caught: 4 flinch frames, then the shared smoke puff; ends empty |
 | `yokai-boss-defeat.png` | 9 × 192² | Once when the boss is beaten; ends empty |
 
@@ -111,6 +112,20 @@ the raw one kept in `tools/art/sources/anim/`:
 The generator turns the frames into a sheet: it drops a loop's repeated last frame, remaps every
 frame to frame 0's colours (no shimmer between frames), cuts alpha to on or off, and puts each
 frame's mask back after the remap (an early batch lost its transparency without that step).
+
+## Card pictures
+
+`stage/assets/cards/` holds one 64² picture per Narabete! Time Line card (56, named by card id, for
+example `konbini.ice.png`; `cardPicture` in `shared/src/modes/narabete/cards.ts`). PixelLab
+`pixflux`, text only, one shared prompt prefix (single object, centred, thick dark outline, no text)
+plus the card's subject; each entry in the manifest has its prompt, params and seed. 26 were redrawn
+after the art panel (28 Oct 2026) by picking the best of several seeds. `tools/art/sources/center-cards.py`
+centres each picture on its visible pixels.
+
+The TV shows a card's picture at 2× (128 px) on a navy tile while the line is face down, 64 px with
+seven or more cards, and as a 64 px sticker in the corner once the card flips (five cards or fewer).
+The phone shows the dealt card's picture at 3× (192 px). A picture that fails to load falls back to
+the card's emoji. Feelings rounds have no pictures yet (their ready answers still use emoji).
 
 ## Backdrop
 

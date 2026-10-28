@@ -69,13 +69,20 @@ function miniLine(ctx: Ctx): HTMLElement {
 
 // ---- your card ----
 
+/** Your card's pixel picture, or its emoji if the picture can't load. */
+function picture(src: string, emoji: string): HTMLElement {
+  const box = h('span', { class: 'nb-mycard-emoji', 'aria-hidden': 'true' });
+  box.append(h('img', { class: 'nb-mycard-pic', src, alt: '', draggable: 'false', onerror: () => box.replaceChildren(emoji) }));
+  return box;
+}
+
 function timeCard(me: Me, compact = false): HTMLElement | null {
   const t = me.time;
   if (!t) return null;
   return h(
     'div',
     { class: `nb-mycard${compact ? ' compact' : ''}` },
-    h('span', { class: 'nb-mycard-emoji', 'aria-hidden': 'true' }, t.emoji),
+    picture(t.picture, t.emoji),
     h('p', { class: 'nb-mycard-clock' }, t.label),
     h('p', { class: 'nb-mycard-en' }, t.en),
     t.jp ? jpView({ ...t.jp, en: null, romaji: t.romaji }, me.level, { cls: 'nb-mycard-jp' }) : null,
