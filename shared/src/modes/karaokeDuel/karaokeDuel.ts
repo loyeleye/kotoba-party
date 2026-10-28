@@ -541,7 +541,7 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     host: 'nobiko',
     minPlayers: 2,
     maxPlayers: 8,
-    roundChoices: [4, 2, 6],
+    roundChoices: [4, 2, 6, 8],
     usesPack: false,
     phrasebookTitle: 'Song sheet',
     phaseLabels: { prompt: 'Song card', answer: 'Sing', reveal: 'Crowd vote', score: 'Duel result', finale: 'Finale' },
