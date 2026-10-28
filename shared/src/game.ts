@@ -43,6 +43,8 @@ export interface GameState {
   remoteControl: boolean;
   /** The host's Audience setting: kids, family (default) or cheeky. Kept across games. */
   audience: Audience;
+  /** Scores and phrasebooks as they were just before this game started, so ending it early can put them back. */
+  beforeGame: { scores: Record<string, number>; phrasebook: Record<string, PhraseEntry[]> } | null;
 }
 
 export interface GameContext {
@@ -87,6 +89,7 @@ export function createGame(code: string): GameState {
     recap: null,
     remoteControl: false,
     audience: 'family',
+    beforeGame: null,
   };
 }
 
@@ -217,6 +220,7 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (state.players.length > mode.info.maxPlayers) return fail('too-many-players');
       state.mode = cmd.mode;
       state.packId = typeof cmd.packId === 'string' ? cmd.packId : null;
+      state.beforeGame = { scores: Object.fromEntries(state.players.map((p) => [p.id, p.score])), phrasebook: state.phrasebook };
       for (const p of state.players) p.score = 0;
       state.phrasebook = {};
       state.recap = null;
@@ -271,6 +275,18 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
     case 'playAgain': {
       if (state.phase !== 'recap') return fail('wrong-phase');
       if (!isVip && !isStage) return fail('not-vip');
+      resetToLobby(state);
+      return OK;
+    }
+    case 'endGame': {
+      // Back to the game picker mid-game (the wrong game was picked): same room, same players,
+      // and everyone's score goes back to what it was when this game started.
+      if (!inGame(state)) return fail('wrong-phase');
+      if (!isVip && !isStage) return fail('not-vip');
+      if (state.beforeGame) {
+        for (const p of state.players) p.score = state.beforeGame.scores[p.id] ?? 0;
+        state.phrasebook = state.beforeGame.phrasebook;
+      }
       resetToLobby(state);
       return OK;
     }
@@ -362,6 +378,7 @@ function resetToLobby(state: GameState): void {
   state.modeState = null;
   state.host = null;
   state.recap = null;
+  state.beforeGame = null;
 }
 
 function lowestFreeSeat(state: GameState): number {

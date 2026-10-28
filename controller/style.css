@@ -200,6 +200,11 @@ body[data-mode] .timer { color: var(--on-accent); }
 .fold-title { display: grid; gap: 1px; font-weight: 700; }
 .fold-title small { font-weight: 400; color: var(--muted); font-size: 13px; }
 .fold-body { padding: 0 14px 14px; }
+.vip-game { margin-top: 24px; }
+.end-ask { display: grid; gap: 10px; text-align: left; }
+.end-ask p { margin: 0; }
+.end-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.secondary.end-yes { border-color: var(--accent); color: var(--accent); }
 .fold-body .inv { border: 0; padding: 0; background: none; box-shadow: none; }
 
 /* An on/off setting as a full-width row with a switch at the thumb end. */

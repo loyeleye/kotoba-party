@@ -138,6 +138,8 @@ export type Command =
   | { id: string; type: 'micCheck'; utterance: unknown }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' }
+  /** VIP or stage: abandons the game in progress and goes back to the lobby, scores as they were before it. */
+  | { id: string; type: 'endGame' }
   /** The VIP's Calm motion switch: stage and phones swap movement for fades and still frames. */
   | { id: string; type: 'setMotion'; calm: boolean }
   /** Main stage only: room settings (either or both). */

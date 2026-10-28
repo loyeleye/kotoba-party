@@ -42,4 +42,7 @@
 .st-btn:disabled { opacity: 0.5; cursor: default; }
 .st-confirm { display: grid; gap: 8px; padding: 16px 18px; border: 2px solid var(--bad); border-radius: 10px; background: color-mix(in srgb, var(--bad) 10%, var(--panel)); }
 .st-confirm p { margin: 0; }
+/* End this game asks too, but it only drops one game's points, so the frame is the accent, not red. */
+.st-confirm-calm { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+.st-game:empty { display: none; }
 .st-confirm .st-row { margin-top: 6px; }

@@ -272,7 +272,8 @@ function render(view: RoomView): void {
   const mode = view.game ? PHONE_MODES[view.game.mode] : null;
   const hold = view.game ? (mode!.hold?.(view, view.game, me.id) ?? null) : null;
   const modeKey = view.game ? mode!.key(view, view.game, me.id) : '';
-  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, hold].join('|') : [
+  if (!view.game) endAsk = false;
+  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, hold, endAsk].join('|') : [
     view.phase,
     view.phaseSeq,
     isVip,
@@ -281,6 +282,7 @@ function render(view: RoomView): void {
     me.mic,
     view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}`).join() + view.modes.length + view.packs.length : '',
     modeKey,
+    endAsk,
   ].join('|');
   if (key === screenKey) return;
   screenKey = key;
@@ -324,7 +326,39 @@ function dockTalk(): void {
 function screenFor(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   if (view.phase === 'lobby') return lobby(view, me, isVip);
   if (view.phase === 'recap' || !view.game) return recap(view, me, isVip);
-  return PHONE_MODES[view.game.mode].render({ view, game: view.game, me, isVip, send: play, flash, redraw });
+  const screen = PHONE_MODES[view.game.mode].render({ view, game: view.game, me, isVip, send: play, flash, redraw });
+  if (isVip) screen.append(endGameFold(view));
+  return screen;
+}
+
+/** End game has been tapped once and is asking to be sure. */
+let endAsk = false;
+
+/**
+ * The VIP's way out of a game picked by mistake: back to the menu, same room and players.
+ * Scores go back to what they were when the game started, so it asks once first.
+ */
+function endGameFold(view: RoomView): HTMLElement {
+  const title = view.mode ? MODES[view.mode].info.title : 'this game';
+  const body = endAsk
+    ? h(
+        'div',
+        { class: 'end-ask', role: 'alertdialog', 'aria-label': `End ${title}?` },
+        h('p', {}, h('strong', {}, `End ${title} for everyone?`), ' Points from this game are dropped; scores go back to what they were when it started.'),
+        h(
+          'div',
+          { class: 'end-row' },
+          h('button', { type: 'button', class: 'secondary', onclick: () => ((endAsk = false), redraw()) }, 'Keep playing'),
+          h('button', { type: 'button', class: 'secondary end-yes', onclick: () => void command({ type: 'endGame' }) }, 'Yes, end game'),
+        ),
+      )
+    : h(
+        'div',
+        { class: 'end-ask' },
+        h('p', { class: 'hint' }, `Picked the wrong game? Stop ${title} and go back to the menu. Everyone stays in the room.`),
+        h('button', { type: 'button', class: 'secondary', onclick: () => ((endAsk = true), redraw()) }, '↩ End game, pick another…'),
+      );
+  return h('div', { class: 'vip-game' }, fold('vip-game', 'VIP controls', 'End this game', body));
 }
 
 /** The three levels as one segmented row; the chosen level's "I can…" line sits under it. */
