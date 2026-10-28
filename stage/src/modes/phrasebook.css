@@ -1,0 +1,63 @@
+/* The stage's Phrasebook (stage/src/phrasebook.ts): a gold button beside Settings in the lobby and
+   the recap, and a panel of washi phrase cards readable from the sofa. One status scale with the
+   phone: green said, amber practise; told apart by shape too (solid and dashed chips, ✓ and ↻). */
+.spb-open { position: absolute; top: 6px; left: 470px; z-index: 5; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; background: transparent; color: var(--muted); border: 2px solid var(--line); border-radius: 10px; padding: 2px 14px 2px 8px; font: 700 19px var(--font-body); cursor: pointer; }
+.spb-open.has { background: var(--gold); color: var(--outline); border-color: var(--outline); box-shadow: 0 3px 0 var(--outline); }
+.spb-open[hidden], .spb-panel[hidden], .spb-scrim[hidden], .spb-count[hidden] { display: none; }
+.spb-open[aria-expanded='true'] { box-shadow: none; translate: 0 2px; }
+.spb-book { width: 28px; height: 28px; object-fit: contain; image-rendering: pixelated; }
+.spb-count { min-width: 28px; padding: 0 6px; border-radius: 999px; background: var(--outline); color: var(--gold); font-size: 16px; text-align: center; }
+/* The now-playing line (music.css) starts where this button sits: it moves along while the button shows. */
+body:has(.spb-open:not([hidden])) .mu-now { left: 660px; max-width: 710px; }
+.spb-scrim { position: absolute; inset: 0; z-index: 19; background: rgba(8, 4, 24, 0.7); }
+.spb-panel { position: absolute; top: 56px; left: 96px; right: 96px; bottom: 36px; z-index: 20; display: grid; grid-template-rows: auto auto 1fr; gap: 14px; padding: 20px 32px 24px; background: var(--panel); color: var(--ink); border: 3px solid var(--outline); border-radius: 16px; box-shadow: 0 8px 0 var(--outline), 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 1px var(--line); text-align: left; animation: spb-in 220ms ease-out both; }
+@keyframes spb-in { from { opacity: 0; translate: 0 12px; } }
+.spb-head { display: flex; align-items: center; gap: 14px; }
+.spb-fude { width: 64px; height: 64px; image-rendering: pixelated; }
+.spb-head h2 { margin: 0; font: 700 40px var(--font-pixel); color: var(--gold); text-shadow: 0 3px 0 var(--outline); }
+.spb-title-ja { font: 700 30px var(--font-ja); color: var(--muted); text-shadow: none; margin-left: 8px; }
+.spb-title-ja rt { font-size: 15px; color: var(--muted); }
+.spb-close { margin-left: auto; background: var(--panel); color: var(--ink); border: 3px solid var(--outline); box-shadow: 0 3px 0 var(--outline), inset 0 0 0 1px var(--line); border-radius: 10px; font: 800 26px var(--font-body); width: 56px; height: 56px; cursor: pointer; }
+.spb-tabs { display: flex; flex-wrap: wrap; gap: 10px; }
+.spb-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 50px; padding: 6px 22px; border-radius: 10px; border: 2px solid var(--line); background: transparent; color: var(--muted); font: 700 23px var(--font-body); cursor: pointer; }
+.spb-tab[aria-selected='true'] { background: var(--gold); border-color: var(--outline); color: var(--outline); box-shadow: 0 3px 0 var(--outline); }
+.spb-tab[aria-selected='true'] .spb-seat { text-shadow: 0 0 2px var(--outline), 0 0 2px var(--outline); }
+.spb-open:focus-visible, .spb-close:focus-visible, .spb-tab:focus-visible, .spb-page:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
+.spb-tab[aria-selected='true']:focus-visible { outline-color: var(--ink); }
+.spb-body { min-height: 0; display: grid; grid-template-rows: auto 1fr auto; gap: 14px; }
+.spb-lede, .spb-hint { margin: 0; color: var(--muted); font-size: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.spb-legend { display: inline-flex; gap: 10px; }
+.spb-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 16px; min-height: 0; }
+.spb-card { --romaji: #7a4a00; display: grid; align-content: start; gap: 2px; min-height: 0; overflow: hidden; padding: 14px 20px 12px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--outline); border-left: 12px solid #b8a99a; box-shadow: 0 4px 0 var(--outline); }
+.spb-card.said { border-left-color: #1f9e6b; }
+.spb-card.practise { border-left-color: #e0a100; }
+.spb-card p { margin: 0; }
+.spb-jp { font-size: 38px; font-weight: 800; line-height: 1.2; }
+.spb-kana { font-size: 30px; font-weight: 600; color: #3f2a48; }
+.spb-romaji { font-size: 24px; font-style: italic; color: var(--romaji); }
+.spb-en { font-size: 26px; font-weight: 600; margin-bottom: 4px !important; }
+.spb-who { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding-top: 6px; border-top: 2px dotted color-mix(in srgb, var(--paper-muted) 45%, transparent); }
+.spb-who + .spb-who { border-top: 0; padding-top: 2px; }
+.spb-who-label { font-size: 20px; font-weight: 800; min-width: 128px; }
+.spb-who.said .spb-who-label { color: #17744f; }
+.spb-who.practise .spb-who-label { color: #8a5a00; }
+/* Name chips: solid green for said, dashed amber for practise, each with the player's seat shape. */
+.spb-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 1px 12px; border-radius: 8px; font: 700 22px var(--font-body); white-space: nowrap; }
+.spb-chip.said { background: #d4f5e6; color: #0f5c3d; border: 2px solid #1f9e6b; }
+.spb-chip.practise { background: #fff1c7; color: #6b4300; border: 2px dashed #c48a00; }
+.spb-legend .spb-chip { font-size: 20px; min-height: 32px; }
+.spb-seat { font-size: 0.9em; text-shadow: 0 0 1px #000, 0 0 1px #000; }
+.spb-mode { margin-top: auto !important; padding-top: 4px; font-size: 20px; color: var(--paper-muted); }
+.spb-mode rt { font-size: 11px; color: var(--paper-muted); }
+.spb-pager { display: flex; align-items: center; justify-content: center; gap: 24px; }
+.spb-page { min-width: 150px; min-height: 52px; border-radius: 10px; border: 3px solid var(--outline); background: var(--accent); color: var(--on-accent); box-shadow: 0 4px 0 var(--outline); font: 800 22px var(--font-body); cursor: pointer; }
+.spb-page:disabled { background: transparent; color: var(--muted); border: 2px dashed var(--line); box-shadow: none; cursor: default; }
+.spb-where { min-width: 150px; text-align: center; color: var(--ink); font: 700 24px var(--font-body); font-variant-numeric: tabular-nums; }
+.spb-empty { display: grid; gap: 8px; padding: 60px 0; text-align: center; }
+.spb-empty > p:first-child { margin: 0; font-size: 34px; font-weight: 700; }
+.spb-empty .spb-hint { justify-content: center; }
+.spb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Nothing moves behind the panel while it's up. */
+body.spb-up .danmaku, body.spb-up .danmaku * { animation-play-state: paused !important; }
+body[data-motion='calm'] .spb-panel { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .spb-panel { animation: none; } }

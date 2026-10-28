@@ -75,6 +75,7 @@ export default {
       if (action === 'join' && req.method === 'POST') return toRoom(env, code, 'join', { base }, await limited(req));
       if (action === 'watch' && req.method === 'POST') return toRoom(env, code, 'watch', { base }, new Request('https://room/', { method: 'POST' }));
       if (action === 'qr.svg' && req.method === 'GET') return toRoom(env, code, 'qr.svg', { base }, req);
+      if (action === 'phrasebook' && req.method === 'GET') return toRoom(env, code, 'phrasebook', { token: bearerOf(req) }, req);
       if (action === 'audio' && m[3] && req.method === 'GET') return toRoom(env, code, 'audio', { id: decodeURIComponent(m[3]) }, req);
       if (action === 'speech' && req.method === 'POST') {
         const auth = req.headers.get('authorization');

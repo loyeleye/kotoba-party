@@ -8165,6 +8165,266 @@
         "height": 32
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-bakezori.png",
+      "what": "Yōkai book sprite on the phone: bakezōri, a straw sandal come alive",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, no ghost body: the creature IS one old woven straw sandal (zori), an oval flat sandal sole of woven yellow-tan straw standing upright on its heel, a red cloth strap in a V on top, one big round cartoon eye in the middle of the straw sole, a wide grinning mouth with a pink tongue below it, two thin stick legs and two tiny stick arms",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-kitsunebi.png",
+      "what": "Yōkai book sprite on the phone: kitsunebi",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, a small fluffy cream-white fox spirit (kitsune) sitting, big friendly eyes, a red kitsune shrine bib around its neck, a soft blue-white flame floating above its bushy tail like a lantern",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-kappa.png",
+      "what": "Yōkai book sprite on the phone: kappa",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, a small chubby friendly kappa river yokai, mint green skin, a yellow beak, a turtle shell on its back, a plate of water on the top of its head ringed with dark hair, big shiny eyes, waving one webbed hand",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-hitodama.png",
+      "what": "Yōkai book sprite on the phone: hitodama",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, a floating ghost fireball (hitodama), a round pale blue-white flame head with a long wispy tapering tail curling below, big cute eyes and a small smile, soft glow",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-dobin.png",
+      "what": "Yōkai book sprite on the phone: dobin",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, a living old Japanese clay teapot (dobin tsukumogami), round brown glazed body, a woven bamboo handle on top, a short spout like a nose, two big eyes and a cheeky smile on the pot, steam curling from the lid, tiny legs",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-nekomata.png",
+      "what": "Yōkai book sprite on the phone: nekomata",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, a cute nekomata cat yokai sitting upright, black and white cat with a red collar and a little gold bell, two tails forked and curling up behind it, a pale ghost flame floating at the tip of each tail, big eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-toro.png",
+      "what": "Yōkai book sprite on the phone: a stone garden lantern (tōrō) come alive",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, no ghost body: the creature IS a small grey stone Japanese garden lantern (ishi-doro): a pointed roof cap, a light box with a square window glowing warm orange, a short pillar and a wide base, two big friendly eyes and a small smile carved in the light box, a little green moss on the roof, standing on stubby stone feet",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-daruma.png",
+      "what": "Yōkai book sprite on the phone: daruma",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, a living red daruma doll yokai, round red body with gold trim, white face with big bold eyebrows and a moustache drawn on, both eyes open and shiny, wobbling cheerfully, tiny arms",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-kodama.png",
+      "what": "Yōkai book sprite on the phone: kodama",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, a tiny round white kodama tree spirit, smooth pale body like a little pebble, three simple dark hole eyes and mouth, head tilted, a small green leaf sprout on top, mossy patch at its feet",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/yokai/book/yokai-tsurube.png",
+      "what": "Yōkai book sprite on the phone: tsurube",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Cute friendly Japanese yokai ghost sprite for a playful-spooky party game, front view, centred, soft pastel ghost colours, no text, no letters, no symbols, a tsurube-otoshi yokai: a big round head with wild orange hair dropping down from a pine branch above, grinning with big eyes, playful rather than scary, pine needles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 128,
+        "height": 128
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/key.png",
+      "what": "Sign-in UI icon: key",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. an old Japanese brass key with a round bow and a red tassel cord tied to it, gold metal, simple chunky shape, tilted diagonally",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 64,
+        "height": 64
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/hanko.png",
+      "what": "Sign-in UI icon: hanko",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. a square red ink seal impression (hanko stamp print) on paper, a thick rough square red border with an empty blank middle, uneven faded ink texture, completely flat, no 3D, no shadow, no characters inside",
+      "params": {
+        "outline": "lineless",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 64,
+        "height": 64
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/speaker.png",
+      "what": "Sign-in UI icon: speaker",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. a small retro loudspeaker horn icon with three curved sound waves coming out of it, cream and gold, chunky simple shape",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 64,
+        "height": 64
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/icons/phrasebook.png",
+      "what": "The stage's Phrasebook button: a small closed notebook",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, thick dark outline, no text, no letters, no numbers. a small closed Japanese notebook (techo) with a vermilion red cloth cover and a cream paper edge, a gold string bookmark ribbon hanging out of the bottom, a small white label rectangle on the cover, flat front view",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 64,
+        "height": 64
+      },
+      "post": {
+        "trim": true
+      }
     }
   ]
 }

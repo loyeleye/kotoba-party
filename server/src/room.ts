@@ -234,6 +234,11 @@ export class Room {
     return { playerId, token, rejoined: false };
   }
 
+  /** The seated players who joined signed in, for the stage's Phrasebook. */
+  signedIn(): { playerId: string; account: string }[] {
+    return [...this.accounts].filter(([id]) => this.seated(id)).map(([playerId, account]) => ({ playerId, account }));
+  }
+
   /** Signing in (or out) between games takes effect from the next one. */
   private setAccount(playerId: string, account: unknown): void {
     if (typeof account === 'string' && account.length > 0 && account.length <= 200) this.accounts.set(playerId, account);

@@ -21,6 +21,7 @@ import { canSpeakHost, speakHost, stopHostSpeech } from './hostSpeech.js';
 import { joinAudioTabs } from '../../shared/src/audioTabs.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
+import { mountPhrasebook, setPhrasebookSource, updatePhrasebook } from './phrasebook.js';
 import { setClipSource } from './modes/dubAudio.js';
 import { sfx, tickSfx, watchSfx } from './music/sfx.js';
 import { playRoulette } from '../../shared/src/roulette.js';
@@ -92,6 +93,7 @@ $('debug').hidden = !DEBUG;
 mountBackdrop(els.canvas, () => client?.remainingMs() ?? null);
 mountSoundButton(els.canvas);
 mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteOrigin });
+mountPhrasebook(els.canvas);
 $('debug-tag').hidden = !DEBUG;
 document.body.dataset.watch = WATCH ? '1' : '';
 if (WATCH) {
@@ -255,6 +257,7 @@ async function openRoom(fresh: boolean): Promise<void> {
   client.connect();
   const c = client;
   setClipSource({ base, code, token: session.stageToken, watch: !!WATCH, serverNow: () => Date.now() + c.clockOffset });
+  setPhrasebookSource(WATCH ? null : { base, code, token: session.stageToken });
 }
 
 let lastView: RoomView | null = null;
@@ -302,6 +305,7 @@ function render(view: RoomView, v: number): void {
   updateMusic(view);
   watchSfx(view);
   updateSettings(view);
+  updatePhrasebook(view);
   showCredits(view.phase === 'recap');
 
   const stageMode = view.game ? STAGE_MODES[view.game.mode] : null;

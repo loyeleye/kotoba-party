@@ -1,12 +1,16 @@
 # Optional sign-in and saved progress
 
 Signing in is optional. It is never needed to join a game, open the stage or host. A signed-in player
-keeps two things between game nights:
+keeps three things between game nights:
 
 - **Yōkai cards.** Each kana they meet in Kana Yōkai Raid becomes a card in a Leitner queue (boxes of
   1, 3, 7, 14 and 30 days). Only a right answer from memory moves a card up: said, typed or drawn, not
   picked from options (design doc). A miss sends it back to tomorrow. A kana recalled right on **3
-  different days** (in the player's own time zone) is *caught* and stamped 封 in their yōkai book.
+  different days** (in the player's own time zone) is *caught* and sealed with a 封印 hanko in their
+  yōkai book. Each kana has its own yōkai, from the Raid's four and ten drawn for the book.
+- **A saved phrasebook.** Every game's phrasebook (said, retried, missed or just seen) is saved too,
+  up to 600 phrases, each in its own Leitner queue: said from memory moves it up a box, a retry or a
+  miss brings it back tomorrow, seen only adds it. Kana Raid's kana stay yōkai cards, not phrases.
 - **Scores from every game.** Each finished game's mode, date, score, place, player count and awards.
   My progress shows the best score per game and the last 30 games.
 
@@ -15,18 +19,39 @@ Decided by Ladi on 2026-10-28 (the Kana Raid saved-progress question in
 
 ## On the phone
 
-- **Join screen:** under Join, *🔑 Sign in to save progress* with a one-line note ("Optional…"). Once
-  signed in it becomes *✓ Saving as Aki · My progress*. The join name is filled from the save if empty.
+- **Join screen:** under Join, two quiet outline chips side by side: *Sign in to save* (pixel key) and
+  *Host a game* (Pon). Join stays the one heavy button. Signed in, the first chip turns green and reads
+  *Aki · Progress*. One status line under the chips holds notices ("✓ Signed in as Aki. Now join a
+  room.", "You were signed out on this phone…") and *Not Aki? Sign out* when the typed name differs.
+  On an invite link Host is left out and the sign-in chip takes the row. The typed room code and name
+  survive the trip to the sign-in page. Chosen by the art panel on 2026-10-28 (all five picked it over
+  top-corner chips, side-by-side tiles and a ☰ menu) after Ladi found the stacked buttons busy;
+  reviews in `/mnt/project-files/sign-in/join-layout/`.
 - **Sign-in page:** *Sign in with a passkey* (signed in before, on any phone the passkey syncs to) or
   *Create a passkey* with a name for the save. Cancelling is calm ("Cancelled. Nothing was saved.").
   On an http LAN address or a browser without passkeys the buttons are off and the page says why.
-- **My progress:** two tabs, *Yōkai cards* (review button with the number due, caught and met counts,
-  the book) and *Scores*. At the bottom: *Sign out on this phone* and *Delete my saved progress* (asks
+- **My progress:** three tabs, *Yōkai cards* (review button with the number due, caught and met counts,
+  the book), *Phrasebook* (the 200 most recent phrases with how each last went, and *Practise now* for
+  the due ones) and *Scores*. At the bottom: *Sign out on this phone* and *Delete my saved progress* (asks
   first). Deleting also asks the phone to forget the passkey where the browser supports it.
 - **Review:** one due card at a time (up to 12, about 3 minutes): type its sound in romaji (Hepburn or
-  the usual variants: si, tu, hu), or *I don't know*. Right answers count towards catching.
+  the usual variants: si, tu, hu, or the romaji the card shows, with long vowels single or doubled),
+  or *I don't know*. Right answers count towards catching. The yōkai hops when you're right and drifts
+  off when you're not; a catch stamps 封印 on the card and buzzes once.
+- **Phrase practice:** one due phrase at a time: the English, *Show the Japanese* (with kana, romaji
+  and *Hear it*), then *I said it* or *Not yet*. Self-graded, because a phrase said out loud can't be
+  checked by typing, and a generous mark only costs the player.
 - **Recap:** a signed-in player sees *✓ Saved to Aki's progress*. Kana Raid's recap note says the
   cards were saved, or that signing in keeps them.
+
+## On the stage
+
+In the lobby and the recap a *Phrasebook* button sits beside *⚙ Settings*. It opens a panel (ことば帳)
+with a *Tonight* tab, every phrase from tonight's finished games (newest first, up to 300) with who
+said it (✓) and who should practise it (↻), and one tab per signed-in player with their 40 most recent
+saved phrases. It reads `GET /api/rooms/:code/phrasebook` with the stage token each time it opens and
+closes itself when a game starts. Watching screens don't show it. Tonight's list lives in the room
+(`GameState.tonight`), so it works for everyone, signed in or not.
 
 ## How it works
 
@@ -61,12 +86,17 @@ All under `/api/account/`, JSON. See also [protocol.md](protocol.md).
 | `POST register/verify` | — | `{ response, tz }` | `{ token, account }`; 400 `expired`, `not-verified` |
 | `POST login/options` | — | `{}` | `{ options }` for `navigator.credentials.get` |
 | `POST login/verify` | — | `{ response, tz }` | `{ token, account }`; 400 `expired`, `not-verified`; 404 `unknown-passkey` (its save was deleted) |
-| `GET me?tz=` | Bearer | — | `{ account: { name, cards, due, games, bests } }`; 401 `signed-out` |
+| `GET me?tz=` | Bearer | — | `{ account: { name, cards, due, games, bests, phrases, duePhrases } }`; 401 `signed-out` |
 | `POST review` | Bearer | `{ itemId, answer }` | `{ right, expected, card, caught }`; 404 `no-card` |
+| `POST review` | Bearer | `{ kind: 'phrase', itemId, knew }` | `{ phrase }`; 404 `no-card` |
 | `POST signout` | Bearer | `{}` | `{ ok }` (ends this phone's session only) |
 | `POST delete` | Bearer | `{}` | `{ ok, credentials }`: the save, its passkeys and every session are gone |
 
 `tz` is the phone's `Date.getTimezoneOffset()`, used to tell which day a right answer falls on.
+
+The stage reads `GET /api/rooms/:code/phrasebook` (stage token): `{ tonight, saved }`, where `saved` is
+each seated, signed-in player's `{ playerId, name, phrases }` ([protocol.md](protocol.md)). On
+Cloudflare the room's Durable Object asks `AccountsObject` for them (`POST /phrasebooks`).
 
 ## Open questions
 

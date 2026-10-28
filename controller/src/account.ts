@@ -7,7 +7,7 @@ import { h, mount } from '../../shared/src/dom.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MODES } from '../../shared/src/modes/registry.js';
-import { CATCH_DAYS, type AccountView, type Card } from '../../shared/src/progress.js';
+import { CATCH_DAYS, type AccountView, type Card, type PhraseCard } from '../../shared/src/progress.js';
 import { hearButton } from './components/voice.js';
 
 /** What this phone keeps after signing in. The token is the only key to the account. */
@@ -59,29 +59,47 @@ async function api<T>(path: string, body?: unknown): Promise<{ status: number; d
 // ---- the join screen's panel ----
 
 /**
- * Under Join: a way in when signed out, and who is saving when signed in. `screens` opens the
- * full-screen pages; `nameInput` lends its name to a new save.
+ * Under Join: two quiet chips side by side, the save (a way in when signed out, who is saving when
+ * signed in) and `host` when there is one, with one status line under them for notices and "Not Aki?".
+ * `screens` opens the full-screen pages; `nameInput` lends its name to a new save.
  */
-export function accountPanel(nameInput: HTMLInputElement, screens: { back: () => void; app: HTMLElement }): HTMLElement {
+export function accountPanel(nameInput: HTMLInputElement, screens: { back: () => void; app: HTMLElement }, host: HTMLElement | null = null): HTMLElement {
   const a = account();
-  if (!a)
-    return h(
-      'section',
-      { class: 'acct-panel', 'aria-label': 'Saved progress' },
-      h('button', { type: 'button', class: 'secondary acct-signin', onclick: () => showSignIn(screens, nameInput.value) }, h('span', { 'aria-hidden': 'true' }, '🔑 '), 'Sign in to save progress'),
-      h('p', { class: 'acct-note' }, 'Optional. Keeps your yōkai cards and scores from every game. No email.'),
-    );
-  return h(
-    'section',
-    { class: 'acct-panel in', 'aria-label': 'Saved progress' },
-    h(
+  const said = notice;
+  notice = '';
+  const status = h('p', { class: `acct-status-line${a ? '' : ' bad'}`, role: 'status' }, said);
+  let chip: HTMLElement;
+  if (!a) {
+    chip = h(
       'button',
-      { type: 'button', class: 'acct-me', onclick: () => void showProgress(screens) },
-      h('span', { class: 'acct-check', 'aria-hidden': 'true' }, '✓'),
-      h('span', { class: 'acct-me-text' }, h('strong', {}, `Saving as ${a.name}`), h('small', {}, 'Your yōkai cards and scores')),
-      h('span', { class: 'acct-go' }, 'My progress'),
-    ),
-  );
+      { type: 'button', class: 'join-chip', 'aria-label': 'Sign in to save your progress (optional)', onclick: () => showSignIn(screens, nameInput.value) },
+      h('span', { class: 'acct-key', 'aria-hidden': 'true' }),
+      h('span', { class: 'join-chip-text' }, 'Sign in to save'),
+    );
+  } else {
+    chip = h(
+      'button',
+      { type: 'button', class: `join-chip in${said ? ' just' : ''}`, 'aria-label': `Saving as ${a.name}. Open my progress`, onclick: () => void showProgress(screens) },
+      h('span', { class: 'join-chip-dot', 'aria-hidden': 'true' }),
+      h('span', { class: 'join-chip-text' }, h('span', { class: 'join-chip-name' }, a.name), ' · Progress'),
+    );
+    // A phone passed around the party: someone else joining on it can step out of the save first.
+    const other = h('button', { type: 'button', class: 'acct-link acct-notme', onclick: () => void signOut(screens.back) }, `Not ${a.name}? Sign out`);
+    const sync = () => (other.hidden = !nameInput.value.trim() || nameInput.value.trim().toLowerCase() === a.name.toLowerCase());
+    nameInput.addEventListener('input', sync);
+    sync();
+    status.append(other);
+  }
+  return h('section', { class: `join-extras${host ? '' : ' solo'}`, 'aria-label': 'More' }, h('div', { class: 'join-chips' }, chip, host), status);
+}
+
+/** A line for the join screen's panel the next time it shows (signed in, or signed out by the server). */
+let notice = '';
+
+async function signOut(back: () => void): Promise<void> {
+  await api('signout', {}).catch(() => null);
+  saveAccount(null);
+  back();
 }
 
 // ---- sign in ----
@@ -102,10 +120,13 @@ function showSignIn(screens: { back: () => void; app: HTMLElement }, suggestedNa
   const ok = passkeysWork();
   const status = h('p', { class: 'acct-status', role: 'status', 'aria-live': 'polite' });
   const nameInput = h('input', { id: 'acct-name', autocomplete: 'nickname', maxlength: MAX_NAME_LENGTH, placeholder: 'Your name', value: suggestedName.trim(), enterkeyhint: 'go' }) as HTMLInputElement;
-  const signIn = h('button', { type: 'button', class: 'primary', disabled: !ok }, 'Sign in with a passkey') as HTMLButtonElement;
-  const create = h('button', { type: 'submit', class: 'secondary acct-wide', disabled: !ok }, 'Create a passkey') as HTMLButtonElement;
-  const busy = (on: boolean, text = '') => {
+  // New players are the common case, so creating comes first; a phone with a passkey offers it either way.
+  const create = h('button', { type: 'submit', class: 'primary', disabled: !ok }, 'Create a passkey') as HTMLButtonElement;
+  const signIn = h('button', { type: 'button', class: 'secondary acct-wide', disabled: !ok }, 'Sign in with my passkey') as HTMLButtonElement;
+  const labels = new Map([[create, create.textContent!], [signIn, signIn.textContent!]]);
+  const busy = (on: boolean, text = '', which?: HTMLButtonElement) => {
     signIn.disabled = create.disabled = on || !ok;
+    for (const [b, label] of labels) b.textContent = on && b === which ? 'Check your phone…' : label;
     status.className = 'acct-status';
     status.textContent = text;
   };
@@ -116,11 +137,12 @@ function showSignIn(screens: { back: () => void; app: HTMLElement }, suggestedNa
   };
   const done = (token: string, view: AccountView) => {
     saveAccount({ token, name: view.name });
+    notice = `✓ Signed in as ${view.name}. Now join a room.`;
     screens.back();
   };
 
   signIn.onclick = async () => {
-    busy(true, 'Waiting for your passkey…');
+    busy(true, 'Your phone will ask for your face, fingerprint or PIN.', signIn);
     try {
       const { data } = await api<{ options: Parameters<typeof startAuthentication>[0]['optionsJSON'] }>('login/options', {});
       if (!data.options) return fail('Could not reach the server. Try again.');
@@ -129,12 +151,12 @@ function showSignIn(screens: { back: () => void; app: HTMLElement }, suggestedNa
       if (res.status === 404) {
         // Its save was deleted: tell the phone to stop offering it.
         void sendSignal({ signalName: 'unknownCredential', rpID: location.hostname, credentialID: response.id }).catch(() => {});
-        return fail('That passkey’s save was deleted. Create a new one below.');
+        return fail('That passkey’s save was deleted. Create a new one above.');
       }
       if (!res.data.token) return fail('That didn’t work. Try again.');
       done(res.data.token, res.data.account);
     } catch (err) {
-      fail(passkeyError(err, 'No passkey found? Create one below.'));
+      fail(passkeyError(err, 'No passkey found? Create one above.'));
     }
   };
 
@@ -149,7 +171,7 @@ function showSignIn(screens: { back: () => void; app: HTMLElement }, suggestedNa
           nameInput.focus();
           return fail('Type a name for your save first.');
         }
-        busy(true, 'Waiting for your passkey…');
+        busy(true, 'Your phone will ask for your face, fingerprint or PIN.', create);
         try {
           const { data } = await api<{ options: Parameters<typeof startRegistration>[0]['optionsJSON'] }>('register/options', { name });
           if (!data.options) return fail(data.error === 'bad-name' ? `Pick a name of 1 to ${MAX_NAME_LENGTH} characters.` : 'Could not reach the server. Try again.');
@@ -164,6 +186,7 @@ function showSignIn(screens: { back: () => void; app: HTMLElement }, suggestedNa
     },
     h('label', { for: 'acct-name' }, 'Name for your save', nameInput),
     create,
+    h('p', { class: 'acct-note' }, 'Your phone will ask for your face, fingerprint or PIN. That’s the passkey.'),
   );
 
   const page = h(
@@ -173,8 +196,8 @@ function showSignIn(screens: { back: () => void; app: HTMLElement }, suggestedNa
     h('h2', {}, 'Save your progress'),
     h('p', { class: 'acct-lede' }, 'Keep your yōkai cards and scores, and pick them up on any phone. You can always play without signing in.'),
     ok ? null : h('p', { class: 'acct-status bad' }, window.isSecureContext ? 'This browser can’t use passkeys. Try a newer browser.' : 'Sign-in needs the game’s https address. Playing works without it.'),
-    h('div', { class: 'acct-block' }, h('h3', {}, 'Signed in before?'), signIn),
     h('div', { class: 'acct-block' }, h('h3', {}, 'New here?'), form),
+    h('div', { class: 'acct-block' }, h('h3', {}, 'Saved before, on this or another phone?'), signIn),
     status,
     h(
       'p',
@@ -198,7 +221,7 @@ function passkeyError(err: unknown, cancelled: string): string {
 
 // ---- my progress ----
 
-type Tab = 'cards' | 'scores';
+type Tab = 'cards' | 'phrases' | 'scores';
 let tab: Tab = 'cards';
 
 async function showProgress(screens: { back: () => void; app: HTMLElement }): Promise<void> {
@@ -216,6 +239,7 @@ async function showProgress(screens: { back: () => void; app: HTMLElement }): Pr
   if (res.status === 401) {
     // The save was deleted on another phone, or the sign-in ran out.
     saveAccount(null);
+    notice = 'You were signed out on this phone. Sign in again to keep saving.';
     screens.back();
     return;
   }
@@ -226,14 +250,23 @@ function renderProgress(screens: { back: () => void; app: HTMLElement }, view: A
   const a = account();
   if (view.name !== a?.name && a) saveAccount({ ...a, name: view.name });
   const tabButton = (id: Tab, label: string) =>
-    h('button', { type: 'button', role: 'tab', id: `acct-tab-${id}`, 'aria-selected': tab === id ? 'true' : 'false', 'aria-controls': 'acct-tabpanel', class: 'acct-tab', onclick: () => ((tab = id), renderProgress(screens, view)) }, label);
+    h('button', { type: 'button', role: 'tab', id: `acct-tab-${id}`, 'aria-selected': tab === id ? 'true' : 'false', 'aria-controls': 'acct-tabpanel', tabindex: tab === id ? '0' : '-1', class: 'acct-tab', onclick: () => ((tab = id), renderProgress(screens, view)) }, label);
+  // Tabs pattern: arrow keys move between them.
+  const onKey = (e: KeyboardEvent) => {
+    const order: Tab[] = ['cards', 'phrases', 'scores'];
+    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (!step) return;
+    e.preventDefault();
+    tab = order[(order.indexOf(tab) + step + order.length) % order.length]!;
+    renderProgress(screens, view);
+  };
   const page = h(
     'div',
     { class: 'acct-page' },
     backBar(screens.back),
     h('h2', {}, `${view.name}’s progress`),
-    h('div', { class: 'acct-tabs', role: 'tablist' }, tabButton('cards', 'Yōkai cards'), tabButton('scores', 'Scores')),
-    h('div', { id: 'acct-tabpanel', role: 'tabpanel', 'aria-labelledby': `acct-tab-${tab}` }, tab === 'cards' ? cardsTab(screens, view) : scoresTab(view)),
+    h('div', { class: 'acct-tabs', role: 'tablist', onkeydown: onKey as EventListener }, tabButton('cards', 'Yōkai cards'), tabButton('phrases', 'Phrasebook'), tabButton('scores', 'Scores')),
+    h('div', { id: 'acct-tabpanel', role: 'tabpanel', 'aria-labelledby': `acct-tab-${tab}` }, tab === 'cards' ? cardsTab(screens, view) : tab === 'phrases' ? phrasesTab(screens, view) : scoresTab(view)),
     accountFooter(screens),
   );
   mount(screens.app, page);
@@ -262,8 +295,15 @@ function cardsTab(screens: { back: () => void; app: HTMLElement }, view: Account
   );
 }
 
-const SPRITES = ['yokai-blob', 'yokai-lantern', 'yokai-umbrella', 'yokai-scroll'];
-/** The same sprite the stage gives this kana (stable by id). */
+/** The yōkai book's cast: the Raid's four, and ten more drawn for the book (stage/assets/yokai/book/). */
+const SPRITES = [
+  'yokai-blob',
+  'yokai-lantern',
+  'yokai-umbrella',
+  'yokai-scroll',
+  ...['daruma', 'dobin', 'hitodama', 'kappa', 'kitsunebi', 'kodama', 'nekomata', 'tsurube', 'bakezori', 'toro'].map((n) => `book/yokai-${n}`),
+];
+/** Each kana keeps the same yōkai (stable by id). */
 function spriteFor(id: string): string {
   let n = 0;
   for (const ch of id) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
@@ -276,17 +316,72 @@ function bookCard(c: Card): HTMLElement {
   const days = Math.min(c.days.length, CATCH_DAYS);
   return h(
     'li',
-    { class: `acct-card${isCaught ? ' caught' : ''}`, 'aria-label': `${c.char}, ${romaji}: ${isCaught ? 'caught' : `${days} of ${CATCH_DAYS} days`}` },
-    h('img', { class: 'acct-sprite', src: `/stage/assets/yokai/${spriteFor(c.itemId)}.png`, alt: '', width: 64, height: 64, loading: 'lazy', onerror: (e: Event) => (e.target as HTMLElement).remove() }),
+    { class: `acct-card${isCaught ? ' caught' : days ? ' near' : ''}`, 'aria-label': `${c.char} (${script(c)}), ${romaji}: ${isCaught ? 'caught' : `${days} of ${CATCH_DAYS} days`}` },
+    spriteWindow(c.itemId),
     h('span', { class: 'acct-kana', lang: 'ja' }, c.char),
-    h('span', { class: 'acct-romaji' }, romaji),
-    h('span', { class: 'acct-pips', 'aria-hidden': 'true' }, Array.from({ length: CATCH_DAYS }, (_, i) => h('i', { class: i < days ? 'on' : '' }))),
-    isCaught ? h('span', { class: 'acct-stamp', lang: 'ja', 'aria-hidden': 'true' }, '封') : null,
+    h('span', { class: 'acct-romaji' }, romaji, h('small', { lang: 'ja' }, script(c) === 'katakana' ? ' カタカナ' : script(c) === 'hiragana' ? ' ひらがな' : '')),
+    isCaught
+      ? h('span', { class: 'acct-caught-tag' }, 'Caught')
+      : h('span', { class: 'acct-pips', 'aria-hidden': 'true' }, Array.from({ length: CATCH_DAYS }, (_, i) => h('i', { class: i < days ? 'on' : '' }))),
+    isCaught ? hanko() : null,
+  );
+}
+
+/** Kana Raid's kana ids start h- (hiragana) or k- (katakana): あ and ア both read "a". */
+const script = (c: Pick<Card, 'itemId'>): string => (c.itemId.startsWith('h-') ? 'hiragana' : c.itemId.startsWith('k-') ? 'katakana' : 'kana');
+
+/** The 封印 seal a caught yōkai gets, like an ofuda sealing it into the book. */
+const hanko = (cls = ''): HTMLElement => h('span', { class: `acct-stamp ${cls}`, lang: 'ja', 'aria-hidden': 'true' }, h('span', {}, '封'), h('span', {}, '印'));
+
+/** The yōkai in a little dark window, so the pale sprites read on the paper card. */
+function spriteWindow(itemId: string, size: 'small' | 'big' = 'small'): HTMLElement {
+  const sprite = spriteFor(itemId);
+  return h(
+    'span',
+    { class: `acct-window ${size}`, 'aria-hidden': 'true' },
+    h('img', { class: `acct-sprite s-${sprite.replace('book/', '')}`, src: `/stage/assets/yokai/${sprite}.png`, alt: '', width: 128, height: 128, loading: 'lazy', onerror: (e: Event) => (e.target as HTMLElement).remove() }),
   );
 }
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 const ORDINAL = ['', '1st', '2nd', '3rd'];
+
+const OUTCOME: Record<PhraseCard['last'], string> = { said: 'Said it', retry: 'Second try', missed: 'Missed', seen: 'Seen' };
+
+function phrasesTab(screens: { back: () => void; app: HTMLElement }, view: AccountView): HTMLElement {
+  const phrases = view.phrases ?? [];
+  if (!phrases.length)
+    return h('div', { class: 'acct-empty' }, h('p', {}, 'No phrases yet.'), h('p', { class: 'acct-note' }, 'Every game you finish signed in adds what you said, retried and missed.'));
+  const due = view.duePhrases ?? [];
+  return h(
+    'div',
+    { class: 'acct-cards' },
+    due.length
+      ? h(
+          'div',
+          { class: 'acct-review' },
+          h('p', {}, h('strong', {}, `${due.length} ${due.length === 1 ? 'phrase' : 'phrases'} to practise`), h('small', {}, 'See the English, say it out loud in Japanese, then check.')),
+          h('button', { type: 'button', class: 'primary', onclick: () => practise(screens, due) }, 'Practise now'),
+        )
+      : h('p', { class: 'acct-review done' }, 'All caught up. More phrases come due tomorrow.'),
+    h('p', { class: 'acct-tally' }, h('strong', {}, `${phrases.filter((p) => p.box >= 2).length} sticking`), ` · ${phrases.length} saved`),
+    h(
+      'ul',
+      { class: 'acct-phrases' },
+      phrases.map((p) =>
+        h(
+          'li',
+          { class: `acct-phrase pb-${p.last}` },
+          h('span', { class: 'acct-ph-jp', lang: 'ja' }, p.text),
+          p.kana !== p.text ? h('span', { class: 'acct-ph-kana', lang: 'ja' }, p.kana) : null,
+          h('span', { class: 'acct-ph-romaji' }, toRomaji(p.kana)),
+          p.en ? h('span', { class: 'acct-ph-en' }, p.en) : null,
+          h('span', { class: 'acct-ph-meta' }, `${OUTCOME[p.last]} · ${MODES[p.mode]?.info.title ?? p.mode}`),
+        ),
+      ),
+    ),
+  );
+}
 
 function scoresTab(view: AccountView): HTMLElement {
   if (!view.games.length) return h('div', { class: 'acct-empty' }, h('p', {}, 'No games yet.'), h('p', { class: 'acct-note' }, 'Join a game while signed in and your scores land here.'));
@@ -316,7 +411,7 @@ function scoresTab(view: AccountView): HTMLElement {
           'li',
           {},
           h('span', { class: 'acct-when' }, dateFmt.format(g.at)),
-          h('span', { class: 'acct-mode' }, MODES[g.mode]?.info.title ?? g.mode, g.awards.map((aw) => h('small', { class: 'acct-award' }, '🏆 ', h('span', { lang: 'ja' }, aw.title), ` · ${aw.en}`))),
+          h('span', { class: 'acct-mode' }, MODES[g.mode]?.info.title ?? g.mode, g.awards.map((aw) => h('small', { class: 'acct-award' }, h('span', { class: 'acct-trophy', 'aria-hidden': 'true' }), h('span', { lang: 'ja' }, aw.title), ` · ${aw.en}`))),
           h('span', { class: 'acct-place' }, g.coop ? 'team' : g.place ? `${ORDINAL[g.place] ?? `${g.place}th`} of ${g.players}` : '–'),
           h('span', { class: 'acct-best' }, `${g.score}`),
         ),
@@ -343,9 +438,22 @@ function accountFooter(screens: { back: () => void; app: HTMLElement }): HTMLEle
   mount(
     confirm,
     h('p', { id: 'acct-del-q' }, h('strong', {}, 'Delete your saved progress?'), ' Your yōkai cards and scores go for good. This can’t be undone.'),
-    h('div', { class: 'acct-row' }, h('button', { type: 'button', class: 'secondary acct-danger', onclick: () => void del() }, 'Delete everything'), h('button', { type: 'button', class: 'secondary', onclick: () => ((confirm.hidden = true), ask.focus()) }, 'Keep it')),
+    // Keeping is the safe, filled default; deleting is the outlined one.
+    h('div', { class: 'acct-row' }, h('button', { type: 'button', class: 'secondary acct-danger', onclick: () => void del() }, 'Delete everything'), h('button', { type: 'button', class: 'primary acct-keep', onclick: () => ((confirm.hidden = true), ask.focus()) }, 'Keep it')),
   );
-  const ask = h('button', { type: 'button', class: 'acct-link danger', onclick: () => ((confirm.hidden = false), confirm.querySelector<HTMLElement>('.acct-danger')?.focus()) }, 'Delete my saved progress');
+  const ask = h(
+    'button',
+    {
+      type: 'button',
+      class: 'acct-link danger',
+      onclick: () => {
+        confirm.hidden = false;
+        confirm.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        confirm.querySelector<HTMLElement>('.acct-keep')?.focus();
+      },
+    },
+    'Delete my saved progress',
+  );
   return h(
     'footer',
     { class: 'acct-footer' },
@@ -354,11 +462,7 @@ function accountFooter(screens: { back: () => void; app: HTMLElement }): HTMLEle
       {
         type: 'button',
         class: 'acct-link',
-        onclick: async () => {
-          await api('signout', {}).catch(() => null);
-          saveAccount(null);
-          screens.back();
-        },
+        onclick: () => void signOut(screens.back),
       },
       'Sign out on this phone',
     ),
@@ -366,6 +470,77 @@ function accountFooter(screens: { back: () => void; app: HTMLElement }): HTMLEle
     confirm,
     status,
   );
+}
+
+// ---- phrase practice ----
+
+/** Due phrases: the English first; the player says it, checks, and marks it themselves. */
+function practise(screens: { back: () => void; app: HTMLElement }, phrases: PhraseCard[]): void {
+  let i = 0;
+  let knew = 0;
+  const toProgress = () => void showProgress(screens);
+  const ask = () => {
+    const p = phrases[i]!;
+    const answer = h('div', { class: 'acct-reveal', hidden: true, role: 'status', 'aria-live': 'polite' });
+    const marks = h('div', { class: 'acct-row', hidden: true });
+    const status = h('p', { class: 'acct-status bad', role: 'status' });
+    const show = h('button', { type: 'button', class: 'primary' }, 'Show the Japanese') as HTMLButtonElement;
+    const mark = async (yes: boolean) => {
+      for (const b of marks.querySelectorAll('button')) (b as HTMLButtonElement).disabled = true;
+      const res = await api('review', { kind: 'phrase', itemId: p.itemId, knew: yes }).catch(() => null);
+      if (!res || res.status !== 200) {
+        for (const b of marks.querySelectorAll('button')) (b as HTMLButtonElement).disabled = false;
+        status.textContent = 'Could not save that. Try again.';
+        return;
+      }
+      if (yes) knew += 1;
+      if (i === phrases.length - 1) finish();
+      else {
+        i += 1;
+        ask();
+      }
+    };
+    mount(
+      answer,
+      h('p', { class: 'acct-ph-jp big', lang: 'ja' }, p.text),
+      p.kana !== p.text ? h('p', { class: 'acct-ph-kana', lang: 'ja' }, p.kana) : null,
+      h('p', { class: 'acct-ph-romaji' }, toRomaji(p.kana)),
+      hearButton(p.kana, 'Hear it', 'raid-hear acct-hear'),
+    );
+    mount(marks, h('button', { type: 'button', class: 'secondary acct-wide', onclick: () => void mark(false) }, 'Not yet'), h('button', { type: 'button', class: 'primary', onclick: () => void mark(true) }, 'I said it'));
+    show.onclick = () => {
+      answer.hidden = false;
+      marks.hidden = false;
+      show.remove();
+      marks.querySelector<HTMLElement>('.primary')?.focus();
+    };
+    const page = h(
+      'div',
+      { class: 'acct-page' },
+      backBar(toProgress, 'Stop'),
+      h('h2', { class: 'acct-count' }, `Phrase ${i + 1} of ${phrases.length}`),
+      h('div', { class: 'acct-face acct-ph-face' }, h('p', { class: 'acct-ph-prompt' }, p.en || p.kana), h('small', {}, `From ${MODES[p.mode]?.info.title ?? p.mode} · say it out loud`)),
+      answer,
+      show,
+      marks,
+      status,
+    );
+    mount(screens.app, page);
+    show.focus();
+  };
+  const finish = () => {
+    const page = h(
+      'div',
+      { class: 'acct-page acct-done' },
+      h('h2', {}, 'Practice done!'),
+      h('p', { class: 'big' }, `${knew} of ${phrases.length} said`),
+      h('p', { class: 'acct-note' }, 'The ones you said wait longer before they come back; the rest return tomorrow.'),
+      h('button', { type: 'button', class: 'primary', onclick: toProgress }, 'Back to my progress'),
+    );
+    mount(screens.app, page);
+    focusHeading(page);
+  };
+  ask();
 }
 
 // ---- review ----
@@ -379,6 +554,7 @@ function review(screens: { back: () => void; app: HTMLElement }, cards: Card[]):
 
   const ask = () => {
     const card = cards[i]!;
+    const face = h('div', { class: 'acct-face', lang: 'ja' }, spriteWindow(card.itemId, 'big'), h('span', { class: 'acct-kana' }, card.char));
     const input = h('input', { id: 'acct-answer', inputmode: 'latin', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', enterkeyhint: 'done', placeholder: 'e.g. ka' }) as HTMLInputElement;
     const check = h('button', { type: 'submit', class: 'primary' }, 'Check') as HTMLButtonElement;
     const feedback = h('div', { class: 'acct-feedback', role: 'status', 'aria-live': 'polite' });
@@ -403,13 +579,21 @@ function review(screens: { back: () => void; app: HTMLElement }, cards: Card[]):
       }
       if (res.data.right) right += 1;
       if (res.data.caught) caught.push(card.char);
+      // The card reacts: the yōkai hops when you're right and drifts off when you're not; a catch
+      // stamps 封印 on it with a buzz.
+      face.classList.add(res.data.right ? 'is-right' : 'is-wrong');
+      face.append(h('span', { class: 'acct-face-romaji' }, res.data.expected));
+      if (res.data.caught) {
+        face.append(hanko('big'));
+        navigator.vibrate?.(60);
+      }
       const last = i === cards.length - 1;
       const next = h('button', { type: 'button', class: 'primary', onclick: () => (last ? finish() : (i++, ask())) }, last ? 'Finish' : 'Next yōkai') as HTMLButtonElement;
       mount(
         feedback,
         h('p', { class: res.data.right ? 'acct-right' : 'acct-wrong' }, res.data.right ? `✓ Right! ${card.char} is “${res.data.expected}”.` : `${card.char} is “${res.data.expected}”. It’ll come back tomorrow.`),
-        res.data.caught ? h('p', { class: 'acct-caught' }, `封 Caught! ${card.char} goes in your yōkai book.`) : null,
-        hearButton(card.hear, '🔊 Hear it'),
+        res.data.caught ? h('p', { class: 'acct-caught' }, h('span', { lang: 'ja' }, 'つかまえた！'), ` Caught! ${card.char} is sealed in your yōkai book.`) : null,
+        hearButton(card.hear, 'Hear it', 'raid-hear acct-hear'),
       );
       feedback.className = 'acct-feedback';
       form.replaceChildren(next);
@@ -438,7 +622,7 @@ function review(screens: { back: () => void; app: HTMLElement }, cards: Card[]):
       { class: 'acct-page' },
       backBar(toProgress, 'Stop'),
       h('h2', { class: 'acct-count' }, `Yōkai ${i + 1} of ${cards.length}`),
-      h('div', { class: 'acct-face', lang: 'ja' }, h('img', { class: 'acct-sprite', src: `/stage/assets/yokai/${spriteFor(card.itemId)}.png`, alt: '', width: 96, height: 96, onerror: (e: Event) => (e.target as HTMLElement).remove() }), h('span', { class: 'acct-kana' }, card.char)),
+      face,
       feedback,
       form,
     );
@@ -452,7 +636,7 @@ function review(screens: { back: () => void; app: HTMLElement }, cards: Card[]):
       { class: 'acct-page acct-done' },
       h('h2', {}, 'Review done!'),
       h('p', { class: 'big' }, `${right} of ${cards.length} right`),
-      caught.length ? h('p', { class: 'acct-caught' }, '封 Caught today: ', h('span', { lang: 'ja' }, caught.join(' '))) : null,
+      caught.length ? h('p', { class: 'acct-caught' }, 'Caught today: ', h('span', { lang: 'ja' }, caught.join(' '))) : null,
       h('p', { class: 'acct-note' }, 'Misses come back tomorrow; the ones you knew wait a little longer each time.'),
       h('button', { type: 'button', class: 'primary', onclick: toProgress }, 'Back to my progress'),
     );

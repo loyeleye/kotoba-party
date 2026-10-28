@@ -70,17 +70,6 @@ h1 { color: var(--accent); font-family: var(--font-pixel); font-size: 40px; marg
 .join { display: grid; gap: 16px; }
 label { display: grid; gap: 6px; color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
 input, select { width: 100%; font-size: 22px; padding: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
-/* The way in for whoever runs the TV: under the join form and quieter than Join, which most visitors want. */
-.or { display: flex; align-items: center; gap: 12px; margin: 20px 0 12px; color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
-.or::before, .or::after { content: ''; flex: 1; border-top: 2px dotted var(--line); }
-.host-link { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 16px 8px 10px; border: 3px solid var(--outline); border-radius: 10px; background: var(--panel); color: var(--ink); text-decoration: none; box-shadow: 0 5px 0 var(--outline), inset 0 0 0 1px var(--line); transition: transform 80ms, box-shadow 80ms; }
-.host-link:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--outline), inset 0 0 0 1px var(--line); }
-.host-link:focus-visible, .primary:focus-visible { outline: 3px solid var(--warn); outline-offset: 3px; }
-.host-link img { flex: none; width: 48px; height: 48px; image-rendering: pixelated; }
-.host-link span { display: grid; gap: 2px; }
-.host-link strong { font-family: var(--font-pixel); font-size: 22px; font-weight: 700; color: var(--gold); }
-.host-link small { color: var(--muted); font-size: 14px; }
-.host-link::after { content: '›'; margin-left: auto; font-family: var(--font-pixel); font-size: 28px; color: var(--muted); }
 #code { text-transform: uppercase; letter-spacing: 0.2em; font-family: var(--font-code); text-align: center; font-size: 28px; }
 
 button { font: inherit; cursor: pointer; }
@@ -407,18 +396,7 @@ body[data-mode='last-train'] .timer:not(:empty)::before { content: '🚃 departs
 .gp-row.gp-surprise { border-style: dashed; border-color: var(--warn); }
 
 /* ---- Optional sign-in and My progress (controller/src/account.ts, docs/accounts.md) ---- */
-.acct-panel { display: grid; gap: 6px; margin-top: 4px; }
-.acct-signin { width: 100%; min-height: 52px; font-weight: 700; }
-.acct-signin:focus-visible, .acct-me:focus-visible, .acct-back:focus-visible, .acct-link:focus-visible, .acct-tab:focus-visible, .secondary:focus-visible { outline: 3px solid var(--warn); outline-offset: 3px; }
 .acct-note { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.4; }
-.acct-panel > .acct-note { text-align: center; }
-.acct-me { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 8px 14px; border: 1px solid var(--good); border-radius: 12px; background: var(--panel); color: var(--ink); text-align: left; }
-.acct-check { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--good); color: var(--outline); font-weight: 900; }
-.acct-me-text { display: grid; gap: 2px; min-width: 0; }
-.acct-me-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.acct-me-text small { color: var(--muted); font-size: 14px; }
-.acct-go { margin-left: auto; flex: none; color: var(--gold); font-weight: 700; font-size: 16px; }
-.acct-go::after { content: ' ›'; }
 
 .acct-page { display: grid; gap: 14px; }
 .acct-page h2 { margin: 0; font-family: var(--font-pixel); font-size: 28px; color: var(--gold); text-shadow: 0 2px 0 var(--outline); }
@@ -492,3 +470,82 @@ body[data-mode='last-train'] .timer:not(:empty)::before { content: '🚃 departs
 .acct-caught { color: var(--gold); font-weight: 700; margin: 0; }
 .acct-done { text-align: center; justify-items: center; }
 .acct-saved { margin: 0; text-align: center; color: var(--good); font-size: 15px; }
+.acct-tabs { grid-template-columns: 1fr 1fr 1fr; }
+.acct-tab { font-size: 16px; }
+.acct-phrases { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.acct-phrase { display: grid; gap: 2px; padding: 10px 12px 10px 14px; border-radius: 10px; background: var(--panel); border-left: 4px solid var(--line); }
+.acct-phrase.pb-said { border-left-color: var(--good); }
+.acct-phrase.pb-retry, .acct-phrase.pb-missed { border-left-color: var(--warn); }
+.acct-ph-jp { font-size: 22px; font-weight: 700; }
+.acct-ph-kana { color: var(--muted); font-size: 16px; margin: 0; }
+.acct-ph-romaji { color: var(--muted); font-size: 15px; font-style: italic; margin: 0; }
+.acct-ph-en { font-size: 16px; }
+.acct-ph-meta { color: var(--muted); font-size: 13px; }
+.acct-ph-face { gap: 8px; text-align: center; }
+.acct-ph-prompt { margin: 0; font-size: 26px; font-weight: 800; line-height: 1.3; }
+.acct-ph-face small { color: var(--paper-muted); font-size: 14px; }
+.acct-reveal { display: grid; gap: 4px; justify-items: center; text-align: center; }
+.acct-reveal[hidden], .acct-row[hidden] { display: none; }
+.acct-reveal .acct-ph-jp.big { margin: 0; font-size: 34px; }
+/* Panel fixes (art panel, sign-in screens). */
+input::placeholder { color: #a99ccf; }
+.acct-key { flex: none; display: inline-block; width: 24px; height: 24px; background: url('/stage/assets/icons/key.png') center / contain no-repeat; image-rendering: pixelated; }
+.acct-notme { justify-self: center; }
+.acct-notme[hidden] { display: none; }
+.acct-keep { font-size: 18px; padding: 12px 14px; }
+/* The yōkai sits in a little dark window so the pale sprites read on the paper card. 128 px art at
+   64 or 128 px: whole-pixel steps only. The blob is drawn small on its canvas, so it shows at 2×. */
+.acct-window { display: grid; place-items: center; overflow: hidden; border-radius: 8px; background: radial-gradient(circle at 50% 40%, #3a2c7a, var(--outline)); box-shadow: inset 0 0 0 2px var(--outline); }
+.acct-window.small { width: 64px; height: 64px; }
+.acct-window.big { width: 128px; height: 128px; }
+.acct-card .acct-window .acct-sprite, .acct-face .acct-window .acct-sprite { width: 100%; height: 100%; image-rendering: pixelated; opacity: 1; filter: none; }
+.acct-window .acct-sprite.s-yokai-blob, .acct-window .acct-sprite.s-yokai-kitsunebi, .acct-window .acct-sprite.s-yokai-kodama { width: 200%; height: 200%; }
+/* Not caught yet: a silhouette, filled in as the days come. */
+.acct-card:not(.caught) .acct-window .acct-sprite { filter: brightness(0) invert(0.35); opacity: 0.8; }
+.acct-card.near .acct-window .acct-sprite { filter: grayscale(1) brightness(0.8); opacity: 1; }
+.acct-romaji small { color: var(--paper-muted); font-size: 11px; }
+.acct-caught-tag { padding: 1px 8px; border-radius: 999px; background: var(--lantern); color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; }
+/* 封印: two characters stacked in a vermilion seal. */
+.acct-stamp { width: 22px; height: 40px; display: grid; grid-template-rows: 1fr 1fr; line-height: 1; font-size: 14px; background: color-mix(in srgb, var(--paper) 70%, transparent); }
+.acct-stamp.big { position: absolute; top: 10px; right: 12px; width: 40px; height: 72px; border-width: 3px; font-size: 26px; animation: acct-stamp-in 420ms cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes acct-stamp-in { from { scale: 2.2; opacity: 0; } to { scale: 1; opacity: 1; } }
+/* The review card reacts: right, the yōkai hops; wrong, it drifts off a little. No shaking. */
+.acct-face.is-right .acct-window { animation: acct-hop 360ms steps(4, end) 2; }
+.acct-face.is-wrong .acct-window .acct-sprite { animation: acct-drift 600ms ease-out forwards; }
+.acct-face.is-right { border-color: var(--good); }
+@keyframes acct-hop { 50% { translate: 0 -10px; } }
+@keyframes acct-drift { to { translate: 14px -6px; opacity: 0.45; } }
+.acct-face-romaji { font-family: var(--font-body); font-size: 26px; font-weight: 800; color: var(--paper-muted); animation: acct-fade 300ms ease-out both; }
+@keyframes acct-fade { from { opacity: 0; translate: 0 6px; } }
+/* Caught is gold, not the warning yellow. */
+.acct-caught { color: var(--gold); }
+@media (prefers-reduced-motion: reduce) {
+  .acct-face.is-right .acct-window, .acct-face.is-wrong .acct-window .acct-sprite, .acct-face-romaji, .acct-stamp.big { animation: none; }
+}
+/* Under Join: two quiet chips side by side (art panel, 2026-10-28), lined up with Join's edges, and
+   one status line under them. Outline only, so Join stays the one heavy shape on the screen. */
+.join-extras { display: grid; gap: 6px; margin-top: 28px; }
+.join-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.join-extras.solo .join-chips { grid-template-columns: 1fr; }
+.join-chip { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 48px; padding: 6px 12px; border: 2px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: 700 16px var(--font-body); text-decoration: none; transition: transform 80ms; }
+.join-chip:active { transform: translateY(2px); }
+.join-chip:focus-visible { outline: 3px solid var(--warn); outline-offset: 3px; }
+.join-chip img { flex: none; width: 32px; height: 32px; image-rendering: pixelated; }
+.join-chip-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.join-chip.in { border-color: var(--good); }
+.join-chip-dot { flex: none; width: 10px; height: 10px; background: var(--good); }
+/* Room for one line, so a notice doesn't push anything. */
+.acct-status-line { margin: 0; min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 10px; text-align: center; color: var(--good); font-size: 15px; }
+.acct-status-line.bad { color: var(--warn); }
+.acct-status-line .acct-link { min-height: 44px; }
+/* Back from signing in: the chip pops once in its place. */
+.join-chip.just { animation: join-pop 360ms steps(3, end) both; }
+@keyframes join-pop { 0% { scale: 0.9; } 66% { scale: 1.06; } 100% { scale: 1; } }
+@media (prefers-reduced-motion: reduce) { .join-chip.just { animation: acct-fade 200ms ease-out both; } }
+/* PixelLab icons (stage/assets/icons/), at whole-pixel scales where they can be. */
+.acct-hear::before { content: ''; display: inline-block; width: 26px; height: 24px; margin-right: 8px; vertical-align: -5px; background: url('/stage/assets/icons/speaker.png') center / contain no-repeat; image-rendering: pixelated; }
+.acct-trophy { display: inline-block; width: 16px; height: 16px; margin-right: 4px; vertical-align: -2px; background: url('/stage/assets/icons/trophy.png') center / contain no-repeat; image-rendering: pixelated; }
+.acct-key { width: 11px; height: 28px; }
+/* The 封印 seal as a red hanko impression with the characters left white (a 白文 seal). */
+.acct-stamp { border: 0; color: #fff8ec; background: url('/stage/assets/icons/hanko.png') center / 100% 100% no-repeat; image-rendering: pixelated; }
+.acct-phrase.pb-said, .acct-phrase.pb-retry, .acct-phrase.pb-missed, .acct-phrase.pb-seen { color: var(--ink); }

@@ -147,7 +147,7 @@ function deviceId(): string {
 }
 
 // ---- join ----
-function showJoin(message = ''): void {
+function showJoin(message = '', draft?: { code: string; name: string }): void {
   client?.close();
   client = null;
   screenKey = '';
@@ -162,9 +162,9 @@ function showJoin(message = ''): void {
     autocapitalize: 'characters',
     maxlength: 4,
     placeholder: 'KMTP',
-    value: params.get('code') ?? saved?.code ?? '',
+    value: draft?.code ?? params.get('code') ?? saved?.code ?? '',
   }) as HTMLInputElement;
-  const nameInput = h('input', { id: 'name', autocomplete: 'nickname', maxlength: MAX_NAME_LENGTH, placeholder: 'Your name', value: saved?.name ?? '' }) as HTMLInputElement;
+  const nameInput = h('input', { id: 'name', autocomplete: 'nickname', maxlength: MAX_NAME_LENGTH, placeholder: 'Your name', value: draft?.name ?? saved?.name ?? '' }) as HTMLInputElement;
   const error = h('p', { class: 'error' }, message);
   const button = h('button', { class: 'primary', type: 'submit' }, 'Join') as HTMLButtonElement;
 
@@ -192,23 +192,22 @@ function showJoin(message = ''): void {
     button,
     error,
   );
-  // Optional sign-in, right under Join (docs/accounts.md). Never needed to play.
+  // Optional sign-in and hosting, as two quiet chips under Join (docs/accounts.md). Never needed to play.
   if (!nameInput.value && account()) nameInput.value = account()!.name;
-  const signIn = accountPanel(nameInput, { app, back: () => showJoin() });
   // Hosting is the stage with no code: it makes a room. Left out when an invite link brought a player here.
   const host = params.has('code')
-    ? []
-    : [
-        h('p', { class: 'or' }, 'or'),
-        h(
-          'a',
-          { class: 'host-link', href: '/stage/' },
-          h('img', { src: '/stage/assets/hosts/pon.png', alt: '', width: 48, height: 48, onerror: (e: Event) => (e.target as HTMLElement).remove() }),
-          h('span', {}, h('strong', {}, 'Host a game'), h('small', {}, 'Put the big screen on a TV or laptop.')),
-        ),
-      ];
-  mount(app, form, signIn, ...host);
-  (codeInput.value ? nameInput : codeInput).focus();
+    ? null
+    : h(
+        'a',
+        { class: 'join-chip', href: '/stage/', 'aria-label': 'Host a game: put the big screen on a TV or laptop' },
+        h('img', { src: '/stage/assets/hosts/pon.png', alt: '', width: 32, height: 32, onerror: (e: Event) => (e.target as HTMLElement).remove() }),
+        h('span', { class: 'join-chip-text' }, 'Host a game'),
+      );
+  // Signing in and coming back keeps what was typed.
+  const extras = accountPanel(nameInput, { app, back: () => showJoin('', { code: codeInput.value, name: nameInput.value }) }, host);
+  mount(app, form, extras);
+  // Both filled (back from signing in, say): Join, so no keyboard opens over the screen.
+  (!codeInput.value ? codeInput : !nameInput.value ? nameInput : button).focus();
 }
 
 async function join(code: string, name: string): Promise<string | null> {

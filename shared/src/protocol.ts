@@ -4,6 +4,7 @@
 import type { HostId, Level } from '../../content/src/types.js';
 import type { Award, ModeInfo, PhraseEntry, RecapTeam } from './modes/mode.js';
 import type { GameView } from './modes/views.js';
+import type { TonightPhrase } from './game.js';
 
 export type { Level, HostId };
 
@@ -208,6 +209,12 @@ export interface JoinResponse {
 }
 
 export type JoinError = 'room-not-found' | 'room-full' | 'game-in-progress' | 'name-taken' | 'bad-name';
+
+/** `GET /api/rooms/:code/phrasebook` (stage): tonight's phrases and the signed-in players' saved ones. */
+export interface PhrasebookResponse {
+  tonight: TonightPhrase[];
+  saved: { playerId: string; name: string; phrases: { itemId: string; text: string; kana: string; en: string; mode: ModeId }[] }[];
+}
 
 export interface RoomInfo {
   code: string;

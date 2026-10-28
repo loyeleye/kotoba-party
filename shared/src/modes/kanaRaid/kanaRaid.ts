@@ -687,7 +687,8 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
     // One card per kana: the same kana met as a horde yōkai and as a boss piece adds up.
     const out = new Map<string, PracticeItem>();
     for (const t of Object.values(p.tally)) {
-      if (!t.card) continue;
+      // ー and ッ have no sound of their own (tap questions), so they can't be reviewed by sound.
+      if (!t.card || MARK_OPTIONS[t.char]) continue;
       const item = out.get(t.card.id) ?? { itemId: t.card.id, char: t.char, hear: t.hear, en: t.card.en, seen: 0, recalled: 0, missed: 0 };
       item.seen += t.seen;
       item.recalled += t.recalled;

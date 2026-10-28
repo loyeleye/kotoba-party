@@ -8,7 +8,7 @@ import { h, ruby } from '../../shared/src/dom.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
 
 /** Readings for the furigana over each title's kanji. */
-const TITLE_KANA: Record<string, string> = {
+export const TITLE_KANA: Record<string, string> = {
   'kana-raid': 'かなようかいレイド',
   oogiri: 'おおぎりナイト',
   'last-train': 'しゅうでん',
