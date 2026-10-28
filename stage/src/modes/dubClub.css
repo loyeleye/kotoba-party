@@ -55,7 +55,9 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 @keyframes dub-run { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 .dub-card { display: flex; align-items: center; gap: 16px; text-align: left; }
 .dub-card-text { display: flex; flex-direction: column; gap: 2px; }
-.dub-card-emoji { flex: none; font-size: 64px; line-height: 1; }
+.dub-card-emoji { flex: none; width: 96px; height: 96px; image-rendering: pixelated; }
+.dub-icon { width: 32px; height: 32px; image-rendering: pixelated; vertical-align: -6px; }
+.dub-roll-row .dub-icon { width: 32px; height: 32px; }
 .dub-card-jp { font-size: 44px; font-weight: 900; color: var(--dub-gold); white-space: nowrap; }
 .dub-card-en { font-size: 26px; color: #d8d0f0; }
 .dub-card.flip { animation: dub-flip 500ms ease-out both; }
@@ -93,14 +95,15 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 .dub-logo rt { font-size: 0.3em; text-shadow: none; }
 .dub-subtitle { font-size: 32px; color: var(--muted); }
 .dub-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1300px; margin: 0; }
-.dub-titlecard { display: grid; place-content: center; justify-items: center; gap: 16px; background: radial-gradient(circle at 50% 45%, #3b2a8a, #0d0820 70%); color: #fff; text-align: center; }
+.dub-titlecard { display: grid; place-content: center; justify-items: center; gap: 16px; background: linear-gradient(rgba(13, 8, 32, 0.25), rgba(13, 8, 32, 0.55)), url('/stage/assets/dub/ep-title.png') center / cover; image-rendering: pixelated; color: #fff; text-align: center; }
 .dub-ep { font-size: 30px; color: var(--dub-gold); font-weight: 800; }
 .dub-ep-title { font-size: 96px; font-weight: 900; text-shadow: 6px 6px 0 #000; animation: dub-zoom 900ms cubic-bezier(0.2, 1.4, 0.4, 1) both; }
 .dub-ep-title rt { font-size: 28px; }
 .dub-ep-en { font-size: 32px; color: #d8d0f0; }
-.dub-titlecard.end { background: #0d0820; }
+.dub-titlecard.end { background: linear-gradient(rgba(40, 20, 0, 0.15), rgba(40, 20, 0, 0.45)), url('/stage/assets/dub/ep-end.png') center / cover; filter: sepia(0.35); }
+.dub-titlecard.end .dub-ep-title { color: var(--dub-gold); }
 @keyframes dub-zoom { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.dub-credits { background: #000; color: #fff; }
+.dub-credits { background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), url('/stage/assets/dub/ep-credits.png') center / cover; image-rendering: pixelated; color: #fff; }
 .dub-roll { position: absolute; left: 0; right: 0; top: 100%; display: grid; gap: 18px; justify-items: center; animation: dub-roll var(--d) linear forwards; }
 .dub-roll-title { font-size: 64px; font-weight: 900; margin-bottom: 30px !important; }
 .dub-roll-head { font-size: 26px; letter-spacing: 0.3em; color: var(--dub-gold); margin-top: 20px !important; }

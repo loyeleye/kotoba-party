@@ -7271,6 +7271,687 @@
         "from": "tools/art/sources/anim/chochin-bow.png",
         "steady": 24
       }
+    },
+    {
+      "path": "stage/assets/dub/cards/happy.png",
+      "what": "Dub Club direction-card icon: happy",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round yellow smiling face with closed happy eyes and rosy cheeks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/laughing.png",
+      "what": "Dub Club direction-card icon: laughing",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round yellow face laughing hard with tears of joy",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/sad.png",
+      "what": "Dub Club direction-card icon: sad",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round pale blue sad face with one tear",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/crying.png",
+      "what": "Dub Club direction-card icon: crying",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round face crying with two streams of tears",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/angry.png",
+      "what": "Dub Club direction-card icon: angry",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round red angry face with furrowed brows and a puff of steam",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/loud.png",
+      "what": "Dub Club direction-card icon: loud",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red megaphone with sound waves coming out",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/quiet.png",
+      "what": "Dub Club direction-card icon: quiet",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a round yellow face with a finger pressed to its lips saying shh",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/secret.png",
+      "what": "Dub Club direction-card icon: secret",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a round yellow face whispering behind its hand",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/shy.png",
+      "what": "Dub Club direction-card icon: shy",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round face blushing bright pink looking away shyly",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/ghost.png",
+      "what": "Dub Club direction-card icon: ghost",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small white Japanese ghost with a triangle headband and wavy tail",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/slow.png",
+      "what": "Dub Club direction-card icon: slow",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a cute small green turtle, side view",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/sleepy.png",
+      "what": "Dub Club direction-card icon: sleepy",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round sleepy face with closed eyes and a snot bubble, zzz",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/grandpa.png",
+      "what": "Dub Club direction-card icon: grandpa",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a cute chibi old man head with white moustache, bald with white hair at the sides",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/drunk.png",
+      "what": "Dub Club direction-card icon: drunk",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round red-faced tipsy face with dizzy swirl eyes and a sake cup",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/fast.png",
+      "what": "Dub Club direction-card icon: fast",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a yellow lightning bolt",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 5,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/running.png",
+      "what": "Dub Club direction-card icon: running",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a red running shoe with motion lines",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/robot.png",
+      "what": "Dub Club direction-card icon: robot",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a boxy grey retro robot head with antenna and square eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/alien.png",
+      "what": "Dub Club direction-card icon: alien",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small green alien head with big black eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/baby.png",
+      "what": "Dub Club direction-card icon: baby",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a baby face with a pacifier",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/cat.png",
+      "what": "Dub Club direction-card icon: cat",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute orange cat face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/dog.png",
+      "what": "Dub Club direction-card icon: dog",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute brown shiba inu dog face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/cool.png",
+      "what": "Dub Club direction-card icon: cool",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round face wearing black sunglasses, confident smirk",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/narcissist.png",
+      "what": "Dub Club direction-card icon: narcissist",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a round hand mirror with a golden frame and a sparkle",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/sexy.png",
+      "what": "Dub Club direction-card icon: sexy",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a pair of glossy red lips",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/gal.png",
+      "what": "Dub Club direction-card icon: gal",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a hand with long glittery pink painted nails and rhinestones",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/host.png",
+      "what": "Dub Club direction-card icon: host",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two champagne glasses clinking",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/singing.png",
+      "what": "Dub Club direction-card icon: singing",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a silver handheld microphone with two music notes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/boss.png",
+      "what": "Dub Club direction-card icon: boss",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a brown leather briefcase",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/teacher.png",
+      "what": "Dub Club direction-card icon: teacher",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a wooden pointer stick and a small green chalkboard",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/motherinlaw.png",
+      "what": "Dub Club direction-card icon: motherinlaw",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a white glove with one finger raised checking for dust",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/mum.png",
+      "what": "Dub Club direction-card icon: mum",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a frying pan with a fried egg",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/eating.png",
+      "what": "Dub Club direction-card icon: eating",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a rice ball onigiri with seaweed",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 3,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/cards/toilet.png",
+      "what": "Dub Club direction-card icon: toilet",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, isolated object, no background, no circle, no text, no letters, no numbers. a white porcelain toilet seen from the front, simple",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 11,
+        "width": 32,
+        "height": 32
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/ep-title.png",
+      "what": "Dub Club episode title card backdrop: a retro anime sunburst",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, a retro 1980s anime opening title backdrop, bright pink and gold sunburst rays spreading from the centre over a deep purple starry sky, sparkles and little stars, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/ep-end.png",
+      "what": "Dub Club つづく end card: a town at sunset",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, a quiet Japanese town at sunset seen from a hill, orange and pink sky, telephone poles and wires, small rooftops at the bottom, warm nostalgic colours, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/ep-credits.png",
+      "what": "Dub Club credits backdrop: a moonlit sea",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, a calm night sea under a big full moon, shooting stars across a dark navy and purple sky, a moonlight path on the water, gentle and bittersweet, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
     }
   ]
 }

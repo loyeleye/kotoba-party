@@ -53,6 +53,11 @@ describe('Dub Club: the content', () => {
     }
   });
 
+  it('every direction card has its pixel icon, and the episode has its title, end and credits art', () => {
+    for (const d of DIRECTIONS) expect(existsSync(`stage/assets/dub/cards/${d.id}.png`), d.id).toBe(true);
+    for (const n of ['title', 'end', 'credits']) expect(existsSync(`stage/assets/dub/ep-${n}.png`), n).toBe(true);
+  });
+
   it('every audience gets episodes and a deck of several sound families; Cheeky never reaches Kids', () => {
     for (const a of ['kids', 'family', 'cheeky'] as const) {
       expect(episodesFor(a).length, a).toBeGreaterThan(1);

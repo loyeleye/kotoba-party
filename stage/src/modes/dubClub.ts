@@ -72,8 +72,11 @@ function screen(o: ScreenOpts): HTMLElement {
   );
 }
 
+/** The card's pixel icon (stage/assets/dub/cards, 32×32, drawn at whole multiples). */
+const cardIcon = (c: DubCard, cls = 'dub-icon'): HTMLElement => h('img', { class: cls, src: `/stage/assets/dub/cards/${c.id}.png`, alt: '', draggable: 'false' });
+
 function cardFace(c: DubCard, cls = ''): HTMLElement {
-  return h('div', { class: `dub-card ${cls}` }, h('span', { class: 'dub-card-emoji', 'aria-hidden': 'true' }, c.emoji), h('span', { class: 'dub-card-text' }, h('span', { class: 'dub-card-jp', lang: 'ja' }, c.jp.text), h('span', { class: 'dub-card-en' }, c.jp.en)));
+  return h('div', { class: `dub-card ${cls}` }, cardIcon(c, 'dub-card-emoji'), h('span', { class: 'dub-card-text' }, h('span', { class: 'dub-card-jp', lang: 'ja' }, c.jp.text), h('span', { class: 'dub-card-en' }, c.jp.en)));
 }
 
 /** The TV must make sound for this mode: one click unlocks it. */
@@ -206,7 +209,7 @@ function screening(view: RoomView, game: DubView): HTMLElement {
         ? h(
             'ul',
             { class: 'dub-done' },
-            game.done.map((d) => h('li', { class: d.skipped ? 'skipped' : '' }, badge(view, d.playerId), h('span', { class: 'dub-done-card' }, d.card.emoji, ' ', h('span', { lang: 'ja' }, d.card.jp.text)), h('span', { class: 'dub-done-n' }, d.skipped ? 'cut' : `⭕ ${d.guessed}`))),
+            game.done.map((d) => h('li', { class: d.skipped ? 'skipped' : '' }, badge(view, d.playerId), h('span', { class: 'dub-done-card' }, cardIcon(d.card), ' ', h('span', { lang: 'ja' }, d.card.jp.text)), h('span', { class: 'dub-done-n' }, d.skipped ? 'cut' : `⭕ ${d.guessed}`))),
           )
         : h('p', { class: 'dub-hint' }, 'Guess on your phone. ❤ your favourite: it goes into tonight’s episode.'),
     ),
@@ -237,7 +240,7 @@ function notes(view: RoomView, game: DubView): HTMLElement {
             'tr',
             { class: r.playerId === best ? 'best' : '' },
             h('td', {}, badge(view, r.playerId)),
-            h('td', { class: 'dub-notes-card' }, r.card.emoji, ' ', h('span', { lang: 'ja' }, r.card.jp.text), r.card.root ? h('small', { lang: 'ja' }, ` ← ${r.card.root.text}`) : null),
+            h('td', { class: 'dub-notes-card' }, cardIcon(r.card), ' ', h('span', { lang: 'ja' }, r.card.jp.text), r.card.root ? h('small', { lang: 'ja' }, ` ← ${r.card.root.text}`) : null),
             h('td', {}, String(r.guessedBy.length)),
             h('td', {}, String(r.hearts)),
             h('td', { class: 'dub-notes-total' }, `+${r.total}`),
@@ -291,7 +294,7 @@ function episode(view: RoomView, game: DubView): HTMLElement {
         { class: 'dub-roll', style: `--d:${EPISODE.credits}ms` },
         h('p', { class: 'dub-roll-title', lang: 'ja' }, title.text),
         h('p', { class: 'dub-roll-head' }, 'CAST'),
-        game.credits.map((c) => h('p', { class: 'dub-roll-row' }, h('span', { lang: 'ja' }, c.who.text), h('span', {}, nameOf(view, c.playerId)), c.card ? h('small', {}, `${c.card.emoji} `, h('span', { lang: 'ja' }, c.card.jp.text)) : null)),
+        game.credits.map((c) => h('p', { class: 'dub-roll-row' }, h('span', { lang: 'ja' }, c.who.text), h('span', {}, nameOf(view, c.playerId)), c.card ? h('small', {}, cardIcon(c.card), ' ', h('span', { lang: 'ja' }, c.card.jp.text)) : null)),
         h('p', { class: 'dub-roll-head' }, 'STAFF'),
         h('p', { class: 'dub-roll-row' }, h('span', { lang: 'ja' }, 'かんとく'), h('span', { lang: 'ja' }, 'フデ')),
         h('p', { class: 'dub-roll-row' }, h('span', { lang: 'ja' }, 'よさん'), h('span', {}, '¥0')),
