@@ -43,6 +43,15 @@ describe('VOICEVOX adapter', () => {
     expect(calls).toContain('POST /synthesis?speaker=42');
   });
 
+  it('sends the token on every request when one is set', async () => {
+    const auth: (string | null)[] = [];
+    const { f } = fakeEngine();
+    const spy = ((url: string | URL, init?: RequestInit) => (auth.push(new Headers(init?.headers).get('authorization')), f(url, init))) as typeof fetch;
+    await new VoicevoxTts({ baseUrl: 'http://vv:50021', fetch: spy, token: 's3cret' }).speak({ host: 'fude', kana: 'はい' });
+    expect(auth).toHaveLength(3);
+    expect(auth.every((a) => a === 'Bearer s3cret')).toBe(true);
+  });
+
   it('reports a missing voice', async () => {
     const f = (async () => Response.json([{ name: '四国めたん', styles: [{ name: 'ノーマル', id: 2 }] }])) as unknown as typeof fetch;
     const r = await new VoicevoxTts({ fetch: f }).check();

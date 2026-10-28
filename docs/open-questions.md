@@ -94,8 +94,9 @@ If you only have ten minutes, these are the answers that would change the build 
 24. **The AI judge is not wired into the rules yet.** Modes are synchronous; the judge is async.
     Oogiri's natural version uses the prompt's written example answer until the judge runs as
     answers lock in (design doc Phase 2).
-25. **Host audio needs a running VOICEVOX** (`VOICEVOX_URL`); without it the host shows
-    subtitles only. LLM lines need `ANTHROPIC_API_KEY`; without it the written bank is used.
+25. **Host audio needs a running VOICEVOX** (`VOICEVOX_URL`) for the hosts' own voices; without
+    it, or when a line's audio isn't ready in time, the TV reads the line with the browser's
+    Japanese voice at each host's pitch and pace (`stage/src/hostSpeech.ts`). LLM lines need `ANTHROPIC_API_KEY`; without it the written bank is used.
 26. **Modes can see who the VIP is** (`ModeContext.vipId`), so Oogiri's VIP can hide an answer.
     That one-tap Hide is the only moderation in any mode so far; Word Gauntlet and Last Train
     show player text unfiltered. A shared hide/moderation hook for every mode is the next step.
@@ -355,8 +356,10 @@ Decisions for the Cloudflare version ([ADR 0003](decisions/0003-cloudflare-worke
   of 20 s). A small client heartbeat would fix it; not added yet to keep ADR 0002's "clients
   never send" rule.
 - **H5. Bank lines aren't pre-voiced on Cloudflare.** The Node server renders every bank line
-  through VOICEVOX at start-up; per room that would repeat the work, so fallback lines are
-  subtitles only there. LLM lines are still voiced when `VOICEVOX_URL` is set.
+  through VOICEVOX at start-up; per room that would repeat the work, so on Cloudflare a bank line
+  is voiced when it is picked and plays with that audio if it's ready by the host's deadline
+  (1.5 s); otherwise the browser's voice reads it that time. LLM lines are voiced as before.
+  Since 2026-10-28 VOICEVOX runs on the reader's Oracle VM, behind Caddy with a token (`VOICEVOX_TOKEN`).
 - **H6. No room cap on Cloudflare.** The Node server stops at 500 rooms; on Cloudflare each room
   is its own object, and the per-game LLM budget still caps Claude spend per game. Anyone with
   the link can open rooms, so a public link could be used to run up the Claude bill a game at a

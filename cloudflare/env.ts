@@ -8,6 +8,8 @@ export interface Env {
   PUBLIC_URL?: string;
   /** VOICEVOX engine for host voices. Unset: the host's lines show as subtitles only. */
   VOICEVOX_URL?: string;
+  /** Secret the VOICEVOX proxy checks (Authorization: Bearer). Unset: no header is sent. */
+  VOICEVOX_TOKEN?: string;
   /** Reader service for kanji answers (server/src/readerMain.ts). Unset: answers are compared as written. */
   READER_URL?: string;
   READER_TOKEN?: string;

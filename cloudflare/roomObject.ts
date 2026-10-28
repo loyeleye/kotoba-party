@@ -6,7 +6,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import QRCode from 'qrcode';
 import debugPrompts from '../content/debug/prompts.json';
-import { HOST_EVENTS, SilentTts, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine, type LlmClient, type HostVoice as AiHostVoice } from '../server/ai/index.js';
+import { HOST_EVENTS, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine, type LlmClient, type HostVoice as AiHostVoice } from '../server/ai/index.js';
 import { buildContent } from '../server/src/content.js';
 import { aiVoice, bankVoice, hostDirector, type HostVoice } from '../server/src/host.js';
 import { inkCoachDirector } from '../server/src/ink.js';
@@ -33,7 +33,7 @@ export class RoomObject extends DurableObject<Env> {
     const llm = logFailures(llmFromEnv());
     const ai = createHostVoice({
       llm,
-      tts: this.env.VOICEVOX_URL ? new VoicevoxTts({ baseUrl: this.env.VOICEVOX_URL }) : new SilentTts(),
+      tts: this.env.VOICEVOX_URL ? new VoicevoxTts({ baseUrl: this.env.VOICEVOX_URL, token: this.env.VOICEVOX_TOKEN }) : undefined,
       lines: bankLines,
     });
     this.ai = ai;

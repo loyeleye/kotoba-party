@@ -101,6 +101,8 @@ export interface VoicevoxOptions {
   hosts?: Partial<Record<HostId, HostVoiceConfig>>;
   /** 24000 is VOICEVOX's native rate; lower it to shrink files sent to the stage. */
   sampleRate?: number;
+  /** Sent as `Authorization: Bearer <token>`, for an engine behind a proxy that checks it. Default VOICEVOX_TOKEN. */
+  token?: string;
   logger?: Logger;
 }
 
@@ -118,7 +120,15 @@ export class VoicevoxTts implements TtsEngine {
 
   constructor(private readonly opts: VoicevoxOptions = {}) {
     this.base = (opts.baseUrl ?? process.env.VOICEVOX_URL ?? 'http://127.0.0.1:50021').replace(/\/$/, '');
-    this.fetch = opts.fetch ?? fetch;
+    const token = opts.token ?? process.env.VOICEVOX_TOKEN;
+    const raw = opts.fetch ?? fetch;
+    this.fetch = token
+      ? (input, init) => {
+          const headers = new Headers(init?.headers);
+          headers.set('authorization', `Bearer ${token}`);
+          return raw(input, { ...init, headers });
+        }
+      : raw;
     this.hosts = {
       pon: opts.hosts?.pon ?? HOSTS.pon.voice,
       chochin: opts.hosts?.chochin ?? HOSTS.chochin.voice,
@@ -196,7 +206,8 @@ export class VoicevoxTts implements TtsEngine {
   }
 }
 
-/** No engine: every line plays as subtitles only. For tests, and for running without VOICEVOX. */
+/** A stand-in engine for tests: records what it was asked to say and returns an empty WAV. Never use it to
+ * run without VOICEVOX: the stage would get empty audio instead of reading the line itself. Pass no engine. */
 export class SilentTts implements TtsEngine {
   readonly name = 'silent';
   spoken: SpeechRequest[] = [];

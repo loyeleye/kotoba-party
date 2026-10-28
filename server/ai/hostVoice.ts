@@ -230,30 +230,45 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
     const id = audioId(tts.name, host, kana, tier);
     const cached = store.get(id);
     if (cached) return cached;
-    try {
-      const a = await tts.speak({ host, kana, tier, signal });
-      store.put(a, pin);
-      return a;
-    } catch (e) {
-      if (!signal?.aborted) log.warn('tts failed', { host, error: String(e) });
-      return undefined;
-    }
+    const synth = async () => {
+      try {
+        const a = await tts.speak({ host, kana, tier, signal });
+        store.put(a, pin);
+        return a;
+      } catch (e) {
+        if (!signal?.aborted) log.warn('tts failed', { host, error: String(e) });
+        return undefined;
+      }
+    };
+    // A render nobody can cancel is shared, so a bank line asked for twice is voiced once.
+    if (signal) return synth();
+    let p = rendering.get(id);
+    if (!p) rendering.set(id, (p = synth().finally(() => rendering.delete(id))));
+    return p;
   }
+  const rendering = new Map<string, Promise<Audio | undefined>>();
 
   /** The bank's line, with audio only if it is already rendered (a fallback can't wait for TTS). */
   function bankLine(r: RoomVoice, cue: HostCue): VoicedLine | null {
+    return voicedBankLine(r, cue)?.line ?? null;
+  }
+
+  /** A bank line, and its audio being rendered when it isn't in the store yet. */
+  function voicedBankLine(r: RoomVoice, cue: HostCue): { line: VoicedLine; rendering?: Promise<Audio | undefined> } | null {
     const picked = r.bank.pick(cue.host, cue.event, cue.tier, cue.slots, cue.audience);
     if (!picked) return null;
     const line: VoicedLine = { id: picked.id, host: cue.host, event: cue.event, tier: cue.tier, text: picked.text, kana: picked.kana, en: picked.en, source: 'bank' };
-    if (opts.tts) {
-      // Keyed by the line's own tier, as warmUp rendered it (an untiered line can stand in for a tiered cue).
-      const tier = picked.line.tier;
-      const a = store.get(audioId(opts.tts.name, cue.host, picked.kana, tier));
-      if (a) line.audio = audioRef(a);
-      // Not rendered yet (a slot such as a name, or no warm-up): render now so the next game has it.
-      else void render(cue.host, picked.kana, tier);
+    if (!opts.tts) return { line };
+    // Keyed by the line's own tier, as warmUp rendered it (an untiered line can stand in for a tiered cue).
+    const tier = picked.line.tier;
+    const a = store.get(audioId(opts.tts.name, cue.host, picked.kana, tier));
+    if (a) {
+      line.audio = audioRef(a);
+      return { line };
     }
-    return line;
+    // Not rendered yet (a slot such as a name, or no warm-up, as on Cloudflare): render now, for this
+    // cue if it lands before the deadline and for the next game otherwise.
+    return { line, rendering: render(cue.host, picked.kana, tier) };
   }
 
   /** Races `work` against a deadline on the injected clock. */
@@ -290,7 +305,14 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
     const ctl = new AbortController();
     const useLlm = !!opts.llm && (cue.llm ?? LLM_EVENTS.has(cue.event)) && !r.budget.exhausted;
     const fallback = () => bankLine(r, cue);
-    if (!useLlm) return pending(Promise.resolve(null), fallback, ctl);
+    if (!useLlm) {
+      if (!opts.tts) return pending(Promise.resolve(null), fallback, ctl);
+      // A bank-only cue picks its line now and waits for its audio up to the deadline.
+      const picked = voicedBankLine(r, cue);
+      const line = picked?.line ?? null;
+      const work = picked?.rendering ? picked.rendering.then((a) => (a && (picked.line.audio = audioRef(a)), picked.line)) : Promise.resolve(line);
+      return pending(work, () => line, ctl);
+    }
     const started = clock.now();
     const timeout = clock.setTimeout(() => ctl.abort(), llmTimeoutMs);
     const work = (async (): Promise<VoicedLine | null> => {
