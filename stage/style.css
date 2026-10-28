@@ -138,7 +138,11 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 .host { grid-row: 2; }
 .main { grid-row: 3; }
 .players { grid-row: 4; }
-.host-sprite { margin: -16px 0 -12px; filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); }
+/* The sprite is sized by main.ts to land on whole screen pixels (--host-size: 192 canvas px at 720p,
+   256 at 1080p). The negative margins let most of the extra height overlap the header, so the host
+   row grows only a little. A lit plate behind it (a soft disc of lantern light with a paper rim)
+   lifts every host off the dark sets. */
+.host-sprite { --plate: color-mix(in srgb, var(--paper) 22%, transparent); --rim: color-mix(in srgb, var(--paper) 55%, transparent); margin: calc(-16px - (var(--host-size, 128px) - 128px) * 0.6) 0 calc(-12px - (var(--host-size, 128px) - 128px) * 0.1); filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); background: radial-gradient(circle at 50% 56%, var(--plate) 0 41%, var(--rim) 41.5% 43.5%, transparent 44%); }
 /* A new host steps up from below in whole-pixel steps: no scaling, so the pixels stay square. */
 .host-sprite.enter { animation: host-in 320ms steps(4, end) both; }
 /* Host speech on a washi card: the Japanese people read aloud sits on paper. */

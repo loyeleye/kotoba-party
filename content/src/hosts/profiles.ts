@@ -67,7 +67,7 @@ export const hostProfiles: HostProfile[] = [
       'Audition: No.7 (アナウンス for intros, 読み聞かせ for kind lines), 九州そら (あまあま) as an alternative casting.',
     runningGags: [
       'Her neck stretches across the stage (にゅーっ！) to eavesdrop on answers, and shrinks or tangles when one flops.',
-      'Her husband is a living kotatsu who hasn’t come out since 1987 (うちの だんなは… ねてる); in Cheeky he is the butt of useless-husband jokes and tiny おこづかい.',
+      'Her husband is a living kotatsu who hasn’t come out in decades (うちの だんなは… ねてる); in Cheeky he is the butt of useless-husband jokes and tiny おこづかい.',
       'Matchmakes everyone and everything ("おにあいね！"), and keeps a matchmaking photo album she threatens to put good answers in.',
     ],
   },

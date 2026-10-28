@@ -41,8 +41,10 @@ The manifest is the source of truth. Edit a prompt there, then regenerate.
 | `stage/assets/yokai/yokai-scroll.png` | 128², transparent | PixelLab `pixflux` | Hanging scroll; large blank paper for a glyph |
 | `stage/assets/yokai/yokai-boss.png` | 192², transparent | PixelLab `pixflux` | Boss: the studio's old dictionary come alive |
 
-Host portraits are transparent 128² sprites, like the yōkai. The stage shows them at 1× (128px) in a
-rounded square on `#14101f` with `image-rendering: pixelated`. Don't crop them to a circle: it cuts off
+Host portraits are transparent 128² sprites, like the yōkai. The stage shows them with `image-rendering: pixelated`
+at a whole multiple of their pixels on the real screen (1× at 720p, 2× at 1080p, 3× at 4K, so 192 to
+256 canvas px; see `scaleCanvas` in `stage/src/main.ts`), on a lit plate: a soft disc of lantern
+light with a paper rim that lifts each host off the dark sets. Don't crop them to a circle: it cuts off
 arms and props.
 
 The yōkai sprites are generic bodies with no kana on them. The game draws a large kana glyph on top
@@ -176,13 +178,16 @@ blank flat smooth area on the front of the body for a text label, no text, no le
 The host prompts share another ("Pixel art character portrait for a cozy-spooky Japanese late-night
 TV game show …, no text or letters"). The PNGs are only stripped of metadata, with no resampling.
 
-**Nobiko-san** (2026-10-27) is `pixflux` too, but from a sketch. A rokurokubi's long neck is the whole
-joke, and text alone drew a normal-necked lady in all 12 tries over two prompts. So
-`tools/art/sources/nobiko-sketch.py` cut one of those outputs (`nobiko-body.png`, seed 88) into head
-and body, shrank both, and joined them with a hand-drawn S-curved neck; `generate.ts` sends that
-sketch as `init_image` (strength 300) when a `pixflux` entry has a `source`, and pixflux redraws it
-as one clean sprite (seed 12). Her lip-sync mouth has no outline, so its `mouth` box uses the
-`'fill'` mode of `polish.ts` (every non-skin pixel in the box is the opening).
+**Nobiko-san** (2026-10-27, redrawn 2026-10-28) is `pixflux` too, but from a sketch. A rokurokubi's
+long neck is the whole joke, and text alone drew a normal-necked lady in all 12 tries over two
+prompts. So `tools/art/sources/nobiko-sketch.py` cuts a text-only auntie (`nobiko-body.png`, seed 8)
+into head and body, shrinks them (head 0.9, body 0.75), and joins them with a hand-drawn S-curved
+neck; `generate.ts` sends that sketch as `init_image` when a `pixflux` entry has a `source`. The
+first version kept the sketch too closely (strength 300) and looked flatter than the other hosts,
+so the redraw uses strength 80 (seed 21), which lets pixflux repaint it at full detail. Her
+lip-sync mouth is hand-painted (an outlined 7×5 opening), so `polish.ts` uses the normal outline
+mode; its `'fill'` mode (every non-skin pixel in the box is the opening) is there for mouths with no
+outline.
 
 **PixelLab `image-to-pixelart`** (`POST https://api.pixellab.ai/v2/image-to-pixelart`) converted two
 earlier Gemini images, kept in `tools/art/sources/`:

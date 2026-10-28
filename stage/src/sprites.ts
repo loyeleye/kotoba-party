@@ -84,7 +84,7 @@ export class HostSprite {
   private kind: 'idle' | HostMood = 'idle';
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private readonly size: number) {
+  constructor(private size: number) {
     this.img = this.sheetImg('');
     this.el = h('div', { class: 'sprite host-sprite', 'aria-hidden': 'true' }, this.img);
   }
@@ -130,6 +130,13 @@ export class HostSprite {
       this.el.classList.add('enter');
     }
     this.play(mood && !calm() ? mood : 'idle', mood === undefined);
+  }
+
+  /** A new on-screen size in CSS px (the stage picks one that lands on whole device pixels). */
+  resize(size: number): void {
+    if (size === this.size) return;
+    this.size = size;
+    this.el.style.setProperty('--size', `${size}px`);
   }
 
   /** Every host's sheets, to preload. */

@@ -80,8 +80,10 @@ preload([
   '/stage/assets/yokai/yokai-boss.png',
   BOSS_DEFEAT.src,
 ]);
-// The host sprite at 1:1 (128 px art on 128 px): stays on screen across lines.
-const hostSprite = new HostSprite(128);
+// The host sprite: stays on screen across lines.
+/** The host sprite's size on the 1080p canvas before it is snapped to whole screen pixels. */
+const HOST_TARGET = 192;
+const hostSprite = new HostSprite(HOST_TARGET);
 
 $('debug').hidden = !DEBUG;
 mountBackdrop(els.canvas, () => client?.remainingMs() ?? null);
@@ -98,6 +100,12 @@ if (WATCH) {
 function scaleCanvas(): void {
   const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
   els.canvas.style.setProperty('--scale', String(scale));
+  // The 128px host sprites draw at a whole multiple of their pixels on the real screen (1× at 720p,
+  // 2× at 1080p, 3× at 4K), so no pixel row gets dropped or doubled: 192 to 256 canvas px.
+  const k = Math.max(1, Math.round((HOST_TARGET * scale) / 128));
+  const size = (128 * k) / scale;
+  els.canvas.style.setProperty('--host-size', `${size}px`);
+  hostSprite.resize(size);
 }
 window.addEventListener('resize', scaleCanvas);
 scaleCanvas();
