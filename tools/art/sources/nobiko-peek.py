@@ -19,6 +19,26 @@ for y in range(128):
         if y <= 64 or (y <= 72 and (x < 56 or x > 78)): head.putpixel((x, y), p)  # face, bun and the hair below the chin
         elif y >= 84 or x < 26: body.putpixel((x, y), p)  # kimono, hands and the fan; the neck between is redrawn
 BASE, CHIN = (42, 88), (67, 63)
+EYES = [(53, 45, 65, 51), (75, 45, 89, 51)]  # her eyes in the portrait: x0, y0, x1, y1 (exclusive)
+SKINS = {SKIN[:3], (250, 154, 182)}  # skin and blush
+
+def glance(im, k):
+    """Her eyes look k pixels to the right: in each row the iris and its highlights slide over inside the
+    eye's outline, and white sclera fills in behind. Ink within two pixels of skin is the (two-pixel) outline and stays put."""
+    out = im.copy()
+    for x0, y0, x1, y1 in EYES:
+        def skin(x, y): return im.getpixel((x, y))[:3] in SKINS
+        def inside(x, y):
+            if skin(x, y): return False
+            if sum(im.getpixel((x, y))[:3]) < 60:  # ink: outline if it touches skin
+                return not any(skin(x + a, y + b) for a, b in ((1, 0), (2, 0), (-1, 0), (-2, 0), (0, 1), (0, -1)))
+            return True
+        for y in range(y0, y1):
+            xs = [x for x in range(x0, x1) if inside(x, y)]
+            for x in xs:
+                out.putpixel((x, y), im.getpixel((x - k, y)) if x - k in xs else (250, 249, 249, 255))
+    return out
+
 # (head offset x, y) per frame: out, a look, a second lean in, then a spring back to the idle pose.
 OFFSETS = [(0, 0), (20, -1), (48, -2), (80, -2), (100, -1), (100, 0), (104, -1), (100, 0), (56, -1), (24, 0)]
 
@@ -51,6 +71,6 @@ for i, (dx, dy) in enumerate(OFFSETS):
     for x, y in pts: disc(neck, x - 0.4, y - 0.9, 4.2, SKIN)
     f.alpha_composite(neck)
     f.alpha_composite(body)  # over the neck, so it disappears into the collar
-    f.alpha_composite(head, (dx, dy))
+    f.alpha_composite(glance(head, 1 if dx < 40 else 2), (dx, dy))  # she looks where she's going
     sheet.alpha_composite(f, (i * W, 0))
 sheet.save(sys.argv[2])
