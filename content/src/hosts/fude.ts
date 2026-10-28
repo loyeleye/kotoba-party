@@ -1,4 +1,4 @@
-// Fude (brush tsukumogami): Kana Yōkai Raid, Kotoba Concentration, Oekaki, Shodō Taikai.
+// Fude (brush tsukumogami): Kana Yōkai Raid, Kotoba Concentration, Oekaki, Shodō Taikai, Dub Club.
 // The shodo_* lines are Fude's quiet register: an over-serious calligraphy teacher who whispers
 // and takes the blame for slipped strokes (story panel, 2026-10-27).
 //
@@ -297,4 +297,54 @@ export const fudeLines: HostLine[] = [
   { id: 'fude.concentration_time.01', host: 'fude', event: 'concentration_time', jp: { text: 'じかんです！　おつかれさま！', kana: 'じかんです！　おつかれさま！', en: "Time's up! Well done!" }, status: 'draft' },
   { id: 'fude.concentration_time.02', host: 'fude', event: 'concentration_time', jp: { text: 'はい、そこまで！　ズバッ！', kana: 'はい、そこまで！　ズバッ！', en: "That's it, stop! Slash!" }, status: 'draft' },
   { id: 'fude.concentration_time.03', host: 'fude', event: 'concentration_time', jp: { text: 'タイムアップ！　よく がんばりました！', kana: 'タイムアップ！　よく がんばりました！', en: "Time's up! You tried hard!" }, status: 'draft' },
+  // Dub Club: Fude-kantoku, a broke but proud anime director (humor and JLPT panels, 2026-10-28)
+  // dub_intro
+  { id: 'fude.dub_intro.01', host: 'fude', event: 'dub_intro', jp: { text: '{title}、さつえい かいし！　かんとくの フデです！', kana: '{title}、さつえい かいし！　かんとくの フデです！', en: '{title}: shooting starts! I\'m the director, Fude!' }, slots: ['{title}'], status: 'draft' },
+  { id: 'fude.dub_intro.02', host: 'fude', event: 'dub_intro', jp: { text: 'よーい、スタート！　こんやの アニメは {title}！', kana: 'よーい、スタート！　こんやの アニメは {title}！', en: 'Ready, action! Tonight\'s anime is {title}!' }, slots: ['{title}'], status: 'draft' },
+  { id: 'fude.dub_intro.03', host: 'fude', event: 'dub_intro', jp: { text: 'よさんは ゼロ！　でも こえは あります！', kana: 'よさんは ゼロ！　でも こえは あります！', en: 'The budget is zero! But we have voices!' }, status: 'draft' },
+  { id: 'fude.dub_intro.04', host: 'fude', event: 'dub_intro', jp: { text: 'みなさんが こえの しゅつえんしゃ です！', kana: 'みなさんが こえの しゅつえんしゃ です！', en: 'You are the voice cast!' }, status: 'draft' },
+  // dub_scene
+  { id: 'fude.dub_scene.01', host: 'fude', event: 'dub_scene', jp: { text: 'まず、よみあわせ です。「{line}」', kana: 'まず、よみあわせ です。「{line}」', en: 'First, the table read. "{line}"' }, slots: ['{line}'], status: 'draft' },
+  { id: 'fude.dub_scene.02', host: 'fude', event: 'dub_scene', jp: { text: 'つぎの シーン！　「{line}」', kana: 'つぎの シーン！　「{line}」', en: 'Next scene! "{line}"' }, slots: ['{line}'], status: 'draft' },
+  { id: 'fude.dub_scene.03', host: 'fude', event: 'dub_scene', jp: { text: 'セリフは これ！　「{line}」', kana: 'セリフは これ！　「{line}」', en: 'Here is the line! "{line}"' }, slots: ['{line}'], status: 'draft' },
+  // dub_record
+  { id: 'fude.dub_record.01', host: 'fude', event: 'dub_record', jp: { text: 'カードの とおりに、どうぞ！', kana: 'カードの とおりに、どうぞ！', en: 'Act it the way your card says!' }, status: 'draft' },
+  { id: 'fude.dub_record.02', host: 'fude', event: 'dub_record', jp: { text: 'よーい… スタート！　シュッ！', kana: 'よーい… スタート！　シュッ！', en: 'Ready… action! Swish!' }, status: 'draft' },
+  { id: 'fude.dub_record.03', host: 'fude', event: 'dub_record', jp: { text: 'ひみつの カードです。いわないで！', kana: 'ひみつの カードです。いわないで！', en: 'The card is a secret. Don’t say it!' }, status: 'draft' },
+  { id: 'fude.dub_record.04', host: 'fude', event: 'dub_record', jp: { text: 'だれが こんな カードを… あ、フデです。', kana: 'だれが こんな カードを… あ、フデです。', en: 'Who wrote these cards… oh, Fude did.' }, status: 'draft' },
+  // dub_screening
+  { id: 'fude.dub_screening.01', host: 'fude', event: 'dub_screening', jp: { text: 'じょうえい スタート！　おしずかに！', kana: 'じょうえい スタート！　おしずかに！', en: 'The screening starts! Quiet, please!' }, status: 'draft' },
+  { id: 'fude.dub_screening.02', host: 'fude', event: 'dub_screening', jp: { text: 'でんきを けして ください！', kana: 'でんきを けして ください！', en: 'Lights off, please!' }, status: 'draft' },
+  { id: 'fude.dub_screening.03', host: 'fude', event: 'dub_screening', jp: { text: 'さあ、みましょう！　どんな こえかな？', kana: 'さあ、みましょう！　どんな こえかな？', en: 'Let’s watch! What will the voices be like?' }, status: 'draft' },
+  // dub_reveal_all
+  { id: 'fude.dub_reveal_all.01', host: 'fude', event: 'dub_reveal_all', jp: { text: 'わかりやすい！　でも、それが いい！', kana: 'わかりやすい！　でも、それが いい！', en: 'Easy to read! But that’s the good part!' }, status: 'draft' },
+  { id: 'fude.dub_reveal_all.02', host: 'fude', event: 'dub_reveal_all', jp: { text: '{name}さん、ぜんいんに つたわりました！', kana: '{name}さん、ぜんいんに つたわりました！', en: '{name}, everyone got it!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.dub_reveal_all.03', host: 'fude', event: 'dub_reveal_all', jp: { text: 'カット！　…さいこう！', kana: 'カット！　…さいこう！', en: 'Cut! …Perfect!' }, status: 'draft' },
+  // dub_reveal_some
+  { id: 'fude.dub_reveal_some.01', host: 'fude', event: 'dub_reveal_some', jp: { text: '{name}さん、いい えんぎ！　シュッ！', kana: '{name}さん、いい えんぎ！　シュッ！', en: '{name}, nice acting! Swish!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.dub_reveal_some.02', host: 'fude', event: 'dub_reveal_some', jp: { text: 'なるほど！　わかった ひとも いますね。', kana: 'なるほど！　わかった ひとも いますね。', en: 'I see! Some of you got it.' }, status: 'draft' },
+  { id: 'fude.dub_reveal_some.03', host: 'fude', event: 'dub_reveal_some', jp: { text: 'カット！　もう いっかい！　…うそです。', kana: 'カット！　もう いっかい！　…うそです。', en: 'Cut! One more time! …Just kidding.' }, status: 'draft' },
+  // dub_reveal_none
+  { id: 'fude.dub_reveal_none.01', host: 'fude', event: 'dub_reveal_none', jp: { text: 'だれも わからない！　…でも フデは すき！', kana: 'だれも わからない！　…でも フデは すき！', en: 'Nobody got it! …But Fude loves it!' }, status: 'draft' },
+  { id: 'fude.dub_reveal_none.02', host: 'fude', event: 'dub_reveal_none', jp: { text: 'え、「{card}」でしたか？', kana: 'え、「{card}」でしたか？', en: 'Wait, that was "{card}"?' }, slots: ['{card}'], status: 'draft' },
+  { id: 'fude.dub_reveal_none.03', host: 'fude', event: 'dub_reveal_none', jp: { text: 'げいじゅつ です。むずかしい！', kana: 'げいじゅつ です。むずかしい！', en: 'That’s art. Hard to read!' }, status: 'draft' },
+  // dub_spoiler
+  { id: 'fude.dub_spoiler.01', host: 'fude', event: 'dub_spoiler', jp: { text: 'ネタバレ きんし！　シュッ！', kana: 'ネタバレ きんし！　シュッ！', en: 'No spoilers! Swish!' }, status: 'draft' },
+  { id: 'fude.dub_spoiler.02', host: 'fude', event: 'dub_spoiler', jp: { text: 'あっ、カードを いいました！', kana: 'あっ、カードを いいました！', en: 'Oh, you said the card!' }, status: 'draft' },
+  // dub_skip
+  { id: 'fude.dub_skip.01', host: 'fude', event: 'dub_skip', jp: { text: 'カット！　つぎに いきましょう。', kana: 'カット！　つぎに いきましょう。', en: 'Cut! Let’s move on.' }, status: 'draft' },
+  { id: 'fude.dub_skip.02', host: 'fude', event: 'dub_skip', jp: { text: 'この シーンは… また こんど！', kana: 'この シーンは… また こんど！', en: 'This scene… another time!' }, status: 'draft' },
+  // dub_notes
+  { id: 'fude.dub_notes.01', host: 'fude', event: 'dub_notes', jp: { text: 'こえの しゅつえん！　はくしゅ！', kana: 'こえの しゅつえん！　はくしゅ！', en: 'Our voice cast! A round of applause!' }, status: 'draft' },
+  { id: 'fude.dub_notes.02', host: 'fude', event: 'dub_notes', jp: { text: 'きょうの スターは {name}さん！', kana: 'きょうの スターは {name}さん！', en: 'Today’s star is {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.dub_notes.03', host: 'fude', event: 'dub_notes', jp: { text: 'いい シーンでした！　つぎも おねがいします！', kana: 'いい シーンでした！　つぎも おねがいします！', en: 'Good scene! Again next time, please!' }, status: 'draft' },
+  // dub_episode
+  { id: 'fude.dub_episode.01', host: 'fude', event: 'dub_episode', jp: { text: 'かんせい しました！　{title}、どうぞ！', kana: 'かんせい しました！　{title}、どうぞ！', en: 'It’s finished! Here is {title}!' }, slots: ['{title}'], status: 'draft' },
+  { id: 'fude.dub_episode.02', host: 'fude', event: 'dub_episode', jp: { text: 'だいいちわ、ほうそう かいし！', kana: 'だいいちわ、ほうそう かいし！', en: 'Episode one, on air!' }, status: 'draft' },
+  { id: 'fude.dub_episode.03', host: 'fude', event: 'dub_episode', jp: { text: 'みなさんの こえで、アニメが できました！', kana: 'みなさんの こえで、アニメが できました！', en: 'Your voices made an anime!' }, status: 'draft' },
+  // dub_sequel
+  { id: 'fude.dub_sequel.01', host: 'fude', event: 'dub_sequel', jp: { text: '「{title}　パート ツー」、つくっても いいですか？　…だめ？', kana: '「{title}　パート ツー」、つくっても いいですか？　…だめ？', en: 'May I make "{title} Part Two"? …No?' }, slots: ['{title}'], status: 'draft' },
+  { id: 'fude.dub_sequel.02', host: 'fude', event: 'dub_sequel', jp: { text: 'おつかれさまでした！　また こんど！', kana: 'おつかれさまでした！　また こんど！', en: 'Thank you for your hard work! See you!' }, status: 'draft' },
+  { id: 'fude.dub_sequel.03', host: 'fude', event: 'dub_sequel', jp: { text: 'つぎも みてね！　やくそく だよ！', kana: 'つぎも みてね！　やくそく だよ！', en: 'Watch the next one too! Promise!' }, audience: 'kids', status: 'draft' },
+  { id: 'fude.dub_sequel.04', host: 'fude', event: 'dub_sequel', jp: { text: 'スポンサーが にげました。だいにわは ありません。', kana: 'スポンサーが にげました。だいにわは ありません。', en: 'The sponsor ran away. There is no episode two.' }, audience: 'cheeky', status: 'draft' },
 ];

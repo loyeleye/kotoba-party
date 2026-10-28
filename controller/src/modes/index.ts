@@ -14,6 +14,7 @@ import { omiaiPhone } from './omiai.js';
 import { shodoPhone } from './shodo.js';
 import { narabetePhone } from './narabete.js';
 import { bentoHausPhone, bentoHausVsPhone } from './bentoHaus.js';
+import { dubClubPhone } from './dubClub.js';
 import type { PhoneMode } from './types.js';
 
 export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
@@ -33,4 +34,5 @@ export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
   narabete: narabetePhone,
   'bento-haus': bentoHausPhone,
   'bento-haus-vs': bentoHausVsPhone,
+  'dub-club': dubClubPhone,
 };

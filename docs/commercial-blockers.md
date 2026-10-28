@@ -31,7 +31,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 17 host and yōkai animation sheets, a smoke-puff effect, 56 Narabete! card pictures and 112 Narabete! answer pictures, 6 Bento Haus VS pieces) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 17 host and yōkai animation sheets, a smoke-puff effect, 56 Narabete! card pictures, 112 Narabete! answer pictures, 6 Bento Haus VS pieces, and Dub Club's 11 anime sets, 14 characters and their 13 mouth sheets) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
 | 7 | AI art: Gemini (source image for Pon) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
@@ -57,6 +57,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 29 | The hosts' Kids and Cheeky voice in every mode: one Audience line each in the host, Onsen suspect and ink-coach AI prompts, 72 written Kids and Cheeky host lines, and a stricter Kids filter on typed player text (decision, 2026-10-27) | `server/ai/hostVoice.ts`, `server/ai/suspect.ts`, `server/ai/inkCoach.ts`, `content/src/hosts/audienceLines.ts`, `shared/src/moderation.ts`, `shared/src/audience.ts` | ⚠️ | Same age-rating question as rows 27 and 28, now across the whole night: with Cheeky on, the hosts joke about office life, dates and the odd drink in every mode, including the AI's own lines, which no one reviews line by line. Before selling: answer the rating questionnaires (IARC / ESRB / PEGI) with Cheeky in, or ship rated builds without it; keep Cheeky off by default and behind its warning; have the fluent reviewer check the Cheeky lines. A Kids setting doesn't make the game safe to market to children (COPPA / GDPR-K, row 20): the Kids filter is a word list, not a moderation service |
 | 30 | Omiai Matchmaker's Cheeky guests (drinking, hangovers, bad habits, dating apps, overtime; never explicit, the prize is still a cup of tea), behind the host's Audience setting (decision, 2026-10-27) | `shared/src/modes/omiai/cards.ts` (`audience: 'cheeky'`) | ⚠️ | Same as rows 27 and 29: no licence issue, but it adds to the game's age rating. Before selling: include it in the rating questionnaires or leave it out of rated builds; have the fluent reviewer check the Cheeky guests' Japanese |
 | 31 | Browser speech synthesis (the device's own ja-JP voices, Web Speech API) for host lines when VOICEVOX isn't set up or is late, as already used for Onsen suspects, Concentration cards and listening prompts | `stage/src/hostSpeech.ts`, `stage/src/modes/onsenMurder.ts`, `stage/src/modes/concentration.ts`, `controller/src/components/voice.ts` | 🟡 ❓ | Nothing is shipped: the voices belong to the player's OS or browser. Chrome's "Google" voices send the text to Google, so the host fallback prefers on-device voices. Read Google's terms for Chrome's network voices and mention it in the privacy notice, or require on-device voices |
+| 32 | Dub Club plays players' recorded voices back on the TV: each acted take is kept in the room's memory (Node, or the Cloudflare Durable Object) while the game needs it, then dropped; never written to disk | `server/src/room.ts` (`keepClip`), `server/src/server.ts`, `cloudflare/roomObject.ts`, `controller/src/modes/dubClub.ts` | ⚠️ ❓ | Privacy, not a licence: a voice played to the room is still personal data, and some players may be children. Before selling: say it in the privacy notice, decide on under-13/16 players (COPPA, GDPR-K: rules not read for this, ❓), keep the "play from my phone" option, and check Cloudflare's Durable Object terms for in-memory personal data (not read, ❓) |
+| 33 | Dub Club's Cheeky episodes and cards (office overtime, a first date, Girls' Night, a cheap idol off stage, and the drunk, sexy, host-club, gyaru and mother-in-law cards), behind the host's Audience setting (decision, 2026-10-28) | `shared/src/modes/dubClub/scenes.ts` (`audience: 'cheeky'`) | ⚠️ | Same as rows 29 and 30: no licence issue, but it adds to the age rating. Include it in the rating questionnaires or leave it out of rated builds; have the fluent reviewer check the Cheeky lines |
 
 ## Details
 
@@ -549,3 +551,29 @@ dropped on 2026-10-27.
 **Recommendation:** keep using AI pixel art (PixelLab) for now. Before selling, have the three hosts,
 the logo and the title screen hand-finished or commissioned, keep the AI sprites and Photo Caption
 pictures if they still look right, and add the Steam/itch disclosure.
+
+### 32. Players' voices played back (Dub Club)
+
+- **What:** In Dub Club a phone records the player's acted line (raw, up to 12 s) and posts it to the room
+  (`POST /api/rooms/:code/clip`). The room keeps it in memory, owned by that seat, and only the main TV's
+  token can fetch it (`GET …/clip/:id`; watching screens and phones can't). The mode lists the clips it
+  still needs (`Mode.clipsInUse`): the current scene's, and each scene's chosen dub for the closing
+  episode. The room drops every other clip after each phase change, all of them when the game ends,
+  and holds at most 8 MB. Nothing is written to disk or logged. A player can tick "Play my voice from
+  this phone instead": then the clip only goes to the speech check (as in row 20) and the phone plays it
+  itself.
+- **Status:** ⚠️ ❓. No licence is involved; it is a privacy question. Voices are personal data, and
+  playing one back to a room is more than transcribing it. The COPPA and GDPR-K rules weren't read for
+  this decision (2026-10-28), nor Cloudflare's terms on personal data held in Durable Object memory: ❓
+  until someone reads them.
+- **To sell:** a privacy notice that says the TV plays your recorded line to the room and keeps it only
+  for the game; a decision on under-13/16 players (parental consent, or Dub Club off for them); keep the
+  play-from-phone option; read the Durable Object data terms.
+
+### 33. Dub Club's Cheeky content
+
+- **What:** Cheeky rooms get four episodes (Overtime Warrior, Date Night, Girls' Night from her side
+  of the table, per Ladi's note that the audience is about half women, and Idol, Backstage) and five Cheeky direction cards.
+  One drinking joke at most (the よっぱらって card); nothing explicit.
+- **Status:** ⚠️, same as rows 29 and 30: it adds to the age rating, nothing to license.
+

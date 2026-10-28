@@ -104,7 +104,8 @@ function pump(): void {
 }
 
 /** A one-shot over the music. It skips the ducked bus, so a host line starting with it doesn't duck it. */
-function sting(id: SongId): void {
+export function sting(id: SongId): void {
+  if (!audioReady() || isMuted()) return;
   const sound = getSound();
   if (!sound) return;
   const v = new SongVoice(sound.ctx, SONGS[id], sound.backing, 'full');
@@ -223,7 +224,7 @@ export function bellTonic(): number {
 export function updateMusic(view: RoomView): void {
   lastView = view;
   countGame(view);
-  const cue = cueFor(view.mode, view.phase, game, listening(view) || performance.now() < hushUntil, saying(view));
+  const cue = cueFor(view.mode, view.phase, game, listening(view) || performance.now() < hushUntil, saying(view), view.game?.mode === 'dub-club' ? `${view.game.step?.kind ?? ''}` : undefined);
   const newPhase = view.phaseSeq !== lastPhaseSeq;
   lastPhaseSeq = view.phaseSeq;
   want = cue;

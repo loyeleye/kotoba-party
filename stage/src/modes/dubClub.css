@@ -1,0 +1,111 @@
+/* Dub Club (stage). Everything is scoped under .dub-stage. The anime picture is the 320×180 set at a
+   whole 3× (960×540), or 4× for the episode, with cinema bars and burnt-in subtitles. */
+body[data-mode='dub-club'] { --mode: #7fd8ff; }
+.dub-stage { width: min(1760px, 100%); display: grid; gap: 18px; align-content: start; text-align: left; --dub-ink: #0b0605; --dub-gold: #ffd36b; }
+.dub-stage p { margin: 0; }
+.dub-stage [lang='ja'] { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.dub-split { grid-template-columns: 960px minmax(0, 1fr); align-items: start; }
+.dub-full { justify-items: center; }
+
+/* ---- the picture ---- */
+.dub-screen { position: relative; width: 960px; height: 540px; overflow: hidden; background: #000; border: 6px solid var(--dub-ink); border-radius: 10px; box-shadow: 0 0 0 3px #3a2f6b, 0 18px 50px rgba(0, 0, 0, 0.55); }
+.dub-screen.big { width: 1280px; height: 720px; }
+.dub-bg { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+/* The character at a whole 3× (4× big), standing on the bottom bar. */
+.dub-char { position: absolute; left: 50%; bottom: 40px; width: 384px; height: 384px; transform: translateX(-50%); image-rendering: pixelated; }
+.dub-screen.big .dub-char { width: 512px; height: 512px; bottom: 54px; }
+.dub-char.sheet { background-size: 300% 100%; background-position: 0 0; background-repeat: no-repeat; }
+.dub-char.sheet[data-m='1'] { background-position: 50% 0; }
+.dub-char.sheet[data-m='2'] { background-position: 100% 0; }
+/* No mouth sheet (the monster): it heaves with the voice instead. */
+.dub-char.still { transform-origin: 50% 100%; transition: transform 60ms; }
+.dub-char.still[data-m='1'] { transform: translateX(-50%) scale(1.02, 1.04); }
+.dub-char.still[data-m='2'] { transform: translateX(-50%) scale(1.04, 1.08); }
+.dub-bar { position: absolute; left: 0; right: 0; height: 40px; background: #000; display: flex; align-items: center; padding: 0 18px; z-index: 2; }
+.dub-bar.top { top: 0; }
+.dub-bar.bottom { bottom: 0; height: 64px; justify-content: center; }
+.dub-screen.big .dub-bar.bottom { height: 84px; }
+.dub-sub { color: #fff; font-size: 34px; font-weight: 800; text-shadow: 2px 2px 0 #000; text-align: center; }
+.dub-screen.big .dub-sub { font-size: 44px; }
+.dub-sub rt { font-size: 15px; }
+.dub-namecard { color: #fff; font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 4px; }
+.dub-namecard small { color: #b8b0d8; font-weight: 400; font-size: 18px; }
+.dub-who { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; }
+.dub-seat { color: var(--seat, var(--mode)); }
+.dub-nosound { position: absolute; top: 48px; right: 12px; z-index: 3; padding: 4px 10px; border-radius: 8px; background: rgba(0, 0, 0, 0.7); color: #fff; font-size: 18px; }
+
+/* ---- overlays ---- */
+.dub-over { min-width: 360px; max-width: 900px; position: absolute; z-index: 3; left: 50%; top: 50%; transform: translate(-50%, -60%); display: grid; justify-items: center; gap: 6px; padding: 18px 30px; border-radius: 14px; border: 4px solid var(--dub-ink); background: rgba(18, 13, 38, 0.92); color: #fff; text-align: center; }
+.dub-over p { font-size: 40px; font-weight: 900; }
+.dub-over small { font-size: 20px; color: #b8b0d8; }
+.dub-curtain p, .dub-cut p, .dub-best p { font-size: 64px; color: var(--dub-gold); }
+.dub-clapper { background: #fff; color: var(--dub-ink); animation: dub-clap 420ms ease-out both; }
+.dub-clapper p { font-size: 46px; }
+.dub-clapper .dub-who { font-size: 34px; }
+@keyframes dub-clap { from { transform: translate(-50%, -60%) rotate(-8deg) scale(0.8); opacity: 0; } to { transform: translate(-50%, -60%); opacity: 1; } }
+.dub-phone { position: absolute; z-index: 3; top: 52px; left: 50%; transform: translateX(-50%); padding: 6px 16px; border-radius: 999px; background: rgba(0, 0, 0, 0.75); color: #fff; font-size: 24px; font-weight: 800; }
+.dub-ask, .dub-reveal { top: 52px; transform: translateX(-50%); }
+.dub-count { font-size: 30px !important; color: var(--mode); }
+.dub-again { font-size: 26px !important; color: var(--dub-gold); }
+.dub-timer { display: block; width: 320px; height: 10px; border-radius: 5px; background: var(--mode); transform-origin: left; animation: dub-run var(--d) linear forwards; }
+@keyframes dub-run { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.dub-card { display: flex; align-items: center; gap: 16px; text-align: left; }
+.dub-card-text { display: flex; flex-direction: column; gap: 2px; }
+.dub-card-emoji { flex: none; font-size: 64px; line-height: 1; }
+.dub-card-jp { font-size: 44px; font-weight: 900; color: var(--dub-gold); white-space: nowrap; }
+.dub-card-en { font-size: 22px; color: #d8d0f0; }
+.dub-card.flip { animation: dub-flip 500ms ease-out both; }
+@keyframes dub-flip { from { transform: perspective(800px) rotateY(90deg); opacity: 0; } 40% { opacity: 1; } to { transform: perspective(800px) rotateY(0); } }
+.dub-got { font-size: 28px !important; color: #48e6a4; }
+.dub-spoil { font-size: 26px !important; color: #ff8a8a; }
+
+/* ---- the side panel ---- */
+.dub-side { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.dub-tag { font-size: 22px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.dub-setup { font-size: 28px; line-height: 1.3; }
+.dub-line { font-size: 44px; font-weight: 900; line-height: 1.5; padding: 12px 18px; border-radius: 14px; background: var(--paper, #fff4dc); color: var(--paper-ink, #22142e); border: 4px solid var(--dub-ink); box-shadow: 0 6px 0 var(--dub-ink); }
+.dub-line rt { font-size: 18px; }
+.dub-line-en { font-size: 24px; color: var(--muted); }
+.dub-call, .dub-quiet { font-size: 28px; font-weight: 800; color: var(--mode); }
+.dub-hint { font-size: 22px; color: var(--muted); }
+.dub-cast, .dub-done { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.dub-cast li, .dub-done li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-radius: 10px; background: var(--panel); font-size: 26px; }
+.dub-cast li.sent { box-shadow: inset 0 0 0 3px #48e6a4; }
+.dub-cast li.passed { opacity: 0.7; }
+.dub-cast-state { color: var(--muted); font-size: 22px; }
+.dub-done-card { font-weight: 800; }
+.dub-done-n { color: #48e6a4; font-weight: 800; }
+.dub-done li.skipped { opacity: 0.5; }
+.dub-notes { width: 100%; border-collapse: collapse; font-size: 26px; }
+.dub-notes th { text-align: left; color: var(--muted); font-size: 20px; font-weight: 400; padding: 0 8px 4px; }
+.dub-notes td { padding: 8px; border-top: 1px solid var(--line); }
+.dub-notes tr.best td { background: color-mix(in srgb, var(--dub-gold) 18%, transparent); }
+.dub-notes-card small { color: var(--muted); font-size: 18px; }
+.dub-notes-total { font-weight: 900; color: var(--dub-gold); text-align: right; }
+
+/* ---- intro and the episode ---- */
+.dub-intro { justify-items: center; text-align: center; gap: 22px; }
+.dub-logo { font-size: 120px; font-weight: 900; color: var(--mode); letter-spacing: 0.06em; text-shadow: 6px 6px 0 var(--dub-ink); }
+.dub-subtitle { font-size: 32px; color: var(--muted); }
+.dub-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1300px; margin: 0; }
+.dub-titlecard { display: grid; place-content: center; justify-items: center; gap: 16px; background: radial-gradient(circle at 50% 45%, #3b2a8a, #0d0820 70%); color: #fff; text-align: center; }
+.dub-ep { font-size: 30px; color: var(--dub-gold); font-weight: 800; }
+.dub-ep-title { font-size: 96px; font-weight: 900; text-shadow: 6px 6px 0 #000; animation: dub-zoom 900ms cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.dub-ep-title rt { font-size: 28px; }
+.dub-ep-en { font-size: 32px; color: #d8d0f0; }
+.dub-titlecard.end { background: #0d0820; }
+@keyframes dub-zoom { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.dub-credits { background: #000; color: #fff; }
+.dub-roll { position: absolute; left: 0; right: 0; top: 100%; display: grid; gap: 18px; justify-items: center; animation: dub-roll var(--d) linear forwards; }
+.dub-roll-title { font-size: 64px; font-weight: 900; margin-bottom: 30px !important; }
+.dub-roll-head { font-size: 26px; letter-spacing: 0.3em; color: var(--dub-gold); margin-top: 20px !important; }
+.dub-roll-row { display: grid; grid-template-columns: 360px 360px; gap: 30px; font-size: 34px; align-items: baseline; }
+.dub-roll-row > :first-child { text-align: right; color: #b8b0d8; }
+.dub-roll-row small { grid-column: 2; font-size: 22px; color: #8f86b8; }
+@keyframes dub-roll { from { transform: translateY(0); } to { transform: translateY(calc(-100% - 760px)); } }
+
+.dub-gate { position: fixed; z-index: 20; left: 50%; bottom: 140px; transform: translateX(-50%); padding: 16px 28px; border-radius: 14px; border: 4px solid var(--dub-ink); background: var(--dub-gold); color: var(--dub-ink); font-size: 28px; font-weight: 900; cursor: pointer; animation: dub-pulse 1.4s ease-in-out infinite; }
+@keyframes dub-pulse { 50% { transform: translateX(-50%) scale(1.04); } }
+
+body[data-motion='calm'] .dub-stage *, body[data-motion='calm'] .dub-gate { animation-duration: 1ms !important; }
+body[data-motion='calm'] .dub-roll { animation-duration: var(--d) !important; }

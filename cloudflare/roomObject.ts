@@ -11,7 +11,7 @@ import { buildContent } from '../server/src/content.js';
 import { aiVoice, bankVoice, hostDirector, type HostVoice } from '../server/src/host.js';
 import { inkCoachDirector } from '../server/src/ink.js';
 import { suspectDirector } from '../server/src/onsen.js';
-import { Room, type RoomSocket } from '../server/src/room.js';
+import { Room, wavDurationMs, type RoomSocket } from '../server/src/room.js';
 import { systemClock } from '../server/src/clock.js';
 import { SttGate, isClip, sttFromEnv, transcribe } from '../server/src/stt.js';
 import { ROOM_STALE_MS } from '../shared/src/constants.js';
@@ -122,6 +122,27 @@ export class RoomObject extends DurableObject<Env> {
       const result = await this.sttGate.run(token, () => transcribe(clip, stt));
       if (result === 'busy') return json(429, { error: 'busy' });
       return result.ok ? json(200, { via: 'speech', text: result.text }) : json(502, { error: result.error });
+    }
+    if (action === 'clip') {
+      const token = url.searchParams.get('token') ?? '';
+      if (room.viewerFor(token)?.kind !== 'player') return json(401, { error: 'bad-token' });
+      const clip = new Uint8Array(await req.arrayBuffer());
+      if (!isClip(clip)) return json(400, { error: 'bad-clip' });
+      const tv = url.searchParams.get('tv') !== '0';
+      const kept = tv ? room.keepClip(token, clip) : null;
+      if (tv && !kept) return json(409, { error: 'no-clips' });
+      const stt = sttFromEnv(this.env);
+      let heard: { via: 'speech'; text: string } | null = null;
+      if (stt) {
+        const result = await this.sttGate.run(token, () => transcribe(clip, stt));
+        if (result !== 'busy' && result.ok) heard = { via: 'speech', text: result.text };
+      }
+      return json(200, { clipId: kept?.clipId ?? null, durMs: kept?.durMs ?? wavDurationMs(clip), heard, speech: !!stt });
+    }
+    if (action === 'clipget') {
+      const bytes = room.clipFor(url.searchParams.get('token') ?? '', url.searchParams.get('id') ?? '');
+      if (!bytes) return json(404, { error: 'not-found' });
+      return new Response(bytes, { headers: { 'content-type': 'audio/wav', 'cache-control': 'no-store' } });
     }
     if (action === 'commands') {
       const token = url.searchParams.get('token');

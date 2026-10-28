@@ -30,6 +30,7 @@ import { touristPolicy } from './policies/tourist.js';
 import { oekakiPolicy } from './policies/oekaki.js';
 import { shodoPolicy } from './policies/shodo.js';
 import { narabetePolicy } from './policies/narabete.js';
+import { dubClubPolicy } from './policies/dubClub.js';
 import { bentoHausPolicy } from './policies/bentoHaus.js';
 
 const { values } = parseArgs({
@@ -59,6 +60,7 @@ const count = Number(values.bots ?? (values.code ? 7 : 8));
 const dropSeconds = Number(values.drop);
 
 let sharedNarabete: ModePolicy | undefined;
+let sharedDubClub: ModePolicy | undefined;
 let sharedPhraseBingo: ModePolicy | undefined;
 
 /** A fresh policy per bot, so each keeps its own memory (Concentration remembers cards). */
@@ -96,6 +98,9 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
     case 'bento-haus':
     case 'bento-haus-vs':
       return bentoHausPolicy();
+    case 'dub-club':
+      // One shared policy: guessers "hear" the card each actor is playing.
+      return (sharedDubClub ??= dubClubPolicy());
     default:
       return undefined;
   }

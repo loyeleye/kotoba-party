@@ -75,6 +75,19 @@ export default {
         await addReadingsRemote({ heard }, env.READER_URL ? { url: env.READER_URL, token: env.READER_TOKEN } : null);
         return json(200, heard);
       }
+      if (action === 'clip' && !m[3] && req.method === 'POST') {
+        // Dub Club: a recorded line for the TV (kept in the room object's memory) and Whisper.
+        const token = bearerOf(req);
+        if (Number(req.headers.get('content-length') ?? 0) > MAX_CLIP_BYTES) return json(400, { error: 'bad-clip' });
+        const clip = await req.arrayBuffer();
+        if (clip.byteLength > MAX_CLIP_BYTES) return json(400, { error: 'bad-clip' });
+        const res = await toRoom(env, code, 'clip', { token, tv: url.searchParams.get('tv') === '0' ? '0' : '1' }, new Request('https://room/', { method: 'POST', body: clip }));
+        if (!res.ok) return res;
+        const body = (await res.json()) as { heard: Utterance | null };
+        if (body.heard) await addReadingsRemote({ heard: body.heard }, env.READER_URL ? { url: env.READER_URL, token: env.READER_TOKEN } : null);
+        return json(200, body);
+      }
+      if (action === 'clip' && m[3] && req.method === 'GET') return toRoom(env, code, 'clipget', { token: bearerOf(req), id: decodeURIComponent(m[3]) }, req);
       if (action === 'commands' && req.method === 'POST') {
         const auth = req.headers.get('authorization');
         const token = auth?.startsWith('Bearer ') ? auth.slice(7) : '';
@@ -97,6 +110,11 @@ export default {
     return json(404, { error: 'not-found' });
   },
 } satisfies ExportedHandler<Env>;
+
+function bearerOf(req: Request): string {
+  const auth = req.headers.get('authorization');
+  return auth?.startsWith('Bearer ') ? auth.slice(7) : '';
+}
 
 function toRoom(env: Env, code: string, action: string, params: Record<string, string>, req: Request): Promise<Response> {
   const stub = env.ROOMS.get(env.ROOMS.idFromName(code));

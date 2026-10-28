@@ -47,6 +47,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'bento-haus': 'kawai-kitsune',
   // VS opens on the other Bento theme, so the race sounds different from the co-op shift.
   'bento-haus-vs': 'feelin-good',
+  // Dub Club: its own cheap anime opening, and silence whenever a voice is recorded or played (dubCue).
+  'dub-club': 'anime-op',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -120,10 +122,11 @@ export const listening = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): bool
 export const saying = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): boolean =>
   view.mode === 'shodo' && view.phase === 'encore' && view.game?.mode === 'shodo' && view.game.finished > 0;
 
-export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = false, say = false): Cue {
+export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = false, say = false, step?: string): Cue {
   if (phase === 'lobby') return { song: 'bouncing', mix: 'full' };
-  // Curtain Call, then the recap tune.
-  if (phase === 'recap') return { song: 'happy-dance', mix: 'full', leadIn: 'fanfare' };
+  // Curtain Call, then the recap tune. Dub Club's episode has just had its own ending: no second one.
+  if (phase === 'recap') return mode === 'dub-club' ? { song: 'happy-dance', mix: 'full' } : { song: 'happy-dance', mix: 'full', leadIn: 'fanfare' };
+  if (mode === 'dub-club') return dubCue(phase, step);
   if (mode === 'karaoke-duel') return karaokeCue(phase);
   if (mode === 'shodo') return shodoCue(phase, listen, say);
   const theme = mode ? themeFor(mode, game) : 'bouncing';
@@ -172,4 +175,23 @@ function shodoCue(phase: Phase, listen: boolean, say: boolean): Cue {
   if (phase === 'finale') return { song: SHODO_GALLERY, mix: 'full', keep: true };
   if (phase === 'penalty') return { song: SHODO_GALLERY, mix: 'under', keep: true };
   return { song, mix: listen ? 'listen' : 'under', keep: true };
+}
+
+/**
+ * Dub Club (the music panel): the opening after the ident; the scene card under, so Fude's table read
+ * is heard; silence while phones record and while the TV plays the dubs (a voice on a voice is mush);
+ * the tally for cast notes. The episode: the opening under its title card, nothing under each dub,
+ * the ending song over the credits. The stage plays the eyecatch jingle itself, on the end card.
+ */
+function dubCue(phase: Phase, step?: string): Cue {
+  if (phase === 'intro') return { song: 'anime-op', mix: 'full', leadIn: 'ident' };
+  if (phase === 'prompt') return { song: 'gentle', mix: 'listen' };
+  if (phase === 'answer' || phase === 'reveal') return { song: null, mix: 'full' };
+  if (phase === 'score') return { song: 'score', mix: 'full' };
+  if (phase === 'finale') {
+    if (step === 'title') return { song: 'anime-op', mix: 'full' };
+    if (step === 'credits') return { song: 'anime-end', mix: 'full' };
+    return { song: null, mix: 'full' };
+  }
+  return { song: 'gentle', mix: 'under' };
 }

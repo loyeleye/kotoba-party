@@ -327,6 +327,16 @@ export function wakeAt(state: GameState, ctx: GameContext): number | null {
   return mode.wakeAt(state.modeState, state.phase, modeContext(state, ctx));
 }
 
+/**
+ * The recorded clips the mode still plays (Dub Club), or null when no game that plays clips is on. The
+ * server keeps clips in memory only while they are in this set.
+ */
+export function clipsInUse(state: GameState): Set<string> | null {
+  const mode = activeMode(state);
+  if (!mode?.clipsInUse || !inGame(state)) return null;
+  return new Set(mode.clipsInUse(state.modeState, state.phase));
+}
+
 /** Ends phases early while the mode says everyone is in. */
 function settle(state: GameState, ctx: GameContext): void {
   for (let guard = 0; guard < 32; guard++) {

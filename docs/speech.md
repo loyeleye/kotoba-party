@@ -5,7 +5,8 @@ AI** (the live game) or on a Whisper server **we run** (Node, or Cloudflare if y
 records a short clip while the hold-to-talk button is held (16 kHz mono WAV, at most 6 s, 12 s in
 Karaoke Duel) and posts it to the game server, which checks the player's seat and passes the clip
 on to Whisper. No audio goes to Google or OpenAI, and the game stores no clip: it lives in memory
-for the one request. Why: [ADR 0004](decisions/0004-self-hosted-speech-to-text.md) and
+for the one request. The one exception is Dub Club, where the TV plays each player's recorded line back:
+see "Dub Club's kept clips" below. Why: [ADR 0004](decisions/0004-self-hosted-speech-to-text.md) and
 [ADR 0005](decisions/0005-whisper-on-workers-ai.md).
 
 Without Whisper, phones don't show the hold-to-talk button at all: every spoken step is typed or
@@ -97,6 +98,18 @@ Players' voices are personal data, and some players may be children. What the ga
   Cloudflare says Workers AI doesn't keep or train on them; whisper.cpp and speaches don't save them
   either, but check the logging of any proxy in front of them.
 - Only the text is kept, like a typed answer, for the length of the game.
+
+### Dub Club's kept clips
+
+Dub Club records the acted line raw (no auto gain or noise suppression, so a whisper stays a whisper) and
+posts it to `POST /api/rooms/:code/clip`. The room keeps it **in memory only** while the mode still
+needs it (`Mode.clipsInUse`: the current scene, and the dubs chosen for the closing episode), at most
+8 MB a room, and drops it after the phase that last uses it; all clips go when the game ends. Only the
+main TV can fetch a clip (`GET /api/rooms/:code/clip/:id` with the stage token), never a watching
+screen or another phone, and a move can only name the sender's own clip. With speech set up, the clip
+is also transcribed, but only to catch a take that says its own secret card. A player can choose
+"Play my voice from this phone instead": the clip then goes only to the speech check (`?tv=0`) and the
+phone plays it itself. See commercial-blockers row 32.
 
 Before a public or paid release: say this in a privacy notice, and decide what to do for players
 under 13/16 (parental consent rules such as COPPA and GDPR-K), even though no audio is kept.

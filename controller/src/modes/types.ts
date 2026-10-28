@@ -11,6 +11,8 @@ export interface PhoneContext<G extends GameView = GameView> {
   flash(text: string): void;
   /** Works the screen key out again (for a hold that ends on a timer, see `hold`). */
   redraw(): void;
+  /** Time left in the phase by the server's clock, or null when it has no deadline. */
+  remainingMs(): number | null;
 }
 
 /** How one mode draws the phone. */

@@ -15,10 +15,13 @@ interface SpeechService {
   token: string;
 }
 let service: SpeechService | null = null;
+/** The room, whether or not it has speech: Dub Club sends its recorded takes here for the TV to play. */
+let room: SpeechService | null = null;
 
-/** Set by main.ts after joining: the room's address and the seat token, or null when the server has no speech. */
-export function setSpeechService(s: SpeechService | null): void {
+/** Set by main.ts after joining: the room's address and the seat token, and whether the server has speech. */
+export function setSpeechService(s: SpeechService | null, roomService: SpeechService | null = s): void {
   service = s;
+  room = roomService;
 }
 
 const hasMic = (): boolean => typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && typeof AudioContext !== 'undefined';
@@ -26,7 +29,19 @@ const hasMic = (): boolean => typeof navigator !== 'undefined' && !!navigator.me
 /** Hold-to-talk works on this phone in this room. */
 export const speechReady = (): boolean => !!service && hasMic();
 
+/** This phone can record a clip for the room (Dub Club), with or without a speech check. */
+export const recordReady = (): boolean => !!room && hasMic();
+
 export type Heard = ({ ok: true } & Pick<Utterance, 'text' | 'tokens'>) | { ok: false; why: 'quiet' | 'blocked' | 'failed' | 'busy' };
+
+export interface MicOptions {
+  /**
+   * Record the voice as it is, for playback (Dub Club): no automatic gain or noise suppression, which
+   * flatten a whisper and a shout to the same level and chew up a robot voice (music panel, 2026-10-28).
+   * The silence gate is lower too, so a whisper counts.
+   */
+  raw?: boolean;
+}
 
 /**
  * One hold of the button. Create it inside the press (so the browser lets audio start), call stop() on release.
@@ -46,7 +61,10 @@ export class MicClip {
   /** How loud the mic is right now, 0 to 1 (for the level meter on the talk button). */
   level = 0;
 
-  constructor() {
+  private readonly raw: boolean;
+
+  constructor(opts: MicOptions = {}) {
+    this.raw = !!opts.raw;
     this.audio = new AudioContext();
     void this.audio.resume();
     this.ready = this.open();
@@ -54,7 +72,8 @@ export class MicClip {
 
   private async open(): Promise<boolean> {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } });
+      const clean = !this.raw;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: clean, autoGainControl: clean, channelCount: 1 } });
       if (this.stopped) {
         for (const t of stream.getTracks()) t.stop();
         return false;
@@ -100,7 +119,7 @@ export class MicClip {
       at += c.length;
     }
     this.chunks = [];
-    if (loudness(all) < 0.008) return new Uint8Array(0); // only room noise: don't bother the server
+    if (loudness(all) < (this.raw ? 0.003 : 0.008)) return new Uint8Array(0); // only room noise: don't bother the server
     return wav(downsample(all, rate, RATE), RATE);
   }
 
@@ -128,6 +147,44 @@ export async function hear(clip: Uint8Array<ArrayBuffer> | null): Promise<Heard>
     if (!res.ok) return { ok: false, why: 'failed' };
     const { text, tokens } = (await res.json()) as Partial<Utterance>;
     return text ? { ok: true, text, tokens: Array.isArray(tokens) ? tokens : undefined } : { ok: false, why: 'quiet' };
+  } catch {
+    return { ok: false, why: 'failed' };
+  }
+}
+
+export interface SentClip {
+  ok: true;
+  /** The room's id for the clip, or null when it stays on this phone (`tv` false). */
+  clipId: string | null;
+  durMs: number;
+  /** What Whisper heard, when the server has speech. */
+  heard: Utterance | null;
+  checked: boolean;
+}
+
+/**
+ * Sends a recorded take to the room (Dub Club). With `tv`, the room keeps it in memory for the TV to play
+ * and drops it when the game no longer needs it; without, only the speech check sees it and this phone
+ * plays it itself.
+ */
+export async function uploadClip(clip: Uint8Array<ArrayBuffer>, tv: boolean): Promise<SentClip | { ok: false; why: 'failed' | 'full' }> {
+  if (!room) return { ok: false, why: 'failed' };
+  try {
+    const res = await fetch(`${room.base}/api/rooms/${room.code}/clip?tv=${tv ? 1 : 0}`, {
+      method: 'POST',
+      headers: { 'content-type': 'audio/wav', authorization: `Bearer ${room.token}` },
+      body: clip,
+    });
+    if (res.status === 409) return { ok: false, why: 'full' };
+    if (!res.ok) return { ok: false, why: 'failed' };
+    const body = (await res.json()) as { clipId?: unknown; durMs?: unknown; heard?: Utterance | null; speech?: unknown };
+    return {
+      ok: true,
+      clipId: typeof body.clipId === 'string' ? body.clipId : null,
+      durMs: typeof body.durMs === 'number' ? body.durMs : 0,
+      heard: body.heard && typeof body.heard.text === 'string' ? body.heard : null,
+      checked: body.speech === true,
+    };
   } catch {
     return { ok: false, why: 'failed' };
   }
