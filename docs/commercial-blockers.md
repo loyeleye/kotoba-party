@@ -36,7 +36,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
 | 10 | Kana course order and links (ToKini Andy) | `content/src/kana/raid.ts` | ✅ | Links only; ask before any paid tie-in or using his name in marketing |
-| 11 | Fonts: Noto Sans JP, Noto Sans, Pixelify Sans, Press Start 2P (Google Fonts CDN) | `stage/index.html`, `controller/index.html` | 🟡 ❓ | OFL 1.1 allows selling; ship the OFL notices. Self-host the fonts before an EU launch (the Google Fonts CDN's privacy terms weren't readable) |
+| 11 | Fonts: Noto Sans JP, Noto Sans, Pixelify Sans, Press Start 2P (Google Fonts CDN); Kotoba Five, our modified Pixelify digit 5 (self-hosted) | `stage/index.html`, `controller/index.html`, `stage/assets/fonts/` | 🟡 ❓ | OFL 1.1 allows selling; ship the OFL notices. Self-host the fonts before an EU launch (the Google Fonts CDN's privacy terms weren't readable) |
 | 12 | Game formats and names (Jackbox, oogiri, Shōten) | Docs, personas | ⚠️ | Don't use "Jackbox" or TV show names in the product or marketing |
 | 13 | Karaoke Duel songs | `shared/src/modes/karaokeDuel/songs.ts` | ✅ | Keep songs original; no covers without a music licence |
 | 14 | Cloudflare Workers + Durable Objects | `wrangler.jsonc`, `cloudflare/` | ⚠️ | Paid plan once traffic grows; not a licence bar |
@@ -199,6 +199,13 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   titles and numbers (timer, scores). Since 2026-10-27, Press Start 2P, a blockier pixel face, for
   the room code only, because Pixelify's G, Z, S and B read as 6, 2, 5 and 8. Both pages load them from the Google
   Fonts CDN (`fonts.googleapis.com`, `fonts.gstatic.com`), with system fonts as the fallback.
+- **Kotoba Five (since 2026-10-28):** Pixelify's 5 read as S or 8 from the couch, so
+  `tools/fonts/build-kotoba-five.py` takes Pixelify Sans, redraws only the 5, keeps only that
+  character and renames the result Kotoba Five (`stage/assets/fonts/kotoba-five-{500,700}.woff2`,
+  self-hosted). That is a Modified Version under the OFL: allowed, it must stay under OFL 1.1, and
+  it can't use a Reserved Font Name (Pixelify Sans reserves none; renamed anyway). The licence text
+  ships beside it as `stage/assets/fonts/OFL.txt` (copied from the Pixelify OFL.txt URL below, read
+  2026-10-28).
 - **Terms (read 2026-10-26; Press Start 2P read 2026-10-27):** all four are under the SIL Open Font License 1.1
   (<https://raw.githubusercontent.com/google/fonts/main/ofl/notosansjp/OFL.txt>,
   <https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/OFL.txt>,
