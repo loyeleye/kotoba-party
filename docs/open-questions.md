@@ -361,8 +361,10 @@ Decisions for the Cloudflare version ([ADR 0003](decisions/0003-cloudflare-worke
   never send" rule.
 - **H5. Bank lines aren't pre-voiced on Cloudflare.** The Node server renders every bank line
   through VOICEVOX at start-up; per room that would repeat the work, so on Cloudflare a bank line
-  is voiced when it is picked and plays with that audio if it's ready by the host's deadline
-  (1.5 s); otherwise the browser's voice reads it that time. LLM lines are voiced as before.
+  is voiced when it is picked, into an audio store every room in the isolate shares. A line whose
+  audio misses the host's deadline (1.5 s) goes out marked `audioPending`, its audio follows as an
+  update, and the TV waits up to 4 s for it before reading the line with the browser's voice.
+  On the 1-core VM a short line took 3.4 s (2026-10-28), so the VM should use the free tier's 4 cores.
   Since 2026-10-28 VOICEVOX runs on the reader's Oracle VM, behind Caddy with a token (`VOICEVOX_TOKEN`).
 - **H6. No room cap on Cloudflare.** The Node server stops at 500 rooms; on Cloudflare each room
   is its own object, and the per-game LLM budget still caps Claude spend per game. Anyone with

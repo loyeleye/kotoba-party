@@ -13,9 +13,17 @@ import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type { HostMood, HostSay } from '../../shared/src/protocol.js';
 import type { Room } from './room.js';
 
+/** Audio that wasn't ready when its line was: sent to the stage as an update to the same line. */
+export interface LateAudio {
+  audioUrl: string;
+  mouth?: HostSay['mouth'];
+}
+
+export type SpokenLine = Omit<HostSay, 'phaseSeq'> & { later?: Promise<LateAudio | undefined> };
+
 export interface HostVoice {
   /** Returns the line for a cue, or null to stay quiet. May be slow; may fail. */
-  speak(roomCode: string, cue: HostCue): Promise<Omit<HostSay, 'phaseSeq'> | null>;
+  speak(roomCode: string, cue: HostCue): Promise<SpokenLine | null>;
   /** A cue the game expects to raise soon (cue.ahead): start on its line now. Optional; nothing is said. */
   ahead?(roomCode: string, cue: HostCue): void;
 }
@@ -93,7 +101,18 @@ export function hostDirector(voice: HostVoice) {
     if (!cue) return;
     voice
       .speak(room.code, cue)
-      .then((line) => line && room.say({ ...line, mood: line.mood ?? moodFor(cue), phaseSeq }))
+      .then((line) => {
+        if (!line) return;
+        const { later, ...rest } = line;
+        const say: HostSay = { ...rest, mood: rest.mood ?? moodFor(cue), phaseSeq };
+        room.say(say);
+        // Late audio joins the line it belongs to, if the stage is still showing it.
+        void later
+          ?.then((a) => {
+            if (a && room.state.host === say) room.say({ ...say, audioPending: undefined, audioUrl: a.audioUrl, mouth: a.mouth });
+          })
+          .catch(() => {});
+      })
       .catch(() => {
         // The host just stays quiet this phase.
       });
@@ -156,6 +175,7 @@ export function aiVoice(
       if (room?.delete(key) && !room.size) early.delete(roomCode);
       const line = await pending.ready(cue.waitMs ?? opts.waitMs ?? 1500);
       if (!line) return fallback.speak(roomCode, cue);
+      const later = voice.audioLater(line);
       return {
         host: line.host,
         text: line.text,
@@ -163,6 +183,8 @@ export function aiVoice(
         en: line.en,
         audioUrl: line.audio ? `/audio/${encodeURIComponent(line.audio.id)}` : undefined,
         mouth: line.audio?.mouth,
+        audioPending: later ? true : undefined,
+        later: later?.then((a) => (a ? { audioUrl: `/audio/${encodeURIComponent(a.id)}`, mouth: a.mouth } : undefined)),
       };
     },
   };

@@ -53,6 +53,8 @@ export interface HostSay {
   kana: string;
   en: string;
   audioUrl?: string;
+  /** No audio yet, but it's being made: the stage waits a few seconds for it before reading the line itself. */
+  audioPending?: boolean;
   /** Lip sync for the audio, from VOICEVOX's timing: [shape, ms] in order (0 closed, 1 half, 2 wide). */
   mouth?: [0 | 1 | 2, number][];
   /** How the host reacts as the line lands: the stage plays that animation once, then idles. */
