@@ -359,7 +359,7 @@ Decisions for the Cloudflare version ([ADR 0003](decisions/0003-cloudflare-worke
   through VOICEVOX at start-up; per room that would repeat the work, so on Cloudflare a bank line
   is voiced when it is picked and plays with that audio if it's ready by the host's deadline
   (1.5 s); otherwise the browser's voice reads it that time. LLM lines are voiced as before.
-  VOICEVOX's planned home is the reader's Oracle VM, behind Caddy with a token (`VOICEVOX_TOKEN`).
+  Since 2026-10-28 VOICEVOX runs on the reader's Oracle VM, behind Caddy with a token (`VOICEVOX_TOKEN`).
 - **H6. No room cap on Cloudflare.** The Node server stops at 500 rooms; on Cloudflare each room
   is its own object, and the per-game LLM budget still caps Claude spend per game. Anyone with
   the link can open rooms, so a public link could be used to run up the Claude bill a game at a

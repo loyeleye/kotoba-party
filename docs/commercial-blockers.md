@@ -49,7 +49,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 21 | Speech to text on Cloudflare Workers AI (`@cf/openai/whisper-large-v3-turbo`) | `server/src/stt.ts`, `wrangler.jsonc` `AI` binding | 🟡 ❓ | Read Cloudflare's service-specific terms for Workers AI; name Cloudflare as a processor in the privacy notice; per-minute cost |
 | 22 | Music: recorded tracks (CC0, CC BY 4.0, CC BY 3.0), original synth tunes (Karaoke Duel's CC instrumentals are all gone: row 26) and synth sound effects | `stage/assets/music/`, `stage/src/music/` | 🟡 | Keep the CC BY credits on the stage (recap credits strip and now-playing line); or buy Kevin MacLeod's paid licence (terms ❓ unread) to drop his credits. Streamer mode plays only our own tunes. Japanese Lofi HipHop is split out as row 25 |
 | 23 | Short link tanoshi.s.gy (s.gy, run on Short.io) | `wrangler.jsonc` `PUBLIC_URL`, `shared/src/share.ts` | ❓ | Read the s.gy / Short.io terms; before selling, move the short link to a domain we own |
-| 24 | Reader service hosting: Oracle Cloud Always Free VM, address via sslip.io | `wrangler.jsonc` `READER_URL`, separate service | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
+| 24 | Reader service and VOICEVOX hosting: Oracle Cloud Always Free VM, addresses via sslip.io | `wrangler.jsonc` `READER_URL`, `VOICEVOX_URL`, separate services | ❓ ⚠️ | Read Oracle's Free Tier and Cloud Services terms; before selling, move to a paid plan or host with an SLA and a domain we own |
 | 25 | Japanese Lofi HipHop (pickentcode, a Fiverr commission uploaded as CC0) | `stage/assets/music/japanese-lofi-hiphop.mp3`, Shodō Taikai's gallery | ❓ | Confirm with pickentcode the Fiverr order, that the gig kept no rights and that it uses no third-party samples; or swap the gallery to Senbazuru (CC BY 4.0) or the synth |
 | 26 | Mureka (AI music generator: API credits and a Premium web plan, 2026-10-27) for Karaoke Duel backings | `stage/assets/music/night-drive-*.mp3`, `harbour-*.mp3`, `run-*.mp3`, `save-*.mp3`, `sleepless-*.mp3`, `monday-blues-*.mp3`, `self-intro-*.mp3`, `cheers-*.mp3`, `where-were-you-*.mp3`, `sparkle-idol-*.mp3` (tracks.ts licence `'Mureka'`): every grown-up song | ⚠️ ❓ | Paid output is ours but must be labelled AI (done in the credits). The terms also limit use of the *service* to personal, non-commercial use without Mureka's written consent: get that consent in writing, or replace the tracks with commissioned music, before selling. The API platform's own terms weren't readable |
 | 27 | Karaoke Duel's Cheeky lyric sets (adult party humour: drinking, bad dates, bathroom jokes, innuendo; never explicit), behind the host's Audience setting (decision, 2026-10-27); Phrase Bingo's Cheeky scenes (an izakaya after work, a first date, coming home on the first train) and Word Gauntlet's Cheeky Fake Kanji words (hangovers, nights out, office life, ogling) follow the same setting (2026-10-27), as do Murder at the Onsen's four Cheeky cases (a hungover new hire, a bad first date, a president's toupee, a ghost-story night) | `shared/src/modes/karaokeDuel/lyrics/*.ts` (`audience: 'cheeky'`), `shared/src/modes/phraseBingo/scenes.ts` (`audience: 'cheeky'`), `shared/src/modes/wordGauntlet/words.ts` (`CHEEKY_WORDS`), `content/src/onsen/cases.ts` (`sakeCase`, `phoneCase`, `toupeeCase`, `candleCase`), `stage/src/settings.ts` | ⚠️ | Not a licence issue, but it sets the game's age rating and store listing. Before selling: rate the game with Cheeky in it (IARC / ESRB / PEGI questionnaires), or ship rated builds without the cheeky sets; keep Cheeky off by default and behind its warning; have the fluent reviewer check the cheeky sets, scenes, words and cases for anything cruder in Japanese than intended |
@@ -417,13 +417,16 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   address).
 - **To sell:** read the terms and record them here; or move the short link to a domain we own (for
   example a `tanoshi.` subdomain), so the QR codes don't depend on someone else's service.
-### 24. Reader service on Oracle Cloud
+### 24. Reader service (and VOICEVOX) on Oracle Cloud
 
 - **What:** since 2026-10-27 the kanji reader (`npm run reader`, kuromoji) runs on an Oracle Cloud
   Always Free Ampere A1 VM (US West, Phoenix) behind Caddy. The Worker reaches it at
   `https://141-148-186-1.sslip.io` (`READER_URL`); sslip.io is a free DNS service that maps the
   hostname to the VM's reserved IP. Setup guide: the "Set up the kanji reader on Oracle Cloud" doc in
-  the project.
+  the project. Since 2026-10-28 the VOICEVOX engine (row 2, Docker image `cpu-0.26.0`) runs on the same
+  VM at `https://voicevox.141-148-186-1.sslip.io` (`VOICEVOX_URL`), behind a Caddy token check
+  (`VOICEVOX_TOKEN`); guide: the "Set up VOICEVOX for the host voices" doc. If it goes away, the TV
+  reads host lines with the browser's voice (row 31).
 - **Terms: unread (❓).** On 2026-10-27 the Oracle Free Tier FAQ (https://www.oracle.com/cloud/free/faq/)
   and the Always Free resources page (https://docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm)
   refused automated reads (403 / blocked), so nothing here is checked against Oracle's own text. Not
