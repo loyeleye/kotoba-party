@@ -223,6 +223,11 @@ export interface Mode<S = unknown, V extends { mode: ModeId } = { mode: ModeId }
    */
   wakeAt?(s: S, phase: Phase, ctx: ModeContext): number | null;
   wake?(s: S, phase: Phase, ctx: ModeContext): void;
+  /**
+   * Modes that play players' recorded voices on the TV (Dub Club): the clip ids still to be played. The server
+   * keeps a clip in memory only while it is listed here, and drops it the moment it isn't.
+   */
+  clipsInUse?(s: S, phase: Phase): string[];
   /** A player's seat was released mid-game. */
   release?(s: S, playerId: string, ctx: ModeContext): void;
   progress(s: S): { round: number; totalRounds: number };

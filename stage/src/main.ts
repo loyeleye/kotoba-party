@@ -22,6 +22,7 @@ import { joinAudioTabs } from '../../shared/src/audioTabs.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
 import { tickSfx, watchSfx } from './music/sfx.js';
+import { setClipSource } from './modes/dubAudio.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import { mountBackdrop, updateBackdrop } from './backdrop.js';
 import { isDanmakuOn, onDanmakuToggle, startDanmaku, stopDanmaku } from './danmaku.js';
@@ -251,6 +252,8 @@ async function openRoom(fresh: boolean): Promise<void> {
     },
   });
   client.connect();
+  const c = client;
+  setClipSource({ base, code, token: session.stageToken, watch: !!WATCH, serverNow: () => Date.now() + c.clockOffset });
 }
 
 let lastView: RoomView | null = null;

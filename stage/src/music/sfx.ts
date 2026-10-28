@@ -15,7 +15,9 @@ export type SfxId =
   // Bento Haus: the shop's own noises.
   | 'ring' | 'ticket' | 'send' | 'serve' | 'toss' | 'leave' | 'static' | 'poof' | 'munch' | 'lastorder'
   // Bento Haus VS: a わけあり box handed over, a box sent back, a drawn shift.
-  | 'wakeari' | 'sendback';
+  | 'wakeari' | 'sendback'
+  // Dub Club: the clapperboard before a dub, and the card flipping over.
+  | 'clap' | 'flip';
 
 /** The same effect twice within this many ms plays once (several screens of state arrive together). */
 const MIN_GAP_MS: Partial<Record<SfxId, number>> = { right: 250, wrong: 250, hit: 70, tick: 500, join: 150, ring: 600, ticket: 150, send: 150, serve: 300, toss: 150, leave: 400, static: 400 };
@@ -89,6 +91,12 @@ export function sfx(id: SfxId, delay = 0, pan = 0): void {
       // Pon's disguise: ドロン.
       swish(ctx, out, t, 0.35, 400, 3000, 0.14);
       return blip(ctx, out, t + 0.1, 'sine', 300, 600, 0.2, 0.12);
+    case 'clap':
+      // カチン: two hard wood clicks, close together.
+      woodblock(ctx, out, t, 2600, 0.22);
+      return woodblock(ctx, out, t + 0.03, 1800, 0.18);
+    case 'flip':
+      return swish(ctx, out, t, 0.16, 1800, 4200, 0.1);
     case 'munch':
       for (let i = 0; i < 3; i++) blip(ctx, out, t + i * 0.13, 'square', 240, 160, 0.06, 0.08, 900);
       return;

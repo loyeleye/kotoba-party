@@ -215,7 +215,7 @@ async function join(code: string, name: string): Promise<string | null> {
 function start(s: Session): void {
   session = s;
   store('kotoba:session', s);
-  setSpeechService(s.speech ? { base, code: s.code, token: s.token } : null);
+  setSpeechService(s.speech ? { base, code: s.code, token: s.token } : null, { base, code: s.code, token: s.token });
   joinAudioTabs('phone', s.code);
   history.replaceState(null, '', `/?code=${s.code}`);
   closedAs = null;
@@ -330,7 +330,7 @@ function dockTalk(): void {
 function screenFor(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   if (view.phase === 'lobby') return lobby(view, me, isVip);
   if (view.phase === 'recap' || !view.game) return recap(view, me, isVip);
-  const screen = PHONE_MODES[view.game.mode].render({ view, game: view.game, me, isVip, send: play, flash, redraw });
+  const screen = PHONE_MODES[view.game.mode].render({ view, game: view.game, me, isVip, send: play, flash, redraw, remainingMs: () => client?.remainingMs() ?? null });
   if (isVip) screen.append(endGameFold(view));
   return screen;
 }

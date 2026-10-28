@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { SEAT_HOLD_MS } from '../../shared/src/constants.js';
-import { apply, wakeAt, canJoin, cleanName, createGame, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
+import { apply, wakeAt, canJoin, clipsInUse, cleanName, createGame, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type {
   ByeReason,
@@ -54,6 +54,24 @@ const COMMAND_MEMORY = 128;
 /** Extra stage screens one room hands out: one per player's laptop and then some. */
 export const MAX_WATCHERS = 16;
 
+/**
+ * Voice clips a mode plays on the TV (Dub Club). Kept in this room's memory only, never written anywhere,
+ * served only to the room's own screens, and dropped as soon as the mode stops using them.
+ */
+export const MAX_KEPT_CLIP_BYTES = 8 * 1024 * 1024;
+interface KeptClip {
+  owner: string;
+  bytes: Uint8Array;
+  durMs: number;
+}
+
+/** A 16-bit PCM WAV's length in ms, from its header's byte rate. */
+export function wavDurationMs(b: Uint8Array): number {
+  if (b.length < 44) return 0;
+  const byteRate = b[28]! | (b[29]! << 8) | (b[30]! << 16) | (b[31]! << 24);
+  return byteRate > 0 ? Math.round(((b.length - 44) / byteRate) * 1000) : 0;
+}
+
 export const newToken = (): string => randomBytes(18).toString('base64url');
 const newId = (): string => randomBytes(6).toString('base64url');
 
@@ -78,6 +96,7 @@ export class Room {
   private readonly holdTimers = new Map<string, unknown>();
   private readonly releasedTokens = new Set<string>();
   private readonly commandLog = new Map<string, Map<string, CommandResult>>();
+  private readonly clips = new Map<string, KeptClip>();
   private phaseTimer: unknown = null;
   private wakeTimer: unknown = null;
   private wakeAtMs: number | null = null;
@@ -125,6 +144,55 @@ export class Room {
   /** True for a token whose seat was held for the full hold time and then given up. */
   wasReleased(token: string): boolean {
     return this.releasedTokens.has(token);
+  }
+
+  /**
+   * Keeps a player's recorded clip for the TV to play (Dub Club). Only while the game is on and the mode
+   * plays clips; the mode's move then names it by id. Null when not allowed or the room's budget is full.
+   */
+  keepClip(token: string, bytes: Uint8Array): { clipId: string; durMs: number } | null {
+    const viewer = this.tokens.get(token);
+    if (viewer?.kind !== 'player' || this.closed || clipsInUse(this.state) === null) return null;
+    let used = 0;
+    for (const c of this.clips.values()) used += c.bytes.length;
+    if (used + bytes.length > MAX_KEPT_CLIP_BYTES) return null;
+    const clipId = newToken();
+    const durMs = wavDurationMs(bytes);
+    this.clips.set(clipId, { owner: viewer.playerId, bytes: new Uint8Array(bytes), durMs });
+    return { clipId, durMs };
+  }
+
+  /** A kept clip, for the room's main TV only: never a watching screen, which can be anywhere. */
+  clipFor(token: string, clipId: string): Uint8Array | null {
+    const viewer = this.tokens.get(token);
+    if (viewer?.kind !== 'stage' || viewer.watch) return null;
+    return this.clips.get(clipId)?.bytes ?? null;
+  }
+
+  /** How many clips the room holds (tests). */
+  get keptClips(): number {
+    return this.clips.size;
+  }
+
+  /** Drops every clip the mode no longer plays (all of them once the game is over). */
+  private pruneClips(): void {
+    if (!this.clips.size) return;
+    const keep = clipsInUse(this.state) ?? new Set<string>();
+    for (const id of [...this.clips.keys()]) if (!keep.has(id)) this.clips.delete(id);
+  }
+
+  /**
+   * A move naming a kept clip may only name the sender's own, and its length comes from the clip itself.
+   * Anything else is passed on as it is: the mode validates the rest.
+   */
+  private withClip(viewer: Viewer, cmd: Command): Command {
+    if (cmd.type !== 'play' || viewer.kind !== 'player') return cmd;
+    const move = (cmd as { move?: unknown }).move;
+    if (!move || typeof move !== 'object' || !('clipId' in move)) return cmd;
+    const m = move as Record<string, unknown>;
+    const clip = typeof m.clipId === 'string' ? this.clips.get(m.clipId) : undefined;
+    const own = clip && clip.owner === viewer.playerId;
+    return { ...cmd, move: { ...m, clipId: own ? m.clipId : null, ...(own ? { durMs: clip.durMs } : {}) } } as Command;
   }
 
   /** Joins a new player, or hands a held seat back to the phone that had it. */
@@ -235,7 +303,7 @@ export class Room {
       this.close('room-ended');
       return { ok: true, v: this.version };
     }
-    const outcome = this.dispatch({ type: 'command', actor: viewer, command: cmd });
+    const outcome = this.dispatch({ type: 'command', actor: viewer, command: this.withClip(viewer, cmd) });
     const result: CommandResult = outcome.changed
       ? { ok: true, v: this.version }
       : { ok: false, error: outcome.error ?? 'bad-command', v: this.version };
@@ -253,6 +321,7 @@ export class Room {
     this.closed = true;
     for (const socket of this.sockets.keys()) bye(socket, reason, CLOSE.roomGone);
     this.sockets.clear();
+    this.clips.clear();
     for (const t of this.holdTimers.values()) this.clock.clearTimeout(t);
     this.holdTimers.clear();
     this.clock.clearTimeout(this.phaseTimer);
@@ -281,7 +350,10 @@ export class Room {
       this.opts.onCommit?.(this, this.version);
       this.broadcast();
     }
-    if (outcome.changed && this.state.phaseSeq !== phaseBefore) this.opts.onPhase?.(this);
+    if (outcome.changed && this.state.phaseSeq !== phaseBefore) {
+      this.pruneClips();
+      this.opts.onPhase?.(this);
+    }
     if (cues.length) this.opts.onCues?.(this, cues, this.state.phaseSeq);
     return outcome;
   }

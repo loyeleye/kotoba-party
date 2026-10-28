@@ -12,7 +12,7 @@ import { CLOSE, type CreateRoomResponse, type JoinRequest, type Phase, type Room
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../../shared/src/roomCode.js';
 import { systemClock, type Clock } from './clock.js';
 import { addReadings, type Reader } from './reading.js';
-import { Room, type RoomSocket } from './room.js';
+import { Room, wavDurationMs, type RoomSocket } from './room.js';
 import { MAX_CLIP_BYTES, SttGate, isClip, transcribe, type SttOptions } from './stt.js';
 
 export interface ServerConfig {
@@ -124,7 +124,7 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       return send(res, 201, body);
     }
 
-    const m = /^\/api\/rooms\/([^/]+)(?:\/([a-z.]+))?$/.exec(path);
+    const m = /^\/api\/rooms\/([^/]+)(?:\/([a-z.]+)(?:\/([^/]+))?)?$/.exec(path);
     if (m) {
       const code = normalizeRoomCode(decodeURIComponent(m[1]!));
       const room = isRoomCode(code) ? rooms.get(code) : undefined;
@@ -166,6 +166,32 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
         const heard: Utterance = { via: 'speech', text: result.text };
         addReadings({ heard }, config.reader ?? null);
         return send(res, 200, heard);
+      }
+      if (action === 'clip' && req.method === 'POST') {
+        // Dub Club: a recorded line the TV will play. Kept in the room's memory (see Room.keepClip) unless the
+        // player plays it from their own phone (?tv=0), and read by Whisper when the server has speech.
+        const token = bearer(req);
+        if (!token || room.viewerFor(token)?.kind !== 'player') return send(res, 401, { error: 'bad-token' });
+        const clip = await readBytes(req, MAX_CLIP_BYTES);
+        if (!clip || !isClip(clip)) return send(res, 400, { error: 'bad-clip' });
+        const kept = url.searchParams.get('tv') === '0' ? null : room.keepClip(token, clip);
+        if (url.searchParams.get('tv') !== '0' && !kept) return send(res, 409, { error: 'no-clips' });
+        let heard: Utterance | null = null;
+        if (config.stt) {
+          const result = await sttGate.run(token, () => transcribe(clip, config.stt!));
+          if (result !== 'busy' && result.ok) {
+            heard = { via: 'speech', text: result.text };
+            addReadings({ heard }, config.reader ?? null);
+          }
+        }
+        return send(res, 200, { clipId: kept?.clipId ?? null, durMs: kept?.durMs ?? wavDurationMs(clip), heard, speech: !!config.stt });
+      }
+      if (action === 'clip' && m[3] && req.method === 'GET') {
+        const bytes = room.clipFor(bearer(req) ?? '', decodeURIComponent(m[3]));
+        if (!bytes) return send(res, 404, { error: 'not-found' });
+        res.writeHead(200, { 'content-type': 'audio/wav', 'cache-control': 'no-store' });
+        res.end(Buffer.from(bytes));
+        return;
       }
       if (action === 'commands' && req.method === 'POST') {
         const token = bearer(req);

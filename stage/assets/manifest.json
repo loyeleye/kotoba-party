@@ -6370,6 +6370,700 @@
       },
       "post": {},
       "source": "tools/art/sources/pon-flags-sketch.png"
+    },
+    {
+      "path": "stage/assets/dub/bg-classroom.png",
+      "what": "Dub Club anime set: a high-school classroom at dusk",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, inside a Japanese high school classroom at lunchtime, front view, a green chalkboard across the back wall, rows of wooden desks at the bottom, large windows with afternoon light at the right edge, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-roof.png",
+      "what": "Dub Club anime set: a school rooftop at sunset",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, on the fenced rooftop of a Japanese high school at sunset, wide view, wire fence along the back, orange and pink sunset sky with long clouds, water tank at the left edge, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-city.png",
+      "what": "Dub Club anime set: a city street at dusk (magical-girl battle)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, a Japanese city street at night under attack, wide view, tall buildings with lit windows, a cracked road, smoke and orange glow in the distance, dramatic anime action sky, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-space.png",
+      "what": "Dub Club anime set: inside a spaceship, a round porthole",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, inside a small cosy spaceship cockpit, front view, a big round window showing stars and a ringed planet, blinking control panels at the bottom, red alarm light at the top, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 38–217 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-planet.png",
+      "what": "Dub Club anime set: a purple alien planet with glowing mushrooms",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, the surface of a small purple alien planet, wide view, round craters, glowing blue mushrooms, two moons and stars in the sky, a little crashed rocket at the left edge, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-sakura.png",
+      "what": "Dub Club anime set: a school courtyard with a cherry tree",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, a big cherry blossom tree in full bloom in a school courtyard, wide view, pink petals falling, a school building behind, soft spring evening light, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-office.png",
+      "what": "Dub Club anime set: an office late at night",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, inside a Japanese office late at night, side view, rows of desks with tall piles of paper files, computer monitors glowing, a wall clock, dark windows with city lights, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-street.png",
+      "what": "Dub Club anime set: a quiet back street at night with a vending machine",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, an empty Japanese residential street at 3 in the morning, wide view, a single street lamp, a vending machine glowing at the right edge, power lines, dark houses, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-restaurant.png",
+      "what": "Dub Club anime set: a fancy restaurant table by a window",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, inside a fancy restaurant at night, front view, a small table with a white tablecloth, a candle and two wine glasses at the bottom, a big window with city lights behind, warm candle light, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-alien.png",
+      "what": "Dub Club character: a little green alien",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a small friendly green alien with one antenna, big black eyes, a tiny silver collar",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-alien-talk.png",
+      "what": "Dub Club lip sync: a little green alien, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-alien.png",
+        "mouth": [
+          54,
+          68,
+          19,
+          18,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-cat.png",
+      "what": "Dub Club character: a cat astronaut",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a white cat astronaut in a round glass space helmet, orange space suit, big round eyes",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-cat-talk.png",
+      "what": "Dub Club lip sync: a cat astronaut, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-cat.png",
+        "mouth": [
+          55,
+          66,
+          16,
+          14
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-dater.png",
+      "what": "Dub Club character: a nervous man on a first date",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a nervous young Japanese man on a date, neat side-parted hair, too-big grey suit, red tie, sweating a little",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-dater-talk.png",
+      "what": "Dub Club lip sync: a nervous man on a first date, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-dater.png",
+        "mouth": [
+          55,
+          67,
+          17,
+          13,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-ghost.png",
+      "what": "Dub Club character: a small friendly ghost",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a small shy white bedsheet ghost yokai, round black eyes, rosy cheeks, holding a small notebook and a pen for an autograph",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-ghost-talk.png",
+      "what": "Dub Club lip sync: a small friendly ghost, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-ghost.png",
+        "mouth": [
+          52,
+          49,
+          17,
+          14,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-guard.png",
+      "what": "Dub Club character: a TV studio night guard with a torch",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a young Japanese night security guard, blue cap and uniform, holding a torch, scared eyes",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-guard-talk.png",
+      "what": "Dub Club lip sync: a TV studio night guard with a torch, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-guard.png",
+        "mouth": [
+          56,
+          66,
+          20,
+          15,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-hero.png",
+      "what": "Dub Club character: the schoolgirl heroine",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a cheerful Japanese high school girl, short brown bob hair with a red hair clip, navy sailor school uniform with a red ribbon",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-hero-talk.png",
+      "what": "Dub Club lip sync: the schoolgirl heroine, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-hero.png",
+        "mouth": [
+          57,
+          66,
+          15,
+          12,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-magical.png",
+      "what": "Dub Club character: a tanuki magical girl with a wand",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. Pon the tanuki raccoon dog as a magical girl, brown fur, dark eye mask, a green leaf on his head, frilly pink magical girl outfit with a big bow, holding a star wand",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-magical-talk.png",
+      "what": "Dub Club lip sync: a tanuki magical girl with a wand, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-magical.png",
+        "mouth": [
+          56,
+          65,
+          13,
+          10,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-monster.png",
+      "what": "Dub Club character: a purple monster",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a big round goofy kaiju monster yokai, purple scales, small horns, big teeth, grumpy eyebrows, cute not scary",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-mum.png",
+      "what": "Dub Club character: a tanuki mum in an apron (the monster's true form)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a plump tanuki raccoon dog mother, brown fur, dark eye mask, curly perm hair, pink apron, holding a purple monster mask she has just taken off, shocked face",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-mum-talk.png",
+      "what": "Dub Club lip sync: a tanuki mum in an apron (the monster's true form), mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-mum.png",
+        "mouth": [
+          57,
+          62,
+          16,
+          12,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-rival.png",
+      "what": "Dub Club character: the spiky-haired rival",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a smug Japanese high school boy, spiky black hair, black gakuran school uniform, a single grain of white rice stuck on his cheek",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-rival-talk.png",
+      "what": "Dub Club lip sync: the spiky-haired rival, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-rival.png",
+        "mouth": [
+          56,
+          73,
+          18,
+          14,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-salaryman.png",
+      "what": "Dub Club character: a tired salaryman",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a tired Japanese office worker man, messy black hair, loose red necktie, white shirt, dark bags under his eyes",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-salaryman-talk.png",
+      "what": "Dub Club lip sync: a tired salaryman, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-salaryman.png",
+        "mouth": [
+          53,
+          65,
+          22,
+          16,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-senpai.png",
+      "what": "Dub Club character: senpai with a graduation tube",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a tall handsome Japanese high school senior boy, neat dark blue hair, black school blazer with a cherry blossom petal on the shoulder, holding a rolled diploma",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-senpai-talk.png",
+      "what": "Dub Club lip sync: senpai with a graduation tube, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-senpai.png",
+        "mouth": [
+          53,
+          61,
+          16,
+          13,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/char-ol.png",
+      "what": "Dub Club character: a young woman out with friends after work, phone in hand (Girls' Night, Cheeky)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a confident young Japanese woman in her late twenties out with friends after work, shoulder-length brown hair, small earrings, cream blouse and navy cardigan, holding up her smartphone, amused expression",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-ol-talk.png",
+      "what": "Dub Club lip sync: the Girls' Night heroine, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-ol.png",
+        "mouth": [
+          57,
+          62,
+          17,
+          14,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/bg-izakaya.png",
+      "what": "Dub Club anime set: an izakaya counter with lanterns (Girls' Night)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, inside a cosy Japanese izakaya pub at night, front view, wooden counter at the bottom with beer mugs and small plates, red paper lanterns hanging at the top, menu boards with no writing on the wall, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-concert.png",
+      "what": "Dub Club anime set: a cheap idol concert stage with a heart balloon",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, a small cheap idol concert stage seen from the audience, front view, pink and purple spotlights, a sagging heart-shaped balloon arch, a few glow sticks in the dark crowd at the bottom, dark navy and purple night colours with neon pink accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-idol.png",
+      "what": "Dub Club character: a pop idol with a microphone (Idol, Backstage; Cheeky)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art anime character portrait bust for a late-night TV party game, head and shoulders, front view, centred, facing the viewer, big expressive anime eyes, mouth wide open as if shouting a line, clear readable silhouette, warm colours, no text or letters. a sparkly Japanese pop idol girl in a frilly pink and white stage costume, twin tails with big ribbons, holding a microphone, winking with a huge stage smile",
+      "params": {
+        "width": 128,
+        "height": 128,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "seed": 33
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/char-idol-talk.png",
+      "what": "Dub Club lip sync: the idol, mouth closed, half open and wide open, driven by the dub's loudness",
+      "generator": "polish",
+      "polish": {
+        "from": "stage/assets/dub/char-idol.png",
+        "mouth": [
+          55,
+          56,
+          17,
+          11,
+          "fill"
+        ]
+      }
+    },
+    {
+      "path": "stage/assets/dub/bg-studio.png",
+      "what": "Dub Club anime set: an empty TV studio at night (the Studio Ghost episode)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, inside an empty old television studio at night, front view, a big dark camera on a tripod at the left edge, a hanging spotlight with a cold blue beam, a folding director's chair at the right, cables on the floor, eerie green glow from a monitor, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/dub/bg-gakuya.png",
+      "what": "Dub Club anime set: a backstage dressing room (がくや, the idol episode)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 7: \"pixel art background, a small Japanese backstage dressing room, front view, a long mirror along the back wall framed with round light bulbs, a counter with makeup, a cup noodle and a water bottle at the bottom, a sparkly stage costume on a hanger at the right edge, a folding chair, dark navy and purple night colours with warm accents, low contrast, anime style backdrop, the middle of the picture is plain and uncluttered, no people, no characters, no text, no letters, no signs, no writing\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Rows 22–201 kept for 320×180. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
     }
   ]
 }

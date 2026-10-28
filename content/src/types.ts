@@ -532,6 +532,19 @@ export type HostEvent =
   | 'bento_vs_sendback' // a VS box is sent back and offered to the other kitchen ({team})
   | 'bento_vs_final' // the last VS shift is over: {team} won the game
   | 'bento_vs_tie' // a VS shift ends level
+  // Dub Club (Fude as a broke, proud anime director)
+  | 'dub_intro' // Fude-kantoku opens tonight's episode ({title})
+  | 'dub_scene' // a new scene: the table read of its line ({line})
+  | 'dub_record' // recording opens: act it the way your card says
+  | 'dub_screening' // the screening starts
+  | 'dub_reveal_all' // every guesser read {name}'s direction
+  | 'dub_reveal_some' // some guessers read {name}'s direction
+  | 'dub_reveal_none' // nobody read it ({card})
+  | 'dub_spoiler' // the actor said the direction out loud
+  | 'dub_skip' // the VIP skipped a dub
+  | 'dub_notes' // cast notes after a scene; {name} got the most hearts
+  | 'dub_episode' // tonight's episode plays ({title})
+  | 'dub_sequel' // over the credits: Fude pitches a sequel ({title})
   | 'omiai_tease'; // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';

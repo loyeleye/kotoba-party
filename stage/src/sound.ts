@@ -22,6 +22,8 @@ export interface Sound {
   backing: GainNode;
   /** Sound effects (sfx.ts): the sound effects volume. */
   sfx: GainNode;
+  /** Players' recorded voices (Dub Club): the master volume only, through the limiter. */
+  voices: GainNode;
 }
 
 /** The settings panel's four volumes, 0 to 1. Host voice covers the browser's read-aloud Japanese too. */
@@ -93,7 +95,9 @@ export function getSound(): Sound | null {
     sfxGain.connect(master);
     const sfx = ctx.createGain();
     sfx.connect(sfxGain);
-    sound = { ctx, music, backing, sfx };
+    const voices = ctx.createGain();
+    voices.connect(master);
+    sound = { ctx, music, backing, sfx, voices };
     ctx.addEventListener('statechange', ready);
     // Some browsers start it running (the player has used the page before): no statechange then.
     queueMicrotask(ready);

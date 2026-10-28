@@ -11,7 +11,7 @@
 // every game with it, the recap fanfare and the synth lobby and outro quote it, so the show
 // sounds like one show whatever track plays between them.
 
-export const SONG_IDS = ['lobby', 'festive', 'quiz', 'stroll', 'rush', 'battle', 'mystery', 'gentle', 'score', 'finale', 'outro', 'fanfare', 'reveal', 'ident', 'win-red', 'win-blue', 'draw', 'neck'] as const;
+export const SONG_IDS = ['lobby', 'festive', 'quiz', 'stroll', 'rush', 'battle', 'mystery', 'gentle', 'score', 'finale', 'outro', 'fanfare', 'reveal', 'ident', 'win-red', 'win-blue', 'draw', 'neck', 'anime-op', 'eyecatch', 'anime-end'] as const;
 export type SongId = (typeof SONG_IDS)[number];
 
 export type Voice = 'pulse' | 'square' | 'tri' | 'pluck' | 'flute' | 'bell';
@@ -348,6 +348,56 @@ export const SONGS: Record<SongId, Song> = {
       t: 'X..x............|X..x............|X..x............|X..x............|X..x............|X..x............|X..x....X..x....|X..x....X..x.x.x',
       w: '........x.......|........x.......|....x.......x...|....x.......x...|....x.......x...|....x.......x...|..x...x...x...x.|.x.x.x.x.x.x.x.x',
     },
+  },
+  // Dub Club's opening titles: a cheap 80s anime opening on the royal road (IV V iii vi), the big
+  // chorus a step up the house theme's scale. Plays under the title card and the intro.
+  'anime-op': {
+    title: 'Afureko Opening',
+    bpm: 152,
+    loop: true,
+    chords: ['D', 'E', 'C#m', 'F#m', 'D', 'E', 'A', 'A'],
+    lead: {
+      voice: 'square',
+      notes:
+        'F#5 - E5 - D5 . E5 F#5 | G#5 - - . E5 . B4 . | C#5 . E5 . G#5 - A5 - | A5 - G#5 . F#5 - - . |' +
+        'F#5 - E5 - D5 . E5 F#5 | G#5 - B5 - G#5 . E5 . | A5 - - . E5 . C#5 . | A5 . . . . . . .',
+      gain: 0.8,
+    },
+    comp: { style: 'stab', voice: 'pulse', gain: 0.5 },
+    bass: { style: 'drive' },
+    drums: {
+      k: 'x.......x.x.....',
+      s: '....X.......X...',
+      h: 'x.x.x.x.x.x.x.x.',
+      t: 'X...............' + '................'.repeat(6) + '........x.x.xxxx',
+    },
+  },
+  // The eyecatch between the episode's scenes: two bars of bells, like the ad break sting.
+  eyecatch: {
+    title: 'Eyecatch',
+    bpm: 132,
+    loop: false,
+    chords: ['C', 'G C'],
+    lead: { voice: 'bell', notes: 'C5 E5 G5 C6 - . . . | B5 . D6 . C6 - - .' },
+    comp: { style: 'none', voice: 'tri' },
+    bass: { style: 'long', gain: 0.5 },
+    drums: { g: '................|........X.......' },
+  },
+  // The ending credits: a slow flute ballad over the cast list.
+  'anime-end': {
+    title: 'Mata Raishū',
+    bpm: 84,
+    loop: true,
+    chords: ['F', 'G', 'Em', 'Am', 'Dm', 'G', 'C', 'C'],
+    lead: {
+      voice: 'flute',
+      notes:
+        'A4 - - . C5 - D5 - | D5 - - . B4 - G4 - | G4 - - . B4 - E5 - | E5 - - - . . C5 - |' +
+        'D5 - F5 - A5 - G5 F5 | F5 - E5 - D5 - B4 - | C5 - - - - - - - | . . . . . . . .',
+    },
+    comp: { style: 'pad', voice: 'tri', gain: 0.6 },
+    bass: { style: 'long' },
+    drums: { k: 'x.......x.......', h: '....o.......o...' },
   },
 };
 
