@@ -1,7 +1,7 @@
 // The server's host director: cues sent ahead start the LLM line early, so the reveal gets it in time.
 
 import { describe, expect, it } from 'vitest';
-import { createHostVoice, fillSlots, ScriptedLlm, type BankLine } from '../server/ai/index.js';
+import { createHostVoice, fillSlots, ScriptedLlm, SilentTts, type BankLine } from '../server/ai/index.js';
 import { ManualClock } from '../server/src/clock.js';
 import { aiVoice, bankVoice, moodFor } from '../server/src/host.js';
 import { EMPTY_CONTENT, type HostCue } from '../shared/src/modes/mode.js';
@@ -73,6 +73,23 @@ describe('host lines sent ahead', () => {
     voice.ahead!('ABCD', { ...cue, ahead: true });
     await tick();
     expect(llm.calls).toHaveLength(1);
+  });
+});
+
+describe('audio that is late for its line', () => {
+  it('sends the line at the deadline marked pending, then its audio when VOICEVOX finishes', async () => {
+    const clock = new ManualClock();
+    let finish!: () => void;
+    const tts = new SilentTts(1, () => new Promise<void>((r) => (finish = r)));
+    const voice = aiVoice(createHostVoice({ tts, lines, clock }), bankVoice(EMPTY_CONTENT));
+    const p = voice.speak('ABCD', { ...cue, event: 'reveal_react', llm: false } as HostCue);
+    await tick();
+    clock.advance(1500);
+    const line = await p;
+    expect(line).toMatchObject({ text: 'いいね！', audioPending: true });
+    expect(line?.audioUrl).toBeUndefined();
+    finish();
+    expect(await line?.later).toMatchObject({ audioUrl: expect.stringMatching(/^\/audio\//) });
   });
 });
 

@@ -73,6 +73,11 @@ export interface HostVoice {
   speak(roomId: string, host: HostId, jp: JpText, tier?: ReactionTier): PendingLine;
   /** Audio bytes by id, for the server's audio route. */
   audio(id: string): Audio | undefined;
+  /**
+   * For a line ready() gave without audio: its audio, still being rendered, so the stage can play it a
+   * little late rather than not at all. Undefined when nothing is on the way.
+   */
+  audioLater(line: VoicedLine): Promise<VoicedLine['audio']> | undefined;
   /** A new game in this room: fresh budget, every bank line fresh. */
   newGame(roomId: string): void;
   /** The room closed. */
@@ -222,6 +227,8 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
   };
 
   const audioRef = (a: Audio) => ({ id: a.id, mime: a.mime, ms: a.ms, mouth: a.mouth });
+  /** Audio still rendering for lines handed out without it. */
+  const late = new WeakMap<VoicedLine, Promise<Audio | undefined>>();
 
   /** TTS a line into the store; undefined when there's no engine or it fails. */
   async function render(host: HostId, kana: string, tier: ReactionTier | undefined, signal?: AbortSignal, pin = false): Promise<Audio | undefined> {
@@ -267,8 +274,10 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
       return { line };
     }
     // Not rendered yet (a slot such as a name, or no warm-up, as on Cloudflare): render now, for this
-    // cue if it lands before the deadline and for the next game otherwise.
-    return { line, rendering: render(cue.host, picked.kana, tier) };
+    // cue if it lands before the deadline, a little late otherwise (audioLater), and for the next game.
+    const rendering = render(cue.host, picked.kana, tier);
+    late.set(line, rendering);
+    return { line, rendering };
   }
 
   /** Races `work` against a deadline on the injected clock. */
@@ -366,8 +375,10 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
     // A prompt's blank (＿＿＿) is read as a pause.
     const kana = jp.kana.replace(/[＿_]+/g, '、');
     const ok = isSpeakableKana(kana) && moderate(jp.text) && moderate(kana);
-    const work = ok
-      ? render(host, kana, tier, ctl.signal).then((a) => (a ? { ...base, audio: audioRef(a) } : base))
+    const rendering = ok ? render(host, kana, tier, ctl.signal) : undefined;
+    if (rendering) late.set(base, rendering);
+    const work = rendering
+      ? rendering.then((a) => (a ? { ...base, audio: audioRef(a) } : base))
       : Promise.resolve(moderate(jp.text) ? base : null);
     // Past the deadline the stage shows the text without audio.
     return pending(work, () => (ok || moderate(jp.text) ? base : null), ctl);
@@ -377,6 +388,7 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
     prepare,
     speak,
     audio: (id) => store.get(id),
+    audioLater: (line) => (line.audio ? undefined : late.get(line)?.then((a) => (a ? audioRef(a) : undefined))),
     newGame(roomId) {
       const r = room(roomId);
       r.bank.reset();

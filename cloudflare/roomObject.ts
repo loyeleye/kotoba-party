@@ -6,7 +6,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import QRCode from 'qrcode';
 import debugPrompts from '../content/debug/prompts.json';
-import { HOST_EVENTS, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine, type LlmClient, type Logger, type HostVoice as AiHostVoice } from '../server/ai/index.js';
+import { AudioStore, HOST_EVENTS, VoicevoxTts, createHostVoice, createInkCoach, createSuspectVoice, llmFromEnv, type BankLine, type LlmClient, type Logger, type HostVoice as AiHostVoice } from '../server/ai/index.js';
 import { buildContent } from '../server/src/content.js';
 import { aiVoice, bankVoice, hostDirector, type HostVoice } from '../server/src/host.js';
 import { inkCoachDirector } from '../server/src/ink.js';
@@ -21,6 +21,8 @@ import type { Env } from './env.js';
 // Built once per isolate and shared by every room in it; the content is read-only.
 const content = buildContent(debugPrompts.prompts);
 const bankLines = content.hostLines.filter((l): l is typeof l & BankLine => (HOST_EVENTS as readonly string[]).includes(l.event));
+// Voiced lines, shared by every room in the isolate: VOICEVOX makes each line once, not once per room.
+const audioStore = new AudioStore(32 * 1024 * 1024);
 
 export class RoomObject extends DurableObject<Env> {
   private room: Room | null = null;
@@ -35,6 +37,7 @@ export class RoomObject extends DurableObject<Env> {
       llm,
       tts: this.env.VOICEVOX_URL ? new VoicevoxTts({ baseUrl: this.env.VOICEVOX_URL, token: this.env.VOICEVOX_TOKEN, logger: workerLog }) : undefined,
       lines: bankLines,
+      store: audioStore,
       logger: workerLog,
     });
     this.ai = ai;
@@ -169,7 +172,13 @@ function roomAudio(voice: HostVoice): HostVoice {
   return {
     async speak(code, cue) {
       const line = await voice.speak(code, cue);
-      return line?.audioUrl ? { ...line, audioUrl: `/api/rooms/${code}${line.audioUrl}` } : line;
+      if (!line) return line;
+      const url = (u: string) => `/api/rooms/${code}${u}`;
+      return {
+        ...line,
+        audioUrl: line.audioUrl && url(line.audioUrl),
+        later: line.later?.then((a) => a && { ...a, audioUrl: url(a.audioUrl) }),
+      };
     },
     ahead: voice.ahead?.bind(voice),
   };
