@@ -62,8 +62,8 @@ reading a line aloud counts the same at every level.
      the TV shows that sentence, so a mis-hearing never shows. The presenter can hide their own
      caption, the VIP any caption.
 3. **Question time** (`encore`, 30 s). Everyone else gets three question cards, picks one and asks it
-   (out loud for more). The TV shows whose hands are up, not the questions. The presenter chooses one
-   and answers it.
+   (out loud for more). The TV shows whose hands are up, not the questions. The presenter chooses one,
+   Chōchin-san reads it out to the room (「〜さまからの しつもんです。」), and the presenter answers it.
 4. **はなまる** (`reveal`, 12 s). The audience grades the talk: 🌼 よく できました, 🌸 たいへん よく
    できました or 💮 はなまる. The assistant grades too in a 3-player game.
 5. **Report card** (`score`, 9 s). Flowers, the grade in red pen (a drawn はなまる for top marks), Chōchin-san's seal, a teacher's comment about the slide that got
@@ -133,4 +133,5 @@ the hanko.
 
 ## Open questions
 
-- Should the room hear the questions read aloud by the host voice before the presenter answers?
+None right now.
+

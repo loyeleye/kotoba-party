@@ -316,6 +316,9 @@ describe('Happyōkai!: a talk', () => {
     expect(table.view().question!.askers.length).toBe(2);
     expect(table.view().question!.chosen).toBeNull();
     expect(table.play(presenter, { kind: 'choose', playerId: askers[0]! }).error).toBeUndefined();
+    // Chōchin-san reads the chosen question out to the room.
+    const asked = table.t.asked.find((x) => x.playerId === askers[0])!;
+    expect(table.s.cues.find((c) => c.event === 'happyokai_ask')).toMatchObject({ host: 'chochin', slots: { question: asked.text, question_kana: asked.kana, question_en: asked.en } });
     expect(table.view().question!.chosen!.playerId).toBe(askers[0]);
     expect(table.view(presenter).me!.answerFrames.length).toBeGreaterThan(0);
     expect(table.say('いい しつもんですね。ラーメンが すき だから です。').error).toBeUndefined();
