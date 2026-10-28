@@ -217,6 +217,8 @@ export interface HappyokaiState {
   stats: Record<string, PlayerStats>;
   phaseAt: number;
   stampSeq: number;
+  /** Server time of the last change (views have no clock of their own; the screens line up with it). */
+  now: number;
 }
 
 // ---- view ----
@@ -248,7 +250,7 @@ export interface CaptionView {
 
 export interface HappyokaiView {
   mode: 'happyokai';
-  /** Server time this view was made (for the slide timer). */
+  /** Server time of the last change: the screens line their clocks up with it (the slide timer, stamps). */
   at: number;
   talk: number;
   totalTalks: number;
@@ -656,8 +658,8 @@ function slideView(st: Step, t: Talk, audience: Audience): SlideView {
     view.up = graphUp(t);
     view.word = talkWord(t)?.word ?? null;
   }
-  if (m?.id === 'upside') {
-    // The upside-down slide is the last picture shown (or a random-looking one: the first choice's).
+  if (m?.id === 'upside' || m?.id === 'message') {
+    // The upside-down slide, and the one the message pops up over, is the last picture shown.
     const prev = [...t.steps].reverse().find((x) => x.slideId);
     const shown = prev?.slideId ? slideOf(prev.slideId) : undefined;
     if (shown) Object.assign(view, { id: shown.id, word: shown.word, emoji: shown.emoji, picture: slidePicture(shown.id) });
@@ -711,6 +713,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
       stats,
       phaseAt: ctx.now,
       stampSeq: 0,
+      now: ctx.now,
     };
   },
 
@@ -736,6 +739,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
 
   enter(s, phase, ctx) {
     s.phaseAt = ctx.now;
+    s.now = ctx.now;
     switch (phase) {
       case 'intro':
         ctx.cue({ host: 'chochin', event: 'happyokai_intro', waitMs: 4_000 });
@@ -794,6 +798,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
   },
 
   leave(s, phase, ctx) {
+    s.now = ctx.now;
     const t = s.talk;
     if (phase === 'finale') {
       for (const [voter, index] of Object.entries(s.votes)) {
@@ -890,6 +895,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
   },
 
   wake(s, phase, ctx) {
+    s.now = ctx.now;
     const t = s.talk;
     if (phase !== 'answer' || !t || t.done) return;
     const st = stepOf(t);
@@ -897,6 +903,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
   },
 
   move(s, phase, playerId, raw, ctx) {
+    s.now = ctx.now;
     if (!isObject(raw)) return moveError('bad-move');
     if (raw.kind === 'vote') {
       if (phase !== 'finale') return moveError('wrong-phase');
@@ -1102,7 +1109,8 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         frames: role === 'presenter' && slide ? framesFor(me.level, slide) : [],
         ready: role === 'presenter' && picture ? scripts.map((x, key) => ({ key, text: x.text, en: x.en, ...(romaji ? { romaji: toRomaji(x.kana) } : {}) })) : [],
         kanpe: role === 'presenter' && t?.kanpe && t.kanpe.step === step ? t.kanpe.key : null,
-        canNext: !!t && role === 'presenter' && phase === 'answer' && !!st && !t.done && (linesOn(t, step).length > 0 || ctx.now - st.at >= MIN_NEXT_MS),
+        // Views have no clock: before MIN_NEXT_MS with nothing said, Next is refused with say-something.
+        canNext: !!t && role === 'presenter' && phase === 'answer' && !!st && !t.done && (linesOn(t, step).length > 0 || s.now - st.at >= MIN_NEXT_MS),
         lines: t && role === 'presenter' ? t.lines.filter((l) => (qa ? l.step === -1 : l.step === step)).map((l) => captionOf(l, true)) : [],
         choices: t && role === 'assistant' && phase === 'answer' ? t.choices.map(choiceView) : [],
         mishaps: t && role === 'assistant' && phase === 'answer' && !t.mishapUsed && t.choices.length ? MISHAPS.map((m) => ({ id: m.id, name: m.name, emoji: m.emoji })) : [],
@@ -1148,7 +1156,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
     const chosen = t?.chosen ? (t.asked.find((a) => a.playerId === t.chosen) ?? null) : null;
     return {
       mode: 'happyokai',
-      at: ctx.now,
+      at: s.now,
       talk: t ? t.index + 1 : 0,
       totalTalks: s.order.length,
       phaseAt: s.phaseAt,

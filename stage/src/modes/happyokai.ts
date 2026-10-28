@@ -156,7 +156,7 @@ function slideFace(view: RoomView, game: HappyokaiView, slide: SlideView): HTMLE
       h('p', { class: 'hk-slide-by' }, chip(view, game.presenterId)),
     );
   if (slide.kind === 'close')
-    return h('div', { class: 'hk-slide hk-close-slide' }, h('p', { class: 'hk-slide-title', lang: 'ja' }, 'ごせいちょう ありがとうございました'), h('p', { class: 'hk-slide-en' }, 'Thank you for listening'), h('p', { class: 'hk-bow', 'aria-hidden': 'true' }, '🙇'));
+    return h('div', { class: 'hk-slide hk-close-slide' }, h('p', { class: 'hk-slide-title', lang: 'ja' }, 'ごせいちょう ありがとう ございました'), h('p', { class: 'hk-slide-en' }, 'Thank you for listening'), h('p', { class: 'hk-bow', 'aria-hidden': 'true' }, '🙇'));
   return h('div', { class: 'hk-slide hk-picture-slide' }, picture(slide.picture, slide.emoji), h('span', { class: 'hk-slide-no' }, `${game.step}`));
 }
 
@@ -180,7 +180,7 @@ function stampColumn(game: HappyokaiView): HTMLElement {
       .map((s) =>
         h(
           'span',
-          { class: `hk-stamp ${s.kind}`, 'data-key': `s${s.id}`, style: `--rise-delay: ${-(now - s.at)}ms; --x: ${(s.id * 37) % 60}px;` },
+          { class: `hk-stamp ${s.kind}`, 'data-key': `s${s.id}`, style: `--rise-delay: ${-(now - s.at)}ms; --x: ${(s.id * 67) % 170}px;` },
           h('b', {}, STAMP_FACES[s.kind].emoji),
           h('span', { lang: 'ja' }, STAMP_FACES[s.kind].kana),
         ),
@@ -196,7 +196,8 @@ function stampTally(game: HappyokaiView): HTMLElement {
   );
 }
 
-function hall(view: RoomView, game: HappyokaiView, body: HTMLElement, below: HTMLElement | null, side: HTMLElement | null): HTMLElement {
+/** The hall: the projector on the left, what's being said and the room's stamps on the right. */
+function hall(view: RoomView, game: HappyokaiView, body: HTMLElement, side: HTMLElement): HTMLElement {
   return h(
     'div',
     { class: 'hk-stage hk-hall' },
@@ -207,7 +208,6 @@ function hall(view: RoomView, game: HappyokaiView, body: HTMLElement, below: HTM
       h('p', { class: 'hk-who' }, chip(view, game.presenterId, '🎤'), game.assistantId ? chip(view, game.assistantId, '🖱️') : null),
     ),
     h('div', { class: 'hk-room' }, body, side),
-    below,
   );
 }
 
@@ -231,8 +231,7 @@ function talk(view: RoomView, game: HappyokaiView): HTMLElement {
     view,
     game,
     h('div', { class: 'hk-projector' }, screen, h('div', { class: 'hk-under' }, dots, candle(game, slide))),
-    captionStrip(game.captions, tail),
-    h('div', { class: 'hk-side' }, stampColumn(game), stampTally(game)),
+    h('div', { class: 'hk-side' }, stampColumn(game), captionStrip(game.captions, tail), stampTally(game)),
   );
 }
 
@@ -251,7 +250,7 @@ function questions(view: RoomView, game: HappyokaiView): HTMLElement {
         : h('p', { class: 'hk-hands' }, (q?.askers ?? []).length ? (q?.askers ?? []).map((id) => h('span', { 'data-key': id }, '🙋', chip(view, id))) : h('span', { class: 'hk-quiet' }, 'Pick a question on your phone and ask it out loud')),
     ),
   );
-  return hall(view, game, body, captionStrip(game.captions, q?.chosen ? '「〜から です」' : ''), h('div', { class: 'hk-side' }, stampColumn(game)));
+  return hall(view, game, body, h('div', { class: 'hk-side' }, stampColumn(game), captionStrip(game.captions, q?.chosen ? '「〜から です」' : '🙋 …'), stampTally(game)));
 }
 
 function grading(view: RoomView, game: HappyokaiView): HTMLElement {
@@ -298,13 +297,13 @@ function vote(view: RoomView, game: HappyokaiView): HTMLElement {
     h('p', { class: 'hk-subtitle' }, `Vote for the best talk on your phone (not your own) · ${v.count} / ${v.needed}`),
     h(
       'ol',
-      { class: 'hk-talks', style: `--n: ${v.talks.length}` },
+      { class: `hk-talks${v.talks.length > 4 ? ' many' : ''}`, style: `--n: ${v.talks.length}` },
       v.talks.map((t) =>
         h(
           'li',
           { 'data-key': `t${t.index}` },
           h('p', { class: 'hk-talk-title', lang: 'ja' }, t.title ? `「${t.title.text}」` : '…'),
-          h('p', {}, chip(view, t.presenterId, '🎤'), t.assistantId ? chip(view, t.assistantId, '🖱️') : null),
+          h('p', {}, chip(view, t.presenterId, '🎤'), t.assistantId && v.talks.length <= 4 ? chip(view, t.assistantId, '🖱️') : null),
           t.quote ? h('p', { class: 'hk-quote', lang: 'ja' }, `“${t.quote}”`) : null,
           h('p', { class: 'hk-votes' }, t.votes ? '🌸'.repeat(t.votes) : ''),
         ),
