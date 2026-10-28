@@ -42,6 +42,8 @@ export interface PlayerView {
   connected: boolean;
   isVip: boolean;
   score: number;
+  /** Party points across the night (places, not raw points: see PARTY_POINTS in game.ts). */
+  total: number;
   /** Lobby mic check: 'ok' once they said こんにちは, 'quiet' if they chose tap/type. */
   mic: 'ok' | 'quiet' | null;
 }
@@ -70,7 +72,8 @@ export interface HostSay {
 export type HostMood = 'cheer' | 'oops' | 'peek' | 'reach';
 
 export interface RecapView {
-  standings: { playerId: string; name: string; score: number }[];
+  /** `earned`: party points from this game; `total`: the night's running total after it. */
+  standings: { playerId: string; name: string; score: number; earned: number; total: number }[];
   awards: Award[];
   /** A team game (Narabete!, Bento Haus): the recap shows the team, not a podium. */
   coop?: boolean;
@@ -138,6 +141,8 @@ export type Command =
   | { id: string; type: 'micCheck'; utterance: unknown }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' }
+  /** VIP or stage: abandons the game in progress and goes back to the lobby, scores as they were before it. */
+  | { id: string; type: 'endGame' }
   /** The VIP's Calm motion switch: stage and phones swap movement for fades and still frames. */
   | { id: string; type: 'setMotion'; calm: boolean }
   /** Main stage only: room settings (either or both). */

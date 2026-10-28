@@ -47,9 +47,9 @@ export interface RoomOptions {
   onPhase?: (room: Room) => void;
 }
 
-const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'setMotion', 'settings', 'closeRoom']);
+const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'endGame', 'setMotion', 'settings', 'closeRoom']);
 /** What a watching screen may send once the main stage turns on remote control. */
-const WATCH_COMMANDS = new Set<Command['type']>(['start', 'skip', 'playAgain']);
+const WATCH_COMMANDS = new Set<Command['type']>(['start', 'skip', 'playAgain', 'endGame']);
 const COMMAND_MEMORY = 128;
 /** Extra stage screens one room hands out: one per player's laptop and then some. */
 export const MAX_WATCHERS = 16;

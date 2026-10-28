@@ -2,11 +2,13 @@
 // main stage, whether watching screens (friends' laptops on ?code=) may run the game. A watching
 // screen that has been given control gets the game buttons here instead. Volumes, streamer mode
 // and background effects belong to this screen; remote control and the Audience (who the words are
-// for: Kids, Family or Cheeky, which asks first) belong to the room. The main stage can also close
-// the room, behind a second, explicit confirm.
+// for: Kids, Family or Cheeky, which asks first) belong to the room. While a game runs, the panel
+// opens on "End this game", which goes back to the game picker with the room, players and scores
+// from before the game kept. The main stage can also close the room, behind a second, explicit confirm.
 
 import { audienceContentList } from '../../shared/src/audience.js';
 import { h, mount } from '../../shared/src/dom.js';
+import { MODES } from '../../shared/src/modes/registry.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import type { Audience, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { isAmbientOn, setAmbient } from './backdrop.js';
@@ -15,7 +17,7 @@ import { isStreamerMode, setStreamerMode } from './music/index.js';
 import { sfx } from './music/sfx.js';
 import { getVolumes, setVolume, type VolumeId } from './sound.js';
 
-type Send = (body: { type: 'start'; mode: ModeId; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience } | { type: 'closeRoom' }) => Promise<void>;
+type Send = (body: { type: 'start'; mode: ModeId; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'endGame' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience } | { type: 'closeRoom' }) => Promise<void>;
 
 const VOLUMES: [VolumeId, string][] = [
   ['master', 'Master volume'],
@@ -26,12 +28,15 @@ const VOLUMES: [VolumeId, string][] = [
 
 let panel: HTMLElement | null = null;
 let room: HTMLElement | null = null;
+let game: HTMLElement | null = null;
 let opts: { watch: boolean; send: Send; site: () => string } | null = null;
 let view: RoomView | null = null;
 let roomKey = '';
 let show: (open: boolean) => void = () => {};
 /** The close-room button has been pressed once and is asking to be sure. */
 let confirming = false;
+/** End this game has been pressed once and is asking to be sure. */
+let ending = false;
 /** Cheeky has been pressed and the warning is showing. */
 let cheekyAsk = false;
 
@@ -40,11 +45,13 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
   opts = options;
   const button = h('button', { type: 'button', class: 'st-open', 'aria-haspopup': 'dialog', 'aria-expanded': 'false' }, '⚙ Settings') as HTMLButtonElement;
   room = h('div', { class: 'st-room' });
+  game = h('div', { class: 'st-game' });
   const close = h('button', { type: 'button', class: 'st-close', 'aria-label': 'Close settings' }, '✕');
   panel = h(
     'div',
     { class: 'st-panel', role: 'dialog', 'aria-label': 'Settings', hidden: true },
     h('div', { class: 'st-head' }, h('h2', {}, 'Settings'), close),
+    game,
     h('section', { class: 'st-sec' }, h('h3', {}, 'Sound on this screen'), VOLUMES.map(([id, label]) => slider(id, label))),
     h(
       'section',
@@ -67,6 +74,7 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
     panel!.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
     confirming = false;
+    ending = false;
     cheekyAsk = false;
     if (open) renderRoom(true);
   };
@@ -75,8 +83,8 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || panel!.hidden) return;
     // Escape backs out of the close-room question first, then closes the panel.
-    if (confirming || cheekyAsk) {
-      confirming = cheekyAsk = false;
+    if (confirming || cheekyAsk || ending) {
+      confirming = cheekyAsk = ending = false;
       renderRoom(true);
     } else show(false);
   });
@@ -116,7 +124,10 @@ function renderRoom(force: boolean): void {
   const key = v ? `${opts.watch}:${v.remoteControl}:${v.audience}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.length}` : 'none';
   if (!force && key === roomKey) return;
   roomKey = key;
-  if (!v) return void mount(room);
+  if (!v) return void (mount(room), mount(game!));
+  const inGame = v.phase !== 'lobby' && v.phase !== 'recap';
+  if (!inGame) ending = false;
+  mount(game!, inGame && (!opts.watch || v.remoteControl) ? endGame(v) : null);
   const share = h('section', { class: 'st-sec' }, h('h3', {}, 'Invite friends'), invite(inviteLinks(opts.site(), v.code), v.code, false));
   if (!opts.watch) {
     mount(
@@ -212,6 +223,49 @@ function audience(v: RoomView): HTMLElement {
     );
     queueMicrotask(() => keep.focus());
   }
+  return sec;
+}
+
+/**
+ * For a wrong pick or a game that isn't landing: back to the game picker, same room and players.
+ * Everyone's score goes back to what it was before this game started, so it asks once first.
+ */
+function endGame(v: RoomView): HTMLElement {
+  const title = v.mode ? MODES[v.mode].info.title : 'this game';
+  const sec = h('section', { class: 'st-sec st-game-end' }, h('h3', {}, 'This game'));
+  if (!ending) {
+    const ask = h('button', { type: 'button', class: 'st-btn st-btn-quiet' }, '↩ End game, pick another…') as HTMLButtonElement;
+    ask.addEventListener('click', () => {
+      sfx('tap');
+      ending = true;
+      renderRoom(true);
+    });
+    sec.append(h('p', { class: 'st-help' }, `Stops ${title} and goes back to the game picker. Everyone stays in the room.`), h('div', { class: 'st-row' }, ask));
+    return sec;
+  }
+  const keep = h('button', { type: 'button', class: 'st-btn st-btn-quiet' }, 'Keep playing') as HTMLButtonElement;
+  const yes = h('button', { type: 'button', class: 'st-btn' }, 'Yes, end game') as HTMLButtonElement;
+  keep.addEventListener('click', () => {
+    sfx('tap');
+    ending = false;
+    renderRoom(true);
+  });
+  yes.addEventListener('click', () => {
+    yes.disabled = keep.disabled = true;
+    sfx('tap');
+    show(false);
+    void opts?.send({ type: 'endGame' });
+  });
+  sec.append(
+    h(
+      'div',
+      { class: 'st-confirm st-confirm-calm', role: 'alertdialog', 'aria-label': `End ${title}?` },
+      h('p', { class: 'st-label' }, `End ${title} and go back to the game picker?`),
+      h('p', { class: 'st-help' }, 'Points from this game are dropped: scores go back to what they were when it started. Players and the room code stay.'),
+      h('div', { class: 'st-row' }, keep, yes),
+    ),
+  );
+  queueMicrotask(() => keep.focus());
   return sec;
 }
 

@@ -28,8 +28,16 @@ Commands:
 - `micCheck { utterance }`: the lobby's "say こんにちは" check.
 - `skip { phaseSeq }`: VIP or stage, timed phases.
 - `playAgain`: VIP or stage, recap.
+- `endGame`: VIP or stage, mid-game (the stage's settings panel or the VIP's phone, after a
+  confirm). Drops the game and goes back to the lobby in the same room; players stay seated and
+  every score goes back to what it was when that game started.
+
+Each player also carries `total`: party points across the night. A finished game adds them by
+place (1st 5, 2nd 3, 3rd 2, anyone else who scored 1; ties share a place; a team game gives
+everyone 2), and the recap's standings carry each player's `earned` and new `total`. A game ended
+early adds nothing.
 - `settings { remoteControl?, audience? }`: main stage only (its settings panel). `remoteControl: true` lets
-  watching stages send `start`, `skip` and `playAgain` too; `audience` is `kids`, `family` (the
+  watching stages send `start`, `skip`, `playAgain` and `endGame` too; `audience` is `kids`, `family` (the
   default) or `cheeky`, and picks the lyric sets Karaoke Duel sings. Every view carries both.
 - `closeRoom`: main stage only (its settings panel, after a confirm). Ends the room for everyone
   with `bye room-ended`; never allowed from a watching stage, even with remote control on.

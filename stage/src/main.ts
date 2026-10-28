@@ -11,7 +11,7 @@ import { isRoomCode, normalizeRoomCode } from '../../shared/src/roomCode.js';
 import { ROOM_STALE_MS } from '../../shared/src/constants.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
-import type { ByeReason, CreateRoomResponse, HostSay, ModeId, RoomView } from '../../shared/src/protocol.js';
+import type { ByeReason, CreateRoomResponse, HostSay, ModeId, RecapView, RoomView } from '../../shared/src/protocol.js';
 import { STAGE_MODES } from './modes/index.js';
 import { HOSTS } from '../../server/ai/hosts.js';
 import { duckFor, mountSoundButton, updateMusic } from './music/index.js';
@@ -309,7 +309,7 @@ function render(view: RoomView, v: number): void {
         { class: `player seat-${p.seat} ${p.connected ? 'online' : 'offline'}`, 'data-key': p.id },
         h('span', { class: 'seat', 'aria-label': `seat ${p.seat}` }, `${seatShape(p.seat)}${p.seat}`),
         h('span', { class: 'name' }, p.name, p.isVip ? h('span', { class: 'vip', title: 'VIP' }, ' ★') : null),
-        h('span', { class: 'ticks' }, (view.game && stageMode?.badge?.(view.game, p.id)) || h('span', { class: 'level' }, LEVEL_LABELS[p.level])),
+        h('span', { class: 'ticks' }, (view.game && stageMode?.badge?.(view.game, p.id)) || h('span', { class: 'level' }, LEVEL_LABELS[p.level], !view.game && p.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, ` · ★${p.total}`) : null)),
         h('span', { class: `score${up ? ' up' : ''}`, 'data-key': `${p.score}`, 'data-from': up ? seen : null }, p.score),
         p.connected ? null : h('span', { class: 'dropped' }, 'reconnecting…'),
       );
@@ -415,6 +415,18 @@ function spotlight(view: RoomView): HTMLElement {
   return h('div', { class: 'spot-wrap' }, h('p', { class: 'spot-label' }, 'Spotlight', h('span', {}, ' · the VIP picks the game on their phone')), slot);
 }
 
+/** The night's running total after this game, leader first, with what this game added. */
+function partyLine(standings: RecapView['standings']): HTMLElement | null {
+  if (!standings.length) return null;
+  const byTotal = [...standings].sort((a, b) => b.total - a.total);
+  return h(
+    'p',
+    { class: 'rest party-line' },
+    h('span', { class: 'party-label' }, '★ Party points tonight: '),
+    byTotal.flatMap((s, i) => [i ? ' · ' : '', h('strong', {}, s.name), ` ${s.total}`, s.earned ? h('span', { class: 'party-earned' }, ` +${s.earned}`) : null]),
+  );
+}
+
 /** Tonight's results: a podium for the top three (third rises first), award cards, everyone else. */
 function recapScreen(view: RoomView): HTMLElement {
   const standings = view.recap?.standings ?? [];
@@ -464,6 +476,7 @@ function recapScreen(view: RoomView): HTMLElement {
       : h('p', { class: 'rest' }, 'No points tonight: a perfect tie. もう いっかい？'),
     !coop && rest.length ? h('p', { class: 'rest' }, rest.flatMap((s, i) => [i ? ' · ' : '', h('strong', {}, `${placeLabel(i + top.length)}. ${s.name}`), ` ${s.score}`])) : null,
     !coop && top.length && zero.length ? h('p', { class: 'rest' }, 'Also played: ', zero.map((s) => s.name).join(' · ')) : null,
+    partyLine(standings),
     view.recap?.awards.length
       ? h(
           'ul',
