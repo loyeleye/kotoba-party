@@ -145,6 +145,11 @@ export interface HostCue {
    * else to say, can wait for one; a cue that opens a short phase can't.
    */
   waitMs?: number;
+  /**
+   * Said this long after the phase starts instead of straight away, alongside the phase's own line (Surprise Me!'s
+   * wheel: Pon names the pick as it stops, then the game's intro line follows).
+   */
+  atMs?: number;
 }
 
 /** One phrasebook entry for the recap. */
@@ -178,6 +183,8 @@ export interface ModeInfo {
   title: string;
   /** Japanese title for the menu. */
   titleJa: string;
+  /** The Japanese title's reading, in kana, where it has kanji (for the host to say it). */
+  titleKana?: string;
   blurb: string;
   host: HostId;
   minPlayers: number;

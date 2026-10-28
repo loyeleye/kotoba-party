@@ -380,6 +380,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
     id: 'word-gauntlet',
     title: 'Word Gauntlet',
     titleJa: 'ことばの関門',
+    titleKana: 'ことばのかんもん',
     blurb: 'Fake meanings, a telephone of translations, then a spoken shiritori showdown.',
     host: 'pon',
     phaseLabels: { reveal: 'Vote' },

@@ -380,6 +380,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
     id: 'onsen-murder',
     title: 'Murder at the Onsen',
     titleJa: '温泉殺人事件',
+    titleKana: 'おんせんさつじんじけん',
     blurb: 'Question the suspects in Japanese, then name the culprit.',
     host: 'chochin',
     minPlayers: 1,
