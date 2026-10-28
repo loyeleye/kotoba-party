@@ -207,8 +207,14 @@ function foot(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement 
       'div',
       { class: `nb-foot nb-result${f.perfect ? ' nb-perfect' : ''}`, style: `--d: ${Math.round(at)}ms` },
       f.perfect ? h('p', { class: 'nb-result-big' }, h('span', { lang: 'ja' }, 'ぴったり！'), ` Perfect line! +${f.teamPoints} each`) : h('p', { class: 'nb-result-big' }, `${f.pairs} of ${f.maxPairs} pairs in order · +${f.teamPoints} each`),
-      f.poker ? h('p', { class: 'nb-poker' }, `🃏 Poker face: ${nameOf(view, f.poker)}’s card fooled the room the most`) : null,
-      game.kind !== 'time' ? h('p', { class: 'nb-vote-call' }, '❤ On your phone: vote for the funniest answer') : null,
+      f.poker || game.kind !== 'time'
+        ? h(
+            'p',
+            { class: 'nb-poker' },
+            f.poker ? `🃏 Poker face: ${nameOf(view, f.poker)}’s card fooled the room the most` : '',
+            game.kind !== 'time' ? h('span', { class: 'nb-vote-call' }, `${f.poker ? ' · ' : ''}❤ Vote on your phone for the funniest answer`) : null,
+          )
+        : null,
     );
   }
   return h('div', { class: 'nb-foot' });

@@ -34,18 +34,21 @@
 .nb-anchor { color: var(--nb-gold); }
 
 /* ---- the cards: each in its owner's seat colour ---- */
-.nb-card { position: relative; height: 220px; animation: nb-in 0.45s var(--ease-pop) both; animation-delay: calc(var(--i) * 70ms); }
+.nb-card { position: relative; height: 206px; animation: nb-in 0.45s var(--ease-pop) both; animation-delay: calc(var(--i) * 70ms); }
 .nb-card::after { content: ''; position: absolute; left: calc(50% - 3px); bottom: -14px; width: 6px; height: 16px; background: var(--nb-ink); }
 @keyframes nb-in { from { opacity: 0; transform: translateY(-24px); } }
 .nb-inner { position: relative; height: 100%; transform-style: preserve-3d; }
 .nb-face, .nb-back { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; gap: 6px; padding: 18px 10px 10px; text-align: center; border-radius: 14px; backface-visibility: hidden; border: 4px solid var(--nb-ink); border-top: 14px solid var(--seat, var(--mode)); box-shadow: 0 6px 0 var(--nb-ink); overflow: hidden; }
 .nb-face { background: var(--panel); }
-.nb-back { background: var(--paper); color: var(--paper-ink); transform: rotateY(180deg); gap: 4px; }
+.nb-back { background: var(--paper); color: var(--paper-ink); transform: rotateY(180deg); gap: 2px; padding: 12px 8px 8px; }
 .nb-slot .nb-face { background: rgba(42, 32, 98, 0.5); border-style: dashed; border-top-style: solid; box-shadow: none; }
 .nb-said .nb-face { background: var(--panel); }
 .nb-locked .nb-face { outline: 4px solid var(--nb-good); outline-offset: 2px; }
 .nb-emoji { font-size: 84px; line-height: 1; }
 .nb-ear { opacity: 0.55; font-size: 64px; }
+/* A card with an answer on it keeps its picture small so the name and lock still fit. */
+.nb-face:has(.nb-text) .nb-emoji { font-size: 52px; }
+.nb-face:has(.nb-text) { gap: 4px; }
 .nb-said .nb-ear { opacity: 1; animation: nb-pop 0.4s var(--ease-pop) both; }
 @keyframes nb-pop { from { transform: scale(0.6); } }
 .nb-text { font-size: 30px; font-weight: 800; line-height: 1.25; text-wrap: balance; }
@@ -57,10 +60,10 @@
 .nb-lock { background: var(--nb-good); color: #0b2416; font-weight: 800; border-radius: 999px; padding: 0 10px; animation: nb-pop 0.35s var(--ease-pop) both; }
 .nb-again { color: var(--nb-gold); font-weight: 900; font-size: 30px; animation: nb-ask 0.6s ease-out both; }
 @keyframes nb-ask { from { transform: scale(1.6); text-shadow: 0 0 18px var(--nb-gold); } }
-.nb-value { font-size: 60px; font-weight: 900; line-height: 1; color: #b23a64; }
-.nb-sentence { font-size: 26px; font-weight: 800; line-height: 1.25; text-wrap: balance; }
+.nb-value { font-size: 50px; font-weight: 900; line-height: 1; color: #b23a64; }
+.nb-sentence { font-size: 22px; font-weight: 800; line-height: 1.25; text-wrap: balance; }
 .nb-n6 .nb-sentence, .nb-n7 .nb-sentence, .nb-n8 .nb-sentence { font-size: 21px; }
-.nb-en { font-size: 18px; color: #6b4a6f; line-height: 1.15; }
+.nb-en { font-size: 16px; color: #6b4a6f; line-height: 1.15; }
 .nb-n6 .nb-en, .nb-n7 .nb-en, .nb-n8 .nb-en { display: none; }
 .nb-back-foot { display: flex; gap: 10px; align-items: center; }
 .nb-back .nb-name { font-size: 22px; color: var(--paper-ink); }
@@ -86,14 +89,14 @@
 .nb-knot::after { content: ''; position: absolute; inset: 6px; border: 4px solid #ff5a5a; border-radius: 50%; }
 
 /* Under the neck: the defence or the result, in a row kept the same height. */
-.nb-foot { min-height: 74px; display: grid; gap: 4px; justify-items: center; text-align: center; align-content: start; }
+.nb-foot { min-height: 74px; display: grid; gap: 0; justify-items: center; text-align: center; align-content: start; }
 .nb-defence-call { font-size: 32px; font-weight: 800; color: var(--nb-gold); }
 .nb-defence-call small { font-size: 24px; color: var(--muted); font-weight: 400; }
 .nb-defence { font-size: 34px; font-weight: 800; }
 .nb-result { animation: nb-in 0.5s var(--ease-pop) var(--d) both; }
-.nb-result-big { font-size: 40px; font-weight: 900; }
+.nb-result-big { font-size: 34px; font-weight: 900; }
 .nb-perfect .nb-result-big { color: var(--nb-gold); }
-.nb-poker { font-size: 24px; font-weight: 700; }
+.nb-poker { font-size: 22px; font-weight: 700; }
 .nb-vote-call { font-size: 22px; color: var(--muted); }
 
 /* Calm motion: no lifts, spins or wobbles; a card's back fades in over its face at its turn. */

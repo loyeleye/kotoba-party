@@ -43,16 +43,22 @@ Three rounds. The intro (15 s) explains it. Each round:
    おねがいします), and their phone shows who asked. In Feelings rounds the TV shows the answers. The
    VIP can hide an answer.
 4. **One defence** (`encore`, 12 s, Feelings rounds only): the author of the card that moved the most
-   says why it belongs there (〜から です。). Said out loud, it tops their bonus up.
-5. **The flip** (`score`, the flip plus 9 s, or 14 s with the vote). Nobiko-san turns the cards over
+   says why it belongs there (〜からです。). Said out loud, it tops their bonus up. The TV shows the
+   call under Nobiko-san's neck, so the line stays where it is.
+5. **Cards over** (`score`, the flip plus 9 s, or 14 s with the vote). Nobiko-san turns the cards over
    from the low end, one every 1.3 s after a 1.8 s lead-in, a bell a step up the scale for each. A
    knot ties in her neck between each pair out of order; the card furthest from its true place
-   wobbles and flips last. Her line waits until the last card is over. In Feelings rounds everyone
-   then votes for the funniest answer (not their own).
+   wobbles and flips last. Her line waits until the last card is over, and phones hold the result
+   ("Nobiko-san is turning the cards over…") until then so nobody's phone spoils it. In Feelings
+   rounds everyone then votes for the funniest answer (not their own).
+
+A round keeps one TV layout from the deal to the flip: the cards stay in place, empty slots fill
+with 🔊 as players say theirs, and moved cards slide. There is no curtain between its phases.
 
 **Round 3, the Worst Day Ever** is a last Feelings Line on "what happened today, and how bad was
 it?". After its flip, one `finale` turn per card, lowest first: the TV shows the story so far, and
-the reader says their line, starting with 「そして…」 (and then…).
+the reader says their line, starting with a joiner: 「そして…」, 「それから…」, 「しかも…」 (and then,
+after that, on top of that), and 「さいごに…」 (finally) for the last.
 
 ## Scoring (co-op)
 
@@ -61,10 +67,11 @@ the reader says their line, starting with 「そして…」 (and then…).
 - **Saying it**: a bonus per player from a pool capped at 30% of the team points at stake: said
   from memory 70% of the cap, with help (the hint, or a ready answer read out) 50%, typed 35%, a ready
   answer tapped 15%, a Time card said with the time missing 20%. A spoken defence adds 30%.
+- Points are paid at the end of the flip, not when it starts.
 - **Votes**: 50 per vote. **The story**: 50 for reading your line out loud.
 - **Awards**: ポーカーフェイス賞 (the card that fooled the room the most, Feelings rounds),
-  おもしろ賞 (most votes), いい こえ賞 (most cards said out loud), みみ賞 (asked to hear a card again
-  the most).
+  おもしろ賞 (most votes), いいこえ賞 (most cards said out loud), ききじょうず賞 (good listener: asked
+  to hear a card again the most).
 
 ## Content
 
@@ -79,8 +86,10 @@ per audience. Opinion, never fact: "how big is this animal" has a right answer, 
 
 **Daily Beetle** (first theme) and **Easy Lemon** (second), both Kevin MacLeod, CC BY 4.0 (row 22 of
 the [commercial blockers](../commercial-blockers.md)). The music goes under while players talk and
-during the flip and vote (`SPEAKING_PHASES`). The flip's bells run C6 up the major scale, above the
-speech band; a knot adds a low "bwomp" below it.
+while cards are said (`listening()`); it ducks for the flip itself (`hushFor`). The flip's bells
+run up the major scale in the playing track's key (`bellTonic`), counted so the last card lands on
+the tonic, with a chord for a perfect line; a knot bends its note down a semitone and adds a low
+"bwomp". Calm motion turns the flip into a cross-fade.
 
 ## Open questions
 
