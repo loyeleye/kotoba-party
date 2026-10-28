@@ -338,7 +338,7 @@ function render(view: RoomView): void {
     isVip ? h('span', { class: 'vip' }, '★ VIP') : null,
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
-    session ? phrasebookButton(view.phase, { base, code: session.code, token: session.token, name: me.name }, flash) : null,
+    session ? phrasebookButton(view.phase, { base, code: session.code, token: session.token, name: me.name, level: me.level }, flash) : null,
     micSwitch(me),
   );
   mount(app, band, header, screenFor(view, me, isVip));
