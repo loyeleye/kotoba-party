@@ -69,6 +69,10 @@ export interface SpeakOptions {
   /** Hide the typed fallback (rare: e.g. a pure shout). */
   speechOnly?: boolean;
   maxLength?: number;
+  /** Send what was heard straight away, without a Send step (fast calls, like a kitchen's). */
+  autoSend?: boolean;
+  /** Keep the half-typed text (and the keyboard) across redraws, for screens that redraw mid-typing. */
+  draftKey?: string;
   onSend(u: Utterance): void;
 }
 
@@ -113,6 +117,7 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       heard.classList.remove('got');
       void heard.offsetWidth;
       heard.classList.add('got');
+      if (opts.autoSend) return opts.onSend({ via: 'speech', text: r.text });
       actions.replaceChildren(
         h('button', { type: 'button', class: 'primary', onclick: () => opts.onSend({ via: 'speech', text: r.text }) }, labelled('Send')),
         h('button', { type: 'button', class: 'secondary', onclick: () => ((heard.textContent = ''), actions.replaceChildren()) }, labelled('Say it again')),
@@ -145,8 +150,21 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
   return box;
 }
 
+// Half-typed text by draftKey, and which one had the keyboard, so a redraw doesn't lose either.
+const drafts = new Map<string, string>();
+let focusedDraft: string | null = null;
+
 function typedFallback(opts: SpeakOptions, collapsed: boolean): HTMLElement {
   const input = h('input', { maxlength: opts.maxLength ?? 80, placeholder: opts.placeholder ?? 'Type it', lang: 'ja', enterkeyhint: 'send', autocomplete: 'off' }) as HTMLInputElement;
+  const key = opts.draftKey;
+  if (key) {
+    input.value = drafts.get(key) ?? '';
+    input.addEventListener('input', () => drafts.set(key, input.value));
+    input.addEventListener('focus', () => (focusedDraft = key));
+    // A blur from being redrawn away (no longer in the page) keeps the keyboard for the new box.
+    input.addEventListener('blur', () => input.isConnected && focusedDraft === key && (focusedDraft = null));
+    if (focusedDraft === key) requestAnimationFrame(() => input.isConnected && input.focus({ preventScroll: true }));
+  }
   const padHolder = h('div', {});
   let padOpen = false;
   const togglePad = () => {
@@ -160,13 +178,16 @@ function typedFallback(opts: SpeakOptions, collapsed: boolean): HTMLElement {
       class: 'typed',
       onsubmit: (e: Event) => {
         e.preventDefault();
-        if (input.value.trim()) opts.onSend({ via: 'typed', text: input.value.trim() });
+        if (!input.value.trim()) return;
+        if (key) drafts.delete(key);
+        opts.onSend({ via: 'typed', text: input.value.trim() });
       },
     },
     h('div', { class: 'typed-row' }, input, h('button', { type: 'button', class: 'secondary pad-toggle', onclick: togglePad }, 'かな'), h('button', { type: 'submit', class: 'secondary' }, 'Send')),
     padHolder,
   );
   if (!collapsed) return form;
+  if (key && drafts.get(key)) return h('details', { class: 'quiet', open: true }, h('summary', {}, 'Can’t talk right now? Type it instead'), form);
   const details = h('details', { class: 'quiet' }, h('summary', {}, 'Can’t talk right now? Type it instead'), form);
   return details;
 }

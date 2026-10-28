@@ -1,0 +1,107 @@
+/* Bento Haus (phone). Fits 360 px (328 px of content). */
+.bh-kitchen { gap: 14px; }
+.bh-section { margin: 0 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+.bh-fl { display: inline-flex; align-items: baseline; gap: 6px; font-weight: 800; }
+.bh-fl .bh-fe, .bh-fe { font-size: 22px; align-self: center; }
+.bh-fl small { color: var(--muted); font-weight: 400; font-size: 12px; }
+/* The header scrolls away; keep the clock readable over the page on its own. */
+body[data-mode='bento-haus'] .timer, body[data-mode='bento-haus-vs'] .timer { padding: 0 8px; border-radius: 8px; background: var(--bg); color: var(--warn); border: 2px solid var(--outline); }
+
+/* The order: yours while the phone rings. */
+.bh-taking { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: var(--paper); color: var(--paper-ink); border: 3px solid #0b0605; box-shadow: 0 5px 0 #0b0605; }
+.bh-taking.ring { animation: bh-ring 0.6s ease-in-out 2; }
+@keyframes bh-ring { 20%, 60% { transform: rotate(-1.5deg); } 40%, 80% { transform: rotate(1.5deg); } }
+.bh-taking p { margin: 0; }
+.bh-taking .hint { color: #6b4a6f; }
+.bh-taking-head { font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.bh-who-p { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bh-rush-p { padding: 2px 8px; border-radius: 999px; background: #ffd36b; color: #0b0605; font-size: 13px; white-space: nowrap; }
+.bh-hear { margin-left: auto; min-width: 48px; min-height: 44px; padding: 4px 10px; }
+.bh-order-words { font-size: 22px; font-weight: 800; line-height: 1.35; word-break: keep-all; overflow-wrap: anywhere; }
+.bh-order-words.fades { animation: bh-fade 0.8s ease both; animation-delay: calc(var(--shown) + var(--since-delay)); }
+@keyframes bh-fade { to { opacity: 0.08; filter: blur(3px); } }
+.bh-patience-p { height: 12px; border-radius: 6px; background: rgba(0, 0, 0, 0.18); overflow: hidden; }
+.bh-patience-p span { display: block; height: 100%; background: #2fa868; transform-origin: left; animation: bh-wait-p var(--total) linear var(--gone-delay) both; }
+@keyframes bh-wait-p { 60% { background: #e0a400; } to { transform: scaleX(0); background: #d9473a; } }
+.bh-pics { display: flex; flex-wrap: wrap; gap: 6px; }
+.bh-pic { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 10px; background: #fff; border: 2px solid #0b0605; font-weight: 800; }
+.bh-pic .bh-fe { font-size: 26px; }
+.bh-box-p { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border-radius: 10px; background: #7a1f1a; color: var(--ink); min-height: 52px; border: 4px solid #1a0d0b; }
+.bh-box-p .hint { color: #ffe9d6; align-self: center; }
+.bh-boxed { display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 8px; border-radius: 10px; background: rgba(0, 0, 0, 0.35); font-weight: 800; }
+.bh-boxed b { color: #ffd36b; }
+.bh-toss { min-width: 44px; min-height: 44px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 18px; }
+/* Serve is gold (できました！ is orange) and waits, greyed, until the box has something in it. */
+.bh-serve { min-height: 56px; font-size: 20px; font-weight: 900; border-radius: 14px; border: 3px solid #0b0605; background: #ffd36b; color: #0b0605; box-shadow: 0 4px 0 #0b0605; }
+.bh-serve small { font-weight: 700; }
+.bh-serve:disabled { background: transparent; border-style: dashed; color: #6b4a6f; box-shadow: none; }
+
+/* The call box, under the order while you have one; otherwise folded away. */
+.bh-call-p { display: grid; gap: 6px; }
+.bh-help > summary { list-style: none; padding: 12px; min-height: 48px; border-radius: 12px; border: 2px dashed var(--line); color: var(--muted); font-weight: 800; text-align: center; cursor: pointer; }
+.bh-help > summary::-webkit-details-marker { display: none; }
+.bh-help[open] > summary { margin-bottom: 6px; }
+.bh-last { margin: 0; font-size: 16px; font-weight: 800; overflow-wrap: anywhere; }
+.bh-last small { font-weight: 400; color: var(--muted); }
+.bh-last.ok { color: var(--good); }
+.bh-last.static { color: var(--warn); }
+.bh-tap summary { list-style: none; display: block; padding: 12px; min-height: 48px; border-radius: 12px; border: 2px solid var(--outline); background: var(--panel); color: var(--ink); font-weight: 800; text-align: center; cursor: pointer; }
+.bh-tap summary::-webkit-details-marker { display: none; }
+.bh-tap-foods { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.bh-tap-food { text-align: left; }
+.bh-tap-food.on { outline: 3px solid var(--mode); }
+.bh-tap-counts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.bh-tap-counts button { min-height: 52px; display: grid; }
+
+/* Tickets: food on your shelf someone called for, with the read-back inside. */
+.bh-tickets { display: grid; gap: 8px; }
+.bh-ticket { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 10px; padding: 10px 12px; border-radius: 14px; background: var(--panel); border: 2px solid var(--mode); animation: bh-in 0.3s var(--ease-pop) both; }
+@keyframes bh-in { from { transform: translateY(-10px); opacity: 0; } }
+.bh-ticket.heard { border-color: var(--good); }
+.bh-ticket.static { border-style: dashed; }
+.bh-ticket .bh-ask { grid-column: 1 / -1; }
+.bh-reading { font-size: 24px; color: #ffd36b; }
+.bh-reading small { color: var(--muted); font-size: 13px; }
+.bh-rb { color: var(--good); grid-column: 1 / -1; }
+.bh-rb-box { grid-column: 1 / -1; display: grid; gap: 4px; }
+.bh-rb-box .mic-chip { display: none; }
+.bh-steps-p { margin: 0; font-size: 13px; color: var(--muted); font-weight: 700; }
+.bh-send { grid-column: 1 / -1; min-height: 52px; }
+.bh-ticket-done { margin: 0; padding: 6px 12px; border-radius: 999px; border: 2px dashed var(--line); color: var(--muted); font-size: 15px; }
+.bh-ticket-done.sent { color: var(--good); }
+
+.bh-idle { display: grid; gap: 4px; padding: 16px; border-radius: 16px; border: 2px dashed var(--line); text-align: center; }
+.bh-idle p { margin: 0; }
+.bh-idle-big { font-size: 26px; font-weight: 900; }
+
+.bh-shelf-items { display: flex; flex-wrap: wrap; gap: 6px; }
+.bh-shelf-item { display: inline-flex; align-items: baseline; gap: 2px; padding: 4px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); }
+.bh-shelf-item b { color: #ffd36b; font-size: 14px; }
+
+.bh-closing { text-align: center; justify-items: center; }
+.bh-stars-p { margin: 0; font-size: 64px; letter-spacing: 6px; }
+.bh-stars-p .on { color: #ffd36b; text-shadow: 0 3px 0 #0b0605; display: inline-block; animation: bh-stamp-p 0.35s var(--ease-pop) calc(var(--i) * 400ms) both; }
+.bh-stars-p .off { color: rgba(255, 255, 255, 0.2); }
+@keyframes bh-stamp-p { from { transform: scale(2.2) rotate(-12deg); opacity: 0; } }
+.bh-points { margin: 0; font-size: 22px; font-weight: 800; color: var(--good); text-align: center; }
+@media (prefers-reduced-motion: reduce) {
+  .bh-ticket, .bh-taking.ring, .bh-stars-p .on { animation: none; }
+  .bh-order-words.fades { animation-duration: 0.01s; }
+}
+
+/* Pixel sprites (64 px PixelLab art), shown crisp. Emoji stand in if one doesn't load. */
+img.bh-px { image-rendering: pixelated; }
+img.bh-fe { width: 32px; height: 32px; align-self: center; }
+.bh-pic img.bh-fe { width: 40px; height: 40px; }
+img.bh-cust-p { width: 48px; height: 48px; flex: none; }
+
+/* Bento Haus VS: whose kitchen this is. */
+.bh-team-p { margin: 0; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--panel); border: 3px solid var(--team); font-size: 15px; }
+.bh-team-p b { font-size: 18px; color: var(--team); margin-right: auto; }
+.team-0 { --team: #ff5a5f; }
+.team-1 { --team: #4f9dff; }
+.bh-team-score { font-weight: 800; }
+.bh-vs-p { margin: 0; font-size: 34px; font-weight: 900; }
+.bh-vs-p.won { color: #ffd36b; }
+.bh-vs-tips { margin: 0; display: flex; gap: 16px; justify-content: center; font-size: 20px; font-weight: 800; }
+.bh-vs-tips span { color: var(--team); }

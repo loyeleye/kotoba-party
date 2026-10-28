@@ -41,6 +41,8 @@ and `themeFor` in `cues.ts`; the count is kept in the browser), so a long night 
 | Murder at the Onsen | **Sneaky Snitch** (Kevin MacLeod) | **Ishikari Lore** (Kevin MacLeod, koto) |
 | Kana Yōkai Raid | **Determination** (HydroGene) | **Ouroboros** (Kevin MacLeod) |
 | Narabete! | **Daily Beetle** (Kevin MacLeod, ukulele and marimba) | **Easy Lemon** (Kevin MacLeod) |
+| Bento Haus | **Kawai Kitsune** (Kevin MacLeod) | **Feelin Good** (Kevin MacLeod) |
+| Bento Haus VS | **Feelin Good** (Kevin MacLeod) | **Kawai Kitsune** (Kevin MacLeod) |
 | The Last Train | **Last Train Dash** (synth, 16 bars) | |
 | Karaoke Duel | Each grown-up song is sung over a recorded instrumental (`track` in `songs.ts`; files listed with the other tracks in `tracks.ts`): two AI-made Mureka backings per song (one per take: Night Drive, Harbour in the Rain, Run!, Save It!, Sleepless Night, Monday Blues, Self-Intro Rap, Cheers!, Where Were You? and Sparkle Idol, credited as AI-generated), with a quiet synth guide melody on top. Kids' songs, streamer mode and files that won't load get the synth backing (`stage/src/modes/karaokeAudio.ts`; each song has a style: nursery, city pop, enka, rock, izakaya, blues, kayō, hip hop, idol, R&B, and grown-up songs carry chords for the bass); the synth's **Teacups at Two** between songs and **Taiko Showdown** at the end | |
 
@@ -93,6 +95,7 @@ their own bus, with their own volume:
 | Bwomp (low, below the speech band) | A miss: Concentration's "nobody said it", a wrong picture guess, a yōkai escaping, a Last Train miss |
 | Thwack | A yōkai takes a hit; a Concentration yōkai or fog card |
 | Tap | Buttons on the stage itself |
+| Bento Haus shop noises (quiet, short) | A phone trill when an order rings; a ticket tick when a call comes through (static when it doesn't); a send; the counter bell on a serve, then a bell per tip up the track's scale; a toss; a low sigh when a customer walks out; Pon's ドロン (disguise) and もぐもぐ (taste test); a two-note last-orders chime 20 s before close; star bells at closing time instead of the points chime |
 
 A screen that joins late hears only what happens after it joins.
 

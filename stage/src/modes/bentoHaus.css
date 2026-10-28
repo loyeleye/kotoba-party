@@ -1,0 +1,192 @@
+/* Bento Haus (stage). Scoped under .bh-stage. Food and customers are PixelLab sprites (emoji if one
+   doesn't load). Nothing anyone needs to read is under 22 px. */
+.bh-stage { width: 1720px; max-width: 100%; display: grid; gap: 14px; align-content: start; text-align: left; --bh-ink: #0b0605; --bh-wood: #8a4b2a; --bh-wood-hi: #b8693b; --bh-good: #3fd68a; --bh-gold: #ffd36b; --bh-warn: #ff7a6b; --bh-lacquer: #1a0d0b; --bh-lacquer-in: #7a1f1a; }
+.bh-stage p { margin: 0; }
+.bh-stage [lang='ja'] { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.bh-intro { justify-items: center; text-align: center; gap: 22px; }
+.bh-logo { font-size: 104px; font-weight: 900; color: var(--mode); letter-spacing: 0.04em; }
+.bh-subtitle { font-size: 32px; color: var(--muted); }
+.bh-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1300px; padding-left: 40px; margin: 0; }
+
+.bh-tag { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.bh-tag span { text-transform: none; letter-spacing: 0; color: var(--mode); font-weight: 800; }
+.bh-title { font-size: 72px; font-weight: 900; line-height: 1.1; }
+.bh-title small { font-size: 32px; font-weight: 400; color: var(--muted); margin-left: 18px; }
+.bh-what { font-size: 32px; }
+.bh-roles { font-size: 26px; color: var(--muted); }
+.bh-roles span { color: var(--ink); font-weight: 800; }
+.bh-menu-label { font-size: 24px; color: var(--muted); margin-top: 10px; }
+.bh-menu { display: flex; flex-wrap: wrap; gap: 14px; }
+.bh-counter-tip { font-size: 28px; color: var(--bh-gold); }
+
+/* A menu tile: picture, name, and (from shift 2) its counter. */
+.bh-food { display: inline-grid; grid-template-columns: auto auto; grid-template-rows: auto auto; align-items: center; column-gap: 8px; padding: 8px 14px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--bh-ink); box-shadow: 0 4px 0 var(--bh-ink); }
+.bh-food .bh-emoji { grid-row: span 2; font-size: 44px; line-height: 1; }
+.bh-food-name { font-size: 26px; font-weight: 800; }
+.bh-count { font-size: 22px; font-weight: 800; color: #b23a64; }
+
+/* ---- the shift ---- */
+.bh-head { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; }
+.bh-till { font-size: 40px; font-weight: 900; color: var(--bh-gold); display: flex; align-items: baseline; gap: 10px; }
+.bh-till small { font-size: 24px; color: var(--muted); font-weight: 400; }
+.bh-stars { display: inline-flex; gap: 4px; font-size: 40px; }
+.bh-stars .on { color: var(--bh-gold); text-shadow: 0 3px 0 var(--bh-ink); }
+.bh-stars .off { color: rgba(255, 255, 255, 0.18); }
+
+.bh-counter { display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+.bh-n1 { max-width: 900px; justify-self: center; width: 100%; }
+.bh-customer { position: relative; display: grid; gap: 12px; grid-template-rows: auto auto auto 1fr auto; align-content: start; padding: 18px; border-radius: 18px; background: var(--panel); border: 4px solid var(--bh-ink); border-bottom: 18px solid var(--bh-wood); box-shadow: inset 0 -4px 0 var(--bh-wood-hi); animation: bh-arrive 0.5s var(--ease-pop) both; }
+@keyframes bh-arrive { from { transform: translateY(30px); opacity: 0; } }
+.bh-customer.empty { background: transparent; border: 4px dashed rgba(255, 255, 255, 0.14); border-bottom: 18px solid rgba(138, 75, 42, 0.35); box-shadow: none; animation: none; min-height: 320px; display: grid; place-items: center; }
+.bh-quiet { text-align: center; font-size: 30px; color: var(--muted); }
+.bh-customer.rush { border-color: var(--bh-gold); }
+.bh-customer.waiting { animation: bh-arrive 0.5s var(--ease-pop) both, bh-fidget 0.5s ease-in-out var(--fidget-delay, 999s) infinite; }
+@keyframes bh-fidget { 25% { transform: translateX(-3px) rotate(-0.4deg); } 75% { transform: translateX(3px) rotate(0.4deg); } }
+.bh-customer.served, .bh-customer.left { animation: bh-exit 0.45s ease-in var(--exit-delay, 2s) both; }
+.bh-customer.left { filter: grayscale(0.8); }
+@keyframes bh-exit { 0% { transform: none; opacity: 1; } 100% { transform: translateY(-24px); opacity: 0; } }
+.bh-who { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.bh-yokai { font-size: 72px; line-height: 1; filter: drop-shadow(3px 3px 0 var(--bh-ink)); }
+.bh-cname { font-size: 32px; font-weight: 900; display: grid; min-width: 0; }
+.bh-cname > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bh-cname small { font-size: 22px; font-weight: 400; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bh-rush { justify-self: start; padding: 2px 12px; border-radius: 999px; background: var(--bh-gold); color: var(--bh-ink); font-weight: 900; font-size: 22px; white-space: nowrap; }
+.bh-bubble { position: relative; padding: 12px 16px; border-radius: 16px; background: var(--paper); color: var(--paper-ink); font-size: 28px; font-weight: 800; line-height: 1.3; display: grid; gap: 4px; border: 3px solid var(--bh-ink); }
+.bh-bubble small { font-size: 22px; color: #6b4a6f; font-weight: 400; }
+
+/* Patience: shrinks over the customer's time, with red fading in over the last part. */
+.bh-patience { position: relative; height: 24px; border-radius: 12px; background: rgba(0, 0, 0, 0.35); border: 3px solid var(--bh-ink); overflow: hidden; }
+.bh-patience::before { content: '⏳'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 16px; z-index: 1; }
+.bh-patience span, .bh-patience i { position: absolute; inset: 0; transform-origin: left; animation: bh-wait var(--total) linear var(--gone-delay) both; }
+.bh-patience span { background: var(--bh-good); }
+.bh-patience i { background: var(--bh-warn); animation-name: bh-wait, bh-redden; }
+@keyframes bh-wait { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes bh-redden { 0%, 55% { opacity: 0; } 100% { opacity: 1; } }
+
+.bh-tips { font-size: 40px; font-weight: 900; color: var(--bh-gold); animation: bh-pop 0.5s var(--ease-pop) both; }
+.bh-tips.t0 { color: var(--muted); }
+.bh-tips.left { color: var(--bh-warn); font-size: 48px; }
+@keyframes bh-pop { from { transform: scale(0.4); opacity: 0; } }
+
+/* The box: black lacquer with a red inside, a compartment per food ordered. */
+.bh-box { position: relative; display: grid; grid-template-columns: repeat(min(var(--parts), 3), minmax(0, 1fr)); gap: 6px; padding: 10px; border-radius: 12px; background: var(--bh-lacquer-in); border: 6px solid var(--bh-lacquer); box-shadow: 0 5px 0 var(--bh-ink); }
+.bh-part { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 104px; padding: 6px 4px; border-radius: 6px; background: rgba(0, 0, 0, 0.22); border: 3px solid var(--bh-lacquer); min-width: 0; }
+.bh-part.empty { background: rgba(0, 0, 0, 0.35); border-style: dashed; border-color: rgba(255, 255, 255, 0.18); }
+.bh-part.in { animation: bh-drop 0.45s var(--ease-pop) both; }
+@keyframes bh-drop { from { transform: translateY(-40px) scale(0.6); opacity: 0; } }
+.bh-pieces { display: flex; flex-wrap: wrap; justify-content: center; font-size: 40px; line-height: 1; filter: drop-shadow(2px 2px 0 var(--bh-ink)); }
+.bh-pieces span + span { margin-left: -10px; }
+.bh-part-label { font-size: 22px; font-weight: 800; color: var(--ink); text-align: center; line-height: 1.15; }
+.bh-part-label b { color: var(--bh-gold); }
+.bh-part.baked { border: 3px dashed var(--bh-gold); position: relative; }
+.bh-part.baked .bh-pieces { filter: hue-rotate(25deg) saturate(0.7) drop-shadow(2px 2px 0 var(--bh-ink)); }
+.bh-leaf { position: absolute; top: -6px; right: 6px; font-size: 30px; transform: rotate(20deg); }
+.bh-box.closed::after { content: '🎀'; position: absolute; inset: -6px; display: grid; place-items: center; font-size: 56px; border-radius: 12px; background: linear-gradient(90deg, transparent 47%, #c0392b 47% 53%, transparent 53%), linear-gradient(0deg, transparent 42%, #c0392b 42% 58%, transparent 58%), linear-gradient(160deg, rgba(255, 255, 255, 0.18) 0 18%, transparent 18% 100%), #2a0f0c; border: 6px solid var(--bh-lacquer); box-shadow: inset 0 0 0 3px #d4a23a; animation: bh-lid 0.35s var(--ease-pop) both; }
+@keyframes bh-lid { from { transform: translateY(-30px); opacity: 0; } }
+.bh-taker { font-size: 26px; color: var(--muted); display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.bh-chip { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--ink); }
+.bh-seat { font-family: var(--font-pixel); font-size: 22px; padding: 0 6px; border: 2px solid var(--bh-ink); border-radius: 4px; background: var(--seat, var(--mode)); color: var(--on-accent); }
+
+/* Four at the counter: tighter, and no English names. */
+.bh-tight { gap: 12px; }
+.bh-tight .bh-customer { padding: 14px; gap: 10px; }
+.bh-tight .bh-yokai { font-size: 60px; }
+.bh-tight .bh-cname { font-size: 28px; }
+.bh-tight .bh-cname small { display: none; }
+.bh-tight .bh-bubble { font-size: 24px; }
+.bh-tight .bh-pieces { font-size: 32px; }
+.bh-tight .bh-part { min-height: 88px; }
+
+/* The kitchen calls: one row above the counter, newest first. */
+.bh-feed { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.bh-feed-title { font-size: 22px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+.bh-feed ol { list-style: none; margin: 0; padding: 0; display: flex; gap: 10px; flex-wrap: nowrap; overflow: hidden; min-width: 0; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.bh-call { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 999px; background: var(--panel); border: 2px solid var(--line); font-size: 28px; font-weight: 800; white-space: nowrap; animation: bh-pop 0.35s var(--ease-pop) both; }
+.bh-call small { font-size: 22px; color: var(--muted); font-weight: 700; }
+.bh-call .bh-emoji { font-size: 30px; }
+.bh-call.sent { border-color: var(--bh-good); opacity: 0.6; }
+.bh-call.sent small { color: var(--bh-good); }
+.bh-call.void { opacity: 0.5; border-style: dotted; }
+.bh-call.static { border-style: dashed; color: var(--muted); }
+.bh-call.idle { font-weight: 400; color: var(--muted); font-size: 24px; }
+.bh-call.idle span { color: var(--ink); font-weight: 800; }
+
+/* Pon's taste test: a sticker over the counter, not another call. */
+.bh-shift { position: relative; }
+.bh-ajimi { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%) rotate(-3deg); display: flex; align-items: center; gap: 14px; padding: 8px 28px 8px 8px; border-radius: 999px; background: var(--bh-gold); color: var(--bh-ink); font-size: 36px; font-weight: 900; border: 4px solid var(--bh-ink); box-shadow: 0 6px 0 var(--bh-ink); z-index: 2; animation: bh-stick 0.4s var(--ease-pop) both, bh-unstick 0.4s ease-in 3s forwards; }
+.bh-ajimi img { width: 64px; height: 64px; image-rendering: pixelated; }
+@keyframes bh-stick { from { transform: translateX(-50%) rotate(-3deg) scale(0.3); opacity: 0; } }
+@keyframes bh-unstick { to { transform: translateX(-50%) rotate(-3deg) translateY(30px); opacity: 0; } }
+
+/* ---- closing time ---- */
+.bh-result { display: flex; align-items: center; gap: 28px; }
+.bh-result .bh-stars { font-size: 96px; }
+.bh-stars.stamp span { animation: bh-stamp 0.35s var(--ease-pop) calc(var(--stars-delay, 0ms) + var(--i) * 400ms) both; }
+@keyframes bh-stamp { from { transform: scale(2.4) rotate(-12deg); opacity: 0; } }
+.bh-result-big { font-size: 40px; font-weight: 900; }
+.bh-orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.bh-order { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding: 10px 18px; border-radius: 14px; background: var(--panel); animation: bh-row 0.35s ease-out var(--row-delay, 0ms) both; }
+@keyframes bh-row { from { transform: translateX(-30px); opacity: 0; } }
+.bh-order .bh-yokai { font-size: 44px; }
+.bh-order-text { font-size: 28px; font-weight: 800; }
+.bh-order-en { font-size: 22px; color: var(--muted); }
+.bh-order .bh-tips { font-size: 32px; }
+
+/* Calm motion: nothing drops, pops, fidgets or stamps. */
+.bh-calm .bh-part.in, .bh-calm .bh-customer, .bh-calm .bh-tips, .bh-calm .bh-call, .bh-calm .bh-order, .bh-calm .bh-stars.stamp span, .bh-calm .bh-box.closed::after { animation: none; }
+.bh-calm .bh-ajimi { animation: bh-unstick 0.01s linear 3s forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .bh-part.in, .bh-customer, .bh-tips, .bh-call, .bh-order, .bh-stars.stamp span, .bh-box.closed::after { animation: none; }
+  .bh-ajimi { animation: bh-unstick 0.01s linear 3s forwards; }
+}
+
+/* Pixel sprites (64 px PixelLab art), shown crisp. Emoji stand in if one doesn't load. */
+img.bh-px { image-rendering: pixelated; display: block; }
+img.bh-emoji { width: 64px; height: 64px; }
+.bh-food img.bh-emoji { grid-row: span 2; }
+.bh-call img.bh-emoji { width: 32px; height: 32px; }
+img.bh-yokai { width: 128px; height: 128px; filter: drop-shadow(4px 4px 0 var(--bh-ink)); }
+.bh-tight img.bh-yokai { width: 64px; height: 64px; }
+.bh-order img.bh-yokai { width: 64px; height: 64px; }
+img.bh-piece { width: 48px; height: 48px; }
+.bh-pieces img.bh-piece + img.bh-piece { margin-left: -18px; }
+.bh-tight img.bh-piece { width: 32px; height: 32px; }
+.bh-tight .bh-pieces img.bh-piece + img.bh-piece { margin-left: -12px; }
+
+/* ---- Bento Haus VS: two kitchens, one counter ---- */
+.bh-vs { --team-0: #ff5a5f; --team-1: #4f9dff; }
+.bh-vs .team-0 { --team: var(--team-0); }
+.bh-vs .team-1 { --team: var(--team-1); }
+.bh-vs-board { display: flex; gap: 14px; }
+.bh-vs-jar { white-space: nowrap; display: flex; align-items: baseline; gap: 10px; padding: 6px 18px; border-radius: 14px; background: var(--panel); border: 4px solid var(--team); }
+.bh-vs-jar b { font-size: 40px; font-weight: 900; color: var(--bh-gold); }
+.bh-vs-jar small { font-size: 22px; color: var(--muted); }
+.bh-vs-name { font-size: 30px; font-weight: 900; color: var(--team); }
+.bh-vs-feeds { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.bh-vs-feeds .bh-feed { padding: 6px 12px; border-radius: 14px; border-left: 8px solid var(--team); background: rgba(0, 0, 0, 0.18); }
+.bh-vs-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.bh-vs-box { position: relative; display: grid; gap: 6px; padding: 8px; border-radius: 14px; border: 4px solid var(--team); background: rgba(0, 0, 0, 0.18); min-width: 0; }
+.bh-vs-boxhead { font-size: 24px; font-weight: 900; color: var(--team); display: flex; justify-content: space-between; gap: 6px; }
+.bh-vs-boxhead .bh-tips { font-size: 26px; }
+.bh-vs-box .bh-box { grid-template-columns: repeat(min(var(--parts), 2), minmax(0, 1fr)); }
+.bh-vs-box .bh-part { min-height: 88px; }
+.bh-vs-box .bh-taker { font-size: 22px; min-height: 30px; }
+.bh-vs-box.won { box-shadow: 0 0 0 4px var(--bh-gold); }
+.bh-vs-box.lost { opacity: 0.75; }
+.bh-wakeari { position: absolute; right: 10px; top: 44px; padding: 2px 12px; border: 3px solid var(--bh-warn); border-radius: 6px; color: var(--bh-warn); background: rgba(11, 6, 5, 0.85); font-size: 24px; font-weight: 900; transform: rotate(8deg); animation: bh-pop 0.4s var(--ease-pop) both; }
+.bh-vs-counter img.bh-piece { width: 40px; height: 40px; }
+.bh-vs-counter .bh-pieces img.bh-piece + img.bh-piece { margin-left: -16px; }
+.bh-vs-rosters { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+.bh-vs-roster { display: grid; gap: 8px; padding: 12px 22px; border-radius: 16px; background: var(--panel); border: 4px solid var(--team); min-width: 420px; }
+.bh-vs-roster small { font-size: 22px; font-weight: 400; color: var(--muted); }
+.bh-vs-roster p:last-child { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 26px; }
+.bh-vs-result { display: grid; justify-items: start; gap: 14px; padding: 12px 22px; border-radius: 18px; background: var(--panel); border: 4px solid var(--team, var(--bh-gold)); }
+.bh-vs-result .bh-result-big { font-size: 56px; color: var(--team, var(--bh-gold)); animation: bh-stamp 0.4s var(--ease-pop) var(--stars-delay, 0ms) both; }
+.bh-vs-result .bh-result-big small { font-size: 26px; color: var(--muted); font-weight: 400; }
+.bh-vs-split { display: flex; gap: 14px; font-size: 28px; font-weight: 900; }
+.bh-vs-split span { color: var(--muted); }
+.bh-vs-split .won { color: var(--team); }
+.bh-calm .bh-wakeari, .bh-calm .bh-vs-result .bh-result-big { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .bh-wakeari, .bh-vs-result .bh-result-big { animation: none; }
+}

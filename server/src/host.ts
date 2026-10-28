@@ -68,8 +68,8 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   };
 }
 
-const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect']);
-const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai', 'narabete_knot']);
+const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_stolen', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect', 'bento_perfect', 'bento_bake']);
+const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'concentration_yokai', 'narabete_knot', 'bento_leave', 'bento_static']);
 
 /** Nobiko-san cranes her neck out to look as players answer and as their answers are revealed. */
 const PEEK = new Set(['say_it_first', 'reveal_react']);

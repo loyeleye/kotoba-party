@@ -15,7 +15,7 @@ export type { Level, HostId };
 export const PHASES = ['lobby', 'intro', 'prompt', 'answer', 'reveal', 'encore', 'score', 'penalty', 'finale', 'recap'] as const;
 export type Phase = (typeof PHASES)[number];
 
-export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'word-gauntlet', 'concentration', 'phrase-bingo', 'karaoke-duel', 'onsen-murder', 'tourist', 'oekaki', 'omiai', 'shodo', 'narabete', 'debug'] as const;
+export const MODE_IDS = ['oogiri', 'last-train', 'kana-raid', 'word-gauntlet', 'concentration', 'phrase-bingo', 'karaoke-duel', 'onsen-murder', 'tourist', 'oekaki', 'omiai', 'shodo', 'narabete', 'bento-haus', 'bento-haus-vs', 'debug'] as const;
 export type ModeId = (typeof MODE_IDS)[number];
 
 export const LEVELS: readonly Level[] = ['kana', 'n5', 'n4'];
@@ -72,6 +72,8 @@ export type HostMood = 'cheer' | 'oops' | 'peek' | 'reach';
 export interface RecapView {
   standings: { playerId: string; name: string; score: number }[];
   awards: Award[];
+  /** A team game (Narabete!, Bento Haus): the recap shows the team, not a podium. */
+  coop?: boolean;
   /** Only the viewer's own phrasebook (empty on the stage). */
   phrasebook: PhraseEntry[];
 }

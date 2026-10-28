@@ -49,6 +49,7 @@ body[data-mode='phrase-bingo'] { --mode: #ff6f91; }
 body[data-mode='omiai'] { --mode: #ffa3c0; }
 body[data-mode='shodo'] { --mode: #c9ced6; }
 body[data-mode='narabete'] { --mode: #ffc29a; }
+body[data-mode='bento-haus'], body[data-mode='bento-haus-vs'] { --mode: #ff9f6b; }
 body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--mode) 22%, var(--bg)), var(--bg) 70%) fixed; }
 
 /* Japanese: break between phrases, never inside a word (see stage/style.css). */

@@ -15,6 +15,7 @@ export const AUDIENCE_CONTENT: Partial<Record<ModeId, { name: string; what: stri
   'onsen-murder': { name: 'Murder at the Onsen', what: 'cases' },
   omiai: { name: 'Omiai Matchmaker', what: 'guests' },
   narabete: { name: 'Narabete!', what: 'themes' },
+  'bento-haus': { name: 'Bento Haus (Co-op and VS)', what: 'customers' },
 };
 
 /** "Karaoke Duel (song lyrics), Oogiri Night (prompts)": for the settings panel. */
