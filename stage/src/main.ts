@@ -266,6 +266,9 @@ function render(view: RoomView, v: number): void {
     // A phase change in a game: curtain wipe (restarted by reflow), and the ring timer starts full.
     // Not between Karaoke Duel's sing turns: each line is a phase, and the curtain would hide the
     // next line on its count-in. Nor within a Narabete! round, or between its story lines.
+    // Into or out of a Narabete! round, where her neck takes over from her portrait: a stage curtain
+    // closes over the whole screen, so she can swap places behind it.
+    else if (lastPhaseSeq >= 0 && view.mode === 'narabete' && narabeteRound(view.mode, view.phase) !== narabeteRound(view.mode, lastPhase) && !['lobby', 'recap'].includes(view.phase)) stageCurtain();
     else if (lastPhaseSeq >= 0 && view.phase !== 'lobby' && !(view.mode === 'karaoke-duel' && view.phase === 'answer' && lastPhase === 'answer') && !(view.phase !== 'prompt' && narabeteRound(view.mode, view.phase) && narabeteRound(view.mode, lastPhase)) && !(view.mode === 'narabete' && view.phase === 'finale' && lastPhase === 'finale')) {
       els.main.classList.remove('wipe');
       void els.main.offsetWidth;
@@ -532,6 +535,21 @@ function channelChange(mode: ModeId): void {
   );
   els.canvas.append(card);
   setTimeout(() => card.remove(), quiet ? 1200 : 1600);
+}
+
+/** A stage curtain over the whole screen (1 s): closes from both sides, holds, opens. Calm motion skips it. */
+function stageCurtain(): void {
+  els.canvas.querySelector('.stage-curtain')?.remove();
+  els.main.classList.remove('wipe', 'wipe-wide');
+  if (calm()) return;
+  void els.main.offsetWidth;
+  els.main.classList.add('wipe-wide');
+  const curtain = h('div', { class: 'stage-curtain', 'aria-hidden': 'true' }, h('span', { class: 'stage-curtain-l' }), h('span', { class: 'stage-curtain-r' }));
+  els.canvas.append(curtain);
+  setTimeout(() => {
+    curtain.remove();
+    els.main.classList.remove('wipe-wide');
+  }, 1000);
 }
 
 let noiseUrl = '';

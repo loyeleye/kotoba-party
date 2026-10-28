@@ -52,7 +52,7 @@ Three rounds. The intro (15 s) explains it. Each round:
    ("Nobiko-san is turning the cards over…") until then so nobody's phone spoils it. In Feelings
    rounds everyone then votes for the funniest answer (not their own).
 
-While her neck is on screen, the host corner shows only her empty plate, so there is never a second Nobiko-san.
+While her neck is on screen, the host corner shows only her empty plate, so there is never a second Nobiko-san. A stage curtain closes over the whole screen as she swaps places (into the first deal, and out to the story).
 A round keeps one TV layout from the deal to the flip: the cards stay in place, empty slots fill
 with 🔊 as players say theirs, and moved cards slide. There is no curtain between its phases.
 

@@ -29,7 +29,9 @@
 .nb-collar { left: -44px; top: -124px; background-position: 0 0; }
 .nb-nobiko { right: -40px; top: -74px; background-position: -256px 0; scale: -1 1; } /* her head turned back along her neck, to the cards */
 .nb-hop .nb-nobiko { animation: nb-hop 0.5s steps(4) var(--r) 2 alternate both; }
-/* While her neck is the ruler she is already on screen, so the corner keeps only her empty plate (her neck has gone to work). */
+/* While her neck is the ruler she is already on screen, so the corner keeps only her empty plate. She swaps places
+   while the stage curtain (stageCurtain in main.ts) is closed. */
+body[data-mode='narabete'] .host-sprite > .sprite-sheet { transition: visibility 0s 380ms; }
 body:has(.nb-stage .nb-neck) .host-sprite > .sprite-sheet { visibility: hidden; }
 @keyframes nb-hop { to { transform: translateY(-24px); } }
 .nb-ends { margin-top: 28px; display: flex; justify-content: space-between; font-size: 28px; font-weight: 800; padding: 0 200px 0 190px; min-height: 38px; }
