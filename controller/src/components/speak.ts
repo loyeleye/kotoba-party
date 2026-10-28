@@ -73,10 +73,17 @@ export interface SpeakOptions {
   autoSend?: boolean;
   /** Keep the half-typed text (and the keyboard) across redraws, for screens that redraw mid-typing. */
   draftKey?: string;
+  /**
+   * Tap to start, tap again to stop (up to TOGGLE_TALK_MS), instead of holding: for several sentences in a row,
+   * where holding a button the whole time gets in the way (Happyōkai!'s talk).
+   */
+  toggle?: boolean;
   onSend(u: Utterance): void;
 }
 
 const MAX_TALK_MS = 6_000;
+/** A toggled take: the mic's own limit (mic.ts MAX_SECONDS). */
+const TOGGLE_TALK_MS = 15_000;
 
 export function speakBox(opts: SpeakOptions): HTMLElement {
   const box = h('div', { class: 'speak' }, micChip());
@@ -86,7 +93,8 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
   if (canSpeak()) {
     let clip: MicClip | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const talk = h('button', { type: 'button', class: 'talk' }, labelled(opts.label ?? 'Hold to talk')) as HTMLButtonElement;
+    const idle = labelled(opts.label ?? (opts.toggle ? 'Tap to talk' : 'Hold to talk'));
+    const talk = h('button', { type: 'button', class: `talk${opts.toggle ? ' toggle' : ''}` }, idle) as HTMLButtonElement;
 
     // While the button is held, a bar inside it follows the mic level, so the player sees it hears them.
     const meter = (c: MicClip) => {
@@ -99,6 +107,7 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       timer = null;
       talk.classList.remove('live');
       talk.style.setProperty('--level', '0');
+      if (opts.toggle) talk.replaceChildren(...idle);
       const c = clip;
       clip = null;
       if (!c) return;
@@ -136,12 +145,17 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
         if (clip === c) heard.textContent = ok ? '🎤 …' : missed(c.blocked ? 'blocked' : 'failed');
         if (ok) meter(c);
       });
-      timer = setTimeout(() => void stop(), MAX_TALK_MS);
+      timer = setTimeout(() => void stop(), opts.toggle ? TOGGLE_TALK_MS : MAX_TALK_MS);
+      if (opts.toggle) talk.replaceChildren(...labelled('Tap to stop'));
     };
-    talk.addEventListener('pointerdown', start);
-    talk.addEventListener('pointerup', () => void stop());
-    talk.addEventListener('pointercancel', () => void stop());
-    talk.addEventListener('pointerleave', () => talk.classList.contains('live') && void stop());
+    if (opts.toggle) {
+      talk.addEventListener('pointerdown', (e) => (clip ? (e.preventDefault(), void stop()) : start(e)));
+    } else {
+      talk.addEventListener('pointerdown', start);
+      talk.addEventListener('pointerup', () => void stop());
+      talk.addEventListener('pointercancel', () => void stop());
+      talk.addEventListener('pointerleave', () => talk.classList.contains('live') && void stop());
+    }
     talk.addEventListener('contextmenu', (e) => e.preventDefault());
     box.append(talk, heard, actions);
   }

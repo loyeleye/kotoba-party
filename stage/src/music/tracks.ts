@@ -34,6 +34,9 @@ export const TRACK_IDS = [
   'feelin-good',
   // Shodō Taikai's gallery round (Ladi's pick).
   'japanese-lofi',
+  // Happyōkai!: a corporate lounge for the talk, and a bouncier one for its second game.
+  'lobby-time',
+  'pamgaea',
   // Karaoke Duel's grown-up songs: one instrumental each, sung over whole (songs.ts `track`).
   'night-drive-satnav',
   'night-drive-asleep',
@@ -139,6 +142,10 @@ export const TRACKS: Record<TrackId, Track> = {
   'kawai-kitsune': { title: 'Kawai Kitsune', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1500059'), url: file('kawai-kitsune'), loop: [37.036, 219.103], gainDb: -0.4, fallback: 'festive', bellTonic: 91 },
   'feelin-good': { title: 'Feelin Good', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1100475'), url: file('feelin-good'), loop: [9.683, 126.943], gainDb: 2.3, fallback: 'festive', bellTonic: 91 },
   'easy-lemon': { title: 'Easy Lemon', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1200076'), url: file('easy-lemon'), loop: [3.019, 109.087], gainDb: 0.2, fallback: 'gentle', bellTonic: 81 },
+  // Happyōkai!: Lobby Time (128 bpm) loops 64 bars after its intro; Pamgaea (94 bpm) loops 28 bars from its
+  // first downbeat. Both cut just after the loop and re-encoded at 128 kbps.
+  'lobby-time': { title: 'Lobby Time', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1600054'), url: file('lobby-time'), loop: [4.76, 124.714], gainDb: 1.1, fallback: 'gentle' },
+  pamgaea: { title: 'Pamgaea', author: 'Kevin MacLeod', licence: 'CC BY 4.0', source: macleod('USUAN1300036'), url: file('pamgaea'), loop: [0.72, 72.191], gainDb: -2.8, fallback: 'festive' },
   // Shodō Taikai's gallery: koto over a lo-fi hip-hop beat. 28 bars at about 75 bpm; the loop skips the
   // intro and the fade (picked by spectral match). CC0 as uploaded; commissioned on Fiverr (row 22, ❓).
   'japanese-lofi': { title: 'Japanese Lofi HipHop', author: 'pickentcode', licence: 'CC0', source: `${OGA}japanese-lofi-hiphop-track`, url: file('japanese-lofi-hiphop'), loop: [10.75, 100.35], gainDb: -6.2, fallback: 'gentle' },

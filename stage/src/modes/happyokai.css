@@ -1,0 +1,156 @@
+/* Happyōkai! (stage). Scoped under .hk-stage: a school recital hall, a projector screen in a wooden
+   frame, a candle for the slide's time, captions under the screen, stamps rising up the right. Slide
+   pictures are PixelLab (emoji if one doesn't load). Nothing anyone needs to read is under 22 px. */
+.hk-stage { width: 1720px; max-width: 100%; display: grid; gap: 14px; align-content: start; text-align: left; --hk-ink: #0b0712; --hk-wood: #7a4a2a; --hk-wood-hi: #a9673b; --hk-screen: #f6f1e4; --hk-screen-ink: #20162c; --hk-curtain: #8e1f2e; --hk-curtain-hi: #b8323f; --hk-flame: #ffcf5a; }
+.hk-stage p { margin: 0; }
+.hk-stage [lang='ja'] { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.hk-tag { font-size: 24px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.hk-tag span { text-transform: none; letter-spacing: 0; color: var(--mode); font-weight: 800; }
+.hk-subtitle { font-size: 30px; color: var(--muted); }
+.hk-big { font-size: 88px; font-weight: 900; color: var(--mode); }
+.hk-label { display: inline-block; min-width: 150px; font-size: 22px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.hk-quiet { font-size: 28px; color: var(--hk-screen-ink); opacity: 0.7; }
+
+.hk-chip { display: inline-flex; align-items: baseline; gap: 8px; margin-right: 12px; padding: 4px 16px 4px 6px; border-radius: 999px; background: var(--panel); border: 3px solid var(--seat); font-size: 30px; font-weight: 800; color: var(--ink); white-space: nowrap; }
+.hk-chip small { font-size: 24px; font-weight: 400; }
+.hk-seat { padding: 0 10px; border-radius: 999px; background: var(--seat); color: var(--outline); font-size: 22px; }
+
+/* ---- intro ---- */
+.hk-intro { justify-items: center; text-align: center; gap: 22px; }
+.hk-logo { font-size: 110px; font-weight: 900; color: var(--mode); letter-spacing: 0.04em; text-shadow: 0 6px 0 var(--outline); }
+.hk-steps { text-align: left; font-size: 30px; line-height: 1.35; display: grid; gap: 12px; max-width: 1350px; padding-left: 40px; margin: 0; }
+
+/* ---- backstage: red curtains either side ---- */
+.hk-backstage { position: relative; padding: 24px 150px; gap: 20px; justify-items: center; text-align: center; }
+.hk-backstage::before, .hk-backstage::after { content: ''; position: absolute; top: -20px; bottom: -20px; width: 120px; background: repeating-linear-gradient(90deg, var(--hk-curtain) 0 22px, var(--hk-curtain-hi) 22px 30px, var(--hk-curtain) 30px 40px); border: 4px solid var(--outline); }
+.hk-backstage::before { left: 0; border-radius: 0 0 40px 0; }
+.hk-backstage::after { right: 0; border-radius: 0 0 0 40px; }
+.hk-backstage .hk-who { display: grid; gap: 10px; justify-items: center; }
+.hk-title-card { display: grid; gap: 6px; padding: 18px 40px; border-radius: 14px; background: var(--paper); color: var(--paper-ink); border: 4px solid var(--outline); box-shadow: 0 6px 0 var(--outline); font-size: 60px; font-weight: 900; animation: hk-pop 0.45s var(--ease-pop) both; }
+.hk-title-card small { font-size: 24px; color: var(--paper-muted); font-weight: 700; }
+.hk-en { font-size: 28px; font-weight: 400; color: var(--paper-muted); }
+.hk-waiting { font-size: 40px; color: var(--muted); }
+.hk-ready { font-size: 30px; color: var(--muted); }
+.hk-ready.on { color: var(--good); font-weight: 800; animation: hk-pop 0.4s var(--ease-pop) both; }
+.hk-photo { width: 560px; animation: hk-pop 0.5s var(--ease-pop) both; }
+.hk-photo figcaption { position: absolute; left: 0; right: 0; bottom: -46px; font-size: 24px; color: var(--muted); text-align: center; }
+@keyframes hk-pop { from { transform: scale(0.6); opacity: 0; } }
+
+/* ---- the hall ---- */
+.hk-hall { gap: 10px; }
+.hk-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.hk-head .hk-who { display: flex; gap: 6px; }
+.hk-room { display: grid; grid-template-columns: 1fr 230px; gap: 16px; align-items: stretch; }
+/* The screen gets the lantern's spotlight from above. */
+.hk-projector { display: grid; justify-items: center; gap: 8px; padding-top: 6px; background: radial-gradient(ellipse 60% 70% at 50% 0%, rgba(255, 207, 90, 0.16), transparent 70%); }
+.hk-screen { position: relative; width: 880px; aspect-ratio: 4 / 3; border-radius: 6px; background: var(--hk-screen); color: var(--hk-screen-ink); border: 10px solid var(--hk-wood); outline: 4px solid var(--outline); box-shadow: inset 0 0 0 4px var(--hk-wood-hi), 0 10px 0 var(--outline); overflow: hidden; animation: hk-slide-in 0.35s ease-out both; }
+@keyframes hk-slide-in { from { filter: brightness(2.2) saturate(0); } }
+.hk-slide { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 14px; text-align: center; padding: 30px; }
+.hk-pic { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.hk-emoji { position: static; font-size: 260px; line-height: 1; display: grid; place-items: center; }
+.hk-slide-title { font-size: 76px; font-weight: 900; line-height: 1.15; }
+.hk-slide-en { font-size: 30px; color: #5e4560; }
+.hk-slide-by .hk-chip { background: var(--hk-screen); color: var(--hk-screen-ink); }
+.hk-slide-no { position: absolute; right: 10px; bottom: 8px; padding: 0 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 22px; font-weight: 800; font-family: var(--font-pixel); }
+.hk-bow { font-size: 120px; }
+.hk-title-slide { background: linear-gradient(180deg, #fff9ec, #f1e6cc); }
+.hk-title-slide .hk-slide-title { font-size: 88px; }
+
+/* Mishaps. */
+.hk-blackout { background: #050307; color: #6a6a6a; }
+.hk-blink { font-family: var(--font-code); font-size: 34px; animation: hk-blink 1s steps(2) infinite; }
+@keyframes hk-blink { 50% { opacity: 0; } }
+.hk-wrong .hk-stamp-label { position: absolute; left: 20px; top: 20px; padding: 4px 16px; border-radius: 8px; background: var(--paper); border: 3px solid var(--outline); font-size: 28px; font-weight: 900; transform: rotate(-4deg); }
+.hk-graph { align-content: stretch; grid-template-rows: auto 1fr; background: #fffdf6; }
+.hk-graph-title { font-size: 44px; font-weight: 900; }
+.hk-graph-title small { font-size: 24px; font-weight: 400; color: #5e4560; }
+.hk-bars { display: flex; align-items: flex-end; gap: 22px; height: 100%; width: 100%; padding: 0 30px; border-left: 6px solid var(--hk-screen-ink); border-bottom: 6px solid var(--hk-screen-ink); }
+.hk-bars span { flex: 1; height: var(--h); background: #3d7be0; border: 4px solid var(--hk-screen-ink); border-bottom: 0; transform-origin: bottom; animation: hk-grow 0.5s ease-out calc(var(--i) * 120ms) both; }
+.hk-graph.down .hk-bars span { background: #e0503d; }
+@keyframes hk-grow { from { transform: scaleY(0); } }
+.hk-graph-arrow { position: absolute; right: 24px; top: 20px; font-size: 80px; }
+.hk-upside .hk-pic, .hk-upside .hk-emoji { transform: rotate(180deg); }
+.hk-toast { position: absolute; top: 20px; right: 20px; display: grid; gap: 4px; padding: 14px 20px; max-width: 70%; text-align: left; border-radius: 16px; background: rgba(250, 250, 252, 0.97); color: #111; border: 3px solid var(--outline); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4); font-size: 34px; animation: hk-toast 0.4s var(--ease-pop) both; }
+.hk-toast b { font-size: 24px; color: #555; }
+@keyframes hk-toast { from { transform: translateY(-140%); } }
+.hk-screen.mishap-blackout, .hk-screen.mishap-upside { animation: hk-shake 0.4s ease-out both; }
+@keyframes hk-shake { 20% { transform: translateX(-10px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
+
+.hk-renzoku { position: absolute; left: 16px; top: 16px; padding: 4px 18px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 32px; font-weight: 900; border: 3px solid var(--outline); animation: hk-pop 0.35s var(--ease-pop) both; }
+
+.hk-under { display: flex; align-items: center; gap: 18px; }
+.hk-dots { display: flex; gap: 8px; }
+.hk-dots span { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--line); }
+.hk-dots .done { background: var(--line); }
+.hk-dots .now { background: var(--mode); border-color: var(--mode); }
+
+/* The candle: wax shrinks over the slide's time; the flame rides on top. */
+.hk-candle { position: relative; display: inline-flex; align-items: flex-end; width: 26px; height: 64px; }
+.hk-wax { position: relative; width: 100%; height: 100%; border-radius: 4px 4px 2px 2px; background: #fff4dc; border: 3px solid var(--outline); transform-origin: bottom; animation: hk-burn var(--total) linear var(--burn-delay) both; }
+.hk-flame { position: absolute; left: 50%; bottom: 100%; width: 14px; height: 22px; margin-left: -7px; border-radius: 50% 50% 40% 40%; background: var(--hk-flame); box-shadow: 0 0 14px var(--hk-flame); animation: hk-flicker 0.3s ease-in-out infinite alternate; }
+@keyframes hk-burn { from { transform: scaleY(1); } to { transform: scaleY(0.12); } }
+@keyframes hk-flicker { to { transform: scaleY(0.85) translateX(1px); } }
+
+/* Captions: the newest bright and big, older ones fading. */
+.hk-captions { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; justify-items: center; min-height: 128px; }
+.hk-cap { max-width: 1400px; font-size: 28px; color: var(--muted); text-align: center; }
+.hk-cap.last { font-size: 40px; font-weight: 800; color: var(--ink); animation: hk-cap-in 0.3s ease-out both; }
+.hk-cap.idle { font-size: 30px; color: var(--muted); opacity: 0.6; }
+.hk-cap.tap::before { content: '👆 '; }
+.hk-cap.read::before { content: '📄 '; }
+@keyframes hk-cap-in { from { transform: translateY(12px); opacity: 0; } }
+
+/* Stamps rise up the right edge and fade. */
+.hk-side { position: relative; display: grid; grid-template-rows: 1fr auto; }
+.hk-stamps { position: relative; overflow: hidden; min-height: 500px; }
+.hk-stamp { position: absolute; bottom: 0; left: var(--x); display: grid; justify-items: center; font-size: 22px; font-weight: 800; white-space: nowrap; animation: hk-rise 4s ease-out var(--rise-delay) both; }
+.hk-stamp b { font-size: 56px; line-height: 1; }
+@keyframes hk-rise { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 10% { transform: translateY(-40px) scale(1.1); opacity: 1; } 75% { opacity: 1; } 100% { transform: translateY(-460px) scale(1); opacity: 0; } }
+.hk-tally { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 26px; font-weight: 800; }
+
+/* ---- question time ---- */
+.hk-qa .hk-slide-title, .hk-qa .hk-slide-en { margin-top: 30px; }
+.hk-qa { display: grid; justify-items: center; align-content: start; gap: 16px; padding: 20px; text-align: center; }
+.hk-question { display: grid; gap: 10px; justify-items: center; font-size: 44px; font-weight: 900; animation: hk-pop 0.4s var(--ease-pop) both; }
+.hk-question small { font-size: 26px; font-weight: 400; color: #5e4560; }
+.hk-question .hk-chip, .hk-hands .hk-chip { background: var(--hk-screen); color: var(--hk-screen-ink); }
+.hk-hands { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; font-size: 40px; }
+.hk-hands > span { animation: hk-pop 0.35s var(--ease-pop) both; }
+
+/* ---- grading ---- */
+.hk-grading { justify-items: center; text-align: center; gap: 26px; padding-top: 60px; }
+.hk-count { font-size: 80px; letter-spacing: 0.1em; }
+.hk-count span { display: inline-block; color: var(--muted); }
+.hk-count span.in { animation: hk-pop 0.4s var(--ease-pop) both; }
+.hk-count small { font-size: 32px; color: var(--muted); letter-spacing: 0; }
+
+/* ---- report card: washi with a red hanko ---- */
+.hk-report { justify-items: center; }
+.hk-card { position: relative; display: grid; gap: 14px; width: 1100px; padding: 30px 46px; border-radius: 10px; background: var(--paper); color: var(--paper-ink); border: 5px solid var(--outline); box-shadow: 0 10px 0 var(--outline); background-image: repeating-linear-gradient(0deg, transparent 0 54px, rgba(200, 33, 60, 0.12) 54px 56px); }
+.hk-card-head { font-size: 40px; font-weight: 900; border-bottom: 4px solid var(--lantern); padding-bottom: 8px; }
+.hk-card-head small { font-size: 32px; color: var(--paper-muted); }
+.hk-card-title { font-size: 44px; font-weight: 900; }
+.hk-flowers { display: flex; gap: 10px; font-size: 72px; min-height: 80px; }
+.hk-flowers span { animation: hk-pop 0.4s var(--ease-pop) calc(300ms + var(--i) * 250ms) both; }
+.hk-facts { display: grid; grid-template-columns: auto auto auto auto auto auto; gap: 4px 16px; justify-content: start; margin: 0; font-size: 28px; }
+.hk-facts dt { color: var(--paper-muted); }
+.hk-facts dd { margin: 0 24px 0 0; font-weight: 900; }
+.hk-comment { display: grid; gap: 4px; font-size: 36px; font-weight: 800; }
+.hk-comment small { font-size: 24px; font-weight: 400; color: var(--paper-muted); }
+.hk-hanko { position: absolute; right: 40px; top: 60px; display: grid; justify-items: center; width: 220px; padding: 16px 10px; border: 6px solid var(--lantern); border-radius: 50%; aspect-ratio: 1; align-content: center; color: var(--lantern); font-size: 34px; font-weight: 900; text-align: center; line-height: 1.15; transform: rotate(-12deg); animation: hk-hanko 0.35s var(--ease-pop) var(--stamp-delay) both; }
+.hk-hanko small { font-size: 22px; font-weight: 700; }
+@keyframes hk-hanko { from { transform: rotate(-12deg) scale(2.4); opacity: 0; } }
+.hk-points { font-size: 34px; font-weight: 900; color: var(--lantern); }
+
+/* ---- best-talk vote ---- */
+.hk-vote { justify-items: center; text-align: center; }
+.hk-talks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(min(var(--n), 4), minmax(0, 1fr)); gap: 16px; width: 100%; }
+.hk-talks li { display: grid; gap: 10px; align-content: start; padding: 18px; border-radius: 14px; background: var(--panel); border: 4px solid var(--outline); text-align: left; animation: hk-pop 0.4s var(--ease-pop) both; }
+.hk-talk-title { font-size: 32px; font-weight: 900; color: var(--mode); }
+.hk-quote { font-size: 24px; color: var(--muted); }
+.hk-votes { font-size: 40px; min-height: 48px; }
+
+body[data-motion='calm'] .hk-stamp { animation: hk-fade 2s ease-out var(--rise-delay) both !important; }
+@keyframes hk-fade { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+body[data-motion='calm'] :is(.hk-flame, .hk-blink, .hk-screen) { animation: none !important; }
+body[data-motion='calm'] .hk-wax { animation: hk-burn var(--total) linear var(--burn-delay) both !important; animation-iteration-count: 1 !important; }

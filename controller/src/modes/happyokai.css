@@ -1,0 +1,73 @@
+/* Happyōkai! (phone). Fits 360 px (328 px of content). */
+.hk-label-p { margin: 0; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.hk-step { margin: 0; font-size: 15px; color: var(--muted); font-weight: 700; }
+.hk-ok { margin: 0; color: var(--good); font-weight: 800; }
+
+.hk-titles, .hk-questions { display: grid; gap: 8px; }
+.hk-title-btn, .hk-q-btn { display: grid; gap: 2px; width: 100%; padding: 12px 14px; text-align: left; border-radius: 14px; background: var(--panel); color: var(--ink); border: 2px solid var(--line); font-size: 18px; font-weight: 800; }
+.hk-title-btn.on, .hk-q-btn.on { background: var(--paper); color: var(--paper-ink); border-color: var(--mode); box-shadow: 0 4px 0 var(--outline); }
+.hk-title-btn .jpv-en, .hk-q-btn .jpv-en, .hk-q-btn small { font-size: 13px; font-weight: 400; opacity: 0.85; }
+.hk-title-btn .jpv-romaji, .hk-q-btn .jpv-romaji { font-size: 13px; font-style: italic; color: #b98a1c; }
+
+.hk-rehearse { display: grid; gap: 6px; padding: 12px; border-radius: 14px; border: 2px dashed var(--mode); }
+.hk-script { display: grid; gap: 2px; margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); font-size: 20px; font-weight: 800; line-height: 1.4; }
+.hk-script p { margin: 0; }
+.hk-script.small { font-size: 16px; }
+.hk-script .jpv-en, .hk-script small { font-size: 13px; font-weight: 400; color: var(--paper-muted); }
+.hk-script .jpv-romaji { font-size: 14px; font-style: italic; color: #8a5a00; }
+.hk-go { width: 100%; margin-top: 6px; }
+
+.hk-word { display: grid; gap: 4px; }
+.hk-word-jp { padding: 10px 14px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); }
+.hk-word-jp p { margin: 0; }
+.hk-word-jp .jpv-main { font-size: 30px; font-weight: 900; }
+.hk-word-jp .jpv-en, .hk-word-jp .jpv-kana { font-size: 14px; color: var(--paper-muted); }
+.hk-frames { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.hk-frames li { padding: 6px 10px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: 16px; font-weight: 700; }
+
+.hk-ready-list { display: grid; gap: 6px; }
+.hk-ready-btn { display: grid; gap: 2px; width: 100%; padding: 10px 12px; text-align: left; border-radius: 12px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); font-size: 16px; font-weight: 700; }
+.hk-ready-btn .jpv-en { font-size: 12px; font-weight: 400; color: var(--muted); }
+.hk-ready-btn .jpv-romaji { font-size: 12px; font-style: italic; color: #e7c060; }
+.hk-ready-btn.kanpe { border: 3px solid var(--warn); box-shadow: 0 0 0 3px rgba(255, 210, 63, 0.25); animation: hk-wiggle 0.5s ease-in-out 2; }
+.hk-kanpe-tag { font-size: 12px; color: var(--warn); font-weight: 800; }
+@keyframes hk-wiggle { 25% { transform: rotate(-1.5deg); } 75% { transform: rotate(1.5deg); } }
+
+.hk-mylines { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.hk-mylines li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.06); font-size: 15px; }
+.hk-mylines li.hidden { opacity: 0.5; text-decoration: line-through; }
+.hk-next { width: 100%; font-size: 20px; }
+.hk-next.dim { opacity: 0.6; }
+
+/* The assistant's slide choices: thumbnails at 1/4 of the 320×240 picture, kept crisp. */
+.hk-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.hk-choice { display: grid; gap: 4px; justify-items: center; padding: 6px; border-radius: 12px; background: var(--panel); color: var(--ink); border: 2px solid var(--line); text-align: center; }
+.hk-choice.on { border: 3px solid var(--mode); background: var(--paper); color: var(--paper-ink); }
+.hk-choice.wild { border-style: dashed; }
+.hk-thumb { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; image-rendering: pixelated; border-radius: 8px; background: #2a2150; }
+.hk-thumb.emoji { display: grid; place-items: center; font-size: 40px; }
+.hk-choice-tag { font-size: 14px; font-weight: 800; }
+.hk-choice small { font-size: 11px; opacity: 0.85; }
+.hk-mishaps summary { font-weight: 800; padding: 6px 0; }
+.hk-mishap-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.hk-mishap-row button { font-size: 15px; }
+.hk-mishap-row button.on { outline: 3px solid var(--mode); }
+.hk-cues { display: grid; gap: 6px; }
+.hk-cue { text-align: left; font-size: 15px; }
+
+/* Stamps: big thumb targets, two rows of three. */
+.hk-stamp-pad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.hk-stamp-btn { display: grid; justify-items: center; gap: 0; padding: 10px 4px; border-radius: 16px; background: var(--panel); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--outline); touch-action: manipulation; }
+.hk-stamp-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--outline); }
+.hk-stamp-btn b { font-size: 36px; line-height: 1.1; }
+.hk-stamp-btn span { font-size: 15px; font-weight: 800; }
+.hk-stamp-btn small { font-size: 11px; color: var(--muted); }
+.hk-stamp-btn.hakushu { border-color: var(--mode); }
+.hk-vip summary { color: var(--muted); font-size: 14px; }
+
+.hk-grades { display: grid; gap: 10px; }
+.hk-grade { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: center; padding: 12px 16px; text-align: left; border-radius: 16px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--outline); box-shadow: 0 4px 0 var(--outline); }
+.hk-grade b { grid-row: span 2; font-size: 40px; }
+.hk-grade span { font-size: 20px; font-weight: 900; }
+.hk-grade small { font-size: 13px; color: var(--paper-muted); }
+.hk-grade.g3 { border-color: var(--lantern); }
