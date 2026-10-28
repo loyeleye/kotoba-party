@@ -140,13 +140,28 @@ const played: Record<string, number> = (() => {
 let game = 0;
 let lastPhase: RoomView['phase'] | null = null;
 
+/**
+ * Modes that share their two themes (Bento Haus Co-op and VS, the other way round): the next game of
+ * either plays whichever of the two the last one didn't, so Co-op then VS never repeats a track.
+ */
+const SHARED_THEMES: Partial<Record<string, string>> = { 'bento-haus': 'bento', 'bento-haus-vs': 'bento' };
+const LAST_KEY = 'kotoba:lastTheme';
+
 function countGame(view: RoomView): void {
   const starting = view.phase === 'intro' && lastPhase !== 'intro';
   lastPhase = view.phase;
   if (!starting || !view.mode) return;
   game = played[view.mode] ?? 0;
   played[view.mode] = game + 1;
+  const family = SHARED_THEMES[view.mode];
   try {
+    if (family) {
+      const last = JSON.parse(localStorage.getItem(LAST_KEY) ?? '{}') as Record<string, string>;
+      // The mode's first theme, unless that's what the family played last.
+      game = last[family] && last[family] === themeFor(view.mode, 0) ? 1 : 0;
+      last[family] = themeFor(view.mode, game) ?? '';
+      localStorage.setItem(LAST_KEY, JSON.stringify(last));
+    }
     localStorage.setItem(PLAYED_KEY, JSON.stringify(played));
   } catch {
     // private mode: every game gets the first theme

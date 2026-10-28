@@ -144,7 +144,7 @@ describe('Bento Haus VS: the teams', () => {
   });
 
   it('every VS host event has four Pon lines, and slots match', () => {
-    for (const e of ['bento_vs_intro', 'bento_vs_win', 'bento_vs_tie', 'bento_vs_sendback']) {
+    for (const e of ['bento_vs_intro', 'bento_vs_win', 'bento_vs_tie', 'bento_vs_sendback', 'bento_vs_final']) {
       const lines = ponLines.filter((l) => l.event === e);
       expect(lines.length, e).toBe(4);
       for (const l of lines) for (const slot of l.jp.text.match(/\{\w+\}/g) ?? []) expect(l.slots ?? [], l.id).toContain(slot);
@@ -204,7 +204,7 @@ describe('Bento Haus VS: a shift', () => {
     expect(vb!.state).toBe('left');
     expect(vb!.tips).toBe(TIPS.wakeari);
     expect(t.k(1).tips).toBe(TIPS.wakeari);
-    expect(t.play(vb!.takerId, { kind: 'serve', visitId: vb!.id }).error).toBe('too-late');
+    expect(t.play(vb!.takerId, { kind: 'serve', visitId: vb!.id }).error).toBe('beaten');
     const stage = t.view();
     expect(stage.vs!.teams.map((x) => x.tips)).toEqual([TIPS.perfect * rush, TIPS.wakeari]);
   });
@@ -242,9 +242,14 @@ describe('Bento Haus VS: a shift', () => {
       t.timeout();
       t.timeout();
     }
+    expect(t.s.cues.some((c) => c.event === 'bento_vs_final' && c.slots?.team === 'あかチーム')).toBe(true);
     t.timeout();
     expect(t.s.phase).toBe('recap');
     expect(t.s.recap!.awards.map((a) => a.title)).toContain('はんじょう賞');
+    expect(t.s.recap!.teams!.map((x) => [x.ja, x.wins, x.tips])).toEqual([
+      ['あかチーム', 1, tipsA],
+      ['あおチーム', 0, 0],
+    ]);
     expect(t.s.recap!.coop).toBeFalsy();
   });
 
@@ -420,7 +425,7 @@ describe('Bento Haus VS: bots end to end', () => {
       for (const [id, list] of seen) for (const { v, hash } of list) expect(truth.byVersion.get(v)?.get(id), `${id} at v${v}`).toBe(hash);
       const standings = (recap as RoomView['recap'])!.standings;
       expect(standings.length).toBe(players);
-      const bad = bots.flatMap((b) => b.moves.filter((m) => !m.ok && !['wrong-phase', 'no-customer', 'too-late'].includes(m.error ?? '')));
+      const bad = bots.flatMap((b) => b.moves.filter((m) => !m.ok && !['wrong-phase', 'no-customer', 'too-late', 'beaten'].includes(m.error ?? '')));
       expect(bad).toEqual([]);
       for (const b of bots) b.stop();
       director.client.close();

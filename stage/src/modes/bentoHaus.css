@@ -210,6 +210,11 @@ img.bh-piece { width: 48px; height: 48px; }
 .bh-refund { background: var(--bh-warn); }
 @keyframes bh-sticker { from { transform: translate(-50%, -50%) rotate(-6deg) scale(2); opacity: 0; } }
 .bh-vs-counter img.bh-piece { width: 48px; height: 48px; }
+/* Three at the counter (Rush Hour): the bubble's English goes, so the Japanese stays big enough for the sofa. */
+.bh-vs-counter.bh-tight .bh-bubble small { display: none; }
+.bh-vs-counter.bh-tight .bh-bubble { font-size: 26px; }
+.bh-vs-counter.bh-tight .bh-rush { font-size: 26px; }
+.bh-vs-counter.bh-tight img.bh-piece { width: 40px; height: 40px; }
 .bh-vs-counter .bh-pieces img.bh-piece + img.bh-piece { margin-left: -20px; }
 /* A sent-back order on offer, or taken on: only the kitchen it's for, with a loud banner. */
 .bh-vs-customer.steal { border-color: var(--bh-gold); }

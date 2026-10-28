@@ -121,6 +121,8 @@ const seatsFor = (s: VsState, ctx: ModeContext): number => counterSlots(s.round,
 const clock = (s: VsState): Round | undefined => s.kitchens[0];
 /** A VS box can't be served empty: that would only hand the other kitchen the customer. */
 const servable = (v: Visit): boolean => Object.values(v.box).some((n) => n > 0);
+/** A move on a customer who's gone: 'beaten' if the other kitchen served them first. */
+const gone = (s: VsState, v: Visit) => moveError(s.kitchens.some((k) => k.visits.some((x) => x.id === v.id && x !== v && (x.state === 'served' || x.sentBack))) ? 'beaten' : 'too-late');
 
 /** A new customer phones both kitchens with the same order. */
 function arrive(s: VsState, at: number, ctx: ModeContext): void {
@@ -378,11 +380,13 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
       s.teams.forEach((t) => payRound(s.kitchens[t.id]!, ctx, membersOf(t, ctx)));
       const [a, b] = s.kitchens.map((k) => k.tips);
       s.winner = a === b ? null : a! > b! ? 0 : 1;
-      if (s.winner === null) cue(s, ctx, 'bento_vs_tie', undefined, true);
-      else {
-        s.teams[s.winner]!.wins += 1;
-        cue(s, ctx, 'bento_vs_win', { team: TEAMS[s.winner]!.ja, team_en: TEAMS[s.winner]!.en }, true);
-      }
+      if (s.winner !== null) s.teams[s.winner]!.wins += 1;
+      // After the last shift Pon crowns the game's champions (most tips over the night), if there are any.
+      const [ta, tb] = s.teams.map((t) => totalOf(s, t));
+      const champ = s.round < s.totalRounds || ta === tb ? null : ta! > tb! ? 0 : 1;
+      if (champ !== null) cue(s, ctx, 'bento_vs_final', { team: TEAMS[champ]!.ja, team_en: TEAMS[champ]!.en }, true);
+      else if (s.winner === null) cue(s, ctx, 'bento_vs_tie', undefined, true);
+      else cue(s, ctx, 'bento_vs_win', { team: TEAMS[s.winner]!.ja, team_en: TEAMS[s.winner]!.en }, true);
     }
   },
 
@@ -457,9 +461,12 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
       }
       return MOVE_OK;
     }
+    if (m.kind === 'serve' || m.kind === 'toss') {
+      const v = k.visits.find((x) => x.id === m.visitId);
+      if (v && v.state !== 'waiting') return gone(s, v);
+    }
     if (m.kind === 'serve') {
       const v = k.visits.find((x) => x.id === m.visitId);
-      if (v && v.state !== 'waiting') return moveError('too-late');
       if (!v || v.takerId !== playerId) return moveError('bad-move');
       if (!servable(v)) return moveError('empty-box');
       serveBonus(k, playerId, m.utterance);
@@ -528,6 +535,10 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
       me: meView(k, me, own, ctx),
       vs: { myTeam, teams: s.teams.map((t) => teamView(s, t, scoring, ctx)), winner: s.winner },
     };
+  },
+
+  recapTeams(s, ctx) {
+    return s.teams.map((t) => ({ ja: TEAMS[t.id]!.ja, en: TEAMS[t.id]!.en, members: membersOf(t, ctx).map((p) => p.id), wins: t.wins, tips: totalOf(s, t) }));
   },
 
   awards(s, ctx) {

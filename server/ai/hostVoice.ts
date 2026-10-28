@@ -178,6 +178,7 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   bento_vs_intro: 'Bento Haus VS starts: you are Manager Pon. Two kitchens, the red team and the blue team, race to serve the same yōkai customers; the first good box gets the tips. Players must call out to their own team in Japanese.',
   bento_vs_win: 'Bento Haus VS: the shift is over and {team} earned more tips. Congratulate them, and praise how hard both kitchens worked.',
   bento_vs_sendback: 'Bento Haus VS: a customer sent a sloppy box back for a refund and is offering the order to {team} instead: perfect earns a big tip, anything else nothing. Call it out loudly and dare them to take it.',
+  bento_vs_final: 'Bento Haus VS: the last shift is over and {team} won the whole game (most tips over all three shifts). Crown them champions.',
   bento_vs_tie: 'Bento Haus VS: the shift is over and both kitchens earned the same tips. Call it a draw.',
 };
 

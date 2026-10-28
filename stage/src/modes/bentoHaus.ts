@@ -286,6 +286,8 @@ let heard: Heard | null = null;
 let pans = new Map<string, number>();
 let wakeariPans = new Map<string, number>();
 let lastOrderTimer: ReturnType<typeof setTimeout> | null = null;
+/** VS: the latest tips, so last orders can tell a close race (rung twice) from a runaway. */
+let tipsNow: number[] = [];
 
 function listen(view: RoomView, game: BentoView): void {
   const prev = heard;
@@ -312,7 +314,11 @@ function listen(view: RoomView, game: BentoView): void {
     }
     if (view.phase === 'answer' && game.shift) {
       const wait = game.shift.end - LAST_ORDER_MS - serverNow(game);
-      if (wait > 0) lastOrderTimer = setTimeout(() => sfx('lastorder'), wait);
+      if (wait > 0)
+        lastOrderTimer = setTimeout(() => {
+          sfx('lastorder');
+          if (tipsNow.length === 2 && Math.abs(tipsNow[0]! - tipsNow[1]!) <= 3) sfx('lastorder', 0.9);
+        }, wait);
     }
     if (prev) return;
   }
@@ -352,6 +358,7 @@ export const bentoHausStage: StageMode<BentoView> = {
   },
 
   render(view, game) {
+    tipsNow = [];
     pans = new Map();
     wakeariPans = new Map();
     listen(view, game);
@@ -457,7 +464,7 @@ function vsCustomer(view: RoomView, game: BentoView, teams: readonly VsTeam[], i
     : v.sentBack && o
       ? h('p', { class: `bh-tips left bh-vs-head team-${o.id}`, lang: 'ja' }, '↩ ', teamName(o), 'の おべんとう、つきかえし！')
       : done
-        ? h('p', { class: `bh-tips bh-vs-head ${v.state}${winner !== null ? ` team-${winner}` : ''}`, lang: 'ja' }, winner !== null ? [teamName(teams[winner]!), 'が さき！'] : '💨 Gone')
+        ? h('p', { class: `bh-tips bh-vs-head ${v.state}${winner !== null ? ` team-${winner}` : ''}`, lang: 'ja' }, winner !== null ? [teamName(teams[winner]!), 'が さきに だした！'] : '💨 Gone')
         : null;
   return h(
     'div',
@@ -651,6 +658,7 @@ function vsClosing(game: BentoView): HTMLElement {
  *  and where each sound sits (red left, blue right). */
 function vsHeard(game: BentoView): BentoView {
   const teams = game.vs?.teams ?? [];
+  tipsNow = teams.map((t) => t.tips);
   pans = new Map();
   wakeariPans = new Map();
   for (const t of teams) {
@@ -670,6 +678,10 @@ function vsHeard(game: BentoView): BentoView {
 }
 
 export const bentoHausVsStage: StageMode<BentoView> = {
+  team(game, playerId) {
+    return game.vs?.teams.find((t) => t.members.includes(playerId))?.id ?? null;
+  },
+
   badge(game, playerId) {
     return (game.vs?.teams ?? []).some((t) => t.visits.some((v) => (v.state === 'waiting' || v.state === 'offered') && v.takerId === playerId)) ? '📞' : '';
   },

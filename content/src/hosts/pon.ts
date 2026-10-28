@@ -324,6 +324,11 @@ export const ponLines: HostLine[] = [
   { id: 'pon.bento_vs_sendback.02', host: 'pon', event: 'bento_vs_sendback', jp: { text: 'おきゃくさんが もどって きた！　{team}、うけますか？', kana: 'おきゃくさんが もどって きた！　{team}、うけますか？', en: 'The customer\'s come back! {team}, will you take it?' }, slots: ['{team}'], status: 'draft' },
   { id: 'pon.bento_vs_sendback.03', host: 'pon', event: 'bento_vs_sendback', jp: { text: 'かんぺきなら チップが たくさん！　{team}、どうする？', kana: 'かんぺきなら チップが たくさん！　{team}、どうする？', en: 'Make it perfect for a big tip! {team}, what will you do?' }, slots: ['{team}'], status: 'draft' },
   { id: 'pon.bento_vs_sendback.04', host: 'pon', event: 'bento_vs_sendback', jp: { text: 'あっ、かえされた！　{team}、いまです！', kana: 'あっ、かえされた！　{team}、いまです！', en: 'Oh, it\'s been sent back! {team}, now\'s your chance!' }, slots: ['{team}'], status: 'draft' },
+  // bento_vs_final
+  { id: 'pon.bento_vs_final.01', host: 'pon', event: 'bento_vs_final', jp: { text: 'きょうの ゆうしょうは {team}！', kana: 'きょうの ゆうしょうは {team}！', en: 'Tonight\'s champions: the {team}!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_final.02', host: 'pon', event: 'bento_vs_final', jp: { text: 'ゆうしょうは {team}！　おめでとう！', kana: 'ゆうしょうは {team}！　おめでとう！', en: 'The champions are the {team}! Congratulations!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_final.03', host: 'pon', event: 'bento_vs_final', jp: { text: 'さいごまで よく がんばりました！　ゆうしょうは {team}！', kana: 'さいごまで よく がんばりました！　ゆうしょうは {team}！', en: 'You all worked hard to the end! The champions: the {team}!' }, slots: ['{team}'], status: 'draft' },
+  { id: 'pon.bento_vs_final.04', host: 'pon', event: 'bento_vs_final', jp: { text: 'おべんとうハウスの いちばんは {team}です！', kana: 'おべんとうハウスの いちばんは {team}です！', en: 'The best kitchen at the Bento Haus: the {team}!' }, slots: ['{team}'], status: 'draft' },
   // bento_vs_tie
   { id: 'pon.bento_vs_tie.01', host: 'pon', event: 'bento_vs_tie', jp: { text: 'チップが おなじ！　ひきわけです！', kana: 'チップが おなじ！　ひきわけです！', en: 'The same tips! It\'s a draw!' }, status: 'draft' },
   { id: 'pon.bento_vs_tie.02', host: 'pon', event: 'bento_vs_tie', jp: { text: 'どっちも おなじ…　ポンも びっくり！', kana: 'どっちも おなじ…　ポンも びっくり！', en: 'Both the same… even Pon is surprised!' }, status: 'draft' },

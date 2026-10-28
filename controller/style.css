@@ -332,3 +332,9 @@ body[data-motion='calm'] .talk.live { transform: none; }
 
 /* Last Train has its own per-answer clock; the corner timer is the train's departure. */
 body[data-mode='last-train'] .timer:not(:empty)::before { content: '🚃 departs '; font-size: 13px; font-family: var(--font-body); }
+/* The recap's team result (Bento Haus VS), in the team's colour, above the list. */
+.recap-team-p { display: grid; gap: 6px; text-align: center; padding: 12px; border-radius: 12px; border: 3px solid var(--team-colour); background: color-mix(in srgb, var(--team-colour) 14%, var(--panel)); }
+.recap-team-p .big { color: var(--team-colour); margin: 0; }
+.recap-team-p p { margin: 0; }
+.recap-team-p.team-0 { --team-colour: #ff5a5f; }
+.recap-team-p.team-1 { --team-colour: #4f9dff; }

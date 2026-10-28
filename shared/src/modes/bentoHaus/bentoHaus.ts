@@ -193,6 +193,8 @@ export interface TicketView {
   at: number;
   /** For the caller's own list: what was heard. */
   heard?: string;
+  /** The customer it's for, so two tickets for the same food can be told apart. */
+  customer?: { visitId: string; id: string; name: string; emoji: string; rush: boolean; state: Visit['state'] };
 }
 
 export interface TakingView {
@@ -808,17 +810,22 @@ export function meView(r: Round | null, me: ModePlayer | undefined, own: boolean
   if (!me) return null;
   if (!r) return { level: me.level, taking: [], shelf: [], tickets: [], calls: [], bonus: 0 };
   const reading = (t: Ticket): string | null => (t.foodId && t.n ? countWord(foodOf(t.foodId)!, t.n, own) : null);
-  const ticketView = (t: Ticket, withHeard = false): TicketView => ({
-    id: t.id,
-    foodId: t.foodId,
-    n: t.n,
-    reading: reading(t),
-    state: t.state,
-    readback: t.readback,
-    asked: t.asked,
-    at: t.at,
-    ...(withHeard ? { heard: t.heard } : {}),
-  });
+  const ticketView = (t: Ticket, withHeard = false): TicketView => {
+    const v = t.visitId ? r.visits.find((x) => x.id === t.visitId) : undefined;
+    const c = v ? customerOf(v.customerId) : undefined;
+    return {
+      id: t.id,
+      foodId: t.foodId,
+      n: t.n,
+      reading: reading(t),
+      state: t.state,
+      readback: t.readback,
+      asked: t.asked,
+      at: t.at,
+      ...(withHeard ? { heard: t.heard } : {}),
+      ...(v && c ? { customer: { visitId: v.id, id: c.id, name: c.name, emoji: c.emoji, rush: v.rush, state: v.state } } : {}),
+    };
+  };
   return {
     level: me.level,
     taking: r.visits

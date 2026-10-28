@@ -51,6 +51,7 @@ export const HOST_EVENTS = [
   'bento_vs_intro',
   'bento_vs_win',
   'bento_vs_sendback',
+  'bento_vs_final',
   'bento_vs_tie',
   // Oogiri Night
   'ippon',

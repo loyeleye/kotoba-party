@@ -114,20 +114,28 @@ Each team is a whole Co-op kitchen; the two share only the customers.
   box gets a へんきん (refund) sticker; a sent-back order shows only the kitchen it's offered to, with
   a 🔁 banner (うけますか？ / ぴったりなら +5). One lane per team above the counter: tip jar, mistake
   meter and the last two calls. Pon's taste test names the team. Closing time names the shift's
-  winner beside both jars (the winner's ringed) and shows each order's tips for both teams.
+  winner beside both jars (the winner's ringed) and shows each order's tips for both teams. Player
+  tiles sit red then blue, with a team band along the bottom, and Pon's row keeps one height during a
+  shift so the counter doesn't jump when he talks. With three at the counter the bubble's English goes.
 - **Phone.** The Co-op kitchen, with a team bar (your team, this shift's tips with yours first, your
   mistake meter). An order you took ends with a short note: your team served first, the other did
   (わけあり +1), or it was sent back; it buzzes short for a win and long for a loss. A sent-back
   order on offer shows うけます / ことわります; once accepted, the order card says it's perfect or
-  nothing. Closing leads with whether your team won, then both teams' tips, and buzzes when the TV
+  nothing. The order card shows how full the other team's box is (a slot per food), each ticket says
+  which customer it's for (and a 🎫 pill jumps down to them), a ticket voided because the other team
+  served first says so, and serving a lost customer says the other kitchen served first. The team
+  bar adds the game's totals from shift 2. Closing leads with whether your team won, then both teams' tips, and buzzes when the TV
   stamps the result.
 - **Sound.** Red's sounds come from the left speaker and blue's from the right, the わけあり box gets
   a low thunk just after the serve, a sent-back box a falling sting, and a drawn shift its own sting.
   Pon names the order-takers only for the shift's first customer, so he doesn't talk over them.
-- **Recap.** A podium of players (teammates tie, and ties stand level). はんじょう賞 goes to the kitchen
-  with the most tips, beside the Co-op awards.
+- **Recap.** A team line above the podium (each team's shifts won and tips, the winner ringed; the
+  phone leads with your team's result), then a podium of players (teammates tie, and ties stand
+  level). After the last shift Pon crowns the game's champions (`bento_vs_final`) instead of naming
+  the shift's winner. はんじょう賞 goes to the kitchen with the most tips, beside the Co-op awards.
 - **Music.** The same two themes the other way round: Feelin Good opens the shifts, Kawai Kitsune is
-  the second theme.
+  the second theme. Across both modes a screen plays whichever of the two the last Bento game didn't.
+  Last orders rings twice when the teams are within 3 tips.
 
 ## Open questions
 

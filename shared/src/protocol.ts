@@ -2,7 +2,7 @@
 // See docs/protocol.md for the prose version and docs/decisions for the reasoning.
 
 import type { HostId, Level } from '../../content/src/types.js';
-import type { Award, ModeInfo, PhraseEntry } from './modes/mode.js';
+import type { Award, ModeInfo, PhraseEntry, RecapTeam } from './modes/mode.js';
 import type { GameView } from './modes/views.js';
 
 export type { Level, HostId };
@@ -77,6 +77,8 @@ export interface RecapView {
   awards: Award[];
   /** A team game (Narabete!, Bento Haus): the recap shows the team, not a podium. */
   coop?: boolean;
+  /** A team game (Bento Haus VS): each team's result, shown above the podium. */
+  teams?: RecapTeam[];
   /** Only the viewer's own phrasebook (empty on the stage). */
   phrasebook: PhraseEntry[];
 }
