@@ -130,7 +130,9 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   the 17 animation sheets in `stage/assets/anim/` (host idle, cheer and oops loops; yōkai hit and
   boss defeat; Nobiko-san's three added 2026-10-27), made by PixelLab's `animate-with-text-v3` endpoint from our own host and yōkai
   sprites as the first and last frame, and the smoke puff in `stage/assets/fx/`. Since 2026-10-28 also the 56 Narabete! card pictures in
-  `stage/assets/cards/` (`pixflux`, text only, prompts and seeds in the manifest). Narabete!'s knot
+  `stage/assets/cards/` (`pixflux`, text only, prompts and seeds in the manifest), and Bento Haus's
+  food sprites and 10 customers in three moods (`stage/assets/bento/`, `pixflux`, text only; のり and
+  うめぼし are drawn in our own code). Narabete!'s knot
   sheet and clothes peg are hand-drawn by `tools/art/sources/narabete-art.py` (no model, no PixelLab).
   The four lip-sync
   mouth sheets are edited from our own host portraits by `tools/art/polish.ts`, and Nobiko-san's neck-stretch sheet (2026-10-28) is cut from her portrait by `tools/art/sources/nobiko-peek.py` with a hand-drawn neck, as are the body and head the stage draws her long reach from and her chorus sway sheet (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon
@@ -234,6 +236,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   and The Mind: secret numbers, opinion themes, ordering by talk. Game mechanics aren't protected by
   copyright, but the names, card text and art are. Our themes, cards and the neck ruler are our own;
   don't use "ito" or "The Mind" in the product, store page or marketing.
+- Bento Haus (added 2026-10-28) borrows the idea of Overcooked (Ghost Town Games / Team17): a co-op
+  kitchen where the team has to talk to fill orders against the clock. Only the idea; the menu,
+  yokai customers, counters, riddles, look and every line are our own. Don't use "Overcooked" in the
+  product, store page or marketing ("a co-op cooking party game" is enough).
 
 ### 13. Karaoke Duel songs
 
@@ -354,7 +360,9 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Wallpaper, Off to Osaka, Local Forecast - Elevator, Cipher, Kool Kats, Ishikari Lore and Ouroboros;
   Narabete!'s Daily Beetle and Easy Lemon, added 2026-10-28 (Daily Beetle is cut just after its loop and
   both are re-encoded at 128 kbps, "cut for the game" in their credits; licence page re-read 2026-10-28:
-  Creative Commons, free, credit required, or a paid Standard License)
+  Creative Commons, free, credit required, or a paid Standard License);
+  Bento Haus's Kawai Kitsune and Feelin Good, added 2026-10-28 (both cut just after their loops and
+  re-encoded at 128 kbps, "cut for the game" in their credits; same licence page, read 2026-10-28)
   (Kevin MacLeod, each credited with its incompetech ISRC page, [incompetech.com](https://incompetech.com/music/royalty-free/licenses/),
   read 2026-10-26: free under Creative Commons with credit, or a paid Standard License with no credit);
   Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY

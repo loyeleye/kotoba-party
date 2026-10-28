@@ -3291,6 +3291,838 @@
         "seed": 15838
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/karaage.png",
+      "what": "Bento Haus food: karaage",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate, no tray, no board, no table. three small pieces of golden-brown craggy Japanese fried chicken (karaage) in a little pile, floating, nothing under them",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/tamagoyaki.png",
+      "what": "Bento Haus food: tamagoyaki",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one thick slice of Japanese tamagoyaki rolled omelette, yellow with visible spiral layers",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/sakana.png",
+      "what": "Bento Haus food: sakana",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one fillet of grilled salmon, pink flesh with darker grill marks and silver skin edge",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/tako.png",
+      "what": "Bento Haus food: tako",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one red Japanese octopus-shaped sausage (tako-san wiener) with little curled legs and two dot eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/ebi.png",
+      "what": "Bento Haus food: ebi",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate, no tray, no board, no table. one Japanese ebi fry on its own: a long golden breaded fried prawn with a red tail fin, floating, nothing under it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 11
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/hamba.png",
+      "what": "Bento Haus food: hamba",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate, no tray, no board, no table. one small round brown hamburg steak patty on its own, glossy dark sauce dripping on top, floating, nothing under it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/tomato.png",
+      "what": "Bento Haus food: tomato",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one shiny red cherry tomato with a small green star-shaped stem",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/broccoli.png",
+      "what": "Bento Haus food: broccoli",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one small floret of green broccoli shaped like a little tree",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/kyuuri.png",
+      "what": "Bento Haus food: kyuuri",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one whole green Japanese cucumber, long and thin, bumpy skin",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/ninjin.png",
+      "what": "Bento Haus food: ninjin",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one orange carrot with green leafy top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/onigiri.png",
+      "what": "Bento Haus food: onigiri",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one triangular Japanese onigiri rice ball, white rice, a strip of dark nori seaweed wrapped at the bottom",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/inari.png",
+      "what": "Bento Haus food: inari",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one inari sushi: a golden-brown sweet fried tofu pouch stuffed with white rice, rounded pillow shape",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/umeboshi.png",
+      "what": "Bento Haus food: umeboshi",
+      "generator": "polish",
+      "model": "hand-drawn",
+      "prompt": "Drawn in code, pixel by pixel, by tools/art/sources/bento-food.py (pixflux drew nori on a tray or on fire and the umeboshi as a tomato or a cherry in 3 tries). No generator.",
+      "params": {},
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/nori.png",
+      "what": "Bento Haus food: nori",
+      "generator": "polish",
+      "model": "hand-drawn",
+      "prompt": "Drawn in code, pixel by pixel, by tools/art/sources/bento-food.py (pixflux drew nori on a tray or on fire and the umeboshi as a tomato or a cherry in 3 tries). No generator.",
+      "params": {},
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/ichigo.png",
+      "what": "Bento Haus food: ichigo",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one red strawberry with green leaves and little yellow seeds",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/food/ringo.png",
+      "what": "Bento Haus food: ringo",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers, no plate. one bunny-cut apple slice (usagi ringo): a wedge of apple with red skin cut into two rabbit ears, cream flesh",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/hitotsume-calm.png",
+      "what": "Bento Haus customer (calm): hitotsume",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. hitotsume-kozo, a small bald yokai monk boy with one huge eye in the middle of his face, pale skin, simple blue monk robe",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/hitotsume-happy.png",
+      "what": "Bento Haus customer (happy): hitotsume",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. hitotsume-kozo, a small bald yokai monk boy with one huge eye in the middle of his face, pale skin, simple blue monk robe, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/hitotsume-cross.png",
+      "what": "Bento Haus customer (cross): hitotsume",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. hitotsume-kozo, a small bald yokai monk boy with one huge eye in the middle of his face, pale skin, simple blue monk robe, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kappa-calm.png",
+      "what": "Bento Haus customer (calm): kappa",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute green kappa river creature: green skin, a flat white dish on top of its head ringed by short black hair, a small yellow beak, holding a cucumber, no hat, bare head showing the white dish",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kappa-happy.png",
+      "what": "Bento Haus customer (happy): kappa",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute green kappa river creature: green skin, a flat white dish on top of its head ringed by short black hair, a small yellow beak, holding a cucumber, no hat, bare head showing the white dish, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kappa-cross.png",
+      "what": "Bento Haus customer (cross): kappa",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute green kappa river creature: green skin, a flat white dish on top of its head ringed by short black hair, a small yellow beak, holding a cucumber, no hat, bare head showing the white dish, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kodanuki-calm.png",
+      "what": "Bento Haus customer (calm): kodanuki",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a tiny round tanuki cub child yokai, brown fur, dark eye mask, a green leaf on its head, big hungry eyes, small and young",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kodanuki-happy.png",
+      "what": "Bento Haus customer (happy): kodanuki",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a tiny round tanuki cub child yokai, brown fur, dark eye mask, a green leaf on its head, big hungry eyes, small and young, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kodanuki-cross.png",
+      "what": "Bento Haus customer (cross): kodanuki",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a tiny round tanuki cub child yokai, brown fur, dark eye mask, a green leaf on its head, big hungry eyes, small and young, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/yukionna-calm.png",
+      "what": "Bento Haus customer (calm): yukionna",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. yuki-onna snow woman yokai, very pale blue-white skin, long straight black hair, white kimono with snowflake pattern, frosty breath",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/yukionna-happy.png",
+      "what": "Bento Haus customer (happy): yukionna",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. yuki-onna snow woman yokai, very pale blue-white skin, long straight black hair, white kimono with snowflake pattern, frosty breath, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/yukionna-cross.png",
+      "what": "Bento Haus customer (cross): yukionna",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. yuki-onna snow woman yokai, very pale blue-white skin, long straight black hair, white kimono with snowflake pattern, frosty breath, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/baku-calm.png",
+      "what": "Bento Haus customer (calm): baku",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a baku dream-eater yokai: a tapir-like creature with a short trunk-like snout, sleepy half-closed eyes, black and white fur, a nightcap",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/baku-happy.png",
+      "what": "Bento Haus customer (happy): baku",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a baku dream-eater yokai: a tapir-like creature with a short trunk-like snout, sleepy half-closed eyes, black and white fur, a nightcap, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/baku-cross.png",
+      "what": "Bento Haus customer (cross): baku",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a baku dream-eater yokai: a tapir-like creature with a short trunk-like snout, sleepy half-closed eyes, black and white fur, a nightcap, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/obaachan-calm.png",
+      "what": "Bento Haus customer (calm): obaachan",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a kind grandmother ghost, translucent pale blue, grey hair in a bun, round glasses, cardigan, a wispy ghost tail instead of legs",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/obaachan-happy.png",
+      "what": "Bento Haus customer (happy): obaachan",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a kind grandmother ghost, translucent pale blue, grey hair in a bun, round glasses, cardigan, a wispy ghost tail instead of legs, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/obaachan-cross.png",
+      "what": "Bento Haus customer (cross): obaachan",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a kind grandmother ghost, translucent pale blue, grey hair in a bun, round glasses, cardigan, a wispy ghost tail instead of legs, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/zangyou-calm.png",
+      "what": "Bento Haus customer (calm): zangyou",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a tired office-worker ghost, translucent pale green, loose necktie, white shirt, dark eye bags, a little ghost flame next to him",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/zangyou-happy.png",
+      "what": "Bento Haus customer (happy): zangyou",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a tired office-worker ghost, translucent pale green, loose necktie, white shirt, dark eye bags, a little ghost flame next to him, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/zangyou-cross.png",
+      "what": "Bento Haus customer (cross): zangyou",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a tired office-worker ghost, translucent pale green, loose necktie, white shirt, dark eye bags, a little ghost flame next to him, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kitsune-calm.png",
+      "what": "Bento Haus customer (calm): kitsune",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a fox girl kitsune yokai dressed up for a date, orange fox ears and a fluffy fox tail, red flower hairpin, pretty kimono",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kitsune-happy.png",
+      "what": "Bento Haus customer (happy): kitsune",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a fox girl kitsune yokai dressed up for a date, orange fox ears and a fluffy fox tail, red flower hairpin, pretty kimono, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/kitsune-cross.png",
+      "what": "Bento Haus customer (cross): kitsune",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a fox girl kitsune yokai dressed up for a date, orange fox ears and a fluffy fox tail, red flower hairpin, pretty kimono, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/influencer-calm.png",
+      "what": "Bento Haus customer (calm): influencer",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cheerful rokurokubi yokai influencer with a slightly long neck, holding up a smartphone for a selfie, trendy hair bow, sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/influencer-happy.png",
+      "what": "Bento Haus customer (happy): influencer",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cheerful rokurokubi yokai influencer with a slightly long neck, holding up a smartphone for a selfie, trendy hair bow, sparkles, delighted, big smile, closed happy eyes, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/influencer-cross.png",
+      "what": "Bento Haus customer (cross): influencer",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cheerful rokurokubi yokai influencer with a slightly long neck, holding up a smartphone for a selfie, trendy hair bow, sparkles, fed up and leaving, frowning, puffed cheeks, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/buchou-calm.png",
+      "what": "Bento Haus customer (calm): buchou",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a noppera-bo faceless yokai office boss: a smooth blank egg-like face with no eyes, no nose and no mouth, neat grey hair, dark business suit and tie",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/buchou-happy.png",
+      "what": "Bento Haus customer (happy): buchou",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a noppera-bo faceless yokai office boss: a smooth blank egg-like face with no eyes, no nose and no mouth, neat grey hair, dark business suit and tie, delighted, pink blush marks on the blank face, little sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/bento/customers/buchou-cross.png",
+      "what": "Bento Haus customer (cross): buchou",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait bust for a cozy-spooky Japanese late-night TV party game, head and shoulders, front view, centred, facing the viewer, cute and friendly, warm colours, clear readable silhouette, no text or letters. a noppera-bo faceless yokai office boss: a smooth blank egg-like face with no eyes, no nose and no mouth, neat grey hair, dark business suit and tie, fed up and leaving, arms crossed, the face stays completely blank and smooth with no eyes and no mouth, a small dark scribble cloud above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 21
+      },
+      "post": {}
     }
   ]
 }

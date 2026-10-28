@@ -254,4 +254,59 @@ export const ponLines: HostLine[] = [
   { id: 'pon.fooled.02', host: 'pon', event: 'fooled', jp: { text: 'うそが かちました！ {author}さん、わるい ひと！', kana: 'うそが かちました！ {author}さん、わるい ひと！', en: "The lie won! {author}, you're terrible!" }, slots: ['{author}'], status: 'draft' },
   { id: 'pon.fooled.03', host: 'pon', event: 'fooled', jp: { text: '{author}さんの うそ、じょうず！ {fooled}さん、ドンマイ！', kana: '{author}さんの うそ、じょうず！ {fooled}さん、ドンマイ！', en: '{author} lies so well! Never mind, {fooled}!' }, slots: ['{author}', '{fooled}'], status: 'draft' },
   { id: 'pon.fooled.04', host: 'pon', event: 'fooled', jp: { text: 'ほんとうの いみより、うそが にんき！ さあ、みんなで！', kana: 'ほんとうの いみより、うそが にんき！ さあ、みんなで！', en: 'The lie beat the truth! Now, everyone!' }, status: 'draft' },
+  // bento_intro
+  { id: 'pon.bento_intro.01', host: 'pon', event: 'bento_intro', jp: { text: 'いらっしゃいませ！　ポンてんちょうの おべんとうハウスです！', kana: 'いらっしゃいませ！　ポンてんちょうの おべんとうハウスです！', en: 'Welcome! This is Manager Pon\'s Bento Haus!' }, status: 'draft' },
+  { id: 'pon.bento_intro.02', host: 'pon', event: 'bento_intro', jp: { text: 'きょうは みんなで ひとつの キッチン！　こえを かけあって ください！', kana: 'きょうは みんなで ひとつの キッチン！　こえを かけあって ください！', en: 'Tonight we\'re one kitchen! Call out to each other!' }, status: 'draft' },
+  { id: 'pon.bento_intro.03', host: 'pon', event: 'bento_intro', jp: { text: 'おきゃくさんは ようかい ばかり。でも、おかねは ちゃんと はらいます。…たぶん。', kana: 'おきゃくさんは ようかい ばかり。でも、おかねは ちゃんと はらいます。…たぶん。', en: 'All our customers are yōkai. But they pay. …Probably.' }, status: 'draft' },
+  { id: 'pon.bento_intro.04', host: 'pon', event: 'bento_intro', jp: { text: 'ちゅうもんは でんわで きます。よく きいて ください！', kana: 'ちゅうもんは でんわで きます。よく きいて ください！', en: 'Orders come by phone. Listen carefully!' }, status: 'draft' },
+  // bento_round
+  { id: 'pon.bento_round.01', host: 'pon', event: 'bento_round', jp: { text: 'つぎは {round}！　おみせ、あけます！', kana: 'つぎは {round}！　おみせ、あけます！', en: 'Next up: {round}! Opening the shop!' }, slots: ['{round}'], status: 'draft' },
+  { id: 'pon.bento_round.02', host: 'pon', event: 'bento_round', jp: { text: '{round}です！　いそいで！', kana: '{round}です！　いそいで！', en: 'It\'s {round}! Hurry!' }, slots: ['{round}'], status: 'draft' },
+  { id: 'pon.bento_round.03', host: 'pon', event: 'bento_round', jp: { text: 'さあ、{round}！　エプロン、いいですか？', kana: 'さあ、{round}！　エプロン、いいですか？', en: 'Here comes {round}! Aprons on?' }, slots: ['{round}'], status: 'draft' },
+  { id: 'pon.bento_round.04', host: 'pon', event: 'bento_round', jp: { text: '{round}、はじめます！　ポン！', kana: '{round}、はじめます！　ポン！', en: 'Starting {round}! Pon!' }, slots: ['{round}'], status: 'draft' },
+  // bento_customer
+  { id: 'pon.bento_customer.01', host: 'pon', event: 'bento_customer', jp: { text: '{name}さん、でんわです！', kana: '{name}さん、でんわです！', en: '{name}, phone for you!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.bento_customer.02', host: 'pon', event: 'bento_customer', jp: { text: 'いらっしゃいませ！　{name}さん、ちゅうもん とって ください！', kana: 'いらっしゃいませ！　{name}さん、ちゅうもん とって ください！', en: 'Welcome! {name}, take the order, please!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.bento_customer.03', host: 'pon', event: 'bento_customer', jp: { text: 'おきゃくさんです！　{name}さん、よく きいて！', kana: 'おきゃくさんです！　{name}さん、よく きいて！', en: 'A customer! {name}, listen closely!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.bento_customer.04', host: 'pon', event: 'bento_customer', jp: { text: 'プルルル！　{name}さん、でて ください！', kana: 'プルルル！　{name}さん、でて ください！', en: 'Brrring! {name}, pick up!' }, slots: ['{name}'], status: 'draft' },
+  // bento_static
+  { id: 'pon.bento_static.01', host: 'pon', event: 'bento_static', jp: { text: 'また でんわが… ゆうれいの せいです！', kana: 'また でんわが… ゆうれいの せいです！', en: 'The phone again… blame the ghosts!' }, status: 'draft' },
+  { id: 'pon.bento_static.02', host: 'pon', event: 'bento_static', jp: { text: 'ザザッ… きこえません！　もう いちど！', kana: 'ザザッ… きこえません！　もう いちど！', en: 'Static… can\'t hear! Once more!' }, status: 'draft' },
+  { id: 'pon.bento_static.03', host: 'pon', event: 'bento_static', jp: { text: 'あれ？　でんぱが わるいですね。', kana: 'あれ？　でんぱが わるいですね。', en: 'Huh? Bad signal tonight.' }, status: 'draft' },
+  { id: 'pon.bento_static.04', host: 'pon', event: 'bento_static', jp: { text: 'ゆうれいが マイクを さわりました。もう いちど どうぞ！', kana: 'ゆうれいが マイクを さわりました。もう いちど どうぞ！', en: 'A ghost touched the mic. Try again!' }, status: 'draft' },
+  // bento_perfect
+  { id: 'pon.bento_perfect.01', host: 'pon', event: 'bento_perfect', jp: { text: 'かんぺき！　まいどあり〜！', kana: 'かんぺき！　まいどあり〜！', en: 'Perfect! Thank you kindly!' }, status: 'draft' },
+  { id: 'pon.bento_perfect.02', host: 'pon', event: 'bento_perfect', jp: { text: 'まいど ありがとう ございます！', kana: 'まいど ありがとう ございます！', en: 'Thank you, come again!' }, status: 'draft' },
+  { id: 'pon.bento_perfect.03', host: 'pon', event: 'bento_perfect', jp: { text: 'すばらしい おべんとう！　ポン！', kana: 'すばらしい おべんとう！　ポン！', en: 'A beautiful bento! Pon!' }, status: 'draft' },
+  { id: 'pon.bento_perfect.04', host: 'pon', event: 'bento_perfect', jp: { text: 'おきゃくさん、にこにこです！', kana: 'おきゃくさん、にこにこです！', en: 'The customer is all smiles!' }, status: 'draft' },
+  // bento_close
+  { id: 'pon.bento_close.01', host: 'pon', event: 'bento_close', jp: { text: 'おしい！　でも、おいしそうです。', kana: 'おしい！　でも、おいしそうです。', en: 'So close! Still looks tasty.' }, status: 'draft' },
+  { id: 'pon.bento_close.02', host: 'pon', event: 'bento_close', jp: { text: 'ひとつだけ ちがいました。だいじょうぶ！', kana: 'ひとつだけ ちがいました。だいじょうぶ！', en: 'Only one thing off. No problem!' }, status: 'draft' },
+  { id: 'pon.bento_close.03', host: 'pon', event: 'bento_close', jp: { text: 'ほとんど かんぺき！', kana: 'ほとんど かんぺき！', en: 'Almost perfect!' }, status: 'draft' },
+  { id: 'pon.bento_close.04', host: 'pon', event: 'bento_close', jp: { text: 'つぎは もっと よく なります！', kana: 'つぎは もっと よく なります！', en: 'The next one\'ll be even better!' }, status: 'draft' },
+  // bento_meh
+  { id: 'pon.bento_meh.01', host: 'pon', event: 'bento_meh', jp: { text: '…まあ、たべものです。', kana: '…まあ、たべものです。', en: '…Well, it is food.' }, status: 'draft' },
+  { id: 'pon.bento_meh.02', host: 'pon', event: 'bento_meh', jp: { text: 'げいじゅつてきな おべんとうですね。', kana: 'げいじゅつてきな おべんとうですね。', en: 'That\'s… an artistic bento.' }, status: 'draft' },
+  { id: 'pon.bento_meh.03', host: 'pon', event: 'bento_meh', jp: { text: 'おきゃくさん、すこし こまって います。', kana: 'おきゃくさん、すこし こまって います。', en: 'The customer looks a bit puzzled.' }, status: 'draft' },
+  { id: 'pon.bento_meh.04', host: 'pon', event: 'bento_meh', jp: { text: 'ドンマイ！　つぎ、つぎ！', kana: 'ドンマイ！　つぎ、つぎ！', en: 'Never mind! Next one!' }, status: 'draft' },
+  // bento_leave
+  { id: 'pon.bento_leave.01', host: 'pon', event: 'bento_leave', jp: { text: 'あっ、おきゃくさんが かえっちゃった…', kana: 'あっ、おきゃくさんが かえっちゃった…', en: 'Oh, the customer left…' }, status: 'draft' },
+  { id: 'pon.bento_leave.02', host: 'pon', event: 'bento_leave', jp: { text: 'まって〜！　…いっちゃった。', kana: 'まって〜！　…いっちゃった。', en: 'Wait~! …They\'re gone.' }, status: 'draft' },
+  { id: 'pon.bento_leave.03', host: 'pon', event: 'bento_leave', jp: { text: 'ようかいは きが みじかいですね。', kana: 'ようかいは きが みじかいですね。', en: 'Yōkai have short tempers.' }, status: 'draft' },
+  { id: 'pon.bento_leave.04', host: 'pon', event: 'bento_leave', jp: { text: 'だいじょうぶ！　つぎの おきゃくさんが きます！', kana: 'だいじょうぶ！　つぎの おきゃくさんが きます！', en: 'It\'s fine! Here comes the next one!' }, status: 'draft' },
+  // bento_bake
+  { id: 'pon.bento_bake.01', host: 'pon', event: 'bento_bake', jp: { text: '{food}が ない？　ポン！　…{food}に なりました。みないで ください。', kana: '{food}が ない？　ポン！　…{food}に なりました。みないで ください。', en: 'No {food}? Pon! …I am the {food} now. Don\'t look at me.' }, slots: ['{food}'], status: 'draft' },
+  { id: 'pon.bento_bake.02', host: 'pon', event: 'bento_bake', jp: { text: 'はっぱを のせて… ドロン！　ぼくが {food}です。', kana: 'はっぱを のせて… ドロン！　ぼくが {food}です。', en: 'A leaf on my head… poof! I am {food}.' }, slots: ['{food}'], status: 'draft' },
+  { id: 'pon.bento_bake.03', host: 'pon', event: 'bento_bake', jp: { text: '{food}、ありました！　…ぼくですけど。', kana: '{food}、ありました！　…ぼくですけど。', en: 'Found the {food}! …It\'s me, though.' }, slots: ['{food}'], status: 'draft' },
+  { id: 'pon.bento_bake.04', host: 'pon', event: 'bento_bake', jp: { text: 'しっぽは みないで ください。ただの {food}です。', kana: 'しっぽは みないで ください。ただの {food}です。', en: 'Ignore the tail. I\'m just {food}.' }, slots: ['{food}'], status: 'draft' },
+  // bento_ajimi
+  { id: 'pon.bento_ajimi.01', host: 'pon', event: 'bento_ajimi', jp: { text: 'あじみ します！　もぐもぐ… あれ？　{food}が たりない。', kana: 'あじみ します！　もぐもぐ… あれ？　{food}が たりない。', en: 'Taste test! Munch munch… huh? We\'re short of {food}.' }, slots: ['{food}'], status: 'draft' },
+  { id: 'pon.bento_ajimi.02', host: 'pon', event: 'bento_ajimi', jp: { text: '{food}、おいしい！　…あ、たべちゃった。', kana: '{food}、おいしい！　…あ、たべちゃった。', en: '{food}, delicious! …Oops, I ate it.' }, slots: ['{food}'], status: 'draft' },
+  { id: 'pon.bento_ajimi.03', host: 'pon', event: 'bento_ajimi', jp: { text: 'てんちょうの しごとです。あじみ！　…{food}、もう いちど よんでね。', kana: 'てんちょうの しごとです。あじみ！　…{food}、もう いちど よんでね。', en: 'Manager\'s duty: taste test! …Call the {food} again.' }, slots: ['{food}'], status: 'draft' },
+  { id: 'pon.bento_ajimi.04', host: 'pon', event: 'bento_ajimi', jp: { text: 'もぐもぐ… {food}、おかわり ください！', kana: 'もぐもぐ… {food}、おかわり ください！', en: 'Munch munch… more {food}, please!' }, slots: ['{food}'], status: 'draft' },
+  // bento_stars
+  { id: 'pon.bento_stars.01', host: 'pon', event: 'bento_stars', jp: { text: 'きょうの ほしは {stars}！　おつかれさまでした！', kana: 'きょうの ほしは {stars}！　おつかれさまでした！', en: 'Tonight\'s stars: {stars}! Good work!' }, slots: ['{stars}'], status: 'draft' },
+  { id: 'pon.bento_stars.02', host: 'pon', event: 'bento_stars', jp: { text: 'ほしが {stars}！　ポン！', kana: 'ほしが {stars}！　ポン！', en: '{stars} stars! Pon!' }, slots: ['{stars}'], status: 'draft' },
+  { id: 'pon.bento_stars.03', host: 'pon', event: 'bento_stars', jp: { text: 'へいてんです！　ほしは {stars}。', kana: 'へいてんです！　ほしは {stars}。', en: 'Closing time! Stars: {stars}.' }, slots: ['{stars}'], status: 'draft' },
+  { id: 'pon.bento_stars.04', host: 'pon', event: 'bento_stars', jp: { text: 'みんなの キッチン、ほしは {stars}です！', kana: 'みんなの キッチン、ほしは {stars}です！', en: 'Our kitchen\'s stars: {stars}!' }, slots: ['{stars}'], status: 'draft' },
 ];

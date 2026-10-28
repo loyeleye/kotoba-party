@@ -43,6 +43,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   shodo: 'gentle',
   // Lining things up: ukulele and marimba, light enough to talk over.
   narabete: 'daily-beetle',
+  // Pon's bento shop: busy and cheerful, under the kitchen calls.
+  'bento-haus': 'kawai-kitsune',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -57,6 +59,7 @@ export const MODE_ALT_THEMES: Partial<Record<ModeId, MusicId>> = {
   'onsen-murder': 'ishikari-lore',
   'kana-raid': 'ouroboros',
   narabete: 'easy-lemon',
+  'bento-haus': 'feelin-good',
 };
 
 /** The theme for the `game`th game of `mode` on this screen (0, 1, 2 …). */

@@ -426,18 +426,34 @@ function recapScreen(view: RoomView): HTMLElement {
   const zero = standings.slice(scored);
   const tied = (i: number) => places.filter((p) => p === places[i]).length > 1;
   const placeLabel = (i: number) => `${tied(i) ? '=' : ''}${places[i]}`;
+  const coop = !!view.recap?.coop;
+  const total = standings.reduce((a, s) => a + s.score, 0);
+  // A team game: everyone shared the team's points, so there's no podium. Each player is listed
+  // with their total (the differences are speaking bonuses), highest first.
+  const team = coop
+    ? h(
+        'div',
+        { class: 'team-result' },
+        h('p', { class: 'team-big' }, '🤝 Played as a team', h('span', { class: 'team-total', 'data-count': total }, `${total} pts`)),
+        h('p', { class: 'rest' }, standings.flatMap((s, i) => [i ? ' · ' : '', h('strong', {}, s.name), ` ${s.score}`])),
+      )
+    : null;
   return h(
     'div',
-    { class: 'recap' },
+    { class: `recap${coop ? ' coop' : ''}` },
     h('p', { class: 'recap-title' }, ruby({ text: 'お疲れさま！', furigana: [['お', ''], ['疲', 'つか'], ['れさま！', '']] }), "Tonight's results"),
-    top.length
+    team,
+    coop
+      ? null
+      : top.length
       ? h(
           'div',
           { class: 'podium' },
           top.map((s, i) =>
             h(
               'div',
-              { class: `step p${i + 1}${tied(i) ? ' tied' : ''}` },
+              // Where it stands goes by order (s1–s3); its height and colour go by its place, so a tie stands level.
+              { class: `step s${i + 1} p${places[i]}${tied(i) ? ' tied' : ''}` },
               places[i] === 1 ? h('span', { class: 'crown', 'aria-hidden': 'true' }, '👑') : null,
               h('span', { class: 'who' }, s.name),
               h('span', { class: 'pts', 'data-count': s.score }, `${s.score} pts`),
@@ -446,8 +462,8 @@ function recapScreen(view: RoomView): HTMLElement {
           ),
         )
       : h('p', { class: 'rest' }, 'No points tonight: a perfect tie. もう いっかい？'),
-    rest.length ? h('p', { class: 'rest' }, rest.flatMap((s, i) => [i ? ' · ' : '', h('strong', {}, `${placeLabel(i + top.length)}. ${s.name}`), ` ${s.score}`])) : null,
-    top.length && zero.length ? h('p', { class: 'rest' }, 'Also played: ', zero.map((s) => s.name).join(' · ')) : null,
+    !coop && rest.length ? h('p', { class: 'rest' }, rest.flatMap((s, i) => [i ? ' · ' : '', h('strong', {}, `${placeLabel(i + top.length)}. ${s.name}`), ` ${s.score}`])) : null,
+    !coop && top.length && zero.length ? h('p', { class: 'rest' }, 'Also played: ', zero.map((s) => s.name).join(' · ')) : null,
     view.recap?.awards.length
       ? h(
           'ul',

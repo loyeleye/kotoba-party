@@ -127,6 +127,16 @@ seven or more cards, and as a 64 px sticker in the corner once the card flips (f
 The phone shows the dealt card's picture at 3× (192 px). A picture that fails to load falls back to
 the card's emoji. Feelings rounds have no pictures yet (their ready answers still use emoji).
 
+## Bento Haus
+
+`stage/assets/bento/food/<id>.png`: 16 foods, 64² transparent PixelLab `pixflux` icons (same prompt
+frame as the other icons; のり and うめぼし are drawn in code by `tools/art/sources/bento-food.py`, after
+pixflux missed them three times), shown at 64 on menu tiles, 48 (32 with four customers) as pieces in the
+box, and 32 on phones. `stage/assets/bento/customers/<id>-<mood>.png`: the 10 yōkai customers as 64²
+busts in three moods: `calm` while waiting, `happy` when served, `cross` when they walk out (the
+moods share seed 7). Shown at 128 (2×) at the counter, 64 with four customers. Both fall back to the
+food's or customer's emoji if a file doesn't load. The box, counter and lid are CSS.
+
 ## Backdrop
 
 Since 2026-10-27 the stage draws its set into one 320×180 `<canvas>` behind everything

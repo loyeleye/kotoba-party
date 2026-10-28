@@ -46,6 +46,8 @@ const ERRORS: Record<string, string> = {
   'no-tokens': 'No hint tokens left.',
   'no-tries-left': 'No tries left.',
   'already-guessed': 'You already guessed.',
+  'readback-mismatch': 'That didn’t match the ticket: say the food and the number on it.',
+  'no-customer': 'No customer yet: wait for the phone to ring.',
   'already-solved': 'Someone already got it.',
   'already-hinted': 'You already used a hint.',
   'already-encored': 'You already did an encore.',
@@ -548,10 +550,14 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   const place = i >= 0 && standings[i]!.score > 0 ? places[i]! : 0;
   const tied = place > 0 && places.filter((p) => p === place).length > 1;
   const romaji = me.level === 'kana';
+  // A team game leads with the team: everyone shared its points, so a place would only rank bonuses.
+  const total = standings.reduce((a, s) => a + s.score, 0);
   return h(
     'div',
     { class: 'screen' },
-    place
+    r?.coop
+      ? h('div', { class: 'place p1' }, h('span', { class: 'place-n' }, `${total}`), h('span', { class: 'place-label' }, '🤝 points together'))
+      : place
       ? h(
           'div',
           { class: `place${place <= 3 ? ` p${place}` : ''}` },
@@ -562,7 +568,7 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
     h(
       'ol',
       { class: 'recap-list' },
-      standings.map((s, j) => h('li', { class: s.playerId === me.id ? 'me-row' : '' }, h('span', {}, s.score > 0 ? `${places.filter((p) => p === places[j]).length > 1 ? '=' : ''}${places[j]}. ${s.name}` : `–  ${s.name}`), h('span', { class: 'pts' }, s.score))),
+      standings.map((s, j) => h('li', { class: s.playerId === me.id ? 'me-row' : '' }, h('span', {}, r?.coop ? s.name : s.score > 0 ? `${places.filter((p) => p === places[j]).length > 1 ? '=' : ''}${places[j]}. ${s.name}` : `–  ${s.name}`), h('span', { class: 'pts' }, s.score))),
     ),
     r?.awards.filter((a) => a.playerId === me.id).map((a) => h('p', { class: 'award' }, '🏆 ', h('span', { lang: 'ja' }, awardTitle(a.title)), ` · ${a.en}`)),
     r?.phrasebook.length

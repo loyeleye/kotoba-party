@@ -515,6 +515,18 @@ export type HostEvent =
   | 'narabete_perfect' // the flip came out in order
   | 'narabete_knot' // the flip has knots in it
   | 'narabete_story' // the Worst Day Ever story is read in order
+  // Bento Haus
+  | 'bento_intro' // Pon opens his bento shop: one kitchen, call out to each other
+  | 'bento_round' // a new shift starts ({round}: its name)
+  | 'bento_customer' // a customer phones in; {name} is taking the order
+  | 'bento_static' // a call didn't come through: blame the ghost on the radio, never a player
+  | 'bento_perfect' // a perfect box
+  | 'bento_close' // a box with one thing off
+  | 'bento_meh' // a box with several things off
+  | 'bento_leave' // a customer gave up waiting
+  | 'bento_bake' // Pon shape-shifts into the missing {food}
+  | 'bento_ajimi' // Pon "tastes" one {food} from the box
+  | 'bento_stars' // the shift's stars ({stars})
   | 'omiai_tease'; // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';

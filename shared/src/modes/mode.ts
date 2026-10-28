@@ -190,6 +190,8 @@ export interface ModeInfo {
   phaseLabels?: Partial<Record<Phase, string>>;
   /** On/off options the VIP can tick before starting, sent as `extra[key] = true`. */
   extras?: { key: string; label: string }[];
+  /** A team game: the recap leads with what the team did, not a podium. */
+  coop?: boolean;
 }
 
 /**
@@ -212,6 +214,13 @@ export interface Mode<S = unknown, V extends { mode: ModeId } = { mode: ModeId }
   done?(s: S, phase: Phase, ctx: ModeContext): boolean;
   /** A player's move. `move` comes off the wire: validate everything. */
   move(s: S, phase: Phase, playerId: string, move: unknown, ctx: ModeContext): MoveResult;
+  /**
+   * Timed events inside a phase, for modes that run a clock of their own (Bento Haus's customers
+   * arrive and give up mid-shift). `wakeAt` says when the next one is due; the room then sends
+   * `wake`, without ending the phase, so host lines and phones aren't cut off by a phase change.
+   */
+  wakeAt?(s: S, phase: Phase, ctx: ModeContext): number | null;
+  wake?(s: S, phase: Phase, ctx: ModeContext): void;
   /** A player's seat was released mid-game. */
   release?(s: S, playerId: string, ctx: ModeContext): void;
   progress(s: S): { round: number; totalRounds: number };

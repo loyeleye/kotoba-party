@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { SEAT_HOLD_MS } from '../../shared/src/constants.js';
-import { apply, canJoin, cleanName, createGame, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
+import { apply, wakeAt, canJoin, cleanName, createGame, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type {
   ByeReason,
@@ -79,6 +79,8 @@ export class Room {
   private readonly releasedTokens = new Set<string>();
   private readonly commandLog = new Map<string, Map<string, CommandResult>>();
   private phaseTimer: unknown = null;
+  private wakeTimer: unknown = null;
+  private wakeAtMs: number | null = null;
   private timedPhaseSeq = -1;
   private idleTimer: unknown = null;
   private staleTimer: unknown = null;
@@ -254,6 +256,7 @@ export class Room {
     for (const t of this.holdTimers.values()) this.clock.clearTimeout(t);
     this.holdTimers.clear();
     this.clock.clearTimeout(this.phaseTimer);
+    this.clock.clearTimeout(this.wakeTimer);
     this.cancelIdleTimer();
     this.clock.clearTimeout(this.staleTimer);
     this.staleTimer = null;
@@ -274,6 +277,7 @@ export class Room {
     if (outcome.changed) {
       this.version += 1;
       this.schedulePhaseTimer();
+      this.scheduleWakeTimer();
       this.opts.onCommit?.(this, this.version);
       this.broadcast();
     }
@@ -293,6 +297,24 @@ export class Room {
       this.phaseTimer = null;
       this.dispatch({ type: 'timeout', phaseSeq });
     }, deadline - this.clock.now());
+  }
+
+  /** A mode's own timed event inside the phase (a customer arriving), re-armed after every change. */
+  private scheduleWakeTimer(): void {
+    const at = wakeAt(this.state, { now: this.clock.now(), durations: this.opts.durations, content: this.opts.content, newId, random: this.opts.random ?? Math.random });
+    if (at === this.wakeAtMs && (at === null || this.wakeTimer !== null)) return;
+    this.clock.clearTimeout(this.wakeTimer);
+    this.wakeTimer = null;
+    this.wakeAtMs = at;
+    if (at === null) return;
+    const phaseSeq = this.state.phaseSeq;
+    this.wakeTimer = this.clock.setTimeout(() => {
+      this.wakeTimer = null;
+      this.wakeAtMs = null;
+      this.dispatch({ type: 'wake', phaseSeq });
+      // Nothing changed (a stale wake): still look for the next one.
+      this.scheduleWakeTimer();
+    }, Math.max(0, at - this.clock.now()));
   }
 
   private broadcast(): void {
