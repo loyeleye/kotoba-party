@@ -258,6 +258,11 @@ describe('a room saves signed-in players’ games', () => {
     expect(saved).toHaveLength(1);
     expect(saved[0]).toHaveLength(1);
     expect(saved[0]![0]!.result.phrases).toHaveLength(2);
+    // The Phrasebook: the stage sees everyone's; a phone sees only its own phrases and its own save.
+    expect(room.phrasebookFor(stage)).toMatchObject({ tonight: [{ itemId: 'a' }, { itemId: 'b' }], signedIn: [{ playerId: aki.playerId }] });
+    expect(room.phrasebookFor(ben.token)).toMatchObject({ tonight: [{ itemId: 'a' }], signedIn: [] });
+    expect(room.phrasebookFor(aki.token)!.signedIn).toEqual([{ playerId: aki.playerId, account: 'session-aki' }]);
+    expect(room.phrasebookFor('nope')).toBeNull();
     expect(saved[0]![0]).toMatchObject({ account: 'session-aki', result: { mode: 'debug', players: 2 } });
     expect(saved[0]![0]!.result.at).toBeGreaterThan(T0);
 

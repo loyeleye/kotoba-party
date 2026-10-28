@@ -54,3 +54,9 @@ const SCENE: Record<string, string> = {
 
 export const placePic = (p: { id: string; emoji: string }, cls: string): HTMLElement => mapped(PLACE, p.id, p.emoji, cls);
 export const scenePic = (s: { id: string; emoji: string }, cls: string): HTMLElement => mapped(SCENE, s.id, s.emoji, cls);
+
+// ---- Phrasebook ----
+
+/** Each game's pixel icon (the Phrasebook cards on the stage and the phone). */
+export const modeIconSrc = (mode: string): string =>
+  `${ASSETS}/icons/${mode === 'last-train' ? 'lt-train' : mode === 'bento-haus-vs' ? 'mode-bento-haus' : `mode-${mode}`}.png`;

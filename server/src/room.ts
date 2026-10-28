@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { SEAT_HOLD_MS } from '../../shared/src/constants.js';
-import { apply, wakeAt, canJoin, clipsInUse, cleanName, createGame, gameResults, type GameAction, type GameState, type Outcome } from '../../shared/src/game.js';
+import { apply, wakeAt, canJoin, clipsInUse, cleanName, createGame, gameResults, type GameAction, type GameState, type Outcome, type TonightPhrase } from '../../shared/src/game.js';
 import type { GameResult } from '../../shared/src/progress.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type {
@@ -237,6 +237,23 @@ export class Room {
   /** The seated players who joined signed in, for the stage's Phrasebook. */
   signedIn(): { playerId: string; account: string }[] {
     return [...this.accounts].filter(([id]) => this.seated(id)).map(([playerId, account]) => ({ playerId, account }));
+  }
+
+  /**
+   * What a screen's Phrasebook may show (GET /api/rooms/:code/phrasebook): the stage sees every phrase
+   * tonight and every signed-in player; a phone sees only the phrases its player said or missed, and
+   * only its own save. Null for a token that can't look.
+   */
+  phrasebookFor(token: string): { tonight: TonightPhrase[]; signedIn: { playerId: string; account: string }[] } | null {
+    const viewer = this.viewerFor(token);
+    if (viewer?.kind === 'stage') return { tonight: this.state.tonight, signedIn: this.signedIn() };
+    if (viewer?.kind !== 'player') return null;
+    const name = this.state.players.find((p) => p.id === viewer.playerId)?.name;
+    if (name === undefined) return null;
+    return {
+      tonight: this.state.tonight.filter((t) => t.said.includes(name) || t.missed.includes(name)),
+      signedIn: this.signedIn().filter((s) => s.playerId === viewer.playerId),
+    };
   }
 
   /** Signing in (or out) between games takes effect from the next one. */

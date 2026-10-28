@@ -222,9 +222,10 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
         return send(res, 200, result);
       }
       if (action === 'phrasebook' && req.method === 'GET') {
-        // The stage's Phrasebook: tonight's phrases, and what the signed-in players have saved.
-        if (room.viewerFor(bearer(req) ?? '')?.kind !== 'stage') return send(res, 401, { error: 'bad-token' });
-        const body: PhrasebookResponse = { tonight: room.state.tonight, saved: accounts ? await accounts.phrasebooks(room.signedIn()) : [] };
+        // The Phrasebook: the stage's (tonight's phrases and every signed-in player's save), or a phone's own.
+        const book = room.phrasebookFor(bearer(req) ?? '');
+        if (!book) return send(res, 401, { error: 'bad-token' });
+        const body: PhrasebookResponse = { tonight: book.tonight, saved: accounts && book.signedIn.length ? await accounts.phrasebooks(book.signedIn) : [] };
         return send(res, 200, body);
       }
       if (action === 'qr.svg' && req.method === 'GET') {

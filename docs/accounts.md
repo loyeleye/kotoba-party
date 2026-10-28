@@ -53,6 +53,16 @@ saved phrases. Each card carries its game's pixel icon, and a phrase someone mis
 closes itself when a game starts. Watching screens don't show it. Tonight's list lives in the room
 (`GameState.tonight`), so it works for everyone, signed in or not.
 
+## On the phone
+
+In the lobby and the recap a round book icon in the phone's header, beside the points and the mic
+switch, opens *My phrasebook*: a sheet with *Tonight* (only the phrases this player said, ✓ *Said it*,
+or missed, ↻ *To practise*, listed first with a もう一回 stamp) and, signed in, *Saved* (their 40 most
+recent). Each card has kana, English, its game and *Hear it*; at かな the spaced kana leads, with the
+kanji under it and romaji. Signed out, a note at the top says tonight's phrases go when the room closes.
+During a game the icon stays where it is, dark with a key badge, and a tap says it opens after the game: mid-game it would pull eyes off the stage and work as a cheat
+sheet for answers said from memory. A game starting closes the sheet.
+
 ## How it works
 
 - **Passkeys (WebAuthn)** through SimpleWebAuthn, MIT ([commercial-blockers.md](commercial-blockers.md)
@@ -95,7 +105,9 @@ All under `/api/account/`, JSON. See also [protocol.md](protocol.md).
 `tz` is the phone's `Date.getTimezoneOffset()`, used to tell which day a right answer falls on.
 
 The stage reads `GET /api/rooms/:code/phrasebook` (stage token): `{ tonight, saved }`, where `saved` is
-each seated, signed-in player's `{ playerId, name, phrases }` ([protocol.md](protocol.md)). On
+each seated, signed-in player's `{ playerId, name, phrases }` ([protocol.md](protocol.md)). A phone
+can read it with its player token and gets only the `tonight` rows it said or missed, and only its own
+save (`Room.phrasebookFor`). On
 Cloudflare the room's Durable Object asks `AccountsObject` for them (`POST /phrasebooks`).
 
 ## Open questions

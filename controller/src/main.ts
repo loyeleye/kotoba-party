@@ -16,6 +16,7 @@ import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
 import { quip, setQuipHost } from './components/ui.js';
 import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
 import { account, accountPanel } from './account.js';
+import { phrasebookButton } from './phrasebook.js';
 import type { HostId } from '../../content/src/types.js';
 
 const LEVEL_HINTS: Record<Level, string> = {
@@ -337,6 +338,7 @@ function render(view: RoomView): void {
     isVip ? h('span', { class: 'vip' }, '★ VIP') : null,
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
+    session ? phrasebookButton(view.phase, { base, code: session.code, token: session.token, name: me.name, level: me.level }, flash) : null,
     micSwitch(me),
   );
   mount(app, band, header, screenFor(view, me, isVip));
