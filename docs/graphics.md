@@ -125,7 +125,14 @@ centres each picture on its visible pixels.
 The TV shows a card's picture at 2× (128 px) on a navy tile while the line is face down, 64 px with
 seven or more cards, and as a 64 px sticker in the corner once the card flips (five cards or fewer).
 The phone shows the dealt card's picture at 3× (192 px). A picture that fails to load falls back to
-the card's emoji. Feelings rounds have no pictures yet (their ready answers still use emoji).
+the card's emoji.
+
+`stage/assets/answers/` holds one 64² picture per Feelings ready answer (112, named by theme id and
+index, for example `smelly.0.png`; `answerPicture` in `cards.ts`), made the same way. 27 were redrawn
+by picking the best of several seeds; a few stay loose metaphors (Pon's tail, a used tissue). A
+card whose author used a ready answer shows its picture at 1× above the answer on the TV, and the
+phone shows each offered ready answer with its picture at 1×. Answers typed or said freely have no
+picture.
 
 ## Backdrop
 
