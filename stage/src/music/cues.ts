@@ -41,6 +41,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'karaoke-duel': null,
   // The calligraphy contest is quiet: the soft synth tune throughout (shodoCue).
   shodo: 'gentle',
+  // Lining things up: ukulele and marimba, light enough to talk over.
+  narabete: 'daily-beetle',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -54,6 +56,7 @@ export const MODE_ALT_THEMES: Partial<Record<ModeId, MusicId>> = {
   concentration: 'kool-kats',
   'onsen-murder': 'ishikari-lore',
   'kana-raid': 'ouroboros',
+  narabete: 'easy-lemon',
 };
 
 /** The theme for the `game`th game of `mode` on this screen (0, 1, 2 …). */
@@ -100,7 +103,9 @@ export const speaks = (mode: ModeId | null, phase: Phase): boolean => TALKING.ha
 export const listening = (view: Pick<RoomView, 'mode' | 'phase' | 'game'>): boolean =>
   (view.mode === 'kana-raid' && view.phase === 'answer' && !!view.game && 'wave' in view.game && (view.game.wave === 2 || view.game.wave === 3)) ||
   // Shodō Taikai's dictation: each phone voices its own word.
-  (view.mode === 'shodo' && view.phase === 'answer' && !!view.game && 'itemKind' in view.game && view.game.itemKind === 'dictation');
+  (view.mode === 'shodo' && view.phase === 'answer' && !!view.game && 'itemKind' in view.game && view.game.itemKind === 'dictation') ||
+  // Narabete!'s say phase is a listening game: everyone has to hear everyone's card.
+  (view.mode === 'narabete' && view.phase === 'answer');
 
 /**
  * Shodō Taikai's big sheet: once the first sheet is in, players start saying their sentence into

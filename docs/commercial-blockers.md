@@ -227,6 +227,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   branding are. Keep "Jackbox", "Quiplash", "Shōten" (笑点) and other show names out of the product,
   store page and marketing; "a party game" is enough. Pon's cushion gag is a nod to Shōten, which is
   fine as long as it isn't named.
+- Narabete! (added 2026-10-28) uses the hidden-number ordering idea of the card games ito (Arclight)
+  and The Mind: secret numbers, opinion themes, ordering by talk. Game mechanics aren't protected by
+  copyright, but the names, card text and art are. Our themes, cards and the neck ruler are our own;
+  don't use "ito" or "The Mind" in the product, store page or marketing.
 
 ### 13. Karaoke Duel songs
 
@@ -344,7 +348,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Licences as stated on those pages, read 2026-10-26.
 - **CC BY 4.0, credit required (🟡):** Monkeys Spinning Monkeys, Hep Cats, Carefree, Investigations,
   Funkorama and Sneaky Snitch, plus the second themes added 2026-10-26: Quirky Dog, Life of Riley,
-  Wallpaper, Off to Osaka, Local Forecast - Elevator, Cipher, Kool Kats, Ishikari Lore and Ouroboros
+  Wallpaper, Off to Osaka, Local Forecast - Elevator, Cipher, Kool Kats, Ishikari Lore and Ouroboros;
+  Narabete!'s Daily Beetle and Easy Lemon, added 2026-10-28 (Daily Beetle is cut just after its loop and
+  both are re-encoded at 128 kbps, "cut for the game" in their credits; licence page re-read 2026-10-28:
+  Creative Commons, free, credit required, or a paid Standard License)
   (Kevin MacLeod, each credited with its incompetech ISRC page, [incompetech.com](https://incompetech.com/music/royalty-free/licenses/),
   read 2026-10-26: free under Creative Commons with credit, or a paid Standard License with no credit);
   Take a Trip (genaralskar, [OGA](https://opengameart.org/content/take-a-trip), read 2026-10-26). CC BY

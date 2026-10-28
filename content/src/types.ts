@@ -506,6 +506,15 @@ export type HostEvent =
   | 'concentration_picture' // someone guessed the hidden picture ({name})
   | 'concentration_clear' // the board is clear
   | 'concentration_time' // the game ran out of time with pairs left
+  // Narabete!
+  | 'narabete_intro' // Nobiko-san opens the game: one team, lining things up along her neck
+  | 'narabete_deal' // the cards are dealt for a round
+  | 'narabete_say' // say your card out loud
+  | 'narabete_order' // the line is open: move your own card
+  | 'narabete_defence' // the most-moved card defends its spot ({name})
+  | 'narabete_perfect' // the flip came out in order
+  | 'narabete_knot' // the flip has knots in it
+  | 'narabete_story' // the Worst Day Ever story is read in order
   | 'omiai_tease'; // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';

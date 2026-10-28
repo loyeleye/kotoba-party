@@ -12,6 +12,7 @@ import type { TouristView } from './tourist/tourist.js';
 import type { OekakiView } from './oekaki/oekaki.js';
 import type { OmiaiView } from './omiai/omiai.js';
 import type { ShodoView } from './shodo/shodo.js';
+import type { NarabeteView } from './narabete/narabete.js';
 
-export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView, ShodoView };
-export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | ShodoView | DebugView;
+export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView, ShodoView, NarabeteView };
+export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | ShodoView | NarabeteView | DebugView;

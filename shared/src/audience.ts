@@ -14,6 +14,7 @@ export const AUDIENCE_CONTENT: Partial<Record<ModeId, { name: string; what: stri
   'last-train': { name: 'Last Train', what: 'the line' },
   'onsen-murder': { name: 'Murder at the Onsen', what: 'cases' },
   omiai: { name: 'Omiai Matchmaker', what: 'guests' },
+  narabete: { name: 'Narabete!', what: 'themes' },
 };
 
 /** "Karaoke Duel (song lyrics), Oogiri Night (prompts)": for the settings panel. */

@@ -12,6 +12,7 @@ import { onsenMurderMode } from './onsenMurder/onsenMurder.js';
 import { touristMode } from './tourist/tourist.js';
 import { oekakiMode } from './oekaki/oekaki.js';
 import { omiaiMode } from './omiai/omiai.js';
+import { narabeteMode } from './narabete/narabete.js';
 import { shodoMode } from './shodo/shodo.js';
 
 export const MODES: Record<ModeId, Mode<any, any>> = {
@@ -26,9 +27,10 @@ export const MODES: Record<ModeId, Mode<any, any>> = {
   tourist: touristMode,
   oekaki: oekakiMode,
   omiai: omiaiMode,
+  narabete: narabeteMode,
   shodo: shodoMode,
   debug: debugMode,
 };
 
 /** Modes on the VIP's menu, in show order (the debug round stays hidden). */
-export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info];
+export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info, narabeteMode.info];

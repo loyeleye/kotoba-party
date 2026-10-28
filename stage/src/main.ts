@@ -265,8 +265,8 @@ function render(view: RoomView, v: number): void {
     if (lastPhase === 'lobby' && view.phase !== 'lobby' && view.phase !== 'recap' && view.mode) channelChange(view.mode);
     // A phase change in a game: curtain wipe (restarted by reflow), and the ring timer starts full.
     // Not between Karaoke Duel's sing turns: each line is a phase, and the curtain would hide the
-    // next line on its count-in.
-    else if (lastPhaseSeq >= 0 && view.phase !== 'lobby' && !(view.mode === 'karaoke-duel' && view.phase === 'answer' && lastPhase === 'answer')) {
+    // next line on its count-in. Nor within a Narabete! round, or between its story lines.
+    else if (lastPhaseSeq >= 0 && view.phase !== 'lobby' && !(view.mode === 'karaoke-duel' && view.phase === 'answer' && lastPhase === 'answer') && !(view.phase !== 'prompt' && narabeteRound(view.mode, view.phase) && narabeteRound(view.mode, lastPhase)) && !(view.mode === 'narabete' && view.phase === 'finale' && lastPhase === 'finale')) {
       els.main.classList.remove('wipe');
       void els.main.offsetWidth;
       els.main.classList.add('wipe');
@@ -317,7 +317,8 @@ function render(view: RoomView, v: number): void {
   // update inside a phase patches the ones on screen so transitions and animations carry on.
   document.body.classList.toggle('flying', view.phase === 'lobby' && flying());
   // Karaoke Duel's sing turns are one scene per song (each turn is a phase; its own card is keyed by turn).
-  const sceneKey = view.mode === 'karaoke-duel' && view.phase === 'answer' ? `karaoke-${view.round}` : `${view.phaseSeq}`;
+  // Narabete!'s round is one scene from deal to flip: the line stays put and its cards slide.
+  const sceneKey = view.mode === 'karaoke-duel' && view.phase === 'answer' ? `karaoke-${view.round}` : narabeteRound(view.mode, view.phase) ? `narabete-${view.round}` : view.mode === 'narabete' && view.phase === 'finale' ? 'narabete-story' : `${view.phaseSeq}`;
   patch(els.fit, h('div', { class: 'scene', 'data-key': sceneKey }, mainFor(view)));
   if (view.phase === 'lobby' && flying() && view.modes.length) startDanmaku(els.canvas, els.main, view.modes);
   else stopDanmaku();
@@ -567,6 +568,9 @@ function fillMenus(view: RoomView): void {
     mount(els.pack, h('option', { value: '' }, 'any pack'), view.packs.map((p) => h('option', { value: p.id }, p.title)));
   }
 }
+
+/** The phases of a Narabete! round, which share one layout (no curtain between them). */
+const narabeteRound = (mode: string | null, phase: string | null): boolean => mode === 'narabete' && !!phase && ['prompt', 'answer', 'reveal', 'encore', 'score'].includes(phase);
 
 let lastHostKey = '';
 let hostAudio: HTMLAudioElement | null = null;
