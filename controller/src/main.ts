@@ -334,7 +334,7 @@ function render(view: RoomView): void {
     'div',
     { class: 'me' },
     h('span', { class: `seat-badge seat-${me.seat}`, 'aria-label': `seat ${me.seat}` }, `${seatShape(me.seat)}${me.seat}`),
-    h('span', {}, `${me.name} · ${LEVEL_LABELS[me.level]}`),
+    h('span', { class: 'me-name' }, `${me.name} · ${LEVEL_LABELS[me.level]}`),
     isVip ? h('span', { class: 'vip' }, '★ VIP') : null,
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
