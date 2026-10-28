@@ -505,7 +505,8 @@ export type HostEvent =
   | 'concentration_fog' // the fog tile: a row is hidden next turn ({name})
   | 'concentration_picture' // someone guessed the hidden picture ({name})
   | 'concentration_clear' // the board is clear
-  | 'concentration_time'; // the game ran out of time with pairs left
+  | 'concentration_time' // the game ran out of time with pairs left
+  | 'omiai_tease'; // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
 
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 

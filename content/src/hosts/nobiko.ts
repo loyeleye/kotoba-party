@@ -107,6 +107,12 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.natural_version.03', host: 'nobiko', event: 'natural_version', jp: { text: 'ちょっと ていねいに すると…', kana: 'ちょっと ていねいに すると…', en: 'A little more polite, and…' }, status: 'draft' },
   { id: 'nobiko.natural_version.04', host: 'nobiko', event: 'natural_version', jp: { text: 'おばちゃんの おてほん、きいてね。', kana: 'おばちゃんの おてほん、きいてね。', en: "Listen to auntie's example." }, status: 'draft' },
   { id: 'nobiko.natural_version.05', host: 'nobiko', event: 'natural_version', jp: { text: 'ひみつを おしえて あげる。こうよ。', kana: 'ひみつを おしえて あげる。こうよ。', en: "I'll tell you a secret. Like this." }, status: 'draft' },
+  // omiai_tease (Cheeky rooms only): scandalised by the most casual answer, which is still anonymous
+  { id: 'nobiko.omiai_tease.01', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらまあ… ずいぶん くだけてるわね！', kana: 'あらまあ… ずいぶん くだけてるわね！', en: "Oh my… aren't we casual!" }, audience: 'cheeky', status: 'draft' },
+  { id: 'nobiko.omiai_tease.02', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらまあ。おみあいで その ことばづかい？', kana: 'あらまあ。おみあいで その ことばづかい？', en: "Oh my. Talking like that, at an omiai?" }, audience: 'cheeky', status: 'draft' },
+  { id: 'nobiko.omiai_tease.03', host: 'nobiko', event: 'omiai_tease', jp: { text: 'ちょっと、これ だれ？　おかあさんに いいつけるわよ。', kana: 'ちょっと、これ だれ？　おかあさんに いいつけるわよ。', en: "Excuse me, whose is this? I'm telling your mother." }, audience: 'cheeky', status: 'draft' },
+  { id: 'nobiko.omiai_tease.04', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらあら、ともだちと はなしてるんじゃ ないのよ？', kana: 'あらあら、ともだちと はなしてるんじゃ ないのよ？', en: "Oh dear, you're not chatting with your friends, you know?" }, audience: 'cheeky', status: 'draft' },
+  { id: 'nobiko.omiai_tease.05', host: 'nobiko', event: 'omiai_tease', jp: { text: 'くびを のばして みちゃった。…あらまあ。', kana: 'くびを のばして みちゃった。…あらまあ。', en: "I stretched my neck for a look… oh my." }, audience: 'cheeky', status: 'draft' },
   // kakegoe_call
   { id: 'nobiko.kakegoe_call.01', host: 'nobiko', event: 'kakegoe_call', jp: { text: 'みんなで いっしょに！　せーの！', kana: 'みんなで いっしょに！　せーの！', en: 'Everyone together! Ready, go!' }, status: 'draft' },
   { id: 'nobiko.kakegoe_call.02', host: 'nobiko', event: 'kakegoe_call', jp: { text: 'おおきな こえで！　さん、はい！', kana: 'おおきな こえで！　さん、はい！', en: 'Nice and loud! One, two, go!' }, status: 'draft' },

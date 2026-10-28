@@ -655,6 +655,41 @@ describe('Omiai: the finale and the whole game', () => {
     }
   });
 
+  it('in a Cheeky room Nobiko-san teases the most casual answer as answers are revealed: N4 first, twice a game at most', () => {
+    const t = new Table(3, ['n5', 'n4', 'kana'], REAL_CONTENT, 3);
+    t.cmd('stage', { type: 'settings', audience: 'cheeky' });
+    t.start(4);
+    const teased: string[] = [];
+    for (let i = 0; i < 120 && t.s.phase !== 'recap'; i++) {
+      if (t.s.phase === 'answer') {
+        t.s.cues.length = 0;
+        t.answer({ p1: 'P1だよ', p2: 'P2だよ', p3: 'P3だよ' });
+        if (t.s.phase === 'answer') t.timeout();
+        expect(t.s.phase).toBe('reveal');
+        const r = t.st.current!;
+        if (r.tease) {
+          teased.push(r.answers.find((a) => a.id === r.tease)!.authorId);
+          expect(t.s.cues.at(-1)).toMatchObject({ host: 'nobiko', event: 'omiai_tease' });
+          expect(t.view().answers.filter((a) => a.tease).map((a) => a.id)).toEqual([r.tease]);
+        } else expect(t.s.cues.some((c) => c.event === 'omiai_tease')).toBe(false);
+      } else t.timeout();
+    }
+    // The N4 first, then the N5; never the kana player, never anyone twice, never a third time.
+    expect(teased).toEqual(['p2', 'p1']);
+  });
+
+  it.each(['kids', 'family'] as const)('Nobiko-san never teases in a %s room, or a polite answer', (audience) => {
+    for (const [room, answer] of [[audience, 'P2だよ'], ['cheeky', 'はじめまして。P2です。']] as const) {
+      const t = new Table(2, ['n4', 'n4'], REAL_CONTENT, 3);
+      t.cmd('stage', { type: 'settings', audience: room });
+      t.start();
+      t.answer({ p1: answer.replace('P2', 'P1'), p2: answer });
+      if (t.s.phase === 'answer') t.timeout();
+      expect(t.s.phase).toBe('reveal');
+      expect(t.st.current!.tease).toBeUndefined();
+    }
+  });
+
   it('a Kids guest invites someone to play, not to tea', () => {
     expect(invitation({ audience: 'kids' }).award.title).toBe('あそびの しょうたい');
     expect(invitation({ audience: 'cheeky' }).award.title).toBe('おちゃの しょうたい');

@@ -128,6 +128,8 @@ export interface Round {
   votes: Record<string, string>;
   encores: Record<string, Encore>;
   result: ResultLine[] | null;
+  /** The answer Nobiko-san teases as the answers are revealed (Cheeky rooms only; see pickTease). */
+  tease?: string;
 }
 
 export interface PlayerStats {
@@ -147,6 +149,8 @@ export interface OmiaiState {
   stats: Record<string, PlayerStats>;
   accepted: string | null;
   phaseAt: number;
+  /** Players Nobiko-san has teased this game: at most TEASE_MAX, never the same one twice. */
+  teased?: string[];
 }
 
 // ---- view ----
@@ -204,6 +208,8 @@ export interface AnswerCard {
   points?: number;
   winner?: boolean;
   encore?: 'said' | 'typed' | 'tried' | 'passed' | null;
+  /** While the answers are revealed: the one Nobiko-san cranes her neck over to tease. */
+  tease?: boolean;
 }
 
 export interface TipView {
@@ -411,6 +417,26 @@ function pay(ctx: ModeContext, playerId: string, points: number): void {
   if (p && ctx.player(playerId)) ctx.award(playerId, p);
 }
 
+/** Nobiko-san teases at most this many players a game. */
+export const TEASE_MAX = 2;
+/** Registers casual enough for her to be scandalised by. */
+const TEASABLE: ReadonlySet<Register> = new Set(['casual', 'plain']);
+
+/**
+ * Cheeky rooms only: as the answers are revealed, Nobiko-san may crane her neck over the most casual one and act
+ * scandalised. She teases manners, never mistakes, and only players who can take it: N4 first, then N5, never a
+ * kana player, an English answer, or anyone she has teased already, and at most TEASE_MAX times a game. The
+ * answer is still anonymous then, so the room gets to guess whose it was.
+ */
+function pickTease(s: OmiaiState, shown: Answer[], ctx: ModeContext): Answer | undefined {
+  if (ctx.audience !== 'cheeky' || (s.teased?.length ?? 0) >= TEASE_MAX) return undefined;
+  const rank = { n4: 0, n5: 1 } as Partial<Record<string, number>>;
+  return shown
+    .filter((a) => !a.hidden && !a.english && TEASABLE.has(a.manners.register) && !s.teased?.includes(a.authorId))
+    .filter((a) => rank[ctx.player(a.authorId)?.level ?? ''] !== undefined)
+    .sort((a, b) => rank[ctx.player(a.authorId)!.level]! - rank[ctx.player(b.authorId)!.level]! || a.manners.meter - b.manners.meter)[0];
+}
+
 /** Votes and manners bonuses for the round. Paid as the encore starts. */
 function scoreRound(s: OmiaiState, ctx: ModeContext): void {
   const r = s.current;
@@ -576,6 +602,13 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         const shown = visible(r).sort(byOrder(r));
         const q = r.question.ask.n5;
         ctx.cue({ host: 'nobiko', event: 'reveal_react', tier: 'good', prompt: { text: q.text, kana: q.kana, en: q.en }, answer: shown.map((a) => a.text).join(' / ') });
+        const tease = pickTease(s, shown, ctx);
+        if (tease) {
+          r.tease = tease.id;
+          (s.teased ??= []).push(tease.authorId);
+          // The last cue raised is the one she says, so this takes the place of the reveal reaction.
+          ctx.cue({ host: 'nobiko', event: 'omiai_tease', answer: tease.text });
+        }
         break;
       }
       case 'encore':
@@ -778,6 +811,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         ? [...r.answers].sort(byOrder(r)).map((a) => {
             const c: AnswerCard = { id: a.id, text: a.hidden ? '[hidden]' : a.text, hidden: a.hidden };
             if (me && a.authorId === me.id) c.mine = true;
+            if (phase === 'reveal' && r.tease === a.id) c.tease = true;
             if (authorsShown && !a.hidden) {
               const line = lines.get(a.id);
               const e = r.encores[a.authorId];

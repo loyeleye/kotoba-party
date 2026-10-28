@@ -121,6 +121,7 @@ describe('host moods', () => {
   it('sends Nobiko-san’s neck all the way to the winning answer when she invites its author', () => {
     expect(moodFor({ host: 'nobiko', event: 'encore_invite' })).toBe('reach');
     expect(moodFor({ host: 'pon', event: 'encore_invite' })).toBeUndefined();
+    expect(moodFor({ host: 'nobiko', event: 'omiai_tease' })).toBe('reach');
   });
 });
 

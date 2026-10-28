@@ -184,6 +184,11 @@ On `say_it_first` and `reveal_react` she stretches her neck out over the speech 
 On `encore_invite` her neck goes all the way to the winning answer's card and she peers over its top
 edge (the `reach` mood, `stage/src/reach.ts`): praise, not mockery, and only once the answer has been read.
 
+**Cheeky rooms only:** as the answers are revealed she may reach for the most *casual* one instead (`omiai_tease`,
+「あらまあ… ずいぶん くだけてるわね！」). She teases manners, never mistakes, and only players who can take it: an N4
+first, then an N5, never a kana player, an English answer or anyone she has teased already, and at most twice a
+game (`pickTease` in `omiai.ts`). The answer is still anonymous then, so the room gets to guess whose it was.
+
 ### Awards (draft titles)
 
 おちゃの しょうたい *Invited to Tea* (the guest's choice), おもてなし しょう *Best Manners*

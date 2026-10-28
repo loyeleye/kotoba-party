@@ -26,6 +26,8 @@ export const HOST_EVENTS = [
   'miss_kind',
   'recap_award',
   'play_again',
+  // Omiai Matchmaker
+  'omiai_tease',
   // Oogiri Night
   'ippon',
   'cushion_steal',

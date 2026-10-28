@@ -74,7 +74,8 @@ export function moodFor(cue: Pick<HostCue, 'host' | 'event' | 'tier'>): HostMood
   if (CHEER.has(cue.event)) return 'cheer';
   if (OOPS.has(cue.event)) return 'oops';
   if (cue.host !== 'nobiko') return undefined;
-  if (cue.event === 'encore_invite') return 'reach'; // to the winning answer's card (a peek-sized look where there is none)
+  // To the card the stage marks: the winning answer, or the one she's teasing. She idles where there is none.
+  if (cue.event === 'encore_invite' || cue.event === 'omiai_tease') return 'reach';
   if (!PEEK.has(cue.event)) return undefined;
   return cue.tier === 'ippon' ? 'cheer' : 'peek'; // a top Karaoke take gets her cheer instead
 }

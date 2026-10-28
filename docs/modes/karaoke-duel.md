@@ -167,6 +167,10 @@ yours"), `encore_cheer` at the crowd vote, `reveal_react` (good/ippon by the win
 take) or `miss_kind` at the result, and the shared `recap_award`. On a good result she stretches her
 neck out to look (the `peek` mood); on an ippon she cheers.
 
+While everyone sings a chorus line she dances in the lyrics' bottom-left corner, leaning two art pixels left
+and right on the song's beat from the line's first beat (`sway` in `stage/src/modes/karaokeDuel.ts`, timed on
+the line's own clock so it stays on the backing track). Calm and reduced motion keep her still.
+
 ### Awards
 
 カラオケ スター (most duels won), ベスト テイク (best single take), はくしゅ しょう (most
