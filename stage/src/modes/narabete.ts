@@ -150,7 +150,8 @@ function card(view: RoomView, game: NarabeteView, c: LineCard, i: number, elapse
     'li',
     {
       class: `nb-card${slot ? ' nb-slot' : ''}${slot && c.said ? ' nb-said' : ''}${c.locked && view.phase === 'reveal' ? ' nb-locked' : ''}${flipped ? ' nb-flipping' : ''}${c.last ? ' nb-last' : ''}${defending ? ' nb-defending' : ''}`,
-      style: `${seatStyle(view, c.ownerId)} --d: ${Math.round(at)}ms; --i: ${i}`,
+      // --d only once flipping: patch() keeps a reused card's first --d, so a value set in reveal would stick at 0.
+      style: `${seatStyle(view, c.ownerId)}${flipped ? ` --d: ${Math.round(at)}ms;` : ''} --i: ${i}`,
       'data-key': c.id,
     },
     h('div', { class: 'nb-inner' }, face, back),
