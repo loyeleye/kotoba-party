@@ -14,7 +14,7 @@
 // Timers run as CSS animations from the server's own times (negative delays, named `--*-delay` so patch()
 // keeps them), the same way as Bento Haus.
 
-import { h, seatShape } from '../../../shared/src/dom.js';
+import { h, ruby, seatShape } from '../../../shared/src/dom.js';
 import type { CaptionView, SlideView, StampKind } from '../../../shared/src/modes/happyokai/happyokai.js';
 import type { HappyokaiView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -112,7 +112,7 @@ function backstage(view: RoomView, game: HappyokaiView): HTMLElement {
       game.assistantId ? h('p', {}, h('span', { class: 'hk-label' }, 'Assistant'), chip(view, game.assistantId)) : null,
     ),
     game.title
-      ? h('p', { class: 'hk-title-card', lang: 'ja', 'data-key': 'title', style: chunk(game.title.text) }, h('small', {}, 'タイトル'), `「${game.title.text}」`, h('span', { class: 'hk-en' }, game.title.en))
+      ? h('p', { class: 'hk-title-card', lang: 'ja', 'data-key': 'title', style: chunk(game.title.text) }, h('small', {}, 'タイトル'), '「', ruby(game.title), '」', h('span', { class: 'hk-en' }, game.title.en))
       : h('p', { class: 'hk-waiting' }, 'Choosing a title… ', h('span', { lang: 'ja' }, 'どれに しようかな'), ' 🤔'),
     photo,
     h('p', { class: `hk-ready${b?.ready ? ' on' : ''}` }, b?.ready ? '🙋 Ready! Lights down…' : '📄 Rehearsing the opening on their phone'),
@@ -158,7 +158,7 @@ function mishapFace(slide: SlideView, game: HappyokaiView, view: RoomView): HTML
         'div',
         { class: 'hk-slide hk-message-slide' },
         picture(slide.picture, '🖥️'),
-        h('div', { class: 'hk-toast', 'data-key': 'toast' }, h('b', { lang: 'ja' }, `💬 ${slide.message?.from.text ?? ''}`), h('span', { lang: 'ja' }, slide.message?.text.text ?? '')),
+        h('div', { class: 'hk-toast', 'data-key': 'toast' }, h('b', { lang: 'ja' }, '💬 ', slide.message ? ruby(slide.message.from) : ''), slide.message ? ruby(slide.message.text) : ''),
       );
   }
   return h('div', { class: 'hk-slide' }, m.emoji, view.phase);
@@ -170,7 +170,7 @@ function slideFace(view: RoomView, game: HappyokaiView, slide: SlideView): HTMLE
     return h(
       'div',
       { class: 'hk-slide hk-title-slide' },
-      h('p', { class: 'hk-slide-title', lang: 'ja', style: chunk(game.title?.text ?? '') }, game.title?.text ?? ''),
+      h('p', { class: 'hk-slide-title', lang: 'ja', style: chunk(game.title?.text ?? '') }, game.title ? ruby(game.title) : ''),
       h('p', { class: 'hk-slide-en' }, game.title?.en ?? ''),
       h('p', { class: 'hk-slide-by' }, chip(view, game.presenterId)),
     );
@@ -184,7 +184,7 @@ function captionStrip(captions: readonly CaptionView[], empty: string): HTMLElem
     'ol',
     { class: 'hk-captions', 'aria-live': 'polite' },
     captions.length
-      ? captions.map((c, i) => h('li', { class: `hk-cap ${c.kind}${c.hidden ? ' hidden' : ''}${i === captions.length - 1 ? ' last' : ''}`, 'data-key': c.id, lang: 'ja' }, c.hidden ? '🙈 …' : c.text))
+      ? captions.map((c, i) => h('li', { class: `hk-cap ${c.kind}${c.hidden ? ' hidden' : ''}${i === captions.length - 1 ? ' last' : ''}`, 'data-key': c.id, lang: 'ja' }, c.hidden ? '🙈 …' : ruby(c)))
       : h('li', { class: 'hk-cap idle', lang: 'ja' }, empty),
   );
 }
@@ -237,7 +237,7 @@ function hall(view: RoomView, game: HappyokaiView, body: HTMLElement, side: HTML
         h(
           'div',
           { class: 'hk-side-head' },
-          h('p', { class: 'hk-tag' }, `Talk ${game.talk} of ${game.totalTalks} `, h('span', { lang: 'ja' }, game.title ? `「${game.title.text}」` : '')),
+          h('p', { class: 'hk-tag' }, `Talk ${game.talk} of ${game.totalTalks} `, game.title ? h('span', { lang: 'ja' }, '「', ruby(game.title), '」') : ''),
           h('p', { class: 'hk-who' }, chip(view, game.presenterId, '🎤'), game.assistantId ? chip(view, game.assistantId, '🖱️') : null),
         ),
         side,
@@ -281,7 +281,7 @@ function questions(view: RoomView, game: HappyokaiView): HTMLElement {
       h('p', { class: 'hk-slide-title', lang: 'ja' }, 'しつもん タイム'),
       h('p', { class: 'hk-slide-en' }, 'Question time'),
       q?.chosen
-        ? h('p', { class: 'hk-question', lang: 'ja', 'data-key': `q-${q.chosen.playerId}` }, chip(view, q.chosen.playerId), h('span', {}, `「${q.chosen.text}」`), h('small', {}, q.chosen.en))
+        ? h('p', { class: 'hk-question', lang: 'ja', 'data-key': `q-${q.chosen.playerId}` }, chip(view, q.chosen.playerId), h('span', {}, '「', ruby(q.chosen), '」'), h('small', {}, q.chosen.en))
         : h('p', { class: 'hk-hands' }, (q?.askers ?? []).length ? (q?.askers ?? []).map((id) => h('span', { 'data-key': id }, '🙋', chip(view, id))) : h('span', { class: 'hk-quiet' }, 'Pick a question on your phone and ask it out loud')),
     ),
   );
@@ -315,10 +315,10 @@ function reportCard(view: RoomView, game: HappyokaiView): HTMLElement {
       'div',
       { class: 'hk-card', style: `--card-thud: ${hankoMs(c.flowers.length) + 270}ms` },
       h('p', { class: 'hk-card-head', lang: 'ja' }, 'つうしんぼ', h('small', {}, ` ${presenter?.name ?? ''}`)),
-      h('p', { class: 'hk-card-title', lang: 'ja' }, game.title ? `「${game.title.text}」` : ''),
+      h('p', { class: 'hk-card-title', lang: 'ja' }, game.title ? ['「', ruby(game.title), '」'] : ''),
       h('p', { class: 'hk-flowers', 'aria-label': `${c.flowers.length} grades` }, c.flowers.map((n, i) => h('span', { class: `f${n}`, style: `--i: ${i}` }, flower(n)))),
       h('dl', { class: 'hk-facts' }, h('dt', {}, 'Sentences'), h('dd', {}, `${c.sentences}`), h('dt', {}, 'Longest run'), h('dd', {}, `${c.best}`), c.loudest ? [h('dt', {}, 'Loudest'), h('dd', {}, stampImg(c.loudest.kind), ` ×${c.loudest.n}`)] : null),
-      h('p', { class: 'hk-comment', lang: 'ja' }, h('span', {}, c.comment.text), h('small', {}, c.comment.en)),
+      h('p', { class: 'hk-comment', lang: 'ja' }, ruby(c.comment), h('small', {}, c.comment.en)),
       // The grade goes on in red pen (a はなまる is drawn, not stamped); the teacher's seal sits in the corner.
       c.stamp.text === 'はなまる'
         ? h('p', { class: 'hk-hanko maru', style: `--stamp-delay: ${hankoMs(c.flowers.length)}ms`, 'aria-label': 'はなまる' }, flower(3, 'hk-flower maru'))
@@ -344,7 +344,7 @@ function vote(view: RoomView, game: HappyokaiView): HTMLElement {
         h(
           'li',
           { 'data-key': `t${t.index}`, style: `--i: ${i}` },
-          h('p', { class: 'hk-talk-title', lang: 'ja' }, t.title ? `『${t.title.text}』` : '…'),
+          h('p', { class: 'hk-talk-title', lang: 'ja' }, t.title ? ['『', ruby(t.title), '』'] : '…'),
           h('p', {}, chip(view, t.presenterId, '🎤'), t.assistantId && v.talks.length <= 4 ? chip(view, t.assistantId, '🖱️') : null),
           t.quote ? h('p', { class: 'hk-quote', lang: 'ja' }, `「${t.quote}」`) : null,
           h('p', { class: 'hk-votes' }, Array.from({ length: t.votes }, (_, k) => h('span', { 'data-key': `v${k}` }, flower(2)))),
