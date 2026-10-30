@@ -10,7 +10,8 @@ import { MODES, surprisePool } from './modes/registry.js';
 import type { GameResult } from './progress.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS, SURPRISE } from './protocol.js';
-import { awardKana, hasKanji, isUtterance, matchesAccepted, utteranceReading } from './japanese/kana.js';
+import { awardKana, hasKanji, isUtterance, matchesAccepted, utteranceReading, type Utterance } from './japanese/kana.js';
+import { isRomaji, romajiToHiragana } from './japanese/toKana.js';
 
 export interface PlayerState {
   id: string;
@@ -302,7 +303,7 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
         me.mic = 'quiet';
         return OK;
       }
-      if (!quiet && !matchesAccepted(utteranceReading(cmd.utterance), ['こんにちは', 'こんにちわ'])) return fail('not-konnichiwa');
+      if (!quiet && !saidKonnichiwa(cmd.utterance)) return fail('not-konnichiwa');
       me.mic = quiet ? 'quiet' : 'ok';
       // The host says each mic line once per player: flipping the switch on and off doesn't repeat it.
       const cued = (me.micCued ??= {});
@@ -524,4 +525,14 @@ export function partyPoints(score: number, place: number, coop: boolean): number
 
 function lowestFreeSeat(state: GameState): number {
   for (let seat = 1; ; seat++) if (!state.players.some((p) => p.seat === seat)) return seat;
+}
+
+/**
+ * The mic check passes on こんにちは however the recogniser spells it: the speech model sometimes writes what it
+ * heard in romaji ("Konnichiwa", "konnichi wa"), and the single-n "konichiwa" is a common spelling of the same word.
+ */
+function saidKonnichiwa(u: Utterance): boolean {
+  const latin = u.text.replace(/[.,!?。、！？]/g, '');
+  const reading = isRomaji(latin) ? romajiToHiragana(latin) : utteranceReading(u);
+  return matchesAccepted(reading, ['こんにちは', 'こんにちわ', 'こにちは', 'こにちわ']);
 }

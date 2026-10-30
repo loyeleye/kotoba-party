@@ -210,6 +210,16 @@ describe('views', () => {
     expect(s.cues.map((c) => c.event)).toEqual(['mic_check_ok', 'mic_check_quiet']);
   });
 
+  it('passes the mic check when the recogniser writes konnichiwa in romaji', () => {
+    for (const text of ['Konnichiwa', 'konnichi wa', 'KONICHIWA', 'Konnichiwa!', 'konnichiha']) {
+      const s = lobby(1);
+      expect(cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'speech', text } }).error, text).toBeUndefined();
+      expect(s.players[0]!.mic, text).toBe('ok');
+    }
+    const s = lobby(1);
+    expect(cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'speech', text: 'Konbanwa' } }).error).toBe('not-konnichiwa');
+  });
+
   it('only the "can’t talk" tap turns quiet mode on: a typed or misheard check keeps the mic, and null turns it back on', () => {
     const s = lobby(2);
     expect(cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'typed', text: 'hello' } }).error).toBe('not-konnichiwa');
