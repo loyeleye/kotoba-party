@@ -153,6 +153,15 @@ function patchChildren(parent: Element, next: Node[]): void {
     const k = c.getAttribute('data-key');
     if (k !== null) keyed.set(`${c.tagName}:${k}`, c);
   }
+  // Drop keyed children that are gone before matching. Otherwise each later sibling would be
+  // moved in front of the leaver, and moving an element restarts its CSS animations (a Raid
+  // yōkai behind a caught one would jump back to the start of its march).
+  const wanted = new Set(next.flatMap((n) => (keyOf(n) === null ? [] : [`${(n as Element).tagName}:${keyOf(n)}`])));
+  for (const [id, el] of keyed) {
+    if (wanted.has(id)) continue;
+    el.remove();
+    keyed.delete(id);
+  }
   let cursor: ChildNode | null = parent.firstChild;
   for (const n of next) {
     const key = keyOf(n);
@@ -170,13 +179,27 @@ function patchChildren(parent: Element, next: Node[]): void {
     }
     morph(match, n);
     if (match === cursor) cursor = cursor.nextSibling;
-    else parent.insertBefore(match, cursor);
+    else moveBefore(parent, match, cursor);
   }
   while (cursor) {
     const after: ChildNode | null = cursor.nextSibling;
     cursor.remove();
     cursor = after;
   }
+}
+
+/** A real reorder: where the browser has `moveBefore`, the moved element keeps its running animations. */
+function moveBefore(parent: Element, node: Node, ref: ChildNode | null): void {
+  const move = (parent as Element & { moveBefore?: (node: Node, ref: Node | null) => void }).moveBefore;
+  if (typeof move === 'function') {
+    try {
+      move.call(parent, node, ref);
+      return;
+    } catch {
+      // Not movable state-preservingly (another document, say): fall back to a plain move.
+    }
+  }
+  parent.insertBefore(node, ref);
 }
 
 function sameKind(a: Node, b: Node): boolean {

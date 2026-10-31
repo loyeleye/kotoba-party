@@ -283,6 +283,27 @@ describe('Ink Storm in the Raid', () => {
     expect(r.play('p1', { kind: 'ink-tip', key: asks[0]!.key, tip: 'again' }).error).toBe('bad-move');
   });
 
+  it('drops a coach tip that lands after the player has moved on to another kana', () => {
+    const r = room(1);
+    toInk(r);
+    const k = target(r, 'p1');
+    // Miss, then miss the retry too: the player is now on a different kana.
+    draw(r, 'p1', scribble(random));
+    draw(r, 'p1', scribble(random));
+    expect(r.rs().players.p1!.attack!.retry).toBe(false);
+    const asks = inkCoachRequests(r.s.modeState);
+    expect(asks.length).toBe(2);
+    // The first drawing's tip arrives late: it's about the old drawing, so it isn't shown.
+    expect(r.play('p1', { kind: 'ink-tip', key: asks[0]!.key, tip: 'About the first one.' }).error).toBeUndefined();
+    expect(r.view('p1').me!.coach).toBeNull();
+    // The latest drawing's tip is shown, naming the kana it was about.
+    expect(r.play('p1', { kind: 'ink-tip', key: asks[1]!.key, tip: 'About the retry.' }).error).toBeUndefined();
+    expect(r.view('p1').me!.coach).toEqual({ char: k.char, tip: 'About the retry.' });
+    // Drawing the next kana hides it.
+    draw(r, 'p1', scribble(random));
+    expect(r.view('p1').me!.coach).toBeNull();
+  });
+
   it('rejects malformed drawings', () => {
     const r = room(1);
     toInk(r);

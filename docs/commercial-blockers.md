@@ -120,6 +120,9 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   `qrcode`, `ws`, `zod`) are MIT or Apache-2.0. The whole tree is MIT, ISC, Apache-2.0, BSD, 0BSD,
   CC0 or Unlicense, except `@img/sharp-libvips-*` (LGPL-3.0), which is a dev-only dependency of
   wrangler and never ships.
+- **2026-10-31:** added `happy-dom` (MIT, read in its `package.json` and npm listing on 2026-10-31)
+  as a dev-only test dependency (a browser DOM for `tests/domPatch.test.ts`). Its own dependencies
+  (`entities`, `buffer-image-size`, `whatwg-mimetype`, `ws`) are MIT or BSD-2-Clause. It never ships.
 - **To sell:** Generate a third-party notices file at release. Re-run the check when adding packages
   (a GPL or AGPL runtime dependency would be a blocker for a closed-source game).
 

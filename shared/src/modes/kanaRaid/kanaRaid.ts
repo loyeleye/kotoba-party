@@ -177,6 +177,8 @@ export interface InkShow {
 /** A drawing waiting for the server's optional vision second look (server only). */
 interface InkAsk {
   key: string;
+  /** The drawing attack it is about: a tip that lands after the player moved on is dropped. */
+  attackId: string;
   char: string;
   candidates: string[];
   strokes: InkPoint[][];
@@ -242,8 +244,8 @@ interface PlayerRaid {
   stats: { hits: number; misses: number; shoutsSpoken: number; comboHits: number; pieces: number; defeats: number; comebacks: number; reads: number; inkClean: number };
   /** Drawings waiting for a vision second look (server only, at most two). */
   inkAsks: InkAsk[];
-  /** The vision second look's line on the latest drawing. */
-  coach: { char: string; tip: string; at: number } | null;
+  /** The vision second look's line on the latest drawing (shown only while that drawing is the last result). */
+  coach: { attackId: string; char: string; tip: string; at: number } | null;
 }
 
 export interface BossPiece {
@@ -595,7 +597,10 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
         const tip = cleanText(raw.tip, 140);
         if (!ask || !tip) return moveError('bad-move');
         p.inkAsks = p.inkAsks.filter((x) => x !== ask);
-        p.coach = { char: ask.char, tip, at: ctx.now };
+        // The look is slow: if the player has drawn or said something since, the tip is about
+        // an older kana and would read as a verdict on the one in front of them, so drop it.
+        if (p.last?.attackId !== ask.attackId) return MOVE_OK;
+        p.coach = { attackId: ask.attackId, char: ask.char, tip, at: ctx.now };
         s.at = ctx.now;
         return MOVE_OK;
       }
@@ -673,7 +678,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
           last: live ? p.last : null,
           hits: p.stats.hits,
           misses: p.stats.misses,
-          coach: live && p.coach ? { char: p.coach.char, tip: p.coach.tip } : null,
+          coach: live && p.coach && p.coach.attackId === p.last?.attackId ? { char: p.coach.char, tip: p.coach.tip } : null,
           recap: phase === 'encore' ? playerRecap(p) : null,
         };
       }
@@ -1447,7 +1452,7 @@ function drawSpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: 
   p.last = res;
   if (g.clean) p.stats.inkClean += 1;
   s.inks = [...s.inks.slice(1 - STAGE_INKS), { id: a.id, playerId, char: k.char, strokes: mine, ok: g.pass, clean: g.clean, at: ctx.now }];
-  askCoach(p, k, ans.ink, g, ctx, deck);
+  askCoach(p, a.id, k, ans.ink, g, ctx, deck);
   if (g.pass) {
     // Say what you drew: the speaking bonus, from the same capped pool as every other bonus.
     a.step = 'say';
@@ -1495,7 +1500,7 @@ function saySpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: K
  * look-alike that weren't clearly right. The question is closed-set: the target and the kana
  * it is most easily drawn as (its look-alike sets, then the closest shapes by the stroke check).
  */
-function askCoach(p: PlayerRaid, k: Kana, ink: InkPoint[][], g: InkGrade, ctx: ModeContext, deck: Deck): void {
+function askCoach(p: PlayerRaid, attackId: string, k: Kana, ink: InkPoint[][], g: InkGrade, ctx: ModeContext, deck: Deck): void {
   const sets = deck.lookAlikes.filter((x) => x.kanaIds.includes(k.id));
   if (g.pass && (!sets.length || g.shapeScore >= COACH_BELOW)) return;
   const near = new Set<string>(sets.flatMap((x) => x.kanaIds).filter((id) => id !== k.id && deck.strokes.has(id)));
@@ -1506,7 +1511,7 @@ function askCoach(p: PlayerRaid, k: Kana, ink: InkPoint[][], g: InkGrade, ctx: M
     for (const x of scored.sort((a, b) => b.score - a.score).slice(0, 3 - near.size)) near.add(x.id);
   }
   const candidates = shuffled([k.char, ...[...near].slice(0, 3).map((id) => deck.byId.get(id)!.char)], ctx.random);
-  p.inkAsks = [...p.inkAsks.slice(-1), { key: ctx.newId(), char: k.char, candidates, strokes: ink, passed: g.pass, at: ctx.now }];
+  p.inkAsks = [...p.inkAsks.slice(-1), { key: ctx.newId(), attackId, char: k.char, candidates, strokes: ink, passed: g.pass, at: ctx.now }];
 }
 
 /** A drawing waiting for a vision second look, as the server's ink coach sees it. */
