@@ -240,7 +240,7 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
     return h('div', { class: 'screen raid' }, head, h('p', { class: 'big' }, 'Nice work!'), h('p', { class: 'hint' }, sub));
   }
   const prompt = (a.kind === 'pair' || a.kind === 'draw') && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? (a.kind === 'draw' ? 'Try again: draw its true form' : `Try again! ${PROMPTS[a.kind]}`) : PROMPTS[a.kind]);
-  const coach = me.coach ? h('p', { class: 'raid-coach' }, h('span', { lang: 'ja' }, `🖌 ${me.coach.char}: `), me.coach.tip) : null;
+  const coach = me.coach ? h('p', { class: 'raid-coach' }, '🖌 Your ', h('span', { lang: 'ja' }, me.coach.char), ': ', me.coach.tip) : null;
   const parts: (HTMLElement | null)[] = [head, coach, prompt];
   switch (a.kind) {
     case 'shout':
