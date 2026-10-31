@@ -70,6 +70,14 @@ export function kanaRaidPolicy(opts: KanaRaidPolicyOptions = {}): ModePolicy {
       const wrongOption = (good: string | undefined) => a.options.find((o) => o.id !== good)?.id;
       const matching = (target: string) => a.options.find((o) => same(normalizeReading(o.label), normalizeReading(target)))?.id;
 
+      // Waves 1–2: now and then pick a yōkai further back instead of the one dealt.
+      if (game.me.canAim && !a.retry && hash(`${key}:aim`) < 0.3) {
+        const mine = new Set(game.me.aimable);
+        const here = game.horde.filter((y) => mine.has(y.id) && y.state === 'alive' && y.spawnAt <= game.at && y.escapeAt > game.at + 2_000 && y.id !== a.yokaiId);
+        const pickY = here[Math.floor(hash(`${key}:which`) * here.length)];
+        if (pickY) return [{ key: `${key}:aim`, move: { kind: 'aim', yokaiId: pickY.id }, delayMs: delay(`${key}:aim`) }];
+      }
+
       let move: unknown;
       switch (a.kind) {
         case 'shout': {
@@ -88,7 +96,8 @@ export function kanaRaidPolicy(opts: KanaRaidPolicyOptions = {}): ModePolicy {
           break;
         }
         case 'echo': {
-          const good = matching(a.hear ?? '');
+          // Numbered voices: the one whose sound is the yōkai's.
+          const good = a.options.find((o) => o.hear && same(o.hear, a.show ?? ''))?.id;
           move = tap(right ? good : wrongOption(good));
           break;
         }

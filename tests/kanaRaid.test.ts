@@ -7,13 +7,13 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, gameResults, type GameContext, type GameState } from '../shared/src/game.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { buildDeck, checkSound, checkWord } from '../shared/src/modes/kanaRaid/deck.js';
-import { BASE_POINTS, BONUS_CAP, levelScale, type KanaRaidView, type RaidState } from '../shared/src/modes/kanaRaid/kanaRaid.js';
+import { BASE_POINTS, BONUS_CAP, levelScale, missPenalty, type KanaRaidView, type RaidState } from '../shared/src/modes/kanaRaid/kanaRaid.js';
 import { EMPTY_CONTENT, type ContentLibrary, type HostCue } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { Bot, Director } from '../tools/bots/bot.js';
 import { kanaRaidPolicy } from '../tools/bots/policies/kanaRaid.js';
-import { hashView, startServer, until } from './helpers.js';
+import { content as REAL, hashView, startServer, until } from './helpers.js';
 
 // ---------- fixtures ----------
 
@@ -248,6 +248,128 @@ describe('Kana Yōkai Raid rules', () => {
     expect(r.stage().waveResult!.escaped).toBeGreaterThan(0);
   });
 
+  it('only hits yōkai on stage: with the stage empty, the next one walks on early', () => {
+    const r = room(1);
+    toBattle(r);
+    // Before anyone has walked on, the first attack calls the first yōkai on now.
+    const first = r.rs().horde.find((y) => y.id === r.rs().players.p1!.attack!.yokaiId)!;
+    expect(first.spawnAt).toBeLessThanOrEqual(now);
+    // Hit fast: every hit lands on a yōkai that has walked on, none dies off stage.
+    for (let i = 0; i < 40 && r.s.phase === 'answer'; i++) {
+      const a = r.rs().players.p1!.attack!;
+      const y = r.rs().horde.find((x) => x.id === a.yokaiId)!;
+      expect(y.spawnAt).toBeLessThanOrEqual(now);
+      answer(r, 'p1', true, 'tap');
+      now += 200;
+      for (const x of r.rs().horde) if (x.state === 'defeated') expect(x.spawnAt).toBeLessThanOrEqual(x.endedAt!);
+    }
+    expect(r.s.phase).toBe('reveal');
+    expect(r.stage().waveResult!.defeated).toBe(r.rs().horde.length);
+  });
+
+  it('waves 1–2: a player picks which yōkai to attack; the TV shows who is on which', () => {
+    const r = room(2);
+    toBattle(r);
+    // Let three walk on.
+    now = r.rs().horde[2]!.spawnAt + 10;
+    const v = r.view('p1');
+    expect(v.me!.canAim).toBe(true);
+    const onStage = r.rs().horde.filter((y) => y.spawnAt <= now && y.state === 'alive');
+    expect(onStage.length).toBeGreaterThanOrEqual(3);
+    const back = onStage.sort((a, b) => b.escapeAt - a.escapeAt)[0]!;
+    expect(v.me!.aimable).toContain(back.id);
+    expect(r.play('p1', { kind: 'aim', yokaiId: back.id }).error).toBeUndefined();
+    const a = r.rs().players.p1!.attack!;
+    expect(a.yokaiId).toBe(back.id);
+    expect(a.itemId).toBe(back.itemId);
+    expect(r.stage().horde.find((y) => y.id === back.id)!.aimedBy).toContain('p1');
+    // The answer lands on the picked yōkai, not the front one.
+    const hpBefore = back.hp;
+    answer(r, 'p1', true, 'tap');
+    const hit = r.rs().horde.find((y) => y.id === back.id)!;
+    expect(hit.hp < hpBefore || hit.state === 'defeated').toBe(true);
+    // Not one that hasn't walked on yet, not a made-up one.
+    const later = r.rs().horde.filter((y) => y.spawnAt > now).at(-1)!;
+    expect(r.play('p1', { kind: 'aim', yokaiId: later.id }).error).toBe('gone');
+    expect(r.play('p1', { kind: 'aim', yokaiId: 'nope' }).error).toBe('gone');
+  });
+
+  it('wave 2 shows the yōkai’s own kana, so knowing which one you picked never gives the answer away', () => {
+    const r = room(1);
+    toBattle(r, { p1: [1, 2, 3, 4] });
+    for (let i = 0; i < 40 && r.s.phase === 'answer'; i++) answer(r, 'p1', true, 'tap'), (now += 200);
+    if (r.s.phase === 'answer') r.timeout();
+    r.timeout();
+    r.timeout();
+    r.timeout();
+    expect(r.rs().wave).toBe(2);
+    expect(r.s.phase).toBe('answer');
+    const seen = new Set<string>();
+    for (let i = 0; i < 60 && r.s.phase === 'answer'; i++) {
+      const a = r.rs().players.p1!.attack!;
+      const k = K(a.itemId);
+      seen.add(a.kind);
+      expect(a.show).toBe(k.char);
+      const right = a.options.find((o) => o.id === a.answer)!;
+      expect(right.label).not.toBe(k.char);
+      if (a.kind === 'echo') {
+        expect(a.options.every((o) => o.hear && /^[①②③④]$/.test(o.label))).toBe(true);
+        expect(right.hear).toBe(k.sound);
+      }
+      // The phone never voices the answer before you pick.
+      expect(a.hear).toBeUndefined();
+      answer(r, 'p1', true, 'tap');
+      now += 200;
+    }
+    expect(seen.has('echo') || seen.has('lookalike')).toBe(true);
+  });
+
+  it('a wrong guess costs a few points by level: nothing at first, more for advanced players', () => {
+    expect([1, 3, 4, 7, 8, 10, 11, 13].map(missPenalty)).toEqual([0, 0, 5, 5, 10, 10, 15, 15]);
+    const r = room(2);
+    toBattle(r, { p1: [1], p2: [1, 2, 3, 4, 10] });
+    for (const id of ['p1', 'p2']) for (let i = 0; i < 3; i++) answer(r, id, true, 'tap'), (now += 100);
+    const b1 = r.score('p1');
+    const b2 = r.score('p2');
+    answer(r, 'p1', false, 'tap');
+    answer(r, 'p2', false, 'tap');
+    expect(r.score('p1')).toBe(b1);
+    expect(r.score('p2')).toBe(b2 - missPenalty(10));
+    expect(r.rs().players.p2!.last!.points).toBe(-missPenalty(10));
+  });
+
+  it('the boss only uses kana the room has studied, and only hands you pieces you know', () => {
+    const toBoss = (r: ReturnType<typeof room>) => {
+      for (let i = 0; i < 30 && r.s.phase !== 'finale'; i++) r.timeout();
+      expect(r.s.phase).toBe('finale');
+    };
+    const chapterOf = (c: string) => REAL.kana.find((k) => k.char === c)!.chapter;
+    // A room of beginners (vowels only, or vowels and the K row): every piece is one they know.
+    for (const chapters of [[1], [1, 2]]) {
+      for (let run = 0; run < 5; run++) {
+        const r = room(2, REAL);
+        toBattle(r, { p1: chapters, p2: chapters });
+        toBoss(r);
+        const b = r.rs().boss!;
+        for (const piece of b.pieces) expect(chapters).toContain(chapterOf(piece.char));
+      }
+    }
+    // A mixed room: a beginner is only ever handed (or asked to help with) a piece they've studied.
+    for (let run = 0; run < 5; run++) {
+      const r = room(2, REAL);
+      toBattle(r, { p1: [1], p2: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] });
+      toBoss(r);
+      const b = r.rs().boss!;
+      for (const piece of b.pieces) if (piece.owner === 'p1') expect(chapterOf(piece.char)).toBe(1);
+      for (let i = 0; i < 20; i++) {
+        const a = r.rs().players.p1!.attack;
+        if (!a || a.kind !== 'piece') break;
+        expect(chapterOf(b.pieces[a.pieceIndex!]!.char)).toBe(1);
+        r.play('p1', { kind: 'attack', attackId: a.id, pick: a.answer });
+      }
+    }
+  });
+
   it('plays all three waves, the boss and the raid recap; bonuses stay inside the cap', () => {
     const r = room(3);
     toBattle(r, { p1: [1], p2: [1, 2, 3], p3: [1, 2, 3, 4, 10] });
@@ -278,7 +400,9 @@ describe('Kana Yōkai Raid rules', () => {
       r.timeout(); // → prompt or finale
       if (wave < 3) r.timeout(); // prompt → answer
     }
-    expect(kinds).toEqual(new Set(['shout', 'twin', 'lookalike', 'echo', 'pair']));
+    // Wave 2 deals look-alikes or echoes at random (look-alikes only where the player knows a set).
+    for (const k of ['shout', 'twin', 'pair']) expect(kinds).toContain(k);
+    expect(kinds.has('lookalike') || kinds.has('echo')).toBe(true);
 
     expect(r.s.phase).toBe('finale');
     const boss = r.stage().boss!;

@@ -7,10 +7,10 @@
 import { h, ruby } from '../../../shared/src/dom.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { inkSvg } from '../../../shared/src/inkSvg.js';
-import type { AttackView, KanaRaidView, LastResult } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
+import type { AttackView, KanaRaidView, LastResult, RaidOption } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import { inkPad } from '../components/inkPad.js';
-import { speakBox } from '../components/speak.js';
+import { canSpeak, micChip, speakBox } from '../components/speak.js';
 import { canVoice, hearButton as voiceButton, say } from '../components/voice.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
@@ -36,8 +36,8 @@ function listen(a: AttackView, auto: boolean): HTMLElement {
 const PROMPTS: Record<AttackView['kind'], string> = {
   shout: 'Shout its sound!',
   twin: 'Tap its twin from the other alphabet',
-  lookalike: 'Shapeshifter! Which one is this?',
-  echo: 'Echo: tap the kana you hear',
+  lookalike: 'Shapeshifter! What does it really say?',
+  echo: 'Echo: which voice is its own?',
   pair: 'Which word did you hear?',
   draw: 'Ink Storm! Draw its true form',
   piece: 'Break your piece of the boss!',
@@ -189,6 +189,7 @@ function lastStrip(last: LastResult | null): HTMLElement | null {
     'div',
     { class: 'raid-last miss' },
     h('span', { class: 'raid-last-char', lang: 'ja' }, last.char),
+    last.points < 0 ? h('span', { class: 'raid-last-lost' }, ` −${-last.points}`) : null,
     h('span', { class: 'raid-last-tip' }, last.tip ?? 'So close! It’ll be back.'),
     last.hear ? hearButton(last.hear, '🔊') : null,
     last.retryNext ? h('small', {}, 'One more try:') : null,
@@ -226,7 +227,104 @@ function glyph(a: AttackView): HTMLElement {
 }
 
 function speak(a: AttackView, send: (move: unknown) => Promise<boolean>, label: string): HTMLElement {
-  return speakBox({ label, placeholder: 'Type it in kana', kanaPadOpen: false, maxLength: 20, onSend: (u: Utterance) => void send({ kind: 'attack', attackId: a.id, say: u }) });
+  // Mic on: just the talk button (no "Can't talk right now?"). Mic off: speakBox shows the typed box.
+  return speakBox({ label, placeholder: 'Type it in kana', kanaPadOpen: false, maxLength: 20, speechOnly: true, onSend: (u: Utterance) => void send({ kind: 'attack', attackId: a.id, say: u }) });
+}
+
+// ---------- picking a yōkai (waves 1–2) ----------
+
+// The server's clock, from the view's `at` (as on the stage): a view arrives after it was made,
+// so the largest `at - Date.now()` is the best offset.
+let clockOffset = Number.NEGATIVE_INFINITY;
+const serverNow = (game: KanaRaidView) => {
+  clockOffset = Math.max(clockOffset, game.at - Date.now());
+  return Date.now() + (Number.isFinite(clockOffset) ? clockOffset : 0);
+};
+let aimTimer: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * The yōkai on stage you can attack, front (nearest the gate) first: tap one to attack it.
+ * Yōkai walk on and get away between updates, so the row redraws itself on the phone's clock.
+ */
+function aimStrip(game: KanaRaidView, current: string | null, send: (move: unknown) => Promise<boolean>): HTMLElement {
+  const row = h('div', { class: 'raid-aim', role: 'group', 'aria-label': 'Pick a yōkai to attack' });
+  const mine = new Set(game.me?.aimable ?? []);
+  let shown = '';
+  const draw = () => {
+    if (!row.isConnected && shown) {
+      if (aimTimer) clearInterval(aimTimer);
+      aimTimer = null;
+      return;
+    }
+    const now = serverNow(game);
+    const here = game.horde.filter((y) => mine.has(y.id) && y.state === 'alive' && y.spawnAt <= now && y.escapeAt > now + 500)
+      // In the order they stand on the TV: furthest along (nearest the gate) first.
+      .sort((x, y) => (now - y.spawnAt) / (y.escapeAt - y.spawnAt) - (now - x.spawnAt) / (x.escapeAt - x.spawnAt));
+    const key = here.map((y) => y.id).join(',') || '-';
+    if (key === shown) return;
+    shown = key;
+    row.replaceChildren(
+      h('span', { class: 'raid-aim-label' }, 'Pick a yōkai:'),
+      ...here.map((y) =>
+        h(
+          'button',
+          {
+            type: 'button',
+            class: `raid-aim-btn${y.id === current ? ' on' : ''}`,
+            lang: 'ja',
+            'aria-pressed': String(y.id === current),
+            onclick: () => void send({ kind: 'aim', yokaiId: y.id }),
+          },
+          y.char,
+        ),
+      ),
+    );
+  };
+  draw();
+  if (aimTimer) clearInterval(aimTimer);
+  aimTimer = setInterval(draw, 400);
+  return row;
+}
+
+/** No Japanese voice on this phone: write the sound instead. */
+const idle = (o: RaidOption) => (canVoice() ? '🔊' : (o.hear ?? ''));
+
+/** Echo: numbered voices; the first tap plays one and picks it, a second tap on it strikes. */
+let echoPicked: { attackId: string; option: string } | null = null;
+function echoOptions(a: AttackView, send: (move: unknown) => Promise<boolean>): HTMLElement {
+  const box = h('div', { class: 'raid-options echo' });
+  const buttons = a.options.map((o) => {
+    const b = h(
+      'button',
+      { type: 'button', class: `raid-option${echoPicked?.attackId === a.id && echoPicked.option === o.id ? ' picked' : ''}` },
+      h('span', {}, o.label),
+      h('small', { lang: 'ja' }, echoPicked?.attackId === a.id && echoPicked.option === o.id ? 'tap again to strike' : idle(o)),
+    ) as HTMLButtonElement;
+    b.addEventListener('click', () => {
+      if (echoPicked?.attackId === a.id && echoPicked.option === o.id) {
+        for (const x of buttons) x.disabled = true;
+        void send({ kind: 'attack', attackId: a.id, pick: o.id }).then((ok) => {
+          if (!ok) for (const x of buttons) x.disabled = false;
+        });
+        return;
+      }
+      if (o.hear) say(o.hear);
+      echoPicked = { attackId: a.id, option: o.id };
+      buttons.forEach((x, i) => {
+        const on = a.options[i]!.id === o.id;
+        x.classList.toggle('picked', on);
+        x.querySelector('small')!.textContent = on ? 'tap again to strike' : idle(a.options[i]!);
+      });
+    });
+    return b;
+  });
+  box.append(...buttons);
+  return box;
+}
+
+/** With the mic off: the tap choices, under the line saying how the phone answers. */
+function quietTap(a: AttackView, send: (move: unknown) => Promise<boolean>, hint: string): HTMLElement {
+  return h('div', { class: 'speak' }, micChip(), h('p', { class: 'hint small' }, hint), options(a, send));
 }
 
 function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
@@ -241,19 +339,20 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
   }
   const prompt = (a.kind === 'pair' || a.kind === 'draw') && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? (a.kind === 'draw' ? 'Try again: draw its true form' : `Try again! ${PROMPTS[a.kind]}`) : PROMPTS[a.kind]);
   const coach = me.coach ? h('p', { class: 'raid-coach' }, '🖌 Your ', h('span', { lang: 'ja' }, me.coach.char), ': ', me.coach.tip) : null;
-  const parts: (HTMLElement | null)[] = [head, coach, prompt];
+  const parts: (HTMLElement | null)[] = [head, coach, me.canAim ? aimStrip(game, a.yokaiId, send) : null, prompt];
   switch (a.kind) {
     case 'shout':
-      parts.push(glyph(a), speak(a, send, 'Hold and shout its sound'), h('p', { class: 'hint small' }, 'Or tap its sound (hits a little softer):'), options(a, send, 'small'));
+      // Mic on: shout it. Mic off: tap its sound (hits a little softer).
+      parts.push(glyph(a), canSpeak() ? speak(a, send, 'Hold and shout its sound') : quietTap(a, send, 'Tap its sound (shouting hits harder):'));
       break;
     case 'twin':
       parts.push(glyph(a), options(a, send));
       break;
     case 'lookalike':
-      parts.push(glyph(a), listen(a, true), options(a, send));
+      parts.push(glyph(a), options(a, send));
       break;
     case 'echo':
-      parts.push(listen(a, true), options(a, send));
+      parts.push(glyph(a), h('p', { class: 'hint small' }, 'Tap each to hear it. Tap the right one again to strike.'), echoOptions(a, send));
       break;
     case 'pair':
       if (a.step === 'tap') parts.push(listen(a, true), options(a, send, 'pair'));
@@ -288,7 +387,7 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
       break;
     case 'piece':
       parts.push(glyph(a));
-      if (a.hear) parts.push(speak(a, send, 'Hold and say its sound'), h('p', { class: 'hint small' }, 'Or tap its sound:'), options(a, send, 'small'));
+      if (a.hear) parts.push(canSpeak() ? speak(a, send, 'Hold and say its sound') : quietTap(a, send, 'Tap its sound:'));
       else parts.push(h('p', { class: 'hint' }, `What does ${a.show} do in a word?`), options(a, send, 'wide'));
       break;
     case 'blow':

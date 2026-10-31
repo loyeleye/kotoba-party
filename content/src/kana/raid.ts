@@ -318,6 +318,20 @@ const boss = (id: string, text: string, en: string, packId?: string): BossWord =
 
 /** Boss: Word Yōkai. Real things you'll read on menus, stations and shop signs. */
 export const bossWords: BossWord[] = [
+  // First chapters: so a room of beginners fights a word they can read every piece of.
+  boss('ie', 'いえ', 'house'),
+  boss('ao', 'あお', 'blue'),
+  boss('ue', 'うえ', 'up, above'),
+  boss('kao', 'かお', 'face'),
+  boss('eki', 'えき', 'station', 'travel'),
+  boss('kokoa', 'ココア', 'cocoa', 'food'),
+  boss('sushi', 'すし', 'sushi', 'food'),
+  boss('aisu', 'アイス', 'ice cream', 'food'),
+  boss('isu', 'いす', 'chair'),
+  boss('tako', 'たこ', 'octopus', 'food'),
+  boss('chikatetsu', 'ちかてつ', 'subway', 'travel'),
+  boss('sakana', 'さかな', 'fish', 'food'),
+  boss('neko', 'ねこ', 'cat'),
   boss('kamera', 'カメラ', 'camera'),
   boss('hoteru', 'ホテル', 'hotel', 'travel'),
   boss('terebi', 'テレビ', 'TV'),

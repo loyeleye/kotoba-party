@@ -11,7 +11,7 @@
 // timers, so an escape is settled at the next move (or when the wave ends); the stage animates
 // from the same times, so what people see matches what the rules settle.
 
-import type { JpText, Kana, MinimalPair } from '../../../../content/src/types.js';
+import type { BossWord, JpText, Kana, MinimalPair } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import { gradeInk, inkTipText, readInk, thin, type InkGrade, type InkPoint } from '../../japanese/strokes.js';
 import type { PracticeItem } from '../../progress.js';
@@ -42,6 +42,27 @@ export const BASE_POINTS = 100;
 export const QUIET_DAMAGE = 0.7;
 /** The speaking bonus on top of a hit's points, from the capped pool. */
 export const SPEAK_BONUS = 0.3;
+/**
+ * Points off for a wrong guess, by the furthest chapter the player has studied: nothing while
+ * you're learning the first rows, then a little more as you go (a hit is worth 60–100).
+ */
+export function missPenalty(top: number): number {
+  if (top <= 3) return 0;
+  if (top <= 7) return 5;
+  if (top <= 10) return 10;
+  return 15;
+}
+
+/** Takes a wrong guess's points off (never below zero); returns what was taken. */
+function dock(p: PlayerRaid, ctx: ModeContext, playerId: string): number {
+  const lost = Math.min(missPenalty(p.top), ctx.player(playerId)?.score ?? 0);
+  if (lost > 0) {
+    ctx.award(playerId, -lost);
+    p.wave.lost += lost;
+  }
+  return lost;
+}
+
 /** Speaking bonuses are at most this share of a player's points in a wave (design doc). */
 export const BONUS_CAP = 0.3;
 export const COMBO_WINDOW_MS = 4_000;
@@ -66,8 +87,8 @@ const WAVE_TIMING: Record<number, { gap: number; walk: number }> = {
 };
 
 export const WAVE_INFO: Record<number, { title: string; titleJa: string; titleKana: string; how: string }> = {
-  1: { title: 'Night Parade', titleJa: '百鬼夜行', titleKana: 'ひゃっきやこう', how: 'Shout each yōkai’s sound, or strike it with its twin from the other alphabet.' },
-  2: { title: 'Shapeshifters', titleJa: '化け物', titleKana: 'ばけもの', how: 'Look-alikes and echoes: hear the sound, tap the right kana.' },
+  1: { title: 'Night Parade', titleJa: '百鬼夜行', titleKana: 'ひゃっきやこう', how: 'Pick a yōkai on your phone, then shout its sound or strike it with its twin from the other alphabet.' },
+  2: { title: 'Shapeshifters', titleJa: '化け物', titleKana: 'ばけもの', how: 'Pick a yōkai on your phone. Look-alikes and echoes: find the sound it really makes.' },
   3: { title: 'Long and Short', titleJa: 'のばす・つまる', titleKana: 'のばす・つまる', how: 'Hear one word, tap it, then say it. Listen for long sounds and little pauses.' },
   4: { title: 'Word Yōkai', titleJa: 'ことば妖怪', titleKana: 'ことばようかい', how: 'Break one piece each, then read the whole word together!' },
 };
@@ -75,6 +96,8 @@ export const WAVE_INFO: Record<number, { title: string; titleJa: string; titleKa
 export const INK_INFO = { title: 'Ink Storm', titleJa: '墨の嵐', titleKana: 'すみのあらし', how: 'The yōkai wear their twins’ masks. Draw each one’s true form on your phone, stroke by stroke, then say it.' };
 
 const isInkWave = (s: RaidState) => s.ink && s.wave === INK_WAVE;
+/** Waves 1 and 2: a player can pick which yōkai to attack. */
+const canAimWave = (s: RaidState) => (s.wave === 1 || s.wave === 2) && !isInkWave(s);
 
 /** The banner for the wave being played (the boss's is always WAVE_INFO[4]). */
 function waveInfoOf(s: RaidState): { title: string; titleJa: string; titleKana: string; how: string } | null {
@@ -111,6 +134,8 @@ export interface RaidOption {
   id: string;
   label: string;
   sub?: string;
+  /** Echo: the sound this choice plays (its label is just a number). */
+  hear?: string;
 }
 
 export interface Attack {
@@ -224,6 +249,8 @@ interface Tally {
 interface WaveStats {
   base: number;
   bonus: number;
+  /** Points taken off for wrong guesses. */
+  lost: number;
   hits: number;
   misses: number;
   spoken: number;
@@ -317,6 +344,8 @@ export interface YokaiView {
   leader?: string;
   caughtBy?: string;
   caughtPoints?: number;
+  /** Players attacking it right now (waves 1–2: they picked it, or were dealt it). */
+  aimedBy?: string[];
 }
 
 export interface KanaRaidView {
@@ -361,6 +390,9 @@ export interface KanaRaidView {
   me: {
     chapters: number[];
     ready: boolean;
+    /** Waves 1–2: you can pick which yōkai to attack ({ kind: 'aim', yokaiId }); these are yours to pick from. */
+    canAim: boolean;
+    aimable: string[];
     attack: AttackView | null;
     last: LastResult | null;
     hits: number;
@@ -461,7 +493,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       s.inks = [];
       s.combo = { count: 0, players: [], lastAt: 0, best: 0 };
       for (const p of Object.values(s.players)) {
-        p.wave = { base: 0, bonus: 0, hits: 0, misses: 0, spoken: 0 };
+        p.wave = { base: 0, bonus: 0, lost: 0, hits: 0, misses: 0, spoken: 0 };
         p.last = null;
         p.retryNext = null;
       }
@@ -476,7 +508,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       s.horde = [];
       s.combo = { count: 0, players: [], lastAt: 0, best: 0 };
       for (const p of Object.values(s.players)) {
-        p.wave = { base: 0, bonus: 0, hits: 0, misses: 0, spoken: 0 };
+        p.wave = { base: 0, bonus: 0, lost: 0, hits: 0, misses: 0, spoken: 0 };
         p.last = null;
         p.retryNext = null;
       }
@@ -519,7 +551,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
         bestCombo: s.combo.best,
         players: seatedIds(s, ctx).map((id) => {
           const w = s.players[id]!.wave;
-          return { playerId: id, hits: w.hits, misses: w.misses, points: w.base + w.bonus, bonus: w.bonus };
+          return { playerId: id, hits: w.hits, misses: w.misses, points: w.base + w.bonus - w.lost, bonus: w.bonus };
         }),
       };
     }
@@ -604,6 +636,25 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
         s.at = ctx.now;
         return MOVE_OK;
       }
+      case 'aim': {
+        // Waves 1–2: attack this yōkai instead (it must be on stage and one of your kana).
+        if (phase !== 'answer' || !canAimWave(s)) return moveError('wrong-phase');
+        sweep(s, ctx);
+        const y = typeof raw.yokaiId === 'string' ? s.horde.find((x) => x.id === raw.yokaiId) : undefined;
+        if (!y || y.spawnAt > ctx.now) return moveError('gone');
+        // Caught or got away a moment before the tap landed: keep the attack you have.
+        if (!isAlive(y, ctx.now)) return MOVE_OK;
+        const deck = deckOf(ctx);
+        if (!poolFor(deck, p.chapters).some((k) => k.id === y.itemId)) return moveError('not-yours');
+        if (p.attack?.yokaiId === y.id) return MOVE_OK;
+        // Picking a new target drops a pending retry: the one you missed stays on the haunted list.
+        p.retryNext = null;
+        if (p.last) p.last = { ...p.last, retryNext: false };
+        if (p.attack) p.replaced = [...p.replaced.slice(-4), p.attack.id];
+        p.attack = waveAttack(s, playerId, p, ctx, deck, y);
+        s.at = ctx.now;
+        return MOVE_OK;
+      }
       case 'attack': {
         if (phase !== 'answer' && phase !== 'finale') return moveError('wrong-phase');
         const a = p.attack;
@@ -634,6 +685,13 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
 
   view(s, phase, viewer, ctx) {
     const inBattle = phase === 'answer' || phase === 'reveal';
+    const aimedBy = new Map<string, string[]>();
+    if (phase === 'answer' && canAimWave(s)) {
+      for (const [id, p] of Object.entries(s.players)) {
+        const y = p.attack?.yokaiId;
+        if (y) aimedBy.set(y, [...(aimedBy.get(y) ?? []), id]);
+      }
+    }
     const b = s.boss;
     const name = (id: string | null) => (id ? (ctx.player(id)?.name ?? null) : null);
     const ids = seatedIds(s, ctx);
@@ -648,7 +706,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       at: s.at,
       chapters: phase === 'intro' ? s.chapters : [],
       picks: ids.map((id) => ({ playerId: id, chapters: s.players[id]!.chapters, ready: s.players[id]!.ready })),
-      horde: inBattle ? s.horde.map(yokaiView) : [],
+      horde: inBattle ? s.horde.map((y) => yokaiView(y, aimedBy)) : [],
       combo: { count: s.combo.count, players: s.combo.players.length, lastAt: s.combo.lastAt, best: s.combo.best },
       waveResult: phase === 'reveal' || phase === 'score' ? s.waveResult : null,
       boss:
@@ -671,9 +729,13 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       const p = s.players[viewer.playerId];
       if (p) {
         const live = phase === 'answer' || phase === 'finale';
+        const canAim = phase === 'answer' && canAimWave(s);
+        const mine = canAim ? new Set(poolFor(deckOf(ctx), p.chapters).map((k) => k.id)) : null;
         view.me = {
           chapters: p.chapters,
           ready: p.ready,
+          canAim,
+          aimable: mine ? s.horde.filter((y) => y.state === 'alive' && mine.has(y.itemId)).map((y) => y.id) : [],
           attack: live && p.attack ? attackView(p.attack) : null,
           last: live ? p.last : null,
           hits: p.stats.hits,
@@ -743,7 +805,7 @@ function newPlayer(chapters: number[]): PlayerRaid {
     last: null,
     retryNext: null,
     tally: {},
-    wave: { base: 0, bonus: 0, hits: 0, misses: 0, spoken: 0 },
+    wave: { base: 0, bonus: 0, lost: 0, hits: 0, misses: 0, spoken: 0 },
     stats: { hits: 0, misses: 0, shoutsSpoken: 0, comboHits: 0, pieces: 0, defeats: 0, comebacks: 0, reads: 0, inkClean: 0 },
     inkAsks: [],
     coach: null,
@@ -761,8 +823,10 @@ function cue(s: RaidState, ctx: ModeContext, event: Parameters<ModeContext['cue'
   ctx.cue({ host: 'fude', event, ...(slots ? { slots } : {}) });
 }
 
-function yokaiView(y: Yokai): YokaiView {
+function yokaiView(y: Yokai, aimedBy: Map<string, string[]>): YokaiView {
+  const aimers = aimedBy.get(y.id);
   return {
+    ...(aimers?.length && y.state === 'alive' ? { aimedBy: aimers } : {}),
     id: y.id,
     // An ink yōkai shows only its mask: its true form is the answer.
     char: y.mask ?? y.char,
@@ -904,6 +968,22 @@ function lookAlikeFor(deck: Deck, k: Kana, pool: readonly Kana[]) {
   });
 }
 
+/**
+ * Walks `y` on now, and everything due after it that much sooner, keeping their spacing.
+ * The stage keys each yōkai by its spawn time, so a moved one starts its march afresh.
+ */
+function bringOn(s: RaidState, y: Yokai, now: number): void {
+  const shift = y.spawnAt - now;
+  if (shift <= 0) return;
+  const from = y.spawnAt;
+  for (const x of s.horde) {
+    if (x.state !== 'alive' || x.spawnAt < from) continue;
+    x.spawnAt -= shift;
+    x.escapeAt -= shift;
+  }
+  s.waveEndsAt = Math.max(...s.horde.map((x) => x.escapeAt)) + 1_000;
+}
+
 /** Escapes whatever reached the gate by now. */
 function sweep(s: RaidState, ctx: ModeContext): void {
   let fled = 0;
@@ -918,6 +998,9 @@ function sweep(s: RaidState, ctx: ModeContext): void {
   if (fled) cue(s, ctx, 'raid_escape');
 }
 
+/** How far along its march a yōkai is (0 at the right edge, 1 at the gate): the TV's left-to-right order. */
+const along = (y: Yokai, now: number) => (now - y.spawnAt) / Math.max(1, y.escapeAt - y.spawnAt);
+
 const isAlive = (y: Yokai, now: number) => y.state === 'alive' && y.escapeAt > now;
 
 // ---------- attacks ----------
@@ -929,26 +1012,31 @@ function assignAttack(s: RaidState, playerId: string, ctx: ModeContext, deck: De
   p.attack = s.wave > s.waves ? bossAttack(s, playerId, ctx, deck) : waveAttack(s, playerId, p, ctx, deck);
 }
 
-function waveAttack(s: RaidState, playerId: string, p: PlayerRaid, ctx: ModeContext, deck: Deck): Attack | null {
+function waveAttack(s: RaidState, playerId: string, p: PlayerRaid, ctx: ModeContext, deck: Deck, aimed?: Yokai): Attack | null {
   const now = ctx.now;
-  const retry = p.retryNext;
+  const retry = aimed ? null : p.retryNext;
   p.retryNext = null;
   const ink = isInkWave(s);
   const poolIds = new Set(s.wave === 3 ? pairsFor(deck, p.top).map((x) => x.id) : (ink ? inkPoolFor : poolFor)(deck, p.chapters).map((k) => k.id));
-  let itemId: string | undefined = retry?.itemId;
-  let yokai: Yokai | undefined;
-  if (itemId) yokai = s.horde.find((y) => y.itemId === itemId && isAlive(y, now));
+  let itemId: string | undefined = aimed?.itemId ?? retry?.itemId;
+  let yokai: Yokai | undefined = aimed;
+  if (aimed) {
+    // The player picked it.
+  } else if (itemId) yokai = s.horde.find((y) => y.itemId === itemId && isAlive(y, now));
   else {
     const targeted = new Map<string, number>();
     for (const [id, other] of Object.entries(s.players)) if (id !== playerId && other.attack?.yokaiId) targeted.set(other.attack.yokaiId, (targeted.get(other.attack.yokaiId) ?? 0) + 1);
     const mine = s.horde.filter((y) => isAlive(y, now) && poolIds.has(y.itemId));
-    // On stage first (closest to the gate), then the next to walk on.
-    mine.sort((a, b) => Number(a.spawnAt > now) - Number(b.spawnAt > now) || (a.spawnAt > now ? a.spawnAt - b.spawnAt : a.escapeAt - b.escapeAt));
-    const front = mine.slice(0, 3);
+    // Only yōkai you can see: on stage, closest to the gate first. With the stage empty, the
+    // next one walks on now, so a hit never lands on a yōkai nobody has seen yet.
+    const onStage = mine.filter((y) => y.spawnAt <= now).sort((a, b) => along(b, now) - along(a, now));
+    const next = mine.filter((y) => y.spawnAt > now).sort((a, b) => a.spawnAt - b.spawnAt)[0];
+    const front = onStage.length ? onStage.slice(0, 3) : next ? [next] : [];
     front.sort((a, b) => (targeted.get(a.id) ?? 0) - (targeted.get(b.id) ?? 0));
     yokai = front[0];
     itemId = yokai?.itemId ?? pick([...poolIds], ctx.random);
   }
+  if (yokai && yokai.spawnAt > now) bringOn(s, yokai, now);
   if (!itemId) return null;
   const base = { id: ctx.newId(), yokaiId: yokai?.id ?? null, itemId, retry: !!retry };
 
@@ -970,9 +1058,11 @@ function waveAttack(s: RaidState, playerId: string, p: PlayerRaid, ctx: ModeCont
 type AttackBase = Pick<Attack, 'id' | 'yokaiId' | 'itemId' | 'retry'>;
 
 /** Shuffles options and gives them opaque ids; returns the id of the right one. */
+const ECHO_LABELS = ['①', '②', '③', '④'];
+
 function dealOptions(right: Omit<RaidOption, 'id'>, wrong: Omit<RaidOption, 'id'>[], ctx: ModeContext): { options: RaidOption[]; answer: string } {
   const all = shuffled([{ ...right, right: true }, ...wrong.map((w) => ({ ...w, right: false }))], ctx.random);
-  const options = all.map((o, i) => ({ id: String(i), label: o.label, ...(o.sub ? { sub: o.sub } : {}) }));
+  const options = all.map((o, i) => ({ id: String(i), label: o.label, ...(o.sub ? { sub: o.sub } : {}), ...(o.hear ? { hear: o.hear } : {}) }));
   return { options, answer: String(all.findIndex((o) => o.right)) };
 }
 
@@ -1005,20 +1095,25 @@ function kanaAttack(base: AttackBase, kind: AttackKind, k: Kana, pool: Kana[], d
     const { options, answer } = dealOptions({ label: twin.char }, wrong.map((x) => ({ label: x.char })), ctx);
     return { ...base, kind, show: k.char, hear, options, answer, ...romaji };
   }
-  if (kind === 'lookalike' || kind === 'echo') {
-    let preferred: Kana[];
-    if (kind === 'lookalike') {
-      const set = lookAlikeFor(deck, k, pool)!;
-      const inPool = new Set(pool.map((x) => x.id));
-      preferred = set.kanaIds.filter((id) => inPool.has(id)).map((id) => deck.byId.get(id)!);
-    } else {
-      const confusions = new Set(k.confusableSounds ?? []);
-      preferred = sameScript(k.script).filter((x) => confusions.has(x.sound));
-    }
+  // Wave 2 shows the yōkai's own kana (the player may have picked it on the TV, so the kana
+  // can't be the answer): say which sound it really makes.
+  if (kind === 'lookalike') {
+    // Shapeshifter: the choices are the sounds of the kana it's easily mistaken for, written in the other script.
+    const set = lookAlikeFor(deck, k, pool)!;
+    const inPool = new Set(pool.map((x) => x.id));
+    const preferred = set.kanaIds.filter((id) => inPool.has(id)).map((id) => deck.byId.get(id)!);
     const wrong = distinct(preferred, sameScript(k.script), 3, (x) => x.sound, new Set([k.sound]), ctx);
-    const { options, answer } = dealOptions({ label: k.char }, wrong.map((x) => ({ label: x.char })), ctx);
-    const twin = k.twinId ? deck.byId.get(k.twinId) : undefined;
-    return { ...base, kind, ...(kind === 'lookalike' ? { show: twin?.char ?? hearText } : {}), hear, hearText, options, answer };
+    const { options, answer } = dealOptions({ label: hearText }, wrong.map((x) => ({ label: inOtherScript(x.sound, k.script) })), ctx);
+    return { ...base, kind, show: k.char, hearText, options, answer };
+  }
+  if (kind === 'echo') {
+    // Echo: four voices, one is its own. Each choice plays its sound; nothing is written.
+    const confusions = new Set(k.confusableSounds ?? []);
+    const preferred = sameScript(k.script).filter((x) => confusions.has(x.sound)).map((x) => x.sound);
+    const wrong = distinct([...preferred, ...(k.confusableSounds ?? [])], pool.map((x) => x.sound), 3, (x) => x, new Set([k.sound]), ctx);
+    const dealt = dealOptions({ label: '', hear: k.sound }, wrong.map((x) => ({ label: '', hear: x })), ctx);
+    const options = dealt.options.map((o, i) => ({ ...o, label: ECHO_LABELS[i] ?? String(i + 1) }));
+    return { ...base, kind, show: k.char, hearText, options, answer: dealt.answer };
   }
   // Shout: say it; the four sounds (in the other script) are the quiet fallback.
   const others = pool.map((x) => x.sound);
@@ -1060,29 +1155,35 @@ function pairAttack(base: AttackBase, pair: MinimalPair, ctx: ModeContext): Atta
 
 function buildBoss(s: RaidState, ctx: ModeContext, deck: Deck): void {
   const ids = seatedIds(s, ctx);
-  const top = Math.max(1, ...ids.map((id) => s.players[id]!.top));
-  let fit = deck.bosses.filter((b) => b.minChapter <= top);
-  if (!fit.length) {
-    const lowest = Math.min(...deck.bosses.map((b) => b.minChapter));
-    fit = deck.bosses.filter((b) => b.minChapter === lowest);
-  }
-  const roomy = fit.filter((b) => b.pieces.length >= ids.length);
-  const choices = roomy.length ? [...roomy].sort((a, b) => b.minChapter - a.minChapter).slice(0, 4) : [[...fit].sort((a, b) => b.pieces.length - a.pieces.length)[0]!];
+  const knows = (id: string, char: string) => {
+    const k = deck.byChar.get(char);
+    return !k || s.players[id]!.chapters.includes(k.chapter);
+  };
+  // Only words where every piece is one somebody here has studied; the more players with a piece
+  // of their own the better, then the hardest such words. A room with nothing that fits gets the
+  // easiest word there is.
+  const readable = deck.bosses.filter((b) => b.pieces.every((c) => ids.some((id) => knows(id, c))));
+  const reach = (b: BossWord) => ids.filter((id) => b.pieces.some((c) => knows(id, c))).length;
+  const lowest = Math.min(...deck.bosses.map((b) => b.minChapter));
+  const fit = readable.length ? readable : deck.bosses.filter((b) => b.minChapter === lowest);
+  const best = Math.max(...fit.map((b) => Math.min(reach(b), b.pieces.length)));
+  const roomy = fit.filter((b) => Math.min(reach(b), b.pieces.length) === best);
+  const choices = [...roomy].sort((a, b) => b.minChapter - a.minChapter || b.pieces.length - a.pieces.length).slice(0, 4);
   const word = pick(choices, ctx.random)!;
   const load = new Map(ids.map((id) => [id, 0]));
   const pieces: BossPiece[] = word.pieces.map((char) => {
-    const k = deck.byChar.get(char);
-    const knows = ids.filter((id) => !k || s.players[id]!.chapters.includes(k.chapter));
-    const pool = knows.length ? knows : ids;
+    const who = ids.filter((id) => knows(id, char));
+    const pool = who.length ? who : ids;
     const fewest = Math.min(...pool.map((id) => load.get(id) ?? 0));
     const owner = pool.find((id) => (load.get(id) ?? 0) === fewest) ?? null;
     if (owner) load.set(owner, (load.get(owner) ?? 0) + 1);
     return { char, sound: pieceSound(deck, char), owner, by: null };
   });
-  // Everyone gets a piece where the word is long enough: hand spares to anyone left out.
+  // Everyone gets a piece where the word is long enough: hand a spare to anyone left out, but
+  // only a piece they've studied.
   for (const id of ids) {
     if ((load.get(id) ?? 0) > 0) continue;
-    const donor = pieces.find((x) => x.owner && (load.get(x.owner) ?? 0) > 1);
+    const donor = pieces.find((x) => x.owner && (load.get(x.owner) ?? 0) > 1 && knows(id, x.char));
     if (donor) {
       load.set(donor.owner!, (load.get(donor.owner!) ?? 0) - 1);
       donor.owner = id;
@@ -1105,8 +1206,12 @@ function bossAttack(s: RaidState, playerId: string, ctx: ModeContext, deck: Deck
   p.retryNext = null;
   let index = b.pieces.findIndex((x) => !x.by && x.owner === playerId);
   if (index < 0) {
-    // Done with your own pieces: help with one whose owner left or is stuck.
-    const open = b.pieces.map((x, i) => ({ x, i })).filter(({ x }) => !x.by);
+    // Done with your own pieces: help with one whose owner left or is stuck (one you've studied).
+    const studied = (char: string) => {
+      const k = deck.byChar.get(char);
+      return !k || p.chapters.includes(k.chapter);
+    };
+    const open = b.pieces.map((x, i) => ({ x, i })).filter(({ x }) => !x.by && studied(x.char));
     const ownerGone = open.find(({ x }) => !x.owner || !ctx.player(x.owner)?.connected);
     index = (ownerGone ?? open[0])?.i ?? -1;
   }
@@ -1155,8 +1260,9 @@ function attack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ans: A
     case 'lookalike':
     case 'echo': {
       if (!k || !('pick' in ans)) return moveError('bad-answer');
-      const label = a.options.find((o) => o.id === ans.pick)?.label;
-      if (label === undefined) return moveError('bad-answer');
+      const picked = a.options.find((o) => o.id === ans.pick);
+      if (!picked) return moveError('bad-answer');
+      const label = picked.hear ?? picked.label;
       return settle(s, playerId, p, a, ans.pick === a.answer, 'tap', ctx, deck, { kana: k, wrongLabel: label });
     }
     case 'pair': {
@@ -1251,7 +1357,10 @@ function settle(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok: bo
   const k = info.kana;
   let tip: string | null = null;
   if (!ok) {
-    const wrong = info.wrongLabel ? deck.kana.find((x) => x.char === info.wrongLabel || (a.kind === 'shout' && sameSound(x.sound, info.wrongLabel!))) : undefined;
+    // Twin choices are kana; the other choices are sounds (written, or voiced in Echo).
+    const bySound = a.kind !== 'twin';
+    const label = info.wrongLabel;
+    const wrong = label ? (deck.kana.find((x) => x.script === k.script && (bySound ? sameSound(x.sound, label) : x.char === label)) ?? deck.kana.find((x) => (bySound ? sameSound(x.sound, label) : x.char === label))) : undefined;
     tip = kanaTip(deck, k, wrong && wrong.id !== k.id ? wrong : undefined, info.check);
   }
   if (a.kind === 'shout' && info.spoke) p.stats.shoutsSpoken += 1;
@@ -1312,7 +1421,9 @@ function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok:
     const retryNext = !a.retry && a.kind !== 'pair';
     p.retryNext = retryNext ? { itemId: a.itemId, kind: a.kind } : null;
     phraseOf('missed');
-    return { attackId: a.id, ok: false, kind: a.kind, char: info.char, hear: info.hear, points: 0, damage: 0, tip: info.tip, combo: s.combo.count, splash: false, retryNext };
+    // A wrong guess costs a little; a drawing isn't a guess.
+    const lost = a.kind === 'draw' ? 0 : dock(p, ctx, playerId);
+    return { attackId: a.id, ok: false, kind: a.kind, char: info.char, hear: info.hear, points: -lost, damage: 0, tip: info.tip, combo: s.combo.count, splash: false, retryNext };
   }
 
   const now = ctx.now;
@@ -1343,8 +1454,8 @@ function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok:
   let target = a.yokaiId ? s.horde.find((y) => y.id === a.yokaiId && isAlive(y, now)) : undefined;
   let splash = false;
   if (!target) {
-    const onStage = s.horde.filter((y) => isAlive(y, now) && y.spawnAt <= now).sort((x, y) => x.escapeAt - y.escapeAt);
-    target = onStage[0] ?? s.horde.filter((y) => isAlive(y, now)).sort((x, y) => x.spawnAt - y.spawnAt)[0];
+    // Only onto a yōkai on stage: never one that hasn't walked on yet.
+    target = s.horde.filter((y) => isAlive(y, now) && y.spawnAt <= now).sort((x, y) => along(y, now) - along(x, now))[0];
     splash = !!target;
   }
   if (target) {
@@ -1407,7 +1518,8 @@ function pieceAttack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, a
     p.wave.misses += 1;
     p.retryNext = { itemId: a.itemId, kind: 'piece' };
     if (k) ctx.phrase(playerId, { itemId: k.id, text: k.char, kana: k.sound, en: kanaEn(deck, k), outcome: 'missed' });
-    p.last = { attackId: a.id, ok: false, kind: 'piece', char: piece.char, hear: piece.sound, points: 0, damage: 0, tip, combo: 0, splash: false, retryNext: true };
+    const lost = dock(p, ctx, playerId);
+    p.last = { attackId: a.id, ok: false, kind: 'piece', char: piece.char, hear: piece.sound, points: -lost, damage: 0, tip, combo: 0, splash: false, retryNext: true };
   } else {
     const splash = !!piece.by;
     if (!piece.by) piece.by = playerId;

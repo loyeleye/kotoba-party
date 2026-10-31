@@ -89,3 +89,11 @@
 @keyframes ink-draw { to { stroke-dashoffset: 0; } }
 @keyframes ink-num { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ink-svg .ink-stroke { animation-duration: 1ms !important; } }
+
+/* Waves 1–2: pick the yōkai to attack. */
+.raid-aim { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.raid-aim-label { font-size: 14px; font-weight: 700; color: var(--muted); }
+.raid-aim-btn { min-width: 52px; min-height: 52px; font-size: 28px; font-weight: 800; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); padding: 2px 8px; }
+.raid-aim-btn.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
+.raid-options.echo .raid-option.picked { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
+.raid-last-lost { color: var(--bad, #d33); font-weight: 800; }

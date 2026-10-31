@@ -66,8 +66,10 @@ function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean, who: M
   const hpPct = Math.round((100 * y.hp) / Math.max(1, y.maxHp));
   return h(
     'div',
-    // Keyed by yōkai: the same element marches, takes hits and bursts across updates.
-    { class: classes.filter(Boolean).join(' '), style, 'data-key': y.id },
+    // Keyed by yōkai: the same element marches, takes hits and bursts across updates. The spawn
+    // time is in the key because the server can call a yōkai on early (the animation's delay is
+    // fixed once an element exists, so a moved yōkai needs a fresh one).
+    { class: classes.filter(Boolean).join(' '), style, 'data-key': `${y.id}@${y.spawnAt}` },
     h(
       'div',
       { class: 'raid-yokai-inner' },
@@ -83,6 +85,7 @@ function yokaiEl(y: YokaiView, index: number, now: number, wide: boolean, who: M
         h('span', { class: 'raid-tag', lang: 'ja' }, h('span', { class: 'raid-kana' }, y.char), y.alt ? h('span', { class: 'raid-kana alt' }, y.alt) : null),
       ),
       y.leader ? h('div', { class: 'raid-leader', lang: 'ja' }, `👑 ${y.leader}`) : null,
+      y.aimedBy?.length ? h('div', { class: 'raid-aimers' }, `🎯 ${y.aimedBy.map((id) => who.get(id) ?? '?').join(', ')}`) : null,
     ),
     y.state === 'defeated' ? h('div', { class: 'raid-burst' }, '✦') : null,
     // The catch chip: who got it and what it paid, rising out of the poof.
