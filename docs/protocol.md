@@ -36,6 +36,7 @@ Commands:
 - `endGame`: VIP or stage, mid-game (the stage's settings panel or the VIP's phone, after a
   confirm). Drops the game and goes back to the lobby in the same room; players stay seated and
   every score goes back to what it was when that game started.
+- `passVip { playerId }`: VIP or main stage, any phase. Makes another player in the room the VIP.
 
 Each player also carries `total`: party points across the night. A finished game adds them by
 place (1st 5, 2nd 3, 3rd 2, anyone else who scored 1; ties share a place; a team game gives

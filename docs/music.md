@@ -120,9 +120,13 @@ The ⚙ Settings button beside the sound button opens a panel on every stage scr
   of the screen can't pick up a copyright claim for the recorded tracks.
 - **Background effects**: the mist, spotlights and confetti behind the game ([graphics.md](graphics.md#backdrop)). Off shows a still set.
 
-The main stage's panel also has **Let other screens control the game**. With it on, a friend's
-watching screen (`/stage/?code=XXXX`) gets Start, Skip ahead and Play again in its own panel. It's a
-room setting (the `settings` command, [protocol.md](protocol.md)); only the main stage can change it.
+The main stage's panel also has **Game controls** (pick a game and Start, Skip ahead, Play again;
+games that don't fit tonight's player count can't be picked) and a **VIP** section that hands the VIP
+star to another player (the `passVip` command; the VIP's phone has the same thing under Room settings).
+
+**Let other screens control the game** gives a friend's watching screen (`/stage/?code=XXXX`) the same
+Game controls and End game in its own panel. It doesn't affect phones. It's a room setting (the
+`settings` command, [protocol.md](protocol.md)); only the main stage can change it.
 
 ### Invite friends
 

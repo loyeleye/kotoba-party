@@ -1,6 +1,6 @@
 // The stage's settings panel: the four volumes, streamer mode, background effects and, on the
-// main stage, whether watching screens (friends' laptops on ?code=) may run the game. A watching
-// screen that has been given control gets the game buttons here instead. Volumes, streamer mode
+// main stage, the game buttons (Start, Skip ahead, Play again) and whether watching screens (friends'
+// laptops on ?code=) may use them too. A watching screen that has been given control gets the same buttons. Volumes, streamer mode
 // and background effects belong to this screen; remote control and the Audience (who the words are
 // for: Kids, Family or Cheeky, which asks first) belong to the room. While a game runs, the panel
 // opens on "End this game", which goes back to the game picker with the room, players and scores
@@ -17,7 +17,7 @@ import { isStreamerMode, setStreamerMode } from './music/index.js';
 import { sfx } from './music/sfx.js';
 import { getVolumes, setVolume, type VolumeId } from './sound.js';
 
-type Send = (body: { type: 'start'; mode: ModeId | typeof SURPRISE; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'endGame' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience } | { type: 'closeRoom' }) => Promise<void>;
+type Send = (body: { type: 'start'; mode: ModeId | typeof SURPRISE; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'endGame' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience } | { type: 'passVip'; playerId: string } | { type: 'closeRoom' }) => Promise<void>;
 
 const VOLUMES: [VolumeId, string][] = [
   ['master', 'Master volume'],
@@ -117,11 +117,11 @@ function toggle(label: string, help: string, on: boolean, change: (on: boolean) 
   return h('label', { class: 'st-toggle' }, box, h('span', {}, h('span', { class: 'st-label' }, label), h('span', { class: 'st-help' }, help)));
 }
 
-/** The room part: the main stage's remote-control switch, or a watching screen's game buttons. */
+/** The room part: the game buttons, plus the main stage's remote-control switch; a watching screen gets the buttons once it has control. */
 function renderRoom(force: boolean): void {
   if (!room || !opts || !panel || panel.hidden) return;
   const v = view;
-  const key = v ? `${opts.watch}:${v.remoteControl}:${v.audience}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.length}` : 'none';
+  const key = v ? `${opts.watch}:${v.remoteControl}:${v.audience}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.map((p) => `${p.id}${p.isVip ? '*' : ''}`).join()}` : 'none';
   if (!force && key === roomKey) return;
   roomKey = key;
   if (!v) return void (mount(room), mount(game!));
@@ -132,13 +132,15 @@ function renderRoom(force: boolean): void {
   if (!opts.watch) {
     mount(
       room,
+      controls(v),
+      vip(v),
       share,
       h(
         'section',
         { class: 'st-sec' },
         toggle(
           'Let other screens control the game',
-          `Friends watching on their own screen (${inviteLinks(opts.site(), v.code).stage.replace(/^https?:\/\//, '')}) can start a game, skip ahead and play again.`,
+          `Friends watching on their own screen (${inviteLinks(opts.site(), v.code).stage.replace(/^https?:\/\//, '')}) get these game controls too: start a game, skip ahead, play again and end a game. Phones aren't affected: the VIP's phone can always run the game.`,
           v.remoteControl,
           (on) => void opts!.send({ type: 'settings', remoteControl: on }),
         ),
@@ -152,16 +154,45 @@ function renderRoom(force: boolean): void {
     mount(room, share, h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), h('p', { class: 'st-help' }, "The main screen runs this game. Ask them to turn on “Let other screens control the game” in their settings.")));
     return;
   }
-  const send = opts.send;
+  mount(room, controls(v), share);
+}
+
+/** Start, Skip ahead and Play again: on the main stage always, on a watching screen once it has control. */
+function controls(v: RoomView): HTMLElement {
+  const send = opts!.send;
   const buttons: HTMLElement[] = [];
   if (v.phase === 'lobby' && v.modes.length) {
-    const pick = h('select', { 'aria-label': 'Game' }, h('option', { value: SURPRISE }, '🎲 Surprise Me!'), v.modes.map((m) => h('option', { value: m.id }, m.title))) as HTMLSelectElement;
-    pick.value = v.modes[0]?.id ?? SURPRISE;
-    buttons.push(pick, button('Start', () => send({ type: 'start', mode: pick.value as ModeId | typeof SURPRISE })));
+    // Games that don't fit tonight's players stay listed but can't be picked, as on the VIP's phone.
+    const n = v.players.length;
+    const fits = (m: RoomView['modes'][number]) => n >= m.minPlayers && n <= m.maxPlayers;
+    const needs = (m: RoomView['modes'][number]) => (m.minPlayers === m.maxPlayers ? `${m.minPlayers}` : `${m.minPlayers}–${m.maxPlayers}`);
+    const pick = h(
+      'select',
+      { 'aria-label': 'Game' },
+      h('option', { value: SURPRISE, disabled: !v.modes.some(fits) }, '🎲 Surprise Me!'),
+      v.modes.map((m) => h('option', { value: m.id, disabled: !fits(m) }, fits(m) ? m.title : `${m.title} (${needs(m)} players)`)),
+    ) as HTMLSelectElement;
+    pick.value = v.modes.find(fits)?.id ?? SURPRISE;
+    const start = button('Start', () => send({ type: 'start', mode: pick.value as ModeId | typeof SURPRISE })) as HTMLButtonElement;
+    start.disabled = !v.modes.some(fits);
+    buttons.push(pick, start);
   }
   if (v.deadline !== null && v.phase !== 'lobby') buttons.push(button('Skip ahead', () => send({ type: 'skip', phaseSeq: v.phaseSeq })));
   if (v.phase === 'recap') buttons.push(button('Play again', () => send({ type: 'playAgain' })));
-  mount(room, share, h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), buttons.length ? h('div', { class: 'st-row' }, buttons) : h('p', { class: 'st-help' }, 'Nothing to do right now.')));
+  return h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), buttons.length ? h('div', { class: 'st-row' }, buttons) : h('p', { class: 'st-help' }, 'Nothing to do right now.'));
+}
+
+/** Main stage only: who holds the VIP star, and a way to hand it to another phone. */
+function vip(v: RoomView): HTMLElement {
+  const sec = h('section', { class: 'st-sec' }, h('h3', {}, 'VIP'));
+  const now = v.players.find((p) => p.isVip);
+  if (!now) return (sec.append(h('p', { class: 'st-help' }, 'The first phone to join becomes the VIP.')), sec);
+  const others = v.players.filter((p) => !p.isVip);
+  sec.append(h('p', { class: 'st-help' }, `${now.name} is the VIP: their phone picks the games, starts, skips and plays again.${others.length ? ' Hand it to someone else here, for example if their phone is going flat.' : ''}`));
+  if (!others.length) return sec;
+  const pick = h('select', { 'aria-label': 'New VIP' }, others.map((p) => h('option', { value: p.id }, p.name))) as HTMLSelectElement;
+  sec.append(h('div', { class: 'st-row' }, pick, button('Make VIP', () => opts!.send({ type: 'passVip', playerId: pick.value }))));
+  return sec;
 }
 
 const AUDIENCE_LABELS: [Audience, string, string][] = [

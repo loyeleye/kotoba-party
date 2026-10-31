@@ -327,6 +327,13 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       state.calmMotion = cmd.calm;
       return OK;
     }
+    case 'passVip': {
+      if (!isVip && !isStage) return fail('not-vip');
+      if (typeof cmd.playerId !== 'string' || !state.players.some((p) => p.id === cmd.playerId)) return fail('bad-command');
+      if (state.vipId === cmd.playerId) return { changed: false };
+      state.vipId = cmd.playerId;
+      return OK;
+    }
     case 'playAgain': {
       if (state.phase !== 'recap') return fail('wrong-phase');
       if (!isVip && !isStage) return fail('not-vip');
