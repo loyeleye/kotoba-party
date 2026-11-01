@@ -563,6 +563,7 @@ export type HostEvent =
   | 'narabete_say' // say your card out loud
   | 'narabete_order' // the line is open: move your own card
   | 'narabete_defence' // the most-moved card defends its spot ({name})
+  | 'narabete_hard' // an N4 player says why their own card sits where it does ({name})
   | 'narabete_perfect' // the flip came out in order
   | 'narabete_knot' // the flip has knots in it
   | 'narabete_story' // the Worst Day Ever story is read in order

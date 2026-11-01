@@ -541,6 +541,8 @@ describe('Narabete!: the N4 defence in a game', () => {
     // A Time Line has no ordinary defence, so the N4 one is the encore.
     expect(t.s.phase).toBe('encore');
     expect(t.r.encore).toBe('hard');
+    // Its own cue: an invitation by name, not "your card moved a lot".
+    expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_hard', slots: { name: 'P2' } });
     expect(t.view().defence).toMatchObject({ playerId: 'p2', n4: true });
     expect(t.view().defence!.frame!.kana).toMatch(/^＿ので、/);
     const me = t.view('p2').me!;
@@ -555,7 +557,67 @@ describe('Narabete!: the N4 defence in a game', () => {
     expect(t.r.flip!.bonus.p2!).toBeGreaterThan(t.r.flip!.bonus.p1!);
     expect(t.r.flip!.bonus.p1).toBe(t.r.flip!.bonus.p3);
     t.timeout();
-    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 1 });
+    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 1, rate: 1 });
+    // A model line read off the phone goes in the phrasebook as seen, not said.
+    expect(t.s.phrasebook.p2!.find((e) => e.itemId.startsWith('narabete:defence:'))!.outcome).toBe('seen');
+  });
+
+  it('an offer still open when the line-up ends times out: no encore', () => {
+    const t = new Table(3, ['n5', 'n4', 'n5']);
+    t.start();
+    t.sayAll();
+    expect(t.view('p2').me!.hard).toMatchObject({ answer: 'offered' });
+    t.sortLine();
+    t.lockAll();
+    expect(t.s.phase).toBe('score');
+    expect(t.r.hard?.answer).toBe('timeout');
+    expect(t.view('p2').me!.hard).toBeNull();
+    t.timeout();
+    expect(t.st.hardLog).toEqual([{ round: 1, playerId: 'p2', answer: 'timeout' }]);
+    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 0, rate: 0 });
+  });
+
+  it('their own spoken ので reason is logged as said', () => {
+    const t = new Table(3, ['n5', 'n4', 'n5']);
+    t.start();
+    t.sayAll();
+    t.play('p2', { kind: 'hard', accept: true });
+    t.sortLine();
+    t.lockAll();
+    expect(t.r.encore).toBe('hard');
+    t.play('p2', { kind: 'defend', utterance: speech('ぼくの すきな じかん なので、ここです') });
+    expect(t.r.hard).toMatchObject({ ok: true, framed: true, read: false });
+    t.timeout();
+    expect(t.s.phrasebook.p2!.find((e) => e.itemId.startsWith('narabete:defence:'))!.outcome).toBe('said');
+  });
+
+  it('spotlight: in a room of 4+, a lone N4 player who defended last round gets the next one off', () => {
+    const t = new Table(4, ['n5', 'n4', 'n5', 'kana']);
+    t.start();
+    t.sayAll();
+    t.play('p2', { kind: 'hard', accept: true });
+    t.sortLine();
+    t.lockAll();
+    expect(t.r.encore).toBe('hard');
+    t.play('p2', { kind: 'defend', pass: true });
+    expect(t.s.phase).toBe('score');
+    t.timeout();
+    t.timeout();
+    expect(t.s.phase).toBe('answer');
+    t.sayAll();
+    expect(t.r.hard).toBeNull();
+    // A small room keeps offering it every round.
+    const small = new Table(3, ['n5', 'n4', 'n5']);
+    small.start();
+    small.sayAll();
+    small.play('p2', { kind: 'hard', accept: true });
+    small.sortLine();
+    small.lockAll();
+    small.play('p2', { kind: 'defend', pass: true });
+    small.timeout();
+    small.timeout();
+    small.sayAll();
+    expect(small.r.hard?.playerId).toBe('p2');
   });
 
   it('“not this time” in the line-up skips it; a room with no N4 player never has it', () => {
@@ -568,7 +630,7 @@ describe('Narabete!: the N4 defence in a game', () => {
     t.lockAll();
     expect(t.s.phase).toBe('score');
     t.timeout();
-    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 0 });
+    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 0, rate: 0 });
 
     const plain = new Table(3, ['kana', 'n5', 'n5']);
     plain.start();
@@ -585,8 +647,7 @@ describe('Narabete!: the N4 defence in a game', () => {
     t.sayAll();
     expect(t.r.hard?.playerId).toBe('p2');
     t.sortLine();
-    t.lockAll();
-    t.timeout(); // p2 lets the N4 defence run out
+    t.lockAll(); // p2 doesn't answer the offer: it times out, no encore
     expect(t.s.phase).toBe('score');
     t.timeout();
     t.timeout();
@@ -598,9 +659,11 @@ describe('Narabete!: the N4 defence in a game', () => {
     while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
     t.play('p1', { kind: 'move', dir: 1 });
     t.play('p1', { kind: 'move', dir: -1 });
+    t.play('p3', { kind: 'hard', accept: true });
     t.lockAll();
     expect(t.s.phase).toBe('encore');
     expect(t.r.encore).toBe('defence');
+    expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_defence' });
     expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
     expect(t.play('p1', { kind: 'defend', utterance: speech('ぜんぜん くさくない から です') }).error).toBeUndefined();
     expect(t.s.phase).toBe('encore');
@@ -623,13 +686,30 @@ describe('Narabete!: the N4 defence in a game', () => {
     while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
     t.play('p1', { kind: 'move', dir: 1 });
     t.play('p1', { kind: 'move', dir: -1 });
+    t.play('p1', { kind: 'hard', accept: true });
     t.lockAll();
     expect(t.s.phase).toBe('encore');
     expect(t.r.defence).toBeNull();
     expect(t.r.encore).toBe('hard');
     t.play('p1', { kind: 'defend', pass: true });
     expect(t.s.phase).toBe('score');
-    expect(t.r.hard?.answer).toBe('declined');
+    // They took it, then passed at the mic: still a yes to the offer, with no bonus.
+    expect(t.r.hard).toMatchObject({ answer: 'accepted', ok: false });
+  });
+
+  it('an N4 player who moved the most but left the offer open gives the ordinary defence', () => {
+    const t = new Table(3, ['n4', 'n5', 'n5']);
+    t.start();
+    toFeelingsN4(t);
+    t.sayAll();
+    const p1 = t.cardOf('p1');
+    while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+    t.play('p1', { kind: 'move', dir: 1 });
+    t.play('p1', { kind: 'move', dir: -1 });
+    t.lockAll();
+    expect(t.s.phase).toBe('encore');
+    expect(t.r.encore).toBe('defence');
+    expect(t.r.hard?.answer).toBe('timeout');
   });
 });
 

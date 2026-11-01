@@ -161,6 +161,7 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   narabete_say: 'Narabete!: everyone now says their card out loud for the others to hear.',
   narabete_order: 'Narabete!: the players now move their own cards to put the line in order, low to high.',
   narabete_defence: 'Narabete!: this player\'s card was moved the most. Ask them to defend where it ended up.',
+  narabete_hard: 'Narabete!: an N4 player will say why their own card sits where it does. Invite them warmly by name; do not say the card moved.',
   narabete_perfect: 'Narabete!: the line flipped over in perfect order. Celebrate.',
   narabete_knot: 'Narabete!: the line flipped over with some cards out of order. Sympathise, kindly.',
   narabete_story: 'Narabete!: the players now read the Worst Day Ever story aloud, in order.',

@@ -68,19 +68,23 @@ defends their own card's place, with ので. Any round, the Time Line too, where
 doesn't run.
 
 - **The offer** comes during the line-up: "🎙 N4: after the line-up, say why your card goes where it
-  is", with **I'm in** and **Not this time**. Declining (or passing, or letting it run out unsaid) skips
-  it; the answer is kept per round in `hardLog`, counted by `hardTally` (the gate: 60% or more taken).
+  is", with two equal buttons, **Take it** and **Not this time**. It's opt-in: the encore runs only when
+  they tap Take it before the line-up ends. An offer still open then is logged `timeout` (`away` if they'd
+  left) and skipped; Not this time is `declined`. The answer (the shared `OfferAnswer`) is kept per round
+  in `hardLog`, counted by `hardTally` with `offerRate` (the gate: 60% or more taken; away is left out).
 - **Its own encore** (`encore`, 15 s), after the ordinary defence when there is one, so two people never
-  talk at once. When the N4 player is also the most-moved card's author they defend once, with the N4
-  script.
+  talk at once. Nobiko-san invites them with her own cue (`narabete_hard`: "{name}さん、どうして そこなの？",
+  never "your card moved a lot"). When the N4 player is also the most-moved card's author they defend
+  once, with the N4 script. The phone says a typed defence doesn't score.
 - **The script** (`defence.ts`) fits where the card ended up: 「＿ので、これが いちばん さきです。」 at
   the low end, 「＿ので、これが いちばん あとです。」 at the high end, 「＿ので、これは Aさんの あとです。」
   after a neighbour. The phone shows the frame and two whole model lines to read out, with reasons that
   fit the round (じかんが いちばん はやいので, Aさんのより たかいので, いちばん くさいので…); the TV shows
   the frame under the neck. All draft, tagged `node`.
 - **Scoring**: said out loud in Japanese, it adds the same 30% defence share as the ordinary defence, to
-  the N4 player only. The team points and everyone else's bonus don't change. Whether ので was used goes
-  to the phrasebook (`narabete:defence:<spot>`), not the score.
+  the N4 player only. The team points and everyone else's bonus don't change. The phrasebook
+  (`narabete:defence:<spot>`) logs it `said` only for their own spoken reason with ので; a model line read
+  off the phone, a typed one, or one without ので is `seen`. Not the score.
 
 ## Scoring (co-op)
 
@@ -127,5 +131,7 @@ the tonic, with a chord for a perfect line; a knot bends its note down a semiton
 6. **Rank and defend, decided for now (Ladi to confirm)**: one N4 defence a round, in turn, in every
    round including the Time Line (so a room with an N4 player gets a 15 s encore there); it never
    replaces the ordinary defence for someone else; the bonus needs Japanese said out loud, not ので.
+   Spotlight, for Ladi to confirm: in a room of 4 or more connected players, when only one N4 player could
+   be offered it and they gave it (took it) last round, nobody is offered it this round.
    Deferred: the host playing it in rooms without an N4 player, the commentary booth, and the N3 script
    (＿ような きが します, step 6).

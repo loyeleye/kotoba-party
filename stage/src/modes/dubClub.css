@@ -28,6 +28,9 @@ body[data-mode='dub-club'] { --mode: #7fd8ff; }
 .dub-sub { color: #fff; font-size: 34px; font-weight: 800; text-shadow: 2px 2px 0 #000; text-align: center; }
 .dub-screen.big .dub-sub { font-size: 44px; }
 .dub-sub rt { font-size: 15px; }
+/* Over an ad-lib: the model line's English only, smaller and softer, so it reads as a gloss. */
+.dub-sub.en { font-size: 28px; font-weight: 700; color: #f0ecff; }
+.dub-screen.big .dub-sub.en { font-size: 36px; }
 .dub-namecard { color: #fff; font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 4px; }
 .dub-namecard small { color: #b8b0d8; font-weight: 400; font-size: 18px; }
 .dub-who { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; }
