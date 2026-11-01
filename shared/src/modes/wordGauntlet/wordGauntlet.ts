@@ -1448,6 +1448,15 @@ function finalRelay(r: Rumour): JpText {
   return { text: h.text, kana: h.kana, en: '' };
 }
 
+/** The hint's frame with the story's source filled in, so ＿に よると has someone to cite (カッパに よると、＿そうです). */
+function hintLabel(seed: RumourSeed, frame: RumourFrameId | null): { ja: string; en: string } | null {
+  const f = frameLabel(frame);
+  if (!f) return null;
+  if (frame === 'ni-yoru') return { ja: `${seed.source.kana}に よると、＿そうです`, en: `According to ${seed.source.en}, I hear ___` };
+  if (frame === 'to-itte-ita') return { ja: `${seed.source.kana}は、＿と いって いました`, en: `${seed.source.en.charAt(0).toUpperCase()}${seed.source.en.slice(1)} said ___` };
+  return f;
+}
+
 function rumourResult(r: Rumour, step: RumourStep, index: number): NonNullable<NonNullable<WordGauntletView['rumour']>['mine']>['result'] {
   const fin = stepFin(step, index);
   const k = step.kept;
@@ -1483,7 +1492,7 @@ function rumourView(s: WordGauntletState, phase: Phase, me: string | null, ctx: 
       fin: step.fin,
       ownFin: step.ownFin,
       hint: step.hint,
-      frame: live && step.level === 'n4' && step.hint >= 1 ? frameLabel(step.hintFrame) : null,
+      frame: live && step.level === 'n4' && step.hint >= 1 ? hintLabel(r.seed, step.hintFrame) : null,
       models,
       peeked: step.peeked,
       sent: step.text,

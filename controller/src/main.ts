@@ -47,7 +47,7 @@ const ERRORS: Record<string, string> = {
   'not-kana': 'Use kana for this one.',
   'too-close': 'Too close to the real meaning. Make it a fake!',
   'kids-words': 'This room is set to Kids. Try other words!',
-  'names-player': 'Rumours are about the yōkai, never about players. Leave the names out!',
+  'names-player': 'Rumours are about the yōkai, never about players. For a source, use who saw it in the story (カッパに よると…).',
   'pick-fin': 'Add a fin first: pick one of the cards.',
   'no-hint': 'That’s every hint.',
   'tiles-only': 'Pick one of your tiles for this card.',
