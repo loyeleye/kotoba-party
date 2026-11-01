@@ -83,7 +83,7 @@ function boothPanel(view: RoomView, game: OmiaiView): HTMLElement | null {
     'div',
     { class: 'omi-nakodo-s omi-booth', style: `animation-delay: ${Math.max(0, left)}ms` },
     g?.line && !b.standIn ? h('p', { class: 'omi-nakodo-who' }, `🎎 Matchmaker ${nameOf(view, g.playerId)}${g.via === 'speech' ? ' 🎤' : ''} +${g.points}`) : null,
-    boothStrip(b, b.standIn ? 'Nobiko-san' : nameOf(view, b.playerId)),
+    boothStrip(b, b.standIn ? 'Nobiko-san' : nameOf(view, b.playerId), b.holdKey),
     h('p', { class: 'omi-nakodo-en' }, b.en),
   );
 }

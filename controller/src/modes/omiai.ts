@@ -86,7 +86,7 @@ function nakodoCard(ctx: Ctx): HTMLElement | null {
       ? h(
           'p',
           { class: 'hint' },
-          `Heard “${g.heard}”. Say the whole line as written: the keigo words (おみえに なりました, いらっしゃいます, まいります) are what counts. ${g.triesLeft} ${g.triesLeft === 1 ? 'try' : 'tries'} left.`,
+          `Heard “${g.heard}”. Say the whole line as written: the keigo words (おつきに なりました, いらっしゃいます, まいります) are what counts. ${g.triesLeft} ${g.triesLeft === 1 ? 'try' : 'tries'} left.`,
         )
       : null,
     speak,

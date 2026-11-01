@@ -62,7 +62,7 @@ their phone while the question is asked, on the shared offer card (`roleOffer`: 
 deputy this turn.", じょしゅ / Deputy), with the two frames (＿と いっていました ／ ＿に ＿られました), the note on
 みられました, and two equal buttons: "Take it" or "Not this time" (which keeps the ordinary part: just
 watch). Who is offered follows the shared rotation (`nextOfferee` in `hardRoleLog.ts`): the N4 player
-offered fewest times, then longest ago; a "not this time" sits the next turn out; in a room of four or
+offered fewest times, then longest ago; a "not this time", or an offer left to run out, sits the next turn out; in a room of four or
 more nobody is deputy two turns running. After the answer the deputy tells the room what the suspect
 said:
 
@@ -78,9 +78,14 @@ line is checkable. **The tiles leave the polite→plain step to the deputy**: in
 verb is a tile of its own in plain form (いた), と いっていました is one tile, and the suspect's own polite
 form (いました, from `politeForm`) is a decoy beside it; only the plain form before と いっていました
 builds the report. A passive report gets the active みました as its decoy beside みられました. The notes
-under the frame: "＿と いっていました takes the plain form: they said いました, you report いたと", or for a
-passive report "みられました is the passive of みる: “was seen” (by the one marked with に). Not the
-potential みられる, “can see”." (the latter on the offer card too).
+under the frame: before a first try only the rule, "＿と いっていました takes the plain form, not the ます
+form." (`reportRule`, so the note doesn't hand over the answer); after a try, "＿と いっていました takes the
+plain form: they said いました, you report いたと". For a passive report it is always "みられました is the
+passive of みる: “was seen” (by the one marked with に). Not the potential みられる, “can see”." (on the
+offer card too). The nine passive reports carry the `passive` tag, but their kana ichidan みられました with
+no を is never named passive by `framesOf`; the deputy is credited by the tag, not by the frame matcher.
+Opening the tiles before a first try sends `report-peek`: the report that follows is still paid as usual,
+but goes in the phrasebook as seen (`recall: 'read'`), not said from memory.
 The deputy says or types it, or builds it (`deputy.ts`: the frame's last two words must be there, then
 the whole line within a few kana or 70% of its words; a passive report fails if the one who saw is
 marked with を or が instead of に, or if it has no られ: the active みました is near enough in sound to
@@ -101,10 +106,13 @@ the very last seconds can be cut short. A miss, a decline or no N4 player: nothi
 
 - **Gallery.** Once the deputy has taken the part (Take it, or a first try) and the answer has a report,
   every other connected player gets one reaction tile for the answer (👏 すごい！ 💡 なるほど 😮 へえ！ 📣 がんばれ！),
-  shown as bubbles under the deputy's panel on the TV, never scored. Once a game, a Kana or N5
-  player's tile is the curveball instead: "Which word did you hear?", with the report's frame word
-  (いっていました, or みられました for a passive one) and two others; **+5 if right**, into the ordinary score
-  (and the bonus pool's base, like any other points). Not for an untouched or declined offer.
+  shown as bubbles under the deputy's panel on the TV, never scored. Once a game, after the report has
+  landed, a Kana or N5 player who hasn't reacted yet gets the curveball instead (who rotates with the
+  turn): "Which word did you hear?", with the report's frame word and two near misses: いっていました
+  among いっています, いいました, いきました, or みられました among みました, みせました, みえました (never a word
+  the report itself contained). **+5 if right**, into the ordinary score (and the bonus pool's base, like
+  any other points). A report that never lands deals none. While it is unanswered the booth on the TV
+  doesn't light the word. Not for an untouched or declined offer.
 - **Commentary booth.** Once the report lands, the deputy's panel on the TV adds the replay
   (`boothStrip`): the line with its frame word lit and one English note on the play (と いっていました =
   "said that…": the suspect's ます form made plain before と; みられました = "was seen", turned round with
@@ -122,6 +130,7 @@ the very last seconds can be cut short. A miss, a decline or no N4 player: nothi
 | Report said or typed | 30 |
 | Report built from tiles | 10 |
 | Report said aloud | +40 speaking bonus (same pool and cap) |
+| A player's fifth report a game and after | 0 (still voiced and replayed for the room) |
 | Gallery curveball right (once a game, a Kana or N5 player) | 5 |
 
 The answer runs 15 s longer only for a deputy who tapped "Take it" before it came in (or has had a
@@ -213,24 +222,27 @@ on the LLM. At most 16 lead-ins per game.
     (ポチは 2じはんに しょくどうで はなちゃんに みられました), keeping each answer's clue words. Sightings that
     hinge on more than where (Nishimura's red face, the flask in his hands, Morita angry, Miki going to
     the hot spring, Kudō shaking, Oyuki a guest since 1926) are reported as speech, as with Suzuki's.
-    Kids reports stay gentle; Cheeky ones keep the cases' jokes (たぶん じぶんのじゃ ない, あしは ない).
+    Kids reports stay gentle; Cheeky ones keep the cases' jokes (じぶんのか どうか わからない, あしは ない).
 24. **The host says the deputy's line** (decided by Ladi, 2026-11-01: "Instead of the TV playing the N4
     player's recorded clip, have the host say the line"): Chōchin-san voices the accepted report's
     model line on the TV, after the suspect's answer, as one beat.
 25. **Who is offered the deputy follows the shared rotation** (`nextOfferee`, round 4, 2026-11-01):
-    fewest offers, then longest ago, instead of seat order; a "not this time" sits the next turn out.
+    fewest offers, then longest ago, instead of seat order; a "not this time", or an offer left to run
+    out, sits the next turn out.
     Voided offers (nothing to report) still count as offers for the rotation, not for the gate rate.
 26. **The tiles leave the polite→plain change to the deputy** (round 4, from the panel): the quoted verb
     is its own tile in plain form, と いっていました is one tile, and the suspect's polite form is a decoy
     beside it; only plain + と いっていました passes. The decoy comes from a small rule set
-    (`politeForm`, checked against every report) rather than hand-written per answer. A passive report's
+    (`politeForm`, checked against every report) rather than hand-written per answer; round 5 adds the
+    ～かった verbs (かった → かいました, not an adjective's かったです), こない / こなかった, ～ていた, and the
+    う-verbs that look like る-verbs (かえる → かえります, はいる, しる, はしる…). A passive report's
     decoy is the active みました. Spoken or typed reports are unchanged: a polite direct quote still passes
     (17).
 27. **A spoken passive report needs られ** (round 4): みました for みられました is near enough in sound for the
     lenient check, and it says the opposite.
 28. **Mixed rooms** (round 4, the shared pieces): the Gallery opens only once the deputy has taken the part
     (Take it or a first try); the curveball's word is the report's frame word (いっていました / みられました),
-    +5, once a game. The booth's gist on Kana and N5 phones is the suspect's own N5 answer with the
+    +5, once a game, dealt only after the report has landed (round 5), with near-miss distractors. The booth's gist on Kana and N5 phones is the suspect's own N5 answer with the
     report's English, so they see the same news in Japanese they can read (for Ladi to confirm).
 29. **Chōchin-san reacts to a landed report** with one short bank line (`onsen_deputy_cheer`) after he has
     said it, 2.5 s, inside the deputy's extra time (round 4, for Ladi to confirm).
@@ -239,6 +251,16 @@ on the LLM. At most 16 lead-ins per game.
     confirm).
 31. **The ramen report reads じぶんの ラーメンが きらいだったと** (round 4, from the panel: きらい takes が; the
     line was ラーメンを きらいだった).
+32. **Only a player's first four reports a game score** (`POINTS.reportsPaid`, round 5, from the panel): an N4
+    player is deputy on most turns in a small room, so without a cap the reports alone could outscore the
+    detectives. Later reports pay 0 points and no speaking bonus, and are still voiced and replayed.
+33. **The notes before a first try give only the rule** (round 5): the full note names the plain verb
+    (いたと), which is the answer.
+34. **Opening the tiles before a first try counts the report as seen** (round 5): it is recorded as read in
+    the phrasebook, not said from memory. Points don't change.
+35. **Two answers reworded** (round 5, from the panel, draft): Tanaka's report says スープを つくる ために
+    (ために after a verb, not スープの ために), and Nishimura's necktie answer is ぼくのか どうか わかりません
+    (with ＿か どうか, `ka-dou-ka`) in place of ぼくのじゃ ありません。…たぶん.
 
 ## Open questions
 

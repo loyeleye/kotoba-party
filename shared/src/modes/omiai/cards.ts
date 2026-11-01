@@ -799,7 +799,7 @@ interface NakodoTemplate {
 export const NAKODO: { status: ReviewStatus; open: Record<'intro' | 'profile' | 'ask' | 'appeal', NakodoTemplate>; close: Record<'next' | 'leave', NakodoTemplate> } = {
   status: 'draft',
   open: {
-    intro: { id: 'intro', kana: 'みなさま、{full}が おみえに なりました。ごしょうかい いたします。', en: 'Everyone, {full} has arrived. Allow me to introduce them.', frames: ['o-ni-naru', 'keigo'], key: 'おみえに なりました', gist: '{full}が きました。しょうかいします。' },
+    intro: { id: 'intro', kana: 'みなさま、{full}が おつきに なりました。ごしょうかい いたします。', en: 'Everyone, {full} has arrived. Allow me to introduce them.', frames: ['o-ni-naru', 'keigo'], key: 'おつきに なりました', gist: '{full}が きました。しょうかいします。' },
     profile: { id: 'profile', kana: 'こちらは {job}の {short}で いらっしゃいます。', en: 'This is {short}, {job}.', frames: ['keigo'], key: 'いらっしゃいます', gist: 'この ひとは {job}の {short}です。' },
     ask: { id: 'ask', kana: '{short}が みなさまに おききに なります。', en: '{short} has a question for you all.', frames: ['o-ni-naru'], key: 'おききに なります', gist: '{short}が みんなに しつもんします。' },
     appeal: { id: 'appeal', kana: '{short}から さいごの しつもんが ございます。', en: '{short} has one last question.', frames: ['keigo'], key: 'ございます', gist: '{short}の さいごの しつもんです。' },

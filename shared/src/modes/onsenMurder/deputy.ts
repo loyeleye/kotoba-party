@@ -52,7 +52,6 @@ const PAST: Record<string, string> = {
   つくった: 'つくりました',
   とった: 'とりました',
   のった: 'のりました',
-  わかった: 'わかりました',
   おわった: 'おわりました',
   もった: 'もちました',
   まった: 'まちました',
@@ -69,6 +68,20 @@ const PAST: Record<string, string> = {
   ならんだ: 'ならびました',
   しんだ: 'しにました',
 };
+/**
+ * ～かった verbs, which the い-adjective rule (たかかった → たかかったです) would otherwise take. Matched whole, so
+ * あつかった (it was hot) stays an adjective.
+ */
+const KATTA_VERBS: Record<string, string> = {
+  かった: 'かいました',
+  わかった: 'わかりました',
+  つかった: 'つかいました',
+  みつかった: 'みつかりました',
+  たすかった: 'たすかりました',
+  ぶつかった: 'ぶつかりました',
+};
+/** う-verbs ending in える / いる, which the る-verb rule would take (かえる → かえます). Matched whole. */
+const GODAN_RU = ['かえる', 'はいる', 'しる', 'はしる', 'へる', 'すべる', 'しゃべる', 'にぎる', 'ける'];
 /** い-adjectives ending in ない, which take です rather than ません. */
 const NAI_ADJ = ['すくない', 'あぶない', 'きたない', 'つまらない', 'おさない', 'せつない'];
 const E_OR_I_ROW = /[いきぎしじちぢにひびぴみりえけげせぜてでねへべぺめれ]$/u;
@@ -77,6 +90,10 @@ const E_OR_I_ROW = /[いきぎしじちぢにひびぴみりえけげせぜて�
 export function politeForm(w: string): string | null {
   const cut = (n: number) => w.slice(0, w.length - n);
   const negStem = (st: string) => st.slice(0, -1) + (A_TO_I[st.slice(-1)] ?? st.slice(-1));
+  if (KATTA_VERBS[w]) return KATTA_VERBS[w]!;
+  if (w === 'こない') return 'きません';
+  if (w === 'こなかった') return 'きませんでした';
+  if (/[てで]いた$/u.test(w)) return `${cut(2)}いました`;
   if (w.endsWith('だった')) return `${cut(3)}でした`;
   if (w.endsWith('なかった')) return cut(4) ? `${negStem(cut(4))}ませんでした` : 'ありませんでした';
   if (w.endsWith('かった')) return `${w}です`;
@@ -95,6 +112,7 @@ export function politeForm(w: string): string | null {
   if (w === 'くる') return 'きます';
   if (w.endsWith('いう')) return `${cut(2)}いいます`;
   if (w === 'いる') return 'います';
+  if (GODAN_RU.includes(w)) return `${cut(1)}ります`;
   if (w.endsWith('る') && E_OR_I_ROW.test(cut(1))) return `${cut(1)}ます`;
   const last = w.slice(-1);
   return U_TO_I[last] ? `${cut(1)}${U_TO_I[last]}ます` : null;
@@ -141,6 +159,14 @@ export function joinReport(words: readonly { text: string }[]): string {
 /** Tiles that build the report? Compared as the joined line, so two identical words can go either way. */
 export function tilesInOrder(r: OnsenReport, tiles: readonly { text: string }[]): boolean {
   return tiles.length > 0 && joinReport(tiles) === joinReport(reportWords(r));
+}
+
+/**
+ * The frame's rule alone, for before the first try: it names the form to use without handing over the word
+ * (the full notes name the plain verb itself, so they wait for a first try).
+ */
+export function reportRule(r: OnsenReport): string {
+  return isPassive(r) ? PASSIVE_NOTE : '＿と いっていました takes the plain form, not the ます form.';
 }
 
 /** The frame notes the deputy sees under the frame. */

@@ -218,7 +218,7 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.onsen_report.01', host: 'chochin', event: 'onsen_report', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // onsen_deputy_cheer: his short reaction once he has said the deputy's report (about the play, never mistakes)
   { id: 'chochin.onsen_deputy_cheer.01', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: '{name}さま、おみごとです！', kana: '{name}さま、おみごとです！', en: 'Splendid, {name}!' }, slots: ['{name}'], status: 'draft' },
-  { id: 'chochin.onsen_deputy_cheer.02', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: 'ありがとう ございます、{name}さま。メモしました！', kana: 'ありがとう ございます、{name}さま。メモしました！', en: 'Thank you, {name}. Noted!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.onsen_deputy_cheer.02', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: 'ありがとう ございます、{name}さま。メモ しました！', kana: 'ありがとう ございます、{name}さま。メモ しました！', en: 'Thank you, {name}. Noted!' }, slots: ['{name}'], status: 'draft' },
   { id: 'chochin.onsen_deputy_cheer.03', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: 'いい ほうこくでした。ゆらゆら。', kana: 'いい ほうこくでした。ゆらゆら。', en: 'A fine report. Sway, sway.' }, status: 'draft' },
   { id: 'chochin.onsen_deputy_cheer.04', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: '{name}さま、よく ききましたね！', kana: '{name}さま、よく ききましたね！', en: '{name}, you listened well!' }, slots: ['{name}'], status: 'draft' },
   { id: 'chochin.onsen_deputy_cheer.05', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: 'たすかります！　いい じょしゅさんです。', kana: 'たすかります！　いい じょしゅさんです。', en: 'That helps! What a good assistant.' }, status: 'draft' },

@@ -200,7 +200,7 @@ four or more nobody holds it two rounds running.
 
 | When | Line (filled in from the guest's card, `nakodoLines` in `cards.ts`) |
 | --- | --- |
-| Round 1, as the guest asks | みなさま、かっぱの キュウリさんが おみえに なりました。ごしょうかい いたします。 |
+| Round 1, as the guest asks | みなさま、かっぱの キュウリさんが おつきに なりました。ごしょうかい いたします。 |
 | Round 2 | こちらは きゅうり のうかの キュウリさんで いらっしゃいます。 |
 | Later rounds | キュウリさんが みなさまに おききに なります。 |
 | The last round | キュウリさんから さいごの しつもんが ございます。 |
@@ -243,12 +243,15 @@ out when it wouldn't leave her the question's 5 s inside the go-between's longer
 
 - **Gallery.** Once the go-between has taken the opening (Take it, or a first try), every other connected
   player gets one reaction tile for the prompt (👏 すごい！ 💡 なるほど 😮 へえ！ 📣 がんばれ！), shown as bubbles on
-  the TV, never scored. Once a game, a Kana or N5 player's tile is the curveball instead: "Which word
-  did you hear?", with the opening's keigo word (おみえに なりました, いらっしゃいます, おききに なります,
-  ございます; `key` on each template) and two of the others; **+5 if right**, paid directly. Not for an
-  untouched or declined offer.
+  the TV, never scored. Once a game, after the opening has landed, a Kana or N5 player who hasn't reacted
+  yet gets the curveball instead (who rotates with the round): "Which word did you hear?", with the
+  opening's keigo word (おつきに なりました, いらっしゃいます, おききに なります, ございます; `key` on each
+  template) and two of the others, never a word the line itself contained; **+5 if right**, paid directly.
+  An opening that never lands deals none, and while it is unanswered the booth doesn't light the word.
+  Not for an untouched or declined offer.
 - **Commentary booth.** Once the opening lands, the TV replays it (`boothStrip`) in place of the
-  matchmaker panel: the line with its keigo word lit and one English note on the play, for `commentaryMs`
+  matchmaker panel: the line with its keigo word lit and one English note on the play (for ございます: "the
+  extra-polite ございます for あります"; otherwise "lifting the guest up"), for `commentaryMs`
   (5–7 s), then it fades. It runs while Nobiko-san says the line, so it adds no time. Kana and N5 phones get
   the gist: the same news in plain N5 Japanese (`gist` on each template: キュウリさんが きました。しょうかいします。,
   romaji for Kana) with the English. Only the opening, not the closing.
@@ -263,7 +266,7 @@ out when it wouldn't leave her the question's 5 s inside the go-between's longer
 | Gallery curveball right (once a game, a Kana or N5 player) | 5 |
 
 The manners meter reads every line as keigo (tested for every card and round). It now also counts
-ごしょうかい as an お/ご word, and お〜に なる in plain form (おみえに なった) as honorific when the
+ごしょうかい as an お/ご word, and お〜に なる in plain form (おつきに なった) as honorific when the
 stem is a verb's.
 
 ### Awards (draft titles)
@@ -341,7 +344,7 @@ canned memory answers (by question kind and register) or build a tile answer. Th
     question waits for the opening; the closing waits for the score's own line (see the go-between above).
 28. **Who is offered the go-between follows the shared rotation** (`nextOfferee`, round 4, 2026-11-01):
     fewest offers, then longest ago, instead of seat order; a "not this time" sits the next round out
-    (before, a decline didn't). A timed-out offer doesn't.
+    (before, a decline didn't). A timed-out offer does too (round 5, the shared rule).
 29. **Mixed rooms in the prompt only** (round 4): the Gallery, the booth and the stand-in are about the
     opening; the closing at the score keeps just Nobiko-san's voicing. The curveball's word is the opening's
     keigo word; the gist is a plain N5 version of the same news, written per template (draft) (for Ladi to
@@ -350,6 +353,10 @@ canned memory answers (by question kind and register) or build a tile answer. Th
     when the go-between took the role and said it (round 4, for Ladi to confirm).
 31. **The host stand-in gives round 1's opening**, once a game, in a 2-player room with nobody at N4
     (round 4, for Ladi to confirm).
+32. **The guest arrives with おつきに なりました**, not おみえに なりました (round 5, from the panel: おみえ is
+    N3; お〜に なる on つく keeps the frame at N4). Draft.
+33. **The curveball is dealt once the opening has landed** (round 5), not when the Gallery opens, so the
+    word is one the player has just heard.
 
 ## Open questions
 
