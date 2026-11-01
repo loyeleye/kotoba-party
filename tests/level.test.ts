@@ -26,7 +26,8 @@ describe('the N3 level (step 6 of the N4/N3 plan)', () => {
     expect(atLevel({ kana: 'a', n5: 'b', n4: 'c' }, 'n3')).toBe('c');
     expect(atLevel({ kana: 'a', n5: 'b', n4: 'c', n3: 'd' }, 'n3')).toBe('d');
     const p = PROBLEMS[0]!;
-    expect(lineOf(p, 'n3')).toBe(p.advice.n4);
+    expect(lineOf(p, 'n3')).toBe(p.advice.n3);
+    expect(lineOf({ ...p, advice: { ...p.advice, n3: undefined } }, 'n3')).toBe(p.advice.n4);
   });
 
   it('rides the Limited Express Line, the last one, whose goals wait for their frames', () => {

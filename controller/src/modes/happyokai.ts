@@ -2,7 +2,8 @@
 //
 //   presenter  backstage: pick a title, rehearse the opening, 🙋 ready. On stage: the slide's script or its
 //              word, sentence frames and ready sentences (tap one, or read it out for more), tap to talk,
-//              next slide. Question time: choose a question, then answer it. Then a private report.
+//              next slide. Question time: choose a question, then answer it (once a game, Chōchin-san's
+//              "Have you ever…?" card comes first, in English). Then a private report.
 //   assistant  pick each next slide (🙂 fits the title, 🎲 random, むちゃぶり wild), play one mishap, push a
 //              cue card to the presenter's phone.
 //   audience   stamp while they talk, ask one question (say it out loud for more), grade the talk.
@@ -110,14 +111,14 @@ function myLines(ctx: Ctx, me: Me): HTMLElement | null {
   );
 }
 
-function talkBox(ctx: Ctx, me: Me, placeholder: string): HTMLElement {
+function talkBox(ctx: Ctx, me: Me, placeholder: string, draft = String(ctx.game.step)): HTMLElement {
   return speakBox({
     toggle: true,
     label: 'Tap to talk',
     placeholder,
     maxLength: MAX_ANSWER_LENGTH * 2,
     kanaPadOpen: me.level === 'kana' && !canSpeak(),
-    draftKey: `hk-${ctx.view.phaseSeq}-${ctx.game.step}`,
+    draftKey: `hk-${ctx.view.phaseSeq}-${draft}`,
     onSend: (utterance) => void ctx.send({ kind: 'say', utterance }),
   });
 }
@@ -345,15 +346,95 @@ function asking(ctx: Ctx, me: Me): HTMLElement {
   );
 }
 
+/** The server's clock, from the phase deadline and what is left of it. */
+function serverNow(ctx: Ctx): number {
+  const left = ctx.remainingMs();
+  return ctx.view.deadline !== null && left !== null && left > 0 ? ctx.view.deadline - left : Date.now();
+}
+
+/** Seconds left on Chōchin-san's card, ticking down on the phone. */
+function haveYouClock(ctx: Ctx, endsAt: number): HTMLElement {
+  const offset = serverNow(ctx) - Date.now();
+  const el = h('p', { class: 'hk-clock', 'aria-live': 'off' });
+  const draw = () => {
+    const left = Math.max(0, endsAt - (Date.now() + offset));
+    el.textContent = left > 0 ? `⏱ ${Math.ceil(left / 1000)}s` : '⏱ Time!';
+    el.classList.toggle('low', left < 5000);
+  };
+  draw();
+  const timer = setInterval(() => (el.isConnected ? draw() : clearInterval(timer)), 250);
+  return el;
+}
+
+const HAVE_YOU_ENDED: Record<'yes' | 'no' | 'pass', string> = { yes: '🏮 Yes, you have!', no: '🏮 Never!', pass: '🏮 It’s a secret!' };
+
+/**
+ * Chōchin-san's "Have you ever…?" card: the question in English, the frame and the words. The Japanese is
+ * behind a peek (opening it counts the answer as read, not from memory). After an answer without the frame,
+ * the phone says how many tries are left and asks for the whole sentence; when the card ends without it,
+ * Chōchin-san's model answer shows while the card stays on the TV.
+ */
+function haveYouCardView(ctx: Ctx, me: Me, card: NonNullable<Me['haveYou']>): HTMLElement {
+  const { send } = ctx;
+  if (card.ended)
+    return h(
+      'div',
+      { class: 'screen hk-p' },
+      h('p', { class: 'big' }, HAVE_YOU_ENDED[card.ended.answer]),
+      card.ended.model
+        ? h('div', { class: 'hk-peek', lang: 'ja' }, h('p', { class: 'hint' }, 'Chōchin-san would say:'), h('p', {}, ruby(card.ended.model), h('small', {}, ` ${card.ended.model.en}`)))
+        : h('p', { class: 'hk-ok' }, '✓ The whole sentence. ', h('span', { lang: 'ja' }, 'すばらしい！')),
+      myLines(ctx, me),
+      h('p', { class: 'hint' }, 'The room’s questions are coming…'),
+    );
+  return h(
+    'div',
+    { class: 'screen hk-p' },
+    h('div', { class: 'hk-have-you-head' }, h('p', { class: 'hk-label-p' }, '🏮 Chōchin-san asks:'), haveYouClock(ctx, card.endsAt)),
+    h('p', { class: 'hk-script hk-have-you' }, card.en),
+    h('ul', { class: 'hk-frames', lang: 'ja' }, h('li', {}, card.frame)),
+    h('p', { class: 'hk-words' }, 'Words: ', h('span', { lang: 'ja' }, ruby(card.hint))),
+    card.missedFrame
+      ? h(
+          'p',
+          { class: 'hk-nudge' },
+          'Almost! Answer with the whole sentence: ',
+          h('span', { lang: 'ja' }, '＿た ことが あります'),
+          ' (or ',
+          h('span', { lang: 'ja' }, 'ありません'),
+          `). ${card.triesLeft} ${card.triesLeft === 1 ? 'try' : 'tries'} left.`,
+        )
+      : h('p', { class: 'hint' }, `Answer in Japanese: yes or no, in a full sentence. The truth is optional. ${card.triesLeft} ${card.triesLeft === 1 ? 'try' : 'tries'}.`),
+    card.peek
+      ? h(
+          'div',
+          { class: 'hk-peek', lang: 'ja' },
+          h('p', {}, ruby(card.peek.question)),
+          h('p', {}, ruby(card.peek.yes), h('small', {}, ` ${card.peek.yes.en}`)),
+          h('p', {}, ruby(card.peek.no), h('small', {}, ` ${card.peek.no.en}`)),
+        )
+      : h('button', { type: 'button', class: 'linkish hk-peek-btn', onclick: () => (buzz(), void send({ kind: 'peek' })) }, '👀 Peek at the Japanese (fewer points)'),
+    talkBox(ctx, me, '〜た ことが あります。', 'have-you'),
+    h('button', { type: 'button', class: 'secondary hk-next', onclick: () => (buzz(), void send({ kind: 'next' })) }, '▶ Pass: on to the room’s questions'),
+    myLines(ctx, me),
+  );
+}
+
+/** Chōchin-san's model answer, under the question picker, when the presenter's answer to his card had no frame. */
+const modelNote = (me: Me): HTMLElement | null =>
+  me.haveYouModel ? h('p', { class: 'hint hk-model' }, '🏮 Chōchin-san’s answer: ', h('span', { lang: 'ja' }, ruby(me.haveYouModel)), ` (${me.haveYouModel.en})`) : null;
+
 function questionTime(ctx: Ctx, me: Me): HTMLElement {
   const { game, send } = ctx;
   if (me.role === 'presenter') {
+    if (me.haveYou) return haveYouCardView(ctx, me, me.haveYou);
     if (me.pickQuestion.length || !game.question?.chosen)
       return h(
         'div',
         { class: 'screen hk-p' },
         h('p', { class: 'big', lang: 'ja' }, '🙋 しつもん タイム'),
         me.pickQuestion.length ? h('p', {}, 'Choose a question to answer:') : h('p', { class: 'hint' }, 'Hands going up… choose one when you see it.'),
+        modelNote(me),
         h(
           'div',
           { class: 'hk-questions' },
@@ -373,6 +454,14 @@ function questionTime(ctx: Ctx, me: Me): HTMLElement {
     );
   }
   if (me.questions.length || me.asked) return asking(ctx, me);
+  if (game.haveYou)
+    return h(
+      'div',
+      { class: 'screen hk-w' },
+      h('p', { class: 'hint' }, `🏮 Chōchin-san is asking ${nameOf(ctx, game.presenterId)} a question first… React! Your question cards come next.`),
+      stamps(ctx),
+      vipCaptions(ctx),
+    );
   return watching(ctx);
 }
 

@@ -130,7 +130,7 @@ goals (open questions doc, Nov 1): ＿ように いわれました on 3.1, ＿�
 ＿さえ ＿ば on 3.5, ＿わけには いかない and ＿こそ on 3.7, ＿た とたん and ＿だす on 3.9, and ＿はずが ない and ＿に とって
 on 3.10. The #158 panel moved ＿きる to 3.2 (with the other compound verb) and ＿こそ to 3.7, so 3.10 isn't a wall of
 chips. The chip's Japanese and English come from frames.ts; FRAME_TEXT keeps the same wording, and a test checks the
-two match for these twelve. A frame becomes required once a game carries it.
+two match for these twelve. Required frames are now frozen (docs/n3-coverage.md): new frames stay optional.
 A sweep of 13,870 game strings finds 1 line that says them (アドバイスばかり), and it's right.
 
 The #157 panel found about 40 more lines that named the wrong frame, mostly compound verbs with the other
@@ -152,6 +152,80 @@ Every one of those lines is a look-alike in `n3-d.ts`.
 | ＿さえ | Not ささえる, おさえる, さえぎる, さえずる, さえる, or names (みさえ, まさえ) |
 | ＿こそ | Not the set phrases こちらこそ, そちらこそ and ようこそ, からこそ／＿てこそ (N2), こそこそ, こそだて, こそ泥 |
 | ＿ばかり | Nばかり and ＿て ばかり. Not ＿た ばかり (just did: N4, with or without a space), ばかりか／ばかりでなく (N2), ばか, or an amount + ばかり (ふたつばかり, ちょっとばかり) |
+
+## Spoken N3 frames (docs/n3-coverage.md)
+
+Ladi's N3 question chose Plan B, spoken N3: the Limited Express stops only at the N3 a player says. The inventory
+(`shared/src/japanese/n3Points.ts`) lists every N3 point with a fit and a band, and 26 of its speak points now have
+draft matchers, each optional on its goal, with the same 10/10 bar (`tests/frame-cases/n3-e.ts`). Required frames
+are frozen as they were on Nov 1.
+
+| Goal | New optional frames |
+| --- | --- |
+| 3.2 | ＿っぱなし, ＿だらけ |
+| 3.3 | ＿がち, ＿んだから |
+| 3.4 | ＿に しては, ＿かわりに, ＿だけで なく |
+| 3.5 | ＿と しても, たとえ ＿ても |
+| 3.6 | ＿ずに すむ, ＿ふりを する |
+| 3.7 | ＿と いうのは, ＿ことは ない, ＿ことに なって いる |
+| 3.8 | ＿て いただきたい |
+| 3.9 | ＿て いく, ＿に つれて, ＿ついでに |
+| 3.10 | ＿に きまって いる, ＿とは かぎらない, ＿に よって, ＿と いうより, ＿ない ことは ない, ＿わけが ない |
+| 3.11 | ＿て しょうがない, ＿ほど ／ ＿くらい (degree) |
+
+Other changes:
+
+- ＿っけ is now speakable (it was listening only), on 3.11. ＿じゃん stays listening only.
+- ＿としたら no longer matches ＿と しても, which has its own frame.
+- ＿くらい (degree) is the same frame as ＿ほど. Not くらい after a time or amount, and not くらい before です／だ／なら.
+- Longer frames are shown over the shorter ones they contain: ＿ずに すむ over ＿ずに, ＿ことに なって いる over
+  ＿ことに なる, ＿ない ことは ない over ＿ことは ない, ＿わけが ない over ＿わけです.
+- Look-alikes worth knowing: ひとりがち and おおがち aren't ＿がち; たとえば isn't たとえ ＿ても; a date before
+  に きまった isn't ＿に きまって いる.
+
+A sweep of 13,942 game strings finds real lines for ＿かわりに, ＿と いうのは, ＿ふりを する, ＿だらけ, ＿に よって and
+＿くらい (Nobiko's おこす くらい), and no wrong ones.
+
+### Part 2: the last speak points
+
+20 more matchers (`tests/frame-cases/n3-f.ts`), so every speak point in the inventory has one:
+
+| Goal | New optional frames |
+| --- | --- |
+| 3.2 | ＿た まま |
+| 3.3 | だって ＿もん |
+| 3.4 | ＿と いっても, ＿は もちろん, ＿うえに |
+| 3.6 | ＿はずだった, ＿てからで ないと, ＿を こめて |
+| 3.7 | ＿ても かまわない, ＿た ように |
+| 3.9 | ＿て はじめて, ＿ぶり, ＿て いらい |
+| 3.10 | ＿んじゃ ない？, ＿ほど ＿は ない, ＿そうに ない |
+| 3.11 | ＿ますように, ＿むけ ／ ＿むき, ＿たて, ＿と いえば |
+
+Look-alikes worth knowing: そのまま and わがまま aren't ＿た まま; もんだい, もんく and かいもん aren't ＿もん; つくえの うえに
+(a place) and じゅっさい ぐらい うえに (older) aren't ＿うえに; ひさしぶり (N5) isn't ＿ぶり; いらいら isn't ＿て いらい; the
+scold たべるんじゃ ない！ and Nの じゃ ない aren't ＿んじゃ ない？; かわいそうに isn't ＿そうに ない; みなみむき (a direction) and むきに
+なる aren't ＿むき; たてもの isn't ＿たて; なんと いえば いいか and もって いったら aren't ＿と いえば. A quoted request (やめてと
+いっても) isn't ＿と いっても. ＿ほど ＿は ない is shown over nothing; ＿はずだった over ＿はずです; ＿んじゃ ない？ over ＿じゃ
+ない and ＿んです; ＿そうに ない over ＿そうです (looks); ＿ますように over ＿ように. A sweep of 15,554 game strings finds them
+only in their own examples, the new host lines and Late Again!'s excuses, plus right ones (Nobiko's じゅうねんぶりに, Fude's
+こころを こめて, におう もんね).
+
+### Part 3: the look-alikes, as guesses
+
+Ladi asked for the six points the game couldn't tell apart from a look-alike to go in too, and for a fluent speaker to
+check them in the playtest (`docs/n3-fluent-check.md`). Each has a narrow matcher (`tests/frame-cases/n3-g.ts`):
+
+| Goal | New optional frames | What it looks for |
+| --- | --- | --- |
+| 3.9 | ＿ところに ／ ＿ところへ | a verb, ところに, then who turned up (Xが). Not a place (しずかな ところに) |
+| 3.9 | ＿きり | ふたりきり, それきり, or a past verb + きり. Not fog, はっきり or きります |
+| 3.11 | ＿らしい（あなたらしい） | a person or kind + らしい (あなた, ポン, おとこ, こども, はる). Not hearsay after a verb |
+| 3.11 | ＿ぐらい（それぐらい） | a thing + ぐらい + what's asked (わかる, して, できる). Not an amount (いちじかんぐらい) |
+| 3.11 | ＿って（すしって） | a noun + って + a question word or how it is. Not quoting って or a て form (まって) |
+| 3.11 | ＿さ ／ ＿み | an adjective's stem + さ, or おもしろみ／あまみ／いたみ, then a particle. Not ながさき or たのしみ |
+
+They miss real uses by design (あしたって やすみ？ isn't counted, since あした ends like a past verb). The fluent
+check says which to widen, narrow or drop.
 
 ## Fixes from the panel on #146
 

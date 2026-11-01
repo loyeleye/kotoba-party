@@ -60,6 +60,9 @@ export const HOST_EVENTS = [
   'happyokai_mishap_upside',
   'happyokai_mishap_message',
   'happyokai_question',
+  'happyokai_have_you',
+  'happyokai_have_you_react',
+  'happyokai_have_you_ghost',
   'happyokai_ask',
   'happyokai_stall',
   'happyokai_grade',
@@ -196,6 +199,8 @@ export interface BankLine {
   slots?: string[];
   /** Only for this Audience setting (Kids or Cheeky). Untagged lines play in every room. */
   audience?: 'kids' | 'cheeky';
+  /** Only in a room where someone plays at N3 (content HostLine.level). */
+  level?: 'n3';
   /** Review state from the content thread ('draft' until a fluent check). Not used here. */
   status?: string;
 }

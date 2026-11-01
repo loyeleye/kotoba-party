@@ -12,6 +12,8 @@ import {
   DECKS,
   deckTitlesFor,
   framesFor,
+  HAVE_YOU,
+  haveYouCard,
   MISHAPS,
   openingFor,
   questionsFor,
@@ -29,8 +31,13 @@ import {
   dealChoices,
   hanamaruPoints,
   HANAMARU_POINTS,
+  HAVE_YOU_HOLD_MS,
+  HAVE_YOU_MS,
+  HAVE_YOU_STEP,
   n4Mix,
   presenterOrder,
+  saysNo,
+  saysTaKoto,
   showPlan,
   speakPoints,
   SPEAK_CAP,
@@ -615,6 +622,13 @@ describe('Happyōkai!: a talk', () => {
     expect(table.say(table.view(presenter).me!.script!.kana).error).toBeUndefined();
     expect(table.next().error).toBeUndefined();
     expect(table.s.phase).toBe('encore');
+    // An N4 presenter gets Chōchin-san's "Have you ever…?" card first (its own test is below): pass on it.
+    if (table.t.haveYou) {
+      expect(table.next().error).toBeUndefined();
+      // The card stays on the TV a moment, then the room's cards come out.
+      table.now = table.t.haveYou.endedAt! + HAVE_YOU_HOLD_MS;
+      table.act({ type: 'wake', phaseSeq: table.s.phaseSeq });
+    }
 
     // Question time: everyone else gets three cards; one asks out loud, one taps.
     const askers = table.s.players.map((p) => p.id).filter((id) => id !== presenter);
@@ -723,6 +737,183 @@ describe('Happyōkai!: a talk', () => {
 });
 
 // ---- full system: bots play a whole game through the real server ----
+
+describe('Happyōkai!: Chōchin-san’s "Have you ever…?" card (goal 4.3)', () => {
+  /** Plays on until question time opens with the card (or the show ends). */
+  function toCard(table: Table): boolean {
+    for (let guard = 0; guard < 200; guard++) {
+      if (table.s.phase === 'encore' && table.t.haveYou && !table.t.haveYou.done) return true;
+      if (table.s.phase === 'finale' || table.s.phase === 'recap') return false;
+      table.timeout();
+    }
+    return false;
+  }
+  /** Ends question time and the talk, through to the next talk's backstage (phrases are logged as score ends). */
+  function finishTalk(table: Table) {
+    for (let guard = 0; guard < 10 && ['encore', 'reveal', 'score'].includes(table.s.phase); guard++) table.timeout();
+  }
+  /** The held card leaves the TV once HAVE_YOU_HOLD_MS is up. */
+  function release(table: Table) {
+    table.now = table.t.haveYou!.endedAt! + HAVE_YOU_HOLD_MS;
+    table.act({ type: 'wake', phaseSeq: table.s.phaseSeq });
+  }
+  const haveYouPhrase = (table: Table, id: string) => (table.s.phrasebook[id] ?? []).find((e) => e.itemId.startsWith('happyokai:have:'));
+
+  it('has a dozen draft topics, each a ＿た ことが あります／ありません line at every level, with every kanji read', () => {
+    expect(HAVE_YOU.length).toBeGreaterThanOrEqual(12);
+    expect(new Set(HAVE_YOU.map((x) => x.id)).size).toBe(HAVE_YOU.length);
+    for (const x of HAVE_YOU) {
+      expect(x.status).toBe('draft');
+      for (const level of ['kana', 'n5', 'n4', 'n3'] as Level[]) {
+        const card = haveYouCard(x, level);
+        for (const j of [card.question, card.yes, card.no]) {
+          expect(saysTaKoto(j.text, j.kana), `${x.id} ${level}: ${j.kana}`).toBe(true);
+          expect(j.kana, x.id).not.toMatch(/\p{Script=Han}/u);
+        }
+        expect(card.question.en).toMatch(/^Have you ever .+\?$/);
+      }
+    }
+  });
+
+  it('opens an N4 presenter’s question time once a game, in English with the frame; the room’s cards wait', () => {
+    const table = new Table(4, ['n4', 'n4', 'n5', 'n5'], 3);
+    table.start();
+    expect(toCard(table)).toBe(true);
+    const presenter = table.t.presenterId;
+    expect(['p1', 'p2']).toContain(presenter);
+    expect(table.s.cues.at(-1)?.event).toBe('happyokai_have_you');
+    // The TV and the phone have the English and the frame, never the Japanese question.
+    const tv = table.view();
+    expect(tv.haveYou!.en).toMatch(/^Have you ever/);
+    expect(tv.haveYou!.frame).toBe('＿た ことが あります／ありません');
+    expect(tv.haveYou!.gloss).toBe('I’ve (done) … / I’ve never (done) …');
+    expect(tv.haveYou!.answer).toBeNull();
+    const card = table.view(presenter).me!.haveYou!;
+    expect(card.en).toBe(tv.haveYou!.en);
+    expect(card.peek).toBeNull();
+    expect(card).toMatchObject({ endsAt: table.st.phaseAt + HAVE_YOU_MS, triesLeft: 2, missedFrame: false, ended: null });
+    // Audience phones keep stamping while it's up.
+    expect(table.play(table.s.players.map((p) => p.id).find((id) => id !== presenter)!, { kind: 'stamp', stamp: 'hee' }).error).toBeUndefined();
+    expect(JSON.stringify(table.view(presenter))).not.toMatch(/ことが ありますか/);
+    // The room's cards wait for it.
+    const audience = table.s.players.map((p) => p.id).filter((id) => id !== presenter);
+    for (const id of audience) expect(table.view(id).me!.questions).toEqual([]);
+    expect(table.play(audience[0]!, { kind: 'ask', key: 0 }).error).toBe('not-yet');
+    // Only the presenter answers it, and peeking is theirs.
+    expect(table.play(audience[0]!, { kind: 'peek' }).error).toBe('not-yours');
+
+    // Said from memory with the frame: the card is done, Chōchin-san reacts to the "no" (him neither), and the
+    // card stays on the TV with the answer in English before the room's cards come out.
+    const topic = HAVE_YOU.find((x) => x.id === card.id)!;
+    const no = haveYouCard(topic, 'n4').no;
+    expect(table.say(no.kana).error).toBeUndefined();
+    expect(table.t.haveYou!.done).toBe(true);
+    expect(table.s.cues.at(-1)).toMatchObject({ host: 'chochin', event: 'happyokai_have_you_react', tier: 'good', answerEn: no.en });
+    expect(table.view().haveYou).toMatchObject({ answer: 'Never!' });
+    expect(table.view().captions.at(-1)?.text).toBe(no.kana);
+    expect(table.view(presenter).me!.haveYou!.ended).toEqual({ answer: 'no', model: null });
+    for (const id of audience) expect(table.view(id).me!.questions).toEqual([]);
+    expect(table.play(audience[0]!, { kind: 'ask', key: 0 }).error).toBe('not-yet');
+    expect(table.st.haveYouTalk).toBe(table.t.index);
+    release(table);
+    expect(table.s.cues.at(-1)?.event).toBe('happyokai_question');
+    expect(table.view().haveYou).toBeNull();
+    for (const id of audience) expect(table.view(id).me!.questions.length).toBe(3);
+    expect(table.st.haveYouTalk).toBe(table.t.index);
+    const index = table.t.index;
+    finishTalk(table);
+    // The answerer's own words, from memory (the path credits the frame they said).
+    expect(haveYouPhrase(table, presenter)).toMatchObject({ itemId: `happyokai:have:${topic.id}`, kana: expect.stringContaining('ことは ありません'), en: no.en, outcome: 'said', recall: 'memory' });
+    // Once a game: no other talk gets the card.
+    for (let guard = 0; guard < 200 && table.s.phase !== 'finale' && table.s.phase !== 'recap'; guard++) {
+      if (table.st.talk && table.st.talk.index !== index) expect(table.st.talk.haveYou).toBeNull();
+      table.timeout();
+    }
+  });
+
+  it('a peek at the Japanese counts the answer as read', () => {
+    const table = new Table(4, ['n4', 'n4', 'n5', 'n5'], 5);
+    table.start();
+    expect(toCard(table)).toBe(true);
+    const presenter = table.t.presenterId;
+    expect(table.play(presenter, { kind: 'peek' }).error).toBeUndefined();
+    const peek = table.view(presenter).me!.haveYou!.peek!;
+    expect(peek.question.kana).toMatch(/ことが ありますか？$/);
+    expect(table.say(peek.yes.kana).error).toBeUndefined();
+    expect(table.t.lines.at(-1)).toMatchObject({ step: HAVE_YOU_STEP, kind: 'read', framed: true });
+    // A yes: Chōchin-san is impressed (his own line if it's a ghost they've seen).
+    const yes = table.t.haveYou!.topicId === 'ghost' ? { event: 'happyokai_have_you_ghost' } : { event: 'happyokai_have_you_react', tier: 'ippon' };
+    expect(table.s.cues.at(-1)).toMatchObject(yes);
+    expect(table.view().haveYou!.answer).toBe('Yes, I have!');
+    finishTalk(table);
+    expect(haveYouPhrase(table, presenter)).toMatchObject({ outcome: 'said', recall: 'read' });
+  });
+
+  it('without the frame it gives two tries, then the room’s questions; Next passes; the time runs out', () => {
+    const tries = new Table(4, ['n4', 'n4', 'n5', 'n5'], 3);
+    tries.start();
+    expect(toCard(tries)).toBe(true);
+    const presenter = tries.t.presenterId;
+    expect(tries.say('はい、あります！').error).toBeUndefined();
+    expect(tries.t.haveYou!.done).toBe(false);
+    // The phone says a try is left and asks for the whole sentence.
+    expect(tries.view(presenter).me!.haveYou).toMatchObject({ triesLeft: 1, missedFrame: true, ended: null });
+    expect(tries.say('いいえ。').error).toBeUndefined();
+    expect(tries.t.haveYou!.done).toBe(true);
+    expect(tries.s.cues.at(-1)).toMatchObject({ event: 'happyokai_have_you_react', tier: 'good' });
+    // Ended without the frame: Chōchin-san's model answer on the presenter's phone, and while they pick a question.
+    const topic = HAVE_YOU.find((x) => x.id === tries.t.haveYou!.topicId)!;
+    const model = haveYouCard(topic, 'n4').no;
+    expect(tries.view(presenter).me!.haveYou!.ended).toEqual({ answer: 'no', model });
+    release(tries);
+    expect(tries.view(presenter).me!.haveYou).toBeNull();
+    expect(tries.view(presenter).me!.haveYouModel).toEqual(model);
+    finishTalk(tries);
+    // Nothing said with the frame: Chōchin-san's model answer goes in the phrasebook, seen.
+    expect(haveYouPhrase(tries, presenter)).toMatchObject({ outcome: 'seen', recall: 'read' });
+
+    const pass = new Table(4, ['n4', 'n4', 'n5', 'n5'], 3);
+    pass.start();
+    expect(toCard(pass)).toBe(true);
+    expect(pass.next().error).toBeUndefined();
+    expect(pass.t.haveYou!.done).toBe(true);
+    expect(pass.s.cues.at(-1)).toMatchObject({ event: 'happyokai_have_you_react', tier: 'flop' });
+    expect(pass.view().haveYou!.answer).toBe('It’s a secret!');
+
+    const late = new Table(4, ['n4', 'n4', 'n5', 'n5'], 3);
+    late.start();
+    expect(toCard(late)).toBe(true);
+    late.now = late.st.phaseAt + HAVE_YOU_MS;
+    late.act({ type: 'wake', phaseSeq: late.s.phaseSeq });
+    expect(late.t.haveYou!.done).toBe(true);
+    expect(late.s.cues.at(-1)).toMatchObject({ event: 'happyokai_have_you_react', tier: 'flop' });
+    expect(late.s.phase).toBe('encore');
+    release(late);
+    expect(late.s.cues.at(-1)?.event).toBe('happyokai_question');
+    expect(late.s.phase).toBe('encore');
+  });
+
+  it('never comes up without an N4 presenter', () => {
+    const table = new Table(4, ['n5', 'n5', 'kana', 'n5'], 3);
+    table.start();
+    expect(toCard(table)).toBe(false);
+    expect(table.st.haveYouTalk).toBeNull();
+  });
+
+  it('pays the answer by how it was said, only when it has the frame; a try without it pays 5', () => {
+    const t = { steps: [] as Step[], lines: [] as Line[] };
+    const line = (kind: Line['kind'], framed = true): Line => ({ id: kind, step: HAVE_YOU_STEP, text: framed ? 'ふじさんに のぼった ことが あります。' : 'はい、あります！', shown: '', kind, sentences: 1, hidden: false, ...(framed ? { framed: true as const } : {}) });
+    expect(speakPoints({ ...t, lines: [line('own')] }, 'n4')).toBeGreaterThan(speakPoints({ ...t, lines: [line('read')] }, 'n4'));
+    expect(speakPoints({ ...t, lines: [line('read')] }, 'n4')).toBeGreaterThan(speakPoints({ ...t, lines: [line('tap')] }, 'n4'));
+    expect(speakPoints({ ...t, lines: [line('own', false)] }, 'n4')).toBe(5);
+    expect(speakPoints({ ...t, lines: [line('own', false), line('read')] }, 'n4')).toBe(speakPoints({ ...t, lines: [line('read')] }, 'n4'));
+  });
+
+  it('reads a no the way the phrasebook does', () => {
+    for (const k of ['いいえ、ふじさんに のぼった ことは ありません。', 'のぼった ことが ないです', 'いいえ']) expect(saysNo(k), k).toBe(true);
+    for (const k of ['はい、のぼった ことが あります。', 'あります！']) expect(saysNo(k), k).toBe(false);
+  });
+});
 
 describe('Happyōkai!: bots play a game end to end', () => {
   let ctx: Awaited<ReturnType<typeof startServer>>;

@@ -21,11 +21,12 @@
 
 import { atLevel, type JpText, type Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { framesOf } from '../../japanese/frames.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsFor, ROMAJI, type AdviceChunk, type AdviceLine, type Problem } from './problems.js';
-import { n4Up } from '../../level.js';
+import { LEVEL_RANK, n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -317,7 +318,7 @@ export function tileView(id: string, level: Level): TileView {
 const withRomaji = (t: JpText, level: Level): JpText & { romaji?: string } => (level === 'kana' ? { ...t, romaji: ROMAJI[t.kana] ?? toRomaji(t.kana) } : t);
 
 /** The level line a speaking adviser works from (Kana and N5 use N5's). */
-export const lineOf = (p: Problem, level: Level): AdviceLine => (n4Up(level) ? p.advice.n4 : p.advice.n5);
+export const lineOf = (p: Problem, level: Level): AdviceLine => (level === 'n3' && p.advice.n3 ? p.advice.n3 : n4Up(level) ? p.advice.n4 : p.advice.n5);
 
 /** What an advice said, as a reading, for matching keys: null when nobody can tell (no speech-to-text). */
 export function adviceReading(c: Call, a: Advice): string | null {
@@ -377,6 +378,24 @@ export function creditOf(c: Call, a: Advice): Credit {
   const k = chunkOf(c, a);
   if (!k || k.level !== a.level) return 'seen';
   return c.hinted.includes(a.playerId) ? 'hint' : 'memory';
+}
+
+/**
+ * Did the advice open with a conditional (＿たら, 4.5)? Asked of the path's own matcher on what was heard, never a
+ * bare たら key (あたらしい has one). Nobiko-san's reading is her version, conditional and all.
+ */
+export function saidTara(c: Call, a: Advice): boolean {
+  const kana = adviceReading(c, a);
+  if (!kana) return false;
+  const text = a.kind === 'clip' ? (a.heard?.text ?? kana) : a.kind === 'nobiko' ? lineOf(problemOfCall(c), a.level).model.text : kana;
+  const tokens = a.kind === 'clip' ? a.heard?.tokens : undefined;
+  return framesOf({ text, kana }, tokens, { keepHidden: true }).includes('tara');
+}
+
+/** The line the phrasebook logs for a speaking adviser: a line's conditional only when the advice used one (see AdviceLine.plain). */
+export function loggedLine(c: Call, a: Advice): JpText {
+  const l = lineOf(problemOfCall(c), a.level);
+  return l.plain && !saidTara(c, a) ? l.plain : l.model;
 }
 
 /** The speaking bonus: their own clip, not hidden, that gave some advice or used a chunk (or couldn't be checked). */
@@ -532,7 +551,7 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
       if (t) ctx.phrase(id, { itemId: `hotline:tile:${t.id}`, text: t.word.text, kana: t.word.kana, en: t.word.en, outcome: 'seen', recall: 'read' });
       continue;
     }
-    const line = lineOf(p, a.level).model;
+    const line = loggedLine(c, a);
     const credit = creditOf(c, a);
     ctx.phrase(id, { itemId: `hotline:${p.id}:${a.level}`, text: line.text, kana: line.kana, en: line.en, outcome: credit === 'memory' || credit === 'hint' || credit === 'unchecked' ? 'said' : 'seen', recall: credit === 'memory' ? 'memory' : 'read' });
     if (spokeOf(c, a)) pay(s, ctx, id, POINTS.spoke, 'spoke');
@@ -557,7 +576,7 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
     const a = c.advice[id]!;
     const k = chunkOf(c, a);
     if (!k) continue;
-    if (!best || (k.level === 'n4' && best.chunk.level !== 'n4')) best = { id, chunk: k, line: subtitleOf(a) ?? lineOf(p, a.level).model.text };
+    if (!best || LEVEL_RANK[k.level] > LEVEL_RANK[best.chunk.level]) best = { id, chunk: k, line: subtitleOf(a) ?? lineOf(p, a.level).model.text };
   }
   // Never two booths in a row: it's a treat, not a beat every call (and it keeps 8 players under 11.5 minutes).
   const prev = s.calls[s.calls.indexOf(c) - 1];

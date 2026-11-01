@@ -22,7 +22,7 @@ import { joinAudioTabs } from '../../shared/src/audioTabs.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
 import { mountPhrasebook, setPhrasebookSource, updatePhrasebook } from './phrasebook.js';
-import { setClipSource } from './modes/dubAudio.js';
+import { serverNow, setClipSource } from './modes/dubAudio.js';
 import { sfx, tickSfx, watchSfx } from './music/sfx.js';
 import { playRoulette } from '../../shared/src/roulette.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
@@ -307,20 +307,29 @@ function render(view: RoomView, v: number): void {
   fillMenus(view);
   showHost(view);
   updateMusic(view);
-  watchSfx(view);
+  // The points chime waits for a mode's hold on the ribbon, like the totals do.
+  const holdMode = view.game ? STAGE_MODES[view.game.mode] : null;
+  const held = view.game && (holdMode?.holdScoresUntil?.(view, view.game) ?? 0) > serverNow();
+  watchSfx(held ? { ...view, players: view.players.map((p) => ({ ...p, score: p.score - (holdMode?.heldPoints?.(view.game!, p.id) ?? 0) })) } : view);
   updateSettings(view);
   updatePhrasebook(view);
   showCredits(view.phase === 'recap');
 
   const stageMode = view.game ? STAGE_MODES[view.game.mode] : null;
+  // A mode can hold the ribbon's totals until its own reveal lands the points (Yōkai Court's seal), so the
+  // ribbon never gives the result away first; it redraws itself when the hold ends.
+  const holdLeft = view.game ? (stageMode?.holdScoresUntil?.(view, view.game) ?? 0) - serverNow() : 0;
+  scheduleScoreRelease(holdLeft);
   // Patched, not rebuilt: chips keep their place and a score that went up gets a fresh
   // element (keyed by the score), so its pop plays once.
   patch(
     els.players,
     view.players.map((p) => {
-      const seen = seenScores.get(p.id) ?? p.score;
-      const up = seen < p.score;
-      seenScores.set(p.id, p.score);
+      const seen = seenScores.get(p.id) ?? (holdLeft > 0 ? p.score - (stageMode?.heldPoints?.(view.game!, p.id) ?? 0) : p.score);
+      const shown = holdLeft > 0 ? seen : p.score;
+      const up = seen < shown;
+      seenScores.set(p.id, shown);
+      const badge = view.game ? stageMode?.badge?.(view.game, p.id) : null;
       const team = view.game ? (stageMode?.team?.(view.game, p.id) ?? null) : null;
       return h(
         'li',
@@ -331,8 +340,8 @@ function render(view: RoomView, v: number): void {
           p.mic === 'quiet' ? h('span', { class: 'how', title: 'Mic off: taps and types' }, ' ⌨️') : null,
           p.soundOff ? h('span', { class: 'how', title: 'Phone sound off: reads instead of listening' }, ' 🔇') : null,
         ),
-        h('span', { class: 'ticks' }, (view.game && stageMode?.badge?.(view.game, p.id)) || h('span', { class: 'level' }, LEVEL_LABELS[p.level], !view.game && p.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, ` · ★${p.total}`) : null)),
-        h('span', { class: `score${up ? ' up' : ''}`, 'data-key': `${p.score}`, 'data-from': up ? seen : null }, p.score),
+        h('span', { class: 'ticks' }, badge || h('span', { class: 'level' }, LEVEL_LABELS[p.level], !view.game && p.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, ` · ★${p.total}`) : null)),
+        h('span', { class: `score${up ? ' up' : ''}`, 'data-key': `${shown}`, 'data-from': up ? seen : null }, shown),
         p.connected ? null : h('span', { class: 'dropped' }, 'reconnecting…'),
       );
     }),
@@ -355,6 +364,13 @@ function render(view: RoomView, v: number): void {
 }
 
 const seenScores = new Map<string, number>();
+
+let scoreRelease: ReturnType<typeof setTimeout> | null = null;
+/** Redraws once a mode's hold on the ribbon's totals runs out, so the held points roll in on time. */
+function scheduleScoreRelease(ms: number): void {
+  if (scoreRelease) clearTimeout(scoreRelease);
+  scoreRelease = ms > 0 ? setTimeout(() => ((scoreRelease = null), lastView && render(lastView, -1)), ms + 20) : null;
+}
 
 /** A name too wide for its card steps down in size (to 22px) before it falls back to an ellipsis. */
 function fitNames(): void {

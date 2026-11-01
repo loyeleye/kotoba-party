@@ -192,7 +192,7 @@ export const frameReady = (id: string): boolean => id in FRAME_BY_ID;
 
 /** One required frame, or any one of a few (5.7's question: か, なんですか or どこですか). */
 export type FrameNeed = string | readonly string[];
-const needIds = (n: FrameNeed): readonly string[] => (typeof n === 'string' ? [n] : n);
+export const needIds = (n: FrameNeed): readonly string[] => (typeof n === 'string' ? [n] : n);
 
 export type GoalKind = 'frames' | 'kana' | 'set' | 'kanji';
 
@@ -268,10 +268,10 @@ export const GOALS: readonly Goal[] = [
   g('5.9', 'local', 'Invite, offer, ask', 'Invite softly, and ask someone to do something.', ['masen-ka', 'te-kudasai'], ['mashou', 'naide-kudasai'], ['omiai', 'phrase-bingo', 'oogiri']),
   g('5.10', 'local', 'Read N5 kanji', 'The kanji on signs, menus and calendars.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
   g('4.1', 'express', 'Ask favours', 'Ask someone to do something for you.', ['te-moraeru'], ['ageru-kureru', 'te-kuremasen', 'te-hoshii'], ['phrase-bingo', 'bento-haus', 'last-train']),
-  g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii', 'sasete-kudasai', 'causative'], ['tourist', 'yokai-court', 'phrase-bingo']),
-  g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau', 'ba-yokatta', 'tari-tari'], ['hajimemashite', 'happyokai', 'phrase-bingo']),
+  g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii', 'sasete-kudasai', 'causative'], ['tourist', 'yokai-court', 'phrase-bingo', 'late-again']),
+  g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau', 'ba-yokatta', 'tari-tari'], ['hajimemashite', 'happyokai', 'phrase-bingo', 'late-again']),
   g('4.4', 'express', 'Say what you can do', 'たべられます, はなせます: say what you can and can’t.', ['potential'], [], ['phrase-bingo', 'tourist', 'late-again']),
-  g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond', 'noni'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri', 'late-again']),
+  g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond', 'noni'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri', 'late-again', 'ghost-hotline']),
   g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou', ['sou-hear', 'ni-yoru', 'n-datte']], ['kamo', 'mitai-you'], ['phrase-bingo', 'happyokai', 'tourist', 'last-train', 'word-gauntlet', 'yokai-court', 'hajimemashite']),
   g('4.7', 'express', 'Plans and advice', 'Say what you plan to do, and give advice.', ['you-to-omou'], ['tsumori', 'hou-ga-ii', 'tara-dou'], ['ghost-hotline'], { gap: 'Ghost Advice Hotline gives advice (＿た ほうが いいです, ＿たら どうですか), but no game asks for plans yet.' }),
   g('4.8', 'express', 'Talk casually with friends', 'Plain form with よ, ね and の: how friends talk.', ['plain'], ['n-da', 'teru'], ['omiai', 'dub-club']),
@@ -284,16 +284,16 @@ export const GOALS: readonly Goal[] = [
   // The Limited Express Line (特急, N3): the plan's 12 goals. Their frames come in frames.ts as their matchers land;
   // until then a goal shows as coming soon (missingFrames) and doesn't count toward clearing the line.
   g('3.1', 'limited', 'Rumours and reported speech', 'Pass on what you heard, and say where you heard it.', ['rashii'], ['ni-yoru', 'n-datte', 'mitai-casual', 'you-ni-iwareta'], ['word-gauntlet', 'onsen-murder', 'yokai-court']),
-  g('3.2', 'limited', 'What happened to me', 'Complain about what was done to you, what you were made to do, and what nearly happened.', ['suffering-passive', 'saserareru'], ['tokoro-deshita', 'sasete-morau', 'kakeru', 'kiru', 'bakari'], ['late-again', 'dub-club']),
-  g('3.3', 'limited', 'Reasons, results and blame', 'Say who or what to blame or thank, and why.', ['sei-de', 'okage-de'], ['wake-desu', 'tame-reason', 'mono-de'], ['late-again', 'ghost-hotline']),
-  g('3.4', 'limited', 'Contrast and concession', 'Say it turned out otherwise, or better than expected.', ['wari-ni', 'kuse-ni'], ['noni', 'ni-kurabete'], ['late-again', 'oogiri']),
-  g('3.5', 'limited', 'What-ifs', 'Suppose something were true, and say “the more…, the more…”.', ['to-shitara'], ['ba-hodo', 'sae'], ['ghost-hotline', 'oogiri', 'happyokai']),
-  g('3.6', 'limited', 'Intentions and attempts', 'Say what you tried to do, what you did without doing, and what you make a habit of.', ['you-to-suru', 'zu-ni'], ['koto-ni-shiteiru', 'ta-tsumori'], ['ghost-hotline', 'happyokai', 'hajimemashite']),
-  g('3.7', 'limited', 'Explaining and clarifying', 'Say what you don’t mean, what should be done, and what it comes down to.', ['wake-dewa-nai', 'beki'], ['to-iu-koto', 'to-shite', 'toori-ni', 'wake-niwa-ikanai', 'koso'], ['ghost-hotline', 'tourist', 'yokai-court']),
-  g('3.8', 'limited', 'Service Japanese', 'How staff speak to guests: humble, formal, and at your service.', ['sasete-itadaku', ['de-gozaimasu', 'te-orimasu']], ['go-kudasai', 'kashikomarimashita'], ['bento-haus', 'omiai', 'last-train']),
-  g('3.9', 'limited', 'Time and change', 'Do it while you can, say what happens every time, and how things have changed.', ['uchi-ni', 'tabi-ni'], ['saichuu-ni', 'te-kita', 'totan', 'dasu'], ['happyokai', 'late-again', 'word-gauntlet']),
-  g('3.10', 'limited', 'Opinions and debate', 'Say what you feel, what must be true, and argue it.', ['you-na-ki', 'ni-chigainai'], ['ni-taishite', 'shika-nai', 'sorenanoni', 'tsumari', 'hazu-ga-nai', 'ni-totte'], ['ghost-hotline', 'narabete', 'yokai-court']),
-  g('3.11', 'limited', 'Casual nuance', 'How friends really talk: ＿っぽい, ＿なんて, ＿とか.', ['ppoi', 'nante'], ['toka'], ['phrase-bingo', 'dub-club', 'word-gauntlet']),
+  g('3.2', 'limited', 'What happened to me', 'Complain about what was done to you, what you were made to do, and what nearly happened.', ['suffering-passive', 'saserareru'], ['tokoro-deshita', 'sasete-morau', 'kakeru', 'kiru', 'bakari', 'ppanashi', 'darake', 'mama'], ['late-again', 'dub-club']),
+  g('3.3', 'limited', 'Reasons, results and blame', 'Say who or what to blame or thank, and why.', ['sei-de', 'okage-de'], ['wake-desu', 'tame-reason', 'mono-de', 'n-dakara', 'gachi', 'datte-mon'], ['late-again', 'ghost-hotline']),
+  g('3.4', 'limited', 'Contrast and concession', 'Say it turned out otherwise, or better than expected.', ['wari-ni', 'kuse-ni'], ['noni', 'ni-kurabete', 'ni-shite-wa', 'kawari-ni', 'dake-de-naku', 'to-itte-mo', 'wa-mochiron', 'ue-ni'], ['late-again', 'oogiri']),
+  g('3.5', 'limited', 'What-ifs', 'Suppose something were true, and say “the more…, the more…”.', ['to-shitara'], ['ba-hodo', 'sae', 'to-shitemo', 'tatoe-temo'], ['ghost-hotline', 'oogiri', 'happyokai']),
+  g('3.6', 'limited', 'Intentions and attempts', 'Say what you tried to do, what you did without doing, and what you make a habit of.', ['you-to-suru', 'zu-ni'], ['koto-ni-shiteiru', 'ta-tsumori', 'zu-ni-sumu', 'furi', 'hazu-datta', 'te-kara-de-nai-to', 'wo-komete'], ['ghost-hotline', 'happyokai', 'hajimemashite']),
+  g('3.7', 'limited', 'Explaining and clarifying', 'Say what you don’t mean, what should be done, and what it comes down to.', ['wake-dewa-nai', 'beki'], ['to-iu-koto', 'to-shite', 'toori-ni', 'wake-niwa-ikanai', 'koso', 'to-iu-no-wa', 'koto-wa-nai', 'koto-ni-natteiru', 'temo-kamawanai', 'ta-you-ni'], ['ghost-hotline', 'tourist', 'yokai-court']),
+  g('3.8', 'limited', 'Service Japanese', 'How staff speak to guests: humble, formal, and at your service.', ['sasete-itadaku', ['de-gozaimasu', 'te-orimasu']], ['go-kudasai', 'kashikomarimashita', 'te-itadakitai'], ['bento-haus', 'omiai', 'last-train']),
+  g('3.9', 'limited', 'Time and change', 'Do it while you can, say what happens every time, and how things have changed.', ['uchi-ni', 'tabi-ni'], ['saichuu-ni', 'te-kita', 'totan', 'dasu', 'te-iku', 'ni-tsurete', 'tsuide-ni', 'te-hajimete', 'buri', 'te-irai', 'tokoro-ni', 'kiri'], ['happyokai', 'late-again', 'word-gauntlet']),
+  g('3.10', 'limited', 'Opinions and debate', 'Say what you feel, what must be true, and argue it.', ['you-na-ki', 'ni-chigainai'], ['ni-taishite', 'shika-nai', 'sorenanoni', 'tsumari', 'hazu-ga-nai', 'ni-totte', 'ni-kimatteiru', 'to-wa-kagiranai', 'ni-yotte', 'to-iu-yori', 'nai-koto-wa-nai', 'wake-ga-nai', 'n-janai', 'hodo-wa-nai', 'sou-ni-nai'], ['ghost-hotline', 'narabete', 'yokai-court']),
+  g('3.11', 'limited', 'Casual nuance', 'How friends really talk: ＿っぽい, ＿なんて, ＿とか.', ['ppoi', 'nante'], ['toka', 'kke', 'te-shouganai', 'hodo-degree', 'you-ni-wish', 'muke-muki', 'tate', 'to-ieba', 'rashii-typical', 'gurai-at-least', 'tte-topic', 'noun-sa-mi'], ['phrase-bingo', 'dub-club', 'word-gauntlet', 'yokai-court']),
   g('3.12', 'limited', 'Read 30 sign kanji', 'The kanji on everyday signs: 受付, 予約, 非常口, 禁煙.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
 ];
 export const GOAL_BY_ID: Readonly<Record<string, Goal>> = Object.fromEntries(GOALS.map((x) => [x.id, x]));

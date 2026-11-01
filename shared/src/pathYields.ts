@@ -54,13 +54,13 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "wa-desu": 0.5
     },
     "tourist": {
-      "de-o": 0.16,
-      "ka": 0.78,
-      "nakereba": 0.11,
-      "nakutemo-ii": 0.05,
-      "potential": 0.23,
-      "tara": 0.09,
-      "te-mo-ii": 0.23
+      "de-o": 0.28,
+      "ka": 2.38,
+      "nakereba": 0.25,
+      "nakutemo-ii": 0.14,
+      "potential": 0.92,
+      "tara": 0.36,
+      "te-mo-ii": 0.5
     },
     "oekaki": {},
     "omiai": {
@@ -100,37 +100,40 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "wa-desu": 0.41
     },
     "happyokai": {
-      "desu": 0.3,
-      "ikura": 0.22,
-      "ka": 2.47,
+      "desu": 0.25,
+      "ikura": 0.25,
+      "ka": 2.48,
       "koto-ni-suru": 0.39,
-      "mashita": 0.75,
+      "mashita": 0.69,
+      "migi-hidari": 0.05,
       "nan": 0.13,
-      "suki": 0.22,
-      "tara": 0.48,
-      "te-iru": 0.25,
-      "to-omou": 0.22,
-      "you-ni-naru": 0.52
+      "suki": 0.2,
+      "ta-koto": 0.39,
+      "tara": 0.5,
+      "te-iru": 0.16,
+      "to-omou": 0.17,
+      "you-ni-naru": 0.47
     },
     "late-again": {
-      "mashita": 1.09,
-      "migi-hidari": 0.09,
-      "nakereba": 0.05,
-      "no": 0.11,
-      "node": 0.67,
-      "passive": 0.45,
-      "potential": 0.28,
-      "sugiru": 0.52,
-      "tara": 0.11,
-      "te-iru": 0.33,
-      "te-shimau": 0.52
+      "ka": 0.75,
+      "mashita": 1,
+      "migi-hidari": 0.05,
+      "no": 0.17,
+      "node": 0.56,
+      "passive": 0.41,
+      "potential": 0.05,
+      "sugiru": 0.25,
+      "ta-koto": 0.41,
+      "te-iru": 0.48,
+      "te-mo-ii": 0.34,
+      "te-shimau": 0.38
     },
     "ghost-hotline": {
       "de-o": 0.28,
       "hou-ga-ii": 3.25,
       "ka": 2.75,
-      "tara-dou": 2.75,
-      "wa-desu": 0.36
+      "tara": 2.53,
+      "tara-dou": 2.75
     },
     "yokai-court": {
       "desu": 0.89,
@@ -196,18 +199,18 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
     "dub-club": {},
     "hajimemashite": {},
     "happyokai": {
-      "ikura": 0.14,
-      "ka": 1.88,
-      "suki": 0.28,
-      "te-iru": 0.34
+      "ikura": 0.17,
+      "ka": 2.02,
+      "suki": 0.33,
+      "te-iru": 0.25
     },
     "late-again": {
-      "desu": 0.08,
-      "kara": 0.16,
-      "mashita": 1.61,
-      "migi-hidari": 0.08,
-      "te-iru": 0.36,
-      "to-itte-ita": 0.16
+      "desu": 0.06,
+      "kara": 0.11,
+      "mashita": 1.55,
+      "migi-hidari": 0.06,
+      "te-iru": 0.3,
+      "to-itte-ita": 0.14
     },
     "ghost-hotline": {
       "naide-kudasai": 0.73,

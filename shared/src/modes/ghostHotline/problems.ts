@@ -33,6 +33,11 @@ export interface AdviceLine {
   mission: string;
   /** Nobiko-san's version: behind "Need a hint?", and what she reads on a mic pass. */
   model: JpText;
+  /**
+   * N4 lines that open with a conditional (＿たら, 4.5) only: the advice without it. The phrasebook logs this one
+   * unless the adviser's own words used the conditional, so 4.5 is credited only when ＿たら was really said.
+   */
+  plain?: JpText;
   /** N5 only: a fill-in frame (＿＿ marks the gap), the first step behind "Need a hint?". */
   frame?: JpText;
 }
@@ -52,8 +57,8 @@ export interface Problem {
   near: string;
   decoys: [string, string];
   curve: string;
-  /** Speaking advisers' lines, by level. */
-  advice: { n5: AdviceLine; n4: AdviceLine };
+  /** Speaking advisers' lines, by level. N3 advice uses the Limited Express grammar (docs/n3-coverage.md). */
+  advice: { n5: AdviceLine; n4: AdviceLine; n3?: AdviceLine };
   /** Nobiko-san's line at the secret beat. */
   reveal: JpText;
   /** Left out: every room. */
@@ -143,6 +148,10 @@ export const PROBLEMS: readonly Problem[] = [
         mission: 'Gently suggest something the kappa could try.',
         model: jk('お皿に 水を かけたら どうですか。', 'おさらに みずを かけたら どうですか。', 'Why not pour some water on your dish?'),
       },
+      n3: {
+        mission: 'Tell the kappa what it really ought to do.',
+        model: jk('お皿に 水を かける べきですよ。', 'おさらに みずを かける べきですよ。', 'You really ought to pour water on your dish.'),
+      },
     },
     reveal: jp('おさらに みず！ かっぱの きほんよ〜。', 'Water on the dish! Kappa basics, dear~'),
     status: 'draft',
@@ -168,8 +177,13 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('ろうそくに ひを ＿＿ ください。', 'Please ＿＿ (light) your candle.'),
       },
       n4: {
-        mission: 'Tell Chōchin-san what he’d better do.',
-        model: jk('マッチで 火を つけた ほうが いいですよ。', 'マッチで ひを つけた ほうが いいですよ。', 'You’d better light it with a match.'),
+        mission: 'Tell Chōchin-san what he’d better do next time his flame goes out.',
+        model: jk('今度 火が 消えたら、マッチで 火を つけた ほうが いいですよ。', 'こんど ひが きえたら、マッチで ひを つけた ほうが いいですよ。', 'Next time your flame goes out, you’d better light it with a match.'),
+        plain: jk('マッチで 火を つけた ほうが いいですよ。', 'マッチで ひを つけた ほうが いいですよ。', 'You’d better light it with a match.'),
+      },
+      n3: {
+        mission: 'Tell Chōchin-san the one thing it needs to fix this.',
+        model: jk('マッチさえ あれば、すぐ 火が つけられますよ。', 'マッチさえ あれば、すぐ ひが つけられますよ。', 'All you need is a match, and you can light it right away.'),
       },
     },
     reveal: jp('ひが ついたら、また ゆらゆらね〜。', 'Light him up, and he’s flickering again~'),
@@ -199,6 +213,10 @@ export const PROBLEMS: readonly Problem[] = [
         mission: 'Gently suggest something Pon could try.',
         model: jk('もう 一度 葉っぱを 頭に のせたら どうですか。', 'もう いちど はっぱを あたまに のせたら どうですか。', 'Why not put a leaf on your head again?'),
       },
+      n3: {
+        mission: 'Suggest, casually, what might fix it.',
+        model: jk('葉っぱを 頭に のせれば いいんじゃ ない？', 'はっぱを あたまに のせれば いいんじゃ ない？', 'Wouldn’t a leaf on your head do it?'),
+      },
     },
     reveal: jp('はっぱ いちまいで ドロン！ かんたんね〜。', 'One leaf and… poof! Easy~'),
     status: 'draft',
@@ -226,6 +244,10 @@ export const PROBLEMS: readonly Problem[] = [
       n4: {
         mission: 'Tell Fude what he’d better do.',
         model: jk('もう 一度 墨を つけた ほうが いいですよ。', 'もう いちど すみを つけた ほうが いいですよ。', 'You’d better dip into the ink again.'),
+      },
+      n3: {
+        mission: 'Tell Fude what will surely work.',
+        model: jk('もう 一度 墨を つければ、書けるに ちがいありません。', 'もう いちど すみを つければ、かけるに ちがいありません。', 'Dip in the ink once more, and you’re sure to write again.'),
       },
     },
     reveal: jp('すみを つけて、シュッ！ ふっかつね〜。', 'A dip of ink and… swish! He’s back~'),
@@ -255,6 +277,10 @@ export const PROBLEMS: readonly Problem[] = [
         mission: 'Gently suggest something the umbrella ghost could try.',
         model: jk('雨の 日は 傘を さしたら どうですか。', 'あめの ひは かさを さしたら どうですか。', 'Why not put up an umbrella on rainy days?'),
       },
+      n3: {
+        mission: 'Tell the umbrella what will spare it from getting wet.',
+        model: jk('雨の 日は 傘を させば、ぬれずに すみますよ。', 'あめの ひは かさを させば、ぬれずに すみますよ。', 'On rainy days, put up an umbrella and you won’t have to get wet.'),
+      },
     },
     reveal: jp('かさが かさを さすの。…いいじゃない〜。', 'An umbrella under an umbrella. …Why not~'),
     status: 'draft',
@@ -280,8 +306,13 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('クーラーを ＿＿ ください！', 'Please ＿＿ (turn on) the air conditioner!'),
       },
       n4: {
-        mission: 'Tell the snow woman what she’d better do.',
-        model: jp('クーラーを つけた ほうが いいですよ。', 'You’d better turn on the air conditioner.'),
+        mission: 'Tell the snow woman what she’d better do when she starts to melt.',
+        model: jp('とけて きたら、クーラーを つけた ほうが いいですよ。', 'When you start to melt, you’d better turn on the air conditioner.'),
+        plain: jp('クーラーを つけた ほうが いいですよ。', 'You’d better turn on the air conditioner.'),
+      },
+      n3: {
+        mission: 'Suppose you were her, and say what you’d do.',
+        model: jp('わたしが あなただと したら、クーラーを つけますね。', 'If I were you, I’d turn on the air con.'),
       },
     },
     reveal: jp('クーラーで ひんやり。なつは これよ〜。', 'Nice cool air. That’s summer sorted~'),
@@ -311,6 +342,10 @@ export const PROBLEMS: readonly Problem[] = [
         mission: 'Gently suggest something the cat could try.',
         model: jk('こたつに 入ったら どうですか。', 'こたつに はいったら どうですか。', 'Why not get in the kotatsu?'),
       },
+      n3: {
+        mission: 'Tell the nekomata what will surely warm its tails.',
+        model: jk('こたつに 入れば、しっぽも 温まるに ちがいありません。', 'こたつに はいれば、しっぽも あたたまるに ちがいありません。', 'Get in the kotatsu, and your tails are sure to warm up.'),
+      },
     },
     reveal: jp('ねこは こたつで まるく なるの。うたにも あるわ〜。', 'Cats curl up in the kotatsu. There’s even a song~'),
     status: 'draft',
@@ -336,8 +371,13 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('いっしょに ＿＿ ください！', 'Please ＿＿ (play) with us!'),
       },
       n4: {
-        mission: 'Tell the house spirit what it’d better do.',
-        model: jk('近所の 子どもと 遊んだ ほうが いいですよ。', 'きんじょの こどもと あそんだ ほうが いいですよ。', 'You’d better play with the kids next door.'),
+        mission: 'Tell the house spirit what it’d better do if it’s bored.',
+        model: jk('ひまだったら、近所の 子どもと 遊んだ ほうが いいですよ。', 'ひまだったら、きんじょの こどもと あそんだ ほうが いいですよ。', 'If you’re bored, you’d better play with the kids next door.'),
+        plain: jk('近所の 子どもと 遊んだ ほうが いいですよ。', 'きんじょの こどもと あそんだ ほうが いいですよ。', 'You’d better play with the kids next door.'),
+      },
+      n3: {
+        mission: 'Say you have a feeling what might cure the boredom.',
+        model: jk('近所の 子どもと 遊べば、元気に なるような 気が します。', 'きんじょの こどもと あそべば、げんきに なるような きが します。', 'I have a feeling playing with the kids next door would cheer you up.'),
       },
     },
     reveal: jp('あそびあいてが いれば、いえも にこにこよ〜。', 'A playmate, and the whole house smiles~'),
@@ -364,8 +404,13 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('したを ＿＿ ください！', 'Please ＿＿ (don’t look) down!'),
       },
       n4: {
-        mission: 'Tell the tengu what it’d better not do.',
-        model: jk('下を 見ない ほうが いいですよ。', 'したを みない ほうが いいですよ。', 'You’d better not look down.'),
+        mission: 'Tell the tengu what it’d better not do once it’s flying.',
+        model: jk('空を 飛んだら、下を 見ない ほうが いいですよ。', 'そらを とんだら、したを みない ほうが いいですよ。', 'Once you’re up in the sky, you’d better not look down.'),
+        plain: jk('下を 見ない ほうが いいですよ。', 'したを みない ほうが いいですよ。', 'You’d better not look down.'),
+      },
+      n3: {
+        mission: 'Tell the tengu there’s no need to do the scary thing.',
+        model: jk('下を 見る ことは ないですよ。上を 見て！', 'したを みる ことは ないですよ。うえを みて！', 'There’s no need to look down. Look up!'),
       },
     },
     reveal: jp('したを みなければ、そらは きもちいいわよ〜。', 'Don’t look down, and the sky is lovely~'),
@@ -392,8 +437,13 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('＿＿ ください！ じっと！', 'Please ＿＿ (don’t move)! Stay still!'),
       },
       n4: {
-        mission: 'Tell the daruma what it’d better not do.',
-        model: jk('「ころんだ」の あとは、動かない ほうが いいですよ。', '「ころんだ」の あとは、うごかない ほうが いいですよ。', 'After “koronda!”, you’d better not move.'),
+        mission: 'Tell the daruma what it’d better not do when it hears “koronda!”.',
+        model: jk('「ころんだ」と 聞こえたら、動かない ほうが いいですよ。', '「ころんだ」と きこえたら、うごかない ほうが いいですよ。', 'When you hear “koronda!”, you’d better not move.'),
+        plain: jk('「ころんだ」の あとは、動かない ほうが いいですよ。', '「ころんだ」の あとは、うごかない ほうが いいですよ。', 'After “koronda!”, you’d better not move.'),
+      },
+      n3: {
+        mission: 'Tell Daruma what it really ought to do after “koronda”.',
+        model: jk('「ころんだ」の あとは、じっと して いる べきです。', '「ころんだ」の あとは、じっと して いる べきです。', 'After “koronda”, you really ought to keep still.'),
       },
     },
     reveal: jp('だるまは うごかないのが しごとよ〜。', 'Not moving is a daruma’s whole job~'),
@@ -423,6 +473,10 @@ export const PROBLEMS: readonly Problem[] = [
         mission: 'Gently suggest something the oni could try.',
         model: jk('節分の 日は 山へ にげたら どうですか。', 'せつぶんの ひは やまへ にげたら どうですか。', 'Why not run off to the mountains on Setsubun?'),
       },
+      n3: {
+        mission: 'Tell the oni what it really ought to do on Setsubun.',
+        model: jk('節分の 日は、山へ にげる べきですよ。', 'せつぶんの ひは、やまへ にげる べきですよ。', 'On Setsubun, you really ought to run off to the mountains.'),
+      },
     },
     reveal: jp('にげるが かちよ〜。おには そと！', 'Running away is winning~ Demons out!'),
     status: 'draft',
@@ -450,6 +504,10 @@ export const PROBLEMS: readonly Problem[] = [
       n4: {
         mission: 'Tell the sandal ghost what it’d better do.',
         model: jk('玄関を 探した ほうが いいですよ。', 'げんかんを さがした ほうが いいですよ。', 'You’d better look by the front door.'),
+      },
+      n3: {
+        mission: 'Tell the sandal where you have a feeling it is.',
+        model: jk('玄関を 探せば 見つかる ような 気が します。', 'げんかんを さがせば みつかる ような きが します。', 'I have a feeling you’ll find it if you look by the front door.'),
       },
     },
     reveal: jp('かたほうは げんかんに いたわ。おにあいね〜。', 'The other one was by the front door. A perfect pair~'),
@@ -479,6 +537,10 @@ export const PROBLEMS: readonly Problem[] = [
         mission: 'Gently suggest something the echo spirit could try.',
         model: jk('自分から 大きな 声で 「やっほー」と 言ったら どうですか。', 'じぶんから おおきな こえで 「やっほー」と いったら どうですか。', 'Why not call “yoo-hoo!” first yourself, nice and loud?'),
       },
+      n3: {
+        mission: 'Suppose you were the kodama, and say what you’d do first.',
+        model: jk('わたしが こだまだと したら、自分から 大きな 声で 「やっほー」と 言いますね。', 'わたしが こだまだと したら、じぶんから おおきな こえで 「やっほー」と いいますね。', 'If I were the kodama, I’d shout “yoo-hoo!” first, nice and loud.'),
+      },
     },
     reveal: jp('やっほー！ …やっほー… いい こだまね〜。', 'Yoo-hoo! …yoo-hoo… What an echo~'),
     status: 'draft',
@@ -504,8 +566,13 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('せっけんで ＿＿ ください。', 'Please ＿＿ (wash) yourself with soap.'),
       },
       n4: {
-        mission: 'Tell the flying cloth what it’d better do.',
-        model: jk('せんたくきで 洗った ほうが いいですよ。', 'せんたくきで あらった ほうが いいですよ。', 'You’d better go through the washing machine.'),
+        mission: 'Tell the flying cloth what it’d better do when it gets muddy.',
+        model: jk('どろどろに なったら、せんたくきで 洗った ほうが いいですよ。', 'どろどろに なったら、せんたくきで あらった ほうが いいですよ。', 'When you get muddy, you’d better go through the washing machine.'),
+        plain: jk('せんたくきで 洗った ほうが いいですよ。', 'せんたくきで あらった ほうが いいですよ。', 'You’d better go through the washing machine.'),
+      },
+      n3: {
+        mission: 'Tell Ittan-momen there’s only one thing for it.',
+        model: jk('せんたくきで 洗う しか ないですね。', 'せんたくきで あらう しか ないですね。', 'There’s nothing for it but the washing machine.'),
       },
     },
     reveal: jp('せんたくして、まっしろ！ ふわふわ〜。', 'Washed, snow-white and fluffy~'),
@@ -535,6 +602,10 @@ export const PROBLEMS: readonly Problem[] = [
       n4: {
         mission: 'Gently suggest something the fox could try.',
         model: jk('会って すぐ 謝ったら どうですか。', 'あって すぐ あやまったら どうですか。', 'Why not apologise the moment you meet?'),
+      },
+      n3: {
+        mission: 'Tell the fox what it really ought to do when they meet.',
+        model: jk('会ったら、すぐ 謝る べきです。', 'あったら、すぐ あやまる べきです。', 'When you meet, you really ought to apologise right away.'),
       },
     },
     reveal: jp('まず あやまる！ はなは そのあとよ〜。', 'Say sorry first! The flowers come after~'),
@@ -566,6 +637,10 @@ export const PROBLEMS: readonly Problem[] = [
         mission: 'Tell the family what they’d better not do any more.',
         model: jk('もう 掃除しない ほうが いいですよ。', 'もう そうじしない ほうが いいですよ。', 'You’d better not clean any more.'),
       },
+      n3: {
+        mission: 'Tell the family it’s fine to stop cleaning.',
+        model: jk('もう 掃除しなくても かまいませんよ。', 'もう そうじしなくても かまいませんよ。', 'It’s fine if you don’t clean any more.'),
+      },
     },
     reveal: jp('そうじしない いえ… うちの ことかしら？', 'A house that never cleans… sounds like mine?'),
     audiences: ['cheeky'],
@@ -574,6 +649,16 @@ export const PROBLEMS: readonly Problem[] = [
 ];
 
 const tag = {
+  beki: 'Limited Express · 〜べきです',
+  sae: 'Limited Express · 〜さえ 〜ば',
+  nJanai: 'Limited Express · 〜んじゃ ない？',
+  chigainai: 'Limited Express · 〜に ちがいない',
+  kotoWaNai: 'Limited Express · 〜ことは ない',
+  zuNiSumu: 'Limited Express · 〜ずに すむ',
+  shika: 'Limited Express · 〜しか ない',
+  kamawanai: 'Limited Express · 〜ても かまわない',
+  toShitara: 'Limited Express · 〜と したら',
+  youNaKi: 'Limited Express · 〜ような 気が する',
   tara: 'Express Line · 〜たら どうですか',
   hou: 'Express Line · 〜た ほうが いいです',
   naiHou: 'Express Line · 〜ない ほうが いいです',
@@ -586,6 +671,16 @@ const tag = {
  * its keys hold the shorter one's (ないほうがいい holds ほうがいい, ないでください holds でください).
  */
 export const CHUNKS: readonly AdviceChunk[] = [
+  { id: 'you-na-ki', level: 'n3', text: 'ような 気が します', keys: ['ようなきがし', 'ようなきがする'], note: '〜ような 気が する: “I have a feeling…”. A hunch, offered gently.', tag: tag.youNaKi },
+  { id: 'to-shitara', level: 'n3', text: 'と したら', keys: ['だとしたら', 'たとしたら', 'るとしたら', 'うとしたら'], note: '〜と したら: “suppose…”. The caller tries the what-if on for size.', tag: tag.toShitara },
+  { id: 'beki', level: 'n3', text: 'べき', keys: ['べきです', 'べきだ', 'べきでは', 'べきじゃ'], note: '〜べきです: what you really ought to do. Advice with a raised eyebrow.', tag: tag.beki },
+  { id: 'sae', level: 'n3', text: 'さえ', keys: ['さえあれ', 'さえすれ', 'さえいれ', 'さえつけ'], note: '〜さえ 〜ば: just this one thing, and it’s fixed. Confident.', tag: tag.sae },
+  { id: 'n-janai', level: 'n3', text: 'んじゃ ない？', keys: ['いいんじゃない', 'んじゃないかな'], note: '〜んじゃ ない？: a soft “wouldn’t it…?”. Friends talk this way.', tag: tag.nJanai },
+  { id: 'chigainai', level: 'n3', text: 'に ちがいありません', keys: ['にちがいない', 'にちがいありません'], note: '〜に ちがいない: sure of it. The caller can relax.', tag: tag.chigainai },
+  { id: 'koto-wa-nai', level: 'n3', text: 'ことは ない', keys: ['ことはない', 'ことはありません'], note: '〜ことは ない: no need to. One worry fewer.', tag: tag.kotoWaNai },
+  { id: 'zu-ni-sumu', level: 'n3', text: 'ずに すみます', keys: ['ずにすみ', 'ずにすむ', 'なくてすみ', 'なくてすむ'], note: '〜ずに すむ: spared from it. Dry, for once.', tag: tag.zuNiSumu },
+  { id: 'shika', level: 'n3', text: 'しか ない', keys: ['しかない', 'しかありません'], note: '〜しか ない: nothing else for it. Into the machine.', tag: tag.shika },
+  { id: 'kamawanai', level: 'n3', text: 'ても かまいません', keys: ['てもかまわ', 'でもかまわ', 'てもかまいません', 'でもかまいません'], note: '〜ても かまわない: it’s fine if you don’t. Permission granted.', tag: tag.kamawanai },
   { id: 'nai-hou', level: 'n4', text: 'ない ほうが いいです', keys: ['ないほうがいい'], note: '〜ない ほうが いいです: friendly advice with a stop sign on it. Fair warning, given.', tag: tag.naiHou },
   { id: 'hou', level: 'n4', text: 'ほうが いいです', keys: ['たほうがいい', 'だほうがいい'], note: '〜た ほうが いいです: “you’d better”. Advice with a gentle shove behind it.', tag: tag.hou },
   // だら after ん (さけんだら, あそんだら): the highlight has to find だら too.

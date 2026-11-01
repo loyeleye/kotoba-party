@@ -247,9 +247,15 @@ describe('host lines', () => {
     }
   });
 
-  it('only use tiers on reveal reactions', () => {
-    expect(hostLines.filter((l) => l.tier && l.event !== 'reveal_react').map((l) => l.id)).toEqual([]);
-    expect(hostLines.filter((l) => l.event === 'reveal_react' && !l.tier).map((l) => l.id)).toEqual([]);
+  // Tiered events: the reveal reactions (by votes), and Chōchin-san's reaction to his Happyōkai card (ippon yes, good no, flop a secret).
+  const TIERED = ['reveal_react', 'happyokai_have_you_react'];
+  it('only use tiers on tiered reactions, and always there', () => {
+    expect(hostLines.filter((l) => l.tier && !TIERED.includes(l.event)).map((l) => l.id)).toEqual([]);
+    expect(hostLines.filter((l) => TIERED.includes(l.event) && !l.tier).map((l) => l.id)).toEqual([]);
+  });
+
+  it('Chōchin-san has a reaction to his Happyōkai card for yes, no and a secret', () => {
+    for (const tier of ['ippon', 'good', 'flop'] as const) expect(hostLines.some((l) => l.host === 'chochin' && l.event === 'happyokai_have_you_react' && l.tier === tier), tier).toBe(true);
   });
 
   it('give every host every shared event', () => {

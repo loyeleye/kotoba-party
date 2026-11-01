@@ -12,6 +12,9 @@ import { cases as n3a } from './frame-cases/n3-a.js';
 import { cases as n3b } from './frame-cases/n3-b.js';
 import { cases as n3c } from './frame-cases/n3-c.js';
 import { cases as n3d } from './frame-cases/n3-d.js';
+import { cases as n3e } from './frame-cases/n3-e.js';
+import { cases as n3f } from './frame-cases/n3-f.js';
+import { cases as n3g } from './frame-cases/n3-g.js';
 import { cases as n5existing } from './frame-cases/n5-existing.js';
 import { cases as n5new } from './frame-cases/n5-new.js';
 import { probes } from './frame-cases/panel-probes.js';
@@ -130,7 +133,7 @@ describe('sentence frames', () => {
 // are read with kuromoji tokens, as the server reads them.
 
 const reader = (await createReader())!;
-const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c, ...n4d, ...n3a, ...n3b, ...n3c, ...n3d };
+const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c, ...n4d, ...n3a, ...n3b, ...n3c, ...n3d, ...n3e, ...n3f, ...n3g };
 const line = (l: CaseLine) => (typeof l === 'string' ? { text: l, kana: l } : l);
 
 describe('every frame in a line (framesOf)', () => {
@@ -179,7 +182,7 @@ describe('every frame in a line (framesOf)', () => {
   // (docs/n4-n3-frames.md): the phone sends them spaced.
   it('finds N3 frames in written lines with no spaces', () => {
     const missed: string[] = [];
-    for (const [id, { pos }] of Object.entries({ ...n3a, ...n3b, ...n3c, ...n3d })) {
+    for (const [id, { pos }] of Object.entries({ ...n3a, ...n3b, ...n3c, ...n3d, ...n3e, ...n3f, ...n3g })) {
       for (const p of pos) {
         if (typeof p === 'string') continue;
         const text = p.text.replace(/[\s　]/g, '');
@@ -248,8 +251,8 @@ describe('every frame in a line (framesOf)', () => {
         'to-shite', 'toori-ni', 'sasete-itadaku', 'de-gozaimasu', 'te-orimasu', 'go-kudasai', 'kashikomarimashita', 'tabi-ni', 'saichuu-ni', 'te-kita', 'you-na-ki',
         'ni-chigainai', 'ni-taishite', 'shika-nai', 'sorenanoni', 'tsumari', 'ppoi', 'nante', 'toka', 'jan', 'kke'],
     };
-    // ＿じゃん and ＿っけ count for listening only (the plan's 3.11); every other frame can be said.
-    expect(ALL_FRAMES.filter((f) => f.listening).map((f) => f.id)).toEqual(['jan', 'kke']);
+    // ＿じゃん counts for listening only; ＿っけ became speakable with the spoken-N3 plan (JLPT seat, docs/n3-coverage.md).
+    expect(ALL_FRAMES.filter((f) => f.listening).map((f) => f.id)).toEqual(['jan']);
     for (const [level, ids] of Object.entries(path)) {
       for (const id of ids) expect([id, FRAME_BY_ID[id]?.level]).toEqual([id, level]);
     }

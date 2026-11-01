@@ -4,7 +4,9 @@ import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { callsFor, heardAny, lineOf, MAX_ADVISERS, POINTS, REACT_LOCK_MS, REACT_MS, RECORD_MS, type HotlineState, type HotlineView } from '../shared/src/modes/ghostHotline/hotline.js';
+import { FRAME_BY_ID, framesOf } from '../shared/src/japanese/frames.js';
 import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, PROBLEMS, problemOf } from '../shared/src/modes/ghostHotline/problems.js';
+import { phraseFrames } from '../shared/src/progress.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { ghostHotlinePolicy } from '../tools/bots/policies/ghostHotline.js';
@@ -154,7 +156,7 @@ describe('Ghost Advice Hotline: content', () => {
       for (const id of tiles) expect(adviceOf(id), `${p.id} ${id}`).toBeTruthy();
       expect(kanaTilesOf(p), p.id).toContain(p.cure);
       expect(betTilesOf(p), p.id).toContain(p.cure);
-      for (const level of ['n5', 'n4'] as const) {
+      for (const level of ['n5', 'n4', 'n3'] as const) {
         const line = lineOf(p, level);
         expect(heardAny(line.model.kana, adviceOf(p.cure)!.keys), `${p.id} ${level}: ${line.model.kana}`).toBe(true);
         expect(line.mission, `${p.id} ${level}`).not.toMatch(/〜|＿|te-form|grammar/i);
@@ -162,6 +164,11 @@ describe('Ghost Advice Hotline: content', () => {
       expect(p.advice.n5.frame?.kana, p.id).toContain('＿＿');
       // Every N4 model uses a chunk the booth can credit.
       expect(CHUNKS.some((k) => k.level === 'n4' && heardAny(p.advice.n4.model.kana, k.keys)), p.id).toBe(true);
+      // N3 (docs/n3-coverage.md): its own advice, with a chunk the booth credits and an N3 frame the path counts.
+      expect(p.advice.n3, p.id).toBeTruthy();
+      expect(CHUNKS.some((k) => k.level === 'n3' && heardAny(p.advice.n3!.model.kana, k.keys)), p.id).toBe(true);
+      const said = framesOf({ text: p.advice.n3!.model.kana, kana: p.advice.n3!.model.kana }, undefined, { keepHidden: true });
+      expect([p.id, said.some((f) => FRAME_BY_ID[f]?.level === 'n3')]).toEqual([p.id, true]);
       for (const level of ['kana', 'n5', 'n4'] as const) expect(p.line[level].kana, `${p.id} ${level}`).toBeTruthy();
     }
     // A cure's keys never fire on the call's other tiles.
@@ -405,6 +412,42 @@ describe('Ghost Advice Hotline: the learning path', () => {
     expect(spoke(a3!)).toBe(1);
   });
 
+  it('logs a line’s conditional (＿たら, 4.5) only when the adviser said one: ほうが いい alone credits hou-ga-ii, not tara', () => {
+    const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 7);
+    t.start();
+    toPlan(t);
+    const c = t.c;
+    c.problemId = 'ittan';
+    const p = problem(t);
+    const n4 = lineOf(p, 'n4');
+    expect(n4.plain).toBeTruthy();
+    const [a1, a2, a3] = c.advisers;
+    // a1: the advice without the conditional; a2: Nobiko-san's version, conditional and all; a3: あたらしい is not a たら.
+    adviseAll(t, (id) => clip(id === a1 ? n4.plain!.kana : id === a2 ? n4.model.kana : 'あたらしい せんたくきで あらった ほうが いいですよ'));
+    while (t.s.phase !== 'score') t.tick();
+    const entry = (id: string) => t.s.phrasebook[id]!.find((e) => e.itemId === `hotline:${p.id}:n4`)!;
+    for (const id of [a1!, a3!]) {
+      expect(entry(id)).toMatchObject({ outcome: 'said', recall: 'memory', kana: n4.plain!.kana });
+      expect(phraseFrames(entry(id))).toContain('hou-ga-ii');
+      expect(phraseFrames(entry(id))).not.toContain('tara');
+    }
+    expect(entry(a2!)).toMatchObject({ outcome: 'said', recall: 'memory', kana: n4.model.kana });
+    expect(phraseFrames(entry(a2!))).toContain('tara');
+  });
+
+  it('every conditional line has a plain version with the same advice and no conditional', () => {
+    const withIf = PROBLEMS.filter((p) => p.advice.n4.plain);
+    expect(withIf.length).toBe(6);
+    for (const p of withIf) {
+      const { model, plain } = p.advice.n4;
+      expect(phraseFrames(model), p.id).toEqual(expect.arrayContaining(['tara', 'hou-ga-ii']));
+      expect(phraseFrames(plain!), p.id).toContain('hou-ga-ii');
+      expect(phraseFrames(plain!), p.id).not.toContain('tara');
+      const tail = (x: string) => x.split('、').pop();
+      expect(tail(plain!.kana), p.id).toBe(tail(model.kana));
+    }
+  });
+
   it('a VIP-hidden clip earns nothing and isn’t credited', () => {
     const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 13);
     t.start();
@@ -440,10 +483,20 @@ describe('Ghost Advice Hotline: chunks', () => {
     expect(heardAny('ねたらどうなりますか', ta.keys)).toBe(false);
     expect(heardAny('ねたらどうですか', ta.keys)).toBe(true);
     // Every model at a level uses that level's chunk.
-    for (const p of PROBLEMS) for (const lv of ['n5', 'n4'] as const) {
-      const m = p.advice[lv].model.kana.replace(/[\s　、。！？「」]/g, '');
+    for (const p of PROBLEMS) for (const lv of ['n5', 'n4', 'n3'] as const) {
+      const m = p.advice[lv]!.model.kana.replace(/[\s　、。！？「」]/g, '');
       expect(CHUNKS.some((k) => k.level === lv && heardAny(m, k.keys)), `${p.id} ${lv}`).toBe(true);
     }
+  });
+});
+
+describe('Ghost Advice Hotline: if and when', () => {
+  it('some N4 advice says when to do it (＿たら, 4.5), and why-not advice (＿たら どうですか) never counts as an if', () => {
+    const n4 = PROBLEMS.map((p) => p.advice.n4.model);
+    const ifs = n4.filter((m) => phraseFrames(m).includes('tara'));
+    expect(ifs.length).toBeGreaterThanOrEqual(3);
+    for (const m of ifs) expect(phraseFrames(m), m.kana).toContain('hou-ga-ii');
+    for (const m of n4.filter((x) => phraseFrames(x).includes('tara-dou'))) expect(phraseFrames(m), m.kana).not.toContain('tara');
   });
 });
 

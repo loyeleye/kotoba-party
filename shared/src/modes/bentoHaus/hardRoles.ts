@@ -15,7 +15,8 @@
 //
 // Only lines said right reach the TV; keigo corrections stay on the player's own phone. Every line
 // here is draft until the fluent check, and each is tagged by name with the N4 frames it practises.
-// N3 (step 6): ＿で ございます, ＿て おります, ＿させて いただきます for the おもてなし shift.
+// N3 (docs/n3-coverage.md): an N3 order-taker's おもてなし lines use ＿させて いただきます (the welcome) and ＿て おります
+// (ごえんりょ いただいて おります, ごよういして おります). Anyone may say them; the N4 lines stay accepted too.
 
 import type { Level, ReviewStatus } from '../../../../content/src/types.js';
 import { nextOfferee, offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
@@ -47,6 +48,10 @@ export interface StepScript {
   keys?: readonly string[];
   /** Another accepted form of a line that asks the customer to wait: しょうしょう おまちください (お〜ください). */
   alt?: HardLine;
+  /** The N3 version of an おもてなし line (docs/n3-coverage.md): accepted from anyone, and the model an N3 player sees. */
+  n3?: HardLine;
+  /** For an N3 player, whose model is the N3 line: the N4 line, still accepted and credited as itself. */
+  plain?: HardLine;
 }
 
 const L =(text: string, en: string, frames: readonly string[]): HardLine => ({ text, kana: text, en, frames });
@@ -212,6 +217,8 @@ export interface GuestAsk {
   kind: 'decline' | 'ready';
   ask: JpLine;
   model: HardLine;
+  /** The N3 line: ＿は ごえんりょ いただいて おります, or ＿は ごよういして おります. */
+  n3: HardLine;
   keys?: readonly string[];
   /** What the guest says once the line has landed: short and plain, for every level (draft, like the rest). */
   reply: JpLine;
@@ -226,6 +233,7 @@ const NO = (thing: string, en: string, ask: JpLine, id: string, keys: readonly s
   ask,
   keys,
   model: L(`${SORRY}${thing}は ごえんりょ ください。`, `I'm terribly sorry. Please refrain from ${en}.`, ['keigo']),
+  n3: L(`${SORRY}${thing}は ごえんりょ いただいて おります。`, `I'm terribly sorry. We ask guests to refrain from ${en}.`, ['keigo', 'te-orimasu']),
   reply,
 });
 const READY = (text: string, en: string, ask: JpLine, id: string, reply: JpLine, customers?: readonly string[]): GuestAsk => ({
@@ -235,6 +243,7 @@ const READY = (text: string, en: string, ask: JpLine, id: string, reply: JpLine,
   ...(customers ? { customers } : {}),
   ask,
   model: L(text, en, ['te-aru']),
+  n3: L(text.replace('よういして あります', 'ごよういして おります'), en, ['te-orimasu']),
   reply,
 });
 
@@ -256,7 +265,15 @@ export const WELCOME: StepScript = {
   to: 'customer',
   check: 'welcome',
   model: L('いらっしゃいませ。どうぞ、おすわりください。', 'Welcome. Please, have a seat.', ['o-kudasai']),
+  n3: L('いらっしゃいませ。おせきへ ごあんない させて いただきます。', 'Welcome. Allow me to show you to your seat.', ['sasete-itadaku']),
 };
+
+/** The N3 welcome's other line, so ＿させて いただきます gets a second word in the gap (3.8 asks for two). */
+export const WELCOME_N3_ALT = L('いらっしゃいませ。おにもつを おあずかり させて いただきます。', 'Welcome. Allow me to take your bags.', ['sasete-itadaku']);
+
+/** A step at the order-taker's level: an N3 player's model is the N3 line, with the N4 one kept as `plain`. */
+export const atStepLevel = (st: StepScript, level: Level | undefined): StepScript =>
+  level === 'n3' && st.n3 ? { ...st, model: st.n3, plain: st.model } : st;
 
 // ---- checking a line ----
 
@@ -270,6 +287,9 @@ const KUREMASEN = ['てくれませんか', 'でくれませんか'];
 const KURERU = ['てくれますか', 'でくれますか', ...KUREMASEN];
 const GOENRYO = ['ごえんりょください', 'ごえんりょいただけますか', 'ごえんりょいただけませんか', 'ごえんりょねがいます', 'ごえんりょおねがいします'];
 const TE_ARU = ['よういしてあります'];
+const SASETE = ['させていただきます', 'させていただけ'];
+const GOENRYO_N3 = ['ごえんりょいただいております', 'ごえんりょねがっております'];
+const ORIMASU_READY = ['よういしております', 'よういいたしております'];
 const IKEMASEN = ['てはいけません', 'ではいけません', 'てはだめ', 'ちゃだめ', 'だめです'];
 
 // Food written in kanji is spelled out first, as the kitchen's calls are (唐揚げ can come back as とうあげ).
@@ -285,7 +305,7 @@ const has = (rs: readonly string[], chunks: readonly string[]) => rs.some((r) =>
  * a kitchen line asked with 〜て くれますか / くれませんか (te-kuremasen) or 〜て いただけますか (te-itadakemasen)
  * instead of 〜て もらえますか, or a customer asked to wait with しょうしょう おまちください (o-kudasai).
  */
-export type LineForm = 'kureru' | 'kuremasen' | 'itadaku' | 'itadakemasen' | 'omachi';
+export type LineForm = 'kureru' | 'kuremasen' | 'itadaku' | 'itadakemasen' | 'omachi' | 'n3' | 'plain';
 
 export interface LineCheck {
   ok: boolean;
@@ -301,7 +321,13 @@ export interface LineCheck {
  * customer asked to wait with しょうしょう おまちください is fine at the ask step, and at a sorry step that asks
  * them to wait (one with an `alt`), tagged o-kudasai.
  */
-export function checkLine(u: Utterance, step: Pick<StepScript, 'check' | 'keys' | 'alt'>): LineCheck {
+/** The N3 form was used: credited as the N3 line, whoever said it. */
+const n3Form = (step: Pick<StepScript, 'n3'>, frames: readonly string[]): LineCheck =>
+  step.n3 ? { ok: true, hint: null, frames: step.n3.frames, form: 'n3' } : { ok: true, hint: null, frames };
+/** The N4 form was used: for an N3 player (whose model is the N3 line), credited as the N4 line. */
+const plainForm = (step: Pick<StepScript, 'plain'>): LineCheck => (step.plain ? { ok: true, hint: null, frames: step.plain.frames, form: 'plain' } : { ok: true, hint: null });
+
+export function checkLine(u: Utterance, step: Pick<StepScript, 'check' | 'keys' | 'alt' | 'n3' | 'plain'>): LineCheck {
   const rs = readingsOf(u);
   const keyed = !step.keys?.length || has(rs, step.keys);
   const miss = (hint: string) => ({ ok: false, hint });
@@ -324,27 +350,32 @@ export function checkLine(u: Utterance, step: Pick<StepScript, 'check' | 'keys' 
       if (!keyed) return miss(`Say what you need: ${step.keys!.join(' / ')}, then 〜て もらえますか.`);
       return miss('Ask the kitchen with 〜て もらえますか (〜を つくって もらえますか).');
     case 'welcome':
-      if (has(rs, O_KUDASAI)) return { ok: true, hint: null };
+      if (has(rs, SASETE)) return n3Form(step, ['sasete-itadaku']);
+      if (has(rs, O_KUDASAI)) return plainForm(step);
       return miss('For a guest, use お〜ください: おすわりください or おまちください.');
     case 'decline':
       if (has(rs, IKEMASEN)) return miss('Staff never tell a guest 〜ては いけません. Say ＿は ごえんりょ ください.');
-      if (has(rs, GOENRYO) && keyed) return { ok: true, hint: null };
+      if (has(rs, GOENRYO_N3) && keyed) return n3Form(step, ['keigo', 'te-orimasu']);
+      if (has(rs, GOENRYO) && keyed) return plainForm(step);
       if (!keyed) return miss(`Say what you’re turning down (${step.keys!.join(' / ')}) and ＿は ごえんりょ ください.`);
       return miss('Turn it down politely: ＿は ごえんりょ ください.');
     case 'ready':
-      if (has(rs, TE_ARU)) return { ok: true, hint: null };
+      if (has(rs, ORIMASU_READY)) return n3Form(step, ['te-orimasu']);
+      if (has(rs, TE_ARU)) return plainForm(step);
       return miss('It’s already done for them: ＿は よういして あります.');
   }
 }
 
-const ENDING: Record<Exclude<LineForm, 'omachi'>, string> = { kureru: 'くれますか', kuremasen: 'くれませんか', itadaku: 'いただけますか', itadakemasen: 'いただけませんか' };
+const ENDING: Record<Exclude<LineForm, 'omachi' | 'n3' | 'plain'>, string> = { kureru: 'くれますか', kuremasen: 'くれませんか', itadaku: 'いただけますか', itadakemasen: 'いただけませんか' };
 
 /**
  * The line a step is credited with in the phrasebook, shown on the TV and voiced in the booth: the model line in
  * the form it was accepted in, so the frames credited are the ones used. Always a fixed line, never the player's words.
  */
-export function creditedLine(step: Pick<StepScript, 'check' | 'model' | 'alt'>, form: LineForm | undefined, frames?: readonly string[]): HardLine {
+export function creditedLine(step: Pick<StepScript, 'check' | 'model' | 'alt' | 'n3' | 'plain'>, form: LineForm | undefined, frames?: readonly string[]): HardLine {
   if (!form) return step.model;
+  if (form === 'n3') return step.n3 ?? step.model;
+  if (form === 'plain') return step.plain ?? step.model;
   if (form === 'omachi') return step.alt ?? (step.check === 'ask' ? SURE_OMACHI : SORRY_OMACHI);
   const text = step.model.text.replace('もらえますか', ENDING[form]);
   return { ...step.model, text, kana: text, frames: frames ?? step.model.frames };
@@ -787,7 +818,7 @@ export const galleryOpen = (hr: HardRound, now: number): Gallery | null => (hr.g
 // ---- おもてなし ----
 
 /** An おもてなし order-taker's guest: a welcome, then the guest's question. */
-export function addGuest(h: HardState, hr: HardRound, v: Visit): Guest | null {
+export function addGuest(h: HardState, hr: HardRound, v: Visit, level?: Level): Guest | null {
   if (!hr.omotenashi.includes(v.takerId)) return null;
   const own = GUEST_ASKS.find((a) => a.customers?.includes(v.customerId));
   const general = GUEST_ASKS.filter((a) => !a.customers);
@@ -796,7 +827,7 @@ export function addGuest(h: HardState, hr: HardRound, v: Visit): Guest | null {
     visitId: v.id,
     takerId: v.takerId,
     askId: ask.id,
-    steps: [lineStep(WELCOME), lineStep({ to: 'customer', check: ask.kind, model: ask.model, ...(ask.keys ? { keys: ask.keys } : {}) })],
+    steps: [hr.guests.length % 2 ? { ...WELCOME, n3: WELCOME_N3_ALT } : WELCOME, { to: 'customer' as const, check: ask.kind, model: ask.model, n3: ask.n3, ...(ask.keys ? { keys: ask.keys } : {}) }].map((st) => lineStep(atStepLevel(st, level))),
     step: 0,
   };
   hr.guests.push(g);

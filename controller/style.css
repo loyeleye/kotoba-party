@@ -798,3 +798,19 @@ input::placeholder { color: #a99ccf; }
 .wait-check-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .wait-check-btns button { min-height: 52px; }
 .wait-check-btns button.picked { outline: 3px solid currentColor; }
+
+/* Spoken N3 (docs/n3-coverage.md): folded "also counts", listening chips, the 通過 sign and the cleared counts. */
+.path-frames-more summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-height: 44px; cursor: pointer; }
+.path-frames-more summary small { color: var(--muted); font-size: 13px; }
+.path-frames-more .path-frames { margin-top: 6px; }
+.frame-chip.hear { border-style: dotted; border-width: 2px; }
+.chip-tag { align-self: center; padding: 0 5px; border-radius: 4px; background: var(--line); color: var(--outline); font-size: 11px; font-weight: 800; letter-spacing: 0.04em; }
+.frame-chip.pass { max-width: 100%; }
+.frame-chip.pass .frame-ja { white-space: nowrap; }
+.path-tsuuka { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; width: 100%; min-height: 56px; margin: 10px 0 0; padding: 8px 12px; border: 2px solid var(--line); border-radius: 12px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.path-tsuuka-mark { font-family: var(--font-ja); font-weight: 800; font-size: 18px; color: var(--ink); background: var(--outline); border-left: 8px solid transparent; border-image: repeating-linear-gradient(135deg, var(--warn) 0 5px, var(--outline) 5px 10px) 8; padding: 4px 8px 2px; border-radius: 0 6px 6px 0; }
+.path-tsuuka-mark rt { font-size: 10px; color: var(--muted); }
+.path-tsuuka .path-stop-text { display: flex; flex-direction: column; }
+.path-tsuuka .path-stop-text small { color: var(--muted); font-size: 13px; }
+.path-claim ul.path-counts { margin: 6px 0 0; padding-left: 18px; color: var(--ink); font-size: 14px; line-height: 1.5; }
+.path-chochin { word-break: keep-all; overflow-wrap: anywhere; }
