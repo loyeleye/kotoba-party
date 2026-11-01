@@ -3,7 +3,7 @@
 // allows), and each seat's phrasebook is counted the way the path counts it: a line said from memory adds one to
 // every frame phraseFrames finds in it, and a kanji read from memory in a game adds one to "kanji:<level>".
 //
-//   npm run sim:yields [-- --games 8 --seed 1]     rewrites shared/src/pathYields.ts
+//   npm run sim:yields [-- --games 32 --seed 1]     rewrites shared/src/pathYields.ts
 //
 // Bot gaps show as zeros: a game whose bots can't do what players do (retell a rumour, take a hard role)
 // yields nothing for that frame here. BOT_GAPS in shared/src/path.ts lists the known bot gaps, which count as 1.
@@ -19,7 +19,7 @@ import { MODE_IDS, type ModeId } from '../../shared/src/protocol.js';
 import { phraseFrames } from '../../shared/src/progress.js';
 import { playGame } from './play.js';
 
-const { values } = parseArgs({ options: { games: { type: 'string', default: '8' }, seed: { type: 'string', default: '1' }, out: { type: 'string' } } });
+const { values } = parseArgs({ options: { games: { type: 'string', default: '32' }, seed: { type: 'string', default: '1' }, out: { type: 'string' } } });
 
 /** Two rooms of four, so every level gets two seats a game. */
 const ROOMS: readonly (readonly Level[])[] = [

@@ -10,6 +10,7 @@ import type { PhraseEntry } from '../../shared/src/modes/mode.js';
 import {
   frameReady,
   frameText,
+  frameYield,
   gamesByYield,
   goalLabel,
   GOAL_BY_ID,
@@ -149,6 +150,28 @@ function countText(goal: Goal, c: { have: number; need: number }): string {
   return `${c.have} of ${c.need} ${noun} so far.`;
 }
 
+/**
+ * A stop no game asks for yet: the train passes through. It still counts: the frame does, not the game, so
+ * saying it from memory anywhere, or in the phrase review, moves it.
+ */
+function passNote(goal: Goal): HTMLElement {
+  const level = LINE_BY_ID[goal.line].level;
+  const scarce = goal.need.filter((n) => ![...(Array.isArray(n) ? n : [n])].some((id) => goal.games.some((m) => frameYield(m, id, level) > 0)));
+  const ja = scarce.map((n) => (Array.isArray(n) ? n : [n]).map((id) => frameText(id).ja).join('／')).join('、');
+  return h(
+    'div',
+    { class: 'path-pass' },
+    h('p', { class: 'path-chochin', lang: 'ja' }, '「この えきには まだ とまりません。 もうしわけ ございません！」'),
+    h(
+      'p',
+      { class: 'path-note' },
+      'No game asks you to say ',
+      h('span', { lang: 'ja' }, ja || 'these'),
+      ' from memory yet, so Next stop won’t send you here. It still counts whenever you say it from memory, in a game or in your phrase review.',
+    ),
+  );
+}
+
 /** The goal's detail: why, its frames, how far along, and where to practise. `short` is the lobby's. */
 function goalDetail(goal: Goal, st: PathStatus, level: Level, short = false): HTMLElement {
   const s = goalState(st, goal.id);
@@ -158,6 +181,7 @@ function goalDetail(goal: Goal, st: PathStatus, level: Level, short = false): HT
     'div',
     { class: 'path-detail' },
     h('p', { class: 'path-why' }, goal.why),
+    s.ready && !s.carried && !s.met ? passNote(goal) : null,
     goal.need.length ? h('div', { class: 'path-frames' }, h('small', { class: 'path-label' }, 'Say from memory'), goal.need.map((n) => needChips(n, level, tallies ? st : undefined))) : null,
     goal.also.length ? h('div', { class: 'path-frames also' }, h('small', { class: 'path-label' }, 'These count too'), goal.also.map((id) => frameChip(id, level))) : null,
     goal.kind === 'set'
@@ -173,9 +197,6 @@ function goalDetail(goal: Goal, st: PathStatus, level: Level, short = false): HT
     missing.length ? h('p', { class: 'path-note' }, 'Coming soon: the game can’t spot ', h('span', { lang: 'ja' }, missing.map((id) => frameText(id).ja).join('、')), ' in what you say yet.') : null,
     s.recheck === 'fading' ? h('p', { class: 'path-note' }, 'This stamp’s ink is fading. Say it from memory once more and it’s fresh again.') : null,
     s.recheck === 'due' ? h('p', { class: 'path-note' }, 'Time for a return trip: one of these is waiting in your phrase review.') : null,
-    s.ready && !s.carried && !s.met
-      ? h('p', { class: 'path-note' }, 'No game counts this from memory yet, so it won’t move tonight and the next-stop sign skips it. It opens when a game asks for it. You can still practise it in the games below.')
-      : null,
     goal.thin ? h('p', { class: 'path-note' }, goal.thin) : null,
     goal.games.length ? h('p', { class: 'path-games' }, 'Practise in: ', gamesByYield(st, goal, level).filter((m, i, a) => a.indexOf(m) === i && m !== 'bento-haus-vs').map((m) => MODES[m].info.title).join(', ')) : null,
   );
@@ -260,7 +281,10 @@ export function pathStrip(level: Level, room: RoomFit, opts: StripOpts): HTMLEle
           'div',
           { class: 'path-strip-more' },
           goalDetail(s.goal, st, level, true),
-          s.instead ? h('p', { class: 'path-note' }, 'The goal before this one needs a game that doesn’t fit tonight’s room. This one does.') : null,
+          s.skipped?.why === 'room' ? h('p', { class: 'path-note' }, `${goalLabel(s.skipped.goal)} needs a game that doesn’t fit tonight’s room. This one does.`) : null,
+          s.skipped?.why === 'pace'
+            ? h('p', { class: 'path-note' }, `Tonight’s games move this stop fastest. ${goalLabel(s.skipped.goal)} and the stops before it still count whenever you say them.`)
+            : null,
           h('p', { class: 'path-note' }, 'Your path shows on your phone only. The whole map is on My progress.'),
         )
       : null,
@@ -410,7 +434,7 @@ function stationState(s: GoalState, isNow: boolean): string {
   if (s.recheck === 'due') parts.push('return trip due');
   if (s.recheck === 'fading') parts.push('ink fading');
   if (!s.ready) parts.push('coming soon');
-  if (s.ready && !s.carried && !s.met) parts.push('no game counts it yet');
+  if (s.ready && !s.carried && !s.met) parts.push('trains don’t stop here yet');
   if (isNow) parts.push('next stop');
   if (!s.met && s.ready) parts.push(`${pct(s.progress)}% there`);
   return parts.join(', ');
@@ -422,8 +446,8 @@ function stationPill(s: GoalState, isNow: boolean): HTMLElement | null {
   if (s.recheck === 'fading') return h('span', { class: 'path-pill fading', 'aria-hidden': 'true' }, 'Ink fading');
   if (isNow && !s.met) return h('span', { class: 'path-pill now', 'aria-hidden': 'true' }, '▶ Next stop');
   if (!s.ready) return h('span', { class: 'path-pill soon', 'aria-hidden': 'true' }, 'Coming soon');
-  if (!s.carried && !s.met) return h('span', { class: 'path-pill soon', 'aria-hidden': 'true' }, 'No game yet');
   if (!s.met && s.progress > 0) return h('span', { class: 'path-pill', 'aria-hidden': 'true' }, `${pct(s.progress)}%`);
+  if (!s.carried && !s.met) return h('span', { class: 'path-pill pass', 'aria-hidden': 'true' }, 'Not stopping yet');
   return null;
 }
 
@@ -464,7 +488,7 @@ function lineTrack(line: Line, st: PathStatus, current: Goal | null, open: (goal
         );
       }
       const isNow = goal === current;
-      const cls = ['path-station', s.met ? 'met' : s.progress > 0 && s.ready ? 'started' : '', isNow ? 'now' : '', s.recheck ? `ring-${s.recheck}` : '', s.ready && (s.carried || s.met) ? '' : 'soon'].filter(Boolean).join(' ');
+      const cls = ['path-station', s.met ? 'met' : s.progress > 0 && s.ready ? 'started' : '', isNow ? 'now' : '', s.recheck ? `ring-${s.recheck}` : '', !s.ready ? 'soon' : s.carried || s.met ? '' : 'pass'].filter(Boolean).join(' ');
       return h(
         'li',
         { class: cls, 'aria-current': isNow ? 'step' : null, style: `--p:${pct(s.met ? 1 : s.progress)}%` },
@@ -541,6 +565,14 @@ export function pathTab(view: AccountView, level: Level, toggle: (on: boolean) =
         { class: 'path-line', id: 'path-line-panel', role: 'tabpanel', 'aria-labelledby': `path-sign-${line.id}`, 'data-line': line.id },
         below ? h('p', { class: 'path-note' }, 'Optional · filled in by what you’ve said') : null,
         ls.soon ? h('p', { class: 'path-note' }, `${ls.soon} ${ls.soon === 1 ? 'station opens' : 'stations open'} when the game learns to spot their sentences. They don’t count yet.`) : null,
+        line.id === 'limited' && !PICKER_LEVELS.includes('n3')
+          ? h(
+              'div',
+              { class: 'path-pass' },
+              h('p', { class: 'path-chochin', lang: 'ja' }, '「とっきゅうは まだ はしって いません。」'),
+              h('p', { class: 'path-note' }, 'The stations are built. Trains start stopping as the games learn their N3 lines.'),
+            )
+          : null,
         lineTrack(line, st, s?.goal ?? null, (goal, btn) => show(goal, st, level, btn)),
         next ? h('button', { type: 'button', class: 'path-transfer', 'data-line': next.id, onclick: () => pick(next.id) }, h('span', { lang: 'ja' }, 'のりかえ'), ` Change to the ${next.name} →`) : null,
       ),

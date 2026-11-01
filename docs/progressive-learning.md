@@ -115,13 +115,20 @@ deck (4.2, 4.4, already listed). 4.2 still has only Tourist, and 4.7 stays 工�
 - **Resting:** when a frame lacks only the 3-day gap, saying it again early adds nothing, so its goal
   shows "say it again from Nov 4" and the suggestion moves on to another goal.
 
-A line is **cleared** when all its visible goals that can be met today are met; coming-soon goals (no
-matcher yet) don't block it, and the map counts them apart. Players who start at N5 or N4 don't have to
+A line is **cleared** when all its visible goals are met, so a line with coming-soon goals (no matcher yet)
+can't clear yet; the map counts them apart. Stops no game asks for yet still count toward clearing. Players who start at N5 or N4 don't have to
 clear the lines below, and what they've said fills those maps in.
 
-**Suggesting the next game.** The first goal on the player's line (their level's, or the next one up with
-anything open) that isn't met, can be met today and isn't resting, with a faded goal first, and the first
-of its games that fits tonight's room. With nothing to suggest, the strip shows the resting goal's date or
+**Suggesting the next game.** On the player's line (their level's, or the next one up with anything open),
+among goals that aren't met, can be met today and aren't resting. A goal with a faded frame comes first, at
+a game that gives that frame. On the Express Line (step 5b) the rest rank by pace: what the best game for
+tonight's room gives the goal's scarcest required frame, from the measured yields (`npm run sim:yields`,
+shared/src/pathYields.ts). Slow stops (under 0.15 says a game) come after every faster one and take turns
+by day, so no single slow stop holds a room; frames only bot-gaps say count as slow. A stop no game on it
+asks for is never suggested. The Kana and Local Lines keep list order and their first game that fits, until
+the Local Line has its own simulation (its yields say most N5 lines are logged as read), and the Limited
+Express does too until N3 opens. When the suggestion passes an earlier open stop, the strip names it and
+says why (the room, or tonight's pace). With nothing to suggest, the strip shows the resting goal's date or
 the phrase review instead. A suggestion never blocks anything.
 
 ## Sentence frames
@@ -170,8 +177,12 @@ lists, including every misfire the Japanese review found.
   the suggestion is on. Line colours are their own (Kana sky blue, Local green, Express orange, Limited Express rose); gold and
   white only mark states. A met station is a solid disc with a check; a started one fills like a clock; a
   return trip due adds a second ring, and fading ink hatches the disc with a dashed edge. Coming-soon
-  stations are small grey diamonds on a dashed stretch, and 4.7 is a striped 工事中 barrier. Every state
-  also has a pill in words. Tapping a station opens its sheet (the game's bottom sheet): the red 済 hanko
+  stations are small grey diamonds on a dashed stretch, and 4.7 is a striped 工事中 barrier. A stop no game
+  asks for yet has a dashed platform and the pill "Not stopping yet" (its progress % instead once started);
+  its sheet has Chōchin-san's 「この えきには まだ とまりません。 もうしわけ ございません！」 and says which frame no
+  game asks for, and that saying it from memory anywhere, or in the phrase review, still counts. Until N3
+  opens, the Limited Express map says 「とっきゅうは まだ はしって いません。」 (its stations are built; trains
+  start stopping as the games learn their N3 lines). Every state also has a pill in words. Tapping a station opens its sheet (the game's bottom sheet): the red 済 hanko
   and date when met, then its frames with tallies, the rule and the games. A のりかえ button at the end of a
   line goes to the next. Lines below the player's level say "Optional · filled in by what you've said".
   Nothing appears on the TV, and there are no streaks.

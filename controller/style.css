@@ -741,6 +741,10 @@ input::placeholder { color: #a99ccf; }
 .path-stop-text { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: baseline; }
 .path-stop-text small { color: var(--muted); font-size: 14px; }
 .path-station.soon .path-stop-text, .path-station.gap .path-stop-text { color: var(--muted); }
+/* A stop no game asks for yet: the track runs on, the train doesn't stop (a hollow, dashed platform). */
+.path-station.pass .path-stop { border-style: dashed; opacity: 0.7; }
+.path-station.pass .path-stop-text { color: var(--muted); }
+.path-pass { margin: 6px 0; }
 .path-row.static { cursor: default; }
 .path-row.static:hover { background: none; }
 .path-pill { flex: none; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }

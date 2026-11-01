@@ -5,11 +5,11 @@
 import { describe, expect, it } from 'vitest';
 import { kana } from '../content/src/kana/kana.js';
 import type { PhraseEntry } from '../shared/src/modes/mode.js';
-import { MODES, noFit } from '../shared/src/modes/registry.js';
+import { MODES } from '../shared/src/modes/registry.js';
 import { FRAME_BY_ID } from '../shared/src/japanese/frames.js';
-import { currentLine, frameReady, frameText, GOAL_FRAMES, goalCarried, GOALS, goalYield, KANA_TARGET, LINES, markPath, missingFrames, pathStatus, suggest } from '../shared/src/path.js';
+import { currentLine, frameReady, frameText, frameYield, GOAL_FRAMES, goalCarried, goalPace, GOALS, goalYield, KANA_TARGET, LINES, markPath, missingFrames, pathStatus, SLOW_YIELD, suggest } from '../shared/src/path.js';
 import { addGame, duePhrases, emptyProgress, frameRule, MAX_PHRASES, recallOf, reviewPhrase, type GameResult, type Progress } from '../shared/src/progress.js';
-import type { ModeId } from '../shared/src/protocol.js';
+import { MODE_IDS, type ModeId } from '../shared/src/protocol.js';
 import { tonightFrames } from '../controller/src/path.js';
 
 const DAY = 86_400_000;
@@ -301,32 +301,54 @@ describe('the 21-day re-check', () => {
 describe('what to play next', () => {
   it('starts on the player’s own line: kana at the Kana level, the Local Line at N5', () => {
     const p = emptyProgress();
-    expect(suggest(status(p), 'kana', room(4))).toMatchObject({ line: { id: 'kana' }, goal: { id: 'K1' }, mode: 'kana-raid', instead: false });
-    expect(suggest(status(p), 'n5', room(4))!.line.id).toBe('local');
+    expect(suggest(status(p), 'kana', room(4))).toMatchObject({ line: { id: 'kana' }, goal: { id: 'K1' }, mode: 'kana-raid', skipped: null });
+    // The Local Line keeps list order until its own simulation: a new N5 player starts on 5.1.
+    expect(suggest(status(p), 'n5', room(4))).toMatchObject({ line: { id: 'local' }, goal: { id: '5.1' }, mode: 'hajimemashite', skipped: null });
     expect(suggest(status(p), 'n4', room(4))!.line.id).toBe('express');
   });
 
-  it('offers the open goal tonight’s game moves most, by the measured yields, and never one no game carries', () => {
+  it('on the Express Line, offers the open goal tonight’s games move fastest, and never one no game carries', () => {
     const st = status(emptyProgress());
-    for (const [level, line] of [['n5', 'local'], ['n4', 'express']] as const) {
-      const s = suggest(st, level, room(4))!;
-      const best = Math.max(
-        ...GOALS.filter((g) => g.line === line && !g.gap && missingFrames(g).length === 0 && goalCarried(g)).flatMap((g) =>
-          g.games.filter((m) => !noFit(MODES[m].info, 4, 4)).map((m) => goalYield(st, g, m, level) ?? 0),
-        ),
-      );
-      expect(goalYield(st, s.goal, s.mode, level), level).toBe(best);
-      expect(goalCarried(s.goal)).toBe(true);
-    }
-    // Following it never sends the room to a game that gives the goal nothing.
-    const n4 = suggest(st, 'n4', room(4))!;
-    expect(goalYield(st, n4.goal, n4.mode, 'n4')).toBeGreaterThan(0);
+    const s = suggest(st, 'n4', room(4))!;
+    const open = GOALS.filter((g) => g.line === 'express' && !g.gap && missingFrames(g).length === 0 && goalCarried(g));
+    const best = Math.max(...open.map((g) => goalPace(st, g, 'n4', room(4))!.y));
+    expect(goalPace(st, s.goal, 'n4', room(4))!.y).toBe(best);
+    expect(best).toBeGreaterThan(0);
+    expect(goalCarried(s.goal)).toBe(true);
+    // The game it names moves the goal's scarcest frame.
+    expect(goalYield(st, s.goal, s.mode, 'n4')).toBeGreaterThan(0);
+  });
+
+  it('can offer every Express goal a game carries: each one has a pace, its frames from whichever games give them', () => {
+    const st = status(emptyProgress());
+    const stuck = GOALS.filter((g) => g.line === 'express' && !g.gap && missingFrames(g).length === 0 && goalCarried(g)).filter((g) => !(goalPace(st, g, 'n4', null)!.y > 0));
+    expect(stuck.map((g) => g.id)).toEqual([]);
+  });
+
+  it('lists every game that gives a required Express frame from memory on that goal', () => {
+    const missing = GOALS.filter((g) => g.line === 'express' && g.kind === 'frames').flatMap((g) =>
+      g.need.flatMap((n) => (Array.isArray(n) ? n : [n])).flatMap((id) =>
+        MODE_IDS.filter((m) => m !== 'debug' && m !== 'bento-haus-vs' && !g.games.includes(m) && frameYield(m, id, 'n4') >= 0.05).map((m) => `${g.id}:${id}:${m}`),
+      ),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it('gives slow stops turns day by day, so one slow stop never holds a room', () => {
+    const p = emptyProgress();
+    // Every Express stop with a fast game is met; what's left is slow.
+    const fastGoals = GOALS.filter((g) => g.line === 'express' && goalCarried(g) && (goalPace(status(p), g, 'n4', room(4))?.y ?? 0) >= SLOW_YIELD);
+    p.frameMarks = Object.fromEntries(fastGoals.flatMap((g) => g.need.flatMap((n) => (Array.isArray(n) ? n : [n]))).map((id) => [id, { metAt: T0, recheckAt: T0 + 60 * DAY, recheck: 'waiting' as const }]));
+    markPath(p, T0);
+    const picks = new Set([0, 1, 2, 3, 4, 5].map((d) => suggest(status(p, T0 + d * DAY), 'n4', room(4))?.goal.id));
+    expect(picks.size).toBeGreaterThan(1);
+    expect(picks.has(undefined)).toBe(false);
   });
 
   it('picks a game that fits the room, and moves on as goals are met', () => {
     const p = emptyProgress();
-    const pair = suggest(status(p), 'n5', room(2))!;
-    expect(noFit(MODES[pair.mode].info, 2, 2)).toBeNull();
+    // Nice to Meet You! needs 3: a pair gets Omiai for 5.1.
+    expect(suggest(status(p), 'n5', room(2))).toMatchObject({ goal: { id: '5.1' }, mode: 'omiai' });
     meetDesu(p);
     expect(suggest(status(p, T0 + 3 * DAY), 'kana', room(4))!.goal.id).toBe('K1');
   });

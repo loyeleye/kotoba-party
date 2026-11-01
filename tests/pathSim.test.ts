@@ -13,6 +13,11 @@ describe('path simulation: bots play the real games in-process', () => {
     expect(g.seats.filter((s) => s.level === 'n4').every((s) => s.result.mode === mode)).toBe(true);
   });
 
+  it('Happyōkai! deals question cards to an N3 seat (the N4 ones, until N3 has its own)', () => {
+    const g = playGame(content, 'happyokai', ['n3', 'n4', 'n5', 'kana'], 4);
+    expect(g.seats.find((s) => s.level === 'n3')!.result.mode).toBe('happyokai');
+  });
+
   it('a speaking N4 bot takes the Bento Haus hard roles and says their frames from memory', () => {
     const g = playGame(content, 'bento-haus', ['n4', 'n4', 'n5', 'n5'], 2);
     const said = g.seats.filter((s) => s.level === 'n4').flatMap((s) => s.result.phrases.filter((e) => e.outcome === 'said' && e.recall === 'memory'));

@@ -117,36 +117,54 @@ to 8 of 13 (4.13 stamps in 9% of rooms).
 
 ## Step 5b: the suggestion ranked by what games yield (300 rooms, same base settings)
 
-`suggest` now ranks the open goals by what the best game for tonight's room gives toward each one, from a
-measured table (`npm run sim:yields` writes shared/src/pathYields.ts: frames an N4, N5 or Kana seat says from
-memory per game, from 8 bot games per room). A goal's score is its **scarcest** required frame not met yet, so
-4.11's plentiful ＿すぎる can't hide its rare ＿ので; optional frames only break ties. A kanji goal is scaled to the
-same units (30 kanji on 2 days, against 3 says for a frame), or Shodō's 0.4 N4 kanji a game would keep a room on
-4.10. A goal no game on it carries (4.2, 4.8, 4.14 and every Limited Express goal today) is never suggested and
-shows "No game yet" on the map. Each goal's games are listed best first.
+On the Express Line, `suggest` now ranks the open goals by **pace**: what tonight's games give each goal's
+scarcest required frame not met yet, from a measured table (`npm run sim:yields -- --games 32` writes
+shared/src/pathYields.ts: frames an N4, N5 or Kana seat says from memory per game, from 32 bot games per
+room, leaving out anything under 0.05). The scarcest frame decides because a goal stamps only when every
+required frame is met; summing let 4.11's plentiful ＿すぎます hide its rare ＿ので. Each frame takes its own best
+game (4.6's three frames come from three games), and the room is sent to the game for the scarcest one.
+Optional frames only break ties, and never make a goal suggestible on their own.
+
+- **Slow stops take turns.** A stop under 0.15 says a game comes only after every faster one, and the slow ones
+  rotate by day, so no slow stop holds a room. Frames that only a known bot gap says (Word Gauntlet's retold
+  rumour) count as slow: guessed at 1 a game, 4.6 outranked every measured goal and held every room.
+- **Kanji goals are scaled** to frame units: 30 kanji on 2 days each, against 3 says for a frame.
+- **A goal no game on it carries** (4.8 and 4.14 today) is never suggested, and the map shows "Not stopping
+  yet". It still counts toward clearing, and saying its frame anywhere, or in the phrase review, still moves it.
+- **A faded frame's goal comes first** only at a game that gives the faded frame.
+- **The Kana and Local Lines keep list order** (a new N5 player starts on 5.1 again). The Local yields say 7 of
+  its 10 goals have no game an N5 player says from memory in: most N5 lines are logged as read, with the frame
+  on screen. That needs its own simulation, and probably cues that fade from the full line to the English, before
+  the phone acts on it. The Limited Express keeps list order too: N3 frames earn no credit until N3 opens.
+- A test checks that every game giving a required Express frame (0.05 or more a game) is on that goal's list.
+  It put Phrase Bingo on 4.2 and Late Again! on 4.4 and 4.5.
 
 | Setting | Seven goals (4.1, 4.3, 4.4, 4.5, 4.9, 4.11, 4.13), median nights (p25 / p75) | Rooms that get all seven |
 |---|---|---|
 | Ignores the suggestion (follow 0) | – | 1% |
-| Base: follows it 60% of the time | **41 (31 / 53)** | 87% |
-| Follows it 90% of the time | **28 (23 / 36)** | 96% |
+| Base: follows it 60% of the time | **40 (31 / 52)** | 85% |
+| Follows it 90% of the time | **29 (22 / 36)** | 97% |
+| Base, plus one phone review sitting a week | 49 (34 / >60) | 57% |
 
-- **Following the suggestion is now the fastest way, and the more the better.** Before, it was slower than
-  random (31 nights against 19 for the four carried goals, and under 40% at follow 0.9). Now the four carried
-  goals stamp by nights 2 (4.1, 4.9), 5 (4.4) and 6 (4.5) at the median, against 26 nights together when the
-  room ignores it.
-- **Three more goals come within reach:** 4.3 in every room (median 26 nights), 4.13 in every room (15) and 4.11
-  in 87% (39). Ignoring the suggestion, they stamp in 21%, 40% and 5% of rooms.
-- **One review sitting a week** adds 4.2 in 59% of rooms (median 41 nights), since a read Tourist phrase becomes
-  a say from memory on the phone. It slows 4.3 and 4.11 a little, because the room finishes 4.2's sayings first.
+- **Following the suggestion is now the fastest way to meet the frame rule.** Before, it was slower than random.
+  The four goals that were already carried stamp by nights 2 (4.1, 4.9), 5 (4.4) and 7 (4.5) at the median,
+  against 8 to 21 nights when the room ignores it.
+- **Three more goals come within reach:** 4.3 in every room (median 19 nights), 4.13 in 99% (27) and 4.11 in 86%
+  (40). Ignoring the suggestion, they stamp in 18%, 36% and 8% of rooms. 4.2 now stamps in 16% (26% when
+  followed closely) through Phrase Bingo.
+- **A weekly review sitting** lifts 4.2 to 65% of rooms but slows the seven: missed re-checks fade frames, and a
+  faded goal comes first. Recall here is a flat 0.7 with no forgetting or learning, so this measures how the
+  rules respond, not how fast people learn, and it can't show any cost of blocked practice. The longest run of
+  one goal is about 10 nights in the median room; interleaving evidence for L2 grammar is modest, so variety
+  within a night is a should-fix, not a rule.
 - `tests/pathSim.test.ts` checks that following the suggestion stamps at least as many goals, no later, than
-  picking games at random over 12 short rooms. The old list-order suggestion fails it (24 stamps against 42).
-- **The Local Line keeps counting every goal as carried for now.** Its yields say 7 of its 10 goals have no game
-  an N5 player says them in from memory (most N5 lines are logged as read, Hajimemashite's first-person cards
-  included). That needs its own simulation before the phone tells every beginner "No game yet", so Local goals
-  rank by yield but are never marked uncarried.
+  random picks over 12 short rooms (the old list-order suggestion fails it, 24 stamps against 42).
+  `tests/path.test.ts` checks that slow stops rotate, that every carried Express goal has a pace, and the list
+  rule above.
 
-Still not cleared in any room: 4.6, 4.8, 4.10, 4.12 and 4.14 need games (fixes 3 to 8 below).
+Still not cleared in any room: 4.6 (bot gap), 4.8, 4.10, 4.12 and 4.14 need games or bots (fixes 3 to 8
+below). The next most useful game fixes, by the game design seat: more ＿ので excuses in Late Again! (2 of its
+16 N4 excuses), and a "what changed / what I decided" card in Happyōkai for 4.12.
 
 ## What would let the line clear
 
@@ -158,7 +176,7 @@ Each of these is a change to a game or the path, so they're logged as open quest
    Keep a "this goal hasn't moved in recent nights" check only as a guard: on its own it made things worse
    (the UX seat measured 42 nights at follow 0.9). Add a test that following the suggestion isn't slower than
    ignoring it.
-2. **Show the stops no game carries yet** (done in step 5b for the Express and Limited Express Lines; they still count toward clearing
+2. **Show the stops no game carries yet** (done in step 5b for the Express Line; they still count toward clearing
    the line, so "cleared" keeps meaning every stop was met) as their own state on the phone: never
    suggested, with one line saying why.
 3. **Put Late Again! and Ghost Advice Hotline on the goals they carry** (Late Again! on 4.2, 4.3, 4.11, 4.13;
