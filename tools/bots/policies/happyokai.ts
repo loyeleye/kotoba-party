@@ -37,11 +37,15 @@ function ownLine(frames: readonly string[], word: string, r: number): string {
   return `これは ${word} です。`;
 }
 
-/** The bot's question-time answer: in a Then and now talk, one of the answer frames a third of the time each, else the stall. */
+/** The bot's question-time answer: in a deck talk, one of the deck's answer frames a third of the time each, else the stall. */
 function answerLine(frames: readonly string[], r: number): string {
   if (frames.some((f) => f.includes('ことに'))) {
     if (r < 1 / 3) return 'いい しつもんですね。それで、もっと しらべる ことに しました。';
     if (r < 2 / 3) return 'まえは できませんでしたが、いまは できるように なりました。';
+  }
+  if (frames.some((f) => f.startsWith('もし'))) {
+    if (r < 1 / 3) return 'もし そう だったら、ずっと ねて いたいです。';
+    if (r < 2 / 3) return 'たぶん、みんな びっくりすると おもいます。';
   }
   return 'いい しつもんですね。おいしい から です。';
 }
