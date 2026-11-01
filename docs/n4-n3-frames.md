@@ -125,24 +125,29 @@ spaces miss 13 of ~400 (the suffering passive, ＿とかいかない), and と�
 ## More N3 points (not on a goal yet)
 
 The #149 JLPT seat counted about 32 genuine N3 points on 3.1 to 3.11. Twelve of the biggest gaps now have
-draft matchers, with the same 10/10 bar (`tests/frame-cases/n3-d.ts`). No goal counts them yet: the open
-questions doc proposes which goals get them, or a 13th goal. A sweep of 13,870 game strings finds 2 lines
-that say them (アドバイスばかり, ゆうれいに なりかけて います), both right.
+draft matchers, with the same 10/10 bar (`tests/frame-cases/n3-d.ts`). No goal counts them yet. Ladi chose
+optional frames on today's goals (open questions doc): they get wired in next, with だす on 3.9 and さえ on 3.5.
+A sweep of 13,870 game strings finds 1 line that says them (アドバイスばかり), and it's right.
+
+The #157 panel found about 40 more lines that named the wrong frame, mostly compound verbs with the other
+meaning (うりだす, わらいかける, わりきる) and kanji lines with no spaces (説明できる, 思い出した). So the compound
+verbs now count only a short list of stems with the right meaning. Missing one is fine; naming the wrong one isn't.
+Every one of those lines is a look-alike in `n3-d.ts`.
 
 | Frame | How it's told apart |
 | --- | --- |
-| ＿ように いわれました | After a non-past verb or ない, then いわれる, たのまれる, ちゅういされる. Shown over ＿ように and the passive |
-| ＿もので | After a plain form or な. Not もの + で as a thing (たべもので, この もので), ものです, ほんもの |
-| ＿かける | Attached to a verb stem (たべかけ, きえかけて). Not でかける, はなしかける, おいかける, みかける, こしかける, or かける alone |
-| ＿きる | Attached to a verb stem (たべきれない, つかれきって). Not できる, おきる, いきる, おもいきって, しめきり, ふみきり, or きる alone |
-| ＿だす | Attached to a verb stem (なきだす, ふりだした). Not おもいだす, とりだす, よびだす, ぬけだす, さしだす, or だす alone |
+| ＿ように いわれました | After a non-past verb or ない, then いわれる, たのまれる, ちゅういされる. Shown over ＿ように and the passive. Not ＿ように いって (say it like), and not a suffering passive |
+| ＿もので | After a plain form or な, then 、, すみません or ものですから. Not もの as a thing (すきな もので いい, ははが つくった もので、), ものです, ほんもの |
+| ＿かける | Only half-done stems: たべ, のみ, よみ, いい, きえ, しに, ね, つくり, わすれ, さき and a few more. Not でかける, はなしかける, わらいかける, しかける, おしかける, みせかけ, しんぱいを かける, めがねを かける |
+| ＿きる | Only to-the-end stems: たべ, のみ, よみ, つかい, つかれ, はしり, はこび, うたい, まち, かぞえ and a few more. Not できる, おもいきって, わりきる, うりきれ, きる (cut) |
+| ＿だす | Only start-suddenly stems: なき, わらい, ふり, はしり, うごき, さけび, おこり, はなし and a few more. Not おもいだす, とりだす, うりだす, ききだす, みつけだす, とびだす, なげだす |
 | ＿た とたん | After た／だ only. Not とたん (iron sheet) |
 | ＿わけには いかない | Shown over ＿わけでは ない. Not いいわけ, もうしわけ |
-| ＿はずが ない | ＿はずは ない too. Shown over ＿はずです (counting keeps both) |
-| ＿に とって | Not とって "take" (てに とって, とって ください), とっても (very), or a handle |
-| ＿さえ | Not ささえる, さえぎる, さえずる, さえる |
-| ＿こそ | Not the set phrases こちらこそ and ようこそ, こそこそ, こそだて |
-| ＿ばかり | Nばかり and ＿て ばかり. Not ＿た ばかり (just did: N4), ばか, or a number + ばかり (about) |
+| ＿はずが ない | ＿はずは ない and ＿はず ない too. Shown over ＿はずです (counting keeps both) |
+| ＿に とって | Not とって "take" (てに とって, とって ください, とって きた, とって おこう, とって もらった, わたしに とって。), とっても (very), or a handle |
+| ＿さえ | Not ささえる, おさえる, さえぎる, さえずる, さえる, or names (みさえ, まさえ) |
+| ＿こそ | Not the set phrases こちらこそ, そちらこそ and ようこそ, からこそ／＿てこそ (N2), こそこそ, こそだて, こそ泥 |
+| ＿ばかり | Nばかり and ＿て ばかり. Not ＿た ばかり (just did: N4, with or without a space), ばかりか／ばかりでなく (N2), ばか, or an amount + ばかり (ふたつばかり, ちょっとばかり) |
 
 ## Fixes from the panel on #146
 
