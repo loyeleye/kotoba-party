@@ -89,17 +89,22 @@ as before. Everyone else keeps their scripted line, and a room with no N4 player
 
 - **The Gallery**: while an ad-lib dub is on (from the clip to its card flip), every other connected
   player gets one tile: four reactions, shown as bubbles in the TV's side column, never scored. Once a game,
-  a Kana or N5 player's tile is the curveball instead: "Which word did you hear?", with the
-  longest of the mission's words (3+ kana) heard in the acted take and two from the episode's other
-  missions, +5 if right (paid at once, not doubled in scene 3). No speech check on the take, or none of
-  the mission's words in it: no curveball that scene.
+  once the take has played (the room has heard it: dealt as the screening moves on to the guess,
+  `armCurveball`), a Kana or N5 player who hasn't reacted yet gets the curveball in place of their tile:
+  "Which word did you hear?", with the longest of the mission's words (3+ kana) heard in the acted take and
+  two from the episode's other missions (never a word the take or the model line contained), +5 if right
+  (paid at once, not doubled in scene 3). Who gets it rotates with the scene. No speech check on the take,
+  a spoiler, or none of the mission's words in it: no curveball that scene. While it is open, the booth
+  holds back lighting its chunk (`keyHeld`).
 - **The commentary booth**: once a good ad-lib's card flips (the take sent, not skipped or spoiled, and
   casual in the plain read or the acted take), one more screening step, `booth`, 5–7 s
-  (`commentaryMs`), and only then: Fude calls 「カット！ いいね！」 (`dub_cut`), and 1.2 s later says the
+  (`commentaryMs`), and only then: Fude calls 「カット！ いい アドリブ！ シュッ！」 or 「カット！ フデ、ないちゃう！」 (`dub_cut`), and 1.2 s later says the
   scene's model ad-lib line himself (`dub_booth`, a `{line}` bank line), never the player's take. The TV
-  shows the model line with its casual chunk lit (〜ちゃった, 〜んだ, だよ, …の？: `casualChunk`) and one
-  line of colour ("No script, all Aki. One casual way to say it, with 「ちゃった」."); Kana and N5 phones
-  show its gist. A night with no speech check has no booth.
+  shows the model line with its casual chunk lit (〜ちゃった, 〜んだ, だよ, …の？: `casualChunk`; a
+  〜ちゃう chunk only on a line tagged `te-shimau` or `teru`, a 〜てる／〜てない chunk only on one tagged
+  `teru`, so the monster's かてない is lit at its よ, not as 〜てない) and one line of colour ("Aki's take is
+  a keeper. Fude-kantoku's cut, for the record, with 「ちゃった」."); Kana and N5 phones show its gist
+  ("Aki's ad-lib: approved! Fude's cut: …"). A night with no speech check has no booth.
 - **The host stand-in**: in a room of one or two connected players with nobody at N4 (a 3-player game
   with one gone), Fude ad-libs one scene himself, once a game: 5 s into its scene card, after his table
   read, he says the scene's model ad-lib line (`dub_standin`), the TV shows it in the booth strip and Kana
@@ -107,8 +112,9 @@ as before. Everyone else keeps their scripted line, and a room with no N4 player
   anything, and nothing is scored.
 
 Content: `Scene.adlib` (and `cheekyAdlib` for Under the Cherry Tree's Cheeky twist) in `scenes.ts`, one per
-scene, all draft, each tagged with its frames (`plain`, `n-da`, `teru`, and
-`potential` for two).
+scene, all draft, each tagged with its frames (`plain`, `n-da`, `teru`, `te-shimau` for the three
+〜ちゃった lines, since ちゃう is 〜て しまう said casually, and `potential` for two). The check reports
+〜ちゃう／〜ちゃった as `te-shimau` and the other contractions as `teru`.
 
 ## Content
 

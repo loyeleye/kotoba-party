@@ -252,7 +252,7 @@ describe('Dub Club: kept clips', () => {
 
 // ---- the N4 ad-lib role (hard role, goal 4.8) ----
 
-const N4_FRAMES = ['plain', 'n-da', 'teru', 'potential'];
+const N4_FRAMES = ['plain', 'n-da', 'teru', 'te-shimau', 'potential'];
 
 describe('Dub Club: the ad-lib content', () => {
   it('every scene has a mission, a picture, key words and a casual model line that passes its own check', () => {
@@ -280,7 +280,10 @@ describe('Dub Club: the ad-lib content', () => {
     expect(adlibCheck('だれが おにぎり たべたの？', keys)).toMatchObject({ casual: true, key: true });
     const chatta = adlibCheck({ via: 'speech', text: '食べちゃった', reading: 'たべちゃった' }, keys);
     expect(chatta).toMatchObject({ casual: true, key: false });
-    expect(chatta.frames).toContain('teru');
+    // 〜ちゃった is 〜て しまう said casually (te-shimau); 〜てる is teru.
+    expect(chatta.frames).toContain('te-shimau');
+    expect(chatta.frames).not.toContain('teru');
+    expect(adlibCheck('いま たべてる', keys).frames).toContain('teru');
     expect(adlibCheck('おばけ なんだ', keys).frames).toContain('n-da');
     expect(adlibCheck('おにぎりを たべましたよ。', keys)).toMatchObject({ casual: false, key: true });
     expect(adlibCheck('おにぎりは どこですか', keys).casual).toBe(false);
@@ -498,28 +501,58 @@ describe('Dub Club: mixed rooms', () => {
     return { k, n5, n4 };
   }
 
-  it('the Gallery on the ad-lib dub: a curveball on a mission word for the Kana player, reactions for the rest', () => {
+  it('the Gallery on the ad-lib dub: a curveball on a mission word for a Kana or N5 player, reactions for the rest', () => {
     const t = room(['kana', 'n5', 'n4']);
     t.start();
     const take = 'ねえ、おにぎり だれが たべたの';
     const { k, n5, n4 } = adlibScene(t, adlib0().model.kana, take);
+    // No curveball while the take plays: the room hasn't heard it yet.
     t.until(() => t.view().now?.step === 'play');
-    const cb = t.view(k).me!.gallery!;
+    expect(t.view(k).me!.gallery!.kind).toBe('react');
+    expect(t.view(n5).me!.gallery!.kind).toBe('react');
+    expect(t.st().curveball).toBe(false);
+    // Once it has played, a Kana or N5 player who hasn't reacted gets it. Who rotates with the seed (the
+    // scene's number): scene 1 picks the second of them, the N5 player.
+    t.until(() => t.view().now?.step === 'guess');
+    const cb = t.view(n5).me!.gallery!;
     expect(cb.kind).toBe('curveball');
     if (cb.kind !== 'curveball') return;
     // The longest mission word heard in the take, against other scenes' mission words.
     expect(cb.options.map((o) => o.kana)).toContain('おにぎり');
     expect(cb.options).toHaveLength(3);
-    expect(t.view(n5).me!.gallery!.kind).toBe('react');
+    expect(t.view(k).me!.gallery!.kind).toBe('react');
     expect(t.view(n4).me!.gallery).toBeNull();
     expect(t.play(n4, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: false });
-    expect(t.play(n5, { kind: 'gallery', pick: 'naruhodo' })).toMatchObject({ ok: true });
-    expect(t.play(n5, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: false });
+    expect(t.play(k, { kind: 'gallery', pick: 'naruhodo' })).toMatchObject({ ok: true });
+    expect(t.play(k, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: false });
     expect(t.view().now!.gallery.map((b) => b.id)).toEqual(['naruhodo']);
-    const before = t.score(k);
-    expect(t.play(k, { kind: 'gallery', pick: 'おにぎり' })).toMatchObject({ ok: true });
-    expect(t.score(k) - before).toBe(CURVEBALL_POINTS);
+    const before = t.score(n5);
+    expect(t.play(n5, { kind: 'gallery', pick: 'おにぎり' })).toMatchObject({ ok: true });
+    expect(t.score(n5) - before).toBe(CURVEBALL_POINTS);
+    expect(t.view(n5).me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: 'おにぎり' });
     expect(t.st().curveball).toBe(true);
+  });
+
+  it('the curveball comes after the take has played, not before; a take with no mission word in it deals none', () => {
+    // Kana and N5 players who both reacted while the take played are past the curveball: none is dealt.
+    const early = room(['kana', 'n5', 'n4']);
+    early.start();
+    const seats = adlibScene(early, adlib0().model.kana, 'ねえ、おにぎり だれが たべたの');
+    early.until(() => early.view().now?.step === 'play');
+    expect(early.play(seats.k, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: true });
+    expect(early.play(seats.n5, { kind: 'gallery', pick: 'e' })).toMatchObject({ ok: true });
+    early.until(() => early.view().now?.step === 'guess');
+    expect(early.view(seats.k).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi' });
+    expect(early.st().curveball).toBe(false);
+
+    // A take with none of the mission's words: nothing to ask about, so no curveball.
+    const missed = room(['kana', 'n5', 'n4']);
+    missed.start();
+    const m = adlibScene(missed, adlib0().model.kana, 'きょうは いい てんき だね');
+    missed.until(() => missed.view().now?.step === 'guess');
+    expect(missed.view(m.k).me!.gallery!.kind).toBe('react');
+    expect(missed.view(m.n5).me!.gallery!.kind).toBe('react');
+    expect(missed.st().curveball).toBe(false);
   });
 
   it('a good ad-lib: カット！, then the booth replays the scene’s model line in Fude’s voice, never the take', () => {
@@ -541,6 +574,10 @@ describe('Dub Club: mixed rooms', () => {
     expect(tv.booth!.line).toEqual(model);
     expect(tv.booth!.lit.key.length).toBeGreaterThan(0);
     expect(tv.booth!.lit.before + tv.booth!.lit.key + tv.booth!.lit.after).toBe(model.text);
+    // The curveball dealt after the take is still unanswered, so the TV holds the lit word back for now.
+    expect(tv.booth!.holdKey).toBe(true);
+    expect(tv.booth!.note).toBe(`P3's take is a keeper. Fude-kantoku's cut, for the record, with 「${tv.booth!.lit.key}」.`);
+    expect(t.view(k).me!.gist!.en).toBe(`P3's ad-lib: approved! Fude's cut: “${model.en}”`);
     expect(tv.card).not.toBeNull();
     // Kana and N5 phones get the gist; the actor doesn't.
     expect(t.view(k).me!.gist).toMatchObject({ kana: model.kana, romaji: expect.any(String) });
@@ -603,6 +640,15 @@ describe('Dub Club: mixed rooms', () => {
     expect(key.endsWith('の')).toBe(true);
     expect(onigiri.indexOf(key)).toBeGreaterThan(onigiri.indexOf('たべ'));
     for (const e of EPISODES) for (const sc of e.scenes) expect(casualChunk(sc.adlib.model.text), sc.id).not.toBe('');
+    // With the line's frames: a て-form chunk only on a line tagged teru, so the monster's かてない (can't win)
+    // isn't lit as 〜てない, while 「…たべてないし」 is.
+    const monster = EPISODES.flatMap((e) => e.scenes).find((sc) => sc.adlib.model.text.includes('かてない'))!.adlib;
+    expect(casualChunk(monster.model.text, monster.frames)).not.toBe('てない');
+    expect(casualChunk(monster.model.text, monster.frames)).not.toBe('');
+    expect(casualChunk('しらないよ。ぼく、なにも たべてないし。…もぐもぐ。', ['plain', 'teru'])).toBe('てない');
+    // 〜ちゃった lines are tagged te-shimau and still light ちゃった.
+    expect(casualChunk('ごめんね。おいしそう だったから、たべちゃったんだ。', ['plain', 'te-shimau', 'n-da'])).toBe('ちゃった');
+    for (const e of EPISODES) for (const sc of e.scenes) expect(casualChunk(sc.adlib.model.text, sc.adlib.frames), sc.id).not.toBe('');
   });
 
   it('offers go by nextOfferee: a lone N4 player who says “not this time” sits the next scene out', () => {

@@ -202,7 +202,7 @@ function screening(view: RoomView, game: DubView): HTMLElement {
     } else if (now.step === 'booth' && now.card && now.booth) {
       // The commentary booth: カット！, and the scene's model ad-lib line with its casual chunk lit.
       caption = now.line;
-      panel = h('div', { class: 'dub-panel dub-booth' }, boothStrip(now.booth, nameOf(view, now.playerId)));
+      panel = h('div', { class: 'dub-panel dub-booth' }, boothStrip(now.booth, nameOf(view, now.playerId), now.booth.holdKey));
     } else if (now.step === 'reveal' && now.card) {
       onceFor(`flip:${key}`, () => sfx('flip'));
       caption = now.line;

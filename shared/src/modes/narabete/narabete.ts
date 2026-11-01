@@ -24,7 +24,8 @@
 // Who is offered it: the shared `nextOfferee` (fewest offers, then longest ago; a "not this time" sits the next
 // round out; in a room of 4 or more, nobody gives it two rounds running).
 // Mixed rooms (shared/src/modes/mixedRoom.ts): while the N4 defence is on, everyone else gets a Gallery tile
-// (a reaction, or once a game a Kana/N5 player's curveball: "which word did you hear?", ので, +5). The replay is
+// (a reaction; once a game, once the defence has landed, a Kana/N5 player who hasn't reacted gets the curveball
+// instead: "which word did you hear?", ので, +5, and the TV holds ので back until it's answered). The replay is
 // the shared commentary booth, with Nobiko-san's あらまあ first. In a 1–2-player room with no N4 player,
 // Nobiko-san gives one model defence herself, once a game, as the first line-up opens (the host stand-in).
 
@@ -34,7 +35,7 @@ import { isKana, isUtterance, normalizeReading, soundKey, utteranceReading, type
 import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
-import { commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
@@ -97,6 +98,8 @@ export const DURATIONS = {
 
 /** The curveball's key word: the frame word of every defence. */
 export const DEFENCE_KEY = 'ので';
+/** The curveball's other options: short connectives an N4 learner mixes up with ので. */
+export const DEFENCE_POOL: readonly string[] = ['のに', 'から', 'けど', 'まで'];
 
 // ---- state ----
 
@@ -286,7 +289,8 @@ export interface NarabeteView {
   /** The defence on now (encore), or the round's defence (score). `n4`: the rank-and-defend script, with its frame. */
   defence: { playerId: string; text: string | null; done: boolean; n4: boolean; frame: JpText | null } | null;
   /** The commentary booth's instant replay of the N4 defence (TV), while it runs. */
-  replay: { playerId: string; line: JpText; lit: Replay['lit']; note: string } | null;
+  /** `holdKey`: the curveball on ので is still open, so the TV doesn't light it yet. */
+  replay: { playerId: string; line: JpText; lit: Replay['lit']; note: string; holdKey: boolean } | null;
   /** The Gallery's reactions to the N4 defence, in tap order (TV). */
   gallery: ReactionTile[];
   /** The host stand-in's model defence, in the line-up it opens: the TV shows it from `atMs` for `ms`. */
@@ -665,7 +669,7 @@ function standInFor(r: Round): Commentary | null {
   const theme = r.kind !== 'time' ? themeOf(r.setId) : undefined;
   const n = Math.max(2, r.line.length);
   const script = set ? defenceScript({ unit: set.unit }, n - 1, n, '') : theme ? defenceScript({ theme }, n - 1, n, '') : null;
-  const line = script?.lines[0];
+  const line = script?.lines[1] ?? script?.lines[0];
   if (!script || !line) return null;
   return {
     playerId: null,
@@ -673,24 +677,26 @@ function standInFor(r: Round): Commentary | null {
     voiced: true,
     lit: lightUp(line.text, [DEFENCE_KEY]),
     note: 'ので = because: Nobiko-san gives the reason first, then where the card goes.',
-    gist: { kana: line.kana, en: `Nobiko-san: ${script.tail.en}, because ${script.reasons[0]!.en}.`, emoji: '🗣️' },
+    gist: { kana: line.kana, en: `Nobiko-san: ${script.tail.en}, because ${(script.reasons[1] ?? script.reasons[0])!.en}.`, emoji: '🗣️' },
     ms: commentaryMs(line),
   };
 }
 
-/** The Gallery for the N4 defence: everyone connected but the defender. The curveball's word is ので. */
+/** Kana and N5 players connected now, but the defender. */
+function lowOthers(hard: HardDefence, ctx: ModeContext): string[] {
+  return ctx
+    .connected()
+    .filter((p) => p.id !== hard.playerId && (p.level === 'kana' || p.level === 'n5'))
+    .map((p) => p.id);
+}
+
+/**
+ * The Gallery for the N4 defence: everyone connected but the defender. Reactions only while the defence is on;
+ * the curveball (ので) is dealt once it has landed, as the replay starts (`armCurveball`).
+ */
 function galleryFor(s: NarabeteState, r: Round, hard: HardDefence, ctx: ModeContext): Gallery {
   const others = ctx.connected().filter((p) => p.id !== hard.playerId);
-  const low = others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id);
-  const g = openGallery(
-    others.map((p) => p.id),
-    low,
-    { word: DEFENCE_KEY },
-    !!s.curveball,
-    s.round,
-  );
-  if (g.curveball) s.curveball = true;
-  return g;
+  return openGallery(others.map((p) => p.id), lowOthers(hard, ctx), null, !!s.curveball, s.round);
 }
 
 /** The N4 script for a card where it sits now. */
@@ -821,6 +827,10 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
           // recording), once, with its subtitle.
           const rp = r.replay;
           ctx.cue({ host: 'nobiko', event: 'narabete_hooray', slots: { name: ctx.player(r.hard.playerId)?.name ?? '' } });
+          // The defence has landed, so now (not before) a Kana or N5 player who hasn't reacted may get the
+          // curveball: which word did you hear? Never an option the line itself contained.
+          const heard = rp?.line.kana || r.hard.kana || '';
+          if (armCurveball(r.gallery, lowOthers(r.hard, ctx), { word: DEFENCE_KEY, pool: DEFENCE_POOL, heard }, !!s.curveball, s.round)) s.curveball = true;
           if (rp?.voiced) ctx.cue({ host: 'nobiko', event: 'narabete_replay', slots: { line: rp.line.text, line_en: rp.line.en, ...(rp.line.kana ? { line_kana: rp.line.kana } : {}) }, atMs: DURATIONS.replayLineAt });
           break;
         }
@@ -1239,7 +1249,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       locked: r && phase === 'reveal' ? Object.keys(r.locks) : [],
       flip: r?.flip && flipped ? { pairs: r.flip.pairs, maxPairs: r.flip.maxPairs, perfect: r.flip.perfect, last: r.flip.last, poker, teamPoints: r.flip.teamPoints, steps: r.flip.order.length } : null,
       defence,
-      replay: replay ? { playerId: replay.playerId, line: replay.line, lit: replay.lit, note: replay.note } : null,
+      replay: replay ? { playerId: replay.playerId, line: replay.line, lit: replay.lit, note: replay.note, holdKey: keyHeld(gallery) } : null,
       gallery: gallery ? galleryBubbles(gallery) : [],
       standIn: standIn ? { line: standIn.c.line, lit: standIn.c.lit, note: standIn.c.note, atMs: standIn.atMs, ms: standIn.c.ms } : null,
       story,

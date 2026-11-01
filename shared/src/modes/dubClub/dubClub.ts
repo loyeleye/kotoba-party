@@ -12,8 +12,8 @@
 // the credits.
 //
 // The ad-lib's offer goes by the shared `nextOfferee`. Mixed rooms (shared/src/modes/mixedRoom.ts): while an
-// ad-lib dub is on, everyone else gets a Gallery tile (a reaction, or once a game the curveball: which of the
-// mission's words did you hear?). Once a good ad-lib's card flips, Fude calls カット！ and the commentary booth
+// ad-lib dub is on, everyone else gets a Gallery tile (a reaction; once a game, after the take has played, a
+// Kana/N5 player who hasn't reacted gets the curveball instead: which of the mission's words did you hear?). Once a good ad-lib's card flips, Fude calls カット！ and the commentary booth
 // replays the scene's model ad-lib line in his voice (never the player's take). In a 1–2-player room with no N4
 // player, Fude ad-libs one scene's model line himself, once a game, as its scene card shows (the host stand-in).
 //
@@ -28,7 +28,7 @@ import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { soundMorae } from '../karaokeDuel/scoring.js';
 import { splitMorae } from '../karaokeDuel/songs.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
-import { commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
 
@@ -250,7 +250,8 @@ export interface DubNow {
   /** The Gallery's reactions to an ad-lib dub, in tap order. */
   gallery: ReactionTile[];
   /** The commentary booth (step `booth`): the model line with its casual chunk lit, and a line of colour. */
-  booth: { line: JpText; lit: Commentary['lit']; note: string } | null;
+  /** `holdKey`: a curveball is still open, so the TV doesn't light the key word yet. */
+  booth: { line: JpText; lit: Commentary['lit']; note: string; holdKey: boolean } | null;
 }
 
 export interface EpisodeStep {
@@ -438,6 +439,8 @@ export function saidDirection(heard: Utterance | null, d: Direction, lineKana: s
 // a polite form (です/ます, でしょう, ください…, even with よ/ね/か) is polite, not casual. Contractions are
 // looked for with katakana words taken out (so ホテル is not 〜てる), and でしょ only when it isn't でしょう.
 const CONTRACTIONS = /(ちゃった|じゃった|ちゃう|じゃう|ちゃって|じゃって|[てで](る|た|て|ない)|[とど](いた|いて)|[とど]く(?!だ)|じゃん|でしょ(?!う))/;
+/** 〜ちゃう／〜ちゃった is 〜て しまう said casually: reported as te-shimau, not teru. */
+const SHIMAU = /(ちゃった|じゃった|ちゃう|じゃう|ちゃって|じゃって)/;
 const N_DA = /(ん|なん)だ(よ|ね|けど|から|もん|ろう)?$/;
 const CASUAL_END = /(よ|ね|の|かな|だ|ぞ|ぜ|わ|さ|っけ|じゃん|でしょ|し)$/;
 const PLAIN_END = /([うくぐすつぬぶむるたいだ]|ない|かった|て|で)$/;
@@ -461,7 +464,8 @@ export function adlibCheck(heard: Utterance | string, adlib: Pick<AdLib, 'keys'>
   const frames: string[] = [];
   if (clauses.some((c) => (CASUAL_END.test(c) || PLAIN_END.test(c)) && !POLITE_END.test(c))) frames.push('plain');
   if (clauses.some((c) => N_DA.test(c))) frames.push('n-da');
-  if (CONTRACTIONS.test(bare)) frames.push('teru');
+  if (SHIMAU.test(bare)) frames.push('te-shimau');
+  if (CONTRACTIONS.test(bare.replace(new RegExp(SHIMAU.source, 'g'), ''))) frames.push('teru');
   const said = soundKey(all);
   const key = adlib.keys.some((k) => said.includes(soundKey(k)));
   return { casual: frames.length > 0, key, frames };
@@ -477,9 +481,15 @@ export const missionWord = (adlib: Pick<AdLib, 'keys'>): string => adlib.keys.fi
 // clause-final particle (だよ, よね, の？…).
 const CHUNKS: readonly RegExp[] = [/(ちゃった|じゃった|ちゃって|ちゃう)/, /(てたんだ|てる|てた|てない|てて)/, /(なんだ|んだ)/, /(じゃん|でしょ(?!う))/, /(だよ|よね|かな|だ|よ|ね|の)(?=\s*[？！。…?!]|$)/];
 
-/** The model line's casual chunk, made long enough that its first appearance is the one lit. */
-export function casualChunk(text: string): string {
-  for (const re of CHUNKS) {
+/**
+ * The model line's casual chunk, made long enough that its first appearance is the one lit. With the line's
+ * frames, a 〜ちゃう chunk counts only when the line is tagged 'te-shimau' or 'teru', and a 〜てる／〜てない chunk
+ * only when it is tagged 'teru' (so かてない, can't win, is no 〜てない).
+ */
+export function casualChunk(text: string, frames?: readonly string[]): string {
+  for (const [i, re] of CHUNKS.entries()) {
+    if (frames && i === 0 && !frames.includes('teru') && !frames.includes('te-shimau')) continue;
+    if (frames && i === 1 && !frames.includes('teru')) continue;
     const m = re.exec(text);
     if (!m) continue;
     let start = m.index;
@@ -498,14 +508,14 @@ export function adlibLanded(a: Actor, adlib: Pick<AdLib, 'keys'>): boolean {
 
 /** The booth's replay of a good ad-lib, or the stand-in's: the scene's model line (fixed, so safe to voice). */
 function boothFor(adlib: AdLib, who: string | null, playerId: string | null): Commentary {
-  const key = casualChunk(adlib.model.text);
+  const key = casualChunk(adlib.model.text, adlib.frames);
   return {
     playerId,
     line: adlib.model,
     voiced: true,
     lit: lightUp(adlib.model.text, key ? [key] : []),
-    note: who ? `No script, all ${who}. One casual way to say it${key ? `, with 「${key}」` : ''}.` : `No script: Fude-kantoku ad-libs it, casually${key ? `, with 「${key}」` : ''}.`,
-    gist: { kana: adlib.model.kana, en: who ? `${who}’s ad-lib. One way to say it: “${adlib.model.en}”` : `Fude-kantoku ad-libs it: “${adlib.model.en}”`, emoji: adlib.emoji },
+    note: who ? `${who}'s take is a keeper. Fude-kantoku's cut, for the record${key ? `, with 「${key}」` : ''}.` : `No script: Fude-kantoku ad-libs it, casually${key ? `, with 「${key}」` : ''}.`,
+    gist: { kana: adlib.model.kana, en: who ? `${who}'s ad-lib: approved! Fude's cut: “${adlib.model.en}”` : `Fude-kantoku ad-libs it: “${adlib.model.en}”`, emoji: adlib.emoji },
     ms: commentaryMs(adlib.model),
   };
 }
@@ -514,17 +524,19 @@ function boothFor(adlib: AdLib, who: string | null, playerId: string | null): Co
  * The curveball for an ad-lib dub: the longest of the mission's words (3+ kana) heard in the acted take, against
  * the other scenes' mission words. Null when the take's words weren't checked or none of them came through.
  */
-function curveballKey(s: DubState, r: SceneRound, a: Actor): { word: string; pool: string[] } | null {
-  if (!a.take?.heard) return null;
+function curveballKey(s: DubState, r: SceneRound, a: Actor): { word: string; pool: string[]; heard: string } | null {
+  if (!a.take?.heard || a.take.spoiler) return null;
   const adlib = adlibOf(s, r);
   const heard = soundKey(normalizeReading(utteranceReading(a.take.heard)));
+  const said = utteranceReading(a.take.heard);
   const word = adlib.keys.filter((k) => k.length >= 3 && heard.includes(soundKey(k))).sort((x, y) => y.length - x.length)[0];
   if (!word) return null;
   const pool = episodeOfState(s)
     .scenes.filter((x) => x.id !== r.sceneId)
     .flatMap((x) => sceneAdlib(x, s.audience).keys)
     .filter((k) => k.length >= 3 && !adlib.keys.includes(k));
-  return { word, pool };
+  // What the room heard (the take) and the model line: no other option may be a word either one contains.
+  return { word, pool, heard: `${said}／${adlib.model.kana}` };
 }
 
 /** Points for the words, from the plain rehearsal. */
@@ -607,6 +619,13 @@ export function stepMs(step: ScreenStep, a: Actor | null, boothMs = 0): number {
 const guessersFor = (r: SceneRound, a: Actor, ctx: ModeContext) => ctx.connected().filter((p) => p.id !== a.playerId && (actorOf(r, p.id) || true));
 const guessedRight = (r: SceneRound, a: Actor) => Object.entries(r.guesses).filter(([g, m]) => g !== a.playerId && m[a.playerId] === a.direction).map(([g]) => g);
 
+/** Kana and N5 players connected now, but the actor. */
+const lowOthers = (a: Actor, ctx: ModeContext): string[] =>
+  ctx
+    .connected()
+    .filter((p) => p.id !== a.playerId && (p.level === 'kana' || p.level === 'n5'))
+    .map((p) => p.id);
+
 /** Moves the screening on one step (from `wake`, or at once for a skipped dub). */
 function advance(s: DubState, r: SceneRound, ctx: ModeContext): void {
   const sc = r.screening!;
@@ -621,20 +640,16 @@ function advance(s: DubState, r: SceneRound, ctx: ModeContext): void {
   }
   switch (sc.step) {
     case 'lead':
-      // An ad-lib dub opens the scene's Gallery for everyone else.
+      // An ad-lib dub opens the scene's Gallery for everyone else: reactions only until the take has played.
       if (isAdlib(a) && !r.gallery) {
         const others = ctx.connected().filter((p) => p.id !== a.playerId);
-        r.gallery = openGallery(
-          others.map((p) => p.id),
-          others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id),
-          curveballKey(s, r, a),
-          !!s.curveball,
-          r.index,
-        );
-        if (r.gallery.curveball) s.curveball = true;
+        r.gallery = openGallery(others.map((p) => p.id), lowOthers(a, ctx), null, !!s.curveball, r.index);
       }
       return next('play');
     case 'play':
+      // The take has played, so the room has heard it: now (not before) a Kana or N5 player who hasn't reacted
+      // may get the curveball. A take with none of the mission's words in it deals none.
+      if (isAdlib(a) && armCurveball(r.gallery, lowOthers(a, ctx), curveballKey(s, r, a), !!s.curveball, r.index)) s.curveball = true;
       return next('guess');
     case 'replay':
       return next('regroup');
@@ -1131,7 +1146,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
         spoiler: revealed && !!a.take?.spoiler,
         adlib: isAdlib(a),
         gallery: isAdlib(a) && r.gallery ? galleryBubbles(r.gallery) : [],
-        booth: sc.step === 'booth' && r.booth ? { line: r.booth.line, lit: r.booth.lit, note: r.booth.note } : null,
+        booth: sc.step === 'booth' && r.booth ? { line: r.booth.line, lit: r.booth.lit, note: r.booth.note, holdKey: keyHeld(r.gallery) } : null,
       };
     }
     const done =
