@@ -2,10 +2,16 @@
 // seat, and the commentary booth's gist for Kana and N5 phones. The same in every game.
 
 import { h } from '../../../shared/src/dom.js';
-import { CURVEBALL_POINTS, type GalleryTileView } from '../../../shared/src/modes/mixedRoom.js';
+import type { Utterance } from '../../../shared/src/japanese/kana.js';
+import { CURVEBALL_POINTS, SAY_PICK, type GalleryTileView } from '../../../shared/src/modes/mixedRoom.js';
+import { canSpeak, speakBox } from './speak.js';
 
-/** One Gallery tile: four reactions, or the once-a-game curveball. `onPick` gets a reaction id or the kana picked. */
-export function galleryTile(view: GalleryTileView | null, onPick: (pick: string) => void): HTMLElement | null {
+/**
+ * One Gallery tile: four reactions, or the once-a-game curveball. `onPick` gets a reaction id or the kana picked,
+ * or SAY_PICK and what was heard for a reaction said out loud (`spokenReaction`: a small 🎤 under the tiles on
+ * phones with a mic on; quiet phones just tap). Send the utterance along with the pick.
+ */
+export function galleryTile(view: GalleryTileView | null, onPick: (pick: string, utterance?: Utterance) => void): HTMLElement | null {
   if (!view) return null;
   let sent = false;
   const pick = (p: string) => () => {
@@ -30,7 +36,7 @@ export function galleryTile(view: GalleryTileView | null, onPick: (pick: string)
           ),
         ),
       ),
-      view.right == null ? null : h('p', { class: 'hint' }, ...(view.right ? [`Yes! +${CURVEBALL_POINTS}`] : ['It was ', h('span', { lang: 'ja' }, view.answer ?? ''), '. Nice try!'])),
+      view.right == null ? null : h('p', { class: 'hint' }, ...(view.right ? [`Yes! +${view.paid ?? CURVEBALL_POINTS}`] : ['It was ', h('span', { lang: 'ja' }, view.answer ?? ''), '. Nice try!'])),
     );
   }
   return h(
@@ -49,7 +55,16 @@ export function galleryTile(view: GalleryTileView | null, onPick: (pick: string)
         ),
       ),
     ),
-    view.picked ? h('p', { class: 'hint' }, 'On the TV now.') : null,
+    view.say && !view.picked && canSpeak()
+      ? h(
+          'div',
+          { class: 'gallery-say' },
+          // A miss sends nothing back but this hint: the tiles are still there to tap.
+          view.say.missed ? h('p', { class: 'hint' }, 'Didn’t catch a reaction: say one of them, or tap.') : null,
+          speakBox({ label: '🎤 or say it', speechOnly: true, autoSend: true, mini: true, onSend: (u) => !sent && onPick(SAY_PICK, u) }),
+        )
+      : null,
+    view.picked ? h('p', { class: 'hint' }, view.say?.said ? 'Said it! On the TV now.' : 'On the TV now.') : null,
   );
 }
 

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
@@ -7,7 +7,8 @@ import { normalizeReading, soundKey, type Utterance } from '../shared/src/japane
 import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
 import { defenceScript } from '../shared/src/modes/narabete/defence.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS } from '../shared/src/modes/mixedRoom.js';
 import {
   BONUS_POOL_SHARE,
   DEFENCE_KEY,
@@ -942,7 +943,38 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.r.hard?.playerId).toBe('p2');
   });
 
-  it('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = toDefence();
+    const P = 'p1';
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('bad-move');
+      expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(t.score(P)).toBe(before);
+      return;
+    }
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().gallery).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('bad-move');
+  });
+
+  it.each([true, false])('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = toDefence();
     // While the defence is on, reactions only: nobody is asked which word they heard before it's been said.
     expect(t.view('p1').me!.gallery!.kind).toBe('react');
@@ -969,7 +1001,7 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.view().gallery.map((b) => b.id)).toEqual(['sugoi']);
     const before = t.score('p3');
     expect(t.play('p3', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
-    expect(t.score('p3') - before).toBe(CURVEBALL_POINTS);
+    expect(t.score('p3') - before).toBe(scaled ? 10 : CURVEBALL_POINTS);
     expect(t.view('p3').me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: DEFENCE_KEY });
     expect(t.view().replay!.holdKey).toBe(false);
     expect(t.st.curveball).toBe(true);

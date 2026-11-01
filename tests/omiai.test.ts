@@ -1,4 +1,6 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
+import { withExperiments } from '../shared/src/modes/experiments.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS } from '../shared/src/modes/mixedRoom.js';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
@@ -1192,7 +1194,40 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
   };
   const said = 'みなさまかっぱのきゅうりさんがおつきになりましたごしょうかいいたします';
 
-  it('the Gallery opens once the go-between takes the opening; one curveball a game, after the line lands, +5 when right', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = new Table(3, ['n5', 'n4', 'kana']);
+    begin(t);
+    t.play('p2', { kind: 'nakodo', accept: true });
+    const P = 'p1';
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('bad-move');
+      expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(t.score(P)).toBe(before);
+      return;
+    }
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().bubbles).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('bad-move');
+  });
+
+  it.each([true, false])('the Gallery opens once the go-between takes the opening; one curveball a game, after the line lands, +5 when right (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = new Table(3, ['n5', 'n4', 'kana']);
     begin(t);
     expect(t.st.current!.gallery).toBeUndefined();
@@ -1216,7 +1251,7 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
     expect(t.view('p1').me!.gallery!.kind).toBe('react');
     const before = t.score('p3');
     expect(t.play('p3', { kind: 'gallery', pick: 'おつきに なりました' }).error).toBeUndefined();
-    expect(t.score('p3') - before).toBe(5);
+    expect(t.score('p3') - before).toBe(scaled ? 10 : 5);
     expect(t.view().booth!.holdKey).toBe(false);
     const p1 = t.score('p1');
     expect(t.play('p1', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();

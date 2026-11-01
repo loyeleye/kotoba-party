@@ -989,9 +989,9 @@ function hardMove(s: BentoState, r: Round, hr: HardRound, playerId: string, raw:
       const g = galleryOpen(hr, ctx.now);
       if (!g && hr.gallery) return moveError('too-late');
       if (!g || typeof raw.pick !== 'string') return moveError('bad-move');
-      const points = pickGallery(g, playerId, raw.pick);
+      const points = pickGallery(g, playerId, raw.pick, { game: 'bento-haus', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
       if (points === null) return moveError('not-allowed');
-      // The curveball's +5 goes straight to the player's score; reactions are never scored.
+      // The curveball's bonus (and a said reaction's) goes straight to the player's score; tapped reactions are never scored.
       if (points) ctx.award(playerId, points);
       return MOVE_OK;
     }

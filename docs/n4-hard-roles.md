@@ -60,6 +60,22 @@ Every game with a hard role uses them the same way:
   reactions (👏 すごい！, 💡 なるほど, 😮 へえ！, 📣 がんばれ！) that pop up on the TV as bubbles, unscored. Once per game, after the line has
   landed, a Kana or N5 player who hasn't reacted yet gets a curveball instead, "Which word did you hear?", with the line's key word and two
   others; +5 if right.
+  - *Experiment `scaledCurveball` (round 5, on by default):* the curveball pays about a tenth of the game's basic right
+    answer, rounded to 5 (`curveballPoints(game)`, table `BASIC_POINTS` in `mixedRoom.ts`): Bento Haus 15 (a perfect
+    box, 3 × 50), Last Train 10 (an item first try, 100), Onsen 30 (the culprit, 300), Omiai 10 (a vote, 100),
+    Dub Club 5 (a right guess, 50), Narabete 10 (a pair, 100). The phone's "Yes! +N" shows what was paid. Off:
+    a flat +5 everywhere (for Ladi to confirm: Onsen's base is the culprit, its one big answer, so its curveball is the
+    richest; a question's 20 would make it 5).
+  - *Experiment `spokenReaction` (round 5, on by default):* a Gallery player may say their reaction instead of tapping.
+    Phones with a mic on show a small "🎤 or say it" button under the four tiles (`speakBox` with `mini`, never
+    docked; quiet or mic-less phones just see the tiles). The phone sends `{ kind: 'gallery', pick: 'say', utterance }`;
+    `reactionSaid` checks the reading against each tile's kana (lenient, small kana and ー folded, one doubling or a
+    little ending like ね/よ/ー allowed: すごいね, へー, がんばれー). A match picks that tile, pays
+    `SPOKEN_REACTION_POINTS` (+2) into the game's ordinary score, shows the TV bubble with a 🎤, and logs the
+    reaction to the phrasebook as `said` with recall `read` (the tile shows the kana while they say it, so it isn't
+    from memory; for Ladi to confirm). A miss pays nothing, picks nothing, and the phone says "Didn't catch a reaction:
+    say one of them, or tap." Tries aren't limited. Typed text can't be sent this way (tap instead). Off: the pick
+    is refused and tiles show no mic. +2 is small on purpose so tappers aren't behind (for Ladi to confirm).
 - **Commentary booth.** Once the N4 line lands, a 5–7 s instant replay on the TV: the line with its key word lit
   and one line of English colour, voiced by the host (the fixed model line, never the player's own words). Kana
   and N5 phones show the gist at their level (romaji for Kana). While a curveball on that word is open, the word

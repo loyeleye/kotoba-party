@@ -1032,7 +1032,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         // A reaction to the N4 defence (or the curveball), from anyone but the defender, while it's on.
         if (phase !== 'encore' || (r.encore !== 'hard' && r.encore !== 'replay') || !r.gallery) return moveError('wrong-phase');
         if (typeof raw.pick !== 'string') return moveError('bad-move');
-        const pts = pickGallery(r.gallery, playerId, raw.pick);
+        const pts = pickGallery(r.gallery, playerId, raw.pick, { game: 'narabete', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
         if (pts === null) return moveError('bad-move');
         if (pts) ctx.award(playerId, pts);
         return MOVE_OK;

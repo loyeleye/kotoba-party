@@ -363,7 +363,7 @@ function gistScreen(ctx: Ctx, me: Me): HTMLElement {
 
 /** My Gallery tile while someone else gives the N4 defence. */
 function gallery(ctx: Ctx, me: Me): HTMLElement | null {
-  return galleryTile(me.gallery, (pick) => void ctx.send({ kind: 'gallery', pick, round: ctx.game.round }));
+  return galleryTile(me.gallery, (pick, utterance) => void ctx.send({ kind: 'gallery', pick, utterance, round: ctx.game.round }));
 }
 
 /** The N4 defence: the ので frame for where the card ended up, and two model lines to read out. */
