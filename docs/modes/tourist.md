@@ -105,7 +105,7 @@ questions and answers").
   (the tourist's suggestions, also mixed into locals' tiles so they aren't a giveaway).
 - **The N4 deck** (goals 4.2 and 4.4, draft): 8 more generic N4 questions in ＿なければ なりませんか,
   ＿なくても いいですか, ＿られますか and ＿ことが できますか, 6 generic N4 answers in the same frames
-  (はい、そう しなければ なりません。 / いいえ、しなくても いいですよ。 / はい、いつでも 来られますよ。…), and
+  (そう しなければ なりません。 / しなくても いいですよ。 / はい、いつでも 来られますよ。…), and
   at every place one more N4 question and two N4 answers (おんせん: みずぎを 着なければ なりませんか →
   いいえ、みずぎは 着ては いけません。). Each deck line has `frames` (frame ids by name).
 - **7 bluffing phrases** for the tourist (そうですね…, ひみつです！, いい しつもんですね！,

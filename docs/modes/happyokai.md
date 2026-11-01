@@ -135,12 +135,16 @@ language:
 | --- | --- | --- |
 | Titles (8 each, 1 Cheeky-only) | おじいちゃんの 昔と 今, うちの 猫の 成長, ロボットの 進化, かっぱの 新しい 生活… | もし 私が 猫だったら, もし 私が 総理大臣だったら, もし 私が 幽霊だったら… |
 | Slide frames | まえは 〜でしたが、いまは 〜ように なりました。 / ＿が 〜られるように なりました。 / 〜ことに しました。 / 〜ことに なりました。 | もし ＿だったら、〜たいです。 / もし ＿が なかったら、〜。 / もし わたしが 〜だったら、〜と おもいます。 |
-| Ready sentences (also the assistant's cue cards), three a slide | 今では 〔topic〕も 〔word〕が 食べられるように なりました。 / 〔word〕に ついて もっと しらべる ことに しました。 / 来月 〔topic〕と 〔word〕の けっこんしきを する ことに なりました。 | もし 私が 〔topic〕だったら、毎日 〔word〕と いっしょに いたいです。 / もし 〔word〕が なかったら、〔topic〕は こまると 思います。 / もし この 〔word〕が 〔topic〕だったら、みんな びっくりするでしょうね。 |
+| Ready sentences (also the assistant's cue cards), three a slide | 今では 〔topic〕も 〔word〕が 食べられるように なりました。 / 〔word〕に ついて もっと しらべる ことに しました。 / 来月 〔topic〕と 〔word〕が 結婚する ことに なりました。 | もし 私が 〔topic〕だったら、毎日 〔word〕を 食べたいです。 / もし 〔word〕が なかったら、〔topic〕は こまると 思います。 / もし この 〔word〕が 〔topic〕だったら、みんな びっくりするでしょうね。 |
 | Question cards (N4 askers) | 〔topic〕は 前は どうでしたか？ / どうして そう する ことに しましたか？ / 今は 何が できるように なりましたか？ | もし あなたが 〔word〕だったら、どう しますか？ / もし 〔topic〕に なれたら、何が したいですか？ |
 | Answer frames | まえは 〜でしたが、いまは 〜ように なりました。 / 〜から、〜ことに しました。 / 〜ことに なりました。 | もし 〜だったら、〜たいです。 / 〜と おもいます。 / じつは、〜んです。 |
 
 The ready sentences pick their verb by the slide's kind (遊べる for a living thing, 行ける for a place,
-食べられる for food, 使える for a thing, 楽しめる for an event). An If I were… title is a clause, so the
+食べられる for food, 使える for a thing, 楽しめる for an event; If I were… uses いっしょに いたい, 住みたい,
+食べたい, 使いたい and 楽しみたい the same way). A thing you don't 使う names its own verb (`use`:
+おみくじが 引ける / を 引きたい, 電車に 乗れる / に 乗りたい). The big news fits the slide too: a place is
+where 〔topic〕 and I move (〔topic〕と 〔word〕に 引っ越す), a food gets a shop (〔topic〕が 〔word〕の お店を
+開く), and anything else gets married (〔topic〕と 〔word〕が 結婚する). An If I were… title is a clause, so the
 opening quotes it: 「今日は 「もし 私が 猫だったら」に ついて 話したいと 思います」. The decks' frames
 are in `DECKS` (by frame id), and both are `draft`. A Kana or N5 asker in an N4 deck talk still gets the
 usual cards at their level. It is not a separate seat (the presenter's talk is the same seat), so there
@@ -159,12 +163,12 @@ is no offer to decline.
    are what makes their talk N4. Their opening, closing, mishap recoveries and points are unchanged.
 2. **The decks reuse the usual slides**; only the frames, ready sentences, deck question cards and answer
    frames change. A slide's word joins the topic in each deck sentence, so the joke still lands (「来月
-   猫と パンツの けっこんしきを する ことに なりました」).
+   猫と パンツが 結婚する ことに なりました」).
 3. **An N4 asker in a deck talk always gets one of the deck's own question cards** first.
 
 ## Open questions
 
 1. Should an N4 presenter sometimes get a usual title (a mix), so the Cheeky and Kids sets reach them too?
-2. Fluent check of the deck lines, especially 使えるように for things like おみくじ, and 毎日 〜と
-   いっしょに いたいです.
+2. Fluent check of the deck lines, especially the `use` verbs (引ける, 乗れる), 毎日 〜と いっしょに
+   いたいです, and the moving and shop news lines.
 

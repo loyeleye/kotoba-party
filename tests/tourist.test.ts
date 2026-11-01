@@ -234,6 +234,14 @@ describe("Who's the Tourist?: content", () => {
     expect(turnCap(5)).toBe(8);
     expect(turnCap(8)).toBe(10);
   });
+
+  it("the N4 must / needn't answers don't open with はい or いいえ, so they fit either question", () => {
+    const line = (id: string) => SAFE_ANSWERS.find((l) => l.id === id)!;
+    expect(line('tourist.a.nakereba').jp.text).toBe('そう しなければ なりません。');
+    expect(line('tourist.a.nakereba').jp.en).toBe('You have to.');
+    expect(line('tourist.a.nakute-mo-ii').jp.text).toBe('しなくても いいですよ。');
+    expect(line('tourist.a.nakute-mo-ii').jp.en).toBe("You don't have to.");
+  });
 });
 
 // ---- the rules ----

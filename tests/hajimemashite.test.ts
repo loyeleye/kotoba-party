@@ -181,6 +181,17 @@ describe('Nice to Meet You!: the cards', () => {
     for (const f of ['ta-koto', 'te-shimau', 'te-miru']) expect(tagged(f).length, f).toBeGreaterThanOrEqual(2);
     expect(INTRO_CARDS.filter((c) => c.level === 'n5').some((c) => c.frames)).toBe(false);
   });
+
+  it('N4 tiles read as natural things to try', () => {
+    const card = (id: string) => INTRO_CARDS.find((c) => c.id === id)!;
+    const mitai = card('mitai').tiles.map((t) => t.kana);
+    expect(mitai).toContain('ききゅうに のる こと');
+    expect(mitai).toContain('まんがを かく こと');
+    expect(mitai).toContain('イルカと およぐ こと');
+    expect(mitai).not.toContain('ききゅう');
+    // Pon's tile on "lately I tried" is a diet, not the shapeshifting he already claims on "I can".
+    expect(card('yattemita').pon.kana).toBe('ダイエット');
+  });
 });
 
 describe('Nice to Meet You!: N4 guests draw the N4 deck', () => {
