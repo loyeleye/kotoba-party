@@ -681,7 +681,7 @@ export const CARDS: readonly CharacterCard[] = [
         kind: 'wh',
         fills: [k('ねぼう', 'oversleeping'), k('むだづかい', 'wasting money'), k('ながでんわ', 'endless phone calls'), k('いびき', 'snoring')],
         endings: nounEndings(),
-        example: { kana: k('ねぼうです。', "It's oversleeping."), n5: k('ええと、ねぼうです。すみません。', "Um, it's oversleeping. Sorry."), n4: k('おはずかしいですが、ねぼうで ございます。', "I'm embarrassed to say it's oversleeping. (extra polite)") },
+        example: { kana: k('ねぼうです。', "It's oversleeping."), n5: k('ええと、ねぼうです。すみません。', "Um, it's oversleeping. Sorry."), n4: k('おはずかしながら、ねぼうぐせが ございます。', "I'm embarrassed to say I have a habit of oversleeping. (extra polite)") },
         keigo: 'aru',
       },
       {

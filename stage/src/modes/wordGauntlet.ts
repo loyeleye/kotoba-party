@@ -29,6 +29,13 @@ export const wordGauntletStage: StageMode<WordGauntletView> = {
       if (i === t.current) return '▶';
       return t.order[i]?.done ? '✓' : '';
     }
+    const r = game.rumour;
+    if (r) {
+      const i = r.order.findIndex((o) => o.playerId === id);
+      if (r.reveal) return r.voted.includes(id) ? '✓' : '';
+      if (i === r.current) return '▶';
+      return r.order[i]?.done ? '✓' : '';
+    }
     const sh = game.shiritori;
     if (sh) {
       if (sh.winnerId === id) return '★';
@@ -40,14 +47,15 @@ export const wordGauntletStage: StageMode<WordGauntletView> = {
   },
 
   render(view, game) {
-    if (view.phase === 'intro' || !game.segment) return intro(view);
+    if (view.phase === 'intro' || !game.segment) return intro(view, game);
     if (game.segment === 'fake') return fake(view, game);
     if (game.segment === 'telephone') return telephone(view, game);
+    if (game.segment === 'rumour') return rumour(view, game);
     return shiritori(view, game);
   },
 };
 
-function intro(view: RoomView): HTMLElement {
+function intro(view: RoomView, game: WordGauntletView): HTMLElement {
   const step = (n: number, title: string, ja: string, blurb: string) =>
     h('li', { class: 'wg-round', style: delay(view, (n - 1) * 1200) }, h('span', { class: 'wg-num' }, String(n)), h('div', {}, h('p', { class: 'wg-round-title' }, title, ' ', h('span', { lang: 'ja' }, ja)), h('p', { class: 'hint' }, blurb)));
   return h(
@@ -59,7 +67,9 @@ function intro(view: RoomView): HTMLElement {
       'ol',
       { class: 'wg-rounds' },
       step(1, 'Kanji Bluff', 'ほんもの？　うそ？', 'A real but obscure word: invent a meaning for it, then find the true one.'),
-      step(2, 'Lost in Translation', 'でんごん', 'One sentence, passed around in Japanese and English. Double points.'),
+      game.round2 === 'rumour'
+        ? step(2, 'Rumour Relay', 'うわさの でんごん', 'Nobiko-san’s secret about a studio yōkai. Pass it on and give it a fin. Double points.')
+        : step(2, 'Lost in Translation', 'でんごん', 'One sentence, passed around in Japanese and English. Double points.'),
       step(3, 'Shiritori Showdown', 'しりとり', 'Say a word from the last kana. ん and you’re out. Last one standing wins.'),
     ),
   );
@@ -190,6 +200,86 @@ function telephone(view: RoomView, game: WordGauntletView): HTMLElement {
       ),
     ),
     view.phase === 'reveal' ? h('p', { class: 'hint' }, `Vote for your favourite step on your phone · ${t.voted.length} in`) : null,
+  );
+}
+
+// ---- Round 2b: the rumour round ----
+
+function subjectPic(game: WordGauntletView): HTMLElement | null {
+  const sp = game.rumour?.subject.sprite;
+  return sp ? h('img', { class: 'wg-subject', src: sp, alt: '', width: 96, height: 96, onerror: (e: Event) => (e.target as HTMLElement).remove() }) : null;
+}
+
+function rumour(view: RoomView, game: WordGauntletView): HTMLElement {
+  const r = game.rumour!;
+  const label = tag('Round 2 · うわさの でんごん · Rumour relay · double points');
+  if (view.phase === 'prompt' || view.phase === 'answer') {
+    const current = r.order[r.current];
+    return h(
+      'div',
+      { class: 'card wg wg-rumour' },
+      label,
+      h('div', { class: 'wg-subject-row' }, subjectPic(game), h('div', {}, h('p', { class: 'prompt', lang: 'ja' }, `${r.subject.kana}の うわさ…`), h('p', { class: 'hint' }, `Nobiko-san has heard something about ${r.subject.en}. Each player hears it in her voice, passes it on, and adds one detail.`))),
+      h(
+        'ol',
+        { class: 'wg-relay' },
+        h('li', { class: 'wg-hop start' }, h('span', { class: 'wg-hop-name' }, 'のびこ'), h('span', { class: 'wg-flag' }, h('img', { class: 'wg-nobiko', src: '/stage/assets/hosts/nobiko.png', alt: 'Nobiko-san', width: 40, height: 40, onerror: (e: Event) => (e.target as HTMLElement).replaceWith('🤫') }))),
+        r.order.map((o, i) =>
+          h(
+            'li',
+            { class: `wg-hop ${i === r.current && view.phase === 'answer' ? 'live' : ''} ${o.done ? 'done' : ''} ${o.skipped ? 'skipped' : ''}` },
+            h('span', { class: 'wg-hop-name' }, o.done ? '✓ ' : o.skipped ? '✗ ' : '', nameOf(view, o.playerId)),
+            h('span', { class: 'wg-flag' }, o.skipped ? '–' : '👂'),
+          ),
+        ),
+      ),
+      view.phase === 'answer' && current ? h('p', { class: 'hint' }, `${nameOf(view, current.playerId)} is listening and passing it on…`) : null,
+    );
+  }
+  const reveal = r.reveal!;
+  const scored = view.phase === 'score' && r.votes;
+  const best = scored ? Math.max(0, ...r.votes!) : 0;
+  const steps = h(
+    'ol',
+    { class: 'wg-drift wg-rumour-steps' },
+    h('li', { class: 'wg-drift-step start', style: view.phase === 'reveal' ? delay(view, r.readAt[0] ?? 0) : null }, h('span', { class: 'wg-flag' }, h('img', { class: 'wg-nobiko', src: '/stage/assets/hosts/nobiko.png', alt: 'Nobiko-san', width: 40, height: 40, onerror: (e: Event) => (e.target as HTMLElement).replaceWith('🤫') })), h('div', {}, h('p', { class: 'wg-drift-text', lang: 'ja' }, reveal.opener.text), h('p', { class: 'hint' }, `Nobiko-san · ${reveal.opener.en}`))),
+    reveal.steps.map((st, i) =>
+      h(
+        'li',
+        {
+          class: `wg-drift-step ${st.skipped ? 'skipped' : ''} ${scored && r.votes![i]! > 0 && r.votes![i] === best ? 'winner' : ''}`,
+          style: view.phase === 'reveal' ? delay(view, r.readAt[i + 1] ?? 0) : null,
+        },
+        h('span', { class: 'wg-flag' }, st.skipped ? '–' : '👂'),
+        h(
+          'div',
+          {},
+          h('p', { class: 'wg-drift-text', lang: 'ja' }, st.skipped ? '(the rumour skipped a phone)' : (st.text ?? '')),
+          h(
+            'p',
+            { class: 'hint' },
+            nameOf(view, st.playerId),
+            st.standIn ? ' · Nobiko-san passed it on' : '',
+            st.fin && st.finSaid ? h('span', { class: 'wg-fin-tag', lang: 'ja' }, ` + ${st.fin.kana} (${st.fin.en})`) : st.fin && !st.skipped ? h('span', { class: 'wg-fin-lost', lang: 'ja' }, ' · おひれ、おちた！') : '',
+            st.frame ? h('span', { class: 'wg-frame-tag', lang: 'ja' }, ` · ${st.frame.ja}`) : '',
+            scored ? ` · ${r.votes![i]} vote${r.votes![i] === 1 ? '' : 's'}` : '',
+          ),
+        ),
+      ),
+    ),
+  );
+  if (view.phase === 'reveal') {
+    return h('div', { class: `card wg wg-rumour ${reveal.steps.length >= 3 ? 'compact' : ''}` }, label, steps, h('p', { class: 'hint' }, `Vote for the juiciest relay on your phone · ${r.voted.length} in`));
+  }
+  return h(
+    'div',
+    { class: 'card wg wg-rumour compact' },
+    label,
+    h('div', { class: 'wg-final' }, h('p', { class: 'wg-golden-tag' }, 'The rumour now'), h('p', { class: 'wg-drift-text', lang: 'ja' }, reveal.final.text), h('p', { class: 'hint' }, reveal.final.en)),
+    r.truth
+      ? h('div', { class: 'wg-truth', style: delay(view, r.truthAtMs) }, subjectPic(game), h('div', {}, h('p', { class: 'wg-golden-tag' }, 'What really happened…'), h('p', { class: 'wg-drift-text', lang: 'ja' }, r.truth.text), h('p', { class: 'hint' }, r.truth.en)))
+      : null,
+    steps,
   );
 }
 

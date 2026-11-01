@@ -203,5 +203,21 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.play_again.02', host: 'nobiko', event: 'play_again', jp: { text: 'おちゃ、もう いっぱい いかが？', kana: 'おちゃ、もう いっぱい いかが？', en: 'Another cup of tea?' }, status: 'draft' },
   { id: 'nobiko.play_again.03', host: 'nobiko', event: 'play_again', jp: { text: 'まだ かえらないで！　だんなが まってるけど。', kana: 'まだ かえらないで！　だんなが まってるけど。', en: "Don't go home yet! Though my husband's waiting." }, status: 'draft' },
   { id: 'nobiko.play_again.04', host: 'nobiko', event: 'play_again', jp: { text: 'たのしかったわ。また やりましょう！', kana: 'たのしかったわ。また やりましょう！', en: "That was fun. Let's do it again!" }, status: 'draft' },
+  // rumour_intro: Word Gauntlet's rumour round opens. She has heard something (her neck reaches everywhere).
+  { id: 'nobiko.rumour_intro.01', host: 'nobiko', event: 'rumour_intro', jp: { text: 'ちょっと ちょっと！ すごい うわさを きいちゃったの。', kana: 'ちょっと ちょっと！ すごい うわさを きいちゃったの。', en: "Psst, psst! I've heard the most amazing rumour." }, status: 'draft' },
+  { id: 'nobiko.rumour_intro.02', host: 'nobiko', event: 'rumour_intro', jp: { text: 'くびが ながいと、いろいろ きこえるのよ。ないしょよ？', kana: 'くびが ながいと、いろいろ きこえるのよ。ないしょよ？', en: "With a neck this long, you hear things. It's a secret, OK?" }, status: 'draft' },
+  { id: 'nobiko.rumour_intro.03', host: 'nobiko', event: 'rumour_intro', jp: { text: 'ここだけの はなしよ。スマホを みみに あてて、そっと きいてね。', kana: 'ここだけの はなしよ。スマホを みみに あてて、そっと きいてね。', en: 'Between us: phone to your ear, and listen closely.' }, status: 'draft' },
+  { id: 'nobiko.rumour_intro.04', host: 'nobiko', event: 'rumour_intro', jp: { text: 'うわさには おひれが つくものよ。ひとつ たして、つぎの ひとに つたえてね。', kana: 'うわさには おひれが つくものよ。ひとつ たして、つぎの ひとに つたえてね。', en: 'Rumours always grow fins. Add one, then pass it on.' }, status: 'draft' },
+  // rumour_line: the game writes the line ({quip}): the rumour's truth, from shared/src/modes/wordGauntlet/rumours.ts. Never player text
+  // rumour_relay: she reads one relay aloud at the reveal ({quip}): a player's words, which passed the moderation filter (docs/commercial-blockers.md row 36)
+  { id: 'nobiko.rumour_relay.01', host: 'nobiko', event: 'rumour_relay', jp: { text: '{quip}', kana: '{quip}', en: '{quip}' }, slots: ['{quip}'], status: 'draft' },
+  // rumour_react: after the last relay, she hears what her rumour became
+  { id: 'nobiko.rumour_react.01', host: 'nobiko', event: 'rumour_react', jp: { text: 'ちょっと！ わたし、そこまで いって ないわよ！', kana: 'ちょっと！ わたし、そこまで いって ないわよ！', en: "Hey! I never said all that!" }, status: 'draft' },
+  { id: 'nobiko.rumour_react.02', host: 'nobiko', event: 'rumour_react', jp: { text: 'えー！ そんなに おおきく なっちゃったの？', kana: 'えー！ そんなに おおきく なっちゃったの？', en: 'Whoa! It got that big?' }, status: 'draft' },
+  { id: 'nobiko.rumour_react.03', host: 'nobiko', event: 'rumour_react', jp: { text: 'あらあら、おひれが いっぱい ついたわね。', kana: 'あらあら、おひれが いっぱい ついたわね。', en: 'Oh my, it grew plenty of fins.' }, status: 'draft' },
+  // rumour_tease: the score opens, before the truth
+  { id: 'nobiko.rumour_tease.01', host: 'nobiko', event: 'rumour_tease', jp: { text: 'さあ、ほんとうは どうだったと おもう？', kana: 'さあ、ほんとうは どうだったと おもう？', en: 'So, what do you think really happened?' }, status: 'draft' },
+  { id: 'nobiko.rumour_tease.02', host: 'nobiko', event: 'rumour_tease', jp: { text: 'じつはね…ほんとうの はなし、きく？', kana: 'じつはね…ほんとうの はなし、きく？', en: 'Actually… want to hear the real story?' }, status: 'draft' },
+  { id: 'nobiko.rumour_line.01', host: 'nobiko', event: 'rumour_line', jp: { text: '{quip}', kana: '{quip}', en: '{quip}' }, slots: ['{quip}'], status: 'draft' },
   { id: 'nobiko.play_again.05', host: 'nobiko', event: 'play_again', jp: { text: 'つぎは だれと だれが おにあいかしら？', kana: 'つぎは だれと だれが おにあいかしら？', en: 'I wonder who makes a lovely pair next time?' }, status: 'draft' },
 ];

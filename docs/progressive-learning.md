@@ -29,7 +29,7 @@ learning-science reviews). Three lines of can-do goals, worked back from the N5 
   dates, 5.4 find your way, 5.5 likes and wants, 5.6 your day, 5.7 ask and answer, 5.8 describe and give
   reasons, 5.9 invite/offer/ask, 5.10 N5 kanji.
 - **Express Line** (急行, N4): 4.1 favours, 4.2 may/must/mustn't, 4.3 experiences, 4.4 potential, 4.5 if
-  and when, 4.6 guess/hearsay/opinion, 4.7 plans and advice (shown as 工事中, under construction: no content yet, not counted), 4.8 casual speech,
+  and when (のに counts too), 4.6 guess/hearsay/opinion, 4.7 plans and advice (shown as 工事中, under construction: no content yet, not counted), 4.8 casual speech,
   4.9 polite requests, 4.10 N4 kanji.
 
 Each goal lists its **required frames** (all must be met; one may be "any of", as 5.7's question frame),
@@ -40,6 +40,14 @@ and N4; cleared screens use only the line names.
 A goal whose required frame frames.ts can't find yet shows its frame as *coming soon* (dashed) and can't
 be met or suggested until the matcher lands; `FRAME_TEXT` in path.ts names each with its own label and
 hand-written rōmaji, so it lights up with no other change.
+
+For the path, a phrase counts toward every frame in it, N5 to N3 (`framesOf` with `keepHidden`, through
+`phraseFrames` in progress.ts), so この ケーキ、おいしそうです counts for both ＿そうです and ＿です. The recap's
+"Tonight on your path" box names only the most specific ones. The N4 hard roles and decks from PR #133 are
+listed in their goals' games: the Bento Haus manager (4.1, 4.9), Last Train's announcer, Lost and Found
+and innkeeper (4.1, 4.6, 4.9), the Dub Club ad-lib (4.8), the Omiai go-between (4.9) and the Tourist N4
+deck (4.2, 4.4, already listed). 4.2 still has only Tourist, and 4.7 stays 工事中 (the おもてなし shift's
+＿て あります isn't one of its frames).
 
 ### When a goal is met
 

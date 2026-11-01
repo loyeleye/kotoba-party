@@ -19,6 +19,7 @@ import { happyokaiMode } from './happyokai/happyokai.js';
 import { shodoMode } from './shodo/shodo.js';
 import { dubClubMode } from './dubClub/dubClub.js';
 import { hajimemashiteMode } from './hajimemashite/hajimemashite.js';
+import { lateAgainMode } from './lateAgain/lateAgain.js';
 
 export const MODES: Record<ModeId, Mode<any, any>> = {
   oogiri: oogiriMode,
@@ -39,11 +40,12 @@ export const MODES: Record<ModeId, Mode<any, any>> = {
   shodo: shodoMode,
   'dub-club': dubClubMode,
   hajimemashite: hajimemashiteMode,
+  'late-again': lateAgainMode,
   debug: debugMode,
 };
 
 /** Modes on the VIP's menu (the debug round stays hidden): fewest players needed first, then A–Z by title. */
-export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, hajimemashiteMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info, narabeteMode.info, bentoHausMode.info, bentoHausVsMode.info, dubClubMode.info, happyokaiMode.info].sort(
+export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, hajimemashiteMode.info, lastTrainMode.info, wordGauntletMode.info, concentrationMode.info, phraseBingoMode.info, karaokeDuelMode.info, onsenMurderMode.info, touristMode.info, oekakiMode.info, omiaiMode.info, shodoMode.info, narabeteMode.info, bentoHausMode.info, bentoHausVsMode.info, dubClubMode.info, happyokaiMode.info, lateAgainMode.info].sort(
   (a, b) => a.minPlayers - b.minPlayers || a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }),
 );
 

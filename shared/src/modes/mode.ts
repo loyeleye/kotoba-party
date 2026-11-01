@@ -255,6 +255,8 @@ export interface Mode<S = unknown, V extends { mode: ModeId } = { mode: ModeId }
   awards?(s: S, ctx: ModeContext): Award[];
   /** Team games: each team's result, shown above the recap's podium. */
   recapTeams?(s: S, ctx: ModeContext): RecapTeam[];
+  /** This game is a team game (overrides `info.coop`): Late Again! is co-op only with two players. */
+  isCoop?(s: S): boolean;
   /** What a player practised, for their saved yōkai cards when they're signed in (Kana Raid). */
   practice?(s: S, playerId: string): PracticeItem[];
   /** The N4 hard-role offers this player had and their answers (docs/n4-hard-roles.md), saved for the 60% gate. */
