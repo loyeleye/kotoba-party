@@ -18,7 +18,7 @@
 // The stage redraws on every update; clips run outside the render (dubAudio.ts), keyed per call and index.
 
 import { h, LEVEL_LABELS, ruby, seatShape } from '../../../shared/src/dom.js';
-import { NOBIKO_PLAY_MS, PLAN_MS, POINTS, REACT_MS, RING_MS, TYPED_PLAY_MS, VOTE_MS, type AdviceRow, type HotlineView, type LedgerEntry, type Reaction, type TileView } from '../../../shared/src/modes/ghostHotline/hotline.js';
+import { NOBIKO_PLAY_MS, PLAN_MS, POINTS, REACT_LOCK_MS, RING_MS, TYPED_PLAY_MS, VOTE_MS, type AdviceRow, type HotlineView, type LedgerEntry, type Reaction, type TileView } from '../../../shared/src/modes/ghostHotline/hotline.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { sfx } from '../music/sfx.js';
 import { clipLeft, clipsHere, playClip, serverNow } from './dubAudio.js';
@@ -85,7 +85,8 @@ function chip(r: Reaction, cls = ''): HTMLElement {
 
 function bar(ms: number, at: number, cls = 'gh-bar'): HTMLElement {
   const gone = Math.max(0, serverNow() - at);
-  return h('div', { class: cls }, h('div', { class: 'gh-bar-fill', style: `animation-duration: ${ms}ms; animation-delay: -${Math.min(gone, ms)}ms` }));
+  // Keyed by its timer, so a bar reused across beats (play → deciding) restarts instead of keeping the old start.
+  return h('div', { class: cls, 'data-key': `bar:${at}:${ms}` }, h('div', { class: 'gh-bar-fill', style: `animation-duration: ${ms}ms; animation-delay: -${Math.min(gone, ms)}ms` }));
 }
 
 /** A countdown ring (SVG, so older TV browsers animate it): it empties over `ms` from `at`. */
@@ -153,7 +154,7 @@ function intro(game: HotlineView): HTMLElement {
         h('span', { class: 'gh-step-marks' }, mark('chigau'), mark('oshii'), mark('soreda')),
         'The advice plays in a random order. The caller answers ',
         h('span', { lang: 'ja', class: 'nw' }, 'ちがう！'),
-        ', ',
+        ' ',
         h('span', { lang: 'ja', class: 'nw' }, 'おしい！'),
         ' or ',
         h('span', { lang: 'ja', class: 'nw' }, 'それだ！'),
@@ -359,7 +360,7 @@ function reactBeat(view: RoomView, game: HotlineView): HTMLElement {
       h('p', { class: 'gh-now-who' }, seat(view, lp.playerId), h('span', { class: 'gh-row-n' }, ` ${lp.index + 1}/${lp.total}`)),
       h('p', { class: 'gh-big' }, `${cap(callerName(view, game))} is deciding…`),
       h('div', { class: 'gh-react-slots', 'aria-hidden': 'true' }, chip('chigau', 'gh-dim'), chip('oshii', 'gh-dim'), chip('soreda', 'gh-dim')),
-      bar(REACT_MS, game.stepAt),
+      bar(REACT_LOCK_MS, game.stepAt),
     ),
   );
 }
@@ -438,7 +439,7 @@ function why(entries: LedgerEntry[]): string {
     if (w === 'soreda') parts.push(`それだ！ +${pts}`);
     else if (w === 'oshii') parts.push(`おしい！ +${pts}`);
     else if (w === 'laugh') parts.push(`${laughs} laugh${laughs === 1 ? '' : 's'} +${pts}`);
-    else if (w === 'sweep') parts.push(`大ウケ！ +${pts}`);
+    else if (w === 'sweep') parts.push(`おおウケ！ +${pts}`);
     else if (w === 'bet') parts.push(`bet right +${pts}`);
     else if (w === 'line') parts.push(`said it +${pts}`);
   }
@@ -467,7 +468,7 @@ function pointsBeat(view: RoomView, game: HotlineView): HTMLElement | null {
       r.tile ? pic(r.tile, 'gh-pic-card') : h('span', { class: 'gh-pic gh-pic-card' }, h('span', { class: 'gh-emoji', 'aria-hidden': 'true' }, '💬')),
       seat(view, r.playerId),
       h('span', { class: 'gh-tokens', 'aria-label': `${n} laugh${n === 1 ? '' : 's'}` }, ...Array.from({ length: n }, () => h('span', { class: 'gh-token gh-drop', style: `animation-delay: ${token++ * TOKEN_MS}ms` })), n === 0 ? h('span', { class: 'gh-muted gh-notoken' }, 'no laughs') : null),
-      top && t.sweep ? h('span', { class: 'gh-sweep gh-stamp', lang: 'ja', style: `animation-delay: ${TOP_MS}ms` }, '大ウケ！', h('small', {}, ' +100')) : null,
+      top && t.sweep ? h('span', { class: 'gh-sweep gh-stamp', lang: 'ja', style: `animation-delay: ${TOP_MS}ms` }, ruby({ text: '大ウケ！', kana: 'おおウケ！' }), h('small', {}, ' +100')) : null,
       top && !t.sweep ? h('span', { class: 'gh-trophy gh-pop', 'aria-label': 'top laugh', style: `animation-delay: ${TOP_MS}ms` }, '🏆') : null,
       h('span', { class: 'gh-pts gh-pop', style: `animation-delay: ${POINTS_MS}ms` }, pts ? `+${pts}` : '0'),
       h('span', { class: 'gh-why gh-pop', style: `animation-delay: ${POINTS_MS}ms` }, why(mine(r.playerId))),

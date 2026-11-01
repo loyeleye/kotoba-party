@@ -32,7 +32,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
 | 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 25 host and yōkai animation sheets (thinking and shocked added 2026-10-28), a smoke-puff effect, 56 Narabete! card pictures, 112 Narabete! answer pictures, 6 Bento Haus VS pieces, Dub Club's 13 anime sets, 14 characters and their 14 mouth sheets, 33 direction-card icons, 3 episode backdrops and 3 phone player icons, 83 Happyōkai! slide pictures, Happyōkai!'s 6 stamp icons, candle, flame and Chōchin-san bow sheet, Nice to Meet You!'s paw stamp and card-back medallion, and, for the phone's yōkai book and sign-in (2026-10-28), 10 yōkai book sprites and 4 icons: key, hanko, speaker and the stage Phrasebook's notebook, then 16 game icons and a stamp ring for the Phrasebook cards; Read the Signs' station-sign casing, arrow and hanger (2026-11-01), Late Again!'s 16 cause pictures, curveball, leaf, sash and certificate (2026-11-01), and Ghost Advice Hotline's 26 advice tiles and 16 caller portraits (2026-11-01)) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
-| 7 | AI art: Gemini (source images for Pon, the lie tanuki cut from him, and two Ghost Advice Hotline tiles: `caller-kodama`, `advice-dont-move`) | `tools/art/sources/`, `tools/art/sources/hotline/` | ❓ ⚠️ | Read Gemini API terms, or redraw these without a Gemini source |
+| 7 | AI art: Gemini (source images for Pon, the lie tanuki cut from him, and one Ghost Advice Hotline picture: `caller-kodama`) | `tools/art/sources/`, `tools/art/sources/hotline/` | ❓ ⚠️ | Read Gemini API terms, or redraw these without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
 | 10 | Kana course order and links (ToKini Andy) | `content/src/kana/raid.ts` | ✅ | Links only; ask before any paid tie-in or using his name in marketing |
@@ -202,11 +202,12 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   from Gemini output and its terms still apply to him, and to the lie tanuki cut from his sheet
   (`stage/assets/fx/tanuki-doron.png`). The backdrop was redrawn from text alone on
   2026-10-27 and its Gemini source deleted.
-- **Ghost Advice Hotline (2026-11-01):** two hotline pictures are also PixelLab `image-to-pixelart`
-  conversions of Gemini images (`gemini-3-pro-image-preview`): `stage/assets/hotline/caller-kodama.png`
-  and `stage/assets/hotline/advice-dont-move.png`. Their sources are in `tools/art/sources/hotline/`
-  (not served) and listed in the manifest. `pixflux` couldn't draw the kodama's bark body or the frozen
-  kid's stop lines from text alone. Ladi approved using Gemini for them, with the terms still unread.
+- **Ghost Advice Hotline (2026-11-01):** one hotline picture is also a PixelLab `image-to-pixelart`
+  conversion of a Gemini image (`gemini-3-pro-image-preview`): `stage/assets/hotline/caller-kodama.png`.
+  Its source is in `tools/art/sources/hotline/` (not served) and listed in the manifest. `pixflux`
+  couldn't draw the kodama's bark body from text alone. Ladi approved using Gemini for it, with the
+  terms still unread. `advice-dont-move.png` was a Gemini conversion too, but the art panel found it
+  showed a moving kid, so it was redrawn from text alone with `pixflux` and its Gemini source deleted.
 - **Terms: unverified.** The Gemini API Additional Terms page was unreachable from these sessions. From
   memory, to be checked: Google doesn't claim ownership of generated content, the Generative AI
   Prohibited Use Policy applies, free-tier prompts and outputs may be used to improve Google's

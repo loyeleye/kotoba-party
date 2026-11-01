@@ -608,3 +608,22 @@ export const problemsFor = (audience: Audience): Problem[] => PROBLEMS.filter((p
 export const kanaTilesOf = (p: Problem): string[] => [p.cure, p.near, p.decoys[0], p.curve];
 /** The gallery's four bet pictures: the cure, the near miss and both decoys. */
 export const betTilesOf = (p: Problem): string[] => [p.cure, p.near, ...p.decoys];
+
+/** Hand romaji for Kana phones where the kana alone can't show the word split (the word-break table only reads
+ *  content/, so these lines would glue particles on: "Higa kieta"). Keyed by the kana as shown. */
+export const ROMAJI: Record<string, string> = {
+  'ひが きえた…': 'hi ga kieta…',
+  'ひが きえた！ まっくら！': 'Hi ga kieta! Makkura!',
+  'おさらに みず': 'osara ni mizu',
+  'おさらが からから！': 'Osara ga karakara!',
+  'しっぽが でたポン…': 'shippo ga deta pon…',
+  'あたまに はっぱ': 'atama ni happa',
+  'こたつで まるく なる': 'kotatsu de maruku naru',
+  'いっしょに あそぶ': 'issho ni asobu',
+  'さがしに いく': 'sagashi ni iku',
+  'おおきな こえで やっほー': 'ōkina koe de yahhō',
+  'もう そうじしない': 'mō sōji shinai',
+  'こたつに はいって！': 'Kotatsu ni haitte!',
+  'おふろに はいって！': 'Ofuro ni haitte!',
+  'そうじしないで！': 'Sōji shinaide!',
+};

@@ -32,9 +32,9 @@
 
 /* ---- the band and this call ---- */
 .gh-head { display: flex; align-items: center; gap: 24px; width: 100%; flex-wrap: wrap; }
-.gh-band { display: inline-flex; align-items: baseline; gap: 18px; padding: 6px 22px; background: var(--gh-band); color: var(--gh-ink); border: 4px solid var(--outline); box-shadow: 6px 6px 0 var(--outline); white-space: nowrap; }
+.gh-band { display: inline-flex; align-items: flex-end; gap: 18px; padding: 18px 22px 6px; background: var(--gh-band); color: var(--gh-ink); border: 4px solid var(--outline); box-shadow: 6px 6px 0 var(--outline); white-space: nowrap; }
 .gh-band-ja { font-size: 40px; font-weight: 900; }
-.gh-band-ja rt { font-size: 0.4em; }
+.gh-band-ja rt { font-size: 0.45em; color: var(--gh-ink); }
 .gh-band-en { font-family: var(--font-pixel); font-size: 22px; font-weight: 700; letter-spacing: 0.08em; }
 .gh-callno { font-family: var(--font-pixel); font-size: 32px; font-weight: 700; white-space: nowrap; }
 .gh-thiscall { margin-left: auto; display: grid; gap: 6px; padding: 10px 18px; background: var(--panel); border: 3px solid var(--outline); border-radius: 10px; box-shadow: 4px 4px 0 var(--outline); text-align: left; }
@@ -55,8 +55,8 @@
 .gh-pic img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 .gh-emoji { display: grid; place-items: center; width: 100%; height: 100%; font-size: 0.62em; line-height: 1; background: var(--paper); border: 4px solid var(--outline); border-radius: 14px; }
 .gh-pic { font-size: 128px; }
-.gh-pic-big { width: 200px; height: 200px; font-size: 200px; }
-.gh-pic-card { width: 120px; height: 120px; font-size: 120px; }
+.gh-pic-big { width: 192px; height: 192px; font-size: 192px; }
+.gh-pic-card { width: 128px; height: 128px; font-size: 128px; }
 
 .gh-tile { display: grid; justify-items: center; gap: 6px; width: 300px; padding: 18px 12px 16px; background: var(--paper); color: var(--paper-ink); border: 5px solid var(--outline); border-radius: 16px; box-shadow: 0 8px 0 var(--outline); }
 .gh-tile-ja { font-size: 40px; font-weight: 900; white-space: nowrap; }
@@ -118,7 +118,8 @@
 .gh-row { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 22px; padding: 10px 22px; text-align: left; background: var(--panel); border: 4px solid var(--outline); border-left: 10px solid var(--seat, var(--line)); border-radius: 12px; }
 .gh-row-who { display: inline-flex; align-items: baseline; gap: 10px; font-size: 30px; white-space: nowrap; }
 .gh-row-n { font-size: 22px; color: var(--muted); white-space: nowrap; }
-.gh-row-pic .gh-pic { width: 72px; height: 72px; font-size: 72px; }
+/* Whole-number scales of the 64 px art, on a paper chip so the black outlines show on dark rows. */
+.gh-row-pic .gh-pic { width: 64px; height: 64px; font-size: 64px; padding: 4px; border-radius: 10px; background: var(--paper); border: 2px solid var(--outline); }
 .gh-row-pic { grid-column: 2; }
 .gh-row-main { grid-column: 3; display: grid; gap: 4px; min-width: 0; }
 .gh-row-words { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
@@ -129,9 +130,9 @@
 /* The newest row, once the caller reacts: it grows and the chip pops; then the words and picture wipe in. */
 .gh-row-big { padding: 22px 30px; border-color: var(--gh-yes); border-left-color: var(--seat, var(--line)); box-shadow: 0 0 0 4px var(--outline); }
 .gh-row-big .gh-row-ja { font-size: 50px; line-height: 1.4; }
-.gh-row-big .gh-row-pic .gh-pic { width: 112px; height: 112px; font-size: 112px; }
+.gh-row-big .gh-row-pic .gh-pic { width: 128px; height: 128px; font-size: 128px; }
 .gh-row-big .gh-chip-pop { animation: gh-stamp 0.35s var(--ease-pop) both; }
-.gh-row-big .gh-wipe { animation: gh-wipe 0.6s ease-out 0.7s both; }
+.gh-row-big .gh-wipe { animation: gh-wipe 0.4s ease-out 0.25s both; }
 @keyframes gh-wipe { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
 @keyframes gh-stamp { from { opacity: 0; transform: scale(1.8) rotate(-6deg); } }
 .gh-glow { border-color: var(--good); box-shadow: 0 0 0 4px var(--good), 0 0 24px var(--good); }
@@ -221,3 +222,5 @@
 
 body[data-motion='calm'] .gh-stage :is(.gh-pop, .gh-done, .gh-lock, .gh-chip-pop, .gh-wipe, .gh-secret, .gh-drop, .gh-stamp, .gh-fair) { animation-name: calm-in !important; animation-duration: 300ms !important; }
 body[data-motion='calm'] .gh-stage :is(.gh-wave span, .gh-levels span, .gh-ringing, .gh-rec-dot) { animation: none !important; }
+
+.gh-sweep rt { color: var(--gh-yes); font-size: 0.42em; }

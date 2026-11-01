@@ -9459,20 +9459,21 @@
     },
     {
       "path": "stage/assets/hotline/advice-dont-move.png",
-      "what": "Ghost Advice Hotline advice tile: a kid frozen mid-step in a 'freeze!' pose with stop lines around it (PixelLab conversion of a Gemini source)",
+      "what": "Ghost Advice Hotline advice tile: a kid in a green shirt standing stock-still, eyes shut, holding their breath (not the running kid)",
       "generator": "pixellab",
-      "model": "image-to-pixelart",
-      "prompt": "(image-to-pixelart takes no prompt.) Converted from the Gemini source in tools/art/sources/hotline/, because pixflux would not draw the stop lines around a frozen figure in 26 text-only attempts (2026-11-01).",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small cartoon kid in a green shirt standing stiffly at attention like a toy soldier, front view, arms pressed straight down at the sides, feet together, eyes squeezed shut, cheeks puffed out holding breath, one sweat drop, completely still, plain, no water, no motion lines",
       "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
         "width": 64,
         "height": 64,
-        "init_image_strength": 0,
-        "seed": 7
-      },
-      "post": {
-        "removeBackground": 6.0
-      },
-      "source": "tools/art/sources/hotline/dont-move-gemini.png"
+        "text_guidance_scale": 8,
+        "seed": 31
+      }
     },
     {
       "path": "stage/assets/hotline/advice-run.png",
@@ -9780,10 +9781,10 @@
     },
     {
       "path": "stage/assets/hotline/caller-kappa.png",
-      "what": "Ghost Advice Hotline caller: a kappa with a cracked, dry head-dish, wilting",
+      "what": "Ghost Advice Hotline caller: a kappa whose flat head-dish (sara) is dry and cracked",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a sad wilting green kappa river yokai with a short yellow beak and a ring of shaggy black hair, slumped and droopy, the white dish on top of its head is completely dry with big dark cracks across it, tired half-closed eyes, sweat drops",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a sad green kappa yokai, bust portrait facing viewer, on top of its head a flat shallow empty pale dish (sara) set into the crown with a visible rim and a dry cracked centre, a ring of shaggy dark hair around the dish, yellow beak, droopy tired eyes, sweat drop",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -9793,7 +9794,7 @@
         "width": 64,
         "height": 64,
         "text_guidance_scale": 8,
-        "seed": 101
+        "seed": 7
       },
       "post": {}
     },

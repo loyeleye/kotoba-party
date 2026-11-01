@@ -24,7 +24,7 @@ import { isUtterance, normalizeReading, utteranceReading, type Utterance } from 
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsFor, type AdviceChunk, type AdviceLine, type Problem } from './problems.js';
+import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsFor, ROMAJI, type AdviceChunk, type AdviceLine, type Problem } from './problems.js';
 
 // ---- tuning ----
 
@@ -50,7 +50,10 @@ export const TYPED_PLAY_MS = 4_000;
 export const NOBIKO_PLAY_MS = 4_500;
 export const PLAY_TAIL_MS = 500;
 /** The caller's reaction locks this long after the advice ends. */
-export const REACT_MS = 3_000;
+/** The caller may react until 3 s after the clip ends; the beat runs a little longer, so a last-second tap still gets
+ *  its words-and-picture reveal (0.65 s on the TV) before the next clip starts. */
+export const REACT_LOCK_MS = 3_000;
+export const REACT_MS = REACT_LOCK_MS + 700;
 export const SECRET_MS = 4_000;
 export const VOTE_MS = 6_000;
 export const SCORE_MS = 4_000;
@@ -231,6 +234,8 @@ export interface HotlineMe {
   level: Level;
   /** The caller's secret: only they see it, until the secret beat. */
   secret: JpText | null;
+  /** The caller's cure as a tile (picture, kana, romaji for Kana, English): what to listen for. */
+  cure: TileView | null;
   /** The caller's line at their level, and whether they may still say it. */
   callerLine: (JpText & { romaji?: string }) | null;
   canSay: boolean;
@@ -305,10 +310,10 @@ export function heardAny(reading: string, keys: readonly string[]): boolean {
 export function tileView(id: string, level: Level): TileView {
   const a = adviceOf(id);
   const word = a?.word ?? { text: id, kana: id, en: id };
-  return { id, word, picture: a?.picture ?? id, emoji: a?.emoji ?? '💬', ...(level === 'kana' ? { romaji: toRomaji(word.kana) } : {}) };
+  return { id, word, picture: a?.picture ?? id, emoji: a?.emoji ?? '💬', ...(level === 'kana' ? { romaji: ROMAJI[word.kana] ?? toRomaji(word.kana) } : {}) };
 }
 
-const withRomaji = (t: JpText, level: Level): JpText & { romaji?: string } => (level === 'kana' ? { ...t, romaji: toRomaji(t.kana) } : t);
+const withRomaji = (t: JpText, level: Level): JpText & { romaji?: string } => (level === 'kana' ? { ...t, romaji: ROMAJI[t.kana] ?? toRomaji(t.kana) } : t);
 
 /** The level line a speaking adviser works from (Kana and N5 use N5's). */
 export const lineOf = (p: Problem, level: Level): AdviceLine => (level === 'n4' ? p.advice.n4 : p.advice.n5);
@@ -698,7 +703,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
         const who = c.caller ? ctx.player(c.caller)?.name : undefined;
         ctx.cue({ host: 'nobiko', event: 'hotline_ring', slots: { ...(who ? { name: who } : {}), caller: p.caller.name.text, caller_kana: p.caller.name.kana, caller_en: p.caller.name.en } });
         // A scripted caller: Nobiko-san reads the problem herself.
-        if (!c.caller) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: p.line.n5.kana }, atMs: 1_500 });
+        if (!c.caller) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: p.line.n5.kana, line_en: p.line.n5.en }, atMs: 1_500 });
         break;
       }
       case 'answer': {
@@ -797,7 +802,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       c.stepAt = ctx.now;
       const p = problemOfCall(c);
       // Nobody heard the caller (and no take is still uploading): Nobiko-san reads the problem for them.
-      if (c.caller && !c.callerSaid && !c.callerTaking) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: p.line[ctx.player(c.caller)?.level ?? 'n5'].kana } });
+      if (c.caller && !c.callerSaid && !c.callerTaking) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: p.line[ctx.player(c.caller)?.level ?? 'n5'].kana, line_en: p.line[ctx.player(c.caller)?.level ?? 'n5'].en } });
     } else if (phase === 'reveal' && c.step === 'play') {
       c.step = 'react';
       c.stepAt = ctx.now;
@@ -930,6 +935,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
         if (playerId !== c.caller) return moveError('not-yours');
         if (phase !== 'reveal' || (c.step !== 'play' && c.step !== 'react')) return moveError('wrong-phase');
         if (raw.index !== c.at) return moveError('wrong-phase');
+        if (c.step === 'react' && ctx.now > c.stepAt + REACT_LOCK_MS) return moveError('too-late');
         if (raw.reaction !== 'chigau' && raw.reaction !== 'oshii' && raw.reaction !== 'soreda') return moveError('bad-move');
         const id = c.order[c.at]!;
         if (gameJudges(c, c.advice[id]!)) return moveError('game-marks-it');
@@ -991,7 +997,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       step: inCall ? c!.step : null,
       stepAt: c?.stepAt ?? 0,
       scripted: s.scripted,
-      call: inCall && p ? { caller: c!.caller, who: p.caller, line: p.line[callerLevel], said: c!.callerSaid } : null,
+      call: inCall && p ? { caller: c!.caller, who: p.caller, line: withRomaji(p.line[callerLevel], 'kana'), said: c!.callerSaid } : null,
       cast: inCall ? { caller: c!.caller, advisers: c!.advisers, gallery: c!.gallery } : null,
       locked: inCall
         ? { ready: c!.advisers.filter((id) => adviserIn(c!, id)), sent: c!.advisers.filter((id) => !!c!.advice[id]), bets: Object.keys(c!.bets), votes: Object.keys(c!.votes) }
@@ -999,7 +1005,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       play: inCall && phase === 'reveal' && (c!.step === 'play' || c!.step === 'react') ? playView(c!, level) : null,
       voters: inCall && phase === 'encore' && !s.scripted ? ctx.connected().filter((pl) => voteTargets(c!, pl.id).length > 0).length : 0,
       rows: played.map((id) => rowOf(c!, id, level)),
-      secret: pastSecret && p ? { text: p.secret, cure: tileView(p.cure, level), fair: fairOf(c!) } : null,
+      secret: pastSecret && p ? { text: withRomaji(p.secret, 'kana'), cure: tileView(p.cure, level), fair: fairOf(c!) } : null,
       tally: inCall && phase === 'score' ? { votes: tallyOf(c!), top: topOf(c!), sweep: sweepOf(c!) && sweepVoters(c!, sweepOf(c!)!) >= 3 ? sweepOf(c!) : null, points: pointsOfCall(s, c!.index) } : null,
       booth: inCall && phase === 'score' && c!.step === 'booth' && c!.booth ? boothView(c!) : null,
       ledger: phase === 'score' || phase === 'recap' ? s.ledger : [],
@@ -1034,7 +1040,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
 function cuePlay(s: HotlineState, c: Call, ctx: ModeContext): void {
   const id = c.order[c.at]!;
   const a = c.advice[id]!;
-  if (a.kind === 'nobiko') ctx.cue({ host: 'nobiko', event: 'hotline_mic_pass', slots: { name: ctx.player(id)?.name ?? '', line: lineOf(problemOfCall(c), a.level).model.kana } });
+  if (a.kind === 'nobiko') ctx.cue({ host: 'nobiko', event: 'hotline_mic_pass', slots: { name: ctx.player(id)?.name ?? '', line: lineOf(problemOfCall(c), a.level).model.kana, line_en: lineOf(problemOfCall(c), a.level).model.en } });
   void s;
 }
 
@@ -1159,7 +1165,8 @@ function meView(s: HotlineState, c: Call, phase: Phase, player: ModePlayer, leve
   return {
     role,
     level,
-    secret: isCaller ? p.secret : null,
+    secret: isCaller ? withRomaji(p.secret, level) : null,
+    cure: isCaller ? tileView(p.cure, level) : null,
     callerLine: isCaller ? withRomaji(p.line[level], level) : null,
     canSay: isCaller && !c.callerSaid && phase === 'prompt' && c.step === 'ring',
     said: isCaller && c.callerSaid,

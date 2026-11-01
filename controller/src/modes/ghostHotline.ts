@@ -19,8 +19,8 @@
 //   Score    "Watch the TV" until the tally lands, then your points by reason and the speaker's private note;
 //            in the booth, your level's tag.
 
-import { h, seatShape } from '../../../shared/src/dom.js';
-import { REACT_MS, UPLOAD_MS, type AdviceKind, type AdviceRow, type HotlineMe, type HotlineView, type Reaction, type TileView } from '../../../shared/src/modes/ghostHotline/hotline.js';
+import { h, ruby, seatShape } from '../../../shared/src/dom.js';
+import { REACT_LOCK_MS, UPLOAD_MS, type AdviceKind, type AdviceRow, type HotlineMe, type HotlineView, type Reaction, type TileView } from '../../../shared/src/modes/ghostHotline/hotline.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { MicClip, recordReady, uploadClip } from '../components/mic.js';
 import { isQuiet } from '../components/speak.js';
@@ -192,7 +192,7 @@ function tryMic(): void {
       problem = '';
     } else {
       micBlocked = clip.blocked || micBlocked;
-      problem = clip.blocked ? 'Still off. Allow the microphone for this page in your browser’s settings, then try again.' : 'Couldn’t open the microphone. Type your advice, or let Nobiko-san read it.';
+      problem = clip.blocked ? 'Still off. Allow the microphone for this page in your browser’s settings, then try again.' : 'Couldn’t open the microphone. Type your advice, or pass the mic to Nobiko-san.';
     }
     bump();
   });
@@ -217,7 +217,7 @@ function startRecording(ctx: Ctx, purpose: Purpose, limitMs: number): void {
         problem = clip.blocked ? 'Your mic is off, so the line went without your voice. Say it out loud anyway!' : 'Couldn’t open the microphone. Your line went in: say it out loud anyway!';
         sendSay(latest ?? ctx, round, null);
       } else {
-        problem = clip.blocked ? 'Your mic is off. Type your advice, or let Nobiko-san read it for free.' : 'Couldn’t open the microphone. Type your advice, or let Nobiko-san read it.';
+        problem = clip.blocked ? 'Your mic is off. Type your advice, or let Nobiko-san read it for free.' : 'Couldn’t open the microphone. Type your advice, or pass the mic to Nobiko-san.';
       }
       return bump();
     }
@@ -539,7 +539,16 @@ function secretCard(me: HotlineMe, compact = false): HTMLElement | null {
     'div',
     { class: `gh-secret${compact ? ' compact' : ''}` },
     h('p', { class: 'gh-secret-label' }, compact ? '🤫 Your secret' : '🤫 Your secret · only you see this'),
-    jpView(me.secret, me.level, { cls: 'gh-secret-line', en: !compact }),
+    jpView(me.secret, me.level, { cls: 'gh-secret-line', en: true }),
+    // What to listen for, with its picture, so a caller who can't follow the Japanese yet can still judge.
+    me.cure
+      ? h(
+          'div',
+          { class: 'gh-listenfor' },
+          pic(me.cure, 'gh-pic gh-who'),
+          h('div', {}, h('p', { class: 'gh-label' }, 'Listen for advice like'), h('p', { class: 'gh-said', lang: 'ja' }, tileWord(me.cure, me.level)), me.cure.romaji ? h('p', { class: 'gh-tile-ro' }, me.cure.romaji) : null, h('p', { class: 'gh-card-en' }, me.cure.word.en)),
+        )
+      : null,
     compact ? null : h('p', { class: 'gh-hint' }, 'React それだ！ to the advice that would really help.'),
   );
 }
@@ -625,7 +634,7 @@ function adviceCard(ctx: Ctx, me: HotlineMe): HTMLElement | null {
       'div',
       { class: 'gh-gist gh-advice gh-getting' },
       h('span', { class: 'gh-pic gh-dots', 'aria-hidden': 'true' }, '⋯'),
-      h('div', { class: 'gh-gist-body' }, h('p', { class: 'gh-label' }, 'Getting the gist…'), h('p', {}, now.kind === 'nobiko' ? `Nobiko-san reads ${name}’s advice.` : `Listen to ${name}.`, ` The words and the picture show once ${caller === 'The caller' ? 'the caller' : caller} reacts.`)),
+      h('div', { class: 'gh-gist-body' }, h('p', { class: 'gh-label' }, 'Getting the gist…'), h('p', {}, now.kind === 'nobiko' ? `Nobiko-san reads ${name}’s advice.` : `Listen to ${name}.`, ` The words and the picture show once ${me.role === 'caller' ? 'you react' : caller === 'The caller' ? 'the caller reacts' : `${caller} reacts`}.`)),
     );
   const verb = now.playing ? (now.kind === 'nobiko' ? ': Nobiko-san reads it' : ' is speaking') : ' stopped';
   return h(
@@ -689,14 +698,21 @@ function recordButton(ctx: Ctx, me: HotlineMe, purpose: Purpose, limitMs: number
   );
 }
 
-function typedBox(ctx: Ctx): HTMLElement {
+/** The typed path: with the keyboard up only this stays in view, so the mission is its label and Send sits beside it. */
+function typedBox(ctx: Ctx, mission: string | null, sendBtn: HTMLElement | null): HTMLElement {
   const record = ctx.view.phase === 'answer';
   const retry = (micDead || micBlocked) && !isQuiet() && recordReady();
   return h(
     'div',
     { class: 'gh-typed' },
+    mission ? h('p', { class: 'gh-typed-mission' }, h('b', {}, 'Mission: '), mission) : null,
     h('p', { class: 'gh-label' }, isQuiet() ? 'Quiet mode: type your advice.' : 'Type your advice.', record ? ' It sends itself just before time runs out.' : ' Send it when it’s ready.'),
-    h('input', { type: 'text', maxlength: '80', lang: 'ja', enterkeyhint: 'send', placeholder: 'Type your advice in Japanese', value: typed, oninput: (e: Event) => (typed = (e.target as HTMLInputElement).value) }),
+    h(
+      'div',
+      { class: 'gh-typed-row' },
+      h('input', { type: 'text', maxlength: '80', lang: 'ja', enterkeyhint: 'send', placeholder: 'Type your advice in Japanese', value: typed, oninput: (e: Event) => (typed = (e.target as HTMLInputElement).value) }),
+      sendBtn,
+    ),
     retry && !micBlocked ? h('button', { type: 'button', class: 'gh-pass', onclick: () => ((micDead = false), (problem = ''), bump()) }, '🎤 Try the mic again') : null,
   );
 }
@@ -773,7 +789,7 @@ function reconnectCard(): HTMLElement | null {
 
 function introScreen(ctx: Ctx): HTMLElement {
   return screen(
-    h('p', { class: 'big', lang: 'ja' }, 'おばけの おなやみ相談室'),
+    h('p', { class: 'big', lang: 'ja' }, 'おばけの おなやみ', ruby({ text: '相談室', kana: 'そうだんしつ' })),
     h('p', {}, '📞 Each call, a yōkai phones Nobiko-san’s advice line. Only the caller sees what would really help.'),
     h('p', {}, '💡 Up to three advisers record their advice at the same time. The caller answers each one: ', h('span', { lang: 'ja' }, 'ちがう！ おしい！ それだ！')),
     ctx.game.scripted ? h('p', {}, '👻 Two of you: a yōkai calls, and you both advise.') : h('p', {}, '😂 Then everyone votes for the advice that made them laugh.'),
@@ -905,12 +921,12 @@ function speakerPlanScreen(ctx: Ctx, me: HotlineMe, send: Send): HTMLElement {
   const typingNow = typing() && me.canType;
   let action: HTMLElement | null;
   if (!record) {
-    if (typingNow) action = h('button', { type: 'button', class: 'primary', onclick: () => sendTyped(ctx, game.round) }, 'Send ✓');
+    if (typingNow) action = h('button', { type: 'button', class: 'primary gh-typed-send', onclick: () => sendTyped(ctx, game.round) }, 'Send ✓');
     else if (me.ready) action = h('p', { class: 'hint gh-ready-done' }, 'Ready ✓ Recording opens when the plan ends.');
     else if (micOff()) action = null;
     else action = h('button', { type: 'button', class: 'primary', onclick: () => ((recShownAt = Date.now()), send({ kind: 'ready' })) }, '● I’m ready');
   } else if (typingNow) {
-    action = h('button', { type: 'button', class: 'primary', onclick: () => sendTyped(ctx, game.round) }, 'Send ✓');
+    action = h('button', { type: 'button', class: 'primary gh-typed-send', onclick: () => sendTyped(ctx, game.round) }, 'Send ✓');
   } else if (pending) {
     action = null;
   } else {
@@ -922,11 +938,11 @@ function speakerPlanScreen(ctx: Ctx, me: HotlineMe, send: Send): HTMLElement {
     micOff() && !record ? micOffCard() : null,
     reconnectCard(),
     record ? null : gistCard(ctx, me, true),
-    me.mission ? h('div', { class: 'gh-mission' }, h('p', { class: 'gh-mission-label' }, 'Your mission'), h('p', { class: 'gh-mission-text' }, me.mission.text)) : null,
+    me.mission && !typingNow ? h('div', { class: 'gh-mission' }, h('p', { class: 'gh-mission-label' }, 'Your mission'), h('p', { class: 'gh-mission-text' }, me.mission.text)) : null,
     live || pending ? null : hintBox(ctx, me, send),
     micOff() && record && !typingNow ? micOffCard() : null,
     // The typed box and any problem live in the dock, so the sticky dock never covers them.
-    dock(typingNow ? typedBox(ctx) : null, problemLine(), action, passBlock(ctx, me, send)),
+    dock(typingNow ? typedBox(ctx, me.mission?.text ?? null, action) : null, problemLine(), typingNow ? null : action, passBlock(ctx, me, send)),
   );
 }
 
@@ -1027,8 +1043,9 @@ function revealScreen(ctx: Ctx, me: HotlineMe): HTMLElement {
     let note: HTMLElement | null = null;
     let change: HTMLElement | null = null;
     if (r && !r.canReact) {
-      note = h('p', { class: 'gh-hint center' }, 'The game marks this one.');
-      tiles = reactionTiles(r.picked, null, true);
+      // No live-looking buttons: one locked line, with the game's mark once it lands.
+      note = h('p', { class: 'gh-locked center' }, '🔒 They picked a picture, so the game checks it against your secret. Just listen.');
+      tiles = r.picked ? h('p', { class: 'center' }, reactionChip(r.picked, 'marked by the game')) : h('span');
     } else if (r) {
       const key = `${game.round}:${r.index}`;
       const open = !r.picked || changing === key;
@@ -1050,7 +1067,7 @@ function revealScreen(ctx: Ctx, me: HotlineMe): HTMLElement {
         note = h('p', { class: 'gh-locked center' }, '✓ Locked in · on the TV now');
         let secs = '';
         if (game.step === 'react') {
-          const left = game.stepAt + REACT_MS - serverNow(ctx);
+          const left = game.stepAt + REACT_LOCK_MS - serverNow(ctx);
           if (left > 0) {
             secs = ` · ${Math.ceil(left / 1000)} s`;
             later('react', (left % 1000) + 20, bump);
@@ -1173,7 +1190,7 @@ function scoreScreen(ctx: Ctx, me: HotlineMe): HTMLElement {
     band(me, next),
     h('p', { class: 'gh-label center' }, 'This call'),
     h('p', { class: 'gh-points' }, `+${me.points ?? 0}`),
-    lines.length ? h('ul', { class: 'gh-breakdown' }, ...lines.map((x) => h('li', {}, h('span', { lang: x.why === 'soreda' || x.why === 'oshii' || x.why === 'sweep' ? 'ja' : 'en' }, WHY[x.why] ?? x.why), h('b', {}, `${x.points > 0 ? '+' : ''}${x.points}`)))) : null,
+    lines.length ? h('ul', { class: 'gh-breakdown' }, ...lines.map((x) => h('li', {}, h('span', { lang: x.why === 'soreda' || x.why === 'oshii' || x.why === 'sweep' ? 'ja' : 'en' }, x.why === 'sweep' ? ruby({ text: '大ウケ！', kana: 'おおウケ！' }) : (WHY[x.why] ?? x.why)), h('b', {}, `${x.points > 0 ? '+' : ''}${x.points}`)))) : null,
     noteCard(me),
     boothCard(ctx, me),
   );

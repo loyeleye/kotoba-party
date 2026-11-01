@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
-import { callsFor, heardAny, lineOf, MAX_ADVISERS, POINTS, RECORD_MS, type HotlineState, type HotlineView } from '../shared/src/modes/ghostHotline/hotline.js';
+import { callsFor, heardAny, lineOf, MAX_ADVISERS, POINTS, REACT_LOCK_MS, REACT_MS, RECORD_MS, type HotlineState, type HotlineView } from '../shared/src/modes/ghostHotline/hotline.js';
 import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, PROBLEMS, problemOf } from '../shared/src/modes/ghostHotline/problems.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -220,6 +220,23 @@ describe('Ghost Advice Hotline: scoring', () => {
       }
       expect(t.st.ledger.some((e) => e.points > 0)).toBe(true);
     }
+  });
+
+  it('locks the caller’s reaction at 3 s but holds the beat so a last-second tap gets its reveal', () => {
+    const t = new Table(4, ['n5', 'n5', 'n5', 'n5'], 1);
+    t.start();
+    const c = t.c;
+    t.play(c.caller!, { kind: 'say', clipId: 'line1' });
+    toPlan(t);
+    adviseAll(t, () => clip('えっと…'));
+    while (t.s.phase === 'reveal' && t.c.step === 'play') t.tick();
+    expect(t.c.step).toBe('react');
+    const at = t.c.stepAt;
+    t.now = at + REACT_LOCK_MS + 1;
+    expect(t.play(c.caller!, { kind: 'react', index: t.c.at, reaction: 'soreda' }).error).toBe('too-late');
+    t.now = at + REACT_LOCK_MS - 1;
+    expect(t.play(c.caller!, { kind: 'react', index: t.c.at, reaction: 'soreda' }).error).toBeUndefined();
+    expect(REACT_MS - REACT_LOCK_MS).toBeGreaterThanOrEqual(650);
   });
 
   it('pays それだ, おしい, laughs, a sweep, the right bet and the caller’s line', () => {
