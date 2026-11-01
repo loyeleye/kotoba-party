@@ -76,6 +76,15 @@ describe('when a frame is met', () => {
     expect(frame(p, 'desu', T0 + 3 * DAY)).toMatchObject({ met: true, progress: 1, recheck: 'waiting' });
   });
 
+  it('counts an N4 frame, and the N5 frame inside it too', () => {
+    const p = emptyProgress();
+    play(p, T0, [said('a', 'まどを あけて もらえますか。'), said('b', 'しゃしんを とって もらえますか。'), said('c', 'この ケーキ、おいしそうです。')], { mode: 'bento-haus' });
+    play(p, T0 + 3 * DAY, [said('a', 'まどを あけて もらえますか。')], { mode: 'bento-haus' });
+    expect(frame(p, 'te-moraeru', T0 + 3 * DAY).met).toBe(true);
+    expect(frame(p, 'sou-look', T0 + 3 * DAY).rule?.says).toBe(1);
+    expect(frame(p, 'desu', T0 + 3 * DAY).rule?.says).toBe(1);
+  });
+
   it('counts at most 2 says a day', () => {
     const p = emptyProgress();
     play(p, T0, [said('a', 'アキです。'), said('b', 'がくせいです。'), said('c', 'ねこです。')]);

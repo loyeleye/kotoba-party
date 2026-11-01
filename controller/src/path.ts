@@ -3,6 +3,7 @@
 // a train map on My progress, and a "line cleared" card that offers to move their level up. It's all on
 // their own phone: the TV and the other players see nothing new (only a wish count on the VIP's list).
 
+import { framesOf } from '../../shared/src/japanese/frames.js';
 import { h } from '../../shared/src/dom.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { PhraseEntry } from '../../shared/src/modes/mode.js';
@@ -27,7 +28,7 @@ import {
   type PathStatus,
   type RoomFit,
 } from '../../shared/src/path.js';
-import { FRAME_FILLERS, FRAME_GAP_DAYS, FRAME_SAYS, phraseFrames, recallOf, type AccountView } from '../../shared/src/progress.js';
+import { FRAME_FILLERS, FRAME_GAP_DAYS, FRAME_SAYS, recallOf, type AccountView } from '../../shared/src/progress.js';
 import type { Level, ModeId } from '../../shared/src/protocol.js';
 
 // ---- the phone's copy of the save, for the lobby and the recap ----
@@ -271,7 +272,7 @@ export function tonightFrames(phrasebook: readonly PhraseEntry[], mode: ModeId):
   const by = new Map<string, Set<string>>();
   for (const e of phrasebook) {
     if (e.outcome !== 'said' || recallOf(e, mode) !== 'memory') continue;
-    for (const id of phraseFrames(e)) by.set(id, (by.get(id) ?? new Set()).add(e.text));
+    for (const id of framesOf(e)) by.set(id, (by.get(id) ?? new Set()).add(e.text));
   }
   return [...by].map(([id, set]) => ({ id, phrases: set.size }));
 }

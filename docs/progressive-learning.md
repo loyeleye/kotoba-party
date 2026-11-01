@@ -41,6 +41,14 @@ A goal whose required frame frames.ts can't find yet shows its frame as *coming 
 be met or suggested until the matcher lands; `FRAME_TEXT` in path.ts names each with its own label and
 hand-written rōmaji, so it lights up with no other change.
 
+For the path, a phrase counts toward every frame in it, N5 to N3 (`framesOf` with `keepHidden`, through
+`phraseFrames` in progress.ts), so この ケーキ、おいしそうです counts for both ＿そうです and ＿です. The recap's
+"Tonight on your path" box names only the most specific ones. The N4 hard roles and decks from PR #133 are
+listed in their goals' games: the Bento Haus manager (4.1, 4.9), Last Train's announcer, Lost and Found
+and innkeeper (4.1, 4.6, 4.9), the Dub Club ad-lib (4.8), the Omiai go-between (4.9) and the Tourist N4
+deck (4.2, 4.4, already listed). 4.2 still has only Tourist, and 4.7 stays 工事中 (the おもてなし shift's
+＿て あります isn't one of its frames).
+
 ### When a goal is met
 
 - **A frame** is met when it's been said **from memory** 3 times, with 2 different phrases (fillers), on 2
