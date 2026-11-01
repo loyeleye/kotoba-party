@@ -112,6 +112,7 @@ export const HOST_EVENTS = [
   'onsen_clue',
   'onsen_accuse',
   'onsen_reveal',
+  'onsen_report',
   // Who's the Tourist?
   'tourist_intro',
   'tourist_deal',

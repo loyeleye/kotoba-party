@@ -522,6 +522,7 @@ export type HostEvent =
   | 'onsen_clue' // a question found a new clue
   | 'onsen_accuse' // the accusation opens
   | 'onsen_reveal' // the culprit is revealed
+  | 'onsen_report' // Chōchin-san says the N4 deputy's accepted report on the TV ({line})
   // Who's the Tourist?
   | 'tourist_intro'
   | 'tourist_deal' // the secret cards are dealt
