@@ -331,12 +331,21 @@ export function mirrored(item: MinigameItem): MinigameItem {
   };
 }
 
-/** Signs as a phone may see them: the target never marked, and on a first try no colours on a pair of boards. */
+/**
+ * Signs as a phone may see them: the target never marked, and on a first try no colours on a pair of boards.
+ * Readings (Kana level only) show on a lone sign from the first try, since it's a first meeting, and on a pair
+ * only on the retry, since the pair tests those same signs.
+ */
 function signsForPhone(signs: readonly StationSign[] | undefined, attempt: 1 | 2): StationSign[] | null {
   if (!signs?.length) return null;
-  const plain = signs.length > 1 && attempt === 1;
-  return signs.map(({ text, arrow, kind }) => ({ text, ...(arrow ? { arrow } : {}), ...(kind && !plain ? { kind } : {}) }));
+  const pair = signs.length > 1;
+  const plain = pair && attempt === 1;
+  const read = !pair || attempt === 2;
+  return signs.map(({ text, arrow, kind, reading }) => ({ text, ...(arrow ? { arrow } : {}), ...(kind && !plain ? { kind } : {}), ...(reading && read ? { reading } : {}) }));
 }
+
+/** A Kana read item (one sign with its reading): shown with its reading and hint from the first try. */
+const showsFirst = (item: MinigameItem) => item.signs?.length === 1 && !!item.signs[0]!.reading;
 
 /** A one-sign item reads a word the stop's name or announcement already spells out (北口 at Kitaguchi). */
 function givenAway(item: MinigameItem, stop: Stop): boolean {
@@ -474,7 +483,10 @@ function startTurns(s: LastTrainState, ctx: ModeContext): void {
   s.turns = {};
   for (const p of ctx.players()) {
     const t = traveller(s, p.id);
-    const dealt = dealItem(s, fair.length ? fair : mg.items, mg.id, p.level, () => ctx.random());
+    // Kana players meet a sign (shown with its reading) before they're tested on it.
+    const pool = fair.length ? fair : mg.items;
+    const first = p.level === 'kana' ? pool.filter((i) => showsFirst(i) && !s.used.includes(itemKey(mg.id, i.id))) : [];
+    const dealt = dealItem(s, first.length ? first : pool, mg.id, p.level, () => ctx.random());
     if (!dealt) continue;
     const item = dealt.mirror && ctx.random() < 0.5 ? mirrored(dealt) : dealt;
     s.turns[p.id] = {
@@ -628,7 +640,7 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
       let bonus = 0;
       if (rec?.via === 'speech') {
         let rate = avg > 0 && p.score < avg ? RULES.speechCapRate : RULES.speechRate;
-        if (turn.task.promptType === 'read-aloud') rate /= 2;
+        if (turn.task.promptType === 'read-aloud' || showsFirst(turn.task.item)) rate /= 2;
         bonus = Math.min(Math.round(base * rate), Math.floor(base * RULES.speechCapRate));
       }
       points = (base + bonus) * mult;
@@ -1188,7 +1200,7 @@ function taskView(s: LastTrainState, task: Task, level: Level, lastHeard: string
     signs: signsForPhone(task.item.signs, task.attempt),
     limitMs: task.limitMs,
     attempt: task.attempt,
-    hint: retry ? task.item.hint : null,
+    hint: retry || showsFirst(task.item) ? task.item.hint : null,
     romaji: kanaHelp ? toRomaji(task.item.prompt.kana) : null,
     firstKana: kanaHelp && retry ? `${firstMora(task.item.accepted[0] ?? task.item.model.kana)} (${toRomaji(firstMora(task.item.accepted[0] ?? task.item.model.kana))})` : null,
     listen: task.promptType === 'listen-and-answer',
