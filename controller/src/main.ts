@@ -1038,7 +1038,12 @@ onTabAudio((active) => {
 window.addEventListener('online', () => client?.reconnectNow());
 
 function tickTimer(): void {
-  timerEl.textContent = formatSeconds(client?.remainingMs() ?? null);
+  // The beat's time when the mode's view says when the beat ends (Yōkai Court's stepEndsAt), else the phase's.
+  const left = client?.remainingMs() ?? null;
+  const view = client?.view ?? null;
+  const end = (view?.game as { stepEndsAt?: unknown } | null | undefined)?.stepEndsAt;
+  const shown = typeof end === 'number' && left !== null && view?.deadline ? Math.max(0, Math.min(left, end - (view.deadline - left))) : left;
+  timerEl.textContent = formatSeconds(shown);
 }
 setInterval(tickTimer, 250);
 

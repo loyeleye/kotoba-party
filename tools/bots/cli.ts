@@ -7,7 +7,8 @@
 //
 // Options: --url (default http://localhost:3000), --code, --bots, --rounds, --drop <seconds>, --fast,
 // --mode <any mode id, or debug>, --games (real modes only), --quiet <n> (the first n bots have their mic off)
-// and --sound-off <n> (the first n bots have phone sound off).
+// --sound-off <n> (the first n bots have phone sound off) and --level <kana|n5|n4|n3> (every bot's level, or a
+// comma list by seat: --level kana,kana,n5).
 // With --code and no --mode, bots play any mode; without --code they default to the debug round.
 
 import { fileURLToPath } from 'node:url';
@@ -32,6 +33,7 @@ const { values } = parseArgs({
     games: { type: 'string', default: '1' },
     quiet: { type: 'string', default: '0' },
     'sound-off': { type: 'string', default: '0' },
+    level: { type: 'string' },
   },
 });
 
@@ -43,6 +45,15 @@ if (!MODE_IDS.includes(mode)) {
   process.exit(1);
 }
 const realMode = mode !== 'debug' || anyMode;
+const LEVELS = ['kana', 'n5', 'n4', 'n3'] as const;
+type BotLevel = (typeof LEVELS)[number];
+const levels = (values.level ?? '').split(',').filter(Boolean) as BotLevel[];
+if (levels.some((l) => !LEVELS.includes(l))) {
+  console.error(`Unknown level in --level ${values.level}. Pick from: ${LEVELS.join(', ')}.`);
+  process.exit(1);
+}
+/** A bot's level by seat: the last one given repeats. */
+const levelFor = (seat: number): BotLevel | undefined => levels[Math.min(seat, levels.length) - 1];
 
 const url = values.url!.replace(/\/$/, '');
 const count = Number(values.bots ?? (values.code ? 7 : 8));
@@ -116,7 +127,7 @@ for (let i = 1; i <= count; i++) {
   const name = `bot${i}`;
   try {
     const policy = anyMode ? anyModePolicy(i) : policyFor(i);
-    const bot = await Bot.join({ baseUrl: url, code, name, ...(policy ? { policy } : { script }), deviceId: `cli-${code}-${name}`, quiet: i <= Number(values.quiet), soundOff: i <= Number(values['sound-off']) });
+    const bot = await Bot.join({ baseUrl: url, code, name, ...(policy ? { policy } : { script }), deviceId: `cli-${code}-${name}`, level: levelFor(i), quiet: i <= Number(values.quiet), soundOff: i <= Number(values['sound-off']) });
     bot.client.connect();
     bots.push(bot);
     console.log(`${name} joined ${code}`);

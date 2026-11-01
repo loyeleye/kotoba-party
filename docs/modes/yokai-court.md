@@ -33,16 +33,24 @@ tiles (a claim, their evidence, an answer to the testimony) and can say them, or
 | reveal | play ×2 | each clip + 0.5 s; Fude-san's reading 4.5–9 s | Prosecution, then defence. The TV shows only who is talking and a playhead (typed words show, since they have no sound; Fude-san's reading shows no English until the gist). Judges' phones show the Listening card: the main claim at their level, never the detail the check asks about. |
 | reveal | check | 4 s, ends when every judge is in | One question about one side's evidence (the side is drawn by chance every case): "What did the prosecution say was left behind?" or "Where did the defence say the accused was?", three pictures. +100 if right; a wrong answer never voids the vote. The alibis aren't the yōkai's folklore home (that's a decoy), so lore can't answer it. |
 | encore | gist → vote | 4 s + 8 s | Both arguments side by side: pictures, the line with furigana, English. One vote from every judge; change it until the timer ends. |
-| score | verdict | 8 s | Tokens drop into both pans in turn, the tally and the hanko land at 2.3 s with Fude-san's verdict line (never before), then the points at 4.4 s and Fude-san tells the case's real story at 5.0 s. Two codas convict the accused, two blame someone else, two blame nobody, and each explains the clue. |
+| score | verdict | 8 s | Tokens drop into both pans in turn, each pan's count pops by 1.3 s, the scroll unrolls and Fude-san's brush writes 有罪 or 無罪 top to bottom from 1.66 s (her host row is kept up for the whole beat, so nothing moves), then the 筆 seal lands at 2.3 s with her verdict line, the reading and the English (never before), then the points at 4.4 s and Fude-san tells the case's real story at 5.0 s. Two codas convict the accused, two blame someone else, two blame nobody, and each explains the clue. |
 | score | booth | 7 s | Only when a lawyer's own words used a chunk, and never two cases in a row. |
 
 Cases: 4 for 4 players (everyone argues twice), 3 for 5–6, 4 for 7–8, so everyone argues at least once. Typical
 case ≈ 80 s, worst 102 s.
 
+Every timed beat (case, ask, testify, plan, record, check, gist, vote) has a gold bar on the TV that runs out, and
+the phones show the same clock as a thin bar under the role band on case, ask, testify, plan, check, gist and vote
+(the record button keeps its own ring). The view carries `stepEndsAt` for beats with their own timer, and the
+corner clocks on the TV and phones count down to it, so the clock and the bar agree; the rest run to the phase's
+deadline.
+
 ## Roles
 
 - **Lawyers:** whoever has argued least, paired by the closest level; the one with fewer prosecutions
-  prosecutes. Prosecution is always left, vermilion, ⛓; defence right, sky blue, 🕊, a dashed edge.
+  prosecutes. Prosecution is always left, vermilion, with a sealed scroll; defence right, sky blue, with a sunflower
+  badge (the Japanese lawyer's badge) and a dashed edge. Role icons are 32×32 pixel art (`stage/assets/court/role-*.png`),
+  with 📜 🌻 ⚖ 👁 standing in if a picture is missing. No chains: nobody goes to prison here.
 - **Witness:** whoever has been witness least. Answers, then judges with everyone else.
 - **Judges:** everyone who isn't a lawyer. Lawyers never vote in their own case. A VIP who is arguing can't hide
   the other side's argument.
@@ -71,6 +79,13 @@ said (read) when their own take has every picked tile in it, else seen. The witn
 when their take has the answer in it (any try counts with no speech-to-text), else seen. "The recogniser heard
 it" is all the game knows: it doesn't check pronunciation.
 
+A Kana judge who checked or voted keeps one word: the check's answer (the clue or the alibi place), with its
+picture, kana, romaji and English on the verdict card, logged as seen (`court:word:<thing>`). A Kana lawyer's
+verdict card is a recap of their tiles in the order sent (kana, romaji, English, the evidence tile marked),
+whether they said every tile, some, none, or Fude-san read them, and whether the evidence went out (or was picked
+but not heard). A tile counts as said only when the take has the kana after the yōkai's name, so saying only
+ざしきわらし doesn't count. The keep word is logged with a plain gloss (cucumber, pond), not the sentence English.
+
 Frames are found from the kana (`framesOf`). Path goals: 4.2 (なければ, なくても いい), 4.6 (に よると, そうです),
 4.14 (と いって いました), and on the Limited Express 3.1 (に よると, optional there), 3.7 (わけでは ありません)
 and 3.10 (に ちがいありません).
@@ -80,10 +95,8 @@ and 3.10 (に ちがいありません).
 - The reconnect hold (the TV waits up to 10 s for a lawyer whose clip is still uploading) isn't built: a
   phone that drops keeps its take and retries until the record beat ends, then Fude-san stands in.
 - Log judges' check accuracy by side in playtests.
-- Not built yet, from the panel: a "one word to keep" card that logs a Kana judge's check word as seen; a recap
-  card for Kana lawyers (their tiles with romaji, and whether they said the evidence); Fude-san's brush writing
-  有罪 / 無罪 as a sprite; a per-beat timer on the TV and phones; pixel role icons in place of the emoji.
-- Romaji glues particles onto words (Kappaja nai). That's the shared `toRomaji`, for its own fix.
+- Romaji: the court spaces に and じゃ before `toRomaji` (Kappa ja nai, yane ni ita). The shared `toRomaji` still
+  glues them elsewhere, for its own fix.
 - Pixelify's 2 reads as 8, so the court's numbers (case number, scores, seats, the record timer) use the
   body face. Its C read as O ("Yōkai Oourt") until Kotoba Pixel redrew it (2026-11-01); the word labels
   are back on the pixel face.
