@@ -62,6 +62,25 @@ describe('the goals', () => {
     const named = new Set(GOALS.flatMap((g) => [...g.need.flat(), ...g.also]));
     for (const id of ['ka', 'sou', 'nan', 'masen-ka', 'te-mo-ii']) expect(named.has(id), id).toBe(true);
   });
+
+  it('count the N4 frames the plan left out as optional frames on their goals (Ladi, Nov 1)', () => {
+    const home: Record<string, string> = {
+      'te-hoshii': '4.1',
+      causative: '4.2',
+      'sasete-kudasai': '4.2',
+      'ba-yokatta': '4.3',
+      'tari-tari': '4.3',
+      'mitai-you': '4.6',
+      'n-desu': '4.9',
+    };
+    for (const [id, goalId] of Object.entries(home)) {
+      expect(frameReady(id), id).toBe(true);
+      expect(GOALS.filter((g) => g.also.includes(id)).map((g) => g.id), id).toEqual([goalId]);
+      expect(GOALS.some((g) => g.need.flat().includes(id)), id).toBe(false);
+    }
+    // Optional, so the goals' required frames are unchanged.
+    expect(missingFrames(GOALS.find((g) => g.id === '4.2')!)).toEqual([]);
+  });
 });
 
 describe('when a frame is met', () => {

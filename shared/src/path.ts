@@ -111,6 +111,14 @@ export const FRAME_TEXT: Readonly<Record<string, { ja: string; en: string; romaj
   'o-kudasai': { ja: 'お／ご＿ください', en: 'Please ___ (polite)', romaji: 'o/go ___ kudasai' },
   'te-itadakemasen': { ja: '＿て いただけませんか', en: 'Could you kindly ___?', romaji: '___ te itadakemasen ka' },
   'o-suru': { ja: 'お／ご＿します', en: "I'll ___ for you (humble)", romaji: 'o/go ___ shimasu' },
+  // N4 the goals left out at first, optional on their goals (Ladi, Nov 1).
+  'te-hoshii': { ja: '＿て ほしいです', en: 'I want you to ___', romaji: '___ te hoshii desu' },
+  causative: { ja: '＿させます ／ ＿せます', en: 'make / let ___ do it', romaji: '___ sasemasu / ___ semasu' },
+  'sasete-kudasai': { ja: '＿させて ください', en: 'Let me ___', romaji: '___ sasete kudasai' },
+  'ba-yokatta': { ja: '＿ば よかったです', en: 'I should have ___', romaji: '___ ba yokatta desu' },
+  'tari-tari': { ja: '＿たり ＿たり します', en: 'do things like ___ and ___', romaji: '___ tari ___ tari shimasu' },
+  'mitai-you': { ja: '＿みたいです ／ ＿ようです', en: "It seems ___ / It's like ___", romaji: '___ mitai desu / ___ yō desu' },
+  'n-desu': { ja: '＿んです', en: "It's that ___ (explaining)", romaji: '___ n desu' },
 };
 
 /** A frame's text for the phone: frames.ts's own when it has the id, else ours. */
@@ -203,15 +211,15 @@ export const GOALS: readonly Goal[] = [
   g('5.8', 'local', 'Describe and give reasons', 'Say what something is like, and why.', ['adj-desu', ['kunai', 'ja-nai']], ['kara', 'hou-ga'], ['happyokai', 'tourist', 'narabete', 'omiai']),
   g('5.9', 'local', 'Invite, offer, ask', 'Invite softly, and ask someone to do something.', ['masen-ka', 'te-kudasai'], ['mashou', 'naide-kudasai'], ['omiai', 'phrase-bingo', 'oogiri']),
   g('5.10', 'local', 'Read N5 kanji', 'The kanji on signs, menus and calendars.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
-  g('4.1', 'express', 'Ask favours', 'Ask someone to do something for you.', ['te-moraeru'], ['ageru-kureru', 'te-kuremasen'], ['phrase-bingo', 'bento-haus', 'last-train']),
-  g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii'], ['tourist'], { thin: 'Only one game uses it so far.' }),
-  g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau'], ['hajimemashite', 'happyokai', 'phrase-bingo']),
+  g('4.1', 'express', 'Ask favours', 'Ask someone to do something for you.', ['te-moraeru'], ['ageru-kureru', 'te-kuremasen', 'te-hoshii'], ['phrase-bingo', 'bento-haus', 'last-train']),
+  g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii', 'sasete-kudasai', 'causative'], ['tourist'], { thin: 'Only one game uses it so far.' }),
+  g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau', 'ba-yokatta', 'tari-tari'], ['hajimemashite', 'happyokai', 'phrase-bingo']),
   g('4.4', 'express', 'Say what you can do', 'たべられます, はなせます: say what you can and can’t.', ['potential'], [], ['phrase-bingo', 'tourist']),
   g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond', 'noni'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri']),
-  g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou', ['sou-hear', 'ni-yoru', 'n-datte']], ['kamo'], ['phrase-bingo', 'happyokai', 'tourist', 'last-train', 'word-gauntlet']),
+  g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou', ['sou-hear', 'ni-yoru', 'n-datte']], ['kamo', 'mitai-you'], ['phrase-bingo', 'happyokai', 'tourist', 'last-train', 'word-gauntlet']),
   g('4.7', 'express', 'Plans and advice', 'Say what you plan to do, and give advice.', ['you-to-omou'], ['tsumori', 'hou-ga-ii', 'tara-dou'], ['ghost-hotline'], { gap: 'Ghost Advice Hotline gives advice (＿た ほうが いいです, ＿たら どうですか), but no game asks for plans yet.' }),
   g('4.8', 'express', 'Talk casually with friends', 'Plain form with よ, ね and の: how friends talk.', ['plain'], ['n-da', 'teru'], ['omiai', 'dub-club']),
-  g('4.9', 'express', 'Speak politely to strangers', 'The extra-polite asks for shops, stations and offices.', ['te-itadakemasen', ['o-kudasai', 'o-suru']], [], ['omiai', 'happyokai', 'bento-haus', 'last-train']),
+  g('4.9', 'express', 'Speak politely to strangers', 'The extra-polite asks for shops, stations and offices.', ['te-itadakemasen', ['o-kudasai', 'o-suru']], ['n-desu'], ['omiai', 'happyokai', 'bento-haus', 'last-train']),
   g('4.10', 'express', 'Read N4 kanji', 'The next kanji up: verbs, places and time words.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
 ];
 export const GOAL_BY_ID: Readonly<Record<string, Goal>> = Object.fromEntries(GOALS.map((x) => [x.id, x]));

@@ -23,7 +23,7 @@ built by `tools/content-kanji-strokes.ts`), `controller/src/components/brushPad.
 | N5 | kanji steps 1–5 | kanji steps 1–7 | 山 川 木 雨 車 本 |
 | N4 | kanji steps 3–9 | kanji steps 1–10, and two-kanji words in the middle item | 春 冬 秋 花 犬 海 |
 
-The kanji (66 N5, 45 N4) and their order come from the Japanese expert's list. Each kanji has a
+The kanji (70 N5, 45 N4) and their order come from the Japanese expert's list. Each kanji has a
 word to say: the kanji itself where it stands alone (山 やま), otherwise a common word with it
 (日 → 毎日 まいにち). Fourteen two-kanji words (学生, 先生, 日本, 火山, 花火 …) use only listed kanji.
 

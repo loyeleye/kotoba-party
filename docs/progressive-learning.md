@@ -28,9 +28,24 @@ learning-science reviews). Three lines of can-do goals, worked back from the N5 
 - **Local Line** (各駅停車, N5): 5.1 introduce yourself and others, 5.2 shop and order, 5.3 times and
   dates, 5.4 find your way, 5.5 likes and wants, 5.6 your day, 5.7 ask and answer, 5.8 describe and give
   reasons, 5.9 invite/offer/ask, 5.10 N5 kanji.
-- **Express Line** (急行, N4): 4.1 favours, 4.2 may/must/mustn't, 4.3 experiences, 4.4 potential, 4.5 if
-  and when (のに counts too), 4.6 guess/hearsay/opinion, 4.7 plans and advice (shown as 工事中, under construction, and not counted: Ghost Advice Hotline gives advice with ＿た ほうが いいです and ＿たら どうですか, but no game asks for plans yet), 4.8 casual speech,
-  4.9 polite requests, 4.10 N4 kanji.
+- **Express Line** (急行, N4): 4.1 favours (＿て ほしい counts too), 4.2 may/must/mustn't (the causative and
+  ＿させて ください count too), 4.3 experiences (＿ば よかった and ＿たり ＿たり count too), 4.4 potential, 4.5 if
+  and when (のに counts too), 4.6 guess/hearsay/opinion (＿みたいです／＿ようです counts too), 4.7 plans and advice
+  (shown as 工事中, under construction, and not counted: Ghost Advice Hotline gives advice with ＿た ほうが いいです
+  and ＿たら どうですか, but no game asks for plans yet), 4.8 casual speech, 4.9 polite requests
+  (polite ＿んです counts too), 4.10 N4 kanji.
+
+The N4 frames the plan's goals first left out (みたい／ようです, polite ＿んです, the causative, ＿て ほしい,
+＿ば よかった, ＿たり ＿たり; Ladi, Nov 1) are optional frames, never required ones. The causative comes in two
+frames: a statement (こどもに たべさせました: made or let someone do it) and the "let me" request
+(＿させて ください／いただけませんか). Both sit on 4.2, since asking to be let do something is asking
+permission and letting or making someone do it is giving permission or setting an obligation; the
+いただけませんか half of the request already counts for 4.9. ＿ば よかった (what you should have done) sits with
+＿て しまいました on 4.3, and ＿たり ＿たり with ＿た ことが あります, as Minna no Nihongo L19 teaches them.
+Polite ＿んです sits on 4.9 because ＿んですが is how you open a polite ask (すみません、きっぷを なくしたんですが…);
+casual ＿んだ stays on 4.8. Three of them (polite ＿んです, both causative frames) need the dictionary's part of
+speech, and the path still counts without tokens, so they show on their goals but won't move until the
+path counts with the server's tokens (docs/n4-n3-frames.md, "For step 2").
 
 Each goal lists its **required frames** (all must be met; one may be "any of", as 5.7's question frame),
 frames that **count too**, and the games where players actually say them. The frame, not the game, is

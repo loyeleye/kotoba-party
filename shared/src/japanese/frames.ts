@@ -786,12 +786,13 @@ const N4: Matcher[] = [
   },
   // ---- Added on the Japanese expert's advice (Nov 1): N4 grammar the goals need ----
   // A guess from what you see: ＿みたいです／＿ようです. Not 〜て みたい (want to try), Nが みたい (want to see),
-  // おはよう, ようこそ, ようび, or Nの ように (like N, as an adverb).
+  // おはよう, ようこそ, ようび, Nの ように (like N, as an adverb), or a word that ends in よう: たいよう (the sun),
+  // じゅうよう (important), えいよう (nutrition), せいよう (the West), and げつよう／もくよう／すいよう said without び.
   {
     id: 'mitai-you',
     re: rx(`[^\\s\\u3000、。てでがを][\\s\\u3000]*みたい[\\s\\u3000]*(です|でした|だ|だった|ね|よ|[。！!？?…]|$)|(${PLAIN}|の|な)[\\s\\u3000]*(よう|様)[\\s\\u3000]*(です|でした|だ|だった)`),
     // A む verb + たい (のみたい, すみたい) is "want to", not みたい.
-    not: rx(`${TE}[\\s\\u3000]*みたい|(が|を|も)[\\s\\u3000]*みたい|(^|[\\s\\u3000、をがもは])(の|飲|よ|読|す|住|やす|休|か|噛|たの|頼|ぬす|盗|すす|進|あ|編|う|生|しず|沈|ふ|踏|こ|込|つつ|包|つ|積|この|好)みたい|おはよう|ようこそ|ようび|(どう|こう|そう|ちゅう|ほう|しゅう|きょう|ひつ|だいじょう|しよう|たべよう|いこう)よう[\\s\\u3000]*です|[おこごそぞとどのぼもよろ]う[\\s\\u3000]*(よう|様)[\\s\\u3000]*です`),
+    not: rx(`${TE}[\\s\\u3000]*みたい|(が|を|も)[\\s\\u3000]*みたい|(^|[\\s\\u3000、をがもは])(の|飲|よ|読|す|住|やす|休|か|噛|たの|頼|ぬす|盗|すす|進|あ|編|う|生|しず|沈|ふ|踏|こ|込|つつ|包|つ|積|この|好)みたい|おはよう|ようこそ|ようび|(どう|こう|そう|ちゅう|ほう|しゅう|きょう|ひつ|だいじょう|しよう|たべよう|いこう)よう[\\s\\u3000]*です|[おこごそぞとどのぼもよろ]う[\\s\\u3000]*(よう|様)[\\s\\u3000]*です|(^|[\\s\\u3000、がはもをの])(たい|じゅう|えい|せい|かい|がい|げつ|もく|すい)よう[\\s\\u3000]*(です|でした|だ|だった)`),
     hides: [...DESU_FAMILY, 'tai'],
   },
   // Explaining, politely: ＿んです／＿のです. Only with tokens (ん as a 非自立 noun before です): かいしゃいんです
@@ -953,7 +954,7 @@ export const N4_FRAMES: readonly Frame[] = [
   d('koto-ni-suru', 'n4', '4.12', '＿ことに しました', "I've decided to ___", 'Say what you decided.', 'まいにち あるく ことに しました。', "I've decided to walk every day."),
   d('koto-ni-naru', 'n4', '4.12', '＿ことに なりました', "It's been decided that ___", 'Say what was decided for you.', 'らいげつ ひっこす ことに なりました。', "It's been decided I'll move next month."),
   d('passive', 'n4', '4.13', '＿れました ／ ＿られました', 'I got ___ed / It was ___ed', 'Say what was done to you.', 'ははに しかられました。', 'I got told off by my mum.'),
-  d('sasete-kudasai', 'n4', '4.13', '＿させて ください', 'Let me ___', 'Ask to be allowed to do something.', 'わたしに はらわせて ください。', 'Let me pay.'),
+  d('sasete-kudasai', 'n4', '4.2, 4.13', '＿させて ください', 'Let me ___', 'Ask to be allowed to do something.', 'わたしに はらわせて ください。', 'Let me pay.'),
   d('yasui-nikui', 'n4', '4.13', '＿やすい ／ ＿にくい', 'easy / hard to ___', 'Say how easy something is to do.', 'この ペンは かきやすいです。', 'This pen is easy to write with.'),
   d('to-itte-ita', 'n4', '4.14', '＿と いって いました', '(They) said ___', 'Pass on what someone said.', 'フデさんは きょう おくれると いって いました。', 'Fude said they\'d be late today.'),
   d('tame-ni', 'n4', '4.14', '＿ために', 'in order to ___', 'Say what something is for.', 'にほんごを べんきょうする ために、にほんに きました。', 'I came to Japan to study Japanese.'),
@@ -962,13 +963,14 @@ export const N4_FRAMES: readonly Frame[] = [
   d('nani-ka', 'n4', '4.14', 'なに／どこ／だれ ＿か', 'what ___ (inside a sentence)', 'Fold a question into a sentence.', 'なにを たべたか、おしえて ください。', 'Tell me what you ate.'),
   // のに moved here from N3 on the Japanese expert's advice (Genki II L22, Minna II L45 teach it in the N4 range).
   d('noni', 'n4', '4.5', '＿のに', 'even though ___', 'Say it turned out against what you expected.', 'がんばったのに、まけました。', 'I tried hard, and still lost.'),
-  // Added on the Japanese expert's advice: N4 grammar Genki II and Minna II students expect. No path goal yet.
-  d('mitai-you', 'n4', '', '＿みたいです ／ ＿ようです', "It seems ___ / It's like ___", 'Guess from what you see or hear, or say what something is like.', 'だれも いない みたいです。', 'It seems nobody is here.'),
-  d('n-desu', 'n4', '', '＿んです', "It's that ___ (explaining)", 'Explain, or ask for an explanation, politely.', 'じつは、あした ひっこすんです。', "The thing is, I'm moving tomorrow."),
-  d('causative', 'n4', '', '＿させます ／ ＿せます', 'make / let ___ do it', 'Say who you made, or let, do something.', 'こどもに やさいを たべさせました。', 'I made the kids eat vegetables.'),
-  d('te-hoshii', 'n4', '', '＿て ほしいです', 'I want you to ___', 'Say what you want someone else to do.', 'もっと ゆっくり はなして ほしいです。', 'I want you to speak more slowly.'),
-  d('ba-yokatta', 'n4', '', '＿ば よかったです', 'I should have ___', 'Say what you wish you had done.', 'もっと はやく くれば よかったです。', 'I should have come earlier.'),
-  d('tari-tari', 'n4', '', '＿たり ＿たり します', 'do things like ___ and ___', 'Give examples of what you do.', 'しゅうまつは えいがを みたり、ほんを よんだり します。', 'At weekends I watch films, read books and so on.'),
+  // Added on the Japanese expert's advice: N4 grammar Genki II and Minna II students expect. The first six count
+  // as optional frames on path goals (Ladi, Nov 1: shared/src/path.ts); ＿ところです and casual ＿って have no goal yet.
+  d('mitai-you', 'n4', '4.6', '＿みたいです ／ ＿ようです', "It seems ___ / It's like ___", 'Guess from what you see or hear, or say what something is like.', 'だれも いない みたいです。', 'It seems nobody is here.'),
+  d('n-desu', 'n4', '4.9', '＿んです', "It's that ___ (explaining)", 'Explain, or ask for an explanation, politely.', 'じつは、あした ひっこすんです。', "The thing is, I'm moving tomorrow."),
+  d('causative', 'n4', '4.2', '＿させます ／ ＿せます', 'make / let ___ do it', 'Say who you made, or let, do something.', 'こどもに やさいを たべさせました。', 'I made the kids eat vegetables.'),
+  d('te-hoshii', 'n4', '4.1', '＿て ほしいです', 'I want you to ___', 'Say what you want someone else to do.', 'もっと ゆっくり はなして ほしいです。', 'I want you to speak more slowly.'),
+  d('ba-yokatta', 'n4', '4.3', '＿ば よかったです', 'I should have ___', 'Say what you wish you had done.', 'もっと はやく くれば よかったです。', 'I should have come earlier.'),
+  d('tari-tari', 'n4', '4.3', '＿たり ＿たり します', 'do things like ___ and ___', 'Give examples of what you do.', 'しゅうまつは えいがを みたり、ほんを よんだり します。', 'At weekends I watch films, read books and so on.'),
   d('tokoro-desu', 'n4', '', '＿ところです', "I'm just about to / in the middle of / have just ___", 'Say where you are in an action.', 'いま、でかける ところです。', "I'm just about to go out."),
   d('tte-quote', 'n4', '', '＿って いって いました', '(They) said ___ (casual)', 'Pass on what someone said, casually.', 'あしたは やすみだって いって いたよ。', 'They said tomorrow is a day off.'),
 ];
