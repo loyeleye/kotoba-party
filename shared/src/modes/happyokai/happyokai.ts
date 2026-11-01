@@ -33,6 +33,7 @@ import {
   GRADE_STAMPS,
   HAVE_YOU,
   HAVE_YOU_FRAME,
+  HAVE_YOU_GLOSS,
   haveYouCard,
   haveYouOf,
   holidayPicture,
@@ -100,11 +101,19 @@ export const ASK = { said: 15, other: 5, picked: 35 } as const;
 export const VOTE = { presenter: 100, assistant: 50 } as const;
 export const DEFAULT_GRADE = 2;
 /** Chōchin-san's "Have you ever…?" card: how long the presenter has before the room's cards come out. */
-export const HAVE_YOU_MS = 20_000;
+export const HAVE_YOU_MS = 25_000;
+/** After the card ends, it stays on the TV this long with the answer (and Chōchin-san reacts) before the room's cards come out. */
+export const HAVE_YOU_HOLD_MS = 3_000;
 /** Lines answering it are kept on this step (question-time answers are on -1). */
 export const HAVE_YOU_STEP = -2;
 /** Tries at it: after a second answer without the frame, the room's questions come out. */
-const HAVE_YOU_TRIES = 2;
+export const HAVE_YOU_TRIES = 2;
+/** How the card ended: yes, no, or passed (Next, or out of time). */
+export type HaveYouAnswer = 'yes' | 'no' | 'pass';
+/** The TV's English for the answer, under the presenter's caption while the card is held. */
+export const HAVE_YOU_ANSWER_EN: Record<HaveYouAnswer, string> = { yes: 'Yes, I have!', no: 'Never!', pass: 'It’s a secret!' };
+/** Chōchin-san's reaction pool for each answer (the host line's tier). */
+export const HAVE_YOU_REACT_TIER = { yes: 'ippon', no: 'good', pass: 'flop' } as const;
 
 export const STAMPS = ['omoshiroi', 'hee', 'sugoi', 'naruhodo', 'ee', 'hakushu'] as const;
 export type StampKind = (typeof STAMPS)[number];
@@ -152,6 +161,8 @@ export interface Line {
   kind: LineKind;
   sentences: number;
   hidden: boolean;
+  /** An answer to Chōchin-san's card that has ＿た ことが あります／ありません in it (only those are priced as said). */
+  framed?: true;
 }
 
 export interface Stamp {
@@ -193,9 +204,18 @@ export interface Talk {
   lastStamp: Record<string, number>;
   /**
    * Chōchin-san's "Have you ever…?" card (one talk a game): the topic, whether the presenter opened the
-   * Japanese, and whether it's over (answered with the frame, two tries, skipped or timed out).
+   * Japanese, and whether it's over (answered with the frame, two tries, skipped or timed out). Once over it
+   * stays on the TV with the answer for HAVE_YOU_HOLD_MS (`endedAt`), then `released` lets the room's cards out.
    */
-  haveYou: { topicId: string; peeked: boolean; done: boolean; said: { text: string; kana: string; kind: LineKind } | null } | null;
+  haveYou: {
+    topicId: string;
+    peeked: boolean;
+    done: boolean;
+    said: { text: string; kana: string; kind: LineKind } | null;
+    answer: HaveYouAnswer | null;
+    endedAt: number | null;
+    released: boolean;
+  } | null;
   /** Question time: each audience player's three cards, what they asked, and the one the presenter chose. */
   cards: Record<string, JpText[]>;
   asked: Asked[];
@@ -308,9 +328,10 @@ export interface HappyokaiView {
   question: { askers: string[]; chosen: Asked | null; answered: boolean } | null;
   /**
    * Chōchin-san's "Have you ever…?" card while the presenter answers it: the question in English and the
-   * frame (never the Japanese, so the answer is the presenter's own).
+   * frame (never the Japanese, so the answer is the presenter's own), with an English gloss of the frame.
+   * `answer`: once it's over, the answer in English while the card stays up a moment.
    */
-  haveYou: { en: string; frame: string } | null;
+  haveYou: { en: string; frame: string; gloss: string; answer: string | null } | null;
   grading: { count: number; needed: number } | null;
   /** The report card (score). `flowers` are the grades, high to low (never who gave them). */
   card:
@@ -354,8 +375,23 @@ export interface HappyokaiView {
     /**
      * The presenter's "Have you ever…?" card: the question in English, the frame and the noun. `peek` is the
      * Japanese (the question and both answers), once they've opened it; peeking counts the answer as read.
+     * `endsAt`: server time the card runs out. `triesLeft`, and `missedFrame` once an answer came without the
+     * frame (the phone nudges for the whole sentence). `ended`: the card is over and held on the TV; `model` is
+     * Chōchin-san's answer when theirs never had the frame.
      */
-    haveYou: { id: string; en: string; frame: string; hint: JpText; peek: { question: JpText; yes: JpText; no: JpText } | null } | null;
+    haveYou: {
+      id: string;
+      en: string;
+      frame: string;
+      hint: JpText;
+      peek: { question: JpText; yes: JpText; no: JpText } | null;
+      endsAt: number;
+      triesLeft: number;
+      missedFrame: boolean;
+      ended: { answer: HaveYouAnswer; model: JpText | null } | null;
+    } | null;
+    /** After the card, while they choose a question: Chōchin-san's model answer when theirs never had the frame. */
+    haveYouModel: JpText | null;
     answerFrames: string[];
     canGrade: boolean;
     graded: number | null;
@@ -430,8 +466,22 @@ const graphUp = (t: Talk): boolean => t.index % 2 === 0;
 
 // ---- Chōchin-san's "Have you ever…?" card ----
 
-/** The card is up and the room's question cards wait for it. */
+/** The presenter is answering the card. */
 const haveYouPending = (t: Talk): boolean => !!t.haveYou && !t.haveYou.done;
+/** The card is on the TV (being answered, or held with the answer) and the room's question cards wait for it. */
+const haveYouUp = (t: Talk): boolean => !!t.haveYou && !t.haveYou.released;
+
+/** A "no" answer: the same test the phrasebook uses (ありません／ないです), plus a bare いいえ. */
+export const saysNo = (kana: string): boolean => /ありません|ないです|ない$|^いいえ/.test(normalizeReading(kana).trim());
+
+/** Chōchin-san's model answer, when the presenter's never had the frame (yes unless they said no). */
+function haveYouModel(t: Talk, level: Level): JpText | null {
+  const hy = t.haveYou;
+  const topic = hy ? haveYouOf(hy.topicId) : undefined;
+  if (!hy?.done || !topic || t.lines.some((l) => l.step === HAVE_YOU_STEP && l.framed)) return null;
+  const card = haveYouCard(topic, level);
+  return hy.answer === 'no' ? card.no : card.yes;
+}
 
 /** Whether a line has ＿た ことが あります／ありません in it, the way the path reads a phrase. */
 export const saysTaKoto = (text: string, kana: string): boolean => framesOf({ text, kana }, undefined, { keepHidden: true }).includes('ta-koto');
@@ -446,15 +496,48 @@ function dealHaveYou(s: HappyokaiState, t: Talk, ctx: ModeContext): void {
   if (!p?.connected || !n4Up(p.level)) return;
   const topic = HAVE_YOU[Math.floor(ctx.random() * HAVE_YOU.length)];
   if (!topic) return;
-  t.haveYou = { topicId: topic.id, peeked: false, done: false, said: null };
+  t.haveYou = { topicId: topic.id, peeked: false, done: false, said: null, answer: null, endedAt: null, released: false };
   s.haveYouTalk = t.index;
 }
 
-/** The card is over (answered, two tries, skipped or out of time): the room's questions come out. */
-function endHaveYou(t: Talk, ctx: ModeContext): void {
+/**
+ * The card is over (answered, two tries, skipped or out of time). Chōchin-san reacts to the answer (yes, no,
+ * or a secret; a ghost seen gets his own line), and the card stays on the TV a moment before the room's
+ * questions come out (`releaseHaveYou`).
+ */
+function endHaveYou(t: Talk, ctx: ModeContext, answer: HaveYouAnswer): void {
   if (!t.haveYou || t.haveYou.done) return;
   t.haveYou.done = true;
+  t.haveYou.answer = answer;
+  t.haveYou.endedAt = ctx.now;
+  const topic = haveYouOf(t.haveYou.topicId);
+  const p = ctx.player(t.presenterId);
+  const card = topic && p ? haveYouCard(topic, p.level) : undefined;
+  if (answer === 'yes' && topic?.id === 'ghost') {
+    ctx.cue({ host: 'chochin', event: 'happyokai_have_you_ghost' });
+    return;
+  }
+  ctx.cue({
+    host: 'chochin',
+    event: 'happyokai_have_you_react',
+    tier: HAVE_YOU_REACT_TIER[answer],
+    ...(card ? { prompt: { text: card.question.text, kana: card.question.kana, en: card.question.en } } : {}),
+    answerEn: answer === 'pass' ? 'They would rather keep it a secret.' : ((answer === 'no' ? card?.no : card?.yes)?.en ?? HAVE_YOU_ANSWER_EN[answer]),
+  });
+}
+
+/** The held card leaves the TV: the room's question cards come out. */
+function releaseHaveYou(t: Talk, ctx: ModeContext): void {
+  if (!t.haveYou || !t.haveYou.done || t.haveYou.released) return;
+  t.haveYou.released = true;
   ctx.cue({ host: 'chochin', event: 'happyokai_question' });
+}
+
+/** When the card next changes on its own: it runs out, or the held card leaves the TV. */
+function haveYouWake(s: HappyokaiState, t: Talk): number | null {
+  const hy = t.haveYou;
+  if (!hy || hy.released) return null;
+  return hy.done ? (hy.endedAt ?? s.phaseAt) + HAVE_YOU_HOLD_MS : s.phaseAt + HAVE_YOU_MS;
 }
 
 /**
@@ -598,7 +681,10 @@ export function speakPoints(t: Pick<Talk, 'steps' | 'lines'>, level: Level): num
     }
   });
   total += price(SAY.answer, bestKind(t.lines.filter((l) => l.step === -1)));
-  total += price(SAY.haveYou, bestKind(t.lines.filter((l) => l.step === HAVE_YOU_STEP)));
+  // Chōchin-san's card is priced from the answers with the frame in them; tries without it pay the least.
+  const hyLines = t.lines.filter((l) => l.step === HAVE_YOU_STEP);
+  const framed = hyLines.filter((l) => l.framed);
+  total += framed.length ? price(SAY.haveYou, bestKind(framed)) : hyLines.length ? price(SAY.haveYou, 'tap') : 0;
   return Math.min(SPEAK_CAP, total);
 }
 
@@ -763,7 +849,7 @@ function phrases(t: Talk, ctx: ModeContext): void {
     // unless they opened the Japanese; else Chōchin-san's model answer, seen.
     const card = haveYouCard(hy, p.level);
     const said = t.haveYou.said;
-    const no = !!said && /ありません|ないです|ない$/.test(normalizeReading(said.kana));
+    const no = !!said && saysNo(said.kana);
     if (said) ctx.phrase(p.id, { itemId: `happyokai:have:${hy.id}`, text: said.text, kana: said.kana, en: (no ? card.no : card.yes).en, outcome: 'said', recall: said.kind === 'own' ? 'memory' : 'read' });
     else ctx.phrase(p.id, { itemId: `happyokai:have:${hy.id}`, text: card.yes.text, kana: card.yes.kana, en: card.yes.en, outcome: 'seen', recall: 'read' });
   }
@@ -1009,7 +1095,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         return STEP_MS.title + (t?.pictures ?? 3) * stepMs('picture', level) + STEP_MS.close + 5_000;
       }
       case 'encore':
-        return DURATIONS.encore + (t?.haveYou ? HAVE_YOU_MS : 0);
+        return DURATIONS.encore + (t?.haveYou ? HAVE_YOU_MS + HAVE_YOU_HOLD_MS : 0);
       case 'reveal':
         return DURATIONS.reveal;
       case 'score':
@@ -1034,7 +1120,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
     if (phase === 'encore') {
       const askers = Object.keys(t.cards).filter((id) => here.has(id));
       if (!here.has(t.presenterId)) return true;
-      if (haveYouPending(t)) return false;
+      if (haveYouUp(t)) return false;
       if (!askers.length) return true;
       return !!t.chosen && t.lines.some((l) => l.step === -1);
     }
@@ -1044,7 +1130,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
 
   wakeAt(s, phase) {
     const t = s.talk;
-    if (phase === 'encore' && t && haveYouPending(t)) return s.phaseAt + HAVE_YOU_MS;
+    if (phase === 'encore' && t && haveYouUp(t)) return haveYouWake(s, t);
     if (phase !== 'answer' || !t || t.done) return null;
     const st = stepOf(t);
     return st ? st.at + st.ms : null;
@@ -1053,7 +1139,13 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
   wake(s, phase, ctx) {
     s.now = ctx.now;
     const t = s.talk;
-    if (phase === 'encore' && t && haveYouPending(t) && ctx.now >= s.phaseAt + HAVE_YOU_MS) return endHaveYou(t, ctx);
+    if (phase === 'encore' && t && haveYouUp(t)) {
+      const at = haveYouWake(s, t);
+      if (at === null || ctx.now < at) return;
+      if (haveYouPending(t)) endHaveYou(t, ctx, 'pass');
+      else releaseHaveYou(t, ctx);
+      return;
+    }
     if (phase !== 'answer' || !t || t.done) return;
     const st = stepOf(t);
     if (st && ctx.now >= st.at + st.ms) advanceStep(s, t, ctx);
@@ -1131,11 +1223,11 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         if (haveYou && t.haveYou) {
           // Chōchin-san's card: own words from memory, or "read" once they've opened the Japanese.
           const kind: LineKind = u.via === 'speech' ? (t.haveYou.peeked ? 'read' : 'own') : u.via === 'tap' ? 'tap' : 'typed';
-          t.lines.push({ id: ctx.newId(), step: HAVE_YOU_STEP, text, shown: text, kind, sentences: sentenceCount(text), hidden: false });
           const kana = u.reading ?? text;
           const framed = saysTaKoto(text, kana);
+          t.lines.push({ id: ctx.newId(), step: HAVE_YOU_STEP, text, shown: text, kind, sentences: sentenceCount(text), hidden: false, ...(framed ? { framed: true as const } : {}) });
           if (framed && u.via === 'speech' && (!t.haveYou.said || KIND_RANK[kind] < KIND_RANK[t.haveYou.said.kind])) t.haveYou.said = { text, kana, kind };
-          if (framed || t.lines.filter((l) => l.step === HAVE_YOU_STEP).length >= HAVE_YOU_TRIES) endHaveYou(t, ctx);
+          if (framed || t.lines.filter((l) => l.step === HAVE_YOU_STEP).length >= HAVE_YOU_TRIES) endHaveYou(t, ctx, saysNo(kana) ? 'no' : 'yes');
           return MOVE_OK;
         }
         const script = phase === 'answer' && u.via === 'speech' ? readFrom(u, scriptsFor(t, ctx)) : null;
@@ -1156,7 +1248,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
       case 'next': {
         // In question time, Next passes on Chōchin-san's card.
         if (phase === 'encore' && presenter && haveYouPending(t)) {
-          endHaveYou(t, ctx);
+          endHaveYou(t, ctx, 'pass');
           return MOVE_OK;
         }
         if (phase !== 'answer') return moveError('wrong-phase');
@@ -1217,7 +1309,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         if (phase !== 'encore') return moveError('wrong-phase');
         const cards = t.cards[playerId];
         if (!cards) return moveError('not-yours');
-        if (haveYouPending(t)) return moveError('not-yet');
+        if (haveYouUp(t)) return moveError('not-yet');
         if (t.chosen) return moveError('question-chosen');
         const q = typeof raw.key === 'number' ? cards[raw.key] : undefined;
         if (!q) return moveError('bad-move');
@@ -1290,7 +1382,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
     const step = t && talking ? stepIndex(t) : -1;
     const qa = phase === 'encore' || phase === 'reveal' || phase === 'score';
     // Question time shows the answer to Chōchin-san's card while it's up, then the answer to the room's question.
-    const hyUp = !!t && phase === 'encore' && haveYouPending(t);
+    const hyUp = !!t && phase === 'encore' && haveYouUp(t);
     const hy = hyUp && t?.haveYou ? haveYouOf(t.haveYou.topicId) : undefined;
     const qaStep = hyUp ? HAVE_YOU_STEP : -1;
     const visible = t ? t.lines.filter((l) => (qa ? l.step === qaStep : l.step === step)) : [];
@@ -1334,9 +1426,22 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
           hy && role === 'presenter'
             ? (() => {
                 const card = haveYouCard(hy, me.level);
-                return { id: hy.id, en: card.question.en, frame: HAVE_YOU_FRAME, hint: card.hint, peek: t!.haveYou!.peeked ? { question: card.question, yes: card.yes, no: card.no } : null };
+                const x = t!.haveYou!;
+                const tries = t!.lines.filter((l) => l.step === HAVE_YOU_STEP);
+                return {
+                  id: hy.id,
+                  en: card.question.en,
+                  frame: HAVE_YOU_FRAME,
+                  hint: card.hint,
+                  peek: x.peeked ? { question: card.question, yes: card.yes, no: card.no } : null,
+                  endsAt: s.phaseAt + HAVE_YOU_MS,
+                  triesLeft: Math.max(0, HAVE_YOU_TRIES - tries.length),
+                  missedFrame: tries.length > 0 && !tries.some((l) => l.framed),
+                  ended: x.done && x.answer ? { answer: x.answer, model: haveYouModel(t!, me.level) } : null,
+                };
               })()
             : null,
+        haveYouModel: t && role === 'presenter' && phase === 'encore' && !hyUp && !t.chosen ? haveYouModel(t, me.level) : null,
         answerFrames: role === 'presenter' && phase === 'encore' && t?.chosen ? answerFrames(me.level, title?.deck) : [],
         canGrade: !!t && phase === 'reveal' && t.graders.includes(me.id) && t.grades[me.id] === undefined,
         graded: t?.grades[me.id] ?? null,
@@ -1392,7 +1497,9 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
       renzoku: t && phase === 'answer' && step >= 0 && st?.kind === 'picture' ? renzokuOn(t, step) : 0,
       renzokuAt: RENZOKU[level],
       question: t && qa ? { askers: t.asked.map((a) => a.playerId), chosen, answered: t.lines.some((l) => l.step === -1) } : null,
-      haveYou: hy ? { en: haveYouCard(hy, level).question.en, frame: HAVE_YOU_FRAME } : null,
+      haveYou: hy
+        ? { en: haveYouCard(hy, level).question.en, frame: HAVE_YOU_FRAME, gloss: HAVE_YOU_GLOSS, answer: t?.haveYou?.done && t.haveYou.answer ? HAVE_YOU_ANSWER_EN[t.haveYou.answer] : null }
+        : null,
       grading: t && phase === 'reveal' ? { count: Object.keys(t.grades).length, needed: t.graders.length } : null,
       card,
       vote:

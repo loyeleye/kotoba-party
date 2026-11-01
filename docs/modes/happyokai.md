@@ -81,7 +81,8 @@ isn't their own.
   mishap's recovery (20/10/5/3), up to 3 new sentences per picture slide (30/15/10/3 each; a sentence
   said twice counts once), a れんぞく bonus of 20 for 2 / 3 / 4 sentences said out loud on one slide
   (Kana / N5 / N4), the answer in question time (60/30/15/5), and the answer to Chōchin-san's "Have you
-  ever…?" card (40 from memory / 15 after a peek / 10 typed / 5 tapped). Speaking is capped at 300.
+  ever…?" card with the frame in it (40 from memory / 15 after a peek / 10 typed / 5 tapped; tries without
+  the frame pay 5). Speaking is capped at 300.
 - **Assistant.** 20 for each sentence said out loud on a slide they picked (up to 120), plus 50 when a
   mishap they played is recovered out loud (20 if typed or tapped).
 - **Questions.** 15 for asking out loud, 5 tapped, +35 if the presenter chose yours.
@@ -190,13 +191,25 @@ Chōchin-san's own, before the room's cards come out (`HAVE_YOU` in `content.ts`
 
 - Chōchin-san announces it without saying it (`happyokai_have_you`: 「まず、わたくしから ひとつ しつもんが
   ございます。」). The presenter's phone and the TV show the question **in English** ("Have you ever eaten
-  nattō?") with the frame chip ＿た ことが あります／ありません; the phone adds the noun (納豆) as a hint. The
-  presenter answers yes or no in a full sentence; either way it's the frame.
-- The Japanese (the question and both answers) is behind **Need the words?** (move `peek`). Said after
-  a peek, the answer counts as read; said without one, from memory.
+  nattō?") with the frame chip ＿た ことが あります／ありません. The TV adds the frame's English under the chip
+  ("I've (done) … / I've never (done) …", `HAVE_YOU_GLOSS`) and "Answer on your phone!"; the phone adds the
+  noun (納豆) in a quieter "Words: …" line, a countdown, and the tries left. The presenter answers yes or no
+  in a full sentence ("The truth is optional."); either way it's the frame.
+- The Japanese (the question and both answers) is behind **👀 Peek at the Japanese (fewer points)** (move
+  `peek`). Said after a peek, the answer counts as read; said without one, from memory.
+- After a try without the frame, the phone says how many tries are left and asks for the whole ＿た ことが
+  あります sentence. The answer box keeps its own draft (not shared with the room's question).
 - The card ends when they say a line with the frame, after two tries without it, when they tap Pass
-  (`next`), or after 20 s (`HAVE_YOU_MS`, added to question time). Then the room's cards come out as
-  usual; until then the askers wait, so only one voice is heard.
+  (`next`), or after 25 s (`HAVE_YOU_MS`). Chōchin-san then **reacts to the answer**
+  (`happyokai_have_you_react`, the tier picks the pool: `ippon` yes 「えっ！ ほんとうで ございますか！」, `good`
+  no 「わたくしも ございません。なかまで ございますね。」, `flop` passed or out of time 「ひみつで ございますね。
+  かしこまりました。」; a yes to the ghost topic gets `happyokai_have_you_ghost` 「…いま、見て いらっしゃいますよ。」).
+  Yes or no is read with the phrasebook's test (ありません／ないです, or a bare いいえ). The card stays on the
+  TV for 3 s (`HAVE_YOU_HOLD_MS`) with the presenter's caption and the answer in English ("Yes, I have!",
+  "Never!", "It's a secret!"); if their answer never had the frame, the presenter's phone shows
+  Chōchin-san's model answer (and keeps it under the question picker). Then the question-time line plays
+  and the room's cards come out as usual. Until then the askers wait, so only one voice is heard, but
+  their phones keep the stamp pad ("Chōchin-san is asking … a question first").
 - The phrasebook gets **what the presenter said** (so the path credits the frames they used), from
   memory unless they peeked; if they never said the frame, Chōchin-san's model answer, seen.
 - The topic is drawn at random each game from 12, all `draft`: 富士山に 登った, 納豆を 食べた, 幽霊を

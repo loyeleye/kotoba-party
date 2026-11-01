@@ -86,7 +86,8 @@ export function happyokaiPolicy(opts: HappyokaiPolicyOptions = {}): ModePolicy {
           // Chōchin-san's card first: a bot knows the Japanese behind the English (a player recalls it, or peeks).
           const topic = me.haveYou ? haveYouOf(me.haveYou.id) : undefined;
           if (me.haveYou && topic) {
-            if (me.lines.length) return out;
+            // One answer; and once the card is over it only stays on the TV a moment.
+            if (me.lines.length || me.haveYou.ended) return out;
             const card = haveYouCard(topic, me.level);
             const peek = r(`peek?:${topic.id}`) < peekChance;
             if (peek && !me.haveYou.peek) out.push({ key: 'peek', move: { kind: 'peek' }, delayMs: delay('peek') });

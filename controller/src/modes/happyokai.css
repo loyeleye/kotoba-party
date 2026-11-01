@@ -109,3 +109,10 @@ body[data-mode='happyokai'] :lang(ja) { word-break: keep-all; }
 .hk-peek { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
 .hk-peek p { margin: 0; font-size: 17px; }
 .hk-peek-btn { justify-self: start; }
+.hk-have-you-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.hk-clock { margin: 0; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--muted); }
+.hk-clock.low { color: var(--bad); }
+/* The noun hint: quieter than the frame chip, so the frame reads as the thing to say. */
+.hk-words { margin: 0; font-size: 14px; color: var(--muted); opacity: 0.85; }
+.hk-nudge { margin: 0; padding: 8px 10px; border-radius: 10px; border: 1px dashed var(--line); background: var(--panel); }
+.hk-model { margin: 0; }

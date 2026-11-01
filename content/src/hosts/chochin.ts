@@ -312,7 +312,15 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.happyokai_question.03', host: 'chochin', event: 'happyokai_question', jp: { text: 'みなさま、しつもんは ございますか？', kana: 'みなさま、しつもんは ございますか？', en: 'Does anyone have a question?' }, status: 'draft' },
   // happyokai_have_you (never the question itself: the presenter answers it from the English)
   { id: 'chochin.happyokai_have_you.01', host: 'chochin', event: 'happyokai_have_you', jp: { text: 'まず、わたくしから ひとつ しつもんが ございます。', kana: 'まず、わたくしから ひとつ しつもんが ございます。', en: 'First, I have one question of my own.' }, status: 'draft' },
-  { id: 'chochin.happyokai_have_you.02', host: 'chochin', event: 'happyokai_have_you', jp: { text: 'しつもん タイムの まえに… わたくし、きに なって おります。', kana: 'しつもん タイムの まえに… わたくし、きに なって おります。', en: 'Before question time… there is something I am curious about.' }, status: 'draft' },
+  { id: 'chochin.happyokai_have_you.02', host: 'chochin', event: 'happyokai_have_you', jp: { text: 'しつもん タイムの まえに… ひとつ、どうしても ききたい ことが ございます。', kana: 'しつもん タイムの まえに… ひとつ、どうしても ききたい ことが ございます。', en: 'Before question time… there is one thing I simply must ask.' }, status: 'draft' },
+  // happyokai_have_you_react: after the presenter answers his card (then the question-time line). Tiers pick
+  // the pool: ippon = yes (impressed), good = no (him neither), flop = passed or out of time. Never about their Japanese.
+  { id: 'chochin.happyokai_have_you_react.ippon.01', host: 'chochin', event: 'happyokai_have_you_react', tier: 'ippon', jp: { text: 'えっ！ ほんとうで ございますか！', kana: 'えっ！ ほんとうで ございますか！', en: 'Oh! Truly?!' }, status: 'draft' },
+  { id: 'chochin.happyokai_have_you_react.ippon.02', host: 'chochin', event: 'happyokai_have_you_react', tier: 'ippon', jp: { text: 'それは それは… おみごとで ございます。', kana: 'それは それは… おみごとで ございます。', en: 'Well, well… how splendid.' }, status: 'draft' },
+  { id: 'chochin.happyokai_have_you_react.good.01', host: 'chochin', event: 'happyokai_have_you_react', tier: 'good', jp: { text: 'わたくしも ございません。なかまで ございますね。', kana: 'わたくしも ございません。なかまで ございますね。', en: 'Nor have I. We are in this together, then.' }, status: 'draft' },
+  { id: 'chochin.happyokai_have_you_react.flop.01', host: 'chochin', event: 'happyokai_have_you_react', tier: 'flop', jp: { text: 'ひみつで ございますね。かしこまりました。', kana: 'ひみつで ございますね。かしこまりました。', en: 'A secret, then. Very good.' }, status: 'draft' },
+  // happyokai_have_you_ghost: the presenter has seen a ghost (he is a lantern ghost)
+  { id: 'chochin.happyokai_have_you_ghost.01', host: 'chochin', event: 'happyokai_have_you_ghost', jp: { text: '…いま、見て いらっしゃいますよ。', kana: '…いま、みて いらっしゃいますよ。', en: '…You are looking at one right now.' }, status: 'draft' },
   // happyokai_ask
   { id: 'chochin.happyokai_ask.01', host: 'chochin', event: 'happyokai_ask', jp: { text: '{name}さまからの しつもんです。「{question}」', kana: '{name}さまからの しつもんです。「{question}」', en: 'A question from {name}: "{question}"' }, slots: ['{name}', '{question}'], status: 'draft' },
   { id: 'chochin.happyokai_ask.02', host: 'chochin', event: 'happyokai_ask', jp: { text: 'しつもんが まいりました。{name}さま より、「{question}」', kana: 'しつもんが まいりました。{name}さま より、「{question}」', en: 'A question has arrived. From {name}: "{question}"' }, slots: ['{name}', '{question}'], status: 'draft' },

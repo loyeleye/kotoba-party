@@ -623,6 +623,8 @@ export const HAVE_YOU: HaveYouTopic[] = [
 
 /** The frame chip on the card. */
 export const HAVE_YOU_FRAME = '＿た ことが あります／ありません';
+/** The frame's English, under the chip on the TV (for the room's beginners). */
+export const HAVE_YOU_GLOSS = 'I’ve (done) … / I’ve never (done) …';
 
 export const haveYouOf = (id: string): HaveYouTopic | undefined => HAVE_YOU.find((x) => x.id === id);
 

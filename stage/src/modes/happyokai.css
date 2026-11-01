@@ -134,6 +134,9 @@
 .hk-question { display: grid; gap: 12px; justify-items: center; font-size: 52px; font-weight: 900; animation: hk-pop 0.4s var(--ease-pop) both; }
 .hk-question small { font-size: 26px; font-weight: 400; color: #5e4560; }
 .hk-question .hk-chip, .hk-hands .hk-chip { background: var(--hk-screen); color: var(--hk-screen-ink); }
+/* Chōchin-san's card: the frame's English, and the answer while the card is held */
+.hk-question .hk-gloss { font-size: 22px; font-style: italic; }
+.hk-have-you-answer { grid-auto-flow: column; align-items: center; gap: 16px; font-size: 44px; }
 .hk-hands { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; font-size: 48px; }
 .hk-hands > span { animation: hk-pop 0.35s var(--ease-pop) both; }
 
