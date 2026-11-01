@@ -180,8 +180,9 @@ body[data-motion='calm'] .yc-stage :is(.yc-wave span, .yc-levels span, .yc-rec-d
 .yc-center { min-height: 0; }
 
 /* ---- panel fixes ---- */
-/* The pixel face reads C as O and 2 as 8 at these sizes: labels and numbers use the body face. */
-.yc-stage :is(.yc-label, .yc-band-en, .yc-caseno, .yc-scroll-tag, .yc-lawyer-tag, .yc-ring-label, .yc-pan-n, .yc-score-n, .yc-booth-tag, .yc-seat, .yc-vs, .yc-rec) { font-family: inherit; font-weight: 800; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+/* Pixelify's 2 reads as 8 at these sizes, so the court's numbers use the body face. (Its C read as O
+   too; Kotoba Pixel redraws that, so the word labels are back on the pixel face.) */
+.yc-stage :is(.yc-caseno, .yc-pan-n, .yc-score-n, .yc-seat, .yc-rec) { font-family: inherit; font-weight: 800; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
 /* Play and check have two cards and no VS. */
 .yc-lawyers.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 /* Side by side: horizontal cards, big words, so the beat fits without shrinking. */

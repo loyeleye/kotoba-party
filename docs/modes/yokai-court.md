@@ -84,8 +84,11 @@ and 3.10 (に ちがいありません).
   card for Kana lawyers (their tiles with romaji, and whether they said the evidence); Fude-san's brush writing
   有罪 / 無罪 as a sprite; a per-beat timer on the TV and phones; pixel role icons in place of the emoji.
 - Romaji glues particles onto words (Kappaja nai). That's the shared `toRomaji`, for its own fix.
-- The pixel face reads C as O ("Yōkai Oourt") in the shell's title plate; the court's own labels use the body
-  face until Kotoba Five's C is redrawn.
+- Pixelify's 2 reads as 8, so the court's numbers (case number, scores, seats, the record timer) use the
+  body face. Its C read as O ("Yōkai Oourt") until Kotoba Pixel redrew it (2026-11-01); the word labels
+  are back on the pixel face.
 - Courtroom facts (who sits where, what a lay judge 裁判員 does) to check against courts.go.jp before the
   lines leave draft.
-- The courtroom set (`scenes/yokai-court.png`) isn't drawn: the tea room stands in.
+- The courtroom set (`scenes/yokai-court.png`, 2026-11-01) seats nine on the bench, as a lay-judge trial
+  (裁判員裁判) does (three judges, six lay judges). Check its layout (which side the prosecution sits, the
+  witness stand) against courts.go.jp with the other courtroom facts.
