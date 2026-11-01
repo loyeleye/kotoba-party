@@ -569,6 +569,8 @@ export type HostEvent =
   | 'narabete_defence' // the most-moved card defends its spot ({name})
   | 'narabete_hard' // an N4 player says why their own card sits where it does ({name})
   | 'narabete_replay' // the commentary booth: Nobiko-san replays the N4 defence's line ({line}: the line, as is)
+  | 'narabete_hooray' // the N4 defence landed: Nobiko-san's あらまあ before the replay ({name})
+  | 'narabete_standin' // the host stand-in (1–2 players, none at N4): Nobiko-san gives one model defence ({line}, as is)
   | 'narabete_perfect' // the flip came out in order
   | 'narabete_knot' // the flip has knots in it
   | 'narabete_story' // the Worst Day Ever story is read in order
@@ -620,6 +622,9 @@ export type HostEvent =
   | 'dub_spoiler' // the actor said the direction out loud
   | 'dub_skip' // the VIP skipped a dub
   | 'dub_notes' // cast notes after a scene; {name} got the most hearts
+  | 'dub_cut' // an ad-lib landed: Fude's カット！ before the booth replays it ({name})
+  | 'dub_booth' // the commentary booth: Fude says the scene's model ad-lib line ({line}, as is; never the player's take)
+  | 'dub_standin' // the host stand-in (1–2 players, none at N4): Fude ad-libs the scene's model line himself ({line}, as is)
   | 'dub_episode' // tonight's episode plays ({title})
   | 'dub_sequel' // over the credits: Fude pitches a sequel ({title})
   // はじめまして！

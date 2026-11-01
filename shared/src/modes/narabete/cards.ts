@@ -50,6 +50,12 @@ export interface FeelTheme {
   ask: JpText;
   /** The theme's adjective for arguing about order: 「Aさんの ほうが 〜！」 */
   more: JpText;
+  /**
+   * `more` is a な-adjective (たいへん): it takes な before ので and before a noun (たいへんなので, たいへんな もの).
+   * False for an い-adjective or a verb (くさい, びっくりする), which join as they are. Set on every theme, never
+   * guessed from the word.
+   */
+  na: boolean;
   low: JpText;
   high: JpText;
   audiences: readonly Audience[];
@@ -214,6 +220,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'smelly',
     ask: jp('どのくらい くさい？', 'How smelly is it?'),
     more: jp('くさい', 'smellier'),
+    na: false,
     low: jp('いい におい', 'smells nice'),
     high: jp('ポンの くつした', "Pon's socks"),
     audiences: ['kids', 'family'],
@@ -234,6 +241,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'ghost-scary',
     ask: jp('おばけが みたら、どのくらい こわがる？', 'How scary would a ghost find it?'),
     more: jp('こわい', 'scarier'),
+    na: false,
     low: jp('ぜんぜん こわくない', 'not scary at all'),
     high: jp('ぎゃー！', 'AAAH!'),
     audiences: ['kids', 'family'],
@@ -254,6 +262,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'pon-ate',
     ask: jp('ポンが たべたら、どのくらい たいへん？', 'If Pon ate it, how much trouble?'),
     more: jp('たいへん', 'worse'),
+    na: true,
     low: jp('だいじょうぶ', "it's fine"),
     high: jp('たいへん！', 'disaster!'),
     audiences: ['kids', 'family'],
@@ -275,6 +284,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'grandma-shock',
     ask: jp('おばあちゃんに みせたら、どのくらい びっくりする？', 'How shocked would Grandma be?'),
     more: jp('びっくりする', 'more shocking'),
+    na: false,
     low: jp('ふーん', '"Hmm."'),
     high: jp('きゅうきゅうしゃ！', 'call an ambulance!'),
     audiences: ['family', 'cheeky'],
@@ -295,6 +305,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'flea-market',
     ask: jp('フリマで いくらで うれる？', 'How much would it sell for at a flea market?'),
     more: jp('たかい', 'pricier'),
+    na: false,
     low: jp('ゼロえん', '0 yen'),
     high: jp('ひゃくまんえん', 'a million yen'),
     audiences: ['kids', 'family', 'cheeky'],
@@ -315,6 +326,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'hard-morning',
     ask: jp('その ひの あさ、おきるのが どのくらい つらい？', 'How hard is getting up on that day?'),
     more: jp('つらい', 'harder'),
+    na: false,
     low: jp('すぐ おきる', 'up at once'),
     high: jp('むり', 'impossible'),
     audiences: ['kids', 'family', 'cheeky'],
@@ -336,6 +348,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'late-excuse',
     ask: jp('ちこくの いいわけ、どのくらい ひどい？', 'How bad is this excuse for being late?'),
     more: jp('ひどい', 'worse'),
+    na: false,
     low: jp('まあ、ゆるせる', 'fair enough'),
     high: jp('ぜったい アウト', 'totally unforgivable'),
     audiences: ['cheeky'],
@@ -356,6 +369,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'dating-profile',
     ask: jp('マッチングアプリに かいたら、どのくらい モテる？', 'How popular would this make your dating profile?'),
     more: jp('モテる', 'more popular'),
+    na: false,
     low: jp('ブロック', 'blocked'),
     high: jp('モテモテ', 'swipes galore'),
     audiences: ['cheeky'],
@@ -376,6 +390,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'midnight-message',
     ask: jp('よなかの メッセージ、どのくらい あやしい？', 'How suspicious is this midnight message?'),
     more: jp('あやしい', 'more suspicious'),
+    na: false,
     low: jp('ふつう', 'normal'),
     high: jp('あやしすぎる', 'way too suspicious'),
     audiences: ['cheeky'],
@@ -396,6 +411,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'parents-saw',
     ask: jp('おやに みられたら、どのくらい まずい？', 'How bad if your parents saw it?'),
     more: jp('まずい', 'worse'),
+    na: false,
     low: jp('セーフ', 'safe'),
     high: jp('かぞく かいぎ', 'family meeting'),
     audiences: ['cheeky'],
@@ -416,6 +432,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'morning-regret',
     ask: jp('のみかいの つぎの あさ、どのくらい こうかいする？', 'How much would you regret it the next morning?'),
     more: jp('はずかしい', 'more embarrassing'),
+    na: false,
     low: jp('へいき', 'no regrets'),
     high: jp('きえたい', 'want to vanish'),
     audiences: ['cheeky'],
@@ -437,6 +454,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'worst-day-kids',
     ask: jp('きょう あった こと、どのくらい たいへん？', 'What happened today, and how bad was it?'),
     more: jp('たいへん', 'worse'),
+    na: true,
     low: jp('ちょっと', 'a bit'),
     high: jp('さいあく！', 'the worst!'),
     audiences: ['kids'],
@@ -458,6 +476,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'worst-day',
     ask: jp('きょう あった こと、どのくらい ひどい？', 'What happened today, and how bad was it?'),
     more: jp('ひどい', 'worse'),
+    na: false,
     low: jp('まあまあ', 'meh'),
     high: jp('さいあく！', 'the worst!'),
     audiences: ['family'],
@@ -479,6 +498,7 @@ export const FEEL_THEMES: FeelTheme[] = [
     id: 'worst-day-cheeky',
     ask: jp('きょう あった こと、どのくらい ひどい？', 'What happened today, and how bad was it?'),
     more: jp('ひどい', 'worse'),
+    na: false,
     low: jp('まあまあ', 'meh'),
     high: jp('じんせい おわり', 'life over'),
     audiences: ['cheeky'],

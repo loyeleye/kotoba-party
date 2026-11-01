@@ -37,6 +37,8 @@ export const HOST_EVENTS = [
   'narabete_defence',
   'narabete_hard',
   'narabete_replay',
+  'narabete_hooray',
+  'narabete_standin',
   'narabete_perfect',
   'narabete_knot',
   'narabete_story',
