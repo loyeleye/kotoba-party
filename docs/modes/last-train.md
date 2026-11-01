@@ -76,11 +76,14 @@ in existing games", Express Line goals 4.1, 4.6, 4.9, 4.10). Items with a `role`
 with the `frames` it practises) are never dealt as ordinary items. At a stop whose minigame has some,
 one connected N4 player is offered one: whoever has been offered fewest so far, then longest ago, so it
 rotates. The phone shows the role and its pitch with two equal buttons, **Take it** and **Not this
-time**, for 8 s (`RULES.offerMs`). Taking it starts the item's clock; "not this time", or no answer,
+time**, for 8 s (`RULES.offerMs`), counted down to the server's deadline (`offer.deadline`, read against the
+client's server-clock offset), so a reconnect or rebuilt screen doesn't restart it. Taking it starts the item's clock; "not this time", or no answer,
 deals the ordinary item (an N4 player's usual N5 one). The offer is private: the TV shows the player as
 answering, and only the reveal names the role (⭐ under their name). Every offer goes in `roleLog`
 (`accepted`, `declined`, `timeout`, or `away` if the stop ended first), for the step's gate of N4
-players taking at least 60% of offers. A hard role scores like any item, and missing it twice never
+players taking at least 60% of offers (the answers are `OfferAnswer` from
+`shared/src/modes/hardRoleLog.ts`). A bot's answer (tools/bots sends `bot: true` on its `role` move) is
+logged with `bot: true` so it can be left out of the gate. A taken hard role pays +20 (decision 17), and missing it twice never
 sends anyone to the penalty car. With no N4 player in the room nothing changes: no offers, the same
 stops, the same items.
 
@@ -94,7 +97,7 @@ stops, the same items.
   minigames are penalty ones, so they still ride in the penalty car. It is never a padding stop
   (`n4Stop`). Kana players say what is in the picture (かさです), N5 players say where, when and what
   colour (電車に忘れました, 黒いかばんです). Two N4 roles: the forgetful passenger (電車に忘れたかもしれません,
-  `kamo`) and the lost property staff (重そうなかばんですね, `sou-look`).
+  `kamo`) and the lost property staff (重そうなかばんですね, 元気そうなかさですね, `sou-look`).
 - **The guest at the front desk** (Meet the Innkeeper, 4.1, 4.10): favours with ＿て いただけますか
   (call a taxi, keep the luggage, a wake-up call, speak more slowly, check the booking again;
   `te-itadakemasu-ka`, with いただけませんか accepted too) and three inn signs drawn as boards, 受付,
@@ -135,7 +138,7 @@ living player: 2 seconds off that player's next timer (floor 4 s). Two correct s
 
 ### Scoring
 
-- Stop: 100 first try, 60 on the retry; ghosts half; the last stop is worth double.
+- Stop: 100 first try, 60 on the retry (+20 on a hard role the player took); ghosts half; the last stop is worth double.
 - Speech bonus (spoken, not typed): 25% of the answer's points; players below the room's average
   score get the cap. The bonus never exceeds 3/7 of base, i.e. 30% of base + bonus. Typed
   answers work everywhere but earn no bonus.
@@ -191,8 +194,10 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
     stays last; padding uses placeholder station names.
 16. Hard roles: one offer per stop, to the N4 player offered fewest (then longest ago); 8 s to
     choose, and no answer is "not this time". Why: one spotlight a stop, and nobody is pushed into it.
-17. A hard role scores like any other item (no bonus) and a double miss never sends anyone to the
-    penalty car. Why: taking the harder line should never be the risky choice, or the 60% gate fails.
+17. A hard role the player took adds 20 to the answer's base points (`RULES.roleBonus`: 120 first
+    try, 80 on the retry, before the ghost share, speech bonus and last-stop double), and a double miss
+    never sends anyone to the penalty car. Why: taking the harder line should never be the risky
+    choice, and should pay a little, or the 60% gate fails.
 18. Lost and Found is swapped in for a penalty-minigame stop (Obake 神社前, Hoshimidai 大学前) rather
     than added, so the line's length and the scenario choice stay the same; Kids and Cheeky lines
     keep their stops (their Station Announcement and Meet the Innkeeper stops still offer roles).

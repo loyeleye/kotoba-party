@@ -131,15 +131,20 @@ function listenBox(task: TaskView): HTMLElement {
 
 // ---- hard role offer (N4) ----
 
+/** The server's clock, from the client's offset (the phase deadline minus what is left of it). */
+function serverNow(ctx: PhoneContext<LastTrainView>): number {
+  const left = ctx.remainingMs();
+  return ctx.view.deadline !== null && left !== null && left > 0 ? ctx.view.deadline - left : Date.now();
+}
+
 /** The offer card: take the hard role, or "not this time" for the ordinary item. No answer is a no. */
-function offerScreen(offer: NonNullable<LastTrainMe['offer']>, send: (move: unknown) => Promise<boolean>): HTMLElement {
-  const seenKey = `offer:${offer.key}`;
-  if (!seenAt.has(seenKey)) seenAt.set(seenKey, Date.now());
-  const start = seenAt.get(seenKey)!;
+function offerScreen(offer: NonNullable<LastTrainMe['offer']>, ctx: PhoneContext<LastTrainView>, send: (move: unknown) => Promise<boolean>): HTMLElement {
+  // Timed by the server's deadline, so a late or rebuilt screen doesn't restart the clock.
+  const start = Date.now();
   const label = h('p', { class: 'hint' });
   let ticked = false;
   const draw = () => {
-    const left = Math.max(0, offer.limitMs - (Date.now() - start));
+    const left = Math.max(0, Math.min(offer.limitMs, offer.deadline - serverNow(ctx)));
     label.textContent = left > 0 ? `${Math.ceil(left / 1000)}s to choose. No answer means not this time.` : 'Dealing your usual item…';
     if (left === 0 && !ticked) {
       ticked = true;
@@ -160,7 +165,7 @@ function offerScreen(offer: NonNullable<LastTrainMe['offer']>, send: (move: unkn
     h(
       'div',
       { class: 'lt-offer-btns' },
-      h('button', { type: 'button', onclick: () => void send({ kind: 'role', key: offer.key, accept: true }) }, 'Take it'),
+      h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'role', key: offer.key, accept: true }) }, 'Take it'),
       h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'role', key: offer.key, accept: false }) }, 'Not this time'),
     ),
     label,
@@ -398,7 +403,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
         );
         break;
       case 'answer':
-        main = me?.offer ? offerScreen(me.offer, send) : me?.task ? taskScreen(me.task, game, send) : statusScreen(game);
+        main = me?.offer ? offerScreen(me.offer, ctx, send) : me?.task ? taskScreen(me.task, game, send) : statusScreen(game);
         break;
       case 'reveal':
         main = revealScreen(game, send);

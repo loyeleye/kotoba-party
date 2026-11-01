@@ -6,7 +6,7 @@ import type { HardRole } from '../types.js';
 export const ANNOUNCER: HardRole = {
   id: 'announcer',
   name: { text: 'アナウンス係', kana: 'アナウンスがかり', en: 'The announcer', furigana: [['アナウンス', ''], ['係', 'がかり']] },
-  pitch: 'You make the platform announcement, in station keigo.',
+  pitch: 'Chōchin-san lends you his megaphone: make the platform announcement, in station keigo.',
 };
 
 export const PASSENGER: HardRole = {

@@ -262,7 +262,7 @@ export const meetTheInnkeeper: LastTrainMinigame = {
       level: 'n4',
       role: GUEST,
       frames: ['te-itadakemasu-ka'],
-      prompt: { text: '旅館の人が早く話します。よくわかりません。', kana: 'りょかんのひとがはやくはなします。よくわかりません。', en: 'The innkeeper is talking fast. You can\'t quite follow.', furigana: [['旅館', 'りょかん'], ['の', ''], ['人', 'ひと'], ['が', ''], ['早', 'はや'], ['く', ''], ['話', 'はな'], ['します。よくわかりません。', '']] },
+      prompt: { text: '旅館の人が速く話します。よくわかりません。', kana: 'りょかんのひとがはやくはなします。よくわかりません。', en: 'The innkeeper is talking fast. You can\'t quite follow.', furigana: [['旅館', 'りょかん'], ['の', ''], ['人', 'ひと'], ['が', ''], ['速', 'はや'], ['く', ''], ['話', 'はな'], ['します。よくわかりません。', '']] },
       visual: '🐢 Ask them to speak more slowly.',
       accepted: ['もうすこしゆっくりはなしていただけますか', 'ゆっくりはなしていただけますか', 'すみませんもうすこしゆっくりはなしていただけますか', 'もうすこしゆっくりはなしていただけませんか', 'もういちどゆっくりはなしていただけますか'],
       model: { text: 'もう少しゆっくり話していただけますか。', kana: 'もうすこしゆっくりはなしていただけますか。', en: 'Could you speak a little more slowly?', furigana: [['もう', ''], ['少', 'すこ'], ['しゆっくり', ''], ['話', 'はな'], ['していただけますか。', '']] },

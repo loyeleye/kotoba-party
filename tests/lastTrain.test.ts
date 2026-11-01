@@ -600,7 +600,10 @@ describe('Last Train hard roles (N4)', () => {
     expect(JSON.stringify(g.view('stage'))).not.toContain('アナウンスがかり');
     expect(JSON.stringify(g.view('p3'))).not.toContain('アナウンスがかり');
     expect(g.view('p1').me!.task).toBeNull();
+    // The phone counts down to the server's deadline, not from when it first drew the card.
+    expect(g.view('p1').me!.offer!.deadline).toBe(g.now + RULES.offerMs);
     g.now += 3_000;
+    expect(g.view('p1').me!.offer!.deadline - g.now).toBe(RULES.offerMs - 3_000);
     expect(role(g, 'p1', true).changed).toBe(true);
     const task = g.view('p1').me!.task!;
     expect(task.role?.en).toBe('The announcer');
@@ -616,7 +619,22 @@ describe('Last Train hard roles (N4)', () => {
     const rows = g.view('stage').results!;
     expect(rows.find((r) => r.playerId === 'p1')!.role?.en).toBe('The announcer');
     expect(rows.find((r) => r.playerId === 'p2')!.role).toBeNull();
-    expect(g.score('p1')).toBe(g.score('p2'));
+    // A taken hard role pays RULES.roleBonus on top of the base (and the speech bonus scales with it).
+    expect(RULES.roleBonus).toBe(20);
+    expect(g.score('p1') - g.score('p2')).toBeGreaterThanOrEqual(RULES.roleBonus);
+  });
+
+  it('logs a bot\'s offer answer as a bot\'s, so it stays out of the gate', () => {
+    const g = table(ROLE_CONTENT, ['n4']);
+    g.start();
+    g.until('answer');
+    expect(g.play('p1', { kind: 'role', key: g.s.turns.p1!.task.key, accept: true, bot: true }).changed).toBe(true);
+    expect(g.s.roleLog).toEqual([expect.objectContaining({ playerId: 'p1', answer: 'accepted', bot: true })]);
+    const h = table(ROLE_CONTENT, ['n4']);
+    h.start();
+    h.until('answer');
+    role(h, 'p1', true);
+    expect(h.s.roleLog[0]!.bot).toBeUndefined();
   });
 
   it('"not this time" deals the ordinary item; no answer does too; offers rotate among N4 players', () => {
