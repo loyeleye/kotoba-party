@@ -6,7 +6,7 @@ import type { BossWord, Kana, LookAlikeSet, MinimalPair } from '../content/src/t
 import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, gameResults, type GameContext, type GameState } from '../shared/src/game.js';
 import type { CommandBody } from '../shared/src/client.js';
-import { buildDeck, checkSound, checkWord } from '../shared/src/modes/kanaRaid/deck.js';
+import { buildDeck, checkSound, checkWord, kanaTip, romajiHint } from '../shared/src/modes/kanaRaid/deck.js';
 import { BASE_POINTS, BONUS_CAP, levelScale, missPenalty, type KanaRaidView, type RaidState } from '../shared/src/modes/kanaRaid/kanaRaid.js';
 import { EMPTY_CONTENT, type ContentLibrary, type HostCue } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -121,6 +121,29 @@ describe('kana sound check', () => {
     expect(tsu).toMatchObject({ ok: false, heard: 'す' });
     expect(checkSound(['ka'], K('h-ka'), deck)).toMatchObject({ ok: false, romaji: true });
     expect(checkSound(['き'], K('h-ka'), deck).ok).toBe(false);
+  });
+
+  it('hears a lone vowel however Whisper writes it, but only from speech and only for its own vowel', () => {
+    const say = (t: string, id: string) => checkSound([t], K(id), deck, { spoken: true }).ok;
+    for (const t of ['い', 'イ', 'いー', 'いい', 'イッ', '胃', '意', '椅子', 'E', 'e.', 'Ee', 'EEE', 'i', 'Yi']) expect(say(t, 'h-i'), t).toBe(true);
+    for (const t of ['E', 'ee', '胃']) expect(say(t, 'k-i'), t).toBe(true);
+    for (const t of ['え', 'eh', 'a', 'I am', 'ki']) expect(say(t, 'h-i'), t).toBe(false);
+    expect(say('ah', 'h-a')).toBe(true);
+    expect(say('oo', 'h-u')).toBe(true);
+    expect(say('Eh', 'h-e')).toBe(true);
+    expect(say('E', 'h-e')).toBe(false);
+    expect(say('絵', 'h-e')).toBe(true);
+    expect(say('oh', 'h-o')).toBe(true);
+    expect(say('oo', 'h-o')).toBe(false);
+    // Typed romaji still never counts, and spoken romaji only for a lone vowel.
+    expect(checkSound(['e'], K('h-i'), deck)).toMatchObject({ ok: false, romaji: true });
+    expect(checkSound(['ka'], K('h-ka'), deck, { spoken: true })).toMatchObject({ ok: false, romaji: true });
+  });
+
+  it('tells English speakers how to say a vowel', () => {
+    expect(kanaTip(deck, K('h-i'))).toContain('“ee” as in “see”');
+    expect(romajiHint(K('h-i'))).toBe('i · “ee” as in see');
+    expect(romajiHint(K('h-ka'))).toBe('ka');
   });
 
   it('tells long from short in minimal pairs', () => {
