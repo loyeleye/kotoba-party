@@ -53,6 +53,19 @@ export function matchLine(u: Utterance, lines: readonly Line[], level: Level): L
   return findLine(u, lines, level)?.line ?? null;
 }
 
+/** Text with its spaces and punctuation taken out, for comparing a line as written. */
+const bare = (s: string): string => s.replace(/[\s\u3000。、，,.．！!？?…「」]/g, '');
+
+/**
+ * True if the utterance is the line exactly as written (its text, or its kana), whatever the reader made of
+ * any kanji: 一人で 行っても いいですか is that line even if a reading of 行っ went astray.
+ */
+export function saysLine(u: Utterance, line: Line): boolean {
+  const heard = bare(u.text);
+  if (!heard) return false;
+  return [line.jp.text, line.jp.kana, ...(line.accepted ?? [])].some((x) => bare(x) === heard);
+}
+
 /** True if the text has any Japanese in it (kana or kanji). */
 export function hasJapanese(text: string): boolean {
   return /[ぁ-ゖァ-ヺ㐀-鿿]/.test(text);

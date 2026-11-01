@@ -14,6 +14,22 @@ import type { UtteranceToken } from '../../shared/src/japanese/kana.js';
 /** Words the dictionary reads wrong for us (IPADIC reads 出口 alone as いでぐち). */
 const READING_FIXES: Record<string, string> = { 出口: 'でぐち' };
 
+/**
+ * IPADIC reads 行っ (te/ta form) as 行う, おこなっ: 一人で 行っても いいですか comes out ひとりで おこなっても.
+ * In speech that is nearly always 行く, いっ. Keep おこなっ only where 行う really fits: after an object
+ * (会議を 行った). 行います and 行われる are other forms and are left alone.
+ */
+function ikuNotOkonau(toks: UtteranceToken[]): UtteranceToken[] {
+  let prev: UtteranceToken | undefined;
+  for (const t of toks) {
+    if (t.surface === '行っ' && t.base === '行う' && t.cform === '連用タ接続' && !(prev?.pos === '助詞' && prev.surface === 'を')) {
+      Object.assign(t, { reading: 'いっ', base: '行く', ctype: '五段・カ行促音便' });
+    }
+    if (t.pos !== '記号' && t.surface.trim()) prev = t;
+  }
+  return toks;
+}
+
 export interface Reader {
   (text: string): string;
   tokens(text: string): UtteranceToken[];
@@ -28,16 +44,18 @@ export async function createReader(): Promise<Reader | null> {
       kuromoji.builder({ dicPath }).build((err, t) => (err ? reject(err) : resolve(t))),
     );
     const tokens = (text: string): UtteranceToken[] =>
-      tokenizer.tokenize(text).map((t) => ({
-        surface: t.surface_form,
-        reading: READING_FIXES[t.surface_form] ?? toHiragana(t.reading && t.reading !== '*' ? t.reading : t.surface_form),
-        pos: t.pos,
-        known: t.word_type === 'KNOWN',
-        detail: `${t.pos_detail_1},${t.pos_detail_2}`,
-        base: t.basic_form,
-        ctype: t.conjugated_type,
-        cform: t.conjugated_form,
-      }));
+      ikuNotOkonau(
+        tokenizer.tokenize(text).map((t) => ({
+          surface: t.surface_form,
+          reading: READING_FIXES[t.surface_form] ?? toHiragana(t.reading && t.reading !== '*' ? t.reading : t.surface_form),
+          pos: t.pos,
+          known: t.word_type === 'KNOWN',
+          detail: `${t.pos_detail_1},${t.pos_detail_2}`,
+          base: t.basic_form,
+          ctype: t.conjugated_type,
+          cform: t.conjugated_form,
+        })),
+      );
     // Numbers first (三百五十円 → さんびゃくごじゅうえん, with sound changes), then the dictionary.
     const reader = ((text: string) =>
       tokens(readNumbers(text))

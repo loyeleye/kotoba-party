@@ -18,11 +18,12 @@
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { creditable, FRAME_BY_ID, framesOf, type FrameId } from '../../japanese/frames.js';
-import { isUtterance, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { hasKanji, isUtterance, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
+import { LEVEL_RANK, n4Up } from '../../level.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { findLine, hasJapanese, matchLine, namesPlace, oneWordChanged } from './check.js';
+import { findLine, hasJapanese, matchLine, namesPlace, oneWordChanged, saysLine } from './check.js';
 import { ALL_LINES, BLUFFS, PLACES, QUESTIONS, SAFE_ANSWERS, TOURIST_ROLE, type Kind, type Line, type Place } from './places.js';
 
 // ---- tuning ----
@@ -49,7 +50,7 @@ export const ANSWER_BONUS = { own: { speech: 30, typed: 15 }, frame: { speech: 1
 /** Saying the guess (ここは えきですか？) rather than only tapping it. From the bonus pool. */
 export const GUESS_BONUS = { speech: 20, typed: 10 } as const;
 /** Askers at these levels get cues (English and frame, the Japanese behind a peek) in place of question tiles. */
-export const CUE_LEVELS: readonly Level[] = ['n4', 'n3'];
+export const CUE_LEVELS: readonly Level[] = (Object.keys(LEVEL_RANK) as Level[]).filter(n4Up);
 /** Every speaking bonus comes from one pool per player per round: 30% of a round's top win. */
 export const BONUS_POOL_SHARE = 0.3;
 export const ROUND_STAKE = WIN_POINTS + SHARP_EYE_POINTS + CALLER_POINTS;
@@ -90,10 +91,12 @@ export interface Said {
   tier: Tier;
   /** Close to a known frame but not exact: the heard text is shown, with the frame's subtitle as a guess. */
   approx?: boolean;
-  /** A question tile with one word swapped (approx too): the asker's own words, logged as heard. */
+  /** A question tile with one word swapped: the asker's own words, logged as heard ("… (one word changed)"). */
   swapped?: boolean;
   /** The heard reading, for a swapped line's phrasebook entry. */
   reading?: string;
+  /** A swapped line whose Japanese was on the asker's screen (a tile, or a peeked cue): own words, but read. */
+  fromShown?: boolean;
 }
 
 export interface Turn {
@@ -336,9 +339,34 @@ function cueFrame(l: Line): FrameId | null {
   return framesOf(l.jp).filter(creditable).reduce<FrameId | null>((best, id) => (best === null || rank(id) >= rank(best) ? id : best), null);
 }
 
-function cueCard(l: Line, peeked: boolean): CueCard {
+/**
+ * A cue's chip: the question form of its frame, so the chip and the English ask the same thing (the frame's
+ * own chip is the statement, ＿なければ なりません). Keyed by frame id; a frame not here (the N5 ones, ＿ますか
+ * and the like) shows no chip. Draft Japanese.
+ */
+export const CUE_CHIPS: Readonly<Partial<Record<FrameId, { ja: string; en: string }>>> = {
+  potential: { ja: '＿(ら)れますか', en: 'Can you ___?' },
+  nakereba: { ja: '＿なければ なりませんか', en: 'Do I have to ___?' },
+  'te-mo-ii': { ja: '＿ても いいですか', en: 'May I ___?' },
+  'nakutemo-ii': { ja: '＿なくても いいですか', en: 'Do I not have to ___?' },
+  'hou-ga-ii': { ja: '＿た ほうが いいですか', en: 'Should I ___?' },
+  tara: { ja: '＿たら、＿か', en: 'If ___, …?' },
+};
+
+/** The chip for a cue line: its frame's question form, with the line's own shape where the table's would mislead. */
+export function cueChip(l: Line): CueCard['frame'] {
   const f = cueFrame(l);
-  return { id: l.id, en: l.jp.en, frame: f ? { id: f, ja: FRAME_BY_ID[f].ja, en: FRAME_BY_ID[f].en } : null, jp: peeked ? lineCard(l, false) : null };
+  const chip = f ? CUE_CHIPS[f] : undefined;
+  if (!f || !chip) return null;
+  // 何を 持って 行ったら いいですか asks what to do, not "if…".
+  if (f === 'tara' && /[ただ]ら[\s\u3000]*いいですか/.test(l.jp.kana)) return { id: f, ja: '＿たら いいですか', en: 'What / when should I ___?' };
+  // ＿ことが できますか is the other way to say can.
+  if (f === 'potential' && /ことが[\s\u3000]*できますか/.test(l.jp.kana)) return { id: f, ja: '＿ことが できますか', en: chip.en };
+  return { id: f, ...chip };
+}
+
+function cueCard(l: Line, peeked: boolean): CueCard {
+  return { id: l.id, en: l.jp.en, frame: cueChip(l), jp: peeked ? lineCard(l, false) : null };
 }
 
 function saidView(x: Said, romaji: boolean, hidden: boolean): SaidView {
@@ -549,18 +577,29 @@ function toSaid(u: Utterance, lineId: string | undefined, suggested: readonly st
   if (u.via === 'tap') return tile ? fromLine(tile, 'tap') : null;
   const heard = cleanText(u.text, 80);
   if (!heard) return null;
-  // Exact: show the tidy frame (read off the screen if it was on it, else from memory).
+  // What was heard, in kana (so romaji can show at Kana level); null if only kanji could show it.
+  const kanaOf = (): string | null => {
+    const k = cleanText(u.reading ?? u.text, 80);
+    return k && !hasKanji(k) ? k : null;
+  };
+  // Exact: show the tidy frame (read off the screen if it was on it, else from memory). The written line
+  // itself counts too, whatever the reader made of it, so a line said as written is never a swap.
+  const mine = tile ? [tile] : suggested.map((id) => LINES.get(id)!);
+  const asWritten = mine.find((l) => saysLine(u, l)) ?? ALL_LINES.find((l) => saysLine(u, l));
+  if (asWritten) return fromLine(asWritten, tierOf(asWritten));
   if (tile && findLine(u, [tile], level)?.exact) return fromLine(tile, tierOf(tile));
   const found = findLine(u, ALL_LINES, level);
   if (found?.exact) return fromLine(found.line, tierOf(found.line));
   if (swaps) {
-    const swapped = (tile ? [tile] : suggested.map((id) => LINES.get(id)!)).find((l) => oneWordChanged(u, l));
-    if (swapped) return { text: heard, kana: null, en: swapped.jp.en, lineId: swapped.id, via: u.via, tier: 'own', approx: true, swapped: true, reading: utteranceReading(u) };
+    const swapped = mine.find((l) => oneWordChanged(u, l));
+    if (swapped) {
+      return { text: heard, kana: kanaOf(), en: `${swapped.jp.en} (one word changed)`, lineId: swapped.id, via: u.via, tier: 'own', swapped: true, reading: utteranceReading(u), fromShown: shown.includes(swapped.id) };
+    }
   }
   // A recogniser slip on a tile still shows the tile.
   if (tile && matchLine(u, [tile], level)) return fromLine(tile, tierOf(tile));
   // Close: show what was heard, with the frame's meaning as a guess.
-  if (found) return { text: heard, kana: null, en: found.line.jp.en, lineId: found.line.id, via: u.via, tier: 'own', approx: true };
+  if (found) return { text: heard, kana: kanaOf(), en: found.line.jp.en, lineId: found.line.id, via: u.via, tier: 'own', approx: true };
   return { text: heard, kana: null, en: null, lineId: null, via: u.via, tier: 'own' };
 }
 
@@ -575,8 +614,9 @@ function logPhrase(ctx: ModeContext, playerId: string, x: Said): void {
   const l = x.lineId ? LINES.get(x.lineId) : undefined;
   if (!l) return;
   if (x.swapped && x.reading) {
-    // The asker's own words: logged as they said them, not as the tile.
-    ctx.phrase(playerId, { itemId: `tourist.own.${x.reading}`, text: x.text, kana: x.reading, en: `≈ ${l.jp.en}`, outcome: 'said', recall: x.via === 'speech' ? 'memory' : 'read' });
+    // The asker's own words: logged as they said them, not as the tile. From memory only when spoken and the
+    // line's Japanese wasn't on their screen (a Kana/N5 tile, or a peeked cue, was read).
+    ctx.phrase(playerId, { itemId: `tourist.own.${x.reading}`, text: x.text, kana: x.reading, en: `${l.jp.en} (one word changed)`, outcome: 'said', recall: x.via === 'speech' && !x.fromShown ? 'memory' : 'read' });
     return;
   }
   ctx.phrase(playerId, { itemId: l.id, text: l.jp.text, kana: l.jp.kana, en: l.jp.en, outcome: x.tier === 'own' && !x.approx ? 'said' : 'seen', recall: x.tier === 'own' && !x.approx && x.via === 'speech' ? 'memory' : 'read' });

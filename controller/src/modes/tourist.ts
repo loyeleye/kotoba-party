@@ -31,7 +31,7 @@ function line(p: { text: string; kana: string | null; en: string | null; romaji?
   return jpView(p, level, { cls: `tou-line ${cls}` });
 }
 
-const saidLine = (x: SaidView, cls = '') => line({ text: x.text, kana: x.kana, en: x.en ? `${x.approx ? '≈ ' : ''}${x.en}` : '(own words)', ...(x.romaji ? { romaji: x.romaji } : {}) }, cls);
+const saidLine = (x: SaidView, cls = '') => line({ text: x.text, kana: x.kana, en: x.en ? `${x.approx ? 'Something like: ' : ''}${x.en}` : '(own words)', ...(x.romaji ? { romaji: x.romaji } : {}) }, cls);
 
 function placeName(p: PlaceCard): HTMLElement {
   return h('span', { class: 'tou-pn' }, placePic(p, 'tou-pn-emoji'), h('span', { lang: 'ja' }, p.text), p.kana !== p.text ? h('small', { lang: 'ja' }, ` ${p.kana}`) : null, h('small', {}, ` · ${p.romaji ? `${p.romaji} · ` : ''}${p.en}`));
@@ -73,12 +73,13 @@ function placeList(game: TouristView): HTMLElement {
   return h('details', { class: 'tou-peek' }, h('summary', {}, `🗺️ The ${game.places.length} possible places`), h('ul', { class: 'tou-plist' }, game.places.map((p) => h('li', {}, placeName(p)))));
 }
 
-/** Tiles to pick from, then say the picked one (or send it as a tap). */
-function tiles(ctx: Ctx, list: LineCard[], label: string, send: (move: { utterance: { via: 'speech' | 'typed' | 'tap'; text: string }; lineId?: string }) => void): HTMLElement {
+/** Tiles to pick from, then say the picked one (or send it as a tap). `onPick` hears whether one is picked. */
+function tiles(ctx: Ctx, list: LineCard[], label: string, send: (move: { utterance: { via: 'speech' | 'typed' | 'tap'; text: string }; lineId?: string }) => void, onPick?: (picked: boolean) => void): HTMLElement {
   const { view } = ctx;
   const holder = h('div', { class: 'tou-tiles-wrap' });
   const draw = () => {
     const sel = tile && tile.seq === view.phaseSeq ? list.find((x) => x.id === tile!.id) : undefined;
+    onPick?.(!!sel);
     if (sel) {
       holder.replaceChildren(
         h('p', { class: 'tou-step' }, 'Now say it out loud:'),
@@ -117,13 +118,16 @@ function tiles(ctx: Ctx, list: LineCard[], label: string, send: (move: { utteran
 const frameChip = (f: NonNullable<CueCard['frame']>) => h('span', { class: 'frame-chip' }, h('span', { class: 'frame-ja', lang: 'ja' }, f.ja), h('small', {}, f.en));
 
 /** N4 and up: cues to pick from (what to ask, and its frame), then ask it from memory; the Japanese is a peek away. */
-function cues(ctx: Ctx, list: CueCard[], send: (move: { utterance: { via: 'speech' | 'typed' | 'tap'; text: string }; lineId?: string }) => void): HTMLElement {
+function cues(ctx: Ctx, list: CueCard[], send: (move: { utterance: { via: 'speech' | 'typed' | 'tap'; text: string }; lineId?: string }) => void, onPick?: (picked: boolean) => void): HTMLElement {
   const { view, game } = ctx;
   const t = game.turn!;
   const holder = h('div', { class: 'tou-tiles-wrap' });
   const draw = () => {
     const sel = tile && tile.seq === view.phaseSeq ? list.find((x) => x.id === tile!.id) : undefined;
+    onPick?.(!!sel);
     if (sel) {
+      // A refused peek (the turn moved on, say) closes the panel and says so, rather than "Opening…" for ever.
+      const peekErr = h('p', { class: 'hint', hidden: true }, 'Couldn’t open the Japanese. Ask it from memory, or try again.');
       holder.replaceChildren(
         h('p', { class: 'tou-step' }, sel.jp ? 'Now say it out loud:' : 'Ask it in Japanese, from memory:'),
         h('div', { class: 'tou-cue picked' }, h('p', { class: 'tou-cue-en' }, sel.en), sel.frame ? frameChip(sel.frame) : null),
@@ -135,13 +139,22 @@ function cues(ctx: Ctx, list: CueCard[], send: (move: { utterance: { via: 'speec
                 class: 'tou-peek',
                 // Opening it tells the server: asked off this cue, the question counts as read.
                 ontoggle: (e: Event) => {
-                  if ((e.target as HTMLDetailsElement).open) void ctx.send({ kind: 'peek', lineId: sel.id, round: game.round, turn: t.seq });
+                  const box = e.target as HTMLDetailsElement;
+                  if (!box.open) return;
+                  peekErr.hidden = true;
+                  void ctx.send({ kind: 'peek', lineId: sel.id, round: game.round, turn: t.seq }).then((ok) => {
+                    if (!ok) {
+                      box.open = false;
+                      peekErr.hidden = false;
+                    }
+                  });
                 },
               },
-              h('summary', {}, '👀 Peek at the Japanese (counts as read)'),
+              h('summary', {}, '👀 Peek at the Japanese (half points)'),
               h('p', { class: 'hint' }, 'Opening…'),
             ),
-        speakBox({ label: 'Hold and ask it', placeholder: sel.frame?.ja ?? 'Type your question', onSend: (utterance) => send({ utterance, lineId: sel.id }) }),
+        peekErr,
+        speakBox({ label: 'Hold and ask it', placeholder: 'Type your question', onSend: (utterance) => send({ utterance, lineId: sel.id }) }),
         h(
           'div',
           { class: 'tou-row' },
@@ -193,14 +206,17 @@ function askScreen(ctx: Ctx): HTMLElement {
     tile = null;
     void send({ kind: 'ask', ...m, round: game.round, turn: t.seq });
   };
+  // One place to speak: once a tile or cue is picked, its own speak box takes over from this one.
+  const top = h('div', {}, speakBox({ label: `Hold and ask ${target}`, placeholder: 'Type your question', onSend: (utterance) => ask({ utterance }) }));
+  const onPick = (picked: boolean) => (top.hidden = picked);
   return h(
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, `Ask ${target}!`),
     h('p', { class: 'hint' }, 'Ask out loud, in Japanese, and into your phone. Your own words score the most.'),
-    speakBox({ label: `Hold and ask ${target}`, placeholder: 'Type your question', onSend: (utterance) => ask({ utterance }) }),
-    me.questions?.length ? tiles(ctx, me.questions, 'Need an idea? Take a question:', ask) : null,
-    me.cues?.length ? cues(ctx, me.cues, ask) : null,
+    top,
+    me.questions?.length ? tiles(ctx, me.questions, 'Need an idea? Take a question:', ask, onPick) : null,
+    me.cues?.length ? cues(ctx, me.cues, ask, onPick) : null,
     others.length
       ? h(
           'details',
