@@ -279,15 +279,12 @@ function kanaDays(p: Progress, script: 'hiragana' | 'katakana'): Map<string, Set
 }
 
 /**
- * The kanji a sign item asks for (Read the Signs, and the inn's signs in Meet the Innkeeper): its one sign,
- * or the target sign when there are several.
+ * The kanji a sign item asks for (Read the Signs, and the inn's signs in Meet the Innkeeper): read items only,
+ * one sign read aloud. A "which way" item with two boards doesn't count: ひだり or みぎ is right half the time
+ * by guessing, and saying it never says the sign (learning science, PR #147).
  */
 const SIGN_KANJI: Map<string, string[]> = new Map(
-  [...readTheSigns.items, ...meetTheInnkeeper.items.filter((it) => it.signs?.length)].map((it) => {
-    const signs = it.signs ?? [];
-    const sign = signs.length === 1 ? signs[0] : signs.find((g) => g.target);
-    return [it.id, [...(sign?.text ?? '')]];
-  }),
+  [...readTheSigns.items, ...meetTheInnkeeper.items].filter((it) => it.signs?.length === 1).map((it) => [it.id, [...it.signs![0]!.text]]),
 );
 
 /**

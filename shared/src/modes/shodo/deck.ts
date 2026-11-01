@@ -5,7 +5,7 @@
 // stroke references (one list per character) and the word players say for it.
 
 import type { KanjiLevel } from '../../../../content/src/kanji/kanji.js';
-import type { JpText, Level } from '../../../../content/src/types.js';
+import type { ItemLevel, JpText, Level } from '../../../../content/src/types.js';
 import type { InkStroke } from '../../japanese/strokes.js';
 import type { ContentLibrary } from '../mode.js';
 import { shuffled } from '../mode.js';
@@ -16,7 +16,7 @@ export type TargetKind = 'kana' | 'kanji' | 'word';
  * A player's level as Shodō deals for it. N3 joins the Level type in its own PR (step 6); until then the
  * N3 deck is keyed here, so it's ready the day an N3 player sits down.
  */
-export type DeckLevel = Level | 'n3';
+export type DeckLevel = ItemLevel;
 
 export interface Target {
   /** Content id (`h-ka`, `kj-山`, `kw-学生`), for the phrasebook and "already dealt". */
@@ -113,8 +113,9 @@ export const GALLERY: Record<DeckLevel, JpText[]> = {
   // Sign kanji that are words on their own (a sleepy window).
   n3: [
     { text: '窓', kana: 'まど', en: 'a window' },
-    { text: '煙', kana: 'けむり', en: 'smoke' },
+    { text: '煙', kana: 'けむり', en: 'a puff of smoke' },
     { text: '席', kana: 'せき', en: 'a seat' },
+    { text: '指', kana: 'ゆび', en: 'a finger' },
   ],
 };
 
@@ -170,7 +171,6 @@ export function buildDeck(content: ContentLibrary): ShodoDeck {
       return { id: k.id, kind: 'kanji' as const, text: k.char, cells, say: k.say, meaning: k.meaning, strokes: count(cells), step: k.step, level: k.level };
     });
   const bandOf = new Map(content.writeKanji.map((k) => [k.char, k.level]));
-  const RANK: Record<KanjiLevel, number> = { n5: 0, n4: 1, n3: 2 };
   const words: Target[] = content.writeWords
     .filter((w) => [...w.word.text].every((c) => strokes.has(c)))
     .map((w) => {
@@ -196,6 +196,7 @@ export function buildDeck(content: ContentLibrary): ShodoDeck {
 }
 
 const step = (t: Target) => t.step ?? 0;
+const RANK: Record<KanjiLevel, number> = { n5: 0, n4: 1, n3: 2 };
 
 /** Hiragana first: katakana join once the hiragana pool is mostly dealt. */
 function kanaPool(deck: ShodoDeck, wide: boolean): Target[] {
@@ -231,9 +232,16 @@ export const PRACTICE = { targets: 3, review: 1 };
 /** Deals a player's practice targets: N4 and N3 get two of their own band and one review. */
 export function dealPractice(deck: ShodoDeck, level: DeckLevel, used: ReadonlySet<string>, random: () => number): Target[] {
   const review = reviewPool(deck, level);
-  const own = deal(practicePool(deck, level), review.length ? PRACTICE.targets - PRACTICE.review : PRACTICE.targets, used, random);
-  const more = review.length ? deal(review, PRACTICE.targets - own.length, used, random) : [];
+  const own = oneEachWord(deal(practicePool(deck, level), Infinity, used, random)).slice(0, review.length ? PRACTICE.targets - PRACTICE.review : PRACTICE.targets);
+  const taken = new Set(own.map((t) => t.say.text));
+  const more = review.length ? oneEachWord(deal(review, Infinity, used, random).filter((t) => !taken.has(t.say.text))).slice(0, PRACTICE.targets - own.length) : [];
   return [...own, ...more];
+}
+
+/** Keeps the first target of each say-word: 改 and 札 both say 改札, so one game deals only one of them. */
+function oneEachWord(ts: Target[]): Target[] {
+  const seen = new Set<string>();
+  return ts.filter((t) => (seen.has(t.say.text) ? false : (seen.add(t.say.text), true)));
 }
 
 /**
@@ -256,8 +264,11 @@ export function dictationPool(deck: ShodoDeck, level: DeckLevel, words: boolean)
  * comes back read inside a word (the JLPT seat: closest to what 漢字読み tests). Null when none has it.
  */
 export function wordWith(deck: ShodoDeck, level: DeckLevel, t: Target, used: ReadonlySet<string>, random: () => number): Target | null {
-  if (!BANDS[level] || t.kind !== 'kanji') return null;
-  return deal(deck.words.filter((w) => w.text.includes(t.text)), 1, used, random)[0] ?? null;
+  const band = BANDS[level];
+  if (!band || t.kind !== 'kanji') return null;
+  // Only words at or below the player's band: an N4 player never meets 割 through 割引 (UX seat, PR #147).
+  const fits = (w: Target) => !w.level || RANK[w.level] <= RANK[band.learn];
+  return deal(deck.words.filter((w) => w.text.includes(t.text) && fits(w)), 1, used, random)[0] ?? null;
 }
 
 /** Deals `n` targets from a pool, avoiding ones already dealt this game when it can. */

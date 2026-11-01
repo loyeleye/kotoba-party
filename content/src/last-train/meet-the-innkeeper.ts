@@ -291,9 +291,9 @@ export const meetTheInnkeeper: LastTrainMinigame = {
     sign('28-shokudou', '食堂', 'しょくどう', 'dining room', 'Memory picture: 食 is a roof over a bowl of rice: food. 堂 is a big hall standing on the earth (土).'),
     // ---- N3: the inn's sign kanji (goal 3.12). ----
     sign('29-uketsuke', '受付', 'うけつけ', 'reception', 'Memory picture: 受 is one hand passing something down to another: receive. 付 is a person (亻) with a hand (寸) on them: attach.', 'n3'),
-    sign('30-yoyakuseki', '予約席', 'よやくせき', 'reserved table', 'Memory picture: 予 is a shuttle hanging ready: in advance. 約 has thread (糸): a promise tied up. 席 is cloth under a roof: a seat.', 'n3'),
-    sign('31-hijouguchi', '非常口', 'ひじょうぐち', 'emergency exit', 'Memory picture: 非 is two rows of bars facing apart: "not". 常 is cloth (巾) under a roof: "usual". The not-usual exit.', 'n3'),
-    sign('32-kinenshitsu', '禁煙室', 'きんえんしつ', 'non-smoking room', 'Memory picture: 禁 is two trees over an altar: forbidden. 煙 has fire (火): smoke. 室 is a room under a roof.', 'n3'),
+    sign('30-yoyakuseki', '予約席', 'よやくせき', 'reserved table (in the dining room)', 'Memory picture: 予 is a hook hanging ready before you need it: in advance. 約 has thread (糸): a promise tied up. 席 is a mat laid out in an open hall (广): a seat.', 'n3'),
+    sign('31-hijouguchi', '非常口', 'ひじょうぐち', 'emergency exit', 'Memory picture: 非 is two rows of bars facing apart: "not". 常 is a banner (巾) that always hangs under the eaves: "usual". The not-usual exit.', 'n3'),
+    sign('32-kannai-kinen', '館内禁煙', 'かんないきんえん', 'no smoking in the building', 'Memory picture: 館 has food (食) on the left: the big building where guests eat. 内 is inside. 禁 is two trees over an altar: forbidden. 煙 has fire (火): smoke.', 'n3'),
     sign('33-kannai-annai', '館内案内', 'かんないあんない', 'floor guide', 'Memory picture: 館 has food (食) on the left: a big building where guests eat. 内 is inside. 案 is a plan on a wooden table (木).', 'n3'),
   ],
 };

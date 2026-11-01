@@ -60,15 +60,16 @@ function placeModel(side: Side, place: Place, hou: boolean): MinigameItem['model
  * boards are drawn plain on the first try (exit yellow and toilet red would give it away) and half the
  * deals come mirrored, so neither the colour nor the side can stand in for reading.
  */
-function where(id: string, level: MinigameItem['level'], question: { kana: string; en: string }, signs: StationSign[], side: Side, place: Place, hint: string, hou = false): MinigameItem {
+function where(id: string, level: MinigameItem['level'], question: { kana: string; en: string }, signs: StationSign[], side: Side, place: Place, hint: string, hou = false, more: (kana: string) => string[] = () => []): MinigameItem {
+  const all = (s: Side) => [...answers(s, place.kana), ...(s === 'up' ? [] : more(SIDE[s].kana))];
   return {
     id: `read-the-signs.${id}`,
     level,
     prompt: { text: question.kana, kana: question.kana, en: question.en, furigana: [[question.kana, '']] },
     signs,
-    accepted: answers(side, place.kana),
+    accepted: all(side),
     model: placeModel(side, place, hou),
-    mirror: { accepted: answers(FLIP[side], place.kana), model: placeModel(FLIP[side], place, hou) },
+    mirror: { accepted: all(FLIP[side]), model: placeModel(FLIP[side], place, hou) },
     hint,
     timeLimit: 10,
   };
@@ -125,28 +126,33 @@ export const readTheSigns: LastTrainMinigame = {
     // goal 4.10 too (the PR #146 panel found no N4 kanji on any target sign). ----
     read('19-machiaishitsu', 'n4', { text: '待合室' }, { text: '待合室', kana: 'まちあいしつ', en: 'waiting room' }, '待 has a road (彳) on the left: you wait by the road. 室 is a room under a roof.'),
     read('20-noriba', 'n4', { text: '乗り場' }, { text: '乗り場', kana: 'のりば', en: 'boarding point' }, '乗 is a person up a tree: riding. 場 has earth (土) on the left: a place.'),
-    read('21-shuuden', 'n4', { text: '終電' }, { text: '終電', kana: 'しゅうでん', en: 'last train' }, '終 has thread (糸) on the left: the end of the thread. 電 is rain (雨) over a spark: electric.'),
+    read('21-shuuden', 'n4', { text: '終電' }, { text: '終電', kana: 'しゅうでん', en: 'last train' }, '終 has thread (糸) on the left: the end of the thread. 電 is rain (雨) over a spark: electric. The one you’re all trying not to miss.'),
     read('22-shiyouchuu', 'n4', { text: '使用中' }, { text: '使用中', kana: 'しようちゅう', en: 'occupied' }, '使 is a person (亻) given a job: use. 中 is a line through the middle of a box: in the middle of it.'),
     read('23-baiten', 'n4', { text: '売店' }, { text: '売店', kana: 'ばいてん', en: 'kiosk' }, '売 has a samurai (士) on top, selling. 店 is a roof (广) over a stall.'),
     where('24-machiaishitsu-doko', 'n4', { kana: 'まちあいしつはどこですか。', en: 'Where is the waiting room?' }, [{ text: '売店', arrow: 'left' }, { text: '待合室', arrow: 'right', target: true }], 'right', WAITING, '待 has a road on its left. 売 has a samurai (士) on top.'),
     // ---- N3: the 30 sign kanji (goal 3.12), read through the sign they're on. Dealt to N3 players once N3 is in
     // the level picker (step 6). ----
-    read('25-hijouguchi', 'n3', { text: '非常口' }, { text: '非常口', kana: 'ひじょうぐち', en: 'emergency exit' }, '非 is two rows of bars facing apart: "not". 常 has cloth (巾) under a roof: "usual". The not-usual exit.'),
+    read('25-hijouguchi', 'n3', { text: '非常口' }, { text: '非常口', kana: 'ひじょうぐち', en: 'emergency exit' }, '非 is two rows of bars facing apart: "not". 常 is a banner (巾) that always hangs under the eaves: "usual". The not-usual exit.'),
     read('26-kinen', 'n3', { text: '禁煙' }, { text: '禁煙', kana: 'きんえん', en: 'no smoking' }, '禁 is two trees (林) over an altar (示): forbidden ground. 煙 has fire (火) on the left: smoke.'),
     read('27-kiken', 'n3', { text: '危険' }, { text: '危険', kana: 'きけん', en: 'danger' }, '危 is a person crouching on a cliff edge. 険 has a hill (阝) on the left: steep.'),
     read('28-annaijo', 'n3', { text: '案内所' }, { text: '案内所', kana: 'あんないじょ', en: 'information centre' }, '案 has a tree (木) under a roof: a plan on the table. 内 is someone stepping into a box: inside.', ['あんないしょ', 'あんないしょです']),
     read('29-madoguchi', 'n3', { text: '窓口' }, { text: '窓口', kana: 'まどぐち', en: 'ticket window' }, '窓 has a hole (穴) on top: a window. 口 here is the counter’s opening.'),
     read('30-kaidan', 'n3', { text: '階段' }, { text: '階段', kana: 'かいだん', en: 'stairs' }, '階 has a hill (阝) and two people side by side (比): floors. 段 is steps cut with a tool (殳).'),
-    read('31-ryougae', 'n3', { text: '両替' }, { text: '両替', kana: 'りょうがえ', en: 'currency exchange' }, '両 is a balance with two pans: both. 替 is two men (夫) over the sun (日): swapping places.'),
+    read('31-ryougae', 'n3', { text: '両替' }, { text: '両替', kana: 'りょうがえ', en: 'change machine' }, '両 is a balance with two pans: both. 替 is two men (夫) over the sun (日): swapping places.'),
     read('32-otoshimono', 'n3', { text: '落とし物' }, { text: '落とし物', kana: 'おとしもの', en: 'lost property' }, '落 is leaves (艹) and water (氵) falling. 物 has a cow (牛) on the left: a thing.'),
-    read('33-hassha', 'n3', { text: '発車' }, { text: '発車', kana: 'はっしゃ', en: 'departing' }, '発 has two feet (癶) on top, setting off. 車 is a cart seen from above.'),
-    read('34-yuusenseki', 'n3', { text: '優先席' }, { text: '優先席', kana: 'ゆうせんせき', en: 'priority seats' }, '優 has a person (亻) beside a worried heart: be kind. 先 goes first. 席 is cloth (巾) under a roof: a seat.'),
+    read('33-hassha', 'n4', { text: '発車' }, { text: '発車', kana: 'はっしゃ', en: 'departing' }, '発 has two feet (癶) on top, setting off. 車 is a cart seen from above.'),
+    read('34-yuusenseki', 'n3', { text: '優先席' }, { text: '優先席', kana: 'ゆうせんせき', en: 'priority seats' }, '優 has a person (亻) beside a worried heart: be kind. 先 goes first. 席 is a mat laid out in an open hall (广): a seat.'),
     read('35-waribiki', 'n3', { text: '割引' }, { text: '割引', kana: 'わりびき', en: 'discount' }, '割 has a knife (刂) on the right: cut the price. 引 is a bow being drawn: pull down.'),
     read('36-muryou', 'n3', { text: '無料' }, { text: '無料', kana: 'むりょう', en: 'free of charge' }, '無 is a dancer with nothing in hand. 料 is rice (米) measured with a ladle (斗): the fee.'),
     read('37-bansen', 'n3', { text: '3番線' }, { text: '3番線', kana: 'さんばんせん', en: 'platform 3' }, '番 is a rice field (田) under a seed: a number in turn. 線 has thread (糸) on the left: a line, the track.', ['ばんせん', 'ばんせんです']),
     read('38-shiteiseki', 'n3', { text: '指定席' }, { text: '指定席', kana: 'していせき', en: 'reserved seats' }, '指 has a hand (扌) on the left: a seat pointed out for you. 定 is a foot settled under a roof: fixed.'),
     where('39-jiyuuseki-doko', 'n3', { kana: 'じゆうせきはどこですか。', en: 'Where are the non-reserved seats?' }, [{ text: '指定席', arrow: 'left' }, { text: '自由席', arrow: 'right', target: true }], 'right', FREE_SEATS, '自 is your own nose: sit where you like. 指 has a hand (扌): a seat pointed out for you.'),
     where('40-hijouguchi-doko', 'n3', { kana: 'ひじょうぐちはどこですか。', en: 'Where is the emergency exit?' }, [{ text: '非常口', arrow: 'left', target: true }, { text: '階段', arrow: 'right' }], 'left', EMERGENCY, '非 is the two rows of bars. 階 has a hill (阝) on its left.'),
-    where('41-osu-doa', 'n3', { kana: 'おすドアはどちらですか。', en: 'Which door do you push?' }, [{ text: '引', arrow: 'left' }, { text: '押', arrow: 'right', target: true }], 'right', PUSH, '押 has a hand (扌) on the left: push. 引 is a bow being drawn back: pull.'),
+    where('41-osu-doa', 'n3', { kana: 'おすドアはどちらですか。', en: 'Which door do you push?' }, [{ text: '引', arrow: 'left' }, { text: '押', arrow: 'right', target: true }], 'right', PUSH, '押 has a hand (扌) on the left: push. 引 is a bow being drawn back: pull. Everyone pulls a push door once.', false, (k) => [`${k}のドア`, `${k}のドアです`, `${k}をおします`, `${k}のほうをおします`, `${k}のドアをおします`]),
+    // Direction items don't count toward kanji goals (a left/right guess is right half the time), so the kanji
+    // only those boards carried get read items of their own (learning science, PR #147).
+    read('42-jiyuuseki', 'n3', { text: '自由席' }, { text: '自由席', kana: 'じゆうせき', en: 'non-reserved seats' }, '自 is your own nose: yourself. 由 is a sprout pushing up from a field (田): free to grow. Sit where you like.'),
+    read('43-osu', 'n3', { text: '押す' }, { text: '押す', kana: 'おす', en: 'push' }, '押 has a hand (扌) on the left, pressing down on a box: push. The door sticker beside 引く (pull).'),
+    read('44-kaisatsuguchi', 'n3', { text: '改札口' }, { text: '改札口', kana: 'かいさつぐち', en: 'ticket gate entrance' }, '改 has a hand with a stick (攵): check it again. 札 is a wooden tag (木): your ticket. 口 here is the way in.'),
   ],
 };

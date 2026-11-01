@@ -204,14 +204,14 @@ describe('goals and stamps', () => {
     expect(goal(p, 'K3', T0 + DAY)).toMatchObject({ met: true, count: { have: 6, need: 6 } });
   });
 
-  it('counts kanji read from memory in Shodō and Read the Signs: the asked-about sign only, on game days', () => {
+  it('counts kanji read from memory in Shodō and Read the Signs: one-sign read items only, on game days', () => {
     const p = emptyProgress();
-    // 07-onna-toire shows 男 and 女; only 女 (the target) was read. 02-deguchi is one sign, 出口.
+    // 07-onna-toire (which way: 男 or 女) is a left/right answer, so it doesn't count. 02-deguchi is one sign, 出口.
     const night = [said('kj-山', '山'), said('read-the-signs.07-onna-toire', 'おんなの ひとの トイレは みぎです。'), said('read-the-signs.02-deguchi', '「出口」です。')];
     play(p, T0, night);
     play(p, T0 + DAY, night);
     const s = status(p, T0 + DAY);
-    expect(s.goals.find((g) => g.id === '5.10')!.count!.have).toBe(4);
+    expect(s.goals.find((g) => g.id === '5.10')!.count!.have).toBe(3);
     const q = emptyProgress();
     play(q, T0, [said('kj-山', '山')]);
     // A phone review is not a game day.
@@ -240,8 +240,8 @@ describe('goals and stamps', () => {
     expect(KANJI_GOAL_BAND['3.12']).toBe('n3');
     const sign = writeKanji.filter((k) => k.level === 'n3').map((k) => k.char);
     expect(sign).toHaveLength(30);
-    // Every sign kanji is on a sign some item asks for (the target, or the one sign).
-    const onSigns = new Set([...readTheSigns.items, ...meetTheInnkeeper.items].flatMap((it) => (it.signs ?? []).filter((sg, _, all) => all.length === 1 || sg.target)).flatMap((sg) => [...sg.text]));
+    // Every sign kanji is on a one-sign read item (direction items don't count).
+    const onSigns = new Set([...readTheSigns.items, ...meetTheInnkeeper.items].filter((it) => it.signs?.length === 1).flatMap((it) => [...it.signs![0]!.text]));
     expect(sign.filter((c) => !onSigns.has(c))).toEqual([]);
     // N3 items say "sign kanji", never "N3 kanji", wherever players read them.
     for (const it of [...readTheSigns.items, ...meetTheInnkeeper.items]) expect(`${it.hint} ${it.model.en}`, it.id).not.toMatch(/N3 kanji/);

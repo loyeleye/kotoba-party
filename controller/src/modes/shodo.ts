@@ -179,7 +179,7 @@ function itemScreen(ctx: Ctx): HTMLElement {
       'div',
       { class: 'screen sho' },
       head,
-      h('div', { class: 'sho-word' }, h('p', { class: 'sho-note' }, 'Say this in Japanese, from memory:'), h('p', { class: 'sho-meaning' }, t.kind === 'kana' ? (t.romaji ?? t.meaning) : t.meaning)),
+      h('div', { class: 'sho-word' }, h('p', { class: 'sho-note' }, 'Say this in Japanese, from memory:'), h('p', { class: 'sho-meaning' }, t.kind === 'kana' ? (t.romaji ?? t.meaning) : t.say.en)),
       it.tries ? h('p', { class: 'hint' }, `Not yet (${it.tries} ${it.tries === 1 ? 'try' : 'tries'}). Try again, or show the reading.`) : null,
       sayBox(ctx, 'Hold and say it', 'Show me the reading'),
     );

@@ -27,8 +27,8 @@ const len = (s: readonly (readonly number[])[]) => s.reduce((n, p, i) => (i ? n 
 
 describe('kanji data', () => {
   it('has stroke data for every kanji, with school stroke counts', () => {
-    expect(writeKanji.length).toBe(160);
-    expect(['n5', 'n4', 'n3'].map((l) => writeKanji.filter((k) => k.level === l).length)).toEqual([70, 60, 30]);
+    expect(writeKanji.length).toBe(161);
+    expect(['n5', 'n4', 'n3'].map((l) => writeKanji.filter((k) => k.level === l).length)).toEqual([70, 61, 30]);
     // The N4 kanji the game's own N4 lines use (PR #146 panel).
     for (const c of '思持待使乗着終写会教') expect(writeKanji.find((k) => k.char === c)?.level, c).toBe('n4');
     for (const k of writeKanji) expect(ref(k.char)?.length, k.char).toBeGreaterThan(0);
@@ -61,7 +61,7 @@ describe('kanji data', () => {
 
   it('deals an N4 player two N4 kanji and one N5 review, and N3 the sign kanji with N4 review', () => {
     const deck = buildDeck(content);
-    expect(practicePool(deck, 'n4').map((t) => t.level)).toEqual(Array(60).fill('n4'));
+    expect(practicePool(deck, 'n4').map((t) => t.level)).toEqual(Array(61).fill('n4'));
     expect(reviewPool(deck, 'n4').every((t) => t.level === 'n5' && (t.step ?? 0) >= 3)).toBe(true);
     expect(practicePool(deck, 'n3').map((t) => t.level)).toEqual(Array(30).fill('n3'));
     for (let i = 0; i < 5; i++) {
@@ -77,6 +77,30 @@ describe('kanji data', () => {
     const sha = deck.kanji.find((t) => t.text === '社')!;
     expect(wordWith(deck, 'n4', sha, new Set(), random)?.text).toBe('会社');
     expect(wordWith(deck, 'n5', sha, new Set(), random)).toBeNull();
+    // Never a sign word for an N4 player: 引 is only in 割引, 自 is in 自分 and 自由席.
+    const hiku = deck.kanji.find((t) => t.text === '引')!;
+    const ji = deck.kanji.find((t) => t.text === '自')!;
+    for (let i = 0; i < 20; i++) {
+      expect(wordWith(deck, 'n4', hiku, new Set(), random)).toBeNull();
+      expect(wordWith(deck, 'n4', ji, new Set(), random)?.text).toBe('自分');
+    }
+  });
+
+  it('never deals an N3 target to an N5 or N4 player, and one kanji per say-word a game', () => {
+    const deck = buildDeck(content);
+    for (const level of ['n5', 'n4'] as const) {
+      for (const words of [true, false]) expect(dictationPool(deck, level, words).filter((t) => t.level === 'n3'), level).toEqual([]);
+      for (let i = 0; i < 30; i++) {
+        const dealt = dealPractice(deck, level, new Set(), random);
+        expect(dealt.filter((t) => t.level === 'n3')).toEqual([]);
+        for (const t of dealt) expect(wordWith(deck, level, t, new Set(), random)?.level ?? 'n5').not.toBe('n3');
+      }
+    }
+    // 改 and 札 both say 改札: never both in one N3 deal.
+    for (let i = 0; i < 50; i++) {
+      const says = dealPractice(deck, 'n3', new Set(), random).map((t) => t.say.text);
+      expect(new Set(says).size).toBe(says.length);
+    }
   });
 });
 

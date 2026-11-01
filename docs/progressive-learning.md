@@ -74,8 +74,11 @@ deck (4.2, 4.4, already listed). 4.2 still has only Tourist, and 4.7 stays 工�
 - **Kana goals:** 90% of the script (95 of 105 hiragana, 114 of 126 katakana), each yōkai card recalled on
   2 days; the bar moves from the first night. **K3:** 6 of 8 set phrases, each said on 2 days. **Kanji
   goals:** 30 kanji read from memory on 2 game days, counted by say-word: in Shodō (the kanji, or each
-  kanji of a word it says), or on a sign in Read the Signs or Meet the Innkeeper (only the sign asked about:
-  the single sign, or the target one when there are several). 5.10 counts N5 kanji, 4.10 N4 kanji, and 3.12
+  kanji of a word it says), or on a one-sign read item in Read the Signs or Meet the Innkeeper ("which way"
+  items don't count: left or right is a coin flip). Shodō's practice say is read off the card, so only the
+  memory rep (written correctly) and "say it, then write it" (said before peeking, written correctly) count.
+  The kanji count has no 3-day gap yet (frames have one); the JLPT seat asked for it on #146 and #147, and it's
+  deferred because it changes kana and set phrases too (open questions doc). 5.10 counts N5 kanji, 4.10 N4 kanji, and 3.12
   (Limited Express) the 30 sign kanji (受付, 予約, 非常口, 禁煙…), which the cleared screen calls "sign kanji",
   never "N3 kanji" (`KANJI_GOAL_BAND`). K3 also counts the
   everyday forms (ありがとう, ありがとうございました, すいません, ごめん, おはよう, よろしく おねがい いたします), at the

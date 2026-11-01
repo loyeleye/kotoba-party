@@ -707,8 +707,9 @@ function enterReplay(s: ShodoState, ctx: ModeContext): void {
   else if (sheets.some((x) => x.clean)) ctx.cue({ host: 'fude', event: 'shodo_clean' });
   for (const sheet of sheets) {
     const t = sheet.target;
-    // "Say it, then write it" said before the reading was shown is said from memory; dictation shows the reading.
-    const recalled = item.kind === 'recall' && !!item.said[sheet.playerId] && !item.peeked?.[sheet.playerId];
+    // "Say it, then write it" counts as from memory when it was said before the reading showed and then written
+    // correctly: the word alone proves the spoken word, the writing proves the kanji. Dictation shows the reading.
+    const recalled = item.kind === 'recall' && !!item.said[sheet.playerId] && !item.peeked?.[sheet.playerId] && sheet.pass;
     ctx.phrase(sheet.playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: item.said[sheet.playerId] === 'speech' ? 'said' : sheet.pass ? 'seen' : 'missed', recall: recalled ? 'memory' : 'read' });
   }
 }
@@ -782,7 +783,8 @@ function moveSay(s: ShodoState, phase: Phase, playerId: string, u: unknown, ctx:
     if (!matchesAccepted(heard, [t.say.kana])) return moveError('not-the-word');
     p.said[rep.target] = u.via;
     owe(s, playerId, u.via === 'speech' ? SAY_BONUS.speech : u.via === 'typed' ? SAY_BONUS.typed : 0);
-    ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: u.via === 'speech' ? 'said' : 'seen', recall: 'memory' });
+    // The say card shows the word and its reading, so this is read aloud, not recalled (learning science, PR #147).
+    ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: u.via === 'speech' ? 'said' : 'seen', recall: 'read' });
     return MOVE_OK;
   }
   if (phase === 'answer') {
@@ -798,7 +800,8 @@ function moveSay(s: ShodoState, phase: Phase, playerId: string, u: unknown, ctx:
     item.said[playerId] = u.via;
     item.shown[playerId] = true;
     // From memory: the biggest speaking bonus in the mode.
-    owe(s, playerId, u.via === 'speech' ? SAY_BONUS.recall : u.via === 'typed' ? SAY_BONUS.typed : 0);
+    // After "show me the reading" it's read aloud, so it earns the plain speaking bonus.
+    owe(s, playerId, u.via === 'speech' ? (item.peeked?.[playerId] ? SAY_BONUS.speech : SAY_BONUS.recall) : u.via === 'typed' ? SAY_BONUS.typed : 0);
     return MOVE_OK;
   }
   if (phase === 'encore') {
@@ -869,7 +872,8 @@ function moveRep(s: ShodoState, phase: Phase, playerId: string, raw: Record<stri
   if (rep.kind === 'memory' && clean) s.stats.clean[playerId] = (s.stats.clean[playerId] ?? 0) + 1;
   p.results.push({ ...rep, ok, clean, strokes });
   p.next += 1;
-  if (rep.kind === 'memory') ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: p.said[rep.target] === 'speech' ? 'said' : ok ? 'seen' : 'retry', recall: 'memory' });
+  // Written from memory: counts only when the writing passes.
+  if (rep.kind === 'memory') ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: !ok ? 'retry' : p.said[rep.target] === 'speech' ? 'said' : 'seen', recall: ok ? 'memory' : 'read' });
   return MOVE_OK;
 }
 
