@@ -473,7 +473,8 @@ function soundSwitch(me: PlayerView): HTMLElement {
   return h(
     'button',
     { type: 'button', class: `mic-switch sound-switch${off ? ' off' : ''}`, 'aria-label': label, 'aria-pressed': String(!off), title: label, onclick: () => void command({ type: 'setSound', on: off }) },
-    off ? '🔇' : '🔊',
+    // Off: the same speaker, struck through like the mic switch (style.css .mic-switch.off::after).
+    '🔊',
   );
 }
 
