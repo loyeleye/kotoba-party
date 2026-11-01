@@ -233,7 +233,7 @@ const MATCHERS: readonly { id: FrameId; re: RegExp; not?: RegExp }[] = [
   // 「Nに Nが あります」, or just 「Nが（十本）あります」. Polite forms only: plain ある／いる is mostly a relative clause
   // (ゆうきが ある ひと: people who have courage). Not 「〜て います」 (doing: a different pattern), nor
   // ありがとう ございます, whose が and います are inside words.
-  { id: 'ni-aru', re: new RegExp(`が${S}[^\\s\\u3000、。]{0,4}${S}(あります|います|有ります|居ます)`), not: new RegExp(`[てで]${S}(います|いる)|ございます|ありがとう|ちがいます`) },
+  { id: 'ni-aru', re: new RegExp(`が${S}[^\\s\\u3000、。]{0,4}${S}(あります|います|有ります|居ます)`), not: new RegExp(`[てで]${S}(います|いる)|ございます|ありがとう|ちがいます|(こと|事)${S}が${S}(あり|有り)`) },
   { id: 'mashita', re: new RegExp(`ました${END}`) },
   // Not 「〜て います」 (いぬを かって います: a state, a different pattern).
   { id: 'o-masu', re: new RegExp(`\\Sを${S}\\S*ます${END}`), not: new RegExp(`[てで]${S}います`) },
@@ -336,6 +336,9 @@ interface Matcher {
   pos?: 'need' | 'veto';
   /** Frames this one makes redundant when both hit the same sentence (＿て もらえますか is also a question). */
   hides?: FrameId[];
+  /** Frames this one shows are misreads, left out even when counting keeps hidden frames (まって ください is not
+   * ＿を ください; ともだちに わらわれました is not ＿に ＿ます). */
+  excludes?: FrameId[];
 }
 
 const rx = (src: string): RegExp => new RegExp(src);
@@ -370,6 +373,8 @@ const CORE_HIDES: Partial<Record<FrameId, FrameId[]>> = {
   sou: DESU_FAMILY,
 };
 for (const m of CORE) m.hides = CORE_HIDES[m.id];
+// ＿て ください is never ＿を ください, even when counting keeps hidden frames (#152's Japanese seat).
+for (const m of CORE) if (m.id === 'te-kudasai') m.excludes = ['kudasai'];
 
 const MORE_N5: Matcher[] = [
   // 「いくらですか」. Not いくら (salmon roe) or いくらでも (any amount).
@@ -500,7 +505,13 @@ function souKind(s: string, toks?: Tok[]): ('look' | 'hear')[] {
   for (const m of s.matchAll(re)) {
     const before = m[1]!;
     const word = before + 'そう';
-    if (/(ごち|かわい|ほう|れん|きょう|こう|ぼう|たい|かい|しん|ど|ちょう|かん|ひ|ほん|かそう|はっ|へいそう|まっ|こっ)そう$/.test(word) && !/(なさ|よさ)そう$/.test(word)) continue;
+    if (/(ごち|かわい|ほう|れん|きょう|こう|ぼう|かい|しん|ど|ちょう|かん|ひ|ほん|かそう|はっ|へいそう|まっ|こっ)そう$/.test(word) && !/(なさ|よさ)そう$/.test(word)) continue;
+    // たいそう alone is 大層 (very); after a verb stem it's ＿たい + hearsay (みたいそうです: Hajimemashite's card).
+    if (/(^|[\s　、がはもを])たいそう$/.test(word)) continue;
+    if (new RegExp(`${STEM}たい$`).test(before)) {
+      out.push('hear');
+      continue;
+    }
     // Hearsay そう never becomes そうな／そうに／そうも (たべたそうな かお: looks like it wants to eat).
     if (/^(な|に|も)$/.test(m[3]!)) out.push('look');
     else if (/(なさ|よさ)$/.test(before) || LOOK_STEM.test(before)) out.push('look');
@@ -521,6 +532,12 @@ function souKind(s: string, toks?: Tok[]): ('look' | 'hear')[] {
       else if (k && isAux(k, 'ない')) out.push('hear');
       else if (k && isVerb(k) && k.cform.startsWith('連用')) out.push('look');
     } else if (new RegExp(`${STEM}$|[かさしたなまらわずん一-龯]$`).test(before)) out.push('look');
+  }
+  // Hearsay after a space (ふる そうです, しずかだ そうです): only a plain form ends the word before it. A stem never
+  // stands alone, so a spaced そう is never "looks" (#152's Japanese seat).
+  for (const m of s.matchAll(/(^|[\s　])([^\s　、。！？「」]*?([うくぐすつぬぶむる]|だ|[ぁ-ん]た|ない|なかった|かった))[\s　]+そう(?=[\s　]*(です|でした|だ|だよ|だね|[。！？!?]|$))/g)) {
+    if (/^(もう|こう|どう|ああ|おもう|いう|そう)$/.test(m[2]!)) continue;
+    if (!out.includes('hear')) out.push('hear');
   }
   return out;
 }
@@ -839,7 +856,7 @@ const N4: Matcher[] = [
     re: rx(`(れ|られ)(ます|ました|ません|る|た|て|ない|なかった|まし)`),
     tok: (ts) => PASSIVE_TOK(ts),
     pos: 'need',
-    hides: ['ni-masu'],
+    excludes: ['ni-masu'],
   },
   {
     id: 'sasete-kudasai',
@@ -871,7 +888,8 @@ const N4: Matcher[] = [
     re: rx(`([うくぐすつぬぶむる]|しない|(こども|子供|かぞく|家族|みんな|けんこう|健康|しょうらい|将来|ゆめ|夢|しけん|試験|ひと|人|わたし|あなた|ともだち|友達|しごと|仕事|おきゃく|お客|なん|何|きょう|今日|あした|明日|パーティー|たんじょうび|誕生日|ダイエット)の)[\\s\\u3000]*(ために|為に|ための)`),
     // …nor a reason with its own subject: かれが くる ために, かれが こない ため、 (because he's (not) coming).
     // (ためる, ためし and ためいき can't be ために, so they don't rule the line out.)
-    not: rx(`が[\\s\\u3000]+([^\\s\\u3000、。]+[\\s\\u3000]+)?(くる|来る|ある|いる|なる|[^\\s\\u3000、。]*ない)[\\s\\u3000]*ために`),
+    // …nor a verb you don't choose to do (はなせる, なおる, わかる ために): that's ように (#152's Japanese seat).
+    not: rx(`が[\\s\\u3000]+([^\\s\\u3000、。]+[\\s\\u3000]+)?(くる|来る|ある|いる|なる|[^\\s\\u3000、。]*ない)[\\s\\u3000]*ために|(はなせる|話せる|よめる|読める|かける|書ける|いける|行ける|のめる|およげる|泳げる|できる|なおる|治る|わかる|分かる|なれる|みえる|見える|きこえる|聞こえる|られる|ふる|降る|はれる|晴れる|こわれる|壊れる|まにあう|間に合う|うかる|受かる|とおる|通る|やせる|ふとる|太る)[\\s\\u3000]*(ために|為に)`),
   },
   {
     id: 'you-ni',
@@ -1552,7 +1570,9 @@ export function framesOf(
   for (const s of pairs) {
     // `only` drops frames before they can hide others: an N3 chip the recap can't show yet mustn't take the N4
     // chip it was shown over (あめに ふられました keeps the passive while N3 is off: panel on #153).
-    const hit = ALL_MATCHERS.filter((m) => (!opts.only || opts.only(m.id)) && hitsIn(m, s));
+    const all = ALL_MATCHERS.filter((m) => hitsIn(m, s));
+    const wrong = new Set(all.flatMap((m) => m.excludes ?? []));
+    const hit = all.filter((m) => !wrong.has(m.id) && (!opts.only || opts.only(m.id)));
     const hidden = new Set(opts.keepHidden ? [] : hit.flatMap((m) => m.hides ?? []));
     const kept = hit.filter((m) => !hidden.has(m.id)).map((m) => m.id);
     for (const id of kept) found.add(id);

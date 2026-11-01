@@ -156,6 +156,10 @@ as the suffering passive, すんでおります as ＿て おります).
 - **＿なんて.** The adverb なんて "how…!" (なんて きれいな けしき, けしきは なんて きれいなんだ) no longer counts:
   only なんて after the thing being waved off.
 - **Display hides** and the recap, above.
+- **From #152's Japanese seat.** Some misreads are now left out even when counting keeps hidden frames
+  (`excludes`): まって ください isn't ＿を ください, a passive (ともだちに わらわれました) isn't ＿に ＿ます. ＿た ことが
+  あります isn't ＿が あります. Hearsay そう after a space counts (ふる そうです, しずかだ そうです), and so does ＿たい
+  + そう (みたいそうです). A verb you don't choose (はなせる, なおる, わかる) + ために isn't purpose: that's ように.
 
 ## The precision bar
 

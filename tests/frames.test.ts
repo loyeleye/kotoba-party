@@ -262,6 +262,19 @@ describe('every frame in a line (framesOf)', () => {
     expect(counted('しゅくだいを しないと いけませんか。')).not.toContain('masen-ka');
     expect(counted('ごめんなさいと いったら どうですか。')).not.toContain('to-itte-ita');
     expect(counted('にほんごが できます。')).not.toContain('potential');
+    // #152's Japanese seat: misreads that counting used to keep.
+    expect(counted('まって ください。')).not.toContain('kudasai');
+    expect(counted('みずを ください。')).toContain('kudasai');
+    expect(counted('ともだちに わらわれました。')).not.toContain('ni-masu');
+    expect(counted('ふじさんに のぼった ことが あります。')).not.toContain('ni-aru');
+    expect(counted('にほんごが はなせる ために、べんきょうします。')).not.toContain('tame-ni');
+    expect(counted('びょうきが なおる ために、くすりを のむ。')).not.toContain('tame-ni');
+    // Hearsay そう after a space.
+    for (const k of ['あしたは あめが ふる そうです。', 'あの こうえんは しずかだ そうです。', 'かれは こない そうです。']) expect([k, counted(k).includes('sou-hear')]).toEqual([k, true]);
+    expect(counted('はい、そう です。')).not.toContain('sou-hear');
+    // ＿たい + hearsay, as Hajimemashite's N4 card has it; たいそう alone is "very".
+    expect(counted('アキさんは にほんで すしを たべて みたいそうです。')).toContain('sou-hear');
+    expect(counted('たいそう よろこんで いました。')).not.toContain('sou-hear');
   });
 
   it('leaves out the frames that need part of speech when there are no tokens', () => {
