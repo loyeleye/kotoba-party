@@ -11,13 +11,20 @@
 //
 // The phone buzzes when it rings (a new order) and when a ticket lands. Typed calls and read-backs
 // keep their half-typed text across redraws (draftKey).
+//
+// N4 hard roles (Co-op): an N4 phone is offered this shift's role (やります / こんかいは いいです). The
+// manager gets a desk card for each complaint or special order; the おもてなし order-taker gets a guest
+// strip on each order card. A miss gets a private hint here, never on the TV. A station the manager asks
+// gets a 👔 request card and taps できました！.
 
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
 import type { TicketView } from '../../../shared/src/modes/bentoHaus/bentoHaus.js';
+import type { HardRole, MyHardView, StepView } from '../../../shared/src/modes/bentoHaus/hardRoles.js';
 import { COUNTS, countWord, foodOf, MAX_COUNT } from '../../../shared/src/modes/bentoHaus/menu.js';
 import type { BentoView } from '../../../shared/src/modes/views.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
+import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
 import { hearButton, isSoundOff } from '../components/voice.js';
@@ -152,6 +159,134 @@ function offerCard(ctx: Ctx, t: Me['taking'][number], ringing: boolean): HTMLEle
   );
 }
 
+// ---- N4 hard roles ----
+
+const ROLE_INFO: Record<HardRole, { icon: string; ja: string; en: string; what: string }> = {
+  manager: {
+    icon: '👔',
+    ja: 'てんちょう',
+    en: 'Manager',
+    what: 'Complaints and special orders come to you. To customers: もうしわけ ございません and 〜て いただけますか. To the kitchen: 〜て もらえますか.',
+  },
+  omotenashi: {
+    icon: '🌸',
+    ja: 'おもてなし',
+    en: 'Hospitality shift',
+    what: 'Look after each guest you take: お〜ください, ＿は ごえんりょ ください (never 〜ては いけません), ＿は よういして あります. Guests give stars.',
+  },
+};
+
+/** This shift's hard-role offer: take it on, or the ordinary part this time. */
+function roleOffer(ctx: Ctx, hard: MyHardView | undefined): HTMLElement | null {
+  if (!hard?.offer) return null;
+  const info = ROLE_INFO[hard.offer.role];
+  const answer = (accept: boolean) => {
+    buzz(60);
+    void ctx.send({ kind: 'role', accept });
+  };
+  return h(
+    'section',
+    { class: 'bh-taking bh-offer', 'data-key': `role-${hard.offer.role}` },
+    h('p', { class: 'bh-taking-head', lang: 'ja' }, `${info.icon} ${info.ja}`, h('small', {}, ` ${info.en} · N4`)),
+    h('p', { class: 'hint' }, info.what),
+    h(
+      'div',
+      { class: 'bh-offer-btns' },
+      h('button', { type: 'button', class: 'bh-serve', onclick: () => answer(true) }, h('span', { lang: 'ja' }, '⭕ やります'), h('small', {}, ' I’ll do it')),
+      h('button', { type: 'button', class: 'secondary', onclick: () => answer(false) }, h('span', { lang: 'ja' }, 'こんかいは いいです'), h('small', {}, ' Not this time')),
+    ),
+  );
+}
+
+const roleBadge = (hard: MyHardView | undefined) =>
+  hard?.role ? h('p', { class: 'bh-role-p', lang: 'ja' }, `${ROLE_INFO[hard.role].icon} ${ROLE_INFO[hard.role].ja}`, h('small', {}, ` ${ROLE_INFO[hard.role].en}`)) : null;
+
+/** One hard-role script: the lines said so far, then the next one to say, with a private hint after a miss. */
+function lineBox(key: string, steps: StepView[], at: number, say: (u: Utterance | null) => void): HTMLElement {
+  const step = steps[at];
+  return h(
+    'div',
+    { class: 'bh-lines' },
+    steps.slice(0, at).map((x) => h('p', { class: `bh-line-done${x.ok ? '' : ' skipped'}`, lang: 'ja' }, x.ok ? `✓ ${x.model.text}` : '– skipped')),
+    step
+      ? [
+          h('p', { class: 'bh-line-to' }, step.to === 'customer' ? '🙇 To the customer' : '🍳 To the kitchen'),
+          step.hint ? h('p', { class: 'bh-hint-p' }, '💡 ', step.hint, step.said ? h('small', { lang: 'ja' }, ` 「${step.said}」`) : null) : null,
+          h('details', { class: 'bh-model', open: !!step.hint || undefined }, h('summary', {}, 'Need the words?'), h('p', { lang: 'ja' }, step.model.text, h('small', {}, ` ${step.model.en}`))),
+          speakBox({ label: 'Hold and say it', placeholder: step.model.text, maxLength: MAX_ANSWER_LENGTH, autoSend: true, draftKey: `${key}-${at}`, onSend: (u) => say(u) }),
+          h('button', { type: 'button', class: 'secondary bh-skip', onclick: () => say(null) }, 'Skip this line'),
+        ]
+      : null,
+  );
+}
+
+/** The manager's desk: a customer with a complaint or a special request. */
+function managerDesk(ctx: Ctx, hard: MyHardView | undefined): HTMLElement[] {
+  return (hard?.desk ?? []).map((d) =>
+    h(
+      'section',
+      { class: 'bh-taking bh-desk', 'data-key': `desk-${d.id}` },
+      h(
+        'div',
+        { class: 'bh-taking-head' },
+        customerPic(d.customerId, 'left', d.emoji, 'bh-cust-p'),
+        h('span', { class: 'bh-who-p', lang: 'ja' }, `👔 ${d.name}`),
+        h('span', { class: 'bh-rush-p' }, d.kind === 'complaint' ? 'Complaint' : 'Special order'),
+      ),
+      h('div', { class: 'bh-patience-p', style: `--total: ${d.until - d.at}ms; --gone-delay: -${Math.max(0, serverNow(ctx.game) - d.at)}ms;` }, h('span', {})),
+      h('p', { class: 'bh-order-words', lang: 'ja' }, `「${d.line.text}」`),
+      h('p', { class: 'hint' }, d.line.en),
+      lineBox(`desk-${d.id}`, d.steps, d.step, (u) => void ctx.send(u ? { kind: 'manager', incidentId: d.id, utterance: u } : { kind: 'manager', incidentId: d.id, skip: true })),
+    ),
+  );
+}
+
+/** What the manager asked this station to do. */
+function requests(ctx: Ctx, me: Me): HTMLElement | null {
+  const list = me.hard?.requests ?? [];
+  if (!list.length) return null;
+  return h(
+    'section',
+    { class: 'bh-tickets' },
+    h('p', { class: 'bh-section' }, '👔 From the manager'),
+    list.map((q) =>
+      h(
+        'div',
+        { class: 'bh-ticket open bh-request', 'data-key': `req-${q.incidentId}` },
+        h('span', { class: 'bh-ticket-for', lang: 'ja' }, `${q.customer.emoji} ${q.customer.name}`),
+        q.foodId ? foodLabel(q.foodId, me.level) : null,
+        h('p', { class: 'bh-request-words', lang: 'ja' }, `「${q.text}」`, h('small', {}, ` ${q.en}`)),
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'primary bh-send',
+            onclick: () => {
+              buzz();
+              void ctx.send({ kind: 'request-done', incidentId: q.incidentId });
+            },
+          },
+          h('span', { lang: 'ja' }, 'はい、できました！'),
+          h('small', {}, ' Done'),
+        ),
+      ),
+    ),
+  );
+}
+
+/** おもてなし: this order's guest, seated and answered in keigo. */
+function guestStrip(ctx: Ctx, me: Me, visitId: string): HTMLElement | null {
+  const g = me.hard?.guests[visitId];
+  if (!g) return null;
+  return h(
+    'div',
+    { class: 'bh-guest-p' },
+    h('p', { class: 'bh-line-to', lang: 'ja' }, '🌸 おもてなし ', h('small', {}, `${'★'.repeat(g.said.length)}${'☆'.repeat(Math.max(0, 2 - g.said.length))} · one more ★ when it’s served`)),
+    g.ask && g.step < g.steps.length ? h('p', { class: 'bh-guest-ask', lang: 'ja' }, `「${g.ask.text}」`, h('small', {}, ` ${g.ask.en}`)) : null,
+    lineBox(`guest-${visitId}`, g.steps, g.step, (u) => void ctx.send(u ? { kind: 'omotenashi', visitId, utterance: u } : { kind: 'omotenashi', visitId, skip: true })),
+  );
+}
+
 function orderCard(ctx: Ctx, me: Me, t: Me['taking'][number], ringing: boolean): HTMLElement {
   const { game, send } = ctx;
   if (t.offer) return offerCard(ctx, t, ringing);
@@ -177,6 +312,7 @@ function orderCard(ctx: Ctx, me: Me, t: Me['taking'][number], ringing: boolean):
     ),
     visit ? h('div', { class: 'bh-patience-p', style: `--total: ${total}ms; --gone-delay: -${gone}ms;` }, h('span', {})) : null,
     t.steal ? h('p', { class: 'bh-steal-p', lang: 'ja' }, '🔁 ぴったりなら +5 💰', h('small', {}, ' Perfect for 5 tips, anything else 0')) : null,
+    guestStrip(ctx, me, t.visitId),
     words,
     // The fade is explained on the first shift; after that it's known.
     t.fades ? (game.round === 1 ? h('p', { class: 'hint bh-fade-hint' }, isSoundOff() ? 'The words fade: 👀 peeks for a moment.' : 'The words fade: 🔊 hears it again.') : null) : h('p', { class: 'hint' }, t.en),
@@ -513,13 +649,17 @@ function feelEnd(game: BentoView, me: string): void {
 function kitchen(ctx: Ctx): HTMLElement {
   const me = ctx.game.me!;
   const ringing = feel(ctx.game, me);
-  const idle = !me.taking.length && !me.tickets.some((t) => t.state === 'open');
+  const idle = !me.taking.length && !me.tickets.some((t) => t.state === 'open') && !me.hard?.desk.length && !me.hard?.requests.length;
   feelEnd(ctx.game, ctx.me.id);
   return h(
     'div',
     { class: 'screen bh-kitchen' },
     teamBar(ctx.game),
     raceNote(ctx.game, ctx.me.id),
+    roleOffer(ctx, me.hard),
+    roleBadge(me.hard),
+    managerDesk(ctx, me.hard),
+    requests(ctx, me),
     ticketPill(me),
     me.taking.map((t) => orderCard(ctx, me, t, ringing.has(t.visitId))),
     me.taking.length ? callBox(ctx, me) : null,
@@ -611,6 +751,15 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
       game.vs?.winner,
       me?.bonus,
       picked,
+      me?.hard
+        ? [
+            me.hard.offer,
+            me.hard.role,
+            me.hard.desk.map((d) => [d.id, d.step, d.steps.map((x) => x.hint)]),
+            me.hard.requests.map((q) => q.incidentId),
+            Object.entries(me.hard.guests).map(([id, g]) => [id, g.step, g.steps.map((x) => x.hint)]),
+          ]
+        : null,
     ]);
   },
 
@@ -627,6 +776,8 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
           h('h2', { class: 'big', lang: 'ja' }, game.info?.ja ?? ''),
           h('p', {}, game.info?.en ?? '', ': ', game.info?.what ?? ''),
           teamBar(game),
+          roleOffer(ctx, game.me.hard),
+          roleBadge(game.me.hard),
           game.vs && game.vs.myTeam !== null ? h('p', { class: 'hint' }, 'Call your own team only: the other kitchen can’t hear your phone. Serve first to win the customer.') : null,
           game.me.shelf.length ? shelf(game.me, game.ownCounter) : null,
           h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, `「${example(game)}、おねがいします！」`)),

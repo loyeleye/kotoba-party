@@ -141,3 +141,25 @@ img.bh-cust-p { width: 48px; height: 48px; flex: none; }
 .bh-ticket-for { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--muted); grid-column: 1 / -1; }
 img.bh-ticket-cust { width: 28px; height: 28px; }
 .bh-ticket-pill { position: sticky; top: 8px; z-index: 3; justify-self: center; padding: 6px 16px; border-radius: 999px; background: #ffd36b; color: #0b0605; font-weight: 900; border: 2px solid #0b0605; min-height: 40px; }
+
+/* N4 hard roles: the role pill, the manager's desk, a station's request, the おもてなし guest strip. */
+.bh-role-p { margin: 0; justify-self: start; padding: 4px 12px; border-radius: 999px; background: #ffd36b; color: #0b0605; font-weight: 900; }
+.bh-role-p small { font-weight: 700; }
+.bh-desk { border-color: #ffd36b; }
+.bh-lines { display: grid; gap: 6px; }
+.bh-line-to { margin: 0; font-weight: 900; font-size: 14px; }
+.bh-line-to small { font-weight: 400; color: #6b4a6f; }
+.bh-line-done { margin: 0; color: #1f7a4a; font-weight: 800; overflow-wrap: anywhere; }
+.bh-line-done.skipped { color: #6b4a6f; font-weight: 400; }
+.bh-hint-p { margin: 0; padding: 8px 10px; border-radius: 10px; background: #fff3c4; color: #0b0605; font-weight: 700; overflow-wrap: anywhere; }
+.bh-hint-p small { font-weight: 400; }
+.bh-model summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: #6b4a6f; }
+.bh-model p { margin: 0; font-size: 18px; font-weight: 800; overflow-wrap: anywhere; }
+.bh-model small { font-weight: 400; font-size: 13px; color: #6b4a6f; }
+.bh-skip { min-height: 44px; }
+.bh-guest-p { display: grid; gap: 6px; padding: 8px; border-radius: 12px; border: 2px dashed #c06b8f; }
+.bh-guest-ask { margin: 0; font-size: 18px; font-weight: 800; overflow-wrap: anywhere; }
+.bh-guest-ask small { font-weight: 400; font-size: 13px; color: #6b4a6f; }
+.bh-request { grid-template-columns: 1fr; }
+.bh-request-words { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
+.bh-request-words small { font-weight: 400; color: var(--muted); }
