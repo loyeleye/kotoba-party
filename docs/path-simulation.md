@@ -168,6 +168,24 @@ Still not cleared in any room: 4.6 (bot gap), 4.8, 4.10, 4.12 and 4.14 need game
 below). The next most useful game fixes, by the game design seat: more ＿ので excuses in Late Again! (2 of its
 16 N4 excuses), and a "what changed / what I decided" card in Happyōkai for 4.12.
 
+## Step 5c: Tourist cues, a "Have you ever…?" card, Late Again! and the Hotline on their goals (200 rooms, base settings)
+
+PR #161 built items 3, 5 and 6 below: Tourist cues with the Japanese behind a peek, Late Again! "ask" lines on 4.2
+and 4.3, real conditionals in the Hotline on 4.5, and Chōchin-san's "Have you ever…?" card in Happyōkai. After the
+panel's must-fixes each game logs the frame only when it was heard (a cause-only clip, a ほうが いい-only clip or a
+swapped tile with the Japanese on screen don't count).
+
+| Goal | Rooms that stamp it | Nights (p25 / median / p75) | Before (step 5b) |
+|---|---|---|---|
+| 4.2 May, must, mustn't | 100% | 8 / 11 / 15 | 16% |
+| 4.3 Experiences and tries | 100% | 9 / 11 / 14 | 100%, median 19 |
+| 4.5 If and when | 100% | 3 / 3 / 4 | 100%, median 7 |
+
+The eight goals most rooms stamp (4.1, 4.2, 4.3, 4.4, 4.5, 4.9, 4.11, 4.13) now come together in **16 nights
+(14 / 20)** in every room. The line still clears in no room: 4.6, 4.8, 4.10, 4.12 and 4.14 stamp nowhere on this
+branch (#160 adds the Word Gauntlet retelling and the Dub Club ad-lib for 4.6 and 4.8). These are upper bounds for
+Late Again! and the Hotline: their bots say the whole model line, conditional or ask included.
+
 ## What would let the line clear
 
 Each of these is a change to a game or the path, so they're logged as open questions and come in their own PR
