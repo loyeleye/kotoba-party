@@ -84,7 +84,7 @@ export const AJIMI_MS = 6_000;
 
 export const DURATIONS = { intro: 14_000, prompt: 8_000, score: 12_000 } as const;
 /** The host stand-in comes this long into the first shift's title card (its line is ≤ 7 s, inside the card's 8 s). */
-export const STAND_IN_AT_MS = 1_500;
+export const STAND_IN_AT_MS = 2_500;
 
 export const ROUND_INFO = [
   { ja: 'ランチラッシュ', en: 'Lunch Rush', what: 'Plain orders: a food and how many.' },
@@ -1049,7 +1049,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       s.round += 1;
       s.current = setupRound(s, ctx);
       // N4 hard roles: offered to the room's N4 players in turn. A room with none never gets the fields.
-      const offers = rolesFor(s.round, ctx.players(), s.hard?.offers, ctx.players().length);
+      const offers = rolesFor(s.round, ctx.connected(), s.hard?.offers, ctx.connected().length);
       if (offers.length || s.hard) {
         s.hard ??= { offers: [], specialTurn: 0, askTurn: 0 };
         s.current.hard = blankHardRound();
@@ -1136,7 +1136,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     // A hard-role offer can be answered from the shift's title card on.
     if (isObject(raw) && raw.kind === 'role' && r && (phase === 'prompt' || phase === 'answer')) {
       if (!s.hard || !r.hard || typeof raw.accept !== 'boolean') return moveError('bad-move');
-      return answerOffer(s.hard, r.hard, r.index, playerId, raw.accept, ctx.players(), ctx.players().length) ? MOVE_OK : moveError('not-allowed');
+      return answerOffer(s.hard, r.hard, r.index, playerId, raw.accept, ctx.connected(), ctx.connected().length) ? MOVE_OK : moveError('not-allowed');
     }
     if (!r || phase !== 'answer' || !r.started) return moveError('wrong-phase');
     if (!isObject(raw)) return moveError('bad-move');
