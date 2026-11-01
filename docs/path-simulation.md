@@ -226,15 +226,21 @@ and 4.3, real conditionals in the Hotline on 4.5, and Chōchin-san's "Have you e
 panel's must-fixes each game logs the frame only when it was heard (a cause-only clip, a ほうが いい-only clip or a
 swapped tile with the Japanese on screen don't count).
 
-| Goal | Rooms that stamp it | Nights (p25 / median / p75) | Before (step 5b) |
-|---|---|---|---|
-| 4.2 May, must, mustn't | 100% | 8 / 11 / 15 | 16% |
-| 4.3 Experiences and tries | 100% | 9 / 11 / 14 | 100%, median 19 |
-| 4.5 If and when | 100% | 3 / 3 / 4 | 100%, median 7 |
+On top of step 5b-2 (#160):
 
-The eight goals most rooms stamp (4.1, 4.2, 4.3, 4.4, 4.5, 4.9, 4.11, 4.13) now come together in **16 nights
-(14 / 20)** in every room. These are upper bounds for
-Late Again! and the Hotline: their bots say the whole model line, conditional or ask included.
+| Goal | Rooms that stamp it | Nights (p25 / median / p75) | Before (step 5b-2) |
+|---|---|---|---|
+| 4.2 May, must, mustn't | 100% | 8 / 9 / 12 | 95% of rooms |
+| 4.3 Experiences and tries | 100% | 13 / 15 / 19 | |
+| 4.4 Say what you can do | 100% | 7 / 8 / 9 | |
+| 4.5 If and when | 100% | 3 / 3 / 4 | |
+| 4.6 Guess, hearsay, opinion | 42% | 49 / >60 / >60 | no room |
+
+The ten goals most rooms stamp (4.1, 4.2, 4.3, 4.4, 4.5, 4.8, 4.9, 4.11, 4.12, 4.13) now come together in
+**28 nights (24 / 32)** in every room, against 40 nights in 95% of rooms after step 5b-2. The line still clears in
+no room: 4.6 stamps in 42% (the Hotline and Happyōkai now give some ＿と おもいます), and 4.7, 4.10 and 4.14 in none.
+These are upper bounds for Late Again! and the Hotline: their bots say the whole model line, conditional or ask
+included.
 
 ## What would let the line clear
 
