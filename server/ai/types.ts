@@ -199,6 +199,8 @@ export interface BankLine {
   slots?: string[];
   /** Only for this Audience setting (Kids or Cheeky). Untagged lines play in every room. */
   audience?: 'kids' | 'cheeky';
+  /** Only in a room where someone plays at N3 (content HostLine.level). */
+  level?: 'n3';
   /** Review state from the content thread ('draft' until a fluent check). Not used here. */
   status?: string;
 }

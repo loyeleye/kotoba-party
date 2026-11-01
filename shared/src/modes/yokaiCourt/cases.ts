@@ -371,7 +371,7 @@ export const LINES: Record<Side, Record<Testimony, Record<SpeakLevel, Template>>
     unseen: {
       n5: { ja: 'だれも みて いません。でも、{K}が ありました。{A}が {Dm}！', en: 'Nobody saw it. But we found {K}. The {A} {deed}!', frames: ['mashita'] },
       n4: { ja: `${W}は [見て|みて] いないと ${SAID}。でも、{K}が ありました。{A}は {R}なければ なりません！`, en: 'The witness said they didn’t see it. But we found {K}. The {A} must {R}!', frames: ['to-itte-ita', 'nakereba'] },
-      n3: { ja: `${W}は [見て|みて] いない そうです。でも、{K}が ありました。{D}のは {A}に ちがいありません！`, en: 'I hear the witness saw nothing. But we found {K}. The one who did it must have been the {A}!', frames: ['sou-hear', 'ni-chigainai'] },
+      n3: { ja: `${W}は [見て|みて] いない そうですが、{K}が ありました。{A}じゃ ないなんて、ありえません！`, en: 'I hear the witness saw nothing, but we found {K}. Saying it wasn’t the {A} is absurd!', frames: ['sou-hear', 'nante'] },
     },
     other: {
       n5: { ja: '{O}じゃ ありません。{K}が ありました。{A}が {Dm}！', en: 'It wasn’t the {O}. We found {K}. The {A} {deed}!', frames: ['ja-nai', 'mashita'] },
@@ -381,7 +381,7 @@ export const LINES: Record<Side, Record<Testimony, Record<SpeakLevel, Template>>
     curve: {
       n5: { ja: '{C}も いました。でも、{K}が ありました。{A}が {Dm}！', en: 'A {C} was there too. But we found {K}. The {A} {deed}!', frames: ['mashita'] },
       n4: { ja: `${W}は {C}も いたと ${SAID}。でも、{K}が ありました。{A}は {R}なければ なりません！`, en: 'The witness said a {C} was there too. But we found {K}. The {A} must {R}!', frames: ['to-itte-ita', 'nakereba'] },
-      n3: { ja: `${W}に よると、{C}も いた そうです。でも、{K}が ありました。{D}のは {A}に ちがいありません！`, en: 'According to the witness, a {C} was there too. But we found {K}. The one who did it must have been the {A}!', frames: ['ni-yoru', 'ni-chigainai'] },
+      n3: { ja: '{C}も いた らしいですが、{K}が ありました。{D}のは {A}に ちがいありません！', en: 'Apparently a {C} was there too, but we found {K}. The one who did it must have been the {A}!', frames: ['rashii', 'ni-chigainai'] },
     },
   },
   def: {
@@ -398,7 +398,7 @@ export const LINES: Record<Side, Record<Testimony, Record<SpeakLevel, Template>>
     other: {
       n5: { ja: '{O}です！ {A}は {P}に いました！', en: 'It was the {O}! The {A} was {Pat}!', frames: ['desu', 'wa-ni-aru'] },
       n4: { ja: `${W}は {O}だと ${SAID}。{A}は {P}に いました。だから、{R}なくても いいです！`, en: 'The witness said it was the {O}. The {A} was {Pat}. So there’s no need to {R}!', frames: ['to-itte-ita', 'nakutemo-ii'] },
-      n3: { ja: `${W}に よると、{O}だ そうです。{A}は {P}に いました。{D}のは {O}に ちがいありません！`, en: 'According to the witness, it was the {O}. The {A} was {Pat}. The one who did it must have been the {O}!', frames: ['ni-yoru', 'ni-chigainai'] },
+      n3: { ja: `${W}に よると、{O}だ そうです。{A}は {P}に いました。いかにも {O}っぽい やり方です！`, en: 'According to the witness, it was the {O}. The {A} was {Pat}. That’s just the sort of thing a {O} does!', frames: ['ni-yoru', 'ppoi'] },
     },
     curve: {
       n5: { ja: '{C}も いました！ {A}は {P}に いました！', en: 'A {C} was there too! The {A} was {Pat}!', frames: ['wa-ni-aru'] },
@@ -481,6 +481,9 @@ export interface CourtChunk {
 
 const tag = {
   chigai: 'Limited Express · 〜に ちがいありません',
+  rashii: 'Limited Express · 〜らしい',
+  ppoi: 'Limited Express · 〜っぽい',
+  nante: 'Limited Express · 〜なんて',
   wake: 'Limited Express · 〜わけでは ありません',
   yoru: 'Express Line · 〜に よると',
   itte: 'Express Line · 〜と いって いました',
@@ -493,6 +496,9 @@ const tag = {
 
 /** Within a level the longer chunk comes first, so its keys win. */
 export const CHUNKS: readonly CourtChunk[] = [
+  { id: 'rashii', level: 'n3', text: 'らしいです', keys: ['いたらしい', 'らしいですが'], note: '〜らしい: “apparently…”. Hearsay, entered into evidence.', tag: tag.rashii },
+  { id: 'nante', level: 'n3', text: 'なんて', keys: ['なんておかし', 'なんてひど', 'なんてうそ', 'なんてありえ'], note: '〜なんて: “to say that…!”. The court is outraged.', tag: tag.nante },
+  { id: 'ppoi', level: 'n3', text: 'っぽい', keys: ['っぽいやり', 'っぽいです'], note: '〜っぽい: “so very like a…”. The court nods.', tag: tag.ppoi },
   { id: 'chigai', level: 'n3', text: 'に ちがいありません', keys: ['にちがいありません', 'にちがいない'], note: '〜に ちがいありません: “it must have been…”. Said like a closing argument. The court leans in.', tag: tag.chigai },
   { id: 'wake', level: 'n3', text: 'わけでは ありません', keys: ['わけではありません', 'わけじゃありません', 'わけではない', 'わけじゃない'], note: '〜わけでは ありません: “that doesn’t mean…”. One line, and the case has a hole in it.', tag: tag.wake },
   { id: 'itte', level: 'n4', text: 'と いって いました', keys: ['といっていました', 'っていっていました', 'といってました', 'っていってました', 'といっていた', 'っていっていた', 'っていってた', 'といいました'], note: '〜と いって いました: “they said…”. The testimony, quoted back at the court.', tag: tag.itte },

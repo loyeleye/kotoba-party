@@ -11,6 +11,7 @@ import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { lateAgainPolicy } from '../tools/bots/policies/lateAgain.js';
 import { content as REAL_CONTENT } from './helpers.js';
+import { FRAME_BY_ID, framesOf } from '../shared/src/japanese/frames.js';
 
 // ---- fixtures ----
 
@@ -115,7 +116,7 @@ describe('Late Again!: content', () => {
   it('every cause has a mission and Pon’s version at N5 and N4, and N5 has a sentence frame', () => {
     expect(new Set(CAUSES.map((c) => c.id)).size).toBe(CAUSES.length);
     for (const c of CAUSES) {
-      for (const level of ['n5', 'n4'] as const) {
+      for (const level of ['n5', 'n4', 'n3'] as const) {
         const line = lineFor(c, level);
         expect(line.mission, `${c.id} ${level}`).toBeTruthy();
         expect(line.model.kana, `${c.id} ${level}`).toMatch(/すみません|ごめん|もうしわけ/);
@@ -131,6 +132,12 @@ describe('Late Again!: content', () => {
       // The frame is Pon's version with one gap: the cause word.
       expect(c.lines.n4!.chunk, c.id).toBeTruthy();
       expect(c.lines.n4!.model.text, c.id).toContain(c.lines.n4!.chunk!.text);
+      // N3 (docs/n3-coverage.md): its own excuse, whose chunk is an N3 frame the path counts.
+      const n3 = c.lines.n3!;
+      expect(n3.model.text, c.id).toContain(n3.chunk!.text);
+      expect(heardAny(n3.model.kana, n3.chunk!.keys), c.id).toBe(true);
+      const said = framesOf({ text: n3.model.kana, kana: n3.model.kana }, undefined, { keepHidden: true });
+      expect([c.id, said.some((f) => FRAME_BY_ID[f]?.level === 'n3')]).toEqual([c.id, true]);
       expect(c.check.wrong, c.id).not.toContain(c.check.right);
     }
     expect(new Set(SCENES.map((s) => s.id)).size).toBe(SCENES.length);

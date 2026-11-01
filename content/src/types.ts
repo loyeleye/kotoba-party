@@ -737,6 +737,11 @@ export interface HostLine {
   slots?: string[];
   /** Only for this Audience setting (Kids or Cheeky). Untagged lines play in every room. */
   audience?: 'kids' | 'cheeky';
+  /**
+   * Only in a room where someone plays at N3: the line carries an N3 listening point (docs/n3-coverage.md), which
+   * players below N3 shouldn't have to follow. Untagged lines play in every room.
+   */
+  level?: 'n3';
   status: ReviewStatus;
 }
 

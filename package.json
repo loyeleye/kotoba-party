@@ -16,6 +16,7 @@
     "gate": "vitest run tests/gate.test.ts tests/reconnect.test.ts",
     "bots": "tsx tools/bots/cli.ts",
     "sim:express": "tsx tools/sim/expressLine.ts",
+    "sim:limited": "tsx tools/sim/expressLine.ts --line limited",
     "sim:mixed": "tsx tools/sim/mixedRooms.ts",
     "sim:yields": "tsx tools/sim/yields.ts",
     "content:readings": "tsx tools/content-readings.ts",

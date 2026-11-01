@@ -26,7 +26,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsFor, ROMAJI, type AdviceChunk, type AdviceLine, type Problem } from './problems.js';
-import { n4Up } from '../../level.js';
+import { LEVEL_RANK, n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -318,7 +318,7 @@ export function tileView(id: string, level: Level): TileView {
 const withRomaji = (t: JpText, level: Level): JpText & { romaji?: string } => (level === 'kana' ? { ...t, romaji: ROMAJI[t.kana] ?? toRomaji(t.kana) } : t);
 
 /** The level line a speaking adviser works from (Kana and N5 use N5's). */
-export const lineOf = (p: Problem, level: Level): AdviceLine => (n4Up(level) ? p.advice.n4 : p.advice.n5);
+export const lineOf = (p: Problem, level: Level): AdviceLine => (level === 'n3' && p.advice.n3 ? p.advice.n3 : n4Up(level) ? p.advice.n4 : p.advice.n5);
 
 /** What an advice said, as a reading, for matching keys: null when nobody can tell (no speech-to-text). */
 export function adviceReading(c: Call, a: Advice): string | null {
@@ -576,7 +576,7 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
     const a = c.advice[id]!;
     const k = chunkOf(c, a);
     if (!k) continue;
-    if (!best || (k.level === 'n4' && best.chunk.level !== 'n4')) best = { id, chunk: k, line: subtitleOf(a) ?? lineOf(p, a.level).model.text };
+    if (!best || LEVEL_RANK[k.level] > LEVEL_RANK[best.chunk.level]) best = { id, chunk: k, line: subtitleOf(a) ?? lineOf(p, a.level).model.text };
   }
   // Never two booths in a row: it's a treat, not a beat every call (and it keeps 8 players under 11.5 minutes).
   const prev = s.calls[s.calls.indexOf(c) - 1];

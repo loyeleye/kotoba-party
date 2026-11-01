@@ -8,7 +8,7 @@
 
 import type { HostLine, Level } from '../../content/src/types.js';
 import { capitalizeAtStart } from '../ai/lineBank.js';
-import { HOST_EVENTS, fitsAudience, type HostEvent as AiEvent, type HostVoice as AiHostVoice, type PendingLine } from '../ai/index.js';
+import { HOST_EVENTS, fitsAudience, fitsLevel, type HostEvent as AiEvent, type HostVoice as AiHostVoice, type PendingLine } from '../ai/index.js';
 import type { ContentLibrary, HostCue } from '../../shared/src/modes/mode.js';
 import type { HostMood, HostSay } from '../../shared/src/protocol.js';
 import type { Room } from './room.js';
@@ -49,7 +49,7 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   return {
     async speak(_room, cue) {
       const candidates = content.hostLines.filter(
-        (l: HostLine) => l.host === cue.host && l.event === cue.event && (!cue.tier || !l.tier || l.tier === cue.tier) && fitsAudience(l, cue.audience),
+        (l: HostLine) => l.host === cue.host && l.event === cue.event && (!cue.tier || !l.tier || l.tier === cue.tier) && fitsAudience(l, cue.audience) && fitsLevel(l, cue.n3),
       );
       // A line with slots we can't fill would show a raw {name}; skip those.
       const usable = preferAnswerLines(
@@ -100,11 +100,12 @@ export function moodFor(cue: Pick<HostCue, 'host' | 'event' | 'tier'>): HostMood
 
 /**
  * Wires a voice to a room: each cue is spoken and lands only if its phase is still current. Cues pick up the
- * room's Audience setting here, so the host follows it in every mode.
+ * room's Audience setting here, so the host follows it in every mode, and whether anyone plays at N3.
  */
 export function hostDirector(voice: HostVoice) {
   return (room: Room, raised: HostCue[], phaseSeq: number): void => {
-    const cues = raised.map((c) => ({ ...c, audience: room.state.audience }));
+    const n3 = room.state.players?.some((p) => p.level === 'n3') ?? false;
+    const cues = raised.map((c) => ({ ...c, audience: room.state.audience, n3 }));
     for (const c of cues) if (c.ahead) voice.ahead?.(room.code, c);
     const start = Date.now();
     const say = (cue: HostCue, atMs: number): void => {
@@ -170,6 +171,7 @@ export function aiVoice(
       slots: cue.slots,
       level: opts.levelOf?.(roomCode),
       audience: cue.audience,
+      n3: cue.n3,
     });
 
   return {
