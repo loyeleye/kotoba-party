@@ -238,7 +238,7 @@ On top of step 5b-2 (#160):
 
 The ten goals most rooms stamp (4.1, 4.2, 4.3, 4.4, 4.5, 4.8, 4.9, 4.11, 4.12, 4.13) now come together in
 **28 nights (24 / 32)** in every room, against 40 nights in 95% of rooms after step 5b-2. The line still clears in
-no room: 4.6 stamps in 42% (the Hotline and Happyōkai now give some ＿と おもいます), and 4.7, 4.10 and 4.14 in none.
+no room: 4.6 stamps in 42% (Happyōkai now gives a little ＿と おもいます, 0.05 a game), and 4.7, 4.10 and 4.14 in none.
 These are upper bounds for Late Again! and the Hotline: their bots say the whole model line, conditional or ask
 included.
 
