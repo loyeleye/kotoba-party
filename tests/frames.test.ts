@@ -3,12 +3,13 @@
 
 import { describe, expect, it } from 'vitest';
 import { createReader } from '../server/src/reading.js';
-import { ALL_FRAMES, FRAMES, frameOf, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
+import { ALL_FRAMES, FRAME_BY_ID, FRAMES, frameOf, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
 import { cases as n4a } from './frame-cases/n4-a.js';
 import { cases as n4b } from './frame-cases/n4-b.js';
 import { cases as n4c } from './frame-cases/n4-c.js';
 import { cases as n5existing } from './frame-cases/n5-existing.js';
 import { cases as n5new } from './frame-cases/n5-new.js';
+import { probes } from './frame-cases/panel-probes.js';
 import type { CaseLine, FrameCases } from './frame-cases/types.js';
 
 const of = (kana: string, text = kana) => frameOf({ text, kana });
@@ -107,6 +108,15 @@ describe('sentence frames', () => {
   it('gives each frame an example built on that frame', () => {
     for (const f of FRAMES) expect([f.id, of(f.example.ja)]).toEqual([f.id, f.id]);
   });
+
+  it('gives a favour request no chip rather than a plain question chip', () => {
+    // ＿て くれませんか is not an invitation (＿ませんか), and calling it ＿ますか "Do you ___?" fits worse.
+    for (const kana of ['ちょっと てつだって くれませんか。', 'もう いちど いって いただけませんか。', 'まどを あけて もらえますか。']) {
+      expect([kana, of(kana)]).toEqual([kana, null]);
+    }
+    expect(of('ゆっくり はなして くださいませんか。')).toBe('te-kudasai');
+    expect(of('いっしょに たべませんか。')).toBe('masen-ka');
+  });
 });
 
 // ---- framesOf: every frame in a line, with the precision bar (docs/n4-n3-frames.md) ----
@@ -141,6 +151,18 @@ describe('every frame in a line (framesOf)', () => {
     });
   }
 
+  it('gets fresh lines from the Japanese review right, with and without tokens', () => {
+    const bad: string[] = [];
+    for (const p of probes) {
+      const l = line(p.line);
+      const withTok = all(p.line);
+      const phone = framesOf(l);
+      for (const id of p.not) if (withTok.includes(id as FrameId) || phone.includes(id as FrameId)) bad.push(`${l.text}: not ${id}`);
+      for (const id of p.want ?? []) if (!withTok.includes(id as FrameId)) bad.push(`${l.text}: wants ${id}`);
+    }
+    expect(bad).toEqual([]);
+  });
+
   it("finds each frame's own example", () => {
     for (const f of ALL_FRAMES) expect([f.id, all(f.example.ja).includes(f.id)]).toEqual([f.id, true]);
   });
@@ -150,6 +172,25 @@ describe('every frame in a line (framesOf)', () => {
     expect(all('まどを あけて もらえますか。')).not.toContain('ka');
     expect(all('しゃしんを とっても いいですか。')).toEqual(['te-mo-ii']);
     expect(all('はじめまして。アキです。よろしく おねがいします。')).toEqual(['desu']);
+  });
+
+  it('keeps the general frames for counting progress when asked', () => {
+    expect(all('この おべんとうは いくらですか。')).not.toContain('ka');
+    const p = { text: 'この おべんとうは いくらですか。', kana: 'この おべんとうは いくらですか。' };
+    expect(framesOf(p, reader.tokens(p.text), { keepHidden: true })).toEqual(expect.arrayContaining(['ka', 'ikura']));
+  });
+
+  it('has one frame per id, and every id the tiered path asks for', () => {
+    expect(new Set(ALL_FRAMES.map((f) => f.id)).size).toBe(ALL_FRAMES.length);
+    for (const f of ALL_FRAMES) expect(FRAME_BY_ID[f.id]).toBe(f);
+    // The ids the tiered path's goals count (agreed with that work); a rename there must land here too.
+    const path: Record<'n5' | 'n4', FrameId[]> = {
+      n5: ['ikura', 'ji-fun', 'ni-masu', 'youbi', 'gatsu-nichi', 'wa-ni-aru', 'migi-hidari', 'hoshii', 'de-o', 'te-iru', 'no', 'adj-desu', 'kunai', 'kara', 'hou-ga', 'mashou', 'naide-kudasai'],
+      n4: ['te-moraeru', 'ageru-kureru', 'te-wa-ikenai', 'nakereba', 'ta-koto', 'te-miru', 'te-shimau', 'potential', 'tara', 'ba', 'toki', 'sou-look', 'to-omou', 'kamo', 'you-to-omou', 'tsumori', 'hou-ga-ii', 'plain', 'n-da', 'o-kudasai', 'te-itadakemasen'],
+    };
+    for (const [level, ids] of Object.entries(path)) {
+      for (const id of ids) expect([id, FRAME_BY_ID[id]?.level]).toEqual([id, level]);
+    }
   });
 
   it('leaves out the frames that need part of speech when there are no tokens', () => {
