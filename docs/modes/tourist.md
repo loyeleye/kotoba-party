@@ -33,6 +33,10 @@ Three rounds by default (the VIP can pick 3, 4 or 5). Each round has a new place
    - The **asker** taps who to ask (anyone but the player who just asked them: no asking straight
      back), then **asks out loud and into the phone** (hold-to-talk; typed or kana-pad fallback).
      Or they take a **question tile** (5 suggestions at their level), say it, or send it as a tap.
+     An **N4 or N3 asker gets cues instead of tiles**: each cue is the question's English and its frame
+     as a chip (Is it OK to go alone? · ＿ても いいですか), with the Japanese behind a **peek**, as Last
+     Train cues a line by its meaning. Asked off a cue without peeking, the question counts as said from
+     memory; after a peek, as read.
    - The **answerer** sees the question, answers out loud and into the phone, or takes one of 4
      **answer tiles** that fit the question's kind (a いつ question gets "when" answers).
    - The **stage** shows "🎤 Aki → Ben", the question and the answer as they arrive, each with an
@@ -88,9 +92,15 @@ questions and answers").
   - Close match: the stage shows what was heard, with the frame's English as a guess ("≈ Do you
     like it here?").
   - No match: shown as heard, "(in their own words)".
-- **Own words vs tile**: a line said that matches a tile on the player's screen counts as the tile
-  (they may have read it); anything else that holds Japanese counts as own words. English typed
-  in is logged but earns no bonus.
+- **Own words vs tile**: a line said that matches a tile whose Japanese was on the player's screen
+  counts as the tile (they may have read it). For an N4+ asker's cues, only a peeked cue's Japanese
+  was on screen: a cue said without a peek is own words. Anything else that holds Japanese counts as
+  own words. English typed in is logged but earns no bonus.
+- **A question tile with one word swapped** (ひとりで いっても いいですか → ともだちと いっても いいですか)
+  is the asker's own words at every level: every other word as written, the swapped word at least two
+  kana from the tile's (a one-kana recogniser slip on a tile still shows the tile). The stage shows
+  what was heard with the tile's English as "≈", and the phrasebook keeps what they said. Answers
+  keep the old rule (a close match is `seen`).
 - **The guess**: the place is the tap; the speech only earns the bonus if it contains the place's
   name (or an accepted variant: うち for 家, ラーメン for ラーメン屋).
 
@@ -124,8 +134,10 @@ player plays as it did. There is no offer to decline because there is no extra r
 
 ### Learning hooks
 
-- Phrasebook: a frame said in your own words → `said`; a tile read or tapped, or a close match →
-  `seen`; the round's place name → `seen` for everyone, `said` for a tourist who said it right.
+- Phrasebook: a frame said in your own words, or a cue asked without peeking → `said` (from memory
+  when spoken); a question tile with one word swapped → `said`, as heard (`tourist.own.<reading>`); a
+  tile read or tapped, a peeked cue, or any other close match → `seen`; the round's place name →
+  `seen` for everyone, `said` for a tourist who said it right.
 - Tiles are at the player's level (romaji at Kana), with English, but own words pay double.
 - The stage log is a running bilingual transcript, read by the whole room.
 
@@ -145,7 +157,8 @@ Disguise* (most rounds won as the tourist), おしゃべり おう *Chatterbox* 
 ### Bots
 
 `touristPolicy({ seed })`: taps ready; on its turn picks someone and asks (35% the tile's text
-as its own words, 45% the tile said, 20% a tap); answers the same way. Locals find the player
+as its own words, 45% the tile said, 20% a tap); answers the same way. An N4 bot asks off a cue:
+60% from memory, 25% after a peek, 15% a tap. Locals find the player
 whose answers fit their place least and may call a vote after turn 4 (`callRate` 0.25) and vote
 for them; the tourist counts which place the logged answers fit and guesses once one place has 2+
 clues and leads; on its last chance it picks its best clue. `npm run bots -- --mode tourist --bots 5`.
@@ -198,6 +211,11 @@ clues and leads; on its last chance it picks its best clue. `npm run bots -- --m
     (must/needn't, can) only when the question carries frames; otherwise by kind, as before.
 22. **The onsen's swimsuit answer uses ＿ては いけません** (4.2's boundary frame), because "no, you
     needn't" would be wrong there: you mustn't.
+23. **Cues for N4 and N3 askers only** (path-simulation item 5): Kana and N5 askers keep tiles with
+    the Japanese showing. A cue said from memory pays the own-words bonus; a peek is tracked by the
+    server (`peek`), so the phone can't claim memory for a line it showed. The cue's chip is the
+    line's own N4 frame when it has one, else the most advanced frame frames.ts finds in it.
+24. **A swapped word counts only for questions**, the half the item asked for; answers could follow.
 
 ## Open questions
 

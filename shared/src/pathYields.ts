@@ -40,7 +40,16 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "desu": 0.5,
       "wa-desu": 0.5
     },
-    "tourist": {},
+    "tourist": {
+      "de-o": 0.17,
+      "hou-ga-ii": 0.06,
+      "ka": 2.36,
+      "nakereba": 0.39,
+      "nakutemo-ii": 0.08,
+      "potential": 0.91,
+      "tara": 0.53,
+      "te-mo-ii": 0.17
+    },
     "oekaki": {},
     "omiai": {
       "desu": 0.52,

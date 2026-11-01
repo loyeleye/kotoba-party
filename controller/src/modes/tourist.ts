@@ -1,13 +1,14 @@
 // Who's the Tourist? on the phone. Your secret card (the place and your role, or "you're the
 // tourist"); on your turn, pick someone and ask out loud (hold to talk, or take a question tile and
-// say it); when asked, answer out loud (or take an answer tile). Anyone can call a vote; the
-// tourist can guess the place at any time.
+// say it; N4 and up get cues instead: the English and the frame, with the Japanese behind a peek);
+// when asked, answer out loud (or take an answer tile). Anyone can call a vote; the tourist can
+// guess the place at any time.
 
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { h } from '../../../shared/src/dom.js';
 import { placePic } from '../../../shared/src/art.js';
 import type { TouristView } from '../../../shared/src/modes/views.js';
-import type { LineCard, PlaceCard, SaidView } from '../../../shared/src/modes/tourist/tourist.js';
+import type { CueCard, LineCard, PlaceCard, SaidView } from '../../../shared/src/modes/tourist/tourist.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { holdButton, waiting } from '../components/ui.js';
@@ -113,6 +114,63 @@ function tiles(ctx: Ctx, list: LineCard[], label: string, send: (move: { utteran
   return holder;
 }
 
+const frameChip = (f: NonNullable<CueCard['frame']>) => h('span', { class: 'frame-chip' }, h('span', { class: 'frame-ja', lang: 'ja' }, f.ja), h('small', {}, f.en));
+
+/** N4 and up: cues to pick from (what to ask, and its frame), then ask it from memory; the Japanese is a peek away. */
+function cues(ctx: Ctx, list: CueCard[], send: (move: { utterance: { via: 'speech' | 'typed' | 'tap'; text: string }; lineId?: string }) => void): HTMLElement {
+  const { view, game } = ctx;
+  const t = game.turn!;
+  const holder = h('div', { class: 'tou-tiles-wrap' });
+  const draw = () => {
+    const sel = tile && tile.seq === view.phaseSeq ? list.find((x) => x.id === tile!.id) : undefined;
+    if (sel) {
+      holder.replaceChildren(
+        h('p', { class: 'tou-step' }, sel.jp ? 'Now say it out loud:' : 'Ask it in Japanese, from memory:'),
+        h('div', { class: 'tou-cue picked' }, h('p', { class: 'tou-cue-en' }, sel.en), sel.frame ? frameChip(sel.frame) : null),
+        sel.jp
+          ? line(sel.jp, 'picked')
+          : h(
+              'details',
+              {
+                class: 'tou-peek',
+                // Opening it tells the server: asked off this cue, the question counts as read.
+                ontoggle: (e: Event) => {
+                  if ((e.target as HTMLDetailsElement).open) void ctx.send({ kind: 'peek', lineId: sel.id, round: game.round, turn: t.seq });
+                },
+              },
+              h('summary', {}, '👀 Peek at the Japanese (counts as read)'),
+              h('p', { class: 'hint' }, 'Opening…'),
+            ),
+        speakBox({ label: 'Hold and ask it', placeholder: sel.frame?.ja ?? 'Type your question', onSend: (utterance) => send({ utterance, lineId: sel.id }) }),
+        h(
+          'div',
+          { class: 'tou-row' },
+          h('button', { type: 'button', class: 'secondary', onclick: () => send({ utterance: { via: 'tap', text: sel.jp?.text ?? sel.en }, lineId: sel.id }) }, 'Send without speaking'),
+          h('button', { type: 'button', class: 'linkish', onclick: () => ((tile = null), draw()) }, 'Other questions'),
+        ),
+      );
+      return;
+    }
+    holder.replaceChildren(
+      h('p', { class: 'tou-step' }, 'Need an idea? Pick a question to ask in Japanese:'),
+      h(
+        'div',
+        { class: 'tou-tiles' },
+        list.map((x) =>
+          h(
+            'button',
+            { type: 'button', class: 'tou-tile tou-cue-tile', onclick: () => ((tile = { seq: view.phaseSeq, id: x.id }), draw()) },
+            h('span', { class: 'tou-cue-en' }, x.en),
+            x.frame ? frameChip(x.frame) : null,
+          ),
+        ),
+      ),
+    );
+  };
+  draw();
+  return holder;
+}
+
 function askScreen(ctx: Ctx): HTMLElement {
   const { view, game, send } = ctx;
   const t = game.turn!;
@@ -142,6 +200,7 @@ function askScreen(ctx: Ctx): HTMLElement {
     h('p', { class: 'hint' }, 'Ask out loud, in Japanese, and into your phone. Your own words score the most.'),
     speakBox({ label: `Hold and ask ${target}`, placeholder: 'Type your question', onSend: (utterance) => ask({ utterance }) }),
     me.questions?.length ? tiles(ctx, me.questions, 'Need an idea? Take a question:', ask) : null,
+    me.cues?.length ? cues(ctx, me.cues, ask) : null,
     others.length
       ? h(
           'details',

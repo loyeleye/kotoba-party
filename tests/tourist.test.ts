@@ -5,8 +5,9 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { hasKanji, toHiragana } from '../shared/src/japanese/kana.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
-import { hasJapanese, matchLine, namesPlace } from '../shared/src/modes/tourist/check.js';
+import { hasJapanese, matchLine, namesPlace, oneWordChanged } from '../shared/src/modes/tourist/check.js';
 import { ALL_LINES, BLUFFS, KINDS, PLACES, QUESTIONS, SAFE_ANSWERS } from '../shared/src/modes/tourist/places.js';
+import { phraseFrames } from '../shared/src/progress.js';
 import {
   ANSWER_BONUS,
   ASK_BONUS,
@@ -522,7 +523,7 @@ describe("Who's the Tourist?: a round", () => {
     t.start();
     t.cards();
     const asker = t.asker;
-    const qs = t.view(asker).me!.questions!.map((q) => ALL_LINES.find((l) => l.id === q.id)!);
+    const qs = t.view(asker).me!.cues!.map((q) => ALL_LINES.find((l) => l.id === q.id)!);
     expect(qs.every((l) => l.level === 'n4')).toBe(true);
     const q = QUESTIONS.find((x) => x.id === 'tourist.q.shizuka')!;
     t.st.turn!.qSuggest = [q.id];
@@ -536,6 +537,100 @@ describe("Who's the Tourist?: a round", () => {
     n5.cards();
     const tiles = n5.view(n5.asker).me!.questions!.map((x) => ALL_LINES.find((l) => l.id === x.id)!);
     expect(tiles.some((l) => l.frames)).toBe(false);
+  });
+
+  it('an N4 asker gets cues: the English and the frame, with the Japanese only after a peek; N5 askers keep tiles', () => {
+    const t = new Table(4, REAL_CONTENT, 9, ['n4', 'n4', 'n4', 'n4']);
+    t.start();
+    t.cards();
+    const me = t.view(t.asker).me!;
+    expect(me.questions).toBeNull();
+    expect(me.cues!.length).toBe(5);
+    for (const c of me.cues!) {
+      expect(c.en, c.id).toBe(ALL_LINES.find((l) => l.id === c.id)!.jp.en);
+      expect(c.jp, c.id).toBeNull();
+    }
+    // ＿ても いいですか gets its own chip.
+    t.st.turn!.qSuggest = ['tourist.q.hitori', 'tourist.q.harawanakute'];
+    const [hitori, harawanakute] = t.view(t.asker).me!.cues!;
+    expect(hitori!.frame).toMatchObject({ id: 'te-mo-ii', ja: '＿ても いいですか' });
+    expect(harawanakute!.frame?.id).toBe('nakutemo-ii');
+    // Nobody else sees the cues, and only the asker may peek, at a cue they were given.
+    const other = t.targetFor();
+    expect(t.view(other).me!.cues).toBeNull();
+    expect(t.play(other, { kind: 'peek', lineId: 'tourist.q.hitori' }).error).toBe('not-your-turn');
+    expect(t.play(t.asker, { kind: 'peek', lineId: 'tourist.q.suki' }).error).toBe('bad-move');
+    expect(t.play(t.asker, { kind: 'peek', lineId: 'tourist.q.hitori' }).error).toBeUndefined();
+    expect(t.view(t.asker).me!.cues![0]!.jp).toMatchObject({ text: '一人で 行っても いいですか。' });
+    expect(t.view(t.asker).me!.cues![1]!.jp).toBeNull();
+
+    // Kana and N5 askers: tiles as before, and no peeking.
+    const n5 = new Table(4, REAL_CONTENT, 9, ['n5', 'kana', 'n4', 'n5']);
+    n5.start();
+    n5.cards();
+    while (n5.s.players.find((p) => p.id === n5.asker)!.level === 'n4') n5.timeout();
+    expect(n5.view(n5.asker).me!.questions!.length).toBe(5);
+    expect(n5.view(n5.asker).me!.cues).toBeNull();
+    expect(n5.play(n5.asker, { kind: 'peek', lineId: n5.st.turn!.qSuggest[0]! }).error).toBe('bad-move');
+  });
+
+  it('a question asked off a cue counts as said from memory; after a peek, as read', () => {
+    const t = new Table(4, REAL_CONTENT, 9, ['n4', 'n4', 'n4', 'n4']);
+    t.start();
+    t.cards();
+    const q = QUESTIONS.find((x) => x.id === 'tourist.q.hitori')!;
+    const asker = t.asker;
+    t.st.turn!.qSuggest = [q.id];
+    t.play(asker, { kind: 'ask', targetId: t.targetFor(), utterance: speech(q.jp.kana), lineId: q.id });
+    const entry = t.s.phrasebook[asker]!.find((e) => e.itemId === q.id)!;
+    expect(entry).toMatchObject({ outcome: 'said', recall: 'memory' });
+    expect(phraseFrames(entry)).toContain('te-mo-ii');
+    // From memory pays like own words; the stage still shows the tidy line.
+    expect(t.score(asker)).toBe(ASK_BONUS.own.speech);
+    expect(t.view('stage').turn!.question).toMatchObject({ text: q.jp.text, en: q.jp.en, ownWords: true, approx: false });
+
+    // Peeked first: read, and the tile's bonus.
+    t.play(t.st.turn!.targetId!, { kind: 'reply', utterance: speech('はい、いいですよ') });
+    const b = t.asker;
+    const q2 = QUESTIONS.find((x) => x.id === 'tourist.q.harawanakute')!;
+    t.st.turn!.qSuggest = [q2.id];
+    const before = t.score(b);
+    expect(t.play(b, { kind: 'peek', lineId: q2.id }).error).toBeUndefined();
+    t.play(b, { kind: 'ask', targetId: t.targetFor(), utterance: speech(q2.jp.kana), lineId: q2.id });
+    expect(t.s.phrasebook[b]!.find((e) => e.itemId === q2.id)).toMatchObject({ outcome: 'seen', recall: 'read' });
+    expect(t.score(b) - before).toBe(ASK_BONUS.frame.speech);
+    // Too late to peek once asked.
+    expect(t.play(b, { kind: 'peek', lineId: q2.id }).error).toBe('already-asked');
+  });
+
+  it('a tile with one word swapped is the asker\'s own words, logged as said; a one-kana slip is still the tile', () => {
+    const q = QUESTIONS.find((x) => x.id === 'tourist.q.hitori')!;
+    expect(oneWordChanged(speech('ともだちと いっても いいですか'), q)).toBe(true);
+    expect(oneWordChanged(speech('ひとりで いっても いいですか'), q)).toBe(false);
+    expect(oneWordChanged(speech('ひとりで いっても いいですが'), q)).toBe(false);
+    expect(oneWordChanged(speech('ともだちと たべても いいですか'), q)).toBe(false);
+
+    // An N5 asker with the tile on screen: own words, and the phrasebook keeps what they said.
+    const t = new Table(4, REAL_CONTENT, 9);
+    t.start();
+    t.cards();
+    const asker = t.asker;
+    t.st.turn!.qSuggest = [q.id];
+    t.play(asker, { kind: 'ask', targetId: t.targetFor(), utterance: speech('ともだちと いっても いいですか'), lineId: q.id });
+    expect(t.view('stage').turn!.question).toMatchObject({ text: 'ともだちと いっても いいですか', en: q.jp.en, approx: true, ownWords: true });
+    expect(t.score(asker)).toBe(ASK_BONUS.own.speech);
+    const entry = t.s.phrasebook[asker]!.find((e) => e.itemId.startsWith('tourist.own.'))!;
+    expect(entry).toMatchObject({ text: 'ともだちと いっても いいですか', outcome: 'said', recall: 'memory' });
+    expect(phraseFrames(entry)).toContain('te-mo-ii');
+    expect(t.s.phrasebook[asker]!.some((e) => e.itemId === q.id)).toBe(false);
+
+    // Read off the tile with a slip: still the tile, still read.
+    t.play(t.st.turn!.targetId!, { kind: 'reply', utterance: speech('はい') });
+    const b = t.asker;
+    t.st.turn!.qSuggest = [q.id];
+    t.play(b, { kind: 'ask', targetId: t.targetFor(), utterance: speech('ひとりで いっても いいですが'), lineId: q.id });
+    expect(t.view('stage').turn!.question).toMatchObject({ text: q.jp.text, ownWords: false });
+    expect(t.s.phrasebook[b]!.find((e) => e.itemId === q.id)).toMatchObject({ outcome: 'seen', recall: 'read' });
   });
 });
 

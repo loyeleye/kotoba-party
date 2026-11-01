@@ -186,6 +186,8 @@ Each of these is a change to a game or the path, so they're logged as open quest
 5. **Tourist: count the asker's own question from memory** when it isn't read off a tile showing the Japanese:
    cue it with the English intent and a frame chip, with the Japanese behind a peek, as Last Train does. Count a
    tile with one word changed as the asker's own words. Give 4.2 one ＿ても いいですか question per place.
+   (The cue and the swapped word are in; Tourist's N4 seat now yields ＿ても いいですか 0.17 a game from the two
+   lines that have it. The questions per place are still to come.)
 6. **More ＿た ことが あります:** a "Have you ever…?" question card in Happyōkai, one prompt a game cued by
    meaning (more than two a night add nothing under the 2-says-a-day cap), with the topics rotating.
 7. **Teach the Word Gauntlet bots to retell a rumour**, then re-run. Until then the simulation can't say how
