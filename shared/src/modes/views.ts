@@ -18,6 +18,7 @@ import type { DubView } from './dubClub/dubClub.js';
 import type { HajimeView } from './hajimemashite/hajimemashite.js';
 import type { HappyokaiView } from './happyokai/happyokai.js';
 import type { LateView } from './lateAgain/lateAgain.js';
+import type { HotlineView } from './ghostHotline/hotline.js';
 
-export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView, ShodoView, NarabeteView, BentoView, DubView, HajimeView, HappyokaiView, LateView };
-export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | ShodoView | NarabeteView | BentoView | DubView | HajimeView | HappyokaiView | LateView | DebugView;
+export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView, ShodoView, NarabeteView, BentoView, DubView, HajimeView, HappyokaiView, LateView, HotlineView };
+export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | ShodoView | NarabeteView | BentoView | DubView | HajimeView | HappyokaiView | LateView | HotlineView | DebugView;

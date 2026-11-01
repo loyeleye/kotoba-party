@@ -9257,6 +9257,829 @@
         "seed": 15838
       },
       "post": {}
+    },
+    {
+      "path": "tools/art/sources/hotline/kodama-gemini.png",
+      "what": "Gemini source for the Ghost Advice Hotline kodama caller (converted by PixelLab image-to-pixelart); an original folklore tree spirit, not the Princess Mononoke design",
+      "generator": "gemini",
+      "model": "gemini-3-pro-image-preview",
+      "prompt": "Simple flat cartoon illustration for a cozy-spooky Japanese late-night TV party game, designed to be converted into a tiny 64x64 pixel-art icon: one subject, centred, filling most of the frame, big simple shapes, bold thick dark outlines, flat warm colours, plain pure white background, no scenery beyond what is described, no text, no letters, no numbers, no signs, no speech bubbles. An original design of a kodama from old Japanese folklore, shown big in the centre of the frame as the main subject: a small round chubby tree spirit with a light brown wooden body, a few simple bark grain lines, a big round friendly face with two large dark eyes and rosy cheeks, and a tuft of bright green leaves for hair. It sits in front of the base of a big old tree, which is smaller and darker in the background, with a twisted straw shimenawa rope and white zigzag paper streamers around the trunk. The spirit clearly cups one hand behind its ear, head tilted, listening hopefully for an echo. The spirit must stand out clearly from the tree, nothing else.",
+      "params": {
+        "aspectRatio": "1:1",
+        "imageSize": "1K"
+      },
+      "post": {
+        "resize": "256x256"
+      }
+    },
+    {
+      "path": "tools/art/sources/hotline/dont-move-gemini.png",
+      "what": "Gemini source for the Ghost Advice Hotline 'don't move' advice tile (converted by PixelLab image-to-pixelart)",
+      "generator": "gemini",
+      "model": "gemini-3-pro-image-preview",
+      "prompt": "Simple flat cartoon illustration for a cozy-spooky Japanese late-night TV party game, designed to be converted into a tiny 64x64 pixel-art icon: one subject, centred, filling most of the frame, big simple shapes, bold thick dark outlines, flat warm colours, plain pure white background, no scenery beyond what is described, no text, no letters, no numbers, no signs, no speech bubbles. A small cartoon kid in a bright orange shirt and blue trousers playing the Japanese freeze game, caught frozen stiff in the middle of a step: one foot lifted off the ground, arms stuck out stiffly, body rigid like a statue, eyes wide, holding its breath. Around the kid, several short thick straight black 'freeze' lines radiate outward like a sudden-stop comic effect, showing the kid has instantly stopped moving. Full body, nothing else.",
+      "params": {
+        "aspectRatio": "1:1",
+        "imageSize": "1K"
+      },
+      "post": {
+        "resize": "256x256"
+      }
+    },
+    {
+      "path": "stage/assets/hotline/advice-water.png",
+      "what": "Ghost Advice Hotline advice tile: a wooden ladle pouring water, splashing drops",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single wooden Japanese water ladle hishaku with a round cup and a long straight handle, tilted and pouring a stream of clear blue water downward, round blue splash droplets at the bottom, nothing else, no character",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 11
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-fire.png",
+      "what": "Ghost Advice Hotline advice tile: a match lighting a candle wick inside a paper lantern",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a lit wooden matchstick with a bright orange flame held to the wick of a white candle that stands inside a round red Japanese paper lantern, the lantern open at the top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-leaf.png",
+      "what": "Ghost Advice Hotline advice tile: a single disguise leaf floating down with a puff of magic smoke",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single big bright green leaf floating down through the air, under it a big round fluffy puff of white magic smoke cloud with a few tiny sparkles, nothing else, no character, no animal",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 47
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-ink.png",
+      "what": "Ghost Advice Hotline advice tile: a brush dipping into an inkstone (suzuri)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese calligraphy brush with a bamboo handle dipping its tip into a black rectangular stone inkstone (suzuri) full of shiny black ink",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-umbrella.png",
+      "what": "Ghost Advice Hotline advice tile: an open umbrella held up",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a bright red open Japanese paper umbrella held up high by a small hand gripping the wooden handle, a few blue raindrops bouncing off the top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-aircon.png",
+      "what": "Ghost Advice Hotline advice tile: a wall air conditioner blowing cold air",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white wall-mounted air conditioner unit blowing pale blue cold air streams downward, with a few small snowflakes in the airflow",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-kotatsu.png",
+      "what": "Ghost Advice Hotline advice tile: a kotatsu with its quilt and a bowl of mikan",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese kotatsu: a low square wooden table with a big puffy orange-red quilt draped over it to the floor, a small bowl of orange mikan mandarins on the table top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-play.png",
+      "what": "Ghost Advice Hotline advice tile: toys, a ball and a kendama",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small pile of colourful toys: a red and white beach ball, a wooden Japanese kendama cup-and-ball toy with a red ball, and a spinning top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-dont-look.png",
+      "what": "Ghost Advice Hotline advice tile: eyes looking down with a red cross mark (don't look down)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two big round white cartoon eyes with black pupils looking straight down to the bottom, side by side, crossed out by a big bold red X mark",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-dont-move.png",
+      "what": "Ghost Advice Hotline advice tile: a kid in a green shirt standing stock-still, eyes shut, holding their breath (not the running kid)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small cartoon kid in a green shirt standing stiffly at attention like a toy soldier, front view, arms pressed straight down at the sides, feet together, eyes squeezed shut, cheeks puffed out holding breath, one sweat drop, completely still, plain, no water, no motion lines",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 31
+      }
+    },
+    {
+      "path": "stage/assets/hotline/advice-run.png",
+      "what": "Ghost Advice Hotline advice tile: a figure running away",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small cartoon person in a bright red shirt and blue shorts running away fast in a big stride, arms pumping, worried face looking back, sweat drops, small dust clouds behind the feet",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-search.png",
+      "what": "Ghost Advice Hotline advice tile: a magnifying glass looking around",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a big round magnifying glass with a brown wooden handle, tilted as if searching, a shiny glint on the glass, small dotted search trail lines around it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-shout.png",
+      "what": "Ghost Advice Hotline advice tile: hands cupped round a mouth, a big call (sound lines, no letters)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cartoon face shouting loudly with both hands cupped around its wide open mouth, big curved sound wave lines coming out to the side",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-wash.png",
+      "what": "Ghost Advice Hotline advice tile: soap and suds",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a pink bar of soap with lots of white foamy suds and shiny round soap bubbles floating around it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-sorry.png",
+      "what": "Ghost Advice Hotline advice tile: a deep apologetic bow",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small cartoon office worker in a dark suit making a deep polite apologetic Japanese bow from the waist, side view of the bow, a small sweat drop",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-dont-clean.png",
+      "what": "Ghost Advice Hotline advice tile: a broom and bucket with a red cross mark",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a straw broom leaning against a blue bucket, with a big bold red X cross mark over both of them, like a no symbol",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-switch.png",
+      "what": "Ghost Advice Hotline advice tile: a light switch and a ceiling light coming on",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a white wall light switch flipped on, and above it a round ceiling lamp lighting up with bright yellow light rays",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-flowers.png",
+      "what": "Ghost Advice Hotline advice tile: a bouquet held out",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a hand holding out a colourful bouquet of pink, red and yellow flowers wrapped in paper with a ribbon",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-close-eyes.png",
+      "what": "Ghost Advice Hotline advice tile: closed eyes",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a calm peaceful cartoon face with both eyes gently closed as curved lines, relaxed small smile, rosy cheeks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-swim.png",
+      "what": "Ghost Advice Hotline advice tile: a swimmer in a pool",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small cartoon swimmer in a swim cap doing front crawl in a blue swimming pool, splashing water, a lane rope",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-hide.png",
+      "what": "Ghost Advice Hotline advice tile: peeking out from behind something",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small cartoon person peeking out shyly from behind the edge of a big wooden box, only head and one hand showing",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-bath.png",
+      "what": "Ghost Advice Hotline advice tile: a steaming bath",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round wooden Japanese bathtub full of hot water with curly white steam rising, a small wooden bucket beside it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-sing.png",
+      "what": "Ghost Advice Hotline advice tile: a karaoke mic and music notes",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a shiny silver karaoke microphone with colourful musical notes floating around it, sparkles",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-sleep.png",
+      "what": "Ghost Advice Hotline advice tile: a futon and sleep bubbles",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cozy Japanese futon on the floor with a fluffy pillow and a blue blanket, a crescent moon and a few small stars floating above",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-eat.png",
+      "what": "Ghost Advice Hotline advice tile: an onigiri",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a big triangle onigiri rice ball with a black nori seaweed wrap at the bottom, a cute happy face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/advice-dance.png",
+      "what": "Ghost Advice Hotline advice tile: a dancing figure",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small cheerful cartoon person in a bright yellow shirt and red skirt dancing joyfully, one arm up and one leg kicked out, colourful music notes and sparkles around",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-kappa.png",
+      "what": "Ghost Advice Hotline caller: a kappa whose flat head-dish (sara) is dry and cracked",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a sad green kappa yokai, bust portrait facing viewer, on top of its head a flat shallow empty pale dish (sara) set into the crown with a visible rim and a dry cracked centre, a ring of shaggy dark hair around the dish, yellow beak, droopy tired eyes, sweat drop",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-chochin.png",
+      "what": "Ghost Advice Hotline caller: Chōchin-san, his lantern dark and flame out, a wisp of smoke",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a sad chochin-obake lantern ghost whose light has gone out: a round dull grey-brown paper lantern with bamboo ribs and dark wooden rims, dark inside with no glow at all, a curl of grey smoke rising from its top, a small navy train conductor cap, small white gloved hands, droopy sad eyes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-pon.png",
+      "what": "Ghost Advice Hotline caller: Pon, a tanuki half-changed, ears and tail out mid-disguise, a fallen leaf",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a chubby brown tanuki with a cream belly, a dark eye mask and a red bow tie, caught halfway through shape-shifting into a man: wearing a grey business suit jacket but with round tanuki ears and a big bushy plain brown tail still showing, a green leaf falling from his head, a small puff of white smoke, embarrassed face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-fude.png",
+      "what": "Ghost Advice Hotline caller: Fude, dry splayed bristles beside blank paper",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. Fude, a living Japanese calligraphy brush: a bamboo brush handle body with small arms and big eyes, on top a tuft of dry grey bristles frayed and splayed out like a worn broom, worried face, standing next to a blank white sheet of paper",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-karakasa.png",
+      "what": "Ghost Advice Hotline caller: a one-eyed paper umbrella ghost cringing from raindrops",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. kasa-obake: a closed red Japanese paper umbrella standing upright, the umbrella itself is the creature: one big eye on the folded canopy, a long red tongue, a single wooden leg, cringing and shivering as blue raindrops fall on it, no person",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-yukionna.png",
+      "what": "Ghost Advice Hotline caller: a snow woman drooping and dripping in summer sun",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. yuki-onna snow woman yokai with pale blue-white skin, long straight black hair and a white kimono, drooping and melting in the hot summer sun, dripping water drops, a bright yellow sun behind, sweaty and tired",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-nekomata.png",
+      "what": "Ghost Advice Hotline caller: a two-tailed cat shivering, both tails wrapped round itself",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. nekomata, a cute grey and white cat yokai with two separate long tails, shivering with cold, both tails wrapped around its body, chattering teeth, small blue shiver marks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-zashiki.png",
+      "what": "Ghost Advice Hotline caller: a bob-haired child spirit in a kimono, bored in an empty tatami room",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. zashiki-warashi, a small child house spirit with a black bob haircut and a red kimono, sitting bored with chin in hands, in an empty tatami mat room",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-tengu.png",
+      "what": "Ghost Advice Hotline caller: a red long-nosed tengu clinging to a mountaintop, scared to look down",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a big close-up tengu yokai with a bright red face and a very long red nose, a small black cap and white robes, hugging the pointed top of a small rocky mountain peak with both arms, eyes squeezed shut in fear, sweat drops",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-daruma.png",
+      "what": "Ghost Advice Hotline caller: a daruma wobbling mid-move, caught out at red light, green light",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a round red daruma doll with a white face, big eyes and a black painted beard, tilted and wobbling on its round base as if caught mid-step, startled guilty face, curved wobble motion lines on both sides",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-oni.png",
+      "what": "Ghost Advice Hotline caller: a friendly oni ducking a shower of Setsubun beans",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a friendly cute red oni with small yellow horns and curly hair, ducking with arms over its head as small roasted soybeans rain down on it, comic surprised face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-bakezori.png",
+      "what": "Ghost Advice Hotline caller: a one-eyed straw sandal alone, looking for its pair",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. bakezori, a cute living Japanese straw sandal yokai: a flat oval woven straw zori sandal with a red thong strap on top, one big eye in the middle of the sole, two thin little arms and legs, standing all alone, looking around sadly for its missing pair",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-kodama.png",
+      "what": "Ghost Advice Hotline caller: a little bark-brown folklore tree spirit with leaf hair at the foot of an old tree tied with a shimenawa rope, cupping a hand to its ear for an echo (PixelLab conversion of a Gemini source)",
+      "generator": "pixellab",
+      "model": "image-to-pixelart",
+      "prompt": "(image-to-pixelart takes no prompt.) Converted from the Gemini source in tools/art/sources/hotline/, because pixflux would not draw the hand cupped to the ear or a bark-coloured body in 25 text-only attempts (2026-11-01).",
+      "params": {
+        "width": 64,
+        "height": 64,
+        "init_image_strength": 0,
+        "seed": 7
+      },
+      "post": {
+        "removeBackground": 6.0
+      },
+      "source": "tools/art/sources/hotline/kodama-gemini.png"
+    },
+    {
+      "path": "stage/assets/hotline/caller-ittan.png",
+      "what": "Ghost Advice Hotline caller: an ittan-momen (long flying white cloth yokai) splattered with mud",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. ittan-momen, a flying yokai that is one long narrow strip of white cotton cloth like a long scarf, with two small eyes near the top end, fluttering through the air in a long wavy S-shape, covered in brown mud splats, dismayed face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-kitsune.png",
+      "what": "Ghost Advice Hotline caller: a fox yokai running late for a date, out of breath, hiding a bouquet behind its back",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute orange fox kitsune yokai in a kimono with a fluffy tail, running late in a hurry, out of breath, big blue sweat drops flying off its head, both arms behind its back hiding a small bouquet of flowers that peeks out behind it, guilty sheepish face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 59
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/hotline/caller-akaname.png",
+      "what": "Ghost Advice Hotline caller: the akaname, long tongue out, gazing sadly at a spotless bathtub",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. akaname, a goofy cartoon yokai with red skin and a messy tuft of hair, its long silly pink tongue hanging out, standing next to a sparkling clean white bathtub and gazing at it with sad puppy eyes, comic disappointed face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
     }
   ]
 }

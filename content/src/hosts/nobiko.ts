@@ -6,8 +6,8 @@
 // an event with the next number. Every line is `draft` until a fluent check.
 //
 // Her voice: a warm, nosy おばちゃん. Soft feminine endings (〜わよ, 〜わね, あらまあ), kept to
-// simple kana. Her gags: the neck stretches out to eavesdrop (にゅーっ), the husband is a living
-// kotatsu who never leaves the house (うちの だんな), and she matchmakes everyone (おにあいね！).
+// simple kana. Her gags: the neck stretches out to eavesdrop (にゅーっ), the husband is a こたつむり
+// (kotatsu-snail) who never leaves the kotatsu, sometimes called the kotatsu itself (うちの だんな), and she matchmakes everyone (おにあいね！).
 // Kids and Cheeky lines for the big moments are in audienceLines.ts. Karaoke Duel cues encore_invite,
 // encore_cheer, reveal_react (good, ippon) and miss_kind too, so keep those free of politeness talk.
 
@@ -220,4 +220,84 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.rumour_tease.02', host: 'nobiko', event: 'rumour_tease', jp: { text: 'じつはね…ほんとうの はなし、きく？', kana: 'じつはね…ほんとうの はなし、きく？', en: 'Actually… want to hear the real story?' }, status: 'draft' },
   { id: 'nobiko.rumour_line.01', host: 'nobiko', event: 'rumour_line', jp: { text: '{quip}', kana: '{quip}', en: '{quip}' }, slots: ['{quip}'], status: 'draft' },
   { id: 'nobiko.play_again.05', host: 'nobiko', event: 'play_again', jp: { text: 'つぎは だれと だれが おにあいかしら？', kana: 'つぎは だれと だれが おにあいかしら？', en: 'I wonder who makes a lovely pair next time?' }, status: 'draft' },
+  // Ghost Advice Hotline (おばけの おなやみ そうだんしつ): Nobiko-san answers the yōkai's late-night advice line.
+  // hotline_intro: Nobiko-san opens the late-night advice line (the こたつむり husband sets up in .05; score.01 calls back to him)
+  { id: 'nobiko.hotline_intro.01', host: 'nobiko', event: 'hotline_intro', jp: { text: 'こんばんは〜。おなやみ そうだんしつ、はじまるわよ！', kana: 'こんばんは〜。おなやみ そうだんしつ、はじまるわよ！', en: 'Good evening~ The advice line is open!' }, status: 'draft' },
+  { id: 'nobiko.hotline_intro.02', host: 'nobiko', event: 'hotline_intro', jp: { text: 'よなかに おばけから でんわが くるの。みんなで アドバイスよ！', kana: 'よなかに おばけから でんわが くるの。みんなで アドバイスよ！', en: 'Yōkai phone in the night. Everyone gives advice!' }, status: 'draft' },
+  { id: 'nobiko.hotline_intro.03', host: 'nobiko', event: 'hotline_intro', jp: { text: 'おばけの おなやみ、きいて あげて ちょうだいね。', kana: 'おばけの おなやみ、きいて あげて ちょうだいね。', en: 'Lend the yōkai an ear, dears.' }, status: 'draft' },
+  { id: 'nobiko.hotline_intro.04', host: 'nobiko', event: 'hotline_intro', jp: { text: 'でんわが なったら、くびを ながーく して きくわよ。', kana: 'でんわが なったら、くびを ながーく して きくわよ。', en: 'When the phone rings, I stretch my neck to listen.' }, status: 'draft' },
+  { id: 'nobiko.hotline_intro.05', host: 'nobiko', event: 'hotline_intro', jp: { text: 'うちの だんなは こたつむり。でんわにも でないの。だから わたしが でるのよ！', kana: 'うちの だんなは こたつむり。でんわにも でないの。だから わたしが でるのよ！', en: 'Husband’s a kotatsu-snail: never comes out for calls. So I answer!' }, status: 'draft' },
+  // hotline_coop: two players, a scripted yōkai calls and both advise
+  { id: 'nobiko.hotline_coop.01', host: 'nobiko', event: 'hotline_coop', jp: { text: 'きょうは ふたりとも アドバイザーよ！', kana: 'きょうは ふたりとも アドバイザーよ！', en: 'Tonight, you’re both advisers!' }, status: 'draft' },
+  { id: 'nobiko.hotline_coop.02', host: 'nobiko', event: 'hotline_coop', jp: { text: 'おばけから でんわ！ ふたりで ちえを だしてね。', kana: 'おばけから でんわ！ ふたりで ちえを だしてね。', en: 'A yōkai’s calling! Put your heads together.' }, status: 'draft' },
+  { id: 'nobiko.hotline_coop.03', host: 'nobiko', event: 'hotline_coop', jp: { text: 'ふたりの アドバイス、たのしみだわ〜。', kana: 'ふたりの アドバイス、たのしみだわ〜。', en: 'I can’t wait to hear you both~' }, status: 'draft' },
+  { id: 'nobiko.hotline_coop.04', host: 'nobiko', event: 'hotline_coop', jp: { text: 'おばけが まってるわ。ふたりとも、たのむわよ！', kana: 'おばけが まってるわ。ふたりとも、たのむわよ！', en: 'A yōkai’s waiting. I’m counting on you both!' }, status: 'draft' },
+  // hotline_ring: {name} is calling as {caller}
+  { id: 'nobiko.hotline_ring.01', host: 'nobiko', event: 'hotline_ring', jp: { text: 'はい、おなやみ そうだんしつです〜。', kana: 'はい、おなやみ そうだんしつです〜。', en: 'Hello, you’re through to the advice line~' }, status: 'draft' },
+  { id: 'nobiko.hotline_ring.02', host: 'nobiko', event: 'hotline_ring', jp: { text: 'あら、でんわ！ {name}さんは きょう {caller}よ。', kana: 'あら、でんわ！ {name}さんは きょう {caller}よ。', en: 'Oh, the phone! {name} is {caller} tonight.' }, slots: ['{name}', '{caller}'], status: 'draft' },
+  { id: 'nobiko.hotline_ring.03', host: 'nobiko', event: 'hotline_ring', jp: { text: 'もしもし？ {caller}ね… なかみは {name}さん！', kana: 'もしもし？ {caller}ね… なかみは {name}さん！', en: 'Hello? It’s {caller}… with {name} inside!' }, slots: ['{name}', '{caller}'], status: 'draft' },
+  { id: 'nobiko.hotline_ring.04', host: 'nobiko', event: 'hotline_ring', jp: { text: 'りりりん！ {caller}から おでんわ。こえは {name}さんよ。', kana: 'りりりん！ {caller}から おでんわ。こえは {name}さんよ。', en: 'Ring ring! It’s {caller}, in {name}’s voice.' }, slots: ['{name}', '{caller}'], status: 'draft' },
+  { id: 'nobiko.hotline_ring.05', host: 'nobiko', event: 'hotline_ring', jp: { text: 'はい、そうだんしつです〜。あら、{caller}？ {name}さんね！', kana: 'はい、そうだんしつです〜。あら、{caller}？ {name}さんね！', en: 'Advice line~ Oh, {caller}? That’s {name}!' }, slots: ['{name}', '{caller}'], status: 'draft' },
+  { id: 'nobiko.hotline_ring.06', host: 'nobiko', event: 'hotline_ring', jp: { text: 'りりりん！ あら、{caller}から おでんわよ。', kana: 'りりりん！ あら、{caller}から おでんわよ。', en: 'Ring ring! Oh, a call from {caller}.' }, slots: ['{caller}'], status: 'draft' },
+  // hotline_read: Nobiko-san says the caller's problem for them ({line}, as is)
+  { id: 'nobiko.hotline_read.01', host: 'nobiko', event: 'hotline_read', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  { id: 'nobiko.hotline_read.02', host: 'nobiko', event: 'hotline_read', jp: { text: 'かわりに よむわね。「{line}」', kana: 'かわりに よむわね。「{line}」', en: 'I’ll read it for you. “{line}”' }, slots: ['{line}'], status: 'draft' },
+  { id: 'nobiko.hotline_read.03', host: 'nobiko', event: 'hotline_read', jp: { text: '「{line}」…ですって！', kana: '「{line}」…ですって！', en: '“{line}”… they say!' }, slots: ['{line}'], status: 'draft' },
+  // hotline_chigau: the caller tapped ちがう！
+  { id: 'nobiko.hotline_chigau.01', host: 'nobiko', event: 'hotline_chigau', jp: { text: 'あらら、ちがうって。', kana: 'あらら、ちがうって。', en: 'Oh dear, that’s a no.' }, status: 'draft' },
+  { id: 'nobiko.hotline_chigau.02', host: 'nobiko', event: 'hotline_chigau', jp: { text: 'ざんねん！ おばけって、きびしいのね。', kana: 'ざんねん！ おばけって、きびしいのね。', en: 'Too bad! Yōkai are a tough crowd.' }, status: 'draft' },
+  { id: 'nobiko.hotline_chigau.03', host: 'nobiko', event: 'hotline_chigau', jp: { text: 'ちがう、ちがう〜。つぎ、いってみましょ！', kana: 'ちがう、ちがう〜。つぎ、いってみましょ！', en: 'Nope, nope~ On to the next!' }, status: 'draft' },
+  { id: 'nobiko.hotline_chigau.04', host: 'nobiko', event: 'hotline_chigau', jp: { text: 'くびを かしげちゃうわね。', kana: 'くびを かしげちゃうわね。', en: 'That one makes my neck tilt.' }, status: 'draft' },
+  // hotline_oshii: the caller tapped おしい！
+  { id: 'nobiko.hotline_oshii.01', host: 'nobiko', event: 'hotline_oshii', jp: { text: 'おしい！ あと ちょっと！', kana: 'おしい！ あと ちょっと！', en: 'So close! Just a bit more!' }, status: 'draft' },
+  { id: 'nobiko.hotline_oshii.02', host: 'nobiko', event: 'hotline_oshii', jp: { text: 'にゅーっ… おしいわね〜！', kana: 'にゅーっ… おしいわね〜！', en: '(Neck stretches.) Ooh, so close~!' }, status: 'draft' },
+  { id: 'nobiko.hotline_oshii.03', host: 'nobiko', event: 'hotline_oshii', jp: { text: 'いい せん いってるわよ！', kana: 'いい せん いってるわよ！', en: 'You’re on the right track!' }, status: 'draft' },
+  { id: 'nobiko.hotline_oshii.04', host: 'nobiko', event: 'hotline_oshii', jp: { text: 'あら、おしい！ もう ひといき！', kana: 'あら、おしい！ もう ひといき！', en: 'Ooh, close! One more push!' }, status: 'draft' },
+  // hotline_soreda: the caller tapped それだ！
+  { id: 'nobiko.hotline_soreda.01', host: 'nobiko', event: 'hotline_soreda', jp: { text: 'あら、それだわ〜！', kana: 'あら、それだわ〜！', en: 'Ooh, that’s the one~!' }, status: 'draft' },
+  { id: 'nobiko.hotline_soreda.02', host: 'nobiko', event: 'hotline_soreda', jp: { text: 'それよ、それ！ さすが！', kana: 'それよ、それ！ さすが！', en: 'That’s it, that’s it! Brilliant!' }, status: 'draft' },
+  { id: 'nobiko.hotline_soreda.03', host: 'nobiko', event: 'hotline_soreda', jp: { text: 'まあ！ ぴったりの アドバイス！', kana: 'まあ！ ぴったりの アドバイス！', en: 'My! Advice that fits perfectly!' }, status: 'draft' },
+  { id: 'nobiko.hotline_soreda.04', host: 'nobiko', event: 'hotline_soreda', jp: { text: 'それだわ！ おにあいね〜！', kana: 'それだわ！ おにあいね〜！', en: 'That’s it! A perfect match~!' }, status: 'draft' },
+  // hotline_knot: a third ちがう！ in a row ties her neck in a knot
+  { id: 'nobiko.hotline_knot.01', host: 'nobiko', event: 'hotline_knot', jp: { text: 'あらまあ、くびに むすびめが できちゃった！', kana: 'あらまあ、くびに むすびめが できちゃった！', en: 'Oh my, there’s a knot in my neck!' }, status: 'draft' },
+  { id: 'nobiko.hotline_knot.02', host: 'nobiko', event: 'hotline_knot', jp: { text: 'ちがう、ちがう、ちがう… くびが ぐるぐる！', kana: 'ちがう、ちがう、ちがう… くびが ぐるぐる！', en: 'No, no, no… my neck’s going round and round!' }, status: 'draft' },
+  { id: 'nobiko.hotline_knot.03', host: 'nobiko', event: 'hotline_knot', jp: { text: 'あらら… ちょうちょ むすびに なったわ。', kana: 'あらら… ちょうちょ むすびに なったわ。', en: 'Oh dear… it’s tied in a bow now.' }, status: 'draft' },
+  { id: 'nobiko.hotline_knot.04', host: 'nobiko', event: 'hotline_knot', jp: { text: 'ほどくから、ちょっと まってね。', kana: 'ほどくから、ちょっと まってね。', en: 'Let me untie it. One moment.' }, status: 'draft' },
+  // hotline_secret: what would really have helped is shown
+  { id: 'nobiko.hotline_secret.01', host: 'nobiko', event: 'hotline_secret', jp: { text: 'じつは… これが ひみつよ！', kana: 'じつは… これが ひみつよ！', en: 'Actually… here’s the secret!' }, status: 'draft' },
+  { id: 'nobiko.hotline_secret.02', host: 'nobiko', event: 'hotline_secret', jp: { text: 'にゅーっ… ほんとうに ほしかったのは、これ！', kana: 'にゅーっ… ほんとうに ほしかったのは、これ！', en: '(Neck stretches.) What they really needed was this!' }, status: 'draft' },
+  { id: 'nobiko.hotline_secret.03', host: 'nobiko', event: 'hotline_secret', jp: { text: 'こたえあわせよ〜。ひみつは…', kana: 'こたえあわせよ〜。ひみつは…', en: 'Time to check~ The secret is…' }, status: 'draft' },
+  { id: 'nobiko.hotline_secret.04', host: 'nobiko', event: 'hotline_secret', jp: { text: 'みんな、みて！ おばけの ほんねよ！', kana: 'みんな、みて！ おばけの ほんねよ！', en: 'Look, everyone! What the yōkai really wanted!' }, status: 'draft' },
+  // hotline_vote: which idea was funniest? (the idea, never how it was said)
+  { id: 'nobiko.hotline_vote.01', host: 'nobiko', event: 'hotline_vote', jp: { text: 'どの アイデアが いちばん おもしろかった？', kana: 'どの アイデアが いちばん おもしろかった？', en: 'Which idea was the funniest?' }, status: 'draft' },
+  { id: 'nobiko.hotline_vote.02', host: 'nobiko', event: 'hotline_vote', jp: { text: 'いちばん わらったのは どれ？', kana: 'いちばん わらったのは どれ？', en: 'Which one made you laugh most?' }, status: 'draft' },
+  { id: 'nobiko.hotline_vote.03', host: 'nobiko', event: 'hotline_vote', jp: { text: 'おもしろい アイデアに いっぴょう！', kana: 'おもしろい アイデアに いっぴょう！', en: 'One vote for the funniest idea!' }, status: 'draft' },
+  { id: 'nobiko.hotline_vote.04', host: 'nobiko', event: 'hotline_vote', jp: { text: 'じぶんのには いれないでね〜。', kana: 'じぶんのには いれないでね〜。', en: 'Not your own, dears~' }, status: 'draft' },
+  // hotline_sweep: every vote to one adviser ({name} when the game gives it): おおウケ！
+  { id: 'nobiko.hotline_sweep.01', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'おおウケ！ みんな わらったわね〜！', kana: 'おおウケ！ みんな わらったわね〜！', en: 'A smash hit! Everyone laughed~!' }, status: 'draft' },
+  { id: 'nobiko.hotline_sweep.02', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'おおウケ！ ぜんぶ {name}さんに！', kana: 'おおウケ！ ぜんぶ {name}さんに！', en: 'A smash hit! Every vote for {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'nobiko.hotline_sweep.03', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'まあ！ みんな {name}さんよ。おおウケ！', kana: 'まあ！ みんな {name}さんよ。おおウケ！', en: 'My! Everyone picked {name}. A smash hit!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'nobiko.hotline_sweep.04', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'おおウケ！ くびが のびすぎちゃう〜！', kana: 'おおウケ！ くびが のびすぎちゃう〜！', en: 'A smash hit! My neck’s stretching too far~!' }, status: 'draft' },
+  // hotline_score: the points land
+  { id: 'nobiko.hotline_score.01', host: 'nobiko', event: 'hotline_score', jp: { text: 'うちの だんなにも きかせたいわ。こたつから でて こないけど。', kana: 'うちの だんなにも きかせたいわ。こたつから でて こないけど。', en: 'I wish my husband heard this. He never leaves the kotatsu.' }, status: 'draft' },
+  { id: 'nobiko.hotline_score.02', host: 'nobiko', event: 'hotline_score', jp: { text: 'いい アドバイスばかり。メモ しなくちゃ。', kana: 'いい アドバイスばかり。メモ しなくちゃ。', en: 'Such good advice. I must take notes.' }, status: 'draft' },
+  { id: 'nobiko.hotline_score.03', host: 'nobiko', event: 'hotline_score', jp: { text: 'てんすうよ〜！ みんな すてき！', kana: 'てんすうよ〜！ みんな すてき！', en: 'Here come the points~! You’re all lovely!' }, status: 'draft' },
+  { id: 'nobiko.hotline_score.04', host: 'nobiko', event: 'hotline_score', jp: { text: 'そうだんしつの スター、たんじょうね！', kana: 'そうだんしつの スター、たんじょうね！', en: 'A star of the advice line is born!' }, status: 'draft' },
+  { id: 'nobiko.hotline_score.05', host: 'nobiko', event: 'hotline_score', jp: { text: 'おばけも にっこり。わたしも にっこり。', kana: 'おばけも にっこり。わたしも にっこり。', en: 'The yōkai’s smiling. So am I.' }, status: 'draft' },
+  // hotline_booth: the replay booth opens on the advice that used its chunk ({chunk} when given)
+  { id: 'nobiko.hotline_booth.02', host: 'nobiko', event: 'hotline_booth', jp: { text: 'もう いちど きいて みましょ。', kana: 'もう いちど きいて みましょ。', en: 'Let’s hear that one again.' }, status: 'draft' },
+  { id: 'nobiko.hotline_booth.03', host: 'nobiko', event: 'hotline_booth', jp: { text: 'リプレイよ〜！ ここが いいのよ。', kana: 'リプレイよ〜！ ここが いいのよ。', en: 'Replay time~! This is the good bit.' }, status: 'draft' },
+  { id: 'nobiko.hotline_booth.04', host: 'nobiko', event: 'hotline_booth', jp: { text: 'あら、すてきな いいかた！ もう いっかい！', kana: 'あら、すてきな いいかた！ もう いっかい！', en: 'Ooh, a lovely way to say it! Once more!' }, status: 'draft' },
+  { id: 'nobiko.hotline_booth.05', host: 'nobiko', event: 'hotline_booth', jp: { text: 'でたわね〜、「{chunk}」！', kana: 'でたわね〜、「{chunk}」！', en: 'There it is~ “{chunk}”!' }, slots: ['{chunk}'], status: 'draft' },
+  // hotline_mic_pass: Nobiko-san says {name}'s advice for them ({line}, as is)
+  { id: 'nobiko.hotline_mic_pass.01', host: 'nobiko', event: 'hotline_mic_pass', jp: { text: 'わたしが いうわね。{name}さんの アドバイス… 「{line}」', kana: 'わたしが いうわね。{name}さんの アドバイス… 「{line}」', en: 'I’ll say it. {name}’s advice… “{line}”' }, slots: ['{name}', '{line}'], status: 'draft' },
+  { id: 'nobiko.hotline_mic_pass.02', host: 'nobiko', event: 'hotline_mic_pass', jp: { text: 'まかせて！ {name}さんから… 「{line}」', kana: 'まかせて！ {name}さんから… 「{line}」', en: 'Leave it to me! From {name}… “{line}”' }, slots: ['{name}', '{line}'], status: 'draft' },
+  { id: 'nobiko.hotline_mic_pass.03', host: 'nobiko', event: 'hotline_mic_pass', jp: { text: '{name}さんの かわりに。「{line}」', kana: '{name}さんの かわりに。「{line}」', en: 'For {name}: “{line}”' }, slots: ['{name}', '{line}'], status: 'draft' },
+  // hotline_skip: {name}'s advice didn't come in (blame the line, never the player)
+  { id: 'nobiko.hotline_skip.01', host: 'nobiko', event: 'hotline_skip', jp: { text: 'あら、でんぱが わるいみたい。{name}さんは つぎね。', kana: 'あら、でんぱが わるいみたい。{name}さんは つぎね。', en: 'Oh, bad signal. {name}, next time, then.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'nobiko.hotline_skip.02', host: 'nobiko', event: 'hotline_skip', jp: { text: 'でんわが ちょっと とおいわね。つぎ、いきましょ！', kana: 'でんわが ちょっと とおいわね。つぎ、いきましょ！', en: 'The line’s gone a bit faint. On we go!' }, status: 'draft' },
+  { id: 'nobiko.hotline_skip.03', host: 'nobiko', event: 'hotline_skip', jp: { text: 'おばけの でんわは、ときどき きれるのよ〜。', kana: 'おばけの でんわは、ときどき きれるのよ〜。', en: 'Yōkai phones cut out sometimes~' }, status: 'draft' },
+  { id: 'nobiko.hotline_skip.04', host: 'nobiko', event: 'hotline_skip', jp: { text: 'あらら、おばけが {name}さんの でんわを とっちゃった！', kana: 'あらら、おばけが {name}さんの でんわを とっちゃった！', en: 'Oh dear, a yōkai has run off with {name}’s phone line!' }, slots: ['{name}'], status: 'draft' },
+  // hotline_line: Nobiko-san says a line the game wrote ({quip}): a caller's reveal, see shared/src/modes/ghostHotline/problems.ts
+  { id: 'nobiko.hotline_line.01', host: 'nobiko', event: 'hotline_line', jp: { text: '{quip}', kana: '{quip}', en: '{quip}' }, slots: ['{quip}'], status: 'draft' },
 ];

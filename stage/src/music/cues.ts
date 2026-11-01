@@ -55,6 +55,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   happyokai: 'lobby-time',
   // Late Again!: Pon's office, a sneaky-cheerful tune under the scene and the vote; silence for the call itself (lateCue).
   'late-again': 'kool-kats',
+  // Ghost Advice Hotline: a late-night call-in show's lo-fi; silence while the advice is recorded and played (lateCue).
+  'ghost-hotline': 'japanese-lofi',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -144,6 +146,7 @@ export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = fal
   if (mode === 'dub-club') return dubCue(phase, game % 2 === 1 ? 'dub-opening-b' : 'dub-opening', step);
   if (mode === 'karaoke-duel') return karaokeCue(phase);
   if (mode === 'late-again') return lateCue(phase, themeFor(mode, game) ?? 'kool-kats');
+  if (mode === 'ghost-hotline') return lateCue(phase, themeFor(mode, game) ?? 'japanese-lofi');
   if (mode === 'shodo') return shodoCue(phase, listen, say);
   const theme = mode ? themeFor(mode, game) : 'bouncing';
   if (theme === null) return { song: null, mix: 'full' };

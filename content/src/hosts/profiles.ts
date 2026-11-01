@@ -60,14 +60,14 @@ export const hostProfiles: HostProfile[] = [
     name: { text: 'のびこさん', kana: 'のびこさん', en: 'Nobiko-san' },
     role:
       'A rokurokubi (long-necked yōkai) and the nosy matchmaking auntie (お見合いおばさん) of the show. Warm, gossipy and delighted by everyone; sizes up every answer as marriage material, never anyone’s Japanese.',
-    segments: ['Omiai Matchmaker', 'Karaoke Duel'],
+    segments: ['Omiai Matchmaker', 'Karaoke Duel', 'Ghost Advice Hotline'],
     voice:
       'Warm, mature female voice with a chatty おばちゃん lilt; quick when gossiping, slow and fond on praise. ' +
       '"あらまあ" rises in delight, "にゅーっ" (her neck stretching) is drawn out and sing-song. ' +
       'Audition: No.7 (アナウンス for intros, 読み聞かせ for kind lines), 九州そら (あまあま) as an alternative casting.',
     runningGags: [
       'Her neck stretches across the stage (にゅーっ！) to eavesdrop on answers, and shrinks or tangles when one flops.',
-      'Her husband is a living kotatsu who hasn’t come out in decades (うちの だんなは… ねてる); in Cheeky he is the butt of useless-husband jokes and tiny おこづかい.',
+      'Her husband is a こたつむり (kotatsu-snail, こたつ + かたつむり): he hasn’t come out of the kotatsu in decades, so some lines call him the kotatsu itself (うちの だんなは… ねてる); in Cheeky he is the butt of useless-husband jokes and tiny おこづかい.',
       'Matchmakes everyone and everything ("おにあいね！"), and keeps a matchmaking photo album she threatens to put good answers in.',
     ],
   },
