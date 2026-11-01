@@ -1064,6 +1064,10 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     delete r.slots[playerId];
   },
 
+  offers(s, playerId) {
+    return (s.nakodoLog ?? []).filter((o) => o.playerId === playerId).map((o) => ({ role: 'omiai:nakodo', answer: o.outcome }));
+  },
+
   progress(s) {
     return { round: s.round, totalRounds: s.totalRounds };
   },

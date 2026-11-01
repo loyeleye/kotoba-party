@@ -1157,6 +1157,10 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     s.haunts = s.haunts.filter((h) => h.by !== playerId && h.target !== playerId);
   },
 
+  offers(s, playerId) {
+    return s.roleLog.filter((o) => o.playerId === playerId && !o.bot).map((o) => ({ role: `last-train:${o.roleId}`, answer: o.answer }));
+  },
+
   progress(s) {
     return { round: Math.min(s.stops.length, Math.max(0, s.stopIndex + 1)), totalRounds: s.stops.length };
   },
