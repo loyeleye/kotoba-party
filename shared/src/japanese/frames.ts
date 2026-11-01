@@ -460,7 +460,7 @@ function souKind(s: string, toks?: Tok[]): ('look' | 'hear')[] {
     else if (/(なさ|よさ)$/.test(before) || LOOK_STEM.test(before)) out.push('look');
     else if (/(だ|ない|なかった|た)$/.test(before)) {
       // 〜たそう is hearsay (たべたそう), but かたそう, つめたそう, いたそう are adjective stems.
-      if (/(^|[\s　、がはもを])(かた|つめた|ひらた|おもた|けむた|いた)$/.test(before) && !/ない$/.test(before)) {
+      if (/(^|[\s　、がはもを])(かた|つめた|ひらた|おもた|けむた|ねむた|いた)$/.test(before) && !/ない$/.test(before)) {
         if (!/(^|[\s　、がはもを])いた$/.test(before)) out.push('look');
       } else out.push('hear');
     } else if (/[うくぐすつぬぶむる]$/.test(before)) {

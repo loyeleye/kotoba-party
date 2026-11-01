@@ -22,3 +22,20 @@
 .wg-judge .secondary { font-size: 20px; font-weight: 800; }
 @keyframes wg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .wg-center { text-align: center; margin: 0; }
+
+/* Round 2b: the rumour relay */
+.wg-heard { display: grid; gap: 8px; justify-items: center; background: var(--panel, rgba(255,255,255,0.06)); border-radius: 14px; padding: 10px 12px; }
+.wg-heard .wg-kanji { font-size: 20px; line-height: 1.5; }
+.wg-heard .wg-kana { font-size: 14px; }
+.wg-fins { display: grid; gap: 6px; }
+.wg-fin { display: grid; gap: 2px; text-align: left; }
+.wg-fin strong { font-size: 18px; }
+.wg-fin-en { color: var(--muted); font-size: 13px; }
+.wg-fin.picked { outline: 3px solid var(--accent); }
+.wg-own-fin { display: flex; gap: 6px; }
+.wg-own-fin input { flex: 1; min-width: 0; }
+.wg-frame { font-size: 20px; font-weight: 700; text-align: center; margin: 0; }
+.wg-frame small { font-size: 13px; font-weight: 400; color: var(--muted); }
+.wg-model { border: 1px dashed var(--muted); border-radius: 12px; padding: 8px 10px; }
+.wg-model p { margin: 0; }
+.wg-kept { font-size: 18px; text-align: center; }
