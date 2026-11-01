@@ -247,7 +247,7 @@ describe('Read the Signs', () => {
 describe('Read the Signs readings', () => {
   it('the server reads every sign the way the game accepts it', async () => {
     const reader = (await createReader())!;
-    // Read the Signs, and the inn's signs for the N4 front-desk guest (受付, 予約).
+    // Read the Signs, and the inn's signs for the N4 front-desk guest (売店, 会計, 食堂).
     const signItems = realContent.lastTrainMinigames.filter((m) => m.id === 'read-the-signs' || m.id === 'meet-the-innkeeper').flatMap((m) => m.items);
     // 北口 is きたぐち, not きたくち; 出口 alone is でぐち, not the dictionary's いでぐち.
     for (const it of signItems.filter((i) => i.signs?.length === 1)) {
@@ -832,19 +832,9 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     expect(g.view('stage').gallery).toBeNull();
     role(g, 'p1', true);
     expect(g.view('p1').me!.gallery).toBeNull();
-    // The first Kana or N5 player gets the curveball: the line's frame word and two others.
-    const cb = g.view('p2').me!.gallery!;
-    expect(cb.kind).toBe('curveball');
-    const word = g.s.gallery!.curveball!.word;
-    expect(['まいります', 'おさがりください']).toContain(word);
-    expect(g.s.turns.p1!.task.item.model.kana).toContain(word);
-    if (cb.kind === 'curveball') {
-      expect(cb.options).toHaveLength(3);
-      expect(cb.options.filter((o) => o.kana === word)).toHaveLength(1);
-      expect(cb.options.every((o) => o.romaji === null)).toBe(true);
-    }
-    // The stage never carries the curveball's answer.
-    expect(JSON.stringify(g.view('stage'))).not.toContain(word);
+    // While the line is still being said, everyone gets a reaction tile: no curveball before the line lands.
+    expect(g.s.gallery!.curveball).toBeNull();
+    expect(g.view('p2').me!.gallery!.kind).toBe('react');
     const react = g.view('p3').me!.gallery!;
     expect(react.kind).toBe('react');
     expect(g.play('p3', { kind: 'gallery', pick: 'sugoi' }).changed).toBe(true);
@@ -852,22 +842,47 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     expect(g.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBe('not-allowed');
     expect(g.play('p3', { kind: 'gallery' }).error).toBe('bad-move');
     expect(g.view('stage').gallery!.map((b) => b.id)).toEqual(['sugoi']);
+    // Reactions are never scored.
+    expect(g.score('p3')).toBe(0);
+    answerAll(g);
+    // The line has landed: at the reveal, the Kana or N5 player who hasn't reacted yet (p2) gets the curveball.
+    const cb = g.view('p2').me!.gallery!;
+    expect(cb.kind).toBe('curveball');
+    expect(g.s.curveballUsed).toBe(true);
+    const word = g.s.gallery!.curveball!.word;
+    expect(['まいります', 'おさがりください']).toContain(word);
+    expect(g.s.turns.p1!.task.item.model.kana).toContain(word);
+    if (cb.kind === 'curveball') {
+      expect(cb.options).toHaveLength(3);
+      expect(cb.options.filter((o) => o.kana === word)).toHaveLength(1);
+      expect(cb.options.every((o) => o.romaji === null)).toBe(true);
+      // No distractor is a word the line also contained.
+      for (const o of cb.options.filter((x) => x.kana !== word)) expect(g.s.turns.p1!.task.item.model.kana).not.toContain(o.kana);
+    }
+    // The TV's bubbles never carry the curveball, and the booth holds its key word back until it's answered.
+    expect(JSON.stringify(g.view('stage').gallery)).not.toContain(word);
+    expect(g.view('stage').booth!.holdKey).toBe(true);
+    // The curveball player's phone holds back the booth's gist (it would give the answer away); p3's shows it.
+    expect(g.view('p2').me!.booth).toBeNull();
+    expect(g.view('p3').me!.booth).not.toBeNull();
     const before = g.score('p2');
     expect(g.play('p2', { kind: 'gallery', pick: word }).changed).toBe(true);
     expect(g.score('p2') - before).toBe(CURVEBALL_POINTS);
     expect(g.s.ledger.filter((e) => e.reason === 'curveball')).toEqual([{ playerId: 'p2', points: 5, reason: 'curveball', stop: 0 }]);
-    // Reactions are never scored.
-    expect(g.score('p3')).toBe(0);
-    answerAll(g);
+    expect(g.view('p2').me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: word });
+    expect(g.view('stage').booth!.holdKey).toBe(false);
+    expect(g.view('p2').me!.booth).not.toBeNull();
     // Still up through the reveal.
     expect(g.view('stage').gallery).toHaveLength(1);
     g.until('prompt');
     expect(g.view('stage').gallery).toBeNull();
     g.until('answer');
     role(g, 'p1', true);
+    answerAll(g);
     // Once a game: the curveball doesn't come back.
     expect(g.view('p2').me!.gallery!.kind).toBe('react');
     expect(g.s.gallery!.curveball).toBeNull();
+    expect(g.view('stage').booth!.holdKey).toBe(false);
   });
 
   it('a wrong curveball pick earns nothing; a Kana player sees romaji on it', () => {
@@ -875,15 +890,71 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     g.start(4);
     g.until('answer');
     role(g, 'p1', true);
+    answerAll(g);
     const cb = g.view('p2').me!.gallery!;
     expect(cb.kind).toBe('curveball');
     if (cb.kind !== 'curveball') return;
     expect(cb.options.every((o) => !!o.romaji)).toBe(true);
     const wrong = cb.options.find((o) => o.kana !== g.s.gallery!.curveball!.word)!;
+    const before = g.score('p2');
     expect(g.play('p2', { kind: 'gallery', pick: wrong.kana }).changed).toBe(true);
-    expect(g.score('p2')).toBe(0);
-    expect(g.view('p2').me!.gallery).toMatchObject({ kind: 'curveball', right: false });
+    expect(g.score('p2')).toBe(before);
+    expect(g.s.ledger.some((e) => e.reason === 'curveball')).toBe(false);
+    expect(g.view('p2').me!.gallery).toMatchObject({ kind: 'curveball', right: false, answer: g.s.gallery!.curveball!.word });
   });
+
+  it('the curveball: none before the line lands, none for a missed line, and nobody who already reacted gets it', () => {
+    // A missed line deals none, and the game's one curveball is still there for a later line.
+    const missed = table(ROLES, ['n4', 'n5']);
+    missed.start(4);
+    missed.until('answer');
+    role(missed, 'p1', true);
+    missed.sayRight('p2');
+    for (let i = 0; i < 2; i++) {
+      missed.say('p1', 'だめ');
+      expect(missed.s.gallery!.curveball).toBeNull();
+      const w = missed.view('p2').overrules.find((x) => x.canVote)!;
+      missed.play('p2', { kind: 'overrule', windowId: w.id, up: false });
+    }
+    expect(missed.state.phase).toBe('reveal');
+    expect(missed.s.gallery!.curveball).toBeNull();
+    expect(missed.s.curveballUsed).toBe(false);
+    expect(missed.view('p2').me!.gallery!.kind).toBe('react');
+    missed.until('prompt');
+    missed.until('answer');
+    role(missed, 'p1', true);
+    answerAll(missed);
+    expect(missed.s.gallery!.curveball!.playerId).toBe('p2');
+
+    // The only Kana or N5 player reacted while the line was said: no curveball, and none spent.
+    const reacted = table(ROLES, ['n4', 'n5']);
+    reacted.start(4);
+    reacted.until('answer');
+    role(reacted, 'p1', true);
+    reacted.play('p2', { kind: 'gallery', pick: 'naruhodo' });
+    answerAll(reacted);
+    expect(reacted.s.gallery!.curveball).toBeNull();
+    expect(reacted.s.curveballUsed).toBe(false);
+    expect(reacted.view('stage').booth!.holdKey).toBe(false);
+  });
+
+  it('the offer card names its role, lasts 6 s, and rotates by connected players', () => {
+    expect(RULES.offerMs).toBe(6_000);
+    const g = table(ROLES, ['n4', 'n5']);
+    g.start(4);
+    g.until('answer');
+    expect(g.view('p1').me!.offer!.roleId).toBe('announcer');
+    // Four players but one away: three connected, so the "nobody twice running" rule for 4+ doesn't apply.
+    const big = table(ROLES, ['n4', 'n5', 'n5', 'kana']);
+    big.act({ type: 'connection', playerId: 'p4', connected: false });
+    big.start(4);
+    big.until('answer');
+    role(big, 'p1', true);
+    big.until('prompt');
+    big.until('answer');
+    expect(offered(big)).toEqual(['p1']);
+  });
+
 
   it('no Gallery for a declined role, or for the guest at the inn', () => {
     const g = table(ROLES, ['n4', 'n5']);
@@ -914,6 +985,10 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     // It fits inside the reveal: no time added.
     expect(b.atMs + b.ms).toBeLessThanOrEqual(12_000);
     expect(g.state.deadline! - g.now).toBe(12_000);
+    // One of the Kana/N5 phones holds the curveball: its gist waits until the pick.
+    const cbHolder = g.s.gallery!.curveball!.playerId;
+    expect(g.view(cbHolder).me!.booth).toBeNull();
+    g.play(cbHolder, { kind: 'gallery', pick: g.s.gallery!.curveball!.word });
     expect(g.view('p2').me!.booth).toEqual({ kana: model.kana, en: model.en, emoji: '📢', romaji: null });
     expect(g.view('p3').me!.booth!.romaji).toBe(toRomaji(model.kana));
     // Not on the speaker's phone, nor an N4 one.
@@ -1042,8 +1117,11 @@ describe('Lost and Found: yōkai lost property', () => {
     expect(items.every(Boolean)).toBe(true);
     expect(items.map((i) => i.frames)).toEqual([['te-aru'], ['hazu'], ['sou-hear']]);
     expect(items.map((i) => i.role!.id)).toEqual(['lost-property-staff', 'passenger', 'lost-property-staff']);
-    expect(items[0]!.prompt.kana).toContain('たぬき');
-    expect(items[0]!.visual).toContain('ポン');
+    // Pon asks for his leaf himself, and wrote his own name on it.
+    expect(items[0]!.prompt.kana).toContain('ポン：');
+    expect(items[0]!.visual).toContain('Pon wrote his own name');
+    // The kappa's dish: it should have been on his head (plain past + はずです).
+    expect(items[1]!.model.kana).toBe('あたまのうえにあったはずです。');
     expect(items[1]!.visual).toContain('kappa');
     expect(items[2]!.prompt.kana).toContain('ろうそく');
     for (const i of items) {

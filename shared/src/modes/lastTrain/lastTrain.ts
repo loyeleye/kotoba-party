@@ -14,8 +14,9 @@
 // some, one N4 player in turn is offered one; "not this time" (or no answer) deals the ordinary item.
 //
 // Mixed rooms (shared/src/modes/mixedRoom.ts): while a taken announcer or Lost and Found line is said, the others
-// get a Gallery tile (one a stop; a once-a-game curveball for a Kana or N5 player); once a taken role lands, the
-// reveal carries the commentary booth's replay of its model line (Chōchin-san voices it, train_role_read). In a
+// get a Gallery tile (one a stop); once a taken role lands, the reveal carries the commentary booth's replay of its
+// model line (Chōchin-san voices it, train_role_read) and, once a game, a Kana or N5 player who hasn't reacted gets
+// the curveball ("Which word did you hear?") in place of their tile. In a
 // room of one or two with nobody at N4, Chōchin-san makes one platform announcement himself (host stand-in).
 
 import type { HardRole, HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, StationSign, TrainStop } from '../../../../content/src/types.js';
@@ -24,7 +25,7 @@ import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type MoveResult, type PhraseEntry } from '../mode.js';
 import { checkUtterance, firstMora } from './check.js';
 import { nextOfferee, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
-import { commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, KEY_WORDS, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, KEY_WORDS, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallback.js';
 
@@ -34,7 +35,7 @@ export const RULES = {
   /** How long the room has to thumbs-up a rejected answer. */
   overruleMs: 7_000,
   /** How long an N4 player has to take a hard role before the ordinary item is dealt instead. */
-  offerMs: 8_000,
+  offerMs: 6_000,
   /** Answers that arrive this late after a personal deadline still count (network lag). */
   graceMs: 1_500,
   /** A phone's own "time's up" tick is believed this early (clock drift). */
@@ -321,7 +322,7 @@ export interface LastTrainMe {
   dash: { pos: number; aboard: number | null } | null;
   level: Level;
   /** A hard role offered to this player: take it or say "not this time" (`role` move) by `deadline` (server clock; `limitMs` is the whole window). */
-  offer: { key: string; role: JpText; pitch: string; limitMs: number; deadline: number } | null;
+  offer: { key: string; roleId: string; role: JpText; pitch: string; limitMs: number; deadline: number } | null;
   /** This player's Gallery tile while a hard-role line is said (`gallery` move), if they have one. */
   gallery: GalleryTileView | null;
   /** Kana and N5 phones during the reveal: the gist of the taken role's line (the booth). */
@@ -360,7 +361,8 @@ export interface LastTrainView {
   /** The Gallery's reaction bubbles, while a hard-role line is said and through its reveal. */
   gallery: ReactionTile[] | null;
   /** The commentary booth, during the reveal: it lights up `atMs` in, as Chōchin-san says the line. */
-  booth: { playerId: string; name: string; line: JpText; lit: Commentary['lit']; note: string; atMs: number; ms: number } | null;
+  /** `holdKey`: a curveball on the key word is still open, so it isn't lit yet (`keyHeld`). */
+  booth: { playerId: string; name: string; line: JpText; lit: Commentary['lit']; note: string; atMs: number; ms: number; holdKey: boolean } | null;
   /** The host stand-in's announcement, during its stop's announcement (subtitled). */
   standIn: { line: JpText; lit: Commentary['lit']; atMs: number } | null;
   me: LastTrainMe | null;
@@ -565,12 +567,12 @@ function offerRound(s: LastTrainState, stopIndex: number): number {
 
 /**
  * Who is offered the stop's hard role (`nextOfferee`, the same in every game): the connected N4 player offered
- * fewest, then longest ago; one who said no last time sits this one out; in a room of 4+, nobody twice running.
+ * fewest, then longest ago; one who said no (or let it time out) last time sits this one out; in a room of 4+ connected, nobody twice running.
  */
 function hardRolePlayer(s: LastTrainState, ctx: ModeContext): string | null {
   const n4 = ctx.connected().filter((p) => p.level === 'n4').map((p) => p.id);
   const log: PastOffer[] = s.roleLog.map((r) => ({ playerId: r.playerId, at: offerRound(s, r.stop), answer: r.answer }));
-  return nextOfferee(n4, log, offerRound(s, s.stopIndex), ctx.players().length);
+  return nextOfferee(n4, log, offerRound(s, s.stopIndex), ctx.connected().length);
 }
 
 // ---- mixed rooms: the Gallery, the commentary booth and the host stand-in ----
@@ -580,16 +582,16 @@ const GALLERY_ROLES: ReadonlySet<string> = new Set(['announcer', 'passenger', 'l
 
 /** Each role line's key word (the frame word): kana for the curveball, the forms it takes in the shown line. */
 const ROLE_KEYS: readonly { kana: string; forms: readonly string[]; note: string }[] = [
-  { kana: 'まいります', forms: ['まいります'], note: 'まいります: the platform’s humble “is coming”. Pure station keigo.' },
+  { kana: 'まいります', forms: ['まいります'], note: 'まいります: keigo for くる, the platform’s polite “is coming”. Even the last train bows.' },
   { kana: 'おさがりください', forms: ['お下がりください', 'おさがりください'], note: 'お＿ください: the politest “please” on the platform.' },
-  { kana: 'ごちゅういください', forms: ['ご注意ください', 'ごちゅういください'], note: 'ご＿ください: the politest “please” on the platform.' },
+  { kana: 'おきをつけください', forms: ['お気をつけください', 'おきをつけください'], note: 'お＿ください: the politest “please” on the platform.' },
   { kana: 'ございません', forms: ['ございません'], note: 'もうしわけございません: the deepest apology the railway has.' },
-  { kana: 'かもしれません', forms: ['かもしれません'], note: 'かもしれません: not sure, and saying so. Every lost property desk hears it.' },
+  { kana: 'かもしれません', forms: ['かもしれません'], note: 'かもしれません: not sure, and honest about it. The lost property desk hears it all night.' },
   { kana: 'だそうです', forms: ['だそうです'], note: 'だそうです: passing on what you heard, not what you saw.' },
   { kana: 'そうな', forms: ['そうな'], note: 'そうな: judging a thing by how it looks, right at the counter.' },
   { kana: 'はずです', forms: ['はずです'], note: 'はずです: sure it should be there. (It wasn’t.)' },
   { kana: 'てあります', forms: ['てあります'], note: 'てあります: read straight off the thing itself.' },
-  { kana: 'いただけますか', forms: ['いただけますか'], note: 'いただけますか: the politest favour you can ask at a front desk.' },
+  { kana: 'いただけますか', forms: ['いただけますか'], note: 'いただけますか: a very polite way to ask a favour at a front desk (いただけませんか is softer still).' },
 ];
 const ROLE_EMOJI: Record<string, string> = { announcer: '📢', passenger: '🧳', 'lost-property-staff': '🔎', 'front-desk-guest': '🛎️' };
 
@@ -614,21 +616,42 @@ function commentaryOf(item: MinigameItem, playerId: string | null): Commentary {
   };
 }
 
-/** A taken announcer or Lost and Found line: the others in the room get a Gallery tile while it is said. */
+/**
+ * A taken announcer or Lost and Found line: the others in the room get a Gallery tile while it is said. No
+ * curveball yet: it is dealt at the reveal, once the line has landed (`armRoleCurveball`).
+ */
 function openRoleGallery(s: LastTrainState, ctx: ModeContext, playerId: string, item: MinigameItem): void {
   if (!item.role || !GALLERY_ROLES.has(item.role.id)) return;
   const others = ctx.connected().filter((p) => p.id !== playerId);
   if (!others.length) return;
-  const key = roleKey(item);
-  const pool = [...ROLE_KEYS.map((k) => k.kana), ...KEY_WORDS];
   s.gallery = openGallery(
     others.map((p) => p.id),
     others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id),
-    key ? { word: key.kana, pool } : null,
+    null,
     s.curveballUsed,
     s.seq,
   );
-  if (s.gallery.curveball) s.curveballUsed = true;
+}
+
+/**
+ * The once-a-game curveball, dealt at the reveal once a Gallery role's line has landed, to a Kana or N5 player
+ * who hasn't reacted yet. A missed line never gets here, so it deals none.
+ */
+function armRoleCurveball(s: LastTrainState, ctx: ModeContext, item: MinigameItem): void {
+  if (!s.gallery || !item.role || !GALLERY_ROLES.has(item.role.id)) return;
+  const key = roleKey(item);
+  const pool = [...new Set([...ROLE_KEYS.map((k) => k.kana), ...KEY_WORDS])];
+  const low = ctx.connected().filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id);
+  // mixedRoom's distractors step through their candidates 7 at a time, so a candidate list of exactly 7 (or 14)
+  // yields one distinct word and no curveball (おさがりください does with this pool). Until that's fixed there,
+  // retry with a word or two fewer in the pool.
+  for (let drop = 0; drop < 3; drop++) {
+    const from = drop ? pool.slice(0, -drop) : pool;
+    if (armCurveball(s.gallery, low, key ? { word: key.kana, pool: from, heard: item.model.kana } : null, s.curveballUsed, s.seq)) {
+      s.curveballUsed = true;
+      return;
+    }
+  }
 }
 
 /**
@@ -1030,6 +1053,8 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
           ctx.cue({ host: 'chochin', event: 'train_role_read', slots: { line: text, line_kana: kana, line_en: en }, atMs: RULES.roleReadAtMs });
           // The commentary booth replays it as he says it: inside the 12 s reveal, no time added.
           s.booth = commentaryOf(star.task.item, star.playerId);
+          // The line has landed: only now can the once-a-game curveball be dealt.
+          armRoleCurveball(s, ctx, star.task.item);
         }
         break;
       }
@@ -1402,9 +1427,10 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         inPenalty: phase === 'penalty' && !!s.penalties[me],
         dash: s.racers[me] && (phase === 'finale' || phase === 'score') ? { pos: s.racers[me]!.pos, aboard: s.racers[me]!.aboard } : null,
         level,
-        offer: phase === 'answer' && turn?.status === 'offer' && turn.offer ? { key: turn.task.key, role: turn.offer.role.name, pitch: turn.offer.role.pitch, limitMs: RULES.offerMs, deadline: turn.offer.deadline } : null,
+        offer: phase === 'answer' && turn?.status === 'offer' && turn.offer ? { key: turn.task.key, roleId: turn.offer.role.id, role: turn.offer.role.name, pitch: turn.offer.role.pitch, limitMs: RULES.offerMs, deadline: turn.offer.deadline } : null,
         gallery: galleryOpen ? galleryTileFor(s.gallery, me, level) : null,
-        booth: phase === 'reveal' && s.booth && s.booth.playerId !== me ? gistFor(s.booth, level) : null,
+        // Not on the curveball player's phone until they've picked: the gist would hand them the answer.
+        booth: phase === 'reveal' && s.booth && s.booth.playerId !== me && !(keyHeld(s.gallery) && s.gallery!.curveball!.playerId === me) ? gistFor(s.booth, level) : null,
         standIn: standingIn(s, phase) ? gistFor(s.standIn, level) : null,
       };
     }
@@ -1431,7 +1457,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
       gallery: galleryOpen ? galleryBubbles(s.gallery!) : null,
       booth:
         phase === 'reveal' && s.booth
-          ? { playerId: s.booth.playerId!, name: nameOf(ctx, s.booth.playerId!), line: s.booth.line, lit: s.booth.lit, note: s.booth.note, atMs: RULES.roleReadAtMs, ms: s.booth.ms }
+          ? { playerId: s.booth.playerId!, name: nameOf(ctx, s.booth.playerId!), line: s.booth.line, lit: s.booth.lit, note: s.booth.note, atMs: RULES.roleReadAtMs, ms: s.booth.ms, holdKey: keyHeld(s.gallery) }
           : null,
       standIn: standingIn(s, phase) ? { line: s.standIn!.line, lit: s.standIn!.lit, atMs: RULES.standInAtMs } : null,
       me: mine,
