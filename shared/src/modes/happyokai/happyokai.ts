@@ -384,13 +384,18 @@ function talkWord(t: Talk): Slide | undefined {
 /** A graph mishap goes up or down, fixed per talk. */
 const graphUp = (t: Talk): boolean => t.index % 2 === 0;
 
-/** Presenters: everyone in a shuffled order; with 3 or 4 players, the same order again. */
+/**
+ * Presenters: everyone in a shuffled order; with 3 or 4 presenters, the same order again. Players with their
+ * mic off don't present while two others can (they still assist, react, ask and grade).
+ */
 export function presenterOrder(players: readonly ModePlayer[], random: () => number): string[] {
+  const speaking = players.filter((p) => p.mic !== 'quiet');
+  const presenters = speaking.length >= 2 ? speaking : players;
   const lap = shuffled(
-    players.map((p) => p.id),
+    presenters.map((p) => p.id),
     random,
   );
-  const { laps } = showPlan(players.length);
+  const { laps } = showPlan(presenters.length);
   return laps === 2 ? [...lap, ...lap] : lap;
 }
 
@@ -705,6 +710,8 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
     blurb: 'Give a surprise talk in Japanese on slides you’ve never seen. Your assistant picks them.',
     host: 'chochin',
     minPlayers: 3,
+    // Singing, presenting or acting needs a mic: mic-off players watch, react and vote (docs/sound-off.md).
+    minSpeakers: 2,
     maxPlayers: 8,
     roundChoices: [],
     usesPack: false,

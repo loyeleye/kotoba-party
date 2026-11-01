@@ -7,7 +7,7 @@ import { LEVEL_LABELS, awardTitle, formatSeconds, h, mount, placesOf, ruby, seat
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
-import { MODES, surprisePool } from '../../shared/src/modes/registry.js';
+import { MODES, noFit, speakersIn, surprisePool } from '../../shared/src/modes/registry.js';
 import { playRoulette } from '../../shared/src/roulette.js';
 import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
@@ -28,6 +28,7 @@ const LEVEL_HINTS: Record<Level, string> = {
 
 const ERRORS: Record<string, string> = {
   'not-enough-players': 'Not enough players for that game.',
+  'not-enough-mics': 'That game needs more players with their mic on.',
   'too-many-players': 'Too many players for that game.',
   'not-vip': 'Only the VIP can do that.',
   'already-answered': 'You already answered.',
@@ -309,7 +310,7 @@ function render(view: RoomView): void {
     me.score,
     me.mic,
     me.soundOff,
-    view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}`).join() + view.modes.length + view.packs.length : '',
+    view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}:${p.mic === 'quiet' ? 'q' : ''}`).join() + view.modes.length + view.packs.length : '',
     modeKey,
     endAsk,
     passAsk,
@@ -545,10 +546,19 @@ const SURPRISE_ENTRY: ModeInfo = {
   usesPack: false,
 };
 const isSurprise = (m: ModeInfo) => (m.id as string) === SURPRISE;
-const fitCount = (n: number) => surprisePool(n).length;
-const fits = (m: ModeInfo, n: number) => (isSurprise(m) ? fitCount(n) > 0 : n >= m.minPlayers && n <= m.maxPlayers);
+// Players with their mic on in the room the menu was last drawn for (a game with speaking roles needs enough).
+let speakers = 0;
+const fitCount = (n: number) => surprisePool(n, speakers).length;
+const fits = (m: ModeInfo, n: number) => (isSurprise(m) ? fitCount(n) > 0 : !noFit(m, n, speakers));
+const micsShort = (m: ModeInfo, n: number) => !isSurprise(m) && noFit(m, n, speakers) === 'not-enough-mics';
 const playersLabel = (m: ModeInfo, n = 0) =>
-  isSurprise(m) ? `${fitCount(n)} game${fitCount(n) === 1 ? '' : 's'} fit` : m.minPlayers === m.maxPlayers ? `${m.minPlayers} players` : `${m.minPlayers}–${m.maxPlayers} players`;
+  isSurprise(m)
+    ? `${fitCount(n)} game${fitCount(n) === 1 ? '' : 's'} fit`
+    : micsShort(m, n)
+      ? `🎤 needs ${m.minSpeakers} mics on`
+      : m.minPlayers === m.maxPlayers
+        ? `${m.minPlayers} players`
+        : `${m.minPlayers}–${m.maxPlayers} players`;
 const hostIcon = (m: ModeInfo) =>
   isSurprise(m)
     ? h('span', { class: 'gp-host gp-dice', 'aria-hidden': 'true' }, '🎲')
@@ -569,6 +579,7 @@ function jaTitle(m: ModeInfo, level: Level): HTMLElement {
 
 function vipMenu(view: RoomView): HTMLElement {
   const n = view.players.length;
+  speakers = speakersIn(view.players);
   const level = view.players.find((p) => p.isVip)?.level ?? 'n5';
   // Surprise Me! sits first on the list; it rolls among the games below it.
   const entries = view.modes.length ? [SURPRISE_ENTRY, ...view.modes] : [];
@@ -659,7 +670,9 @@ function vipMenu(view: RoomView): HTMLElement {
     note.textContent = !ok
       ? isSurprise(m)
         ? `No game fits ${n} player${n === 1 ? '' : 's'} yet.`
-        : `${m.title} needs ${playersLabel(m)}. Tonight there ${n === 1 ? 'is 1' : `are ${n}`}.`
+        : micsShort(m, n)
+          ? `${m.title} needs ${m.minSpeakers} players with their mic on. Tonight ${speakers === 1 ? 'there’s 1' : `there are ${speakers}`}.`
+          : `${m.title} needs ${playersLabel(m)}. Tonight there ${n === 1 ? 'is 1' : `are ${n}`}.`
       : isSurprise(m)
         ? fitCount(n) === 1
           ? `Chooses the only game available for ${n} player${n === 1 ? '' : 's'}.`

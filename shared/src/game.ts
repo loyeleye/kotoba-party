@@ -6,7 +6,7 @@
 import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS, SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } from './constants.js';
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam, ModeInfo } from './modes/mode.js';
-import { MODES, surprisePool } from './modes/registry.js';
+import { MODES, noFit, speakersIn, surprisePool } from './modes/registry.js';
 import type { GameResult } from './progress.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS, SURPRISE } from './protocol.js';
@@ -244,13 +244,13 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (state.phase !== 'lobby') return fail('wrong-phase');
       if (!isVip && !isStage) return fail('not-vip');
       // Surprise Me!: roll one of the menu's games that fits the room, with its default length and any topic.
-      const surprise = cmd.mode === SURPRISE ? surprisePool(state.players.length).map((m) => m.id) : null;
+      const surprise = cmd.mode === SURPRISE ? surprisePool(state.players.length, speakersIn(state.players)).map((m) => m.id) : null;
       if (surprise && !surprise.length) return fail('not-enough-players');
       const id = surprise ? surprise[Math.floor(ctx.random() * surprise.length)]! : cmd.mode;
       if (!(MODE_IDS as readonly string[]).includes(id)) return fail('unknown-mode');
       const mode = MODES[id as ModeId];
-      if (state.players.length < mode.info.minPlayers) return fail('not-enough-players');
-      if (state.players.length > mode.info.maxPlayers) return fail('too-many-players');
+      const why = noFit(mode.info, state.players.length, speakersIn(state.players));
+      if (why) return fail(why);
       state.mode = id as ModeId;
       state.surprise = surprise;
       state.packId = !surprise && typeof cmd.packId === 'string' ? cmd.packId : null;

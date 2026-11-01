@@ -194,6 +194,8 @@ export interface ModeInfo {
   host: HostId;
   minPlayers: number;
   maxPlayers: number;
+  /** Players who must have their mic on (not quiet mode), for games built on speaking roles. */
+  minSpeakers?: number;
   /** Rounds the VIP can choose between; the first is the default. Empty if fixed. */
   roundChoices: number[];
   /** True if the mode uses a topic pack. */

@@ -31,3 +31,21 @@ answer away, the game swaps in a fair version:
 | Phrasebook | 🔊 on each phrase | Hidden |
 
 Nothing is disabled for Sound off.
+
+## Mic off roles
+
+Most games already take taps and typing from a mic-off player (often for a smaller bonus). Three games are
+built on speaking out loud, so mic-off players sit those roles out and play the rest:
+
+| Game | Mic-off players | Code |
+|---|---|---|
+| Karaoke Duel | Never cast as a singer; they watch and vote. No "I sang it!" button | `pickDuel` |
+| Happyōkai! | Don't present; they still assist, react, ask by tapping a question and grade | `presenterOrder` |
+| Phrase Bingo | Stay in the audience, catching lines | `pickCast` |
+
+Each falls back to casting everyone if fewer than two players have their mic on (someone switched theirs
+off mid-game). Before a game starts, those three have `ModeInfo.minSpeakers: 2`: the VIP's menu and the
+stage's game controls grey them out with "needs 2 mics on", Surprise Me! skips them, and the server refuses
+the start with `not-enough-mics` (`noFit` in `shared/src/modes/registry.ts`).
+
+Bots: `npm run bots -- --mode karaoke-duel --bots 4 --quiet 2 --sound-off 1` (the first n bots).

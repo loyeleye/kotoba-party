@@ -57,6 +57,10 @@ export interface BotOptions {
   policy?: ModePolicy;
   level?: 'kana' | 'n5' | 'n4';
   deviceId?: string;
+  /** Join in quiet mode (mic off), as the lobby's "I can't talk right now". */
+  quiet?: boolean;
+  /** Join with phone sound off. */
+  soundOff?: boolean;
   /** Called for every state the bot accepts (after version filtering). */
   onState?: (bot: Bot, view: RoomView, v: number) => void;
 }
@@ -103,6 +107,8 @@ export class Bot {
     if ('error' in res) throw new Error(`${opts.name} could not join ${opts.code}: ${res.error}`);
     const bot = new Bot(opts, res.playerId, res.token);
     bot.client.connect();
+    if (opts.quiet) await bot.client.send({ type: 'micCheck', utterance: { via: 'tap', text: '' } });
+    if (opts.soundOff) await bot.client.send({ type: 'setSound', on: false });
     return bot;
   }
 

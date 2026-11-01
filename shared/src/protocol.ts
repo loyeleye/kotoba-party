@@ -177,6 +177,8 @@ export type CommandError =
   | 'unknown-mode'
   | 'not-enough-players'
   | 'too-many-players'
+  /** The game needs more players with their mic on (ModeInfo.minSpeakers). */
+  | 'not-enough-mics'
   | 'stale-phase'
   | 'bad-level'
   /** Sent by a watching stage screen, which can only look. */

@@ -47,5 +47,16 @@ export const MENU: ModeInfo[] = [kanaRaidMode.info, oogiriMode.info, hajimemashi
   (a, b) => a.minPlayers - b.minPlayers || a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }),
 );
 
+/** Why a room can't start this game, or null if it can: `speakers` is how many players have their mic on. */
+export function noFit(m: Pick<ModeInfo, 'minPlayers' | 'maxPlayers' | 'minSpeakers'>, players: number, speakers = players): 'not-enough-players' | 'too-many-players' | 'not-enough-mics' | null {
+  if (players < m.minPlayers) return 'not-enough-players';
+  if (players > m.maxPlayers) return 'too-many-players';
+  if (speakers < (m.minSpeakers ?? 0)) return 'not-enough-mics';
+  return null;
+}
+
+/** Players with their mic on: everyone not in quiet mode. */
+export const speakersIn = (players: readonly { mic?: 'ok' | 'quiet' | null }[]): number => players.filter((p) => p.mic !== 'quiet').length;
+
 /** The menu games a room of `players` can start: what Surprise Me! rolls between. */
-export const surprisePool = (players: number): ModeInfo[] => MENU.filter((m) => players >= m.minPlayers && players <= m.maxPlayers);
+export const surprisePool = (players: number, speakers = players): ModeInfo[] => MENU.filter((m) => !noFit(m, players, speakers));

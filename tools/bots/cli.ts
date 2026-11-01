@@ -6,7 +6,8 @@
 //   npm run bots -- --mode oogiri --bots 5      # make a room and play one game of a real mode
 //
 // Options: --url (default http://localhost:3000), --code, --bots, --rounds, --drop <seconds>, --fast,
-// --mode <any mode id, or debug> and --games (real modes only).
+// --mode <any mode id, or debug>, --games (real modes only), --quiet <n> (the first n bots have their mic off)
+// and --sound-off <n> (the first n bots have phone sound off).
 // With --code and no --mode, bots play any mode; without --code they default to the debug round.
 
 import { fileURLToPath } from 'node:url';
@@ -45,6 +46,8 @@ const { values } = parseArgs({
     fast: { type: 'boolean', default: false },
     mode: { type: 'string' },
     games: { type: 'string', default: '1' },
+    quiet: { type: 'string', default: '0' },
+    'sound-off': { type: 'string', default: '0' },
   },
 });
 
@@ -173,7 +176,7 @@ for (let i = 1; i <= count; i++) {
   const name = `bot${i}`;
   try {
     const policy = anyMode ? anyModePolicy(i) : policyFor(i);
-    const bot = await Bot.join({ baseUrl: url, code, name, ...(policy ? { policy } : { script }), deviceId: `cli-${code}-${name}` });
+    const bot = await Bot.join({ baseUrl: url, code, name, ...(policy ? { policy } : { script }), deviceId: `cli-${code}-${name}`, quiet: i <= Number(values.quiet), soundOff: i <= Number(values['sound-off']) });
     bot.client.connect();
     bots.push(bot);
     console.log(`${name} joined ${code}`);

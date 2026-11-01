@@ -352,7 +352,8 @@ function singBox(opts: SingOptions): HTMLElement {
 
   if (opts.typed) box.append(typedFallback(opts, !canSpeak(), (u) => void finish({ utterance: u })));
   // No mic, and 8–10 s is too short to read and type: sing out loud and tap. Honour system, small score.
-  if (opts.typed && !canSpeak())
+  // Not in quiet mode: that player chose not to make a sound (they're only cast when two can't otherwise sing).
+  if (opts.typed && !canSpeak() && !isQuiet())
     box.append(h('button', { type: 'button', class: 'secondary kdp-sang', onclick: () => void finish({ utterance: { via: 'tap', text: '' } }) }, 'I sang it! 🎶'));
   return box;
 }
