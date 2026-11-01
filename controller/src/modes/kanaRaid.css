@@ -34,6 +34,8 @@
 .raid-listen { display: grid; gap: 8px; justify-items: center; }
 .raid-hear { font: inherit; font-size: 18px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
 .raid-hear.big { font-size: 22px; padding: 18px 28px; border-color: var(--good); }
+.raid-clue { margin: 0; font-size: 22px; text-align: center; }
+.raid-clue b { color: var(--warn); }
 .raid-heartext { margin: 0; font-size: 56px; font-weight: 800; color: var(--warn); }
 
 .raid-last { border-radius: 12px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 18px; }

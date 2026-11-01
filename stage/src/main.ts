@@ -322,7 +322,11 @@ function render(view: RoomView, v: number): void {
         'li',
         { class: `player seat-${p.seat} ${p.connected ? 'online' : 'offline'}${team !== null ? ` on-team team-${team}` : ''}`, 'data-key': p.id, style: team !== null ? `order: ${team * 100 + p.seat}` : null },
         h('span', { class: 'seat', 'aria-label': `seat ${p.seat}` }, `${seatShape(p.seat)}${p.seat}`),
-        h('span', { class: 'name' }, p.name, p.isVip ? h('span', { class: 'vip', title: 'VIP' }, ' ★') : null),
+        h('span', { class: 'name' }, p.name, p.isVip ? h('span', { class: 'vip', title: 'VIP' }, ' ★') : null,
+          // How this phone plays: mic off (taps and types), phone sound off (reads instead of listening).
+          p.mic === 'quiet' ? h('span', { class: 'how', title: 'Mic off: taps and types' }, ' ⌨️') : null,
+          p.soundOff ? h('span', { class: 'how', title: 'Phone sound off: reads instead of listening' }, ' 🔇') : null,
+        ),
         h('span', { class: 'ticks' }, (view.game && stageMode?.badge?.(view.game, p.id)) || h('span', { class: 'level' }, LEVEL_LABELS[p.level], !view.game && p.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, ` · ★${p.total}`) : null)),
         h('span', { class: `score${up ? ' up' : ''}`, 'data-key': `${p.score}`, 'data-from': up ? seen : null }, p.score),
         p.connected ? null : h('span', { class: 'dropped' }, 'reconnecting…'),

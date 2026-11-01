@@ -20,7 +20,7 @@ import type { BentoView } from '../../../shared/src/modes/views.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
-import { hearButton } from '../components/voice.js';
+import { hearButton, isSoundOff } from '../components/voice.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 type Ctx = PhoneContext<BentoView>;
@@ -30,6 +30,31 @@ type Me = NonNullable<BentoView['me']>;
 const ORDER_SHOWN_MS = 6_000;
 /** How long the last call's echo stays under the call box. */
 const ECHO_MS = 8_000;
+/** Sound off: how long a 👀 peek brings faded order words back (in place of 🔊 hearing it again). */
+const PEEK_MS = 2_000;
+/** When each order's last peek ends, by visit, so a redraw keeps it showing. */
+const peeks = new Map<string, number>();
+
+/** Sound off: 👀 shows the faded words again for a moment, so the order is still held in memory. */
+function peekButton(words: HTMLElement, visitId: string): HTMLElement {
+  return h(
+    'button',
+    {
+      type: 'button',
+      class: 'secondary bh-hear',
+      'aria-label': 'Peek at the order again',
+      onclick: () => {
+        peeks.set(visitId, Date.now() + PEEK_MS);
+        words.style.animation = 'none';
+        void words.offsetWidth;
+        words.style.removeProperty('animation');
+        words.style.setProperty('--shown', `${PEEK_MS}ms`);
+        words.style.setProperty('--since-delay', '0ms');
+      },
+    },
+    '👀',
+  );
+}
 
 const COUNTER_KANA = { tsu: 'つ', hon: 'ほん', mai: 'まい', ko: 'こ' } as const;
 
@@ -135,7 +160,9 @@ function orderCard(ctx: Ctx, me: Me, t: Me['taking'][number], ringing: boolean):
   const shownFor = Math.max(0, now - t.at);
   const total = visit ? visit.leaveAt - visit.arriveAt : 1;
   const gone = visit ? Math.min(total, Math.max(0, now - visit.arriveAt)) : 0;
-  const words = h('p', { class: `bh-order-words${t.fades ? ' fades' : ''}`, lang: 'ja', style: `--shown: ${ORDER_SHOWN_MS}ms; --since-delay: -${Math.round(shownFor)}ms;` }, t.text);
+  const peekLeft = (peeks.get(t.visitId) ?? 0) - Date.now();
+  const fadeStyle = peekLeft > 0 ? `--shown: ${Math.round(peekLeft)}ms; --since-delay: 0ms;` : `--shown: ${ORDER_SHOWN_MS}ms; --since-delay: -${Math.round(shownFor)}ms;`;
+  const words = h('p', { class: `bh-order-words${t.fades ? ' fades' : ''}`, lang: 'ja', style: fadeStyle }, t.text);
   const empty = !visit?.box.length;
   return h(
     'section',
@@ -146,13 +173,13 @@ function orderCard(ctx: Ctx, me: Me, t: Me['taking'][number], ringing: boolean):
       visit ? customerPic(visit.customerId, 'waiting', visit.emoji, 'bh-cust-p') : null,
       h('span', { class: 'bh-who-p', lang: 'ja' }, visit ? `📞 ${visit.name}` : '📞 Order'),
       visit?.rush ? h('span', { class: 'bh-rush-p', lang: 'ja' }, 'いそいで！') : null,
-      hearButton(t.text, '🔊', 'secondary bh-hear'),
+      isSoundOff() ? (t.fades ? peekButton(words, t.visitId) : null) : hearButton(t.text, '🔊', 'secondary bh-hear'),
     ),
     visit ? h('div', { class: 'bh-patience-p', style: `--total: ${total}ms; --gone-delay: -${gone}ms;` }, h('span', {})) : null,
     t.steal ? h('p', { class: 'bh-steal-p', lang: 'ja' }, '🔁 ぴったりなら +5 💰', h('small', {}, ' Perfect for 5 tips, anything else 0')) : null,
     words,
     // The fade is explained on the first shift; after that it's known.
-    t.fades ? (game.round === 1 ? h('p', { class: 'hint bh-fade-hint' }, 'The words fade: 🔊 hears it again.') : null) : h('p', { class: 'hint' }, t.en),
+    t.fades ? (game.round === 1 ? h('p', { class: 'hint bh-fade-hint' }, isSoundOff() ? 'The words fade: 👀 peeks for a moment.' : 'The words fade: 🔊 hears it again.') : null) : h('p', { class: 'hint' }, t.en),
     me.level === 'kana'
       ? h(
           'div',

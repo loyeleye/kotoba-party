@@ -38,6 +38,7 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
       score: p.score,
       total: p.total,
       mic: p.mic,
+      soundOff: !!p.soundOff,
     })),
     host: state.host,
     calmMotion: state.calmMotion,

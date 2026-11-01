@@ -83,6 +83,10 @@ export interface ModePlayer {
   readonly level: Level;
   readonly connected: boolean;
   readonly score: number;
+  /** 'quiet' when the player turned their mic off (optional so test contexts can leave it out). */
+  readonly mic?: 'ok' | 'quiet' | null;
+  /** True when the player's phone sound is off: listening prompts must work as text. */
+  readonly soundOff?: boolean;
 }
 
 /** Options the VIP picks when starting a game. */
@@ -190,6 +194,8 @@ export interface ModeInfo {
   host: HostId;
   minPlayers: number;
   maxPlayers: number;
+  /** Players who must have their mic on (not quiet mode), for games built on speaking roles. */
+  minSpeakers?: number;
   /** Rounds the VIP can choose between; the first is the default. Empty if fixed. */
   roundChoices: number[];
   /** True if the mode uses a topic pack. */

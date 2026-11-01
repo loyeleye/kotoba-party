@@ -196,6 +196,15 @@ describe('Happyōkai!: the show plan', () => {
     }
   });
 
+  it('mic-off players don’t present while two others can', () => {
+    const players = ['a', 'b', 'c', 'd', 'e'].map((id, i) => ({ id, seat: i + 1, mic: i < 2 ? 'quiet' : 'ok' }));
+    const order = presenterOrder(players as never, mulberry(3));
+    expect(new Set(order)).toEqual(new Set(['c', 'd', 'e']));
+    expect(order.length).toBe(3 * showPlan(3).laps);
+    const one = players.map((p, i) => ({ ...p, mic: i < 4 ? 'quiet' : 'ok' }));
+    expect(new Set(presenterOrder(one as never, mulberry(3))).size).toBe(5);
+  });
+
   it('deals one choice that fits the title, one random, one wild', () => {
     const pool = slidesFor('family');
     for (let seed = 1; seed < 30; seed++) {

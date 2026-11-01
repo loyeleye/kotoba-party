@@ -319,12 +319,17 @@ function hintFor(p: Phrase, romaji: boolean): string {
   return romaji ? `${mora}… (${toRomaji(mora)}…)` : `${mora}…`;
 }
 
-/** Picks the scene's cast: who has acted least, avoiding last scene's actors, connected first. */
+/**
+ * Picks the scene's cast: who has acted least, avoiding last scene's actors, connected first. Players with
+ * their mic off stay in the audience (catching lines) while two others can act.
+ */
 function pickCast(s: PhraseBingoState, ctx: ModeContext): ModePlayer[] {
   const all = ctx.players();
   const here = all.filter((p) => p.connected);
-  const pool = here.length >= 2 ? here : all;
-  const size = castSize(pool.length);
+  const room = here.length >= 2 ? here : all;
+  const speaking = room.filter((p) => p.mic !== 'quiet');
+  const pool = speaking.length >= 2 ? speaking : room;
+  const size = Math.min(castSize(room.length), pool.length);
   const jitter = new Map(pool.map((p) => [p.id, ctx.random()]));
   return [...pool]
     .sort(
@@ -501,6 +506,8 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
     blurb: 'Act out a scene and secretly slip in your phrases. The audience plays bingo to catch them.',
     host: 'pon',
     minPlayers: 3,
+    // Singing, presenting or acting needs a mic: mic-off players watch, react and vote (docs/sound-off.md).
+    minSpeakers: 2,
     maxPlayers: 8,
     roundChoices: [TOTAL_SCENES, 6, 3],
     usesPack: true,

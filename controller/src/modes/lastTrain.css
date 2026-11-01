@@ -24,6 +24,13 @@
 .lt-hint p { margin: 0; font-size: 17px; }
 .lt-listen { display: grid; gap: 8px; }
 .lt-listen-text[hidden] { display: none; }
+/* Sound off: a station departure board the announcement crosses once (lastTrain.ts boardBox). */
+.lt-board { overflow: hidden; padding: 10px 0; background: #111; border: 3px solid var(--outline); border-radius: 6px; color: #ffb000; font-size: 26px; font-weight: 800; white-space: nowrap; }
+.lt-board-line { display: inline-block; padding-left: 100%; }
+.lt-board-line small { font-size: 16px; opacity: 0.85; }
+.lt-board-line.calm { display: block; padding: 0 10px; white-space: normal; }
+@keyframes lt-board-calm { 0%, 99% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes lt-board { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 .lt-task.retry .talk { background: var(--warn); color: #2a1f05; }
 .lt-dash .talk { padding: 22px 16px; }
 .lt-live { display: grid; gap: 10px; }

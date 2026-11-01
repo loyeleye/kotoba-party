@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { ManualClock } from '../server/src/clock.js';
 import { Room } from '../server/src/room.js';
-import { MENU, MODES, surprisePool } from '../shared/src/modes/registry.js';
+import { MENU, MODES, noFit, surprisePool } from '../shared/src/modes/registry.js';
 import type { JoinResponse } from '../shared/src/protocol.js';
 import { wedgeAt, wheelTurn } from '../shared/src/roulette.js';
 import { content } from './helpers.js';
@@ -45,6 +45,21 @@ describe('Surprise Me!', () => {
       });
       expect([...seen].sort()).toEqual(pool.map((m) => m.id).sort());
     }
+  });
+
+  it('greys out games built on speaking when too few players have their mic on', () => {
+    const speaking = MENU.filter((m) => m.minSpeakers).map((m) => m.id).sort();
+    expect(speaking).toEqual(['happyokai', 'karaoke-duel', 'phrase-bingo']);
+    expect(noFit(MODES['karaoke-duel'].info, 4, 1)).toBe('not-enough-mics');
+    expect(noFit(MODES['karaoke-duel'].info, 4, 2)).toBeNull();
+    expect(surprisePool(4, 1).map((m) => m.id)).not.toContain('karaoke-duel');
+    expect(surprisePool(4, 1).map((m) => m.id)).toContain('oogiri');
+    const { room, vip } = setup(3);
+    const players = room.state.players;
+    for (const p of players.slice(1)) p.mic = 'quiet';
+    expect(room.command(vip.token, { id: 'k', type: 'start', mode: 'karaoke-duel' })).toMatchObject({ error: 'not-enough-mics' });
+    players[1]!.mic = null;
+    expect(room.command(vip.token, { id: 'k2', type: 'start', mode: 'karaoke-duel' })).toMatchObject({ ok: true });
   });
 
   it('keeps Bento Haus VS out of a room too small for two kitchens', () => {

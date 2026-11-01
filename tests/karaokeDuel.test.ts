@@ -433,6 +433,16 @@ describe('Karaoke Duel: who duels', () => {
     }
   });
 
+  it('never casts a mic-off player while two others can sing', () => {
+    const quiet = (p: ModePlayer): ModePlayer => ({ ...p, mic: 'quiet' });
+    for (let i = 0; i < 20; i++) {
+      const duel = pickDuel([quiet(mp('a', 1)), mp('b', 2), quiet(mp('c', 3)), mp('d', 4)], { b: i, d: i }, '', Math.random)!;
+      expect([duel.a, duel.b].sort()).toEqual(['b', 'd']);
+    }
+    // Only one mic on (someone turned theirs off mid-game): everyone can be cast again.
+    expect(pickDuel([quiet(mp('a', 1)), mp('b', 2)], {}, '', () => 0.5)).toEqual({ a: 'a', b: 'b' });
+  });
+
   it('prefers connected players, and lines alternate who goes first', () => {
     const duel = pickDuel([mp('a', 1, false), mp('b', 2), mp('c', 3)], {}, '', () => 0.5)!;
     expect([duel.a, duel.b].sort()).toEqual(['b', 'c']);

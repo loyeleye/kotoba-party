@@ -8,7 +8,7 @@
 
 import { audienceContentList } from '../../shared/src/audience.js';
 import { h, mount, ruby } from '../../shared/src/dom.js';
-import { MODES } from '../../shared/src/modes/registry.js';
+import { MODES, noFit, speakersIn } from '../../shared/src/modes/registry.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import { SURPRISE, type Audience, type ModeId, type RoomView } from '../../shared/src/protocol.js';
 import { isAmbientOn, setAmbient } from './backdrop.js';
@@ -130,7 +130,7 @@ function toggle(label: string, help: string, on: boolean, change: (on: boolean) 
 function renderRoom(force: boolean): void {
   if (!room || !opts || !panel || panel.hidden) return;
   const v = view;
-  const key = v ? `${opts.watch}:${v.remoteControl}:${v.audience}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.map((p) => `${p.id}${p.isVip ? '*' : ''}`).join()}` : 'none';
+  const key = v ? `${opts.watch}:${v.remoteControl}:${v.audience}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.map((p) => `${p.id}${p.isVip ? '*' : ''}${p.mic === 'quiet' ? 'q' : ''}`).join()}` : 'none';
   if (!force && key === roomKey) return;
   roomKey = key;
   if (!v) return void (mount(room), mount(game!));
@@ -163,14 +163,16 @@ function controls(v: RoomView): HTMLElement {
   if (v.phase === 'lobby' && v.modes.length) {
     // Games that don't fit tonight's players stay listed but can't be picked, as on the VIP's phone.
     const n = v.players.length;
-    const fits = (m: RoomView['modes'][number]) => n >= m.minPlayers && n <= m.maxPlayers;
-    const needs = (m: RoomView['modes'][number]) => (m.minPlayers === m.maxPlayers ? `${m.minPlayers}` : `${m.minPlayers}–${m.maxPlayers}`);
+    const speakers = speakersIn(v.players);
+    const fits = (m: RoomView['modes'][number]) => !noFit(m, n, speakers);
+    const needs = (m: RoomView['modes'][number]) =>
+      noFit(m, n, speakers) === 'not-enough-mics' ? `${m.minSpeakers} mics on` : m.minPlayers === m.maxPlayers ? `${m.minPlayers} players` : `${m.minPlayers}–${m.maxPlayers} players`;
     const pick = h(
       'select',
       { 'aria-label': 'Game' },
       h('option', { value: SURPRISE, disabled: !v.modes.some(fits) }, '🎲 Surprise Me!'),
       // Ruby can't go in an <option>, so the Japanese title comes as its kana reading.
-      v.modes.map((m) => h('option', { value: m.id, disabled: !fits(m) }, `${m.title} · ${m.titleKana ?? m.titleJa}${fits(m) ? '' : ` (${needs(m)} players)`}`)),
+      v.modes.map((m) => h('option', { value: m.id, disabled: !fits(m) }, `${m.title} · ${m.titleKana ?? m.titleJa}${fits(m) ? '' : ` (${needs(m)})`}`)),
     ) as HTMLSelectElement;
     pick.value = v.modes.find(fits)?.id ?? SURPRISE;
     // The intro plays straight away, so the panel gets out of its way.

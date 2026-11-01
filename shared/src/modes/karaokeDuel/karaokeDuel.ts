@@ -366,11 +366,14 @@ export function turnMs(song: Song, line: number): number {
 
 /**
  * The next duel: the two players who have duelled least (connected first), avoiding the
- * same pair twice in a row when there's anyone else; ties broken at random.
+ * same pair twice in a row when there's anyone else; ties broken at random. Players with their mic off
+ * aren't cast while two others can sing (they watch, cheer and vote).
  */
 export function pickDuel(players: readonly ModePlayer[], duelCount: Record<string, number>, lastPair: string, random: () => number): { a: string; b: string } | null {
   const connected = players.filter((p) => p.connected);
-  const pool = connected.length >= 2 ? connected : players;
+  const anyone = connected.length >= 2 ? connected : players;
+  const singers = anyone.filter((p) => p.mic !== 'quiet');
+  const pool = singers.length >= 2 ? singers : anyone;
   if (pool.length < 2) return null;
   const jitter = new Map(pool.map((p) => [p.id, random()]));
   const ranked = [...pool].sort((x, y) => (duelCount[x.id] ?? 0) - (duelCount[y.id] ?? 0) || jitter.get(x.id)! - jitter.get(y.id)!);
@@ -541,6 +544,8 @@ export const karaokeDuelMode: Mode<KaraokeState, KaraokeDuelView> = {
     blurb: 'Sing short Japanese songs head to head. Words, tune and timing all count.',
     host: 'nobiko',
     minPlayers: 2,
+    // Singing, presenting or acting needs a mic: mic-off players watch, react and vote (docs/sound-off.md).
+    minSpeakers: 2,
     maxPlayers: 8,
     roundChoices: [4, 2, 6, 8],
     usesPack: false,

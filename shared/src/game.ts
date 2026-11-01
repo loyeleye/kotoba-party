@@ -6,7 +6,7 @@
 import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS, SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } from './constants.js';
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam, ModeInfo } from './modes/mode.js';
-import { MODES, surprisePool } from './modes/registry.js';
+import { MODES, noFit, speakersIn, surprisePool } from './modes/registry.js';
 import type { GameResult } from './progress.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS, SURPRISE } from './protocol.js';
@@ -23,6 +23,8 @@ export interface PlayerState {
   /** Party points across the night: earned by where they finished each game (see PARTY_POINTS). */
   total: number;
   mic: 'ok' | 'quiet' | null;
+  /** Sound off: this phone plays no sound, and shows what it would have said as text instead. */
+  soundOff?: boolean;
   /** Mic lines the host has already said for this player, so spamming the mic switch gets each one once. */
   micCued?: { ok?: boolean; quiet?: boolean };
 }
@@ -242,13 +244,13 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (state.phase !== 'lobby') return fail('wrong-phase');
       if (!isVip && !isStage) return fail('not-vip');
       // Surprise Me!: roll one of the menu's games that fits the room, with its default length and any topic.
-      const surprise = cmd.mode === SURPRISE ? surprisePool(state.players.length).map((m) => m.id) : null;
+      const surprise = cmd.mode === SURPRISE ? surprisePool(state.players.length, speakersIn(state.players)).map((m) => m.id) : null;
       if (surprise && !surprise.length) return fail('not-enough-players');
       const id = surprise ? surprise[Math.floor(ctx.random() * surprise.length)]! : cmd.mode;
       if (!(MODE_IDS as readonly string[]).includes(id)) return fail('unknown-mode');
       const mode = MODES[id as ModeId];
-      if (state.players.length < mode.info.minPlayers) return fail('not-enough-players');
-      if (state.players.length > mode.info.maxPlayers) return fail('too-many-players');
+      const why = noFit(mode.info, state.players.length, speakersIn(state.players));
+      if (why) return fail(why);
       state.mode = id as ModeId;
       state.surprise = surprise;
       state.packId = !surprise && typeof cmd.packId === 'string' ? cmd.packId : null;
@@ -311,6 +313,15 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
         cued[me.mic] = true;
         state.cues.push({ host, event: quiet ? 'mic_check_quiet' : 'mic_check_ok', slots: { name: me.name } });
       }
+      return OK;
+    }
+    case 'setSound': {
+      // The phone's 🎧 switch, in the lobby or mid-game: its own speaker only (the TV keeps playing).
+      if (!me) return fail('not-allowed');
+      if (typeof cmd.on !== 'boolean') return fail('bad-command');
+      if (!me.soundOff === cmd.on) return { changed: false };
+      if (cmd.on) delete me.soundOff;
+      else me.soundOff = true;
       return OK;
     }
     case 'skip': {

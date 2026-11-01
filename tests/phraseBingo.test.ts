@@ -182,6 +182,18 @@ describe('Phrase Bingo: the lenient phrase check', () => {
 describe('Phrase Bingo: casting and dealing', () => {
   it('sizes the cast so someone is always watching', () => {
     expect([3, 4, 5, 6, 7, 8].map(castSize)).toEqual([2, 2, 3, 3, 3, 4]);
+  });
+
+  it('keeps mic-off players in the audience while two others can act, and greys the game out with fewer', () => {
+    const t = new Table(5);
+    for (const id of ['p1', 'p2']) t.cmd(id, { type: 'micCheck', utterance: { via: 'tap', text: '' } });
+    t.start(3);
+    expect(t.actors.length).toBeGreaterThanOrEqual(2);
+    expect(t.actors).not.toContain('p1');
+    expect(t.actors).not.toContain('p2');
+    const few = new Table(4);
+    for (const id of ['p1', 'p2', 'p3']) few.cmd(id, { type: 'micCheck', utterance: { via: 'tap', text: '' } });
+    expect(few.cmd('stage', { type: 'start', mode: 'phrase-bingo' }).error).toBe('not-enough-mics');
     expect(castSize(2)).toBe(1);
     expect(secretsFor('n5', 2)).toBe(3);
     expect(secretsFor('kana', 2)).toBe(2);

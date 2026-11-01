@@ -7,13 +7,14 @@ import { LEVEL_LABELS, awardTitle, formatSeconds, h, mount, placesOf, ruby, seat
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
-import { MODES, surprisePool } from '../../shared/src/modes/registry.js';
+import { MODES, noFit, speakersIn, surprisePool } from '../../shared/src/modes/registry.js';
 import { playRoulette } from '../../shared/src/roulette.js';
 import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService, speechReady } from './components/mic.js';
 import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
 import { quip, setQuipHost } from './components/ui.js';
+import { setSoundOff } from './components/voice.js';
 import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
 import { account, accountPanel } from './account.js';
 import { phrasebookButton } from './phrasebook.js';
@@ -27,6 +28,7 @@ const LEVEL_HINTS: Record<Level, string> = {
 
 const ERRORS: Record<string, string> = {
   'not-enough-players': 'Not enough players for that game.',
+  'not-enough-mics': 'That game needs more players with their mic on.',
   'too-many-players': 'Too many players for that game.',
   'not-vip': 'Only the VIP can do that.',
   'already-answered': 'You already answered.',
@@ -300,14 +302,15 @@ function render(view: RoomView): void {
   const hold = view.game ? (mode!.hold?.(view, view.game, me.id) ?? null) : null;
   const modeKey = view.game ? mode!.key(view, view.game, me.id) : '';
   if (!view.game) endAsk = false;
-  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, hold, endAsk].join('|') : [
+  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, me.soundOff, hold, endAsk].join('|') : [
     view.phase,
     view.phaseSeq,
     isVip,
     me.level,
     me.score,
     me.mic,
-    view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}`).join() + view.modes.length + view.packs.length : '',
+    me.soundOff,
+    view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}:${p.mic === 'quiet' ? 'q' : ''}`).join() + view.modes.length + view.packs.length : '',
     modeKey,
     endAsk,
     passAsk,
@@ -316,6 +319,7 @@ function render(view: RoomView): void {
   screenKey = key;
   setSpeakLevel(me.level);
   setQuiet(me.mic === 'quiet');
+  setSoundOff(me.soundOff);
 
   // In a game (and its recap) the phone wears the mode's colour and host.
   const info = view.phase !== 'lobby' && view.mode ? MODES[view.mode].info : null;
@@ -340,6 +344,8 @@ function render(view: RoomView): void {
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
     session ? phrasebookButton(view.phase, { base, code: session.code, token: session.token, name: me.name, level: me.level }, flash) : null,
+    // The lobby has its own sound line (soundCheck), so the header keeps the room for the name there.
+    view.phase === 'lobby' ? null : soundSwitch(me),
     micSwitch(me),
   );
   mount(app, band, header, screenFor(view, me, isVip));
@@ -419,6 +425,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
     h('p', { class: 'big' }, 'You are in!'),
     h('p', {}, `${view.players.length} player${view.players.length === 1 ? '' : 's'}: ${view.players.map((p) => p.name).join(', ')}`),
     micCheck(me),
+    soundCheck(me),
     h('p', { class: 'hint' }, 'Your level'),
     levelPicker(me.level, (level) => {
       store('kotoba:level', level);
@@ -454,6 +461,34 @@ function micSwitch(me: PlayerView): HTMLElement | null {
     // Quiet: the same mic, struck through (style.css .mic-switch.off::after).
     '🎤',
   );
+}
+
+/**
+ * The header's sound switch: Sound off silences this phone (a crowded room, no headphones) and its listening
+ * prompts show as text instead (components/voice.ts). The TV keeps playing. Any time, lobby or mid-game.
+ */
+function soundSwitch(me: PlayerView): HTMLElement {
+  const off = me.soundOff;
+  const label = off ? 'Phone sound is off: tap to turn it on' : 'Phone sound is on: tap to turn it off';
+  return h(
+    'button',
+    { type: 'button', class: `mic-switch sound-switch${off ? ' off' : ''}`, 'aria-label': label, 'aria-pressed': String(!off), title: label, onclick: () => void command({ type: 'setSound', on: off }) },
+    // Off: the same speaker, struck through like the mic switch (style.css .mic-switch.off::after).
+    '🔊',
+  );
+}
+
+/** The lobby's sound line, under the mic check. */
+function soundCheck(me: PlayerView): HTMLElement {
+  if (me.soundOff) {
+    return h(
+      'div',
+      { class: 'mic-quiet' },
+      h('p', { class: 'mic' }, '🔇 Phone sound off: listening prompts show as text. The TV still plays.'),
+      h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'setSound', on: true }) }, '🔊 Turn my phone sound on'),
+    );
+  }
+  return h('button', { type: 'button', class: 'linkish sound-off-link', onclick: () => void command({ type: 'setSound', on: false }) }, 'I can’t hear my phone (turn its sound off)');
 }
 
 function micCheck(me: PlayerView): HTMLElement {
@@ -512,10 +547,19 @@ const SURPRISE_ENTRY: ModeInfo = {
   usesPack: false,
 };
 const isSurprise = (m: ModeInfo) => (m.id as string) === SURPRISE;
-const fitCount = (n: number) => surprisePool(n).length;
-const fits = (m: ModeInfo, n: number) => (isSurprise(m) ? fitCount(n) > 0 : n >= m.minPlayers && n <= m.maxPlayers);
+// Players with their mic on in the room the menu was last drawn for (a game with speaking roles needs enough).
+let speakers = 0;
+const fitCount = (n: number) => surprisePool(n, speakers).length;
+const fits = (m: ModeInfo, n: number) => (isSurprise(m) ? fitCount(n) > 0 : !noFit(m, n, speakers));
+const micsShort = (m: ModeInfo, n: number) => !isSurprise(m) && noFit(m, n, speakers) === 'not-enough-mics';
 const playersLabel = (m: ModeInfo, n = 0) =>
-  isSurprise(m) ? `${fitCount(n)} game${fitCount(n) === 1 ? '' : 's'} fit` : m.minPlayers === m.maxPlayers ? `${m.minPlayers} players` : `${m.minPlayers}–${m.maxPlayers} players`;
+  isSurprise(m)
+    ? `${fitCount(n)} game${fitCount(n) === 1 ? '' : 's'} fit`
+    : micsShort(m, n)
+      ? `🎤 needs ${m.minSpeakers} mics on`
+      : m.minPlayers === m.maxPlayers
+        ? `${m.minPlayers} players`
+        : `${m.minPlayers}–${m.maxPlayers} players`;
 const hostIcon = (m: ModeInfo) =>
   isSurprise(m)
     ? h('span', { class: 'gp-host gp-dice', 'aria-hidden': 'true' }, '🎲')
@@ -536,6 +580,7 @@ function jaTitle(m: ModeInfo, level: Level): HTMLElement {
 
 function vipMenu(view: RoomView): HTMLElement {
   const n = view.players.length;
+  speakers = speakersIn(view.players);
   const level = view.players.find((p) => p.isVip)?.level ?? 'n5';
   // Surprise Me! sits first on the list; it rolls among the games below it.
   const entries = view.modes.length ? [SURPRISE_ENTRY, ...view.modes] : [];
@@ -626,7 +671,9 @@ function vipMenu(view: RoomView): HTMLElement {
     note.textContent = !ok
       ? isSurprise(m)
         ? `No game fits ${n} player${n === 1 ? '' : 's'} yet.`
-        : `${m.title} needs ${playersLabel(m)}. Tonight there ${n === 1 ? 'is 1' : `are ${n}`}.`
+        : micsShort(m, n)
+          ? `${m.title} needs ${m.minSpeakers} players with their mic on. Tonight ${speakers === 1 ? 'there’s 1' : `there are ${speakers}`}.`
+          : `${m.title} needs ${playersLabel(m)}. Tonight there ${n === 1 ? 'is 1' : `are ${n}`}.`
       : isSurprise(m)
         ? fitCount(n) === 1
           ? `Chooses the only game available for ${n} player${n === 1 ? '' : 's'}.`
