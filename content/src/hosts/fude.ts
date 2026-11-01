@@ -360,12 +360,12 @@ export const fudeLines: HostLine[] = [
   { id: 'fude.dub_sequel.04', host: 'fude', event: 'dub_sequel', jp: { text: 'スポンサーが にげました。だいにわは ありません。', kana: 'スポンサーが にげました。だいにわは ありません。', en: 'The sponsor ran away. There is no episode two.' }, audience: 'cheeky', status: 'draft' },
   // court_intro: Fude-san presides over Yōkai Court (Fude is the judge; everyone who isn't a lawyer judges too)
   { id: 'fude.court_intro.01', host: 'fude', event: 'court_intro', jp: { text: 'ようかい さいばん、かいてい します！　シュッ！', kana: 'ようかい さいばん、かいてい します！　シュッ！', en: 'Yōkai Court is now in session! Swish!' }, status: 'draft' },
-  { id: 'fude.court_intro.02', host: 'fude', event: 'court_intro', jp: { text: 'さいばんちょうは フデです。みなさんも さいばんいんですよ！', kana: 'さいばんちょうは フデです。みなさんも さいばんいんですよ！', en: 'I am the presiding judge. And you are all judges too!' }, status: 'draft' },
-  { id: 'fude.court_intro.03', host: 'fude', event: 'court_intro', jp: { text: 'しょうにんが ひとり、べんごしが ふたり。あとは みんなで きめます！', kana: 'しょうにんが ひとり、べんごしが ふたり。あとは みんなで きめます！', en: 'One witness, two lawyers. Everyone else decides!' }, status: 'draft' },
+  { id: 'fude.court_intro.02', host: 'fude', event: 'court_intro', jp: { text: 'さいばんちょうは フデです。みなさんは さいばんいんですよ！', kana: 'さいばんちょうは フデです。みなさんは さいばんいんですよ！', en: 'I am the presiding judge. And you are all lay judges!' }, status: 'draft' },
+  { id: 'fude.court_intro.03', host: 'fude', event: 'court_intro', jp: { text: 'しょうにんが ひとり、けんじと べんごしが ひとりずつ。あとは みんなで きめます！', kana: 'しょうにんが ひとり、けんじと べんごしが ひとりずつ。あとは みんなで きめます！', en: 'One witness, a prosecutor and a defence lawyer. Everyone else decides!' }, status: 'draft' },
   { id: 'fude.court_intro.04', host: 'fude', event: 'court_intro', jp: { text: 'スタジオで じけんです！　ほうていへ どうぞ！', kana: 'スタジオで じけんです！　ほうていへ どうぞ！', en: 'There has been an incident at the studio! To the courtroom!' }, status: 'draft' },
   // court_case: {line} is the case title, {accused} the accused yōkai
   { id: 'fude.court_case.01', host: 'fude', event: 'court_case', jp: { text: 'じけんです！　「{line}」', kana: 'じけんです！　「{line}」', en: 'A case! “{line}”' }, slots: ['{line}'], status: 'draft' },
-  { id: 'fude.court_case.02', host: 'fude', event: 'court_case', jp: { text: 'ひこくは {accused}です！', kana: 'ひこくは {accused}です！', en: 'The accused is the {accused}!' }, slots: ['{accused}'], status: 'draft' },
+  { id: 'fude.court_case.02', host: 'fude', event: 'court_case', jp: { text: 'ひこくにんは {accused}です！', kana: 'ひこくにんは {accused}です！', en: 'The accused is the {accused}!' }, slots: ['{accused}'], status: 'draft' },
   { id: 'fude.court_case.03', host: 'fude', event: 'court_case', jp: { text: 'きょうの じけん…　「{line}」　ドン！', kana: 'きょうの じけん…　「{line}」　ドン！', en: 'Today’s case… “{line}” Bang!' }, slots: ['{line}'], status: 'draft' },
   { id: 'fude.court_case.04', host: 'fude', event: 'court_case', jp: { text: '{accused}が うたがわれて います！', kana: '{accused}が うたがわれて います！', en: 'The {accused} is under suspicion!' }, slots: ['{accused}'], status: 'draft' },
   // court_ask: Fude-san asks the witness ({name}) one question
@@ -377,40 +377,42 @@ export const fudeLines: HostLine[] = [
   { id: 'fude.court_testimony.02', host: 'fude', event: 'court_testimony', jp: { text: '「{line}」　…なるほど。', kana: '「{line}」　…なるほど。', en: '“{line}” …I see.' }, slots: ['{line}'], status: 'draft' },
   // court_curveball: a second suspect ({suspect}): the court gasps
   { id: 'fude.court_curveball.01', host: 'fude', event: 'court_curveball', jp: { text: 'えっ！？　{suspect}も！？', kana: 'えっ！？　{suspect}も！？', en: 'What?! The {suspect} too?!' }, slots: ['{suspect}'], status: 'draft' },
-  { id: 'fude.court_curveball.02', host: 'fude', event: 'court_curveball', jp: { text: 'ようぎしゃが ふたり！？　ほうていが ざわざわ…', kana: 'ようぎしゃが ふたり！？　ほうていが ざわざわ…', en: 'Two suspects?! The court is buzzing…' }, status: 'draft' },
+  { id: 'fude.court_curveball.02', host: 'fude', event: 'court_curveball', jp: { text: 'あやしい ようかいが ふたり！？　ほうていが ざわざわ…', kana: 'あやしい ようかいが ふたり！？　ほうていが ざわざわ…', en: 'Two suspicious yōkai?! The court is buzzing…' }, status: 'draft' },
   { id: 'fude.court_curveball.03', host: 'fude', event: 'court_curveball', jp: { text: '{suspect}も いた！？　これは たいへんです！', kana: '{suspect}も いた！？　これは たいへんです！', en: 'The {suspect} was there too?! This is serious!' }, slots: ['{suspect}'], status: 'draft' },
   // court_plan: both lawyers plan in private
-  { id: 'fude.court_plan.01', host: 'fude', event: 'court_plan', jp: { text: 'べんごしの おふたり、じゅんびを どうぞ。', kana: 'べんごしの おふたり、じゅんびを どうぞ。', en: 'Lawyers, prepare your arguments.' }, status: 'draft' },
+  { id: 'fude.court_plan.01', host: 'fude', event: 'court_plan', jp: { text: 'けんじと べんごし、じゅんびを どうぞ。', kana: 'けんじと べんごし、じゅんびを どうぞ。', en: 'Prosecutor, defence: prepare your arguments.' }, status: 'draft' },
   { id: 'fude.court_plan.02', host: 'fude', event: 'court_plan', jp: { text: 'さいばんいんの みなさん、よそうを どうぞ。', kana: 'さいばんいんの みなさん、よそうを どうぞ。', en: 'Judges, make your guess.' }, status: 'draft' },
-  { id: 'fude.court_plan.03', host: 'fude', event: 'court_plan', jp: { text: 'しずかに！　べんごしが かんがえて います。', kana: 'しずかに！　べんごしが かんがえて います。', en: 'Quiet! The lawyers are thinking.' }, status: 'draft' },
+  { id: 'fude.court_plan.03', host: 'fude', event: 'court_plan', jp: { text: 'しずかに！　おふたりが かんがえて います。', kana: 'しずかに！　おふたりが かんがえて います。', en: 'Quiet! The two of them are thinking.' }, status: 'draft' },
   // court_read: Fude-san reads a Kana lawyer's tiles ({line}, as is)
   { id: 'fude.court_read.01', host: 'fude', event: 'court_read', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // court_mic_pass: Fude-san says {name}'s argument for them ({line}, as is)
-  { id: 'fude.court_mic_pass.01', host: 'fude', event: 'court_mic_pass', jp: { text: 'フデが よみます。{name}さんの べんろん…「{line}」', kana: 'フデが よみます。{name}さんの べんろん…「{line}」', en: 'I’ll read it. {name}’s argument… “{line}”' }, slots: ['{name}', '{line}'], status: 'draft' },
+  { id: 'fude.court_mic_pass.01', host: 'fude', event: 'court_mic_pass', jp: { text: 'フデが よみます。{name}さんの いけん…「{line}」', kana: 'フデが よみます。{name}さんの いけん…「{line}」', en: 'I’ll read it. {name}’s case… “{line}”' }, slots: ['{name}', '{line}'], status: 'draft' },
   { id: 'fude.court_mic_pass.02', host: 'fude', event: 'court_mic_pass', jp: { text: 'まかせて ください！　「{line}」', kana: 'まかせて ください！　「{line}」', en: 'Leave it to me! “{line}”' }, slots: ['{line}'], status: 'draft' },
-  // court_stand_in: nothing came from {name} in time; Fude-san stands in ({line}, as is). Blames the brush, never the player
+  // court_stand_in: nothing came from {name} in time; Fude-san stands in ({line}, as is). Blames the mic or the ink, never the player
   { id: 'fude.court_stand_in.01', host: 'fude', event: 'court_stand_in', jp: { text: 'マイクが ねて いました。フデが いいます。「{line}」', kana: 'マイクが ねて いました。フデが いいます。「{line}」', en: 'The mic fell asleep. I’ll say it: “{line}”' }, slots: ['{line}'], status: 'draft' },
   { id: 'fude.court_stand_in.02', host: 'fude', event: 'court_stand_in', jp: { text: 'インクぎれ！　かわりに よみます。「{line}」', kana: 'インクぎれ！　かわりに よみます。「{line}」', en: 'Out of ink! I’ll read it instead: “{line}”' }, slots: ['{line}'], status: 'draft' },
   // court_check: one question about the arguments
   { id: 'fude.court_check.01', host: 'fude', event: 'court_check', jp: { text: 'さいばんいんに しつもんです！', kana: 'さいばんいんに しつもんです！', en: 'A question for the judges!' }, status: 'draft' },
-  { id: 'fude.court_check.02', host: 'fude', event: 'court_check', jp: { text: 'よく きいて いましたか？', kana: 'よく きいて いましたか？', en: 'Were you listening carefully?' }, status: 'draft' },
+  { id: 'fude.court_check.02', host: 'fude', event: 'court_check', jp: { text: 'さあ、しつもん！　おぼえて いますか？', kana: 'さあ、しつもん！　おぼえて いますか？', en: 'Question time! Do you remember?' }, status: 'draft' },
   { id: 'fude.court_check.03', host: 'fude', event: 'court_check', jp: { text: 'ひとつだけ しつもん。スマホを みて ください。', kana: 'ひとつだけ しつもん。スマホを みて ください。', en: 'Just one question. Look at your phone.' }, status: 'draft' },
   // court_vote: who won you over?
   { id: 'fude.court_vote.01', host: 'fude', event: 'court_vote', jp: { text: 'どちらに なっとく しましたか？', kana: 'どちらに なっとく しましたか？', en: 'Who won you over?' }, status: 'draft' },
   { id: 'fude.court_vote.02', host: 'fude', event: 'court_vote', jp: { text: 'ゆうざいか、むざいか。みなさんが きめます！', kana: 'ゆうざいか、むざいか。みなさんが きめます！', en: 'Guilty or not guilty. You decide!' }, status: 'draft' },
-  { id: 'fude.court_vote.03', host: 'fude', event: 'court_vote', jp: { text: 'さあ、とうひょう です！　シュッ！', kana: 'さあ、とうひょう です！　シュッ！', en: 'Now, the vote! Swish!' }, status: 'draft' },
+  { id: 'fude.court_vote.03', host: 'fude', event: 'court_vote', jp: { text: 'さあ、とうひょうです！　シュッ！', kana: 'さあ、とうひょうです！　シュッ！', en: 'Now, the vote! Swish!' }, status: 'draft' },
   // court_guilty: 有罪 ({accused})
   { id: 'fude.court_guilty.01', host: 'fude', event: 'court_guilty', jp: { text: 'はんけつ！　ゆうざい！', kana: 'はんけつ！　ゆうざい！', en: 'The verdict: guilty!' }, status: 'draft' },
-  { id: 'fude.court_guilty.02', host: 'fude', event: 'court_guilty', jp: { text: '{accused}、ゆうざい です！　ドン！', kana: '{accused}、ゆうざい です！　ドン！', en: 'The {accused} is guilty! Bang!' }, slots: ['{accused}'], status: 'draft' },
+  { id: 'fude.court_guilty.02', host: 'fude', event: 'court_guilty', jp: { text: '{accused}、ゆうざいです！　ドン！', kana: '{accused}、ゆうざいです！　ドン！', en: 'The {accused} is guilty! Bang!' }, slots: ['{accused}'], status: 'draft' },
   { id: 'fude.court_guilty.03', host: 'fude', event: 'court_guilty', jp: { text: 'ゆうざい！　…あとで ちゃんと あやまりましょうね。', kana: 'ゆうざい！　…あとで ちゃんと あやまりましょうね。', en: 'Guilty! …Let’s apologise properly later.' }, status: 'draft' },
   // court_not_guilty: 無罪 ({accused})
   { id: 'fude.court_not_guilty.01', host: 'fude', event: 'court_not_guilty', jp: { text: 'はんけつ！　むざい！', kana: 'はんけつ！　むざい！', en: 'The verdict: not guilty!' }, status: 'draft' },
-  { id: 'fude.court_not_guilty.02', host: 'fude', event: 'court_not_guilty', jp: { text: '{accused}は むざい です！　よかったですね！', kana: '{accused}は むざい です！　よかったですね！', en: 'The {accused} is not guilty! What a relief!' }, slots: ['{accused}'], status: 'draft' },
+  { id: 'fude.court_not_guilty.02', host: 'fude', event: 'court_not_guilty', jp: { text: '{accused}は むざいです！　よかったですね！', kana: '{accused}は むざいです！　よかったですね！', en: 'The {accused} is not guilty! What a relief!' }, slots: ['{accused}'], status: 'draft' },
   { id: 'fude.court_not_guilty.03', host: 'fude', event: 'court_not_guilty', jp: { text: 'むざい！　…では、だれが？', kana: 'むざい！　…では、だれが？', en: 'Not guilty! …Then who did it?' }, status: 'draft' },
   // court_tie: a tie is not guilty
-  { id: 'fude.court_tie.01', host: 'fude', event: 'court_tie', jp: { text: 'どうてん！　うたがわしきは ばっせず。むざい です！', kana: 'どうてん！　うたがわしきは ばっせず。むざい です！', en: 'A tie! When in doubt, no punishment. Not guilty!' }, status: 'draft' },
+  { id: 'fude.court_tie.01', host: 'fude', event: 'court_tie', jp: { text: 'どうてん！　うたがわしきは ばっせず。むざいです！', kana: 'どうてん！　うたがわしきは ばっせず。むざいです！', en: 'A tie! When in doubt, no punishment. Not guilty!' }, status: 'draft' },
   { id: 'fude.court_tie.02', host: 'fude', event: 'court_tie', jp: { text: 'はんぶん はんぶん…　だから、むざい！', kana: 'はんぶん はんぶん…　だから、むざい！', en: 'Half and half… so, not guilty!' }, status: 'draft' },
+  // court_coda: the case's real story, after the points ({line}: the coda, as is)
+  { id: 'fude.court_coda.01', host: 'fude', event: 'court_coda', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // court_booth: the replay booth opens on the argument that used its chunk ({chunk}, when given)
-  { id: 'fude.court_booth.01', host: 'fude', event: 'court_booth', jp: { text: 'ここで もう いちど！　「{chunk}」が でました！', kana: 'ここで もう いちど！　「{chunk}」が でました！', en: 'Once more! There was “{chunk}”!' }, slots: ['{chunk}'], status: 'draft' },
-  { id: 'fude.court_booth.02', host: 'fude', event: 'court_booth', jp: { text: 'いい べんろん でした！　もう いちど きいて みましょう。', kana: 'いい べんろん でした！　もう いちど きいて みましょう。', en: 'A fine argument! Let’s hear it again.' }, status: 'draft' },
+  { id: 'fude.court_booth.01', host: 'fude', event: 'court_booth', jp: { text: 'もう いちど！　「〜{chunk}」、でました！', kana: 'もう いちど！　「〜{chunk}」、でました！', en: 'Once more! “〜{chunk}”: there it is!' }, slots: ['{chunk}'], status: 'draft' },
+  { id: 'fude.court_booth.02', host: 'fude', event: 'court_booth', jp: { text: 'いい いけんでした！　もう いちど きいて みましょう。', kana: 'いい いけんでした！　もう いちど きいて みましょう。', en: 'A fine argument! Let’s hear it again.' }, status: 'draft' },
 ];

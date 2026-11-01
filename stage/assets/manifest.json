@@ -10102,10 +10102,10 @@
     },
     {
       "path": "stage/assets/court/clue-footprints.png",
-      "what": "Yōkai Court clue: small muddy footprints",
+      "what": "Yōkai Court clue: small inky footprints",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. three small brown muddy paw prints on a plain floor, each a round pad with three small round toe dots, arranged in a diagonal line of steps, flat top-down view, only the prints, no animal, no creature, no character, no moon, no background",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. three small pure black ink footprints of little bare feet with five toes, solid jet black, walking in a line",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -10115,9 +10115,11 @@
         "width": 64,
         "height": 64,
         "text_guidance_scale": 8,
-        "seed": 211
+        "seed": 234
       },
-      "post": {}
+      "post": {
+        "outline": "#f3e7c9"
+      }
     },
     {
       "path": "stage/assets/court/clue-puddle.png",
@@ -10140,10 +10142,10 @@
     },
     {
       "path": "stage/assets/court/clue-spoon.png",
-      "what": "Yōkai Court clue: a dropped spoon",
+      "what": "Yōkai Court clue: a spoon",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single small silver dessert spoon lying on its side, with a dab of yellow custard pudding on the bowl, nothing else",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. one single shiny silver metal spoon lying diagonally, empty, nothing in it, only the spoon, no bowl, no dessert, no food, no table",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -10153,7 +10155,7 @@
         "width": 64,
         "height": 64,
         "text_guidance_scale": 8,
-        "seed": 104
+        "seed": 231
       },
       "post": {}
     },
@@ -10363,6 +10365,25 @@
         "height": 64,
         "text_guidance_scale": 8,
         "seed": 115
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/object-lantern.png",
+      "what": "Yōkai Court case object: a broken paper lantern",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single round red Japanese paper lantern (chochin) with black bands at top and bottom, torn and broken with a rip in the paper, no face, no eyes, no mouth",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 233
       },
       "post": {}
     }

@@ -7,7 +7,7 @@ import { apply, createGame, wakeAt, type GameAction, type GameContext, type Game
 import { ALL_FRAMES, framesOf } from '../shared/src/japanese/frames.js';
 import { hasKanji } from '../shared/src/japanese/kana.js';
 import { CASES, CHUNKS, CLUES, fill, kanaTilesOf, LINES, PLACES, slotsOf, TESTIMONIES, WITNESS, YOKAI, type Side } from '../shared/src/modes/yokaiCourt/cases.js';
-import { CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
+import { CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, saidEvidence, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { yokaiCourtPolicy } from '../tools/bots/policies/yokaiCourt.js';
@@ -161,8 +161,6 @@ function checkAndVote(t: Table, check: (id: string, answer: string) => string | 
 }
 
 const caseOf = (t: Table) => CASES.find((x) => x.id === t.c.caseId)!;
-/** N3 frame ids that land with the progressive-learning work. TODO(n3): drop this once they're in frames.ts. */
-const PENDING_N3 = new Set(['ni-chigainai', 'wake-dewa-nai']);
 /** Frames framesOf only finds with kuromoji tokens (the server passes them; this test doesn't). */
 const TOKEN_ONLY = new Set(['sou-hear']);
 
@@ -207,7 +205,6 @@ describe('Yōkai Court content', () => {
             const line = fill(tpl, slotsOf(cs, t), lv === 'n5');
             const got = framesOf(line, undefined, { keepHidden: true }) as string[];
             for (const f of tpl.frames ?? []) {
-              if (PENDING_N3.has(f)) continue;
               expect(known.has(f), f).toBe(true);
               if (TOKEN_ONLY.has(f)) continue;
               expect(got, `${cs.id} ${t} ${side} ${lv}: ${line.kana}`).toContain(f);
@@ -240,8 +237,9 @@ describe('Yōkai Court content', () => {
 // ---- roles ----
 
 describe('Yōkai Court roles', () => {
-  it('runs 3 cases for 4–6 players and 4 for 7–8, and everyone argues at least once', () => {
-    expect(roundsFor(4)).toBe(3);
+  it('runs 4 cases for 4 players (everyone argues twice), 3 for 5–6 and 4 for 7–8, and everyone argues at least once', () => {
+    expect(roundsFor(4)).toBe(4);
+    expect(roundsFor(5)).toBe(3);
     expect(roundsFor(6)).toBe(3);
     expect(roundsFor(7)).toBe(4);
     for (const n of [4, 5, 6, 7, 8]) {
@@ -311,8 +309,10 @@ describe('Yōkai Court scoring', () => {
     const decoy = t.c.checkSide === 'pros' ? cs.clueDecoys[0]! : cs.alibiDecoys[0]!;
     checkAndVote(t, (id, right) => (judges.indexOf(id) < 2 ? right : decoy), (id) => (judges.indexOf(id) < 3 ? 'pros' : 'def'));
     const gain = (id: string) => t.score(id) - before[id]!;
-    expect(gain(pros)).toBe(POINTS.win + 3 * POINTS.vote);
-    expect(gain(def)).toBe(POINTS.vote);
+    // The checked side's lawyer gets a bonus for each judge who heard their evidence (two here).
+    const heard = (side: 'pros' | 'def') => (t.c.checkSide === side ? 2 * POINTS.heard : 0);
+    expect(gain(pros)).toBe(POINTS.win + 3 * POINTS.vote + heard('pros'));
+    expect(gain(def)).toBe(POINTS.vote + heard('def'));
     const right = t.c.checkSide === 'pros' ? caseOf(t).clue : caseOf(t).alibi;
     for (const id of judges) {
       const checked = t.c.checks[id] === right ? POINTS.check : 0;
@@ -322,16 +322,18 @@ describe('Yōkai Court scoring', () => {
     expect(t.view('stage').verdict).toMatchObject({ pros: 3, def: 1, winner: 'pros', tie: false });
   });
 
-  it('a tie is not guilty: the defence wins, and nobody is paid for a majority', () => {
+  it('a tie is not guilty, the win is split between both lawyers, and nobody is paid for a majority', () => {
     const t = new Table(6, [], 22);
     t.start();
     toPlan(t);
-    const { def, judges } = t.c;
+    const { pros, def, judges } = t.c;
     argueAll(t, (id) => clip(t.view(id).me!.mission!.model.kana));
     const before = t.score(def);
+    const beforePros = t.score(pros);
     checkAndVote(t, () => null, (id) => (judges.indexOf(id) < 2 ? 'pros' : 'def'));
     expect(t.view('stage').verdict).toMatchObject({ pros: 2, def: 2, winner: 'def', tie: true });
-    expect(t.score(def) - before).toBe(POINTS.win + 2 * POINTS.vote);
+    expect(t.score(def) - before).toBe(POINTS.win / 2 + 2 * POINTS.vote);
+    expect(t.score(pros) - beforePros).toBe(POINTS.win / 2 + 2 * POINTS.vote);
     expect(t.st.ledger.filter((e) => e.why === 'majority')).toHaveLength(0);
   });
 
@@ -399,6 +401,70 @@ describe('Yōkai Court Kana lawyers', () => {
   });
 });
 
+// ---- panel fixes ----
+
+describe('Yōkai Court panel fixes', () => {
+  it('never names the prosecution’s clue on the public case card', () => {
+    for (const cs of CASES) {
+      const clue = CLUES.find((x) => x.id === cs.clue)!;
+      const noun = clue.word.en.replace(/^(a|an|the)\s+/, '').split(' ').pop()!.replace(/s$/, '');
+      expect(cs.evidence.toLowerCase(), cs.id).not.toContain(noun.toLowerCase());
+    }
+  });
+
+  it('a Kana lawyer’s first tap doesn’t end the plan: they tap Done', () => {
+    const t = new Table(4, ['kana', 'kana', 'kana', 'kana'], 33);
+    t.start();
+    toPlan(t);
+    const { pros, def } = t.c;
+    expect(t.play(pros, { kind: 'ready' }).error).toBe('empty');
+    t.play(pros, { kind: 'pick', tiles: ['claim'] });
+    t.play(def, { kind: 'pick', tiles: ['evidence'] });
+    expect(t.s.phase).toBe('prompt');
+    expect(t.c.step).toBe('plan');
+    t.play(pros, { kind: 'pick', tiles: ['claim', 'evidence'] });
+    t.play(pros, { kind: 'ready' });
+    t.play(def, { kind: 'ready' });
+    expect(t.s.phase).toBe('answer');
+  });
+
+  it('a VIP who is arguing this case can’t hide the other side', () => {
+    const t = new Table(5, [], 34);
+    t.start();
+    toPlan(t);
+    argueAll(t, (id) => clip(t.view(id).me!.mission!.model.kana));
+    const vip = t.s.vipId!;
+    const other = t.c.pros === vip ? t.c.def : t.c.def === vip ? t.c.pros : null;
+    if (other) expect(t.play(vip, { kind: 'hide', playerId: other }).error).toBe('not-yours');
+    else expect(t.play(vip, { kind: 'hide', playerId: t.c.pros }).error).toBeUndefined();
+  });
+
+  it('logs a lawyer’s own words when they said a chunk, so only the frames they used are credited', () => {
+    const t = new Table(5, ['n4', 'n4', 'n4', 'n4', 'n4'], 41);
+    t.start();
+    toPlan(t);
+    const { pros } = t.c;
+    const cs = caseOf(t);
+    const own = 'しょうにんは みたと いって いました';
+    argueAll(t, (id) => clip(id === pros ? own : t.view(id).me!.mission!.model.kana));
+    checkAndVote(t, () => null, () => 'def');
+    const e = t.s.phrasebook[pros]!.find((x) => x.itemId === `court:${cs.id}:saw:pros:n4`)!;
+    expect(e).toMatchObject({ outcome: 'said', kana: own });
+  });
+
+  it('reads typed kanji for the evidence keys', () => {
+    const t = new Table(5, ['n4', 'n4', 'n4', 'n4', 'n4'], 43);
+    t.start();
+    toPlan(t);
+    const { def } = t.c;
+    const cs = caseOf(t);
+    const place = PLACES.find((x) => x.id === cs.alibi)!;
+    const typed = { via: 'typed', text: `${place.word.text}に いました`, reading: `${place.word.kana}に いました` };
+    expect(t.play(def, { kind: 'argue', type: 'typed', text: typed }).error).toBeUndefined();
+    expect(saidEvidence(t.c, t.c.args[def]!)).toBe(true);
+  });
+});
+
 // ---- the path ----
 
 describe('Yōkai Court and the path', () => {
@@ -436,9 +502,9 @@ describe('Yōkai Court and the path', () => {
 // ---- pacing ----
 
 describe('Yōkai Court pacing', () => {
-  it('runs a typical case in about 80 s and the worst in under 100 s', () => {
+  it('runs a typical case in about 80 s and the worst in under 105 s', () => {
     const worst = CASE_MS + ASK_MS + TESTIFY_MS + PLAN_MS + RECORD_MS.n3 + UPLOAD_MS + GRACE_MS + 2 * (RECORD_MS.n3 + 500) + CHECK_MS + GIST_MS + VOTE_MS + VERDICT_MS;
-    expect(worst).toBeLessThan(100_000);
+    expect(worst).toBeLessThan(105_000);
     expect(FUDE_PLAY_MS.n3).toBeLessThanOrEqual(RECORD_MS.n3);
     const t = new Table(6, [], 51);
     t.start();

@@ -59,7 +59,7 @@ export function yokaiCourtPolicy(opts: YokaiCourtPolicyOptions = {}): ModePolicy
           const said = me.mission.model.kana;
           if (me.micPassLeft && r('pass?') < pass) push('pass', { kind: 'pass' });
           else if (opts.speak) push('argue', { kind: 'argue', type: 'clip', clipId: `sim-${playerId}-${game.round}`, durMs: 6000, checked: true, heard: { via: 'speech', text: said, reading: said } }, think);
-          else push('argue', { kind: 'argue', type: 'typed', text: said }, think);
+          else push('argue', { kind: 'argue', type: 'typed', text: { via: 'typed', text: said } }, think);
         }
         return out;
       }

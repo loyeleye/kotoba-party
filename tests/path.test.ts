@@ -224,14 +224,13 @@ describe('the Limited Express Line (N3)', () => {
   const limited = GOALS.filter((g) => g.line === 'limited');
   const required = (g: (typeof GOALS)[number]) => g.need.flatMap((n) => (Array.isArray(n) ? n : [n]));
 
-  it("doesn't clear while it still has coming-soon stations: meeting 3.1 alone isn't the last stop", () => {
+  it("doesn't clear on one station: meeting 3.1 alone isn't the last stop", () => {
     const p = emptyProgress();
     p.frameMarks = Object.fromEntries(required(GOALS.find((g) => g.id === '3.1')!).map((id) => [id, { metAt: T0, recheckAt: T0 + 21 * DAY, recheck: 'waiting' as const }]));
     markPath(p, T0);
     const st = status(p);
     expect(goal(p, '3.1').met).toBe(true);
     const line = st.lines.find((l) => l.id === 'limited')!;
-    expect(line.soon).toBeGreaterThan(0);
     expect(line.cleared).toBe(false);
   });
 

@@ -21,7 +21,7 @@
 
 import { h, LEVEL_LABELS, ruby, seatShape } from '../../../shared/src/dom.js';
 import { POINTS_AT_MS, UPLOAD_MS, type ArgView, type CourtMe, type CourtView, type Role, type ThingView } from '../../../shared/src/modes/yokaiCourt/court.js';
-import type { CourtLevel, Side } from '../../../shared/src/modes/yokaiCourt/cases.js';
+import type { Side } from '../../../shared/src/modes/yokaiCourt/cases.js';
 import type { Level } from '../../../content/src/types.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { MicClip, recordReady, uploadClip } from '../components/mic.js';
@@ -44,10 +44,8 @@ const SAY_MS = 5_000;
 /** A failed upload tries again this often while the record beat lasts. */
 const RETRY_MS = 2_000;
 
-/** jpView knows Kana, N5 and N4. TODO(n3): pass the level as is once 'n3' is in Level. */
-const shown = (l: CourtLevel): Level => (l === 'n3' ? 'n4' : l);
 const levelLabel = (l: string): string => LEVEL_LABELS[l] ?? l.toUpperCase();
-const jpv = (t: JpLike, l: CourtLevel, cls = 'yc-line') => jpView(t, shown(l), { cls });
+const jpv = (t: JpLike, l: Level, cls = 'yc-line') => jpView(t, l, { cls });
 
 const buzz = (ms = 60) => {
   try {
@@ -277,7 +275,7 @@ function sendTyped(ctx: Ctx, round: number): void {
     problem = 'Type your argument first.';
     return bump();
   }
-  void ctx.send({ kind: 'argue', type: 'typed', text, round }).then((ok) => ok && buzz(80));
+  void ctx.send({ kind: 'argue', type: 'typed', text: { via: 'typed', text }, round }).then((ok) => ok && buzz(80));
 }
 
 function armTypedSend(ctx: Ctx): void {
@@ -361,7 +359,17 @@ const WHY: Record<CourtMe['breakdown'][number]['why'], string> = {
   vote: 'Votes for your side',
   majority: 'Voted with the majority',
   check: 'Check right',
+  heard: 'Judges heard your evidence',
 };
+
+/** What a judge can score: the majority line only shows when three or more people vote. */
+const judgePoints = (ctx: Ctx): HTMLElement =>
+  h(
+    'ul',
+    { class: 'yc-breakdown' },
+    h('li', {}, h('span', {}, 'Check right'), h('b', {}, '+100')),
+    ctx.view.players.length - 2 >= 3 ? h('li', {}, h('span', {}, 'Vote with the majority (3+ voters)'), h('b', {}, '+50')) : null,
+  );
 
 function band(ctx: Ctx, me: CourtMe, next: string): HTMLElement {
   const r = me.role ? ROLE[me.role] : null;
@@ -406,7 +414,7 @@ function testimonyCard(ctx: Ctx, me: CourtMe): HTMLElement | null {
     h('p', { class: 'yc-label' }, t.auto ? 'No answer in time: the witness saw nothing' : `What ${witness ? nameOf(ctx.view, witness) : 'the witness'} said`),
     jpv(t.line, me.level),
     h('p', { class: 'yc-hint' }, t.note),
-    t.suspect ? h('p', { class: 'yc-suspect' }, pic(t.suspect, 'yc-pic yc-pic-small'), h('span', {}, 'A second suspect: ', h('b', { lang: 'ja' }, t.suspect.word.kana), ` · ${t.suspect.word.en}`)) : null,
+    t.suspect ? h('p', { class: 'yc-suspect' }, pic(t.suspect, 'yc-pic yc-pic-small'), h('span', {}, t.kind === 'curve' ? 'A second suspect: ' : 'Blamed: ', h('b', { lang: 'ja' }, t.suspect.word.kana), ` · ${t.suspect.word.en}`)) : null,
   );
 }
 
@@ -418,7 +426,7 @@ function evidenceCard(me: CourtMe): HTMLElement | null {
     { class: `yc-mission yc-side-${m.side}` },
     h('p', { class: 'yc-mission-label' }, `${SIDE[m.side].icon} Your mission · only you see this`),
     h('p', { class: 'yc-mission-text' }, m.text),
-    h('div', { class: 'yc-evidence' }, pic(m.evidence), h('div', {}, h('p', { class: 'yc-label' }, 'Your evidence'), jpv(m.evidence.word, me.level, 'yc-ev-word'))),
+    h('div', { class: 'yc-evidence' }, pic(m.evidence), h('div', {}, h('p', { class: 'yc-label' }, 'Your evidence'), jpv(me.level === 'n5' ? { ...m.evidence.word, text: m.evidence.word.kana } : m.evidence.word, me.level, 'yc-ev-word'))),
   );
 }
 
@@ -454,8 +462,8 @@ function passBlock(me: CourtMe, send: Send): HTMLElement | null {
     return h(
       'div',
       { class: 'yc-pass-wrap' },
-      h('button', { type: 'button', class: 'yc-pass free', onclick: () => send({ kind: 'pass', free: true }) }, 'Let Fude-san read it · free'),
-      h('p', { class: 'yc-hint center' }, 'This doesn’t use your pass the mic. It scores nothing this case.'),
+      h('button', { type: 'button', class: 'yc-pass free', onclick: () => send({ kind: 'pass', free: true }) }, 'Fude-san reads it · no points'),
+      h('p', { class: 'yc-hint center' }, 'Your mic pass stays unused. Typing your argument scores in full.'),
     );
   if (!me.micPassLeft) return h('button', { type: 'button', class: 'yc-pass', disabled: true }, 'Pass the mic · 0 left');
   if (!passAsk) return h('button', { type: 'button', class: 'yc-pass', onclick: () => ((passAsk = true), buzz(20), bump()) }, '🎙 Pass the mic · ', h('b', {}, '1 left'));
@@ -543,12 +551,12 @@ const sentCard = (sub: string): HTMLElement => h('div', { class: 'yc-sent' }, h(
 const watchCard = (title: string, sub = ''): HTMLElement => h('div', { class: 'yc-sent' }, h('p', { class: 'yc-watch' }, '📺 ', title), sub ? h('p', { class: 'yc-hint center' }, sub) : null);
 
 /** A picture button: hunches, the check, the vote. */
-function pictureButton(t: ThingView, level: CourtLevel, on: boolean, onclick: (() => void) | null, cls = ''): HTMLElement {
+function pictureButton(t: ThingView, level: Level, on: boolean, onclick: (() => void) | null, cls = ''): HTMLElement {
   return h(
     'button',
     { type: 'button', class: `yc-card ${cls}${on ? ' on' : ''}`, 'aria-pressed': on ? 'true' : 'false', disabled: !onclick, onclick: onclick ?? undefined },
     pic(t),
-    h('span', { class: 'yc-card-ja', lang: 'ja' }, level === 'kana' ? t.word.kana : ruby(t.word)),
+    h('span', { class: 'yc-card-ja', lang: 'ja' }, level === 'kana' || level === 'n5' ? t.word.kana : ruby(t.word)),
     level === 'kana' && t.word.romaji ? h('span', { class: 'yc-card-ro' }, t.word.romaji) : null,
     h('span', { class: 'yc-card-en' }, t.word.en),
   );
@@ -618,7 +626,7 @@ function roleCard(ctx: Ctx, me: CourtMe): HTMLElement {
       { class: `yc-rolecard yc-side-${r}` },
       h('p', { class: 'yc-role-big' }, `${SIDE[r].icon} ${r === 'pros' ? 'You prosecute' : 'You defend'}`),
       h('p', {}, `Against ${nameOf(ctx.view, other)}${otherLevel ? ` (${levelLabel(otherLevel)})` : ''}. Lawyers are paired by the closest level, so the better idea wins, not the bigger vocabulary.`),
-      h('ul', { class: 'yc-breakdown' }, h('li', {}, h('span', {}, 'Win the vote'), h('b', {}, '+200')), h('li', {}, h('span', {}, 'Each judge’s vote'), h('b', {}, '+50'))),
+      h('ul', { class: 'yc-breakdown' }, h('li', {}, h('span', {}, 'Win the vote (a tie splits it)'), h('b', {}, '+200')), h('li', {}, h('span', {}, 'Each judge’s vote'), h('b', {}, '+50')), h('li', {}, h('span', {}, 'Each judge who hears your evidence'), h('b', {}, '+25'))),
     );
   }
   if (r === 'witness')
@@ -627,14 +635,14 @@ function roleCard(ctx: Ctx, me: CourtMe): HTMLElement {
       { class: 'yc-rolecard' },
       h('p', { class: 'yc-role-big' }, '👁 You’re the witness'),
       h('p', {}, 'Fude-san asks you one question. Answer with a tile. You can add a curveball. Then you judge with everyone else.'),
-      h('ul', { class: 'yc-breakdown' }, h('li', {}, h('span', {}, 'Check right'), h('b', {}, '+50')), h('li', {}, h('span', {}, 'Vote with the majority'), h('b', {}, '+100'))),
+      judgePoints(ctx),
     );
   return h(
     'div',
     { class: 'yc-rolecard' },
     h('p', { class: 'yc-role-big' }, '⚖ You judge'),
     h('p', {}, 'Listen to the witness, then two lawyers. Answer one question about their arguments, then vote: who won you over?'),
-    h('ul', { class: 'yc-breakdown' }, h('li', {}, h('span', {}, 'Check right'), h('b', {}, '+50')), h('li', {}, h('span', {}, 'Vote with the majority'), h('b', {}, '+100'))),
+    judgePoints(ctx),
   );
 }
 
@@ -656,7 +664,7 @@ function witnessScreen(ctx: Ctx, me: CourtMe): HTMLElement {
               class: `yc-tile${t.curve ? ' yc-curve' : ''}`,
               onclick: () => void ctx.send({ kind: 'testify', round: game.round, testimony: t.id }).then((ok) => ok && buzz(60)),
             },
-            jpView(t.word, shown(me.level), { as: 'tile', cls: 'yc-tile-words' }),
+            jpView(t.word, me.level, { as: 'tile', cls: 'yc-tile-words' }),
             t.curve ? h('img', { class: 'yc-leaf', src: LEAF, alt: 'curveball', draggable: 'false' }) : null,
           ),
         ),
@@ -692,7 +700,11 @@ function kanaLawyerScreen(ctx: Ctx, me: CourtMe, send: Send): HTMLElement {
       testimonyCard(ctx, me),
       evidenceCard(me),
       tilesBox(ctx, me, true),
-      me.picks.length ? h('p', { class: 'yc-locked' }, '✓ Picked. Change it until the plan ends.') : h('p', { class: 'yc-hint' }, 'No pick? Fude-san reads your first two tiles.'),
+      !me.picks.length
+        ? h('p', { class: 'yc-hint' }, 'Pick at least one. No pick: Fude-san stands in, and you score nothing this case.')
+        : me.ready
+          ? h('p', { class: 'yc-locked' }, '✓ Done. You can still change your tiles until the plan ends.')
+          : dock(h('button', { type: 'button', class: 'primary', onclick: () => send({ kind: 'ready' }) }, `✓ Done: ${me.picks.length === 1 ? 'one tile' : 'two tiles'}`)),
     );
   // Record.
   if (me.sent) return screen(band(ctx, me, 'both arguments play. Then the judges vote.'), sentCard('Prosecution plays first, then defence. You don’t vote in your own case.'));
@@ -720,14 +732,14 @@ function speakerScreen(ctx: Ctx, me: CourtMe, send: Send): HTMLElement {
     if (game.step === 'testify')
       return screen(band(ctx, me, '8 s to plan, then you both record at the same time.'), testimonyCard(ctx, me), evidenceCard(me));
     return screen(
-      band(ctx, me, 'recording starts by itself at 0.'),
+      band(ctx, me, 'at 0, tap ● and argue.'),
       testimonyCard(ctx, me),
       evidenceCard(me),
       hintBox(me, send),
       micOff() && !isQuiet() ? micOffCard() : null,
       problemLine(),
       dock(
-        typeIt ? typedBox(ctx, typedSend) : me.ready ? h('p', { class: 'yc-locked yc-ready-done' }, '✓ Ready. Recording starts at 0.') : h('button', { type: 'button', class: 'primary', onclick: () => send({ kind: 'ready' }) }, '● I’m ready: record'),
+        typeIt ? typedBox(ctx, typedSend) : me.ready ? h('p', { class: 'yc-locked yc-ready-done' }, '✓ Ready. At 0, tap ● and talk.') : h('button', { type: 'button', class: 'primary', onclick: () => send({ kind: 'ready' }) }, '● I’m ready: record'),
         passBlock(me, send),
       ),
     );
@@ -792,8 +804,8 @@ function argCard(ctx: Ctx, me: CourtMe, a: ArgView, onclick: (() => void) | null
     { type: 'button', class: `yc-arg yc-side-${a.side}${me.vote === a.side ? ' on' : ''}`, 'aria-pressed': me.vote === a.side ? 'true' : 'false', disabled: !onclick, onclick: onclick ?? undefined },
     h('span', { class: 'yc-arg-who' }, seatChip(ctx.view, a.playerId), h('b', {}, nameOf(ctx.view, a.playerId))),
     h('span', { class: 'yc-arg-pics' }, ...a.pics.map((t) => pic(t, 'yc-pic yc-pic-small'))),
-    a.hidden ? h('span', { class: 'yc-hint' }, 'Taken off the TV') : jpView(a.gist, shown(me.level), { as: 'tile', cls: 'yc-arg-gist' }),
-    a.subtitle ? plain('span', 'yc-arg-said', `“${a.subtitle}”`) : null,
+    a.hidden ? h('span', { class: 'yc-hint' }, 'Taken off the TV') : jpView(a.gist, me.level, { as: 'tile', cls: 'yc-arg-gist' }),
+    a.subtitle ? plain('span', 'yc-arg-said', `「${a.subtitle}」`) : null,
     a.pass || a.free ? h('span', { class: 'yc-hint' }, a.free ? '🖌 Fude-san stood in' : '🎙 Fude-san read it') : null,
     h('span', { class: 'yc-arg-verdict' }, `${s.icon} `, h('span', { lang: 'ja' }, ruby(s.verdict)), ` ${s.en}`),
   );
@@ -816,7 +828,7 @@ function voteScreen(ctx: Ctx, me: CourtMe): HTMLElement {
     band(ctx, me, 'the verdict.'),
     h('p', { class: 'yc-strong center' }, game.step === 'gist' ? 'Both arguments, side by side' : 'Who won you over?'),
     h('div', { class: 'yc-args' }, ...game.args.map((a) => argCard(ctx, me, a, open ? () => void ctx.send({ kind: 'vote', round: game.round, side: a.side }).then((ok) => ok && buzz(20)) : null))),
-    h('p', { class: 'yc-hint center' }, same ? `Both lawyers are ${levelLabel(levels[0]!)}. Vote for the better idea, not the harder Japanese.` : 'Vote for the better idea, not the harder Japanese.'),
+    h('p', { class: 'yc-hint center' }, same ? `Both lawyers are ${levelLabel(levels[0]!)}. Vote for who argued it better.` : 'Vote for who argued it better.'),
     open ? h('p', { class: 'yc-hint center' }, me.vote ? '✓ Locked in. Tap the other side to change it.' : 'One vote. Change it until the timer ends.') : game.step === 'gist' ? h('p', { class: 'yc-hint center' }, 'The vote opens in a moment.') : null,
   );
 }
@@ -844,7 +856,7 @@ function noteCard(me: CourtMe): HTMLElement | null {
         ? h('span', { class: 'yc-mark-chip' }, 'Said it, with a hint')
         : n.credit === 'unchecked'
           ? h('span', { class: 'yc-mark-chip' }, 'Said it (the game couldn’t check the words)')
-          : h('span', { class: 'yc-mark-chip' }, n.said !== null ? 'Seen: say it with the pattern next time' : 'Seen');
+          : h('span', { class: 'yc-mark-chip' }, n.said !== null ? 'Logged as seen: use the pattern in your own words to log it as said' : 'Logged as seen: say it yourself next time to log it as said');
   return h(
     'div',
     { class: 'yc-note' },
@@ -901,7 +913,8 @@ function scoreScreen(ctx: Ctx, me: CourtMe): HTMLElement {
     band(ctx, me, next),
     v ? h('p', { class: `yc-verdict yc-side-${v.winner}` }, SIDE[v.winner].icon, ' ', h('span', { lang: 'ja' }, ruby(SIDE[v.winner].verdict)), ` · ${v.pros} to ${v.def}${v.tie ? ', and a tie is not guilty' : ''}`) : null,
     h('p', { class: 'yc-label center' }, 'This case'),
-    h('p', { class: 'yc-points' }, `+${me.points ?? 0}`),
+    h('p', { class: `yc-points${me.points ? '' : ' zero'}` }, `+${me.points ?? 0}`),
+    me.scoreWhy ? h('p', { class: 'yc-hint center' }, me.scoreWhy) : null,
     lines.length ? h('ul', { class: 'yc-breakdown' }, ...lines.map((x) => h('li', {}, h('span', {}, WHY[x.why] ?? x.why), h('b', {}, `+${x.points}`)))) : null,
     resultCard(me),
     noteCard(me),
@@ -922,7 +935,7 @@ function vipFold(ctx: Ctx): HTMLElement | null {
   return h(
     'details',
     { class: 'yc-vip' },
-    h('summary', {}, 'VIP: hide an argument'),
+    h('summary', {}, h('span', {}, 'VIP: hide an argument'), h('small', {}, 'Takes it off the TV. It scores nothing; the vote still counts.')),
     ...list.map((x) =>
       h(
         'button',
@@ -936,7 +949,7 @@ function vipFold(ctx: Ctx): HTMLElement | null {
           },
         },
         `🚫 Hide ${nameOf(view, x.id)}’s argument `,
-        x.text ? plain('span', '', `“${x.text}”`) : null,
+        x.text ? plain('span', '', `「${x.text}」`) : null,
       ),
     ),
   );

@@ -10,7 +10,8 @@
 //
 // Lines are built from templates, so one set of missions fits every case: {A} the accused, {O} the yōkai the
 // witness blames, {C} the curveball's second suspect, {D} the deed (plain past), {Dm} the deed (ます past),
-// {Dn} the deed (ません past), {K} the prosecution's clue, {P} the defence's alibi place. In the Japanese,
+// {Dn} the deed (ません past), {K} the prosecution's clue, {P} the defence's alibi place, {R} what
+// the accused must do to put it right (ない stem: 返さ), so the N4 lines put a new verb in なければ / なくても each case. In the Japanese,
 // [漢字|かんじ] is a word with its reading, so the line's text and kana stay space for space (furigana is
 // built from the pair). Kana and N5 lines are all kana.
 //
@@ -20,15 +21,10 @@
 import type { JpText, Level } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 
-/**
- * The court's levels: the room's, plus N3 (the Limited Express Line, 特急), which joins the Level type at step 6.
- * TODO(n3): once 'n3' is in Level on main, this is just Level.
- */
-export type CourtLevel = Level | 'n3';
-export const COURT_LEVELS: readonly CourtLevel[] = ['kana', 'n5', 'n4', 'n3'];
-/** Rank for pairing lawyers by the closest level. */
-export const LEVEL_RANK: Record<CourtLevel, number> = { kana: 0, n5: 1, n4: 2, n3: 3 };
-export type SpeakLevel = Exclude<CourtLevel, 'kana'>;
+export { LEVEL_RANK } from '../../level.js';
+export const COURT_LEVELS: readonly Level[] = ['kana', 'n5', 'n4', 'n3'];
+/** The levels that argue in their own words (Kana lawyers pick tiles). */
+export type SpeakLevel = Exclude<Level, 'kana'>;
 
 export type Side = 'pros' | 'def';
 /** What the witness said: saw it, saw nothing, it was someone else, or the curveball (a second suspect). */
@@ -50,6 +46,8 @@ export interface Yokai {
 export interface Thing {
   id: string;
   word: JpText;
+  /** A place with its preposition, for the English lines (on the roof). Clues leave it out. */
+  at?: string;
   picture: string;
   emoji: string;
   keys: string[];
@@ -66,8 +64,10 @@ export interface Case {
   deed: { plain: JpText; masu: JpText; neg: JpText };
   /** The thing it happened to: the case card's picture, and the prosecution's picture in the gist. */
   object: Thing;
-  /** The case card's evidence line, in English. */
+  /** The case card's evidence line, in English: the damage only, never the clue the check asks about. */
   evidence: string;
+  /** What the accused must do to put it right, in the ない stem (返さ: 返さなければ / 返さなくても); en: give the mic back. */
+  remedy: JpText;
   /** The prosecution's clue, and two decoys for the check. */
   clue: string;
   clueDecoys: [string, string];
@@ -89,7 +89,7 @@ const jk = (text: string, kana: string, en: string): JpText => ({ text, kana, en
 // ---- the yōkai ----
 
 export const YOKAI: readonly Yokai[] = [
-  { id: 'kappa', name: jp('かっぱ', 'kappa'), picture: 'hotline/caller-kappa', emoji: '🥒', keys: ['かっぱ'] },
+  { id: 'kappa', name: jp('かっぱ', 'kappa'), picture: 'hotline/caller-kappa', emoji: '🌊', keys: ['かっぱ'] },
   { id: 'kitsune', name: jp('きつね', 'fox'), picture: 'hotline/caller-kitsune', emoji: '🦊', keys: ['きつね'] },
   { id: 'tanuki', name: jp('たぬき', 'tanuki'), picture: 'fx/tanuki-doron', emoji: '🍃', keys: ['たぬき'] },
   { id: 'neko', name: jp('ねこ', 'cat'), picture: 'late/cause-cat', emoji: '🐈', keys: ['ねこが', 'ねこも', 'ねこだ', 'ねこで', 'ねこは', 'ねこじゃ', 'ねこに'] },
@@ -117,13 +117,13 @@ export const CLUES: readonly Thing[] = [
 ];
 
 export const PLACES: readonly Thing[] = [
-  { id: 'pond', word: jk('池', 'いけ', 'the pond'), picture: 'court/place-pond', emoji: '🪷', keys: ['いけに', 'いけで', 'いけの', 'いけへ', 'いけです', 'いけにい'] },
-  { id: 'bath', word: jp('おふろ', 'the bath'), picture: 'court/place-bath', emoji: '♨️', keys: ['ふろ'] },
-  { id: 'roof', word: jk('屋根', 'やね', 'the roof'), picture: 'court/place-roof', emoji: '🏠', keys: ['やね'] },
-  { id: 'garden', word: jk('庭', 'にわ', 'the garden'), picture: 'court/place-garden', emoji: '🌸', keys: ['にわに', 'にわで', 'にわの', 'にわへ', 'にわです'] },
-  { id: 'mountain', word: jk('山', 'やま', 'the mountain'), picture: 'court/place-mountain', emoji: '🗻', keys: ['やまに', 'やまで', 'やまの', 'やまへ', 'やまです'] },
-  { id: 'kotatsu', word: jp('こたつ', 'the kotatsu'), picture: 'hotline/advice-kotatsu', emoji: '🍊', keys: ['こたつ'] },
-  { id: 'closet', word: jp('おしいれ', 'the cupboard'), picture: 'court/place-closet', emoji: '🚪', keys: ['おしいれ'] },
+  { id: 'pond', word: jk('池', 'いけ', 'the pond'), at: 'by the pond', picture: 'court/place-pond', emoji: '🪷', keys: ['いけに', 'いけで', 'いけの', 'いけへ', 'いけです', 'いけにい'] },
+  { id: 'bath', word: jp('おふろ', 'the bath'), at: 'in the bath', picture: 'court/place-bath', emoji: '♨️', keys: ['ふろ'] },
+  { id: 'roof', word: jk('屋根', 'やね', 'the roof'), at: 'on the roof', picture: 'court/place-roof', emoji: '🏠', keys: ['やね'] },
+  { id: 'garden', word: jk('庭', 'にわ', 'the garden'), at: 'in the garden', picture: 'court/place-garden', emoji: '🌸', keys: ['にわに', 'にわで', 'にわの', 'にわへ', 'にわです'] },
+  { id: 'mountain', word: jk('山', 'やま', 'the mountain'), at: 'on the mountain', picture: 'court/place-mountain', emoji: '🗻', keys: ['やまに', 'やまで', 'やまの', 'やまへ', 'やまです'] },
+  { id: 'kotatsu', word: jp('こたつ', 'the kotatsu'), at: 'under the kotatsu', picture: 'hotline/advice-kotatsu', emoji: '🍊', keys: ['こたつ'] },
+  { id: 'closet', word: jp('おしいれ', 'the cupboard'), at: 'in the cupboard', picture: 'court/place-closet', emoji: '🚪', keys: ['おしいれ'] },
 ];
 
 // ---- the cases ----
@@ -136,14 +136,15 @@ export const CASES: readonly Case[] = [
     accused: 'kappa',
     deed: { plain: jk('食べた', 'たべた', 'ate the bento'), masu: jk('食べました', 'たべました', 'ate the bento'), neg: jk('食べませんでした', 'たべませんでした', 'didn’t eat the bento') },
     object: { id: 'bento', word: jk('お弁当', 'おべんとう', 'the bento'), picture: 'cards/konbini.bento', emoji: '🍱', keys: ['べんとう'] },
-    evidence: 'An empty box. One cucumber slice left.',
+    evidence: 'An empty box. Not one grain of rice left.',
+    remedy: jk('作ら', 'つくら', 'make a new bento'),
     clue: 'cucumber',
-    clueDecoys: ['leaf', 'feather'],
-    alibi: 'pond',
-    alibiDecoys: ['bath', 'roof'],
+    clueDecoys: ['leaf', 'puddle'],
+    alibi: 'roof',
+    alibiDecoys: ['pond', 'garden'],
     other: 'kitsune',
     curve: 'tanuki',
-    coda: jp('ほんとうは… ポンが はんぶん たべました。', 'The real story… Pon ate half of it.'),
+    coda: jp('ほんとうは… ポンが たべました。きゅうりは きらいです。', 'The real story… Pon ate it. He doesn’t like cucumber.'),
     status: 'draft',
   },
   {
@@ -153,14 +154,15 @@ export const CASES: readonly Case[] = [
     accused: 'oni',
     deed: { plain: jk('食べた', 'たべた', 'ate the pudding'), masu: jk('食べました', 'たべました', 'ate the pudding'), neg: jk('食べませんでした', 'たべませんでした', 'didn’t eat the pudding') },
     object: { id: 'pudding', word: jp('プリン', 'the pudding'), picture: 'court/object-pudding', emoji: '🍮', keys: ['ぷりん'] },
-    evidence: 'An empty cup, licked clean. A spoon on the floor.',
+    evidence: 'An empty cup, licked clean.',
+    remedy: jk('買わ', 'かわ', 'buy a new pudding'),
     clue: 'spoon',
     clueDecoys: ['bell', 'ice'],
     alibi: 'bath',
     alibiDecoys: ['garden', 'mountain'],
     other: 'neko',
     curve: 'kappa',
-    coda: jp('ほんとうは… ポンが じぶんで たべて、わすれて いました。', 'The real story… Pon ate it himself, and forgot.'),
+    coda: jp('ほんとうは… おにが たべました。スプーンも おにの です。', 'The real story… the oni did eat it. The spoon is the oni’s too.'),
     status: 'draft',
   },
   {
@@ -169,15 +171,16 @@ export const CASES: readonly Case[] = [
     scene: jp('スタジオ', 'the studio'),
     accused: 'karakasa',
     deed: { plain: jp('こわした', 'broke the lantern'), masu: jp('こわしました', 'broke the lantern'), neg: jp('こわしませんでした', 'didn’t break the lantern') },
-    object: { id: 'lantern', word: jp('ちょうちん', 'the lantern'), picture: 'hotline/caller-chochin', emoji: '🏮', keys: ['ちょうちん'] },
-    evidence: 'A torn lantern. A puddle by the door.',
+    object: { id: 'lantern', word: jp('ちょうちん', 'the lantern'), picture: 'court/object-lantern', emoji: '🏮', keys: ['ちょうちん'] },
+    evidence: 'A broken lantern on the floor.',
+    remedy: jk('直さ', 'なおさ', 'fix the lantern'),
     clue: 'puddle',
     clueDecoys: ['footprints', 'leaf'],
     alibi: 'roof',
     alibiDecoys: ['pond', 'closet'],
     other: 'tengu',
-    curve: 'tanuki',
-    coda: jp('ほんとうは… ちょうちんさんが くしゃみを しました。', 'The real story… Chōchin-san sneezed.'),
+    curve: 'kodama',
+    coda: jp('ほんとうは… ちょうちんさんが くしゃみを しました。みずたまりは はなみず でした。', 'The real story… Chōchin-san sneezed. The puddle was a runny nose.'),
     status: 'draft',
   },
   {
@@ -187,14 +190,15 @@ export const CASES: readonly Case[] = [
     accused: 'yukionna',
     deed: { plain: jk('飲んだ', 'のんだ', 'drank the tea'), masu: jk('飲みました', 'のみました', 'drank the tea'), neg: jk('飲みませんでした', 'のみませんでした', 'didn’t drink the tea') },
     object: { id: 'tea', word: jk('お茶', 'おちゃ', 'the tea'), picture: 'cards/konbini.tea', emoji: '🍵', keys: ['おちゃ'] },
-    evidence: 'An empty cup, frosted over. The cup is still cold.',
+    evidence: 'An empty cup. Not one drop left.',
+    remedy: jk('入れ', 'いれ', 'make new tea'),
     clue: 'ice',
     clueDecoys: ['puddle', 'spoon'],
-    alibi: 'mountain',
-    alibiDecoys: ['kotatsu', 'bath'],
+    alibi: 'bath',
+    alibiDecoys: ['mountain', 'kotatsu'],
     other: 'tengu',
     curve: 'kitsune',
-    coda: jp('ほんとうは… のびこさんの くびが のびて、じぶんで のみました。', 'The real story… Nobiko-san’s neck stretched over and she drank it herself.'),
+    coda: jp('ほんとうは… のびこさんが くびを のばして、じぶんで のみました。', 'The real story… Nobiko-san stretched her neck over and drank it herself.'),
     status: 'draft',
   },
   {
@@ -204,31 +208,33 @@ export const CASES: readonly Case[] = [
     accused: 'nekomata',
     deed: { plain: jp('とった', 'took the mic'), masu: jp('とりました', 'took the mic'), neg: jp('とりませんでした', 'didn’t take the mic') },
     object: { id: 'mic', word: jp('マイク', 'the mic'), picture: 'court/object-mic', emoji: '🎤', keys: ['まいく'] },
-    evidence: 'An empty mic stand. Something jingled in the dark.',
+    evidence: 'An empty mic stand. The show starts in ten minutes.',
+    remedy: jk('返さ', 'かえさ', 'give the mic back'),
     clue: 'bell',
     clueDecoys: ['feather', 'cucumber'],
-    alibi: 'kotatsu',
-    alibiDecoys: ['roof', 'garden'],
+    alibi: 'pond',
+    alibiDecoys: ['kotatsu', 'roof'],
     other: 'kodama',
-    curve: 'tanuki',
-    coda: jp('ほんとうは… マイクは カラオケの へやに ありました。', 'The real story… the mic was in the karaoke room all along.'),
+    curve: 'tengu',
+    coda: jp('ほんとうは… ねこまたが とりました。カラオケが だいすきです。', 'The real story… the nekomata did take it. It loves karaoke.'),
     status: 'draft',
   },
   {
     id: 'inkstone',
-    title: jp('フデさんの すずり、だれが かくした？', 'Who hid Fude-san’s inkstone?'),
+    title: jk('フデさんの すずり、誰が かくした？', 'フデさんの すずり、だれが かくした？', 'Who hid Fude-san’s inkstone?'),
     scene: jk('書道室', 'しょどうしつ', 'the calligraphy room'),
     accused: 'zashiki',
     deed: { plain: jp('かくした', 'hid the inkstone'), masu: jp('かくしました', 'hid the inkstone'), neg: jp('かくしませんでした', 'didn’t hide the inkstone') },
     object: { id: 'inkstone', word: jp('すずり', 'the inkstone'), picture: 'hotline/advice-ink', emoji: '🖋️', keys: ['すずり'] },
-    evidence: 'An empty desk. Small inky footprints.',
+    evidence: 'An empty desk. Fude-san can’t write a thing.',
+    remedy: jk('探さ', 'さがさ', 'find the inkstone'),
     clue: 'footprints',
     clueDecoys: ['feather', 'bell'],
-    alibi: 'closet',
-    alibiDecoys: ['garden', 'pond'],
+    alibi: 'garden',
+    alibiDecoys: ['closet', 'pond'],
     other: 'neko',
     curve: 'kappa',
-    coda: jp('ほんとうは… すずりは フデさんの ポケットに ありました。', 'The real story… the inkstone was in Fude-san’s own pocket.'),
+    coda: jp('ほんとうは… すずりは フデさんの ポケットに ありました。あしあとも フデさんの でした。', 'The real story… the inkstone was in Fude-san’s own pocket. The footprints were Fude-san’s too.'),
     status: 'draft',
   },
 ];
@@ -269,12 +275,13 @@ export function slotsOf(c: Case, t: Testimony): Record<string, JpText> {
   const k = thingOf(c.clue)!.word;
   const p = thingOf(c.alibi)!.word;
   void t;
-  return { A: a, O: o, C: cv, D: c.deed.plain, Dm: c.deed.masu, Dn: c.deed.neg, K: k, P: p };
+  return { A: a, O: o, C: cv, D: c.deed.plain, Dm: c.deed.masu, Dn: c.deed.neg, K: k, P: p, Pat: { ...p, en: thingOf(c.alibi)!.at ?? p.en }, R: c.remedy };
 }
 
 /**
  * Fills a template. `kanaOnly` writes the whole line in kana (Kana and N5 lines), so a slot's kanji never shows.
- * English slots: {A} the kappa, {deed} ate the bento, {K} a cucumber slice, {P} the pond.
+ * English slots: {A} the kappa, {deed} ate the bento, {K} a cucumber slice, {P} the pond, {Pat} by the pond,
+ * {R} make a new bento.
  */
 export function fill(tpl: Template, slots: Record<string, JpText>, kanaOnly: boolean): JpText {
   let text = '';
@@ -313,7 +320,7 @@ export const QUESTION: JpText = jk('なにか 見ましたか？', 'なにか �
 /** The witness's four answers. The curveball adds a second suspect (it scores nothing: it changes the case). */
 export const WITNESS: Record<Testimony, Template> = {
   saw: { ja: 'みました！', en: 'I saw it!' },
-  unseen: { ja: 'みていません！', en: 'I didn’t see anything!' },
+  unseen: { ja: 'なにも みて いません！', en: 'I didn’t see anything!' },
   other: { ja: '{O}です！', en: 'It was the {O}!' },
   curve: { ja: '{C}も いました！', en: 'A {C} was there too!' },
 };
@@ -326,6 +333,11 @@ export const TESTIMONY_NOTE: Record<Testimony, string> = {
 };
 
 // ---- missions: one per side and testimony, for every level; they never name the grammar ----
+
+/** Kana lawyers argue with tiles, so a mission never asks for what no tile says. */
+export const KANA_MISSIONS: Partial<Record<Side, Partial<Record<Testimony, string>>>> = {
+  pros: { saw: 'The witness saw it. Use that, give your evidence, and say the {A} did it.' },
+};
 
 export const MISSIONS: Record<Side, Record<Testimony, string>> = {
   pros: {
@@ -350,46 +362,46 @@ const SAID = '[言って|いって] いました';
 export const LINES: Record<Side, Record<Testimony, Record<SpeakLevel, Template>>> = {
   pros: {
     saw: {
-      n5: { ja: 'しょうにんは みました。{K}が ありました。{A}が {Dm}！', en: 'The witness saw it. There was {K}. The {A} {deed}!', frames: ['mashita'] },
-      n4: { ja: `${W}は {A}を [見た|みた]と ${SAID}。{K}も ありました。{A}は あやまらなければ なりません！`, en: 'The witness said they saw the {A}. There was {K} too. The {A} must apologise!', frames: ['to-itte-ita', 'nakereba'] },
-      n3: { ja: `${W}に よると、{A}が {D} そうです。{K}も ありました。{A}に ちがいありません！`, en: 'According to the witness, the {A} {deed}. There was {K} too. It must have been the {A}!', frames: ['ni-yoru', 'ni-chigainai'] },
+      n5: { ja: 'しょうにんは みました。{K}が ありました。{A}が {Dm}！', en: 'The witness saw it. We found {K}. The {A} {deed}!', frames: ['mashita'] },
+      n4: { ja: `${W}は {A}を [見た|みた]と ${SAID}。{K}も ありました。{A}は {R}なければ なりません！`, en: 'The witness said they saw the {A}. We found {K} too. The {A} must {R}!', frames: ['to-itte-ita', 'nakereba'] },
+      n3: { ja: `${W}に よると、{A}が {D} そうです。{K}も ありました。{A}に ちがいありません！`, en: 'According to the witness, the {A} {deed}. We found {K} too. It must have been the {A}!', frames: ['ni-yoru', 'ni-chigainai'] },
     },
     unseen: {
-      n5: { ja: 'だれも みて いません。でも、{K}が ありました。{A}が {Dm}！', en: 'Nobody saw it. But there was {K}. The {A} {deed}!', frames: ['mashita'] },
-      n4: { ja: `${W}は [見て|みて] いないと ${SAID}。でも、{K}が ありました。{A}は あやまらなければ なりません！`, en: 'The witness said they didn’t see it. But there was {K}. The {A} must apologise!', frames: ['to-itte-ita', 'nakereba'] },
-      n3: { ja: `${W}は [見て|みて] いない そうです。でも、{K}が ありました。{D}のは {A}に ちがいありません！`, en: 'I hear the witness saw nothing. But there was {K}. The one who did it must have been the {A}!', frames: ['sou-hear', 'ni-chigainai'] },
+      n5: { ja: 'だれも みて いません。でも、{K}が ありました。{A}が {Dm}！', en: 'Nobody saw it. But we found {K}. The {A} {deed}!', frames: ['mashita'] },
+      n4: { ja: `${W}は [見て|みて] いないと ${SAID}。でも、{K}が ありました。{A}は {R}なければ なりません！`, en: 'The witness said they didn’t see it. But we found {K}. The {A} must {R}!', frames: ['to-itte-ita', 'nakereba'] },
+      n3: { ja: `${W}は [見て|みて] いない そうです。でも、{K}が ありました。{D}のは {A}に ちがいありません！`, en: 'I hear the witness saw nothing. But we found {K}. The one who did it must have been the {A}!', frames: ['sou-hear', 'ni-chigainai'] },
     },
     other: {
-      n5: { ja: '{O}じゃ ありません。{K}が ありました。{A}が {Dm}！', en: 'It wasn’t the {O}. There was {K}. The {A} {deed}!', frames: ['ja-nai', 'mashita'] },
-      n4: { ja: `${W}は {O}だと ${SAID}。でも、{K}が ありました。{A}は あやまらなければ なりません！`, en: 'The witness said it was the {O}. But there was {K}. The {A} must apologise!', frames: ['to-itte-ita', 'nakereba'] },
-      n3: { ja: `${W}に よると {O}だ そうですが、{K}が ありました。{A}に ちがいありません！`, en: 'According to the witness it was the {O}, but there was {K}. It must have been the {A}!', frames: ['ni-yoru', 'ni-chigainai'] },
+      n5: { ja: '{O}じゃ ありません。{K}が ありました。{A}が {Dm}！', en: 'It wasn’t the {O}. We found {K}. The {A} {deed}!', frames: ['ja-nai', 'mashita'] },
+      n4: { ja: `${W}は {O}だと ${SAID}。でも、{K}が ありました。{A}は {R}なければ なりません！`, en: 'The witness said it was the {O}. But we found {K}. The {A} must {R}!', frames: ['to-itte-ita', 'nakereba'] },
+      n3: { ja: `${W}に よると、{O}だ そうですが、{K}が ありました。{A}に ちがいありません！`, en: 'According to the witness it was the {O}, but we found {K}. It must have been the {A}!', frames: ['ni-yoru', 'ni-chigainai'] },
     },
     curve: {
-      n5: { ja: '{C}も いました。でも、{K}が ありました。{A}が {Dm}！', en: 'A {C} was there too. But there was {K}. The {A} {deed}!', frames: ['mashita'] },
-      n4: { ja: `${W}は {C}も いたと ${SAID}。でも、{K}が ありました。{A}は あやまらなければ なりません！`, en: 'The witness said a {C} was there too. But there was {K}. The {A} must apologise!', frames: ['to-itte-ita', 'nakereba'] },
-      n3: { ja: `${W}に よると、{C}も いた そうです。でも、{K}が ありました。{D}のは {A}に ちがいありません！`, en: 'According to the witness, a {C} was there too. But there was {K}. The one who did it must have been the {A}!', frames: ['ni-yoru', 'ni-chigainai'] },
+      n5: { ja: '{C}も いました。でも、{K}が ありました。{A}が {Dm}！', en: 'A {C} was there too. But we found {K}. The {A} {deed}!', frames: ['mashita'] },
+      n4: { ja: `${W}は {C}も いたと ${SAID}。でも、{K}が ありました。{A}は {R}なければ なりません！`, en: 'The witness said a {C} was there too. But we found {K}. The {A} must {R}!', frames: ['to-itte-ita', 'nakereba'] },
+      n3: { ja: `${W}に よると、{C}も いた そうです。でも、{K}が ありました。{D}のは {A}に ちがいありません！`, en: 'According to the witness, a {C} was there too. But we found {K}. The one who did it must have been the {A}!', frames: ['ni-yoru', 'ni-chigainai'] },
     },
   },
   def: {
     saw: {
-      n5: { ja: 'みまちがいです！ {A}は {P}に いました！', en: 'They saw wrong! The {A} was at {P}!', frames: ['wa-ni-aru'] },
-      n4: { ja: `${W}は [見た|みた]と ${SAID}。でも、{A}は {P}に いました。あやまらなくても いいです！`, en: 'The witness said they saw it. But the {A} was at {P}. No need to apologise!', frames: ['to-itte-ita', 'nakutemo-ii'] },
-      n3: { ja: '[見た|みた]からと いって、{A}が {D} わけでは ありません。{A}は {P}に いました。', en: 'Just because they saw something doesn’t mean the {A} {deed}. The {A} was at {P}.', frames: ['wake-dewa-nai'] },
+      n5: { ja: 'ちがいます！ {A}は {P}に いました！', en: 'That’s wrong! The {A} was {Pat}!', frames: ['wa-ni-aru'] },
+      n4: { ja: `${W}は [見た|みた]と ${SAID}。でも、{A}は {P}に いました。だから、{R}なくても いいです！`, en: 'The witness said they saw it. But the {A} was {Pat}. So there’s no need to {R}!', frames: ['to-itte-ita', 'nakutemo-ii'] },
+      n3: { ja: `${W}が [見た|みた]からと いって、{A}が {D} わけでは ありません。{A}は {P}に いました。`, en: 'Just because the witness saw something doesn’t mean the {A} {deed}. The {A} was {Pat}.', frames: ['wake-dewa-nai'] },
     },
     unseen: {
-      n5: { ja: 'だれも みて いません！ {A}は {P}に いました！', en: 'Nobody saw it! The {A} was at {P}!', frames: ['te-iru', 'wa-ni-aru'] },
-      n4: { ja: `${W}は [見て|みて] いないと ${SAID}。{A}は {P}に いました。あやまらなくても いいです！`, en: 'The witness said they didn’t see it. The {A} was at {P}. No need to apologise!', frames: ['to-itte-ita', 'nakutemo-ii'] },
-      n3: { ja: `${W}に よると、だれも [見て|みて] いない そうです。{A}が {D} わけでは ありません。{A}は {P}に いました。`, en: 'According to the witness, nobody saw it. That doesn’t mean the {A} {deed}. The {A} was at {P}.', frames: ['ni-yoru', 'wake-dewa-nai'] },
+      n5: { ja: 'だれも みて いません！ {A}は {P}に いました！', en: 'Nobody saw it! The {A} was {Pat}!', frames: ['te-iru', 'wa-ni-aru'] },
+      n4: { ja: `${W}は [見て|みて] いないと ${SAID}。{A}は {P}に いました。だから、{R}なくても いいです！`, en: 'The witness said they didn’t see it. The {A} was {Pat}. So there’s no need to {R}!', frames: ['to-itte-ita', 'nakutemo-ii'] },
+      n3: { ja: `${W}に よると、だれも [見て|みて] いない そうです。だからと いって、{A}が {D} わけでは ありません。{A}は {P}に いました。`, en: 'According to the witness, nobody saw it. But that doesn’t mean the {A} {deed}. The {A} was {Pat}.', frames: ['ni-yoru', 'wake-dewa-nai'] },
     },
     other: {
-      n5: { ja: '{O}です！ {A}は {P}に いました！', en: 'It was the {O}! The {A} was at {P}!', frames: ['desu', 'wa-ni-aru'] },
-      n4: { ja: `${W}は {O}だと ${SAID}。{A}は {P}に いました。あやまらなくても いいです！`, en: 'The witness said it was the {O}. The {A} was at {P}. No need to apologise!', frames: ['to-itte-ita', 'nakutemo-ii'] },
-      n3: { ja: `${W}に よると、{O}だ そうです。{A}は {P}に いました。{D}のは {O}に ちがいありません！`, en: 'According to the witness, it was the {O}. The {A} was at {P}. The one who did it must have been the {O}!', frames: ['ni-yoru', 'ni-chigainai'] },
+      n5: { ja: '{O}です！ {A}は {P}に いました！', en: 'It was the {O}! The {A} was {Pat}!', frames: ['desu', 'wa-ni-aru'] },
+      n4: { ja: `${W}は {O}だと ${SAID}。{A}は {P}に いました。だから、{R}なくても いいです！`, en: 'The witness said it was the {O}. The {A} was {Pat}. So there’s no need to {R}!', frames: ['to-itte-ita', 'nakutemo-ii'] },
+      n3: { ja: `${W}に よると、{O}だ そうです。{A}は {P}に いました。{D}のは {O}に ちがいありません！`, en: 'According to the witness, it was the {O}. The {A} was {Pat}. The one who did it must have been the {O}!', frames: ['ni-yoru', 'ni-chigainai'] },
     },
     curve: {
-      n5: { ja: '{C}も いました！ {A}は {P}に いました！', en: 'A {C} was there too! The {A} was at {P}!', frames: ['wa-ni-aru'] },
-      n4: { ja: `${W}は {C}も いたと ${SAID}。{A}は {P}に いました。あやまらなくても いいです！`, en: 'The witness said a {C} was there too. The {A} was at {P}. No need to apologise!', frames: ['to-itte-ita', 'nakutemo-ii'] },
-      n3: { ja: '{C}が いたからと いって、{A}が {D} わけでは ありません。{A}は {P}に いました。', en: 'Just because a {C} was there doesn’t mean the {A} {deed}. The {A} was at {P}.', frames: ['wake-dewa-nai'] },
+      n5: { ja: '{C}も いました！ {A}は {P}に いました！', en: 'A {C} was there too! The {A} was {Pat}!', frames: ['wa-ni-aru'] },
+      n4: { ja: `${W}は {C}も いたと ${SAID}。{A}は {P}に いました。だから、{R}なくても いいです！`, en: 'The witness said a {C} was there too. The {A} was {Pat}. So there’s no need to {R}!', frames: ['to-itte-ita', 'nakutemo-ii'] },
+      n3: { ja: '{C}が いたからと いって、{A}が {D} わけでは ありません。{A}は {P}に いました。', en: 'Just because a {C} was there doesn’t mean the {A} {deed}. The {A} was {Pat}.', frames: ['wake-dewa-nai'] },
     },
   },
 };
@@ -407,24 +419,24 @@ export function kanaTilesOf(side: Side, t: Testimony): ArgTile[] {
   if (side === 'pros') {
     const third: Record<Testimony, Template> = {
       saw: { ja: 'しょうにんが みた！', en: 'The witness saw it!' },
-      unseen: { ja: 'みてなくても わかる！', en: 'Nobody saw, but I just know!' },
+      unseen: { ja: 'ぜったい {A}！', en: 'It was the {A}, for sure!' },
       other: { ja: '{O}じゃ ない！', en: 'Not the {O}!' },
       curve: { ja: '{C}じゃ ない！', en: 'Not the {C}!' },
     };
     return [
       { id: 'claim', tpl: { ja: '{A}が {D}！', en: 'The {A} {deed}!' } },
-      { id: 'evidence', tpl: { ja: '{K}が あった！', en: 'There was {K}!' }, evidence: true },
+      { id: 'evidence', tpl: { ja: '{K}が あった！', en: 'We found {K}!' }, evidence: true },
       { id: 'answer', tpl: third[t] },
     ];
   }
   const third: Record<Testimony, Template> = {
-    saw: { ja: 'みまちがい！', en: 'They saw wrong!' },
+    saw: { ja: 'ちがう！', en: 'That’s wrong!' },
     unseen: { ja: 'だれも みてない！', en: 'Nobody saw it!' },
     other: { ja: '{O}が {D}！', en: 'The {O} {deed}!' },
     curve: { ja: '{C}が {D}！', en: 'The {C} {deed}!' },
   };
   return [
-    { id: 'evidence', tpl: { ja: '{A}は {P}に いた！', en: 'The {A} was at {P}!' }, evidence: true },
+    { id: 'evidence', tpl: { ja: '{A}は {P}に いた！', en: 'The {A} was {Pat}!' }, evidence: true },
     { id: 'claim', tpl: { ja: '{A}じゃ ない！', en: 'It wasn’t the {A}!' } },
     { id: 'answer', tpl: third[t] },
   ];
@@ -468,35 +480,34 @@ export interface CourtChunk {
 const tag = {
   chigai: 'Limited Express · 〜に ちがいありません',
   wake: 'Limited Express · 〜わけでは ありません',
-  yoru: 'Limited Express · 〜に よると',
+  yoru: 'Express Line · 〜に よると',
   itte: 'Express Line · 〜と いって いました',
   nakereba: 'Express Line · 〜なければ なりません',
   nakutemo: 'Express Line · 〜なくても いいです',
   imashita: 'Local Line · 〜に いました',
   janai: 'Local Line · 〜じゃ ありません',
-  atta: 'Local Line · 〜が あります',
+  atta: 'Local Line · 〜が ありました',
 };
 
 /** Within a level the longer chunk comes first, so its keys win. */
 export const CHUNKS: readonly CourtChunk[] = [
   { id: 'chigai', level: 'n3', text: 'に ちがいありません', keys: ['にちがいありません', 'にちがいない'], note: '〜に ちがいありません: “it must have been…”. Said like a closing argument. The court leans in.', tag: tag.chigai },
   { id: 'wake', level: 'n3', text: 'わけでは ありません', keys: ['わけではありません', 'わけじゃありません', 'わけではない', 'わけじゃない'], note: '〜わけでは ありません: “that doesn’t mean…”. One line, and the case has a hole in it.', tag: tag.wake },
-  { id: 'yoru', level: 'n3', text: 'に よると', keys: ['によると'], note: '〜に よると: “according to…”. The witness’s words, kept apart from your own. Very lawyerly.', tag: tag.yoru },
-  { id: 'itte', level: 'n4', text: 'と いって いました', keys: ['といっていました', 'っていっていました', 'といってました', 'っていってました'], note: '〜と いって いました: “they said…”. The testimony, quoted back at the court.', tag: tag.itte },
-  { id: 'nakereba', level: 'n4', text: 'なければ なりません', keys: ['なければなりません', 'なければならない', 'なきゃいけない', 'なくちゃいけない'], note: '〜なければ なりません: “must”. The sentence, before the judges have even voted.', tag: tag.nakereba },
-  { id: 'nakutemo', level: 'n4', text: 'なくても いいです', keys: ['なくてもいい'], note: '〜なくても いいです: “no need to…”. The defence lets its client off the hook, politely.', tag: tag.nakutemo },
+  { id: 'itte', level: 'n4', text: 'と いって いました', keys: ['といっていました', 'っていっていました', 'といってました', 'っていってました', 'といっていた', 'っていっていた', 'っていってた', 'といいました'], note: '〜と いって いました: “they said…”. The testimony, quoted back at the court.', tag: tag.itte },
+  { id: 'nakereba', level: 'n4', text: 'なければ なりません', keys: ['なければなりません', 'なければならない', 'なければいけ', 'なくてはいけ', 'なくてはなりません', 'なきゃいけ', 'なくちゃいけ', 'ないといけ'], note: '〜なければ なりません: “must”. The sentence, before the judges have even voted.', tag: tag.nakereba },
+  { id: 'nakutemo', level: 'n4', text: 'なくても いいです', keys: ['なくてもいい', 'なくていい'], note: '〜なくても いいです: “no need to…”. The defence lets its client off the hook, politely.', tag: tag.nakutemo },
+  { id: 'yoru', level: 'n4', text: 'に よると', keys: ['によると', 'によれば'], note: '〜に よると: “according to…”. The witness’s words, kept apart from your own. Very lawyerly.', tag: tag.yoru },
   { id: 'imashita', level: 'n5', text: 'に いました', keys: ['にいました'], note: '〜に いました: “was at…”. An alibi in three words.', tag: tag.imashita },
   { id: 'atta', level: 'n5', text: 'が ありました', keys: ['がありました', 'もありました'], note: '〜が ありました: “there was…”. Exhibit A, laid on the table.', tag: tag.atta },
-  { id: 'janai', level: 'n5', text: 'じゃ ありません', keys: ['じゃありません', 'じゃないです', 'ではありません'], note: '〜じゃ ありません: “it wasn’t…”. Short, flat, and the court heard it.', tag: tag.janai },
+  { id: 'janai', level: 'n5', text: 'じゃ ありません', keys: ['じゃありません', 'じゃないです', 'ではありません', 'じゃない'], note: '〜じゃ ありません: “it wasn’t…”. Short, firm, and the court heard it.', tag: tag.janai },
 ];
 
 /** Hand romaji for Kana phones where the kana alone can't show the word split. Keyed by the kana as shown. */
 export const ROMAJI: Record<string, string> = {
   'みました！': 'Mimashita!',
-  'みていません！': 'Mite imasen!',
-  'みまちがい！': 'Mimachigai!',
+  'なにも みて いません！': 'Nani mo mite imasen!',
+  'ちがう！': 'Chigau!',
   'だれも みてない！': 'Dare mo mitenai!',
   'しょうにんが みた！': 'Shōnin ga mita!',
-  'みてなくても わかる！': 'Mitenakute mo wakaru!',
   'なにが あった？': 'Nani ga atta?',
 };

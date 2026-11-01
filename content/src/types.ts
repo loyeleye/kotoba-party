@@ -716,6 +716,7 @@ export type HostEvent =
   | 'court_not_guilty' // the verdict: 無罪 ({accused})
   | 'court_tie' // a tie is not guilty: うたがわしきは ばっせず
   | 'court_booth' // the replay booth opens on the argument that used its chunk ({chunk}, when given)
+  | 'court_coda' // after the points, Fude-san tells the case's real story ({line}: the coda, as is)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin
   | 'surprise_pick'; // Surprise Me!: the wheel stops on tonight's game ({game})
 

@@ -5,7 +5,7 @@
 [data-mode='yokai-court'] { --mode: #e8553d; }
 .yc-stage { --yc-band: #e8553d; --yc-ink: #160f2c; --yc-pros: #ff5f3c; --yc-def: #4fb6ff; width: min(1720px, 94%); display: grid; gap: 20px; align-content: start; justify-items: center; text-align: center; }
 .yc-stage p { margin: 0; }
-.yc-stage [lang='ja'] { word-break: keep-all; word-break: auto-phrase; overflow-wrap: anywhere; line-break: strict; }
+.yc-stage [lang='ja'] { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
 .yc-small { font-size: 26px; color: var(--muted); }
 .yc-muted { color: var(--muted); }
 .yc-big { font-size: 46px; font-weight: 900; line-height: 1.2; }
@@ -178,3 +178,34 @@ body[data-motion='calm'] .yc-stage :is(.yc-wave span, .yc-levels span, .yc-rec-d
 .yc-planbeat .yc-lawyer-mark, .yc-recordbeat .yc-lawyer-mark { grid-column: 1; grid-row: 1 / span 5; align-self: center; }
 .yc-planbeat .yc-lawyer > :not(.yc-lawyer-mark), .yc-recordbeat .yc-lawyer > :not(.yc-lawyer-mark) { grid-column: 2; }
 .yc-center { min-height: 0; }
+
+/* ---- panel fixes ---- */
+/* The pixel face reads C as O and 2 as 8 at these sizes: labels and numbers use the body face. */
+.yc-stage :is(.yc-label, .yc-band-en, .yc-caseno, .yc-scroll-tag, .yc-lawyer-tag, .yc-ring-label, .yc-pan-n, .yc-score-n, .yc-booth-tag, .yc-seat, .yc-vs, .yc-rec) { font-family: inherit; font-weight: 800; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+/* Play and check have two cards and no VS. */
+.yc-lawyers.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Side by side: horizontal cards, big words, so the beat fits without shrinking. */
+.yc-arg { justify-items: stretch; text-align: left; gap: 8px; padding: 16px 22px; }
+.yc-arg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.yc-arg-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; }
+.yc-arg-pics { flex-direction: column; gap: 8px; }
+.yc-arg-pics .yc-pic-card { width: 96px; height: 96px; }
+.yc-arg-text { display: grid; gap: 6px; }
+.yc-arg-ja { font-size: 40px; line-height: 1.45; }
+.yc-arg-en { font-size: 28px; color: var(--paper-ink); opacity: 0.8; }
+.yc-arg-chip { justify-self: start; font-size: 24px; padding: 2px 12px; border: 3px solid var(--paper-muted); border-radius: 999px; }
+/* The verdict: the hanko lands over the scale, so nothing waits for space it doesn't use yet. */
+.yc-floor { position: relative; display: grid; place-items: center; width: 100%; }
+.yc-floor > .yc-scale { width: 90%; }
+.yc-floor > .yc-hanko { position: absolute; top: 50%; left: 50%; translate: -50% -50%; z-index: 2; }
+.yc-pan { padding: 20px 28px; }
+.yc-tokens { min-height: 48px; flex-wrap: wrap; justify-content: center; }
+.yc-token { width: 44px; height: 44px; }
+.yc-score-n { font-size: 64px; }
+.yc-coda { font-size: 34px; }
+.yc-coda-en { color: var(--ink); opacity: 0.85; font-weight: 600; }
+.yc-booth-line { word-break: keep-all; overflow-wrap: anywhere; }
+.yc-question .yc-muted { color: var(--paper-muted); }
+/* Side colours as text on paper need darker shades to read (4.5:1). */
+.yc-arg.yc-side-pros .yc-lawyer-tag { color: #b8321a; }
+.yc-arg.yc-side-def .yc-lawyer-tag { color: #1f6aa5; }
