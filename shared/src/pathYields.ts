@@ -100,6 +100,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "wa-desu": 0.41
     },
     "happyokai": {
+      "desu": 0.25,
       "ikura": 0.25,
       "ka": 2.48,
       "koto-ni-suru": 0.39,
@@ -108,9 +109,9 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "nan": 0.13,
       "suki": 0.2,
       "ta-koto": 0.39,
-      "tara": 0.25,
+      "tara": 0.5,
       "te-iru": 0.16,
-      "to-omou": 0.05,
+      "to-omou": 0.17,
       "you-ni-naru": 0.47
     },
     "late-again": {

@@ -272,8 +272,11 @@ Each of these is a change to a game or the path, so they're logged as open quest
 7. **Teach the Word Gauntlet bots to retell a rumour** (done in step 5b-2), then re-run. Until then the simulation can't say how
    fast 4.6 goes.
 8. **A game where players say ＿と おもいます from memory** (4.6, step 5b-2): Happyōkai's If I were… frame filled with the
-   slide's word is read, and the opening's 〜と おもいます is read off the card. An opinion card in question time
-   (「〔word〕は どう おもいますか」) answered in the presenter's own words would do it.
+   slide's word is read, and the opening's 〜と おもいます is read off the card. The If I were… answer frames already
+   offer 〜と おもいます in question time, but the bots only answered Then and now talks in a deck frame. They now
+   answer If I were… talks the same way (a third each in 〜たい and 〜と おもいます): ＿と おもいます from Happyōkai went
+   from 0 to 0.2 a game. With step 5c (#161) merged too, 4.6 stamps in 96% of rooms by a median of 39 nights, and
+   all eleven goals together in 96%, by 39. An opinion card in every N4 talk's question time (「〔word〕は どう おもいますか」) would give it more.
 8. **A plain-form source for 4.8** (done in step 5b-2, with the bots taking the ad-lib and logged as the model line): count Dub Club's ad-lib from memory with what the player said, and let the
    bots take it. Widen the plain-form matcher first (it misses もう たべた？ and いかない？ and accepts おいしいだよ),
    or new lines will all be written with よ to get counted. An Omiai casual beat works only if the guest invites

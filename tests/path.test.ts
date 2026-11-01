@@ -387,7 +387,10 @@ describe('what to play next', () => {
     p.frameMarks = Object.fromEntries(fastGoals.flatMap((g) => g.need.flatMap((n) => (Array.isArray(n) ? n : [n]))).map((id) => [id, { metAt: T0, recheckAt: T0 + 60 * DAY, recheck: 'waiting' as const }]));
     markPath(p, T0);
     const picks = new Set([0, 1, 2, 3, 4, 5].map((d) => suggest(status(p, T0 + d * DAY), 'n4', room(4))?.goal.id));
-    expect(picks.size).toBeGreaterThan(1);
+    // Every slow stop gets a turn within six days (with only one slow stop left, that one each day).
+    const slow = GOALS.filter((g) => g.line === 'express' && goalCarried(g) && !fastGoals.includes(g) && (goalPace(status(p, T0), g, 'n4', room(4))?.y ?? 0) > 0);
+    expect(slow.length).toBeGreaterThan(0);
+    expect(picks.size).toBe(Math.min(slow.length, 6));
     expect(picks.has(undefined)).toBe(false);
   });
 
