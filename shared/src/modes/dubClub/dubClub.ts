@@ -947,6 +947,10 @@ export const dubClubMode: Mode<DubState, DubView> = {
     delete r.hearts[playerId];
   },
 
+  offers(s, playerId) {
+    return s.rounds.flatMap((r) => r.actors.flatMap((a) => (a.playerId === playerId && a.adlib && a.adlib !== 'offered' ? [{ role: 'dub-club:adlib', answer: a.adlib }] : [])));
+  },
+
   progress(s) {
     return { round: s.round, totalRounds: s.totalRounds };
   },
