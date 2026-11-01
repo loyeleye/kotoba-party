@@ -667,7 +667,7 @@ export const CAUSES: readonly Cause[] = [
 
 // The N4 "push your luck" excuses: on some rounds (ASK_CHANCE) an N4 latecomer's excuse carries a cheeky ask
 // or a question for the boss, so ＿ても いいですか (4.2) and ＿た ことが あります (4.3) are said from memory too.
-// Each keeps its cause's story (the gallery's listening check still holds) and names the cause. Kept apart
+// Each is the apology plus the ask, and names the cause (the gallery's listening check still holds). Kept apart
 // from CAUSES, one entry per cause, so edits to the causes themselves rebase cleanly. Draft, like every line here.
 const askTag = { mayI: 'Express Line · 〜ても いいですか', ever: 'Express Line · 〜た ことが あります' };
 // Plain hiragana, matched on the plain reading (spaces stripped).
@@ -676,61 +676,63 @@ const EVER = ['たことが', 'だことが', 'たことは', 'だことは'];
 
 /** Chance an N4 round uses its cause's ask line, when the cause has one. */
 export const ASK_CHANCE = 0.5;
+/** Extra record time on an ask round: the longest ask lines run about 38 mora, the usual N4 ones about 30. */
+export const ASK_RECORD_MS = 3_000;
 
 export const N4_ASKS: Readonly<Record<string, CauseLine>> = {
   kotatsu: {
-    mission: 'Apologise, then blame the kotatsu. Say why you can’t get out, and ask if it can come with you.',
-    model: n4('こたつが 暖かすぎて、出られません。こたつと いっしょに 行っても いいですか？', 'こたつが あたたかすぎて、でられません。こたつと いっしょに いっても いいですか？', 'The kotatsu is too warm; I can’t get out. May I bring it with me?'),
-    chunk: { text: '行っても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. Very polite, for a request nobody has ever made.', tag: askTag.mayI },
+    mission: 'Apologise, then ask if the kotatsu can come with you.',
+    model: n4('こたつと いっしょに 行っても いいですか？', 'こたつと いっしょに いっても いいですか？', 'May I bring the kotatsu with me?'),
+    chunk: { text: '行っても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission, politely. For a request nobody has ever made.', tag: askTag.mayI },
   },
   cat: {
-    mission: 'Apologise, then blame the cat. Politely explain why you can’t move, and ask to rest until it wakes up.',
-    model: n4('猫が お腹の 上で 寝て いるので、起きるまで 休んでも いいですか？', 'ねこが おなかの うえで ねて いるので、おきるまで やすんでも いいですか？', 'The cat is asleep on my stomach, so may I rest until it wakes up?'),
+    mission: 'Apologise, then ask to rest until the cat wakes up.',
+    model: n4('猫が 寝て いるので、起きるまで 休んでも いいですか？', 'ねこが ねて いるので、おきるまで やすんでも いいですか？', 'The cat is asleep, so may I rest until it wakes up?'),
     chunk: { text: '休んでも いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. You can’t say no to a sleeping cat either.', tag: askTag.mayI },
   },
   breakfast: {
-    mission: 'Apologise, then blame breakfast. Say just how good it is, and ask if you can finish it at work.',
-    model: n4('朝ごはんが おいしすぎて、まだ 食べて います。会社で 食べても いいですか？', 'あさごはんが おいしすぎて、まだ たべて います。かいしゃで たべても いいですか？', 'Breakfast is so good I’m still eating. May I eat it at work?'),
+    mission: 'Apologise for still eating breakfast, and ask if you can finish it when you get there.',
+    model: n4('まだ 朝ごはんを 食べて います。そちらで 食べても いいですか？', 'まだ あさごはんを たべて います。そちらで たべても いいですか？', 'I’m still eating breakfast. May I finish it there?'),
     chunk: { text: '食べても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission, with your mouth full.', tag: askTag.mayI },
   },
   granny: {
-    mission: 'Apologise, then blame an old lady. Say where you took her, and ask to join by phone from there.',
-    model: n4('おばあさんを 山の 上まで 送りました。今日は 山から 電話で 出ても いいですか？', 'おばあさんを やまの うえまで おくりました。きょうは やまから でんわで でても いいですか？', 'I took an old lady all the way up a mountain. May I join by phone from the mountain today?'),
+    mission: 'Apologise, then say you’re up a mountain with an old lady and ask to join the meeting by phone.',
+    model: n4('おばあさんと 山の 上です。電話で 会議に 出ても いいですか？', 'おばあさんと やまの うえです。でんわで かいぎに でても いいですか？', 'I’m up a mountain with an old lady. May I join the meeting by phone?'),
     chunk: { text: '出ても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. From a mountain top, the signal is great.', tag: askTag.mayI },
   },
   nobiko: {
-    mission: 'Apologise, then blame Nobiko-san. Say how long she’s talking, and ask if she can come too.',
-    model: n4('のびこさんの 話が 長すぎて、逃げられません。のびこさんも いっしょに 行っても いいですか？', 'のびこさんの はなしが ながすぎて、にげられません。のびこさんも いっしょに いっても いいですか？', 'Nobiko-san’s story is so long I can’t get away. May she come too?'),
-    chunk: { text: '行っても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. Her neck is already in the lift.', tag: askTag.mayI },
+    mission: 'Apologise, then say how long Nobiko-san’s story is and ask if you can put her on.',
+    model: n4('話が 長すぎて… のびこさんに 代わっても いいですか？', 'はなしが ながすぎて… のびこさんに かわっても いいですか？', 'Her story is so long… May I put Nobiko-san on?'),
+    chunk: { text: '代わっても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. Her neck is already in the lift.', tag: askTag.mayI },
   },
   oversleep: {
-    mission: 'Apologise, then blame your alarm clock. Ask the boss if theirs has ever done that.',
-    model: n4('目覚まし時計が 寝坊しました。部長の 時計も 寝坊した ことが ありますか？', 'めざましどけいが ねぼうしました。ぶちょうの とけいも ねぼうした ことが ありますか？', 'My alarm clock overslept. Has your clock ever overslept too, boss?'),
-    chunk: { text: '寝坊した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Turn the question on the boss.', tag: askTag.ever },
+    mission: 'Apologise, then ask the boss if their alarm clock has ever overslept too.',
+    model: n4('部長の 時計も 寝坊した ことが ありますか？', 'ぶちょうの とけいも ねぼうした ことが ありますか？', 'Boss, has your clock ever overslept too?'),
+    chunk: { text: '寝坊した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Say, boss, why are YOU late today?', tag: askTag.ever },
   },
   train: {
-    mission: 'Apologise, then blame the train. Say where you woke up, and ask if the boss has ever woken up there.',
-    model: n4('電車で 寝て、起きたら 海でした。海で 起きた ことが ありますか？', 'でんしゃで ねて、おきたら うみでした。うみで おきた ことが ありますか？', 'I fell asleep on the train, and when I woke up, I was at the sea. Have you ever woken up at the sea?'),
+    mission: 'Apologise for sleeping on the train, and ask if the boss has ever woken up at the sea.',
+    model: n4('電車で 寝て しまいました。海で 起きた ことが ありますか？', 'でんしゃで ねて しまいました。うみで おきた ことが ありますか？', 'I fell asleep on the train. Have you ever woken up at the sea?'),
     chunk: { text: '起きた ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Everyone has. Haven’t they?', tag: askTag.ever },
   },
   station: {
-    mission: 'Apologise, then blame the station. Say you’ve never seen one so big.',
-    model: n4('こんなに 広い 駅は 見た ことが ありません。出口が わかりませんでした。', 'こんなに ひろい えきは みた ことが ありません。でぐちが わかりませんでした。', 'I’ve never seen a station this big. I couldn’t find the exit.'),
-    chunk: { text: '見た ことが ありません', keys: EVER, note: '〜た ことが ありません: never, ever. Ninety-nine exits will do that.', tag: askTag.ever },
+    mission: 'Apologise, then ask if the boss has ever seen a station this big.',
+    model: n4('部長は こんなに 広い 駅を 見た ことが ありますか？', 'ぶちょうは こんなに ひろい えきを みた ことが ありますか？', 'Boss, have you ever seen a station this big?'),
+    chunk: { text: '見た ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Ninety-nine exits. Has anyone?', tag: askTag.ever },
   },
   game: {
-    mission: 'Apologise, then blame a game. Confess how long you played, and ask if the boss ever has.',
-    model: n4('ゲームを 朝まで して しまいました。部長も した ことが ありますか？', 'ゲームを あさまで して しまいました。ぶちょうも した ことが ありますか？', 'I ended up playing a game till morning. Have you ever done that, boss?'),
-    chunk: { text: 'した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? If the boss says yes, you’re Safe.', tag: askTag.ever },
+    mission: 'Apologise for gaming till morning, and ask if the boss ever has.',
+    model: n4('ゲームを 朝まで しました。部長も した ことが ありますか？', 'ゲームを あさまで しました。ぶちょうも した ことが ありますか？', 'I played a game till morning. Have you ever done that, boss?'),
+    chunk: { text: 'した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? The boss is late too today. Draw your own conclusions.', tag: askTag.ever },
   },
   kappa: {
-    mission: 'Apologise, then blame a kappa. Say what it asked you, and ask if the boss has ever talked to one.',
-    model: n4('かっぱに 川までの 道を 聞かれました。かっぱと 話した ことが ありますか？', 'かっぱに かわまでの みちを きかれました。かっぱと はなした ことが ありますか？', 'A kappa asked me the way to the river. Have you ever talked to a kappa?'),
+    mission: 'Apologise, say a kappa asked you the way, and ask if the boss has ever talked to one.',
+    model: n4('かっぱに 道を 聞かれました。かっぱと 話した ことが ありますか？', 'かっぱに みちを きかれました。かっぱと はなした ことが ありますか？', 'A kappa asked me the way. Have you ever talked to a kappa?'),
     chunk: { text: '話した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? They talk a lot, for a river monster.', tag: askTag.ever },
   },
   fox: {
-    mission: 'Apologise, then blame a fox. Say what “the boss” told you, and ask if the boss has ever been a fox.',
-    model: n4('部長に「今日は 休みだよ」と 言われました。部長は きつねに なった ことが ありますか？', 'ぶちょうに「きょうは やすみだよ」と いわれました。ぶちょうは きつねに なった ことが ありますか？', 'The boss told me “today’s a day off”. Boss, have you ever turned into a fox?'),
+    mission: 'Apologise, then ask the boss, very fairly, if they’ve ever turned into a fox.',
+    model: n4('部長は きつねに なった ことが ありますか？', 'ぶちょうは きつねに なった ことが ありますか？', 'Boss, have you ever turned into a fox?'),
     chunk: { text: 'なった ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? A very fair question, in the circumstances.', tag: askTag.ever },
   },
 };

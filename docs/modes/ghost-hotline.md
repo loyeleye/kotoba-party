@@ -30,7 +30,7 @@ through play and react, and the ring beat shows the caller's face beside it.
 ## Why it works for speaking
 
 Giving advice is everyday speech (〜て ください at N5, 〜たら どうですか and 〜ほうが いいです at N4, some of the
-latter with a real "if/when" in front: 暑く なったら、クーラーを つけた ほうが いいですよ), and
+latter with a real "if/when" in front: とけそうに なったら、クーラーを つけた ほうが いいですよ), and
 the secret turns it into a listening and reasoning task: the cure can be worked out from the problem's
 gist (the kappa's dish is dry, so: water). Kana advisers pick one of four tiles (the cure, the near miss,
 a decoy and an absurd curveball), so reading the gist is how they find it. The caller says the problem
@@ -77,7 +77,11 @@ A speaking adviser's level line goes in the phrasebook. It counts as said only w
 level's pattern (〜て ください, 〜たら どうですか, 〜た ほうが いいです…): naming the cure alone doesn't say the
 frame, so it's seen. Said is from memory, or read if they opened the hint. A clip with no speech-to-text is
 said but read (nobody could check it). Typing, Nobiko-san's reading and advice the VIP hid are seen. The
-private note on the phone says exactly which of these was logged. The caller's line is read (it's on their
+private note on the phone says exactly which of these was logged. The six N4 lines that open with a
+conditional (＿たら, 4.5) keep their plain version (`AdviceLine.plain`, the advice without the "if"): the
+phrasebook logs the conditional line only when the path's own frame matcher finds ＿たら in what the adviser
+said (Nobiko-san's reading counts, as read), and the plain line otherwise, so ほうが いい alone credits 4.7's
+frame and not 4.5's. The caller's line is read (it's on their
 phone), and said when they recorded it. A Kana adviser's tile is seen. Goal 4.7 names this game, but stays
 under construction until a game asks for plans.
 

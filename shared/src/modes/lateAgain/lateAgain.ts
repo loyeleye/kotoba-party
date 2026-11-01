@@ -26,7 +26,7 @@ import { isUtterance, normalizeReading, utteranceReading, type Utterance } from 
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { ASK_CHANCE, callbackLine, CAUSES, causeOf, dealOptions, kanaLine, latenessFor, lineFor, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, type Cause, type Chunk } from './causes.js';
+import { ASK_CHANCE, ASK_RECORD_MS, callbackLine, CAUSES, causeOf, dealOptions, kanaLine, latenessFor, lineFor, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, N4_ASKS, type Cause, type Chunk } from './causes.js';
 import { n4Up } from '../../level.js';
 
 // ---- tuning ----
@@ -269,7 +269,8 @@ export interface LateView {
   } | null;
   /** From the ruling beat. */
   ruling: (Ruling & { points: { playerId: string; points: number }[] }) | null;
-  booth: { line: string; chunk: string; note: string; tag: string } | null;
+  /** en: Pon's version in English (the line the excuse worked from), for players who don't read Japanese yet. */
+  booth: { line: string; chunk: string; note: string; tag: string; en: string } | null;
   /** The real story, at the round's last beat: the cause's picture (none for Pon) and Pon's line, after a pause. */
   truth: { picture: string | null; emoji: string; line: JpText; pauseMs: number } | null;
   ledger: LedgerEntry[];
@@ -350,6 +351,10 @@ const causeOfRound = (r: LateRound): Cause => causeOf(r.cause) ?? CAUSES[0]!;
 const lineOf = (r: LateRound) => lineFor(causeOfRound(r), r.level, { finale: r.finale, ask: r.ask });
 /** The line the round's latecomer works from (their mission and Pon's version), for the cause they blame. */
 export const roundLine = (r: LateRound) => lineOf(r);
+/** An ask round: an N4+ latecomer, the round drew the ask, and the cause they blame has an ask line (N4_ASKS). */
+export const askRound = (r: LateRound): boolean => !!r.ask && n4Up(r.level) && !!N4_ASKS[r.cause];
+/** The record limit: an ask line is longer than the cause's usual one, so it gets a little more time. */
+export const recordMs = (r: LateRound): number => RECORD_MS[r.level] + (askRound(r) ? ASK_RECORD_MS : 0);
 
 /** Rounds for `n` players: the smallest multiple of n that is 6 or more (one lap with `oneLap`). */
 export function roundsFor(n: number, oneLap = false): number {
@@ -615,11 +620,24 @@ function settle(s: LateState, r: LateRound, ctx: ModeContext): void {
   if (s.settings.leafBudget) for (const id of giving) s.leaves[id] = Math.max(0, (s.leaves[id] ?? 0) - 1);
   r.chunk = chunkHeard(r);
   const c = causeOfRound(r);
-  const line = r.level === 'kana' ? kanaLine(c) : lineOf(r).model;
-  const said = saidAloud(r);
   // Said from memory unless the hint was opened. Tiles, typing and Pon's reading are seen, not said; Pon's is read.
   const read = r.hinted || r.excuse?.kind === 'pon';
-  ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: read ? 'read' : 'memory' });
+  if (askRound(r) && !(r.excuse?.kind === 'clip' && r.excuse.checked && r.chunk)) {
+    // An ask round where no checked clip was heard asking: the ask's frame (＿ても いいですか, ＿た ことが あります)
+    // isn't credited. With the hint open or Pon reading, the ask was read; otherwise the excuse counts as the
+    // cause's usual N4 line, as on any other round (naming the cause alone says nothing about the ask).
+    if (read) {
+      const ask = lineOf(r).model;
+      ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}:ask`, text: ask.text, kana: ask.kana, en: ask.en, outcome: 'seen', recall: 'read' });
+    } else {
+      const usual = lineFor(c, r.level, { finale: r.finale }).model;
+      ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}`, text: usual.text, kana: usual.kana, en: usual.en, outcome: saidAloud(r) ? 'said' : 'seen', recall: 'memory' });
+    }
+  } else {
+    const line = r.level === 'kana' ? kanaLine(c) : lineOf(r).model;
+    const itemId = askRound(r) ? `late:${c.id}:${r.level}:ask` : `late:${c.id}:${r.level}`;
+    ctx.phrase(r.latecomer, { itemId, text: line.text, kana: line.kana, en: line.en, outcome: saidAloud(r) ? 'said' : 'seen', recall: read ? 'read' : 'memory' });
+  }
   if (r.hidden) return;
 
   if (s.coop) {
@@ -850,7 +868,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       case 'prompt':
         return SCENE_MS + PLAN_MS;
       case 'answer':
-        return (r ? RECORD_MS[r.level] : RECORD_MS.n5) + UPLOAD_MS + GRACE_MS;
+        return (r ? recordMs(r) : RECORD_MS.n5) + UPLOAD_MS + GRACE_MS;
       case 'reveal':
         return r ? playMs(r.excuse) + gistMs(r) : PON_PLAY_MS + GIST_MS;
       case 'encore':
@@ -979,11 +997,11 @@ export const lateAgainMode: Mode<LateState, LateView> = {
         const clipId = typeof raw.clipId === 'string' && raw.clipId.length <= 64 ? raw.clipId : null;
         const local = raw.local === true;
         if (!clipId && !local) return moveError('no-clip');
-        const dur = typeof raw.durMs === 'number' && Number.isFinite(raw.durMs) ? raw.durMs : RECORD_MS[r.level];
+        const dur = typeof raw.durMs === 'number' && Number.isFinite(raw.durMs) ? raw.durMs : recordMs(r);
         r.excuse = blankExcuse('clip', {
           clipId: local ? null : clipId,
           local,
-          durMs: Math.max(MIN_CLIP_MS, Math.min(RECORD_MS[r.level] + 500, Math.round(dur))),
+          durMs: Math.max(MIN_CLIP_MS, Math.min(recordMs(r) + 500, Math.round(dur))),
           heard: parseHeard(raw.heard),
           checked: raw.checked === true,
         });
@@ -1211,8 +1229,8 @@ function subtitleOf(r: LateRound): string | null {
 function boothOf(r: LateRound): LateView['booth'] {
   if (r.hidden || !r.chunk) return null;
   const said = r.excuse?.kind === 'clip' ? (r.excuse.heard?.text ?? null) : null;
-  const model = lineOf(r).model.text;
-  return { line: said ?? model, chunk: r.chunk.text, note: r.chunk.note, tag: r.chunk.tag };
+  const model = lineOf(r).model;
+  return { line: said ?? model.text, chunk: r.chunk.text, note: r.chunk.note, tag: r.chunk.tag, en: model.en };
 }
 
 /** The real story: the last round's is always "the boss was Pon"; after a tanuki curveball it was Pon; else the dealt truth. */
@@ -1306,7 +1324,7 @@ function meView(s: LateState, r: LateRound, phase: Phase, player: ModePlayer, le
     draft: isLate ? r.draft : [],
     ready: isLate && r.ready,
     sent: isLate && !!r.excuse,
-    limitMs: isLate ? RECORD_MS[r.level] : 0,
+    limitMs: isLate ? recordMs(r) : 0,
     micPassLeft: isLate && !s.micPassUsed[player.id],
     alibiTiles: role === 'witness' ? [...order, ...(s.curveUsed[player.id] ? [] : [TANUKI_TILE.id])].map((id) => tileView(id, level)) : [],
     alibi: role === 'witness' ? r.alibi : null,

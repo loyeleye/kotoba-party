@@ -4,8 +4,9 @@ import { describe, expect, it } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
-import { CAUSES, causeOf, dealOptions, latenessFor, lineFor, N4_ASKS, SCENES, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthLine } from '../shared/src/modes/lateAgain/causes.js';
+import { ASK_RECORD_MS, CAUSES, causeOf, dealOptions, latenessFor, lineFor, N4_ASKS, SCENES, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthLine } from '../shared/src/modes/lateAgain/causes.js';
 import { heardAny, MAX_LEAVES, POINTS, RECORD_MS, roundLine, roundsFor, START_LEAVES, type LateState, type LateView } from '../shared/src/modes/lateAgain/lateAgain.js';
+import { phraseFrames } from '../shared/src/progress.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { lateAgainPolicy } from '../tools/bots/policies/lateAgain.js';
@@ -367,6 +368,52 @@ describe('Late Again!: scoring', () => {
     expect(t.st.ledger.some((e) => e.round === r2.index && e.why === 'spoke')).toBe(false);
   });
 
+  it('an N4 ask round credits the ask only when a checked clip asked it; naming the cause alone logs the usual line', () => {
+    const t = new Table(3, ['n4', 'n4', 'n4'], 4);
+    t.start();
+    const clip = (heardText: string) => (id: string) =>
+      expect(t.play(id, { kind: 'excuse', type: 'clip', clipId: 'c1', durMs: 4000, checked: true, heard: { via: 'speech', text: heardText, reading: heardText } }).error).toBeUndefined();
+    /** The excuse blames `cause` on an ask round, then `send` goes in. */
+    const asking = (cause: string, send: (id: string) => void) => (id: string) => {
+      t.r.ask = true;
+      t.r.cause = cause;
+      expect(t.view(id).me!.limitMs).toBe(RECORD_MS.n4 + ASK_RECORD_MS);
+      send(id);
+    };
+    const entries = (r: { latecomer: string; cause: string }) => t.s.phrasebook[r.latecomer]!.filter((e) => e.itemId.startsWith(`late:${r.cause}:`));
+    const usual = (cause: string) => lineFor(causeOf(cause)!, 'n4').model;
+    const ask = (cause: string) => lineFor(causeOf(cause)!, 'n4', { ask: true }).model;
+
+    // A clip that names the kotatsu but never asks: the usual N4 line, said from memory, and no ＿ても いいですか.
+    const r1 = oneRound(t, { give: () => true, call: 'safe', excuse: asking('kotatsu', clip(usual('kotatsu').kana)) });
+    expect(entries(r1)).toHaveLength(1);
+    expect(entries(r1)[0]).toMatchObject({ itemId: 'late:kotatsu:n4', kana: usual('kotatsu').kana, outcome: 'said', recall: 'memory' });
+    for (const e of entries(r1)) expect(phraseFrames(e)).not.toEqual(expect.arrayContaining(['te-mo-ii']));
+    expect(r1.chunk).toBeNull();
+
+    // A clip that asks: the ask line under its own id, from memory, and the booth gives Pon's version in English.
+    while (t.s.phase !== 'prompt') t.tick();
+    const r2 = oneRound(t, { give: () => true, call: 'safe', excuse: asking('cat', clip(ask('cat').kana)) });
+    expect(entries(r2)).toHaveLength(1);
+    expect(entries(r2)[0]).toMatchObject({ itemId: 'late:cat:n4:ask', kana: ask('cat').kana, outcome: 'said', recall: 'memory' });
+    expect(phraseFrames(entries(r2)[0]!)).toContain('te-mo-ii');
+    while (t.r.step !== 'booth' && t.phase === 'score') t.tick();
+    expect(t.view().booth).toMatchObject({ chunk: N4_ASKS.cat!.chunk!.text, en: ask('cat').en });
+
+    // The hint open and the ask never heard: the ask was read, not said.
+    while (t.s.phase !== 'prompt') t.tick();
+    const r3 = oneRound(t, {
+      give: () => true,
+      call: 'safe',
+      excuse: asking('fox', (id) => {
+        t.play(id, { kind: 'hint' });
+        clip('すみません、きつねでした')(id);
+      }),
+    });
+    expect(entries(r3)).toHaveLength(1);
+    expect(entries(r3)[0]).toMatchObject({ itemId: 'late:fox:n4:ask', outcome: 'seen', recall: 'read' });
+  });
+
   it('the chief’s call against the room is overruled on the stamp', () => {
     const t = new Table(5, [], 11);
     t.start();
@@ -568,6 +615,9 @@ describe('Late Again!: hearing the excuse', () => {
       expect(line.model.text, id).toContain(line.chunk!.text);
       expect(heardAny(line.model.kana, line.chunk!.keys), id).toBe(true);
       expect(line.model.kana, id).toMatch(/[てで]\s*も\s*いいですか|[たっだ]\s*ことが\s*あり/);
+      // The apology plus the ask: short enough for the record beat (RECORD_MS.n4 + ASK_RECORD_MS).
+      const mora = [...line.model.kana.replace(/[^ぁ-んァ-ンー]/g, '')].filter((ch) => !'ゃゅょぁぃぅぇぉャュョァィゥェォ'.includes(ch)).length;
+      expect(mora, id).toBeLessThanOrEqual(38);
       // Kana and N5 never get it.
       expect(lineFor(c, 'n5', { ask: true }), id).toBe(lineFor(c, 'n5'));
     }

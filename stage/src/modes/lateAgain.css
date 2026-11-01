@@ -105,6 +105,7 @@
 .la-booth-tag { font-size: 28px; font-weight: 800; color: var(--mode); }
 .la-booth-line { font-size: 54px; font-weight: 900; max-width: 1500px; line-height: 1.35; }
 .la-chunk { background: var(--gold); color: var(--la-ink); padding: 0 8px; border-radius: 8px; white-space: nowrap; }
+.la-booth-en { font-size: 30px; max-width: 1300px; color: var(--muted); font-style: italic; }
 .la-booth-note { font-size: 32px; max-width: 1300px; }
 .la-booth-map { font-size: 28px; font-weight: 800; padding: 8px 22px; background: var(--la-board); color: var(--la-led); border-radius: 10px; font-family: var(--font-pixel); }
 .la-gag { font-size: 60px; font-weight: 900; }

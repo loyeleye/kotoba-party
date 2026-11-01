@@ -24,7 +24,9 @@ and each is a flag.
    goal, 4.7's Ghost Advice Hotline too, plus Late Again!, which the plan puts on 4.2, 4.3, 4.11 and 4.13 but
    the path doesn't list yet. Three options make the bots play as a speaker would:
    - Ghost Advice Hotline and Late Again! advisers send a checked clip of the host's version, where live bots
-     type.
+     type. So their yields are upper bounds: a bot always says the whole model line, conditional or ask
+     included, and a player who gives the advice or names the cause without it isn't credited with that frame
+     (Hotline ＿たら, Late Again!'s ＿ても いいですか and ＿た ことが あります).
    - N4 Bento Haus bots take the hard roles and say each line.
    - Every bot says lines from memory where the game allows it.
 2. **Each N4 seat's phrasebook goes through the real save path**: `addGame`, then `markPath`. So the frame
