@@ -89,4 +89,6 @@ and 3.10 (に ちがいありません).
   are back on the pixel face.
 - Courtroom facts (who sits where, what a lay judge 裁判員 does) to check against courts.go.jp before the
   lines leave draft.
-- The courtroom set (`scenes/yokai-court.png`) isn't drawn: the tea room stands in.
+- The courtroom set (`scenes/yokai-court.png`, 2026-11-01) seats nine on the bench, as a lay-judge trial
+  (裁判員裁判) does (three judges, six lay judges). Check its layout (which side the prosecution sits, the
+  witness stand) against courts.go.jp with the other courtroom facts.
