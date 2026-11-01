@@ -96,6 +96,14 @@ export type FrameId =
   | 'you-ni'
   | 'ka-dou-ka'
   | 'nani-ka'
+  | 'mitai-you'
+  | 'n-desu'
+  | 'causative'
+  | 'te-hoshii'
+  | 'ba-yokatta'
+  | 'tari-tari'
+  | 'tokoro-desu'
+  | 'tte-quote'
   | 'rashii'
   | 'noni'
   | 'uchi-ni'
@@ -653,7 +661,7 @@ const N4: Matcher[] = [
   // 4.9 Polite to strangers.
   {
     id: 'o-kudasai',
-    re: rx(`お(まち|待ち|すわり|座り|はいり|入り|かけ|掛け|あがり|上がり|さがり|下がり|もち|持ち|よび|呼び|つかい|使い|いれ|入れ|きき|聞き|かえり|帰り|こし|越し|とり|取り|のり|乗り|おり|降り|ためし|試し|たちより|立ち寄り|もとめ|求め|うけとり|受け取り|まちがえ|気をつけ|きをつけ|きがるに|気軽に|しらせ|知らせ|わたり|渡り|すすみ|進み|ならび|並び|めしあがり|召し上がり|あるき|歩き|いそぎ|急ぎ|つかまり|つかみ|でかけ|出かけ|すごし|過ごし|休み|やすみ|みせ|見せ|はなし|話し|かき|書き|よみ|読み|まわり|回り|ぬぎ|脱ぎ|はき|履き|つけ|付け|わすれ|忘れ|あずけ|預け|かけ|掛け|おくり|送り|もうしこみ|申し込み|しはらい|支払い)[\\s\\u3000]*(ください|下さい)`),
+    re: rx(`お(まち|待ち|すわり|座り|はいり|入り|かけ|掛け|あがり|上がり|さがり|下がり|もち|持ち|よび|呼び|つかい|使い|いれ|入れ|きき|聞き|かえり|帰り|こし|越し|とり|取り|のり|乗り|おり|降り|ためし|試し|たちより|立ち寄り|もとめ|求め|うけとり|受け取り|まちがえ|気をつけ|きをつけ|きがるに|気軽に|しらせ|知らせ|わたり|渡り|すすみ|進み|ならび|並び|めしあがり|召し上がり|あるき|歩き|いそぎ|急ぎ|つかまり|つかみ|でかけ|出かけ|すごし|過ごし|休み|やすみ|みせ|見せ|はなし|話し|かき|書き|よみ|読み|まわり|回り|ぬぎ|脱ぎ|はき|履き|つけ|付け|わすれ|忘れ|あずけ|預け|かけ|掛け|おくり|送り|もうしこみ|申し込み|しはらい|支払い)[\\s\\u3000]*(ください|下さい)|ご(ちゅうい|えんりょ|りよう|らん|ようい|かくにん|れんらく|ちゅうもん|きにゅう|じょうしゃ|注意|遠慮|利用|覧|用意|確認|連絡|注文|記入|乗車)[\\s\\u3000]*(ください|下さい)`),
     hides: ['kudasai'],
   },
   {
@@ -747,9 +755,59 @@ const N4: Matcher[] = [
     re: rx(`(なに|なん|何|どこ|どれ|どの|だれ|誰|いつ|どう|どんな|いくら|どちら|なぜ|どうして|いくつ)[^。？?！!]*?(${PLAIN}|[ぁ-ん]た)[\\s\\u3000]*か[\\s\\u3000、]*((まだ|よく|ぜんぜん|ちょっと|しょうじきに|正直に)[\\s\\u3000]*)?(わか|分か|しり|しら|しって|知|おしえ|教え|せつめい|説明|えら|選|いい|言い|きい|きき|きか|聞|おぼえ|覚え|わすれ|忘れ|しらべ|調べ|かんがえ|考え|きめ|決め|いって|言って|みて|見て|たずね|尋ね|はなし|話|あて|当て|きにな|気にな|ふしぎ)`),
     not: rx(`(なに|だれ|どこ|いつ|どれ|なん|何|誰)か[\\s\\u3000]|か[\\s\\u3000]*どうか|かしら|(なに|なん|だれ|どこ|いつ)も|どうも|なんでも|いつでも`),
   },
+  // ---- Added on the Japanese expert's advice (Nov 1): N4 grammar the goals need ----
+  // A guess from what you see: ＿みたいです／＿ようです. Not 〜て みたい (want to try), Nが みたい (want to see),
+  // おはよう, ようこそ, ようび, or Nの ように (like N, as an adverb).
+  {
+    id: 'mitai-you',
+    re: rx(`[^\\s\\u3000、。てでがを][\\s\\u3000]*みたい[\\s\\u3000]*(です|でした|だ|だった|ね|よ|[。！!？?…]|$)|(${PLAIN}|の|な)[\\s\\u3000]*(よう|様)[\\s\\u3000]*(です|でした|だ|だった)`),
+    // A む verb + たい (のみたい, すみたい) is "want to", not みたい.
+    not: rx(`${TE}[\\s\\u3000]*みたい|(が|を|も)[\\s\\u3000]*みたい|(^|[\\s\\u3000、をがもは])(の|飲|よ|読|す|住|やす|休|か|噛|たの|頼|ぬす|盗|すす|進|あ|編|う|生|しず|沈|ふ|踏|こ|込|つつ|包|つ|積|この|好)みたい|おはよう|ようこそ|ようび|(どう|こう|そう|ちゅう|ほう|しゅう|きょう|ひつ|だいじょう|しよう|たべよう|いこう)よう[\\s\\u3000]*です|[おこごそぞとどのぼもよろ]う[\\s\\u3000]*(よう|様)[\\s\\u3000]*です`),
+    hides: [...DESU_FAMILY, 'tai'],
+  },
+  // Explaining, politely: ＿んです／＿のです. Only with tokens (ん as a 非自立 noun before です): かいしゃいんです
+  // and びょういんです end in ん too.
+  {
+    id: 'n-desu',
+    re: rx(`(ん|の)[\\s\\u3000]*(です|でした|ですか|ですが)`),
+    tok: (ts) => some(ts, (t, i) => (t.s === 'ん' || t.s === 'の') && t.pos === '名詞' && t.detail.startsWith('非自立') && isAux(tokAt(ts, i + 1), 'です') && (endsPlain(tokAt(ts, i - 1)) || isAux(tokAt(ts, i - 1), 'だ') || tokAt(ts, i - 1)?.s === 'な')),
+    pos: 'need',
+    kanaOnly: rx(`([うくぐすつぬぶむるた]|ない|かった|[^\\s\\u3000ん]い|[^\\s\\u3000]な)[\\s\\u3000]*(ん|の)[\\s\\u3000]*です`),
+    hides: [...DESU_FAMILY, 'n-da'],
+  },
+  // Making or letting someone do it: ＿させます. Only with tokens (せる／させる as a suffix): ませ, あわせ, しあわせ
+  // end in せ too. ＿させて ください is its own frame.
+  {
+    id: 'causative',
+    re: rx(`(せ|させ)(ます|ました|ません|る|た|ない|なかった|られ|て)`),
+    tok: (ts) => some(ts, (t, i) => (t.base === 'せる' || t.base === 'させる') && t.pos === '動詞' && t.detail.startsWith('接尾') && !(tokAt(ts, i + 1)?.s === 'て' && ['ください', '下さい', 'もらえ', 'くれ', 'いただけ', 'ほしい'].some((x) => (tokAt(ts, i + 2)?.s ?? '').startsWith(x)))),
+    pos: 'need',
+    kanaOnly: rx(`([かがさたなばまらわ]せ|させ)(ます|ました|ません|る|た|ない|なかった|られ|て)`),
+    hides: ['ni-masu'],
+  },
+  // Wanting someone else to do it: ＿て ほしい.
+  { id: 'te-hoshii', re: rx(`${TE}[\\s\\u3000]*(ほし|欲し)(い|く|かった)`), hides: [...DESU_FAMILY, 'hoshii'] },
+  // Regret: ＿ば よかった.
+  { id: 'ba-yokatta', re: rx(`(けれ|[えけげせぜてねへべめれ])ば[\\s\\u3000]*(よかった|良かった)`), not: rx(`(たとえ|例え)ば`), hides: ['ba', ...DESU_FAMILY] },
+  // Examples of what you did: ＿たり ＿たり します. Two たり／だり after a verb, then する. Not ふたり, あたり,
+  // ぴったり, ゆったり.
+  {
+    id: 'tari-tari',
+    re: rx(`[っいしきみびんぎちりにえけせてでねべめれげじ](たり|だり)[^。！？]*?[っいしきみびんぎちりにえけせてでねべめれげじ](たり|だり)[\\s\\u3000]*(し|する|した|して|します|しました|しています)`),
+    not: rx(`(ぴ|ば|ゆ|ぐ|が|か|さ|や|ま|ば|ぼ|ほ|に|け)ったり|(ふ|ひと)たり`),
+  },
+  // Where in an action you are: ＿る／＿て いる／＿た ところです. Not a place (すんで いる ところ: where I live).
+  {
+    id: 'tokoro-desu',
+    re: rx(`([るた]|て[\\s\\u3000]*いる|てる|で[\\s\\u3000]*いる|でる|だ)[\\s\\u3000]*(ところ|所)[\\s\\u3000]*(です|だ|でした|だった|なんです)`),
+    not: rx(`(すんで|住んで|はたらいて|働いて|つとめて|勤めて)[\\s\\u3000]*(いる|る)?[\\s\\u3000]*(ところ|所)|(すんで|住んで|すむ|住む|うまれた|生まれた|そだった|育った|はたらいて|働いて|つとめて|勤めて|いった|行った|いく|行く|いきたい|すきな|好きな|いい|あった|会った|あそぶ|あそんだ|みた|見た|かった|買った)[\\s\\u3000]*(ところ|所)`),
+  },
+  // A casual quote: ＿って いって いた／＿って いう. Not topic って (こうちゃって おいしい).
+  // The quote follows a plain form (やすみだって, くるって, ないって) or a request (まってって); もって いって is "take".
+  { id: 'tte-quote', re: rx(`([だるたいうくすつぬぶむぐて]|ない)って[\\s\\u3000]*(いって|いった|いう|いってた|いいました|いいます|きいた|きいて|きいたよ|聞い|言っ|言う)`) },
 ];
 
-// ---- N3 matchers (the four the step needs part of speech for) ----
+// ---- N3 matchers (the three the step needs part of speech for, and のに, now N4) ----
 const N3: Matcher[] = [
   // Hearsay らしい: かれは くる らしい. Not the adjectives あたらしい, めずらしい, すばらしい, nor おとこらしい (manly)
   // or Nらしい, which can mean either "apparently N" or "typical of N".
@@ -871,12 +929,22 @@ export const N4_FRAMES: readonly Frame[] = [
   d('you-ni', 'n4', '4.14', '＿ように', 'so that ___', 'Say what you do it for.', 'わすれないように、メモします。', "I'll make a note so I don't forget."),
   d('ka-dou-ka', 'n4', '4.14', '＿か どうか', 'whether ___', 'Say you\'re not sure yes or no.', 'しゅうでんに まにあうか どうか、わかりません。', "I don't know whether I'll make the last train."),
   d('nani-ka', 'n4', '4.14', 'なに／どこ／だれ ＿か', 'what ___ (inside a sentence)', 'Fold a question into a sentence.', 'なにを たべたか、おしえて ください。', 'Tell me what you ate.'),
+  // のに moved here from N3 on the Japanese expert's advice (Genki II L22, Minna II L45 teach it in the N4 range).
+  d('noni', 'n4', '4.5', '＿のに', 'even though ___', 'Say it turned out against what you expected.', 'がんばったのに、まけました。', 'I tried hard, and still lost.'),
+  // Added on the Japanese expert's advice: N4 grammar Genki II and Minna II students expect. No path goal yet.
+  d('mitai-you', 'n4', '', '＿みたいです ／ ＿ようです', "It seems ___ / It's like ___", 'Guess from what you see or hear, or say what something is like.', 'だれも いない みたいです。', 'It seems nobody is here.'),
+  d('n-desu', 'n4', '', '＿んです', "It's that ___ (explaining)", 'Explain, or ask for an explanation, politely.', 'じつは、あした ひっこすんです。', "The thing is, I'm moving tomorrow."),
+  d('causative', 'n4', '', '＿させます ／ ＿せます', 'make / let ___ do it', 'Say who you made, or let, do something.', 'こどもに やさいを たべさせました。', 'I made the kids eat vegetables.'),
+  d('te-hoshii', 'n4', '', '＿て ほしいです', 'I want you to ___', 'Say what you want someone else to do.', 'もっと ゆっくり はなして ほしいです。', 'I want you to speak more slowly.'),
+  d('ba-yokatta', 'n4', '', '＿ば よかったです', 'I should have ___', 'Say what you wish you had done.', 'もっと はやく くれば よかったです。', 'I should have come earlier.'),
+  d('tari-tari', 'n4', '', '＿たり ＿たり します', 'do things like ___ and ___', 'Give examples of what you do.', 'しゅうまつは えいがを みたり、ほんを よんだり します。', 'At weekends I watch films, read books and so on.'),
+  d('tokoro-desu', 'n4', '', '＿ところです', "I'm just about to / in the middle of / have just ___", 'Say where you are in an action.', 'いま、でかける ところです。', "I'm just about to go out."),
+  d('tte-quote', 'n4', '', '＿って いって いました', '(They) said ___ (casual)', 'Pass on what someone said, casually.', 'あしたは やすみだって いって いたよ。', 'They said tomorrow is a day off.'),
 ];
 
 /** The four Limited Express (特急, N3) frames that need part of speech; the rest of N3 comes at step 6. Draft. */
 export const N3_FRAMES: readonly Frame[] = [
   d('rashii', 'n3', '3.1', '＿らしいです', 'Apparently ___', 'Pass on something you heard or read.', 'ゆきおんなは らいげつ けっこんする らしいです。', 'Apparently the snow woman is getting married next month.'),
-  d('noni', 'n3', '3.4', '＿のに', 'even though ___', 'Say it turned out against what you expected.', 'がんばったのに、まけました。', 'I tried hard, and still lost.'),
   d('uchi-ni', 'n3', '3.9', '＿うちに', 'while still ___', 'Do it before the chance passes.', 'あつい うちに たべて ください。', 'Eat it while it\'s hot.'),
   d('tame-reason', 'n3', '3.3', '＿ため、', 'Due to ___ (formal)', 'Give a reason, formally.', 'ゆきが ふった ため、でんしゃが おくれて います。', 'The train is late because it snowed.'),
 ];
