@@ -47,9 +47,32 @@ Rules every role follows:
 | Who's the Tourist? | N4 question and answer deck | 4.2, 4.4 | `shared/src/modes/tourist/places.ts` |
 | Nice to Meet You! | N4 experience cards | 4.3 | `shared/src/modes/hajimemashite/cards.ts` |
 
-Not built in this step (from the plan's "How mixed rooms work"): the host playing a hard role when
-nobody in the room is N4, the Gallery, Kana curveball tiles, and the commentary booth everywhere but
-Narabete.
+## How mixed rooms work (built after step 2)
+
+The shared pieces are in `shared/src/modes/mixedRoom.ts`, with the phone side in
+`controller/src/components/gallery.ts` and `roleOffer.ts` and the TV side in `stage/src/components/mixedRoom.ts`.
+Every game with a hard role uses them the same way:
+
+- **Offer card and rotation.** One offer card on every phone (`roleOffer`). `nextOfferee()` picks who is offered:
+  fewest offers so far, then longest ago; a player who said no last time sits the next one out; in rooms of 4 or
+  more, nobody holds the spotlight two rounds running.
+- **Gallery.** While the N4 line is being said, each player without the seat gets one tile a round: four
+  reactions (👏 すごい！, 💡 なるほど, 😮 えっ？, 😂 あはは) that pop up on the TV as bubbles, unscored. Once per game a
+  Kana or N5 player's tile is a curveball instead, "Which word did you hear?", with the line's key word and two
+  others; +5 if right.
+- **Commentary booth.** Once the N4 line lands, a 5–7 s instant replay on the TV: the line with its key word lit
+  and one line of English colour, voiced by the host (the fixed model line, never the player's own words). Kana
+  and N5 phones show the gist at their level (romaji for Kana).
+- **Host stand-in.** In a room of one or two players with nobody at N4, the host plays the hard role once per
+  game: one model line, voiced, with the gist on the phones. Nobody is asked to say it and it scores nothing.
+  This is the one thing that reaches rooms without an N4 player (for Ladi to confirm).
+- **Host reactions.** Each game's host reacts in one short line when a role lands.
+- **The waiting check.** In a mixed room (an N4 player and anyone below N4), the recap asks each player below
+  N4 one tap: "Did anything in that game feel like waiting?" (No / A bit / Yes). The server logs the answers
+  with how long each phase ran (`[mixed-room]` in the server log) when the recap ends, for playtests. The
+  answers aren't shown on any screen or kept in accounts.
+
+Still to come: N3 lines (step 6), and bots taking hard roles.
 
 ## N4 frame ids used
 

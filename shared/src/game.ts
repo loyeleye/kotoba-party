@@ -8,8 +8,8 @@ import { MAX_NAME_LENGTH, MAX_PLAYERS, SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } fr
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam, ModeInfo } from './modes/mode.js';
 import { MODES, noFit, speakersIn, surprisePool } from './modes/registry.js';
 import type { GameResult } from './progress.js';
-import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer } from './protocol.js';
-import { isAudience, LEVELS, MODE_IDS, SURPRISE } from './protocol.js';
+import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer, WaitAnswer } from './protocol.js';
+import { isAudience, LEVELS, MODE_IDS, SURPRISE, WAIT_ANSWERS } from './protocol.js';
 import { awardKana, hasKanji, isUtterance, matchesAccepted, utteranceReading, type Utterance } from './japanese/kana.js';
 import { isRomaji, romajiToHiragana } from './japanese/toKana.js';
 
@@ -48,7 +48,10 @@ export interface GameState {
   /** Host cues raised by the last action; the server drains them after each dispatch. */
   cues: HostCue[];
   phrasebook: Record<string, PhraseEntry[]>;
-  recap: { standings: { playerId: string; name: string; score: number; earned: number; total: number }[]; awards: Award[]; coop?: boolean; teams?: RecapTeam[] } | null;
+  recap: { standings: { playerId: string; name: string; score: number; earned: number; total: number }[]; awards: Award[]; coop?: boolean; teams?: RecapTeam[]; mixed?: MixedRoomCheck } | null;
+  /** When the current phase began (server clock), and how long each of this game's phases ran so far. */
+  phaseAt?: number;
+  phaseLog?: { phase: Phase; ms: number }[];
   /** Watching stage screens may run the game too (start, skip, play again). */
   remoteControl: boolean;
   /** The host's Audience setting: kids, family (default) or cheeky. Kept across games. */
@@ -59,6 +62,21 @@ export interface GameState {
   surprise: ModeId[] | null;
   /** The room's phrasebook from every game finished tonight, for the stage's Phrasebook (newest first). */
   tonight: TonightPhrase[];
+}
+
+/**
+ * Mixed rooms (docs/n4-hard-roles.md): the playtest check that N4 roles don't make anyone else wait. How long
+ * each phase ran, and the one-tap "Did anything feel like waiting?" asked of each player below N4 on the recap.
+ */
+export interface MixedRoomCheck {
+  phases: { phase: Phase; ms: number }[];
+  ask: string[];
+  answers: Record<string, WaitAnswer>;
+}
+
+/** A mixed room: at least one N4 player and at least one below N4. */
+export function isMixedRoom(levels: readonly Level[]): boolean {
+  return levels.includes('n4') && levels.some((l) => l !== 'n4');
 }
 
 /** One phrase from tonight's games, with who said it and who missed it. */
@@ -331,6 +349,14 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       else me.soundOff = true;
       return OK;
     }
+    case 'waitCheck': {
+      const mixed = state.recap?.mixed;
+      if (!me || state.phase !== 'recap' || !mixed?.ask.includes(me.id)) return fail('wrong-phase');
+      if (!WAIT_ANSWERS.includes(cmd.answer)) return fail('bad-command');
+      if (mixed.answers[me.id] === cmd.answer) return { changed: false };
+      mixed.answers[me.id] = cmd.answer;
+      return OK;
+    }
     case 'wish': {
       if (!me) return fail('not-allowed');
       if (state.phase !== 'lobby') return fail('wrong-phase');
@@ -450,6 +476,7 @@ function spinCues(state: GameState, info: ModeInfo, from: number): void {
 
 function enter(state: GameState, phase: Phase, ctx: GameContext): void {
   const mode = activeMode(state)!;
+  logPhase(state, ctx.now);
   state.phase = phase;
   state.phaseSeq += 1;
   state.host = null;
@@ -459,8 +486,17 @@ function enter(state: GameState, phase: Phase, ctx: GameContext): void {
   state.deadline = ctx.now + Math.max(0, ms);
 }
 
+/** Closes the phase that's ending in this game's phase log (a fresh log when the game is just starting). */
+function logPhase(state: GameState, now: number): void {
+  const playing = state.phase !== 'lobby' && state.phase !== 'recap';
+  if (playing && state.phaseAt != null) (state.phaseLog ??= []).push({ phase: state.phase, ms: Math.max(0, now - state.phaseAt) });
+  else state.phaseLog = [];
+  state.phaseAt = now;
+}
+
 function finish(state: GameState, ctx: GameContext): void {
   const mode = activeMode(state);
+  logPhase(state, ctx.now);
   state.phase = 'recap';
   state.phaseSeq += 1;
   state.deadline = null;
@@ -476,6 +512,9 @@ function finish(state: GameState, ctx: GameContext): void {
     awards: mode?.awards?.(state.modeState, modeContext(state, ctx)) ?? [],
     ...(mode?.info.coop ? { coop: true } : {}),
     ...(mode?.recapTeams ? { teams: mode.recapTeams(state.modeState, modeContext(state, ctx)) } : {}),
+    ...(isMixedRoom(state.players.map((p) => p.level))
+      ? { mixed: { phases: state.phaseLog ?? [], ask: state.players.filter((p) => p.level !== 'n4' && p.connected).map((p) => p.id), answers: {} } }
+      : {}),
   };
   if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award', slots: awardSlots(state.recap.awards[0]) });
   if (state.mode) addTonight(state, state.mode);
