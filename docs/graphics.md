@@ -228,7 +228,7 @@ Since 2026-10-27 the stage draws its set into one 320×180 `<canvas>` behind eve
 | Train carriage | `scenes/train-carriage.png` | Last Train (windows cut out) |
 | Call-in booth | `scenes/hotline-booth.png` | Ghost Advice Hotline (Nobiko-san's late-night advice line, 2026-11-01) |
 | Call light, off and on | `scenes/hotline-bulb-off.png`, `hotline-bulb-on.png` | The booth's red bulb: unlit over the set, or lit above the scrim with its glow |
-| Hitodama | `scenes/hotline-wisp.png` | The ghost fire outside the booth window |
+| Hitodama | `scenes/hotline-wisp.png` | The ghost fire outside the booth window and in the courtroom's side lanes |
 | Pages | `scenes/page-a.png` … `page-c.png` | The loose dictionary pages floating in the studio's side lanes |
 
 Every set is a text-only PixelLab `pixflux` image drawn as pixel art from the start, with its bright
@@ -258,13 +258,17 @@ Per mode:
   desk and its props sit 14 art px higher (14 rows of empty window cut out above the desk), so the mic
   head, teacup and phone dial clear the scoreboard; the scrim's rim is lighter in this mode (0.28, not
   0.42), centre unchanged; a hitodama hangs in the window's left pane, below Nobiko-san, bobbing a pixel
-  or two (still with calm motion); and while lit the call light is drawn again above the scrim on a
-  second canvas (`.backdrop-glow`) with a flat two-ring warm halo, right of the text area, so it reads
-  from the sofa.
-- **Yōkai Court:** Fude-san's courtroom: an old wooden hall, the judges' bench with seven empty chairs
-  at the back, the two counsel desks facing each other at the sides (as in a Japanese court, prosecution
-  and defence face each other across the floor), two blue ghost fires near the ceiling and lanterns on
-  the walls. No effects yet.
+  or two (still with calm motion); and the call light is drawn again above the scrim on a second canvas
+  (`.backdrop-glow`), right of the text area: full colour with a flat two-ring warm halo while it rings,
+  then a quiet steady glow (0.55, no halo) so it isn't as loud as the timer all call. The ring waits
+  600 ms for the curtain wipe, so its first flash is seen. The caller card's lamp is a hollow ring when
+  unlit and a filled dot when lit, so it doesn't rely on colour.
+- **Yōkai Court:** Fude-san's courtroom: an old wooden hall, the judges' bench at the back with nine empty
+  chairs (a lay-judge trial's three judges and six lay judges; Fude-san's, in the middle, is taller), the
+  two counsel desks facing each other at the sides (prosecution and defence face each other across the
+  floor), and amber lanterns on the side walls. Two hitodama float in the side lanes beside the lanterns,
+  above the scrim like the Hotline's (the draft's ghost fires sat behind the title bar and timer, so they
+  were painted out).
 - **Who's the Tourist?** stays on the plain studio: a themed set would tell the tourist the place.
 - **Confetti (紙吹雪):** one burst in gold and washi colours in the side lanes when a round's scores
   or the recap appear.

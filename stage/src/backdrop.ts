@@ -118,6 +118,9 @@ export function mountBackdrop(stage: HTMLElement, remaining: () => number | null
   stage.prepend(canvas, scrim, over);
   ctx = canvas.getContext('2d');
   glow = over.getContext('2d');
+  if (glow) glow.imageSmoothingEnabled = false;
+  // A reduced-motion change starts or stops the loop, as the VIP's Calm motion switch does.
+  if (typeof matchMedia !== 'undefined') matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', restart);
   document.addEventListener('visibilitychange', restart);
   restart();
 }
@@ -262,11 +265,9 @@ function drawStudio(g: CanvasRenderingContext2D, mode: ModeId | null, effects: b
 /** A game with a place of its own: its set, and the one effect that belongs there. */
 function drawSet(g: CanvasRenderingContext2D, mode: ModeId, set: string, effects: boolean): void {
   if (ready(set)) g.drawImage(art[set]!, 0, 0);
-  if (mode === 'ghost-hotline') {
-    // The call light is state, not an effect: dark between calls, lit while a caller is on the line.
-    callLight(g, effects);
-    wisp(g, effects);
-  }
+  // The call light is state, not an effect: dark between calls, lit while a caller is on the line.
+  if (mode === 'ghost-hotline') callLight(g, effects);
+  wisps(mode, effects);
   if (!effects) return;
   if (set === 'comedy-stage') spotlights(g, 0.16);
   g.save();
@@ -332,63 +333,91 @@ function hotlineRing(v: RoomView): { key: string; at: number } | null {
 
 /** How long the call light flashes when a call rings in: three rings, one a second (as the caller's card). */
 const RING_FLASH_MS = 3_000;
+/** The ring waits out the curtain wipe that opens the beat (560 ms), so its first flash is seen. */
+const RING_WAIT_MS = 600;
 /** The call light's bulb, unlit, over the set's lit one (hotline-booth.png). */
 const BULB = { x: 272, y: 54 };
 
 /**
  * Ghost Hotline's red call light over the phone (art panel, 1 Nov 2026): dark before the first call and
- * between games, flashing once a second for the first 3 s of a call as the phone rings (in step with the
- * lamp on the caller's card), then lit while the caller is on the line. The flash is a one-off signal like
- * confetti, so it runs on the clock even while the room holds; calm motion and effects off show it lit and
- * still. It sits at the right edge, outside the text area.
+ * between games; when a call rings in, dark through the curtain wipe, then flashing once a second for 3 s (in
+ * step with the lamp on the caller's card), then a quiet steady glow while the caller is on the line. The
+ * flash is a one-off signal like confetti, so it runs on the clock even while the room holds; calm motion
+ * and effects off show it steady and still. It sits at the right edge, outside the text area.
  */
 function callLight(g: CanvasRenderingContext2D, effects: boolean): void {
   if (!ready('hotline-bulb-off')) return;
   const game = view?.game as HotlineBits;
-  let lit = !!game?.step && !!game.call;
-  if (lit && effects && !calm() && game?.step === 'ring' && ringAt !== null) {
-    const since = performance.now() - ringAt;
-    if (since < RING_FLASH_MS) lit = Math.floor(since / 500) % 2 === 0;
+  if (!game?.step || !game.call) return g.drawImage(art['hotline-bulb-off']!, BULB.x, BULB.y);
+  let flash = false;
+  if (effects && !calm() && game.step === 'ring' && ringAt !== null) {
+    const since = performance.now() - ringAt - RING_WAIT_MS;
+    // Dark while the curtain wipe opens the beat, then three flashes, bright and haloed when on.
+    if (since < 0) return g.drawImage(art['hotline-bulb-off']!, BULB.x, BULB.y);
+    if (since < RING_FLASH_MS) {
+      if (Math.floor(since / 500) % 2 === 1) return g.drawImage(art['hotline-bulb-off']!, BULB.x, BULB.y);
+      flash = true;
+    }
   }
-  if (!lit) return g.drawImage(art['hotline-bulb-off']!, BULB.x, BULB.y);
   if (!glow || !ready('hotline-bulb-on')) return;
-  // Lit, it glows through the scrim: a warm halo in two flat rings (at 6× a dithered halo reads as a grid),
-  // then the bulb at full colour. It stays right of the text area (x 266 on), so no card's contrast changes.
+  // Lit, it shows through the scrim. Ringing, it is full colour with a warm halo; on the line, it steps down to
+  // a quiet glow, so it isn't as loud as the timer all call (art panel, 1 Nov 2026). Right of the text area.
+  if (flash) glow.drawImage(halo(), 0, 0);
+  glow.globalAlpha = flash ? 1 : 0.55;
+  glow.drawImage(art['hotline-bulb-on']!, BULB.x, BULB.y);
+  glow.globalAlpha = 1;
+}
+
+let haloArt: HTMLCanvasElement | null = null;
+/** The call light's halo, drawn once: two flat rings of warm light (at 6× a dithered halo reads as a grid). */
+function halo(): HTMLCanvasElement {
+  if (haloArt) return haloArt;
+  haloArt = document.createElement('canvas');
+  haloArt.width = W;
+  haloArt.height = H;
+  const hg = haloArt.getContext('2d')!;
   const cx = BULB.x + 17;
   const cy = BULB.y + 16;
-  glow.save();
-  glow.beginPath();
-  glow.rect(SAFE.x + SAFE.w + 2, 0, W, H);
-  glow.clip();
+  hg.fillStyle = '#ff9a52';
   for (const [r, a] of [
     [21, 0.14],
     [15, 0.2],
   ] as const) {
-    glow.globalAlpha = a;
-    glow.fillStyle = '#ff9a52';
-    // Whole art pixels, so the halo's edge steps like the art's.
+    hg.globalAlpha = a;
+    // Whole art pixels, so the halo's edge steps like the art's; nothing left of x 266.
     for (let y = -r; y <= r; y++) {
       const half = Math.floor(Math.sqrt(r * r - y * y));
-      glow.fillRect(cx - half, cy + y, half * 2 + 1, 1);
+      const x0 = Math.max(SAFE.x + SAFE.w + 2, cx - half);
+      hg.fillRect(x0, cy + y, cx + half + 1 - x0, 1);
     }
   }
-  glow.restore();
-  glow.globalAlpha = 1;
-  glow.imageSmoothingEnabled = false;
-  glow.drawImage(art['hotline-bulb-on']!, BULB.x, BULB.y);
+  return haloArt;
 }
 
-/** Where the hitodama hangs in the booth window's left pane (hotline-wisp.png, 18×27), outside the text area. */
-const WISP = { x: 36, y: 66 };
-
 /**
- * The booth is haunted (art panel, 1 Nov 2026): a hitodama hangs outside the window, bobbing a pixel or two
- * like the studio's loose pages. It's part of the set, so it stays (still) with calm motion or "Background effects" off.
+ * Hitodama (人魂): a round blue-white flame with its tail rising (hotline-wisp.png, 12×26). One hangs outside
+ * the Hotline booth's window, below Nobiko-san; two float in the courtroom's side lanes beside the lanterns.
+ * They are drawn above the scrim at 0.8, so they read as fire, not a grey smudge, and bob a pixel or two like
+ * the studio's pages. They're part of the set: still (not gone) with calm motion or "Background effects" off.
  */
-function wisp(g: CanvasRenderingContext2D, effects: boolean): void {
-  if (!ready('hotline-wisp')) return;
-  const bob = effects ? [0, 1, 2, 1][Math.floor(t * 1.2) % 4]! : 0;
-  g.drawImage(art['hotline-wisp']!, WISP.x, WISP.y - bob);
+const WISPS: Partial<Record<ModeId, [number, number][]>> = {
+  'ghost-hotline': [[37, 66]],
+  'yokai-court': [
+    [4, 40],
+    [304, 40],
+  ],
+};
+
+function wisps(mode: ModeId, effects: boolean): void {
+  const spots = WISPS[mode];
+  if (!spots || !glow || !ready('hotline-wisp')) return;
+  const still = !effects || calm();
+  glow.globalAlpha = 0.8;
+  spots.forEach(([x, y], i) => {
+    const bob = still ? 0 : [0, 1, 2, 1][Math.floor(t * 1.2 + i * 2) % 4]!;
+    glow!.drawImage(art['hotline-wisp']!, x, y - bob);
+  });
+  glow.globalAlpha = 1;
 }
 
 /** Karaoke: dots from a mirror ball, stepping across the side walls once a bar. */

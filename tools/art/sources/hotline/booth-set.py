@@ -1,7 +1,8 @@
 """Ghost Advice Hotline's set: crops the PixelLab draft to the stage and makes the call light's "off" frame.
 
     python3 tools/art/sources/hotline/booth-set.py tools/art/sources/hotline/booth-draft.png \
-        tools/art/sources/hotline/wisp-draft.png tools/art/sources/hotline/phone-draft.png
+        tools/art/sources/hotline/wisp-draft.png tools/art/sources/hotline/phone-draft.png \
+        tools/art/sources/hotline/mic-draft.png
 
 The draft is PixelLab pixflux, seed 21 (prompt in stage/assets/manifest.json, "hotline-booth"). pixflux
 letterboxes a 320x180 request, so it is drawn at 320x224 and rows 12-191 are kept (so the call light hangs below the caller's card),
@@ -61,10 +62,10 @@ for y in range(BOX[1], BOX[3]):
             lit.putpixel((x - BOX[0], y - BOX[1]), c + (255,))
 lit.save('stage/assets/scenes/hotline-bulb-on.png', optimize=True)
 
-# The haunted prop: a hitodama (PixelLab pixflux 32x32, seed 21, tools/art/sources/hotline/wisp-draft.png),
-# trimmed; backdrop.ts hangs it in the window's left pane, outside the text area.
+# The other pixflux drafts, trimmed to their pixels: the hitodama (32x32, seed 13; backdrop.ts floats it in the
+# booth window's left pane and the courtroom's side lanes), the caller card's rotary phone (32x32, seed 3)
+# and its "said it" mic (32x32, seed 7).
 if len(sys.argv) > 2:
-    wisp = Image.open(sys.argv[2]).convert('RGBA')
-    wisp.crop(wisp.getbbox()).save('stage/assets/scenes/hotline-wisp.png', optimize=True)
-    phone = Image.open(sys.argv[3]).convert('RGBA')
-    phone.crop(phone.getbbox()).save('stage/assets/icons/hl-phone.png', optimize=True)
+    for src, out in zip(sys.argv[2:5], ('scenes/hotline-wisp', 'icons/hl-phone', 'icons/hl-mic')):
+        im = Image.open(src).convert('RGBA')
+        im.crop(im.getbbox()).save(f'stage/assets/{out}.png', optimize=True)

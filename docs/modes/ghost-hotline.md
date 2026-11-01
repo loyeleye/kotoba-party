@@ -22,7 +22,7 @@ window. The desk sits high enough that the mic and phone show above the scoreboa
 2026-11-01): she sits at the left of the host row, idling when she has nothing to say, and the caller's
 card sits at its right end, with a matching lamp, the yōkai, who is playing it and what they're doing
 now, Japanese first (もしもし…, まって います, きいて います, こたえて います…) with English small. It rings
-for 3 s (ジリリリン！ and a sideways buzz), then says 電話ちゅう. Before the first call it says
+for 3 s (ジリリリン！ and a sideways buzz), then says 電話中 (でんわちゅう). Before the first call it says
 お電話 まってます. The host row keeps one height all game, so the beat below never jumps. The beats have
 no band or call counter of their own (the top bar has the title and round), the problem line stays up
 through play and react, and the ring beat shows the caller's face beside it.

@@ -30,10 +30,14 @@ describe('backdrop art', () => {
     expect(png('stage/assets/scenes/hotline-bulb-on.png')).toEqual({ w, h });
   });
 
-  it('hangs the hitodama in the left window pane, outside the text area', () => {
-    // backdrop.ts draws it at x 36, y 66 (below Nobiko-san) (up to 2 px higher as it bobs); the text area starts at x 56.
+  it('floats the hitodama outside the text area', () => {
+    // backdrop.ts draws it at (37, 66) in the booth window and (4, 40) and (304, 40) in the courtroom, up to
+    // 2 px higher as it bobs; the text area is x 56–264.
     const { w, h } = png('stage/assets/scenes/hotline-wisp.png');
-    expect(36 + w).toBeLessThanOrEqual(56);
+    expect(37 + w).toBeLessThanOrEqual(56);
+    expect(4 + w).toBeLessThanOrEqual(56);
+    expect(304).toBeGreaterThanOrEqual(264);
+    expect(304 + w).toBeLessThanOrEqual(320);
     expect(66 + h).toBeLessThanOrEqual(180);
   });
 
