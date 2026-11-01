@@ -61,7 +61,7 @@ export const snowmanCase: OnsenCase = {
         what: { jp: k('おゆを たくさん わかしました。ラーメンの スープです。', 'I boiled lots of water. For the ramen soup.'), clueId: 'hot-water', report: said('たなかさんは ラーメンの スープの ために おゆを たくさん わかしたと いっていました。', null, 'Tanaka said he boiled lots of water for the ramen soup.', 'tame-ni') },
         who: { jp: k('だれも みませんでした。ひとりでした。', "I didn't see anyone. I was alone."), report: said('たなかさんは だれも みなかったと いっていました。', null, 'Tanaka said he didn’t see anyone.') },
         when: { jp: t('12じに ねました。しごとが たくさん ありました。', 'じゅうにじに ねました。しごとが たくさん ありました。', 'I went to bed at 12. I had lots of work.'), report: said('たなかさんは 12じに ねたと いっていました。', 'たなかさんは じゅうにじに ねたと いっていました。', 'Tanaka said he went to bed at 12.') },
-        victim: { jp: k('つめたい ひとでした。わたしの ラーメンが きらいでした。', 'He was a cold person. He hated my ramen.'), clueId: 'motive', report: said('たなかさんは ゆきだるまさんが じぶんの ラーメンを きらいだったと いっていました。', null, 'Tanaka said Mr. Snowman hated his ramen.') },
+        victim: { jp: k('つめたい ひとでした。わたしの ラーメンが きらいでした。', 'He was a cold person. He hated my ramen.'), clueId: 'motive', report: said('たなかさんは ゆきだるまさんが じぶんの ラーメンが きらいだったと いっていました。', null, 'Tanaka said Mr. Snowman hated his ramen.') },
         item: { jp: k('その マフラー？　しりません。', "That scarf? I don't know it."), report: said('たなかさんは その マフラーを しらないと いっていました。', null, 'Tanaka said he doesn’t know the scarf.') },
       },
     },

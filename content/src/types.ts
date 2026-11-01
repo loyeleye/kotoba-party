@@ -526,6 +526,8 @@ export type HostEvent =
   | 'onsen_accuse' // the accusation opens
   | 'onsen_reveal' // the culprit is revealed
   | 'onsen_report' // Chōchin-san says the N4 deputy's accepted report on the TV ({line})
+  | 'onsen_deputy_cheer' // Chōchin-san's short reaction once he has said the deputy's report ({name})
+  | 'onsen_standin' // a 1–2-player room with nobody at N4: Chōchin-san gives one report himself, once a game ({line}, as is)
   // Who's the Tourist?
   | 'tourist_intro'
   | 'tourist_deal' // the secret cards are dealt
@@ -647,6 +649,8 @@ export type HostEvent =
   | 'hajime_recall' // おぼえてる？ say everyone's truth
   | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
   | 'omiai_nakodo_read' // the go-between's keigo line was said: Nobiko-san voices it ({line}, as is)
+  | 'omiai_nakodo_cheer' // あらまあ: Nobiko-san delighted by the go-between's keigo opening, once she has said it ({name})
+  | 'omiai_standin' // a 2-player room with nobody at N4: Nobiko-san says the go-between's opening herself, once a game ({line}, as is)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin
   | 'surprise_pick'; // Surprise Me!: the wheel stops on tonight's game ({game})
 

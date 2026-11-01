@@ -29,6 +29,8 @@ export const HOST_EVENTS = [
   // Omiai Matchmaker
   'omiai_tease',
   'omiai_nakodo_read',
+  'omiai_nakodo_cheer',
+  'omiai_standin',
   // Narabete!
   'narabete_intro',
   'narabete_deal',
@@ -124,6 +126,8 @@ export const HOST_EVENTS = [
   'onsen_accuse',
   'onsen_reveal',
   'onsen_report',
+  'onsen_deputy_cheer',
+  'onsen_standin',
   // Who's the Tourist?
   'tourist_intro',
   'tourist_deal',
