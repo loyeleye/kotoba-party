@@ -37,6 +37,15 @@ function ownLine(frames: readonly string[], word: string, r: number): string {
   return `これは ${word} です。`;
 }
 
+/** The bot's question-time answer: in a Then and now talk, one of the answer frames a third of the time each, else the stall. */
+function answerLine(frames: readonly string[], r: number): string {
+  if (frames.some((f) => f.includes('ことに'))) {
+    if (r < 1 / 3) return 'いい しつもんですね。それで、もっと しらべる ことに しました。';
+    if (r < 2 / 3) return 'まえは できませんでしたが、いまは できるように なりました。';
+  }
+  return 'いい しつもんですね。おいしい から です。';
+}
+
 export function happyokaiPolicy(opts: HappyokaiPolicyOptions = {}): ModePolicy {
   const readChance = opts.readChance ?? 0.4;
   const mishapChance = opts.mishapChance ?? 0.3;
@@ -87,7 +96,7 @@ export function happyokaiPolicy(opts: HappyokaiPolicyOptions = {}): ModePolicy {
       if (view.phase === 'encore') {
         if (me.role === 'presenter') {
           if (me.pickQuestion.length) out.push({ key: 'choose', move: { kind: 'choose', playerId: pickOf(me.pickQuestion, r('choose'))!.playerId }, delayMs: delay('choose') + think });
-          else if (me.answerFrames.length && !me.lines.length) out.push({ key: 'answer', move: { kind: 'say', utterance: { via, text: me.answerFrames.some((f) => f.includes('ことに')) ? 'いい しつもんですね。それで、もっと しらべる ことに しました。' : 'いい しつもんですね。おいしい から です。' } }, delayMs: delay('answer') });
+          else if (me.answerFrames.length && !me.lines.length) out.push({ key: 'answer', move: { kind: 'say', utterance: { via, text: answerLine(me.answerFrames, r('answer')) } }, delayMs: delay('answer') });
           return out;
         }
         if (me.questions.length && !me.asked) {

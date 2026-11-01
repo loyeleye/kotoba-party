@@ -5,7 +5,7 @@
 import type { ContentLibrary } from '../../../shared/src/modes/mode.js';
 import { lexiconFor, type WordGauntletView } from '../../../shared/src/modes/wordGauntlet/wordGauntlet.js';
 import { follows, repeatKey } from '../../../shared/src/modes/wordGauntlet/shiritori.js';
-import { RUMOUR_SEEDS, keptParts, rumourFin, rumourFrameOf, rumourLine, type RumourFrameId } from '../../../shared/src/modes/wordGauntlet/rumours.js';
+import { RUMOUR_FINS, RUMOUR_SEEDS, addFin, finKept, keptParts, rumourFin, rumourFrameOf, rumourLine, type RumourFrameId } from '../../../shared/src/modes/wordGauntlet/rumours.js';
 import { n4Up } from '../../../shared/src/level.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
@@ -14,17 +14,19 @@ import type { ModePolicy } from '../bot.js';
 const RETELL: readonly RumourFrameId[] = ['sou-hear', 'ni-yoru', 'to-itte-ita', 'n-datte'];
 
 /**
- * An N4 bot's retelling: the rumour it heard (who, where, what, all kept) with its fin added, passed on in a
+ * An N4 bot's retelling: the rumour it heard (who, where, what and every detail, all kept) with its fin added, passed on in a
  * reporting frame other than the one it heard, as a player does who isn't just saying it back. Null when the
  * heard line lost a part, so the bot falls back to echoing it.
  */
-function retell(subject: string, heard: { text: string; kana: string }, fin: string | null, pick: number): string | null {
+export function retell(subject: string, heard: { text: string; kana: string }, fin: string | null, pick: number): string | null {
   const seed = RUMOUR_SEEDS.find((sd) => sd.who.kana === subject && Object.values(keptParts(sd, heard.kana)).every(Boolean));
   if (!seed) return null;
   const was = rumourFrameOf({ text: heard.text, reading: heard.kana });
   const frames = RETELL.filter((f) => f !== was);
+  // Keep every detail the rumour already carried (an earlier player's おひれ), then add this bot's own.
+  const carried = RUMOUR_FINS.filter((f) => finKept(f, heard.kana));
   const added = fin ? rumourFin(fin) : undefined;
-  return rumourLine(seed, added ? [added] : [], frames[pick % frames.length]!).kana;
+  return rumourLine(seed, added ? addFin(carried, added) : carried, frames[pick % frames.length]!).kana;
 }
 
 /** A repeatable pick for one retelling, so the frames vary from bot to bot and rumour to rumour. */

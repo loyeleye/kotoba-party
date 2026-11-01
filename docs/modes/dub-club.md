@@ -78,8 +78,10 @@ as before. Everyone else keeps their scripted line, and a room with no N4 player
   one of the scene's key words comes through. Both score as a full
   plain read (50), one as close (30), neither as tried (20): the same word points as everyone else.
 - **The model line** (one casual N4 way to say it) shows on the phone once the take is sent, in the cast
-  notes and in the phrasebook (`dub:<scene>:adlib`), logged as said from memory (an ad-lib has no script), so a
-  good one counts toward goal 4.8 (step 5b-2). The TV tags the cast list and the name card
+  notes and in the phrasebook (`dub:<scene>:adlib:<frames>`), logged as said from memory (an ad-lib has no
+  script). The card counts only for the model line's frames that were also heard in the player's best take
+  (panel on #160): a casual ending of their own counts toward goal 4.8, but the model's おいしそう doesn't count
+  toward 4.6 unless they said a そう too. Takes with different frames are different cards. The TV tags the cast list and the name card
   アドリブ; over an ad-lib's voice it captions only the model line's English (so the room can follow
   without being handed a Japanese answer), and the reveal captions it with the model line itself.
 - An ad-lib take may run 9 s (13.5 s capped at 12 s for slow cards).

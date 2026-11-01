@@ -16,7 +16,8 @@
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
-import { framesOf, type FrameId } from '../../japanese/frames.js';
+import { framesHeard, type FrameId } from '../../japanese/frames.js';
+import { wordsSimilarity } from '../dubClub/dubClub.js';
 import { isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
@@ -679,6 +680,9 @@ export function photoBeat(index: number, total: number): 1 | 2 | 3 | null {
   return null;
 }
 
+/** A line of the presenter's this close to a ready sentence on screen was read off it (a word changed, a particle misheard). */
+const NEAR_READ = 0.75;
+
 function phrases(t: Talk, ctx: ModeContext): void {
   const p = ctx.player(t.presenterId);
   const title = titleFor(t);
@@ -697,8 +701,9 @@ function phrases(t: Talk, ctx: ModeContext): void {
     });
     // A deck talk's own sentences: when the presenter makes up a line in one of the deck's frames (Then and
     // now's 〜ように なりました, 〜ことに しました), on a picture slide or as their answer in question time, the
-    // deck's ready sentence in that frame goes in their phrasebook as said from memory. What was heard has no
-    // English to practise from, so the card is the deck's version (as Late Again! logs Pon's model line).
+    // deck's ready sentence closest to it goes in their phrasebook as said from memory, one card for the line,
+    // counting only the frames heard in it. What was heard has no English to practise from, so the card is the
+    // deck's version (as Late Again! logs Pon's model line). A line close to a ready sentence was read, not made up.
     if (title.deck) {
       const want = DECKS[title.deck].frames;
       const credited = new Set<string>();
@@ -706,20 +711,23 @@ function phrases(t: Talk, ctx: ModeContext): void {
         if (l.kind !== 'own' || l.hidden) continue;
         const own = l.step === -1 ? null : t.steps[l.step];
         if (own && own.kind !== 'picture') continue;
-        const heard = framesOf({ text: l.text, kana: l.kana ?? l.text }, undefined, { keepHidden: true });
-        const slides = (own ? [own] : t.steps).filter((x) => x.kind === 'picture' && x.slideId);
-        for (const f of want) {
-          if (credited.has(f) || !heard.includes(f as FrameId)) continue;
-          for (const x of slides) {
-            const slide = slideOf(x.slideId!);
-            const ready = slide ? readySentences(slide, p.level, title.topic, title.deck, title.place).find((r) => framesOf(r, undefined, { keepHidden: true }).includes(f as FrameId)) : undefined;
-            if (!ready) continue;
-            credited.add(f);
-            // One card per slide, so different talks give the frame different phrases (the path wants two).
-            ctx.phrase(p.id, { itemId: `happyokai:${title.deck}:${f}:${x.slideId}:${p.level}`, text: ready.text, kana: ready.kana, en: ready.en, outcome: 'said', recall: 'memory' });
-            break;
-          }
+        const heard = { text: l.text, kana: l.kana ?? l.text };
+        const readyOf = (x: Step) => {
+          const slide = x.slideId ? slideOf(x.slideId) : undefined;
+          return slide ? readySentences(slide, p.level, title.topic, title.deck, title.place).map((r) => ({ r, slideId: x.slideId! })) : [];
+        };
+        const candidates = (own ? [own] : t.steps.filter((x) => x.kind === 'picture')).flatMap(readyOf);
+        if (own && candidates.some(({ r }) => wordsSimilarity(r.kana, heard.kana) >= NEAR_READ)) continue;
+        // The ready sentence sharing the most deck frames with the line (ties: the first).
+        let best: { r: JpText; slideId: string; frames: FrameId[] } | null = null;
+        for (const c of candidates) {
+          const frames = framesHeard(c.r, heard);
+          const deck = frames.filter((f) => want.includes(f) && !credited.has(f)).length;
+          if (deck && (!best || deck > best.frames.filter((f) => want.includes(f) && !credited.has(f)).length)) best = { ...c, frames };
         }
+        if (!best) continue;
+        for (const f of best.frames) if (want.includes(f)) credited.add(f);
+        ctx.phrase(p.id, { itemId: `happyokai:${title.deck}:${best.slideId}:${best.frames.join('+')}:${p.level}`, text: best.r.text, kana: best.r.kana, en: best.r.en, outcome: 'said', recall: 'memory', frames: best.frames });
       }
     }
   }

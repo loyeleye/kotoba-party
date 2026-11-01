@@ -97,6 +97,8 @@ export interface PhraseCard {
   memory?: MemoryDay[];
   /** Epoch ms it was last said from memory. */
   memAt?: number;
+  /** Only these frames count for it (PhraseEntry.frames): what was heard, when the card is a model sentence. */
+  frames?: readonly string[];
 }
 
 /** One day a phrase was said from memory: how many times, and whether any of them was in a game (not a phone review). */
@@ -254,6 +256,8 @@ function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number, day: s
   const all = (p.phrases ??= {});
   const card = (all[e.itemId] ??= { itemId: e.itemId, text: e.text, kana: e.kana, en: e.en, mode, box: 0, due: at, seen: 0, said: 0, missed: 0, last: e.outcome, lastAt: at });
   Object.assign(card, { text: e.text, kana: e.kana, en: e.en, mode, last: e.outcome, lastAt: at });
+  if (e.frames) card.frames = [...e.frames];
+  else delete card.frames;
   card.seen += 1;
   if (e.outcome === 'said') {
     card.said += 1;
@@ -285,7 +289,7 @@ export function duePhrases(p: Progress, now: number, limit = REVIEW_SIZE): Phras
 
 /** Every frame a phrase counts for, N5 and N4. keepHidden: an N5 frame still counts when a more specific one
  * matched. Listening-only and (until the Limited Express is on the path) N3 frames are left out (`creditable`). */
-export function phraseFrames(c: { text: string; kana: string }): FrameId[] {
+export function phraseFrames(c: { text: string; kana: string; frames?: readonly string[] }): FrameId[] {
   // The path asks for every saved phrase's frames on each save, and a phrase's frames never change: keep them.
   const key = `${c.text}\u0000${c.kana}`;
   let hit = FRAME_CACHE.get(key);
@@ -294,7 +298,8 @@ export function phraseFrames(c: { text: string; kana: string }): FrameId[] {
     hit = framesOf(c, undefined, { keepHidden: true }).filter(creditable);
     FRAME_CACHE.set(key, hit);
   }
-  return [...hit];
+  // A model sentence counts only for the frames heard in the player's own words.
+  return c.frames ? hit.filter((f) => c.frames!.includes(f)) : [...hit];
 }
 const FRAME_CACHE = new Map<string, FrameId[]>();
 const FRAME_CACHE_MAX = 20_000;

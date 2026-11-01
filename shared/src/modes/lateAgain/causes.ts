@@ -314,8 +314,8 @@ export const CAUSES: readonly Cause[] = [
         frame: jp('すみません！ おばあさんの にもつを ＿＿。やまの うえまで！', 'Sorry! I ＿＿ (carried) an old lady’s bags. Up a mountain!'),
       },
       n4: {
-        mission: 'Apologise, then blame an old lady. Say why, and that you had no choice.',
-        model: n4('おばあさんが 道に 迷って いたので、山の 上まで 送らなければ なりませんでした。', 'おばあさんが みちに まよって いたので、やまの うえまで おくらなければ なりませんでした。', 'An old lady was lost, so I had to take her all the way up a mountain.'),
+        mission: 'Apologise, then blame an old lady. Say you had no choice.',
+        model: n4('おばあさんを 山の 上まで 送らなければ なりませんでした。', 'おばあさんを やまの うえまで おくらなければ なりませんでした。', 'I had to take an old lady all the way up a mountain.'),
         chunk: { text: '送らなければ なりませんでした', keys: MUST, note: '〜なければ なりませんでした: you HAD to. A kind person has no choice.', tag: tag.must },
       },
     },
@@ -344,9 +344,9 @@ export const CAUSES: readonly Cause[] = [
         frame: jp('すみません！ カラスが かぎを もって ＿＿！', 'Sorry! A crow took my keys and ＿＿ (went off)!'),
       },
       n4: {
-        mission: 'Apologise, then blame a crow. Say what it did to you, and what you did about it.',
+        mission: 'Apologise, then blame a crow. Say what it did to you, and how you spent the morning.',
         model: n4('カラスに 家の 鍵を 取られたので、ずっと 追いかけて いました。', 'カラスに いえの かぎを とられたので、ずっと おいかけて いました。', 'A crow took my house keys, so I was chasing it the whole time.'),
-        chunk: { text: '取られた', keys: ['とられ', 'いかれ'], note: 'カラスに とられました: it was done TO you. The passive is how victims talk.', tag: tag.passive },
+        chunk: { text: '取られた', keys: ['とられ', 'いかれ'], note: 'カラスに とられた（ので）: it was done TO you, so… The passive is how victims talk.', tag: tag.passive },
       },
     },
     pon: {
@@ -526,9 +526,9 @@ export const CAUSES: readonly Cause[] = [
         frame: jp('すみません！ かっぱが みちを ＿＿。かわまで いっしょに いきました。', 'Sorry! A kappa ＿＿ (asked) me the way. I went with it to the river.'),
       },
       n4: {
-        mission: 'Apologise, then blame a kappa. Say what it asked you, and what you did next.',
-        model: n4('かっぱに 川までの 道を 聞かれたので、いっしょに 行きました。', 'かっぱに かわまでの みちを きかれたので、いっしょに いきました。', 'A kappa asked me the way to the river, so I went with it.'),
-        chunk: { text: '聞かれた', keys: ['きかれ'], note: 'かっぱに きかれました: it happened TO you. The kappa started it.', tag: tag.passive },
+        mission: 'Apologise, then blame a kappa. Say what it asked you, and where you ended up.',
+        model: n4('かっぱに 川までの 道を 聞かれたので、いっしょに 行きました。', 'かっぱに かわまでの みちを きかれたので、いっしょに いきました。', 'A kappa asked me the way to the river, so I walked it there.'),
+        chunk: { text: '聞かれた', keys: ['きかれ'], note: 'かっぱに きかれた（ので）: it happened TO you, so… The kappa started it.', tag: tag.passive },
       },
     },
     pon: {
@@ -556,9 +556,9 @@ export const CAUSES: readonly Cause[] = [
         frame: jp('すみません！ ぶちょうが「やすみ」と ＿＿。…きつねでした。', 'Sorry! The boss ＿＿ (said) “day off”. …It was a fox.'),
       },
       n4: {
-        mission: 'Apologise, then blame a fox. Say what “the boss” told you, and what you did about it.',
-        model: n4('部長に「今日は 休みだよ」と 言われたので、家で のんびり して いました。…きつねでした。', 'ぶちょうに「きょうは やすみだよ」と いわれたので、いえで のんびり して いました。…きつねでした。', 'The boss told me “today’s a day off”, so I took it easy at home. …It was a fox.'),
-        chunk: { text: '言われた', keys: ['いわれ'], note: 'ぶちょうに いわれました: you were TOLD. It’s not your fault the boss was a fox.', tag: tag.passive },
+        mission: 'Apologise, then blame a fox. Say what “the boss” told you, and where you went instead.',
+        model: n4('部長に「休みだよ」と 言われたので、おんせんに 行きました。…きつねでした。', 'ぶちょうに「やすみだよ」と いわれたので、おんせんに いきました。…きつねでした。', 'The boss told me “it’s a day off”, so I went to a hot spring. …It was a fox.'),
+        chunk: { text: '言われた', keys: ['いわれ'], note: 'ぶちょうに いわれた（ので）: you were TOLD, so… It’s not your fault the boss was a fox.', tag: tag.passive },
       },
     },
     pon: {
@@ -566,7 +566,7 @@ export const CAUSES: readonly Cause[] = [
       good: jp('きつね！？ ポンの ライバルだポン！', 'A fox?! My rival!'),
       ippon: jp('くやしい！ あした ポンも ぶちょうに ばけるポン！', 'So jealous! Tomorrow I’m disguising myself as the boss!'),
     },
-    check: { q: 'What did “the boss” say?', right: 'That today was a day off', wrong: ['That the meeting moved', 'To bring a cake'] },
+    check: { q: 'What did “the boss” say?', right: 'That it was a day off', wrong: ['That the meeting moved', 'To bring a cake'] },
     truth: jp('ほんとうは… きつねと いなりずしを たべたポン！', 'What really happened… they ate inari sushi with the fox!'),
     status: 'draft',
   },

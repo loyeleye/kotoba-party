@@ -22,6 +22,7 @@
 // which clips are still needed; the server drops the rest at once.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
+import { framesHeard } from '../../japanese/frames.js';
 import { isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
@@ -92,6 +93,8 @@ export interface Rehearsal {
   /** The best try so far: what Whisper wrote, and its reading. */
   heard: string | null;
   reading: string;
+  /** The best try's reading as heard, spaces and punctuation kept (the frame matcher needs them). */
+  spoken?: string;
   similarity: number;
   /** Ad-lib only: what the lenient check found in the best try. */
   adlib?: AdlibCheck;
@@ -765,11 +768,16 @@ function settle(s: DubState, r: SceneRound, ctx: ModeContext): void {
 
 function phrases(s: DubState, r: SceneRound, a: Actor, scene: Scene, ctx: ModeContext): void {
   const line = lineFor(s, r, a);
-  const itemId = isAdlib(a) ? `dub:${scene.id}:adlib` : `dub:${scene.id}:${a.level}`;
   const reh = a.rehearsal;
   const outcome = !reh ? 'seen' : reh.similarity >= WORDS_FULL_AT[a.level] ? 'said' : reh.similarity >= CLOSE_AT ? 'retry' : 'missed';
-  // An ad-lib has no script: it's said from memory, and logged as the scene's model line (the take has no English).
-  ctx.phrase(a.playerId, { itemId, text: line.text, kana: line.kana, en: line.en, outcome, recall: isAdlib(a) ? 'memory' : 'read' });
+  if (isAdlib(a)) {
+    // An ad-lib has no script: it's said from memory, logged as the scene's model line (the take has no
+    // English), and it counts only for the model's frames that were heard in the take.
+    const heard = reh?.heard ? framesHeard(line, { text: reh.heard, kana: reh.spoken ?? reh.heard }) : [];
+    ctx.phrase(a.playerId, { itemId: `dub:${scene.id}:adlib:${heard.join('+')}`, text: line.text, kana: line.kana, en: line.en, outcome, recall: 'memory', frames: heard });
+    return;
+  }
+  ctx.phrase(a.playerId, { itemId: `dub:${scene.id}:${a.level}`, text: line.text, kana: line.kana, en: line.en, outcome, recall: 'read' });
 }
 
 /** The episode's steps: the title, each scene, the end card, the credits. */
@@ -1023,6 +1031,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
           reh.similarity = sim;
           reh.heard = String(raw.utterance.text).slice(0, 160);
           reh.reading = reading;
+          reh.spoken = String(raw.utterance.reading ?? raw.utterance.text).slice(0, 320);
           if (check) reh.adlib = check;
         }
         return MOVE_OK;

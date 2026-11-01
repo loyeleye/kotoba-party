@@ -1,11 +1,11 @@
 // How bots play Dub Club: one policy shared by every bot in the room, standing in for a room that
 // listens. Each bot keeps the first card it's offered (or the second, by chance), rehearses the line
-// (said right, or fluffed; offered the N4 ad-lib, it usually takes it and ad-libs a casual line on the mission), and sends a take that "plays from its phone": a bot has no voice, so no
+// (said right, or fluffed; offered the N4 ad-lib, it usually takes it and ad-libs a short casual line with the mission's word), and sends a take that "plays from its phone": a bot has no voice, so no
 // clip reaches the TV and the screening shows its name card over a silent scene. Guessers "hear" the
 // actor's card with a fair chance, ask for もう いっかい now and then, and give their heart to a dub.
 // Repeatable: every choice hashes the bot's id with the phase.
 
-import type { DubView } from '../../../shared/src/modes/dubClub/dubClub.js';
+import { missionWord, type DubView } from '../../../shared/src/modes/dubClub/dubClub.js';
 import { EPISODES, type AdLib } from '../../../shared/src/modes/dubClub/scenes.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
@@ -18,7 +18,7 @@ export interface DubClubPolicyOptions {
   thinkMs?: number;
 }
 
-/** Every ad-lib by its mission: an N4 bot that takes the ad-lib says a casual line on the mission, as the scene's model does. */
+/** Every ad-lib by its mission: an N4 bot that takes the ad-lib says a short casual line with the mission's word. */
 const ADLIBS = new Map<string, AdLib>(EPISODES.flatMap((e) => e.scenes.flatMap((sc) => [sc.adlib, sc.cheekyAdlib].filter((x): x is AdLib => !!x).map((x) => [x.mission, x] as const))));
 
 function hash(...parts: (string | number)[]): number {
@@ -53,9 +53,11 @@ export function dubClubPolicy(opts: DubClubPolicyOptions = {}): ModePolicy {
         return [{ key: 'adlib', move: { kind: 'adlib', accept: r('adlib') < 0.6, round }, delayMs: delay('adlib') }];
       }
       if (view.phase === 'answer' && me.acting && !me.sent && !me.passed && me.adlib?.state === 'accepted') {
-        const model = ADLIBS.get(me.adlib.mission)?.model;
-        if (model && (!me.rehearsal || (me.rehearsal.left > 0 && me.rehearsal.similarity < 0.8 && r('retry') < 0.5))) {
-          const text = r(`fluff${me.rehearsal?.tries ?? 0}`) < fluff ? model.kana.slice(0, Math.ceil(model.kana.length / 3)) : model.kana;
+        const adlib = ADLIBS.get(me.adlib.mission);
+        if (adlib && (!me.rehearsal || (me.rehearsal.left > 0 && me.rehearsal.similarity < 0.8 && r('retry') < 0.5))) {
+          // Not the model line (a player only sees it after the take): the mission's word and a short casual end.
+          const own = `${missionWord(adlib)}… もう いやだよ！`;
+          const text = r(`fluff${me.rehearsal?.tries ?? 0}`) < fluff ? 'えっと…' : own;
           return [{ key: `rehearse:${me.rehearsal?.tries ?? 0}`, move: { kind: 'rehearse', utterance: { via: 'speech', text }, round }, delayMs: delay('rehearse') }];
         }
       }

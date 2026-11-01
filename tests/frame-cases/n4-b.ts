@@ -328,6 +328,7 @@ export const cases: FrameCases = {
       'えっ、ほんとう？ ぼくの こと、すきなの？',
       'まって！ じつは ぼく、らいげつ けっこん するんだ。',
       'なんで かいしゃに いるんだろう…',
+      'あれ、だれが くるんだろ？',
     ],
     neg: [
       ['いいですね。', 'polite です + ね'],
@@ -354,6 +355,13 @@ export const cases: FrameCases = {
       ['ごめんね。', 'a set phrase with ね'],
       ['ありがとうね！', 'a set phrase with ね'],
       ['ほんとうに すみませんね。', 'a set phrase with ね'],
+      // Bare んだ only after a plain verb or adjective (panel on #160).
+      ['ビールを のんだ。', 'のんだ = drank, not explaining んだ'],
+      ['ぼくの ばんだ。', 'ばん + だ: a noun'],
+      ['もう すんだ。', 'すんだ = finished'],
+      ['かれが さいふを ぬすんだ。', 'ぬすんだ = stole'],
+      ['ごめんなさい。', 'a set phrase'],
+      ['おやすみなさい。', 'a set phrase'],
     ],
   },
 
