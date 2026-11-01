@@ -1,9 +1,11 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
+import { withExperiments } from '../shared/src/modes/experiments.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
 import type { Level, OnsenCase, OnsenIntent } from '../content/src/types.js';
 import { onsenCases } from '../content/src/onsen/cases.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
-import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import {
   BONUS_CAP,
@@ -186,7 +188,7 @@ describe('Murder at the Onsen: the cases', () => {
     expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck', 'ice-cream', 'sake', 'phone', 'toupee', 'candle']);
     expect(onsenCases.map((c) => c.audience ?? null)).toEqual([null, null, null, 'kids', 'cheeky', 'cheeky', 'cheeky', 'cheeky']);
     expect(content.onsenCases.length).toBe(8);
-    expect(content.hostLines.filter((l) => l.event.startsWith('onsen_')).length).toBe(32);
+    expect(content.hostLines.filter((l) => l.event.startsWith('onsen_')).length).toBe(33);
   });
 
   it('picks by the room’s Audience: a family room never gets the Kids or Cheeky case, the others get their own half the time', () => {
@@ -1169,7 +1171,48 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
     t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
   };
 
-  it('the Gallery opens for the others once the deputy takes the part; one curveball a game, after the report lands, +5 when right', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = new Table(3, CONTENT, ['n5', 'n4', 'kana']);
+    t.start();
+    t.play('p2', { kind: 'deputy', accept: true });
+    t.ask('tanaka', 'どこに いましたか');
+    let P = 'p1';
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    let before = t.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('bad-move');
+      expect(t.view(P).mine!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(t.score(P)).toBe(before);
+      return;
+    }
+    // Not before the report: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(t.view(P).mine!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！').error).toBe('bad-move');
+    // The report lands: now it may be said, by whichever of them didn't get the curveball.
+    t.play('p2', { kind: 'report', tiles: inOrder(t, 'p2') });
+    if (t.st.gallery!.curveball?.playerId === P) P = 'p3';
+    before = t.score(P);
+    expect(t.view(P).mine!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(t.view(P).mine!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(t.view(P).mine!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().bubbles).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('bad-move');
+  });
+
+  it.each([true, false])('the Gallery opens for the others once the deputy takes the part; one curveball a game, after the report lands, +5 when right (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = new Table(3, CONTENT, ['n5', 'n4', 'kana']);
     t.start();
     t.play('p2', { kind: 'deputy', accept: true });
@@ -1195,7 +1238,8 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
     expect(t.view().booth!.holdKey).toBe(true);
     const before = t.score(target);
     expect(t.play(target, { kind: 'gallery', pick: 'いっていました' }).error).toBeUndefined();
-    expect(t.score(target) - before).toBe(5);
+    // Scaled, a tenth of a clue's 100 (not the culprit's 300).
+    expect(t.score(target) - before).toBe(scaled ? 10 : 5);
     expect(t.view().booth!.holdKey).toBe(false);
     expect(t.play(target, { kind: 'gallery', pick: 'いっていました' }).error).toBe('bad-move');
     const was = t.score(other);
@@ -1281,6 +1325,7 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
   });
 
   it('the host stand-in: once a game in a 1–2-player room with nobody at N4, Chōchin-san gives one report', () => {
+    onTestFinished(withExperiments({ standInSetup: false, standInCurveball: false }));
     for (const levels of [['n5'], ['kana', 'n5']] as Level[][]) {
       const t = new Table(levels.length, CONTENT, levels);
       t.start();
@@ -1302,6 +1347,80 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
       }
       expect(t.s.cues.filter((c) => c.event === 'onsen_standin').length).toBe(1);
     }
+  });
+
+  describe('the stand-in experiments', () => {
+    const r = snowman.suspects.find((s) => s.id === 'tanaka')!.answers.where!.report!;
+    const wake = (t: Table) => {
+      const at = wakeAt(t.s, t.ctx());
+      expect(at).not.toBeNull();
+      t.now = at!;
+      t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    };
+
+    it('standInSetup: his setup line where the report began, the report 2.5 s later, the answer that much longer', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: false }));
+      const t = new Table(1, CONTENT, ['n5']);
+      t.start();
+      t.ask('tanaka', 'どこに いましたか', 'typed', 'p1');
+      const at = REPORT_VOICE.after + STAND_IN_SETUP_MS;
+      expect(t.s.cues.filter((c) => c.event.startsWith('onsen_standin'))).toEqual([
+        { host: 'chochin', event: 'onsen_standin_setup', atMs: REPORT_VOICE.after },
+        { host: 'chochin', event: 'onsen_standin', slots: { line: r.jp.text, line_kana: r.jp.kana, line_en: r.jp.en }, atMs: at },
+      ]);
+      expect(t.view().standIn).toMatchObject({ atMs: at });
+      expect(t.view().standIn!.holdKey).toBeUndefined();
+      expect(t.s.deadline! - t.now).toBe(Math.max(12_000, at + reportVoiceMs(r.jp.kana)));
+      expect(t.view('p1').mine!.gallery).toBeNull();
+    });
+
+    it('standInCurveball: a tile for each player while he reports, then the curveball on its frame word, +5 if right', () => {
+      onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+      const t = new Table(2, CONTENT, ['kana', 'n5']);
+      t.start();
+      t.ask('tanaka', 'どこに いましたか', 'typed', 'p1');
+      const start = t.now;
+      const said = start + REPORT_VOICE.after + reportVoiceMs(r.jp.kana);
+      expect(t.s.deadline!).toBe(Math.max(start + 12_000, said + STAND_IN_CURVEBALL_MS));
+      expect(t.view('p1').mine!.gallery).toMatchObject({ kind: 'react' });
+      expect(t.view().standIn!.holdKey).toBe(true);
+      expect(t.view('p2').mine!.gist).toBeNull();
+      expect(t.play('p2', { kind: 'gallery', pick: 'e' }).error).toBeUndefined();
+      expect(t.view().bubbles.map((b) => b.id)).toEqual(['e']);
+      wake(t);
+      expect(t.now).toBe(said);
+      const tile = t.view('p1').mine!.gallery!;
+      expect(tile.kind).toBe('curveball');
+      if (tile.kind === 'curveball') expect(tile.options.every((o) => o.romaji)).toBe(true);
+      expect(t.view('p1').mine!.gist).toBeNull();
+      expect(t.view('p2').mine!.gist).toMatchObject({ en: r.jp.en });
+      const before = t.score('p1');
+      const word = t.st.gallery!.curveball!.word;
+      expect(t.play('p1', { kind: 'gallery', pick: word }).error).toBeUndefined();
+      expect(t.score('p1')).toBe(before + curveballPoints('onsen-murder'));
+      expect(t.view().standIn!.holdKey).toBe(false);
+      expect(t.st.curveballUsed).toBe(true);
+      // Answered, and the answer has had its time: on to the next turn at the next wake.
+      if (t.s.phase === 'reveal') wake(t);
+      expect(t.s.phase).toBe('answer');
+    });
+
+    it('standInCurveball: both reacted while he spoke, and the curveball still comes to one of them; answered at once, no extra wait', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
+      const t = new Table(2, CONTENT, ['kana', 'n5']);
+      t.start();
+      t.ask('tanaka', 'どこに いましたか', 'typed', 'p1');
+      t.play('p1', { kind: 'gallery', pick: 'sugoi' });
+      t.play('p2', { kind: 'gallery', pick: 'sugoi' });
+      wake(t);
+      const cb = t.st.standIn!.sg!.g.curveball!;
+      expect(['p1', 'p2']).toContain(cb.playerId);
+      expect(t.st.curveballUsed).toBe(true);
+      t.play(cb.playerId, { kind: 'gallery', pick: cb.word });
+      if (t.s.phase === 'reveal') wake(t);
+      expect(t.s.phase).toBe('answer');
+      expect(t.now - t.st.revealAt).toBe(Math.max(12_000, REPORT_VOICE.after + STAND_IN_SETUP_MS + reportVoiceMs(r.jp.kana)));
+    });
   });
 
   it('no stand-in with an N4 player in the room, or in a room of three; an N5-only room of three is unchanged', () => {

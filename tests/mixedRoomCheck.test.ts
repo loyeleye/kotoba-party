@@ -8,6 +8,7 @@ import { EMPTY_CONTENT } from '../shared/src/modes/mode.js';
 import type { Command } from '../shared/src/protocol.js';
 import type { Level } from '../content/src/types.js';
 import { viewFor } from '../shared/src/view.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
 
 let now = 0;
 let ids = 0;
@@ -23,13 +24,15 @@ const cmd = (s: GameState, actor: { kind: 'player'; playerId: string } | { kind:
 const act = (s: GameState, a: GameAction) => apply(s, a, ctx());
 const as = (playerId: string) => ({ kind: 'player', playerId }) as const;
 
-function playToRecap(levels: Level[]): GameState {
+function playToRecap(levels: Level[], again?: GameState): GameState {
   now = 1_000;
-  const s = createGame('BCDF');
-  levels.forEach((level, i) => {
-    act(s, { type: 'join', playerId: `p${i + 1}`, name: `P${i + 1}`, level });
-    act(s, { type: 'connection', playerId: `p${i + 1}`, connected: true });
-  });
+  const s = again ?? createGame('BCDF');
+  if (again) cmd(s, { kind: 'stage' }, { type: 'playAgain' });
+  else
+    levels.forEach((level, i) => {
+      act(s, { type: 'join', playerId: `p${i + 1}`, name: `P${i + 1}`, level });
+      act(s, { type: 'connection', playerId: `p${i + 1}`, connected: true });
+    });
   cmd(s, { kind: 'stage' }, { type: 'start', mode: 'debug', rounds: 1 });
   while (s.phase !== 'recap') {
     if (s.phase === 'answer') cmd(s, as('p1'), { type: 'play', move: { kind: 'answer', text: 'hi' } });
@@ -82,5 +85,54 @@ describe('mixed-room check', () => {
     expect(s.recap!.mixed).toBeUndefined();
     expect(viewFor(s, as('p1'), ctx().content).recap!.waitCheck).toBeNull();
     expect(cmd(s, as('p1'), { type: 'waitCheck', answer: 'no' }).changed).toBe(false);
+  });
+
+  describe('waitCheckFirstTwo', () => {
+    it('on: asks on the 1st and 3rd qualifying recaps of a night; the others log phases with nobody asked', () => {
+      const restore = withExperiments({ waitCheckFirstTwo: true });
+      try {
+        withOffers(true);
+        const s = playToRecap(['n4', 'n5']);
+        expect(s.recap!.mixed!.ask).toEqual(['p2']);
+        expect(s.recap!.mixed!.nth).toBe(1);
+        // A game that offered no role doesn't count.
+        withOffers(false);
+        playToRecap([], s);
+        expect(s.recap!.mixed).toBeUndefined();
+        withOffers(true);
+        playToRecap([], s);
+        const second = s.recap!.mixed!;
+        expect(second.nth).toBe(2);
+        expect(second.ask).toEqual([]);
+        expect(second.phases.length).toBeGreaterThan(2);
+        expect(viewFor(s, as('p2'), ctx().content).recap!.waitCheck).toBeNull();
+        expect(cmd(s, as('p2'), { type: 'waitCheck', answer: 'no' }).changed).toBe(false);
+        playToRecap([], s);
+        expect(s.recap!.mixed!.nth).toBe(3);
+        expect(s.recap!.mixed!.ask).toEqual(['p2']);
+        expect(viewFor(s, as('p2'), ctx().content).recap!.waitCheck).toEqual({ answer: null });
+        playToRecap([], s);
+        expect(s.recap!.mixed!.nth).toBe(4);
+        expect(s.recap!.mixed!.ask).toEqual([]);
+        // A new room starts the count again.
+        expect(playToRecap(['n4', 'n5']).recap!.mixed!.ask).toEqual(['p2']);
+      } finally {
+        restore();
+      }
+    });
+
+    it('off: asks on every qualifying recap, as before', () => {
+      const restore = withExperiments({ waitCheckFirstTwo: false });
+      try {
+        withOffers(true);
+        const s = playToRecap(['n4', 'kana']);
+        for (let i = 0; i < 3; i++) playToRecap([], s);
+        expect(s.recap!.mixed!.nth).toBe(4);
+        expect(s.recap!.mixed!.ask).toEqual(['p2']);
+        expect(viewFor(s, as('p2'), ctx().content).recap!.waitCheck).toEqual({ answer: null });
+      } finally {
+        restore();
+      }
+    });
   });
 });

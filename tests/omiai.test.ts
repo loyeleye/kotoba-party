@@ -1,8 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
+import { withExperiments } from '../shared/src/modes/experiments.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
-import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import { EMPTY_CONTENT, type ContentLibrary, type HostCue } from '../shared/src/modes/mode.js';
 import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, KEIGO_PAIRS, keigoPair, NAKODO, nakodoLines, OPENERS, withName } from '../shared/src/modes/omiai/cards.js';
@@ -34,6 +36,9 @@ import { addReadings, createReader, type Reader } from '../server/src/reading.js
 import { Bot, Director } from '../tools/bots/bot.js';
 import { omiaiPolicy } from '../tools/bots/policies/omiai.js';
 import { content as REAL_CONTENT, hashView, startServer, until } from './helpers.js';
+
+// standInSetup's gap after the setup line, from its bank line (at least STAND_IN_SETUP_MS).
+const SETUP_MS = standInSetupFor(REAL_CONTENT.hostLines, 'omiai_standin_setup');
 
 // ---- fixtures ----
 
@@ -1192,7 +1197,46 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
   };
   const said = 'みなさまかっぱのきゅうりさんがおつきになりましたごしょうかいいたします';
 
-  it('the Gallery opens once the go-between takes the opening; one curveball a game, after the line lands, +5 when right', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = new Table(3, ['n5', 'n4', 'kana']);
+    begin(t);
+    t.play('p2', { kind: 'nakodo', accept: true });
+    const P = 'p1';
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('bad-move');
+      expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(t.score(P)).toBe(before);
+      return;
+    }
+    // Not before the opening has landed: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！').error).toBe('bad-move');
+    // The opening lands (the curveball goes to p3): now it may be said.
+    t.play('p2', { kind: 'nakodo', utterance: speech(said) });
+    expect(t.st.current!.gallery!.curveball?.playerId).toBe('p3');
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().bubbles).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('bad-move');
+  });
+
+  it.each([true, false])('the Gallery opens once the go-between takes the opening; one curveball a game, after the line lands, +5 when right (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = new Table(3, ['n5', 'n4', 'kana']);
     begin(t);
     expect(t.st.current!.gallery).toBeUndefined();
@@ -1216,7 +1260,7 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
     expect(t.view('p1').me!.gallery!.kind).toBe('react');
     const before = t.score('p3');
     expect(t.play('p3', { kind: 'gallery', pick: 'おつきに なりました' }).error).toBeUndefined();
-    expect(t.score('p3') - before).toBe(5);
+    expect(t.score('p3') - before).toBe(scaled ? 10 : 5);
     expect(t.view().booth!.holdKey).toBe(false);
     const p1 = t.score('p1');
     expect(t.play('p1', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();
@@ -1293,6 +1337,7 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
   });
 
   it('the host stand-in: in a 2-player room with nobody at N4, Nobiko-san gives the opening once a game, then the question', () => {
+    onTestFinished(withExperiments({ standInSetup: false, standInCurveball: false }));
     const t = new Table(2, ['kana', 'n5']);
     begin(t);
     const line = nakodoLines(CARDS.find((c) => c.id === 'kappa')!, 1, t.st.totalRounds).open;
@@ -1312,6 +1357,70 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
     expect(t.s.phase).toBe('prompt');
     expect(t.s.cues.filter((c) => c.event === 'omiai_standin')).toHaveLength(1);
     expect(t.s.deadline! - t.now).toBe(8_000);
+  });
+
+  describe('the stand-in experiments', () => {
+    const line = () => nakodoLines(CARDS.find((c) => c.id === 'kappa')!, 1, 5).open;
+    const wake = (t: Table) => {
+      const at = wakeAt(t.s, t.ctx());
+      expect(at).not.toBeNull();
+      t.now = at!;
+      t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    };
+
+    it('standInSetup: her setup line opens the prompt, the opening 2.5 s later, then the question; 2.5 s longer', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: false }));
+      const t = new Table(2, ['kana', 'n5']);
+      begin(t, 5);
+      const l = line();
+      const ours = t.s.cues.filter((c) => c.event.startsWith('omiai_standin') || c.event === 'prompt_read');
+      expect(ours).toEqual([
+        { host: 'nobiko', event: 'omiai_standin_setup' },
+        { host: 'nobiko', event: 'omiai_standin', slots: { line: l.jp.text, line_kana: l.jp.kana, line_en: l.jp.en }, atMs: SETUP_MS },
+        expect.objectContaining({ event: 'prompt_read', atMs: SETUP_MS + voiceMs(l.jp.kana) }),
+      ]);
+      expect(t.s.deadline! - t.now).toBe(8_000 + SETUP_MS + voiceMs(l.jp.kana));
+      expect(t.view('p1').me!.gallery).toBeNull();
+    });
+
+    it('standInCurveball: a tile for both while she says it, then the curveball on its keigo word, +5 if right; no time added', () => {
+      onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+      const t = new Table(2, ['kana', 'n5']);
+      begin(t, 5);
+      const l = line();
+      const start = t.now;
+      expect(t.s.deadline! - start).toBe(8_000 + voiceMs(l.jp.kana));
+      expect(8_000).toBeGreaterThanOrEqual(STAND_IN_CURVEBALL_MS);
+      expect(t.view('p1').me!.gallery).toMatchObject({ kind: 'react' });
+      expect(t.view('p2').me!.gallery).toMatchObject({ kind: 'react' });
+      expect(t.view().booth!.holdKey).toBe(true);
+      expect(t.view('p1').me!.gist).toBeNull();
+      expect(t.play('p1', { kind: 'gallery', pick: 'naruhodo', round: 1 }).error).toBeUndefined();
+      expect(t.view().bubbles.map((b) => b.id)).toEqual(['naruhodo']);
+      wake(t);
+      expect(t.now).toBe(start + voiceMs(l.jp.kana));
+      expect(t.view('p2').me!.gallery!.kind).toBe('curveball');
+      expect(t.view('p2').me!.gist).toBeNull();
+      expect(t.view('p1').me!.gist).toMatchObject({ kana: l.gist.kana });
+      expect(t.play('p2', { kind: 'gallery', pick: l.key, round: 1 }).error).toBeUndefined();
+      expect(t.score('p2')).toBe(curveballPoints('omiai'));
+      expect(t.view().booth!.holdKey).toBe(false);
+      // The prompt still has its own time for the question.
+      expect(t.s.phase).toBe('prompt');
+      wake(t);
+      expect(t.s.phase).toBe('answer');
+      expect(t.now).toBe(start + 8_000 + voiceMs(l.jp.kana));
+      expect(t.st.curveballUsed).toBe(true);
+    });
+
+    it('stays out of rooms with an N4 player, and of 3+ rooms', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
+      const three = new Table(3, ['n5', 'n5', 'kana']);
+      begin(three);
+      expect(three.s.cues.map((c) => c.event)).not.toContain('omiai_standin_setup');
+      expect(three.s.deadline! - three.now).toBe(8_000);
+      expect(three.view('p1').me!.gallery).toBeNull();
+    });
   });
 
   it('no stand-in with an N4 player or in a room of three; an N5-only room of three is unchanged', () => {

@@ -27,7 +27,8 @@ import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, type Award, type Mode, type ModeContext, type ModePlayer, type PhraseEntry } from '../mode.js';
 import { answerTiles, checkReport, joinReport, reportFrame, reportNotes, reportRule, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
 import { nextOfferee, offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
-import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { EXPERIMENTS } from '../experiments.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { FALLBACK_CASE } from './fallback.js';
 import { accusationLine, bareName, checkAccusation, INTENTS, matchQuestion, questionFor, tilesFor, type QuestionTile } from './questions.js';
 
@@ -215,8 +216,11 @@ export interface OnsenState {
   curveballUsed?: boolean;
   /** The commentary booth's replay of the deputy's landed report, this answer. */
   booth?: OnsenBooth | null;
-  /** Chōchin-san reporting this answer himself, in a small room with nobody at N4 (once a game). */
-  standIn?: OnsenBooth | null;
+  /**
+   * Chōchin-san reporting this answer himself, in a small room with nobody at N4 (once a game). `sg`: the
+   * Gallery on it, with the once-a-game curveball (experiment standInCurveball).
+   */
+  standIn?: (OnsenBooth & { sg?: StandInGallery | null }) | null;
   standInUsed?: boolean;
 }
 
@@ -300,7 +304,7 @@ export interface OnsenView {
   /** The commentary booth's replay of the deputy's report (TV), once it has landed: atMs into the answer, for ms. */
   booth: { playerId: string | null; lit: Commentary['lit']; note: string; en: string; atMs: number; ms: number; holdKey: boolean } | null;
   /** Chōchin-san reports this answer himself (small rooms with nobody at N4, once a game), atMs into the answer. */
-  standIn: { line: JpText; lit: Commentary['lit']; note: string; atMs: number } | null;
+  standIn: { line: JpText; lit: Commentary['lit']; note: string; atMs: number; holdKey?: boolean } | null;
   /** The Gallery's reaction bubbles. */
   bubbles: ReactionTile[];
   mine: OnsenMe | null;
@@ -657,9 +661,27 @@ function armDeputyCurveball(s: OnsenState, ctx: ModeContext, ask: Ask): void {
 function standIn(s: OnsenState, ctx: ModeContext, ask: Ask | undefined): void {
   if (s.standInUsed || s.deputy || !ask?.report || !hostStandsIn(ctx.connected().map((p) => p.level))) return;
   s.standInUsed = true;
-  s.standIn = boothFor(ask, null, REPORT_VOICE.after);
+  // Experiment standInSetup: his short setup line where the report used to start; the report follows it.
+  const atMs = REPORT_VOICE.after + (EXPERIMENTS.standInSetup ? standInSetupFor(ctx.content.hostLines, 'onsen_standin_setup') : 0);
+  if (EXPERIMENTS.standInSetup) ctx.cue({ host: 'chochin', event: 'onsen_standin_setup', atMs: REPORT_VOICE.after });
+  s.standIn = boothFor(ask, null, atMs);
   const r = ask.report;
-  ctx.cue({ host: 'chochin', event: 'onsen_standin', slots: { line: r.jp.text, line_kana: r.jp.kana, line_en: r.jp.en }, atMs: REPORT_VOICE.after });
+  // Experiment standInCurveball: a Gallery tile for everyone while he reports; the curveball once he has.
+  if (EXPERIMENTS.standInCurveball) {
+    const said = s.revealAt + atMs + reportVoiceMs(r.jp.kana);
+    s.standIn.sg = openStandInGallery(ctx.connected(), !!s.curveballUsed, s.turnNo, said, Math.max(s.revealAt + revealBase(s), said));
+    s.gallery = s.standIn.sg?.g ?? null;
+  }
+  ctx.cue({ host: 'chochin', event: 'onsen_standin', slots: { line: r.jp.text, line_kana: r.jp.kana, line_en: r.jp.en }, atMs });
+}
+
+/** The stand-in's report has been said: the once-a-game curveball on its frame word. */
+function dealStandInCurveball(s: OnsenState, ctx: ModeContext): void {
+  const sg = s.standIn?.sg;
+  const report = s.asks.at(-1)?.report;
+  if (!sg || !report) return;
+  const word = keyWord(report);
+  if (dealStandIn(sg, ctx.connected(), { word, pool: curveballPool(word), heard: report.jp.kana }, !!s.curveballUsed, s.turnNo, ctx.now)) s.curveballUsed = true;
 }
 
 function reportEntry(s: OnsenState, ask: Ask, outcome: PhraseEntry['outcome']): PhraseEntry {
@@ -819,7 +841,9 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
       case 'answer':
         return ctx.player(s.turn?.playerId ?? '')?.level === 'kana' ? DURATIONS.turnKana : DURATIONS.turn;
       case 'reveal':
-        // The stand-in's report may run a little past the answer's usual time (once a game, at most 7 s of voice).
+        // The stand-in's report may run a little past the answer's usual time (once a game, at most 7 s of voice),
+        // and with experiment standInCurveball, until its curveball has had its time.
+        if (s.standIn?.sg) return standInEnd(s.standIn.sg) - s.revealAt;
         return Math.max(revealBase(s), s.standIn ? s.standIn.atMs + reportVoiceMs(s.standIn.line.kana) : 0) + (deputyHolds(s.deputy) ? DURATIONS.deputy : 0);
       case 'encore':
         return DURATIONS.accuse;
@@ -839,6 +863,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         return (!p || !p.connected) && here.length > 0;
       }
       case 'reveal': {
+        if (s.standIn?.sg) return standInDone(s.standIn.sg, ctx.now);
         // Only a deputy's turn runs long: it ends once they're done and the answer has had its time.
         const d = s.deputy;
         if (!d || d.askNo === null) return false;
@@ -853,14 +878,17 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
   },
 
   wakeAt(s, phase, ctx) {
+    if (phase === 'reveal' && s.standIn?.sg) return standInWakeAt(s.standIn.sg, ctx.now);
     const d = s.deputy;
     if (phase !== 'reveal' || !d || d.askNo === null || deputyHolds(d)) return null;
     const at = revealEnd(s, d);
     return ctx.now < at ? at : null;
   },
 
-  wake() {
-    // Nothing to change: the wake lets done() end a deputy's turn once the answer has had its time.
+  wake(s, phase, ctx) {
+    // The stand-in's report has been said: deal its curveball (experiment standInCurveball). Otherwise nothing to
+    // change: the wake lets done() end a deputy's turn once the answer has had its time.
+    if (phase === 'reveal') dealStandInCurveball(s, ctx);
   },
 
   move(s, phase, playerId, raw, ctx) {
@@ -981,7 +1009,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
     if (raw.kind === 'gallery') {
       // A reaction tile (or the curveball) from a player without the deputy's seat.
       if (phase !== 'reveal' || !s.gallery || typeof raw.pick !== 'string') return moveError('wrong-phase');
-      const points = pickGallery(s.gallery, playerId, raw.pick);
+      const points = pickGallery(s.gallery, playerId, raw.pick, { game: 'onsen-murder', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
       if (points === null) return moveError('bad-move');
       if (points > 0) give(s, ctx, playerId, points);
       return MOVE_OK;
@@ -1091,7 +1119,8 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
               }
             : null,
         gallery: phase === 'reveal' && me ? galleryTileFor(s.gallery, id, me.level) : null,
-        gist: phase === 'reveal' && me && (s.booth?.playerId ?? null) !== id ? gistFor(s.booth ?? s.standIn, me.level) : null,
+        // The stand-in's gist waits while its curveball may still come to this phone (experiment standInCurveball).
+        gist: phase === 'reveal' && me && (s.booth?.playerId ?? null) !== id && !(standInHoldKey(s.standIn?.sg) && (!s.standIn!.sg!.dealt || s.gallery?.curveball?.playerId === id)) ? gistFor(s.booth ?? s.standIn, me.level) : null,
       };
     }
     const booth = phase === 'reveal' ? (s.booth ?? null) : null;
@@ -1128,7 +1157,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
           }
         : null,
       booth: booth ? { playerId: booth.playerId, lit: booth.lit, note: booth.note, en: booth.line.en, atMs: booth.atMs, ms: booth.ms, holdKey: keyHeld(s.gallery) } : null,
-      standIn: stood ? { line: stood.line, lit: stood.lit, note: stood.note, atMs: stood.atMs } : null,
+      standIn: stood ? { line: stood.line, lit: stood.lit, note: stood.note, atMs: stood.atMs, ...(stood.sg ? { holdKey: standInHoldKey(stood.sg) } : {}) } : null,
       bubbles: phase === 'reveal' && s.gallery ? galleryBubbles(s.gallery) : [],
       mine,
     };

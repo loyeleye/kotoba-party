@@ -285,7 +285,19 @@ export function duePhrases(p: Progress, now: number, limit = REVIEW_SIZE): Phras
 
 /** Every frame a phrase counts for, N5 and N4. keepHidden: an N5 frame still counts when a more specific one
  * matched. Listening-only and (until the Limited Express is on the path) N3 frames are left out (`creditable`). */
-export const phraseFrames = (c: { text: string; kana: string }): FrameId[] => framesOf(c, undefined, { keepHidden: true }).filter(creditable);
+export function phraseFrames(c: { text: string; kana: string }): FrameId[] {
+  // The path asks for every saved phrase's frames on each save, and a phrase's frames never change: keep them.
+  const key = `${c.text}\u0000${c.kana}`;
+  let hit = FRAME_CACHE.get(key);
+  if (!hit) {
+    if (FRAME_CACHE.size >= FRAME_CACHE_MAX) FRAME_CACHE.clear();
+    hit = framesOf(c, undefined, { keepHidden: true }).filter(creditable);
+    FRAME_CACHE.set(key, hit);
+  }
+  return [...hit];
+}
+const FRAME_CACHE = new Map<string, FrameId[]>();
+const FRAME_CACHE_MAX = 20_000;
 
 /** Each frame's saved phrases. */
 function byFrame(p: Progress): Map<string, PhraseCard[]> {

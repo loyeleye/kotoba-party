@@ -212,6 +212,9 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
       : null,
     hardOffer(ctx, me),
     boothGist(me.standIn),
+    // Experiment standInCurveball: the once-a-game curveball on Nobiko-san's defence is timed, so it stays on top;
+    // the reaction tile sits below the line-up's own controls.
+    me.gallery?.kind === 'curveball' ? gallery(ctx, me) : null,
     ends(game),
     timeCard(me, true) ?? (me.secret !== null ? secret(me) : null),
     me.said && game.kind !== 'time' ? h('p', { class: 'hint' }, 'Your answer: ', h('span', { lang: 'ja' }, me.said.text)) : null,
@@ -236,6 +239,8 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
       },
       me.locked ? h('span', {}, '🔒 ', h('span', { lang: 'ja' }, 'きめた！'), ' (tap to unlock)') : h('span', {}, h('span', { lang: 'ja' }, 'きめた！'), ' Happy with my spot'),
     ),
+    me.gallery?.kind === 'react' ? gallery(ctx, me) : null,
+    me.locked && me.gallery?.kind === 'react' ? h('p', { class: 'hint' }, '👂 Nobiko-san is talking: react if you like.') : null,
     h('p', { class: 'hint' }, 'Talk it over out loud. Moving a card unlocks it and its neighbour.'),
     game.kind === 'time' && others.length
       ? h(
@@ -276,6 +281,8 @@ function scoreScreen(ctx: Ctx, me: Me): HTMLElement {
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, 'Look at the TV! 🪢'),
+    // Experiment standInCurveball: the stand-in's Gallery, carried on from a line-up that ended while she spoke.
+    gallery(ctx, me),
     left > 0 ? h('p', { class: 'nb-turning', style: `--d: ${Math.round(left)}ms` }, 'Nobiko-san is turning the cards over…') : null,
     h(
       'div',
@@ -363,7 +370,7 @@ function gistScreen(ctx: Ctx, me: Me): HTMLElement {
 
 /** My Gallery tile while someone else gives the N4 defence. */
 function gallery(ctx: Ctx, me: Me): HTMLElement | null {
-  return galleryTile(me.gallery, (pick) => void ctx.send({ kind: 'gallery', pick, round: ctx.game.round }));
+  return galleryTile(me.gallery, (pick, utterance) => void ctx.send({ kind: 'gallery', pick, utterance, round: ctx.game.round }));
 }
 
 /** The N4 defence: the ので frame for where the card ended up, and two model lines to read out. */
