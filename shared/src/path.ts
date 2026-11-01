@@ -258,14 +258,14 @@ export const GOALS: readonly Goal[] = [
   g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau', 'ba-yokatta', 'tari-tari'], ['hajimemashite', 'happyokai', 'phrase-bingo']),
   g('4.4', 'express', 'Say what you can do', 'たべられます, はなせます: say what you can and can’t.', ['potential'], [], ['phrase-bingo', 'tourist', 'late-again']),
   g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond', 'noni'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri', 'late-again']),
-  g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou', ['sou-hear', 'ni-yoru', 'n-datte']], ['kamo', 'mitai-you'], ['phrase-bingo', 'happyokai', 'tourist', 'last-train', 'word-gauntlet', 'yokai-court']),
+  g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou', ['sou-hear', 'ni-yoru', 'n-datte']], ['kamo', 'mitai-you'], ['phrase-bingo', 'happyokai', 'tourist', 'last-train', 'word-gauntlet', 'yokai-court', 'dub-club']),
   g('4.7', 'express', 'Plans and advice', 'Say what you plan to do, and give advice.', ['you-to-omou'], ['tsumori', 'hou-ga-ii', 'tara-dou'], ['ghost-hotline'], { gap: 'Ghost Advice Hotline gives advice (＿た ほうが いいです, ＿たら どうですか), but no game asks for plans yet.' }),
   g('4.8', 'express', 'Talk casually with friends', 'Plain form with よ, ね and の: how friends talk.', ['plain'], ['n-da', 'teru'], ['omiai', 'dub-club']),
   g('4.9', 'express', 'Speak politely to strangers', 'The extra-polite asks for shops, stations and offices.', ['te-itadakemasen', ['o-kudasai', 'o-suru']], ['n-desu'], ['omiai', 'happyokai', 'bento-haus', 'last-train']),
   g('4.10', 'express', 'Read N4 kanji', 'The next kanji up: verbs, places and time words.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
   g('4.11', 'express', 'Reasons and too much', 'Give reasons politely, say what was too much, and do two things at once.', ['node', 'sugiru'], ['nagara', 'shi'], ['late-again', 'happyokai', 'narabete']),
   g('4.12', 'express', 'Change and decisions', 'Say what changed, and what you or others decided.', ['you-ni-naru', 'koto-ni-suru'], ['koto-ni-naru'], ['happyokai', 'ghost-hotline', 'oogiri']),
-  g('4.13', 'express', 'Passive, easy and hard', 'Say what was done to you, and how easy or hard something is to do.', ['passive'], ['yasui-nikui'], ['late-again', 'onsen-murder']),
+  g('4.13', 'express', 'Passive, easy and hard', 'Say what was done to you, and how easy or hard something is to do.', ['passive'], ['yasui-nikui'], ['late-again', 'onsen-murder', 'word-gauntlet']),
   g('4.14', 'express', 'Quote, purpose, embedded questions', 'Pass on what someone said, say what it’s for, and fold a question into a sentence.', ['to-itte-ita', ['tame-ni', 'you-ni']], ['ka-dou-ka', 'nani-ka', 'tte-quote'], ['ghost-hotline', 'word-gauntlet', 'onsen-murder', 'yokai-court']),
   // The Limited Express Line (特急, N3): the plan's 12 goals. Their frames come in frames.ts as their matchers land;
   // until then a goal shows as coming soon (missingFrames) and doesn't count toward clearing the line.
@@ -538,14 +538,12 @@ export function markPath(p: Progress, now: number, tzOffsetMin = 0): string[] {
 // ---- what each game gives ----
 
 /**
- * Frames real players say from memory in a game that its bots can't (so the measured yield is 0): Word
- * Gauntlet's rumour round counts a retelling from memory, but the bots only echo what they heard. Unmeasured,
+ * Frames real players say from memory in a game that its bots can't (so the measured yield is 0). Unmeasured,
  * so they count as a slow stop (BOT_GAP_YIELD), never a fast one: guessed high, 4.6 outranked every measured
- * goal and held rooms in the simulation, where the bots really can't say them.
+ * goal and held rooms in the simulation. Empty since step 5b-2: Word Gauntlet's N4 bots now retell a rumour in
+ * a frame of their own instead of echoing it, so its hearsay frames are measured.
  */
-export const BOT_GAPS: Readonly<Partial<Record<ModeId, readonly string[]>>> = {
-  'word-gauntlet': ['sou-hear', 'ni-yoru', 'n-datte', 'to-itte-ita'],
-};
+export const BOT_GAPS: Readonly<Partial<Record<ModeId, readonly string[]>>> = {};
 /** What a bot gap counts as: carried, but slow (half of SLOW_YIELD). */
 export const BOT_GAP_YIELD = 0.075;
 /** The level whose yields a goal is measured at (N3 frames earn no credit until N3 opens, so N3 reads N4). */

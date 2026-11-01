@@ -16,6 +16,7 @@
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
+import { framesOf, type FrameId } from '../../japanese/frames.js';
 import { isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
@@ -134,6 +135,8 @@ export interface Line {
   shown: string;
   /** Furigana for `shown`, when it's the phone's sentence. */
   furigana?: [string, string][];
+  /** The reading of what was heard, for a line of the presenter's own (so the phrasebook can find its grammar). */
+  kana?: string;
   kind: LineKind;
   sentences: number;
   hidden: boolean;
@@ -692,6 +695,32 @@ function phrases(t: Talk, ctx: ModeContext): void {
       const r = recoveryFor(st.mishapId, p.level, talkWord(t)?.word ?? null, graphUp(t), audienceOf(ctx));
       ctx.phrase(p.id, { itemId: `happyokai:mishap:${st.mishapId}:${p.level}`, text: r.text, kana: r.kana, en: r.en, outcome: spoke(i) ? 'said' : 'seen', recall: recall(i) });
     });
+    // A deck talk's own sentences: when the presenter makes up a line in one of the deck's frames (Then and
+    // now's 〜ように なりました, 〜ことに しました), on a picture slide or as their answer in question time, the
+    // deck's ready sentence in that frame goes in their phrasebook as said from memory. What was heard has no
+    // English to practise from, so the card is the deck's version (as Late Again! logs Pon's model line).
+    if (title.deck) {
+      const want = DECKS[title.deck].frames;
+      const credited = new Set<string>();
+      for (const l of t.lines) {
+        if (l.kind !== 'own' || l.hidden) continue;
+        const own = l.step === -1 ? null : t.steps[l.step];
+        if (own && own.kind !== 'picture') continue;
+        const heard = framesOf({ text: l.text, kana: l.kana ?? l.text }, undefined, { keepHidden: true });
+        const slides = (own ? [own] : t.steps).filter((x) => x.kind === 'picture' && x.slideId);
+        for (const f of want) {
+          if (credited.has(f) || !heard.includes(f as FrameId)) continue;
+          for (const x of slides) {
+            const slide = slideOf(x.slideId!);
+            const ready = slide ? readySentences(slide, p.level, title.topic, title.deck, title.place).find((r) => framesOf(r, undefined, { keepHidden: true }).includes(f as FrameId)) : undefined;
+            if (!ready) continue;
+            credited.add(f);
+            ctx.phrase(p.id, { itemId: `happyokai:${title.deck}:${f}:${p.level}`, text: ready.text, kana: ready.kana, en: ready.en, outcome: 'said', recall: 'memory' });
+            break;
+          }
+        }
+      }
+    }
   }
   for (const a of t.asked) {
     if (!ctx.player(a.playerId)) continue;
@@ -1050,7 +1079,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         const script = phase === 'answer' && u.via === 'speech' ? readFrom(u, scriptsFor(t, ctx)) : null;
         const kind: LineKind = u.via === 'speech' ? (script ? 'read' : 'own') : u.via === 'tap' ? 'tap' : 'typed';
         const step = phase === 'encore' ? -1 : stepIndex(t);
-        t.lines.push({ id: ctx.newId(), step, text, shown: script?.text ?? text, ...(script?.furigana ? { furigana: script.furigana } : {}), kind, sentences: sentenceCount(text), hidden: false });
+        t.lines.push({ id: ctx.newId(), step, text, shown: script?.text ?? text, ...(script?.furigana ? { furigana: script.furigana } : {}), ...(kind === 'own' ? { kana: u.reading ?? text } : {}), kind, sentences: sentenceCount(text), hidden: false });
         if (phase === 'encore' && /いいしつもん/.test(soundKey(normalizeReading(utteranceReading(u))))) ctx.cue({ host: 'chochin', event: 'happyokai_stall' });
         return MOVE_OK;
       }

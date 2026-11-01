@@ -1,11 +1,12 @@
 // How bots play Dub Club: one policy shared by every bot in the room, standing in for a room that
 // listens. Each bot keeps the first card it's offered (or the second, by chance), rehearses the line
-// (said right, or fluffed), and sends a take that "plays from its phone": a bot has no voice, so no
+// (said right, or fluffed; offered the N4 ad-lib, it usually takes it and ad-libs a casual line on the mission), and sends a take that "plays from its phone": a bot has no voice, so no
 // clip reaches the TV and the screening shows its name card over a silent scene. Guessers "hear" the
 // actor's card with a fair chance, ask for もう いっかい now and then, and give their heart to a dub.
 // Repeatable: every choice hashes the bot's id with the phase.
 
 import type { DubView } from '../../../shared/src/modes/dubClub/dubClub.js';
+import { EPISODES, type AdLib } from '../../../shared/src/modes/dubClub/scenes.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
 
@@ -16,6 +17,9 @@ export interface DubClubPolicyOptions {
   fluffChance?: number;
   thinkMs?: number;
 }
+
+/** Every ad-lib by its mission: an N4 bot that takes the ad-lib says a casual line on the mission, as the scene's model does. */
+const ADLIBS = new Map<string, AdLib>(EPISODES.flatMap((e) => e.scenes.flatMap((sc) => [sc.adlib, sc.cheekyAdlib].filter((x): x is AdLib => !!x).map((x) => [x.mission, x] as const))));
 
 function hash(...parts: (string | number)[]): number {
   let h = 2166136261;
@@ -43,6 +47,17 @@ export function dubClubPolicy(opts: DubClubPolicyOptions = {}): ModePolicy {
       if ((view.phase === 'prompt' || view.phase === 'answer') && me.acting && !me.sent && me.offered.length === 2) {
         const want = me.offered[r('card') < 0.7 ? 0 : 1]!.id;
         if (me.direction?.id !== want && view.phase === 'prompt') return [{ key: `pick:${want}`, move: { kind: 'pick', direction: want, round }, delayMs: delay('pick') }];
+      }
+      // Offered the ad-lib (N4): yes, more often than not.
+      if ((view.phase === 'prompt' || view.phase === 'answer') && me.acting && !me.sent && me.adlib?.state === 'offered') {
+        return [{ key: 'adlib', move: { kind: 'adlib', accept: r('adlib') < 0.6, round }, delayMs: delay('adlib') }];
+      }
+      if (view.phase === 'answer' && me.acting && !me.sent && !me.passed && me.adlib?.state === 'accepted') {
+        const model = ADLIBS.get(me.adlib.mission)?.model;
+        if (model && (!me.rehearsal || (me.rehearsal.left > 0 && me.rehearsal.similarity < 0.8 && r('retry') < 0.5))) {
+          const text = r(`fluff${me.rehearsal?.tries ?? 0}`) < fluff ? model.kana.slice(0, Math.ceil(model.kana.length / 3)) : model.kana;
+          return [{ key: `rehearse:${me.rehearsal?.tries ?? 0}`, move: { kind: 'rehearse', utterance: { via: 'speech', text }, round }, delayMs: delay('rehearse') }];
+        }
       }
       if (view.phase === 'answer' && me.acting && !me.sent && !me.passed) {
         const line = me.line;

@@ -24,6 +24,19 @@ describe('path simulation: bots play the real games in-process', () => {
     expect(said.some((e) => phraseFrames(e).includes('te-itadakemasen'))).toBe(true);
   });
 
+  it('a Then and now presenter who makes up a line in the deck’s frames is credited with the deck’s sentence', () => {
+    const credited = [1, 2, 3, 4, 5, 6].flatMap((seed) => playGame(content, 'happyokai', ['n4', 'n4', 'n5', 'n5'], seed).seats.flatMap((s) => s.result.phrases.filter((e) => e.itemId.startsWith('happyokai:then-now:'))));
+    expect(credited.length).toBeGreaterThan(0);
+    for (const e of credited) {
+      // The card's sentence carries the frame it was credited for, and has English to practise from.
+      expect(phraseFrames(e)).toContain(e.itemId.split(':')[2]);
+      expect(e).toMatchObject({ outcome: 'said', recall: 'memory' });
+      expect(e.en).not.toBe('');
+    }
+    const frames = new Set(credited.flatMap((e) => phraseFrames(e)));
+    expect(frames.has('koto-ni-suru')).toBe(true);
+  });
+
   it('a speaking Ghost Advice Hotline adviser is credited from memory', () => {
     const g = playGame(content, 'ghost-hotline', ['n4', 'n4', 'n5', 'n5'], 3);
     const lines = g.seats.flatMap((s) => s.result.phrases.filter((e) => e.itemId.startsWith('hotline:') && !e.itemId.endsWith(':call')));

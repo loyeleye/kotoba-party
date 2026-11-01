@@ -6,7 +6,7 @@
 // Kana level), n5 = です/ます sentences, n4 = one N4 pattern each (〜たら, potential, 〜ても
 // いい, 〜ほうがいい, 〜そう, 〜ておく, 〜てもらう).
 //
-// The N4 deck (goals 4.2 and 4.4): questions in ＿なければ なりませんか, ＿なくても いいですか,
+// The N4 deck (goals 4.2 and 4.4): questions in ＿ても いいですか, ＿なければ なりませんか, ＿なくても いいですか,
 // ＿られますか (potential) and ＿ことが できますか, with answers in the same frames (＿なければ
 // なりません, ＿なくても いいです, ＿られます). Those lines carry `frames` (frame ids by name), and an
 // answerer's tiles put answers in the question's frame family first.
@@ -88,6 +88,10 @@ export const QUESTIONS: readonly Line[] = [
   n4('tourist.q.nani-nakereba', 'what', t('ここで 何を しなければ なりませんか。', 'ここで なにを しなければ なりませんか。', 'What do you have to do here?'), ['nakereba']),
   n4('tourist.q.shizuka', 'yesno', k('しずかに しなければ なりませんか。', 'Do you have to be quiet?'), ['nakereba']),
   n4('tourist.q.harawanakute', 'yesno', t('お金を はらわなくても いいですか。', 'おかねを はらわなくても いいですか。', 'Is it OK not to pay?'), ['nakutemo-ii']),
+  // May I…? (4.2's required frame, step 5b-2): yes/no questions any place can answer.
+  n4('tourist.q.shashin-temo', 'yesno', t('しゃしんを とっても いいですか。', 'しゃしんを とっても いいですか。', 'Is it OK to take photos?'), ['te-mo-ii']),
+  n4('tourist.q.tabetemo', 'yesno', t('そこで 食べても いいですか。', 'そこで たべても いいですか。', 'Is it OK to eat there?'), ['te-mo-ii']),
+  n4('tourist.q.petto', 'yesno', t('犬を つれて 行っても いいですか。', 'いぬを つれて いっても いいですか。', 'Is it OK to take a dog?'), ['te-mo-ii']),
   n4('tourist.q.taberaremasu', 'yesno', t('ここで 食べられますか。', 'ここで たべられますか。', 'Can you eat here?'), ['potential']),
   n4('tourist.q.neraremasu', 'yesno', k('ここで ねられますか。', 'Can you sleep here?'), ['potential']),
   n4('tourist.q.miraremasu', 'what', t('ここで 何が 見られますか。', 'ここで なにが みられますか。', 'What can you see here?'), ['potential']),

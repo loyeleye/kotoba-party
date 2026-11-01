@@ -89,7 +89,12 @@ assistant points), ノンストップ賞 (most sentences on one slide), ベス�
 loud), ハプニング賞 (most laughs on a mishap).
 
 **Phrasebook.** The presenter's opening, closing and recovery lines, and every あいづち a player
-stamped.
+stamped. In a deck talk (step 5b-2), a sentence of the presenter's own in one of the deck's frames, on a picture
+slide or as the answer in question time, puts the deck's ready sentence in that frame in their phrasebook as
+said from memory: 「…ように なりました」 of their own logs 「今では 〔topic〕も 〔word〕が …ように なりました」, once
+per frame a talk. What was heard has no English to practise from, so the card is the deck's version, as Late
+Again! logs Pon's model line. A ready sentence read out is logged as read (it already was). Before this, a
+Then and now presenter's own sentences counted toward nothing, which is why 4.12 never moved.
 
 ## Content
 

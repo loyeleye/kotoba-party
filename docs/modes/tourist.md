@@ -103,7 +103,8 @@ questions and answers").
   N5 levels, with N4 lines for some kinds.
 - **29 generic questions** (6 kana, 10 N5, 13 N4) and **29 generic answers** for every kind
   (the tourist's suggestions, also mixed into locals' tiles so they aren't a giveaway).
-- **The N4 deck** (goals 4.2 and 4.4, draft): 8 more generic N4 questions in ＿なければ なりませんか,
+- **The N4 deck** (goals 4.2 and 4.4, draft): 11 more generic N4 questions in ＿ても いいですか (3, step 5b-2:
+  4.2's required frame), ＿なければ なりませんか,
   ＿なくても いいですか, ＿られますか and ＿ことが できますか, 6 generic N4 answers in the same frames
   (そう しなければ なりません。 / しなくても いいですよ。 / はい、いつでも 来られますよ。…), and
   at every place one more N4 question and two N4 answers (おんせん: みずぎを 着なければ なりませんか →
