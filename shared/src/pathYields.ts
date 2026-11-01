@@ -124,7 +124,6 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "de-o": 0.28,
       "hou-ga-ii": 3.25,
       "ka": 2.75,
-      "sou-look": 0.58,
       "tara": 2.53,
       "tara-dou": 2.75
     },

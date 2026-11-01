@@ -287,7 +287,7 @@ export const PROBLEMS: readonly Problem[] = [
       },
       n4: {
         mission: 'Tell the snow woman what she’d better do when she starts to melt.',
-        model: jp('とけそうに なったら、クーラーを つけた ほうが いいですよ。', 'When you feel yourself melting, you’d better turn on the air conditioner.'),
+        model: jp('とけて きたら、クーラーを つけた ほうが いいですよ。', 'When you start to melt, you’d better turn on the air conditioner.'),
         plain: jp('クーラーを つけた ほうが いいですよ。', 'You’d better turn on the air conditioner.'),
       },
     },

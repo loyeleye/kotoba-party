@@ -30,7 +30,7 @@ through play and react, and the ring beat shows the caller's face beside it.
 ## Why it works for speaking
 
 Giving advice is everyday speech (〜て ください at N5, 〜たら どうですか and 〜ほうが いいです at N4, some of the
-latter with a real "if/when" in front: とけそうに なったら、クーラーを つけた ほうが いいですよ), and
+latter with a real "if/when" in front: とけて きたら、クーラーを つけた ほうが いいですよ), and
 the secret turns it into a listening and reasoning task: the cure can be worked out from the problem's
 gist (the kappa's dish is dry, so: water). Kana advisers pick one of four tiles (the cure, the near miss,
 a decoy and an absurd curveball), so reading the gist is how they find it. The caller says the problem
