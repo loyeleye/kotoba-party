@@ -273,6 +273,10 @@ interface PlayerRaid {
   stats: { hits: number; misses: number; shoutsSpoken: number; comboHits: number; pieces: number; defeats: number; comebacks: number; reads: number; inkClean: number };
   /** Drawings waiting for a vision second look (server only, at most two). */
   inkAsks: InkAsk[];
+  /** Say steps the player moved on from while the phone checks the recording (at most three). */
+  pendingSays: { attack: Attack; at: number }[];
+  /** The latest of those, scored when it came back. */
+  said: LastResult | null;
   /** The vision second look's line on the latest drawing (shown only while that drawing is the last result). */
   coach: { attackId: string; char: string; tip: string; at: number } | null;
 }
@@ -397,6 +401,8 @@ export interface KanaRaidView {
     aimable: string[];
     attack: AttackView | null;
     last: LastResult | null;
+    /** A say you moved on from, scored once the phone's speech check came back. */
+    said: LastResult | null;
     hits: number;
     misses: number;
     /** Ink Storm's vision second look on the latest drawing. */
@@ -497,6 +503,8 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       for (const p of Object.values(s.players)) {
         p.wave = { base: 0, bonus: 0, lost: 0, hits: 0, misses: 0, spoken: 0 };
         p.last = null;
+        p.said = null;
+        p.pendingSays = [];
         p.retryNext = null;
       }
       cue(s, ctx, 'raid_wave_start', true);
@@ -512,6 +520,8 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       for (const p of Object.values(s.players)) {
         p.wave = { base: 0, bonus: 0, lost: 0, hits: 0, misses: 0, spoken: 0 };
         p.last = null;
+        p.said = null;
+        p.pendingSays = [];
         p.retryNext = null;
       }
       buildBoss(s, ctx, deck);
@@ -659,6 +669,10 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       }
       case 'attack': {
         if (phase !== 'answer' && phase !== 'finale') return moveError('wrong-phase');
+        if (p.attack?.id !== raw.attackId) {
+          const later = settleLater(s, playerId, p, raw.attackId, raw, ctx, deckOf(ctx));
+          if (later) return later;
+        }
         const a = p.attack;
         if (!a) return moveError(typeof raw.attackId === 'string' && p.replaced.includes(raw.attackId) ? 'wrong-phase' : 'no-attack');
         if (raw.attackId !== a.id) return moveError(typeof raw.attackId === 'string' && p.replaced.includes(raw.attackId) ? 'wrong-phase' : 'stale-attack');
@@ -740,6 +754,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
           aimable: mine ? s.horde.filter((y) => y.state === 'alive' && mine.has(y.itemId)).map((y) => y.id) : [],
           attack: live && p.attack ? attackView(p.attack) : null,
           last: live ? p.last : null,
+          said: live ? (p.said ?? null) : null,
           hits: p.stats.hits,
           misses: p.stats.misses,
           coach: live && p.coach && p.coach.attackId === p.last?.attackId ? { char: p.coach.char, tip: p.coach.tip } : null,
@@ -810,6 +825,8 @@ function newPlayer(chapters: number[]): PlayerRaid {
     wave: { base: 0, bonus: 0, lost: 0, hits: 0, misses: 0, spoken: 0 },
     stats: { hits: 0, misses: 0, shoutsSpoken: 0, comboHits: 0, pieces: 0, defeats: 0, comebacks: 0, reads: 0, inkClean: 0 },
     inkAsks: [],
+    pendingSays: [],
+    said: null,
     coach: null,
   };
 }
@@ -880,7 +897,8 @@ function playerRecap(p: PlayerRaid): NonNullable<NonNullable<KanaRaidView['me']>
   };
 }
 
-type Answer = { pick: string } | { say: Utterance } | { pass: true } | { ink: InkPoint[][] };
+/** `pending`: the player spoke and the phone is still checking the recording (say steps only). */
+type Answer = { pick: string } | { say: Utterance } | { pass: true } | { ink: InkPoint[][] } | { pending: true };
 
 function readAnswer(raw: Record<string, unknown>): Answer | null {
   if (raw.ink !== undefined) {
@@ -890,6 +908,7 @@ function readAnswer(raw: Record<string, unknown>): Answer | null {
   if (typeof raw.pick === 'string' && raw.pick.length <= 8) return { pick: raw.pick };
   if (isUtterance(raw.say)) return { say: raw.say };
   if (raw.pass === true) return { pass: true };
+  if (raw.pending === true) return { pending: true };
   return null;
 }
 
@@ -1289,38 +1308,18 @@ function attack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ans: A
         return MOVE_OK;
       }
       // Say step
-      const word = pair[a.played];
-      const other = a.played === 'a' ? pair.b : pair.a;
-      let ok = false;
-      let spoken = false;
-      if ('say' in ans) {
-        ok = checkWord(texts(ans.say), word, other);
-        spoken = ans.say.via === 'speech';
-      } else if (!('pass' in ans)) return moveError('bad-answer');
-      const bonus = ok && spoken ? payBonus(p, ctx, playerId, Math.round(BASE_POINTS * SPEAK_BONUS)) : 0;
-      if (ok) {
-        p.wave.spoken += spoken ? 1 : 0;
-        if (spoken) ctx.phrase(playerId, { itemId: `pair:${pair.id}:${a.played}`, text: word.text, kana: word.kana, en: word.en, outcome: 'said' });
-      }
-      p.last = {
-        attackId: a.id,
-        ok: ok || 'pass' in ans,
-        kind: 'pair',
-        char: word.kana,
-        hear: word.kana,
-        points: bonus,
-        damage: 0,
-        tip: ok || 'pass' in ans ? null : `It was ${word.kana} (${word.en}). ${pairTip(pair, a.played)}`,
-        combo: s.combo.count,
-        splash: false,
-        retryNext: false,
-      };
+      if ('pending' in ans) return sayLater(s, playerId, p, a, ctx, deck);
+      const said = sayPair(s, playerId, p, a, pair, ans, ctx);
+      if (!said) return moveError('bad-answer');
+      p.last = said;
       assignAttack(s, playerId, ctx, deck);
       return MOVE_OK;
     }
     case 'draw':
       if (!k) return moveError('bad-attack');
-      return a.step === 'say' ? saySpell(s, playerId, p, a, k, ans, ctx, deck) : drawSpell(s, playerId, p, a, k, ans, ctx, deck);
+      if (a.step !== 'say') return drawSpell(s, playerId, p, a, k, ans, ctx, deck);
+      if ('pending' in ans) return sayLater(s, playerId, p, a, ctx, deck);
+      return saySpell(s, playerId, p, a, k, ans, ctx, deck);
     case 'piece':
       return pieceAttack(s, playerId, p, a, ans, ctx, deck);
     case 'blow': {
@@ -1587,12 +1586,21 @@ function drawSpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: 
 
 /** After a drawing that landed: say the kana for the speaking bonus (or type it, or skip). */
 function saySpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: Kana, ans: Answer, ctx: ModeContext, deck: Deck): MoveResult {
+  const said = spellSay(s, playerId, p, a, k, ans, ctx, deck);
+  if (!said) return moveError('bad-answer');
+  p.last = said;
+  assignAttack(s, playerId, ctx, deck);
+  return MOVE_OK;
+}
+
+/** Scores saying the drawn kana (or skipping it); null when the answer isn't a say or a skip. */
+function spellSay(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: Kana, ans: Answer, ctx: ModeContext, deck: Deck): LastResult | null {
   let check: SoundCheck | undefined;
   let spoken = false;
   if ('say' in ans) {
     check = checkSound(texts(ans.say), k, deck);
     spoken = ans.say.via === 'speech';
-  } else if (!('pass' in ans)) return moveError('bad-answer');
+  } else if (!('pass' in ans)) return null;
   const ok = !!check?.ok;
   const base = Math.round(BASE_POINTS * levelScale(k.difficulty, p.top));
   const bonus = ok && spoken ? payBonus(p, ctx, playerId, Math.round(base * SPEAK_BONUS)) : 0;
@@ -1600,7 +1608,7 @@ function saySpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: K
     p.wave.spoken += 1;
     ctx.phrase(playerId, { itemId: k.id, text: k.char, kana: k.sound, en: kanaEn(deck, k), outcome: 'said' });
   }
-  p.last = {
+  return {
     attackId: a.id,
     ok: ok || !check,
     kind: 'draw',
@@ -1613,7 +1621,72 @@ function saySpell(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: K
     splash: false,
     retryNext: false,
   };
+}
+
+/** Scores saying the word you heard in Wave 3 (or skipping it); null when the answer isn't a say or a skip. */
+function sayPair(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, pair: MinimalPair, ans: Answer, ctx: ModeContext): LastResult | null {
+  const played = a.played!;
+  const word = pair[played];
+  const other = played === 'a' ? pair.b : pair.a;
+  let ok = false;
+  let spoken = false;
+  if ('say' in ans) {
+    ok = checkWord(texts(ans.say), word, other);
+    spoken = ans.say.via === 'speech';
+  } else if (!('pass' in ans)) return null;
+  const bonus = ok && spoken ? payBonus(p, ctx, playerId, Math.round(BASE_POINTS * SPEAK_BONUS)) : 0;
+  if (ok) {
+    p.wave.spoken += spoken ? 1 : 0;
+    if (spoken) ctx.phrase(playerId, { itemId: `pair:${pair.id}:${played}`, text: word.text, kana: word.kana, en: word.en, outcome: 'said' });
+  }
+  return {
+    attackId: a.id,
+    ok: ok || 'pass' in ans,
+    kind: 'pair',
+    char: word.kana,
+    hear: word.kana,
+    points: bonus,
+    damage: 0,
+    tip: ok || 'pass' in ans ? null : `It was ${word.kana} (${word.en}). ${pairTip(pair, played)}`,
+    combo: s.combo.count,
+    splash: false,
+    retryNext: false,
+  };
+}
+
+/** How long a recording the phone is still checking can come back for its bonus. */
+const SAY_LATER_MS = 20_000;
+
+/**
+ * The player has spoken and the phone is checking the recording: move them on to the next
+ * yōkai now, and score the say when it comes back (speech checks can take a few seconds).
+ */
+function sayLater(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ctx: ModeContext, deck: Deck): MoveResult {
+  p.pendingSays = [...(p.pendingSays ?? []).filter((x) => ctx.now - x.at < SAY_LATER_MS).slice(-2), { attack: { ...a, options: [...a.options] }, at: ctx.now }];
   assignAttack(s, playerId, ctx, deck);
+  return MOVE_OK;
+}
+
+/** A say for a recording the player already moved on from: scored, shown as its own line. */
+function settleLater(s: RaidState, playerId: string, p: PlayerRaid, attackId: unknown, raw: Record<string, unknown>, ctx: ModeContext, deck: Deck): MoveResult | null {
+  const i = (p.pendingSays ?? []).findIndex((x) => x.attack.id === attackId);
+  if (i < 0) return null;
+  const { attack: a, at } = p.pendingSays[i]!;
+  p.pendingSays.splice(i, 1);
+  if (ctx.now - at >= SAY_LATER_MS) return moveError('wrong-phase');
+  const ans = readAnswer(raw);
+  if (!ans || !('say' in ans || 'pass' in ans)) return moveError('bad-answer');
+  let said: LastResult | null = null;
+  if (a.kind === 'pair') {
+    const pair = deck.pairs.find((x) => x.id === a.itemId);
+    if (pair) said = sayPair(s, playerId, p, a, pair, ans, ctx);
+  } else {
+    const k = deck.byId.get(a.itemId);
+    if (k) said = spellSay(s, playerId, p, a, k, ans, ctx, deck);
+  }
+  if (!said) return moveError('bad-attack');
+  p.said = said;
+  s.at = ctx.now;
   return MOVE_OK;
 }
 

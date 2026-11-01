@@ -134,7 +134,17 @@ export class MicClip {
 }
 
 /** Sends a clip to the server and returns what Whisper heard. */
-export async function hear(clip: Uint8Array<ArrayBuffer> | null): Promise<Heard> {
+export async function hear(clip: Uint8Array<ArrayBuffer> | null, waitIfBusy = false): Promise<Heard> {
+  // The server checks one take per player at a time. A game that moves on before the check
+  // comes back (Kana Raid's say steps) queues the next take behind it instead of losing it.
+  for (let tries = 0; ; tries++) {
+    const r = await hearOnce(clip);
+    if (!waitIfBusy || r.ok || r.why !== 'busy' || tries >= 15) return r;
+    await new Promise((done) => setTimeout(done, 800));
+  }
+}
+
+async function hearOnce(clip: Uint8Array<ArrayBuffer> | null): Promise<Heard> {
   if (!clip || clip.length === 0) return { ok: false, why: 'quiet' };
   if (!service) return { ok: false, why: 'failed' };
   try {

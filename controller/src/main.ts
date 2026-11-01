@@ -12,7 +12,7 @@ import { playRoulette } from '../../shared/src/roulette.js';
 import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService, speechReady } from './components/mic.js';
-import { getTalkMode, setQuiet, setSpeakLevel, setTalkMode, speakBox } from './components/speak.js';
+import { getTalkMode, isTalking, onTalkEnd, setQuiet, setSpeakLevel, setTalkMode, speakBox } from './components/speak.js';
 import { openMicSheet, refreshMicSheet, type MicSheetState } from './micSheet.js';
 import { quip, setQuipHost } from './components/ui.js';
 import { setSoundOff } from './components/voice.js';
@@ -287,7 +287,19 @@ function status(st: ConnectionStatus): void {
 }
 
 // ---- game screens ----
+// A redraw while a talk button is held would drop the take: hold it until the button is let go.
+let heldView: RoomView | null = null;
+onTalkEnd(() => {
+  const v = heldView;
+  heldView = null;
+  if (v) render(v);
+});
+
 function render(view: RoomView): void {
+  if (isTalking()) {
+    heldView = view;
+    return;
+  }
   tickTimer();
   // A Surprise Me! game: the phone spins for it too, the moment the room leaves the lobby.
   if (view.surprise?.length && view.mode && lastView?.phase === 'lobby' && view.phase !== 'lobby') {

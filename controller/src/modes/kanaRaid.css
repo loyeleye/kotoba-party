@@ -99,3 +99,6 @@
 .raid-aim-btn.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
 .raid-options.echo .raid-option.picked { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
 .raid-last-lost { color: var(--bad, #d33); font-weight: 800; }
+.raid-said { margin: 0; font-size: 15px; font-weight: 700; }
+.raid-said.ok { color: var(--good); }
+.raid-said.miss { color: var(--muted); }

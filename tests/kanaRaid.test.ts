@@ -363,6 +363,47 @@ describe('Kana Yōkai Raid rules', () => {
     expect(r.rs().players.p1!.attack!.step).toBe('say');
   });
 
+  it('wave 3: once you have spoken you move on; the slow speech check scores the say when it comes back', () => {
+    const r = room(1);
+    toBattle(r);
+    for (let w = 1; w < 3; w++) {
+      for (let i = 0; i < 60 && r.s.phase === 'answer'; i++) answer(r, 'p1', true, 'tap'), (now += 200);
+      if (r.s.phase === 'answer') r.timeout();
+      r.timeout();
+      r.timeout();
+      r.timeout();
+    }
+    expect(r.rs().wave).toBe(3);
+    expect(r.s.phase).toBe('answer');
+    const tap = r.rs().players.p1!.attack!;
+    expect(tap.kind).toBe('pair');
+    r.play('p1', { kind: 'attack', attackId: tap.id, pick: tap.answer });
+    const sayStep = r.rs().players.p1!.attack!;
+    expect(sayStep.step).toBe('say');
+    // Spoke: the phone is checking. The player is on the next yōkai already.
+    expect(r.play('p1', { kind: 'attack', attackId: sayStep.id, pending: true }).error).toBeUndefined();
+    const next = r.rs().players.p1!.attack!;
+    expect(next.id).not.toBe(sayStep.id);
+    expect(next.step).toBe('tap');
+    // The check comes back a few seconds later: the bonus is paid and shown, the next attack stays.
+    now += 6_000;
+    const before = r.score('p1');
+    expect(r.play('p1', { kind: 'attack', attackId: sayStep.id, say: { via: 'speech', text: sayStep.word!.kana } }).error).toBeUndefined();
+    expect(r.score('p1')).toBeGreaterThan(before);
+    expect(r.view('p1').me!.said).toMatchObject({ ok: true, char: sayStep.word!.kana });
+    expect(r.rs().players.p1!.attack!.id).toBe(next.id);
+    // Only once, and not after it has gone stale.
+    expect(r.play('p1', { kind: 'attack', attackId: sayStep.id, say: { via: 'speech', text: sayStep.word!.kana } }).error).toBe('wrong-phase');
+    r.play('p1', { kind: 'attack', attackId: next.id, pick: next.answer });
+    const say2 = r.rs().players.p1!.attack!;
+    r.play('p1', { kind: 'attack', attackId: say2.id, pending: true });
+    now += 25_000;
+    expect(r.play('p1', { kind: 'attack', attackId: say2.id, say: { via: 'speech', text: say2.word!.kana } }).error).toBe('wrong-phase');
+    // A tap step can't be "pending".
+    const t3 = r.rs().players.p1!.attack;
+    if (t3?.kind === 'pair' && t3.step === 'tap') expect(r.play('p1', { kind: 'attack', attackId: t3.id, pending: true }).error).toBe('bad-answer');
+  });
+
   it('a wrong guess costs a few points by level: nothing at first, more for advanced players', () => {
     expect([1, 3, 4, 7, 8, 10, 11, 13].map(missPenalty)).toEqual([0, 0, 5, 5, 10, 10, 15, 15]);
     const r = room(2);
