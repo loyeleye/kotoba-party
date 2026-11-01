@@ -208,3 +208,32 @@ body[data-motion='calm'] .yc-rec-btn.live .yc-rec-ring { animation: yc-rec-run v
   .yc-args { grid-template-columns: minmax(0, 1fr); }
   .yc-arg { min-height: 64px; }
 }
+
+/* Role icons: pixel art at whole-pixel sizes (the emoji stands in if a picture is missing). */
+.yc-role-icon { display: inline-block; width: 32px; height: 32px; vertical-align: -9px; image-rendering: pixelated; object-fit: contain; font-size: 24px; line-height: 32px; text-align: center; }
+.yc-role-icon.big { width: 64px; height: 64px; vertical-align: -18px; font-size: 48px; line-height: 64px; }
+/* A dark chip with the side's colour as border and text (white on the side colours fails contrast). */
+.yc-role-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 4px; border-radius: 10px; background: #2e1410; border: 2px solid var(--side, #f2c14e); color: var(--side, #f2c14e); font-weight: 800; }
+.yc-band:not(.yc-side-pros):not(.yc-side-def) .yc-beat-bar span { background: #f2c14e; }
+
+/* The beat's clock, under the band: it runs out with the TV's bar. */
+.yc-beat-bar { height: 6px; margin-top: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.yc-beat-bar span { display: block; height: 100%; background: var(--side, #f2c14e); transform-origin: left; animation: yc-beat-run var(--ms, 8000ms) linear var(--yc-beat-delay, 0ms) both; }
+@keyframes yc-beat-run { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+/* A clock, not decoration: it keeps running in calm motion (the shell's calm rule shortens every animation). */
+body[data-motion='calm'] .yc-beat-bar span { animation: yc-beat-run var(--ms, 8000ms) linear var(--yc-beat-delay, 0ms) both !important; }
+
+/* A Kana judge's word to keep. */
+.yc-keep { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: #2b2440; border: 2px solid #f2c14e; }
+.yc-keep-row { display: flex; align-items: center; gap: 14px; }
+.yc-keep-pic { width: 64px; height: 64px; flex: none; image-rendering: pixelated; object-fit: contain; font-size: 48px; line-height: 64px; text-align: center; }
+.yc-take { font-weight: 800; }
+.yc-take.good { color: var(--good); }
+.yc-keep-ja .jpv-main { font-size: 32px; font-weight: 900; }
+
+/* A Kana lawyer's tiles, in the order sent. */
+.yc-recap { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
+.yc-recap li { padding: 6px 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); }
+.yc-recap li.evidence { outline: 2px solid #f2c14e; }
+.yc-recap-ja .jpv-main { font-size: 20px; font-weight: 800; }
+.yc-recap-tag { font-size: 13px; font-weight: 800; color: #f2c14e; }

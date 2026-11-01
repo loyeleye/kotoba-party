@@ -777,8 +777,29 @@ function showHost(view: RoomView): void {
   }
 }
 
-function tick(): void {
+/**
+ * Time left on the corner clock: the phase's, or the beat's when the mode's view says when the beat ends
+ * (`stepEndsAt`, e.g. Yōkai Court), so the clock and the beat's bar agree.
+ */
+let lastBeatEnd: number | null = null;
+function clockLeft(): number | null {
   const left = client?.remainingMs() ?? null;
+  const view = client?.view ?? null;
+  const end = (view?.game as { stepEndsAt?: unknown } | null | undefined)?.stepEndsAt;
+  if (typeof end !== 'number' || left === null || !view?.deadline) {
+    lastBeatEnd = null;
+    return left;
+  }
+  const beatLeft = Math.max(0, Math.min(left, end - (view.deadline - left)));
+  if (end !== lastBeatEnd) {
+    lastBeatEnd = end;
+    phaseTotal = beatLeft;
+  }
+  return beatLeft;
+}
+
+function tick(): void {
+  const left = clockLeft();
   tickSfx(client?.view ?? null, left);
   const text = formatSeconds(left);
   if (els.timer.textContent !== text) els.timer.textContent = text;

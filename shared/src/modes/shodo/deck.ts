@@ -1,15 +1,18 @@
 // What Shodō Taikai asks each player to write, by level: kana for Kana-level players, the N5
-// kanji for N5, the N5 kanji plus short N4 kanji (and two-kanji words in dictation) for N4. Built
-// from the content library, so tests can pass small fixtures. Every target carries its KanjiVG
+// kanji for N5, N4 kanji with one N5 kanji as review (and words with N4 kanji in dictation) for N4,
+// and the same one level up for N3 with the 30 sign kanji (goal 3.12). Built from the content
+// library, so tests can pass small fixtures. Every target carries its KanjiVG
 // stroke references (one list per character) and the word players say for it.
 
+import type { KanjiLevel } from '../../../../content/src/kanji/kanji.js';
 import { atLevel, type ByLevel, type JpText, type Level } from '../../../../content/src/types.js';
 import type { InkStroke } from '../../japanese/strokes.js';
 import type { ContentLibrary } from '../mode.js';
 import { shuffled } from '../mode.js';
-import { n4Up } from '../../level.js';
+import { LEVEL_RANK } from '../../level.js';
 
 export type TargetKind = 'kana' | 'kanji' | 'word';
+
 
 export interface Target {
   /** Content id (`h-ka`, `kj-山`, `kw-学生`), for the phrasebook and "already dealt". */
@@ -29,6 +32,8 @@ export interface Target {
   strokes: number;
   /** A kanji's step in the writing order (content/src/kanji/kanji.ts). */
   step?: number;
+  /** A kanji's level band; a word's is its highest kanji's. */
+  level?: KanjiLevel;
   /** The gallery only: the word on its own, without the brief ("やま" in "ねむい やまです"). */
   word?: JpText;
 }
@@ -101,6 +106,13 @@ export const GALLERY: ByLevel<JpText[]> = {
     { text: '犬', kana: 'いぬ', en: 'a dog' },
     { text: '海', kana: 'うみ', en: 'the sea' },
   ],
+  // Sign kanji that are words on their own (a sleepy window).
+  n3: [
+    { text: '窓', kana: 'まど', en: 'a window' },
+    { text: '煙', kana: 'けむり', en: 'a puff of smoke' },
+    { text: '席', kana: 'せき', en: 'a seat' },
+    { text: '指', kana: 'ゆび', en: 'a finger' },
+  ],
 };
 
 /**
@@ -152,13 +164,16 @@ export function buildDeck(content: ContentLibrary): ShodoDeck {
     .filter((k) => strokes.has(k.char))
     .map((k) => {
       const cells = [strokes.get(k.char)!];
-      return { id: k.id, kind: 'kanji' as const, text: k.char, cells, say: k.say, meaning: k.meaning, strokes: count(cells), step: k.step };
+      return { id: k.id, kind: 'kanji' as const, text: k.char, cells, say: k.say, meaning: k.meaning, strokes: count(cells), step: k.step, level: k.level };
     });
+  const bandOf = new Map(content.writeKanji.map((k) => [k.char, k.level]));
   const words: Target[] = content.writeWords
     .filter((w) => [...w.word.text].every((c) => strokes.has(c)))
     .map((w) => {
       const cells = [...w.word.text].map((c) => strokes.get(c)!);
-      return { id: w.id, kind: 'word' as const, text: w.word.text, cells, say: w.word, meaning: w.word.en, strokes: count(cells) };
+      const bands = [...w.word.text].map((c) => bandOf.get(c)).filter((b): b is KanjiLevel => !!b);
+      const level = bands.sort((a, b) => LEVEL_RANK[b] - LEVEL_RANK[a])[0];
+      return { id: w.id, kind: 'word' as const, text: w.word.text, cells, say: w.word, meaning: w.word.en, strokes: count(cells), ...(level ? { level } : {}) };
     });
   const kanaSets = content.lookAlikeSets.map((s) => s.kanaIds.map((id) => byId.get(id)?.char).filter((c): c is string => !!c));
   return {
@@ -184,24 +199,71 @@ function kanaPool(deck: ShodoDeck, wide: boolean): Target[] {
   return wide ? deck.kana : hira.length ? hira : deck.kana;
 }
 
-/** Practice (お手本) targets: short ones, to trace, fade and write from memory. */
+/** The kanji band a level learns, and the band below it that comes back as review. */
+const BANDS: Partial<Record<Level, { learn: KanjiLevel; review: KanjiLevel }>> = { n4: { learn: 'n4', review: 'n5' }, n3: { learn: 'n3', review: 'n4' } };
+
+/**
+ * Practice (お手本) targets: short ones, to trace, fade and write from memory. N5 players get steps 1–5.
+ * N4 and N3 players get their own band (the PR #146 panel found Shodō dealt an N4 player about 0.4 N4
+ * kanji a game); `reviewPool` has the band below.
+ */
 export function practicePool(deck: ShodoDeck, level: Level): Target[] {
   if (level === 'kana') return kanaPool(deck, false);
-  const steps = level === 'n5' ? [1, 5] : [3, 9];
-  const pool = deck.kanji.filter((t) => {
-    const s = step(t);
-    return s >= steps[0]! && s <= steps[1]!;
-  });
+  const band = BANDS[level];
+  const pool = band ? deck.kanji.filter((t) => t.level === band.learn) : deck.kanji.filter((t) => step(t) >= 1 && step(t) <= 5);
   return pool.length ? pool : deck.kanji.length ? deck.kanji : deck.kana;
 }
 
-/** Dictation (書き取り) targets: anything at the level, plus two-kanji words at N4. */
+/** Review targets for N4 and N3 practice: the band below (N5 steps 3–7 for N4, the N4 kanji for N3). */
+export function reviewPool(deck: ShodoDeck, level: Level): Target[] {
+  const band = BANDS[level];
+  if (!band) return [];
+  return deck.kanji.filter((t) => t.level === band.review && (band.review !== 'n5' || step(t) >= 3));
+}
+
+/** Practice targets, how many of them come from the band below (about a third: the Japanese seat). */
+export const PRACTICE = { targets: 3, review: 1 };
+
+/** Deals a player's practice targets: N4 and N3 get two of their own band and one review. */
+export function dealPractice(deck: ShodoDeck, level: Level, used: ReadonlySet<string>, random: () => number): Target[] {
+  const review = reviewPool(deck, level);
+  const own = oneEachWord(deal(practicePool(deck, level), Infinity, used, random)).slice(0, review.length ? PRACTICE.targets - PRACTICE.review : PRACTICE.targets);
+  const taken = new Set(own.map((t) => t.say.text));
+  const more = review.length ? oneEachWord(deal(review, Infinity, used, random).filter((t) => !taken.has(t.say.text))).slice(0, PRACTICE.targets - own.length) : [];
+  return [...own, ...more];
+}
+
+/** Keeps the first target of each say-word: 改 and 札 both say 改札, so one game deals only one of them. */
+function oneEachWord(ts: Target[]): Target[] {
+  const seen = new Set<string>();
+  return ts.filter((t) => (seen.has(t.say.text) ? false : (seen.add(t.say.text), true)));
+}
+
+/**
+ * Dictation (書き取り) targets: anything at the level. With `words`, N4 gets words with an N4 kanji in
+ * them and N3 the sign words (改札, 非常口).
+ */
 export function dictationPool(deck: ShodoDeck, level: Level, words: boolean): Target[] {
   if (level === 'kana') return kanaPool(deck, true);
-  if (n4Up(level) && words && deck.words.length) return deck.words;
-  const max = level === 'n5' ? 7 : 10;
-  const pool = deck.kanji.filter((t) => step(t) <= max);
+  const band = BANDS[level];
+  if (band && words && deck.words.length) {
+    const mine = deck.words.filter((w) => w.level === band.learn);
+    return mine.length ? mine : deck.words;
+  }
+  const pool = band ? deck.kanji.filter((t) => t.level === band.learn || t.level === band.review) : deck.kanji.filter((t) => step(t) <= 7);
   return pool.length ? pool : deck.kanji.length ? deck.kanji : deck.kana;
+}
+
+/**
+ * The last "say it, then write it" item at N4 and N3: a word with a practised kanji in it, so the kanji
+ * comes back read inside a word (the JLPT seat: closest to what 漢字読み tests). Null when none has it.
+ */
+export function wordWith(deck: ShodoDeck, level: Level, t: Target, used: ReadonlySet<string>, random: () => number): Target | null {
+  const band = BANDS[level];
+  if (!band || t.kind !== 'kanji') return null;
+  // Only words at or below the player's band: an N4 player never meets 割 through 割引 (UX seat, PR #147).
+  const fits = (w: Target) => !w.level || LEVEL_RANK[w.level] <= LEVEL_RANK[band.learn];
+  return deal(deck.words.filter((w) => w.text.includes(t.text) && fits(w)), 1, used, random)[0] ?? null;
 }
 
 /** Deals `n` targets from a pool, avoiding ones already dealt this game when it can. */

@@ -1,11 +1,16 @@
 // The kanji Shodō Taikai (the Calligraphy Contest) asks players to write, in writing order (not
 // frequency), from the Japanese expert panel's starter list (2026-10-27). N5 players write steps
-// 1–7 (70 kanji); N4 players also get steps 8–10 (45 short N4 kanji). JLPT has published no
-// official kanji lists since 2010, so the level bands are our own draft picks.
+// 1–7 (70 kanji); N4 players get steps 8–11 (60 N4 kanji), with N5 kanji as review. Step 11 is the
+// N4 kanji the game's own N4 lines use (思う, 持って, 待って, 使えます, 会社, 教室…), added after
+// the PR #146 panel. Steps 12–14 are the 30 sign kanji of goal 3.12 (N3 players): kanji read on
+// station and inn signs, each said through its sign word (受 → 受付, 禁 → 禁煙). JLPT has published
+// no official kanji lists since 2010, so the level bands are our own draft picks; "sign kanji" is
+// what the game calls the N3 set, never "N3 kanji", since 30 is a small part of what N3 adds.
 //
 // Each kanji has one "say word": the word players say aloud for it, never a reading on its own
 // (日 alone could be ひ, にち or か). A kanji that is a word by itself says that word (山 やま);
-// any other says a common word that contains it (日 → 毎日 まいにち).
+// any other says a common word that contains it (日 → 毎日 まいにち). A sign kanji says the sign
+// it's read on, even when that's a word of two or three kanji (常 → 非常口 ひじょうぐち).
 //
 // Stroke data comes from KanjiVG (content/src/kanji/strokes.ts, generated). Everything here is
 // `draft` until a fluent speaker checks it.
@@ -16,7 +21,7 @@ export interface WriteKanji {
   /** Stable id: `kj-` and the character. */
   id: string;
   char: string;
-  level: 'n5' | 'n4';
+  level: KanjiLevel;
   /** Writing order: lower steps first. */
   step: number;
   /** A short English meaning of the character. */
@@ -25,6 +30,9 @@ export interface WriteKanji {
   say: JpText;
   status: ReviewStatus;
 }
+
+/** The N3 set is the 30 sign kanji (goal 3.12). */
+export type KanjiLevel = 'n5' | 'n4' | 'n3';
 
 /** A word written in two or more kanji, one grid cell each (N4 dictation). */
 export interface WriteWord {
@@ -36,7 +44,7 @@ export interface WriteWord {
 /** [char, meaning, say text, say kana, say en] */
 type Row = [char: string, meaning: string, text: string, kana: string, en: string];
 
-const steps: { level: 'n5' | 'n4'; rows: Row[] }[] = [
+const steps: { level: KanjiLevel; rows: Row[] }[] = [
   // 1 · Numbers
   {
     level: 'n5',
@@ -181,7 +189,7 @@ const steps: { level: 'n5' | 'n4'; rows: Row[] }[] = [
       ['地', 'ground', '地図', 'ちず', 'a map'],
       ['同', 'same', '同じ', 'おなじ', 'the same'],
       ['早', 'early', '早い', 'はやい', 'early'],
-      ['考', 'think', '考える', 'かんがえる', 'to think'],
+      ['考', 'consider', '考える', 'かんがえる', 'to think over, to consider'],
       ['足', 'foot, leg', '足', 'あし', 'a foot, a leg'],
       ['赤', 'red', '赤い', 'あかい', 'red'],
       ['町', 'town', '町', 'まち', 'a town'],
@@ -212,6 +220,76 @@ const steps: { level: 'n5' | 'n4'; rows: Row[] }[] = [
       ['海', 'sea', '海', 'うみ', 'the sea'],
     ],
   },
+  // 11 · N4: verbs and places the game's own N4 lines use (JLPT and Japanese seats, PR #146)
+  {
+    level: 'n4',
+    rows: [
+      ['写', 'copy', '写真', 'しゃしん', 'a photo'],
+      ['会', 'meet', '会う', 'あう', 'to meet'],
+      ['売', 'sell', '売る', 'うる', 'to sell'],
+      ['使', 'use', '使う', 'つかう', 'to use'],
+      ['待', 'wait', '待つ', 'まつ', 'to wait'],
+      ['持', 'hold', '持つ', 'もつ', 'to hold, to have'],
+      ['思', 'think, feel', '思う', 'おもう', 'to think, to feel'],
+      ['計', 'measure', '時計', 'とけい', 'a clock'],
+      ['映', 'reflect, project', '映画', 'えいが', 'a film'],
+      ['乗', 'ride', '乗る', 'のる', 'to ride'],
+      ['夏', 'summer', '夏', 'なつ', 'summer'],
+      ['教', 'teach', '教える', 'おしえる', 'to teach'],
+      ['終', 'end', '終わる', 'おわる', 'to end'],
+      ['堂', 'hall', '食堂', 'しょくどう', 'a dining hall'],
+      ['着', 'wear, arrive', '着る', 'きる', 'to wear'],
+      ['発', 'depart', '出発', 'しゅっぱつ', 'departure'],
+    ],
+  },
+  // 12 · Sign kanji (goal 3.12): at the station
+  {
+    level: 'n3',
+    rows: [
+      ['由', 'reason, cause', '自由席', 'じゆうせき', 'a non-reserved seat'],
+      ['札', 'tag, banknote', '改札', 'かいさつ', 'the ticket gates'],
+      ['改', 'renew, inspect', '改札', 'かいさつ', 'the ticket gates'],
+      ['定', 'fixed', '指定席', 'していせき', 'a reserved seat'],
+      ['両', 'both', '両替', 'りょうがえ', 'changing money'],
+      ['央', 'centre', '中央口', 'ちゅうおうぐち', 'the central exit'],
+      ['指', 'finger, point', '指定席', 'していせき', 'a reserved seat'],
+      ['席', 'seat', '席', 'せき', 'a seat'],
+      ['替', 'swap', '両替', 'りょうがえ', 'changing money'],
+      ['窓', 'window', '窓口', 'まどぐち', 'a ticket window'],
+      ['線', 'line, track', '番線', 'ばんせん', 'a track number'],
+      ['優', 'gentle, excel', '優先席', 'ゆうせんせき', 'a priority seat'],
+    ],
+  },
+  // 13 · Sign kanji (goal 3.12): safety
+  {
+    level: 'n3',
+    rows: [
+      ['危', 'danger', '危険', 'きけん', 'danger'],
+      ['非', 'not', '非常口', 'ひじょうぐち', 'an emergency exit'],
+      ['押', 'push', '押す', 'おす', 'to push'],
+      ['段', 'step', '階段', 'かいだん', 'stairs'],
+      ['常', 'usual', '非常口', 'ひじょうぐち', 'an emergency exit'],
+      ['険', 'steep, risky', '危険', 'きけん', 'danger'],
+      ['階', 'floor', '階段', 'かいだん', 'stairs'],
+      ['禁', 'forbid', '禁煙', 'きんえん', 'no smoking'],
+      ['煙', 'smoke', '禁煙', 'きんえん', 'no smoking'],
+    ],
+  },
+  // 14 · Sign kanji (goal 3.12): at the inn and the shop
+  {
+    level: 'n3',
+    rows: [
+      ['予', 'in advance', '予約', 'よやく', 'a reservation'],
+      ['内', 'inside', '案内', 'あんない', 'information, guidance'],
+      ['付', 'attach', '受付', 'うけつけ', 'reception'],
+      ['受', 'receive', '受付', 'うけつけ', 'reception'],
+      ['約', 'promise', '予約', 'よやく', 'a reservation'],
+      ['案', 'plan, idea', '案内', 'あんない', 'information, guidance'],
+      ['割', 'divide', '割引', 'わりびき', 'a discount'],
+      ['無', 'nothing', '無料', 'むりょう', 'free of charge'],
+      ['落', 'fall', '落とし物', 'おとしもの', 'lost property'],
+    ],
+  },
 ];
 
 export const writeKanji: WriteKanji[] = steps.flatMap((s, i) =>
@@ -235,6 +313,33 @@ export const writeWords: WriteWord[] = (
     ['子犬', 'こいぬ', 'a puppy'],
     ['花火', 'はなび', 'fireworks'],
     ['水車', 'すいしゃ', 'a water wheel'],
+    // N4 kanji in words (PR #146: N4 dictation was mostly N5 kanji).
+    ['会社', 'かいしゃ', 'a company'],
+    ['教室', 'きょうしつ', 'a classroom'],
+    ['自分', 'じぶん', 'oneself'],
+    ['食堂', 'しょくどう', 'a dining hall'],
+    ['時計', 'とけい', 'a clock'],
+    ['売店', 'ばいてん', 'a kiosk'],
+    ['本屋', 'ほんや', 'a bookshop'],
+    ['体力', 'たいりょく', 'stamina'],
+    // Sign words (goal 3.12): the signs themselves, two or three kanji each.
+    ['改札', 'かいさつ', 'the ticket gates'],
+    ['窓口', 'まどぐち', 'a ticket window'],
+    ['発車', 'はっしゃ', 'departure (of a train)'],
+    ['出発', 'しゅっぱつ', 'departure'],
+    ['中央口', 'ちゅうおうぐち', 'the central exit'],
+    ['指定席', 'していせき', 'a reserved seat'],
+    ['自由席', 'じゆうせき', 'a non-reserved seat'],
+    ['優先席', 'ゆうせんせき', 'a priority seat'],
+    ['両替', 'りょうがえ', 'changing money'],
+    ['非常口', 'ひじょうぐち', 'an emergency exit'],
+    ['禁煙', 'きんえん', 'no smoking'],
+    ['危険', 'きけん', 'danger'],
+    ['階段', 'かいだん', 'stairs'],
+    ['受付', 'うけつけ', 'reception'],
+    ['予約', 'よやく', 'a reservation'],
+    ['案内', 'あんない', 'information, guidance'],
+    ['割引', 'わりびき', 'a discount'],
   ] as const
 )
   .filter(([text]) => [...text].every((c) => writeKanji.some((k) => k.char === c)))
