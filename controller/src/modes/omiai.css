@@ -71,5 +71,3 @@
 .omi-nakodo { background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
 .omi-nakodo p { margin: 0; }
 .omi-nakodo-line { font-size: 20px; font-weight: 800; }
-.omi-offer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.omi-offer-btns button { min-height: 56px; }

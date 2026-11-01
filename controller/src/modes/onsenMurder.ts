@@ -38,6 +38,13 @@ let draft: { scope: string; tiles: QuestionTile[] } = { scope: '', tiles: [] };
 const sayFirstFrom = new Map<string, number>();
 let reportDraft: { scope: string; tiles: ReportTile[] } = { scope: '', tiles: [] };
 
+/** When this answer's reveal first drew, so the fade-ins keep their timing when the screen redraws mid-answer. */
+let revealAt = { scope: '', at: 0 };
+function revealDelay(scope: string, ms: number): string {
+  if (revealAt.scope !== scope) revealAt = { scope, at: Date.now() };
+  return `animation-delay: ${ms - (Date.now() - revealAt.at)}ms`;
+}
+
 function reportDraftFor(scope: string): ReportTile[] {
   if (reportDraft.scope !== scope) reportDraft = { scope, tiles: [] };
   return reportDraft.tiles;
@@ -246,7 +253,7 @@ function deputyOffer(ctx: Ctx): HTMLElement | null {
     roleOffer({
       kicker: '🕵️ Chōchin-san needs a deputy this turn.',
       role: { text: 'じょしゅ', kana: 'じょしゅ', en: 'Deputy' },
-      pitch: 'After the answer, tell the room what the suspect said, in plain form before と いっていました, or in the passive:',
+      pitch: 'After the answer, tell the room what the suspect said, with one of these:',
       onTake: () => void ctx.send({ kind: 'deputy', accept: true }),
       onDecline: () => void ctx.send({ kind: 'deputy', accept: false }),
       extra: frames,
@@ -260,7 +267,7 @@ function deputyReport(ctx: Ctx): HTMLElement | null {
   const d = game.mine?.deputy;
   if (!d || d.status === 'declined') return null;
   if (d.status === 'reported')
-    return h('div', { class: 'om-p-deputy' }, h('p', {}, h('strong', {}, `🕵️ Reported! +${d.points}`)), d.line ? jpLine(d.line) : null);
+    return h('div', { class: 'om-p-deputy' }, h('p', {}, h('strong', {}, d.points ? `🕵️ Reported! +${d.points}` : '🕵️ Reported! The room heard it.')), d.line ? jpLine(d.line) : null);
   if (d.status === 'missed')
     return h('div', { class: 'om-p-deputy' }, h('p', {}, '🕵️ Nice try, deputy. The report:'), d.line ? jpLine(d.line) : null);
   if (!d.canReport) return null;
@@ -308,7 +315,7 @@ function deputyReport(ctx: Ctx): HTMLElement | null {
   return h(
     'div',
     // Fades in once the answer and its subtitle are up, so the tiles don't give the answer away first.
-    { class: 'om-p-deputy report', style: `animation-delay: ${game.thinkMs + game.subtitleMs}ms` },
+    { class: 'om-p-deputy report', style: revealDelay(`${view.phaseSeq}`, game.thinkMs + game.subtitleMs) },
     h('p', {}, h('strong', {}, '🕵️ Deputy: tell the room what they said.')),
     d.frame ? h('p', { class: 'om-p-frame', lang: 'ja' }, d.frame) : null,
     d.notes.map((n) => h('p', { class: 'hint om-p-note' }, n)),
@@ -323,11 +330,18 @@ function deputyReport(ctx: Ctx): HTMLElement | null {
     // The tiles are the fallback: say it from the frame first, build it if you need the words.
     h(
       'details',
-      { class: 'om-p-tiles-help', ...(d.heard ? { open: true } : {}) },
+      {
+        class: 'om-p-tiles-help',
+        ...(d.heard || d.peeked ? { open: true } : {}),
+        // Opening the tiles before a first try: the server notes the report as read, not recalled.
+        ontoggle: (e: Event) => {
+          if ((e.target as HTMLDetailsElement).open && !d.heard && !d.peeked) void send({ kind: 'report-peek' });
+        },
+      },
       h('summary', {}, 'Need the words? Build it from tiles (one is a spare)'),
       h('div', { class: 'om-p-builder' }, preview, h('div', { class: 'om-p-row' }, sendBtn, undo), grid),
     ),
-    d.heard ? null : h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'deputy', accept: false }) }, 'Not this time'),
+    d.heard ? null : h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'deputy', accept: false }) }, 'Not this time after all'),
     h('p', { class: 'hint' }, 'Saying it aloud earns the 🎤 bonus.'),
   );
 }
@@ -425,15 +439,15 @@ export const onsenMurderPhone: PhoneMode<OnsenView> = {
           'div',
           { class: 'screen om-p' },
           h('p', { class: 'big' }, `${s?.emoji ?? ''} ${s ? calledName(s).text : ''} answers…`),
-          h('div', { class: 'om-p-answer', style: `animation-delay: ${game.thinkMs}ms` }, jpLine(cur.answer)),
+          h('div', { class: 'om-p-answer', style: revealDelay(`${view.phaseSeq}`, game.thinkMs) }, jpLine(cur.answer)),
           mineAsk ? h('p', { class: 'hint' }, cur.guessed ? `Best guess: ${cur.natural.text} (${cur.natural.en})` : `Natural: ${cur.natural.text} (${cur.natural.en})`) : null,
-          cur.newClue && cur.clue ? h('p', { class: 'om-p-clue', style: `animation-delay: ${game.thinkMs + game.subtitleMs}ms` }, `📝 New clue${mineAsk ? ` +${cur.points}` : ''}: `, h('span', { lang: 'ja' }, cur.clue.text)) : null,
+          cur.newClue && cur.clue ? h('p', { class: 'om-p-clue', style: revealDelay(`${view.phaseSeq}`, game.thinkMs + game.subtitleMs) }, `📝 New clue${mineAsk ? ` +${cur.points}` : ''}: `, h('span', { lang: 'ja' }, cur.clue.text)) : null,
           deputyReport(ctx),
           // Players without the deputy's seat: a reaction tile (or the curveball); Kana and N5 phones get the gist.
           mine?.gallery || mine?.gist
             ? h(
                 'div',
-                { class: 'om-p-mixed', style: `animation-delay: ${game.thinkMs + game.subtitleMs}ms` },
+                { class: 'om-p-mixed', style: revealDelay(`${view.phaseSeq}`, game.thinkMs + game.subtitleMs) },
                 galleryTile(mine.gallery, (pick) => void ctx.send({ kind: 'gallery', pick })),
                 boothGist(mine.gist),
               )

@@ -115,7 +115,7 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.omiai_nakodo_cheer.02', host: 'nobiko', event: 'omiai_nakodo_cheer', jp: { text: 'あらまあ、わたしより じょうずだわ。', kana: 'あらまあ、わたしより じょうずだわ。', en: 'Oh my, better than me.' }, status: 'draft' },
   { id: 'nobiko.omiai_nakodo_cheer.03', host: 'nobiko', event: 'omiai_nakodo_cheer', jp: { text: 'あらまあ、りっぱな けいご！', kana: 'あらまあ、りっぱな けいご！', en: 'Oh my, what splendid keigo!' }, status: 'draft' },
   { id: 'nobiko.omiai_nakodo_cheer.04', host: 'nobiko', event: 'omiai_nakodo_cheer', jp: { text: 'あらまあ。わたしの しごとが なくなっちゃう。', kana: 'あらまあ。わたしの しごとが なくなっちゃう。', en: "Oh my. I'll be out of a job." }, status: 'draft' },
-  { id: 'nobiko.omiai_nakodo_cheer.05', host: 'nobiko', event: 'omiai_nakodo_cheer', jp: { text: 'あらまあ！　くびが のびちゃうわ。', kana: 'あらまあ！　くびが のびちゃうわ。', en: 'Oh my! My neck is stretching.' }, status: 'draft' },
+  { id: 'nobiko.omiai_nakodo_cheer.05', host: 'nobiko', event: 'omiai_nakodo_cheer', jp: { text: 'あらまあ！　うれしくて くびが のびちゃうわ。', kana: 'あらまあ！　うれしくて くびが のびちゃうわ。', en: "Oh my! My neck's stretching with joy!" }, status: 'draft' },
   // omiai_standin: a 2-player room with nobody at N4 has no go-between: she gives the keigo opening herself, once a game, as is
   { id: 'nobiko.omiai_standin.01', host: 'nobiko', event: 'omiai_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   { id: 'nobiko.omiai_tease.01', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらまあ… ずいぶん くだけてるわね！', kana: 'あらまあ… ずいぶん くだけてるわね！', en: "Oh my… aren't we casual!" }, audience: 'cheeky', status: 'draft' },

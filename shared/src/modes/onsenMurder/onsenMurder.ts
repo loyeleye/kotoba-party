@@ -25,9 +25,9 @@ import type { JpText, OnsenCase, OnsenIntent, OnsenReport, OnsenSuspect } from '
 import { hasKanji, isKana, isUtterance, soundKey, type Utterance } from '../../japanese/kana.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, type Award, type Mode, type ModeContext, type ModePlayer, type PhraseEntry } from '../mode.js';
-import { answerTiles, checkReport, joinReport, reportFrame, reportNotes, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
+import { answerTiles, checkReport, joinReport, reportFrame, reportNotes, reportRule, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
 import { nextOfferee, offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
-import { commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
 import { FALLBACK_CASE } from './fallback.js';
 import { accusationLine, bareName, checkAccusation, INTENTS, matchQuestion, questionFor, tilesFor, type QuestionTile } from './questions.js';
 
@@ -50,6 +50,8 @@ export const POINTS = {
   reportTiles: 10,
   /** Speaking bonus for the deputy's report said aloud. */
   spokenReport: 40,
+  /** Reports a game that score: after a player's fourth, the deputy's report is for the room, not points. */
+  reportsPaid: 4,
 } as const;
 
 /**
@@ -79,9 +81,14 @@ export const REPORT_VOICE = { after: THINK_MS + SUBTITLE_MS + 1_500, cheer: 2_50
 /** About how long Chōchin-san takes to say a report: his bank voice may land 1.5 s late, then ~0.11 s a kana; at most 7 s. */
 export const reportVoiceMs = (kana: string): number => Math.min(7_000, 1_500 + 110 * kana.replace(/[\s。、]/g, '').length);
 
-/** The curveball's key words: the report's frame word, and the others it is mixed with. */
-export const KEY_WORDS: readonly string[] = ['いっていました', 'みられました', 'みました', 'ねました', 'でした', 'ので'];
+/** The curveball's key word: the report's frame word. */
 const keyWord = (r: OnsenReport) => (r.frames?.includes('passive') ? 'みられました' : 'いっていました');
+/**
+ * Near misses for each key word, so the curveball tests the ear: the passive beside the active and its
+ * look-alikes, the reported いっていました beside other forms of いう and a look-alike (the panel's J7).
+ */
+export const curveballPool = (word: string): readonly string[] =>
+  word === 'みられました' ? ['みました', 'みせました', 'みえました'] : ['いっています', 'いいました', 'いきました'];
 
 export const DURATIONS = {
   intro: 25_000,
@@ -139,6 +146,8 @@ export interface Deputy {
   points: number;
   /** Once the report is in, when Chōchin-san finishes voicing it: the answer stays up until then. */
   voicedUntil: number | null;
+  /** Opened the tiles before a first try: the report is then from the tiles' words, not from memory. */
+  peeked?: boolean;
 }
 
 /** The commentary booth's replay (or the host stand-in's report), with when it starts, ms into the answer. */
@@ -218,6 +227,7 @@ export type OnsenMove =
   | { kind: 'deputy'; accept: boolean }
   | { kind: 'report'; utterance: Utterance }
   | { kind: 'report'; tiles: string[] }
+  | { kind: 'report-peek' }
   | { kind: 'gallery'; pick: string };
 
 // ---- view ----
@@ -288,7 +298,7 @@ export interface OnsenView {
   /** This turn's deputy; their line once they have reported. */
   deputy: { playerId: string; status: DeputyStatus; reporting: boolean; line: JpText | null; via: Via | null; points: number } | null;
   /** The commentary booth's replay of the deputy's report (TV), once it has landed: atMs into the answer, for ms. */
-  booth: { playerId: string | null; lit: Commentary['lit']; note: string; en: string; atMs: number; ms: number } | null;
+  booth: { playerId: string | null; lit: Commentary['lit']; note: string; en: string; atMs: number; ms: number; holdKey: boolean } | null;
   /** Chōchin-san reports this answer himself (small rooms with nobody at N4, once a game), atMs into the answer. */
   standIn: { line: JpText; lit: Commentary['lit']; note: string; atMs: number } | null;
   /** The Gallery's reaction bubbles. */
@@ -332,6 +342,8 @@ export interface DeputyMe {
   /** The whole line, once you've had a try (or are done). */
   line: JpText | null;
   points: number;
+  /** Opened the tiles before a first try (they stay open on a redraw). */
+  peeked: boolean;
 }
 
 // ---- helpers ----
@@ -607,8 +619,8 @@ function boothFor(ask: Ask, playerId: string | null, atMs: number): OnsenBooth {
 
 /**
  * Opens the answer's Gallery once the deputy has taken the part (Take it, or a first try) and has a report to
- * give: one reaction tile for every other connected player, and once a game a curveball for a Kana or N5 player
- * ("Which word did you hear?": いっていました or みられました).
+ * give: one reaction tile for every other connected player. The curveball ("Which word did you hear?":
+ * いっていました or みられました) is only dealt once the report has landed (armDeputyCurveball).
  */
 function openDeputyGallery(s: OnsenState, ctx: ModeContext): void {
   const d = s.deputy;
@@ -620,11 +632,21 @@ function openDeputyGallery(s: OnsenState, ctx: ModeContext): void {
   s.gallery = openGallery(
     others.map((p) => p.id),
     others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id),
-    { word: keyWord(ask.report), pool: KEY_WORDS },
+    null,
     !!s.curveballUsed,
     s.turnNo,
   );
-  if (s.gallery.curveball) s.curveballUsed = true;
+}
+
+/**
+ * Once a game, after the deputy's report has landed: a Kana or N5 player who hasn't reacted yet gets the
+ * curveball in place of their tile, on the report's frame word. A report that never lands deals none.
+ */
+function armDeputyCurveball(s: OnsenState, ctx: ModeContext, ask: Ask): void {
+  if (!ask.report) return;
+  const word = keyWord(ask.report);
+  const low = ctx.connected().filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id);
+  if (armCurveball(s.gallery, low, { word, pool: curveballPool(word), heard: ask.report.jp.kana }, !!s.curveballUsed, s.turnNo)) s.curveballUsed = true;
 }
 
 /**
@@ -930,16 +952,29 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
       if (ok) {
         d.status = 'reported';
         d.via = via;
-        d.points = via === 'tap' ? POINTS.reportTiles : POINTS.report;
+        // A player's first few reports a game score; after that it's for the room (so one N4 player can't run away with it).
+        const paid = tallyFor(s, playerId).reports < POINTS.reportsPaid;
+        d.points = !paid ? 0 : via === 'tap' ? POINTS.reportTiles : POINTS.report;
         tallyFor(s, playerId).reports += 1;
-        give(s, ctx, playerId, d.points, via === 'speech' ? POINTS.spokenReport : 0);
-        // Only a spoken report counts as from memory, as for the questions.
-        ctx.phrase(playerId, { ...reportEntry(s, ask, via === 'tap' ? 'seen' : d.tries > 1 ? 'retry' : 'said'), recall: via === 'speech' ? 'memory' : 'read' });
+        give(s, ctx, playerId, d.points, paid && via === 'speech' ? POINTS.spokenReport : 0);
+        // Only a spoken report counts as from memory, as for the questions; one after a look at the tiles is seen.
+        const outcome: PhraseEntry['outcome'] = via === 'tap' || d.peeked ? 'seen' : d.tries > 1 ? 'retry' : 'said';
+        ctx.phrase(playerId, { ...reportEntry(s, ask, outcome), recall: via === 'speech' && !d.peeked ? 'memory' : 'read' });
         voiceReport(s, ctx, d, ask);
+        armDeputyCurveball(s, ctx, ask);
       } else if (d.tries >= TRIES) {
         d.status = 'missed';
         ctx.phrase(playerId, reportEntry(s, ask, 'missed'));
       }
+      return MOVE_OK;
+    }
+
+    if (raw.kind === 'report-peek') {
+      // The deputy opened the tiles before a first try: the report that follows was read, not recalled.
+      const d = s.deputy;
+      if (!d || d.playerId !== playerId) return moveError('not-deputy');
+      if (phase !== 'reveal' || !deputyOpen(d)) return moveError('wrong-phase');
+      if (d.tries === 0) d.peeked = true;
       return MOVE_OK;
     }
 
@@ -1044,13 +1079,15 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
                 status: d.status,
                 canReport: phase === 'reveal' && deputyOpen(d),
                 frame: dAsk?.report ? reportFrame(dAsk.report) : null,
-                notes: dAsk?.report ? reportNotes(dAsk.report) : [],
+                // Before a first try, only the rule: the full notes name the plain verb, which is the answer.
+                notes: dAsk?.report ? (d.tries > 0 ? reportNotes(dAsk.report) : [reportRule(dAsk.report)]) : [],
                 tiles: phase === 'reveal' && deputyOpen(d) ? d.tiles : [],
                 need: dAsk?.report ? answerTiles(dAsk.report).length : 0,
                 triesLeft: TRIES - d.tries,
                 heard: d.heard,
                 line: dAsk?.report && (d.tries > 0 || !deputyOpen(d)) ? dAsk.report.jp : null,
                 points: d.points,
+                peeked: !!d.peeked,
               }
             : null,
         gallery: phase === 'reveal' && me ? galleryTileFor(s.gallery, id, me.level) : null,
@@ -1090,7 +1127,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
             points: d.points,
           }
         : null,
-      booth: booth ? { playerId: booth.playerId, lit: booth.lit, note: booth.note, en: booth.line.en, atMs: booth.atMs, ms: booth.ms } : null,
+      booth: booth ? { playerId: booth.playerId, lit: booth.lit, note: booth.note, en: booth.line.en, atMs: booth.atMs, ms: booth.ms, holdKey: keyHeld(s.gallery) } : null,
       standIn: stood ? { line: stood.line, lit: stood.lit, note: stood.note, atMs: stood.atMs } : null,
       bubbles: phase === 'reveal' && s.gallery ? galleryBubbles(s.gallery) : [],
       mine,

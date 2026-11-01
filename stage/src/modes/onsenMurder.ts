@@ -235,11 +235,11 @@ function deputyPanel(view: RoomView, game: OnsenView): HTMLElement | null {
     return h(
       'div',
       { class: 'om-deputy om-appear' },
-      h('span', { class: 'om-who' }, `🕵️ Deputy ${who}${d.via === 'speech' ? ' 🎤' : d.via === 'tap' ? ' 🧩' : ''} +${d.points}`),
+      h('span', { class: 'om-who' }, `🕵️ Deputy ${who}${d.via === 'speech' ? ' 🎤' : d.via === 'tap' ? ' 🧩' : ''}${d.points ? ` +${d.points}` : ''}`),
       ruby(d.line, { class: 'om-ja' }),
       h('span', { class: 'om-en' }, d.line.en),
       // The commentary booth: the replay with its frame word lit, as Chōchin-san says the line.
-      game.booth ? h('div', { class: 'om-booth om-appear', style: appearAfter(game.booth.atMs, sinceBeat(`ask:${game.current?.no ?? 0}`)) }, boothStrip(game.booth, who)) : null,
+      game.booth ? h('div', { class: 'om-booth om-appear', style: appearAfter(game.booth.atMs, sinceBeat(`ask:${game.current?.no ?? 0}`)) }, boothStrip(game.booth, who, game.booth.holdKey)) : null,
       bubbles,
     );
   if (d.status !== 'missed' && bubbles) return h('div', {}, h('p', { class: 'om-line muted om-appear', style: appearAfter(game.thinkMs, 0) }, `🕵️ Deputy ${who} is reporting what they said…`), bubbles);
