@@ -26,7 +26,7 @@ import { isUtterance, normalizeReading, utteranceReading, type Utterance } from 
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { callbackLine, CAUSES, causeOf, dealOptions, kanaLine, latenessFor, lineFor, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, type Cause, type Chunk } from './causes.js';
+import { ASK_CHANCE, callbackLine, CAUSES, causeOf, dealOptions, kanaLine, latenessFor, lineFor, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, type Cause, type Chunk } from './causes.js';
 import { n4Up } from '../../level.js';
 
 // ---- tuning ----
@@ -190,6 +190,8 @@ export interface LateRound {
   hinted: boolean;
   /** The game's last round. */
   finale: boolean;
+  /** N4 and up: the excuse is the cause's ask line (N4_ASKS), when it has one. */
+  ask?: boolean;
 }
 
 export interface PlayerStats {
@@ -345,7 +347,9 @@ const statsOf = (s: LateState, id: string) => (s.stats[id] ??= blankStats());
 export const current = (s: LateState): LateRound | null => s.rounds[s.round - 1] ?? null;
 const causeOfRound = (r: LateRound): Cause => causeOf(r.cause) ?? CAUSES[0]!;
 /** The latecomer's line: the last round (a year late) opens with the deepest apology. */
-const lineOf = (r: LateRound) => lineFor(causeOfRound(r), r.level, { finale: r.finale });
+const lineOf = (r: LateRound) => lineFor(causeOfRound(r), r.level, { finale: r.finale, ask: r.ask });
+/** The line the round's latecomer works from (their mission and Pon's version), for the cause they blame. */
+export const roundLine = (r: LateRound) => lineOf(r);
 
 /** Rounds for `n` players: the smallest multiple of n that is 6 or more (one lap with `oneLap`). */
 export function roundsFor(n: number, oneLap = false): number {
@@ -565,6 +569,8 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
   };
   // Two players: Pon is the witness, and he "probably saw it".
   if (s.coop && !r.witness) r.alibi = options[Math.floor(ctx.random() * 3)]!;
+  // Drawn last, so the deal above stays as it was.
+  if (n4Up(level)) r.ask = ctx.random() < ASK_CHANCE;
   s.rounds.push(r);
   statsOf(s, r.latecomer).late += 1;
   if (r.chief) {

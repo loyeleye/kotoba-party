@@ -665,6 +665,76 @@ export const CAUSES: readonly Cause[] = [
   },
 ];
 
+// The N4 "push your luck" excuses: on some rounds (ASK_CHANCE) an N4 latecomer's excuse carries a cheeky ask
+// or a question for the boss, so ＿ても いいですか (4.2) and ＿た ことが あります (4.3) are said from memory too.
+// Each keeps its cause's story (the gallery's listening check still holds) and names the cause. Kept apart
+// from CAUSES, one entry per cause, so edits to the causes themselves rebase cleanly. Draft, like every line here.
+const askTag = { mayI: 'Express Line · 〜ても いいですか', ever: 'Express Line · 〜た ことが あります' };
+// Plain hiragana, matched on the plain reading (spaces stripped).
+const MAY_I = ['てもいい', 'でもいい'];
+const EVER = ['たことが', 'だことが', 'たことは', 'だことは'];
+
+/** Chance an N4 round uses its cause's ask line, when the cause has one. */
+export const ASK_CHANCE = 0.5;
+
+export const N4_ASKS: Readonly<Record<string, CauseLine>> = {
+  kotatsu: {
+    mission: 'Apologise, then blame the kotatsu. Say why you can’t get out, and ask if it can come with you.',
+    model: n4('こたつが 暖かすぎて、出られません。こたつと いっしょに 行っても いいですか？', 'こたつが あたたかすぎて、でられません。こたつと いっしょに いっても いいですか？', 'The kotatsu is too warm; I can’t get out. May I bring it with me?'),
+    chunk: { text: '行っても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. Very polite, for a request nobody has ever made.', tag: askTag.mayI },
+  },
+  cat: {
+    mission: 'Apologise, then blame the cat. Politely explain why you can’t move, and ask to rest until it wakes up.',
+    model: n4('猫が お腹の 上で 寝て いるので、起きるまで 休んでも いいですか？', 'ねこが おなかの うえで ねて いるので、おきるまで やすんでも いいですか？', 'The cat is asleep on my stomach, so may I rest until it wakes up?'),
+    chunk: { text: '休んでも いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. You can’t say no to a sleeping cat either.', tag: askTag.mayI },
+  },
+  breakfast: {
+    mission: 'Apologise, then blame breakfast. Say just how good it is, and ask if you can finish it at work.',
+    model: n4('朝ごはんが おいしすぎて、まだ 食べて います。会社で 食べても いいですか？', 'あさごはんが おいしすぎて、まだ たべて います。かいしゃで たべても いいですか？', 'Breakfast is so good I’m still eating. May I eat it at work?'),
+    chunk: { text: '食べても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission, with your mouth full.', tag: askTag.mayI },
+  },
+  granny: {
+    mission: 'Apologise, then blame an old lady. Say where you took her, and ask to join by phone from there.',
+    model: n4('おばあさんを 山の 上まで 送りました。今日は 山から 電話で 出ても いいですか？', 'おばあさんを やまの うえまで おくりました。きょうは やまから でんわで でても いいですか？', 'I took an old lady all the way up a mountain. May I join by phone from the mountain today?'),
+    chunk: { text: '出ても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. From a mountain top, the signal is great.', tag: askTag.mayI },
+  },
+  nobiko: {
+    mission: 'Apologise, then blame Nobiko-san. Say how long she’s talking, and ask if she can come too.',
+    model: n4('のびこさんの 話が 長すぎて、逃げられません。のびこさんも いっしょに 行っても いいですか？', 'のびこさんの はなしが ながすぎて、にげられません。のびこさんも いっしょに いっても いいですか？', 'Nobiko-san’s story is so long I can’t get away. May she come too?'),
+    chunk: { text: '行っても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. Her neck is already in the lift.', tag: askTag.mayI },
+  },
+  oversleep: {
+    mission: 'Apologise, then blame your alarm clock. Ask the boss if theirs has ever done that.',
+    model: n4('目覚まし時計が 寝坊しました。部長の 時計も 寝坊した ことが ありますか？', 'めざましどけいが ねぼうしました。ぶちょうの とけいも ねぼうした ことが ありますか？', 'My alarm clock overslept. Has your clock ever overslept too, boss?'),
+    chunk: { text: '寝坊した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Turn the question on the boss.', tag: askTag.ever },
+  },
+  train: {
+    mission: 'Apologise, then blame the train. Say where you woke up, and ask if the boss has ever woken up there.',
+    model: n4('電車で 寝て、起きたら 海でした。海で 起きた ことが ありますか？', 'でんしゃで ねて、おきたら うみでした。うみで おきた ことが ありますか？', 'I fell asleep on the train, and when I woke up, I was at the sea. Have you ever woken up at the sea?'),
+    chunk: { text: '起きた ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Everyone has. Haven’t they?', tag: askTag.ever },
+  },
+  station: {
+    mission: 'Apologise, then blame the station. Say you’ve never seen one so big.',
+    model: n4('こんなに 広い 駅は 見た ことが ありません。出口が わかりませんでした。', 'こんなに ひろい えきは みた ことが ありません。でぐちが わかりませんでした。', 'I’ve never seen a station this big. I couldn’t find the exit.'),
+    chunk: { text: '見た ことが ありません', keys: EVER, note: '〜た ことが ありません: never, ever. Ninety-nine exits will do that.', tag: askTag.ever },
+  },
+  game: {
+    mission: 'Apologise, then blame a game. Confess how long you played, and ask if the boss ever has.',
+    model: n4('ゲームを 朝まで して しまいました。部長も した ことが ありますか？', 'ゲームを あさまで して しまいました。ぶちょうも した ことが ありますか？', 'I ended up playing a game till morning. Have you ever done that, boss?'),
+    chunk: { text: 'した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? If the boss says yes, you’re Safe.', tag: askTag.ever },
+  },
+  kappa: {
+    mission: 'Apologise, then blame a kappa. Say what it asked you, and ask if the boss has ever talked to one.',
+    model: n4('かっぱに 川までの 道を 聞かれました。かっぱと 話した ことが ありますか？', 'かっぱに かわまでの みちを きかれました。かっぱと はなした ことが ありますか？', 'A kappa asked me the way to the river. Have you ever talked to a kappa?'),
+    chunk: { text: '話した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? They talk a lot, for a river monster.', tag: askTag.ever },
+  },
+  fox: {
+    mission: 'Apologise, then blame a fox. Say what “the boss” told you, and ask if the boss has ever been a fox.',
+    model: n4('部長に「今日は 休みだよ」と 言われました。部長は きつねに なった ことが ありますか？', 'ぶちょうに「きょうは やすみだよ」と いわれました。ぶちょうは きつねに なった ことが ありますか？', 'The boss told me “today’s a day off”. Boss, have you ever turned into a fox?'),
+    chunk: { text: 'なった ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? A very fair question, in the circumstances.', tag: askTag.ever },
+  },
+};
+
 const BY_ID = new Map(CAUSES.map((c) => [c.id, c]));
 export const causeOf = (id: string): Cause | undefined => BY_ID.get(id);
 export const sceneOf = (id: string): LateScene | undefined => SCENES.find((s) => s.id === id);
@@ -677,8 +747,9 @@ export const scenesFor = (audience: Audience): LateScene[] => SCENES.filter((s) 
  * The line a latecomer at `level` works from: N5 for Kana (shown on a mic pass), the highest written one at or
  * below the level. In the finale (a year late), the N4 model opens たいへん もうしわけ ありません instead.
  */
-export function lineFor(cause: Cause, level: Level, opts: { finale?: boolean } = {}): CauseLine {
-  const line = n4Up(level) && cause.lines.n4 ? cause.lines.n4 : (cause.lines.n5 ?? cause.lines.n4!);
+export function lineFor(cause: Cause, level: Level, opts: { finale?: boolean; ask?: boolean } = {}): CauseLine {
+  const ask = opts.ask && n4Up(level) ? N4_ASKS[cause.id] : undefined;
+  const line = ask ?? (n4Up(level) && cause.lines.n4 ? cause.lines.n4 : (cause.lines.n5 ?? cause.lines.n4!));
   if (!opts.finale || !line.model.text.startsWith(N4_SORRY.text)) return line;
   const m = line.model;
   return {

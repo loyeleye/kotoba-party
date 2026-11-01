@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
-import { CAUSES, causeOf, dealOptions, latenessFor, lineFor, SCENES, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthLine } from '../shared/src/modes/lateAgain/causes.js';
-import { heardAny, MAX_LEAVES, POINTS, RECORD_MS, roundsFor, START_LEAVES, type LateState, type LateView } from '../shared/src/modes/lateAgain/lateAgain.js';
+import { CAUSES, causeOf, dealOptions, latenessFor, lineFor, N4_ASKS, SCENES, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthLine } from '../shared/src/modes/lateAgain/causes.js';
+import { heardAny, MAX_LEAVES, POINTS, RECORD_MS, roundLine, roundsFor, START_LEAVES, type LateState, type LateView } from '../shared/src/modes/lateAgain/lateAgain.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { lateAgainPolicy } from '../tools/bots/policies/lateAgain.js';
@@ -553,6 +553,28 @@ describe('Late Again!: the real story', () => {
 });
 
 describe('Late Again!: hearing the excuse', () => {
+  it('an N4 ask line keeps its cause, its apology and a chunk, and asks permission or about experience', () => {
+    const asks = Object.entries(N4_ASKS);
+    expect(asks.length).toBeGreaterThan(0);
+    for (const [id, line] of asks) {
+      const c = causeOf(id)!;
+      expect(c, id).toBeTruthy();
+      for (const finale of [false, true]) {
+        const l = lineFor(c, 'n4', { ask: true, finale });
+        expect(l.model.kana, id).toMatch(/すみません|もうしわけ/);
+        expect(heardAny(l.model.kana, c.keys), id).toBe(true);
+      }
+      expect(line.mission, id).not.toMatch(/〜|passive|te-form|すぎ|ので/i);
+      expect(line.model.text, id).toContain(line.chunk!.text);
+      expect(heardAny(line.model.kana, line.chunk!.keys), id).toBe(true);
+      expect(line.model.kana, id).toMatch(/[てで]\s*も\s*いいですか|[たっだ]\s*ことが\s*あり/);
+      // Kana and N5 never get it.
+      expect(lineFor(c, 'n5', { ask: true }), id).toBe(lineFor(c, 'n5'));
+    }
+    // A cause without one keeps its usual line.
+    const plain = CAUSES.find((c) => !N4_ASKS[c.id])!;
+    expect(lineFor(plain, 'n4', { ask: true })).toBe(lineFor(plain, 'n4'));
+  });
   it('matches keys within words, not across them', () => {
     expect(heardAny('うみまで いきました', ['えき'])).toBe(false);
     expect(heardAny('もって いきました', ['えき'])).toBe(false);
@@ -571,7 +593,7 @@ describe('Late Again!: pacing', () => {
     for (let guard = 0; guard < 800 && t.s.phase !== 'recap'; guard++) {
       if (t.s.phase === 'answer' && !t.r.excuse && t.r.level !== 'kana') {
         t.now += RECORD_MS[t.r.level];
-        const said = lineFor(causeOf(t.r.cause)!, t.r.level).model.kana;
+        const said = roundLine(t.r).model.kana;
         t.play(t.r.latecomer, { kind: 'excuse', type: 'clip', clipId: 'clip1', durMs: RECORD_MS[t.r.level] + 500, checked: true, heard: { via: 'speech', text: said, reading: said } });
         continue;
       }

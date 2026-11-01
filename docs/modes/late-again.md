@@ -20,7 +20,10 @@ room watching is funny. Each level gets the same mission card in English ("Apolo
 train. Say where you woke up."), which never names the grammar; it asks for the punchline. Pon's version
 is behind "Need a hint?" (N5 first sees a fill-in frame, then Pon's line). The N4 lines each carry one
 Express Line chunk (〜て しまいました, 〜すぎて, 〜ので, the passive, 〜なければ なりませんでした), and the
-commentary booth calls it out only when the excuse used it.
+commentary booth calls it out only when the excuse used it. On half the N4 rounds, a cause with an "ask"
+version (`N4_ASKS`) pushes its luck instead: a cheeky request (こたつと いっしょに 行っても いいですか？) or a
+question for the boss (部長の 時計も 寝坊した ことが ありますか？), so 〜ても いいですか and 〜た ことが あります
+come up too.
 
 Kana latecomers build the excuse from tiles: すみません！, the cause, and the cause's sound (ぐうぐう,
 にゃー), and say it out loud to the room. Listeners practise too: N4 phones answer one listening check

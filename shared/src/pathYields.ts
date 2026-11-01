@@ -107,24 +107,26 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "you-ni-naru": 0.09
     },
     "late-again": {
+      "ka": 0.66,
       "mashita": 1.09,
-      "migi-hidari": 0.09,
-      "nakereba": 0.05,
-      "no": 0.11,
-      "node": 0.22,
-      "passive": 0.31,
-      "potential": 0.28,
-      "sugiru": 0.7,
-      "tara": 0.11,
-      "te-iru": 0.22,
-      "te-shimau": 0.52
+      "migi-hidari": 0.08,
+      "no": 0.17,
+      "node": 0.2,
+      "passive": 0.28,
+      "potential": 0.14,
+      "sugiru": 0.52,
+      "ta-koto": 0.39,
+      "tara": 0.08,
+      "te-iru": 0.31,
+      "te-mo-ii": 0.34,
+      "te-shimau": 0.41
     },
     "ghost-hotline": {
       "de-o": 0.28,
       "hou-ga-ii": 3.25,
       "ka": 2.75,
-      "tara-dou": 2.75,
-      "wa-desu": 0.36
+      "tara": 2.53,
+      "tara-dou": 2.75
     },
     "yokai-court": {
       "desu": 0.89,
@@ -200,12 +202,12 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "te-kudasai": 0.3
     },
     "late-again": {
-      "desu": 0.08,
-      "kara": 0.16,
-      "mashita": 1.61,
-      "migi-hidari": 0.08,
-      "te-iru": 0.36,
-      "to-itte-ita": 0.16
+      "desu": 0.06,
+      "kara": 0.11,
+      "mashita": 1.55,
+      "migi-hidari": 0.06,
+      "te-iru": 0.3,
+      "to-itte-ita": 0.14
     },
     "ghost-hotline": {
       "naide-kudasai": 0.73,

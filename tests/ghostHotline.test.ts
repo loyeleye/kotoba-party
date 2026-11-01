@@ -5,6 +5,7 @@ import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { callsFor, heardAny, lineOf, MAX_ADVISERS, POINTS, REACT_LOCK_MS, REACT_MS, RECORD_MS, type HotlineState, type HotlineView } from '../shared/src/modes/ghostHotline/hotline.js';
 import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, PROBLEMS, problemOf } from '../shared/src/modes/ghostHotline/problems.js';
+import { phraseFrames } from '../shared/src/progress.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { ghostHotlinePolicy } from '../tools/bots/policies/ghostHotline.js';
@@ -444,6 +445,16 @@ describe('Ghost Advice Hotline: chunks', () => {
       const m = p.advice[lv].model.kana.replace(/[\s　、。！？「」]/g, '');
       expect(CHUNKS.some((k) => k.level === lv && heardAny(m, k.keys)), `${p.id} ${lv}`).toBe(true);
     }
+  });
+});
+
+describe('Ghost Advice Hotline: if and when', () => {
+  it('some N4 advice says when to do it (＿たら, 4.5), and why-not advice (＿たら どうですか) never counts as an if', () => {
+    const n4 = PROBLEMS.map((p) => p.advice.n4.model);
+    const ifs = n4.filter((m) => phraseFrames(m).includes('tara'));
+    expect(ifs.length).toBeGreaterThanOrEqual(3);
+    for (const m of ifs) expect(phraseFrames(m), m.kana).toContain('hou-ga-ii');
+    for (const m of n4.filter((x) => phraseFrames(x).includes('tara-dou'))) expect(phraseFrames(m), m.kana).not.toContain('tara');
   });
 });
 
