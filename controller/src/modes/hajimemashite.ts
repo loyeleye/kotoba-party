@@ -5,8 +5,9 @@
 //   write    in silence: your role (the guest, a tanuki or a detective), the card's frame with its
 //            blank, your tiles (the guest sees every tile, a tanuki only their own hand) and a keyboard.
 //   intro    the introducer reads one line at a time: Kana players see the whole line, N5 the frame
-//            and the word to put in it, N4 only the word. 「ポン、たすけて！」 hands a line to Pon. The
-//            guest may veto a lie before it's read. Everyone else listens.
+//            and the word to put in it, N4 only the word (on a verb card, the verb in the dictionary
+//            form, to say in the た or て form; the model line follows). 「ポン、たすけて！」 hands a line
+//            to Pon. The guest may veto a lie before it's read. Everyone else listens.
 //   rank     tap the cards in order, surely true first; argue out loud. The guest picks the lie they
 //            wish were true.
 //   truth    after the TV's flip: your points; a tanuki claims their lie (ドロン！), the guest refutes
@@ -125,6 +126,9 @@ function welcomeScreen(ctx: Ctx, me: Me): HTMLElement {
 
 // ---- writing ----
 
+/** A verb card's form, as the phones name it. */
+const FORM = { ta: { name: 'た', example: 'のぼる → のぼった' }, te: { name: 'て', example: 'たべる → たべて' } } as const;
+
 const ROLE_COPY = {
   guest: { title: '✍ Write the truth', sub: 'One true thing about you. Something the people who know you could spot!' },
   tanuki: { title: '🦝 You’re a tanuki!', sub: 'Write a lie about the guest that sounds true. In silence: nobody hears it until the reveal.' },
@@ -136,9 +140,11 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
   const card = game.card;
   const role = me.role ?? 'detective';
   const copy = ROLE_COPY[role];
-  const frame = role === 'guest' ? (card?.first ?? '') : (card?.third ?? '');
+  // A verb card shows its cue (＿た ことが あります) and the tiles in the dictionary form.
+  const frame = role === 'guest' ? (card?.cue ?? card?.first ?? '') : (card?.cueThird ?? card?.third ?? '');
   const [before, after] = frame.split('＿');
-  const word = me.written?.word;
+  const word = me.written?.dict ?? me.written?.word;
+  const form = card?.conj ? FORM[card.conj] : null;
   const write = (move: Record<string, unknown>) =>
     void ctx.send({ ...move, turn: game.turn }).then((ok) => {
       if (ok) ctx.flash('✓');
@@ -152,6 +158,7 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
     h('p', { class: 'hj-frame-p', lang: 'ja' }, before ?? '', h('span', { class: `hj-blank-p${word ? ' on' : ''}` }, word ?? '＿＿'), after ?? ''),
     me.level !== 'n4' && card ? h('p', { class: 'hint' }, role === 'guest' ? card.en : card.enThird) : null,
     me.level === 'kana' && frame ? h('p', { class: 'hj-romaji' }, toRomaji(fillFrame(frame, word ?? '＿', game.guestName))) : null,
+    form ? h('p', { class: 'hint' }, `Pick a verb. When it’s said out loud, it goes in the ${form.name} form (${form.example}).`) : null,
     h(
       'div',
       { class: 'hj-tiles' },
@@ -160,8 +167,8 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
           'button',
           { type: 'button', class: `option hj-tile${me.written?.tileId === t.id ? ' on' : ''}`, onclick: () => write({ kind: 'write', tileId: t.id }) },
           h('span', { class: 'hj-tile-emoji', 'aria-hidden': 'true' }, t.emoji),
-          h('span', { class: `hj-tile-jp${[...t.kana].length >= 7 ? ' long' : ''}`, lang: 'ja' }, t.kana),
-          t.romaji ? h('small', { class: 'hj-romaji' }, toRomaji(t.kana)) : null,
+          h('span', { class: `hj-tile-jp${[...(t.dict ?? t.kana)].length >= 7 ? ' long' : ''}`, lang: 'ja' }, t.dict ?? t.kana),
+          t.romaji ? h('small', { class: 'hj-romaji' }, toRomaji(t.dict ?? t.kana)) : null,
           t.en ? h('small', {}, t.en) : null,
         ),
       ),
@@ -172,7 +179,7 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
           { class: 'hj-own', open: role === 'guest' && me.level === 'n4' ? true : undefined },
           h('summary', {}, role === 'guest' ? 'Not on the list? Type your own' : 'Or type your own'),
           typeBox(
-            `${MAX_WORD} characters at most`,
+            form ? `In the ${form.name} form: ${form.example.split(' → ')[1]}` : `${MAX_WORD} characters at most`,
             (text) =>
               void ctx.send({ kind: 'write', utterance: { via: 'typed', text }, turn: game.turn }).then((ok) => {
                 if (ok) ctx.flash('✓');
@@ -200,12 +207,28 @@ function introducerScreen(ctx: Ctx, me: Me): HTMLElement {
   else if (me.level === 'n5') {
     const [before, after] = cur.frame.split('＿');
     prompt = h('div', { class: 'hj-script-p' }, h('p', { class: 'hj-ja', lang: 'ja' }, before ?? '', h('strong', { class: 'hj-blank-p on' }, cur.word), after ?? ''), h('p', { class: 'hint' }, `Say it about ${ctx.game.guestName}さん.`));
+  } else if (cur.dict && cur.cue && ctx.game.card?.conj) {
+    // A verb card: the verb in the dictionary form; the introducer says it in the card's form.
+    const form = FORM[ctx.game.card.conj];
+    prompt = h(
+      'div',
+      { class: 'hj-script-p' },
+      h('p', { class: 'hj-ja big', lang: 'ja' }, cur.dict),
+      h('p', { class: 'hint' }, `Make the sentence about ${ctx.game.guestName}さん yourself, with the verb in the ${form.name} form (${form.example}): `, h('span', { lang: 'ja' }, cur.cue)),
+    );
   } else prompt = h('div', { class: 'hj-script-p' }, h('p', { class: 'hj-ja big', lang: 'ja' }, cur.word), h('p', { class: 'hint' }, `Make the sentence about ${ctx.game.guestName}さん yourself: ${ctx.game.card?.title.text ?? ''}.`));
+  // After a verb card's line: the model, so the form can be checked.
+  const prev = script[at - 1];
+  const model =
+    prev?.dict && me.level === 'n4'
+      ? h('p', { class: `hj-model${prev.read === 'said' ? ' ok' : ''}` }, prev.read === 'said' ? '✓ ' : 'The line: ', h('span', { lang: 'ja' }, prev.text))
+      : null;
   return h(
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, '🎤 You’re introducing!'),
     h('p', { class: 'hj-steps-p' }, cur.kind === 'open' ? 'Opening line' : cur.kind === 'close' ? 'Closing line' : `Card ${cardNo} of ${total}`),
+    model,
     prompt,
     h('p', { class: 'hint' }, 'The card goes up on the TV when you’ve read it. After 12 seconds Pon reads it for you. Read every card the same way: you don’t know which is true either!'),
     h('button', { type: 'button', class: 'linkish hj-help', onclick: () => void send(ctx, { kind: 'read', pon: true }) }, '🐾 ', h('span', { lang: 'ja' }, 'ポン、たすけて！'), ' Pon reads this one (no points for it)'),
@@ -322,14 +345,14 @@ function wishScreen(ctx: Ctx, me: Me): HTMLElement {
 
 // ---- the truth ----
 
-function sayOrTap(label: string, text: string, done: boolean, level: Me['level'], onSay: (u: { via: 'speech' | 'tap'; text: string }) => void): HTMLElement {
+function sayOrTap(label: string, text: string, done: boolean, level: Me['level'], onSay: (u: { via: 'speech' | 'tap'; text: string }) => void, tapText = text): HTMLElement {
   return h(
     'div',
     { class: `hj-say${done ? ' done' : ''}` },
     line(text, level),
     done
       ? h('p', { class: 'hj-ok' }, '✓')
-      : h('div', {}, speakBox({ label, speechOnly: true, autoSend: true, onSend: (u) => onSay(u as { via: 'speech'; text: string }) }), h('button', { type: 'button', class: 'linkish', onclick: () => onSay({ via: 'tap', text }) }, 'Tap instead')),
+      : h('div', {}, speakBox({ label, speechOnly: true, autoSend: true, onSend: (u) => onSay(u as { via: 'speech'; text: string }) }), h('button', { type: 'button', class: 'linkish', onclick: () => onSay({ via: 'tap', text: tapText }) }, 'Tap instead')),
   );
 }
 
@@ -345,14 +368,21 @@ function truthScreen(ctx: Ctx, me: Me): HTMLElement {
     const f = game.facts.find((x) => x.id === factId);
     return f?.flip === undefined ? 0 : flipAt(f.flip, game.facts.length) + 700;
   };
-  type Step = { label: string; line: string; at: number; move: (u: Utterance) => Record<string, unknown> };
+  type Step = { label: string; line: string; tap?: string; at: number; move: (u: Utterance) => Record<string, unknown> };
   const truthId = game.facts.find((f) => f.kind === 'truth')?.id;
   const steps: Step[] = [
     ...(me.claim && !me.claim.done ? [{ label: 'Your tanuki is out! Claim it:', line: 'ドロン！　わたしでした！', at: turnsAt(me.claim.factId), move: (u: Utterance) => ({ kind: 'claim', utterance: u }) }] : []),
     ...me.refute
       .filter((r) => !r.done)
       .map((r) => ({ label: 'That one’s not you! Wave it away:', line: `${r.word}？　ちがいます！`, at: turnsAt(r.factId), move: (u: Utterance) => ({ kind: 'refute', factId: r.factId, utterance: u }) })),
-    ...(me.truth && !me.truth.done ? [{ label: 'Now tell them the truth:', line: me.truth.line, at: turnsAt(truthId), move: (u: Utterance) => ({ kind: 'truth', utterance: u }) }] : []),
+    ...(me.truth && !me.truth.done
+      ? [
+          me.truth.cue && me.truth.conj
+            ? // A verb card: the guest says the form themselves; tapping sends the model line.
+              { label: `Now tell them the truth, with the verb in the ${FORM[me.truth.conj].name} form:`, line: me.truth.cue, tap: me.truth.line, at: turnsAt(truthId), move: (u: Utterance) => ({ kind: 'truth', utterance: u }) }
+            : { label: 'Now tell them the truth:', line: me.truth.line, at: turnsAt(truthId), move: (u: Utterance) => ({ kind: 'truth', utterance: u }) },
+        ]
+      : []),
   ].sort((a, b) => a.at - b.at);
   const next = steps[0];
   const said = !!me.claim?.done || !!me.truth?.done;
@@ -367,9 +397,16 @@ function truthScreen(ctx: Ctx, me: Me): HTMLElement {
       me.points.length ? h('ul', { class: 'hj-points' }, me.points.map((p) => h('li', {}, `+${p.pts} `, p.label)), h('li', { class: 'hj-total' }, `+${total} this turn`)) : h('p', { class: 'hint' }, 'No points this turn. Next one!'),
     ),
     next
-      ? h('div', { class: 'hj-after', style: `--d: ${Math.round(Math.max(0, next.at - elapsed))}ms` }, h('p', {}, next.label), sayOrTap('Hold and say it', next.line, false, me.level, (utterance) => void send(ctx, next.move(utterance))))
+      ? h(
+          'div',
+          { class: 'hj-after', style: `--d: ${Math.round(Math.max(0, next.at - elapsed))}ms` },
+          h('p', {}, next.label),
+          sayOrTap('Hold and say it', next.line, false, me.level, (utterance) => void send(ctx, next.move(utterance)), next.tap),
+          // A verb card tried but not heard in the form yet: the model line, to try again.
+          next.tap && me.truth?.said === 'tried' ? h('p', { class: 'hj-model' }, 'The line: ', h('span', { lang: 'ja' }, next.tap)) : null,
+        )
       : said
-        ? h('p', { class: 'hj-ok' }, '✓ Said!')
+        ? h('div', {}, h('p', { class: 'hj-ok' }, '✓ Said!'), me.truth?.cue ? h('p', { class: 'hj-model ok' }, h('span', { lang: 'ja' }, me.truth.line)) : null)
         : null,
   );
 }

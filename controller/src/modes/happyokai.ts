@@ -67,10 +67,16 @@ function titlePicker(ctx: Ctx, me: Me): HTMLElement {
       { class: 'hk-titles' },
       me.titleChoices.map((t) =>
         h(
-          'button',
-          { type: 'button', class: `hk-title-btn${game.title?.text === t.jp.text ? ' on' : ''}`, onclick: () => (buzz(), void send({ kind: 'title', key: t.key })) },
-          t.deck ? h('span', { class: 'hk-deck', lang: 'ja' }, `${t.deck.text} · ${t.deck.en}`) : null,
-          jpView({ ...t.jp, romaji: t.romaji }, me.level, { as: 'tile' }),
+          'div',
+          { class: 'hk-title-slot' },
+          h(
+            'button',
+            { type: 'button', class: `hk-title-btn${game.title?.text === t.jp.text ? ' on' : ''}`, onclick: () => (buzz(), void send({ kind: 'title', key: t.key })) },
+            t.deck ? h('span', { class: 'hk-deck', lang: 'ja' }, `${t.deck.text} · ${t.deck.en}`) : null,
+            jpView({ ...t.jp, romaji: t.romaji }, me.level, { as: 'tile' }),
+          ),
+          // One swap a turn: this deck title for a usual one.
+          t.swap ? h('button', { type: 'button', class: 'linkish hk-swap', onclick: () => (buzz(), void send({ kind: 'swap', key: t.key })) }, '🔄 Swap for a usual title') : null,
         ),
       ),
     ),

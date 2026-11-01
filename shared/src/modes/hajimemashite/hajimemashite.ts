@@ -25,7 +25,7 @@ import { isRomaji, nameToKatakana, romajiToHiragana } from '../../japanese/toKan
 import { playerTextAllowed } from '../../moderation.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { cardsFor, fillFrame, introCardOf, tileOf, tilesOnly, type IntroCard, type Tile } from './cards.js';
+import { cardsFor, endsInForm, fillFrame, introCardOf, tileOf, tilesOnly, type Conj, type IntroCard, type Tile } from './cards.js';
 
 // ---- tuning ----
 
@@ -209,6 +209,8 @@ export interface TileView {
   en: string | null;
   emoji: string;
   romaji?: boolean;
+  /** A verb card's tile: the dictionary form the player is shown (they say the た or て form). */
+  dict?: string;
 }
 
 export interface HajimeView {
@@ -220,7 +222,8 @@ export interface HajimeView {
   introducerId: string | null;
   /** The guest's name in katakana (or as typed, before they've written it). */
   guestName: string;
-  card: { title: JpText; first: string; third: string; en: string; enThird: string; level: 'n5' | 'n4' } | null;
+  /** `conj`, `cue`, `cueThird`: a verb card (the frames with ＿た or ＿て, for the dictionary-form tiles). */
+  card: { title: JpText; first: string; third: string; en: string; enThird: string; level: 'n5' | 'n4'; conj?: Conj; cue?: string; cueThird?: string } | null;
   facts: FactView[];
   /** The introduction's line now being read. */
   line: { index: number; total: number; kind: Line['kind']; factId: string | null; at: number; ms: number } | null;
@@ -241,9 +244,12 @@ export interface HajimeView {
     kochira: boolean;
     hand: TileView[];
     canType: boolean;
-    written: Written | null;
-    /** The introducer's script, from the reveal on. */
-    script: { kind: Line['kind']; text: string; frame: string; word: string; read: Read | null }[] | null;
+    written: (Written & { dict?: string }) | null;
+    /**
+     * The introducer's script, from the reveal on. `text` is the model line. On a verb card `dict` is the
+     * card's verb phrase in the dictionary form, for an N4 introducer to conjugate (`cue`: the frame with ＿た/＿て).
+     */
+    script: { kind: Line['kind']; text: string; frame: string; word: string; read: Read | null; dict?: string; cue?: string }[] | null;
     scriptAt: number;
     /** The guest's veto list in the reveal (lies not yet read). */
     vetoable: { id: string; word: string }[];
@@ -255,7 +261,11 @@ export interface HajimeView {
     /** Score: my lie to claim, the lies to refute (guest), the truth to say (guest). */
     claim: { factId: string; word: string; done: boolean } | null;
     refute: { factId: string; word: string; done: boolean }[];
-    truth: { line: string; done: boolean } | null;
+    /**
+     * `line` is the model. On a verb card the guest is shown `cue` instead (the line with the verb in the
+     * dictionary form, in ［］) and says the form themselves; `said` is how the last try went.
+     */
+    truth: { line: string; done: boolean; said: Read | null; cue?: string; dict?: string; conj?: Conj } | null;
     points: { label: string; pts: number }[];
     recall: { turn: number; guestId: string; name: string; frame: string; options: { id: string; word: string }[]; done: Read | null }[];
   } | null;
@@ -821,8 +831,10 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
         if (!word) return moveError('not-japanese');
         if ([...word].length > MAX_WORD) return moveError('too-long');
         if (!playerTextAllowed(word, ctx.audience)) return moveError('kids-words');
-        // A typed word that is one of the card's tiles is that tile (so twins and the truth match).
-        const tile = card.tiles.find((x) => normalizeReading(x.kana) === normalizeReading(word));
+        // A typed word that is one of the card's tiles is that tile (so twins and the truth match); on a
+        // verb card, in either form. Any other verb phrase must come in the card's form: the TV shows it so.
+        const tile = card.tiles.find((x) => normalizeReading(x.kana) === normalizeReading(word) || (!!x.dict && normalizeReading(x.dict) === normalizeReading(word)));
+        if (!tile && card.conj && !endsInForm(word, card.conj)) return moveError(card.conj === 'ta' ? 'make-it-ta' : 'make-it-te');
         t.writes[playerId] = tile ? { tileId: tile.id, word: tile.kana, en: tile.en } : { tileId: null, word, en: null };
         return MOVE_OK;
       }
@@ -1038,7 +1050,10 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
     if (me) {
       const role = t?.roles[me.id] ?? null;
       const romaji = me.level === 'kana';
-      const tile = (x: Tile): TileView => ({ id: x.id, kana: x.kana, en: me.level === 'n4' ? null : x.en, emoji: x.emoji, ...(romaji ? { romaji: true } : {}) });
+      const tile = (x: Tile): TileView => ({ id: x.id, kana: x.kana, en: me.level === 'n4' ? null : x.en, emoji: x.emoji, ...(romaji ? { romaji: true } : {}), ...(x.dict ? { dict: x.dict } : {}) });
+      const dictOf = (tileId: string | null | undefined): string | undefined => (card?.conj && tileId ? tileOf(tileId)?.dict : undefined);
+      const written = t?.writes[me.id];
+      const myDict = dictOf(written?.tileId);
       const handIds = t && card ? (role === 'tanuki' ? (t.hands[me.id] ?? []) : role ? card.tiles.map((x) => x.id) : []) : [];
       const isIntroducer = !!t && t.introducerId === me.id && phase === 'reveal';
       const myLie = t?.facts.find((f) => f.kind === 'lie' && f.authors.includes(me.id) && !f.hidden);
@@ -1053,12 +1068,20 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
         kochira: !!t?.kochira[me.id],
         hand: t && phase === 'answer' ? handIds.map((id) => tile(tileOf(id)!)) : [],
         canType: !!t && !!card && phase === 'answer' && !(role === 'tanuki' && tilesOnly(card, ctx.audience ?? 'family')),
-        written: t?.writes[me.id] ?? null,
+        written: written ? { ...written, ...(myDict ? { dict: myDict } : {}) } : null,
         script:
           isIntroducer && t && card
             ? t.lines.map((l) => {
                 const f = l.factId ? factOf(t, l.factId) : undefined;
-                return { kind: l.kind, text: lineText(s, t, l, ctx), frame: l.kind === 'card' ? card.third.replace('{name}', guestName) : '', word: f?.word ?? '', read: l.read };
+                const dict = l.kind === 'card' ? dictOf(f?.tileId) : undefined;
+                return {
+                  kind: l.kind,
+                  text: lineText(s, t, l, ctx),
+                  frame: l.kind === 'card' ? card.third.replace('{name}', guestName) : '',
+                  word: f?.word ?? '',
+                  read: l.read,
+                  ...(dict && card.cueThird ? { dict, cue: card.cueThird.replace('{name}', guestName) } : {}),
+                };
               })
             : null,
         scriptAt: isIntroducer && t ? t.line : -1,
@@ -1077,7 +1100,18 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
         argued: t?.argue[me.id] ?? 0,
         claim: t && flipped && myLie ? { factId: myLie.id, word: myLie.word, done: !!t.claims[me.id] } : null,
         refute: t && flipped && me.id === t.guestId ? t.facts.filter((f) => f.kind !== 'truth' && !f.hidden).map((f) => ({ factId: f.id, word: f.word, done: !!t.refutes[f.id] })) : [],
-        truth: t && flipped && me.id === t.guestId && truth && card ? { line: `ほんとうです！ ${fillFrame(card.first, truth.word)}`, done: t.truthSaid === 'said' } : null,
+        truth:
+          t && flipped && me.id === t.guestId && truth && card
+            ? (() => {
+                const dict = dictOf(truth.tileId);
+                return {
+                  line: `ほんとうです！ ${fillFrame(card.first, truth.word)}`,
+                  done: t.truthSaid === 'said',
+                  said: t.truthSaid,
+                  ...(dict && card.cue && card.conj ? { cue: `ほんとうです！ ${fillFrame(card.cue, `［${dict}］`).replace(/］[たて]/, '］')}`, dict, conj: card.conj } : {}),
+                };
+              })()
+            : null,
         points: t?.result && flipped ? (t.result.points[me.id] ?? []) : [],
         recall:
           phase === 'finale'
@@ -1101,7 +1135,17 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
       guestId: t?.guestId ?? null,
       introducerId: t?.introducerId ?? null,
       guestName,
-      card: card ? { title: card.title, first: card.first, third: card.third.replace('{name}', guestName), en: card.en, enThird: card.enThird.replace('{name}', guest?.name ?? guestName), level: card.level } : null,
+      card: card
+        ? {
+            title: card.title,
+            first: card.first,
+            third: card.third.replace('{name}', guestName),
+            en: card.en,
+            enThird: card.enThird.replace('{name}', guest?.name ?? guestName),
+            level: card.level,
+            ...(card.conj && card.cue && card.cueThird ? { conj: card.conj, cue: card.cue, cueThird: card.cueThird.replace('{name}', guestName) } : {}),
+          }
+        : null,
       facts,
       line:
         t && phase === 'reveal' && t.line < t.lines.length

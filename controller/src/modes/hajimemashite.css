@@ -6,6 +6,8 @@
 .hj-line-p .hj-romaji, .hj-script-p .hj-romaji { color: #8a5a00; }
 .hj-script-p .hint { color: #6b4a6f; }
 .hj-ok { margin: 0; color: var(--good); font-weight: 800; }
+.hj-model { margin: 0; padding: 6px 10px; border-radius: 10px; background: var(--panel); border: 1px dashed var(--line); font-size: 15px; }
+.hj-model.ok { border-style: solid; border-color: var(--good); }
 .hj-cardname { margin: 0; color: var(--muted); font-size: 15px; }
 .hj-cardname span { color: var(--mode); font-weight: 800; }
 .hj-frame-p { margin: 0; font-size: 22px; font-weight: 800; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }

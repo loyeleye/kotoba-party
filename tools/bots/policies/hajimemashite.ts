@@ -55,7 +55,8 @@ export function hajimemashitePolicy(opts: HajimePolicyOptions = {}): ModePolicy 
           return [];
         case 'answer': {
           if (me.written || !me.role) return [];
-          if (me.canType && r('type?') < typeChance) return [{ key: 'write', move: { kind: 'write', utterance: { via: 'typed', text: pickOf(TYPED, r('typed'))! }, turn }, delayMs: delay('write') }];
+          // A verb card takes its tiles (a typed noun isn't a verb in the card's form).
+          if (me.canType && !game.card?.conj && r('type?') < typeChance) return [{ key: 'write', move: { kind: 'write', utterance: { via: 'typed', text: pickOf(TYPED, r('typed'))! }, turn }, delayMs: delay('write') }];
           const tile = pickOf(me.hand, r('tile'));
           return tile ? [{ key: 'write', move: { kind: 'write', tileId: tile.id, turn }, delayMs: delay('write') }] : [];
         }

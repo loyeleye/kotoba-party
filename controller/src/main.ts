@@ -84,6 +84,9 @@ const ERRORS: Record<string, string> = {
   // Happyōkai!
   'own-talk': 'Vote for someone else’s talk.',
   'pick-a-title': 'Pick a title first.',
+  'already-swapped': 'You’ve already swapped a title this turn.',
+  'make-it-ta': 'Put the verb in the た form: のぼる → のぼった.',
+  'make-it-te': 'Put the verb in the て form: たべる → たべて.',
   'say-something': 'Say something about this slide first (or wait a moment).',
   'pick-a-question': 'Choose a question first.',
   'question-chosen': 'A question was already chosen.',

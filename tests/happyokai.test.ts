@@ -221,7 +221,8 @@ describe('Happyōkai!: content', () => {
     const byKind = (kind: string) => SLIDES.find((s) => s.kind === kind && !s.event && !s.use)!;
     const tn = TITLES.find((t) => t.id === 'tn-tanuki')!;
     expect(tn.deck).toBe('then-now');
-    expect(TITLES.some((t) => t.id === 'tn-town')).toBe(false);
+    // 私の 町 is back as a place title, with sentences of its own (see "Then and now about a place").
+    expect(TITLES.find((t) => t.id === 'tn-town')!.place).toBeDefined();
     const news = (s: (typeof SLIDES)[number]) => readySentences(s, 'n4', tn.topic, 'then-now')[2]!.kana;
     expect(news(byKind('place'))).toMatch(/^じつは、らいげつ たぬきと .+に ひっこす ことに なりました。$/);
     expect(news(byKind('food'))).toMatch(/^じつは、らいげつから たぬきが .+の おみせを ひらく ことに なりました。$/);
@@ -255,6 +256,166 @@ describe('Happyōkai!: content', () => {
 });
 
 // ---- rules ----
+
+describe('Happyōkai!: Then and now about a place', () => {
+  const ALL_TITLES = ['kids', 'family', 'cheeky'].flatMap((a) => deckTitlesFor(a as 'kids', 'then-now'));
+  const places = [...new Set(ALL_TITLES.filter((t) => t.place))];
+  const agents = [...new Set(ALL_TITLES.filter((t) => !t.place))];
+  /** The topic's own noun, in kana: わたしの まち → まち. */
+  const noun = (kana: string) => kana.split(/\s|の/).filter(Boolean).at(-1)!;
+
+  it('has place titles, each with its own "before" that never names the place again', () => {
+    expect(places.map((t) => t.id).sort()).toEqual(['tn-shotengai', 'tn-town', 'tn-village']);
+    for (const t of places) {
+      expect(t.tags, t.id).toContain('place');
+      expect(t.place!.before, t.id).toMatch(/(でした|です)$/);
+      expect(forLevel(rb(t.place!.before, ''), 'n4').kana, t.id).not.toContain(noun(t.topic.kana));
+    }
+  });
+
+  it('renders every place title through every slide: what it was, what you can do there now, what is coming', () => {
+    for (const t of places)
+      for (const s of SLIDES) {
+        const ready = readySentences(s, 'n4', t.topic, 'then-now', t.place);
+        const at = `${t.id} × ${s.id}`;
+        expect(ready.length, at).toBe(3);
+        const [was, decided, coming] = ready.map((r) => r.kana);
+        expect(was, at).toMatch(new RegExp(`^${t.topic.kana}は まえは .+が、いまでは .+ように なりました。$`));
+        expect(decided, at).toMatch(/ことに しました。$/);
+        expect(coming, at).toMatch(/ことに なりました。$/);
+        for (const r of ready) {
+          // A place can't go somewhere alone, move house or marry; and it never "becomes" itself.
+          expect(r.kana, at).not.toMatch(/ひとりで|ひっこす|けっこん|あそべる/);
+          expect(r.kana, at).not.toContain(`${t.topic.kana}も `);
+          expect(r.kana.split(noun(t.topic.kana)).length - 1, `${at}: ${r.kana}`).toBeLessThanOrEqual(1);
+          expect(r.kana, at).not.toMatch(new RegExp(`${noun(t.topic.kana)}に なりました`));
+          expect(r.en, at).not.toMatch(/undefined|the the|a the |an the /i);
+          expect(r.kana, at).not.toMatch(/undefined|\$\{|  /);
+        }
+        // What's coming fits the slide: a bus to a place, a shop for a food, a festival for the rest.
+        if (s.kind === 'place') expect(coming, at).toContain('バスが はしる');
+        else if (s.kind === 'food') expect(coming, at).toContain('おみせが できる');
+        else expect(coming, at).toContain('おまつりを する');
+      }
+  });
+
+  it('keeps the agent titles on their own sentences, with a verb that fits each place slide', () => {
+    for (const t of agents)
+      for (const s of SLIDES) {
+        const ready = readySentences(s, 'n4', t.topic, 'then-now', t.place);
+        expect(ready, `${t.id} × ${s.id}`).toEqual(readySentences(s, 'n4', t.topic, 'then-now'));
+        expect(ready[0]!.kana, `${t.id} × ${s.id}`).toMatch(new RegExp(`^いまでは ${t.topic.kana}も `));
+        for (const r of ready) expect(r.en, `${t.id} × ${s.id}`).not.toMatch(/undefined|the the|a the /i);
+      }
+    const cat = agents.find((t) => t.id === 'tn-cat')!;
+    const can = (id: string) => readySentences(SLIDES.find((s) => s.id === id)!, 'n4', cat.topic, 'then-now')[0]!.kana;
+    expect(can('onsen')).toContain('おんせんに はいれるように');
+    expect(can('fuji')).toContain('ふじさんに のぼれるように');
+    expect(can('sea')).toContain('うみで およげるように');
+    expect(can('school')).toContain('がっこうに いけるように');
+  });
+
+  it('never asks where a place is now', () => {
+    for (const t of places)
+      for (let k = 0; k < 30; k++)
+        for (const level of ['kana', 'n5', 'n4'] as const)
+          for (const q of questionsFor(level, SLIDES[k % SLIDES.length]!, t.topic, 'family', mulberry(k), 'then-now', t.place)) expect(q.kana, t.id).not.toContain('いま どこですか');
+    // Everyone else still can be asked.
+    const asked = Array.from({ length: 40 }, (_, k) => questionsFor('n5', SLIDES[0]!, agents[0]!.topic, 'family', mulberry(k), 'then-now')).flat();
+    expect(asked.some((q) => q.kana.includes('いま どこですか'))).toBe(true);
+  });
+
+  it('uses いなかったら for living slide words in the If I were… frames and lines, なかったら for the rest', () => {
+    for (const s of SLIDES) {
+      const frames = framesFor('n4', s, 'if').join(' ');
+      const line = readySentences(s, 'n4', deckTitlesFor('family', 'if')[0]!.topic, 'if')[1]!.kana;
+      if (s.kind === 'living') {
+        expect(frames, s.id).toContain('いなかったら');
+        expect(line, s.id).toContain('いなかったら');
+      } else {
+        expect(frames, s.id).toMatch(/が なかったら/);
+        expect(line, s.id).toMatch(/が なかったら/);
+      }
+    }
+  });
+
+  it('a place title plays through a talk with its own sentences', () => {
+    const table = new Table(3, ['n4', 'n4', 'n4']);
+    table.start();
+    table.t.titleChoices[0] = 'tn-town';
+    expect(table.play(table.t.presenterId, { kind: 'title', key: 0 }).error).toBeUndefined();
+    expect(table.play(table.t.presenterId, { kind: 'go' }).error).toBeUndefined();
+    expect(table.say(table.view(table.t.presenterId).me!.script!.kana).error).toBeUndefined();
+    expect(table.next().error).toBeUndefined();
+    const ready = table.view(table.t.presenterId).me!.ready;
+    expect(ready[0]!.kana).toMatch(/^わたしの まちは まえは しずかでしたが、/);
+  });
+});
+
+describe('Happyōkai!: an N4 presenter swaps a deck title', () => {
+  const isDeck = (id: string) => !!TITLES.find((t) => t.id === id)!.deck;
+
+  it('swaps one deck title for a usual one, once a turn, before they are ready', () => {
+    const table = new Table(3, ['n4', 'n4', 'n4']);
+    table.start();
+    const p = table.t.presenterId;
+    expect(table.t.titleChoices.every(isDeck)).toBe(true);
+    expect(table.view(p).me!.titleChoices.map((c) => c.swap)).toEqual([true, true]);
+    // Not the assistant, and not a usual title.
+    expect(table.play(table.t.assistantId!, { kind: 'swap', key: 0 }).error).toBe('not-yours');
+    // They had picked it: the pick follows the swap.
+    expect(table.play(p, { kind: 'title', key: 1 }).error).toBeUndefined();
+    const keep = table.t.titleChoices[0];
+    expect(table.play(p, { kind: 'swap', key: 1 }).error).toBeUndefined();
+    const swapped = table.t.titleChoices[1]!;
+    expect(isDeck(swapped)).toBe(false);
+    expect(table.t.titleChoices[0]).toBe(keep);
+    expect(table.t.titleId).toBe(swapped);
+    expect(table.st.usedTitles).not.toContain(swapped);
+    // Once a turn.
+    expect(table.view(p).me!.titleChoices.some((c) => c.swap)).toBe(false);
+    expect(table.play(p, { kind: 'swap', key: 0 }).error).toBe('already-swapped');
+    // The talk is a usual talk: usual ready sentences, no deck question cards.
+    expect(table.play(p, { kind: 'go' }).error).toBeUndefined();
+    expect(table.say(table.view(p).me!.script!.kana).error).toBeUndefined();
+    expect(table.next().error).toBeUndefined();
+    const me = table.view(p).me!;
+    expect(me.ready.length).toBe(2);
+    expect(me.frames.join(' ')).not.toMatch(/ように なりました|もし ＿だったら/);
+  });
+
+  it('a usual title cannot be swapped, nor after ready, and Kana and N5 presenters have no swap', () => {
+    // A mix (their 2nd talk): only the deck title can go.
+    const table = new Table(3, ['n4', 'n4', 'n4'], 3);
+    table.start();
+    table.t.titleChoices = ['tn-cat', titlesFor('family')[0]!.id];
+    expect(table.view(table.t.presenterId).me!.titleChoices.map((c) => !!c.swap)).toEqual([true, false]);
+    expect(table.play(table.t.presenterId, { kind: 'swap', key: 1 }).error).toBe('bad-move');
+    expect(table.play(table.t.presenterId, { kind: 'title', key: 0 }).error).toBeUndefined();
+    expect(table.play(table.t.presenterId, { kind: 'go' }).error).toBeUndefined();
+    expect(table.s.phase).toBe('answer');
+    expect(table.play(table.t.presenterId, { kind: 'swap', key: 0 }).error).toBe('wrong-phase');
+
+    const ready = new Table(3, ['n4', 'n4', 'n4']);
+    ready.start();
+    ready.t.ready = true; // ready, but the phase hasn't moved on yet
+    expect(ready.play(ready.t.presenterId, { kind: 'swap', key: 0 }).error).toBe('wrong-phase');
+
+    for (const level of ['n5', 'kana'] as const) {
+      const other = new Table(3, [level, level, level]);
+      other.start();
+      expect(other.view(other.t.presenterId).me!.titleChoices.some((c) => c.swap)).toBe(false);
+      other.t.titleChoices[0] = 'tn-cat';
+      expect(other.play(other.t.presenterId, { kind: 'swap', key: 0 }).error).toBe('not-yours');
+    }
+  });
+
+  it('keeps the mix: N4 presenters still get usual titles on their own', () => {
+    const table = new Table(3, ['n4', 'n4', 'n4']);
+    table.start();
+    expect(n4Mix(table.st, 3)).toBe(true);
+  });
+});
 
 describe('Happyōkai!: the show plan', () => {
   it('everyone presents, and small rooms present twice', () => {
