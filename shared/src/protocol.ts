@@ -153,6 +153,8 @@ export type Command =
   | { id: string; type: 'endGame' }
   /** The VIP's Calm motion switch: stage and phones swap movement for fades and still frames. */
   | { id: string; type: 'setMotion'; calm: boolean }
+  /** VIP or main stage: makes another player the VIP (the phone that picks and runs the games). */
+  | { id: string; type: 'passVip'; playerId: string }
   /** Main stage only: room settings (either or both). */
   | { id: string; type: 'settings'; remoteControl?: boolean; audience?: Audience }
   /** Main stage only: ends the room for every screen and phone. */

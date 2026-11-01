@@ -56,7 +56,7 @@ export interface AccountResult {
   result: GameResult;
 }
 
-const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'endGame', 'setMotion', 'settings', 'closeRoom']);
+const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'skip', 'playAgain', 'endGame', 'setMotion', 'passVip', 'settings', 'closeRoom']);
 /** What a watching screen may send once the main stage turns on remote control. */
 const WATCH_COMMANDS = new Set<Command['type']>(['start', 'skip', 'playAgain', 'endGame']);
 const COMMAND_MEMORY = 128;

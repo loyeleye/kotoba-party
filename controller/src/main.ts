@@ -641,7 +641,7 @@ function vipMenu(view: RoomView): HTMLElement {
     extras,
     note,
     startBtn,
-    fold('settings', 'Room settings', 'Calm motion', motionToggle(view)),
+    fold('settings', 'Room settings', 'Calm motion · Hand over VIP', motionToggle(view), vipHandoff(view)),
     sheet,
   );
 }
@@ -661,6 +661,24 @@ function motionToggle(view: RoomView): HTMLElement {
     if (await command({ type: 'setMotion', calm })) label(calm);
   });
   return btn;
+}
+
+/** Hands the VIP star (picking and running the games) to another player's phone. */
+function vipHandoff(view: RoomView): HTMLElement {
+  const others = view.players.filter((p) => !p.isVip);
+  if (!others.length) return h('p', { class: 'hint vip-pass' }, 'Once a friend joins, you can make them the VIP here.');
+  const pick = h('select', { 'aria-label': 'New VIP' }, others.map((p) => h('option', { value: p.id }, p.name))) as HTMLSelectElement;
+  const give = h('button', { type: 'button', class: 'secondary' }, 'Make VIP') as HTMLButtonElement;
+  give.addEventListener('click', () => {
+    give.disabled = true;
+    void command({ type: 'passVip', playerId: pick.value }).finally(() => (give.disabled = false));
+  });
+  return h(
+    'div',
+    { class: 'vip-pass' },
+    h('span', { class: 'switch-text' }, 'Hand over VIP', h('small', {}, 'They pick the games, start, skip and play again from their phone. You stay in the game.')),
+    h('div', { class: 'vip-pass-row' }, pick, give),
+  );
 }
 
 const ORDINAL = ['', '1st', '2nd', '3rd'];
