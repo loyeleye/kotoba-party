@@ -9259,11 +9259,39 @@
       "post": {}
     },
     {
+      "path": "tools/art/sources/hotline/kodama-gemini.png",
+      "what": "Gemini source for the Ghost Advice Hotline kodama caller (converted by PixelLab image-to-pixelart); an original folklore tree spirit, not the Princess Mononoke design",
+      "generator": "gemini",
+      "model": "gemini-3-pro-image-preview",
+      "prompt": "Simple flat cartoon illustration for a cozy-spooky Japanese late-night TV party game, designed to be converted into a tiny 64x64 pixel-art icon: one subject, centred, filling most of the frame, big simple shapes, bold thick dark outlines, flat warm colours, plain pure white background, no scenery beyond what is described, no text, no letters, no numbers, no signs, no speech bubbles. An original design of a kodama from old Japanese folklore, shown big in the centre of the frame as the main subject: a small round chubby tree spirit with a light brown wooden body, a few simple bark grain lines, a big round friendly face with two large dark eyes and rosy cheeks, and a tuft of bright green leaves for hair. It sits in front of the base of a big old tree, which is smaller and darker in the background, with a twisted straw shimenawa rope and white zigzag paper streamers around the trunk. The spirit clearly cups one hand behind its ear, head tilted, listening hopefully for an echo. The spirit must stand out clearly from the tree, nothing else.",
+      "params": {
+        "aspectRatio": "1:1",
+        "imageSize": "1K"
+      },
+      "post": {
+        "resize": "256x256"
+      }
+    },
+    {
+      "path": "tools/art/sources/hotline/dont-move-gemini.png",
+      "what": "Gemini source for the Ghost Advice Hotline 'don't move' advice tile (converted by PixelLab image-to-pixelart)",
+      "generator": "gemini",
+      "model": "gemini-3-pro-image-preview",
+      "prompt": "Simple flat cartoon illustration for a cozy-spooky Japanese late-night TV party game, designed to be converted into a tiny 64x64 pixel-art icon: one subject, centred, filling most of the frame, big simple shapes, bold thick dark outlines, flat warm colours, plain pure white background, no scenery beyond what is described, no text, no letters, no numbers, no signs, no speech bubbles. A small cartoon kid in a bright orange shirt and blue trousers playing the Japanese freeze game, caught frozen stiff in the middle of a step: one foot lifted off the ground, arms stuck out stiffly, body rigid like a statue, eyes wide, holding its breath. Around the kid, several short thick straight black 'freeze' lines radiate outward like a sudden-stop comic effect, showing the kid has instantly stopped moving. Full body, nothing else.",
+      "params": {
+        "aspectRatio": "1:1",
+        "imageSize": "1K"
+      },
+      "post": {
+        "resize": "256x256"
+      }
+    },
+    {
       "path": "stage/assets/hotline/advice-water.png",
-      "what": "Ghost Advice Hotline advice tile: water poured from a ladle onto a kappa's head-dish",
+      "what": "Ghost Advice Hotline advice tile: a wooden ladle pouring water, splashing drops",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a wooden ladle pouring a stream of clear blue water onto the flat white dish on top of a small green kappa's head, splashing droplets",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single wooden Japanese water ladle hishaku with a round cup and a long straight handle, tilted and pouring a stream of clear blue water downward, round blue splash droplets at the bottom, nothing else, no character",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -9273,7 +9301,7 @@
         "width": 64,
         "height": 64,
         "text_guidance_scale": 8,
-        "seed": 22
+        "seed": 11
       },
       "post": {}
     },
@@ -9298,10 +9326,10 @@
     },
     {
       "path": "stage/assets/hotline/advice-leaf.png",
-      "what": "Ghost Advice Hotline advice tile: a leaf being placed on a tanuki's head",
+      "what": "Ghost Advice Hotline advice tile: a single disguise leaf floating down with a puff of magic smoke",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a hand placing a single bright green leaf on top of the head of a round chubby brown tanuki raccoon dog with a dark eye mask",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single big bright green leaf floating down through the air, under it a big round fluffy puff of white magic smoke cloud with a few tiny sparkles, nothing else, no character, no animal",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -9311,7 +9339,7 @@
         "width": 64,
         "height": 64,
         "text_guidance_scale": 8,
-        "seed": 22
+        "seed": 47
       },
       "post": {}
     },
@@ -9431,22 +9459,20 @@
     },
     {
       "path": "stage/assets/hotline/advice-dont-move.png",
-      "what": "Ghost Advice Hotline advice tile: a figure frozen stiff, with freeze lines",
+      "what": "Ghost Advice Hotline advice tile: a kid frozen mid-step in a 'freeze!' pose with stop lines around it (PixelLab conversion of a Gemini source)",
       "generator": "pixellab",
-      "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small cartoon person in a bright orange shirt and blue trousers frozen stiff like a statue, arms pressed straight at the sides, wide startled eyes, short white straight lines around the body to show it is holding perfectly still",
+      "model": "image-to-pixelart",
+      "prompt": "(image-to-pixelart takes no prompt.) Converted from the Gemini source in tools/art/sources/hotline/, because pixflux would not draw the stop lines around a frozen figure in 26 text-only attempts (2026-11-01).",
       "params": {
-        "outline": "single color black outline",
-        "shading": "basic shading",
-        "detail": "medium detail",
-        "view": "side",
-        "no_background": true,
         "width": 64,
         "height": 64,
-        "text_guidance_scale": 8,
-        "seed": 22
+        "init_image_strength": 0,
+        "seed": 7
       },
-      "post": {}
+      "post": {
+        "removeBackground": 6.0
+      },
+      "source": "tools/art/sources/hotline/dont-move-gemini.png"
     },
     {
       "path": "stage/assets/hotline/advice-run.png",
@@ -9982,22 +10008,20 @@
     },
     {
       "path": "stage/assets/hotline/caller-kodama.png",
-      "what": "Ghost Advice Hotline caller: a small white tree spirit in a silent forest, waiting for an echo",
+      "what": "Ghost Advice Hotline caller: a little bark-brown folklore tree spirit with leaf hair at the foot of an old tree tied with a shimenawa rope, cupping a hand to its ear for an echo (PixelLab conversion of a Gemini source)",
       "generator": "pixellab",
-      "model": "pixflux",
-      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. kodama, a tiny round white tree spirit with a simple face of three dark dots, sitting among tall green forest trees, head tilted, listening and waiting",
+      "model": "image-to-pixelart",
+      "prompt": "(image-to-pixelart takes no prompt.) Converted from the Gemini source in tools/art/sources/hotline/, because pixflux would not draw the hand cupped to the ear or a bark-coloured body in 25 text-only attempts (2026-11-01).",
       "params": {
-        "outline": "single color black outline",
-        "shading": "basic shading",
-        "detail": "medium detail",
-        "view": "side",
-        "no_background": true,
         "width": 64,
         "height": 64,
-        "text_guidance_scale": 8,
-        "seed": 22
+        "init_image_strength": 0,
+        "seed": 7
       },
-      "post": {}
+      "post": {
+        "removeBackground": 6.0
+      },
+      "source": "tools/art/sources/hotline/kodama-gemini.png"
     },
     {
       "path": "stage/assets/hotline/caller-ittan.png",
@@ -10020,10 +10044,10 @@
     },
     {
       "path": "stage/assets/hotline/caller-kitsune.png",
-      "what": "Ghost Advice Hotline caller: a fox yokai checking a wristwatch, crossed arms, waiting for a late date",
+      "what": "Ghost Advice Hotline caller: a fox yokai running late for a date, out of breath, hiding a bouquet behind its back",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute orange fox kitsune yokai dressed up for a date in a pretty kimono with a red flower hairpin, fluffy tail, standing with arms folded and tapping one foot, looking down at a big wristwatch on her wrist, pouting impatiently",
+      "prompt": "Pixel art character portrait for a cozy-spooky Japanese late-night TV game show, head and upper body, front view, centred, cute and friendly, warm colours, clear readable silhouette, no text or letters. a cute orange fox kitsune yokai in a kimono with a fluffy tail, running late in a hurry, out of breath, big blue sweat drops flying off its head, both arms behind its back hiding a small bouquet of flowers that peeks out behind it, guilty sheepish face",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -10033,7 +10057,7 @@
         "width": 64,
         "height": 64,
         "text_guidance_scale": 8,
-        "seed": 7
+        "seed": 59
       },
       "post": {}
     },

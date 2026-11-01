@@ -20,7 +20,7 @@ Set in the environment only. They are never written to the repo, logged or print
 | Env var | Provider | Used for |
 | --- | --- | --- |
 | `PIXELLAB_API_KEY` | PixelLab (`api.pixellab.ai/v2`) | Everything that ships |
-| `GEMINI_API_KEY` | Google Gemini API (`generativelanguage.googleapis.com`) | Optional: drafting a source image to convert. Nothing shipped comes straight from Gemini |
+| `GEMINI_API_KEY` | Google Gemini API (`generativelanguage.googleapis.com`) | Optional: drafting a source image to convert. Nothing shipped comes straight from Gemini; Pon and two Ghost Advice Hotline pictures (caller-kodama, advice-dont-move) are PixelLab conversions of Gemini drafts in `tools/art/sources/` |
 
 ## What's here
 
