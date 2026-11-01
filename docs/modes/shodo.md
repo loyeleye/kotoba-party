@@ -21,11 +21,27 @@ built by `tools/content-kanji-strokes.ts`), `controller/src/components/brushPad.
 | --- | --- | --- | --- |
 | かな | hiragana | hiragana and katakana (the twin shown as a clue) | ねこ はな そら うみ やま |
 | N5 | kanji steps 1–5 | kanji steps 1–7 | 山 川 木 雨 車 本 |
-| N4 | kanji steps 3–9 | kanji steps 1–10, and two-kanji words in the middle item | 春 冬 秋 花 犬 海 |
+| N4 | two N4 kanji (steps 8–11) and one N5 review kanji (steps 3–7) | N5 and N4 kanji, and words with an N4 kanji in the middle item (会社, 教室, 天気…) | 春 冬 秋 花 犬 海 |
+| N3 (step 6) | two sign kanji (steps 12–14) and one N4 review kanji | N4 and sign kanji, and the sign words in the middle item (非常口, 受付, 予約, 禁煙…) | 窓 煙 席 |
 
-The kanji (70 N5, 45 N4) and their order come from the Japanese expert's list. Each kanji has a
-word to say: the kanji itself where it stands alone (山 やま), otherwise a common word with it
-(日 → 毎日 まいにち). Fourteen two-kanji words (学生, 先生, 日本, 火山, 花火 …) use only listed kanji.
+The kanji (70 N5, 61 N4, 30 sign kanji) and their order come from the Japanese expert's list, and the
+PR #146 panel. Step 11 adds the N4 kanji the game's own N4 lines use (思 持 待 使 乗 着 終 写 会 教, and
+夏 映 売 計 堂 発). Steps 12–14 are goal 3.12's 30 sign kanji: kanji read on station and inn signs, never
+called "N3 kanji". The N3 deck is keyed by `DeckLevel` (`Level | 'n3'`) until N3 joins the level picker.
+
+Each kanji has a word to say: the kanji itself where it stands alone (山 やま), otherwise a common word
+with it (日 → 毎日 まいにち). A sign kanji says the sign it's on (常 → 非常口 ひじょうぐち). The words
+(学生, 会社, 非常口 …) use only listed kanji.
+
+At N4 and N3 the last "say it, then write it" item brings the second practice kanji back inside a word
+when one has it (社 → 会社), never a word above the player's band. A practice deal never holds two kanji
+with the same say-word (改 and 札 both say 改札).
+
+What the path counts as read from memory (PR #147 panel): the practice say is read aloud off the card, so
+it logs `read`; the memory rep logs `memory` only when the writing passes; "say it, then write it" logs
+`memory` only when said before "show me the reading" and then written correctly (said after a peek, it
+earns the plain speaking bonus, not the recall one). Its prompt shows the say-word's English ("an
+emergency exit"), since that's the word it accepts.
 
 The gallery adds one silly brief for the whole room, picked per game: ねむい (sleepy), おこった
 (angry), つかれた (tired), こわい (scary), げんきな (lively) or おなかが すいた (hungry). Each player

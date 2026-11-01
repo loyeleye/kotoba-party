@@ -28,7 +28,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | --- | --- | --- | --- | --- |
 | 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, No.7, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms. **No.7 (Nobiko-san) read 2026-11-01: free only while the game is non-commercial; a sold game is "ゲームでの利用" and needs a paid VOICEVOX licence from No.7's team (from ¥15,000 with credit, ¥250,000 without)** |
 | 2 | VOICEVOX engine | Docker image, separate service | 🟡 | Run unmodified as a service; LGPL/core terms if ever bundled into a download |
-| 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
+| 3 | KanjiVG stroke data (kana, and 161 kanji: 46 more added 2026-11-01 for N4 and the 30 sign kanji) | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
 | 6 | AI art: PixelLab (all stage art: hosts, yōkai, the eight backdrop sets including the Last Train carriage, Ghost Advice Hotline's call-in booth (2026-11-01) with its hitodama and phone icon, and Yōkai Court's courtroom (2026-11-01), Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 25 host and yōkai animation sheets (thinking and shocked added 2026-10-28), a smoke-puff effect, 56 Narabete! card pictures, 112 Narabete! answer pictures, 6 Bento Haus VS pieces, Dub Club's 13 anime sets, 14 characters and their 14 mouth sheets, 33 direction-card icons, 3 episode backdrops and 3 phone player icons, 83 Happyōkai! slide pictures, Happyōkai!'s 6 stamp icons, candle, flame and Chōchin-san bow sheet, Nice to Meet You!'s paw stamp and card-back medallion, and, for the phone's yōkai book and sign-in (2026-10-28), 10 yōkai book sprites and 4 icons: key, hanko, speaker and the stage Phrasebook's notebook, then 16 game icons and a stamp ring for the Phrasebook cards; Read the Signs' station-sign casing, arrow and hanger (2026-11-01), Late Again!'s 16 cause pictures, curveball, leaf, sash and certificate (2026-11-01), Ghost Advice Hotline's 26 advice tiles and 16 caller portraits (2026-11-01), and Yōkai Court's 7 clue, 6 place and 3 case-object pictures, 4 role icons and Fude-san's brush (2026-11-01)) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
@@ -114,9 +114,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 ### 3. KanjiVG
 
 - **Terms:** CC BY-SA 3.0, © Ulrich Apel and contributors. Commercial use is allowed.
-- **Read:** https://github.com/KanjiVG/kanjivg/blob/master/COPYING, 2026-10-27.
+- **Read:** https://github.com/KanjiVG/kanjivg/blob/master/COPYING, 2026-10-27; read again 2026-11-01 when
+  46 kanji were added (still CC BY-SA 3.0, nothing changed).
 - **Conditions:** Attribution, and anything derived from it stays CC BY-SA. Both `strokes.ts` files
-  (kana, and the 111 kanji Shodō Taikai uses) are derived, and their headers say so. The share-alike applies to that data, not to the rest of the game, as long
+  (kana, and the 161 kanji Shodō Taikai uses) are derived, and their headers say so. The share-alike applies to that data, not to the rest of the game, as long
   as it stays a separate data file.
 - **Credited:** since 2026-10-27 the stage's recap credits strip includes "Stroke order data:
   KanjiVG, © Ulrich Apel and contributors, CC BY-SA 3.0" (`creditLines` in `stage/src/main.ts`).

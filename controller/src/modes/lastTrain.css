@@ -77,6 +77,10 @@
 .lt-sign.exit { border-image-source: url('/stage/assets/signs/sign-board-exit.png'); color: #1a1205; }
 .lt-sign.men { border-image-source: url('/stage/assets/signs/sign-board-men.png'); }
 .lt-sign.women { border-image-source: url('/stage/assets/signs/sign-board-women.png'); }
+/* A pair with a sign of 3+ characters (待合室, 指定席) shrinks to stay inside the frame on a 360px phone (UX, PR #147). */
+.lt-signs.pair.long:not(.small) { gap: 4px; }
+.lt-signs.pair.long:not(.small) .lt-sign-text { font-size: clamp(24px, 8vw, 40px); }
+.lt-signs.pair.long:not(.small) .lt-sign-arrow { font-size: clamp(20px, 6vw, 30px); }
 .lt-signs.small .lt-sign-text { font-size: 28px; }
 .lt-signs.small .lt-sign-arrow { font-size: 22px; }
 .lt-dir-strip { text-align: center; color: var(--muted); font-size: 14px; margin: 2px 0 0; text-wrap: balance; }
