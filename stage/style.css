@@ -258,6 +258,7 @@ body[data-mode^='bento-haus'][data-phase='answer'] .main { place-items: start ce
 /* The name gets the whole top line; the level (or the mode's badge) and the score share the line under it. */
 .name { grid-column: 2 / 4; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vip { color: var(--warn); }
+.player .how { font-size: 0.7em; }
 .ticks { grid-column: 2; font-size: 28px; color: var(--good); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .level { color: var(--muted); font-size: 28px; }
 .score { grid-row: 2; grid-column: 3; justify-self: end; font-family: var(--font-pixel); font-size: 36px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--gold); }

@@ -95,6 +95,8 @@ button { font: inherit; cursor: pointer; }
 .me .mic-switch { position: relative; }
 .me .mic-switch.off { border-color: var(--bad); }
 .me .mic-switch.off::after { content: ''; position: absolute; left: 50%; top: 50%; width: 40px; height: 2px; background: var(--bad); translate: -50% -50%; rotate: 45deg; pointer-events: none; }
+/* The sound switch says it with its icon (🔊 / 🔇), so no strike. */
+.me .sound-switch.off::after { content: none; }
 /* In a game the header is a band in the mode's colour, with its host. */
 .me-band { position: relative; display: flex; align-items: center; gap: 10px; margin: 0 -16px 18px; padding: 6px 72px 6px 12px; background: var(--mode); color: var(--on-accent); border-bottom: 3px solid var(--outline); }
 /* Festival bunting under the band. */

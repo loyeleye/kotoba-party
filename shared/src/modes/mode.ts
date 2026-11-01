@@ -83,6 +83,10 @@ export interface ModePlayer {
   readonly level: Level;
   readonly connected: boolean;
   readonly score: number;
+  /** 'quiet' when the player turned their mic off (optional so test contexts can leave it out). */
+  readonly mic?: 'ok' | 'quiet' | null;
+  /** True when the player's phone sound is off: listening prompts must work as text. */
+  readonly soundOff?: boolean;
 }
 
 /** Options the VIP picks when starting a game. */

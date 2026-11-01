@@ -23,6 +23,8 @@ export interface PlayerState {
   /** Party points across the night: earned by where they finished each game (see PARTY_POINTS). */
   total: number;
   mic: 'ok' | 'quiet' | null;
+  /** Sound off: this phone plays no sound, and shows what it would have said as text instead. */
+  soundOff?: boolean;
   /** Mic lines the host has already said for this player, so spamming the mic switch gets each one once. */
   micCued?: { ok?: boolean; quiet?: boolean };
 }
@@ -311,6 +313,15 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
         cued[me.mic] = true;
         state.cues.push({ host, event: quiet ? 'mic_check_quiet' : 'mic_check_ok', slots: { name: me.name } });
       }
+      return OK;
+    }
+    case 'setSound': {
+      // The phone's 🎧 switch, in the lobby or mid-game: its own speaker only (the TV keeps playing).
+      if (!me) return fail('not-allowed');
+      if (typeof cmd.on !== 'boolean') return fail('bad-command');
+      if (!me.soundOff === cmd.on) return { changed: false };
+      if (cmd.on) delete me.soundOff;
+      else me.soundOff = true;
       return OK;
     }
     case 'skip': {

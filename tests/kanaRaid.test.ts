@@ -324,6 +324,45 @@ describe('Kana Yōkai Raid rules', () => {
     expect(seen.has('echo') || seen.has('lookalike')).toBe(true);
   });
 
+  it('sound off: wave 2 never deals an Echo, and wave 3 reads the meaning instead of voicing the word', () => {
+    const r = room(1);
+    expect(r.cmd('p1', { type: 'setSound', on: false }).error).toBeUndefined();
+    toBattle(r, { p1: [1, 2, 3, 4] });
+    for (let i = 0; i < 40 && r.s.phase === 'answer'; i++) answer(r, 'p1', true, 'tap'), (now += 200);
+    if (r.s.phase === 'answer') r.timeout();
+    r.timeout();
+    r.timeout();
+    r.timeout();
+    expect(r.rs().wave).toBe(2);
+    const seen = new Set<string>();
+    for (let i = 0; i < 60 && r.s.phase === 'answer'; i++) {
+      const a = r.rs().players.p1!.attack!;
+      seen.add(a.kind);
+      expect(a.options.every((o) => !o.hear)).toBe(true);
+      answer(r, 'p1', true, 'tap');
+      now += 200;
+    }
+    expect(seen.has('echo')).toBe(false);
+    expect(seen.size).toBeGreaterThan(0);
+    if (r.s.phase === 'answer') r.timeout();
+    r.timeout();
+    r.timeout();
+    expect(r.rs().wave).toBe(3);
+    if (r.s.phase === 'prompt') r.timeout();
+    expect(r.s.phase).toBe('answer');
+    const a = r.rs().players.p1!.attack!;
+    expect(a.kind).toBe('pair');
+    expect(a.hear).toBeUndefined();
+    expect(a.hearText).toBeUndefined();
+    const pairOf = CONTENT.minimalPairs.find((x) => x.id === a.itemId)!;
+    expect(a.clue).toBe(pairOf[a.played!].en);
+    // The choices are the two spellings only: their meanings would give it away.
+    expect(a.options.map((o) => o.label).sort()).toEqual([pairOf.a.kana, pairOf.b.kana].sort());
+    expect(a.options.every((o) => !o.sub)).toBe(true);
+    expect(r.play('p1', { kind: 'attack', attackId: a.id, pick: a.answer }).error).toBeUndefined();
+    expect(r.rs().players.p1!.attack!.step).toBe('say');
+  });
+
   it('a wrong guess costs a few points by level: nothing at first, more for advanced players', () => {
     expect([1, 3, 4, 7, 8, 10, 11, 13].map(missPenalty)).toEqual([0, 0, 5, 5, 10, 10, 15, 15]);
     const r = room(2);

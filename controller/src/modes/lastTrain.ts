@@ -16,6 +16,7 @@ import { waiting } from '../components/ui.js';
 import { jpView } from '../components/jp.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { hasTabAudio } from '../../../shared/src/audioTabs.js';
+import { isSoundOff } from '../components/voice.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 // ---- small pieces ----
@@ -63,6 +64,7 @@ function countdown(task: TaskView, send: (move: unknown) => Promise<boolean>): H
 // ---- listening (Station Announcement) ----
 
 function speakJa(text: string): boolean {
+  if (isSoundOff()) return false;
   const synth = globalThis.speechSynthesis;
   if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return false;
   if (!hasTabAudio()) return true; // another tab of this phone reads it out
@@ -76,7 +78,38 @@ function speakJa(text: string): boolean {
 
 const played = new Set<string>();
 
+// Sound off: the announcement runs once across a station departure board, then is gone, with one replay.
+// Left up, the words would turn listening into copying. Started times survive the screen's redraws.
+const boards = new Map<string, { start: number; replayed: boolean }>();
+const boardMs = (kana: string) => Math.max(6_000, kana.length * 380);
+
+function boardBox(task: TaskView): HTMLElement {
+  let b = boards.get(task.key);
+  if (!b) boards.set(task.key, (b = { start: Date.now(), replayed: false }));
+  const kana = task.prompt.kana;
+  const ms = boardMs(kana);
+  const line = h('span', { class: 'lt-board-line', lang: 'ja' }, kana, level === 'kana' ? h('small', { lang: 'ja-Latn' }, `  ${toRomaji(kana)}`) : null);
+  const board = h('div', { class: 'lt-board', role: 'marquee', 'aria-label': kana }, line);
+  // Calm motion: the words stand still on the board for the same time, then go.
+  const calm = document.body.dataset.motion === 'calm' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (calm) line.classList.add('calm');
+  const run = (from: number) => line.style.setProperty('animation', `${calm ? 'lt-board-calm' : 'lt-board'} ${ms}ms linear ${-Math.min(from, ms)}ms 1 both`);
+  run(Date.now() - b.start);
+  const again = h('button', { type: 'button', class: 'secondary', disabled: b.replayed }, b.replayed ? 'Shown again' : '▶ Show it again (once)') as HTMLButtonElement;
+  again.addEventListener('click', () => {
+    b.replayed = true;
+    b.start = Date.now();
+    again.disabled = true;
+    again.textContent = 'Shown again';
+    line.style.animation = 'none';
+    void line.offsetWidth;
+    run(0);
+  });
+  return h('div', { class: 'lt-listen' }, h('p', { class: 'hint' }, '🚉 Read the announcement as it goes by, then answer.'), board, again);
+}
+
 function listenBox(task: TaskView): HTMLElement {
+  if (isSoundOff()) return boardBox(task);
   const text = h('div', { class: 'lt-listen-text', hidden: true }, jpBlock(task.prompt, { en: false }));
   const reveal = () => text.removeAttribute('hidden');
   const play = () => {

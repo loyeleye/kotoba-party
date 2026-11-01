@@ -18,7 +18,7 @@ import { account } from '../account.js';
 
 // ---------- speech synthesis ----------
 
-const hearButton = (text: string, label = '🔊 Hear it', big = false): HTMLElement => voiceButton(text, label, `raid-hear${big ? ' big' : ''}`);
+const hearButton = (text: string, label = '🔊 Hear it', big = false): HTMLElement | null => voiceButton(text, label, `raid-hear${big ? ' big' : ''}`);
 
 /** The sound, voiced; written out too when the phone can't voice Japanese. */
 function listen(a: AttackView, auto: boolean): HTMLElement {
@@ -337,7 +337,8 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
     const sub = boss?.stage === 'blow' ? 'Waiting for everyone to read it…' : boss ? 'Your pieces are broken! Cheer the others on.' : 'Watch the stage!';
     return h('div', { class: 'screen raid' }, head, h('p', { class: 'big' }, 'Nice work!'), h('p', { class: 'hint' }, sub));
   }
-  const prompt = (a.kind === 'pair' || a.kind === 'draw') && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? (a.kind === 'draw' ? 'Try again: draw its true form' : `Try again! ${PROMPTS[a.kind]}`) : PROMPTS[a.kind]);
+  const ask = a.clue ? 'Which spelling is right?' : PROMPTS[a.kind];
+  const prompt = (a.kind === 'pair' || a.kind === 'draw') && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? (a.kind === 'draw' ? 'Try again: draw its true form' : `Try again! ${ask}`) : ask);
   const coach = me.coach ? h('p', { class: 'raid-coach' }, '🖌 Your ', h('span', { lang: 'ja' }, me.coach.char), ': ', me.coach.tip) : null;
   const parts: (HTMLElement | null)[] = [head, coach, me.canAim ? aimStrip(game, a.yokaiId, send) : null, prompt];
   switch (a.kind) {
@@ -355,7 +356,9 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
       parts.push(glyph(a), h('p', { class: 'hint small' }, 'Tap each to hear it. Tap the right one again to strike.'), echoOptions(a, send));
       break;
     case 'pair':
-      if (a.step === 'tap') parts.push(listen(a, true), options(a, send, 'pair'));
+      // Sound off: the meaning is the clue, the two spellings the choices (kanaRaid.ts pairAttack).
+      if (a.step === 'tap' && a.clue) parts.push(h('p', { class: 'raid-clue' }, 'Which one means ', h('b', {}, `“${a.clue}”`), '?'), options(a, send, 'pair'));
+      else if (a.step === 'tap') parts.push(listen(a, true), options(a, send, 'pair'));
       else
         parts.push(
           h('p', { class: 'raid-say' }, 'Now say it!'),

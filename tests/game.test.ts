@@ -202,6 +202,19 @@ describe('views', () => {
     expect(cmd(s, as('p1'), { type: 'setLevel', level: 'n4' }).error).toBe('wrong-phase');
   });
 
+  it('switches a phone’s sound off and on, in the lobby or mid-game, and shows it in the view', () => {
+    const s = lobby(2);
+    expect(cmd(s, as('p1'), { type: 'setSound', on: false }).changed).toBe(true);
+    expect(s.players[0]!.soundOff).toBe(true);
+    expect(cmd(s, as('p1'), { type: 'setSound', on: false }).changed).toBe(false);
+    expect(viewFor(s, { kind: 'stage' }, EMPTY_CONTENT).players.map((p) => p.soundOff)).toEqual([true, false]);
+    expect(cmd(s, as('p1'), { type: 'setSound', on: 'no' as never }).error).toBe('bad-command');
+    toAnswer(s);
+    expect(cmd(s, as('p1'), { type: 'setSound', on: true }).changed).toBe(true);
+    expect(s.players[0]!.soundOff).toBeUndefined();
+    expect(cmd(s, as('p2'), { type: 'setSound', on: false }).changed).toBe(true);
+  });
+
   it('runs the lobby mic check: こんにちは passes, anything else switches to quiet mode', () => {
     const s = lobby(2);
     cmd(s, as('p1'), { type: 'micCheck', utterance: { via: 'speech', text: 'コンニチハ' } });

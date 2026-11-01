@@ -153,6 +153,8 @@ export interface Attack {
   hearText?: string;
   /** Chapter 1 training wheels only. */
   romaji?: string;
+  /** Sound off, Wave 3: the meaning to find among the spellings, in place of the voiced word. */
+  clue?: string;
   options: RaidOption[];
   /** Wave 3: tap what you heard, then say it. Ink Storm: draw it, then say it. */
   step?: 'tap' | 'draw' | 'say';
@@ -1042,7 +1044,7 @@ function waveAttack(s: RaidState, playerId: string, p: PlayerRaid, ctx: ModeCont
 
   if (s.wave === 3) {
     const pair = deck.pairs.find((x) => x.id === itemId);
-    return pair ? pairAttack(base, pair, ctx) : null;
+    return pair ? pairAttack(base, pair, ctx, !!ctx.player(playerId)?.soundOff) : null;
   }
   const k = deck.byId.get(itemId);
   if (!k) return null;
@@ -1052,6 +1054,8 @@ function waveAttack(s: RaidState, playerId: string, p: PlayerRaid, ctx: ModeCont
   if (retry) kind = retry.kind;
   else if (s.wave === 1) kind = k.twinId && deck.byId.has(k.twinId) && ctx.random() < 0.35 ? 'twin' : 'shout';
   else kind = lookAlikeFor(deck, k, pool) && ctx.random() < 0.6 ? 'lookalike' : 'echo';
+  // Sound off: Echo is all voices, and writing them out would give it away, so a reading attack takes its place.
+  if (kind === 'echo' && ctx.player(playerId)?.soundOff) kind = lookAlikeFor(deck, k, pool) ? 'lookalike' : k.twinId && deck.byId.has(k.twinId) ? 'twin' : 'shout';
   return kanaAttack(base, kind, k, pool, deck, s.wave, ctx);
 }
 
@@ -1145,10 +1149,16 @@ function drawAttack(base: AttackBase, k: Kana, deck: Deck, kanaLevel: boolean): 
   };
 }
 
-function pairAttack(base: AttackBase, pair: MinimalPair, ctx: ModeContext): Attack {
+/**
+ * Wave 3: hear one word of a minimal pair, tap which. With sound off it's read instead: the meaning is the
+ * clue and the two spellings are the choices (おばさん or おばあさん for "grandmother"), so it still turns on
+ * the one mark that differs.
+ */
+function pairAttack(base: AttackBase, pair: MinimalPair, ctx: ModeContext, soundOff = false): Attack {
   const played: 'a' | 'b' = ctx.random() < 0.5 ? 'a' : 'b';
-  const opts = shuffled(['a', 'b'] as const, ctx.random).map((id) => ({ id, label: pair[id].kana, sub: pair[id].en }));
-  return { ...base, kind: 'pair', step: 'tap', hear: pair[played].kana, hearText: pair[played].kana, options: opts, answer: played, played, word: pair[played] };
+  const opts = shuffled(['a', 'b'] as const, ctx.random).map((id) => (soundOff ? { id, label: pair[id].kana } : { id, label: pair[id].kana, sub: pair[id].en }));
+  const read = soundOff ? { clue: pair[played].en } : { hear: pair[played].kana, hearText: pair[played].kana };
+  return { ...base, kind: 'pair', step: 'tap', ...read, options: opts, answer: played, played, word: pair[played] };
 }
 
 // ---------- the boss ----------

@@ -18,6 +18,7 @@ import type { RoomView } from '../../../shared/src/protocol.js';
 import { MicClip, recordReady, uploadClip } from '../components/mic.js';
 import { canSpeak, isQuiet, speakBox } from '../components/speak.js';
 import { jpView } from '../components/jp.js';
+import { isSoundOff } from '../components/voice.js';
 import { holdButton, waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
@@ -227,7 +228,19 @@ function togglePreview(url: string): void {
   showProgress();
 }
 
+/**
+ * Your take, to play back. With sound off there is no listen-back: just its waveform and length. (A take that
+ * stayed on this phone still plays in the screening: that's the room's dub, not the player listening.)
+ */
 function takePlayer(d: Draft): HTMLElement {
+  if (isSoundOff()) {
+    return h(
+      'div',
+      { class: 'dc-player' },
+      h('span', { class: 'dc-wave', 'aria-hidden': 'true' }, peaksOf(d.wav).map((p) => h('i', { class: 'on', style: `--h:${Math.max(1, Math.round(p * 8))}` }))),
+      h('span', { class: 'dc-dur' }, `${(d.durMs / 1000).toFixed(1)} s`),
+    );
+  }
   return h(
     'div',
     { class: 'dc-player', 'data-url': d.url },
@@ -413,7 +426,7 @@ function actScreen(ctx: Ctx, me: Me): HTMLElement {
       ? h(
           'div',
           { class: 'dc-review' },
-          h('p', { class: 'hint' }, 'Listen back, then send it to the TV.'),
+          h('p', { class: 'hint' }, isSoundOff() ? 'Sound’s off, so no listen-back: send it, or record again.' : 'Listen back, then send it to the TV.'),
           takePlayer(review),
           h('button', { type: 'button', class: 'primary dc-send', disabled: sending, onclick: () => void sendTake(ctx) }, sending ? 'Sending…' : '📤 Send this take'),
           h('p', { class: 'hint dc-autosend' }, '⏱ Not sent by the end? It goes in by itself.'),

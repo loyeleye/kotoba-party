@@ -191,7 +191,7 @@ function card(p: { text: string; kana: string; en: string; mode: ModeId }, how: 
       : [h('p', { class: 'mpb-jp', lang: 'ja' }, p.text), kanji ? h('p', { class: 'mpb-kana', lang: 'ja' }, p.kana) : null];
   // The spaces between words are for reading; the voice shouldn't pause at them.
   const hear = hearButton(p.kana.replace(/\s+/g, ''), 'Hear it', 'raid-hear mpb-hear');
-  hear.setAttribute('aria-label', `Hear ${p.text}`);
+  hear?.setAttribute('aria-label', `Hear ${p.text}`);
   return h(
     'li',
     { class: `mpb-card${how ? ` ${how}` : ''}` },

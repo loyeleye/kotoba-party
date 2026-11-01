@@ -49,6 +49,8 @@ export interface PlayerView {
   total: number;
   /** Lobby mic check: 'ok' once they said こんにちは, 'quiet' if they chose tap/type. */
   mic: 'ok' | 'quiet' | null;
+  /** Sound off: the phone plays no sound and shows what it would have said as text. */
+  soundOff: boolean;
 }
 
 /** What the host is saying right now (shown as a subtitle, voiced if audio is ready). */
@@ -147,6 +149,8 @@ export type Command =
   | { id: string; type: 'setLevel'; level: Level }
   /** The lobby mic check: say こんにちは. A tap ("I can't talk right now") switches the phone to tap/type; null turns the mic back on. */
   | { id: string; type: 'micCheck'; utterance: unknown }
+  /** The phone's 🎧 switch: false turns its sound off (listening prompts show as text), true back on. */
+  | { id: string; type: 'setSound'; on: boolean }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' }
   /** VIP or stage: abandons the game in progress and goes back to the lobby, scores as they were before it. */

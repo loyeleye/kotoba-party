@@ -14,6 +14,7 @@ import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService, speechReady } from './components/mic.js';
 import { setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
 import { quip, setQuipHost } from './components/ui.js';
+import { setSoundOff } from './components/voice.js';
 import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
 import { account, accountPanel } from './account.js';
 import { phrasebookButton } from './phrasebook.js';
@@ -300,13 +301,14 @@ function render(view: RoomView): void {
   const hold = view.game ? (mode!.hold?.(view, view.game, me.id) ?? null) : null;
   const modeKey = view.game ? mode!.key(view, view.game, me.id) : '';
   if (!view.game) endAsk = false;
-  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, hold, endAsk].join('|') : [
+  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, me.soundOff, hold, endAsk].join('|') : [
     view.phase,
     view.phaseSeq,
     isVip,
     me.level,
     me.score,
     me.mic,
+    me.soundOff,
     view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}`).join() + view.modes.length + view.packs.length : '',
     modeKey,
     endAsk,
@@ -316,6 +318,7 @@ function render(view: RoomView): void {
   screenKey = key;
   setSpeakLevel(me.level);
   setQuiet(me.mic === 'quiet');
+  setSoundOff(me.soundOff);
 
   // In a game (and its recap) the phone wears the mode's colour and host.
   const info = view.phase !== 'lobby' && view.mode ? MODES[view.mode].info : null;
@@ -340,6 +343,8 @@ function render(view: RoomView): void {
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
     session ? phrasebookButton(view.phase, { base, code: session.code, token: session.token, name: me.name, level: me.level }, flash) : null,
+    // The lobby has its own sound line (soundCheck), so the header keeps the room for the name there.
+    view.phase === 'lobby' ? null : soundSwitch(me),
     micSwitch(me),
   );
   mount(app, band, header, screenFor(view, me, isVip));
@@ -419,6 +424,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
     h('p', { class: 'big' }, 'You are in!'),
     h('p', {}, `${view.players.length} player${view.players.length === 1 ? '' : 's'}: ${view.players.map((p) => p.name).join(', ')}`),
     micCheck(me),
+    soundCheck(me),
     h('p', { class: 'hint' }, 'Your level'),
     levelPicker(me.level, (level) => {
       store('kotoba:level', level);
@@ -454,6 +460,33 @@ function micSwitch(me: PlayerView): HTMLElement | null {
     // Quiet: the same mic, struck through (style.css .mic-switch.off::after).
     '🎤',
   );
+}
+
+/**
+ * The header's sound switch: Sound off silences this phone (a crowded room, no headphones) and its listening
+ * prompts show as text instead (components/voice.ts). The TV keeps playing. Any time, lobby or mid-game.
+ */
+function soundSwitch(me: PlayerView): HTMLElement {
+  const off = me.soundOff;
+  const label = off ? 'Phone sound is off: tap to turn it on' : 'Phone sound is on: tap to turn it off';
+  return h(
+    'button',
+    { type: 'button', class: `mic-switch sound-switch${off ? ' off' : ''}`, 'aria-label': label, 'aria-pressed': String(!off), title: label, onclick: () => void command({ type: 'setSound', on: off }) },
+    off ? '🔇' : '🔊',
+  );
+}
+
+/** The lobby's sound line, under the mic check. */
+function soundCheck(me: PlayerView): HTMLElement {
+  if (me.soundOff) {
+    return h(
+      'div',
+      { class: 'mic-quiet' },
+      h('p', { class: 'mic' }, '🔇 Phone sound off: listening prompts show as text. The TV still plays.'),
+      h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'setSound', on: true }) }, '🔊 Turn my phone sound on'),
+    );
+  }
+  return h('button', { type: 'button', class: 'linkish sound-off-link', onclick: () => void command({ type: 'setSound', on: false }) }, 'I can’t hear my phone (turn its sound off)');
 }
 
 function micCheck(me: PlayerView): HTMLElement {
