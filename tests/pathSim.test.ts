@@ -13,6 +13,11 @@ describe('path simulation: bots play the real games in-process', () => {
     expect(g.seats.filter((s) => s.level === 'n4').every((s) => s.result.mode === mode)).toBe(true);
   });
 
+  it('Happyōkai! deals question cards to an N3 seat (the N4 ones, until N3 has its own)', () => {
+    const g = playGame(content, 'happyokai', ['n3', 'n4', 'n5', 'kana'], 4);
+    expect(g.seats.find((s) => s.level === 'n3')!.result.mode).toBe('happyokai');
+  });
+
   it('a speaking N4 bot takes the Bento Haus hard roles and says their frames from memory', () => {
     const g = playGame(content, 'bento-haus', ['n4', 'n4', 'n5', 'n5'], 2);
     const said = g.seats.filter((s) => s.level === 'n4').flatMap((s) => s.result.phrases.filter((e) => e.outcome === 'said' && e.recall === 'memory'));
@@ -42,5 +47,21 @@ describe('path simulation: bots play the real games in-process', () => {
     const first = (r: typeof games) => Math.min(...Object.values(r.stamped), Infinity);
     expect(first(reviews)).toBeLessThanOrEqual(first(games));
     expect(Object.keys(reviews.stamped).length).toBeGreaterThanOrEqual(Object.keys(games.stamped).length);
+  });
+
+  it("following the path's suggestion is no slower than picking games at random", () => {
+    const modes = ['bento-haus', 'phrase-bingo', 'ghost-hotline', 'late-again', 'tourist', 'omiai', 'hajimemashite'] as const;
+    const lib = new Map(modes.map((m) => [m as (typeof modes)[number], [1, 2].flatMap((seed) => playGame(content, m, ['n4', 'n4', 'n5', 'n5'], seed).seats.filter((s) => s.level === 'n4').map((s) => s.result))]));
+    const base = { rooms: 1, library: 2, nightsEvery: 7, games: 3, follow: 0, memory: 0.7, max: 10, reviews: 0, seed: 1 };
+    // Stamps by night 10, summed over 12 rooms, and the nights they took (a goal never stamped counts as 11).
+    const run = (follow: number) => {
+      const rooms = Array.from({ length: 12 }, (_, i) => runRoom(lib, { ...base, follow }, 100 + i));
+      const ids = GOALS.filter((g) => g.line === 'express').map((g) => g.id);
+      return { stamps: rooms.reduce((n, r) => n + Object.keys(r.stamped).length, 0), nights: rooms.reduce((n, r) => n + ids.reduce((m, id) => m + (r.stamped[id] ?? 11), 0), 0) };
+    };
+    const random = run(0);
+    const followed = run(0.9);
+    expect(followed.stamps).toBeGreaterThanOrEqual(random.stamps);
+    expect(followed.nights).toBeLessThanOrEqual(random.nights);
   });
 });
