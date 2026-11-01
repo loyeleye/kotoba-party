@@ -10080,6 +10080,312 @@
         "seed": 101
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/court/clue-cucumber.png",
+      "what": "Yōkai Court clue: one cucumber slice",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single round slice of green cucumber, pale green flesh with small seeds and a dark green rim, lying flat, slightly tilted, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/clue-footprints.png",
+      "what": "Yōkai Court clue: small inky footprints",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. three small pure black ink footprints of little bare feet with five toes, solid jet black, walking in a line",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "high top-down",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 234
+      },
+      "post": {
+        "outline": "#f3e7c9"
+      }
+    },
+    {
+      "path": "stage/assets/court/clue-puddle.png",
+      "what": "Yōkai Court clue: a puddle of water",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. one small round flat puddle of clear blue water with a white shine highlight, and two round blue water drops beside it, only the puddle, no floor lines, no background",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 212
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/clue-spoon.png",
+      "what": "Yōkai Court clue: a spoon",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. one single shiny silver metal spoon lying diagonally, empty, nothing in it, only the spoon, no bowl, no dessert, no food, no table",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 231
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/clue-ice.png",
+      "what": "Yōkai Court clue: ice cubes",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. two clear pale blue ice cubes with white shine and a tiny puddle of melt water under them, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 105
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/clue-bell.png",
+      "what": "Yōkai Court clue: a little cat bell",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single small round golden Japanese suzu bell with a slit at the bottom, tied to a short red cord with a bow, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 106
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/clue-feather.png",
+      "what": "Yōkai Court clue: a black feather",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single long black crow feather with a white quill, slightly curved, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 107
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/place-pond.png",
+      "what": "Yōkai Court place: a small garden pond",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small round Japanese garden pond of blue water edged with grey stones, one pink lotus flower and a green lily pad floating on it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 108
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/place-bath.png",
+      "what": "Yōkai Court place: a steaming wooden bath",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round Japanese wooden bathtub ofuro made of light wooden planks bound with bands, full of blue water, white steam curls rising",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 109
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/place-roof.png",
+      "what": "Yōkai Court place: a tiled Japanese roof",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small traditional Japanese roof with dark grey curved kawara tiles and upturned corners, seen from the side, a little chimney-free ridge, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 110
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/place-garden.png",
+      "what": "Yōkai Court place: a little garden",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small Japanese garden patch: a pink cherry blossom bush, a grey stone lantern and green grass tufts on a round patch of earth",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 111
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/place-mountain.png",
+      "what": "Yōkai Court place: a snowy mountain",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small isolated icon of one snowy mountain peak like Mount Fuji, white snow cap, blue-grey slopes, two tiny green pine trees at its foot, the whole mountain fits inside the frame with empty space around it, no sky, no background",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 222
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/place-closet.png",
+      "what": "Yōkai Court place: a Japanese oshiire cupboard",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese oshiire closet with two sliding paper fusuma doors, one door slid half open showing a folded futon stacked inside",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 113
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/object-pudding.png",
+      "what": "Yōkai Court case object: a custard pudding",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single Japanese custard purin pudding on a small white plate, yellow with dark brown caramel sauce dripping from the top, wobbly, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 114
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/object-mic.png",
+      "what": "Yōkai Court case object: a studio microphone",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single silver handheld stage microphone with a round mesh head and a black handle, a short coiled cable, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 115
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/object-lantern.png",
+      "what": "Yōkai Court case object: a broken paper lantern",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single round red Japanese paper lantern (chochin) with black bands at top and bottom, torn and broken with a rip in the paper, no face, no eyes, no mouth",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 233
+      },
+      "post": {}
     }
   ]
 }
