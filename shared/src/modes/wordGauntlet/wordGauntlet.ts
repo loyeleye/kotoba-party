@@ -5,6 +5,10 @@
 //  2. Lost in Translation (telephone, double points): an N5 sentence passes around the room,
 //     Japanese → English → Japanese …, each player seeing only the step before theirs.
 //     The drift is revealed and everyone votes for their favourite step.
+//  2b. The rumour round (うわさの でんごんゲーム, N4 and up): in a room with an N4 player, Nobiko-san takes
+//     round 2. She whispers a rumour about a studio yōkai to one phone; it goes round the room, each
+//     relay keeping who, where and what and adding one fin (うわさに おひれが つく), said in a reported-speech
+//     frame. No player's voice leaves their phone: the next phone hears the words in Nobiko-san's voice.
 //  3. Shiritori Showdown: a spoken word chain with a shrinking timer. ん knocks you out;
 //     the last player standing takes the crown.
 //
@@ -33,6 +37,24 @@ import { toRomaji } from '../../japanese/romaji.js';
 import { dictionaryNoun, endsInN, follows, lastKana, repeatKey, startOptions, wordReading } from './shiritori.js';
 import { CHEEKY_WORDS, FALLBACK_STARTERS, OBSCURE_WORDS, SHIRITORI_NOUNS, fakeWordPool, type ObscureWord } from './words.js';
 import { playerTextAllowed } from '../../moderation.js';
+import { nameToKatakana } from '../../japanese/toKana.js';
+import { toHiragana } from '../../japanese/kana.js';
+import {
+  addFin,
+  finKept,
+  keptParts,
+  MAX_FINS,
+  RUMOUR_FRAMES,
+  rumourFin,
+  rumourFins,
+  rumourFrameOf,
+  rumourLine,
+  rumourOpener,
+  rumourSeeds,
+  type RumourFin,
+  type RumourFrameId,
+  type RumourSeed,
+} from './rumours.js';
 
 // ---- tuning ----
 
@@ -50,6 +72,19 @@ export const TELEPHONE_SPOKEN_BONUS = 50;
 export const TELEPHONE_TYPED_BONUS = 20;
 /** The stage reveals one step this often (ms); the vote phase is long enough for all of them. */
 export const TELEPHONE_REVEAL_STEP_MS = 2_500;
+
+/** The rumour round: double points, like the telephone it stands in for. */
+export const RUMOUR_RELAY_POINTS = 50;
+export const RUMOUR_KEPT_POINTS = 50;
+export const RUMOUR_FRAME_POINTS = 50;
+export const RUMOUR_FINS_OFFERED = 3;
+/** Each reveal line gets at least this long, more for a long one (Nobiko-san reads it all before the next). */
+export const RUMOUR_REVEAL_STEP_MS = 6_500;
+export const RUMOUR_READ_MS_PER_KANA = 150;
+/** The truth appears this long into the score phase, after the rumour as it ended up. */
+export const RUMOUR_TRUTH_AT_MS = 3_500;
+/** Nobiko-san starts reading a relay this long after it appears on the TV. */
+export const RUMOUR_READ_LEAD_MS = 400;
 
 export const SHIRITORI_WORD_POINTS = 50;
 export const SHIRITORI_SPOKEN_BONUS = 20;
@@ -83,12 +118,15 @@ export const DURATIONS = {
   telStepKanaExtra: 15_000,
   telScore: 12_000,
   shiriPrompt: 9_000,
+  rumourPrompt: 9_000,
+  rumourStep: { kana: 35_000, n5: 50_000, n4: 60_000 } as Record<Level, number>,
+  rumourScore: 15_000,
   shiriScore: 14_000,
 };
 
 // ---- state ----
 
-export type Segment = 'fake' | 'telephone' | 'shiritori';
+export type Segment = 'fake' | 'telephone' | 'rumour' | 'shiritori';
 export type Via = Utterance['via'];
 
 export interface FakeOption {
@@ -134,6 +172,52 @@ export interface Telephone {
   /** When the reveal began, so the vote can end early once the stage has shown every step. */
   revealAt: number;
   /** voterId → step index */
+  votes: Record<string, number>;
+  points: Record<string, number> | null;
+}
+
+export interface RumourStep {
+  playerId: string;
+  level: Level;
+  /** The frame an N4 relayer's first hint shows, chosen when they open it (never the frame they heard). */
+  hintFrame: RumourFrameId | null;
+  /** The frame in the line they heard, so echoing it back isn't counted as their own. */
+  heardFrame: RumourFrameId | null;
+  /** The fin they picked made it into what they said. */
+  finSaid: boolean;
+  /** Their frame just repeats the one they heard. */
+  echoed: boolean;
+  /** The fin cards this relayer was dealt. */
+  offered: string[];
+  /** The fin they added: a card's id, or their own words (N4). */
+  fin: string | null;
+  ownFin: string | null;
+  /** What they passed on (null until sent). */
+  text: string | null;
+  reading: string | null;
+  via: Via | null;
+  frame: RumourFrameId | null;
+  kept: { who: boolean; where: boolean; what: boolean } | null;
+  /** Hints opened: N4 1 = the frame, 2 = Nobiko-san's line; N5 1 = Nobiko-san's line. */
+  hint: number;
+  /** Opened the words instead of only listening. */
+  peeked: boolean;
+  /** Picked a fin but sent nothing in time: Nobiko-san passed it on for them. */
+  standIn: boolean;
+  skipped: boolean;
+}
+
+export interface Rumour {
+  seed: RumourSeed;
+  /** The fins the rumour carries now, newest last (the newest MAX_FINS). */
+  fins: RumourFin[];
+  steps: RumourStep[];
+  current: number;
+  revealAt: number;
+  /** When each line of the reveal starts (ms after revealAt): the opener, then each step. Sized to the line, so Nobiko-san finishes one before the next. */
+  readAt: number[];
+  /** Where the hint frames start for this room (a random frame, so one N4 player doesn't always get the same). */
+  frameStart: number;
   votes: Record<string, number>;
   points: Record<string, number> | null;
 }
@@ -199,12 +283,15 @@ export interface WordGauntletState {
   fakeIndex: number;
   fake: FakeRound | null;
   telephone: Telephone | null;
+  rumour: Rumour | null;
+  /** Seeds already told this game, so a replay hears a new one. */
+  rumoursTold: string[];
   shiritori: Shiritori | null;
   /** One bonus pool per round: base points and bonus points awarded so far. */
   pool: { base: number; bonus: number };
   /** Every point this mode gave, per player (the room's scores should match). */
   earned: Record<string, number>;
-  stats: { fooled: Record<string, number>; telVotes: Record<string, number> };
+  stats: { fooled: Record<string, number>; telVotes: Record<string, number>; rumourVotes: Record<string, number> };
 }
 
 // ---- moves ----
@@ -217,7 +304,18 @@ export type WordGauntletMove =
   | { kind: 'vote'; step: number }
   | { kind: 'word'; utterance: Utterance }
   | { kind: 'hint' }
-  | { kind: 'judge'; accept: boolean };
+  | { kind: 'judge'; accept: boolean }
+  | { kind: 'fin'; fin?: string; own?: string }
+  | { kind: 'peek' }
+  | { kind: 'relay'; utterance?: Utterance };
+
+export interface RumourHeard {
+  text: string;
+  kana: string;
+  romaji: string | null;
+  /** Nobiko-san's opener, not a player's relay. */
+  opener: boolean;
+}
 
 // ---- view ----
 
@@ -228,6 +326,8 @@ export interface WordGauntletView {
   round: number;
   /** Points per player from this mode so far (public, like the scoreboard). */
   earned: Record<string, number>;
+  /** What round 2 will be with the room as it is: the rumour round needs an N4 player. */
+  round2: 'telephone' | 'rumour';
   fake: {
     index: number;
     total: number;
@@ -258,6 +358,60 @@ export interface WordGauntletView {
       prev: TelPrev | null;
       to: 'en' | 'jp' | null;
       sent: string | null;
+      vote: number | null;
+    } | null;
+  } | null;
+  rumour: {
+    /** Who the rumour is about: public from the start (the TV shows them). */
+    subject: { kana: string; en: string; sprite: string | null };
+    order: { playerId: string; level: Level; done: boolean; skipped: boolean; standIn: boolean }[];
+    current: number;
+    /** The whole relay and the truth, from the reveal on. */
+    reveal: {
+      opener: JpText;
+      steps: { index: number; playerId: string; text: string | null; kana: string | null; fin: { kana: string; en: string } | null; finSaid: boolean; frame: { ja: string; en: string } | null; kept: RumourStep['kept']; standIn: boolean; skipped: boolean }[];
+      /** The last relay actually passed on. */
+      final: JpText;
+    } | null;
+    /** The truth, at the score. */
+    truth: JpText | null;
+    /** When each reveal line appears (ms from the reveal's start): the opener, then each step. */
+    readAt: number[];
+    /** When the truth appears in the score phase (ms). */
+    truthAtMs: number;
+    voted: string[];
+    votes: number[] | null;
+    points: Record<string, number> | null;
+    mine: {
+      step: number | null;
+      level: Level;
+      /** Only while it's this player's relay: what they heard. */
+      heard: RumourHeard | null;
+      fins: { id: string; kana: string; en: string; tile: string }[];
+      fin: string | null;
+      ownFin: string | null;
+      hint: number;
+      /** N4, from the first hint: the frame to try. */
+      frame: { ja: string; en: string } | null;
+      /** Nobiko-san's version: N4 from the second hint, N5 from the first; per fin card ('' = their own fin). */
+      models: Record<string, JpText> | null;
+      peeked: boolean;
+      sent: string | null;
+      /** At the score: how their relay did, and what to try next time. */
+      result: {
+        kept: RumourStep['kept'];
+        /** The parts they lost, in Japanese. */
+        missed: string[];
+        frame: { ja: string; en: string } | null;
+        echoed: boolean;
+        fin: { kana: string; en: string } | null;
+        finSaid: boolean;
+        standIn: boolean;
+        /** It went in the phrasebook as said from memory (counts toward the path). */
+        counted: boolean;
+        /** N4 with no frame or an echoed one: a frame to try, with Nobiko-san's line in it. */
+        tryNext: { ja: string; en: string; line: JpText } | null;
+      } | null;
       vote: number | null;
     } | null;
   } | null;
@@ -400,10 +554,12 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       fakeIndex: 0,
       fake: null,
       telephone: null,
+      rumour: null,
+      rumoursTold: [],
       shiritori: null,
       pool: { base: 0, bonus: 0 },
       earned: {},
-      stats: { fooled: {}, telVotes: {} },
+      stats: { fooled: {}, telVotes: {}, rumourVotes: {} },
     };
   },
 
@@ -416,6 +572,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       case 'answer':
         if (s.segment === 'fake') return 'reveal';
         if (s.segment === 'telephone') return nextTelStep(s, ctx) >= 0 ? 'answer' : 'reveal';
+        if (s.segment === 'rumour') return nextRumourStep(s) >= 0 ? 'answer' : 'reveal';
         if (s.segment === 'shiritori') return s.shiritori?.challenge ? 'reveal' : showdownOver(s) ? 'score' : 'answer';
         return 'recap';
       case 'reveal':
@@ -436,6 +593,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
     if (phase === 'prompt') return enterPrompt(s, ctx);
     if (s.segment === 'fake') return enterFake(s, phase, ctx);
     if (s.segment === 'telephone') return enterTelephone(s, phase, ctx);
+    if (s.segment === 'rumour') return enterRumour(s, phase, ctx);
     if (s.segment === 'shiritori') return enterShiritori(s, phase, ctx);
   },
 
@@ -444,6 +602,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       const step = s.telephone?.steps[s.telephone.current];
       if (step && step.text === null) step.skipped = true;
     }
+    if (s.segment === 'rumour' && phase === 'answer') closeRumourStep(s);
     if (s.segment === 'shiritori') {
       const sh = s.shiritori!;
       if (phase === 'answer' && sh.turn && !sh.acted) {
@@ -469,6 +628,13 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       }
       if (phase === 'reveal') return 20_000 + TELEPHONE_REVEAL_STEP_MS * (t.steps.length + 1);
       if (phase === 'score') return DURATIONS.telScore;
+    }
+    if (s.segment === 'rumour') {
+      const r = s.rumour!;
+      if (phase === 'prompt') return DURATIONS.rumourPrompt;
+      if (phase === 'answer') return DURATIONS.rumourStep[r.steps[r.current]?.level ?? 'n5'];
+      if (phase === 'reveal') return 20_000 + rumourReadEnd(r);
+      if (phase === 'score') return DURATIONS.rumourScore;
     }
     if (s.segment === 'shiritori') {
       const sh = s.shiritori!;
@@ -503,6 +669,20 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       }
       return false;
     }
+    if (s.segment === 'rumour' && s.rumour) {
+      const r = s.rumour;
+      if (phase === 'answer') {
+        const step = r.steps[r.current];
+        return !step || step.text !== null || !ctx.player(step.playerId)?.connected;
+      }
+      if (phase === 'reveal') {
+        if (here.length === 0) return false;
+        const voters = here.filter((p) => r.steps.some((st) => st.text !== null && st.playerId !== p.id));
+        const voters2 = voters.filter((p) => r.steps.some((st) => st.text !== null && !st.standIn && st.playerId !== p.id));
+        return voters2.every((p) => r.votes[p.id] !== undefined) && ctx.now >= r.revealAt + rumourReadEnd(r);
+      }
+      return false;
+    }
     if (s.segment === 'shiritori' && s.shiritori) {
       const sh = s.shiritori;
       if (phase === 'answer') return sh.acted || !sh.turn || !ctx.player(sh.turn);
@@ -528,11 +708,17 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       case 'step':
         return moveStep(s, phase, playerId, raw.utterance);
       case 'vote':
-        return moveVote(s, phase, playerId, raw.step);
+        return s.segment === 'rumour' ? moveRumourVote(s, phase, playerId, raw.step) : moveVote(s, phase, playerId, raw.step);
       case 'word':
         return moveWord(s, phase, playerId, raw.utterance, ctx);
       case 'hint':
-        return moveHint(s, phase, playerId, ctx);
+        return s.segment === 'rumour' ? moveRumourHint(s, phase, playerId) : moveHint(s, phase, playerId, ctx);
+      case 'fin':
+        return moveFin(s, phase, playerId, raw, ctx);
+      case 'peek':
+        return moveRumourPeek(s, phase, playerId);
+      case 'relay':
+        return moveRelay(s, phase, playerId, raw.utterance, ctx);
       case 'judge':
         return moveJudge(s, phase, playerId, raw.accept);
       default:
@@ -546,6 +732,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       // Their fake stays on the board (someone may already have picked it) but earns nothing.
     }
     if (s.telephone) delete s.telephone.votes[playerId];
+    if (s.rumour) delete s.rumour.votes[playerId];
     const sh = s.shiritori;
     if (sh) {
       if (sh.alive.includes(playerId) && sh.turn !== playerId) knockOut(s, ctx, playerId, 'left', null);
@@ -567,8 +754,10 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       segment: phase === 'intro' ? null : s.segment,
       round: s.round,
       earned: s.earned,
+      round2: ctx.players().length >= TELEPHONE_MIN_PLAYERS && rumourRoom(ctx) ? 'rumour' : 'telephone',
       fake: s.segment === 'fake' && phase !== 'intro' ? fakeView(s, phase, me) : null,
       telephone: s.segment === 'telephone' ? telephoneView(s, phase, me) : null,
+      rumour: s.segment === 'rumour' ? rumourView(s, phase, me, ctx) : null,
       shiritori: s.segment === 'shiritori' ? shiritoriView(s, phase, me, ctx) : null,
     };
   },
@@ -585,6 +774,8 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
     if (winner && ctx.player(winner)) out.push({ playerId: winner, name: name(ctx, winner), title: 'しりとり王', en: 'Shiritori Champion' });
     const fibber = top(s.stats.fooled);
     if (fibber) out.push({ playerId: fibber, name: name(ctx, fibber), title: 'うそつき名人', en: 'Master Fibber (fooled the most players)' });
+    const finner = top(s.stats.rumourVotes);
+    if (finner) out.push({ playerId: finner, name: name(ctx, finner), title: 'おひれ大賞', en: 'Biggest Fin (the room’s favourite rumour relay)' });
     const translator = top(s.stats.telVotes);
     if (translator) out.push({ playerId: translator, name: name(ctx, translator), title: 'ほんやく大賞', en: 'Translation Grand Prize (favourite step)' });
     return out;
@@ -603,6 +794,10 @@ function enterPrompt(s: WordGauntletState, ctx: ModeContext): void {
     s.fakeIndex += 1;
     s.fake = { word, options: [], picks: {}, said: {}, results: null, points: {} };
     ctx.cue({ host: 'pon', event: 'prompt_read', prompt: { text: word.jp.text, kana: word.jp.kana, en: 'What does this word mean?' } });
+    return;
+  }
+  if (s.segment === 'fake' && ctx.players().length >= TELEPHONE_MIN_PLAYERS && rumourRoom(ctx)) {
+    startRumour(s, ctx);
     return;
   }
   if (s.segment === 'fake' && ctx.players().length >= TELEPHONE_MIN_PLAYERS) {
@@ -879,6 +1074,448 @@ function scoreTelephone(s: WordGauntletState, ctx: ModeContext): void {
   t.points = points;
   const best = Object.entries(points).sort((a, b) => b[1] - a[1])[0];
   if (best) ctx.cue({ host: 'pon', event: 'encore_cheer', slots: { name: name(ctx, best[0]) } });
+}
+
+// ---- The rumour round (うわさの でんごんゲーム) ----
+
+/** The rumour round takes round 2 when anyone in the room plays at N4 (it's built on N4 frames). */
+export function rumourRoom(ctx: ModeContext): boolean {
+  return ctx.players().some((p) => p.level === 'n4');
+}
+
+/** A hand of fin cards with at least one big, visual fin in it. */
+function dealFins(deck: RumourFin[], at: { next: number }): string[] {
+  const hand: string[] = [];
+  const want = Math.min(RUMOUR_FINS_OFFERED, deck.length);
+  let guard = 0;
+  while (hand.length < want && guard++ < deck.length * 3) {
+    const f = deck[at.next++ % deck.length]!;
+    if (hand.includes(f.id)) continue;
+    // Keep the last slot for a big fin when the hand has none yet.
+    if (hand.length === want - 1 && !f.big && !hand.some((id) => rumourFin(id)?.big) && deck.some((x) => x.big && !hand.includes(x.id))) continue;
+    hand.push(f.id);
+  }
+  return hand;
+}
+
+function startRumour(s: WordGauntletState, ctx: ModeContext): void {
+  s.segment = 'rumour';
+  s.round = 2;
+  s.pool = { base: 0, bonus: 0 };
+  const audience = ctx.audience ?? 'family';
+  const all = rumourSeeds(audience);
+  const fresh = all.filter((x) => !s.rumoursTold.includes(x.id));
+  // A Cheeky room hears a Cheeky rumour when one is left.
+  const cheeky = fresh.filter((x) => x.audience === 'cheeky');
+  const pool = audience === 'cheeky' && cheeky.length ? cheeky : fresh.length ? fresh : all;
+  const seed = pool[Math.floor(ctx.random() * pool.length)]!;
+  s.rumoursTold.push(seed.id);
+  const seated = ctx.players();
+  const startAt = Math.floor(ctx.random() * seated.length);
+  const order = [...seated.slice(startAt), ...seated.slice(0, startAt)];
+  const deck = shuffled(rumourFins(audience), () => ctx.random());
+  const at = { next: 0 };
+  const steps: RumourStep[] = order.map((p) => ({
+    playerId: p.id,
+    level: p.level,
+    hintFrame: null,
+    heardFrame: null,
+    offered: dealFins(deck, at),
+    fin: null,
+    ownFin: null,
+    text: null,
+    reading: null,
+    via: null,
+    frame: null,
+    kept: null,
+    finSaid: false,
+    echoed: false,
+    hint: 0,
+    peeked: false,
+    standIn: false,
+    skipped: false,
+  }));
+  s.rumour = { seed, fins: [], steps, current: -1, revealAt: 0, readAt: [], frameStart: Math.floor(ctx.random() * RUMOUR_FRAMES.length), votes: {}, points: null };
+  ctx.cue({ host: 'nobiko', event: 'rumour_intro' });
+}
+
+function nextRumourStep(s: WordGauntletState): number {
+  const r = s.rumour;
+  if (!r) return -1;
+  const i = r.current + 1;
+  return i < r.steps.length ? i : -1;
+}
+
+/** What the relayer at `index` hears: the last relay passed on before theirs, or Nobiko-san's opener. */
+export function rumourHeard(r: Rumour, index: number): { text: string; kana: string; opener: boolean } {
+  for (let i = index - 1; i >= 0; i--) {
+    const step = r.steps[i]!;
+    if (step.text !== null) return { text: step.text, kana: step.reading ?? step.text, opener: false };
+  }
+  const o = rumourOpener(r.seed);
+  return { text: o.text, kana: o.kana, opener: true };
+}
+
+/** The fin a step added, as the rumour carries it. */
+function stepFin(step: RumourStep, index: number): RumourFin | null {
+  if (step.ownFin) return { id: `own-${index}`, kana: step.ownFin, en: `“${step.ownFin}”`, tile: step.ownFin, keys: [step.ownFin], kind: 'how' };
+  return step.fin ? (rumourFin(step.fin) ?? null) : null;
+}
+
+/** Nobiko-san's version of what a relayer heard, with their fin added: the hint line. N5 hears it in polite form. */
+function modelFor(r: Rumour, step: RumourStep, fin: RumourFin | null): JpText {
+  const fins = [...r.fins, ...(fin ? [fin] : [])].slice(-MAX_FINS);
+  const frame = step.level === 'n4' ? (step.hintFrame ?? 'n5') : 'n5';
+  return rumourLine(r.seed, fins, frame);
+}
+
+/**
+ * The rumour as it now stands, from what the relay actually said: the fins it still carries (older ones it
+ * dropped fall off) and the new one if it made it in. A rumour is only what people say.
+ */
+function carryFins(r: Rumour, step: RumourStep, index: number, reading: string): void {
+  const fin = stepFin(step, index);
+  step.finSaid = !!fin && finKept(fin, reading);
+  const kept = r.fins.filter((f) => finKept(f, reading));
+  r.fins = fin && step.finSaid ? addFin(kept, fin) : kept.slice(-MAX_FINS);
+}
+
+/**
+ * Kana relays and Nobiko-san's stand-ins pass on what they heard with the fin tacked on, so earlier drift
+ * survives and no frame is handed to the next player for free.
+ */
+function tackOn(r: Rumour, step: RumourStep, index: number): { text: string; kana: string } {
+  const heard = rumourHeard(r, index);
+  const fin = stepFin(step, index);
+  const strip = (x: string) => x.replace(/[。！？!?\s]+$/u, '');
+  const tail = fin ? ` しかも、${fin.kana}！` : '';
+  step.finSaid = !!fin;
+  if (fin) r.fins = addFin(r.fins, fin);
+  return { text: `${strip(heard.text)}。${tail}`.trim(), kana: `${strip(heard.kana)}。${tail}`.trim() };
+}
+
+/** How long Nobiko-san needs for a line (and so how long it stays alone on the TV). */
+const readMs = (kana: string): number => Math.max(RUMOUR_REVEAL_STEP_MS, 1_500 + kana.replace(/[\s、。！？]/g, '').length * RUMOUR_READ_MS_PER_KANA);
+
+/** When the last reveal line has been read. */
+function rumourReadEnd(r: Rumour): number {
+  if (!r.readAt.length) return RUMOUR_REVEAL_STEP_MS * (r.steps.length + 2);
+  const lastIdx = r.steps.map((st) => st.text !== null).lastIndexOf(true);
+  const last = lastIdx >= 0 ? r.steps[lastIdx]! : null;
+  return r.readAt[lastIdx + 1]! + (last ? readMs(last.reading ?? last.text ?? '') : RUMOUR_REVEAL_STEP_MS);
+}
+
+function enterRumour(s: WordGauntletState, phase: Phase, ctx: ModeContext): void {
+  const r = s.rumour!;
+  if (phase === 'answer') {
+    r.current = nextRumourStep(s);
+    if (r.current < 0) r.current = r.steps.length;
+  }
+  if (phase === 'reveal') {
+    r.current = r.steps.length;
+    r.revealAt = ctx.now;
+    const o = rumourOpener(r.seed);
+    // Kana players never relay the opener in words, so it isn't a review card for them.
+    for (const p of ctx.players()) if (p.level !== 'kana') ctx.phrase(p.id, { itemId: `wg.rumour.${r.seed.id}`, text: o.text, kana: o.kana, en: o.en, outcome: 'seen' });
+    // Nobiko-san reads the relay aloud, one line after another, in time with the TV (VOICEVOX when the server
+    // has it, else the TV's own voice). Players' words already passed the moderation filter (commercial-blockers row 36).
+    let at = 0;
+    r.readAt = [0];
+    ctx.cue({ host: 'nobiko', event: 'rumour_relay', slots: { quip: o.text, quip_kana: o.kana, quip_en: o.en }, atMs: RUMOUR_READ_LEAD_MS });
+    let prev = o.kana;
+    r.steps.forEach((st, i) => {
+      if (st.text !== null) at += readMs(prev);
+      r.readAt.push(at);
+      if (st.text === null) return;
+      prev = st.reading ?? st.text;
+      ctx.cue({ host: 'nobiko', event: 'rumour_relay', slots: { quip: st.text, quip_kana: prev, quip_en: `${name(ctx, st.playerId)}'s relay` }, atMs: at + RUMOUR_READ_LEAD_MS });
+      void i;
+    });
+    ctx.cue({ host: 'nobiko', event: 'rumour_react', atMs: at + readMs(prev) });
+  }
+  if (phase === 'score') {
+    scoreRumour(s, ctx);
+    ctx.cue({ host: 'nobiko', event: 'rumour_tease' });
+    ctx.cue({ host: 'nobiko', event: 'rumour_line', slots: { quip: r.seed.truth.text, quip_kana: r.seed.truth.kana, quip_en: r.seed.truth.en }, atMs: RUMOUR_TRUTH_AT_MS });
+  }
+}
+
+/** The relay's turn ended: a relayer who picked a fin but sent nothing has Nobiko-san pass it on. */
+function closeRumourStep(s: WordGauntletState): void {
+  const r = s.rumour;
+  const step = r?.steps[r.current];
+  if (!r || !step || step.text !== null) return;
+  if (step.fin || step.ownFin) {
+    const line = tackOn(r, step, r.current);
+    step.text = line.text;
+    step.reading = line.kana;
+    step.standIn = true;
+    step.kept = { who: true, where: true, what: true };
+    return;
+  }
+  step.skipped = true;
+}
+
+/** The step a move acts on: during your turn, or (for picking a fin) any time before it. */
+function rumourStepFor(s: WordGauntletState, phase: Phase, playerId: string, early: boolean): RumourStep | MoveResult {
+  if (s.segment !== 'rumour' || !s.rumour) return moveError('wrong-phase');
+  const r = s.rumour;
+  const index = r.steps.findIndex((st) => st.playerId === playerId);
+  const step = r.steps[index];
+  if (!step) return moveError('not-your-turn');
+  if (step.text !== null || step.skipped) return moveError('already-answered');
+  const now = phase === 'answer' && index === r.current;
+  const before = early && (phase === 'prompt' || (phase === 'answer' && index > r.current));
+  if (!now && !before) return phase === 'answer' || phase === 'prompt' ? moveError('not-your-turn') : moveError('wrong-phase');
+  return step;
+}
+const myRumourStep = (s: WordGauntletState, phase: Phase, playerId: string): RumourStep | MoveResult => rumourStepFor(s, phase, playerId, false);
+const isStep = (x: RumourStep | MoveResult): x is RumourStep => 'playerId' in x;
+
+/**
+ * Rumours are about the studio's yōkai, never about players: a relay that names one is refused. The name
+ * counts as written (Aki), or in kana followed by さん, a particle or the end (so ダン in ダンスを doesn't count).
+ */
+function namesAPlayer(text: string, ctx: ModeContext): boolean {
+  const t = toHiragana(text.normalize('NFKC'));
+  const raw = text.toLowerCase();
+  return ctx.players().some((p) => {
+    const n = p.name.trim();
+    if (n.length < 2) return false;
+    if (/[a-z]/i.test(n) ? new RegExp(`(^|[^a-z])${n.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^a-z])`).test(raw) : raw.includes(n.toLowerCase())) return true;
+    const kana = toHiragana(nameToKatakana(n).normalize('NFKC')).replace(/[\s　]/g, '');
+    if (kana.length < 2) return false;
+    // A two-kana name (アキ) is also a word (あき, autumn): only with an honorific or on its own.
+    const after = kana.length >= 3 ? '(さん|くん|ちゃん|さま|が|は|に|の|と|も|を|って|$|[^ぁ-ゖー])' : '(さん|くん|ちゃん|さま|$|[^ぁ-ゖー])';
+    return new RegExp(`${kana}${after}`).test(t);
+  });
+}
+
+function moveFin(s: WordGauntletState, phase: Phase, playerId: string, raw: Record<string, unknown>, ctx: ModeContext): MoveResult {
+  const step = rumourStepFor(s, phase, playerId, true);
+  if (!isStep(step)) return step;
+  if (typeof raw.own === 'string') {
+    if (step.level !== 'n4') return moveError('bad-move');
+    const own = cleanText(raw.own, 30);
+    if (!own) return moveError('empty-answer');
+    if (!hasJapanese(own)) return moveError('not-japanese');
+    if (!playerTextAllowed(own, ctx.audience)) return moveError('kids-words');
+    if (namesAPlayer(own, ctx)) return moveError('names-player');
+    step.ownFin = own;
+    step.fin = null;
+    return MOVE_OK;
+  }
+  if (typeof raw.fin !== 'string' || !step.offered.includes(raw.fin)) return moveError('bad-move');
+  step.fin = raw.fin;
+  step.ownFin = null;
+  return MOVE_OK;
+}
+
+function moveRumourHint(s: WordGauntletState, phase: Phase, playerId: string): MoveResult {
+  const step = myRumourStep(s, phase, playerId);
+  if (!isStep(step)) return step;
+  const r = s.rumour!;
+  const max = step.level === 'n4' ? 2 : step.level === 'n5' ? 1 : 0;
+  if (step.hint >= max) return moveError('no-hint');
+  step.hint += 1;
+  if (step.level === 'n4' && step.hint === 1) {
+    // The next frame along from this room's start, never the one they just heard.
+    const heard = rumourHeard(r, r.current);
+    const heardFrame = rumourFrameOf({ text: heard.text, reading: heard.kana });
+    const n4Before = r.steps.slice(0, r.current).filter((st) => st.level === 'n4').length;
+    for (let k = 0; k < RUMOUR_FRAMES.length; k++) {
+      const f = RUMOUR_FRAMES[(r.frameStart + n4Before + k) % RUMOUR_FRAMES.length]!.id;
+      if (f !== heardFrame) {
+        step.hintFrame = f;
+        break;
+      }
+    }
+  }
+  return MOVE_OK;
+}
+
+function moveRumourPeek(s: WordGauntletState, phase: Phase, playerId: string): MoveResult {
+  const step = myRumourStep(s, phase, playerId);
+  if (!isStep(step)) return step;
+  step.peeked = true;
+  return MOVE_OK;
+}
+
+const allKept = (k: RumourStep['kept']): boolean => !!k && k.who && k.where && k.what;
+
+function moveRelay(s: WordGauntletState, phase: Phase, playerId: string, u: unknown, ctx: ModeContext): MoveResult {
+  const step = myRumourStep(s, phase, playerId);
+  if (!isStep(step)) return step;
+  const r = s.rumour!;
+  if (!step.fin && !step.ownFin) return moveError('pick-fin');
+  const fin = stepFin(step, r.current);
+  if (step.level === 'kana') {
+    // Kana relayers add a fin by tile and say the tile; the rumour travels on as they heard it, plus the fin.
+    let via: Via | null = null;
+    if (u !== undefined) {
+      if (!isUtterance(u)) return moveError('bad-move');
+      const text = cleanText(u.text, MAX_ANSWER_LENGTH);
+      if (!text || !hasJapanese(text)) return moveError('not-japanese');
+      via = u.via;
+    }
+    const line = tackOn(r, step, r.current);
+    step.text = line.text;
+    step.reading = line.kana;
+    step.via = via;
+    step.kept = { who: true, where: true, what: true };
+    if (fin) ctx.phrase(playerId, { itemId: `wg.fin.${fin.id}`, text: fin.kana, kana: fin.kana, en: fin.en, outcome: via === 'speech' ? 'said' : 'seen', recall: 'read' });
+    return MOVE_OK;
+  }
+  if (!isUtterance(u)) return moveError('bad-move');
+  const text = cleanText(u.text, MAX_ANSWER_LENGTH);
+  if (!text) return moveError('empty-answer');
+  if (!hasJapanese(text)) return moveError('not-japanese');
+  if (!playerTextAllowed(text, ctx.audience)) return moveError('kids-words');
+  if (namesAPlayer(text, ctx)) return moveError('names-player');
+  const reading = u.reading ?? (isKana(text) ? text : null);
+  const heard = rumourHeard(r, r.current);
+  step.heardFrame = rumourFrameOf({ text: heard.text, reading: heard.kana });
+  step.text = text;
+  step.reading = reading;
+  step.via = u.via;
+  step.kept = keptParts(r.seed, reading ?? text);
+  step.frame = rumourFrameOf({ text, reading: reading ?? undefined, tokens: u.tokens });
+  step.echoed = !!step.frame && step.frame === step.heardFrame;
+  carryFins(r, step, r.current, reading ?? text);
+  // Counts toward the path only when it was theirs: no words shown, no model line, all three parts kept,
+  // and (N4) not just the frame they heard said back.
+  const memory = !step.peeked && step.hint < (step.level === 'n4' ? 2 : 1) && allKept(step.kept) && !step.echoed;
+  const en = rumourLine(r.seed, r.fins, step.level === 'n4' && step.frame ? step.frame : 'n5').en;
+  ctx.phrase(playerId, {
+    itemId: `wg.rumour.${r.seed.id}.${step.level}`,
+    text,
+    kana: reading ?? text,
+    en,
+    outcome: u.via === 'speech' && allKept(step.kept) ? 'said' : 'seen',
+    recall: memory ? 'memory' : 'read',
+  });
+  return MOVE_OK;
+}
+
+function moveRumourVote(s: WordGauntletState, phase: Phase, playerId: string, raw: unknown): MoveResult {
+  if (s.segment !== 'rumour' || phase !== 'reveal' || !s.rumour) return moveError('wrong-phase');
+  const r = s.rumour;
+  if (r.votes[playerId] !== undefined) return moveError('already-voted');
+  if (typeof raw !== 'number' || !Number.isInteger(raw)) return moveError('bad-move');
+  const step = r.steps[raw];
+  // Nobiko-san's stand-ins aren't anyone's relay to vote for.
+  if (!step || step.text === null || step.standIn) return moveError('unknown-answer');
+  if (step.playerId === playerId) return moveError('own-answer');
+  r.votes[playerId] = raw;
+  return MOVE_OK;
+}
+
+function scoreRumour(s: WordGauntletState, ctx: ModeContext): void {
+  const r = s.rumour!;
+  const points: Record<string, number> = {};
+  const x = TELEPHONE_MULTIPLIER;
+  for (const st of r.steps) {
+    if (st.text === null || st.standIn || !ctx.player(st.playerId)) continue;
+    giveBase(s, ctx, st.playerId, RUMOUR_RELAY_POINTS * x, points);
+    if (st.level !== 'kana' && allKept(st.kept) && st.finSaid) giveBase(s, ctx, st.playerId, RUMOUR_KEPT_POINTS * x, points);
+    // A frame of their own: full points from memory, half after Nobiko-san's line; nothing for an echo.
+    if (st.level === 'n4' && st.frame && !st.echoed) giveBase(s, ctx, st.playerId, (st.hint >= 2 ? RUMOUR_FRAME_POINTS / 2 : RUMOUR_FRAME_POINTS) * x, points);
+  }
+  for (const [voter, index] of Object.entries(r.votes)) {
+    const step = r.steps[index];
+    if (!step || !ctx.player(voter)) continue;
+    giveBase(s, ctx, step.playerId, POINTS_PER_TELEPHONE_VOTE * x, points);
+    s.stats.rumourVotes[step.playerId] = (s.stats.rumourVotes[step.playerId] ?? 0) + 1;
+  }
+  const wants = r.steps
+    .filter((st) => st.text !== null && !st.standIn && st.via && ctx.player(st.playerId))
+    .map((st) => ({ id: st.playerId, want: (st.via === 'speech' ? TELEPHONE_SPOKEN_BONUS : TELEPHONE_TYPED_BONUS) * x }));
+  const total = wants.reduce((n, w) => n + w.want, 0);
+  const cap = Math.floor((s.pool.base * BONUS_SHARE) / (1 - BONUS_SHARE));
+  const scale = total > cap ? cap / total : 1;
+  for (const w of wants) giveBonus(s, ctx, w.id, Math.floor(w.want * scale), points);
+  r.points = points;
+}
+
+const frameLabel = (id: RumourFrameId | null): { ja: string; en: string } | null => {
+  const f = id ? RUMOUR_FRAMES.find((x) => x.id === id) : undefined;
+  return f ? { ja: f.ja, en: f.en } : null;
+};
+
+/** The last relay actually passed on (Nobiko-san's opener if nobody passed it on). */
+function finalRelay(r: Rumour): JpText {
+  const h = rumourHeard(r, r.steps.length);
+  return { text: h.text, kana: h.kana, en: '' };
+}
+
+function rumourResult(r: Rumour, step: RumourStep, index: number): NonNullable<NonNullable<WordGauntletView['rumour']>['mine']>['result'] {
+  const fin = stepFin(step, index);
+  const k = step.kept;
+  const missed = k && step.level !== 'kana' && !step.standIn ? [!k.who ? r.seed.who.kana : null, !k.where ? r.seed.where.kana : null, !k.what ? r.seed.what.kana : null].filter((x): x is string => !!x) : [];
+  let tryNext: { ja: string; en: string; line: JpText } | null = null;
+  if (step.level === 'n4' && !step.standIn && step.text !== null && (!step.frame || step.echoed)) {
+    const f = RUMOUR_FRAMES.find((x) => x.id !== step.heardFrame && x.id !== step.frame) ?? RUMOUR_FRAMES[0]!;
+    tryNext = { ja: f.ja, en: f.en, line: rumourLine(r.seed, fin ? [fin] : [], f.id) };
+  }
+  const counted = step.level !== 'kana' && !step.standIn && step.via === 'speech' && !step.peeked && step.hint < (step.level === 'n4' ? 2 : 1) && allKept(step.kept) && !step.echoed;
+  return { kept: k, missed, frame: frameLabel(step.frame), echoed: step.echoed, fin: fin ? { kana: fin.kana, en: fin.en } : null, finSaid: step.finSaid, standIn: step.standIn, counted, tryNext };
+}
+
+function rumourView(s: WordGauntletState, phase: Phase, me: string | null, ctx: ModeContext): WordGauntletView['rumour'] {
+  const r = s.rumour;
+  if (!r) return null;
+  const revealed = phase === 'reveal' || phase === 'score';
+  const myIndex = me ? r.steps.findIndex((st) => st.playerId === me) : -1;
+  const step = myIndex >= 0 ? r.steps[myIndex]! : null;
+  const live = !!step && phase === 'answer' && myIndex === r.current && step.text === null;
+  let mine: NonNullable<WordGauntletView['rumour']>['mine'] = null;
+  if (me && step) {
+    const heard = live ? rumourHeard(r, myIndex) : null;
+    const showModels = live && ((step.level === 'n4' && step.hint >= 2) || (step.level === 'n5' && step.hint >= 1));
+    const models: Record<string, JpText> | null = showModels
+      ? Object.fromEntries([...step.offered.map((id) => [id, modelFor(r, step, rumourFin(id) ?? null)] as const), ['', modelFor(r, step, step.ownFin ? stepFin(step, myIndex) : null)] as const])
+      : null;
+    mine = {
+      step: myIndex,
+      level: step.level,
+      heard: heard ? { ...heard, romaji: step.level === 'kana' ? toRomaji(heard.kana) : null } : null,
+      fins: step.offered.map((id) => rumourFin(id)).filter((f): f is RumourFin => !!f).map((f) => ({ id: f.id, kana: f.kana, en: f.en, tile: f.tile })),
+      fin: step.fin,
+      ownFin: step.ownFin,
+      hint: step.hint,
+      frame: live && step.level === 'n4' && step.hint >= 1 ? frameLabel(step.hintFrame) : null,
+      models,
+      peeked: step.peeked,
+      sent: step.text,
+      result: phase === 'score' ? rumourResult(r, step, myIndex) : null,
+      vote: r.votes[me] ?? null,
+    };
+  } else if (me) {
+    mine = { step: null, level: ctx.player(me)?.level ?? 'n5', heard: null, fins: [], fin: null, ownFin: null, hint: 0, frame: null, models: null, peeked: false, sent: null, result: null, vote: r.votes[me] ?? null };
+  }
+  const votes = phase === 'score' ? r.steps.map((_, i) => Object.values(r.votes).filter((v) => v === i).length) : null;
+  return {
+    subject: { kana: r.seed.who.kana, en: r.seed.who.en, sprite: r.seed.who.sprite },
+    order: r.steps.map((st) => ({ playerId: st.playerId, level: st.level, done: st.text !== null, skipped: st.skipped, standIn: st.standIn })),
+    current: r.current,
+    reveal: revealed
+      ? {
+          opener: rumourOpener(r.seed),
+          steps: r.steps.map((st, i) => {
+            const fin = stepFin(st, i);
+            return { index: i, playerId: st.playerId, text: st.text, kana: st.reading, fin: fin ? { kana: fin.kana, en: fin.en } : null, finSaid: st.finSaid, frame: st.echoed ? null : frameLabel(st.frame), kept: st.kept, standIn: st.standIn, skipped: st.skipped };
+          }),
+          final: finalRelay(r),
+        }
+      : null,
+    truth: phase === 'score' ? r.seed.truth : null,
+    readAt: r.readAt,
+    truthAtMs: RUMOUR_TRUTH_AT_MS,
+    voted: Object.keys(r.votes),
+    votes,
+    points: phase === 'score' ? r.points : null,
+    mine,
+  };
 }
 
 // ---- Shiritori Showdown ----

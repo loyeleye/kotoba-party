@@ -394,7 +394,7 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     await ctx.server.close();
   });
 
-  it('reaches the recap with scores that add up and no desyncs', async () => {
+  const playBots = async (levels: ('kana' | 'n5' | 'n4')[], expected: string[]) => {
     const { baseUrl, truth, server } = ctx;
     const created = await createRoom(baseUrl);
     const room = server.rooms.get(created.code)!;
@@ -432,12 +432,12 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     const policy = wordGauntletPolicy(realContent, { delayMs: 5 });
     const bots: Bot[] = [];
     for (let i = 1; i <= 5; i++) {
-      bots.push(await Bot.join({ baseUrl, code: created.code, name: `wg${i}`, policy, level: i === 5 ? 'kana' : 'n5', onState: (bot, view, v) => record(bot.playerId, view, v) }));
+      bots.push(await Bot.join({ baseUrl, code: created.code, name: `wg${i}`, policy, level: levels[i - 1]!, onState: (bot, view, v) => record(bot.playerId, view, v) }));
     }
     await until(() => finished, 18_000, 'the gauntlet');
     await until(() => [director.client, ...bots.map((b) => b.client)].every((c) => c.version === room.version), 5_000, 'quiescence');
 
-    expect([...segments]).toEqual(['fake', 'telephone', 'shiritori']);
+    expect([...segments]).toEqual(expected);
     expect(challenged).toBe(true);
     // Every point the mode handed out shows up on the scoreboard.
     const standings = (recap as RoomView['recap'])!.standings;
@@ -452,5 +452,13 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     expect(failures).toEqual([]);
     for (const b of bots) b.stop();
     director.client.close();
+  };
+
+  it('reaches the recap with scores that add up and no desyncs', async () => {
+    await playBots(['n5', 'n5', 'n5', 'n5', 'kana'], ['fake', 'telephone', 'shiritori']);
+  });
+
+  it('plays the rumour round instead when an N4 player is in the room', async () => {
+    await playBots(['n4', 'n5', 'n4', 'n5', 'kana'], ['fake', 'rumour', 'shiritori']);
   });
 });

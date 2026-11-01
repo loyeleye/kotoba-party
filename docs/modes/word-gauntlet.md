@@ -14,6 +14,7 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 | --- | --- | --- |
 | 1. Fake Kanji (×2 words) | prompt → answer → reveal → score | A real, obscure word (kanji + reading) is shown. Everyone writes a fake English meaning in private. At the reveal, the fakes and the real meaning are listed anonymously and everyone picks the one they think is real (not their own). Score: who wrote what, who picked what, then the real word becomes the **golden word**: the room says it together, and each phone can say it for a small bonus. It goes in everyone's phrasebook. |
 | 2. Lost in Translation | prompt → answer × N → reveal → score | An N5 phrase from the night's topic pack passes around in a seat rotation starting at a random player: step 1 turns it into English, step 2 back into Japanese (spoken, typed fallback), and so on. Each step is its own `answer` phase and the phone shows only the step before. The reveal shows the drift one step at a time; everyone votes for a favourite step (not their own). Double points. |
+| 2b. Rumour Relay (うわさの でんごん), in place of round 2 when anyone in the room plays at N4 | prompt → answer × N → reveal → score | Nobiko-san whispers a rumour about a studio yōkai to the first phone. Each relayer hears the previous relay in Nobiko-san's voice, passes it on, and adds one fin (うわさに おひれが つく). The reveal reads the whole relay in her voice; everyone votes for the juiciest relay; then she tells what really happened. Double points. See below. |
 | 3. Shiritori Showdown | prompt → (answer ↔ reveal)… → score | A spoken word chain that starts with Pon's しりとり. Each turn is its own `answer` phase, so the room's phase clock is the turn clock. A word nobody can vouch for opens a short `reveal` phase where judges vote. The last player standing takes the crown. |
 
 ### Fake Kanji scoring
@@ -25,6 +26,64 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 - 100 × 2 per vote for your step.
 - Japanese steps: +50 × 2 spoken, +20 × 2 typed, all scaled down together if they would pass the 30% bonus pool.
 - A stepper who is disconnected when their step starts, or who runs out of time, is skipped ("lost in the post"); the next step sees the last step that was done.
+
+### Rumour Relay (うわさの でんごんゲーム, N4 and up)
+
+Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shared/src/modes/wordGauntlet/rumours.ts`
+(rumours, fins, frames, model lines), the rumour section of `wordGauntlet.ts`, the phone's `rumourScreen`, the TV's
+`rumour`. Tests: `tests/wordGauntletRumour.test.ts`, plus a bot game with N4 bots in `tests/wordGauntlet.test.ts`.
+
+- **When:** round 2 is the rumour round if anyone in the room plays at N4 when round 2 starts; otherwise it stays
+  Lost in Translation. Players at every level take part.
+- **The rumour:** who (a studio yōkai or a host), where, and what they're up to, plus who saw it (the source
+  for ＿に よると and ＿と いって いました). 9 rumours for every room and 3 more for Cheeky rooms. Rumours are about
+  the studio's yōkai, **never about players**: a relay or a fin that contains a player's name is refused
+  (`names-player`).
+- **A relay:** one `answer` phase per player in seat order from a random seat (35 s Kana, 50 s N5, 60 s N4). The
+  relayer's phone plays what they heard in Nobiko-san's voice (🔊 Listen) and hides the words until they tap
+  "Show the words" (shown at once when the phone has no voice or sound is off). Each relayer is dealt 3 fin cards
+  and must add one (at least one card is a big, visual fin; they can pick before their turn):
+  - **Kana:** tap a fin tile and say it (or pass it on without saying it). The rumour travels on as what they
+    heard, with 「しかも、＿！」 and their fin tacked on.
+  - **N5:** pick a fin card and say the whole rumour (typed works). "Need a hint?" shows Nobiko-san's polite
+    version (＿て います), with their fin.
+  - **N4:** pick a fin card or write their own (Japanese, 30 characters), and pass the rumour on as something they
+    heard, and make it juicier. The mission never names the grammar. Hint 1 shows a frame to try (from a random
+    start, each N4 relayer gets the next of ＿そうです, ＿と いって いました, ＿んだって, ＿に よると ＿そうです, ＿らしいです,
+    plain form + よ／ね／の, skipping the frame they just heard); hint 2 shows Nobiko-san's line in that frame.
+  - **Fins come from what was said.** A fin stays on the rumour only if the relay said it (its key kana are in the
+    reading); one the relayer picked but didn't say falls off (「おひれ、おちた！」). The rumour keeps its newest three
+    fins and one time fin at a time (まいばん replaces まいあさ ごじに). Model lines put time → place → how → action.
+  - **Echoes:** a relay that uses the same frame as the line it heard gets no frame points and doesn't count
+    toward the path; the score suggests a different frame with Nobiko-san's line in it.
+- **No player's voice moves between phones.** The next phone gets the relay's words (the transcript or the typed
+  text) and reads them with the phone's own Japanese voice (on-device first). At the reveal the TV has Nobiko-san
+  read each relay as a host line (`rumour_relay`): her VOICEVOX voice (No.7) when the server has VOICEVOX, else
+  the TV's own voice. No.7's terms allow this while the game is free (commercial-blockers rows 1 and 36); every
+  relay has passed the room's word filter first.
+- **Ran out of time:** with a fin picked, Nobiko-san passes it on for them (what they heard plus 「しかも、＿！」, no
+  points, no votes); with nothing picked, the phone is skipped and the next relayer hears the relay before.
+- **Reveal:** the TV shows Nobiko-san's opener and each relay in turn, each read in her voice and timed by the
+  line's length (`readAt`), with the fin it added (only if said) and the frame it used (not for an echo). After the
+  last one she reacts (`rumour_react`: 「ちょっと！ わたし、そこまで いって ないわよ！」). Everyone votes for the juiciest
+  relay (not their own, not a stand-in); the reveal waits until the lines are read.
+- **Score:** "The rumour now" (the last relay passed on), then she asks the room (`rumour_tease`), and a few seconds
+  later "What really happened…", the rumour's truth in her voice (mundane, or now and then stranger than the
+  rumour). Each phone shows what its relay lost, whether its fin survived, its frame, and a frame to try next.
+
+#### Rumour Relay scoring (all doubled, like the telephone)
+- Passing it on: 50. Kept who, where and what and said the fin (N5 and N4, checked by key words in the reading):
+  +50. Used a rumour frame other than the one heard (N4): +50, halved after the second hint. Each vote: 100. Speaking bonus +50 (typed +20) from the round's 30% pool. A stand-in earns no
+  relay points.
+
+#### Rumour Relay and the learning path
+- Each N5 and N4 relay goes in the relayer's phrasebook as what they said (`said` when spoken, `seen` when
+  typed), from memory only if they didn't open the words or Nobiko-san's line, kept who, where and what, and
+  didn't echo the frame they heard. So frames in it count toward the goals
+  through the path's own matchers: ＿そうです (4.6), ＿と いって いました and ＿って いって いました (4.14), ＿らしいです
+  (3.1), plain form (4.8). The round also recognises ＿に よると and ＿んだって, which the path has no frames for yet
+  (open question below).
+- Kana relayers' fins go in as tiles (`read`). Everyone gets the opener as `seen`.
 
 ### Shiritori rules (house rules from the design doc)
 - The next word starts with the last kana of the one before. ー continues from the kana before it (コーヒー → ひ). Small kana count as full size (きしゃ → や). Dakuten and handakuten may be added or dropped (か ↔ が, は ↔ ば ↔ ぱ).
@@ -50,7 +109,7 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 `intro`; `prompt_read` (each prompt); `reveal_react` (reveals); `kakegoe_call` (golden word); `encore_cheer` (telephone favourite); `miss_kind` (knock-out); `room_overrule` (challenged word accepted); `ippon` (crown); `recap_award` (by the room).
 
 ### Awards
-しりとり王 (showdown winner), うそつき名人 (fooled the most players), ほんやく大賞 (most telephone votes).
+しりとり王 (showdown winner), うそつき名人 (fooled the most players), ほんやく大賞 (most telephone votes), おひれ大賞 (most rumour votes).
 
 ### Content
 `words.ts` holds the mode's own **draft** content (`OBSCURE_WORDS_STATUS = 'draft'`): 18 real obscure words with meanings checked against standard dictionary senses (needs a fluent sign-off before shipping), 15 of them marked `kids` as the gentle set, 8 Cheeky-only words (`CHEEKY_WORDS`: 二日酔い, 千鳥足, 朝帰り, 午前様, 梯子酒, 泣き上戸, 鼻の下を伸ばす, 窓際族), plus placeholder N5 telephone starters and ~150 common hiragana nouns used only as a shiritori dictionary, hint pool and bot vocabulary. With no topic packs at all the mode still runs end to end.
@@ -76,6 +135,13 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 18. A 60-turn cap ends a showdown that never ends (most words, then points, wins).
 19. Fake Kanji follows the room's Audience setting: Kids deals only the 15 gentle words (no lying about your age, pockmarks or going broke), Family deals the 18-word base list, and Cheeky deals its own 8 words first (topped up from the base list). Shiritori and Telephone stay the same in every audience.
 
+20. The rumour round replaces Lost in Translation when anyone in the room plays at N4, rather than adding a fourth round: the game stays near 15 minutes and Lost in Translation is an N5 round.
+21. The rumour structure (who, where, what, fins) drives Nobiko-san's model lines and the "kept it" check, so Kana and N5 players can relay without parsing free speech.
+22. With No.7's terms read (2026-11-01: free while the game is non-commercial, no clause against live user text), the TV reads relays in Nobiko-san's VOICEVOX voice; phones use their own voice so a relay costs no server audio (commercial-blockers row 36).
+23. After the panel (all five seats plus humor): the rumour is rebuilt from what each relay said (fins only stay when spoken, the final rumour is the last relay passed on), the TV and the tags tell the truth about what happened, Nobiko-san reacts before the truth, and the truth lands a few seconds into the score.
+24. Kana relays and stand-ins tack 「しかも、＿！」 onto what they heard instead of replacing it with Nobiko-san's clean line, so earlier drift survives and the next N4 player isn't handed a frame for free.
+25. A frame that echoes the line you heard earns nothing: the round is about passing it on in your own words.
+
 ## Open questions
 1. A fluent check of the 18 obscure words and the 8 Cheeky words (plus Ladi's taste check on the Cheeky ones), the placeholder starters and the shiritori noun list (all `draft`).
 2. ~~Done: the shell's `ERRORS` map now has wording for these codes.~~ Should the phone's error flashes get proper wording in the shell's `ERRORS` map? The phone shows its own message after a refused move, but the shell first flashes the raw code (`too-close`, `wrong-start`, `repeat`, `not-japanese`…). Adding these to `controller/src/main.ts` would fix it.
@@ -83,3 +149,7 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 4. Mode-specific host events (e.g. `gauntlet_golden_word`, `shiritori_out`) would let Pon react more precisely than the shared events used now.
 5. Should a challenged word that is accepted be added to a room-wide "house words" list for later games?
 6. Comeback boosts to speaking bonuses (design doc) are not applied.
+7. The learning path has no frames for ＿に よると ＿そうです or ＿んだって, so the rumour round scores them but the path doesn't count them. The Japanese seat says both are N4 material (Minna no Nihongo lesson 47, Genki II lesson 17), so add them under goal 4.6 rather than N3, with the usual 10 real lines and 10 look-alikes.
+9. The rumour round needs about 20 Family rumours before launch so a regular group doesn't hear repeats (12 now, 3 of them Cheeky).
+10. The word filter isn't a moderation service: a relay read aloud on the TV has passed the filter only.
+8. Every rumour, fin, truth and Nobiko-san line in `rumours.ts` and her `rumour_*` lines is `draft` until a fluent check.

@@ -77,7 +77,7 @@ const SHOCK = new Set(['cushion_steal', 'concentration_stolen', 'concentration_y
 const THINK = new Set(['hajime_write', 'hajime_rank', 'tourist_vote', 'shodo_vote', 'onsen_accuse', 'happyokai_question', 'concentration_steal_open', 'late_vote']);
 
 /** Nobiko-san cranes her neck out to look as players answer and as their answers are revealed. */
-const PEEK = new Set(['say_it_first', 'reveal_react']);
+const PEEK = new Set(['say_it_first', 'reveal_react', 'rumour_intro', 'rumour_relay', 'rumour_react', 'rumour_tease']);
 
 /**
  * The host's reaction to a cue: a cheer for a win, a flinch for a miss, a gasp at a twist, a

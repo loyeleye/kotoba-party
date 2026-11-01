@@ -19,8 +19,11 @@ export const isSoundOff = (): boolean => soundOff;
 
 const synth = (): SpeechSynthesis | null => (typeof speechSynthesis === 'undefined' ? null : speechSynthesis);
 
+// On-device voices first: Chrome's network voices send the text to Google, and some of what phones read
+// is players' own words (Word Gauntlet's rumour relay; docs/commercial-blockers.md row 31).
 function jaVoice(): SpeechSynthesisVoice | null {
-  return synth()?.getVoices().find((v) => v.lang.replace('_', '-').toLowerCase().startsWith('ja')) ?? null;
+  const ja = synth()?.getVoices().filter((v) => v.lang.replace('_', '-').toLowerCase().startsWith('ja')) ?? [];
+  return ja.find((v) => v.localService) ?? ja[0] ?? null;
 }
 
 /** True unless we know there is no Japanese voice (voices load late on some phones). */
