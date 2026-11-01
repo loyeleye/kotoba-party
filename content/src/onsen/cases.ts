@@ -74,8 +74,8 @@ export const snowmanCase: OnsenCase = {
       persona: 'A cheerful, chatty guest who has been in the hot spring so long she is pink. Loves gossip.',
       answers: {
         where: { jp: t('10じはんに、ろてんぶろに いました。', 'じゅうじはんに、ろてんぶろに いました。', 'At 10:30 I was in the outdoor bath.'), report: said('すずきさんは 10じはんに ろてんぶろに いたと いっていました。', 'すずきさんは じゅうじはんに ろてんぶろに いたと いっていました。', 'Suzuki said she was in the outdoor bath at 10:30.') },
-        what: { jp: t('10じ45ふんまで おんせんに いました。ゆきだるまさんは げんきでした。', 'じゅうじよんじゅうごふんまで おんせんに いました。ゆきだるまさんは げんきでした。', 'I was in the hot spring until 10:45. Mr. Snowman was fine.'), clueId: 'fine', report: said('すずきさんは 10じ45ふんまで ゆきだるまさんが げんきだったと いっていました。', 'すずきさんは じゅうじよんじゅうごふんまで ゆきだるまさんが げんきだったと いっていました。', 'Suzuki said Mr. Snowman was fine until 10:45.') },
-        who: { jp: t('10じ50ぷんに たなかさんを みました。おおきい なべを もって いました。', 'じゅうじごじゅっぷんに たなかさんを みました。おおきい なべを もって いました。', 'At 10:50 I saw Tanaka. He was carrying a big pot.'), clueId: 'saw-tanaka', report: seen('たなかさんは 10じ50ぷんに すずきさんに みられました。', 'たなかさんは じゅうじごじゅっぷんに すずきさんに みられました。', 'Tanaka was seen by Suzuki at 10:50.') },
+        what: { jp: t('10じ45ふんまで おんせんに いました。ゆきだるまさんは げんきでした。', 'じゅうじよんじゅうごふんまで おんせんに いました。ゆきだるまさんは げんきでした。', 'I was in the hot spring until 10:45. Mr. Snowman was fine.'), clueId: 'fine', report: said('すずきさんは ゆきだるまさんが 10じ45ふんまで げんきだったと いっていました。', 'すずきさんは ゆきだるまさんが じゅうじよんじゅうごふんまで げんきだったと いっていました。', 'Suzuki said Mr. Snowman was fine until 10:45.') },
+        who: { jp: t('10じ50ぷんに たなかさんを みました。おおきい なべを もって いました。', 'じゅうじごじゅっぷんに たなかさんを みました。おおきい なべを もって いました。', 'At 10:50 I saw Tanaka. He was carrying a big pot.'), clueId: 'saw-tanaka', report: said('すずきさんは 10じ50ぷんに たなかさんが おおきい なべを もって いたと いっていました。', 'すずきさんは じゅうじごじゅっぷんに たなかさんが おおきい なべを もって いたと いっていました。', 'Suzuki said Tanaka was carrying a big pot at 10:50.') },
         when: { jp: t('11じに ねました。', 'じゅういちじに ねました。', 'I went to bed at 11.'), report: said('すずきさんは 11じに ねたと いっていました。', 'すずきさんは じゅういちじに ねたと いっていました。', 'Suzuki said she went to bed at 11.') },
         victim: { jp: k('しずかな ひとでした。いつも わらって いました。', 'He was a quiet one. He was always smiling.'), report: said('すずきさんは ゆきだるまさんが いつも わらって いたと いっていました。', null, 'Suzuki said Mr. Snowman was always smiling.') },
         item: { jp: k('あかい マフラー？　やまださんのです。', "The red scarf? It's Yamada's."), clueId: 'scarf', report: said('すずきさんは あかい マフラーが やまださんのだと いっていました。', null, 'Suzuki said the red scarf is Yamada’s.') },
@@ -139,10 +139,10 @@ export const puddingCase: OnsenCase = {
       answers: {
         where: { jp: t('8じまで、だいどころに いました。', 'はちじまで、だいどころに いました。', 'I was in the kitchen until 8.'), report: said('きむらさんは 8じまで だいどころに いたと いっていました。', 'きむらさんは はちじまで だいどころに いたと いっていました。', 'Kimura said she was in the kitchen until 8.') },
         what: { jp: t('8じに、プリンさんを れいぞうこに いれました。', 'はちじに、プリンさんを れいぞうこに いれました。', 'At 8 I put Purin-san in the fridge.'), clueId: 'fridge-8', report: said('きむらさんは 8じに プリンさんを れいぞうこに いれたと いっていました。', 'きむらさんは はちじに プリンさんを れいぞうこに いれたと いっていました。', 'Kimura said she put Purin-san in the fridge at 8.') },
-        who: { jp: t('8じに もりくんを みました。おふろに いきました。', 'はちじに もりくんを みました。おふろに いきました。', 'At 8 I saw Mori. He went to the bath.'), clueId: 'mori-bath', report: seen('もりくんは 8じに きむらさんに みられました。', 'もりくんは はちじに きむらさんに みられました。', 'Mori was seen by Kimura at 8.') },
+        who: { jp: t('8じに もりくんを みました。おふろに いきました。', 'はちじに もりくんを みました。おふろに いきました。', 'At 8 I saw Mori. He went to the bath.'), clueId: 'mori-bath', report: seen('もりくんは 8じに おふろの まえで きむらさんに みられました。', 'もりくんは はちじに おふろの まえで きむらさんに みられました。', 'Mori was seen outside the bath by Kimura at 8.') },
         when: { jp: t('12じに ねました。', 'じゅうにじに ねました。', 'I went to bed at 12.'), report: said('きむらさんは 12じに ねたと いっていました。', 'きむらさんは じゅうにじに ねたと いっていました。', 'Kimura said she went to bed at 12.') },
         victim: { jp: k('とても あまい ひとでした。ゆうめいでした。', 'He was very sweet. He was famous.'), report: said('きむらさんは プリンさんが とても あまくて ゆうめいだったと いっていました。', null, 'Kimura said Purin-san was very sweet and famous.') },
-        item: { jp: k('へやの スプーンです。ピンクは にかいの へやです。', "It's a guest-room spoon. Pink ones are for the second-floor rooms."), clueId: 'pink-floor', report: said('きむらさんは ピンクの スプーンが にかいの へやの スプーンだと いっていました。', null, 'Kimura said pink spoons belong to the second-floor rooms.') },
+        item: { jp: k('へやの スプーンです。ピンクは にかいの へやです。', "It's a guest-room spoon. Pink ones are for the second-floor rooms."), clueId: 'pink-floor', report: said('きむらさんは ピンクの スプーンは にかいの へやの ものだと いっていました。', null, 'Kimura said pink spoons belong to the second-floor rooms.') },
       },
     },
     {
@@ -158,7 +158,7 @@ export const puddingCase: OnsenCase = {
         what: { jp: k('おふろで うたを うたいました。', 'I sang songs in the bath.'), report: said('もりくんは おふろで うたを うたったと いっていました。', null, 'Mori said he sang songs in the bath.') },
         who: { jp: k('いとうさんを みました。ろうかを そうじして いました。', 'I saw Itō. She was cleaning the hallway.'), clueId: 'ito-hall', report: seen('いとうさんは ろうかで もりくんに みられました。', null, 'Itō was seen in the hallway by Mori.') },
         when: { jp: t('9じはんに ねました。', 'くじはんに ねました。', 'I went to bed at 9:30.'), report: said('もりくんは 9じはんに ねたと いっていました。', 'もりくんは くじはんに ねたと いっていました。', 'Mori said he went to bed at 9:30.') },
-        victim: { jp: k('プリンさん、だいすきでした！　たべたかったです…', 'I loved Purin-san! I wanted to eat him…'), report: said('もりくんは プリンさんを たべたかったと いっていました。', null, 'Mori said he wanted to eat Purin-san.') },
+        victim: { jp: k('プリンさん、だいすきでした！　たべたかったです…', 'I loved Purin-san! I wanted to eat him…'), report: said('もりくんは プリンさんが だいすきで、たべたかったと いっていました。', null, 'Mori said he loved Purin-san and wanted to eat him.') },
         item: { jp: k('ぼくの スプーンは あおです。', 'My spoon is blue.'), clueId: 'mori-blue', report: said('もりくんは じぶんの スプーンは あおだと いっていました。', null, 'Mori said his spoon is blue.') },
       },
     },
@@ -172,7 +172,7 @@ export const puddingCase: OnsenCase = {
       answers: {
         where: { jp: t('8じから 9じまで、にかいの ろうかに いました。', 'はちじから くじまで、にかいの ろうかに いました。', 'From 8 to 9 I was in the second-floor hallway.'), clueId: 'ito-hall', report: said('いとうさんは 8じから 9じまで にかいの ろうかに いたと いっていました。', 'いとうさんは はちじから くじまで にかいの ろうかに いたと いっていました。', 'Itō said she was in the second-floor hallway from 8 to 9.') },
         what: { jp: k('ろうかを そうじしました。ピカピカです。', 'I cleaned the hallway. It sparkles.'), report: said('いとうさんは ろうかを そうじしたと いっていました。', null, 'Itō said she cleaned the hallway.') },
-        who: { jp: t('8じはんに さとうさんを みました。だいどころから でました。', 'はちじはんに さとうさんを みました。だいどころから でました。', 'At 8:30 I saw Satō. She came out of the kitchen.'), clueId: 'sato-kitchen', report: seen('さとうさんは 8じはんに いとうさんに みられました。', 'さとうさんは はちじはんに いとうさんに みられました。', 'Satō was seen by Itō at 8:30.') },
+        who: { jp: t('8じはんに さとうさんを みました。だいどころから でました。', 'はちじはんに さとうさんを みました。だいどころから でました。', 'At 8:30 I saw Satō. She came out of the kitchen.'), clueId: 'sato-kitchen', report: seen('さとうさんは 8じはんに だいどころの まえで いとうさんに みられました。', 'さとうさんは はちじはんに だいどころの まえで いとうさんに みられました。', 'Satō was seen outside the kitchen by Itō at 8:30.') },
         when: { jp: t('10じに ねました。', 'じゅうじに ねました。', 'I went to bed at 10.'), report: said('いとうさんは 10じに ねたと いっていました。', 'いとうさんは じゅうじに ねたと いっていました。', 'Itō said she went to bed at 10.') },
         victim: { jp: k('きいろくて、かわいかったです。', 'He was yellow and cute.'), report: said('いとうさんは プリンさんが きいろくて かわいかったと いっていました。', null, 'Itō said Purin-san was yellow and cute.') },
         item: { jp: k('ピンクの スプーンですね。さとうさんの へやは にかいです。', "A pink spoon, huh. Satō's room is on the second floor."), clueId: 'sato-floor', report: said('いとうさんは さとうさんの へやが にかいだと いっていました。', null, 'Itō said Satō’s room is on the second floor.') },
@@ -238,7 +238,7 @@ export const duckCase: OnsenCase = {
       answers: {
         where: { jp: t('11じから、ロビーに いました。', 'じゅういちじから、ロビーに いました。', 'From 11 I was in the lobby.'), report: said('はやしさんは 11じから ロビーに いたと いっていました。', 'はやしさんは じゅういちじから ロビーに いたと いっていました。', 'Hayashi said he was in the lobby from 11.') },
         what: { jp: k('たっきゅうを しました。となりの へやから ギターの おとは しませんでした。', "I played ping-pong. There was no guitar sound from the room next door."), clueId: 'no-guitar', report: said('はやしさんは となりの へやから ギターの おとが しなかったと いっていました。', null, 'Hayashi said there was no guitar sound from the room next door.') },
-        who: { jp: t('11じに タマを みました。ロビーで ねて いました。', 'じゅういちじに タマを みました。ロビーで ねて いました。', 'At 11 I saw Tama. She was asleep in the lobby.'), clueId: 'tama-sleep', report: seen('タマは 11じに ロビーで はやしさんに みられました。', 'タマは じゅういちじに ロビーで はやしさんに みられました。', 'Tama was seen in the lobby by Hayashi at 11.') },
+        who: { jp: t('11じに タマを みました。ロビーで ねて いました。', 'じゅういちじに タマを みました。ロビーで ねて いました。', 'At 11 I saw Tama. She was asleep in the lobby.'), clueId: 'tama-sleep', report: said('はやしさんは 11じに タマが ロビーで ねて いたと いっていました。', 'はやしさんは じゅういちじに タマが ロビーで ねて いたと いっていました。', 'Hayashi said Tama was asleep in the lobby at 11.') },
         when: { jp: t('12じはんに ねました。', 'じゅうにじはんに ねました。', 'I went to bed at 12:30.'), report: said('はやしさんは 12じはんに ねたと いっていました。', 'はやしさんは じゅうにじはんに ねたと いっていました。', 'Hayashi said he went to bed at 12:30.') },
         victim: { jp: k('アヒルくんは うるさかったです。ピー ピー！', 'Ahiru-kun was noisy. Squeak, squeak!'), report: said('はやしさんは アヒルくんが うるさかったと いっていました。', null, 'Hayashi said Ahiru-kun was noisy.') },
         item: { jp: k('その フォーク、まつださんのです。ばんごはんで つかって いました。', "That fork is Matsuda's. He was using it at dinner."), clueId: 'fork', report: said('はやしさんは その フォークが まつださんのだと いっていました。', null, 'Hayashi said the fork is Matsuda’s.') },
@@ -271,7 +271,7 @@ export const duckCase: OnsenCase = {
       answers: {
         where: { jp: k('ロビーに いました。にゃ。', 'I was in the lobby. Meow.'), report: said('タマは ロビーに いたと いっていました。', null, 'Tama said she was in the lobby.') },
         what: { jp: k('ねて いました。にゃー。', 'I was sleeping. Meow.'), report: said('タマは ねて いたと いっていました。', null, 'Tama said she was sleeping.') },
-        who: { jp: t('11じはんに まつださんを みました。おおきい おふろに いきました。にゃ。', 'じゅういちじはんに まつださんを みました。おおきい おふろに いきました。にゃ。', 'At 11:30 I saw Matsuda. He went to the big bath. Meow.'), clueId: 'matsuda-bath', report: seen('まつださんは 11じはんに タマに みられました。', 'まつださんは じゅういちじはんに タマに みられました。', 'Matsuda was seen by Tama at 11:30.') },
+        who: { jp: t('11じはんに まつださんを みました。おおきい おふろに いきました。にゃ。', 'じゅういちじはんに まつださんを みました。おおきい おふろに いきました。にゃ。', 'At 11:30 I saw Matsuda. He went to the big bath. Meow.'), clueId: 'matsuda-bath', report: seen('まつださんは 11じはんに おおきい おふろの まえで タマに みられました。', 'まつださんは じゅういちじはんに おおきい おふろの まえで タマに みられました。', 'Matsuda was seen outside the big bath by Tama at 11:30.') },
         when: { jp: k('ねこは いつも ねて います。にゃ。', 'Cats are always asleep. Meow.'), report: said('タマは ねこは いつも ねて いると いっていました。', null, 'Tama said cats are always asleep.') },
         victim: { jp: k('アヒルくんは ともだちでした。にゃ…', 'Ahiru-kun was my friend. Meow…'), report: said('タマは アヒルくんが ともだちだったと いっていました。', null, 'Tama said Ahiru-kun was her friend.') },
         item: { jp: k('ねこは フォークを つかいません。にゃ。', "Cats don't use forks. Meow."), report: said('タマは ねこは フォークを つかわないと いっていました。', null, 'Tama said cats don’t use forks.') },

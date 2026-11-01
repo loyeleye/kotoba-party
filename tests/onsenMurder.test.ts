@@ -667,6 +667,24 @@ describe('Murder at the Onsen: the deputy’s reports', () => {
     expect(reportFrame(r)).toBe('＿は ＿と いっていました');
     expect(joinReport(reportWords(r))).toBe(r.jp.text);
   });
+
+  it('a passive report needs に on the one who saw: を or が turns the sentence around', () => {
+    const r = { jp: { text: 'たなかさんは すずきさんに みられました。', kana: 'たなかさんは すずきさんに みられました。', en: 'Tanaka was seen by Suzuki.' }, frames: ['passive'] };
+    expect(checkReport(speech('たなかさんは すずきさんに みられました'), r)).toBe(true);
+    expect(checkReport(speech('たなかさんは すずきさんを みられました'), r)).toBe(false);
+    expect(checkReport(speech('たなかさんは すずきさんが みられました'), r)).toBe(false);
+    expect(checkReport(speech('田中さんは鈴木さんを見られました', 'たなかさんはすずきさんをみられました'), r)).toBe(false);
+    // The case's own passive reports, the same way.
+    const real = snowman.suspects.find((s) => s.id === 'yamada')!.answers.who!.report!;
+    expect(checkReport(speech('すずきさんは おんせんで やまださんに みられました'), real)).toBe(true);
+    expect(checkReport(speech('すずきさんは おんせんで やまださんを みられました'), real)).toBe(false);
+  });
+
+  it('the panel’s rewrites keep their facts (draft Japanese)', () => {
+    const suzuki = snowman.suspects.find((s) => s.id === 'suzuki')!;
+    expect(suzuki.answers.who!.report!.jp.text).toBe('すずきさんは 10じ50ぷんに たなかさんが おおきい なべを もって いたと いっていました。');
+    expect(suzuki.answers.what!.report!.jp.kana).toBe('すずきさんは ゆきだるまさんが じゅうじよんじゅうごふんまで げんきだったと いっていました。');
+  });
 });
 
 describe('Murder at the Onsen: the deputy in play', () => {
@@ -726,18 +744,78 @@ describe('Murder at the Onsen: the deputy in play', () => {
     // The N4 player's own turn: nobody else is N4, so no deputy.
     expect(t.turnPlayer).toBe('p2');
     expect(t.st.deputy).toBeNull();
-    expect(deputyOffers(t.st)).toEqual({ p2: { offered: 1, accepted: 1, declined: 0 } });
+    expect(deputyOffers(t.st)).toEqual({ p2: { offered: 1, accepted: 1, declined: 0, timeout: 0, rate: 1 } });
   });
 
   it('a spoken report pays more, with the speaking bonus in the pool; the passive for a sighting', () => {
     const t = new Table(2, CONTENT, ['n5', 'n4']);
     t.start();
-    t.ask('suzuki', 'だれを みましたか');
+    t.ask('yamada', 'だれを みましたか');
     expect(t.view('p2').mine!.deputy!.frame).toBe('＿は ＿に ＿られました');
-    expect(t.play('p2', { kind: 'report', utterance: speech('田中さんは10時50分に鈴木さんに見られました', 'たなかさんはじゅうじごじゅっぷんにすずきさんにみられました') }).error).toBeUndefined();
+    expect(t.play('p2', { kind: 'report', utterance: speech('鈴木さんは温泉で山田さんに見られました', 'すずきさんはおんせんでやまださんにみられました') }).error).toBeUndefined();
     expect(t.st.deputy?.status).toBe('reported');
     expect(t.st.tally.p2).toMatchObject({ base: POINTS.report, bonusEarned: POINTS.spokenReport, reports: 1 });
-    expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'onsen.report.snowman.suzuki.who' && e.outcome === 'said')).toBe(true);
+    expect(POINTS).toMatchObject({ report: 30, reportTiles: 10, spokenReport: 40 });
+    expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'onsen.report.snowman.yamada.who' && e.outcome === 'said')).toBe(true);
+  });
+
+  it('an untouched offer adds no time, but can still report; one never answered times out', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    expect(t.s.deadline! - t.now).toBe(12_000);
+    expect(t.view('p2').mine!.deputy).toMatchObject({ status: 'offered', canReport: true });
+    // Nothing tried: the answer ends at its usual time.
+    expect(onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never)).toBe(t.st.revealAt + 12_000);
+    t.timeout();
+    expect(t.st.deputyLog).toEqual([{ turnNo: 1, playerId: 'p2', outcome: 'timeout' }]);
+    expect(deputyOffers(t.st).p2).toMatchObject({ timeout: 1, rate: 0 });
+  });
+
+  it('a first try counts as taking the part, and the answer waits for the second', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    t.play('p2', { kind: 'report', utterance: speech('たなかさんは だいどころに いました') });
+    // A try in: the phase no longer ends on its own at the usual time.
+    expect(onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never)).toBeNull();
+    t.timeout();
+    expect(t.st.deputyLog).toEqual([{ turnNo: 1, playerId: 'p2', outcome: 'accepted' }]);
+  });
+
+  it('in a room of four or more, a lone N4 deputy rests the turn after one in the part (for Ladi to confirm)', () => {
+    const t = new Table(4, CONTENT, ['n5', 'n5', 'n4', 'n5']);
+    t.start();
+    expect(t.turnPlayer).toBe('p1');
+    expect(t.st.deputy?.playerId).toBe('p3');
+    t.play('p3', { kind: 'deputy', accept: true });
+    t.ask('tanaka', 'どこに いましたか');
+    t.play('p3', { kind: 'report', tiles: inOrder(t, 'p3') });
+    t.now = t.st.revealAt + 12_000;
+    t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    expect(t.st.deputyLog.at(-1)).toMatchObject({ turnNo: 1, playerId: 'p3', outcome: 'accepted' });
+    // Turn 2: p3 is the only N4 player who could be deputy, and just was: they sit it out.
+    expect(t.s.phase).toBe('answer');
+    expect(t.turnPlayer).toBe('p2');
+    expect(t.st.deputy).toBeNull();
+    t.timeout(); // nobody asked
+    // Turn 3 is p3's own; turn 4 they're offered again.
+    expect(t.turnPlayer).toBe('p3');
+    t.timeout();
+    expect(t.turnPlayer).toBe('p4');
+    expect(t.st.deputy?.playerId).toBe('p3');
+  });
+
+  it('in a smaller room the lone N4 deputy is offered every turn they don’t ask', () => {
+    const t = new Table(3, CONTENT, ['n5', 'n5', 'n4']);
+    t.start();
+    t.play('p3', { kind: 'deputy', accept: true });
+    t.ask('tanaka', 'どこに いましたか');
+    t.play('p3', { kind: 'report', tiles: inOrder(t, 'p3') });
+    t.now = t.st.revealAt + 12_000;
+    t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    expect(t.turnPlayer).toBe('p2');
+    expect(t.st.deputy?.playerId).toBe('p3');
   });
 
   it('“not this time” keeps the ordinary part, and is logged as a decline', () => {

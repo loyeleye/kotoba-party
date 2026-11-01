@@ -58,29 +58,38 @@ Awards: めいたんてい (most clues found), こえの たんてい (most ques
 ### The deputy (N4 hard role)
 
 When the room has an N4 player, each turn one of them (in seat rotation, never the asker) is offered
-the deputy's part on their phone while the question is asked: "I'm ready" or "Not this time" (which
-keeps the ordinary part: just watch). After the answer the deputy tells the room what the suspect said:
+the deputy's part on their phone while the question is asked ("🕵️ Chōchin-san needs a deputy this
+turn."), with the two frames (＿と いっていました ／ ＿に ＿られました) and two equal buttons: "Take it" or "Not
+this time" (which keeps the ordinary part: just watch). After the answer the deputy tells the room what
+the suspect said:
 
 - **Reported speech** (4.14 ＿と いっていました) for most answers: たなかさんは 12じに ねたと いっていました。
-- **The passive** (4.13 ＿に ＿られました) for a sighting: たなかさんは 10じ50ぷんに すずきさんに みられました。
+- **The passive** (4.13 ＿に ＿られました) for a sighting: さとうさんは 8じはんに だいどころの まえで いとうさんに みられました。
 - A few also use ために, ＿そうでした and ので.
 
 Each answer of the three cases for everyone has its report written beside it (`report` in
-`content/src/onsen/cases.ts`, draft). The phone shows the frame (＿は ＿と いっていました) and the
-report's words as shuffled tiles, so the line is checkable; the deputy builds it, or says or types it
-(`deputy.ts`: the frame's last two words must be there, then the whole line within a few kana or 70% of
-its words). Two tries; after a miss the whole line is shown. The stage shows the report under the answer.
+`content/src/onsen/cases.ts`, draft). The phone's report box fades in once the answer and its subtitle
+are up, and shows the frame (＿は ＿と いっていました) over a speak box; the report's words as shuffled
+tiles sit behind "Need the words? Build it from tiles" (open after a miss), so the line is checkable.
+The deputy says or types it, or builds it (`deputy.ts`: the frame's last two words must be there, then
+the whole line within a few kana or 70% of its words; a passive report fails if the one who saw is
+marked with を or が instead of に). Two tries; after a miss the whole line is shown. The stage shows the
+report under the answer.
 
 | | Points |
 | --- | --- |
-| Report said or typed | 60 |
-| Report built from tiles | 30 |
+| Report said or typed | 30 |
+| Report built from tiles | 10 |
 | Report said aloud | +40 speaking bonus (same pool and cap) |
 
-The answer runs 15 s longer while a deputy has a report to give, and ends once they're done and the
-answer has had its usual 10–12 s (a `wake`). An answer with nothing to report (a shrug, a Kids or Cheeky
-case, the placeholder) voids the offer. Every offer and its outcome (accepted, declined, ignored) is in
-`deputyLog`; `deputyOffers()` sums it per player for the "accept at least 60%" gate. Phrasebook:
+The answer runs 15 s longer only for a deputy who tapped "Take it" before it came in (or has had a
+try), and ends once they're done and the answer has had its usual 10–12 s (a `wake`). An offer nobody
+answered adds no time, but the deputy can still report in the usual time, and a first try counts as
+taking it. An answer with nothing to report (a shrug, a Kids or Cheeky case, the placeholder) voids the
+offer. Every offer and its outcome (accepted, declined, timeout, away; the shared `OfferAnswer` in
+`hardRoleLog.ts`) is in `deputyLog`; `deputyOffers()` sums it per player with the gate rate
+(`offerRate`, "accept at least 60%"). In a room of four or more, a lone N4 player who could be deputy
+and was deputy last turn sits the next turn out. Phrasebook:
 `onsen.report.<case>.<suspect>.<intent>`. Kana and N5 players' parts and scores don't change, and with no
 N4 player nothing changes.
 
@@ -141,10 +150,20 @@ on the LLM. At most 16 lead-ins per game.
     reported speech (2026-11-01).
 17. **A polite direct quote passes the deputy's check** (いましたと いっていました): it is still correct
     Japanese, and the check leans towards accepting. Dropping a fact (both times) fails.
-18. **Deputy points: 60 said or typed, 30 from tiles, +40 spoken bonus under the shared cap.** A guess
-    to tune in playtests; a clue is worth 100, so the deputy never outscores the detective.
-19. **The deputy's answer time is +15 s**, ended early once they're done and the answer has had its
-    usual time.
+18. **Deputy points: 30 said or typed, 10 from tiles, +40 spoken bonus under the shared cap**
+    (2026-11-01, down from 60 / 30, so saying it aloud is most of the reward and tiles are the fallback).
+    A guess to tune in playtests; a clue is worth 100, so the deputy never outscores the detective.
+19. **The deputy's answer time is +15 s, only when they took the part** ("Take it" before the answer)
+    or have tried, ended early once they're done and the answer has had its usual time. An untouched
+    offer doesn't hold the room up (2026-11-01).
+20. **Spotlight: in a room of four or more, a lone eligible N4 player who was deputy last turn sits the
+    next one out**, so the part isn't theirs on every turn (2026-11-01, for Ladi to confirm).
+21. **Passive reports check the particle on the one who saw** (に, not を or が), since the lenient sound
+    check would otherwise pass a sentence that says the opposite (2026-11-01).
+22. **Some sightings are reported as speech** where the passive would lose a fact: Suzuki's sighting
+    keeps the big pot (すずきさんは … たなかさんが おおきい なべを もって いたと いっていました), and
+    Hayashi's keeps Tama asleep in the lobby. Others gain where (だいどころの まえで, おふろの まえで)
+    (2026-11-01, draft).
 
 ## Open questions
 

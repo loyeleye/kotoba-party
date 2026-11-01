@@ -55,7 +55,7 @@ function nakodoLine(view: RoomView, game: OmiaiView): HTMLElement | null {
   const g = game.nakodo;
   if (!g || g.declined) return null;
   const who = nameOf(view, g.playerId);
-  if (!g.line) return h('p', { class: 'omi-nakodo-wait' }, `🎎 Matchmaker ${who} is about to speak…`);
+  if (!g.line) return g.pending ? h('p', { class: 'omi-nakodo-wait' }, `🎎 Matchmaker ${who} is about to speak…`) : null;
   return h(
     'div',
     { class: 'omi-nakodo-s' },

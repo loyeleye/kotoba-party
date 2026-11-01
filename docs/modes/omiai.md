@@ -203,13 +203,20 @@ matchmaker lines for that round, in keigo (4.9):
 | Closing each round (score) | キュウリさん、ありがとう ございました。つぎの しつもんに まいります。 |
 | Closing the last round | キュウリさんは そろそろ おかえりに なります。 |
 
-The phone shows the line as a script; the go-between says it (+50) or types it (+25), checked with Phrase
-Bingo's lenient `saidPhrase`, two tries per line, and sees its manners meter. Nobiko-san doesn't read the
-question while a go-between has the opening; "Not this time" hands the round's lines back to her (and
-she reads the question). The prompt and score phases run 12 s longer while a line is waiting and end once
-it's said and the phase has had its usual 8 or 9 s. Everyone still answers, votes and scores as usual,
-the go-between too. Offers and outcomes are in `nakodoLog`; `nakodoOffers()` sums them per player.
-Phrasebook: `omiai:nakodo:<card>:<line>`. With no N4 player nothing changes.
+The phone shows the line as a script with two equal buttons, "Take it" and "Not this time"; saying the
+line straight away counts as taking it. The go-between says it (+25) or types it (+10), checked with Phrase
+Bingo's lenient `saidPhrase`, two tries per line, and sees its manners meter. Nobiko-san always reads the
+question, once a round: right after the opening is said or its tries run out, when they tap "Not this
+time" (which also hands the round's lines back to her), or, if the opening hasn't come, at the prompt's
+usual 8 s (an offer still unanswered then times out). A go-between who tapped "Take it" but hasn't
+spoken by then gets until 5 s before the longer prompt ends. She gets 5 s to read it before the answers
+open. The closing is theirs only if they tried the opening. The prompt and score phases run 12 s longer
+while a line is waiting and end once it's said and the phase has had its usual 8 or 9 s. The TV says the
+matchmaker is about to speak only while their line is still to come. Everyone still answers, votes and
+scores as usual, the go-between too. Offers and outcomes (accepted, declined, timeout, away; the shared
+`OfferAnswer` in `hardRoleLog.ts`) are in `nakodoLog`; `nakodoOffers()` sums them per player with the gate
+rate (`offerRate`). Phrasebook: `omiai:nakodo:<card>:<line>`, as `seen` when said (it's read off the
+script) or `missed`. With no N4 player nothing changes.
 
 The manners meter reads every line as keigo (tested for every card and round). It now also counts
 ごしょうかい as an お/ご word, and お〜に なる in plain form (おみえに なった) as honorific when the
@@ -272,11 +279,19 @@ canned memory answers (by question kind and register) or build a tile answer. Th
 21. **The go-between (N4) gets two lines a round, the opening and the closing**, from six keigo
     templates filled in with the guest's name and job, rather than lines written per card. Kids guests get
     the same formal lines, as part of the parody (2026-11-01).
-22. **With one N4 player, they're offered the go-between every round.** Each offer can be declined.
-23. **Go-between points: 50 a line said, 25 typed**, paid directly (not from the manners pool), so a
-    Kana or N5 player's scoring is unchanged. A guess to tune.
+22. **With one N4 player, they're offered the go-between every round** in rooms of up to three. In a
+    room of four or more, a lone N4 player who was go-between last round (took it or tried a line) sits
+    the next round out, so the spotlight moves around (2026-11-01, for Ladi to confirm). Each offer can
+    be declined.
+23. **Go-between points: 25 a line said, 10 typed**, paid directly (not from the manners pool), so a
+    Kana or N5 player's scoring is unchanged. Lowered from 50 / 25 so the role doesn't outweigh a vote
+    (100) for reading a script (2026-11-01). A guess to tune.
 24. **The meter's お〜に なる rule now takes plain forms** (なる, なった) when the stem ends in an i- or
-    e-row kana, so おとなに なる isn't read as keigo.
+    e-row kana, so おとなに なる isn't read as keigo (nor おばけに なる or おきに なる).
+25. **Next to keigo, a ちゃん or くん guest is さん** in the go-between's lines (ワラシさん, タツさん),
+    in the text and the kana; the English name stays (2026-11-01).
+26. **The go-between's line counts as `seen` in the phrasebook**, not `said`: it's read off the phone's
+    script (2026-11-01).
 
 ## Open questions
 

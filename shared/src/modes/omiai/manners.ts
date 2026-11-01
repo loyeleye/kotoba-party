@@ -192,8 +192,9 @@ const HONORIFIC: readonly RegExp[] = [
   /おいでに/,
   /お[^をがはにでともへ、]{1,6}になり/,
   /ご[^をがはにでともへ、]{1,6}になり/,
-  // The plain forms too (おみえに なった, おかえりに なる), when the stem is a verb's (ends in an i- or e-row kana).
-  /お[^をがはにでともへ、]{0,5}[いきしちにひみりぎじびぴえけせてねへめれげぜでべぺ]にな[るっら]/,
+  // The plain forms too (おみえに なった, おかえりに なる), when the stem is a verb's (ends in an i- or e-row kana);
+  // not おばけに なる (turn into a ghost) or おきに なる, which aren't keigo.
+  /(?!おばけに|おきにな)お[^をがはにでともへ、]{0,5}[いきしちにひみりぎじびぴえけせてねへめれげぜでべぺ]にな[るっら]/,
   /お[^をがはにでともへ、]{1,5}ください/,
   /ご[^をがはにでともへ、]{1,5}ください/,
 ];
