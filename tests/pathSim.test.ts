@@ -30,6 +30,7 @@ describe('path simulation: bots play the real games in-process', () => {
     for (const e of credited) {
       // The card's sentence carries the frame it was credited for, and has English to practise from.
       expect(phraseFrames(e)).toContain(e.itemId.split(':')[2]);
+      expect(e.itemId.split(':')).toHaveLength(5); // happyokai:<deck>:<frame>:<slide>:<level>: a card per slide
       expect(e).toMatchObject({ outcome: 'said', recall: 'memory' });
       expect(e.en).not.toBe('');
     }

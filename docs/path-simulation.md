@@ -166,6 +166,43 @@ Still not cleared in any room: 4.6 (bot gap), 4.8, 4.10, 4.12 and 4.14 need game
 below). The next most useful game fixes, by the game design seat: more ＿ので excuses in Late Again! (2 of its
 16 N4 excuses), and a "what changed / what I decided" card in Happyōkai for 4.12.
 
+## Step 5b-2: games that give the slow goals more (300 rooms, same base settings)
+
+Game and bot fixes for the goals the step 5b suggestion couldn't move, then `sim:yields` and these runs again:
+
+- **Late Again!:** four more N4 excuses give a reason with ので (the old lady, the crow, the kappa, the fox), so 7 of
+  16 do. ＿ので from Late Again! went from 0.2 to 0.7 a game.
+- **Happyōkai:** a Then and now (or If I were…) presenter's own sentence in one of the deck's frames, on a slide or
+  as the answer in question time, puts the deck's ready sentence in that frame in their phrasebook as said from
+  memory, one card per slide. Before this, nothing the presenter made up was logged at all. ＿ことに しました went
+  from 0.06 to 0.8 a game; ＿ように なりました only from 0.09 to 0.11 (bots rarely pick it), so 4.12 still doesn't stamp.
+- **Tourist:** three ＿ても いいですか questions any place can answer (4.2's required frame was on one question).
+- **Dub Club:** the N4 ad-lib is logged as said from memory (it has no script), and the casual matcher now
+  catches lines ending in ちゃった, じゃん, でしょ (not でしょう), 〜んだ, だろう and なの, and no longer drops a whole
+  sentence because ごめん or ありがとう starts it. The casual frame went from 0 to 1 a game.
+- **Bots, so the simulation sees what players do:** a sentence read out is sent in kana (the server adds the reading
+  in a real room; without it, Happyōkai counted bots' read lines as their own); Dub Club bots take the ad-lib
+  60% of the time; Tourist bots ask a question remembered from an earlier turn, not the tile on screen; Word
+  Gauntlet's N4 bots retell a rumour in a reporting frame other than the one they heard. `BOT_GAPS` is empty.
+- **Honest drops:** Happyōkai's opening and closing were counted from memory before (the bots' kanji text
+  didn't match the card), so its ＿と おもいます fell from 1.0 to 0.4 and its keigo to 0. Two games joined goal
+  lists because they now measurably give a required frame: Dub Club on 4.6 (おいしそう), Word Gauntlet on 4.13 (かこまれて).
+- **A trap found and fixed:** the deck's card was first one per frame, so a room could never get the two different
+  phrases a frame needs, and 4.6 held rooms in Happyōkai for ＿と おもいます. Yields count says, not different
+  phrases, so the ranking can't see this; the card is now one per slide.
+
+| Setting | Seven goals, median nights (p25 / p75) | Rooms that get all seven | Before (step 5b) |
+|---|---|---|---|
+| Ignores the suggestion (follow 0) | – | 9% | 1% |
+| Base: follows it 60% of the time | **34 (26 / 41)** | 98% | 40 nights, 85% |
+| Follows it 90% of the time | **26 (20 / 33)** | 100% | 29 nights, 97% |
+| Base, plus one phone review sitting a week | 29 (24 / 35) | 100% | 49 nights, 57% |
+
+Ten goals now stamp in most rooms (4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.8, 4.9, 4.11, 4.13): all ten in 78% of rooms by a
+median of 51 nights. At the base setting 4.2 stamps in 79% of rooms (was 16%), 4.6 in 99% (was 0%), 4.8 in 100%
+(was 0%, by night 4), 4.11 by night 14 (was 40). Still in no room: 4.7 (no game asks for plans), 4.10 (N4 kanji
+in Shodō), 4.12 (＿ように なりました) and 4.14 (purpose ＿ために／＿ように).
+
 ## What would let the line clear
 
 Each of these is a change to a game or the path, so they're logged as open questions and come in their own PR
@@ -183,14 +220,14 @@ Each of these is a change to a game or the path, so they're logged as open quest
    the Hotline on 4.5 only for real conditionals such as ゆうれいが 来たら、にげた ほうが いいですよ).
 4. **Shodō: deal N4 kanji to N4 players**, and grow the N4 pool (it lacks 思 持 待 使 乗 着 終 写 会 教, which the
    game's own lines use), so 4.10 can be reached.
-5. **Tourist: count the asker's own question from memory** when it isn't read off a tile showing the Japanese:
+5. **Tourist: count the asker's own question from memory** (the ＿ても いいですか questions are in, step 5b-2; the rule isn't) when it isn't read off a tile showing the Japanese:
    cue it with the English intent and a frame chip, with the Japanese behind a peek, as Last Train does. Count a
    tile with one word changed as the asker's own words. Give 4.2 one ＿ても いいですか question per place.
 6. **More ＿た ことが あります:** a "Have you ever…?" question card in Happyōkai, one prompt a game cued by
    meaning (more than two a night add nothing under the 2-says-a-day cap), with the topics rotating.
-7. **Teach the Word Gauntlet bots to retell a rumour**, then re-run. Until then the simulation can't say how
+7. **Teach the Word Gauntlet bots to retell a rumour** (done in step 5b-2), then re-run. Until then the simulation can't say how
    fast 4.6 goes.
-8. **A plain-form source for 4.8:** count Dub Club's ad-lib from memory with what the player said, and let the
+8. **A plain-form source for 4.8** (done in step 5b-2, with the bots taking the ad-lib and logged as the model line): count Dub Club's ad-lib from memory with what the player said, and let the
    bots take it. Widen the plain-form matcher first (it misses もう たべた？ and いかない？ and accepts おいしいだよ),
    or new lines will all be written with よ to get counted. An Omiai casual beat works only if the guest invites
    it (「もう けいごは なしで いいよ」) and the manners meter is off for that round.

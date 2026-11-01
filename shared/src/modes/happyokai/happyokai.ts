@@ -715,7 +715,8 @@ function phrases(t: Talk, ctx: ModeContext): void {
             const ready = slide ? readySentences(slide, p.level, title.topic, title.deck, title.place).find((r) => framesOf(r, undefined, { keepHidden: true }).includes(f as FrameId)) : undefined;
             if (!ready) continue;
             credited.add(f);
-            ctx.phrase(p.id, { itemId: `happyokai:${title.deck}:${f}:${p.level}`, text: ready.text, kana: ready.kana, en: ready.en, outcome: 'said', recall: 'memory' });
+            // One card per slide, so different talks give the frame different phrases (the path wants two).
+            ctx.phrase(p.id, { itemId: `happyokai:${title.deck}:${f}:${x.slideId}:${p.level}`, text: ready.text, kana: ready.kana, en: ready.en, outcome: 'said', recall: 'memory' });
             break;
           }
         }
