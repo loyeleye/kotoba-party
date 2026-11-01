@@ -18,11 +18,37 @@
 // (`wakeAt` / `wake`, so the phase never changes mid-shift): ① ランチラッシュ plain orders, ② なぞなぞ
 // ちゅうもん customers describe food and change their minds, ③ ラッシュアワー two at once, some in a hurry.
 // Co-op: every tip pays the whole team, and the round ends with 1–3 ★.
+//
+// With an N4 player in the room, each shift also offers the N4 hard roles (hardRoles.ts): the deputy manager, who
+// handles complaints and special orders in keigo, and the おもてなし shift, an order-taker who looks after
+// each guest. They ride on the same shift; nobody else's part or pay changes.
 
 import type { Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type ModePlayer, type MoveResult } from '../mode.js';
 import { COUNTS, countWord, KANJI_SPELLINGS, customerOf, customersFor, FOODS, foodOf, MAX_COUNT, RIDDLE_EN, RIDDLES, type Customer, type Food, type JpLine } from './menu.js';
+import {
+  addGuest,
+  answerOffer,
+  blankHardRound,
+  closeOffers,
+  expireIncidents,
+  hardView,
+  hardWakeTimes,
+  hostSays,
+  managerSays,
+  maybeComplaint,
+  maybeSpecial,
+  myHardView,
+  offerAway,
+  releaseHard,
+  requestDone,
+  rolesFor,
+  type HardRound,
+  type HardState,
+  type HardView,
+  type MyHardView,
+} from './hardRoles.js';
 
 // ---- tuning ----
 
@@ -127,6 +153,8 @@ export interface Round {
   stars: number | null;
   teamPoints: number;
   paid: Record<string, number>;
+  /** Co-op with an N4 player: this shift's hard roles. */
+  hard?: HardRound;
 }
 
 export interface PlayerStats {
@@ -143,6 +171,10 @@ export interface BentoState {
   stats: Record<string, PlayerStats>;
   usedCustomers: string[];
   lastCueAt: number;
+  /** Co-op: the hard-role offers, once an N4 player has been in the room. */
+  hard?: HardState;
+  /** The server's clock at the mode's last call (see stampClock). */
+  clock?: number;
 }
 
 // ---- view ----
@@ -251,9 +283,11 @@ export interface BentoView {
   visits: VisitView[];
   feed: FeedItem[];
   ajimi: { foodId: string; at: number } | null;
-  me: { level: Level; taking: TakingView[]; shelf: string[]; tickets: TicketView[]; calls: TicketView[]; bonus: number } | null;
+  me: { level: Level; taking: TakingView[]; shelf: string[]; tickets: TicketView[]; calls: TicketView[]; bonus: number; hard?: MyHardView } | null;
   /** VS only: both kitchens, and which one this phone cooks in. The fields above are that kitchen's (the red one's on the TV). */
   vs?: { myTeam: number | null; teams: VsTeamView[]; winner: number | null };
+  /** Co-op, once the room has had an N4 player: the manager's desk and the おもてなし guests. */
+  hard?: HardView;
 }
 
 export type BentoMove =
@@ -263,9 +297,26 @@ export type BentoMove =
   | { kind: 'send'; ticketId: string }
   | { kind: 'ask'; ticketId: string; utterance?: Utterance }
   | { kind: 'toss'; visitId: string; foodId: string }
-  | { kind: 'serve'; visitId: string; utterance?: Utterance };
+  | { kind: 'serve'; visitId: string; utterance?: Utterance }
+  // N4 hard roles (Co-op): answer this shift's offer, say the manager's or the host's next line (or skip
+  // it), and a station sees to the manager's request. peeked: the phone's "Need the words?" was opened
+  // before the line's first try, so it's logged as seen.
+  | { kind: 'role'; accept: boolean }
+  | { kind: 'manager'; incidentId: string; utterance?: Utterance; skip?: boolean; peeked?: boolean }
+  | { kind: 'request-done'; incidentId: string }
+  | { kind: 'omotenashi'; visitId: string; utterance?: Utterance; skip?: boolean; peeked?: boolean };
 
 // ---- helpers ----
+
+/**
+ * Views are built without the server's clock (viewFor passes now 0), but the phones and the TV time
+ * every bar and linger from the view's `at`, and the view drops lingering customers and desks by it.
+ * So each call that runs with the real clock stamps it, and the view uses the latest stamp.
+ */
+export function stampClock(s: { clock?: number }, now: number): void {
+  if (now > (s.clock ?? 0)) s.clock = now;
+}
+export const viewContext = (s: { clock?: number }, ctx: ModeContext): ModeContext => (ctx.now ? ctx : { ...ctx, now: s.clock ?? 0 });
 
 /** What a shop keeps across its kitchens: who did what, and when Pon last spoke. */
 export type Shop = Pick<BentoState, 'stats' | 'lastCueAt'>;
@@ -553,6 +604,11 @@ function arrive(s: BentoState, r: Round, at: number, ctx: ModeContext): void {
     baked: null,
   });
   r.maxTips += TIPS.perfect * (order.rush ? 2 : 1);
+  if (s.hard && r.hard) {
+    const v = r.visits.at(-1)!;
+    maybeSpecial(s.hard, r.hard, r, v, ctx);
+    addGuest(s.hard, r.hard, v);
+  }
   cue(s, ctx, 'bento_customer', { name: taker.name });
 }
 
@@ -870,6 +926,38 @@ export function shopAwards(s: Shop, ctx: ModeContext): Award[] {
   return out;
 }
 
+/** The N4 hard roles' moves: the manager's lines, a station seeing to a request, the おもてなし host's lines. */
+function hardMove(r: Round, hr: HardRound, playerId: string, raw: Record<string, unknown>, ctx: ModeContext): MoveResult {
+  const u = raw.skip === true ? null : utteranceOk(raw.utterance) ? raw.utterance : undefined;
+  const peeked = raw.peeked === true;
+  switch (raw.kind) {
+    case 'manager': {
+      const inc = hr.incidents.find((i) => i.id === raw.incidentId);
+      if (inc && inc.state !== 'open') return moveError('too-late');
+      if (!inc || inc.managerId !== playerId || u === undefined) return moveError('bad-move');
+      addBonus(r, playerId, managerSays(hr, inc, playerId, u, ctx.players(), ctx, peeked));
+      return MOVE_OK;
+    }
+    case 'request-done': {
+      const inc = hr.incidents.find((i) => i.id === raw.incidentId);
+      if (inc && inc.state !== 'asked') return moveError('too-late');
+      if (!inc || inc.stationId !== playerId) return moveError('bad-move');
+      requestDone(inc, r, ctx);
+      return MOVE_OK;
+    }
+    case 'omotenashi': {
+      const g = hr.guests.find((x) => x.visitId === raw.visitId);
+      const v = r.visits.find((x) => x.id === raw.visitId);
+      if (g && (v?.state !== 'waiting' || g.step >= g.steps.length)) return moveError('too-late');
+      if (!g || g.takerId !== playerId || u === undefined) return moveError('bad-move');
+      addBonus(r, playerId, hostSays(g, playerId, u, ctx, peeked));
+      return MOVE_OK;
+    }
+    default:
+      return moveError('bad-move');
+  }
+}
+
 // ---- the mode ----
 
 export const bentoHausMode: Mode<BentoState, BentoView> = {
@@ -910,6 +998,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   },
 
   enter(s, phase, ctx) {
+    stampClock(s, ctx.now);
     if (phase === 'intro') {
       ctx.cue({ host: 'pon', event: 'bento_intro', waitMs: 4_000 });
       return;
@@ -917,6 +1006,13 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     if (phase === 'prompt') {
       s.round += 1;
       s.current = setupRound(s, ctx);
+      // N4 hard roles: offered to the room's N4 players in turn. A room with none never gets the fields.
+      const offers = rolesFor(s.round, ctx.players());
+      if (offers.length || s.hard) {
+        s.hard ??= { offers: [], specialTurn: 0, askTurn: 0 };
+        s.current.hard = blankHardRound();
+        for (const o of offers) s.hard.offers.push({ round: s.round, ...o, answer: null });
+      }
       const info = ROUND_INFO[s.round - 1]!;
       ctx.cue({ host: 'pon', event: 'bento_round', slots: { round: info.ja } });
       return;
@@ -936,12 +1032,16 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   },
 
   leave(s, phase, ctx) {
+    stampClock(s, ctx.now);
     const r = s.current;
     if (!r || phase !== 'answer') return;
     runClock(s, r, ctx.now, ctx);
     // Closing time: whoever is still waiting takes their box as it is.
     for (const v of waiting(r)) giveUp(s, r, v, ctx.now, ctx);
     r.nextArriveAt = null;
+    if (r.hard) expireIncidents(r.hard, Infinity);
+    // An offer still open at closing time timed out.
+    if (s.hard) closeOffers(s.hard, r.index);
   },
 
   duration(s, phase) {
@@ -966,19 +1066,31 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     // Also wake when a served or walked-out customer has lingered long enough to leave the counter.
     for (const v of r.visits) if (v.endedAt !== null && v.endedAt + LINGER_MS > now) times.push(v.endedAt + LINGER_MS);
     if (r.ajimi && r.ajimi.at + AJIMI_MS > now) times.push(r.ajimi.at + AJIMI_MS);
+    if (r.hard) times.push(...hardWakeTimes(r.hard, now));
     return times.length ? Math.min(...times) : null;
   },
 
   wake(s, phase, ctx) {
+    stampClock(s, ctx.now);
     const r = s.current;
-    if (phase === 'answer' && r) runClock(s, r, ctx.now, ctx);
+    if (phase === 'answer' && r) {
+      runClock(s, r, ctx.now, ctx);
+      if (r.hard) expireIncidents(r.hard, ctx.now);
+    }
   },
 
   move(s, phase, playerId, raw, ctx) {
+    stampClock(s, ctx.now);
     const r = s.current;
+    // A hard-role offer can be answered from the shift's title card on.
+    if (isObject(raw) && raw.kind === 'role' && r && (phase === 'prompt' || phase === 'answer')) {
+      if (!s.hard || !r.hard || typeof raw.accept !== 'boolean') return moveError('bad-move');
+      return answerOffer(s.hard, r.hard, r.index, playerId, raw.accept, ctx.players()) ? MOVE_OK : moveError('not-allowed');
+    }
     if (!r || phase !== 'answer' || !r.started) return moveError('wrong-phase');
     if (!isObject(raw)) return moveError('bad-move');
     runClock(s, r, ctx.now, ctx);
+    if (r.hard) expireIncidents(r.hard, ctx.now);
     const player = ctx.player(playerId);
     if (!player) return moveError('not-allowed');
 
@@ -986,15 +1098,20 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       const v = r.visits.find((x) => x.id === raw.visitId);
       if (v && v.state !== 'waiting') return moveError('too-late');
       if (!v || v.takerId !== playerId) return moveError('bad-move');
+      const off = compareBox(v.lines, v.box);
       serveBonus(r, playerId, raw.utterance);
       serve(s, r, v, playerId, ctx);
+      // The manager hears about a box that wasn't right.
+      if (r.hard && v.tips > 0 && off.length) maybeComplaint(r.hard, r, v, off, ctx);
       planArrival(r, ctx.now, ctx.players().length);
       return MOVE_OK;
     }
+    if (raw.kind === 'manager' || raw.kind === 'request-done' || raw.kind === 'omotenashi') return r.hard ? hardMove(r, r.hard, playerId, raw, ctx) : moveError('bad-move');
     return kitchenMove(s, r, playerId, raw, ctx);
   },
 
   release(s, playerId, ctx) {
+    stampClock(s, ctx.now);
     const r = s.current;
     if (!r) return;
     const left = ctx.players().filter((p) => p.id !== playerId);
@@ -1004,19 +1121,28 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     for (const id of Object.keys(r.holders)) if (r.holders[id] === playerId) r.holders[id] = left[i++ % left.length]!.id;
     for (const t of r.tickets) if (t.stationId === playerId && t.foodId) t.stationId = r.holders[t.foodId] ?? null;
     for (const v of waiting(r)) if (v.takerId === playerId) v.takerId = left[i++ % left.length]!.id;
+    if (r.hard) releaseHard(r.hard, playerId, left, ctx.now);
+    if (s.hard) offerAway(s.hard, r.index, playerId);
+  },
+
+  offers(s, playerId) {
+    return (s.hard?.offers ?? []).flatMap((o) => (o.playerId === playerId && o.answer ? [{ role: `bento-haus:${o.role}`, answer: o.answer }] : []));
   },
 
   progress(s) {
     return { round: Math.max(1, s.round), totalRounds: s.totalRounds };
   },
 
-  view(s, phase, viewer, ctx) {
+  view(s, phase, viewer, rawCtx) {
+    const ctx = viewContext(s, rawCtx);
     const r = s.current;
     const info = s.round ? ROUND_INFO[s.round - 1]! : null;
     const own = ownCounter(s.round);
     const scoring = phase === 'score';
     const visits = visitsView(r, scoring, ctx);
     const me = viewer.kind === 'player' ? ctx.player(viewer.playerId) : undefined;
+    const mine = meView(r, me, own, ctx);
+    const myHard = s.hard && mine && me ? myHardView(s.hard, r?.hard ?? null, s.round, me.id, r) : null;
     return {
       mode: 'bento-haus',
       round: s.round,
@@ -1034,7 +1160,8 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       visits,
       feed: feedView(r),
       ajimi: ajimiView(r, ctx),
-      me: meView(r, me, own, ctx),
+      me: mine && myHard ? { ...mine, hard: myHard } : mine,
+      ...(r?.hard ? { hard: hardView(r.hard, r, scoring, ctx.now) } : {}),
     };
   },
 

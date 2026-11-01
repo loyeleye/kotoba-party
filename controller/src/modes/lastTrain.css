@@ -12,6 +12,12 @@
 .lt-chip { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font-size: 15px; font-weight: 700; margin: 0; }
 .lt-chip.warn { border-color: var(--warn); color: var(--warn); }
 .lt-chip.ghost { border-color: #9fb7ff; color: #c9d6ff; }
+.lt-chip.star { border-color: var(--accent); color: var(--accent); }
+/* Hard role offer: two equal, full-width buttons, so turning it down is as easy as taking it. */
+.lt-offer { display: grid; gap: 12px; }
+.lt-offer p { margin: 0; }
+.lt-offer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lt-offer-btns button { min-height: 64px; font-size: 19px; }
 .lt-banner { margin: 0; padding: 10px 12px; border-radius: 12px; background: #4a1f2a; color: #ffd6d6; font-weight: 800; }
 .lt-clock-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
 .lt-clock { position: relative; height: 18px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; }

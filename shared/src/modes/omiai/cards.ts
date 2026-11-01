@@ -765,3 +765,77 @@ export function withName(jp: JpText, name: string): JpText {
 }
 
 export const keigoPair = (id: string): KeigoPair | undefined => KEIGO_PAIRS.find((p) => p.id === id);
+
+// ---- the go-between (なこうど), the N4 hard role ----
+//
+// When the room has an N4 player, one of them may take Nobiko-san's introduction and closing lines
+// for a round: the opening as the guest asks (prompt) and the closing as the round's score comes up.
+// The lines are keigo templates filled in from the guest's card. Draft, like the cards.
+// N3 (step 6): ＿で ございます / ＿て おります lines.
+
+export interface NakodoLine {
+  /** Stable per template, for the phrasebook: intro, profile, ask, appeal, next, leave. */
+  id: string;
+  jp: JpText;
+  /** The N4 frames this line practises, by id (shared/src/japanese/frames.ts). */
+  frames: readonly string[];
+}
+
+interface NakodoTemplate {
+  id: string;
+  /** {full} the guest's full name, {short} the name alone, {job} the job. */
+  kana: string;
+  en: string;
+  frames: readonly string[];
+}
+
+export const NAKODO: { status: ReviewStatus; open: Record<'intro' | 'profile' | 'ask' | 'appeal', NakodoTemplate>; close: Record<'next' | 'leave', NakodoTemplate> } = {
+  status: 'draft',
+  open: {
+    intro: { id: 'intro', kana: 'みなさま、{full}が おみえに なりました。ごしょうかい いたします。', en: 'Everyone, {full} has arrived. Allow me to introduce them.', frames: ['o-ni-naru', 'keigo'] },
+    profile: { id: 'profile', kana: 'こちらは {job}の {short}で いらっしゃいます。', en: 'This is {short}, {job}.', frames: ['keigo'] },
+    ask: { id: 'ask', kana: '{short}が みなさまに おききに なります。', en: '{short} has a question for you all.', frames: ['o-ni-naru'] },
+    appeal: { id: 'appeal', kana: '{short}から さいごの しつもんが ございます。', en: '{short} has one last question.', frames: ['keigo'] },
+  },
+  close: {
+    next: { id: 'next', kana: '{short}、ありがとう ございました。つぎの しつもんに まいります。', en: 'Thank you, {short}. On to the next question.', frames: ['keigo'] },
+    leave: { id: 'leave', kana: '{short}は そろそろ おかえりに なります。', en: '{short} will be leaving soon.', frames: ['o-ni-naru'] },
+  },
+};
+
+/** The name on its own: かっぱの キュウリさん → キュウリさん (and the English before " the "). */
+export function shortName(card: Pick<CharacterCard, 'name'>): JpText {
+  const kana = card.name.kana.split('の ').at(-1)!;
+  const en = card.name.en.split(' the ')[0]!;
+  return { text: kana, kana, en };
+}
+
+/** Next to keigo, a ちゃん or くん name takes さん (ワラシちゃん → ワラシさん); the English stays. */
+const politeName = (k: string) => k.replace(/(ちゃん|くん)$/, 'さん');
+
+function fill(t: NakodoTemplate, card: CharacterCard): NakodoLine {
+  const job = card.job.kana.replace(/（.*?）/g, '');
+  const jobEn = card.job.en.replace(/\s*\(.*?\)/g, '');
+  const short = shortName(card);
+  const f = (x: string, en: boolean) =>
+    x
+      .split('{full}')
+      .join(en ? card.name.en : politeName(card.name.kana))
+      .split('{short}')
+      .join(en ? short.en : politeName(short.kana))
+      .split('{job}')
+      .join(en ? `the ${jobEn}` : job);
+  const kana = f(t.kana, false);
+  return { id: t.id, jp: { text: kana, kana, en: f(t.en, true) }, frames: t.frames };
+}
+
+/**
+ * The go-between's two lines for a round: the opening (the guest arrives in round 1, their
+ * profile in round 2, their question after that, the last question in the closing round) and the
+ * closing (on to the next question, or the guest will soon be leaving).
+ */
+export function nakodoLines(card: CharacterCard, round: number, total: number): { open: NakodoLine; close: NakodoLine } {
+  const o = NAKODO.open;
+  const open = round <= 1 ? o.intro : round >= total ? o.appeal : round === 2 ? o.profile : o.ask;
+  return { open: fill(open, card), close: fill(round >= total ? NAKODO.close.leave : NAKODO.close.next, card) };
+}

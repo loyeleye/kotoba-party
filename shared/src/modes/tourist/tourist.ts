@@ -327,15 +327,29 @@ function questionTiles(s: TouristState, playerId: string, level: Level, random: 
   return [...local, ...generic.filter((l) => !local.includes(l))].slice(0, 5).map((l) => l.id);
 }
 
-function answerTiles(s: TouristState, playerId: string, level: Level, kind: Kind | null, random: () => number): string[] {
-  const safe = byLevel(SAFE_ANSWERS, level, random);
+/** N4 deck frame families: a ＿なければ なりませんか question is answered in must/needn't, a ＿られますか one in can. */
+const FAMILIES: readonly (readonly string[])[] = [
+  ['nakereba', 'nakutemo-ii', 'te-wa-ikenai'],
+  ['potential'],
+];
+
+/** Lines in the question's frame family first (stable); unchanged when the question has no frames. */
+function familyFirst(lines: Line[], frames: readonly string[] | undefined): Line[] {
+  const fam = new Set(FAMILIES.filter((f) => frames?.some((x) => f.includes(x))).flat());
+  if (!fam.size) return lines;
+  const inFam = (l: Line) => !!l.frames?.some((x) => fam.has(x));
+  return [...lines.filter(inFam), ...lines.filter((l) => !inFam(l))];
+}
+
+function answerTiles(s: TouristState, playerId: string, level: Level, kind: Kind | null, random: () => number, frames?: readonly string[]): string[] {
+  const safe = familyFirst(byLevel(SAFE_ANSWERS, level, random), frames);
   const bluffs = byLevel(BLUFFS, level, random);
   const fits = (l: Line) => kind === null || l.kind === kind || l.kind === 'any';
   let picks: Line[];
   if (playerId === s.touristId) {
     picks = [...safe.filter(fits).slice(0, 2), ...(kind === null || kind === 'yesno' ? [] : safe.filter((l) => l.kind === 'yesno').slice(0, 1)), ...bluffs];
   } else {
-    const here = byLevel(placeOf(s).answers, level, random);
+    const here = familyFirst(byLevel(placeOf(s).answers, level, random), frames);
     const mine = kind === null ? here.slice(0, 2) : here.filter(fits).slice(0, 2);
     const extra = kind === 'yesno' ? here.filter((l) => l.kind === 'how' || l.kind === 'like').slice(0, 1) : [];
     picks = [...mine, ...extra, ...safe.filter(fits), ...safe.filter((l) => l.kind === 'yesno')];
@@ -801,7 +815,7 @@ export const touristMode: Mode<TouristState, TouristView> = {
         turn.question = said;
         const q = said.lineId ? LINES.get(said.lineId) : undefined;
         const target = ctx.player(turn.targetId);
-        turn.aSuggest = answerTiles(s, turn.targetId, target?.level ?? 'n5', q && q.kind !== 'any' ? q.kind : null, () => ctx.random());
+        turn.aSuggest = answerTiles(s, turn.targetId, target?.level ?? 'n5', q && q.kind !== 'any' ? q.kind : null, () => ctx.random(), q?.frames);
         stats(s, playerId).asked += 1;
         if (said.via === 'speech') stats(s, playerId).spoken += 1;
         payBonus(s, ctx, playerId, bonusFor(said, ASK_BONUS));

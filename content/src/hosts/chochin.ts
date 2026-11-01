@@ -173,6 +173,8 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.platform_dash.03', host: 'chochin', event: 'platform_dash', jp: { text: 'いちばんのりは だれですか？', kana: 'いちばんのりは だれですか？', en: 'Who will be first aboard?' }, status: 'draft' },
   { id: 'chochin.platform_dash.04', host: 'chochin', event: 'platform_dash', jp: { text: 'ゆうれいさんも、まだ チャンスが あります！', kana: 'ゆうれいさんも、まだ チャンスが あります！', en: 'Ghosts, you still have a chance!' }, status: 'draft' },
   { id: 'chochin.platform_dash.05', host: 'chochin', event: 'platform_dash', jp: { text: 'ドアが しまります！　はしって ください！', kana: 'ドアが しまります！　はしって ください！', en: 'The doors are closing! Run!' }, status: 'draft' },
+  // train_role_read: a taken hard role answered right; Chōchin-san says its model line as is at the reveal
+  { id: 'chochin.train_role_read.01', host: 'chochin', event: 'train_role_read', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // Murder at the Onsen: Chōchin-san is off duty at the inn and plays detective's narrator.
   // onsen_case
   { id: 'chochin.onsen_case.01', host: 'chochin', event: 'onsen_case', jp: { text: 'じけんです！　ゆらゆら。', kana: 'じけんです！　ゆらゆら。', en: 'We have a case! Sway, sway.' }, status: 'draft' },
@@ -204,6 +206,8 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.onsen_reveal.03', host: 'chochin', event: 'onsen_reveal', jp: { text: 'ゆらゆら… ほんとうの ことを はなして ください。', kana: 'ゆらゆら… ほんとうの ことを はなして ください。', en: 'Sway, sway… please tell us the truth.' }, status: 'draft' },
   { id: 'chochin.onsen_reveal.04', host: 'chochin', event: 'onsen_reveal', jp: { text: 'みなさま、おみごとでした。', kana: 'みなさま、おみごとでした。', en: 'Splendid work, everyone.' }, status: 'draft' },
   { id: 'chochin.onsen_reveal.05', host: 'chochin', event: 'onsen_reveal', jp: { text: 'さあ、こたえあわせです！', kana: 'さあ、こたえあわせです！', en: "Now, let's check the answer!" }, status: 'draft' },
+  // onsen_report: the deputy's accepted report, said as it is (the line is the slot; its kana and subtitle come with it)
+  { id: 'chochin.onsen_report.01', host: 'chochin', event: 'onsen_report', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // Who's the Tourist?: Chōchin-san guides the tour, and admires a good disguise.
   // tourist_intro
   { id: 'chochin.tourist_intro.01', host: 'chochin', event: 'tourist_intro', jp: { text: 'かんこうきゃくは だれでしょう？　ゆらゆら。', kana: 'かんこうきゃくは だれでしょう？　ゆらゆら。', en: 'Who could the tourist be? Sway, sway.' }, status: 'draft' },

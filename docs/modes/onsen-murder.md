@@ -4,7 +4,7 @@ Host: Chōchin-san, off duty at the inn. 1–8 players. The VIP picks 2, 3 or 1 
 (`roundChoices`). Mode id `onsen-murder`.
 
 Code: `shared/src/modes/onsenMurder/` (rules; `questions.ts` question matching, tiles and the
-accusation line; `fallback.ts` placeholder case), `content/src/onsen/cases.ts` (8 draft N5
+accusation line; `deputy.ts` the N4 deputy's report tiles and check; `fallback.ts` placeholder case), `content/src/onsen/cases.ts` (8 draft N5
 cases: 3 for everyone, 1 Kids, 4 Cheeky), `stage/src/modes/onsenMurder.ts` (+ `.css`), `controller/src/modes/onsenMurder.ts`
 (+ `.css`), `tools/bots/policies/onsenMurder.ts`, `server/ai/suspect.ts` and
 `server/src/onsen.ts` (optional LLM lead-ins), `tests/onsenMurder.test.ts`.
@@ -15,7 +15,7 @@ cases: 3 for everyone, 1 Kids, 4 Cheeky), `stage/src/modes/onsenMurder.ts` (+ `.
 | --- | --- | --- |
 | `intro` (Case file) | The victim (a thing, not a person), where it happened, the suspects with roles, the evidence item. 25 s. | `onsen_case` |
 | `answer` (Question) | One player's turn, by seat. They pick a suspect on the phone and ask one question: said aloud, typed, or built from tiles. 40 s (50 s at Kana level). Ends as soon as a question lands. | `onsen_turn` (`name`) |
-| `reveal` (Answer) | The suspect "thinks" for 1.8 s, then the scripted Japanese answer appears and is spoken (browser ja-JP voice, per-suspect pitch and rate); the English follows 2.5 s later. A new clue goes into the shared notebook. 10 s (12 s with a new clue). | `onsen_clue` on a new clue |
+| `reveal` (Answer) | The suspect "thinks" for 1.8 s, then the scripted Japanese answer appears and is spoken (browser ja-JP voice, per-suspect pitch and rate); the English follows 2.5 s later. A new clue goes into the shared notebook. 10 s (12 s with a new clue). | `onsen_clue` on a new clue; `onsen_report` (`line`) when the deputy's report is accepted |
 | … | `answer` → `reveal` repeats for every turn: players × questions each, clamped to 6–14 turns. | |
 | `encore` (Accuse) | Everyone picks a suspect and says 「はんにんは ○○さんです！」. 50 s. Ends when everyone has voted. | `onsen_accuse` |
 | `finale` (Confession) | Votes per suspect, the はんにん stamp on the culprit, their confession, the English solution, and any key clues nobody found. 30 s. | `onsen_reveal` |
@@ -54,6 +54,51 @@ bonus is never more than 30% of their score. The pool settles whenever base poin
 
 Awards: めいたんてい (most clues found), こえの たんてい (most questions asked aloud), みぬいた！
 (first to name the culprit).
+
+### The deputy (N4 hard role)
+
+When the room has an N4 player, each turn one of them (in seat rotation, never the asker) is offered
+the deputy's part on their phone while the question is asked ("🕵️ Chōchin-san needs a deputy this
+turn."), with the two frames (＿と いっていました ／ ＿に ＿られました) and two equal buttons: "Take it" or "Not
+this time" (which keeps the ordinary part: just watch). After the answer the deputy tells the room what
+the suspect said:
+
+- **Reported speech** (4.14 ＿と いっていました) for most answers: たなかさんは 12じに ねたと いっていました。
+- **The passive** (4.13 ＿に ＿られました) for a sighting: さとうさんは 8じはんに だいどころの まえで いとうさんに みられました。
+- A few also use ために, ＿そうでした and ので.
+
+Every answer of all eight cases (the three for everyone, the Kids case and the four Cheeky ones) has
+its report written beside it (`report` in `content/src/onsen/cases.ts`, draft). The phone's report box fades in once the answer and its subtitle
+are up, and shows the frame (＿は ＿と いっていました) over a speak box; the report's words as shuffled
+tiles sit behind "Need the words? Build it from tiles" (open after a miss), so the line is checkable.
+The deputy says or types it, or builds it (`deputy.ts`: the frame's last two words must be there, then
+the whole line within a few kana or 70% of its words; a passive report fails if the one who saw is
+marked with を or が instead of に). Two tries; after a miss the whole line is shown. The stage shows the
+report under the answer, and **Chōchin-san says it on the TV** (`onsen_report`): the deputy's own
+recording never plays there. He always voices the model line (fixed, fluent and safe for the TTS),
+whatever the deputy said, typed or built, with its subtitle, as one short beat. The cue carries the
+line as the `{line}` slot with `line_kana` and `line_en` (bank line `chochin.onsen_report.01`). It
+waits until 5.8 s into the answer (`REPORT_VOICE.after`: think + subtitle + 1.5 s), so it never talks
+over the suspect's answer, and a report that lands late holds the answer up 5 s more
+(`REPORT_VOICE.beat`) so the next turn's line doesn't cut it off. The phase deadline still wins: a
+report in the very last seconds can be cut short. A miss, a decline or no N4 player: nothing is said.
+
+| | Points |
+| --- | --- |
+| Report said or typed | 30 |
+| Report built from tiles | 10 |
+| Report said aloud | +40 speaking bonus (same pool and cap) |
+
+The answer runs 15 s longer only for a deputy who tapped "Take it" before it came in (or has had a
+try), and ends once they're done and the answer has had its usual 10–12 s (a `wake`). An offer nobody
+answered adds no time, but the deputy can still report in the usual time, and a first try counts as
+taking it. An answer with nothing to report (a shrug, the placeholder) voids the offer. Kids and
+Cheeky rooms get the deputy like any other room. Every offer and its outcome (accepted, declined, timeout, away; the shared `OfferAnswer` in
+`hardRoleLog.ts`) is in `deputyLog`; `deputyOffers()` sums it per player with the gate rate
+(`offerRate`, "accept at least 60%"). In a room of four or more, a lone N4 player who could be deputy
+and was deputy last turn sits the next turn out. Phrasebook:
+`onsen.report.<case>.<suspect>.<intent>`. Kana and N5 players' parts and scores don't change, and with no
+N4 player nothing changes.
 
 ### The optional LLM
 
@@ -106,6 +151,35 @@ on the LLM. At most 16 lead-ins per game.
     romaji.
 15. **Phrasebook entries**: each intent asked (`onsen.q.<intent>`) and the player's accusation
     (`onsen.accuse.<case>.<suspect>`).
+16. **The deputy (N4) is offered every turn to the next N4 player who isn't asking**, with reports
+    hand-written per answer rather than generated: turning a polite answer into a plain-form quote isn't
+    safe to do by rule. Sightings (だれを みましたか) are reported in the passive, everything else in
+    reported speech (2026-11-01).
+17. **A polite direct quote passes the deputy's check** (いましたと いっていました): it is still correct
+    Japanese, and the check leans towards accepting. Dropping a fact (both times) fails.
+18. **Deputy points: 30 said or typed, 10 from tiles, +40 spoken bonus under the shared cap**
+    (2026-11-01, down from 60 / 30, so saying it aloud is most of the reward and tiles are the fallback).
+    A guess to tune in playtests; a clue is worth 100, so the deputy never outscores the detective.
+19. **The deputy's answer time is +15 s, only when they took the part** ("Take it" before the answer)
+    or have tried, ended early once they're done and the answer has had its usual time. An untouched
+    offer doesn't hold the room up (2026-11-01).
+20. **Spotlight: in a room of four or more, a lone eligible N4 player who was deputy last turn sits the
+    next one out**, so the part isn't theirs on every turn (2026-11-01, for Ladi to confirm).
+21. **Passive reports check the particle on the one who saw** (に, not を or が), since the lenient sound
+    check would otherwise pass a sentence that says the opposite (2026-11-01).
+22. **Some sightings are reported as speech** where the passive would lose a fact: Suzuki's sighting
+    keeps the big pot (すずきさんは … たなかさんが おおきい なべを もって いたと いっていました), and
+    Hayashi's keeps Tama asleep in the lobby. Others gain where (だいどころの まえで, おふろの まえで)
+    (2026-11-01, draft).
+23. **The Kids and Cheeky cases have deputy reports too** (decided by Ladi, 2026-11-01): all 90 are
+    hand-written drafts in the same style, reported speech for most and the passive for a sighting
+    (ポチは 2じはんに しょくどうで はなちゃんに みられました), keeping each answer's clue words. Sightings that
+    hinge on more than where (Nishimura's red face, the flask in his hands, Morita angry, Miki going to
+    the hot spring, Kudō shaking, Oyuki a guest since 1926) are reported as speech, as with Suzuki's.
+    Kids reports stay gentle; Cheeky ones keep the cases' jokes (たぶん じぶんのじゃ ない, あしは ない).
+24. **The host says the deputy's line** (decided by Ladi, 2026-11-01: "Instead of the TV playing the N4
+    player's recorded clip, have the host say the line"): Chōchin-san voices the accepted report's
+    model line on the TV, after the suspect's answer, as one beat.
 
 ## Open questions
 
@@ -119,11 +193,21 @@ on the LLM. At most 16 lead-ins per game.
 - 3 cases is about one evening. How many cases for launch, and at which levels (N4 cases with
   conditional clues)?
 
+- The deputy: should a 2-player room with one N4 player get a deputy every other turn only? (The
+  recorded clip: decided by Ladi, the host says the line instead; see decision 24. Reports for the
+  Kids and Cheeky cases: decided by Ladi, yes; see decision 23.)
+
 ## Known gaps
+
+- The deputy: not built yet are the host playing the part in solo rooms, the commentary booth's replay
+  of the report, Gallery reactions and curveball tiles; the bots never take the deputy's part (an N4
+  bot's offer just times out). The 150 reports are draft and need the fluent check, the 90 Kids and
+  Cheeky ones (2026-11-01) especially: もりたさんは しゃちょうが いつも もりたさんの しごとを じぶんの しごとだと
+  いうと いっていました is long for a tile builder.
 
 - The ice cream, sake, smartphone, toupee and candle cases have no pixel art yet: their suspects, victim and item show
   emoji until portraits and icons are made.
-- All eight cases and the 25 host lines are `status: 'draft'` and need the fluent-speaker check
+- All eight cases and the 26 host lines are `status: 'draft'` and need the fluent-speaker check
   (C1), especially the confessions and the lenient matching keys.
 - Bot accusations are naive: with chance `sleuth` (default 0.75) a bot votes for the
   suspect named most in the notebook, otherwise for a random hunch.

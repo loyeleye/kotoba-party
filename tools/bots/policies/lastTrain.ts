@@ -44,6 +44,13 @@ export function lastTrainPolicy(opts: LastTrainPolicyOptions): ModePolicy {
       const me = game.me;
       const out: { key: string; move: unknown; delayMs?: number }[] = [];
 
+      // An N4 bot takes most hard roles it is offered. It marks its answer as a bot's, so the server
+      // logs it with `bot: true` and it stays out of the 60% acceptance gate.
+      if (me.offer) {
+        const accept = roll(`${seed}:${playerId}:role:${me.offer.key}`) < 0.7;
+        out.push({ key: `role:${me.offer.key}`, move: { kind: 'role', key: me.offer.key, accept, bot: true }, delayMs: think(me.offer.key) });
+      }
+
       const task = me.task;
       if (task) {
         const item = items.get(task.itemId);

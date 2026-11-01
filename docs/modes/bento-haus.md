@@ -9,7 +9,8 @@ the box. Tips fill the tip jar for the whole team.
 Code: `shared/src/modes/bentoHaus/` (rules and views in `bentoHaus.ts`; foods, counters, customers,
 riddles and lines in `menu.ts`), `stage/src/modes/bentoHaus.{ts,css}`,
 `controller/src/modes/bentoHaus.{ts,css}`, `tools/bots/policies/bentoHaus.ts`,
-`tests/bentoHaus.test.ts`. Design: the Bento Haus and Narabe! design doc (v0.2) and its panel
+`tests/bentoHaus.test.ts`; the N4 hard roles in `shared/src/modes/bentoHaus/hardRoles.ts` and
+`tests/bentoHausHard.test.ts`. Design: the Bento Haus and Narabe! design doc (v0.2) and its panel
 reviews. The co-op kitchen that has to talk is the idea of Overcooked; nothing else is borrowed (see
 [commercial-blockers.md](../commercial-blockers.md) row 12).
 
@@ -65,6 +66,58 @@ perfect boxes served).
 toss, a sigh when a customer leaves, static, Pon's ドロン and もぐもぐ, a last-orders chime) and bells in
 the track's key for the stars. Phones buzz when they ring and when a ticket lands. Pon waits 7 s
 between lines so he doesn't talk over the calls.
+
+## Hard roles (N4)
+
+From the N4/N3 doc's hard roles, step 2. Co-op only; they ride on the same shift, so nobody else's part
+changes. A room with no N4 player never sees them (no state, no view fields). All lines are draft, in
+kana, and tagged by name with the N4 frames they practise (`hardRoles.ts`).
+
+- **Offers.** At each shift's title card, the room's N4 players are offered a role on their phone: two
+  equal buttons, やります (Take it) or こんかいは いいです (Not this time: the ordinary part). One deputy
+  manager seat a shift, rotating through the N4 players; every other N4 player is offered the おもてなし
+  shift. With one N4 player the two alternate (deputy manager in shifts 1 and 3). A declined deputy
+  manager seat passes for that shift to the next N4 player in turn (Ladi, 2026-11-01), as a new logged
+  offer, skipping anyone already offered the seat this shift or already on the おもてなし shift; that
+  player's still-open おもてなし offer is withdrawn (unanswered, so never counted), so the phone shows one
+  choice at a time. Once every N4 player has declined it, the seat stays empty. The offer stays open
+  into the shift, below the order and call box. Every offer and its answer is kept in mode state
+  (`hard.offers`) with the shared offer log's answers (`hardRoleLog.ts`): accepted, declined, timeout
+  (still open at closing time) or away (the player left with it open). Gate = accepted ÷ (accepted +
+  declined + timeout), per game; away is left out (`offerStats().rate`).
+- **Deputy manager (📋 ふくてんちょう)**, goals 4.1 and 4.9. Pon is busy "tasting" (his words), so
+  complaints and special orders come to this player, who is still a normal member of the kitchen. They
+  come one at a time, for 30 s each:
+  - a **complaint**: a box served with something off (not Pon's disguise). The deputy manager says sorry and
+    asks the customer to wait (「もうしわけ ございません。すこし まって いただけますか。」), then asks the
+    station that holds the food (「からあげを もう ひとつ つくって もらえますか。」, or
+    「おべんとうを つくりなおして もらえますか。」 when there's too much of something).
+  - a **special order**: every third customer while the deputy manager is free (no wasabi, warm it up, a big
+    helping of rice, chopsticks, sauce on the side; the influencer wants a cuter box; the baku wants a
+    dream, which the shop can't do: もうしわけ ございません and 「おにぎりに して いただけますか。」).
+    The deputy manager answers the customer (かしこまりました。〜て いただけますか), then asks the
+    station (〜て もらえますか, or 〜て くれませんか, tagged te-kuremasen).
+  The station gets a 📋 card with the deputy manager's line and taps はい、できました！; a missing food goes
+  into the box on the TV and the customer thanks the shop. The box's tips don't change.
+- **おもてなし shift** (was Ryokan Front Desk), goals 4.7 and 4.9. A variant of the order-taker's job:
+  each guest this player takes has a strip on the order card. Seat them (おすわりください /
+  おまちください), then answer their question: turn a house rule down with ＿は ごえんりょ ください
+  (pets for anyone; smoking and calls from Cheeky customers only, photos of other guests from the
+  influencer, sleeping in the shop from the baku and the tanuki cub), never ＿ては いけません, or
+  say it's ready with ＿は よういして あります (chopsticks, a hand towel, cold tea, a booked seat). The guest
+  gives a star for each line said right and one for being served (0–3); the TV shows a 🌸 tag, the
+  question once seated, and the stars as they go; closing time adds the shift's おもてなし stars.
+- **Checking.** Each line is checked for its frame (and for the thing named, so the station knows what
+  is needed), on the speech server's reading. The phone's input shows the frame (「〜て いただけますか」,
+  「＿は ごえんりょ ください」), not the line; the line is under "Need the words?", and a line whose words
+  were opened before its first try goes in the phrasebook as seen, not said. A miss gets a private hint on the speaker's phone
+  (「〜て もらえますか is for your own kitchen」, 「never 〜ては いけません」) and they can try again or skip;
+  only lines said right reach the TV.
+- **Pay.** A line said right earns the speaker a speaking bonus (20 out loud, 8 typed) from the same
+  capped pool as Co-op's other bonuses, and goes in their phrasebook. Team tips and everyone else's pay
+  are as before.
+- **Not built:** the host playing the role when nobody is N4, the commentary booth, the gallery,
+  curveball tiles, N3 lines (step 6), bots taking the roles, and VS (left unchanged).
 
 ## Not built yet
 
@@ -151,3 +204,13 @@ Each team is a whole Co-op kitchen; the two share only the customers.
    meter now punishes a run of sloppy boxes; Ladi kept the わけあり tip for the slower box, 2026-10-28.)
 7. VS: are the meter steps (+10 / +25 / +40), the 5-tip sent-back order and the 8-tip lead limit
    right, once played?
+8. Hard roles: should a deputy manager's fix win back a tip, or the おもてなし stars pay the team? (For now
+   neither changes team pay, so other players notice no change; decided for Ladi, 2026-11-01.)
+9. ~~Hard roles: does a declined deputy manager seat stay empty for the shift?~~ Decided by Ladi,
+   2026-11-01: it passes to the next N4 player in turn for that shift, each pass a new logged offer; it
+   stays empty only once every N4 player has declined it (see Offers).
+10. Hard roles: is a special order every third customer (was every second until 2026-11-01), and 30 s
+    on the desk, too much on top of a deputy manager's own orders? Should they stop taking orders
+    instead?
+11. Hard roles: should the kitchen line accept 〜て いただけますか too (it does now: too polite for your
+    own kitchen, but not wrong)?

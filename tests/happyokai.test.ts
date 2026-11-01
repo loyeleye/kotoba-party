@@ -7,7 +7,10 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import {
+  answerFrames,
   closingFor,
+  DECKS,
+  deckTitlesFor,
   framesFor,
   MISHAPS,
   openingFor,
@@ -26,6 +29,7 @@ import {
   dealChoices,
   hanamaruPoints,
   HANAMARU_POINTS,
+  n4Mix,
   presenterOrder,
   showPlan,
   speakPoints,
@@ -178,6 +182,76 @@ describe('Happyōkai!: content', () => {
     expect(openingFor('n5', 'Ladi', cat).text).toContain('今日は ねこの しごとに ついて 話します');
     expect(openingFor('n4', 'Ladi', cat).kana).toContain('きょうは ねこの しごとに ついて はなしたいと おもいます');
   });
+
+  it('has two N4 decks, Then and now and If I were…, with their own frames, cue cards, questions and answers', () => {
+    const HAN = /\p{Script=Han}/u;
+    const bare = (j: { text: string; furigana?: [string, string][] }) => (j.furigana ?? [[j.text, '']]).filter(([b, r]) => !r && HAN.test(b)).map(([b]) => b);
+    for (const deck of ['then-now', 'if'] as const) {
+      expect(DECKS[deck].status).toBe('draft');
+      for (const a of ['kids', 'family', 'cheeky'] as const) expect(deckTitlesFor(a, deck).length, `${deck} ${a}`).toBeGreaterThanOrEqual(5);
+      for (const a of ['kids', 'family', 'cheeky'] as const) expect(titlesFor(a).some((t) => t.deck)).toBe(false);
+      const pattern = deck === 'then-now' ? /ように なりました|ことに しました|ことに なりました/ : /^もし |、もし /;
+      for (const s of SLIDES) {
+        const ready = readySentences(s, 'n4', deckTitlesFor('family', deck)[0]!.topic, deck);
+        expect(ready.length, s.id).toBe(3);
+        for (const r of ready) {
+          expect(r.kana, `${s.id} ${deck}`).toMatch(pattern);
+          expect(r.kana, s.id).not.toMatch(/undefined|null/);
+          expect(bare(r), s.id).toEqual([]);
+        }
+        expect(framesFor('n4', s, deck).join(' '), s.id).toMatch(pattern);
+        // Other levels keep their usual lines, even in a deck talk.
+        expect(readySentences(s, 'n5', TITLES[0]!.topic, deck)).toEqual(readySentences(s, 'n5', TITLES[0]!.topic));
+        expect(framesFor('n5', s, deck)).toEqual(framesFor('n5', s));
+      }
+      const cards = questionsFor('n4', SLIDES[0]!, deckTitlesFor('family', deck)[0]!.topic, 'family', () => 0, deck);
+      expect(cards[0]!.kana).toMatch(deck === 'then-now' ? /まえは|ことに しました|ように なりました/ : /^もし/);
+      expect(answerFrames('n4', deck).join(' ')).toMatch(pattern.source.startsWith('^') ? /もし/ : pattern);
+      expect(answerFrames('n5', deck)).toEqual(answerFrames('n5'));
+    }
+    // Deck questions stay out of every other talk.
+    for (let k = 0; k < 20; k++) for (const q of questionsFor('n4', SLIDES[k]!, TITLES[0]!.topic, 'family', mulberry(k))) expect(q.kana).not.toMatch(/ことに しました|できるように|もし あなたが|なれたら/);
+    // An If I were… title is a clause, so the opening quotes it.
+    const ifCat = TITLES.find((t) => t.id === 'if-cat')!.jp;
+    expect(openingFor('n4', 'Ladi', ifCat).kana).toContain('きょうは 「もし わたしが ねこだったら」に ついて');
+  });
+
+  it('fits the N4 deck sentences to the slide: news, the "if" wish, and verbs for things you don\'t 使う', () => {
+    const slide = (id: string) => SLIDES.find((s) => s.id === id)!;
+    const byKind = (kind: string) => SLIDES.find((s) => s.kind === kind && !s.event && !s.use)!;
+    const tn = TITLES.find((t) => t.id === 'tn-tanuki')!;
+    expect(tn.deck).toBe('then-now');
+    expect(TITLES.some((t) => t.id === 'tn-town')).toBe(false);
+    const news = (s: (typeof SLIDES)[number]) => readySentences(s, 'n4', tn.topic, 'then-now')[2]!.kana;
+    expect(news(byKind('place'))).toMatch(/^じつは、らいげつ たぬきと .+に ひっこす ことに なりました。$/);
+    expect(news(byKind('food'))).toMatch(/^じつは、らいげつから たぬきが .+の おみせを ひらく ことに なりました。$/);
+    expect(news(byKind('living'))).toMatch(/^じつは、らいげつ たぬきと .+が けっこんする ことに なりました。$/);
+    expect(news(byKind('thing'))).toMatch(/が けっこんする ことに なりました。$/);
+    const ifT = deckTitlesFor('family', 'if')[0]!.topic;
+    const wish = (s: (typeof SLIDES)[number]) => readySentences(s, 'n4', ifT, 'if')[0]!.kana;
+    expect(wish(byKind('living'))).toMatch(/いっしょに いたいです。$/);
+    expect(wish(byKind('place'))).toMatch(/に すみたいです。$/);
+    expect(wish(byKind('food'))).toMatch(/まいにち .+を たべたいです。$/);
+    expect(wish(byKind('thing'))).toMatch(/まいにち .+を つかいたいです。$/);
+    expect(wish(slide('sakura'))).toMatch(/まいにち さくらを たのしみたいです。$/);
+    // おみくじ is drawn, not used; trains are ridden.
+    expect(wish(slide('omikuji'))).toMatch(/まいにち おみくじを ひきたいです。$/);
+    expect(readySentences(slide('omikuji'), 'n4', tn.topic, 'then-now')[0]!.kana).toContain('おみくじが ひけるように なりました');
+    expect(readySentences(slide('shinkansen'), 'n4', tn.topic, 'then-now')[0]!.kana).toContain('しんかんせんに のれるように なりました');
+    expect(wish(slide('rush-hour'))).toMatch(/でんしゃに のりたいです。$/);
+  });
+
+  it('asks いなかったら about a living slide word, なかったら about anything else', () => {
+    const living = SLIDES.find((s) => s.kind === 'living')!;
+    const other = SLIDES.find((s) => s.kind === 'thing')!;
+    const all = (s: (typeof SLIDES)[number]) => Array.from({ length: 40 }, (_, k) => questionsFor('n4', s, TITLES[0]!.topic, 'family', mulberry(k))).flat().map((q) => q.kana);
+    const livingQs = all(living);
+    expect(livingQs.some((q) => q.includes('いなかったら'))).toBe(true);
+    expect(livingQs.some((q) => /が なかったら/.test(q))).toBe(false);
+    const otherQs = all(other);
+    expect(otherQs.some((q) => /が なかったら/.test(q))).toBe(true);
+    expect(otherQs.some((q) => q.includes('いなかったら'))).toBe(false);
+  });
 });
 
 // ---- rules ----
@@ -263,6 +337,70 @@ describe('Happyōkai!: a talk', () => {
     const n5 = new Table(4);
     n5.start();
     expect(n5.t.pictures).toBe(showPlan(4).pictures);
+  });
+
+  it('gives an N4 presenter the N4 decks (one title from each), with deck frames and cue cards; N5 presenters never see them', () => {
+    const table = new Table(3, ['n4', 'n4', 'n4']);
+    table.start();
+    const presenter = table.t.presenterId;
+    const choices = table.t.titleChoices.map((id) => TITLES.find((t) => t.id === id)!);
+    expect(choices.map((t) => t.deck)).toEqual(['then-now', 'if']);
+    expect(table.view(presenter).me!.titleChoices.map((c) => c.deck?.en)).toEqual(['Then and now', 'If I were…']);
+    expect(table.play(presenter, { kind: 'title', key: 1 }).error).toBeUndefined();
+    expect(table.play(presenter, { kind: 'go' }).error).toBeUndefined();
+    const opening = table.view(presenter).me!.script!;
+    expect(opening.kana).toContain('「もし わたしが');
+    expect(table.say(opening.kana).error).toBeUndefined();
+    expect(table.next().error).toBeUndefined();
+    const me = table.view(presenter).me!;
+    expect(me.frames.join(' ')).toContain('もし ＿だったら');
+    expect(me.ready.length).toBe(3);
+    for (const r of me.ready) expect(r.kana).toMatch(/もし/);
+    // The assistant's cue cards are the deck's sentences too.
+    expect(table.view(table.t.assistantId!).me!.cueCards.map((c) => c.kana)).toEqual(me.ready.map((r) => r.kana));
+
+    const n5 = new Table(3, ['n5', 'n5', 'kana']);
+    n5.start();
+    expect(n5.t.titleChoices.every((id) => !TITLES.find((t) => t.id === id)!.deck)).toBe(true);
+  });
+
+  it("alternates an N4 presenter's pairs: a deck pair, then one deck title and one usual title", () => {
+    for (const seed of [3, 7, 11]) {
+      const table = new Table(3, ['n4', 'n4', 'n4'], seed);
+      table.start('cheeky');
+      const picked: Record<string, string> = {};
+      let mixes = 0;
+      let usualTalks = 0;
+      for (let guard = 0; guard < 600 && table.s.phase !== 'finale' && table.s.phase !== 'recap'; guard++) {
+        const t = table.st.talk;
+        if (table.s.phase === 'prompt' && t && !t.titleId) {
+          const choices = t.titleChoices.map((id) => TITLES.find((x) => x.id === id)!);
+          const decks = choices.filter((c) => c.deck);
+          if (n4Mix(table.st, t.index)) {
+            mixes++;
+            expect(decks.length, `seed ${seed} talk ${t.index}`).toBe(1);
+            // The deck title is from the deck they didn't pick last time.
+            expect(decks[0]!.deck).not.toBe(TITLES.find((x) => x.id === picked[t.presenterId])!.deck);
+            // The presenter takes the usual title.
+            const usual = t.titleChoices.findIndex((id) => !TITLES.find((x) => x.id === id)!.deck);
+            expect(table.play(t.presenterId, { kind: 'title', key: usual }).error).toBeUndefined();
+          } else {
+            expect(choices.map((c) => c.deck), `seed ${seed} talk ${t.index}`).toEqual(['then-now', 'if']);
+            expect(table.play(t.presenterId, { kind: 'title', key: 0 }).error).toBeUndefined();
+          }
+          picked[t.presenterId] = t.titleId!;
+          continue;
+        }
+        // A usual title's talk: nobody gets a deck question card.
+        if (t?.titleId && !TITLES.find((x) => x.id === t.titleId)!.deck && Object.keys(t.cards).length) {
+          usualTalks++;
+          for (const cards of Object.values(t.cards)) for (const c of cards) expect(c.kana).not.toMatch(/まえは|ことに しました|できるように|もし あなたが|なれたら/);
+        }
+        table.timeout();
+      }
+      expect(mixes, `seed ${seed}`).toBe(3);
+      expect(usualTalks, `seed ${seed}`).toBeGreaterThan(0);
+    }
   });
 
   it('runs backstage → slides → questions → grades → report card, and pays everyone', () => {

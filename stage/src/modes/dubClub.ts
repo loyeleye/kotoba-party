@@ -44,8 +44,8 @@ interface ScreenOpts {
   char: string;
   /** The mouth follows the clip playing now. */
   live?: boolean;
-  /** The subtitle in the bottom bar. */
-  caption?: JpText | null;
+  /** The subtitle in the bottom bar: Japanese, or English only (a string) over an ad-lib. */
+  caption?: JpText | string | null;
   /** Top-left card: who is voicing it. */
   nameCard?: HTMLElement | null;
   overlay?: HTMLElement | null;
@@ -65,7 +65,7 @@ function screen(o: ScreenOpts): HTMLElement {
     h('img', { class: 'dub-bg', src: BG(o.bg), alt: '' }),
     char,
     h('div', { class: 'dub-bar top' }, o.nameCard ?? null),
-    h('div', { class: 'dub-bar bottom' }, o.caption ? h('p', { class: 'dub-sub' }, ruby(o.caption)) : null),
+    h('div', { class: 'dub-bar bottom' }, typeof o.caption === 'string' ? h('p', { class: 'dub-sub en' }, o.caption) : o.caption ? h('p', { class: 'dub-sub' }, ruby(o.caption)) : null),
     o.overlay ?? null,
     !clipsHere() ? h('p', { class: 'dub-nosound' }, '🔇 The dubs play on the main TV') : null,
   );
@@ -127,7 +127,13 @@ function sceneSide(view: RoomView, game: DubView, phase: 'prompt' | 'answer'): H
           'ul',
           { class: 'dub-cast' },
           game.cast.map((c) =>
-            h('li', { class: c.sent ? 'sent' : c.passed ? 'passed' : '' }, badge(view, c.playerId), h('span', { class: 'dub-cast-state' }, c.sent ? '🎬 take in' : c.passed ? '🎧 guessing' : c.rehearsed ? '🗣 rehearsed' : '…')),
+            h(
+              'li',
+              { class: c.sent ? 'sent' : c.passed ? 'passed' : '' },
+              badge(view, c.playerId),
+              c.adlib ? h('span', { class: 'dub-adlib', lang: 'ja' }, 'アドリブ') : null,
+              h('span', { class: 'dub-cast-state' }, c.sent ? '🎬 take in' : c.passed ? '🎧 guessing' : c.rehearsed ? '🗣 rehearsed' : '…'),
+            ),
           ),
         ),
     phase === 'answer' ? h('p', { class: 'dub-quiet' }, '🔇 Recording! Quiet on set, please.') : null,
@@ -153,25 +159,27 @@ function screening(view: RoomView, game: DubView): HTMLElement {
   // The guess and the card go in the side column, so the face stays clear.
   let panel: HTMLElement | null = null;
   let live = false;
-  let caption: JpText | null = null;
+  let caption: JpText | string | null = null;
   let nameCard: HTMLElement | null = h('p', { class: 'dub-namecard' }, h('span', { lang: 'ja' }, sc.who.text));
   if (!now) {
     overlay = h('div', { class: 'dub-over dub-curtain' }, h('p', { lang: 'ja' }, 'じょうえい'), h('small', {}, 'The screening'));
   } else {
     const key = `${game.round}:${now.index}`;
-    nameCard = h('p', { class: 'dub-namecard' }, h('span', { lang: 'ja' }, sc.who.text), h('small', {}, ' CV: '), badge(view, now.playerId));
+    nameCard = h('p', { class: 'dub-namecard' }, h('span', { lang: 'ja' }, sc.who.text), h('small', {}, ' CV: '), badge(view, now.playerId), now.adlib ? h('span', { class: 'dub-adlib', lang: 'ja' }, 'アドリブ') : null);
     if (now.skipped) overlay = h('div', { class: 'dub-over dub-cut' }, h('p', { lang: 'ja' }, 'カット！'), h('small', {}, 'Skipped'));
     else if (now.step === 'lead') {
       onceFor(`clap:${key}`, () => sfx('clap', 0.5));
       overlay = h('div', { class: 'dub-over dub-clapper' }, h('p', {}, `🎬 ${now.index + 1} / ${now.count}`), badge(view, now.playerId));
     } else if (now.step === 'play' || now.step === 'replay') {
       live = true;
-      caption = now.line;
+      // An ad-lib has no script: the TV shows the model line's English only, so the room can follow
+      // without reading the player a Japanese answer. The Japanese waits for the reveal.
+      caption = now.adlib ? now.line.en : now.line;
       if (now.clipId && now.playAt !== null) playClip(now.clipId, `${key}:${now.step}`, serverNow() - now.playAt);
       if (now.local) overlay = h('p', { class: 'dub-phone' }, `📱 Playing from ${nameOf(view, now.playerId)}’s phone`);
       if (now.step === 'replay') overlay = h('p', { class: 'dub-phone' }, h('span', { lang: 'ja' }, 'もう いっかい！'), now.local ? ` 📱 ${nameOf(view, now.playerId)}’s phone` : '');
     } else if (now.step === 'guess' || now.step === 'regroup') {
-      caption = now.line;
+      caption = now.adlib ? now.line.en : now.line;
       const left = Math.max(0, now.at + (now.step === 'guess' ? 4_500 : 3_000) - serverNow());
       panel = h(
         'div',
@@ -271,7 +279,7 @@ function episode(view: RoomView, game: DubView): HTMLElement {
         bg: s.bg,
         char: s.char,
         live: !!s.playerId,
-        caption: s.line,
+        caption: s.adlib ? s.line.en : s.line,
         cls: 'big',
         nameCard: h('p', { class: 'dub-namecard' }, h('span', { lang: 'ja' }, s.who.text), s.playerId ? h('small', {}, ' CV: ') : null, s.playerId ? badge(view, s.playerId) : null),
         overlay: s.local && s.playerId ? h('p', { class: 'dub-phone' }, `📱 ${nameOf(view, s.playerId)}’s phone`) : null,

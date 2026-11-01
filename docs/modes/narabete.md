@@ -61,6 +61,43 @@ it?". After its flip, one `finale` turn per card, lowest first: the TV shows the
 the reader says their line, starting with a joiner: 「そして…」, 「それから…」, 「しかも…」 (and then,
 after that, on top of that), and 「さいごに…」 (finally) for the last.
 
+## Rank and defend (N4 hard role, goal 4.11)
+
+In a room with N4 players, one of them each round (in turn, skipping a card not said or hidden) also
+defends their own card's place, with ので. Any round, the Time Line too, where the ordinary defence
+doesn't run.
+
+- **The offer** comes during the line-up: "🎙 N4: after the line-up, say why your card goes where it
+  is", with two equal buttons, **Take it** and **Not this time**. It's opt-in: the encore runs only when
+  they tap Take it before the line-up ends. An offer still open then is logged `timeout` (`away` if they'd
+  left) and skipped; Not this time is `declined`. The answer (the shared `OfferAnswer`) is kept per round
+  in `hardLog`, counted by `hardTally` with `offerRate` (the gate: 60% or more taken; away is left out).
+- **Its own encore** (`encore`, 15 s), after the ordinary defence when there is one, so two people never
+  talk at once. Nobiko-san invites them with her own cue (`narabete_hard`: "{name}さん、どうして そこなの？",
+  never "your card moved a lot"). When the N4 player is also the most-moved card's author they defend
+  once, with the N4 script. The phone says a typed defence doesn't score.
+- **The script** (`defence.ts`) fits where the card ended up: 「＿ので、これが いちばん さきです。」 at
+  the low end, 「＿ので、これが いちばん あとです。」 at the high end, 「＿ので、これは Aさんの あとです。」
+  after a neighbour. The phone shows the frame and two whole model lines to read out, with reasons that
+  fit the round (じかんが いちばん はやいので, Aさんのより たかいので, いちばん くさいので…); the TV shows
+  the frame under the neck. All draft, tagged `node`.
+- **The commentary booth** (Ladi, 2026-11-01: the 15 s encore every round is fine "as long as the other
+  N5/Kana players are getting something out of it"). Once the ので line lands (said out loud, in Japanese,
+  with ので), one more short `encore` replays it. The TV keeps the defence and adds an instant replay: the
+  line with its ので chunk lit and one line of English colour ("ので = because: Aki gave the reason first,
+  then where the card goes."), while Nobiko-san says the line herself (`narabete_replay`, a bank line that
+  is the `{line}` slot as is, with `line_kana` and `line_en`; the player's recording never plays). The line
+  is the model line they read out; a line in their own words is shown but not voiced, because the host
+  only ever speaks fixed, checked lines, never what speech recognition heard. Every Kana and N5 phone shows the gist at its level: the line in
+  kana (romaji too for Kana), plain English ("Aki: this one comes first, because it's the earliest
+  time."), and the card's picture. It calls the play, never the player's mistakes, and the defender's own
+  phone doesn't get it. The replay fills what's left of the 15 s encore, kept to 5–7 s, so it runs at most
+  5 s past the encore, and only when the line was said. Passed, typed, or said without ので: no replay.
+- **Scoring**: said out loud in Japanese, it adds the same 30% defence share as the ordinary defence, to
+  the N4 player only. The team points and everyone else's bonus don't change. The phrasebook
+  (`narabete:defence:<spot>`) logs it `said` only for their own spoken reason with ので; a model line read
+  off the phone, a typed one, or one without ので is `seen`. Not the score.
+
 ## Scoring (co-op)
 
 - **The team**: 100 per neighbouring pair in order, +300 when the whole line is in order. Everyone
@@ -101,4 +138,14 @@ the tonic, with a chord for a perfect line; a knot bends its note down a semiton
    (a 🍦 at a konbini is likely late at night)?
 4. **Moving only your own card** keeps the TV calm and makes people talk, but a shy player can stall
    the line. Should the VIP be able to nudge any card in the last 15 s?
-5. **Fluent check** of every card sentence, theme, ready answer, frame and Nobiko-san's lines.
+5. **Fluent check** of every card sentence, theme, ready answer, frame and Nobiko-san's lines, and the
+   N4 defence script's frames and reasons.
+6. **Rank and defend, decided for now (Ladi to confirm)**: one N4 defence a round, in turn, in every
+   round including the Time Line (so a room with an N4 player gets a 15 s encore there); it never
+   replaces the ordinary defence for someone else; the bonus needs Japanese said out loud, not ので.
+   Spotlight, for Ladi to confirm: in a room of 4 or more connected players, when only one N4 player could
+   be offered it and they gave it (took it) last round, nobody is offered it this round.
+   The 15 s encore every round: decided by Ladi, 2026-11-01, kept, as long as Kana and N5 players get
+   something from it, so the commentary booth's replay is built (see Rank and defend).
+   Deferred: the host playing it in rooms without an N4 player, and the N3 script (＿ような きが します,
+   step 6).

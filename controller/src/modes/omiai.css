@@ -67,3 +67,9 @@
 .omi-accepted p { margin: 0; }
 .omi-accept-big { font-size: 96px; line-height: 1; animation: omi-pop 0.7s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
 @keyframes omi-pop { from { transform: scale(0.3); opacity: 0; } }
+
+.omi-nakodo { background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
+.omi-nakodo p { margin: 0; }
+.omi-nakodo-line { font-size: 20px; font-weight: 800; }
+.omi-offer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.omi-offer-btns button { min-height: 56px; }

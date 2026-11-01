@@ -10,6 +10,7 @@ import { counterChaos } from './counter-chaos.js';
 import { particlePanic } from './particle-panic.js';
 import { calendarCrunch } from './calendar-crunch.js';
 import { readTheSigns } from './read-the-signs.js';
+import { lostAndFound } from './lost-and-found.js';
 import { lastTrainScenarios as scenarios } from './scenarios.js';
 
 export const lastTrainMinigames: LastTrainMinigame[] = [
@@ -22,6 +23,7 @@ export const lastTrainMinigames: LastTrainMinigame[] = [
   particlePanic,
   calendarCrunch,
   readTheSigns,
+  lostAndFound,
 ];
 
 export const lastTrainScenarios: LastTrainScenario[] = scenarios;

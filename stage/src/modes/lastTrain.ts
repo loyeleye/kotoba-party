@@ -139,7 +139,7 @@ function reveal(game: LastTrainView): HTMLElement {
           h(
             'li',
             { class: `o-${r.outcome}` },
-            h('span', { class: 'lt-r-name' }, r.ghost ? `👻 ${r.name}` : r.name),
+            h('span', { class: 'lt-r-name' }, r.ghost ? `👻 ${r.name}` : r.name, r.role ? h('small', { class: 'lt-r-role' }, '⭐ ', ruby(r.role)) : null),
             h('span', { class: 'lt-r-q' }, r.signs?.length ? signBoard(r.signs, { small: true, outline: true }) : null, ruby(r.prompt)),
             h('span', { class: 'lt-r-said', lang: 'ja' }, r.said ? `“${r.said}”` : '—'),
             h('span', { class: 'lt-r-model' }, ruby(r.model), h('small', {}, ` ${r.model.en}`)),

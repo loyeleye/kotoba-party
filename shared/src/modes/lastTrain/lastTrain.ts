@@ -9,12 +9,16 @@
 // Personal timers: every item has its own time limit, so each player's attempt has its own
 // deadline inside the answer phase. Modes have no timers, so expiry is lazy: any move first
 // sweeps what is overdue, and phones send { kind: 'tick' } when their own clock runs out.
+//
+// Hard roles (N4): items with a `role` are never dealt as ordinary items. At a stop whose minigame has
+// some, one N4 player in turn is offered one; "not this time" (or no answer) deals the ordinary item.
 
-import type { HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, StationSign, TrainStop } from '../../../../content/src/types.js';
+import type { HardRole, HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, StationSign, TrainStop } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type MoveResult, type PhraseEntry } from '../mode.js';
 import { checkUtterance, firstMora } from './check.js';
+import type { OfferAnswer } from '../hardRoleLog.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallback.js';
 
@@ -23,6 +27,8 @@ import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallb
 export const RULES = {
   /** How long the room has to thumbs-up a rejected answer. */
   overruleMs: 7_000,
+  /** How long an N4 player has to take a hard role before the ordinary item is dealt instead. */
+  offerMs: 8_000,
   /** Answers that arrive this late after a personal deadline still count (network lag). */
   graceMs: 1_500,
   /** A phone's own "time's up" tick is believed this early (clock drift). */
@@ -32,6 +38,13 @@ export const RULES = {
   minLimitMs: 4_000,
   pointsFirstTry: 100,
   pointsRetry: 60,
+  /** Added to the base points of a correct answer on a hard-role item the player took. */
+  roleBonus: 20,
+  /**
+   * When Chōchin-san says a taken hard role's model line at the reveal, after his reaction (an LLM line may wait
+   * 1.5 s, then takes about 2 s to say). The longest model line takes about 7 s, inside the 12 s reveal.
+   */
+  roleReadAtMs: 4_500,
   /** Ghosts earn this share of a living player's points. */
   ghostShare: 0.5,
   /** From-memory speech bonus, as a share of the answer's points. */
@@ -82,7 +95,7 @@ interface AttemptRec {
   timedOut: boolean;
 }
 
-type TurnStatus = 'answering' | 'retry' | 'correct' | 'missed' | 'away';
+type TurnStatus = 'offer' | 'answering' | 'retry' | 'correct' | 'missed' | 'away';
 
 interface Turn {
   playerId: string;
@@ -93,6 +106,19 @@ interface Turn {
   correctOn: 0 | 1 | 2;
   ghostAtStart: boolean;
   points: number;
+  /** A hard role on offer (status 'offer'): the task holds the role's item, its clock not started yet. */
+  offer: { role: HardRole; deadline: number } | null;
+}
+
+/** One hard-role offer and what the player did with it (the step's gate: N4 players accept at least 60%). */
+export interface RoleOffer {
+  stop: number;
+  playerId: string;
+  roleId: string;
+  itemId: string;
+  answer: OfferAnswer;
+  /** Answered by a test bot (tools/bots): leave it out of the acceptance gate. */
+  bot?: true;
 }
 
 interface PenaltyTurn {
@@ -182,6 +208,7 @@ export interface LastTrainState {
   ledger: LedgerEntry[];
   overruleLog: { stop: number; playerId: string; itemId: string; heard: string; up: number; eligible: number }[];
   rejects: number;
+  roleLog: RoleOffer[];
   seq: number;
 }
 
@@ -211,6 +238,8 @@ export interface RevealRow {
   model: JpText;
   points: number;
   ghost: boolean;
+  /** The hard role this player took at the stop, if any. */
+  role: JpText | null;
 }
 
 export interface OverruleView {
@@ -254,6 +283,8 @@ export interface TaskView {
   listen: boolean;
   /** What the phone heard last time (on a retry). */
   lastHeard: string | null;
+  /** The hard role this item belongs to, if any. */
+  role: JpText | null;
 }
 
 export interface LastTrainMe {
@@ -270,6 +301,8 @@ export interface LastTrainMe {
   inPenalty: boolean;
   dash: { pos: number; aboard: number | null } | null;
   level: Level;
+  /** A hard role offered to this player: take it or say "not this time" (`role` move) by `deadline` (server clock; `limitMs` is the whole window). */
+  offer: { key: string; role: JpText; pitch: string; limitMs: number; deadline: number } | null;
 }
 
 export interface StopView {
@@ -308,7 +341,8 @@ export type LastTrainMove =
   | { kind: 'tick' }
   | { kind: 'overrule'; windowId: string; up: boolean }
   | { kind: 'haunt'; targetId: string }
-  | { kind: 'echo'; utterance: Utterance };
+  | { kind: 'echo'; utterance: Utterance }
+  | { kind: 'role'; key: string; accept: boolean; /** Sent by a test bot: its answer stays out of the gate. */ bot?: boolean };
 
 // ---- helpers ----
 
@@ -448,12 +482,15 @@ function chooseScenario(ctx: ModeContext, want: number, minigames: Record<string
 }
 
 /** Trims or pads a scenario's stops to `want`, always keeping its last stop last (the twist). */
-export function buildStops(scenario: LastTrainScenario, want: number, minigames: Record<string, LastTrainMinigame>, penaltyIds: readonly string[], random: () => number): Stop[] {
-  const valid: TrainStop[] = scenario.stops.filter((st) => minigames[st.minigameId]);
+export function buildStops(scenario: LastTrainScenario, want: number, minigames: Record<string, LastTrainMinigame>, penaltyIds: readonly string[], random: () => number, n4 = false): Stop[] {
+  // A room with an N4 player swaps in the line's hard-role stops (Lost and Found).
+  const swapped = scenario.stops.map((st) => (n4 && st.withN4 && minigames[st.withN4.minigameId] ? st.withN4 : st));
+  const valid: TrainStop[] = swapped.filter((st) => minigames[st.minigameId]);
   let stops: Stop[] = valid.map((st) => ({ id: st.id, name: st.name, announcement: st.announcement, minigameId: st.minigameId }));
   if (stops.length > want) stops = [...stops.slice(0, want - 1), stops.at(-1)!];
   // Borrowed placeholder penalty minigames never become stops.
-  const regular = Object.values(minigames).filter((m) => !(penaltyIds.includes(m.id) && m.id.startsWith('fallback-')));
+  // Neither do hard-role stops (they come only as a line's N4 swap).
+  const regular = Object.values(minigames).filter((m) => !(penaltyIds.includes(m.id) && m.id.startsWith('fallback-')) && !m.n4Stop);
   const nonPenalty = regular.filter((m) => !m.penalty);
   const choices = shuffled(nonPenalty.length ? nonPenalty : regular, random);
   const names = shuffled(SPARE_STOP_NAMES, random);
@@ -477,29 +514,79 @@ export function buildStops(scenario: LastTrainScenario, want: number, minigames:
 
 // ---- turns and attempts ----
 
+/** A stop's items split into what anyone may be dealt and the hard-role items (N4, offered only). */
+function stopPools(s: LastTrainState, stop: Stop): { ordinary: MinigameItem[]; roles: MinigameItem[] } {
+  const mg = s.minigames[stop.minigameId]!;
+  const fair = mg.items.filter((i) => !givenAway(i, stop));
+  const items = fair.length ? fair : mg.items;
+  const ordinary = items.filter((i) => !i.role);
+  return { ordinary: ordinary.length ? ordinary : mg.items.filter((i) => !i.role), roles: items.filter((i) => i.role) };
+}
+
+/** Who is offered the stop's hard role: the connected N4 player offered fewest so far, then longest ago. */
+function hardRolePlayer(s: LastTrainState, ctx: ModeContext): string | null {
+  const n4 = ctx.connected().filter((p) => p.level === 'n4');
+  const offers = (id: string) => s.roleLog.filter((r) => r.playerId === id);
+  const last = (id: string) => Math.max(-1, ...offers(id).map((r) => r.stop));
+  return [...n4].sort((a, b) => offers(a.id).length - offers(b.id).length || last(a.id) - last(b.id))[0]?.id ?? null;
+}
+
+function ordinaryItem(s: LastTrainState, ctx: ModeContext, pool: readonly MinigameItem[], mgId: string, level: Level): MinigameItem | undefined {
+  const dealt = dealItem(s, pool, mgId, level, () => ctx.random());
+  return dealt?.mirror && ctx.random() < 0.5 ? mirrored(dealt) : dealt;
+}
+
 function startTurns(s: LastTrainState, ctx: ModeContext): void {
   const stop = s.stops[s.stopIndex]!;
   const mg = s.minigames[stop.minigameId]!;
-  const fair = mg.items.filter((i) => !givenAway(i, stop));
+  const { ordinary, roles } = stopPools(s, stop);
+  const star = roles.length ? hardRolePlayer(s, ctx) : null;
   s.turns = {};
   for (const p of ctx.players()) {
     const t = traveller(s, p.id);
+    const hard = p.id === star ? dealItem(s, roles, mg.id, 'n4', () => ctx.random()) : undefined;
     // Kana players meet a sign (shown with its reading) before they're tested on it.
-    const pool = fair.length ? fair : mg.items;
-    const first = p.level === 'kana' ? pool.filter((i) => showsFirst(i) && !s.used.includes(itemKey(mg.id, i.id))) : [];
-    const dealt = dealItem(s, first.length ? first : pool, mg.id, p.level, () => ctx.random());
-    if (!dealt) continue;
-    const item = dealt.mirror && ctx.random() < 0.5 ? mirrored(dealt) : dealt;
+    const first = !hard && p.level === 'kana' ? ordinary.filter((i) => showsFirst(i) && !s.used.includes(itemKey(mg.id, i.id))) : [];
+    const item = hard ?? ordinaryItem(s, ctx, first.length ? first : ordinary, mg.id, p.level);
+    if (!item) continue;
     s.turns[p.id] = {
       playerId: p.id,
       task: makeTask(s, 'stop', mg, item, 1, t, ctx.now),
-      status: 'answering',
+      status: hard ? 'offer' : 'answering',
       attempts: [],
       correctOn: 0,
       ghostAtStart: t.ghost,
       points: 0,
+      offer: hard?.role ? { role: hard.role, deadline: ctx.now + RULES.offerMs } : null,
     };
+    if (hard) s.roleLog.push({ stop: s.stopIndex, playerId: p.id, roleId: hard.role!.id, itemId: hard.id, answer: 'away' });
   }
+}
+
+/** Whether this player took the hard role offered at the current stop. */
+function tookRole(s: LastTrainState, playerId: string): boolean {
+  return s.roleLog.some((r) => r.playerId === playerId && r.stop === s.stopIndex && r.answer === 'accepted');
+}
+
+/** Settles a hard-role offer: taking it starts the role item's clock now; anything else deals the ordinary item. */
+function settleOffer(s: LastTrainState, ctx: ModeContext, turn: Turn, answer: Exclude<OfferAnswer, 'away'>, bot = false): void {
+  const log = [...s.roleLog].reverse().find((r) => r.playerId === turn.playerId && r.stop === s.stopIndex);
+  if (log) {
+    log.answer = answer;
+    if (bot) log.bot = true;
+  }
+  turn.offer = null;
+  turn.status = 'answering';
+  if (answer === 'accepted') {
+    turn.task = { ...turn.task, startedAt: ctx.now, deadline: ctx.now + turn.task.limitMs };
+    return;
+  }
+  // The role item goes back in the pot for a later offer.
+  const stop = s.stops[s.stopIndex]!;
+  s.used = s.used.filter((k) => k !== itemKey(turn.task.minigameId, turn.task.item.id));
+  const mg = s.minigames[stop.minigameId]!;
+  const item = ordinaryItem(s, ctx, stopPools(s, stop).ordinary, mg.id, ctx.player(turn.playerId)?.level ?? 'n5');
+  if (item) turn.task = makeTask(s, 'stop', mg, item, 1, traveller(s, turn.playerId), ctx.now);
 }
 
 function openWindow(s: LastTrainState, ctx: ModeContext, playerId: string, scope: Overrule['scope'], attemptIndex: number, heard: string, prompt: JpText, signs?: StationSign[]): void {
@@ -601,6 +688,12 @@ function sweep(s: LastTrainState, phase: Phase, ctx: ModeContext, actorId: strin
   const timedOut: AttemptRec = { via: null, text: null, ok: false, overruled: false, timedOut: true };
   if (phase === 'answer') {
     for (const turn of Object.values(s.turns)) {
+      if (turn.status !== 'offer' || !turn.offer) continue;
+      // Never taken up when the stop ends: the player was never given anything to answer.
+      if (force) turn.status = 'away';
+      else if (now >= turn.offer.deadline + RULES.graceMs || (turn.playerId === actorId && now >= turn.offer.deadline - RULES.tickToleranceMs)) settleOffer(s, ctx, turn, 'timeout');
+    }
+    for (const turn of Object.values(s.turns)) {
       // A forced end can need two passes: attempt 1 expires into attempt 2, which then expires too.
       for (let i = 0; i < 2 && (turn.status === 'answering' || turn.status === 'retry') && due(turn.task, turn.playerId); i++) {
         if (force && !isConnected(ctx, turn.playerId) && turn.attempts.length === 0) {
@@ -637,6 +730,7 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
     if (turn.correctOn) {
       const rec = turn.attempts[turn.correctOn - 1];
       let base: number = turn.correctOn === 1 ? RULES.pointsFirstTry : RULES.pointsRetry;
+      if (item.role && tookRole(s, p.id)) base += RULES.roleBonus;
       if (turn.ghostAtStart) base = Math.round(base * RULES.ghostShare);
       let bonus = 0;
       if (rec?.via === 'speech') {
@@ -679,6 +773,7 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
       model: item.model,
       points,
       ghost: turn.ghostAtStart,
+      role: item.role?.name ?? null,
     });
   }
   s.results = rows;
@@ -686,7 +781,8 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
 
 function penaltyCandidates(s: LastTrainState): string[] {
   return Object.values(s.turns)
-    .filter((t) => t.status === 'missed' && !traveller(s, t.playerId).ghost && !t.ghostAtStart && !s.minigames[t.task.minigameId]?.forgiving)
+    // A missed hard role never does either: taking one should never be the risky choice.
+    .filter((t) => t.status === 'missed' && !traveller(s, t.playerId).ghost && !t.ghostAtStart && !s.minigames[t.task.minigameId]?.forgiving && !t.task.item.role)
     .map((t) => t.playerId);
 }
 
@@ -716,7 +812,8 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     const want = Math.min(6, Math.max(4, opts.rounds ?? 4));
     const { minigames, penaltyIds } = resolveLibrary(ctx);
     const scenario = chooseScenario(ctx, want, minigames);
-    const stops = buildStops(scenario, want, minigames, penaltyIds, () => ctx.random());
+    const n4 = ctx.players().some((p) => p.level === 'n4');
+    const stops = buildStops(scenario, want, minigames, penaltyIds, () => ctx.random(), n4);
     const dashPool = scenario.platformDash.length ? scenario.platformDash : FALLBACK_SCENARIO.platformDash;
     const s: LastTrainState = {
       scenario: { id: scenario.id, title: scenario.title, departure: scenario.departure, twist: scenario.twist },
@@ -739,6 +836,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
       ledger: [],
       overruleLog: [],
       rejects: 0,
+      roleLog: [],
       seq: 0,
     };
     for (const p of ctx.players()) traveller(s, p.id);
@@ -798,6 +896,13 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         const right = played.filter((r) => r.outcome !== 'missed').length;
         const tier = played.length && right === played.length ? 'ippon' : right * 2 >= played.length ? 'good' : 'flop';
         ctx.cue({ host: 'chochin', event: 'reveal_react', tier });
+        // A hard role taken and answered right: Chōchin-san says its model line on the TV (never the
+        // player's recording), after his reaction. One role a stop, so one line.
+        const star = Object.values(s.turns).find((t) => t.task.item.role && t.correctOn > 0 && t.status !== 'away');
+        if (star) {
+          const { text, kana, en } = star.task.item.model;
+          ctx.cue({ host: 'chochin', event: 'train_role_read', slots: { line: text, line_kana: kana, line_en: en }, atMs: RULES.roleReadAtMs });
+        }
         break;
       }
       case 'penalty': {
@@ -872,7 +977,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
 
   duration(s, phase) {
     if (phase === 'answer') {
-      const longest = Math.max(0, ...Object.values(s.turns).map((t) => t.task.limitMs));
+      const longest = Math.max(0, ...Object.values(s.turns).map((t) => t.task.limitMs + (t.offer ? RULES.offerMs : 0)));
       return Math.min(90_000, Math.max(20_000, longest * 2 + RULES.overruleMs + 4_000));
     }
     if (phase === 'penalty') {
@@ -1009,6 +1114,17 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         return MOVE_OK;
       }
 
+      case 'role': {
+        if (typeof raw.key !== 'string' || typeof raw.accept !== 'boolean') return moveError('bad-move');
+        if (phase !== 'answer') return moveError('wrong-phase');
+        const turn = s.turns[playerId];
+        if (!turn) return moveError('not-playing');
+        // Already settled (taken, declined or timed out) or an old stop's offer: a harmless race.
+        if (turn.status !== 'offer' || turn.task.key !== raw.key) return moveError('wrong-phase');
+        settleOffer(s, ctx, turn, raw.accept ? 'accepted' : 'declined', raw.bot === true);
+        return MOVE_OK;
+      }
+
       case 'echo': {
         if (phase !== 'reveal') return moveError('wrong-phase');
         const turn = s.turns[playerId];
@@ -1041,6 +1157,10 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     s.haunts = s.haunts.filter((h) => h.by !== playerId && h.target !== playerId);
   },
 
+  offers(s, playerId) {
+    return s.roleLog.filter((o) => o.playerId === playerId && !o.bot).map((o) => ({ role: `last-train:${o.roleId}`, answer: o.answer }));
+  },
+
   progress(s) {
     return { round: Math.min(s.stops.length, Math.max(0, s.stopIndex + 1)), totalRounds: s.stops.length };
   },
@@ -1062,7 +1182,8 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         return pt.status === 'answering' || voting ? 'penalty' : pt.status;
       }
       const turn = s.turns[id];
-      if ((phase === 'answer' || phase === 'reveal' || phase === 'penalty') && turn) return turn.status;
+      // An offer is private: the room just sees someone answering.
+      if ((phase === 'answer' || phase === 'reveal' || phase === 'penalty') && turn) return turn.status === 'offer' ? 'answering' : turn.status;
       return 'waiting';
     };
 
@@ -1136,6 +1257,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         inPenalty: phase === 'penalty' && !!s.penalties[me],
         dash: s.racers[me] && (phase === 'finale' || phase === 'score') ? { pos: s.racers[me]!.pos, aboard: s.racers[me]!.aboard } : null,
         level,
+        offer: phase === 'answer' && turn?.status === 'offer' && turn.offer ? { key: turn.task.key, role: turn.offer.role.name, pitch: turn.offer.role.pitch, limitMs: RULES.offerMs, deadline: turn.offer.deadline } : null,
       };
     }
 
@@ -1204,8 +1326,10 @@ function taskView(s: LastTrainState, task: Task, level: Level, lastHeard: string
     hint: retry || showsFirst(task.item) ? task.item.hint : null,
     romaji: kanaHelp ? toRomaji(task.item.prompt.kana) : null,
     firstKana: kanaHelp && retry ? `${firstMora(task.item.accepted[0] ?? task.item.model.kana)} (${toRomaji(firstMora(task.item.accepted[0] ?? task.item.model.kana))})` : null,
-    listen: task.promptType === 'listen-and-answer',
+    // A hard role in a listening minigame (the announcer) speaks the line instead: it is shown, not played.
+    listen: task.promptType === 'listen-and-answer' && !task.item.role,
     lastHeard: retry ? lastHeard : null,
+    role: task.item.role?.name ?? null,
   };
 }
 

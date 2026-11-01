@@ -1,7 +1,25 @@
 // Last Train · Meet the Innkeeper (Phase 1). The right greeting for the moment.
+// N4 hard role: the guest at the front desk asks favours (＿て いただけますか) and reads the inn's signs.
 // Item ids are stable: never rename one once it ships.
 
-import type { LastTrainMinigame } from '../types.js';
+import type { LastTrainMinigame, MinigameItem } from '../types.js';
+import { GUEST } from './roles.js';
+
+const READ = { text: 'これは何と読みますか。', kana: 'これはなんとよみますか。', en: 'What does this sign say?', furigana: [['これは', ''], ['何', 'なん'], ['と', ''], ['読', 'よ'], ['みますか。', '']] as [string, string][] };
+
+/** An inn sign to read out loud, drawn as a board with no reading. The hint is a picture, never the reading. */
+const sign = (id: string, kanji: string, kana: string, en: string, hint: string): MinigameItem => ({
+  id: `meet-the-innkeeper.${id}`,
+  level: 'n4',
+  role: GUEST,
+  frames: ['sign-kanji'],
+  prompt: READ,
+  signs: [{ text: kanji }],
+  accepted: [kana, `${kana}です`, `${kana}とよみます`],
+  model: { text: `「${kanji}」です。`, kana: `${kana}です。`, en: `It says “${en}”.`, furigana: [['「', ''], [kanji, kana], ['」です。', '']] },
+  hint,
+  timeLimit: 10,
+});
 
 export const meetTheInnkeeper: LastTrainMinigame = {
   id: 'meet-the-innkeeper',
@@ -201,5 +219,70 @@ export const meetTheInnkeeper: LastTrainMinigame = {
       hint: 'The word you used coming in, now in the past tense.',
       timeLimit: 8,
     },
+    // ---- N4 hard role: the guest at the front desk. Favours with ＿て いただけますか, and the inn's signs. ----
+    // N3 (step 6): ＿させて いただけますか, ご＿ください and the 3.12 sign kanji (非常口, 禁煙).
+    {
+      id: 'meet-the-innkeeper.21-takushii',
+      level: 'n4',
+      role: GUEST,
+      frames: ['te-itadakemasen'],
+      prompt: { text: 'フロントです。駅までタクシーで行きたいです。旅館の人にたのんでください。', kana: 'フロントです。えきまでタクシーでいきたいです。りょかんのひとにたのんでください。', en: 'At the front desk. You want a taxi to the station. Ask the innkeeper, politely.', furigana: [['フロントです。', ''], ['駅', 'えき'], ['までタクシーで', ''], ['行', 'い'], ['きたいです。', ''], ['旅館', 'りょかん'], ['の', ''], ['人', 'ひと'], ['にたのんでください。', '']] },
+      visual: '🚕 Ask them to call you a taxi.',
+      accepted: ['タクシーをよんでいただけますか', 'タクシーをよんでいただけませんか', 'すみませんタクシーをよんでいただけますか', 'えきまでタクシーをよんでいただけますか'],
+      model: { text: 'タクシーを呼んでいただけますか。', kana: 'タクシーをよんでいただけますか。', en: 'Could you call a taxi for me?', furigana: [['タクシーを', ''], ['呼', 'よ'], ['んでいただけますか。', '']] },
+      hint: 'To call is よぶ; its て form is よんで. Add the politest "could you": いただけますか.',
+      timeLimit: 12,
+    },
+    {
+      id: 'meet-the-innkeeper.22-nimotsu',
+      level: 'n4',
+      role: GUEST,
+      frames: ['te-itadakemasen'],
+      prompt: { text: 'チェックアウトしました。でも、三時まで町を見たいです。荷物が重いです。', kana: 'チェックアウトしました。でも、さんじまでまちをみたいです。にもつがおもいです。', en: 'You\'ve checked out, but you want to see the town until three. Your luggage is heavy.', furigana: [['チェックアウトしました。でも、', ''], ['三時', 'さんじ'], ['まで', ''], ['町', 'まち'], ['を', ''], ['見', 'み'], ['たいです。', ''], ['荷物', 'にもつ'], ['が', ''], ['重', 'おも'], ['いです。', '']] },
+      visual: '🧳 Ask them to keep your luggage.',
+      accepted: ['にもつをあずかっていただけますか', 'にもつをあずかっていただけませんか', 'さんじまでにもつをあずかっていただけますか', 'すみませんにもつをあずかっていただけますか'],
+      model: { text: '荷物を預かっていただけますか。', kana: 'にもつをあずかっていただけますか。', en: 'Could you keep my luggage for me?', furigana: [['荷物', 'にもつ'], ['を', ''], ['預', 'あず'], ['かっていただけますか。', '']] },
+      hint: 'To look after something for someone is あずかる (て form あずかって), then いただけますか.',
+      timeLimit: 12,
+    },
+    {
+      id: 'meet-the-innkeeper.23-okoshite',
+      level: 'n4',
+      role: GUEST,
+      frames: ['te-itadakemasen'],
+      prompt: { text: 'あしたの朝、早い電車に乗ります。七時に起きたいです。', kana: 'あしたのあさ、はやいでんしゃにのります。しちじにおきたいです。', en: 'You\'re catching an early train tomorrow and need to be up at seven.', furigana: [['あしたの', ''], ['朝', 'あさ'], ['、', ''], ['早', 'はや'], ['い', ''], ['電車', 'でんしゃ'], ['に', ''], ['乗', 'の'], ['ります。', ''], ['七時', 'しちじ'], ['に', ''], ['起', 'お'], ['きたいです。', '']] },
+      visual: '⏰ Ask them to wake you at 7.',
+      accepted: ['しちじにおこしていただけますか', 'ななじにおこしていただけますか', 'あしたしちじにおこしていただけますか', 'しちじにおこしていただけませんか', 'あしたのあさしちじにおこしていただけますか'],
+      model: { text: '七時に起こしていただけますか。', kana: 'しちじにおこしていただけますか。', en: 'Could you wake me at seven?', furigana: [['七時', 'しちじ'], ['に', ''], ['起', 'お'], ['こしていただけますか。', '']] },
+      hint: 'You get up is おきる; someone wakes you is おこす (て form おこして). Then いただけますか.',
+      timeLimit: 12,
+    },
+    {
+      id: 'meet-the-innkeeper.24-yukkuri',
+      level: 'n4',
+      role: GUEST,
+      frames: ['te-itadakemasen'],
+      prompt: { text: '旅館の人が速く話します。よくわかりません。', kana: 'りょかんのひとがはやくはなします。よくわかりません。', en: 'The innkeeper is talking fast. You can\'t quite follow.', furigana: [['旅館', 'りょかん'], ['の', ''], ['人', 'ひと'], ['が', ''], ['速', 'はや'], ['く', ''], ['話', 'はな'], ['します。よくわかりません。', '']] },
+      visual: '🐢 Ask them to speak more slowly.',
+      accepted: ['もうすこしゆっくりはなしていただけますか', 'ゆっくりはなしていただけますか', 'すみませんもうすこしゆっくりはなしていただけますか', 'もうすこしゆっくりはなしていただけませんか', 'もういちどゆっくりはなしていただけますか'],
+      model: { text: 'もう少しゆっくり話していただけますか。', kana: 'もうすこしゆっくりはなしていただけますか。', en: 'Could you speak a little more slowly?', furigana: [['もう', ''], ['少', 'すこ'], ['しゆっくり', ''], ['話', 'はな'], ['していただけますか。', '']] },
+      hint: 'A little more slowly is もう すこし ゆっくり. To speak, in the て form, is はなして.',
+      timeLimit: 12,
+    },
+    {
+      id: 'meet-the-innkeeper.25-shirabete',
+      level: 'n4',
+      role: GUEST,
+      frames: ['te-itadakemasen'],
+      prompt: { text: 'フロントです。旅館の人：「お名前がありません……」でも、あなたは予約しました！', kana: 'フロントです。りょかんのひと：「おなまえがありません……」でも、あなたはよやくしました！', en: 'At the front desk. The innkeeper: "Your name isn\'t here..." But you did book!', furigana: [['フロントです。', ''], ['旅館', 'りょかん'], ['の', ''], ['人', 'ひと'], ['：「お', ''], ['名前', 'なまえ'], ['がありません……」でも、あなたは', ''], ['予約', 'よやく'], ['しました！', '']] },
+      visual: '📋 Ask them to check once more.',
+      accepted: ['もういちどしらべていただけますか', 'もういちどみていただけますか', 'もういちどかくにんしていただけますか', 'よやくをしらべていただけますか', 'よやくをかくにんしていただけますか', 'すみませんもういちどしらべていただけますか', 'もういちどしらべていただけませんか'],
+      model: { text: 'もう一度調べていただけますか。', kana: 'もういちどしらべていただけますか。', en: 'Could you check once more, please?', furigana: [['もう', ''], ['一度', 'いちど'], ['調', 'しら'], ['べていただけますか。', '']] },
+      hint: 'Once more is もう いちど. To look something up is しらべる (て form しらべて).',
+      timeLimit: 12,
+    },
+    sign('26-uketsuke', '受付', 'うけつけ', 'reception', 'Memory picture: 受 is a hand reaching down to a hand below, passing something on. 付 is a person (亻) with a hand: attaching.'),
+    sign('27-yoyaku', '予約', 'よやく', 'reservation', 'Memory picture: 予 is a hook hung up ahead of time. 約 has a thread (糸): a promise tied in advance.'),
+    sign('28-shokudou', '食堂', 'しょくどう', 'dining room', 'Memory picture: 食 is a roof over a bowl of rice: food. 堂 is a big hall standing on the earth (土).'),
   ],
 };

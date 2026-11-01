@@ -41,6 +41,50 @@ function meterBar(value: number): HTMLElement {
   return h('div', { class: 'omi-meter-p', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': value, 'aria-label': 'Manners meter' }, h('span', { style: `width: ${value}%` }), h('b', {}, `${value}`));
 }
 
+// ---- the go-between (なこうど, N4 hard role) ----
+
+/** The round's go-between script: take it and say or type it, or "not this time" (Nobiko-san takes it back). */
+function nakodoCard(ctx: Ctx): HTMLElement | null {
+  const g = ctx.game.me?.nakodo;
+  if (!g || !g.slot) return null;
+  if (g.status === 'declined' || g.status === 'timeout') return h('p', { class: 'hint omi-nakodo' }, '🎎 Nobiko-san has the matchmaker’s lines this round.');
+  // The line has passed without a try (the question was read, or the opening never tried): nothing to show.
+  if (!g.ok && !g.canSay && !g.heard) return null;
+  const what = g.slot === 'open' ? 'Introduce the guest' : 'Close the round';
+  if (g.ok)
+    return h('div', { class: 'omi-nakodo' }, h('p', {}, h('strong', {}, `🎎 Beautifully said! +${g.points}`)), h('p', { lang: 'ja' }, g.line?.text ?? ''), g.meter !== null ? meterBar(g.meter) : null);
+  return h(
+    'div',
+    { class: 'omi-nakodo' },
+    h('p', {}, h('strong', {}, `🎎 You’re the matchmaker (なこうど) this round. ${what}, in keigo:`)),
+    g.line ? jpView(g.line, 'n4', { cls: 'omi-nakodo-line' }) : null,
+    g.heard
+      ? h(
+          'p',
+          { class: 'hint' },
+          `Heard “${g.heard}”. Say the whole line as written: the keigo words (おみえに なりました, いらっしゃいます, まいります) are what counts. ${g.triesLeft} ${g.triesLeft === 1 ? 'try' : 'tries'} left.`,
+        )
+      : null,
+    g.canSay
+      ? speakBox({
+          label: 'Hold and say it',
+          placeholder: 'Type the line (kana)',
+          maxLength: MAX_ANSWER_LENGTH,
+          onSend: (utterance) => void ctx.send({ kind: 'nakodo', utterance, round: ctx.game.round }),
+        })
+      : null,
+    // Two equal answers to the offer; saying the line straight away counts as taking it.
+    g.canSay && g.status === 'offered'
+      ? h(
+          'div',
+          { class: 'omi-offer-btns' },
+          h('button', { type: 'button', class: 'secondary', onclick: () => void ctx.send({ kind: 'nakodo', accept: true, round: ctx.game.round }) }, 'Take it'),
+          h('button', { type: 'button', class: 'secondary', onclick: () => void ctx.send({ kind: 'nakodo', accept: false, round: ctx.game.round }) }, 'Not this time'),
+        )
+      : null,
+  );
+}
+
 // ---- answering ----
 
 function sayFirst(ctx: Ctx, q: QuestionView, ms: number): HTMLElement {
@@ -249,7 +293,15 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
           h('p', { class: 'hint' }, 'Casual answers never lose points. You just get a tip for next time.'),
         );
       case 'prompt':
-        return h('div', { class: 'screen' }, guestLine(game), game.question ? questionCard(game.question) : null, h('p', { class: 'hint' }, 'Listen… your answer screen opens in a moment.'));
+        return h(
+          'div',
+          { class: 'screen' },
+          guestLine(game),
+          nakodoCard(ctx),
+          game.question ? questionCard(game.question) : null,
+          // Not while you're the one speaking: the answer screen waits for you.
+          mine?.nakodo?.canSay ? null : h('p', { class: 'hint' }, 'Listen… your answer screen opens in a moment.'),
+        );
       case 'answer': {
         if (!mine) return waiting('Look at the TV!');
         if (mine.answer !== null) return waiting('Answer sent 💌', `“${mine.answer}”. Waiting for the others…`);
@@ -287,8 +339,10 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
       case 'encore':
         if (mine?.encore && mine.tip) return encoreScreen(ctx);
         return waiting('Look at the TV!', 'The manners meter is up.');
-      case 'score':
-        return scoreScreen(ctx);
+      case 'score': {
+        const g = nakodoCard(ctx);
+        return g ? h('div', { class: 'screen' }, g, scoreScreen(ctx)) : scoreScreen(ctx);
+      }
       case 'finale':
         return mine?.accepted
           ? h('div', { class: 'screen omi-accepted' }, h('p', { class: 'omi-accept-big' }, invitation(game.card).emoji), h('p', { class: 'big' }, invitation(game.card).you), game.finale?.line ? h('p', { lang: 'ja' }, game.finale.line.text) : null, h('p', { class: 'hint' }, 'Say it: ありがとう ございます！'))

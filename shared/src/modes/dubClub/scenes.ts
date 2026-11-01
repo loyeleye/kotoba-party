@@ -1,7 +1,7 @@
 // Dub Club's content: the episodes (three scenes each, a line per level) and the direction cards.
 // All draft until a fluent check. See docs/modes/dub-club.md.
 
-import type { JpText, Level } from '../../../../content/src/types.js';
+import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 
 export interface Scene {
@@ -18,6 +18,28 @@ export interface Scene {
   lines: Record<Level, JpText>;
   /** Cheeky rooms' version of the line, where the twist differs. */
   cheeky?: Record<Level, JpText>;
+  /** The N4 ad-lib role: the same moment with no script showing (goal 4.8, casual speech). */
+  adlib: AdLib;
+  /** Cheeky rooms' ad-lib, where the twist differs. */
+  cheekyAdlib?: AdLib;
+}
+
+/**
+ * The ad-lib hard role (N4, goal 4.8): the player gets the scene and a mission, never the words, and says
+ * it casually (plain form + よ/ね/の？, 〜んだ, 〜てる/〜ちゃった). The model line is shown after the take.
+ */
+export interface AdLib {
+  /** What to get across, in English: the meaning, not the words. */
+  mission: string;
+  /** The mission's picture on the phone. */
+  emoji: string;
+  /** Kana: any one of these heard in the plain read shows the mission came through. */
+  keys: string[];
+  /** One casual N4 way to say it, shown after the take. */
+  model: JpText;
+  /** The N4 frames the model practises (by name: see shared/src/japanese/frames.ts). */
+  frames: readonly string[];
+  status: ReviewStatus;
 }
 
 export interface Episode {
@@ -53,6 +75,8 @@ const jp = (text: string, en: string, kana = text): JpText => ({ text, kana, en 
 
 /** A scene's lines for the room: Cheeky rooms get their own twist where a scene has one. */
 export const sceneLines = (scene: Scene, audience: Audience): Record<Level, JpText> => (audience === 'cheeky' && scene.cheeky) || scene.lines;
+/** A scene's ad-lib for the room, the same way. */
+export const sceneAdlib = (scene: Scene, audience: Audience): AdLib => (audience === 'cheeky' && scene.cheekyAdlib) || scene.adlib;
 
 const card = (id: string, text: string, en: string, root: JpText | null, emoji: string, family: string, spoil: string[], tip: string, extra: Partial<Direction> = {}): Direction => ({
   id,
@@ -105,6 +129,10 @@ export const DIRECTIONS: Direction[] = [
 ];
 
 const lines = (kana: JpText, n5: JpText, n4: JpText): Record<Level, JpText> => ({ kana, n5, n4 });
+const ad = (mission: string, emoji: string, keys: string[], model: JpText, frames: string[]): AdLib => ({ mission, emoji, keys, model, frames, status: 'draft' });
+const CASUAL = 'plain';
+const NDA = 'n-da';
+const CONTRACT = 'teru';
 
 // Every episode is setup, build, twist: scene 3 is the punchline, and it counts double. Kana lines are at
 // least four morae (Whisper misses lone short words); each N4 line has an N4 grammar point (in `point`).
@@ -120,6 +148,7 @@ export const EPISODES: Episode[] = [
         who: jp('ヒロイン', 'the heroine', 'ひろいん'),
         setup: 'Lunchtime. Her lunch box is open. It is empty.',
         lines: lines(jp('あれ？ ない！', 'Huh? It’s gone!'), jp('わたしの おにぎりが ない！', 'My onigiri is gone!'), jp('わたしの おにぎり、だれが たべちゃったの？', 'Who ate my onigiri? (〜ちゃう)')),
+        adlib: ad('Your lunch box is empty. Ask, casually, who ate your onigiri.', '🍙', ['おにぎり', 'たべ', 'だれ'], jp('あれ？ わたしの おにぎり、だれが たべたの？', 'Huh? Who ate my onigiri?'), [CASUAL]),
       },
       {
         id: 'onigiri.2',
@@ -128,6 +157,7 @@ export const EPISODES: Episode[] = [
         who: jp('ライバル', 'the rival', 'らいばる'),
         setup: 'The rival turns round, chewing. There is rice on his cheek.',
         lines: lines(jp('しらない… もぐもぐ', 'Dunno… munch munch'), jp('ぼくじゃ ないよ。…もぐもぐ。', 'It wasn’t me. …munch munch.'), jp('しらないよ。おなか すいて ないし。…もぐもぐ。', 'Dunno. I’m not even hungry. …munch. (〜し)')),
+        adlib: ad('You’re chewing, with rice on your cheek. Deny everything.', '🙄', ['しらない', 'ちがう', 'たべてない', 'ぼくじゃ'], jp('しらないよ。ぼく、なにも たべてないし。…もぐもぐ。', 'Dunno. I haven’t eaten a thing. …munch munch.'), [CASUAL, CONTRACT]),
       },
       {
         id: 'onigiri.3',
@@ -136,6 +166,7 @@ export const EPISODES: Episode[] = [
         who: jp('ポン', 'Pon', 'ぽん'),
         setup: 'On the roof at sunset, the real thief confesses.',
         lines: lines(jp('おいしかった！', 'It was delicious!'), jp('ごめんね。とても おいしかった！', 'Sorry. It was really tasty!'), jp('ごめん。おいしそう だったから、ぜんぶ たべちゃった。', 'Sorry. It looked tasty, so I ate it all. (〜そう, 〜ちゃう)')),
+        adlib: ad('Confess: it looked so good that you ate it.', '😋', ['たべ', 'おいし', 'ごめん'], jp('ごめんね。おいしそう だったから、たべちゃったんだ。', 'Sorry. It looked so good, so I ate it.'), [CASUAL, CONTRACT, NDA]),
       },
     ],
   },
@@ -150,6 +181,7 @@ export const EPISODES: Episode[] = [
         who: jp('まほうしょうじょ', 'the magical girl'),
         setup: 'A giant monster attacks the city. Time to transform!',
         lines: lines(jp('へんしん！', 'Transform!'), jp('いくよ！ へんしん！', 'Here I go! Transform!'), jp('みんなを まもるために… へんしん！', 'To protect everyone… transform! (ために)')),
+        adlib: ad('Tell everyone not to worry: you’ll protect them. Then transform!', '✨', ['だいじょうぶ', 'まもる', 'へんしん'], jp('みんな、だいじょうぶだよ！ わたしが まもるから。へんしん！', 'Don’t worry, everyone! I’ll protect you. Transform!'), [CASUAL]),
       },
       {
         id: 'magical.2',
@@ -158,6 +190,7 @@ export const EPISODES: Episode[] = [
         who: jp('かいじゅう', 'the monster'),
         setup: 'The monster laughs and stomps closer. (おまえ: rough, monster talk.)',
         lines: lines(jp('まけないぞ！', 'I won’t lose!'), jp('おまえには まけないぞ！', 'I won’t lose to you!'), jp('おまえには この まちを まもれない！', 'You can’t protect this town! (potential)')),
+        adlib: ad('You’re the monster. Laugh at her: she can’t beat you.', '👹', ['かてない', 'まけない', 'よわい', 'むり'], jp('はっはっは！ おまえは ぜったい おれに かてないよ！', 'Ha ha ha! You’ll never beat me!'), [CASUAL, 'potential']),
       },
       {
         id: 'magical.3',
@@ -166,6 +199,7 @@ export const EPISODES: Episode[] = [
         who: jp('かいじゅう…？', 'the monster…?'),
         setup: 'The monster takes off its mask. It’s Pon’s mum, in an apron.',
         lines: lines(jp('ごはんよ！', 'Dinner’s ready!'), jp('ポン！ もう ごはんの じかんですよ！', 'Pon! It’s dinner time!', 'ぽん！ もう ごはんの じかんですよ！'), jp('ポン！ しゅくだいを してから あそびなさい！', 'Pon! Homework first, then play! (〜なさい)', 'ぽん！ しゅくだいを してから あそびなさい！')),
+        adlib: ad('You’re Pon’s mum under the mask. Tell Pon dinner’s ready: come home now.', '🍛', ['ごはん', 'かえ', 'はやく'], jp('ポン、ごはん できてるよ！ はやく かえって きなさい。', 'Pon, dinner’s ready! Come home, quick.', 'ぽん、ごはん できてるよ！ はやく かえって きなさい。'), [CASUAL, CONTRACT]),
       },
     ],
   },
@@ -181,6 +215,7 @@ export const EPISODES: Episode[] = [
         who: jp('うちゅうねこ', 'Space Cat'),
         setup: 'Alarms! The spaceship is breaking down.',
         lines: lines(jp('たすけて！', 'Help!'), jp('たすけて！ ふねが こわれた！', 'Help! The ship is broken!'), jp('だれか たすけて！ ふねが こわれちゃった！', 'Somebody help! The ship broke! (〜ちゃう)')),
+        adlib: ad('The ship is breaking down. Panic and shout for help.', '🚨', ['たすけ', 'こわれ', 'たいへん'], jp('たいへん！ ふねが こわれちゃった！ だれか たすけて！', 'Oh no! The ship broke! Somebody help!'), [CASUAL, CONTRACT]),
       },
       {
         id: 'spacecat.2',
@@ -189,6 +224,7 @@ export const EPISODES: Episode[] = [
         who: jp('うちゅうじん', 'the alien'),
         setup: 'The ship lands on a purple planet. A small alien waves.',
         lines: lines(jp('こんにちは', 'Hello'), jp('こんにちは。ぼくの ほしへ ようこそ。', 'Hello. Welcome to my planet.'), jp('こんにちは。ぼくの ほしに すんで みない？', 'Hello. Want to try living on my planet? (〜てみる)')),
+        adlib: ad('Welcome the cat to your planet, like an old friend.', '👽', ['ようこそ', 'ほし', 'こんにちは'], jp('ようこそ！ ぼくの ほし、きれいでしょ？', 'Welcome! My planet’s pretty, isn’t it?'), [CASUAL]),
       },
       {
         id: 'spacecat.3',
@@ -197,6 +233,7 @@ export const EPISODES: Episode[] = [
         who: jp('うちゅうねこ', 'Space Cat'),
         setup: 'The alien holds out a fish. The rescue is cancelled.',
         lines: lines(jp('さかなだ！', 'A fish!'), jp('さかな！？ ここに すみます！', 'Fish?! I’ll live here!'), jp('さかなが あるなら、ずっと ここに いる！', 'If there’s fish, I’m staying here forever! (〜なら)')),
+        adlib: ad('There’s fish here! Cancel the rescue: you’re not going home.', '🐟', ['さかな', 'ここに', 'かえらない', 'すむ'], jp('さかなが あるの？ じゃあ、もう かえらないよ！', 'There’s fish? Then I’m not going home!'), [CASUAL]),
       },
     ],
   },
@@ -211,6 +248,7 @@ export const EPISODES: Episode[] = [
         who: jp('けいびいん', 'the night guard'),
         setup: 'Midnight. The guard hears something in the empty studio.',
         lines: lines(jp('だれか いる？', 'Anyone there?'), jp('だれか いますか？', 'Is anyone there?'), jp('こんな じかんに、だれが いるんですか？', 'Who’s here at this hour? (〜んです)')),
+        adlib: ad('You heard a noise in the empty studio. Ask, nervously, who’s there.', '🔦', ['だれ', 'いる', 'なにか'], jp('だれか いるの？ いま、なにか きこえたんだけど…', 'Is someone there? I just heard something…'), [CASUAL, NDA]),
       },
       {
         id: 'studio.2',
@@ -219,6 +257,7 @@ export const EPISODES: Episode[] = [
         who: jp('けいびいん', 'the night guard'),
         setup: 'A white shape floats out from behind the curtain.',
         lines: lines(jp('おばけだ！', 'A ghost!'), jp('おばけだ！ にげて！', 'A ghost! Run!'), jp('おばけが でた！ はやく にげよう！', 'A ghost! Let’s run, quick! (volitional)')),
+        adlib: ad('A ghost! Tell everyone to run.', '😱', ['おばけ', 'にげ', 'でた'], jp('おばけが でたんだ！ みんな、はやく にげて！', 'There’s a ghost! Everyone, run, quick!'), [NDA, CASUAL]),
       },
       {
         id: 'studio.3',
@@ -227,6 +266,7 @@ export const EPISODES: Episode[] = [
         who: jp('おばけ', 'the ghost'),
         setup: 'The ghost holds out a notebook and a pen. It’s a fan.',
         lines: lines(jp('サイン ください', 'Autograph, please', 'さいん ください'), jp('あの… サインを ください。', 'Um… may I have your autograph?', 'あの… さいんを ください。'), jp('こわがらないで。サインが ほしい だけ なんです。', 'Don’t be scared. I just want an autograph. (〜だけ)', 'こわがらないで。さいんが ほしい だけ なんです。')),
+        adlib: ad('You’re the ghost, and a fan. Say don’t be scared: you only want an autograph.', '✍️', ['さいん', 'こわ', 'ふぁん'], jp('こわがらないで。ぼく、ファン なんだ。サイン、もらえる？', 'Don’t be scared. I’m a fan. Can I get your autograph?', 'こわがらないで。ぼく、ふぁん なんだ。さいん、もらえる？'), [NDA, CASUAL]),
       },
     ],
   },
@@ -242,6 +282,7 @@ export const EPISODES: Episode[] = [
         who: jp('こうはい', 'the junior student'),
         setup: 'Graduation day. She finally says it.',
         lines: lines(jp('すきです', 'I like you'), jp('せんぱい、ずっと すきでした。', 'Senpai, I’ve always liked you.'), jp('はじめて あった ときから、ずっと すきでした。', 'I’ve liked you since the day we met. (〜とき)')),
+        adlib: ad('Graduation day. Tell senpai you’ve always liked him.', '🌸', ['すき'], jp('せんぱい、あのね… ずっと すきだったの。', 'Senpai, um… I’ve always liked you.'), [CASUAL]),
       },
       {
         id: 'sakura.2',
@@ -250,6 +291,7 @@ export const EPISODES: Episode[] = [
         who: jp('せんぱい', 'the senior student'),
         setup: 'Senpai drops his diploma.',
         lines: lines(jp('ほんとう？', 'Really?'), jp('えっ、ぼくの ことが？', 'Huh, me?'), jp('えっ、ぼくの ことが すきだって？', 'Huh, you said you like me? (〜って)')),
+        adlib: ad('Did she just say she likes you? Check, in shock.', '😳', ['すき', 'ほんとう', 'ぼく'], jp('えっ、ほんとう？ ぼくの こと、すきなの？', 'Huh, really? You like me?'), [CASUAL]),
       },
       {
         id: 'sakura.3',
@@ -259,6 +301,8 @@ export const EPISODES: Episode[] = [
         setup: 'She runs off. He shouts after her, with a confession of his own.',
         lines: lines(jp('おばけです', 'I’m a ghost'), jp('まって！ ぼくは… おばけです。', 'Wait! I’m… a ghost.'), jp('まって！ じつは ぼく、おばけ なんだ。', 'Wait! The truth is, I’m a ghost. (〜んだ)')),
         cheeky: lines(jp('つまが…', 'My wife…'), jp('まって！ ぼく、つまが います。', 'Wait! I have a wife.'), jp('まって！ じつは らいげつ けっこん するんだ。', 'Wait! Actually, I’m getting married next month. (〜んだ)')),
+        adlib: ad('Shout after her: you have a secret. You’re a ghost.', '👻', ['おばけ', 'ゆうれい', 'じつは'], jp('まって！ じつは ぼく、おばけ なんだよ！', 'Wait! The truth is, I’m a ghost!'), [NDA]),
+        cheekyAdlib: ad('Shout after her: you have a secret. You’re getting married next month.', '💍', ['けっこん', 'つま', 'じつは'], jp('まって！ じつは ぼく、らいげつ けっこん するんだ。', 'Wait! Actually, I’m getting married next month.'), [NDA]),
       },
     ],
   },
@@ -274,6 +318,7 @@ export const EPISODES: Episode[] = [
         who: jp('かいしゃいん', 'the office worker'),
         setup: '11 p.m. The boss drops another pile of files on his desk.',
         lines: lines(jp('また ざんぎょう？', 'Overtime again?'), jp('きょうも ざんぎょう ですか？', 'Overtime again today?'), jp('また ざんぎょう しなければ ならないんですか？', 'Do I have to do overtime again? (〜なければならない)')),
+        adlib: ad('11 p.m., and more files. Grumble to yourself: overtime again?', '📚', ['ざんぎょう', 'また', 'かえれない'], jp('うそ、また ざんぎょう？ きょうも かえれないじゃん…', 'No way, overtime again? I can’t go home today either…'), [CASUAL, 'potential']),
       },
       {
         id: 'overtime.2',
@@ -282,6 +327,7 @@ export const EPISODES: Episode[] = [
         who: jp('かいしゃいん', 'the office worker'),
         setup: 'He stands up. The whole office goes quiet.',
         lines: lines(jp('かえります！', 'I’m going home!'), jp('ぶちょう、きょうは かえります！', 'Boss, I’m going home today!'), jp('ぶちょう、すみません。きょうは かえる ことに します！', 'Sorry, boss. I’ve decided to go home today! (〜ことにする)')),
+        adlib: ad('Stand up and tell the whole office: you’re done, you’re going home.', '🚪', ['かえ', 'むり'], jp('もう むり。きょうは かえるよ！', 'I can’t any more. I’m going home today!'), [CASUAL]),
       },
       {
         id: 'overtime.3',
@@ -290,6 +336,7 @@ export const EPISODES: Episode[] = [
         who: jp('かいしゃいん', 'the office worker'),
         setup: 'Outside, he checks his phone. Oh no.',
         lines: lines(jp('きょう どようび？', 'Today’s Saturday?'), jp('あれ？ きょうは どようびだ。', 'Huh? Today is Saturday.'), jp('きょうは どようび なのに、どうして かいしゃに いるの？', 'It’s Saturday, so why am I at work? (のに)')),
+        adlib: ad('Your phone says it’s Saturday. Why are you at work?', '📅', ['どようび', 'やすみ', 'なんで', 'どうして'], jp('えっ、きょう どようび じゃん！ なんで かいしゃに いるんだろう…', 'Huh, it’s Saturday! Why am I at work…?'), [CASUAL, NDA]),
       },
     ],
   },
@@ -305,6 +352,7 @@ export const EPISODES: Episode[] = [
         who: jp('デートの あいて', 'the date', 'でーとの あいて'),
         setup: 'A fancy restaurant. He has practised this line all week.',
         lines: lines(jp('きれいだね', 'You look lovely'), jp('きょうの ふく、とても きれい ですね。', 'Your outfit is really lovely today.'), jp('きょうの ために、あたらしい ふくを かいました。', 'I bought new clothes for today. (ために)')),
+        adlib: ad('Compliment your date’s outfit. Admit you bought new clothes for tonight.', '👔', ['ふく', 'きれい', 'かった', 'かわいい'], jp('その ふく、すごく いいね。ぼくも きょうの ために かったんだ。', 'That outfit’s great. I bought mine for today too.'), [CASUAL, NDA]),
       },
       {
         id: 'date.2',
@@ -313,6 +361,7 @@ export const EPISODES: Episode[] = [
         who: jp('デートの あいて', 'the date', 'でーとの あいて'),
         setup: 'His phone rings. It’s his mum. Again.',
         lines: lines(jp('もしもし？', 'Hello?'), jp('もしもし、おかあさん？ いま、いそがしい です！', 'Hello, Mum? I’m busy right now!'), jp('おかあさん、デートちゅうに でんわ しないでって いったのに！', 'Mum, I told you not to call during my date! (〜って, のに)', 'おかあさん、でーとちゅうに でんわ しないでって いったのに！')),
+        adlib: ad('Mum is calling during your date. Again. Tell her you’re busy.', '📱', ['いそがしい', 'でーと', 'おかあさん', 'あとで'], jp('おかあさん、いま デートちゅう なんだよ！ あとで かけるね。', 'Mum, I’m on a date right now! I’ll call you later.', 'おかあさん、いま でーとちゅう なんだよ！ あとで かけるね。'), [NDA, CASUAL]),
       },
       {
         id: 'date.3',
@@ -321,6 +370,7 @@ export const EPISODES: Episode[] = [
         who: jp('デートの あいて', 'the date', 'でーとの あいて'),
         setup: 'The bill arrives. He pats every pocket.',
         lines: lines(jp('さいふが…', 'My wallet…'), jp('あ… さいふが ありません。', 'Ah… I don’t have my wallet.'), jp('ごめん、さいふを いえに わすれて きちゃった。', 'Sorry, I left my wallet at home. (〜てくる, 〜ちゃう)')),
+        adlib: ad('The bill. You forgot your wallet. Say sorry.', '👛', ['さいふ', 'わすれ', 'ごめん'], jp('ごめん… さいふ、いえに わすれちゃった。', 'Sorry… I left my wallet at home.'), [CONTRACT]),
       },
     ],
   },
@@ -337,6 +387,7 @@ export const EPISODES: Episode[] = [
         who: jp('かのじょ', 'her'),
         setup: 'Girls’ night. She holds up her phone: his reply to her long message.',
         lines: lines(jp('おやすみ だけ？', 'Just “good night”?'), jp('みて！ かれの へんじ、「おやすみ」だけ です。', 'Look! His reply is just “good night”.'), jp('みて！ かれ、「おやすみ」しか かいて こないの。', 'Look! He never writes anything but “good night”. (しか〜ない)')),
+        adlib: ad('Show your friends his reply: just “good night”. Complain.', '💬', ['おやすみ', 'へんじ', 'だけ'], jp('みて！ かれの へんじ、「おやすみ」だけ なの。ひどくない？', 'Look! His reply is just “good night”. Isn’t that awful?'), [CASUAL]),
       },
       {
         id: 'girlsnight.2',
@@ -345,6 +396,7 @@ export const EPISODES: Episode[] = [
         who: jp('かのじょ', 'her'),
         setup: 'Her friends ask about the first date. She swipes to his dating-app photo.',
         lines: lines(jp('しゃしんと ちがう！', 'Not like his photo!'), jp('かれ、しゃしんと ぜんぜん ちがいました。', 'He looked nothing like his photo.'), jp('しゃしんより じゅっさい ぐらい うえに みえたの。', 'He looked about ten years older than his photo. (より, 〜に みえる)')),
+        adlib: ad('He looked nothing like his photo: much older. Tell your friends.', '📸', ['しゃしん', 'ちがう', 'ちがった', 'おじさん'], jp('しゃしんと ぜんぜん ちがったの。おじさん だったよ！', 'He was nothing like his photo. He was an old guy!'), [CASUAL]),
       },
       {
         id: 'girlsnight.3',
@@ -353,6 +405,7 @@ export const EPISODES: Episode[] = [
         who: jp('かのじょ', 'her'),
         setup: 'Her phone rings. It’s him. Her friends go quiet.',
         lines: lines(jp('わたしも あいたい！', 'I miss you too!'), jp('もしもし？ うん、わたしも あいたい です！', 'Hello? Yes, I miss you too!'), jp('もしもし？ ちょうど あなたの こと、かんがえて いたの！', 'Hello? I was just thinking about you! (〜ていた)')),
+        adlib: ad('He’s calling. Answer sweetly: you were just thinking about him.', '📞', ['あいたい', 'かんがえ', 'もしもし'], jp('もしもし？ いま ちょうど、あなたの こと かんがえてたんだ。', 'Hello? I was just thinking about you.'), [CONTRACT, NDA]),
       },
     ],
   },
@@ -369,6 +422,7 @@ export const EPISODES: Episode[] = [
         who: jp('アイドル', 'the idol', 'あいどる'),
         setup: 'Her first big concert. Twelve fans, one glow stick each.',
         lines: lines(jp('みんな だいすき！', 'I love you all!'), jp('みなさん、きょうは ありがとう！ だいすき です！', 'Thank you all for today! I love you!'), jp('みんなの おかげで、ここまで こられたよ！', 'Thanks to all of you, I made it this far! (おかげで, 〜られる)')),
+        adlib: ad('Thank your twelve fans for coming. Tell them you love them.', '🎤', ['ありがとう', 'だいすき', 'みんな'], jp('みんな、きて くれて ありがとう！ だいすきだよ！', 'Thanks for coming, everyone! I love you!'), [CASUAL]),
       },
       {
         id: 'idol.2',
@@ -377,6 +431,7 @@ export const EPISODES: Episode[] = [
         who: jp('アイドル', 'the idol', 'あいどる'),
         setup: 'The handshake event. This fan queued six hours to propose.',
         lines: lines(jp('つぎの かた どうぞ', 'Next, please'), jp('うれしい！ …はい、つぎの かた どうぞ。', 'I’m so happy! …OK, next please.'), jp('ずっと まって いて くれたの？ …はい、つぎの かた。', 'You waited all this time for me? …OK, next. (〜てくれる)')),
+        adlib: ad('A fan queued six hours to propose. Be sweet, then move him along.', '💍', ['つぎ', 'うれしい', 'まって'], jp('ずっと まってて くれたの？ うれしい！ …はい、つぎ。', 'You waited all this time? I’m so happy! …OK, next.'), [CONTRACT, CASUAL]),
       },
       {
         id: 'idol.3',
@@ -385,6 +440,7 @@ export const EPISODES: Episode[] = [
         who: jp('アイドル', 'the idol', 'あいどる'),
         setup: 'Backstage. The door shuts. The smile drops.',
         lines: lines(jp('あー、つかれた', 'Ugh, I’m wiped'), jp('あー、つかれた。ラーメン たべたい。', 'Ugh, I’m wiped. I want ramen.', 'あー、つかれた。らーめん たべたい。'), jp('あー、わらいすぎて かおが いたい。', 'Ugh, my face hurts from smiling so much. (〜すぎる)')),
+        adlib: ad('Backstage, the act drops. You’re exhausted and you want ramen.', '🍜', ['つかれ', 'らーめん', 'おなか'], jp('あー、もう つかれた。ラーメン たべに いこうよ。', 'Ugh, I’m wiped. Let’s go and eat ramen.', 'あー、もう つかれた。らーめん たべに いこうよ。'), [CASUAL]),
       },
     ],
   },
