@@ -2,7 +2,7 @@
 // Gallery's reaction bubbles. The same in every game.
 
 import { h } from '../../../shared/src/dom.js';
-import type { Commentary, ReactionTile } from '../../../shared/src/modes/mixedRoom.js';
+import type { Commentary, GalleryBubble } from '../../../shared/src/modes/mixedRoom.js';
 
 /**
  * The booth: 📺 REPLAY · name, the line with its key word lit, and one line of colour. `holdKey`: a curveball on
@@ -18,12 +18,14 @@ export function boothStrip(c: Pick<Commentary, 'lit' | 'note'>, who: string | nu
   );
 }
 
-/** The Gallery's bubbles, in tap order (nothing when nobody has reacted yet). */
-export function galleryBubbles(tiles: readonly ReactionTile[]): HTMLElement | null {
+/** The Gallery's bubbles, in tap order (nothing when nobody has reacted yet). A said one wears a 🎤. */
+export function galleryBubbles(tiles: readonly GalleryBubble[]): HTMLElement | null {
   if (!tiles.length) return null;
   return h(
     'div',
     { class: 'gallery-bubbles', 'aria-label': 'Reactions from the Gallery' },
-    tiles.map((t, i) => h('span', { class: 'gallery-bubble', style: `animation-delay:${i * 120}ms` }, t.emoji, h('span', { lang: 'ja' }, ` ${t.kana}`))),
+    tiles.map((t, i) =>
+      h('span', { class: `gallery-bubble${t.said ? ' said' : ''}`, style: `animation-delay:${i * 120}ms` }, t.emoji, h('span', { lang: 'ja' }, ` ${t.kana}`), t.said ? h('span', { class: 'gallery-said', 'aria-label': 'said out loud' }, ' 🎤') : null),
+    ),
   );
 }

@@ -26,9 +26,9 @@ import {
   type RoleOffer,
   type StepScript,
 } from '../shared/src/modes/bentoHaus/hardRoles.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS } from '../shared/src/modes/mixedRoom.js';
 import { framesOf } from '../shared/src/japanese/frames.js';
-import { COUNTS, FOODS, foodOf } from '../shared/src/modes/bentoHaus/menu.js';
+import { COUNTS, CUSTOMERS, FOODS, foodOf } from '../shared/src/modes/bentoHaus/menu.js';
 import type { Command } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { addReadings, createReader, type Reader } from '../server/src/reading.js';
@@ -403,6 +403,26 @@ describe('Bento Haus hard roles: the manager', () => {
     expect(checkLine(speech('こおりを いれて もらえますか'), ice.steps[1]).ok).toBe(true);
   });
 
+  it('the kappa, the fox and the one-eyed boy have their own special orders, at the right station', () => {
+    const own = (id: string) => SPECIALS.find((x) => x.id === id)!;
+    const cases: [string, string, string, string][] = [
+      ['kyuuri-more', 'kappa', 'kyuuri', 'きゅうりを もう すこし いれて もらえますか'],
+      ['inari-apart', 'kitsune', 'inari', 'おいなりさんを べつの はこに いれて もらえますか'],
+      ['big-eye', 'hitotsume', 'onigiri', 'おにぎりを おおきく して もらえますか'],
+    ];
+    for (const [id, customer, food, line] of cases) {
+      const x = own(id);
+      expect(x.customers).toEqual([customer]);
+      expect(CUSTOMERS.some((c) => c.id === customer), customer).toBe(true);
+      expect(FOODS.some((f) => f.id === food), food).toBe(true);
+      expect(x.foodId).toBe(food);
+      expect(x.steps[1].model.frames).toEqual(['te-moraeru']);
+      expect(checkLine(speech(line), x.steps[1]).ok, id).toBe(true);
+    }
+    // The kitchen line must name what the station adds.
+    expect(checkLine(speech('もう すこし いれて もらえますか'), own('kyuuri-more').steps[1]).ok).toBe(false);
+  });
+
   it('special orders come every few customers, and run out after a while', () => {
     const t = managerTable();
     const seen: Visit[] = [];
@@ -687,7 +707,40 @@ describe('Bento Haus mixed rooms: the booth and the Gallery', () => {
     expect(cuesOf(t, 'bento_replay')).toEqual([]);
   });
 
-  it('once the apology lands: Pon voices the fixed line, the TV lights いただけますか, the others get tiles and the gist', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = seated(['n4', 'n5', 'kana']);
+    const { inc } = complain(t);
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: heard('申し訳ございません、少々待っていただけますか') });
+    const P = 'p3';
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.s.players.find((p) => p.id === P)!.score;
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('not-allowed');
+      expect(t.view(P).me!.hard!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(t.s.players.find((p) => p.id === P)!.score).toBe(before);
+      return;
+    }
+    expect(t.view(P).me!.hard!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(t.view(P).me!.hard!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.s.players.find((p) => p.id === P)!.score).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(t.view(P).me!.hard!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.s.players.find((p) => p.id === P)!.score - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().hard!.gallery).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('not-allowed');
+  });
+
+  it.each([true, false])('once the apology lands: Pon voices the fixed line, the TV lights いただけますか, the others get tiles and the gist (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = seated(['n4', 'n5', 'kana']);
     const { inc } = complain(t);
     t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: heard('申し訳ございません、少々待っていただけますか') });
@@ -709,10 +762,10 @@ describe('Bento Haus mixed rooms: the booth and the Gallery', () => {
     expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
     expect(t.play('p3', { kind: 'gallery', pick: 'warai' }).error).toBe('not-allowed');
     expect(t.view().hard!.gallery.map((b) => b.id)).toEqual(['sugoi']);
-    // The right word: +5 to the normal score, once.
+    // The right word: +5 to the normal score (+15 scaled: a tenth of a perfect box), once.
     const score = t.s.players.find((p) => p.id === 'p2')!.score;
     expect(t.play('p2', { kind: 'gallery', pick: 'いただけますか' }).error).toBeUndefined();
-    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(score + CURVEBALL_POINTS);
+    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(score + (scaled ? 15 : CURVEBALL_POINTS));
     expect(t.view('p2').me!.hard!.gallery).toMatchObject({ kind: 'curveball', right: true });
     expect(t.play('p2', { kind: 'gallery', pick: 'いただけますか' }).error).toBe('not-allowed');
     // The booth leaves after its 5–7 s; the tiles after GALLERY_MS.
@@ -885,7 +938,7 @@ describe('Bento Haus mixed rooms: the host stand-in', () => {
     expect(t.view('p1').standIn!.gist).toBeTruthy();
     expect(t.view('p2').standIn!.gist).toBeNull();
     expect(t.play('p2', { kind: 'gallery', pick: 'いただけますか' }).error).toBeUndefined();
-    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(CURVEBALL_POINTS);
+    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(curveballPoints('bento-haus'));
     // Answered and the line said: the title card ends now, or at its usual 8 s if that's later.
     if (t.s.phase === 'prompt') t.wake();
     expect(t.s.phase).toBe('answer');

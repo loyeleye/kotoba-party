@@ -6,6 +6,7 @@
 import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS, SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } from './constants.js';
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam, ModeInfo } from './modes/mode.js';
+import { EXPERIMENTS } from './modes/experiments.js';
 import { MODES, noFit, speakersIn, surprisePool } from './modes/registry.js';
 import type { GameResult } from './progress.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer, WaitAnswer } from './protocol.js';
@@ -62,6 +63,8 @@ export interface GameState {
   surprise: ModeId[] | null;
   /** The room's phrasebook from every game finished tonight, for the stage's Phrasebook (newest first). */
   tonight: TonightPhrase[];
+  /** How many recaps tonight qualified for the mixed-room waiting check (asked or not). Kept across games; a new room starts at 0. */
+  mixedChecks?: number;
 }
 
 /**
@@ -76,21 +79,34 @@ export interface MixedRoomCheck {
   levels: Record<string, Level>;
   /** The game's hard-role offers, by answer. */
   offers: { accepted: number; declined: number; timeout: number };
+  /** Which qualifying recap of the night this is (1 = the first). */
+  nth: number;
 }
 
-/** The waiting check, asked only after a game in a mixed room that offered a hard role. */
+/** With `waitCheckFirstTwo` on, the waiting check is asked on this many qualifying recaps a night, then not again. */
+export const WAIT_CHECKS_A_NIGHT = 2;
+
+/**
+ * The waiting check, asked only after a game in a mixed room that offered a hard role. With the
+ * `waitCheckFirstTwo` experiment on, only the first two such recaps of a night ask it; later ones still log
+ * their phases, with nobody asked (for Ladi to confirm).
+ */
 function mixedCheck(state: GameState, mode: Mode<unknown, { mode: ModeId }> | null): { mixed?: MixedRoomCheck } {
   if (!mode?.offers || !isMixedRoom(state.players.map((p) => p.level))) return {};
   const offers = { accepted: 0, declined: 0, timeout: 0 };
   for (const p of state.players) for (const o of mode.offers(state.modeState, p.id)) if (o.answer !== 'away') offers[o.answer] += 1;
   if (!offers.accepted && !offers.declined && !offers.timeout) return {};
+  const nth = (state.mixedChecks ?? 0) + 1;
+  state.mixedChecks = nth;
+  const asking = !EXPERIMENTS.waitCheckFirstTwo || nth <= WAIT_CHECKS_A_NIGHT;
   return {
     mixed: {
       phases: state.phaseLog ?? [],
-      ask: state.players.filter((p) => p.level !== 'n4' && p.connected).map((p) => p.id),
+      ask: asking ? state.players.filter((p) => p.level !== 'n4' && p.connected).map((p) => p.id) : [],
       answers: {},
       levels: Object.fromEntries(state.players.map((p) => [p.id, p.level])),
       offers,
+      nth,
     },
   };
 }
@@ -160,6 +176,7 @@ export function createGame(code: string): GameState {
     beforeGame: null,
     surprise: null,
     tonight: [],
+    mixedChecks: 0,
   };
 }
 

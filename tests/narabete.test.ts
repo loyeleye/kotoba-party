@@ -8,7 +8,7 @@ import { normalizeReading, soundKey, type Utterance } from '../shared/src/japane
 import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
 import { defenceScript } from '../shared/src/modes/narabete/defence.js';
-import { CURVEBALL_POINTS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
 import {
   BONUS_POOL_SHARE,
   DEFENCE_KEY,
@@ -710,6 +710,55 @@ describe('Narabete!: the N4 defence in a game', () => {
     expect(t.r.hard).toMatchObject({ answer: 'accepted', ok: false });
   });
 
+  // The `narabeteFold` experiment: on (above), one defence; off, the ordinary defence and then the N4 encore.
+  it('narabeteFold off: an N4 player who also moved the most gives the ordinary defence, then the N4 one', () => {
+    const restore = withExperiments({ narabeteFold: false });
+    try {
+      const t = new Table(3, ['n4', 'n5', 'n5']);
+      t.start();
+      toFeelingsN4(t);
+      t.sayAll();
+      const p1 = t.cardOf('p1');
+      while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'move', dir: 1 });
+      t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'hard', accept: true });
+      t.lockAll();
+      expect(t.r.encore).toBe('defence');
+      expect(t.s.deadline! - t.now).toBe(DURATIONS.encore);
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
+      t.play('p1', { kind: 'defend', pass: true });
+      expect(t.s.phase).toBe('encore');
+      expect(t.r.encore).toBe('hard');
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
+    } finally {
+      restore();
+    }
+  });
+
+  it('narabeteFold on: the folded defence goes straight to the N4 encore, with its frame', () => {
+    const restore = withExperiments({ narabeteFold: true });
+    try {
+      const t = new Table(3, ['n4', 'n5', 'n5']);
+      t.start();
+      toFeelingsN4(t);
+      t.sayAll();
+      const p1 = t.cardOf('p1');
+      while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'move', dir: 1 });
+      t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'hard', accept: true });
+      t.lockAll();
+      expect(t.r.encore).toBe('hard');
+      expect(t.s.deadline! - t.now).toBe(DURATIONS.encoreN4);
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
+      expect(t.view().defence!.frame?.text).toContain('ので');
+      expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_hard' });
+    } finally {
+      restore();
+    }
+  });
+
   it('an N4 player who moved the most but left the offer open gives the ordinary defence', () => {
     const t = new Table(3, ['n4', 'n5', 'n5']);
     t.start();
@@ -945,7 +994,38 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.r.hard?.playerId).toBe('p2');
   });
 
-  it('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = toDefence();
+    const P = 'p1';
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('bad-move');
+      expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(t.score(P)).toBe(before);
+      return;
+    }
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().gallery).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('bad-move');
+  });
+
+  it.each([true, false])('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = toDefence();
     // While the defence is on, reactions only: nobody is asked which word they heard before it's been said.
     expect(t.view('p1').me!.gallery!.kind).toBe('react');
@@ -972,7 +1052,7 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.view().gallery.map((b) => b.id)).toEqual(['sugoi']);
     const before = t.score('p3');
     expect(t.play('p3', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
-    expect(t.score('p3') - before).toBe(CURVEBALL_POINTS);
+    expect(t.score('p3') - before).toBe(scaled ? 10 : CURVEBALL_POINTS);
     expect(t.view('p3').me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: DEFENCE_KEY });
     expect(t.view().replay!.holdKey).toBe(false);
     expect(t.st.curveball).toBe(true);
@@ -1112,7 +1192,7 @@ describe('Narabete!: mixed rooms', () => {
       expect(t.view('p1').me!.standIn).toBeNull();
       const before = t.score('p1');
       expect(t.play('p1', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
-      expect(t.score('p1')).toBe(before + CURVEBALL_POINTS);
+      expect(t.score('p1')).toBe(before + curveballPoints('narabete'));
       expect(t.s.phase).toBe('score');
       expect(t.st.curveball).toBe(true);
     });

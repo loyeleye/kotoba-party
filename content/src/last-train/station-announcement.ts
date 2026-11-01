@@ -264,5 +264,25 @@ export const stationAnnouncement: LastTrainMinigame = {
       hint: 'Say what happened in the て form (でんしゃが おくれて), then the station\'s deepest sorry: もうしわけ ございません.',
       timeLimit: 15,
     },
+    {
+      // The yōkai platform: the same arrival keigo, for a ghost train (draft, for the fluent check).
+      id: 'station-announcement.22-announce-yuurei',
+      level: 'n4',
+      role: ANNOUNCER,
+      frames: ['keigo'],
+      prompt: { text: 'あなたは駅員です。ゆうれい列車が来ます！アナウンスしてください。', kana: 'あなたはえきいんです。ゆうれいれっしゃがきます！アナウンスしてください。', en: 'You\'re the station staff. A ghost train is coming in! Make the announcement.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。ゆうれい', ''], ['列車', 'れっしゃ'], ['が', ''], ['来', 'き'], ['ます！アナウンスしてください。', '']] },
+      visual: '📣 👻 The yōkai platform: a ghost train is due in a moment.',
+      accepted: [
+        'まもなくゆうれいれっしゃがまいります',
+        'ゆうれいれっしゃがまいります',
+        'まもなくゆうれいのれっしゃがまいります',
+        'まもなくゆうれいでんしゃがまいります',
+        'ゆうれいでんしゃがまいります',
+        'まもなくゆうれいれっしゃがまいりますきいろいせんのうちがわまでおさがりください',
+      ],
+      model: { text: 'まもなく、ゆうれい れっしゃが まいります。', kana: 'まもなく、ゆうれい れっしゃが まいります。', en: 'A ghost train will soon arrive.', furigana: [['まもなく、ゆうれい れっしゃが まいります。', '']] },
+      hint: 'Same shape as every arrival: まもなく (soon), the train with が (ゆうれい れっしゃ, ghost train), then まいります, the humble "comes".',
+      timeLimit: 15,
+    },
   ],
 };

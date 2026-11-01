@@ -520,6 +520,7 @@ export type HostEvent =
   | 'train_announcer_react' // the announcer's line landed: Chōchin-san's short reaction at the reveal
   | 'train_stand_in' // a 1–2-player room with no N4 player: Chōchin-san makes one platform announcement ({line}, as is)
   | 'train_stand_in_setup' // experiment standInSetup: Chōchin-san's short line just before his stand-in announcement
+  | 'train_candle' // lost and found: the candle turns out to be Chōchin-san's own; his one-off reaction (bank only, once a game)
   // Murder at the Onsen
   | 'onsen_case' // the case file opens
   | 'onsen_turn' // a player's turn to question a suspect

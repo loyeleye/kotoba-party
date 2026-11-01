@@ -277,7 +277,7 @@ function liveContent(game: LastTrainView, send: (m: unknown) => Promise<boolean>
   const parts: (HTMLElement | null)[] = game.overrules.map((w) => overruleCard(w, send));
   // The Gallery: react to the hard-role line being said (or the once-a-game curveball). Live, so a tap never
   // rebuilds the talk button.
-  parts.push(galleryTile(me?.gallery ?? null, (pick) => void send({ kind: 'gallery', pick })));
+  parts.push(galleryTile(me?.gallery ?? null, (pick, utterance) => void send({ kind: 'gallery', pick, utterance })));
   if (me?.canHaunt && me.hauntTargets.length) {
     parts.push(
       h(
@@ -304,7 +304,7 @@ function liveKey(game: LastTrainView): string {
     game.overrules.map((w) => `${w.id}:${w.state}:${w.up}:${w.canVote}:${w.myVote}`).join(','),
     game.me?.canHaunt,
     game.me?.hauntTargets.map((t) => t.playerId).join(),
-    g ? `${g.kind}:${g.picked}:${g.kind === 'curveball' ? g.right : ''}` : '',
+    g ? `${g.kind}:${g.picked}:${g.kind === 'curveball' ? g.right : `${g.say?.said}:${g.say?.missed}`}` : '',
   ].join('|');
 }
 let lastLiveKey = '';

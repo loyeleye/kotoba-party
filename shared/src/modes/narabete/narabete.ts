@@ -882,8 +882,10 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       if (hard && cardOf(r, hard.cardId)?.hidden) r.hard = null;
       else if (hard && hard.answer === 'offered') hard.answer = gone ? 'away' : 'timeout';
       else if (hard && gone) r.hard = null;
-      // One defence each: the N4 player who also moved the most gives the N4 one.
-      if (r.hard && liveHard(r) && r.defence?.playerId === r.hard.playerId) r.defence = null;
+      // One defence each (the `narabeteFold` experiment): when the N4 defender's card is also the most-moved
+      // card, they give only the N4 one, with its frame, and the 12 s ordinary encore is skipped. Off: both run,
+      // the ordinary defence first.
+      if (EXPERIMENTS.narabeteFold && r.hard && liveHard(r) && r.defence?.playerId === r.hard.playerId) r.defence = null;
     }
     if (phase === 'score') {
       if (r.hard) s.hardLog.push({ round: r.index, playerId: r.hard.playerId, answer: r.hard.answer === 'offered' ? 'timeout' : r.hard.answer });
@@ -1066,7 +1068,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         const g = sg ? sg.g : phase === 'encore' && (r.encore === 'hard' || r.encore === 'replay') ? r.gallery : null;
         if (!g) return moveError('wrong-phase');
         if (typeof raw.pick !== 'string') return moveError('bad-move');
-        const pts = pickGallery(g, playerId, raw.pick);
+        const pts = pickGallery(g, playerId, raw.pick, { game: 'narabete', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
         if (pts === null) return moveError('bad-move');
         if (pts) ctx.award(playerId, pts);
         return MOVE_OK;

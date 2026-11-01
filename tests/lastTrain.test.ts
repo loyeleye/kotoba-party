@@ -10,8 +10,8 @@ import { apply, createGame, wakeAt, type GameAction, type GameContext, type Game
 import { withExperiments } from '../shared/src/modes/experiments.js';
 import { checkUtterance, firstMora } from '../shared/src/modes/lastTrain/check.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
-import { buildStops, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
-import { CURVEBALL_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
+import { buildStops, CANDLE_ITEM, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
 import { framesOf } from '../shared/src/japanese/frames.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -824,7 +824,41 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     expect(offered(big)).toEqual(['p1']);
   });
 
-  it('the Gallery: a tile for each player without the seat while the line is said, bubbles on the TV, one curveball a game worth +5', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const g = table(ROLES, ['n4', 'n5', 'kana']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', true);
+    const P = 'p3';
+    const say = (text: string) => g.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = g.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('not-allowed');
+      expect(g.view(P).me!.gallery).not.toHaveProperty('say');
+      expect(g.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(g.score(P)).toBe(before);
+      return;
+    }
+    expect(g.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(g.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(g.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(g.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(g.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(g.view('stage').gallery).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(g.state.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('not-allowed');
+  });
+
+  it.each([true, false])('the Gallery: a tile for each player without the seat while the line is said, bubbles on the TV, one curveball a game worth +5 (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const g = table(ROLES, ['n4', 'n5', 'kana']);
     g.start(4);
     g.until('answer');
@@ -868,8 +902,12 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     expect(g.view('p3').me!.booth).not.toBeNull();
     const before = g.score('p2');
     expect(g.play('p2', { kind: 'gallery', pick: word }).changed).toBe(true);
-    expect(g.score('p2') - before).toBe(CURVEBALL_POINTS);
-    expect(g.s.ledger.filter((e) => e.reason === 'curveball')).toEqual([{ playerId: 'p2', points: 5, reason: 'curveball', stop: 0 }]);
+    expect(g.score('p2') - before).toBe(scaled ? 10 : CURVEBALL_POINTS);
+    expect(curveballPoints('last-train')).toBe(scaled ? 10 : 5);
+    expect(g.s.ledger.filter((e) => e.reason === 'curveball')).toEqual([{ playerId: 'p2', points: curveballPoints('last-train'), reason: 'curveball', stop: 0 }]);
+    // The phone's "Yes! +N" reads what was paid; with the switch off it falls back to +5.
+    if (scaled) expect(g.view('p2').me!.gallery).toMatchObject({ paid: 10 });
+    else expect(g.view('p2').me!.gallery).not.toHaveProperty('paid');
     expect(g.view('p2').me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: word });
     expect(g.view('stage').booth!.holdKey).toBe(false);
     expect(g.view('p2').me!.booth).not.toBeNull();
@@ -1124,7 +1162,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
       expect(g.view('p2').me!.standIn).toBeNull();
       const before = g.score('p2');
       expect(g.play('p2', { kind: 'gallery', pick: 'まいります' }).error).toBeUndefined();
-      expect(g.score('p2')).toBe(before + CURVEBALL_POINTS);
+      expect(g.score('p2')).toBe(before + curveballPoints('last-train'));
       expect(g.s.ledger.filter((e) => e.reason === 'curveball')).toHaveLength(1);
       // Answered, and the line said: the stop's announcement is over.
       expect(g.state.phase).toBe('answer');
@@ -1198,6 +1236,41 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     expect(durations.filter((d) => d === 7_000).length).toBe(4);
     expect(g.s.gallery).toBeNull();
     expect(g.s.curveballUsed).toBe(false);
+  });
+
+  it('Chōchin-san reacts once when lost and found\'s candle (item 21) turns out to be his own', () => {
+    const STAFF = { id: 'lost-property-staff', name: t('わすれものがかり', 'わすれものがかり', 'Lost property'), pitch: 'pitch' };
+    const LOST = mg('lost-and-found', [item('lf1', ['かさです']), roleItem(CANDLE_ITEM, ['ちょうちんさんのろうそくだそうです'], STAFF)]);
+    const g = table(lib(LOST), ['n4', 'n5']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', true);
+    answerAll(g);
+    expect(g.cues.filter((c) => c.event === 'train_candle')).toEqual([{ host: 'chochin', event: 'train_candle', atMs: RULES.candleAtMs }]);
+    // After his model line, inside the 12 s reveal.
+    expect(RULES.candleAtMs).toBeGreaterThan(RULES.roleReadAtMs);
+    expect(g.state.deadline! - g.now).toBeGreaterThan(RULES.candleAtMs);
+    // Once a game, however often the candle turns up again.
+    for (let i = 0; i < 40 && g.state.phase !== 'recap'; i++) {
+      if (g.state.phase === 'answer') {
+        if (g.view('p1').me?.offer) role(g, 'p1', true);
+        answerAll(g);
+      } else g.timeout();
+    }
+    expect(g.cues.filter((c) => c.event === 'train_candle')).toHaveLength(1);
+    // A real bank line in his voice, and the event is bank only (no LLM prompt).
+    const bank = realContent.hostLines.filter((l) => l.event === 'train_candle');
+    expect(bank.map((l) => l.jp.text)).toEqual(['あっ、わたしの ろうそく！　ゆらゆら…']);
+    expect(bank[0]!.status).toBe('draft');
+  });
+
+  it('no candle reaction when another role line lands', () => {
+    const g = table(ROLES, ['n4', 'n5']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', true);
+    answerAll(g);
+    expect(g.cues.some((c) => c.event === 'train_candle')).toBe(false);
   });
 
   it('lights the key word of every real role line', () => {

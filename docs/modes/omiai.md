@@ -270,7 +270,8 @@ out when it wouldn't leave her the question's 5 s inside the go-between's longer
 | | Points |
 | --- | --- |
 | Go-between line said / typed | 25 / 10 |
-| Gallery curveball right (once a game, a Kana or N5 player) | 5 |
+| Gallery curveball right (once a game, a Kana or N5 player) | 5 (10 with `scaledCurveball`: a tenth of a vote's 100) |
+| Gallery reaction said out loud (`spokenReaction`) | 2 |
 
 The manners meter reads every line as keigo (tested for every card and round). It now also counts
 ごしょうかい as an お/ご word, and お〜に なる in plain form (おつきに なった) as honorific when the

@@ -185,6 +185,8 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.train_stand_in.01', host: 'chochin', event: 'train_stand_in', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // train_stand_in_setup: experiment standInSetup, just before his stand-in announcement
   { id: 'chochin.train_stand_in_setup.01', host: 'chochin', event: 'train_stand_in_setup', jp: { text: 'きょうは わたしが アナウンスします。ゆらゆら。', kana: 'きょうは わたしが アナウンスします。ゆらゆら。', en: "Tonight I'll make the announcement. Sway, sway." }, status: 'draft' },
+  // train_candle: lost-and-found item 21 was answered right, so the candle is his own; once a game, after his model line (bank only)
+  { id: 'chochin.train_candle.01', host: 'chochin', event: 'train_candle', jp: { text: 'あっ、わたしの ろうそく！　ゆらゆら…', kana: 'あっ、わたしの ろうそく！　ゆらゆら…', en: 'Oh, my candle! Sway…' }, status: 'draft' },
   // Murder at the Onsen: Chōchin-san is off duty at the inn and plays detective's narrator.
   // onsen_case
   { id: 'chochin.onsen_case.01', host: 'chochin', event: 'onsen_case', jp: { text: 'じけんです！　ゆらゆら。', kana: 'じけんです！　ゆらゆら。', en: 'We have a case! Sway, sway.' }, status: 'draft' },

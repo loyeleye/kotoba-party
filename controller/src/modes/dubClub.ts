@@ -628,7 +628,7 @@ function screeningScreen(ctx: Ctx, me: Me): HTMLElement {
           : null,
     );
   }
-  kids.push(boothGist(me.gist), galleryTile(me.gallery, (pick) => void send({ kind: 'gallery', pick, round: game.round })), hearts(ctx, me));
+  kids.push(boothGist(me.gist), galleryTile(me.gallery, (pick, utterance) => void send({ kind: 'gallery', pick, utterance, round: game.round })), hearts(ctx, me));
   if (isVip && now && !now.skipped && now.step !== 'reveal' && now.step !== 'booth')
     kids.push(h('details', { class: 'dc-vip' }, h('summary', {}, 'VIP: skip this dub'), holdButton('🚫 Skip it', 'secondary', () => void send({ kind: 'skip', actorId: now.playerId, round: game.round }))));
   return h('div', { class: 'screen' }, ...kids);

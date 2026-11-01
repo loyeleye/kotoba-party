@@ -32,6 +32,9 @@ import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallb
 
 // ---- tuning ----
 
+/** The lost-and-found item whose candle turns out to be Chōchin-san's own (his `train_candle` reaction). */
+export const CANDLE_ITEM = 'lost-and-found.21-rousoku-souda';
+
 export const RULES = {
   /** How long the room has to thumbs-up a rejected answer. */
   overruleMs: 7_000,
@@ -58,6 +61,11 @@ export const RULES = {
    * announcement phase then runs until the line is done (commentaryMs), a few seconds longer, once a game.
    */
   standInAtMs: 3_500,
+  /**
+   * Lost and found's candle (item 21): when Chōchin-san sees it's his own, after he has said the staff's model line
+   * (from roleReadAtMs, about 3 s), still inside the 12 s reveal. Once a game.
+   */
+  candleAtMs: 8_500,
   /** Ghosts earn this share of a living player's points. */
   ghostShare: 0.5,
   /** From-memory speech bonus, as a share of the answer's points. */
@@ -189,7 +197,7 @@ export interface DashResult {
 interface LedgerEntry {
   playerId: string;
   points: number;
-  reason: 'stop' | 'dash' | 'curveball';
+  reason: 'stop' | 'dash' | 'curveball' | 'reaction';
   stop: number;
 }
 
@@ -234,6 +242,8 @@ export interface LastTrainState {
    * the once-a-game curveball (standInCurveball).
    */
   standIn: (Commentary & { stop: number; atMs?: number; sg?: StandInGallery | null }) | null;
+  /** Chōchin-san has reacted to his own candle turning up in lost and found (once a game). */
+  candleSeen?: boolean;
   seq: number;
 }
 
@@ -1087,6 +1097,11 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
           s.booth = commentaryOf(star.task.item, star.playerId);
           // The line has landed: only now can the once-a-game curveball be dealt.
           armRoleCurveball(s, ctx, star.task.item);
+          // Lost and found's candle is his own: a one-off reaction once he has said it (bank only).
+          if (star.task.item.id === CANDLE_ITEM && !s.candleSeen) {
+            s.candleSeen = true;
+            ctx.cue({ host: 'chochin', event: 'train_candle', atMs: RULES.candleAtMs });
+          }
         }
         break;
       }
@@ -1335,12 +1350,13 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         if (typeof raw.pick !== 'string') return moveError('bad-move');
         if (phase !== 'answer' && phase !== 'reveal' && !standInSg(s, phase)) return moveError('wrong-phase');
         if (!s.gallery) return moveError('no-gallery');
-        const points = pickGallery(s.gallery, playerId, raw.pick);
+        const reason = s.gallery.curveball?.playerId === playerId ? 'curveball' : 'reaction';
+        const points = pickGallery(s.gallery, playerId, raw.pick, { game: 'last-train', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
         if (points === null) return moveError('not-allowed');
-        // The curveball's +5 goes to the game's own score, like any other points.
+        // The curveball's bonus (or a said reaction's) goes to the game's own score, like any other points.
         if (points > 0) {
           ctx.award(playerId, points);
-          s.ledger.push({ playerId, points, reason: 'curveball', stop: s.stopIndex });
+          s.ledger.push({ playerId, points, reason, stop: s.stopIndex });
         }
         return MOVE_OK;
       }

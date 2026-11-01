@@ -100,8 +100,14 @@ are draft, in kana, and tagged by name with the N4 frames they practise (`hardRo
     (「からあげを もう ひとつ つくって もらえますか。」, or 「おべんとうを もう いちど つくって もらえますか。」
     when there's too much of something; つくりなおして is accepted too).
   - a **special order**: every third customer while the deputy manager is free (no wasabi, warm it up, a big
-    helping of rice, chopsticks, sauce on the side; the influencer wants a cuter box; the yuki-onna asks for ice; the baku wants a
+    helping of rice, chopsticks, sauce on the side; the influencer wants a cuter box; the yuki-onna asks for ice; the kappa wants more
+    cucumber (「きゅうりを もう すこし いれて もらえますか。」 to the vegetable station); the fox on a date wants her
+    おいなりさん in a separate box, so he doesn't see (「おいなりさんを べつの はこに いれて もらえますか。」); the one-eyed
+    boy's eye is big, so his rice ball should be too (「おにぎりを おおきく して もらえますか。」, おおもり also
+    counts); the baku wants a
     dream, which the shop can't do: もうしわけ ございません and 「おにぎりに して いただけますか。」).
+    A customer's own request needs its food on tonight's menu; otherwise they get the next general one. The kappa,
+    fox and one-eyed boy requests are new, draft, and (for Ladi to confirm) the jokes: the fox's secret box, the big eye.
     The deputy manager answers the customer (かしこまりました。〜て いただけますか, or かしこまりました。
     しょうしょう おまちください), then asks the station (〜て もらえますか, or 〜て くれませんか).
   The station gets a 📋 card with the deputy manager's line and taps はい、できました！; a missing food goes
@@ -161,7 +167,7 @@ the title card).
   (`GALLERY_MS`): four reactions (すごい！ なるほど へえ！ がんばれ！), shown on the TV as bubbles, never scored.
   Once a game, a Kana or N5 player's tile is the curveball instead: "Which word did you hear?", the
   line's key word and two other request endings (もらえますか, くれませんか, おねがいします…, never one in the
-  line), +5 to their score if right. It is dealt the moment the line lands (the tiles open then too), to a
+  line), +5 to their score if right (With the round-5 experiments on (docs/n4-hard-roles.md, "How mixed rooms work"): `scaledCurveball` makes it +15 (a tenth of a perfect box, 3 tips × 50), and `spokenReaction` lets a Gallery player say their reaction for +2 instead of tapping (for Ladi to confirm).). It is dealt the moment the line lands (the tiles open then too), to a
   Kana or N5 player picked by the seed; a skipped or missed line deals none, and the game keeps it for a
   later shift. While it is unanswered the TV's replay holds its key word back (unlit), so the answer isn't
   on screen. Bots can't be told apart from players in the mode, so a bot gets a
