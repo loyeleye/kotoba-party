@@ -20,6 +20,7 @@ import { audioReady, unlockAudio } from '../sound.js';
 import { sting } from '../music/index.js';
 import { sfx } from '../music/sfx.js';
 import { clipLeft, clipsHere, playClip, resetPlayed, serverNow, startLipSync, stopClip } from './dubAudio.js';
+import { boothStrip, galleryBubbles } from '../components/mixedRoom.js';
 import type { StageMode } from './types.js';
 
 const playerOf = (view: RoomView, id: string | null | undefined) => view.players.find((p) => p.id === id);
@@ -137,7 +138,16 @@ function sceneSide(view: RoomView, game: DubView, phase: 'prompt' | 'answer'): H
           ),
         ),
     phase === 'answer' ? h('p', { class: 'dub-quiet' }, '🔇 Recording! Quiet on set, please.') : null,
+    phase === 'prompt' ? standIn(game) : null,
   );
+}
+
+/** The host stand-in: Fude's own ad-lib of the scene, while he says it (timed by the server clock, so a redraw
+ * picks the fade up where it was). */
+function standIn(game: DubView): HTMLElement | null {
+  const si = game.standIn;
+  if (!si) return null;
+  return h('div', { class: 'dub-standin', style: `animation-duration: ${si.ms}ms; animation-delay: ${Math.round(si.at - serverNow())}ms` }, boothStrip(si, 'Fude-kantoku’s ad-lib'));
 }
 
 function sceneScreen(view: RoomView, game: DubView, phase: 'prompt' | 'answer'): HTMLElement {
@@ -189,6 +199,10 @@ function screening(view: RoomView, game: DubView): HTMLElement {
         now.again ? h('p', { class: 'dub-again' }, h('span', { lang: 'ja' }, 'もう いっかい'), ` 🙋 ×${now.again}`) : null,
         h('span', { class: 'dub-timer', style: `--d:${Math.round(left)}ms` }),
       );
+    } else if (now.step === 'booth' && now.card && now.booth) {
+      // The commentary booth: カット！, and the scene's model ad-lib line with its casual chunk lit.
+      caption = now.line;
+      panel = h('div', { class: 'dub-panel dub-booth' }, boothStrip(now.booth, nameOf(view, now.playerId), now.booth.holdKey));
     } else if (now.step === 'reveal' && now.card) {
       onceFor(`flip:${key}`, () => sfx('flip'));
       caption = now.line;
@@ -212,6 +226,7 @@ function screening(view: RoomView, game: DubView): HTMLElement {
       h('p', { class: 'dub-tag' }, `Scene ${game.round} · the screening`),
       h('p', { class: 'dub-line', lang: 'ja' }, ruby(sc.line)),
       panel,
+      now?.gallery.length ? galleryBubbles(now.gallery) : null,
       game.done.length
         ? h(
             'ul',

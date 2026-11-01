@@ -10,6 +10,9 @@
 //              their card goes where it is (「＿ので、これが いちばん さきです。」), with "Not this time".
 //              Their turn shows the frame and two model lines to read out.
 //              Once it lands, Kana and N5 phones show the gist of it (kana, English, the card).
+//              While it's on, everyone else gets a Gallery tile: a reaction, or once a game the curveball.
+//   Stand-in   a room of one or two with nobody at N4: Kana and N5 phones show the gist of Nobiko-san's
+//              own model defence, in the line-up she gives it.
 
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
@@ -20,6 +23,8 @@ import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { speakBox, canSpeak } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
 import { jpView } from '../components/jp.js';
+import { roleOffer } from '../components/roleOffer.js';
+import { boothGist, galleryTile } from '../components/gallery.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
 type Ctx = PhoneContext<NarabeteView>;
@@ -206,6 +211,7 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
         )
       : null,
     hardOffer(ctx, me),
+    boothGist(me.standIn),
     ends(game),
     timeCard(me, true) ?? (me.secret !== null ? secret(me) : null),
     me.said && game.kind !== 'time' ? h('p', { class: 'hint' }, 'Your answer: ', h('span', { lang: 'ja' }, me.said.text)) : null,
@@ -328,33 +334,36 @@ function storyScreen(ctx: Ctx, me: Me): HTMLElement {
   );
 }
 
-/** The N4 defence, offered during the line-up: Take it (before the line-up ends), or "not this time". */
+/** The N4 defence, offered during the line-up: the shared offer card (Take it before the line-up ends, or not). */
 function hardOffer(ctx: Ctx, me: Me): HTMLElement | null {
   const hard = me.hard;
   if (!hard) return null;
   const send = (accept: boolean) => void ctx.send({ kind: 'hard', accept, round: ctx.game.round });
-  return h(
-    'div',
-    { class: 'nb-hard' },
-    h('p', {}, '🎙 N4: after the line-up, say why your card goes where it is, with ', h('span', { lang: 'ja' }, '〜ので'), '.'),
-    hard.answer === 'offered'
-      ? h('div', { class: 'nb-hard-btns' }, h('button', { type: 'button', class: 'secondary', onclick: () => send(true) }, 'Take it'), h('button', { type: 'button', class: 'secondary', onclick: () => send(false) }, 'Not this time'))
-      : h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Not this time after all'),
-    hard.answer === 'offered' ? h('p', { class: 'hint' }, 'Answer before the line-up ends, or the chance passes.') : null,
-  );
+  if (hard.answer === 'accepted') return h('div', { class: 'nb-hard' }, h('p', {}, '🎙 After the line-up, say why your card goes where it is, with ', h('span', { lang: 'ja' }, '〜ので'), '.'), h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Not this time after all'));
+  return roleOffer({
+    kicker: '🎙 Nobiko-san wants to hear your reason.',
+    pitch: 'After the line-up, say why your card goes where it is, with 〜ので.',
+    onTake: () => send(true),
+    onDecline: () => send(false),
+    extra: [h('p', { class: 'hint' }, 'Answer before the line-up ends, or the chance passes.')],
+  });
 }
 
-/** Kana and N5 phones, during the N4 defence's replay: what was said, at their level (never a correction). */
-function gistScreen(g: NonNullable<Me['gist']>): HTMLElement {
+/** Kana and N5 phones, during the N4 defence's replay: what was said, at their level (never a correction), and the card. */
+function gistScreen(ctx: Ctx, me: Me): HTMLElement {
+  const g = me.gist!;
   return h(
     'div',
     { class: 'screen nb-gist' },
-    h('p', { class: 'big' }, '📺 Replay'),
-    g.picture ? h('img', { class: 'nb-gist-pic', src: g.picture, alt: '' }) : g.emoji ? h('p', { class: 'nb-gist-emoji', 'aria-hidden': 'true' }, g.emoji) : null,
-    h('p', { class: 'nb-gist-ja', lang: 'ja' }, g.kana),
-    g.romaji ? h('p', { class: 'nb-gist-romaji' }, g.romaji) : null,
-    h('p', { class: 'nb-gist-en' }, g.en),
+    g.picture ? h('img', { class: 'nb-gist-pic', src: g.picture, alt: '' }) : null,
+    boothGist({ ...g, emoji: g.picture ? null : g.emoji }),
+    gallery(ctx, me),
   );
+}
+
+/** My Gallery tile while someone else gives the N4 defence. */
+function gallery(ctx: Ctx, me: Me): HTMLElement | null {
+  return galleryTile(me.gallery, (pick) => void ctx.send({ kind: 'gallery', pick, round: ctx.game.round }));
 }
 
 /** The N4 defence: the ので frame for where the card ended up, and two model lines to read out. */
@@ -378,7 +387,7 @@ function hardDefence(ctx: Ctx, me: Me): HTMLElement {
     ),
     speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'defend', utterance, round: game.round }) }),
     h('p', { class: 'hint' }, 'Say it out loud for the bonus: a typed defence doesn’t score.'),
-    h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Not this time'),
+    h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Not this time after all'),
   );
 }
 
@@ -436,7 +445,8 @@ export const narabetePhone: PhoneMode<NarabeteView> = {
             speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'defend', utterance, round: game.round }) }),
             h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Pass'),
           );
-        if (me?.gist) return gistScreen(me.gist);
+        if (me?.gist) return gistScreen(ctx, me);
+        if (me?.gallery) return h('div', { class: 'screen' }, h('p', { class: 'big' }, 'Look at the TV!'), game.defence ? h('p', {}, `${nameOf(ctx, game.defence.playerId)} is defending their card…`) : null, gallery(ctx, me));
         return waiting('Look at the TV!', game.defence ? `${nameOf(ctx, game.defence.playerId)} is defending their card…` : '');
       case 'score':
         return me ? scoreScreen(ctx, me) : waiting('Look at the TV!');

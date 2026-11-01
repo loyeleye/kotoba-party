@@ -52,8 +52,9 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
     game: playing ? (mode.view(state.modeState, state.phase, viewer, modeContext(state, ctx)) as GameView) : null,
     recap: state.recap
       ? {
-          ...state.recap,
+          ...recapWithoutCheck(state.recap),
           phrasebook: viewer.kind === 'player' ? (state.phrasebook[viewer.playerId] ?? []) : [],
+          waitCheck: viewer.kind === 'player' && state.recap.mixed?.ask.includes(viewer.playerId) ? { answer: state.recap.mixed.answers[viewer.playerId] ?? null } : null,
         }
       : null,
     me:
@@ -65,4 +66,10 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
     audience: state.audience,
     surprise: state.surprise,
   };
+}
+
+/** The recap as every screen sees it: the mixed-room check's answers and phase log stay on the server. */
+function recapWithoutCheck(r: NonNullable<GameState['recap']>): Omit<NonNullable<GameState['recap']>, 'mixed'> {
+  const { mixed: _mixed, ...rest } = r;
+  return rest;
 }

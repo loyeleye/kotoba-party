@@ -486,3 +486,15 @@ body.flying[data-phase='lobby'] .main { place-items: end center; }
 .canvas.spinning-wheel .roulette-tv { --wheel: 470px; align-content: start; padding-top: 318px; }
 .canvas.spinning-wheel .roulette-tv .roulette-foot { min-height: 150px; }
 .canvas.spinning-wheel .roulette-tv .roulette-kicker { display: none; }
+
+/* Mixed rooms on the TV (components/mixedRoom.ts). */
+.booth { text-align: center; }
+.booth-tag { font-size: 22px; font-weight: 800; letter-spacing: 0.08em; color: var(--gold); margin: 0; }
+.booth-line { font-size: 36px; font-weight: 800; margin: 6px 0; }
+.booth-line mark { background: var(--gold); color: var(--on-accent); border-radius: 6px; padding: 0 4px; animation: booth-lit 0.6s ease-out both; }
+.booth-note { font-size: 24px; color: var(--muted); margin: 0; }
+@keyframes booth-lit { from { background: transparent; } }
+.gallery-bubbles { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
+.gallery-bubble { font-size: 26px; padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); animation: bubble-in 0.4s ease-out both; }
+@keyframes bubble-in { from { opacity: 0; transform: translateY(12px) scale(0.8); } }
+@media (prefers-reduced-motion: reduce) { .booth-line mark, .gallery-bubble { animation: none; } }

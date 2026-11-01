@@ -309,6 +309,20 @@ export const ponLines: HostLine[] = [
   { id: 'pon.bento_stars.02', host: 'pon', event: 'bento_stars', jp: { text: 'ほしが {stars}！　ポン！', kana: 'ほしが {stars}！　ポン！', en: '{stars} stars! Pon!' }, slots: ['{stars}'], status: 'draft' },
   { id: 'pon.bento_stars.03', host: 'pon', event: 'bento_stars', jp: { text: 'へいてんです！　ほしは {stars}。', kana: 'へいてんです！　ほしは {stars}。', en: 'Closing time! Stars: {stars}.' }, slots: ['{stars}'], status: 'draft' },
   { id: 'pon.bento_stars.04', host: 'pon', event: 'bento_stars', jp: { text: 'みんなの キッチン、ほしは {stars}です！', kana: 'みんなの キッチン、ほしは {stars}です！', en: 'Our kitchen\'s stars: {stars}!' }, slots: ['{stars}'], status: 'draft' },
+  // bento_replay: the commentary booth's instant replay: Pon says the deputy manager's landed line, the fixed line as is
+  { id: 'pon.bento_replay.01', host: 'pon', event: 'bento_replay', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // bento_standin: Pon plays the deputy manager for one line (a room of 1–2 with nobody at N4)
+  { id: 'pon.bento_standin.01', host: 'pon', event: 'bento_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // bento_manager_win
+  { id: 'pon.bento_manager_win.01', host: 'pon', event: 'bento_manager_win', jp: { text: 'さすが、ふくてんちょう！', kana: 'さすが、ふくてんちょう！', en: 'That\'s my deputy manager!' }, status: 'draft' },
+  { id: 'pon.bento_manager_win.02', host: 'pon', event: 'bento_manager_win', jp: { text: 'おきゃくさん、にこにこ！　ポン！', kana: 'おきゃくさん、にこにこ！　ポン！', en: 'The customer\'s all smiles! Pon!' }, status: 'draft' },
+  { id: 'pon.bento_manager_win.03', host: 'pon', event: 'bento_manager_win', jp: { text: 'たすかった！　ポンは いま、たべて いるので。', kana: 'たすかった！　ポンは いま、たべて いるので。', en: 'Phew, thanks! I\'m a bit busy eating, you see.' }, status: 'draft' },
+  { id: 'pon.bento_manager_win.04', host: 'pon', event: 'bento_manager_win', jp: { text: 'りっぱな ふくてんちょうです！', kana: 'りっぱな ふくてんちょうです！', en: 'What a fine deputy manager!' }, status: 'draft' },
+  // bento_omotenashi_win
+  { id: 'pon.bento_omotenashi_win.01', host: 'pon', event: 'bento_omotenashi_win', jp: { text: 'すばらしい おもてなし！', kana: 'すばらしい おもてなし！', en: 'Wonderful hospitality!' }, status: 'draft' },
+  { id: 'pon.bento_omotenashi_win.02', host: 'pon', event: 'bento_omotenashi_win', jp: { text: 'おきゃくさん、うれしそう！', kana: 'おきゃくさん、うれしそう！', en: 'The guest looks happy!' }, status: 'draft' },
+  { id: 'pon.bento_omotenashi_win.03', host: 'pon', event: 'bento_omotenashi_win', jp: { text: 'おもてなしの プロですね！', kana: 'おもてなしの プロですね！', en: 'A real hospitality pro!' }, status: 'draft' },
+  { id: 'pon.bento_omotenashi_win.04', host: 'pon', event: 'bento_omotenashi_win', jp: { text: 'うちの みせ、いい みせでしょう？', kana: 'うちの みせ、いい みせでしょう？', en: 'Ours is a fine shop, isn\'t it?' }, status: 'draft' },
   // bento_vs_intro
   { id: 'pon.bento_vs_intro.01', host: 'pon', event: 'bento_vs_intro', jp: { text: 'いらっしゃいませ！　きょうは キッチンが ふたつ！', kana: 'いらっしゃいませ！　きょうは キッチンが ふたつ！', en: 'Welcome! Tonight there are two kitchens!' }, status: 'draft' },
   { id: 'pon.bento_vs_intro.02', host: 'pon', event: 'bento_vs_intro', jp: { text: 'あかチームと あおチーム、おなじ おきゃくさんを とりあいます！', kana: 'あかチームと あおチーム、おなじ おきゃくさんを とりあいます！', en: 'Red team and blue team, you\'re fighting over the same customers!' }, status: 'draft' },

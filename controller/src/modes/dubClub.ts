@@ -14,6 +14,10 @@
 // offer out. Once taken: no script, a mission and a picture instead. Say it your way, casually; the check is
 // lenient and private, and a model line shows once the take is sent. "Not this time" keeps the script.
 //
+// Mixed rooms: while someone's ad-lib dub is on, everyone else gets a Gallery tile (a reaction, or once a game
+// the curveball). After a good ad-lib, Kana and N5 phones get the gist of the booth's model line; in a small room
+// with nobody at N4, the gist of Fude's own ad-lib on one scene card.
+//
 // A take goes to the room for the TV to play (kept in memory only), or, with "Play my voice from this
 // phone", stays here and this phone plays it when its turn comes.
 
@@ -23,6 +27,8 @@ import type { RoomView } from '../../../shared/src/protocol.js';
 import { MicClip, recordReady, uploadClip } from '../components/mic.js';
 import { canSpeak, isQuiet, speakBox } from '../components/speak.js';
 import { jpView } from '../components/jp.js';
+import { roleOffer } from '../components/roleOffer.js';
+import { boothGist, galleryTile } from '../components/gallery.js';
 import { isSoundOff } from '../components/voice.js';
 import { holdButton, waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
@@ -334,18 +340,20 @@ function adlibOffer(ctx: Ctx, me: Me): HTMLElement | null {
   if (!ad || me.sent) return null;
   const send = (accept: boolean) => void ctx.send({ kind: 'adlib', accept, round: ctx.game.round });
   if (ad.state === 'accepted') return h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Give me the script after all');
-  return h(
-    'div',
-    { class: 'dc-offer-box' },
-    h('p', { class: 'hint' }, '🎬 Fude-kantoku: “No script this time. Make it yours!”'),
-    h('p', { class: 'dc-offer-what' }, h('span', { 'aria-hidden': 'true' }, `${ad.emoji} `), `Ad-lib instead: ${ad.mission}`),
-    h(
-      'div',
-      { class: 'dc-offer' },
-      h('button', { type: 'button', class: 'secondary', onclick: () => send(true) }, '🎙 Take it: ad-lib'),
-      h('button', { type: 'button', class: 'secondary', onclick: () => send(false) }, 'Not this time'),
-    ),
-  );
+  return roleOffer({
+    kicker: '🎬 Fude-kantoku: “No script this time. Make it yours!”',
+    pitch: `${ad.emoji} Ad-lib instead: ${ad.mission}`,
+    take: '🎙 Take it: ad-lib',
+    onTake: () => send(true),
+    onDecline: () => send(false),
+  });
+}
+
+/** After "mission missed": one of the mission's words, so they know what to aim for. */
+function aimFor(me: Me): HTMLElement | null {
+  const w = me.adlib?.hint;
+  if (!w) return null;
+  return h('p', { class: 'hint dc-aim' }, '🎯 Try to get this word in: ', h('span', { lang: 'ja' }, w));
 }
 
 function adlibVerdict(me: Me): string | null {
@@ -398,6 +406,7 @@ function pickScreen(ctx: Ctx, me: Me): HTMLElement {
     'div',
     { class: 'screen' },
     sceneCard(game),
+    boothGist(me.gist),
     h('p', { class: 'dc-label' }, adlibbing(me) ? '🎙 Ad-lib: your mission' : 'Your line'),
     lineBox(me),
     missionBox(me),
@@ -451,7 +460,9 @@ function rehearseScreen(ctx: Ctx, me: Me): HTMLElement {
     lineBox(me),
     missionBox(me),
     reh ? marks(me) : null,
-    verdict ? h('p', { class: sim >= 0.5 ? 'dc-ok' : 'dc-warn' }, verdict) : h('p', { class: 'hint' }, ad ? 'First just say it, no acting yet, the way you’d talk to a friend. Only you see how it went.' : 'Just the words, clearly. Only you see how it went.'),
+    verdict ? h('p', { class: sim >= 0.5 ? 'dc-ok' : 'dc-warn' }, verdict) : null,
+    ad ? aimFor(me) : null,
+    verdict ? null : h('p', { class: 'hint' }, ad ? 'First just say it, no acting yet, the way you’d talk to a friend. Only you see how it went.' : 'Just the words, clearly. Only you see how it went.'),
     again
       ? speakBox({ label: ad ? 'Hold and say it' : 'Hold and read the line', speechOnly: true, autoSend: true, onSend: (utterance) => (setStep(ctx, { retry: false }), void send({ kind: 'rehearse', utterance, round: game.round })) })
       : null,
@@ -577,10 +588,11 @@ function screeningScreen(ctx: Ctx, me: Me): HTMLElement {
     kids.push(
       h('p', { class: 'big' }, '🎬 Your dub is on!'),
       now.local ? h('p', { class: 'hint' }, 'Playing from this phone: hold it up!') : null,
-      now.step === 'reveal' && now.card ? h('p', { class: 'dc-ok' }, `${now.guessedBy.length} of ${now.guessers} read your card.`) : h('p', { class: 'hint' }, 'Keep a straight face…'),
+      (now.step === 'reveal' || now.step === 'booth') && now.card ? h('p', { class: 'dc-ok' }, `${now.guessedBy.length} of ${now.guessers} read your card.`) : h('p', { class: 'hint' }, 'Keep a straight face…'),
+      now.step === 'booth' ? h('p', { class: 'dc-ok' }, '🎬 カット！ Fude-kantoku liked that ad-lib.') : null,
     );
   } else {
-    const revealed = now.step === 'reveal' && now.card;
+    const revealed = (now.step === 'reveal' || now.step === 'booth') && now.card;
     const right = revealed && me.guess === now.card!.id;
     kids.push(
       h('p', { class: 'dc-now' }, `${nameOf(view, now.playerId)}’s dub · ${now.index + 1} of ${now.count}`),
@@ -614,8 +626,8 @@ function screeningScreen(ctx: Ctx, me: Me): HTMLElement {
           : null,
     );
   }
-  kids.push(hearts(ctx, me));
-  if (isVip && now && !now.skipped && now.step !== 'reveal')
+  kids.push(boothGist(me.gist), galleryTile(me.gallery, (pick) => void send({ kind: 'gallery', pick, round: game.round })), hearts(ctx, me));
+  if (isVip && now && !now.skipped && now.step !== 'reveal' && now.step !== 'booth')
     kids.push(h('details', { class: 'dc-vip' }, h('summary', {}, 'VIP: skip this dub'), holdButton('🚫 Skip it', 'secondary', () => void send({ kind: 'skip', actorId: now.playerId, round: game.round }))));
   return h('div', { class: 'screen' }, ...kids);
 }
@@ -638,6 +650,7 @@ function notesScreen(ctx: Ctx, me: Me): HTMLElement {
         : h('li', {}, n.checked ? (pct === null ? '🗣 No plain read this time' : `🗣 Plain read: ${pct}% of the sounds came through`) : '🗣 No speech check tonight'),
       n.spoiler ? h('li', { class: 'dc-warn' }, '🤐 You said your card out loud: no acting points this time.') : null,
     ),
+    adlibbing(me) ? aimFor(me) : null,
     marks(me),
     modelBox(me),
     h('p', { class: 'dc-total' }, `+${n.total}`),

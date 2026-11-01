@@ -21,6 +21,7 @@ import type { RoomView } from '../../../shared/src/protocol.js';
 import { bellTonic, hushFor } from '../music/index.js';
 import { drawRuler, type Knot } from '../neck.js';
 import { flipChord, flipNote } from '../music/sfx.js';
+import { boothStrip, galleryBubbles } from '../components/mixedRoom.js';
 import type { StageMode } from './types.js';
 
 /** What the round asks, in the words players say: なんじ？ for times, いくら？ for prices … */
@@ -354,19 +355,20 @@ function neck(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement 
 function foot(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement {
   const d = game.defence;
   const rp = game.replay;
+  // The Gallery's reactions to the N4 defence, while it's on.
+  const bubbles = view.phase === 'encore' ? galleryBubbles(game.gallery) : null;
   // The commentary booth: the N4 defence's line again, its ので lit, and one line of colour (Nobiko-san says it).
-  if (view.phase === 'encore' && rp)
-    return h(
-      'div',
-      { class: 'nb-foot nb-replay' },
-      h('p', { class: 'nb-replay-tag' }, `📺 REPLAY · ${nameOf(view, rp.playerId)}`),
-      h('p', { class: 'nb-replay-line', lang: 'ja' }, '「', rp.lit.before, rp.lit.node ? h('mark', {}, rp.lit.node) : null, rp.lit.after, '」'),
-      h('p', { class: 'nb-replay-note' }, rp.note),
-    );
+  if (view.phase === 'encore' && rp) return h('div', { class: 'nb-foot nb-replay' }, boothStrip(rp, nameOf(view, rp.playerId), rp.holdKey), bubbles);
+  // The host stand-in: Nobiko-san's own model defence, shown while she says it (timed from the phase start, so a
+  // redraw picks the fade up where it was).
+  const si = game.standIn;
+  if (view.phase === 'reveal' && si)
+    return h('div', { class: 'nb-foot nb-replay nb-standin', style: `animation-duration: ${si.ms}ms; animation-delay: ${Math.round(si.atMs - elapsed)}ms` }, boothStrip(si, 'Nobiko-san'));
   if (view.phase === 'encore' && d)
     return h(
       'div',
       { class: 'nb-foot' },
+      bubbles,
       d.n4
         ? h('p', { class: 'nb-defence-call' }, `🎤 ${nameOf(view, d.playerId)}, why does your card go there?`, d.frame ? h('small', { lang: 'ja' }, ` 「${d.frame.text}」`) : null)
         : h('p', { class: 'nb-defence-call' }, `🎤 ${nameOf(view, d.playerId)}, your card moved the most. Why is it there?`, h('small', { lang: 'ja' }, ' 「〜からです。」')),

@@ -68,7 +68,7 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   };
 }
 
-const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect', 'bento_perfect', 'bento_bake', 'hajime_known', 'hajime_pon_win', 'happyokai_great', 'happyokai_stall', 'happyokai_vote', 'late_alibi_match', 'late_booth']);
+const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'train_announcer_react', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect', 'bento_perfect', 'bento_bake', 'hajime_known', 'hajime_pon_win', 'happyokai_great', 'happyokai_stall', 'happyokai_vote', 'late_alibi_match', 'late_booth']);
 const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'narabete_knot', 'bento_leave', 'bento_static', 'hajime_truth', 'happyokai_mishap_blackout', 'happyokai_mishap_wrong', 'happyokai_mishap_graph', 'happyokai_mishap_upside', 'happyokai_mishap_message', 'late_alibi_miss', 'late_stand_in', 'late_misread']);
 
 /** Twists: a steal, an upset, a reveal nobody saw coming. Bigger than a flinch. */

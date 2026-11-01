@@ -334,6 +334,15 @@ export const fudeLines: HostLine[] = [
   // dub_skip
   { id: 'fude.dub_skip.01', host: 'fude', event: 'dub_skip', jp: { text: 'カット！　つぎに いきましょう。', kana: 'カット！　つぎに いきましょう。', en: 'Cut! Let’s move on.' }, status: 'draft' },
   { id: 'fude.dub_skip.02', host: 'fude', event: 'dub_skip', jp: { text: 'この シーンは… また こんど！', kana: 'この シーンは… また こんど！', en: 'This scene… another time!' }, status: 'draft' },
+  // dub_cut: an ad-lib landed, before the booth replays it
+  { id: 'fude.dub_cut.01', host: 'fude', event: 'dub_cut', jp: { text: 'カット！　いい アドリブ！　シュッ！', kana: 'カット！　いい アドリブ！　シュッ！', en: 'Cut! Great ad-lib!' }, status: 'draft' },
+  { id: 'fude.dub_cut.02', host: 'fude', event: 'dub_cut', jp: { text: 'カット！　{name}さん、さいこう！', kana: 'カット！　{name}さん、さいこう！', en: 'Cut! {name}, brilliant!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'fude.dub_cut.03', host: 'fude', event: 'dub_cut', jp: { text: 'カット！　いまの、つかおう！', kana: 'カット！　いまの、つかおう！', en: 'Cut! We’re using that one!' }, status: 'draft' },
+  { id: 'fude.dub_cut.04', host: 'fude', event: 'dub_cut', jp: { text: 'カット！　フデ、ないちゃう！', kana: 'カット！　フデ、ないちゃう！', en: "Cut! Fude's gonna cry!" }, status: 'draft' },
+  // dub_booth: the commentary booth: he says the scene's model ad-lib line himself, as is (never the player's take)
+  { id: 'fude.dub_booth.01', host: 'fude', event: 'dub_booth', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // dub_standin: the host stand-in, a small room with no N4 player: he ad-libs the scene's model line himself, as is
+  { id: 'fude.dub_standin.01', host: 'fude', event: 'dub_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // dub_notes
   { id: 'fude.dub_notes.01', host: 'fude', event: 'dub_notes', jp: { text: 'こえの しゅつえん！　はくしゅ！', kana: 'こえの しゅつえん！　はくしゅ！', en: 'Our voice cast! A round of applause!' }, status: 'draft' },
   { id: 'fude.dub_notes.02', host: 'fude', event: 'dub_notes', jp: { text: 'きょうの スターは {name}さん！', kana: 'きょうの スターは {name}さん！', en: 'Today’s star is {name}!' }, slots: ['{name}'], status: 'draft' },

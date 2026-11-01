@@ -217,8 +217,8 @@ export const stationAnnouncement: LastTrainMinigame = {
       prompt: { text: 'あなたは駅員です。電車のドアが閉まります。お客さんに言ってください。', kana: 'あなたはえきいんです。でんしゃのドアがしまります。おきゃくさんにいってください。', en: 'You\'re the station staff. The train doors are closing. Warn the passengers.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。', ''], ['電車', 'でんしゃ'], ['のドアが', ''], ['閉', 'し'], ['まります。お', ''], ['客', 'きゃく'], ['さんに', ''], ['言', 'い'], ['ってください。', '']] },
       visual: '📣 Doors closing: tell them to take care.',
       accepted: ['ドアがしまりますごちゅういください', 'ドアがしまりますのでごちゅういください', 'ドアがしまりますおきをつけください', 'ドアがしまりますのでおきをつけください', 'ごちゅういくださいドアがしまります'],
-      model: { text: 'ドアが閉まります。ご注意ください。', kana: 'ドアがしまります。ごちゅういください。', en: 'The doors are closing. Please take care.', furigana: [['ドアが', ''], ['閉', 'し'], ['まります。ご', ''], ['注意', 'ちゅうい'], ['ください。', '']] },
-      hint: 'Say what is happening (ドアが しまります), then the polite warning: ご + ちゅうい + ください.',
+      model: { text: 'ドアが閉まります。お気をつけください。', kana: 'ドアがしまります。おきをつけください。', en: 'The doors are closing. Please take care.', furigana: [['ドアが', ''], ['閉', 'し'], ['まります。お', ''], ['気', 'き'], ['をつけください。', '']] },
+      hint: 'Say what is happening (ドアが しまります), then the polite warning: お + きを つけ + ください.',
       timeLimit: 15,
     },
     {

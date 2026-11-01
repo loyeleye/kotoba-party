@@ -9,7 +9,7 @@ import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import { MODES, noFit, speakersIn, surprisePool } from '../../shared/src/modes/registry.js';
 import { playRoulette } from '../../shared/src/roulette.js';
-import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type ModeId, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
+import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type ModeId, type PlayerView, type RoomView, type WaitAnswer } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService, speechReady } from './components/mic.js';
 import { getTalkMode, isTalking, onTalkEnd, setQuiet, setSpeakLevel, setTalkMode, speakBox } from './components/speak.js';
@@ -87,6 +87,9 @@ const ERRORS: Record<string, string> = {
   // Happyōkai!
   'own-talk': 'Vote for someone else’s talk.',
   'pick-a-title': 'Pick a title first.',
+  'already-swapped': 'You’ve already swapped a title this turn.',
+  'make-it-ta': 'Put the verb in the plain た form: のぼる → のぼった (not のぼりました).',
+  'make-it-te': 'Put the verb in the て form: たべる → たべて (not たべます).',
   'say-something': 'Say something about this slide first (or wait a moment).',
   'pick-a-question': 'Choose a question first.',
   'question-chosen': 'A question was already chosen.',
@@ -868,6 +871,18 @@ function savedNote(): HTMLElement | null {
   return a && session?.account ? h('p', { class: 'acct-saved' }, `✓ Saved to ${a.name}’s progress`) : null;
 }
 
+/** Mixed rooms: one tap for players below N4, so playtests learn whether the N4 roles made anyone wait. */
+function waitCheck(answer: WaitAnswer | null): HTMLElement {
+  const opts: [WaitAnswer, string][] = [['no', 'No'], ['bit', 'A bit'], ['yes', 'Yes']];
+  return h(
+    'div',
+    { class: 'wait-check' },
+    h('p', {}, 'Quick one: was there a part of that game where you were just waiting?'),
+    h('div', { class: 'wait-check-btns' }, opts.map(([a, label]) => h('button', { type: 'button', class: `secondary${answer === a ? ' picked' : ''}`, 'aria-pressed': String(answer === a), onclick: () => void command({ type: 'waitCheck', answer: a }) }, label))),
+    answer ? h('p', { class: 'hint' }, 'Thanks! That helps make the games better.') : null,
+  );
+}
+
 function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   const r = view.recap;
   const standings = r?.standings ?? [];
@@ -919,6 +934,7 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
       standings.map((s, j) => h('li', { class: s.playerId === me.id ? 'me-row' : '' }, h('span', {}, r?.coop ? s.name : s.score > 0 ? `${places.filter((p) => p === places[j]).length > 1 ? '=' : ''}${places[j]}. ${s.name}` : `–  ${s.name}`), h('span', { class: 'pts' }, s.score))),
     ),
     r?.awards.filter((a) => a.playerId === me.id).map((a) => h('p', { class: 'award' }, '🏆 ', h('span', { lang: 'ja' }, awardTitle(a.title)), ` · ${a.en}`)),
+    r?.waitCheck ? waitCheck(r.waitCheck.answer) : null,
     r?.phrasebook.length && view.mode ? tonightBox(r.phrasebook, view.mode, me.level) : null,
     r?.phrasebook.length
       ? h(

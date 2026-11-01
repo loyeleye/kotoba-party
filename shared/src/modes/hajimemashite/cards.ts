@@ -11,17 +11,27 @@
 // The N4 deck (goal 4.3, experiences, tries and oops): ＿た ことが あります, ＿て しまいました,
 // ＿て みました and ＿て みたい. N4 guests draw these first; everyone else never sees them. Kids and
 // Cheeky rooms add their own N4 cards (Ladi's call), which their N4 guests draw before the shared ones.
+//
+// The deck's verb cards (`conj`) make the player conjugate: the blank is a verb phrase, its tiles show
+// the dictionary form (ふじさんに のぼる) under the card's `cue` (＿た ことが あります), and the line is
+// said with the た or て form (ふじさんに のぼった ことが あります). A tile's kana is the conjugated phrase,
+// so the TV, twins, the truth and every check use the form the line needs; `dict` is only the prompt.
 
 import type { JpText, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 
 export interface Tile {
   id: string;
-  /** The blank's word, as the TV shows it. */
+  /** The blank's word, as the TV shows it (on a verb card, the conjugated phrase: ふじさんに のぼった). */
   kana: string;
   en: string;
   emoji: string;
+  /** A verb card's tile: the phrase in the dictionary form, which is what the player is shown (ふじさんに のぼる). */
+  dict?: string;
 }
+
+/** A verb card's form: ＿た (ta) or ＿て (te). */
+export type Conj = 'ta' | 'te';
 
 export interface IntroCard {
   id: string;
@@ -36,6 +46,14 @@ export interface IntroCard {
   enThird: string;
   /** N4 cards go only to N4 guests. A chunk card is N4 grammar used as a fixed phrase. */
   level: 'n5' | 'n4';
+  /**
+   * A verb card: the blank takes the た or て form of its tile's dictionary-form phrase. `first` and
+   * `third` take the conjugated phrase; `cue` and `cueThird` are the same frames as the player sees them,
+   * with ＿た or ＿て for the verb they conjugate.
+   */
+  conj?: Conj;
+  cue?: string;
+  cueThird?: string;
   /** The N4 frames the card's lines practise, by frame id (N4 cards). */
   frames?: readonly string[];
   /** Set on the N4 deck's cards (all cards are draft until the fluent check). */
@@ -55,6 +73,11 @@ function tiles(card: string, rows: [string, string, string][]): Tile[] {
   return rows.map(([kana, en, emoji], i) => ({ id: `${card}.${String(i + 1).padStart(2, '0')}`, kana, en, emoji }));
 }
 const ponTile = (card: string, kana: string, en: string): Tile => ({ id: `${card}.pon`, kana, en, emoji: '🍃' });
+/** A verb card's tiles from [dictionary form, conjugated, en, emoji] rows. */
+function verbTiles(card: string, rows: [string, string, string, string][]): Tile[] {
+  return rows.map(([dict, kana, en, emoji], i) => ({ id: `${card}.${String(i + 1).padStart(2, '0')}`, kana, en, emoji, dict }));
+}
+const verbPon = (card: string, dict: string, kana: string, en: string): Tile => ({ ...ponTile(card, kana, en), dict });
 
 export const INTRO_CARDS: IntroCard[] = [
   {
@@ -341,6 +364,87 @@ export const INTRO_CARDS: IntroCard[] = [
     ]),
     pon: ponTile('mitai', 'にんげんの ふり', 'passing as a human'),
   },
+  // ---- N4 verb cards: the blank is a verb phrase, given in the dictionary form; whoever says the line
+  // (an N4 introducer, the guest at the truth) makes the た or て form themselves. The tile's kana is the
+  // conjugated form, which is what the TV shows and what the check listens for. ----
+  {
+    id: 'shita-koto',
+    title: { text: 'した ことが ある こと', kana: 'した ことが ある こと', en: "Something you've done" },
+    first: '＿ ことが あります',
+    third: '{name}さんは ＿ ことが あります',
+    cue: '＿た ことが あります',
+    cueThird: '{name}さんは ＿た ことが あります',
+    conj: 'ta',
+    en: "I've ___",
+    enThird: '{name} has ___',
+    level: 'n4',
+    frames: ['ta-koto'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: verbTiles('shita-koto', [
+      ['ふじさんに のぼる', 'ふじさんに のぼった', 'climbed Mount Fuji', '🗻'], ['うまに のる', 'うまに のった', 'ridden a horse', '🐎'],
+      ['ゆきで あそぶ', 'ゆきで あそんだ', 'played in the snow', '⛄'], ['おばけを みる', 'おばけを みた', 'seen a ghost', '👻'],
+      ['テレビに でる', 'テレビに でた', 'been on TV', '📺'], ['きものを きる', 'きものを きた', 'worn a kimono', '👘'],
+      ['すしを つくる', 'すしを つくった', 'made sushi', '🍣'], ['うみで およぐ', 'うみで およいだ', 'swum in the sea', '🌊'],
+      ['にほんに いく', 'にほんに いった', 'been to Japan', '🗾'], ['かぶきを みる', 'かぶきを みた', 'seen kabuki', '🎭'],
+      ['ひこうきで ねる', 'ひこうきで ねた', 'slept on a plane', '✈️'], ['さるに あう', 'さるに あった', 'met a monkey', '🐒'],
+      ['マラソンを はしる', 'マラソンを はしった', 'run a marathon', '🏃'], ['てがみを かく', 'てがみを かいた', 'written a letter', '✉️'],
+      ['おまつりで おどる', 'おまつりで おどった', 'danced at a festival', '🏮'], ['ねこを かう', 'ねこを かった', 'kept a cat', '🐱'],
+    ]),
+    pon: verbPon('shita-koto', 'にんげんに ばける', 'にんげんに ばけた', 'turned into a human'),
+  },
+  {
+    id: 'ukkari',
+    title: { text: 'うっかり して しまった こと', kana: 'うっかり して しまった こと', en: 'Something you did by mistake' },
+    first: 'うっかり ＿ しまいました',
+    third: '{name}さんは うっかり ＿ しまいました',
+    cue: 'うっかり ＿て しまいました',
+    cueThird: '{name}さんは うっかり ＿て しまいました',
+    conj: 'te',
+    en: 'Oops, I ___',
+    enThird: 'Oops, {name} ___',
+    level: 'n4',
+    frames: ['te-shimau'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: verbTiles('ukkari', [
+      ['かぎを なくす', 'かぎを なくして', 'lost the keys', '🔑'], ['でんしゃで ねる', 'でんしゃで ねて', 'fell asleep on the train', '🚃'],
+      ['さいふを おとす', 'さいふを おとして', 'dropped a wallet', '👛'], ['ケーキを ぜんぶ たべる', 'ケーキを ぜんぶ たべて', 'ate the whole cake', '🍰'],
+      ['えきを まちがえる', 'えきを まちがえて', 'got the wrong station', '🚉'], ['かさを わすれる', 'かさを わすれて', 'forgot an umbrella', '☂️'],
+      ['じゅぎょうに おくれる', 'じゅぎょうに おくれて', 'was late for class', '⏰'], ['コーヒーを こぼす', 'コーヒーを こぼして', 'spilled coffee', '☕'],
+      ['スマホを こわす', 'スマホを こわして', 'broke a phone', '📱'], ['しゅくだいを わすれる', 'しゅくだいを わすれて', 'forgot the homework', '📓'],
+      ['バスに おくれる', 'バスに おくれて', 'was late for the bus', '🚌'], ['みちに まよう', 'みちに まよって', 'got lost', '🗺️'],
+      ['ゆびを きる', 'ゆびを きって', 'cut a finger', '🩹'], ['ねぼうする', 'ねぼうして', 'overslept', '😴'],
+      ['パンを やきすぎる', 'パンを やきすぎて', 'burnt the toast', '🍞'], ['ふくを よごす', 'ふくを よごして', 'got clothes dirty', '👕'],
+    ]),
+    pon: verbPon('ukkari', 'しっぽを だす', 'しっぽを だして', 'let the tail show'),
+  },
+  {
+    id: 'nihon-temitai',
+    title: { text: 'にほんで して みたい こと', kana: 'にほんで して みたい こと', en: "Something you'd love to try in Japan" },
+    first: 'にほんで ＿ みたいです',
+    third: '{name}さんは にほんで ＿ みたいそうです',
+    cue: 'にほんで ＿て みたいです',
+    cueThird: '{name}さんは にほんで ＿て みたいそうです',
+    conj: 'te',
+    en: "In Japan I'd love to try ___",
+    enThird: "In Japan {name} would love to try ___",
+    level: 'n4',
+    frames: ['te-miru', 'tai', 'sou-hear'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: verbTiles('nihon-temitai', [
+      ['おんせんに はいる', 'おんせんに はいって', 'getting into a hot spring', '♨️'], ['きものを きる', 'きものを きて', 'wearing a kimono', '👘'],
+      ['しんかんせんに のる', 'しんかんせんに のって', 'riding the bullet train', '🚄'], ['なっとうを たべる', 'なっとうを たべて', 'eating nattō', '🫘'],
+      ['すもうを みる', 'すもうを みて', 'watching sumo', '🤼'], ['ふじさんに のぼる', 'ふじさんに のぼって', 'climbing Mount Fuji', '🗻'],
+      ['カラオケで うたう', 'カラオケで うたって', 'singing karaoke', '🎤'], ['おまつりで おどる', 'おまつりで おどって', 'dancing at a festival', '🏮'],
+      ['ラーメンを つくる', 'ラーメンを つくって', 'making ramen', '🍜'], ['おてらに とまる', 'おてらに とまって', 'staying at a temple', '🛕'],
+      ['にほんごで はなす', 'にほんごで はなして', 'speaking Japanese', '💬'], ['さくらを みる', 'さくらを みて', 'seeing the cherry blossoms', '🌸'],
+      ['ゆかたで あるく', 'ゆかたで あるいて', 'walking about in a yukata', '🎐'], ['おみくじを ひく', 'おみくじを ひいて', 'drawing a fortune slip', '🎋'],
+      ['しかに あう', 'しかに あって', 'meeting the deer', '🦌'], ['ねこカフェに いく', 'ねこカフェに いって', 'going to a cat café', '🐈'],
+    ]),
+    pon: verbPon('nihon-temitai', 'たぬきそばを たべる', 'たぬきそばを たべて', 'eating tanuki soba'),
+  },
   // ---- Kids N4: gentle experiences, tries and oops, for N4 guests in a Kids room ----
   {
     id: 'mita',
@@ -359,7 +463,7 @@ export const INTRO_CARDS: IntroCard[] = [
       ['ラッコ', 'a sea otter', '🦦'], ['フラミンゴ', 'a flamingo', '🦩'], ['カピバラ', 'a capybara', '🦫'], ['ゴリラ', 'a gorilla', '🦍'],
       ['シマウマ', 'a zebra', '🦓'], ['カンガルー', 'a kangaroo', '🦘'], ['シロクマ', 'a polar bear', '🐻‍❄️'], ['カバ', 'a hippo', '🦛'],
     ]),
-    pon: ponTile('mita', 'ユニコーン', 'a unicorn'),
+    pon: ponTile('mita', 'かっぱ', 'a kappa'),
   },
   {
     id: 'koboshita',
@@ -398,6 +502,59 @@ export const INTRO_CARDS: IntroCard[] = [
       ['ケーキ', 'a cake', '🎂'], ['ジャム', 'jam', '🍓'], ['てがみ', 'a letter', '✉'], ['どんぐりの こま', 'an acorn spinning top', '🌰'],
     ]),
     pon: ponTile('tsukutta', 'はっぱの おかね', 'leaf money'),
+  },
+  // Kids N4 verb cards.
+  {
+    id: 'gakkou-ta',
+    title: { text: 'がっこうで した こと', kana: 'がっこうで した こと', en: "Something you've done at school" },
+    first: 'がっこうで ＿ ことが あります',
+    third: '{name}さんは がっこうで ＿ ことが あります',
+    cue: 'がっこうで ＿た ことが あります',
+    cueThird: '{name}さんは がっこうで ＿た ことが あります',
+    conj: 'ta',
+    en: "At school I've ___",
+    enThird: 'At school {name} has ___',
+    level: 'n4',
+    frames: ['ta-koto'],
+    status: 'draft',
+    audiences: KIDS,
+    tiles: verbTiles('gakkou-ta', [
+      ['じゅぎょうで ねる', 'じゅぎょうで ねた', 'fallen asleep in class', '😴'], ['ごはんを おかわりする', 'ごはんを おかわりした', 'had seconds at lunch', '🍚'],
+      ['せんせいを ママと よぶ', 'せんせいを ママと よんだ', 'called the teacher "Mum"', '🙊'], ['ろうかを はしる', 'ろうかを はしった', 'run in the corridor', '🏃'],
+      ['うんどうかいで ころぶ', 'うんどうかいで ころんだ', 'fallen over on sports day', '🏅'], ['こくばんに えを かく', 'こくばんに えを かいた', 'drawn on the blackboard', '🖍️'],
+      ['プールで およぐ', 'プールで およいだ', 'swum in the school pool', '🏊'], ['カエルを つかまえる', 'カエルを つかまえた', 'caught a frog', '🐸'],
+      ['てがみを もらう', 'てがみを もらった', 'got a letter', '💌'], ['たいこを たたく', 'たいこを たたいた', 'played the drum', '🥁'],
+      ['きょうしつで うたう', 'きょうしつで うたった', 'sung in the classroom', '🎶'], ['そうじを サボる', 'そうじを サボった', 'skipped cleaning duty', '🧹'],
+      ['ドッジボールで かつ', 'ドッジボールで かった', 'won at dodgeball', '🏐'], ['うさぎに えさを やる', 'うさぎに えさを やった', 'fed the rabbits', '🐰'],
+      ['おべんとうを わすれる', 'おべんとうを わすれた', 'forgotten a packed lunch', '🍱'], ['ともだちと けんかする', 'ともだちと けんかした', 'had a fight with a friend', '😤'],
+    ]),
+    pon: verbPon('gakkou-ta', 'はっぱで ばける', 'はっぱで ばけた', 'shapeshifted with a leaf'),
+  },
+  {
+    id: 'ouchi-te',
+    title: { text: 'おうちで やって しまった こと', kana: 'おうちで やって しまった こと', en: 'Something you did at home, oops' },
+    first: 'おうちで ＿ しまいました',
+    third: '{name}さんは おうちで ＿ しまいました',
+    cue: 'おうちで ＿て しまいました',
+    cueThird: '{name}さんは おうちで ＿て しまいました',
+    conj: 'te',
+    en: 'At home I (oops) ___',
+    enThird: 'At home {name} (oops) ___',
+    level: 'n4',
+    frames: ['te-shimau'],
+    status: 'draft',
+    audiences: KIDS,
+    tiles: verbTiles('ouchi-te', [
+      ['おさらを わる', 'おさらを わって', 'broke a plate', '🍽️'], ['ソファで ねる', 'ソファで ねて', 'fell asleep on the sofa', '🛋️'],
+      ['おやつを ぜんぶ たべる', 'おやつを ぜんぶ たべて', 'ate all the snacks', '🍪'], ['かべに えを かく', 'かべに えを かいて', 'drew on the wall', '🖍️'],
+      ['ジュースを こぼす', 'ジュースを こぼして', 'spilled juice', '🧃'], ['ねこの しっぽを ふむ', 'ねこの しっぽを ふんで', "stepped on the cat's tail", '🐈'],
+      ['ぬいぐるみを なくす', 'ぬいぐるみを なくして', 'lost a cuddly toy', '🧸'], ['おふろで ねる', 'おふろで ねて', 'fell asleep in the bath', '🛁'],
+      ['テレビを こわす', 'テレビを こわして', 'broke the TV', '📺'], ['おとうとと けんかする', 'おとうとと けんかして', 'had a fight with a little brother', '😤'],
+      ['ゲームを ずっと する', 'ゲームを ずっと して', 'played games for hours', '🎮'], ['かみを じぶんで きる', 'かみを じぶんで きって', 'did a DIY haircut', '✂️'],
+      ['でんきを けすのを わすれる', 'でんきを けすのを わすれて', 'forgot to turn off the light', '💡'], ['いぬの さんぽを わすれる', 'いぬの さんぽを わすれて', 'forgot to walk the dog', '🐕'],
+      ['あさ ねぼうする', 'あさ ねぼうして', 'overslept', '⏰'], ['ママの くつを はく', 'ママの くつを はいて', "put on Mum's shoes", '👠'],
+    ]),
+    pon: verbPon('ouchi-te', 'しっぽを だす', 'しっぽを だして', 'let the tail show'),
   },
   // ---- Cheeky: written for everyone in the room (both ex tiles, both partners' homes) ----
   {
@@ -486,7 +643,7 @@ export const INTRO_CARDS: IntroCard[] = [
       ['ピザや', 'a pizza place', '🍕'], ['おすしや', 'a sushi place', '🍣'], ['ラジオきょく', 'a radio station', '📻'], ['はつこいの ひと', 'my first love', '💘'],
       ['いもうと', 'my little sister', '👧'], ['おとうと', 'my little brother', '👦'], ['ルームメイト', 'my flatmate', '🛋'], ['うらないし', 'a fortune-teller', '🔮'],
     ]),
-    pon: ponTile('denwashita', 'ポン', 'Pon'),
+    pon: ponTile('denwashita', 'ポンの おかあさん', "Pon's mum"),
   },
   {
     id: 'neta',
@@ -524,7 +681,60 @@ export const INTRO_CARDS: IntroCard[] = [
       ['おばけやしき', 'a haunted house', '👻'], ['どうぶつえん', 'the zoo', '🦒'], ['ホテルの バー', 'a hotel bar', '🍸'], ['ふじさん', 'Mount Fuji', '🗻'],
       ['ラーメンや', 'a ramen shop', '🍜'], ['ゲームセンター', 'an arcade', '🕹'], ['うみ', 'the seaside', '🏖'], ['パリ', 'Paris', '🗼'],
     ]),
-    pon: ponTile('detemitai', 'たぬきの むら', 'the tanuki village'),
+    pon: ponTile('detemitai', 'まんげつの やま', 'a mountain under the full moon'),
+  },
+  // Cheeky N4 verb cards.
+  {
+    id: 'nomikai-ta',
+    title: { text: 'のみかいで した こと', kana: 'のみかいで した こと', en: "Something you've done at a drinking party" },
+    first: 'のみかいで ＿ ことが あります',
+    third: '{name}さんは のみかいで ＿ ことが あります',
+    cue: 'のみかいで ＿た ことが あります',
+    cueThird: '{name}さんは のみかいで ＿た ことが あります',
+    conj: 'ta',
+    en: "At a drinking party I've ___",
+    enThird: 'At a drinking party {name} has ___',
+    level: 'n4',
+    frames: ['ta-koto'],
+    status: 'draft',
+    audiences: CHEEKY,
+    tiles: verbTiles('nomikai-ta', [
+      ['ぶちょうと おどる', 'ぶちょうと おどった', 'danced with the boss', '🕺'], ['トイレで ねる', 'トイレで ねた', 'fallen asleep in the toilet', '🚽'],
+      ['くつを なくす', 'くつを なくした', 'lost a shoe', '👞'], ['カラオケで なく', 'カラオケで ないた', 'cried at karaoke', '😭'],
+      ['さいふを わすれる', 'さいふを わすれた', 'forgotten a wallet', '👛'], ['ひとりで ぜんぶ はらう', 'ひとりで ぜんぶ はらった', 'paid for everyone', '💸'],
+      ['しゅうでんを のがす', 'しゅうでんを のがした', 'missed the last train', '🚃'], ['テーブルで おどる', 'テーブルで おどった', 'danced on the table', '💃'],
+      ['ビールを こぼす', 'ビールを こぼした', 'spilled beer', '🍺'], ['いきなり うたう', 'いきなり うたった', 'burst into song', '🎤'],
+      ['ネクタイを あたまに まく', 'ネクタイを あたまに まいた', 'worn a tie as a headband', '👔'], ['ひみつを はなす', 'ひみつを はなした', 'told a secret', '🤫'],
+      ['タクシーで ねる', 'タクシーで ねた', 'fallen asleep in a taxi', '🚕'], ['ウーロンちゃで よう', 'ウーロンちゃで よった', 'got drunk on oolong tea', '🍵'],
+      ['プロポーズする', 'プロポーズした', 'proposed', '💍'], ['はだしで かえる', 'はだしで かえった', 'gone home barefoot', '🦶'],
+    ]),
+    pon: verbPon('nomikai-ta', 'はっぱで はらう', 'はっぱで はらった', 'paid with leaves'),
+  },
+  {
+    id: 'ichido-temitai',
+    title: { text: 'いちど して みたい こと', kana: 'いちど して みたい こと', en: "Something you'd love to try just once" },
+    first: 'いちどで いいから ＿ みたいです',
+    third: '{name}さんは いちどで いいから ＿ みたいそうです',
+    cue: 'いちどで いいから ＿て みたいです',
+    cueThird: '{name}さんは いちどで いいから ＿て みたいそうです',
+    conj: 'te',
+    en: "Just once, I'd love to try ___",
+    enThird: "Just once, {name} would love to try ___",
+    level: 'n4',
+    frames: ['te-miru', 'tai', 'sou-hear'],
+    status: 'draft',
+    audiences: CHEEKY,
+    tiles: verbTiles('ichido-temitai', [
+      ['かいしゃを ずるやすみする', 'かいしゃを ずるやすみして', 'pulling a sickie', '🤒'], ['ぶちょうに いいかえす', 'ぶちょうに いいかえして', 'talking back to the boss', '🗯️'],
+      ['ホストクラブに いく', 'ホストクラブに いって', 'going to a host club', '🥂'], ['キャバクラに いく', 'キャバクラに いって', 'going to a hostess bar', '🍾'],
+      ['パジャマで すごす', 'パジャマで すごして', 'spending all day in pyjamas', '🛌'], ['ヘリで しゅっきんする', 'ヘリで しゅっきんして', 'commuting by helicopter', '🚁'],
+      ['たからくじを あてる', 'たからくじを あてて', 'winning the lottery', '🎰'], ['まいにち ひるねする', 'まいにち ひるねして', 'napping every day', '😪'],
+      ['ハワイで けっこんする', 'ハワイで けっこんして', 'getting married in Hawaii', '🌺'], ['ひとりで やきにくに いく', 'ひとりで やきにくに いって', 'going for barbecue alone', '🥩'],
+      ['ケーキを ワンホール たべる', 'ケーキを ワンホール たべて', 'eating a whole cake', '🎂'], ['ぶちょうの せきに すわる', 'ぶちょうの せきに すわって', "sitting in the boss's chair", '🪑'],
+      ['リムジンに のる', 'リムジンに のって', 'riding in a limo', '🚘'], ['メイドカフェで はたらく', 'メイドカフェで はたらいて', 'working at a maid café', '🎀'],
+      ['マッチングアプリを する', 'マッチングアプリを して', 'using a dating app', '📱'], ['ひしょを やとう', 'ひしょを やとって', 'hiring a secretary', '🗂️'],
+    ]),
+    pon: verbPon('ichido-temitai', 'たぬきの おうさまに なる', 'たぬきの おうさまに なって', 'becoming the tanuki king'),
   },
 ];
 
@@ -547,6 +757,16 @@ export function cardsFor(audience: Audience, level: 'kana' | 'n5' | 'n4'): Intro
 
 /** Cheeky cards (and every card in a Kids room) take tiles only from the tanuki: no typed lies about a real person there. */
 export const tilesOnly = (card: IntroCard, audience: Audience): boolean => audience === 'kids' || (card.audiences.length === 1 && card.audiences[0] === 'cheeky');
+
+/**
+ * Does a typed verb phrase end in the card's plain form? た: た, or だ after ん/い (よんだ, およいだ), not
+ * the polite ました/でした. て: て, or で after ん/い (よんで, およいで), not まして/でして, and not a
+ * particle で (うみで). Trailing spaces and punctuation are ignored.
+ */
+export const endsInForm = (word: string, conj: Conj): boolean => {
+  const w = word.replace(/[\s　。！？!?]+$/, '');
+  return conj === 'ta' ? /(た|[んい]だ)$/.test(w) && !/(ました|でした)$/.test(w) : /(て|[んい]で)$/.test(w) && !/(まして|でして)$/.test(w);
+};
 
 /** Fills a frame: ＿ with the word, {name} with the guest's name, and a 。 at the end. */
 export function fillFrame(frame: string, word: string, name = ''): string {

@@ -21,10 +21,15 @@
 //
 // With an N4 player in the room, each shift also offers the N4 hard roles (hardRoles.ts): the deputy manager, who
 // handles complaints and special orders in keigo, and the おもてなし shift, an order-taker who looks after
-// each guest. They ride on the same shift; nobody else's part or pay changes.
+// each guest. They ride on the same shift. A deputy manager doesn't take ordinary orders (unless they're alone),
+// and a complaint's fix that lands wins back half the tips the box lost. Mixed rooms (mixedRoom.ts): the first
+// line of the shift the deputy manager lands to a customer gets the commentary booth's replay on the TV and a
+// Gallery tile on every other phone; in a 1–2-player room with nobody at N4, Pon plays the deputy manager once,
+// on the first shift's title card.
 
 import type { Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { gistFor, hostStandsIn, pickGallery, type Commentary } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type ModePlayer, type MoveResult } from '../mode.js';
 import { COUNTS, countWord, KANJI_SPELLINGS, customerOf, customersFor, FOODS, foodOf, MAX_COUNT, RIDDLE_EN, RIDDLES, type Customer, type Food, type JpLine } from './menu.js';
 import {
@@ -33,9 +38,11 @@ import {
   blankHardRound,
   closeOffers,
   expireIncidents,
+  galleryOpen,
   hardView,
   hardWakeTimes,
   hostSays,
+  landed,
   managerSays,
   maybeComplaint,
   maybeSpecial,
@@ -44,6 +51,8 @@ import {
   releaseHard,
   requestDone,
   rolesFor,
+  standInBooth,
+  type Booth,
   type HardRound,
   type HardState,
   type HardView,
@@ -74,6 +83,8 @@ export const LINGER_MS = 2_600;
 export const AJIMI_MS = 6_000;
 
 export const DURATIONS = { intro: 14_000, prompt: 8_000, score: 12_000 } as const;
+/** The host stand-in comes this long into the first shift's title card (its line is ≤ 7 s, inside the card's 8 s). */
+export const STAND_IN_AT_MS = 2_500;
 
 export const ROUND_INFO = [
   { ja: 'ランチラッシュ', en: 'Lunch Rush', what: 'Plain orders: a food and how many.' },
@@ -175,6 +186,8 @@ export interface BentoState {
   hard?: HardState;
   /** The server's clock at the mode's last call (see stampClock). */
   clock?: number;
+  /** A 1–2-player room with nobody at N4: Pon plays the deputy manager once, on this shift's title card. */
+  standIn?: Booth & { round: number; ask: JpLine };
 }
 
 // ---- view ----
@@ -288,6 +301,11 @@ export interface BentoView {
   vs?: { myTeam: number | null; teams: VsTeamView[]; winner: number | null };
   /** Co-op, once the room has had an N4 player: the manager's desk and the おもてなし guests. */
   hard?: HardView;
+  /**
+   * The host stand-in (1–2 players, nobody at N4), on the first shift's title card: Pon plays the deputy manager
+   * for one line. `gist` is this phone's, at its level (Kana and N5 only).
+   */
+  standIn?: { ask: JpLine; line: { text: string; kana: string; en: string }; lit: Commentary['lit']; note: string; gist: ReturnType<typeof gistFor> };
 }
 
 export type BentoMove =
@@ -304,7 +322,9 @@ export type BentoMove =
   | { kind: 'role'; accept: boolean }
   | { kind: 'manager'; incidentId: string; utterance?: Utterance; skip?: boolean; peeked?: boolean }
   | { kind: 'request-done'; incidentId: string }
-  | { kind: 'omotenashi'; visitId: string; utterance?: Utterance; skip?: boolean; peeked?: boolean };
+  | { kind: 'omotenashi'; visitId: string; utterance?: Utterance; skip?: boolean; peeked?: boolean }
+  // Mixed rooms: a tap on this phone's Gallery tile (a reaction id, or the curveball's kana).
+  | { kind: 'gallery'; pick: string };
 
 // ---- helpers ----
 
@@ -583,7 +603,10 @@ function arrive(s: BentoState, r: Round, at: number, ctx: ModeContext): void {
   const players = ctx.players();
   if (!players.length) return;
   const customer = pickCustomer(s, r, ctx);
-  const taker = nextTaker(s, r, players);
+  // The deputy manager doesn't take ordinary orders while holding the seat, unless nobody else can.
+  const manager = r.hard?.manager;
+  const takers = manager && players.length > 1 ? players.filter((p) => p.id !== manager) : players;
+  const taker = nextTaker(s, r, takers);
   const order = makeOrder(r.index, r.menu, customer, taker.level, ctx.random);
   const patience = patienceFor(order.lines, order.rush, players.length);
   r.visits.push({
@@ -926,8 +949,11 @@ export function shopAwards(s: Shop, ctx: ModeContext): Award[] {
   return out;
 }
 
-/** The N4 hard roles' moves: the manager's lines, a station seeing to a request, the おもてなし host's lines. */
-function hardMove(r: Round, hr: HardRound, playerId: string, raw: Record<string, unknown>, ctx: ModeContext): MoveResult {
+/**
+ * The N4 hard roles' moves: the manager's lines, a station seeing to a request, the おもてなし host's lines, and
+ * a tap on a Gallery tile.
+ */
+function hardMove(s: BentoState, r: Round, hr: HardRound, playerId: string, raw: Record<string, unknown>, ctx: ModeContext): MoveResult {
   const u = raw.skip === true ? null : utteranceOk(raw.utterance) ? raw.utterance : undefined;
   const peeked = raw.peeked === true;
   switch (raw.kind) {
@@ -935,7 +961,11 @@ function hardMove(r: Round, hr: HardRound, playerId: string, raw: Record<string,
       const inc = hr.incidents.find((i) => i.id === raw.incidentId);
       if (inc && inc.state !== 'open') return moveError('too-late');
       if (!inc || inc.managerId !== playerId || u === undefined) return moveError('bad-move');
+      const first = inc.step === 0;
       addBonus(r, playerId, managerSays(hr, inc, playerId, u, ctx.players(), ctx, peeked));
+      // The shift's first line to a customer that lands: the booth's replay (Pon voices the fixed line) and the Gallery.
+      const booth = first && inc.step === 1 && s.hard ? landed(s.hard, hr, inc, ctx.players(), ctx) : null;
+      if (booth) cue(s, ctx, 'bento_replay', { line: booth.line.text, line_kana: booth.line.kana, line_en: booth.line.en }, true);
       return MOVE_OK;
     }
     case 'request-done': {
@@ -943,6 +973,7 @@ function hardMove(r: Round, hr: HardRound, playerId: string, raw: Record<string,
       if (inc && inc.state !== 'asked') return moveError('too-late');
       if (!inc || inc.stationId !== playerId) return moveError('bad-move');
       requestDone(inc, r, ctx);
+      cue(s, ctx, 'bento_manager_win', undefined, true);
       return MOVE_OK;
     }
     case 'omotenashi': {
@@ -951,6 +982,17 @@ function hardMove(r: Round, hr: HardRound, playerId: string, raw: Record<string,
       if (g && (v?.state !== 'waiting' || g.step >= g.steps.length)) return moveError('too-late');
       if (!g || g.takerId !== playerId || u === undefined) return moveError('bad-move');
       addBonus(r, playerId, hostSays(g, playerId, u, ctx, peeked));
+      if (g.step >= g.steps.length && g.steps.every((x) => x.ok)) cue(s, ctx, 'bento_omotenashi_win');
+      return MOVE_OK;
+    }
+    case 'gallery': {
+      const g = galleryOpen(hr, ctx.now);
+      if (!g && hr.gallery) return moveError('too-late');
+      if (!g || typeof raw.pick !== 'string') return moveError('bad-move');
+      const points = pickGallery(g, playerId, raw.pick);
+      if (points === null) return moveError('not-allowed');
+      // The curveball's +5 goes straight to the player's score; reactions are never scored.
+      if (points) ctx.award(playerId, points);
       return MOVE_OK;
     }
     default:
@@ -1007,7 +1049,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       s.round += 1;
       s.current = setupRound(s, ctx);
       // N4 hard roles: offered to the room's N4 players in turn. A room with none never gets the fields.
-      const offers = rolesFor(s.round, ctx.players());
+      const offers = rolesFor(s.round, ctx.connected(), s.hard?.offers, ctx.connected().length);
       if (offers.length || s.hard) {
         s.hard ??= { offers: [], specialTurn: 0, askTurn: 0 };
         s.current.hard = blankHardRound();
@@ -1015,6 +1057,13 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       }
       const info = ROUND_INFO[s.round - 1]!;
       ctx.cue({ host: 'pon', event: 'bento_round', slots: { round: info.ja } });
+      // The host stand-in: once a game, where the role would first be offered. Pon voices one model line.
+      const levels = ctx.players().filter((p) => p.connected).map((p) => p.level);
+      if (!s.standIn && !s.hard && hostStandsIn(levels)) {
+        s.standIn = { ...standInBooth(ctx.now + STAND_IN_AT_MS), round: s.round };
+        const line = s.standIn.line;
+        ctx.cue({ host: 'pon', event: 'bento_standin', slots: { line: line.text, line_kana: line.kana, line_en: line.en }, atMs: STAND_IN_AT_MS });
+      }
       return;
     }
     const r = s.current;
@@ -1061,6 +1110,8 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   wakeAt(s, phase, ctx) {
     const r = s.current;
     const now = ctx.now;
+    // The host stand-in's card comes up on the title card a moment in, as Pon says the line.
+    if (phase === 'prompt' && s.standIn?.round === s.round && s.standIn.at > now) return s.standIn.at;
     if (phase !== 'answer' || !r?.started) return null;
     const times = [...waiting(r).map((v) => v.leaveAt), ...(r.nextArriveAt !== null ? [r.nextArriveAt] : [])];
     // Also wake when a served or walked-out customer has lingered long enough to leave the counter.
@@ -1085,7 +1136,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     // A hard-role offer can be answered from the shift's title card on.
     if (isObject(raw) && raw.kind === 'role' && r && (phase === 'prompt' || phase === 'answer')) {
       if (!s.hard || !r.hard || typeof raw.accept !== 'boolean') return moveError('bad-move');
-      return answerOffer(s.hard, r.hard, r.index, playerId, raw.accept, ctx.players()) ? MOVE_OK : moveError('not-allowed');
+      return answerOffer(s.hard, r.hard, r.index, playerId, raw.accept, ctx.connected(), ctx.connected().length) ? MOVE_OK : moveError('not-allowed');
     }
     if (!r || phase !== 'answer' || !r.started) return moveError('wrong-phase');
     if (!isObject(raw)) return moveError('bad-move');
@@ -1102,11 +1153,11 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       serveBonus(r, playerId, raw.utterance);
       serve(s, r, v, playerId, ctx);
       // The manager hears about a box that wasn't right.
-      if (r.hard && v.tips > 0 && off.length) maybeComplaint(r.hard, r, v, off, ctx);
+      if (r.hard && s.hard && v.tips > 0 && off.length) maybeComplaint(s.hard, r.hard, r, v, off, TIPS.perfect * (v.rush ? 2 : 1) - v.tips, ctx);
       planArrival(r, ctx.now, ctx.players().length);
       return MOVE_OK;
     }
-    if (raw.kind === 'manager' || raw.kind === 'request-done' || raw.kind === 'omotenashi') return r.hard ? hardMove(r, r.hard, playerId, raw, ctx) : moveError('bad-move');
+    if (raw.kind === 'manager' || raw.kind === 'request-done' || raw.kind === 'omotenashi' || raw.kind === 'gallery') return r.hard ? hardMove(s, r, r.hard, playerId, raw, ctx) : moveError('bad-move');
     return kitchenMove(s, r, playerId, raw, ctx);
   },
 
@@ -1142,7 +1193,8 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     const visits = visitsView(r, scoring, ctx);
     const me = viewer.kind === 'player' ? ctx.player(viewer.playerId) : undefined;
     const mine = meView(r, me, own, ctx);
-    const myHard = s.hard && mine && me ? myHardView(s.hard, r?.hard ?? null, s.round, me.id, r) : null;
+    const myHard = s.hard && mine && me ? myHardView(s.hard, r?.hard ?? null, s.round, me, r, ctx.now) : null;
+    const standIn = phase === 'prompt' && s.standIn?.round === s.round && ctx.now >= s.standIn.at ? s.standIn : null;
     return {
       mode: 'bento-haus',
       round: s.round,
@@ -1162,6 +1214,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       ajimi: ajimiView(r, ctx),
       me: mine && myHard ? { ...mine, hard: myHard } : mine,
       ...(r?.hard ? { hard: hardView(r.hard, r, scoring, ctx.now) } : {}),
+      ...(standIn ? { standIn: { ask: standIn.ask, line: standIn.line, lit: standIn.lit, note: standIn.note, gist: me ? gistFor(standIn, me.level) : null } } : {}),
     };
   },
 

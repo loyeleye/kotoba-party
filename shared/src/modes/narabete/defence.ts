@@ -34,11 +34,11 @@ function tail(spot: DefenceSpot, after: string): JpText {
 }
 
 /**
- * The theme's adjective before ので and before a noun. たいへん is a な-adjective (たいへんなので,
- * たいへんな もの); the rest are い-adjectives or verbs (くさいので, びっくりするので), which join as they are.
+ * The theme's word before ので and before a noun. A な-adjective (the theme's `na` flag: たいへん) takes な
+ * (たいへんなので, たいへんな もの); an い-adjective or a verb (くさいので, びっくりするので) joins as it is.
  */
-function moreForms(more: JpText): { node: JpText; noun: JpText } {
-  const na = !/[いうくすつぬふむゆるぐぶ]$/.test(more.kana);
+function moreForms(theme: Pick<FeelTheme, 'more' | 'na'>): { node: JpText; noun: JpText } {
+  const { more, na } = theme;
   return {
     node: { text: `${more.text}${na ? 'なので' : 'ので'}`, kana: `${more.kana}${na ? 'なので' : 'ので'}`, en: more.en },
     noun: { text: `${more.text}${na ? 'な' : ''}`, kana: `${more.kana}${na ? 'な' : ''}`, en: more.en },
@@ -46,9 +46,9 @@ function moreForms(more: JpText): { node: JpText; noun: JpText } {
 }
 
 /** Ready reasons (each already ending in ので), by round and spot. `n` is the neighbour before, for 'after'. */
-function reasons(round: { unit: TimeSet['unit'] } | { theme: Pick<FeelTheme, 'more'> }, spot: DefenceSpot, n: string): JpText[] {
+function reasons(round: { unit: TimeSet['unit'] } | { theme: Pick<FeelTheme, 'more' | 'na'> }, spot: DefenceSpot, n: string): JpText[] {
   if ('theme' in round) {
-    const { node, noun } = moreForms(round.theme.more);
+    const { node, noun } = moreForms(round.theme);
     if (spot === 'first')
       return [
         { text: `ちょっとだけ ${node.text}`, kana: `ちょっとだけ ${node.kana}`, en: "it's only a little that way" },
@@ -74,9 +74,9 @@ function reasons(round: { unit: TimeSet['unit'] } | { theme: Pick<FeelTheme, 'mo
       if (spot === 'last') return [jp('いちばん たかいので', "it's the most expensive"), jp('これより たかい ものは ないので', 'nothing costs more than this')];
       return [jp(`${n}さんのより たかいので`, `it costs more than ${n}'s`), jp(`${n}さんのより すこし たかいので`, `it costs a little more than ${n}'s`)];
     case 'date':
-      if (spot === 'first') return [jp('ひづけが いちばん はやいので', "it's the earliest date"), jp('これより まえの ひは ないので', 'no day comes before this')];
-      if (spot === 'last') return [jp('ひづけが いちばん おそいので', "it's the latest date"), jp('これより あとの ひは ないので', 'no day comes after this')];
-      return [jp(`${n}さんの ひより あとなので`, `it comes after ${n}'s day`), jp(`${n}さんのより ひづけが おそいので`, `the date is later than ${n}'s`)];
+      if (spot === 'first') return [jp('いちばん はやい ひなので', "it's the earliest day"), jp('これより まえの ひは ないので', 'no day comes before this')];
+      if (spot === 'last') return [jp('いちばん おそい ひなので', "it's the latest day"), jp('これより あとの ひは ないので', 'no day comes after this')];
+      return [jp(`${n}さんの ひより あとなので`, `it comes after ${n}'s day`), jp(`${n}さんのより あとの ひなので`, `it's a later day than ${n}'s`)];
   }
 }
 
@@ -91,7 +91,7 @@ export function spotOf(position: number, length: number): DefenceSpot {
  * The N4 defence script for a card at `position` in a line of `length`: the frame and two model lines.
  * `before` is the name of the player whose card sits just before it (for 'after').
  */
-export function defenceScript(round: { unit: TimeSet['unit'] } | { theme: Pick<FeelTheme, 'more'> }, position: number, length: number, before: string): DefenceScript {
+export function defenceScript(round: { unit: TimeSet['unit'] } | { theme: Pick<FeelTheme, 'more' | 'na'> }, position: number, length: number, before: string): DefenceScript {
   const spot = spotOf(position, length);
   const t = tail(spot, before);
   const frame: JpText = { text: `＿ので、${t.text}`, kana: `＿ので、${t.kana}`, en: `Because ＿, ${t.en}.` };

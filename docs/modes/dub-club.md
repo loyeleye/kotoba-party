@@ -45,6 +45,7 @@ the first sent.
 | Each heart your dub got (one heart per player per scene) | 100 |
 | Your dub goes into the episode | 150 |
 | Words, from the plain read: all heard at your level's bar (Kana 70%, N5 80%, N4 85%) / half / tried | 50 / 30 / 20 (30 for everyone on a night with no speech check) |
+| The Gallery's curveball, right (once a game, one Kana or N5 player, ad-lib rooms only) | 5 (not doubled) |
 
 Words are capped low on purpose: careful reading should never beat bold acting.
 
@@ -53,13 +54,16 @@ Awards: しゅえんしょう (most hearts), めいえんぎしょう (card read
 
 ## The ad-lib (N4 hard role, goal 4.8)
 
-In a room with an N4 player, each scene offers one of them (in turn) the **ad-lib**: no script showing.
+In a room with an N4 player, each scene offers one of them the **ad-lib**: no script showing. Who is
+offered it comes from the shared `nextOfferee` (shared/src/modes/hardRoleLog.ts): the N4 player offered
+fewest times, then longest ago; a "not this time" sits the next scene out; in a room of 4 or more, whoever
+played it last scene gets this one off.
 Their phone shows the scene, a mission in English and a picture ("Your lunch box is empty. Ask, casually,
 who ate your onigiri." 🍙) instead of the line, and they say it their own way in casual speech: plain form
 + よ/ね/の？, 〜んだ, 〜てる/〜ちゃった. They still get two direction cards and act it, so the screening works
 as before. Everyone else keeps their scripted line, and a room with no N4 player sees no change.
 
-- **The offer** is opt-in: two equal buttons, **🎙 Take it: ad-lib** or **Not this time** (keep the
+- **The offer** is opt-in, on the shared offer card (`roleOffer`): two equal buttons, **🎙 Take it: ad-lib** or **Not this time** (keep the
   scripted N4 line), with Fude-kantoku's "No script this time. Make it yours!" and the mission, until the
   take is sent. Until they tap Take it: ad-lib, the phone shows the scripted N4 line; sending the scripted
   take without answering logs the offer as timed out. A plain read while the offer is open is of the
@@ -77,10 +81,40 @@ as before. Everyone else keeps their scripted line, and a room with no N4 player
   アドリブ; over an ad-lib's voice it captions only the model line's English (so the room can follow
   without being handed a Japanese answer), and the reveal captions it with the model line itself.
 - An ad-lib take may run 9 s (13.5 s capped at 12 s for slow cards).
+- **Mission missed**: when the plain read misses the mission, the phone shows one of its words to aim for
+  ("🎯 Try to get this word in: おにぎり": the first key word of 3+ kana, else the first), on the rehearsal
+  screen and in the cast notes.
+
+### Mixed rooms (shared, mixedRoom.ts)
+
+- **The Gallery**: while an ad-lib dub is on (from the clip to its card flip), every other connected
+  player gets one tile: four reactions, shown as bubbles in the TV's side column, never scored. Once a game,
+  once the take has played (the room has heard it: dealt as the screening moves on to the guess,
+  `armCurveball`), a Kana or N5 player who hasn't reacted yet gets the curveball in place of their tile:
+  "Which word did you hear?", with the longest of the mission's words (3+ kana) heard in the acted take and
+  two from the episode's other missions (never a word the take or the model line contained), +5 if right
+  (paid at once, not doubled in scene 3). Who gets it rotates with the scene. No speech check on the take,
+  a spoiler, or none of the mission's words in it: no curveball that scene. While it is open, the booth
+  holds back lighting its chunk (`keyHeld`).
+- **The commentary booth**: once a good ad-lib's card flips (the take sent, not skipped or spoiled, and
+  casual in the plain read or the acted take), one more screening step, `booth`, 5–7 s
+  (`commentaryMs`), and only then: Fude calls 「カット！ いい アドリブ！ シュッ！」 or 「カット！ フデ、ないちゃう！」 (`dub_cut`), and 1.2 s later says the
+  scene's model ad-lib line himself (`dub_booth`, a `{line}` bank line), never the player's take. The TV
+  shows the model line with its casual chunk lit (〜ちゃった, 〜んだ, だよ, …の？: `casualChunk`; a
+  〜ちゃう chunk only on a line tagged `te-shimau` or `teru`, a 〜てる／〜てない chunk only on one tagged
+  `teru`, so the monster's かてない is lit at its よ, not as 〜てない) and one line of colour ("Aki's take is
+  a keeper. Fude-kantoku's cut, for the record, with 「ちゃった」."); Kana and N5 phones show its gist
+  ("Aki's ad-lib: approved! Fude's cut: …"). A night with no speech check has no booth.
+- **The host stand-in**: in a room of one or two connected players with nobody at N4 (a 3-player game
+  with one gone), Fude ad-libs one scene himself, once a game: 5 s into its scene card, after his table
+  read, he says the scene's model ad-lib line (`dub_standin`), the TV shows it in the booth strip and Kana
+  and N5 phones show the gist. Inside the 12 s scene card, so no time is added; nobody is asked to say
+  anything, and nothing is scored.
 
 Content: `Scene.adlib` (and `cheekyAdlib` for Under the Cherry Tree's Cheeky twist) in `scenes.ts`, one per
-scene, all draft, each tagged with its frames (`plain`, `n-da`, `teru`, and
-`potential` for two).
+scene, all draft, each tagged with its frames (`plain`, `n-da`, `teru`, `te-shimau` for the three
+〜ちゃった lines, since ちゃう is 〜て しまう said casually, and `potential` for two). The check reports
+〜ちゃう／〜ちゃった as `te-shimau` and the other contractions as `teru`.
 
 ## Content
 
@@ -121,11 +155,14 @@ master limiter. Fude never talks over a dub (`hostHoldMs`).
 - Ad-lib, decided for now (Ladi to confirm): it's offered every scene to one N4 player in turn; the check
   is casual-or-key-word lenient, not a grammar check; the model line is shown after the take, never
   before; the TV shows only the model line's English over an ad-lib's voice, and the Japanese at the reveal.
-- Spotlight, for Ladi to confirm: in a room of 4 or more connected players, a lone N4 player who played
-  the ad-lib (said yes) last scene isn't offered it this scene, so the same voice isn't on the spot every
-  scene. With fewer players, or two or more N4 players, nothing changes.
-- Ad-lib, deferred: the host playing it in rooms without an N4 player, the commentary booth's replay of
-  the casual chunk, and the N3 ad-lib (step 6).
+- Rotation: the shared `nextOfferee` (fewest offers, then longest ago; a "not this time" sits one scene
+  out; in rooms of 4+, nobody two scenes running). A lone N4 player in a small room who declines is now
+  offered it every other scene, not every scene.
+- Mixed rooms, decided for now (for Ladi to confirm): the curveball's word is a mission word heard in the
+  take (the player's own words are what the room hears, not the model line); the booth needs casual
+  speech found by the check, so a night with no speech check has none; the stand-in can only happen when a
+  game is down to one or two connected players (Dub Club needs three to start, and bots count as players).
+- Ad-lib, deferred: the N3 ad-lib (step 6).
 
 - Players with no mic: a VOICEVOX dub of their line in their chosen style (deferred).
 - The learning-science "stress scene", where the card is a word to stress, not a mood (deferred).

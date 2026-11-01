@@ -281,8 +281,8 @@ export const meetTheInnkeeper: LastTrainMinigame = {
       hint: 'Once more is もう いちど. To look something up is しらべる (て form しらべて).',
       timeLimit: 12,
     },
-    sign('26-uketsuke', '受付', 'うけつけ', 'reception', 'Memory picture: 受 is a hand reaching down to a hand below, passing something on. 付 is a person (亻) with a hand: attaching.'),
-    sign('27-yoyaku', '予約', 'よやく', 'reservation', 'Memory picture: 予 is a hook hung up ahead of time. 約 has a thread (糸): a promise tied in advance.'),
+    sign('26-baiten', '売店', 'ばいてん', 'shop', 'Memory picture: 売 has a samurai (士) on top, selling. 店 is a roof (广) over a stall.'),
+    sign('27-kaikei', '会計', 'かいけい', 'cashier', 'Memory picture: 会 is people meeting under a roof. 計 has words (言) and ten (十): adding it all up.'),
     sign('28-shokudou', '食堂', 'しょくどう', 'dining room', 'Memory picture: 食 is a roof over a bowl of rice: food. 堂 is a big hall standing on the earth (土).'),
   ],
 };

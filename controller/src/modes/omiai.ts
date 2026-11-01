@@ -13,6 +13,8 @@ import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { waiting } from '../components/ui.js';
 import { jpView } from '../components/jp.js';
 import type { PhoneContext, PhoneMode } from './types.js';
+import { roleOffer } from '../components/roleOffer.js';
+import { boothGist, galleryTile } from '../components/gallery.js';
 
 type Ctx = PhoneContext<OmiaiView>;
 
@@ -53,6 +55,28 @@ function nakodoCard(ctx: Ctx): HTMLElement | null {
   const what = g.slot === 'open' ? 'Introduce the guest' : 'Close the round';
   if (g.ok)
     return h('div', { class: 'omi-nakodo' }, h('p', {}, h('strong', {}, `🎎 Beautifully said! +${g.points}`)), h('p', { lang: 'ja' }, g.line?.text ?? ''), g.meter !== null ? meterBar(g.meter) : null);
+  const speak = g.canSay
+    ? speakBox({
+        label: 'Hold and say it',
+        placeholder: 'Type the line (kana)',
+        maxLength: MAX_ANSWER_LENGTH,
+        onSend: (utterance) => void ctx.send({ kind: 'nakodo', utterance, round: ctx.game.round }),
+      })
+    : null;
+  // The shared offer card; saying the line straight away counts as taking it.
+  if (g.canSay && g.status === 'offered')
+    return h(
+      'div',
+      { class: 'omi-nakodo' },
+      roleOffer({
+        kicker: '🎎 Nobiko-san hands you her fan.',
+        role: { text: 'なこうど', kana: 'なこうど', en: 'Matchmaker' },
+        pitch: `Speak for the matchmaker this round. ${what}, in keigo:`,
+        onTake: () => void ctx.send({ kind: 'nakodo', accept: true, round: ctx.game.round }),
+        onDecline: () => void ctx.send({ kind: 'nakodo', accept: false, round: ctx.game.round }),
+        extra: [g.line ? jpView(g.line, 'n4', { cls: 'omi-nakodo-line' }) : null, speak],
+      }),
+    );
   return h(
     'div',
     { class: 'omi-nakodo' },
@@ -62,26 +86,10 @@ function nakodoCard(ctx: Ctx): HTMLElement | null {
       ? h(
           'p',
           { class: 'hint' },
-          `Heard “${g.heard}”. Say the whole line as written: the keigo words (おみえに なりました, いらっしゃいます, まいります) are what counts. ${g.triesLeft} ${g.triesLeft === 1 ? 'try' : 'tries'} left.`,
+          `Heard “${g.heard}”. Say the whole line as written: the keigo words (おつきに なりました, いらっしゃいます, まいります) are what counts. ${g.triesLeft} ${g.triesLeft === 1 ? 'try' : 'tries'} left.`,
         )
       : null,
-    g.canSay
-      ? speakBox({
-          label: 'Hold and say it',
-          placeholder: 'Type the line (kana)',
-          maxLength: MAX_ANSWER_LENGTH,
-          onSend: (utterance) => void ctx.send({ kind: 'nakodo', utterance, round: ctx.game.round }),
-        })
-      : null,
-    // Two equal answers to the offer; saying the line straight away counts as taking it.
-    g.canSay && g.status === 'offered'
-      ? h(
-          'div',
-          { class: 'omi-offer-btns' },
-          h('button', { type: 'button', class: 'secondary', onclick: () => void ctx.send({ kind: 'nakodo', accept: true, round: ctx.game.round }) }, 'Take it'),
-          h('button', { type: 'button', class: 'secondary', onclick: () => void ctx.send({ kind: 'nakodo', accept: false, round: ctx.game.round }) }, 'Not this time'),
-        )
-      : null,
+    speak,
   );
 }
 
@@ -298,6 +306,9 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
           { class: 'screen' },
           guestLine(game),
           nakodoCard(ctx),
+          // Players without the go-between's seat: a reaction tile (or the curveball); Kana and N5 phones get the gist.
+          galleryTile(mine?.gallery ?? null, (pick) => void send({ kind: 'gallery', pick, round: game.round })),
+          boothGist(mine?.gist ?? null),
           game.question ? questionCard(game.question) : null,
           // Not while you're the one speaking: the answer screen waits for you.
           mine?.nakodo?.canSay ? null : h('p', { class: 'hint' }, 'Listen… your answer screen opens in a moment.'),

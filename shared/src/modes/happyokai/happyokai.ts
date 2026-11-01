@@ -161,6 +161,8 @@ export interface Talk {
   pictures: number;
   titleChoices: string[];
   titleId: string | null;
+  /** An N4 presenter has swapped one deck title for a usual one (once a turn). */
+  swapped: boolean;
   ready: boolean;
   steps: Step[];
   /** The assistant's choices for the next picture slide. */
@@ -296,8 +298,11 @@ export interface HappyokaiView {
   me: {
     role: 'presenter' | 'assistant' | 'audience';
     level: Level;
-    /** `deck`: the N4 deck the title is from (Then and now, If I were…), for its label. */
-    titleChoices: { key: number; jp: JpText; romaji?: string; deck?: JpText }[];
+    /**
+     * `deck`: the N4 deck the title is from (Then and now, If I were…), for its label. `swap`: an N4
+     * presenter can still swap this deck title for a usual one (once a turn, before 🙋 ready).
+     */
+    titleChoices: { key: number; jp: JpText; romaji?: string; deck?: JpText; swap?: true }[];
     /** Backstage: the opening and closing to rehearse. */
     rehearse: { opening: JpText & { romaji?: string }; closing: JpText & { romaji?: string } } | null;
     /** The presenter's script for this slide: the opening, the closing or a mishap's recovery line. */
@@ -331,6 +336,7 @@ export interface HappyokaiView {
 
 export type HappyokaiMove =
   | { kind: 'title'; key: number }
+  | { kind: 'swap'; key: number }
   | { kind: 'go' }
   | { kind: 'say'; utterance: Utterance }
   | { kind: 'ready'; key: number }
@@ -575,13 +581,30 @@ export function n4Mix(s: Pick<HappyokaiState, 'order'>, index: number): boolean 
   return before % 2 === 1;
 }
 
+/** The usual titles a talk draws from: the ones the room hasn't had, while two are left. */
+function usualPool(s: HappyokaiState, audience: Audience): Title[] {
+  const fresh = titlesFor(audience).filter((x) => !s.usedTitles.includes(x.id));
+  return fresh.length >= 2 ? fresh : titlesFor(audience);
+}
+
+/** An N4 presenter's swap: deck title `key` becomes a usual title, drawn the usual way (one not on offer). */
+function swapTitle(s: HappyokaiState, t: Talk, key: number, ctx: ModeContext): string | null {
+  const old = t.titleChoices[key];
+  if (!old || !titleOf(old)?.deck) return null;
+  const pool = usualPool(s, audienceOf(ctx)).filter((x) => !t.titleChoices.includes(x.id));
+  const pick = shuffled(pool.length ? pool : titlesFor(audienceOf(ctx)).filter((x) => !t.titleChoices.includes(x.id)), () => ctx.random())[0];
+  if (!pick) return null;
+  t.titleChoices[key] = pick.id;
+  t.swapped = true;
+  return pick.id;
+}
+
 function startTalk(s: HappyokaiState, ctx: ModeContext): void {
   const index = s.talk ? s.talk.index + 1 : 0;
   const presenterId = s.order[index]!;
   const audience = audienceOf(ctx);
   // A pair of titles: one about a creature or thing, one about people or a situation, when the pool allows.
-  const fresh = titlesFor(audience).filter((x) => !s.usedTitles.includes(x.id));
-  const pool = fresh.length >= 2 ? fresh : titlesFor(audience);
+  const pool = usualPool(s, audience);
   const people = (x: Title) => x.tags.includes('person') || x.tags.includes('work') || x.tags.includes('love') || x.tags.includes('travel');
   // An N4 presenter's talks alternate (Ladi's call): the first is a deck pair (one Then and now title,
   // one If I were… title), the next a mix (one deck title, from the deck they didn't pick last time, and
@@ -610,6 +633,7 @@ function startTalk(s: HappyokaiState, ctx: ModeContext): void {
     pictures: ctx.player(presenterId)?.level === 'kana' ? Math.max(1, s.pictures - 1) : s.pictures,
     titleChoices,
     titleId: null,
+    swapped: false,
     ready: false,
     steps: [],
     choices: [],
@@ -640,7 +664,7 @@ function scriptsFor(t: Talk, ctx: ModeContext): JpText[] {
   if (st.kind === 'close') return [closingFor(p.level)];
   if (st.kind === 'mishap') return st.mishapId ? [recoveryFor(st.mishapId, p.level, talkWord(t)?.word ?? null, graphUp(t), audienceOf(ctx))] : [];
   const slide = st.slideId ? slideOf(st.slideId) : undefined;
-  return slide ? readySentences(slide, p.level, title.topic, title.deck) : [];
+  return slide ? readySentences(slide, p.level, title.topic, title.deck, title.place) : [];
 }
 
 /** Which of Chōchin-san's three holiday photos the backstage curtain shows: talk 1, the middle, the last. */
@@ -824,7 +848,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         for (const p of ctx.players()) {
           if (p.id === t.presenterId || !p.connected) continue;
           const level = presenter ? lower(p.level, presenter.level) : p.level;
-          t.cards[p.id] = questionsFor(level, talkWord(t) ?? null, title?.topic ?? null, audienceOf(ctx), () => ctx.random(), title?.deck);
+          t.cards[p.id] = questionsFor(level, talkWord(t) ?? null, title?.topic ?? null, audienceOf(ctx), () => ctx.random(), title?.deck, title?.place);
         }
         ctx.cue({ host: 'chochin', event: 'happyokai_question' });
         break;
@@ -977,6 +1001,26 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         const id = typeof raw.key === 'number' ? t.titleChoices[raw.key] : undefined;
         if (!id) return moveError('bad-move');
         if (t.titleId !== id) {
+          t.titleId = id;
+          if (!photoBeat(t.index, s.order.length)) {
+            const title = forLevel(titleOf(id)!.jp, presenterLevel(t, ctx));
+            ctx.cue({ host: 'chochin', event: 'happyokai_title', slots: { name: ctx.player(playerId)?.name ?? '', title: title.kana }, prompt: { text: title.text, kana: title.kana, en: title.en } });
+          }
+        }
+        return MOVE_OK;
+      }
+      case 'swap': {
+        // An N4 presenter trades one deck title for a usual one, once a turn, before they're ready.
+        if (phase !== 'prompt') return moveError('wrong-phase');
+        if (!presenter) return moveError('not-yours');
+        if (ctx.player(playerId)?.level !== 'n4') return moveError('not-yours');
+        if (t.ready) return moveError('wrong-phase');
+        if (t.swapped) return moveError('already-swapped');
+        const key = typeof raw.key === 'number' ? raw.key : -1;
+        const old = t.titleChoices[key];
+        const id = swapTitle(s, t, key, ctx);
+        if (!id) return moveError('bad-move');
+        if (t.titleId === old) {
           t.titleId = id;
           if (!photoBeat(t.index, s.order.length)) {
             const title = forLevel(titleOf(id)!.jp, presenterLevel(t, ctx));
@@ -1159,7 +1203,8 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         level: me.level,
         titleChoices: t && role === 'presenter' && phase === 'prompt' ? t.titleChoices.map((id, key) => {
                 const x = titleOf(id)!;
-                return { key, jp: forLevel(x.jp, me.level), ...(romaji ? { romaji: toRomaji(x.jp.kana) } : {}), ...(x.deck ? { deck: forLevel(DECKS[x.deck].name, me.level) } : {}) };
+                const swap = !!x.deck && me.level === 'n4' && !t.swapped && !t.ready;
+                return { key, jp: forLevel(x.jp, me.level), ...(romaji ? { romaji: toRomaji(x.jp.kana) } : {}), ...(x.deck ? { deck: forLevel(DECKS[x.deck].name, me.level) } : {}), ...(swap ? { swap: true as const } : {}) };
               }) : [],
         rehearse: t && title && role === 'presenter' && phase === 'prompt' ? { opening: withRomaji(openingFor(me.level, me.name, title.jp)), closing: withRomaji(closingFor(me.level)) } : null,
         script: role === 'presenter' && !picture && scripts[0] ? withRomaji(scripts[0]) : null,

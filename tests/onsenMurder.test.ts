@@ -13,13 +13,14 @@ import {
   onsenMurderMode,
   POINTS,
   REPORT_VOICE,
+  reportVoiceMs,
   suspectLineRequests,
   THINK_MS,
   TURNS,
   type OnsenState,
   type OnsenView,
 } from '../shared/src/modes/onsenMurder/onsenMurder.js';
-import { checkReport, joinReport, reportFrame, reportWords, tilesInOrder } from '../shared/src/modes/onsenMurder/deputy.js';
+import { answerTiles, checkReport, decoyTile, joinReport, politeForm, reportFrame, reportNotes, reportTiles, reportWords, tilesInOrder } from '../shared/src/modes/onsenMurder/deputy.js';
 import { accusationLine, calledName, checkAccusation, INTENTS, joinTiles, matchQuestion, questionFor, tilesFor } from '../shared/src/modes/onsenMurder/questions.js';
 import { hasKanji, normalizeReading } from '../shared/src/japanese/kana.js';
 import type { Audience, Command, RoomView } from '../shared/src/protocol.js';
@@ -185,7 +186,7 @@ describe('Murder at the Onsen: the cases', () => {
     expect(onsenCases.map((c) => c.id)).toEqual(['snowman', 'pudding', 'duck', 'ice-cream', 'sake', 'phone', 'toupee', 'candle']);
     expect(onsenCases.map((c) => c.audience ?? null)).toEqual([null, null, null, 'kids', 'cheeky', 'cheeky', 'cheeky', 'cheeky']);
     expect(content.onsenCases.length).toBe(8);
-    expect(content.hostLines.filter((l) => l.event.startsWith('onsen_')).length).toBe(26);
+    expect(content.hostLines.filter((l) => l.event.startsWith('onsen_')).length).toBe(32);
   });
 
   it('picks by the room’s Audience: a family room never gets the Kids or Cheeky case, the others get their own half the time', () => {
@@ -354,7 +355,8 @@ describe('Murder at the Onsen: no spoilers', () => {
       expect(json).not.toContain(pudding.solution);
       expect(json).not.toContain('culpritId');
       expect(json).not.toContain(pudding.suspects.find((s) => s.id === 'sato')!.answers.where!.jp.text);
-      expect(json).not.toContain('"key":');
+      // The notebook's key flags (the booth's lit word is also called key, but is a string).
+      expect(json).not.toMatch(/"key":(true|false)/);
     }
     expect(suspectLineRequests(t.st)[0]?.key).toBeTruthy();
     for (const json of views) expect(json).not.toContain(suspectLineRequests(t.st)[0]!.key);
@@ -616,7 +618,7 @@ describe('Murder at the Onsen: bots play a game end to end', () => {
 
 // ---- the deputy (N4 hard role) ----
 
-const FRAME_IDS = new Set(['to-itte-ita', 'passive', 'tame-ni', 'sou-look', 'node']);
+const FRAME_IDS = new Set(['to-itte-ita', 'passive', 'tame-ni', 'sou-look', 'node', 'ka-dou-ka']);
 
 describe('Murder at the Onsen: the deputy’s reports', () => {
   // Every case, the Kids and Cheeky ones too (Ladi, 2026-11-01).
@@ -693,7 +695,7 @@ describe('Murder at the Onsen: the deputy in play', () => {
   /** Tile ids in the report's order. */
   const inOrder = (t: Table, deputy: string) => {
     const me = t.view(deputy).mine!.deputy!;
-    const words = reportWords(t.st.asks.at(-1)!.report!);
+    const words = answerTiles(t.st.asks.at(-1)!.report!);
     const left = [...me.tiles];
     return words.map((w) => {
       const i = left.findIndex((x) => x.text === w.text);
@@ -735,10 +737,13 @@ describe('Murder at the Onsen: the deputy in play', () => {
     expect(t.score('p2') - before).toBe(POINTS.reportTiles);
     expect(t.view().deputy?.line?.text).toBe('たなかさんは 10じから 11じまで だいどころに いたと いっていました。');
     expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'onsen.report.snowman.tanaka.where' && e.outcome === 'seen')).toBe(true);
-    // Done, but the answer still gets its usual 12 s: the room wakes the phase then.
+    // Done, but the answer stays up while Chōchin-san says it, reacts, and the booth replays it (all inside the
+    // deputy's longer answer time): the room wakes the phase then.
     expect(t.s.phase).toBe('reveal');
     const wake = onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never);
-    expect(wake).toBe(t.st.revealAt + 12_000);
+    const said = reportVoiceMs(t.st.asks.at(-1)!.report!.jp.kana);
+    expect(wake).toBe(t.st.revealAt + REPORT_VOICE.after + Math.max(t.st.booth!.ms, said + REPORT_VOICE.cheer));
+    expect(wake! - t.st.revealAt).toBeLessThan(12_000 + 15_000);
     t.now = wake!;
     t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
     expect(t.s.phase).toBe('answer');
@@ -759,6 +764,50 @@ describe('Murder at the Onsen: the deputy in play', () => {
     expect(t.st.tally.p2).toMatchObject({ base: POINTS.report, bonusEarned: POINTS.spokenReport, reports: 1 });
     expect(POINTS).toMatchObject({ report: 30, reportTiles: 10, spokenReport: 40 });
     expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'onsen.report.snowman.yamada.who' && e.outcome === 'said')).toBe(true);
+  });
+
+  it('before a first try the notes give the rule only; the plain verb comes after a try', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    const r = t.st.asks.at(-1)!.report!;
+    expect(t.view('p2').mine!.deputy!.notes).toEqual(['＿と いっていました takes the plain form, not the ます form.']);
+    expect(t.view('p2').mine!.deputy!.notes.join(' ')).not.toContain('いたと');
+    t.play('p2', { kind: 'report', utterance: speech('たなかさんは だいどころに いました') });
+    expect(t.view('p2').mine!.deputy!.notes).toEqual(reportNotes(r));
+    expect(reportNotes(r)[0]).toContain('いたと');
+  });
+
+  it('a report said after opening the tiles counts as seen, not from memory', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    expect(t.play('p1', { kind: 'report-peek' }).error).toBe('not-deputy');
+    expect(t.play('p2', { kind: 'report-peek' }).error).toBeUndefined();
+    expect(t.view('p2').mine!.deputy!.peeked).toBe(true);
+    const r = t.st.asks.at(-1)!.report!;
+    t.play('p2', { kind: 'report', utterance: speech(r.jp.kana.replace(/ /g, '')) });
+    expect(t.st.deputy?.status).toBe('reported');
+    const e = t.s.phrasebook.p2?.find((x) => x.itemId === 'onsen.report.snowman.tanaka.where');
+    expect(e).toMatchObject({ outcome: 'seen', recall: 'read' });
+    // Points are the same: the peek only changes what the phrasebook records.
+    expect(t.st.tally.p2!.base).toBe(POINTS.report);
+  });
+
+  it('only the first four reports a game score; later ones are for the room', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    expect(POINTS.reportsPaid).toBe(4);
+    t.st.tally.p2 = { clues: 0, questions: 0, spoken: 0, base: 200, bonusEarned: 0, bonusPaid: 0, correct: false, reports: POINTS.reportsPaid };
+    t.ask('tanaka', 'どこに いましたか');
+    const r = t.st.asks.at(-1)!.report!;
+    const before = t.score('p2');
+    t.play('p2', { kind: 'report', utterance: speech(r.jp.kana.replace(/ /g, '')) });
+    expect(t.st.deputy).toMatchObject({ status: 'reported', points: 0 });
+    expect(t.score('p2')).toBe(before);
+    expect(t.st.tally.p2).toMatchObject({ base: 200, bonusEarned: 0, reports: POINTS.reportsPaid + 1 });
+    // Still voiced and replayed for the room.
+    expect(t.view().booth).not.toBeNull();
   });
 
   it('an untouched offer adds no time, but can still report; one never answered times out', () => {
@@ -793,7 +842,7 @@ describe('Murder at the Onsen: the deputy in play', () => {
     t.play('p3', { kind: 'deputy', accept: true });
     t.ask('tanaka', 'どこに いましたか');
     t.play('p3', { kind: 'report', tiles: inOrder(t, 'p3') });
-    t.now = t.st.revealAt + 12_000;
+    t.now = onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never)!;
     t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
     expect(t.st.deputyLog.at(-1)).toMatchObject({ turnNo: 1, playerId: 'p3', outcome: 'accepted' });
     // Turn 2: p3 is the only N4 player who could be deputy, and just was: they sit it out.
@@ -814,7 +863,7 @@ describe('Murder at the Onsen: the deputy in play', () => {
     t.play('p3', { kind: 'deputy', accept: true });
     t.ask('tanaka', 'どこに いましたか');
     t.play('p3', { kind: 'report', tiles: inOrder(t, 'p3') });
-    t.now = t.st.revealAt + 12_000;
+    t.now = onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never)!;
     t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
     expect(t.turnPlayer).toBe('p2');
     expect(t.st.deputy?.playerId).toBe('p3');
@@ -865,7 +914,7 @@ describe('Murder at the Onsen: the deputy in play', () => {
     }
   });
 
-  it('rotates among the N4 players, never the asker; an answer with nothing to report voids the offer', () => {
+  it('rotates among the N4 players by the shared rule (fewest offers, then longest ago), never the asker; an answer with nothing to report voids the offer', () => {
     const t = new Table(3, { ...EMPTY_CONTENT }, ['n4', 'n4', 'n4']);
     t.start('fallback');
     // The placeholder case has no reports.
@@ -874,12 +923,41 @@ describe('Murder at the Onsen: the deputy in play', () => {
     t.ask('a', 'どこに いましたか');
     expect(t.st.deputy).toBeNull();
     t.timeout();
+    // p1 and p3 have had no offer yet; p1 sits first.
     expect(t.turnPlayer).toBe('p2');
-    expect(t.st.deputy?.playerId).toBe('p3');
-    t.timeout(); // nobody asked
-    expect(t.turnPlayer).toBe('p3');
     expect(t.st.deputy?.playerId).toBe('p1');
+    t.timeout(); // nobody asked
+    // p1 and p2 have had one each; p2's was longer ago.
+    expect(t.turnPlayer).toBe('p3');
+    expect(t.st.deputy?.playerId).toBe('p2');
+    t.timeout();
+    // p3 has had none.
+    expect(t.turnPlayer).toBe('p1');
+    expect(t.st.deputy?.playerId).toBe('p3');
     expect(t.st.deputyLog).toEqual([]);
+  });
+
+  it('a “not this time” sits the next turn out (the shared rotation, no nagging)', () => {
+    const t = new Table(3, CONTENT, ['n5', 'n4', 'n5']);
+    t.start();
+    expect(t.st.deputy?.playerId).toBe('p2');
+    t.play('p2', { kind: 'deputy', accept: false });
+    t.ask('tanaka', 'どこに いましたか');
+    t.timeout();
+    // Turn 2 is p2's own; turn 3, p2 is offered again (the decline was two turns ago).
+    expect(t.turnPlayer).toBe('p2');
+    expect(t.st.deputy).toBeNull();
+    t.timeout();
+    expect(t.turnPlayer).toBe('p3');
+    expect(t.st.deputy?.playerId).toBe('p2');
+    const u = new Table(3, CONTENT, ['n4', 'n5', 'n4']);
+    u.start();
+    // p1 asks, p3 is offered and declines; turn 2 (p2 asks): p3 sits out, p1 is offered instead.
+    expect(u.st.deputy?.playerId).toBe('p3');
+    u.play('p3', { kind: 'deputy', accept: false });
+    u.timeout();
+    expect(u.turnPlayer).toBe('p2');
+    expect(u.st.deputy?.playerId).toBe('p1');
   });
 });
 
@@ -888,7 +966,7 @@ describe('Murder at the Onsen: Chōchin-san says the deputy’s report (host say
   const inOrder = (t: Table, deputy: string) => {
     const me = t.view(deputy).mine!.deputy!;
     const left = [...me.tiles];
-    return reportWords(t.st.asks.at(-1)!.report!).map((w) => left.splice(left.findIndex((x) => x.text === w.text), 1)[0]!.id);
+    return answerTiles(t.st.asks.at(-1)!.report!).map((w) => left.splice(left.findIndex((x) => x.text === w.text), 1)[0]!.id);
   };
 
   it('voices an accepted report once, as the model line, after the suspect’s answer; the answer stays up for it', () => {
@@ -905,14 +983,20 @@ describe('Murder at the Onsen: Chōchin-san says the deputy’s report (host say
     expect(reportCues(t)).toEqual([
       { host: 'chochin', event: 'onsen_report', slots: { line: r.jp.text, line_kana: r.jp.kana, line_en: r.jp.en }, atMs: REPORT_VOICE.after - 2_000 },
     ]);
+    // Then his short reaction, once he has said it.
+    const said = reportVoiceMs(r.jp.kana);
+    expect(t.s.cues.filter((c) => c.event === 'onsen_deputy_cheer')).toEqual([{ host: 'chochin', event: 'onsen_deputy_cheer', slots: { name: 'P2' }, atMs: REPORT_VOICE.after - 2_000 + said }]);
     // The bank line is the report itself, text, reading and subtitle.
     return bankVoice(content)
       .speak('BCDF', reportCues(t)[0]!)
       .then((line) => {
         expect(line).toMatchObject({ host: 'chochin', text: r.jp.text, kana: r.jp.kana, en: r.jp.en });
-        // Said 5.8 s in, done by 10.8 s: inside the answer's usual 12 s, so the turn ends as before.
-        expect(onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never)).toBe(t.st.revealAt + 12_000);
-        t.now = t.st.revealAt + 12_000;
+        // Said 5.8 s in; the answer stays up for the line, his reaction and the booth's replay, inside the deputy's
+        // longer answer time.
+        const end = t.st.revealAt + REPORT_VOICE.after + Math.max(t.st.booth!.ms, said + REPORT_VOICE.cheer);
+        expect(onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never)).toBe(end);
+        expect(end - t.st.revealAt).toBeLessThanOrEqual(12_000 + 15_000);
+        t.now = end;
         t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
         expect(t.s.phase).toBe('answer');
         expect(reportCues(t).length).toBe(1);
@@ -938,7 +1022,7 @@ describe('Murder at the Onsen: Chōchin-san says the deputy’s report (host say
     expect(cues.length).toBe(1);
     expect(cues[0]!.atMs).toBeUndefined();
     expect(cues[0]!.slots?.line).toBe('すずきさんは おんせんで やまださんに みられました。');
-    const until = t.now + REPORT_VOICE.beat;
+    const until = t.now + Math.max(t.st.booth!.ms, reportVoiceMs(cues[0]!.slots!.line_kana!) + REPORT_VOICE.cheer);
     expect(onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never)).toBe(until);
     t.now = t.st.revealAt + 12_000;
     t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
@@ -981,5 +1065,259 @@ describe('Murder at the Onsen: Chōchin-san says the deputy’s report (host say
     t.play('p2', { kind: 'report', tiles: ids });
     expect(t.play('p2', { kind: 'report', tiles: ids }).error).toBe('wrong-phase');
     expect(reportCues(t).length).toBe(1);
+  });
+});
+
+describe('Murder at the Onsen: the deputy’s tiles leave the plain form to the learner', () => {
+  it('the quoted verb comes plain and polite; only the plain form before と いっていました builds the report', () => {
+    const r = snowman.suspects.find((s) => s.id === 'tanaka')!.answers.where!.report!;
+    const tiles = answerTiles(r);
+    expect(tiles.slice(-2).map((x) => x.text)).toEqual(['いた', 'と いっていました']);
+    expect(decoyTile(r)).toEqual({ text: 'いました', kana: 'いました' });
+    expect(tilesInOrder(r, tiles)).toBe(true);
+    expect(tilesInOrder(r, [...tiles.slice(0, -2), { text: 'いました' }, tiles.at(-1)!])).toBe(false);
+    // The phone gets the report's tiles and the decoy.
+    const dealt = reportTiles(r, () => 0.3);
+    expect(dealt.length).toBe(tiles.length + 1);
+    expect(dealt.map((x) => x.text)).toContain('いました');
+    expect(reportNotes(r)[0]).toContain('いました');
+    // A passive report gets the active みました beside みられました, and the note on みられました.
+    const p = snowman.suspects.find((s) => s.id === 'yamada')!.answers.who!.report!;
+    expect(decoyTile(p)!.text).toBe('みました');
+    expect(reportNotes(p)[0]).toMatch(/passive of みる.*was seen.*potential みられる/);
+  });
+
+  for (const c of onsenCases)
+    it(`${c.id}: every reported-speech report gets a polite decoy that doesn't build it`, () => {
+      for (const s of c.suspects)
+        for (const intent of INTENTS) {
+          const r = s.answers[intent]!.report!;
+          const at = `${c.id}/${s.id}/${intent}`;
+          const tiles = answerTiles(r);
+          const decoy = decoyTile(r);
+          expect(decoy, at).toBeTruthy();
+          if (!r.frames!.includes('passive')) {
+            expect(tiles.at(-1)!.text, at).toBe('と いっていました');
+            expect(/(ます|ました|ません|ませんでした|です|でした)$/.test(decoy!.text), `${at}: ${decoy!.text}`).toBe(true);
+            expect(tilesInOrder(r, [...tiles.slice(0, -2), decoy!, tiles.at(-1)!]), at).toBe(false);
+          }
+        }
+    });
+
+  it('the polite forms the decoy uses', () => {
+    const cases: [string, string][] = [
+      ['ねた', 'ねました'],
+      ['いた', 'いました'],
+      ['いった', 'いきました'],
+      ['よんだ', 'よみました'],
+      ['うたった', 'うたいました'],
+      ['おいた', 'おきました'],
+      ['みなかった', 'みませんでした'],
+      ['のまない', 'のみません'],
+      ['わからない', 'わかりません'],
+      ['ない', 'ありません'],
+      ['きらいだった', 'きらいでした'],
+      ['にかいだ', 'にかいです'],
+      ['2じかんだ', '2じかんです'],
+      ['さむかった', 'さむかったです'],
+      ['いたい', 'いたいです'],
+      ['いる', 'います'],
+      ['いう', 'いいます'],
+      ['そうじした', 'そうじしました'],
+      // The panel's table (JP4): ～かった verbs, くる's negatives, ～ていた, and う-verbs in える / いる.
+      ['かった', 'かいました'],
+      ['わかった', 'わかりました'],
+      ['つかった', 'つかいました'],
+      ['みつかった', 'みつかりました'],
+      ['たすかった', 'たすかりました'],
+      ['ぶつかった', 'ぶつかりました'],
+      ['あつかった', 'あつかったです'],
+      ['こない', 'きません'],
+      ['こなかった', 'きませんでした'],
+      ['ねていた', 'ねていました'],
+      ['よんでいた', 'よんでいました'],
+      ['かえる', 'かえります'],
+      ['はいる', 'はいります'],
+      ['しる', 'しります'],
+      ['はしる', 'はしります'],
+      ['へる', 'へります'],
+      ['すべる', 'すべります'],
+      ['しゃべる', 'しゃべります'],
+      ['にぎる', 'にぎります'],
+      ['ける', 'けります'],
+      ['たべる', 'たべます'],
+      ['でかける', 'でかけます'],
+    ];
+    for (const [plain, polite] of cases) expect(politeForm(plain), plain).toBe(polite);
+  });
+
+  it('the panel’s ramen line: じぶんの ラーメンが きらいだったと (が, not を, with きらい)', () => {
+    const r = snowman.suspects.find((s) => s.id === 'tanaka')!.answers.victim!.report!;
+    expect(r.jp.text).toBe('たなかさんは ゆきだるまさんが じぶんの ラーメンが きらいだったと いっていました。');
+    expect(decoyTile(r)!.text).toBe('きらいでした');
+  });
+});
+
+describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () => {
+  const inOrder = (t: Table, deputy: string) => {
+    const me = t.view(deputy).mine!.deputy!;
+    const left = [...me.tiles];
+    return answerTiles(t.st.asks.at(-1)!.report!).map((w) => left.splice(left.findIndex((x) => x.text === w.text), 1)[0]!.id);
+  };
+  const wakeEnd = (t: Table) => {
+    t.now = onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never)!;
+    t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+  };
+
+  it('the Gallery opens for the others once the deputy takes the part; one curveball a game, after the report lands, +5 when right', () => {
+    const t = new Table(3, CONTENT, ['n5', 'n4', 'kana']);
+    t.start();
+    t.play('p2', { kind: 'deputy', accept: true });
+    t.ask('tanaka', 'どこに いましたか');
+    expect(t.st.gallery?.players).toEqual(['p1', 'p3']);
+    // Nothing reported yet: reaction tiles only, no curveball before the line is heard.
+    expect(t.st.gallery?.curveball).toBeNull();
+    expect(t.view('p1').mine!.gallery).toMatchObject({ kind: 'react', picked: null });
+    expect(t.view('p3').mine!.gallery).toMatchObject({ kind: 'react', picked: null });
+    expect(t.view('p2').mine!.gallery).toBeNull();
+    // The report lands: a Kana or N5 player who hasn't reacted gets the curveball, picked by the turn.
+    t.play('p2', { kind: 'report', tiles: inOrder(t, 'p2') });
+    expect(t.st.curveballUsed).toBe(true);
+    const target = t.st.gallery!.curveball!.playerId;
+    const other = target === 'p1' ? 'p3' : 'p1';
+    const cb = t.view(target).mine!.gallery!;
+    expect(cb.kind).toBe('curveball');
+    expect(cb.kind === 'curveball' && cb.options.map((o) => o.kana)).toContain('いっていました');
+    // Near misses, never a word the report itself contained.
+    expect(cb.kind === 'curveball' && cb.options.map((o) => o.kana).filter((k) => k !== 'いっていました').every((k) => ['いっています', 'いいました', 'いきました'].includes(k))).toBe(true);
+    expect(t.view(other).mine!.gallery).toMatchObject({ kind: 'react', picked: null });
+    // While it's unanswered, the TV's booth holds back lighting the word.
+    expect(t.view().booth!.holdKey).toBe(true);
+    const before = t.score(target);
+    expect(t.play(target, { kind: 'gallery', pick: 'いっていました' }).error).toBeUndefined();
+    expect(t.score(target) - before).toBe(5);
+    expect(t.view().booth!.holdKey).toBe(false);
+    expect(t.play(target, { kind: 'gallery', pick: 'いっていました' }).error).toBe('bad-move');
+    const was = t.score(other);
+    expect(t.play(other, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+    expect(t.score(other)).toBe(was);
+    expect(t.view().bubbles.map((b) => b.id)).toEqual(['sugoi']);
+    expect(t.play('p2', { kind: 'gallery', pick: 'sugoi' }).error).toBe('bad-move');
+    // A later answer with a deputy: reactions only, no second curveball.
+    wakeEnd(t);
+    expect(t.st.gallery).toBeNull();
+    t.timeout(); // p2 asks: no deputy
+    expect(t.turnPlayer).toBe('p3');
+    t.play('p2', { kind: 'deputy', accept: true });
+    t.ask('yamada', 'だれを みましたか', 'speech', 'p3');
+    t.play('p2', { kind: 'report', tiles: inOrder(t, 'p2') });
+    expect(t.st.gallery?.curveball).toBeNull();
+    expect(t.view('p1').mine!.gallery?.kind).toBe('react');
+  });
+
+  it('the curveball passes over a player who already reacted; a report that never lands deals none', () => {
+    const t = new Table(3, CONTENT, ['n5', 'n4', 'kana']);
+    t.start();
+    t.play('p2', { kind: 'deputy', accept: true });
+    t.ask('tanaka', 'どこに いましたか');
+    expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+    expect(t.play('p1', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();
+    // Everyone low has reacted: nobody to deal it to, so it waits for a later report.
+    t.play('p2', { kind: 'report', tiles: inOrder(t, 'p2') });
+    expect(t.st.gallery!.curveball).toBeNull();
+    expect(t.st.curveballUsed).toBeFalsy();
+
+    const m = new Table(3, CONTENT, ['n5', 'n4', 'kana']);
+    m.start();
+    m.play('p2', { kind: 'deputy', accept: true });
+    m.ask('tanaka', 'どこに いましたか');
+    m.play('p2', { kind: 'report', utterance: speech('こんにちは') });
+    m.play('p2', { kind: 'report', utterance: speech('さようなら') });
+    expect(m.st.deputy!.status).toBe('missed');
+    expect(m.st.gallery!.curveball).toBeNull();
+    expect(m.st.curveballUsed).toBeFalsy();
+    expect(m.view('p1').mine!.gallery!.kind).toBe('react');
+    expect(m.view('p3').mine!.gallery!.kind).toBe('react');
+  });
+
+  it('no Gallery for an untouched or declined offer; a first try opens it', () => {
+    const t = new Table(3, CONTENT, ['n5', 'n4', 'n5']);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    expect(t.st.gallery).toBeNull();
+    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBe('wrong-phase');
+    t.play('p2', { kind: 'report', utterance: speech('たなかさんは だいどころに いました') });
+    expect(t.st.gallery?.players).toEqual(['p1', 'p3']);
+    const d = new Table(3, CONTENT, ['n5', 'n4', 'n5']);
+    d.start();
+    d.play('p2', { kind: 'deputy', accept: false });
+    d.ask('tanaka', 'どこに いましたか');
+    expect(d.st.gallery).toBeNull();
+  });
+
+  it('the booth replays only a landed report: the frame word lit, a note, and the gist on Kana and N5 phones', () => {
+    const t = new Table(3, CONTENT, ['n5', 'n4', 'kana']);
+    t.start();
+    t.play('p2', { kind: 'deputy', accept: true });
+    t.ask('yamada', 'だれを みましたか');
+    expect(t.view().booth).toBeNull();
+    t.play('p2', { kind: 'report', utterance: speech('すずきさんは おんせんで やまださんに みました') });
+    expect(t.st.deputy).toMatchObject({ status: 'ready', tries: 1 });
+    expect(t.view().booth).toBeNull();
+    t.play('p2', { kind: 'report', tiles: inOrder(t, 'p2') });
+    const b = t.view().booth!;
+    expect(b).toMatchObject({ playerId: 'p2', atMs: REPORT_VOICE.after });
+    expect(b.lit.key).toBe('みられました');
+    expect(b.note).toContain('was seen');
+    expect(b.ms).toBeGreaterThanOrEqual(5_000);
+    expect(b.ms).toBeLessThanOrEqual(7_000);
+    // The gist: the suspect's own N5 line and the English; romaji for Kana; nothing for the deputy.
+    const yamada = snowman.suspects.find((s) => s.id === 'yamada')!.answers.who!;
+    expect(t.view('p1').mine!.gist).toMatchObject({ kana: yamada.jp.kana, en: yamada.report!.jp.en, romaji: null });
+    expect(t.view('p3').mine!.gist!.romaji).toBeTruthy();
+    expect(t.view('p2').mine!.gist).toBeNull();
+    // The host voices only the model line, never the player's own words.
+    expect(t.s.cues.filter((c) => c.event === 'onsen_report').map((c) => c.slots?.line)).toEqual([yamada.report!.jp.text]);
+  });
+
+  it('the host stand-in: once a game in a 1–2-player room with nobody at N4, Chōchin-san gives one report', () => {
+    for (const levels of [['n5'], ['kana', 'n5']] as Level[][]) {
+      const t = new Table(levels.length, CONTENT, levels);
+      t.start();
+      t.ask('tanaka', 'どこに いましたか', 'typed', 'p1');
+      const r = snowman.suspects.find((s) => s.id === 'tanaka')!.answers.where!.report!;
+      const cues = t.s.cues.filter((c) => c.event === 'onsen_standin');
+      expect(cues).toEqual([{ host: 'chochin', event: 'onsen_standin', slots: { line: r.jp.text, line_kana: r.jp.kana, line_en: r.jp.en }, atMs: REPORT_VOICE.after }]);
+      expect(t.view().standIn).toMatchObject({ line: r.jp, atMs: REPORT_VOICE.after });
+      expect(t.view('p1').mine!.gist).toMatchObject({ en: r.jp.en });
+      // At most 7 s of voice, a little past the answer's usual 12 s; nobody scores for it.
+      expect(reportVoiceMs(r.jp.kana)).toBeLessThanOrEqual(7_000);
+      expect(t.s.deadline! - t.now).toBe(Math.max(12_000, REPORT_VOICE.after + reportVoiceMs(r.jp.kana)));
+      expect(t.score('p1')).toBe(POINTS.question + POINTS.clue);
+      t.timeout();
+      // Never again this game.
+      for (let i = 0; i < 8 && t.s.phase !== 'encore'; i++) {
+        if (t.s.phase === 'answer' && t.st.turn?.playerId) t.ask('suzuki', 'どこに いましたか', 'speech', t.st.turn.playerId);
+        t.timeout();
+      }
+      expect(t.s.cues.filter((c) => c.event === 'onsen_standin').length).toBe(1);
+    }
+  });
+
+  it('no stand-in with an N4 player in the room, or in a room of three; an N5-only room of three is unchanged', () => {
+    const n4 = new Table(2, CONTENT, ['n5', 'n4']);
+    n4.start();
+    n4.play('p2', { kind: 'deputy', accept: false });
+    n4.ask('tanaka', 'どこに いましたか');
+    expect(n4.st.standIn).toBeNull();
+    const three = new Table(3);
+    three.start();
+    three.ask('tanaka', 'どこに いましたか');
+    expect(three.st.standIn).toBeNull();
+    expect(three.s.deadline! - three.now).toBe(12_000);
+    const v = three.view('p2');
+    expect(v).toMatchObject({ booth: null, standIn: null, bubbles: [], deputy: null });
+    expect(v.mine).toMatchObject({ gallery: null, gist: null, deputy: null });
+    expect(three.s.cues.map((c) => c.event)).not.toContain('onsen_standin');
   });
 });
