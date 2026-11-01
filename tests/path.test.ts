@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { kana } from '../content/src/kana/kana.js';
 import type { PhraseEntry } from '../shared/src/modes/mode.js';
 import { MODES } from '../shared/src/modes/registry.js';
+import { FRAME_BY_ID } from '../shared/src/japanese/frames.js';
 import { currentLine, frameReady, frameText, GOAL_FRAMES, GOALS, KANA_TARGET, LINES, markPath, missingFrames, pathStatus, suggest } from '../shared/src/path.js';
 import { addGame, duePhrases, emptyProgress, frameRule, MAX_PHRASES, recallOf, reviewPhrase, type GameResult, type Progress } from '../shared/src/progress.js';
 import type { ModeId } from '../shared/src/protocol.js';
@@ -216,6 +217,33 @@ describe('goals and stamps', () => {
     // A phone review is not a game day.
     reviewPhrase(q, 'kj-山', true, T0 + 3 * DAY, 0);
     expect(goal(q, '5.10', T0 + 3 * DAY).count!.have).toBe(0);
+  });
+});
+
+describe('the Limited Express Line (N3)', () => {
+  const limited = GOALS.filter((g) => g.line === 'limited');
+  const required = (g: (typeof GOALS)[number]) => g.need.flatMap((n) => (Array.isArray(n) ? n : [n]));
+
+  it("doesn't clear while it still has coming-soon stations: meeting 3.1 alone isn't the last stop", () => {
+    const p = emptyProgress();
+    p.frameMarks = Object.fromEntries(required(GOALS.find((g) => g.id === '3.1')!).map((id) => [id, { metAt: T0, recheckAt: T0 + 21 * DAY, recheck: 'waiting' as const }]));
+    markPath(p, T0);
+    const st = status(p);
+    expect(goal(p, '3.1').met).toBe(true);
+    const line = st.lines.find((l) => l.id === 'limited')!;
+    expect(line.soon).toBeGreaterThan(0);
+    expect(line.cleared).toBe(false);
+  });
+
+  it('never requires a frame tagged N5 or N4: those can count on an N3 goal only as optional', () => {
+    const bad = limited.flatMap((g) => required(g).filter((id) => ['n5', 'n4'].includes(FRAME_BY_ID[id as keyof typeof FRAME_BY_ID]?.level ?? '')).map((id) => `${g.id}:${id}`));
+    expect(bad).toEqual([]);
+  });
+
+  it('gives every N3 frame goal at least one required frame that no N4 goal offers', () => {
+    const n4 = new Set(GOALS.filter((g) => g.line === 'express').flatMap((g) => [...required(g), ...g.also]));
+    const lacking = limited.filter((g) => g.kind !== 'kanji' && !required(g).some((id) => !n4.has(id))).map((g) => g.id);
+    expect(lacking).toEqual([]);
   });
 });
 

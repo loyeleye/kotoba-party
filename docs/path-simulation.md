@@ -11,8 +11,8 @@ nights** together, about seven months, from games alone. One phone review sittin
 **19 nights**.
 
 Those 31 nights are the pace for a few fixed lines, not for N4 as a whole. The JLPT seat counted 39 of the 61
-N4 frames that no game gets an N4 player to say from memory. Goals 4.11 to 4.14 weren't on the line when this
-ran, so a cleared line wouldn't mean the N4 grammar was covered either.
+N4 frames that no game gets an N4 player to say from memory. The tables below are from the nine-goal line;
+step 6a added 4.11 to 4.14 (see "With 14 goals" below), and games barely carry them yet.
 
 ## How it works
 
@@ -97,6 +97,23 @@ The four carried goals (4.1, 4.4, 4.5, 4.9), timed together:
   chances to say the frame. It cuts the calendar time to under half.
 - **The longest dry spell is long.** In the base run, the median stamps come at nights 4, 5 and 9, then nothing for
   months: the game design seat measured a median of 17 nights with no new stamp in rooms that get all four.
+
+### With 14 goals (step 6a, 300 rooms, same base settings)
+
+| Goal | Rooms that stamp it | Nights (p25 / median / p75) | What limits it |
+|---|---|---|---|
+| 4.11 Reasons and too much | 0% | – | ＿ので comes up 0.1 times a Late Again! game; ＿すぎる comes from Late Again! only (1.0) |
+| 4.12 Change and decisions | 0% | – | ＿ように なりました and ＿ことに しました: 0.1 a Happyōkai game each, nowhere else |
+| 4.13 Passive, easy and hard | 9% | too few rooms | The passive: 0.3 a Late Again! game |
+| 4.14 Quote, purpose, embedded questions | 0% | – | Purpose ＿ために／＿ように comes from no game; ＿と いって いました comes from Ghost Advice Hotline (0.4), now on 4.14 |
+
+The four carried goals together now take a median of **33 nights (22 / 52)**, and 84% of rooms get all four,
+against 31 (20 / 45) and 91% on the nine-goal line. The new goals don't help any room, but they slow the others:
+the shipped suggestion takes open goals in list order, and 4.2 stays open in nearly every room, so it keeps
+sending rooms to Tourist either way; the change probably comes from the extra games 4.11 to 4.14 bring into the random
+draw (Late Again!, Narabete, Murder at the Onsen), most of which give nothing from memory. Fix 1 below (rank by
+yield, skip goals no game carries) is meant to undo this, and the line went from 5 of 9 goals no game carries
+to 8 of 13 (4.13 stamps in 9% of rooms).
 
 ## What would let the line clear
 

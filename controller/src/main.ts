@@ -431,15 +431,17 @@ function endGameFold(view: RoomView): HTMLElement {
   return h('div', { class: 'vip-game' }, fold('vip-game', 'VIP controls', 'End this game', body));
 }
 
-/** The three levels as one segmented row; the chosen level's "I can…" line sits under it. */
+/** The levels as one segmented row; the chosen level's "I can…" line sits under it. A saved level the picker
+ * doesn't offer yet (N3, before it opens) still shows, checked, so the row never has nothing selected. */
 function levelPicker(current: Level, onPick: (level: Level) => void): HTMLElement {
+  const levels = PICKER_LEVELS.includes(current) ? PICKER_LEVELS : [...PICKER_LEVELS, current];
   return h(
     'div',
     { class: 'levels' },
     h(
       'div',
       { class: 'seg', role: 'radiogroup', 'aria-label': 'Your level' },
-      PICKER_LEVELS.map((l) =>
+      levels.map((l) =>
         h(
           'button',
           { type: 'button', role: 'radio', 'aria-checked': String(l === current), class: `seg-btn ${l === current ? 'on' : ''}`, title: LEVEL_HINTS[l], onclick: () => onPick(l) },

@@ -29,7 +29,7 @@ import {
   type RoomFit,
 } from '../../shared/src/path.js';
 import { FRAME_FILLERS, FRAME_GAP_DAYS, FRAME_SAYS, recallOf, type AccountView } from '../../shared/src/progress.js';
-import type { Level, ModeId } from '../../shared/src/protocol.js';
+import { PICKER_LEVELS, type Level, type ModeId } from '../../shared/src/protocol.js';
 
 // ---- the phone's copy of the save, for the lobby and the recap ----
 
@@ -326,7 +326,7 @@ function markSeen(id: LineId): void {
 }
 
 /** Each line's sign-off: what clearing it means, and the move it offers. */
-const CLEARED: Record<LineId, { jlpt: string | null; move: string | null; stay: string | null; end: string | null }> = {
+const CLEARED: Record<LineId, { jlpt: string | null; move: string | null; stay: string | null; end: string | null; endEn?: string }> = {
   kana: { jlpt: null, move: 'Change to the Local Line', stay: 'Stay on the Kana Line', end: null },
   local: {
     jlpt: 'That’s the speaking side of N5, not a JLPT result: the test also checks reading, listening and many more words. A JLPT mock test will show where you stand there.',
@@ -344,14 +344,16 @@ const CLEARED: Record<LineId, { jlpt: string | null; move: string | null; stay: 
     jlpt: 'That’s the speaking side of some everyday N3, not a JLPT result: the test also checks reading, listening and far more words and kanji. A JLPT mock test will show where you stand there.',
     move: null,
     stay: null,
-    end: 'しゅうてん。 Thanks for riding.',
+    end: '「しゅうてん、 しゅうてんです。 ごじょうしゃ ありがとう ございました。」',
+    endEn: 'Last stop. Thanks for riding.',
   },
 };
 
 /**
- * "Local Line cleared": the celebration first, then what was said, a JLPT note for the N5 and N4 lines, and
- * the level move offered with "stay" at the same weight. Shown once per line, on this phone only. The move
- * is never automatic.
+ * "Local Line cleared": the celebration first, then what was said, a JLPT note for the N5, N4 and N3 lines,
+ * and the level move offered with "stay" at the same weight. Shown once per line, on this phone only. The move
+ * is never automatic, and never to a level the picker doesn't offer yet: until N3 opens, the Express card says
+ * the Limited Express platform is still being built, with a single OK.
  */
 export function clearedCard(level: Level, moveUp: (to: Level) => void, redraw: () => void): HTMLElement | null {
   const view = pathView();
@@ -361,6 +363,7 @@ export function clearedCard(level: Level, moveUp: (to: Level) => void, redraw: (
   const line = LINES.find((l, i) => st.lines[i]!.cleared && !seen.includes(l.id) && l.level === level);
   if (!line) return null;
   const c = CLEARED[line.id];
+  const canMove = !!line.up && PICKER_LEVELS.includes(line.up) && !!c.move && !!c.stay;
   const done = () => {
     markSeen(line.id);
     redraw();
@@ -369,11 +372,14 @@ export function clearedCard(level: Level, moveUp: (to: Level) => void, redraw: (
     'section',
     { class: 'path-cleared', 'aria-label': `${line.name} cleared` },
     h('p', { class: 'path-cleared-title' }, sumiStamp('big'), h('span', {}, h('strong', {}, `${line.name} cleared!`), lineJa(line.id))),
-    line.up ? h('p', { class: 'path-chochin', lang: 'ja' }, '「のりかえです！ つぎの せんへ どうぞ。」') : null,
+    canMove ? h('p', { class: 'path-chochin', lang: 'ja' }, '「のりかえです！ つぎの せんへ どうぞ。」') : null,
+    line.up && !canMove ? h('p', { class: 'path-chochin', lang: 'ja' }, '「とっきゅうの ホームは ただいま こうじちゅうです。」') : null,
+    line.up && !canMove ? h('p', { class: 'path-note' }, 'The Limited Express platform is still being built. Its first station is already on your map.') : null,
     c.end ? h('p', { class: 'path-chochin', lang: 'ja' }, c.end) : null,
+    c.endEn ? h('p', { class: 'path-note' }, c.endEn) : null,
     h('p', {}, `You’ve said this line’s sentence patterns out loud, from memory, on more than one day. So far: ${st.stats.frames} frames, ${st.stats.words} phrases from memory, ${st.stats.kanji} kanji.`),
     c.jlpt ? h('p', { class: 'path-note' }, c.jlpt) : null,
-    line.up && c.move && c.stay
+    canMove
       ? h(
           'div',
           { class: 'path-choice' },
@@ -432,7 +438,7 @@ function lineSign(line: Line, st: PathStatus, level: Level, on: boolean, pick: (
 }
 
 /** Furigana split per kanji where the reading divides evenly (各駅停車 → かく えき てい しゃ). */
-const RUBY_SPLIT: Record<string, string[]> = { 各駅停車: ['かく', 'えき', 'てい', 'しゃ'], 急行: ['きゅう', 'こう'], 線: ['せん'] };
+const RUBY_SPLIT: Record<string, string[]> = { 各駅停車: ['かく', 'えき', 'てい', 'しゃ'], 急行: ['きゅう', 'こう'], 特急: ['とっ', 'きゅう'], 線: ['せん'] };
 const rubyPart = (reading: string, text: string, i: number): string => RUBY_SPLIT[text]?.[i] ?? (i === 0 ? reading : '');
 
 /** One line's track: a row per goal, the marker on the track, the state in words. */

@@ -27,6 +27,7 @@ import { isQuiet } from '../components/speak.js';
 import { jpView } from '../components/jp.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
+import { boothTag } from '../../../shared/src/level.js';
 
 type Ctx = PhoneContext<HotlineView>;
 type Send = (move: Record<string, unknown>) => void;
@@ -1142,13 +1143,6 @@ function noteCard(me: HotlineMe): HTMLElement | null {
     h('div', { class: 'gh-note-side' }, h('p', { class: 'gh-label' }, 'Nobiko-san’s way'), jpView(n.model, me.level, { cls: 'gh-model' })),
     h('p', { class: 'gh-hint' }, 'Path credit only. Not on the scoreboard.'),
   );
-}
-
-/** Where the booth's chunk sits on this player's map: their own line, one they've passed, or one coming up. */
-function boothTag(mine: string, chunk: 'n5' | 'n4' | 'n3', tag: string): string {
-  const rank = (l: string) => (l === 'n3' ? 3 : l === 'n4' ? 2 : l === 'n5' ? 1 : 0);
-  if (rank(mine) === rank(chunk)) return `You’re on this line: ${tag}`;
-  return rank(mine) > rank(chunk) ? `Already on your map: ${tag}` : `Coming up on your map: ${tag}`;
 }
 
 function boothCard(ctx: Ctx, me: HotlineMe): HTMLElement | null {
