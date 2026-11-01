@@ -176,7 +176,7 @@ export const stationAnnouncement: LastTrainMinigame = {
       visual: '📣 Platform 3: a train is due in a moment.',
       accepted: ['まもなくさんばんせんにでんしゃがまいります', 'さんばんせんにでんしゃがまいります', 'まもなくさんばんせんにでんしゃがまいりますきいろいせんのうちがわまでおさがりください'],
       model: { text: 'まもなく、三番線に電車がまいります。', kana: 'まもなく、さんばんせんにでんしゃがまいります。', en: 'A train will soon arrive at platform 3.', furigana: [['まもなく、', ''], ['三番線', 'さんばんせん'], ['に', ''], ['電車', 'でんしゃ'], ['がまいります。', '']] },
-      hint: 'Start with まもなく (soon), then the platform with に, then でんしゃが and まいります, the humble "comes".',
+      hint: 'Start with まもなく (soon), then the platform with に, then でんしゃが and まいります, the station\'s polite "is coming".',
       timeLimit: 15,
     },
     {
