@@ -158,7 +158,7 @@ function intro(game: HotlineView): HTMLElement {
         ' or ',
         h('span', { lang: 'ja', class: 'nw' }, 'それだ！'),
       ),
-      step('😂', game.scripted ? 'Then the secret comes out. Advice that really helps scores most.' : 'Then the secret comes out, and you vote for the advice that made you laugh.'),
+      step('😂', game.scripted ? 'Then the secret comes out. Advice that really helps scores most.' : 'Then the secret comes out, and you vote for the idea that made you laugh.'),
     ),
   );
 }
@@ -303,6 +303,12 @@ function playBeat(view: RoomView, game: HotlineView): HTMLElement | null {
   let body: (HTMLElement | null)[];
   if (hidden) body = [h('p', { class: 'gh-big' }, '🙈 Nobiko-san covers the phone.')];
   else if (p.kind === 'tile' && p.tile) body = [h('div', { class: 'gh-pop' }, tile(p.tile, 'gh-tile-play'))];
+  else if (p.kind === 'typed' && p.text) {
+    // Typed advice has no sound, so its words show as it plays (player text: plain text only).
+    const words = h('p', { class: 'gh-big gh-typed-line', lang: 'ja' });
+    words.textContent = p.text;
+    body = [words, bar(TYPED_PLAY_MS, p.at || serverNow(), 'gh-bar gh-playhead'), h('p', { class: 'gh-small' }, `⌨ Typed advice · ${caller}, read it and react`)];
+  }
   else
     body = [
       h('div', { class: 'gh-wave', 'aria-hidden': 'true' }, ...Array.from({ length: 28 }, (_, i) => h('span', { style: `--i: ${i}` }))),
@@ -396,7 +402,7 @@ function voteBeat(view: RoomView, game: HotlineView): HTMLElement {
   return h(
     'div',
     { class: 'gh-center gh-votebeat' },
-    h('p', { class: 'gh-big' }, 'Which advice made you laugh?'),
+    h('p', { class: 'gh-big' }, 'Which idea made you laugh?'),
     h('p', { class: 'gh-voted' }, h('span', { class: 'gh-lock' }, '✓'), ` ${voted} of ${voters} voted`),
     h('p', { class: 'gh-small' }, 'Choices stay hidden until everyone is in. Never your own.'),
     h(

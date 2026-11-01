@@ -29,7 +29,7 @@ learning-science reviews). Three lines of can-do goals, worked back from the N5 
   dates, 5.4 find your way, 5.5 likes and wants, 5.6 your day, 5.7 ask and answer, 5.8 describe and give
   reasons, 5.9 invite/offer/ask, 5.10 N5 kanji.
 - **Express Line** (急行, N4): 4.1 favours, 4.2 may/must/mustn't, 4.3 experiences, 4.4 potential, 4.5 if
-  and when (のに counts too), 4.6 guess/hearsay/opinion, 4.7 plans and advice (shown as 工事中, under construction, and not counted: Ghost Advice Hotline gives advice, but no game asks for plans yet), 4.8 casual speech,
+  and when (のに counts too), 4.6 guess/hearsay/opinion, 4.7 plans and advice (shown as 工事中, under construction, and not counted: Ghost Advice Hotline gives advice with ＿た ほうが いいです and ＿たら どうですか, but no game asks for plans yet), 4.8 casual speech,
   4.9 polite requests, 4.10 N4 kanji.
 
 Each goal lists its **required frames** (all must be met; one may be "any of", as 5.7's question frame),

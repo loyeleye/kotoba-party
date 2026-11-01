@@ -31,6 +31,12 @@ import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsF
 export const MIN_CALLS = 5;
 export const MAX_ADVISERS = 3;
 export const RING_MS = 6_000;
+/**
+ * The ring beat when a player calls: long enough for Nobiko-san's ring line, a take of the caller's line
+ * (8 s on the phone) and its upload. It closes before the advisers record, so the caller's voice never
+ * gets into their clips.
+ */
+export const SAY_RING_MS: Record<Level, number> = { kana: 8_000, n5: 11_000, n4: 12_000 };
 export const PLAN_MS = 8_000;
 /** How long a speaking adviser may record, by level (Kana advisers pick a tile). N3 gets 12 s when it joins. */
 export const RECORD_MS: Record<Level, number> = { kana: 0, n5: 9_000, n4: 9_000 };
@@ -40,7 +46,7 @@ export const GRACE_MS = 1_500;
 export const MIN_CLIP_MS = 300;
 /** A Kana tile on the TV, a typed line, Nobiko-san reading one. */
 export const TILE_PLAY_MS = 2_000;
-export const TYPED_PLAY_MS = 3_000;
+export const TYPED_PLAY_MS = 4_000;
 export const NOBIKO_PLAY_MS = 4_500;
 export const PLAY_TAIL_MS = 500;
 /** The caller's reaction locks this long after the advice ends. */
@@ -64,6 +70,8 @@ export const POINTS = {
   bet: 20,
   /** The caller, for saying the problem out loud (a try counts). */
   line: 50,
+  /** A speaking adviser whose own clip counted as said: speaking pays more than typing or a tap. */
+  spoke: 50,
 } as const;
 
 export type Reaction = 'chigau' | 'oshii' | 'soreda';
@@ -88,13 +96,15 @@ export interface Advice {
   checked: boolean;
   /** Nobiko-san read it: a mic pass (half points), or a free read when the mic is blocked. */
   pass: boolean;
+  /** A free read (the mic is blocked): it keeps the adviser in the call, but earns no reaction points. */
+  free?: boolean;
 }
 
 export interface LedgerEntry {
   round: number;
   playerId: string;
   points: number;
-  why: 'soreda' | 'oshii' | 'laugh' | 'sweep' | 'bet' | 'line';
+  why: 'soreda' | 'oshii' | 'laugh' | 'sweep' | 'bet' | 'line' | 'spoke';
 }
 
 export interface Call {
@@ -107,6 +117,10 @@ export interface Call {
   /** The caller said the problem out loud (a clip came in). */
   callerSaid: boolean;
   callerClip: string | null;
+  /** The caller started a take: Nobiko-san doesn't read over it while it uploads. */
+  callerTaking: boolean;
+  /** This call's ring beat (see SAY_RING_MS). */
+  ringMs: number;
   /** Speaking advisers who pressed Ready in the plan beat. */
   ready: string[];
   hinted: string[];
@@ -197,7 +211,8 @@ export interface HotlineView {
   /** Lock-ins for the seat chips: who is in, never what they chose. */
   locked: { ready: string[]; sent: string[]; bets: string[]; votes: string[] };
   /** The advice playing now, and (with `reacting`) through its react beat. */
-  play: { index: number; total: number; playerId: string; kind: AdviceKind; clipId: string | null; local: boolean; durMs: number; at: number; tile: TileView | null; pass: boolean; hidden: boolean; reacting: boolean } | null;
+  /** text: typed advice, shown while it plays (it has no sound, so the caller reads it to judge it). */
+  play: { index: number; total: number; playerId: string; kind: AdviceKind; clipId: string | null; local: boolean; durMs: number; at: number; tile: TileView | null; text: string | null; pass: boolean; hidden: boolean; reacting: boolean } | null;
   /** Players who may vote in the laugh vote now. */
   voters: number;
   /** Advice already played, in play order. */
@@ -206,7 +221,7 @@ export interface HotlineView {
   secret: { text: JpText; cure: TileView; fair: boolean | null } | null;
   /** From the score beat. */
   tally: { votes: Record<string, number>; top: string | null; sweep: string | null; points: { playerId: string; points: number }[] } | null;
-  booth: { playerId: string; line: string; chunk: string; note: string; tag: string } | null;
+  booth: { playerId: string; line: string; chunk: string; note: string; tag: string; level: 'n5' | 'n4' } | null;
   ledger: LedgerEntry[];
   me: HotlineMe | null;
 }
@@ -246,10 +261,12 @@ export interface HotlineMe {
   points: number | null;
   breakdown: { why: LedgerEntry['why']; points: number }[];
   /** A speaking adviser's private note at the score: Nobiko-san's way, what was said, the chunk if used. */
-  note: { model: JpText; said: string | null; hinted: boolean; chunk: string | null } | null;
+  /** credit: what the phrasebook logged for their line (see creditOf). */
+  note: { model: JpText; said: string | null; hinted: boolean; chunk: string | null; credit: Credit } | null;
 }
 
 export type HotlineMove =
+  | { kind: 'taking'; round: number }
   | { kind: 'say'; round: number; clipId?: string | null; heard?: Utterance | null; checked?: boolean; local?: boolean }
   | { kind: 'ready'; round: number }
   | { kind: 'hint'; round: number }
@@ -340,6 +357,28 @@ export function chunkOf(c: Call, a: Advice): AdviceChunk | null {
   return CHUNKS.find((k) => heardAny(reading, k.keys)) ?? null;
 }
 
+/**
+ * What the path credits a speaking adviser's level line with. The line's frame is only credited when their own
+ * clip used that level's chunk: naming the cure alone ("みずを") doesn't say ＿た ほうが いいです.
+ *   memory: their clip used the chunk, no hint · hint: the same, after opening the hint
+ *   unchecked: a clip with no speech-to-text (said, but not counted as from memory)
+ *   seen: anything else (typed, Nobiko-san's reading, a clip without the chunk, hidden by the VIP)
+ */
+export type Credit = 'memory' | 'hint' | 'unchecked' | 'seen';
+export function creditOf(c: Call, a: Advice): Credit {
+  if (a.kind !== 'clip' || c.hidden.includes(a.playerId)) return 'seen';
+  if (!a.checked) return 'unchecked';
+  const k = chunkOf(c, a);
+  if (!k || k.level !== a.level) return 'seen';
+  return c.hinted.includes(a.playerId) ? 'hint' : 'memory';
+}
+
+/** The speaking bonus: their own clip, not hidden, that gave some advice or used a chunk (or couldn't be checked). */
+export function spokeOf(c: Call, a: Advice): boolean {
+  if (a.kind !== 'clip' || c.hidden.includes(a.playerId)) return false;
+  return !a.checked || !!tileOfAdvice(c, a) || !!chunkOf(c, a);
+}
+
 /** Play time for one advice. */
 export function playMs(a: Advice | undefined): number {
   if (!a) return NOBIKO_PLAY_MS;
@@ -404,6 +443,8 @@ function startCall(s: HotlineState, ctx: ModeContext): Call {
     ...roles,
     callerSaid: false,
     callerClip: null,
+    callerTaking: false,
+    ringMs: RING_MS,
     ready: [],
     hinted: [],
     picks: {},
@@ -473,21 +514,22 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
     const a = c.advice[id]!;
     const hidden = c.hidden.includes(id);
     const r = c.reactions[id];
-    const half = a.pass ? 0.5 : 1;
-    if (!hidden && r === 'soreda') {
+    // A mic pass earns half; a free read none (Nobiko-san always reads the cure, so it can't be a sure 100 a call).
+    const half = a.free ? 0 : a.pass ? 0.5 : 1;
+    if (!hidden && r === 'soreda' && half > 0) {
       pay(s, ctx, id, POINTS.soreda * half, 'soreda');
       statsOf(s, id).soreda += 1;
-    } else if (!hidden && r === 'oshii') pay(s, ctx, id, POINTS.oshii * half, 'oshii');
-    // The path: a speaking adviser's own clip counts as said when it named any advice or used a chunk (or nobody could tell).
+    } else if (!hidden && r === 'oshii' && half > 0) pay(s, ctx, id, POINTS.oshii * half, 'oshii');
+    // The path: see creditOf. Kana tiles are seen.
     if (a.level === 'kana') {
       const t = a.tile ? adviceOf(a.tile) : null;
       if (t) ctx.phrase(id, { itemId: `hotline:tile:${t.id}`, text: t.word.text, kana: t.word.kana, en: t.word.en, outcome: 'seen', recall: 'read' });
       continue;
     }
     const line = lineOf(p, a.level).model;
-    const said = a.kind === 'clip' && (!a.checked || !!tileOfAdvice(c, a) || !!chunkOf(c, a));
-    const read = c.hinted.includes(id) || a.kind === 'nobiko';
-    ctx.phrase(id, { itemId: `hotline:${p.id}:${a.level}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: read ? 'read' : 'memory' });
+    const credit = creditOf(c, a);
+    ctx.phrase(id, { itemId: `hotline:${p.id}:${a.level}`, text: line.text, kana: line.kana, en: line.en, outcome: credit === 'memory' || credit === 'hint' || credit === 'unchecked' ? 'said' : 'seen', recall: credit === 'memory' ? 'memory' : 'read' });
+    if (spokeOf(c, a)) pay(s, ctx, id, POINTS.spoke, 'spoke');
   }
   // Laughs: +50 a vote, and a sweep with three voters or more.
   const votes = tallyOf(c);
@@ -495,9 +537,8 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
     pay(s, ctx, id, n * POINTS.laugh, 'laugh');
     statsOf(s, id).laughs += n;
   }
-  const voters = Object.keys(c.votes).length;
   const sweep = sweepOf(c);
-  if (sweep && voters >= 3) pay(s, ctx, sweep, POINTS.sweep, 'sweep');
+  if (sweep && sweepVoters(c, sweep) >= 3) pay(s, ctx, sweep, POINTS.sweep, 'sweep');
   for (const [id, tile] of Object.entries(c.bets)) {
     if (tile === p.cure && c.gallery.includes(id)) {
       pay(s, ctx, id, POINTS.bet, 'bet');
@@ -512,7 +553,9 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
     if (!k) continue;
     if (!best || (k.level === 'n4' && best.chunk.level !== 'n4')) best = { id, chunk: k, line: subtitleOf(a) ?? lineOf(p, a.level).model.text };
   }
-  c.booth = best ? { playerId: best.id, chunk: best.chunk.id, line: best.line } : null;
+  // Never two booths in a row: it's a treat, not a beat every call (and it keeps 8 players under 11.5 minutes).
+  const prev = s.calls[s.calls.indexOf(c) - 1];
+  c.booth = best && !prev?.booth ? { playerId: best.id, chunk: best.chunk.id, line: best.line } : null;
 }
 
 function tallyOf(c: Call): Record<string, number> {
@@ -521,12 +564,20 @@ function tallyOf(c: Call): Record<string, number> {
   return out;
 }
 
+/** Every vote from everyone else went to one adviser (they can't vote for themselves, so their own vote doesn't count). */
 function sweepOf(c: Call): string | null {
   const targets = Object.values(c.votes);
   if (!targets.length) return null;
-  const first = targets[0]!;
-  return targets.every((t) => t === first) && !c.hidden.includes(first) ? first : null;
+  for (const t of new Set(targets)) {
+    if (c.hidden.includes(t)) continue;
+    const others = Object.entries(c.votes).filter(([voter]) => voter !== t);
+    if (others.length && others.every(([, v]) => v === t)) return t;
+  }
+  return null;
 }
+
+/** Voters other than the sweep's target: three or more make a sweep. */
+const sweepVoters = (c: Call, target: string): number => Object.keys(c.votes).filter((v) => v !== target).length;
 
 function subtitleOf(a: Advice): string | null {
   if (a.kind === 'typed') return a.text;
@@ -641,8 +692,11 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       case 'prompt': {
         const c = startCall(s, ctx);
         step(c, 'ring');
+        c.ringMs = c.caller ? SAY_RING_MS[ctx.player(c.caller)?.level ?? 'n5'] : RING_MS;
         const p = problemOfCall(c);
-        ctx.cue({ host: 'nobiko', event: 'hotline_ring', slots: { name: c.caller ? (ctx.player(c.caller)?.name ?? '') : '', caller: p.caller.name.text, caller_kana: p.caller.name.kana, caller_en: p.caller.name.en } });
+        // A scripted caller has no player name: leave the slot out, so only the lines without {name} can play.
+        const who = c.caller ? ctx.player(c.caller)?.name : undefined;
+        ctx.cue({ host: 'nobiko', event: 'hotline_ring', slots: { ...(who ? { name: who } : {}), caller: p.caller.name.text, caller_kana: p.caller.name.kana, caller_en: p.caller.name.en } });
         // A scripted caller: Nobiko-san reads the problem herself.
         if (!c.caller) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: p.line.n5.kana }, atMs: 1_500 });
         break;
@@ -674,7 +728,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
         step(c, 'points');
         settle(s, c, ctx);
         const sweep = sweepOf(c);
-        if (sweep && Object.keys(c.votes).length >= 3) ctx.cue({ host: 'nobiko', event: 'hotline_sweep', slots: { name: ctx.player(sweep)?.name ?? '' } });
+        if (sweep && sweepVoters(c, sweep) >= 3) ctx.cue({ host: 'nobiko', event: 'hotline_sweep', slots: { name: ctx.player(sweep)?.name ?? '' } });
         else ctx.cue({ host: 'nobiko', event: 'hotline_score' });
         break;
       }
@@ -695,7 +749,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       case 'intro':
         return DURATIONS.intro;
       case 'prompt':
-        return RING_MS + PLAN_MS;
+        return (c?.ringMs ?? RING_MS) + PLAN_MS;
       case 'answer': {
         if (!c) return 0;
         const limits = c.advisers.filter((id) => !c.advice[id] && isSpeaker(ctx, id)).map((id) => RECORD_MS[ctx.player(id)?.level ?? 'n5']);
@@ -728,7 +782,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
   wakeAt(s, phase) {
     const c = current(s);
     if (!c) return null;
-    if (phase === 'prompt' && c.step === 'ring') return c.stepAt + RING_MS;
+    if (phase === 'prompt' && c.step === 'ring') return c.stepAt + c.ringMs;
     if (phase === 'reveal' && c.step === 'play') return c.stepAt + playMs(c.advice[c.order[c.at]!]);
     if (phase === 'reveal' && c.step === 'react') return c.stepAt + REACT_MS;
     if (phase === 'score' && c.step === 'points' && c.booth) return c.stepAt + SCORE_MS;
@@ -742,8 +796,8 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       c.step = 'plan';
       c.stepAt = ctx.now;
       const p = problemOfCall(c);
-      // Nobody heard the caller: Nobiko-san reads the problem for them.
-      if (c.caller && !c.callerSaid) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: p.line[ctx.player(c.caller)?.level ?? 'n5'].kana } });
+      // Nobody heard the caller (and no take is still uploading): Nobiko-san reads the problem for them.
+      if (c.caller && !c.callerSaid && !c.callerTaking) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: p.line[ctx.player(c.caller)?.level ?? 'n5'].kana } });
     } else if (phase === 'reveal' && c.step === 'play') {
       c.step = 'react';
       c.stepAt = ctx.now;
@@ -794,12 +848,19 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
     const adviser = c.advisers.includes(playerId);
     switch (raw.kind) {
       case 'say': {
-        // The caller says the problem: any time before the advice comes in. A try counts.
+        // The caller says the problem in the ring beat (a take started then may land in the plan beat). A try counts.
         if (playerId !== c.caller) return moveError('not-yours');
-        if (phase !== 'prompt' && phase !== 'answer') return moveError('wrong-phase');
+        if (phase !== 'prompt' || (c.step === 'plan' && !c.callerTaking)) return moveError('wrong-phase');
         if (c.callerSaid) return moveError('already-sent');
         c.callerSaid = true;
         c.callerClip = typeof raw.clipId === 'string' && raw.clipId.length <= 64 ? raw.clipId : null;
+        return MOVE_OK;
+      }
+      case 'taking': {
+        // The caller's take has started (the clip lands with 'say').
+        if (playerId !== c.caller) return moveError('not-yours');
+        if (phase !== 'prompt' || c.step !== 'ring') return moveError('wrong-phase');
+        c.callerTaking = true;
         return MOVE_OK;
       }
       case 'ready': {
@@ -848,14 +909,14 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
         return MOVE_OK;
       }
       case 'pass': {
-        // Nobiko-san reads the adviser's level line: once a game, or free when the mic is blocked. Half points.
+        // Nobiko-san reads the adviser's level line: once a game for half points, or free when the mic is blocked for none.
         if (!adviser || !isSpeaker(ctx, playerId)) return moveError('not-yours');
         if (phase !== 'prompt' && phase !== 'answer') return moveError('wrong-phase');
         if (c.advice[playerId]) return moveError('already-sent');
         const free = raw.free === true;
         if (!free && s.micPassUsed[playerId]) return moveError('no-pass-left');
         if (!free) s.micPassUsed[playerId] = true;
-        c.advice[playerId] = blankAdvice(playerId, level, 'nobiko', { pass: true });
+        c.advice[playerId] = blankAdvice(playerId, level, 'nobiko', { pass: true, ...(free ? { free: true } : {}) });
         return MOVE_OK;
       }
       case 'bet': {
@@ -939,7 +1000,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       voters: inCall && phase === 'encore' && !s.scripted ? ctx.connected().filter((pl) => voteTargets(c!, pl.id).length > 0).length : 0,
       rows: played.map((id) => rowOf(c!, id, level)),
       secret: pastSecret && p ? { text: p.secret, cure: tileView(p.cure, level), fair: fairOf(c!) } : null,
-      tally: inCall && phase === 'score' ? { votes: tallyOf(c!), top: topOf(c!), sweep: Object.keys(c!.votes).length >= 3 ? sweepOf(c!) : null, points: pointsOfCall(s, c!.index) } : null,
+      tally: inCall && phase === 'score' ? { votes: tallyOf(c!), top: topOf(c!), sweep: sweepOf(c!) && sweepVoters(c!, sweepOf(c!)!) >= 3 ? sweepOf(c!) : null, points: pointsOfCall(s, c!.index) } : null,
       booth: inCall && phase === 'score' && c!.step === 'booth' && c!.booth ? boothView(c!) : null,
       ledger: phase === 'score' || phase === 'recap' ? s.ledger : [],
       me: null,
@@ -1002,8 +1063,9 @@ function playView(c: Call, level: Level): HotlineView['play'] {
     local: !hidden && a.local,
     durMs: a.durMs,
     at: c.step === 'play' ? c.stepAt : 0,
-    // A Kana tile shows as it plays; spoken advice never shows a picture until the caller reacts.
+    // A Kana tile and typed words show as they play; spoken advice never shows a picture until the caller reacts.
     tile: a.kind === 'tile' && a.tile && !hidden ? tileView(a.tile, level) : null,
+    text: a.kind === 'typed' && !hidden ? a.text : null,
     pass: a.pass,
     hidden,
     reacting: c.step === 'react',
@@ -1052,7 +1114,7 @@ function boothView(c: Call): HotlineView['booth'] {
   const b = c.booth;
   if (!b) return null;
   const k = CHUNKS.find((x) => x.id === b.chunk);
-  return k ? { playerId: b.playerId, line: b.line, chunk: chunkIn(b.line, k.text), note: k.note, tag: k.tag } : null;
+  return k ? { playerId: b.playerId, line: b.line, chunk: chunkIn(b.line, k.text), note: k.note, tag: k.tag, level: k.level } : null;
 }
 
 function pointsOfCall(s: HotlineState, round: number): { playerId: string; points: number }[] {
@@ -1063,7 +1125,8 @@ function pointsOfCall(s: HotlineState, round: number): { playerId: string; point
 
 /** Who this player may vote for: advice that was played and not hidden, never their own. */
 function voteTargets(c: Call, playerId: string): string[] {
-  return c.order.filter((id) => id !== playerId && !c.hidden.includes(id));
+  // Nobiko-san's reading is her joke, not the adviser's: it isn't up for a laugh.
+  return c.order.filter((id) => id !== playerId && !c.hidden.includes(id) && c.advice[id]?.kind !== 'nobiko');
 }
 
 function roleOf(c: Call, id: string): Role | null {
@@ -1098,7 +1161,7 @@ function meView(s: HotlineState, c: Call, phase: Phase, player: ModePlayer, leve
     level,
     secret: isCaller ? p.secret : null,
     callerLine: isCaller ? withRomaji(p.line[level], level) : null,
-    canSay: isCaller && !c.callerSaid && (phase === 'prompt' || phase === 'answer'),
+    canSay: isCaller && !c.callerSaid && phase === 'prompt' && c.step === 'ring',
     said: isCaller && c.callerSaid,
     gist: withRomaji(p.gist, level),
     mission: line ? { text: line.mission, model: withRomaji(line.model, level), ...(line.frame ? { frame: withRomaji(line.frame, level) } : {}) } : null,
@@ -1124,7 +1187,7 @@ function meView(s: HotlineState, c: Call, phase: Phase, player: ModePlayer, leve
     breakdown,
     note:
       phase === 'score' && isAdviser && speaker && mine
-        ? { model: lineOf(p, level).model, said: mine.kind === 'nobiko' || c.hidden.includes(id) ? null : subtitleOf(mine), hinted: c.hinted.includes(id), chunk: chunk?.text ?? null }
+        ? { model: lineOf(p, level).model, said: mine.kind === 'nobiko' || c.hidden.includes(id) ? null : subtitleOf(mine), hinted: c.hinted.includes(id), chunk: chunk?.text ?? null, credit: creditOf(c, mine) }
         : null,
   };
 }

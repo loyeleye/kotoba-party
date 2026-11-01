@@ -88,21 +88,22 @@ export const ADVICE: readonly AdviceTile[] = [
   { id: 'water', word: jp('みずを かけて！', 'Pour water on it!'), picture: 'advice-water', emoji: '💧', keys: ['みずを', 'みずに', 'おみず', 'みずかけ'] },
   { id: 'fire', word: jp('ひを つけて！', 'Light it!'), picture: 'advice-fire', emoji: '🔥', keys: ['ひをつけ', 'ひをともし', 'ろうそく', 'まっち', 'らいたあ', 'ほのお'] },
   { id: 'leaf', word: jp('はっぱを のせて！', 'Put a leaf on it!'), picture: 'advice-leaf', emoji: '🍃', keys: ['はっぱ'] },
-  // すみを, not すみ (すみません, おやすみ); すみに, for すみに つけて.
-  { id: 'ink', word: jp('すみを つけて！', 'Dip into the ink!'), picture: 'advice-ink', emoji: '🖋️', keys: ['すみを', 'すみに', 'いんく', 'ぼくじゅう', 'すずり'] },
+  // Not a bare すみを / すみに: おやすみを, やすみを and へやの すみに would fire. Tie すみ to its verb.
+  { id: 'ink', word: jp('すみを つけて！', 'Dip into the ink!'), picture: 'advice-ink', emoji: '🖋️', keys: ['すみをつけ', 'すみにつけ', 'すみをたっぷり', 'すみをいれ', 'いんく', 'ぼくじゅう', 'すずり'] },
   { id: 'umbrella', word: jp('かさを さして！', 'Put up an umbrella!'), picture: 'advice-umbrella', emoji: '☂️', keys: ['かさを', 'かさに', 'かさが', 'かさの', 'かさも', 'かさは', 'あまがさ'] },
   { id: 'aircon', word: jp('クーラーを つけて！', 'Turn on the air con!'), picture: 'advice-aircon', emoji: '🌬️', keys: ['くうらあ', 'えあこん', 'れいぼう'] },
   { id: 'kotatsu', word: jp('こたつに はいって！', 'Get in the kotatsu!'), picture: 'advice-kotatsu', emoji: '🍊', keys: ['こたつ'] },
   { id: 'play', word: jp('あそんで！', 'Play!'), picture: 'advice-play', emoji: '🪀', keys: ['あそん', 'あそぼ', 'あそび', 'あそべ', 'あそば'] },
-  { id: 'dont-look', word: jp('したを みないで！', 'Don’t look down!'), picture: 'advice-dont-look', emoji: '🙈', keys: ['みないで', 'みないほう', 'みちゃだめ', 'みてはだめ', 'みてはいけ'] },
-  { id: 'dont-move', word: jp('うごかないで！', 'Don’t move!'), picture: 'advice-dont-move', emoji: '🗿', keys: ['うごかな', 'じっと', 'とまって'] },
+  { id: 'dont-look', word: jp('したを みないで！', 'Don’t look down!'), picture: 'advice-dont-look', emoji: '🙈', keys: ['みないで', 'みないほう', 'みちゃだめ', 'みてはだめ', 'みてはいけ', 'みるな', 'したをみず', 'うえをみ'] },
+  { id: 'dont-move', word: jp('うごかないで！', 'Don’t move!'), picture: 'advice-dont-move', emoji: '🗿', keys: ['うごかな', 'うごくな', 'じっと', 'とまって'] },
   // Not にげな: にげないで is the opposite advice.
   { id: 'run', word: jp('にげて！', 'Run!'), picture: 'advice-run', emoji: '🏃', keys: ['にげて', 'にげた', 'にげる', 'にげろ', 'にげま', 'はしって'] },
   { id: 'search', word: jp('さがして！', 'Look for it!'), picture: 'advice-search', emoji: '🔍', keys: ['さがし', 'さがそ', 'さがす', 'さがせ', 'みつけ'] },
-  { id: 'shout', word: jp('さけんで！', 'Shout!'), picture: 'advice-shout', emoji: '📣', keys: ['さけん', 'さけび', 'さけぼ', 'さけべ', 'おおきなこえ', 'おおごえ', 'やっほお'] },
+  { id: 'shout', word: jp('さけんで！', 'Shout!'), picture: 'advice-shout', emoji: '📣', keys: ['さけん', 'さけび', 'さけぼ', 'さけべ', 'おおきなこえ', 'おおきいこえ', 'おおごえ', 'やっほお'] },
   { id: 'wash', word: jp('あらって！', 'Wash it!'), picture: 'advice-wash', emoji: '🧼', keys: ['あらって', 'あらう', 'あらった', 'あらえ', 'あらお', 'せんたく'] },
-  { id: 'sorry', word: jp('あやまって！', 'Say sorry!'), picture: 'advice-sorry', emoji: '🙇', keys: ['あやま', 'ごめん'] },
-  { id: 'dont-clean', word: jp('そうじしないで！', 'Don’t clean!'), picture: 'advice-dont-clean', emoji: '🧹', keys: ['そうじしな', 'そうじはだめ', 'そうじをやめ', 'そうじやめ'] },
+  // Not a bare すみません: learners open advice with it.
+  { id: 'sorry', word: jp('あやまって！', 'Say sorry!'), picture: 'advice-sorry', emoji: '🙇', keys: ['あやま', 'ごめん', 'すみませんと', 'すみませんって', 'もうしわけ'] },
+  { id: 'dont-clean', word: jp('そうじしないで！', 'Don’t clean!'), picture: 'advice-dont-clean', emoji: '🧹', keys: ['そうじしな', 'そうじをしな', 'そうじはしな', 'そうじするな', 'そうじをするな', 'そうじはだめ', 'そうじをやめ', 'そうじやめ'] },
   // Near misses: close, but not what the caller needs.
   { id: 'switch', word: jp('でんきを つけて！', 'Turn the light on!'), picture: 'advice-switch', emoji: '💡', keys: ['でんき', 'あかりを', 'あかりが'] },
   { id: 'flowers', word: jp('はなを あげて！', 'Give flowers!'), picture: 'advice-flowers', emoji: '💐', keys: ['はなを', 'はなたば', 'ぷれぜんと'] },
@@ -178,11 +179,11 @@ export const PROBLEMS: readonly Problem[] = [
     id: 'pon',
     caller: { name: jp('ポン', 'Pon'), picture: 'caller-pon', emoji: '🦝' },
     line: {
-      kana: jp('しっぽが もどらないポン…', 'My tail won’t go back in…'),
-      n5: jp('あたまの はっぱが おちました。しっぽが もどりません！', 'The leaf fell off my head. My tail won’t go back in!'),
+      kana: jp('しっぽが でたポン…', 'My tail popped out…'),
+      n5: jp('あたまの はっぱが おちました。しっぽが でました！', 'The leaf fell off my head. My tail popped out!'),
       n4: jk('頭の 葉っぱが 落ちて、半分 たぬきに 戻って しまったんです！', 'あたまの はっぱが おちて、はんぶん たぬきに もどって しまったんです！', 'The leaf fell off my head, and I’ve gone half back to tanuki!'),
     },
-    gist: jp('はっぱが おちた！ しっぽが でた！', 'The leaf fell off Pon’s head, and his tail popped out.'),
+    gist: jp('あたまの うえが からっぽ！ しっぽが でた！', 'Nothing’s on top of Pon’s head any more, and his tail popped out.'),
     secret: jp('あたまに はっぱ', 'A leaf back on his head'),
     cure: 'leaf',
     near: 'hide',
@@ -224,7 +225,7 @@ export const PROBLEMS: readonly Problem[] = [
       },
       n4: {
         mission: 'Tell Fude what he’d better do.',
-        model: jk('すずりで 墨を つけた ほうが いいですよ。', 'すずりで すみを つけた ほうが いいですよ。', 'You’d better dip into the inkstone.'),
+        model: jk('もう 一度 墨を つけた ほうが いいですよ。', 'もう いちど すみを つけた ほうが いいですよ。', 'You’d better dip into the ink again.'),
       },
     },
     reveal: jp('すみを つけて、シュッ！ ふっかつね〜。', 'A dip of ink and… swish! He’s back~'),
@@ -378,7 +379,7 @@ export const PROBLEMS: readonly Problem[] = [
       n5: jp('「だるまさんが ころんだ」で いつも まけます。すぐ うごきます…', 'I always lose at “Daruma-san ga koronda”. I keep moving…'),
       n4: jk('「だるまさんが ころんだ」で、いつも 動いて しまうんです…', '「だるまさんが ころんだ」で、いつも うごいて しまうんです…', 'At “Daruma-san ga koronda”, I always end up moving…'),
     },
-    gist: jp('じっと できない！ また まけた！', 'At red light, green light, the daruma keeps moving and keeps losing.'),
+    gist: jp('つい うごいちゃう！ また まけた！', 'At red light, green light, the daruma keeps moving and keeps losing.'),
     secret: jp('うごかない', 'Don’t move a muscle'),
     cure: 'dont-move',
     near: 'sleep',
@@ -462,7 +463,7 @@ export const PROBLEMS: readonly Problem[] = [
       n5: jp('わたしは こだまです。でも、もう だれも 「やっほー」と いいません…', 'I’m an echo spirit. But nobody shouts “yoo-hoo!” any more…'),
       n4: jk('最近 だれも 山で 叫ばないので、返事が できないんです…', 'さいきん だれも やまで さけばないので、へんじが できないんです…', 'Nobody shouts in the mountains any more, so I’ve nothing to answer…'),
     },
-    gist: jp('だれも 「やっほー」って いわない！', 'Nobody shouts “yoo-hoo!” in the mountains, so there’s nothing to echo.'),
+    gist: jp('だれも よんで くれない！ しーん…', 'Nobody calls out in the mountains any more, so there’s nothing to echo.'),
     secret: jp('おおきな こえで やっほー', 'A big, loud “yoo-hoo!”'),
     cure: 'shout',
     near: 'sing',
@@ -471,12 +472,12 @@ export const PROBLEMS: readonly Problem[] = [
     advice: {
       n5: {
         mission: 'Tell the echo spirit what to do, out loud.',
-        model: jp('じぶんで 「やっほー」と さけんで ください！', 'Please shout “yoo-hoo!” yourself!'),
-        frame: jp('じぶんで 「やっほー」と ＿＿ ください！', 'Please ＿＿ (shout) “yoo-hoo!” yourself!'),
+        model: jp('おおきな こえで 「やっほー」と いって ください！', 'Please call “yoo-hoo!” in a big voice!'),
+        frame: jp('おおきな こえで 「やっほー」と ＿＿ ください！', 'Please ＿＿ (say) “yoo-hoo!” in a big voice!'),
       },
       n4: {
         mission: 'Gently suggest something the echo spirit could try.',
-        model: jk('自分から 大きな 声で 叫んだら どうですか。', 'じぶんから おおきな こえで さけんだら どうですか。', 'Why not shout first yourself, nice and loud?'),
+        model: jk('自分から 大きな 声で 「やっほー」と 言ったら どうですか。', 'じぶんから おおきな こえで 「やっほー」と いったら どうですか。', 'Why not call “yoo-hoo!” first yourself, nice and loud?'),
       },
     },
     reveal: jp('やっほー！ …やっほー… いい こだまね〜。', 'Yoo-hoo! …yoo-hoo… What an echo~'),
@@ -586,9 +587,9 @@ const tag = {
  */
 export const CHUNKS: readonly AdviceChunk[] = [
   { id: 'nai-hou', level: 'n4', text: 'ない ほうが いいです', keys: ['ないほうがいい'], note: '〜ない ほうが いいです: friendly advice with a stop sign on it. Fair warning, given.', tag: tag.naiHou },
-  { id: 'hou', level: 'n4', text: 'ほうが いいです', keys: ['ほうがいい'], note: '〜た ほうが いいです: “you’d better”. Advice with a gentle shove behind it.', tag: tag.hou },
+  { id: 'hou', level: 'n4', text: 'ほうが いいです', keys: ['たほうがいい', 'だほうがいい'], note: '〜た ほうが いいです: “you’d better”. Advice with a gentle shove behind it.', tag: tag.hou },
   // だら after ん (さけんだら, あそんだら): the highlight has to find だら too.
-  { id: 'tara', level: 'n4', text: 'たら どうですか', keys: ['たらどう', 'だらどう'], note: '〜たら どうですか: “why not…?” So gentle the yōkai will think it was its own idea.', tag: tag.tara },
+  { id: 'tara', level: 'n4', text: 'たら どうですか', keys: ['たらどうで', 'だらどうで', 'たらいかが', 'だらいかが'], note: '〜たら どうですか: “why not…?” So gentle the yōkai will think it was its own idea.', tag: tag.tara },
   { id: 'naide', level: 'n5', text: 'ないで ください', keys: ['ないでください'], note: '〜ないで ください: a polite “don’t!”. The caller has been warned, nicely.', tag: tag.naide },
   // で after ん (あそんで, さけんで).
   { id: 'te', level: 'n5', text: 'て ください', keys: ['てください', 'でください'], note: '〜て ください: a polite “please do”. Short, clear, and the caller knows exactly what to do.', tag: tag.te },

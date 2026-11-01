@@ -251,12 +251,16 @@ describe('Ghost Advice Hotline: scoring', () => {
     expect(got(a2!, 'oshii')).toBe(POINTS.oshii);
     expect(got(a3!, 'soreda') + got(a3!, 'oshii')).toBe(0);
     expect(got(a1!, 'laugh')).toBe(5 * POINTS.laugh);
-    // Five of six votes isn't a sweep.
-    expect(got(a1!, 'sweep')).toBe(0);
+    // Every vote but their own is a sweep (they can't vote for themselves).
+    expect(got(a1!, 'sweep')).toBe(POINTS.sweep);
+    // Speaking pays: a1 and a2 named advice in their own clips; a3's "えっと…" didn't.
+    expect(got(a1!, 'spoke')).toBe(POINTS.spoke);
+    expect(got(a2!, 'spoke')).toBe(POINTS.spoke);
+    expect(got(a3!, 'spoke')).toBe(0);
     for (const g of c.gallery) expect(got(g, 'bet')).toBe(POINTS.bet);
     expect(got(c.caller!, 'line')).toBe(POINTS.line);
     expect(t.view('stage').secret!.fair).toBe(true);
-    expect(t.view(a1!).me!.breakdown.map((b) => b.why)).toEqual(['soreda', 'laugh']);
+    expect(t.view(a1!).me!.breakdown.map((b) => b.why).sort()).toEqual(['laugh', 'soreda', 'spoke', 'sweep']);
   });
 
   it('a Kana adviser’s tile is marked by the game, and the caller can’t overrule it', () => {
@@ -355,6 +359,74 @@ describe('Ghost Advice Hotline: the learning path', () => {
     expect(c.booth).not.toBeNull();
     expect([a1, a2]).toContain(c.booth!.playerId);
     expect(t.view(a1!).me!.note!.chunk).not.toBeNull();
+    expect(t.view(a1!).me!.note!.credit).toBe('memory');
+    expect(t.view(a2!).me!.note!.credit).toBe('hint');
+  });
+
+  it('only credits the level line when their own clip used its pattern', () => {
+    const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 11);
+    t.start();
+    toPlan(t);
+    const c = t.c;
+    const p = problem(t);
+    const [a1, a2, a3] = c.advisers;
+    const cure = adviceOf(p.cure)!.word.kana;
+    // a1: the cure, bare (no ほうが いい / たら どうですか); a2: the N5 frame on an N4 call; a3: no speech-to-text.
+    adviseAll(t, (id) => (id === a1 ? clip(cure.replace(/！$/, '')) : id === a2 ? clip(lineOf(p, 'n5').model.kana) : clip('', false)));
+    while (t.s.phase !== 'score') t.tick();
+    const entry = (id: string) => t.s.phrasebook[id]!.find((e) => e.itemId === `hotline:${p.id}:n4`)!;
+    expect(entry(a1!)).toMatchObject({ outcome: 'seen' });
+    expect(entry(a2!)).toMatchObject({ outcome: 'seen' });
+    expect(entry(a3!)).toMatchObject({ outcome: 'said', recall: 'read' });
+    // The note says exactly what was logged.
+    expect(t.view(a1!).me!.note!.credit).toBe('seen');
+    expect(t.view(a2!).me!.note!.credit).toBe('seen');
+    expect(t.view(a3!).me!.note!.credit).toBe('unchecked');
+    // Speaking still pays when the clip gave advice, or couldn't be checked.
+    const spoke = (id: string) => t.st.ledger.filter((e) => e.playerId === id && e.why === 'spoke').length;
+    expect(spoke(a1!)).toBe(1);
+    expect(spoke(a3!)).toBe(1);
+  });
+
+  it('a VIP-hidden clip earns nothing and isn’t credited', () => {
+    const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 13);
+    t.start();
+    toPlan(t);
+    const c = t.c;
+    const p = problem(t);
+    const [a1] = c.advisers;
+    adviseAll(t, () => clip(lineOf(p, 'n4').model.kana));
+    const vip = { id: t.s.vipId! };
+    while (t.s.phase !== 'reveal') t.tick();
+    expect(t.play(vip.id, { kind: 'hide', playerId: a1 }).error).toBeUndefined();
+    while ((t.s.phase as string) !== 'score') t.tick();
+    expect(t.st.ledger.filter((e) => e.playerId === a1 && e.round === c.index).reduce((a, e) => a + e.points, 0)).toBe(0);
+    expect(t.s.phrasebook[a1!]!.find((e) => e.itemId === `hotline:${p.id}:n4`)).toMatchObject({ outcome: 'seen' });
+  });
+});
+
+describe('Ghost Advice Hotline: gists', () => {
+  it('never name the cure: the gist is on every phone, so it only hints', () => {
+    for (const p of PROBLEMS) {
+      const g = p.gist.kana.replace(/[\s　、。！？]/g, '');
+      expect(heardAny(g, adviceOf(p.cure)!.keys), p.id).toBe(false);
+    }
+  });
+});
+
+describe('Ghost Advice Hotline: chunks', () => {
+  it('credit advice patterns only: not a comparison (クーラーの ほうが いい) or a conditional question (ねたら どうなりますか)', () => {
+    const ho = CHUNKS.find((k) => k.id === 'hou')!;
+    const ta = CHUNKS.find((k) => k.id === 'tara')!;
+    expect(heardAny('くうらあのほうがいいです', ho.keys)).toBe(false);
+    expect(heardAny('ねたほうがいいです', ho.keys)).toBe(true);
+    expect(heardAny('ねたらどうなりますか', ta.keys)).toBe(false);
+    expect(heardAny('ねたらどうですか', ta.keys)).toBe(true);
+    // Every model at a level uses that level's chunk.
+    for (const p of PROBLEMS) for (const lv of ['n5', 'n4'] as const) {
+      const m = p.advice[lv].model.kana.replace(/[\s　、。！？「」]/g, '');
+      expect(CHUNKS.some((k) => k.level === lv && heardAny(m, k.keys)), `${p.id} ${lv}`).toBe(true);
+    }
   });
 });
 

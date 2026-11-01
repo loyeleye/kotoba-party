@@ -222,6 +222,8 @@ function startRecording(ctx: Ctx, purpose: Purpose, limitMs: number): void {
       return bump();
     }
     buzz(40);
+    // Tell the room a take is on, so Nobiko-san doesn't read the line over it while it uploads.
+    if (purpose === 'say') void ctx.send({ kind: 'taking', round });
     // The record beat holds the limit, a grace and the upload: the take must stop in time to upload. A slow
     // mic (a first-time permission prompt) eats into the take, not into the upload.
     const now = latest ?? ctx;
@@ -417,6 +419,7 @@ const WHY: Record<HotlineMe['breakdown'][number]['why'], string> = {
   sweep: '大ウケ！',
   bet: 'Right bet',
   line: 'Said the problem',
+  spoke: 'Spoke your advice',
 };
 
 function band(me: HotlineMe, next: string): HTMLElement {
@@ -553,6 +556,8 @@ function callingCard(ctx: Ctx, me: HotlineMe): HTMLElement {
 }
 
 interface NowPlaying {
+  /** Typed advice's words, shown as it plays (it has no sound). */
+  text: string | null;
   playerId: string;
   index: number;
   total: number;
@@ -568,12 +573,12 @@ function nowPlaying(ctx: Ctx, me: HotlineMe): NowPlaying | null {
   if (ctx.view.phase !== 'reveal') return null;
   if (g.play) {
     lastPlay = { round: g.round, index: g.play.index, total: g.play.total, playerId: g.play.playerId, kind: g.play.kind };
-    return { ...lastPlay, tile: g.play.tile, playing: !g.play.reacting, local: g.play.local };
+    return { ...lastPlay, tile: g.play.tile, text: g.play.text, playing: !g.play.reacting, local: g.play.local };
   }
   if (g.step !== 'react') return null;
   const last = lastPlay && lastPlay.round === g.round ? lastPlay : null;
-  if (me.react) return { playerId: me.react.playerId, index: me.react.index, total: last?.total ?? Math.max(g.rows.length, me.react.index + 1), kind: last?.playerId === me.react.playerId ? last.kind : 'clip', tile: null, playing: false, local: false };
-  return last ? { ...last, tile: null, playing: false, local: false } : null;
+  if (me.react) return { playerId: me.react.playerId, index: me.react.index, total: last?.total ?? Math.max(g.rows.length, me.react.index + 1), kind: last?.playerId === me.react.playerId ? last.kind : 'clip', tile: null, text: null, playing: false, local: false };
+  return last ? { ...last, tile: null, text: null, playing: false, local: false } : null;
 }
 
 /** The words and the picture of one played advice, once the caller has reacted. */
@@ -613,6 +618,8 @@ function adviceCard(ctx: Ctx, me: HotlineMe): HTMLElement | null {
       pic(now.tile, 'gh-pic gh-who'),
       h('div', { class: 'gh-gist-body' }, h('p', { class: 'gh-label' }, `${name}’s tile`), h('p', { class: 'gh-said', lang: 'ja' }, tileWord(now.tile, me.level)), now.tile.romaji ? h('p', { class: 'gh-tile-ro' }, now.tile.romaji) : null, h('p', { class: 'gh-card-en' }, now.tile.word.en)),
     );
+  else if (now.text)
+    body = h('div', { class: 'gh-gist gh-advice' }, h('span', { class: 'gh-pic', 'aria-hidden': 'true' }, '⌨'), h('div', { class: 'gh-gist-body' }, h('p', { class: 'gh-label' }, `${name} typed`), plain('p', 'gh-said', now.text)));
   else
     body = h(
       'div',
@@ -678,7 +685,7 @@ function recordButton(ctx: Ctx, me: HotlineMe, purpose: Purpose, limitMs: number
     },
     h('span', { class: 'gh-rec-ring', 'aria-hidden': 'true' }),
     live ? h('span', { class: 'gh-rec-secs' }, String(secs), h('small', {}, 'REC')) : null,
-    h('span', { class: 'gh-rec-label' }, label, live ? h('small', {}, 'We hear you · it sends by itself at 0') : !on && !busy ? h('small', {}, 'tap again to stop') : null),
+    h('span', { class: 'gh-rec-label' }, label, live ? h('small', {}, 'We hear you · it sends by itself at 0') : !on && !busy ? h('small', {}, 'Tap, talk, tap again to send') : null),
   );
 }
 
@@ -859,11 +866,11 @@ function callerScreen(ctx: Ctx, me: HotlineMe): HTMLElement {
         reactionTiles(practice, (r) => ((practice = r), buzz(20), bump()), false),
         h('p', { class: 'gh-hint' }, practice ? `${REACT[practice].ja} = “${REACT[practice].en}”. Your real reaction comes after each clip.` : 'Your real reaction comes after each clip.'),
       );
-  const sayLater = !ring && me.canSay && !me.said;
+  // The ring: the line to say comes first, right above the Say button; the secret sits compact below it.
   return screen(
     band(me, ring ? 'advisers plan. Then react to each piece of advice.' : 'after each clip, tap one reaction.'),
-    secretCard(me, !ring && !sayLater),
-    ...(ring || sayLater ? callerLine(ctx, me) : []),
+    ...(ring ? callerLine(ctx, me) : []),
+    secretCard(me, true),
     status,
     practise,
     problemLine(),
@@ -917,10 +924,9 @@ function speakerPlanScreen(ctx: Ctx, me: HotlineMe, send: Send): HTMLElement {
     record ? null : gistCard(ctx, me, true),
     me.mission ? h('div', { class: 'gh-mission' }, h('p', { class: 'gh-mission-label' }, 'Your mission'), h('p', { class: 'gh-mission-text' }, me.mission.text)) : null,
     live || pending ? null : hintBox(ctx, me, send),
-    typingNow ? typedBox(ctx) : null,
     micOff() && record && !typingNow ? micOffCard() : null,
-    problemLine(),
-    dock(action, passBlock(ctx, me, send)),
+    // The typed box and any problem live in the dock, so the sticky dock never covers them.
+    dock(typingNow ? typedBox(ctx) : null, problemLine(), action, passBlock(ctx, me, send)),
   );
 }
 
@@ -957,12 +963,14 @@ function galleryScreen(ctx: Ctx, me: HotlineMe): HTMLElement {
       gistCard(ctx, me, true),
     );
   }
+  // The problem first: you can't bet on a cure before you know what's wrong.
+  const who = game.call?.who.name.en ?? 'the caller';
   return screen(
     band(me, 'listen to each adviser.'),
-    h('div', { class: 'gh-box' }, h('p', { class: 'gh-strong' }, `Bet: what will cure ${callerName(ctx)}?`), h('p', { class: 'gh-hint' }, 'Right bet +20. Nobody sees your bet.')),
+    gistCard(ctx, me, true),
+    h('div', { class: 'gh-box' }, h('p', { class: 'gh-strong' }, `Bet: what will help ${who}?`), h('p', { class: 'gh-hint' }, '+20 if you’re right. Nobody sees your bet.')),
     h('div', { class: 'gh-cards' }, ...me.betTiles.map((t) => betTile(t, me, me.bet === t.id, bet(t.id)))),
     h('p', { class: 'gh-hint' }, me.bet ? '✓ Bet placed · tap another to change.' : 'It locks when the recording starts.'),
-    gistCard(ctx, me, true),
   );
 }
 
@@ -992,7 +1000,7 @@ function revealScreen(ctx: Ctx, me: HotlineMe): HTMLElement {
   const send: Send = (move) => void ctx.send({ ...move, round: game.round });
   const nextVote = game.scripted ? 'the secret, then the points.' : 'the secret, then the laugh vote.';
   if (game.step === 'secret') {
-    if (me.role === 'caller') return screen(band(me, game.scripted ? 'the points.' : 'vote for the advice that made you laugh.'), watchCard('Your secret is on the TV'), secretCard(me));
+    if (me.role === 'caller') return screen(band(me, game.scripted ? 'the points.' : 'vote for the idea that made you laugh.'), watchCard('Your secret is on the TV'), secretCard(me));
     if (me.role === 'gallery') {
       const t = me.betTiles.find((x) => x.id === me.bet);
       const right = !!t && game.secret?.cure.id === t.id;
@@ -1088,7 +1096,7 @@ function voteScreen(ctx: Ctx, me: HotlineMe): HTMLElement {
   const left = Math.max(0, game.voters - game.locked.votes.length);
   return screen(
     band(me, 'the points.'),
-    h('div', { class: 'gh-box' }, h('p', { class: 'gh-strong' }, 'Which advice made you laugh?'), h('p', { class: 'gh-hint' }, own ? 'Not your own. You can change it until the timer ends.' : 'One vote. You can change it until the timer ends.')),
+    h('div', { class: 'gh-box' }, h('p', { class: 'gh-strong' }, 'Which idea made you laugh?'), h('p', { class: 'gh-hint' }, own ? 'Not your own. You can change it until the timer ends.' : 'One vote. You can change it until the timer ends.')),
     me.vote ? h('p', { class: 'gh-locked' }, '✓ Vote in', left ? ` · waiting for ${left} more vote${left === 1 ? '' : 's'}…` : '') : null,
     h('div', { class: 'gh-cards' }, ...me.voteOptions.map((o) => card(o, me.vote === o.playerId, send(o.playerId))), mineCard),
     h('p', { class: 'gh-hint' }, me.vote ? 'Sending… tap another to change.' : 'The picture is the button.'),
@@ -1098,7 +1106,15 @@ function voteScreen(ctx: Ctx, me: HotlineMe): HTMLElement {
 function noteCard(me: HotlineMe): HTMLElement | null {
   const n = me.note;
   if (!n) return null;
-  const chip = n.hinted ? h('span', { class: 'gh-mark-chip' }, 'With a hint') : n.said !== null ? h('span', { class: 'gh-mark-chip memory' }, 'From memory ✓') : null;
+  // The chip says exactly what the phrasebook logged (the server's creditOf).
+  const chip =
+    n.credit === 'memory'
+      ? h('span', { class: 'gh-mark-chip memory' }, 'Said it from memory ✓')
+      : n.credit === 'hint'
+        ? h('span', { class: 'gh-mark-chip' }, 'Said it, with a hint')
+        : n.credit === 'unchecked'
+          ? h('span', { class: 'gh-mark-chip' }, 'Said it (the game couldn’t check the words)')
+          : h('span', { class: 'gh-mark-chip' }, n.said !== null ? 'Seen: say it with the pattern next time' : 'Seen');
   return h(
     'div',
     { class: 'gh-note' },
@@ -1109,6 +1125,13 @@ function noteCard(me: HotlineMe): HTMLElement | null {
     h('div', { class: 'gh-note-side' }, h('p', { class: 'gh-label' }, 'Nobiko-san’s way'), jpView(n.model, me.level, { cls: 'gh-model' })),
     h('p', { class: 'gh-hint' }, 'Path credit only. Not on the scoreboard.'),
   );
+}
+
+/** Where the booth's chunk sits on this player's map: their own line, one they've passed, or one coming up. */
+function boothTag(mine: string, chunk: 'n5' | 'n4', tag: string): string {
+  const rank = (l: string) => (l === 'n4' ? 2 : l === 'n5' ? 1 : 0);
+  if (rank(mine) === rank(chunk)) return `You’re on this line: ${tag}`;
+  return rank(mine) > rank(chunk) ? `Already on your map: ${tag}` : `Coming up on your map: ${tag}`;
 }
 
 function boothCard(ctx: Ctx, me: HotlineMe): HTMLElement | null {
@@ -1130,7 +1153,7 @@ function boothCard(ctx: Ctx, me: HotlineMe): HTMLElement | null {
     h('p', { class: 'gh-label' }, mine ? '✓ Skill used' : `Replay · ${nameOf(ctx.view, b.playerId)}`),
     mine ? plain('p', 'gh-chunk', b.chunk) : line,
     h('p', {}, b.note),
-    b.tag ? h('p', { class: 'gh-tag' }, '🚃 ', me.level === 'n4' ? `You’re on this line: ${b.tag}` : `Coming up on your map: ${b.tag}`) : null,
+    b.tag ? h('p', { class: 'gh-tag' }, '🚃 ', boothTag(me.level, b.level, b.tag)) : null,
   );
 }
 
