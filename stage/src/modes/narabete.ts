@@ -356,7 +356,8 @@ function foot(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement 
   const d = game.defence;
   const rp = game.replay;
   // The Gallery's reactions to the N4 defence, while it's on.
-  const bubbles = view.phase === 'encore' ? galleryBubbles(game.gallery) : null;
+  // (Or to the stand-in's line, carried on from its line-up: experiment standInCurveball.)
+  const bubbles = view.phase === 'encore' || view.phase === 'score' ? galleryBubbles(game.gallery) : null;
   // The commentary booth: the N4 defence's line again, its ので lit, and one line of colour (Nobiko-san says it).
   if (view.phase === 'encore' && rp) return h('div', { class: 'nb-foot nb-replay' }, boothStrip(rp, nameOf(view, rp.playerId), rp.holdKey), bubbles);
   // The host stand-in: Nobiko-san's own model defence, shown while she says it (timed from the phase start, so a
@@ -389,6 +390,7 @@ function foot(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement 
             game.kind !== 'time' ? h('span', { class: 'nb-vote-call' }, `${f.poker ? ' · ' : ''}❤ Vote on your phone for the funniest answer`) : null,
           )
         : null,
+      bubbles,
     );
   }
   return h('div', { class: 'nb-foot' });

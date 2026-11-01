@@ -125,8 +125,11 @@ offer time out, sits the next round out; in a room of 4 or more, whoever gave it
     Still inside the line-up: no time added.
   - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile on the line-up screen while
     she says it, and once she has (its booth length) the once-a-game curveball on ので (against `DEFENCE_POOL`), +5.
-    The gist and the lit ので wait until then. A line-up everyone locks early waits until she has said it and the
-    curveball is answered (at most 5 s); otherwise no time is added. Narabete now has `wakeAt`/`wake` for this.
+    The gist and the lit ので wait until then. So that it never holds the line-up, she starts at once
+    (`standInEarlyAt`, 0.5 s in, the setup line too with `standInSetup`), in place of her "line them up" (`narabete_order`) in that one
+    line-up. A line-up everyone locks after she has started ends anyway, and the tile and curveball carry into the
+    next phase (the encore or the score) and go with it; one locked before she got to her line drops them for that
+    game (`carried` on the stand-in). No time is added. Narabete now has `wakeAt`/`wake` for this.
 - **Scoring**: said out loud in Japanese, it adds the same 30% defence share as the ordinary defence, to
   the N4 player only. The team points and everyone else's bonus don't change. The phrasebook
   (`narabete:defence:<spot>`) logs it `said` only for their own spoken reason with ので; a model line read

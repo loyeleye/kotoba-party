@@ -93,7 +93,9 @@ Every game with a hard role uses them the same way:
     been said the once-a-game curveball is dealt on it (`openStandInGallery` with no key, then `dealStandIn`, i.e.
     `armCurveball` with the line's kana as heard), +5 if right. Until it's answered the key word isn't lit and
     the gist waits (`standInHoldKey`). The phase waits up to `STAND_IN_CURVEBALL_MS` (5 s) for the answer and
-    ends once it's in (`standInDone`); Omiai and Narabete! fit it in time they already had.
+    ends once it's in (`standInDone`); Omiai fits it in time it already had. Narabete! never waits: she starts
+    0.5 s into the line-up, and a line-up locked once she has started carries the tile and curveball into the
+    next phase, one locked before drops them (for Ladi to confirm).
   With both off, the stand-in is exactly as above.
 - **Host reactions.** Each game's host reacts in one short line when a role lands.
 - **The waiting check.** After a game in a mixed room (an N4 player and anyone below N4) where a hard role was offered, the recap asks each player below
@@ -148,7 +150,7 @@ the time. Think times are 1–6 s. The numbers are in `PERSONA` at the top of th
 | taps | Gallery reaction taps in the game (everyone). |
 | curve games/hit | Share of games that dealt a curveball; right ÷ dealt over them. |
 | stand-in cues | Host stand-in cues in the game (the line, and its setup line with `standInSetup`). |
-| sg held/s/5s | Stand-in rooms with `standInCurveball`: per game, stand-in phases the curveball kept open past their own end, the seconds that added, and curveballs that ran the full 5 s unanswered. |
+| sg held/s/5s | Stand-in rooms with `standInCurveball`: per game, stand-in phases the curveball kept open past their own end, the seconds that added, and curveballs that ran the full 5 s unanswered. Narabete! carries its tile into the next phase instead of waiting, so there this counts time inside that phase, not added time: read Δlen. (A persona decides once whether to tap a carried tile, not again per phase.) |
 | say/match <N4 | `spokenReaction`: reactions said out loud per player below N4, and those that matched a tile. |
 | spoken/p<N4 | Moves said out loud (speech) that the game took, per player below N4. |
 | said/seen | Phrasebook rows per player at the end of the game: said (from memory or after a retry) and seen. |

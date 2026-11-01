@@ -278,6 +278,8 @@ function scoreScreen(ctx: Ctx, me: Me): HTMLElement {
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, 'Look at the TV! 🪢'),
+    // Experiment standInCurveball: the stand-in's Gallery, carried on from a line-up that ended while she spoke.
+    gallery(ctx, me),
     left > 0 ? h('p', { class: 'nb-turning', style: `--d: ${Math.round(left)}ms` }, 'Nobiko-san is turning the cards over…') : null,
     h(
       'div',

@@ -216,7 +216,10 @@ const counted = (p: Persona, key: string) => () => p.tries.set(key, (p.tries.get
 function galleryMoves(p: Persona, view: RoomView, pid: string, state: GameState): Move[] {
   const tile = galleryTile(view);
   if (!tile || tile.picked != null) return [];
-  const k = `${view.phaseSeq}`;
+  // A stand-in tile carried out of its phase (Narabete's, standInCurveball) is the same tile: the persona decides
+  // once whether to tap it, not again in each phase it is shown in.
+  const sg = state.mode === 'narabete' ? findStandIn(state.modeState) : null;
+  const k = sg?.g?.players?.includes(pid) && sg.g.picks?.[pid] == null && !sg.g.curveball ? `sg:${sg.dealAt}` : `${view.phaseSeq}`;
   if (tile.kind === 'curveball') {
     const c = findCurveball(state.modeState, pid);
     const options: string[] = tile.options.map((o: Any) => o.kana);

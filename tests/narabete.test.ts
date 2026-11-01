@@ -368,8 +368,6 @@ describe('Narabete!: the Feelings Line and the Worst Day Ever', () => {
     t.sayAll();
     t.sortLine();
     t.lockAll();
-    // A 2-player stand-in line-up waits for Nobiko-san's line and its curveball (experiment standInCurveball).
-    if (t.s.phase === 'reveal') t.timeout();
     // A room with an N4 player gets the N4 defence, even in the Time Line.
     if (t.s.phase === 'encore') t.timeout();
     expect(t.s.phase).toBe('score');
@@ -1168,33 +1166,69 @@ describe('Narabete!: mixed rooms', () => {
       expect(t.s.phase).toBe('score');
     });
 
-    it('standInCurveball: a tile for both while she says it, the curveball on ので after, +5 if right; the line-up waits for it', () => {
+    it('standInCurveball: she starts at once (no "line them up"), a tile for both, then the curveball on ので', () => {
       onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
       const t = new Table(2, ['kana', 'n5']);
       t.start();
       t.sayAll();
       const start = t.now;
       const ms = t.view().standIn!.ms;
+      expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_standin', atMs: DURATIONS.standInEarlyAt });
+      expect(t.s.cues.filter((c) => c.event === 'narabete_order')).toHaveLength(0);
       expect(t.s.deadline! - start).toBe(DURATIONS.reveal);
       expect(t.view('p1').me!.gallery).toMatchObject({ kind: 'react' });
       expect(t.view().standIn!.holdKey).toBe(true);
       expect(t.view('p2').me!.standIn).toBeNull();
       expect(t.play('p2', { kind: 'gallery', pick: 'warai' }).error).toBeUndefined();
       expect(t.view().gallery.map((b) => b.id)).toEqual(['warai']);
-      // Everyone locks early: the line-up waits until she has said it.
-      t.sortLine();
-      t.lockAll();
-      expect(t.s.phase).toBe('reveal');
       wake(t);
-      expect(t.now).toBe(start + DURATIONS.standInAt + ms);
+      expect(t.now).toBe(start + DURATIONS.standInEarlyAt + ms);
       expect(t.view('p1').me!.gallery!.kind).toBe('curveball');
       expect(t.view('p2').me!.standIn).toMatchObject({ romaji: null });
       expect(t.view('p1').me!.standIn).toBeNull();
       const before = t.score('p1');
       expect(t.play('p1', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
       expect(t.score('p1')).toBe(before + curveballPoints('narabete'));
-      expect(t.s.phase).toBe('score');
       expect(t.st.curveball).toBe(true);
+      expect(t.s.phase).toBe('reveal');
+    });
+
+    it('standInCurveball never holds the line-up: locked while she speaks, it ends and the Gallery carries into the score', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
+      const t = new Table(2, ['kana', 'n5']);
+      t.start();
+      t.sayAll();
+      const start = t.now;
+      const st = t.st.standIn!;
+      expect(st.atMs).toBe(DURATIONS.standInEarlyAt + STAND_IN_SETUP_MS);
+      // She has started her line; everyone locks: the line-up ends at once.
+      t.now = start + st.atMs + 1_000;
+      t.sortLine();
+      t.lockAll();
+      expect(t.s.phase).toBe('score');
+      expect(t.view('p1').me!.gallery).toMatchObject({ kind: 'react' });
+      wake(t);
+      expect(t.now).toBe(start + st.atMs + st.c.ms);
+      const who = t.st.standIn!.sg!.g.curveball!.playerId;
+      expect(t.play(who, { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
+      expect(t.score(who)).toBeGreaterThanOrEqual(curveballPoints('narabete'));
+      // Gone with the score.
+      t.timeout();
+      expect(t.s.phase).toBe('prompt');
+      expect(t.st.standIn!.sg).toBeNull();
+    });
+
+    it('standInCurveball: a line-up locked before she got to her line drops the Gallery and the curveball', () => {
+      onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+      const t = new Table(2, ['kana', 'n5']);
+      t.start();
+      t.sayAll();
+      t.sortLine();
+      t.lockAll();
+      expect(t.s.phase).toBe('score');
+      expect(t.st.standIn!.sg).toBeNull();
+      expect(t.view('p1').me!.gallery).toBeNull();
+      expect(t.st.curveball).toBe(false);
     });
 
     it('stays out of rooms with an N4 player, and of 3+ rooms', () => {
