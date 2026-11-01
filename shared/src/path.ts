@@ -205,7 +205,7 @@ export const GOALS: readonly Goal[] = [
   g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii'], ['tourist'], { thin: 'Only one game uses it so far.' }),
   g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau'], ['hajimemashite', 'happyokai', 'phrase-bingo']),
   g('4.4', 'express', 'Say what you can do', 'たべられます, はなせます: say what you can and can’t.', ['potential'], [], ['phrase-bingo', 'tourist']),
-  g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri']),
+  g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond', 'noni'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri']),
   g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou'], ['kamo', 'sou-hear'], ['phrase-bingo', 'happyokai', 'tourist', 'last-train']),
   g('4.7', 'express', 'Plans and advice', 'Say what you plan to do, and give advice.', ['you-to-omou'], ['tsumori', 'hou-ga-ii'], [], { gap: 'No game uses these yet.' }),
   g('4.8', 'express', 'Talk casually with friends', 'Plain form with よ, ね and の: how friends talk.', ['plain'], ['n-da', 'teru'], ['omiai', 'dub-club']),
