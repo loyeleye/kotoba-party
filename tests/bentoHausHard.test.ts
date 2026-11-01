@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
@@ -24,7 +24,8 @@ import {
   type RoleOffer,
   type StepScript,
 } from '../shared/src/modes/bentoHaus/hardRoles.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS } from '../shared/src/modes/mixedRoom.js';
 import { framesOf } from '../shared/src/japanese/frames.js';
 import { COUNTS, CUSTOMERS, FOODS, foodOf } from '../shared/src/modes/bentoHaus/menu.js';
 import type { Command } from '../shared/src/protocol.js';
@@ -705,7 +706,40 @@ describe('Bento Haus mixed rooms: the booth and the Gallery', () => {
     expect(cuesOf(t, 'bento_replay')).toEqual([]);
   });
 
-  it('once the apology lands: Pon voices the fixed line, the TV lights いただけますか, the others get tiles and the gist', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = seated(['n4', 'n5', 'kana']);
+    const { inc } = complain(t);
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: heard('申し訳ございません、少々待っていただけますか') });
+    const P = 'p3';
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.s.players.find((p) => p.id === P)!.score;
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('not-allowed');
+      expect(t.view(P).me!.hard!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(t.s.players.find((p) => p.id === P)!.score).toBe(before);
+      return;
+    }
+    expect(t.view(P).me!.hard!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(t.view(P).me!.hard!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.s.players.find((p) => p.id === P)!.score).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(t.view(P).me!.hard!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.s.players.find((p) => p.id === P)!.score - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().hard!.gallery).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('not-allowed');
+  });
+
+  it.each([true, false])('once the apology lands: Pon voices the fixed line, the TV lights いただけますか, the others get tiles and the gist (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = seated(['n4', 'n5', 'kana']);
     const { inc } = complain(t);
     t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: heard('申し訳ございません、少々待っていただけますか') });
@@ -727,10 +761,10 @@ describe('Bento Haus mixed rooms: the booth and the Gallery', () => {
     expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
     expect(t.play('p3', { kind: 'gallery', pick: 'warai' }).error).toBe('not-allowed');
     expect(t.view().hard!.gallery.map((b) => b.id)).toEqual(['sugoi']);
-    // The right word: +5 to the normal score, once.
+    // The right word: +5 to the normal score (+15 scaled: a tenth of a perfect box), once.
     const score = t.s.players.find((p) => p.id === 'p2')!.score;
     expect(t.play('p2', { kind: 'gallery', pick: 'いただけますか' }).error).toBeUndefined();
-    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(score + CURVEBALL_POINTS);
+    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(score + (scaled ? 15 : CURVEBALL_POINTS));
     expect(t.view('p2').me!.hard!.gallery).toMatchObject({ kind: 'curveball', right: true });
     expect(t.play('p2', { kind: 'gallery', pick: 'いただけますか' }).error).toBe('not-allowed');
     // The booth leaves after its 5–7 s; the tiles after GALLERY_MS.

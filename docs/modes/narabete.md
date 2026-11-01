@@ -134,7 +134,8 @@ offer time out, sits the next round out; in a room of 4 or more, whoever gave it
   answer tapped 15%, a Time card said with the time missing 20%. A spoken defence adds 30%.
 - Points are paid at the end of the flip, not when it starts.
 - **Votes**: 50 per vote. **The story**: 50 for reading your line out loud.
-- **The Gallery's curveball**: 5, once a game, for one Kana or N5 player, only when an N4 defence landed.
+- **The Gallery's curveball**: 5, once a game, for one Kana or N5 player, only when an N4 defence landed (10 with `scaledCurveball`: a tenth of a pair's 100).
+- **A Gallery reaction said out loud** (`spokenReaction`): 2.
 - **Awards**: ポーカーフェイス賞 (the card that fooled the room the most, Feelings rounds),
   おもしろ賞 (most votes), いいこえ賞 (most cards said out loud), ききじょうず賞 (good listener: asked
   to hear a card again the most).

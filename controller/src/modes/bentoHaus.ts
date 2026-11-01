@@ -213,9 +213,9 @@ function roleOffer(ctx: Ctx, hard: MyHardView | undefined): HTMLElement | null {
 /** Mixed rooms: this phone's Gallery tile and the booth's gist, while they're out. */
 function mixedRoom(ctx: Ctx, hard: MyHardView | undefined): (HTMLElement | null)[] {
   return [
-    galleryTile(hard?.gallery ?? null, (pick) => {
+    galleryTile(hard?.gallery ?? null, (pick, utterance) => {
       buzz(30);
-      void ctx.send({ kind: 'gallery', pick });
+      void ctx.send({ kind: 'gallery', pick, utterance });
     }),
     boothGist(hard?.booth ?? null),
   ];

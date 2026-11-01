@@ -981,7 +981,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
     if (raw.kind === 'gallery') {
       // A reaction tile (or the curveball) from a player without the deputy's seat.
       if (phase !== 'reveal' || !s.gallery || typeof raw.pick !== 'string') return moveError('wrong-phase');
-      const points = pickGallery(s.gallery, playerId, raw.pick);
+      const points = pickGallery(s.gallery, playerId, raw.pick, { game: 'onsen-murder', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
       if (points === null) return moveError('bad-move');
       if (points > 0) give(s, ctx, playerId, points);
       return MOVE_OK;

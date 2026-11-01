@@ -45,7 +45,8 @@ the first sent.
 | Each heart your dub got (one heart per player per scene) | 100 |
 | Your dub goes into the episode | 150 |
 | Words, from the plain read: all heard at your level's bar (Kana 70%, N5 80%, N4 85%) / half / tried | 50 / 30 / 20 (30 for everyone on a night with no speech check) |
-| The Gallery's curveball, right (once a game, one Kana or N5 player, ad-lib rooms only) | 5 (not doubled) |
+| The Gallery's curveball, right (once a game, one Kana or N5 player, ad-lib rooms only) | 5 (not doubled; `scaledCurveball` keeps it 5, a tenth of a right guess's 50) |
+| A Gallery reaction said out loud (`spokenReaction`) | 2 |
 
 Words are capped low on purpose: careful reading should never beat bold acting.
 

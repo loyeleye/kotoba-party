@@ -307,7 +307,7 @@ export const omiaiPhone: PhoneMode<OmiaiView> = {
           guestLine(game),
           nakodoCard(ctx),
           // Players without the go-between's seat: a reaction tile (or the curveball); Kana and N5 phones get the gist.
-          galleryTile(mine?.gallery ?? null, (pick) => void send({ kind: 'gallery', pick, round: game.round })),
+          galleryTile(mine?.gallery ?? null, (pick, utterance) => void send({ kind: 'gallery', pick, utterance, round: game.round })),
           boothGist(mine?.gist ?? null),
           game.question ? questionCard(game.question) : null,
           // Not while you're the one speaking: the answer screen waits for you.

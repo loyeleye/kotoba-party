@@ -2,12 +2,13 @@
 // kept clips (only the sender's own, only the main TV, dropped as soon as the game is done with them).
 
 import { existsSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 import { ManualClock } from '../server/src/clock.js';
 import { Room, wavDurationMs } from '../server/src/room.js';
 import { soundMorae } from '../shared/src/modes/karaokeDuel/scoring.js';
 import { ACT_POINTS, adlibCheck, adlibSimilarity, adlibTally, BOOTH_LINE_AT_MS, casualChunk, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, missionWord, saidDirection, STANDIN_AT_MS, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS } from '../shared/src/modes/mixedRoom.js';
 import type { HostCue } from '../shared/src/modes/mode.js';
 import { DIRECTIONS, EPISODES, directionOf, directionsFor, episodesFor, sceneAdlib, takeLimitMs } from '../shared/src/modes/dubClub/scenes.js';
 import type { JoinResponse } from '../shared/src/protocol.js';
@@ -501,7 +502,41 @@ describe('Dub Club: mixed rooms', () => {
     return { k, n5, n4 };
   }
 
-  it('the Gallery on the ad-lib dub: a curveball on a mission word for a Kana or N5 player, reactions for the rest', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = room(['kana', 'n5', 'n4']);
+    t.start();
+    const { k } = adlibScene(t, adlib0().model.kana, 'ねえ、おにぎり だれが たべたの');
+    t.until(() => t.view().now?.step === 'play');
+    const P = k;
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！')).toMatchObject({ ok: false });
+      expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: true });
+      expect(t.score(P)).toBe(before);
+      return;
+    }
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう')).toMatchObject({ ok: true });
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！')).toMatchObject({ ok: true });
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().now!.gallery).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.room.state.phrasebook[P.playerId]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど')).toMatchObject({ ok: false });
+  });
+
+  it.each([true, false])('the Gallery on the ad-lib dub: a curveball on a mission word for a Kana or N5 player, reactions for the rest (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = room(['kana', 'n5', 'n4']);
     t.start();
     const take = 'ねえ、おにぎり だれが たべたの';
@@ -528,7 +563,8 @@ describe('Dub Club: mixed rooms', () => {
     expect(t.view().now!.gallery.map((b) => b.id)).toEqual(['naruhodo']);
     const before = t.score(n5);
     expect(t.play(n5, { kind: 'gallery', pick: 'おにぎり' })).toMatchObject({ ok: true });
-    expect(t.score(n5) - before).toBe(CURVEBALL_POINTS);
+    // Dub Club's right guess is 50, so a tenth is the old +5 either way.
+    expect(t.score(n5) - before).toBe(scaled ? 5 : CURVEBALL_POINTS);
     expect(t.view(n5).me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: 'おにぎり' });
     expect(t.st().curveball).toBe(true);
   });

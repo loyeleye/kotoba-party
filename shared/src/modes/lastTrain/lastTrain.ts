@@ -196,7 +196,7 @@ export interface DashResult {
 interface LedgerEntry {
   playerId: string;
   points: number;
-  reason: 'stop' | 'dash' | 'curveball';
+  reason: 'stop' | 'dash' | 'curveball' | 'reaction';
   stop: number;
 }
 
@@ -1299,12 +1299,13 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         if (typeof raw.pick !== 'string') return moveError('bad-move');
         if (phase !== 'answer' && phase !== 'reveal') return moveError('wrong-phase');
         if (!s.gallery) return moveError('no-gallery');
-        const points = pickGallery(s.gallery, playerId, raw.pick);
+        const reason = s.gallery.curveball?.playerId === playerId ? 'curveball' : 'reaction';
+        const points = pickGallery(s.gallery, playerId, raw.pick, { game: 'last-train', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
         if (points === null) return moveError('not-allowed');
-        // The curveball's +5 goes to the game's own score, like any other points.
+        // The curveball's bonus (or a said reaction's) goes to the game's own score, like any other points.
         if (points > 0) {
           ctx.award(playerId, points);
-          s.ledger.push({ playerId, points, reason: 'curveball', stop: s.stopIndex });
+          s.ledger.push({ playerId, points, reason, stop: s.stopIndex });
         }
         return MOVE_OK;
       }

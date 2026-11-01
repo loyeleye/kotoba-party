@@ -495,6 +495,8 @@ body.flying[data-phase='lobby'] .main { place-items: end center; }
 .booth-note { font-size: 24px; color: var(--muted); margin: 0; }
 @keyframes booth-lit { from { background: transparent; } }
 .gallery-bubbles { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
+.gallery-bubble.said { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.gallery-said { font-size: 0.7em; }
 .gallery-bubble { font-size: 26px; padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); animation: bubble-in 0.4s ease-out both; }
 @keyframes bubble-in { from { opacity: 0; transform: translateY(12px) scale(0.8); } }
 @media (prefers-reduced-motion: reduce) { .booth-line mark, .gallery-bubble { animation: none; } }

@@ -384,7 +384,7 @@ function render(view: RoomView): void {
 
 /** A screen with exactly one talk button pins it to the bottom of the phone, under the thumb. */
 function dockTalk(): void {
-  const talks = app.querySelectorAll<HTMLElement>('.talk');
+  const talks = app.querySelectorAll<HTMLElement>('.talk:not(.mini)');
   const one = talks.length === 1 ? talks[0]! : null;
   one?.classList.add('docked');
   document.body.classList.toggle('has-dock', !!one);

@@ -131,7 +131,8 @@ the very last seconds can be cut short. A miss, a decline or no N4 player: nothi
 | Report built from tiles | 10 |
 | Report said aloud | +40 speaking bonus (same pool and cap) |
 | A player's fifth report a game and after | 0 (still voiced and replayed for the room) |
-| Gallery curveball right (once a game, a Kana or N5 player) | 5 |
+| Gallery curveball right (once a game, a Kana or N5 player) | 5 (30 with `scaledCurveball`: a tenth of the culprit's 300, for Ladi to confirm) |
+| Gallery reaction said out loud (`spokenReaction`) | 2 |
 
 The answer runs 15 s longer only for a deputy who tapped "Take it" before it came in (or has had a
 try), and ends once they're done and the answer has had its usual 10–12 s (a `wake`). An offer nobody

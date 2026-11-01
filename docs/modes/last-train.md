@@ -139,7 +139,7 @@ stand-in.
   a game, at the reveal, once the role line has landed, a Kana or N5 player who hasn't reacted yet (picked by the
   game's seed, so it rotates) gets the curveball in place of their tile, "Which word did you hear?": the line's key
   word (its frame word: まいります, おさがりください, おきをつけください, ございません, かもしれません, そうな,
-  だそうです, はずです, てあります) and two others, +5 into the ledger (`reason: 'curveball'`) if right. The move is
+  だそうです, はずです, てあります) and two others, +5 into the ledger (`reason: 'curveball'`) if right. With the round-5 experiments on (docs/n4-hard-roles.md, "How mixed rooms work"): `scaledCurveball` makes it +10 (a tenth of an item right first try, 100), and `spokenReaction` lets a Gallery player say their reaction for +2 instead of tapping (for Ladi to confirm). A said reaction's +2 goes in the ledger as `reason: 'reaction'`. The move is
   `{ kind: 'gallery', pick }` (a reaction id, or the kana picked), in the answer or the reveal.
 - **Commentary booth** (all three roles): when a taken role lands (right on the first try, the retry or by
   overrule), the reveal carries an instant replay: 📺 REPLAY · name, the model line with its key word lit, one
@@ -197,7 +197,7 @@ living player: 2 seconds off that player's next timer (floor 4 s). Two correct s
 ### Scoring
 
 - Stop: 100 first try, 60 on the retry (+20 on a hard role the player took); ghosts half; the last stop is worth double.
-- Gallery curveball: +5 if right, once a game (mixed rooms only).
+- Gallery curveball: +5 if right, once a game (mixed rooms only); +10 with `scaledCurveball`. A said Gallery reaction: +2 (`spokenReaction`).
 - Speech bonus (spoken, not typed): 25% of the answer's points; players below the room's average
   score get the cap. The bonus never exceeds 3/7 of base, i.e. 30% of base + bonus. Typed
   answers work everywhere but earn no bonus.

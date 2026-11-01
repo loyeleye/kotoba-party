@@ -167,7 +167,7 @@ the title card).
   (`GALLERY_MS`): four reactions (すごい！ なるほど へえ！ がんばれ！), shown on the TV as bubbles, never scored.
   Once a game, a Kana or N5 player's tile is the curveball instead: "Which word did you hear?", the
   line's key word and two other request endings (もらえますか, くれませんか, おねがいします…, never one in the
-  line), +5 to their score if right. It is dealt the moment the line lands (the tiles open then too), to a
+  line), +5 to their score if right (With the round-5 experiments on (docs/n4-hard-roles.md, "How mixed rooms work"): `scaledCurveball` makes it +15 (a tenth of a perfect box, 3 tips × 50), and `spokenReaction` lets a Gallery player say their reaction for +2 instead of tapping (for Ladi to confirm).). It is dealt the moment the line lands (the tiles open then too), to a
   Kana or N5 player picked by the seed; a skipped or missed line deals none, and the game keeps it for a
   later shift. While it is unanswered the TV's replay holds its key word back (unlit), so the answer isn't
   on screen. Bots can't be told apart from players in the mode, so a bot gets a

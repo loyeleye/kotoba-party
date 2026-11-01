@@ -1162,7 +1162,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       case 'gallery': {
         // A reaction tile (or the curveball) from a player without the go-between's seat.
         if (phase !== 'prompt' || !r?.gallery || typeof raw.pick !== 'string') return moveError('wrong-phase');
-        const points = pickGallery(r.gallery, playerId, raw.pick);
+        const points = pickGallery(r.gallery, playerId, raw.pick, { game: 'omiai', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
         if (points === null) return moveError('bad-move');
         pay(ctx, playerId, points);
         return MOVE_OK;
