@@ -78,7 +78,11 @@ offer time out, sits the next round out; in a room of 4 or more, whoever gave it
 - **Its own encore** (`encore`, 15 s), after the ordinary defence when there is one, so two people never
   talk at once. Nobiko-san invites them with her own cue (`narabete_hard`: "{name}さん、どうして そこなの？　おばちゃんに おしえて！",
   never "your card moved a lot"). When the N4 player is also the most-moved card's author they defend
-  once, with the N4 script. The phone says a typed defence doesn't score.
+  once, with the N4 script and its frame (the `narabeteFold` experiment, on by default). That saves the 12 s
+  ordinary encore and its call that round, so the round runs 15 s of defence (plus the replay if it lands)
+  instead of 27 s, and nobody hears the same player defend the same card twice. With the switch off, they give
+  the ordinary defence first and then the N4 one, as two encores. The bonus is the same either way (one 30%
+  defence share). The phone says a typed defence doesn't score.
 - **The script** (`defence.ts`) fits where the card ended up: 「＿ので、これが いちばん さきです。」 at
   the low end, 「＿ので、これが いちばん あとです。」 at the high end, 「＿ので、これは Aさんの あとです。」
   after a neighbour. The phone shows the frame and two whole model lines to read out, with reasons that
@@ -177,3 +181,7 @@ the tonic, with a chord for a perfect line; a knot bends its note down a semiton
    replay; the curveball is dealt only once the defence has landed, and ので lights up once the curveball is
    answered (the TV holds it back while it is open, `keyHeld`, so the replay doesn't give the answer away); the stand-in comes in the first line-up of the game (the Time Line) and defends the card
    at the high end; Nobiko-san's あらまあ comes before every landed defence, voiced or not.
+8. **The fold (`narabeteFold`), for Ladi to confirm**: kept on, the shipped behaviour. It only matters in a
+   Feelings round where the N4 defender took the offer and also walked their card furthest; the sims should count
+   how often that happens (it needs the N4 player to move most, so mostly small rooms) and whether two defences
+   from one player felt like waiting.

@@ -24,7 +24,8 @@ Rules every role follows:
   Lines in a player's own words are shown, never voiced.
 - **What others do see in a mixed room.** Bento stations get 📋 requests to tap; Last Train swaps
   神社前 and 大学前 for Lost and Found; Narabete gains a 15 s encore when the N4 defence is taken;
-  Omiai and Onsen phases wait a little for a role that was taken; Dub Club ad-libs are captioned in
+  Omiai and Onsen phases wait a little for a role that was taken (Narabete's N4 defender whose card also moved
+  most gives one defence, not two: `narabeteFold`); Dub Club ad-libs are captioned in
   English only. Their points, turns and tiles don't change. Playtests should check that none of these
   feels like waiting.
 - **Draft.** Every new line is `status: 'draft'` until a fluent speaker checks it.
@@ -71,7 +72,12 @@ Every game with a hard role uses them the same way:
 - **The waiting check.** After a game in a mixed room (an N4 player and anyone below N4) where a hard role was offered, the recap asks each player below
   N4 one tap: "Was there a part of that game where you were just waiting?" (No / A bit / Yes). The server logs the answers
   with how long each phase ran (`[mixed-room]` in the server log) when the recap ends, for playtests. The
-  answers aren't shown on any screen or kept in accounts.
+  answers aren't shown on any screen or kept in accounts. With the `waitCheckFirstTwo` experiment on (the
+  default), only the first two qualifying recaps of a night ask it (`WAIT_CHECKS_A_NIGHT`); later ones still
+  log their phases, with nobody asked. The count (`GameState.mixedChecks`, and `nth` on each check) runs across
+  the night's games and starts again in a new room; a recap that doesn't qualify doesn't count. Off, every
+  qualifying recap asks. Why: the same tap after every game nags, and two answers a night already say whether
+  the roles made people wait (for Ladi to confirm).
 
 Still to come: N3 lines (step 6), and bots taking hard roles.
 

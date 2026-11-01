@@ -9,7 +9,7 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { checkUtterance, firstMora } from '../shared/src/modes/lastTrain/check.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
-import { buildStops, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
+import { buildStops, CANDLE_ITEM, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
 import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
 import { framesOf } from '../shared/src/japanese/frames.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
@@ -1100,6 +1100,41 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     expect(durations.filter((d) => d === 7_000).length).toBe(4);
     expect(g.s.gallery).toBeNull();
     expect(g.s.curveballUsed).toBe(false);
+  });
+
+  it('Chōchin-san reacts once when lost and found\'s candle (item 21) turns out to be his own', () => {
+    const STAFF = { id: 'lost-property-staff', name: t('わすれものがかり', 'わすれものがかり', 'Lost property'), pitch: 'pitch' };
+    const LOST = mg('lost-and-found', [item('lf1', ['かさです']), roleItem(CANDLE_ITEM, ['ちょうちんさんのろうそくだそうです'], STAFF)]);
+    const g = table(lib(LOST), ['n4', 'n5']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', true);
+    answerAll(g);
+    expect(g.cues.filter((c) => c.event === 'train_candle')).toEqual([{ host: 'chochin', event: 'train_candle', atMs: RULES.candleAtMs }]);
+    // After his model line, inside the 12 s reveal.
+    expect(RULES.candleAtMs).toBeGreaterThan(RULES.roleReadAtMs);
+    expect(g.state.deadline! - g.now).toBeGreaterThan(RULES.candleAtMs);
+    // Once a game, however often the candle turns up again.
+    for (let i = 0; i < 40 && g.state.phase !== 'recap'; i++) {
+      if (g.state.phase === 'answer') {
+        if (g.view('p1').me?.offer) role(g, 'p1', true);
+        answerAll(g);
+      } else g.timeout();
+    }
+    expect(g.cues.filter((c) => c.event === 'train_candle')).toHaveLength(1);
+    // A real bank line in his voice, and the event is bank only (no LLM prompt).
+    const bank = realContent.hostLines.filter((l) => l.event === 'train_candle');
+    expect(bank.map((l) => l.jp.text)).toEqual(['あっ、わたしの ろうそく！　ゆらゆら…']);
+    expect(bank[0]!.status).toBe('draft');
+  });
+
+  it('no candle reaction when another role line lands', () => {
+    const g = table(ROLES, ['n4', 'n5']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', true);
+    answerAll(g);
+    expect(g.cues.some((c) => c.event === 'train_candle')).toBe(false);
   });
 
   it('lights the key word of every real role line', () => {

@@ -26,7 +26,7 @@ import {
 } from '../shared/src/modes/bentoHaus/hardRoles.js';
 import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
 import { framesOf } from '../shared/src/japanese/frames.js';
-import { COUNTS, FOODS, foodOf } from '../shared/src/modes/bentoHaus/menu.js';
+import { COUNTS, CUSTOMERS, FOODS, foodOf } from '../shared/src/modes/bentoHaus/menu.js';
 import type { Command } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { addReadings, createReader, type Reader } from '../server/src/reading.js';
@@ -399,6 +399,26 @@ describe('Bento Haus hard roles: the manager', () => {
     expect(ice.customers).toEqual(['yukionna']);
     expect(ice.steps[1].keys).toEqual(['こおり']);
     expect(checkLine(speech('こおりを いれて もらえますか'), ice.steps[1]).ok).toBe(true);
+  });
+
+  it('the kappa, the fox and the one-eyed boy have their own special orders, at the right station', () => {
+    const own = (id: string) => SPECIALS.find((x) => x.id === id)!;
+    const cases: [string, string, string, string][] = [
+      ['kyuuri-more', 'kappa', 'kyuuri', 'きゅうりを もう すこし いれて もらえますか'],
+      ['inari-apart', 'kitsune', 'inari', 'おいなりさんを べつの はこに いれて もらえますか'],
+      ['big-eye', 'hitotsume', 'onigiri', 'おにぎりを おおきく して もらえますか'],
+    ];
+    for (const [id, customer, food, line] of cases) {
+      const x = own(id);
+      expect(x.customers).toEqual([customer]);
+      expect(CUSTOMERS.some((c) => c.id === customer), customer).toBe(true);
+      expect(FOODS.some((f) => f.id === food), food).toBe(true);
+      expect(x.foodId).toBe(food);
+      expect(x.steps[1].model.frames).toEqual(['te-moraeru']);
+      expect(checkLine(speech(line), x.steps[1]).ok, id).toBe(true);
+    }
+    // The kitchen line must name what the station adds.
+    expect(checkLine(speech('もう すこし いれて もらえますか'), own('kyuuri-more').steps[1]).ok).toBe(false);
   });
 
   it('special orders come every few customers, and run out after a while', () => {

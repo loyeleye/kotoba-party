@@ -39,6 +39,7 @@ import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, ho
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
+import { EXPERIMENTS } from '../experiments.js';
 import { defenceScript, type DefenceScript } from './defence.js';
 
 // ---- tuning ----
@@ -864,8 +865,10 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       if (hard && cardOf(r, hard.cardId)?.hidden) r.hard = null;
       else if (hard && hard.answer === 'offered') hard.answer = gone ? 'away' : 'timeout';
       else if (hard && gone) r.hard = null;
-      // One defence each: the N4 player who also moved the most gives the N4 one.
-      if (r.hard && liveHard(r) && r.defence?.playerId === r.hard.playerId) r.defence = null;
+      // One defence each (the `narabeteFold` experiment): when the N4 defender's card is also the most-moved
+      // card, they give only the N4 one, with its frame, and the 12 s ordinary encore is skipped. Off: both run,
+      // the ordinary defence first.
+      if (EXPERIMENTS.narabeteFold && r.hard && liveHard(r) && r.defence?.playerId === r.hard.playerId) r.defence = null;
     }
     if (phase === 'score') {
       if (r.hard) s.hardLog.push({ round: r.index, playerId: r.hard.playerId, answer: r.hard.answer === 'offered' ? 'timeout' : r.hard.answer });

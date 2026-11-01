@@ -31,6 +31,9 @@ import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallb
 
 // ---- tuning ----
 
+/** The lost-and-found item whose candle turns out to be Chōchin-san's own (his `train_candle` reaction). */
+export const CANDLE_ITEM = 'lost-and-found.21-rousoku-souda';
+
 export const RULES = {
   /** How long the room has to thumbs-up a rejected answer. */
   overruleMs: 7_000,
@@ -57,6 +60,11 @@ export const RULES = {
    * announcement phase then runs until the line is done (commentaryMs), a few seconds longer, once a game.
    */
   standInAtMs: 3_500,
+  /**
+   * Lost and found's candle (item 21): when Chōchin-san sees it's his own, after he has said the staff's model line
+   * (from roleReadAtMs, about 3 s), still inside the 12 s reveal. Once a game.
+   */
+  candleAtMs: 8_500,
   /** Ghosts earn this share of a living player's points. */
   ghostShare: 0.5,
   /** From-memory speech bonus, as a share of the answer's points. */
@@ -229,6 +237,8 @@ export interface LastTrainState {
   booth: Commentary | null;
   /** The host stand-in's one announcement (1–2-player rooms with no N4 player), and the stop it was made at. */
   standIn: (Commentary & { stop: number }) | null;
+  /** Chōchin-san has reacted to his own candle turning up in lost and found (once a game). */
+  candleSeen?: boolean;
   seq: number;
 }
 
@@ -1055,6 +1065,11 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
           s.booth = commentaryOf(star.task.item, star.playerId);
           // The line has landed: only now can the once-a-game curveball be dealt.
           armRoleCurveball(s, ctx, star.task.item);
+          // Lost and found's candle is his own: a one-off reaction once he has said it (bank only).
+          if (star.task.item.id === CANDLE_ITEM && !s.candleSeen) {
+            s.candleSeen = true;
+            ctx.cue({ host: 'chochin', event: 'train_candle', atMs: RULES.candleAtMs });
+          }
         }
         break;
       }

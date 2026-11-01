@@ -136,6 +136,42 @@ export const SPECIALS: readonly SpecialScript[] = [
     ],
   },
   {
+    // The kappa can never have enough cucumber (the vegetable station's).
+    id: 'kyuuri-more',
+    status: 'draft',
+    customers: ['kappa'],
+    foodId: 'kyuuri',
+    ask: { text: 'きゅうりを もっと いれて ください！　かっぱですから。', en: "More cucumber, please! I'm a kappa, after all." },
+    steps: [
+      SURE,
+      { to: 'kitchen', check: 'kitchen', keys: ['きゅうり'], model: L('きゅうりを もう すこし いれて もらえますか。', 'Could you put a bit more cucumber in?', ['te-moraeru']) },
+    ],
+  },
+  {
+    // The fox on a date: the inari (in あぶらあげ, foxes' favourite) goes in its own box, so her date doesn't see.
+    id: 'inari-apart',
+    status: 'draft',
+    customers: ['kitsune'],
+    foodId: 'inari',
+    ask: { text: 'おいなりさんは べつの はこに いれて ください。かれには ないしょなの。', en: "Put the inari in a separate box, please. It's a secret from him." },
+    steps: [
+      SURE,
+      { to: 'kitchen', check: 'kitchen', keys: ['いなり'], model: L('おいなりさんを べつの はこに いれて もらえますか。', 'Could you put the inari in a separate box?', ['te-moraeru']) },
+    ],
+  },
+  {
+    // The one-eyed boy: one of everything, but his one eye is big, so the rice ball is too.
+    id: 'big-eye',
+    status: 'draft',
+    customers: ['hitotsume'],
+    foodId: 'onigiri',
+    ask: { text: 'めが おおきいから、おにぎりも おおきく して ください！', en: 'My eye is big, so make the rice ball big too!' },
+    steps: [
+      SURE,
+      { to: 'kitchen', check: 'kitchen', keys: ['おおきく', 'おおもり'], model: L('おにぎりを おおきく して もらえますか。', 'Could you make the rice ball big?', ['te-moraeru']) },
+    ],
+  },
+  {
     // The one request the shop can't meet: sorry, and a polite ask for something else.
     id: 'dream',
     status: 'draft',

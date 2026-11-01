@@ -8,6 +8,7 @@ import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
 import { defenceScript } from '../shared/src/modes/narabete/defence.js';
 import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
 import {
   BONUS_POOL_SHARE,
   DEFENCE_KEY,
@@ -705,6 +706,55 @@ describe('Narabete!: the N4 defence in a game', () => {
     expect(t.s.phase).toBe('score');
     // They took it, then passed at the mic: still a yes to the offer, with no bonus.
     expect(t.r.hard).toMatchObject({ answer: 'accepted', ok: false });
+  });
+
+  // The `narabeteFold` experiment: on (above), one defence; off, the ordinary defence and then the N4 encore.
+  it('narabeteFold off: an N4 player who also moved the most gives the ordinary defence, then the N4 one', () => {
+    const restore = withExperiments({ narabeteFold: false });
+    try {
+      const t = new Table(3, ['n4', 'n5', 'n5']);
+      t.start();
+      toFeelingsN4(t);
+      t.sayAll();
+      const p1 = t.cardOf('p1');
+      while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'move', dir: 1 });
+      t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'hard', accept: true });
+      t.lockAll();
+      expect(t.r.encore).toBe('defence');
+      expect(t.s.deadline! - t.now).toBe(DURATIONS.encore);
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
+      t.play('p1', { kind: 'defend', pass: true });
+      expect(t.s.phase).toBe('encore');
+      expect(t.r.encore).toBe('hard');
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
+    } finally {
+      restore();
+    }
+  });
+
+  it('narabeteFold on: the folded defence goes straight to the N4 encore, with its frame', () => {
+    const restore = withExperiments({ narabeteFold: true });
+    try {
+      const t = new Table(3, ['n4', 'n5', 'n5']);
+      t.start();
+      toFeelingsN4(t);
+      t.sayAll();
+      const p1 = t.cardOf('p1');
+      while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'move', dir: 1 });
+      t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'hard', accept: true });
+      t.lockAll();
+      expect(t.r.encore).toBe('hard');
+      expect(t.s.deadline! - t.now).toBe(DURATIONS.encoreN4);
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
+      expect(t.view().defence!.frame?.text).toContain('ので');
+      expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_hard' });
+    } finally {
+      restore();
+    }
   });
 
   it('an N4 player who moved the most but left the offer open gives the ordinary defence', () => {

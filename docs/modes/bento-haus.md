@@ -100,8 +100,14 @@ are draft, in kana, and tagged by name with the N4 frames they practise (`hardRo
     (「からあげを もう ひとつ つくって もらえますか。」, or 「おべんとうを もう いちど つくって もらえますか。」
     when there's too much of something; つくりなおして is accepted too).
   - a **special order**: every third customer while the deputy manager is free (no wasabi, warm it up, a big
-    helping of rice, chopsticks, sauce on the side; the influencer wants a cuter box; the yuki-onna asks for ice; the baku wants a
+    helping of rice, chopsticks, sauce on the side; the influencer wants a cuter box; the yuki-onna asks for ice; the kappa wants more
+    cucumber (「きゅうりを もう すこし いれて もらえますか。」 to the vegetable station); the fox on a date wants her
+    おいなりさん in a separate box, so he doesn't see (「おいなりさんを べつの はこに いれて もらえますか。」); the one-eyed
+    boy's eye is big, so his rice ball should be too (「おにぎりを おおきく して もらえますか。」, おおもり also
+    counts); the baku wants a
     dream, which the shop can't do: もうしわけ ございません and 「おにぎりに して いただけますか。」).
+    A customer's own request needs its food on tonight's menu; otherwise they get the next general one. The kappa,
+    fox and one-eyed boy requests are new, draft, and (for Ladi to confirm) the jokes: the fox's secret box, the big eye.
     The deputy manager answers the customer (かしこまりました。〜て いただけますか, or かしこまりました。
     しょうしょう おまちください), then asks the station (〜て もらえますか, or 〜て くれませんか).
   The station gets a 📋 card with the deputy manager's line and taps はい、できました！; a missing food goes

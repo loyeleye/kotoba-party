@@ -93,10 +93,12 @@ logged with `bot: true` so it can be left out of the gate. A taken hard role pay
 sends anyone to the penalty car. With no N4 player in the room nothing changes: no offers, the same
 stops, the same items.
 
-- **The announcer** (Station Announcement, 4.9): six items where the N4 player makes the announcement
+- **The announcer** (Station Announcement, 4.9): seven items where the N4 player makes the announcement
   instead of hearing one, so the line is shown, not played. まもなく、三番線に電車がまいります。,
-  黄色い線の内側までお下がりください。, ドアが閉まります。お気をつけください。, both sentences at once, and
-  電車がおくれて、もうしわけございません。 Frames `keigo`, `o-kudasai`.
+  黄色い線の内側までお下がりください。, ドアが閉まります。お気をつけください。, both sentences at once,
+  電車がおくれて、もうしわけございません。, and the yōkai platform's ghost train, まもなく、ゆうれい れっしゃが
+  まいります。 (`station-announcement.22-announce-yuurei`, `keigo`; ゆうれいでんしゃ is accepted too). Frames
+  `keigo`, `o-kudasai`.
 - **Lost and Found** (忘れ物センター, 4.6), `content/src/last-train/lost-and-found.ts`: a new minigame
   that rides a line only in a room with an N4 player. The Obake Line's 神社前 becomes 忘れ野 (Wasureno)
   and the Hoshimidai line's 大学前 becomes 音無 (Otonashi) through the stop's `withN4`; both swapped-out
@@ -111,6 +113,9 @@ stops, the same items.
 - **Yōkai lost property** (Lost and Found, 4.6), three more N4 items in the same two roles: Pon's leaf, with
   ポン written on it (staff: ポンと書いてあります, `te-aru`); a kappa's missing dish (passenger: 頭の上にあったはずです,
   `hazu`); Chōchin-san's candle, as heard on the phone (staff: ちょうちんさんのろうそくだそうです, `sou-hear`).
+  When the candle item lands, Chōchin-san sees it's his own, once a game: 「あっ、わたしの ろうそく！　ゆらゆら…」
+  ("Oh, my candle! Sway…", `train_candle`, bank only, `RULES.candleAtMs` = 8.5 s into the reveal, after he has
+  said the staff's line; no time added).
 
 **Chōchin-san says the line** (decided by Ladi, 2026-11-01: the host says the line, the player's recording
 never plays on the TV). When a taken hard role is answered right (first try, retry or overruled), Chōchin-san
@@ -284,6 +289,10 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
     stops, not stops. (for Ladi to confirm)
 28. Yōkai lost property: Pon's leaf (`te-aru`) and Chōchin-san's candle (`sou-hear`) are the staff's, the kappa's
     dish (`hazu`) the passenger's, so each role gains a new frame. Drafts for the fluent check. (for Ladi to confirm)
+29. The candle reaction (`train_candle`) fires only when item 21 is taken and lands (the same moment as his
+    `train_role_read`), once a game, timed after the model line rather than in place of `reveal_react`, so the
+    room still hears its own reaction. The ghost-train announcement is an ordinary announcer item, dealt like
+    the others, not a special stop. (for Ladi to confirm)
 
 ## Open questions
 
