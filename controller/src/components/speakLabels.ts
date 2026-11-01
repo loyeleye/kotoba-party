@@ -84,6 +84,15 @@ export function levelText(text: string, level: Level): LevelText {
   return { main: phrase.n4 + tail, ja: true };
 }
 
+/**
+ * The same wording for a tap-to-talk button: "Hold and say it" becomes "Tap and say it", おしながら becomes タップして.
+ * For players who picked Tap to talk under the header's 🎤 (speak.ts talkMode).
+ */
+export function tapWording(t: LevelText): LevelText {
+  const tap = (s: string) => s.replace(/^Hold\b/, 'Tap').replace(/^(おしながら|押しながら)/, 'タップして');
+  return { ...t, main: tap(t.main), ...(t.sub ? { sub: tap(t.sub) } : {}) };
+}
+
 /** "Heard: …" line under the button. */
 export const heardPrefix = (level: Level): string => (level === 'kana' ? 'Heard' : level === 'n5' ? 'きこえた' : '聞こえた');
 

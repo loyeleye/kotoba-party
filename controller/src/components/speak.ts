@@ -1,4 +1,4 @@
-// "Say it to send it": hold to talk, see what was heard, then send. Every spoken step has a quiet
+// "Say it to send it": hold to talk (or tap, tap: the player's choice), see what was heard, then send. Every spoken step has a quiet
 // fallback (type, or tap kana on the built-in pad) per the design doc.
 //
 // Speech goes to our own server, which passes it to Whisper (components/mic.ts, server/src/stt.ts). There is
@@ -10,7 +10,7 @@ import type { Utterance } from '../../../shared/src/japanese/kana.js';
 import type { Level } from '../../../shared/src/protocol.js';
 import { kanaPad } from './kanaPad.js';
 import { MicClip, hear, speechReady, type Heard } from './mic.js';
-import { heardPrefix, heardRomaji, levelText } from './speakLabels.js';
+import { heardPrefix, heardRomaji, levelText, tapWording } from './speakLabels.js';
 
 // The phone's player level, set by main.ts before each screen draws.
 let level: Level = 'n5';
@@ -18,9 +18,32 @@ export const setSpeakLevel = (l: Level): void => {
   level = l;
 };
 
-/** Button content for a label, worded for the player's level (see speakLabels.ts). */
-function labelled(text: string): (HTMLElement | string)[] {
-  const t = levelText(text, level);
+// How this phone's talk buttons work: hold while speaking (the default), or tap to start and tap again to
+// stop. Each player picks it under the header's 🎤 (main.ts micSheet); it's kept on the phone, not the room.
+export type TalkMode = 'hold' | 'tap';
+const TALK_MODE_KEY = 'kotoba:talkMode';
+let talkMode: TalkMode = (() => {
+  try {
+    return localStorage.getItem(TALK_MODE_KEY) === 'tap' ? 'tap' : 'hold';
+  } catch {
+    return 'hold';
+  }
+})();
+export const getTalkMode = (): TalkMode => talkMode;
+export function setTalkMode(m: TalkMode): void {
+  talkMode = m;
+  try {
+    if (m === 'hold') localStorage.removeItem(TALK_MODE_KEY);
+    else localStorage.setItem(TALK_MODE_KEY, m);
+  } catch {
+    /* private mode: it lasts for this visit */
+  }
+}
+
+/** Button content for a label, worded for the player's level (see speakLabels.ts), and for tapping when `tap`. */
+function labelled(text: string, tap = false): (HTMLElement | string)[] {
+  const t0 = levelText(text, level);
+  const t = tap ? tapWording(t0) : t0;
   const main = h('span', { class: 'say-main', lang: t.ja ? 'ja' : 'en' }, t.main);
   return t.sub ? [main, h('small', { class: 'say-sub', lang: t.ja ? 'en' : 'ja' }, t.sub)] : [main];
 }
@@ -51,13 +74,17 @@ export function micChip(): HTMLElement {
   return h('p', { class: `mic-chip mic-${st}`, role: 'status' }, CHIP[st]);
 }
 
-/** What to tell the player when nothing usable came back. */
-export function missed(why: Exclude<Heard, { ok: true }>['why'] | 'blocked'): string {
+/** What to tell the player when nothing usable came back. `tap`: their talk button is tap to start, tap to stop. */
+export function missed(why: Exclude<Heard, { ok: true }>['why'] | 'blocked', tap = false): string {
   if (why === 'blocked') return 'Microphone blocked: type your answer below instead.';
   if (why === 'busy') return 'Still working on the last one…';
   if (why === 'failed') return 'Couldn’t check that just now. Try again, or type it.';
-  return 'Didn’t catch that. Hold the button while you speak.';
+  return tap ? 'Didn’t catch that. Tap, speak, then tap again.' : 'Didn’t catch that. Hold the button while you speak.';
 }
+
+/** A hold this short was a tap: say how holding works, and where tapping lives. */
+const TAP_LIKE_MS = 350;
+const HOLD_NUDGE = 'Keep holding while you speak. Rather tap to start and stop? Switch to Tap to talk under 🎤.';
 
 export interface SpeakOptions {
   /** Button label, e.g. "Hold and say your answer". */
@@ -75,7 +102,8 @@ export interface SpeakOptions {
   draftKey?: string;
   /**
    * Tap to start, tap again to stop (up to TOGGLE_TALK_MS), instead of holding: for several sentences in a row,
-   * where holding a button the whole time gets in the way (Happyōkai!'s talk).
+   * where holding a button the whole time gets in the way (Happyōkai!'s talk). Every talk button works this
+   * way when the player picked Tap to talk.
    */
   toggle?: boolean;
   onSend(u: Utterance): void;
@@ -93,12 +121,20 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
   if (canSpeak()) {
     let clip: MicClip | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const idle = labelled(opts.label ?? (opts.toggle ? 'Tap to talk' : 'Hold to talk'));
-    const talk = h('button', { type: 'button', class: `talk${opts.toggle ? ' toggle' : ''}` }, idle) as HTMLButtonElement;
+    let pressAt = 0;
+    const toggle = !!opts.toggle || talkMode === 'tap';
+    const idle = labelled(opts.label ?? (toggle ? 'Tap to talk' : 'Hold to talk'), toggle);
+    const talk = h('button', { type: 'button', class: `talk${toggle ? ' toggle' : ''}` }, idle) as HTMLButtonElement;
 
     // While the button is held, a bar inside it follows the mic level, so the player sees it hears them.
     const meter = (c: MicClip) => {
       if (clip !== c) return void talk.style.setProperty('--level', '0');
+      // Redrawn away while a tapped take was open: close the mic now, not at the time limit.
+      if (!talk.isConnected) {
+        clip = null;
+        if (timer) clearTimeout(timer);
+        return void c.stop();
+      }
       talk.style.setProperty('--level', c.level.toFixed(2));
       requestAnimationFrame(() => meter(c));
     };
@@ -107,7 +143,7 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       timer = null;
       talk.classList.remove('live');
       talk.style.setProperty('--level', '0');
-      if (opts.toggle) talk.replaceChildren(...idle);
+      if (toggle) talk.replaceChildren(...idle);
       const c = clip;
       clip = null;
       if (!c) return;
@@ -116,10 +152,11 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
         micBlocked = true;
         return void (heard.textContent = missed('blocked'));
       }
+      if (!toggle && Date.now() - pressAt < TAP_LIKE_MS) return void (heard.textContent = HOLD_NUDGE);
       heard.textContent = '…';
       const r = await hear(wav);
-      if (clip) return; // pressed again while this one was being checked
-      if (!r.ok) return void (heard.textContent = missed(r.why));
+      if (clip || !talk.isConnected) return; // pressed again while this one was being checked, or redrawn away
+      if (!r.ok) return void (heard.textContent = missed(r.why, toggle));
       const romaji = level === 'kana' ? heardRomaji(r) : undefined;
       heard.textContent = `${heardPrefix(level)}: ${r.text}${romaji ? ` (${romaji})` : ''}`;
       // A tick pops in once: we heard you.
@@ -139,16 +176,17 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       actions.replaceChildren();
       const c = new MicClip();
       clip = c;
+      pressAt = Date.now();
       talk.classList.add('live');
       heard.classList.remove('got');
       void c.ready.then((ok) => {
         if (clip === c) heard.textContent = ok ? '🎤 …' : missed(c.blocked ? 'blocked' : 'failed');
         if (ok) meter(c);
       });
-      timer = setTimeout(() => void stop(), opts.toggle ? TOGGLE_TALK_MS : MAX_TALK_MS);
-      if (opts.toggle) talk.replaceChildren(...labelled('Tap to stop'));
+      timer = setTimeout(() => void stop(), toggle ? TOGGLE_TALK_MS : MAX_TALK_MS);
+      if (toggle) talk.replaceChildren(...labelled('Tap to stop'));
     };
-    if (opts.toggle) {
+    if (toggle) {
       talk.addEventListener('pointerdown', (e) => (clip ? (e.preventDefault(), void stop()) : start(e)));
     } else {
       talk.addEventListener('pointerdown', start);

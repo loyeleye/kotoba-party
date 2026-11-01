@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createReader } from '../server/src/reading.js';
-import { heardRomaji, levelText } from '../controller/src/components/speakLabels.js';
+import { heardRomaji, levelText, tapWording } from '../controller/src/components/speakLabels.js';
 
 describe('speaking prompt wording by level', () => {
   it('stays English at kana level, with romaji instead of kana', () => {
@@ -46,5 +46,17 @@ describe('romaji after "Heard:" for かな players', () => {
   it('leaves it out when kanji are left that nothing read', () => {
     expect(heardRomaji({ text: '学生です' })).toBeUndefined();
     expect(heardRomaji({ text: '...' })).toBeUndefined();
+  });
+});
+
+describe('tap-to-talk wording', () => {
+  it('swaps holding for tapping at every level', () => {
+    expect(tapWording(levelText('Hold and say it 🎤', 'kana')).main).toBe('Tap and say it 🎤');
+    expect(tapWording(levelText('Hold and say your answer', 'n5'))).toEqual({ main: 'タップして こたえを いって', sub: 'Tap and say your answer', ja: true });
+    expect(tapWording(levelText('Hold and say こんにちは', 'n4')).main).toBe('タップして「こんにちは」と言って');
+  });
+  it('leaves labels without a hold alone', () => {
+    expect(tapWording(levelText('Send', 'n5'))).toEqual(levelText('Send', 'n5'));
+    expect(tapWording(levelText('Holder', 'kana')).main).toBe('Holder');
   });
 });
