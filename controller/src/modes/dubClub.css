@@ -123,5 +123,8 @@ body[data-motion='calm'] .dc-rec-bar { animation: dc-rec-run var(--len, 10s) lin
 .dc-mission-how { font-size: 14px; color: var(--muted); }
 .dc-mission.small .dc-mission-emoji { font-size: 28px; }
 .dc-mission.small .dc-mission-what { font-size: 16px; }
-.dc-offer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dc-offer-box { display: grid; gap: 6px; }
+.dc-offer-what { margin: 0; font-weight: 700; }
+.dc-offer { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dc-offer > button { width: 100%; }
 .dc-model { display: grid; gap: 6px; }

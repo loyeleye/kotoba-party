@@ -9,9 +9,10 @@
 //              heart of the scene to the dub you loved.
 //   Notes      how your scene went, privately.
 //
-// The N4 ad-lib role (one N4 player a scene, in turn): no script, a mission and a picture instead. Say it
-// your way, casually; the check is lenient and private, and a model line shows once the take is sent.
-// "Not this time" gives the scripted N4 line instead.
+// The N4 ad-lib role (one N4 player a scene, in turn): opt-in. Until they tap "Take it: ad-lib", the phone
+// shows the scripted N4 line with the offer beside it; sending the scripted take without answering times the
+// offer out. Once taken: no script, a mission and a picture instead. Say it your way, casually; the check is
+// lenient and private, and a model line shows once the take is sent. "Not this time" keeps the script.
 //
 // A take goes to the room for the TV to play (kept in memory only), or, with "Play my voice from this
 // phone", stays here and this phone plays it when its turn comes.
@@ -300,6 +301,9 @@ function cardFace(c: DubCard, opts: { tip?: boolean; cls?: string } = {}): HTMLE
   );
 }
 
+/** Playing the ad-lib (said yes): the mission instead of the script. An open offer isn't yet. */
+const adlibbing = (me: Me): boolean => me.adlib?.state === 'accepted';
+
 function lineBox(me: Me, cls = ''): HTMLElement | null {
   return me.line ? jpView(me.line, me.level, { cls: `dc-line ${cls}` }) : null;
 }
@@ -307,7 +311,7 @@ function lineBox(me: Me, cls = ''): HTMLElement | null {
 /** The ad-lib's mission, in place of the script: the picture, the English, and how to say it. */
 function missionBox(me: Me, cls = ''): HTMLElement | null {
   const ad = me.adlib;
-  if (!ad) return null;
+  if (!ad || ad.state !== 'accepted') return null;
   return h(
     'div',
     { class: `dc-mission ${cls}` },
@@ -324,7 +328,7 @@ function modelBox(me: Me): HTMLElement | null {
   return h('div', { class: 'dc-model' }, h('p', { class: 'dc-label' }, '💡 One way to say it'), jpView(m, me.level, { cls: 'dc-line small' }));
 }
 
-/** The offer: ad-lib it, or "not this time" for the scripted line. */
+/** The offer: take the ad-lib, or "not this time" to keep the scripted line (showing above it). */
 function adlibOffer(ctx: Ctx, me: Me): HTMLElement | null {
   const ad = me.adlib;
   if (!ad || me.sent) return null;
@@ -332,9 +336,15 @@ function adlibOffer(ctx: Ctx, me: Me): HTMLElement | null {
   if (ad.state === 'accepted') return h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Give me the script after all');
   return h(
     'div',
-    { class: 'dc-offer' },
-    h('button', { type: 'button', class: 'primary', onclick: () => send(true) }, '🎙 Ad-lib it!'),
-    h('button', { type: 'button', class: 'secondary', onclick: () => send(false) }, 'Not this time'),
+    { class: 'dc-offer-box' },
+    h('p', { class: 'hint' }, '🎬 Fude-kantoku: “No script this time. Make it yours!”'),
+    h('p', { class: 'dc-offer-what' }, h('span', { 'aria-hidden': 'true' }, `${ad.emoji} `), `Ad-lib instead: ${ad.mission}`),
+    h(
+      'div',
+      { class: 'dc-offer' },
+      h('button', { type: 'button', class: 'secondary', onclick: () => send(true) }, '🎙 Take it: ad-lib'),
+      h('button', { type: 'button', class: 'secondary', onclick: () => send(false) }, 'Not this time'),
+    ),
   );
 }
 
@@ -388,7 +398,7 @@ function pickScreen(ctx: Ctx, me: Me): HTMLElement {
     'div',
     { class: 'screen' },
     sceneCard(game),
-    h('p', { class: 'dc-label' }, me.adlib ? '🎙 Ad-lib: your mission' : 'Your line'),
+    h('p', { class: 'dc-label' }, adlibbing(me) ? '🎙 Ad-lib: your mission' : 'Your line'),
     lineBox(me),
     missionBox(me),
     adlibOffer(ctx, me),
@@ -432,7 +442,7 @@ function rehearseScreen(ctx: Ctx, me: Me): HTMLElement {
   const reh = me.rehearsal;
   const again = !reh || (stepOf.retry && reh.left > 0);
   const sim = reh?.similarity ?? 0;
-  const ad = !!me.adlib;
+  const ad = adlibbing(me);
   const verdict = !reh ? null : ad ? adlibVerdict(me) : reh.marks.every((m) => m.ok) ? 'Crisp! Every sound came through.' : sim >= 0.5 ? 'Nearly! Try the dashed sounds again.' : 'Hard to hear. Slow down and say every sound.';
   return h(
     'div',
@@ -441,7 +451,7 @@ function rehearseScreen(ctx: Ctx, me: Me): HTMLElement {
     lineBox(me),
     missionBox(me),
     reh ? marks(me) : null,
-    verdict ? h('p', { class: sim >= 0.5 ? 'dc-ok' : 'dc-warn' }, verdict) : h('p', { class: 'hint' }, ad ? 'Say it plainly first, casually. Only you see how it went.' : 'Just the words, clearly. Only you see how it went.'),
+    verdict ? h('p', { class: sim >= 0.5 ? 'dc-ok' : 'dc-warn' }, verdict) : h('p', { class: 'hint' }, ad ? 'First just say it, no acting yet, the way you’d talk to a friend. Only you see how it went.' : 'Just the words, clearly. Only you see how it went.'),
     again
       ? speakBox({ label: ad ? 'Hold and say it' : 'Hold and read the line', speechOnly: true, autoSend: true, onSend: (utterance) => (setStep(ctx, { retry: false }), void send({ kind: 'rehearse', utterance, round: game.round })) })
       : null,
@@ -475,6 +485,7 @@ function actScreen(ctx: Ctx, me: Me): HTMLElement {
     me.offered.length > 1 && !review ? offeredStrip(ctx, me) : null,
     lineBox(me, 'small'),
     missionBox(me, 'small'),
+    me.adlib?.state === 'offered' && !review && !live ? adlibOffer(ctx, me) : null,
     review
       ? h(
           'div',
@@ -484,7 +495,7 @@ function actScreen(ctx: Ctx, me: Me): HTMLElement {
           h('button', { type: 'button', class: 'primary dc-send', disabled: sending, onclick: () => void sendTake(ctx) }, sending ? 'Sending…' : '📤 Send this take'),
           h('p', { class: 'hint dc-autosend' }, '⏱ Not sent by the end? It goes in by itself.'),
         )
-      : h('p', { class: 'hint' }, `${me.adlib ? 'Say it your way' : 'Say the line'}, the way your card says, up to ${seconds} seconds. Don’t say the card!`),
+      : h('p', { class: 'hint' }, `${adlibbing(me) ? 'Say it your way' : 'Say the line'}, the way your card says, up to ${seconds} seconds. Don’t say the card!`),
     recBtn,
     problem ? h('p', { class: 'dc-warn' }, problem) : null,
     !me.rehearsal && canSpeak() ? h('button', { type: 'button', class: 'linkish', onclick: () => setStep(ctx, { act: false }) }, '← Back to the plain read') : null,
@@ -622,7 +633,7 @@ function notesScreen(ctx: Ctx, me: Me): HTMLElement {
       { class: 'dc-notes' },
       h('li', {}, `🎭 ${n.guessedBy} read your card`),
       h('li', {}, `❤ ${n.hearts} heart${n.hearts === 1 ? '' : 's'}`),
-      me.adlib
+      me.adlib && adlibbing(me)
         ? h('li', {}, me.adlib.check ? `🎙 Ad-lib: ${me.adlib.check.casual ? 'casual ✓' : 'not casual yet'} · ${me.adlib.check.key ? 'mission ✓' : 'mission missed'}` : '🎙 Ad-lib: no plain read this time')
         : h('li', {}, n.checked ? (pct === null ? '🗣 No plain read this time' : `🗣 Plain read: ${pct}% of the sounds came through`) : '🗣 No speech check tonight'),
       n.spoiler ? h('li', { class: 'dc-warn' }, '🤐 You said your card out loud: no acting points this time.') : null,

@@ -21,6 +21,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { soundMorae } from '../karaokeDuel/scoring.js';
 import { splitMorae } from '../karaokeDuel/songs.js';
+import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
 
@@ -119,10 +120,11 @@ export interface Actor {
   /** This dub's guess grid. */
   grid: string[];
   /**
-   * The N4 ad-lib role (hard role, goal 4.8), when this actor was offered it: no script, a mission. Offered
-   * until they say yes (or rehearse or send a take, which counts as yes) or decline it for the script.
+   * The N4 ad-lib role (hard role, goal 4.8), when this actor was offered it: no script, a mission. Opt-in:
+   * 'offered' (the scripted N4 line shows, with the offer) until they tap Take it or Not this time. An offer
+   * still open when the take is sent, or when recording ends, is 'timeout' ('away' if they'd dropped out).
    */
-  adlib?: 'offered' | 'accepted' | 'declined';
+  adlib?: 'offered' | OfferAnswer;
 }
 
 export type ScreenStep = 'lead' | 'play' | 'guess' | 'replay' | 'regroup' | 'reveal';
@@ -295,8 +297,10 @@ export const episodeOfState = (s: DubState): Episode => episodeOf(s.episodeId) ?
 export const sceneOf = (s: DubState, r: SceneRound): Scene => episodeOfState(s).scenes[r.index - 1]!;
 export const lineOf = (s: DubState, r: SceneRound, level: Level): JpText => sceneLines(sceneOf(s, r), s.audience)[level];
 export const adlibOf = (s: DubState, r: SceneRound): AdLib => sceneAdlib(sceneOf(s, r), s.audience);
-/** Is this actor playing the ad-lib (offered and not declined)? */
-export const isAdlib = (a: Actor | undefined | null): boolean => a?.adlib === 'offered' || a?.adlib === 'accepted';
+/** Is this actor playing the ad-lib? Only once they've said yes: until then it's the scripted line. */
+export const isAdlib = (a: Actor | undefined | null): boolean => a?.adlib === 'accepted';
+/** Is the ad-lib offer still open for this actor (no answer yet)? */
+export const adlibOpen = (a: Actor | undefined | null): boolean => a?.adlib === 'offered';
 /** An actor's line: the script at their level, or the ad-lib's model line. */
 const lineFor = (s: DubState, r: SceneRound, a: Actor): JpText => (isAdlib(a) ? adlibOf(s, r).model : lineOf(s, r, a.level));
 const current = (s: DubState): SceneRound | null => s.rounds[s.round - 1] ?? null;
@@ -393,29 +397,33 @@ export function saidDirection(heard: Utterance | null, d: Direction, lineKana: s
 }
 
 // Casual speech (goal 4.8), checked leniently on the reading: any one sign counts. A clause that ends in
-// です/ます (even with よ/ね) is polite, not casual.
-const CONTRACTIONS = /(ちゃった|じゃった|ちゃう|じゃう|ちゃって|てる|でる|てた|てない|とく|といた|といて|どく|じゃん|でしょ)/;
-const N_DA = /(んだ|なんだ)/;
-const CASUAL_END = /(よ|ね|の|かな|だ|ぞ|ぜ|わ|さ|っけ|じゃん|でしょ)$/;
-const POLITE_END = /(です|ます|ました|ません|でした|ましょう)(よ|ね|よね|か)?$/;
+// a polite form (です/ます, でしょう, ください…, even with よ/ね/か) is polite, not casual. Contractions are
+// looked for with katakana words taken out (so ホテル is not 〜てる), and でしょ only when it isn't でしょう.
+const CONTRACTIONS = /(ちゃった|じゃった|ちゃう|じゃう|ちゃって|じゃって|[てで](る|た|て|ない)|[とど](いた|いて)|[とど]く(?!だ)|じゃん|でしょ(?!う))/;
+const N_DA = /(ん|なん)だ(よ|ね|けど|から|もん|ろう)?$/;
+const CASUAL_END = /(よ|ね|の|かな|だ|ぞ|ぜ|わ|さ|っけ|じゃん|でしょ|し)$/;
+const PLAIN_END = /([うくぐすつぬぶむるたいだ]|ない|かった|て|で)$/;
+const POLITE_END = /(です|ます|ました|ません|でした|ましょう|でしょう|ください|なさい|ございます)(よ|ね|よね|か)?$/;
 
 /**
  * The ad-lib's check: lenient on purpose (there is no script to match). Casual if a clause ends in a
- * casual particle or the copula (よ, ね, の？, だ…), or a contraction or 〜んだ turns up anywhere; on the
- * mission if one of its key words came through.
+ * casual particle, the copula or a plain form (よ, ね, の？, だ, 〜た, 〜ない, 〜う…) and not a polite one,
+ * or a clause ends in 〜んだ, or a contraction (〜ちゃった, 〜てる, 〜とく…) turns up outside katakana; on
+ * the mission if one of its key words came through.
  */
 export function adlibCheck(heard: Utterance | string, adlib: Pick<AdLib, 'keys'>): AdlibCheck {
   const raw = typeof heard === 'string' ? heard : (heard.reading ?? heard.text);
   const clauses = raw
     .normalize('NFKC')
-    .split(/[\s、。,.!?！？…「」]+/)
-    .map((c) => normalizeReading(c))
+    .split(/[、。,.!?！？…「」]+/)
+    .map((c) => normalizeReading(c).replace(/[\s　]+/g, ''))
     .filter(Boolean);
   const all = normalizeReading(raw);
+  const bare = normalizeReading(raw.normalize('NFKC').replace(/[ァ-ヶー]+/g, '')).replace(/[\s　]+/g, '');
   const frames: string[] = [];
-  if (clauses.some((c) => CASUAL_END.test(c) && !POLITE_END.test(c))) frames.push('plain');
-  if (N_DA.test(all)) frames.push('n-da');
-  if (CONTRACTIONS.test(all)) frames.push('teru');
+  if (clauses.some((c) => (CASUAL_END.test(c) || PLAIN_END.test(c)) && !POLITE_END.test(c))) frames.push('plain');
+  if (clauses.some((c) => N_DA.test(c))) frames.push('n-da');
+  if (CONTRACTIONS.test(bare)) frames.push('teru');
   const said = soundKey(all);
   const key = adlib.keys.some((k) => said.includes(soundKey(k)));
   return { casual: frames.length > 0, key, frames };
@@ -441,10 +449,15 @@ function limitFor(kana: string, slow: boolean, adlib: boolean): number {
   return adlib ? Math.min(MAX_TAKE_MS, Math.round(ADLIB_TAKE_MS * (slow ? 1.5 : 1))) : takeLimitMs(kana, slow);
 }
 
-/** The ad-lib offers so far and how many were taken (the step's gate: N4 players accept 60% or more). */
-export function adlibTally(s: DubState): { offered: number; accepted: number } {
-  const all = s.rounds.flatMap((r) => r.actors.filter((a) => a.adlib));
-  return { offered: all.length, accepted: all.filter((a) => a.adlib === 'accepted').length };
+/**
+ * The ad-lib offers so far and how many were taken (the step's gate: N4 players accept 60% or more, by
+ * `offerRate`). `offered` counts the answered offers the rate counts (not 'away'); an offer still open
+ * waits until it's answered or times out.
+ */
+export function adlibTally(s: DubState): { offered: number; accepted: number; rate: number | null } {
+  const answers = s.rounds.flatMap((r) => r.actors.flatMap((a) => (a.adlib && a.adlib !== 'offered' ? [a.adlib] : [])));
+  const counted = answers.filter((a) => a !== 'away');
+  return { offered: counted.length, accepted: counted.filter((a) => a === 'accepted').length, rate: offerRate(answers) };
 }
 
 function startScene(s: DubState, ctx: ModeContext): void {
@@ -459,7 +472,11 @@ function startScene(s: DubState, ctx: ModeContext): void {
   // The ad-lib hard role: offered to one N4 player a scene, in turn. No N4 player, no change.
   const n4 = actors.filter((a) => a.level === 'n4');
   const pick = n4[(s.round - 1) % Math.max(1, n4.length)];
-  if (pick) pick.adlib = 'offered';
+  // Spotlight (for Ladi to confirm): in a room of 4 or more, a lone N4 player who played the ad-lib last
+  // scene gets this one off, so the same voice isn't on the spot every scene.
+  const prev = s.rounds.at(-1)?.actors.find((a) => a.playerId === pick?.playerId);
+  const rest = n4.length === 1 && ctx.connected().length >= 4 && prev?.adlib === 'accepted';
+  if (pick && !rest) pick.adlib = 'offered';
   s.rounds.push({ index: s.round, sceneId: scene.id, actors, order: [], screening: null, guesses: {}, hearts: {}, results: null, best: null });
 }
 
@@ -695,6 +712,9 @@ export const dubClubMode: Mode<DubState, DubView> = {
   leave(s, phase, ctx) {
     const r = current(s);
     if (phase === 'answer' && r) {
+      // An offer nobody answered by the end of recording timed out ('away' if they'd dropped out).
+      const here = new Set(ctx.connected().map((p) => p.id));
+      for (const a of r.actors) if (adlibOpen(a)) a.adlib = here.has(a.playerId) ? 'timeout' : 'away';
       r.order = shuffled(
         r.actors.filter((a) => a.take).map((a) => a.playerId),
         () => ctx.random(),
@@ -797,8 +817,8 @@ export const dubClubMode: Mode<DubState, DubView> = {
         if (reh.tries >= REHEARSALS) return moveError('no-more-tries');
         reh.tries += 1;
         const reading = utteranceReading(raw.utterance).slice(0, 320);
-        // An ad-lib has no script to match: the lenient casual check stands in for the similarity.
-        if (me.adlib === 'offered') me.adlib = 'accepted';
+        // An ad-lib has no script to match: the lenient casual check stands in for the similarity. While
+        // the offer is open, the plain read is of the scripted line (rehearsing isn't a yes).
         const check = isAdlib(me) ? adlibCheck(raw.utterance, adlibOf(s, r)) : undefined;
         const sim = check ? adlibSimilarity(check) : wordsSimilarity(lineOf(s, r, me.level).kana, reading);
         // The best try counts.
@@ -818,7 +838,8 @@ export const dubClubMode: Mode<DubState, DubView> = {
         if (!clipId && !local) return moveError('no-clip');
         const dur = typeof raw.durMs === 'number' && Number.isFinite(raw.durMs) ? raw.durMs : MAX_TAKE_MS;
         const heard = parseHeard(raw.heard);
-        if (me.adlib === 'offered') me.adlib = 'accepted';
+        // Sending the scripted take without answering the offer: it timed out.
+        if (adlibOpen(me)) me.adlib = 'timeout';
         const line = lineFor(s, r, me);
         const d = directionOf(me.direction)!;
         const limit = limitFor(line.kana, !!d.slow, isAdlib(me));
@@ -838,7 +859,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
         // Yes to the ad-lib, or "not this time": the scripted N4 line instead. Until the take is sent.
         if (phase !== 'prompt' && phase !== 'answer') return moveError('wrong-phase');
         if (!me) return moveError('not-playing');
-        if (!me.adlib) return moveError('not-offered');
+        if (me.adlib !== 'offered' && me.adlib !== 'accepted' && me.adlib !== 'declined') return moveError('not-offered');
         if (me.take) return moveError('already-sent');
         const next = raw.accept === true ? 'accepted' : 'declined';
         // A plain read checked the other way doesn't carry over.
@@ -1012,6 +1033,8 @@ export const dubClubMode: Mode<DubState, DubView> = {
     if (player && r && scene) {
       const mine = actorOf(r, player.id);
       const adlib = isAdlib(mine) ? adlibOf(s, r) : null;
+      // The offer shows (beside the scripted line) until it's answered, while there's still a take to make.
+      const offer = adlibOpen(mine) && !mine!.take && (phase === 'prompt' || phase === 'answer') ? adlibOf(s, r) : null;
       const line = mine ? lineFor(s, r, mine) : lineOf(s, r, level);
       const res = r.results?.find((x) => x.playerId === player.id);
       const d = mine ? directionOf(mine.direction) : undefined;
@@ -1037,8 +1060,10 @@ export const dubClubMode: Mode<DubState, DubView> = {
         myTurn: (!!a && a.playerId === player.id) || (step?.kind === 'scene' && step.scene?.playerId === player.id),
         adlib:
           mine && adlib
-            ? { state: mine.adlib as 'offered' | 'accepted', mission: adlib.mission, emoji: adlib.emoji, check: reh?.adlib ?? null, model: mine.take || phase === 'reveal' || phase === 'score' ? adlib.model : null }
-            : null,
+            ? { state: 'accepted', mission: adlib.mission, emoji: adlib.emoji, check: reh?.adlib ?? null, model: mine.take || phase === 'reveal' || phase === 'score' ? adlib.model : null }
+            : mine && offer
+              ? { state: 'offered', mission: offer.mission, emoji: offer.emoji, check: null, model: null }
+              : null,
         notes:
           showResults && mine?.take && res
             ? { words: res.words, similarity: reh?.similarity ?? null, checked: mine.take.checked, spoiler: mine.take.spoiler, total: res.total, guessedBy: res.guessedBy.length, hearts: res.hearts, best: r.best === player.id }

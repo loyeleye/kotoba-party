@@ -276,11 +276,29 @@ describe('Dub Club: the ad-lib content', () => {
   it('checks casual speech leniently: plain endings, 〜んだ and contractions count; です/ます does not', () => {
     const keys = { keys: ['おにぎり'] };
     expect(adlibCheck('だれが おにぎり たべたの？', keys)).toMatchObject({ casual: true, key: true });
-    expect(adlibCheck({ via: 'speech', text: '食べちゃった', reading: 'たべちゃった' }, keys)).toMatchObject({ casual: true, key: false, frames: ['teru'] });
+    const chatta = adlibCheck({ via: 'speech', text: '食べちゃった', reading: 'たべちゃった' }, keys);
+    expect(chatta).toMatchObject({ casual: true, key: false });
+    expect(chatta.frames).toContain('teru');
     expect(adlibCheck('おばけ なんだ', keys).frames).toContain('n-da');
     expect(adlibCheck('おにぎりを たべましたよ。', keys)).toMatchObject({ casual: false, key: true });
     expect(adlibCheck('おにぎりは どこですか', keys).casual).toBe(false);
     expect(adlibSimilarity({ casual: true, key: true, frames: [] })).toBe(1);
+  });
+
+  it('rejects polite lines and false contractions (ホテル, ください, でしょう)', () => {
+    const keys = { keys: ['おにぎり'] };
+    expect(adlibCheck('わたしの おにぎりを たべましたか。', keys).casual).toBe(false);
+    expect(adlibCheck('ホテルで まって います。', keys).casual).toBe(false);
+    expect(adlibCheck('ホテルに かえります。', keys).casual).toBe(false);
+    expect(adlibCheck('ちょっとください', keys).casual).toBe(false);
+    expect(adlibCheck('そうでしょう', keys).casual).toBe(false);
+  });
+
+  it('accepts plain forms with no particle', () => {
+    const keys = { keys: ['おにぎり'] };
+    for (const line of ['しらない。ぼくじゃない。', 'おなか すいた。', 'ちがう！', 'おいしかった！', 'いっしょに いこう！', 'ぜんぶ たべた！'])
+      expect(adlibCheck(line, keys).casual, line).toBe(true);
+    expect(adlibCheck('しらない。', keys).frames).toContain('plain');
     expect(adlibSimilarity({ casual: true, key: false, frames: [] })).toBeGreaterThanOrEqual(0.5);
     expect(adlibSimilarity({ casual: false, key: false, frames: [] })).toBeLessThan(0.5);
   });
@@ -294,27 +312,41 @@ function setupLevels(levels: ('kana' | 'n5' | 'n4')[]) {
 }
 
 describe('Dub Club: the ad-lib role', () => {
-  it('offers the N4 player a mission instead of a script; everyone else keeps their line', () => {
+  /** Plays scene by scene to `round`, passing everyone at recording. */
+  function toRound(t: ReturnType<typeof setupLevels>, round: number) {
+    for (let i = 0; i < 400 && t.st().round < round; i++) {
+      if (t.room.state.phase === 'answer') for (const s of t.seats) if (!t.view(s).me!.sent && !t.view(s).me!.passed) t.play(s, { kind: 'pass' });
+      t.clock.advance(1_000);
+    }
+    expect(t.st().round).toBe(round);
+  }
+
+  it('offers the N4 player the ad-lib beside the scripted line; Take it swaps in the mission', () => {
     const t = setupLevels(['kana', 'n5', 'n4']);
     const [k, n5, n4] = t.seats as [JoinResponse, JoinResponse, JoinResponse];
     t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
     t.skipPhase();
     expect(t.room.state.phase).toBe('prompt');
+    const scene0 = EPISODES.find((e) => e.id === t.st().episodeId)!.scenes[0];
+    // Opt-in: until they take it, the phone shows the scripted N4 line with the offer.
     const mine = t.view(n4).me!;
-    expect(mine.line).toBeNull();
+    expect(mine.line!.kana).toBe(scene0.lines.n4.kana);
     expect(mine.adlib).toMatchObject({ state: 'offered', model: null });
     expect(mine.adlib!.mission.length).toBeGreaterThan(0);
     for (const s of [k, n5]) {
       expect(t.view(s).me!.adlib).toBeNull();
       expect(t.view(s).me!.line).not.toBeNull();
     }
-    expect(t.view().cast.filter((c) => c.adlib).map((c) => c.playerId)).toEqual([n4.playerId]);
     // Others can't take it.
     expect(t.play(n5, { kind: 'adlib', accept: true })).toMatchObject({ ok: false });
+    expect(t.view().cast.some((c) => c.adlib)).toBe(false);
+    expect(t.play(n4, { kind: 'adlib', accept: true })).toMatchObject({ ok: true });
+    expect(t.view(n4).me!.line).toBeNull();
+    expect(t.view().cast.filter((c) => c.adlib).map((c) => c.playerId)).toEqual([n4.playerId]);
     t.skipPhase();
 
     // A casual plain read on the mission scores full; the model shows only after the take.
-    const ad = sceneAdlib(EPISODES.find((e) => e.id === t.st().episodeId)!.scenes[0], t.st().audience);
+    const ad = sceneAdlib(scene0, t.st().audience);
     t.play(n4, { kind: 'rehearse', utterance: { via: 'speech', text: ad.model.kana, reading: ad.model.kana } });
     expect(t.view(n4).me!.adlib).toMatchObject({ state: 'accepted', check: { casual: true, key: true }, model: null });
     expect(t.view(n4).me!.rehearsal!.similarity).toBe(1);
@@ -322,6 +354,45 @@ describe('Dub Club: the ad-lib role', () => {
     t.play(n4, { kind: 'take', clipId: null, local: true, durMs: 3000, heard: null, checked: true });
     expect(t.view(n4).me!.adlib!.model).toEqual(ad.model);
     expect(t.play(n4, { kind: 'adlib', accept: false })).toMatchObject({ ok: false }); // sent: too late
+    expect(adlibTally(t.st())).toEqual({ offered: 1, accepted: 1, rate: 1 });
+  });
+
+  it('a plain read while the offer is open is of the script, and isn’t a yes', () => {
+    const t = setupLevels(['n5', 'kana', 'n4']);
+    const n4 = t.seats[2]!;
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    t.skipPhase();
+    t.skipPhase();
+    expect(t.room.state.phase).toBe('answer');
+    const line = EPISODES.find((e) => e.id === t.st().episodeId)!.scenes[0].lines.n4;
+    t.play(n4, { kind: 'rehearse', utterance: { via: 'speech', text: line.kana, reading: line.kana } });
+    expect(t.view(n4).me!.adlib?.state).toBe('offered');
+    expect(t.view(n4).me!.rehearsal!.marks.length).toBeGreaterThan(0);
+    expect(t.st().rounds[0]!.actors.find((a) => a.playerId === n4.playerId)!.adlib).toBe('offered');
+  });
+
+  it('sending the scripted take with the offer open logs it as timed out', () => {
+    const t = setupLevels(['n5', 'kana', 'n4']);
+    const n4 = t.seats[2]!;
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    t.skipPhase();
+    t.skipPhase();
+    t.play(n4, { kind: 'take', clipId: null, local: true, durMs: 3000, heard: null, checked: true });
+    const actor = t.st().rounds[0]!.actors.find((a) => a.playerId === n4.playerId)!;
+    expect(actor.adlib).toBe('timeout');
+    expect(t.view(n4).me!.adlib).toBeNull();
+    expect(t.view().cast.some((c) => c.adlib)).toBe(false);
+    expect(adlibTally(t.st())).toEqual({ offered: 1, accepted: 0, rate: 0 });
+  });
+
+  it('an offer still open when recording ends times out', () => {
+    const t = setupLevels(['n5', 'kana', 'n4']);
+    const n4 = t.seats[2]!;
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    t.skipPhase();
+    t.skipPhase();
+    t.skipPhase(); // recording ends with no answer
+    expect(t.st().rounds[0]!.actors.find((a) => a.playerId === n4.playerId)!.adlib).toBe('timeout');
   });
 
   it('“not this time” gives the scripted N4 line, and offers rotate among N4 players', () => {
@@ -334,15 +405,35 @@ describe('Dub Club: the ad-lib role', () => {
     expect(t.play(a, { kind: 'adlib', accept: false })).toMatchObject({ ok: true });
     expect(t.view(a).me!.adlib).toBeNull();
     expect(t.view(a).me!.line!.kana).toBe(EPISODES.find((e) => e.id === t.st().episodeId)!.scenes[0].lines.n4.kana);
-    expect(adlibTally(t.st())).toEqual({ offered: 1, accepted: 0 });
+    expect(adlibTally(t.st())).toEqual({ offered: 1, accepted: 0, rate: 0 });
     // Scene 2 goes to the other N4 player.
-    for (let i = 0; i < 400 && t.st().round < 2; i++) {
-      if (t.room.state.phase === 'answer') for (const s of t.seats) if (!t.view(s).me!.sent && !t.view(s).me!.passed) t.play(s, { kind: 'pass' });
-      t.clock.advance(1_000);
-    }
-    expect(t.st().round).toBe(2);
+    toRound(t, 2);
     expect(t.view(b).me!.adlib?.state).toBe('offered');
     expect(t.view(a).me!.adlib).toBeNull();
+  });
+
+  it('spotlight: in a room of 4+, a lone N4 player who ad-libbed last scene gets the next one off', () => {
+    const t = setupLevels(['n5', 'n5', 'kana', 'n4']);
+    const n4 = t.seats[3]!;
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    t.skipPhase();
+    t.play(n4, { kind: 'adlib', accept: true });
+    toRound(t, 2);
+    expect(t.view(n4).me!.adlib).toBeNull();
+    expect(t.st().rounds[1]!.actors.every((a) => a.adlib === undefined)).toBe(true);
+    // Scene 3: offered again.
+    toRound(t, 3);
+    expect(t.view(n4).me!.adlib?.state).toBe('offered');
+  });
+
+  it('a lone N4 player in a small room is offered it every scene', () => {
+    const t = setupLevels(['n5', 'kana', 'n4']);
+    const n4 = t.seats[2]!;
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    t.skipPhase();
+    t.play(n4, { kind: 'adlib', accept: true });
+    toRound(t, 2);
+    expect(t.view(n4).me!.adlib?.state).toBe('offered');
   });
 
   it('a room with no N4 player never sees it', () => {

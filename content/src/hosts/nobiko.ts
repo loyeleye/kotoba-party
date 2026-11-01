@@ -137,6 +137,10 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.narabete_defence.02', host: 'nobiko', event: 'narabete_defence', jp: { text: '{name}さんの カード、ずいぶん うごいたわね。', kana: '{name}さんの カード、ずいぶん うごいたわね。', en: "Oh my, {name}'s card moved a lot." }, slots: ['{name}'], status: 'draft' },
   { id: 'nobiko.narabete_defence.03', host: 'nobiko', event: 'narabete_defence', jp: { text: '{name}さん、ひとこと どうぞ！', kana: '{name}さん、ひとこと どうぞ！', en: '{name}, a word, please!' }, slots: ['{name}'], status: 'draft' },
   { id: 'nobiko.narabete_defence.04', host: 'nobiko', event: 'narabete_defence', jp: { text: 'ちょっと {name}さん、いいわけ きかせて。', kana: 'ちょっと {name}さん、いいわけ きかせて。', en: "Now then, {name}, let's hear your excuse." }, slots: ['{name}'], status: 'draft' },
+  // narabete_hard: the N4 defence (rank and defend): their own card, wherever it sits
+  { id: 'nobiko.narabete_hard.01', host: 'nobiko', event: 'narabete_hard', jp: { text: '{name}さん、どうして そこなの？　おばさんに おしえて！', kana: '{name}さん、どうして そこなの？　おばさんに おしえて！', en: '{name}, why there? Tell Auntie!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'nobiko.narabete_hard.02', host: 'nobiko', event: 'narabete_hard', jp: { text: 'あらまあ、{name}さんの カード、そこで いいの？', kana: 'あらまあ、{name}さんの カード、そこで いいの？', en: 'Oh my, {name}, is that the spot for your card?' }, slots: ['{name}'], status: 'draft' },
+  { id: 'nobiko.narabete_hard.03', host: 'nobiko', event: 'narabete_hard', jp: { text: '{name}さん、りゆうを きかせて ちょうだい。', kana: '{name}さん、りゆうを きかせて ちょうだい。', en: "{name}, let's hear your reason, dear." }, slots: ['{name}'], status: 'draft' },
   // narabete_perfect
   { id: 'nobiko.narabete_perfect.01', host: 'nobiko', event: 'narabete_perfect', jp: { text: 'あらまあ！　ぴったり ならんだわ！', kana: 'あらまあ！　ぴったり ならんだわ！', en: 'Oh my! Perfectly in line!' }, status: 'draft' },
   { id: 'nobiko.narabete_perfect.02', host: 'nobiko', event: 'narabete_perfect', jp: { text: 'くびが まっすぐ！　かんぺきよ！', kana: 'くびが まっすぐ！　かんぺきよ！', en: "My neck's dead straight! Perfect!" }, status: 'draft' },

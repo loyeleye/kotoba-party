@@ -15,14 +15,18 @@
 //
 // The N4 hard role, rank and defend (goal 4.11): in a room with N4 players, one of them each round (in
 // turn) also defends their own card's place with ので (「＿ので、これが いちばん さきです。」), in any round,
-// Time Line too. It's offered during the line-up and can be declined. It runs as its own `encore` after the
-// ordinary defence (or instead of it, when the same player would give both). Team points don't change.
+// Time Line too. It's offered during the line-up, opt-in: it runs only when they tap Take it before the
+// line-up ends (an offer still open then is 'timeout'). It runs as its own `encore` after the ordinary
+// defence (or instead of it, when the same player would give both). Team points don't change.
+// Spotlight (for Ladi to confirm): in a room of 4 or more, a lone eligible N4 player who gave it last round
+// gets this round off.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
 import { isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
+import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
@@ -123,12 +127,15 @@ export interface Flip {
 export interface HardDefence {
   playerId: string;
   cardId: string;
-  answer: 'offered' | 'accepted' | 'declined';
+  /** 'offered' until they answer; still open when the line-up ends, it's 'timeout' ('away' if they left). */
+  answer: 'offered' | OfferAnswer;
   done: boolean;
   /** Said out loud, in Japanese: tops the bonus up, like the ordinary defence. */
   ok: boolean;
   /** It used ので (the frame). */
   framed: boolean;
+  /** It was one of the model lines shown on the phone, read out (the phrasebook logs it as seen). */
+  read?: boolean;
   text: string | null;
 }
 
@@ -171,7 +178,7 @@ export interface NarabeteState {
   story: Story | null;
   phaseAt: number;
   /** Every N4 defence offered so far, and the answer (the step's gate: N4 players accept 60% or more). */
-  hardLog: { round: number; playerId: string; answer: HardDefence['answer'] }[];
+  hardLog: { round: number; playerId: string; answer: OfferAnswer }[];
 }
 
 // ---- view ----
@@ -462,7 +469,8 @@ function phrases(s: NarabeteState, r: Round, ctx: ModeContext): void {
     const script = scriptFor(s, r, hard.cardId, ctx);
     const model = script?.lines[0];
     if (script && model)
-      ctx.phrase(hard.playerId, { itemId: `narabete:defence:${script.spot}`, text: model.text, kana: model.kana, en: `${model.en} (〜ので: giving a reason)`, outcome: hard.ok && hard.framed ? 'said' : hard.ok ? 'retry' : 'missed' });
+      // Said only for their own spoken ので reason; a model line read off the phone (or typed) was seen.
+      ctx.phrase(hard.playerId, { itemId: `narabete:defence:${script.spot}`, text: model.text, kana: model.kana, en: `${model.en} (〜ので: giving a reason)`, outcome: hard.ok && hard.framed && !hard.read ? 'said' : 'seen' });
   }
   const more = r.kind !== 'time' ? themeOf(r.setId)?.more : undefined;
   if (more)
@@ -508,22 +516,40 @@ function pickDefence(r: Round, ctx: ModeContext): Round['defence'] {
 function pickHard(s: NarabeteState, r: Round, ctx: ModeContext): HardDefence | null {
   const here = new Set(ctx.connected().map((p) => p.id));
   const n4 = ctx.players().filter((p) => p.level === 'n4');
+  const eligible = (id: string) => {
+    const c = cardOfPlayer(r, id);
+    return c && c.said && !c.hidden && here.has(id) ? c : null;
+  };
+  // Spotlight (for Ladi to confirm): in a room of 4 or more, the only eligible N4 player gets a round off
+  // after giving the defence.
+  const only = n4.filter((p) => eligible(p.id));
+  if (only.length === 1 && here.size >= 4 && s.hardLog.some((x) => x.round === s.round - 1 && x.playerId === only[0]!.id && x.answer === 'accepted')) return null;
   for (let k = 0; k < n4.length; k++) {
     const p = n4[(s.round - 1 + k) % n4.length]!;
-    const c = cardOfPlayer(r, p.id);
-    if (c && c.said && !c.hidden && here.has(p.id)) return { playerId: p.id, cardId: c.id, answer: 'offered', done: false, ok: false, framed: false, text: null };
+    const c = eligible(p.id);
+    if (c) return { playerId: p.id, cardId: c.id, answer: 'offered', done: false, ok: false, framed: false, text: null };
   }
   return null;
 }
 
-/** The N4 defence, if it is still to be said (offered or accepted, not declined). */
-const liveHard = (r: Round): HardDefence | null => (r.hard && r.hard.answer !== 'declined' ? r.hard : null);
+/** The N4 defence, if it is still to be said: only once they've taken it. */
+const liveHard = (r: Round): HardDefence | null => (r.hard && r.hard.answer === 'accepted' && !r.hard.done ? r.hard : null);
 
 /** The defence the encore is on now. */
 function onStand(r: Round): { playerId: string; done: boolean; hard: boolean } | null {
   if (r.encore === 'hard' && r.hard) return { playerId: r.hard.playerId, done: r.hard.done, hard: true };
   if (r.encore === 'defence' && r.defence) return { playerId: r.defence.playerId, done: r.defence.done, hard: false };
   return null;
+}
+
+/** Was this defence one of the shown model lines read out? Its reason (before 、) came through whole. */
+function readScript(script: DefenceScript | null, reading: string): boolean {
+  if (!script) return false;
+  const said = soundKey(normalizeReading(reading));
+  return script.lines.some((l) => {
+    const reason = soundKey(normalizeReading(l.kana.split('、')[0] ?? ''));
+    return reason.length >= 3 && said.includes(reason);
+  });
 }
 
 /** The N4 script for a card where it sits now. */
@@ -539,9 +565,11 @@ export function scriptFor(s: NarabeteState, r: Round, cardId: string, ctx: ModeC
   return null;
 }
 
-/** N4 defences offered and taken so far. */
-export function hardTally(s: NarabeteState): { offered: number; accepted: number } {
-  return { offered: s.hardLog.length, accepted: s.hardLog.filter((x) => x.answer === 'accepted').length };
+/** N4 defences offered and taken so far, and the rate (`offerRate`: away is left out of both). */
+export function hardTally(s: NarabeteState): { offered: number; accepted: number; rate: number | null } {
+  const answers = s.hardLog.map((x) => x.answer);
+  const counted = answers.filter((a) => a !== 'away');
+  return { offered: counted.length, accepted: counted.filter((a) => a === 'accepted').length, rate: offerRate(answers) };
 }
 
 const canVote = (r: Round, playerId: string) => r.kind !== 'time' && r.cards.some((c) => c.ownerId !== playerId && c.said && !c.hidden);
@@ -633,7 +661,8 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         if (!r) break;
         r.encore = !r.encore && r.defence ? 'defence' : 'hard';
         const on = onStand(r);
-        if (on) ctx.cue({ host: 'nobiko', event: 'narabete_defence', slots: { name: ctx.player(on.playerId)?.name ?? '' } });
+        // The N4 defence is about the player's own card, wherever it sits: its own cue (not "it moved a lot").
+        if (on) ctx.cue({ host: 'nobiko', event: on.hard ? 'narabete_hard' : 'narabete_defence', slots: { name: ctx.player(on.playerId)?.name ?? '' } });
         break;
       }
       case 'score':
@@ -650,15 +679,17 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     if (!r) return;
     if (phase === 'reveal') {
       r.defence = pickDefence(r, ctx);
-      const hard = liveHard(r);
-      // The VIP hid it, or its player left: no N4 defence.
-      if (hard && (cardOf(r, hard.cardId)?.hidden || !ctx.connected().some((p) => p.id === hard.playerId))) r.hard = null;
+      const hard = r.hard;
+      const gone = !!hard && !ctx.connected().some((p) => p.id === hard.playerId);
+      // The VIP hid it: no N4 defence. An offer still open as the line-up ends timed out (away if they left).
+      if (hard && cardOf(r, hard.cardId)?.hidden) r.hard = null;
+      else if (hard && hard.answer === 'offered') hard.answer = gone ? 'away' : 'timeout';
+      else if (hard && gone) r.hard = null;
       // One defence each: the N4 player who also moved the most gives the N4 one.
       if (r.hard && liveHard(r) && r.defence?.playerId === r.hard.playerId) r.defence = null;
     }
-    if (phase === 'encore' && r.encore === 'hard' && r.hard && r.hard.answer === 'offered' && !r.hard.text) r.hard.answer = 'declined';
     if (phase === 'score') {
-      if (r.hard) s.hardLog.push({ round: r.index, playerId: r.hard.playerId, answer: r.hard.answer });
+      if (r.hard) s.hardLog.push({ round: r.index, playerId: r.hard.playerId, answer: r.hard.answer === 'offered' ? 'timeout' : r.hard.answer });
       payFlip(r, ctx);
       payVotes(s, r, ctx);
       if (r.kind === 'story') {
@@ -805,11 +836,12 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         return MOVE_OK;
       }
       case 'hard': {
-        // Yes to the N4 defence, or "not this time". Until it's said.
+        // Yes to the N4 defence, or "not this time". Until it's said; a yes only during the line-up.
         if (phase !== 'reveal' && phase !== 'encore') return moveError('wrong-phase');
         const hard = r.hard;
         if (!hard || hard.playerId !== playerId) return moveError('not-offered');
-        if (hard.done) return MOVE_OK;
+        if (hard.done || hard.answer === 'timeout' || hard.answer === 'away') return MOVE_OK;
+        if (phase === 'encore' && raw.accept === true && hard.answer !== 'accepted') return moveError('wrong-phase');
         hard.answer = raw.accept === true ? 'accepted' : 'declined';
         if (hard.answer === 'declined') hard.done = true;
         return MOVE_OK;
@@ -832,6 +864,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
           hard.text = tidyJa(text);
           hard.ok = raw.utterance.via === 'speech' && hasJapanese(text);
           hard.framed = /ので/.test(utteranceReading(raw.utterance)) || /ので/.test(text);
+          hard.read = readScript(scriptFor(s, r, hard.cardId, ctx), utteranceReading(raw.utterance));
           return MOVE_OK;
         }
         if (!r.defence) return moveError('wrong-phase');
@@ -981,7 +1014,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         votedFor: (phase === 'score' && r.votes[me.id]) || null,
         defending: !!stand && stand.playerId === me.id && !stand.done,
         hard:
-          r.hard && r.hard.playerId === me.id && r.hard.answer !== 'declined' && !r.hard.done && (phase === 'reveal' || phase === 'encore')
+          r.hard && r.hard.playerId === me.id && (r.hard.answer === 'offered' || r.hard.answer === 'accepted') && !r.hard.done && (phase === 'reveal' || phase === 'encore')
             ? { answer: r.hard.answer, script: stand?.hard ? scriptFor(s, r, r.hard.cardId, ctx) : null }
             : null,
         performing: current && c && current === c.id && !s.story!.done[c.id] ? { text: c.said?.text ?? '' } : null,

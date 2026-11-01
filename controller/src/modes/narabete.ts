@@ -327,7 +327,7 @@ function storyScreen(ctx: Ctx, me: Me): HTMLElement {
   );
 }
 
-/** The N4 defence, offered during the line-up: say yes, or "not this time". */
+/** The N4 defence, offered during the line-up: Take it (before the line-up ends), or "not this time". */
 function hardOffer(ctx: Ctx, me: Me): HTMLElement | null {
   const hard = me.hard;
   if (!hard) return null;
@@ -337,8 +337,9 @@ function hardOffer(ctx: Ctx, me: Me): HTMLElement | null {
     { class: 'nb-hard' },
     h('p', {}, '🎙 N4: after the line-up, say why your card goes where it is, with ', h('span', { lang: 'ja' }, '〜ので'), '.'),
     hard.answer === 'offered'
-      ? h('div', { class: 'nb-hard-btns' }, h('button', { type: 'button', class: 'secondary', onclick: () => send(true) }, 'I’m in'), h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Not this time'))
+      ? h('div', { class: 'nb-hard-btns' }, h('button', { type: 'button', class: 'secondary', onclick: () => send(true) }, 'Take it'), h('button', { type: 'button', class: 'secondary', onclick: () => send(false) }, 'Not this time'))
       : h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Not this time after all'),
+    hard.answer === 'offered' ? h('p', { class: 'hint' }, 'Answer before the line-up ends, or the chance passes.') : null,
   );
 }
 
@@ -362,6 +363,7 @@ function hardDefence(ctx: Ctx, me: Me): HTMLElement {
       script.lines.map((l) => jpView(l, me.level, { cls: 'nb-hard-line' })),
     ),
     speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'defend', utterance, round: game.round }) }),
+    h('p', { class: 'hint' }, 'Say it out loud for the bonus: a typed defence doesn’t score.'),
     h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Not this time'),
   );
 }

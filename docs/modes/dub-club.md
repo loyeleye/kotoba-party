@@ -59,16 +59,23 @@ who ate your onigiri." 🍙) instead of the line, and they say it their own way 
 + よ/ね/の？, 〜んだ, 〜てる/〜ちゃった. They still get two direction cards and act it, so the screening works
 as before. Everyone else keeps their scripted line, and a room with no N4 player sees no change.
 
-- **The offer**: 🎙 Ad-lib it! or **Not this time** (the scripted N4 line instead), until the take is
-  sent. Saying the plain read or sending a take counts as yes. Each actor keeps the answer in
-  `Actor.adlib`, and `adlibTally` counts offers and yeses (the step's gate: 60% or more taken).
+- **The offer** is opt-in: two equal buttons, **🎙 Take it: ad-lib** or **Not this time** (keep the
+  scripted N4 line), with Fude-kantoku's "No script this time. Make it yours!" and the mission, until the
+  take is sent. Until they tap Take it: ad-lib, the phone shows the scripted N4 line; sending the scripted
+  take without answering logs the offer as timed out. A plain read while the offer is open is of the
+  script and isn't a yes. An offer still open when recording ends is `timeout` (`away` if the player had
+  dropped out). Each actor keeps the answer in `Actor.adlib` (the shared `OfferAnswer`), and `adlibTally`
+  counts offers, yeses and `offerRate` (the step's gate: 60% or more taken; away is left out).
 - **The check** is lenient, since there is nothing to match against: casual if a clause ends in a casual
-  particle or the copula (よ, ね, の, だ, かな, じゃん…) and not in です/ます, or a contraction or 〜んだ
-  turns up anywhere; on the mission if one of the scene's key words comes through. Both score as a full
+  particle, the copula or a plain form (よ, ね, の, だ, かな, じゃん, 〜た, 〜ない, 〜う…) and not in a polite
+  form (です/ます, でしょう, ください…), or a clause ends in 〜んだ, or a contraction (〜ちゃった, 〜てる,
+  〜とく, でしょ but not でしょう) turns up outside katakana words (so ホテル isn't 〜てる); on the mission if
+  one of the scene's key words comes through. Both score as a full
   plain read (50), one as close (30), neither as tried (20): the same word points as everyone else.
 - **The model line** (one casual N4 way to say it) shows on the phone once the take is sent, in the cast
   notes and in the phrasebook (`dub:<scene>:adlib`). The TV tags the cast list and the name card
-  アドリブ and shows no caption over an ad-lib's voice; the reveal captions it with the model line.
+  アドリブ; over an ad-lib's voice it captions only the model line's English (so the room can follow
+  without being handed a Japanese answer), and the reveal captions it with the model line itself.
 - An ad-lib take may run 9 s (13.5 s capped at 12 s for slow cards).
 
 Content: `Scene.adlib` (and `cheekyAdlib` for Under the Cherry Tree's Cheeky twist) in `scenes.ts`, one per
@@ -111,9 +118,12 @@ master limiter. Fude never talks over a dub (`hostHoldMs`).
 
 ## Open questions
 
-- Ad-lib, decided for now (Ladi to confirm): it's offered every scene to one N4 player in turn, so a lone
-  N4 player gets it every scene; the check is casual-or-key-word lenient, not a grammar check; the model
-  line is shown after the take, never before; the TV captions an ad-lib only at the reveal.
+- Ad-lib, decided for now (Ladi to confirm): it's offered every scene to one N4 player in turn; the check
+  is casual-or-key-word lenient, not a grammar check; the model line is shown after the take, never
+  before; the TV shows only the model line's English over an ad-lib's voice, and the Japanese at the reveal.
+- Spotlight, for Ladi to confirm: in a room of 4 or more connected players, a lone N4 player who played
+  the ad-lib (said yes) last scene isn't offered it this scene, so the same voice isn't on the spot every
+  scene. With fewer players, or two or more N4 players, nothing changes.
 - Ad-lib, deferred: the host playing it in rooms without an N4 player, the commentary booth's replay of
   the casual chunk, and the N3 ad-lib (step 6).
 
