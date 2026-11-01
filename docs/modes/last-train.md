@@ -14,7 +14,7 @@ placeholder content), `stage/src/modes/lastTrain.ts`, `controller/src/modes/last
 | `prompt` (each stop) | The stop's name and announcement, the minigame's shared situation. The last stop also shows the twist. | `train_stop` (`stop`), last stop `train_last_stop_twist` |
 | `answer` | Every phone gets its own item from that stop's minigame at the player's level. Spoken (or typed) answer; one private retry with the hint; room overrule votes. Ends early when everyone is resolved and no vote is open. | `room_overrule` (`name`) on a successful overrule |
 | `reveal` | The stage shows each player's prompt, what they said, the natural version and the points. A player who missed is asked to say the natural version once (no points). | `reveal_react` (tier: all right = ippon, half = good, else flop); `train_revive` (`name`) |
-| `penalty` | Only if a living player missed twice. One item from a `penalty: true` minigame (Calendar Crunch, Counter Chaos, Particle Panic), one attempt; the room can still overrule. Failing makes a ghost. | `miss_kind`, then `train_ghost` (`name`) per new ghost |
+| `penalty` | Only if a living player missed twice, at a stop whose minigame isn't `forgiving` (Read the Signs is). One item from a `penalty: true` minigame (Calendar Crunch, Counter Chaos, Particle Panic), one attempt; the room can still overrule. Failing makes a ghost. | `miss_kind`, then `train_ghost` (`name`) per new ghost |
 | `finale` (Platform Dash) | Rapid questions from `scenario.platformDash`; each right answer is one step; 6 steps to the door. Ghosts start 2 steps back. First aboard wins. Ends early when everyone is aboard. | `platform_dash` |
 | `score` | Dash results and the twist line. | |
 | `recap` | Room standings, awards and each player's phrasebook ("travel survival kit"). | `recap_award` (room) |
@@ -35,6 +35,39 @@ placeholder content), `stage/src/modes/lastTrain.ts`, `controller/src/modes/last
     `speechSynthesis` (ja-JP) and hides the text until the retry; with no voice available it
     shows the text after 2.5 s.
   - `read-aloud`: the speech bonus is halved (reading, not from memory).
+  - Items with `signs` (Read the Signs): the phone draws each as a station board, only the kanji
+    and a drawn arrow on it, with no reading (reading it is the task). Exits are yellow, toilets
+    blue and red, other signs dark. A pair of boards always shares one row, and is drawn plain on
+    the first try, since colour would give the answer away. The TV reveal shows the boards too,
+    with the asked-about sign outlined, and so does the overrule vote.
+
+### Read the Signs (看板を読もう)
+
+Kanji as icons, the way a traveller first meets them: read like traffic signs long before anyone
+writes one (from the learning path's ideas, [progressive-learning.md](../progressive-learning.md)).
+17 items in `content/src/last-train/read-the-signs.ts`:
+
+- **Kana:** 駅, 出口, 入口, 男, 女 read out loud, then "Where's the exit?" with 出口 and 入口,
+  and "Where's the women's toilet?" with 男 and 女 (answer ひだりです / みぎです, or 出口は左です).
+  Kana phones show a "← ひだり · ↑ まっすぐ · みぎ →" strip under a pair of boards.
+- **N5:** the four station exits 北口, 南口, 東口, 西口, and 切符, then which way to the south exit
+  and to the ticket office (↑: まっすぐです).
+- **N4:** 改札, 乗換, and which way to the east exit (東口は右のほうです).
+
+Direction questions are written in kana only, so the sign they ask about never appears in them,
+and half the deals come mirrored (`mirror` on the item; the dealt id ends in `~mirrored`, and
+`itemIndex` has both). A one-sign item is never dealt at a stop whose name or announcement spells
+it (no 北口 at Kitaguchi).
+
+N5 and N4 hints are pictures to remember a kanji by (駅's horse, 男's rice field over strength,
+北's two people back to back), never the reading. A Kana player may never have heard the word, so a
+Kana retry gives the reading to say ("It reads えき (eki). Say it!") with the picture for next time.
+Models quote the sign (「男」です。), since 男です。 can mean "I'm a man". The minigame is
+`forgiving`: these are first meetings with kanji, so a miss never sends anyone to the penalty car.
+The stop rides the Obake Line as 北口 (Kitaguchi), just before its last stop.
+
+The reader fixes one dictionary slip for it: IPADIC reads 出口 alone as いでぐち, so
+`server/src/reading.ts` reads it でぐち.
 
 ### Items and levels
 
@@ -90,7 +123,7 @@ Perfect Passenger), with built-in names as a fallback.
 The stage view never carries anyone's words or hints before `reveal`. A phone sees its own
 task, hint and last heard text, plus the words of rejected answers it may vote on (needed to
 judge an overrule). Accepted answers are never sent to any client; bots look items up by
-`itemId` in the content.
+`itemId` in the content. A sign's `target` mark is stripped from every phone's view too.
 
 ## Decisions made on Ladi's behalf
 
@@ -135,4 +168,6 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
   `ModeInfo.phrasebookTitle`, so it says "Your travel survival kit".
 - Phone audio for Station Announcement uses the device voice; the host pipeline could pre-render
   item audio instead (content notes say audio must play before text).
+- Read the Signs: are the kanji pictures (in each hint) memorable and right? They need the fluent
+  check with the rest. A Kids line could use the kana-level signs too.
 - Overrule logs live in the mode state only; the false-reject metric needs them persisted.

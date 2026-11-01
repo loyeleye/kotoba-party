@@ -4,6 +4,7 @@
 
 import { h, ruby, stagger } from '../../../shared/src/dom.js';
 import { icon } from '../../../shared/src/art.js';
+import { signBoard } from '../../../shared/src/signBoard.js';
 import type { JpText } from '../../../content/src/types.js';
 import type { LastTrainView, TravellerStatus, TravellerView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -139,7 +140,7 @@ function reveal(game: LastTrainView): HTMLElement {
             'li',
             { class: `o-${r.outcome}` },
             h('span', { class: 'lt-r-name' }, r.ghost ? `👻 ${r.name}` : r.name),
-            h('span', { class: 'lt-r-q' }, ruby(r.prompt)),
+            h('span', { class: 'lt-r-q' }, r.signs?.length ? signBoard(r.signs, { small: true, outline: true }) : null, ruby(r.prompt)),
             h('span', { class: 'lt-r-said', lang: 'ja' }, r.said ? `“${r.said}”` : '—'),
             h('span', { class: 'lt-r-model' }, ruby(r.model), h('small', {}, ` ${r.model.en}`)),
             h('span', { class: 'lt-r-out' }, OUTCOME[r.outcome] ?? '', r.points ? ` +${r.points}` : ''),

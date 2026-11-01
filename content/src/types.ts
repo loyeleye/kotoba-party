@@ -273,6 +273,7 @@ export type MinigameId =
   | 'counter-chaos'
   | 'particle-panic'
   | 'calendar-crunch'
+  | 'read-the-signs'
   | (string & {});
 
 export type PromptType = 'spoken-question' | 'listen-and-answer' | 'read-aloud' | 'picture' | 'fill-particle';
@@ -289,6 +290,13 @@ export interface MinigameItem {
   prompt: JpText;
   /** Optional on-screen visual (prices, a clock face, a picture) described in words. */
   visual?: string;
+  /** Station signs drawn on the phone (Read the Signs): the kanji itself is the picture. */
+  signs?: StationSign[];
+  /**
+   * Read the Signs direction items: the answer when the signs are dealt mirrored (left and right
+   * swapped), so where the target sits can't be learnt by heart. Half the deals use it.
+   */
+  mirror?: { accepted: string[]; model: JpText };
   /** Accepted answers, as kana readings. First is the model answer. */
   accepted: string[];
   /** The natural version shown after a miss, with English. */
@@ -299,6 +307,15 @@ export interface MinigameItem {
   timeLimit: number;
 }
 
+/** A station sign: its kanji, which way its arrow points, and its colours (exits are yellow, toilets blue and red). */
+export interface StationSign {
+  text: string;
+  arrow?: 'left' | 'right' | 'up';
+  kind?: 'exit' | 'men' | 'women';
+  /** The sign the question asks about. Never sent to a phone; the TV outlines it in the reveal. */
+  target?: boolean;
+}
+
 export interface LastTrainMinigame {
   id: MinigameId;
   title: JpText;
@@ -307,6 +324,8 @@ export interface LastTrainMinigame {
   promptType: PromptType;
   /** Usable as a penalty minigame after a second miss. */
   penalty: boolean;
+  /** A miss at this stop never sends anyone to the penalty car (a first meeting, like Read the Signs). */
+  forgiving?: boolean;
   /** Build phase the minigame ships in (Phase 1 has Konbini Math and Meet the Innkeeper). */
   phase: 1 | 4 | 5;
   status: ReviewStatus;

@@ -9,6 +9,7 @@
 
 import { h, mount, ruby } from '../../../shared/src/dom.js';
 import type { JpText, Level } from '../../../content/src/types.js';
+import { signBoard } from '../../../shared/src/signBoard.js';
 import type { LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
@@ -130,6 +131,11 @@ function listenBox(task: TaskView): HTMLElement {
 
 // ---- answering ----
 
+/** Kana players get the direction words with every pair of boards. */
+function directionStrip(): HTMLElement {
+  return h('p', { class: 'lt-dir-strip' }, '← ひだり hidari · ↑ まっすぐ massugu · みぎ migi →');
+}
+
 let draft: { key: string; input: HTMLInputElement } | null = null;
 
 function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) => Promise<boolean>, banner?: string): HTMLElement {
@@ -160,6 +166,8 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
     ),
     countdown(task, send),
     task.listen && task.attempt === 1 ? listenBox(task) : null,
+    task.signs?.length ? signBoard(task.signs) : null,
+    task.signs && task.signs.length > 1 && level === 'kana' ? directionStrip() : null,
     // かな players get the romaji under the prompt too, unless the task carries its own.
     showText ? jpBlock(task.prompt, { en: level === 'kana' || task.attempt === 2, big: true, romaji: level === 'kana' && !task.romaji }) : null,
     // N5 and up read the Japanese first; the English is one tap away.
@@ -195,6 +203,7 @@ function overruleCard(w: OverruleView, send: (m: unknown) => Promise<boolean>): 
     'div',
     { class: 'lt-vote' },
     h('p', {}, h('strong', {}, w.name), '’s answer was rejected. Was it right?'),
+    w.signs?.length ? signBoard(w.signs, { small: true }) : null,
     w.prompt ? jpBlock(w.prompt, { en: true }) : null,
     h('p', { class: 'lt-heard' }, 'They said: ', h('span', { lang: 'ja' }, w.heard)),
     level === 'kana' && w.heard ? h('p', { class: 'lt-romaji' }, toRomaji(w.heard)) : null,
