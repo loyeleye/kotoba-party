@@ -176,6 +176,10 @@ const tag = {
   bakari: 'Limited Express · 〜て ばかり',
   wakedewa: 'Limited Express · 〜わけでは ない',
   shika: 'Limited Express · 〜しか ない',
+  okage: 'Limited Express · 〜おかげで',
+  kuseni: 'Limited Express · 〜くせに',
+  wari: 'Limited Express · 〜わりに',
+  tabi: 'Limited Express · 〜たびに',
 };
 // Plain hiragana, matched on the plain reading. しまっ catches しまった／しまって.
 const SHIMAU = ['しまい', 'しまっ', 'ちゃい', 'ちゃっ', 'じゃい', 'じゃっ'];
@@ -287,9 +291,9 @@ export const CAUSES: readonly Cause[] = [
         chunk: { text: '降って いたので', keys: NODE, note: '〜ので: the polite “so”. It makes staying home sound perfectly reasonable.', tag: tag.node },
       },
       n3: {
-        mission: 'Apologise, then blame the rain. Say what was supposed to happen.',
-        model: n3('雨が 止む はずだったのに、止みませんでした。', 'あめが やむ はずだったのに、やみませんでした。', 'The rain was supposed to stop, but it didn’t.'),
-        chunk: { text: 'はずだった', keys: ['はずだった', 'はずでした'], note: '〜はずだった: it was supposed to. The forecast lied.', tag: tag.hazu },
+        mission: 'Apologise, then “thank” the rain for what it did to your train.',
+        model: n3('雨の おかげで、電車が 二時間も 止まりました。', 'あめの おかげで、でんしゃが にじかんも とまりました。', 'Thanks to the rain, the train stopped for two whole hours.'),
+        chunk: { text: '雨の おかげで', keys: ['おかげで'], note: '〜の おかげで: thanks to… Said through gritted teeth, it’s blame.', tag: tag.okage },
       },
     },
     pon: {
@@ -498,9 +502,9 @@ export const CAUSES: readonly Cause[] = [
         chunk: { text: '忘れて しまいました', keys: SHIMAU, note: '〜て しまいました: oops, it happened. Forgetting to sleep counts.', tag: tag.shimau },
       },
       n3: {
-        mission: 'Apologise, then blame a game. Confess what you left on, and for how long.',
-        model: n3('ゲームを つけっぱなしで、朝まで 遊んで しまいました。', 'ゲームを つけっぱなしで、あさまで あそんで しまいました。', 'I left the game on and played until morning.'),
-        chunk: { text: 'つけっぱなし', keys: ['っぱなし'], note: '〜っぱなし: left on, and nobody switched it off.', tag: tag.ppanashi },
+        mission: 'Apologise, then blame a game. Confess what you said every time you lost.',
+        model: n3('ゲームで 負ける たびに、「もう 一回」と 言って しまいました。', 'ゲームで まける たびに、「もう いっかい」と いって しまいました。', 'Every time I lost, I said “one more go”.'),
+        chunk: { text: '負ける たびに', keys: ['るたびに', 'たびに'], note: '〜たびに: every single time. Until sunrise.', tag: tag.tabi },
       },
     },
     pon: {
@@ -604,9 +608,9 @@ export const CAUSES: readonly Cause[] = [
         chunk: { text: '聞かれた', keys: ['きかれ'], note: 'かっぱに きかれた（ので）: it happened TO you, so… The kappa started it.', tag: tag.passive },
       },
       n3: {
-        mission: 'Apologise, then blame a kappa. Say what it asked, and what else it made you do.',
-        model: n3('かっぱに 道を 聞かれた うえに、相撲まで 取らされました。', 'かっぱに みちを きかれた うえに、すもうまで とらされました。', 'A kappa asked me the way, and on top of that made me wrestle it.'),
-        chunk: { text: '聞かれた うえに', keys: ['たうえに'], note: '〜うえに: and on top of that… sumo.', tag: tag.ueni },
+        mission: 'Apologise, then complain about a kappa that can’t swim, and what it made you do.',
+        model: n3('かっぱの くせに 泳げなくて、泳ぎ方を 教えさせられました。', 'かっぱの くせに およげなくて、およぎかたを おしえさせられました。', 'A kappa, and it can’t even swim. It made me teach it.'),
+        chunk: { text: 'かっぱの くせに', keys: ['のくせに', 'くせに'], note: '〜の くせに: a kappa, and yet… Aimed at the kappa, never at a friend.', tag: tag.kuseni },
       },
     },
     pon: {
@@ -674,9 +678,9 @@ export const CAUSES: readonly Cause[] = [
         chunk: { text: '長すぎて', keys: SUGI, note: '〜すぎて: too much, so… And her neck follows you round corners.', tag: tag.sugite },
       },
       n3: {
-        mission: 'Apologise, then blame Nobiko-san. Say what she did, all evening.',
-        model: n3('のびこさんが 話して ばかりで、帰れませんでした。', 'のびこさんが はなして ばかりで、かえれませんでした。', 'Nobiko-san did nothing but talk, so I couldn’t leave.'),
-        chunk: { text: '話して ばかり', keys: ['てばかり', 'でばかり'], note: '〜て ばかり: nothing but talking. For three hours.', tag: tag.bakari },
+        mission: 'Apologise, then blame Nobiko-san. She said it would be quick: say how long it really was.',
+        model: n3('のびこさんは 「すぐ 終わる」と 言った わりに、三時間も 話しました。', 'のびこさんは 「すぐ おわる」と いった わりに、さんじかんも はなしました。', 'For someone who said it’d be quick, Nobiko-san talked for three hours.'),
+        chunk: { text: '言った わりに', keys: ['たわりに', 'わりに'], note: '〜わりに: for someone who said that… Three hours.', tag: tag.wari },
       },
     },
     pon: {

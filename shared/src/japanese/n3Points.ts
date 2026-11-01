@@ -183,12 +183,12 @@ export const N3_POINTS: readonly N3Point[] = [
   l('gimi', '3.11', '＿ぎみ', 'a touch of (かぜぎみ)', 'A handful of fixed words (かぜぎみ, つかれぎみ). Nobiko-san says it.'),
   l('te-goran', '3.11', '＿て ごらん', 'try ___ing (to a child)', 'Said by grown-ups to children.'),
   // Passed by: spoken, but a look-alike no matcher can tell apart.
-  u('rashii-typical', '＿らしい（あなたらしい）', 'typical of, true to', LOOKALIKE + ' (hearsay らしい)'),
-  u('tokoro-ni', '＿ところに ／ ＿ところへ', 'just as (someone came)', LOOKALIKE + ' (ところ, the place)', { edge: 'n2' }),
-  u('kiri', '＿きり', 'only, ever since', LOOKALIKE + ' (ふたりきり, それきり)', { edge: 'n2' }),
-  u('gurai-at-least', '＿ぐらい', 'at least (それぐらい わかる)', LOOKALIKE + ' (ぐらい as "about": いちじかんぐらい)'),
-  u('tte-topic', '＿って', 'as for ___ (casual topic)', LOOKALIKE + ' (って quoting: ねこって いった)'),
-  u('noun-sa-mi', '＿さ ／ ＿み', 'making nouns (たかさ, おもみ)', 'Word building: the words count, not a pattern.'),
+  f('rashii-typical', '3.11', '＿らしい（あなたらしい）', 'typical of, true to'),
+  f('tokoro-ni', '3.9', '＿ところに ／ ＿ところへ', 'just as (someone came)', { edge: 'n2' }),
+  f('kiri', '3.9', '＿きり', 'only, ever since', { edge: 'n2' }),
+  f('gurai-at-least', '3.11', '＿ぐらい', 'at least (それぐらい わかる)'),
+  f('tte-topic', '3.11', '＿って', 'as for ___ (casual topic)'),
+  f('noun-sa-mi', '3.11', '＿さ ／ ＿み', 'making nouns (たかさ, おもみ)'),
   // Passed by: written Japanese.
   w('ni-kanshite', '＿に かんして', 'concerning, about'),
   w('wo-hajime', '＿を はじめ', 'starting with, including'),

@@ -287,11 +287,12 @@ The same simulation for the Limited Express (docs/n3-coverage.md): 2 N3 players,
 nights, games only. N3 frames are credited for the run only (`SIM.n3`), since they don't count for players until
 the line opens.
 
-- **3.7 stamps in 53% of rooms** (median 58 nights). No other goal stamps in any room, so the line doesn't clear.
+- First run: only 3.7 stamped (53% of rooms). Most required frames had no game line yet.
+- After N3 lines for those frames in Late Again!, Ghost Advice Hotline, Yōkai Court and Bento Haus: **3.5 stamps in
+  56% of rooms, 3.7 in 48%, 3.10 in 21%**, and no other goal in any room, so the line doesn't clear.
 - Limited Express frames an N3 seat says from memory, per game: Bento Haus 9.7, Ghost Advice Hotline 6.0, Yōkai
-  Court 2.0, Late Again! 1.9, every other game 0.
-- Most required frames have no game line yet, and Bento Haus's N3 welcome has one filler (ごあんない), so 3.8 can't
-  get "2 different words in the gap" from it. Both are open questions.
+  Court 2.0, Late Again! 1.1, every other game 0. Late Again!'s frames are spread over 16 causes, so each comes round
+  too rarely; the open questions doc asks which games get N3 lines next.
 
 ## Running it
 

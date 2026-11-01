@@ -615,7 +615,7 @@ function passingSheet(): { sheet: HTMLDialogElement; show: (from: HTMLElement) =
       h('p', { class: 'path-chochin', lang: 'ja' }, '「この とっきゅうは、ここには とまりません。」'),
       h('p', { class: 'path-note' }, 'This limited express doesn’t stop here.'),
       h('p', { class: 'path-why' }, 'Kotoba Party is for the N3 you say. These points are real N3 too, but a textbook or a graded reader covers them better.'),
-      h('div', { class: 'path-frames' }, h('small', { class: 'path-label' }, `Spoken, but the game can’t tell them apart yet (${unchecked.length})`), unchecked.map(passChip)),
+      unchecked.length ? h('div', { class: 'path-frames' }, h('small', { class: 'path-label' }, `Spoken, but the game can’t tell them apart yet (${unchecked.length})`), unchecked.map(passChip)) : null,
       h('div', { class: 'path-frames' }, h('small', { class: 'path-label' }, `Mostly written (${written.length})`), written.map(passChip)),
       h('p', { class: 'path-note' }, `Also passed by: about ${N3_KANJI_PASSED} more N3 kanji (you read 30 ${SIGN_KANJI_LABEL} on 3.12), the N3 word list, and the test’s timed reading and listening.`),
     ),

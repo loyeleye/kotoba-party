@@ -311,8 +311,8 @@ export const PROBLEMS: readonly Problem[] = [
         plain: jp('クーラーを つけた ほうが いいですよ。', 'You’d better turn on the air conditioner.'),
       },
       n3: {
-        mission: 'Suggest, casually, what might cool her down.',
-        model: jp('クーラーを つけたら いいんじゃ ない？', 'Wouldn’t turning on the air con help?'),
+        mission: 'Suppose you were her, and say what you’d do.',
+        model: jp('わたしが あなただと したら、クーラーを つけますね。', 'If I were you, I’d turn on the air con.'),
       },
     },
     reveal: jp('クーラーで ひんやり。なつは これよ〜。', 'Nice cool air. That’s summer sorted~'),
@@ -376,8 +376,8 @@ export const PROBLEMS: readonly Problem[] = [
         plain: jk('近所の 子どもと 遊んだ ほうが いいですよ。', 'きんじょの こどもと あそんだ ほうが いいですよ。', 'You’d better play with the kids next door.'),
       },
       n3: {
-        mission: 'Suggest, casually, what might cure the boredom.',
-        model: jk('近所の 子どもと 遊べば いいんじゃ ない？', 'きんじょの こどもと あそべば いいんじゃ ない？', 'Why not just play with the kids next door?'),
+        mission: 'Say you have a feeling what might cure the boredom.',
+        model: jk('近所の 子どもと 遊べば、元気に なるような 気が します。', 'きんじょの こどもと あそべば、げんきに なるような きが します。', 'I have a feeling playing with the kids next door would cheer you up.'),
       },
     },
     reveal: jp('あそびあいてが いれば、いえも にこにこよ〜。', 'A playmate, and the whole house smiles~'),
@@ -506,8 +506,8 @@ export const PROBLEMS: readonly Problem[] = [
         model: jk('玄関を 探した ほうが いいですよ。', 'げんかんを さがした ほうが いいですよ。', 'You’d better look by the front door.'),
       },
       n3: {
-        mission: 'Tell the sandal where to look, and that it’s sure to turn up.',
-        model: jk('玄関を 探せば、見つかるに ちがいありません。', 'げんかんを さがせば、みつかるに ちがいありません。', 'Look by the front door, and it’s sure to turn up.'),
+        mission: 'Tell the sandal where you have a feeling it is.',
+        model: jk('玄関を 探せば 見つかる ような 気が します。', 'げんかんを さがせば みつかる ような きが します。', 'I have a feeling you’ll find it if you look by the front door.'),
       },
     },
     reveal: jp('かたほうは げんかんに いたわ。おにあいね〜。', 'The other one was by the front door. A perfect pair~'),
@@ -538,8 +538,8 @@ export const PROBLEMS: readonly Problem[] = [
         model: jk('自分から 大きな 声で 「やっほー」と 言ったら どうですか。', 'じぶんから おおきな こえで 「やっほー」と いったら どうですか。', 'Why not call “yoo-hoo!” first yourself, nice and loud?'),
       },
       n3: {
-        mission: 'Suggest, casually, what the kodama could do first.',
-        model: jk('自分から 大きな 声で 「やっほー」と 言えば いいんじゃ ない？', 'じぶんから おおきな こえで 「やっほー」と いえば いいんじゃ ない？', 'Why not shout “yoo-hoo!” first, loudly?'),
+        mission: 'Suppose you were the kodama, and say what you’d do first.',
+        model: jk('わたしが こだまだと したら、自分から 大きな 声で 「やっほー」と 言いますね。', 'わたしが こだまだと したら、じぶんから おおきな こえで 「やっほー」と いいますね。', 'If I were the kodama, I’d shout “yoo-hoo!” first, nice and loud.'),
       },
     },
     reveal: jp('やっほー！ …やっほー… いい こだまね〜。', 'Yoo-hoo! …yoo-hoo… What an echo~'),
@@ -657,6 +657,8 @@ const tag = {
   zuNiSumu: 'Limited Express · 〜ずに すむ',
   shika: 'Limited Express · 〜しか ない',
   kamawanai: 'Limited Express · 〜ても かまわない',
+  toShitara: 'Limited Express · 〜と したら',
+  youNaKi: 'Limited Express · 〜ような 気が する',
   tara: 'Express Line · 〜たら どうですか',
   hou: 'Express Line · 〜た ほうが いいです',
   naiHou: 'Express Line · 〜ない ほうが いいです',
@@ -669,6 +671,8 @@ const tag = {
  * its keys hold the shorter one's (ないほうがいい holds ほうがいい, ないでください holds でください).
  */
 export const CHUNKS: readonly AdviceChunk[] = [
+  { id: 'you-na-ki', level: 'n3', text: 'ような 気が します', keys: ['ようなきがし', 'ようなきがする'], note: '〜ような 気が する: “I have a feeling…”. A hunch, offered gently.', tag: tag.youNaKi },
+  { id: 'to-shitara', level: 'n3', text: 'と したら', keys: ['だとしたら', 'たとしたら', 'るとしたら', 'うとしたら'], note: '〜と したら: “suppose…”. The caller tries the what-if on for size.', tag: tag.toShitara },
   { id: 'beki', level: 'n3', text: 'べき', keys: ['べきです', 'べきだ', 'べきでは', 'べきじゃ'], note: '〜べきです: what you really ought to do. Advice with a raised eyebrow.', tag: tag.beki },
   { id: 'sae', level: 'n3', text: 'さえ', keys: ['さえあれ', 'さえすれ', 'さえいれ', 'さえつけ'], note: '〜さえ 〜ば: just this one thing, and it’s fixed. Confident.', tag: tag.sae },
   { id: 'n-janai', level: 'n3', text: 'んじゃ ない？', keys: ['いいんじゃない', 'んじゃないかな'], note: '〜んじゃ ない？: a soft “wouldn’t it…?”. Friends talk this way.', tag: tag.nJanai },

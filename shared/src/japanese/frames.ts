@@ -208,7 +208,13 @@ export type FrameId =
   | 'you-ni-wish'
   | 'muke-muki'
   | 'tate'
-  | 'to-ieba';
+  | 'to-ieba'
+  | 'rashii-typical'
+  | 'tokoro-ni'
+  | 'kiri'
+  | 'gurai-at-least'
+  | 'tte-topic'
+  | 'noun-sa-mi';
 
 export interface Frame {
   id: FrameId;
@@ -1579,6 +1585,44 @@ const N3: Matcher[] = [
   // ＿と いえば／＿と いうと: speaking of (なつと いえば、すいか). Not a quoted request (やめてと いえば やめる), なんと
   // いえば いいか (what should I say), or いったら (mostly "if you say": もって いったら).
   { id: 'to-ieba', re: rx(`(と[\\s\\u3000]*(いえば|言えば|いうと|言うと)|って[\\s\\u3000]*(いえば|言えば))(?![\\s\\u3000]*(いって|言って|おもう|思う|いい|良い))`), not: rx(`(なん|何|どう)[\\s\\u3000]*と[\\s\\u3000]*(いえ|言え|いう|言う)|(て|で|ください|よ|ね|な|！|!|」|ありがとう|すみません|ごめん|ごめんなさい|おねがい)[\\s\\u3000]*(と|って)[\\s\\u3000]*(いえ|言え|いう|言う|いった|言った)`) },
+  // The six points the game used to call "unchecked": each looks like another pattern, so these matchers are
+  // narrow guesses, logged for the fluent playtest (docs/n3-fluent-check.md). Optional, never required.
+  // ＿らしい (typical of): a person or kind before らしい, not hearsay after a verb (くる らしい).
+  {
+    id: 'rashii-typical',
+    re: rx(`(さん|くん|ちゃん|さま|おとこ|おんな|こども|おとな|男|女|子供|大人|あなた|きみ|じぶん|自分|はる|春|なつ|夏|ふゆ|冬|ポン|にほん|日本|がくせい|学生|せんせい|先生)[\\s\\u3000]*らし(い|く|さ)`),
+  },
+  // ＿ところに／へ (just as): a verb's plain or て いる form, ところに, then who turned up (Xが).
+  {
+    id: 'tokoro-ni',
+    re: rx(`(${PLAIN}|ている|ていた|でいる)[\\s\\u3000]*(ところ|所)[\\s\\u3000]*(に|へ)[\\s\\u3000]*、?[\\s\\u3000]*[^\\s\\u3000、。]+が`),
+    not: rx(`(しずかな|いい|すてきな|きれいな|ちかい|とおい|たかい|ひろい|せまい|すずしい|あつい|さむい|あかるい|くらい|あの|この|その|どんな|こんな|ある|すむ|住む)[\\s\\u3000]*(ところ|所)[\\s\\u3000]*(に|へ)`),
+  },
+  // ＿きり (only, ever since): ふたりきり, それきり, or a past verb + きり. Not きり (fog), はっきり, きります (cut).
+  {
+    id: 'kiri',
+    re: rx(`(ふたり|ひとり|二人|一人|それ|これ|あれ|た|だ)[\\s\\u3000]*(きり|っきり)(?!(ます|ました|ません|たい|なさい|ましょう))`),
+  },
+  // ＿ぐらい (at least): a thing, ぐらい, then what's asked or claimed (それぐらい わかる). Not an amount (いちじかんぐらい).
+  {
+    id: 'gurai-at-least',
+    re: rx(`[ぁ-んァ-ヶ一-龯ー]{2,}[\\s\\u3000]*(ぐらい|くらい)[\\s\\u3000]*(は|なら)?[\\s\\u3000]*[ぁ-んァ-ヶ一-龯ー\\s\\u3000]{0,6}?(わかる|わかり|できる|できま|して|しな|しろ|おしえ|いって|もって|かいて|よんで|よめ|のんで|たべて|まって)`),
+    not: rx(`([0-9０-９一二三四五六七八九十百千万]|いち|さん|よん|ろく|なな|はち|きゅう|じゅう|ひゃく|せん|まん|なん|何|いくら|どの|どれ|この|その|あの|おなじ|じかん|時間|ふん|ぷん|分|にち|日|かい|回|ばい|ねん|年|ほん|本|まい|枚|えん|円|メートル|キロ|にん|人|(ひと|ふた|みっ|よっ|いつ|むっ|なな|やっ|ここの|いく)つ)[\\s\\u3000]*(ぐらい|くらい)`),
+    hides: ['hodo-degree'],
+  },
+  // ＿って (as for, casual topic): a noun, って, then a question word or how it is (すしって おいしい). Not quoting
+  // って (ねこって いった) or a verb's て form (まって, はしって).
+  {
+    id: 'tte-topic',
+    re: rx(`[ぁ-んァ-ヶ一-龯ー]って[\\s\\u3000]*(だれ|誰|なに|何|なん|どこ|どんな|どう|いつ|おいし|むずかし|難し|たのし|楽し|すご|すてき|かわい|こわ|怖|やさし|優し|へん|おもしろ|面白|ほんと|べんり|たいへん|きれい|だいじょうぶ)`),
+    not: rx(`(^|[\\s\\u3000、。」])(はし|ま|も|と|か|や|い|き|し|た|つく|かえ|はい|おく|つか|なら|わら|うた|あ|すわ|のぼ|まが|はら|まも|おこ|おも|かよ|あら|ひろ|もら|うつ|たも)って`),
+  },
+  // ＿さ／＿み (making nouns): an adjective's stem + さ, or a few + み, then a particle (たかさは, おもしろみが).
+  {
+    id: 'noun-sa-mi',
+    re: rx(`((たか|おも|なが|ひろ|ふか|おお|おおき|ちいさ|あつ|さむ|やさし|うれし|かなし|たのし|おもしろ|つよ|よわ|はや|おそ|おいし|あたたか|しずか|きれい|べんり|たいせつ|大切|高|重|長|広|深|強|速|早|暑|寒|優し|嬉し|悲し|楽し|美味し)さ|(おもしろ|面白|かなし|悲し|あま|甘|いた|痛|ふか|深|あたたか|暖か|おも|重)み)[\\s\\u3000]*(が|は|を|に|も|の|で)`),
+    not: rx(`(たのし|楽し)み|ながさき|長崎|おおさか|大阪|ひろみ|おもみさん`),
+  },
 ];
 
 const d = (id: FrameId, level: 'n5' | 'n4' | 'n3', goal: string, ja: string, en: string, use: string, exJa: string, exEn: string): Frame => ({
@@ -1791,6 +1835,12 @@ export const N3_FRAMES: readonly Frame[] = [
   d('muke-muki', 'n3', '3.11', '＿むけ ／ ＿むき', 'meant for / suited to ___', 'Say who something is made for, or suits.', 'これは こどもむけの ゲームです。', 'This is a game for kids.'),
   d('tate', 'n3', '3.11', '＿たて', 'fresh from ___ (やきたて)', 'Say something has only just been made or done.', 'やきたての パンは おいしいです。', 'Fresh-baked bread is delicious.'),
   d('to-ieba', 'n3', '3.11', '＿と いえば', 'speaking of ___', 'Say what a topic makes you think of.', 'なつと いえば、すいかですね。', 'Speaking of summer: watermelon.'),
+  d('rashii-typical', 'n3', '3.11', '＿らしい（あなたらしい）', 'just like ___, true to ___', 'Say something is typical of someone.', 'それは ポンらしい こたえだね。', 'That’s such a Pon answer.'),
+  d('tokoro-ni', 'n3', '3.9', '＿ところに ／ ＿ところへ', 'just as ___, (someone came)', 'Say who turned up right as you were doing something.', 'ねようと した ところに、でんわが きた。', 'Just as I was going to bed, the phone rang.'),
+  d('kiri', 'n3', '3.9', '＿きり', 'only ___, ever since ___', 'Say it was just the two of you, or it never happened again.', 'でかけた きり、かえって こない。', 'They went out and never came back.'),
+  d('gurai-at-least', 'n3', '3.11', '＿ぐらい（それぐらい）', 'at least ___', 'Say it’s the least someone could do, or know.', 'でんわぐらい してよ。', 'At least give me a call.'),
+  d('tte-topic', 'n3', '3.11', '＿って（すしって）', 'as for ___ (casual)', 'Bring up a topic the way friends do.', 'すしって おいしいよね。', 'Sushi is so good, right?'),
+  d('noun-sa-mi', 'n3', '3.11', '＿さ ／ ＿み', 'the ___-ness', 'Turn a describing word into a thing: how tall, how fun.', 'この やまの たかさは すごい。', 'The height of this mountain is amazing.'),
 ];
 
 /**

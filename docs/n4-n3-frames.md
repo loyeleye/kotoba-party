@@ -210,6 +210,23 @@ scold たべるんじゃ ない！ and Nの じゃ ない aren't ＿んじゃ �
 only in their own examples, the new host lines and Late Again!'s excuses, plus right ones (Nobiko's じゅうねんぶりに, Fude's
 こころを こめて, におう もんね).
 
+### Part 3: the look-alikes, as guesses
+
+Ladi asked for the six points the game couldn't tell apart from a look-alike to go in too, and for a fluent speaker to
+check them in the playtest (`docs/n3-fluent-check.md`). Each has a narrow matcher (`tests/frame-cases/n3-g.ts`):
+
+| Goal | New optional frames | What it looks for |
+| --- | --- | --- |
+| 3.9 | ＿ところに ／ ＿ところへ | a verb, ところに, then who turned up (Xが). Not a place (しずかな ところに) |
+| 3.9 | ＿きり | ふたりきり, それきり, or a past verb + きり. Not fog, はっきり or きります |
+| 3.11 | ＿らしい（あなたらしい） | a person or kind + らしい (あなた, ポン, おとこ, こども, はる). Not hearsay after a verb |
+| 3.11 | ＿ぐらい（それぐらい） | a thing + ぐらい + what's asked (わかる, して, できる). Not an amount (いちじかんぐらい) |
+| 3.11 | ＿って（すしって） | a noun + って + a question word or how it is. Not quoting って or a て form (まって) |
+| 3.11 | ＿さ ／ ＿み | an adjective's stem + さ, or おもしろみ／あまみ／いたみ, then a particle. Not ながさき or たのしみ |
+
+They miss real uses by design (あしたって やすみ？ isn't counted, since あした ends like a past verb). The fluent
+check says which to widen, narrow or drop.
+
 ## Fixes from the panel on #146
 
 The Japanese and JLPT seats found matcher gaps while checking the Express Line simulation:

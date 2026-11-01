@@ -23,6 +23,7 @@ import {
   SURE_OMACHI,
   THANKS,
   WELCOME,
+  WELCOME_N3_ALT,
   winBack,
   type RoleOffer,
   type StepScript,
@@ -167,7 +168,7 @@ describe('Bento Haus hard roles: the lines', () => {
   // N3 (docs/n3-coverage.md): an N3 order-taker's おもてなし lines use ＿させて いただきます and ＿て おります. Anyone may
   // say them and is credited with the N3 line; an N3 player who says the N4 line is credited with that one.
   it('N3 おもてなし lines pass their check, carry their N3 frames, and credit the form that was said', () => {
-    const steps = [WELCOME, ...GUEST_ASKS.map((a): StepScript => ({ to: 'customer', check: a.kind, model: a.model, n3: a.n3, ...(a.keys ? { keys: a.keys } : {}) }))];
+    const steps = [WELCOME, { ...WELCOME, n3: WELCOME_N3_ALT }, ...GUEST_ASKS.map((a): StepScript => ({ to: 'customer', check: a.kind, model: a.model, n3: a.n3, ...(a.keys ? { keys: a.keys } : {}) }))];
     for (const st of steps) {
       const n3 = atStepLevel(st, 'n3');
       expect(n3.model, st.model.text).toBe(st.n3);

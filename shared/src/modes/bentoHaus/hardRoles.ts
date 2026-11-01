@@ -268,6 +268,9 @@ export const WELCOME: StepScript = {
   n3: L('いらっしゃいませ。おせきへ ごあんない させて いただきます。', 'Welcome. Allow me to show you to your seat.', ['sasete-itadaku']),
 };
 
+/** The N3 welcome's other line, so ＿させて いただきます gets a second word in the gap (3.8 asks for two). */
+export const WELCOME_N3_ALT = L('いらっしゃいませ。おにもつを おあずかり させて いただきます。', 'Welcome. Allow me to take your bags.', ['sasete-itadaku']);
+
 /** A step at the order-taker's level: an N3 player's model is the N3 line, with the N4 one kept as `plain`. */
 export const atStepLevel = (st: StepScript, level: Level | undefined): StepScript =>
   level === 'n3' && st.n3 ? { ...st, model: st.n3, plain: st.model } : st;
@@ -824,7 +827,7 @@ export function addGuest(h: HardState, hr: HardRound, v: Visit, level?: Level): 
     visitId: v.id,
     takerId: v.takerId,
     askId: ask.id,
-    steps: [WELCOME, { to: 'customer' as const, check: ask.kind, model: ask.model, n3: ask.n3, ...(ask.keys ? { keys: ask.keys } : {}) }].map((st) => lineStep(atStepLevel(st, level))),
+    steps: [hr.guests.length % 2 ? { ...WELCOME, n3: WELCOME_N3_ALT } : WELCOME, { to: 'customer' as const, check: ask.kind, model: ask.model, n3: ask.n3, ...(ask.keys ? { keys: ask.keys } : {}) }].map((st) => lineStep(atStepLevel(st, level))),
     step: 0,
   };
   hr.guests.push(g);
