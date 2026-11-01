@@ -29,6 +29,7 @@ import {
   dealChoices,
   hanamaruPoints,
   HANAMARU_POINTS,
+  n4Mix,
   presenterOrder,
   showPlan,
   speakPoints,
@@ -361,6 +362,45 @@ describe('Happyōkai!: a talk', () => {
     const n5 = new Table(3, ['n5', 'n5', 'kana']);
     n5.start();
     expect(n5.t.titleChoices.every((id) => !TITLES.find((t) => t.id === id)!.deck)).toBe(true);
+  });
+
+  it("alternates an N4 presenter's pairs: a deck pair, then one deck title and one usual title", () => {
+    for (const seed of [3, 7, 11]) {
+      const table = new Table(3, ['n4', 'n4', 'n4'], seed);
+      table.start('cheeky');
+      const picked: Record<string, string> = {};
+      let mixes = 0;
+      let usualTalks = 0;
+      for (let guard = 0; guard < 600 && table.s.phase !== 'finale' && table.s.phase !== 'recap'; guard++) {
+        const t = table.st.talk;
+        if (table.s.phase === 'prompt' && t && !t.titleId) {
+          const choices = t.titleChoices.map((id) => TITLES.find((x) => x.id === id)!);
+          const decks = choices.filter((c) => c.deck);
+          if (n4Mix(table.st, t.index)) {
+            mixes++;
+            expect(decks.length, `seed ${seed} talk ${t.index}`).toBe(1);
+            // The deck title is from the deck they didn't pick last time.
+            expect(decks[0]!.deck).not.toBe(TITLES.find((x) => x.id === picked[t.presenterId])!.deck);
+            // The presenter takes the usual title.
+            const usual = t.titleChoices.findIndex((id) => !TITLES.find((x) => x.id === id)!.deck);
+            expect(table.play(t.presenterId, { kind: 'title', key: usual }).error).toBeUndefined();
+          } else {
+            expect(choices.map((c) => c.deck), `seed ${seed} talk ${t.index}`).toEqual(['then-now', 'if']);
+            expect(table.play(t.presenterId, { kind: 'title', key: 0 }).error).toBeUndefined();
+          }
+          picked[t.presenterId] = t.titleId!;
+          continue;
+        }
+        // A usual title's talk: nobody gets a deck question card.
+        if (t?.titleId && !TITLES.find((x) => x.id === t.titleId)!.deck && Object.keys(t.cards).length) {
+          usualTalks++;
+          for (const cards of Object.values(t.cards)) for (const c of cards) expect(c.kana).not.toMatch(/まえは|ことに しました|できるように|もし あなたが|なれたら/);
+        }
+        table.timeout();
+      }
+      expect(mixes, `seed ${seed}`).toBe(3);
+      expect(usualTalks, `seed ${seed}`).toBeGreaterThan(0);
+    }
   });
 
   it('runs backstage → slides → questions → grades → report card, and pays everyone', () => {

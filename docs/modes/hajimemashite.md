@@ -10,7 +10,7 @@ It merges the classroom activity 他己紹介 (introducing someone else, the ste
 the name stays out of the product). Ladi's twist: one card is true, the rest are lies, and lies above
 the truth score.
 
-Code: `shared/src/modes/hajimemashite/` (rules and views in `hajimemashite.ts`, the 20 draft cards in
+Code: `shared/src/modes/hajimemashite/` (rules and views in `hajimemashite.ts`, the 26 draft cards in
 `cards.ts`), `shared/src/japanese/toKana.ts` (romaji to kana, names to katakana),
 `stage/src/modes/hajimemashite.{ts,css}`, `controller/src/modes/hajimemashite.{ts,css}`,
 `tools/bots/policies/hajimemashite.ts`, `tests/hajimemashite.test.ts`.
@@ -76,8 +76,9 @@ VIP extras: みじかめ (4 guests only) and 5まい (five cards a turn).
 
 ## Content
 
-20 draft cards (`cards.ts`): すきな たべもの, きらいな たべもの, しゅみ, いきたい ところ, できること, こわい もの,
-まいあさ, かいたい ペット, こどもの ころの ゆめ, ねる まえに, six N4 cards for N4 guests (the N4 deck, below) and four Cheeky cards (はつデート, よっぱらうと, スマホの しゃしん, じつは すき) written
+26 draft cards (`cards.ts`): すきな たべもの, きらいな たべもの, しゅみ, いきたい ところ, できること, こわい もの,
+まいあさ, かいたい ペット, こどもの ころの ゆめ, ねる まえに, six N4 cards for N4 guests (the N4 deck, below),
+three Kids N4 cards and three Cheeky N4 cards (below), and four Cheeky cards (はつデート, よっぱらうと, スマホの しゃしん, じつは すき) written
 for women and men alike (もとカレ and もとカノ, かれの いえ and かのじょの いえ). 28 draft Pon lines
 (`content/src/hosts/pon.ts`, `hajime_*`). All `draft` until the fluent check.
 
@@ -99,8 +100,24 @@ grammar, and the introducer says it in the third person (「アキさんは で�
 しまいました」). 〜て みたい can't take someone else as its subject, so that card is a noun sentence like
 いきたい ところ. Each card has `frames` and `status: 'draft'`.
 
-An N4 guest draws the N4 cards first, in every room (Cheeky included), and the usual cards once
-they've had them all. Kana and N5 guests never get them. It isn't a separate seat: the tanuki and
+Kids and Cheeky rooms add three N4 cards of their own, one per frame (Ladi's call), so their N4 guests
+don't miss the room's set:
+
+| Room | Card | First person | Frame |
+| --- | --- | --- | --- |
+| Kids | みた ことが ある どうぶつ | ＿を みた ことが あります | ta-koto |
+| Kids | こぼして しまった もの | ＿を こぼして しまいました | te-shimau |
+| Kids | つくって みた もの | ＿を つくって みました | te-miru |
+| Cheeky | ねた ことが ある ところ | ＿で ねた ことが あります | ta-koto |
+| Cheeky | よっぱらって でんわした ひと | よっぱらって ＿に でんわして しまいました | te-shimau |
+| Cheeky | デートで いって みたい ところ | デートで いって みたい ところは ＿です | te-miru |
+
+They have 16 tiles and a Pon tile like every card (Kids: animals, spills, things to make; Cheeky: places
+you nodded off, who you drunk-called, date spots, both ex tiles as on the other Cheeky cards) and are
+tiles only, like every Kids-room card and every Cheeky-only card.
+
+An N4 guest draws the N4 cards first, in every room: the room's own N4 cards (Kids, Cheeky) first, then
+the shared N4 deck, then the usual cards once they've had them all. Kana and N5 guests never get them. It isn't a separate seat: the tanuki and
 detectives play the guest's card as always, so there's no offer to decline.
 
 ## Music and sound
@@ -135,6 +152,11 @@ the truth.
 13. The N4 cards' blanks are nouns with the verb in the frame (でんしゃに ＿を わすれて しまいました), not a
     verb phrase in the blank, so typed lies stay one word and are cut down the usual way.
 
+## Decided by Ladi
+
+1. **Kids and Cheeky rooms have their own N4 cards** (was open question 7): three each, one per frame,
+   which N4 guests in those rooms draw first, before the shared N4 deck.
+
 ## Open questions
 
 1. Is a tutorial turn worth adding (Pon as the first guest, nobody scores) if first games confuse?
@@ -144,5 +166,3 @@ the truth.
 5. Pon's English captions show a guest's name in katakana (マット… even better than Pon); host-line slots
    carry one value for both languages.
 6. Fluent check of every frame, tile, Pon line and argue phrase.
-7. Should a Cheeky room have N4 Cheeky cards (よっぱらって ＿て しまいました…) so its N4 guests don't
-   miss the Cheeky set?

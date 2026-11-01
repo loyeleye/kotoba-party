@@ -195,12 +195,28 @@ describe('Nice to Meet You!: the cards', () => {
 });
 
 describe('Nice to Meet You!: N4 guests draw the N4 deck', () => {
-  for (const audience of ['family', 'cheeky'] as const) {
+  it('has Kids and Cheeky N4 cards (one per frame) that only their rooms get', () => {
+    for (const a of ['kids', 'cheeky'] as const) {
+      const own = INTRO_CARDS.filter((c) => c.level === 'n4' && c.audiences.length === 1 && c.audiences[0] === a);
+      expect(own.map((c) => c.frames![0]).sort(), a).toEqual(['ta-koto', 'te-miru', 'te-shimau']);
+      for (const c of own) {
+        expect(c.status, c.id).toBe('draft');
+        expect(cardsFor('family', 'n4'), c.id).not.toContain(c);
+        expect(cardsFor(a === 'kids' ? 'cheeky' : 'kids', 'n4'), c.id).not.toContain(c);
+        expect(cardsFor(a, 'n5'), c.id).not.toContain(c);
+        expect(cardsFor(a, 'n4'), c.id).toContain(c);
+      }
+    }
+  });
+
+  for (const audience of ['kids', 'family', 'cheeky'] as const) {
     it(`in a ${audience} room, an N4 guest gets an N4 card and an N5 or Kana guest never does`, () => {
       for (let seed = 1; seed <= 8; seed++) {
         const n4 = new Table(4, ['n4', 'n5', 'n5', 'kana'], seed);
         n4.start(audience);
         expect(introCardOf(n4.t.cardId)!.level, `seed ${seed}`).toBe('n4');
+        // Kids and Cheeky rooms play their own N4 cards first.
+        if (audience !== 'family') expect(introCardOf(n4.t.cardId)!.audiences, `seed ${seed}`).toEqual([audience]);
         for (const level of ['n5', 'kana'] as const) {
           const other = new Table(4, [level, 'n4', 'n4', 'n4'], seed);
           other.start(audience);
