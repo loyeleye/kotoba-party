@@ -4,7 +4,7 @@ import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import type { BentoState, BentoView, Round, Visit } from '../shared/src/modes/bentoHaus/bentoHaus.js';
-import { checkLine, complaintSteps, GUEST_ASKS, INCIDENT_MS, offerStats, rolesFor, SPECIAL_EVERY, SPECIALS, WELCOME, type StepScript } from '../shared/src/modes/bentoHaus/hardRoles.js';
+import { checkLine, complaintSteps, DESK_LINGER_MS, GUEST_ASKS, INCIDENT_MS, offerStats, rolesFor, SPECIAL_EVERY, SPECIALS, THANKS, WELCOME, type StepScript } from '../shared/src/modes/bentoHaus/hardRoles.js';
 import { COUNTS, FOODS, foodOf } from '../shared/src/modes/bentoHaus/menu.js';
 import type { Command } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -128,6 +128,8 @@ describe('Bento Haus hard roles: the lines', () => {
   it('staff turn guests down with ＿は ごえんりょ ください, never ＿ては いけません', () => {
     for (const a of GUEST_ASKS.filter((x) => x.kind === 'decline')) expect(a.model.text, a.id).toMatch(/は ごえんりょ ください。$/);
     const smoking = GUEST_ASKS.find((a) => a.id === 'smoking')!;
+    expect(checkLine(speech('もうしわけ ございません。おたばこは ごえんりょ いただけますか。'), { check: 'decline', keys: smoking.keys }).ok).toBe(true);
+    expect(checkLine(speech('おたばこは ごえんりょ おねがいします。'), { check: 'decline', keys: smoking.keys }).ok).toBe(true);
     const step = { check: smoking.kind, keys: smoking.keys };
     const no = checkLine(speech('たばこを すっては いけません。'), step);
     expect(no.ok).toBe(false);
@@ -144,9 +146,21 @@ describe('Bento Haus hard roles: the lines', () => {
     expect(checkLine(speech('からあげを もう ひとつ つくって もらえますか'), kitchen).ok).toBe(true);
     expect(checkLine(speech('もう ひとつ つくって もらえますか'), kitchen).hint).toContain('からあげ');
     expect(checkLine(speech('からあげを つくって ください'), kitchen).ok).toBe(false);
+    // 〜て くれませんか to your own kitchen is fine too, tagged te-kuremasen.
+    expect(checkLine(speech('からあげを もう ひとつ つくって くれませんか'), kitchen)).toEqual({ ok: true, hint: null, frames: ['te-kuremasen'] });
+    expect(checkLine(speech('もう ひとつ つくって くれますか'), kitchen).ok).toBe(false);
+    // おまち いただけますか (without the て) is a polite ask to a customer.
+    expect(checkLine(speech('かしこまりました。しょうしょう おまち いただけますか。'), { check: 'ask' }).ok).toBe(true);
+    expect(checkLine(speech('もうしわけ ございません。おまち いただけませんか。'), sorry).ok).toBe(true);
     expect(checkLine(speech('どうぞ すわって ください'), { check: 'welcome' }).ok).toBe(false);
     expect(checkLine(speech('しょうしょう おまちください'), { check: 'welcome' }).ok).toBe(true);
     expect(checkLine(speech('おはしを よういして います'), { check: 'ready' }).ok).toBe(false);
+  });
+
+  it('smoking and phone calls come only from Cheeky customers', () => {
+    expect(GUEST_ASKS.find((a) => a.id === 'smoking')!.customers).toEqual(['buchou']);
+    expect(GUEST_ASKS.find((a) => a.id === 'phone')!.customers).toEqual(['zangyou']);
+    expect(THANKS.en).toBe('Thanks. You saved me.');
   });
 
   it('hears keigo written in kanji by its reading', () => {
@@ -195,8 +209,21 @@ describe('Bento Haus hard roles: who is offered what', () => {
     t.open();
     expect(t.play('p3', { kind: 'role', accept: false }).error).toBeUndefined();
     expect(t.view('p3').me!.hard).toBeUndefined();
-    expect(offerStats(t.st.hard!.offers)).toEqual({ offered: 2, accepted: 1, declined: 1, unanswered: 0 });
+    expect(offerStats(t.st.hard!.offers)).toEqual({ offered: 2, accepted: 1, declined: 1, timeout: 0, away: 0, rate: 0.5 });
     expect(t.view().hard!.manager).toBe('p1');
+  });
+
+  it('an offer still open at closing time is a timeout, counted against the rate', () => {
+    const t = new Table(['n4', 'n5', 'n4']);
+    t.toPrompt();
+    t.play('p1', { kind: 'role', accept: true });
+    t.open();
+    expect(t.st.hard!.offers.find((o) => o.playerId === 'p3')!.answer).toBeNull();
+    t.timeout();
+    expect(t.s.phase).toBe('score');
+    expect(t.st.hard!.offers.find((o) => o.playerId === 'p3')!.answer).toBe('timeout');
+    expect(offerStats(t.st.hard!.offers)).toMatchObject({ accepted: 1, timeout: 1, rate: 0.5 });
+    expect(t.play('p3', { kind: 'role', accept: true }).error).toBeDefined();
   });
 });
 
@@ -249,9 +276,26 @@ describe('Bento Haus hard roles: the manager', () => {
     expect(t.view().hard!.handled).toEqual({ done: 1, of: 1 });
   });
 
+  it('a line whose words were opened before the first try is logged as seen', () => {
+    const t = managerTable();
+    const v = t.customer();
+    t.fill(v, v.lines[0]!.foodId);
+    t.r.bakeUsed = true;
+    t.play(v.takerId, { kind: 'serve', visitId: v.id });
+    const inc = t.r.hard!.incidents.at(-1)!;
+    expect(t.view('p1').me!.hard!.desk[0]!.steps[0]!.check).toBe('sorry-ask');
+    // Peeked, missed once, then right: still read off the screen.
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech('すみません。'), peeked: true });
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech('もうしわけ ございません。すこし まって いただけますか。') });
+    expect(t.s.phrasebook.p1!.at(-1)!.outcome).toBe('seen');
+  });
+
   it('special orders come every few customers, and run out after a while', () => {
     const t = managerTable();
     const seen: Visit[] = [];
+    // Pon's disguise or taste-test would turn a box into a complaint and keep the desk busy.
+    t.r.bakeUsed = true;
+    t.r.ajimi = { visitId: 'none', foodId: 'none', at: 0 };
     for (let k = 0; k < SPECIAL_EVERY && t.s.phase === 'answer'; k++) {
       const v = t.customer();
       seen.push(v);
@@ -265,6 +309,26 @@ describe('Bento Haus hard roles: the manager', () => {
     t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
     expect(inc!.state).toBe('missed');
     expect(INCIDENT_MS).toBeGreaterThan(0);
+  });
+
+  it('views carry the server clock, so a finished desk leaves the TV after its linger', () => {
+    const t = managerTable();
+    const v = t.customer();
+    // viewFor builds views with now 0; the view's at is the last time the mode ran.
+    expect(t.view().at).toBe(t.now);
+    expect(t.view('p1').at).toBe(t.now);
+    t.fill(v, v.lines[0]!.foodId);
+    t.r.bakeUsed = true;
+    t.play(v.takerId, { kind: 'serve', visitId: v.id });
+    const inc = t.r.hard!.incidents.at(-1)!;
+    t.play('p1', { kind: 'manager', incidentId: inc.id, skip: true });
+    t.play('p1', { kind: 'manager', incidentId: inc.id, skip: true });
+    expect(inc.state).toBe('missed');
+    expect(t.view().hard!.desk.map((d) => d.id)).toEqual([inc.id]);
+    t.now = inc.endedAt! + DESK_LINGER_MS;
+    t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    expect(t.view().at).toBe(t.now);
+    expect(t.view().hard!.desk).toEqual([]);
   });
 
   it('a declined seat is the ordinary part: no complaints, no specials', () => {

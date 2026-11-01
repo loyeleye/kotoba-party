@@ -9,8 +9,8 @@
 //           📻 ザザッ…, never a name.
 //   score   closing time: each customer's order next to what they got, then the stars.
 //
-// N4 hard roles (Co-op): the manager's desk under the counter shows a complaint or special order and the
-// manager's lines that came out right (never a miss); an おもてなし guest wears a 🌸, shows their question
+// N4 hard roles (Co-op): the deputy manager's (📋 ふくてんちょう) desk under the counter shows a complaint
+// or special order and their lines that came out right (never a miss); an おもてなし guest wears a 🌸, shows their question
 // once seated, and leaves with their stars.
 //
 // Timers run as CSS animations from the server's own times (negative delays). The delays are named
@@ -228,7 +228,7 @@ function desk(view: RoomView, d: DeskView): HTMLElement {
     h(
       'p',
       { class: 'bh-desk-staff' },
-      h('span', { class: 'bh-desk-tag', lang: 'ja' }, d.kind === 'complaint' ? '👔 クレーム' : '👔 とくべつ ちゅうもん'),
+      h('span', { class: 'bh-desk-tag', lang: 'ja' }, d.kind === 'complaint' ? '📋 クレーム' : '📋 とくべつ ちゅうもん'),
       seatChip(view, d.managerId),
       last ? h('span', { class: 'bh-staff', lang: 'ja' }, last.text) : null,
       d.stationId && d.state === 'asked' ? [' → ', seatChip(view, d.stationId)] : null,
@@ -246,7 +246,7 @@ function kitchen(view: RoomView, game: BentoView): HTMLElement {
       'div',
       { class: 'bh-head' },
       h('p', { class: 'bh-tag' }, `Shift ${game.round} of ${game.totalRounds} · `, h('span', { lang: 'ja' }, game.info?.ja ?? ''), ` ${game.info?.en ?? ''}`),
-      game.hard?.manager ? h('p', { class: 'bh-manager', lang: 'ja' }, '👔 てんちょう ', seatChip(view, game.hard.manager)) : null,
+      game.hard?.manager ? h('p', { class: 'bh-manager', lang: 'ja' }, '📋 ふくてんちょう ', seatChip(view, game.hard.manager)) : null,
       h('p', { class: 'bh-till' }, `💰 ${game.tips}`, h('small', {}, ' tips'), stars(starsFor(game.tips, game.maxTips))),
     ),
     h(
@@ -310,7 +310,7 @@ function hardLine(game: BentoView): HTMLElement | null {
   return h(
     'p',
     { class: 'bh-hard-result', lang: 'ja' },
-    hd.handled.of ? h('span', {}, `👔 ${hd.handled.done} / ${hd.handled.of}`, h('small', {}, ' sorted out')) : null,
+    hd.handled.of ? h('span', {}, `📋 ${hd.handled.done} / ${hd.handled.of}`, h('small', {}, ' sorted out')) : null,
     hd.stars.of ? h('span', {}, `🌸 おもてなし ★ ${hd.stars.got} / ${hd.stars.of}`) : null,
   );
 }
