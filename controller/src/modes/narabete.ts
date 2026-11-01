@@ -212,8 +212,9 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
       : null,
     hardOffer(ctx, me),
     boothGist(me.standIn),
-    // Experiment standInCurveball: a Gallery tile on Nobiko-san's defence (or the once-a-game curveball).
-    gallery(ctx, me),
+    // Experiment standInCurveball: the once-a-game curveball on Nobiko-san's defence is timed, so it stays on top;
+    // the reaction tile sits below the line-up's own controls.
+    me.gallery?.kind === 'curveball' ? gallery(ctx, me) : null,
     ends(game),
     timeCard(me, true) ?? (me.secret !== null ? secret(me) : null),
     me.said && game.kind !== 'time' ? h('p', { class: 'hint' }, 'Your answer: ', h('span', { lang: 'ja' }, me.said.text)) : null,
@@ -238,6 +239,8 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
       },
       me.locked ? h('span', {}, '🔒 ', h('span', { lang: 'ja' }, 'きめた！'), ' (tap to unlock)') : h('span', {}, h('span', { lang: 'ja' }, 'きめた！'), ' Happy with my spot'),
     ),
+    me.gallery?.kind === 'react' ? gallery(ctx, me) : null,
+    me.locked && me.gallery?.kind === 'react' ? h('p', { class: 'hint' }, '👂 Nobiko-san is talking: react if you like.') : null,
     h('p', { class: 'hint' }, 'Talk it over out loud. Moving a card unlocks it and its neighbour.'),
     game.kind === 'time' && others.length
       ? h(

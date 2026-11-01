@@ -119,12 +119,14 @@ offer time out, sits the next round out; in a room of 4 or more, whoever gave it
   (`narabete_standin`, a `{line}` bank line): the round's card at the high end, the second model line,
   e.g. 「これより おそい じかんは ないので、これが いちばん あとです。」. The TV shows it in the booth strip for 5–7 s (inside the 90 s
   line-up, so no time is added), and Kana and N5 phones show its gist on the line-up screen. Nobody is
-  asked to say anything, and nothing is scored.
+  asked to say anything, and the line scores nothing (with `standInCurveball`, the curveball and a said reaction do).
   - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 4 s in she first says
-    「じゃあ、おばちゃんが いいわけ するわね。」 (`narabete_standin_setup`, bank only); the defence follows 2.5 s later.
+    「ちょっと、おばちゃんに いわせて！」 ("Oh, let Auntie have her say!", `narabete_standin_setup`, bank only); the
+    defence follows 2.5 s later.
     Still inside the line-up: no time added.
   - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile on the line-up screen while
-    she says it, and once she has (its booth length) the once-a-game curveball on ので (against `DEFENCE_POOL`), +5.
+    she says it, and once she has (its booth length) the once-a-game curveball on ので (against `DEFENCE_POOL`), +10 (+5 with
+    `scaledCurveball` off). While the line-up lasts, the booth strip stays up through the 5 s the curveball may take.
     The gist and the lit ので wait until then. So that it never holds the line-up, she starts at once
     (`standInEarlyAt`, 0.5 s in, the setup line too with `standInSetup`), in place of her "line them up" (`narabete_order`) in that one
     line-up. A line-up everyone locks after she has started ends anyway, and the tile and curveball carry into the

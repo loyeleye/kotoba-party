@@ -344,7 +344,7 @@ export const fudeLines: HostLine[] = [
   // dub_standin: the host stand-in, a small room with no N4 player: he ad-libs the scene's model line himself, as is
   { id: 'fude.dub_standin.01', host: 'fude', event: 'dub_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // dub_standin_setup: experiment standInSetup, just before his stand-in ad-lib
-  { id: 'fude.dub_standin_setup.01', host: 'fude', event: 'dub_standin_setup', jp: { text: 'アドリブは かんとくが やります！　シュッ！', kana: 'アドリブは かんとくが やります！　シュッ！', en: 'The director will do the ad-lib! Swish!' }, status: 'draft' },
+  { id: 'fude.dub_standin_setup.01', host: 'fude', event: 'dub_standin_setup', jp: { text: 'アドリブは かんとくが！　シュッ！', kana: 'アドリブは かんとくが！　シュッ！', en: "The ad-lib? The director's got it! Swish!" }, status: 'draft' },
   // dub_notes
   { id: 'fude.dub_notes.01', host: 'fude', event: 'dub_notes', jp: { text: 'こえの しゅつえん！　はくしゅ！', kana: 'こえの しゅつえん！　はくしゅ！', en: 'Our voice cast! A round of applause!' }, status: 'draft' },
   { id: 'fude.dub_notes.02', host: 'fude', event: 'dub_notes', jp: { text: 'きょうの スターは {name}さん！', kana: 'きょうの スターは {name}さん！', en: 'Today’s star is {name}!' }, slots: ['{name}'], status: 'draft' },

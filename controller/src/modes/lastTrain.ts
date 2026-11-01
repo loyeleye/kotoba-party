@@ -392,8 +392,9 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
       !!me?.booth,
       me?.dash ? `${me.dash.pos}:${me.dash.aboard}` : '',
       view.phase === 'score' ? (game.dash?.results ? 'r' : '') : '',
-      // The stand-in's Gallery tile, and its gist once the curveball is out of the way (experiment standInCurveball).
-      view.phase === 'prompt' ? `${!!me?.standIn}:${me?.gallery ? `${me.gallery.kind}:${me.gallery.picked}` : ''}` : '',
+      // The stand-in's gist once the curveball is out of the way (experiment standInCurveball). Its Gallery tile
+      // is in liveBox, which redraws on its own key.
+      view.phase === 'prompt' ? `${!!me?.standIn}` : '',
     ].join('|');
   },
 
@@ -424,8 +425,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
           game.stop ? jpBlock(game.stop.minigame.intro) : null,
           me?.ghost ? h('p', { class: 'lt-chip ghost' }, '👻 You’re a ghost: answer 2 in a row to come back') : null,
           boothGist(me?.standIn ?? null, '📢 Chōchin-san’s announcement'),
-          // Experiment standInCurveball: a Gallery tile on his announcement (or the once-a-game curveball).
-          galleryTile(me?.gallery ?? null, (pick) => void send({ kind: 'gallery', pick })),
+          // Experiment standInCurveball: the Gallery tile on his announcement is in liveBox (liveContent), below.
         );
         break;
       case 'answer':

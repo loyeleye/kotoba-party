@@ -407,7 +407,7 @@ describe('Bento Haus hard roles: the manager', () => {
     const own = (id: string) => SPECIALS.find((x) => x.id === id)!;
     const cases: [string, string, string, string][] = [
       ['kyuuri-more', 'kappa', 'kyuuri', 'きゅうりを もう すこし いれて もらえますか'],
-      ['inari-apart', 'kitsune', 'inari', 'おいなりさんを べつの はこに いれて もらえますか'],
+      ['inari-apart', 'kitsune', 'inari', 'いなりずしを べつの はこに いれて もらえますか'],
       ['big-eye', 'hitotsume', 'onigiri', 'おにぎりを おおきく して もらえますか'],
     ];
     for (const [id, customer, food, line] of cases) {

@@ -36,7 +36,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
-import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
@@ -1311,7 +1311,8 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       defence,
       replay: replay ? { playerId: replay.playerId, line: replay.line, lit: replay.lit, note: replay.note, holdKey: keyHeld(gallery) } : null,
       gallery: gallery ? galleryBubbles(gallery) : [],
-      standIn: standIn ? { line: standIn.c.line, lit: standIn.c.lit, note: standIn.c.note, atMs: standIn.atMs, ms: standIn.c.ms, ...(standIn.sg ? { holdKey: standInHoldKey(standIn.sg) } : {}) } : null,
+      // The strip stays up through a curveball that may come (while the line-up lasts), so the word is seen lit.
+      standIn: standIn ? { line: standIn.c.line, lit: standIn.c.lit, note: standIn.c.note, atMs: standIn.atMs, ms: standIn.c.ms + (standIn.sg?.maybe ? STAND_IN_CURVEBALL_MS : 0), ...(standIn.sg ? { holdKey: standInHoldKey(standIn.sg) } : {}) } : null,
       story,
       me: mine,
     };

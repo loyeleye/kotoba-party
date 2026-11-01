@@ -773,7 +773,8 @@ describe('Dub Club: mixed rooms', () => {
       const t = two();
       const [k, n5] = t.seats as [JoinResponse, JoinResponse];
       const tv = t.view().standIn!;
-      const said = tv.at + tv.ms;
+      // The strip stays up through the curveball's window, so its ms runs that much past the line.
+      const said = tv.at + tv.ms - STAND_IN_CURVEBALL_MS;
       expect(t.room.state.deadline!).toBe(Math.max(t.view().phaseAt + 12_000, said + STAND_IN_CURVEBALL_MS));
       expect(t.view(k).me!.gallery).toMatchObject({ kind: 'react' });
       expect(tv.holdKey).toBe(true);

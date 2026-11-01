@@ -1260,7 +1260,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     expect(g.cues.filter((c) => c.event === 'train_candle')).toHaveLength(1);
     // A real bank line in his voice, and the event is bank only (no LLM prompt).
     const bank = realContent.hostLines.filter((l) => l.event === 'train_candle');
-    expect(bank.map((l) => l.jp.text)).toEqual(['あっ、わたしの ろうそく！　ゆらゆら…']);
+    expect(bank.map((l) => l.jp.text)).toEqual(['あっ、それ、わたしの！　だから くらかった…']);
     expect(bank[0]!.status).toBe('draft');
   });
 

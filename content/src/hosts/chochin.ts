@@ -184,9 +184,9 @@ export const chochinLines: HostLine[] = [
   // train_stand_in: a room of one or two with no N4 player; Chōchin-san makes one platform announcement himself (as is)
   { id: 'chochin.train_stand_in.01', host: 'chochin', event: 'train_stand_in', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // train_stand_in_setup: experiment standInSetup, just before his stand-in announcement
-  { id: 'chochin.train_stand_in_setup.01', host: 'chochin', event: 'train_stand_in_setup', jp: { text: 'きょうは わたしが アナウンスします。ゆらゆら。', kana: 'きょうは わたしが アナウンスします。ゆらゆら。', en: "Tonight I'll make the announcement. Sway, sway." }, status: 'draft' },
+  { id: 'chochin.train_stand_in_setup.01', host: 'chochin', event: 'train_stand_in_setup', jp: { text: 'アナウンスは わたしが！　ゆらゆら。', kana: 'アナウンスは わたしが！　ゆらゆら。', en: 'The announcement? Leave it to me! Sway, sway.' }, status: 'draft' },
   // train_candle: lost-and-found item 21 was answered right, so the candle is his own; once a game, after his model line (bank only)
-  { id: 'chochin.train_candle.01', host: 'chochin', event: 'train_candle', jp: { text: 'あっ、わたしの ろうそく！　ゆらゆら…', kana: 'あっ、わたしの ろうそく！　ゆらゆら…', en: 'Oh, my candle! Sway…' }, status: 'draft' },
+  { id: 'chochin.train_candle.01', host: 'chochin', event: 'train_candle', jp: { text: 'あっ、それ、わたしの！　だから くらかった…', kana: 'あっ、それ、わたしの！　だから くらかった…', en: "Oh, that's mine! No wonder it's been so dark…" }, status: 'draft' },
   // Murder at the Onsen: Chōchin-san is off duty at the inn and plays detective's narrator.
   // onsen_case
   { id: 'chochin.onsen_case.01', host: 'chochin', event: 'onsen_case', jp: { text: 'じけんです！　ゆらゆら。', kana: 'じけんです！　ゆらゆら。', en: 'We have a case! Sway, sway.' }, status: 'draft' },
@@ -229,7 +229,7 @@ export const chochinLines: HostLine[] = [
   // onsen_standin: a 1–2-player room with nobody at N4 has no deputy: he gives one report himself, once a game, as is
   { id: 'chochin.onsen_standin.01', host: 'chochin', event: 'onsen_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // onsen_standin_setup: experiment standInSetup, just before his stand-in report
-  { id: 'chochin.onsen_standin_setup.01', host: 'chochin', event: 'onsen_standin_setup', jp: { text: 'じょしゅさんが いません。わたしが ほうこくします！', kana: 'じょしゅさんが いません。わたしが ほうこくします！', en: "No assistant tonight. I'll give the report!" }, status: 'draft' },
+  { id: 'chochin.onsen_standin_setup.01', host: 'chochin', event: 'onsen_standin_setup', jp: { text: 'きいて ください！　わたしが はなします。', kana: 'きいて ください！　わたしが はなします。', en: "Listen, please! I'll tell it myself." }, status: 'draft' },
   // Who's the Tourist?: Chōchin-san guides the tour, and admires a good disguise.
   // tourist_intro
   { id: 'chochin.tourist_intro.01', host: 'chochin', event: 'tourist_intro', jp: { text: 'かんこうきゃくは だれでしょう？　ゆらゆら。', kana: 'かんこうきゃくは だれでしょう？　ゆらゆら。', en: 'Who could the tourist be? Sway, sway.' }, status: 'draft' },
