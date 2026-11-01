@@ -19,7 +19,7 @@ export const lostAndFound: LastTrainMinigame = {
   phase: 5,
   n4Stop: true,
   status: 'draft',
-  intro: { text: '忘れ物ですか。どんな物ですか。', kana: 'わすれものですか。どんなものですか。', en: 'Lost something? What does it look like?', furigana: [['忘', 'わす'], ['れ', ''], ['物', 'もの'], ['ですか。どんな', ''], ['物', 'もの'], ['ですか。', '']] },
+  intro: { text: 'お忘れ物のないよう、ご注意ください。……もう、忘れましたか？', kana: 'おわすれもののないよう、ごちゅういください。……もう、わすれましたか？', en: 'Please take care not to leave anything behind. …Too late? Already forgot something?', furigana: [['お', ''], ['忘', 'わす'], ['れ', ''], ['物', 'もの'], ['のないよう、ご', ''], ['注意', 'ちゅうい'], ['ください。……もう、', ''], ['忘', 'わす'], ['れましたか？', '']] },
   items: [
     // ---- Kana: say what is in the picture ----
     {
@@ -209,6 +209,18 @@ export const lostAndFound: LastTrainMinigame = {
       accepted: ['たかそうなとけいですね', 'たかそうですね', 'これですかたかそうなとけいですね', 'たかそうなとけいですねこれですか'],
       model: { text: '高そうな時計ですね。', kana: 'たかそうなとけいですね。', en: 'That watch looks expensive.', furigana: [['高', 'たか'], ['そうな', ''], ['時計', 'とけい'], ['ですね。', '']] },
       hint: 'Looks expensive: たかい loses its い and takes そう (そうな before a noun).',
+      timeLimit: 14,
+    },
+    {
+      id: 'lost-and-found.18-genkisou',
+      level: 'n4',
+      role: STAFF,
+      frames: ['sou-look'],
+      prompt: { text: 'あなたは駅員です。お客さん：「かさを忘れました。」かさが一つあります。', kana: 'あなたはえきいんです。おきゃくさん：「かさをわすれました。」かさがひとつあります。', en: 'You\'re the station staff. A passenger: "I left my umbrella." There\'s one umbrella on the shelf.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。お', ''], ['客', 'きゃく'], ['さん：「かさを', ''], ['忘', 'わす'], ['れました。」かさが', ''], ['一', 'ひと'], ['つあります。', '']] },
+      visual: '🌂👁️ The umbrella has one eye, and it just winked at you. Say it looks lively.',
+      accepted: ['げんきそうなかさですね', 'げんきそうですね', 'これですかげんきそうなかさですね', 'げんきそうなかさですねこれですか'],
+      model: { text: '元気そうなかさですね。', kana: 'げんきそうなかさですね。', en: 'That umbrella looks lively.', furigana: [['元気', 'げんき'], ['そうなかさですね。', '']] },
+      hint: 'Looks lively: げんき is a な-word, so just add そう (そうな before a noun).',
       timeLimit: 14,
     },
   ],

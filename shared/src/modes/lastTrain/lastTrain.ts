@@ -18,6 +18,7 @@ import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type MoveResult, type PhraseEntry } from '../mode.js';
 import { checkUtterance, firstMora } from './check.js';
+import type { OfferAnswer } from '../hardRoleLog.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallback.js';
 
@@ -37,6 +38,8 @@ export const RULES = {
   minLimitMs: 4_000,
   pointsFirstTry: 100,
   pointsRetry: 60,
+  /** Added to the base points of a correct answer on a hard-role item the player took. */
+  roleBonus: 20,
   /** Ghosts earn this share of a living player's points. */
   ghostShare: 0.5,
   /** From-memory speech bonus, as a share of the answer's points. */
@@ -108,7 +111,9 @@ export interface RoleOffer {
   playerId: string;
   roleId: string;
   itemId: string;
-  answer: 'accepted' | 'declined' | 'timeout' | 'away';
+  answer: OfferAnswer;
+  /** Answered by a test bot (tools/bots): leave it out of the acceptance gate. */
+  bot?: true;
 }
 
 interface PenaltyTurn {
@@ -291,8 +296,8 @@ export interface LastTrainMe {
   inPenalty: boolean;
   dash: { pos: number; aboard: number | null } | null;
   level: Level;
-  /** A hard role offered to this player: take it or say "not this time" (`role` move) within `limitMs`. */
-  offer: { key: string; role: JpText; pitch: string; limitMs: number } | null;
+  /** A hard role offered to this player: take it or say "not this time" (`role` move) by `deadline` (server clock; `limitMs` is the whole window). */
+  offer: { key: string; role: JpText; pitch: string; limitMs: number; deadline: number } | null;
 }
 
 export interface StopView {
@@ -332,7 +337,7 @@ export type LastTrainMove =
   | { kind: 'overrule'; windowId: string; up: boolean }
   | { kind: 'haunt'; targetId: string }
   | { kind: 'echo'; utterance: Utterance }
-  | { kind: 'role'; key: string; accept: boolean };
+  | { kind: 'role'; key: string; accept: boolean; /** Sent by a test bot: its answer stays out of the gate. */ bot?: boolean };
 
 // ---- helpers ----
 
@@ -541,10 +546,18 @@ function startTurns(s: LastTrainState, ctx: ModeContext): void {
   }
 }
 
+/** Whether this player took the hard role offered at the current stop. */
+function tookRole(s: LastTrainState, playerId: string): boolean {
+  return s.roleLog.some((r) => r.playerId === playerId && r.stop === s.stopIndex && r.answer === 'accepted');
+}
+
 /** Settles a hard-role offer: taking it starts the role item's clock now; anything else deals the ordinary item. */
-function settleOffer(s: LastTrainState, ctx: ModeContext, turn: Turn, answer: 'accepted' | 'declined' | 'timeout'): void {
+function settleOffer(s: LastTrainState, ctx: ModeContext, turn: Turn, answer: Exclude<OfferAnswer, 'away'>, bot = false): void {
   const log = [...s.roleLog].reverse().find((r) => r.playerId === turn.playerId && r.stop === s.stopIndex);
-  if (log) log.answer = answer;
+  if (log) {
+    log.answer = answer;
+    if (bot) log.bot = true;
+  }
   turn.offer = null;
   turn.status = 'answering';
   if (answer === 'accepted') {
@@ -700,6 +713,7 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
     if (turn.correctOn) {
       const rec = turn.attempts[turn.correctOn - 1];
       let base: number = turn.correctOn === 1 ? RULES.pointsFirstTry : RULES.pointsRetry;
+      if (item.role && tookRole(s, p.id)) base += RULES.roleBonus;
       if (turn.ghostAtStart) base = Math.round(base * RULES.ghostShare);
       let bonus = 0;
       if (rec?.via === 'speech') {
@@ -1083,7 +1097,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         if (!turn) return moveError('not-playing');
         // Already settled (taken, declined or timed out) or an old stop's offer: a harmless race.
         if (turn.status !== 'offer' || turn.task.key !== raw.key) return moveError('wrong-phase');
-        settleOffer(s, ctx, turn, raw.accept ? 'accepted' : 'declined');
+        settleOffer(s, ctx, turn, raw.accept ? 'accepted' : 'declined', raw.bot === true);
         return MOVE_OK;
       }
 
@@ -1215,7 +1229,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         inPenalty: phase === 'penalty' && !!s.penalties[me],
         dash: s.racers[me] && (phase === 'finale' || phase === 'score') ? { pos: s.racers[me]!.pos, aboard: s.racers[me]!.aboard } : null,
         level,
-        offer: phase === 'answer' && turn?.status === 'offer' && turn.offer ? { key: turn.task.key, role: turn.offer.role.name, pitch: turn.offer.role.pitch, limitMs: RULES.offerMs } : null,
+        offer: phase === 'answer' && turn?.status === 'offer' && turn.offer ? { key: turn.task.key, role: turn.offer.role.name, pitch: turn.offer.role.pitch, limitMs: RULES.offerMs, deadline: turn.offer.deadline } : null,
       };
     }
 
