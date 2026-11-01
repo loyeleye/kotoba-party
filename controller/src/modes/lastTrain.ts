@@ -1,6 +1,8 @@
 // Last Train on the phone: your own item at each stop, said out loud (typed works, earns
 // less), a private retry with a hint, the penalty car, room overrule votes, ghost haunts and
 // the Platform Dash. N4 players are sometimes offered a hard role first, which they may turn down.
+// Mixed rooms: a Gallery tile while a hard-role line is said, the booth's gist at the reveal, and the host
+// stand-in's gist (components/gallery.ts).
 //
 // Two things keep a spoken answer from being wiped by someone else's update:
 //  - the screen key only covers what this player is doing (their task, status, result);
@@ -10,11 +12,13 @@
 import { h, mount, ruby } from '../../../shared/src/dom.js';
 import type { JpText, Level, StationSign } from '../../../content/src/types.js';
 import { signBoard } from '../../../shared/src/signBoard.js';
-import type { LastTrainMe, LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
+import type { Gist, LastTrainMe, LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
 import { jpView } from '../components/jp.js';
+import { roleOffer } from '../components/roleOffer.js';
+import { boothGist, galleryTile } from '../components/gallery.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { hasTabAudio } from '../../../shared/src/audioTabs.js';
 import { isSoundOff } from '../components/voice.js';
@@ -137,38 +141,32 @@ function serverNow(ctx: PhoneContext<LastTrainView>): number {
   return ctx.view.deadline !== null && left !== null && left > 0 ? ctx.view.deadline - left : Date.now();
 }
 
-/** The offer card: take the hard role, or "not this time" for the ordinary item. No answer is a no. */
+/** The offer card (components/roleOffer.ts): take the hard role, or "not this time" for the ordinary item. No answer is a no. */
 function offerScreen(offer: NonNullable<LastTrainMe['offer']>, ctx: PhoneContext<LastTrainView>, send: (move: unknown) => Promise<boolean>): HTMLElement {
-  // Timed by the server's deadline, so a late or rebuilt screen doesn't restart the clock.
-  const start = Date.now();
-  const label = h('p', { class: 'hint' });
-  let ticked = false;
-  const draw = () => {
-    const left = Math.max(0, Math.min(offer.limitMs, offer.deadline - serverNow(ctx)));
-    label.textContent = left > 0 ? `${Math.ceil(left / 1000)}s to choose. No answer means not this time.` : 'Dealing your usual item…';
-    if (left === 0 && !ticked) {
-      ticked = true;
-      setTimeout(() => void send({ kind: 'tick' }), 300);
-    }
-  };
-  draw();
-  const timer = setInterval(() => {
-    if (!label.isConnected && Date.now() - start > 1000) return clearInterval(timer);
-    draw();
-  }, 250);
   return h(
     'div',
     { class: 'screen lt-offer' },
-    h('p', { class: 'lt-kicker' }, '⭐ Hard role'),
-    jpBlock(offer.role, { en: true, big: true }),
-    h('p', {}, offer.pitch),
-    h(
-      'div',
-      { class: 'lt-offer-btns' },
-      h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'role', key: offer.key, accept: true }) }, 'Take it'),
-      h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'role', key: offer.key, accept: false }) }, 'Not this time'),
-    ),
-    label,
+    roleOffer({
+      kicker: '⭐ Hard role',
+      role: offer.role,
+      pitch: offer.pitch,
+      onTake: () => void send({ kind: 'role', key: offer.key, accept: true }),
+      onDecline: () => void send({ kind: 'role', key: offer.key, accept: false }),
+      // Timed by the server's deadline, so a late or rebuilt screen doesn't restart the clock.
+      deadline: { at: offer.deadline, now: () => serverNow(ctx), onExpire: () => setTimeout(() => void send({ kind: 'tick' }), 300), expired: 'Dealing your usual item…' },
+    }),
+  );
+}
+
+/** The host stand-in's announcement on a Kana or N5 phone: what Chōchin-san is saying, at this level. */
+function standInGist(g: Gist): HTMLElement {
+  return h(
+    'div',
+    { class: 'booth-gist' },
+    h('p', { class: 'gallery-kicker' }, '📢 Chōchin-san’s announcement'),
+    h('p', { class: 'booth-gist-ja', lang: 'ja' }, g.kana),
+    g.romaji ? h('p', { class: 'booth-gist-romaji' }, g.romaji) : null,
+    h('p', { class: 'booth-gist-en' }, g.en),
   );
 }
 
@@ -281,6 +279,9 @@ function overruleCard(w: OverruleView, send: (m: unknown) => Promise<boolean>): 
 function liveContent(game: LastTrainView, send: (m: unknown) => Promise<boolean>): (HTMLElement | null)[] {
   const me = game.me;
   const parts: (HTMLElement | null)[] = game.overrules.map((w) => overruleCard(w, send));
+  // The Gallery: react to the hard-role line being said (or the once-a-game curveball). Live, so a tap never
+  // rebuilds the talk button.
+  parts.push(galleryTile(me?.gallery ?? null, (pick) => void send({ kind: 'gallery', pick })));
   if (me?.canHaunt && me.hauntTargets.length) {
     parts.push(
       h(
@@ -302,7 +303,13 @@ function liveBox(game: LastTrainView, send: (m: unknown) => Promise<boolean>): H
 }
 
 function liveKey(game: LastTrainView): string {
-  return [game.overrules.map((w) => `${w.id}:${w.state}:${w.up}:${w.canVote}:${w.myVote}`).join(','), game.me?.canHaunt, game.me?.hauntTargets.map((t) => t.playerId).join()].join('|');
+  const g = game.me?.gallery;
+  return [
+    game.overrules.map((w) => `${w.id}:${w.state}:${w.up}:${w.canVote}:${w.myVote}`).join(','),
+    game.me?.canHaunt,
+    game.me?.hauntTargets.map((t) => t.playerId).join(),
+    g ? `${g.kind}:${g.picked}:${g.kind === 'curveball' ? g.right : ''}` : '',
+  ].join('|');
 }
 let lastLiveKey = '';
 
@@ -343,6 +350,7 @@ function revealScreen(game: LastTrainView, send: (m: unknown) => Promise<boolean
         )
       : null,
     me.echo ? h('p', { class: me.echo.ok ? 'lt-good' : 'hint' }, me.echo.ok ? '✓ Nice. It’s in your survival kit.' : `Heard “${me.echo.text}”. It’s in your survival kit.`) : null,
+    boothGist(me.booth),
   );
 }
 
@@ -415,6 +423,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
           game.stop ? jpBlock(game.stop.name, { big: true }) : null,
           game.stop ? jpBlock(game.stop.minigame.intro) : null,
           me?.ghost ? h('p', { class: 'lt-chip ghost' }, '👻 You’re a ghost: answer 2 in a row to come back') : null,
+          me?.standIn ? standInGist(me.standIn) : null,
         );
         break;
       case 'answer':

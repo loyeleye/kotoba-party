@@ -99,3 +99,9 @@
 .lt-signs.small .lt-sign-arrow { font-size: 24px; }
 .lt-sign.target { outline: 4px solid var(--good); outline-offset: 2px; }
 .lt-sign.dim { opacity: 0.45; }
+
+/* Mixed rooms: the booth and the host stand-in fade in as Chōchin-san starts the line (animation-delay inline). */
+.lt-booth, .lt-stand-in { margin-top: 12px; padding: 10px 16px; border-radius: 16px; background: rgba(0, 0, 0, 0.28); animation: lt-booth-in 0.4s ease-out both; }
+.lt-stand-in { text-align: center; }
+@keyframes lt-booth-in { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) { .lt-booth, .lt-stand-in { animation: lt-booth-in 0.01s linear both; } }

@@ -175,6 +175,14 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.platform_dash.05', host: 'chochin', event: 'platform_dash', jp: { text: 'ドアが しまります！　はしって ください！', kana: 'ドアが しまります！　はしって ください！', en: 'The doors are closing! Run!' }, status: 'draft' },
   // train_role_read: a taken hard role answered right; Chōchin-san says its model line as is at the reveal
   { id: 'chochin.train_role_read.01', host: 'chochin', event: 'train_role_read', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // train_announcer_react: the announcer's line landed; Chōchin-san reacts at the reveal (in place of reveal_react)
+  { id: 'chochin.train_announcer_react.01', host: 'chochin', event: 'train_announcer_react', jp: { text: 'いい アナウンスでした！　ゆらゆら。', kana: 'いい アナウンスでした！　ゆらゆら。', en: 'Lovely announcement! Sway, sway.' }, status: 'draft' },
+  { id: 'chochin.train_announcer_react.02', host: 'chochin', event: 'train_announcer_react', jp: { text: 'えきいんさんに なれますよ！', kana: 'えきいんさんに なれますよ！', en: 'You could work at the station!' }, status: 'draft' },
+  { id: 'chochin.train_announcer_react.03', host: 'chochin', event: 'train_announcer_react', jp: { text: 'じょうずな けいごです！', kana: 'じょうずな けいごです！', en: 'Beautiful keigo!' }, status: 'draft' },
+  { id: 'chochin.train_announcer_react.04', host: 'chochin', event: 'train_announcer_react', jp: { text: 'ホームの みなさん、ちゃんと ききましたよ！', kana: 'ホームの みなさん、ちゃんと ききましたよ！', en: 'The whole platform heard that!' }, status: 'draft' },
+  { id: 'chochin.train_announcer_react.05', host: 'chochin', event: 'train_announcer_react', jp: { text: 'わたしの メガホン、かえして くださいね。', kana: 'わたしの メガホン、かえして くださいね。', en: 'You will give my megaphone back, won\'t you?' }, status: 'draft' },
+  // train_stand_in: a room of one or two with no N4 player; Chōchin-san makes one platform announcement himself (as is)
+  { id: 'chochin.train_stand_in.01', host: 'chochin', event: 'train_stand_in', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // Murder at the Onsen: Chōchin-san is off duty at the inn and plays detective's narrator.
   // onsen_case
   { id: 'chochin.onsen_case.01', host: 'chochin', event: 'onsen_case', jp: { text: 'じけんです！　ゆらゆら。', kana: 'じけんです！　ゆらゆら。', en: 'We have a case! Sway, sway.' }, status: 'draft' },

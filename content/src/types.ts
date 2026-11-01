@@ -517,6 +517,8 @@ export type HostEvent =
   | 'platform_dash'
   | 'room_overrule'
   | 'train_role_read' // a taken hard role answered right: Chōchin-san says its model line at the reveal ({line}, as is)
+  | 'train_announcer_react' // the announcer's line landed: Chōchin-san's short reaction at the reveal
+  | 'train_stand_in' // a 1–2-player room with no N4 player: Chōchin-san makes one platform announcement ({line}, as is)
   // Murder at the Onsen
   | 'onsen_case' // the case file opens
   | 'onsen_turn' // a player's turn to question a suspect
