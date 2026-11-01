@@ -145,6 +145,12 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.narabete_hard.03', host: 'nobiko', event: 'narabete_hard', jp: { text: '{name}さん、りゆうを きかせて ちょうだい。', kana: '{name}さん、りゆうを きかせて ちょうだい。', en: "{name}, let's hear your reason, dear." }, slots: ['{name}'], status: 'draft' },
   // narabete_replay: the commentary booth's instant replay: she says the N4 defence's line herself, as is
   { id: 'nobiko.narabete_replay.01', host: 'nobiko', event: 'narabete_replay', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // narabete_hooray: the N4 defence landed, before she replays it
+  { id: 'nobiko.narabete_hooray.01', host: 'nobiko', event: 'narabete_hooray', jp: { text: 'あらまあ！　じょうずねえ！', kana: 'あらまあ！　じょうずねえ！', en: 'Oh my! How clever!' }, status: 'draft' },
+  { id: 'nobiko.narabete_hooray.02', host: 'nobiko', event: 'narabete_hooray', jp: { text: 'あらまあ、{name}さん！　なるほどねえ。', kana: 'あらまあ、{name}さん！　なるほどねえ。', en: 'Oh my, {name}! I see, dear.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'nobiko.narabete_hooray.03', host: 'nobiko', event: 'narabete_hooray', jp: { text: 'あらまあ！　おばさん、なっとく！', kana: 'あらまあ！　おばさん、なっとく！', en: 'Oh my! Auntie is convinced!' }, status: 'draft' },
+  // narabete_standin: the host stand-in, a small room with no N4 player: she gives one model defence herself, as is
+  { id: 'nobiko.narabete_standin.01', host: 'nobiko', event: 'narabete_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // narabete_perfect
   { id: 'nobiko.narabete_perfect.01', host: 'nobiko', event: 'narabete_perfect', jp: { text: 'あらまあ！　ぴったり ならんだわ！', kana: 'あらまあ！　ぴったり ならんだわ！', en: 'Oh my! Perfectly in line!' }, status: 'draft' },
   { id: 'nobiko.narabete_perfect.02', host: 'nobiko', event: 'narabete_perfect', jp: { text: 'くびが まっすぐ！　かんぺきよ！', kana: 'くびが まっすぐ！　かんぺきよ！', en: "My neck's dead straight! Perfect!" }, status: 'draft' },

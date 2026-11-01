@@ -11,6 +11,12 @@
 // After scene 3, `finale` plays the episode a step at a time: the title, three scenes, the end card,
 // the credits.
 //
+// The ad-lib's offer goes by the shared `nextOfferee`. Mixed rooms (shared/src/modes/mixedRoom.ts): while an
+// ad-lib dub is on, everyone else gets a Gallery tile (a reaction, or once a game the curveball: which of the
+// mission's words did you hear?). Once a good ad-lib's card flips, Fude calls カット！ and the commentary booth
+// replays the scene's model ad-lib line in his voice (never the player's take). In a 1–2-player room with no N4
+// player, Fude ad-libs one scene's model line himself, once a game, as its scene card shows (the host stand-in).
+//
 // Clips: a phone uploads its acted take to the room (Room.keepClip, in memory only) and sends the id
 // here, or keeps it on the phone (`local`) and plays it itself when its turn comes. `clipsInUse` says
 // which clips are still needed; the server drops the rest at once.
@@ -21,7 +27,8 @@ import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { soundMorae } from '../karaokeDuel/scoring.js';
 import { splitMorae } from '../karaokeDuel/songs.js';
-import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
+import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
+import { commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
 
@@ -59,6 +66,10 @@ export const ADLIB_SIM = { both: 1, one: 0.6, neither: 0.2 } as const;
 
 /** One dub in the screening, in steps. */
 export const STEP_MS = { lead: 1_600, guess: 4_500, regroup: 3_000, reveal: 3_400, start: 4_000 } as const;
+/** The commentary booth after a good ad-lib: Fude's カット！, then the model line this long into the booth. */
+export const BOOTH_LINE_AT_MS = 1_200;
+/** The host stand-in: Fude's own ad-lib, this long into the scene card (after his table read). */
+export const STANDIN_AT_MS = 5_000;
 /** The clip plays with a little air after it. */
 export const playMs = (durMs: number): number => durMs + 400;
 /** Episode steps. */
@@ -127,7 +138,8 @@ export interface Actor {
   adlib?: 'offered' | OfferAnswer;
 }
 
-export type ScreenStep = 'lead' | 'play' | 'guess' | 'replay' | 'regroup' | 'reveal';
+/** `booth`: after a good ad-lib's reveal only, the commentary booth's replay of the model line. */
+export type ScreenStep = 'lead' | 'play' | 'guess' | 'replay' | 'regroup' | 'reveal' | 'booth';
 
 export interface Screening {
   index: number;
@@ -165,6 +177,17 @@ export interface SceneRound {
   results: Result[] | null;
   /** The dub that goes into the episode. */
   best: string | null;
+  /** The Gallery, while the ad-lib dub is on (one a scene). */
+  gallery?: Gallery | null;
+  /** The commentary booth's replay of a good ad-lib (the scene's model line). */
+  booth?: Commentary | null;
+}
+
+/** The host stand-in (1–2 players, nobody at N4): Fude's one ad-lib of the game, on a scene card. */
+export interface StandIn {
+  round: number;
+  atMs: number;
+  c: Commentary;
 }
 
 export interface PlayerStats {
@@ -185,6 +208,10 @@ export interface DubState {
   phaseAt: number;
   /** The episode in the finale: which step is on, and since when. */
   episode: { step: number; at: number } | null;
+  /** The Gallery's curveball has been asked this game (once a game). */
+  curveball?: boolean;
+  /** The host stand-in, once it has happened (once a game). */
+  standIn?: StandIn | null;
 }
 
 // ---- view ----
@@ -220,6 +247,10 @@ export interface DubNow {
   spoiler: boolean;
   /** An ad-lib dub: `line` is only the model, so the TV shows it at the reveal, not over the voice. */
   adlib: boolean;
+  /** The Gallery's reactions to an ad-lib dub, in tap order. */
+  gallery: ReactionTile[];
+  /** The commentary booth (step `booth`): the model line with its casual chunk lit, and a line of colour. */
+  booth: { line: JpText; lit: Commentary['lit']; note: string } | null;
 }
 
 export interface EpisodeStep {
@@ -245,6 +276,8 @@ export interface DubView {
   best: string | null;
   step: EpisodeStep | null;
   credits: { playerId: string; who: JpText; card: DubCard | null; scene: number }[];
+  /** The host stand-in on this scene card: the TV shows it from `at` (server clock) for `ms`. */
+  standIn: { line: JpText; lit: Commentary['lit']; note: string; at: number; ms: number } | null;
   me: {
     level: Level;
     line: (JpText & { romaji?: string }) | null;
@@ -270,7 +303,11 @@ export interface DubView {
      * The ad-lib role, while it's mine (offered or accepted): the mission instead of a script (`line` is
      * null), the check of my plain read, and the model line once my take is sent.
      */
-    adlib: { state: 'offered' | 'accepted'; mission: string; emoji: string; check: AdlibCheck | null; model: JpText | null } | null;
+    adlib: { state: 'offered' | 'accepted'; mission: string; emoji: string; check: AdlibCheck | null; model: JpText | null; hint: string | null } | null;
+    /** My Gallery tile while someone else's ad-lib dub is on (a reaction, or the curveball). */
+    gallery: GalleryTileView | null;
+    /** Kana and N5 phones: the gist of the booth's model line (`booth` step), or of Fude's stand-in ad-lib. */
+    gist: { kana: string; romaji: string | null; en: string; emoji: string | null } | null;
     /** Cast notes: how my scene went, privately. */
     notes: { words: number; similarity: number | null; checked: boolean; spoiler: boolean; total: number; guessedBy: number; hearts: number; best: boolean } | null;
   } | null;
@@ -284,6 +321,7 @@ export type DubMove =
   | { kind: 'take'; clipId: string | null; local: boolean; durMs: number; heard: Utterance | null; checked: boolean }
   | { kind: 'pass' }
   | { kind: 'adlib'; accept: boolean }
+  | { kind: 'gallery'; pick: string }
   | { kind: 'guess'; actorId: string; direction: string }
   | { kind: 'again'; actorId: string }
   | { kind: 'heart'; actorId: string | null }
@@ -432,6 +470,63 @@ export function adlibCheck(heard: Utterance | string, adlib: Pick<AdLib, 'keys'>
 /** The ad-lib check as a similarity, so the word points work the same as a scripted read. */
 export const adlibSimilarity = (c: AdlibCheck): number => (c.casual && c.key ? ADLIB_SIM.both : c.casual || c.key ? ADLIB_SIM.one : ADLIB_SIM.neither);
 
+/** The mission's word to aim for, shown after "mission missed": the first whole key word (3+ kana), else the first. */
+export const missionWord = (adlib: Pick<AdLib, 'keys'>): string => adlib.keys.find((k) => k.length >= 3) ?? adlib.keys[0] ?? '';
+
+// The casual chunk to light in the booth, most telling first: a contraction, 〜んだ, じゃん/でしょ, then a
+// clause-final particle (だよ, よね, の？…).
+const CHUNKS: readonly RegExp[] = [/(ちゃった|じゃった|ちゃって|ちゃう)/, /(てたんだ|てる|てた|てない|てて)/, /(なんだ|んだ)/, /(じゃん|でしょ(?!う))/, /(だよ|よね|かな|だ|よ|ね|の)(?=\s*[？！。…?!]|$)/];
+
+/** The model line's casual chunk, made long enough that its first appearance is the one lit. */
+export function casualChunk(text: string): string {
+  for (const re of CHUNKS) {
+    const m = re.exec(text);
+    if (!m) continue;
+    let start = m.index;
+    const end = m.index + m[0].length;
+    while (start > 0 && text.indexOf(text.slice(start, end)) !== start) start--;
+    return text.slice(start, end);
+  }
+  return '';
+}
+
+/** Did the ad-lib come off: casual speech, in the plain read or (with a speech check) the acted take? */
+export function adlibLanded(a: Actor, adlib: Pick<AdLib, 'keys'>): boolean {
+  if (!isAdlib(a) || !a.take || a.skipped || a.take.spoiler) return false;
+  return !!a.rehearsal?.adlib?.casual || (!!a.take.heard && adlibCheck(a.take.heard, adlib).casual);
+}
+
+/** The booth's replay of a good ad-lib, or the stand-in's: the scene's model line (fixed, so safe to voice). */
+function boothFor(adlib: AdLib, who: string | null, playerId: string | null): Commentary {
+  const key = casualChunk(adlib.model.text);
+  return {
+    playerId,
+    line: adlib.model,
+    voiced: true,
+    lit: lightUp(adlib.model.text, key ? [key] : []),
+    note: who ? `No script, all ${who}. One casual way to say it${key ? `, with 「${key}」` : ''}.` : `No script: Fude-kantoku ad-libs it, casually${key ? `, with 「${key}」` : ''}.`,
+    gist: { kana: adlib.model.kana, en: who ? `${who}’s ad-lib. One way to say it: “${adlib.model.en}”` : `Fude-kantoku ad-libs it: “${adlib.model.en}”`, emoji: adlib.emoji },
+    ms: commentaryMs(adlib.model),
+  };
+}
+
+/**
+ * The curveball for an ad-lib dub: the longest of the mission's words (3+ kana) heard in the acted take, against
+ * the other scenes' mission words. Null when the take's words weren't checked or none of them came through.
+ */
+function curveballKey(s: DubState, r: SceneRound, a: Actor): { word: string; pool: string[] } | null {
+  if (!a.take?.heard) return null;
+  const adlib = adlibOf(s, r);
+  const heard = soundKey(normalizeReading(utteranceReading(a.take.heard)));
+  const word = adlib.keys.filter((k) => k.length >= 3 && heard.includes(soundKey(k))).sort((x, y) => y.length - x.length)[0];
+  if (!word) return null;
+  const pool = episodeOfState(s)
+    .scenes.filter((x) => x.id !== r.sceneId)
+    .flatMap((x) => sceneAdlib(x, s.audience).keys)
+    .filter((k) => k.length >= 3 && !adlib.keys.includes(k));
+  return { word, pool };
+}
+
 /** Points for the words, from the plain rehearsal. */
 export function wordPoints(a: Actor): number {
   if (a.rehearsal) {
@@ -469,14 +564,15 @@ function startScene(s: DubState, ctx: ModeContext): void {
     const offered = dealt[i]!;
     return { playerId: p.id, level: p.level, offered, direction: offered[0], rehearsal: null, take: null, passed: false, skipped: false, grid: [] };
   });
-  // The ad-lib hard role: offered to one N4 player a scene, in turn. No N4 player, no change.
-  const n4 = actors.filter((a) => a.level === 'n4');
-  const pick = n4[(s.round - 1) % Math.max(1, n4.length)];
-  // Spotlight (for Ladi to confirm): in a room of 4 or more, a lone N4 player who played the ad-lib last
-  // scene gets this one off, so the same voice isn't on the spot every scene.
-  const prev = s.rounds.at(-1)?.actors.find((a) => a.playerId === pick?.playerId);
-  const rest = n4.length === 1 && ctx.connected().length >= 4 && prev?.adlib === 'accepted';
-  if (pick && !rest) pick.adlib = 'offered';
+  // The ad-lib hard role: offered to one N4 player a scene, by the shared `nextOfferee` (fewest offers, then
+  // longest ago; a "not this time" sits the next scene out; in a room of 4 or more, whoever played it last
+  // scene gets this one off). No N4 player, no change.
+  const here = new Set(ctx.connected().map((p) => p.id));
+  const n4 = actors.filter((a) => a.level === 'n4' && here.has(a.playerId)).map((a) => a.playerId);
+  const past = s.rounds.flatMap((r) => r.actors.flatMap((a) => (a.adlib ? [{ playerId: a.playerId, at: r.index, answer: a.adlib }] : [])));
+  const id = nextOfferee(n4, past, s.round, here.size);
+  const pick = actors.find((a) => a.playerId === id);
+  if (pick) pick.adlib = 'offered';
   s.rounds.push({ index: s.round, sceneId: scene.id, actors, order: [], screening: null, guesses: {}, hearts: {}, results: null, best: null });
 }
 
@@ -488,7 +584,7 @@ export function onNow(r: SceneRound): Actor | null {
 }
 
 /** How long a screening step lasts. */
-export function stepMs(step: ScreenStep, a: Actor | null): number {
+export function stepMs(step: ScreenStep, a: Actor | null, boothMs = 0): number {
   const dur = a?.take?.durMs ?? 0;
   switch (step) {
     case 'lead':
@@ -502,6 +598,8 @@ export function stepMs(step: ScreenStep, a: Actor | null): number {
       return STEP_MS.regroup;
     case 'reveal':
       return STEP_MS.reveal;
+    case 'booth':
+      return boothMs;
   }
 }
 
@@ -523,6 +621,18 @@ function advance(s: DubState, r: SceneRound, ctx: ModeContext): void {
   }
   switch (sc.step) {
     case 'lead':
+      // An ad-lib dub opens the scene's Gallery for everyone else.
+      if (isAdlib(a) && !r.gallery) {
+        const others = ctx.connected().filter((p) => p.id !== a.playerId);
+        r.gallery = openGallery(
+          others.map((p) => p.id),
+          others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id),
+          curveballKey(s, r, a),
+          !!s.curveball,
+          r.index,
+        );
+        if (r.gallery.curveball) s.curveball = true;
+      }
       return next('play');
     case 'play':
       return next('guess');
@@ -539,7 +649,21 @@ function advance(s: DubState, r: SceneRound, ctx: ModeContext): void {
       else ctx.cue({ host: 'fude', event: 'dub_reveal_some', slots: { name: ctx.player(a.playerId)?.name ?? '' } });
       return;
     }
-    case 'reveal':
+    case 'reveal': {
+      // A good ad-lib: カット！, then the booth replays the scene's model line in Fude's voice.
+      const adlib = adlibOf(s, r);
+      if (adlibLanded(a, adlib) && !r.booth) {
+        const name = ctx.player(a.playerId)?.name ?? '';
+        r.booth = boothFor(adlib, name, a.playerId);
+        next('booth');
+        ctx.cue({ host: 'fude', event: 'dub_cut', slots: { name } });
+        ctx.cue({ host: 'fude', event: 'dub_booth', slots: { line: adlib.model.text, line_kana: adlib.model.kana, line_en: adlib.model.en }, atMs: BOOTH_LINE_AT_MS });
+        return;
+      }
+      r.screening = { index: sc.index + 1, step: 'lead', at: ctx.now, replayed: false, again: [] };
+      return;
+    }
+    case 'booth':
       r.screening = { index: sc.index + 1, step: 'lead', at: ctx.now, replayed: false, again: [] };
       return;
   }
@@ -653,7 +777,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
     const episode = pool[Math.floor(ctx.random() * pool.length)] ?? pool[0]!;
     const all: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) all[p.id] = blankStats();
-    return { round: 0, totalRounds: TOTAL_SCENES, episodeId: episode.id, audience, rounds: [], stats: all, phaseAt: ctx.now, episode: null };
+    return { round: 0, totalRounds: TOTAL_SCENES, episodeId: episode.id, audience, rounds: [], stats: all, phaseAt: ctx.now, episode: null, curveball: false, standIn: null };
   },
 
   next(s, from) {
@@ -685,6 +809,13 @@ export const dubClubMode: Mode<DubState, DubView> = {
         const line = lineOf(s, r, 'n5');
         // The table read: Fude reads the N5 line plainly, the model for the words (not the feeling).
         ctx.cue({ host: 'fude', event: 'dub_scene', slots: { line: line.kana, line_en: line.en }, prompt: { text: line.text, kana: line.kana, en: line.en } });
+        // The host stand-in: a room of one or two with nobody at N4 hears Fude ad-lib one scene himself, once a
+        // game, after his table read. Nobody is asked to say anything, and nothing is scored.
+        if (!s.standIn && hostStandsIn(ctx.connected().map((p) => p.level))) {
+          const adlib = adlibOf(s, r);
+          s.standIn = { round: r.index, atMs: STANDIN_AT_MS, c: boothFor(adlib, null, null) };
+          ctx.cue({ host: 'fude', event: 'dub_standin', slots: { line: adlib.model.text, line_kana: adlib.model.kana, line_en: adlib.model.en }, atMs: STANDIN_AT_MS });
+        }
         break;
       }
       case 'answer':
@@ -734,7 +865,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
         return r?.actors.some((a) => a.level === 'kana') ? DURATIONS.answerKana : DURATIONS.answer;
       case 'reveal': {
         // The screening ends itself (`done`) after the last dub; this is only a backstop.
-        const per = (a: Actor | undefined) => STEP_MS.lead + 2 * playMs(a?.take?.durMs ?? MAX_TAKE_MS) + STEP_MS.guess + STEP_MS.regroup + STEP_MS.reveal;
+        const per = (a: Actor | undefined) => STEP_MS.lead + 2 * playMs(a?.take?.durMs ?? MAX_TAKE_MS) + STEP_MS.guess + STEP_MS.regroup + STEP_MS.reveal + (isAdlib(a) ? 7_000 : 0);
         return STEP_MS.start + (r ? r.order.reduce((t, id) => t + per(actorOf(r, id)), 0) : 0) + 5_000;
       }
       case 'score':
@@ -766,7 +897,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
     if (phase === 'reveal' && r?.screening) {
       const a = onNow(r);
       if (!a) return null;
-      return a.skipped ? r.screening.at : r.screening.at + stepMs(r.screening.step, a);
+      return a.skipped ? r.screening.at : r.screening.at + stepMs(r.screening.step, a, r.booth?.ms ?? 0);
     }
     if (phase === 'finale' && s.episode) {
       const step = episodeSteps(s)[s.episode.step];
@@ -865,6 +996,16 @@ export const dubClubMode: Mode<DubState, DubView> = {
         // A plain read checked the other way doesn't carry over.
         if (isAdlib(me) !== (next === 'accepted')) me.rehearsal = null;
         me.adlib = next;
+        return MOVE_OK;
+      }
+      case 'gallery': {
+        // A reaction to the ad-lib dub on now (or the curveball), from anyone but its actor.
+        const on = onNow(r);
+        if (phase !== 'reveal' || !r.gallery || !on || !isAdlib(on) || r.screening?.step === 'lead') return moveError('wrong-phase');
+        if (typeof raw.pick !== 'string') return moveError('bad-move');
+        const pts = pickGallery(r.gallery, playerId, raw.pick);
+        if (pts === null) return moveError('bad-move');
+        if (pts) ctx.award(playerId, pts);
         return MOVE_OK;
       }
       case 'pass': {
@@ -967,7 +1108,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
 
     let now: DubNow | null = null;
     if (a && sc && r) {
-      const revealed = sc.step === 'reveal';
+      const revealed = sc.step === 'reveal' || sc.step === 'booth';
       const d = directionOf(a.direction)!;
       const playing = sc.step === 'play' || sc.step === 'replay';
       now = {
@@ -989,6 +1130,8 @@ export const dubClubMode: Mode<DubState, DubView> = {
         guessedBy: revealed ? guessedRight(r, a) : [],
         spoiler: revealed && !!a.take?.spoiler,
         adlib: isAdlib(a),
+        gallery: isAdlib(a) && r.gallery ? galleryBubbles(r.gallery) : [],
+        booth: sc.step === 'booth' && r.booth ? { line: r.booth.line, lit: r.booth.lit, note: r.booth.note } : null,
       };
     }
     const done =
@@ -1044,6 +1187,10 @@ export const dubClubMode: Mode<DubState, DubView> = {
       const d = mine ? directionOf(mine.direction) : undefined;
       const reh = mine?.rehearsal;
       const canGuess = !!a && a.playerId !== player.id && !!sc && ['play', 'guess', 'replay', 'regroup'].includes(sc.step);
+      const ownAdlib = adlib ?? (isAdlib(mine) ? adlibOf(s, r) : null);
+      const missed = reh?.adlib && !reh.adlib.key && ownAdlib ? missionWord(ownAdlib) : null;
+      const booth = a && sc?.step === 'booth' && a.playerId !== player.id ? r.booth : null;
+      const standIn = phase === 'prompt' && s.standIn?.round === r.index ? s.standIn.c : null;
       me = {
         level,
         // An ad-lib has no script showing: the mission stands in for it.
@@ -1064,10 +1211,12 @@ export const dubClubMode: Mode<DubState, DubView> = {
         myTurn: (!!a && a.playerId === player.id) || (step?.kind === 'scene' && step.scene?.playerId === player.id),
         adlib:
           mine && adlib
-            ? { state: 'accepted', mission: adlib.mission, emoji: adlib.emoji, check: reh?.adlib ?? null, model: mine.take || phase === 'reveal' || phase === 'score' ? adlib.model : null }
+            ? { state: 'accepted', mission: adlib.mission, emoji: adlib.emoji, check: reh?.adlib ?? null, model: mine.take || phase === 'reveal' || phase === 'score' ? adlib.model : null, hint: missed }
             : mine && offer
-              ? { state: 'offered', mission: offer.mission, emoji: offer.emoji, check: null, model: null }
+              ? { state: 'offered', mission: offer.mission, emoji: offer.emoji, check: null, model: null, hint: null }
               : null,
+        gallery: a && isAdlib(a) && sc && sc.step !== 'lead' ? galleryTileFor(r.gallery, player.id, level) : null,
+        gist: gistFor(booth ?? standIn, level),
         notes:
           showResults && mine?.take && res
             ? { words: res.words, similarity: reh?.similarity ?? null, checked: mine.take.checked, spoiler: mine.take.spoiler, total: res.total, guessedBy: res.guessedBy.length, hearts: res.hearts, best: r.best === player.id }
@@ -1089,6 +1238,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
       best: showResults ? (r?.best ?? null) : null,
       step,
       credits: phase === 'finale' ? credits : [],
+      standIn: phase === 'prompt' && r && s.standIn?.round === r.index ? { line: s.standIn.c.line, lit: s.standIn.c.lit, note: s.standIn.c.note, at: s.phaseAt + s.standIn.atMs, ms: s.standIn.c.ms } : null,
       me,
     };
   },

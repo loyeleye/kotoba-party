@@ -163,6 +163,8 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   narabete_defence: 'Narabete!: this player\'s card was moved the most. Ask them to defend where it ended up.',
   narabete_hard: 'Narabete!: an N4 player will say why their own card sits where it does. Invite them warmly by name; do not say the card moved.',
   narabete_replay: 'Narabete!: instant replay of the N4 defence. Say this line exactly as given: {line}',
+  narabete_hooray: 'Narabete!: {name} just gave a good reason for their card\'s place, with ので. One short, delighted aunt-like reaction ("あらまあ!"), no correction.',
+  narabete_standin: 'Narabete!: a small room with no N4 player. Show how a card is defended by saying this line exactly as given: {line}',
   narabete_perfect: 'Narabete!: the line flipped over in perfect order. Celebrate.',
   narabete_knot: 'Narabete!: the line flipped over with some cards out of order. Sympathise, kindly.',
   narabete_story: 'Narabete!: the players now read the Worst Day Ever story aloud, in order.',
