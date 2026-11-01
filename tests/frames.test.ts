@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { createReader } from '../server/src/reading.js';
-import { ALL_FRAMES, FRAME_BY_ID, FRAMES, frameOf, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
+import { ALL_FRAMES, creditable, FRAME_BY_ID, FRAMES, frameOf, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
 import { cases as n4a } from './frame-cases/n4-a.js';
 import { cases as n4b } from './frame-cases/n4-b.js';
 import { cases as n4c } from './frame-cases/n4-c.js';
@@ -194,8 +194,33 @@ describe('every frame in a line (framesOf)', () => {
   });
 
   it('names every frame in a line, the specific one over the general', () => {
-    expect(all({ text: '雨に降られたので、遅れました。', kana: 'あめに ふられたので、おくれました。' })).toEqual(expect.arrayContaining(['mashita', 'passive', 'node']));
+    // The suffering passive is shown over the plain passive chip (one chip for one verb); counting keeps both.
+    const rain = { text: '雨に降られたので、遅れました。', kana: 'あめに ふられたので、おくれました。' };
+    expect(all(rain)).toEqual(expect.arrayContaining(['mashita', 'suffering-passive', 'node']));
+    expect(all(rain)).not.toContain('passive');
+    expect(framesOf(rain, reader.tokens(rain.text), { keepHidden: true })).toEqual(expect.arrayContaining(['passive', 'suffering-passive']));
+    // While N3 can't be credited, the recap (only creditable frames) still shows the N4 chips the N3 ones hide.
+    expect(framesOf(rain, reader.tokens(rain.text), { only: creditable })).toEqual(expect.arrayContaining(['passive', 'node']));
+    const scold = 'ははに ゲームを すてられた！';
+    expect(framesOf({ text: scold, kana: scold }, reader.tokens(scold), { only: creditable })).toContain('passive');
+    const orimasu = 'いま、でかけて おります。';
+    expect(framesOf({ text: orimasu, kana: orimasu }, undefined, { only: creditable })).toContain('keigo');
     expect(all('まどを あけて もらえますか。')).not.toContain('ka');
+    // 3.8's ＿て おります and ＿で ございます are shown over the keigo-verb chip (4.9); counting keeps it (panel on #149).
+    for (const k of ['おまち して おります。', 'こちらが おへやで ございます。']) {
+      expect(all(k)).not.toContain('keigo');
+      expect(framesOf({ text: k, kana: k }, reader.tokens(k), { keepHidden: true })).toContain('keigo');
+    }
+    // Casual ＿みたい (3.1) is shown over ＿みたいです (4.6); counting keeps both, and ＿みたいです alone isn't casual.
+    const kept = (k: string) => framesOf({ text: k, kana: k }, reader.tokens(k), { keepHidden: true });
+    expect(all('でんぱが わるいみたい。')).toEqual(['mitai-casual']);
+    expect(kept('でんぱが わるいみたい。')).toEqual(expect.arrayContaining(['mitai-casual', 'mitai-you']));
+    expect(kept('でんぱが わるい みたいです。')).not.toContain('mitai-casual');
+    // Every suffering passive counts as a passive too, with tokens and on the phone (JLPT seat on #153).
+    for (const k of ['さいふを ぬすまれました。', 'あしを ふまれました。', 'ともだちに こられて、こまった。', 'あめに ふられました。']) {
+      expect([k, kept(k).includes('passive')]).toEqual([k, true]);
+      expect([k, framesOf({ text: k, kana: k }, undefined, { keepHidden: true }).includes('passive')]).toEqual([k, true]);
+    }
     expect(all('しゃしんを とっても いいですか。')).toEqual(['te-mo-ii']);
     expect(all('はじめまして。アキです。よろしく おねがいします。')).toEqual(['desu']);
   });
@@ -237,6 +262,19 @@ describe('every frame in a line (framesOf)', () => {
     expect(counted('しゅくだいを しないと いけませんか。')).not.toContain('masen-ka');
     expect(counted('ごめんなさいと いったら どうですか。')).not.toContain('to-itte-ita');
     expect(counted('にほんごが できます。')).not.toContain('potential');
+    // #152's Japanese seat: misreads that counting used to keep.
+    expect(counted('まって ください。')).not.toContain('kudasai');
+    expect(counted('みずを ください。')).toContain('kudasai');
+    expect(counted('ともだちに わらわれました。')).not.toContain('ni-masu');
+    expect(counted('ふじさんに のぼった ことが あります。')).not.toContain('ni-aru');
+    expect(counted('にほんごが はなせる ために、べんきょうします。')).not.toContain('tame-ni');
+    expect(counted('びょうきが なおる ために、くすりを のむ。')).not.toContain('tame-ni');
+    // Hearsay そう after a space.
+    for (const k of ['あしたは あめが ふる そうです。', 'あの こうえんは しずかだ そうです。', 'かれは こない そうです。']) expect([k, counted(k).includes('sou-hear')]).toEqual([k, true]);
+    expect(counted('はい、そう です。')).not.toContain('sou-hear');
+    // ＿たい + hearsay, as Hajimemashite's N4 card has it; たいそう alone is "very".
+    expect(counted('アキさんは にほんで すしを たべて みたいそうです。')).toContain('sou-hear');
+    expect(counted('たいそう よろこんで いました。')).not.toContain('sou-hear');
   });
 
   it('leaves out the frames that need part of speech when there are no tokens', () => {
@@ -244,7 +282,8 @@ describe('every frame in a line (framesOf)', () => {
     expect(framesOf({ text: 'ねこに たべられました。', kana: 'ねこに たべられました。' })).not.toContain('passive');
     expect(all('猫に食べられました。')).toContain('passive');
     // …but with a を object it can't be "can" (that takes が).
-    expect(framesOf({ text: 'ねこに さかなを たべられました。', kana: 'ねこに さかなを たべられました。' })).toContain('passive');
+    // (It's also the suffering passive, shown over it; counting keeps the passive.)
+    expect(framesOf({ text: 'ねこに さかなを たべられました。', kana: 'ねこに さかなを たべられました。' }, undefined, { keepHidden: true })).toContain('passive');
     expect(all('ここに いられます。')).not.toContain('passive');
     // A godan passive is spelled out, so it counts without tokens.
     expect(framesOf({ text: 'ははに しかられました。', kana: 'ははに しかられました。' })).toContain('passive');

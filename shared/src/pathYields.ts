@@ -22,7 +22,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "doko": 0.06,
       "hou-ga-ii": 0.09,
       "ka": 0.89,
-      "kudasai": 0.13,
+      "kudasai": 0.11,
       "mashita": 0.22,
       "nan": 0.09,
       "ni-masu": 0.2,
@@ -69,8 +69,8 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
     "hajimemashite": {
       "desu": 0.56,
       "mashita": 0.27,
-      "ni-aru": 0.31,
       "o-masu": 0.09,
+      "sou-hear": 0.06,
       "suki": 0.05,
       "ta-koto": 0.31,
       "te-miru": 0.31,
@@ -83,7 +83,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "ka": 2.47,
       "keigo": 1,
       "koto-ni-suru": 0.06,
-      "kudasai": 0.56,
+      "kudasai": 0.27,
       "mashita": 1.78,
       "migi-hidari": 0.08,
       "nan": 0.13,
@@ -142,7 +142,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "doko": 0.25,
       "ikura": 0.05,
       "ka": 1.55,
-      "kudasai": 0.47,
+      "kudasai": 0.45,
       "masen-ka": 0.11,
       "mashita": 0.48,
       "migi-hidari": 0.08,
@@ -182,7 +182,6 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "desu": 1.22,
       "ikura": 0.14,
       "ka": 1.88,
-      "kudasai": 0.3,
       "mashita": 0.3,
       "migi-hidari": 0.05,
       "ni-masu": 1.3,
@@ -200,7 +199,6 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "to-itte-ita": 0.16
     },
     "ghost-hotline": {
-      "kudasai": 4.91,
       "naide-kudasai": 0.73,
       "te-kudasai": 4.91
     },
