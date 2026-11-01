@@ -91,9 +91,13 @@ const hostSprite = new HostSprite(HOST_TARGET);
 
 $('debug').hidden = !DEBUG;
 mountBackdrop(els.canvas, () => client?.remainingMs() ?? null);
-mountSoundButton(els.canvas);
-mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteOrigin });
-mountPhrasebook(els.canvas);
+// The top-left toolbar: Sound, Settings and Phrasebook buttons in one row, then the now-playing
+// credit, laid out by flex so a longer label or a hidden button never makes them collide.
+const tools = h('div', { class: 'stage-tools' });
+els.canvas.append(tools);
+mountSoundButton(tools);
+mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteOrigin, bar: tools });
+mountPhrasebook(els.canvas, tools);
 $('debug-tag').hidden = !DEBUG;
 document.body.dataset.watch = WATCH ? '1' : '';
 if (WATCH) {

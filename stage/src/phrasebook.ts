@@ -37,7 +37,8 @@ export function setPhrasebookSource(next: { base: string; code: string; token: s
   data = null;
 }
 
-export function mountPhrasebook(parent: HTMLElement): void {
+/** The button goes in the stage's toolbar (`bar`); the scrim and panel cover the canvas (`parent`). */
+export function mountPhrasebook(parent: HTMLElement, bar: HTMLElement = parent): void {
   count = h('span', { class: 'spb-count', hidden: true });
   button = h(
     'button',
@@ -80,7 +81,8 @@ export function mountPhrasebook(parent: HTMLElement): void {
       else if (!e.shiftKey && document.activeElement === last) (e.preventDefault(), first.focus());
     }
   });
-  parent.append(button, scrim, panel);
+  bar.append(button);
+  parent.append(scrim, panel);
 }
 
 /** Call on every render: the button shows between games only, and the panel closes when one starts. */
