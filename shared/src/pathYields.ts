@@ -9,9 +9,9 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
   "n4": {
     "oogiri": {},
     "last-train": {
-      "desu": 2.38,
+      "desu": 2.31,
       "mashita": 0.25,
-      "wa-desu": 0.19
+      "wa-desu": 0.17
     },
     "kana-raid": {},
     "word-gauntlet": {},
@@ -57,8 +57,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "suki": 0.48
     },
     "shodo": {
-      "kanji:n4": 0.44,
-      "kanji:n5": 0.56
+      "kanji:n4": 0.92
     },
     "narabete": {},
     "bento-haus": {
@@ -143,7 +142,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
     "oogiri": {},
     "last-train": {
       "desu": 2,
-      "mashita": 0.11,
+      "mashita": 0.13,
       "wa-desu": 0.13
     },
     "kana-raid": {},
@@ -178,9 +177,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
     "omiai": {
       "o-masu": 1.03
     },
-    "shodo": {
-      "kanji:n5": 1
-    },
+    "shodo": {},
     "narabete": {},
     "bento-haus": {
       "kudasai": 20.33
