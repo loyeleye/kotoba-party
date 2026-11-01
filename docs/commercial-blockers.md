@@ -61,6 +61,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 33 | Dub Club's Cheeky episodes and cards (office overtime, a first date, Girls' Night, a cheap idol off stage, and the drunk, sexy, host-club, gyaru and mother-in-law cards), behind the host's Audience setting (decision, 2026-10-28) | `shared/src/modes/dubClub/scenes.ts` (`audience: 'cheeky'`) | ⚠️ | Same as rows 29 and 30: no licence issue, but it adds to the age rating. Include it in the rating questionnaires or leave it out of rated builds; have the fluent reviewer check the Cheeky lines |
 | 34 | Optional sign-in: passkeys through SimpleWebAuthn (`@simplewebauthn/server` and `/browser`, MIT, plus MIT, Apache-2.0, 0BSD and BSD-3 dependencies), and each signed-in player's save (save name, game scores, kana practised) kept on one Cloudflare Durable Object (decision, 2026-10-28) | `server/src/accounts.ts`, `cloudflare/accountsObject.ts`, `controller/src/account.ts`, `shared/src/progress.ts` | 🟡 ⚠️ ❓ | Ship the MIT and Apache-2.0 notices (row 5). Privacy, not licence: a privacy notice for saves, a decision on under-13/16 players (COPPA, GDPR-K: not read, ❓), and Cloudflare's Durable Object storage named as a processor. Deleting a save is already in the game |
 | 35 | The learning path names levels "N5" and "N4" (the JLPT's level names) and suggests a JLPT mock test; its lines use our own names (Kana Line, Local Line, Express Line) (decision, 2026-11-01) | `shared/src/path.ts`, `controller/src/path.ts`, the level picker in `controller/src/main.ts` | ⚠️ | JLPT site policy read 2026-11-01: it covers copying the site's works (questions, text), not naming the test or its levels, and carries no trademark notice. We copy none of its content. Keep "N5"/"N4" descriptive, never claim endorsement or a result, and have a lawyer check whether "JLPT" or 日本語能力試験 is a registered mark before launch |
+| 36 | VOICEVOX speaking player-written text in the planned Word Gauntlet rumour round (Nobiko-san's voice reads each relay) | planned: `server/ai/hosts.ts`, rumour round | 🕓 ❓ | Row 1 covers fixed host lines; generated lines from players' own words need each character's terms read again for live, user-made text (not read, 2026-11-01). Check before the rumour round is built |
 
 ## Details
 
@@ -646,3 +647,14 @@ pictures if they still look right, and add the Steam/itch disclosure.
   copy the site's text or sample questions without permission; keep
   "N5"/"N4" descriptive (never "JLPT certified" or a score); if the names aren't allowed, rename the picker
   and the path to our own level names.
+- **Also:** each sentence frame carries a level tag, `n5`, `n4` or `n3` (`shared/src/japanese/frames.ts`,
+  N4/N3 step 1). The tags are internal; the same terms decide whether players may see them.
+
+### 36. VOICEVOX reading players' words aloud (planned rumour round)
+
+- **What:** The planned Word Gauntlet rumour round replays each relay in Nobiko-san's VOICEVOX voice, so no
+  player's voice moves between phones. Unlike row 1's fixed host lines, the text is generated from what
+  players said.
+- **Status:** 🕓 ❓. Each character's terms need reading for live, user-made lines (not read, 2026-11-01).
+- **To sell:** read the terms of the character chosen for Nobiko-san before the round is built; if they
+  bar generated lines, use a character whose terms allow it, or browser speech (row 31).
