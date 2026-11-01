@@ -242,7 +242,7 @@ out when it wouldn't leave her the question's 5 s inside the go-between's longer
 **Mixed rooms** (the shared pieces in `mixedRoom.ts`, docs/n4-hard-roles.md):
 
 - **Gallery.** Once the go-between has taken the opening (Take it, or a first try), every other connected
-  player gets one reaction tile for the prompt (👏 すごい！ 💡 なるほど 😮 へえ！ 😂 あはは), shown as bubbles on
+  player gets one reaction tile for the prompt (👏 すごい！ 💡 なるほど 😮 へえ！ 📣 がんばれ！), shown as bubbles on
   the TV, never scored. Once a game, a Kana or N5 player's tile is the curveball instead: "Which word
   did you hear?", with the opening's keigo word (おみえに なりました, いらっしゃいます, おききに なります,
   ございます; `key` on each template) and two of the others; **+5 if right**, paid directly. Not for an

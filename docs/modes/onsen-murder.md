@@ -100,7 +100,7 @@ the very last seconds can be cut short. A miss, a decline or no N4 player: nothi
 **Mixed rooms** (the shared pieces in `mixedRoom.ts`, docs/n4-hard-roles.md):
 
 - **Gallery.** Once the deputy has taken the part (Take it, or a first try) and the answer has a report,
-  every other connected player gets one reaction tile for the answer (👏 すごい！ 💡 なるほど 😮 へえ！ 😂 あはは),
+  every other connected player gets one reaction tile for the answer (👏 すごい！ 💡 なるほど 😮 へえ！ 📣 がんばれ！),
   shown as bubbles under the deputy's panel on the TV, never scored. Once a game, a Kana or N5
   player's tile is the curveball instead: "Which word did you hear?", with the report's frame word
   (いっていました, or みられました for a passive one) and two others; **+5 if right**, into the ordinary score

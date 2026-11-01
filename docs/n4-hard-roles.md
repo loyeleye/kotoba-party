@@ -57,7 +57,7 @@ Every game with a hard role uses them the same way:
   fewest offers so far, then longest ago; a player who said no, or didn't answer, last time sits the next one out; in rooms of 4 or
   more, nobody holds the spotlight two rounds running.
 - **Gallery.** While the N4 line is being said, each player without the seat gets one tile a round: four
-  reactions (👏 すごい！, 💡 なるほど, 😮 へえ！, 😂 あはは) that pop up on the TV as bubbles, unscored. Once per game, after the line has
+  reactions (👏 すごい！, 💡 なるほど, 😮 へえ！, 📣 がんばれ！) that pop up on the TV as bubbles, unscored. Once per game, after the line has
   landed, a Kana or N5 player who hasn't reacted yet gets a curveball instead, "Which word did you hear?", with the line's key word and two
   others; +5 if right.
 - **Commentary booth.** Once the N4 line lands, a 5–7 s instant replay on the TV: the line with its key word lit

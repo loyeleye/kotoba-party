@@ -28,7 +28,7 @@ export const REACTIONS: readonly ReactionTile[] = [
   { id: 'sugoi', emoji: '👏', kana: 'すごい！', en: 'Amazing!' },
   { id: 'naruhodo', emoji: '💡', kana: 'なるほど', en: 'I see' },
   { id: 'e', emoji: '😮', kana: 'へえ！', en: 'Oh, really!' },
-  { id: 'warai', emoji: '😂', kana: 'あはは', en: 'Ha ha' },
+  { id: 'warai', emoji: '📣', kana: 'がんばれ！', en: 'Go for it!' },
 ];
 
 export const CURVEBALL_POINTS = 5;
