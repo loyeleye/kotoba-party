@@ -126,9 +126,11 @@ spaces miss 13 of ~400 (the suffering passive, ＿とかいかない), and と�
 
 The #149 JLPT seat counted about 32 genuine N3 points on 3.1 to 3.11. Twelve of the biggest gaps now have
 draft matchers, with the same 10/10 bar (`tests/frame-cases/n3-d.ts`). Ladi chose optional frames on today's
-goals (open questions doc, Nov 1): ＿ように いわれました on 3.1, ＿かける and ＿ばかり on 3.2, ＿もので on 3.3, ＿さえ
-on 3.5, ＿きる on 3.6, ＿わけには いかない on 3.7, ＿た とたん and ＿だす on 3.9, and ＿はずが ない, ＿に とって and
-＿こそ on 3.10. A frame becomes required once a game carries it.
+goals (open questions doc, Nov 1): ＿ように いわれました on 3.1, ＿かける, ＿きる and ＿ばかり on 3.2, ＿もので on 3.3,
+＿さえ ＿ば on 3.5, ＿わけには いかない and ＿こそ on 3.7, ＿た とたん and ＿だす on 3.9, and ＿はずが ない and ＿に とって
+on 3.10. The #158 panel moved ＿きる to 3.2 (with the other compound verb) and ＿こそ to 3.7, so 3.10 isn't a wall of
+chips. The chip's Japanese and English come from frames.ts; FRAME_TEXT keeps the same wording, and a test checks the
+two match for these twelve. A frame becomes required once a game carries it.
 A sweep of 13,870 game strings finds 1 line that says them (アドバイスばかり), and it's right.
 
 The #157 panel found about 40 more lines that named the wrong frame, mostly compound verbs with the other
