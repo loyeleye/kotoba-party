@@ -72,6 +72,7 @@
 .gh-yokai { font-weight: 800; white-space: nowrap; }
 .gh-yokai small { font-size: 22px; color: var(--muted); font-weight: 400; }
 .gh-ringing { animation: gh-buzz 1s steps(1, end) 3; }
+.gh-line .gh-ringing { animation-delay: var(--ring-delay, 0ms); }
 /* A buzz, not a spin: whole art-pixel steps sideways, so pixel art never rotates (art panel, 1 Nov 2026). */
 @keyframes gh-buzz { 0% { transform: translateX(0); } 8% { transform: translateX(4px); } 16% { transform: translateX(-4px); } 24% { transform: translateX(4px); } 32%, 100% { transform: translateX(0); } }
 .gh-problem { display: grid; gap: 10px; justify-items: start; text-align: left; padding: 22px 34px; background: var(--paper); color: var(--paper-ink); border: 5px solid var(--outline); border-radius: 18px; box-shadow: 0 8px 0 var(--outline); width: 100%; box-sizing: border-box; }
@@ -106,11 +107,20 @@
 @keyframes gh-ring-pill { 50% { background: transparent; color: var(--gh-yes); } }
 .gh-line .gh-said { padding: 0 10px; font-size: 20px; font-weight: 800; color: var(--good); background: transparent; background: color-mix(in srgb, var(--good) 14%, transparent); border: 2px solid var(--good); border-radius: 999px; }
 .gh-line-open .gh-line-phone { display: grid; place-items: center; font-size: 72px; line-height: 1; color: var(--muted); }
+/* The pixel phone and mic (stage/assets/icons/hl-phone.png, lt-mic.png) at whole-pixel scales, in place of emoji. */
+.gh-line-open img.gh-line-phone { width: 78px; height: 69px; }
+.gh-line .gh-said { display: inline-flex; align-items: center; gap: 4px; }
+img.pix.gh-said-mic { width: 12px; height: 31px; margin: -6px 2px -6px -2px; }
+img.pix.gh-seat-phone { width: 26px; height: 23px; }
+/* A long state never clips: the English gloss gives way first. */
+.gh-state { min-width: 0; overflow: hidden; }
+.gh-state small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The call lamp: dark before a call, flashing once a second for 3 s as it rings, then lit (like the set's call light). */
-.gh-lamp { width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid var(--outline); background: #4a1626; }
-.gh-lamp-on { background: var(--gh-lamp); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gh-lamp) 35%, transparent); }
-.gh-lamp-ring { background: var(--gh-lamp); animation: gh-lamp 1s steps(1, end) 3; }
-@keyframes gh-lamp { 50% { background: #4a1626; } }
+.gh-lamp { box-sizing: border-box; width: 20px; height: 20px; flex: none; border-radius: 50%; border: 3px solid var(--muted); background: transparent; }
+/* Lit is a filled dot in a light ring, unlit a hollow ring: the state reads by shape, not only colour (art panel, 1 Nov 2026). */
+.gh-lamp-on, .gh-lamp-ring { border-color: var(--paper); background: var(--gh-lamp); }
+.gh-lamp-ring { animation: gh-lamp 1s steps(1, end) 3; animation-delay: var(--ring-delay, 0ms); }
+@keyframes gh-lamp { 50% { border-color: var(--muted); background: transparent; } }
 
 /* ---- plan and record: adviser cards ---- */
 .gh-advisers { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; width: 100%; }

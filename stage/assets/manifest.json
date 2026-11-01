@@ -219,7 +219,7 @@
       "what": "Backdrop set for Ghost Advice Hotline: Nobiko-san's late-night call-in booth, a starry window, a microphone and teacup at the left, a rotary phone and a hanging red call light at the right",
       "generator": "polish",
       "model": "pixflux",
-      "prompt": "PixelLab pixflux, 320×224, seed 21: \"pixel art background, a small Japanese late-night radio booth for a ghost advice phone-in show after midnight, front view, a big dark window with a starry night sky across the back, a wooden desk along the bottom, a vintage silver microphone and a steaming teacup at the left, a big old black rotary telephone with a curly cord on the desk in front of a switchboard panel of small round lamps at the right edge, a round red on-air lamp hanging at the top right, a warm paper lantern hanging at the top left, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing, no paper notes\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Picked from 12 drafts (seeds 3, 7, 13 of two earlier prompts and 2, 5, 9, 13, 17, 21 of this one); the raw draft is tools/art/sources/hotline/booth-draft.png. tools/art/sources/hotline/booth-set.py keeps rows 12–191 (pixflux letterboxes a 320×180 request; this keeps the call light below the caller’s card in the host row) and paints the small framed picture at the left edge plain, since its marks read as fake writing. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "prompt": "PixelLab pixflux, 320×224, seed 21: \"pixel art background, a small Japanese late-night radio booth for a ghost advice phone-in show after midnight, front view, a big dark window with a starry night sky across the back, a wooden desk along the bottom, a vintage silver microphone and a steaming teacup at the left, a big old black rotary telephone with a curly cord on the desk in front of a switchboard panel of small round lamps at the right edge, a round red on-air lamp hanging at the top right, a warm paper lantern hanging at the top left, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing, no paper notes\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Picked from 12 drafts (seeds 3, 7, 13 of two earlier prompts and 2, 5, 9, 13, 17, 21 of this one); the raw draft is tools/art/sources/hotline/booth-draft.png. tools/art/sources/hotline/booth-set.py keeps rows 12–191 (pixflux letterboxes a 320×180 request; this keeps the call light below the caller’s card in the host row), less 14 rows of empty window above the desk (draft rows 98–111), so the desk props sit above the scoreboard, and paints the small framed picture at the left edge plain, since its marks read as fake writing. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
       "params": {
         "width": 320,
         "height": 224,
@@ -239,6 +239,90 @@
       "model": "hand-drawn",
       "prompt": "Made by tools/art/sources/hotline/booth-set.py from hotline-booth.png: the bulb's four glass colours remapped to unlit reds, everything else transparent. No generator.",
       "params": {},
+      "post": {}
+    },
+    {
+      "path": "stage/assets/scenes/hotline-bulb-on.png",
+      "what": "Ghost Hotline's red call light, lit: the bulb's glass from hotline-booth.png, drawn above the scrim with a glow while a caller is on the line",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "Cut from hotline-booth.png by tools/art/sources/hotline/booth-set.py (the four glass colours inside the bulb box at 272,54, 34×30).",
+      "params": {},
+      "post": {}
+    },
+    {
+      "path": "stage/assets/scenes/hotline-wisp.png",
+      "what": "Hitodama (人魂): a round blue-white flame with its tail rising, floating outside Ghost Hotline's booth window and in Yōkai Court's side lanes",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 32×32, seed 13, no background: \"pixel art sprite, a Japanese hitodama ghost fire, a round glowing pale blue-white ball of flame at the bottom with one long thin tapering tail rising upward and curling at the tip like a tadpole, cyan outline, no face, no text\" (outline single color black outline, shading basic, detail medium, view side, text_guidance_scale 8). Picked from seeds 3, 7, 13, 21 and 29 (an earlier prompt's pick read as a smudge); the raw draft is tools/art/sources/hotline/wisp-draft.png, trimmed to 12×26 by tools/art/sources/hotline/booth-set.py.",
+      "params": {
+        "width": 32,
+        "height": 32,
+        "seed": 13,
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/hl-phone.png",
+      "what": "Icon: black rotary telephone (Ghost Hotline's caller card)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 32×32, seed 3, no background: \"Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an old black Japanese rotary telephone with a cream dial\" (outline single color black outline, shading basic, detail medium, view side, text_guidance_scale 8). Picked from seeds 3, 7, 13 and 21; the raw draft is tools/art/sources/hotline/phone-draft.png, trimmed to 26×23 by tools/art/sources/hotline/booth-set.py. Shown at 3× on the caller card and 1× in a seat chip.",
+      "params": {
+        "width": 32,
+        "height": 32,
+        "seed": 3,
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/icons/hl-mic.png",
+      "what": "Icon: small silver studio microphone (Ghost Hotline's \"said it\" pill)",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 32×32, seed 7, no background: \"Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a retro silver studio microphone on a small stand\" (outline single color black outline, shading basic, detail medium, view side, text_guidance_scale 8). Picked from seeds 3, 7 and 13; the raw draft is tools/art/sources/hotline/mic-draft.png, trimmed to 12×31 by tools/art/sources/hotline/booth-set.py and shown at 1×.",
+      "params": {
+        "width": 32,
+        "height": 32,
+        "seed": 7,
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/scenes/yokai-court.png",
+      "what": "Backdrop set for Yōkai Court: an old wooden courtroom at night, the judges' bench with nine empty chairs (the middle one taller) at the back, two counsel desks facing each other at the sides, amber wall lanterns",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 3: \"pixel art background, inside an old Japanese wooden courtroom for a ghost trial at night, front view, dark wood panelled back wall, a long raised wooden judges' bench across the back with a row of tall empty high-backed chairs, a low wooden railing in front of it, a lawyer's desk at the left edge and another lawyer's desk at the right edge facing each other, small blue ghost fires floating near the ceiling, a paper lantern hanging at each side, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing, no flags\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Picked from 8 drafts (seeds 3, 7, 13, 21 of this prompt and of a shrine-hall prompt); the raw draft is tools/art/sources/court/courtroom-draft.png. tools/art/sources/court/courtroom-set.py keeps rows 26–205, paints out the two ghost fires at the top (hitodama float in the side lanes in code instead), rebuilds the bench with nine chairs (the middle one 5 px taller, from the draft's own chair) for a lay-judge trial's three judges and six lay judges, and warms the lanterns' glass to amber. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "seed": 3,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8
+      },
       "post": {}
     },
     {

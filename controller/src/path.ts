@@ -302,7 +302,7 @@ export function tonightFrames(phrasebook: readonly PhraseEntry[], mode: ModeId):
   for (const e of phrasebook) {
     if (e.outcome !== 'said' || recallOf(e, mode) !== 'memory') continue;
     // Only frames that count (`creditable`): no listening-only ＿じゃん chip, and no N3 chips before N3 is on the path.
-    for (const id of framesOf(e).filter(creditable)) by.set(id, (by.get(id) ?? new Set()).add(e.text));
+    for (const id of framesOf(e, undefined, { only: creditable })) by.set(id, (by.get(id) ?? new Set()).add(e.text));
   }
   return [...by].map(([id, set]) => ({ id, phrases: set.size }));
 }
