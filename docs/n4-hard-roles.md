@@ -14,6 +14,14 @@ Rules every role follows:
   time"), rotating among the room's N4 players. Each offer and its answer (accepted, declined,
   timed out) is kept in the mode's state for the step's gate (N4 players accept at least 60% of
   offers). The decks (Tourist, Nice to Meet You!, Happyōkai) aren't seats, so they have no offer.
+- **One offer log.** Every game logs each offer as `accepted`, `declined`, `timeout` or `away`
+  (`shared/src/modes/hardRoleLog.ts`). Gate = accepted ÷ (accepted + declined + timeout), per game;
+  away is left out.
+- **What others do see in a mixed room.** Bento stations get 📋 requests to tap; Last Train swaps
+  神社前 and 大学前 for Lost and Found; Narabete gains a 15 s encore when the N4 defence is taken;
+  Omiai and Onsen phases wait a little for a role that was taken; Dub Club ad-libs are captioned in
+  English only. Their points, turns and tiles don't change. Playtests should check that none of these
+  feels like waiting.
 - **Draft.** Every new line is `status: 'draft'` until a fluent speaker checks it.
 - **Frames by name.** New lines carry `frames: [...]` with the frame ids below as plain strings.
   They aren't `FrameId`s yet: the N4 matchers are a separate step. Ids that the learning path
