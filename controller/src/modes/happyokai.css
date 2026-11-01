@@ -9,6 +9,7 @@
 .hk-title-btn .jpv-en, .hk-q-btn .jpv-en, .hk-q-btn small { font-size: 13px; font-weight: 400; opacity: 0.85; }
 .hk-title-btn.on .jpv-en, .hk-q-btn.on .jpv-en, .hk-q-btn.on small { color: var(--paper-muted); opacity: 1; }
 .hk-title-btn .jpv-romaji, .hk-q-btn .jpv-romaji { font-size: 13px; font-style: italic; color: #b98a1c; }
+.hk-deck { justify-self: start; padding: 1px 8px; border-radius: 999px; background: var(--mode); color: var(--paper); font-size: 12px; font-weight: 800; }
 
 .hk-rehearse { display: grid; gap: 6px; padding: 12px; border-radius: 14px; border: 2px dashed var(--mode); }
 .hk-script { display: grid; gap: 2px; margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); font-size: 20px; font-weight: 800; line-height: 1.4; }

@@ -28,12 +28,15 @@ export const HOST_EVENTS = [
   'play_again',
   // Omiai Matchmaker
   'omiai_tease',
+  'omiai_nakodo_read',
   // Narabete!
   'narabete_intro',
   'narabete_deal',
   'narabete_say',
   'narabete_order',
   'narabete_defence',
+  'narabete_hard',
+  'narabete_replay',
   'narabete_perfect',
   'narabete_knot',
   'narabete_story',
@@ -105,12 +108,14 @@ export const HOST_EVENTS = [
   'train_last_stop_twist',
   'platform_dash',
   'room_overrule',
+  'train_role_read',
   // Murder at the Onsen
   'onsen_case',
   'onsen_turn',
   'onsen_clue',
   'onsen_accuse',
   'onsen_reveal',
+  'onsen_report',
   // Who's the Tourist?
   'tourist_intro',
   'tourist_deal',

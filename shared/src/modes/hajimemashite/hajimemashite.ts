@@ -337,8 +337,13 @@ function cutFront(text: string, n: number): string {
 /** Picks the turn's card: one the room hasn't had, that suits the guest's level and the room. */
 function pickCard(s: HajimeState, audience: Audience, level: Level, random: () => number): IntroCard {
   const pool = cardsFor(audience, level);
-  // Cheeky rooms play the cheeky cards first, then the rest.
-  const ordered = audience === 'cheeky' ? [pool.filter((c) => c.audiences.length === 1), pool.filter((c) => c.audiences.length > 1)] : [pool];
+  // N4 guests play the N4 deck first (in every room): the room's own N4 cards (Kids, Cheeky), then the
+  // shared ones. Cheeky rooms play the cheeky cards next, then the rest.
+  const own = (c: IntroCard) => c.audiences.length === 1;
+  const n4deck = pool.filter((c) => c.level === 'n4');
+  const n4 = level === 'n4' ? [n4deck.filter(own), n4deck.filter((c) => !own(c))] : [];
+  const rest = pool.filter((c) => !(level === 'n4' && c.level === 'n4'));
+  const ordered = [...n4, ...(audience === 'cheeky' ? [rest.filter(own), rest.filter((c) => !own(c))] : [rest])];
   for (const group of ordered) {
     const fresh = group.filter((c) => !s.usedCards.includes(c.id));
     if (fresh.length) return fresh[Math.floor(random() * fresh.length)]!;
@@ -536,7 +541,8 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
   const name = nameFor(s, ctx.player(t.guestId));
   if (truth && ctx.player(t.guestId)) {
     const line = fillFrame(card.first, truth.word);
-    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen', recall: 'read' });
+    // The guest's own true word, spoken: counts as memory. The printed greeting and こちらこそ stay read.
+    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen', recall: 'memory' });
   }
   for (const p of ctx.players()) {
     const greet = `はじめまして。${nameFor(s, p)}です。よろしく おねがいします。`;

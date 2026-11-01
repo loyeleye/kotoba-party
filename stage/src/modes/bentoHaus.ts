@@ -9,12 +9,17 @@
 //           📻 ザザッ…, never a name.
 //   score   closing time: each customer's order next to what they got, then the stars.
 //
+// N4 hard roles (Co-op): the deputy manager's (📋 ふくてんちょう) desk under the counter shows a complaint
+// or special order and their lines that came out right (never a miss); an おもてなし guest wears a 🌸, shows their question
+// once seated, and leaves with their stars.
+//
 // Timers run as CSS animations from the server's own times (negative delays). The delays are named
 // `--*-delay` so patch() keeps them on a redraw, and a patience bar never jumps ahead. The shop's
 // noises come from comparing each view with the last (listen()).
 
 import { h, seatShape } from '../../../shared/src/dom.js';
 import { LAST_ORDER_MS, LINGER_MS, starsFor, type FeedItem, type VisitView } from '../../../shared/src/modes/bentoHaus/bentoHaus.js';
+import type { DeskView } from '../../../shared/src/modes/bentoHaus/hardRoles.js';
 import { countWord, foodOf } from '../../../shared/src/modes/bentoHaus/menu.js';
 import type { BentoView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -150,7 +155,9 @@ function customer(view: RoomView, game: BentoView, v: VisitView, now: number): H
   const done = v.state !== 'waiting';
   const total = v.leaveAt - v.arriveAt;
   const gone = Math.min(total, Math.max(0, now - v.arriveAt));
-  const line = done ? v.reaction : v.hello;
+  const guest = game.hard?.guests[v.id];
+  // An おもてなし guest asks their question once they've been seated.
+  const line = done ? v.reaction : (guest?.ask ?? v.hello);
   // Waiting customers fidget for the last quarter of their patience; leaving ones slide out at the end.
   const timing = done
     ? `--exit-delay: ${Math.round((v.endedAt ?? now) + LINGER_MS - 450 - now)}ms;`
@@ -159,8 +166,10 @@ function customer(view: RoomView, game: BentoView, v: VisitView, now: number): H
     'div',
     { class: `bh-customer ${v.state}${v.rush ? ' rush' : ''}`, 'data-key': v.id, style: timing },
     v.rush ? h('span', { class: 'bh-rush', lang: 'ja' }, 'いそいで！ ×2') : null,
+    guest ? h('span', { class: 'bh-guest', lang: 'ja' }, '🌸 おもてなし', guest.stars !== null ? stars(guest.stars) : null) : null,
     h('div', { class: 'bh-who' }, customerPic(v.customerId, v.state, v.emoji, 'bh-yokai'), h('p', { class: 'bh-cname', lang: 'ja' }, h('span', {}, v.name), h('small', {}, v.nameEn))),
     line ? h('p', { class: 'bh-bubble', lang: 'ja' }, line.text, h('small', {}, line.en)) : null,
+    !done && guest?.said.length ? h('p', { class: 'bh-staff', lang: 'ja' }, `🙇 ${guest.said.at(-1)}`) : null,
     done
       ? h('p', { class: `bh-tips t${v.tips} ${v.state}` }, v.tips ? `+${v.tips} 💰` : v.state === 'left' ? '💨 Gone' : '0 tips')
       : h('div', { class: 'bh-patience', role: 'img', 'aria-label': 'patience' }, h('span', {}), h('i', {})),
@@ -208,6 +217,26 @@ function ajimiLine(foodId: string, own: boolean): string {
   return food ? `もぐもぐ… ${food.kana}、${countWord(food, 1, own)} たべちゃった！` : '';
 }
 
+/** The manager's desk: a complaint or special order, and the manager's lines that came out right. */
+function desk(view: RoomView, d: DeskView): HTMLElement {
+  const last = d.said.at(-1);
+  return h(
+    'div',
+    { class: `bh-desk ${d.state}`, 'data-key': `desk-${d.id}` },
+    customerPic(d.customerId, d.state === 'resolved' ? 'served' : 'left', d.emoji, 'bh-yokai'),
+    h('p', { class: 'bh-bubble', lang: 'ja' }, d.line.text, h('small', {}, d.line.en)),
+    h(
+      'p',
+      { class: 'bh-desk-staff' },
+      h('span', { class: 'bh-desk-tag', lang: 'ja' }, d.kind === 'complaint' ? '📋 クレーム' : '📋 とくべつ ちゅうもん'),
+      seatChip(view, d.managerId),
+      last ? h('span', { class: 'bh-staff', lang: 'ja' }, last.text) : null,
+      d.stationId && d.state === 'asked' ? [' → ', seatChip(view, d.stationId)] : null,
+      d.state === 'resolved' ? h('b', { lang: 'ja' }, ' ✓') : null,
+    ),
+  );
+}
+
 function kitchen(view: RoomView, game: BentoView): HTMLElement {
   const now = serverNow(game);
   return h(
@@ -217,6 +246,7 @@ function kitchen(view: RoomView, game: BentoView): HTMLElement {
       'div',
       { class: 'bh-head' },
       h('p', { class: 'bh-tag' }, `Shift ${game.round} of ${game.totalRounds} · `, h('span', { lang: 'ja' }, game.info?.ja ?? ''), ` ${game.info?.en ?? ''}`),
+      game.hard?.manager ? h('p', { class: 'bh-manager', lang: 'ja' }, '📋 ふくてんちょう ', seatChip(view, game.hard.manager)) : null,
       h('p', { class: 'bh-till' }, `💰 ${game.tips}`, h('small', {}, ' tips'), stars(starsFor(game.tips, game.maxTips))),
     ),
     h(
@@ -235,6 +265,7 @@ function kitchen(view: RoomView, game: BentoView): HTMLElement {
       ),
     ),
     counter(view, game, now),
+    game.hard?.desk.length ? h('div', { class: 'bh-desks' }, game.hard.desk.slice(-1).map((d) => desk(view, d))) : null,
     game.ajimi
       ? h(
           'p',
@@ -255,6 +286,7 @@ function closing(game: BentoView): HTMLElement {
     { class: 'bh-stage bh-score', style: `--stars-delay: ${starsAt(rows)}ms` },
     h('p', { class: 'bh-tag' }, `Closing time · shift ${game.round} of ${game.totalRounds}`),
     h('div', { class: 'bh-result' }, stars(n, 3, true), h('p', { class: 'bh-result-big' }, `${game.tips} of ${game.maxTips} tips · +${game.teamPoints} each`)),
+    hardLine(game),
     h(
       'ul',
       { class: 'bh-orders' },
@@ -268,6 +300,18 @@ function closing(game: BentoView): HTMLElement {
         ),
       ),
     ),
+  );
+}
+
+/** Closing: how the manager and the おもてなし guests did, when anyone took those roles. */
+function hardLine(game: BentoView): HTMLElement | null {
+  const hd = game.hard;
+  if (!hd || (!hd.handled.of && !hd.stars.of)) return null;
+  return h(
+    'p',
+    { class: 'bh-hard-result', lang: 'ja' },
+    hd.handled.of ? h('span', {}, `📋 ${hd.handled.done} / ${hd.handled.of}`, h('small', {}, ' sorted out')) : null,
+    hd.stars.of ? h('span', {}, `🌸 おもてなし ★ ${hd.stars.got} / ${hd.stars.of}`) : null,
   );
 }
 

@@ -89,3 +89,23 @@
 @keyframes nb-gone { to { opacity: 0; height: 0; visibility: hidden; } }
 .nb-vote-opt { display: grid; gap: 2px; text-align: left; }
 .nb-vote-opt small { color: var(--muted); font-size: 13px; }
+
+/* The N4 rank-and-defend: the offer during the line-up, and the model lines on its turn. */
+.nb-hard { display: grid; gap: 6px; padding: 10px 12px; border-radius: 12px; border: 2px dashed var(--mode, #ffd34d); }
+.nb-hard p { margin: 0; }
+.nb-hard-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.nb-hard-btns > button { width: 100%; }
+.nb-hard-label { margin: 0; font-size: 14px; font-weight: 800; color: var(--muted); }
+.nb-hard-lines { display: grid; gap: 8px; }
+.nb-hard-line { display: grid; gap: 2px; padding: 8px 12px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); }
+.nb-hard-line p { margin: 0; }
+.nb-hard-line .jpv-main { font-weight: 800; }
+.nb-hard-line .jpv-en, .nb-hard-line .jpv-kana { color: var(--paper-muted, #6b4a6f); font-size: 13px; }
+
+/* The N4 defence's instant replay, on Kana and N5 phones: the gist at their level. */
+.nb-gist { text-align: center; }
+.nb-gist-pic { width: 96px; height: 96px; margin: 0 auto; image-rendering: pixelated; object-fit: contain; }
+.nb-gist-emoji { margin: 0; font-size: 56px; }
+.nb-gist-ja { margin: 0; font-size: 22px; font-weight: 800; }
+.nb-gist-romaji { margin: 0; color: var(--muted); font-size: 14px; }
+.nb-gist-en { margin: 0; font-size: 16px; }

@@ -55,8 +55,10 @@ import {
   SHIFT_MS,
   shiftDone,
   shopAwards,
+  stampClock,
   TIPS,
   TOTAL_ROUNDS,
+  viewContext,
   visitsView,
   waiting,
   type BentoView,
@@ -94,6 +96,8 @@ export interface VsState {
   lastCueAt: number;
   /** The last shift's winner (a team id), or null for a tie. */
   winner: number | null;
+  /** The server's clock at the mode's last call (see stampClock). */
+  clock?: number;
 }
 
 /** How much each sloppy box fills the mistake meter: one thing off, two things off, worse. */
@@ -338,6 +342,7 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
   },
 
   enter(s, phase, ctx) {
+    stampClock(s, ctx.now);
     if (phase === 'intro') {
       ctx.cue({ host: 'pon', event: 'bento_vs_intro', waitMs: 4_000 });
       return;
@@ -391,6 +396,7 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
   },
 
   leave(s, phase, ctx) {
+    stampClock(s, ctx.now);
     const lead = clock(s);
     if (!lead || phase !== 'answer') return;
     runClock(s, ctx.now, ctx);
@@ -434,10 +440,12 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
   },
 
   wake(s, phase, ctx) {
+    stampClock(s, ctx.now);
     if (phase === 'answer') runClock(s, ctx.now, ctx);
   },
 
   move(s, phase, playerId, raw, ctx) {
+    stampClock(s, ctx.now);
     const lead = clock(s);
     if (!lead || phase !== 'answer' || !lead.started) return moveError('wrong-phase');
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return moveError('bad-move');
@@ -490,6 +498,7 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
   },
 
   release(s, playerId, ctx) {
+    stampClock(s, ctx.now);
     const team = teamOf(s, playerId);
     if (!team) return;
     team.members = team.members.filter((id) => id !== playerId);
@@ -507,7 +516,8 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
     return { round: Math.max(1, s.round), totalRounds: s.totalRounds };
   },
 
-  view(s, phase, viewer, ctx) {
+  view(s, phase, viewer, rawCtx) {
+    const ctx = viewContext(s, rawCtx);
     const scoring = phase === 'score';
     const info = s.round ? ROUND_INFO[s.round - 1]! : null;
     const own = ownCounter(s.round);

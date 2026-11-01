@@ -25,7 +25,7 @@ import type {
   TopicPack,
 } from '../../../content/src/types.js';
 import type { WriteKanji, WriteWord } from '../../../content/src/kanji/kanji.js';
-import type { PracticeItem } from '../progress.js';
+import type { PracticeItem, RoleOffer } from '../progress.js';
 import type { Audience, ModeId, Phase, Viewer } from '../protocol.js';
 
 /** All the content a mode may draw on. Plain arrays, so tests can pass small fixtures. */
@@ -259,6 +259,8 @@ export interface Mode<S = unknown, V extends { mode: ModeId } = { mode: ModeId }
   isCoop?(s: S): boolean;
   /** What a player practised, for their saved yōkai cards when they're signed in (Kana Raid). */
   practice?(s: S, playerId: string): PracticeItem[];
+  /** The N4 hard-role offers this player had and their answers (docs/n4-hard-roles.md), saved for the 60% gate. */
+  offers?(s: S, playerId: string): RoleOffer[];
 }
 
 /** One team's result for the recap (Bento Haus VS). */

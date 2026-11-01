@@ -68,7 +68,7 @@ const CONTENT: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: MINIGAME
 class Table {
   state: GameState = createGame('LAST');
   now = 1_000_000;
-  cues: { event: string; slots?: Record<string, string> }[] = [];
+  cues: { host?: string; event: string; slots?: Record<string, string>; atMs?: number }[] = [];
   private ids = 0;
   private cmdId = 0;
   constructor(
@@ -245,9 +245,10 @@ describe('Read the Signs', () => {
 describe('Read the Signs readings', () => {
   it('the server reads every sign the way the game accepts it', async () => {
     const reader = (await createReader())!;
-    const signs = realContent.lastTrainMinigames.find((m) => m.id === 'read-the-signs')!;
+    // Read the Signs, and the inn's signs for the N4 front-desk guest (受付, 予約).
+    const signItems = realContent.lastTrainMinigames.filter((m) => m.id === 'read-the-signs' || m.id === 'meet-the-innkeeper').flatMap((m) => m.items);
     // 北口 is きたぐち, not きたくち; 出口 alone is でぐち, not the dictionary's いでぐち.
-    for (const it of signs.items.filter((i) => i.signs?.length === 1)) {
+    for (const it of signItems.filter((i) => i.signs?.length === 1)) {
       expect(checkUtterance({ via: 'speech', text: it.signs![0]!.text, reading: reader(it.signs![0]!.text) }, it.accepted), it.id).toBe(true);
     }
     expect(reader('出口は左です')).toBe('でぐちはひだりです');
@@ -533,6 +534,245 @@ describe('Last Train rules', () => {
   });
 });
 
+describe('Last Train hard roles (N4)', () => {
+  const ROLE = { id: 'announcer', name: t('アナウンスがかり', 'アナウンスがかり', 'The announcer'), pitch: 'pitch' };
+  const roleItem = (id: string, accepted: string[]): MinigameItem => ({ ...item(id, accepted, 'n4', 12), role: ROLE, frames: ['keigo'] });
+  const ANNOUNCE = mg('station-announcement', [item('sa1', ['しぶやです']), item('sa2', ['うえのです']), roleItem('ann1', ['まもなくまいります']), roleItem('ann2', ['おさがりください'])], { promptType: 'listen-and-answer' });
+  const LINE: LastTrainScenario = { ...SCENARIO, id: 'role-line', stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: 'station-announcement' })) };
+  const ROLE_CONTENT: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [ANNOUNCE, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [LINE] };
+  const FRAMES = new Set(['te-itadakemasen', 'kamo', 'sou-look', 'o-kudasai', 'keigo', 'sign-kanji']);
+
+  const table = (lib: ContentLibrary, levels: MinigameItem['level'][]) => {
+    const g = new Table(lib, levels.length);
+    levels.forEach((level, i) => g.act({ type: 'command', actor: { kind: 'player', playerId: `p${i + 1}` }, command: { id: `lv${i}`, type: 'setLevel', level } }));
+    return g;
+  };
+  const role = (g: Table, id: string, accept: boolean) => g.play(id, { kind: 'role', key: g.view(id).me!.offer!.key, accept });
+
+  it('writes every role line at N4, tagged with its frames, in all three minigames', () => {
+    const real = realContent.lastTrainMinigames;
+    const roles = real.flatMap((m) => m.items.filter((i) => i.role).map((i) => ({ m: m.id, i })));
+    expect(new Set(roles.map((r) => r.m))).toEqual(new Set(['station-announcement', 'lost-and-found', 'meet-the-innkeeper']));
+    for (const { i } of roles) {
+      expect(i.level, i.id).toBe('n4');
+      expect(i.frames?.length, i.id).toBeGreaterThan(0);
+      for (const f of i.frames!) expect(FRAMES.has(f), `${i.id}: ${f}`).toBe(true);
+      expect(checkUtterance({ via: 'typed', text: i.model.kana.replace(/。$/, '') }, i.accepted), i.id).toBe(true);
+      // Sign hints are pictures, never the reading.
+      if (i.signs) expect(i.hint, i.id).not.toContain(i.accepted[0]!);
+    }
+    // Lost and Found has ordinary items for everyone else, and comes only as an N4 swap.
+    const lost = real.find((m) => m.id === 'lost-and-found')!;
+    expect(['kana', 'n5'].every((l) => lost.items.some((i) => i.level === l && !i.role))).toBe(true);
+    expect(lost.n4Stop).toBe(true);
+    const swaps = lastTrainScenarios.flatMap((sc) => sc.stops.filter((st) => st.withN4).map((st) => ({ sc, st })));
+    expect(swaps.map(({ st }) => st.withN4!.minigameId)).toEqual(['lost-and-found', 'lost-and-found']);
+    for (const { sc } of swaps) expect(sc.audience, sc.id).toBeUndefined();
+    expect(lastTrainScenarios.flatMap((sc) => sc.stops).some((st) => st.minigameId === 'lost-and-found')).toBe(false);
+  });
+
+  it('changes nothing in a room with no N4 player: same stops, no offers, no role items', () => {
+    const lib = { lastTrainMinigames: realContent.lastTrainMinigames, lastTrainScenarios };
+    const all = Object.fromEntries(lib.lastTrainMinigames.map((m) => [m.id, m]));
+    const before = Object.fromEntries(lib.lastTrainMinigames.filter((m) => m.id !== 'lost-and-found').map((m) => [m.id, m]));
+    const penalties = lib.lastTrainMinigames.filter((m) => m.penalty).map((m) => m.id);
+    const seeded = () => {
+      let x = 7;
+      return () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+    };
+    for (const sc of lastTrainScenarios) {
+      const plain = { ...sc, stops: sc.stops.map(({ withN4: _, ...st }) => st) };
+      for (const want of [4, 6]) expect(buildStops(sc, want, all, penalties, seeded()), sc.id).toEqual(buildStops(plain, want, before, penalties, seeded()));
+    }
+    const g = table(ROLE_CONTENT, ['n5', 'kana']);
+    g.start();
+    g.until('answer');
+    expect(Object.values(g.s.turns).every((tn) => !tn.task.item.role && tn.status === 'answering')).toBe(true);
+    expect(g.view('p1').me!.offer).toBeNull();
+    expect(g.s.roleLog).toEqual([]);
+  });
+
+  it('swaps in the lost property stop when the room has an N4 player', () => {
+    const lib = { lastTrainMinigames: realContent.lastTrainMinigames, lastTrainScenarios };
+    const minigames = Object.fromEntries(lib.lastTrainMinigames.map((m) => [m.id, m]));
+    const obake = lastTrainScenarios.find((sc) => sc.id === 'obake-line')!;
+    expect(buildStops(obake, 6, minigames, [], () => 0.5, true).map((st) => st.id)).toContain('obake-line.wasureno');
+    expect(buildStops(obake, 6, minigames, [], () => 0.5, false).map((st) => st.id)).not.toContain('obake-line.wasureno');
+    const hoshi = lastTrainScenarios.find((sc) => sc.id === 'hoshimidai-line')!;
+    expect(buildStops(hoshi, 4, minigames, [], () => 0.5, true).map((st) => st.id)).toContain('hoshimidai-line.otonashi');
+  });
+
+  it('offers the hard role to one N4 player, privately; taking it shows the line to say, not play', () => {
+    const g = table(ROLE_CONTENT, ['n4', 'n4', 'n5']);
+    g.start();
+    g.until('answer');
+    const offered = ['p1', 'p2'].filter((id) => g.view(id).me!.offer);
+    expect(offered).toEqual(['p1']);
+    // The other N4 player gets the ordinary part, exactly as before hard roles.
+    expect(g.s.turns.p2!.task.item.role).toBeUndefined();
+    expect(g.view('p2').me!.task!.listen).toBe(true);
+    // Nobody else sees the offer, and the TV just sees someone answering.
+    expect(g.view('stage').travellers.find((x) => x.playerId === 'p1')!.status).toBe('answering');
+    expect(JSON.stringify(g.view('stage'))).not.toContain('アナウンスがかり');
+    expect(JSON.stringify(g.view('p3'))).not.toContain('アナウンスがかり');
+    expect(g.view('p1').me!.task).toBeNull();
+    // The phone counts down to the server's deadline, not from when it first drew the card.
+    expect(g.view('p1').me!.offer!.deadline).toBe(g.now + RULES.offerMs);
+    g.now += 3_000;
+    expect(g.view('p1').me!.offer!.deadline - g.now).toBe(RULES.offerMs - 3_000);
+    expect(role(g, 'p1', true).changed).toBe(true);
+    const task = g.view('p1').me!.task!;
+    expect(task.role?.en).toBe('The announcer');
+    expect(task.listen).toBe(false);
+    expect(task.limitMs).toBe(12_000);
+    // The clock starts when the role is taken.
+    expect(g.s.turns.p1!.task.deadline).toBe(g.now + 12_000);
+    expect(g.s.roleLog).toEqual([expect.objectContaining({ playerId: 'p1', roleId: 'announcer', answer: 'accepted' })]);
+    g.sayRight('p1');
+    g.sayRight('p2');
+    g.sayRight('p3');
+    expect(g.state.phase).toBe('reveal');
+    const rows = g.view('stage').results!;
+    expect(rows.find((r) => r.playerId === 'p1')!.role?.en).toBe('The announcer');
+    expect(rows.find((r) => r.playerId === 'p2')!.role).toBeNull();
+    // A taken hard role pays RULES.roleBonus on top of the base (and the speech bonus scales with it).
+    expect(RULES.roleBonus).toBe(20);
+    expect(g.score('p1') - g.score('p2')).toBeGreaterThanOrEqual(RULES.roleBonus);
+  });
+
+  it('logs a bot\'s offer answer as a bot\'s, so it stays out of the gate', () => {
+    const g = table(ROLE_CONTENT, ['n4']);
+    g.start();
+    g.until('answer');
+    expect(g.play('p1', { kind: 'role', key: g.s.turns.p1!.task.key, accept: true, bot: true }).changed).toBe(true);
+    expect(g.s.roleLog).toEqual([expect.objectContaining({ playerId: 'p1', answer: 'accepted', bot: true })]);
+    const h = table(ROLE_CONTENT, ['n4']);
+    h.start();
+    h.until('answer');
+    role(h, 'p1', true);
+    expect(h.s.roleLog[0]!.bot).toBeUndefined();
+  });
+
+  it('"not this time" deals the ordinary item; no answer does too; offers rotate among N4 players', () => {
+    const g = table(ROLE_CONTENT, ['n4', 'n4']);
+    g.start(4);
+    g.until('answer');
+    expect(role(g, 'p1', false).changed).toBe(true);
+    expect(g.view('p1').me!.offer).toBeNull();
+    expect(g.s.turns.p1!.task.item.role).toBeUndefined();
+    expect(g.s.turns.p1!.task.item.level).toBe('n5');
+    expect(g.play('p1', { kind: 'role', key: g.s.turns.p1!.task.key, accept: true }).error).toBe('wrong-phase');
+    g.until('prompt');
+    g.until('answer');
+    // Stop 2: p2's turn. No answer within the offer window deals the ordinary item.
+    expect(g.view('p1').me!.offer).toBeNull();
+    expect(g.view('p2').me!.offer).not.toBeNull();
+    g.now += RULES.offerMs - 500;
+    expect(g.play('p2', { kind: 'tick' }).changed).toBe(true);
+    expect(g.s.turns.p2!.status).toBe('answering');
+    expect(g.s.turns.p2!.task.item.role).toBeUndefined();
+    g.until('prompt');
+    g.until('answer');
+    expect(g.view('p1').me!.offer).not.toBeNull();
+    expect(g.s.roleLog.map((r) => [r.playerId, r.answer])).toEqual([
+      ['p1', 'declined'],
+      ['p2', 'timeout'],
+      ['p1', 'away'],
+    ]);
+  });
+
+  it('a missed hard role never sends anyone to the penalty car', () => {
+    const g = table(ROLE_CONTENT, ['n4']);
+    g.start();
+    g.until('answer');
+    role(g, 'p1', true);
+    g.say('p1', 'だめ');
+    g.say('p1', 'だめ');
+    expect(g.state.phase).toBe('reveal');
+    g.timeout();
+    expect(g.state.phase).toBe('prompt');
+    expect(g.s.travellers.p1!.ghost).toBe(false);
+  });
+
+  describe('Chōchin-san says a taken role’s line at the reveal (decided by Ladi: the host says the line)', () => {
+    const reads = (g: Table) => g.cues.filter((c) => c.event === 'train_role_read');
+
+    it('once, after his reaction, with the model line and its subtitle, only when the role was answered right', () => {
+      const g = table(ROLE_CONTENT, ['n4', 'n5']);
+      g.start();
+      g.until('answer');
+      role(g, 'p1', true);
+      const model = g.s.turns.p1!.task.item.model;
+      g.sayRight('p1');
+      g.sayRight('p2');
+      expect(g.state.phase).toBe('reveal');
+      expect(reads(g)).toEqual([{ host: 'chochin', event: 'train_role_read', slots: { line: model.text, line_kana: model.kana, line_en: model.en }, atMs: RULES.roleReadAtMs }]);
+      // The reaction still opens the reveal; the line follows it, and the reveal row and model answer stay.
+      const at = g.cues.findIndex((c) => c.event === 'train_role_read');
+      expect(g.cues.slice(0, at).some((c) => c.event === 'reveal_react' && c.atMs === undefined)).toBe(true);
+      expect(g.view('stage').results!.find((r) => r.playerId === 'p1')).toMatchObject({ model, role: { en: 'The announcer' } });
+      g.timeout();
+      expect(reads(g)).toHaveLength(1);
+    });
+
+    it('on the retry too; never for a missed role, a declined one, or an ordinary item', () => {
+      const retry = table(ROLE_CONTENT, ['n4']);
+      retry.start();
+      retry.until('answer');
+      role(retry, 'p1', true);
+      retry.say('p1', 'だめ');
+      retry.sayRight('p1');
+      expect(retry.state.phase).toBe('reveal');
+      expect(reads(retry)).toHaveLength(1);
+
+      const missed = table(ROLE_CONTENT, ['n4']);
+      missed.start();
+      missed.until('answer');
+      role(missed, 'p1', true);
+      missed.say('p1', 'だめ');
+      missed.say('p1', 'だめ');
+      expect(missed.state.phase).toBe('reveal');
+      expect(reads(missed)).toHaveLength(0);
+
+      const declined = table(ROLE_CONTENT, ['n4', 'n5']);
+      declined.start();
+      declined.until('answer');
+      role(declined, 'p1', false);
+      declined.sayRight('p1');
+      declined.sayRight('p2');
+      expect(declined.state.phase).toBe('reveal');
+      expect(reads(declined)).toHaveLength(0);
+    });
+
+    it('for every role: the announcer, Lost and Found’s passenger and staff, and the guest at the inn', () => {
+      for (const mgId of ['station-announcement', 'lost-and-found', 'meet-the-innkeeper']) {
+        const real = realContent.lastTrainMinigames.find((m) => m.id === mgId)!;
+        const line: LastTrainScenario = { ...SCENARIO, id: `${mgId}-line`, stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: mgId })) };
+        const lib: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [real, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [line] };
+        const g = table(lib, ['n4']);
+        g.start();
+        g.until('answer');
+        role(g, 'p1', true);
+        const item = g.s.turns.p1!.task.item;
+        expect(item.role, mgId).toBeDefined();
+        g.sayRight('p1');
+        expect(g.state.phase, mgId).toBe('reveal');
+        expect(reads(g).map((c) => c.slots), mgId).toEqual([{ line: item.model.text, line_kana: item.model.kana, line_en: item.model.en }]);
+        // Every role's model reading is kana only, so the host's TTS can say it.
+        for (const i of real.items.filter((x) => x.role)) expect(i.model.kana, i.id).not.toMatch(/[\u3400-\u9fff]/);
+      }
+    });
+  });
+
+  it('rejects malformed role moves', () => {
+    const g = table(ROLE_CONTENT, ['n4']);
+    g.start();
+    g.until('answer');
+    expect(g.play('p1', { kind: 'role', key: 'x' }).error).toBe('bad-move');
+    expect(g.play('p1', { kind: 'role', key: 'nope', accept: true }).error).toBe('wrong-phase');
+  });
+});
+
 // ---- full system: bots over the network ----
 
 describe('Last Train and the room\'s Audience', () => {
@@ -616,7 +856,8 @@ describe('Last Train with bots', () => {
           baseUrl,
           code: created.code,
           name: `bot${i}`,
-          level: i === 5 ? 'kana' : 'n5',
+          // Bot 4 is N4, so hard-role offers run over the network too.
+          level: i === 5 ? 'kana' : i === 4 ? 'n4' : 'n5',
           policy: lastTrainPolicy({ content: realContent, seed: i }),
           onState: (bot, view, v) => record(bot.playerId, view, v),
         }),
@@ -634,6 +875,8 @@ describe('Last Train with bots', () => {
     expect(bots.reduce((n, b) => n + b.moves.filter((m) => m.ok).length, 0)).toBeGreaterThan(20);
     // The room overrule path ran over the network.
     expect(bots.some((b) => b.moves.some((m) => m.ok && m.key.includes(':overrule:')))).toBe(true);
+    // Every family line has a hard-role stop, so the N4 bot was offered one and answered it.
+    expect(bots[3]!.moves.some((m) => m.ok && m.key.includes(':role:'))).toBe(true);
 
     // Scores: the recap equals the sum of the ledger the stage saw.
     const game = lastGame as LastTrainView | null;

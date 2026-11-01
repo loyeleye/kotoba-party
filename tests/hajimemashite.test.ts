@@ -164,7 +164,68 @@ describe('Nice to Meet You!: the cards', () => {
     expect(typedWord({ via: 'typed', text: 'おでん' }, suki)).toBe('おでん');
     expect(typedWord({ via: 'typed', text: '寿司', reading: 'すし' }, suki)).toBe('すし');
     expect(typedWord({ via: 'typed', text: '123' }, suki)).toBeNull();
+    expect(typedWord({ via: 'typed', text: 'でんしゃに かさを わすれて しまいました。' }, introCardOf('wasureta')!)).toBe('かさ');
+    expect(typedWord({ via: 'typed', text: 'さいきん ヨガを やって みました' }, introCardOf('yattemita')!)).toBe('ヨガ');
   });
+
+  it('has an N4 deck in た ことが ある, て しまいました and て みる, tagged and draft', () => {
+    const n4 = INTRO_CARDS.filter((c) => c.level === 'n4');
+    for (const c of n4) {
+      expect(c.status, c.id).toBe('draft');
+      expect(c.frames?.length, c.id).toBeGreaterThan(0);
+    }
+    const tagged = (f: string) => n4.filter((c) => c.frames?.includes(f));
+    expect(tagged('ta-koto').every((c) => c.first.includes('た ことが あります'))).toBe(true);
+    expect(tagged('te-shimau').every((c) => c.first.includes('て しまいました'))).toBe(true);
+    expect(tagged('te-miru').every((c) => /て みま|て みたい/.test(c.first))).toBe(true);
+    for (const f of ['ta-koto', 'te-shimau', 'te-miru']) expect(tagged(f).length, f).toBeGreaterThanOrEqual(2);
+    expect(INTRO_CARDS.filter((c) => c.level === 'n5').some((c) => c.frames)).toBe(false);
+  });
+
+  it('N4 tiles read as natural things to try', () => {
+    const card = (id: string) => INTRO_CARDS.find((c) => c.id === id)!;
+    const mitai = card('mitai').tiles.map((t) => t.kana);
+    expect(mitai).toContain('ききゅうに のる こと');
+    expect(mitai).toContain('まんがを かく こと');
+    expect(mitai).toContain('イルカと およぐ こと');
+    expect(mitai).not.toContain('ききゅう');
+    // Pon's tile on "lately I tried" is a diet, not the shapeshifting he already claims on "I can".
+    expect(card('yattemita').pon.kana).toBe('ダイエット');
+  });
+});
+
+describe('Nice to Meet You!: N4 guests draw the N4 deck', () => {
+  it('has Kids and Cheeky N4 cards (one per frame) that only their rooms get', () => {
+    for (const a of ['kids', 'cheeky'] as const) {
+      const own = INTRO_CARDS.filter((c) => c.level === 'n4' && c.audiences.length === 1 && c.audiences[0] === a);
+      expect(own.map((c) => c.frames![0]).sort(), a).toEqual(['ta-koto', 'te-miru', 'te-shimau']);
+      for (const c of own) {
+        expect(c.status, c.id).toBe('draft');
+        expect(cardsFor('family', 'n4'), c.id).not.toContain(c);
+        expect(cardsFor(a === 'kids' ? 'cheeky' : 'kids', 'n4'), c.id).not.toContain(c);
+        expect(cardsFor(a, 'n5'), c.id).not.toContain(c);
+        expect(cardsFor(a, 'n4'), c.id).toContain(c);
+      }
+    }
+  });
+
+  for (const audience of ['kids', 'family', 'cheeky'] as const) {
+    it(`in a ${audience} room, an N4 guest gets an N4 card and an N5 or Kana guest never does`, () => {
+      for (let seed = 1; seed <= 8; seed++) {
+        const n4 = new Table(4, ['n4', 'n5', 'n5', 'kana'], seed);
+        n4.start(audience);
+        expect(introCardOf(n4.t.cardId)!.level, `seed ${seed}`).toBe('n4');
+        // Kids and Cheeky rooms play their own N4 cards first.
+        if (audience !== 'family') expect(introCardOf(n4.t.cardId)!.audiences, `seed ${seed}`).toEqual([audience]);
+        for (const level of ['n5', 'kana'] as const) {
+          const other = new Table(4, [level, 'n4', 'n4', 'n4'], seed);
+          other.start(audience);
+          expect(introCardOf(other.t.cardId)!.level, `seed ${seed} ${level}`).toBe('n5');
+          if (audience === 'cheeky') expect(introCardOf(other.t.cardId)!.audiences).toEqual(['cheeky']);
+        }
+      }
+    });
+  }
 });
 
 // ---- a turn ----

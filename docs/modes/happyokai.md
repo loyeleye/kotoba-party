@@ -94,7 +94,7 @@ stamped.
 ## Content
 
 49 titles, noun phrases so they fit 「タイトルは「〜」です」: 12 for Kids and Family, 12 more for Family
-and Cheeky, and 25 Cheeky-only. 80 slides in three pools: everyday Japan played straight (おみくじ,
+and Cheeky, and 25 Cheeky-only; plus the N4 decks' 16 (below). 80 slides in three pools: everyday Japan played straight (おみくじ,
 じはんき, ラッシュアワー, えきべん…), ridiculous ones (a grandma doing a kickflip, a sock in a museum, a
 kappa at the laundrette…) and grown-up ones for Family and Cheeky rooms. Kids rooms see 12 titles and
 48 slides; Cheeky rooms see all of them.
@@ -124,6 +124,36 @@ listening mix, because the whole room has to hear one voice. The TV plays a soft
 static for a blackout, a phone trill for the message, a bwomp for the other mishaps, and a chime with
 the hanko.
 
+## The N4 decks (goals 4.12, 4.3, 4.7, 4.11)
+
+An N4 presenter's talks alternate between two kinds of pair (Ladi's call): their first talk offers a
+**deck pair**, one **Then and now** (昔と 今) title and one **If I were…** (もしも…) title; their next talk
+offers a **mix**, one deck title (from the deck they didn't pick last time) and one usual title, in random
+order; and so on (`n4Mix`). Deck titles are labelled with their deck on the phone. With 3 or 4 players
+(two talks each) every N4 presenter gets one of each; with 5 or more (one talk each) every other talk
+in the running order is a mix, so N4 presenters get a deck pair or a mix by seat. Everyone else keeps the usual titles. A usual title picked from a mix plays as a usual talk: usual
+frames, ready sentences and question cards (no deck cards). The slides, mishaps and scoring are the same; what changes is the N4 presenter's
+language:
+
+| | Then and now | If I were… |
+| --- | --- | --- |
+| Titles (8 each, 1 Cheeky-only) | おじいちゃんの 昔と 今, うちの 猫の 成長, ロボットの 進化, かっぱの 新しい 生活… | もし 私が 猫だったら, もし 私が 総理大臣だったら, もし 私が 幽霊だったら… |
+| Slide frames | まえは 〜でしたが、いまは 〜ように なりました。 / ＿が 〜られるように なりました。 / 〜ことに しました。 / 〜ことに なりました。 | もし ＿だったら、〜たいです。 / もし ＿が なかったら、〜。 / もし わたしが 〜だったら、〜と おもいます。 |
+| Ready sentences (also the assistant's cue cards), three a slide | 今では 〔topic〕も 〔word〕が 食べられるように なりました。 / 〔word〕に ついて もっと しらべる ことに しました。 / 来月 〔topic〕と 〔word〕が 結婚する ことに なりました。 | もし 私が 〔topic〕だったら、毎日 〔word〕を 食べたいです。 / もし 〔word〕が なかったら、〔topic〕は こまると 思います。 / もし この 〔word〕が 〔topic〕だったら、みんな びっくりするでしょうね。 |
+| Question cards (N4 askers) | 〔topic〕は 前は どうでしたか？ / どうして そう する ことに しましたか？ / 今は 何が できるように なりましたか？ | もし あなたが 〔word〕だったら、どう しますか？ / もし 〔topic〕に なれたら、何が したいですか？ |
+| Answer frames | まえは 〜でしたが、いまは 〜ように なりました。 / 〜から、〜ことに しました。 / 〜ことに なりました。 | もし 〜だったら、〜たいです。 / 〜と おもいます。 / じつは、〜んです。 |
+
+The ready sentences pick their verb by the slide's kind (遊べる for a living thing, 行ける for a place,
+食べられる for food, 使える for a thing, 楽しめる for an event; If I were… uses いっしょに いたい, 住みたい,
+食べたい, 使いたい and 楽しみたい the same way). A thing you don't 使う names its own verb (`use`:
+おみくじが 引ける / を 引きたい, 電車に 乗れる / に 乗りたい). The big news fits the slide too: a place is
+where 〔topic〕 and I move (〔topic〕と 〔word〕に 引っ越す), a food gets a shop (〔topic〕が 〔word〕の お店を
+開く), and anything else gets married (〔topic〕と 〔word〕が 結婚する). An If I were… title is a clause, so the
+opening quotes it: 「今日は 「もし 私が 猫だったら」に ついて 話したいと 思います」. The decks' frames
+are in `DECKS` (by frame id), and both are `draft`. A Kana or N5 asker in an N4 deck talk still gets the
+usual cards at their level. It is not a separate seat (the presenter's talk is the same seat), so there
+is no offer to decline.
+
 ## Not built yet
 
 - A private correction after each talk (an AI teacher's one-line note on one sentence).
@@ -131,7 +161,25 @@ the hanko.
 - Nobiko-san's cameo and the ぷう mishap from the humor review.
 - Pictures for the title and closing slides (they are drawn by the TV).
 
+## Decisions made on Ladi's behalf
+
+1. ~~N4 presenters get only the N4 decks' titles.~~ Superseded by Ladi's decision below. Their opening,
+   closing, mishap recoveries and points are unchanged.
+2. **The decks reuse the usual slides**; only the frames, ready sentences, deck question cards and answer
+   frames change. A slide's word joins the topic in each deck sentence, so the joke still lands (「来月
+   猫と パンツが 結婚する ことに なりました」).
+3. **An N4 asker in a deck talk always gets one of the deck's own question cards** first.
+
+## Decided by Ladi
+
+1. **N4 presenters sometimes get a usual title too** (was open question 1): their pairs alternate, a deck
+   pair on their 1st, 3rd… talk and a mix (one deck title, from the other deck than last time, plus one
+   usual title) on their 2nd, 4th… talk. Alternating per presenter is simple and even: everyone who
+   presents twice sees both kinds, and nobody's deck practice depends on the dice. The question cards
+   follow the chosen title's deck.
+
 ## Open questions
 
-None right now.
+1. Fluent check of the deck lines, especially the `use` verbs (引ける, 乗れる), 毎日 〜と いっしょに
+   いたいです, and the moving and shop news lines.
 

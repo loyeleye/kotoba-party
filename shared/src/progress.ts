@@ -2,10 +2,11 @@
 // and the scores from every game they finish. Pure rules, no storage: the account service
 // (server/src/accounts.ts) loads a profile, applies one of these and saves it.
 
-import { FRAMES, frameOf, type FrameId } from './japanese/frames.js';
+import { FRAMES, frameOf, framesOf, type FrameId } from './japanese/frames.js';
 import { soundKey, toHiragana } from './japanese/kana.js';
 import { toRomaji } from './japanese/romaji.js';
 import { isRomaji, romajiToHiragana } from './japanese/toKana.js';
+import type { OfferAnswer } from './modes/hardRoleLog.js';
 import type { PhraseEntry } from './modes/mode.js';
 import type { PathStatus } from './path.js';
 import type { ModeId } from './protocol.js';
@@ -38,6 +39,22 @@ export interface GameResult {
   cards: PracticeItem[];
   /** This game's phrasebook for the player (every mode fills one): said, retried, missed or seen. */
   phrases: PhraseEntry[];
+  /** N4 hard-role offers in this game (modes with hard roles fill it). */
+  offers?: RoleOffer[];
+}
+
+/** One N4 hard-role offer and its answer (shared/src/modes/hardRoleLog.ts). Bots never save, so none are here. */
+export interface RoleOffer {
+  /** `<mode>:<role>`, e.g. `bento-haus:manager`. */
+  role: string;
+  answer: OfferAnswer;
+}
+
+/** Saved offer counts for one hard role. */
+export interface RoleOfferTally {
+  accepted: number;
+  declined: number;
+  timeout: number;
 }
 
 /** A yōkai card: one kana in the player's Leitner queue. */
@@ -98,16 +115,18 @@ export type Recall = 'memory' | 'read';
 /** A met sentence frame, kept so it stays met when its phrases age out of the phrasebook. */
 export interface FrameMark {
   metAt: number;
-  /** When it comes back once in the phone review (21 days after it was met). */
+  /** When it next comes back in the phone review (21 days after it was met, then 60 days after that). */
   recheckAt: number;
-  /** waiting: not re-checked yet; passed: said again from memory; fading: missed in the re-check, until said again. */
+  /** waiting: not re-checked yet; passed: said again from memory at every check; fading: missed, until said again. */
   recheck: 'waiting' | 'passed' | 'fading';
+  /** Which re-check is next or running: 1 (the 21-day one) or 2 (60 days later). Missing means 1. */
+  round?: number;
   /** The day (the player's own) it faded: only a say from memory on a later day brings it back. */
   fadedDay?: string;
 }
 
 /** A finished game as the profile keeps it (without the per-card detail). */
-export type GameRecord = Omit<GameResult, 'cards' | 'phrases'>;
+export type GameRecord = Omit<GameResult, 'cards' | 'phrases' | 'offers'>;
 
 export interface Progress {
   cards: Record<string, Card>;
@@ -121,6 +140,8 @@ export interface Progress {
   frameMarks?: Record<string, FrameMark>;
   /** Path goals met, by goal id: when. The 済 stamp stays even if a frame later fades. */
   goalsMet?: Record<string, number>;
+  /** N4 hard-role offers answered, by role (`<mode>:<role>`), for the step 2 gate. An away player's offer isn't counted. */
+  roleOffers?: Record<string, RoleOfferTally>;
 }
 
 /** Days until the next review, by box (design doc: 1, 3, 7, 14, 30). Box 0 is due at once. */
@@ -142,8 +163,19 @@ export const SAYS_PER_DAY = 2;
 export const FRAME_SAYS = 3;
 export const FRAME_FILLERS = 2;
 export const FRAME_GAP_DAYS = 3;
-/** A met frame comes back once in the phone review this many days later. */
+/** A met frame comes back in the phone review this many days later, and once more this many days after that. */
 export const RECHECK_DAYS = 21;
+export const SECOND_RECHECK_DAYS = 60;
+
+/** A re-check passed: the first schedules the second; the second is the last. */
+function passRecheck(m: FrameMark, now: number): void {
+  delete m.fadedDay;
+  if ((m.round ?? 1) < 2) {
+    m.round = 2;
+    m.recheckAt = now + SECOND_RECHECK_DAYS * DAY_MS;
+    m.recheck = 'waiting';
+  } else m.recheck = 'passed';
+}
 
 /**
  * How a phrasebook entry was said. Opt-in: only a line its game tags `recall: 'memory'` counts as said from
@@ -190,8 +222,13 @@ function miss(card: Card, now: number): void {
 
 /** Adds a finished game: its score to the history and each card's result to the queue. */
 export function addGame(p: Progress, result: GameResult, tzOffsetMin: number): void {
-  const { cards, phrases, ...record } = result;
+  const { cards, phrases, offers, ...record } = result;
   p.games.unshift(record);
+  for (const o of offers ?? []) {
+    if (o.answer === 'away') continue;
+    const t = ((p.roleOffers ??= {})[o.role] ??= { accepted: 0, declined: 0, timeout: 0 });
+    t[o.answer] += 1;
+  }
   // Rooms can finish out of order (two saves arriving together): newest first all the same.
   p.games.sort((a, b) => b.at - a.at);
   p.games.length = Math.min(p.games.length, MAX_GAMES);
@@ -246,11 +283,8 @@ export function duePhrases(p: Progress, now: number, limit = REVIEW_SIZE): Phras
   return [...checks, ...due].slice(0, limit);
 }
 
-/** The frames a phrase is built on (frames.ts gives one today; the path takes a list so more can count). */
-export const phraseFrames = (c: { text: string; kana: string }): FrameId[] => {
-  const id = frameOf(c);
-  return id ? [id] : [];
-};
+/** Every frame a phrase is built on, N5 to N3. keepHidden: an N5 frame still counts when a more specific one matched. */
+export const phraseFrames = (c: { text: string; kana: string }): FrameId[] => framesOf(c, undefined, { keepHidden: true });
 
 /** Each frame's saved phrases. */
 function byFrame(p: Progress): Map<string, PhraseCard[]> {
@@ -352,10 +386,7 @@ export function markFrames(p: Progress, now: number): string[] {
     if (m.recheck === 'passed' || now < m.recheckAt) continue;
     // Said from memory again since the check came due (and, once faded, on a later day than the miss).
     const again = cards.some((c) => (c.memAt ?? 0) >= m.recheckAt && (!m.fadedDay || (c.memory ?? []).some((d) => d.day > m.fadedDay!)));
-    if (again) {
-      m.recheck = 'passed';
-      delete m.fadedDay;
-    }
+    if (again) passRecheck(m, now);
   }
   return fresh;
 }
@@ -369,7 +400,7 @@ function recheckReview(p: Progress, card: PhraseCard, knew: boolean, now: number
   for (const id of phraseFrames(card)) {
     const m = p.frameMarks?.[id];
     if (!m || m.recheckAt > now || m.recheck !== 'waiting') continue;
-    if (knew) m.recheck = 'passed';
+    if (knew) passRecheck(m, now);
     else {
       m.recheck = 'fading';
       m.fadedDay = day;
@@ -502,4 +533,11 @@ export function bests(p: Progress): ModeBest[] {
     by.set(g.mode, b);
   }
   return [...by.values()].sort((a, b) => b.played - a.played);
+}
+
+/** The share of a player's N4 hard-role offers they took (all roles, or one), or null with none answered. */
+export function roleOfferRate(p: Progress, role?: string): number | null {
+  const tallies = Object.entries(p.roleOffers ?? {}).filter(([r]) => role === undefined || r === role).map(([, t]) => t);
+  const all = tallies.reduce((n, t) => n + t.accepted + t.declined + t.timeout, 0);
+  return all ? tallies.reduce((n, t) => n + t.accepted, 0) / all : null;
 }

@@ -14,6 +14,12 @@
 // tea, or to play for a Kids guest (most hearts: votes received plus a star for each round with good manners).
 //
 // The manners meter is the pure rule-based checker in manners.ts. Nothing here waits on an LLM.
+//
+// The go-between (なこうど, N4 hard role): when the room has an N4 player, each round one of them
+// (in seat rotation) is offered Nobiko-san's keigo lines for that round: the opening as the guest
+// asks (prompt: ごしょうかい いたします, おききに なります …) and the closing as the score comes up
+// (つぎの しつもんに まいります, おかえりに なります). Said or typed from the phone's script; "not this
+// time" leaves the lines to Nobiko-san. Everyone's answers, votes and points are unchanged.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH, POINTS_PER_VOTE } from '../../constants.js';
@@ -22,9 +28,10 @@ import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { saidPhrase } from '../phraseBingo/check.js';
-import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, keigoPair, OPENERS, withName, type CharacterCard, type KeigoPair, type OmiaiQuestion } from './cards.js';
+import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, keigoPair, nakodoLines, OPENERS, withName, type CharacterCard, type KeigoPair, type NakodoLine, type OmiaiQuestion } from './cards.js';
 import { analysisText, checkManners, type CasualHit, type MannersResult, type Register } from './manners.js';
 import { playerTextAllowed } from '../../moderation.js';
+import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 
 // ---- tuning ----
 
@@ -46,6 +53,9 @@ export const STAR_METER = 70;
 /** The guest's tea invitation at the finale. */
 export const ACCEPT_POINTS = 200;
 const MAX_TILES = 6;
+/** The go-between's line, said aloud or typed. */
+export const NAKODO_POINTS = { speech: 25, typed: 10 } as const;
+export const NAKODO_TRIES = 2;
 
 export const DURATIONS = {
   intro: 16_000,
@@ -57,7 +67,21 @@ export const DURATIONS = {
   encore: 15_000,
   score: 9_000,
   finale: 14_000,
+  /** Extra prompt and score time while a go-between has a line to say. */
+  nakodo: 12_000,
+  /** Time Nobiko-san gets to read the question once it's cued, before the answer phase opens. */
+  questionRead: 5_000,
+  /** The most time Nobiko-san takes to say an accepted go-between line (see voiceMs); added to the go-between's prompt and score. */
+  nakodoVoice: 7_000,
+  /** The score's own line (the natural version) gets this long before she says the go-between's closing. */
+  naturalRead: 5_000,
 } as const;
+
+/**
+ * About how long Nobiko-san takes to say a line on the TV: her voice can land up to 1.5 s late (the bank voice
+ * waits that long for its audio), then roughly 0.11 s a kana. Capped at DURATIONS.nakodoVoice.
+ */
+export const voiceMs = (kana: string): number => Math.min(DURATIONS.nakodoVoice, 1_500 + 110 * kana.replace(/\s/g, '').length);
 
 // ---- state ----
 
@@ -130,6 +154,31 @@ export interface Round {
   result: ResultLine[] | null;
   /** The answer Nobiko-san teases as the answers are revealed (Cheeky rooms only; see pickTease). */
   tease?: string;
+  /** When Nobiko-san reads the question (once a round, go-between or not): later than the cue when she says the opening first. */
+  cuedAt?: number;
+  /** When Nobiko-san has finished saying the go-between's accepted closing, so the score waits for it. */
+  voicedUntil?: number;
+}
+
+export type NakodoSlot = 'open' | 'close';
+
+export interface NakodoTry {
+  tries: number;
+  ok: boolean;
+  via: Utterance['via'] | null;
+  heard: string;
+  /** The manners meter of what they said (rule-based, manners.ts). */
+  meter: number | null;
+  points: number;
+}
+
+/** This round's go-between (N4 hard role). */
+export interface GoBetween {
+  round: number;
+  playerId: string;
+  /** offered: not answered yet; accepted: tapped Take it or tried a line; timeout: the opening passed unanswered. */
+  status: 'offered' | 'accepted' | 'declined' | 'timeout';
+  lines: Record<NakodoSlot, NakodoTry>;
 }
 
 export interface PlayerStats {
@@ -151,6 +200,11 @@ export interface OmiaiState {
   phaseAt: number;
   /** Players Nobiko-san has teased this game: at most TEASE_MAX, never the same one twice. */
   teased?: string[];
+  nakodo?: GoBetween | null;
+  /** The last go-between's seat, for the rotation. */
+  nakodoSeat?: number;
+  /** Every go-between offer and what came of it. */
+  nakodoLog?: { round: number; playerId: string; outcome: OfferAnswer }[];
 }
 
 // ---- view ----
@@ -249,6 +303,9 @@ export interface OmiaiView {
   natural: { text: string; kana: string; en: string; from: string | null } | null;
   hearts: Record<string, number>;
   finale: { accepted: string | null; line: JpText | null; ranking: { playerId: string; hearts: number }[] } | null;
+  /** The round's go-between (prompt and score): their line once said. */
+  /** pending: their line for this phase is still to come. */
+  nakodo: { playerId: string; slot: NakodoSlot; declined: boolean; line: JpText | null; via: Utterance['via'] | null; points: number; pending: boolean } | null;
   me: {
     level: Level;
     slot: { question: QuestionView; sayFirst: boolean; sayFirstMs: number; tiles: TileView[] } | null;
@@ -258,7 +315,26 @@ export interface OmiaiView {
     encore: { canEncore: boolean; ok: boolean; triesLeft: number; heard: string; winner: boolean; target: TipView['target'] } | null;
     tip: TipView | null;
     accepted: boolean;
+    /** When you are this round's go-between. */
+    nakodo: NakodoMe | null;
   } | null;
+}
+
+export interface NakodoMe {
+  status: GoBetween['status'];
+  /** The line for this phase (the script to say), or null between them. */
+  slot: NakodoSlot | null;
+  line: JpText | null;
+  frames: readonly string[];
+  canSay: boolean;
+  ok: boolean;
+  triesLeft: number;
+  heard: string;
+  meter: number | null;
+  points: number;
+  /** Both lines, so the offer can show what's coming. */
+  open: JpText;
+  close: JpText;
 }
 
 export type OmiaiMove =
@@ -268,7 +344,9 @@ export type OmiaiMove =
   | { kind: 'vote'; answerId: string }
   | { kind: 'hide'; answerId: string }
   | { kind: 'encore'; utterance: Utterance }
-  | { kind: 'encore'; pass: true };
+  | { kind: 'encore'; pass: true }
+  | { kind: 'nakodo'; accept: boolean }
+  | { kind: 'nakodo'; utterance: Utterance };
 
 // ---- helpers ----
 
@@ -437,6 +515,28 @@ function pickTease(s: OmiaiState, shown: Answer[], ctx: ModeContext): Answer | u
     .sort((a, b) => rank[ctx.player(a.authorId)!.level]! - rank[ctx.player(b.authorId)!.level]! || a.manners.meter - b.manners.meter)[0];
 }
 
+/**
+ * Nobiko-san reads the question: once a round, whatever the go-between does. `afterMs` holds it back while she
+ * says the go-between's opening first, so the two never overlap.
+ */
+function cueQuestion(s: OmiaiState, ctx: ModeContext, afterMs = 0): void {
+  const r = s.current!;
+  if (r.cuedAt !== undefined) return;
+  r.cuedAt = ctx.now + afterMs;
+  const q = r.question.ask.n5;
+  ctx.cue({ host: 'nobiko', event: 'prompt_read', prompt: { text: q.text, kana: q.kana, en: q.en }, ...(afterMs ? { atMs: afterMs } : {}) });
+}
+
+/**
+ * The go-between's line was accepted: Nobiko-san says it on the TV (the filled template, never their recording),
+ * `afterMs` from now. Returns how long until she has finished.
+ */
+function voiceNakodo(line: NakodoLine, ctx: ModeContext, afterMs = 0): number {
+  const { text, kana, en } = line.jp;
+  ctx.cue({ host: 'nobiko', event: 'omiai_nakodo_read', slots: { line: text, line_kana: kana, line_en: en }, ...(afterMs ? { atMs: afterMs } : {}) });
+  return afterMs + voiceMs(kana);
+}
+
 /** Votes and manners bonuses for the round. Paid as the encore starts. */
 function scoreRound(s: OmiaiState, ctx: ModeContext): void {
   const r = s.current;
@@ -480,15 +580,17 @@ function scoreEncores(s: OmiaiState, ctx: ModeContext): void {
     const e = r.encores[line.authorId];
     const a = r.answers.find((x) => x.id === line.answerId)!;
     const entry = { itemId: `omiai:${r.question.id}:${line.authorId}`, text: a.tip.target.text, kana: a.tip.target.kana, en: a.tip.kind === 'stock' ? a.tip.example.en : 'Your answer, said politely' };
+    // A polite answer in your own words, spoken: said from memory (the learning path counts it).
+    const own = a.tip.kind === 'perfect' && a.via === 'speech' && !a.english;
     if (e?.ok && e.via) {
       const share = (line.winner ? ENCORE_SHARE.winner : ENCORE_SHARE.other)[e.via === 'speech' ? 'speech' : 'typed'];
       line.encoreBonus = Math.max(0, Math.min(line.cap - line.bonus, round5(line.cap * share)));
       pay(ctx, line.authorId, line.encoreBonus);
-      // The encore says back the polite version shown on the phone: said, but read.
-      ctx.phrase(line.authorId, { ...entry, outcome: e.via === 'speech' ? 'said' : 'seen', recall: 'read' });
+      // The encore says back the polite version shown on the phone: read, unless the answer was already yours.
+      ctx.phrase(line.authorId, { ...entry, outcome: own || e.via === 'speech' ? 'said' : 'seen', recall: own ? 'memory' : 'read' });
     } else {
       // A correction that wasn't said back goes to review; a polite answer is just kept.
-      ctx.phrase(line.authorId, { ...entry, outcome: a.tip.kind === 'rewrite' || a.tip.kind === 'stock' ? 'missed' : 'seen' });
+      ctx.phrase(line.authorId, { ...entry, outcome: own ? 'said' : a.tip.kind === 'rewrite' || a.tip.kind === 'stock' ? 'missed' : 'seen', recall: own ? 'memory' : 'read' });
     }
   }
 }
@@ -517,6 +619,95 @@ function rankHearts(s: OmiaiState, ctx: ModeContext): { playerId: string; hearts
     .map((p) => ({ playerId: p.id, hearts: stats(s, p.id).votes + stats(s, p.id).stars, seat: p.seat }))
     .sort((a, b) => b.hearts - a.hearts || a.seat - b.seat)
     .map(({ playerId, hearts }) => ({ playerId, hearts }));
+}
+
+// ---- the go-between (N4 hard role) ----
+
+const blankTry = (): NakodoTry => ({ tries: 0, ok: false, via: null, heard: '', meter: null, points: 0 });
+
+/** Rooms this big or bigger rest a lone N4 player after a round as go-between (see offerNakodo). */
+export const SPOTLIGHT_ROOM = 4;
+
+/**
+ * Offers the round's go-between lines to the next N4 player by seat. Nobody at N4: Nobiko-san keeps them.
+ * In a room of SPOTLIGHT_ROOM or more, a lone N4 player who was go-between last round sits this one out.
+ */
+function offerNakodo(s: OmiaiState, ctx: ModeContext): void {
+  s.nakodo = null;
+  const n4 = ctx
+    .players()
+    .filter((p) => p.level === 'n4' && p.connected)
+    .sort((a, b) => a.seat - b.seat);
+  const p = n4.find((x) => x.seat > (s.nakodoSeat ?? 0)) ?? n4[0];
+  if (!p) return;
+  const last = s.nakodoLog?.at(-1);
+  if (n4.length === 1 && ctx.connected().length >= SPOTLIGHT_ROOM && last?.round === s.round - 1 && last.playerId === p.id && last.outcome === 'accepted') return;
+  s.nakodoSeat = p.seat;
+  s.nakodo = { round: s.round, playerId: p.id, status: 'offered', lines: { open: blankTry(), close: blankTry() } };
+}
+
+function closeNakodo(s: OmiaiState, ctx: ModeContext): void {
+  const g = s.nakodo;
+  s.nakodo = null;
+  if (!g) return;
+  const tried = g.lines.open.tries + g.lines.close.tries > 0;
+  const outcome: OfferAnswer =
+    tried || g.status === 'accepted' ? 'accepted' : g.status === 'declined' ? 'declined' : ctx.player(g.playerId)?.connected === false ? 'away' : 'timeout';
+  (s.nakodoLog ??= []).push({ round: g.round, playerId: g.playerId, outcome });
+}
+
+/** Which line the phase is for. */
+const slotFor = (phase: Phase): NakodoSlot | null => (phase === 'prompt' ? 'open' : phase === 'score' ? 'close' : null);
+
+/**
+ * The go-between still has this phase's line to say. The opening ends once Nobiko-san has read the
+ * question; the closing is theirs only if they tried the opening.
+ */
+function nakodoOpen(s: OmiaiState, phase: Phase, ctx: ModeContext): boolean {
+  const g = s.nakodo;
+  const slot = slotFor(phase);
+  if (!g || !slot || g.status === 'declined' || g.status === 'timeout' || !ctx.player(g.playerId)?.connected) return false;
+  if (slot === 'open' && s.current?.cuedAt !== undefined) return false;
+  if (slot === 'close' && g.lines.open.tries === 0) return false;
+  const t = g.lines[slot];
+  return !t.ok && t.tries < NAKODO_TRIES;
+}
+
+const phaseBase = (phase: Phase) => (phase === 'prompt' ? DURATIONS.prompt : DURATIONS.score);
+
+/**
+ * When Nobiko-san reads the question if the go-between hasn't finished the opening: at the prompt's usual
+ * time, or, for a go-between who took it, late enough in the longer prompt that she still has time to read it.
+ */
+function questionDueAt(s: OmiaiState, ctx: ModeContext): number {
+  const g = s.nakodo;
+  const late = g?.status === 'accepted' && ctx.player(g.playerId)?.connected;
+  return s.phaseAt + (late ? DURATIONS.prompt + DURATIONS.nakodo - DURATIONS.questionRead : DURATIONS.prompt);
+}
+
+export interface NakodoTally {
+  offered: number;
+  accepted: number;
+  declined: number;
+  timeout: number;
+  /** offerRate: the step's gate is at least 60% accepted. */
+  rate: number | null;
+}
+
+/** Go-between offers per N4 player and what came of them. */
+export function nakodoOffers(s: Pick<OmiaiState, 'nakodoLog'>): Record<string, NakodoTally> {
+  const out: Record<string, NakodoTally> = {};
+  const answers: Record<string, OfferAnswer[]> = {};
+  for (const e of s.nakodoLog ?? []) {
+    const o = (out[e.playerId] ??= { offered: 0, accepted: 0, declined: 0, timeout: 0, rate: null });
+    o.offered += 1;
+    if (e.outcome === 'accepted') o.accepted += 1;
+    if (e.outcome === 'declined') o.declined += 1;
+    if (e.outcome === 'timeout') o.timeout += 1;
+    (answers[e.playerId] ??= []).push(e.outcome);
+  }
+  for (const [id, o] of Object.entries(out)) o.rate = offerRate(answers[id]!);
+  return out;
 }
 
 function parseTiles(raw: unknown): string[] | null {
@@ -556,6 +747,9 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       stats: all,
       accepted: null,
       phaseAt: ctx.now,
+      nakodo: null,
+      nakodoSeat: 0,
+      nakodoLog: [],
     };
   },
 
@@ -586,8 +780,10 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         break;
       case 'prompt': {
         startRound(s, ctx);
-        const q = s.current!.question.ask.n5;
-        ctx.cue({ host: 'nobiko', event: 'prompt_read', prompt: { text: q.text, kana: q.kana, en: q.en } });
+        offerNakodo(s, ctx);
+        // With a go-between, the opening is theirs; Nobiko-san reads the question once they've said it,
+        // run out of tries, passed, or let it go by (see wake).
+        if (!s.nakodo) cueQuestion(s, ctx);
         break;
       }
       case 'answer':
@@ -636,12 +832,16 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     }
   },
 
-  duration(s, phase) {
+  leave(s, phase, ctx) {
+    if (phase === 'score' || (phase === 'answer' && !s.current?.answers.length)) closeNakodo(s, ctx);
+  },
+
+  duration(s, phase, ctx) {
     switch (phase) {
       case 'intro':
         return DURATIONS.intro;
       case 'prompt':
-        return DURATIONS.prompt;
+        return DURATIONS.prompt + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo + DURATIONS.nakodoVoice : 0);
       case 'answer':
         return DURATIONS.answer;
       case 'reveal':
@@ -649,7 +849,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       case 'encore':
         return DURATIONS.encore;
       case 'score':
-        return DURATIONS.score;
+        return DURATIONS.score + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo + DURATIONS.nakodoVoice : 0);
       case 'finale':
         return DURATIONS.finale;
       default:
@@ -661,6 +861,11 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     const here = ctx.connected();
     const r = s.current;
     if (!here.length || !r) return false;
+    // A go-between's prompt or score runs long: it ends once their line is done and the phase has had its usual
+    // time (and, in the prompt, once Nobiko-san has had time to read the question).
+    if (phase === 'prompt' && s.nakodo)
+      return r.cuedAt !== undefined && !nakodoOpen(s, phase, ctx) && ctx.now >= Math.max(s.phaseAt + DURATIONS.prompt, r.cuedAt + DURATIONS.questionRead);
+    if (phase === 'score' && s.nakodo) return !nakodoOpen(s, phase, ctx) && ctx.now >= Math.max(s.phaseAt + phaseBase(phase), r.voicedUntil ?? 0);
     if (phase === 'answer') return here.every((p) => r.answers.some((a) => a.authorId === p.id));
     if (phase === 'reveal') {
       const can = new Set(voters(r, ctx));
@@ -671,6 +876,24 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       return authors.size > 0 && here.every((p) => !authors.has(p.id) || r.encores[p.id]?.ok || r.encores[p.id]?.passed || (r.encores[p.id]?.tries ?? 0) >= ENCORE_TRIES);
     }
     return false;
+  },
+
+  wakeAt(s, phase, ctx) {
+    if ((phase !== 'prompt' && phase !== 'score') || !s.nakodo) return null;
+    const cuedAt = s.current?.cuedAt;
+    if (phase === 'prompt' && cuedAt === undefined) return Math.max(ctx.now, questionDueAt(s, ctx));
+    if (nakodoOpen(s, phase, ctx)) return null;
+    const at = phase === 'prompt' ? Math.max(s.phaseAt + DURATIONS.prompt, cuedAt! + DURATIONS.questionRead) : Math.max(s.phaseAt + phaseBase(phase), s.current?.voicedUntil ?? 0);
+    return ctx.now < at ? at : null;
+  },
+
+  wake(s, phase, ctx) {
+    // The go-between hasn't finished the opening in time: Nobiko-san reads the question anyway, and an
+    // offer nobody answered times out. Otherwise the wake just lets done() end the phase.
+    const g = s.nakodo;
+    if (phase !== 'prompt' || !g || !s.current || s.current.cuedAt !== undefined || ctx.now < questionDueAt(s, ctx)) return;
+    if (g.status === 'offered') g.status = 'timeout';
+    cueQuestion(s, ctx);
   },
 
   move(s, phase, playerId, raw, ctx) {
@@ -777,6 +1000,59 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         if (raw.utterance.via === 'speech') ctx.cue({ host: 'nobiko', event: 'encore_cheer', slots: { name: player.name } });
         return MOVE_OK;
       }
+      case 'nakodo': {
+        const g = s.nakodo;
+        if (!g || g.playerId !== playerId) return moveError('not-go-between');
+        if (g.status === 'declined' || g.status === 'timeout') return MOVE_OK;
+        if (raw.accept === false) {
+          // "Not this time": the rest of the round's lines go back to Nobiko-san.
+          g.status = 'declined';
+          if (phase === 'prompt') cueQuestion(s, ctx);
+          return MOVE_OK;
+        }
+        if (raw.accept === true) {
+          // "Take it": the lines are theirs (the speak box is open either way).
+          g.status = 'accepted';
+          return MOVE_OK;
+        }
+        const slot = slotFor(phase);
+        if (!slot || !r) return moveError('wrong-phase');
+        const t = g.lines[slot];
+        if (t.ok) return MOVE_OK;
+        if (t.tries >= NAKODO_TRIES) return moveError('no-tries-left');
+        if (!nakodoOpen(s, phase, ctx)) return moveError('wrong-phase');
+        if (!isUtterance(raw.utterance)) return moveError('bad-utterance');
+        const heard = cleanText(raw.utterance.text, MAX_ANSWER_LENGTH);
+        if (!heard) return moveError('empty-answer');
+        if (raw.utterance.via === 'tap') return moveError('bad-utterance');
+        const u: Utterance = { ...raw.utterance, text: heard };
+        const line = nakodoLines(cardOf(s), s.round, s.totalRounds)[slot];
+        // A first try is a yes.
+        g.status = 'accepted';
+        t.tries += 1;
+        t.heard = heard;
+        t.meter = checkManners(u, 'n4', { name: player.name }).meter;
+        const entry = { itemId: `omiai:nakodo:${cardOf(s).id}:${line.id}`, text: line.jp.text, kana: line.jp.kana, en: line.jp.en };
+        if (saidPhrase(u, line.jp.kana, undefined, 'n4')) {
+          t.ok = true;
+          t.via = u.via;
+          t.points = u.via === 'speech' ? NAKODO_POINTS.speech : NAKODO_POINTS.typed;
+          pay(ctx, playerId, t.points);
+          // Read off the phone's script, so it counts as seen, not said from memory.
+          ctx.phrase(playerId, { ...entry, outcome: 'seen' });
+          // Nobiko-san says the line on the TV: the opening straight away (the question waits for it), the
+          // closing once the score's own line has had its time, and only if it still fits in the phase.
+          if (slot === 'open') cueQuestion(s, ctx, voiceNakodo(line, ctx));
+          else {
+            const after = Math.max(0, s.phaseAt + DURATIONS.naturalRead - ctx.now);
+            const end = s.phaseAt + DURATIONS.score + DURATIONS.nakodo + DURATIONS.nakodoVoice;
+            if (ctx.now + after + voiceMs(line.jp.kana) <= end) r.voicedUntil = ctx.now + voiceNakodo(line, ctx, after);
+          }
+        } else if (t.tries >= NAKODO_TRIES) ctx.phrase(playerId, { ...entry, outcome: 'missed' });
+        // The opening is done (said, or out of tries): Nobiko-san reads the question.
+        if (slot === 'open' && (t.ok || t.tries >= NAKODO_TRIES)) cueQuestion(s, ctx);
+        return MOVE_OK;
+      }
       default:
         return moveError('bad-move');
     }
@@ -788,6 +1064,10 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     delete r.votes[playerId];
     delete r.encores[playerId];
     delete r.slots[playerId];
+  },
+
+  offers(s, playerId) {
+    return (s.nakodoLog ?? []).filter((o) => o.playerId === playerId).map((o) => ({ role: 'omiai:nakodo', answer: o.outcome }));
   },
 
   progress(s) {
@@ -844,6 +1124,10 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       finale = { accepted, line: accepted ? withName(card.accept, nameOf(accepted)) : null, ranking: rankHearts(s, ctx) };
     }
 
+    const g = s.nakodo;
+    const gSlot = slotFor(phase);
+    const gLines = g ? nakodoLines(card, s.round, s.totalRounds) : null;
+
     let mine: OmiaiView['me'] = null;
     if (me) {
       const slot = r?.slots[me.id];
@@ -893,6 +1177,23 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
             : null,
         tip: (phase === 'encore' || phase === 'score') && myAnswer ? tipView(myAnswer) : null,
         accepted: phase === 'finale' && s.accepted === me.id,
+        nakodo:
+          g && gLines && g.playerId === me.id && phase !== 'finale'
+            ? {
+                status: g.status,
+                slot: gSlot,
+                line: gSlot ? gLines[gSlot].jp : null,
+                frames: gSlot ? gLines[gSlot].frames : [],
+                canSay: !!gSlot && nakodoOpen(s, phase, ctx),
+                ok: !!gSlot && g.lines[gSlot].ok,
+                triesLeft: gSlot ? NAKODO_TRIES - g.lines[gSlot].tries : 0,
+                heard: gSlot ? g.lines[gSlot].heard : '',
+                meter: gSlot ? g.lines[gSlot].meter : null,
+                points: gSlot ? g.lines[gSlot].points : 0,
+                open: gLines.open.jp,
+                close: gLines.close.jp,
+              }
+            : null,
       };
     }
 
@@ -913,6 +1214,18 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       natural,
       hearts,
       finale,
+      nakodo:
+        g && gLines && gSlot
+          ? {
+              playerId: g.playerId,
+              slot: gSlot,
+              declined: g.status === 'declined' || g.status === 'timeout',
+              line: g.lines[gSlot].ok ? gLines[gSlot].jp : null,
+              via: g.lines[gSlot].via,
+              points: g.lines[gSlot].points,
+              pending: nakodoOpen(s, phase, ctx),
+            }
+          : null,
       me: mine,
     };
   },

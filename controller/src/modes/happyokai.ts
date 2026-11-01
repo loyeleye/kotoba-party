@@ -69,6 +69,7 @@ function titlePicker(ctx: Ctx, me: Me): HTMLElement {
         h(
           'button',
           { type: 'button', class: `hk-title-btn${game.title?.text === t.jp.text ? ' on' : ''}`, onclick: () => (buzz(), void send({ kind: 'title', key: t.key })) },
+          t.deck ? h('span', { class: 'hk-deck', lang: 'ja' }, `${t.deck.text} · ${t.deck.en}`) : null,
           jpView({ ...t.jp, romaji: t.romaji }, me.level, { as: 'tile' }),
         ),
       ),

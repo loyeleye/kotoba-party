@@ -274,6 +274,7 @@ export type MinigameId =
   | 'particle-panic'
   | 'calendar-crunch'
   | 'read-the-signs'
+  | 'lost-and-found'
   | (string & {});
 
 export type PromptType = 'spoken-question' | 'listen-and-answer' | 'read-aloud' | 'picture' | 'fill-particle';
@@ -305,6 +306,20 @@ export interface MinigameItem {
   hint: string;
   /** Seconds to answer. */
   timeLimit: number;
+  /**
+   * A hard role (N4 and up): never dealt as an ordinary item. At each stop one N4 player in turn is
+   * offered it and may say "not this time" (docs/modes/last-train.md, Hard roles).
+   */
+  role?: HardRole;
+  /** The sentence frames the line practises, by id (shared/src/japanese/frames.ts). */
+  frames?: readonly string[];
+}
+
+/** A hard role's name and its one-line pitch on the offer card. */
+export interface HardRole {
+  id: string;
+  name: JpText;
+  pitch: string;
 }
 
 /** A station sign: its kanji, which way its arrow points, and its colours (exits are yellow, toilets blue and red). */
@@ -330,6 +345,8 @@ export interface LastTrainMinigame {
   forgiving?: boolean;
   /** Build phase the minigame ships in (Phase 1 has Konbini Math and Meet the Innkeeper). */
   phase: 1 | 4 | 5;
+  /** Rides a line only as a stop swapped in for a room with an N4 player (TrainStop.withN4), never as padding. */
+  n4Stop?: boolean;
   status: ReviewStatus;
   /** Chōchin-san's one-line setup for the stop. */
   intro: JpText;
@@ -343,6 +360,8 @@ export interface TrainStop {
   minigameId: MinigameId;
   /** Chōchin-san's announcement as the train pulls in. */
   announcement: JpText;
+  /** In a room with an N4 player, this stop is swapped for the given one (a hard-role stop such as Lost and Found). */
+  withN4?: Omit<TrainStop, 'withN4'>;
 }
 
 export interface LastTrainScenario {
@@ -370,6 +389,19 @@ export interface OnsenAnswer {
   jp: JpText;
   /** The clue this answer puts in the notebook, if any. Two answers may point at the same clue. */
   clueId?: string;
+  /** The N4 deputy's relay of this answer (Murder at the Onsen's hard role). Left out, nobody deputises that turn. */
+  report?: OnsenReport;
+}
+
+/**
+ * How the N4 deputy reports an answer to the room: reported speech (＿と いっていました) or the passive
+ * (＿に みられました). Words are spaced, and `text` and `kana` split into the same number of chunks:
+ * the chunks are the deputy's tiles, and the last two carry the frame.
+ */
+export interface OnsenReport {
+  jp: JpText;
+  /** The N4 frames this line practises, by id (shared/src/japanese/frames.ts). */
+  frames?: readonly string[];
 }
 
 export interface OnsenSuspect {
@@ -484,12 +516,14 @@ export type HostEvent =
   | 'train_last_stop_twist'
   | 'platform_dash'
   | 'room_overrule'
+  | 'train_role_read' // a taken hard role answered right: Chōchin-san says its model line at the reveal ({line}, as is)
   // Murder at the Onsen
   | 'onsen_case' // the case file opens
   | 'onsen_turn' // a player's turn to question a suspect
   | 'onsen_clue' // a question found a new clue
   | 'onsen_accuse' // the accusation opens
   | 'onsen_reveal' // the culprit is revealed
+  | 'onsen_report' // Chōchin-san says the N4 deputy's accepted report on the TV ({line})
   // Who's the Tourist?
   | 'tourist_intro'
   | 'tourist_deal' // the secret cards are dealt
@@ -533,6 +567,8 @@ export type HostEvent =
   | 'narabete_say' // say your card out loud
   | 'narabete_order' // the line is open: move your own card
   | 'narabete_defence' // the most-moved card defends its spot ({name})
+  | 'narabete_hard' // an N4 player says why their own card sits where it does ({name})
+  | 'narabete_replay' // the commentary booth: Nobiko-san replays the N4 defence's line ({line}: the line, as is)
   | 'narabete_perfect' // the flip came out in order
   | 'narabete_knot' // the flip has knots in it
   | 'narabete_story' // the Worst Day Ever story is read in order
@@ -613,6 +649,7 @@ export type HostEvent =
   | 'late_misread' // the acting chief ({name}) called it against the room: くうきが よめない
   | 'late_booth' // the commentary booth opens because the excuse used its grammar chunk ({chunk}): でました！
   | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
+  | 'omiai_nakodo_read' // the go-between's keigo line was said: Nobiko-san voices it ({line}, as is)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin
   | 'surprise_pick'; // Surprise Me!: the wheel stops on tonight's game ({game})
 

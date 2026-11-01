@@ -76,6 +76,15 @@ describe('when a frame is met', () => {
     expect(frame(p, 'desu', T0 + 3 * DAY)).toMatchObject({ met: true, progress: 1, recheck: 'waiting' });
   });
 
+  it('counts an N4 frame, and the N5 frame inside it too', () => {
+    const p = emptyProgress();
+    play(p, T0, [said('a', 'まどを あけて もらえますか。'), said('b', 'しゃしんを とって もらえますか。'), said('c', 'この ケーキ、おいしそうです。')], { mode: 'bento-haus' });
+    play(p, T0 + 3 * DAY, [said('a', 'まどを あけて もらえますか。')], { mode: 'bento-haus' });
+    expect(frame(p, 'te-moraeru', T0 + 3 * DAY).met).toBe(true);
+    expect(frame(p, 'sou-look', T0 + 3 * DAY).rule?.says).toBe(1);
+    expect(frame(p, 'desu', T0 + 3 * DAY).rule?.says).toBe(1);
+  });
+
   it('counts at most 2 says a day', () => {
     const p = emptyProgress();
     play(p, T0, [said('a', 'アキです。'), said('b', 'がくせいです。'), said('c', 'ねこです。')]);
@@ -209,7 +218,9 @@ describe('the 21-day re-check', () => {
     play(p, check + 60_000, [said('a', 'アキです。')]);
     expect(frame(p, 'desu', check + 60_000).recheck).toBe('fading');
     play(p, check + DAY, [said('a', 'アキです。')]);
-    expect(frame(p, 'desu', check + DAY).recheck).toBe('passed');
+    // Passed: the second check is set 60 days on.
+    expect(frame(p, 'desu', check + DAY).recheck).toBe('waiting');
+    expect(p.frameMarks!['desu']).toMatchObject({ round: 2, recheckAt: check + DAY + 60 * DAY });
   });
 
   it('only the chosen phrase decides the check', () => {
@@ -221,16 +232,21 @@ describe('the 21-day re-check', () => {
     reviewPhrase(p, other, false, check, 0);
     expect(frame(p, 'desu', check).recheck).toBe('due');
     reviewPhrase(p, probe, true, check, 0);
-    expect(frame(p, 'desu', check).recheck).toBe('passed');
+    expect(p.frameMarks!['desu']!.round).toBe(2);
   });
 
-  it('passes when known in the review', () => {
+  it('passes when known in the review, then comes back once more 60 days later', () => {
     const p = emptyProgress();
     meetDesu(p);
     const check = T0 + 24 * DAY;
     reviewPhrase(p, duePhrases(p, check)[0]!.itemId, true, check, 0);
-    expect(frame(p, 'desu', check).recheck).toBe('passed');
+    expect(frame(p, 'desu', check).recheck).toBe('waiting');
     expect(duePhrases(p, check + DAY).some((c) => c.due > check + DAY)).toBe(false);
+    const second = check + 60 * DAY;
+    expect(frame(p, 'desu', second).recheck).toBe('due');
+    reviewPhrase(p, duePhrases(p, second)[0]!.itemId, true, second, 0);
+    expect(frame(p, 'desu', second).recheck).toBe('passed');
+    expect(frame(p, 'desu', second + 100 * DAY).recheck).toBe('passed');
   });
 });
 

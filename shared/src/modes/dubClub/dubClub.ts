@@ -21,8 +21,9 @@ import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { soundMorae } from '../karaokeDuel/scoring.js';
 import { splitMorae } from '../karaokeDuel/songs.js';
+import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { directionOf, directionsFor, episodeOf, episodesFor, sceneLines, takeLimitMs, type Direction, type Episode, type Scene } from './scenes.js';
+import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
 
 // ---- tuning ----
 
@@ -51,6 +52,10 @@ export const FINAL_MULTIPLIER = 2;
 export const GRID = 6;
 export const MAX_TAKE_MS = 12_000;
 export const MIN_TAKE_MS = 300;
+/** An ad-lib take may run to 9 s (the N4 clip length), half as long again for a slow card. */
+export const ADLIB_TAKE_MS = 9_000;
+/** The ad-lib's plain read, as a similarity for the word points: casual and on the mission / one of them / neither. */
+export const ADLIB_SIM = { both: 1, one: 0.6, neither: 0.2 } as const;
 
 /** One dub in the screening, in steps. */
 export const STEP_MS = { lead: 1_600, guess: 4_500, regroup: 3_000, reveal: 3_400, start: 4_000 } as const;
@@ -75,6 +80,15 @@ export interface Rehearsal {
   heard: string | null;
   reading: string;
   similarity: number;
+  /** Ad-lib only: what the lenient check found in the best try. */
+  adlib?: AdlibCheck;
+}
+
+/** The ad-lib check: was it casual (and which frames), and did one of the mission's key words come through. */
+export interface AdlibCheck {
+  casual: boolean;
+  key: boolean;
+  frames: string[];
 }
 
 export interface Take {
@@ -105,6 +119,12 @@ export interface Actor {
   skipped: boolean;
   /** This dub's guess grid. */
   grid: string[];
+  /**
+   * The N4 ad-lib role (hard role, goal 4.8), when this actor was offered it: no script, a mission. Opt-in:
+   * 'offered' (the scripted N4 line shows, with the offer) until they tap Take it or Not this time. An offer
+   * still open when the take is sent, or when recording ends, is 'timeout' ('away' if they'd dropped out).
+   */
+  adlib?: 'offered' | OfferAnswer;
 }
 
 export type ScreenStep = 'lead' | 'play' | 'guess' | 'replay' | 'regroup' | 'reveal';
@@ -198,13 +218,15 @@ export interface DubNow {
   card: DubCard | null;
   guessedBy: string[];
   spoiler: boolean;
+  /** An ad-lib dub: `line` is only the model, so the TV shows it at the reveal, not over the voice. */
+  adlib: boolean;
 }
 
 export interface EpisodeStep {
   kind: 'title' | 'scene' | 'end' | 'credits';
   at: number;
   ms: number;
-  scene?: { index: number; bg: string; char: string; who: JpText; line: JpText; playerId: string | null; clipId: string | null; local: boolean; durMs: number; card: DubCard | null };
+  scene?: { index: number; bg: string; char: string; who: JpText; line: JpText; playerId: string | null; clipId: string | null; local: boolean; durMs: number; card: DubCard | null; adlib: boolean };
 }
 
 export interface DubView {
@@ -215,7 +237,7 @@ export interface DubView {
   episode: { id: string; title: JpText };
   scene: { id: string; bg: string; char: string; who: JpText; setup: string; line: JpText } | null;
   /** Who has rehearsed and sent a take this scene (the TV ticks them off), who plays from their phone, who passed. */
-  cast: { playerId: string; rehearsed: boolean; sent: boolean; local: boolean; passed: boolean }[];
+  cast: { playerId: string; rehearsed: boolean; sent: boolean; local: boolean; passed: boolean; adlib: boolean }[];
   now: DubSlot | null;
   /** Dubs already revealed this scene, in screening order. */
   done: { playerId: string; card: DubCard; guessed: number; skipped: boolean }[];
@@ -244,6 +266,11 @@ export interface DubView {
     heartable: string[];
     /** My own dub is on: this phone plays it if it kept the clip. */
     myTurn: boolean;
+    /**
+     * The ad-lib role, while it's mine (offered or accepted): the mission instead of a script (`line` is
+     * null), the check of my plain read, and the model line once my take is sent.
+     */
+    adlib: { state: 'offered' | 'accepted'; mission: string; emoji: string; check: AdlibCheck | null; model: JpText | null } | null;
     /** Cast notes: how my scene went, privately. */
     notes: { words: number; similarity: number | null; checked: boolean; spoiler: boolean; total: number; guessedBy: number; hearts: number; best: boolean } | null;
   } | null;
@@ -256,6 +283,7 @@ export type DubMove =
   | { kind: 'rehearse'; utterance: Utterance }
   | { kind: 'take'; clipId: string | null; local: boolean; durMs: number; heard: Utterance | null; checked: boolean }
   | { kind: 'pass' }
+  | { kind: 'adlib'; accept: boolean }
   | { kind: 'guess'; actorId: string; direction: string }
   | { kind: 'again'; actorId: string }
   | { kind: 'heart'; actorId: string | null }
@@ -268,6 +296,13 @@ const stats = (s: DubState, id: string) => (s.stats[id] ??= blankStats());
 export const episodeOfState = (s: DubState): Episode => episodeOf(s.episodeId) ?? episodesFor('family')[0]!;
 export const sceneOf = (s: DubState, r: SceneRound): Scene => episodeOfState(s).scenes[r.index - 1]!;
 export const lineOf = (s: DubState, r: SceneRound, level: Level): JpText => sceneLines(sceneOf(s, r), s.audience)[level];
+export const adlibOf = (s: DubState, r: SceneRound): AdLib => sceneAdlib(sceneOf(s, r), s.audience);
+/** Is this actor playing the ad-lib? Only once they've said yes: until then it's the scripted line. */
+export const isAdlib = (a: Actor | undefined | null): boolean => a?.adlib === 'accepted';
+/** Is the ad-lib offer still open for this actor (no answer yet)? */
+export const adlibOpen = (a: Actor | undefined | null): boolean => a?.adlib === 'offered';
+/** An actor's line: the script at their level, or the ad-lib's model line. */
+const lineFor = (s: DubState, r: SceneRound, a: Actor): JpText => (isAdlib(a) ? adlibOf(s, r).model : lineOf(s, r, a.level));
 const current = (s: DubState): SceneRound | null => s.rounds[s.round - 1] ?? null;
 const actorOf = (r: SceneRound, id: string) => r.actors.find((a) => a.playerId === id);
 
@@ -361,6 +396,42 @@ export function saidDirection(heard: Utterance | null, d: Direction, lineKana: s
   });
 }
 
+// Casual speech (goal 4.8), checked leniently on the reading: any one sign counts. A clause that ends in
+// a polite form (です/ます, でしょう, ください…, even with よ/ね/か) is polite, not casual. Contractions are
+// looked for with katakana words taken out (so ホテル is not 〜てる), and でしょ only when it isn't でしょう.
+const CONTRACTIONS = /(ちゃった|じゃった|ちゃう|じゃう|ちゃって|じゃって|[てで](る|た|て|ない)|[とど](いた|いて)|[とど]く(?!だ)|じゃん|でしょ(?!う))/;
+const N_DA = /(ん|なん)だ(よ|ね|けど|から|もん|ろう)?$/;
+const CASUAL_END = /(よ|ね|の|かな|だ|ぞ|ぜ|わ|さ|っけ|じゃん|でしょ|し)$/;
+const PLAIN_END = /([うくぐすつぬぶむるたいだ]|ない|かった|て|で)$/;
+const POLITE_END = /(です|ます|ました|ません|でした|ましょう|でしょう|ください|なさい|ございます)(よ|ね|よね|か)?$/;
+
+/**
+ * The ad-lib's check: lenient on purpose (there is no script to match). Casual if a clause ends in a
+ * casual particle, the copula or a plain form (よ, ね, の？, だ, 〜た, 〜ない, 〜う…) and not a polite one,
+ * or a clause ends in 〜んだ, or a contraction (〜ちゃった, 〜てる, 〜とく…) turns up outside katakana; on
+ * the mission if one of its key words came through.
+ */
+export function adlibCheck(heard: Utterance | string, adlib: Pick<AdLib, 'keys'>): AdlibCheck {
+  const raw = typeof heard === 'string' ? heard : (heard.reading ?? heard.text);
+  const clauses = raw
+    .normalize('NFKC')
+    .split(/[、。,.!?！？…「」]+/)
+    .map((c) => normalizeReading(c).replace(/[\s　]+/g, ''))
+    .filter(Boolean);
+  const all = normalizeReading(raw);
+  const bare = normalizeReading(raw.normalize('NFKC').replace(/[ァ-ヶー]+/g, '')).replace(/[\s　]+/g, '');
+  const frames: string[] = [];
+  if (clauses.some((c) => (CASUAL_END.test(c) || PLAIN_END.test(c)) && !POLITE_END.test(c))) frames.push('plain');
+  if (clauses.some((c) => N_DA.test(c))) frames.push('n-da');
+  if (CONTRACTIONS.test(bare)) frames.push('teru');
+  const said = soundKey(all);
+  const key = adlib.keys.some((k) => said.includes(soundKey(k)));
+  return { casual: frames.length > 0, key, frames };
+}
+
+/** The ad-lib check as a similarity, so the word points work the same as a scripted read. */
+export const adlibSimilarity = (c: AdlibCheck): number => (c.casual && c.key ? ADLIB_SIM.both : c.casual || c.key ? ADLIB_SIM.one : ADLIB_SIM.neither);
+
 /** Points for the words, from the plain rehearsal. */
 export function wordPoints(a: Actor): number {
   if (a.rehearsal) {
@@ -373,6 +444,22 @@ export function wordPoints(a: Actor): number {
   return a.take && !a.take.checked ? WORD_POINTS.unchecked : 0;
 }
 
+/** How long a take may record: the line's limit, or the ad-lib's (no script to time it by). */
+function limitFor(kana: string, slow: boolean, adlib: boolean): number {
+  return adlib ? Math.min(MAX_TAKE_MS, Math.round(ADLIB_TAKE_MS * (slow ? 1.5 : 1))) : takeLimitMs(kana, slow);
+}
+
+/**
+ * The ad-lib offers so far and how many were taken (the step's gate: N4 players accept 60% or more, by
+ * `offerRate`). `offered` counts the answered offers the rate counts (not 'away'); an offer still open
+ * waits until it's answered or times out.
+ */
+export function adlibTally(s: DubState): { offered: number; accepted: number; rate: number | null } {
+  const answers = s.rounds.flatMap((r) => r.actors.flatMap((a) => (a.adlib && a.adlib !== 'offered' ? [a.adlib] : [])));
+  const counted = answers.filter((a) => a !== 'away');
+  return { offered: counted.length, accepted: counted.filter((a) => a === 'accepted').length, rate: offerRate(answers) };
+}
+
 function startScene(s: DubState, ctx: ModeContext): void {
   s.round += 1;
   const scene = episodeOfState(s).scenes[s.round - 1]!;
@@ -382,6 +469,14 @@ function startScene(s: DubState, ctx: ModeContext): void {
     const offered = dealt[i]!;
     return { playerId: p.id, level: p.level, offered, direction: offered[0], rehearsal: null, take: null, passed: false, skipped: false, grid: [] };
   });
+  // The ad-lib hard role: offered to one N4 player a scene, in turn. No N4 player, no change.
+  const n4 = actors.filter((a) => a.level === 'n4');
+  const pick = n4[(s.round - 1) % Math.max(1, n4.length)];
+  // Spotlight (for Ladi to confirm): in a room of 4 or more, a lone N4 player who played the ad-lib last
+  // scene gets this one off, so the same voice isn't on the spot every scene.
+  const prev = s.rounds.at(-1)?.actors.find((a) => a.playerId === pick?.playerId);
+  const rest = n4.length === 1 && ctx.connected().length >= 4 && prev?.adlib === 'accepted';
+  if (pick && !rest) pick.adlib = 'offered';
   s.rounds.push({ index: s.round, sceneId: scene.id, actors, order: [], screening: null, guesses: {}, hearts: {}, results: null, best: null });
 }
 
@@ -502,8 +597,8 @@ function settle(s: DubState, r: SceneRound, ctx: ModeContext): void {
 }
 
 function phrases(s: DubState, r: SceneRound, a: Actor, scene: Scene, ctx: ModeContext): void {
-  const line = lineOf(s, r, a.level);
-  const itemId = `dub:${scene.id}:${a.level}`;
+  const line = lineFor(s, r, a);
+  const itemId = isAdlib(a) ? `dub:${scene.id}:adlib` : `dub:${scene.id}:${a.level}`;
   const reh = a.rehearsal;
   const outcome = !reh ? 'seen' : reh.similarity >= WORDS_FULL_AT[a.level] ? 'said' : reh.similarity >= CLOSE_AT ? 'retry' : 'missed';
   ctx.phrase(a.playerId, { itemId, text: line.text, kana: line.kana, en: line.en, outcome, recall: 'read' });
@@ -617,6 +712,9 @@ export const dubClubMode: Mode<DubState, DubView> = {
   leave(s, phase, ctx) {
     const r = current(s);
     if (phase === 'answer' && r) {
+      // An offer nobody answered by the end of recording timed out ('away' if they'd dropped out).
+      const here = new Set(ctx.connected().map((p) => p.id));
+      for (const a of r.actors) if (adlibOpen(a)) a.adlib = here.has(a.playerId) ? 'timeout' : 'away';
       r.order = shuffled(
         r.actors.filter((a) => a.take).map((a) => a.playerId),
         () => ctx.random(),
@@ -719,12 +817,16 @@ export const dubClubMode: Mode<DubState, DubView> = {
         if (reh.tries >= REHEARSALS) return moveError('no-more-tries');
         reh.tries += 1;
         const reading = utteranceReading(raw.utterance).slice(0, 320);
-        const sim = wordsSimilarity(lineOf(s, r, me.level).kana, reading);
+        // An ad-lib has no script to match: the lenient casual check stands in for the similarity. While
+        // the offer is open, the plain read is of the scripted line (rehearsing isn't a yes).
+        const check = isAdlib(me) ? adlibCheck(raw.utterance, adlibOf(s, r)) : undefined;
+        const sim = check ? adlibSimilarity(check) : wordsSimilarity(lineOf(s, r, me.level).kana, reading);
         // The best try counts.
         if (reh.heard === null || sim > reh.similarity) {
           reh.similarity = sim;
           reh.heard = String(raw.utterance.text).slice(0, 160);
           reh.reading = reading;
+          if (check) reh.adlib = check;
         }
         return MOVE_OK;
       }
@@ -736,9 +838,11 @@ export const dubClubMode: Mode<DubState, DubView> = {
         if (!clipId && !local) return moveError('no-clip');
         const dur = typeof raw.durMs === 'number' && Number.isFinite(raw.durMs) ? raw.durMs : MAX_TAKE_MS;
         const heard = parseHeard(raw.heard);
-        const line = lineOf(s, r, me.level);
+        // Sending the scripted take without answering the offer: it timed out.
+        if (adlibOpen(me)) me.adlib = 'timeout';
+        const line = lineFor(s, r, me);
         const d = directionOf(me.direction)!;
-        const limit = takeLimitMs(line.kana, !!d.slow);
+        const limit = limitFor(line.kana, !!d.slow, isAdlib(me));
         me.take = {
           clipId: local ? null : clipId,
           local,
@@ -749,6 +853,18 @@ export const dubClubMode: Mode<DubState, DubView> = {
           at: ctx.now,
         };
         me.passed = false;
+        return MOVE_OK;
+      }
+      case 'adlib': {
+        // Yes to the ad-lib, or "not this time": the scripted N4 line instead. Until the take is sent.
+        if (phase !== 'prompt' && phase !== 'answer') return moveError('wrong-phase');
+        if (!me) return moveError('not-playing');
+        if (me.adlib !== 'offered' && me.adlib !== 'accepted' && me.adlib !== 'declined') return moveError('not-offered');
+        if (me.take) return moveError('already-sent');
+        const next = raw.accept === true ? 'accepted' : 'declined';
+        // A plain read checked the other way doesn't carry over.
+        if (isAdlib(me) !== (next === 'accepted')) me.rehearsal = null;
+        me.adlib = next;
         return MOVE_OK;
       }
       case 'pass': {
@@ -831,6 +947,10 @@ export const dubClubMode: Mode<DubState, DubView> = {
     delete r.hearts[playerId];
   },
 
+  offers(s, playerId) {
+    return s.rounds.flatMap((r) => r.actors.flatMap((a) => (a.playerId === playerId && a.adlib && a.adlib !== 'offered' ? [{ role: 'dub-club:adlib', answer: a.adlib }] : [])));
+  },
+
   progress(s) {
     return { round: s.round, totalRounds: s.totalRounds };
   },
@@ -860,7 +980,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
         playAt: playing ? sc.at : null,
         index: sc.index,
         count: r.order.length,
-        line: lineOf(s, r, a.level),
+        line: lineFor(s, r, a),
         skipped: a.skipped,
         guessed: Object.entries(r.guesses).filter(([g, m]) => g !== a.playerId && m[a.playerId]).length,
         guessers: guessersFor(r, a, ctx).length,
@@ -868,6 +988,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
         card: revealed ? cardView(d, level) : null,
         guessedBy: revealed ? guessedRight(r, a) : [],
         spoiler: revealed && !!a.take?.spoiler,
+        adlib: isAdlib(a),
       };
     }
     const done =
@@ -892,12 +1013,13 @@ export const dubClubMode: Mode<DubState, DubView> = {
             bg: sc2.bg,
             char: sc2.char,
             who: sc2.who,
-            line: lineOf(s, cur.round, best?.level ?? 'n5'),
+            line: best ? lineFor(s, cur.round, best) : lineOf(s, cur.round, 'n5'),
             playerId: best?.playerId ?? null,
             clipId: best?.take?.clipId ?? null,
             local: !!best?.take?.local,
             durMs: best?.take?.durMs ?? 0,
             card: d ? cardView(d, level) : null,
+            adlib: isAdlib(best),
           };
         }
       }
@@ -914,18 +1036,22 @@ export const dubClubMode: Mode<DubState, DubView> = {
     let me: DubView['me'] = null;
     if (player && r && scene) {
       const mine = actorOf(r, player.id);
-      const line = lineOf(s, r, mine?.level ?? level);
+      const adlib = isAdlib(mine) ? adlibOf(s, r) : null;
+      // The offer shows (beside the scripted line) until it's answered, while there's still a take to make.
+      const offer = adlibOpen(mine) && !mine!.take && (phase === 'prompt' || phase === 'answer') ? adlibOf(s, r) : null;
+      const line = mine ? lineFor(s, r, mine) : lineOf(s, r, level);
       const res = r.results?.find((x) => x.playerId === player.id);
       const d = mine ? directionOf(mine.direction) : undefined;
       const reh = mine?.rehearsal;
       const canGuess = !!a && a.playerId !== player.id && !!sc && ['play', 'guess', 'replay', 'regroup'].includes(sc.step);
       me = {
         level,
-        line: mine ? { ...line, ...(level === 'kana' ? { romaji: toRomaji(line.kana) } : {}) } : null,
+        // An ad-lib has no script showing: the mission stands in for it.
+        line: mine && !adlib ? { ...line, ...(level === 'kana' ? { romaji: toRomaji(line.kana) } : {}) } : null,
         offered: mine && !mine.take && (phase === 'prompt' || phase === 'answer') ? mine.offered.map((id) => cardView(directionOf(id)!, level, true)) : [],
         direction: d ? cardView(d, level, true) : null,
-        limitMs: mine ? takeLimitMs(line.kana, !!d?.slow) : 0,
-        rehearsal: reh ? { tries: reh.tries, left: REHEARSALS - reh.tries, heard: reh.heard, similarity: reh.similarity, marks: wordMarks(line.kana, reh.reading).marks } : null,
+        limitMs: mine ? limitFor(line.kana, !!d?.slow, !!adlib) : 0,
+        rehearsal: reh ? { tries: reh.tries, left: REHEARSALS - reh.tries, heard: reh.heard, similarity: reh.similarity, marks: adlib ? [] : wordMarks(line.kana, reh.reading).marks } : null,
         sent: !!mine?.take,
         passed: !!mine?.passed,
         acting: !!mine,
@@ -936,6 +1062,12 @@ export const dubClubMode: Mode<DubState, DubView> = {
         heart: r.hearts[player.id] ?? null,
         heartable: phase === 'reveal' ? heartable(r).filter((id) => id !== player.id) : [],
         myTurn: (!!a && a.playerId === player.id) || (step?.kind === 'scene' && step.scene?.playerId === player.id),
+        adlib:
+          mine && adlib
+            ? { state: 'accepted', mission: adlib.mission, emoji: adlib.emoji, check: reh?.adlib ?? null, model: mine.take || phase === 'reveal' || phase === 'score' ? adlib.model : null }
+            : mine && offer
+              ? { state: 'offered', mission: offer.mission, emoji: offer.emoji, check: null, model: null }
+              : null,
         notes:
           showResults && mine?.take && res
             ? { words: res.words, similarity: reh?.similarity ?? null, checked: mine.take.checked, spoiler: mine.take.spoiler, total: res.total, guessedBy: res.guessedBy.length, hearts: res.hearts, best: r.best === player.id }
@@ -950,7 +1082,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
       phaseAt: s.phaseAt,
       episode: { id: episode.id, title: episode.title },
       scene: scene && r ? { id: scene.id, bg: scene.bg, char: scene.char, who: scene.who, setup: scene.setup, line: lineOf(s, r, 'n5') } : null,
-      cast: r ? r.actors.map((x) => ({ playerId: x.playerId, rehearsed: !!x.rehearsal, sent: !!x.take, local: !!x.take?.local, passed: x.passed })) : [],
+      cast: r ? r.actors.map((x) => ({ playerId: x.playerId, rehearsed: !!x.rehearsal, sent: !!x.take, local: !!x.take?.local, passed: x.passed, adlib: isAdlib(x) })) : [],
       now,
       done,
       results: showResults && r?.results ? r.results.map((x) => ({ ...x, card: cardView(directionOf(x.direction)!, level, true) })) : null,

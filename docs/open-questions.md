@@ -56,6 +56,19 @@ The optional learning path and sentence frames ([progressive-learning.md](progre
 the path's order and goals are a first guess; a VIP badge for players' next games, and frame chips
 during play, are left for later.
 
+## N4 hard roles (2026-11-01)
+
+Harder scripts for N4 players inside eight existing games, plus N4 decks for three more
+([n4-hard-roles.md](n4-hard-roles.md)). Each game's decisions are in its own doc under `modes/`.
+The ones that change the most: a declined Bento Haus manager seat stays empty for the shift; Last
+Train's Lost and Found replaces two stops when an N4 player is in the room; Narabete's N4 defence adds
+a 15 s encore to every round, the Time Line too; N4 presenters in Happyōkai get only the two new
+decks' titles, and sometimes the usual titles too (Ladi's call). Ladi also decided: a declined Bento
+manager seat passes to the next N4 player, the host voices accepted N4 lines (no player's recording on
+the TV), N4 content for Kids and Cheeky rooms, and the offer log saved in account progress. Not built
+yet: the host playing a role when nobody is N4, the Gallery, curveball tiles, and the commentary booth
+outside Narabete.
+
 ## Phase 0 (multiplayer)
 
 1. **Repo layout: one root package, no workspaces.** One `package.json` and `tsconfig.json` at

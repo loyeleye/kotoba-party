@@ -1,6 +1,6 @@
 // The kanji Shodō Taikai (the Calligraphy Contest) asks players to write, in writing order (not
 // frequency), from the Japanese expert panel's starter list (2026-10-27). N5 players write steps
-// 1–7 (66 kanji); N4 players also get steps 8–10 (45 short N4 kanji). JLPT has published no
+// 1–7 (70 kanji); N4 players also get steps 8–10 (45 short N4 kanji). JLPT has published no
 // official kanji lists since 2010, so the level bands are our own draft picks.
 //
 // Each kanji has one "say word": the word players say aloud for it, never a reading on its own
@@ -109,6 +109,7 @@ const steps: { level: 'n5' | 'n4'; rows: Row[] }[] = [
       ['母', 'mother', '母', 'はは', 'my mother'],
       ['北', 'north', '北', 'きた', 'north'],
       ['外', 'outside', '外', 'そと', 'outside'],
+      ['分', 'minute, part', '分かる', 'わかる', 'to understand'],
     ],
   },
   // 6 · Six and seven strokes
@@ -127,6 +128,7 @@ const steps: { level: 'n5' | 'n4'; rows: Row[] }[] = [
       ['来', 'come', '来る', 'くる', 'to come'],
       ['男', 'man', '男の人', 'おとこのひと', 'a man'],
       ['車', 'car, wheel', '車', 'くるま', 'a car'],
+      ['西', 'west', '西', 'にし', 'west'],
     ],
   },
   // 7 · Stretch (8–10 strokes)
@@ -136,6 +138,8 @@ const steps: { level: 'n5' | 'n4'; rows: Row[] }[] = [
       ['金', 'gold, money', 'お金', 'おかね', 'money'],
       ['雨', 'rain', '雨', 'あめ', 'rain'],
       ['東', 'east', '東', 'ひがし', 'east'],
+      ['南', 'south', '南', 'みなみ', 'south'],
+      ['時', 'time, hour', '時間', 'じかん', 'time'],
       ['学', 'study', '学生', 'がくせい', 'a student'],
       ['食', 'eat', '食べる', 'たべる', 'to eat'],
       ['前', 'front, before', '前', 'まえ', 'in front'],

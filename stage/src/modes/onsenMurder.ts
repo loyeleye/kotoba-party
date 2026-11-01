@@ -205,8 +205,25 @@ function answerScreen(view: RoomView, game: OnsenView): HTMLElement {
     'div',
     { class: 'om-stage', 'data-key': `ask:${cur.no}` },
     caseStrip(game),
-    h('div', { class: 'om-layout' }, h('div', { class: 'om-main' }, asked, answer, clue), notebook(view, game, { freshStyle: appearAfter(game.thinkMs + game.subtitleMs + 600, elapsed) })),
+    h('div', { class: 'om-layout' }, h('div', { class: 'om-main' }, asked, answer, clue, deputyPanel(view, game)), notebook(view, game, { freshStyle: appearAfter(game.thinkMs + game.subtitleMs + 600, elapsed) })),
   );
+}
+
+/** The N4 deputy relaying the answer to the room (reported speech or the passive), once they've said it. */
+function deputyPanel(view: RoomView, game: OnsenView): HTMLElement | null {
+  const d = game.deputy;
+  if (!d || !d.reporting || d.status === 'declined') return null;
+  const who = nameOf(view, d.playerId);
+  if (d.status === 'reported' && d.line)
+    return h(
+      'div',
+      { class: 'om-deputy om-appear' },
+      h('span', { class: 'om-who' }, `🕵️ Deputy ${who}${d.via === 'speech' ? ' 🎤' : d.via === 'tap' ? ' 🧩' : ''} +${d.points}`),
+      ruby(d.line, { class: 'om-ja' }),
+      h('span', { class: 'om-en' }, d.line.en),
+    );
+  if (d.status === 'missed') return null;
+  return h('p', { class: 'om-line muted om-appear', style: appearAfter(game.thinkMs, 0) }, `🕵️ Deputy ${who} is reporting what they said…`);
 }
 
 function accuseScreen(view: RoomView, game: OnsenView): HTMLElement {

@@ -24,6 +24,8 @@ import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mod
 import {
   answerFrames,
   closingFor,
+  deckTitlesFor,
+  DECKS,
   framesFor,
   GRADE_STAMPS,
   holidayPicture,
@@ -40,6 +42,7 @@ import {
   teacherComment,
   titleOf,
   titlesFor,
+  type Deck,
   type MishapId,
   type Slide,
   type Title,
@@ -293,7 +296,8 @@ export interface HappyokaiView {
   me: {
     role: 'presenter' | 'assistant' | 'audience';
     level: Level;
-    titleChoices: { key: number; jp: JpText; romaji?: string }[];
+    /** `deck`: the N4 deck the title is from (Then and now, If I were…), for its label. */
+    titleChoices: { key: number; jp: JpText; romaji?: string; deck?: JpText }[];
     /** Backstage: the opening and closing to rehearse. */
     rehearse: { opening: JpText & { romaji?: string }; closing: JpText & { romaji?: string } } | null;
     /** The presenter's script for this slide: the opening, the closing or a mishap's recovery line. */
@@ -562,6 +566,15 @@ function computeResult(t: Talk, level: Level): TalkResult {
   };
 }
 
+/** Whether talk `index` is a mix for an N4 presenter: their 2nd, 4th… talk (their 1st, 3rd… is a deck pair), or every other talk when each player presents once. */
+export function n4Mix(s: Pick<HappyokaiState, 'order'>, index: number): boolean {
+  const id = s.order[index];
+  const before = s.order.slice(0, index).filter((x) => x === id).length;
+  // With 5 or more players everyone presents once: then every other talk in the running order is a mix.
+  if (s.order.filter((x) => x === id).length === 1) return index % 2 === 1;
+  return before % 2 === 1;
+}
+
 function startTalk(s: HappyokaiState, ctx: ModeContext): void {
   const index = s.talk ? s.talk.index + 1 : 0;
   const presenterId = s.order[index]!;
@@ -570,8 +583,24 @@ function startTalk(s: HappyokaiState, ctx: ModeContext): void {
   const fresh = titlesFor(audience).filter((x) => !s.usedTitles.includes(x.id));
   const pool = fresh.length >= 2 ? fresh : titlesFor(audience);
   const people = (x: Title) => x.tags.includes('person') || x.tags.includes('work') || x.tags.includes('love') || x.tags.includes('travel');
-  const a = shuffled(pool.filter((x) => !people(x)), () => ctx.random())[0];
-  const b = shuffled(pool.filter((x) => people(x)), () => ctx.random())[0];
+  // An N4 presenter's talks alternate (Ladi's call): the first is a deck pair (one Then and now title,
+  // one If I were… title), the next a mix (one deck title, from the deck they didn't pick last time, and
+  // one usual title, in random order), and so on.
+  const deckPick = (deck: Deck) => {
+    const all = deckTitlesFor(audience, deck);
+    const unused = all.filter((x) => !s.usedTitles.includes(x.id));
+    return shuffled(unused.length ? unused : all, () => ctx.random())[0];
+  };
+  const n4 = ctx.player(presenterId)?.level === 'n4';
+  let a: Title | undefined;
+  let b: Title | undefined;
+  if (n4 && n4Mix(s, index)) {
+    const lastId = s.done.filter((r) => r.presenterId === presenterId).at(-1)?.titleId;
+    const lastDeck = lastId ? titleOf(lastId)?.deck : undefined;
+    const deck: Deck = lastDeck === 'then-now' ? 'if' : lastDeck === 'if' ? 'then-now' : ctx.random() < 0.5 ? 'then-now' : 'if';
+    [a, b] = shuffled([deckPick(deck), shuffled(pool, () => ctx.random())[0]], () => ctx.random());
+  } else if (n4) [a, b] = [deckPick('then-now'), deckPick('if')];
+  else [a, b] = [shuffled(pool.filter((x) => !people(x)), () => ctx.random())[0], shuffled(pool.filter((x) => people(x)), () => ctx.random())[0]];
   const titleChoices = (a && b ? [a, b] : shuffled(pool, () => ctx.random()).slice(0, 2)).map((x) => x.id);
   s.talk = {
     index,
@@ -611,7 +640,7 @@ function scriptsFor(t: Talk, ctx: ModeContext): JpText[] {
   if (st.kind === 'close') return [closingFor(p.level)];
   if (st.kind === 'mishap') return st.mishapId ? [recoveryFor(st.mishapId, p.level, talkWord(t)?.word ?? null, graphUp(t), audienceOf(ctx))] : [];
   const slide = st.slideId ? slideOf(st.slideId) : undefined;
-  return slide ? readySentences(slide, p.level, title.topic) : [];
+  return slide ? readySentences(slide, p.level, title.topic, title.deck) : [];
 }
 
 /** Which of Chōchin-san's three holiday photos the backstage curtain shows: talk 1, the middle, the last. */
@@ -795,7 +824,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         for (const p of ctx.players()) {
           if (p.id === t.presenterId || !p.connected) continue;
           const level = presenter ? lower(p.level, presenter.level) : p.level;
-          t.cards[p.id] = questionsFor(level, talkWord(t) ?? null, title?.topic ?? null, audienceOf(ctx), () => ctx.random());
+          t.cards[p.id] = questionsFor(level, talkWord(t) ?? null, title?.topic ?? null, audienceOf(ctx), () => ctx.random(), title?.deck);
         }
         ctx.cue({ host: 'chochin', event: 'happyokai_question' });
         break;
@@ -1128,11 +1157,14 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
       mine = {
         role,
         level: me.level,
-        titleChoices: t && role === 'presenter' && phase === 'prompt' ? t.titleChoices.map((id, key) => ({ key, jp: forLevel(titleOf(id)!.jp, me.level), ...(romaji ? { romaji: toRomaji(titleOf(id)!.jp.kana) } : {}) })) : [],
+        titleChoices: t && role === 'presenter' && phase === 'prompt' ? t.titleChoices.map((id, key) => {
+                const x = titleOf(id)!;
+                return { key, jp: forLevel(x.jp, me.level), ...(romaji ? { romaji: toRomaji(x.jp.kana) } : {}), ...(x.deck ? { deck: forLevel(DECKS[x.deck].name, me.level) } : {}) };
+              }) : [],
         rehearse: t && title && role === 'presenter' && phase === 'prompt' ? { opening: withRomaji(openingFor(me.level, me.name, title.jp)), closing: withRomaji(closingFor(me.level)) } : null,
         script: role === 'presenter' && !picture && scripts[0] ? withRomaji(scripts[0]) : null,
         word: role === 'presenter' && slide ? forLevel(slide.word, me.level) : null,
-        frames: role === 'presenter' && slide ? framesFor(me.level, slide) : [],
+        frames: role === 'presenter' && slide ? framesFor(me.level, slide, title?.deck) : [],
         ready: role === 'presenter' && picture ? scripts.map((x, key) => ({ key, ...x, ...(romaji ? { romaji: toRomaji(x.kana) } : {}) })) : [],
         kanpe: role === 'presenter' && t?.kanpe && t.kanpe.step === step ? t.kanpe.key : null,
         // Views have no clock: before MIN_NEXT_MS with nothing said, Next is refused with say-something.
@@ -1145,7 +1177,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         questions: t && phase === 'encore' && t.cards[me.id] && !t.chosen ? t.cards[me.id]!.map((q, key) => ({ key, ...q, ...(romaji ? { romaji: toRomaji(q.kana) } : {}) })) : [],
         asked: asked?.text ?? null,
         pickQuestion: t && role === 'presenter' && phase === 'encore' && !t.chosen ? t.asked.map((a) => ({ playerId: a.playerId, text: a.text, kana: a.kana, ...(a.furigana ? { furigana: a.furigana } : {}), en: a.en })) : [],
-        answerFrames: role === 'presenter' && phase === 'encore' && t?.chosen ? answerFrames(me.level) : [],
+        answerFrames: role === 'presenter' && phase === 'encore' && t?.chosen ? answerFrames(me.level, title?.deck) : [],
         canGrade: !!t && phase === 'reveal' && t.graders.includes(me.id) && t.grades[me.id] === undefined,
         graded: t?.grades[me.id] ?? null,
         canVote: phase === 'finale' && s.votes[me.id] === undefined && s.done.some((r) => r.presenterId !== me.id),
