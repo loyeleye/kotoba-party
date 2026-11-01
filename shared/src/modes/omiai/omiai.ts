@@ -33,7 +33,7 @@ import { analysisText, checkManners, type CasualHit, type MannersResult, type Re
 import { playerTextAllowed } from '../../moderation.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
-import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 
 // ---- tuning ----
 
@@ -749,7 +749,7 @@ function standIn(s: OmiaiState, ctx: ModeContext): boolean {
   r.standIn = boothFor(line, null, 'Nobiko-san');
   const slots = { line: line.jp.text, line_kana: line.jp.kana, line_en: line.jp.en };
   // Experiment standInSetup: her short setup line opens the prompt; the opening follows it, then the question.
-  const atMs = EXPERIMENTS.standInSetup ? STAND_IN_SETUP_MS : 0;
+  const atMs = EXPERIMENTS.standInSetup ? standInSetupFor(ctx.content.hostLines, 'omiai_standin_setup') : 0;
   if (EXPERIMENTS.standInSetup) {
     r.standIn.atMs = atMs;
     ctx.cue({ host: 'nobiko', event: 'omiai_standin_setup' });

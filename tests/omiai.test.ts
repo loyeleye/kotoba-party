@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import { withExperiments } from '../shared/src/modes/experiments.js';
-import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
@@ -36,6 +36,9 @@ import { addReadings, createReader, type Reader } from '../server/src/reading.js
 import { Bot, Director } from '../tools/bots/bot.js';
 import { omiaiPolicy } from '../tools/bots/policies/omiai.js';
 import { content as REAL_CONTENT, hashView, startServer, until } from './helpers.js';
+
+// standInSetup's gap after the setup line, from its bank line (at least STAND_IN_SETUP_MS).
+const SETUP_MS = standInSetupFor(REAL_CONTENT.hostLines, 'omiai_standin_setup');
 
 // ---- fixtures ----
 
@@ -1210,6 +1213,12 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
       expect(t.score(P)).toBe(before);
       return;
     }
+    // Not before the opening has landed: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！').error).toBe('bad-move');
+    // The opening lands (the curveball goes to p3): now it may be said.
+    t.play('p2', { kind: 'nakodo', utterance: speech(said) });
+    expect(t.st.current!.gallery!.curveball?.playerId).toBe('p3');
     expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
     // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
     expect(say('ありがとう').error).toBeUndefined();
@@ -1367,10 +1376,10 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
       const ours = t.s.cues.filter((c) => c.event.startsWith('omiai_standin') || c.event === 'prompt_read');
       expect(ours).toEqual([
         { host: 'nobiko', event: 'omiai_standin_setup' },
-        { host: 'nobiko', event: 'omiai_standin', slots: { line: l.jp.text, line_kana: l.jp.kana, line_en: l.jp.en }, atMs: STAND_IN_SETUP_MS },
-        expect.objectContaining({ event: 'prompt_read', atMs: STAND_IN_SETUP_MS + voiceMs(l.jp.kana) }),
+        { host: 'nobiko', event: 'omiai_standin', slots: { line: l.jp.text, line_kana: l.jp.kana, line_en: l.jp.en }, atMs: SETUP_MS },
+        expect.objectContaining({ event: 'prompt_read', atMs: SETUP_MS + voiceMs(l.jp.kana) }),
       ]);
-      expect(t.s.deadline! - t.now).toBe(8_000 + STAND_IN_SETUP_MS + voiceMs(l.jp.kana));
+      expect(t.s.deadline! - t.now).toBe(8_000 + SETUP_MS + voiceMs(l.jp.kana));
       expect(t.view('p1').me!.gallery).toBeNull();
     });
 

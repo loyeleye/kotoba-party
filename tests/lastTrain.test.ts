@@ -830,9 +830,9 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
     g.start(4);
     g.until('answer');
     role(g, 'p1', true);
-    const P = 'p3';
+    let P = 'p3';
     const say = (text: string) => g.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
-    const before = g.score(P);
+    let before = g.score(P);
     if (!on) {
       // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
       expect(say('すごい！').error).toBe('not-allowed');
@@ -841,6 +841,13 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
       expect(g.score(P)).toBe(before);
       return;
     }
+    // Not while the line is still being said: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(g.view(P).me!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！').error).toBe('not-allowed');
+    // The line lands at the reveal: now it may be said, by whichever of them didn't get the curveball.
+    answerAll(g);
+    if (g.s.gallery!.curveball?.playerId === P) P = 'p2';
+    before = g.score(P);
     expect(g.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
     // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
     expect(say('ありがとう').error).toBeUndefined();
@@ -1171,7 +1178,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
       expect(g.s.curveballUsed).toBe(true);
     });
 
-    it('standInCurveball: a wrong pick earns nothing; nobody left to deal it to means no curveball and no wait', () => {
+    it('standInCurveball: a wrong pick earns nothing; a quick tap while he speaks doesn\'t cost the curveball', () => {
       onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
       const g = table(ROLES, ['kana']);
       g.start(4);
@@ -1190,9 +1197,14 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
       h.until('prompt');
       h.play('p1', { kind: 'gallery', pick: 'naruhodo' });
       wake(h);
-      expect(h.s.standIn!.sg!.g.curveball).toBeNull();
+      // Nobody is left who hasn't reacted, so it goes to one who has (dealStandIn's fallback); the tap stays.
+      expect(h.s.standIn!.sg!.g.curveball?.playerId).toBe('p1');
+      expect(h.s.curveballUsed).toBe(true);
+      expect(h.s.standIn!.sg!.g.picks).toEqual({ p1: 'naruhodo' });
+      expect(h.view('p1').me!.gallery!.kind).toBe('curveball');
+      expect(h.play('p1', { kind: 'gallery', pick: h.s.standIn!.sg!.g.curveball!.word }).error).toBeUndefined();
+      expect(h.score('p1')).toBe(curveballPoints('last-train'));
       expect(h.state.phase).toBe('answer');
-      expect(h.s.curveballUsed).toBe(false);
     });
 
     it('stays out of rooms with an N4 player, and of 3+ rooms', () => {

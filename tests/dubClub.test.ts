@@ -8,11 +8,14 @@ import { Room, wavDurationMs } from '../server/src/room.js';
 import { soundMorae } from '../shared/src/modes/karaokeDuel/scoring.js';
 import { ACT_POINTS, adlibCheck, adlibSimilarity, adlibTally, BOOTH_LINE_AT_MS, casualChunk, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, missionWord, saidDirection, STANDIN_AT_MS, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
 import { withExperiments } from '../shared/src/modes/experiments.js';
-import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
 import type { HostCue } from '../shared/src/modes/mode.js';
 import { DIRECTIONS, EPISODES, directionOf, directionsFor, episodesFor, sceneAdlib, takeLimitMs } from '../shared/src/modes/dubClub/scenes.js';
 import type { JoinResponse } from '../shared/src/protocol.js';
 import { content } from './helpers.js';
+
+// standInSetup's gap after the setup line, from its bank line (at least STAND_IN_SETUP_MS).
+const SETUP_MS = standInSetupFor(content.hostLines, 'dub_standin_setup');
 
 const LEVELS = ['kana', 'n5', 'n4'] as const;
 
@@ -519,6 +522,11 @@ describe('Dub Club: mixed rooms', () => {
       expect(t.score(P)).toBe(before);
       return;
     }
+    // Not while the take is playing: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！')).toMatchObject({ ok: false });
+    // Once it has played (the curveball goes to the N5 player): now it may be said.
+    t.until(() => t.view().now?.step === 'guess');
     expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
     // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
     expect(say('ありがとう')).toMatchObject({ ok: true });
@@ -759,12 +767,12 @@ describe('Dub Club: mixed rooms', () => {
       const ours = t.cues.filter((c) => c.event.startsWith('dub_standin'));
       expect(ours).toEqual([
         { host: 'fude', event: 'dub_standin_setup', atMs: STANDIN_AT_MS },
-        { host: 'fude', event: 'dub_standin', slots: { line: model.text, line_kana: model.kana, line_en: model.en }, atMs: STANDIN_AT_MS + STAND_IN_SETUP_MS },
+        { host: 'fude', event: 'dub_standin', slots: { line: model.text, line_kana: model.kana, line_en: model.en }, atMs: STANDIN_AT_MS + SETUP_MS },
       ]);
       const tv = t.view().standIn!;
-      expect(tv.at).toBe(t.view().phaseAt + STANDIN_AT_MS + STAND_IN_SETUP_MS);
+      expect(tv.at).toBe(t.view().phaseAt + STANDIN_AT_MS + SETUP_MS);
       expect(tv.bubbles).toBeUndefined();
-      expect(t.room.state.deadline! - t.view().phaseAt).toBe(Math.max(12_000, STANDIN_AT_MS + STAND_IN_SETUP_MS + tv.ms));
+      expect(t.room.state.deadline! - t.view().phaseAt).toBe(Math.max(12_000, STANDIN_AT_MS + SETUP_MS + tv.ms));
       expect(t.view(t.seats[0]!).me!.gallery).toBeNull();
     });
 

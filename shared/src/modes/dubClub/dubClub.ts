@@ -29,7 +29,7 @@ import { soundMorae } from '../karaokeDuel/scoring.js';
 import { splitMorae } from '../karaokeDuel/songs.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
-import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
 
@@ -856,7 +856,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
         if (!s.standIn && hostStandsIn(ctx.connected().map((p) => p.level))) {
           const adlib = adlibOf(s, r);
           // Experiment standInSetup: his short setup line where the ad-lib used to start; the ad-lib follows it.
-          const atMs = STANDIN_AT_MS + (EXPERIMENTS.standInSetup ? STAND_IN_SETUP_MS : 0);
+          const atMs = STANDIN_AT_MS + (EXPERIMENTS.standInSetup ? standInSetupFor(ctx.content.hostLines, 'dub_standin_setup') : 0);
           if (EXPERIMENTS.standInSetup) ctx.cue({ host: 'fude', event: 'dub_standin_setup', atMs: STANDIN_AT_MS });
           s.standIn = { round: r.index, atMs, c: boothFor(adlib, null, null) };
           // Experiment standInCurveball: a Gallery tile for everyone while he says it; the curveball once he has.

@@ -5,9 +5,11 @@
 //                     line (shown on the TV as a bubble), never scored. Once per game, after the line has
 //                     landed, a Kana or N5 player who hasn't reacted yet gets a curveball instead (`armCurveball`):
 //                     "Which word did you hear?", 3 options, +5 if right (with `scaledCurveball` on, about a
-//                     tenth of the game's basic right answer: `curveballPoints`). Who gets it rotates with the seed.
-//                     With `spokenReaction` on, a player may say their reaction instead of tapping it: a match
-//                     picks that tile and pays SPOKEN_REACTION_POINTS; a miss leaves the tiles to tap.
+//                     tenth of the game's basic right answer: `curveballPoints`), then what the word means
+//                     (`KEY_GLOSS`). Who gets it rotates with the seed.
+//                     With `spokenReaction` on, a player may say their reaction instead of tapping it, once the
+//                     line has landed (`Gallery.landed`): a match picks that tile and pays SPOKEN_REACTION_POINTS;
+//                     a miss leaves the tiles to tap.
 //   Commentary booth  once the N4 line lands, a short instant replay on the TV: the line with its key word
 //                     lit, one line of English colour, and the gist on Kana and N5 phones (Narabete's replay).
 //   Host stand-in     in a 1–2-player room with no N4 player, the host plays the role once per game: the
@@ -17,8 +19,8 @@
 //
 // None of it changes anyone's points, turns or tiles, except the curveball's small bonus (and a said reaction's).
 
-import type { JpText, Level } from '../../../content/src/types.js';
-import { isUtterance, normalizeReading, soundKey, type Utterance } from '../japanese/kana.js';
+import type { HostLine, JpText, Level } from '../../../content/src/types.js';
+import { isUtterance, normalizeReading, soundKey, VOWEL_OF, type Utterance } from '../japanese/kana.js';
 import { toRomaji } from '../japanese/romaji.js';
 import { EXPERIMENTS } from './experiments.js';
 import type { PhraseEntry } from './mode.js';
@@ -29,6 +31,8 @@ export interface ReactionTile {
   /** Kana, so every level can read it. */
   kana: string;
   en: string;
+  /** On a Kana player's phone only: the kana in romaji, shown under it with the English. */
+  romaji?: string;
   /** On a TV bubble only (`spokenReaction`): it was said out loud, not tapped. */
   said?: true;
 }
@@ -52,16 +56,17 @@ export type GalleryGame = 'bento-haus' | 'last-train' | 'onsen-murder' | 'omiai'
  * imported, since the games import this file; tests/mixedRoom.test.ts checks they still match the games' own.
  *   Bento Haus    a perfect box: TIPS.perfect (3) × TIP_POINTS (50) = 150
  *   Last Train    a stop's item right first try: RULES.pointsFirstTry = 100
- *   Onsen         naming the culprit: POINTS.accuse = 300
+ *   Onsen         a question that finds a clue: POINTS.clue = 100
  *   Omiai         one vote for your answer: POINTS_PER_VOTE = 100
  *   Dub Club      a right guess: GUESS_POINTS = 50
  *   Narabete      one pair in order: PAIR_POINTS = 100
- * (for Ladi to confirm: Onsen's is the culprit, the game's big answer, so its curveball is the richest at 30.)
+ * (Onsen's is a clue, not the culprit, so a 1-in-3 tap never pays more than an understood question's 20; for Ladi
+ * to confirm.)
  */
 export const BASIC_POINTS: Readonly<Record<GalleryGame, number>> = {
   'bento-haus': 150,
   'last-train': 100,
-  'onsen-murder': 300,
+  'onsen-murder': 100,
   omiai: 100,
   'dub-club': 50,
   narabete: 100,
@@ -89,6 +94,8 @@ export interface Curveball {
   playerId: string;
   /** The key word, in kana. */
   word: string;
+  /** What the key word means, in plain English (the key's own `en`, else `KEY_GLOSS`), shown once it's answered. */
+  en?: string;
   options: CurveballOption[];
   pick?: string | null;
   /** What a right pick paid (`scaledCurveball` only), for the phone's "+N". */
@@ -105,6 +112,17 @@ export interface Gallery {
   said?: Record<string, true>;
   /** `spokenReaction`: players whose last try at saying one matched no tile (they tap instead). */
   missed?: Record<string, true>;
+  /**
+   * The line has landed (been accepted, or voiced by the host): only then may a reaction be said, so nobody talks
+   * over it. Tapping works all along. Set by `armCurveball` (and `dealStandIn`), `landGallery`, or an `openGallery`
+   * given a key.
+   */
+  landed?: true;
+}
+
+/** Marks a Gallery's line as landed, for a game whose line lands without `armCurveball` being called. */
+export function landGallery(g: Gallery | null | undefined): void {
+  if (g) g.landed = true;
 }
 
 /**
@@ -133,6 +151,132 @@ function distractors(word: string, pool: readonly string[], seed: number, heard 
 export const KEY_WORDS: readonly string[] = ['ので', 'のに', 'から', 'けど', 'そう', 'らしい', 'かも', 'ように', 'ために', 'ながら', 'すぎる', 'いただけますか', 'もらえますか', 'いっていました', 'みられました', 'ございます'];
 
 /**
+ * What each curveball key word means, in plain English, for the phone once the curveball is answered and for the
+ * phrasebook (the beginner seat's list, plus every other key the six games light; tests/mixedRoom.test.ts checks
+ * each one has a gloss). For Ladi to confirm.
+ */
+export const KEY_GLOSS: Readonly<Record<string, string>> = {
+  // Short N4 connectives and endings.
+  ので: 'so, because',
+  のに: 'even though',
+  から: 'because',
+  けど: 'but',
+  まで: 'until',
+  そう: 'looks like',
+  そうな: 'looks like',
+  らしい: 'apparently',
+  かも: 'maybe',
+  ように: 'so that',
+  ために: 'in order to',
+  ながら: 'while doing',
+  すぎる: 'too much',
+  // Asking politely (Bento Haus).
+  いただけますか: 'could you please…? (very polite)',
+  いただけませんか: 'could you please…? (very polite, softer)',
+  もらえますか: 'could you…?',
+  くれませんか: 'won’t you…?',
+  おねがいします: 'please',
+  あります: 'there is, we have',
+  ください: 'please',
+  おまちください: 'please wait',
+  // Reports (Murder at the Onsen).
+  いっていました: '(they) said',
+  いいました: 'said',
+  いっています: 'is saying',
+  いきました: 'went',
+  みられました: 'was seen',
+  みました: 'saw',
+  みせました: 'showed',
+  みえました: 'could be seen',
+  // The platform and the front desk (Last Train).
+  ございます: 'there is (extra polite)',
+  まいります: 'is coming (polite)',
+  おさがりください: 'please step back',
+  おきをつけください: 'please be careful',
+  ございません: 'there isn’t (extra polite)',
+  かもしれません: 'might be',
+  だそうです: 'I hear that…',
+  はずです: 'should be',
+  てあります: 'has been done',
+  // The go-between (Omiai).
+  'おつきに なりました': 'has arrived (polite)',
+  いらっしゃいます: 'is (polite, about a person)',
+  'おききに なります': 'will ask (polite)',
+  'おかえりに なります': 'will go home (polite)',
+  // Dub Club's ad-lib words (a stem like たすけ is glossed as the word it starts).
+  おにぎり: 'rice ball',
+  しらない: 'don’t know',
+  ちがう: 'that’s wrong',
+  たべてない: 'haven’t eaten',
+  ぼくじゃ: 'not me',
+  おいし: 'tasty',
+  ごめん: 'sorry',
+  だいじょうぶ: 'it’s OK',
+  まもる: 'protect',
+  へんしん: 'transform',
+  かてない: 'can’t win',
+  まけない: 'won’t lose',
+  よわい: 'weak',
+  ごはん: 'meal, rice',
+  はやく: 'quickly',
+  たすけ: 'help',
+  こわれ: 'broke',
+  たいへん: 'oh no, terrible',
+  ようこそ: 'welcome',
+  こんにちは: 'hello',
+  さかな: 'fish',
+  ここに: 'here',
+  かえらない: 'won’t go home',
+  なにか: 'something',
+  おばけ: 'ghost',
+  さいん: 'autograph',
+  ふぁん: 'fan',
+  ほんとう: 'really, true',
+  ゆうれい: 'ghost',
+  じつは: 'actually, the truth is',
+  けっこん: 'getting married',
+  ざんぎょう: 'overtime',
+  かえれない: 'can’t go home',
+  どようび: 'Saturday',
+  やすみ: 'day off, rest',
+  なんで: 'why',
+  どうして: 'why',
+  きれい: 'pretty',
+  かった: 'bought',
+  かわいい: 'cute',
+  いそがしい: 'busy',
+  でーと: 'date',
+  おかあさん: 'mum',
+  あとで: 'later',
+  さいふ: 'wallet',
+  わすれ: 'forgot',
+  おやすみ: 'good night',
+  へんじ: 'reply',
+  しゃしん: 'photo',
+  ちがった: 'was different',
+  おじさん: 'old guy',
+  あいたい: 'want to see you',
+  かんがえ: 'thinking',
+  もしもし: 'hello (on the phone)',
+  ありがとう: 'thank you',
+  だいすき: 'love',
+  みんな: 'everyone',
+  うれしい: 'happy',
+  まって: 'wait',
+  つかれ: 'tired',
+  らーめん: 'ramen',
+  おなか: 'stomach',
+};
+
+/** A curveball's key: the word, where its distractors come from, what was heard, and (optionally) its English. */
+export interface CurveballKey {
+  word: string;
+  pool?: readonly string[];
+  heard?: string;
+  en?: string;
+}
+
+/**
  * Open a round's Gallery. `others` are the players without the seat (connected, not bots); `kanaOrN5` the
  * subset at Kana or N5. Pass a key only when the line has already been heard; otherwise pass null and call
  * `armCurveball` once it lands. The curveball goes to a Kana or N5 player picked by `seed`, once per game.
@@ -140,7 +284,7 @@ export const KEY_WORDS: readonly string[] = ['ので', 'のに', 'から', 'け�
 export function openGallery(
   others: readonly string[],
   kanaOrN5: readonly string[],
-  key: { word: string; pool?: readonly string[]; heard?: string } | null,
+  key: CurveballKey | null,
   curveballUsed: boolean,
   seed: number,
 ): Gallery {
@@ -153,19 +297,35 @@ export function openGallery(
       const all = [key.word, ...wrong];
       const order = all.map((_, i) => all[(i + seed) % all.length]!);
       curveball = { playerId: target, word: key.word, options: order.map((w) => ({ kana: w, romaji: toRomaji(w), correct: w === key.word })) };
+      const en = key.en ?? KEY_GLOSS[key.word];
+      if (en) curveball.en = en;
     }
   }
-  return { players: [...others], picks: {}, curveball };
+  const g: Gallery = { players: [...others], picks: {}, curveball };
+  // A key means the line has already been heard.
+  if (key) g.landed = true;
+  return g;
 }
 
 /**
  * Deals the once-a-game curveball after the line has been heard (accepted, or voiced by the host): a Kana or N5
  * player who hasn't reacted yet gets it in place of their reaction tile, picked by `seed`. True when dealt, so the
- * game can mark its curveball used. A line that never lands deals none.
+ * game can mark its curveball used. A line that never lands deals none. Called once the line lands, so it marks
+ * the Gallery landed whether or not a curveball comes of it. `evenIfReacted`: any Kana or N5 player may get it
+ * (the stand-in's fallback, `dealStandIn`); their reaction stays on the TV.
  */
-export function armCurveball(g: Gallery | null | undefined, kanaOrN5: readonly string[], key: { word: string; pool?: readonly string[]; heard?: string } | null, used: boolean, seed: number): boolean {
-  if (!g || used || !key || g.curveball) return false;
-  const free = g.players.filter((p) => kanaOrN5.includes(p) && !g.picks[p]);
+export function armCurveball(
+  g: Gallery | null | undefined,
+  kanaOrN5: readonly string[],
+  key: CurveballKey | null,
+  used: boolean,
+  seed: number,
+  opts: { evenIfReacted?: boolean } = {},
+): boolean {
+  if (!g) return false;
+  g.landed = true;
+  if (used || !key || g.curveball) return false;
+  const free = g.players.filter((p) => kanaOrN5.includes(p) && (opts.evenIfReacted || !g.picks[p]));
   if (!free.length) return false;
   const c = openGallery(free, free, key, false, seed).curveball;
   if (!c) return false;
@@ -187,21 +347,35 @@ export interface GalleryPickOptions {
   phrase?: (entry: PhraseEntry) => void;
 }
 
-// Little endings a reaction is often said with (すごいね, がんばれー, へえー).
-const TAIL = /^[ねよなあえおっー]{0,2}$/;
+// Little endings a reaction is often said with (すごいね, がんばれー, へえー), after a polite です or ください at most
+// (すごいですね, がんばってください).
+const TAIL = /^(?:です|ください)?[ねよなあえおっー]{0,2}$/;
+// Other ways a reaction is said, beyond its tile's kana: the N5 がんばって for the N4 imperative がんばれ. Matched,
+// they still log the tile's kana.
+const SAID_ALSO: Readonly<Record<string, readonly string[]>> = { warai: ['がんばって'] };
+// A reaction's kana, said with any vowel stretched or a small っ inside it (すごーい → すごおい, すっごい, なーるほど).
+const stretchy = (k: string) => new RegExp('^' + [...k].map((c) => c + (VOWEL_OF[c] && VOWEL_OF[c] !== 'ん' ? `${VOWEL_OF[c]}*` : '') + 'っ?').join(''));
 
-/** The reaction tile an utterance says, if any: its kana, said once or twice, with a little ending at most. */
+/**
+ * The reaction tile an utterance says, if any: its kana (or a SAID_ALSO form), stretched or not, said once or twice,
+ * with a little ending at most.
+ */
 export function reactionSaid(u: Utterance): ReactionTile | null {
-  const heard = normalizeReading(u.reading ?? u.text).replace(/[ぁぃぅぇぉ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 1));
+  // Speech-to-text often writes a long vowel as 〜 (へ〜, すご〜い): read it as ー, not as punctuation.
+  const raw = (u.reading ?? u.text).replace(/[〜～~]/g, 'ー');
+  const heard = normalizeReading(raw).replace(/[ぁぃぅぇぉ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 1));
   if (!heard) return null;
   for (const t of REACTIONS) {
-    const k = normalizeReading(t.kana);
-    let rest = heard;
-    if (soundKey(rest) === soundKey(k)) return t;
-    if (!rest.startsWith(k)) continue;
-    rest = rest.slice(k.length);
-    if (rest.startsWith(k)) rest = rest.slice(k.length);
-    if (TAIL.test(rest)) return t;
+    for (const k of [normalizeReading(t.kana), ...(SAID_ALSO[t.id] ?? [])]) {
+      if (soundKey(heard) === soundKey(k)) return t;
+      const re = stretchy(k);
+      let m = heard.match(re);
+      if (!m) continue;
+      let rest = heard.slice(m[0].length);
+      m = rest.match(re);
+      if (m) rest = rest.slice(m[0].length);
+      if (TAIL.test(rest)) return t;
+    }
   }
   return null;
 }
@@ -220,12 +394,16 @@ export function pickGallery(g: Gallery, playerId: string, pick: string, opts: Ga
     g.curveball.pick = pick;
     const points = opt.correct ? curveballPoints(opts.game) : 0;
     if (points && EXPERIMENTS.scaledCurveball) g.curveball.paid = points;
+    // Right or wrong, the phone then shows what the word means: save it to the phrasebook as seen.
+    const { word, en } = g.curveball;
+    if (en) opts.phrase?.({ itemId: `curveball-${word}`, text: word, kana: word, en, outcome: 'seen' });
     return points;
   }
   if (g.picks[playerId]) return null;
   if (pick === SAY_PICK) {
     const u = opts.utterance;
-    if (!EXPERIMENTS.spokenReaction || !isUtterance(u) || u.via !== 'speech') return null;
+    // Not before the line has landed: nobody talks over it.
+    if (!EXPERIMENTS.spokenReaction || !g.landed || !isUtterance(u) || u.via !== 'speech') return null;
     const tile = reactionSaid(u);
     if (!tile) {
       (g.missed ??= {})[playerId] = true;
@@ -262,7 +440,10 @@ export type GalleryTileView =
       kind: 'react';
       picked: string | null;
       tiles: readonly ReactionTile[];
-      /** `spokenReaction` only: the reaction may be said (phones with a mic show a small 🎤), was said, missed. */
+      /**
+       * `spokenReaction` only, once the line has landed: the reaction may be said (phones with a mic show a small
+       * 🎤), was said, missed.
+       */
       say?: { said: boolean; missed: boolean };
     }
   | {
@@ -271,6 +452,10 @@ export type GalleryTileView =
       options: { kana: string; romaji: string | null }[];
       right: boolean | null;
       answer: string | null;
+      /** Once picked: the answer in romaji, for every level. */
+      answerRomaji: string | null;
+      /** Once picked: what the answer means, when there's a gloss. */
+      gloss: string | null;
       /** `scaledCurveball` only: what the right pick paid. */
       paid?: number;
     };
@@ -280,12 +465,22 @@ export function galleryTileFor(g: Gallery | null | undefined, playerId: string, 
   if (g.curveball?.playerId === playerId) {
     const c = g.curveball;
     const picked = c.pick ?? null;
-    const view: GalleryTileView = { kind: 'curveball', picked, options: c.options.map((o) => ({ kana: o.kana, romaji: level === 'kana' ? o.romaji : null })), right: picked == null ? null : picked === c.word, answer: picked == null ? null : c.word };
+    const done = picked != null;
+    const view: GalleryTileView = {
+      kind: 'curveball',
+      picked,
+      options: c.options.map((o) => ({ kana: o.kana, romaji: level === 'kana' ? o.romaji : null })),
+      right: done ? picked === c.word : null,
+      answer: done ? c.word : null,
+      answerRomaji: done ? toRomaji(c.word) : null,
+      gloss: done ? (c.en ?? null) : null,
+    };
     if (c.paid) view.paid = c.paid;
     return view;
   }
-  const view: GalleryTileView = { kind: 'react', picked: g.picks[playerId] ?? null, tiles: REACTIONS };
-  if (EXPERIMENTS.spokenReaction) view.say = { said: !!g.said?.[playerId], missed: !!g.missed?.[playerId] };
+  const tiles = level === 'kana' ? REACTIONS.map((t) => ({ ...t, romaji: toRomaji(t.kana) })) : REACTIONS;
+  const view: GalleryTileView = { kind: 'react', picked: g.picks[playerId] ?? null, tiles };
+  if (EXPERIMENTS.spokenReaction && g.landed) view.say = { said: !!g.said?.[playerId], missed: !!g.missed?.[playerId] };
   return view;
 }
 
@@ -337,7 +532,7 @@ export function hostStandsIn(levels: readonly Level[]): boolean {
 
 /**
  * standInSetup: the host's short setup line (Pon's ドロン！) comes where the stand-in's model line used to, and the
- * model line follows it this long after (the setup lines are about 20 kana, ~2–2.5 s said).
+ * model line follows it after `standInSetupMs` of the setup line: at least this long.
  */
 export const STAND_IN_SETUP_MS = 2_500;
 
@@ -346,6 +541,23 @@ export const STAND_IN_SETUP_MS = 2_500;
  * roughly 0.11 s a kana; at most 7 s (the estimate Omiai and Murder at the Onsen use).
  */
 export const standInVoiceMs = (kana: string): number => Math.min(7_000, 1_500 + 110 * kana.replace(/[\s　。、！？…]/g, '').length);
+
+/**
+ * standInSetup: the gap between the setup line and the model line, from how long the setup line takes to say
+ * (`standInVoiceMs`), never under STAND_IN_SETUP_MS. Setup lines are at most 16 kana, so about 2.5–3.3 s.
+ */
+export const standInSetupMs = (kana: string): number => Math.max(STAND_IN_SETUP_MS, standInVoiceMs(kana));
+
+/**
+ * The kana of a setup event's bank line, for `standInSetupMs`: the longest of them, so the model line never lands
+ * on top of whichever the host says ('' when the bank has none, which gives the floor).
+ */
+export function setupKana(lines: readonly HostLine[], event: string): string {
+  return lines.filter((l) => l.event === event).reduce((a, l) => (l.jp.kana.length > a.length ? l.jp.kana : a), '');
+}
+
+/** standInSetup: the gap after a game's setup event (`*_standin_setup`), from its bank line. */
+export const standInSetupFor = (lines: readonly HostLine[], event: string): number => standInSetupMs(setupKana(lines, event));
 
 /** standInCurveball: a curveball dealt on the stand-in's line stays up at least this long for its answer. */
 export const STAND_IN_CURVEBALL_MS = 5_000;
@@ -390,20 +602,25 @@ export const standInEnd = (sg: StandInGallery): number => Math.max(sg.until, sg.
 export const standInHoldKey = (sg: StandInGallery | null | undefined): boolean => !!sg && sg.maybe && (!sg.dealt || keyHeld(sg.g));
 
 /**
- * Once the line has been voiced: deals the curveball on its key word (`armCurveball`, heard = the line's kana).
- * True when one was dealt, so the game can mark its curveball used. Tried once.
+ * Once the line has been voiced: marks the Gallery landed and deals the curveball on its key word (`armCurveball`,
+ * heard = the line's kana), to a Kana or N5 player who hasn't reacted, else to one who has. True when one was
+ * dealt, so the game can mark its curveball used. Tried once.
  */
 export function dealStandIn(
   sg: StandInGallery | null | undefined,
   players: readonly Seat[],
-  key: { word: string; pool?: readonly string[]; heard?: string } | null,
+  key: CurveballKey | null,
   used: boolean,
   seed: number,
   now: number,
 ): boolean {
   if (!sg || sg.dealt || now < sg.dealAt) return false;
   sg.dealt = true;
-  return armCurveball(sg.g, lowIds(players), key, used, seed);
+  landGallery(sg.g);
+  // Players react while the host is still talking, so a quick tap mustn't cost them the curveball: someone who
+  // hasn't reacted first, then anyone at Kana or N5.
+  const low = lowIds(players);
+  return armCurveball(sg.g, low, key, used, seed) || armCurveball(sg.g, low, key, used, seed, { evenIfReacted: true });
 }
 
 /**

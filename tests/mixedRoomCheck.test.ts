@@ -88,7 +88,7 @@ describe('mixed-room check', () => {
   });
 
   describe('waitCheckFirstTwo', () => {
-    it('on: asks on the first two qualifying recaps of a night, then logs phases with nobody asked', () => {
+    it('on: asks on the 1st and 3rd qualifying recaps of a night; the others log phases with nobody asked', () => {
       const restore = withExperiments({ waitCheckFirstTwo: true });
       try {
         withOffers(true);
@@ -101,15 +101,19 @@ describe('mixed-room check', () => {
         expect(s.recap!.mixed).toBeUndefined();
         withOffers(true);
         playToRecap([], s);
-        expect(s.recap!.mixed!.ask).toEqual(['p2']);
-        expect(s.recap!.mixed!.nth).toBe(2);
-        playToRecap([], s);
-        const third = s.recap!.mixed!;
-        expect(third.nth).toBe(3);
-        expect(third.ask).toEqual([]);
-        expect(third.phases.length).toBeGreaterThan(2);
+        const second = s.recap!.mixed!;
+        expect(second.nth).toBe(2);
+        expect(second.ask).toEqual([]);
+        expect(second.phases.length).toBeGreaterThan(2);
         expect(viewFor(s, as('p2'), ctx().content).recap!.waitCheck).toBeNull();
         expect(cmd(s, as('p2'), { type: 'waitCheck', answer: 'no' }).changed).toBe(false);
+        playToRecap([], s);
+        expect(s.recap!.mixed!.nth).toBe(3);
+        expect(s.recap!.mixed!.ask).toEqual(['p2']);
+        expect(viewFor(s, as('p2'), ctx().content).recap!.waitCheck).toEqual({ answer: null });
+        playToRecap([], s);
+        expect(s.recap!.mixed!.nth).toBe(4);
+        expect(s.recap!.mixed!.ask).toEqual([]);
         // A new room starts the count again.
         expect(playToRecap(['n4', 'n5']).recap!.mixed!.ask).toEqual(['p2']);
       } finally {

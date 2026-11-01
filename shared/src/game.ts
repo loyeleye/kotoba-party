@@ -83,13 +83,16 @@ export interface MixedRoomCheck {
   nth: number;
 }
 
-/** With `waitCheckFirstTwo` on, the waiting check is asked on this many qualifying recaps a night, then not again. */
-export const WAIT_CHECKS_A_NIGHT = 2;
+/**
+ * With `waitCheckFirstTwo` on, the qualifying recaps of a night that ask the waiting check (1 = the first): the 1st
+ * and the 3rd, so the answers aren't all from the night's opening games. Others still log, with nobody asked.
+ */
+export const WAIT_CHECK_RECAPS: readonly number[] = [1, 3];
 
 /**
  * The waiting check, asked only after a game in a mixed room that offered a hard role. With the
- * `waitCheckFirstTwo` experiment on, only the first two such recaps of a night ask it; later ones still log
- * their phases, with nobody asked (for Ladi to confirm).
+ * `waitCheckFirstTwo` experiment on (the name is kept), only the 1st and 3rd such recaps of a night ask it; the
+ * others still log their phases, with nobody asked (for Ladi to confirm).
  */
 function mixedCheck(state: GameState, mode: Mode<unknown, { mode: ModeId }> | null): { mixed?: MixedRoomCheck } {
   if (!mode?.offers || !isMixedRoom(state.players.map((p) => p.level))) return {};
@@ -98,7 +101,7 @@ function mixedCheck(state: GameState, mode: Mode<unknown, { mode: ModeId }> | nu
   if (!offers.accepted && !offers.declined && !offers.timeout) return {};
   const nth = (state.mixedChecks ?? 0) + 1;
   state.mixedChecks = nth;
-  const asking = !EXPERIMENTS.waitCheckFirstTwo || nth <= WAIT_CHECKS_A_NIGHT;
+  const asking = !EXPERIMENTS.waitCheckFirstTwo || WAIT_CHECK_RECAPS.includes(nth);
   return {
     mixed: {
       phases: state.phaseLog ?? [],

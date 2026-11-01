@@ -493,6 +493,8 @@ body.flying[data-phase='lobby'] .main { place-items: end center; }
 .booth-line { font-size: 36px; font-weight: 800; margin: 6px 0; }
 .booth-line mark { background: var(--gold); color: var(--on-accent); border-radius: 6px; padding: 0 4px; animation: booth-lit 0.6s ease-out both; }
 .booth-note { font-size: 24px; color: var(--muted); margin: 0; }
+/* A held key word (a curveball on it is open): a gap, so the answer can't be read off the TV. */
+.booth-gap { letter-spacing: 0.05em; opacity: 0.7; }
 @keyframes booth-lit { from { background: transparent; } }
 .gallery-bubbles { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
 .gallery-bubble.said { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
