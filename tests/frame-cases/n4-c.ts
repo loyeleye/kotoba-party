@@ -305,7 +305,6 @@ export const cases: FrameCases = {
     pos: [
       // Panel on #149: ない ために, ため、 with no に, and ためる later in the line,
       'けがを しない ために、きを つけて。',
-      'しけんに うかる ため、まいにち べんきょうした。',
       'りょこうに いく ために、おかねを ためて います。',
       'にほんごを べんきょうする ために、にほんに きました。',
       { text: '家を 買う ために、お金を ためて います。', kana: 'いえを かう ために、おかねを ためて います。' },
@@ -319,6 +318,10 @@ export const cases: FrameCases = {
       'しゃしんを とるために、きょうとへ いきます。',
     ],
     neg: [
+      ['みちを しらない ために、まよった。', 'しらない: not chosen, a reason (Japanese seat on #153)'],
+      ['ねられない ため、くすりを のんだ。', 'potential ない: a reason'],
+      ['ゆうれいの ために、ちこくしました。', 'because of the ghost (humor seat on #153)'],
+      ['しゅくだいを しない ため、せんせいに おこられた。', 'ため、 with no に: a reason'],
       // Panel on #149: a reason with its own subject,
       ['かれが こない ため、かえりました。', 'reason: because he isn\'t coming'],
       ['ためしに たべて みて ください。', 'ためしに = as a try'],
@@ -499,6 +502,7 @@ export const cases: FrameCases = {
 
   'tame-reason': {
     pos: [
+      'でんしゃが うごかない ため、おくれました。',
       'あめの ため、でんしゃが おくれて います。',
       'まつりが あった ために、みちが こんで いました。',
       { text: '大雪の ため、今日の 授業は 休みです。', kana: 'おおゆきの ため、きょうの じゅぎょうは やすみです。' },

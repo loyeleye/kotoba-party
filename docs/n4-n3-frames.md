@@ -94,12 +94,15 @@ How the harder ones are told apart:
 
 N3 frames mostly don't hide the N4 frames they overlap (ご＿ください is still お＿ください), so a line keeps its N4
 chip. Some hide one for display only: ＿ところでした over ＿ところです, the suffering passive over the plain
-passive (あめに ふられました gets one chip, not two), and ＿て おります and ＿で ございます over the keigo-verb chip.
-They also hide N5 ＿です and ＿ます where they say more. Counting (`keepHidden`) keeps every one: the suffering
-passive is still a passive, and Genki II teaches 雨に降られる with it.
+passive (あめに ふられました gets one chip, not two), casual ＿みたい over ＿みたいです, and ＿て おります and ＿で
+ございます over the keigo-verb chip. They also hide N5 ＿です and ＿ます where they say more. Counting
+(`keepHidden`) keeps every one: every suffering passive counts as a passive too (Genki II L21 and Minna L37 teach
+雨に降られる and 足を踏まれる with the passive), and casual みたい counts for 4.6 as well as 3.1.
 
-＿みたい is split by register instead: ＿みたいです／でした is the N4 frame (4.6) and ＿みたい, ＿みたいだ, ＿みたいね
-with no です is the casual N3 one (3.1), so a line counts for one of them, never both.
+**A frame that can't count yet hides nothing.** `framesOf(…, { only: creditable })` drops N3 and listening-only
+frames before working out hides, so while N3 is off the recap ("Tonight on your path") still shows the passive
+for あめに ふられました and the keigo chip for ＿て おります. Progress counts without the tokenizer (the phone's
+path), so the spelling rules are what decide credit there.
 
 **Not credited yet.** `creditable(id)` is false for N3 frames and for listening-only ones, and progress
 (`phraseFrames`) and the night's recap (`tonightFrames`) skip them. So an N4 player who says an N3 line
@@ -139,18 +142,20 @@ A sweep over the game's ~9,800 Japanese strings found the N3 matchers' misfires 
 おみずに as ＿ずに, おくれて きた as ＿て きました) and fixed them; the new hits it finds are right (にげられました
 as the suffering passive, すんでおります as ＿て おります).
 
-## Fixes from the panel on #149
+## Fixes from the panels on #149 and #153
 
-- **Reason ため and purpose ために.** ＿ない ために (けがを しない ために) and a verb + ため、 with no に (うかる ため、)
-  are purpose. ＿ない／＿たい ため are never the reason frame now, spaced or not. ゆうれいの ために is "for the ghost"
-  as often as "because of it", so it's no longer a cause. ためる later in the line no longer hides a purpose
-  ために, and Nが ＿ない ため、 (かれが こない ため) stays out as a reason with its own subject.
-- **＿としたら.** Nと したら is "did it with N" (せんせいと したら, ぼくと すれば). The tokens rule out と "with" after a
-  noun; on the phone, a list of people words does.
-- **＿なんて.** The adverb なんて "how…!" (なんて きれいな けしき, この けしきは なんて きれいなんだ) no longer counts:
+- **Reason ため and purpose ために.** しない ために (けがを しない ために) is purpose. Other ＿ない ために (しらない,
+  わからない, ねられない) and ＿たい ため are left out: they read both ways. ＿ない ため、 alone is a reason
+  (でんしゃが うごかない ため). A verb + ため、 with no に isn't counted as purpose: でんしゃが とまる ため、 is as
+  often a reason. ゆうれいの ために is "for the ghost" as often as "because of it", so it's in neither list. ためる
+  later in the line no longer cancels a purpose ために.
+- **＿としたら.** Nと したら is usually "did it with N" (かるたを せんせいと したら). The tokens rule out と "with"
+  after a noun; on the phone, a list of people words at the start of a word does (so うまいと したら still
+  counts). Known miss: はんにんが せんせいと したら ("if the culprit is the teacher") is a real ＿としたら and
+  is now missed.
+- **＿なんて.** The adverb なんて "how…!" (なんて きれいな けしき, けしきは なんて きれいなんだ) no longer counts:
   only なんて after the thing being waved off.
-- **Display hides.** The suffering passive, ＿て おります and ＿で ございます, above.
-- **＿みたい** split by register, above.
+- **Display hides** and the recap, above.
 
 ## The precision bar
 
