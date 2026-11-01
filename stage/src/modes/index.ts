@@ -17,6 +17,7 @@ import { bentoHausStage, bentoHausVsStage } from './bentoHaus.js';
 import { dubClubStage } from './dubClub.js';
 import { hajimemashiteStage } from './hajimemashite.js';
 import { happyokaiStage } from './happyokai.js';
+import { lateAgainStage } from './lateAgain.js';
 import type { StageMode } from './types.js';
 
 export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
@@ -39,4 +40,5 @@ export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
   'dub-club': dubClubStage,
   hajimemashite: hajimemashiteStage,
   happyokai: happyokaiStage,
+  'late-again': lateAgainStage,
 };

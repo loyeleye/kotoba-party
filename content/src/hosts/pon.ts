@@ -375,4 +375,50 @@ export const ponLines: HostLine[] = [
   { id: 'pon.surprise_pick.03', host: 'pon', event: 'surprise_pick', jp: { text: '{game}に けってい！', kana: '{game}に けってい！', en: '{game} it is!' }, slots: ['{game}'], status: 'draft' },
   { id: 'pon.surprise_pick.04', host: 'pon', event: 'surprise_pick', jp: { text: 'おおっ、{game}！　やりましょう！', kana: 'おおっ、{game}！　やりましょう！', en: "Ooh, {game}! Let's play!" }, slots: ['{game}'], status: 'draft' },
   { id: 'pon.surprise_pick.05', host: 'pon', event: 'surprise_pick', jp: { text: 'こんやの ゲームは {game}です！', kana: 'こんやの ゲームは {game}です！', en: "Tonight's game is {game}!" }, slots: ['{game}'], status: 'draft' },
+  // late_intro
+  { id: 'pon.late_intro.01', host: 'pon', event: 'late_intro', jp: { text: 'ポンの ちこく きゅうけいしつへ ようこそ！', kana: 'ポンの ちこく きゅうけいしつへ ようこそ！', en: 'Welcome to Pon’s Late Again lounge!' }, status: 'draft' },
+  { id: 'pon.late_intro.02', host: 'pon', event: 'late_intro', jp: { text: 'ちこくしたら、ぶちょうに でんわです！', kana: 'ちこくしたら、ぶちょうに でんわです！', en: 'Late? Phone the boss!' }, status: 'draft' },
+  { id: 'pon.late_intro.03', host: 'pon', event: 'late_intro', jp: { text: 'いいわけが よければ セーフ！　だめなら アウト！', kana: 'いいわけが よければ セーフ！　だめなら アウト！', en: 'A good excuse is Safe! A bad one is Out!' }, status: 'draft' },
+  { id: 'pon.late_intro.04', host: 'pon', event: 'late_intro', jp: { text: 'ポンも まいにち ちこくします。だから くわしいです。', kana: 'ポンも まいにち ちこくします。だから くわしいです。', en: 'Pon is late every day. So Pon is an expert.' }, status: 'draft' },
+  { id: 'pon.late_intro.05', host: 'pon', event: 'late_intro', jp: { text: 'たいへん！　ぶちょうも ちこくだポン！', kana: 'たいへん！　ぶちょうも ちこくだポン！', en: 'Oh no! The boss is late too!' }, status: 'draft' },
+  { id: 'pon.late_intro.06', host: 'pon', event: 'late_intro', jp: { text: 'この たすきの ひとが、きょうの ぶちょうだいりだポン！', kana: 'この たすきの ひとが、きょうの ぶちょうだいりだポン！', en: 'Whoever wears this sash is acting chief today!' }, status: 'draft' },
+  { id: 'pon.late_intro.07', host: 'pon', event: 'late_intro', jp: { text: 'また ちこくだポン！', kana: 'また ちこくだポン！', en: 'Late again, pon!' }, status: 'draft' },
+  // late_coop
+  { id: 'pon.late_coop.01', host: 'pon', event: 'late_coop', jp: { text: 'ふたりで ポンの きろくに ちょうせん！', kana: 'ふたりで ポンの きろくに ちょうせん！', en: 'You two against Pon’s record!' }, status: 'draft' },
+  { id: 'pon.late_coop.02', host: 'pon', event: 'late_coop', jp: { text: 'チームで いいわけ！　ポンに かてますか？', kana: 'チームで いいわけ！　ポンに かてますか？', en: 'Team excuses! Can you beat Pon?' }, status: 'draft' },
+  { id: 'pon.late_coop.03', host: 'pon', event: 'late_coop', jp: { text: 'ふたりの いいわけ、ポンが きいて あげます。', kana: 'ふたりの いいわけ、ポンが きいて あげます。', en: 'Pon will hear both your excuses.' }, status: 'draft' },
+  { id: 'pon.late_coop.04', host: 'pon', event: 'late_coop', jp: { text: 'ふたりで ちこく スタンプを あつめるポン！', kana: 'ふたりで ちこく スタンプを あつめるポン！', en: 'Collect late stamps together!' }, status: 'draft' },
+  { id: 'pon.late_coop.05', host: 'pon', event: 'late_coop', jp: { text: 'しょうにんは ポンだポン。…たぶん みたポン。', kana: 'しょうにんは ポンだポン。…たぶん みたポン。', en: 'I’m the witness. I probably saw it.' }, status: 'draft' },
+  // late_alibi_match
+  { id: 'pon.late_alibi_match.00', host: 'pon', event: 'late_alibi_match', jp: { text: 'あってるポン！', kana: 'あってるポン！', en: 'It matches, pon!' }, status: 'draft' },
+  { id: 'pon.late_alibi_match.01', host: 'pon', event: 'late_alibi_match', jp: { text: 'おっ、しょうにんも おなじ はなし！', kana: 'おっ、しょうにんも おなじ はなし！', en: 'Ooh, the witness tells the same story!' }, status: 'draft' },
+  { id: 'pon.late_alibi_match.02', host: 'pon', event: 'late_alibi_match', jp: { text: 'ぴったり！　しょうにん、ありがとう！', kana: 'ぴったり！　しょうにん、ありがとう！', en: 'A perfect match! Thanks, witness!' }, status: 'draft' },
+  { id: 'pon.late_alibi_match.03', host: 'pon', event: 'late_alibi_match', jp: { text: 'ふたりの はなしが あいました！　あやしい…', kana: 'ふたりの はなしが あいました！　あやしい…', en: 'Their stories match! Suspicious…' }, status: 'draft' },
+  // late_alibi_miss
+  { id: 'pon.late_alibi_miss.01', host: 'pon', event: 'late_alibi_miss', jp: { text: 'あれ？　しょうにんの はなしと ちがいますよ。', kana: 'あれ？　しょうにんの はなしと ちがいますよ。', en: 'Huh? That’s not what the witness said.' }, status: 'draft' },
+  { id: 'pon.late_alibi_miss.02', host: 'pon', event: 'late_alibi_miss', jp: { text: 'はなしが あいません！　どっちが うそ？', kana: 'はなしが あいません！　どっちが うそ？', en: 'The stories don’t match! Who’s lying?' }, status: 'draft' },
+  { id: 'pon.late_alibi_miss.03', host: 'pon', event: 'late_alibi_miss', jp: { text: 'しょうにん、なにを みたんですか…', kana: 'しょうにん、なにを みたんですか…', en: 'Witness, what did you even see…' }, status: 'draft' },
+  // late_curveball
+  { id: 'pon.late_curveball.01', host: 'pon', event: 'late_curveball', jp: { text: '{name}さんは「たぬき！」　…ポンは しりません。', kana: '{name}さんは「たぬき！」　…ポンは しりません。', en: '{name} says “A tanuki!” Pon knows nothing.' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.late_curveball.02', host: 'pon', event: 'late_curveball', jp: { text: 'たぬきの せい？　ポンじゃ ないですよ！', kana: 'たぬきの せい？　ポンじゃ ないですよ！', en: 'A tanuki’s fault? It wasn’t Pon!' }, status: 'draft' },
+  { id: 'pon.late_curveball.03', host: 'pon', event: 'late_curveball', jp: { text: '{name}さん、また たぬきですか！', kana: '{name}さん、また たぬきですか！', en: '{name}, a tanuki again?!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.late_curveball.04', host: 'pon', event: 'late_curveball', jp: { text: 'た、たぬき！？　…ぼくじゃ ないポン！', kana: 'た、たぬき！？　…ぼくじゃ ないポン！', en: 'A t-tanuki?! …It wasn’t me!' }, status: 'draft' },
+  { id: 'pon.late_curveball.05', host: 'pon', event: 'late_curveball', jp: { text: '…たぬきは ぼくだポン。', kana: '…たぬきは ぼくだポン。', en: '…The tanuki was me.' }, status: 'draft' },
+  // late_vote
+  { id: 'pon.late_vote.01', host: 'pon', event: 'late_vote', jp: { text: 'では、ぶちょう、{name}さん！　セーフ？　アウト？', kana: 'では、ぶちょう、{name}さん！　セーフ？　アウト？', en: 'Now, chief {name}! Safe or Out?' }, slots: ['{name}'], status: 'draft' },
+  { id: 'pon.late_vote.02', host: 'pon', event: 'late_vote', jp: { text: 'はっぱで きめましょう！　セーフに いれて ください。', kana: 'はっぱで きめましょう！　セーフに いれて ください。', en: 'Decide with leaves! Leaves vote Safe.' }, status: 'draft' },
+  { id: 'pon.late_vote.03', host: 'pon', event: 'late_vote', jp: { text: 'ゆるしますか？　ゆるしませんか？', kana: 'ゆるしますか？　ゆるしませんか？', en: 'Will you forgive them, or not?' }, status: 'draft' },
+  // late_mic_pass
+  { id: 'pon.late_mic_pass.01', host: 'pon', event: 'late_mic_pass', jp: { text: 'ポンが いいます。{name}さんの いいわけ… 「{line}」', kana: 'ポンが いいます。{name}さんの いいわけ… 「{line}」', en: 'Pon says it. {name}’s excuse… “{line}”' }, slots: ['{name}', '{line}'], status: 'draft' },
+  { id: 'pon.late_mic_pass.02', host: 'pon', event: 'late_mic_pass', jp: { text: 'まかせて！　「{line}」', kana: 'まかせて！　「{line}」', en: 'Leave it to Pon! “{line}”' }, slots: ['{line}'], status: 'draft' },
+  { id: 'pon.late_mic_pass.03', host: 'pon', event: 'late_mic_pass', jp: { text: 'ポンの こえで どうぞ。「{line}」', kana: 'ポンの こえで どうぞ。「{line}」', en: 'In Pon’s voice: “{line}”' }, slots: ['{line}'], status: 'draft' },
+  // late_stand_in
+  { id: 'pon.late_stand_in.01', host: 'pon', event: 'late_stand_in', jp: { text: '{name}さん、こえが ない！　ポンが いいます。「{line}」', kana: '{name}さん、こえが ない！　ポンが いいます。「{line}」', en: 'No voice from {name}! Pon says: “{line}”' }, slots: ['{name}', '{line}'], status: 'draft' },
+  { id: 'pon.late_stand_in.02', host: 'pon', event: 'late_stand_in', jp: { text: 'でんわが きれました… ポンが かわりに。「{line}」', kana: 'でんわが きれました… ポンが かわりに。「{line}」', en: 'The call dropped… Pon stands in: “{line}”' }, slots: ['{line}'], status: 'draft' },
+  { id: 'pon.late_stand_in.03', host: 'pon', event: 'late_stand_in', jp: { text: 'しんごうが ない！　「{line}」…と いって いました。', kana: 'しんごうが ない！　「{line}」…と いって いました。', en: 'No signal! They said: “{line}”' }, slots: ['{line}'], status: 'draft' },
+  // late_hidden
+  { id: 'pon.late_hidden.01', host: 'pon', event: 'late_hidden', jp: { text: 'この いいわけは… ないしょに しましょう。', kana: 'この いいわけは… ないしょに しましょう。', en: 'This excuse… let’s keep it secret.' }, status: 'draft' },
+  { id: 'pon.late_hidden.02', host: 'pon', event: 'late_hidden', jp: { text: 'はい、つぎ！　なにも きこえませんでした。', kana: 'はい、つぎ！　なにも きこえませんでした。', en: 'Next! Pon heard nothing.' }, status: 'draft' },
+  // late_line: the game writes the line (scene openers, Pon's reaction to each cause, the real story); see shared/src/modes/lateAgain/causes.ts
+  { id: 'pon.late_line.01', host: 'pon', event: 'late_line', jp: { text: '{quip}', kana: '{quip}', en: '{quip}' }, slots: ['{quip}'], status: 'draft' },
 ];

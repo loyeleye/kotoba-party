@@ -1,0 +1,89 @@
+/* Late Again! on the phone. One column, big targets, fine at 360px. Safe is sky blue with ⭕ on top; Out is
+   vermilion with ❌ underneath, so the two calls never rely on colour alone. */
+.la-screen { --la-ink: #0b0605; --la-safe: #4fb8ff; --la-out: #ff5f3c; --la-led: #ffb000; }
+.la-screen p { margin: 0; }
+.la-screen [lang='ja'] { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+
+/* ---- the band: role, leaves, what's next ---- */
+.la-band { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: #17130d; border: 2px solid var(--la-ink); }
+.la-role-chip { font-weight: 900; font-size: 18px; color: var(--la-led); }
+.la-band-leaves { display: inline-flex; gap: 2px; min-height: 28px; }
+.la-next { grid-column: 1 / -1; font-size: 15px; color: var(--muted); }
+.la-leaf { width: 28px; height: 28px; image-rendering: pixelated; vertical-align: middle; }
+.la-leaf.big { width: 44px; height: 44px; }
+
+.la-label { font-size: 15px; color: var(--muted); font-weight: 700; }
+.la-mission { font-size: 20px; font-weight: 800; line-height: 1.35; text-wrap: balance; }
+.la-problem { padding: 10px 12px; border-radius: 12px; background: #4a1f2a; color: #ffd6d6; font-weight: 800; }
+
+/* ---- picture tiles ---- */
+.la-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.la-tiles-1 { grid-template-columns: minmax(0, 160px); justify-content: center; }
+.la-tiles-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.la-tile { display: grid; justify-items: center; align-content: start; gap: 4px; min-height: 132px; padding: 10px 6px; background: var(--paper, #fff6e6); color: var(--paper-ink, #1d1410); border: 3px solid var(--la-ink); border-radius: 14px; box-shadow: 0 5px 0 var(--la-ink); touch-action: manipulation; transition: transform 80ms, box-shadow 80ms; }
+.la-tile:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--la-ink); }
+.la-tile:disabled { opacity: 1; cursor: default; }
+.la-tile.on { outline: 4px solid var(--good); outline-offset: 2px; }
+.la-tile.on::after { content: '✓'; position: absolute; }
+.la-tile { position: relative; }
+.la-tile.on::after { top: 4px; right: 8px; font-weight: 900; color: #0d7a4f; font-size: 20px; }
+.la-tile.la-curve { background: #fff0c2; }
+.la-pic { width: 64px; height: 64px; image-rendering: pixelated; }
+.la-emoji { display: grid; place-items: center; font-size: 46px; line-height: 1; }
+.la-tile-ja { font-size: 19px; font-weight: 900; line-height: 1.2; }
+.la-tile-ro { font-size: 13px; color: #8a5a00; }
+.la-tile-en { font-size: 13px; color: var(--paper-muted, #6b5a50); line-height: 1.2; }
+.la-built { min-height: 1.4em; padding: 10px; text-align: center; font-size: 26px; font-weight: 900; border: 2px dashed var(--line); border-radius: 12px; }
+
+/* ---- hints ---- */
+.la-hint { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #2b2440; border-left: 4px solid var(--warn); }
+.la-hint .ghost, .la-pass { width: 100%; min-height: 48px; padding: 10px; border-radius: 10px; border: 2px solid var(--line); background: transparent; color: var(--ink); font-weight: 700; }
+.la-frame { display: grid; gap: 4px; }
+.la-model .jpv-main { font-size: 22px; }
+
+/* ---- the record button: tap, talk, tap. A ring fills while the take runs. ---- */
+.la-rec-btn { position: relative; overflow: hidden; width: 100%; min-height: 104px; border-radius: 999px; border: 4px solid var(--la-ink); background: #e8344e; color: #fff; font-size: 24px; font-weight: 900; box-shadow: 0 6px 0 var(--la-ink); touch-action: manipulation; }
+.la-rec-btn:disabled { opacity: 0.6; }
+.la-rec-btn.live { background: #2a0b12; }
+.la-rec-ring { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.la-rec-btn.live .la-rec-ring { background: #b0263b; transform-origin: left; animation: la-rec-run var(--ms, 9000ms) linear forwards; }
+.la-rec-btn > :not(.la-rec-ring) { position: relative; }
+.la-rec-btn { isolation: isolate; }
+@keyframes la-rec-run { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* The ring is time left to record, so calm motion keeps it. */
+body[data-motion='calm'] .la-rec-btn.live .la-rec-ring { animation: la-rec-run var(--ms, 9000ms) linear forwards !important; }
+
+.la-typed { display: grid; gap: 8px; }
+.la-typed input { font: inherit; font-size: 20px; padding: 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); }
+
+/* ---- listening ---- */
+.la-choices { display: grid; gap: 8px; }
+.la-choice { min-height: 52px; padding: 10px 12px; text-align: left; font-size: 18px; font-weight: 700; border-radius: 12px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); }
+.la-choice.on { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn); }
+.la-choice.right { border-color: var(--good); color: var(--good); }
+.la-gist { display: grid; gap: 6px; padding: 12px; border-radius: 14px; background: var(--paper, #fff6e6); color: var(--paper-ink, #1d1410); border: 3px solid var(--la-ink); }
+.la-gist .la-label { color: var(--paper-muted, #6b5a50); }
+.la-gist-line .jpv-main { font-size: 24px; font-weight: 900; }
+
+/* ---- the call: full width, one above the other ---- */
+.la-call { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 88px; padding: 12px; border-radius: 16px; border: 4px solid var(--la-ink); font-size: 28px; font-weight: 900; box-shadow: 0 6px 0 var(--la-ink); touch-action: manipulation; transition: transform 80ms, box-shadow 80ms; }
+.la-call:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 var(--la-ink); }
+.la-call small { font-size: 16px; font-weight: 700; opacity: 0.85; }
+.la-call-icon { font-size: 34px; }
+.la-call.la-safe { background: var(--la-safe); color: var(--la-ink); }
+.la-call.la-out { background: var(--la-out); color: var(--la-ink); }
+.la-call.la-give { background: #7fd36b; color: var(--la-ink); }
+.la-call.la-keep { background: var(--panel); color: var(--ink); border-color: var(--line); }
+.la-call:disabled { background: var(--panel); color: var(--muted); border-style: dashed; box-shadow: none; }
+.la-call.on { outline: 4px solid var(--warn); outline-offset: 3px; }
+
+/* ---- score ---- */
+.la-points { font-family: var(--font-pixel); color: var(--warn); font-size: 44px; text-align: center; }
+.la-note { display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: #2b2440; }
+.la-tag { font-size: 15px; font-weight: 700; color: var(--la-led); }
+
+@media (max-width: 370px) {
+  .la-tiles { gap: 6px; }
+  .la-tile-ja { font-size: 16px; }
+  .la-pic { width: 52px; height: 52px; }
+}

@@ -8877,6 +8877,386 @@
       "prompt": "Made by tools/art/sources/signs.py from tools/art/sources/signs/hanger-raw.png (PixelLab pixflux): the rod and bottom bracket kept, 3x nearest-neighbour.",
       "params": {},
       "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-oversleep.png",
+      "what": "Late Again! cause tile: overslept (the alarm clock itself asleep under a tiny futon)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a cute red alarm clock with a sleepy face fast asleep under its own tiny futon blanket, wearing a nightcap, eyes closed, snoring",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-train.png",
+      "what": "Late Again! cause tile: the train (latecomer asleep on a train seat, sea and lighthouse outside; never a stopped train or delay)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small compact vignette with empty space all around it: a young office worker in a light blue shirt fast asleep on a short red train seat, head tilted back, mouth open, beside a small round train window showing blue sea and a white lighthouse",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-rain.png",
+      "what": "Late Again! cause tile: rain (dark cloud pouring rain)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a dark grey storm cloud pouring heavy blue rain straight down in thick streaks",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-cat.png",
+      "what": "Late Again! cause tile: the cat (fat cat asleep on a folded futon)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a fat orange cat curled up fast asleep on top of a neatly folded Japanese futon mattress, eyes closed",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-breakfast.png",
+      "what": "Late Again! cause tile: breakfast (three empty rice bowls stacked high)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a tall stack of three empty white rice bowls piled on top of each other with a pair of chopsticks resting on top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-game.png",
+      "what": "Late Again! cause tile: games till dawn (a phone glowing on a pillow at night)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a smartphone lying on a dark pillow at night, its screen glowing bright with a colourful game, light rays around it, a small crescent moon",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-umbrella.png",
+      "what": "Late Again! cause tile: kasa-obake (umbrella yokai chasing)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. kasa-obake, a Japanese umbrella yokai: a half-open red paper umbrella with one big eye, a long red tongue sticking out and a single leg, leaping forward in a running chase, speed lines behind it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-kappa.png",
+      "what": "Late Again! cause tile: a kappa asking for directions",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a kappa, a Japanese river yokai: a green creature with a turtle shell on its back, a short yellow beak and a round water dish on top of its bald head, standing upright on two legs, one arm stretched out pointing to the side as if asking for directions, puzzled face",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-crow.png",
+      "what": "Late Again! cause tile: a crow took the key",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a black crow flying with spread wings, carrying a shiny gold key in its beak",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-fox.png",
+      "what": "Late Again! cause tile: a kitsune fox posing as the boss (suit, glasses, on the phone)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a sly orange kitsune fox dressed as a company boss in a grey business suit and tie with round glasses, holding a phone to its ear, fluffy tail poking out behind",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/curve-tanuki.png",
+      "what": "Late Again! curveball tile: a tanuki's shape-shifting leaf with a puff of smoke",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single green leaf with a puff of white smoke bursting around it, magic shape-shifting leaf",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/leaf.png",
+      "what": "Late Again! vote counter: a single green tanuki leaf",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single flat bright green tree leaf, pointed oval shape with a short stem and a central vein, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 32,
+        "height": 32,
+        "text_guidance_scale": 8,
+        "seed": 7919
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/sash.png",
+      "what": "Late Again! acting chief's sash: red-and-white sash with a small badge",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red and white striped shoulder sash made of wide satin fabric, laid flat as a big diagonal loop, the kind a mayor or a pageant winner wears across the chest, a small round gold badge pinned on it",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/certificate.png",
+      "what": "Late Again! train-delay certificate, half turning into a leaf",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small paper certificate slip with blank lines and a red stamp circle, split down the middle: its left half is paper, its right half has magically turned into a big green leaf, a puff of smoke where they meet",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-station.png",
+      "what": "Late Again! cause tile: lost in the station (maze of exit signs, map upside down)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a tangle of many yellow station exit signs on poles with arrows pointing every which way, and a folded paper map hanging upside down",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-granny.png",
+      "what": "Late Again! cause tile: the old lady (a cheerful grandmother waving a fan from a hilltop; the piggyback never drew)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small compact vignette with empty space all around it: a cheerful little old grandmother with grey hair in a bun waving a paper fan, standing on top of a small round green hill",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-kotatsu.png",
+      "what": "Late Again! cause tile: won't leave the kotatsu (quilted kotatsu with a mandarin, someone tucked in behind it on the phone)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese kotatsu: a low square table with a big puffy red quilt draped over it down to the floor, a person's head poking out from under the quilt edge holding a phone to their ear, a mandarin orange on the table top",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-nobiko.png",
+      "what": "Late Again! cause tile: Nobiko-san kept them talking (her head on a long winding neck; no latecomer beside her)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. Nobiko-san, a rokurokubi yokai: the big round head of a cheerful Japanese auntie with a black hair bun and a red hair band, on a very long thin neck that winds in a zigzag like a hose down to her small body in a rose-pink kimono",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-date.png",
+      "what": "Late Again! cause tile (Cheeky): the date ran long (a dreamy young person with a heart balloon; innuendo only)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. isolated character, no background scenery: a dreamy smiling young person in rumpled going-out clothes holding a red heart-shaped balloon, a small orange rising sun behind their shoulder",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 101
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-okozukai.png",
+      "what": "Late Again! cause tile (Cheeky): no money, had to walk (empty wallet with a moth flying out)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. an open empty brown wallet with a small grey moth flying out of it, nothing inside",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 15838
+      },
+      "post": {}
     }
   ]
 }
