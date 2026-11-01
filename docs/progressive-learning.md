@@ -73,8 +73,11 @@ deck (4.2, 4.4, already listed). 4.2 still has only Tourist, and 4.7 stays 工�
   (`Progress.frameMarks`) are kept, so they stay met when old phrases leave the 600-phrase phrasebook.
 - **Kana goals:** 90% of the script (95 of 105 hiragana, 114 of 126 katakana), each yōkai card recalled on
   2 days; the bar moves from the first night. **K3:** 6 of 8 set phrases, each said on 2 days. **Kanji
-  goals:** 30 kanji read from memory on 2 game days, in Shodō (the kanji itself) or Read the Signs (only
-  the sign asked about: the single sign, or the target one when there are several). K3 also counts the
+  goals:** 30 kanji read from memory on 2 game days, counted by say-word: in Shodō (the kanji, or each
+  kanji of a word it says), or on a sign in Read the Signs or Meet the Innkeeper (only the sign asked about:
+  the single sign, or the target one when there are several). 5.10 counts N5 kanji, 4.10 N4 kanji, and 3.12
+  (Limited Express) the 30 sign kanji (受付, 予約, 非常口, 禁煙…), which the cleared screen calls "sign kanji",
+  never "N3 kanji" (`KANJI_GOAL_BAND`). K3 also counts the
   everyday forms (ありがとう, ありがとうございました, すいません, ごめん, おはよう, よろしく おねがい いたします), at the
   start of a line or after a space or punctuation.
 - **Only true recall counts, and it's opt-in.** A phrasebook entry carries `recall: 'memory' | 'read'`, and

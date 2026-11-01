@@ -19,7 +19,7 @@
 // the curveball ("Which word did you hear?") in place of their tile. In a
 // room of one or two with nobody at N4, Chōchin-san makes one platform announcement himself (host stand-in).
 
-import type { HardRole, HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, StationSign, TrainStop } from '../../../../content/src/types.js';
+import type { HardRole, HostAward, ItemLevel, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, StationSign, TrainStop } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type MoveResult, type PhraseEntry } from '../mode.js';
@@ -383,7 +383,8 @@ export type LastTrainMove =
 
 // ---- helpers ----
 
-const LEVEL_ORDER: Record<Level, Level[]> = { kana: ['kana', 'n5'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'] };
+// N3 is keyed ahead of the Level type (step 6): nobody is dealt an N3 item until an N3 player exists.
+const LEVEL_ORDER: Record<ItemLevel, ItemLevel[]> = { kana: ['kana', 'n5'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'], n3: ['n3', 'n4', 'n5', 'kana'] };
 const itemKey = (mgId: string, itemId: string) => `${mgId}#${itemId}`;
 /** A Read the Signs direction item dealt mirrored: its id gets this, and bots look the variant up by it. */
 const MIRRORED = '~mirrored';

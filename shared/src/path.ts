@@ -7,7 +7,8 @@
 // saved (markPath), and sends the result with My progress (pathStatus). The phone only draws it.
 
 import { kana } from '../../content/src/kana/kana.js';
-import { writeKanji } from '../../content/src/kanji/kanji.js';
+import { writeKanji, type KanjiLevel } from '../../content/src/kanji/kanji.js';
+import { meetTheInnkeeper } from '../../content/src/last-train/meet-the-innkeeper.js';
 import { readTheSigns } from '../../content/src/last-train/read-the-signs.js';
 import { FRAME_BY_ID } from './japanese/frames.js';
 import { toRomaji } from './japanese/romaji.js';
@@ -220,7 +221,7 @@ export const GOALS: readonly Goal[] = [
   g('4.7', 'express', 'Plans and advice', 'Say what you plan to do, and give advice.', ['you-to-omou'], ['tsumori', 'hou-ga-ii', 'tara-dou'], ['ghost-hotline'], { gap: 'Ghost Advice Hotline gives advice (＿た ほうが いいです, ＿たら どうですか), but no game asks for plans yet.' }),
   g('4.8', 'express', 'Talk casually with friends', 'Plain form with よ, ね and の: how friends talk.', ['plain'], ['n-da', 'teru'], ['omiai', 'dub-club']),
   g('4.9', 'express', 'Speak politely to strangers', 'The extra-polite asks for shops, stations and offices.', ['te-itadakemasen', ['o-kudasai', 'o-suru']], ['n-desu'], ['omiai', 'happyokai', 'bento-haus', 'last-train']),
-  g('4.10', 'express', 'Read N4 kanji', 'The next kanji up: verbs, places and time words.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
+  g('4.10', 'express', 'Read 30 N4 kanji', 'The next kanji up: verbs, places and time words.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
 ];
 export const GOAL_BY_ID: Readonly<Record<string, Goal>> = Object.fromEntries(GOALS.map((x) => [x.id, x]));
 
@@ -233,10 +234,21 @@ const SCRIPT_IDS = {
   hiragana: new Set(kana.filter((k) => k.script === 'hiragana').map((k) => k.id)),
   katakana: new Set(kana.filter((k) => k.script === 'katakana').map((k) => k.id)),
 };
-const KANJI = {
+const KANJI: Record<KanjiLevel, Set<string>> = {
   n5: new Set(writeKanji.filter((k) => k.level === 'n5').map((k) => k.char)),
   n4: new Set(writeKanji.filter((k) => k.level === 'n4').map((k) => k.char)),
+  n3: new Set(writeKanji.filter((k) => k.level === 'n3').map((k) => k.char)),
 };
+
+/**
+ * Which kanji band a kanji goal counts. 3.12 (Limited Express, N3) is "Read 30 sign kanji": the 30 kanji
+ * of signs such as 受付, 予約, 非常口 and 禁煙. Its cleared screen says "30 sign kanji", never "N3 kanji",
+ * since 30 is under a tenth of what N3 lists add. The goal itself joins GOALS with the Limited Express line
+ * (step 6); until then its kanji are counted here and shown in the cleared screen's stats.
+ */
+export const KANJI_GOAL_BAND: Readonly<Record<string, KanjiLevel>> = { '5.10': 'n5', '4.10': 'n4', '3.12': 'n3' };
+/** The words for the 3.12 count, wherever it's shown. */
+export const SIGN_KANJI_LABEL = 'sign kanji';
 /** How many of each a goal asks for. */
 export const KANA_TARGET = { hiragana: Math.ceil(SCRIPT_IDS.hiragana.size * KANA_SHARE), katakana: Math.ceil(SCRIPT_IDS.katakana.size * KANA_SHARE) };
 
@@ -266,9 +278,12 @@ function kanaDays(p: Progress, script: 'hiragana' | 'katakana'): Map<string, Set
   return m;
 }
 
-/** The kanji a Read the Signs item asks for: its one sign, or the target sign when there are several. */
+/**
+ * The kanji a sign item asks for (Read the Signs, and the inn's signs in Meet the Innkeeper): its one sign,
+ * or the target sign when there are several.
+ */
 const SIGN_KANJI: Map<string, string[]> = new Map(
-  readTheSigns.items.map((it) => {
+  [...readTheSigns.items, ...meetTheInnkeeper.items.filter((it) => it.signs?.length)].map((it) => {
     const signs = it.signs ?? [];
     const sign = signs.length === 1 ? signs[0] : signs.find((g) => g.target);
     return [it.id, [...(sign?.text ?? '')]];
@@ -276,14 +291,15 @@ const SIGN_KANJI: Map<string, string[]> = new Map(
 );
 
 /**
- * Kanji read from memory in a game: Shodō's kanji (kj-<char>) and the target sign of a Read the Signs
- * item. Other characters in the model answer, and phone-review days, don't count.
+ * Kanji read from memory in a game, counted by say-word: Shodō's kanji (kj-<char>), each kanji of a Shodō
+ * word (kw-<word>, so 会社 counts 会 and 社), and each kanji of the target sign of a sign item. Other
+ * characters in the model answer, and phone-review days, don't count.
  */
-function kanjiDays(p: Progress, level: 'n5' | 'n4'): Map<string, Set<string>> {
+function kanjiDays(p: Progress, level: KanjiLevel): Map<string, Set<string>> {
   const m = new Map<string, Set<string>>();
   for (const c of Object.values(p.phrases ?? {})) {
     if (!c.memory?.length) continue;
-    const chars = c.itemId.startsWith('kj-') ? [c.itemId.slice(3)] : SIGN_KANJI.get(c.itemId);
+    const chars = c.itemId.startsWith('kj-') ? [c.itemId.slice(3)] : c.itemId.startsWith('kw-') ? [...c.itemId.slice(3)] : SIGN_KANJI.get(c.itemId);
     if (!chars) continue;
     const days = c.memory.filter((d) => d.game).map((d) => d.day);
     for (const ch of chars) if (KANJI[level].has(ch)) addDays(m, ch, days);
@@ -361,8 +377,8 @@ export interface PathStatus {
   goals: GoalState[];
   frames: FrameState[];
   lines: LineState[];
-  /** For the cleared screen: frames met, words (phrases) said from memory, kanji read. */
-  stats: { frames: number; words: number; kanji: number };
+  /** For the cleared screen: frames met, words (phrases) said from memory, kanji read (of them, sign kanji). */
+  stats: { frames: number; words: number; kanji: number; signKanji: number };
 }
 
 const NO_RULE: FrameRule = { says: 0, fillers: 0, days: 0, spaced: false, inGame: false, firstDay: null, lastDay: null };
@@ -421,7 +437,7 @@ export function pathStatus(p: Progress, now: number, tzOffsetMin = 0): PathStatu
         goal.kind === 'kana'
           ? itemCount(kanaDays(p, goal.id === 'K1' ? 'hiragana' : 'katakana'), goal.id === 'K1' ? KANA_TARGET.hiragana : KANA_TARGET.katakana)
           : goal.kind === 'kanji'
-            ? itemCount(kanjiDays(p, goal.id === '5.10' ? 'n5' : 'n4'), KANJI_GOAL)
+            ? itemCount(kanjiDays(p, KANJI_GOAL_BAND[goal.id] ?? 'n4'), KANJI_GOAL)
             : itemCount(setDays(p), SET_GOAL);
       count = { have: Math.min(c.have, c.need), need: c.need };
       met = c.have >= c.need;
@@ -442,8 +458,9 @@ export function pathStatus(p: Progress, now: number, tzOffsetMin = 0): PathStatu
     return { id: l.id, cleared: ready.length > 0 && met === ready.length, met, of: ready.length, soon: visible.length - ready.length };
   });
   const words = Object.values(p.phrases ?? {}).filter((c) => c.recall === 'memory').length;
-  const kanji = new Set([...kanjiDays(p, 'n5').keys(), ...kanjiDays(p, 'n4').keys()]).size;
-  return { goals, frames, lines, stats: { frames: Object.keys(marks).length, words, kanji } };
+  const signKanji = kanjiDays(p, 'n3').size;
+  const kanji = new Set([...kanjiDays(p, 'n5').keys(), ...kanjiDays(p, 'n4').keys()]).size + signKanji;
+  return { goals, frames, lines, stats: { frames: Object.keys(marks).length, words, kanji, signKanji } };
 }
 
 /**

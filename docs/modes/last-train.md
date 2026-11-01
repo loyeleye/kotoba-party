@@ -45,15 +45,20 @@ placeholder content), `stage/src/modes/lastTrain.ts`, `controller/src/modes/last
 
 Kanji as icons, the way a traveller first meets them: read like traffic signs long before anyone
 writes one (from the learning path's ideas, [progressive-learning.md](../progressive-learning.md)).
-17 items in `content/src/last-train/read-the-signs.ts`:
+41 items in `content/src/last-train/read-the-signs.ts`:
 
 - **Kana:** 駅, 出口, 入口, 男, 女 read out loud, then "Where's the exit?" with 出口 and 入口,
   and "Where's the women's toilet?" with 男 and 女 (answer ひだりです / みぎです, or 出口は左です).
   Kana phones show a "← ひだり · ↑ まっすぐ · みぎ →" strip under a pair of boards.
 - **N5:** the four station exits 北口, 南口, 東口, 西口, then which way to the south exit.
-- **N4:** 中央口 (央 is N4), 切符, 改札, 乗換, which way to the ticket office (↑: まっすぐです) and to the east
-  exit (東口は右のほうです). 切符, 改札 and 乗換 aren't on the N4 kanji lists: they're station icons, read as whole
-  signs the way 出口 is, and not counted as N4 kanji.
+- **N4:** 中央口, 切符, 改札, 乗換, which way to the ticket office (↑: まっすぐです) and to the east
+  exit (東口は右のほうです). Then the platform at night: 待合室, 乗り場, 終電, 使用中, 売店, and which way to
+  the waiting room. Each of these has an N4 kanji on its target sign (待 乗 終 使 売), so Read the Signs moves
+  goal 4.10. 切符 is a station icon, read as a whole sign the way 出口 is.
+- **N3 (step 6):** the 30 sign kanji of goal 3.12, read through the signs they're on: 非常口, 禁煙, 危険, 案内所,
+  窓口, 階段, 両替, 落とし物, 発車, 優先席, 割引, 無料, 3番線, 指定席, then which way to the non-reserved seats
+  (指定席 or 自由席), the emergency exit, and the door to push (押 or 引). N3 items wait in the pool until N3 is
+  in the level picker.
 
 Direction questions are written in kana only, so the sign they ask about never appears in them,
 and half the deals come mirrored (`mirror` on the item; the dealt id ends in `~mirrored`, and
@@ -107,7 +112,9 @@ stops, the same items.
 - **The guest at the front desk** (Meet the Innkeeper, 4.1, 4.10): favours with ＿て いただけますか
   (call a taxi, keep the luggage, a wake-up call, speak more slowly, check the booking again;
   `te-itadakemasen`, with いただけませんか accepted too) and three inn signs drawn as boards, 売店,
-  会計 and 食堂 (`sign-kanji`, hints are pictures, never the reading).
+  会計 and 食堂 (`sign-kanji`, hints are pictures, never the reading). Read from memory, their kanji count
+  toward goal 4.10. N3 (goal 3.12): five ordinary sign items for N3 guests, 受付, 予約席, 非常口, 禁煙室
+  and 館内案内, dealt once N3 is in the level picker.
 - **Yōkai lost property** (Lost and Found, 4.6), three more N4 items in the same two roles: Pon's leaf, with
   ポン written on it (staff: ポンと書いてあります, `te-aru`); a kappa's missing dish (passenger: 頭の上にあったはずです,
   `hazu`); Chōchin-san's candle, as heard on the phone (staff: ちょうちんさんのろうそくだそうです, `sou-hear`).

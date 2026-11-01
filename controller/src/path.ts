@@ -18,6 +18,7 @@ import {
   currentLine,
   missingFrames,
   SET_PHRASES,
+  SIGN_KANJI_LABEL,
   suggest,
   type FrameNeed,
   type FrameState,
@@ -364,7 +365,7 @@ export function clearedCard(level: Level, moveUp: (to: Level) => void, redraw: (
     h('p', { class: 'path-cleared-title' }, sumiStamp('big'), h('span', {}, h('strong', {}, `${line.name} cleared!`), lineJa(line.id))),
     line.up ? h('p', { class: 'path-chochin', lang: 'ja' }, '「のりかえです！ つぎの せんへ どうぞ。」') : null,
     c.end ? h('p', { class: 'path-chochin', lang: 'ja' }, c.end) : null,
-    h('p', {}, `You’ve said this line’s sentence patterns out loud, from memory, on more than one day. So far: ${st.stats.frames} frames, ${st.stats.words} phrases from memory, ${st.stats.kanji} kanji.`),
+    h('p', {}, `You’ve said this line’s sentence patterns out loud, from memory, on more than one day. So far: ${st.stats.frames} frames, ${st.stats.words} phrases from memory, ${st.stats.kanji} kanji${st.stats.signKanji ? ` (${st.stats.signKanji} of them ${SIGN_KANJI_LABEL})` : ''}.`),
     c.jlpt ? h('p', { class: 'path-note' }, c.jlpt) : null,
     line.up && c.move && c.stay
       ? h(

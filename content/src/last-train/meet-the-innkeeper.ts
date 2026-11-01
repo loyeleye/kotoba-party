@@ -1,5 +1,7 @@
 // Last Train · Meet the Innkeeper (Phase 1). The right greeting for the moment.
 // N4 hard role: the guest at the front desk asks favours (＿て いただけますか) and reads the inn's signs.
+// N3: the inn's signs carry the sign kanji of goal 3.12 (受付, 予約席, 非常口). They're ordinary items, dealt to
+// N3 players once N3 is in the level picker (step 6), so an N3 guest reads them every stay.
 // Item ids are stable: never rename one once it ships.
 
 import type { LastTrainMinigame, MinigameItem } from '../types.js';
@@ -7,11 +9,14 @@ import { GUEST } from './roles.js';
 
 const READ = { text: 'これは何と読みますか。', kana: 'これはなんとよみますか。', en: 'What does this sign say?', furigana: [['これは', ''], ['何', 'なん'], ['と', ''], ['読', 'よ'], ['みますか。', '']] as [string, string][] };
 
-/** An inn sign to read out loud, drawn as a board with no reading. The hint is a picture, never the reading. */
-const sign = (id: string, kanji: string, kana: string, en: string, hint: string): MinigameItem => ({
+/**
+ * An inn sign to read out loud, drawn as a board with no reading. The hint is a picture, never the reading.
+ * N4 signs belong to the front-desk guest's hard role; N3 signs are ordinary items.
+ */
+const sign = (id: string, kanji: string, kana: string, en: string, hint: string, level: 'n4' | 'n3' = 'n4'): MinigameItem => ({
   id: `meet-the-innkeeper.${id}`,
-  level: 'n4',
-  role: GUEST,
+  level,
+  ...(level === 'n4' ? { role: GUEST } : {}),
   frames: ['sign-kanji'],
   prompt: READ,
   signs: [{ text: kanji }],
@@ -220,7 +225,7 @@ export const meetTheInnkeeper: LastTrainMinigame = {
       timeLimit: 8,
     },
     // ---- N4 hard role: the guest at the front desk. Favours with ＿て いただけますか, and the inn's signs. ----
-    // N3 (step 6): ＿させて いただけますか, ご＿ください and the 3.12 sign kanji (非常口, 禁煙).
+    // N3 (step 6): ＿させて いただけますか and ご＿ください come with the N3 frames; the 3.12 sign kanji are below.
     {
       id: 'meet-the-innkeeper.21-takushii',
       level: 'n4',
@@ -284,5 +289,11 @@ export const meetTheInnkeeper: LastTrainMinigame = {
     sign('26-baiten', '売店', 'ばいてん', 'shop', 'Memory picture: 売 has a samurai (士) on top, selling. 店 is a roof (广) over a stall.'),
     sign('27-kaikei', '会計', 'かいけい', 'cashier', 'Memory picture: 会 is people meeting under a roof. 計 has words (言) and ten (十): adding it all up.'),
     sign('28-shokudou', '食堂', 'しょくどう', 'dining room', 'Memory picture: 食 is a roof over a bowl of rice: food. 堂 is a big hall standing on the earth (土).'),
+    // ---- N3: the inn's sign kanji (goal 3.12). ----
+    sign('29-uketsuke', '受付', 'うけつけ', 'reception', 'Memory picture: 受 is one hand passing something down to another: receive. 付 is a person (亻) with a hand (寸) on them: attach.', 'n3'),
+    sign('30-yoyakuseki', '予約席', 'よやくせき', 'reserved table', 'Memory picture: 予 is a shuttle hanging ready: in advance. 約 has thread (糸): a promise tied up. 席 is cloth under a roof: a seat.', 'n3'),
+    sign('31-hijouguchi', '非常口', 'ひじょうぐち', 'emergency exit', 'Memory picture: 非 is two rows of bars facing apart: "not". 常 is cloth (巾) under a roof: "usual". The not-usual exit.', 'n3'),
+    sign('32-kinenshitsu', '禁煙室', 'きんえんしつ', 'non-smoking room', 'Memory picture: 禁 is two trees over an altar: forbidden. 煙 has fire (火): smoke. 室 is a room under a roof.', 'n3'),
+    sign('33-kannai-annai', '館内案内', 'かんないあんない', 'floor guide', 'Memory picture: 館 has food (食) on the left: a big building where guests eat. 内 is inside. 案 is a plan on a wooden table (木).', 'n3'),
   ],
 };

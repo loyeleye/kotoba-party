@@ -8,6 +8,12 @@
 export type Level = 'kana' | 'n5' | 'n4';
 
 /**
+ * A content item's level. N3 joins Level in its own PR (step 6); until then N3 items are keyed here
+ * and dealt to nobody.
+ */
+export type ItemLevel = Level | 'n3';
+
+/**
  * A piece of Japanese with everything the game needs to show, voice and check it.
  *
  * - `text`: what the stage shows (kanji allowed; furigana comes from `furigana`).
@@ -286,7 +292,7 @@ export type PromptType = 'spoken-question' | 'listen-and-answer' | 'read-aloud' 
  */
 export interface MinigameItem {
   id: string;
-  level: Level;
+  level: ItemLevel;
   /** What the conductor or character says or shows. */
   prompt: JpText;
   /** Optional on-screen visual (prices, a clock face, a picture) described in words. */

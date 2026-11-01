@@ -6,7 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { kana } from '../content/src/kana/kana.js';
 import type { PhraseEntry } from '../shared/src/modes/mode.js';
 import { MODES } from '../shared/src/modes/registry.js';
-import { currentLine, frameReady, frameText, GOAL_FRAMES, GOALS, KANA_TARGET, LINES, markPath, missingFrames, pathStatus, suggest } from '../shared/src/path.js';
+import { currentLine, frameReady, frameText, GOAL_FRAMES, GOALS, KANA_TARGET, KANJI_GOAL_BAND, LINES, markPath, missingFrames, pathStatus, suggest } from '../shared/src/path.js';
+import { writeKanji } from '../content/src/kanji/kanji.js';
+import { meetTheInnkeeper } from '../content/src/last-train/meet-the-innkeeper.js';
+import { readTheSigns } from '../content/src/last-train/read-the-signs.js';
 import { addGame, duePhrases, emptyProgress, frameRule, MAX_PHRASES, recallOf, reviewPhrase, type GameResult, type Progress } from '../shared/src/progress.js';
 import type { ModeId } from '../shared/src/protocol.js';
 import { tonightFrames } from '../controller/src/path.js';
@@ -214,6 +217,34 @@ describe('goals and stamps', () => {
     // A phone review is not a game day.
     reviewPhrase(q, 'kj-山', true, T0 + 3 * DAY, 0);
     expect(goal(q, '5.10', T0 + 3 * DAY).count!.have).toBe(0);
+  });
+
+  it('counts N4 kanji by say-word in Shodō words and the inn’s signs, and the 30 sign kanji apart (3.12)', () => {
+    const p = emptyProgress();
+    // 会社 is 会 (N4) and 社 (N4); the inn's 売店 is 売 and 店; 待合室 has 待 and 室 (合 isn't in the pool).
+    // 非常口 is two sign kanji (非, 常) and an N5 one (口).
+    const night = [said('kw-会社', '会社'), said('meet-the-innkeeper.26-baiten', '「売店」です。'), said('read-the-signs.19-machiaishitsu', '「待合室」です。'), said('read-the-signs.25-hijouguchi', '「非常口」です。')];
+    play(p, T0, night);
+    play(p, T0 + DAY, night);
+    const s = status(p, T0 + DAY);
+    expect(s.goals.find((g) => g.id === '4.10')!.count!.have).toBe(6);
+    expect(s.goals.find((g) => g.id === '5.10')!.count!.have).toBe(1);
+    expect(s.stats).toMatchObject({ kanji: 9, signKanji: 2 });
+    // A word heard in dictation (read) doesn't count.
+    const q = emptyProgress();
+    for (const day of [0, 1]) play(q, T0 + day * DAY, [said('kw-会社', '会社', { recall: 'read' })]);
+    expect(goal(q, '4.10', T0 + DAY).count!.have).toBe(0);
+  });
+
+  it('can count all 30 sign kanji and every N4 kanji in Last Train or Shodō', () => {
+    expect(KANJI_GOAL_BAND['3.12']).toBe('n3');
+    const sign = writeKanji.filter((k) => k.level === 'n3').map((k) => k.char);
+    expect(sign).toHaveLength(30);
+    // Every sign kanji is on a sign some item asks for (the target, or the one sign).
+    const onSigns = new Set([...readTheSigns.items, ...meetTheInnkeeper.items].flatMap((it) => (it.signs ?? []).filter((sg, _, all) => all.length === 1 || sg.target)).flatMap((sg) => [...sg.text]));
+    expect(sign.filter((c) => !onSigns.has(c))).toEqual([]);
+    // N3 items say "sign kanji", never "N3 kanji", wherever players read them.
+    for (const it of [...readTheSigns.items, ...meetTheInnkeeper.items]) expect(`${it.hint} ${it.model.en}`, it.id).not.toMatch(/N3 kanji/);
   });
 });
 

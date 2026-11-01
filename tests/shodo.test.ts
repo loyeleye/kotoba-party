@@ -8,7 +8,7 @@ import { createRoom, type CommandBody } from '../shared/src/client.js';
 import { brushPath } from '../shared/src/brush.js';
 import { apply, createGame, type GameAction, type GameContext } from '../shared/src/game.js';
 import { checkStroke, gradeInk, strokeStart, strokeWay, traceTolerance, type InkPoint } from '../shared/src/japanese/strokes.js';
-import { buildDeck, dictationPool, KANJI_LOOKALIKES, LOOKALIKE_KANA, practicePool } from '../shared/src/modes/shodo/deck.js';
+import { buildDeck, dealPractice, dictationPool, KANJI_LOOKALIKES, LOOKALIKE_KANA, practicePool, reviewPool, wordWith } from '../shared/src/modes/shodo/deck.js';
 import { AWARDS, BONUS_SHARE, ITEMS, type ShodoState, type ShodoView } from '../shared/src/modes/shodo/shodo.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -27,10 +27,12 @@ const len = (s: readonly (readonly number[])[]) => s.reduce((n, p, i) => (i ? n 
 
 describe('kanji data', () => {
   it('has stroke data for every kanji, with school stroke counts', () => {
-    expect(writeKanji.length).toBe(115);
-    expect(writeKanji.filter((k) => k.level === 'n5').length).toBe(70);
+    expect(writeKanji.length).toBe(160);
+    expect(['n5', 'n4', 'n3'].map((l) => writeKanji.filter((k) => k.level === l).length)).toEqual([70, 60, 30]);
+    // The N4 kanji the game's own N4 lines use (PR #146 panel).
+    for (const c of '思持待使乗着終写会教') expect(writeKanji.find((k) => k.char === c)?.level, c).toBe('n4');
     for (const k of writeKanji) expect(ref(k.char)?.length, k.char).toBeGreaterThan(0);
-    const counts: Record<string, number> = { 一: 1, 二: 2, 三: 3, 山: 3, 川: 3, 木: 4, 日: 4, 右: 5, 左: 5, 本: 5, 女: 3, 子: 3, 書: 10, 歩: 8, 雨: 8, 車: 7 };
+    const counts: Record<string, number> = { 一: 1, 二: 2, 三: 3, 山: 3, 川: 3, 木: 4, 日: 4, 右: 5, 左: 5, 本: 5, 女: 3, 子: 3, 書: 10, 歩: 8, 雨: 8, 車: 7, 着: 12, 押: 8, 階: 12, 煙: 13, 険: 11 };
     for (const [c, n] of Object.entries(counts)) expect(ref(c)?.length, c).toBe(n);
   });
 
@@ -55,6 +57,26 @@ describe('kanji data', () => {
     expect(practicePool(deck, 'n5').every((t) => t.kind === 'kanji' && (t.step ?? 0) <= 5)).toBe(true);
     expect(dictationPool(deck, 'n4', true).every((t) => t.kind === 'word' && t.cells.length >= 2)).toBe(true);
     expect(dictationPool(deck, 'n5', true).every((t) => t.kind === 'kanji')).toBe(true);
+  });
+
+  it('deals an N4 player two N4 kanji and one N5 review, and N3 the sign kanji with N4 review', () => {
+    const deck = buildDeck(content);
+    expect(practicePool(deck, 'n4').map((t) => t.level)).toEqual(Array(60).fill('n4'));
+    expect(reviewPool(deck, 'n4').every((t) => t.level === 'n5' && (t.step ?? 0) >= 3)).toBe(true);
+    expect(practicePool(deck, 'n3').map((t) => t.level)).toEqual(Array(30).fill('n3'));
+    for (let i = 0; i < 5; i++) {
+      expect(dealPractice(deck, 'n4', new Set(), random).map((t) => t.level)).toEqual(['n4', 'n4', 'n5']);
+      expect(dealPractice(deck, 'n3', new Set(), random).map((t) => t.level)).toEqual(['n3', 'n3', 'n4']);
+      expect(dealPractice(deck, 'n5', new Set(), random).every((t) => t.level === 'n5')).toBe(true);
+    }
+    // Dictation words: N4 words have an N4 kanji (会社, not 学生); N3 words are the signs (非常口).
+    expect(dictationPool(deck, 'n4', true).every((t) => t.level === 'n4')).toBe(true);
+    expect(dictationPool(deck, 'n4', true).map((t) => t.text)).toContain('会社');
+    expect(dictationPool(deck, 'n3', true).map((t) => t.text)).toEqual(expect.arrayContaining(['非常口', '受付', '予約', '禁煙']));
+    // A practised kanji comes back inside a word.
+    const sha = deck.kanji.find((t) => t.text === '社')!;
+    expect(wordWith(deck, 'n4', sha, new Set(), random)?.text).toBe('会社');
+    expect(wordWith(deck, 'n5', sha, new Set(), random)).toBeNull();
   });
 });
 
@@ -237,6 +259,40 @@ describe('Shodō Taikai rounds', () => {
     const st = r.ms();
     for (const id of ['p1', 'p2', 'p3', 'p4']) expect(st.bonus[id] ?? 0).toBeLessThanOrEqual(((st.base[id] ?? 0) * BONUS_SHARE) / (1 - BONUS_SHARE) + 1);
     for (const p of r.s.players) expect(p.score).toBe(st.earned[p.id] ?? 0);
+  });
+
+  it('logs "say it, then write it" as said from memory, unless the reading was shown first; N4 ends on a word', () => {
+    const r = room(['n4', 'n4']);
+    r.cmd(stage, { type: 'start', mode: 'shodo' } as CommandBody);
+    r.tick();
+    for (const id of ['p1', 'p2']) practice(r, id);
+    expect(r.ms().practice.p1!.targets.map((t) => t.level)).toEqual(['n4', 'n4', 'n5']);
+    r.tick();
+    for (let i = 0; i < ITEMS; i++) {
+      const item = r.ms().items.at(-1)!;
+      for (const id of ['p1', 'p2']) {
+        const t = item.targets[id]!;
+        if (item.kind === 'recall') {
+          if (id === 'p2') r.play(id, { kind: 'say-skip' });
+          r.play(id, { kind: 'say', utterance: { via: 'speech', text: t.say.kana } });
+        }
+        r.play(id, { kind: 'sheet', cells: t.cells.map((c) => handDraw(c, random)) });
+      }
+      r.tick();
+    }
+    const [first, , last] = r.ms().items;
+    const practised = r.ms().practice.p1!.targets;
+    expect(first!.targets.p1!.id).toBe(practised[0]!.id);
+    // The last item is a word with the second practised kanji in it, when one has it.
+    const second = practised[1]!.text;
+    const hasWord = writeWords.some((w) => w.word.text.includes(second));
+    expect(last!.targets.p1!.kind).toBe(hasWord ? 'word' : 'kanji');
+    expect(last!.targets.p1!.text).toContain(second);
+    const logged = (pid: string, itemId: string) => (r.s.phrasebook[pid] ?? []).filter((x) => x.itemId === itemId).map((x) => x.recall);
+    expect(logged('p1', last!.targets.p1!.id)).toContain('memory');
+    // p2 gave up first: read. (A kanji target was already said from memory in practice, so check a word.)
+    if (last!.targets.p2!.kind === 'word') expect(logged('p2', last!.targets.p2!.id)).toEqual(['read']);
+    else expect(r.ms().items[2]!.peeked?.p2).toBe(true);
   });
 
   it('gives a stroke out of step its own line at the replay', () => {

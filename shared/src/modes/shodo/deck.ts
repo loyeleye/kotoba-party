@@ -1,14 +1,22 @@
 // What Shodō Taikai asks each player to write, by level: kana for Kana-level players, the N5
-// kanji for N5, the N5 kanji plus short N4 kanji (and two-kanji words in dictation) for N4. Built
-// from the content library, so tests can pass small fixtures. Every target carries its KanjiVG
+// kanji for N5, N4 kanji with one N5 kanji as review (and words with N4 kanji in dictation) for N4,
+// and the same one level up for N3 with the 30 sign kanji (goal 3.12). Built from the content
+// library, so tests can pass small fixtures. Every target carries its KanjiVG
 // stroke references (one list per character) and the word players say for it.
 
+import type { KanjiLevel } from '../../../../content/src/kanji/kanji.js';
 import type { JpText, Level } from '../../../../content/src/types.js';
 import type { InkStroke } from '../../japanese/strokes.js';
 import type { ContentLibrary } from '../mode.js';
 import { shuffled } from '../mode.js';
 
 export type TargetKind = 'kana' | 'kanji' | 'word';
+
+/**
+ * A player's level as Shodō deals for it. N3 joins the Level type in its own PR (step 6); until then the
+ * N3 deck is keyed here, so it's ready the day an N3 player sits down.
+ */
+export type DeckLevel = Level | 'n3';
 
 export interface Target {
   /** Content id (`h-ka`, `kj-山`, `kw-学生`), for the phrasebook and "already dealt". */
@@ -28,6 +36,8 @@ export interface Target {
   strokes: number;
   /** A kanji's step in the writing order (content/src/kanji/kanji.ts). */
   step?: number;
+  /** A kanji's level band; a word's is its highest kanji's. */
+  level?: KanjiLevel;
   /** The gallery only: the word on its own, without the brief ("やま" in "ねむい やまです"). */
   word?: JpText;
 }
@@ -76,7 +86,7 @@ export const LOOKALIKE_KANA: Readonly<Record<string, string>> = {
 };
 
 /** The gallery's shared theme, "something I love", one glyph per level (the Japanese panel's picks). */
-export const GALLERY: Record<Level, JpText[]> = {
+export const GALLERY: Record<DeckLevel, JpText[]> = {
   kana: [
     { text: 'ねこ', kana: 'ねこ', en: 'a cat' },
     { text: 'はな', kana: 'はな', en: 'a flower' },
@@ -99,6 +109,12 @@ export const GALLERY: Record<Level, JpText[]> = {
     { text: '花', kana: 'はな', en: 'a flower' },
     { text: '犬', kana: 'いぬ', en: 'a dog' },
     { text: '海', kana: 'うみ', en: 'the sea' },
+  ],
+  // Sign kanji that are words on their own (a sleepy window).
+  n3: [
+    { text: '窓', kana: 'まど', en: 'a window' },
+    { text: '煙', kana: 'けむり', en: 'smoke' },
+    { text: '席', kana: 'せき', en: 'a seat' },
   ],
 };
 
@@ -151,13 +167,17 @@ export function buildDeck(content: ContentLibrary): ShodoDeck {
     .filter((k) => strokes.has(k.char))
     .map((k) => {
       const cells = [strokes.get(k.char)!];
-      return { id: k.id, kind: 'kanji' as const, text: k.char, cells, say: k.say, meaning: k.meaning, strokes: count(cells), step: k.step };
+      return { id: k.id, kind: 'kanji' as const, text: k.char, cells, say: k.say, meaning: k.meaning, strokes: count(cells), step: k.step, level: k.level };
     });
+  const bandOf = new Map(content.writeKanji.map((k) => [k.char, k.level]));
+  const RANK: Record<KanjiLevel, number> = { n5: 0, n4: 1, n3: 2 };
   const words: Target[] = content.writeWords
     .filter((w) => [...w.word.text].every((c) => strokes.has(c)))
     .map((w) => {
       const cells = [...w.word.text].map((c) => strokes.get(c)!);
-      return { id: w.id, kind: 'word' as const, text: w.word.text, cells, say: w.word, meaning: w.word.en, strokes: count(cells) };
+      const bands = [...w.word.text].map((c) => bandOf.get(c)).filter((b): b is KanjiLevel => !!b);
+      const level = bands.sort((a, b) => RANK[b] - RANK[a])[0];
+      return { id: w.id, kind: 'word' as const, text: w.word.text, cells, say: w.word, meaning: w.word.en, strokes: count(cells), ...(level ? { level } : {}) };
     });
   const kanaSets = content.lookAlikeSets.map((s) => s.kanaIds.map((id) => byId.get(id)?.char).filter((c): c is string => !!c));
   return {
@@ -183,24 +203,61 @@ function kanaPool(deck: ShodoDeck, wide: boolean): Target[] {
   return wide ? deck.kana : hira.length ? hira : deck.kana;
 }
 
-/** Practice (お手本) targets: short ones, to trace, fade and write from memory. */
-export function practicePool(deck: ShodoDeck, level: Level): Target[] {
+/** The kanji band a level learns, and the band below it that comes back as review. */
+const BANDS: Partial<Record<DeckLevel, { learn: KanjiLevel; review: KanjiLevel }>> = { n4: { learn: 'n4', review: 'n5' }, n3: { learn: 'n3', review: 'n4' } };
+
+/**
+ * Practice (お手本) targets: short ones, to trace, fade and write from memory. N5 players get steps 1–5.
+ * N4 and N3 players get their own band (the PR #146 panel found Shodō dealt an N4 player about 0.4 N4
+ * kanji a game); `reviewPool` has the band below.
+ */
+export function practicePool(deck: ShodoDeck, level: DeckLevel): Target[] {
   if (level === 'kana') return kanaPool(deck, false);
-  const steps = level === 'n5' ? [1, 5] : [3, 9];
-  const pool = deck.kanji.filter((t) => {
-    const s = step(t);
-    return s >= steps[0]! && s <= steps[1]!;
-  });
+  const band = BANDS[level];
+  const pool = band ? deck.kanji.filter((t) => t.level === band.learn) : deck.kanji.filter((t) => step(t) >= 1 && step(t) <= 5);
   return pool.length ? pool : deck.kanji.length ? deck.kanji : deck.kana;
 }
 
-/** Dictation (書き取り) targets: anything at the level, plus two-kanji words at N4. */
-export function dictationPool(deck: ShodoDeck, level: Level, words: boolean): Target[] {
+/** Review targets for N4 and N3 practice: the band below (N5 steps 3–7 for N4, the N4 kanji for N3). */
+export function reviewPool(deck: ShodoDeck, level: DeckLevel): Target[] {
+  const band = BANDS[level];
+  if (!band) return [];
+  return deck.kanji.filter((t) => t.level === band.review && (band.review !== 'n5' || step(t) >= 3));
+}
+
+/** Practice targets, how many of them come from the band below (about a third: the Japanese seat). */
+export const PRACTICE = { targets: 3, review: 1 };
+
+/** Deals a player's practice targets: N4 and N3 get two of their own band and one review. */
+export function dealPractice(deck: ShodoDeck, level: DeckLevel, used: ReadonlySet<string>, random: () => number): Target[] {
+  const review = reviewPool(deck, level);
+  const own = deal(practicePool(deck, level), review.length ? PRACTICE.targets - PRACTICE.review : PRACTICE.targets, used, random);
+  const more = review.length ? deal(review, PRACTICE.targets - own.length, used, random) : [];
+  return [...own, ...more];
+}
+
+/**
+ * Dictation (書き取り) targets: anything at the level. With `words`, N4 gets words with an N4 kanji in
+ * them and N3 the sign words (改札, 非常口).
+ */
+export function dictationPool(deck: ShodoDeck, level: DeckLevel, words: boolean): Target[] {
   if (level === 'kana') return kanaPool(deck, true);
-  if (level === 'n4' && words && deck.words.length) return deck.words;
-  const max = level === 'n5' ? 7 : 10;
-  const pool = deck.kanji.filter((t) => step(t) <= max);
+  const band = BANDS[level];
+  if (band && words && deck.words.length) {
+    const mine = deck.words.filter((w) => w.level === band.learn);
+    return mine.length ? mine : deck.words;
+  }
+  const pool = band ? deck.kanji.filter((t) => t.level === band.learn || t.level === band.review) : deck.kanji.filter((t) => step(t) <= 7);
   return pool.length ? pool : deck.kanji.length ? deck.kanji : deck.kana;
+}
+
+/**
+ * The last "say it, then write it" item at N4 and N3: a word with a practised kanji in it, so the kanji
+ * comes back read inside a word (the JLPT seat: closest to what 漢字読み tests). Null when none has it.
+ */
+export function wordWith(deck: ShodoDeck, level: DeckLevel, t: Target, used: ReadonlySet<string>, random: () => number): Target | null {
+  if (!BANDS[level] || t.kind !== 'kanji') return null;
+  return deal(deck.words.filter((w) => w.text.includes(t.text)), 1, used, random)[0] ?? null;
 }
 
 /** Deals `n` targets from a pool, avoiding ones already dealt this game when it can. */
@@ -211,7 +268,7 @@ export function deal(pool: readonly Target[], n: number, used: ReadonlySet<strin
 }
 
 /** The gallery target for a level and the room's brief: the theme glyph with strokes, or null without data. */
-export function galleryTarget(deck: ShodoDeck, level: Level, brief: JpText, random: () => number): Target | null {
+export function galleryTarget(deck: ShodoDeck, level: DeckLevel, brief: JpText, random: () => number): Target | null {
   const options = shuffled(GALLERY[level], random);
   for (const word of options) {
     const cells = [...word.text].map((c) => deck.strokesOf(c));
