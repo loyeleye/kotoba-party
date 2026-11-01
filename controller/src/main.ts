@@ -344,8 +344,8 @@ function render(view: RoomView): void {
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
     session ? phrasebookButton(view.phase, { base, code: session.code, token: session.token, name: me.name, level: me.level }, flash) : null,
-    // The lobby has its own sound line (soundCheck), so the header keeps the room for the name there.
-    view.phase === 'lobby' ? null : soundSwitch(me),
+    // Always in the header, lobby too, so it's in the same place on every screen.
+    soundSwitch(me),
     micSwitch(me),
   );
   mount(app, band, header, screenFor(view, me, isVip));
@@ -442,11 +442,11 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
 
 /**
  * The header's mic switch: turns quiet mode on or off at any time, in the lobby or mid-game. It sits at
- * the end of the header row, so it never covers a game's screen. Hidden when there's no mic to switch to.
+ * the end of the header row, so it never covers a game's screen. Always shown beside the sound switch:
+ * with no speech server tonight it still marks the player as mic off, for the games with speaking roles.
  */
-function micSwitch(me: PlayerView): HTMLElement | null {
+function micSwitch(me: PlayerView): HTMLElement {
   const quiet = me.mic === 'quiet';
-  if (!quiet && !speechReady()) return null;
   const label = quiet ? 'Quiet mode is on: tap to use your mic' : 'Mic is on: tap for quiet mode';
   return h(
     'button',
@@ -488,7 +488,7 @@ function soundCheck(me: PlayerView): HTMLElement {
       h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'setSound', on: true }) }, '🔊 Turn my phone sound on'),
     );
   }
-  return h('button', { type: 'button', class: 'linkish sound-off-link', onclick: () => void command({ type: 'setSound', on: false }) }, 'I can’t hear my phone (turn its sound off)');
+  return h('button', { type: 'button', class: 'linkish sound-off-link', onclick: () => void command({ type: 'setSound', on: false }) }, 'I can’t hear my phone right now');
 }
 
 function micCheck(me: PlayerView): HTMLElement {
