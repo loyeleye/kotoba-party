@@ -99,10 +99,13 @@ logged with `bot: true` so it can be left out of the gate. A taken hard role pay
 sends anyone to the penalty car. With no N4 player in the room nothing changes: no offers, the same
 stops, the same items.
 
-- **The announcer** (Station Announcement, 4.9): six items where the N4 player makes the announcement
+- **The announcer** (Station Announcement, 4.9): seven items where the N4 player makes the announcement
   instead of hearing one, so the line is shown, not played. まもなく、三番線に電車がまいります。,
-  黄色い線の内側までお下がりください。, ドアが閉まります。お気をつけください。, both sentences at once, and
-  電車がおくれて、もうしわけございません。 Frames `keigo`, `o-kudasai`.
+  黄色い線の内側までお下がりください。, ドアが閉まります。お気をつけください。, both sentences at once,
+  電車がおくれて、もうしわけございません。, and a ghost train, まもなく、ゆうれい列車がまいります。
+  (`station-announcement.22-announce-yuurei`, `keigo`; ゆうれいでんしゃ, the other word order (ゆうれいれっしゃが
+  まもなく まいります) and a plain でんしゃ / れっしゃ are accepted too). Frames
+  `keigo`, `o-kudasai`.
 - **Lost and Found** (忘れ物センター, 4.6), `content/src/last-train/lost-and-found.ts`: a new minigame
   that rides a line only in a room with an N4 player. The Obake Line's 神社前 becomes 忘れ野 (Wasureno)
   and the Hoshimidai line's 大学前 becomes 音無 (Otonashi) through the stop's `withN4`; both swapped-out
@@ -119,6 +122,9 @@ stops, the same items.
 - **Yōkai lost property** (Lost and Found, 4.6), three more N4 items in the same two roles: Pon's leaf, with
   ポン written on it (staff: ポンと書いてあります, `te-aru`); a kappa's missing dish (passenger: 頭の上にあったはずです,
   `hazu`); Chōchin-san's candle, as heard on the phone (staff: ちょうちんさんのろうそくだそうです, `sou-hear`).
+  When the candle item lands, Chōchin-san sees it's his own, once a game: 「あっ、それ、わたしの！　だから くらかった…」
+  ("Oh, that's mine! No wonder it's been so dark…", `train_candle`, bank only, `RULES.candleAtMs` = 8.5 s into the reveal, after he has
+  said the staff's line; no time added).
 
 **Chōchin-san says the line** (decided by Ladi, 2026-11-01: the host says the line, the player's recording
 never plays on the TV). When a taken hard role is answered right (first try, retry or overruled), Chōchin-san
@@ -132,7 +138,7 @@ row (⭐ and the role) and the model answer stay as they were. A missed, decline
 ### Mixed rooms (shared/src/modes/mixedRoom.ts)
 
 What the players without the hard role get, the same way in every game. None of it changes anyone's points,
-turns or items except the curveball's +5, and none of it happens in a room without an N4 player, except the host
+turns or items except the curveball (+10 with `scaledCurveball`) and a said reaction's +2, and none of it happens in a room without an N4 player, except the host
 stand-in.
 
 - **Gallery** (the announcer and Lost and Found's two roles; not the guest at the inn, whose favours are quieter
@@ -142,7 +148,7 @@ stand-in.
   a game, at the reveal, once the role line has landed, a Kana or N5 player who hasn't reacted yet (picked by the
   game's seed, so it rotates) gets the curveball in place of their tile, "Which word did you hear?": the line's key
   word (its frame word: まいります, おさがりください, おきをつけください, ございません, かもしれません, そうな,
-  だそうです, はずです, てあります) and two others, +5 into the ledger (`reason: 'curveball'`) if right. The move is
+  だそうです, はずです, てあります) and two others, +5 into the ledger (`reason: 'curveball'`) if right. With the round-5 experiments on (docs/n4-hard-roles.md, "How mixed rooms work"): `scaledCurveball` makes it +10 (a tenth of an item right first try, 100), and `spokenReaction` lets a Gallery player say their reaction for +2 instead of tapping (for Ladi to confirm). A said reaction's +2 goes in the ledger as `reason: 'reaction'`. The move is
   `{ kind: 'gallery', pick }` (a reaction id, or the kana picked), in the answer or the reveal.
 - **Commentary booth** (all three roles): when a taken role lands (right on the first try, the retry or by
   overrule), the reveal carries an instant replay: 📺 REPLAY · name, the model line with its key word lit, one
@@ -160,6 +166,16 @@ stand-in.
   (`RULES.standInAtMs`) into the stop's announcement, subtitled on the TV and with its gist on the phones. That
   announcement phase runs on until the line is said (about 2.5 s longer, once a game). Nobody is asked to say
   anything and nobody scores. The line is fixed, not drawn, so the game deals exactly as it would without it.
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 3.5 s in he first says
+    「アナウンスは わたしが！　ゆらゆら。」 ("The announcement? Leave it to me! Sway, sway.", `train_stand_in_setup`,
+    bank only); the announcement follows
+    2.5 s later, and the stop's announcement runs 2.5 s longer for it.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): every phone gets a Gallery tile while he says it (bubbles
+    on the TV), and once it's said (`standInAtMs` + its booth length) the once-a-game curveball is dealt on its key
+    word (まいります) to a player who hasn't reacted, +10 in the ledger (+5 with `scaledCurveball` off). The gist waits
+    on the phones until then (and on the curveball phone until it's answered), and while it may still come the TV
+    shows the key word as a gap (＿＿＿＿＿) with no English subtitle. The stop's announcement waits up to 5 s more for the answer and ends
+    once it's in. Last Train now has `wakeAt`/`wake` for this, null otherwise.
 
 The mode can't tell a bot from a player (`ModePlayer` has no bot flag), so a bot in the room gets a Gallery tile
 and counts for the stand-in like anyone else.
@@ -200,7 +216,7 @@ living player: 2 seconds off that player's next timer (floor 4 s). Two correct s
 ### Scoring
 
 - Stop: 100 first try, 60 on the retry (+20 on a hard role the player took); ghosts half; the last stop is worth double.
-- Gallery curveball: +5 if right, once a game (mixed rooms only).
+- Gallery curveball: +5 if right, once a game (mixed rooms only); +10 with `scaledCurveball`. A said Gallery reaction: +2 (`spokenReaction`).
 - Speech bonus (spoken, not typed): 25% of the answer's points; players below the room's average
   score get the cap. The bonus never exceeds 3/7 of base, i.e. 30% of base + bonus. Typed
   answers work everywhere but earn no bonus.
@@ -292,6 +308,10 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
     stops, not stops. (for Ladi to confirm)
 28. Yōkai lost property: Pon's leaf (`te-aru`) and Chōchin-san's candle (`sou-hear`) are the staff's, the kappa's
     dish (`hazu`) the passenger's, so each role gains a new frame. Drafts for the fluent check. (for Ladi to confirm)
+29. The candle reaction (`train_candle`) fires only when item 21 is taken and lands (the same moment as his
+    `train_role_read`), once a game, timed after the model line rather than in place of `reveal_react`, so the
+    room still hears its own reaction. The ghost-train announcement is an ordinary announcer item, dealt like
+    the others, not a special stop. (for Ladi to confirm)
 
 ## Open questions
 

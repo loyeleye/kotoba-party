@@ -17,6 +17,8 @@ export interface BentoPolicyOptions {
   /** Type instead of speak (quiet mode). */
   quiet?: boolean;
   thinkMs?: number;
+  /** An N4 bot takes the hard roles it's offered and says each line Pon's way (the path simulation, tools/sim). */
+  hardRoles?: boolean;
 }
 
 function hash(...parts: (string | number)[]): number {
@@ -39,6 +41,21 @@ export function bentoHausPolicy(opts: BentoPolicyOptions = {}): ModePolicy {
       const me = game.me;
       const out: { key: string; move: unknown; delayMs?: number }[] = [];
       const delay = (what: string, extra = 0) => Math.floor(think * (0.5 + hash(playerId, what, 'delay')) + extra);
+
+      // N4 hard roles: take the offer, say the deputy manager's and the おもてなし lines, and see to requests.
+      if (opts.hardRoles && me.hard) {
+        const hr = me.hard;
+        if (hr.offer) out.push({ key: `role:${hr.offer.role}`, move: { kind: 'role', accept: true }, delayMs: delay('role') });
+        for (const d of hr.desk) {
+          const step = d.steps[d.step];
+          if (step && !step.ok && !step.skipped) out.push({ key: `mgr:${d.id}:${d.step}`, move: { kind: 'manager', incidentId: d.id, utterance: { via, text: step.model.kana } }, delayMs: delay(`mgr${d.id}${d.step}`) });
+        }
+        for (const [visitId, g] of Object.entries(hr.guests)) {
+          const step = g.steps[g.step];
+          if (step && !step.ok && !step.skipped) out.push({ key: `omo:${visitId}:${g.step}`, move: { kind: 'omotenashi', visitId, utterance: { via, text: step.model.kana } }, delayMs: delay(`omo${visitId}${g.step}`) });
+        }
+        for (const q of hr.requests) out.push({ key: `req:${q.incidentId}`, move: { kind: 'request-done', incidentId: q.incidentId }, delayMs: delay(`req${q.incidentId}`) });
+      }
 
       // Stations: read back, then send; ask again when the number didn't come through.
       for (const t of me.tickets) {

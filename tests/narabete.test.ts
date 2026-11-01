@@ -1,13 +1,14 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
-import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
 import { normalizeReading, soundKey, type Utterance } from '../shared/src/japanese/kana.js';
 import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
 import { defenceScript } from '../shared/src/modes/narabete/defence.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
 import {
   BONUS_POOL_SHARE,
   DEFENCE_KEY,
@@ -36,6 +37,9 @@ import { bankVoice } from '../server/src/host.js';
 import { Bot, Director } from '../tools/bots/bot.js';
 import { labelValue, narabetePolicy } from '../tools/bots/policies/narabete.js';
 import { content as REAL_CONTENT, hashView, startServer, until } from './helpers.js';
+
+// standInSetup's gap after the setup line, from its bank line (at least STAND_IN_SETUP_MS).
+const SETUP_MS = standInSetupFor(REAL_CONTENT.hostLines, 'narabete_standin_setup');
 
 // ---- fixtures ----
 
@@ -707,6 +711,55 @@ describe('Narabete!: the N4 defence in a game', () => {
     expect(t.r.hard).toMatchObject({ answer: 'accepted', ok: false });
   });
 
+  // The `narabeteFold` experiment: on (above), one defence; off, the ordinary defence and then the N4 encore.
+  it('narabeteFold off: an N4 player who also moved the most gives the ordinary defence, then the N4 one', () => {
+    const restore = withExperiments({ narabeteFold: false });
+    try {
+      const t = new Table(3, ['n4', 'n5', 'n5']);
+      t.start();
+      toFeelingsN4(t);
+      t.sayAll();
+      const p1 = t.cardOf('p1');
+      while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'move', dir: 1 });
+      t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'hard', accept: true });
+      t.lockAll();
+      expect(t.r.encore).toBe('defence');
+      expect(t.s.deadline! - t.now).toBe(DURATIONS.encore);
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
+      t.play('p1', { kind: 'defend', pass: true });
+      expect(t.s.phase).toBe('encore');
+      expect(t.r.encore).toBe('hard');
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
+    } finally {
+      restore();
+    }
+  });
+
+  it('narabeteFold on: the folded defence goes straight to the N4 encore, with its frame', () => {
+    const restore = withExperiments({ narabeteFold: true });
+    try {
+      const t = new Table(3, ['n4', 'n5', 'n5']);
+      t.start();
+      toFeelingsN4(t);
+      t.sayAll();
+      const p1 = t.cardOf('p1');
+      while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'move', dir: 1 });
+      t.play('p1', { kind: 'move', dir: -1 });
+      t.play('p1', { kind: 'hard', accept: true });
+      t.lockAll();
+      expect(t.r.encore).toBe('hard');
+      expect(t.s.deadline! - t.now).toBe(DURATIONS.encoreN4);
+      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
+      expect(t.view().defence!.frame?.text).toContain('ので');
+      expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_hard' });
+    } finally {
+      restore();
+    }
+  });
+
   it('an N4 player who moved the most but left the offer open gives the ordinary defence', () => {
     const t = new Table(3, ['n4', 'n5', 'n5']);
     t.start();
@@ -942,7 +995,44 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.r.hard?.playerId).toBe('p2');
   });
 
-  it('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = toDefence();
+    const P = 'p1';
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！').error).toBe('bad-move');
+      expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(t.score(P)).toBe(before);
+      return;
+    }
+    // Not while the defence is still being said: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！').error).toBe('bad-move');
+    // The defence lands (the curveball goes to p3): now it may be said.
+    t.play('p2', { kind: 'defend', utterance: { via: 'speech', text: t.view('p2').me!.hard!.script!.lines[0]!.kana } });
+    expect(t.r.encore).toBe('replay');
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！').error).toBeUndefined();
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().gallery).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど').error).toBe('bad-move');
+  });
+
+  it.each([true, false])('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = toDefence();
     // While the defence is on, reactions only: nobody is asked which word they heard before it's been said.
     expect(t.view('p1').me!.gallery!.kind).toBe('react');
@@ -969,7 +1059,7 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.view().gallery.map((b) => b.id)).toEqual(['sugoi']);
     const before = t.score('p3');
     expect(t.play('p3', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
-    expect(t.score('p3') - before).toBe(CURVEBALL_POINTS);
+    expect(t.score('p3') - before).toBe(scaled ? 10 : CURVEBALL_POINTS);
     expect(t.view('p3').me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: DEFENCE_KEY });
     expect(t.view().replay!.holdKey).toBe(false);
     expect(t.st.curveball).toBe(true);
@@ -1028,6 +1118,7 @@ describe('Narabete!: mixed rooms', () => {
   });
 
   it('the host stand-in: a 2-player room with no N4 player hears one model defence, once a game', () => {
+    onTestFinished(withExperiments({ standInSetup: false, standInCurveball: false }));
     const t = new Table(2, ['kana', 'n5']);
     t.start();
     t.sayAll();
@@ -1056,6 +1147,110 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.s.phase).toBe('reveal');
     expect(t.view().standIn).toBeNull();
     expect(t.s.cues.filter((c) => c.event === 'narabete_standin')).toHaveLength(1);
+  });
+
+  describe('the stand-in experiments', () => {
+    const wake = (t: Table) => {
+      const at = wakeAt(t.s, t.ctx());
+      expect(at).not.toBeNull();
+      t.now = at!;
+      t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    };
+
+    it('standInSetup: her setup line where the defence began, the defence 2.5 s later, inside the line-up', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: false }));
+      const t = new Table(2, ['kana', 'n5']);
+      t.start();
+      t.sayAll();
+      const ours = t.s.cues.filter((c) => c.event.startsWith('narabete_standin'));
+      expect(ours.map((c) => [c.event, c.atMs])).toEqual([
+        ['narabete_standin_setup', DURATIONS.standInAt],
+        ['narabete_standin', DURATIONS.standInAt + SETUP_MS],
+      ]);
+      expect(t.view().standIn!.atMs).toBe(DURATIONS.standInAt + SETUP_MS);
+      expect(t.s.deadline! - t.now).toBe(DURATIONS.reveal);
+      expect(t.view('p1').me!.gallery).toBeNull();
+      t.sortLine();
+      t.lockAll();
+      expect(t.s.phase).toBe('score');
+    });
+
+    it('standInCurveball: she starts at once (no "line them up"), a tile for both, then the curveball on ので', () => {
+      onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+      const t = new Table(2, ['kana', 'n5']);
+      t.start();
+      t.sayAll();
+      const start = t.now;
+      // The strip stays up through the curveball's window, so its ms runs that much past the line.
+      const ms = t.view().standIn!.ms - STAND_IN_CURVEBALL_MS;
+      expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_standin', atMs: DURATIONS.standInEarlyAt });
+      expect(t.s.cues.filter((c) => c.event === 'narabete_order')).toHaveLength(0);
+      expect(t.s.deadline! - start).toBe(DURATIONS.reveal);
+      expect(t.view('p1').me!.gallery).toMatchObject({ kind: 'react' });
+      expect(t.view().standIn!.holdKey).toBe(true);
+      expect(t.view('p2').me!.standIn).toBeNull();
+      expect(t.play('p2', { kind: 'gallery', pick: 'warai' }).error).toBeUndefined();
+      expect(t.view().gallery.map((b) => b.id)).toEqual(['warai']);
+      wake(t);
+      expect(t.now).toBe(start + DURATIONS.standInEarlyAt + ms);
+      expect(t.view('p1').me!.gallery!.kind).toBe('curveball');
+      expect(t.view('p2').me!.standIn).toMatchObject({ romaji: null });
+      expect(t.view('p1').me!.standIn).toBeNull();
+      const before = t.score('p1');
+      expect(t.play('p1', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
+      expect(t.score('p1')).toBe(before + curveballPoints('narabete'));
+      expect(t.st.curveball).toBe(true);
+      expect(t.s.phase).toBe('reveal');
+    });
+
+    it('standInCurveball never holds the line-up: locked while she speaks, it ends and the Gallery carries into the score', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
+      const t = new Table(2, ['kana', 'n5']);
+      t.start();
+      t.sayAll();
+      const start = t.now;
+      const st = t.st.standIn!;
+      expect(st.atMs).toBe(DURATIONS.standInEarlyAt + SETUP_MS);
+      // She has started her line; everyone locks: the line-up ends at once.
+      t.now = start + st.atMs + 1_000;
+      t.sortLine();
+      t.lockAll();
+      expect(t.s.phase).toBe('score');
+      expect(t.view('p1').me!.gallery).toMatchObject({ kind: 'react' });
+      wake(t);
+      expect(t.now).toBe(start + st.atMs + st.c.ms);
+      const who = t.st.standIn!.sg!.g.curveball!.playerId;
+      expect(t.play(who, { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
+      expect(t.score(who)).toBeGreaterThanOrEqual(curveballPoints('narabete'));
+      // Gone with the score.
+      t.timeout();
+      expect(t.s.phase).toBe('prompt');
+      expect(t.st.standIn!.sg).toBeNull();
+    });
+
+    it('standInCurveball: a line-up locked before she got to her line drops the Gallery and the curveball', () => {
+      onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+      const t = new Table(2, ['kana', 'n5']);
+      t.start();
+      t.sayAll();
+      t.sortLine();
+      t.lockAll();
+      expect(t.s.phase).toBe('score');
+      expect(t.st.standIn!.sg).toBeNull();
+      expect(t.view('p1').me!.gallery).toBeNull();
+      expect(t.st.curveball).toBe(false);
+    });
+
+    it('stays out of rooms with an N4 player, and of 3+ rooms', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
+      for (const levels of [['n4', 'n5'], ['kana', 'n5', 'n5']] as Level[][]) {
+        const t = new Table(levels.length, levels);
+        t.start();
+        t.sayAll();
+        expect(t.s.cues.some((c) => c.event === 'narabete_standin_setup')).toBe(false);
+        expect(t.view('p2').me!.gallery).toBeNull();
+      }
+    });
   });
 
   it('no stand-in with an N4 player, or with 3+ players; an N5-only 3+ room sees nothing new', () => {

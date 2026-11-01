@@ -17,6 +17,9 @@ export interface LateAgainPolicyOptions {
   /** Chance the latecomer uses its one mic pass instead of answering. */
   pass?: number;
   thinkMs?: number;
+  /** Speak the excuse as a checked clip of Pon's version, as a speaker who knows it would (the path
+   *  simulation, tools/sim). Off by default: live bots can't record. */
+  speak?: boolean;
 }
 
 function hash(...parts: (string | number)[]): number {
@@ -60,7 +63,10 @@ export function lateAgainPolicy(opts: LateAgainPolicyOptions = {}): ModePolicy {
           if (view.phase === 'prompt' && !me.ready) push('ready', { kind: 'ready' }, think);
           if (view.phase === 'answer') {
             if (me.micPassLeft && r('pass?') < pass) push('pass', { kind: 'micPass' });
-            else if (me.mission) push('excuse', { kind: 'excuse', type: 'typed', text: me.mission.model.kana }, think);
+            else if (me.mission && opts.speak) {
+              const said = me.mission.model.kana;
+              push('excuse', { kind: 'excuse', type: 'clip', clipId: `sim-${playerId}-${game.round}`, durMs: 4000, checked: true, heard: { via: 'speech', text: said, reading: said } }, think);
+            } else if (me.mission) push('excuse', { kind: 'excuse', type: 'typed', text: me.mission.model.kana }, think);
           }
           return out;
         }
