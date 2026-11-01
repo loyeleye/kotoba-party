@@ -8,7 +8,7 @@ counted goals (4.6, 4.8, 4.10 and, without reviews, 4.2) have no game that lets 
 required frame from memory often enough. 4.6 can't be measured at all until the bots can retell a Word
 Gauntlet rumour. The four goals the games do carry (4.1, 4.4, 4.5, 4.9) take a median of **31 weekly game
 nights** together, about seven months, from games alone. One phone review sitting a week cuts that to
-**@REV1M nights**.
+**19 nights**.
 
 Those 31 nights are the pace for a few fixed lines, not for N4 as a whole. The JLPT seat counted 39 of the 61
 N4 frames that no game gets an N4 player to say from memory. Goals 4.11 to 4.14 weren't on the line when this
@@ -78,15 +78,21 @@ The four carried goals (4.1, 4.4, 4.5, 4.9), timed together:
 | Remembers less (memory 0.5) | 38 (26 / 57) | about 9 months | 77% |
 | Remembers more (memory 0.9) | 25 (17 / 37) | about 6 months | 95% |
 | Twice a week (every 3 days) | 31 (20 / 45) | about 3 months | 91% |
-| One phone review sitting a week | @REV1 | @REV1C | @REV1S |
-| Two sittings a week | @REV2 | @REV2C | @REV2S |
-| A sitting every day | @REV7 | @REV7C | @REV7S |
+| One phone review sitting a week | 19 (12 / 28) | about 4½ months | 99% |
+| Two sittings a week | 14 (8 / 21) | about 3 months | 99% |
+| A sitting every day | 12 (7 / 20) | about 2¾ months | 100% |
 
 - **The shipped suggestion is slower than picking games at random.** `suggest` offers the first open goal in
   list order, so a room keeps getting sent to Tourist for 4.2, which can't move it, and to Omiai, which is first
   in 4.9's games and gives no Express frame from memory. On the phone it says "Next stop: Tourist · 4.2" night
   after night, and because the suggestion becomes a ♡ wish, the whole room plays Tourist, Kana players too.
-- **Phone reviews are the biggest lever.** @REVNOTE
+- **Phone reviews are the biggest lever.** One sitting a week cuts the four carried goals from 31 nights to 19, and
+  lifts 4.2 from 3% of rooms to 57% and 4.3 from 6% to 73%: a phrase read in Tourist becomes a say from memory
+  on the phone, and only the in-game day still needs a game. More sittings keep speeding up the four (14 nights
+  at two a week, 12 daily) but stamp 4.2 in fewer rooms (46% and 41%), probably because the room finishes the
+  four sooner and the suggestion then sends it to Tourist every game. None of it clears the line: 4.6, 4.8 and
+  4.10 still need a game that gives those frames from memory. Recall here is a flat 0.7 for everyone, with no
+  forgetting or learning, so these runs say how the rules respond, not how fast a person learns.
 - **Twice a week gives exactly the same night counts.** The 3-day gap is met either way, and what's scarce is
   chances to say the frame. It cuts the calendar time to under half.
 - **The longest dry spell is long.** In the base run, the median stamps come at nights 4, 5 and 9, then nothing for
