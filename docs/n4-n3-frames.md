@@ -122,11 +122,13 @@ the JLPT lists them at N3; the open questions doc has the question.
 with kanji and reads its kana with the dictionary; all of them keep their frame. Kana-only lines with no
 spaces miss 13 of ~400 (the suffering passive, ＿とかいかない), and ともだちとかえった reads as ＿とか.
 
-## More N3 points (not on a goal yet)
+## More N3 points (optional on their goals)
 
 The #149 JLPT seat counted about 32 genuine N3 points on 3.1 to 3.11. Twelve of the biggest gaps now have
-draft matchers, with the same 10/10 bar (`tests/frame-cases/n3-d.ts`). No goal counts them yet. Ladi chose
-optional frames on today's goals (open questions doc): they get wired in next, with だす on 3.9 and さえ on 3.5.
+draft matchers, with the same 10/10 bar (`tests/frame-cases/n3-d.ts`). Ladi chose optional frames on today's
+goals (open questions doc, Nov 1): ＿ように いわれました on 3.1, ＿かける and ＿ばかり on 3.2, ＿もので on 3.3, ＿さえ
+on 3.5, ＿きる on 3.6, ＿わけには いかない on 3.7, ＿た とたん and ＿だす on 3.9, and ＿はずが ない, ＿に とって and
+＿こそ on 3.10. A frame becomes required once a game carries it.
 A sweep of 13,870 game strings finds 1 line that says them (アドバイスばかり), and it's right.
 
 The #157 panel found about 40 more lines that named the wrong frame, mostly compound verbs with the other
