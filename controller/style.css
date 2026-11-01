@@ -752,3 +752,10 @@ input::placeholder { color: #a99ccf; }
 .gp-wish { display: block; margin-top: 4px; color: var(--gold); font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .path-hanko.big { animation: none; } }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* The N4 hard-role offer card (components/roleOffer.ts), the same in every game. */
+.role-offer { display: grid; gap: 12px; }
+.role-offer p { margin: 0; }
+.role-offer-kicker { font-weight: 700; color: var(--gold); }
+.role-offer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.role-offer-btns button { min-height: 64px; font-size: 19px; display: grid; place-content: center; gap: 2px; }
+.role-offer-gloss { font-size: 13px; font-weight: 400; opacity: 0.8; }
