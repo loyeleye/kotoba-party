@@ -6,7 +6,7 @@
 // Kana level), n5 = です/ます sentences, n4 = one N4 pattern each (〜たら, potential, 〜ても
 // いい, 〜ほうがいい, 〜そう, 〜ておく, 〜てもらう).
 //
-// The N4 deck (goals 4.2 and 4.4): questions in ＿なければ なりませんか, ＿なくても いいですか,
+// The N4 deck (goals 4.2 and 4.4): questions in ＿ても いいですか, ＿なければ なりませんか, ＿なくても いいですか,
 // ＿られますか (potential) and ＿ことが できますか, with answers in the same frames (＿なければ
 // なりません, ＿なくても いいです, ＿られます). Those lines carry `frames` (frame ids by name), and an
 // answerer's tiles put answers in the question's frame family first.
@@ -88,6 +88,10 @@ export const QUESTIONS: readonly Line[] = [
   n4('tourist.q.nani-nakereba', 'what', t('ここで 何を しなければ なりませんか。', 'ここで なにを しなければ なりませんか。', 'What do you have to do here?'), ['nakereba']),
   n4('tourist.q.shizuka', 'yesno', k('しずかに しなければ なりませんか。', 'Do you have to be quiet?'), ['nakereba']),
   n4('tourist.q.harawanakute', 'yesno', t('お金を はらわなくても いいですか。', 'おかねを はらわなくても いいですか。', 'Is it OK not to pay?'), ['nakutemo-ii']),
+  // May I…? (4.2's required frame, step 5b-2): yes/no questions any place can answer.
+  n4('tourist.q.shashin-temo', 'yesno', k('ここで しゃしんを とっても いいですか。', 'Can I take photos here?'), ['te-mo-ii']),
+  n4('tourist.q.utatte-mo', 'yesno', k('ここで うたっても いいですか。', 'Can I sing here?'), ['te-mo-ii']),
+  n4('tourist.q.petto', 'yesno', t('犬を つれて 来ても いいですか。', 'いぬを つれて きても いいですか。', 'Can I bring my dog?'), ['te-mo-ii']),
   n4('tourist.q.taberaremasu', 'yesno', t('ここで 食べられますか。', 'ここで たべられますか。', 'Can you eat here?'), ['potential']),
   n4('tourist.q.neraremasu', 'yesno', k('ここで ねられますか。', 'Can you sleep here?'), ['potential']),
   n4('tourist.q.miraremasu', 'what', t('ここで 何が 見られますか。', 'ここで なにが みられますか。', 'What can you see here?'), ['potential']),
@@ -128,6 +132,9 @@ export const SAFE_ANSWERS: readonly Line[] = [
   n4('tourist.a.dekiru', 'yesno', k('ええ、だれでも する ことが できます。', 'Sure, anyone can do it.'), ['potential']),
   n4('tourist.a.mirareru', 'what', t('いろいろな ものが 見られますよ。', 'いろいろな ものが みられますよ。', 'You can see all sorts of things.'), ['potential']),
   n4('tourist.a.rule', 'what', k('ルールを まもらなければ なりません。', 'You have to follow the rules.'), ['nakereba']),
+  n4('tourist.a.shite-mo-ii', 'yesno', k('はい、しても いいですよ。', 'Yes, go ahead.'), ['te-mo-ii']),
+  n4('tourist.a.shite-wa', 'yesno', k('いいえ、それは しては いけません。', "No, you can't do that."), ['te-wa-ikenai']),
+  { id: 'tourist.a.chotto', level: 'n4', kind: 'yesno', jp: k('ここでは ちょっと…', "Here's… not really the place."), status: 'draft' },
 ];
 
 /** The tourist's cheat sheet: helpful-but-safe phrases that fit any question. */

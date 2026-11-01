@@ -373,7 +373,7 @@ function render(view: RoomView): void {
     h('span', { class: 'me-name' }, `${me.name} · ${LEVEL_LABELS[me.level]}`),
     isVip ? h('span', { class: 'vip' }, '★ VIP') : null,
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
-    h('span', { class: 'score' }, `${me.score} pts`),
+    h('span', { class: 'score' }, `${me.score - (view.game ? (PHONE_MODES[view.game.mode].heldPoints?.(view, view.game, () => client?.remainingMs() ?? null) ?? 0) : 0)} pts`),
     session ? phrasebookButton(view.phase, { base, code: session.code, token: session.token, name: me.name, level: me.level }, flash) : null,
     // Always in the header, lobby too, so it's in the same place on every screen.
     soundSwitch(me),

@@ -33,6 +33,12 @@ Three rounds by default (the VIP can pick 3, 4 or 5). Each round has a new place
    - The **asker** taps who to ask (anyone but the player who just asked them: no asking straight
      back), then **asks out loud and into the phone** (hold-to-talk; typed or kana-pad fallback).
      Or they take a **question tile** (5 suggestions at their level), say it, or send it as a tap.
+     An **N4 or N3 asker gets cues instead of tiles**: each cue is the question's English and its frame
+     as a question-form chip (Is it OK to go alone? · ＿ても いいですか "May I ___?"), with the Japanese
+     behind a **peek** ("👀 Peek at the Japanese (half points)"), as Last Train cues a line by its
+     meaning. Asked off a cue without peeking, the question counts as said from memory; after a peek,
+     as read, at the tile's bonus (half the own-words one). Once a tile or cue is picked, the phone
+     shows only its speak box, so there's one place to speak. A refused peek closes the panel and says so.
    - The **answerer** sees the question, answers out loud and into the phone, or takes one of 4
      **answer tiles** that fit the question's kind (a いつ question gets "when" answers).
    - The **stage** shows "🎤 Aki → Ben", the question and the answer as they arrive, each with an
@@ -85,12 +91,21 @@ questions and answers").
   はい！ isn't found in はいります).
   - Exact match: the stage shows the tidy frame text and its English subtitle (a recogniser slip on
     a tile still shows the tile).
-  - Close match: the stage shows what was heard, with the frame's English as a guess ("≈ Do you
-    like it here?").
+  - Close match: the stage shows what was heard (with its reading, so romaji shows at Kana), and the
+    frame's English as a guess ("Something like: Do you like it here?").
   - No match: shown as heard, "(in their own words)".
-- **Own words vs tile**: a line said that matches a tile on the player's screen counts as the tile
-  (they may have read it); anything else that holds Japanese counts as own words. English typed
-  in is logged but earns no bonus.
+- **Own words vs tile**: a line said that matches a tile whose Japanese was on the player's screen
+  counts as the tile (they may have read it). For an N4+ asker's cues, only a peeked cue's Japanese
+  was on screen: a cue said without a peek is own words. Anything else that holds Japanese counts as
+  own words. English typed in is logged but earns no bonus.
+- **A question tile with one word swapped** (ひとりで いっても いいですか → ともだちと いっても いいですか)
+  is the asker's own words at every level: every other word as written, the swapped word at least two
+  kana from the tile's (a one-kana recogniser slip on a tile still shows the tile). A line said exactly
+  as written (its text, whatever the reader made of its kanji) is never a swap. The stage shows what
+  was heard, its reading, and "<the tile's English> (one word changed)"; the phrasebook keeps what
+  they said. It pays the own-words bonus, but counts as from memory only when spoken and the line's
+  Japanese wasn't on their screen: a Kana/N5 tile or a peeked cue swapped is `read`. Answers keep the
+  old rule (a close match is `seen`).
 - **The guess**: the place is the tap; the speech only earns the bonus if it contains the place's
   name (or an accepted variant: うち for 家, ラーメン for ラーメン屋).
 
@@ -103,9 +118,12 @@ questions and answers").
   N5 levels, with N4 lines for some kinds.
 - **29 generic questions** (6 kana, 10 N5, 13 N4) and **29 generic answers** for every kind
   (the tourist's suggestions, also mixed into locals' tiles so they aren't a giveaway).
-- **The N4 deck** (goals 4.2 and 4.4, draft): 8 more generic N4 questions in ＿なければ なりませんか,
-  ＿なくても いいですか, ＿られますか and ＿ことが できますか, 6 generic N4 answers in the same frames
-  (そう しなければ なりません。 / しなくても いいですよ。 / はい、いつでも 来られますよ。…), and
+- **The N4 deck** (goals 4.2 and 4.4, draft): 11 more generic N4 questions in ＿ても いいですか (3, step 5b-2:
+  4.2's required frame: ここで しゃしんを とっても いいですか。 / ここで うたっても いいですか。 / 犬を つれて 来ても
+  いいですか。, answered from the may/mustn't family first), ＿なければ なりませんか,
+  ＿なくても いいですか, ＿られますか and ＿ことが できますか, 9 generic N4 answers in the same frames
+  (そう しなければ なりません。 / しなくても いいですよ。 / はい、いつでも 来られますよ。 / はい、しても いいですよ。 /
+  いいえ、それは しては いけません。 / ここでは ちょっと…), and
   at every place one more N4 question and two N4 answers (おんせん: みずぎを 着なければ なりませんか →
   いいえ、みずぎは 着ては いけません。). Each deck line has `frames` (frame ids by name).
 - **7 bluffing phrases** for the tourist (そうですね…, ひみつです！, いい しつもんですね！,
@@ -124,8 +142,11 @@ player plays as it did. There is no offer to decline because there is no extra r
 
 ### Learning hooks
 
-- Phrasebook: a frame said in your own words → `said`; a tile read or tapped, or a close match →
-  `seen`; the round's place name → `seen` for everyone, `said` for a tourist who said it right.
+- Phrasebook: a frame said in your own words, or a cue asked without peeking → `said` (from memory
+  when spoken); a question tile with one word swapped → `said`, as heard (`tourist.own.<reading>`,
+  "… (one word changed)"; from memory only if spoken and the line wasn't on screen, else read); a
+  tile read or tapped, a peeked cue, or any other close match → `seen`; the round's place name →
+  `seen` for everyone, `said` for a tourist who said it right.
 - Tiles are at the player's level (romaji at Kana), with English, but own words pay double.
 - The stage log is a running bilingual transcript, read by the whole room.
 
@@ -145,7 +166,8 @@ Disguise* (most rounds won as the tourist), おしゃべり おう *Chatterbox* 
 ### Bots
 
 `touristPolicy({ seed })`: taps ready; on its turn picks someone and asks (35% the tile's text
-as its own words, 45% the tile said, 20% a tap); answers the same way. Locals find the player
+as its own words, 45% the tile said, 20% a tap); answers the same way. An N4 bot asks off a cue:
+60% from memory, 25% after a peek, 15% a tap. Locals find the player
 whose answers fit their place least and may call a vote after turn 4 (`callRate` 0.25) and vote
 for them; the tourist counts which place the logged answers fit and guesses once one place has 2+
 clues and leads; on its last chance it picks its best clue. `npm run bots -- --mode tourist --bots 5`.
@@ -183,7 +205,7 @@ clues and leads; on its last chance it picks its best clue. `npm run bots -- --m
 15. **Free questions get no machine translation**: a line that matches no frame is shown as heard
     with "(in their own words)". No round waits on an LLM; a translation could be added later as
     an async extra.
-16. **Close matches show what was heard**, with the matched frame's English marked "≈", rather
+16. **Close matches show what was heard**, with the matched frame's English as "Something like: …", rather
     than replacing the player's words with a frame they may not have meant.
 17. **6 place choices**, at least half from the round's pack, so the tourist's guess is a real
     deduction among similar places.
@@ -198,6 +220,16 @@ clues and leads; on its last chance it picks its best clue. `npm run bots -- --m
     (must/needn't, can) only when the question carries frames; otherwise by kind, as before.
 22. **The onsen's swimsuit answer uses ＿ては いけません** (4.2's boundary frame), because "no, you
     needn't" would be wrong there: you mustn't.
+23. **Cues for N4 and N3 askers only** (path-simulation item 5): Kana and N5 askers keep tiles with
+    the Japanese showing. A cue said from memory pays the own-words bonus; a peek is tracked by the
+    server (`peek`), so the phone can't claim memory for a line it showed. The cue's frame is the
+    line's own N4 frame when it has one, else the most advanced frame frames.ts finds in it; its chip
+    is that frame's question form (`CUE_CHIPS`: ＿(ら)れますか / ＿ことが できますか "Can you ___?",
+    ＿なければ なりませんか "Do I have to ___?", ＿ても いいですか "May I ___?", ＿なくても いいですか
+    "Do I not have to ___?", ＿た ほうが いいですか "Should I ___?", ＿たら いいですか "What / when should
+    I ___?" on a たら いいですか line, else ＿たら、＿か "If ___, …?"). A cue whose frame is an N5 one
+    (＿ますか, ＿に ＿ます) gets no chip. The speak box's placeholder never shows the frame. Draft.
+24. **A swapped word counts only for questions**, the half the item asked for; answers could follow.
 
 ## Open questions
 

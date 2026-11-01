@@ -588,6 +588,56 @@ export function answerFrames(level: Level, deck?: Deck): string[] {
   return ['いい しつもんですね。じつは、〜んです。', '〜と おもいます。', 'いちばん たいへんだったのは 〜ことです。', 'それは ひみつです。'];
 }
 
+// ---- Chōchin-san's "Have you ever…?" card (goal 4.3) ----
+//
+// Once a game, at the start of question time for the first N4 presenter's talk, Chōchin-san asks one
+// question of his own. The presenter's phone shows it in English with the frame (＿た ことが あります／
+// ありません) and the noun, so the た form and the frame come from memory; the Japanese is behind a peek.
+// The topic is drawn at random each game. Answering yes or no is up to them: the frame is the same.
+
+export interface HaveYouTopic {
+  id: string;
+  /** The experience as a た clause, in bracket notation: 富士山[ふじさん]に 登[のぼ]った. */
+  did: string;
+  /** The noun shown as a hint, in bracket notation (the verb is theirs to find). */
+  hint: string;
+  /** "climbed Mt Fuji": after "Have you ever" and "I've". */
+  en: string;
+  status: ReviewStatus;
+}
+
+export const HAVE_YOU: HaveYouTopic[] = [
+  { id: 'fuji', did: '富士山[ふじさん]に 登[のぼ]った', hint: '富士山[ふじさん]', en: 'climbed Mt Fuji', status: 'draft' },
+  { id: 'natto', did: '納豆[なっとう]を 食[た]べた', hint: '納豆[なっとう]', en: 'eaten nattō', status: 'draft' },
+  { id: 'ghost', did: '幽霊[ゆうれい]を 見[み]た', hint: '幽霊[ゆうれい]', en: 'seen a ghost', status: 'draft' },
+  { id: 'kappa', did: 'かっぱに きゅうりを あげた', hint: 'かっぱ・きゅうり', en: 'given a kappa a cucumber', status: 'draft' },
+  { id: 'karaoke', did: '一人[ひとり]で カラオケに 行[い]った', hint: 'カラオケ', en: 'gone to karaoke on your own', status: 'draft' },
+  { id: 'train', did: '電車[でんしゃ]で 寝[ね]て、終点[しゅうてん]まで 行[い]った', hint: '電車[でんしゃ]・終点[しゅうてん]', en: 'fallen asleep on a train and ended up at the end of the line', status: 'draft' },
+  { id: 'pajamas', did: 'パジャマで 外[そと]に 出[で]た', hint: 'パジャマ', en: 'gone outside in your pyjamas', status: 'draft' },
+  { id: 'teacher', did: '先生[せんせい]を 「お母[かあ]さん」と 呼[よ]んだ', hint: '先生[せんせい]・お母[かあ]さん', en: 'called your teacher "Mum"', status: 'draft' },
+  { id: 'ufo', did: 'ユーフォーを 見[み]た', hint: 'ユーフォー', en: 'seen a UFO', status: 'draft' },
+  { id: 'monkeys', did: 'サルと 温泉[おんせん]に 入[はい]った', hint: 'サル・温泉[おんせん]', en: 'got in a hot spring with monkeys', status: 'draft' },
+  { id: 'sushi', did: '回転[かいてん]ずしで 二十[にじゅっ]皿[さら] 食[た]べた', hint: '回転[かいてん]ずし', en: 'eaten twenty plates at a conveyor-belt sushi place', status: 'draft' },
+  { id: 'haunted', did: 'おばけ屋敷[やしき]で 泣[な]いた', hint: 'おばけ屋敷[やしき]', en: 'cried in a haunted house', status: 'draft' },
+];
+
+/** The frame chip on the card. */
+export const HAVE_YOU_FRAME = '＿た ことが あります／ありません';
+/** The frame's English, under the chip on the TV (for the room's beginners). */
+export const HAVE_YOU_GLOSS = 'I’ve (done) … / I’ve never (done) …';
+
+export const haveYouOf = (id: string): HaveYouTopic | undefined => HAVE_YOU.find((x) => x.id === id);
+
+/** The card at a level: the question, the yes and no answers (behind the peek), and the noun hint. */
+export function haveYouCard(x: HaveYouTopic, level: Level): { question: JpText; yes: JpText; no: JpText; hint: JpText } {
+  return {
+    question: forLevel(rb(`${x.did} ことが ありますか？`, `Have you ever ${x.en}?`), level),
+    yes: forLevel(rb(`はい、${x.did} ことが あります。`, `Yes, I've ${x.en.replace(/\byour\b/g, 'my')}.`), level),
+    no: forLevel(rb(`いいえ、${x.did} ことは ありません。`, `No, I've never ${x.en.replace(/\byour\b/g, 'my')}.`), level),
+    hint: forLevel(rb(x.hint, ''), level),
+  };
+}
+
 // ---- report card ----
 
 /** The teacher's stamps: every grade is praise, like a real Japanese teacher's. */

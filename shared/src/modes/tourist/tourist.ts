@@ -10,16 +10,20 @@
 // Each round:
 //   prompt  your card: the place and your role, or "you're the tourist" (tap Got it)
 //   answer  one question turn: the asker picks someone and asks; they answer. Repeats.
+//           An N4+ asker's question tiles are cues (the English and the frame, the Japanese behind a peek),
+//           so a question asked off a cue without peeking counts as said from memory.
 //   reveal  the vote: called by a player (needs a majority) or at the end of the round (most votes)
 //   encore  last chance: a caught tourist may still guess the place
 //   score   who the tourist was, where we were, and the round's points
 
 import type { JpText, Level } from '../../../../content/src/types.js';
-import { isUtterance, type Utterance } from '../../japanese/kana.js';
+import { creditable, FRAME_BY_ID, framesOf, type FrameId } from '../../japanese/frames.js';
+import { hasKanji, isUtterance, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
+import { LEVEL_RANK, n4Up } from '../../level.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { findLine, hasJapanese, matchLine, namesPlace } from './check.js';
+import { findLine, hasJapanese, matchLine, namesPlace, oneWordChanged, saysLine } from './check.js';
 import { ALL_LINES, BLUFFS, PLACES, QUESTIONS, SAFE_ANSWERS, TOURIST_ROLE, type Kind, type Line, type Place } from './places.js';
 
 // ---- tuning ----
@@ -45,6 +49,8 @@ export const ASK_BONUS = { own: { speech: 40, typed: 20 }, frame: { speech: 20, 
 export const ANSWER_BONUS = { own: { speech: 30, typed: 15 }, frame: { speech: 15, typed: 5 } } as const;
 /** Saying the guess (ここは えきですか？) rather than only tapping it. From the bonus pool. */
 export const GUESS_BONUS = { speech: 20, typed: 10 } as const;
+/** Askers at these levels get cues (English and frame, the Japanese behind a peek) in place of question tiles. */
+export const CUE_LEVELS: readonly Level[] = (Object.keys(LEVEL_RANK) as Level[]).filter(n4Up);
 /** Every speaking bonus comes from one pool per player per round: 30% of a round's top win. */
 export const BONUS_POOL_SHARE = 0.3;
 export const ROUND_STAKE = WIN_POINTS + SHARP_EYE_POINTS + CALLER_POINTS;
@@ -85,6 +91,12 @@ export interface Said {
   tier: Tier;
   /** Close to a known frame but not exact: the heard text is shown, with the frame's subtitle as a guess. */
   approx?: boolean;
+  /** A question tile with one word swapped: the asker's own words, logged as heard ("… (one word changed)"). */
+  swapped?: boolean;
+  /** The heard reading, for a swapped line's phrasebook entry. */
+  reading?: string;
+  /** A swapped line whose Japanese was on the asker's screen (a tile, or a peeked cue): own words, but read. */
+  fromShown?: boolean;
 }
 
 export interface Turn {
@@ -99,6 +111,10 @@ export interface Turn {
   /** Line ids suggested to the asker, then to the answerer. */
   qSuggest: string[];
   aSuggest: string[];
+  /** The asker gets cues, not tiles (set when the turn starts, from their level). */
+  cue?: boolean;
+  /** Cues whose Japanese the asker peeked at: asked off one of these, the question was read. */
+  peeked?: string[];
   /** The VIP hid it. */
   hidden: boolean;
 }
@@ -174,6 +190,7 @@ export interface TouristState {
 export type TouristMove =
   | { kind: 'ready' }
   | { kind: 'pick'; targetId: string }
+  | { kind: 'peek'; lineId: string }
   | { kind: 'ask'; targetId?: string; utterance: Utterance; lineId?: string }
   | { kind: 'reply'; utterance: Utterance; lineId?: string }
   | { kind: 'call' }
@@ -201,6 +218,15 @@ export interface LineCard {
   en: string;
   furigana?: JpText['furigana'];
   romaji?: string;
+}
+
+/** An N4+ asker's question cue: what to ask in English and the frame to build it on; the Japanese once peeked. */
+export interface CueCard {
+  id: string;
+  en: string;
+  frame: { id: string; ja: string; en: string } | null;
+  /** The Japanese, after a peek (asked off it, the question counts as read). */
+  jp: LineCard | null;
 }
 
 export interface SaidView {
@@ -272,8 +298,10 @@ export interface TouristView {
     canCall: boolean;
     canGuess: boolean;
     myVote: string | null;
-    /** Question tiles when it's your turn to ask. */
+    /** Question tiles when it's your turn to ask (Kana and N5). */
     questions: LineCard[] | null;
+    /** Question cues when it's your turn to ask (N4 and up), in place of tiles. */
+    cues: CueCard[] | null;
     /** Answer tiles when someone asked you. */
     answers: LineCard[] | null;
     /** The tourist's cheat sheet. */
@@ -299,6 +327,46 @@ export function placeCard(p: Place, romaji: boolean): PlaceCard {
 
 function lineCard(l: Line, romaji: boolean): LineCard {
   return { id: l.id, text: l.jp.text, kana: l.jp.kana, en: l.jp.en, ...(l.jp.furigana ? { furigana: l.jp.furigana } : {}), ...(romaji ? { romaji: toRomaji(l.jp.kana) } : {}) };
+}
+
+/** The frame a question cue shows: the line's own N4 frame, else the most advanced one found in it. */
+function cueFrame(l: Line): FrameId | null {
+  const known = (id: string): id is FrameId => id in FRAME_BY_ID;
+  const own = l.frames?.find(known);
+  if (own) return own;
+  const rank = (id: FrameId) => ({ n3: 3, n4: 2, n5: 1 })[FRAME_BY_ID[id].level ?? 'n5'];
+  // Most advanced first; among equals the later one (＿で ＿を ＿ます before the bare ＿ますか).
+  return framesOf(l.jp).filter(creditable).reduce<FrameId | null>((best, id) => (best === null || rank(id) >= rank(best) ? id : best), null);
+}
+
+/**
+ * A cue's chip: the question form of its frame, so the chip and the English ask the same thing (the frame's
+ * own chip is the statement, ＿なければ なりません). Keyed by frame id; a frame not here (the N5 ones, ＿ますか
+ * and the like) shows no chip. Draft Japanese.
+ */
+export const CUE_CHIPS: Readonly<Partial<Record<FrameId, { ja: string; en: string }>>> = {
+  potential: { ja: '＿(ら)れますか', en: 'Can you ___?' },
+  nakereba: { ja: '＿なければ なりませんか', en: 'Do I have to ___?' },
+  'te-mo-ii': { ja: '＿ても いいですか', en: 'May I ___?' },
+  'nakutemo-ii': { ja: '＿なくても いいですか', en: 'Do I not have to ___?' },
+  'hou-ga-ii': { ja: '＿た ほうが いいですか', en: 'Should I ___?' },
+  tara: { ja: '＿たら、＿か', en: 'If ___, …?' },
+};
+
+/** The chip for a cue line: its frame's question form, with the line's own shape where the table's would mislead. */
+export function cueChip(l: Line): CueCard['frame'] {
+  const f = cueFrame(l);
+  const chip = f ? CUE_CHIPS[f] : undefined;
+  if (!f || !chip) return null;
+  // 何を 持って 行ったら いいですか asks what to do, not "if…".
+  if (f === 'tara' && /[ただ]ら[\s\u3000]*いいですか/.test(l.jp.kana)) return { id: f, ja: '＿たら いいですか', en: 'What / when should I ___?' };
+  // ＿ことが できますか is the other way to say can.
+  if (f === 'potential' && /ことが[\s\u3000]*できますか/.test(l.jp.kana)) return { id: f, ja: '＿ことが できますか', en: chip.en };
+  return { id: f, ...chip };
+}
+
+function cueCard(l: Line, peeked: boolean): CueCard {
+  return { id: l.id, en: l.jp.en, frame: cueChip(l), jp: peeked ? lineCard(l, false) : null };
 }
 
 function saidView(x: Said, romaji: boolean, hidden: boolean): SaidView {
@@ -327,9 +395,11 @@ function questionTiles(s: TouristState, playerId: string, level: Level, random: 
   return [...local, ...generic.filter((l) => !local.includes(l))].slice(0, 5).map((l) => l.id);
 }
 
-/** N4 deck frame families: a ＿なければ なりませんか question is answered in must/needn't, a ＿られますか one in can. */
+/** N4 deck frame families: a ＿なければ なりませんか question is answered in must/needn't, a ＿ても いいですか one in
+ * may/mustn't, a ＿られますか one in can. */
 const FAMILIES: readonly (readonly string[])[] = [
   ['nakereba', 'nakutemo-ii', 'te-wa-ikenai'],
+  ['te-mo-ii', 'te-wa-ikenai'],
   ['potential'],
 ];
 
@@ -461,7 +531,8 @@ function startTurn(s: TouristState, ctx: ModeContext): void {
   }
   const level = ctx.player(next.askerId)?.level ?? 'n5';
   s.turnSeq += 1;
-  s.turn = { seq: s.turnSeq, askerId: next.askerId, targetId: null, noAskBack: next.noAskBack, question: null, answer: null, qSuggest: questionTiles(s, next.askerId, level, () => ctx.random()), aSuggest: [], hidden: false };
+  const cue = CUE_LEVELS.includes(level);
+  s.turn = { seq: s.turnSeq, askerId: next.askerId, targetId: null, noAskBack: next.noAskBack, question: null, answer: null, qSuggest: questionTiles(s, next.askerId, level, () => ctx.random()), aSuggest: [], ...(cue ? { cue, peeked: [] } : {}), hidden: false };
 }
 
 /** Closes the current turn: logs it and decides who asks next. */
@@ -494,22 +565,43 @@ function targetsFor(s: TouristState, ctx: ModeContext, turn: Turn): ModePlayer[]
   return here.length ? here : pool;
 }
 
-/** Turns an utterance into a log line, matched to a known frame where possible. */
-function toSaid(u: Utterance, lineId: string | undefined, suggested: readonly string[], level: Level): Said | null {
+/**
+ * Turns an utterance into a log line, matched to a known frame where possible. `suggested` are the lines the
+ * player may take; `shown`, those whose Japanese was on their screen (all of them for tiles, the peeked ones
+ * for cues). A line said that was on screen counts as read (`frame`); one that wasn't, as own words. With
+ * `swaps` (questions), a suggested line said with one word swapped is own words too, logged as heard.
+ */
+function toSaid(u: Utterance, lineId: string | undefined, suggested: readonly string[], shown: readonly string[], level: Level, swaps = false): Said | null {
   const tile = lineId && suggested.includes(lineId) ? LINES.get(lineId) : undefined;
   if (lineId !== undefined && !tile) return null;
   const fromLine = (l: Line, tier: Tier): Said => ({ text: l.jp.text, kana: l.jp.kana, en: l.jp.en, ...(l.jp.furigana ? { furigana: l.jp.furigana } : {}), lineId: l.id, via: u.via, tier });
+  const tierOf = (l: Line): Tier => (shown.includes(l.id) ? 'frame' : 'own');
   if (u.via === 'tap') return tile ? fromLine(tile, 'tap') : null;
   const heard = cleanText(u.text, 80);
   if (!heard) return null;
-  if (tile && matchLine(u, [tile], level)) return fromLine(tile, 'frame');
+  // What was heard, in kana (so romaji can show at Kana level); null if only kanji could show it.
+  const kanaOf = (): string | null => {
+    const k = cleanText(u.reading ?? u.text, 80);
+    return k && !hasKanji(k) ? k : null;
+  };
+  // Exact: show the tidy frame (read off the screen if it was on it, else from memory). The written line
+  // itself counts too, whatever the reader made of it, so a line said as written is never a swap.
+  const mine = tile ? [tile] : suggested.map((id) => LINES.get(id)!);
+  const asWritten = mine.find((l) => saysLine(u, l)) ?? ALL_LINES.find((l) => saysLine(u, l));
+  if (asWritten) return fromLine(asWritten, tierOf(asWritten));
+  if (tile && findLine(u, [tile], level)?.exact) return fromLine(tile, tierOf(tile));
   const found = findLine(u, ALL_LINES, level);
-  if (found) {
-    // Exact: show the tidy frame (read off a tile if it was one on screen). Close: show what was
-    // heard, with the frame's meaning as a guess; changing a word of a tile counts as own words.
-    if (found.exact) return fromLine(found.line, suggested.includes(found.line.id) ? 'frame' : 'own');
-    return { text: heard, kana: null, en: found.line.jp.en, lineId: found.line.id, via: u.via, tier: 'own', approx: true };
+  if (found?.exact) return fromLine(found.line, tierOf(found.line));
+  if (swaps) {
+    const swapped = mine.find((l) => oneWordChanged(u, l));
+    if (swapped) {
+      return { text: heard, kana: kanaOf(), en: `${swapped.jp.en} (one word changed)`, lineId: swapped.id, via: u.via, tier: 'own', swapped: true, reading: utteranceReading(u), fromShown: shown.includes(swapped.id) };
+    }
   }
+  // A recogniser slip on a tile still shows the tile.
+  if (tile && matchLine(u, [tile], level)) return fromLine(tile, tierOf(tile));
+  // Close: show what was heard, with the frame's meaning as a guess.
+  if (found) return { text: heard, kana: kanaOf(), en: found.line.jp.en, lineId: found.line.id, via: u.via, tier: 'own', approx: true };
   return { text: heard, kana: null, en: null, lineId: null, via: u.via, tier: 'own' };
 }
 
@@ -523,6 +615,12 @@ function bonusFor(x: Said, table: typeof ASK_BONUS | typeof ANSWER_BONUS): numbe
 function logPhrase(ctx: ModeContext, playerId: string, x: Said): void {
   const l = x.lineId ? LINES.get(x.lineId) : undefined;
   if (!l) return;
+  if (x.swapped && x.reading) {
+    // The asker's own words: logged as they said them, not as the tile. From memory only when spoken and the
+    // line's Japanese wasn't on their screen (a Kana/N5 tile, or a peeked cue, was read).
+    ctx.phrase(playerId, { itemId: `tourist.own.${x.reading}`, text: x.text, kana: x.reading, en: `${l.jp.en} (one word changed)`, outcome: 'said', recall: x.via === 'speech' && !x.fromShown ? 'memory' : 'read' });
+    return;
+  }
   ctx.phrase(playerId, { itemId: l.id, text: l.jp.text, kana: l.jp.kana, en: l.jp.en, outcome: x.tier === 'own' && !x.approx ? 'said' : 'seen', recall: x.tier === 'own' && !x.approx && x.via === 'speech' ? 'memory' : 'read' });
 }
 
@@ -784,7 +882,7 @@ export const touristMode: Mode<TouristState, TouristView> = {
     const player = ctx.player(playerId)!;
     const turn = s.turn;
     // Turn moves may name the turn they were made in; one from an earlier turn is a race with the clock.
-    if (raw.turn !== undefined && raw.turn !== turn?.seq && ['pick', 'ask', 'reply'].includes(String(raw.kind))) return moveError('wrong-phase');
+    if (raw.turn !== undefined && raw.turn !== turn?.seq && ['pick', 'peek', 'ask', 'reply'].includes(String(raw.kind))) return moveError('wrong-phase');
     switch (raw.kind) {
       case 'ready': {
         if (phase !== 'prompt') return moveError('wrong-phase');
@@ -799,6 +897,16 @@ export const touristMode: Mode<TouristState, TouristView> = {
         turn.targetId = raw.targetId;
         return MOVE_OK;
       }
+      case 'peek': {
+        // An N4+ asker opens a cue's Japanese: asked off that cue, the question counts as read.
+        if (phase !== 'answer' || !turn) return moveError('wrong-phase');
+        if (turn.askerId !== playerId) return moveError('not-your-turn');
+        if (turn.question) return moveError('already-asked');
+        if (!turn.cue || typeof raw.lineId !== 'string' || !turn.qSuggest.includes(raw.lineId)) return moveError('bad-move');
+        const peeked = (turn.peeked ??= []);
+        if (!peeked.includes(raw.lineId)) peeked.push(raw.lineId);
+        return MOVE_OK;
+      }
       case 'ask': {
         if (phase !== 'answer' || !turn) return moveError('wrong-phase');
         if (turn.askerId !== playerId) return moveError('not-your-turn');
@@ -810,7 +918,7 @@ export const touristMode: Mode<TouristState, TouristView> = {
         if (!turn.targetId) return moveError('pick-someone');
         if (!isUtterance(raw.utterance)) return moveError('bad-utterance');
         if (raw.lineId !== undefined && typeof raw.lineId !== 'string') return moveError('bad-move');
-        const said = toSaid(raw.utterance, raw.lineId as string | undefined, turn.qSuggest, player.level);
+        const said = toSaid(raw.utterance, raw.lineId as string | undefined, turn.qSuggest, turn.cue ? (turn.peeked ?? []) : turn.qSuggest, player.level, true);
         if (!said) return moveError(raw.utterance.via === 'tap' || raw.lineId !== undefined ? 'bad-move' : 'empty-answer');
         turn.question = said;
         const q = said.lineId ? LINES.get(said.lineId) : undefined;
@@ -828,7 +936,7 @@ export const touristMode: Mode<TouristState, TouristView> = {
         if (turn.answer) return moveError('already-answered');
         if (!isUtterance(raw.utterance)) return moveError('bad-utterance');
         if (raw.lineId !== undefined && typeof raw.lineId !== 'string') return moveError('bad-move');
-        const said = toSaid(raw.utterance, raw.lineId as string | undefined, turn.aSuggest, player.level);
+        const said = toSaid(raw.utterance, raw.lineId as string | undefined, turn.aSuggest, turn.aSuggest, player.level);
         if (!said) return moveError(raw.utterance.via === 'tap' || raw.lineId !== undefined ? 'bad-move' : 'empty-answer');
         turn.answer = said;
         if (said.via === 'speech') stats(s, playerId).spoken += 1;
@@ -951,7 +1059,8 @@ export const touristMode: Mode<TouristState, TouristView> = {
         canCall: phase === 'answer' && !s.called.includes(me.id) && !s.pendingVote && !s.outcome,
         canGuess: isTourist && ((phase === 'answer' && !s.outcome) || (phase === 'encore' && o?.how === 'caught' && !o.lastChance)),
         myVote: phase === 'reveal' ? (s.vote?.ballots[me.id] ?? null) : null,
-        questions: myTurnToAsk ? tiles(live!.qSuggest) : null,
+        questions: myTurnToAsk && !live!.cue ? tiles(live!.qSuggest) : null,
+        cues: myTurnToAsk && live!.cue ? live!.qSuggest.map((id) => cueCard(LINES.get(id)!, !!live!.peeked?.includes(id))) : null,
         answers: myTurnToAnswer ? tiles(live!.aSuggest) : null,
         bluffs: isTourist && phase !== 'score' ? BLUFFS.filter((l) => BANDS[me.level].includes(l.level)).map((l) => lineCard(l, romaji)) : null,
         points: phase === 'score' ? (s.roundPoints[me.id] ?? 0) : null,

@@ -20,7 +20,17 @@ room watching is funny. Each level gets the same mission card in English ("Apolo
 train. Say where you woke up."), which never names the grammar; it asks for the punchline. Pon's version
 is behind "Need a hint?" (N5 first sees a fill-in frame, then Pon's line). The N4 lines each carry one
 Express Line chunk (〜て しまいました, 〜すぎて, 〜ので, the passive, 〜なければ なりませんでした), and the
-commentary booth calls it out only when the excuse used it.
+commentary booth calls it out only when the excuse used it. On half the N4 rounds, a cause with an "ask"
+version (`N4_ASKS`) pushes its luck instead: a cheeky request (こたつと いっしょに 行っても いいですか？) or a
+question for the boss (部長の 時計も 寝坊した ことが ありますか？), so 〜ても いいですか and 〜た ことが あります
+come up too. An ask line is the apology plus the ask, and names the cause so the listening check still works
+(26–38 mora against about 30 for the usual N4 lines); an ask round records for 3 s longer.
+
+The trade-off: an ask round replaces the cause's usual N4 line, so on those rounds its chunk (〜すぎて, 〜ので,
+〜て しまいました, the passive, 〜なければ なりませんでした) mostly doesn't come up. About a third of N4 rounds are
+ask rounds (half the rounds, for the 11 of 16 causes that have one), which costs 4.11 and 4.13 some of the
+little they get here. Four ask lines keep a chunk where it fits (cat ので, Nobiko-san すぎて, train しまいました,
+kappa the passive), but only the ask is listened for. Worth re-checking with `sim:yields` before adding more.
 
 Kana latecomers build the excuse from tiles: すみません！, the cause, and the cause's sound (ぐうぐう,
 にゃー), and say it out loud to the room. Listeners practise too: N4 phones answer one listening check
@@ -32,12 +42,12 @@ while the clip plays, Kana and N5 phones tap the words they catch.
 |---|---|---|---|
 | prompt | scene | 5 s | The departure board: who is late, how late (ごふん climbing to いちねん over the game), for what. Pon's opener. The latecomer may already pick. |
 | prompt | plan | 8 s | The latecomer taps one of the witness's three causes (each phone has its own order); the witness picks blind; the gallery bets. Ready ends it once the witness is in. Everything locks here, before the room hears a word. |
-| answer | record | 6 s Kana, 9 s N5, 12 s N4, then 3.5 s to upload | One button: tap, talk, tap. Typing works from the plan beat (quiet mode, no mic). The mic pass lets Pon say it, once a game. Silence: Pon stands in. |
+| answer | record | 6 s Kana, 9 s N5, 12 s N4 (15 s on an ask round), then 3.5 s to upload | One button: tap, talk, tap. Typing works from the plan beat (quiet mode, no mic). The mic pass lets Pon say it, once a game. Silence: Pon stands in. |
 | reveal | play | the clip | The TV shows only who is talking. Checks and word catch on the phones. |
 | reveal | gist | 4 s (5 s on a miss) | The subtitle, the picture gist, the alibi card (face down, flipping at 1.3 s as Pon reacts). The chief's phone gets the gist. |
 | encore | vote | 6 s | Voters holding a leaf give it (Safe) or keep it; the chief calls Safe or Out. The TV shows how many can say Safe, never how anyone voted. |
 | score | ruling | 5 s | The stamp, the leaves (Safe turns them into Pon's late pass, Out puffs them back), "Overruled by the room" when the chief misread it, Pon's reaction to this cause, points. |
-| score | booth | 7 s | Only when the latecomer's own excuse used its chunk: 「でました！」, the line with the chunk lit, a line of colour, the train-line tag. |
+| score | booth | 7 s | Only when the latecomer's own excuse used its chunk: 「でました！」, the line with the chunk lit, Pon's version in English, a line of colour, the train-line tag. |
 | score | truth | 4 s | "What really happened…", a pause, then a cause nobody was dealt and nobody has used this game (Pon himself, 1 in 12 or after a tanuki curveball; "the boss was Pon" in the last round). Every round ends on a laugh. |
 
 Rounds: the smallest multiple of the player count that is 6 or more (everyone is late equally often), or
@@ -90,7 +100,14 @@ The latecomer's line goes in the phrasebook. It counts as said when it was their
 speech-to-text heard it name the cause or use the chunk (or there was no speech-to-text to tell); tiles,
 typing and Pon's reading are seen. It is from memory unless the hint was opened or Pon read it. When
 speech-to-text heard a different one of the three causes than the one tapped, the excuse blamed that one.
+An ask round logs the ask line (its own item, `late:<cause>:<level>:ask`) as said only when a checked clip
+was heard asking (its chunk, so ＿ても いいですか or ＿た ことが あります is really credited). Otherwise the ask isn't
+credited: with the hint open or Pon reading, the ask is logged as read; else the excuse counts as the cause's
+usual N4 line, as on any other round, since naming the cause alone says nothing about the ask.
 The private note at the ruling shows "From memory ✓" or "With a hint", and what they said beside Pon's way.
+Pon's line is the card, but when speech-to-text heard the clip, the card counts only for Pon's frames that were
+heard in it (`late:<cause>:<level>:<frames>`, its own card): naming the crow doesn't earn Pon's ので (panel on
+#160).
 
 ## Open, for playtests
 

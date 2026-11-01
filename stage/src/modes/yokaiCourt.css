@@ -1,3 +1,9 @@
+/* Fude-san's brush face for the verdict column and her seal: Yuji Syuku (OFL 1.1), cut to 有罪無筆 and renamed
+   (tools/fonts/build-kotoba-brush.py). font-display block: the verdict never flashes in a sans first. Set on every
+   stroke span too, since :lang(ja) gives each one Noto Sans JP directly. */
+@font-face { font-family: 'Kotoba Brush'; src: url('/stage/assets/fonts/kotoba-brush.woff2') format('woff2'); font-display: block; unicode-range: U+6709, U+7121, U+7F6A, U+7B46; }
+.yc-stage :is(.yc-brush-ja, .yc-brush-ja *, .yc-seal) { font-family: 'Kotoba Brush', 'Noto Serif JP', var(--font-ja), serif; font-weight: 400; }
+
 /* Yōkai Court (stage). Scoped under .yc-stage: the vermilion band and the accused in the corner across the
    top, the beat below; roles sit in the score ribbon. Prosecution is always on the left in vermilion with
    ⛓; defence on the right in sky blue with 🕊 and a dashed edge, so the sides never rely on colour alone.
@@ -199,7 +205,10 @@ body[data-motion='calm'] .yc-stage :is(.yc-wave span, .yc-levels span, .yc-rec-d
 /* The verdict: the hanko lands over the scale, so nothing waits for space it doesn't use yet. */
 .yc-floor { position: relative; display: grid; place-items: center; width: 100%; }
 .yc-floor > .yc-scale { width: 90%; }
-.yc-floor > .yc-hanko { position: absolute; top: 50%; left: 50%; translate: -50% -50%; z-index: 2; }
+/* The scroll stacks over the scale in one grid cell, so the floor is as tall as the taller of the two and the points
+   row below is never covered (art panel, PR #162). */
+.yc-floor > .yc-scale, .yc-floor > .yc-hanko { grid-area: 1 / 1; }
+.yc-floor > .yc-hanko { z-index: 2; min-width: 420px; }
 .yc-pan { padding: 20px 28px; }
 .yc-tokens { min-height: 48px; flex-wrap: wrap; justify-content: center; }
 .yc-token { width: 44px; height: 44px; }
@@ -219,24 +228,40 @@ body[data-motion='calm'] .yc-stage :is(.yc-wave span, .yc-levels span, .yc-rec-d
 
 /* The verdict: Fude-san's brush writes it top to bottom, then the 筆 seal. */
 .yc-unfurl { animation: yc-unroll 0.35s ease-out both; }
-.yc-brush { display: flex; align-items: center; gap: 28px; }
+.yc-brush { display: flex; align-items: center; gap: 24px; }
+/* The seal signs at the lower left of the column, as on a scroll; ふで under it says whose it is. */
+.yc-brush-sign { align-self: flex-end; display: grid; justify-items: center; gap: 4px; }
+.yc-seal-kana { font-size: 28px; font-weight: 800; color: #c0283c; letter-spacing: 0.1em; }
 .yc-brush-col { position: relative; }
-.yc-brush-ja { writing-mode: vertical-rl; font-size: 92px; font-weight: 900; line-height: 1.05; color: #1b1512; text-shadow: 0 0 2px rgba(27, 21, 18, 0.55), 2px 3px 0 rgba(27, 21, 18, 0.12); }
-.yc-stroke { display: inline-block; animation: yc-stroke 0.32s cubic-bezier(0.5, 0, 0.3, 1) both; }
+.yc-brush-ja { writing-mode: vertical-rl; font-size: 100px; font-weight: 400; line-height: 1.05; color: #1b1512; text-shadow: 2px 3px 0 rgba(27, 21, 18, 0.12); }
+.yc-stroke { display: inline-block; animation: yc-stroke 0.28s cubic-bezier(0.5, 0, 0.3, 1) both; }
 @keyframes yc-stroke { from { clip-path: inset(-8px -8px 100% -8px); } to { clip-path: inset(-8px); } }
 .yc-brush { margin-bottom: 10px; }
-/* The tip (the sprite's lower left) follows the bottom of the reveal, just right of the column, then lifts away. */
-.yc-brush-pen { position: absolute; left: 70%; top: 0; width: 128px; height: 128px; image-rendering: pixelated; pointer-events: none; animation: yc-pen 900ms linear both; }
+/* Fude-san writes upside down: her topknot's tip (38, 112) of the 88×112 sprite, at 1×, rides the bottom of the
+   reveal just right of the column's middle, then she flips away. */
+/* At 2×, like her host portrait: the 90×114 sprite (tip at x 39, cream-outlined) is 180×228, and the tip rides the
+   column's right edge, a little out, so her hair
+   mass (x 20–75 of 90) leans off the ink she's writing. */
+.yc-brush-pen { position: absolute; left: calc(100% - 40px); top: 0; width: 180px; height: 228px; z-index: 3; image-rendering: pixelated; pointer-events: none; animation: yc-pen 900ms linear both; }
+/* One leg per character, with the strokes' own easing, so her tip stays on the edge of the ink; she has lifted off
+   before the seal falls. (2 characters: the halfway key is the first character's end.) */
+.yc-brush-pen { animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1); }
 @keyframes yc-pen {
-  0% { opacity: 0; top: 0; transform: translate(0, -128px); }
-  6% { opacity: 1; transform: translate(0, -128px); }
-  80% { opacity: 1; top: 100%; transform: translate(0, -128px); }
-  100% { opacity: 0; top: 100%; transform: translate(30px, -170px) rotate(12deg); }
+  0% { opacity: 1; transform: translate(0, -228px); }
+  50% { opacity: 1; transform: translate(0, calc(-228px + 105px)); }
+  92% { opacity: 1; transform: translate(0, calc(-228px + 210px)); }
+  100% { opacity: 0; transform: translate(40px, -60px); }
 }
 .yc-hanko .yc-label rt { color: #c0283c; font-size: 0.55em; }
-.yc-brush-side { display: grid; justify-items: center; gap: 14px; }
 .yc-brush-kana { font-size: 30px; font-weight: 800; color: var(--paper-muted); letter-spacing: 0.1em; }
-.yc-seal { animation: yc-seal 0.36s linear both; display: grid; place-items: center; width: 64px; height: 64px; background: #c8213c; color: #fff4e6; font-size: 36px; font-weight: 900; border-radius: 6px; box-shadow: inset 0 0 0 4px #c8213c, inset 0 0 0 7px #fff4e6; rotate: -1deg; }
+.yc-seal { animation: yc-seal 0.36s linear both; display: grid; place-items: center; width: 64px; height: 64px; background: #c8213c; color: #fff4e6; font-size: 36px; font-weight: 400; border-radius: 6px; box-shadow: inset 0 0 0 4px #c8213c, inset 0 0 0 7px #fff4e6; rotate: -1deg; }
 @keyframes yc-seal { 0% { opacity: 0; transform: scale(1.6); } 50% { opacity: 1; transform: scale(0.94); } 100% { transform: scale(1); } }
 body[data-motion='calm'] .yc-stage :is(.yc-stroke, .yc-unfurl, .yc-seal) { animation-name: calm-in !important; animation-duration: 300ms !important; }
 body[data-motion='calm'] .yc-brush-pen { display: none; }
+
+/* The score ribbon's role: the court's own pixel icon, 32 px (1×), then the role and its state. */
+.yc-badge { display: inline; }
+.ticks .yc-badge-icon { margin-right: 8px; vertical-align: -6px; }
+.ticks .yc-badge-icon { width: 32px; height: 32px; image-rendering: pixelated; object-fit: contain; font-size: 24px; line-height: 32px; text-align: center; flex: none; }
+/* On the ribbon's dark chip the scale's dark outline vanishes: each icon sits on a small paper tile, like the scroll. */
+.ticks .yc-badge-icon { background: #f3e6c8; border-radius: 6px; box-shadow: inset 0 0 0 2px #1b1512; }

@@ -33,6 +33,11 @@ export interface AdviceLine {
   mission: string;
   /** Nobiko-san's version: behind "Need a hint?", and what she reads on a mic pass. */
   model: JpText;
+  /**
+   * N4 lines that open with a conditional (＿たら, 4.5) only: the advice without it. The phrasebook logs this one
+   * unless the adviser's own words used the conditional, so 4.5 is credited only when ＿たら was really said.
+   */
+  plain?: JpText;
   /** N5 only: a fill-in frame (＿＿ marks the gap), the first step behind "Need a hint?". */
   frame?: JpText;
 }
@@ -172,8 +177,9 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('ろうそくに ひを ＿＿ ください。', 'Please ＿＿ (light) your candle.'),
       },
       n4: {
-        mission: 'Tell Chōchin-san what he’d better do.',
-        model: jk('マッチで 火を つけた ほうが いいですよ。', 'マッチで ひを つけた ほうが いいですよ。', 'You’d better light it with a match.'),
+        mission: 'Tell Chōchin-san what he’d better do next time his flame goes out.',
+        model: jk('今度 火が 消えたら、マッチで 火を つけた ほうが いいですよ。', 'こんど ひが きえたら、マッチで ひを つけた ほうが いいですよ。', 'Next time your flame goes out, you’d better light it with a match.'),
+        plain: jk('マッチで 火を つけた ほうが いいですよ。', 'マッチで ひを つけた ほうが いいですよ。', 'You’d better light it with a match.'),
       },
       n3: {
         mission: 'Tell Chōchin-san the one thing it needs to fix this.',
@@ -300,8 +306,9 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('クーラーを ＿＿ ください！', 'Please ＿＿ (turn on) the air conditioner!'),
       },
       n4: {
-        mission: 'Tell the snow woman what she’d better do.',
-        model: jp('クーラーを つけた ほうが いいですよ。', 'You’d better turn on the air conditioner.'),
+        mission: 'Tell the snow woman what she’d better do when she starts to melt.',
+        model: jp('とけて きたら、クーラーを つけた ほうが いいですよ。', 'When you start to melt, you’d better turn on the air conditioner.'),
+        plain: jp('クーラーを つけた ほうが いいですよ。', 'You’d better turn on the air conditioner.'),
       },
       n3: {
         mission: 'Suggest, casually, what might cool her down.',
@@ -364,8 +371,9 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('いっしょに ＿＿ ください！', 'Please ＿＿ (play) with us!'),
       },
       n4: {
-        mission: 'Tell the house spirit what it’d better do.',
-        model: jk('近所の 子どもと 遊んだ ほうが いいですよ。', 'きんじょの こどもと あそんだ ほうが いいですよ。', 'You’d better play with the kids next door.'),
+        mission: 'Tell the house spirit what it’d better do if it’s bored.',
+        model: jk('ひまだったら、近所の 子どもと 遊んだ ほうが いいですよ。', 'ひまだったら、きんじょの こどもと あそんだ ほうが いいですよ。', 'If you’re bored, you’d better play with the kids next door.'),
+        plain: jk('近所の 子どもと 遊んだ ほうが いいですよ。', 'きんじょの こどもと あそんだ ほうが いいですよ。', 'You’d better play with the kids next door.'),
       },
       n3: {
         mission: 'Suggest, casually, what might cure the boredom.',
@@ -396,8 +404,9 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('したを ＿＿ ください！', 'Please ＿＿ (don’t look) down!'),
       },
       n4: {
-        mission: 'Tell the tengu what it’d better not do.',
-        model: jk('下を 見ない ほうが いいですよ。', 'したを みない ほうが いいですよ。', 'You’d better not look down.'),
+        mission: 'Tell the tengu what it’d better not do once it’s flying.',
+        model: jk('空を 飛んだら、下を 見ない ほうが いいですよ。', 'そらを とんだら、したを みない ほうが いいですよ。', 'Once you’re up in the sky, you’d better not look down.'),
+        plain: jk('下を 見ない ほうが いいですよ。', 'したを みない ほうが いいですよ。', 'You’d better not look down.'),
       },
       n3: {
         mission: 'Tell the tengu there’s no need to do the scary thing.',
@@ -428,8 +437,9 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('＿＿ ください！ じっと！', 'Please ＿＿ (don’t move)! Stay still!'),
       },
       n4: {
-        mission: 'Tell the daruma what it’d better not do.',
-        model: jk('「ころんだ」の あとは、動かない ほうが いいですよ。', '「ころんだ」の あとは、うごかない ほうが いいですよ。', 'After “koronda!”, you’d better not move.'),
+        mission: 'Tell the daruma what it’d better not do when it hears “koronda!”.',
+        model: jk('「ころんだ」と 聞こえたら、動かない ほうが いいですよ。', '「ころんだ」と きこえたら、うごかない ほうが いいですよ。', 'When you hear “koronda!”, you’d better not move.'),
+        plain: jk('「ころんだ」の あとは、動かない ほうが いいですよ。', '「ころんだ」の あとは、うごかない ほうが いいですよ。', 'After “koronda!”, you’d better not move.'),
       },
       n3: {
         mission: 'Tell Daruma what it really ought to do after “koronda”.',
@@ -556,8 +566,9 @@ export const PROBLEMS: readonly Problem[] = [
         frame: jp('せっけんで ＿＿ ください。', 'Please ＿＿ (wash) yourself with soap.'),
       },
       n4: {
-        mission: 'Tell the flying cloth what it’d better do.',
-        model: jk('せんたくきで 洗った ほうが いいですよ。', 'せんたくきで あらった ほうが いいですよ。', 'You’d better go through the washing machine.'),
+        mission: 'Tell the flying cloth what it’d better do when it gets muddy.',
+        model: jk('どろどろに なったら、せんたくきで 洗った ほうが いいですよ。', 'どろどろに なったら、せんたくきで あらった ほうが いいですよ。', 'When you get muddy, you’d better go through the washing machine.'),
+        plain: jk('せんたくきで 洗った ほうが いいですよ。', 'せんたくきで あらった ほうが いいですよ。', 'You’d better go through the washing machine.'),
       },
       n3: {
         mission: 'Tell Ittan-momen there’s only one thing for it.',

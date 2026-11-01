@@ -21,6 +21,7 @@
 
 import { atLevel, type JpText, type Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { framesOf } from '../../japanese/frames.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
@@ -379,6 +380,24 @@ export function creditOf(c: Call, a: Advice): Credit {
   return c.hinted.includes(a.playerId) ? 'hint' : 'memory';
 }
 
+/**
+ * Did the advice open with a conditional (＿たら, 4.5)? Asked of the path's own matcher on what was heard, never a
+ * bare たら key (あたらしい has one). Nobiko-san's reading is her version, conditional and all.
+ */
+export function saidTara(c: Call, a: Advice): boolean {
+  const kana = adviceReading(c, a);
+  if (!kana) return false;
+  const text = a.kind === 'clip' ? (a.heard?.text ?? kana) : a.kind === 'nobiko' ? lineOf(problemOfCall(c), a.level).model.text : kana;
+  const tokens = a.kind === 'clip' ? a.heard?.tokens : undefined;
+  return framesOf({ text, kana }, tokens, { keepHidden: true }).includes('tara');
+}
+
+/** The line the phrasebook logs for a speaking adviser: a line's conditional only when the advice used one (see AdviceLine.plain). */
+export function loggedLine(c: Call, a: Advice): JpText {
+  const l = lineOf(problemOfCall(c), a.level);
+  return l.plain && !saidTara(c, a) ? l.plain : l.model;
+}
+
 /** The speaking bonus: their own clip, not hidden, that gave some advice or used a chunk (or couldn't be checked). */
 export function spokeOf(c: Call, a: Advice): boolean {
   if (a.kind !== 'clip' || c.hidden.includes(a.playerId)) return false;
@@ -532,7 +551,7 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
       if (t) ctx.phrase(id, { itemId: `hotline:tile:${t.id}`, text: t.word.text, kana: t.word.kana, en: t.word.en, outcome: 'seen', recall: 'read' });
       continue;
     }
-    const line = lineOf(p, a.level).model;
+    const line = loggedLine(c, a);
     const credit = creditOf(c, a);
     ctx.phrase(id, { itemId: `hotline:${p.id}:${a.level}`, text: line.text, kana: line.kana, en: line.en, outcome: credit === 'memory' || credit === 'hint' || credit === 'unchecked' ? 'said' : 'seen', recall: credit === 'memory' ? 'memory' : 'read' });
     if (spokeOf(c, a)) pay(s, ctx, id, POINTS.spoke, 'spoke');

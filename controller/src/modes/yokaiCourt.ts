@@ -20,12 +20,13 @@
 //             speaking lawyer's private note; in the booth, the chunk and your level's tag.
 
 import { h, LEVEL_LABELS, ruby, seatShape } from '../../../shared/src/dom.js';
-import { POINTS, POINTS_AT_MS, UPLOAD_MS, type ArgView, type CourtMe, type CourtView, type Role, type ThingView } from '../../../shared/src/modes/yokaiCourt/court.js';
+import { POINTS, POINTS_AT_MS, UPLOAD_MS, type ArgView, type CourtMe, type JpR, type CourtView, type Role, type ThingView } from '../../../shared/src/modes/yokaiCourt/court.js';
 import type { Side } from '../../../shared/src/modes/yokaiCourt/cases.js';
 import type { Level } from '../../../content/src/types.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { MicClip, recordReady, uploadClip } from '../components/mic.js';
 import { isQuiet } from '../components/speak.js';
+import { canVoice, say } from '../components/voice.js';
 import { jpView, type JpLike } from '../components/jp.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
@@ -717,7 +718,7 @@ function judgePromptScreen(ctx: Ctx, me: CourtMe): HTMLElement {
   const { game } = ctx;
   if (game.step === 'case') return screen(band(ctx, me, 'the witness, then two lawyers. Then you vote.'), roleCard(ctx, me), caseCard(ctx));
   if (game.step === 'ask') return screen(band(ctx, me, 'the witness answers.'), caseCard(ctx, true), h('div', { class: 'yc-question' }, h('p', { class: 'yc-label' }, `Fude-san asks ${nameOf(ctx.view, game.cast?.witness) || 'the witness'}:`), game.question ? jpv(game.question, me.level) : null));
-  return screen(band(ctx, me, 'two lawyers argue. Then one question and your vote.'), testimonyCard(ctx, me), hunchBox(ctx, me), ctx.view.phase === 'answer' ? h('p', { class: 'yc-hint center' }, '● Both lawyers are recording.') : null);
+  return screen(band(ctx, me, 'two lawyers argue. Then one question and your vote.'), testimonyCard(ctx, me), hunchBox(ctx, me), ctx.view.phase === 'answer' ? h('p', { class: 'yc-hint center' }, '● Both lawyers are recording.') : null, ctx.view.phase === 'answer' ? keptList(me, '🔖 Your words so far', false) : null);
 }
 
 function kanaLawyerScreen(ctx: Ctx, me: CourtMe, send: Send): HTMLElement {
@@ -875,16 +876,54 @@ function resultCard(me: CourtMe): HTMLElement | null {
   );
 }
 
-/** A Kana judge's one word from the case, logged on their path as seen. */
+/**
+ * A Kana judge's one word from the case, with a 🔊 to hear it (the phone's own voice). Logged on their path as
+ * seen when they took part; a judge who sat out still gets the word, unlogged, since they need it most.
+ */
 function keepCard(me: CourtMe): HTMLElement | null {
   const k = me.keep;
   if (!k) return null;
   return h(
     'div',
-    { class: 'yc-keep' },
-    h('p', { class: 'yc-label' }, h('span', { 'aria-hidden': 'true' }, '🔖 '), 'Word to keep'),
-    h('div', { class: 'yc-keep-row' }, pic(k, 'yc-pic yc-keep-pic'), jpv(k.word, me.level, 'yc-keep-ja')),
-    h('p', { class: 'yc-hint' }, k.checked ? 'The answer to your check. Saved to your path as a word you’ve seen.' : 'The evidence in this case. Saved to your path as a word you’ve seen.'),
+    { class: `yc-keep${k.sat ? ' sat' : ''}` },
+    h('p', { class: 'yc-label' }, h('span', { 'aria-hidden': 'true' }, '🔖 '), k.sat ? 'This case’s word' : 'Word to keep'),
+    h('div', { class: 'yc-keep-row' }, pic(k, 'yc-pic yc-keep-pic'), jpv(k.word, me.level, 'yc-keep-ja'), hear(k.word)),
+    h(
+      'p',
+      { class: 'yc-hint' },
+      k.sat
+        ? 'Not saved to your path this time. Answer the check or vote when you judge, and the word is yours to keep.'
+        : k.checked
+          ? 'The answer to your check. Saved to your path as a word you’ve seen.'
+          : 'The evidence in this case. Saved to your path as a word you’ve seen.',
+    ),
+    keptList(me),
+  );
+}
+
+/**
+ * 🔊 for a word to keep: the phone's own Japanese voice reads the written word (庭, not にわ, so the voice picks the
+ * right pitch accent). None with phone sound off or no Japanese voice: the kana and romaji are on screen.
+ */
+function hear(word: JpR, cls = 'yc-hear'): HTMLElement | null {
+  if (!canVoice()) return null;
+  const label = `Hear ${word.kana}${word.romaji ? ` (${word.romaji})` : ''}`;
+  return h('button', { type: 'button', class: cls, 'aria-label': label, title: label, onclick: (e: Event) => {
+    say(word.text || word.kana);
+    const b = e.currentTarget as HTMLElement;
+    b.classList.add('on');
+    setTimeout(() => b.classList.remove('on'), 1200);
+  } }, h('span', { 'aria-hidden': 'true' }, '🔊'));
+}
+
+/** A Kana player's words to keep from earlier cases tonight, each with its 🔊: seen again, never logged again. */
+function keptList(me: CourtMe, title = 'Earlier tonight', sound = true): HTMLElement | null {
+  if (!me.kept.length) return null;
+  return h(
+    'div',
+    { class: 'yc-kept' },
+    h('p', { class: 'yc-label' }, title),
+    h('ul', {}, ...me.kept.map((k) => h('li', {}, pic(k, 'yc-pic yc-kept-pic'), jpv(k.word, me.level, 'yc-kept-ja'), sound ? hear(k.word, 'yc-hear small') : null))),
   );
 }
 
@@ -993,9 +1032,10 @@ function scoreScreen(ctx: Ctx, me: CourtMe): HTMLElement {
     h('p', { class: 'yc-label center' }, 'This case'),
     h('p', { class: `yc-points${me.points ? '' : ' zero'}` }, `+${me.points ?? 0}`),
     me.scoreWhy ? h('p', { class: 'yc-hint center' }, me.scoreWhy) : null,
+    // A Kana judge's word sits right under their points, above the fold on a small phone.
+    keepCard(me),
     lines.length ? h('ul', { class: 'yc-breakdown' }, ...lines.map((x) => h('li', {}, h('span', {}, WHY[x.why] ?? x.why), h('b', {}, `+${x.points}`)))) : null,
     resultCard(me),
-    keepCard(me),
     kanaNoteCard(me),
     noteCard(me),
     boothCard(ctx, me),
@@ -1050,6 +1090,13 @@ export const yokaiCourtPhone: PhoneMode<CourtView> = {
       game.verdict ? 'v' : '',
       game.booth ? JSON.stringify(game.booth) : '',
     ].join('|'),
+
+  heldPoints(view, game, remainingMs) {
+    if (view.phase !== 'score' || game.step !== 'verdict' || !game.me) return 0;
+    const left = remainingMs();
+    const now = view.deadline !== null && left !== null && left > 0 ? view.deadline - left : Date.now();
+    return now < game.stepAt + POINTS_AT_MS ? (game.me.points ?? 0) : 0;
+  },
 
   render(ctx) {
     latest = ctx;

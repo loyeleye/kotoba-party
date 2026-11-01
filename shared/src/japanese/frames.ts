@@ -823,7 +823,8 @@ const N4: Matcher[] = [
     hides: ['ni-aru'],
   },
   // 4.8 Talk casually. A plain form before よ／ね／の／かな／わ, or a plain question with nothing after it (もう
-  // たべた？, いかない？, ひま？), or a て-form asking softly (ちょっと まってね). Not だ after a verb or an い-adjective
+  // たべた？, いかない？, ひま？), or a て-form asking softly (ちょっと まってね), or a casual ending (こわれちゃった！,
+  // かえれないじゃん, きれいでしょ？, けっこん するんだ: Dub Club's ad-libs, step 5b-2). Not だ after a verb or an い-adjective
   // (おいしいだよ, いくだよ: a learner slip, panel on #146).
   {
     id: 'plain',
@@ -831,7 +832,10 @@ const N4: Matcher[] = [
       `([うくぐすつぬぶむるいただ]|ない|だった)[\\s\\u3000]*(よ|ね|よね|の|かな|わ)[\\s\\u3000]*[！!？?。…〜ー]*[\\s\\u3000]*$` +
         `|([っんいしきちにひみりえけせてねべめれげぜじびぎ](た|だ)|ない|なかった|かった|${PLAIN_Q})[\\s\\u3000]*[？?]+[\\s\\u3000]*$` +
         `|(^|[\\s\\u3000、])(${ADJ_KANA})[\\s\\u3000]*[？?]+[\\s\\u3000]*$` +
-        `|${TE}[\\s\\u3000]*(ね|よ|ね[ぇえ]?)[\\s\\u3000]*[！!。…〜ー]*[\\s\\u3000]*$`,
+        `|${TE}[\\s\\u3000]*(ね|よ|ね[ぇえ]?)[\\s\\u3000]*[！!。…〜ー]*[\\s\\u3000]*$` +
+        // Casual endings with nothing after them: ちゃった／じゃった, じゃん, でしょ (not でしょう), 〜んだ after a plain verb
+        // or adjective (not のんだ "drank" or ばんだ "it's my turn"), だろ(う), なの.
+        `|(ちゃった|じゃった|ちゃう|じゃう|じゃん|でしょ(?!う)|(?<=[うくぐすつぬむぶるいたな])んだ|だろう?|なの)[\\s\\u3000]*[！!？?。…〜ー]*[\\s\\u3000]*$`,
     ),
     tok: (ts) => {
       const last = [...ts].reverse().find((t) => t.pos !== '記号');
@@ -843,7 +847,11 @@ const N4: Matcher[] = [
     not: rx(
       `(です|ます|でした|ました|ません|でしょう|ください|下さい)[\\s\\u3000]*(よ|ね|よね|の|かな|わ|[？?])|(^|[\\s\\u3000、])(わたし|ぼく|おれ|あなた|きみ|だれ|これ|それ)の[\\s\\u3000]*[！!？?。]*$|^(はい|ええ|いいえ|うん)[\\s\\u3000、]*(よ|ね)|(すい|みな|かな|ほん)[\\s\\u3000]*(よ|ね)$` +
         `|(${ADJ_I}|(^|[\\s\\u3000、])(いい|よい))[\\s\\u3000]*だ[\\s\\u3000]*(よ|ね|わ|[？?。！!]|$)|(ない|なかった|かった)[\\s\\u3000]*だ[\\s\\u3000]*(よ|ね|わ)|(^|[\\s\\u3000、])(いく|くる|する|たべる|のむ|みる|いる|ある|かう|よむ|かく|はなす|まつ|わかる|なる|行く|来る|食べる|飲む|見る)[\\s\\u3000]*だ[\\s\\u3000]*(よ|ね|わ)` +
-        `|(^|[\\s\\u3000、])(あした|かた|うた|ふた|まえ|いっしょ|そして|それで|あと)[\\s\\u3000]*[？?]|(ありがとう|ごめん|すみません)`,
+        `|(^|[\\s\\u3000、])(あした|かた|うた|ふた|まえ|いっしょ|そして|それで|あと)[\\s\\u3000]*[？?]` +
+        // A past verb in んだ that isn't explaining (すんだ, うんだ, ぬすんだ, やすんだ: 済んだ, 産んだ, stole, rested).
+        `|((^|[\\s\\u3000、])(すんだ|うんだ)|(ぬす|やす|すす|つつ|まな)んだ)[\\s\\u3000]*[！!？?。…〜ー]*[\\s\\u3000]*$` +
+        // A set phrase ending the sentence (ありがとうね, ごめんね), not one before a casual line (ごめん… わすれちゃった).
+        `|(^|[\\s\\u3000、…])(ありがとう|ごめん(なさい)?|おやすみ(なさい)?|すみません)[\\s\\u3000]*(ね|よ|な|ねえ)?[\\s\\u3000]*[！!？?。…〜ー]*[\\s\\u3000]*$`,
     ),
   },
   {
@@ -1881,7 +1889,7 @@ function sufferingIn(s: Sentence): boolean {
   const passive = passiveIn(s);
   return [s.k, s.t].some((x) => {
     // An intransitive verb made passive, after someone (not a place: ここに こられますか is "can").
-    const agent = x.search(/[^\s\u3000、。]に[\s\u3000]/);
+    const agent = x.search(/[^\s\u3000、。]に[\s\u3000「『]/);
     if (agent >= 0 && SUFFER_INTRANS.test(x) && !/(ここ|そこ|あそこ|どこ|うち|いえ|へや|えき|がっこう|パーティー)に/.test(x)) return true;
     // A を object before the passive verb: my thing got done to. Without the dictionary's passive, only a
     // godan passive spelled out counts (ふまれた, ぬすまれた): ichidan られる is as likely "can".
@@ -1979,4 +1987,13 @@ export function framesOf(
     for (const id of kept) found.add(id);
   }
   return ALL_FRAMES.map((f) => f.id).filter((id) => found.has(id));
+}
+
+/**
+ * The frames of a model sentence that were also heard in what the player said: what a model card (Pon's line,
+ * a deck sentence, a model ad-lib) may count for when it stands in for the player's own words.
+ */
+export function framesHeard(model: { text: string; kana: string }, heard: { text: string; kana: string }, tokens?: readonly UtteranceToken[]): FrameId[] {
+  const said = new Set(framesOf(heard, tokens, { keepHidden: true }));
+  return framesOf(model, undefined, { keepHidden: true }).filter((f) => said.has(f));
 }

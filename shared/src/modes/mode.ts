@@ -173,6 +173,12 @@ export interface PhraseEntry {
    * memory, except in Dub Club and Karaoke Duel (progress.ts's recallOf). Only memory counts toward the learning path.
    */
   recall?: 'memory' | 'read';
+  /**
+   * The frames this entry may count for, when the card is a model sentence rather than what was said (Late
+   * Again!'s Pon line, Happyōkai's deck sentence, Dub Club's model ad-lib): the frames heard in the player's
+   * words. Left out, every frame in the sentence counts. Give a card with a different set its own itemId.
+   */
+  frames?: readonly string[];
 }
 
 export interface Award {
