@@ -87,8 +87,8 @@ Six N4 cards, so N4 guests write their truth, and the tanuki their lies, in the 
 
 | Card | First person | Frame |
 | --- | --- | --- |
-| たべた ことが ある もの | ＿を たべた ことが あります | ta-koto-ga-aru |
-| いった ことが ある ところ | ＿に いった ことが あります | ta-koto-ga-aru |
+| たべた ことが ある もの | ＿を たべた ことが あります | ta-koto |
+| いった ことが ある ところ | ＿に いった ことが あります | ta-koto |
 | わすれて しまった もの | でんしゃに ＿を わすれて しまいました | te-shimau |
 | こわして しまった もの | ＿を こわして しまいました | te-shimau |
 | さいきん やって みた こと | さいきん ＿を やって みました | te-miru |

@@ -524,7 +524,7 @@ describe('Last Train hard roles (N4)', () => {
   const ANNOUNCE = mg('station-announcement', [item('sa1', ['しぶやです']), item('sa2', ['うえのです']), roleItem('ann1', ['まもなくまいります']), roleItem('ann2', ['おさがりください'])], { promptType: 'listen-and-answer' });
   const LINE: LastTrainScenario = { ...SCENARIO, id: 'role-line', stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: 'station-announcement' })) };
   const ROLE_CONTENT: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [ANNOUNCE, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [LINE] };
-  const FRAMES = new Set(['te-itadakemasu-ka', 'te-itadakemasen-ka', 'kamo-shiremasen', 'sou-looks', 'o-kudasai', 'keigo-verb', 'sign-kanji']);
+  const FRAMES = new Set(['te-itadakemasu-ka', 'te-itadakemasen', 'kamo', 'sou-look', 'o-kudasai', 'keigo-verb', 'sign-kanji']);
 
   const table = (lib: ContentLibrary, levels: MinigameItem['level'][]) => {
     const g = new Table(lib, levels.length);

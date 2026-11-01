@@ -94,7 +94,7 @@ stops, the same items.
   minigames are penalty ones, so they still ride in the penalty car. It is never a padding stop
   (`n4Stop`). Kana players say what is in the picture (かさです), N5 players say where, when and what
   colour (電車に忘れました, 黒いかばんです). Two N4 roles: the forgetful passenger (電車に忘れたかもしれません,
-  `kamo-shiremasen`) and the lost property staff (重そうなかばんですね, `sou-looks`).
+  `kamo`) and the lost property staff (重そうなかばんですね, `sou-look`).
 - **The guest at the front desk** (Meet the Innkeeper, 4.1, 4.10): favours with ＿て いただけますか
   (call a taxi, keep the luggage, a wake-up call, speak more slowly, check the booking again;
   `te-itadakemasu-ka`, with いただけませんか accepted too) and three inn signs drawn as boards, 受付,

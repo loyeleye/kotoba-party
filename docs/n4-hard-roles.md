@@ -16,8 +16,9 @@ Rules every role follows:
   offers). The decks (Tourist, Nice to Meet You!, Happyōkai) aren't seats, so they have no offer.
 - **Draft.** Every new line is `status: 'draft'` until a fluent speaker checks it.
 - **Frames by name.** New lines carry `frames: [...]` with the frame ids below as plain strings.
-  They aren't `FrameId`s yet: the frame matchers for N4 are a separate step, and these names are
-  the proposal for them.
+  They aren't `FrameId`s yet: the N4 matchers are a separate step. Ids that the learning path
+  (`shared/src/path.ts`, PR #132) already names are used as it spells them; the rest are proposed
+  here.
 
 | Game | Hard role or deck | Goals | Where |
 | --- | --- | --- | --- |
@@ -42,15 +43,15 @@ offer log beyond the game (the gate needs it stored somewhere).
 
 | Goal | Ids |
 | --- | --- |
-| 4.1 Ask favours | `te-moraemasu-ka`, `te-kuremasen-ka`, `te-ageru-kureru-morau`, `te-itadakemasu-ka` |
-| 4.2 Must and needn't | `nakereba-narimasen`, `nakute-mo-ii`, `te-wa-ikemasen` |
-| 4.3 Experiences, tries, oops | `ta-koto-ga-aru`, `te-shimau`, `te-miru` |
+| 4.1 Ask favours | `te-moraeru`, `te-kuremasen`, `ageru-kureru`, `te-itadakemasu-ka` |
+| 4.2 Must and needn't | `nakereba`, `nakutemo-ii`, `te-wa-ikenai` |
+| 4.3 Experiences, tries, oops | `ta-koto`, `te-shimau`, `te-miru` |
 | 4.4 Say what you can do | `potential`, `koto-ga-dekiru` |
-| 4.5 If, when, even if | `tara`, `nara`, `ba`, `to-conditional`, `toki`, `te-mo` |
-| 4.6 Looks, hearsay, guesses | `sou-looks`, `sou-hearsay`, `to-omoimasu`, `kamo-shiremasen`, `hazu` |
+| 4.5 If, when, even if | `tara`, `nara`, `ba`, `to-cond`, `toki`, `te-mo` |
+| 4.6 Looks, hearsay, guesses | `sou-look`, `sou-hear`, `to-omou`, `kamo`, `hazu` |
 | 4.7 Plans, advice, getting ready | `you-to-omou`, `hou-ga-ii`, `tsumori`, `tara-dou`, `te-oku`, `te-aru` |
-| 4.8 Talk casually | `casual-plain`, `n-da`, `casual-contraction` |
-| 4.9 Polite to strangers | `o-kudasai`, `te-itadakemasen-ka`, `o-ni-naru`, `o-shimasu`, `keigo-verb` |
+| 4.8 Talk casually | `plain`, `n-da`, `teru` |
+| 4.9 Polite to strangers | `o-kudasai`, `te-itadakemasen`, `o-ni-naru`, `o-suru`, `keigo-verb` |
 | 4.10 Sign kanji | `sign-kanji` |
 | 4.11 Reasons and order | `node`, `sugite`, `nagara`, `shi-shi` |
 | 4.12 Change and decisions | `you-ni-naru`, `koto-ni-suru`, `koto-ni-naru` |

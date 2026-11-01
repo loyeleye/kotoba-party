@@ -500,8 +500,8 @@ describe("Who's the Tourist?: a round", () => {
     for (const l of deck) expect(l.level, l.id).toBe('n4');
     for (const l of [...QUESTIONS, ...SAFE_ANSWERS].filter((x) => x.frames)) expect(l.status, l.id).toBe('draft');
     const has = (lines: readonly { frames?: readonly string[] }[], f: string) => lines.some((l) => l.frames?.includes(f));
-    for (const f of ['nakereba-narimasen', 'nakute-mo-ii', 'potential', 'koto-ga-dekiru']) expect(has(QUESTIONS, f), f).toBe(true);
-    for (const f of ['nakereba-narimasen', 'nakute-mo-ii', 'potential']) expect(has(SAFE_ANSWERS, f), f).toBe(true);
+    for (const f of ['nakereba', 'nakutemo-ii', 'potential', 'koto-ga-dekiru']) expect(has(QUESTIONS, f), f).toBe(true);
+    for (const f of ['nakereba', 'nakutemo-ii', 'potential']) expect(has(SAFE_ANSWERS, f), f).toBe(true);
     for (const p of PLACES) {
       expect(p.questions.some((q) => q.frames?.length), p.id).toBe(true);
       expect(p.answers.filter((a) => a.frames?.length).length, p.id).toBeGreaterThanOrEqual(2);
@@ -521,7 +521,7 @@ describe("Who's the Tourist?: a round", () => {
     const target = t.targetFor(t.locals.find((id) => id !== asker));
     t.play(asker, { kind: 'ask', targetId: target, utterance: speech(q.jp.kana), lineId: q.id });
     const first = ALL_LINES.find((l) => l.id === t.view(target).me!.answers![0]!.id)!;
-    expect(first.frames?.some((f) => ['nakereba-narimasen', 'nakute-mo-ii', 'te-wa-ikemasen'].includes(f)), first.id).toBe(true);
+    expect(first.frames?.some((f) => ['nakereba', 'nakutemo-ii', 'te-wa-ikenai'].includes(f)), first.id).toBe(true);
 
     const n5 = new Table(4, REAL_CONTENT, 9);
     n5.start();

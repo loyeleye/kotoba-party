@@ -413,9 +413,9 @@ export function adlibCheck(heard: Utterance | string, adlib: Pick<AdLib, 'keys'>
     .filter(Boolean);
   const all = normalizeReading(raw);
   const frames: string[] = [];
-  if (clauses.some((c) => CASUAL_END.test(c) && !POLITE_END.test(c))) frames.push('casual-plain');
+  if (clauses.some((c) => CASUAL_END.test(c) && !POLITE_END.test(c))) frames.push('plain');
   if (N_DA.test(all)) frames.push('n-da');
-  if (CONTRACTIONS.test(all)) frames.push('casual-contraction');
+  if (CONTRACTIONS.test(all)) frames.push('teru');
   const said = soundKey(all);
   const key = adlib.keys.some((k) => said.includes(soundKey(k)));
   return { casual: frames.length > 0, key, frames };

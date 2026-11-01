@@ -72,7 +72,7 @@ as before. Everyone else keeps their scripted line, and a room with no N4 player
 - An ad-lib take may run 9 s (13.5 s capped at 12 s for slow cards).
 
 Content: `Scene.adlib` (and `cheekyAdlib` for Under the Cherry Tree's Cheeky twist) in `scenes.ts`, one per
-scene, all draft, each tagged with its frames (`casual-plain`, `n-da`, `casual-contraction`, and
+scene, all draft, each tagged with its frames (`plain`, `n-da`, `teru`, and
 `potential` for two).
 
 ## Content

@@ -36,7 +36,7 @@ export type Deck = 'then-now' | 'if';
 
 export const DECKS: Record<Deck, { name: JpText; frames: readonly string[]; status: ReviewStatus }> = {
   'then-now': { name: rb('昔[むかし]と 今[いま]', 'Then and now'), frames: ['you-ni-naru', 'koto-ni-suru', 'koto-ni-naru', 'potential'], status: 'draft' },
-  if: { name: rb('もしも…', 'If I were…'), frames: ['tara', 'to-omoimasu'], status: 'draft' },
+  if: { name: rb('もしも…', 'If I were…'), frames: ['tara', 'to-omou'], status: 'draft' },
 };
 
 export type WordKind = 'living' | 'place' | 'food' | 'thing';

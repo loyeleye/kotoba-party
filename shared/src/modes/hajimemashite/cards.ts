@@ -233,7 +233,7 @@ export const INTRO_CARDS: IntroCard[] = [
     en: "I've eaten ___",
     enThird: '{name} has eaten ___',
     level: 'n4',
-    frames: ['ta-koto-ga-aru'],
+    frames: ['ta-koto'],
     status: 'draft',
     audiences: ALL,
     tiles: tiles('tabeta', [
@@ -252,7 +252,7 @@ export const INTRO_CARDS: IntroCard[] = [
     en: "I've been to ___",
     enThird: '{name} has been to ___',
     level: 'n4',
-    frames: ['ta-koto-ga-aru'],
+    frames: ['ta-koto'],
     status: 'draft',
     audiences: ALL,
     tiles: tiles('itta', [

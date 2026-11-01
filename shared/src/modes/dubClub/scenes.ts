@@ -130,9 +130,9 @@ export const DIRECTIONS: Direction[] = [
 
 const lines = (kana: JpText, n5: JpText, n4: JpText): Record<Level, JpText> => ({ kana, n5, n4 });
 const ad = (mission: string, emoji: string, keys: string[], model: JpText, frames: string[]): AdLib => ({ mission, emoji, keys, model, frames, status: 'draft' });
-const CASUAL = 'casual-plain';
+const CASUAL = 'plain';
 const NDA = 'n-da';
-const CONTRACT = 'casual-contraction';
+const CONTRACT = 'teru';
 
 // Every episode is setup, build, twist: scene 3 is the punchline, and it counts double. Kana lines are at
 // least four morae (Whisper misses lone short words); each N4 line has an N4 grammar point (in `point`).

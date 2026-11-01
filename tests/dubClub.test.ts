@@ -250,7 +250,7 @@ describe('Dub Club: kept clips', () => {
 
 // ---- the N4 ad-lib role (hard role, goal 4.8) ----
 
-const N4_FRAMES = ['casual-plain', 'n-da', 'casual-contraction', 'potential'];
+const N4_FRAMES = ['plain', 'n-da', 'teru', 'potential'];
 
 describe('Dub Club: the ad-lib content', () => {
   it('every scene has a mission, a picture, key words and a casual model line that passes its own check', () => {
@@ -276,7 +276,7 @@ describe('Dub Club: the ad-lib content', () => {
   it('checks casual speech leniently: plain endings, 〜んだ and contractions count; です/ます does not', () => {
     const keys = { keys: ['おにぎり'] };
     expect(adlibCheck('だれが おにぎり たべたの？', keys)).toMatchObject({ casual: true, key: true });
-    expect(adlibCheck({ via: 'speech', text: '食べちゃった', reading: 'たべちゃった' }, keys)).toMatchObject({ casual: true, key: false, frames: ['casual-contraction'] });
+    expect(adlibCheck({ via: 'speech', text: '食べちゃった', reading: 'たべちゃった' }, keys)).toMatchObject({ casual: true, key: false, frames: ['teru'] });
     expect(adlibCheck('おばけ なんだ', keys).frames).toContain('n-da');
     expect(adlibCheck('おにぎりを たべましたよ。', keys)).toMatchObject({ casual: false, key: true });
     expect(adlibCheck('おにぎりは どこですか', keys).casual).toBe(false);

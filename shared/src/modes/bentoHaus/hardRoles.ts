@@ -67,7 +67,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     ask: { text: 'わさびは いれないで ください。', en: 'No wasabi, please.' },
     steps: [
       { to: 'customer', check: 'ask', model: SURE_WAIT },
-      { to: 'kitchen', check: 'kitchen', keys: ['わさび'], model: L('わさびを いれないで もらえますか。', 'Could you leave the wasabi out?', ['te-moraemasu-ka']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['わさび'], model: L('わさびを いれないで もらえますか。', 'Could you leave the wasabi out?', ['te-moraeru']) },
     ],
   },
   {
@@ -76,7 +76,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     ask: { text: 'おべんとうを あたためて ください。', en: 'Please warm the bento up.' },
     steps: [
       { to: 'customer', check: 'ask', model: L('はい。こちらで まって いただけますか。', 'Of course. Could you wait here?', ['te-itadakemasu-ka']) },
-      { to: 'kitchen', check: 'kitchen', keys: ['あたため'], model: L('おべんとうを あたためて もらえますか。', 'Could you warm the bento up?', ['te-moraemasu-ka']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['あたため'], model: L('おべんとうを あたためて もらえますか。', 'Could you warm the bento up?', ['te-moraeru']) },
     ],
   },
   {
@@ -85,7 +85,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     ask: { text: 'ごはんを おおもりに して ください。', en: 'A big helping of rice, please.' },
     steps: [
       { to: 'customer', check: 'ask', model: SURE_WAIT },
-      { to: 'kitchen', check: 'kitchen', keys: ['おおもり'], model: L('ごはんを おおもりに して もらえますか。', 'Could you make it a big helping of rice?', ['te-moraemasu-ka']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['おおもり'], model: L('ごはんを おおもりに して もらえますか。', 'Could you make it a big helping of rice?', ['te-moraeru']) },
     ],
   },
   {
@@ -94,7 +94,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     ask: { text: 'おはしを ふたつ いれて ください。', en: 'Two pairs of chopsticks, please.' },
     steps: [
       { to: 'customer', check: 'ask', model: SURE_WAIT },
-      { to: 'kitchen', check: 'kitchen', keys: ['はし'], model: L('おはしを ふたつ いれて もらえますか。', 'Could you put two pairs of chopsticks in?', ['te-moraemasu-ka']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['はし'], model: L('おはしを ふたつ いれて もらえますか。', 'Could you put two pairs of chopsticks in?', ['te-moraeru']) },
     ],
   },
   {
@@ -103,7 +103,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     ask: { text: 'ソースは べつに して ください。', en: 'Sauce on the side, please.' },
     steps: [
       { to: 'customer', check: 'ask', model: SURE_WAIT },
-      { to: 'kitchen', check: 'kitchen', keys: ['ソース', 'べつ'], model: L('ソースを べつに して もらえますか。', 'Could you put the sauce on the side?', ['te-moraemasu-ka']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['ソース', 'べつ'], model: L('ソースを べつに して もらえますか。', 'Could you put the sauce on the side?', ['te-moraeru']) },
     ],
   },
   {
@@ -113,7 +113,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     ask: { text: 'はこを もっと かわいく して ください！', en: 'Make the box cuter!' },
     steps: [
       { to: 'customer', check: 'ask', model: SURE_WAIT },
-      { to: 'kitchen', check: 'kitchen', keys: ['かわいく'], model: L('はこを かわいく して もらえますか。', 'Could you make the box cute?', ['te-moraemasu-ka']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['かわいく'], model: L('はこを かわいく して もらえますか。', 'Could you make the box cute?', ['te-moraeru']) },
     ],
   },
   {
@@ -125,7 +125,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     ask: { text: 'ゆめを ひとつ いれて ください。', en: 'Put a dream in, please.' },
     steps: [
       { to: 'customer', check: 'sorry-ask', model: L('もうしわけ ございません。おにぎりに して いただけますか。', "I'm terribly sorry. Could you make it a rice ball instead?", ['keigo-verb', 'te-itadakemasu-ka']) },
-      { to: 'kitchen', check: 'kitchen', keys: ['おにぎり'], model: L('おにぎりを ひとつ つくって もらえますか。', 'Could you make one rice ball?', ['te-moraemasu-ka']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['おにぎり'], model: L('おにぎりを ひとつ つくって もらえますか。', 'Could you make one rice ball?', ['te-moraeru']) },
     ],
   },
 ];
@@ -139,9 +139,9 @@ export function complaintSteps(off: { foodId: string; how: 'missing' | 'few' | '
           to: 'kitchen',
           check: 'kitchen',
           keys: [f.kana],
-          model: L(`${f.kana}を もう ${countWord(f, Math.max(1, short), own)} つくって もらえますか。`, `Could you make ${Math.max(1, short)} more ${f.en}?`, ['te-moraemasu-ka']),
+          model: L(`${f.kana}を もう ${countWord(f, Math.max(1, short), own)} つくって もらえますか。`, `Could you make ${Math.max(1, short)} more ${f.en}?`, ['te-moraeru']),
         }
-      : { to: 'kitchen', check: 'kitchen', keys: ['つくりなお'], model: L('おべんとうを つくりなおして もらえますか。', 'Could you make the bento again?', ['te-moraemasu-ka']) };
+      : { to: 'kitchen', check: 'kitchen', keys: ['つくりなお'], model: L('おべんとうを つくりなおして もらえますか。', 'Could you make the bento again?', ['te-moraeru']) };
   return [{ to: 'customer', check: 'sorry-ask', model: SORRY_WAIT }, fix];
 }
 

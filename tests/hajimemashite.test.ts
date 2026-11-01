@@ -175,10 +175,10 @@ describe('Nice to Meet You!: the cards', () => {
       expect(c.frames?.length, c.id).toBeGreaterThan(0);
     }
     const tagged = (f: string) => n4.filter((c) => c.frames?.includes(f));
-    expect(tagged('ta-koto-ga-aru').every((c) => c.first.includes('た ことが あります'))).toBe(true);
+    expect(tagged('ta-koto').every((c) => c.first.includes('た ことが あります'))).toBe(true);
     expect(tagged('te-shimau').every((c) => c.first.includes('て しまいました'))).toBe(true);
     expect(tagged('te-miru').every((c) => /て みま|て みたい/.test(c.first))).toBe(true);
-    for (const f of ['ta-koto-ga-aru', 'te-shimau', 'te-miru']) expect(tagged(f).length, f).toBeGreaterThanOrEqual(2);
+    for (const f of ['ta-koto', 'te-shimau', 'te-miru']) expect(tagged(f).length, f).toBeGreaterThanOrEqual(2);
     expect(INTRO_CARDS.filter((c) => c.level === 'n5').some((c) => c.frames)).toBe(false);
   });
 });

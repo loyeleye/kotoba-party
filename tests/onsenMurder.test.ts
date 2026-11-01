@@ -614,7 +614,7 @@ describe('Murder at the Onsen: bots play a game end to end', () => {
 
 // ---- the deputy (N4 hard role) ----
 
-const FRAME_IDS = new Set(['to-itte-imashita', 'passive', 'tame-ni', 'sou-looks', 'node']);
+const FRAME_IDS = new Set(['to-itte-imashita', 'passive', 'tame-ni', 'sou-look', 'node']);
 
 describe('Murder at the Onsen: the deputy’s reports', () => {
   const shared = onsenCases.filter((c) => !c.audience);

@@ -329,7 +329,7 @@ function questionTiles(s: TouristState, playerId: string, level: Level, random: 
 
 /** N4 deck frame families: a ＿なければ なりませんか question is answered in must/needn't, a ＿られますか one in can. */
 const FAMILIES: readonly (readonly string[])[] = [
-  ['nakereba-narimasen', 'nakute-mo-ii', 'te-wa-ikemasen'],
+  ['nakereba', 'nakutemo-ii', 'te-wa-ikenai'],
   ['potential', 'koto-ga-dekiru'],
 ];
 

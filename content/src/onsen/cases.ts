@@ -90,7 +90,7 @@ export const snowmanCase: OnsenCase = {
       persona: 'A kind, sleepy grandmother who knits and worries that everyone is cold.',
       answers: {
         where: { jp: t('10じに、ゆきだるまさんの ところに いきました。', 'じゅうじに、ゆきだるまさんの ところに いきました。', 'At 10 I went to see Mr. Snowman.'), report: said('やまださんは 10じに ゆきだるまさんの ところに いったと いっていました。', 'やまださんは じゅうじに ゆきだるまさんの ところに いったと いっていました。', 'Yamada said she went to see Mr. Snowman at 10.') },
-        what: { jp: k('マフラーを あげました。ゆきだるまさんは さむそうでした。', 'I gave him my scarf. Mr. Snowman looked cold.'), clueId: 'scarf', report: said('やまださんは ゆきだるまさんが さむそうだったので マフラーを あげたと いっていました。', null, 'Yamada said Mr. Snowman looked cold, so she gave him her scarf.', 'sou-looks', 'node') },
+        what: { jp: k('マフラーを あげました。ゆきだるまさんは さむそうでした。', 'I gave him my scarf. Mr. Snowman looked cold.'), clueId: 'scarf', report: said('やまださんは ゆきだるまさんが さむそうだったので マフラーを あげたと いっていました。', null, 'Yamada said Mr. Snowman looked cold, so she gave him her scarf.', 'sou-look', 'node') },
         who: { jp: k('すずきさんを みました。おんせんに いました。', 'I saw Suzuki. She was in the hot spring.'), report: seen('すずきさんは おんせんで やまださんに みられました。', null, 'Suzuki was seen in the hot spring by Yamada.') },
         when: { jp: t('10じ15ふんに ねました。おばあさんですから。', 'じゅうじじゅうごふんに ねました。おばあさんですから。', "I went to bed at 10:15. I'm a grandma, after all."), clueId: 'yamada-bed', report: said('やまださんは 10じ15ふんに ねたと いっていました。', 'やまださんは じゅうじじゅうごふんに ねたと いっていました。', 'Yamada said she went to bed at 10:15.') },
         victim: { jp: k('やさしい ひとでした。かなしいです。', 'He was a kind soul. I am sad.'), report: said('やまださんは ゆきだるまさんが やさしい ひとだったと いっていました。', null, 'Yamada said Mr. Snowman was a kind soul.') },
