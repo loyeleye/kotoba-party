@@ -9,6 +9,8 @@ import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import { CATCH_DAYS, type AccountView, type Card, type PhraseCard } from '../../shared/src/progress.js';
 import { hearButton } from './components/voice.js';
+import { pathTab, setPathView } from './path.js';
+import type { Level } from '../../shared/src/protocol.js';
 
 /** What this phone keeps after signing in. The token is the only key to the account. */
 interface SavedAccount {
@@ -221,8 +223,26 @@ function passkeyError(err: unknown, cancelled: string): string {
 
 // ---- my progress ----
 
-type Tab = 'cards' | 'phrases' | 'scores';
-let tab: Tab = 'cards';
+type Tab = 'path' | 'cards' | 'phrases' | 'scores';
+let tab: Tab | null = null;
+
+/** The level this phone last picked in a lobby (main.ts keeps it), for the path's steps. */
+function phoneLevel(): Level {
+  try {
+    const l = JSON.parse(localStorage.getItem('kotoba:level') ?? 'null') as unknown;
+    return l === 'kana' || l === 'n5' || l === 'n4' ? l : 'n5';
+  } catch {
+    return 'n5';
+  }
+}
+
+/** The save, for the lobby's path card: null when signed out or the sign-in ran out. */
+export async function fetchMe(): Promise<AccountView | null> {
+  if (!account()) return null;
+  const res = await api<{ account: AccountView }>(`me?tz=${tz()}`);
+  if (res.status !== 200) return null;
+  return res.data.account;
+}
 
 async function showProgress(screens: { back: () => void; app: HTMLElement }): Promise<void> {
   mount(screens.app, h('div', { class: 'acct-page' }, backBar(screens.back), h('p', { class: 'center', role: 'status' }, 'Loading your progress…')));
@@ -246,18 +266,36 @@ async function showProgress(screens: { back: () => void; app: HTMLElement }): Pr
   renderProgress(screens, res.data.account);
 }
 
+/** The Path tab's switch: saved on the account, so it follows the player to any phone. */
+let switching = false;
+async function setPath(screens: { back: () => void; app: HTMLElement }, view: AccountView, on: boolean): Promise<void> {
+  switching = true;
+  renderProgress(screens, view);
+  try {
+    const res = await api<{ account: AccountView }>('settings', { path: on });
+    switching = false;
+    renderProgress(screens, res.status === 200 ? res.data.account : view);
+  } catch {
+    switching = false;
+    renderProgress(screens, view);
+  }
+}
+
 function renderProgress(screens: { back: () => void; app: HTMLElement }, view: AccountView): void {
   const a = account();
   if (view.name !== a?.name && a) saveAccount({ ...a, name: view.name });
+  setPathView(view);
+  // Opens on the path when it's on, else on the yōkai cards as before.
+  const current: Tab = (tab ??= view.path ? 'path' : 'cards');
   const tabButton = (id: Tab, label: string) =>
-    h('button', { type: 'button', role: 'tab', id: `acct-tab-${id}`, 'aria-selected': tab === id ? 'true' : 'false', 'aria-controls': 'acct-tabpanel', tabindex: tab === id ? '0' : '-1', class: 'acct-tab', onclick: () => ((tab = id), renderProgress(screens, view)) }, label);
+    h('button', { type: 'button', role: 'tab', id: `acct-tab-${id}`, 'aria-selected': current === id ? 'true' : 'false', 'aria-controls': 'acct-tabpanel', tabindex: current === id ? '0' : '-1', class: 'acct-tab', onclick: () => ((tab = id), renderProgress(screens, view)) }, label);
   // Tabs pattern: arrow keys move between them.
   const onKey = (e: KeyboardEvent) => {
-    const order: Tab[] = ['cards', 'phrases', 'scores'];
+    const order: Tab[] = ['path', 'cards', 'phrases', 'scores'];
     const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
     if (!step) return;
     e.preventDefault();
-    tab = order[(order.indexOf(tab) + step + order.length) % order.length]!;
+    tab = order[(order.indexOf(current) + step + order.length) % order.length]!;
     renderProgress(screens, view);
   };
   const page = h(
@@ -265,12 +303,16 @@ function renderProgress(screens: { back: () => void; app: HTMLElement }, view: A
     { class: 'acct-page' },
     backBar(screens.back),
     h('h2', {}, `${view.name}’s progress`),
-    h('div', { class: 'acct-tabs', role: 'tablist', onkeydown: onKey as EventListener }, tabButton('cards', 'Yōkai cards'), tabButton('phrases', 'Phrasebook'), tabButton('scores', 'Scores')),
-    h('div', { id: 'acct-tabpanel', role: 'tabpanel', 'aria-labelledby': `acct-tab-${tab}` }, tab === 'cards' ? cardsTab(screens, view) : tab === 'phrases' ? phrasesTab(screens, view) : scoresTab(view)),
+    h('div', { class: 'acct-tabs', role: 'tablist', onkeydown: onKey as EventListener }, tabButton('path', 'Path'), tabButton('cards', 'Yōkai cards'), tabButton('phrases', 'Phrasebook'), tabButton('scores', 'Scores')),
+    h(
+      'div',
+      { id: 'acct-tabpanel', role: 'tabpanel', 'aria-labelledby': `acct-tab-${current}` },
+      current === 'path' ? pathTab(view, phoneLevel(), (on) => void setPath(screens, view, on), switching) : current === 'cards' ? cardsTab(screens, view) : current === 'phrases' ? phrasesTab(screens, view) : scoresTab(view),
+    ),
     accountFooter(screens),
   );
   mount(screens.app, page);
-  page.querySelector<HTMLElement>(`#acct-tab-${tab}`)?.focus();
+  page.querySelector<HTMLElement>(`#acct-tab-${current}`)?.focus();
 }
 
 function cardsTab(screens: { back: () => void; app: HTMLElement }, view: AccountView): HTMLElement {

@@ -222,6 +222,21 @@ describe('account service', () => {
     expect(books[0]!.phrases.map((p) => p.itemId).sort()).toEqual(['a', 'b']);
   });
 
+  it('keeps the learning path switch, off until turned on, with the frames met so far', async () => {
+    const s = service();
+    const token = (await s.register()).data.token!;
+    expect((await s.call('me', undefined, token)).data.account).toMatchObject({ path: false, frames: [] });
+    await s.accounts.recordResults([
+      { account: token, result: game(T0, [], { mode: 'last-train', phrases: [{ itemId: 'k', text: 'コーヒーを ください', kana: 'コーヒーを ください', en: 'A coffee, please', outcome: 'said' }] }) },
+    ]);
+    const on = await s.call('settings', { path: true }, token);
+    expect(on.data.account).toMatchObject({ path: true, frames: [{ id: 'kudasai', phrases: 1, said: 1 }] });
+    expect((await s.call('me', undefined, token)).data.account!.path).toBe(true);
+    expect((await s.call('settings', { path: 'yes' }, token)).data.error).toBe('bad-settings');
+    expect((await s.call('settings', { path: false })).status).toBe(401);
+    expect((await s.call('settings', { path: false }, token)).data.account!.path).toBe(false);
+  });
+
   it('deletes everything: the save, its passkeys and every sign-in', async () => {
     const s = service();
     const token = (await s.register()).data.token!;

@@ -2,6 +2,7 @@
 // and the scores from every game they finish. Pure rules, no storage: the account service
 // (server/src/accounts.ts) loads a profile, applies one of these and saves it.
 
+import { FRAMES, frameOf, type FrameId } from './japanese/frames.js';
 import { soundKey, toHiragana } from './japanese/kana.js';
 import { toRomaji } from './japanese/romaji.js';
 import { isRomaji, romajiToHiragana } from './japanese/toKana.js';
@@ -83,6 +84,8 @@ export interface Progress {
   games: GameRecord[];
   /** The saved phrasebook. Missing on saves made before it existed. */
   phrases?: Record<string, PhraseCard>;
+  /** The learning path is on (docs/progressive-learning.md). Off, or missing, until the player turns it on. */
+  path?: boolean;
 }
 
 /** Days until the next review, by box (design doc: 1, 3, 7, 14, 30). Box 0 is due at once. */
@@ -242,6 +245,38 @@ export interface AccountView {
   /** The saved phrasebook, most recently met first. */
   phrases: PhraseCard[];
   duePhrases: PhraseCard[];
+  /** The learning path is on. */
+  path: boolean;
+  /** Every sentence frame met in the saved phrasebook, in the path's order. */
+  frames: FrameStat[];
+}
+
+/** One sentence frame across the saved phrasebook (shared/src/japanese/frames.ts). */
+export interface FrameStat {
+  id: FrameId;
+  /** Phrases on this frame, and how many times they were said from memory (games and reviews). */
+  phrases: number;
+  said: number;
+  /** Up to three, most recently met first. */
+  examples: Pick<PhraseCard, 'text' | 'kana' | 'en'>[];
+}
+
+/** The frames in a saved phrasebook. Frames never met are left out. */
+export function frameStats(p: Progress): FrameStat[] {
+  const by = new Map<FrameId, { said: number; cards: PhraseCard[] }>();
+  for (const c of Object.values(p.phrases ?? {})) {
+    const id = frameOf(c);
+    if (!id) continue;
+    const f = by.get(id) ?? { said: 0, cards: [] };
+    f.said += c.said;
+    f.cards.push(c);
+    by.set(id, f);
+  }
+  return FRAMES.filter((f) => by.has(f.id)).map((f) => {
+    const { said, cards } = by.get(f.id)!;
+    const examples = [...cards].sort((a, b) => b.lastAt - a.lastAt).slice(0, 3).map(({ text, kana, en }) => ({ text, kana, en }));
+    return { id: f.id, phrases: cards.length, said, examples };
+  });
 }
 
 export interface ModeBest {

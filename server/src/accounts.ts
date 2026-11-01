@@ -15,7 +15,7 @@ import {
   type RegistrationResponseJSON,
 } from '@simplewebauthn/server';
 import { cleanName } from '../../shared/src/game.js';
-import { addGame, bests, dueCards, duePhrases, emptyProgress, reviewCard, reviewPhrase, rightSound, type AccountView, type PhraseCard, type Progress } from '../../shared/src/progress.js';
+import { addGame, bests, dueCards, duePhrases, emptyProgress, frameStats, reviewCard, reviewPhrase, rightSound, type AccountView, type PhraseCard, type Progress } from '../../shared/src/progress.js';
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import type { AccountResult } from './room.js';
 
@@ -231,6 +231,16 @@ export class Accounts {
         await this.storage.put(`user:${user.id}`, user);
         return json(200, { right, expected: toRomaji(card.hear), card, caught: !caughtBefore && card.caughtAt !== null });
       }
+      case 'settings': {
+        // The learning path's switch (docs/progressive-learning.md). Only what's sent changes.
+        if (req.method !== 'POST') break;
+        const user = await this.userFor(req);
+        if (!user) return json(401, { error: 'signed-out' });
+        if (typeof body.path !== 'boolean') return json(400, { error: 'bad-settings' });
+        user.progress.path = body.path;
+        await this.storage.put(`user:${user.id}`, user);
+        return json(200, { account: this.view(user) });
+      }
       case 'signout': {
         if (req.method !== 'POST') break;
         const token = bearer(req);
@@ -290,6 +300,8 @@ export class Accounts {
       bests: bests(user.progress),
       phrases: recentPhrases(user.progress, PHONE_PHRASES),
       duePhrases: duePhrases(user.progress, now),
+      path: user.progress.path === true,
+      frames: frameStats(user.progress),
     };
   }
 

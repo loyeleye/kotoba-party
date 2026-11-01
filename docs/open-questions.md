@@ -50,6 +50,12 @@ If you only have ten minutes, these are the answers that would change the build 
   on the TV with the player's name? ([kana-raid.md](modes/kana-raid.md#open-questions))
 - **Photo Caption art (C2)** and **voice casting (C3).**
 
+## Learning path (2026-11-01)
+
+The optional learning path and sentence frames ([progressive-learning.md](progressive-learning.md#open-questions)):
+the path's order and goals are a first guess; a VIP badge for players' next games, and frame chips
+during play, are left for later.
+
 ## Phase 0 (multiplayer)
 
 1. **Repo layout: one root package, no workspaces.** One `package.json` and `tsconfig.json` at

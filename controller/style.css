@@ -486,7 +486,7 @@ body[data-mode='last-train'] .timer:not(:empty)::before { content: '🚃 departs
 .acct-caught { color: var(--gold); font-weight: 700; margin: 0; }
 .acct-done { text-align: center; justify-items: center; }
 .acct-saved { margin: 0; text-align: center; color: var(--good); font-size: 15px; }
-.acct-tabs { grid-template-columns: 1fr 1fr 1fr; }
+.acct-tabs { grid-template-columns: 1fr 1fr; }
 .acct-tab { font-size: 16px; }
 .acct-phrases { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .acct-phrase { display: grid; gap: 2px; padding: 10px 12px 10px 14px; border-radius: 10px; background: var(--panel); border-left: 4px solid var(--line); }
@@ -640,3 +640,44 @@ input::placeholder { color: #a99ccf; }
 .ms-note { margin: 0; }
 .ms-foot { padding: 10px 16px 16px; border-top: 1px solid var(--line); }
 .ms-foot .primary { width: 100%; }
+
+/* The learning path (controller/src/path.ts, docs/progressive-learning.md): the lobby and recap card, frame
+   chips on the recap phrasebook, and My progress's Path tab. Phone only. */
+.path-next { display: grid; gap: 6px; margin: 4px 0; padding: 14px; border-radius: 12px; border: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); text-align: left; }
+.path-next p { margin: 0; }
+.path-kicker { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); }
+.path-game strong { font-size: 20px; }
+.path-game span { color: var(--muted); }
+.path-step { font-weight: 700; }
+.path-why, .path-note, .path-goal { color: var(--muted); font-size: 15px; line-height: 1.4; }
+.path-pick { justify-self: start; margin-top: 4px; }
+.path-frames { list-style: none; margin: 2px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.path-frames li, .frame-chip { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--outline); border: 1px solid var(--line); }
+.path-frames li span, .frame-ja { font-family: var(--font-ja); font-weight: 700; color: var(--ink); }
+.path-frames li small, .frame-chip small { color: var(--muted); font-size: 13px; }
+.phrase-card .frame-chip { justify-self: start; margin-top: 4px; }
+.frame-romaji { font-style: italic; }
+
+.path-switch { display: grid; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); }
+.path-switch p { margin: 0; display: grid; gap: 4px; }
+.path-switch small { color: var(--muted); font-size: 14px; line-height: 1.4; }
+.path-switch button { min-height: 48px; font-weight: 700; }
+.path-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.path-steps.off { opacity: 0.6; }
+.path-row { display: grid; grid-template-columns: 28px 1fr; gap: 4px 8px; align-items: start; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+.path-row.now { border: 2px solid var(--gold); }
+.path-row.done .path-mark { color: var(--good); }
+.path-row.now .path-mark { color: var(--gold); }
+.path-mark { font-weight: 800; font-size: 18px; text-align: center; }
+.path-text { display: grid; gap: 2px; }
+.path-text small { color: var(--muted); font-size: 14px; }
+.path-bar { grid-column: 2; height: 6px; border-radius: 3px; background: var(--outline); overflow: hidden; }
+.path-bar i { display: block; height: 100%; background: var(--good); }
+.path-frame-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.path-frame { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--good); }
+.path-frame.unmet { border-left-color: var(--line); }
+.path-frame .frame-ja { font-size: 19px; }
+.path-frame-en, .path-frame-n { color: var(--muted); font-size: 14px; }
+.path-frame-ex { font-size: 15px; }
+.path-more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--muted); font-weight: 700; }
+.path-more[open] summary { margin-bottom: 8px; }
