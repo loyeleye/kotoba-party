@@ -8,6 +8,7 @@
 //            asked to hear it again. A card that moves slides to its new place.
 //   defence  the most-moved card lifts off the neck, and its author says why it belongs there. An N4
 //            player's rank-and-defend turn shows its ので frame instead (「＿ので、これが いちばん さきです。」).
+//            Once it lands, a short instant replay: the line with its ので lit and a line of colour.
 //   flip     Nobiko-san turns the cards over from the low end, one per step, a bell a step up the
 //            theme's scale as each face shows; a knot ties in her neck between two cards out of order;
 //            the biggest surprise wobbles and turns last, on the scale's home note.
@@ -352,6 +353,16 @@ function neck(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement 
 /** Under the neck: the defence, or the flip's result once the last card is over (space kept either way). */
 function foot(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement {
   const d = game.defence;
+  const rp = game.replay;
+  // The commentary booth: the N4 defence's line again, its ので lit, and one line of colour (Nobiko-san says it).
+  if (view.phase === 'encore' && rp)
+    return h(
+      'div',
+      { class: 'nb-foot nb-replay' },
+      h('p', { class: 'nb-replay-tag' }, `📺 REPLAY · ${nameOf(view, rp.playerId)}`),
+      h('p', { class: 'nb-replay-line', lang: 'ja' }, '「', rp.lit.before, rp.lit.node ? h('mark', {}, rp.lit.node) : null, rp.lit.after, '」'),
+      h('p', { class: 'nb-replay-note' }, rp.note),
+    );
   if (view.phase === 'encore' && d)
     return h(
       'div',

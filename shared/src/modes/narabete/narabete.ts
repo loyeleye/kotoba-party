@@ -18,12 +18,15 @@
 // Time Line too. It's offered during the line-up, opt-in: it runs only when they tap Take it before the
 // line-up ends (an offer still open then is 'timeout'). It runs as its own `encore` after the ordinary
 // defence (or instead of it, when the same player would give both). Team points don't change.
+// The commentary booth: once it lands (said out loud, with ので), one more short `encore` replays it: the TV
+// shows the line with its ので lit and a line of English colour while Nobiko-san says it, and Kana and N5
+// phones show its gist. It fills what's left of the 15 s encore, kept to 5–7 s.
 // Spotlight (for Ladi to confirm): in a room of 4 or more, a lone eligible N4 player who gave it last round
 // gets this round off.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
-import { isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { isKana, isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
 import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
@@ -71,6 +74,12 @@ export const DURATIONS = {
   encore: 12_000,
   /** The N4 defence: a little longer, to plan the ので line (the doc's 8 s to plan). */
   encoreN4: 15_000,
+  /**
+   * The commentary booth's instant replay, once the N4 defence has been said: whatever is left of the 15 s
+   * encore, but never under 5 s or over 7 s (so it runs at most 5 s past the encore, and only when said).
+   */
+  replayMin: 5_000,
+  replayMax: 7_000,
   /** After the flip: time to take it in (and, in Feelings rounds, vote for the funniest). */
   scoreTail: 9_000,
   scoreVoteTail: 14_000,
@@ -137,6 +146,29 @@ export interface HardDefence {
   /** It was one of the model lines shown on the phone, read out (the phrasebook logs it as seen). */
   read?: boolean;
   text: string | null;
+  /** The server's kana reading of what they said, and when, for the replay. */
+  kana?: string;
+  saidAt?: number;
+}
+
+/**
+ * The commentary booth (Ladi, 2026-11-01): once the N4 defence lands, Nobiko-san gives a short instant replay
+ * on the TV (the line with its ので lit, and a one-line English colour note), and Kana and N5 phones get the
+ * gist at their level. It calls the play, never the player's mistakes.
+ */
+export interface Replay {
+  playerId: string;
+  /** The line as replayed and voiced: the model line they read out, else their own accepted line. */
+  line: JpText;
+  /** Nobiko-san says it (a model line, or their own line with a kana reading); else the TV replays it unvoiced. */
+  voiced: boolean;
+  /** The line split round its first ので, for lighting it. */
+  lit: { before: string; node: string; after: string };
+  /** English colour commentary, one line. */
+  note: string;
+  /** For Kana and N5 phones: a kana line and plain English, and the card's picture. */
+  gist: { kana: string; en: string; emoji: string | null; picture?: string };
+  ms: number;
 }
 
 export interface Round {
@@ -150,8 +182,11 @@ export interface Round {
   defence: { playerId: string; cardId: string; done: boolean; ok: boolean; text: string | null } | null;
   /** The N4 defence this round, if the room has an N4 player (kept when declined, for the tally). */
   hard?: HardDefence | null;
-  /** Which defence the encore is on now. */
-  encore?: 'defence' | 'hard' | null;
+  /** Which defence the encore is on now, or the N4 defence's instant replay. */
+  encore?: 'defence' | 'hard' | 'replay' | null;
+  replay?: Replay | null;
+  /** When the N4 defence's encore opened (the replay fills what's left of it). */
+  hardAt?: number;
   flip: Flip | null;
   votes: Record<string, string>;
 }
@@ -233,6 +268,8 @@ export interface NarabeteView {
   flip: { pairs: number; maxPairs: number; perfect: boolean; last: string | null; poker: string | null; teamPoints: number; steps: number } | null;
   /** The defence on now (encore), or the round's defence (score). `n4`: the rank-and-defend script, with its frame. */
   defence: { playerId: string; text: string | null; done: boolean; n4: boolean; frame: JpText | null } | null;
+  /** The commentary booth's instant replay of the N4 defence (TV), while it runs. */
+  replay: { playerId: string; line: JpText; lit: Replay['lit']; note: string } | null;
   story: { order: string[]; index: number; current: string | null } | null;
   me: {
     level: Level;
@@ -252,6 +289,8 @@ export interface NarabeteView {
     defending: boolean;
     /** The N4 defence, while it's mine: offered or taken (from the line-up), and the script while I defend. */
     hard: { answer: 'offered' | 'accepted'; script: DefenceScript | null } | null;
+    /** Kana and N5 phones, during the replay: what the N4 defender said, at my level (romaji for Kana). */
+    gist: { name: string; kana: string; romaji?: string; en: string; emoji: string | null; picture?: string } | null;
     performing: { text: string } | null;
     bonus: number;
   } | null;
@@ -543,14 +582,58 @@ function onStand(r: Round): { playerId: string; done: boolean; hard: boolean } |
   return null;
 }
 
-/** Was this defence one of the shown model lines read out? Its reason (before 、) came through whole. */
-function readScript(script: DefenceScript | null, reading: string): boolean {
-  if (!script) return false;
+/** Which of the shown model lines was read out (its reason, before 、, came through whole), or -1. */
+function readLine(script: DefenceScript | null, reading: string): number {
+  if (!script) return -1;
   const said = soundKey(normalizeReading(reading));
-  return script.lines.some((l) => {
+  return script.lines.findIndex((l) => {
     const reason = soundKey(normalizeReading(l.kana.split('、')[0] ?? ''));
     return reason.length >= 3 && said.includes(reason);
   });
+}
+
+/** Was this defence one of the shown model lines read out? */
+const readScript = (script: DefenceScript | null, reading: string): boolean => readLine(script, reading) >= 0;
+
+/** The N4 defence landed: said out loud, in Japanese, with ので. Only then is there a replay. */
+const landed = (h: HardDefence | null | undefined): h is HardDefence => !!h && h.answer === 'accepted' && h.ok && h.framed && !!h.text;
+
+/** Splits a line round its first ので, so the replay can light it. */
+function lightNode(text: string): Replay['lit'] {
+  const i = text.indexOf('ので');
+  return i < 0 ? { before: text, node: '', after: '' } : { before: text.slice(0, i), node: 'ので', after: text.slice(i + 2) };
+}
+
+/**
+ * The instant replay of a landed N4 defence. The line is the model line they read out (fixed, fluent, safe to
+ * voice), else their own accepted line with the server's kana reading. The note and the gist call the play: what
+ * they said and why, never what they got wrong.
+ */
+function buildReplay(s: NarabeteState, r: Round, hard: HardDefence, ctx: ModeContext, ms: number): Replay | null {
+  const script = scriptFor(s, r, hard.cardId, ctx);
+  const name = ctx.player(hard.playerId)?.name ?? '';
+  if (!script || !hard.text) return null;
+  const k = readLine(script, hard.kana ?? '');
+  const note = `ので = because: ${name} gave the reason first, then where the card goes.`;
+  // A model line is always voiced; its kana is left to the host pipeline when it holds a name in Latin letters
+  // (it reads the line as it reads any {name}). Their own line is voiced only from a kana reading.
+  const model = k >= 0 ? script.lines[k]! : null;
+  const line: JpText = model
+    ? { ...model, kana: isKana(model.kana) ? model.kana : '' }
+    : { text: hard.text, kana: hard.kana && isKana(hard.kana) ? hard.kana : '', en: `${name} gives the reason first, with ので (because).` };
+  const voiced = !!model || !!line.kana;
+  const c = cardOf(r, hard.cardId);
+  const tc = c ? timeCardOf(c) : undefined;
+  const theme = r.kind !== 'time' ? themeOf(r.setId) : undefined;
+  const ready = theme && c?.said?.ready !== null && c?.said?.ready !== undefined && !c.hidden ? { a: theme.ready[c.said.ready]!, i: c.said.ready } : undefined;
+  const picture = tc ? cardPicture(tc.id) : ready && theme ? answerPicture(theme.id, ready.i) : undefined;
+  const gist: Replay['gist'] = {
+    kana: k >= 0 ? script.lines[k]!.kana : script.tail.kana,
+    en: k >= 0 ? `${name}: ${script.tail.en}, because ${script.reasons[k]!.en}.` : `${name}: ${script.tail.en}, and said why (ので = because).`,
+    emoji: tc?.emoji ?? ready?.a.emoji ?? null,
+    ...(picture ? { picture } : {}),
+  };
+  return { playerId: hard.playerId, line, voiced, lit: lightNode(line.text), note, gist, ms };
 }
 
 /** The N4 script for a card where it sits now. */
@@ -621,8 +704,9 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       case 'reveal':
         return r?.defence || (r && liveHard(r)) ? 'encore' : 'score';
       case 'encore':
-        // The ordinary defence first, then the N4 one.
-        return r?.encore === 'defence' && liveHard(r) ? 'encore' : 'score';
+        // The ordinary defence first, then the N4 one, then its instant replay if it landed.
+        if (r?.encore === 'defence' && liveHard(r)) return 'encore';
+        return r?.encore === 'hard' && landed(r.hard) ? 'encore' : 'score';
       case 'score':
         if (s.round < s.totalRounds) return 'prompt';
         return s.story && s.story.order.length ? 'finale' : 'recap';
@@ -660,7 +744,19 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         break;
       case 'encore': {
         if (!r) break;
+        if (r.encore === 'hard' && landed(r.hard)) {
+          // The commentary booth: whatever is left of the N4 encore, kept to 5–7 s.
+          const left = DURATIONS.encoreN4 - ((r.hard.saidAt ?? ctx.now) - (r.hardAt ?? ctx.now));
+          const ms = Math.min(DURATIONS.replayMax, Math.max(DURATIONS.replayMin, left));
+          r.encore = 'replay';
+          r.replay = buildReplay(s, r, r.hard, ctx, ms);
+          // Nobiko-san says the line herself (never the player's recording), once, with its subtitle.
+          const rp = r.replay;
+          if (rp?.voiced) ctx.cue({ host: 'nobiko', event: 'narabete_replay', slots: { line: rp.line.text, line_en: rp.line.en, ...(rp.line.kana ? { line_kana: rp.line.kana } : {}) } });
+          break;
+        }
         r.encore = !r.encore && r.defence ? 'defence' : 'hard';
+        if (r.encore === 'hard') r.hardAt = ctx.now;
         const on = onStand(r);
         // The N4 defence is about the player's own card, wherever it sits: its own cue (not "it moved a lot").
         if (on) ctx.cue({ host: 'nobiko', event: on.hard ? 'narabete_hard' : 'narabete_defence', slots: { name: ctx.player(on.playerId)?.name ?? '' } });
@@ -716,6 +812,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       case 'reveal':
         return DURATIONS.reveal;
       case 'encore':
+        if (r?.encore === 'replay') return r.replay?.ms ?? DURATIONS.replayMin;
         return r?.encore === 'hard' ? DURATIONS.encoreN4 : DURATIONS.encore;
       case 'score':
         return flipMs(r ? flipSteps(r) : 0) + (r && r.kind !== 'time' ? DURATIONS.scoreVoteTail : DURATIONS.scoreTail);
@@ -733,6 +830,8 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     if (phase === 'answer') return here.every((p) => !cardOfPlayer(r, p.id) || cardOfPlayer(r, p.id)!.said);
     if (phase === 'reveal') return here.every((p) => !cardOfPlayer(r, p.id) || r.locks[p.id]);
     if (phase === 'encore') {
+      // The replay runs its few seconds: nobody has anything to do.
+      if (r.encore === 'replay') return !r.replay;
       const on = onStand(r);
       return !on || on.done || !here.some((p) => p.id === on.playerId);
     }
@@ -866,6 +965,8 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
           hard.ok = raw.utterance.via === 'speech' && hasJapanese(text);
           hard.framed = /ので/.test(utteranceReading(raw.utterance)) || /ので/.test(text);
           hard.read = readScript(scriptFor(s, r, hard.cardId, ctx), utteranceReading(raw.utterance));
+          hard.kana = utteranceReading(raw.utterance);
+          hard.saidAt = ctx.now;
           return MOVE_OK;
         }
         if (!r.defence) return moveError('wrong-phase');
@@ -979,10 +1080,12 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     let defence: NarabeteView['defence'] = null;
     if (r && (phase === 'encore' || phase === 'score')) {
       // The encore shows the defence on now; the score, the round's defence (the ordinary one first).
-      const hardOn = phase === 'encore' ? !!stand?.hard : !r.defence && !!r.hard?.text;
+      const hardOn = phase === 'encore' ? !!stand?.hard || r.encore === 'replay' : !r.defence && !!r.hard?.text;
       if (hardOn && r.hard) defence = { playerId: r.hard.playerId, text: r.hard.text, done: r.hard.done, n4: true, frame: scriptFor(s, r, r.hard.cardId, ctx)?.frame ?? null };
       else if (r.defence && (phase === 'score' || stand)) defence = { playerId: r.defence.playerId, text: r.defence.text, done: r.defence.done, n4: false, frame: null };
     }
+
+    const replay = r && phase === 'encore' && r.encore === 'replay' ? (r.replay ?? null) : null;
 
     let mine: NarabeteView['me'] = null;
     if (me && r) {
@@ -1018,6 +1121,17 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
           r.hard && r.hard.playerId === me.id && (r.hard.answer === 'offered' || r.hard.answer === 'accepted') && !r.hard.done && (phase === 'reveal' || phase === 'encore')
             ? { answer: r.hard.answer, script: stand?.hard ? scriptFor(s, r, r.hard.cardId, ctx) : null }
             : null,
+        gist:
+          replay && replay.playerId !== me.id && (me.level === 'kana' || me.level === 'n5')
+            ? {
+                name: ctx.player(replay.playerId)?.name ?? '',
+                kana: replay.gist.kana,
+                ...(me.level === 'kana' ? { romaji: toRomaji(replay.gist.kana) } : {}),
+                en: replay.gist.en,
+                emoji: replay.gist.emoji,
+                ...(replay.gist.picture ? { picture: replay.gist.picture } : {}),
+              }
+            : null,
         performing: current && c && current === c.id && !s.story!.done[c.id] ? { text: c.said?.text ?? '' } : null,
         bonus: r.flip?.bonus[me.id] ?? 0,
       };
@@ -1039,6 +1153,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       locked: r && phase === 'reveal' ? Object.keys(r.locks) : [],
       flip: r?.flip && flipped ? { pairs: r.flip.pairs, maxPairs: r.flip.maxPairs, perfect: r.flip.perfect, last: r.flip.last, poker, teamPoints: r.flip.teamPoints, steps: r.flip.order.length } : null,
       defence,
+      replay: replay ? { playerId: replay.playerId, line: replay.line, lit: replay.lit, note: replay.note } : null,
       story,
       me: mine,
     };

@@ -213,6 +213,59 @@ describe('Bento Haus hard roles: who is offered what', () => {
     expect(t.view().hard!.manager).toBe('p1');
   });
 
+  it('a declined deputy manager seat passes to the next N4 player in turn, each pass a new logged offer', () => {
+    const t = new Table(['n4', 'n5', 'n4', 'n4']);
+    t.toPrompt();
+    // Shift 1: p1 has the seat; p3 and p4 are offered おもてなし. p4 takes おもてなし first.
+    expect(t.play('p4', { kind: 'role', accept: true }).error).toBeUndefined();
+    expect(t.play('p1', { kind: 'role', accept: false }).error).toBeUndefined();
+    // The seat goes to p3 (next N4 in turn), replacing p3's unanswered おもてなし offer; p4 already has a role.
+    expect(t.view('p3').me!.hard?.offer).toEqual({ role: 'manager' });
+    expect(t.view('p1').me!.hard).toBeUndefined();
+    expect(t.st.hard!.offers.filter((o) => o.playerId === 'p3')).toEqual([{ round: 1, playerId: 'p3', role: 'manager', answer: null }]);
+    t.open();
+    expect(t.play('p3', { kind: 'role', accept: true }).error).toBeUndefined();
+    expect(t.view().hard!.manager).toBe('p3');
+    expect(t.view('p3').me!.hard).toMatchObject({ offer: null, role: 'manager' });
+    expect(t.st.hard!.offers.map((o) => [o.playerId, o.role, o.answer])).toEqual([
+      ['p1', 'manager', 'declined'],
+      ['p4', 'omotenashi', 'accepted'],
+      ['p3', 'manager', 'accepted'],
+    ]);
+    expect(offerStats(t.st.hard!.offers)).toMatchObject({ offered: 3, accepted: 2, declined: 1 });
+  });
+
+  it('when every N4 player declines the seat, it stays empty for the shift', () => {
+    const t = new Table(['n4', 'n5', 'n4']);
+    t.toPrompt();
+    t.play('p1', { kind: 'role', accept: false });
+    expect(t.view('p3').me!.hard?.offer).toEqual({ role: 'manager' });
+    t.play('p3', { kind: 'role', accept: false });
+    // Back round to p1, who already said no: nobody else is asked.
+    expect(t.view('p1').me!.hard).toBeUndefined();
+    expect(t.view('p3').me!.hard).toBeUndefined();
+    expect(t.st.hard!.offers.map((o) => [o.playerId, o.role, o.answer])).toEqual([
+      ['p1', 'manager', 'declined'],
+      ['p3', 'manager', 'declined'],
+    ]);
+    t.open();
+    expect(t.view().hard!.manager).toBeNull();
+    // The next shift starts fresh: p3's turn for the seat, p1 offered おもてなし.
+    t.timeout();
+    t.timeout();
+    expect(t.s.phase).toBe('prompt');
+    expect(t.view('p3').me!.hard?.offer).toEqual({ role: 'manager' });
+    expect(t.view('p1').me!.hard?.offer).toEqual({ role: 'omotenashi' });
+  });
+
+  it('a lone N4 player declining the seat leaves it empty', () => {
+    const t = new Table(['n4', 'n5']);
+    t.toPrompt();
+    t.play('p1', { kind: 'role', accept: false });
+    expect(t.st.hard!.offers).toHaveLength(1);
+    expect(t.view('p1').me!.hard).toBeUndefined();
+  });
+
   it('an offer still open at closing time is a timeout, counted against the rate', () => {
     const t = new Table(['n4', 'n5', 'n4']);
     t.toPrompt();

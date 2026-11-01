@@ -14,6 +14,9 @@ export interface DefenceScript {
   frame: JpText;
   /** Whole model lines (a ready reason in the frame), to read out. */
   lines: JpText[];
+  /** Each model line's reason (before 、), in the same order, and the second half: for the replay's gist. */
+  reasons: JpText[];
+  tail: JpText;
   /** The N4 frames it practises (by name: see shared/src/japanese/frames.ts). */
   frames: readonly string[];
   status: ReviewStatus;
@@ -92,8 +95,9 @@ export function defenceScript(round: { unit: TimeSet['unit'] } | { theme: Pick<F
   const spot = spotOf(position, length);
   const t = tail(spot, before);
   const frame: JpText = { text: `＿ので、${t.text}`, kana: `＿ので、${t.kana}`, en: `Because ＿, ${t.en}.` };
-  const lines = reasons(round, spot, before).map((r) => ({ text: `${r.text}、${t.text}`, kana: `${r.kana}、${t.kana}`, en: `${cap(r.en)}, so ${t.en}.` }));
-  return { spot, frame, lines, frames: ['node'], status: 'draft' };
+  const why = reasons(round, spot, before);
+  const lines = why.map((r) => ({ text: `${r.text}、${t.text}`, kana: `${r.kana}、${t.kana}`, en: `${cap(r.en)}, so ${t.en}.` }));
+  return { spot, frame, lines, reasons: why, tail: t, frames: ['node'], status: 'draft' };
 }
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);

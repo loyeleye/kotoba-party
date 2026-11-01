@@ -28,6 +28,7 @@ import {
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { addReadings, createReader, type Reader } from '../server/src/reading.js';
+import { bankVoice } from '../server/src/host.js';
 import { Bot, Director } from '../tools/bots/bot.js';
 import { labelValue, narabetePolicy } from '../tools/bots/policies/narabete.js';
 import { content as REAL_CONTENT, hashView, startServer, until } from './helpers.js';
@@ -551,6 +552,9 @@ describe('Narabete!: the N4 defence in a game', () => {
     expect(t.view('p1').me!.defending).toBe(false);
     expect(t.play('p1', { kind: 'defend', pass: true }).error).toBe('not-yours');
     expect(t.play('p2', { kind: 'defend', utterance: speech(me.hard!.script!.lines[0]!.kana) }).error).toBeUndefined();
+    // It landed: the commentary booth's replay, then the flip.
+    expect(t.r.encore).toBe('replay');
+    t.timeout();
     expect(t.s.phase).toBe('score');
     expect(t.r.hard).toMatchObject({ ok: true, framed: true, answer: 'accepted' });
     // Everyone said their card from memory: the N4 defender gets the defence share on top, nobody else changes.
@@ -670,6 +674,8 @@ describe('Narabete!: the N4 defence in a game', () => {
     expect(t.r.encore).toBe('hard');
     expect(t.view('p3').me!.defending).toBe(true);
     expect(t.play('p3', { kind: 'defend', utterance: speech('ちょっとだけ くさいので、これが いちばん さきです') }).error).toBeUndefined();
+    expect(t.r.encore).toBe('replay');
+    t.timeout();
     expect(t.s.phase).toBe('score');
     expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
     expect(t.r.flip!.bonus.p1!).toBe(t.r.flip!.bonus.p3!);
@@ -710,6 +716,95 @@ describe('Narabete!: the N4 defence in a game', () => {
     expect(t.s.phase).toBe('encore');
     expect(t.r.encore).toBe('defence');
     expect(t.r.hard?.answer).toBe('timeout');
+  });
+});
+
+describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
+  /** A Time Line with a Kana, an N4 and an N5 player, to the N4 defence's encore. */
+  function toDefence(): Table {
+    const t = new Table(3, ['kana', 'n4', 'n5']);
+    t.start();
+    t.sayAll();
+    t.play('p2', { kind: 'hard', accept: true });
+    t.sortLine();
+    t.lockAll();
+    expect(t.r.encore).toBe('hard');
+    return t;
+  }
+  const replays = (t: Table) => t.s.cues.filter((c) => c.event === 'narabete_replay');
+
+  it('once the ので line lands: the host says it on the TV with the ので lit, and Kana/N5 phones get the gist', () => {
+    const t = toDefence();
+    const model = t.view('p2').me!.hard!.script!.lines[0]!;
+    t.now += 3_000;
+    t.play('p2', { kind: 'defend', utterance: speech(model.kana) });
+    expect(t.s.phase).toBe('encore');
+    expect(t.r.encore).toBe('replay');
+    // Within the 15 s encore: said 3 s in, the replay gets its 7 s.
+    expect(t.s.deadline! - t.now).toBe(7_000);
+    // Nobiko-san says the model line herself, once, with its subtitle; the defence stays on the TV too.
+    expect(replays(t)).toHaveLength(1);
+    expect(replays(t)[0]).toMatchObject({ host: 'nobiko', slots: { line: model.text, line_en: model.en } });
+    const tv = t.view();
+    expect(tv.defence).toMatchObject({ playerId: 'p2', n4: true, done: true });
+    expect(tv.replay).toMatchObject({ playerId: 'p2', line: { text: model.text } });
+    expect(tv.replay!.lit.node).toBe('ので');
+    expect(tv.replay!.lit.before + 'ので' + tv.replay!.lit.after).toBe(model.text);
+    expect(tv.replay!.note).toBe('ので = because: P2 gave the reason first, then where the card goes.');
+    // Kana: the line in kana with romaji and English, and the card's picture. N5: the same without romaji.
+    const kana = t.view('p1').me!.gist!;
+    expect(kana).toMatchObject({ name: 'P2', kana: model.kana });
+    expect(kana.romaji).toBeTruthy();
+    expect(kana.en).toMatch(/^P2: this one (comes first|goes last|goes after P\d’?'?s), because /);
+    expect(kana.picture ?? kana.emoji).toBeTruthy();
+    const n5 = t.view('p3').me!.gist!;
+    expect(n5).toMatchObject({ name: 'P2', kana: model.kana, en: kana.en });
+    expect(n5.romaji).toBeUndefined();
+    // Not for the defender, and never a correction.
+    expect(t.view('p2').me!.gist).toBeNull();
+    expect(JSON.stringify([tv.replay, kana, n5])).not.toMatch(/wrong|mistake|should|correct/i);
+    // Then the flip, with no second replay.
+    t.timeout();
+    expect(t.s.phase).toBe('score');
+    expect(t.view().replay).toBeNull();
+    expect(t.view('p1').me!.gist).toBeNull();
+    expect(replays(t)).toHaveLength(1);
+  });
+
+  it('said late, the replay runs at most 5 s past the encore', () => {
+    const t = toDefence();
+    t.now += 13_000;
+    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[1]!.kana) });
+    expect(t.r.encore).toBe('replay');
+    expect(t.s.deadline! - t.now).toBe(5_000);
+  });
+
+  it('their own ので line is replayed and voiced from its kana reading', async () => {
+    const t = toDefence();
+    t.play('p2', { kind: 'defend', utterance: speech('ぼくの すきな じかん なので、ここです') });
+    expect(t.r.encore).toBe('replay');
+    expect(replays(t)).toHaveLength(1);
+    expect(replays(t)[0]!.slots).toMatchObject({ line: 'ぼくの すきな じかん なので、ここです。', line_kana: normalizeReading('ぼくの すきな じかん なので、ここです') });
+    expect(t.view().replay!.lit).toEqual({ before: 'ぼくの すきな じかん な', node: 'ので', after: '、ここです。' });
+    expect(t.view('p3').me!.gist!.en).toMatch(/^P2: this one .*, and said why \(ので = because\)\.$/);
+    // The bank's replay line is the slot as is: text, voiced kana and subtitle.
+    const said = await bankVoice(REAL_CONTENT, () => 0).speak('ROOM', replays(t)[0]!);
+    expect(said).toMatchObject({ text: 'ぼくの すきな じかん なので、ここです。', kana: normalizeReading('ぼくの すきな じかん なので、ここです') });
+    expect(said!.en).toBe('P2 gives the reason first, with ので (because).');
+  });
+
+  it('no replay and no cue unless it landed: passed, typed, or said without ので', () => {
+    for (const move of [
+      { kind: 'defend', pass: true },
+      { kind: 'defend', utterance: typed('はやいので、これが いちばん さきです') },
+      { kind: 'defend', utterance: speech('ここが いいと おもいます') },
+    ]) {
+      const t = toDefence();
+      t.play('p2', move);
+      expect(t.s.phase).toBe('score');
+      expect(replays(t)).toHaveLength(0);
+      expect(t.r.replay ?? null).toBeNull();
+    }
   });
 });
 

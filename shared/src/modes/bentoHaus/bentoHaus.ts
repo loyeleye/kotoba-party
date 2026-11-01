@@ -1085,7 +1085,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     // A hard-role offer can be answered from the shift's title card on.
     if (isObject(raw) && raw.kind === 'role' && r && (phase === 'prompt' || phase === 'answer')) {
       if (!s.hard || !r.hard || typeof raw.accept !== 'boolean') return moveError('bad-move');
-      return answerOffer(s.hard, r.hard, r.index, playerId, raw.accept) ? MOVE_OK : moveError('not-allowed');
+      return answerOffer(s.hard, r.hard, r.index, playerId, raw.accept, ctx.players()) ? MOVE_OK : moveError('not-allowed');
     }
     if (!r || phase !== 'answer' || !r.started) return moveError('wrong-phase');
     if (!isObject(raw)) return moveError('bad-move');
