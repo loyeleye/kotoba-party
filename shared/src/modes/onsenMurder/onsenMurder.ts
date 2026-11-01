@@ -830,6 +830,10 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
     return moveError('bad-move');
   },
 
+  offers(s, playerId) {
+    return s.deputyLog.filter((o) => o.playerId === playerId).map((o) => ({ role: 'onsen-murder:deputy', answer: o.outcome }));
+  },
+
   progress(s) {
     return { round: Math.min(s.turnNo, s.totalTurns), totalRounds: s.totalTurns };
   },
