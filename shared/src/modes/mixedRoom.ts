@@ -60,10 +60,19 @@ export interface Gallery {
  * Distractors for a curveball: words from the pool that aren't the key word and don't contain it, in a stable
  * order picked by `seed` (so a replay of a game is the same).
  */
-function distractors(word: string, pool: readonly string[], seed: number): string[] {
-  const other = [...new Set(pool)].filter((w) => w !== word && !w.includes(word) && !word.includes(w));
+function distractors(word: string, pool: readonly string[], seed: number, heard = ''): string[] {
+  const flat = (w: string) => w.replace(/[\s　]/g, '');
+  const h = flat(heard);
+  const k = flat(word);
+  // Never a word the line also contains (it was heard too), and options of about the same length.
+  const other = [...new Set(pool)].filter((w) => {
+    const f = flat(w);
+    return f !== k && !f.includes(k) && !k.includes(f) && !h.includes(f) && !h.includes(f.slice(0, 4));
+  });
+  const near = other.filter((w) => Math.abs(flat(w).length - k.length) <= 2);
+  const from = near.length >= 2 ? near : other;
   const out: string[] = [];
-  for (let i = 0; out.length < 2 && i < other.length; i++) out.push(other[(seed + i * 7) % other.length]!);
+  for (let i = 0; out.length < 2 && i < from.length; i++) out.push(from[(seed + i * 7) % from.length]!);
   return [...new Set(out)];
 }
 
@@ -78,7 +87,7 @@ export const KEY_WORDS: readonly string[] = ['ので', 'のに', 'から', 'け�
 export function openGallery(
   others: readonly string[],
   kanaOrN5: readonly string[],
-  key: { word: string; pool?: readonly string[] } | null,
+  key: { word: string; pool?: readonly string[]; heard?: string } | null,
   curveballUsed: boolean,
   seed: number,
 ): Gallery {
@@ -86,7 +95,7 @@ export function openGallery(
   const target = !curveballUsed && key && low.length ? low[Math.abs(seed) % low.length] : undefined;
   let curveball: Curveball | null = null;
   if (target && key) {
-    const wrong = distractors(key.word, key.pool ?? KEY_WORDS, seed);
+    const wrong = distractors(key.word, key.pool ?? KEY_WORDS, seed, key.heard);
     if (wrong.length === 2) {
       const all = [key.word, ...wrong];
       const order = all.map((_, i) => all[(i + seed) % all.length]!);
@@ -101,7 +110,7 @@ export function openGallery(
  * player who hasn't reacted yet gets it in place of their reaction tile, picked by `seed`. True when dealt, so the
  * game can mark its curveball used. A line that never lands deals none.
  */
-export function armCurveball(g: Gallery | null | undefined, kanaOrN5: readonly string[], key: { word: string; pool?: readonly string[] } | null, used: boolean, seed: number): boolean {
+export function armCurveball(g: Gallery | null | undefined, kanaOrN5: readonly string[], key: { word: string; pool?: readonly string[]; heard?: string } | null, used: boolean, seed: number): boolean {
   if (!g || used || !key || g.curveball) return false;
   const free = g.players.filter((p) => kanaOrN5.includes(p) && !g.picks[p]);
   if (!free.length) return false;

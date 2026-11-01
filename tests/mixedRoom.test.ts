@@ -34,6 +34,17 @@ describe('Gallery', () => {
   });
 });
 
+describe('curveball distractors', () => {
+  it('never offers a word the line also contained', () => {
+    for (let seed = 0; seed < 12; seed++) {
+      const g = openGallery(['b'], ['b'], { word: 'ので', pool: ['のに', 'から', 'けど', 'まで'], heard: 'あるいたけど、つかれたので、やすみました' }, false, seed);
+      expect(g.curveball!.options.map((o) => o.kana)).not.toContain('けど');
+      const o = openGallery(['b'], ['b'], { word: 'ございます', heard: 'ありがとうございました' }, false, seed);
+      expect(o.curveball?.options.some((x) => x.kana === 'ございます' && x.correct)).toBe(true);
+    }
+  });
+});
+
 describe('armCurveball', () => {
   it('deals once the line lands, to a Kana or N5 player who has not reacted', () => {
     const g = openGallery(['a', 'b', 'c'], ['b', 'c'], null, false, 0);
