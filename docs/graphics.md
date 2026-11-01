@@ -79,6 +79,22 @@ The phone's award line uses the existing `icons/trophy.png`. Generations: 15 pla
 and 26 wasted on a filter typo that matched every existing icon (written to a scratch folder, nothing
 replaced).
 
+## Read the Signs boards
+
+Ladi asked for a PixelLab pixel-art restyle of Last Train's station signs on 2026-11-01, after the art panel
+review of PR #128. Three text-only `pixflux` drawings (two tries each, the better one kept; prompts in the
+manifest) are the raws in `tools/art/sources/signs/`; `tools/art/sources/signs.py` makes the shipped files.
+
+| File | Size | What |
+| --- | --- | --- |
+| `stage/assets/signs/sign-board.png`, `-exit`, `-men`, `-women` | 258×120 (86×40 art px, ×3) | The casing with rivets. The script paints out the two middle rivets so the edges can stretch, and recolours the face (dark navy, exit yellow, toilet blue and red) keeping PixelLab's shading. CSS nine-slices it: `border-image: … 42 fill / 28px / 0 round`, so 14 art px per side at 2 CSS px each, and the board fits any width |
+| `stage/assets/signs/sign-arrow.png` | 84×72 (×4) | The arrow's white fill only, turned to point left (pixflux drew it pointing up). Used as a CSS `mask`, so it takes the sign's text colour; right and up are the same mask turned |
+| `stage/assets/signs/sign-hanger.png` | 18×42 (×3) | The ceiling rod drawn twice above each full-size board (`::before`/`::after`); the small TV reveal copies have none |
+
+The kanji stay in Noto Sans JP Bold, not a pixel font: learners are reading the shapes, and a 16-px bitmap
+kanji font would squash 駅 or 乗換. Real station signs are a gothic face too. The face colours match the
+old flat boards, so contrast is unchanged (white on the blue and red faces, dark brown on yellow).
+
 ## Animation
 
 Thirty-three sprite sheets in `stage/assets/anim/` (art panel, 26 Oct 2026; thinking and shocked added 28 Oct). Each is one row of square

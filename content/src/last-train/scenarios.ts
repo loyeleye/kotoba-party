@@ -23,10 +23,10 @@ export const lastTrainScenarios: LastTrainScenario[] = [
         announcement: { text: '次は旅館前。「りょかん？」「りょうかい！」', kana: 'つぎはりょかんまえ。「りょかん？」「りょうかい！」', en: 'Next: Ryokan-mae. "Ryokan?" "Roger that!" (ryōkai)', furigana: [['次', 'つぎ'], ['は', ''], ['旅館前', 'りょかんまえ'], ['。「りょかん？」「りょうかい！」', '']] },
       },
       {
-        id: 'chochin-line.shoutengai',
-        name: { text: '商店街', kana: 'しょうてんがい', en: 'Shōtengai', furigana: [['商店街', 'しょうてんがい']] },
-        minigameId: 'konbini-math',
-        announcement: { text: '次は商店街。カレーは……かれえ！', kana: 'つぎはしょうてんがい。カレーは……かれえ！', en: 'Next: Shopping Street. The curry (karē) is... spicy (karē)!', furigana: [['次', 'つぎ'], ['は', ''], ['商店街', 'しょうてんがい'], ['。カレーは……かれえ！', '']] },
+        id: 'chochin-line.annaijo',
+        name: { text: '案内所', kana: 'あんないじょ', en: 'Annaijo', furigana: [['案内所', 'あんないじょ']] },
+        minigameId: 'read-the-signs',
+        announcement: { text: '次は案内所。案内、だいじょうぶ？', kana: 'つぎはあんないじょ。あんない、だいじょうぶ？', en: 'Next: the Information Desk (annai-jo). Can you read the signs? Dai-jo-bu!', furigana: [['次', 'つぎ'], ['は', ''], ['案内所', 'あんないじょ'], ['。', ''], ['案内', 'あんない'], ['、だいじょうぶ？', '']] },
       },
       {
         id: 'chochin-line.onsen-guchi',
@@ -168,7 +168,7 @@ export const lastTrainScenarios: LastTrainScenario[] = [
         id: 'obake-line.kitaguchi',
         name: { text: '北口', kana: 'きたぐち', en: 'Kitaguchi', furigana: [['北口', 'きたぐち']] },
         minigameId: 'read-the-signs',
-        announcement: { text: '次は北口。看板クイズ、きた、きた！', kana: 'つぎはきたぐち。かんばんクイズ、きた、きた！', en: 'Next: Kitaguchi. Here comes (kita, kita) the sign quiz!', furigana: [['次', 'つぎ'], ['は', ''], ['北口', 'きたぐち'], ['。', ''], ['看板', 'かんばん'], ['クイズ、きた、きた！', '']] },
+        announcement: { text: '次は北口。案内クイズ、きた、きた！', kana: 'つぎはきたぐち。あんないクイズ、きた、きた！', en: 'Next: Kitaguchi. Here comes (kita, kita) the sign quiz!', furigana: [['次', 'つぎ'], ['は', ''], ['北口', 'きたぐち'], ['。', ''], ['案内', 'あんない'], ['クイズ、きた、きた！', '']] },
       },
       {
         id: 'obake-line.tsukimidai',
