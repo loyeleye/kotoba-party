@@ -14,6 +14,11 @@
 //                   logged as a retry, as a stumble or a peek at the hint would be
 //   --rooms         rooms simulated (500); --library games played per mode to sample from (12)
 //   --max           nights before a room gives up (60)
+//   --goals         the goal set to time together (default: the goals half the rooms or more stamp), e.g.
+//                   4.1,4.4,4.5,4.9 to compare runs on the same set
+//   --reviews       phone review sittings between one game night and the next (0). A sitting reviews the due
+//                   phrases (up to 12) and the player knows each with the --memory chance; a known review is a
+//                   say from memory, as on the phone, so it counts toward a frame's says, fillers and spacing.
 // A room is 4 players: 2 N4 and 2 N5, everyone speaking. Re-checks (21 and 60 days) don't affect a stamp,
 // so phone reviews aren't simulated.
 //
@@ -26,7 +31,7 @@ import type { Level } from '../../content/src/types.js';
 import { loadContent } from '../../server/src/content.js';
 import { GOALS, markPath, pathStatus, suggest, type Goal } from '../../shared/src/path.js';
 import type { ModeId } from '../../shared/src/protocol.js';
-import { addGame, DAY_MS, emptyProgress, phraseFrames, type GameResult, type Progress } from '../../shared/src/progress.js';
+import { addGame, DAY_MS, duePhrases, emptyProgress, phraseFrames, reviewPhrase, type GameResult, type Progress } from '../../shared/src/progress.js';
 import { mulberry, playGame } from './play.js';
 
 const { values } = parseArgs({
@@ -38,6 +43,8 @@ const { values } = parseArgs({
     follow: { type: 'string', default: '0.6' },
     memory: { type: 'string', default: '0.7' },
     max: { type: 'string', default: '60' },
+    reviews: { type: 'string', default: '0' },
+    goals: { type: 'string' },
     seed: { type: 'string', default: '1' },
     json: { type: 'string' },
   },
@@ -51,13 +58,19 @@ export interface SimOptions {
   follow: number;
   memory: number;
   max: number;
+  /** Phone review sittings between one game night and the next. */
+  reviews: number;
+  /** Goals to time together; empty: the ones half the rooms or more stamp. */
+  goals?: readonly string[];
   seed: number;
 }
 
 const LEVELS: Level[] = ['n4', 'n4', 'n5', 'n5'];
 const ROOM = { players: LEVELS.length, speakers: LEVELS.length };
 const EXPRESS: readonly Goal[] = GOALS.filter((g) => g.line === 'express');
-const MODES_ON_LINE: ModeId[] = [...new Set(EXPRESS.filter((g) => !g.gap).flatMap((g) => g.games))];
+/** The games a room plays: every game on an Express goal (4.7's too, though it isn't counted yet), and Late
+ *  Again!, which the plan puts on 4.2, 4.3, 4.11 and 4.13 but the path doesn't list yet. */
+const MODES_ON_LINE: ModeId[] = [...new Set([...EXPRESS.flatMap((g) => g.games), 'late-again' as ModeId])];
 
 /** Every N4 seat's result from `n` real games of each mode. */
 export function buildLibrary(n: number, seed: number): Map<ModeId, GameResult[]> {
@@ -112,13 +125,21 @@ export function runRoom(lib: Map<ModeId, GameResult[]>, o: SimOptions, roomSeed:
       addGame(p, asSaid(pool[Math.floor(random() * pool.length)]!, at, o.memory, random), 0);
       for (const id of markPath(p, at)) if (EXPRESS.some((x) => x.id === id)) stamped[id] ??= night;
     }
+    // Review sittings in the mornings after the night, spread until the next one.
+    for (let k = 0; k < o.reviews; k++) {
+      const at = nightAt + (1 + Math.floor((k * o.nightsEvery) / o.reviews)) * DAY_MS - 11 * 3_600_000;
+      for (const c of duePhrases(p, at)) reviewPhrase(p, c.itemId, random() < o.memory, at);
+      for (const id of markPath(p, at)) if (EXPRESS.some((x) => x.id === id)) stamped[id] ??= night;
+    }
     if (pathStatus(p, nightAt + DAY_MS / 2).lines.find((l) => l.id === 'express')!.cleared) cleared = night;
   }
   return { stamped, cleared, played };
 }
 
+/** A quartile over every room. A room that never got there counts as Infinity, so a quartile it decides
+ *  reads "more than the cap"; null when no room got there. */
 const pct = (xs: number[], q: number): number | null => {
-  if (!xs.length) return null;
+  if (!xs.some(Number.isFinite)) return null;
   const s = [...xs].sort((a, b) => a - b);
   return s[Math.min(s.length - 1, Math.floor(q * s.length))]!;
 };
@@ -141,12 +162,13 @@ export function simulate(o: SimOptions): SimReport {
   const st = pathStatus({ ...emptyProgress(), path: true }, Date.UTC(2026, 0, 1));
   const counted = new Set(st.goals.filter((g) => !g.hidden && g.ready).map((g) => g.id));
   const goals = EXPRESS.map((g) => {
-    const nights = runs.map((r) => r.stamped[g.id]).filter((n): n is number => n !== undefined);
-    return { id: g.id, title: g.title, counted: counted.has(g.id), share: nights.length / runs.length, p25: pct(nights, 0.25), median: pct(nights, 0.5), p75: pct(nights, 0.75) };
+    const nights = runs.map((r) => r.stamped[g.id] ?? Infinity);
+    const share = nights.filter(Number.isFinite).length / runs.length;
+    return { id: g.id, title: g.title, counted: counted.has(g.id), share, p25: pct(nights, 0.25), median: pct(nights, 0.5), p75: pct(nights, 0.75) };
   });
-  const clears = runs.map((r) => r.cleared).filter((n): n is number => n !== null);
-  const reach = goals.filter((g) => g.counted && g.share >= 0.5).map((g) => g.id);
-  const allReached = runs.map((r) => (reach.every((id) => r.stamped[id] !== undefined) ? Math.max(...reach.map((id) => r.stamped[id]!)) : null)).filter((n): n is number => n !== null);
+  const clears = runs.map((r) => r.cleared ?? Infinity);
+  const reach = o.goals?.length ? [...o.goals] : goals.filter((g) => g.counted && g.share >= 0.5).map((g) => g.id);
+  const allReached = runs.map((r) => (reach.every((id) => r.stamped[id] !== undefined) ? Math.max(...reach.map((id) => r.stamped[id]!)) : Infinity));
   const expressFrames = new Set(EXPRESS.flatMap((g) => [...g.need.flatMap((n) => (typeof n === 'string' ? [n] : [...n])), ...g.also]));
   const yields = MODES_ON_LINE.map((mode) => {
     const games = lib.get(mode)!;
@@ -164,20 +186,28 @@ export function simulate(o: SimOptions): SimReport {
   return {
     options: o,
     goals,
-    line: { share: clears.length / runs.length, p25: pct(clears, 0.25), median: pct(clears, 0.5), p75: pct(clears, 0.75) },
-    reachable: { goals: reach, share: allReached.length / runs.length, p25: pct(allReached, 0.25), median: pct(allReached, 0.5), p75: pct(allReached, 0.75) },
+    line: { share: clears.filter(Number.isFinite).length / runs.length, p25: pct(clears, 0.25), median: pct(clears, 0.5), p75: pct(clears, 0.75) },
+    reachable: { goals: reach, share: allReached.filter(Number.isFinite).length / runs.length, p25: pct(allReached, 0.25), median: pct(allReached, 0.5), p75: pct(allReached, 0.75) },
     yields,
   };
 }
 
+/** Quartiles for printing: a quartile no room reached reads ">cap"; under 10% of rooms, no pace at all. */
+const q3 = (x: { share: number; p25: number | null; median: number | null; p75: number | null }, cap: number): string => {
+  if (x.median === null && x.p25 === null) return '-';
+  if (x.share < 0.1) return 'too few rooms';
+  const f = (n: number | null) => (n === null || !Number.isFinite(n) ? `>${cap}` : String(n));
+  return `${f(x.p25)} / ${f(x.median)} / ${f(x.p75)}`;
+};
+
 function print(r: SimReport): void {
   const o = r.options;
-  console.log(`Express Line: ${o.rooms} rooms, a game night every ${o.nightsEvery} days, ${o.games} games a night, follow ${o.follow}, memory ${o.memory}, cap ${o.max} nights.\n`);
-  console.log('Goal                                   counted  stamped  nights p25 / median / p75');
-  for (const g of r.goals) console.log(`${`${g.id} ${g.title}`.padEnd(40)}${(g.counted ? 'yes' : 'no').padEnd(9)}${`${Math.round(g.share * 100)}%`.padEnd(9)}${g.median === null ? '-' : `${g.p25} / ${g.median} / ${g.p75}`}`);
-  console.log(`\nLine cleared in ${Math.round(r.line.share * 100)}% of rooms${r.line.median === null ? '' : `: nights ${r.line.p25} / ${r.line.median} / ${r.line.p75}`}.\n`);
+  console.log(`Express Line: ${o.rooms} rooms, a game night every ${o.nightsEvery} days, ${o.games} games a night, follow ${o.follow}, memory ${o.memory}, ${o.reviews} review sittings between nights, cap ${o.max} nights.\n`);
+  console.log('Goal                                   counted  stamped  nights p25 / median / p75 (over all rooms)');
+  for (const g of r.goals) console.log(`${`${g.id} ${g.title}`.padEnd(40)}${(g.counted ? 'yes' : 'no').padEnd(9)}${`${Math.round(g.share * 100)}%`.padEnd(9)}${q3(g, o.max)}`);
+  console.log(`\nLine cleared in ${Math.round(r.line.share * 100)}% of rooms${r.line.share === 0 ? '' : `: nights ${q3(r.line, o.max)}`}.\n`);
   const rc = r.reachable;
-  console.log(`Goals most rooms stamp (${rc.goals.join(', ')}): all of them in ${Math.round(rc.share * 100)}% of rooms${rc.median === null ? '' : `, nights ${rc.p25} / ${rc.median} / ${rc.p75}`}.\n`);
+  console.log(`${o.goals?.length ? 'Goals' : 'Goals most rooms stamp'} (${rc.goals.join(', ')}): all of them in ${Math.round(rc.share * 100)}% of rooms${rc.share === 0 ? '' : `, nights ${q3(rc, o.max)}`}.\n`);
   console.log('Express frames an N4 seat says from memory, per game:');
   for (const y of r.yields) console.log(`  ${y.mode.padEnd(14)} ${y.perGame.toFixed(1).padStart(4)}  ${Object.entries(y.frames).map(([k, v]) => `${k} ${v}`).join(', ')}`);
 }
@@ -191,6 +221,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     follow: Number(values.follow),
     memory: Number(values.memory),
     max: Number(values.max),
+    reviews: Number(values.reviews),
+    goals: values.goals ? values.goals.split(',') : undefined,
     seed: Number(values.seed),
   });
   print(report);
