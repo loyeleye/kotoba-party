@@ -16,6 +16,7 @@
 
 import type { ModeId, RoomView } from '../../shared/src/protocol.js';
 import { speaks } from './music/cues.js';
+import { serverNow } from './modes/dubAudio.js';
 import { calm } from './sprites.js';
 
 const W = 320;
@@ -36,15 +37,15 @@ const art: Record<string, HTMLImageElement> = {};
 const SETS: Partial<Record<ModeId, string>> = {
   'onsen-murder': 'onsen-inn',
   'karaoke-duel': 'karaoke-box',
-  // Ghost Advice Hotline: the karaoke box stands in for a late-night call-in booth until its own set is drawn.
-  'ghost-hotline': 'studio',
+  // Ghost Advice Hotline: Nobiko-san's late-night call-in booth (a mic, a rotary phone and the call light).
+  'ghost-hotline': 'hotline-booth',
   oogiri: 'comedy-stage',
   'phrase-bingo': 'comedy-stage',
   omiai: 'tea-room',
   // Yōkai Court: the tea room stands in for a courtroom until scenes/yokai-court.png is drawn.
   'yokai-court': 'tea-room',
 };
-for (const name of ['studio', ...new Set(Object.values(SETS)), 'page-a', 'page-b', 'page-c', 'train-carriage']) {
+for (const name of ['studio', ...new Set(Object.values(SETS)), 'page-a', 'page-b', 'page-c', 'train-carriage', 'hotline-bulb-off']) {
   const img = new Image();
   img.src = `${ASSET}${name}.png`;
   img.onload = () => draw();
@@ -91,6 +92,9 @@ let camAt = 0;
 let lastFrame = 0;
 let timer: ReturnType<typeof setTimeout> | null = null;
 const confetti: { x: number; y: number; vx: number; vy: number; c: string; w: number }[] = [];
+/** Ghost Hotline: when this call's phone started ringing (performance.now() time), and which ring that was. */
+let ringAt: number | null = null;
+let ringKey = '';
 let burstAt: number | null = null;
 let wasCalm = false;
 
@@ -115,6 +119,15 @@ export function updateBackdrop(next: RoomView): void {
   const changed = !view || next.phaseSeq !== view.phaseSeq;
   const prevPhase = view?.phase;
   view = next;
+  // A new call rings in Ghost Hotline: the booth's call light flashes with the phone (the ring is a step
+  // inside the prompt phase, so it doesn't count as a phase change).
+  const ring = hotlineRing(next);
+  if (ring && ring.key !== ringKey) {
+    ringKey = ring.key;
+    // Timed from when the server started the ring, so a TV that joins mid-ring doesn't replay it late.
+    ringAt = performance.now() - Math.max(0, serverNow() - ring.at);
+    if (!changed) return restart();
+  }
   // The VIP's Calm motion switch arrives with the view: start or stop the loop when it flips.
   if (calm() !== wasCalm) {
     wasCalm = calm();
@@ -240,6 +253,8 @@ function drawStudio(g: CanvasRenderingContext2D, mode: ModeId | null, effects: b
 /** A game with a place of its own: its set, and the one effect that belongs there. */
 function drawSet(g: CanvasRenderingContext2D, mode: ModeId, set: string, effects: boolean): void {
   if (ready(set)) g.drawImage(art[set]!, 0, 0);
+  // The call light is state, not an effect: dark between calls, lit while a caller is on the line.
+  if (mode === 'ghost-hotline') callLight(g, effects);
   if (!effects) return;
   if (set === 'comedy-stage') spotlights(g, 0.16);
   g.save();
@@ -293,6 +308,37 @@ function spotlights(g: CanvasRenderingContext2D, alpha: number): void {
   }
   g.restore();
   g.globalAlpha = 1;
+}
+
+type HotlineBits = { step?: string | null; stepAt?: number; call?: unknown } | null;
+
+/** Ghost Hotline's ringing call: its key (the server's ring time) and when it started (null outside the ring beat). */
+function hotlineRing(v: RoomView): { key: string; at: number } | null {
+  const game = v.game as HotlineBits;
+  return v.mode === 'ghost-hotline' && game?.step === 'ring' && game.stepAt ? { key: String(game.stepAt), at: game.stepAt } : null;
+}
+
+/** How long the call light flashes when a call rings in: three rings, one a second (as the caller's card). */
+const RING_FLASH_MS = 3_000;
+/** The call light's bulb, unlit, over the set's lit one (hotline-booth.png). */
+const BULB = { x: 272, y: 54 };
+
+/**
+ * Ghost Hotline's red call light over the phone (art panel, 1 Nov 2026): dark before the first call and
+ * between games, flashing once a second for the first 3 s of a call as the phone rings (in step with the
+ * lamp on the caller's card), then lit while the caller is on the line. The flash is a one-off signal like
+ * confetti, so it runs on the clock even while the room holds; calm motion and effects off show it lit and
+ * still. It sits at the right edge, outside the text area.
+ */
+function callLight(g: CanvasRenderingContext2D, effects: boolean): void {
+  if (!ready('hotline-bulb-off')) return;
+  const game = view?.game as HotlineBits;
+  let lit = !!game?.step && !!game.call;
+  if (lit && effects && !calm() && game?.step === 'ring' && ringAt !== null) {
+    const since = performance.now() - ringAt;
+    if (since < RING_FLASH_MS) lit = Math.floor(since / 500) % 2 === 0;
+  }
+  if (!lit) g.drawImage(art['hotline-bulb-off']!, BULB.x, BULB.y);
 }
 
 /** Karaoke: dots from a mirror ball, stepping across the side walls once a bar. */

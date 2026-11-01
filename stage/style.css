@@ -154,6 +154,15 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 /* Fixed rows, so a hidden host doesn't shift the play area into an auto row. */
 .bar { grid-row: 1; }
 .host { grid-row: 2; }
+/* A mode that keeps its host up (Ghost Hotline): the host, her bubble when she talks, and the mode's own
+   card at the right end, at one fixed height whether she is talking or not, so the beat below never
+   rescales or jumps (art panel, 1 Nov 2026). Everything is top-aligned, so the card ends above the set's call light. */
+.host.host-kept { grid-template-columns: auto minmax(0, 1fr) auto; height: 184px; align-items: start; }
+/* A slightly smaller voice, so her longest lines (three lines) still fit the fixed row. */
+.host.host-kept .host-jp { font-size: 34px; }
+.host.host-kept .host-en { font-size: 24px; }
+.host.host-kept > .host-bubble { grid-column: 2; align-self: start; }
+.host-side { grid-column: 3; align-self: start; display: flex; }
 /* Bento Haus shifts: Pon talks a lot, so his row keeps one height (shown or not) and the counter stays put. */
 body[data-mode^='bento-haus'][data-phase='answer'] .host { height: 150px; }
 body[data-mode^='bento-haus'][data-phase='answer'] .host[hidden] { display: grid; visibility: hidden; }
@@ -499,6 +508,6 @@ body.flying[data-phase='lobby'] .main { place-items: end center; }
 .gallery-bubbles { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
 .gallery-bubble.said { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
 .gallery-said { font-size: 0.7em; }
-.gallery-bubble { font-size: 26px; padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); animation: bubble-in 0.4s ease-out both; }
-@keyframes bubble-in { from { opacity: 0; transform: translateY(12px) scale(0.8); } }
+.gallery-bubble { font-size: 26px; padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); animation: gallery-bubble-in 0.4s ease-out both; }
+@keyframes gallery-bubble-in { from { opacity: 0; transform: translateY(12px) scale(0.8); } }
 @media (prefers-reduced-motion: reduce) { .booth-line mark, .gallery-bubble { animation: none; } }

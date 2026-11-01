@@ -691,10 +691,35 @@ function playHostAudio(say: HostSay & { audioUrl: string }): void {
 /** A host's line, with furigana over any kanji (はんじょう賞) when it can be worked out from the line's kana. */
 const hostJp = (say: HostSay): string | HTMLElement => (/\p{Script=Han}/u.test(say.text) && hasReading({ text: say.text, kana: say.kana }) ? ruby({ text: say.text, kana: say.kana }) : say.text);
 
+/** The mode's own end of the host row (Ghost Hotline's caller), patched in place each render. */
+const hostSide = h('div', { class: 'host-side' });
+
+/** Puts a new bubble in the host row, in the old one's place or before the mode's side slot. */
+function setBubble(bubble: HTMLElement): void {
+  const old = els.host.querySelector('.host-bubble');
+  if (old) old.replaceWith(bubble);
+  else if (hostSide.isConnected) els.host.insertBefore(bubble, hostSide);
+  else els.host.append(bubble);
+}
+
 function showHost(view: RoomView): void {
   const say = view.host;
-  els.host.hidden = !say;
-  if (!say) return;
+  const row = view.game ? (STAGE_MODES[view.game.mode].hostRow?.(view, view.game) ?? null) : null;
+  els.host.classList.toggle('host-kept', !!row);
+  if (row?.side) {
+    if (!hostSide.isConnected) els.host.append(hostSide);
+    patch(hostSide, row.side);
+  } else hostSide.remove();
+  els.host.hidden = !say && !row;
+  if (!say) {
+    if (!row) return;
+    // A quiet beat in a mode that keeps its host up: she stays and idles, with no bubble.
+    if (!hostSprite.el.isConnected) els.host.prepend(hostSprite.el);
+    if (hostSprite.current !== row.host) hostSprite.show(row.host);
+    els.host.querySelector('.host-bubble')?.remove();
+    lastHostKey = '';
+    return;
+  }
   const key = `${say.phaseSeq}:${say.text}`;
   if (key === lastHostKey) {
     // The line's audio, late: it plays if the browser hasn't started reading the line instead.
@@ -718,10 +743,7 @@ function showHost(view: RoomView): void {
       hostAudio?.pause();
       hostAudio = null;
       stopHostSpeech();
-      const wait = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, '…'));
-      const old = els.host.querySelector('.host-bubble');
-      if (old) old.replaceWith(wait);
-      else els.host.append(wait);
+      setBubble(h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, '…')));
     }
     return;
   }
@@ -730,9 +752,7 @@ function showHost(view: RoomView): void {
   if (!hostSprite.el.isConnected) els.host.prepend(hostSprite.el);
   hostSprite.show(say.host, say.mood);
   const bubble = h('div', { class: 'host-bubble' }, h('span', { class: 'host-name', lang: 'ja' }, HOST_NAMES[say.host] ?? say.host), h('span', { class: 'host-jp', lang: 'ja' }, hostJp(say)), say.en && say.en !== say.text ? h('span', { class: 'host-en' }, say.en) : null); // a line read out as is (Pon reading for the introducer) has no translation to show
-  const old = els.host.querySelector('.host-bubble');
-  if (old) old.replaceWith(bubble);
-  else els.host.append(bubble);
+  setBubble(bubble);
   // A new line cuts off the last one, so two never talk over each other.
   hostAudio?.pause();
   hostAudio = null;
