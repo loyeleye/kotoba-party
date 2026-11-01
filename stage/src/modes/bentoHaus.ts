@@ -127,7 +127,7 @@ function standIn(game: BentoView): HTMLElement | null {
   return h(
     'div',
     { class: 'bh-standin', 'data-key': 'standin' },
-    h('p', { class: 'bh-desk-tag', lang: 'ja' }, '📋 ふくてんちょう: ポン', h('small', {}, ' Pon stands in as deputy manager')),
+    h('p', { class: 'bh-desk-tag', lang: 'ja' }, '📋 ふくてんちょう: ポン', h('small', {}, ' Pon disguises himself as the deputy manager. ドロン！')),
     h('p', { class: 'bh-bubble', lang: 'ja' }, si.ask.text, h('small', {}, si.ask.en)),
     boothStrip(si, 'Pon'),
   );
@@ -285,7 +285,7 @@ function kitchen(view: RoomView, game: BentoView): HTMLElement {
     ),
     counter(view, game, now),
     game.hard?.desk.length ? h('div', { class: 'bh-desks' }, game.hard.desk.slice(-1).map((d) => desk(view, d))) : null,
-    game.hard?.booth ? h('div', { class: 'bh-booth', 'data-key': 'booth' }, boothStrip(game.hard.booth, playerOf(view, game.hard.booth.playerId)?.name ?? null)) : null,
+    game.hard?.booth ? h('div', { class: 'bh-booth', 'data-key': 'booth' }, boothStrip(game.hard.booth, playerOf(view, game.hard.booth.playerId)?.name ?? null, game.hard.booth.holdKey)) : null,
     game.hard?.gallery.length ? galleryBubbles(game.hard.gallery) : null,
     game.ajimi
       ? h(

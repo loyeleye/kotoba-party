@@ -20,7 +20,7 @@
 import type { Level, ReviewStatus } from '../../../../content/src/types.js';
 import { nextOfferee, offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
 import { normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
-import { commentaryMs, galleryBubbles, galleryTileFor, gistFor, lightUp, openGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, keyHeld, lightUp, openGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
 import type { ModeContext, ModePlayer } from '../mode.js';
 import type { Round, Visit } from './bentoHaus.js';
 import { countWord, customerOf, foodOf, KANJI_SPELLINGS, type JpLine } from './menu.js';
@@ -126,6 +126,16 @@ export const SPECIALS: readonly SpecialScript[] = [
     ],
   },
   {
+    id: 'ice',
+    status: 'draft',
+    customers: ['yukionna'],
+    ask: { text: 'こおりを いっぱい いれて ください。', en: 'Lots of ice in it, please.' },
+    steps: [
+      SURE,
+      { to: 'kitchen', check: 'kitchen', keys: ['こおり'], model: L('こおりを いれて もらえますか。', 'Could you put some ice in?', ['te-moraeru']) },
+    ],
+  },
+  {
     // The one request the shop can't meet: sorry, and a polite ask for something else.
     id: 'dream',
     status: 'draft',
@@ -150,7 +160,7 @@ export function complaintSteps(off: { foodId: string; how: 'missing' | 'few' | '
           keys: [f.kana],
           model: L(`${f.kana}を もう ${countWord(f, Math.max(1, short), own)} つくって もらえますか。`, `Could you make ${Math.max(1, short)} more ${f.en}?`, ['te-moraeru']),
         }
-      : { to: 'kitchen', check: 'kitchen', keys: ['つくりなお'], model: L('おべんとうを つくりなおして もらえますか。', 'Could you make the bento again?', ['te-moraeru']) };
+      : { to: 'kitchen', check: 'kitchen', keys: ['もういちど', 'つくりなお'], model: L('おべんとうを もう いちど つくって もらえますか。', 'Could you make the bento again?', ['te-moraeru']) };
   return [{ to: 'customer', check: 'sorry-ask', model: SORRY_WAIT, alt: SORRY_OMACHI }, fix];
 }
 
@@ -193,14 +203,14 @@ const READY = (text: string, en: string, ask: JpLine, id: string, reply: JpLine,
 
 /** What a guest asks the おもてなし order-taker, after they've been seated, and what they say back. */
 export const GUEST_ASKS: readonly GuestAsk[] = [
-  NO('おたばこ', 'smoking', { text: 'ここで たばこを すっても いいですか。', en: 'May I smoke here?' }, 'smoking', ['たばこ'], { text: 'あ、そうですか。わかりました。', en: 'Oh, I see. All right.' }, ['buchou']),
+  NO('おたばこ', 'smoking', { text: 'ここで たばこを すっても いいですか。', en: 'May I smoke here?' }, 'smoking', ['たばこ'], { text: 'はい… わたし、ぶちょう なのに…', en: "Yes… and I'm a section chief…" }, ['buchou']),
   READY('はい、おはしは よういして あります。', "Yes, chopsticks are ready for you.", { text: 'おはしは ありますか。', en: 'Are there chopsticks?' }, 'chopsticks', { text: 'よかった！　ありがとう。', en: 'Great! Thanks.' }),
   NO('おでんわ', 'phone calls', { text: 'みせの なかで でんわを しても いいですか。', en: 'May I make a phone call in the shop?' }, 'phone', ['でんわ'], { text: 'すみません。そとで かけます。', en: "Sorry. I'll call outside." }, ['zangyou']),
-  READY('はい、おしぼりも よういして あります。', 'Yes, a hand towel is ready too.', { text: 'おしぼりは ありますか。', en: 'Is there a hand towel?' }, 'oshibori', { text: 'ありがとう ございます。', en: 'Thank you.' }),
-  NO('ペット', 'pets', { text: 'ペットと いっしょに はいっても いいですか。', en: 'May I come in with my pet?' }, 'pet', ['ペット'], { text: 'わかりました。ごめんなさい。', en: 'All right. Sorry.' }),
-  READY('はい、おせきは よういして あります。', 'Yes, your seat is ready.', { text: 'よやくした ものですが…', en: 'I have a reservation…' }, 'booking', { text: 'わあ、ありがとう ございます！', en: 'Oh, thank you!' }),
-  NO('しゃしん', 'photos', { text: 'ほかの おきゃくさんの しゃしんを とっても いいですか。', en: 'May I take photos of the other customers?' }, 'photos', ['しゃしん'], { text: 'えー、ざんねん。', en: 'Aw, too bad.' }, ['influencer']),
-  READY('はい、つめたい おちゃも よういして あります。', 'Yes, cold tea is ready for you too.', { text: 'つめたい おちゃは ありますか。', en: 'Is there cold tea?' }, 'cold-tea', { text: 'わあ、うれしい！', en: "Oh, I'm so glad!" }, ['yukionna']),
+  READY('はい、おしぼりも よういして あります。', 'Yes, a hand towel is ready too.', { text: 'おしぼりは ありますか。', en: 'Is there a hand towel?' }, 'oshibori', { text: 'わあ、あったかい！　ありがとう ございます。', en: "Ooh, it's warm! Thank you." }),
+  NO('ペット', 'pets', { text: 'ペットと いっしょに はいっても いいですか。', en: 'May I come in with my pet?' }, 'pet', ['ペット'], { text: 'わかりました。ポチ、そとで まっててね。', en: 'All right. Pochi, wait outside, OK?' }),
+  READY('はい、おせきは よういして あります。', 'Yes, your seat is ready.', { text: 'よやくしたんですが…', en: 'I have a reservation…' }, 'booking', { text: 'わあ、ありがとう ございます！', en: 'Oh, thank you!' }),
+  NO('しゃしん', 'photos', { text: 'ほかの おきゃくさんの しゃしんを とっても いいですか。', en: 'May I take photos of the other customers?' }, 'photos', ['しゃしん'], { text: 'えー… じゃあ、じぶんの しゃしんを とります！', en: 'Aww… selfies, then!' }, ['influencer']),
+  READY('はい、つめたい おちゃも よういして あります。', 'Yes, cold tea is ready for you too.', { text: 'つめたい おちゃは ありますか。', en: 'Is there cold tea?' }, 'cold-tea', { text: 'わあ、つめたい！　だいすき！', en: 'Ooh, ice cold! I love it!' }, ['yukionna']),
   NO('おみせで ねるの', 'sleeping in the shop', { text: 'ここで ねても いいですか。', en: 'May I sleep here?' }, 'sleep', ['ねる'], { text: 'はーい… ねむいなあ。', en: 'Oka-ay… so sleepy.' }, ['baku', 'kodanuki']),
 ];
 
@@ -666,10 +676,10 @@ const CURVE_POOL = ['もらえますか', 'くれませんか', 'おねがいし
 
 /** The booth's colour line, one per kind of incident: about the play, never a slip. */
 function boothNote(inc: Incident, line: HardLine): string {
-  if (inc.scriptId === 'dream') return 'No dreams on the menu, so: sorry first, then a polite ask for something the shop can make.';
+  if (inc.scriptId === 'dream') return 'No dreams on the menu. Sorry first, then a polite ask for a rice ball. The baku can dream about it.';
   if (line.frames?.includes('o-kudasai')) return 'しょうしょう おまちください: the shop’s own polite “one moment, please”.';
-  if (inc.kind === 'complaint') return 'Sorry first, then a polite ask with いただけますか: that’s how a shop keeps a customer.';
-  return 'かしこまりました, then a polite ask with いただけますか: top-class service.';
+  if (inc.kind === 'complaint') return 'Sorry first, then a polite いただけますか. Customer kept, tips back, and Pon is still taste-testing.';
+  return 'かしこまりました, then a polite いただけますか. Pon is impressed, and a little worried for his job.';
 }
 
 /** The gist for Kana and N5 phones (draft, like the rest of the hard roles' Japanese). */
@@ -703,15 +713,11 @@ export function landed(h: HardState, hr: HardRound, inc: Incident, players: read
   hr.booth = booth;
   const others = players.filter((p) => p.connected && p.id !== inc.managerId);
   if (others.length) {
-    const flat = line.kana.replace(/\s/g, '');
-    const g = openGallery(
-      others.map((p) => p.id),
-      others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id),
-      lit.key ? { word: lit.key, pool: CURVE_POOL.filter((w) => !flat.includes(w)) } : null,
-      !!h.curveballUsed,
-      Math.floor(ctx.random() * 1000),
-    );
-    if (g.curveball) h.curveballUsed = true;
+    const low = others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id);
+    const seed = Math.floor(ctx.random() * 1000);
+    // The tiles open with the booth; the curveball is dealt once the line has landed (it just has).
+    const g = openGallery(others.map((p) => p.id), low, null, !!h.curveballUsed, seed);
+    if (armCurveball(g, low, lit.key ? { word: lit.key, pool: CURVE_POOL, heard: line.kana } : null, !!h.curveballUsed, seed)) h.curveballUsed = true;
     hr.gallery = { g, at: ctx.now, until: ctx.now + GALLERY_MS };
   }
   return booth;
@@ -730,8 +736,8 @@ export function standInBooth(at: number): Booth & { ask: JpLine } {
     line: { text: line.text, kana: line.kana, en: line.en },
     voiced: true,
     lit: lightUp(line.text, BOOTH_KEYS),
-    note: 'Pon plays the deputy manager tonight: かしこまりました, then a polite ask with いただけますか.',
-    gist: { kana: 'はい、わかりました。ちょっと まって ください。', en: '“Certainly! Please wait here a moment.”', emoji: '📋' },
+    note: 'Pon plays the deputy manager tonight (ドロン！): かしこまりました, then a polite いただけますか.',
+    gist: { kana: 'はい、わかりました。ここで ちょっと まって ください。', en: '“Certainly! Please wait here a moment.”', emoji: '📋' },
     ms: commentaryMs(line),
     at,
   };
@@ -868,7 +874,7 @@ export interface HardView {
   handled: { done: number; of: number };
   stars: { got: number; of: number };
   /** The commentary booth's instant replay of the deputy manager's line, while it runs. */
-  booth: { playerId: string | null; lit: Commentary['lit']; note: string } | null;
+  booth: { playerId: string | null; lit: Commentary['lit']; note: string; holdKey: boolean } | null;
   /** The Gallery's reactions so far, while its tiles are out. */
   gallery: ReactionTile[];
 }
@@ -947,7 +953,7 @@ export function hardView(hr: HardRound, r: Round, scoring: boolean, now: number)
     stars: { got, of },
     booth: (() => {
       const b = scoring ? null : boothLive(hr, now);
-      return b ? { playerId: b.playerId, lit: b.lit, note: b.note } : null;
+      return b ? { playerId: b.playerId, lit: b.lit, note: b.note, holdKey: keyHeld(galleryOpen(hr, now)) } : null;
     })(),
     gallery: (() => {
       const g = scoring ? null : galleryOpen(hr, now);

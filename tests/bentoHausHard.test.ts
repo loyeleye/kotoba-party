@@ -218,6 +218,14 @@ describe('Bento Haus hard roles: who is offered what', () => {
     expect(seat(3, [{ round: 1, playerId: 'a', role: 'manager', answer: 'accepted' }])).toBe('manager');
   });
 
+  it('a disconnected N4 player is never offered a role', () => {
+    const t = new Table(['n4', 'n5', 'n4']);
+    t.act({ type: 'connection', playerId: 'p1', connected: false });
+    t.toPrompt();
+    expect(t.st.hard!.offers.map((o) => [o.playerId, o.role])).toEqual([['p3', 'manager']]);
+    expect(t.view('p3').me!.hard?.offer).toEqual({ role: 'manager' });
+  });
+
   it('a room with no N4 player gets no hard-role state or view at all', () => {
     const t = new Table(['n5', 'kana']);
     t.toPrompt();
@@ -384,6 +392,13 @@ describe('Bento Haus hard roles: the manager', () => {
     t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech('すみません。'), peeked: true });
     t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech('もうしわけ ございません。すこし まって いただけますか。') });
     expect(t.s.phrasebook.p1!.at(-1)!.outcome).toBe('seen');
+  });
+
+  it('the yuki-onna asks for ice; the kitchen line names こおり', () => {
+    const ice = SPECIALS.find((x) => x.id === 'ice')!;
+    expect(ice.customers).toEqual(['yukionna']);
+    expect(ice.steps[1].keys).toEqual(['こおり']);
+    expect(checkLine(speech('こおりを いれて もらえますか'), ice.steps[1]).ok).toBe(true);
   });
 
   it('special orders come every few customers, and run out after a while', () => {
@@ -684,7 +699,8 @@ describe('Bento Haus mixed rooms: the booth and the Gallery', () => {
     expect(t.view('p2').me!.hard!.booth).toMatchObject({ romaji: null });
     expect(t.view('p3').me!.hard!.booth!.romaji).toBeTruthy();
     expect(t.view('p1').me!.hard!.booth).toBeNull();
-    // Tiles: the first Kana/N5 player gets the curveball, the other reacts; the deputy manager gets none.
+    // Tiles: a Kana/N5 player picked by the seed (here p2) gets the curveball, the other reacts; the deputy
+    // manager gets none.
     expect(t.view('p1').me!.hard!.gallery).toBeNull();
     expect(t.view('p2').me!.hard!.gallery!.kind).toBe('curveball');
     expect(t.view('p3').me!.hard!.gallery!.kind).toBe('react');
@@ -710,6 +726,44 @@ describe('Bento Haus mixed rooms: the booth and the Gallery', () => {
     expect(t.view().hard!.gallery).toEqual([]);
     expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBe('too-late');
     expect(GALLERY_MS).toBe(12_000);
+  });
+
+  it('the curveball is dealt only once the line has landed, never with a word the line contained', () => {
+    const t = seated(['n4', 'n5', 'kana']);
+    const { inc } = complain(t);
+    // The complaint is on the desk, nothing said yet: no tiles, no curveball.
+    expect(t.r.hard!.gallery ?? null).toBeNull();
+    expect(t.st.hard!.curveballUsed ?? false).toBe(false);
+    expect(t.view('p2').me!.hard?.gallery ?? null).toBeNull();
+    expect(t.view('p3').me!.hard?.gallery ?? null).toBeNull();
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech(SORRY_LINE) });
+    // Landed: exactly one curveball, and the game's is used.
+    const tiles = ['p2', 'p3'].map((id) => t.view(id).me!.hard!.gallery!.kind);
+    expect(tiles.filter((k) => k === 'curveball')).toHaveLength(1);
+    expect(t.st.hard!.curveballUsed).toBe(true);
+    const cb = t.r.hard!.gallery!.g.curveball!;
+    const flat = SORRY_LINE.replace(/[\s　]/g, '');
+    for (const o of cb.options) if (!o.correct) expect(flat.includes(o.kana)).toBe(false);
+    // The TV holds the key word back while the curveball is open, and lights it once it's answered.
+    expect(t.view().hard!.booth!.holdKey).toBe(true);
+    t.play(cb.playerId, { kind: 'gallery', pick: cb.word });
+    expect(t.view().hard!.booth!.holdKey).toBe(false);
+  });
+
+  it('a missed line deals no curveball; the game keeps it for a line that lands', () => {
+    const t = seated(['n4', 'n5']);
+    const a = complain(t).inc;
+    t.play('p1', { kind: 'manager', incidentId: a.id, skip: true });
+    expect(t.r.hard!.gallery ?? null).toBeNull();
+    expect(t.st.hard!.curveballUsed ?? false).toBe(false);
+    // Next shift, the line lands: the curveball comes then.
+    t.timeout();
+    t.timeout();
+    t.play('p1', { kind: 'role', accept: true });
+    t.open();
+    const b = complain(t).inc;
+    t.play('p1', { kind: 'manager', incidentId: b.id, utterance: speech(SORRY_LINE) });
+    expect(t.view('p2').me!.hard!.gallery!.kind).toBe('curveball');
   });
 
   it('once a shift, the curveball once a game; a wrong word scores nothing', () => {
@@ -761,15 +815,19 @@ describe('Bento Haus mixed rooms: the host stand-in', () => {
       { host: 'pon', event: 'bento_standin', slots: { line: si.line.text, line_kana: si.line.kana, line_en: si.line.en }, atMs: STAND_IN_AT_MS },
     ]);
     expect(si.line.text).toContain('いただけますか');
-    // Up a moment in, as Pon says it; ≤ 7 s, and inside the 8 s title card.
+    // Up 2.5 s in, once Pon's round call is done, and on the TV to the end of the 8 s title card.
+    expect(STAND_IN_AT_MS).toBe(2_500);
     expect('standIn' in t.view()).toBe(false);
     t.wake();
+    expect(t.now - (t.s.deadline! - 8_000)).toBe(STAND_IN_AT_MS);
     const tv = t.view().standIn!;
     expect(tv.lit.key).toBe('いただけますか');
     expect(tv.gist).toBeNull();
     expect(t.view('p1').standIn!.gist).toMatchObject({ romaji: null });
     expect(t.view('p2').standIn!.gist!.romaji).toBeTruthy();
     expect(si.ms).toBeLessThanOrEqual(7_000);
+    t.now = t.s.deadline! - 1;
+    expect('standIn' in t.view()).toBe(true);
     // No one is asked to say anything, no points, no hard-role state; and it's once a game.
     expect(t.st.hard).toBeUndefined();
     t.open();

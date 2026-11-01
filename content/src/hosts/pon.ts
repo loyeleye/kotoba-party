@@ -316,7 +316,7 @@ export const ponLines: HostLine[] = [
   // bento_manager_win
   { id: 'pon.bento_manager_win.01', host: 'pon', event: 'bento_manager_win', jp: { text: 'さすが、ふくてんちょう！', kana: 'さすが、ふくてんちょう！', en: 'That\'s my deputy manager!' }, status: 'draft' },
   { id: 'pon.bento_manager_win.02', host: 'pon', event: 'bento_manager_win', jp: { text: 'おきゃくさん、にこにこ！　ポン！', kana: 'おきゃくさん、にこにこ！　ポン！', en: 'The customer\'s all smiles! Pon!' }, status: 'draft' },
-  { id: 'pon.bento_manager_win.03', host: 'pon', event: 'bento_manager_win', jp: { text: 'たすかった！　ぼくは あじみで いそがしいので。', kana: 'たすかった！　ぼくは あじみで いそがしいので。', en: 'Phew, thanks! I\'m busy taste-testing, you see.' }, status: 'draft' },
+  { id: 'pon.bento_manager_win.03', host: 'pon', event: 'bento_manager_win', jp: { text: 'たすかった！　ポンは いま、たべて いるので。', kana: 'たすかった！　ポンは いま、たべて いるので。', en: 'Phew, thanks! I\'m a bit busy eating, you see.' }, status: 'draft' },
   { id: 'pon.bento_manager_win.04', host: 'pon', event: 'bento_manager_win', jp: { text: 'りっぱな ふくてんちょうです！', kana: 'りっぱな ふくてんちょうです！', en: 'What a fine deputy manager!' }, status: 'draft' },
   // bento_omotenashi_win
   { id: 'pon.bento_omotenashi_win.01', host: 'pon', event: 'bento_omotenashi_win', jp: { text: 'すばらしい おもてなし！', kana: 'すばらしい おもてなし！', en: 'Wonderful hospitality!' }, status: 'draft' },

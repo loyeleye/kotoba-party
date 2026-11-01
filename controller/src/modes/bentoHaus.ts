@@ -170,15 +170,17 @@ function offerCard(ctx: Ctx, t: Me['taking'][number], ringing: boolean): HTMLEle
 
 // ---- N4 hard roles ----
 
-const ROLE_INFO: Record<HardRole, { icon: string; ja: string; en: string; what: string }> = {
+const ROLE_INFO: Record<HardRole, { icon: string; kicker: string; ja: string; en: string; what: string }> = {
   manager: {
     icon: '📋',
+    kicker: '📋 Pon needs a deputy manager.',
     ja: 'ふくてんちょう',
     en: 'Deputy manager',
     what: 'Pon is busy “tasting” (his words), so complaints and special orders come to you. To customers: もうしわけ ございません and 〜て いただけますか. To the kitchen: 〜て もらえますか.',
   },
   omotenashi: {
     icon: '🌸',
+    kicker: '🛎️ Pon needs someone to greet the guests.',
     ja: 'おもてなし',
     en: 'Hospitality shift',
     what: 'Look after each guest you take: お〜ください, ＿は ごえんりょ ください (never 〜ては いけません), ＿は よういして あります. Guests give stars.',
@@ -197,7 +199,7 @@ function roleOffer(ctx: Ctx, hard: MyHardView | undefined): HTMLElement | null {
     'section',
     { class: 'bh-taking bh-offer', 'data-key': `role-${hard.offer.role}` },
     roleOfferCard({
-      kicker: `${info.icon} Hard role · N4`,
+      kicker: info.kicker,
       role: { text: info.ja, kana: info.ja, en: info.en },
       pitch: info.what,
       takeGloss: 'やります',
@@ -716,7 +718,6 @@ function kitchen(ctx: Ctx): HTMLElement {
     teamBar(ctx.game),
     raceNote(ctx.game, ctx.me.id),
     roleBadge(me.hard),
-    mixedRoom(ctx, me.hard),
     managerDesk(ctx, me.hard),
     requests(ctx, me),
     ticketPill(me),
@@ -725,6 +726,7 @@ function kitchen(ctx: Ctx): HTMLElement {
     // Mid-shift, a still-open offer waits below the order and the call box (it leads on the title card).
     roleOffer(ctx, me.hard),
     tickets(ctx, me),
+    mixedRoom(ctx, me.hard),
     idle
       ? h(
           'section',
