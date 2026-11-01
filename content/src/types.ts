@@ -349,6 +349,19 @@ export interface OnsenAnswer {
   jp: JpText;
   /** The clue this answer puts in the notebook, if any. Two answers may point at the same clue. */
   clueId?: string;
+  /** The N4 deputy's relay of this answer (Murder at the Onsen's hard role). Left out, nobody deputises that turn. */
+  report?: OnsenReport;
+}
+
+/**
+ * How the N4 deputy reports an answer to the room: reported speech (＿と いっていました) or the passive
+ * (＿に みられました). Words are spaced, and `text` and `kana` split into the same number of chunks:
+ * the chunks are the deputy's tiles, and the last two carry the frame.
+ */
+export interface OnsenReport {
+  jp: JpText;
+  /** The N4 frames this line practises, by id (shared/src/japanese/frames.ts). */
+  frames?: readonly string[];
 }
 
 export interface OnsenSuspect {

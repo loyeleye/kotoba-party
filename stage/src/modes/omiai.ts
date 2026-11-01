@@ -50,6 +50,21 @@ function bubble(game: OmiaiView, compact = false): HTMLElement | null {
   );
 }
 
+/** The round's go-between: their keigo line once said, or a note that they're about to speak. */
+function nakodoLine(view: RoomView, game: OmiaiView): HTMLElement | null {
+  const g = game.nakodo;
+  if (!g || g.declined) return null;
+  const who = nameOf(view, g.playerId);
+  if (!g.line) return h('p', { class: 'omi-nakodo-wait' }, `🎎 Matchmaker ${who} is about to speak…`);
+  return h(
+    'div',
+    { class: 'omi-nakodo-s' },
+    h('p', { class: 'omi-nakodo-who' }, `🎎 Matchmaker ${who}${g.via === 'speech' ? ' 🎤' : ''} +${g.points}`),
+    h('p', { class: 'omi-nakodo-jp' }, ruby(g.line)),
+    h('p', { class: 'omi-nakodo-en' }, g.line.en),
+  );
+}
+
 function roundTag(game: OmiaiView): HTMLElement | null {
   if (!game.roundKind) return null;
   return h('p', { class: 'omi-roundtag' }, `${KIND_LABEL[game.roundKind]} · round ${game.round} of ${game.totalRounds}`, game.multiplier > 1 ? h('span', { class: 'omi-double' }, '×2') : null);
@@ -155,6 +170,7 @@ export const omiaiStage: StageMode<OmiaiView> = {
           'div',
           { class: 'omi-stage' },
           roundTag(game),
+          view.phase === 'prompt' ? nakodoLine(view, game) : null,
           h('div', { class: 'omi-ask' }, card ? guest(card) : null, bubble(game)),
           view.phase === 'answer'
             ? h(
@@ -186,6 +202,7 @@ export const omiaiStage: StageMode<OmiaiView> = {
         return h(
           'div',
           { class: 'omi-stage omi-score' },
+          nakodoLine(view, game),
           n
             ? h(
                 'div',

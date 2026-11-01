@@ -48,6 +48,9 @@
 .om-natural { font-size: 24px; }
 .om-a { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
 .om-answer { min-height: 120px; }
+.om-deputy { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-left: 6px solid var(--accent); background: var(--panel); border-radius: 8px; }
+.om-deputy .om-ja { font-size: 32px; font-weight: 800; line-height: 1.25; }
+.om-deputy .om-en { font-size: 22px; }
 .om-answer .om-ja, .om-confession .om-ja { font-size: 40px; font-weight: 900; line-height: 1.25; }
 .om-answer .om-en, .om-confession .om-en { font-size: 24px; display: block; }
 .om-answer .om-kana { font-size: 24px; }

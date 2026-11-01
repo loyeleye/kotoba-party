@@ -58,3 +58,7 @@
 .om-p-answer .om-p-kana, .om-p-answer .om-p-en { color: var(--muted); }
 .om-p-clue { margin: 0; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--good); font-weight: 800; animation: om-p-appear 0.5s ease-out both; }
 @keyframes om-p-appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.om-p-deputy { background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
+.om-p-deputy p { margin: 0; }
+.om-p-frame { font-size: 20px; font-weight: 800; color: var(--accent); }
