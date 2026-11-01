@@ -10,8 +10,9 @@
 //             spoken argument (the check is about it); typed words show, since they have no sound.
 //   check     "Judges: one question, on your phone": lock-ins only, no words or pictures until all lock.
 //   gist/vote both arguments side by side: pictures, the gist with furigana, English; "3 of 4 voted".
-//   verdict   the tally (tokens drop into two pans), then the scroll: Fude-san's brush writes 有罪 or 無罪
-//             top to bottom and the 筆 seal lands; the tie line, then the points: checks first, then the lawyers.
+//   verdict   the tally (tokens drop into two pans), then the scroll: Fude-san herself writes 有罪 or 無罪
+//             top to bottom in a brush face and signs it with her 筆 seal (lower left, ふで under it); the tie line,
+//             then the points (the score ribbon holds its totals until they land): checks first, then the lawyers.
 //   booth     the replay booth: the line, its chunk lit, one line of colour, the station tag.
 
 import { h, LEVEL_LABELS, ruby, seatShape } from '../../../shared/src/dom.js';
@@ -63,6 +64,7 @@ const thing = (t: ThingView, label: string, cls = ''): HTMLElement =>
 
 type Role = Side | 'witness' | 'judge';
 const ROLE_EMOJI: Record<Role, string> = { pros: '📜', def: '🌻', witness: '👁️', judge: '⚖️' };
+const ROLE_NAME: Record<Role, string> = { pros: 'prosecution', def: 'defence', witness: 'witness', judge: 'judge' };
 
 /** A role's pixel icon (the emoji if the picture is missing): a sealed scroll, a sunflower badge, a scale, an eye. */
 function icon(role: Role, cls = 'yc-role-icon'): HTMLElement {
@@ -395,29 +397,35 @@ function voteBeat(view: RoomView, game: CourtView): HTMLElement {
 /** All the tokens drop within this, both pans at once, and each pan's count pops before the scroll unrolls over them. */
 const TOKENS_MS = 1_000;
 /** Fude-san's brush writes the verdict one character at a time, finishing as the seal lands (STAMP_AT_MS). */
-const STROKE_MS = 320;
-const BRUSH_AT_MS = STAMP_AT_MS - 2 * STROKE_MS;
+const STROKE_MS = 280;
 /** The seal's fall: it touches the paper at STAMP_AT_MS, with Fude-san's line and the stamp sound. */
 const SEAL_MS = 180;
+/** She has written both characters and lifted away just before the seal starts to fall. */
+const BRUSH_AT_MS = STAMP_AT_MS - SEAL_MS - 2 * STROKE_MS;
+/** Fude-san upside down, her topknot the brush tip (tools/art/sources/court/fude-write.py). */
+const FUDE_WRITES = 'court/fude-write';
 
 /**
- * Fude-san's brush writes 有罪 or 無罪 top to bottom, one character per stroke, then the square 筆 seal lands. The
- * reading sits beside it, since furigana on vertical brush writing would crowd the strokes.
+ * Fude-san herself writes 有罪 or 無罪 top to bottom in a brush face, one character per stroke, upside down with
+ * her topknot as the tip, then signs it: the square 筆 seal lands at the lower left of the column, as a seal
+ * follows vertical writing, with ふで under it so the joke reads. The reading sits right of the column, since
+ * furigana on vertical brush writing would crowd the strokes.
  */
 function brushVerdict(verdict: { text: string; kana: string }, at: (ms: number) => string): HTMLElement {
   const chars = [...verdict.text];
   return h(
     'div',
     { class: 'yc-brush' },
+    h('div', { class: 'yc-brush-sign' }, h('span', { class: 'yc-seal', lang: 'ja', style: at(STAMP_AT_MS - SEAL_MS) }, '筆'), h('span', { class: 'yc-seal-kana yc-pop', lang: 'ja', style: at(STAMP_AT_MS) }, 'ふで')),
     h(
       'div',
       { class: 'yc-brush-col' },
       h('p', { class: 'yc-brush-ja', lang: 'ja', 'aria-label': verdict.text }, ...chars.map((ch, i) => h('span', { class: 'yc-stroke', style: at(BRUSH_AT_MS + i * STROKE_MS) }, ch))),
-      missing.has('court/brush')
+      missing.has(FUDE_WRITES)
         ? null
-        : h('img', { class: 'yc-brush-pen', src: ART('court/brush'), alt: '', draggable: 'false', style: `${at(BRUSH_AT_MS)}; animation-duration: ${chars.length * STROKE_MS + 250}ms`, onerror: (e: Event) => (missing.add('court/brush'), (e.target as HTMLElement).remove()) }),
+        : h('img', { class: 'yc-brush-pen', src: ART(FUDE_WRITES), alt: '', draggable: 'false', style: `${at(BRUSH_AT_MS)}; animation-duration: ${chars.length * STROKE_MS}ms; --strokes: ${chars.length}`, onerror: (e: Event) => (missing.add(FUDE_WRITES), (e.target as HTMLElement).remove()) }),
     ),
-    h('div', { class: 'yc-brush-side' }, h('p', { class: 'yc-brush-kana yc-pop', lang: 'ja', style: at(STAMP_AT_MS) }, verdict.kana), h('span', { class: 'yc-seal', lang: 'ja', style: at(STAMP_AT_MS - SEAL_MS) }, '筆')),
+    h('p', { class: 'yc-brush-kana yc-pop', lang: 'ja', style: at(STAMP_AT_MS) }, verdict.kana),
   );
 }
 
@@ -540,8 +548,22 @@ function center(view: RoomView, game: CourtView): HTMLElement | null {
   }
 }
 
+/** The verdict's brush face and Fude-san's writing sprite load when the mode starts, never during the climax. */
+let preloaded = false;
+function preload(): void {
+  if (preloaded) return;
+  preloaded = true;
+  try {
+    void document.fonts?.load("100px 'Kotoba Brush'", '有罪無筆');
+  } catch {
+    /* the fallback face is fine */
+  }
+  new Image().src = ART(FUDE_WRITES);
+}
+
 export const yokaiCourtStage: StageMode<CourtView> = {
   render(view, game) {
+    preload();
     if (view.phase === 'intro') return intro();
     if (!game.step) return h('div', { class: 'yc-stage' });
     return h('div', { class: `yc-stage yc-step-${game.step}` }, header(view, game), center(view, game));
@@ -549,10 +571,18 @@ export const yokaiCourtStage: StageMode<CourtView> = {
   badge(game, playerId) {
     const c = game.cast;
     if (!c || !game.step) return '';
-    // Roles sit in the score ribbon, so nothing is cut off at the bottom of the beat.
-    const role = c.pros === playerId ? '📜 prosecution' : c.def === playerId ? '🌻 defence' : c.witness === playerId ? '👁️ witness' : c.judges.includes(playerId) ? '⚖️ judge' : '';
+    // Roles sit in the score ribbon, so nothing is cut off at the bottom of the beat. Same pixel icons as the court.
+    const role: Role | null = c.pros === playerId ? 'pros' : c.def === playerId ? 'def' : c.witness === playerId ? 'witness' : c.judges.includes(playerId) ? 'judge' : null;
     const state = badgeState(game, playerId);
-    return role && state ? `${role} · ${state}` : role || state;
+    if (!role) return state;
+    return h('span', { class: 'yc-badge' }, icon(role, 'yc-role-icon yc-badge-icon'), ` ${ROLE_NAME[role]}${state ? ` · ${state}` : ''}`);
+  },
+  holdScoresUntil(view, game) {
+    // The ribbon keeps last case's totals until the verdict's points land (after the tally, the brush and the seal).
+    return view.phase === 'score' && game.step === 'verdict' ? game.stepAt + POINTS_AT_MS : null;
+  },
+  heldPoints(game, playerId) {
+    return game.verdict?.points.find((p) => p.playerId === playerId)?.points ?? 0;
   },
   hostRow(view, game) {
     // The verdict keeps Fude-san's row up from the start, so her line at the seal doesn't push the court down.
