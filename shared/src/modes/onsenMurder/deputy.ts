@@ -5,7 +5,7 @@
 // report is checked against the same words. See docs/modes/onsen-murder.md.
 
 import type { OnsenReport } from '../../../../content/src/types.js';
-import type { Utterance } from '../../japanese/kana.js';
+import { normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { shuffled } from '../mode.js';
 import { saidPhrase } from '../phraseBingo/check.js';
 
@@ -54,10 +54,18 @@ export function tilesInOrder(r: OnsenReport, tiles: readonly { text: string }[])
  * kana, or most of its words. The frame is checked as one stretch, because the sound key reads a
  * word by its neighbour (わらって いた sounds like わらってえた), which a lone short word can't absorb.
  * A direct quote in polite form (いましたと いっていました) also passes: it is still correct Japanese.
+ * A passive report fails when the one who saw is marked with を or が instead of に.
  */
 export function checkReport(u: Utterance, r: OnsenReport): boolean {
   const words = reportWords(r).map((w) => w.kana);
   const has = (kana: string) => saidPhrase(u, kana, undefined, 'n4');
+  if (r.frames?.includes('passive')) {
+    // The one who saw is marked with に. With を or が they become the one seen, which the lenient
+    // sound check alone would let through (すずきさんを みられました).
+    const agent = normalizeReading(words.at(-2)!.replace(/に$/, ''));
+    const said = normalizeReading(utteranceReading(u)).replace(/[\s　]+/g, '');
+    if (said.includes(`${agent}を`) || said.includes(`${agent}が`)) return false;
+  }
   if (!has(words.slice(-2).join(''))) return false;
   if (has(r.jp.kana)) return true;
   return words.filter(has).length >= Math.ceil(words.length * REPORT_WORDS);

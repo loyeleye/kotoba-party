@@ -62,3 +62,7 @@
 .om-p-deputy { background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
 .om-p-deputy p { margin: 0; }
 .om-p-frame { font-size: 20px; font-weight: 800; color: var(--accent); }
+.om-p-deputy.report { animation: om-p-appear 0.5s ease-out both; }
+.om-p-offer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.om-p-offer-btns button { min-height: 56px; }
+.om-p-tiles-help summary { cursor: pointer; font-weight: 700; padding: 6px 0; }

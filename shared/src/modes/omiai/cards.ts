@@ -810,6 +810,9 @@ export function shortName(card: Pick<CharacterCard, 'name'>): JpText {
   return { text: kana, kana, en };
 }
 
+/** Next to keigo, a ちゃん or くん name takes さん (ワラシちゃん → ワラシさん); the English stays. */
+const politeName = (k: string) => k.replace(/(ちゃん|くん)$/, 'さん');
+
 function fill(t: NakodoTemplate, card: CharacterCard): NakodoLine {
   const job = card.job.kana.replace(/（.*?）/g, '');
   const jobEn = card.job.en.replace(/\s*\(.*?\)/g, '');
@@ -817,9 +820,9 @@ function fill(t: NakodoTemplate, card: CharacterCard): NakodoLine {
   const f = (x: string, en: boolean) =>
     x
       .split('{full}')
-      .join(en ? card.name.en : card.name.kana)
+      .join(en ? card.name.en : politeName(card.name.kana))
       .split('{short}')
-      .join(en ? short.en : short.kana)
+      .join(en ? short.en : politeName(short.kana))
       .split('{job}')
       .join(en ? `the ${jobEn}` : job);
   const kana = f(t.kana, false);

@@ -2,8 +2,8 @@
 // type it, or build it from tiles), the notebook, and the accusation 「はんにんは ○○さんです！」.
 //
 // An N4 player may be the turn's deputy: offered the part while someone asks ("not this time"
-// keeps the ordinary part), then, after the answer, they report it from shuffled word tiles under
-// the frame (＿と いっていました / ＿に ＿られました), or say or type it.
+// keeps the ordinary part), then, after the answer, they say or type the report from the frame
+// (＿と いっていました / ＿に ＿られました), or build it from shuffled word tiles if they need the words.
 //
 // The screen key only covers what this player is doing, so another player's accusation never
 // rebuilds the talk button mid-sentence. The tile draft and the picked suspect live in module
@@ -238,14 +238,14 @@ function deputyOffer(ctx: Ctx): HTMLElement | null {
   return h(
     'div',
     { class: 'om-p-deputy' },
-    h('p', {}, h('strong', {}, '🕵️ You’re the deputy this turn.'), ' After the answer, tell the room what the suspect said:'),
-    h('p', { class: 'om-p-frame', lang: 'ja' }, '＿は ＿と いっていました'),
+    h('p', {}, h('strong', {}, '🕵️ Chōchin-san needs a deputy this turn.'), ' After the answer, tell the room what the suspect said:'),
+    h('p', { class: 'om-p-frame', lang: 'ja' }, '＿と いっていました ／ ＿に ＿られました'),
     d.status === 'ready'
       ? h('p', { class: 'hint' }, 'Ready! Listen to the answer.')
       : h(
           'div',
-          { class: 'om-p-row' },
-          h('button', { type: 'button', onclick: () => void ctx.send({ kind: 'deputy', accept: true }) }, 'I’m ready'),
+          { class: 'om-p-offer-btns' },
+          h('button', { type: 'button', class: 'secondary', onclick: () => void ctx.send({ kind: 'deputy', accept: true }) }, 'Take it'),
           h('button', { type: 'button', class: 'secondary', onclick: () => void ctx.send({ kind: 'deputy', accept: false }) }, 'Not this time'),
         ),
   );
@@ -304,18 +304,25 @@ function deputyReport(ctx: Ctx): HTMLElement | null {
   draw();
   return h(
     'div',
-    { class: 'om-p-deputy', style: `animation-delay: ${game.thinkMs}ms` },
+    // Fades in once the answer and its subtitle are up, so the tiles don't give the answer away first.
+    { class: 'om-p-deputy report', style: `animation-delay: ${game.thinkMs + game.subtitleMs}ms` },
     h('p', {}, h('strong', {}, '🕵️ Deputy: tell the room what they said.')),
     d.frame ? h('p', { class: 'om-p-frame', lang: 'ja' }, d.frame) : null,
     d.heard ? h('p', { class: 'om-p-missline' }, `Heard “${d.heard}”. ${d.triesLeft} try left.`) : null,
     d.line ? h('div', {}, h('p', { class: 'hint' }, 'Like this:'), jpLine(d.line)) : null,
     speakBox({
       label: 'Hold and report it',
-      placeholder: '…と いっていました',
+      placeholder: d.frame ?? '…と いっていました',
       kanaPadOpen: false,
       onSend: (utterance) => void send({ kind: 'report', utterance }),
     }),
-    h('div', { class: 'om-p-builder' }, preview, h('div', { class: 'om-p-row' }, sendBtn, undo), grid),
+    // The tiles are the fallback: say it from the frame first, build it if you need the words.
+    h(
+      'details',
+      { class: 'om-p-tiles-help', ...(d.heard ? { open: true } : {}) },
+      h('summary', {}, 'Need the words? Build it from tiles'),
+      h('div', { class: 'om-p-builder' }, preview, h('div', { class: 'om-p-row' }, sendBtn, undo), grid),
+    ),
     d.heard ? null : h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'deputy', accept: false }) }, 'Not this time'),
     h('p', { class: 'hint' }, 'Saying it aloud earns the 🎤 bonus.'),
   );

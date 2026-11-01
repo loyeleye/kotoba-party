@@ -26,6 +26,7 @@ import { hasKanji, isKana, isUtterance, soundKey, type Utterance } from '../../j
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, type Award, type Mode, type ModeContext, type ModePlayer, type PhraseEntry } from '../mode.js';
 import { checkReport, joinReport, reportFrame, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
+import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { FALLBACK_CASE } from './fallback.js';
 import { accusationLine, bareName, checkAccusation, INTENTS, matchQuestion, questionFor, tilesFor, type QuestionTile } from './questions.js';
 
@@ -43,9 +44,9 @@ export const POINTS = {
   /** Speaking bonus for saying the whole accusation aloud. */
   spokenAccuse: 60,
   /** The deputy's report, said or typed. */
-  report: 60,
+  report: 30,
   /** The deputy's report, built from the tiles. */
-  reportTiles: 30,
+  reportTiles: 10,
   /** Speaking bonus for the deputy's report said aloud. */
   spokenReport: 40,
 } as const;
@@ -176,7 +177,7 @@ export interface OnsenState {
   /** The last deputy's seat, for the rotation. */
   deputySeat: number;
   /** Every deputy offer and what came of it (an offer whose answer had nothing to report isn't counted). */
-  deputyLog: { turnNo: number; playerId: string; outcome: 'accepted' | 'declined' | 'ignored' }[];
+  deputyLog: { turnNo: number; playerId: string; outcome: OfferAnswer }[];
 }
 
 export type OnsenMove =
@@ -434,7 +435,13 @@ function recordAsk(s: OnsenState, ctx: ModeContext, playerId: string, suspect: O
 
 // ---- the deputy (N4 hard role) ----
 
-/** Offers the deputy's part to the next N4 player by seat, never the asker. Nobody at N4: no deputy. */
+/** Rooms this big or bigger rest a lone N4 deputy after a turn in the part (see offerDeputy). */
+export const SPOTLIGHT_ROOM = 4;
+
+/**
+ * Offers the deputy's part to the next N4 player by seat, never the asker. Nobody at N4: no deputy.
+ * In a room of SPOTLIGHT_ROOM or more, a lone eligible N4 player who was deputy last turn sits this one out.
+ */
 function offerDeputy(s: OnsenState, ctx: ModeContext, askerId: string | null): void {
   s.deputy = null;
   const n4 = ctx
@@ -443,31 +450,56 @@ function offerDeputy(s: OnsenState, ctx: ModeContext, askerId: string | null): v
     .sort((a, b) => a.seat - b.seat);
   const p = n4.find((x) => x.seat > s.deputySeat) ?? n4[0];
   if (!p) return;
+  const last = s.deputyLog.at(-1);
+  if (n4.length === 1 && ctx.connected().length >= SPOTLIGHT_ROOM && last?.turnNo === s.turnNo - 1 && last.playerId === p.id && last.outcome === 'accepted') return;
   s.deputySeat = p.seat;
   s.deputy = { turnNo: s.turnNo, playerId: p.id, status: 'offered', askNo: null, tiles: [], tries: 0, heard: '', via: null, points: 0 };
 }
 
-/** A deputy with a report still to give. */
+/** A deputy with a report still to give (an unanswered offer can still report: a first try is a yes). */
 const deputyOpen = (d: Deputy | null): d is Deputy => !!d && d.askNo !== null && (d.status === 'offered' || d.status === 'ready');
 
+/** A deputy the answer waits for: open, and they took the part or have had a try. An untouched offer adds no time. */
+const deputyHolds = (d: Deputy | null): d is Deputy => deputyOpen(d) && (d.status === 'ready' || d.tries > 0);
+
 /** Logs how the turn's offer went and clears it. An offer whose answer had nothing to report isn't counted. */
-function closeDeputy(s: OnsenState): void {
+function closeDeputy(s: OnsenState, ctx: ModeContext): void {
   const d = s.deputy;
   s.deputy = null;
   if (!d || (d.askNo === null && d.status !== 'declined')) return;
-  const outcome = d.status === 'declined' ? 'declined' : d.status === 'ready' || d.tries > 0 || d.status === 'reported' ? 'accepted' : 'ignored';
+  const outcome: OfferAnswer =
+    d.status === 'declined'
+      ? 'declined'
+      : d.status === 'ready' || d.tries > 0 || d.status === 'reported'
+        ? 'accepted'
+        : ctx.player(d.playerId)?.connected === false
+          ? 'away'
+          : 'timeout';
   s.deputyLog.push({ turnNo: d.turnNo, playerId: d.playerId, outcome });
 }
 
-/** Deputy offers per N4 player and how many they took up (the step's gate: at least 60% accepted). */
-export function deputyOffers(s: Pick<OnsenState, 'deputyLog'>): Record<string, { offered: number; accepted: number; declined: number }> {
-  const out: Record<string, { offered: number; accepted: number; declined: number }> = {};
+export interface DeputyTally {
+  offered: number;
+  accepted: number;
+  declined: number;
+  timeout: number;
+  /** offerRate: the step's gate is at least 60% accepted. */
+  rate: number | null;
+}
+
+/** Deputy offers per N4 player and what came of them. */
+export function deputyOffers(s: Pick<OnsenState, 'deputyLog'>): Record<string, DeputyTally> {
+  const out: Record<string, DeputyTally> = {};
+  const answers: Record<string, OfferAnswer[]> = {};
   for (const e of s.deputyLog) {
-    const o = (out[e.playerId] ??= { offered: 0, accepted: 0, declined: 0 });
+    const o = (out[e.playerId] ??= { offered: 0, accepted: 0, declined: 0, timeout: 0, rate: null });
     o.offered += 1;
     if (e.outcome === 'accepted') o.accepted += 1;
     if (e.outcome === 'declined') o.declined += 1;
+    if (e.outcome === 'timeout') o.timeout += 1;
+    (answers[e.playerId] ??= []).push(e.outcome);
   }
+  for (const [id, o] of Object.entries(out)) o.rate = offerRate(answers[id]!);
   return out;
 }
 
@@ -587,10 +619,10 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
   leave(s, phase, ctx) {
     if (phase === 'reveal') {
       s.line = null;
-      closeDeputy(s);
+      closeDeputy(s, ctx);
     }
     // No question landed this turn, so there is nothing to report.
-    if (phase === 'answer' && !s.turn?.asked) closeDeputy(s);
+    if (phase === 'answer' && !s.turn?.asked) closeDeputy(s, ctx);
     if (phase === 'encore') {
       // A player who picked a suspect but never got the sentence out still gets their vote.
       for (const [playerId, tr] of Object.entries(s.accuseTries)) {
@@ -617,7 +649,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
       case 'answer':
         return ctx.player(s.turn?.playerId ?? '')?.level === 'kana' ? DURATIONS.turnKana : DURATIONS.turn;
       case 'reveal':
-        return revealBase(s) + (deputyOpen(s.deputy) ? DURATIONS.deputy : 0);
+        return revealBase(s) + (deputyHolds(s.deputy) ? DURATIONS.deputy : 0);
       case 'encore':
         return DURATIONS.accuse;
       case 'finale':
@@ -640,7 +672,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         const d = s.deputy;
         if (!d || d.askNo === null) return false;
         const gone = !ctx.player(d.playerId)?.connected;
-        return (gone || !deputyOpen(d)) && ctx.now >= s.revealAt + revealBase(s);
+        return (gone || !deputyHolds(d)) && ctx.now >= s.revealAt + revealBase(s);
       }
       case 'encore':
         return here.length > 0 && here.every((p) => !!s.accusations[p.id]);
@@ -651,7 +683,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
 
   wakeAt(s, phase, ctx) {
     const d = s.deputy;
-    if (phase !== 'reveal' || !d || d.askNo === null || deputyOpen(d)) return null;
+    if (phase !== 'reveal' || !d || d.askNo === null || deputyHolds(d)) return null;
     const at = s.revealAt + revealBase(s);
     return ctx.now < at ? at : null;
   },
