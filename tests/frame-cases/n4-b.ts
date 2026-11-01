@@ -382,6 +382,8 @@ export const cases: FrameCases = {
 
   'o-kudasai': {
     pos: [
+      'ごえんりょ ください。',
+      'ドアが しまります。ごちゅうい ください。',
       'しょうしょう おまちください。',
       'どうぞ おすわりください。',
       'どうぞ、おはいりください。',
@@ -397,13 +399,14 @@ export const cases: FrameCases = {
       ['おちゃを ください。', 'お + noun を ください: asking for a thing'],
       ['おみずを ください。', 'お + noun を ください'],
       ['ちょっと まって ください。', 'て ください'],
-      ['ごえんりょ ください。', 'ご + noun ください: the ご form, kept out of this frame'],
       ['おべんとうを ふたつ ください。', 'お + noun を ください'],
       ['おしえて ください', 'て ください with a verb that starts with お'],
       ['おきて ください', 'て ください with a verb that starts with お'],
       ['おつりを ください。', 'お + noun を ください'],
       ['にもつは ここに おいて ください。', 'て ください with おく'],
       ['おもちを ください。', 'おもち is the noun (rice cake) with を, not もつ\'s stem'],
+      ['ごはんを ください。', 'ご + noun を ください: asking for a thing'],
+      ['ごみは ここに すてないで ください。', 'ごみ is a noun, not a ご + verb noun'],
     ],
   },
 
