@@ -53,9 +53,10 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
     Nobiko-san's line in that frame.
   - The rumour keeps its newest three fins; older ones fall off, as in real gossip.
 - **No player's voice moves between phones.** The next phone gets the relay's words (the transcript or the typed
-  text) and reads them in Nobiko-san's voice with the browser's own speech synthesis. Players' words never go to
-  VOICEVOX, because its character terms for live, player-made text are unread (commercial-blockers row 36). The
-  fixed lines (her opener, the truths, the intro) are ordinary host lines.
+  text) and reads them with the phone's own Japanese voice (on-device first). At the reveal the TV has Nobiko-san
+  read each relay as a host line (`rumour_relay`): her VOICEVOX voice (No.7) when the server has VOICEVOX, else
+  the TV's own voice. No.7's terms allow this while the game is free (commercial-blockers rows 1 and 36); every
+  relay has passed the room's word filter first.
 - **Ran out of time:** with a fin picked, Nobiko-san passes it on for them (her line, no points); with nothing
   picked, the phone is skipped and the next relayer hears the relay before.
 - **Reveal:** the TV shows Nobiko-san's opener and each relay in turn, each read in her voice, with the fin it
@@ -128,7 +129,7 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
 
 20. The rumour round replaces Lost in Translation when anyone in the room plays at N4, rather than adding a fourth round: the game stays near 15 minutes and Lost in Translation is an N5 round.
 21. The rumour structure (who, where, what, fins) drives Nobiko-san's model lines and the "kept it" check, so Kana and N5 players can relay without parsing free speech.
-22. Nobiko-san reads players' relays with the browser's voice, never VOICEVOX, until the VOICEVOX terms for live player text are read (commercial-blockers row 36).
+22. With No.7's terms read (2026-11-01: free while the game is non-commercial, no clause against live user text), the TV reads relays in Nobiko-san's VOICEVOX voice; phones use their own voice so a relay costs no server audio (commercial-blockers row 36).
 
 ## Open questions
 1. A fluent check of the 18 obscure words and the 8 Cheeky words (plus Ladi's taste check on the Cheeky ones), the placeholder starters and the shiritori noun list (all `draft`).

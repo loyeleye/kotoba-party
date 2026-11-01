@@ -7,7 +7,6 @@ import type { JpText } from '../../../content/src/types.js';
 import type { WordGauntletView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
-import { speakHost, stopHostSpeech } from '../hostSpeech.js';
 
 const nameOf = (view: RoomView, id: string | null | undefined) => view.players.find((p) => p.id === id)?.name ?? '(left)';
 
@@ -206,25 +205,6 @@ function telephone(view: RoomView, game: WordGauntletView): HTMLElement {
 
 // ---- Round 2b: the rumour round ----
 
-// Nobiko-san reads each relay aloud as it appears (the browser's voice: players' words never go to
-// VOICEVOX, docs/commercial-blockers.md row 36). Scheduled once per phase, timed like the reveal.
-let readFor = -1;
-let readTimers: ReturnType<typeof setTimeout>[] = [];
-function readRelays(view: RoomView, lines: (string | null)[], stepMs: number): void {
-  if (readFor === view.phaseSeq) return;
-  readFor = view.phaseSeq;
-  for (const t of readTimers) clearTimeout(t);
-  readTimers = [];
-  stopHostSpeech();
-  const shownAt = phaseShown.seq === view.phaseSeq ? phaseShown.at : performance.now();
-  lines.forEach((kana, i) => {
-    if (!kana) return;
-    const wait = i * stepMs + 400 - (performance.now() - shownAt);
-    if (wait < -stepMs / 2) return;
-    readTimers.push(setTimeout(() => readFor === view.phaseSeq && speakHost('nobiko', kana), Math.max(0, wait)));
-  });
-}
-
 function subjectPic(game: WordGauntletView): HTMLElement | null {
   const sp = game.rumour?.subject.sprite;
   return sp ? h('img', { class: 'wg-subject', src: sp, alt: '', width: 96, height: 96, onerror: (e: Event) => (e.target as HTMLElement).remove() }) : null;
@@ -259,7 +239,6 @@ function rumour(view: RoomView, game: WordGauntletView): HTMLElement {
   const reveal = r.reveal!;
   const scored = view.phase === 'score' && r.votes;
   const best = scored ? Math.max(0, ...r.votes!) : 0;
-  if (view.phase === 'reveal') readRelays(view, [reveal.opener.kana, ...reveal.steps.map((st) => (st.text === null ? null : (st.kana ?? st.text)))], r.revealStepMs);
   const steps = h(
     'ol',
     { class: 'wg-drift wg-rumour-steps' },

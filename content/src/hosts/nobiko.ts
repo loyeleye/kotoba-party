@@ -194,6 +194,8 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.rumour_intro.02', host: 'nobiko', event: 'rumour_intro', jp: { text: 'くびが ながいと、いろいろ きこえるのよ。ないしょよ？', kana: 'くびが ながいと、いろいろ きこえるのよ。ないしょよ？', en: "With a neck this long, you hear things. It's a secret, OK?" }, status: 'draft' },
   { id: 'nobiko.rumour_intro.03', host: 'nobiko', event: 'rumour_intro', jp: { text: 'ここだけの はなしよ。となりの ひとに だけ、そっと つたえてね。', kana: 'ここだけの はなしよ。となりの ひとに だけ、そっと つたえてね。', en: 'This stays between us. Just pass it quietly to the next person.' }, status: 'draft' },
   // rumour_line: the game writes the line ({quip}): the rumour's truth, from shared/src/modes/wordGauntlet/rumours.ts. Never player text
+  // rumour_relay: she reads one relay aloud at the reveal ({quip}): a player's words, which passed the moderation filter (docs/commercial-blockers.md row 36)
+  { id: 'nobiko.rumour_relay.01', host: 'nobiko', event: 'rumour_relay', jp: { text: '{quip}', kana: '{quip}', en: '{quip}' }, slots: ['{quip}'], status: 'draft' },
   { id: 'nobiko.rumour_line.01', host: 'nobiko', event: 'rumour_line', jp: { text: '{quip}', kana: '{quip}', en: '{quip}' }, slots: ['{quip}'], status: 'draft' },
   { id: 'nobiko.play_again.05', host: 'nobiko', event: 'play_again', jp: { text: 'つぎは だれと だれが おにあいかしら？', kana: 'つぎは だれと だれが おにあいかしら？', en: 'I wonder who makes a lovely pair next time?' }, status: 'draft' },
 ];

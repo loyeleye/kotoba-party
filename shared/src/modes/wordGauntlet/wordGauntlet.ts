@@ -78,6 +78,8 @@ export const RUMOUR_KEPT_POINTS = 50;
 export const RUMOUR_FRAME_POINTS = 50;
 export const RUMOUR_FINS_OFFERED = 3;
 export const RUMOUR_REVEAL_STEP_MS = 6_500;
+/** Nobiko-san starts reading a relay this long after it appears on the TV. */
+export const RUMOUR_READ_LEAD_MS = 400;
 
 export const SHIRITORI_WORD_POINTS = 50;
 export const SHIRITORI_SPOKEN_BONUS = 20;
@@ -1126,6 +1128,14 @@ function enterRumour(s: WordGauntletState, phase: Phase, ctx: ModeContext): void
     r.revealAt = ctx.now;
     const o = rumourOpener(r.seed);
     for (const p of ctx.players()) ctx.phrase(p.id, { itemId: `wg.rumour.${r.seed.id}`, text: o.text, kana: o.kana, en: o.en, outcome: 'seen' });
+    // Nobiko-san reads the relay aloud, one step at a time, in time with the TV (VOICEVOX when the server has
+    // it, else the TV's own voice). Players' words already passed the moderation filter (commercial-blockers row 36).
+    ctx.cue({ host: 'nobiko', event: 'rumour_relay', slots: { quip: o.text, quip_kana: o.kana, quip_en: o.en }, atMs: RUMOUR_READ_LEAD_MS });
+    r.steps.forEach((st, i) => {
+      if (st.text === null) return;
+      const kana = st.reading ?? st.text;
+      ctx.cue({ host: 'nobiko', event: 'rumour_relay', slots: { quip: st.text, quip_kana: kana, quip_en: `${name(ctx, st.playerId)}'s relay` }, atMs: (i + 1) * RUMOUR_REVEAL_STEP_MS + RUMOUR_READ_LEAD_MS });
+    });
   }
   if (phase === 'score') {
     scoreRumour(s, ctx);

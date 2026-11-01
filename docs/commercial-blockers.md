@@ -26,7 +26,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 
 | # | Item | Where | Status | What it takes to sell |
 | --- | --- | --- | --- | --- |
-| 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, No.7, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms |
+| 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, No.7, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms. **No.7 (Nobiko-san) read 2026-11-01: free only while the game is non-commercial; a sold game is "ゲームでの利用" and needs a paid VOICEVOX licence from No.7's team (from ¥15,000 with credit, ¥250,000 without)** |
 | 2 | VOICEVOX engine | Docker image, separate service | 🟡 | Run unmodified as a service; LGPL/core terms if ever bundled into a download |
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
@@ -61,7 +61,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 33 | Dub Club's Cheeky episodes and cards (office overtime, a first date, Girls' Night, a cheap idol off stage, and the drunk, sexy, host-club, gyaru and mother-in-law cards), behind the host's Audience setting (decision, 2026-10-28) | `shared/src/modes/dubClub/scenes.ts` (`audience: 'cheeky'`) | ⚠️ | Same as rows 29 and 30: no licence issue, but it adds to the age rating. Include it in the rating questionnaires or leave it out of rated builds; have the fluent reviewer check the Cheeky lines |
 | 34 | Optional sign-in: passkeys through SimpleWebAuthn (`@simplewebauthn/server` and `/browser`, MIT, plus MIT, Apache-2.0, 0BSD and BSD-3 dependencies), and each signed-in player's save (save name, game scores, kana practised) kept on one Cloudflare Durable Object (decision, 2026-10-28) | `server/src/accounts.ts`, `cloudflare/accountsObject.ts`, `controller/src/account.ts`, `shared/src/progress.ts` | 🟡 ⚠️ ❓ | Ship the MIT and Apache-2.0 notices (row 5). Privacy, not licence: a privacy notice for saves, a decision on under-13/16 players (COPPA, GDPR-K: not read, ❓), and Cloudflare's Durable Object storage named as a processor. Deleting a save is already in the game |
 | 35 | The learning path names levels "N5" and "N4" (the JLPT's level names) and suggests a JLPT mock test; its lines use our own names (Kana Line, Local Line, Express Line) (decision, 2026-11-01) | `shared/src/path.ts`, `controller/src/path.ts`, the level picker in `controller/src/main.ts` | ⚠️ | JLPT site policy read 2026-11-01: it covers copying the site's works (questions, text), not naming the test or its levels, and carries no trademark notice. We copy none of its content. Keep "N5"/"N4" descriptive, never claim endorsement or a result, and have a lawyer check whether "JLPT" or 日本語能力試験 is a registered mark before launch |
-| 36 | VOICEVOX speaking player-written text in Word Gauntlet's rumour round (Nobiko-san = No.7, fallback 九州そら) | not used: the relays are read by browser speech (`stage/src/modes/wordGauntlet.ts` `readRelays`, `controller/src/modes/wordGauntlet.ts` `rumourRelay`); fixed lines only through `server/ai/hosts.ts` | ❓ | Terms unread: voicevox.hiroshiba.jp, voiceseven.com and our own VOICEVOX engine were all blocked from this session (tried 2026-11-01). Built without it: players' words go only to the device's own voice (row 31). To voice relays with No.7, read No.7's terms for live, user-made text and switch `readRelays` to the server's voice |
+| 36 | VOICEVOX speaking player-written text in Word Gauntlet's rumour round (Nobiko-san = No.7) | the TV's reveal reads each relay as a Nobiko-san host line (`rumour_relay`, `shared/src/modes/wordGauntlet/wordGauntlet.ts`), voiced by VOICEVOX when the server has it, else browser speech; the relayer's phone always uses browser speech (`controller/src/modes/wordGauntlet.ts`) | 🟡 ⚠️ | No.7's terms read 2026-11-01 (https://voiceseven.com/): fine while the game is free; selling needs row 1's paid No.7 licence. No clause bans live user text, but the image clause applies: relays pass the Kids/Family word filter first. Before selling, also decide whether a word-list filter is enough for player text in a licensed voice |
 
 ## Details
 
@@ -81,8 +81,23 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 - **Known traps:** 青山龍星 reportedly needs prior permission for any use by a company, so it was
   avoided. ずんだもん has separate character-image rules. Using a character's picture, not just their
   voice, usually has extra terms.
+- **No.7 (Nobiko-san), read 2026-11-01** at https://voiceseven.com/ (the terms page No.7's VOICEVOX page
+  links to; https://voicevox.hiroshiba.jp/product/number_seven/ and the VOICEVOX software terms at
+  https://voicevox.hiroshiba.jp/term/ read the same day):
+  - Non-commercial use needs no application. Free distribution and 同人ゲーム count as non-commercial.
+  - **"ゲームでの利用" (use in a game) is listed as commercial: consult them first.** For VOICEVOX, commercial
+    use with a credit is licensed (the guide price for unlimited characters with no time limit is from ¥15,000;
+    terms vary by use). Without a credit it's ¥250,000 plus tax. Contact is by email.
+  - Banned for every use: anything that seriously damages the character's image or the author's reputation,
+    infringes others' rights, alters the character beyond recognition, exclusive use (trademarks), or use by
+    antisocial forces. The VOICEVOX software also bans anything against public order (公序良俗).
+  - Nothing restricts reading live, user-written text as such. Player text read in her voice is covered by the
+    image clause, so it should pass the moderation filter first (row 36).
+  - 九州そら (the fallback): its product page links only to the general VOICEVOX terms; its own character
+    terms weren't found, still ❓.
 - **To sell:** Credits screen shows `HOSTS[h].credit` for every voice used (it's in the code, the screen
-  isn't built yet). Read each chosen character's full terms and record the date and URL here. If a voice
+  isn't built yet). Buy a No.7 commercial licence (or swap Nobiko-san's voice). Read each other chosen
+  character's full terms and record the date and URL here. If a voice
   needs a contract for commercial use, swap it for one that doesn't.
 
 ### 2. VOICEVOX engine
@@ -658,12 +673,14 @@ pictures if they still look right, and add the Steam/itch disclosure.
 
 - **What:** Word Gauntlet's rumour round replays each relay in Nobiko-san's voice, so no player's voice moves
   between phones. Unlike row 1's fixed host lines, that text is what players said.
-- **Terms:** not read. On 2026-11-01 the build thread tried No.7's page (https://voicevox.hiroshiba.jp/product/no7/),
-  https://voiceseven.com/ and the room's own VOICEVOX engine's `/speakers` (for its short policy); the session's
-  network policy blocked all three (proxy 403). 九州そら's page is on the same blocked host.
-- **Decision (2026-11-01):** build the round without VOICEVOX for player text. The TV and the relayer's phone read
-  the relays with the browser's own Japanese voice (row 31's terms apply). Only our own fixed lines (Nobiko-san's
-  opener, the rumour truths, her intro lines) go through the host pipeline and VOICEVOX, which row 1 covers.
-- **Status:** ❓ for VOICEVOX with player text; nothing in the game depends on it.
-- **To use No.7 for relays:** read No.7's (and 九州そら's) terms for live, generated, user-made text. If they allow it,
-  switch the TV's `readRelays` to ask the server for VOICEVOX audio. If not, keep browser speech.
+- **Terms read 2026-11-01:** No.7's terms at https://voiceseven.com/ (see row 1 for the full summary). First
+  attempt the same morning was blocked by the session's network policy; Ladi allowed the domains and they were
+  read. Non-commercial use is free with no application; a game is commercial use and needs a licence. No clause
+  addresses live, user-written text; the bans that could bite are "seriously damaging the character's image"
+  and the software's 公序良俗 rule.
+- **Decision (2026-11-01):** the TV's reveal reads each relay as a Nobiko-san host line (VOICEVOX when the server
+  has it, browser speech otherwise). Relays already pass `playerTextAllowed` (the Kids or Family word list)
+  before they're accepted, and a relay that names a player is refused. The relayer's phone uses the browser's
+  own voice (on-device first, row 31), so no extra server traffic per relay.
+- **Status:** 🟡 ⚠️: allowed while the game is free; selling needs row 1's No.7 licence, and a sharper moderation
+  plan for player text in a licensed voice (a word list isn't a moderation service).
