@@ -1,6 +1,6 @@
 // N4 hard-role offers are saved in account progress for the step 2 gate (docs/n4-hard-roles.md).
 import { describe, expect, it } from 'vitest';
-import { offerRate } from '../shared/src/modes/hardRoleLog.js';
+import { nextOfferee, offerRate } from '../shared/src/modes/hardRoleLog.js';
 import { addGame, emptyProgress, roleOfferRate, type GameResult } from '../shared/src/progress.js';
 import { bentoHausMode } from '../shared/src/modes/bentoHaus/bentoHaus.js';
 import { dubClubMode } from '../shared/src/modes/dubClub/dubClub.js';
@@ -63,4 +63,20 @@ describe('each mode reports its own offers, for one player', () => {
   for (const [name, mode, state, want] of cases) {
     it(name, () => expect(mode.offers!(state as never, 'a')).toEqual(want));
   }
+});
+
+describe('nextOfferee', () => {
+  it('rotates by fewest offers, then longest ago', () => {
+    expect(nextOfferee(['a', 'b'], [], 0, 3)).toBe('a');
+    expect(nextOfferee(['a', 'b'], [{ playerId: 'a', at: 0, answer: 'accepted' }], 1, 3)).toBe('b');
+  });
+  it('lets a player who just said no sit the next one out', () => {
+    expect(nextOfferee(['a'], [{ playerId: 'a', at: 0, answer: 'declined' }], 1, 2)).toBeNull();
+    expect(nextOfferee(['a'], [{ playerId: 'a', at: 0, answer: 'declined' }], 2, 2)).toBe('a');
+  });
+  it('keeps the spotlight moving in rooms of 4 or more', () => {
+    const log = [{ playerId: 'a', at: 0, answer: 'accepted' as const }];
+    expect(nextOfferee(['a'], log, 1, 4)).toBeNull();
+    expect(nextOfferee(['a'], log, 1, 3)).toBe('a');
+  });
 });

@@ -156,10 +156,7 @@ body[data-mode='narabete'] .players.two-rows .ticks, body[data-mode='narabete'] 
 body[data-mode='narabete'] .players.two-rows .score { grid-row: 1; grid-column: 4; font-size: 30px; }
 
 
-/* The commentary booth: Nobiko-san's instant replay of the N4 defence, its ので lit. */
-.nb-replay-tag { font-size: 22px; font-weight: 800; letter-spacing: 0.08em; color: var(--nb-gold); }
-.nb-replay-line { font-size: 36px; font-weight: 800; }
-.nb-replay-line mark { background: var(--nb-gold); color: #241a10; border-radius: 6px; padding: 0 4px; animation: nb-lit 0.6s ease-out both; }
-.nb-replay-note { font-size: 24px; color: var(--muted); }
-@keyframes nb-lit { from { background: transparent; } }
-.nb-calm .nb-replay-line mark { animation: none; }
+/* The commentary booth (stage/src/components/mixedRoom.ts boothStrip) sits in the foot; its CSS is shared. */
+/* The host stand-in's model defence: in for the few seconds she says it, out again (timed inline). */
+.nb-standin { animation-name: nb-standin; animation-timing-function: linear; animation-fill-mode: both; }
+@keyframes nb-standin { 0% { opacity: 0; } 8%, 88% { opacity: 1; } 100% { opacity: 0; } }

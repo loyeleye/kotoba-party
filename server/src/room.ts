@@ -56,7 +56,7 @@ export interface AccountResult {
   result: GameResult;
 }
 
-const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'setSound', 'wish', 'skip', 'playAgain', 'endGame', 'setMotion', 'passVip', 'settings', 'closeRoom']);
+const COMMAND_TYPES = new Set<Command['type']>(['start', 'play', 'setLevel', 'micCheck', 'setSound', 'wish', 'skip', 'playAgain', 'endGame', 'setMotion', 'passVip', 'settings', 'closeRoom', 'waitCheck']);
 /** What a watching screen may send once the main stage turns on remote control. */
 const WATCH_COMMANDS = new Set<Command['type']>(['start', 'skip', 'playAgain', 'endGame']);
 const COMMAND_MEMORY = 128;
@@ -377,6 +377,7 @@ export class Room {
 
   private dispatch(action: GameAction): Outcome {
     if (this.closed) return { changed: false };
+    const check = this.state.phase === 'recap' ? { mode: this.state.mode, ...this.state.recap?.mixed } : null;
     const outcome = apply(this.state, action, {
       now: this.clock.now(),
       durations: this.opts.durations,
@@ -397,6 +398,8 @@ export class Room {
       this.pruneClips();
       this.opts.onPhase?.(this);
       if (this.state.phase === 'recap') this.saveResults();
+      // Mixed rooms: the playtest check (phase lengths, "did anything feel like waiting?") once the recap is left.
+      if (check?.phases && this.state.phase !== 'recap') console.info('[mixed-room]', JSON.stringify({ room: this.state.code, mode: check.mode, phases: check.phases, answers: Object.entries(check.answers ?? {}).map(([id, a]) => ({ level: check.levels?.[id], a })), asked: check.ask?.length ?? 0, offers: check.offers }));
     }
     if (cues.length) this.opts.onCues?.(this, cues, this.state.phaseSeq);
     return outcome;

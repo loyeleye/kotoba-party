@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest';
 import { ManualClock } from '../server/src/clock.js';
 import { Room, wavDurationMs } from '../server/src/room.js';
 import { soundMorae } from '../shared/src/modes/karaokeDuel/scoring.js';
-import { ACT_POINTS, adlibCheck, adlibSimilarity, adlibTally, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, saidDirection, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
+import { ACT_POINTS, adlibCheck, adlibSimilarity, adlibTally, BOOTH_LINE_AT_MS, casualChunk, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, missionWord, saidDirection, STANDIN_AT_MS, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
+import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import type { HostCue } from '../shared/src/modes/mode.js';
 import { DIRECTIONS, EPISODES, directionOf, directionsFor, episodesFor, sceneAdlib, takeLimitMs } from '../shared/src/modes/dubClub/scenes.js';
 import type { JoinResponse } from '../shared/src/protocol.js';
 import { content } from './helpers.js';
@@ -250,7 +252,7 @@ describe('Dub Club: kept clips', () => {
 
 // ---- the N4 ad-lib role (hard role, goal 4.8) ----
 
-const N4_FRAMES = ['plain', 'n-da', 'teru', 'potential'];
+const N4_FRAMES = ['plain', 'n-da', 'teru', 'te-shimau', 'potential'];
 
 describe('Dub Club: the ad-lib content', () => {
   it('every scene has a mission, a picture, key words and a casual model line that passes its own check', () => {
@@ -278,7 +280,10 @@ describe('Dub Club: the ad-lib content', () => {
     expect(adlibCheck('だれが おにぎり たべたの？', keys)).toMatchObject({ casual: true, key: true });
     const chatta = adlibCheck({ via: 'speech', text: '食べちゃった', reading: 'たべちゃった' }, keys);
     expect(chatta).toMatchObject({ casual: true, key: false });
-    expect(chatta.frames).toContain('teru');
+    // 〜ちゃった is 〜て しまう said casually (te-shimau); 〜てる is teru.
+    expect(chatta.frames).toContain('te-shimau');
+    expect(chatta.frames).not.toContain('teru');
+    expect(adlibCheck('いま たべてる', keys).frames).toContain('teru');
     expect(adlibCheck('おばけ なんだ', keys).frames).toContain('n-da');
     expect(adlibCheck('おにぎりを たべましたよ。', keys)).toMatchObject({ casual: false, key: true });
     expect(adlibCheck('おにぎりは どこですか', keys).casual).toBe(false);
@@ -442,5 +447,274 @@ describe('Dub Club: the ad-lib role', () => {
     t.skipPhase();
     expect(t.st().rounds[0]!.actors.every((a) => a.adlib === undefined)).toBe(true);
     expect(t.view().cast.some((c) => c.adlib)).toBe(false);
+  });
+});
+
+// ---- mixed rooms: offer rotation, the Gallery, the booth after a good ad-lib, the host stand-in ----
+
+describe('Dub Club: mixed rooms', () => {
+  /** A room of these levels, every phone connected, collecting the host cues. */
+  function room(levels: ('kana' | 'n5' | 'n4')[]) {
+    const cues: HostCue[] = [];
+    const clock = new ManualClock();
+    const r = new Room({ code: 'DUBM', clock, content, onCues: (_room, raised) => cues.push(...raised) });
+    const stage = r.createStageToken();
+    const seats = levels.map((level, i) => r.join({ name: `P${i + 1}`, level }) as JoinResponse);
+    const sockets = seats.map((s) => {
+      const sock = { send: () => {}, close: () => {} };
+      r.attach(s.token, sock);
+      return sock;
+    });
+    let n = 0;
+    const cmd = (token: string, body: Record<string, unknown>) => r.command(token, { id: `c${++n}`, ...body });
+    const play = (seat: JoinResponse, move: Record<string, unknown>) => cmd(seat.token, { type: 'play', move });
+    const st = () => r.state.modeState as DubState;
+    const view = (seat?: JoinResponse) => r.viewFor(seat ? { kind: 'player', playerId: seat.playerId } : { kind: 'stage' }).game as DubView;
+    const skipPhase = () => cmd(stage, { type: 'skip', phaseSeq: r.state.phaseSeq });
+    /** Starts on the Onigiri Thief (its first mission's words: おにぎり, たべ, だれ), at the first scene card. */
+    const start = () => {
+      cmd(stage, { type: 'start', mode: 'dub-club' });
+      st().episodeId = 'onigiri';
+      skipPhase();
+      expect(r.state.phase).toBe('prompt');
+    };
+    const until = (f: () => boolean) => {
+      for (let i = 0; i < 600 && !f(); i++) clock.advance(100);
+      expect(f()).toBe(true);
+    };
+    const score = (seat: JoinResponse) => r.state.players.find((p) => p.id === seat.playerId)!.score;
+    return { room: r, clock, cues, seats, sockets, cmd, play, st, view, skipPhase, start, until, score };
+  }
+  const adlib0 = () => sceneAdlib(EPISODES.find((e) => e.id === 'onigiri')!.scenes[0], 'family');
+  const heard = (text: string) => ({ via: 'speech', text, reading: text });
+
+  /** The N4 player takes the ad-lib and sends `take` (after a plain read of `plain`); everyone else passes. */
+  function adlibScene(t: ReturnType<typeof room>, plain: string, take: string | null) {
+    const [k, n5, n4] = t.seats as [JoinResponse, JoinResponse, JoinResponse];
+    expect(t.play(n4, { kind: 'adlib', accept: true })).toMatchObject({ ok: true });
+    t.skipPhase();
+    t.play(n4, { kind: 'rehearse', utterance: heard(plain) });
+    t.play(n4, { kind: 'take', clipId: null, local: true, durMs: 2500, heard: take ? heard(take) : null, checked: true });
+    t.play(k, { kind: 'pass' });
+    t.play(n5, { kind: 'pass' });
+    expect(t.room.state.phase).toBe('reveal');
+    return { k, n5, n4 };
+  }
+
+  it('the Gallery on the ad-lib dub: a curveball on a mission word for a Kana or N5 player, reactions for the rest', () => {
+    const t = room(['kana', 'n5', 'n4']);
+    t.start();
+    const take = 'ねえ、おにぎり だれが たべたの';
+    const { k, n5, n4 } = adlibScene(t, adlib0().model.kana, take);
+    // No curveball while the take plays: the room hasn't heard it yet.
+    t.until(() => t.view().now?.step === 'play');
+    expect(t.view(k).me!.gallery!.kind).toBe('react');
+    expect(t.view(n5).me!.gallery!.kind).toBe('react');
+    expect(t.st().curveball).toBe(false);
+    // Once it has played, a Kana or N5 player who hasn't reacted gets it. Who rotates with the seed (the
+    // scene's number): scene 1 picks the second of them, the N5 player.
+    t.until(() => t.view().now?.step === 'guess');
+    const cb = t.view(n5).me!.gallery!;
+    expect(cb.kind).toBe('curveball');
+    if (cb.kind !== 'curveball') return;
+    // The longest mission word heard in the take, against other scenes' mission words.
+    expect(cb.options.map((o) => o.kana)).toContain('おにぎり');
+    expect(cb.options).toHaveLength(3);
+    expect(t.view(k).me!.gallery!.kind).toBe('react');
+    expect(t.view(n4).me!.gallery).toBeNull();
+    expect(t.play(n4, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: false });
+    expect(t.play(k, { kind: 'gallery', pick: 'naruhodo' })).toMatchObject({ ok: true });
+    expect(t.play(k, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: false });
+    expect(t.view().now!.gallery.map((b) => b.id)).toEqual(['naruhodo']);
+    const before = t.score(n5);
+    expect(t.play(n5, { kind: 'gallery', pick: 'おにぎり' })).toMatchObject({ ok: true });
+    expect(t.score(n5) - before).toBe(CURVEBALL_POINTS);
+    expect(t.view(n5).me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: 'おにぎり' });
+    expect(t.st().curveball).toBe(true);
+  });
+
+  it('the curveball comes after the take has played, not before; a take with no mission word in it deals none', () => {
+    // Kana and N5 players who both reacted while the take played are past the curveball: none is dealt.
+    const early = room(['kana', 'n5', 'n4']);
+    early.start();
+    const seats = adlibScene(early, adlib0().model.kana, 'ねえ、おにぎり だれが たべたの');
+    early.until(() => early.view().now?.step === 'play');
+    expect(early.play(seats.k, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: true });
+    expect(early.play(seats.n5, { kind: 'gallery', pick: 'e' })).toMatchObject({ ok: true });
+    early.until(() => early.view().now?.step === 'guess');
+    expect(early.view(seats.k).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi' });
+    expect(early.st().curveball).toBe(false);
+
+    // A take with none of the mission's words: nothing to ask about, so no curveball.
+    const missed = room(['kana', 'n5', 'n4']);
+    missed.start();
+    const m = adlibScene(missed, adlib0().model.kana, 'きょうは いい てんき だね');
+    missed.until(() => missed.view().now?.step === 'guess');
+    expect(missed.view(m.k).me!.gallery!.kind).toBe('react');
+    expect(missed.view(m.n5).me!.gallery!.kind).toBe('react');
+    expect(missed.st().curveball).toBe(false);
+  });
+
+  it('a good ad-lib: カット！, then the booth replays the scene’s model line in Fude’s voice, never the take', () => {
+    const t = room(['kana', 'n5', 'n4']);
+    t.start();
+    const take = 'ねえ、おにぎり だれが たべたの';
+    const { k, n5, n4 } = adlibScene(t, adlib0().model.kana, take);
+    t.until(() => t.view().now?.step === 'reveal');
+    expect(t.cues.some((c) => c.event === 'dub_cut')).toBe(false);
+    t.until(() => t.view().now?.step === 'booth');
+    const model = adlib0().model;
+    const cut = t.cues.findIndex((c) => c.event === 'dub_cut');
+    expect(t.cues[cut]).toMatchObject({ host: 'fude', slots: { name: 'P3' } });
+    const booth = t.cues.find((c) => c.event === 'dub_booth')!;
+    expect(t.cues.indexOf(booth)).toBeGreaterThan(cut);
+    expect(booth).toMatchObject({ host: 'fude', slots: { line: model.text, line_kana: model.kana, line_en: model.en }, atMs: BOOTH_LINE_AT_MS });
+    expect(JSON.stringify(t.cues)).not.toContain(take);
+    const tv = t.view().now!;
+    expect(tv.booth!.line).toEqual(model);
+    expect(tv.booth!.lit.key.length).toBeGreaterThan(0);
+    expect(tv.booth!.lit.before + tv.booth!.lit.key + tv.booth!.lit.after).toBe(model.text);
+    // The curveball dealt after the take is still unanswered, so the TV holds the lit word back for now.
+    expect(tv.booth!.holdKey).toBe(true);
+    expect(tv.booth!.note).toBe(`P3's take is a keeper. Fude-kantoku's cut, for the record, with 「${tv.booth!.lit.key}」.`);
+    expect(t.view(k).me!.gist!.en).toBe(`P3's ad-lib: approved! Fude's cut: “${model.en}”`);
+    expect(tv.card).not.toBeNull();
+    // Kana and N5 phones get the gist; the actor doesn't.
+    expect(t.view(k).me!.gist).toMatchObject({ kana: model.kana, romaji: expect.any(String) });
+    expect(t.view(n5).me!.gist).toMatchObject({ kana: model.kana, romaji: null });
+    expect(t.view(n4).me!.gist).toBeNull();
+    // 5–7 s, then on to the cast notes.
+    const at = t.view().now!.at;
+    t.until(() => t.room.state.phase === 'score');
+    expect(t.clock.now() - at).toBeGreaterThanOrEqual(5_000);
+    expect(t.clock.now() - at).toBeLessThanOrEqual(7_100);
+  });
+
+  it('no booth for a scripted take, nor for an ad-lib that wasn’t casual', () => {
+    const scripted = room(['kana', 'n5', 'n4']);
+    scripted.start();
+    const [k, n5, n4] = scripted.seats as [JoinResponse, JoinResponse, JoinResponse];
+    scripted.play(n4, { kind: 'adlib', accept: false });
+    scripted.skipPhase();
+    scripted.play(n4, { kind: 'take', clipId: null, local: true, durMs: 2000, heard: null, checked: true });
+    scripted.play(k, { kind: 'pass' });
+    scripted.play(n5, { kind: 'pass' });
+    scripted.until(() => scripted.room.state.phase === 'score');
+    expect(scripted.cues.some((c) => c.event === 'dub_cut' || c.event === 'dub_booth')).toBe(false);
+    expect(scripted.st().rounds[0]!.gallery ?? null).toBeNull();
+
+    const polite = room(['kana', 'n5', 'n4']);
+    polite.start();
+    adlibScene(polite, 'おにぎりを たべましたか', 'おにぎりを たべましたか');
+    const steps = new Set<string>();
+    for (let i = 0; i < 600 && polite.room.state.phase === 'reveal'; i++) {
+      if (polite.view().now) steps.add(polite.view().now!.step);
+      polite.clock.advance(100);
+    }
+    expect(steps.has('reveal')).toBe(true);
+    expect(steps.has('booth')).toBe(false);
+    expect(polite.cues.some((c) => c.event === 'dub_cut' || c.event === 'dub_booth')).toBe(false);
+  });
+
+  it('after “mission missed”, the phone shows a mission word to aim for', () => {
+    const t = room(['kana', 'n5', 'n4']);
+    t.start();
+    const n4 = t.seats[2]!;
+    t.play(n4, { kind: 'adlib', accept: true });
+    t.skipPhase();
+    t.play(n4, { kind: 'rehearse', utterance: heard('きょうは いい てんき だね') });
+    expect(t.view(n4).me!.adlib).toMatchObject({ check: { casual: true, key: false }, hint: 'おにぎり' });
+    expect(missionWord(adlib0())).toBe('おにぎり');
+    expect(missionWord({ keys: ['すき'] })).toBe('すき');
+    t.play(n4, { kind: 'rehearse', utterance: heard(adlib0().model.kana) });
+    expect(t.view(n4).me!.adlib!.hint).toBeNull();
+  });
+
+  it('the casual chunk lit in the booth is a contraction, 〜んだ, or a clause-final particle', () => {
+    expect(casualChunk('ごめんね。おいしそう だったから、たべちゃったんだ。')).toBe('ちゃった');
+    expect(casualChunk('おばけが でたんだ！ みんな、はやく にげて！')).toBe('んだ');
+    expect(casualChunk('みんな、だいじょうぶだよ！ わたしが まもるから。へんしん！')).toBe('だよ');
+    const onigiri = adlib0().model.text;
+    // 「…たべたの？」: the の at the end, not the one in わたしの (made long enough to be lit where it is).
+    const key = casualChunk(onigiri);
+    expect(key.endsWith('の')).toBe(true);
+    expect(onigiri.indexOf(key)).toBeGreaterThan(onigiri.indexOf('たべ'));
+    for (const e of EPISODES) for (const sc of e.scenes) expect(casualChunk(sc.adlib.model.text), sc.id).not.toBe('');
+    // With the line's frames: a て-form chunk only on a line tagged teru, so the monster's かてない (can't win)
+    // isn't lit as 〜てない, while 「…たべてないし」 is.
+    const monster = EPISODES.flatMap((e) => e.scenes).find((sc) => sc.adlib.model.text.includes('かてない'))!.adlib;
+    expect(casualChunk(monster.model.text, monster.frames)).not.toBe('てない');
+    expect(casualChunk(monster.model.text, monster.frames)).not.toBe('');
+    expect(casualChunk('しらないよ。ぼく、なにも たべてないし。…もぐもぐ。', ['plain', 'teru'])).toBe('てない');
+    // 〜ちゃった lines are tagged te-shimau and still light ちゃった.
+    expect(casualChunk('ごめんね。おいしそう だったから、たべちゃったんだ。', ['plain', 'te-shimau', 'n-da'])).toBe('ちゃった');
+    for (const e of EPISODES) for (const sc of e.scenes) expect(casualChunk(sc.adlib.model.text, sc.adlib.frames), sc.id).not.toBe('');
+  });
+
+  it('offers go by nextOfferee: a lone N4 player who says “not this time” sits the next scene out', () => {
+    const t = room(['kana', 'n5', 'n4']);
+    t.start();
+    const n4 = t.seats[2]!;
+    expect(t.play(n4, { kind: 'adlib', accept: false })).toMatchObject({ ok: true });
+    const toRound = (round: number) => {
+      for (let i = 0; i < 400 && t.st().round < round; i++) {
+        if (t.room.state.phase === 'answer') for (const s of t.seats) if (!t.view(s).me!.sent && !t.view(s).me!.passed) t.play(s, { kind: 'pass' });
+        t.clock.advance(1_000);
+      }
+    };
+    toRound(2);
+    expect(t.view(n4).me!.adlib).toBeNull();
+    toRound(3);
+    expect(t.view(n4).me!.adlib?.state).toBe('offered');
+  });
+
+  it('the host stand-in: with two players and nobody at N4, Fude ad-libs one scene card himself, once a game', () => {
+    const t = room(['kana', 'n5', 'n5']);
+    t.cmd(t.room.createStageToken(), { type: 'start', mode: 'dub-club' });
+    t.st().episodeId = 'onigiri';
+    // One player drops out before the first scene: two are left.
+    t.room.detach(t.sockets[2]!);
+    t.skipPhase();
+    expect(t.room.state.phase).toBe('prompt');
+    const model = adlib0().model;
+    const cues = t.cues.filter((c) => c.event === 'dub_standin');
+    expect(cues).toHaveLength(1);
+    expect(cues[0]).toMatchObject({ host: 'fude', slots: { line: model.text, line_kana: model.kana, line_en: model.en }, atMs: STANDIN_AT_MS });
+    const tv = t.view().standIn!;
+    expect(tv.line).toEqual(model);
+    expect(tv.at).toBe(t.view().phaseAt + STANDIN_AT_MS);
+    expect(tv.ms).toBeGreaterThanOrEqual(5_000);
+    expect(tv.ms).toBeLessThanOrEqual(7_000);
+    expect(STANDIN_AT_MS + tv.ms).toBeLessThanOrEqual(12_000);
+    const [k, n5] = t.seats as [JoinResponse, JoinResponse];
+    expect(t.view(k).me!.gist).toMatchObject({ kana: model.kana, romaji: expect.any(String) });
+    expect(t.view(n5).me!.gist).toMatchObject({ kana: model.kana, romaji: null });
+    // Nobody is offered anything.
+    expect(t.st().rounds[0]!.actors.every((a) => a.adlib === undefined)).toBe(true);
+    t.skipPhase();
+    expect(t.view().standIn).toBeNull();
+    expect(t.view(k).me!.gist).toBeNull();
+    // Once a game.
+    for (let i = 0; i < 400 && t.st().round < 2; i++) {
+      if (t.room.state.phase === 'answer') for (const s of t.seats.slice(0, 2)) if (!t.view(s).me!.sent && !t.view(s).me!.passed) t.play(s, { kind: 'pass' });
+      t.clock.advance(1_000);
+    }
+    expect(t.room.state.phase).toBe('prompt');
+    expect(t.view().standIn).toBeNull();
+    expect(t.cues.filter((c) => c.event === 'dub_standin')).toHaveLength(1);
+  });
+
+  it('a room of three with nobody at N4 sees nothing new: no stand-in, no Gallery, no booth', () => {
+    const t = room(['kana', 'n5', 'n5']);
+    t.start();
+    expect(t.view().standIn).toBeNull();
+    for (const s of t.seats) expect(t.view(s).me!.gist).toBeNull();
+    t.skipPhase();
+    for (const s of t.seats) t.play(s, { kind: 'take', clipId: null, local: true, durMs: 1500, heard: heard('おにぎり たべたの'), checked: true });
+    t.until(() => t.view().now?.step === 'play');
+    for (const s of t.seats) expect(t.view(s).me!.gallery).toBeNull();
+    expect(t.play(t.seats[0]!, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: false });
+    t.until(() => t.room.state.phase === 'score');
+    expect(t.cues.some((c) => ['dub_standin', 'dub_cut', 'dub_booth'].includes(c.event))).toBe(false);
   });
 });

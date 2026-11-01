@@ -7,8 +7,12 @@ import { normalizeReading, soundKey, type Utterance } from '../shared/src/japane
 import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
 import { defenceScript } from '../shared/src/modes/narabete/defence.js';
+import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
 import {
   BONUS_POOL_SHARE,
+  DEFENCE_KEY,
+  DEFENCE_POOL,
+  DURATIONS,
   computeFlip,
   dealTime,
   DEFENCE_SHARE,
@@ -748,7 +752,7 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
     const tv = t.view();
     expect(tv.defence).toMatchObject({ playerId: 'p2', n4: true, done: true });
     expect(tv.replay).toMatchObject({ playerId: 'p2', line: { text: model.text } });
-    expect(tv.replay!.lit.node).toBe('ので');
+    expect(tv.replay!.lit.key).toBe('ので');
     expect(tv.replay!.lit.before + 'ので' + tv.replay!.lit.after).toBe(model.text);
     expect(tv.replay!.note).toBe('ので = because: P2 gave the reason first, then where the card goes.');
     // Kana: the line in kana with romaji and English, and the card's picture. N5: the same without romaji.
@@ -759,7 +763,7 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
     expect(kana.picture ?? kana.emoji).toBeTruthy();
     const n5 = t.view('p3').me!.gist!;
     expect(n5).toMatchObject({ name: 'P2', kana: model.kana, en: kana.en });
-    expect(n5.romaji).toBeUndefined();
+    expect(n5.romaji).toBeNull();
     // Not for the defender, and never a correction.
     expect(t.view('p2').me!.gist).toBeNull();
     expect(JSON.stringify([tv.replay, kana, n5])).not.toMatch(/wrong|mistake|should|correct/i);
@@ -785,7 +789,7 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
     expect(t.r.encore).toBe('replay');
     // The host speaks only fixed, checked lines, never what speech recognition heard.
     expect(replays(t)).toHaveLength(0);
-    expect(t.view().replay!.lit).toEqual({ before: 'ぼくの すきな じかん な', node: 'ので', after: '、ここです。' });
+    expect(t.view().replay!.lit).toEqual({ before: 'ぼくの すきな じかん な', key: 'ので', after: '、ここです。' });
     expect(t.view('p3').me!.gist!.en).toMatch(/^P2: this one .*, and said why \(ので = because\)\.$/);
   });
 
@@ -807,6 +811,8 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
 /** Through the Time Line (and its N4 defence, left to run out) to the first Feelings round. */
 function toFeelingsN4(t: Table) {
   t.sayAll();
+  // An N4 offer takes the yes: an offer left to time out sits that player out of the next round.
+  if (t.r.hard?.answer === 'offered') t.play(t.r.hard.playerId, { kind: 'hard', accept: true });
   t.sortLine();
   t.lockAll();
   if (t.s.phase === 'encore') t.timeout();
@@ -899,4 +905,178 @@ describe('Narabete!: bots play a game end to end', () => {
       director.client.close();
     });
   }
+});
+
+// ---- mixed rooms: offer rotation, the Gallery, the booth's reaction, the host stand-in ----
+
+describe('Narabete!: mixed rooms', () => {
+  function toDefence(levels: Level[] = ['kana', 'n4', 'n5']): Table {
+    const t = new Table(levels.length, levels);
+    t.start();
+    t.sayAll();
+    t.play('p2', { kind: 'hard', accept: true });
+    t.sortLine();
+    t.lockAll();
+    expect(t.r.encore).toBe('hard');
+    return t;
+  }
+
+  it('offers go by nextOfferee: a “not this time” sits the next round out, then it comes back', () => {
+    const t = new Table(3, ['n5', 'n4', 'n5']);
+    t.start();
+    t.sayAll();
+    expect(t.r.hard?.playerId).toBe('p2');
+    t.play('p2', { kind: 'hard', accept: false });
+    t.sortLine();
+    t.lockAll();
+    t.timeout();
+    t.timeout();
+    t.sayAll();
+    expect(t.r.hard ?? null).toBeNull();
+    t.sortLine();
+    t.lockAll();
+    if (t.s.phase === 'encore') t.timeout();
+    t.timeout();
+    t.timeout();
+    t.sayAll();
+    expect(t.r.hard?.playerId).toBe('p2');
+  });
+
+  it('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands', () => {
+    const t = toDefence();
+    // While the defence is on, reactions only: nobody is asked which word they heard before it's been said.
+    expect(t.view('p1').me!.gallery!.kind).toBe('react');
+    expect(t.view('p3').me!.gallery!.kind).toBe('react');
+    expect(t.view('p2').me!.gallery).toBeNull();
+    expect(t.st.curveball).toBe(false);
+    expect(t.play('p2', { kind: 'gallery', pick: 'sugoi' }).error).toBe('bad-move');
+    // The defence lands: the replay starts, and a Kana or N5 player who hasn't reacted gets the curveball. Who
+    // rotates with the seed (the round): round 1 picks the second of them, the N5 player.
+    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[0]!.kana) });
+    expect(t.r.encore).toBe('replay');
+    const cb = t.view('p3').me!.gallery!;
+    expect(cb.kind).toBe('curveball');
+    if (cb.kind !== 'curveball') return;
+    expect(cb.options.map((o) => o.kana)).toContain(DEFENCE_KEY);
+    expect(cb.options.filter((o) => o.kana !== DEFENCE_KEY).every((o) => DEFENCE_POOL.includes(o.kana))).toBe(true);
+    expect(cb.options.every((o) => o.romaji === null)).toBe(true);
+    // The TV holds ので back while the curveball is open, and lights it once it's answered.
+    expect(t.view().replay!.lit.key).toBe(DEFENCE_KEY);
+    expect(t.view().replay!.holdKey).toBe(true);
+    expect(t.view('p1').me!.gallery!.kind).toBe('react');
+    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+    expect(t.play('p1', { kind: 'gallery', pick: 'warai' }).error).toBe('bad-move');
+    expect(t.view().gallery.map((b) => b.id)).toEqual(['sugoi']);
+    const before = t.score('p3');
+    expect(t.play('p3', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
+    expect(t.score('p3') - before).toBe(CURVEBALL_POINTS);
+    expect(t.view('p3').me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: DEFENCE_KEY });
+    expect(t.view().replay!.holdKey).toBe(false);
+    expect(t.st.curveball).toBe(true);
+    // Gone by the flip.
+    t.timeout();
+    expect(t.s.phase).toBe('score');
+    expect(t.view().gallery).toEqual([]);
+    expect(t.play('p1', { kind: 'gallery', pick: 'e' }).error).toBe('wrong-phase');
+  });
+
+  it('a defence that never lands deals no curveball; nor does one whose Kana and N5 players all reacted already', () => {
+    const missed = toDefence();
+    missed.play('p2', { kind: 'defend', pass: true });
+    expect(missed.s.phase).toBe('score');
+    expect(missed.st.curveball).toBe(false);
+
+    const early = toDefence();
+    expect(early.play('p1', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();
+    expect(early.play('p3', { kind: 'gallery', pick: 'e' }).error).toBeUndefined();
+    early.play('p2', { kind: 'defend', utterance: speech(early.view('p2').me!.hard!.script!.lines[0]!.kana) });
+    expect(early.r.encore).toBe('replay');
+    expect(early.view('p1').me!.gallery).toMatchObject({ kind: 'react', picked: 'naruhodo' });
+    expect(early.view('p3').me!.gallery).toMatchObject({ kind: 'react', picked: 'e' });
+    expect(early.view().replay!.holdKey).toBe(false);
+    expect(early.st.curveball).toBe(false);
+  });
+
+  it('no Gallery during the ordinary defence, nor in a room where nobody took the N4 defence', () => {
+    const plain = new Table(3, ['kana', 'n5', 'n5']);
+    plain.start();
+    toFeelingsN4(plain);
+    plain.sayAll();
+    const p1 = plain.cardOf('p1');
+    while (plain.r.line.indexOf(p1.id) > 0) plain.play('p1', { kind: 'move', dir: -1 });
+    plain.play('p1', { kind: 'move', dir: 1 });
+    plain.play('p1', { kind: 'move', dir: -1 });
+    plain.lockAll();
+    expect(plain.r.encore).toBe('defence');
+    expect(plain.view('p2').me!.gallery).toBeNull();
+    expect(plain.view().gallery).toEqual([]);
+    expect(plain.play('p2', { kind: 'gallery', pick: 'sugoi' }).error).toBe('wrong-phase');
+  });
+
+  it('the booth: Nobiko-san reacts (あらまあ) first, then says the model line a beat later', () => {
+    const t = toDefence();
+    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[0]!.kana) });
+    const events = t.s.cues.map((c) => c.event);
+    const hooray = events.lastIndexOf('narabete_hooray');
+    expect(hooray).toBeGreaterThanOrEqual(0);
+    expect(events.lastIndexOf('narabete_replay')).toBeGreaterThan(hooray);
+    expect(t.s.cues.find((c) => c.event === 'narabete_replay')!.atMs).toBe(DURATIONS.replayLineAt);
+    expect(REAL_CONTENT.hostLines.some((l) => l.event === 'narabete_hooray' && l.jp.text.startsWith('あらまあ'))).toBe(true);
+    // The gist on Kana and N5 phones is the shared booth gist.
+    expect(t.view('p1').me!.gist).toMatchObject({ name: 'P2', romaji: expect.any(String) });
+    expect(t.view('p3').me!.gist!.romaji).toBeNull();
+  });
+
+  it('the host stand-in: a 2-player room with no N4 player hears one model defence, once a game', () => {
+    const t = new Table(2, ['kana', 'n5']);
+    t.start();
+    t.sayAll();
+    expect(t.s.phase).toBe('reveal');
+    const cues = t.s.cues.filter((c) => c.event === 'narabete_standin');
+    expect(cues).toHaveLength(1);
+    expect(cues[0]).toMatchObject({ host: 'nobiko', atMs: DURATIONS.standInAt });
+    const tv = t.view().standIn!;
+    expect(tv.line.text).toBe(cues[0]!.slots!.line);
+    expect(tv.line.text).toMatch(/ので、これが いちばん あとです。$/);
+    expect(tv.lit.key).toBe(DEFENCE_KEY);
+    expect(tv.ms).toBeGreaterThanOrEqual(5_000);
+    expect(tv.ms).toBeLessThanOrEqual(7_000);
+    expect(DURATIONS.standInAt + tv.ms).toBeLessThan(DURATIONS.reveal);
+    expect(t.view('p1').me!.standIn!.romaji).toBeTruthy();
+    expect(t.view('p2').me!.standIn).toMatchObject({ kana: tv.line.kana, romaji: null });
+    // Nobody is asked to say it: no offer, no encore, no points.
+    expect(t.r.hard ?? null).toBeNull();
+    t.sortLine();
+    t.lockAll();
+    expect(t.s.phase).toBe('score');
+    // Once a game.
+    t.timeout();
+    t.timeout();
+    t.sayAll();
+    expect(t.s.phase).toBe('reveal');
+    expect(t.view().standIn).toBeNull();
+    expect(t.s.cues.filter((c) => c.event === 'narabete_standin')).toHaveLength(1);
+  });
+
+  it('no stand-in with an N4 player, or with 3+ players; an N5-only 3+ room sees nothing new', () => {
+    for (const levels of [['n4', 'n5'], ['kana', 'n5', 'n5']] as Level[][]) {
+      const t = new Table(levels.length, levels);
+      t.start();
+      t.sayAll();
+      expect(t.view().standIn).toBeNull();
+      expect(t.s.cues.some((c) => c.event === 'narabete_standin')).toBe(false);
+      for (const id of t.ids_()) expect(t.view(id).me!.standIn).toBeNull();
+    }
+  });
+
+  it('every Feelings theme says whether its word is a な-adjective, and たいへん is', () => {
+    for (const theme of FEEL_THEMES) expect(typeof theme.na).toBe('boolean');
+    expect(FEEL_THEMES.filter((x) => x.na).every((x) => x.more.kana === 'たいへん')).toBe(true);
+    expect(FEEL_THEMES.filter((x) => x.more.kana === 'たいへん').every((x) => x.na)).toBe(true);
+    // The flag decides, not the word's last kana: しずか ends in か, which looked like a verb ending.
+    const quiet = { more: { text: 'しずか', kana: 'しずか', en: 'quieter' }, na: true };
+    expect(defenceScript({ theme: quiet }, 3, 4, 'Aki').lines[0]!.kana).toContain('しずかなので');
+    const smelly = { more: { text: 'くさい', kana: 'くさい', en: 'smellier' }, na: false };
+    expect(defenceScript({ theme: smelly }, 3, 4, 'Aki').lines[0]!.kana).toContain('くさいので');
+  });
 });

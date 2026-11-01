@@ -87,6 +87,11 @@ export interface RecapView {
   teams?: RecapTeam[];
   /** Only the viewer's own phrasebook (empty on the stage). */
   phrasebook: PhraseEntry[];
+  /**
+   * A mixed room (an N4 player and players below N4): the one-tap "Did anything feel like waiting?" for this
+   * phone, when it's asked (players below N4), with its answer so far. Null on the stage and N4 phones.
+   */
+  waitCheck?: { answer: WaitAnswer | null } | null;
 }
 
 /**
@@ -166,7 +171,13 @@ export type Command =
   /** Main stage only: room settings (either or both). */
   | { id: string; type: 'settings'; remoteControl?: boolean; audience?: Audience }
   /** Main stage only: ends the room for every screen and phone. */
-  | { id: string; type: 'closeRoom' };
+  | { id: string; type: 'closeRoom' }
+  /** Recap, mixed rooms only: the one-tap playtest question for players below N4, "Did anything feel like waiting?" */
+  | { id: string; type: 'waitCheck'; answer: WaitAnswer };
+
+/** The mixed-room playtest question's answers: no, a bit, yes. */
+export type WaitAnswer = 'no' | 'bit' | 'yes';
+export const WAIT_ANSWERS: readonly WaitAnswer[] = ['no', 'bit', 'yes'];
 
 export type CommandType = Command['type'];
 

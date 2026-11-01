@@ -10,8 +10,11 @@
 //   score   closing time: each customer's order next to what they got, then the stars.
 //
 // N4 hard roles (Co-op): the deputy manager's (📋 ふくてんちょう) desk under the counter shows a complaint
-// or special order and their lines that came out right (never a miss); an おもてなし guest wears a 🌸, shows their question
-// once seated, and leaves with their stars.
+// or special order and their lines that came out right (never a miss), and the tips a fix won back; an おもてなし
+// guest wears a 🌸, shows their question once seated, replies once it's answered, and leaves with their stars.
+// Mixed rooms: the commentary booth's replay strip (📺 REPLAY, the key word lit) and the Gallery's reaction
+// bubbles sit under the counter for a few seconds once a shift; in a 1–2-player room with nobody at N4, the
+// first title card shows Pon standing in as the deputy manager.
 //
 // Timers run as CSS animations from the server's own times (negative delays). The delays are named
 // `--*-delay` so patch() keeps them on a redraw, and a patience bar never jumps ahead. The shop's
@@ -20,6 +23,7 @@
 import { h, seatShape } from '../../../shared/src/dom.js';
 import { LAST_ORDER_MS, LINGER_MS, starsFor, type FeedItem, type VisitView } from '../../../shared/src/modes/bentoHaus/bentoHaus.js';
 import type { DeskView } from '../../../shared/src/modes/bentoHaus/hardRoles.js';
+import { boothStrip, galleryBubbles } from '../components/mixedRoom.js';
 import { countWord, foodOf } from '../../../shared/src/modes/bentoHaus/menu.js';
 import type { BentoView } from '../../../shared/src/modes/views.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -112,6 +116,20 @@ function prompt(game: BentoView): HTMLElement {
       game.menu.map((id) => foodTile(id, game.ownCounter)),
     ),
     game.ownCounter ? h('p', { class: 'bh-counter-tip', lang: 'ja' }, 'ほそながい もの: 〜ほん · うすい もの: 〜まい · ちいさい もの: 〜こ（〜つ でも OK）') : null,
+    standIn(game),
+  );
+}
+
+/** The host stand-in: Pon plays the deputy manager for one line (the customer's ask, then his answer, lit). */
+function standIn(game: BentoView): HTMLElement | null {
+  const si = game.standIn;
+  if (!si) return null;
+  return h(
+    'div',
+    { class: 'bh-standin', 'data-key': 'standin' },
+    h('p', { class: 'bh-desk-tag', lang: 'ja' }, '📋 ふくてんちょう: ポン', h('small', {}, ' Pon disguises himself as the deputy manager. ドロン！')),
+    h('p', { class: 'bh-bubble', lang: 'ja' }, si.ask.text, h('small', {}, si.ask.en)),
+    boothStrip(si, 'Pon'),
   );
 }
 
@@ -156,8 +174,8 @@ function customer(view: RoomView, game: BentoView, v: VisitView, now: number): H
   const total = v.leaveAt - v.arriveAt;
   const gone = Math.min(total, Math.max(0, now - v.arriveAt));
   const guest = game.hard?.guests[v.id];
-  // An おもてなし guest asks their question once they've been seated.
-  const line = done ? v.reaction : (guest?.ask ?? v.hello);
+  // An おもてなし guest asks their question once they've been seated, and replies once it's answered.
+  const line = done ? v.reaction : (guest?.reply ?? guest?.ask ?? v.hello);
   // Waiting customers fidget for the last quarter of their patience; leaving ones slide out at the end.
   const timing = done
     ? `--exit-delay: ${Math.round((v.endedAt ?? now) + LINGER_MS - 450 - now)}ms;`
@@ -233,6 +251,7 @@ function desk(view: RoomView, d: DeskView): HTMLElement {
       last ? h('span', { class: 'bh-staff', lang: 'ja' }, last.text) : null,
       d.stationId && d.state === 'asked' ? [' → ', seatChip(view, d.stationId)] : null,
       d.state === 'resolved' ? h('b', { lang: 'ja' }, ' ✓') : null,
+      d.won ? h('b', { class: 'bh-won' }, ` +${d.won} 💰`) : null,
     ),
   );
 }
@@ -266,6 +285,8 @@ function kitchen(view: RoomView, game: BentoView): HTMLElement {
     ),
     counter(view, game, now),
     game.hard?.desk.length ? h('div', { class: 'bh-desks' }, game.hard.desk.slice(-1).map((d) => desk(view, d))) : null,
+    game.hard?.booth ? h('div', { class: 'bh-booth', 'data-key': 'booth' }, boothStrip(game.hard.booth, playerOf(view, game.hard.booth.playerId)?.name ?? null, game.hard.booth.holdKey)) : null,
+    game.hard?.gallery.length ? galleryBubbles(game.hard.gallery) : null,
     game.ajimi
       ? h(
           'p',

@@ -10,7 +10,7 @@ It merges the classroom activity 他己紹介 (introducing someone else, the ste
 the name stays out of the product). Ladi's twist: one card is true, the rest are lies, and lies above
 the truth score.
 
-Code: `shared/src/modes/hajimemashite/` (rules and views in `hajimemashite.ts`, the 26 draft cards in
+Code: `shared/src/modes/hajimemashite/` (rules and views in `hajimemashite.ts`, the 33 draft cards in
 `cards.ts`), `shared/src/japanese/toKana.ts` (romaji to kana, names to katakana),
 `stage/src/modes/hajimemashite.{ts,css}`, `controller/src/modes/hajimemashite.{ts,css}`,
 `tools/bots/policies/hajimemashite.ts`, `tests/hajimemashite.test.ts`.
@@ -76,9 +76,9 @@ VIP extras: みじかめ (4 guests only) and 5まい (five cards a turn).
 
 ## Content
 
-26 draft cards (`cards.ts`): すきな たべもの, きらいな たべもの, しゅみ, いきたい ところ, できること, こわい もの,
+33 draft cards (`cards.ts`): すきな たべもの, きらいな たべもの, しゅみ, いきたい ところ, できること, こわい もの,
 まいあさ, かいたい ペット, こどもの ころの ゆめ, ねる まえに, six N4 cards for N4 guests (the N4 deck, below),
-three Kids N4 cards and three Cheeky N4 cards (below), and four Cheeky cards (はつデート, よっぱらうと, スマホの しゃしん, じつは すき) written
+three Kids N4 cards and three Cheeky N4 cards, seven N4 verb cards (below), and four Cheeky cards (はつデート, よっぱらうと, スマホの しゃしん, じつは すき) written
 for women and men alike (もとカレ and もとカノ, かれの いえ and かのじょの いえ). 28 draft Pon lines
 (`content/src/hosts/pon.ts`, `hajime_*`). All `draft` until the fluent check.
 
@@ -116,6 +116,38 @@ They have 16 tiles and a Pon tile like every card (Kids: animals, spills, things
 you nodded off, who you drunk-called, date spots, both ex tiles as on the other Cheeky cards) and are
 tiles only, like every Kids-room card and every Cheeky-only card.
 
+**Verb cards: the player makes the た or て form.** Seven N4 cards put a verb phrase in the blank
+(`conj`). Their tiles show the dictionary form (ふじさんに のぼる) under the card's cue (＿た ことが
+あります); the line needs the conjugated form (ふじさんに のぼった ことが あります), which is the tile's kana,
+what the TV shows and what the check listens for:
+
+| Room | Card | Cue (first person) | Form | Frames |
+| --- | --- | --- | --- | --- |
+| All | した ことが ある こと | ＿た ことが あります | た | ta-koto |
+| All | うっかり して しまった こと | うっかり ＿て しまいました | て | te-shimau |
+| All | にほんで して みたい こと | にほんで ＿て みたいです (third: 〜て みたいそうです) | て | te-miru, tai, sou-hear |
+| Kids | がっこうで した こと | がっこうで ＿た ことが あります | た | ta-koto |
+| Kids | おうちで やって しまった こと | おうちで ＿て しまいました | て | te-shimau |
+| Cheeky | のみかいで した こと | のみかいで ＿た ことが あります | た | ta-koto |
+| Cheeky | いちど して みたい こと | いちどで いいから ＿て みたいです (third: 〜そうです) | て | te-miru, tai, sou-hear |
+
+Each has 16 tiles and a Pon tile, with the forms worth practising (いく → いった, はしる → はしった,
+はいる → はいって, きる → きって). Who conjugates:
+
+- **The N4 introducer** sees the verb in the dictionary form and the cue (アキさんは ＿た ことが あります)
+  and makes the sentence; the line counts as said only when the conjugated phrase is heard (the
+  dictionary form is a try). The model line shows on their phone after each verb line. A Kana or N5
+  introducer reads the whole line or the frame with the conjugated phrase, as on every card.
+- **The N4 guest** at the truth sees 「ほんとうです！ ［ふじさんに のぼる］ ことが あります。」 and says it in the
+  form; the dictionary form is a try (the model line shows, to try again), and tapping sends the model.
+- **Typing**: a tile in either form is that tile; any other verb phrase must end in the card's form
+  in the plain form (た, or だ after ん/い; て, or で after ん/い), not the polite ました/まして, and a particle
+  で (うみで) isn't a て form; otherwise the phone asks for it (`make-it-ta`, `make-it-te`). Bots use tiles
+  on verb cards.
+- **Phrasebook**: the guest's true line is from memory on a verb card (they built the form) and read on a
+  noun card (the phone prints it); heard only after a try that missed, it's a retry. The introducer's
+  line is from memory for an N4 introducer (they make the sentence from the word) and read otherwise.
+
 An N4 guest draws the N4 cards first, in every room: the room's own N4 cards (Kids, Cheeky) first, then
 the shared N4 deck, then the usual cards once they've had them all. Kana and N5 guests never get them. It isn't a separate seat: the tanuki and
 detectives play the guest's card as always, so there's no offer to decline.
@@ -149,8 +181,15 @@ the truth.
 
 12. N4 guests draw the N4 deck first, even in a Cheeky room (where everyone else gets the Cheeky
     cards first): the N4 deck is the point of their turn.
-13. The N4 cards' blanks are nouns with the verb in the frame (でんしゃに ＿を わすれて しまいました), not a
-    verb phrase in the blank, so typed lies stay one word and are cut down the usual way.
+13. The first N4 cards' blanks are nouns with the verb in the frame (でんしゃに ＿を わすれて しまいました), so
+    typed lies stay one word and are cut down the usual way. The verb cards (below) add the other kind.
+14. **Verb cards** (for Ladi to confirm): seven, a た and a て card for the shared deck, Kids and
+    Cheeky (plus にほんで して みたい こと). The tile's kana is the conjugated phrase (so twins, the truth,
+    the TV and the recall all use one form) and its `dict` is only the prompt. Points are unchanged: a
+    line or truth in the dictionary form scores as a try, like any line not heard. 〜て みたい takes
+    someone else as subject through hearsay (アキさんは 〜て みたいそうです), not a noun sentence.
+15. A typed verb phrase on a verb card must already be in the card's form; the game doesn't conjugate
+    it for the player (a plain る verb can be either kind, so it can't be done reliably).
 
 ## Decided by Ladi
 
@@ -165,4 +204,5 @@ the truth.
 4. Pon reads a line after 12 s of silence: too long for the room, too short for a nervous reader?
 5. Pon's English captions show a guest's name in katakana (マット… even better than Pon); host-line slots
    carry one value for both languages.
-6. Fluent check of every frame, tile, Pon line and argue phrase.
+6. Fluent check of every frame, tile, Pon line and argue phrase, and the verb cards' tiles and
+   〜みたいそうです lines.

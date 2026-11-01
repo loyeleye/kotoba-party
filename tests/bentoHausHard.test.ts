@@ -3,8 +3,29 @@ import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
-import type { BentoState, BentoView, Round, Visit } from '../shared/src/modes/bentoHaus/bentoHaus.js';
-import { checkLine, complaintSteps, DESK_LINGER_MS, GUEST_ASKS, INCIDENT_MS, offerStats, rolesFor, SPECIAL_EVERY, SPECIALS, THANKS, WELCOME, type StepScript } from '../shared/src/modes/bentoHaus/hardRoles.js';
+import { STAND_IN_AT_MS, TIPS, type BentoState, type BentoView, type Round, type Visit } from '../shared/src/modes/bentoHaus/bentoHaus.js';
+import {
+  checkLine,
+  complaintSteps,
+  creditedLine,
+  DESK_LINGER_MS,
+  GALLERY_MS,
+  GUEST_ASKS,
+  INCIDENT_MS,
+  offerStats,
+  rolesFor,
+  SORRY_OMACHI,
+  SPECIAL_EVERY,
+  SPECIALS,
+  SURE_OMACHI,
+  THANKS,
+  WELCOME,
+  winBack,
+  type RoleOffer,
+  type StepScript,
+} from '../shared/src/modes/bentoHaus/hardRoles.js';
+import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { framesOf } from '../shared/src/japanese/frames.js';
 import { COUNTS, FOODS, foodOf } from '../shared/src/modes/bentoHaus/menu.js';
 import type { Command } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -147,7 +168,7 @@ describe('Bento Haus hard roles: the lines', () => {
     expect(checkLine(speech('もう ひとつ つくって もらえますか'), kitchen).hint).toContain('からあげ');
     expect(checkLine(speech('からあげを つくって ください'), kitchen).ok).toBe(false);
     // 〜て くれませんか to your own kitchen is fine too, tagged te-kuremasen.
-    expect(checkLine(speech('からあげを もう ひとつ つくって くれませんか'), kitchen)).toEqual({ ok: true, hint: null, frames: ['te-kuremasen'] });
+    expect(checkLine(speech('からあげを もう ひとつ つくって くれませんか'), kitchen)).toEqual({ ok: true, hint: null, frames: ['te-kuremasen'], form: 'kuremasen' });
     expect(checkLine(speech('もう ひとつ つくって くれますか'), kitchen).ok).toBe(false);
     // おまち いただけますか (without the て) is a polite ask to a customer.
     expect(checkLine(speech('かしこまりました。しょうしょう おまち いただけますか。'), { check: 'ask' }).ok).toBe(true);
@@ -173,15 +194,36 @@ describe('Bento Haus hard roles: the lines', () => {
 
 describe('Bento Haus hard roles: who is offered what', () => {
   const p = (id: string, level: Level) => ({ id, level });
-  it('rotates the manager seat through the N4 players; the rest get おもてなし', () => {
+  it('rotates the manager seat with nextOfferee; the rest get おもてなし', () => {
     expect(rolesFor(1, [p('a', 'n5'), p('b', 'kana')])).toEqual([]);
-    expect([1, 2, 3].map((r) => rolesFor(r, [p('a', 'n4'), p('b', 'n5')])[0]!.role)).toEqual(['manager', 'omotenashi', 'manager']);
     const two = [p('a', 'n4'), p('b', 'n5'), p('c', 'n4')];
     expect(rolesFor(1, two)).toEqual([
       { playerId: 'a', role: 'manager' },
       { playerId: 'c', role: 'omotenashi' },
     ]);
-    expect(rolesFor(2, two).find((o) => o.role === 'manager')!.playerId).toBe('c');
+    // Fewest offers of the seat first: c, then a again.
+    const log: RoleOffer[] = [{ round: 1, playerId: 'a', role: 'manager', answer: 'accepted' }];
+    expect(rolesFor(2, two, log).find((o) => o.role === 'manager')!.playerId).toBe('c');
+    log.push({ round: 2, playerId: 'c', role: 'manager', answer: 'accepted' });
+    expect(rolesFor(3, two, log).find((o) => o.role === 'manager')!.playerId).toBe('a');
+    // A lone N4 player in a small room keeps the seat while they take it…
+    const one = [p('a', 'n4'), p('b', 'n5')];
+    expect(rolesFor(2, one, [{ round: 1, playerId: 'a', role: 'manager', answer: 'accepted' }])[0]!.role).toBe('manager');
+    // …sits it out for a shift after saying no (the おもてなし shift instead)…
+    expect(rolesFor(2, one, [{ round: 1, playerId: 'a', role: 'manager', answer: 'declined' }])[0]!.role).toBe('omotenashi');
+    // …and in a room of 4 or more, gets it every other shift.
+    const four = [p('a', 'n4'), p('b', 'n5'), p('c', 'n5'), p('d', 'kana')];
+    const seat = (r: number, o: RoleOffer[]) => rolesFor(r, four, o)[0]!.role;
+    expect(seat(2, [{ round: 1, playerId: 'a', role: 'manager', answer: 'accepted' }])).toBe('omotenashi');
+    expect(seat(3, [{ round: 1, playerId: 'a', role: 'manager', answer: 'accepted' }])).toBe('manager');
+  });
+
+  it('a disconnected N4 player is never offered a role', () => {
+    const t = new Table(['n4', 'n5', 'n4']);
+    t.act({ type: 'connection', playerId: 'p1', connected: false });
+    t.toPrompt();
+    expect(t.st.hard!.offers.map((o) => [o.playerId, o.role])).toEqual([['p3', 'manager']]);
+    expect(t.view('p3').me!.hard?.offer).toEqual({ role: 'manager' });
   });
 
   it('a room with no N4 player gets no hard-role state or view at all', () => {
@@ -250,12 +292,17 @@ describe('Bento Haus hard roles: who is offered what', () => {
     ]);
     t.open();
     expect(t.view().hard!.manager).toBeNull();
-    // The next shift starts fresh: p3's turn for the seat, p1 offered おもてなし.
+    // Next shift, both sit the seat out (a no last time means no nagging): both are offered おもてなし.
     t.timeout();
     t.timeout();
     expect(t.s.phase).toBe('prompt');
-    expect(t.view('p3').me!.hard?.offer).toEqual({ role: 'manager' });
+    expect(t.view('p3').me!.hard?.offer).toEqual({ role: 'omotenashi' });
     expect(t.view('p1').me!.hard?.offer).toEqual({ role: 'omotenashi' });
+    // The shift after, the seat is offered again.
+    t.open();
+    t.timeout();
+    t.timeout();
+    expect(t.view('p1').me!.hard?.offer).toEqual({ role: 'manager' });
   });
 
   it('a lone N4 player declining the seat leaves it empty', () => {
@@ -323,8 +370,12 @@ describe('Bento Haus hard roles: the manager', () => {
     expect(t.play(station, { kind: 'request-done', incidentId: inc.id }).error).toBeUndefined();
     expect(inc.state).toBe('resolved');
     expect(t.view().hard!.desk[0]!.line.text).toBe('ありがとう。たすかりました。');
-    // Nobody's pay changes: the tips stay what the box earned.
-    expect(t.r.tips).toBe(tips);
+    // The fix landed: half the tips the box lost (rounded up) come back for the team.
+    const back = winBack(TIPS.perfect * (v.rush ? 2 : 1) - (v.tips - inc.won!));
+    expect(back).toBeGreaterThan(0);
+    expect(inc.won).toBe(back);
+    expect(t.r.tips).toBe(tips + back);
+    expect(t.view().hard!.desk[0]!.won).toBe(back);
     expect(t.r.bonus.p1).toBeGreaterThan(0);
     expect(t.view().hard!.handled).toEqual({ done: 1, of: 1 });
   });
@@ -341,6 +392,13 @@ describe('Bento Haus hard roles: the manager', () => {
     t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech('すみません。'), peeked: true });
     t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech('もうしわけ ございません。すこし まって いただけますか。') });
     expect(t.s.phrasebook.p1!.at(-1)!.outcome).toBe('seen');
+  });
+
+  it('the yuki-onna asks for ice; the kitchen line names こおり', () => {
+    const ice = SPECIALS.find((x) => x.id === 'ice')!;
+    expect(ice.customers).toEqual(['yukionna']);
+    expect(ice.steps[1].keys).toEqual(['こおり']);
+    expect(checkLine(speech('こおりを いれて もらえますか'), ice.steps[1]).ok).toBe(true);
   });
 
   it('special orders come every few customers, and run out after a while', () => {
@@ -438,5 +496,376 @@ describe('Bento Haus hard roles: the おもてなし shift', () => {
     expect(t.view().hard!.guests[v.id]!.stars).toBe(3);
     expect(t.play('p1', { kind: 'omotenashi', visitId: v.id, skip: true }).error).toBe('too-late');
     expect(offerStats(t.st.hard!.offers)).toMatchObject({ offered: 2, accepted: 1, declined: 1 });
+  });
+});
+
+// ---- round 4: the manager's seat, credit, and mixed rooms ----
+
+/** Serve a box with one thing off (a food left out, or one extra), so the deputy manager gets a complaint. */
+function complain(t: Table) {
+  t.r.bakeUsed = true;
+  t.r.ajimi ??= { visitId: 'none', foodId: 'none', at: 0 };
+  const v = t.customer();
+  if (v.lines.length > 1) t.fill(v, v.lines[0]!.foodId);
+  else {
+    t.fill(v);
+    const extra = t.r.menu.find((id) => !v.lines.some((l) => l.foodId === id))!;
+    v.box[extra] = 1;
+  }
+  expect(t.play(v.takerId, { kind: 'serve', visitId: v.id }).error).toBeUndefined();
+  const inc = t.r.hard!.incidents.at(-1)!;
+  expect(inc.kind).toBe('complaint');
+  return { v, inc };
+}
+const SORRY_LINE = 'もうしわけ ございません。すこし まって いただけますか。';
+const cuesOf = (t: Table, event: string) => t.s.cues.filter((c) => c.event === event);
+
+function seated(levels: Level[]) {
+  const t = new Table(levels);
+  t.toPrompt();
+  expect(t.play('p1', { kind: 'role', accept: true }).error).toBeUndefined();
+  t.open();
+  return t;
+}
+
+describe('Bento Haus hard roles: the deputy manager’s seat', () => {
+  it('the deputy manager takes no ordinary orders while holding the seat; the others take them all', () => {
+    const t = seated(['n4', 'n5', 'kana']);
+    t.r.bakeUsed = true;
+    for (let k = 0; k < 4 && t.s.phase === 'answer'; k++) {
+      const v = t.customer();
+      expect(v.takerId).not.toBe('p1');
+      t.fill(v);
+      t.play(v.takerId, { kind: 'serve', visitId: v.id });
+    }
+    expect(t.r.visits.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('a deputy manager alone in the room still takes the orders', () => {
+    const t = seated(['n4']);
+    expect(t.customer().takerId).toBe('p1');
+  });
+
+  it('a declined seat still passes to the next N4 player (nextOfferee), and they then take no orders', () => {
+    const t = new Table(['n4', 'n5', 'n4']);
+    t.toPrompt();
+    t.play('p1', { kind: 'role', accept: false });
+    expect(t.view('p3').me!.hard?.offer).toEqual({ role: 'manager' });
+    t.play('p3', { kind: 'role', accept: true });
+    t.open();
+    t.r.bakeUsed = true;
+    for (let k = 0; k < 3 && t.s.phase === 'answer'; k++) {
+      const v = t.customer();
+      expect(v.takerId).not.toBe('p3');
+      t.fill(v);
+      t.play(v.takerId, { kind: 'serve', visitId: v.id });
+    }
+  });
+
+  it('a fix that lands wins back half the tips the box lost, rounded up; a missed one wins nothing', () => {
+    expect([0, 1, 2, 3, 4].map(winBack)).toEqual([0, 1, 1, 2, 2]);
+    const t = seated(['n4', 'n5']);
+    const { v, inc } = complain(t);
+    const before = t.r.tips;
+    expect(inc.lost).toBe(TIPS.perfect * (v.rush ? 2 : 1) - v.tips);
+    t.play('p1', { kind: 'manager', incidentId: inc.id, skip: true });
+    t.play('p1', { kind: 'manager', incidentId: inc.id, skip: true });
+    expect(inc.state).toBe('missed');
+    expect(t.r.tips).toBe(before);
+    expect(inc.won).toBeUndefined();
+  });
+
+  it('"Need the words?" opens by itself on the deputy manager’s first incident of the game only', () => {
+    const t = seated(['n4', 'n5']);
+    const first = complain(t).inc;
+    expect(t.view('p1').me!.hard!.desk[0]!.firstHelp).toBe(true);
+    t.play('p1', { kind: 'manager', incidentId: first.id, skip: true });
+    t.play('p1', { kind: 'manager', incidentId: first.id, skip: true });
+    const second = complain(t).inc;
+    expect(second.id).not.toBe(first.id);
+    expect(t.view('p1').me!.hard!.desk[0]!.firstHelp).toBe(false);
+  });
+});
+
+describe('Bento Haus hard roles: crediting only the frames used', () => {
+  const tags = (text: string) => framesOf({ text, kana: text });
+
+  it('a kitchen line said with くれますか is credited te-kuremasen, not te-moraeru', () => {
+    const t = seated(['n4', 'n5']);
+    const { inc } = complain(t);
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech(SORRY_LINE) });
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech(inc.steps[1]!.model.text.replace('もらえますか', 'くれますか')) });
+    expect(inc.state).toBe('asked');
+    const entry = t.s.phrasebook.p1!.at(-1)!;
+    expect(entry.text).toContain('くれますか');
+    expect(entry.itemId).toMatch(/:kureru$/);
+    expect(tags(entry.text)).toContain('te-kuremasen');
+    expect(tags(entry.text)).not.toContain('te-moraeru');
+    expect(inc.steps[1]!.heardFrames).toEqual(['te-kuremasen']);
+    // The station's card and the TV show the line in the form it was said.
+    expect(t.view(inc.stationId!).me!.hard!.requests[0]!.text).toContain('くれますか');
+    expect(t.view().hard!.desk[0]!.said.at(-1)!.text).toContain('くれますか');
+  });
+
+  it('a kitchen line said with いただけますか is credited te-itadakemasen', () => {
+    const step = complaintSteps({ foodId: 'karaage', how: 'missing' }, 1, false)[1];
+    const res = checkLine(speech('からあげを もう ひとつ つくって いただけますか'), step);
+    expect(res).toMatchObject({ ok: true, form: 'itadaku', frames: ['te-itadakemasen'] });
+    const line = creditedLine(step, res.form, res.frames);
+    expect(line.text).toBe('からあげを もう ひとつ つくって いただけますか。');
+    expect(tags(line.text)).toContain('te-itadakemasen');
+    expect(tags(line.text)).not.toContain('te-moraeru');
+    expect(creditedLine(step, undefined)).toBe(step.model);
+  });
+
+  it('the ask step accepts しょうしょう おまちください, credited o-kudasai', () => {
+    for (const x of [SURE_OMACHI, SORRY_OMACHI]) {
+      expect(x.kana).toBe(x.text);
+      for (const f of x.frames ?? []) expect(FRAMES.has(f), f).toBe(true);
+      expect(tags(x.text)).toContain('o-kudasai');
+      expect(tags(x.text)).not.toContain('te-itadakemasen');
+    }
+    const ask = SPECIALS.find((x) => x.id === 'no-wasabi')!.steps[0];
+    expect(ask.alt).toBe(SURE_OMACHI);
+    expect(checkLine(speech('かしこまりました。しょうしょう おまちください。'), ask)).toMatchObject({ ok: true, form: 'omachi', frames: ['o-kudasai'] });
+    expect(creditedLine(ask, 'omachi').text).toBe(SURE_OMACHI.text);
+    // A complaint's sorry step asks them to wait too; the dream's (make it a rice ball instead) doesn't.
+    const sorry = complaintSteps({ foodId: 'karaage', how: 'missing' }, 1, false)[0];
+    expect(checkLine(speech('もうしわけ ございません。しょうしょう おまちください。'), sorry)).toMatchObject({ ok: true, form: 'omachi', frames: ['keigo', 'o-kudasai'] });
+    const dream = SPECIALS.find((x) => x.id === 'dream')!.steps[0];
+    expect(checkLine(speech('もうしわけ ございません。しょうしょう おまちください。'), dream).ok).toBe(false);
+    expect(checkLine(speech('しょうしょう おまちください。'), sorry).ok).toBe(false);
+  });
+
+  it('an ask said with おまちください goes in the phrasebook as that line', () => {
+    const t = seated(['n4', 'n5']);
+    const { inc } = complain(t);
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech('もうしわけ ございません。しょうしょう おまちください。') });
+    expect(inc.step).toBe(1);
+    expect(t.s.phrasebook.p1!.at(-1)!.text).toBe(SORRY_OMACHI.text);
+  });
+});
+
+describe('Bento Haus hard roles: guests reply', () => {
+  it('every guest has a short draft reply, shown on the TV once their question is answered', () => {
+    for (const a of GUEST_ASKS) expect(a.reply.text.length, a.id).toBeGreaterThan(0);
+    const t = new Table(['n4', 'n5']);
+    t.toPrompt();
+    t.play('p1', { kind: 'role', accept: false });
+    t.open();
+    t.timeout();
+    t.timeout();
+    t.play('p1', { kind: 'role', accept: true });
+    t.open();
+    let v = t.customer();
+    while (v.takerId !== 'p1') {
+      t.fill(v);
+      t.play(v.takerId, { kind: 'serve', visitId: v.id });
+      v = t.customer();
+    }
+    t.play('p1', { kind: 'omotenashi', visitId: v.id, utterance: speech('いらっしゃいませ。おすわりください。') });
+    expect(t.view().hard!.guests[v.id]!.reply).toBeNull();
+    const ask = GUEST_ASKS.find((a) => a.id === t.r.hard!.guests[0]!.askId)!;
+    t.now += 8_000;
+    t.play('p1', { kind: 'omotenashi', visitId: v.id, utterance: speech(ask.model.text) });
+    expect(t.view().hard!.guests[v.id]!.reply).toEqual(ask.reply);
+    // Pon's reaction to a guest looked after perfectly.
+    expect(cuesOf(t, 'bento_omotenashi_win')).toHaveLength(1);
+  });
+});
+
+describe('Bento Haus mixed rooms: the booth and the Gallery', () => {
+  it('a skipped apology gets no booth and no Gallery', () => {
+    const t = seated(['n4', 'n5', 'kana']);
+    const { inc } = complain(t);
+    t.play('p1', { kind: 'manager', incidentId: inc.id, skip: true });
+    expect(t.r.hard!.booth ?? null).toBeNull();
+    expect(t.view().hard!.booth).toBeNull();
+    expect(t.view('p2').me!.hard?.gallery ?? null).toBeNull();
+    expect(cuesOf(t, 'bento_replay')).toEqual([]);
+  });
+
+  it('once the apology lands: Pon voices the fixed line, the TV lights いただけますか, the others get tiles and the gist', () => {
+    const t = seated(['n4', 'n5', 'kana']);
+    const { inc } = complain(t);
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: heard('申し訳ございません、少々待っていただけますか') });
+    expect(inc.step).toBe(1);
+    // The fixed model line is voiced, never the player's own words.
+    expect(cuesOf(t, 'bento_replay')).toEqual([{ host: 'pon', event: 'bento_replay', slots: { line: SORRY_LINE, line_kana: SORRY_LINE, line_en: "I'm terribly sorry. Could you wait a moment?" } }]);
+    const tv = t.view().hard!;
+    expect(tv.booth).toMatchObject({ playerId: 'p1', lit: { key: 'いただけますか' } });
+    expect(tv.booth!.note.length).toBeGreaterThan(0);
+    // Gist on Kana and N5 phones (romaji for Kana), none for the deputy manager.
+    expect(t.view('p2').me!.hard!.booth).toMatchObject({ romaji: null });
+    expect(t.view('p3').me!.hard!.booth!.romaji).toBeTruthy();
+    expect(t.view('p1').me!.hard!.booth).toBeNull();
+    // Tiles: a Kana/N5 player picked by the seed (here p2) gets the curveball, the other reacts; the deputy
+    // manager gets none.
+    expect(t.view('p1').me!.hard!.gallery).toBeNull();
+    expect(t.view('p2').me!.hard!.gallery!.kind).toBe('curveball');
+    expect(t.view('p3').me!.hard!.gallery!.kind).toBe('react');
+    expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+    expect(t.play('p3', { kind: 'gallery', pick: 'warai' }).error).toBe('not-allowed');
+    expect(t.view().hard!.gallery.map((b) => b.id)).toEqual(['sugoi']);
+    // The right word: +5 to the normal score, once.
+    const score = t.s.players.find((p) => p.id === 'p2')!.score;
+    expect(t.play('p2', { kind: 'gallery', pick: 'いただけますか' }).error).toBeUndefined();
+    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(score + CURVEBALL_POINTS);
+    expect(t.view('p2').me!.hard!.gallery).toMatchObject({ kind: 'curveball', right: true });
+    expect(t.play('p2', { kind: 'gallery', pick: 'いただけますか' }).error).toBe('not-allowed');
+    // The booth leaves after its 5–7 s; the tiles after GALLERY_MS.
+    const booth = t.r.hard!.booth!;
+    expect(booth.ms).toBeGreaterThanOrEqual(5_000);
+    expect(booth.ms).toBeLessThanOrEqual(7_000);
+    t.now = booth.at + booth.ms;
+    t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    expect(t.view().hard!.booth).toBeNull();
+    expect(t.view('p2').me!.hard?.booth ?? null).toBeNull();
+    t.now = t.r.hard!.gallery!.until;
+    t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    expect(t.view().hard!.gallery).toEqual([]);
+    expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBe('too-late');
+    expect(GALLERY_MS).toBe(12_000);
+  });
+
+  it('the curveball is dealt only once the line has landed, never with a word the line contained', () => {
+    const t = seated(['n4', 'n5', 'kana']);
+    const { inc } = complain(t);
+    // The complaint is on the desk, nothing said yet: no tiles, no curveball.
+    expect(t.r.hard!.gallery ?? null).toBeNull();
+    expect(t.st.hard!.curveballUsed ?? false).toBe(false);
+    expect(t.view('p2').me!.hard?.gallery ?? null).toBeNull();
+    expect(t.view('p3').me!.hard?.gallery ?? null).toBeNull();
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech(SORRY_LINE) });
+    // Landed: exactly one curveball, and the game's is used.
+    const tiles = ['p2', 'p3'].map((id) => t.view(id).me!.hard!.gallery!.kind);
+    expect(tiles.filter((k) => k === 'curveball')).toHaveLength(1);
+    expect(t.st.hard!.curveballUsed).toBe(true);
+    const cb = t.r.hard!.gallery!.g.curveball!;
+    const flat = SORRY_LINE.replace(/[\s　]/g, '');
+    for (const o of cb.options) if (!o.correct) expect(flat.includes(o.kana)).toBe(false);
+    // The TV holds the key word back while the curveball is open, and lights it once it's answered.
+    expect(t.view().hard!.booth!.holdKey).toBe(true);
+    t.play(cb.playerId, { kind: 'gallery', pick: cb.word });
+    expect(t.view().hard!.booth!.holdKey).toBe(false);
+  });
+
+  it('a missed line deals no curveball; the game keeps it for a line that lands', () => {
+    const t = seated(['n4', 'n5']);
+    const a = complain(t).inc;
+    t.play('p1', { kind: 'manager', incidentId: a.id, skip: true });
+    expect(t.r.hard!.gallery ?? null).toBeNull();
+    expect(t.st.hard!.curveballUsed ?? false).toBe(false);
+    // Next shift, the line lands: the curveball comes then.
+    t.timeout();
+    t.timeout();
+    t.play('p1', { kind: 'role', accept: true });
+    t.open();
+    const b = complain(t).inc;
+    t.play('p1', { kind: 'manager', incidentId: b.id, utterance: speech(SORRY_LINE) });
+    expect(t.view('p2').me!.hard!.gallery!.kind).toBe('curveball');
+  });
+
+  it('once a shift, the curveball once a game; a wrong word scores nothing', () => {
+    const t = seated(['n4', 'n5']);
+    const a = complain(t).inc;
+    t.play('p1', { kind: 'manager', incidentId: a.id, utterance: speech(SORRY_LINE) });
+    const cb = t.view('p2').me!.hard!.gallery!;
+    expect(cb.kind).toBe('curveball');
+    if (cb.kind !== 'curveball') return;
+    expect(cb.options.map((o) => o.kana)).toContain('いただけますか');
+    const wrong = cb.options.find((o) => o.kana !== 'いただけますか')!;
+    const score = t.s.players.find((p) => p.id === 'p2')!.score;
+    t.play('p2', { kind: 'gallery', pick: wrong.kana });
+    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(score);
+    t.play('p1', { kind: 'manager', incidentId: a.id, skip: true });
+    // A second landing in the same shift: no second booth.
+    const b = complain(t).inc;
+    t.play('p1', { kind: 'manager', incidentId: b.id, utterance: speech(SORRY_LINE) });
+    expect(cuesOf(t, 'bento_replay')).toHaveLength(1);
+    // Next shift (p1 keeps the seat in a 2-player room): a new booth and tiles, but reactions only.
+    t.timeout();
+    t.timeout();
+    t.play('p1', { kind: 'role', accept: true });
+    t.open();
+    const c = complain(t).inc;
+    t.play('p1', { kind: 'manager', incidentId: c.id, utterance: speech(SORRY_LINE) });
+    expect(cuesOf(t, 'bento_replay')).toHaveLength(2);
+    expect(t.view('p2').me!.hard!.gallery!.kind).toBe('react');
+  });
+
+  it('Pon reacts when the deputy manager’s request is done', () => {
+    const t = seated(['n4', 'n5']);
+    const { inc } = complain(t);
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech(SORRY_LINE) });
+    t.play('p1', { kind: 'manager', incidentId: inc.id, utterance: speech(inc.steps[1]!.model.text) });
+    t.now += 8_000;
+    t.play(inc.stationId!, { kind: 'request-done', incidentId: inc.id });
+    expect(cuesOf(t, 'bento_manager_win')).toHaveLength(1);
+  });
+});
+
+describe('Bento Haus mixed rooms: the host stand-in', () => {
+  it('in a 1–2-player room with nobody at N4, Pon plays the deputy manager once, on the first title card', () => {
+    const t = new Table(['n5', 'kana']);
+    t.toPrompt();
+    const si = t.st.standIn!;
+    expect(si).toBeDefined();
+    expect(cuesOf(t, 'bento_standin')).toEqual([
+      { host: 'pon', event: 'bento_standin', slots: { line: si.line.text, line_kana: si.line.kana, line_en: si.line.en }, atMs: STAND_IN_AT_MS },
+    ]);
+    expect(si.line.text).toContain('いただけますか');
+    // Up 2.5 s in, once Pon's round call is done, and on the TV to the end of the 8 s title card.
+    expect(STAND_IN_AT_MS).toBe(2_500);
+    expect('standIn' in t.view()).toBe(false);
+    t.wake();
+    expect(t.now - (t.s.deadline! - 8_000)).toBe(STAND_IN_AT_MS);
+    const tv = t.view().standIn!;
+    expect(tv.lit.key).toBe('いただけますか');
+    expect(tv.gist).toBeNull();
+    expect(t.view('p1').standIn!.gist).toMatchObject({ romaji: null });
+    expect(t.view('p2').standIn!.gist!.romaji).toBeTruthy();
+    expect(si.ms).toBeLessThanOrEqual(7_000);
+    t.now = t.s.deadline! - 1;
+    expect('standIn' in t.view()).toBe(true);
+    // No one is asked to say anything, no points, no hard-role state; and it's once a game.
+    expect(t.st.hard).toBeUndefined();
+    t.open();
+    expect('standIn' in t.view()).toBe(false);
+    t.timeout();
+    t.timeout();
+    expect(t.s.phase).toBe('prompt');
+    expect('standIn' in t.view()).toBe(false);
+    expect(cuesOf(t, 'bento_standin')).toHaveLength(1);
+    expect(t.s.players.every((p) => p.score === 0)).toBe(true);
+  });
+
+  it('a room with an N4 player, or of 3 or more, never gets the stand-in', () => {
+    for (const levels of [['n4', 'n5'], ['n5', 'n5', 'kana']] as Level[][]) {
+      const t = new Table(levels);
+      t.toPrompt();
+      expect(t.st.standIn).toBeUndefined();
+      expect(cuesOf(t, 'bento_standin')).toEqual([]);
+    }
+  });
+
+  it('an N5-only room of 3 or more is unchanged: no new state, views or cues', () => {
+    const t = new Table(['n5', 'n5', 'kana']);
+    t.toPrompt();
+    expect(wakeAt(t.s, t.ctx())).toBeNull();
+    t.open();
+    const v = t.customer();
+    t.fill(v, v.lines[0]!.foodId);
+    t.play(v.takerId, { kind: 'serve', visitId: v.id });
+    expect(t.st.hard).toBeUndefined();
+    expect(t.st.standIn).toBeUndefined();
+    for (const who of ['stage', 'p1', 'p3'] as const) {
+      const view = t.view(who);
+      expect('hard' in view).toBe(false);
+      expect('standIn' in view).toBe(false);
+      if (view.me) expect(view.me.hard).toBeUndefined();
+    }
+    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBe('bad-move');
+    for (const e of ['bento_replay', 'bento_standin', 'bento_manager_win', 'bento_omotenashi_win']) expect(cuesOf(t, e)).toEqual([]);
   });
 });

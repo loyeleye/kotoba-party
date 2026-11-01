@@ -58,10 +58,10 @@ export const snowmanCase: OnsenCase = {
       persona: 'A proud, gruff ramen cook who sweats a lot and gets defensive about his cooking.',
       answers: {
         where: { jp: t('10じから 11じまで、だいどころに いました。', 'じゅうじから じゅういちじまで、だいどころに いました。', 'From 10 to 11, I was in the kitchen.'), clueId: 'kitchen', report: said('たなかさんは 10じから 11じまで だいどころに いたと いっていました。', 'たなかさんは じゅうじから じゅういちじまで だいどころに いたと いっていました。', 'Tanaka said he was in the kitchen from 10 to 11.') },
-        what: { jp: k('おゆを たくさん わかしました。ラーメンの スープです。', 'I boiled lots of water. For the ramen soup.'), clueId: 'hot-water', report: said('たなかさんは ラーメンの スープの ために おゆを たくさん わかしたと いっていました。', null, 'Tanaka said he boiled lots of water for the ramen soup.', 'tame-ni') },
+        what: { jp: k('おゆを たくさん わかしました。ラーメンの スープです。', 'I boiled lots of water. For the ramen soup.'), clueId: 'hot-water', report: said('たなかさんは ラーメンの スープを つくる ために おゆを たくさん わかしたと いっていました。', null, 'Tanaka said he boiled lots of water to make ramen soup.', 'tame-ni') },
         who: { jp: k('だれも みませんでした。ひとりでした。', "I didn't see anyone. I was alone."), report: said('たなかさんは だれも みなかったと いっていました。', null, 'Tanaka said he didn’t see anyone.') },
         when: { jp: t('12じに ねました。しごとが たくさん ありました。', 'じゅうにじに ねました。しごとが たくさん ありました。', 'I went to bed at 12. I had lots of work.'), report: said('たなかさんは 12じに ねたと いっていました。', 'たなかさんは じゅうにじに ねたと いっていました。', 'Tanaka said he went to bed at 12.') },
-        victim: { jp: k('つめたい ひとでした。わたしの ラーメンが きらいでした。', 'He was a cold person. He hated my ramen.'), clueId: 'motive', report: said('たなかさんは ゆきだるまさんが じぶんの ラーメンを きらいだったと いっていました。', null, 'Tanaka said Mr. Snowman hated his ramen.') },
+        victim: { jp: k('つめたい ひとでした。わたしの ラーメンが きらいでした。', 'He was a cold person. He hated my ramen.'), clueId: 'motive', report: said('たなかさんは ゆきだるまさんが じぶんの ラーメンが きらいだったと いっていました。', null, 'Tanaka said Mr. Snowman hated his ramen.') },
         item: { jp: k('その マフラー？　しりません。', "That scarf? I don't know it."), report: said('たなかさんは その マフラーを しらないと いっていました。', null, 'Tanaka said he doesn’t know the scarf.') },
       },
     },
@@ -422,7 +422,7 @@ export const sakeCase: OnsenCase = {
         who: { jp: k('だれも みませんでした。', "I didn't see anyone."), report: said('にしむらくんは だれも みなかったと いっていました。', null, 'Nishimura said he didn’t see anyone.') },
         when: { jp: t('11じに ねました。…あたまが いたいです。', 'じゅういちじに ねました。…あたまが いたいです。', 'I went to bed at 11. …My head hurts.'), clueId: 'headache', report: said('にしむらくんは 11じに ねたけど あたまが いたいと いっていました。', 'にしむらくんは じゅういちじに ねたけど あたまが いたいと いっていました。', 'Nishimura said he went to bed at 11, but his head hurts.') },
         victim: { jp: t('ぶちょうの おさけですね。…ぶちょうの カラオケは まいばん 2じかんです。', 'ぶちょうの おさけですね。…ぶちょうの カラオケは まいばん にじかんです。', "The boss's sake, right. …The boss's karaoke goes on two hours every night."), clueId: 'grudge', report: said('にしむらくんは ぶちょうの カラオケが まいばん 2じかんだと いっていました。', 'にしむらくんは ぶちょうの カラオケが まいばん にじかんだと いっていました。', 'Nishimura said the boss’s karaoke goes on two hours every night.') },
-        item: { jp: k('ネクタイ？　ぼくのじゃ ありません。…たぶん。', "A necktie? It's not mine. …Probably."), report: said('にしむらくんは ネクタイが たぶん じぶんのじゃ ないと いっていました。', null, 'Nishimura said the necktie probably isn’t his.') },
+        item: { jp: k('ネクタイ？　ぼくのか どうか わかりません。', "A necktie? I don't know if it's mine."), report: said('にしむらくんは ネクタイが じぶんのか どうか わからないと いっていました。', null, 'Nishimura said he doesn’t know if the necktie is his.', 'ka-dou-ka') },
       },
     },
     {

@@ -126,3 +126,10 @@ body[data-mode='dub-club'][data-phase='finale'] :is(.host, .players) { display: 
 
 /* The N4 ad-lib tag: on the cast list and the name card (no script, so no caption over the voice). */
 .dub-adlib { margin-left: 0.4em; padding: 0 0.4em; border-radius: 6px; background: #ffd34d; color: #1a1205; font-size: 0.75em; font-weight: 800; }
+
+/* Mixed rooms: the commentary booth after a good ad-lib, and the host stand-in on a scene card (in for the few
+   seconds Fude says it, out again; timed inline). */
+.dub-booth .booth-line { font-size: 30px; }
+.dub-standin { margin-top: 12px; animation-name: dub-standin; animation-timing-function: linear; animation-fill-mode: both; }
+.dub-standin .booth-line { font-size: 28px; }
+@keyframes dub-standin { 0% { opacity: 0; } 8%, 88% { opacity: 1; } 100% { opacity: 0; } }

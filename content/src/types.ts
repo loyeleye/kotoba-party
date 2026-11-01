@@ -517,6 +517,8 @@ export type HostEvent =
   | 'platform_dash'
   | 'room_overrule'
   | 'train_role_read' // a taken hard role answered right: Chōchin-san says its model line at the reveal ({line}, as is)
+  | 'train_announcer_react' // the announcer's line landed: Chōchin-san's short reaction at the reveal
+  | 'train_stand_in' // a 1–2-player room with no N4 player: Chōchin-san makes one platform announcement ({line}, as is)
   // Murder at the Onsen
   | 'onsen_case' // the case file opens
   | 'onsen_turn' // a player's turn to question a suspect
@@ -524,6 +526,8 @@ export type HostEvent =
   | 'onsen_accuse' // the accusation opens
   | 'onsen_reveal' // the culprit is revealed
   | 'onsen_report' // Chōchin-san says the N4 deputy's accepted report on the TV ({line})
+  | 'onsen_deputy_cheer' // Chōchin-san's short reaction once he has said the deputy's report ({name})
+  | 'onsen_standin' // a 1–2-player room with nobody at N4: Chōchin-san gives one report himself, once a game ({line}, as is)
   // Who's the Tourist?
   | 'tourist_intro'
   | 'tourist_deal' // the secret cards are dealt
@@ -569,6 +573,8 @@ export type HostEvent =
   | 'narabete_defence' // the most-moved card defends its spot ({name})
   | 'narabete_hard' // an N4 player says why their own card sits where it does ({name})
   | 'narabete_replay' // the commentary booth: Nobiko-san replays the N4 defence's line ({line}: the line, as is)
+  | 'narabete_hooray' // the N4 defence landed: Nobiko-san's あらまあ before the replay ({name})
+  | 'narabete_standin' // the host stand-in (1–2 players, none at N4): Nobiko-san gives one model defence ({line}, as is)
   | 'narabete_perfect' // the flip came out in order
   | 'narabete_knot' // the flip has knots in it
   | 'narabete_story' // the Worst Day Ever story is read in order
@@ -604,6 +610,10 @@ export type HostEvent =
   | 'bento_bake' // Pon shape-shifts into the missing {food}
   | 'bento_ajimi' // Pon "tastes" one {food} from the box
   | 'bento_stars' // the shift's stars ({stars})
+  | 'bento_replay' // the commentary booth: Pon replays the deputy manager's landed line ({line}: the fixed line, as is)
+  | 'bento_standin' // the host stand-in: Pon plays the deputy manager for one line ({line}: the model line, as is)
+  | 'bento_manager_win' // the deputy manager's request was done: the customer is looked after
+  | 'bento_omotenashi_win' // an おもてなし guest's two lines both landed
   | 'bento_vs_intro' // Bento Haus VS opens: two kitchens race for the same customers
   | 'bento_vs_win' // a VS shift is over and {team} earned more tips
   | 'bento_vs_sendback' // a VS box is sent back and offered to the other kitchen ({team})
@@ -620,6 +630,9 @@ export type HostEvent =
   | 'dub_spoiler' // the actor said the direction out loud
   | 'dub_skip' // the VIP skipped a dub
   | 'dub_notes' // cast notes after a scene; {name} got the most hearts
+  | 'dub_cut' // an ad-lib landed: Fude's カット！ before the booth replays it ({name})
+  | 'dub_booth' // the commentary booth: Fude says the scene's model ad-lib line ({line}, as is; never the player's take)
+  | 'dub_standin' // the host stand-in (1–2 players, none at N4): Fude ad-libs the scene's model line himself ({line}, as is)
   | 'dub_episode' // tonight's episode plays ({title})
   | 'dub_sequel' // over the credits: Fude pitches a sequel ({title})
   // はじめまして！
@@ -673,6 +686,8 @@ export type HostEvent =
   | 'rumour_tease' // the score opens: Nobiko-san asks the room what really happened, before the truth
   | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
   | 'omiai_nakodo_read' // the go-between's keigo line was said: Nobiko-san voices it ({line}, as is)
+  | 'omiai_nakodo_cheer' // あらまあ: Nobiko-san delighted by the go-between's keigo opening, once she has said it ({name})
+  | 'omiai_standin' // a 2-player room with nobody at N4: Nobiko-san says the go-between's opening herself, once a game ({line}, as is)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin
   | 'surprise_pick'; // Surprise Me!: the wheel stops on tonight's game ({game})
 

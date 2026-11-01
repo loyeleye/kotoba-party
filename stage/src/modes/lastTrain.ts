@@ -1,6 +1,7 @@
 // Last Train on the stage: the route, the stop and its shared situation, each traveller's
 // status (never their words until the stop resolves), then everyone's answer beside the
-// natural version, the penalty car, and the Platform Dash track.
+// natural version, the penalty car, and the Platform Dash track. Mixed rooms: the Gallery's bubbles while a
+// hard-role line is said, the commentary booth at its reveal, and the host stand-in's announcement.
 
 import { h, ruby, stagger } from '../../../shared/src/dom.js';
 import { icon } from '../../../shared/src/art.js';
@@ -10,6 +11,7 @@ import type { LastTrainView, TravellerStatus, TravellerView } from '../../../sha
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
 import { sfx } from '../music/sfx.js';
+import { boothStrip, galleryBubbles } from '../components/mixedRoom.js';
 
 const STATUS: Record<TravellerStatus, { icon: string; label: string }> = {
   waiting: { icon: '🧳', label: 'ready' },
@@ -92,6 +94,7 @@ function prompt(game: LastTrainView): HTMLElement {
     stop ? h('p', { class: 'lt-intro-jp' }, ruby(stop.announcement)) : null,
     stop ? h('p', { class: 'lt-en' }, stop.announcement.en) : null,
     stop?.isLast && game.twist ? h('div', { class: 'lt-twist' }, h('p', { class: 'lt-intro-jp' }, ruby(game.twist)), h('p', { class: 'lt-en' }, game.twist.en)) : null,
+    standIn(game),
     situation(game, true),
   );
 }
@@ -118,7 +121,28 @@ function answer(game: LastTrainView): HTMLElement {
     situation(game),
     h('p', { class: 'hint' }, `Each phone has its own question · ${done} / ${game.travellers.length} done`),
     h('ul', { class: 'lt-travs' }, game.travellers.map((t) => travellerCard(t, game))),
+    galleryBubbles(game.gallery ?? []),
   );
+}
+
+/** The host stand-in: Chōchin-san takes his own megaphone, subtitled, as he says it (once a game). */
+function standIn(game: LastTrainView): HTMLElement | null {
+  const si = game.standIn;
+  if (!si) return null;
+  return h(
+    'div',
+    { class: 'lt-stand-in', style: `animation-delay:${si.atMs}ms` },
+    h('p', { class: 'booth-tag' }, '📢 Chōchin-san takes the megaphone'),
+    h('p', { class: 'booth-line', lang: 'ja' }, '「', ruby(si.line), '」'),
+    h('p', { class: 'booth-note' }, si.line.en),
+  );
+}
+
+/** The commentary booth: it lights up as Chōchin-san says the taken role's line. */
+function booth(game: LastTrainView): HTMLElement | null {
+  const b = game.booth;
+  if (!b) return null;
+  return h('div', { class: 'lt-booth', style: `animation-delay:${b.atMs}ms` }, boothStrip(b, b.name, b.holdKey));
 }
 
 const OUTCOME: Record<string, string> = { first: '✓', retry: '✓ retry', overruled: '🙌 room overrule', missed: '✗', away: 'away' };
@@ -149,6 +173,8 @@ function reveal(game: LastTrainView): HTMLElement {
         450,
       ),
     ),
+    booth(game),
+    galleryBubbles(game.gallery ?? []),
   );
 }
 
