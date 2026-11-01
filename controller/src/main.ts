@@ -344,8 +344,8 @@ function render(view: RoomView): void {
     !view.game && me.total ? h('span', { class: 'tonight', title: 'Party points tonight' }, `★${me.total}`) : null,
     h('span', { class: 'score' }, `${me.score} pts`),
     session ? phrasebookButton(view.phase, { base, code: session.code, token: session.token, name: me.name, level: me.level }, flash) : null,
-    // The lobby has its own sound line (soundCheck), so the header keeps the room for the name there.
-    view.phase === 'lobby' ? null : soundSwitch(me),
+    // Always in the header, lobby too, so it's in the same place on every screen.
+    soundSwitch(me),
     micSwitch(me),
   );
   mount(app, band, header, screenFor(view, me, isVip));
