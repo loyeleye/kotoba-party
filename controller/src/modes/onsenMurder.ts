@@ -448,7 +448,7 @@ export const onsenMurderPhone: PhoneMode<OnsenView> = {
             ? h(
                 'div',
                 { class: 'om-p-mixed', style: revealDelay(`${view.phaseSeq}`, game.thinkMs + game.subtitleMs) },
-                galleryTile(mine.gallery, (pick) => void ctx.send({ kind: 'gallery', pick })),
+                galleryTile(mine.gallery, (pick, utterance) => void ctx.send({ kind: 'gallery', pick, utterance })),
                 boothGist(mine.gist),
               )
             : null,

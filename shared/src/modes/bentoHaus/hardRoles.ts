@@ -136,6 +136,42 @@ export const SPECIALS: readonly SpecialScript[] = [
     ],
   },
   {
+    // The kappa can never have enough cucumber (the vegetable station's).
+    id: 'kyuuri-more',
+    status: 'draft',
+    customers: ['kappa'],
+    foodId: 'kyuuri',
+    ask: { text: 'きゅうりを もっと いれて ください！　かっぱですから。', en: "More cucumber, please! I'm a kappa, after all." },
+    steps: [
+      SURE,
+      { to: 'kitchen', check: 'kitchen', keys: ['きゅうり'], model: L('きゅうりを もう すこし いれて もらえますか。', 'Could you put a bit more cucumber in?', ['te-moraeru']) },
+    ],
+  },
+  {
+    // The fox on a date: the inari (in あぶらあげ, foxes' favourite) goes in its own box, so her date doesn't see.
+    id: 'inari-apart',
+    status: 'draft',
+    customers: ['kitsune'],
+    foodId: 'inari',
+    ask: { text: 'いなりずしは べつの はこに いれて ください。かれには ないしょなの。', en: "Put the inari in a separate box, please. It's a secret from him." },
+    steps: [
+      SURE,
+      { to: 'kitchen', check: 'kitchen', keys: ['いなり'], model: L('いなりずしを べつの はこに いれて もらえますか。', 'Could you put the inari sushi in a separate box?', ['te-moraeru']) },
+    ],
+  },
+  {
+    // The one-eyed boy: one of everything, but his one eye is big, so the rice ball is too.
+    id: 'big-eye',
+    status: 'draft',
+    customers: ['hitotsume'],
+    foodId: 'onigiri',
+    ask: { text: 'おにぎりは ひとつ！　でも めが おおきいから、おおきく して ください！', en: 'One rice ball! But my eye is big, so make it a big one!' },
+    steps: [
+      SURE,
+      { to: 'kitchen', check: 'kitchen', keys: ['おおきく', 'おおきめ', 'おおきい', 'おおもり'], model: L('おにぎりを おおきく して もらえますか。', 'Could you make the rice ball big?', ['te-moraeru']) },
+    ],
+  },
+  {
     // The one request the shop can't meet: sorry, and a polite ask for something else.
     id: 'dream',
     status: 'draft',
@@ -670,9 +706,9 @@ export function requestDone(inc: Incident, r: Round, ctx: ModeContext): number {
 /** The line a step was credited as (the model, or the form it was accepted in). */
 export const lineOf = (s: LineStep): HardLine => s.credit ?? s.model;
 
-const BOOTH_KEYS = ['いただけますか', 'いただけませんか', 'おまちください'];
+export const BOOTH_KEYS = ['いただけますか', 'いただけませんか', 'おまちください'];
 /** Curveball distractors: other request endings the shop hears all night. */
-const CURVE_POOL = ['もらえますか', 'くれませんか', 'おねがいします', 'あります', 'ください'];
+export const CURVE_POOL = ['もらえますか', 'くれませんか', 'おねがいします', 'あります', 'ください'];
 
 /** The booth's colour line, one per kind of incident: about the play, never a slip. */
 function boothNote(inc: Incident, line: HardLine): string {
@@ -736,7 +772,7 @@ export function standInBooth(at: number): Booth & { ask: JpLine } {
     line: { text: line.text, kana: line.kana, en: line.en },
     voiced: true,
     lit: lightUp(line.text, BOOTH_KEYS),
-    note: 'Pon plays the deputy manager tonight (ドロン！): かしこまりました, then a polite いただけますか.',
+    note: 'The deputy manager is… Pon! Poof! かしこまりました means "certainly", then the polite ask いただけますか, "could you please…?"',
     gist: { kana: 'はい、わかりました。ここで ちょっと まって ください。', en: '“Certainly! Please wait here a moment.”', emoji: '📋' },
     ms: commentaryMs(line),
     at,

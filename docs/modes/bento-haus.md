@@ -100,8 +100,15 @@ are draft, in kana, and tagged by name with the N4 frames they practise (`hardRo
     (「からあげを もう ひとつ つくって もらえますか。」, or 「おべんとうを もう いちど つくって もらえますか。」
     when there's too much of something; つくりなおして is accepted too).
   - a **special order**: every third customer while the deputy manager is free (no wasabi, warm it up, a big
-    helping of rice, chopsticks, sauce on the side; the influencer wants a cuter box; the yuki-onna asks for ice; the baku wants a
+    helping of rice, chopsticks, sauce on the side; the influencer wants a cuter box; the yuki-onna asks for ice; the kappa wants more
+    cucumber (「きゅうりを もう すこし いれて もらえますか。」 to the vegetable station); the fox on a date wants her
+    いなりずし in a separate box, so he doesn't see (「いなりずしを べつの はこに いれて もらえますか。」; いなりずし,
+    not the warmer おいなりさん, which is also slang, for Ladi to confirm); the one-eyed boy wants one rice ball, but
+    his eye is big, so it should be too (「おにぎりを おおきく して もらえますか。」; おおきめ, おおきい and おおもり
+    also count); the baku wants a
     dream, which the shop can't do: もうしわけ ございません and 「おにぎりに して いただけますか。」).
+    A customer's own request needs its food on tonight's menu; otherwise they get the next general one. The kappa,
+    fox and one-eyed boy requests are new, draft, and (for Ladi to confirm) the jokes: the fox's secret box, the big eye.
     The deputy manager answers the customer (かしこまりました。〜て いただけますか, or かしこまりました。
     しょうしょう おまちください), then asks the station (〜て もらえますか, or 〜て くれませんか).
   The station gets a 📋 card with the deputy manager's line and taps はい、できました！; a missing food goes
@@ -148,8 +155,8 @@ are draft, in kana, and tagged by name with the N4 frames they practise (`hardRo
 ### Mixed rooms
 
 The shared pieces in `shared/src/modes/mixedRoom.ts`, Bento's way. Nothing changes for Kana or N5 players'
-points, turns or tiles except the curveball's +5, and nothing here adds time: it all runs inside the shift (or
-the title card).
+points, turns or tiles except the curveball (+15 with `scaledCurveball`) and a said reaction's +2, and nothing here
+adds time but the stand-in experiments': it all runs inside the shift (or the title card).
 
 - **Commentary booth.** Once a shift, when the deputy manager's first line to a customer lands (the sorry
   or ask step said right), the TV shows a 📺 REPLAY strip under the counter for 5–7 s (`commentaryMs`): the
@@ -161,7 +168,7 @@ the title card).
   (`GALLERY_MS`): four reactions (すごい！ なるほど へえ！ がんばれ！), shown on the TV as bubbles, never scored.
   Once a game, a Kana or N5 player's tile is the curveball instead: "Which word did you hear?", the
   line's key word and two other request endings (もらえますか, くれませんか, おねがいします…, never one in the
-  line), +5 to their score if right. It is dealt the moment the line lands (the tiles open then too), to a
+  line), +5 to their score if right (+15 with the round-5 `scaledCurveball` experiment, a tenth of a perfect box, 3 tips × 50; with `spokenReaction` a Gallery player may say their reaction for +2 instead of tapping; see docs/n4-hard-roles.md, "How mixed rooms work"; for Ladi to confirm). It is dealt the moment the line lands (the tiles open then too), to a
   Kana or N5 player picked by the seed; a skipped or missed line deals none, and the game keeps it for a
   later shift. While it is unanswered the TV's replay holds its key word back (unlit), so the answer isn't
   on screen. Bots can't be told apart from players in the mode, so a bot gets a
@@ -171,8 +178,18 @@ the title card).
   for one line. The TV shows the customer's ask
   (「おべんとうを あたためて ください。」) and Pon's answer lit (「かしこまりました。こちらで すこし まって
   いただけますか。」, `bento_standin`, bank only, with its subtitle); Kana and N5 phones get the gist. Nobody is
-  asked to say anything; no points; once a game. The line is under 7 s; the strip stays on the TV to the end
+  asked to say anything; the line scores no points (with `standInCurveball`, the curveball and a said reaction do); once a game. The line is under 7 s; the strip stays on the TV to the end
   of the 8 s title card.
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 2.5 s in he first says
+    「ふくてんちょうは… ポンです！　ドロン！」 ("The deputy manager is… Pon! Poof!", `bento_standin_setup`, bank
+    only), and the line follows
+    once the setup line has been said (`standInSetupFor`, at least 2.5 s). The title card then runs until the line is
+    said (`standInVoiceMs`): the sim measures about 3 s more a game than without the setup line.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile on the title card while he
+    says it (bubbles on the TV), and once he has said it the once-a-game curveball is dealt on いただけますか to a
+    player who hasn't reacted (+15, or +5 with `scaledCurveball` off; `CURVE_POOL` for the other options). The TV and the gist hold back the key word
+    until it's answered (`holdKey`). The card waits up to 5 s for the answer (`STAND_IN_CURVEBALL_MS`), so at most
+    11.8 s alone or 14.3 s with the setup line; it ends as soon as the curveball is answered (never before 8 s).
 
 ## Not built yet
 

@@ -277,7 +277,7 @@ function liveContent(game: LastTrainView, send: (m: unknown) => Promise<boolean>
   const parts: (HTMLElement | null)[] = game.overrules.map((w) => overruleCard(w, send));
   // The Gallery: react to the hard-role line being said (or the once-a-game curveball). Live, so a tap never
   // rebuilds the talk button.
-  parts.push(galleryTile(me?.gallery ?? null, (pick) => void send({ kind: 'gallery', pick })));
+  parts.push(galleryTile(me?.gallery ?? null, (pick, utterance) => void send({ kind: 'gallery', pick, utterance })));
   if (me?.canHaunt && me.hauntTargets.length) {
     parts.push(
       h(
@@ -304,7 +304,7 @@ function liveKey(game: LastTrainView): string {
     game.overrules.map((w) => `${w.id}:${w.state}:${w.up}:${w.canVote}:${w.myVote}`).join(','),
     game.me?.canHaunt,
     game.me?.hauntTargets.map((t) => t.playerId).join(),
-    g ? `${g.kind}:${g.picked}:${g.kind === 'curveball' ? g.right : ''}` : '',
+    g ? `${g.kind}:${g.picked}:${g.kind === 'curveball' ? g.right : `${g.say?.said}:${g.say?.missed}`}` : '',
   ].join('|');
 }
 let lastLiveKey = '';
@@ -392,6 +392,9 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
       !!me?.booth,
       me?.dash ? `${me.dash.pos}:${me.dash.aboard}` : '',
       view.phase === 'score' ? (game.dash?.results ? 'r' : '') : '',
+      // The stand-in's gist once the curveball is out of the way (experiment standInCurveball). Its Gallery tile
+      // is in liveBox, which redraws on its own key.
+      view.phase === 'prompt' ? `${!!me?.standIn}` : '',
     ].join('|');
   },
 
@@ -422,6 +425,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
           game.stop ? jpBlock(game.stop.minigame.intro) : null,
           me?.ghost ? h('p', { class: 'lt-chip ghost' }, '👻 You’re a ghost: answer 2 in a row to come back') : null,
           boothGist(me?.standIn ?? null, '📢 Chōchin-san’s announcement'),
+          // Experiment standInCurveball: the Gallery tile on his announcement is in liveBox (liveContent), below.
         );
         break;
       case 'answer':

@@ -52,7 +52,8 @@ export function toKatakana(text: string): string {
   return out;
 }
 
-const VOWEL_OF: Record<string, string> = {};
+/** The vowel each kana ends in (ん for ん): what ー after it lengthens. */
+export const VOWEL_OF: Record<string, string> = {};
 const ROWS: [string, string][] = [
   ['あかさたなはまやらわがざだばぱぁゃ', 'あ'],
   ['いきしちにひみりぎじぢびぴぃ', 'い'],

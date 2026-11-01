@@ -124,6 +124,8 @@ export interface SpeakOptions {
    * way when the player picked Tap to talk.
    */
   toggle?: boolean;
+  /** A small talk button beside other controls, never docked under the thumb (the Gallery's "🎤 or say it"). */
+  mini?: boolean;
   onSend(u: Utterance): void;
 }
 
@@ -142,7 +144,7 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
     let pressAt = 0;
     const toggle = !!opts.toggle || talkMode === 'tap';
     const idle = labelled(opts.label ?? (toggle ? 'Tap to talk' : 'Hold to talk'), toggle);
-    const talk = h('button', { type: 'button', class: `talk${toggle ? ' toggle' : ''}` }, idle) as HTMLButtonElement;
+    const talk = h('button', { type: 'button', class: `talk${toggle ? ' toggle' : ''}${opts.mini ? ' mini' : ''}` }, idle) as HTMLButtonElement;
 
     // While the button is held, a bar inside it follows the mic level, so the player sees it hears them.
     const meter = (c: MicClip) => {
