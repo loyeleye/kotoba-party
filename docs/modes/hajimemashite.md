@@ -10,7 +10,7 @@ It merges the classroom activity 他己紹介 (introducing someone else, the ste
 the name stays out of the product). Ladi's twist: one card is true, the rest are lies, and lies above
 the truth score.
 
-Code: `shared/src/modes/hajimemashite/` (rules and views in `hajimemashite.ts`, the 16 draft cards in
+Code: `shared/src/modes/hajimemashite/` (rules and views in `hajimemashite.ts`, the 20 draft cards in
 `cards.ts`), `shared/src/japanese/toKana.ts` (romaji to kana, names to katakana),
 `stage/src/modes/hajimemashite.{ts,css}`, `controller/src/modes/hajimemashite.{ts,css}`,
 `tools/bots/policies/hajimemashite.ts`, `tests/hajimemashite.test.ts`.
@@ -76,11 +76,32 @@ VIP extras: みじかめ (4 guests only) and 5まい (five cards a turn).
 
 ## Content
 
-16 draft cards (`cards.ts`): すきな たべもの, きらいな たべもの, しゅみ, いきたい ところ, できること, こわい もの,
-まいあさ, かいたい ペット, こどもの ころの ゆめ, ねる まえに, two N4 cards for N4 guests (たべた ことが ある,
-いった ことが ある) and four Cheeky cards (はつデート, よっぱらうと, スマホの しゃしん, じつは すき) written
+20 draft cards (`cards.ts`): すきな たべもの, きらいな たべもの, しゅみ, いきたい ところ, できること, こわい もの,
+まいあさ, かいたい ペット, こどもの ころの ゆめ, ねる まえに, six N4 cards for N4 guests (the N4 deck, below) and four Cheeky cards (はつデート, よっぱらうと, スマホの しゃしん, じつは すき) written
 for women and men alike (もとカレ and もとカノ, かれの いえ and かのじょの いえ). 28 draft Pon lines
 (`content/src/hosts/pon.ts`, `hajime_*`). All `draft` until the fluent check.
+
+## The N4 deck (goal 4.3)
+
+Six N4 cards, so N4 guests write their truth, and the tanuki their lies, in the experience frames:
+
+| Card | First person | Frame |
+| --- | --- | --- |
+| たべた ことが ある もの | ＿を たべた ことが あります | ta-koto-ga-aru |
+| いった ことが ある ところ | ＿に いった ことが あります | ta-koto-ga-aru |
+| わすれて しまった もの | でんしゃに ＿を わすれて しまいました | te-shimau |
+| こわして しまった もの | ＿を こわして しまいました | te-shimau |
+| さいきん やって みた こと | さいきん ＿を やって みました | te-miru |
+| いつか やって みたい こと | いつか やって みたい ことは ＿です | te-miru |
+
+The blank is always a noun, so tiles and typed lies work as on every card; the frame carries the
+grammar, and the introducer says it in the third person (「アキさんは でんしゃに かさを わすれて
+しまいました」). 〜て みたい can't take someone else as its subject, so that card is a noun sentence like
+いきたい ところ. Each card has `frames` and `status: 'draft'`.
+
+An N4 guest draws the N4 cards first, in every room (Cheeky included), and the usual cards once
+they've had them all. Kana and N5 guests never get them. It isn't a separate seat: the tanuki and
+detectives play the guest's card as always, so there's no offer to decline.
 
 ## Music and sound
 
@@ -109,6 +130,11 @@ the truth.
     from Pon's own sprite, not the 🦝 emoji (a raccoon). Pon's paw stamp is a red ink paw hanko and face-down
     cards show a gold leaf medallion (both PixelLab, Ladi's call).
 
+12. N4 guests draw the N4 deck first, even in a Cheeky room (where everyone else gets the Cheeky
+    cards first): the N4 deck is the point of their turn.
+13. The N4 cards' blanks are nouns with the verb in the frame (でんしゃに ＿を わすれて しまいました), not a
+    verb phrase in the blank, so typed lies stay one word and are cut down the usual way.
+
 ## Open questions
 
 1. Is a tutorial turn worth adding (Pon as the first guest, nobody scores) if first games confuse?
@@ -118,3 +144,5 @@ the truth.
 5. Pon's English captions show a guest's name in katakana (マット… even better than Pon); host-line slots
    carry one value for both languages.
 6. Fluent check of every frame, tile, Pon line and argue phrase.
+7. Should a Cheeky room have N4 Cheeky cards (よっぱらって ＿て しまいました…) so its N4 guests don't
+   miss the Cheeky set?

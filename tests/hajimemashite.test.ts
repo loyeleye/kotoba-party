@@ -164,7 +164,41 @@ describe('Nice to Meet You!: the cards', () => {
     expect(typedWord({ via: 'typed', text: 'おでん' }, suki)).toBe('おでん');
     expect(typedWord({ via: 'typed', text: '寿司', reading: 'すし' }, suki)).toBe('すし');
     expect(typedWord({ via: 'typed', text: '123' }, suki)).toBeNull();
+    expect(typedWord({ via: 'typed', text: 'でんしゃに かさを わすれて しまいました。' }, introCardOf('wasureta')!)).toBe('かさ');
+    expect(typedWord({ via: 'typed', text: 'さいきん ヨガを やって みました' }, introCardOf('yattemita')!)).toBe('ヨガ');
   });
+
+  it('has an N4 deck in た ことが ある, て しまいました and て みる, tagged and draft', () => {
+    const n4 = INTRO_CARDS.filter((c) => c.level === 'n4');
+    for (const c of n4) {
+      expect(c.status, c.id).toBe('draft');
+      expect(c.frames?.length, c.id).toBeGreaterThan(0);
+    }
+    const tagged = (f: string) => n4.filter((c) => c.frames?.includes(f));
+    expect(tagged('ta-koto-ga-aru').every((c) => c.first.includes('た ことが あります'))).toBe(true);
+    expect(tagged('te-shimau').every((c) => c.first.includes('て しまいました'))).toBe(true);
+    expect(tagged('te-miru').every((c) => /て みま|て みたい/.test(c.first))).toBe(true);
+    for (const f of ['ta-koto-ga-aru', 'te-shimau', 'te-miru']) expect(tagged(f).length, f).toBeGreaterThanOrEqual(2);
+    expect(INTRO_CARDS.filter((c) => c.level === 'n5').some((c) => c.frames)).toBe(false);
+  });
+});
+
+describe('Nice to Meet You!: N4 guests draw the N4 deck', () => {
+  for (const audience of ['family', 'cheeky'] as const) {
+    it(`in a ${audience} room, an N4 guest gets an N4 card and an N5 or Kana guest never does`, () => {
+      for (let seed = 1; seed <= 8; seed++) {
+        const n4 = new Table(4, ['n4', 'n5', 'n5', 'kana'], seed);
+        n4.start(audience);
+        expect(introCardOf(n4.t.cardId)!.level, `seed ${seed}`).toBe('n4');
+        for (const level of ['n5', 'kana'] as const) {
+          const other = new Table(4, [level, 'n4', 'n4', 'n4'], seed);
+          other.start(audience);
+          expect(introCardOf(other.t.cardId)!.level, `seed ${seed} ${level}`).toBe('n5');
+          if (audience === 'cheeky') expect(introCardOf(other.t.cardId)!.audiences).toEqual(['cheeky']);
+        }
+      }
+    });
+  }
 });
 
 // ---- a turn ----

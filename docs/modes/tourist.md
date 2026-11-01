@@ -98,15 +98,29 @@ questions and answers").
 
 `places.ts`, all `status: 'draft'`:
 - **12 places**, 4 per topic pack: food (コンビニ, レストラン, ラーメン屋, スーパー), travel (駅,
-  温泉, 空港, ホテル), family (学校, 公園, 家, 病院). Each has 5 roles, 3 local questions
-  (kana, N5, N4) and 13–14 answers covering what / when / who / like / how / where at the Kana and
+  温泉, 空港, ホテル), family (学校, 公園, 家, 病院). Each has 5 roles, 4 local questions
+  (kana, N5, two N4) and 15–16 answers covering what / when / who / like / how / where at the Kana and
   N5 levels, with N4 lines for some kinds.
-- **21 generic questions** (6 kana, 10 N5, 5 N4) and **23 generic answers** for every kind
+- **29 generic questions** (6 kana, 10 N5, 13 N4) and **29 generic answers** for every kind
   (the tourist's suggestions, also mixed into locals' tiles so they aren't a giveaway).
+- **The N4 deck** (goals 4.2 and 4.4, draft): 8 more generic N4 questions in ＿なければ なりませんか,
+  ＿なくても いいですか, ＿られますか and ＿ことが できますか, 6 generic N4 answers in the same frames
+  (はい、そう しなければ なりません。 / いいえ、しなくても いいですよ。 / はい、いつでも 来られますよ。…), and
+  at every place one more N4 question and two N4 answers (おんせん: みずぎを 着なければ なりませんか →
+  いいえ、みずぎは 着ては いけません。). Each deck line has `frames` (frame ids by name).
 - **7 bluffing phrases** for the tourist (そうですね…, ひみつです！, いい しつもんですね！,
   みんなと おなじです。, あなたは どうですか。, 何と 言ったら いいかな…).
 - Choices each round: the place, up to 3 more from its pack, then others (6 in all). The night's
   pack plays first.
+
+### The N4 deck
+
+Not a new seat: N4 players simply get N4 tiles, as before (their tiles are N4 first, then N5, then Kana),
+and there are now enough N4 lines that an N4 asker's five suggestions are all N4. When a question carries
+frames, the answerer's tiles put answers from its frame family first: a ＿なければ なりませんか question gets
+must / needn't / mustn't answers, a ＿られますか or ＿ことが できますか one gets can answers. Kana and N5
+players' tiles, points and turns are exactly as before (no extra random draws), and a room with no N4
+player plays as it did. There is no offer to decline because there is no extra role.
 
 ### Learning hooks
 
@@ -179,6 +193,11 @@ clues and leads; on its last chance it picks its best clue. `npm run bots -- --m
     leaving just drops out of turns and votes.
 20. **The VIP can hide any logged line** (`hide`), shown as "[hidden]", per the design doc's
     moderation rule; the stage has no other text filter yet.
+21. **N4 deck (step 2 of the N4/N3 plan)**: the deck is more lines in the existing level bands, not a
+    hard seat, so there's no accept/decline offer. Answers are matched to a question's frame family
+    (must/needn't, can) only when the question carries frames; otherwise by kind, as before.
+22. **The onsen's swimsuit answer uses ＿ては いけません** (4.2's boundary frame), because "no, you
+    needn't" would be wrong there: you mustn't.
 
 ## Open questions
 
@@ -195,8 +214,10 @@ clues and leads; on its last chance it picks its best clue. `npm run bots -- --m
 6. **Kana-level players**: are the kana question tiles enough to play, or should the Kana level get a
    simpler mode (yes/no questions only)?
 7. **Durations** (45 s turns, 25 s vote, 6-minute cap) and the turn cap are playtest numbers.
-8. **Fluent check** of all 246 lines, 60 roles and award titles; especially casual lines (ずるずる！,
+8. **Fluent check** of all 246 lines (and the N4 deck's 50 more), 60 roles and award titles; especially casual lines (ずるずる！,
    だいすき！), N4 forms, and whether roles like おさるさん land as jokes.
+9. **N4 deck**: are 13 generic N4 questions too many next to each place's 2? Should the answer tiles
+   for a deck question be only its frame family (today they fill up with the kind's other answers)?
 
 ## Known gaps
 

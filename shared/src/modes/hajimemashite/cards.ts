@@ -7,8 +7,11 @@
 // never 「アキさんは ＿に いきたいです」. Each card has 16 tiles to fill the blank: the guest sees them
 // all, each tanuki a private hand of four. Kana only, katakana for loanwords, so a typed card and a
 // tile look the same on the TV. `pon` is Pon's own in-frame lie, used once a game in a 3-player room.
+//
+// The N4 deck (goal 4.3, experiences, tries and oops): ＿た ことが あります, ＿て しまいました,
+// ＿て みました and ＿て みたい. N4 guests draw these first; everyone else never sees them.
 
-import type { JpText } from '../../../../content/src/types.js';
+import type { JpText, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 
 export interface Tile {
@@ -32,6 +35,10 @@ export interface IntroCard {
   enThird: string;
   /** N4 cards go only to N4 guests. A chunk card is N4 grammar used as a fixed phrase. */
   level: 'n5' | 'n4';
+  /** The N4 frames the card's lines practise, by frame id (N4 cards). */
+  frames?: readonly string[];
+  /** Set on the N4 deck's cards (all cards are draft until the fluent check). */
+  status?: ReviewStatus;
   audiences: readonly Audience[];
   tiles: Tile[];
   pon: Tile;
@@ -226,6 +233,8 @@ export const INTRO_CARDS: IntroCard[] = [
     en: "I've eaten ___",
     enThird: '{name} has eaten ___',
     level: 'n4',
+    frames: ['ta-koto-ga-aru'],
+    status: 'draft',
     audiences: ALL,
     tiles: tiles('tabeta', [
       ['ふぐ', 'pufferfish', '🐡'], ['カエル', 'frog', '🐸'], ['むし', 'insects', '🦗'], ['ドリアン', 'durian', '🍈'],
@@ -243,6 +252,8 @@ export const INTRO_CARDS: IntroCard[] = [
     en: "I've been to ___",
     enThird: '{name} has been to ___',
     level: 'n4',
+    frames: ['ta-koto-ga-aru'],
+    status: 'draft',
     audiences: ALL,
     tiles: tiles('itta', [
       ['ふじさん', 'Mount Fuji', '🗻'], ['ハワイ', 'Hawaii', '🌺'], ['こうばん', 'a police box', '👮'], ['おきなわ', 'Okinawa', '🏝'],
@@ -251,6 +262,82 @@ export const INTRO_CARDS: IntroCard[] = [
       ['むじんとう', 'a desert island', '🏝'], ['きょうと', 'Kyoto', '⛩'], ['グランドキャニオン', 'the Grand Canyon', '🏜'], ['おばけやしき', 'a haunted house', '👻'],
     ]),
     pon: ponTile('itta', 'たぬきの むら', 'the tanuki village'),
+  },
+  {
+    id: 'wasureta',
+    title: { text: 'わすれて しまった もの', kana: 'わすれて しまった もの', en: 'Something you left behind' },
+    first: 'でんしゃに ＿を わすれて しまいました',
+    third: '{name}さんは でんしゃに ＿を わすれて しまいました',
+    en: 'I (oops) left ___ on a train',
+    enThird: '{name} (oops) left ___ on a train',
+    level: 'n4',
+    frames: ['te-shimau'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: tiles('wasureta', [
+      ['かさ', 'an umbrella', '☂'], ['さいふ', 'a wallet', '👛'], ['スマホ', 'a phone', '📱'], ['パスポート', 'a passport', '🛂'],
+      ['くつ', 'shoes', '👟'], ['しゅくだい', 'homework', '📓'], ['おべんとう', 'a packed lunch', '🍱'], ['ギター', 'a guitar', '🎸'],
+      ['ねこ', 'a cat', '🐈'], ['ケーキ', 'a cake', '🎂'], ['めがね', 'glasses', '👓'], ['かぎ', 'keys', '🔑'],
+      ['ぼうし', 'a hat', '🧢'], ['ラケット', 'a racket', '🎾'], ['スーツケース', 'a suitcase', '🧳'], ['うわぎ', 'a jacket', '🧥'],
+    ]),
+    pon: ponTile('wasureta', 'しっぽ', 'my tail'),
+  },
+  {
+    id: 'kowashita',
+    title: { text: 'こわして しまった もの', kana: 'こわして しまった もの', en: 'Something you broke' },
+    first: '＿を こわして しまいました',
+    third: '{name}さんは ＿を こわして しまいました',
+    en: 'I (oops) broke ___',
+    enThird: '{name} (oops) broke ___',
+    level: 'n4',
+    frames: ['te-shimau'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: tiles('kowashita', [
+      ['おさら', 'a plate', '🍽'], ['スマホ', 'a phone', '📱'], ['めがね', 'glasses', '👓'], ['テレビ', 'the TV', '📺'],
+      ['いす', 'a chair', '🪑'], ['パソコン', 'a computer', '💻'], ['まど', 'a window', '🪟'], ['かさ', 'an umbrella', '☂'],
+      ['とけい', 'a clock', '⏰'], ['ゲームき', 'a games console', '🎮'], ['ドア', 'a door', '🚪'], ['ベッド', 'a bed', '🛏'],
+      ['ピアノ', 'a piano', '🎹'], ['じてんしゃ', 'a bike', '🚲'], ['おもちゃ', 'a toy', '🧸'], ['トイレ', 'the toilet', '🚽'],
+    ]),
+    pon: ponTile('kowashita', 'ポンの カメラ', "Pon's camera"),
+  },
+  {
+    id: 'yattemita',
+    title: { text: 'さいきん やって みた こと', kana: 'さいきん やって みた こと', en: 'Something you tried lately' },
+    first: 'さいきん ＿を やって みました',
+    third: '{name}さんは さいきん ＿を やって みました',
+    en: 'Lately I tried ___',
+    enThird: 'Lately {name} tried ___',
+    level: 'n4',
+    frames: ['te-miru'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: tiles('yattemita', [
+      ['ヨガ', 'yoga', '🧘'], ['ボルダリング', 'bouldering', '🧗'], ['サーフィン', 'surfing', '🏄'], ['すもう', 'sumo', '🤼'],
+      ['いけばな', 'flower arranging', '💐'], ['ざぜん', 'zen meditation', '🪷'], ['スキー', 'skiing', '⛷'], ['からて', 'karate', '🥋'],
+      ['つり', 'fishing', '🎣'], ['キャンプ', 'camping', '⛺'], ['ゴルフ', 'golf', '⛳'], ['けんどう', 'kendō', '🤺'],
+      ['さどう', 'the tea ceremony', '🍵'], ['ボクシング', 'boxing', '🥊'], ['スカイダイビング', 'skydiving', '🪂'], ['ジャグリング', 'juggling', '🤹'],
+    ]),
+    pon: ponTile('yattemita', 'へんしん', 'shapeshifting'),
+  },
+  {
+    id: 'mitai',
+    title: { text: 'いつか やって みたい こと', kana: 'いつか やって みたい こと', en: "Something you'd love to try" },
+    first: 'いつか やって みたい ことは ＿です',
+    third: '{name}さんの いつか やって みたい ことは ＿です',
+    en: "Something I'd love to try one day is ___",
+    enThird: "Something {name} would love to try one day is ___",
+    level: 'n4',
+    frames: ['te-miru'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: tiles('mitai', [
+      ['スカイダイビング', 'skydiving', '🪂'], ['バンジージャンプ', 'a bungee jump', '🪢'], ['ダイビング', 'scuba diving', '🤿'], ['うちゅうりょこう', 'a trip to space', '🚀'],
+      ['すもう', 'sumo', '🤼'], ['にんじゃしゅぎょう', 'ninja training', '🥷'], ['ふじさんの とざん', 'climbing Mount Fuji', '🗻'], ['せかいいっしゅう', 'a trip round the world', '🌍'],
+      ['ききゅう', 'a hot-air balloon', '🎈'], ['マラソン', 'a marathon', '🏃'], ['サーカス', 'the circus', '🎪'], ['ひとりたび', 'travelling alone', '🎒'],
+      ['かぶき', 'kabuki', '🎭'], ['ボルダリング', 'bouldering', '🧗'], ['まんがを かくこと', 'drawing manga', '✏'], ['イルカと およぐこと', 'swimming with dolphins', '🐬'],
+    ]),
+    pon: ponTile('mitai', 'にんげんの ふり', 'passing as a human'),
   },
   // ---- Cheeky: written for everyone in the room (both ex tiles, both partners' homes) ----
   {
