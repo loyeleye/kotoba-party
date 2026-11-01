@@ -3,7 +3,7 @@
 
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import { RoomClient, joinRoom, type CommandBody, type ConnectionStatus } from '../../shared/src/client.js';
-import { LEVEL_LABELS, awardTitle, formatSeconds, h, mount, placesOf, seatShape } from '../../shared/src/dom.js';
+import { LEVEL_LABELS, awardTitle, formatSeconds, h, mount, placesOf, ruby, seatShape } from '../../shared/src/dom.js';
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
@@ -20,9 +20,9 @@ import { phrasebookButton } from './phrasebook.js';
 import type { HostId } from '../../content/src/types.js';
 
 const LEVEL_HINTS: Record<Level, string> = {
-  kana: 'I can’t read Japanese yet',
-  n5: 'I can read ひらがな',
-  n4: 'I can make simple sentences',
+  kana: 'New to Japanese: you’ll see rōmaji too',
+  n5: 'I can read ひらがな and カタカナ',
+  n4: 'I can read some 漢字 and make simple sentences',
 };
 
 const ERRORS: Record<string, string> = {
@@ -310,6 +310,7 @@ function render(view: RoomView): void {
     view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}`).join() + view.modes.length + view.packs.length : '',
     modeKey,
     endAsk,
+    passAsk,
   ].join('|');
   if (key === screenKey) return;
   screenKey = key;
@@ -363,6 +364,8 @@ function screenFor(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement 
 
 /** End game has been tapped once and is asking to be sure. */
 let endAsk = false;
+/** The VIP pressed Make VIP…: who it would go to, while the phone asks to be sure. */
+let passAsk: string | null = null;
 
 /**
  * The VIP's way out of a game picked by mistake: back to the menu, same room and players.
@@ -426,7 +429,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), quip(vipIdleQuip));
   // Links to bring more people in: the phone link for when the QR code won't scan, the stage
   // screen link for friends playing from somewhere else.
-  parts.push(fold('invite', 'Invite friends', 'Links for friends who can’t scan the code', invite(inviteLinks(session?.site ?? location.origin, view.code), view.code, false)));
+  parts.push(fold('invite', ['Invite friends', ruby({ text: '友だちを よぼう', kana: 'ともだちを よぼう' }, { class: 'jp-k' })], 'Links for friends who can’t scan the code', invite(inviteLinks(session?.site ?? location.origin, view.code), view.code, false)));
   return h('div', { class: 'screen' }, parts);
 }
 
@@ -485,11 +488,11 @@ function micCheck(me: PlayerView): HTMLElement {
 const menu = { mode: '', packId: '', rounds: 0, sheetOpen: false, folds: new Set<string>() };
 
 /** A collapsed panel with a one-line summary; it remembers being open across redraws. */
-function fold(id: string, title: string, sub: string, ...body: HTMLElement[]): HTMLElement {
+function fold(id: string, title: string | (string | HTMLElement)[], sub: string, ...body: HTMLElement[]): HTMLElement {
   const el = h(
     'details',
     { class: 'fold', open: menu.folds.has(id) },
-    h('summary', {}, h('span', { class: 'fold-title' }, title, h('small', {}, sub))),
+    h('summary', {}, h('span', { class: 'fold-title' }, h('span', {}, title), h('small', {}, sub))),
     h('div', { class: 'fold-body' }, body),
   ) as HTMLDetailsElement;
   el.addEventListener('toggle', () => (el.open ? menu.folds.add(id) : menu.folds.delete(id)));
@@ -522,8 +525,18 @@ const hostIcon = (m: ModeInfo) =>
  * The VIP's menu: tonight's game as one card that opens a picker sheet, topic and rounds side
  * by side, then Start. Calm motion lives in a folded settings panel under it.
  */
+/** A game's Japanese title at the VIP's level: kana and rōmaji for beginners, furigana over the kanji for N5 and N4. */
+function jaTitle(m: ModeInfo, level: Level): HTMLElement {
+  if (level === 'kana') {
+    const kana = m.titleKana ?? m.titleJa;
+    return h('span', { class: 'gp-ja' }, h('span', { lang: 'ja' }, kana), h('small', { class: 'gp-romaji' }, toRomaji(kana)));
+  }
+  return ruby({ text: m.titleJa, kana: m.titleKana }, { class: 'gp-ja' });
+}
+
 function vipMenu(view: RoomView): HTMLElement {
   const n = view.players.length;
+  const level = view.players.find((p) => p.isVip)?.level ?? 'n5';
   // Surprise Me! sits first on the list; it rolls among the games below it.
   const entries = view.modes.length ? [SURPRISE_ENTRY, ...view.modes] : [];
   // Keep the VIP's pick across redraws; the first game that fits the room is the default.
@@ -556,7 +569,7 @@ function vipMenu(view: RoomView): HTMLElement {
         },
       },
       hostIcon(m),
-      h('span', { class: 'gp-text' }, h('strong', {}, m.title), h('span', { class: 'gp-ja', lang: 'ja' }, m.titleJa), h('small', {}, m.blurb)),
+      h('span', { class: 'gp-text' }, h('strong', {}, m.title), jaTitle(m, level), h('small', {}, m.blurb)),
       h('span', { class: 'gp-players' }, playersLabel(m, n)),
     ),
   );
@@ -590,7 +603,7 @@ function vipMenu(view: RoomView): HTMLElement {
     mount(
       current,
       hostIcon(m),
-      h('span', { class: 'gp-text' }, h('small', { class: 'gp-kicker' }, 'Tonight’s game'), h('strong', {}, m.title), h('span', { class: 'gp-ja', lang: 'ja' }, m.titleJa), h('small', {}, m.blurb)),
+      h('span', { class: 'gp-text' }, h('small', { class: 'gp-kicker' }, 'Tonight’s game'), h('strong', {}, m.title), jaTitle(m, level), h('small', {}, m.blurb)),
       h('span', { class: 'gp-change' }, 'Change'),
     );
     current.setAttribute('aria-label', `Tonight’s game: ${m.title}. Change game`);
@@ -641,7 +654,7 @@ function vipMenu(view: RoomView): HTMLElement {
     extras,
     note,
     startBtn,
-    fold('settings', 'Room settings', 'Calm motion · Hand over VIP', motionToggle(view), vipHandoff(view)),
+    fold('settings', ['Room settings', ruby({ text: 'へやの 設定', kana: 'へやの せってい' }, { class: 'jp-k' })], 'Calm motion · Hand over VIP', motionToggle(view), vipHandoff(view)),
     sheet,
   );
 }
@@ -667,18 +680,28 @@ function motionToggle(view: RoomView): HTMLElement {
 function vipHandoff(view: RoomView): HTMLElement {
   const others = view.players.filter((p) => !p.isVip);
   if (!others.length) return h('p', { class: 'hint vip-pass' }, 'Once a friend joins, you can make them the VIP here.');
+  const label = h('span', { class: 'switch-text' }, 'Hand over VIP', h('small', {}, 'They pick the games, start, skip and play again from their phone. You stay in the game.'));
+  const to = passAsk ? others.find((p) => p.id === passAsk) : undefined;
+  if (to) {
+    // It takes the game menu off this phone, so it asks first, like End game.
+    const yes = h('button', { type: 'button', class: 'secondary end-yes' }, `Yes, ${to.name}`) as HTMLButtonElement;
+    yes.addEventListener('click', () => {
+      yes.disabled = true;
+      passAsk = null;
+      void command({ type: 'passVip', playerId: to.id }).finally(() => redraw());
+    });
+    return h(
+      'div',
+      { class: 'vip-pass' },
+      label,
+      h('p', { class: 'vip-pass-ask' }, `Make ${to.name} the VIP? The game menu moves to their phone.`),
+      h('div', { class: 'end-row' }, h('button', { type: 'button', class: 'secondary', onclick: () => ((passAsk = null), redraw()) }, 'Keep it'), yes),
+    );
+  }
+  passAsk = null;
   const pick = h('select', { 'aria-label': 'New VIP' }, others.map((p) => h('option', { value: p.id }, p.name))) as HTMLSelectElement;
-  const give = h('button', { type: 'button', class: 'secondary' }, 'Make VIP') as HTMLButtonElement;
-  give.addEventListener('click', () => {
-    give.disabled = true;
-    void command({ type: 'passVip', playerId: pick.value }).finally(() => (give.disabled = false));
-  });
-  return h(
-    'div',
-    { class: 'vip-pass' },
-    h('span', { class: 'switch-text' }, 'Hand over VIP', h('small', {}, 'They pick the games, start, skip and play again from their phone. You stay in the game.')),
-    h('div', { class: 'vip-pass-row' }, pick, give),
-  );
+  const give = h('button', { type: 'button', class: 'secondary', onclick: () => ((passAsk = pick.value), redraw()) }, 'Make VIP…');
+  return h('div', { class: 'vip-pass' }, label, h('div', { class: 'vip-pass-row' }, pick, give));
 }
 
 const ORDINAL = ['', '1st', '2nd', '3rd'];

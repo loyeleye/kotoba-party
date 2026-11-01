@@ -40,7 +40,7 @@ export const reconnectQuips: Record<HostId, JpText> = {
 
 /** Under "Waiting for the VIP to pick a game" in the lobby (Pon hosts the lobby). */
 export const vipIdleQuip: JpText = {
-  text: 'VIPさん、えらんで ください。 ポンの おなかが なって います。',
-  kana: 'ブイアイピーさん、えらんで ください。 ポンの おなかが なって います。',
+  text: 'VIPさん、えらんで ください。ポンの おなかが なって います。',
+  kana: 'ビップさん、えらんで ください。ポンの おなかが なって います。',
   en: "VIP, please pick. Pon's belly is rumbling.",
 };

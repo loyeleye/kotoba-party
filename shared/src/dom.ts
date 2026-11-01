@@ -276,7 +276,8 @@ export const PHASE_LABELS: Record<string, string> = {
 export const SEAT_SHAPES = ['●', '▲', '■', '◆', '★', '♥', '✚', '✿'] as const;
 export const seatShape = (seat: number): string => SEAT_SHAPES[(seat - 1) % SEAT_SHAPES.length] ?? '';
 
-export const LEVEL_LABELS: Record<string, string> = { kana: 'かな', n5: 'N5', n4: 'N4' };
+/** The level buttons and chips. The beginner level can't read kana yet, so it wears the 🔰 shoshinsha (beginner) mark, not kana. */
+export const LEVEL_LABELS: Record<string, string> = { kana: '🔰 New', n5: 'N5', n4: 'N4' };
 
 export const HOST_NAMES: Record<string, string> = { pon: 'ポン', chochin: 'ちょうちんさん', fude: 'フデ', nobiko: 'のびこさん' };
 
