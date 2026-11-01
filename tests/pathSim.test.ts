@@ -24,6 +24,25 @@ describe('path simulation: bots play the real games in-process', () => {
     expect(said.some((e) => phraseFrames(e).includes('te-itadakemasen'))).toBe(true);
   });
 
+  it('a Then and now presenter who makes up a line in the deck’s frames is credited with the deck’s sentence, for the frames heard', () => {
+    const credited = [1, 2, 3, 4, 5, 6].flatMap((seed) => playGame(content, 'happyokai', ['n4', 'n4', 'n5', 'n5'], seed).seats.flatMap((s) => s.result.phrases.filter((e) => e.itemId.startsWith('happyokai:then-now:'))));
+    expect(credited.length).toBeGreaterThan(0);
+    for (const e of credited) {
+      // happyokai:<deck>:<slide>:<frames heard>:<level>. The card counts for the frames heard and no others,
+      // its sentence carries them, and it has English to practise from.
+      const parts = e.itemId.split(':');
+      expect(parts).toHaveLength(5);
+      const heard = parts[3]!.split('+');
+      expect(e.frames).toEqual(heard);
+      expect(heard).toEqual(expect.arrayContaining(phraseFrames(e)));
+      expect(phraseFrames(e).some((f) => f === 'you-ni-naru' || f === 'koto-ni-suru')).toBe(true);
+      expect(e).toMatchObject({ outcome: 'said', recall: 'memory' });
+      expect(e.en).not.toBe('');
+    }
+    const frames = new Set(credited.flatMap((e) => phraseFrames(e)));
+    expect(frames.has('koto-ni-suru')).toBe(true);
+  });
+
   it('a speaking Ghost Advice Hotline adviser is credited from memory', () => {
     const g = playGame(content, 'ghost-hotline', ['n4', 'n4', 'n5', 'n5'], 3);
     const lines = g.seats.flatMap((s) => s.result.phrases.filter((e) => e.itemId.startsWith('hotline:') && !e.itemId.endsWith(':call')));
@@ -53,9 +72,10 @@ describe('path simulation: bots play the real games in-process', () => {
     const modes = ['bento-haus', 'phrase-bingo', 'ghost-hotline', 'late-again', 'tourist', 'omiai', 'hajimemashite'] as const;
     const lib = new Map(modes.map((m) => [m as (typeof modes)[number], [1, 2].flatMap((seed) => playGame(content, m, ['n4', 'n4', 'n5', 'n5'], seed).seats.filter((s) => s.level === 'n4').map((s) => s.result))]));
     const base = { rooms: 1, library: 2, nightsEvery: 7, games: 3, follow: 0, memory: 0.7, max: 10, reviews: 0, seed: 1 };
-    // Stamps by night 10, summed over 12 rooms, and the nights they took (a goal never stamped counts as 11).
+    // Stamps by night 10, summed over 24 rooms, and the nights they took (a goal never stamped counts as 11).
+    // 24, not 12: in this small library 12 rooms is noise (new Tourist questions in step 5b-2 flipped it).
     const run = (follow: number) => {
-      const rooms = Array.from({ length: 12 }, (_, i) => runRoom(lib, { ...base, follow }, 100 + i));
+      const rooms = Array.from({ length: 24 }, (_, i) => runRoom(lib, { ...base, follow }, 100 + i));
       const ids = GOALS.filter((g) => g.line === 'express').map((g) => g.id);
       return { stamps: rooms.reduce((n, r) => n + Object.keys(r.stamped).length, 0), nights: rooms.reduce((n, r) => n + ids.reduce((m, id) => m + (r.stamped[id] ?? 11), 0), 0) };
     };

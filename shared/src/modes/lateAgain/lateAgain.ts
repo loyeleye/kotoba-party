@@ -23,6 +23,7 @@
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { framesHeard } from '../../japanese/frames.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
@@ -613,7 +614,14 @@ function settle(s: LateState, r: LateRound, ctx: ModeContext): void {
   const said = saidAloud(r);
   // Said from memory unless the hint was opened. Tiles, typing and Pon's reading are seen, not said; Pon's is read.
   const read = r.hinted || r.excuse?.kind === 'pon';
-  ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: read ? 'read' : 'memory' });
+  // Pon's line is the card; when speech-to-text heard the excuse, it counts only for the frames heard in it (so
+  // naming the cause doesn't earn Pon's ので), and a card with other frames is its own card.
+  const x = r.excuse;
+  // A clip earns only the model's frames it was heard saying (a ので left out isn't credited): a card of its own,
+  // unless it was heard saying them all.
+  const heardAll = r.level !== 'kana' && x?.kind === 'clip' && x.checked && x.heard ? framesHeard(line, { text: x.heard.text, kana: x.heard.reading ?? x.heard.text }, x.heard.tokens) : null;
+  const heard = heardAll && heardAll.length < framesHeard(line, line).length ? heardAll : null;
+  ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}${heard ? `:${heard.join('+')}` : ''}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: read ? 'read' : 'memory', ...(heard ? { frames: heard } : {}) });
   if (r.hidden) return;
 
   if (s.coop) {

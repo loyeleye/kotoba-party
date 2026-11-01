@@ -91,6 +91,9 @@ speech-to-text heard it name the cause or use the chunk (or there was no speech-
 typing and Pon's reading are seen. It is from memory unless the hint was opened or Pon read it. When
 speech-to-text heard a different one of the three causes than the one tapped, the excuse blamed that one.
 The private note at the ruling shows "From memory ✓" or "With a hint", and what they said beside Pon's way.
+Pon's line is the card, but when speech-to-text heard the clip, the card counts only for Pon's frames that were
+heard in it (`late:<cause>:<level>:<frames>`, its own card): naming the crow doesn't earn Pon's ので (panel on
+#160).
 
 ## Open, for playtests
 
