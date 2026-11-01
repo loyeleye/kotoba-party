@@ -120,3 +120,6 @@ body[data-motion='calm'] .dub-roll { animation-duration: var(--d) !important; }
 
 /* Tonight's episode is a premiere: the host and the score bar step aside so the screen is all show. */
 body[data-mode='dub-club'][data-phase='finale'] :is(.host, .players) { display: none; }
+
+/* The N4 ad-lib tag: on the cast list and the name card (no script, so no caption over the voice). */
+.dub-adlib { margin-left: 0.4em; padding: 0 0.4em; border-radius: 6px; background: #ffd34d; color: #1a1205; font-size: 0.75em; font-weight: 800; }

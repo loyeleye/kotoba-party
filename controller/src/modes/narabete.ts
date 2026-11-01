@@ -6,6 +6,9 @@
 //   Feelings   a secret number (hold to peek), the theme, sentence frames and two swerve words, and
 //              a few ready answers to tap or read out. Never say the number.
 //   Story      round 3 ends with everyone's answers read out low to high: your turn shows your line.
+//   N4         rank and defend: one N4 player a round is told during the line-up that they'll say why
+//              their card goes where it is (「＿ので、これが いちばん さきです。」), with "Not this time".
+//              Their turn shows the frame and two model lines to read out.
 
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
@@ -201,6 +204,7 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
           speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'say', utterance, round: game.round }) }),
         )
       : null,
+    hardOffer(ctx, me),
     ends(game),
     timeCard(me, true) ?? (me.secret !== null ? secret(me) : null),
     me.said && game.kind !== 'time' ? h('p', { class: 'hint' }, 'Your answer: ', h('span', { lang: 'ja' }, me.said.text)) : null,
@@ -323,6 +327,45 @@ function storyScreen(ctx: Ctx, me: Me): HTMLElement {
   );
 }
 
+/** The N4 defence, offered during the line-up: say yes, or "not this time". */
+function hardOffer(ctx: Ctx, me: Me): HTMLElement | null {
+  const hard = me.hard;
+  if (!hard) return null;
+  const send = (accept: boolean) => void ctx.send({ kind: 'hard', accept, round: ctx.game.round });
+  return h(
+    'div',
+    { class: 'nb-hard' },
+    h('p', {}, '🎙 N4: after the line-up, say why your card goes where it is, with ', h('span', { lang: 'ja' }, '〜ので'), '.'),
+    hard.answer === 'offered'
+      ? h('div', { class: 'nb-hard-btns' }, h('button', { type: 'button', class: 'secondary', onclick: () => send(true) }, 'I’m in'), h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Not this time'))
+      : h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Not this time after all'),
+  );
+}
+
+/** The N4 defence: the ので frame for where the card ended up, and two model lines to read out. */
+function hardDefence(ctx: Ctx, me: Me): HTMLElement {
+  const { game, send } = ctx;
+  const script = me.hard!.script!;
+  return h(
+    'div',
+    { class: 'screen' },
+    h('p', { class: 'big' }, '🎤 Defend your card!'),
+    h('p', {}, 'Say why it goes where it is.'),
+    me.said ? h('p', { class: 'hint' }, 'Your card: ', h('span', { lang: 'ja' }, me.said.text)) : null,
+    timeCard(me, true) ?? secret(me),
+    h('p', { class: 'nb-pos' }, defenceSpot(ctx, me)),
+    h('p', { class: 'nb-frame', lang: 'ja' }, script.frame.text, h('small', {}, ` ${script.frame.en}`)),
+    h('p', { class: 'nb-hard-label' }, 'Read one out, or say your own:'),
+    h(
+      'div',
+      { class: 'nb-hard-lines' },
+      script.lines.map((l) => jpView(l, me.level, { cls: 'nb-hard-line' })),
+    ),
+    speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'defend', utterance, round: game.round }) }),
+    h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Not this time'),
+  );
+}
+
 function defenceSpot(ctx: Ctx, me: Me): string {
   const line = ctx.game.line;
   const i = line.findIndex((c) => c.mine);
@@ -363,6 +406,7 @@ export const narabetePhone: PhoneMode<NarabeteView> = {
         if (!me?.cardId) return waiting('Line them up!', 'Watch the TV.');
         return ordering(ctx, me);
       case 'encore':
+        if (me?.defending && me.hard?.script) return hardDefence(ctx, me);
         if (me?.defending)
           return h(
             'div',

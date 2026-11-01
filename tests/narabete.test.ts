@@ -6,11 +6,13 @@ import { apply, createGame, type GameAction, type GameContext, type GameState } 
 import { normalizeReading, soundKey, type Utterance } from '../shared/src/japanese/kana.js';
 import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
+import { defenceScript } from '../shared/src/modes/narabete/defence.js';
 import {
   BONUS_POOL_SHARE,
   computeFlip,
   dealTime,
   DEFENCE_SHARE,
+  hardTally,
   PAIR_POINTS,
   PERFECT_POINTS,
   PERFORM_POINTS,
@@ -360,6 +362,8 @@ describe('Narabete!: the Feelings Line and the Worst Day Ever', () => {
     t.sayAll();
     t.sortLine();
     t.lockAll();
+    // A room with an N4 player gets the N4 defence, even in the Time Line.
+    if (t.s.phase === 'encore') t.timeout();
     expect(t.s.phase).toBe('score');
     t.timeout();
     expect(t.s.phase).toBe('prompt');
@@ -492,6 +496,153 @@ describe('Narabete!: the Feelings Line and the Worst Day Ever', () => {
     expect(t.r.flip!.maxPairs).toBeLessThanOrEqual(3);
   });
 });
+
+// ---- the N4 hard role: rank and defend (goal 4.11) ----
+
+describe('Narabete!: the N4 defence script', () => {
+  it('fits the frame to where the card sits, with ので in every model line', () => {
+    const first = defenceScript({ unit: 'time' }, 0, 4, '');
+    expect(first.spot).toBe('first');
+    expect(first.frame.kana).toBe('＿ので、これが いちばん さきです。');
+    expect(first.status).toBe('draft');
+    expect(first.frames).toEqual(['node']);
+    const last = defenceScript({ unit: 'price' }, 3, 4, 'Aki');
+    expect(last.frame.kana).toContain('いちばん あとです');
+    const after = defenceScript({ unit: 'date' }, 2, 4, 'Aki');
+    expect(after.frame.kana).toContain('Akiさんの あとです');
+    for (const s of [first, last, after]) {
+      expect(s.lines.length).toBeGreaterThanOrEqual(2);
+      for (const l of s.lines) {
+        expect(l.kana).toMatch(/ので、/);
+        expect(l.en.length).toBeGreaterThan(0);
+      }
+    }
+    // A な-adjective theme joins with なので; an い-adjective or verb as it is.
+    const pon = FEEL_THEMES.find((x) => x.more.kana === 'たいへん')!;
+    expect(defenceScript({ theme: pon }, 3, 4, 'Aki').lines.map((l) => l.kana).join(' ')).toContain('たいへんなので');
+    expect(defenceScript({ theme: pon }, 3, 4, 'Aki').lines.map((l) => l.kana).join(' ')).toContain('たいへんな もの');
+    const smelly = FEEL_THEMES.find((x) => x.id === 'smelly')!;
+    expect(defenceScript({ theme: smelly }, 0, 4, '').lines[0]!.kana).toBe('ちょっとだけ くさいので、これが いちばん さきです。');
+  });
+});
+
+describe('Narabete!: the N4 defence in a game', () => {
+  it('the N4 player is offered it in the line-up, defends in its own encore, and only they get the bonus for it', () => {
+    const t = new Table(3, ['n5', 'n4', 'n5']);
+    t.start();
+    t.sayAll();
+    expect(t.s.phase).toBe('reveal');
+    expect(t.view('p2').me!.hard).toMatchObject({ answer: 'offered', script: null });
+    expect(t.view('p1').me!.hard).toBeNull();
+    expect(t.play('p1', { kind: 'hard', accept: true }).error).toBe('not-offered');
+    expect(t.play('p2', { kind: 'hard', accept: true }).error).toBeUndefined();
+    t.sortLine();
+    t.lockAll();
+    // A Time Line has no ordinary defence, so the N4 one is the encore.
+    expect(t.s.phase).toBe('encore');
+    expect(t.r.encore).toBe('hard');
+    expect(t.view().defence).toMatchObject({ playerId: 'p2', n4: true });
+    expect(t.view().defence!.frame!.kana).toMatch(/^＿ので、/);
+    const me = t.view('p2').me!;
+    expect(me.defending).toBe(true);
+    expect(me.hard!.script!.lines.length).toBeGreaterThanOrEqual(2);
+    expect(t.view('p1').me!.defending).toBe(false);
+    expect(t.play('p1', { kind: 'defend', pass: true }).error).toBe('not-yours');
+    expect(t.play('p2', { kind: 'defend', utterance: speech(me.hard!.script!.lines[0]!.kana) }).error).toBeUndefined();
+    expect(t.s.phase).toBe('score');
+    expect(t.r.hard).toMatchObject({ ok: true, framed: true, answer: 'accepted' });
+    // Everyone said their card from memory: the N4 defender gets the defence share on top, nobody else changes.
+    expect(t.r.flip!.bonus.p2!).toBeGreaterThan(t.r.flip!.bonus.p1!);
+    expect(t.r.flip!.bonus.p1).toBe(t.r.flip!.bonus.p3);
+    t.timeout();
+    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 1 });
+  });
+
+  it('“not this time” in the line-up skips it; a room with no N4 player never has it', () => {
+    const t = new Table(3, ['n5', 'n4', 'n5']);
+    t.start();
+    t.sayAll();
+    expect(t.play('p2', { kind: 'hard', accept: false }).error).toBeUndefined();
+    expect(t.view('p2').me!.hard).toBeNull();
+    t.sortLine();
+    t.lockAll();
+    expect(t.s.phase).toBe('score');
+    t.timeout();
+    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 0 });
+
+    const plain = new Table(3, ['kana', 'n5', 'n5']);
+    plain.start();
+    plain.sayAll();
+    expect(plain.r.hard).toBeNull();
+    plain.sortLine();
+    plain.lockAll();
+    expect(plain.s.phase).toBe('score');
+  });
+
+  it('rotates among N4 players; in a Feelings round the ordinary defence goes first, then the N4 one', () => {
+    const t = new Table(3, ['n5', 'n4', 'n4']);
+    t.start();
+    t.sayAll();
+    expect(t.r.hard?.playerId).toBe('p2');
+    t.sortLine();
+    t.lockAll();
+    t.timeout(); // p2 lets the N4 defence run out
+    expect(t.s.phase).toBe('score');
+    t.timeout();
+    t.timeout();
+    expect(t.r.kind).toBe('feel');
+    t.sayAll();
+    expect(t.r.hard?.playerId).toBe('p3');
+    // p1 (N5) walks its card the furthest: the ordinary defence is theirs.
+    const p1 = t.cardOf('p1');
+    while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+    t.play('p1', { kind: 'move', dir: 1 });
+    t.play('p1', { kind: 'move', dir: -1 });
+    t.lockAll();
+    expect(t.s.phase).toBe('encore');
+    expect(t.r.encore).toBe('defence');
+    expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
+    expect(t.play('p1', { kind: 'defend', utterance: speech('ぜんぜん くさくない から です') }).error).toBeUndefined();
+    expect(t.s.phase).toBe('encore');
+    expect(t.r.encore).toBe('hard');
+    expect(t.view('p3').me!.defending).toBe(true);
+    expect(t.play('p3', { kind: 'defend', utterance: speech('ちょっとだけ くさいので、これが いちばん さきです') }).error).toBeUndefined();
+    expect(t.s.phase).toBe('score');
+    expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
+    expect(t.r.flip!.bonus.p1!).toBe(t.r.flip!.bonus.p3!);
+    expect(t.r.flip!.bonus.p1!).toBeGreaterThan(t.r.flip!.bonus.p2!);
+  });
+
+  it('an N4 player who also moved the most defends once, with the N4 script', () => {
+    const t = new Table(3, ['n4', 'n5', 'n5']);
+    t.start();
+    toFeelingsN4(t);
+    t.sayAll();
+    expect(t.r.hard?.playerId).toBe('p1');
+    const p1 = t.cardOf('p1');
+    while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
+    t.play('p1', { kind: 'move', dir: 1 });
+    t.play('p1', { kind: 'move', dir: -1 });
+    t.lockAll();
+    expect(t.s.phase).toBe('encore');
+    expect(t.r.defence).toBeNull();
+    expect(t.r.encore).toBe('hard');
+    t.play('p1', { kind: 'defend', pass: true });
+    expect(t.s.phase).toBe('score');
+    expect(t.r.hard?.answer).toBe('declined');
+  });
+});
+
+/** Through the Time Line (and its N4 defence, left to run out) to the first Feelings round. */
+function toFeelingsN4(t: Table) {
+  t.sayAll();
+  t.sortLine();
+  t.lockAll();
+  if (t.s.phase === 'encore') t.timeout();
+  t.timeout();
+  t.timeout();
+  expect(t.r.kind).toBe('feel');
+}
 
 // ---- full system: bots play a whole game through the real server ----
 

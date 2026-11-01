@@ -12,6 +12,11 @@
 // their own card, from their phone, then locks) → encore (Feelings rounds: the most-moved card's author
 // gets one defence) → score (Nobiko-san flips the cards; neighbouring pairs in order score for everyone).
 // After round 3, one `finale` phase per performer for the story.
+//
+// The N4 hard role, rank and defend (goal 4.11): in a room with N4 players, one of them each round (in
+// turn) also defends their own card's place with ので (「＿ので、これが いちばん さきです。」), in any round,
+// Time Line too. It's offered during the line-up and can be declined. It runs as its own `encore` after the
+// ordinary defence (or instead of it, when the same player would give both). Team points don't change.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
@@ -21,6 +26,7 @@ import { playerTextAllowed } from '../../moderation.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
+import { defenceScript, type DefenceScript } from './defence.js';
 
 // ---- tuning ----
 
@@ -59,6 +65,8 @@ export const DURATIONS = {
   answer: 60_000,
   reveal: 90_000,
   encore: 12_000,
+  /** The N4 defence: a little longer, to plan the ので line (the doc's 8 s to plan). */
+  encoreN4: 15_000,
   /** After the flip: time to take it in (and, in Feelings rounds, vote for the funniest). */
   scoreTail: 9_000,
   scoreVoteTail: 14_000,
@@ -111,6 +119,19 @@ export interface Flip {
   bonus: Record<string, number>;
 }
 
+/** The N4 defence (rank and defend): offered during the line-up, said in its own encore. */
+export interface HardDefence {
+  playerId: string;
+  cardId: string;
+  answer: 'offered' | 'accepted' | 'declined';
+  done: boolean;
+  /** Said out loud, in Japanese: tops the bonus up, like the ordinary defence. */
+  ok: boolean;
+  /** It used ので (the frame). */
+  framed: boolean;
+  text: string | null;
+}
+
 export interface Round {
   index: number;
   kind: RoundKind;
@@ -120,6 +141,10 @@ export interface Round {
   line: string[];
   locks: Record<string, boolean>;
   defence: { playerId: string; cardId: string; done: boolean; ok: boolean; text: string | null } | null;
+  /** The N4 defence this round, if the room has an N4 player (kept when declined, for the tally). */
+  hard?: HardDefence | null;
+  /** Which defence the encore is on now. */
+  encore?: 'defence' | 'hard' | null;
   flip: Flip | null;
   votes: Record<string, string>;
 }
@@ -145,6 +170,8 @@ export interface NarabeteState {
   stats: Record<string, PlayerStats>;
   story: Story | null;
   phaseAt: number;
+  /** Every N4 defence offered so far, and the answer (the step's gate: N4 players accept 60% or more). */
+  hardLog: { round: number; playerId: string; answer: HardDefence['answer'] }[];
 }
 
 // ---- view ----
@@ -197,7 +224,8 @@ export interface NarabeteView {
   said: string[];
   locked: string[];
   flip: { pairs: number; maxPairs: number; perfect: boolean; last: string | null; poker: string | null; teamPoints: number; steps: number } | null;
-  defence: { playerId: string; text: string | null; done: boolean } | null;
+  /** The defence on now (encore), or the round's defence (score). `n4`: the rank-and-defend script, with its frame. */
+  defence: { playerId: string; text: string | null; done: boolean; n4: boolean; frame: JpText | null } | null;
   story: { order: string[]; index: number; current: string | null } | null;
   me: {
     level: Level;
@@ -215,6 +243,8 @@ export interface NarabeteView {
     canVote: boolean;
     votedFor: string | null;
     defending: boolean;
+    /** The N4 defence, while it's mine: offered or taken (from the line-up), and the script while I defend. */
+    hard: { answer: 'offered' | 'accepted'; script: DefenceScript | null } | null;
     performing: { text: string } | null;
     bonus: number;
   } | null;
@@ -230,6 +260,7 @@ export type NarabeteMove =
   | { kind: 'hide'; cardId: string }
   | { kind: 'defend'; utterance: Utterance }
   | { kind: 'defend'; pass: true }
+  | { kind: 'hard'; accept: boolean }
   | { kind: 'vote'; cardId: string }
   | { kind: 'perform'; utterance: Utterance }
   | { kind: 'perform'; pass: true };
@@ -395,7 +426,7 @@ function score(s: NarabeteState, ctx: ModeContext): void {
   for (const p of ctx.players()) {
     const c = cardOfPlayer(r, p.id);
     let share = c ? sayShare(c, r.kind, p.level) : 0;
-    if (r.defence?.playerId === p.id && r.defence.ok) share += DEFENCE_SHARE;
+    if ((r.defence?.playerId === p.id && r.defence.ok) || (r.hard?.playerId === p.id && r.hard.ok)) share += DEFENCE_SHARE;
     bonus[p.id] = Math.min(cap, round5(cap * share));
     if (c?.said?.via === 'speech') stats(s, p.id).spoken += 1;
   }
@@ -425,6 +456,13 @@ function phrases(s: NarabeteState, r: Round, ctx: ModeContext): void {
         ctx.phrase(c.ownerId, { itemId: `narabete:${theme.id}:${ready}`, text: a.jp.text, kana: a.jp.kana, en: a.jp.en, outcome: c.said?.via === 'speech' ? 'said' : 'seen' });
       }
     }
+  }
+  const hard = r.hard;
+  if (hard && hard.answer === 'accepted' && hard.text && ctx.player(hard.playerId)) {
+    const script = scriptFor(s, r, hard.cardId, ctx);
+    const model = script?.lines[0];
+    if (script && model)
+      ctx.phrase(hard.playerId, { itemId: `narabete:defence:${script.spot}`, text: model.text, kana: model.kana, en: `${model.en} (〜ので: giving a reason)`, outcome: hard.ok && hard.framed ? 'said' : hard.ok ? 'retry' : 'missed' });
   }
   const more = r.kind !== 'time' ? themeOf(r.setId)?.more : undefined;
   if (more)
@@ -463,6 +501,49 @@ function pickDefence(r: Round, ctx: ModeContext): Round['defence'] {
   return best ? { playerId: best.ownerId, cardId: best.id, done: false, ok: false, text: null } : null;
 }
 
+/**
+ * The N4 defender this round: the room's N4 players in turn, skipping any without a card said out loud.
+ * None in the room, none offered.
+ */
+function pickHard(s: NarabeteState, r: Round, ctx: ModeContext): HardDefence | null {
+  const here = new Set(ctx.connected().map((p) => p.id));
+  const n4 = ctx.players().filter((p) => p.level === 'n4');
+  for (let k = 0; k < n4.length; k++) {
+    const p = n4[(s.round - 1 + k) % n4.length]!;
+    const c = cardOfPlayer(r, p.id);
+    if (c && c.said && !c.hidden && here.has(p.id)) return { playerId: p.id, cardId: c.id, answer: 'offered', done: false, ok: false, framed: false, text: null };
+  }
+  return null;
+}
+
+/** The N4 defence, if it is still to be said (offered or accepted, not declined). */
+const liveHard = (r: Round): HardDefence | null => (r.hard && r.hard.answer !== 'declined' ? r.hard : null);
+
+/** The defence the encore is on now. */
+function onStand(r: Round): { playerId: string; done: boolean; hard: boolean } | null {
+  if (r.encore === 'hard' && r.hard) return { playerId: r.hard.playerId, done: r.hard.done, hard: true };
+  if (r.encore === 'defence' && r.defence) return { playerId: r.defence.playerId, done: r.defence.done, hard: false };
+  return null;
+}
+
+/** The N4 script for a card where it sits now. */
+export function scriptFor(s: NarabeteState, r: Round, cardId: string, ctx: ModeContext): DefenceScript | null {
+  const pos = r.line.indexOf(cardId);
+  if (pos < 0) return null;
+  const before = r.line[pos - 1];
+  const name = before ? (ctx.player(cardOf(r, before)?.ownerId ?? '')?.name ?? '') : '';
+  const set = r.kind === 'time' ? timeSetOf(r.setId) : undefined;
+  const theme = r.kind !== 'time' ? themeOf(r.setId) : undefined;
+  if (set) return defenceScript({ unit: set.unit }, pos, r.line.length, name);
+  if (theme) return defenceScript({ theme }, pos, r.line.length, name);
+  return null;
+}
+
+/** N4 defences offered and taken so far. */
+export function hardTally(s: NarabeteState): { offered: number; accepted: number } {
+  return { offered: s.hardLog.length, accepted: s.hardLog.filter((x) => x.answer === 'accepted').length };
+}
+
 const canVote = (r: Round, playerId: string) => r.kind !== 'time' && r.cards.some((c) => c.ownerId !== playerId && c.said && !c.hidden);
 
 function flipSteps(r: Round): number {
@@ -496,7 +577,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
   setup(ctx) {
     const all: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) all[p.id] = blankStats();
-    return { round: 0, totalRounds: TOTAL_ROUNDS, current: null, usedSets: [], stats: all, story: null, phaseAt: ctx.now };
+    return { round: 0, totalRounds: TOTAL_ROUNDS, current: null, usedSets: [], stats: all, story: null, phaseAt: ctx.now, hardLog: [] };
   },
 
   next(s, from) {
@@ -509,9 +590,10 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       case 'answer':
         return 'reveal';
       case 'reveal':
-        return r?.defence ? 'encore' : 'score';
+        return r?.defence || (r && liveHard(r)) ? 'encore' : 'score';
       case 'encore':
-        return 'score';
+        // The ordinary defence first, then the N4 one.
+        return r?.encore === 'defence' && liveHard(r) ? 'encore' : 'score';
       case 'score':
         if (s.round < s.totalRounds) return 'prompt';
         return s.story && s.story.order.length ? 'finale' : 'recap';
@@ -540,12 +622,20 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         ctx.cue({ host: 'nobiko', event: 'narabete_say' });
         break;
       case 'reveal':
-        if (r) r.line = shuffled(r.line, () => ctx.random());
+        if (r) {
+          r.line = shuffled(r.line, () => ctx.random());
+          r.hard = pickHard(s, r, ctx);
+          r.encore = null;
+        }
         ctx.cue({ host: 'nobiko', event: 'narabete_order' });
         break;
-      case 'encore':
-        if (r?.defence) ctx.cue({ host: 'nobiko', event: 'narabete_defence', slots: { name: ctx.player(r.defence.playerId)?.name ?? '' } });
+      case 'encore': {
+        if (!r) break;
+        r.encore = !r.encore && r.defence ? 'defence' : 'hard';
+        const on = onStand(r);
+        if (on) ctx.cue({ host: 'nobiko', event: 'narabete_defence', slots: { name: ctx.player(on.playerId)?.name ?? '' } });
         break;
+      }
       case 'score':
         score(s, ctx);
         break;
@@ -558,8 +648,17 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
   leave(s, phase, ctx) {
     const r = s.current;
     if (!r) return;
-    if (phase === 'reveal') r.defence = pickDefence(r, ctx);
+    if (phase === 'reveal') {
+      r.defence = pickDefence(r, ctx);
+      const hard = liveHard(r);
+      // The VIP hid it, or its player left: no N4 defence.
+      if (hard && (cardOf(r, hard.cardId)?.hidden || !ctx.connected().some((p) => p.id === hard.playerId))) r.hard = null;
+      // One defence each: the N4 player who also moved the most gives the N4 one.
+      if (r.hard && liveHard(r) && r.defence?.playerId === r.hard.playerId) r.defence = null;
+    }
+    if (phase === 'encore' && r.encore === 'hard' && r.hard && r.hard.answer === 'offered' && !r.hard.text) r.hard.answer = 'declined';
     if (phase === 'score') {
+      if (r.hard) s.hardLog.push({ round: r.index, playerId: r.hard.playerId, answer: r.hard.answer });
       payFlip(r, ctx);
       payVotes(s, r, ctx);
       if (r.kind === 'story') {
@@ -585,7 +684,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       case 'reveal':
         return DURATIONS.reveal;
       case 'encore':
-        return DURATIONS.encore;
+        return r?.encore === 'hard' ? DURATIONS.encoreN4 : DURATIONS.encore;
       case 'score':
         return flipMs(r ? flipSteps(r) : 0) + (r && r.kind !== 'time' ? DURATIONS.scoreVoteTail : DURATIONS.scoreTail);
       case 'finale':
@@ -601,7 +700,10 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     if (!here.length || !r) return false;
     if (phase === 'answer') return here.every((p) => !cardOfPlayer(r, p.id) || cardOfPlayer(r, p.id)!.said);
     if (phase === 'reveal') return here.every((p) => !cardOfPlayer(r, p.id) || r.locks[p.id]);
-    if (phase === 'encore') return !r.defence || r.defence.done || !here.some((p) => p.id === r.defence!.playerId);
+    if (phase === 'encore') {
+      const on = onStand(r);
+      return !on || on.done || !here.some((p) => p.id === on.playerId);
+    }
     if (phase === 'finale') {
       const st = s.story;
       const id = st?.order[st.index];
@@ -702,8 +804,37 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         for (const [voter, id] of Object.entries(r.votes)) if (id === c.id) delete r.votes[voter];
         return MOVE_OK;
       }
+      case 'hard': {
+        // Yes to the N4 defence, or "not this time". Until it's said.
+        if (phase !== 'reveal' && phase !== 'encore') return moveError('wrong-phase');
+        const hard = r.hard;
+        if (!hard || hard.playerId !== playerId) return moveError('not-offered');
+        if (hard.done) return MOVE_OK;
+        hard.answer = raw.accept === true ? 'accepted' : 'declined';
+        if (hard.answer === 'declined') hard.done = true;
+        return MOVE_OK;
+      }
       case 'defend': {
-        if (phase !== 'encore' || !r.defence) return moveError('wrong-phase');
+        if (phase !== 'encore') return moveError('wrong-phase');
+        if (r.encore === 'hard' && r.hard) {
+          const hard = r.hard;
+          if (hard.playerId !== playerId) return moveError('not-yours');
+          if (hard.done) return MOVE_OK;
+          hard.done = true;
+          if (raw.pass === true) {
+            if (hard.answer === 'offered') hard.answer = 'declined';
+            return MOVE_OK;
+          }
+          if (!isUtterance(raw.utterance)) return moveError('bad-utterance');
+          hard.answer = 'accepted';
+          const text = cleanText(raw.utterance.text, MAX_ANSWER_LENGTH);
+          if (!text || !playerTextAllowed(text, ctx.audience)) return MOVE_OK;
+          hard.text = tidyJa(text);
+          hard.ok = raw.utterance.via === 'speech' && hasJapanese(text);
+          hard.framed = /ので/.test(utteranceReading(raw.utterance)) || /ので/.test(text);
+          return MOVE_OK;
+        }
+        if (!r.defence) return moveError('wrong-phase');
         if (r.defence.playerId !== playerId) return moveError('not-yours');
         if (r.defence.done) return MOVE_OK;
         r.defence.done = true;
@@ -755,6 +886,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     r.line = r.line.filter((id) => id !== c.id);
     for (const [voter, id] of Object.entries(r.votes)) if (id === c.id) delete r.votes[voter];
     if (r.defence?.playerId === playerId) r.defence = null;
+    if (r.hard?.playerId === playerId) r.hard = null;
   },
 
   progress(s) {
@@ -809,6 +941,15 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     const story = s.story && phase === 'finale' ? { order: s.story.order, index: s.story.index, current: s.story.order[s.story.index] ?? null } : null;
     const poker = r?.flip?.last && r.kind !== 'time' ? (cardOf(r, r.flip.last)?.ownerId ?? null) : null;
 
+    const stand = r && phase === 'encore' ? onStand(r) : null;
+    let defence: NarabeteView['defence'] = null;
+    if (r && (phase === 'encore' || phase === 'score')) {
+      // The encore shows the defence on now; the score, the round's defence (the ordinary one first).
+      const hardOn = phase === 'encore' ? !!stand?.hard : !r.defence && !!r.hard?.text;
+      if (hardOn && r.hard) defence = { playerId: r.hard.playerId, text: r.hard.text, done: r.hard.done, n4: true, frame: scriptFor(s, r, r.hard.cardId, ctx)?.frame ?? null };
+      else if (r.defence && (phase === 'score' || stand)) defence = { playerId: r.defence.playerId, text: r.defence.text, done: r.defence.done, n4: false, frame: null };
+    }
+
     let mine: NarabeteView['me'] = null;
     if (me && r) {
       const c = cardOfPlayer(r, me.id);
@@ -838,7 +979,11 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         againFrom: phase === 'reveal' && c ? c.again : [],
         canVote: phase === 'score' && !r.votes[me.id] && canVote(r, me.id),
         votedFor: (phase === 'score' && r.votes[me.id]) || null,
-        defending: phase === 'encore' && r.defence?.playerId === me.id && !r.defence.done,
+        defending: !!stand && stand.playerId === me.id && !stand.done,
+        hard:
+          r.hard && r.hard.playerId === me.id && r.hard.answer !== 'declined' && !r.hard.done && (phase === 'reveal' || phase === 'encore')
+            ? { answer: r.hard.answer, script: stand?.hard ? scriptFor(s, r, r.hard.cardId, ctx) : null }
+            : null,
         performing: current && c && current === c.id && !s.story!.done[c.id] ? { text: c.said?.text ?? '' } : null,
         bonus: r.flip?.bonus[me.id] ?? 0,
       };
@@ -859,7 +1004,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       said: r ? r.cards.filter((c) => c.said).map((c) => c.ownerId) : [],
       locked: r && phase === 'reveal' ? Object.keys(r.locks) : [],
       flip: r?.flip && flipped ? { pairs: r.flip.pairs, maxPairs: r.flip.maxPairs, perfect: r.flip.perfect, last: r.flip.last, poker, teamPoints: r.flip.teamPoints, steps: r.flip.order.length } : null,
-      defence: r?.defence && (phase === 'encore' || phase === 'score') ? { playerId: r.defence.playerId, text: r.defence.text, done: r.defence.done } : null,
+      defence,
       story,
       me: mine,
     };
