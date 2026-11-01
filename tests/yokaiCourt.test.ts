@@ -7,7 +7,7 @@ import { apply, createGame, wakeAt, type GameAction, type GameContext, type Game
 import { ALL_FRAMES, framesOf } from '../shared/src/japanese/frames.js';
 import { hasKanji } from '../shared/src/japanese/kana.js';
 import { CASES, CHUNKS, CLUES, fill, kanaTilesOf, LINES, PLACES, slotsOf, TESTIMONIES, WITNESS, YOKAI, type Side } from '../shared/src/modes/yokaiCourt/cases.js';
-import { CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, saidEvidence, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
+import { glossOf, withRomaji, CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, saidEvidence, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { yokaiCourtPolicy } from '../tools/bots/policies/yokaiCourt.js';
@@ -462,6 +462,99 @@ describe('Yōkai Court panel fixes', () => {
     const typed = { via: 'typed', text: `${place.word.text}に いました`, reading: `${place.word.kana}に いました` };
     expect(t.play(def, { kind: 'argue', type: 'typed', text: typed }).error).toBeUndefined();
     expect(saidEvidence(t.c, t.c.args[def]!)).toBe(true);
+  });
+});
+
+// ---- the panels' later ideas ----
+
+describe('Yōkai Court later ideas', () => {
+  it('gives a Kana judge who took part a word to keep, logged as seen', () => {
+    const t = new Table(5, ['kana', 'kana', 'kana', 'kana', 'kana'], 51);
+    t.start();
+    toPlan(t);
+    const { pros, def } = t.c;
+    t.play(pros, { kind: 'pick', tiles: ['claim', 'evidence'] });
+    t.play(def, { kind: 'pick', tiles: ['evidence', 'claim'] });
+    argueAll(t, () => null);
+    const [first, ...rest] = t.c.judges;
+    checkAndVote(t, (id, right) => (id === first ? null : right), (id) => (id === first ? null : 'def'));
+    const cs = caseOf(t);
+    const word = t.c.checkSide === 'pros' ? cs.clue : cs.alibi;
+    for (const id of rest) {
+      const keep = t.view(id).me!.keep!;
+      expect(keep.word.romaji, id).toBeTruthy();
+      expect(keep.checked).toBe(true);
+      expect(t.s.phrasebook[id]!.find((x) => x.itemId === `court:word:${word}`), id).toMatchObject({ outcome: 'seen' });
+    }
+    // Sat out: no word, nothing logged.
+    expect(t.view(first!).me!.keep).toBeNull();
+    expect((t.s.phrasebook[first!] ?? []).some((x) => x.itemId.startsWith('court:word:'))).toBe(false);
+    // Lawyers get their tiles back instead.
+    expect(t.view(pros).me!.keep).toBeNull();
+    const note = t.view(pros).me!.kanaNote!;
+    expect(note.take).toBe('read');
+    expect(note.evidence).toBe(true);
+    expect(note.tiles.map((x) => x.evidence)).toEqual([false, true]);
+    expect(note.tiles[0]!.word.romaji).toBeTruthy();
+  });
+
+  it('a Kana lawyer’s recap says whether their own take had every tile', () => {
+    const t = new Table(4, ['kana', 'kana', 'kana', 'kana'], 52);
+    t.start();
+    toPlan(t);
+    const { pros, def } = t.c;
+    t.play(pros, { kind: 'pick', tiles: ['claim', 'evidence'] });
+    t.play(def, { kind: 'pick', tiles: ['evidence'] });
+    const full = t.view(pros).me!.tiles.filter((x) => x.id === 'claim' || x.id === 'evidence').map((x) => x.word.kana).join(' ');
+    argueAll(t, (id) => (id === pros ? clip(full) : clip('ちがう')));
+    checkAndVote(t, () => null, () => 'pros');
+    expect(t.view(pros).me!.kanaNote!.take).toBe('said');
+    expect(t.view(def).me!.kanaNote).toMatchObject({ take: 'silent', evidence: false });
+    // Picked the evidence tile, but it wasn't heard: the card can tell (evidence false, an evidence tile marked).
+    expect(t.view(def).me!.kanaNote!.tiles.some((x) => x.evidence)).toBe(true);
+    // A speaking level gets the usual note, never the Kana recap.
+    expect(t.view(t.c.judges[0]!).me!.kanaNote).toBeNull();
+  });
+
+  it('a Kana take with no words heard is silent, not partly said, and logs as seen', () => {
+    const t = new Table(4, ['kana', 'kana', 'kana', 'kana'], 54);
+    t.start();
+    toPlan(t);
+    const { pros } = t.c;
+    t.play(pros, { kind: 'pick', tiles: ['claim'] });
+    argueAll(t, (id) => (id === pros ? { ...clip('x'), heard: { via: 'speech', text: '', reading: '' } } : null));
+    checkAndVote(t, () => null, () => 'pros');
+    expect(t.view(pros).me!.kanaNote!.take).toBe('silent');
+    expect(t.s.phrasebook[pros]!.find((x) => x.itemId.endsWith(':pros:kana'))).toMatchObject({ outcome: 'seen' });
+  });
+
+  it('needs more than the yōkai’s name for a tile, spaces particles in romaji, and keeps a plain gloss', () => {
+    const t = new Table(4, ['kana', 'kana', 'kana', 'kana'], 55);
+    t.start();
+    toPlan(t);
+    const { pros } = t.c;
+    t.play(pros, { kind: 'pick', tiles: ['claim'] });
+    const name = YOKAI.find((y) => y.id === caseOf(t).accused)!.name.kana;
+    argueAll(t, (id) => (id === pros ? clip(name) : null));
+    checkAndVote(t, () => null, () => 'pros');
+    expect(t.view(pros).me!.kanaNote!.take).toBe('silent');
+    const cs = CASES.find((x) => x.id === 'bento')!;
+    expect(withRomaji(fill({ ja: '{A}じゃ ない！', en: '' }, slotsOf(cs, 'saw'), true), 'kana').romaji).toBe('Kappa ja nai!');
+    expect(glossOf(CLUES.find((x) => x.id === 'cucumber')!)).toBe('cucumber');
+    expect(glossOf(PLACES.find((x) => x.id === 'pond')!)).toBe('pond');
+  });
+
+  it('tells the phones when each timed beat ends', () => {
+    const t = new Table(4, [], 53);
+    t.start();
+    expect(t.view('stage').stepEndsAt).toBe(t.c.stepAt + CASE_MS);
+    t.tick();
+    expect(t.view('stage').stepEndsAt).toBe(t.c.stepAt + ASK_MS);
+    t.tick();
+    expect(t.view('stage').stepEndsAt).toBe(t.c.stepAt + TESTIFY_MS);
+    t.tick();
+    expect(t.c.step).toBe('plan');
+    expect(t.view('stage').stepEndsAt).toBeNull();
   });
 });
 

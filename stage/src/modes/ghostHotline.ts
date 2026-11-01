@@ -1,7 +1,7 @@
 // Ghost Advice Hotline (おばけの おなやみ相談室) on the TV: Nobiko-san's late-night advice line.
 //
 //   (all)   the host row: Nobiko-san at the left the whole game, the caller's card (the yōkai, who is playing
-//           it, what they're doing, "🎤 said it") at the right, on the line all call long.
+//           it, what they're doing, "said it" with the pixel mic) at the right, on the line all call long.
 //   ring    ☎ RING RING on the caller's card, and the problem line in kanji with furigana, English under it.
 //   plan    the holding loop: an adviser card each with a plan ring that turns ✓, the gallery's bet chips.
 //           Never what anyone picked.
@@ -18,6 +18,7 @@
 //
 // The stage redraws on every update; clips run outside the render (dubAudio.ts), keyed per call and index.
 
+import { icon } from '../../../shared/src/art.js';
 import { h, LEVEL_LABELS, ruby, seatShape } from '../../../shared/src/dom.js';
 import { NOBIKO_PLAY_MS, PLAN_MS, POINTS, REACT_LOCK_MS, RING_MS, TYPED_PLAY_MS, VOTE_MS, type AdviceRow, type HotlineView, type LedgerEntry, type Reaction, type TileView } from '../../../shared/src/modes/ghostHotline/hotline.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -159,14 +160,16 @@ const LINE_STATE: Record<string, { ja: string; en: string }> = {
   record: { ja: 'まって います', en: 'on hold' },
   play: { ja: 'きいて います', en: 'listening' },
   react: { ja: 'こたえて います', en: 'answering' },
-  secret: { ja: 'ひみつを おしえます', en: 'tells the secret' },
-  vote: { ja: 'まだ きいて います', en: 'stays for the laugh vote' },
-  points: { ja: 'まだ きいて います', en: 'stays for the scores' },
-  booth: { ja: 'まだ きいて います', en: 'stays for the replay' },
+  secret: { ja: 'ひみつを おしえます', en: 'the secret' },
+  vote: { ja: 'まだ きいて います', en: 'still on' },
+  points: { ja: 'まだ きいて います', en: 'still on' },
+  booth: { ja: 'まだ きいて います', en: 'still on' },
 };
 
 /** How long a call rings (the card's buzz and the set's call light): three rings, one a second. */
 const RING_FLASH_MS = 3_000;
+/** The ring waits out the curtain wipe that opens the beat (560 ms), so its first flash is seen (art panel, 1 Nov 2026). */
+const RING_WAIT_MS = 600;
 
 /** The card's call lamp, matching the set's red call light: dark before a call, flashing as it rings, then lit. */
 const lamp = (state: 'off' | 'ring' | 'on'): HTMLElement => h('span', { class: `gh-lamp gh-lamp-${state}`, 'aria-hidden': 'true' });
@@ -182,7 +185,7 @@ function onTheLine(view: RoomView, game: HotlineView): HTMLElement {
     return h(
       'div',
       { class: 'gh-line gh-line-open', 'data-key': 'line:open' },
-      h('span', { class: 'gh-line-picwrap' }, h('span', { class: 'gh-pic gh-line-pic gh-line-phone', 'aria-hidden': 'true' }, '☎')),
+      h('span', { class: 'gh-line-picwrap' }, icon('hl-phone', '☎', 'gh-line-phone')),
       h(
         'div',
         { class: 'gh-line-text' },
@@ -191,12 +194,14 @@ function onTheLine(view: RoomView, game: HotlineView): HTMLElement {
         h('p', { class: 'gh-line-en' }, 'Waiting for the first call'),
       ),
     );
-  const ringing = game.step === 'ring' && serverNow() - game.stepAt < RING_FLASH_MS;
   const gone = Math.max(0, serverNow() - game.stepAt);
+  const ringing = game.step === 'ring' && gone < RING_WAIT_MS + RING_FLASH_MS;
+  // One delay for the lamp, the buzz and ジリリリン！: positive while the wipe plays, negative when the TV joins mid-ring.
+  const delay = RING_WAIT_MS - Math.min(gone, RING_WAIT_MS + RING_FLASH_MS);
   const state = LINE_STATE[game.step] ?? { ja: 'でんわちゅう', en: 'on the line' };
   return h(
     'div',
-    { class: `gh-line${game.step === 'ring' ? ' gh-line-ring' : ''}`, style: seatVar(view, c.caller), 'data-key': `line:${game.round}` },
+    { class: `gh-line${game.step === 'ring' ? ' gh-line-ring' : ''}`, style: `${seatVar(view, c.caller) ?? ''}; --ring-delay: ${delay}ms`, 'data-key': `line:${game.round}` },
     // Keyed by the call, so the ring runs once; started part-way in when the TV joins mid-ring.
     h('span', { class: 'gh-line-picwrap', 'data-key': `pic:${game.round}` }, pic(c.who, `gh-line-pic${ringing ? ' gh-ringing' : ''}`)),
     h(
@@ -206,15 +211,15 @@ function onTheLine(view: RoomView, game: HotlineView): HTMLElement {
         'p',
         { class: 'gh-line-tag', lang: 'ja' },
         lamp(ringing ? 'ring' : 'on'),
-        game.step === 'ring' ? h('span', { class: 'gh-ring-pill', style: `--ring-delay: -${Math.min(gone, RING_FLASH_MS)}ms` }, 'ジリリリン！') : ruby({ text: '電話ちゅう', kana: 'でんわちゅう' }),
+        game.step === 'ring' ? h('span', { class: 'gh-ring-pill' }, 'ジリリリン！') : ruby({ text: '電話中', kana: 'でんわちゅう' }),
         h('small', { lang: 'en' }, game.step === 'ring' ? ' ringing' : ' on the line'),
-        c.said ? h('span', { class: 'gh-said gh-pop', lang: 'en' }, '🎤 said it') : null,
+        c.said ? h('span', { class: 'gh-said gh-pop', lang: 'en' }, icon('hl-mic', '🎤', 'gh-said-mic'), 'said it') : null,
       ),
       h('p', { class: 'gh-yokai' }, h('span', { lang: 'ja' }, ruby(c.who.name)), h('small', {}, ` ${c.who.name.en}`)),
       h(
         'p',
         { class: 'gh-line-who' },
-        c.caller ? seat(view, c.caller) : h('span', { class: 'gh-chip' }, h('span', { class: 'gh-seat' }, '☎'), h('span', { class: 'gh-name' }, 'the house')),
+        c.caller ? seat(view, c.caller) : h('span', { class: 'gh-chip' }, h('span', { class: 'gh-seat' }, icon('hl-phone', '☎', 'gh-seat-phone')), h('span', { class: 'gh-name' }, 'the house')),
         h('span', { class: 'gh-state' }, h('span', { lang: 'ja' }, state.ja), h('small', {}, state.en)),
       ),
     ),

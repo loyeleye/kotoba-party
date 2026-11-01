@@ -14,8 +14,8 @@ Code: `shared/src/japanese/frames.ts`. Tests: `tests/frames.test.ts`, lines in `
 - **`framesOf(phrase, tokens?)`** names every frame in a line, N5 to N3, sentence by sentence:
   「あめに ふられたので、おくれました」 is the passive, ので and ＿ました. `frameOf` is unchanged: it still names
   the one N5 frame a phrase is built on, from the original sixteen, for the chips and the path.
-- **138 frames.** The sixteen N5 frames (`FRAMES`), 17 more N5 frames the tiered path's goals need
-  (`MORE_N5_FRAMES`), 61 N4 frames (`N4_FRAMES`), and 44 N3 frames (`N3_FRAMES`): らしい, うちに and reason
+- **150 frames.** The sixteen N5 frames (`FRAMES`), 17 more N5 frames the tiered path's goals need
+  (`MORE_N5_FRAMES`), 61 N4 frames (`N4_FRAMES`), and 56 N3 frames (`N3_FRAMES`): らしい, うちに and reason
   ため from step 1, and the other 41 Limited Express frames from step 6 (see "The Limited Express" below). The N4 frames are the 50 for goals 4.1 to 4.14 (including the
   keigo-verb matcher), のに (moved from N3 on the Japanese expert's advice: Genki II and Minna II teach it in
   the N4 range), and eight the expert said an N4 student expects: みたい／ようです, polite ＿んです, the
@@ -121,6 +121,33 @@ the JLPT lists them at N3; the open questions doc has the question.
 **No spaces.** Speech comes back with kanji and no spaces. A test strips the spaces from every N3 line
 with kanji and reads its kana with the dictionary; all of them keep their frame. Kana-only lines with no
 spaces miss 13 of ~400 (the suffering passive, ＿とかいかない), and ともだちとかえった reads as ＿とか.
+
+## More N3 points (not on a goal yet)
+
+The #149 JLPT seat counted about 32 genuine N3 points on 3.1 to 3.11. Twelve of the biggest gaps now have
+draft matchers, with the same 10/10 bar (`tests/frame-cases/n3-d.ts`). No goal counts them yet. Ladi chose
+optional frames on today's goals (open questions doc): they get wired in next, with だす on 3.9 and さえ on 3.5.
+A sweep of 13,870 game strings finds 1 line that says them (アドバイスばかり), and it's right.
+
+The #157 panel found about 40 more lines that named the wrong frame, mostly compound verbs with the other
+meaning (うりだす, わらいかける, わりきる) and kanji lines with no spaces (説明できる, 思い出した). So the compound
+verbs now count only a short list of stems with the right meaning. Missing one is fine; naming the wrong one isn't.
+Every one of those lines is a look-alike in `n3-d.ts`.
+
+| Frame | How it's told apart |
+| --- | --- |
+| ＿ように いわれました | After a non-past verb or ない, then いわれる, たのまれる, ちゅういされる. Shown over ＿ように and the passive. Not ＿ように いって (say it like), and not a suffering passive |
+| ＿もので | After a plain form or な, then 、, すみません or ものですから. Not もの as a thing (すきな もので いい, ははが つくった もので、), ものです, ほんもの |
+| ＿かける | Only half-done stems: たべ, のみ, よみ, いい, きえ, しに, ね, つくり, わすれ, さき and a few more. Not でかける, はなしかける, わらいかける, しかける, おしかける, みせかけ, しんぱいを かける, めがねを かける |
+| ＿きる | Only to-the-end stems: たべ, のみ, よみ, つかい, つかれ, はしり, はこび, うたい, まち, かぞえ and a few more. Not できる, おもいきって, わりきる, うりきれ, きる (cut) |
+| ＿だす | Only start-suddenly stems: なき, わらい, ふり, はしり, うごき, さけび, おこり, はなし and a few more. Not おもいだす, とりだす, うりだす, ききだす, みつけだす, とびだす, なげだす |
+| ＿た とたん | After た／だ only. Not とたん (iron sheet) |
+| ＿わけには いかない | Shown over ＿わけでは ない. Not いいわけ, もうしわけ |
+| ＿はずが ない | ＿はずは ない and ＿はず ない too. Shown over ＿はずです (counting keeps both) |
+| ＿に とって | Not とって "take" (てに とって, とって ください, とって きた, とって おこう, とって もらった, わたしに とって。), とっても (very), or a handle |
+| ＿さえ | Not ささえる, おさえる, さえぎる, さえずる, さえる, or names (みさえ, まさえ) |
+| ＿こそ | Not the set phrases こちらこそ, そちらこそ and ようこそ, からこそ／＿てこそ (N2), こそこそ, こそだて, こそ泥 |
+| ＿ばかり | Nばかり and ＿て ばかり. Not ＿た ばかり (just did: N4, with or without a space), ばかりか／ばかりでなく (N2), ばか, or an amount + ばかり (ふたつばかり, ちょっとばかり) |
 
 ## Fixes from the panel on #146
 
