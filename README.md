@@ -63,7 +63,9 @@ generation (see [docs/graphics.md](docs/graphics.md)). Everything runs without t
 Set `PUBLIC_URL` when deploying so the QR code points at the public address.
 
 Players can sign in with a passkey to keep their yōkai cards and scores between nights; it's optional
-and never needed to play ([docs/accounts.md](docs/accounts.md)). Locally, saves last until the server stops.
+and never needed to play ([docs/accounts.md](docs/accounts.md)). Signed in, they can turn on a learning
+path: their phone suggests what to play next and names the sentence frames they use
+([docs/progressive-learning.md](docs/progressive-learning.md)). Locally, saves last until the server stops.
 
 ### On Cloudflare (always on)
 

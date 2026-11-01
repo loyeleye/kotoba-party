@@ -30,7 +30,8 @@ Decided by Ladi on 2026-10-28 (the Kana Raid saved-progress question in
 - **Sign-in page:** *Sign in with a passkey* (signed in before, on any phone the passkey syncs to) or
   *Create a passkey* with a name for the save. Cancelling is calm ("Cancelled. Nothing was saved.").
   On an http LAN address or a browser without passkeys the buttons are off and the page says why.
-- **My progress:** three tabs, *Yōkai cards* (review button with the number due, caught and met counts,
+- **My progress:** four tabs: *Path* (the optional learning path and the sentence frames met so far,
+  see [progressive-learning.md](progressive-learning.md)), *Yōkai cards* (review button with the number due, caught and met counts,
   the book), *Phrasebook* (the 200 most recent phrases with how each last went, and *Practise now* for
   the due ones) and *Scores*. At the bottom: *Sign out on this phone* and *Delete my saved progress* (asks
   first). Deleting also asks the phone to forget the passkey where the browser supports it.
@@ -96,9 +97,10 @@ All under `/api/account/`, JSON. See also [protocol.md](protocol.md).
 | `POST register/verify` | — | `{ response, tz }` | `{ token, account }`; 400 `expired`, `not-verified` |
 | `POST login/options` | — | `{}` | `{ options }` for `navigator.credentials.get` |
 | `POST login/verify` | — | `{ response, tz }` | `{ token, account }`; 400 `expired`, `not-verified`; 404 `unknown-passkey` (its save was deleted) |
-| `GET me?tz=` | Bearer | — | `{ account: { name, cards, due, games, bests, phrases, duePhrases } }`; 401 `signed-out` |
+| `GET me?tz=` | Bearer | — | `{ account: { name, cards, due, games, bests, phrases, duePhrases, path, frames } }`; 401 `signed-out` |
 | `POST review` | Bearer | `{ itemId, answer }` | `{ right, expected, card, caught }`; 404 `no-card` |
 | `POST review` | Bearer | `{ kind: 'phrase', itemId, knew }` | `{ phrase }`; 404 `no-card` |
+| `POST settings` | Bearer | `{ path: boolean }` | `{ account }`: the learning path's switch ([progressive-learning.md](progressive-learning.md)); 400 `bad-settings` |
 | `POST signout` | Bearer | `{}` | `{ ok }` (ends this phone's session only) |
 | `POST delete` | Bearer | `{}` | `{ ok, credentials }`: the save, its passkeys and every session are gone |
 

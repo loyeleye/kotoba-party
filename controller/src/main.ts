@@ -9,7 +9,7 @@ import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import { MODES, noFit, speakersIn, surprisePool } from '../../shared/src/modes/registry.js';
 import { playRoulette } from '../../shared/src/roulette.js';
-import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
+import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type ModeId, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService, speechReady } from './components/mic.js';
 import { getTalkMode, isTalking, onTalkEnd, setQuiet, setSpeakLevel, setTalkMode, speakBox } from './components/speak.js';
@@ -17,7 +17,8 @@ import { openMicSheet, refreshMicSheet, type MicSheetState } from './micSheet.js
 import { quip, setQuipHost } from './components/ui.js';
 import { setSoundOff } from './components/voice.js';
 import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
-import { account, accountPanel } from './account.js';
+import { account, accountPanel, fetchMe } from './account.js';
+import { frameChip, loadPathView, nextCard, pathView } from './path.js';
 import { phrasebookButton } from './phrasebook.js';
 import type { HostId } from '../../content/src/types.js';
 
@@ -306,9 +307,16 @@ function render(view: RoomView): void {
     const pool = view.surprise.map((id) => MODES[id].info);
     playRoulette(document.body, pool, MODES[view.mode].info, { calm: view.calmMotion || matchMedia('(prefers-reduced-motion: reduce)').matches });
   }
+  const prevPhase = lastView?.phase;
   lastView = view;
   const me = view.players.find((p) => p.id === session?.playerId);
   if (!me) return;
+  // The learning path's card reads the save: fresh in each lobby, and again once a finished game is in it.
+  if (prevPhase !== view.phase && (view.phase === 'lobby' || view.phase === 'recap')) {
+    const load = () => void loadPathView(account() && session?.account ? fetchMe : null, redraw);
+    if (view.phase === 'recap') setTimeout(load, 1500);
+    else load();
+  }
   const isVip = me.isVip;
   document.body.dataset.motion = view.calmMotion ? 'calm' : '';
   const mode = view.game ? PHONE_MODES[view.game.mode] : null;
@@ -328,6 +336,7 @@ function render(view: RoomView): void {
     modeKey,
     endAsk,
     passAsk,
+    pathKey(view.phase),
   ].join('|');
   if (key === screenKey) return;
   screenKey = key;
@@ -435,6 +444,27 @@ function levelPicker(current: Level, onPick: (level: Level) => void): HTMLElemen
   );
 }
 
+/** What the learning path's card shows, so a loaded save or a pick redraws the lobby and recap. */
+function pathKey(phase: RoomView['phase']): string {
+  const v = phase === 'lobby' || phase === 'recap' ? pathView() : null;
+  return v ? `${v.games[0]?.at ?? 0}:${v.frames.map((f) => f.said).join()}:${menu.mode}` : '';
+}
+
+/** "Next on your path", for a signed-in player who turned the path on (path.ts). */
+function pathCard(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement | null {
+  return nextCard(me.level, { players: view.players.length, speakers: speakersIn(view.players) }, {
+    isVip,
+    picked: view.phase === 'lobby' ? (menu.mode as ModeId) || null : null,
+    pick: (mode) => {
+      menu.mode = mode;
+      menu.rounds = 0;
+      if (view.phase === 'recap') void command({ type: 'playAgain' });
+      screenKey = '';
+      redraw();
+    },
+  });
+}
+
 function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   const parts: (HTMLElement | null)[] = [
     h('p', { class: 'big' }, 'You are in!'),
@@ -446,6 +476,7 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
       store('kotoba:level', level);
       void command({ type: 'setLevel', level });
     }),
+    pathCard(view, me, isVip),
   ];
   if (isVip) parts.push(vipMenu(view));
   else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), quip(vipIdleQuip));
@@ -658,6 +689,12 @@ function vipMenu(view: RoomView): HTMLElement {
           menu.rounds = 0;
           refresh();
           closeSheet();
+          // The learning path's card says whether its game is the one on the menu.
+          if (pathView()) {
+            menu.sheetOpen = false; // the dialog's close event comes after this redraw
+            screenKey = '';
+            redraw();
+          }
         },
       },
       hostIcon(m),
@@ -875,12 +912,14 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
                 ro ? h('span', { class: 'pc-romaji' }, ro) : null,
                 // A kana's English is its romaji (ま · ma): once is enough.
                 e.en !== ro ? h('span', { class: 'pc-en' }, e.en) : null,
+                pathView() ? frameChip(e, me.level) : null,
               );
             }),
           ),
         )
       : null,
     savedNote(),
+    pathCard(view, me, isVip),
     isVip ? h('button', { class: 'primary', onclick: () => void command({ type: 'playAgain' }) }, 'Back to the menu') : h('p', { class: 'hint' }, 'The VIP can start another game.'),
   );
 }
