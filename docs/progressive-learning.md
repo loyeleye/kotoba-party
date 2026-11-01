@@ -156,6 +156,9 @@ lists, including every misfire the Japanese review found.
   `path` and `frames`. The account service runs `markPath` after each saved game, phrase review and kana
   review, so frames and goals are stamped on the server.
 - The room only ever sees wish counts. It never learns who is on the path.
+- `npm run sim:express` measures how many nights the Express Line takes, with bots playing the real games
+  and the real path rules. The results, and the goals no game carries yet, are in
+  [path-simulation.md](path-simulation.md).
 
 ## Open questions
 
