@@ -16,8 +16,13 @@
 // buttons; mid-shift the offer sits below the order and call box). The deputy manager (ふくてんちょう) gets
 // a desk card for each complaint or special order; the おもてなし order-taker gets a guest strip on each
 // order card. The input shows the line's frame, not the line; the line itself is under "Need the words?",
-// and opening it before the first try logs the line as seen. A miss gets a private hint here, never on
-// the TV. A station the deputy manager asks gets a 📋 request card and taps できました！.
+// and opening it before the first try logs the line as seen (it opens by itself on the deputy manager's first
+// incident of the game). A miss gets a private hint here, never on the TV. A station the deputy manager asks
+// gets a 📋 request card and taps できました！.
+//
+// Mixed rooms: once a shift, when the deputy manager's line lands, every other phone gets a Gallery tile (four
+// reactions, or the once-a-game curveball), and Kana and N5 phones get the booth's gist while the TV replays
+// it. In a 1–2-player room with nobody at N4, Kana and N5 phones get the gist of Pon's stand-in line.
 
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
@@ -27,6 +32,8 @@ import { COUNTS, countWord, foodOf, MAX_COUNT } from '../../../shared/src/modes/
 import type { BentoView } from '../../../shared/src/modes/views.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { Utterance } from '../../../shared/src/japanese/kana.js';
+import { boothGist, galleryTile } from '../components/gallery.js';
+import { roleOffer as roleOfferCard } from '../components/roleOffer.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
 import { hearButton, isSoundOff } from '../components/voice.js';
@@ -178,7 +185,7 @@ const ROLE_INFO: Record<HardRole, { icon: string; ja: string; en: string; what: 
   },
 };
 
-/** This shift's hard-role offer: take it on, or the ordinary part this time. */
+/** This shift's hard-role offer (the shared offer card): take it on, or the ordinary part this time. */
 function roleOffer(ctx: Ctx, hard: MyHardView | undefined): HTMLElement | null {
   if (!hard?.offer) return null;
   const info = ROLE_INFO[hard.offer.role];
@@ -189,15 +196,27 @@ function roleOffer(ctx: Ctx, hard: MyHardView | undefined): HTMLElement | null {
   return h(
     'section',
     { class: 'bh-taking bh-offer', 'data-key': `role-${hard.offer.role}` },
-    h('p', { class: 'bh-taking-head', lang: 'ja' }, `${info.icon} ${info.ja}`, h('small', {}, ` ${info.en} · N4`)),
-    h('p', { class: 'hint' }, info.what),
-    h(
-      'div',
-      { class: 'bh-offer-btns' },
-      h('button', { type: 'button', class: 'secondary', onclick: () => answer(true) }, h('span', { lang: 'ja' }, 'やります'), h('small', {}, ' Take it')),
-      h('button', { type: 'button', class: 'secondary', onclick: () => answer(false) }, h('span', { lang: 'ja' }, 'こんかいは いいです'), h('small', {}, ' Not this time')),
-    ),
+    roleOfferCard({
+      kicker: `${info.icon} Hard role · N4`,
+      role: { text: info.ja, kana: info.ja, en: info.en },
+      pitch: info.what,
+      takeGloss: 'やります',
+      declineGloss: 'こんかいは いいです',
+      onTake: () => answer(true),
+      onDecline: () => answer(false),
+    }),
   );
+}
+
+/** Mixed rooms: this phone's Gallery tile and the booth's gist, while they're out. */
+function mixedRoom(ctx: Ctx, hard: MyHardView | undefined): (HTMLElement | null)[] {
+  return [
+    galleryTile(hard?.gallery ?? null, (pick) => {
+      buzz(30);
+      void ctx.send({ kind: 'gallery', pick });
+    }),
+    boothGist(hard?.booth ?? null),
+  ];
 }
 
 const roleBadge = (hard: MyHardView | undefined) =>
@@ -217,7 +236,7 @@ const FRAME_CUE: Record<CheckKind, string> = {
 const peekedLines = new Set<string>();
 
 /** One hard-role script: the lines said so far, then the next one to say, with a private hint after a miss. */
-function lineBox(key: string, steps: StepView[], at: number, say: (u: Utterance | null, peeked: boolean) => void): HTMLElement {
+function lineBox(key: string, steps: StepView[], at: number, say: (u: Utterance | null, peeked: boolean) => void, firstHelp = false): HTMLElement {
   const step = steps[at];
   const lineKey = `${key}-${at}`;
   const send = (u: Utterance | null) => {
@@ -236,7 +255,8 @@ function lineBox(key: string, steps: StepView[], at: number, say: (u: Utterance 
             'details',
             {
               class: 'bh-model',
-              open: !!step.hint || undefined,
+              // Open after a miss, and by itself on the deputy manager's first incident of the game.
+              open: !!step.hint || firstHelp || undefined,
               ontoggle: (e: Event) => {
                 if ((e.currentTarget as HTMLDetailsElement).open && step.said === null) peekedLines.add(lineKey);
               },
@@ -267,8 +287,12 @@ function managerDesk(ctx: Ctx, hard: MyHardView | undefined): HTMLElement[] {
       h('div', { class: 'bh-patience-p', style: `--total: ${d.until - d.at}ms; --gone-delay: -${Math.max(0, serverNow(ctx.game) - d.at)}ms;` }, h('span', {})),
       h('p', { class: 'bh-order-words', lang: 'ja' }, `「${d.line.text}」`),
       h('p', { class: 'hint' }, d.line.en),
-      lineBox(`desk-${d.id}`, d.steps, d.step, (u, peeked) =>
-        void ctx.send(u ? { kind: 'manager', incidentId: d.id, utterance: u, ...(peeked ? { peeked } : {}) } : { kind: 'manager', incidentId: d.id, skip: true }),
+      lineBox(
+        `desk-${d.id}`,
+        d.steps,
+        d.step,
+        (u, peeked) => void ctx.send(u ? { kind: 'manager', incidentId: d.id, utterance: u, ...(peeked ? { peeked } : {}) } : { kind: 'manager', incidentId: d.id, skip: true }),
+        d.firstHelp,
       ),
     ),
   );
@@ -692,6 +716,7 @@ function kitchen(ctx: Ctx): HTMLElement {
     teamBar(ctx.game),
     raceNote(ctx.game, ctx.me.id),
     roleBadge(me.hard),
+    mixedRoom(ctx, me.hard),
     managerDesk(ctx, me.hard),
     requests(ctx, me),
     ticketPill(me),
@@ -794,8 +819,11 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
             me.hard.desk.map((d) => [d.id, d.step, d.steps.map((x) => x.hint)]),
             me.hard.requests.map((q) => q.incidentId),
             Object.entries(me.hard.guests).map(([id, g]) => [id, g.step, g.steps.map((x) => x.hint)]),
+            me.hard.gallery ? [me.hard.gallery.kind, me.hard.gallery.picked] : null,
+            !!me.hard.booth,
           ]
         : null,
+      !!game.standIn?.gist,
     ]);
   },
 
@@ -814,6 +842,8 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
           teamBar(game),
           roleOffer(ctx, game.me.hard),
           roleBadge(game.me.hard),
+          // The host stand-in: Pon plays the deputy manager for one line; Kana and N5 phones get the gist.
+          boothGist(game.standIn?.gist ?? null),
           game.vs && game.vs.myTeam !== null ? h('p', { class: 'hint' }, 'Call your own team only: the other kitchen can’t hear your phone. Serve first to win the customer.') : null,
           game.me.shelf.length ? shelf(game.me, game.ownCounter) : null,
           h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, `「${example(game)}、おねがいします！」`)),

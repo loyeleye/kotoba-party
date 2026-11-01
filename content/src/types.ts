@@ -608,6 +608,10 @@ export type HostEvent =
   | 'bento_bake' // Pon shape-shifts into the missing {food}
   | 'bento_ajimi' // Pon "tastes" one {food} from the box
   | 'bento_stars' // the shift's stars ({stars})
+  | 'bento_replay' // the commentary booth: Pon replays the deputy manager's landed line ({line}: the fixed line, as is)
+  | 'bento_standin' // the host stand-in: Pon plays the deputy manager for one line ({line}: the model line, as is)
+  | 'bento_manager_win' // the deputy manager's request was done: the customer is looked after
+  | 'bento_omotenashi_win' // an おもてなし guest's two lines both landed
   | 'bento_vs_intro' // Bento Haus VS opens: two kitchens race for the same customers
   | 'bento_vs_win' // a VS shift is over and {team} earned more tips
   | 'bento_vs_sendback' // a VS box is sent back and offered to the other kitchen ({team})
