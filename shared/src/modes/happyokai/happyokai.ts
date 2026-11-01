@@ -566,10 +566,13 @@ function computeResult(t: Talk, level: Level): TalkResult {
   };
 }
 
-/** Whether talk `index` is a mix for an N4 presenter: their 2nd, 4th… talk (their 1st, 3rd… is a deck pair). */
+/** Whether talk `index` is a mix for an N4 presenter: their 2nd, 4th… talk (their 1st, 3rd… is a deck pair), or every other talk when each player presents once. */
 export function n4Mix(s: Pick<HappyokaiState, 'order'>, index: number): boolean {
   const id = s.order[index];
-  return s.order.slice(0, index).filter((x) => x === id).length % 2 === 1;
+  const before = s.order.slice(0, index).filter((x) => x === id).length;
+  // With 5 or more players everyone presents once: then every other talk in the running order is a mix.
+  if (s.order.filter((x) => x === id).length === 1) return index % 2 === 1;
+  return before % 2 === 1;
 }
 
 function startTalk(s: HappyokaiState, ctx: ModeContext): void {

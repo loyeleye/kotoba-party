@@ -130,8 +130,8 @@ An N4 presenter's talks alternate between two kinds of pair (Ladi's call): their
 **deck pair**, one **Then and now** (昔と 今) title and one **If I were…** (もしも…) title; their next talk
 offers a **mix**, one deck title (from the deck they didn't pick last time) and one usual title, in random
 order; and so on (`n4Mix`). Deck titles are labelled with their deck on the phone. With 3 or 4 players
-(two talks each) every N4 presenter gets one of each; with 5 or more (one talk each) they get the deck
-pair. Everyone else keeps the usual titles. A usual title picked from a mix plays as a usual talk: usual
+(two talks each) every N4 presenter gets one of each; with 5 or more (one talk each) every other talk
+in the running order is a mix, so N4 presenters get a deck pair or a mix by seat. Everyone else keeps the usual titles. A usual title picked from a mix plays as a usual talk: usual
 frames, ready sentences and question cards (no deck cards). The slides, mishaps and scoring are the same; what changes is the N4 presenter's
 language:
 
