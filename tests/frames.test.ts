@@ -187,7 +187,9 @@ describe('every frame in a line (framesOf)', () => {
     // The ids the tiered path's goals count (agreed with that work); a rename there must land here too.
     const path: Record<'n5' | 'n4', FrameId[]> = {
       n5: ['ikura', 'ji-fun', 'ni-masu', 'youbi', 'gatsu-nichi', 'wa-ni-aru', 'migi-hidari', 'hoshii', 'de-o', 'te-iru', 'no', 'adj-desu', 'kunai', 'kara', 'hou-ga', 'mashou', 'naide-kudasai'],
-      n4: ['te-moraeru', 'ageru-kureru', 'te-wa-ikenai', 'nakereba', 'ta-koto', 'te-miru', 'te-shimau', 'potential', 'tara', 'ba', 'toki', 'sou-look', 'to-omou', 'kamo', 'you-to-omou', 'tsumori', 'hou-ga-ii', 'plain', 'n-da', 'o-kudasai', 'te-itadakemasen'],
+      n4: ['te-moraeru', 'ageru-kureru', 'te-wa-ikenai', 'nakereba', 'ta-koto', 'te-miru', 'te-shimau', 'potential', 'tara', 'ba', 'toki', 'sou-look', 'to-omou', 'kamo', 'you-to-omou', 'tsumori', 'hou-ga-ii', 'plain', 'n-da', 'o-kudasai', 'te-itadakemasen',
+        // The N4 frames the goals left out at first, optional on 4.1, 4.2, 4.3, 4.6 and 4.9 (Ladi, Nov 1).
+        'te-hoshii', 'causative', 'sasete-kudasai', 'ba-yokatta', 'tari-tari', 'mitai-you', 'n-desu'],
     };
     for (const [level, ids] of Object.entries(path)) {
       for (const id of ids) expect([id, FRAME_BY_ID[id]?.level]).toEqual([id, level]);

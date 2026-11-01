@@ -18,8 +18,10 @@ Code: `shared/src/japanese/frames.ts`. Tests: `tests/frames.test.ts`, lines in `
   (`MORE_N5_FRAMES`), 59 N4 frames (`N4_FRAMES`), and three N3 frames that need part of speech
   (`N3_FRAMES`: らしい, うちに, reason ため). The N4 frames are the 50 for goals 4.1 to 4.14 (including the
   keigo-verb matcher), のに (moved from N3 on the Japanese expert's advice: Genki II and Minna II teach it in
-  the N4 range), and eight the expert said an N4 student expects, with no path goal yet: みたい／ようです,
-  polite ＿んです, the causative, ＿て ほしい, ＿ば よかった, ＿たり ＿たり, ＿ところです and casual ＿って.
+  the N4 range), and eight the expert said an N4 student expects: みたい／ようです, polite ＿んです, the
+  causative, ＿て ほしい, ＿ば よかった, ＿たり ＿たり, ＿ところです and casual ＿って. The first six are now
+  optional frames on path goals 4.1, 4.2, 4.3, 4.6 and 4.9 (docs/progressive-learning.md); ＿ところです and
+  casual ＿って still have no goal.
   `FRAME_BY_ID` and `ALL_FRAMES` cover them all. Ids match the tiered path's goal list.
 - **Part of speech.** The server's kuromoji tokens now carry the finer part of speech, the dictionary form
   and the conjugation (`detail`, `base`, `ctype`, `cform` on `UtteranceToken`).
