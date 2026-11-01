@@ -4,7 +4,7 @@ Each phone has two separate switches, in the lobby and in the header at any time
 
 - **🎤 Mic off** (quiet mode, "I can't talk right now"): the player taps and types. `PlayerState.mic === 'quiet'`,
   set by the `micCheck` command. See `controller/src/components/speak.ts`.
-- **🔇 Sound off** ("I can't hear my phone"): the phone plays no sound, and anything it would have said
+- **🔇 Sound off** ("I can't hear my phone right now"): the phone plays no sound, and anything it would have said
   shows as text in a way that still tests something. `PlayerState.soundOff`, set by the `setSound` command.
 
 They combine freely. Sound off covers the **phone's own speaker** only: the TV keeps playing the music,

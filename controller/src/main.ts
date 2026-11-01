@@ -488,7 +488,7 @@ function soundCheck(me: PlayerView): HTMLElement {
       h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'setSound', on: true }) }, '🔊 Turn my phone sound on'),
     );
   }
-  return h('button', { type: 'button', class: 'linkish sound-off-link', onclick: () => void command({ type: 'setSound', on: false }) }, 'I can’t hear my phone (turn its sound off)');
+  return h('button', { type: 'button', class: 'linkish sound-off-link', onclick: () => void command({ type: 'setSound', on: false }) }, 'I can’t hear my phone right now');
 }
 
 function micCheck(me: PlayerView): HTMLElement {
