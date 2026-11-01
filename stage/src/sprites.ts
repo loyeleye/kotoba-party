@@ -128,6 +128,11 @@ export class HostSprite {
     this.img = img;
   }
 
+  /** The host on show ('' before the first). */
+  get current(): string {
+    return this.host;
+  }
+
   /** Shows `host`, reacting with `mood` if the line has one. */
   show(host: string, mood?: HostMood): void {
     if (host !== this.host) {

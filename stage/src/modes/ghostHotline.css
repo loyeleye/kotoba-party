@@ -65,17 +65,16 @@
 .gh-tile-play .gh-tile-ja { font-size: 52px; }
 
 /* ---- ring ---- */
-.gh-ringbeat { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 32px; }
-.gh-ringbeat > .gh-bar { grid-column: 1 / -1; }
-.gh-caller { position: relative; display: grid; justify-items: center; gap: 12px; padding: 18px 28px 20px; background: var(--panel); border: 5px solid var(--seat, var(--gh-band)); border-radius: 16px; box-shadow: 6px 6px 0 var(--outline); min-width: 320px; }
-.gh-caller-tag { font-family: var(--font-pixel); font-size: 24px; letter-spacing: 0.08em; color: var(--muted); }
-.gh-caller-who { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; justify-content: center; font-size: 32px; }
-.gh-as { font-size: 24px; color: var(--muted); }
+.gh-ringbeat { width: min(1500px, 100%); gap: 24px; }
+.gh-problem-face { grid-template-columns: auto minmax(0, 1fr); column-gap: 32px; align-items: center; }
+.gh-problem-face > .gh-problem-pic { grid-row: 1 / span 3; width: 192px; height: 192px; font-size: 176px; }
+.gh-problem-face > :not(.gh-problem-pic) { grid-column: 2; }
 .gh-yokai { font-weight: 800; white-space: nowrap; }
 .gh-yokai small { font-size: 22px; color: var(--muted); font-weight: 400; }
-.gh-ringing { animation: gh-shake 0.5s steps(2, end) 6; }
-@keyframes gh-shake { 50% { transform: translateX(6px) rotate(-3deg); } }
-.gh-said { position: absolute; top: -18px; right: -14px; padding: 4px 14px; font-size: 22px; font-weight: 800; color: var(--gh-ink); background: var(--good); border: 3px solid var(--outline); border-radius: 999px; white-space: nowrap; }
+.gh-ringing { animation: gh-buzz 1s steps(1, end) 3; }
+.gh-line .gh-ringing { animation-delay: var(--ring-delay, 0ms); }
+/* A buzz, not a spin: whole art-pixel steps sideways, so pixel art never rotates (art panel, 1 Nov 2026). */
+@keyframes gh-buzz { 0% { transform: translateX(0); } 8% { transform: translateX(4px); } 16% { transform: translateX(-4px); } 24% { transform: translateX(4px); } 32%, 100% { transform: translateX(0); } }
 .gh-problem { display: grid; gap: 10px; justify-items: start; text-align: left; padding: 22px 34px; background: var(--paper); color: var(--paper-ink); border: 5px solid var(--outline); border-radius: 18px; box-shadow: 0 8px 0 var(--outline); width: 100%; box-sizing: border-box; }
 .gh-problem-tag { font-family: var(--font-pixel); font-size: 22px; letter-spacing: 0.08em; color: #c0283c; }
 .gh-problem-ja { font-size: 60px; font-weight: 900; line-height: 1.5; }
@@ -85,6 +84,43 @@
 .gh-problem-slim .gh-problem-ja { font-size: 38px; }
 .gh-problem-slim .gh-problem-en { grid-column: 2; font-size: 24px; }
 .gh-problem-slim .gh-problem-tag { grid-row: 1 / span 2; }
+
+/* ---- the caller, on the line: their card at the right of the host row, all game ----
+   One fixed shape in every state (lines open, ringing, on the line), so the bubble beside it never moves,
+   and short enough to end above the set's call light (art panel, 1 Nov 2026). The seat colour stays on the
+   left edge while it rings; the ring is the ジリリリン！ pill, the lamp and a sideways buzz, three rings in 3 s. */
+.gh-line { --gh-ink: #160f2c; --gh-yes: #ff5f3c; --gh-lamp: #ff4b4b; position: relative; box-sizing: border-box; display: flex; align-items: center; gap: 16px; width: 600px; height: 156px; padding: 4px 20px 4px 10px; text-align: left; background: var(--panel); border: 4px solid var(--outline); border-left: 10px solid var(--seat, var(--mode)); border-radius: 14px; box-shadow: 5px 5px 0 var(--outline); overflow: hidden; }
+.gh-line p { margin: 0; }
+.gh-line-picwrap { display: grid; place-items: center; width: 120px; height: 120px; flex: none; }
+.gh-line .gh-pic { width: 120px; height: 120px; font-size: 96px; }
+.gh-line-text { display: grid; gap: 0; min-width: 0; line-height: 1.25; }
+.gh-line-tag ruby, .gh-yokai ruby { line-height: 1.5; }
+.gh-line-tag { display: flex; align-items: center; gap: 8px; font-size: 26px; font-weight: 900; color: var(--ink); white-space: nowrap; }
+.gh-line-tag rt { font-size: 0.45em; color: var(--muted); font-weight: 400; }
+.gh-line-tag small, .gh-yokai small, .gh-state small, .gh-line-en { font-size: 20px; font-weight: 400; color: var(--muted); }
+.gh-line .gh-yokai { font-size: 30px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gh-line .gh-yokai rt { font-size: 0.45em; color: var(--muted); }
+.gh-line-who { display: flex; align-items: center; gap: 12px; font-size: 24px; white-space: nowrap; }
+.gh-state { display: inline-flex; align-items: baseline; gap: 8px; padding: 2px 12px; border-radius: 999px; background: var(--panel); background: color-mix(in srgb, var(--seat, var(--mode)) 22%, var(--panel)); border: 2px solid var(--seat, var(--mode)); font-weight: 800; }
+.gh-ring-pill { padding: 0 12px; border-radius: 999px; color: var(--gh-ink); background: var(--gh-yes); }
+.gh-line-ring .gh-ring-pill { animation: gh-ring-pill 1s steps(1, end) 3; animation-delay: var(--ring-delay, 0ms); }
+@keyframes gh-ring-pill { 50% { background: transparent; color: var(--gh-yes); } }
+.gh-line .gh-said { padding: 0 10px; font-size: 20px; font-weight: 800; color: var(--good); background: transparent; background: color-mix(in srgb, var(--good) 14%, transparent); border: 2px solid var(--good); border-radius: 999px; }
+.gh-line-open .gh-line-phone { display: grid; place-items: center; font-size: 72px; line-height: 1; color: var(--muted); }
+/* The pixel phone and mic (stage/assets/icons/hl-phone.png, lt-mic.png) at whole-pixel scales, in place of emoji. */
+.gh-line-open img.gh-line-phone { width: 78px; height: 69px; }
+.gh-line .gh-said { display: inline-flex; align-items: center; gap: 4px; }
+img.pix.gh-said-mic { width: 12px; height: 31px; margin: -6px 2px -6px -2px; }
+img.pix.gh-seat-phone { width: 26px; height: 23px; }
+/* A long state never clips: the English gloss gives way first. */
+.gh-state { min-width: 0; overflow: hidden; }
+.gh-state small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The call lamp: dark before a call, flashing once a second for 3 s as it rings, then lit (like the set's call light). */
+.gh-lamp { box-sizing: border-box; width: 20px; height: 20px; flex: none; border-radius: 50%; border: 3px solid var(--muted); background: transparent; }
+/* Lit is a filled dot in a light ring, unlit a hollow ring: the state reads by shape, not only colour (art panel, 1 Nov 2026). */
+.gh-lamp-on, .gh-lamp-ring { border-color: var(--paper); background: var(--gh-lamp); }
+.gh-lamp-ring { animation: gh-lamp 1s steps(1, end) 3; animation-delay: var(--ring-delay, 0ms); }
+@keyframes gh-lamp { 50% { border-color: var(--muted); background: transparent; } }
 
 /* ---- plan and record: adviser cards ---- */
 .gh-advisers { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; width: 100%; }
@@ -221,6 +257,7 @@
 .gh-booth-map { font-size: 30px; font-weight: 800; padding: 10px 24px; background: var(--gold); color: var(--gh-ink); border: 4px solid var(--outline); border-radius: 10px; white-space: nowrap; justify-self: start; }
 
 body[data-motion='calm'] .gh-stage :is(.gh-pop, .gh-done, .gh-lock, .gh-chip-pop, .gh-wipe, .gh-secret, .gh-drop, .gh-stamp, .gh-fair) { animation-name: calm-in !important; animation-duration: 300ms !important; }
-body[data-motion='calm'] .gh-stage :is(.gh-wave span, .gh-levels span, .gh-ringing, .gh-rec-dot) { animation: none !important; }
+body[data-motion='calm'] .gh-stage :is(.gh-wave span, .gh-levels span, .gh-ringing, .gh-rec-dot), body[data-motion='calm'] .gh-line :is(.gh-ringing, .gh-ring-pill, .gh-lamp, .gh-pop) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .gh-line :is(.gh-ringing, .gh-ring-pill, .gh-lamp) { animation: none !important; } }
 
 .gh-sweep rt { color: var(--gh-yes); font-size: 0.42em; }

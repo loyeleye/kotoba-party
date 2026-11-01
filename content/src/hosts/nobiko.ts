@@ -280,11 +280,11 @@ export const nobikoLines: HostLine[] = [
   // hotline_sweep: every vote to one adviser ({name} when the game gives it): おおウケ！
   { id: 'nobiko.hotline_sweep.01', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'おおウケ！ みんな わらったわね〜！', kana: 'おおウケ！ みんな わらったわね〜！', en: 'A smash hit! Everyone laughed~!' }, status: 'draft' },
   { id: 'nobiko.hotline_sweep.02', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'おおウケ！ ぜんぶ {name}さんに！', kana: 'おおウケ！ ぜんぶ {name}さんに！', en: 'A smash hit! Every vote for {name}!' }, slots: ['{name}'], status: 'draft' },
-  { id: 'nobiko.hotline_sweep.03', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'まあ！ みんな {name}さんよ。おおウケ！', kana: 'まあ！ みんな {name}さんよ。おおウケ！', en: 'My! Everyone picked {name}. A smash hit!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'nobiko.hotline_sweep.03', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'まあ！ みんな {name}さんに いれたのね。おおウケ！', kana: 'まあ！ みんな {name}さんに いれたのね。おおウケ！', en: 'My! Everyone voted for {name}. A smash hit!' }, slots: ['{name}'], status: 'draft' },
   { id: 'nobiko.hotline_sweep.04', host: 'nobiko', event: 'hotline_sweep', jp: { text: 'おおウケ！ くびが のびすぎちゃう〜！', kana: 'おおウケ！ くびが のびすぎちゃう〜！', en: 'A smash hit! My neck’s stretching too far~!' }, status: 'draft' },
   // hotline_score: the points land
   { id: 'nobiko.hotline_score.01', host: 'nobiko', event: 'hotline_score', jp: { text: 'うちの だんなにも きかせたいわ。こたつから でて こないけど。', kana: 'うちの だんなにも きかせたいわ。こたつから でて こないけど。', en: 'I wish my husband heard this. He never leaves the kotatsu.' }, status: 'draft' },
-  { id: 'nobiko.hotline_score.02', host: 'nobiko', event: 'hotline_score', jp: { text: 'いい アドバイスばかり。メモ しなくちゃ。', kana: 'いい アドバイスばかり。メモ しなくちゃ。', en: 'Such good advice. I must take notes.' }, status: 'draft' },
+  { id: 'nobiko.hotline_score.02', host: 'nobiko', event: 'hotline_score', jp: { text: 'いい アドバイスばかり。メモしなくちゃ。', kana: 'いい アドバイスばかり。メモしなくちゃ。', en: 'Such good advice. I must take notes.' }, status: 'draft' },
   { id: 'nobiko.hotline_score.03', host: 'nobiko', event: 'hotline_score', jp: { text: 'てんすうよ〜！ みんな すてき！', kana: 'てんすうよ〜！ みんな すてき！', en: 'Here come the points~! You’re all lovely!' }, status: 'draft' },
   { id: 'nobiko.hotline_score.04', host: 'nobiko', event: 'hotline_score', jp: { text: 'そうだんしつの スター、たんじょうね！', kana: 'そうだんしつの スター、たんじょうね！', en: 'A star of the advice line is born!' }, status: 'draft' },
   { id: 'nobiko.hotline_score.05', host: 'nobiko', event: 'hotline_score', jp: { text: 'おばけも にっこり。わたしも にっこり。', kana: 'おばけも にっこり。わたしも にっこり。', en: 'The yōkai’s smiling. So am I.' }, status: 'draft' },

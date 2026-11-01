@@ -1,7 +1,7 @@
-/* Pixelify's 5 reads as S or 8 from the couch, so the 5 alone comes from a redrawn copy
-   (tools/fonts/build-kotoba-five.py); unicode-range keeps every other character on Pixelify. */
-@font-face { font-family: 'Kotoba Five'; src: url('/stage/assets/fonts/kotoba-five-500.woff2') format('woff2'); font-weight: 100 600; font-display: block; unicode-range: U+0035; }
-@font-face { font-family: 'Kotoba Five'; src: url('/stage/assets/fonts/kotoba-five-700.woff2') format('woff2'); font-weight: 700 900; font-display: block; unicode-range: U+0035; }
+/* From the couch Pixelify's 5 reads as S or 8, its C as O and its B as G, so those come from a redrawn copy
+   (tools/fonts/build-kotoba-pixel.py); unicode-range keeps every other character on Pixelify. */
+@font-face { font-family: 'Kotoba Pixel'; src: url('/stage/assets/fonts/kotoba-pixel-500.woff2') format('woff2'); font-weight: 100 600; font-display: block; unicode-range: U+0035, U+0042-0043; }
+@font-face { font-family: 'Kotoba Pixel'; src: url('/stage/assets/fonts/kotoba-pixel-700.woff2') format('woff2'); font-weight: 700 900; font-display: block; unicode-range: U+0035, U+0042-0043; }
 :root {
   /* "Matsuri Night", the same tokens as the stage (see stage/style.css for the ratios). */
   --bg: #1a1440;
@@ -26,7 +26,7 @@
   --seat-5: #bfe85e; --seat-6: #f98bcd; --seat-7: #f0c294; --seat-8: #a3ffd1;
   /* The current mode's colour (main.ts sets body[data-mode]). */
   --mode: var(--accent);
-  --font-pixel: 'Kotoba Five', 'Pixelify Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --font-pixel: 'Kotoba Pixel', 'Pixelify Sans', 'Noto Sans JP', system-ui, sans-serif;
   /* The room code: a blockier pixel face whose G, Z, S and B don't blur into 6, 2, 5 and 8. */
   --font-code: 'Press Start 2P', 'Noto Sans', system-ui, monospace;
   /* Noto Sans first for Latin: Noto Sans JP lacks some macron vowels (ō), so romaji mixed fonts. */
@@ -53,6 +53,7 @@ body[data-mode='hajimemashite'] { --mode: #7fdc8c; }
 body[data-mode='bento-haus'], body[data-mode='bento-haus-vs'] { --mode: #ff9f6b; }
 body[data-mode='happyokai'] { --mode: #ffd27a; }
 body[data-mode='late-again'] { --mode: #ffb000; }
+body[data-mode='yokai-court'] { --mode: #e8553d; }
 body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--mode) 22%, var(--bg)), var(--bg) 70%) fixed; }
 
 /* Japanese: break between phrases, never inside a word (see stage/style.css). */
@@ -65,6 +66,8 @@ rt { font-size: 0.5em; color: var(--muted); }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100%; }
 body { padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); font-size: 18px; }
+/* Pixelify's fi ligature is broken ("Case file" showed as "Case Ale"), so no common ligatures anywhere. */
+body { font-variant-ligatures: no-common-ligatures; }
 main { max-width: 480px; margin: 0 auto; }
 h1 { color: var(--accent); font-family: var(--font-pixel); font-size: 40px; margin: 24px 0; text-align: center; text-shadow: 0 3px 0 var(--outline); }
 
@@ -293,7 +296,7 @@ span.jpv .jpv-written { font-size: 11px; }
 
 /* Washi cards: inside them the text tokens flip to dark ink, so muted glosses, furigana and
    romaji stay readable (paper-muted 7.7:1, romaji amber 6.9:1). */
-.paper, .la-gist, .la-tile, .cc-cue, .cc-cuecard, .cc-m-up, .cc-up, .om-bubble, .om-p-answer, .om-notebook, .om-p-notebook, .omi-bubble, .omi-invite, .omi-natural, .omi-q, .omi-target, .pb-big-phrase, .pb-line, .tou-line, .tou-reveal, .tou-said.q, .host-bubble, .gh-secret, .gh-mission, .gh-gist, .gh-tile, .gh-card {
+.paper, .la-gist, .la-tile, .cc-cue, .cc-cuecard, .cc-m-up, .cc-up, .om-bubble, .om-p-answer, .om-notebook, .om-p-notebook, .omi-bubble, .omi-invite, .omi-natural, .omi-q, .omi-target, .pb-big-phrase, .pb-line, .tou-line, .tou-reveal, .tou-said.q, .host-bubble, .gh-secret, .gh-mission, .gh-gist, .gh-tile, .gh-card, .yc-case, .yc-testimony, .yc-question, .yc-mission, .yc-tile, .yc-card, .yc-arg {
   --ink: var(--paper-ink); --muted: var(--paper-muted); --romaji: #7a4a00;
 }
 
@@ -740,6 +743,10 @@ input::placeholder { color: #a99ccf; }
 .path-stop-text { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: baseline; }
 .path-stop-text small { color: var(--muted); font-size: 14px; }
 .path-station.soon .path-stop-text, .path-station.gap .path-stop-text { color: var(--muted); }
+/* A stop no game asks for yet: the track runs on, the train doesn't stop (a hollow, dashed platform). */
+.path-station.pass .path-stop { border-style: dashed; opacity: 0.7; }
+.path-station.pass .path-stop-text { color: var(--muted); }
+.path-pass { margin: 6px 0; }
 .path-row.static { cursor: default; }
 .path-row.static:hover { background: none; }
 .path-pill { flex: none; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }

@@ -48,7 +48,7 @@ import {
   type Title,
 } from './content.js';
 import { forLevel } from './ruby.js';
-import { n4Up } from '../../level.js';
+import { LEVEL_RANK, n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -1317,6 +1317,5 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
 
 /** The lower of two levels: question cards both the asker and the presenter can manage. */
 export function lower(a: Level, b: Level): Level {
-  const order: Level[] = ['kana', 'n5', 'n4'];
-  return order[Math.min(order.indexOf(a), order.indexOf(b))]!;
+  return LEVEL_RANK[a] <= LEVEL_RANK[b] ? a : b;
 }

@@ -57,6 +57,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   'late-again': 'kool-kats',
   // Ghost Advice Hotline: a late-night call-in show's lo-fi; silence while the advice is recorded and played (lateCue).
   'ghost-hotline': 'japanese-lofi',
+  // Yōkai Court: the mystery's investigation theme under the case and the vote; silence while arguments are recorded and played (lateCue).
+  'yokai-court': 'investigations',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -147,6 +149,7 @@ export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = fal
   if (mode === 'karaoke-duel') return karaokeCue(phase);
   if (mode === 'late-again') return lateCue(phase, themeFor(mode, game) ?? 'kool-kats');
   if (mode === 'ghost-hotline') return lateCue(phase, themeFor(mode, game) ?? 'japanese-lofi');
+  if (mode === 'yokai-court') return lateCue(phase, themeFor(mode, game) ?? 'investigations');
   if (mode === 'shodo') return shodoCue(phase, listen, say);
   const theme = mode ? themeFor(mode, game) : 'bouncing';
   if (theme === null) return { song: null, mix: 'full' };

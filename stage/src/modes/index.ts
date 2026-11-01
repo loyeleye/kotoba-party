@@ -19,6 +19,7 @@ import { hajimemashiteStage } from './hajimemashite.js';
 import { happyokaiStage } from './happyokai.js';
 import { lateAgainStage } from './lateAgain.js';
 import { ghostHotlineStage } from './ghostHotline.js';
+import { yokaiCourtStage } from './yokaiCourt.js';
 import type { StageMode } from './types.js';
 
 export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
@@ -43,4 +44,5 @@ export const STAGE_MODES: Record<ModeId, StageMode<any>> = {
   happyokai: happyokaiStage,
   'late-again': lateAgainStage,
   'ghost-hotline': ghostHotlineStage,
+  'yokai-court': yokaiCourtStage,
 };

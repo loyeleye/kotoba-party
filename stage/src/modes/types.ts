@@ -9,6 +9,11 @@ export interface StageMode<G extends GameView = GameView> {
   badge?(game: G, playerId: string): string;
   /** Team games: which team a player is on (0 or 1), so their tile carries the team and sits with it. */
   team?(game: G, playerId: string): number | null;
+  /**
+   * Keep the host row up even while the host is quiet: `host` idles in it with no bubble, and `side`
+   * (if any) sits at the row's right end. Null leaves the row to come and go with the host's lines.
+   */
+  hostRow?(view: RoomView, game: G): { host: string; side: HTMLElement | null } | null;
   /** How long the host's new line should wait, in ms (a reveal still running would be spoiled). */
   hostHoldMs?(view: RoomView, game: G): number;
 }

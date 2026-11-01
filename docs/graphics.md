@@ -224,7 +224,11 @@ Since 2026-10-27 the stage draws its set into one 320×180 `<canvas>` behind eve
 | Karaoke box | `scenes/karaoke-box.png` | Karaoke Duel |
 | Onsen inn | `scenes/onsen-inn.png` | Murder at the Onsen |
 | Tea room | `scenes/tea-room.png` | Omiai Matchmaker |
+| Courtroom | `scenes/yokai-court.png` | Yōkai Court (Fude-san's court, 2026-11-01) |
 | Train carriage | `scenes/train-carriage.png` | Last Train (windows cut out) |
+| Call-in booth | `scenes/hotline-booth.png` | Ghost Advice Hotline (Nobiko-san's late-night advice line, 2026-11-01) |
+| Call light, off and on | `scenes/hotline-bulb-off.png`, `hotline-bulb-on.png` | The booth's red bulb: unlit over the set, or lit above the scrim with its glow |
+| Hitodama | `scenes/hotline-wisp.png` | The ghost fire outside the booth window and in the courtroom's side lanes |
 | Pages | `scenes/page-a.png` … `page-c.png` | The loose dictionary pages floating in the studio's side lanes |
 
 Every set is a text-only PixelLab `pixflux` image drawn as pixel art from the start, with its bright
@@ -244,6 +248,27 @@ Per mode:
 - **Last Train:** the carriage. A night town (far skyline and near poles, drawn in code) scrolls past
   the windows during the intro and the first 1.5 s of each "next stop", then the train pulls in and
   holds; rain (秋雨) runs on the glass, and the straps sway while it moves.
+- **Ghost Advice Hotline:** the call-in booth: a starry window, a microphone and teacup at the left, a
+  rotary phone and a hanging red call light at the right. The call light is dark before the first call,
+  flashes once a second for 3 s when a call rings in (in step with the lamp and ジリリリン！ on the
+  caller's card), then stays lit while the caller is on the line. Like confetti the flash is a one-off
+  signal, so it runs even while the room holds. The set is cropped so the light hangs just below the
+  caller's card in the host row, where Nobiko-san and the caller stay all game; that row has one fixed
+  height in this mode, so the card never covers it. Follow-ups from the art panel (2026-11-01): the
+  desk and its props sit 14 art px higher (14 rows of empty window cut out above the desk), so the mic
+  head, teacup and phone dial clear the scoreboard; the scrim's rim is lighter in this mode (0.28, not
+  0.42), centre unchanged; a hitodama hangs in the window's left pane, below Nobiko-san, bobbing a pixel
+  or two (still with calm motion); and the call light is drawn again above the scrim on a second canvas
+  (`.backdrop-glow`), right of the text area: full colour with a flat two-ring warm halo while it rings,
+  then a quiet steady glow (0.55, no halo) so it isn't as loud as the timer all call. The ring waits
+  600 ms for the curtain wipe, so its first flash is seen. The caller card's lamp is a hollow ring when
+  unlit and a filled dot when lit, so it doesn't rely on colour.
+- **Yōkai Court:** Fude-san's courtroom: an old wooden hall, the judges' bench at the back with nine empty
+  chairs (a lay-judge trial's three judges and six lay judges; Fude-san's, in the middle, is taller), the
+  two counsel desks facing each other at the sides (prosecution and defence face each other across the
+  floor), and amber lanterns on the side walls. Two hitodama float in the side lanes beside the lanterns,
+  above the scrim like the Hotline's (the draft's ghost fires sat behind the title bar and timer, so they
+  were painted out).
 - **Who's the Tourist?** stays on the plain studio: a themed set would tell the tourist the place.
 - **Confetti (紙吹雪):** one burst in gold and washi colours in the side lanes when a round's scores
   or the recap appear.
@@ -344,7 +369,7 @@ compare. If Node's `fetch` can't reach the APIs behind a proxy, run with `NODE_U
 ## Stage layout and type
 
 - The stage is a fixed 1920×1080 canvas scaled to the window (`stage/src/main.ts`, `scaleCanvas`), with a 5% title-safe margin. Rows: header, host, play area, score ribbon. Nothing scrolls; a play area that is too tall is shrunk to fit (`#fit`).
-- Fonts: Pixelify Sans for English titles and numbers only, except the digit 5, which comes from Kotoba Five (`stage/assets/fonts/`, built by `tools/fonts/build-kotoba-five.py`) because Pixelify's 5 reads as S or 8 from the couch; it is listed first in `--font-pixel` with `unicode-range: U+0035`, so nothing else changes; Press Start 2P for the room code (`--font-code`), whose letters must survive a glance across the room; Noto Sans JP for all Japanese (`--font-ja`); Noto Sans for English body text and romaji (`--font-body`). Both OFL 1.1, loaded from Google Fonts (see commercial-blockers.md, row 11).
+- Fonts: Pixelify Sans for English titles and numbers only, except the digit 5 and the capitals B and C, which come from Kotoba Pixel (`stage/assets/fonts/`, built by `tools/fonts/build-kotoba-pixel.py`) because from the couch Pixelify's 5 reads as S or 8, its C as O and its bold B as G; it is listed first in `--font-pixel` with `unicode-range: U+0035, U+0042-0043`, so nothing else changes (common ligatures are off on both pages, because Pixelify's fi ligature is broken); Press Start 2P for the room code (`--font-code`), whose letters must survive a glance across the room; Noto Sans JP for all Japanese (`--font-ja`); Noto Sans for English body text and romaji (`--font-body`). Both OFL 1.1, loaded from Google Fonts (see commercial-blockers.md, row 11).
 - Japanese text is wrapped in `lang="ja"` automatically by `h()` and breaks between phrases (`word-break: auto-phrase`); a blank stays with its particle and a number with its counter.
 - Text on coral, mint or gold fills is dark (`--on-accent`), never white.
 - The developer panel is hidden; open the stage with `?debug=1` to show it.
