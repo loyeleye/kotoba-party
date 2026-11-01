@@ -601,6 +601,7 @@ export type HostEvent =
   | 'happyokai_mishap_upside' // mishap: the slide is upside down
   | 'happyokai_mishap_message' // mishap: a message popped up on the presenter's slide
   | 'happyokai_question' // question time: the audience asks
+  | 'happyokai_have_you' // question time opens with Chōchin-san's own "Have you ever…?" card, on the presenter's phone in English (never say the question)
   | 'happyokai_ask' // read out the question the presenter chose ({name} asks {question})
   | 'happyokai_stall' // the presenter said "いい しつもんですね" (the classic stall)
   | 'happyokai_grade' // the audience gives はなまる

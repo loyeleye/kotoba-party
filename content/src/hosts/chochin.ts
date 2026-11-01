@@ -310,6 +310,9 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.happyokai_question.01', host: 'chochin', event: 'happyokai_question', jp: { text: 'しつもん タイムで ございます。どうぞ！', kana: 'しつもん タイムで ございます。どうぞ！', en: 'It is now question time. Go ahead!' }, status: 'draft' },
   { id: 'chochin.happyokai_question.02', host: 'chochin', event: 'happyokai_question', jp: { text: 'するどい しつもんを おねがい いたします。', kana: 'するどい しつもんを おねがい いたします。', en: 'A sharp question, if you please.' }, status: 'draft' },
   { id: 'chochin.happyokai_question.03', host: 'chochin', event: 'happyokai_question', jp: { text: 'みなさま、しつもんは ございますか？', kana: 'みなさま、しつもんは ございますか？', en: 'Does anyone have a question?' }, status: 'draft' },
+  // happyokai_have_you (never the question itself: the presenter answers it from the English)
+  { id: 'chochin.happyokai_have_you.01', host: 'chochin', event: 'happyokai_have_you', jp: { text: 'まず、わたくしから ひとつ しつもんが ございます。', kana: 'まず、わたくしから ひとつ しつもんが ございます。', en: 'First, I have one question of my own.' }, status: 'draft' },
+  { id: 'chochin.happyokai_have_you.02', host: 'chochin', event: 'happyokai_have_you', jp: { text: 'しつもん タイムの まえに… わたくし、きに なって おります。', kana: 'しつもん タイムの まえに… わたくし、きに なって おります。', en: 'Before question time… there is something I am curious about.' }, status: 'draft' },
   // happyokai_ask
   { id: 'chochin.happyokai_ask.01', host: 'chochin', event: 'happyokai_ask', jp: { text: '{name}さまからの しつもんです。「{question}」', kana: '{name}さまからの しつもんです。「{question}」', en: 'A question from {name}: "{question}"' }, slots: ['{name}', '{question}'], status: 'draft' },
   { id: 'chochin.happyokai_ask.02', host: 'chochin', event: 'happyokai_ask', jp: { text: 'しつもんが まいりました。{name}さま より、「{question}」', kana: 'しつもんが まいりました。{name}さま より、「{question}」', en: 'A question has arrived. From {name}: "{question}"' }, slots: ['{name}', '{question}'], status: 'draft' },

@@ -190,6 +190,9 @@ Each of these is a change to a game or the path, so they're logged as open quest
    lines that have it. The questions per place are still to come.)
 6. **More ＿た ことが あります:** a "Have you ever…?" question card in Happyōkai, one prompt a game cued by
    meaning (more than two a night add nothing under the 2-says-a-day cap), with the topics rotating.
+   *Built:* Chōchin-san's card opens the first N4 presenter's question time, in English with the frame
+   (docs/modes/happyokai.md). `sim:yields`: 0.39 a game for an N4 seat in Happyōkai, from 0. The 4.3 row
+   above predates it; re-run `sim:express` for the new pace.
 7. **Teach the Word Gauntlet bots to retell a rumour**, then re-run. Until then the simulation can't say how
    fast 4.6 goes.
 8. **A plain-form source for 4.8:** count Dub Club's ad-lib from memory with what the player said, and let the

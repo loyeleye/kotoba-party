@@ -1,10 +1,12 @@
 // How bots play Happyōkai!: the presenter picks a title, says it's ready, and on each slide says a
 // sentence or two (its own, a ready sentence read out, or one tapped), then moves on; it chooses a
-// question and answers it. The assistant picks each next slide (sometimes the wild one, once a mishap)
+// question and answers it; Chōchin-san's "Have you ever…?" card it answers yes or no with the frame, from
+// memory or after a peek at the Japanese. The assistant picks each next slide (sometimes the wild one, once a mishap)
 // and now and then pushes a cue card. Everyone else stamps, asks a question (out loud or tapped),
 // grades the talk and votes for the best one.
 // Repeatable: every choice hashes the bot's id with the phase and slide.
 
+import { haveYouCard, haveYouOf } from '../../../shared/src/modes/happyokai/content.js';
 import type { HappyokaiView } from '../../../shared/src/modes/happyokai/happyokai.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
@@ -14,6 +16,8 @@ export interface HappyokaiPolicyOptions {
   readChance?: number;
   /** Chance the assistant plays its mishap on a slide. */
   mishapChance?: number;
+  /** Chance the presenter opens the Japanese of Chōchin-san's card before answering it. */
+  peekChance?: number;
   /** Type instead of speak (quiet mode). */
   quiet?: boolean;
   thinkMs?: number;
@@ -32,6 +36,7 @@ const STAMPS = ['omoshiroi', 'hee', 'sugoi', 'naruhodo', 'ee'] as const;
 export function happyokaiPolicy(opts: HappyokaiPolicyOptions = {}): ModePolicy {
   const readChance = opts.readChance ?? 0.4;
   const mishapChance = opts.mishapChance ?? 0.3;
+  const peekChance = opts.peekChance ?? 0.25;
   const think = opts.thinkMs ?? 300;
   return {
     act(view: RoomView, playerId: string) {
@@ -78,6 +83,16 @@ export function happyokaiPolicy(opts: HappyokaiPolicyOptions = {}): ModePolicy {
 
       if (view.phase === 'encore') {
         if (me.role === 'presenter') {
+          // Chōchin-san's card first: a bot knows the Japanese behind the English (a player recalls it, or peeks).
+          const topic = me.haveYou ? haveYouOf(me.haveYou.id) : undefined;
+          if (me.haveYou && topic) {
+            if (me.lines.length) return out;
+            const card = haveYouCard(topic, me.level);
+            const peek = r(`peek?:${topic.id}`) < peekChance;
+            if (peek && !me.haveYou.peek) out.push({ key: 'peek', move: { kind: 'peek' }, delayMs: delay('peek') });
+            out.push({ key: 'have-you', move: { kind: 'say', utterance: { via, text: (r(`yes?:${topic.id}`) < 0.5 ? card.yes : card.no).kana } }, delayMs: delay('have-you') + think });
+            return out;
+          }
           if (me.pickQuestion.length) out.push({ key: 'choose', move: { kind: 'choose', playerId: pickOf(me.pickQuestion, r('choose'))!.playerId }, delayMs: delay('choose') + think });
           else if (me.answerFrames.length && !me.lines.length) out.push({ key: 'answer', move: { kind: 'say', utterance: { via, text: 'いい しつもんですね。おいしい から です。' } }, delayMs: delay('answer') });
           return out;

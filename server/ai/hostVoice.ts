@@ -181,6 +181,7 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   happyokai_mishap_upside: 'Happyōkai!: the slide came up upside down. Two or three words.',
   happyokai_mishap_message: 'Happyōkai!: a private message just popped up over the slide for everyone to see. Two or three words, pretend not to look.',
   happyokai_question: 'Happyōkai!: the talk is over; it is question time. Invite the audience to ask, formally.',
+  happyokai_have_you: 'Happyōkai!: before the audience asks, you have one question of your own for the presenter, on their phone in English ("Have you ever…?"). Announce it formally and with curiosity. Never say the question itself or any of its Japanese.',
   happyokai_stall: 'Happyōkai!: the presenter answered a question with "good question…", the classic stall. Admire it as true professionalism. One short line.',
   happyokai_grade: 'Happyōkai!: the audience now grades the talk with hanamaru on their phones. One short line.',
   happyokai_card: "Happyōkai!: {name}'s report card is up. Kind, warm, about the talk, never their Japanese.",

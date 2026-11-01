@@ -2,7 +2,8 @@
 //
 //   presenter  backstage: pick a title, rehearse the opening, 🙋 ready. On stage: the slide's script or its
 //              word, sentence frames and ready sentences (tap one, or read it out for more), tap to talk,
-//              next slide. Question time: choose a question, then answer it. Then a private report.
+//              next slide. Question time: choose a question, then answer it (once a game, Chōchin-san's
+//              "Have you ever…?" card comes first, in English). Then a private report.
 //   assistant  pick each next slide (🙂 fits the title, 🎲 random, むちゃぶり wild), play one mishap, push a
 //              cue card to the presenter's phone.
 //   audience   stamp while they talk, ask one question (say it out loud for more), grade the talk.
@@ -345,9 +346,38 @@ function asking(ctx: Ctx, me: Me): HTMLElement {
   );
 }
 
+/**
+ * Chōchin-san's "Have you ever…?" card: the question in English, the frame and the noun. The Japanese is
+ * behind "Need the words?" (opening it counts the answer as read, not from memory).
+ */
+function haveYouCardView(ctx: Ctx, me: Me, card: NonNullable<Me['haveYou']>): HTMLElement {
+  const { send } = ctx;
+  return h(
+    'div',
+    { class: 'screen hk-p' },
+    h('p', { class: 'hk-label-p' }, '🏮 Chōchin-san asks:'),
+    h('p', { class: 'hk-script hk-have-you' }, card.en),
+    h('ul', { class: 'hk-frames', lang: 'ja' }, h('li', {}, card.frame), h('li', {}, ruby(card.hint))),
+    h('p', { class: 'hint' }, 'Answer in Japanese: yes or no, in a full sentence.'),
+    card.peek
+      ? h(
+          'div',
+          { class: 'hk-peek', lang: 'ja' },
+          h('p', {}, ruby(card.peek.question)),
+          h('p', {}, ruby(card.peek.yes), h('small', {}, ` ${card.peek.yes.en}`)),
+          h('p', {}, ruby(card.peek.no), h('small', {}, ` ${card.peek.no.en}`)),
+        )
+      : h('button', { type: 'button', class: 'linkish hk-peek-btn', onclick: () => (buzz(), void send({ kind: 'peek' })) }, 'Need the words? (counts as read)'),
+    talkBox(ctx, me, '〜た ことが あります。'),
+    myLines(ctx, me),
+    h('button', { type: 'button', class: 'secondary hk-next', onclick: () => (buzz(), void send({ kind: 'next' })) }, '▶ Pass: on to the room’s questions'),
+  );
+}
+
 function questionTime(ctx: Ctx, me: Me): HTMLElement {
   const { game, send } = ctx;
   if (me.role === 'presenter') {
+    if (me.haveYou) return haveYouCardView(ctx, me, me.haveYou);
     if (me.pickQuestion.length || !game.question?.chosen)
       return h(
         'div',
@@ -373,6 +403,7 @@ function questionTime(ctx: Ctx, me: Me): HTMLElement {
     );
   }
   if (me.questions.length || me.asked) return asking(ctx, me);
+  if (game.haveYou) return waiting(`🏮 Chōchin-san is asking ${nameOf(ctx, game.presenterId)} a question first…`, 'Your question cards come next.');
   return watching(ctx);
 }
 

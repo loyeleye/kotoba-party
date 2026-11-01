@@ -60,6 +60,7 @@ export const HOST_EVENTS = [
   'happyokai_mishap_upside',
   'happyokai_mishap_message',
   'happyokai_question',
+  'happyokai_have_you',
   'happyokai_ask',
   'happyokai_stall',
   'happyokai_grade',

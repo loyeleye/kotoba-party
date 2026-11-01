@@ -104,3 +104,8 @@ body[data-mode='happyokai'] :lang(ja) { word-break: keep-all; }
   .hk-ready-btn.kanpe, .hk-stamp-btn.sent::after { animation: none; }
   .hk-stamp-btn:active { transform: none; }
 }
+/* Chōchin-san's "Have you ever…?" card */
+.hk-have-you { font-family: inherit; }
+.hk-peek { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+.hk-peek p { margin: 0; font-size: 17px; }
+.hk-peek-btn { justify-self: start; }

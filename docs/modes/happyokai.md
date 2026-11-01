@@ -64,6 +64,8 @@ reading a line aloud counts the same at every level.
 3. **Question time** (`encore`, 30 s). Everyone else gets three question cards, picks one and asks it
    (out loud for more). The TV shows whose hands are up, not the questions. The presenter chooses one,
    Chōchin-san reads it out to the room (「〜さまからの しつもんです。」), and the presenter answers it.
+   Once a game, the first N4 presenter's question time opens with Chōchin-san's own "Have you ever…?"
+   card (below).
 4. **はなまる** (`reveal`, 12 s). The audience grades the talk: 🌼 よく できました, 🌸 たいへん よく
    できました or 💮 はなまる. The assistant grades too in a 3-player game.
 5. **Report card** (`score`, 9 s). Flowers, the grade in red pen (a drawn はなまる for top marks), Chōchin-san's seal, a teacher's comment about the slide that got
@@ -78,7 +80,8 @@ isn't their own.
   grades). Speaking: the opening (40 own / 20 read / 10 typed / 5 tapped), the closing (20/10/5/3), a
   mishap's recovery (20/10/5/3), up to 3 new sentences per picture slide (30/15/10/3 each; a sentence
   said twice counts once), a れんぞく bonus of 20 for 2 / 3 / 4 sentences said out loud on one slide
-  (Kana / N5 / N4), and the answer in question time (60/30/15/5). Speaking is capped at 300.
+  (Kana / N5 / N4), the answer in question time (60/30/15/5), and the answer to Chōchin-san's "Have you
+  ever…?" card (40 from memory / 15 after a peek / 10 typed / 5 tapped). Speaking is capped at 300.
 - **Assistant.** 20 for each sentence said out loud on a slide they picked (up to 120), plus 50 when a
   mishap they played is recovered out loud (20 if typed or tapped).
 - **Questions.** 15 for asking out loud, 5 tapped, +35 if the presenter chose yours.
@@ -88,7 +91,8 @@ isn't their own.
 assistant points), ノンストップ賞 (most sentences on one slide), ベストしつもん賞 (most questions asked out
 loud), ハプニング賞 (most laughs on a mishap).
 
-**Phrasebook.** The presenter's opening, closing and recovery lines, and every あいづち a player
+**Phrasebook.** The presenter's opening, closing and recovery lines, their answer to Chōchin-san's card
+(their own words when they said it with the frame, else his model answer, seen), and every あいづち a player
 stamped.
 
 ## Content
@@ -177,6 +181,33 @@ are in `DECKS` (by frame id), and both are `draft`. A Kana or N5 asker in an N4 
 usual cards at their level. It is not a separate seat (the presenter's talk is the same seat), so there
 is no offer to decline.
 
+## Chōchin-san's "Have you ever…?" card (goal 4.3)
+
+The path's 4.3 needs ＿た ことが あります said from memory, and no game asked for it (0.2 a Hajimemashite
+game). So once a game, question time for the **first N4 (or N3) presenter** opens with a card of
+Chōchin-san's own, before the room's cards come out (`HAVE_YOU` in `content.ts`, `dealHaveYou` in
+`happyokai.ts`):
+
+- Chōchin-san announces it without saying it (`happyokai_have_you`: 「まず、わたくしから ひとつ しつもんが
+  ございます。」). The presenter's phone and the TV show the question **in English** ("Have you ever eaten
+  nattō?") with the frame chip ＿た ことが あります／ありません; the phone adds the noun (納豆) as a hint. The
+  presenter answers yes or no in a full sentence; either way it's the frame.
+- The Japanese (the question and both answers) is behind **Need the words?** (move `peek`). Said after
+  a peek, the answer counts as read; said without one, from memory.
+- The card ends when they say a line with the frame, after two tries without it, when they tap Pass
+  (`next`), or after 20 s (`HAVE_YOU_MS`, added to question time). Then the room's cards come out as
+  usual; until then the askers wait, so only one voice is heard.
+- The phrasebook gets **what the presenter said** (so the path credits the frames they used), from
+  memory unless they peeked; if they never said the frame, Chōchin-san's model answer, seen.
+- The topic is drawn at random each game from 12, all `draft`: 富士山に 登った, 納豆を 食べた, 幽霊を
+  見た, かっぱに きゅうりを あげた, 一人で カラオケに 行った, 電車で 寝て、終点まで 行った, パジャマで 外に 出た,
+  先生を 「お母さん」と 呼んだ, ユーフォーを 見た, サルと 温泉に 入った, 回転ずしで 二十皿 食べた, おばけ屋敷で
+  泣いた. One a game is enough: the path counts at most two says of a frame a day.
+
+Bots answer it yes or no with the frame, peeking first a quarter of the time. `npm run sim:yields`
+(32 games): ＿た ことが あります went from 0 to 0.39 a game for an N4 seat in Happyōkai (the most it can be
+is 0.5 in the four-seat room with two N4 seats, one card a game).
+
 ## Not built yet
 
 - A private correction after each talk (an AI teacher's one-line note on one sentence).
@@ -202,6 +233,11 @@ is no offer to decline.
    now (海で 泳げる) rather than the bus.
 6. **The place slides name their own verb** in Then and now (入れる, 登れる, 泳げる, 出られる, 泊まれる)
    instead of 一人で 行ける for all of them.
+7. **The "Have you ever…?" card is Chōchin-san's, and the presenter answers it** (for Ladi to confirm), so
+   the answerer's line is what counts, cued in English, and the asker isn't credited for reading a card.
+   It goes to the first N4 presenter of the game (not every N4 talk: two a night already fill the path's
+   daily cap), comes before the room's cards rather than among them (so it's always asked), and pays
+   like a smaller question-time answer.
 
 ## Decided by Ladi
 
@@ -213,7 +249,9 @@ is no offer to decline.
 
 ## Open questions
 
-1. Fluent check of the deck lines, especially the `use` verbs (引ける, 乗れる, 入れる, 登れる, 泳げる,
+1. Fluent check of the "Have you ever…?" topics (`HAVE_YOU`), especially 電車で 寝て、終点まで 行った,
+   回転ずしで 二十皿 食べた and the negative 〜ことは ありません.
+2. Fluent check of the deck lines, especially the `use` verbs (引ける, 乗れる, 入れる, 登れる, 泳げる,
    出られる, 泊まれる), 毎日 〜と いっしょに いたいです, the moving and shop news lines, and the place lines
    (〔place〕は 前は 人が 少なかったですが、 and the bus news).
 

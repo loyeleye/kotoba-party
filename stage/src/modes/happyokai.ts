@@ -272,6 +272,20 @@ function talk(view: RoomView, game: HappyokaiView): HTMLElement {
 
 function questions(view: RoomView, game: HappyokaiView): HTMLElement {
   const q = game.question;
+  // Chōchin-san's "Have you ever…?" card: the English and the frame (the Japanese is the presenter's to find).
+  if (game.haveYou) {
+    const card = h(
+      'div',
+      { class: 'hk-projector' },
+      h(
+        'div',
+        { class: 'hk-screen hk-qa', 'data-key': 'have-you' },
+        h('p', { class: 'hk-slide-title', lang: 'ja' }, '🏮 ちょうちんさんの しつもん'),
+        h('p', { class: 'hk-question' }, h('span', {}, game.haveYou.en), h('small', { lang: 'ja' }, game.haveYou.frame)),
+      ),
+    );
+    return hall(view, game, card, [stampColumn(game), captionStrip(game.captions, '「〜た ことが あります」'), stampTally(game)]);
+  }
   const body = h(
     'div',
     { class: 'hk-projector' },
