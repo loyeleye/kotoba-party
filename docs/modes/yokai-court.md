@@ -97,9 +97,9 @@ and 3.10 (に ちがいありません).
 - Log judges' check accuracy by side in playtests.
 - Romaji: the court spaces に and じゃ before `toRomaji` (Kappa ja nai, yane ni ita). The shared `toRomaji` still
   glues them elsewhere, for its own fix.
-- Pixelify's 2 reads as 8, so the court's numbers (case number, scores, seats, the record timer) use the
-  body face. Its C read as O ("Yōkai Oourt") until Kotoba Pixel redrew it (2026-11-01); the word labels
-  are back on the pixel face.
+- The court's labels and numbers are on the pixel face. Pixelify's C read as O ("Yōkai Oourt") and its 2
+  as 8, so for a while they used the body face; Kotoba Pixel redraws both (2026-11-01). Japanese inside a
+  pixel label (有罪, 無罪, 判決) is set at weight 800, because it falls back to Noto Sans JP.
 - Courtroom facts (who sits where, what a lay judge 裁判員 does) to check against courts.go.jp before the
   lines leave draft.
 - The courtroom set (`scenes/yokai-court.png`, 2026-11-01) seats nine on the bench, as a lay-judge trial

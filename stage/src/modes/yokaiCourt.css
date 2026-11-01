@@ -9,7 +9,7 @@
 .yc-small { font-size: 26px; color: var(--muted); }
 .yc-muted { color: var(--muted); }
 .yc-big { font-size: 46px; font-weight: 900; line-height: 1.2; }
-.yc-label { font-family: var(--font-pixel); font-size: 22px; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+.yc-label { font-family: var(--font-pixel); font-size: 26px; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
 .yc-caption { font-size: 28px; padding: 10px 24px; background: var(--panel); border: 3px solid var(--outline); border-radius: 12px; max-width: 1500px; }
 
 .yc-chip { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-weight: 800; }
@@ -30,7 +30,7 @@
 .yc-band { display: inline-flex; align-items: flex-end; gap: 18px; padding: 18px 22px 6px; background: var(--yc-band); color: var(--yc-ink); border: 4px solid var(--outline); box-shadow: 6px 6px 0 var(--outline); white-space: nowrap; }
 .yc-band-ja { font-size: 40px; font-weight: 900; }
 .yc-band-ja rt { font-size: 0.45em; color: var(--yc-ink); }
-.yc-band-en { font-family: var(--font-pixel); font-size: 22px; font-weight: 700; letter-spacing: 0.08em; }
+.yc-band-en { font-family: var(--font-pixel); font-size: 26px; font-weight: 700; letter-spacing: 0.08em; }
 .yc-caseno { font-family: var(--font-pixel); font-size: 32px; font-weight: 700; white-space: nowrap; }
 .yc-accused-corner { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; padding: 6px 16px; font-size: 30px; font-weight: 800; background: var(--panel); border: 3px solid var(--outline); border-radius: 10px; box-shadow: 4px 4px 0 var(--outline); }
 
@@ -56,7 +56,7 @@
 /* ---- the case scroll ---- */
 .yc-scroll { display: grid; gap: 8px; justify-items: center; padding: 22px 48px; background: var(--paper); color: var(--paper-ink); border: 5px solid var(--outline); border-left: 18px solid #8a5a2b; border-right: 18px solid #8a5a2b; border-radius: 10px; box-shadow: 0 8px 0 var(--outline); animation: yc-unroll 0.6s ease-out both; }
 @keyframes yc-unroll { from { clip-path: inset(0 50% 0 50%); } to { clip-path: inset(0 0 0 0); } }
-.yc-scroll-tag { font-family: var(--font-pixel); font-size: 22px; letter-spacing: 0.08em; color: #c0283c; }
+.yc-scroll-tag { font-family: var(--font-pixel); font-size: 26px; font-weight: 700; letter-spacing: 0.08em; color: #c0283c; }
 .yc-scroll-ja { font-size: 60px; font-weight: 900; line-height: 1.5; }
 .yc-scroll-ja rt { font-size: 0.4em; color: var(--paper-muted); }
 .yc-scroll-en { font-size: 30px; color: var(--paper-muted); }
@@ -104,7 +104,7 @@
 .yc-ring-bg { fill: none; stroke: var(--outline); stroke-width: 10; }
 .yc-ring-arc { fill: none; stroke: var(--gold); stroke-width: 10; stroke-dasharray: 100 100; animation: yc-ring linear both; }
 @keyframes yc-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 100; } }
-.yc-ring-label { font-family: var(--font-pixel); font-size: 22px; font-weight: 700; color: var(--muted); }
+.yc-ring-label { font-family: var(--font-pixel); font-size: 26px; font-weight: 700; color: var(--muted); }
 .yc-done { display: grid; place-items: center; width: 108px; height: 108px; border: 10px solid var(--good); border-radius: 50%; box-sizing: border-box; font-size: 54px; font-weight: 900; color: var(--good); animation: yc-pop 0.35s var(--ease-pop) both; }
 .yc-wait { color: var(--muted); font-weight: 900; font-size: 40px; }
 .yc-levels { display: flex; align-items: center; gap: 8px; height: 90px; }
@@ -181,9 +181,9 @@ body[data-motion='calm'] .yc-stage :is(.yc-wave span, .yc-levels span, .yc-rec-d
 .yc-center { min-height: 0; }
 
 /* ---- panel fixes ---- */
-/* Pixelify's 2 reads as 8 at these sizes, so the court's numbers use the body face. (Its C read as O
-   too; Kotoba Pixel redraws that, so the word labels are back on the pixel face.) */
-.yc-stage :is(.yc-caseno, .yc-pan-n, .yc-score-n, .yc-seat, .yc-rec) { font-family: inherit; font-weight: 800; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+/* Labels and numbers are on the pixel face: Kotoba Pixel redraws the C, B, G and digits that misread.
+   The Japanese inside a pixel label falls back to Noto Sans JP, so it gets the weight Noto needs. */
+.yc-stage :is(.yc-label, .yc-lawyer-tag, .yc-booth-tag, .yc-ring-label, .yc-scroll-tag, .yc-band-en) [lang='ja'] { font-weight: 800; letter-spacing: 0; }
 /* Play and check have two cards and no VS. */
 .yc-lawyers.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 /* Side by side: horizontal cards, big words, so the beat fits without shrinking. */
