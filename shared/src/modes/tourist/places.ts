@@ -91,8 +91,8 @@ export const QUESTIONS: readonly Line[] = [
   n4('tourist.q.taberaremasu', 'yesno', t('ここで 食べられますか。', 'ここで たべられますか。', 'Can you eat here?'), ['potential']),
   n4('tourist.q.neraremasu', 'yesno', k('ここで ねられますか。', 'Can you sleep here?'), ['potential']),
   n4('tourist.q.miraremasu', 'what', t('ここで 何が 見られますか。', 'ここで なにが みられますか。', 'What can you see here?'), ['potential']),
-  n4('tourist.q.shashin', 'yesno', k('ここで しゃしんを とる ことが できますか。', 'Can you take photos here?'), ['koto-ga-dekiru']),
-  n4('tourist.q.kaimono', 'yesno', t('ここで 買いものを する ことが できますか。', 'ここで かいものを する ことが できますか。', 'Can you go shopping here?'), ['koto-ga-dekiru']),
+  n4('tourist.q.shashin', 'yesno', k('ここで しゃしんを とる ことが できますか。', 'Can you take photos here?'), ['potential']),
+  n4('tourist.q.kaimono', 'yesno', t('ここで 買いものを する ことが できますか。', 'ここで かいものを する ことが できますか。', 'Can you go shopping here?'), ['potential']),
 ];
 
 // ---- generic answers (any place: safe for the tourist) ----
@@ -125,7 +125,7 @@ export const SAFE_ANSWERS: readonly Line[] = [
   n4('tourist.a.nakereba', 'yesno', k('そう しなければ なりません。', 'You have to.'), ['nakereba']),
   n4('tourist.a.nakute-mo-ii', 'yesno', k('しなくても いいですよ。', "You don't have to."), ['nakutemo-ii']),
   n4('tourist.a.koraremasu', 'yesno', t('はい、いつでも 来られますよ。', 'はい、いつでも こられますよ。', 'Yes, you can come any time.'), ['potential']),
-  n4('tourist.a.dekiru', 'yesno', k('ええ、だれでも する ことが できます。', 'Sure, anyone can do it.'), ['koto-ga-dekiru']),
+  n4('tourist.a.dekiru', 'yesno', k('ええ、だれでも する ことが できます。', 'Sure, anyone can do it.'), ['potential']),
   n4('tourist.a.mirareru', 'what', t('いろいろな ものが 見られますよ。', 'いろいろな ものが みられますよ。', 'You can see all sorts of things.'), ['potential']),
   n4('tourist.a.rule', 'what', k('ルールを まもらなければ なりません。', 'You have to follow the rules.'), ['nakereba']),
 ];
@@ -178,7 +178,7 @@ export const PLACES: readonly Place[] = [
       ['kana', 'yesno', k('よる いきますか。', 'Do you go at night?')],
       ['n5', 'what', t('よく 何を 買いますか。', 'よく なにを かいますか。', 'What do you often buy?')],
       ['n4', 'yesno', t('お金を おろせますか。', 'おかねを おろせますか。', 'Can you take out money there?'), ['potential']],
-      ['n4', 'yesno', k('にもつを おくる ことが できますか。', 'Can you send parcels from there?'), ['koto-ga-dekiru']],
+      ['n4', 'yesno', k('にもつを おくる ことが できますか。', 'Can you send parcels from there?'), ['potential']],
     ],
     answers: [
       ['kana', 'what', k('おにぎりです。', 'Onigiri.')],
@@ -352,7 +352,7 @@ export const PLACES: readonly Place[] = [
       ['kana', 'where', k('やまの なか。', 'In the mountains.')],
       ['n5', 'where', t('やまの ちかくに あります。', 'やまの ちかくに あります。', "It's near the mountains.")],
       ['n4', 'yesno', t('いいえ、みずぎは 着ては いけません。', 'いいえ、みずぎは きては いけません。', "No, you're not allowed to wear one."), ['te-wa-ikenai']],
-      ['n4', 'what', t('そとの おふろで ゆきを 見る ことが できます。', 'そとの おふろで ゆきを みる ことが できます。', 'From the outdoor bath you can see the snow.'), ['koto-ga-dekiru']],
+      ['n4', 'what', t('そとの おふろで ゆきを 見る ことが できます。', 'そとの おふろで ゆきを みる ことが できます。', 'From the outdoor bath you can see the snow.'), ['potential']],
     ],
   }),
   place({
@@ -365,7 +365,7 @@ export const PLACES: readonly Place[] = [
       ['kana', 'how', k('にもつは おおきいですか。', 'Is your luggage big?')],
       ['n5', 'yesno', t('パスポートが いりますか。', 'パスポートが いりますか。', 'Do you need a passport?')],
       ['n4', 'when', t('何時間ぐらい 前に 着いたら いいですか。', 'なんじかんぐらい まえに ついたら いいですか。', 'How many hours early should I get there?')],
-      ['n4', 'yesno', k('みずを もって いく ことが できますか。', 'Can you take water through?'), ['koto-ga-dekiru']],
+      ['n4', 'yesno', k('みずを もって いく ことが できますか。', 'Can you take water through?'), ['potential']],
     ],
     answers: [
       ['kana', 'what', k('おみやげ！', 'Souvenirs!')],
@@ -395,7 +395,7 @@ export const PLACES: readonly Place[] = [
       ['kana', 'when', k('なんにち いますか。', 'How many days are you there?')],
       ['n5', 'how', t('へやは ひろいですか。', 'へやは ひろいですか。', 'Is the room big?')],
       ['n4', 'yesno', t('ルームサービスを たのんでも いいですか。', 'ルームサービスを たのんでも いいですか。', 'Can I order room service?')],
-      ['n4', 'yesno', k('チェックアウトを おそく する ことが できますか。', 'Can you check out late?'), ['koto-ga-dekiru']],
+      ['n4', 'yesno', k('チェックアウトを おそく する ことが できますか。', 'Can you check out late?'), ['potential']],
     ],
     answers: [
       ['kana', 'what', k('ねます。', 'I sleep.')],
@@ -534,7 +534,7 @@ export const PLACES: readonly Place[] = [
       ['n5', 'how', t('しずかで、きれいです。', 'しずかで、きれいです。', "It's quiet and clean.")],
       ['kana', 'where', k('まちの なか。', 'In town.')],
       ['n5', 'where', t('おおきい みちの ちかくに あります。', 'おおきい みちの ちかくに あります。', "It's near the main road.")],
-      ['n4', 'yesno', k('はい、よやく しなくても みて もらえます。', "Yes, they'll see you even without booking."), ['te-mo', 'ageru-kureru']],
+      ['n4', 'yesno', k('はい、よやく しなくても みて もらえます。', "Yes, they'll see you even without booking."), ['temo', 'ageru-kureru']],
       ['n4', 'what', t('ほけんしょうを 見せなければ なりません。', 'ほけんしょうを みせなければ なりません。', 'You have to show your insurance card.'), ['nakereba']],
     ],
   }),

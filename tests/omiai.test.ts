@@ -825,7 +825,7 @@ describe('Omiai: the go-between’s keigo lines', () => {
             expect(line.jp.kana, at).not.toMatch(/[{}（）]/);
             expect(line.jp.en, at).not.toMatch(/[{}]/);
             expect(line.frames.length, at).toBeGreaterThan(0);
-            expect(line.frames.every((f) => ['o-ni-naru', 'keigo-verb'].includes(f)), at).toBe(true);
+            expect(line.frames.every((f) => ['o-ni-naru', 'keigo'].includes(f)), at).toBe(true);
             const m = checkManners(typed(line.jp.kana), 'n4', { name: 'アキ' });
             expect(m.register, at).toBe('keigo');
             expect(m.hits.some((h) => h.kind === 'honorific' || h.kind === 'humble' || h.kind === 'teinei'), at).toBe(true);

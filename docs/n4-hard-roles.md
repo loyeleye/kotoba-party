@@ -28,10 +28,9 @@ Rules every role follows:
   English only. Their points, turns and tiles don't change. Playtests should check that none of these
   feels like waiting.
 - **Draft.** Every new line is `status: 'draft'` until a fluent speaker checks it.
-- **Frames by name.** New lines carry `frames: [...]` with the frame ids below as plain strings.
-  They aren't `FrameId`s yet: the N4 matchers are a separate step. Ids that the learning path
-  (`shared/src/path.ts`, PR #132) already names are used as it spells them; the rest are proposed
-  here.
+- **Frames by name.** New lines carry `frames: [...]` with the frame ids below as plain strings: the
+  ids `shared/src/japanese/frames.ts` uses (PR #134), so a tag and the matcher agree. `sign-kanji` is
+  not a frame: it marks the sign boards, which count toward goal 4.10 as kanji.
 
 | Game | Hard role or deck | Goals | Where |
 | --- | --- | --- | --- |
@@ -52,24 +51,24 @@ Not built in this step (from the plan's "How mixed rooms work"): the host playin
 nobody in the room is N4, the Gallery, Kana curveball tiles, and the commentary booth everywhere but
 Narabete.
 
-## Proposed N4 frame ids
+## N4 frame ids used
 
 | Goal | Ids |
 | --- | --- |
-| 4.1 Ask favours | `te-moraeru`, `te-kuremasen`, `ageru-kureru`, `te-itadakemasu-ka` |
+| 4.1 Ask favours | `te-moraeru`, `te-kuremasen`, `ageru-kureru`, `te-itadakemasen` |
 | 4.2 Must and needn't | `nakereba`, `nakutemo-ii`, `te-wa-ikenai` |
 | 4.3 Experiences, tries, oops | `ta-koto`, `te-shimau`, `te-miru` |
-| 4.4 Say what you can do | `potential`, `koto-ga-dekiru` |
-| 4.5 If, when, even if | `tara`, `nara`, `ba`, `to-cond`, `toki`, `te-mo` |
+| 4.4 Say what you can do | `potential` (たべられます and ＿ことが できます) |
+| 4.5 If, when, even if | `tara`, `nara`, `ba`, `to-cond`, `toki`, `temo` |
 | 4.6 Looks, hearsay, guesses | `sou-look`, `sou-hear`, `to-omou`, `kamo`, `hazu` |
 | 4.7 Plans, advice, getting ready | `you-to-omou`, `hou-ga-ii`, `tsumori`, `tara-dou`, `te-oku`, `te-aru` |
 | 4.8 Talk casually | `plain`, `n-da`, `teru` |
-| 4.9 Polite to strangers | `o-kudasai`, `te-itadakemasen`, `o-ni-naru`, `o-suru`, `keigo-verb` |
+| 4.9 Polite to strangers | `o-kudasai`, `te-itadakemasen`, `o-ni-naru`, `o-suru`, `keigo` |
 | 4.10 Sign kanji | `sign-kanji` |
-| 4.11 Reasons and order | `node`, `sugite`, `nagara`, `shi-shi` |
+| 4.11 Reasons and order | `node`, `sugiru`, `nagara`, `shi` |
 | 4.12 Change and decisions | `you-ni-naru`, `koto-ni-suru`, `koto-ni-naru` |
 | 4.13 Passive, causative, easy/hard | `passive`, `sasete-kudasai`, `yasui-nikui` |
-| 4.14 Quote, purpose, embedded questions | `to-itte-imashita`, `tame-ni`, `you-ni-purpose`, `ka-dou-ka`, `embedded-question` |
+| 4.14 Quote, purpose, embedded questions | `to-itte-ita`, `tame-ni`, `you-ni`, `ka-dou-ka`, `nani-ka` |
 
-`keigo-verb` covers set keigo that no frame matcher finds today (もうしわけ ございません,
-ごしょうかい いたします, ＿は ごえんりょ ください, いらっしゃいます, まいります, ございます).
+`keigo` covers the keigo verbs and set phrases (もうしわけ ございません, ごしょうかい いたします,
+＿は ごえんりょ ください, いらっしゃいます, まいります, ございます).

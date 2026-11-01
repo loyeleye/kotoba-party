@@ -29,7 +29,7 @@ const k = (text: string, en: string): JpText => ({ text, kana: text, en });
  * The N4 deputy's report of an answer (the hard role, 4.13 and 4.14). Reported speech, ＿と いっていました,
  * in plain form: `kana` is null when the text is its own reading.
  */
-const said = (text: string, kana: string | null, en: string, ...frames: string[]): OnsenReport => ({ jp: kana ? t(text, kana, en) : k(text, en), frames: ['to-itte-imashita', ...frames] });
+const said = (text: string, kana: string | null, en: string, ...frames: string[]): OnsenReport => ({ jp: kana ? t(text, kana, en) : k(text, en), frames: ['to-itte-ita', ...frames] });
 /** The passive report of a "who did you see?" answer: ＿は ＿に みられました. */
 const seen = (text: string, kana: string | null, en: string): OnsenReport => ({ jp: kana ? t(text, kana, en) : k(text, en), frames: ['passive'] });
 // N3 (step 6): ＿らしいです reports.

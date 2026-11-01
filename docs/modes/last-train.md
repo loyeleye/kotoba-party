@@ -90,7 +90,7 @@ stops, the same items.
 - **The announcer** (Station Announcement, 4.9): six items where the N4 player makes the announcement
   instead of hearing one, so the line is shown, not played. まもなく、三番線に電車がまいります。,
   黄色い線の内側までお下がりください。, ドアが閉まります。ご注意ください。, both sentences at once, and
-  電車がおくれて、もうしわけございません。 Frames `keigo-verb`, `o-kudasai`.
+  電車がおくれて、もうしわけございません。 Frames `keigo`, `o-kudasai`.
 - **Lost and Found** (忘れ物センター, 4.6), `content/src/last-train/lost-and-found.ts`: a new minigame
   that rides a line only in a room with an N4 player. The Obake Line's 神社前 becomes 忘れ野 (Wasureno)
   and the Hoshimidai line's 大学前 becomes 音無 (Otonashi) through the stop's `withN4`; both swapped-out
@@ -100,7 +100,7 @@ stops, the same items.
   `kamo`) and the lost property staff (重そうなかばんですね, 元気そうなかさですね, `sou-look`).
 - **The guest at the front desk** (Meet the Innkeeper, 4.1, 4.10): favours with ＿て いただけますか
   (call a taxi, keep the luggage, a wake-up call, speak more slowly, check the booking again;
-  `te-itadakemasu-ka`, with いただけませんか accepted too) and three inn signs drawn as boards, 受付,
+  `te-itadakemasen`, with いただけませんか accepted too) and three inn signs drawn as boards, 受付,
   予約 and 食堂 (`sign-kanji`, hints are pictures, never the reading).
 
 **Chōchin-san says the line** (decided by Ladi, 2026-11-01: the host says the line, the player's recording

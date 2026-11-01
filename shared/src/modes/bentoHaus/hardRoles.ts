@@ -47,8 +47,8 @@ export interface StepScript {
 
 const L = (text: string, en: string, frames: readonly string[]): HardLine => ({ text, kana: text, en, frames });
 
-const SORRY_WAIT = L('もうしわけ ございません。すこし まって いただけますか。', "I'm terribly sorry. Could you wait a moment?", ['keigo-verb', 'te-itadakemasu-ka']);
-const SURE_WAIT = L('かしこまりました。すこし まって いただけますか。', 'Certainly. Could you wait a moment?', ['te-itadakemasu-ka']);
+const SORRY_WAIT = L('もうしわけ ございません。すこし まって いただけますか。', "I'm terribly sorry. Could you wait a moment?", ['keigo', 'te-itadakemasen']);
+const SURE_WAIT = L('かしこまりました。すこし まって いただけますか。', 'Certainly. Could you wait a moment?', ['te-itadakemasen']);
 
 export interface SpecialScript {
   id: string;
@@ -77,7 +77,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     status: 'draft',
     ask: { text: 'おべんとうを あたためて ください。', en: 'Please warm the bento up.' },
     steps: [
-      { to: 'customer', check: 'ask', model: L('かしこまりました。こちらで すこし まって いただけますか。', 'Certainly. Could you wait here a moment?', ['te-itadakemasu-ka']) },
+      { to: 'customer', check: 'ask', model: L('かしこまりました。こちらで すこし まって いただけますか。', 'Certainly. Could you wait here a moment?', ['te-itadakemasen']) },
       { to: 'kitchen', check: 'kitchen', keys: ['あたため'], model: L('おべんとうを あたためて もらえますか。', 'Could you warm the bento up?', ['te-moraeru']) },
     ],
   },
@@ -126,7 +126,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     foodId: 'onigiri',
     ask: { text: 'ゆめを ひとつ いれて ください。', en: 'Put a dream in, please.' },
     steps: [
-      { to: 'customer', check: 'sorry-ask', model: L('もうしわけ ございません。おにぎりに して いただけますか。', "I'm terribly sorry. Could you make it a rice ball instead?", ['keigo-verb', 'te-itadakemasu-ka']) },
+      { to: 'customer', check: 'sorry-ask', model: L('もうしわけ ございません。おにぎりに して いただけますか。', "I'm terribly sorry. Could you make it a rice ball instead?", ['keigo', 'te-itadakemasen']) },
       { to: 'kitchen', check: 'kitchen', keys: ['おにぎり'], model: L('おにぎりを ひとつ つくって もらえますか。', 'Could you make one rice ball?', ['te-moraeru']) },
     ],
   },
@@ -169,7 +169,7 @@ const NO = (thing: string, en: string, ask: JpLine, id: string, keys: readonly s
   ...(customers ? { customers } : {}),
   ask,
   keys,
-  model: L(`${SORRY}${thing}は ごえんりょ ください。`, `I'm terribly sorry. Please refrain from ${en}.`, ['keigo-verb']),
+  model: L(`${SORRY}${thing}は ごえんりょ ください。`, `I'm terribly sorry. Please refrain from ${en}.`, ['keigo']),
 });
 const READY = (text: string, en: string, ask: JpLine, id: string, customers?: readonly string[]): GuestAsk => ({
   id,

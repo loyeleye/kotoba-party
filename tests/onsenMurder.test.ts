@@ -616,7 +616,7 @@ describe('Murder at the Onsen: bots play a game end to end', () => {
 
 // ---- the deputy (N4 hard role) ----
 
-const FRAME_IDS = new Set(['to-itte-imashita', 'passive', 'tame-ni', 'sou-look', 'node']);
+const FRAME_IDS = new Set(['to-itte-ita', 'passive', 'tame-ni', 'sou-look', 'node']);
 
 describe('Murder at the Onsen: the deputy’s reports', () => {
   // Every case, the Kids and Cheeky ones too (Ladi, 2026-11-01).
@@ -640,7 +640,7 @@ describe('Murder at the Onsen: the deputy’s reports', () => {
             expect(words.at(-2)!.kana, at).toBe(`${calledName(s).kana}に`);
             expect(names.some((n) => words[0]!.kana === `${n}は`), at).toBe(true);
           } else {
-            expect(r!.frames![0], at).toBe('to-itte-imashita');
+            expect(r!.frames![0], at).toBe('to-itte-ita');
             expect(words[0]!.kana, at).toBe(`${calledName(s).kana}は`);
             expect(words.at(-1)!.kana, at).toBe('いっていました');
             expect(words.at(-2)!.kana.endsWith('と'), at).toBe(true);

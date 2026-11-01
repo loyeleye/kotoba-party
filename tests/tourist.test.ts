@@ -508,7 +508,7 @@ describe("Who's the Tourist?: a round", () => {
     for (const l of deck) expect(l.level, l.id).toBe('n4');
     for (const l of [...QUESTIONS, ...SAFE_ANSWERS].filter((x) => x.frames)) expect(l.status, l.id).toBe('draft');
     const has = (lines: readonly { frames?: readonly string[] }[], f: string) => lines.some((l) => l.frames?.includes(f));
-    for (const f of ['nakereba', 'nakutemo-ii', 'potential', 'koto-ga-dekiru']) expect(has(QUESTIONS, f), f).toBe(true);
+    for (const f of ['nakereba', 'nakutemo-ii', 'potential']) expect(has(QUESTIONS, f), f).toBe(true);
     for (const f of ['nakereba', 'nakutemo-ii', 'potential']) expect(has(SAFE_ANSWERS, f), f).toBe(true);
     for (const p of PLACES) {
       expect(p.questions.some((q) => q.frames?.length), p.id).toBe(true);

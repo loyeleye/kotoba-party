@@ -792,13 +792,13 @@ interface NakodoTemplate {
 export const NAKODO: { status: ReviewStatus; open: Record<'intro' | 'profile' | 'ask' | 'appeal', NakodoTemplate>; close: Record<'next' | 'leave', NakodoTemplate> } = {
   status: 'draft',
   open: {
-    intro: { id: 'intro', kana: 'みなさま、{full}が おみえに なりました。ごしょうかい いたします。', en: 'Everyone, {full} has arrived. Allow me to introduce them.', frames: ['o-ni-naru', 'keigo-verb'] },
-    profile: { id: 'profile', kana: 'こちらは {job}の {short}で いらっしゃいます。', en: 'This is {short}, {job}.', frames: ['keigo-verb'] },
+    intro: { id: 'intro', kana: 'みなさま、{full}が おみえに なりました。ごしょうかい いたします。', en: 'Everyone, {full} has arrived. Allow me to introduce them.', frames: ['o-ni-naru', 'keigo'] },
+    profile: { id: 'profile', kana: 'こちらは {job}の {short}で いらっしゃいます。', en: 'This is {short}, {job}.', frames: ['keigo'] },
     ask: { id: 'ask', kana: '{short}が みなさまに おききに なります。', en: '{short} has a question for you all.', frames: ['o-ni-naru'] },
-    appeal: { id: 'appeal', kana: '{short}から さいごの しつもんが ございます。', en: '{short} has one last question.', frames: ['keigo-verb'] },
+    appeal: { id: 'appeal', kana: '{short}から さいごの しつもんが ございます。', en: '{short} has one last question.', frames: ['keigo'] },
   },
   close: {
-    next: { id: 'next', kana: '{short}、ありがとう ございました。つぎの しつもんに まいります。', en: 'Thank you, {short}. On to the next question.', frames: ['keigo-verb'] },
+    next: { id: 'next', kana: '{short}、ありがとう ございました。つぎの しつもんに まいります。', en: 'Thank you, {short}. On to the next question.', frames: ['keigo'] },
     leave: { id: 'leave', kana: '{short}は そろそろ おかえりに なります。', en: '{short} will be leaving soon.', frames: ['o-ni-naru'] },
   },
 };

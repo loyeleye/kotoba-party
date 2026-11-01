@@ -105,7 +105,7 @@ function heard(text: string): Utterance {
   return move.u;
 }
 
-const FRAMES = new Set(['te-moraeru', 'te-itadakemasu-ka', 'o-kudasai', 'keigo-verb', 'te-aru']);
+const FRAMES = new Set(['te-moraeru', 'te-itadakemasen', 'o-kudasai', 'keigo', 'te-aru']);
 
 describe('Bento Haus hard roles: the lines', () => {
   const allSteps = (): StepScript[] => [
