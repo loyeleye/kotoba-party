@@ -18,6 +18,7 @@ import { dubClubPhone } from './dubClub.js';
 import { hajimemashitePhone } from './hajimemashite.js';
 import { happyokaiPhone } from './happyokai.js';
 import { lateAgainPhone } from './lateAgain.js';
+import { ghostHotlinePhone } from './ghostHotline.js';
 import type { PhoneMode } from './types.js';
 
 export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
@@ -41,4 +42,5 @@ export const PHONE_MODES: Record<ModeId, PhoneMode<any>> = {
   hajimemashite: hajimemashitePhone,
   happyokai: happyokaiPhone,
   'late-again': lateAgainPhone,
+  'ghost-hotline': ghostHotlinePhone,
 };

@@ -648,6 +648,23 @@ export type HostEvent =
   | 'late_truth' // the round's last beat, the real story: Pon says the line the game wrote ({quip})
   | 'late_misread' // the acting chief ({name}) called it against the room: くうきが よめない
   | 'late_booth' // the commentary booth opens because the excuse used its grammar chunk ({chunk}): でました！
+  // Ghost Advice Hotline (Nobiko-san answers the yōkai's late-night advice line, おなやみ そうだんしつ)
+  | 'hotline_intro' // Nobiko-san opens the advice line: a yōkai calls, everyone advises
+  | 'hotline_coop' // two players: a scripted yōkai calls and both of them advise
+  | 'hotline_ring' // the phone rings: {name} is calling as {caller}
+  | 'hotline_read' // Nobiko-san says the caller's problem for them ({line}: the line, as is)
+  | 'hotline_chigau' // the caller tapped ちがう！ on a piece of advice
+  | 'hotline_oshii' // the caller tapped おしい！
+  | 'hotline_soreda' // the caller tapped それだ！
+  | 'hotline_knot' // a third ちがう！ in a row: her neck ties itself in a knot
+  | 'hotline_secret' // the secret beat: what would really have helped is shown
+  | 'hotline_vote' // the laugh vote: which advice made you laugh?
+  | 'hotline_sweep' // every vote went to one adviser ({name}, when given): おおウケ！
+  | 'hotline_score' // the points land: うちの こたつむりにも きかせたいわ〜
+  | 'hotline_booth' // the replay booth opens on the advice that used its chunk ({chunk}, when given)
+  | 'hotline_mic_pass' // Nobiko-san says {name}'s advice for them ({line}: the line, as is)
+  | 'hotline_skip' // {name}'s advice didn't come in: the line is blamed, never the player
+  | 'hotline_line' // Nobiko-san says a line the game wrote ({quip}): a caller's reveal line
   | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
   | 'omiai_nakodo_read' // the go-between's keigo line was said: Nobiko-san voices it ({line}, as is)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin

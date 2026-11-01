@@ -1,0 +1,212 @@
+/* Ghost Advice Hotline on the phone. One column, big targets, fine at 360px. The band is orchid with dark ink.
+   The three reactions keep fixed places and carry a drawn shape as well as a colour (✗ sky blue, ≈ gold,
+   ◎ vermilion), so they never rely on colour alone. */
+body[data-mode='ghost-hotline'] { --mode: #e87ce8; }
+.gh-screen { --gh-ink: #0b0605; --gh-orchid: #e87ce8; --gh-chigau: #4f9dff; --gh-oshii: #ffc93c; --gh-soreda: #ff5f3c; --gh-secret: #c8213c; }
+.gh-screen p { margin: 0; }
+.gh-screen [lang='ja'] { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.gh-screen .center { text-align: center; }
+
+/* ---- the band: role, what's next ---- */
+.gh-band { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: #2a1638; border: 2px solid var(--gh-orchid); }
+.gh-role-chip { justify-self: start; padding: 2px 10px; border-radius: 999px; background: var(--gh-orchid); color: var(--gh-ink); font-weight: 900; font-size: 17px; }
+.gh-next { font-size: 15px; color: var(--muted); }
+.gh-next b { color: var(--ink); }
+
+.gh-label { font-size: 15px; color: var(--muted); font-weight: 700; }
+.gh-hint { font-size: 15px; color: var(--muted); }
+.gh-strong { font-size: 18px; font-weight: 800; }
+.gh-box { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 2px solid var(--line); }
+.gh-problem { padding: 10px 12px; border-radius: 12px; background: #4a1f2a; color: #ffd6d6; font-weight: 800; }
+.gh-locked { font-weight: 800; color: var(--good); }
+
+/* ---- the dock: the one main action, pinned under the thumb while the screen above it scrolls ---- */
+.gh-dock { position: sticky; bottom: 0; z-index: 3; display: grid; gap: 10px; margin: 0 -16px; padding: 14px 16px max(12px, env(safe-area-inset-bottom)); background: linear-gradient(to bottom, transparent, var(--bg) 14px); }
+.gh-dock > .primary { width: 100%; min-height: 64px; font-size: 22px; }
+.gh-ready-done { text-align: center; padding: 12px 0; }
+
+/* ---- paper cards: the secret, the gist, the mission ---- */
+.gh-secret { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); border: 3px dashed var(--gh-secret); }
+.gh-secret-label { font-size: 13px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gh-secret); }
+.gh-secret-line .jpv-main { font-size: 24px; font-weight: 900; }
+.gh-secret.compact .gh-secret-line .jpv-main { font-size: 20px; }
+.gh-secret .gh-hint { font-size: 14px; }
+.gh-mission { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); border: 3px dashed var(--gh-secret); }
+.gh-mission-label { font-size: 13px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gh-secret); }
+.gh-mission-text { font-size: 20px; font-weight: 800; line-height: 1.35; text-wrap: balance; }
+.gh-gist { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 12px; padding: 12px; border-radius: 14px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--gh-ink); }
+.gh-gist.compact { grid-template-columns: minmax(0, 1fr); padding: 10px 12px; }
+.gh-gist-body { display: grid; gap: 4px; min-width: 0; }
+.gh-gist .gh-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+.gh-gist-line .jpv-main { font-size: 22px; font-weight: 900; }
+.gh-gist > .gh-chip { grid-column: 1 / -1; justify-self: start; }
+.gh-said { font-size: 20px; font-weight: 800; line-height: 1.4; }
+.gh-getting .gh-dots { display: grid; place-items: center; font-size: 28px; border: 2px dashed var(--muted); border-radius: 10px; }
+
+/* ---- pictures (the emoji stands in until the art exists) ---- */
+.gh-pic { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; flex: none; }
+.gh-emoji { display: grid; place-items: center; font-size: 44px; line-height: 1; }
+.gh-who { width: 56px; height: 56px; }
+.gh-who.gh-emoji { font-size: 40px; }
+
+/* ---- the Listening card ---- */
+.gh-listen { display: grid; gap: 10px; padding: 10px; border-radius: 14px; background: #221a4a; border: 2px solid var(--line); }
+.gh-listen-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 17px; }
+.gh-count { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.gh-seat { display: inline-block; font-family: var(--font-pixel); font-weight: 700; font-size: 14px; line-height: 1.3; padding: 0 6px; color: var(--on-accent); background: var(--seat, var(--muted)); border: 2px solid var(--outline); border-radius: 4px; }
+/* The live bar: six bars that bob while someone speaks. Calm mode stills them (style.css). */
+.gh-live { display: inline-flex; align-items: flex-end; gap: 3px; height: 20px; }
+.gh-live span { width: 4px; height: 100%; border-radius: 2px; background: var(--good); transform-origin: bottom; animation: gh-bob 900ms ease-in-out calc(var(--i, 0) * -150ms) infinite alternate; }
+@keyframes gh-bob { from { transform: scaleY(0.25); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .gh-live span { animation: none; transform: scaleY(0.6); } }
+
+/* ---- a Kana adviser's tiles: one per row, one line each, never broken inside a word ---- */
+.gh-tiles { display: grid; gap: 10px; }
+.gh-tile { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 84px; padding: 8px 12px; text-align: left; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--gh-ink); border-radius: 14px; box-shadow: 0 5px 0 var(--gh-ink); touch-action: manipulation; transition: transform 80ms, box-shadow 80ms; }
+.gh-tile:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--gh-ink); }
+.gh-tile:disabled { opacity: 1; cursor: default; }
+.gh-tile.on { outline: 4px solid var(--warn); outline-offset: 2px; }
+.gh-tile.gh-curve { background: #fff0c2; }
+.gh-tile-words { display: grid; gap: 2px; min-width: 0; }
+.gh-screen .gh-tile-ja { font-size: 22px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow-wrap: normal; }
+.gh-tile-ro { font-size: 14px; color: #7a4a00; }
+.gh-tile-en { font-size: 14px; color: var(--paper-muted); }
+.gh-leaf { position: absolute; top: -10px; right: -6px; width: 30px; height: 30px; image-rendering: pixelated; }
+.gh-leaf.gh-emoji { font-size: 24px; }
+/* The caller's own line as a tile (Kana): it records while lit. */
+.gh-line .gh-line-jp .jpv-main { font-size: 22px; font-weight: 900; }
+.gh-line.live { background: #ffd9de; outline: 4px solid #e8344e; outline-offset: 2px; }
+.gh-sent-chip { position: absolute; top: -12px; left: 10px; padding: 1px 8px; border-radius: 999px; background: var(--good); color: var(--gh-ink); font-size: 13px; font-weight: 900; }
+.gh-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 16px; }
+.gh-toggle input { width: 24px; height: 24px; padding: 0; }
+
+/* ---- picture buttons: bets and laugh votes ---- */
+.gh-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gh-cards.one { grid-template-columns: minmax(0, 180px); justify-content: center; }
+.gh-card { position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; min-height: 136px; padding: 10px 6px; text-align: center; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--gh-ink); border-radius: 14px; box-shadow: 0 5px 0 var(--gh-ink); touch-action: manipulation; transition: transform 80ms, box-shadow 80ms; }
+.gh-card:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--gh-ink); }
+.gh-card:disabled { opacity: 1; cursor: default; }
+.gh-card.on { outline: 4px solid var(--warn); outline-offset: 2px; }
+.gh-card.mine { opacity: 0.55; border-style: dashed; box-shadow: none; }
+.gh-card-ja { font-size: 18px; font-weight: 900; line-height: 1.25; }
+.gh-card-en { font-size: 13px; color: var(--paper-muted); line-height: 1.25; }
+.gh-card-who { font-size: 13px; font-weight: 800; color: var(--paper-ink); }
+.gh-card > .gh-seat { position: absolute; top: -10px; right: -6px; }
+/* A long laugh-vote line takes the whole row. */
+.gh-vote:has(.gh-card-ja:not(:empty)) { min-height: 150px; }
+
+/* ---- the three reactions: fixed places, a drawn shape and a colour each ---- */
+.gh-reacts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.gh-react { display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 92px; padding: 8px 4px; border-radius: 14px; border: 3px solid var(--gh-ink); color: var(--gh-ink); box-shadow: 0 5px 0 var(--gh-ink); touch-action: manipulation; transition: transform 80ms, box-shadow 80ms; }
+.gh-react:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--gh-ink); }
+.gh-react:disabled { opacity: 1; cursor: default; }
+.gh-react-ja { font-size: 20px; font-weight: 900; white-space: nowrap; }
+.gh-react small { font-size: 13px; font-weight: 800; }
+.gh-react.gh-r-chigau, .gh-chip.gh-r-chigau { background: var(--gh-chigau); }
+.gh-react.gh-r-oshii, .gh-chip.gh-r-oshii { background: var(--gh-oshii); }
+.gh-react.gh-r-soreda, .gh-chip.gh-r-soreda { background: var(--gh-soreda); }
+.gh-react.on { outline: 4px solid var(--ink); outline-offset: 3px; }
+/* Locked in: the others step back (a flat colour, then the mix where it works). */
+.gh-react.dim { background: #3a3550; color: #a8a2c4; border-color: #3a3550; box-shadow: none; }
+@supports (color: color-mix(in srgb, red, blue)) {
+  .gh-react.gh-r-chigau.dim { background: color-mix(in srgb, var(--gh-chigau) 30%, var(--panel)); }
+  .gh-react.gh-r-oshii.dim { background: color-mix(in srgb, var(--gh-oshii) 30%, var(--panel)); }
+  .gh-react.gh-r-soreda.dim { background: color-mix(in srgb, var(--gh-soreda) 30%, var(--panel)); }
+}
+.gh-practice { display: grid; gap: 8px; }
+.gh-practice .gh-react { min-height: 72px; }
+
+/* The marks, drawn in ink: ✗ two bars, ≈ two waves, ◎ two rings. */
+.gh-mark { position: relative; flex: none; display: inline-block; box-sizing: border-box; width: 26px; height: 26px; }
+.gh-mark-chigau::before, .gh-mark-chigau::after { content: ''; position: absolute; top: -2px; left: 50%; width: 6px; height: 30px; margin-left: -3px; border-radius: 3px; background: currentColor; transform: rotate(45deg); }
+.gh-mark-chigau::after { transform: rotate(-45deg); }
+.gh-mark-soreda { border: 4px solid currentColor; border-radius: 50%; }
+.gh-mark-soreda::after { content: ''; position: absolute; inset: 4px; border: 3px solid currentColor; border-radius: 50%; }
+.gh-wave { position: absolute; left: 0; width: 26px; height: 10px; }
+.gh-wave:first-child { top: 3px; }
+.gh-wave:last-child { top: 13px; }
+.gh-wave::before, .gh-wave::after { content: ''; position: absolute; top: 0; width: 15px; height: 15px; box-sizing: border-box; border: 4px solid transparent; border-radius: 50%; }
+.gh-wave::before { left: 0; border-top-color: currentColor; }
+.gh-wave::after { left: 11px; top: -6px; border-bottom-color: currentColor; }
+.gh-chip .gh-mark { width: 18px; height: 18px; }
+.gh-chip .gh-mark-chigau::before, .gh-chip .gh-mark-chigau::after { height: 22px; width: 4px; margin-left: -2px; }
+.gh-chip .gh-mark-soreda { border-width: 3px; }
+.gh-chip .gh-mark-soreda::after { inset: 3px; border-width: 2px; }
+.gh-chip .gh-wave { width: 18px; }
+.gh-chip .gh-wave::before, .gh-chip .gh-wave::after { width: 11px; height: 11px; border-width: 3px; }
+.gh-chip .gh-wave::after { left: 8px; top: -4px; }
+.gh-chip .gh-wave:last-child { top: 9px; }
+.gh-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 10px; border: 2px solid var(--gh-ink); color: var(--gh-ink); font-weight: 900; font-size: 17px; vertical-align: middle; white-space: nowrap; }
+.gh-chip small { font-size: 12px; font-weight: 700; }
+
+/* ---- hints, the mic pass, typing ---- */
+.gh-hintbox { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #2b2440; border-left: 4px solid var(--warn); }
+.gh-hintbox .ghost, .gh-pass { width: 100%; min-height: 48px; padding: 10px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); font-size: 17px; font-weight: 700; }
+.gh-pass b { color: var(--warn); }
+.gh-pass:disabled { opacity: 0.6; }
+.gh-pass.ask { border-color: var(--warn); background: #3a2e10; color: var(--warn); }
+.gh-pass.free { border-color: var(--good); }
+.gh-pass-wrap { display: grid; gap: 6px; }
+.gh-frame { display: grid; gap: 4px; }
+.gh-model .jpv-main { font-size: 22px; }
+.gh-typed { display: grid; gap: 8px; }
+.gh-typed input { font: inherit; font-size: 20px; padding: 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); }
+
+/* ---- the record control: Plan → Recording → Sent. A fill runs while the take does, from the real start
+   time (--gh-rec-delay is minus the time already recorded), with the seconds left beside the label. ---- */
+.gh-rec-btn { position: relative; overflow: hidden; isolation: isolate; display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 92px; padding: 10px 18px; border-radius: 999px; border: 4px solid var(--gh-ink); background: #e8344e; color: #fff; font-size: 22px; font-weight: 900; box-shadow: 0 6px 0 var(--gh-ink); touch-action: manipulation; }
+.gh-rec-btn:disabled { opacity: 0.6; }
+.gh-rec-btn.opening { background: var(--panel); color: var(--ink); opacity: 1; }
+.gh-rec-btn.live { background: #2a0b12; }
+.gh-rec-ring { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.gh-rec-btn.live .gh-rec-ring { background: #b0263b; transform-origin: left; animation: gh-rec-run var(--ms, 9000ms) linear var(--gh-rec-delay, 0ms) forwards; }
+.gh-rec-label, .gh-rec-secs { position: relative; z-index: 1; }
+.gh-rec-label { display: grid; gap: 2px; text-align: left; }
+.gh-rec-label small { font-size: 14px; font-weight: 700; opacity: 0.9; }
+.gh-rec-secs { display: grid; justify-items: center; font-family: var(--font-pixel); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+.gh-rec-secs small { font-family: inherit; font-size: 11px; letter-spacing: 0.1em; }
+@keyframes gh-rec-run { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* The fill is time left to record, so calm motion keeps it. */
+body[data-motion='calm'] .gh-rec-btn.live .gh-rec-ring { animation: gh-rec-run var(--ms, 9000ms) linear var(--gh-rec-delay, 0ms) forwards !important; }
+
+/* ---- Sent, Watch the TV, and the states for when things go wrong ---- */
+.gh-sent { display: grid; justify-items: center; gap: 8px; padding: 16px 8px; text-align: center; }
+.gh-stamp { padding: 4px 18px; border: 4px solid var(--good); border-radius: 12px; color: var(--good); font-size: 32px; font-weight: 900; rotate: -3deg; }
+.gh-watch { font-size: 22px; font-weight: 900; }
+.gh-micoff { display: grid; justify-items: center; gap: 8px; padding: 14px 12px; text-align: center; border-radius: 14px; background: var(--panel); border: 2px solid var(--line); }
+.gh-micoff-icon { font-size: 40px; line-height: 1; }
+.gh-micoff-title { font-size: 22px; font-weight: 900; }
+.gh-micoff .gh-box { text-align: left; }
+.gh-mic-on { width: 100%; min-height: 52px; font-size: 18px; font-weight: 800; border-radius: 10px; border: 3px solid var(--outline); background: var(--accent); color: var(--on-accent, #fff); }
+.gh-local { display: grid; gap: 10px; }
+.gh-own .gh-chip { margin-left: 4px; }
+
+/* ---- the secret beat: the gallery's own bet ---- */
+.gh-result { display: grid; gap: 8px; animation: gh-in 300ms ease-out 150ms both; }
+@keyframes gh-in { from { opacity: 0; transform: translateY(6px); } }
+.gh-verdict { text-align: center; font-size: 26px; font-weight: 900; }
+.gh-verdict.yes { color: var(--good); }
+.gh-verdict.no { color: var(--muted); }
+
+/* ---- score ---- */
+.gh-points { font-family: var(--font-pixel); color: var(--good); font-size: 56px; line-height: 1.1; text-align: center; }
+.gh-breakdown { display: grid; gap: 4px; margin: 0; padding: 10px 12px; list-style: none; border-radius: 12px; background: var(--panel); border: 2px solid var(--line); }
+.gh-breakdown li { display: flex; justify-content: space-between; gap: 12px; font-size: 17px; font-weight: 700; }
+.gh-breakdown b { font-variant-numeric: tabular-nums; color: var(--warn); }
+.gh-note { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: #2b2440; }
+.gh-note-side { display: grid; gap: 4px; }
+.gh-used { font-weight: 800; color: var(--good); }
+.gh-chunk { font-size: 22px; font-weight: 900; }
+.gh-lit { background: var(--warn); color: var(--gh-ink); border-radius: 4px; padding: 0 2px; white-space: nowrap; }
+.gh-mark-chip { justify-self: start; padding: 2px 10px; border-radius: 999px; font-size: 14px; font-weight: 800; border: 2px solid var(--line); color: var(--muted); }
+.gh-mark-chip.memory { border-color: var(--good); color: var(--good); }
+.gh-tag { font-size: 15px; font-weight: 700; color: var(--warn); }
+.gh-vip { margin-top: 8px; }
+
+@media (max-width: 370px) {
+  .gh-react-ja { font-size: 17px; }
+  .gh-react { min-height: 84px; }
+  .gh-screen .gh-tile-ja { font-size: 19px; }
+  .gh-pic { width: 52px; height: 52px; }
+  .gh-cards { gap: 8px; }
+}

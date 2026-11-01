@@ -36,6 +36,8 @@ const art: Record<string, HTMLImageElement> = {};
 const SETS: Partial<Record<ModeId, string>> = {
   'onsen-murder': 'onsen-inn',
   'karaoke-duel': 'karaoke-box',
+  // Ghost Advice Hotline: the karaoke box stands in for a late-night call-in booth until its own set is drawn.
+  'ghost-hotline': 'karaoke-box',
   oogiri: 'comedy-stage',
   'phrase-bingo': 'comedy-stage',
   omiai: 'tea-room',
