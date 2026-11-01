@@ -1,5 +1,7 @@
-// Mixed rooms: the recap's one-tap "did anything feel like waiting?" and the phase log (docs/n4-hard-roles.md).
-import { describe, expect, it } from 'vitest';
+// Mixed rooms: the recap's one-tap "was there a part of that game where you were just waiting?" and the phase log
+// (docs/n4-hard-roles.md). Asked only after a game that offered a hard role.
+import { afterEach, describe, expect, it } from 'vitest';
+import { MODES } from '../shared/src/modes/registry.js';
 import { apply, createGame, isMixedRoom, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { EMPTY_CONTENT } from '../shared/src/modes/mode.js';
@@ -37,7 +39,14 @@ function playToRecap(levels: Level[]): GameState {
   return s;
 }
 
+// The debug mode has no hard role; give it one offer to p1 so the check runs.
+const withOffers = (on: boolean) => {
+  (MODES.debug as { offers?: unknown }).offers = on ? (_s: unknown, id: string) => (id === 'p1' ? [{ role: 'debug:role', answer: 'accepted' }] : []) : undefined;
+};
+
 describe('mixed-room check', () => {
+  afterEach(() => withOffers(false));
+
   it('a mixed room is N4 plus anyone below it', () => {
     expect(isMixedRoom(['n4', 'kana'])).toBe(true);
     expect(isMixedRoom(['n4', 'n4'])).toBe(false);
@@ -45,11 +54,14 @@ describe('mixed-room check', () => {
   });
 
   it('logs each phase and asks players below N4 once, on the recap', () => {
+    withOffers(true);
     const s = playToRecap(['n4', 'n5', 'kana']);
     const mixed = s.recap!.mixed!;
     expect(mixed.phases.length).toBeGreaterThan(2);
     expect(mixed.phases.every((p) => p.ms === 2_000)).toBe(true);
     expect(mixed.ask).toEqual(['p2', 'p3']);
+    expect(mixed.levels).toEqual({ p1: 'n4', p2: 'n5', p3: 'kana' });
+    expect(mixed.offers).toEqual({ accepted: 1, declined: 0, timeout: 0 });
     expect(viewFor(s, as('p1'), ctx().content).recap!.waitCheck).toBeNull();
     expect(viewFor(s, as('p2'), ctx().content).recap!.waitCheck).toEqual({ answer: null });
     expect(cmd(s, as('p1'), { type: 'waitCheck', answer: 'yes' }).changed).toBe(false);
@@ -60,7 +72,12 @@ describe('mixed-room check', () => {
     expect(JSON.stringify(viewFor(s, { kind: 'stage' }, ctx().content))).not.toContain('"mixed"');
   });
 
+  it('asks nothing after a mixed-room game that offered no hard role', () => {
+    expect(playToRecap(['n4', 'n5']).recap!.mixed).toBeUndefined();
+  });
+
   it('asks nothing in a room without an N4 player', () => {
+    withOffers(true);
     const s = playToRecap(['n5', 'kana']);
     expect(s.recap!.mixed).toBeUndefined();
     expect(viewFor(s, as('p1'), ctx().content).recap!.waitCheck).toBeNull();

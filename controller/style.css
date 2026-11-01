@@ -761,18 +761,24 @@ input::placeholder { color: #a99ccf; }
 .role-offer-gloss { font-size: 13px; font-weight: 400; opacity: 0.8; }
 
 /* Mixed rooms: the Gallery tile and the commentary booth's gist (components/gallery.ts). */
-.gallery, .booth-gist { margin-top: 14px; padding: 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.04); }
+.gallery, .booth-gist { margin-top: 14px; padding: 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
 .gallery-kicker { font-weight: 700; margin: 0 0 8px; }
 .gallery-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .gallery-btns button { min-height: 56px; }
 .gallery-btns button small { display: block; opacity: 0.7; }
-.gallery-btns button.picked { outline: 3px solid currentColor; }
+.gallery-btns button.picked { outline: 3px solid currentColor; border-color: var(--gold); }
+.gallery-btns button:disabled:not(.picked) { opacity: 0.45; }
+.gallery-btns button.right { border-color: var(--good); }
+.gallery-curveball .gallery-btns { grid-template-columns: 1fr; }
 .booth-gist-emoji { font-size: 2.4rem; margin: 0; }
 .booth-gist-ja { font-size: 1.4rem; margin: 4px 0; }
-.booth-gist-romaji, .booth-gist-en { margin: 2px 0; opacity: 0.8; }
+.booth-gist-romaji { margin: 2px 0; color: var(--warn); }
+.booth-gist-en { margin: 2px 0; opacity: 0.8; animation: gist-en 0.3s ease-out 1.5s both; }
+@keyframes gist-en { from { opacity: 0; } to { opacity: 0.8; } }
+@media (prefers-reduced-motion: reduce) { .booth-gist-en { animation: none; } }
 
 /* Recap: the mixed-room playtest question (main.ts waitCheck). */
-.wait-check { margin-top: 14px; padding: 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.04); }
+.wait-check { margin-top: 14px; padding: 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
 .wait-check-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .wait-check-btns button { min-height: 52px; }
 .wait-check-btns button.picked { outline: 3px solid currentColor; }

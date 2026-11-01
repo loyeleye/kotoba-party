@@ -127,8 +127,8 @@ stand-in.
 - **Gallery** (the announcer and Lost and Found's two roles; not the guest at the inn, whose favours are quieter
   and come mixed with sign reading): once the role is taken, each other connected player gets one tile for the
   stop, on their phone's live box so a tap never rebuilds their own talk button: four reactions (👏 すごい！,
-  💡 なるほど, 😮 えっ？, 😂 あはは), shown on the TV as bubbles through the answer and the reveal, never scored. Once
-  a game, the first Kana or N5 player's tile is the curveball instead, "Which word did you hear?": the line's key
+  💡 なるほど, 😮 へえ！, 😂 あはは), shown on the TV as bubbles through the answer and the reveal, never scored. Once
+  a game, a Kana or N5 player's tile is the curveball instead, "Which word did you hear?": the line's key
   word (its frame word: まいります, おさがりください, ごちゅういください, ございません, かもしれません, そうな,
   だそうです, はずです, てあります) and two others, +5 into the ledger (`reason: 'curveball'`) if right. The move is
   `{ kind: 'gallery', pick }` (a reaction id, or the kana picked), in the answer or the reveal.

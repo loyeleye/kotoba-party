@@ -1,10 +1,10 @@
 // The shared mixed-room pieces: Gallery tiles and the curveball, the booth's lit key word, the host stand-in.
 import { describe, expect, it } from 'vitest';
-import { commentaryMs, CURVEBALL_POINTS, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, lightUp, openGallery, pickGallery } from '../shared/src/modes/mixedRoom.js';
+import { armCurveball, commentaryMs, keyHeld, CURVEBALL_POINTS, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, lightUp, openGallery, pickGallery } from '../shared/src/modes/mixedRoom.js';
 
 describe('Gallery', () => {
-  it('gives one reaction per player and one curveball to the first Kana or N5 player', () => {
-    const g = openGallery(['a', 'b', 'c'], ['b', 'c'], { word: 'ので' }, false, 1);
+  it('gives one reaction per player and one curveball to a Kana or N5 player', () => {
+    const g = openGallery(['a', 'b', 'c'], ['b', 'c'], { word: 'ので' }, false, 0);
     expect(g.curveball?.playerId).toBe('b');
     expect(g.curveball!.options).toHaveLength(3);
     expect(g.curveball!.options.filter((o) => o.correct).map((o) => o.kana)).toEqual(['ので']);
@@ -31,6 +31,28 @@ describe('Gallery', () => {
     const n5 = galleryTileFor(g, 'b', 'n5');
     expect(kana?.kind === 'curveball' && kana.options.every((o) => !!o.romaji)).toBe(true);
     expect(n5?.kind === 'curveball' && n5.options.every((o) => o.romaji === null)).toBe(true);
+  });
+});
+
+describe('armCurveball', () => {
+  it('deals once the line lands, to a Kana or N5 player who has not reacted', () => {
+    const g = openGallery(['a', 'b', 'c'], ['b', 'c'], null, false, 0);
+    expect(g.curveball).toBeNull();
+    pickGallery(g, 'b', 'sugoi');
+    expect(armCurveball(g, ['b', 'c'], { word: 'ので' }, false, 3)).toBe(true);
+    expect(g.curveball?.playerId).toBe('c');
+    expect(keyHeld(g)).toBe(true);
+    pickGallery(g, 'c', 'ので');
+    expect(keyHeld(g)).toBe(false);
+    expect(armCurveball(g, ['b', 'c'], { word: 'ので' }, false, 3)).toBe(false);
+  });
+  it('deals none without a key, once used, or when every Kana/N5 player has reacted', () => {
+    const g = openGallery(['a', 'b'], ['b'], null, false, 0);
+    expect(armCurveball(g, ['b'], null, false, 0)).toBe(false);
+    expect(armCurveball(g, ['b'], { word: 'ので' }, true, 0)).toBe(false);
+    pickGallery(g, 'b', 'sugoi');
+    expect(armCurveball(g, ['b'], { word: 'ので' }, false, 0)).toBe(false);
+    expect(armCurveball(null, ['b'], { word: 'ので' }, false, 0)).toBe(false);
   });
 });
 

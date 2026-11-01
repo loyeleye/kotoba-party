@@ -488,9 +488,9 @@ body.flying[data-phase='lobby'] .main { place-items: end center; }
 
 /* Mixed rooms on the TV (components/mixedRoom.ts). */
 .booth { text-align: center; }
-.booth-tag { font-size: 22px; font-weight: 800; letter-spacing: 0.08em; color: #e8b84a; margin: 0; }
+.booth-tag { font-size: 22px; font-weight: 800; letter-spacing: 0.08em; color: var(--gold); margin: 0; }
 .booth-line { font-size: 36px; font-weight: 800; margin: 6px 0; }
-.booth-line mark { background: #e8b84a; color: #241a10; border-radius: 6px; padding: 0 4px; animation: booth-lit 0.6s ease-out both; }
+.booth-line mark { background: var(--gold); color: var(--on-accent); border-radius: 6px; padding: 0 4px; animation: booth-lit 0.6s ease-out both; }
 .booth-note { font-size: 24px; color: var(--muted); margin: 0; }
 @keyframes booth-lit { from { background: transparent; } }
 .gallery-bubbles { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }

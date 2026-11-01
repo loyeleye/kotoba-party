@@ -72,6 +72,27 @@ export interface MixedRoomCheck {
   phases: { phase: Phase; ms: number }[];
   ask: string[];
   answers: Record<string, WaitAnswer>;
+  /** Everyone's level, so the log can say whose answer is whose level (no names). */
+  levels: Record<string, Level>;
+  /** The game's hard-role offers, by answer. */
+  offers: { accepted: number; declined: number; timeout: number };
+}
+
+/** The waiting check, asked only after a game in a mixed room that offered a hard role. */
+function mixedCheck(state: GameState, mode: Mode<unknown, { mode: ModeId }> | null): { mixed?: MixedRoomCheck } {
+  if (!mode?.offers || !isMixedRoom(state.players.map((p) => p.level))) return {};
+  const offers = { accepted: 0, declined: 0, timeout: 0 };
+  for (const p of state.players) for (const o of mode.offers(state.modeState, p.id)) if (o.answer !== 'away') offers[o.answer] += 1;
+  if (!offers.accepted && !offers.declined && !offers.timeout) return {};
+  return {
+    mixed: {
+      phases: state.phaseLog ?? [],
+      ask: state.players.filter((p) => p.level !== 'n4' && p.connected).map((p) => p.id),
+      answers: {},
+      levels: Object.fromEntries(state.players.map((p) => [p.id, p.level])),
+      offers,
+    },
+  };
 }
 
 /** A mixed room: at least one N4 player and at least one below N4. */
@@ -512,9 +533,7 @@ function finish(state: GameState, ctx: GameContext): void {
     awards: mode?.awards?.(state.modeState, modeContext(state, ctx)) ?? [],
     ...(mode?.info.coop ? { coop: true } : {}),
     ...(mode?.recapTeams ? { teams: mode.recapTeams(state.modeState, modeContext(state, ctx)) } : {}),
-    ...(isMixedRoom(state.players.map((p) => p.level))
-      ? { mixed: { phases: state.phaseLog ?? [], ask: state.players.filter((p) => p.level !== 'n4' && p.connected).map((p) => p.id), answers: {} } }
-      : {}),
+    ...mixedCheck(state, mode),
   };
   if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award', slots: awardSlots(state.recap.awards[0]) });
   if (state.mode) addTonight(state, state.mode);

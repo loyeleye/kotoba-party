@@ -874,7 +874,7 @@ function waitCheck(answer: WaitAnswer | null): HTMLElement {
   return h(
     'div',
     { class: 'wait-check' },
-    h('p', {}, 'Quick one: did anything in that game feel like waiting?'),
+    h('p', {}, 'Quick one: was there a part of that game where you were just waiting?'),
     h('div', { class: 'wait-check-btns' }, opts.map(([a, label]) => h('button', { type: 'button', class: `secondary${answer === a ? ' picked' : ''}`, 'aria-pressed': String(answer === a), onclick: () => void command({ type: 'waitCheck', answer: a }) }, label))),
     answer ? h('p', { class: 'hint' }, 'Thanks! That helps make the games better.') : null,
   );

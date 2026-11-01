@@ -399,7 +399,7 @@ export class Room {
       this.opts.onPhase?.(this);
       if (this.state.phase === 'recap') this.saveResults();
       // Mixed rooms: the playtest check (phase lengths, "did anything feel like waiting?") once the recap is left.
-      if (check?.phases && this.state.phase !== 'recap') console.info('[mixed-room]', JSON.stringify({ room: this.state.code, mode: check.mode, phases: check.phases, answers: Object.values(check.answers ?? {}), asked: check.ask?.length ?? 0 }));
+      if (check?.phases && this.state.phase !== 'recap') console.info('[mixed-room]', JSON.stringify({ room: this.state.code, mode: check.mode, phases: check.phases, answers: Object.entries(check.answers ?? {}).map(([id, a]) => ({ level: check.levels?.[id], a })), asked: check.ask?.length ?? 0, offers: check.offers }));
     }
     if (cues.length) this.opts.onCues?.(this, cues, this.state.phaseSeq);
     return outcome;

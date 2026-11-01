@@ -2,8 +2,9 @@
 // it runs, the same way in every game.
 //
 //   Gallery           one reaction tile per round for each player without the seat: tap a reaction to the
-//                     line (shown on the TV as a bubble), never scored. Once per game, a Kana or N5 player's
-//                     tile is a curveball instead: "Which word did you hear?", 3 options, +5 if right.
+//                     line (shown on the TV as a bubble), never scored. Once per game, after the line has
+//                     landed, a Kana or N5 player who hasn't reacted yet gets a curveball instead (`armCurveball`):
+//                     "Which word did you hear?", 3 options, +5 if right. Who gets it rotates with the seed.
 //   Commentary booth  once the N4 line lands, a short instant replay on the TV: the line with its key word
 //                     lit, one line of English colour, and the gist on Kana and N5 phones (Narabete's replay).
 //   Host stand-in     in a 1–2-player room with no N4 player, the host plays the role once per game: the
@@ -26,7 +27,7 @@ export interface ReactionTile {
 export const REACTIONS: readonly ReactionTile[] = [
   { id: 'sugoi', emoji: '👏', kana: 'すごい！', en: 'Amazing!' },
   { id: 'naruhodo', emoji: '💡', kana: 'なるほど', en: 'I see' },
-  { id: 'e', emoji: '😮', kana: 'えっ？', en: 'Huh?' },
+  { id: 'e', emoji: '😮', kana: 'へえ！', en: 'Oh, really!' },
   { id: 'warai', emoji: '😂', kana: 'あはは', en: 'Ha ha' },
 ];
 
@@ -71,8 +72,8 @@ export const KEY_WORDS: readonly string[] = ['ので', 'のに', 'から', 'け�
 
 /**
  * Open a round's Gallery. `others` are the players without the seat (connected, not bots); `kanaOrN5` the
- * subset at Kana or N5. The curveball goes to the first Kana or N5 player, once per game (`curveballUsed`), and
- * only when the line has a key word.
+ * subset at Kana or N5. Pass a key only when the line has already been heard; otherwise pass null and call
+ * `armCurveball` once it lands. The curveball goes to a Kana or N5 player picked by `seed`, once per game.
  */
 export function openGallery(
   others: readonly string[],
@@ -81,7 +82,8 @@ export function openGallery(
   curveballUsed: boolean,
   seed: number,
 ): Gallery {
-  const target = !curveballUsed && key ? others.find((p) => kanaOrN5.includes(p)) : undefined;
+  const low = others.filter((p) => kanaOrN5.includes(p));
+  const target = !curveballUsed && key && low.length ? low[Math.abs(seed) % low.length] : undefined;
   let curveball: Curveball | null = null;
   if (target && key) {
     const wrong = distractors(key.word, key.pool ?? KEY_WORDS, seed);
@@ -92,6 +94,26 @@ export function openGallery(
     }
   }
   return { players: [...others], picks: {}, curveball };
+}
+
+/**
+ * Deals the once-a-game curveball after the line has been heard (accepted, or voiced by the host): a Kana or N5
+ * player who hasn't reacted yet gets it in place of their reaction tile, picked by `seed`. True when dealt, so the
+ * game can mark its curveball used. A line that never lands deals none.
+ */
+export function armCurveball(g: Gallery | null | undefined, kanaOrN5: readonly string[], key: { word: string; pool?: readonly string[] } | null, used: boolean, seed: number): boolean {
+  if (!g || used || !key || g.curveball) return false;
+  const free = g.players.filter((p) => kanaOrN5.includes(p) && !g.picks[p]);
+  if (!free.length) return false;
+  const c = openGallery(free, free, key, false, seed).curveball;
+  if (!c) return false;
+  g.curveball = c;
+  return true;
+}
+
+/** The booth holds back lighting its key word while a curveball on that word is still unanswered. */
+export function keyHeld(g: Gallery | null | undefined): boolean {
+  return !!g?.curveball && g.curveball.pick == null;
 }
 
 /** A tap on a Gallery tile. Returns curveball points (0 or CURVEBALL_POINTS), or null if the tap is refused. */
@@ -117,14 +139,14 @@ export function galleryBubbles(g: Gallery): ReactionTile[] {
 /** A player's Gallery tile, for their phone (null when they have none this round). */
 export type GalleryTileView =
   | { kind: 'react'; picked: string | null; tiles: readonly ReactionTile[] }
-  | { kind: 'curveball'; picked: string | null; options: { kana: string; romaji: string | null }[]; right: boolean | null };
+  | { kind: 'curveball'; picked: string | null; options: { kana: string; romaji: string | null }[]; right: boolean | null; answer: string | null };
 
 export function galleryTileFor(g: Gallery | null | undefined, playerId: string, level: Level): GalleryTileView | null {
   if (!g || !g.players.includes(playerId)) return null;
   if (g.curveball?.playerId === playerId) {
     const c = g.curveball;
     const picked = c.pick ?? null;
-    return { kind: 'curveball', picked, options: c.options.map((o) => ({ kana: o.kana, romaji: level === 'kana' ? o.romaji : null })), right: picked == null ? null : picked === c.word };
+    return { kind: 'curveball', picked, options: c.options.map((o) => ({ kana: o.kana, romaji: level === 'kana' ? o.romaji : null })), right: picked == null ? null : picked === c.word, answer: picked == null ? null : c.word };
   }
   return { kind: 'react', picked: g.picks[playerId] ?? null, tiles: REACTIONS };
 }

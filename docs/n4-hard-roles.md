@@ -9,7 +9,7 @@ Rules every role follows:
 - **N4 only.** There is no N3 level until step 6. N3 lines from the plan are left as
   `// N3 (step 6)` comments.
 - **Nothing changes without an N4 player.** A room with no N4 player gets no new state, views or
-  timing. Kana and N5 players' parts and scoring are the same in every room.
+  timing, except the host stand-in (rooms of one or two, once a game: one voiced line and the few seconds it takes). Kana and N5 players' parts and scoring are the same in every room.
 - **Offered, never forced.** A seat is offered on the N4 player's phone ("Take it" / "Not this
   time"), rotating among the room's N4 players. Each offer and its answer (accepted, declined,
   timed out) is kept in the mode's state for the step's gate (N4 players accept at least 60% of
@@ -54,21 +54,22 @@ The shared pieces are in `shared/src/modes/mixedRoom.ts`, with the phone side in
 Every game with a hard role uses them the same way:
 
 - **Offer card and rotation.** One offer card on every phone (`roleOffer`). `nextOfferee()` picks who is offered:
-  fewest offers so far, then longest ago; a player who said no last time sits the next one out; in rooms of 4 or
+  fewest offers so far, then longest ago; a player who said no, or didn't answer, last time sits the next one out; in rooms of 4 or
   more, nobody holds the spotlight two rounds running.
 - **Gallery.** While the N4 line is being said, each player without the seat gets one tile a round: four
-  reactions (👏 すごい！, 💡 なるほど, 😮 えっ？, 😂 あはは) that pop up on the TV as bubbles, unscored. Once per game a
-  Kana or N5 player's tile is a curveball instead, "Which word did you hear?", with the line's key word and two
+  reactions (👏 すごい！, 💡 なるほど, 😮 へえ！, 😂 あはは) that pop up on the TV as bubbles, unscored. Once per game, after the line has
+  landed, a Kana or N5 player who hasn't reacted yet gets a curveball instead, "Which word did you hear?", with the line's key word and two
   others; +5 if right.
 - **Commentary booth.** Once the N4 line lands, a 5–7 s instant replay on the TV: the line with its key word lit
   and one line of English colour, voiced by the host (the fixed model line, never the player's own words). Kana
-  and N5 phones show the gist at their level (romaji for Kana).
+  and N5 phones show the gist at their level (romaji for Kana). While a curveball on that word is open, the word
+  isn't lit yet (`keyHeld`).
 - **Host stand-in.** In a room of one or two players with nobody at N4, the host plays the hard role once per
   game: one model line, voiced, with the gist on the phones. Nobody is asked to say it and it scores nothing.
   This is the one thing that reaches rooms without an N4 player (for Ladi to confirm).
 - **Host reactions.** Each game's host reacts in one short line when a role lands.
-- **The waiting check.** In a mixed room (an N4 player and anyone below N4), the recap asks each player below
-  N4 one tap: "Did anything in that game feel like waiting?" (No / A bit / Yes). The server logs the answers
+- **The waiting check.** After a game in a mixed room (an N4 player and anyone below N4) where a hard role was offered, the recap asks each player below
+  N4 one tap: "Was there a part of that game where you were just waiting?" (No / A bit / Yes). The server logs the answers
   with how long each phase ran (`[mixed-room]` in the server log) when the recap ends, for playtests. The
   answers aren't shown on any screen or kept in accounts.
 

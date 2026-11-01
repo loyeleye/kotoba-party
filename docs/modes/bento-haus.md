@@ -158,8 +158,8 @@ the title card).
   player's words. Kana and N5 phones get the gist (「ごめんなさい。ちょっと まって ください。」 and plain
   English, romaji for Kana). A skipped or missed line gets no booth.
 - **Gallery.** At the same moment, every other connected phone gets one tile for the shift, for 12 s
-  (`GALLERY_MS`): four reactions (すごい！ なるほど えっ？ あはは), shown on the TV as bubbles, never scored.
-  Once a game, the first Kana or N5 player's tile is the curveball instead: "Which word did you hear?", the
+  (`GALLERY_MS`): four reactions (すごい！ なるほど へえ！ あはは), shown on the TV as bubbles, never scored.
+  Once a game, a Kana or N5 player's tile is the curveball instead: "Which word did you hear?", the
   line's key word and two other request endings (もらえますか, くれませんか, おねがいします…, never one in the
   line), +5 to their score if right. Bots can't be told apart from players in the mode, so a bot gets a
   tile too (it never taps it).

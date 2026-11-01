@@ -4,13 +4,16 @@
 import { h } from '../../../shared/src/dom.js';
 import type { Commentary, ReactionTile } from '../../../shared/src/modes/mixedRoom.js';
 
-/** The booth: 📺 REPLAY · name, the line with its key word lit, and one line of colour. */
-export function boothStrip(c: Pick<Commentary, 'lit' | 'note'>, who: string | null): HTMLElement {
+/**
+ * The booth: 📺 REPLAY · name, the line with its key word lit, and one line of colour. `holdKey`: a curveball on
+ * that word is still open, so the word isn't lit yet (`keyHeld` in shared/src/modes/mixedRoom.ts).
+ */
+export function boothStrip(c: Pick<Commentary, 'lit' | 'note'>, who: string | null, holdKey = false): HTMLElement {
   return h(
     'div',
     { class: 'booth' },
     h('p', { class: 'booth-tag' }, who ? `📺 REPLAY · ${who}` : '📺 REPLAY'),
-    h('p', { class: 'booth-line', lang: 'ja' }, '「', c.lit.before, c.lit.key ? h('mark', {}, c.lit.key) : null, c.lit.after, '」'),
+    h('p', { class: 'booth-line', lang: 'ja' }, '「', c.lit.before, c.lit.key ? (holdKey ? c.lit.key : h('mark', {}, c.lit.key)) : null, c.lit.after, '」'),
     h('p', { class: 'booth-note' }, c.note),
   );
 }

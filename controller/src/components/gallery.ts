@@ -2,7 +2,7 @@
 // seat, and the commentary booth's gist for Kana and N5 phones. The same in every game.
 
 import { h } from '../../../shared/src/dom.js';
-import type { GalleryTileView } from '../../../shared/src/modes/mixedRoom.js';
+import { CURVEBALL_POINTS, type GalleryTileView } from '../../../shared/src/modes/mixedRoom.js';
 
 /** One Gallery tile: four reactions, or the once-a-game curveball. `onPick` gets a reaction id or the kana picked. */
 export function galleryTile(view: GalleryTileView | null, onPick: (pick: string) => void): HTMLElement | null {
@@ -24,19 +24,19 @@ export function galleryTile(view: GalleryTileView | null, onPick: (pick: string)
         view.options.map((o) =>
           h(
             'button',
-            { type: 'button', class: `secondary${view.picked === o.kana ? ' picked' : ''}`, disabled: view.picked != null, onclick: pick(o.kana) },
+            { type: 'button', class: `secondary${view.picked === o.kana ? ' picked' : ''}${view.answer === o.kana ? ' right' : ''}`, disabled: view.picked != null, onclick: pick(o.kana) },
             h('span', { lang: 'ja' }, o.kana),
             o.romaji ? h('small', {}, o.romaji) : null,
           ),
         ),
       ),
-      view.right == null ? null : h('p', { class: 'hint' }, view.right ? 'Yes! +5' : 'Good try. Listen for it next time.'),
+      view.right == null ? null : h('p', { class: 'hint' }, ...(view.right ? [`Yes! +${CURVEBALL_POINTS}`] : ['It was ', h('span', { lang: 'ja' }, view.answer ?? ''), '. Nice try!'])),
     );
   }
   return h(
     'div',
     { class: 'gallery' },
-    h('p', { class: 'gallery-kicker' }, '🎭 React from the Gallery'),
+    h('p', { class: 'gallery-kicker' }, '🎭 React: your tap pops up on the TV'),
     h(
       'div',
       { class: 'gallery-btns' },
@@ -49,6 +49,7 @@ export function galleryTile(view: GalleryTileView | null, onPick: (pick: string)
         ),
       ),
     ),
+    view.picked ? h('p', { class: 'hint' }, 'On the TV now.') : null,
   );
 }
 

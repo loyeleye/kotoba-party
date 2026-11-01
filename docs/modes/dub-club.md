@@ -89,7 +89,7 @@ as before. Everyone else keeps their scripted line, and a room with no N4 player
 
 - **The Gallery**: while an ad-lib dub is on (from the clip to its card flip), every other connected
   player gets one tile: four reactions, shown as bubbles in the TV's side column, never scored. Once a game,
-  the first Kana or N5 player's tile is the curveball instead: "Which word did you hear?", with the
+  a Kana or N5 player's tile is the curveball instead: "Which word did you hear?", with the
   longest of the mission's words (3+ kana) heard in the acted take and two from the episode's other
   missions, +5 if right (paid at once, not doubled in scene 3). No speech check on the take, or none of
   the mission's words in it: no curveball that scene.

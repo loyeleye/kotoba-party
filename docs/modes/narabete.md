@@ -103,7 +103,7 @@ round out; in a room of 4 or more, whoever gave it last round gets this round of
   じょうずねえ！」), and says the model line 1.2 s into the replay; a line in their own words gets only
   the reaction.
 - **The Gallery** (shared, mixedRoom.ts): while the N4 defence is on (its encore and its replay),
-  every other connected player gets one tile: four reactions (👏 すごい！, 💡 なるほど, 😮 えっ？,
+  every other connected player gets one tile: four reactions (👏 すごい！, 💡 なるほど, 😮 へえ！,
   😂 あはは) that pop up as bubbles under the neck, never scored. Once a game, the first Kana or N5 player's
   tile is the curveball instead: "Which word did you hear?", ので and two other N4 words, +5 if right
   (paid at once, on top of the round's points). No Gallery in the ordinary defence, or without an N4
