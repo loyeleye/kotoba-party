@@ -122,8 +122,16 @@ the very last seconds can be cut short. A miss, a decline or no N4 player: nothi
 - **Host stand-in.** In a room of one or two players with nobody at N4 (`hostStandsIn`), there is never
   a deputy, so once a game, on the first answer that has a report, Chōchin-san gives the report himself
   (`onsen_standin`, bank-only `{line}`) 5.8 s in, with its subtitle on the TV ("🏮 Chōchin-san reports",
-  frame word lit) and the gist on the phones. Nobody is asked to say anything; no points. That one
+  frame word lit) and the gist on the phones. Nobody is asked to say anything; the line scores no points
+  (with `standInCurveball`, the curveball and a said reaction do). That one
   answer may run a little past its usual 10–12 s, to at most 12.8 s (5.8 s + at most 7 s of voice).
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 5.8 s in he first says
+    「きいて ください！　わたしが はなします。」 ("Listen, please! I'll tell it myself.", `onsen_standin_setup`, bank
+    only); the report follows 2.5 s later, so that answer runs to at most 15.3 s.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile while he reports (bubbles in
+    his panel), and once he has said it (`reportVoiceMs`) the once-a-game curveball is dealt on its frame word
+    (いっていました or みられました, against `curveballPool`), +10 (+5 with `scaledCurveball` off). Until then the TV
+    shows the frame word as a gap (＿＿＿) with no English subtitle, and the gist waits. The answer waits up to 5 s more for the curveball and moves on once it's answered.
 
 | | Points |
 | --- | --- |
@@ -131,7 +139,8 @@ the very last seconds can be cut short. A miss, a decline or no N4 player: nothi
 | Report built from tiles | 10 |
 | Report said aloud | +40 speaking bonus (same pool and cap) |
 | A player's fifth report a game and after | 0 (still voiced and replayed for the room) |
-| Gallery curveball right (once a game, a Kana or N5 player) | 5 |
+| Gallery curveball right (once a game, a Kana or N5 player) | 5 (10 with `scaledCurveball`: a tenth of a clue's 100) |
+| Gallery reaction said out loud (`spokenReaction`) | 2 |
 
 The answer runs 15 s longer only for a deputy who tapped "Take it" before it came in (or has had a
 try), and ends once they're done and the answer has had its usual 10–12 s (a `wake`). An offer nobody

@@ -258,12 +258,22 @@ out when it wouldn't leave her the question's 5 s inside the go-between's longer
 - **Host stand-in.** In a 2-player room with nobody at N4 (`hostStandsIn`; Omiai needs two players), once a
   game, in round 1, Nobiko-san gives the opening herself (`omiai_standin`, bank-only `{line}`) before she
   reads the question; the TV shows it as the booth strip, the phones get the gist. Nobody is asked to say
-  anything; no points. The round-1 prompt is that much longer (`voiceMs`, at most 7 s).
+  anything; the line scores no points (with `standInCurveball`, the curveball and a said reaction do). The round-1 prompt is that much longer (`voiceMs`, at most 7 s).
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): she opens the prompt with
+    「おばちゃんが しょうかいするわよ！」 ("Auntie will do the introductions!", `omiai_standin_setup`, bank only;
+    おばちゃん, as she calls herself, and しょうかい, which her keigo opening echoes); the opening follows 2.5 s
+    later and the question after it, so that prompt is 2.5 s longer.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile while she says the opening,
+    and once she has (`voiceMs`) the once-a-game curveball is dealt on its keigo word (against `NAKODO_KEYS`), +10 (+5 with
+    `scaledCurveball` off).
+    The booth strip holds the word back and the gist waits until then. No time is added: it is answered while she
+    reads the question.
 
 | | Points |
 | --- | --- |
 | Go-between line said / typed | 25 / 10 |
-| Gallery curveball right (once a game, a Kana or N5 player) | 5 |
+| Gallery curveball right (once a game, a Kana or N5 player) | 5 (10 with `scaledCurveball`: a tenth of a vote's 100) |
+| Gallery reaction said out loud (`spokenReaction`) | 2 |
 
 The manners meter reads every line as keigo (tested for every card and round). It now also counts
 ごしょうかい as an お/ご word, and お〜に なる in plain form (おつきに なった) as honorific when the

@@ -313,6 +313,8 @@ export const ponLines: HostLine[] = [
   { id: 'pon.bento_replay.01', host: 'pon', event: 'bento_replay', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // bento_standin: Pon plays the deputy manager for one line (a room of 1–2 with nobody at N4)
   { id: 'pon.bento_standin.01', host: 'pon', event: 'bento_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // bento_standin_setup: experiment standInSetup, just before he plays the deputy manager
+  { id: 'pon.bento_standin_setup.01', host: 'pon', event: 'bento_standin_setup', jp: { text: 'ふくてんちょうは… ポンです！　ドロン！', kana: 'ふくてんちょうは… ポンです！　ドロン！', en: 'The deputy manager is… Pon! Poof!' }, status: 'draft' },
   // bento_manager_win
   { id: 'pon.bento_manager_win.01', host: 'pon', event: 'bento_manager_win', jp: { text: 'さすが、ふくてんちょう！', kana: 'さすが、ふくてんちょう！', en: 'That\'s my deputy manager!' }, status: 'draft' },
   { id: 'pon.bento_manager_win.02', host: 'pon', event: 'bento_manager_win', jp: { text: 'おきゃくさん、にこにこ！　ポン！', kana: 'おきゃくさん、にこにこ！　ポン！', en: 'The customer\'s all smiles! Pon!' }, status: 'draft' },

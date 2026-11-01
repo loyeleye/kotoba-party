@@ -2,16 +2,20 @@
 // kept clips (only the sender's own, only the main TV, dropped as soon as the game is done with them).
 
 import { existsSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 import { ManualClock } from '../server/src/clock.js';
 import { Room, wavDurationMs } from '../server/src/room.js';
 import { soundMorae } from '../shared/src/modes/karaokeDuel/scoring.js';
 import { ACT_POINTS, adlibCheck, adlibSimilarity, adlibTally, BOOTH_LINE_AT_MS, casualChunk, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, missionWord, saidDirection, STANDIN_AT_MS, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
 import type { HostCue } from '../shared/src/modes/mode.js';
 import { DIRECTIONS, EPISODES, directionOf, directionsFor, episodesFor, sceneAdlib, takeLimitMs } from '../shared/src/modes/dubClub/scenes.js';
 import type { JoinResponse } from '../shared/src/protocol.js';
 import { content } from './helpers.js';
+
+// standInSetup's gap after the setup line, from its bank line (at least STAND_IN_SETUP_MS).
+const SETUP_MS = standInSetupFor(content.hostLines, 'dub_standin_setup');
 
 const LEVELS = ['kana', 'n5', 'n4'] as const;
 
@@ -501,7 +505,46 @@ describe('Dub Club: mixed rooms', () => {
     return { k, n5, n4 };
   }
 
-  it('the Gallery on the ad-lib dub: a curveball on a mission word for a Kana or N5 player, reactions for the rest', () => {
+  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+    onTestFinished(withExperiments({ spokenReaction: on }));
+    const t = room(['kana', 'n5', 'n4']);
+    t.start();
+    const { k } = adlibScene(t, adlib0().model.kana, 'ねえ、おにぎり だれが たべたの');
+    t.until(() => t.view().now?.step === 'play');
+    const P = k;
+    const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
+    const before = t.score(P);
+    if (!on) {
+      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
+      expect(say('すごい！')).toMatchObject({ ok: false });
+      expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+      expect(t.play(P, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: true });
+      expect(t.score(P)).toBe(before);
+      return;
+    }
+    // Not while the take is playing: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！')).toMatchObject({ ok: false });
+    // Once it has played (the curveball goes to the N5 player): now it may be said.
+    t.until(() => t.view().now?.step === 'guess');
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
+    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
+    expect(say('ありがとう')).toMatchObject({ ok: true });
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
+    expect(t.score(P)).toBe(before);
+    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
+    expect(say('すごいね！')).toMatchObject({ ok: true });
+    expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
+    expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
+    expect(t.view().now!.gallery).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
+    // In the phrasebook as said, but read: the tile shows the kana.
+    expect(t.room.state.phrasebook[P.playerId]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
+    // One reaction a round, said or tapped.
+    expect(say('なるほど')).toMatchObject({ ok: false });
+  });
+
+  it.each([true, false])('the Gallery on the ad-lib dub: a curveball on a mission word for a Kana or N5 player, reactions for the rest (scaled curveball: %s)', (scaled) => {
+    onTestFinished(withExperiments({ scaledCurveball: scaled }));
     const t = room(['kana', 'n5', 'n4']);
     t.start();
     const take = 'ねえ、おにぎり だれが たべたの';
@@ -528,7 +571,8 @@ describe('Dub Club: mixed rooms', () => {
     expect(t.view().now!.gallery.map((b) => b.id)).toEqual(['naruhodo']);
     const before = t.score(n5);
     expect(t.play(n5, { kind: 'gallery', pick: 'おにぎり' })).toMatchObject({ ok: true });
-    expect(t.score(n5) - before).toBe(CURVEBALL_POINTS);
+    // Dub Club's right guess is 50, so a tenth is the old +5 either way.
+    expect(t.score(n5) - before).toBe(scaled ? 5 : CURVEBALL_POINTS);
     expect(t.view(n5).me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: 'おにぎり' });
     expect(t.st().curveball).toBe(true);
   });
@@ -669,6 +713,7 @@ describe('Dub Club: mixed rooms', () => {
   });
 
   it('the host stand-in: with two players and nobody at N4, Fude ad-libs one scene card himself, once a game', () => {
+    onTestFinished(withExperiments({ standInSetup: false, standInCurveball: false }));
     const t = room(['kana', 'n5', 'n5']);
     t.cmd(t.room.createStageToken(), { type: 'start', mode: 'dub-club' });
     t.st().episodeId = 'onigiri';
@@ -702,6 +747,59 @@ describe('Dub Club: mixed rooms', () => {
     expect(t.room.state.phase).toBe('prompt');
     expect(t.view().standIn).toBeNull();
     expect(t.cues.filter((c) => c.event === 'dub_standin')).toHaveLength(1);
+  });
+
+  describe('the stand-in experiments', () => {
+    /** Dub Club needs three to start: one drops out before the first scene, so two are left. */
+    const two = () => {
+      const t = room(['kana', 'n5', 'n5']);
+      t.cmd(t.room.createStageToken(), { type: 'start', mode: 'dub-club' });
+      t.st().episodeId = 'onigiri';
+      t.room.detach(t.sockets[2]!);
+      t.skipPhase();
+      expect(t.room.state.phase).toBe('prompt');
+      return t;
+    };
+    it('standInSetup: his setup line where the ad-lib began, the ad-lib 2.5 s later; the card runs to its end', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: false }));
+      const t = two();
+      const model = adlib0().model;
+      const ours = t.cues.filter((c) => c.event.startsWith('dub_standin'));
+      expect(ours).toEqual([
+        { host: 'fude', event: 'dub_standin_setup', atMs: STANDIN_AT_MS },
+        { host: 'fude', event: 'dub_standin', slots: { line: model.text, line_kana: model.kana, line_en: model.en }, atMs: STANDIN_AT_MS + SETUP_MS },
+      ]);
+      const tv = t.view().standIn!;
+      expect(tv.at).toBe(t.view().phaseAt + STANDIN_AT_MS + SETUP_MS);
+      expect(tv.bubbles).toBeUndefined();
+      expect(t.room.state.deadline! - t.view().phaseAt).toBe(Math.max(12_000, STANDIN_AT_MS + SETUP_MS + tv.ms));
+      expect(t.view(t.seats[0]!).me!.gallery).toBeNull();
+    });
+
+    it('standInCurveball: a tile for both while he says it, then the curveball on a mission word, +5 if right', () => {
+      onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+      const t = two();
+      const [k, n5] = t.seats as [JoinResponse, JoinResponse];
+      const tv = t.view().standIn!;
+      // The strip stays up through the curveball's window, so its ms runs that much past the line.
+      const said = tv.at + tv.ms - STAND_IN_CURVEBALL_MS;
+      expect(t.room.state.deadline!).toBe(Math.max(t.view().phaseAt + 12_000, said + STAND_IN_CURVEBALL_MS));
+      expect(t.view(k).me!.gallery).toMatchObject({ kind: 'react' });
+      expect(tv.holdKey).toBe(true);
+      expect(t.view(k).me!.gist).toBeNull();
+      expect(t.play(n5, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: true });
+      expect(t.view().standIn!.bubbles!.map((b) => b.id)).toEqual(['sugoi']);
+      t.until(() => !!t.view(k).me!.gallery && t.view(k).me!.gallery!.kind === 'curveball');
+      expect(t.clock.now()).toBeGreaterThanOrEqual(said);
+      expect(t.view(n5).me!.gist).toMatchObject({ kana: adlib0().model.kana });
+      const word = t.st().standIn!.sg!.g.curveball!.word;
+      expect(adlib0().keys).toContain(word);
+      expect(t.play(k, { kind: 'gallery', pick: word })).toMatchObject({ ok: true });
+      expect(t.score(k)).toBe(curveballPoints('dub-club'));
+      expect(t.st().curveball).toBe(true);
+      t.until(() => t.room.state.phase === 'answer');
+      expect(t.view(k).me!.gallery).toBeNull();
+    });
   });
 
   it('a room of three with nobody at N4 sees nothing new: no stand-in, no Gallery, no booth', () => {

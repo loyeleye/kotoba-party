@@ -28,7 +28,8 @@ import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { soundMorae } from '../karaokeDuel/scoring.js';
 import { splitMorae } from '../karaokeDuel/songs.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
-import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { EXPERIMENTS } from '../experiments.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_CURVEBALL_MS, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
 
@@ -186,8 +187,11 @@ export interface SceneRound {
 /** The host stand-in (1–2 players, nobody at N4): Fude's one ad-lib of the game, on a scene card. */
 export interface StandIn {
   round: number;
+  /** When he says it, ms into the scene card (after his setup line, with experiment standInSetup). */
   atMs: number;
   c: Commentary;
+  /** Experiment standInCurveball: the Gallery on his ad-lib, with the once-a-game curveball once he has said it. */
+  sg?: StandInGallery | null;
 }
 
 export interface PlayerStats {
@@ -278,7 +282,8 @@ export interface DubView {
   step: EpisodeStep | null;
   credits: { playerId: string; who: JpText; card: DubCard | null; scene: number }[];
   /** The host stand-in on this scene card: the TV shows it from `at` (server clock) for `ms`. */
-  standIn: { line: JpText; lit: Commentary['lit']; note: string; at: number; ms: number } | null;
+  /** Experiment standInCurveball: `bubbles`, the Gallery's reactions; `holdKey`, as the booth's. */
+  standIn: { line: JpText; lit: Commentary['lit']; note: string; at: number; ms: number; bubbles?: ReactionTile[]; holdKey?: boolean } | null;
   me: {
     level: Level;
     line: (JpText & { romaji?: string }) | null;
@@ -537,6 +542,28 @@ function curveballKey(s: DubState, r: SceneRound, a: Actor): { word: string; poo
     .filter((k) => k.length >= 3 && !adlib.keys.includes(k));
   // What the room heard (the take) and the model line: no other option may be a word either one contains.
   return { word, pool, heard: `${said}／${adlib.model.kana}` };
+}
+
+/**
+ * The curveball on Fude's stand-in ad-lib (experiment standInCurveball): the longest of the mission's words
+ * (3+ kana) in his model line, against the other scenes' mission words.
+ */
+function standInKey(s: DubState, r: SceneRound): { word: string; pool: string[]; heard: string } | null {
+  const adlib = adlibOf(s, r);
+  const heard = soundKey(normalizeReading(adlib.model.kana));
+  const word = adlib.keys.filter((k) => k.length >= 3 && heard.includes(soundKey(k))).sort((x, y) => y.length - x.length)[0];
+  if (!word) return null;
+  const pool = episodeOfState(s)
+    .scenes.filter((x) => x.id !== r.sceneId)
+    .flatMap((x) => sceneAdlib(x, s.audience).keys)
+    .filter((k) => k.length >= 3 && !adlib.keys.includes(k));
+  return { word, pool, heard: adlib.model.kana };
+}
+
+/** The stand-in's Gallery, on its scene card (experiment standInCurveball). */
+function standInSg(s: DubState, phase: Phase): StandInGallery | null {
+  const r = current(s);
+  return phase === 'prompt' && r && s.standIn?.round === r.index ? (s.standIn.sg ?? null) : null;
 }
 
 /** Points for the words, from the plain rehearsal. */
@@ -828,8 +855,16 @@ export const dubClubMode: Mode<DubState, DubView> = {
         // game, after his table read. Nobody is asked to say anything, and nothing is scored.
         if (!s.standIn && hostStandsIn(ctx.connected().map((p) => p.level))) {
           const adlib = adlibOf(s, r);
-          s.standIn = { round: r.index, atMs: STANDIN_AT_MS, c: boothFor(adlib, null, null) };
-          ctx.cue({ host: 'fude', event: 'dub_standin', slots: { line: adlib.model.text, line_kana: adlib.model.kana, line_en: adlib.model.en }, atMs: STANDIN_AT_MS });
+          // Experiment standInSetup: his short setup line where the ad-lib used to start; the ad-lib follows it.
+          const atMs = STANDIN_AT_MS + (EXPERIMENTS.standInSetup ? standInSetupFor(ctx.content.hostLines, 'dub_standin_setup') : 0);
+          if (EXPERIMENTS.standInSetup) ctx.cue({ host: 'fude', event: 'dub_standin_setup', atMs: STANDIN_AT_MS });
+          s.standIn = { round: r.index, atMs, c: boothFor(adlib, null, null) };
+          // Experiment standInCurveball: a Gallery tile for everyone while he says it; the curveball once he has.
+          if (EXPERIMENTS.standInCurveball) {
+            const said = ctx.now + atMs + s.standIn.c.ms;
+            s.standIn.sg = openStandInGallery(ctx.connected(), !!s.curveball, r.index, said, Math.max(ctx.now + DURATIONS.prompt, said));
+          }
+          ctx.cue({ host: 'fude', event: 'dub_standin', slots: { line: adlib.model.text, line_kana: adlib.model.kana, line_en: adlib.model.en }, atMs });
         }
         break;
       }
@@ -874,8 +909,13 @@ export const dubClubMode: Mode<DubState, DubView> = {
     switch (phase) {
       case 'intro':
         return DURATIONS.intro;
-      case 'prompt':
-        return DURATIONS.prompt;
+      case 'prompt': {
+        // The stand-in's ad-lib runs to its end (with experiment standInSetup it may pass the card's 12 s), and with
+        // standInCurveball until its curveball has had its time.
+        const st = r && s.standIn?.round === r.index ? s.standIn : null;
+        if (st?.sg) return standInEnd(st.sg) - s.phaseAt;
+        return st ? Math.max(DURATIONS.prompt, st.atMs + st.c.ms) : DURATIONS.prompt;
+      }
       case 'answer':
         return r?.actors.some((a) => a.level === 'kana') ? DURATIONS.answerKana : DURATIONS.answer;
       case 'reveal': {
@@ -904,10 +944,14 @@ export const dubClubMode: Mode<DubState, DubView> = {
     }
     if (phase === 'reveal') return !!r.screening && r.screening.index >= r.order.length;
     if (phase === 'finale') return !!s.episode && s.episode.step >= episodeSteps(s).length;
+    const sg = standInSg(s, phase);
+    if (sg) return standInDone(sg, ctx.now);
     return false;
   },
 
-  wakeAt(s, phase) {
+  wakeAt(s, phase, ctx) {
+    const sg = standInSg(s, phase);
+    if (sg) return standInWakeAt(sg, ctx.now);
     const r = current(s);
     if (phase === 'reveal' && r?.screening) {
       const a = onNow(r);
@@ -923,6 +967,11 @@ export const dubClubMode: Mode<DubState, DubView> = {
 
   wake(s, phase, ctx) {
     const r = current(s);
+    const sg = standInSg(s, phase);
+    if (sg && r) {
+      if (dealStandIn(sg, ctx.connected(), standInKey(s, r), !!s.curveball, r.index, ctx.now)) s.curveball = true;
+      return;
+    }
     if (phase === 'reveal' && r?.screening) advance(s, r, ctx);
     else if (phase === 'finale' && s.episode) {
       s.episode = { step: s.episode.step + 1, at: ctx.now };
@@ -1014,11 +1063,20 @@ export const dubClubMode: Mode<DubState, DubView> = {
         return MOVE_OK;
       }
       case 'gallery': {
+        // Experiment standInCurveball: a reaction to Fude's stand-in ad-lib (or its curveball), on its scene card.
+        const sg = standInSg(s, phase);
+        if (sg) {
+          if (typeof raw.pick !== 'string') return moveError('bad-move');
+          const pts = pickGallery(sg.g, playerId, raw.pick, { game: 'dub-club', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
+          if (pts === null) return moveError('bad-move');
+          if (pts) ctx.award(playerId, pts);
+          return MOVE_OK;
+        }
         // A reaction to the ad-lib dub on now (or the curveball), from anyone but its actor.
         const on = onNow(r);
         if (phase !== 'reveal' || !r.gallery || !on || !isAdlib(on) || r.screening?.step === 'lead') return moveError('wrong-phase');
         if (typeof raw.pick !== 'string') return moveError('bad-move');
-        const pts = pickGallery(r.gallery, playerId, raw.pick);
+        const pts = pickGallery(r.gallery, playerId, raw.pick, { game: 'dub-club', utterance: raw.utterance, phrase: (e) => ctx.phrase(playerId, e) });
         if (pts === null) return moveError('bad-move');
         if (pts) ctx.award(playerId, pts);
         return MOVE_OK;
@@ -1230,8 +1288,9 @@ export const dubClubMode: Mode<DubState, DubView> = {
             : mine && offer
               ? { state: 'offered', mission: offer.mission, emoji: offer.emoji, check: null, model: null, hint: null }
               : null,
-        gallery: a && isAdlib(a) && sc && sc.step !== 'lead' ? galleryTileFor(r.gallery, player.id, level) : null,
-        gist: gistFor(booth ?? standIn, level),
+        gallery: a && isAdlib(a) && sc && sc.step !== 'lead' ? galleryTileFor(r.gallery, player.id, level) : standInSg(s, phase) ? galleryTileFor(standInSg(s, phase)!.g, player.id, level) : null,
+        // The stand-in's gist waits while its curveball may still come to this phone (experiment standInCurveball).
+        gist: gistFor(booth ?? (standIn && !(standInHoldKey(s.standIn!.sg) && (!s.standIn!.sg!.dealt || s.standIn!.sg!.g.curveball?.playerId === player.id)) ? standIn : null), level),
         notes:
           showResults && mine?.take && res
             ? { words: res.words, similarity: reh?.similarity ?? null, checked: mine.take.checked, spoiler: mine.take.spoiler, total: res.total, guessedBy: res.guessedBy.length, hearts: res.hearts, best: r.best === player.id }
@@ -1253,7 +1312,18 @@ export const dubClubMode: Mode<DubState, DubView> = {
       best: showResults ? (r?.best ?? null) : null,
       step,
       credits: phase === 'finale' ? credits : [],
-      standIn: phase === 'prompt' && r && s.standIn?.round === r.index ? { line: s.standIn.c.line, lit: s.standIn.c.lit, note: s.standIn.c.note, at: s.phaseAt + s.standIn.atMs, ms: s.standIn.c.ms } : null,
+      standIn:
+        phase === 'prompt' && r && s.standIn?.round === r.index
+          ? {
+              line: s.standIn.c.line,
+              lit: s.standIn.c.lit,
+              note: s.standIn.c.note,
+              at: s.phaseAt + s.standIn.atMs,
+              // The strip stays up through a curveball that may come, so the word is seen lit once it's answered.
+              ms: s.standIn.c.ms + (s.standIn.sg?.maybe ? STAND_IN_CURVEBALL_MS : 0),
+              ...(s.standIn.sg ? { bubbles: galleryBubbles(s.standIn.sg.g), holdKey: standInHoldKey(s.standIn.sg) } : {}),
+            }
+          : null,
       me,
     };
   },

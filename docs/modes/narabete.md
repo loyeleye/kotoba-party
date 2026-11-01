@@ -78,7 +78,11 @@ offer time out, sits the next round out; in a room of 4 or more, whoever gave it
 - **Its own encore** (`encore`, 15 s), after the ordinary defence when there is one, so two people never
   talk at once. Nobiko-san invites them with her own cue (`narabete_hard`: "{name}さん、どうして そこなの？　おばちゃんに おしえて！",
   never "your card moved a lot"). When the N4 player is also the most-moved card's author they defend
-  once, with the N4 script. The phone says a typed defence doesn't score.
+  once, with the N4 script and its frame (the `narabeteFold` experiment, on by default). That saves the 12 s
+  ordinary encore and its call that round, so the round runs 15 s of defence (plus the replay if it lands)
+  instead of 27 s, and nobody hears the same player defend the same card twice. With the switch off, they give
+  the ordinary defence first and then the N4 one, as two encores. The bonus is the same either way (one 30%
+  defence share). The phone says a typed defence doesn't score.
 - **The script** (`defence.ts`) fits where the card ended up: 「＿ので、これが いちばん さきです。」 at
   the low end, 「＿ので、これが いちばん あとです。」 at the high end, 「＿ので、これは Aさんの あとです。」
   after a neighbour. The phone shows the frame and two whole model lines to read out, with reasons that
@@ -115,7 +119,19 @@ offer time out, sits the next round out; in a room of 4 or more, whoever gave it
   (`narabete_standin`, a `{line}` bank line): the round's card at the high end, the second model line,
   e.g. 「これより おそい じかんは ないので、これが いちばん あとです。」. The TV shows it in the booth strip for 5–7 s (inside the 90 s
   line-up, so no time is added), and Kana and N5 phones show its gist on the line-up screen. Nobody is
-  asked to say anything, and nothing is scored.
+  asked to say anything, and the line scores nothing (with `standInCurveball`, the curveball and a said reaction do).
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 4 s in she first says
+    「ちょっと、おばちゃんに いわせて！」 ("Oh, let Auntie have her say!", `narabete_standin_setup`, bank only); the
+    defence follows 2.5 s later.
+    Still inside the line-up: no time added.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile on the line-up screen while
+    she says it, and once she has (its booth length) the once-a-game curveball on ので (against `DEFENCE_POOL`), +10 (+5 with
+    `scaledCurveball` off). While the line-up lasts, the booth strip stays up through the 5 s the curveball may take.
+    The gist and the lit ので wait until then. So that it never holds the line-up, she starts at once
+    (`standInEarlyAt`, 0.5 s in, the setup line too with `standInSetup`), in place of her "line them up" (`narabete_order`) in that one
+    line-up. A line-up everyone locks after she has started ends anyway, and the tile and curveball carry into the
+    next phase (the encore or the score) and go with it; one locked before she got to her line drops them for that
+    game (`carried` on the stand-in). No time is added. Narabete now has `wakeAt`/`wake` for this.
 - **Scoring**: said out loud in Japanese, it adds the same 30% defence share as the ordinary defence, to
   the N4 player only. The team points and everyone else's bonus don't change. The phrasebook
   (`narabete:defence:<spot>`) logs it `said` only for their own spoken reason with ので; a model line read
@@ -130,7 +146,8 @@ offer time out, sits the next round out; in a room of 4 or more, whoever gave it
   answer tapped 15%, a Time card said with the time missing 20%. A spoken defence adds 30%.
 - Points are paid at the end of the flip, not when it starts.
 - **Votes**: 50 per vote. **The story**: 50 for reading your line out loud.
-- **The Gallery's curveball**: 5, once a game, for one Kana or N5 player, only when an N4 defence landed.
+- **The Gallery's curveball**: 5, once a game, for one Kana or N5 player, only when an N4 defence landed (10 with `scaledCurveball`: a tenth of a pair's 100).
+- **A Gallery reaction said out loud** (`spokenReaction`): 2.
 - **Awards**: ポーカーフェイス賞 (the card that fooled the room the most, Feelings rounds),
   おもしろ賞 (most votes), いいこえ賞 (most cards said out loud), ききじょうず賞 (good listener: asked
   to hear a card again the most).
@@ -177,3 +194,7 @@ the tonic, with a chord for a perfect line; a knot bends its note down a semiton
    replay; the curveball is dealt only once the defence has landed, and ので lights up once the curveball is
    answered (the TV holds it back while it is open, `keyHeld`, so the replay doesn't give the answer away); the stand-in comes in the first line-up of the game (the Time Line) and defends the card
    at the high end; Nobiko-san's あらまあ comes before every landed defence, voiced or not.
+8. **The fold (`narabeteFold`), for Ladi to confirm**: kept on, the shipped behaviour. It only matters in a
+   Feelings round where the N4 defender took the offer and also walked their card furthest; the sims should count
+   how often that happens (it needs the N4 player to move most, so mostly small rooms) and whether two defences
+   from one player felt like waiting.

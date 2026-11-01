@@ -407,6 +407,9 @@ function pickScreen(ctx: Ctx, me: Me): HTMLElement {
     { class: 'screen' },
     sceneCard(game),
     boothGist(me.gist),
+    // Experiment standInCurveball: the once-a-game curveball on Fude's stand-in ad-lib is timed, so it stays on
+    // top; the reaction tile sits below the direction picker.
+    ctx.view.phase === 'prompt' && me.gallery?.kind === 'curveball' ? standInTile(ctx, me) : null,
     h('p', { class: 'dc-label' }, adlibbing(me) ? '🎙 Ad-lib: your mission' : 'Your line'),
     lineBox(me),
     missionBox(me),
@@ -431,9 +434,15 @@ function pickScreen(ctx: Ctx, me: Me): HTMLElement {
         ),
       ),
     ),
+    ctx.view.phase === 'prompt' && me.gallery?.kind === 'react' ? standInTile(ctx, me) : null,
     h('p', { class: 'hint' }, 'Don’t show anyone! The room will guess it from your voice.'),
     privacy(),
   );
+}
+
+/** The stand-in's Gallery tile in the prompt phase (experiment standInCurveball). */
+function standInTile(ctx: Ctx, me: Me): HTMLElement | null {
+  return galleryTile(me.gallery, (pick, utterance) => void ctx.send({ kind: 'gallery', pick, utterance, round: ctx.game.round }));
 }
 
 function marks(me: Me): HTMLElement | null {
@@ -626,7 +635,7 @@ function screeningScreen(ctx: Ctx, me: Me): HTMLElement {
           : null,
     );
   }
-  kids.push(boothGist(me.gist), galleryTile(me.gallery, (pick) => void send({ kind: 'gallery', pick, round: game.round })), hearts(ctx, me));
+  kids.push(boothGist(me.gist), galleryTile(me.gallery, (pick, utterance) => void send({ kind: 'gallery', pick, utterance, round: game.round })), hearts(ctx, me));
   if (isVip && now && !now.skipped && now.step !== 'reveal' && now.step !== 'booth')
     kids.push(h('details', { class: 'dc-vip' }, h('summary', {}, 'VIP: skip this dub'), holdButton('🚫 Skip it', 'secondary', () => void send({ kind: 'skip', actorId: now.playerId, round: game.round }))));
   return h('div', { class: 'screen' }, ...kids);
