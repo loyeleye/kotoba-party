@@ -580,15 +580,17 @@ function scoreEncores(s: OmiaiState, ctx: ModeContext): void {
     const e = r.encores[line.authorId];
     const a = r.answers.find((x) => x.id === line.answerId)!;
     const entry = { itemId: `omiai:${r.question.id}:${line.authorId}`, text: a.tip.target.text, kana: a.tip.target.kana, en: a.tip.kind === 'stock' ? a.tip.example.en : 'Your answer, said politely' };
+    // A polite answer in your own words, spoken: said from memory (the learning path counts it).
+    const own = a.tip.kind === 'perfect' && a.via === 'speech' && !a.english;
     if (e?.ok && e.via) {
       const share = (line.winner ? ENCORE_SHARE.winner : ENCORE_SHARE.other)[e.via === 'speech' ? 'speech' : 'typed'];
       line.encoreBonus = Math.max(0, Math.min(line.cap - line.bonus, round5(line.cap * share)));
       pay(ctx, line.authorId, line.encoreBonus);
-      // The encore says back the polite version shown on the phone: said, but read.
-      ctx.phrase(line.authorId, { ...entry, outcome: e.via === 'speech' ? 'said' : 'seen', recall: 'read' });
+      // The encore says back the polite version shown on the phone: read, unless the answer was already yours.
+      ctx.phrase(line.authorId, { ...entry, outcome: own || e.via === 'speech' ? 'said' : 'seen', recall: own ? 'memory' : 'read' });
     } else {
       // A correction that wasn't said back goes to review; a polite answer is just kept.
-      ctx.phrase(line.authorId, { ...entry, outcome: a.tip.kind === 'rewrite' || a.tip.kind === 'stock' ? 'missed' : 'seen' });
+      ctx.phrase(line.authorId, { ...entry, outcome: own ? 'said' : a.tip.kind === 'rewrite' || a.tip.kind === 'stock' ? 'missed' : 'seen', recall: own ? 'memory' : 'read' });
     }
   }
 }

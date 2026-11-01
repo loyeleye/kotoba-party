@@ -58,11 +58,11 @@ hand-written rōmaji, so it lights up with no other change.
   an untagged entry is read. A game tags `memory` only for a line spoken (not typed or tapped) without it
   on the screen: Last Train's answers, Shodō's spoken readings, Kana Raid's spoken kana, Bento Haus calls,
   Concentration pairs, Narabete time cards, shiritori words, Onsen questions, Tourist's own lines, and
-  the memory answers in Oogiri, Phrase Bingo and Happyōkai. Read is a line on the screen (every line in
-  Nice to Meet You!), an echo, a tile answer or encore, a typed answer, a script line or a lyric.
+  the memory answers in Oogiri, Phrase Bingo and Happyōkai. Nice to Meet You!'s own true word, spoken, is memory too. Read is a line on the screen (Nice to Meet
+  You!'s greeting and こちらこそ), an echo, a tile answer or encore, a typed answer, a script line or a lyric.
   `tests/recall-tags.test.ts` fails if any phrase a game can log as said leaves `recall` out. Each saved
   phrase keeps `recall` and the days it was said from memory (`memory`).
-- **The 21-day re-check:** 21 days after a frame is met, one of its phrases (the one said least, then the
+- **The re-checks:** 21 days after a frame is met, and once more 60 days after that check passes, one of its phrases (the one said least, then the
   longest ago) comes first in the phone's phrase review. Only that phrase decides: known, it passes;
   missed, the frame **fades** (a dashed ring on its station) until it's said from memory again on a later
   day, in a game or a review. The 済 stamp stays.
@@ -116,12 +116,16 @@ lists, including every misfire the Japanese review found.
   tests reading and listening (a mock test shows where you stand). Then *Change to the Express Line* /
   *Stay on the Local Line* at the same weight. The Express Line ends with しゅうてん and "Thanks for riding".
   Shown once per line on that phone, below Start or on the recap; it never changes the level by itself.
-- **My progress → Path:** the switch, then a train map: three coloured lines (furigana on 各駅停車 and 急行),
-  one station per goal, 済 on met goals, a solid ring when the return trip is due and a dashed one when
-  the ink is fading, a percentage on started stations and a bar on the current one. Lines below the
-  player's level are muted ("Optional · filled in by what you've said"). Tapping a station opens its
-  frames, each with its tally ("2 of 3 says · say it again from Nov 4 · needs a game day"), right under
-  it. Each station's state is also in text for screen readers, and the current one is `aria-current`. Nothing appears on the TV, and there are no streaks.
+- **My progress → Path:** a one-row switch, then three route signs (かな線 · 各駅停車 · 急行, furigana over each
+  kanji, the count, and ↻ N when a return trip is due) that show one line at a time, opening on the line
+  the suggestion is on. Line colours are their own (Kana sky blue, Local green, Express orange); gold and
+  white only mark states. A met station is a solid disc with a check; a started one fills like a clock; a
+  return trip due adds a second ring, and fading ink hatches the disc with a dashed edge. Coming-soon
+  stations are small grey diamonds on a dashed stretch, and 4.7 is a striped 工事中 barrier. Every state
+  also has a pill in words. Tapping a station opens its sheet (the game's bottom sheet): the red 済 hanko
+  and date when met, then its frames with tallies, the rule and the games. A のりかえ button at the end of a
+  line goes to the next. Lines below the player's level say "Optional · filled in by what you've said".
+  Nothing appears on the TV, and there are no streaks.
 
 ## How it works
 

@@ -89,7 +89,7 @@ export const KEIGO_PAIRS: readonly KeigoPair[] = [
   { id: 'kiku', en: 'to ask, to hear', plain: 'きく', polite: 'ききます', honorific: 'おききに なります', humble: 'うかがいます' },
   { id: 'sumu', en: 'to live (somewhere)', plain: 'すんでいる', polite: 'すんでいます', honorific: 'おすまいです', humble: 'すんでおります' },
   { id: 'motsu', en: 'to have', plain: 'もっている', polite: 'もっています', honorific: 'おもちです', humble: 'もっております' },
-  { id: 'okiru', en: 'to get up', plain: 'おきる', polite: 'おきます', honorific: 'おきに なります', humble: 'おきます' },
+  { id: 'okiru', en: 'to get up', plain: 'おきる', polite: 'おきます', honorific: 'おおきに なります', humble: 'おきます' },
   { id: 'da', en: 'to be (is)', plain: 'だ', polite: 'です', honorific: 'で いらっしゃいます', humble: 'で ございます' },
   { id: 'aru', en: 'to have, there is', plain: 'ある', polite: 'あります', honorific: 'おありです', humble: 'ございます' },
 ];
@@ -311,7 +311,7 @@ export const CARDS: readonly CharacterCard[] = [
       },
       {
         id: 'manekineko.morning',
-        ask: { n5: k('あさは なんじに おきますか。', 'What time do you get up?'), n4: k('あさは なんじに おきに なりますか。', 'What time do you get up? (honorific)') },
+        ask: { n5: k('あさは なんじに おきますか。', 'What time do you get up?'), n4: k('あさは なんじに おおきに なりますか。', 'What time do you get up? (honorific)') },
         kind: 'wh',
         fills: [k('ろくじに', 'at six'), k('しちじに', 'at seven'), k('くじに', 'at nine'), k('おひるに', 'at noon')],
         endings: { polite: polite(k('おきます。', 'get up (polite)')), casual: [{ jp: k('おきる。', 'get up (plain)') }, { jp: k('おきるよ。', 'get up, you know') }] },
@@ -653,7 +653,7 @@ export const CARDS: readonly CharacterCard[] = [
       },
       {
         id: 'tokkuri.morning',
-        ask: { n5: k('のんだ つぎの ひは なんじに おきますか。', 'What time do you get up the morning after drinking?'), n4: k('のんだ つぎの ひは なんじに おきに なりますか。', 'What time do you get up the morning after? (honorific)') },
+        ask: { n5: k('のんだ つぎの ひは なんじに おきますか。', 'What time do you get up the morning after drinking?'), n4: k('のんだ つぎの ひは なんじに おおきに なりますか。', 'What time do you get up the morning after? (honorific)') },
         kind: 'wh',
         fills: [k('しちじに', 'at seven'), k('じゅうじに', 'at ten'), k('おひるに', 'at noon'), k('ゆうがたに', 'in the evening')],
         endings: { polite: polite(k('おきます。', 'get up (polite)')), casual: [{ jp: k('おきる。', 'get up (plain)') }, { jp: k('おきるよ。', 'get up, you know') }] },

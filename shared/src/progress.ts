@@ -115,10 +115,12 @@ export type Recall = 'memory' | 'read';
 /** A met sentence frame, kept so it stays met when its phrases age out of the phrasebook. */
 export interface FrameMark {
   metAt: number;
-  /** When it comes back once in the phone review (21 days after it was met). */
+  /** When it next comes back in the phone review (21 days after it was met, then 60 days after that). */
   recheckAt: number;
-  /** waiting: not re-checked yet; passed: said again from memory; fading: missed in the re-check, until said again. */
+  /** waiting: not re-checked yet; passed: said again from memory at every check; fading: missed, until said again. */
   recheck: 'waiting' | 'passed' | 'fading';
+  /** Which re-check is next or running: 1 (the 21-day one) or 2 (60 days later). Missing means 1. */
+  round?: number;
   /** The day (the player's own) it faded: only a say from memory on a later day brings it back. */
   fadedDay?: string;
 }
@@ -161,8 +163,19 @@ export const SAYS_PER_DAY = 2;
 export const FRAME_SAYS = 3;
 export const FRAME_FILLERS = 2;
 export const FRAME_GAP_DAYS = 3;
-/** A met frame comes back once in the phone review this many days later. */
+/** A met frame comes back in the phone review this many days later, and once more this many days after that. */
 export const RECHECK_DAYS = 21;
+export const SECOND_RECHECK_DAYS = 60;
+
+/** A re-check passed: the first schedules the second; the second is the last. */
+function passRecheck(m: FrameMark, now: number): void {
+  delete m.fadedDay;
+  if ((m.round ?? 1) < 2) {
+    m.round = 2;
+    m.recheckAt = now + SECOND_RECHECK_DAYS * DAY_MS;
+    m.recheck = 'waiting';
+  } else m.recheck = 'passed';
+}
 
 /**
  * How a phrasebook entry was said. Opt-in: only a line its game tags `recall: 'memory'` counts as said from
@@ -376,10 +389,7 @@ export function markFrames(p: Progress, now: number): string[] {
     if (m.recheck === 'passed' || now < m.recheckAt) continue;
     // Said from memory again since the check came due (and, once faded, on a later day than the miss).
     const again = cards.some((c) => (c.memAt ?? 0) >= m.recheckAt && (!m.fadedDay || (c.memory ?? []).some((d) => d.day > m.fadedDay!)));
-    if (again) {
-      m.recheck = 'passed';
-      delete m.fadedDay;
-    }
+    if (again) passRecheck(m, now);
   }
   return fresh;
 }
@@ -393,7 +403,7 @@ function recheckReview(p: Progress, card: PhraseCard, knew: boolean, now: number
   for (const id of phraseFrames(card)) {
     const m = p.frameMarks?.[id];
     if (!m || m.recheckAt > now || m.recheck !== 'waiting') continue;
-    if (knew) m.recheck = 'passed';
+    if (knew) passRecheck(m, now);
     else {
       m.recheck = 'fading';
       m.fadedDay = day;
