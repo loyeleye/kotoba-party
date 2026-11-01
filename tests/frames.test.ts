@@ -149,8 +149,14 @@ describe('every frame in a line (framesOf)', () => {
   for (const f of ALL_FRAMES) {
     it(`${f.id}: finds it in every positive and in no look-alike`, () => {
       const c = cases[f.id]!;
-      const missed = c.pos.filter((l) => !all(l).includes(f.id)).map((l) => line(l).text);
-      const wrong = c.neg.filter(([l]) => all(l).includes(f.id)).map(([l, why]) => `${line(l).text} (${why})`);
+      // Positives are counted the way progress counts (keepHidden), so a frame shown under a more specific one
+      // still passes. Look-alikes must stay out with tokens and on the phone, which has none (panel on #148).
+      const counted = (l: CaseLine) => {
+        const p = line(l);
+        return framesOf(p, reader.tokens(p.text), { keepHidden: true });
+      };
+      const missed = c.pos.filter((l) => !counted(l).includes(f.id)).map((l) => line(l).text);
+      const wrong = c.neg.filter(([l]) => all(l).includes(f.id) || framesOf(line(l)).includes(f.id)).map(([l, why]) => `${line(l).text} (${why})`);
       expect({ missed, wrong }).toEqual({ missed: [], wrong: [] });
     });
   }
@@ -165,6 +171,22 @@ describe('every frame in a line (framesOf)', () => {
       for (const id of p.want ?? []) if (!withTok.includes(id as FrameId)) bad.push(`${l.text}: wants ${id}`);
     }
     expect(bad).toEqual([]);
+  });
+
+  // Speech comes back from the recognizer with kanji and no spaces. Every N3 positive with kanji, spaces taken
+  // out and its kana read by the dictionary, still has its frame. Kana-only lines with no spaces are a known gap
+  // (docs/n4-n3-frames.md): the phone sends them spaced.
+  it('finds N3 frames in written lines with no spaces', () => {
+    const missed: string[] = [];
+    for (const [id, { pos }] of Object.entries({ ...n3a, ...n3b, ...n3c })) {
+      for (const p of pos) {
+        if (typeof p === 'string') continue;
+        const text = p.text.replace(/[\s　]/g, '');
+        const l = { text, kana: reader(text) };
+        if (!framesOf(l, reader.tokens(text), { keepHidden: true }).includes(id as FrameId)) missed.push(`${id}: ${text}`);
+      }
+    }
+    expect(missed).toEqual([]);
   });
 
   it("finds each frame's own example", () => {

@@ -2,7 +2,7 @@
 // and the scores from every game they finish. Pure rules, no storage: the account service
 // (server/src/accounts.ts) loads a profile, applies one of these and saves it.
 
-import { FRAMES, frameOf, framesOf, type FrameId } from './japanese/frames.js';
+import { creditable, FRAMES, frameOf, framesOf, type FrameId } from './japanese/frames.js';
 import { soundKey, toHiragana } from './japanese/kana.js';
 import { toRomaji } from './japanese/romaji.js';
 import { isRomaji, romajiToHiragana } from './japanese/toKana.js';
@@ -283,8 +283,9 @@ export function duePhrases(p: Progress, now: number, limit = REVIEW_SIZE): Phras
   return [...checks, ...due].slice(0, limit);
 }
 
-/** Every frame a phrase is built on, N5 to N3. keepHidden: an N5 frame still counts when a more specific one matched. */
-export const phraseFrames = (c: { text: string; kana: string }): FrameId[] => framesOf(c, undefined, { keepHidden: true });
+/** Every frame a phrase counts for, N5 and N4. keepHidden: an N5 frame still counts when a more specific one
+ * matched. Listening-only and (until the Limited Express is on the path) N3 frames are left out (`creditable`). */
+export const phraseFrames = (c: { text: string; kana: string }): FrameId[] => framesOf(c, undefined, { keepHidden: true }).filter(creditable);
 
 /** Each frame's saved phrases. */
 function byFrame(p: Progress): Map<string, PhraseCard[]> {

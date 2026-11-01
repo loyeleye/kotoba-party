@@ -87,14 +87,33 @@ How the harder ones are told apart:
 | ＿ずに | Not みず (water) or ちず (a map) before に, unless the word follows を or も (テレビを みずに) |
 | ＿て きました | A change or a run up to now. Going and coming back (かって きた), and coming somewhere (はしって きた, おくれて きた, にげて きた), are left out |
 | ＿として | Not おとして (dropped), ＿ようと して, ほっと して, だとしても |
-| ＿しか ない | Not しかし, しかた, しかも, しかる, or しか inside an adjective's past (かなしかった) |
+| ＿しか ない | Only after a verb (かえる しか ない, "no choice but to"). Nしか ない (ひゃくえんしか ない) is N5 and stays out |
+| ご＿ください | A list of the verb nouns staff use (ごちゅうい, ごえんりょ, ごりよう…), so ごはん, ごみ and ごまんえん stay out |
+| ＿て おります | Not おります after を, から, に or a place (さんかいで おります: getting off on the third floor) |
+| The suffering passive | An intransitive verb made passive after someone (あめに ふられて, こどもに なかれた, にげられた), only in a form that tells what happened (not にげられますか), or a を object in the same clause (かぎを わすれて、ははに おこられた is the N4 passive). Giving verbs (わたされた) and される are left out. With kanji and no spaces, the dictionary's tokens decide |
 
-N3 frames don't hide the N4 frames they overlap (ご＿ください is still お＿ください, ＿て おります still the keigo
-verb, the suffering passive still the passive), so a line keeps its N4 chip. They do hide N5 ＿です and
-＿ます where they say more.
+N3 frames mostly don't hide the N4 frames they overlap (ご＿ください is still お＿ください, ＿て おります still the
+keigo verb, the suffering passive still the passive), so a line keeps its N4 chip. Two hide one for display
+only: ＿みたい (a guess) over ＿みたいです, and ＿ところでした over ＿ところです. They also hide N5 ＿です and ＿ます
+where they say more. Counting (`keepHidden`) keeps every one.
+
+**Not credited yet.** `creditable(id)` is false for N3 frames and for listening-only ones, and progress
+(`phraseFrames`) and the night's recap (`tonightFrames`) skip them. So an N4 player who says an N3 line
+gets no permanent N3 mark before N3 is on the path; the path's step-6 PR turns N3 on.
 
 **Listening only.** ＿じゃん and ＿っけ have `listening: true`: the plan counts them for a goal's listening half,
 never as a line the player says.
+
+**3.8 overlaps N4 textbooks.** ＿させて いただく, でございます, ＿て おります, ご＿ください and かしこまりました are
+taught in Genki II and Minna no Nihongo II, the N4 courses. They stay at 3.8 as the plan has them, since
+the JLPT lists them at N3; the open questions doc has the question.
+
+**On the phone.** With no tokens, ＿させて もらう／いただく fall back to the spelling (かかせて, たべさせて), minus
+任せる, 知らせる, 合わせる and the other verbs that end in せる on their own.
+
+**No spaces.** Speech comes back with kanji and no spaces. A test strips the spaces from every N3 line
+with kanji and reads its kana with the dictionary; all of them keep their frame. Kana-only lines with no
+spaces miss 13 of ~400 (the suffering passive, ＿とかいかない), and ともだちとかえった reads as ＿とか.
 
 ## Fixes from the panel on #146
 
@@ -118,7 +137,9 @@ as the suffering passive, すんでおります as ＿て おります).
 
 ## The precision bar
 
-Every matcher finds its frame in at least 10 positive lines and in none of 10 look-alikes. The N5 lines
+Every matcher finds its frame in at least 10 positive lines and in none of 10 look-alikes. Positives are
+checked with hidden frames kept (an N3 frame may hide the N4 one for display); look-alikes are checked
+both with tokens and on the phone path. The N5 lines
 are real game lines where the game has them (probes are marked). The N4 and N3 lines are written for the
 test: there's little N4 content yet. A sweep over all ~10,000 Japanese strings in the game's content found
 and fixed more misfires (かんとく as 〜とく, なんと いいますか as a report, かしら as an embedded question).
@@ -141,6 +162,11 @@ picture: the 10/10 bar is a regression test, not a measure of precision (see "Fo
   ＿ばかり and the causative-passive. Lexical causatives (泣かせる, 笑わせる) are one dictionary verb, so the
   causative misses them.
 - N3 frames have no path goals yet: N3 joins the level picker and the path in its own step-6 PR.
+- Kana-only lines with no spaces: see "No spaces" above. The phone sends spaced kana.
+- ＿ところでした after a non-past verb is also "it was a place where" (ここは わたしが すむ ところでした). A line
+  that starts with ここは／そこは stays out; elsewhere a bare verb + ところでした counts as "nearly".
+- The N3 lines were written and checked by Claude with the panel's Japanese seat. A fluent speaker still
+  needs to check them before they ship (all N3 frames stay `status: 'draft'`).
 - `frameStats` and the path still use `frameOf`. Switching them to `framesOf` (with the server's tokens)
   is step 2's job, with the hard roles that produce N4 lines.
 - English and romaji: the labels are Japanese only, as in the sixteen. A hand-written romaji per frame

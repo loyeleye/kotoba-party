@@ -296,6 +296,7 @@ export const cases: FrameCases = {
       { text: 'ごめん、今日は 行けない。', kana: 'ごめん、きょうは いけない。' },
     ],
     neg: [
+      ['もう いかなきゃ いけない。', 'なきゃ いけない: must, not "can go" (Japanese seat)'],
       ['えいごが できますか。', 'Nが できます: an N5 word, not the N4 potential (panel on #146)'],
       ['テニスが じょうずに できます。', 'Nが できます again, the N5 word'],
       ['ここで たべては いけません。', 'いけません after ては: mustn\'t, not "can go"'],
