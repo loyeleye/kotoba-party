@@ -36,7 +36,7 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
 - **When:** round 2 is the rumour round if anyone in the room plays at N4 when round 2 starts; otherwise it stays
   Lost in Translation. Players at every level take part.
 - **The rumour:** who (a studio yōkai or a host), where, and what they're up to, plus who saw it (the source
-  for ＿に よると and ＿と いって いました). 9 rumours for every room and 3 more for Cheeky rooms. Rumours are about
+  for ＿に よると and ＿と いって いました). 20 rumours for every room and 3 more for Cheeky rooms. Rumours are about
   the studio's yōkai, **never about players**: a relay or a fin that contains a player's name is refused
   (`names-player`).
 - **A relay:** one `answer` phase per player in seat order from a random seat (35 s Kana, 50 s N5, 60 s N4). The
@@ -81,8 +81,7 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
   typed), from memory only if they didn't open the words or Nobiko-san's line, kept who, where and what, and
   didn't echo the frame they heard. So frames in it count toward the goals
   through the path's own matchers: ＿そうです (4.6), ＿と いって いました and ＿って いって いました (4.14), ＿らしいです
-  (3.1), plain form (4.8). The round also recognises ＿に よると and ＿んだって, which the path has no frames for yet
-  (open question below).
+  (3.1), plain form (4.8), and (since 2026-11-01) ＿に よると ＿そうです and ＿んだって (4.6).
 - Kana relayers' fins go in as tiles (`read`). Everyone gets the opener as `seen`.
 
 ### Shiritori rules (house rules from the design doc)
@@ -149,7 +148,7 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
 4. Mode-specific host events (e.g. `gauntlet_golden_word`, `shiritori_out`) would let Pon react more precisely than the shared events used now.
 5. Should a challenged word that is accepted be added to a room-wide "house words" list for later games?
 6. Comeback boosts to speaking bonuses (design doc) are not applied.
-7. The learning path has no frames for ＿に よると ＿そうです or ＿んだって, so the rumour round scores them but the path doesn't count them. The Japanese seat says both are N4 material (Minna no Nihongo lesson 47, Genki II lesson 17), so add them under goal 4.6 rather than N3, with the usual 10 real lines and 10 look-alikes.
-9. The rumour round needs about 20 Family rumours before launch so a regular group doesn't hear repeats (12 now, 3 of them Cheeky).
+7. ~~Done (Ladi, 2026-11-01): ＿に よると ＿そうです and ＿んだって are now path frames under goal 4.6 (`ni-yoru`, `n-datte`), with 10 real lines and 10 look-alikes each.~~
+9. ~~Done (Ladi, 2026-11-01): 11 more rumours bring every room to 20 (23 in Cheeky rooms).~~
 10. The word filter isn't a moderation service: a relay read aloud on the TV has passed the filter only.
 8. Every rumour, fin, truth and Nobiko-san line in `rumours.ts` and her `rumour_*` lines is `draft` until a fluent check.
