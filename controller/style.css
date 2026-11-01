@@ -656,10 +656,10 @@ input::placeholder { color: #a99ccf; }
 .path-act.on { background: color-mix(in srgb, var(--gold) 18%, transparent); }
 .path-done { flex: none; padding: 0 8px; font-size: 13px; color: var(--good); font-weight: 700; }
 .path-strip-more { display: grid; gap: 6px; padding: 0 12px 12px; }
-.path-line-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 3px solid var(--line-c); background: var(--bg); }
-[data-line='kana'] { --line-c: var(--gold); }
+/* Line colours are their own: gold and warn mean states (next stop, return trip), never a line. */
+[data-line='kana'] { --line-c: #6ecef7; }
 [data-line='local'] { --line-c: var(--good); }
-[data-line='express'] { --line-c: var(--bad); }
+[data-line='express'] { --line-c: #ff8a3d; }
 .path-detail { display: grid; gap: 6px; }
 .path-detail p, .path-strip-more p, .path-tonight p, .path-cleared p { margin: 0; }
 .path-why, .path-note, .path-goal, .path-games { color: var(--muted); font-size: 14px; line-height: 1.4; }
@@ -697,45 +697,58 @@ input::placeholder { color: #a99ccf; }
 .path-switch small { color: var(--muted); font-size: 14px; line-height: 1.4; }
 .path-switch button { min-height: 48px; font-weight: 700; }
 /* The train map: a coloured track per line, one station per goal. */
-.path-map { display: grid; gap: 14px; }
+.path-map { display: grid; gap: 12px; }
 .path-map.off { opacity: 0.6; }
+.path-switch { grid-template-columns: 1fr auto; align-items: center; padding: 10px 12px; }
+.path-switch button { min-height: 44px; padding: 0 16px; }
+/* The route signs: one per line, like a station's line sign. */
+.path-signs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.path-sign { position: relative; display: grid; justify-items: center; gap: 2px; min-height: 92px; padding: 0 4px 8px; overflow: hidden; border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; cursor: pointer; }
+.path-sign-band { width: calc(100% + 8px); height: 8px; margin-bottom: 4px; background: var(--line-c); opacity: 0.5; }
+.path-sign-ja { font-family: var(--font-ja); font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.9; white-space: nowrap; }
+.path-sign-ja rt { font-size: 10px; font-weight: 400; color: var(--muted); }
+.path-sign strong { font-size: 14px; color: var(--ink); }
+.path-sign small { font-size: 12px; }
+.path-sign.on { border-color: var(--line-c); background: color-mix(in srgb, var(--line-c) 14%, var(--panel)); color: var(--ink); }
+.path-sign.on .path-sign-band { opacity: 1; }
+.path-sign-due { position: absolute; bottom: 6px; right: 4px; padding: 0 5px; border-radius: 999px; background: var(--gold); color: var(--bg); font-size: 11px; font-weight: 700; }
 .path-line { display: grid; gap: 6px; }
-.path-line h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; }
-.path-line h3 small { color: var(--muted); font-weight: 400; font-size: 13px; }
-.path-line .path-line-n { margin-left: auto; }
-.path-track { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; }
-.path-station { position: relative; padding-left: 26px; }
-.path-station::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 4px; background: var(--line-c); }
-.path-station:first-child::before { top: 50%; }
-.path-station:last-child::before { bottom: 50%; }
-.path-station button { display: grid; grid-template-columns: 1fr; gap: 2px; width: 100%; min-height: 48px; padding: 6px 8px; border: 0; border-radius: 10px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.path-station.now button { background: var(--panel); outline: 2px solid var(--line-c); }
-.path-station.open button { background: var(--panel); }
-.path-stop { position: absolute; left: 0; top: 50%; translate: 0 -50%; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; border: 4px solid var(--line-c); background: var(--bg); }
-.path-station.met .path-stop { border-color: transparent; background: none; }
-.path-station.soon .path-stop-text { opacity: 0.6; }
-/* Re-check rings, told apart by shape as well as colour: due is a solid ring, fading a dashed one. The stamp stays at full strength. */
-.path-station.ring-due .path-stop::after, .path-station.ring-fading .path-stop::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--warn); }
-.path-station.ring-fading .path-stop::after { border-style: dashed; border-color: var(--muted); }
-.path-station.gap .path-stop { border-style: dashed; border-color: var(--muted); }
-.path-station-static { display: grid; gap: 2px; min-height: 48px; padding: 6px 8px; }
-.path-koji { color: var(--warn) !important; font-family: var(--font-ja); font-weight: 700; }
-.path-pct { margin-left: auto; }
-.path-line.below { opacity: 0.7; }
-.path-chochin { font-family: var(--font-ja); font-weight: 700; color: var(--gold); }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.path-stop-text { display: flex; gap: 8px; align-items: baseline; }
+/* The track: a marker on the line for each station, then the station's words and its state pill. */
+.path-track { list-style: none; margin: 0; padding: 0; display: grid; }
+.path-station { position: relative; }
+.path-station::before { content: ''; position: absolute; left: 13px; top: 0; height: 100%; width: 6px; background: var(--line-c); }
+.path-station:first-child::before { top: 24px; height: calc(100% - 24px); }
+.path-station:last-child::before { height: 24px; }
+.path-station.soon::before, .path-station.gap::before { background: repeating-linear-gradient(var(--line-c) 0 6px, transparent 6px 10px); opacity: 0.5; }
+.path-row { position: relative; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 6px 8px 6px 42px; border: 0; border-radius: 10px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.path-row:hover { background: var(--panel); }
+.path-station.now .path-row { background: var(--panel); outline: 2px solid var(--ink); outline-offset: -2px; }
+.path-stop { position: absolute; left: 4px; top: 24px; translate: 0 -50%; width: 24px; height: 24px; border-radius: 50%; border: 4px solid var(--line-c); background: var(--bg); }
+/* Started: the ring fills like a clock, --p of the way round. Met: a solid disc. */
+.path-station.started .path-stop { background: conic-gradient(var(--line-c) var(--p), var(--bg) 0); }
+.path-station.met .path-stop { background: var(--line-c); }
+.path-station.met .path-stop::before { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--bg); font-size: 13px; font-weight: 900; }
+/* Return trip due: a second ring. Ink fading: the disc hatched, with a dashed edge. */
+.path-station.ring-due .path-stop { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--ink); }
+.path-station.ring-fading .path-stop { border-style: dashed; background: repeating-linear-gradient(45deg, var(--line-c) 0 3px, var(--bg) 3px 6px); }
+.path-station.ring-fading .path-stop::before { content: none; }
+/* Coming soon: a small grey diamond. Under construction: a striped barrier. */
+.path-station.soon .path-stop { left: 9px; width: 14px; height: 14px; border: 2px solid var(--muted); border-radius: 2px; rotate: 45deg; }
+.path-station.gap .path-stop { left: 4px; width: 24px; height: 12px; border: 0; border-radius: 2px; background: repeating-linear-gradient(45deg, var(--warn) 0 4px, var(--bg) 4px 8px); }
+.path-stop-text { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: baseline; }
 .path-stop-text small { color: var(--muted); font-size: 14px; }
-.path-bar { height: 6px; border-radius: 3px; background: var(--outline); overflow: hidden; }
-.path-bar i { display: block; height: 100%; background: var(--line-c); }
-.path-station-detail { display: grid; gap: 6px; margin: 4px 0 6px 8px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
-.path-station-detail p { margin: 0; }
-.path-legend { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0; padding: 0; color: var(--muted); font-size: 13px; }
-.path-legend li { display: inline-flex; align-items: center; gap: 4px; }
-.path-key { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--good); }
-.path-key.now { border-radius: 4px; outline: 2px solid var(--good); border: 0; }
-.path-key.due { border-color: var(--warn); }
-.path-key.fading { border: 2px dashed var(--muted); }
-.path-key.soon { border-style: dashed; border-color: var(--muted); opacity: 0.6; }
+.path-station.soon .path-stop-text, .path-station.gap .path-stop-text { color: var(--muted); }
+.path-row.static { cursor: default; }
+.path-row.static:hover { background: none; }
+.path-pill { flex: none; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.path-pill.now { border-color: var(--ink); color: var(--ink); }
+.path-pill.due { border-color: var(--gold); color: var(--gold); }
+.path-pill.fading { border-style: dashed; }
+.path-pill.koji { border-color: var(--warn); color: var(--warn); font-family: var(--font-ja); }
+.path-transfer { justify-self: start; min-height: 44px; margin: 4px 0 0; padding: 0 14px; border-radius: 999px; border: 2px solid var(--line-c); background: none; color: var(--ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.path-transfer span { font-family: var(--font-ja); color: var(--line-c); }
+.path-sheet .gp-head h2 { font-size: 18px; }
+.path-sheet-body { display: grid; gap: 10px; padding: 12px 16px 20px; overflow-y: auto; }
 .gp-wish { display: block; margin-top: 4px; color: var(--gold); font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .path-hanko.big { animation: none; } }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

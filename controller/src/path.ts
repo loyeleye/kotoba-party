@@ -378,13 +378,17 @@ export function clearedCard(level: Level, moveUp: (to: Level) => void, redraw: (
 
 // ---- My progress: the Path tab ----
 
-let openStation: string | null = null;
+// The map: one line at a time behind a route-sign picker, solid stations for met goals, and each station's
+// detail in a bottom sheet so the map never moves. The red hanko stays for the reward moments (the recap,
+// the line-cleared card, and the top of a met station's sheet).
 
-/** A station's state, for screen readers (the map shows it with stamps, rings and colour). */
+let shownLine: LineId | null = null;
+
+/** A station's state, for screen readers and for its pill. */
 function stationState(s: GoalState, isNow: boolean): string {
   const parts: string[] = [];
   if (s.met) parts.push('met');
-  if (s.recheck === 'due') parts.push('due for its return trip');
+  if (s.recheck === 'due') parts.push('return trip due');
   if (s.recheck === 'fading') parts.push('ink fading');
   if (!s.ready) parts.push('coming soon');
   if (isNow) parts.push('next stop');
@@ -392,98 +396,134 @@ function stationState(s: GoalState, isNow: boolean): string {
   return parts.join(', ');
 }
 
-/**
- * One line on the map: a track with one station per goal. A gap goal shows as 工事中 (under construction),
- * not counted. Lines below the player's level are muted: optional, filled in by what they've said.
- */
-function lineMap(line: Line, st: PathStatus, level: Level, current: Goal | null, redraw: () => void): HTMLElement {
-  const goals = GOALS.filter((x) => x.line === line.id);
+/** The pill at the row's end: words, so no state rests on colour alone. */
+function stationPill(s: GoalState, isNow: boolean): HTMLElement | null {
+  if (s.recheck === 'due') return h('span', { class: 'path-pill due', 'aria-hidden': 'true' }, '↻ Return trip');
+  if (s.recheck === 'fading') return h('span', { class: 'path-pill fading', 'aria-hidden': 'true' }, 'Ink fading');
+  if (isNow && !s.met) return h('span', { class: 'path-pill now', 'aria-hidden': 'true' }, '▶ Next stop');
+  if (!s.ready) return h('span', { class: 'path-pill soon', 'aria-hidden': 'true' }, 'Coming soon');
+  if (!s.met && s.progress > 0) return h('span', { class: 'path-pill', 'aria-hidden': 'true' }, `${pct(s.progress)}%`);
+  return null;
+}
+
+/** The route sign for one line: its name, the Japanese with furigana, and how far along it is. */
+function lineSign(line: Line, st: PathStatus, level: Level, on: boolean, pick: () => void): HTMLElement {
   const ls = st.lines.find((l) => l.id === line.id)!;
   const below = LINES.indexOf(line) < LINES.findIndex((l) => l.level === level);
-  const count = ls.cleared ? 'Cleared' : `${ls.met} of ${ls.of} met`;
+  const due = GOALS.filter((x) => x.line === line.id && goalState(st, x.id).recheck).length;
+  const count = ls.cleared ? '済 Cleared' : `${ls.met} of ${ls.of}${below ? ' · optional' : ''}`;
   return h(
-    'section',
-    { class: `path-line${below ? ' below' : ''}`, 'data-line': line.id, 'aria-label': `${line.name}: ${count}${ls.soon ? `, ${ls.soon} coming soon` : ''}` },
-    h('h3', {}, h('span', { class: 'path-line-dot', 'data-line': line.id, 'aria-hidden': 'true' }), line.name, ' ', lineJa(line.id), h('small', { class: 'path-line-n' }, count)),
-    below ? h('p', { class: 'path-note' }, 'Optional · filled in by what you’ve said') : null,
-    h(
-      'ol',
-      { class: 'path-track' },
-      goals.map((goal) => {
-        const s = goalState(st, goal.id);
-        if (goal.gap) {
-          return h(
-            'li',
-            { class: 'path-station gap' },
-            h('div', { class: 'path-station-static' }, h('span', { class: 'path-stop', 'aria-hidden': 'true' }), h('span', { class: 'path-stop-text' }, h('strong', {}, goal.id), h('small', {}, goal.title), h('small', { class: 'path-koji', lang: 'ja' }, '工事中')), h('small', { class: 'path-note' }, 'Under construction: no game uses these yet, so it isn’t counted.')),
-          );
-        }
-        const isNow = goal === current;
-        const isOpen = openStation === goal.id;
-        const detailId = `path-detail-${goal.id.replace('.', '-')}`;
-        const cls = ['path-station', s.met ? 'met' : '', isNow ? 'now' : '', s.recheck ? `ring-${s.recheck}` : '', s.ready ? '' : 'soon', isOpen ? 'open' : ''].filter(Boolean).join(' ');
-        return h(
-          'li',
-          { class: cls, 'aria-current': isNow ? 'step' : null },
-          h(
-            'button',
-            {
-              type: 'button',
-              'aria-expanded': String(isOpen),
-              'aria-controls': detailId,
-              'data-goal': goal.id,
-              onclick: () => {
-                openStation = isOpen ? null : goal.id;
-                redraw();
-                // The redraw rebuilds the page: keep focus on this station, and bring its detail into view.
-                const btn = document.querySelector<HTMLElement>(`.path-station button[data-goal="${goal.id}"]`);
-                btn?.focus();
-                if (!isOpen) document.getElementById(detailId)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-              },
-            },
-            h('span', { class: 'path-stop', 'aria-hidden': 'true' }, s.met ? sumiStamp() : null),
-            h('span', { class: 'path-stop-text' }, h('strong', {}, goal.id), h('small', {}, goal.title), !s.met && s.ready && s.progress > 0 ? h('small', { class: 'path-pct', 'aria-hidden': 'true' }, `${pct(s.progress)}%`) : null, srOnly(stationState(s, isNow))),
-            isNow && !s.met ? h('span', { class: 'path-bar', 'aria-hidden': 'true' }, h('i', { style: `width:${pct(s.progress)}%` })) : null,
-          ),
-          isOpen ? h('div', { class: 'path-station-detail', id: detailId }, goalDetail(goal, st, level)) : null,
-        );
-      }),
-    ),
+    'button',
+    { type: 'button', role: 'tab', class: `path-sign${on ? ' on' : ''}`, 'data-line': line.id, 'aria-selected': String(on), 'aria-controls': 'path-line-panel', id: `path-sign-${line.id}`, tabindex: on ? '0' : '-1', onclick: pick },
+    h('span', { class: 'path-sign-band', 'aria-hidden': 'true' }),
+    h('span', { class: 'path-sign-ja', lang: 'ja' }, LINE_RUBY[line.id].flatMap(([t, r]): (HTMLElement | string)[] => (r ? [...t].map((c, i) => h('ruby', {}, c, h('rt', {}, rubyPart(r, t, i)))) : [t]))),
+    h('strong', {}, line.name.replace(' Line', '')),
+    h('small', {}, count),
+    due ? h('span', { class: 'path-sign-due', 'aria-label': `${due} return ${due === 1 ? 'trip' : 'trips'} due` }, `↻ ${due}`) : null,
   );
 }
 
-/** The switch and the train map: three lines, a station per goal, 済 for met, a ring for the 3-week check. */
+/** Furigana split per kanji where the reading divides evenly (各駅停車 → かく えき てい しゃ). */
+const RUBY_SPLIT: Record<string, string[]> = { 各駅停車: ['かく', 'えき', 'てい', 'しゃ'], 急行: ['きゅう', 'こう'], 線: ['せん'] };
+const rubyPart = (reading: string, text: string, i: number): string => RUBY_SPLIT[text]?.[i] ?? (i === 0 ? reading : '');
+
+/** One line's track: a row per goal, the marker on the track, the state in words. */
+function lineTrack(line: Line, st: PathStatus, current: Goal | null, open: (goal: Goal, btn: HTMLElement) => void): HTMLElement {
+  const goals = GOALS.filter((x) => x.line === line.id);
+  return h(
+    'ol',
+    { class: 'path-track', 'data-line': line.id },
+    goals.map((goal) => {
+      const s = goalState(st, goal.id);
+      if (goal.gap) {
+        return h(
+          'li',
+          { class: 'path-station gap' },
+          h('div', { class: 'path-row static' }, h('span', { class: 'path-stop', 'aria-hidden': 'true' }), h('span', { class: 'path-stop-text' }, h('strong', {}, goal.id), h('small', {}, goal.title)), h('span', { class: 'path-pill koji', lang: 'ja' }, '工事中')),
+        );
+      }
+      const isNow = goal === current;
+      const cls = ['path-station', s.met ? 'met' : s.progress > 0 && s.ready ? 'started' : '', isNow ? 'now' : '', s.recheck ? `ring-${s.recheck}` : '', s.ready ? '' : 'soon'].filter(Boolean).join(' ');
+      return h(
+        'li',
+        { class: cls, 'aria-current': isNow ? 'step' : null, style: `--p:${pct(s.met ? 1 : s.progress)}%` },
+        h(
+          'button',
+          { type: 'button', class: 'path-row', 'aria-haspopup': 'dialog', 'data-goal': goal.id, onclick: (e: Event) => open(goal, e.currentTarget as HTMLElement) },
+          h('span', { class: 'path-stop', 'aria-hidden': 'true' }),
+          h('span', { class: 'path-stop-text' }, h('strong', {}, goal.id), h('small', {}, goal.title), srOnly(stationState(s, isNow))),
+          stationPill(s, isNow),
+        ),
+      );
+    }),
+  );
+}
+
+/** A station's sheet: the stamp when met, then the detail. */
+function stationSheet(): { sheet: HTMLDialogElement; show: (goal: Goal, st: PathStatus, level: Level, from: HTMLElement) => void } {
+  const body = h('div', { class: 'path-sheet-body' });
+  const title = h('h2', { id: 'path-sheet-title' });
+  const sheet = h('dialog', { class: 'gp-sheet path-sheet', 'aria-labelledby': 'path-sheet-title' }, h('div', { class: 'gp-head' }, title, h('button', { type: 'button', class: 'gp-close', 'aria-label': 'Close', onclick: () => sheet.close() }, '✕')), body) as HTMLDialogElement;
+  let back: HTMLElement | null = null;
+  sheet.addEventListener('click', (e) => e.target === sheet && sheet.close());
+  sheet.addEventListener('close', () => back?.isConnected && back.focus());
+  const show = (goal: Goal, st: PathStatus, level: Level, from: HTMLElement) => {
+    back = from;
+    const s = goalState(st, goal.id);
+    title.textContent = goalLabel(goal);
+    body.replaceChildren(
+      s.met ? h('p', { class: 'path-stamped' }, sumiStamp('big'), h('span', {}, h('strong', {}, 'Station stamped'), h('small', {}, `${LINE_BY_ID[goal.line].name}${s.metAt ? ` · ${new Date(s.metAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}`))) : '',
+      goalDetail(goal, st, level),
+    );
+    sheet.dataset.line = goal.line;
+    if (!sheet.open) sheet.showModal();
+  };
+  return { sheet, show };
+}
+
+/** The switch, the line picker and one line's track. */
 export function pathTab(view: AccountView, level: Level, toggle: (on: boolean) => void, busy: boolean, redraw: () => void): HTMLElement {
   const on = view.path;
   const st = view.pathStatus;
   const s = suggest(st, level, null);
+  const line = LINE_BY_ID[shownLine ?? s?.line.id ?? currentLine(st, level).id];
+  const { sheet, show } = stationSheet();
+  const pick = (id: LineId) => {
+    shownLine = id;
+    redraw();
+    document.getElementById(`path-sign-${id}`)?.focus();
+  };
+  // Arrow keys move between the signs, as in any tab list.
+  const onKey = (e: KeyboardEvent) => {
+    const i = LINES.indexOf(line);
+    const j = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : -1;
+    if (j >= 0 && j < LINES.length) (e.preventDefault(), pick(LINES[j]!.id));
+  };
+  const ls = st.lines.find((l) => l.id === line.id)!;
+  const below = LINES.indexOf(line) < LINES.findIndex((l) => l.level === level);
+  const next = LINES[LINES.indexOf(line) + 1];
   return h(
     'div',
     { class: 'acct-cards path-tab' },
     h(
       'div',
       { class: 'path-switch' },
-      h(
-        'p',
-        {},
-        h('strong', {}, 'Learning path'),
-        h('small', {}, 'Ride three train lines, Kana → N5 → N4. Each station is something you can say from memory, and your phone suggests the game that gets you there. Only you see it; the TV and the game stay the same for everyone.'),
-      ),
+      h('p', {}, h('strong', {}, 'Learning path'), h('small', {}, 'Stations you can say from memory. Only you see it.')),
       h('button', { type: 'button', class: on ? 'secondary' : 'primary', role: 'switch', 'aria-checked': String(on), disabled: busy, onclick: () => toggle(!on) }, on ? 'Turn off' : 'Turn on'),
     ),
     h(
       'div',
       { class: `path-map${on ? '' : ' off'}` },
-      LINES.map((line) => lineMap(line, st, level, s?.goal ?? null, redraw)),
+      h('div', { class: 'path-signs', role: 'tablist', 'aria-label': 'Lines', onkeydown: onKey as EventListener }, LINES.map((l) => lineSign(l, st, level, l === line, () => pick(l.id)))),
       h(
-        'ul',
-        { class: 'path-legend', 'aria-label': 'Key' },
-        h('li', {}, sumiStamp(), ' met'),
-        h('li', {}, h('span', { class: 'path-key now', 'aria-hidden': 'true' }), ' next stop'),
-        h('li', {}, h('span', { class: 'path-key due', 'aria-hidden': 'true' }), ' return trip due'),
-        h('li', {}, h('span', { class: 'path-key fading', 'aria-hidden': 'true' }), ' ink fading'),
-        h('li', {}, h('span', { class: 'path-key soon', 'aria-hidden': 'true' }), ' coming soon'),
+        'section',
+        { class: 'path-line', id: 'path-line-panel', role: 'tabpanel', 'aria-labelledby': `path-sign-${line.id}`, 'data-line': line.id },
+        below ? h('p', { class: 'path-note' }, 'Optional · filled in by what you’ve said') : null,
+        ls.soon ? h('p', { class: 'path-note' }, `${ls.soon} ${ls.soon === 1 ? 'station opens' : 'stations open'} when the game learns to spot their sentences. They don’t count yet.`) : null,
+        lineTrack(line, st, s?.goal ?? null, (goal, btn) => show(goal, st, level, btn)),
+        next ? h('button', { type: 'button', class: 'path-transfer', 'data-line': next.id, onclick: () => pick(next.id) }, h('span', { lang: 'ja' }, 'のりかえ'), ` Change to the ${next.name} →`) : null,
       ),
     ),
+    sheet,
   );
 }
