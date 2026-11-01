@@ -14,6 +14,7 @@ import type { RoomView } from '../../../shared/src/protocol.js';
 import { audioReady, audioSupported, fanfare, isMuted, playSong, playTurn, setMuted, songPlaying, stopAll, unlockAudio } from './karaokeAudio.js';
 import type { StageMode } from './types.js';
 import { calm } from '../sprites.js';
+import { n4Up } from '../../../shared/src/level.js';
 
 // ---------- server clock ----------
 // `at` is the server time of the view's last change; a state arrives after it was made, so
@@ -290,7 +291,7 @@ function danceFace(view: RoomView, game: KaraokeDuelView, turnNo: number): 'smil
   const t = game.takes.filter((x) => x.turnNo >= turnNo - 1).at(-1);
   if (!t || t.via === 'typed') return null;
   const level = view.players.find((p) => p.id === t.playerId)?.level;
-  const wryUnder = level === 'n4' ? 0.5 : level === 'n5' ? 0.3 : 0; // the words score below which she looks wry
+  const wryUnder = n4Up(level) ? 0.5 : level === 'n5' ? 0.3 : 0; // the words score below which she looks wry
   if (wryUnder && (t.missed || t.pron < wryUnder)) return 'wry';
   return t.pron >= 0.8 && (t.timing ?? 1) >= 0.7 ? 'smile' : null;
 }

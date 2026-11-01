@@ -32,6 +32,7 @@ import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_CURVEBALL_MS, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -50,7 +51,7 @@ export const EPISODE_POINTS = 150;
  */
 export const WORD_POINTS = { full: 50, close: 30, tried: 20, unchecked: 30 } as const;
 /** Similarity that counts as the words being right, by level: a step easier than Karaoke Duel's. */
-export const WORDS_FULL_AT: Record<Level, number> = { kana: 0.7, n5: 0.8, n4: 0.85 };
+export const WORDS_FULL_AT: Record<Level, number> = { kana: 0.7, n5: 0.8, n4: 0.85, n3: 0.85 };
 export const CLOSE_AT = 0.5;
 /** Rehearsal tries: the first, and one retry after the feedback. */
 export const REHEARSALS = 2;
@@ -607,7 +608,7 @@ function startScene(s: DubState, ctx: ModeContext): void {
   // longest ago; a "not this time" sits the next scene out; in a room of 4 or more, whoever played it last
   // scene gets this one off). No N4 player, no change.
   const here = new Set(ctx.connected().map((p) => p.id));
-  const n4 = actors.filter((a) => a.level === 'n4' && here.has(a.playerId)).map((a) => a.playerId);
+  const n4 = actors.filter((a) => n4Up(a.level) && here.has(a.playerId)).map((a) => a.playerId);
   const past = s.rounds.flatMap((r) => r.actors.flatMap((a) => (a.adlib ? [{ playerId: a.playerId, at: r.index, answer: a.adlib }] : [])));
   const id = nextOfferee(n4, past, s.round, here.size);
   const pick = actors.find((a) => a.playerId === id);

@@ -11,7 +11,7 @@
 // Never: illness, injury, death, mental health, family emergencies, body or weight jokes, drinking. The
 // problems are yōkai nuisances (a dry dish, a lantern that's lost its flame, a tanuki who can't change back).
 
-import type { JpText, Level } from '../../../../content/src/types.js';
+import type { ByLevel, JpText, Level } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 
 /** One piece of advice: a Kana adviser's tile, a gallery bet picture, and what the recogniser listens for. */
@@ -42,7 +42,7 @@ export interface Problem {
   /** Who is calling: a yōkai of the studio. */
   caller: { name: JpText; picture: string; emoji: string };
   /** The problem as the caller says it, by level (Kana: one short line on a tile). */
-  line: Record<Level, JpText>;
+  line: ByLevel<JpText>;
   /** The gist every phone gets once the problem is said: a short kana line, with English. */
   gist: JpText;
   /** What would really help: only the caller sees it until the secret beat. */

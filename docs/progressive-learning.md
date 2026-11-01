@@ -18,10 +18,10 @@ My progress has a **Path** tab (first of four). Its switch, *Turn on* / *Turn of
 account (`Progress.path`), so it follows the player to any phone. It's off until they turn it on.
 Signed-out players never see any of this. With the path on, My progress opens on the Path tab.
 
-## The path (version 2: Kana → N5 → N4)
+## The path (version 2: Kana → N5 → N4 → N3)
 
 `shared/src/path.ts`, from the tiers doc v2 (Claude Doc, 2026-11-01, after the game design, JLPT and
-learning-science reviews). Three lines of can-do goals, worked back from the N5 and N4 syllabus:
+learning-science reviews). Four lines of can-do goals, worked back from the N5, N4 and N3 syllabus:
 
 - **Kana Line** (かな線, the New level): K1 hiragana, K2 katakana, K3 greet/thank/apologise, K4 say who
   you are.
@@ -33,7 +33,25 @@ learning-science reviews). Three lines of can-do goals, worked back from the N5 
   and when (のに counts too), 4.6 guess/hearsay/opinion (＿みたいです／＿ようです counts too), 4.7 plans and advice
   (shown as 工事中, under construction, and not counted: Ghost Advice Hotline gives advice with ＿た ほうが いいです
   and ＿たら どうですか, but no game asks for plans yet), 4.8 casual speech, 4.9 polite requests
-  (polite ＿んです counts too), 4.10 N4 kanji.
+  (polite ＿んです counts too), 4.10 N4 kanji, 4.11 reasons and too much (＿ので, ＿すぎる), 4.12 change and
+  decisions (＿ように なりました, ＿ことに しました), 4.13 the passive (＿やすい／＿にくい count too) and 4.14 quoting,
+  purpose and embedded questions (＿と いって いました, ＿ために／＿ように; Ghost Advice Hotline's callers pass on what
+  they were told). 4.11 to 4.14 joined at step 6 of the N4/N3
+  plan: their frames have been in frames.ts since step 1, and Late Again! (4.11, 4.13), Happyōkai (4.11, 4.12),
+  Murder at the Onsen's deputy (4.13, 4.14) and the Word Gauntlet rumour round (4.14) already ask for them.
+- **Limited Express Line** (特急, N3): 3.1 rumours and reported speech, 3.2 what happened to me, 3.3 reasons and
+  blame, 3.4 contrast, 3.5 what-ifs, 3.6 intentions and attempts, 3.7 explaining, 3.8 service Japanese, 3.9 time
+  and change, 3.10 opinions and debate, 3.11 casual nuance, 3.12 30 sign kanji. It's the last line. Most of its
+  frames are still coming to frames.ts, so its goals show as coming soon and count once their matchers land;
+  3.12 is hidden until the N3 sign kanji are in Shodō and Read the Signs. One rule for frames shared across the boundary: a frame
+  tagged N4 in frames.ts may count on an N3 goal only as optional, never required, and every N3 goal requires
+  at least one frame no N4 goal offers (both are tests). So 3.1 requires らしい (に よると and ＿んだって count too,
+  as on 4.6), 3.4 requires ＿わりに and ＿くせに (のに counts too, as on 4.5), and the N4 frames Ladi made optional
+  (Nov 1) stay off the N3 goals' requirements: 3.5 asks for ＿としたら and 4.13 for the passive alone. Frames that
+  exist only as N3 ids, such as らしい and させられる, stay required. The line can't clear while any of its
+  stations is still coming soon. An N3 player gets the N4 hard roles, decks and hints in every game until a
+  game has its own N3 script (`n4Up` in shared/src/level.ts), and N3 joins the level picker once the N3 decks
+  are in (`N3_IN_PICKER` in shared/src/protocol.ts).
 
 Yōkai Court (docs/modes/yokai-court.md, step 6) plays on 4.2: its N4 lawyers say ＿なければ なりません and
 ＿なくても いいです. Its N3 lines (に よると, に ちがいありません, わけでは ありません) are keyed by a local
@@ -140,13 +158,16 @@ lists, including every misfire the Japanese review found.
   tonight, once, with how many different phrases used it, and a hanko 済 for each goal met tonight
   ("Station stamped on the Local Line"). The strip comes back with no button.
 - **Line cleared:** "Local Line cleared!" with the hanko first, the chōchin's 「のりかえです！ つぎの せんへ
-  どうぞ。」, the frames, phrases and kanji used, and for the Local and Express Lines a note that the JLPT also
-  tests reading and listening (a mock test shows where you stand). Then *Change to the Express Line* /
-  *Stay on the Local Line* at the same weight. The Express Line ends with しゅうてん and "Thanks for riding".
+  どうぞ。」, the frames, phrases and kanji used, and for the Local, Express and Limited Express Lines a note that
+  the JLPT also tests reading and listening (a mock test shows where you stand). Then *Change to the Express
+  Line* / *Stay on the Local Line* at the same weight. Until N3 is in the level picker, the Express card offers
+  no move: the chōchin says 「とっきゅうの ホームは ただいま こうじちゅうです。」 and there's a single OK. The
+  Limited Express Line is the end of the line: 「しゅうてん、 しゅうてんです。 ごじょうしゃ ありがとう ございました。」
+  ("Last stop. Thanks for riding.").
   Shown once per line on that phone, below Start or on the recap; it never changes the level by itself.
-- **My progress → Path:** a one-row switch, then three route signs (かな線 · 各駅停車 · 急行, furigana over each
+- **My progress → Path:** a one-row switch, then four route signs, two by two (かな線 · 各駅停車 · 急行 · 特急, furigana over each
   kanji, the count, and ↻ N when a return trip is due) that show one line at a time, opening on the line
-  the suggestion is on. Line colours are their own (Kana sky blue, Local green, Express orange); gold and
+  the suggestion is on. Line colours are their own (Kana sky blue, Local green, Express orange, Limited Express rose); gold and
   white only mark states. A met station is a solid disc with a check; a started one fills like a clock; a
   return trip due adds a second ring, and fading ink hatches the disc with a dashed edge. Coming-soon
   stations are small grey diamonds on a dashed stretch, and 4.7 is a striped 工事中 barrier. Every state

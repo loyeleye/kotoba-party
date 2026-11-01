@@ -662,6 +662,7 @@ input::placeholder { color: #a99ccf; }
 [data-line='kana'] { --line-c: #6ecef7; }
 [data-line='local'] { --line-c: var(--good); }
 [data-line='express'] { --line-c: #ff8a3d; }
+[data-line='limited'] { --line-c: #f25ca2; }
 .path-detail { display: grid; gap: 6px; }
 .path-detail p, .path-strip-more p, .path-tonight p, .path-cleared p { margin: 0; }
 .path-why, .path-note, .path-goal, .path-games { color: var(--muted); font-size: 14px; line-height: 1.4; }
@@ -704,7 +705,7 @@ input::placeholder { color: #a99ccf; }
 .path-switch { grid-template-columns: 1fr auto; align-items: center; padding: 10px 12px; }
 .path-switch button { min-height: 44px; padding: 0 16px; }
 /* The route signs: one per line, like a station's line sign. */
-.path-signs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.path-signs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .path-sign { position: relative; display: grid; justify-items: center; gap: 2px; min-height: 92px; padding: 0 4px 8px; overflow: hidden; border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; cursor: pointer; }
 .path-sign-band { width: calc(100% + 8px); height: 8px; margin-bottom: 4px; background: var(--line-c); opacity: 0.5; }
 .path-sign-ja { font-family: var(--font-ja); font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.9; white-space: nowrap; }

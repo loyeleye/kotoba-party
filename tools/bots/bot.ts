@@ -55,7 +55,7 @@ export interface BotOptions {
   script?: BotScript;
   /** Play a real mode with this policy instead of the debug script. */
   policy?: ModePolicy;
-  level?: 'kana' | 'n5' | 'n4';
+  level?: 'kana' | 'n5' | 'n4' | 'n3';
   deviceId?: string;
   /** Join in quiet mode (mic off), as the lobby's "I can't talk right now". */
   quiet?: boolean;

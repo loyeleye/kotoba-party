@@ -5,7 +5,12 @@
 // these types can be re-exported from there without changes.
 
 /** A player's level band (see the design doc, "Level bands"). */
-export type Level = 'kana' | 'n5' | 'n4';
+export type Level = 'kana' | 'n5' | 'n4' | 'n3';
+
+/** Text written for each level up to N4, with an optional N3 version (N3 falls back to the N4 one). */
+export type ByLevel<T> = Record<'kana' | 'n5' | 'n4', T> & { n3?: T };
+/** The version for this level: an N3 player gets the N4 version where no N3 one is written. */
+export const atLevel = <T>(rec: ByLevel<T>, level: Level): T => (level === 'n3' ? (rec.n3 ?? rec.n4) : rec[level]);
 
 /**
  * A piece of Japanese with everything the game needs to show, voice and check it.

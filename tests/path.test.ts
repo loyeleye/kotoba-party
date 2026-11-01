@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { kana } from '../content/src/kana/kana.js';
 import type { PhraseEntry } from '../shared/src/modes/mode.js';
 import { MODES } from '../shared/src/modes/registry.js';
+import { FRAME_BY_ID } from '../shared/src/japanese/frames.js';
 import { currentLine, frameReady, frameText, GOAL_FRAMES, GOALS, KANA_TARGET, LINES, markPath, missingFrames, pathStatus, suggest } from '../shared/src/path.js';
 import { addGame, duePhrases, emptyProgress, frameRule, MAX_PHRASES, recallOf, reviewPhrase, type GameResult, type Progress } from '../shared/src/progress.js';
 import type { ModeId } from '../shared/src/protocol.js';
@@ -36,23 +37,25 @@ function meetDesu(p: Progress): void {
 }
 
 describe('the goals', () => {
-  it('are the tiers doc’s 24: 4 on the Kana Line, 10 on the Local Line, 10 on the Express Line', () => {
-    expect(GOALS).toHaveLength(24);
-    expect(LINES.map((l) => GOALS.filter((g) => g.line === l.id).length)).toEqual([4, 10, 10]);
-    expect(new Set(GOALS.map((g) => g.id)).size).toBe(24);
+  it('are the plan’s 40: 4 on the Kana Line, 10 on the Local Line, 14 on the Express Line, 12 on the Limited Express Line', () => {
+    expect(GOALS).toHaveLength(40);
+    expect(LINES.map((l) => GOALS.filter((g) => g.line === l.id).length)).toEqual([4, 10, 14, 12]);
+    expect(new Set(GOALS.map((g) => g.id)).size).toBe(40);
     for (const g of GOALS) for (const m of g.games) expect(MODES[m], `${g.id} ${m}`).toBeDefined();
   });
 
   it('give every frame they name a label and hand-written rōmaji', () => {
     for (const id of GOAL_FRAMES) {
       const t = frameText(id);
-      expect(t.romaji, id).not.toBe(id);
+      // An unknown id falls back to the id itself; a set phrase's rōmaji can match its id (tsumari).
+      expect(t.ja, id).not.toBe(id);
+      expect(t.romaji, id).not.toMatch(/[ぁ-んァ-ン一-鿿]/);
       expect(t.ja, id).toMatch(/[ぁ-んァ-ン＿]/);
     }
   });
 
   it('hide only the gap (4.7) and wait for frames.ts on the frames it doesn’t have yet', () => {
-    expect(GOALS.filter((g) => g.gap).map((g) => g.id)).toEqual(['4.7']);
+    expect(GOALS.filter((g) => g.gap).map((g) => g.id)).toEqual(['4.7', '3.12']);
     // Today's frames cover K4, 5.1, 5.4 (with ＿に ＿が あります standing in), 5.5, 5.6, 5.7, 5.9 and 4.2.
     for (const id of ['K4', '5.1', '5.4', '5.5', '5.6', '5.7', '5.9', '4.2']) expect(missingFrames(GOALS.find((g) => g.id === id)!), id).toEqual([]);
     for (const g of GOALS) for (const id of missingFrames(g)) expect(frameReady(id)).toBe(false);
@@ -214,6 +217,33 @@ describe('goals and stamps', () => {
     // A phone review is not a game day.
     reviewPhrase(q, 'kj-山', true, T0 + 3 * DAY, 0);
     expect(goal(q, '5.10', T0 + 3 * DAY).count!.have).toBe(0);
+  });
+});
+
+describe('the Limited Express Line (N3)', () => {
+  const limited = GOALS.filter((g) => g.line === 'limited');
+  const required = (g: (typeof GOALS)[number]) => g.need.flatMap((n) => (Array.isArray(n) ? n : [n]));
+
+  it("doesn't clear while it still has coming-soon stations: meeting 3.1 alone isn't the last stop", () => {
+    const p = emptyProgress();
+    p.frameMarks = Object.fromEntries(required(GOALS.find((g) => g.id === '3.1')!).map((id) => [id, { metAt: T0, recheckAt: T0 + 21 * DAY, recheck: 'waiting' as const }]));
+    markPath(p, T0);
+    const st = status(p);
+    expect(goal(p, '3.1').met).toBe(true);
+    const line = st.lines.find((l) => l.id === 'limited')!;
+    expect(line.soon).toBeGreaterThan(0);
+    expect(line.cleared).toBe(false);
+  });
+
+  it('never requires a frame tagged N5 or N4: those can count on an N3 goal only as optional', () => {
+    const bad = limited.flatMap((g) => required(g).filter((id) => ['n5', 'n4'].includes(FRAME_BY_ID[id as keyof typeof FRAME_BY_ID]?.level ?? '')).map((id) => `${g.id}:${id}`));
+    expect(bad).toEqual([]);
+  });
+
+  it('gives every N3 frame goal at least one required frame that no N4 goal offers', () => {
+    const n4 = new Set(GOALS.filter((g) => g.line === 'express').flatMap((g) => [...required(g), ...g.also]));
+    const lacking = limited.filter((g) => g.kind !== 'kanji' && !required(g).some((id) => !n4.has(id))).map((g) => g.id);
+    expect(lacking).toEqual([]);
   });
 });
 
