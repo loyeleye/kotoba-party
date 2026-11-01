@@ -4,7 +4,8 @@
 // memory or after a peek at the Japanese. The assistant picks each next slide (sometimes the wild one, once a mishap)
 // and now and then pushes a cue card. Everyone else stamps, asks a question (out loud or tapped),
 // grades the talk and votes for the best one.
-// Repeatable: every choice hashes the bot's id with the phase and slide.
+// Repeatable: every choice hashes the bot's id with the phase and slide. A sentence read out is sent in kana,
+// as the server's reading would give it, so the game can tell it was read (no server adds readings in the sim).
 
 import { haveYouCard, haveYouOf } from '../../../shared/src/modes/happyokai/content.js';
 import type { HappyokaiView } from '../../../shared/src/modes/happyokai/happyokai.js';
@@ -33,6 +34,22 @@ const pickOf = <T>(items: readonly T[], r: number): T | undefined => items[Math.
 
 const STAMPS = ['omoshiroi', 'hee', 'sugoi', 'naruhodo', 'ee'] as const;
 
+/** A sentence of the bot's own about the slide: in a deck talk, one in the deck's frames, as a player would make from the cue frames. */
+function ownLine(frames: readonly string[], word: string, r: number): string {
+  if (frames.some((f) => f.includes('ように なりました'))) return r < 0.5 ? `いまは まいにち ${word}を みるように なりました。` : `それで、${word}を さがす ことに しました。`;
+  if (frames.some((f) => f.startsWith('もし'))) return `もし ${word}が ${frames.some((f) => f.includes('いなかったら')) ? 'いなかったら' : 'なかったら'}、こまると おもいます。`;
+  return `これは ${word} です。`;
+}
+
+/** The bot's question-time answer: in a Then and now talk, one of the answer frames a third of the time each, else the stall. */
+function answerLine(frames: readonly string[], r: number): string {
+  if (frames.some((f) => f.includes('ことに'))) {
+    if (r < 1 / 3) return 'いい しつもんですね。それで、もっと しらべる ことに しました。';
+    if (r < 2 / 3) return 'まえは できませんでしたが、いまは できるように なりました。';
+  }
+  return 'いい しつもんですね。おいしい から です。';
+}
+
 export function happyokaiPolicy(opts: HappyokaiPolicyOptions = {}): ModePolicy {
   const readChance = opts.readChance ?? 0.4;
   const mishapChance = opts.mishapChance ?? 0.3;
@@ -59,13 +76,13 @@ export function happyokaiPolicy(opts: HappyokaiPolicyOptions = {}): ModePolicy {
         if (me.role === 'presenter') {
           const said = me.lines.length;
           if (said === 0) {
-            if (me.script) out.push({ key: `say:${at}`, move: { kind: 'say', utterance: { via, text: me.script.text } }, delayMs: delay('say') });
+            if (me.script) out.push({ key: `say:${at}`, move: { kind: 'say', utterance: { via, text: me.script.kana } }, delayMs: delay('say') });
             else if (me.ready.length && r('read?') < readChance) {
               const line = pickOf(me.ready, r('ready'))!;
-              out.push(opts.quiet ? { key: `ready:${at}`, move: { kind: 'ready', key: line.key }, delayMs: delay('say') } : { key: `say:${at}`, move: { kind: 'say', utterance: { via: 'speech', text: line.text } }, delayMs: delay('say') });
-            } else if (me.word) out.push({ key: `say:${at}`, move: { kind: 'say', utterance: { via, text: `これは ${me.word.kana} です。` } }, delayMs: delay('say') });
+              out.push(opts.quiet ? { key: `ready:${at}`, move: { kind: 'ready', key: line.key }, delayMs: delay('say') } : { key: `say:${at}`, move: { kind: 'say', utterance: { via: 'speech', text: line.kana } }, delayMs: delay('say') });
+            } else if (me.word) out.push({ key: `say:${at}`, move: { kind: 'say', utterance: { via, text: ownLine(me.frames, me.word.kana, r('which frame')) } }, delayMs: delay('say') });
           } else if (said === 1 && me.ready.length > 1 && r('two?') < 0.6) {
-            out.push({ key: `say2:${at}`, move: { kind: 'say', utterance: { via, text: me.ready[1]!.text } }, delayMs: delay('say2') + think });
+            out.push({ key: `say2:${at}`, move: { kind: 'say', utterance: { via, text: me.ready[1]!.kana } }, delayMs: delay('say2') + think });
           } else if (me.canNext) out.push({ key: `next:${at}`, move: { kind: 'next' }, delayMs: delay('next') + think });
           return out;
         }
@@ -95,7 +112,7 @@ export function happyokaiPolicy(opts: HappyokaiPolicyOptions = {}): ModePolicy {
             return out;
           }
           if (me.pickQuestion.length) out.push({ key: 'choose', move: { kind: 'choose', playerId: pickOf(me.pickQuestion, r('choose'))!.playerId }, delayMs: delay('choose') + think });
-          else if (me.answerFrames.length && !me.lines.length) out.push({ key: 'answer', move: { kind: 'say', utterance: { via, text: 'いい しつもんですね。おいしい から です。' } }, delayMs: delay('answer') });
+          else if (me.answerFrames.length && !me.lines.length) out.push({ key: 'answer', move: { kind: 'say', utterance: { via, text: answerLine(me.answerFrames, r('answer')) } }, delayMs: delay('answer') });
           return out;
         }
         if (me.questions.length && !me.asked) {

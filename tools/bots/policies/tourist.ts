@@ -66,6 +66,8 @@ export function touristPolicy(opts: TouristBotOptions = {}): ModePolicy {
   const callRate = opts.callRate ?? 0.25;
   const guessAt = opts.guessAt ?? 2;
   const [minDelay, maxDelay] = opts.delayMs ?? [1_500, 8_000];
+  // Question tiles this bot has been dealt before: its own words are one of these, remembered, when it isn't on screen.
+  const remembered = new Map<string, { id: string; text: string; kana: string }>();
 
   return {
     act(view: RoomView, me: string) {
@@ -88,10 +90,18 @@ export function touristPolicy(opts: TouristBotOptions = {}): ModePolicy {
           const tile = list[Math.floor(chance(seed, me, seq, salt, 'tile') * list.length)];
           if (!tile) return { utterance: { via, text: 'えっと…' } };
           const r = chance(seed, me, seq, salt, 'how');
-          if (r < 0.35) return { utterance: { via, text: tile.kana } }; // in their own words (from memory)
+          if (r < 0.35) {
+            // From memory: a question it was dealt on an earlier turn, not one on screen now (saying a tile
+            // that's on screen is reading it). Answers have to fit tonight's place, so they're said off the tile.
+            const on = new Set(list.map((l) => l.id));
+            const past = salt === 'q' ? [...remembered.values()].filter((l) => !on.has(l.id)).sort((x, y) => x.id.localeCompare(y.id)) : [];
+            const own = past[Math.floor(chance(seed, me, seq, salt, 'past') * past.length)];
+            return { utterance: { via, text: (own ?? tile).kana } };
+          }
           if (r < 0.8) return { utterance: { via, text: tile.kana }, lineId: tile.id }; // took the tile and said it
           return { utterance: { via: 'tap' as const, text: tile.text }, lineId: tile.id };
         };
+        for (const q of mine.questions ?? []) remembered.set(q.id, q);
         if (t.askerId === me && !t.question) {
           const options = view.players.filter((p) => p.id !== me && p.id !== t.noAskBack && p.connected).map((p) => p.id);
           const targetId = t.targetId ?? options[Math.floor(chance(seed, me, seq, 'who') * options.length)];

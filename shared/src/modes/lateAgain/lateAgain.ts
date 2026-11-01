@@ -23,6 +23,7 @@
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { framesHeard } from '../../japanese/frames.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
@@ -622,22 +623,21 @@ function settle(s: LateState, r: LateRound, ctx: ModeContext): void {
   const c = causeOfRound(r);
   // Said from memory unless the hint was opened. Tiles, typing and Pon's reading are seen, not said; Pon's is read.
   const read = r.hinted || r.excuse?.kind === 'pon';
-  if (askRound(r) && !(r.excuse?.kind === 'clip' && r.excuse.checked && r.chunk)) {
-    // An ask round where no checked clip was heard asking: the ask's frame (＿ても いいですか, ＿た ことが あります)
-    // isn't credited. With the hint open or Pon reading, the ask was read; otherwise the excuse counts as the
-    // cause's usual N4 line, as on any other round (naming the cause alone says nothing about the ask).
-    if (read) {
-      const ask = lineOf(r).model;
-      ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}:ask`, text: ask.text, kana: ask.kana, en: ask.en, outcome: 'seen', recall: 'read' });
-    } else {
-      const usual = lineFor(c, r.level, { finale: r.finale }).model;
-      ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}`, text: usual.text, kana: usual.kana, en: usual.en, outcome: saidAloud(r) ? 'said' : 'seen', recall: 'memory' });
-    }
-  } else {
-    const line = r.level === 'kana' ? kanaLine(c) : lineOf(r).model;
-    const itemId = askRound(r) ? `late:${c.id}:${r.level}:ask` : `late:${c.id}:${r.level}`;
-    ctx.phrase(r.latecomer, { itemId, text: line.text, kana: line.kana, en: line.en, outcome: saidAloud(r) ? 'said' : 'seen', recall: read ? 'read' : 'memory' });
-  }
+  // An ask round counts as the ask (＿ても いいですか, ＿た ことが あります) only when a checked clip was heard asking.
+  // Otherwise, with the hint open or Pon reading, the ask was read; else the excuse counts as the cause's usual
+  // N4 line, as on any other round (naming the cause says nothing about the ask).
+  const x = r.excuse;
+  const asking = askRound(r);
+  const askHeard = x?.kind === 'clip' && !!x.checked && !!r.chunk;
+  const usualInstead = asking && !askHeard && !read;
+  const line = r.level === 'kana' ? kanaLine(c) : usualInstead ? lineFor(c, r.level, { finale: r.finale }).model : lineOf(r).model;
+  const said = asking && !askHeard && read ? false : saidAloud(r);
+  const base = `late:${c.id}:${r.level}${asking && !usualInstead ? ':ask' : ''}`;
+  // Pon's line is the card; when speech-to-text heard the excuse, it counts only for the frames heard in it (so
+  // naming the cause doesn't earn Pon's ので), and a card with other frames is its own card.
+  const heardAll = r.level !== 'kana' && said && x?.kind === 'clip' && x.checked && x.heard ? framesHeard(line, { text: x.heard.text, kana: x.heard.reading ?? x.heard.text }, x.heard.tokens) : null;
+  const heard = heardAll && heardAll.length < framesHeard(line, line).length ? heardAll : null;
+  ctx.phrase(r.latecomer, { itemId: `${base}${heard ? `:${heard.join('+')}` : ''}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: read ? 'read' : 'memory', ...(heard ? { frames: heard } : {}) });
   if (r.hidden) return;
 
   if (s.coop) {

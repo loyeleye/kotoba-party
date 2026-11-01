@@ -395,9 +395,11 @@ function questionTiles(s: TouristState, playerId: string, level: Level, random: 
   return [...local, ...generic.filter((l) => !local.includes(l))].slice(0, 5).map((l) => l.id);
 }
 
-/** N4 deck frame families: a ＿なければ なりませんか question is answered in must/needn't, a ＿られますか one in can. */
+/** N4 deck frame families: a ＿なければ なりませんか question is answered in must/needn't, a ＿ても いいですか one in
+ * may/mustn't, a ＿られますか one in can. */
 const FAMILIES: readonly (readonly string[])[] = [
   ['nakereba', 'nakutemo-ii', 'te-wa-ikenai'],
+  ['te-mo-ii', 'te-wa-ikenai'],
   ['potential'],
 ];
 

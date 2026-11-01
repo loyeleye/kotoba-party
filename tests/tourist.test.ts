@@ -510,7 +510,7 @@ describe("Who's the Tourist?: a round", () => {
     }
   });
 
-  it('has an N4 deck: must/needn\'t and can questions and answers, generic and at every place, tagged and draft', () => {
+  it('has an N4 deck: may, must/needn\'t and can questions and answers, generic and at every place, tagged and draft', () => {
     const deck = ALL_LINES.filter((l) => l.frames?.length);
     for (const l of deck) expect(l.level, l.id).toBe('n4');
     for (const l of [...QUESTIONS, ...SAFE_ANSWERS].filter((x) => x.frames)) expect(l.status, l.id).toBe('draft');
@@ -521,7 +521,9 @@ describe("Who's the Tourist?: a round", () => {
       expect(p.questions.some((q) => q.frames?.length), p.id).toBe(true);
       expect(p.answers.filter((a) => a.frames?.length).length, p.id).toBeGreaterThanOrEqual(2);
     }
-    expect(deck.every((l) => /なければ|なくても|ては いけ|ことが できます|[られえけせてべめ]ま[すせ]/.test(l.jp.kana)), 'every deck line is in its frame').toBe(true);
+    expect(deck.every((l) => /なければ|なくても|ては いけ|ても いい|ことが できます|[られえけせてべめ]ま[すせ]/.test(l.jp.kana)), 'every deck line is in its frame').toBe(true);
+    // 4.2's required frame: generic ＿ても いいですか questions every place can answer (step 5b-2).
+    expect(QUESTIONS.filter((q) => q.frames?.includes('te-mo-ii')).length).toBeGreaterThanOrEqual(3);
   });
 
   it('N4 players get N4 deck tiles, and a must question gets must/needn\'t answers first; N5 players see none of it', () => {

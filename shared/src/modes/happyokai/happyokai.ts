@@ -18,7 +18,8 @@
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
-import { framesOf } from '../../japanese/frames.js';
+import { framesHeard, framesOf, type FrameId } from '../../japanese/frames.js';
+import { wordsSimilarity } from '../dubClub/dubClub.js';
 import { isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
@@ -158,6 +159,8 @@ export interface Line {
   shown: string;
   /** Furigana for `shown`, when it's the phone's sentence. */
   furigana?: [string, string][];
+  /** The reading of what was heard, for a line of the presenter's own (so the phrasebook can find its grammar). */
+  kana?: string;
   kind: LineKind;
   sentences: number;
   hidden: boolean;
@@ -826,6 +829,9 @@ export function photoBeat(index: number, total: number): 1 | 2 | 3 | null {
   return null;
 }
 
+/** A line of the presenter's this close to a ready sentence on screen was read off it (a word changed, a particle misheard). */
+const NEAR_READ = 0.75;
+
 function phrases(t: Talk, ctx: ModeContext): void {
   const p = ctx.player(t.presenterId);
   const title = titleFor(t);
@@ -842,6 +848,37 @@ function phrases(t: Talk, ctx: ModeContext): void {
       const r = recoveryFor(st.mishapId, p.level, talkWord(t)?.word ?? null, graphUp(t), audienceOf(ctx));
       ctx.phrase(p.id, { itemId: `happyokai:mishap:${st.mishapId}:${p.level}`, text: r.text, kana: r.kana, en: r.en, outcome: spoke(i) ? 'said' : 'seen', recall: recall(i) });
     });
+    // A deck talk's own sentences: when the presenter makes up a line in one of the deck's frames (Then and
+    // now's 〜ように なりました, 〜ことに しました), on a picture slide or as their answer in question time, the
+    // deck's ready sentence closest to it goes in their phrasebook as said from memory, one card for the line,
+    // counting only the frames heard in it. What was heard has no English to practise from, so the card is the
+    // deck's version (as Late Again! logs Pon's model line). A line close to a ready sentence was read, not made up.
+    if (title.deck) {
+      const want = DECKS[title.deck].frames;
+      const credited = new Set<string>();
+      for (const l of t.lines) {
+        if (l.kind !== 'own' || l.hidden) continue;
+        const own = l.step === -1 ? null : t.steps[l.step];
+        if (own && own.kind !== 'picture') continue;
+        const heard = { text: l.text, kana: l.kana ?? l.text };
+        const readyOf = (x: Step) => {
+          const slide = x.slideId ? slideOf(x.slideId) : undefined;
+          return slide ? readySentences(slide, p.level, title.topic, title.deck, title.place).map((r) => ({ r, slideId: x.slideId! })) : [];
+        };
+        const candidates = (own ? [own] : t.steps.filter((x) => x.kind === 'picture')).flatMap(readyOf);
+        if (own && candidates.some(({ r }) => wordsSimilarity(r.kana, heard.kana) >= NEAR_READ)) continue;
+        // The ready sentence sharing the most deck frames with the line (ties: the first).
+        let best: { r: JpText; slideId: string; frames: FrameId[] } | null = null;
+        for (const c of candidates) {
+          const frames = framesHeard(c.r, heard);
+          const deck = frames.filter((f) => want.includes(f) && !credited.has(f)).length;
+          if (deck && (!best || deck > best.frames.filter((f) => want.includes(f) && !credited.has(f)).length)) best = { ...c, frames };
+        }
+        if (!best) continue;
+        for (const f of best.frames) if (want.includes(f)) credited.add(f);
+        ctx.phrase(p.id, { itemId: `happyokai:${title.deck}:${best.slideId}:${best.frames.join('+')}:${p.level}`, text: best.r.text, kana: best.r.kana, en: best.r.en, outcome: 'said', recall: 'memory', frames: best.frames });
+      }
+    }
   }
   const hy = t.haveYou ? haveYouOf(t.haveYou.topicId) : undefined;
   if (p && t.haveYou && hy) {
@@ -1233,7 +1270,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         const script = phase === 'answer' && u.via === 'speech' ? readFrom(u, scriptsFor(t, ctx)) : null;
         const kind: LineKind = u.via === 'speech' ? (script ? 'read' : 'own') : u.via === 'tap' ? 'tap' : 'typed';
         const step = phase === 'encore' ? -1 : stepIndex(t);
-        t.lines.push({ id: ctx.newId(), step, text, shown: script?.text ?? text, ...(script?.furigana ? { furigana: script.furigana } : {}), kind, sentences: sentenceCount(text), hidden: false });
+        t.lines.push({ id: ctx.newId(), step, text, shown: script?.text ?? text, ...(script?.furigana ? { furigana: script.furigana } : {}), ...(kind === 'own' ? { kana: u.reading ?? text } : {}), kind, sentences: sentenceCount(text), hidden: false });
         if (phase === 'encore' && /いいしつもん/.test(soundKey(normalizeReading(utteranceReading(u))))) ctx.cue({ host: 'chochin', event: 'happyokai_stall' });
         return MOVE_OK;
       }

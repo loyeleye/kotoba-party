@@ -5,8 +5,8 @@
 //
 //   npm run sim:yields [-- --games 32 --seed 1]     rewrites shared/src/pathYields.ts
 //
-// Bot gaps show as zeros: a game whose bots can't do what players do (retell a rumour, take a hard role)
-// yields nothing for that frame here. BOT_GAPS in shared/src/path.ts lists the known bot gaps, which count as 1.
+// Bot gaps show as zeros: a game whose bots can't do what players do yields nothing for that frame here.
+// BOT_GAPS in shared/src/path.ts lists the known bot gaps, which count as a slow stop (BOT_GAP_YIELD).
 
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

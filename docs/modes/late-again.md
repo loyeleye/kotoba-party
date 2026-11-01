@@ -105,6 +105,9 @@ was heard asking (its chunk, so ＿ても いいですか or ＿た ことが �
 credited: with the hint open or Pon reading, the ask is logged as read; else the excuse counts as the cause's
 usual N4 line, as on any other round, since naming the cause alone says nothing about the ask.
 The private note at the ruling shows "From memory ✓" or "With a hint", and what they said beside Pon's way.
+Pon's line is the card, but when speech-to-text heard the clip, the card counts only for Pon's frames that were
+heard in it (`late:<cause>:<level>:<frames>`, its own card): naming the crow doesn't earn Pon's ので (panel on
+#160).
 
 ## Open, for playtests
 
