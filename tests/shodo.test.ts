@@ -27,8 +27,8 @@ const len = (s: readonly (readonly number[])[]) => s.reduce((n, p, i) => (i ? n 
 
 describe('kanji data', () => {
   it('has stroke data for every kanji, with school stroke counts', () => {
-    expect(writeKanji.length).toBe(111);
-    expect(writeKanji.filter((k) => k.level === 'n5').length).toBe(66);
+    expect(writeKanji.length).toBe(115);
+    expect(writeKanji.filter((k) => k.level === 'n5').length).toBe(70);
     for (const k of writeKanji) expect(ref(k.char)?.length, k.char).toBeGreaterThan(0);
     const counts: Record<string, number> = { 一: 1, 二: 2, 三: 3, 山: 3, 川: 3, 木: 4, 日: 4, 右: 5, 左: 5, 本: 5, 女: 3, 子: 3, 書: 10, 歩: 8, 雨: 8, 車: 7 };
     for (const [c, n] of Object.entries(counts)) expect(ref(c)?.length, c).toBe(n);
