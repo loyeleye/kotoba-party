@@ -20,10 +20,11 @@ import type { CommandBody } from '../../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameContext, type GameState } from '../../shared/src/game.js';
 import { EXPERIMENTS, withExperiments, type MixedExperiments } from '../../shared/src/modes/experiments.js';
 import type { ContentLibrary } from '../../shared/src/modes/mode.js';
-import { REACTIONS, SAY_PICK } from '../../shared/src/modes/mixedRoom.js';
+import { curveballPoints, REACTIONS, SAY_PICK, SPOKEN_REACTION_POINTS } from '../../shared/src/modes/mixedRoom.js';
 import { adlibOf, type DubState } from '../../shared/src/modes/dubClub/dubClub.js';
 import { itemIndex } from '../../shared/src/modes/lastTrain/lastTrain.js';
 import { MODES, noFit } from '../../shared/src/modes/registry.js';
+import { recallOf } from '../../shared/src/progress.js';
 import type { Command, ModeId, RoomView } from '../../shared/src/protocol.js';
 import { viewFor } from '../../shared/src/view.js';
 import type { ModePolicy } from '../bots/bot.js';
@@ -40,12 +41,13 @@ type Any = any;
 export const SIM_MODES = ['bento-haus', 'last-train', 'onsen-murder', 'omiai', 'dub-club', 'narabete'] as const satisfies readonly ModeId[];
 export type SimMode = (typeof SIM_MODES)[number];
 
-/** The room setups the panel asked about. */
-export const SETUPS: Record<string, { label: string; levels: Level[] }> = {
+/** The room setups the panel asked about. `quiet`: seats (0-based) whose phone has no mic (the lobby's tap/type). */
+export const SETUPS: Record<string, { label: string; levels: Level[]; quiet?: number[] }> = {
   a: { label: '3p N4+N5+Kana', levels: ['n4', 'n5', 'kana'] },
-  b: { label: '5p 1×N4+2N5+2Kana', levels: ['n4', 'n5', 'kana', 'n5', 'kana'] },
+  b: { label: '5p 1×N4+2N5+2Kana (2nd Kana quiet)', levels: ['n4', 'n5', 'kana', 'n5', 'kana'], quiet: [4] },
   c: { label: '2p N5+Kana (stand-in)', levels: ['n5', 'kana'] },
   d: { label: '3p all N5 (control)', levels: ['n5', 'n5', 'n5'] },
+  e: { label: '4p 2×N4+N5+Kana', levels: ['n4', 'n4', 'n5', 'kana'] },
 };
 
 /** How simulated people behave on top of the bot policies (the brief's numbers). */
@@ -55,9 +57,9 @@ export const PERSONA = {
   /** N4: share of hard-role lines said right on the first try; later tries are right this often. */
   firstTry: 0.6,
   retry: 0.85,
-  /** Gallery: share of reaction tiles tapped; share of curveballs answered right. */
+  /** Gallery: share of reaction tiles tapped; share of curveballs answered right, by level (only Kana and N5 get one). */
   tap: 0.8,
-  curveRight: 0.6,
+  curveRight: { kana: 0.45, n5: 0.7, n4: 0.85 } as Record<Level, number>,
   /** A station sees to the deputy manager's 📋 request this often. */
   request: 0.9,
   /** spokenReaction: a Gallery player with a mic says the reaction instead of tapping this often, matched this often. */
@@ -143,12 +145,13 @@ function findCurveball(node: Any, playerId: string, depth = 0): Any {
  * (docs/n4-hard-roles.md, "Playtest sims"): an input, tile or button on their phone that they haven't used yet.
  * Everything else (watching the TV, waiting for someone else's turn, a phase with nothing for them) is idle.
  */
-export function hasInput(mode: SimMode, view: RoomView): boolean {
+export function hasInput(mode: SimMode, view: RoomView, countTiles = true): boolean {
   const g = view.game as Any;
   const me = meOf(view);
   if (!g || !me) return false;
   const tile = galleryTile(view);
-  if (tile && tile.picked == null) return true;
+  // countTiles false: an untapped reaction tile isn't a move (the "no tiles" idle column); a curveball still is.
+  if (tile && tile.picked == null && (tile.kind === 'curveball' || countTiles)) return true;
   const phase = view.phase;
   switch (mode) {
     case 'bento-haus': {
@@ -223,7 +226,8 @@ function galleryMoves(p: Persona, view: RoomView, pid: string, state: GameState)
   if (tile.kind === 'curveball') {
     const c = findCurveball(state.modeState, pid);
     const options: string[] = tile.options.map((o: Any) => o.kana);
-    const right = roll(p.seed, pid, k, 'curve') < PERSONA.curveRight;
+    const level = view.players.find((x) => x.id === pid)?.level ?? 'n5';
+    const right = roll(p.seed, pid, k, 'curve') < PERSONA.curveRight[level];
     const wrong = options.filter((o) => o !== c?.word);
     const pick = right && c ? c.word : wrong[Math.floor(roll(p.seed, pid, k, 'curve-pick') * wrong.length)] ?? options[0];
     return [{ key: `curve:${options.join(',')}`, move: { kind: 'gallery', pick }, delayMs: between(2_000, 5_000, roll(p.seed, pid, k, 'cd')), tag: 'curve', right: !!c && pick === c.word }];
@@ -397,13 +401,20 @@ export interface PlayerResult {
   score: number;
   idleMs: number;
   longestIdleMs: number;
+  /** Idle with untapped reaction tiles not counted as a move (curveballs still are). */
+  idleNoTilesMs: number;
   spoken: number;
-  said: number;
+  /** Phrasebook rows: said from memory, said but read (progress.ts recallOf), retried, seen. */
+  saidMem: number;
+  saidRead: number;
+  retry: number;
   seen: number;
   taps: number;
   /** spokenReaction: reactions said out loud, and those that matched a tile. */
   sayTried: number;
   sayMatched: number;
+  /** Points from right curveballs and said reactions this game. */
+  bonus: number;
 }
 
 export interface GameResult {
@@ -426,6 +437,8 @@ export interface GameResult {
   sgTimedOut: number;
   offers: { accepted: number; declined: number; timeout: number };
   waitPrompts: number;
+  /** Would anyone's place in this game change without the curveball and said-reaction points (night totals are rank-based)? */
+  rankFlip: boolean;
   /** Something went wrong (a stuck game): the sim stopped it. */
   stuck?: string;
 }
@@ -470,8 +483,9 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
   const base = basePolicy(mode, content, seed);
   const personas = new Map(state.players.map((p) => [p.id, { seed, tries: new Map() } as Persona]));
   const level = new Map(state.players.map((p) => [p.id, p.level]));
-  const res = new Map<string, PlayerResult>(state.players.map((p) => [p.id, { id: p.id, level: p.level, score: 0, idleMs: 0, longestIdleMs: 0, spoken: 0, said: 0, seen: 0, taps: 0, sayTried: 0, sayMatched: 0 }]));
+  const res = new Map<string, PlayerResult>(state.players.map((p) => [p.id, { id: p.id, level: p.level, score: 0, idleMs: 0, longestIdleMs: 0, idleNoTilesMs: 0, spoken: 0, saidMem: 0, saidRead: 0, retry: 0, seen: 0, taps: 0, sayTried: 0, sayMatched: 0, bonus: 0 }]));
   const idleSince = new Map<string, number | null>(state.players.map((p) => [p.id, null]));
+  const quiet = (pid: string) => state.players.find((x) => x.id === pid)?.mic === 'quiet';
   const sent = new Set<string>();
   const curveSeen = new Set<string>();
   let curveDealt = 0;
@@ -527,9 +541,11 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
     }
     // 1. Every phone looks at its view: what it may do, what the persona will do.
     const busy = new Map<string, boolean>();
+    const busyNoTiles = new Map<string, boolean>();
     for (const p of state.players) {
       const view = viewFor(state, { kind: 'player', playerId: p.id }, content);
       busy.set(p.id, hasInput(mode, view));
+      busyNoTiles.set(p.id, hasInput(mode, view, false));
       const tile = galleryTile(view);
       if (tile?.kind === 'curveball') {
         const id = `${p.id}:${tile.options.map((o: Any) => o.kana).join(',')}`;
@@ -546,7 +562,10 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
         const full = `${view.phaseSeq}:${p.id}:${m.key}`;
         if (sent.has(full)) continue;
         sent.add(full);
-        planned.push({ at: clock.now + Math.max(1, m.delayMs ?? 0), seq: view.phaseSeq, pid: p.id, key: m.key, move: m.move, tag: m.tag, onSent: m.onSent, right: m.right });
+        // A quiet phone (no mic) types what a policy would have said.
+        const u = (m.move as Any)?.utterance;
+        const move = quiet(p.id) && u?.via === 'speech' ? { ...(m.move as Any), utterance: { ...u, via: 'typed' } } : m.move;
+        planned.push({ at: clock.now + Math.max(1, m.delayMs ?? 0), seq: view.phaseSeq, pid: p.id, key: m.key, move, tag: m.tag, onSent: m.onSent, right: m.right });
       }
     }
     // A move planned in a phase that has ended is dropped (the phone re-renders).
@@ -576,12 +595,14 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
         r.idleMs += next - clock.now;
         if (since === null) idleSince.set(p.id, clock.now);
       }
+      if (!busyNoTiles.get(p.id)) r.idleNoTilesMs += next - clock.now;
     }
     clock.now = next;
 
     // 3. Make it happen.
     if (nextMove <= Math.min(wake ?? Infinity, deadline)) {
       const m = planned.shift()!;
+      const before = state.players.find((x) => x.id === m.pid)?.score ?? 0;
       const out = apply(state, { type: 'command', actor: { kind: 'player', playerId: m.pid }, command: { type: 'play', move: m.move, id: `m${++cmdNo}` } as Command }, ctx());
       if (TRACE) console.log(`${((clock.now - startAt) / 1000).toFixed(1)}s ${state.phase} ${m.pid} ${JSON.stringify(m.move).slice(0, 140)} ${out.error ?? 'ok'}`);
       if (!out.error) {
@@ -592,6 +613,11 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
         if (m.tag === 'tap') r.taps += 1;
         // Counted when the game takes the pick: a stand-in phase may end at once, before the tile shows it.
         if (m.tag === 'curve' && m.right) curveRight += 1;
+        // The bonus this pick paid, capped at what a curveball or a said reaction pays (in case the pick also ended a phase).
+        if (m.tag === 'curve' || m.tag === 'say') {
+          const gained = (state.players.find((x) => x.id === m.pid)?.score ?? 0) - before;
+          r.bonus += Math.max(0, Math.min(gained, m.tag === 'curve' ? curveballPoints(mode) : SPOKEN_REACTION_POINTS));
+        }
         if (m.tag === 'say') {
           r.sayTried += 1;
           const after = galleryTile(viewFor(state, { kind: 'player', playerId: m.pid }, content));
@@ -616,10 +642,19 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
     if (since != null) r.longestIdleMs = Math.max(r.longestIdleMs, clock.now - since);
     r.score = p.score;
     for (const e of state.phrasebook[p.id] ?? []) {
-      if (e.outcome === 'said' || e.outcome === 'retry') r.said += 1;
+      if (e.outcome === 'said') {
+        if (recallOf(e, mode) === 'memory') r.saidMem += 1;
+        else r.saidRead += 1;
+      } else if (e.outcome === 'retry') r.retry += 1;
       else if (e.outcome === 'seen') r.seen += 1;
     }
   }
+  // Places as the recap gives them (1 + players strictly ahead), with and without the bonus points.
+  const players = [...res.values()];
+  const place = (score: (p: PlayerResult) => number) => players.map((p) => 1 + players.filter((o) => score(o) > score(p)).length);
+  const withBonus = place((p) => p.score);
+  const without = place((p) => p.score - p.bonus);
+  const rankFlip = withBonus.some((x, i) => x !== without[i]);
   const offers = { accepted: 0, declined: 0, timeout: 0 };
   const m = MODES[mode] as Any;
   if (m.offers && state.modeState) for (const p of state.players) for (const o of m.offers(state.modeState, p.id)) if (o.answer !== 'away') offers[o.answer as keyof typeof offers] += 1;
@@ -638,6 +673,7 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
     sgTimedOut,
     offers,
     waitPrompts: state.recap?.mixed?.ask.length ?? 0,
+    rankFlip,
     ...(stuck ? { stuck } : {}),
   };
 }
@@ -645,7 +681,7 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
 /** One night in one room: the modes back to back, the order rotated by the seed. */
 export function playNight(setup: string, seed: number, modes: readonly SimMode[], content: ContentLibrary, rounds: Partial<Record<SimMode, number>> = {}): NightResult {
   ltIndex ??= itemIndex(content);
-  const levels = SETUPS[setup]!.levels;
+  const { levels, quiet = [] } = SETUPS[setup]!;
   const state = createGame('SIMR');
   const clock = { now: 1_000_000 };
   // Joining draws nothing; each game gets its own random stream (seed, room, game), so a switch that changes how
@@ -660,6 +696,8 @@ export function playNight(setup: string, seed: number, modes: readonly SimMode[]
     const playerId = `s${seed}p${i + 1}`;
     apply(state, { type: 'join', playerId, name: `P${i + 1}`, level }, ctx());
     apply(state, { type: 'connection', playerId, connected: true }, ctx());
+    // A quiet phone: the lobby mic check's "I can't talk right now" tap.
+    if (quiet.includes(i)) apply(state, { type: 'command', actor: { kind: 'player', playerId }, command: { type: 'micCheck', utterance: { via: 'tap', text: '' }, id: `q${i}` } as Command }, ctx());
   });
   const order = modes.map((_, i) => modes[(i + seed) % modes.length]!);
   const games: GameResult[] = [];
@@ -712,6 +750,8 @@ export interface CellMetrics {
   idleS: Stat;
   idleShare: Stat;
   longestIdleS: Stat;
+  /** The same idle time with untapped reaction tiles not counted as a move (curveballs still are). */
+  idleNoTilesS: Stat;
   /** Per game: Gallery reaction taps (all players). */
   taps: Stat;
   /** Per game: curveballs dealt and answered right. */
@@ -722,11 +762,17 @@ export interface CellMetrics {
   hostLines: Stat;
   /** Per player below N4: accepted moves said by voice. */
   spokenLow: Stat;
-  /** Per player, from the phrasebook: phrases said (said or retry) and seen, below N4 and at N4. */
-  saidLow: Stat;
+  /** Per player, from the phrasebook: said from memory, said but read (recallOf), retried, seen; below N4 and at N4. */
+  saidMemLow: Stat;
+  saidReadLow: Stat;
+  retryLow: Stat;
   seenLow: Stat;
-  saidN4: Stat;
+  saidMemN4: Stat;
+  saidReadN4: Stat;
+  retryN4: Stat;
   seenN4: Stat;
+  /** Share of games where taking away the curveball and said-reaction points changes someone's place. */
+  rankFlips: number;
   /** Share of the game's points that went to players below N4 (rooms with an N4 player and some points). */
   lowScoreShare: Stat;
   /** Their share of the seats, for comparison. */
@@ -765,16 +811,22 @@ export function cellMetrics(games: GameResult[], mode: SimMode, setup: string): 
     idleS: per((p) => p.idleMs / 1000),
     idleShare: per((p, g) => (g.lengthMs ? p.idleMs / g.lengthMs : 0)),
     longestIdleS: per((p) => p.longestIdleMs / 1000),
+    idleNoTilesS: per((p) => p.idleNoTilesMs / 1000),
     taps: stat(games.map((g) => g.players.reduce((n, p) => n + p.taps, 0))),
     curveDealt: stat(games.map((g) => g.curveDealt)),
     curveRight: stat(games.map((g) => g.curveRight)),
     standIns: stat(games.map((g) => g.standIns)),
     hostLines: stat(games.map((g) => g.hostLines)),
     spokenLow: per((p) => p.spoken),
-    saidLow: per((p) => p.said),
+    saidMemLow: per((p) => p.saidMem),
+    saidReadLow: per((p) => p.saidRead),
+    retryLow: per((p) => p.retry),
     seenLow: per((p) => p.seen),
-    saidN4: per((p) => p.said, n4),
+    saidMemN4: per((p) => p.saidMem, n4),
+    saidReadN4: per((p) => p.saidRead, n4),
+    retryN4: per((p) => p.retry, n4),
     seenN4: per((p) => p.seen, n4),
+    rankFlips: games.length ? games.filter((g) => g.rankFlip).length / games.length : 0,
     lowScoreShare: stat(
       games.map((g) => {
         const all = g.players.reduce((n, p) => n + p.score, 0);
@@ -879,6 +931,7 @@ const COLUMNS: { head: string; cell: (c: CellMetrics) => string }[] = [
   { head: 'set', cell: (c) => c.setup + (c.stuck ? `!${c.stuck}` : '') },
   { head: 'len s', cell: (c) => ms(c.lengthS) },
   { head: 'idle s/p', cell: (c) => ms(c.idleS) },
+  { head: 'idle s/p (no tiles)', cell: (c) => ms(c.idleNoTilesS) },
   { head: 'idle%', cell: (c) => pct(c.idleShare.mean) },
   { head: 'max idle s', cell: (c) => ms(c.longestIdleS) },
   { head: 'taps', cell: (c) => ms(c.taps, f1) },
@@ -887,8 +940,9 @@ const COLUMNS: { head: string; cell: (c: CellMetrics) => string }[] = [
   { head: 'sg held/s/5s', cell: (c) => (c.setup === 'c' ? `${f1(c.sgHeld.mean)}/${f1(c.sgHeldS.mean)}/${f1(c.sgTimedOut.mean)}` : '–') },
   { head: 'spoken/p<N4', cell: (c) => ms(c.spokenLow, f1) },
   { head: 'say/match <N4', cell: (c) => `${f1(c.sayTried.mean)}/${f1(c.sayMatched.mean)}` },
-  { head: 'said/seen <N4', cell: (c) => `${f1(c.saidLow.mean)}/${f1(c.seenLow.mean)}` },
-  { head: 'said/seen N4', cell: (c) => (c.saidN4.n ? `${f1(c.saidN4.mean)}/${f1(c.seenN4.mean)}` : '–') },
+  { head: 'said mem/read/retry/seen <N4', cell: (c) => `${f1(c.saidMemLow.mean)}/${f1(c.saidReadLow.mean)}/${f1(c.retryLow.mean)}/${f1(c.seenLow.mean)}` },
+  { head: 'said mem/read/retry/seen N4', cell: (c) => (c.saidMemN4.n ? `${f1(c.saidMemN4.mean)}/${f1(c.saidReadN4.mean)}/${f1(c.retryN4.mean)}/${f1(c.seenN4.mean)}` : '–') },
+  { head: 'rank flips', cell: (c) => pct(c.rankFlips) },
   { head: 'pts <N4 (seats)', cell: (c) => (c.lowScoreShare.n ? `${pct(c.lowScoreShare.mean)} (${pct(c.lowSeatShare)})` : '–') },
   { head: 'N4 accept', cell: (c) => (c.n4AcceptRate === null ? '–' : `${pct(c.n4AcceptRate)} of ${f1(c.offersPerGame.mean)}`) },
   { head: 'wait?', cell: (c) => f1(c.waitPrompts.mean) },
@@ -921,14 +975,14 @@ export function formatRun(run: SimRun): string {
 /** The A/B difference: on minus off, per cell, for the metrics a switch is likely to move. */
 export function formatAb(name: string, off: SimRun, on: SimRun): string {
   const d = (a: Stat, b: Stat, f = f1) => (a.n && b.n ? `${b.mean - a.mean >= 0 ? '+' : ''}${f(b.mean - a.mean)}` : '–');
-  const rows = [['mode', 'set', 'Δlen s', 'Δidle s/p', 'Δmax idle', 'Δtaps', 'Δcurve', 'Δcurve right', 'Δstand-in', 'Δsg held s', 'Δspoken/p', 'Δsay/p', 'Δsaid <N4', 'Δseen <N4', 'Δpts <N4', 'Δwin <N4', 'Δwait?']];
+  const rows = [['mode', 'set', 'Δlen s', 'Δidle s/p', 'Δidle (no tiles)', 'Δmax idle', 'Δtaps', 'Δcurve', 'Δcurve right', 'Δstand-in', 'Δsg held s', 'Δspoken/p', 'Δsay/p', 'Δsaid mem <N4', 'Δsaid read <N4', 'Δretry <N4', 'Δseen <N4', 'Δpts <N4', 'Δwin <N4', 'Δrank flips', 'Δwait?']];
   for (const b of on.cells) {
     const a = off.cells.find((c) => c.mode === b.mode && c.setup === b.setup);
     if (!a) continue;
     const share = a.lowScoreShare.n && b.lowScoreShare.n ? `${Math.round((b.lowScoreShare.mean - a.lowScoreShare.mean) * 100)}pt` : '–';
     const win = (c: CellMetrics) => (c.byLevel.n4 ? 1 - c.byLevel.n4.winShare : NaN);
     const dw = Number.isFinite(win(a)) && Number.isFinite(win(b)) ? `${Math.round((win(b) - win(a)) * 100)}pt` : '–';
-    rows.push([SHORT[b.mode], b.setup, d(a.lengthS, b.lengthS), d(a.idleS, b.idleS), d(a.longestIdleS, b.longestIdleS), d(a.taps, b.taps), d(a.curveDealt, b.curveDealt), d(a.curveRight, b.curveRight), d(a.standIns, b.standIns), d(a.sgHeldS, b.sgHeldS), d(a.spokenLow, b.spokenLow), d(a.sayTried, b.sayTried), d(a.saidLow, b.saidLow), d(a.seenLow, b.seenLow), share, dw, d(a.waitPrompts, b.waitPrompts)]);
+    rows.push([SHORT[b.mode], b.setup, d(a.lengthS, b.lengthS), d(a.idleS, b.idleS), d(a.idleNoTilesS, b.idleNoTilesS), d(a.longestIdleS, b.longestIdleS), d(a.taps, b.taps), d(a.curveDealt, b.curveDealt), d(a.curveRight, b.curveRight), d(a.standIns, b.standIns), d(a.sgHeldS, b.sgHeldS), d(a.spokenLow, b.spokenLow), d(a.sayTried, b.sayTried), d(a.saidMemLow, b.saidMemLow), d(a.saidReadLow, b.saidReadLow), d(a.retryLow, b.retryLow), d(a.seenLow, b.seenLow), share, dw, `${Math.round((b.rankFlips - a.rankFlips) * 100)}pt`, d(a.waitPrompts, b.waitPrompts)]);
   }
   const lines = [`A/B ${name}: on minus off (${on.options.seeds} seeds each)`, '', table(rows), '', 'Waiting-check prompts per night:'];
   for (const n of on.nights) {

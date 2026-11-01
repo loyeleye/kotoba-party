@@ -127,9 +127,11 @@ npm run sim:mixed -- --rounds last-train=6                # a mode's length, whe
 SIM_TRACE=1 npm run sim:mixed -- --seeds 1 --modes omiai --setups a   # every move and the game's answer
 ```
 
-**Rooms.** a: 3 players, N4 + N5 + Kana. b: 5 players, one N4 and four below (2 N5, 2 Kana). c: 2 players,
-N5 + Kana (the host stand-in's rooms). d: 3 players, all N5 (the control: nothing mixed-room should show). Dub
-Club needs 3 players, so it has no row for c. Each seed plays one *night* per room: the chosen games back to back
+**Rooms.** a: 3 players, N4 + N5 + Kana. b: 5 players, one N4 and four below (2 N5, 2 Kana); the second Kana
+player's phone is quiet (the lobby's "I can't talk right now" tap), so it types instead of speaking and can't say a
+reaction. c: 2 players, N5 + Kana (the host stand-in's rooms). d: 3 players, all N5 (the control: nothing
+mixed-room should show). e: 4 players, two N4 + N5 + Kana (offers rotating between two N4 players, sitting out
+after a decline, the 4+ spotlight rule). Dub Club needs 3 players, so it has no row for c. Each seed plays one *night* per room: the chosen games back to back
 in one room, the order rotated by the seed. Each game gets its own random stream, ids, clock and phase count, so
 a switch that changes one game doesn't reshuffle the games after it (an A/B stays like for like).
 
@@ -137,8 +139,12 @@ a switch that changes one game doesn't reshuffle the games after it (an A/B stay
 offers and says a hard line right 60% of the time on the first try, 85% on later tries (a wrong try is
 「えっと… あの…」; Narabete's one-try defence leaves out ので). A player with a Gallery tile (the round's, or the stand-in's with `standInCurveball`) taps a reaction 80% of
 the time; with `spokenReaction` and a mic, half of them say it instead (matched 75% of the time; a miss taps after).
-The curveball is right 60% of the time, answered in 2–5 s. A station sees to the deputy manager's 📋 request 90% of
+The curveball is right 45% of the time for a Kana player and 70% for N5 (`PERSONA.curveRight`, for Ladi to
+confirm), answered in 2–5 s. A station sees to the deputy manager's 📋 request 90% of
 the time. Think times are 1–6 s. The numbers are in `PERSONA` at the top of the file.
+
+Ordinary play is the same bot at every level, so the fairness columns show how big a bonus is next to the game's
+scores, not whether it helps weaker players catch up.
 
 **What each column means** (mean ± spread over the seeds; "per player" is over players below N4):
 
@@ -146,6 +152,7 @@ the time. Think times are 1–6 s. The numbers are in `PERSONA` at the top of th
 | --- | --- |
 | len s | Game length on the fake clock, start to recap. |
 | idle s/p, idle% | Time a player below N4 had **nothing to do**: their phone's view offered no move. A move is an input, tile or button not yet used: an open answer, an untapped Gallery tile, an unanswered offer, a vote, a line to say (`hasInput()` lists them per game). Watching the TV, someone else's turn and phases with nothing for them count as idle. |
+| idle s/p (no tiles) | The same, but an untapped reaction tile doesn't count as a move (a curveball still does). Any new tile lowers plain idle time by definition; quote both columns for a switch that adds tiles. |
 | max idle s | The longest such stretch in the game, per player: what is most likely to *feel* like waiting. |
 | taps | Gallery reaction taps in the game (everyone). |
 | curve games/hit | Share of games that dealt a curveball; right ÷ dealt over them. |
@@ -153,14 +160,19 @@ the time. Think times are 1–6 s. The numbers are in `PERSONA` at the top of th
 | sg held/s/5s | Stand-in rooms with `standInCurveball`: per game, stand-in phases the curveball kept open past their own end, the seconds that added, and curveballs that ran the full 5 s unanswered. Narabete! carries its tile into the next phase instead of waiting, so there this counts time inside that phase, not added time: read Δlen. (A persona decides once whether to tap a carried tile, not again per phase.) |
 | say/match <N4 | `spokenReaction`: reactions said out loud per player below N4, and those that matched a tile. |
 | spoken/p<N4 | Moves said out loud (speech) that the game took, per player below N4. |
-| said/seen | Phrasebook rows per player at the end of the game: said (from memory or after a retry) and seen. |
+| said mem/read/retry/seen | Phrasebook rows per player at the end of the game: said from memory, said but read (off a tile or the screen), retried, and seen. Only from-memory rows count toward the learning path. |
 | pts <N4 (seats) | Share of the game's points that went to players below N4, beside their share of the seats. |
 | N4 accept | Hard-role offers taken ÷ offers answered or timed out (away left out), and offers per game. |
 | wait? | The recap's waiting-check prompts this game (one per player below N4 asked). |
+| rank flips | Share of games where taking away the curveball and said-reaction points changes anyone's place in the game. Night totals are rank-based (`partyPoints`), so this, not points share, is what says whether those bonuses decide anything. |
 | By level | A second table: each level's share of the game's points and of its wins (ties split), beside its share of the seats. |
 
 Under the table, **waiting-check prompts per night** adds them up over each room's night. With `--ab` the sim
 plays both sides on the same seeds and prints on minus off. `--out` writes every number as JSON.
+
+None of the columns measures learning. Curveball hits are the persona's rate (`PERSONA.curveRight`) plus noise,
+not a result. "Said" rows are activity. A Gallery tile counts as a move, so more tiles means less idle by
+definition. Read the sims for cost (time, waiting, points share); judge learning in playtests.
 
 What it can't tell you: whether a stretch *feels* like waiting (the booth and the TV are worth watching), whether
 a line is fun to say, or how real people take offers. A new switch that adds a move needs a line in `galleryMoves()`
