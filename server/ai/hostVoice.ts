@@ -44,6 +44,8 @@ export interface HostCue {
   level?: Level;
   /** The room's Audience setting: the tone of the LLM line and which bank lines may play. Default 'family'. */
   audience?: Audience;
+  /** Someone in the room plays at N3, so N3 bank lines (an N3 listening point) may play. Default false. */
+  n3?: boolean;
   /** Values for {slot} markers in bank lines, e.g. { name: 'Ladi' } or { name: { text: 'Ladi', kana: 'ラディ' } }. */
   slots?: Slots;
   /** Let the LLM write this line. Defaults to true for the events in LLM_EVENTS when an LLM is configured. */
@@ -332,7 +334,7 @@ export function createHostVoice(opts: HostVoiceOptions = {}): HostVoice {
 
   /** A bank line, and its audio being rendered when it isn't in the store yet. */
   function voicedBankLine(r: RoomVoice, cue: HostCue): { line: VoicedLine; rendering?: Promise<Audio | undefined> } | null {
-    const picked = r.bank.pick(cue.host, cue.event, cue.tier, cue.slots, cue.audience);
+    const picked = r.bank.pick(cue.host, cue.event, cue.tier, cue.slots, cue.audience, cue.n3);
     if (!picked) return null;
     const line: VoicedLine = { id: picked.id, host: cue.host, event: cue.event, tier: cue.tier, text: picked.text, kana: picked.kana, en: picked.en, source: 'bank' };
     if (!opts.tts) return { line };

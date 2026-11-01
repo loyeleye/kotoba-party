@@ -139,6 +139,8 @@ export interface HostCue {
   context?: string;
   /** The room's Audience setting. Modes leave it out: the server fills it in from the room before the host speaks. */
   audience?: Audience;
+  /** Someone in the room plays at N3, so N3 host lines may play. Modes leave it out: the server fills it in. */
+  n3?: boolean;
   /**
    * Not said now: a cue the rules expect to raise soon, sent early so the host pipeline can start writing the
    * line. A later cue with the same content uses it. The bank voice ignores these.

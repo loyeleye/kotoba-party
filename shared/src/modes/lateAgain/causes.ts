@@ -86,7 +86,7 @@ export interface Cause {
   keys: string[];
   /** The gist every phone gets at the gist beat: a short kana line, with English. */
   gist: JpText;
-  /** N5 and N4 lines (N3 joins at step 6). */
+  /** N5, N4 and N3 lines. An N3 excuse uses the Limited Express grammar (docs/n3-coverage.md). */
   lines: Partial<Record<Exclude<Level, 'kana'>, CauseLine>>;
   /** Pon's reaction at the ruling, by how the leaves went: flop "I've used that one", good "taking notes", IPPON "I'm using it tomorrow". */
   pon: { flop: JpText; good: JpText; ippon: JpText };
@@ -160,6 +160,22 @@ const tag = {
   node: 'Express Line · 〜ので',
   passive: 'Express Line · 〜(ら)れました',
   must: 'Express Line · 〜なければ なりませんでした',
+  seide: 'Limited Express · 〜せいで',
+  mama: 'Limited Express · 〜た まま',
+  hazu: 'Limited Express · 〜はずだった',
+  uchi: 'Limited Express · 〜うちに',
+  saserareru: 'Limited Express · 〜させられる',
+  suffering: 'Limited Express · 〜(ら)れて (it happened to you)',
+  zuni: 'Limited Express · 〜ずに',
+  youto: 'Limited Express · 〜ようと する',
+  ppanashi: 'Limited Express · 〜っぱなし',
+  mon: 'Limited Express · だって 〜もん',
+  totan: 'Limited Express · 〜た とたん',
+  ueni: 'Limited Express · 〜うえに',
+  nishitewa: 'Limited Express · 〜に しては',
+  bakari: 'Limited Express · 〜て ばかり',
+  wakedewa: 'Limited Express · 〜わけでは ない',
+  shika: 'Limited Express · 〜しか ない',
 };
 // Plain hiragana, matched on the plain reading. しまっ catches しまった／しまって.
 const SHIMAU = ['しまい', 'しまっ', 'ちゃい', 'ちゃっ', 'じゃい', 'じゃっ'];
@@ -173,6 +189,8 @@ const MUST = ['なければ', 'なきゃ', 'なくちゃ'];
 const N4_SORRY: JpText = { text: '遅れて すみません。', kana: 'おくれて すみません。', en: 'Sorry I’m late. ' };
 /** A year late to the finale, the register climbs with the ladder: たいへん もうしわけ ありません. */
 const FINALE_SORRY: JpText = { text: '大変 申し訳 ありません。', kana: 'たいへん もうしわけ ありません。', en: 'I am terribly sorry. ' };
+/** N3 apologises the same way; the excuse after it carries the N3 grammar. */
+const n3 = (kanji: string, kana: string, en: string): JpText => n4(kanji, kana, en);
 const n4 = (kanji: string, kana: string, en: string): JpText => ({ text: `${N4_SORRY.text}${kanji}`, kana: `${N4_SORRY.kana}${kana}`, en: `${N4_SORRY.en}${en}` });
 
 export const CAUSES: readonly Cause[] = [
@@ -196,6 +214,11 @@ export const CAUSES: readonly Cause[] = [
         mission: 'Apologise, then blame your alarm clock. Sound sorry about what it did.',
         model: n4('目覚まし時計が 寝坊して しまいました。', 'めざましどけいが ねぼうして しまいました。', 'My alarm clock overslept.'),
         chunk: { text: '寝坊して しまいました', keys: SHIMAU, note: '〜て しまいました: it happened, and you’re sorry it did. Even the clock is sorry.', tag: tag.shimau },
+      },
+      n3: {
+        mission: 'Apologise, then make it clear the alarm clock is to blame, not you.',
+        model: n3('目覚まし時計の せいで、寝坊して しまいました。', 'めざましどけいの せいで、ねぼうして しまいました。', 'It’s my alarm clock’s fault I overslept.'),
+        chunk: { text: 'せいで', keys: ['せいで'], note: '〜の せいで: it’s someone’s fault. Never yours.', tag: tag.seide },
       },
     },
     pon: {
@@ -228,6 +251,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('電車で 寝て しまいました。起きたら、海でした。', 'でんしゃで ねて しまいました。おきたら、うみでした。', 'I fell asleep on the train. When I woke up, I was at the sea.'),
         chunk: { text: '寝て しまいました', keys: SHIMAU, note: '〜て しまいました: you didn’t mean to. Nobody means to wake up at the sea.', tag: tag.shimau },
       },
+      n3: {
+        mission: 'Apologise, then say you stayed asleep on the train, and where you ended up.',
+        model: n3('電車で 寝た まま、終点の 海まで 行って しまいました。', 'でんしゃで ねた まま、しゅうてんの うみまで いって しまいました。', 'I stayed asleep on the train, all the way to the last stop: the sea.'),
+        chunk: { text: '寝た まま', keys: ['ねたまま'], note: '〜た まま: and it stayed that way. All the way to the sea.', tag: tag.mama },
+      },
     },
     pon: {
       flop: jp('でんしゃ… ポンも せんしゅう つかったポン。', 'The train… I used that one last week.'),
@@ -257,6 +285,11 @@ export const CAUSES: readonly Cause[] = [
         mission: 'Apologise, then blame the rain. Explain very politely why staying home made sense.',
         model: n4('雨が 降って いたので、止むまで 家で 待って いました。', 'あめが ふって いたので、やむまで いえで まって いました。', 'It was raining, so I waited at home until it stopped.'),
         chunk: { text: '降って いたので', keys: NODE, note: '〜ので: the polite “so”. It makes staying home sound perfectly reasonable.', tag: tag.node },
+      },
+      n3: {
+        mission: 'Apologise, then blame the rain. Say what was supposed to happen.',
+        model: n3('雨が 止む はずだったのに、止みませんでした。', 'あめが やむ はずだったのに、やみませんでした。', 'The rain was supposed to stop, but it didn’t.'),
+        chunk: { text: 'はずだった', keys: ['はずだった', 'はずでした'], note: '〜はずだった: it was supposed to. The forecast lied.', tag: tag.hazu },
       },
     },
     pon: {
@@ -288,6 +321,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('駅が 広すぎて、出口が わかりませんでした。', 'えきが ひろすぎて、でぐちが わかりませんでした。', 'The station was so big I couldn’t find the exit.'),
         chunk: { text: '広すぎて', keys: SUGI, note: '〜すぎて: too much, so… Ninety-nine exits is too many exits.', tag: tag.sugite },
       },
+      n3: {
+        mission: 'Apologise, then blame the station. Say what happened while you hunted for the exit.',
+        model: n3('駅が 広すぎて、出口を 探して いる うちに 昼に なりました。', 'えきが ひろすぎて、でぐちを さがして いる うちに ひるに なりました。', 'The station was so big that while I hunted for the exit, it turned noon.'),
+        chunk: { text: '探して いる うちに', keys: ['いるうちに', 'てるうちに'], note: '〜うちに: while you were busy, something else happened. Like lunchtime.', tag: tag.uchi },
+      },
     },
     pon: {
       flop: jp('えきは ひろい。ポンも まいにち でぐちが わからないポン。', 'Stations are big. I can’t find the exit every day.'),
@@ -318,6 +356,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('おばあさんを 山の 上まで 送らなければ なりませんでした。', 'おばあさんを やまの うえまで おくらなければ なりませんでした。', 'I had to take an old lady all the way up a mountain.'),
         chunk: { text: '送らなければ なりませんでした', keys: MUST, note: '〜なければ なりませんでした: you HAD to. A kind person has no choice.', tag: tag.must },
       },
+      n3: {
+        mission: 'Apologise, then blame an old lady. Say what she made you do.',
+        model: n3('おばあさんに 荷物を 山の 上まで 運ばされました。', 'おばあさんに にもつを やまの うえまで はこばされました。', 'An old lady made me carry her bags all the way up a mountain.'),
+        chunk: { text: '運ばされました', keys: ['ばされ', 'させられ', 'らされ', 'かされ', 'たされ', 'まされ'], note: '〜させられました: made to do it, and not thrilled about it.', tag: tag.saserareru },
+      },
     },
     pon: {
       flop: jp('おばあさん… まんがで よく みるポン。', 'An old lady… I see that one in manga a lot.'),
@@ -347,6 +390,11 @@ export const CAUSES: readonly Cause[] = [
         mission: 'Apologise, then blame a crow. Say what it did to you.',
         model: n4('カラスに 家の 鍵を 取られました。', 'カラスに いえの かぎを とられました。', 'A crow took my house keys.'),
         chunk: { text: '取られました', keys: ['とられ', 'いかれ'], note: 'カラスに とられました: it was done TO you. The passive is how victims talk.', tag: tag.passive },
+      },
+      n3: {
+        mission: 'Apologise, then blame a crow. Say what it did to you, and how you suffered.',
+        model: n3('カラスに 家の 鍵を 持って 行かれて しまいました。', 'カラスに いえの かぎを もって いかれて しまいました。', 'A crow made off with my house keys.'),
+        chunk: { text: '持って 行かれて', keys: ['いかれ', 'とられ'], note: 'The passive for when it happened TO you: the crow did it, you suffered.', tag: tag.suffering },
       },
     },
     pon: {
@@ -379,6 +427,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('猫が お腹の 上で 寝て いたので、起きられませんでした。', 'ねこが おなかの うえで ねて いたので、おきられませんでした。', 'The cat was asleep on my stomach, so I couldn’t get up.'),
         chunk: { text: '寝て いたので', keys: NODE, note: '〜ので: the polite “so”. Everyone knows you can’t move a sleeping cat.', tag: tag.node },
       },
+      n3: {
+        mission: 'Apologise, then blame the cat. Say what you did without disturbing it.',
+        model: n3('猫が お腹の 上で 寝て いたので、起こさずに じっと して いました。', 'ねこが おなかの うえで ねて いたので、おこさずに じっと して いました。', 'The cat was asleep on my stomach, so I lay still without waking it.'),
+        chunk: { text: '起こさずに', keys: ['さずに', 'ずに'], note: '〜ずに: without doing it. Nobody wakes the cat.', tag: tag.zuni },
+      },
     },
     pon: {
       flop: jp('ねこ… ポンも よく つかうポン。', 'The cat… I use that one a lot.'),
@@ -409,6 +462,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('朝ごはんが おいしすぎて、止まりませんでした。', 'あさごはんが おいしすぎて、とまりませんでした。', 'Breakfast was so good I couldn’t stop.'),
         chunk: { text: 'おいしすぎて', keys: SUGI, note: '〜すぎて: too much, so… Too delicious is a real problem.', tag: tag.sugite },
       },
+      n3: {
+        mission: 'Apologise, then blame breakfast. Say what you tried to do, and how it went.',
+        model: n3('朝ごはんを 一口だけ 食べようと しましたが、止まりませんでした。', 'あさごはんを ひとくちだけ たべようと しましたが、とまりませんでした。', 'I tried to have just one bite of breakfast, but I couldn’t stop.'),
+        chunk: { text: '食べようと しました', keys: ['ようとし'], note: '〜ようと しました: you tried. You really tried.', tag: tag.youto },
+      },
     },
     pon: {
       flop: jp('あさごはん… ポンは よっつ たべたポン。', 'Breakfast… I had four.'),
@@ -438,6 +496,11 @@ export const CAUSES: readonly Cause[] = [
         mission: 'Apologise, then blame a game. Confess what you forgot to do.',
         model: n4('ゲームが 楽しすぎて、寝るのを 忘れて しまいました。', 'ゲームが たのしすぎて、ねるのを わすれて しまいました。', 'The game was so fun I forgot to sleep.'),
         chunk: { text: '忘れて しまいました', keys: SHIMAU, note: '〜て しまいました: oops, it happened. Forgetting to sleep counts.', tag: tag.shimau },
+      },
+      n3: {
+        mission: 'Apologise, then blame a game. Confess what you left on, and for how long.',
+        model: n3('ゲームを つけっぱなしで、朝まで 遊んで しまいました。', 'ゲームを つけっぱなしで、あさまで あそんで しまいました。', 'I left the game on and played until morning.'),
+        chunk: { text: 'つけっぱなし', keys: ['っぱなし'], note: '〜っぱなし: left on, and nobody switched it off.', tag: tag.ppanashi },
       },
     },
     pon: {
@@ -470,6 +533,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('こたつが 暖かすぎて、出られませんでした。', 'こたつが あたたかすぎて、でられませんでした。', 'The kotatsu was too warm; I couldn’t get out.'),
         chunk: { text: '暖かすぎて', keys: SUGI, note: '〜すぎて: too much, so… Nobody beats a kotatsu.', tag: tag.sugite },
       },
+      n3: {
+        mission: 'Apologise, then blame the kotatsu, with a sulky kid’s excuse.',
+        model: n3('だって、こたつが 暖かいんだもん。出られませんでした。', 'だって、こたつが あたたかいんだもん。でられませんでした。', 'But the kotatsu is SO warm! I couldn’t get out.'),
+        chunk: { text: '暖かいんだもん', keys: ['んだもん', 'だもん'], note: 'だって 〜もん: a sulky kid’s excuse. At work. Bold.', tag: tag.mon },
+      },
     },
     pon: {
       flop: jp('こたつ… ポンも ふゆは まいにち つかうポン。', 'Kotatsu… I use that every day in winter.'),
@@ -499,6 +567,11 @@ export const CAUSES: readonly Cause[] = [
         mission: 'Apologise, then blame a yōkai umbrella. Say what it did, and sound sorry it happened.',
         model: n4('傘が お化けに なって、逃げて しまいました。', 'かさが おばけに なって、にげて しまいました。', 'My umbrella turned into a ghost and ran off.'),
         chunk: { text: '逃げて しまいました', keys: SHIMAU, note: '〜て しまいました: it got away, and you’re sorry. Umbrellas do that round here.', tag: tag.shimau },
+      },
+      n3: {
+        mission: 'Apologise, then blame a yōkai umbrella. Say what it did the very moment it changed.',
+        model: n3('傘が お化けに なった とたん、逃げて しまいました。', 'かさが おばけに なった とたん、にげて しまいました。', 'The moment my umbrella turned into a ghost, it ran off.'),
+        chunk: { text: 'なった とたん', keys: ['たとたん', 'だとたん'], note: '〜た とたん: the very moment it happened.', tag: tag.totan },
       },
     },
     pon: {
@@ -530,6 +603,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('かっぱに 川までの 道を 聞かれました。', 'かっぱに かわまでの みちを きかれました。', 'A kappa asked me the way to the river.'),
         chunk: { text: '聞かれました', keys: ['きかれ'], note: 'かっぱに きかれました: it happened TO you. The kappa started it.', tag: tag.passive },
       },
+      n3: {
+        mission: 'Apologise, then blame a kappa. Say what it asked, and what else it made you do.',
+        model: n3('かっぱに 道を 聞かれた うえに、相撲まで 取らされました。', 'かっぱに みちを きかれた うえに、すもうまで とらされました。', 'A kappa asked me the way, and on top of that made me wrestle it.'),
+        chunk: { text: '聞かれた うえに', keys: ['たうえに'], note: '〜うえに: and on top of that… sumo.', tag: tag.ueni },
+      },
     },
     pon: {
       flop: jp('かっぱは いつも みちを きくポン。', 'Kappas are always asking for directions.'),
@@ -560,6 +638,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('部長に「今日は 休みだよ」と 言われました。…きつねでした。', 'ぶちょうに「きょうは やすみだよ」と いわれました。…きつねでした。', 'The boss told me “today’s a day off”. …It was a fox.'),
         chunk: { text: '言われました', keys: ['いわれ'], note: 'ぶちょうに いわれました: you were TOLD. It’s not your fault the boss was a fox.', tag: tag.passive },
       },
+      n3: {
+        mission: 'Apologise, then blame a fox. Say what “the boss” told you, and what was odd about him.',
+        model: n3('部長に 休みだと 言われましたが、部長に しては しっぽが ありました。…きつねでした。', 'ぶちょうに やすみだと いわれましたが、ぶちょうに しては しっぽが ありました。…きつねでした。', 'The boss said it was a day off. For a boss, he had quite a tail. …A fox.'),
+        chunk: { text: '部長に しては', keys: ['にしては'], note: '〜に しては: for a boss, that’s a strange tail.', tag: tag.nishitewa },
+      },
     },
     pon: {
       flop: jp('きつねは うそつきだポン。ポンは うそを つかない… たぶん。', 'Foxes are liars. I never lie… probably.'),
@@ -589,6 +672,11 @@ export const CAUSES: readonly Cause[] = [
         mission: 'Apologise, then blame Nobiko-san. Say how long she talked.',
         model: n4('のびこさんの 話が 長すぎて、逃げられませんでした。', 'のびこさんの はなしが ながすぎて、にげられませんでした。', 'Nobiko-san’s story was so long I couldn’t get away.'),
         chunk: { text: '長すぎて', keys: SUGI, note: '〜すぎて: too much, so… And her neck follows you round corners.', tag: tag.sugite },
+      },
+      n3: {
+        mission: 'Apologise, then blame Nobiko-san. Say what she did, all evening.',
+        model: n3('のびこさんが 話して ばかりで、帰れませんでした。', 'のびこさんが はなして ばかりで、かえれませんでした。', 'Nobiko-san did nothing but talk, so I couldn’t leave.'),
+        chunk: { text: '話して ばかり', keys: ['てばかり', 'でばかり'], note: '〜て ばかり: nothing but talking. For three hours.', tag: tag.bakari },
       },
     },
     pon: {
@@ -622,6 +710,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('昨日の デートが 楽しすぎて… 朝に なって しまいました。', 'きのうの デートが たのしすぎて… あさに なって しまいました。', 'Last night’s date was so fun… it turned into morning.'),
         chunk: { text: 'なって しまいました', keys: SHIMAU, note: '〜て しまいました: it just happened. That’s all Pon will say.', tag: tag.shimau },
       },
+      n3: {
+        mission: 'Apologise, then say what it wasn’t, and blame last night’s date.',
+        model: n3('寝坊した わけでは ありません。デートが 朝まで 続いたんです。', 'ねぼうした わけでは ありません。デートが あさまで つづいたんです。', 'It’s not that I overslept. The date just went on till morning.'),
+        chunk: { text: 'わけでは ありません', keys: ['わけではありません', 'わけではない', 'わけじゃない', 'わけじゃありません'], note: '〜わけでは ありません: it’s not THAT. It’s something worse.', tag: tag.wakedewa },
+      },
     },
     pon: {
       flop: jp('デート… ポンは おくさんと じゅうねん ないポン。', 'A date… none with my wife in ten years.'),
@@ -653,6 +746,11 @@ export const CAUSES: readonly Cause[] = [
         model: n4('お小遣いが なかったので、歩いて 来なければ なりませんでした。', 'おこづかいが なかったので、あるいて こなければ なりませんでした。', 'I had no pocket money left, so I had to walk here.'),
         chunk: { text: '来なければ なりませんでした', keys: MUST, note: '〜なければ なりませんでした: you HAD to. Twenty kilometres of had to.', tag: tag.must },
       },
+      n3: {
+        mission: 'Apologise, then blame your empty wallet. Say you had no other choice.',
+        model: n3('お小遣いが なかったので、歩いて 来る しか ありませんでした。', 'おこづかいが なかったので、あるいて くる しか ありませんでした。', 'I had no pocket money, so I had no choice but to walk.'),
+        chunk: { text: '来る しか ありませんでした', keys: ['しかありません', 'しかない', 'しかなかった'], note: '〜しか ない: no other way. Twenty kilometres of no other way.', tag: tag.shika },
+      },
     },
     pon: {
       flop: jp('おこづかい… ポンも ゼロえんだポン。', 'Pocket money… mine’s zero yen too.'),
@@ -678,7 +776,7 @@ export const scenesFor = (audience: Audience): LateScene[] => SCENES.filter((s) 
  * below the level. In the finale (a year late), the N4 model opens たいへん もうしわけ ありません instead.
  */
 export function lineFor(cause: Cause, level: Level, opts: { finale?: boolean } = {}): CauseLine {
-  const line = n4Up(level) && cause.lines.n4 ? cause.lines.n4 : (cause.lines.n5 ?? cause.lines.n4!);
+  const line = (level === 'n3' && cause.lines.n3) || (n4Up(level) && cause.lines.n4) || (cause.lines.n5 ?? cause.lines.n4!);
   if (!opts.finale || !line.model.text.startsWith(N4_SORRY.text)) return line;
   const m = line.model;
   return {

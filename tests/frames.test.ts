@@ -13,6 +13,7 @@ import { cases as n3b } from './frame-cases/n3-b.js';
 import { cases as n3c } from './frame-cases/n3-c.js';
 import { cases as n3d } from './frame-cases/n3-d.js';
 import { cases as n3e } from './frame-cases/n3-e.js';
+import { cases as n3f } from './frame-cases/n3-f.js';
 import { cases as n5existing } from './frame-cases/n5-existing.js';
 import { cases as n5new } from './frame-cases/n5-new.js';
 import { probes } from './frame-cases/panel-probes.js';
@@ -131,7 +132,7 @@ describe('sentence frames', () => {
 // are read with kuromoji tokens, as the server reads them.
 
 const reader = (await createReader())!;
-const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c, ...n4d, ...n3a, ...n3b, ...n3c, ...n3d, ...n3e };
+const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c, ...n4d, ...n3a, ...n3b, ...n3c, ...n3d, ...n3e, ...n3f };
 const line = (l: CaseLine) => (typeof l === 'string' ? { text: l, kana: l } : l);
 
 describe('every frame in a line (framesOf)', () => {
@@ -180,7 +181,7 @@ describe('every frame in a line (framesOf)', () => {
   // (docs/n4-n3-frames.md): the phone sends them spaced.
   it('finds N3 frames in written lines with no spaces', () => {
     const missed: string[] = [];
-    for (const [id, { pos }] of Object.entries({ ...n3a, ...n3b, ...n3c, ...n3d, ...n3e })) {
+    for (const [id, { pos }] of Object.entries({ ...n3a, ...n3b, ...n3c, ...n3d, ...n3e, ...n3f })) {
       for (const p of pos) {
         if (typeof p === 'string') continue;
         const text = p.text.replace(/[\s　]/g, '');

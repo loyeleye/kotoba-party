@@ -39,6 +39,9 @@ export function fillSlots(jp: JpText, slots: Slots = {}): JpText {
 /** Untagged lines play in every room; a Kids or Cheeky line only in a room with that Audience setting. */
 export const fitsAudience = (line: { audience?: string }, audience: Audience = 'family'): boolean => !line.audience || line.audience === audience;
 
+/** Untagged lines play in every room; an N3 line (an N3 listening point) only when someone in the room plays at N3. */
+export const fitsLevel = (line: { level?: string }, n3 = false): boolean => !line.level || n3;
+
 /** An English gloss that opens a sentence ("{tile} wins!") starts with a capital: "An octopus wins!". */
 export function capitalizeAtStart(value: string, line: string, at: number): string {
   return /^\W*$|[.!?…]\s+$/.test(line.slice(0, at)) ? value.replace(/^(\W*)([a-z])/, (_, pre: string, c: string) => pre + c.toUpperCase()) : value;
@@ -79,8 +82,8 @@ export class LineBank {
    * are skipped, and so are other audiences' lines. In a Kids or Cheeky room that audience's own fresh lines
    * come first. Undefined only when the bank has nothing for this host and event.
    */
-  pick(host: HostId, event: HostEvent, tier?: ReactionTier, slots: Slots = {}, audience: Audience = 'family'): (PickedLine & { line: BankLine }) | undefined {
-    let usable = this.candidates(host, event, tier).filter((l) => fitsAudience(l, audience) && (l.slots ?? []).every((s) => slotName(s) in slots));
+  pick(host: HostId, event: HostEvent, tier?: ReactionTier, slots: Slots = {}, audience: Audience = 'family', n3 = false): (PickedLine & { line: BankLine }) | undefined {
+    let usable = this.candidates(host, event, tier).filter((l) => fitsAudience(l, audience) && fitsLevel(l, n3) && (l.slots ?? []).every((s) => slotName(s) in slots));
     // When the cue names the answer ({tile}), lines that react to it beat the ones that could follow anything.
     if ('tile' in slots) {
       const named = usable.filter((l) => (l.slots ?? []).some((s) => slotName(s) === 'tile'));
