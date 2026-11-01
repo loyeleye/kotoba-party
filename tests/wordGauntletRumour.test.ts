@@ -169,9 +169,13 @@ describe('rumour round', () => {
     r.play(pid, { kind: 'hint' });
     const heardFrame = r.ms().rumour!.steps[0]!.heardFrame;
     const tried = r.view(as(pid)).rumour!.mine!.frame;
-    expect(RUMOUR_FRAMES.map((f) => f.ja)).toContain(tried?.ja);
-    // Never the frame they just heard.
-    expect(tried?.ja).not.toBe(RUMOUR_FRAMES.find((f) => f.id === heardFrame)?.ja);
+    // A frame from the list, with the story's source filled in where it needs one; never the one they just heard.
+    const seed = r.ms().rumour!.seed;
+    const shown = (id: string, ja: string) => (id === 'ni-yoru' ? `${seed.source.kana}に よると、＿そうです` : id === 'to-itte-ita' ? `${seed.source.kana}は、＿と いって いました` : ja);
+    const labels = RUMOUR_FRAMES.map((f) => shown(f.id, f.ja));
+    expect(labels).toContain(tried?.ja);
+    const heard = RUMOUR_FRAMES.find((f) => f.id === heardFrame);
+    if (heard) expect(tried?.ja).not.toBe(shown(heard.id, heard.ja));
     r.play(pid, { kind: 'hint' });
     expect(Object.keys(r.view(as(pid)).rumour!.mine!.models ?? {})).toHaveLength(4);
     expect(r.play(pid, { kind: 'hint' }).error).toBeTruthy();

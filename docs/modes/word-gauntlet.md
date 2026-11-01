@@ -81,7 +81,9 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
   typed), from memory only if they didn't open the words or Nobiko-san's line, kept who, where and what, and
   didn't echo the frame they heard. So frames in it count toward the goals
   through the path's own matchers: ＿そうです (4.6), ＿と いって いました and ＿って いって いました (4.14), ＿らしいです
-  (3.1), plain form (4.8), and (since 2026-11-01) ＿に よると ＿そうです and ＿んだって (4.6).
+  (3.1), plain form (4.8), and (since 2026-11-01) ＿に よると ＿そうです and ＿んだって (4.6). Goal 4.6 now needs one hearsay
+  frame (＿そうです, ＿に よると or ＿んだって) besides ＿そうです (looks) and ＿と おもいます. An N4 hint fills in the story's
+  source (カッパに よると、＿そうです).
 - Kana relayers' fins go in as tiles (`read`). Everyone gets the opener as `seen`.
 
 ### Shiritori rules (house rules from the design doc)

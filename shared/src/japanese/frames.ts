@@ -606,13 +606,26 @@ const N4: Matcher[] = [
   // によって (depending on, by), によるもの, nor によると with a plain statement after it.
   {
     id: 'ni-yoru',
-    re: rx(`に[\\s\\u3000]*(よると|よれば|依ると|拠ると|依れば|拠れば)[、,\\s\\u3000]*[^。！？!?]*?((?<![みよ])そう[\\s\\u3000]*(です|でした|だ|だった|よ|ね|な(?!い)|[。！!…]|$)|らし(い|かった)|(ん|の)?(だ|です)?って|と(いう|の)[\\s\\u3000]*こと)`),
+    // The hearsay must follow a plain form (ふるそう, not ふりそう), and って must end the clause (not まって).
+    re: rx(
+      `に[\\s\\u3000]*(よると|よれば|よりますと|依ると|拠ると|依れば|拠れば)[、,\\s\\u3000]*[^。！？!?]*?` +
+        `(?:[うくぐすつぬぶむるいただ]|ない|だった)[\\s\\u3000]*` +
+        `(そう[\\s\\u3000]*(です|でした|だ|だった|よ|ね|な(?!い)|[。！!…]|$)` +
+        `|(?<!あた|すば|めず|かわい)らし(い|かった)` +
+        `|(ん|の)?(だ|です)?って(?=[\\s\\u3000]*(さ|よ|ね|[。！!？?…、,〜ー]|$)))`,
+    ),
+    // ＿て いそう／だれか いそう: いる's stem + looks-like そう, not hearsay.
+    not: rx(`([てでがかはも])[\\s\\u3000]*いそう`),
   },
   // ＿んだって／＿んですって: news passed on to a friend. Not なんだって？ alone ("What?!"), nor だって "because"
   // or "even", nor ＿んだって いって いました (a quote: tte-quote).
   {
     id: 'n-datte',
-    re: rx(`([うくぐすつぬぶむるいただな]|てる|ない)[\\s\\u3000]*(ん|の)(だ|です)って(?![\\s\\u3000]*(いって|いった|いう|いい|言|ゆって|きいた|聞い))`),
+    // って ends the sentence (not ってば), and な doesn't start a word (カッパが なんだって？).
+    re: rx(
+      `(?:[うくぐすつぬぶむるいただ]|(?<=[^\\s\\u3000、。！？!?がはをにもで])な|てる|ない)[\\s\\u3000]*(ん|の)(だ|です)って` +
+        `(?=[\\s\\u3000]*(さ|よ|ね|[。！!？?…、,〜ー]|$))`,
+    ),
     not: rx(`^[\\s\\u3000]*(なん|何)(だ|です)って[\\s\\u3000]*[？?！!。…]*[\\s\\u3000]*$`),
     hides: ['n-da'],
   },
@@ -916,7 +929,7 @@ export const N4_FRAMES: readonly Frame[] = [
   d('sou-hear', 'n4', '4.6', '＿る／＿た／＿だ そうです', 'I hear ___', 'Pass on what you heard.', 'あしたは あめが ふるそうです。', 'I hear it will rain tomorrow.'),
   d('to-omou', 'n4', '4.6', '＿と おもいます', 'I think ___', 'Give your opinion or guess.', 'もう でんしゃは こないと おもいます。', "I don't think any more trains are coming."),
   d('kamo', 'n4', '4.6', '＿かもしれません', 'It might ___', 'Say something is possible.', 'あしたは ゆきかもしれません。', 'It might snow tomorrow.'),
-  d('ni-yoru', 'n4', '4.6', '＿に よると ＿そうです', 'According to ___, ___', 'Say where you heard it.', 'てんきよほうに よると、あしたは ゆきが ふるそうです。', 'According to the forecast, it will snow tomorrow.'),
+  d('ni-yoru', 'n4', '4.6', '＿に よると ＿そうです', 'According to ___, I hear ___', 'Say where you heard it.', 'てんきよほうに よると、あしたは ゆきが ふるそうです。', 'According to the forecast, it will snow tomorrow.'),
   d('n-datte', 'n4', '4.6', '＿んだって', 'They say ___ (casual)', 'Pass on news to a friend.', 'ポン、また ちこくしたんだって。', 'Apparently Pon was late again.'),
   d('hazu', 'n4', '4.6', '＿はずです', 'It should ___', 'Say what you expect.', 'バスは もうすぐ くる はずです。', 'The bus should come soon.'),
   d('you-to-omou', 'n4', '4.7', '＿(よ)うと おもいます', "I'm thinking of ___", 'Share a plan.', 'らいねん にほんに いこうと おもいます。', "I'm thinking of going to Japan next year."),

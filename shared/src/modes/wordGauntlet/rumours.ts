@@ -99,7 +99,7 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
   },
   {
     id: 'yukionna-oden',
-    who: { kana: 'ゆきおんな', en: 'the snow woman', keys: ['ゆきおんな'], sprite: null },
+    who: { kana: 'ゆきおんな', en: 'the snow woman', keys: ['ゆきおんな'], sprite: S('bento/customers/yukionna-calm') },
     where: { kana: 'やたいで', en: 'at a food stall', keys: ['やたい'] },
     what: { kana: 'あつい おでんを たべて いる', masu: 'あつい おでんを たべて います', en: 'is eating piping-hot oden', keys: ['おでん'] },
     source: { kana: 'フデさん', en: 'Fude-san' },
@@ -140,28 +140,28 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
   },
   // ---- More for every room (2026-11-01: Family rooms get 20) ----
   {
-    id: 'bakezori-tap',
+    id: 'bakezori-skip',
     who: { kana: 'ばけぞうり', en: 'the haunted sandal', keys: ['ばけぞうり', 'ぞうり'], sprite: S('yokai/book/yokai-bakezori') },
     where: { kana: 'えきで', en: 'at the station', keys: ['えきで', 'えきの'] },
-    what: { kana: 'タップダンスの れんしゅうを して いる', masu: 'タップダンスの れんしゅうを して います', en: 'is practising tap dance', keys: ['たっぷ'] },
-    source: { kana: 'カッパ', en: 'the kappa' },
-    truth: { text: 'ほんとうは、かたほうを さがして いた だけなの。ずっと ケンケンで あるいて いたから、そう みえたのね。', kana: 'ほんとうは、かたほうを さがして いた だけなの。ずっと ケンケンで あるいて いたから、そう みえたのね。', en: "Really, he was just looking for his other half. He'd been hopping on one foot the whole time, so it looked like dancing." },
+    what: { kana: 'なわとびを して いる', masu: 'なわとびを して います', en: 'is skipping rope', keys: ['なわとび'] },
+    source: { kana: 'ゆきおんな', en: 'the snow woman' },
+    truth: { text: 'ほんとうは、もう ひとつの ぞうりを さがして いたの。かたあしで ぴょんぴょん とんで いたのよ。', kana: 'ほんとうは、もう ひとつの ぞうりを さがして いたの。かたあしで ぴょんぴょん とんで いたのよ。', en: 'Really, he was looking for his other sandal, hopping along on one foot.' },
   },
   {
-    id: 'dobin-date',
+    id: 'dobin-cafe',
     who: { kana: 'どびんさん', en: 'Dobin-san the teapot', keys: ['どびん'], sprite: S('yokai/book/yokai-dobin') },
     where: { kana: 'きっさてんで', en: 'at a café', keys: ['きっさてん'] },
-    what: { kana: 'こいびとを まって いる', masu: 'こいびとを まって います', en: 'is waiting for a sweetheart', keys: ['こいびと'] },
+    what: { kana: 'すきな ひとを まって いる', masu: 'すきな ひとを まって います', en: 'is waiting for someone she likes', keys: ['すきなひと', 'かれし', 'こいびと', 'でえと'] },
     source: { kana: 'フデさん', en: 'Fude-san' },
-    truth: { text: 'ほんとうは、おゆが わくのを まって いたのよ。じぶんが どびんなのに。', kana: 'ほんとうは、おゆが わくのを まって いたのよ。じぶんが どびんなのに。', en: 'Really, she was waiting for the water to boil. Even though she IS the teapot.' },
+    truth: { text: 'ほんとうは、おゆが わくのを まって いたのよ。わくわく しながらね。', kana: 'ほんとうは、おゆが わくのを まって いたのよ。わくわく しながらね。', en: 'Really, she was waiting for her water to boil (わく). Bubbling with excitement (わくわく).' },
   },
   {
     id: 'hitodama-library',
     who: { kana: 'ひとだま', en: 'the hitodama', keys: ['ひとだま'], sprite: S('yokai/book/yokai-hitodama') },
     where: { kana: 'としょかんで', en: 'at the library', keys: ['としょかん'] },
-    what: { kana: 'しけんの べんきょうを して いる', masu: 'しけんの べんきょうを して います', en: 'is studying for an exam', keys: ['しけん'] },
+    what: { kana: 'テストの べんきょうを して いる', masu: 'テストの べんきょうを して います', en: 'is studying for a test', keys: ['てすと', 'しけん', 'べんきょう'] },
     source: { kana: 'ちょうちんさん', en: 'Chōchin-san' },
-    truth: { text: 'ほんとうは、としょかんの でんきが きれて いたの。ひとだまが ずっと あかりの かわりを して いたのよ。', kana: 'ほんとうは、としょかんの でんきが きれて いたの。ひとだまが ずっと あかりの かわりを して いたのよ。', en: "Really, the library's lights had gone out. The hitodama was standing in as the lamp." },
+    truth: { text: 'ほんとうは、としょかんの でんきの かわりを して いたのよ。ちょうちんさんは 「ぼくの しごとだ！」って おこって いるわ。', kana: 'ほんとうは、としょかんの でんきの かわりを して いたのよ。ちょうちんさんは 「ぼくの しごとだ！」って おこって いるわ。', en: "Really, it was standing in for the library's lights. Chōchin-san is fuming: 'That's MY job!'" },
   },
   {
     id: 'kitsunebi-guitar',
@@ -169,7 +169,7 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
     where: { kana: 'キャンプじょうで', en: 'at the campsite', keys: ['きゃんぷ'] },
     what: { kana: 'ギターを ひいて いる', masu: 'ギターを ひいて います', en: 'is playing the guitar', keys: ['ぎたあ'] },
     source: { kana: 'ポン', en: 'Pon' },
-    truth: { text: 'ほんとうは、キャンプファイヤーの ふりを して いたの。みんな マシュマロを やいて いたわ。', kana: 'ほんとうは、キャンプファイヤーの ふりを して いたの。みんな マシュマロを やいて いたわ。', en: 'Really, he was pretending to be the campfire. Everyone was toasting marshmallows on him.' },
+    truth: { text: 'ほんとうは、ギターは ポンよ。へたすぎて、マシュマロも にげたわ。', kana: 'ほんとうは、ギターは ポンよ。へたすぎて、マシュマロも にげたわ。', en: 'Really, the guitarist was Pon. So bad that even the marshmallows ran away.' },
   },
   {
     id: 'kodama-karaoke',
@@ -177,39 +177,39 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
     where: { kana: 'やまで', en: 'in the mountains', keys: ['やまで', 'やまの', 'やまに'] },
     what: { kana: 'カラオケを して いる', masu: 'カラオケを して います', en: 'is doing karaoke', keys: ['からおけ'] },
     source: { kana: 'フデさん', en: 'Fude-san' },
-    truth: { text: 'ほんとうは、やまびこの しごとちゅうだったのよ。だれかが 「ヤッホー」って いうと、「ヤッホー」って かえすの。', kana: 'ほんとうは、やまびこの しごとちゅうだったのよ。だれかが 「ヤッホー」って いうと、「ヤッホー」って かえすの。', en: "Really, he was at work as the echo. When someone shouts 'Yoo-hoo!', he shouts it back." },
+    truth: { text: 'ほんとうは、だれかの うたを まねして いた だけ。こだまだもの。', kana: 'ほんとうは、だれかの うたを まねして いた だけ。こだまだもの。', en: "Really, he was just copying someone else's song. He's an echo, after all." },
   },
   {
     id: 'toro-yoga',
-    who: { kana: 'とうろうさん', en: 'Tōrō-san the stone lantern', keys: ['とうろう'], sprite: S('yokai/book/yokai-toro') },
+    who: { kana: 'とうろうさん', en: 'Tōrō-san the stone lantern', keys: ['とうろう', 'とろう'], sprite: S('yokai/book/yokai-toro') },
     where: { kana: 'にわで', en: 'in the garden', keys: ['にわで', 'にわの'] },
     what: { kana: 'ヨガを して いる', masu: 'ヨガを して います', en: 'is doing yoga', keys: ['よが'] },
     source: { kana: 'ねこまた', en: 'the nekomata' },
-    truth: { text: 'ほんとうは、ずっと たって いた だけなの。もう ひゃくねんも おなじ ポーズよ。', kana: 'ほんとうは、ずっと たって いた だけなの。もう ひゃくねんも おなじ ポーズよ。', en: 'Really, he was just standing there. Same pose for a hundred years.' },
+    truth: { text: 'ほんとうは、ずっと たって いた だけなの。もう ひゃくねんも おなじ ポーズよ。', kana: 'ほんとうは、ずっと たって いた だけなの。もう ひゃくねんも おなじ ポーズよ。', en: 'Really, she was just standing there. Same pose for a hundred years.' },
   },
   {
     id: 'tsurube-nap',
     who: { kana: 'つるべおとし', en: 'the tsurube-otoshi', keys: ['つるべ'], sprite: S('yokai/book/yokai-tsurube') },
-    where: { kana: 'きの うえで', en: 'up a tree', keys: ['きのうえ'] },
-    what: { kana: 'ひるねを して いる', masu: 'ひるねを して います', en: 'is taking a nap', keys: ['ひるね'] },
-    source: { kana: 'カッパ', en: 'the kappa' },
-    truth: { text: 'ほんとうは、おちる れんしゅうを して いたのよ。でも こわくて、まだ いちども おちて いないの。', kana: 'ほんとうは、おちる れんしゅうを して いたのよ。でも こわくて、まだ いちども おちて いないの。', en: "Really, he was practising dropping on people. But he's scared, so he hasn't dropped once yet." },
+    where: { kana: 'たかい きの うえで', en: 'up a tall tree', keys: ['きのうえで', 'きのうえに'] },
+    what: { kana: 'ぐうぐう ねて いる', masu: 'ぐうぐう ねて います', en: 'is fast asleep', keys: ['ねて', 'ねむ', 'ぐうぐう'] },
+    source: { kana: 'だるま', en: 'the daruma' },
+    truth: { text: 'ほんとうは、とびおりる れんしゅうを して いたのよ。でも こわくて、まだ いちども とびおりて いないの。', kana: 'ほんとうは、とびおりる れんしゅうを して いたのよ。でも こわくて、まだ いちども とびおりて いないの。', en: "Really, he was practising jumping down on people. But he's scared, so he hasn't jumped once yet." },
   },
   {
     id: 'tengu-airport',
-    who: { kana: 'てんぐ', en: 'the tengu', keys: ['てんぐ'], sprite: null },
+    who: { kana: 'てんぐ', en: 'the tengu', keys: ['てんぐ'], sprite: S('portraits/omiai/tengu-calm') },
     where: { kana: 'くうこうで', en: 'at the airport', keys: ['くうこう'] },
     what: { kana: 'ひこうきの チケットを かって いる', masu: 'ひこうきの チケットを かって います', en: 'is buying a plane ticket', keys: ['ちけっと', 'ひこうき'] },
-    source: { kana: 'ちょうちんさん', en: 'Chōchin-san' },
-    truth: { text: 'ほんとうは、おみやげを かって いた だけなの。じぶんで とべるもの。', kana: 'ほんとうは、おみやげを かって いた だけなの。じぶんで とべるもの。', en: 'Really, he was just buying souvenirs. He can fly on his own.' },
+    source: { kana: 'からかさおばけ', en: 'the umbrella ghost' },
+    truth: { text: 'ほんとうは、ひこうきと きょうそうを して いたの。いつも まけるから、ないしょよ。', kana: 'ほんとうは、ひこうきと きょうそうを して いたの。いつも まけるから、ないしょよ。', en: 'Really, the tengu was racing the planes. They always lose, so keep it quiet.' },
   },
   {
-    id: 'zashiki-hotel',
-    who: { kana: 'ざしきわらし', en: 'the zashiki-warashi', keys: ['ざしきわらし', 'ざしき'], sprite: null },
-    where: { kana: 'ホテルで', en: 'at a hotel', keys: ['ほてる'] },
-    what: { kana: 'ひっこしの じゅんびを して いる', masu: 'ひっこしの じゅんびを して います', en: 'is getting ready to move out', keys: ['ひっこし'] },
+    id: 'zashiki-inn',
+    who: { kana: 'ざしきわらし', en: 'the zashiki-warashi', keys: ['ざしきわらし', 'ざしき'], sprite: S('portraits/omiai/zashiki-calm') },
+    where: { kana: 'りょかんで', en: 'at an inn', keys: ['りょかん'] },
+    what: { kana: 'かばんに にもつを いれて いる', masu: 'かばんに にもつを いれて います', en: 'is packing a bag to leave', keys: ['にもつ', 'かばん', 'ひっこ'] },
     source: { kana: 'ポン', en: 'Pon' },
-    truth: { text: 'ほんとうは、まくらなげの しあいを して いたのよ。ホテルの ひと、みんな まけたわ。', kana: 'ほんとうは、まくらなげの しあいを して いたのよ。ホテルの ひと、みんな まけたわ。', en: 'Really, she was having a pillow fight. The hotel staff all lost.' },
+    truth: { text: 'ほんとうは、おおきい かばんの なかで かくれんぼを して いたのよ。まだ だれも みつけて いないの。', kana: 'ほんとうは、おおきい かばんの なかで かくれんぼを して いたのよ。まだ だれも みつけて いないの。', en: 'Really, they were playing hide-and-seek inside a big bag. Nobody has found them yet, so the inn keeps its luck.' },
   },
   {
     id: 'pon-bakery',
@@ -217,15 +217,15 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
     where: { kana: 'パンやで', en: 'at the bakery', keys: ['ぱんや'] },
     what: { kana: 'ケーキを つくって いる', masu: 'ケーキを つくって います', en: 'is baking a cake', keys: ['けえき'] },
     source: { kana: 'ちょうちんさん', en: 'Chōchin-san' },
-    truth: { text: 'ほんとうは、パンを かいに いった だけ。でも ちこくして、おみせは もう しまって いたの。', kana: 'ほんとうは、パンを かいに いった だけ。でも ちこくして、おみせは もう しまって いたの。', en: 'Really, he only went to buy bread. But he was late, and the shop had already closed.' },
+    truth: { text: 'ほんとうは、ケーキに ばけて いたのよ。おきゃくさんに かわれそうに なって、にげて きたの。', kana: 'ほんとうは、ケーキに ばけて いたのよ。おきゃくさんに かわれそうに なって、にげて きたの。', en: 'Really, he had turned himself into a cake. A customer nearly bought him, so he ran away.' },
   },
   {
     id: 'kappa-aquarium',
     who: { kana: 'カッパ', en: 'the kappa', keys: ['かっぱ'], sprite: S('yokai/book/yokai-kappa') },
-    where: { kana: 'すいぞくかんで', en: 'at the aquarium', keys: ['すいぞくかん'] },
-    what: { kana: 'しごとを さがして いる', masu: 'しごとを さがして います', en: 'is looking for a job', keys: ['しごと'] },
+    where: { kana: 'すいぞくかんで', en: 'at the aquarium', keys: ['すいぞくかん', 'すいぞく'] },
+    what: { kana: 'しごとを さがして いる', masu: 'しごとを さがして います', en: 'is looking for a job', keys: ['しごと', 'ばいと'] },
     source: { kana: 'ゆきおんな', en: 'the snow woman' },
-    truth: { text: 'ほんとうは、ペンギンに およぎを ならって いたの。こんどは カッパが せいとよ。', kana: 'ほんとうは、ペンギンに およぎを ならって いたの。こんどは カッパが せいとよ。', en: 'Really, he was taking swimming lessons from the penguins. This time the kappa is the student.' },
+    truth: { text: 'ほんとうは、もう はたらいて いるのよ。いちばん おおきい プールの なかで。おきゃくさんは みんな、めずらしい さかなだと おもって いるの。', kana: 'ほんとうは、もう はたらいて いるのよ。いちばん おおきい プールの なかで。おきゃくさんは みんな、めずらしい さかなだと おもって いるの。', en: "Really, he already works there, in the biggest tank. The visitors all think he's a rare fish." },
   },
   // ---- Cheeky (the room's Audience is Cheeky) ----
   {
@@ -430,10 +430,10 @@ export function rumourFrameOf(u: { text: string; reading?: string; tokens?: read
   const k = normalizeReading(kana).replace(/[\s　]/g, '');
   const found = new Set(framesOf({ text: u.text, kana }, u.tokens, { keepHidden: true }));
   const rashii = found.has('rashii') || hasRashii(k);
-  if (found.has('ni-yoru') || (/によると/.test(k) && (/そう(です|だ|よ|な)/.test(k) || rashii))) return 'ni-yoru';
+  if (found.has('ni-yoru')) return 'ni-yoru';
   // と in a quote follows a plain form (くると いって いました); ともだちと いって いました is "went with a friend".
   if (found.has('to-itte-ita') || found.has('tte-quote') || /([うくぐすつぬぶむるいただよね]と|って)(いって|ゆって)(い)?(ました|た|る|ます)/.test(k) || /[うくぐすつぬぶむるいただ]と(きき|きい)(ました|た)/.test(k)) return 'to-itte-ita';
-  if (found.has('n-datte') || /(ん|の)(だ|です)って|なんだって/.test(k) || /([うくぐすつぬぶむるいただ]|ない)って[！!。…〜ー]*$/.test(k)) return 'n-datte';
+  if (found.has('n-datte') || /([うくぐすつぬぶむるいただ]|ない)って[！!。…〜ー]*$/.test(k)) return 'n-datte';
   if (rashii) return 'rashii';
   if (found.has('sou-hear')) return 'sou-hear';
   if (!POLITE_END.test(k) && (found.has('plain') || /([うくぐすつぬぶむるいただ]|ない)(よ|ね|の)[！!？?。…]*$/.test(k))) return 'plain';
