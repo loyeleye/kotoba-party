@@ -4,18 +4,18 @@
 //   ask       Fude-san's question to the witness (なにか 見ましたか？), the witness chip.
 //   testify   what the witness said; a curveball adds a NEW SUSPECT card (the court gasps).
 //   plan      the holding loop: both lawyer cards with a plan ring that turns ✓. Prosecution always left in
-//             vermilion with ⛓; defence right in sky blue with 🕊 and a dashed edge. Never what anyone picked.
+//             vermilion with the sealed scroll; defence right in sky blue with the sunflower badge and a dashed edge. Never what anyone picked.
 //   record    ● REC with level bars on each lawyer still recording, ✓ Sent on the rest.
 //   play      the speaker and a playhead only, prosecution then defence. Never words or pictures for a
 //             spoken argument (the check is about it); typed words show, since they have no sound.
 //   check     "Judges: one question, on your phone": lock-ins only, no words or pictures until all lock.
 //   gist/vote both arguments side by side: pictures, the gist with furigana, English; "3 of 4 voted".
-//   verdict   the tally (tokens drop into two pans), the scroll and the hanko stamp (有罪 or 無罪), the
-//             tie line, then the points: checks first, then the lawyers.
+//   verdict   the tally (tokens drop into two pans), then the scroll: Fude-san's brush writes 有罪 or 無罪
+//             top to bottom and the 筆 seal lands; the tie line, then the points: checks first, then the lawyers.
 //   booth     the replay booth: the line, its chunk lit, one line of colour, the station tag.
 
 import { h, LEVEL_LABELS, ruby, seatShape } from '../../../shared/src/dom.js';
-import { CASE_MS, CHECK_MS, CODA_AT_MS, GIST_MS, PLAN_MS, POINTS, POINTS_AT_MS, STAMP_AT_MS, TYPED_PLAY_MS, VOTE_MS, FUDE_PLAY_MS, TILE_READ_MS, type ArgView, type CourtView, type ThingView } from '../../../shared/src/modes/yokaiCourt/court.js';
+import { ASK_MS, CASE_MS, CHECK_MS, TESTIFY_MS, CODA_AT_MS, GIST_MS, PLAN_MS, POINTS, POINTS_AT_MS, STAMP_AT_MS, TYPED_PLAY_MS, VOTE_MS, FUDE_PLAY_MS, TILE_READ_MS, type ArgView, type CourtView, type ThingView } from '../../../shared/src/modes/yokaiCourt/court.js';
 import type { Side } from '../../../shared/src/modes/yokaiCourt/cases.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { sfx } from '../music/sfx.js';
@@ -61,9 +61,29 @@ function pic(t: { picture: string; emoji: string }, cls = ''): HTMLElement {
 const thing = (t: ThingView, label: string, cls = ''): HTMLElement =>
   h('div', { class: `yc-thing ${cls}`, 'data-key': `${label}:${t.id}` }, h('p', { class: 'yc-label' }, label), pic(t), h('p', { class: 'yc-thing-ja', lang: 'ja' }, ruby(t.word)), h('p', { class: 'yc-thing-en' }, t.word.en));
 
+type Role = Side | 'witness' | 'judge';
+const ROLE_EMOJI: Record<Role, string> = { pros: '📜', def: '🌻', witness: '👁', judge: '⚖' };
+
+/** A role's pixel icon (the emoji if the picture is missing): a sealed scroll, a sunflower badge, a scale, an eye. */
+function icon(role: Role, cls = 'yc-role-icon'): HTMLElement {
+  const key = `court/role-${role}`;
+  const emoji = () => h('span', { class: cls, 'aria-hidden': 'true' }, ROLE_EMOJI[role]);
+  if (missing.has(key)) return emoji();
+  return h('img', {
+    class: cls,
+    src: ART(key),
+    alt: '',
+    draggable: 'false',
+    onerror: (e: Event) => {
+      missing.add(key);
+      (e.target as HTMLElement).replaceWith(emoji());
+    },
+  });
+}
+
 const SIDE: Record<Side, { icon: string; label: string; verdict: { text: string; kana: string }; en: string }> = {
-  pros: { icon: '⛓', label: 'PROSECUTION', verdict: { text: '有罪', kana: 'ゆうざい' }, en: 'guilty' },
-  def: { icon: '🕊', label: 'DEFENCE', verdict: { text: '無罪', kana: 'むざい' }, en: 'not guilty' },
+  pros: { icon: '📜', label: 'PROSECUTION', verdict: { text: '有罪', kana: 'ゆうざい' }, en: 'guilty' },
+  def: { icon: '🌻', label: 'DEFENCE', verdict: { text: '無罪', kana: 'むざい' }, en: 'not guilty' },
 };
 
 // ---- timing ----
@@ -103,7 +123,7 @@ function header(view: RoomView, game: CourtView): HTMLElement {
   );
 }
 
-const step = (icon: string, ...text: (string | HTMLElement)[]): HTMLElement => h('li', {}, h('span', { class: 'yc-step-icon', 'aria-hidden': 'true' }, icon), h('span', {}, ...text));
+const step = (icon: string | HTMLElement, ...text: (string | HTMLElement)[]): HTMLElement => h('li', {}, h('span', { class: 'yc-step-icon', 'aria-hidden': 'true' }, icon), h('span', {}, ...text));
 
 function intro(): HTMLElement {
   return h(
@@ -115,8 +135,8 @@ function intro(): HTMLElement {
       'ol',
       { class: 'yc-steps' },
       step('📜', 'A studio mystery goes to trial. Fude-san reads the case.'),
-      step('👁', 'Fude-san asks the witness one question. A curveball can add a second suspect.'),
-      step('⚖', 'Two lawyers, paired by level, plan in private and argue at the same time: ⛓ prosecution, then 🕊 defence.'),
+      step(icon('witness'), 'Fude-san asks the witness one question. A curveball can add a second suspect.'),
+      step(icon('judge'), 'Two lawyers, paired by level, plan in private and argue at the same time: ', icon('pros'), ' prosecution, then ', icon('def'), ' defence.'),
       step('🗳', 'Everyone else answers one question about the arguments, then votes: who won you over? A tie is not guilty.'),
     ),
   );
@@ -162,8 +182,9 @@ function askBeat(view: RoomView, game: CourtView): HTMLElement {
       h('p', { class: 'yc-label' }, 'FUDE-SAN ASKS THE WITNESS'),
       game.question ? h('p', { class: 'yc-question-ja', lang: 'ja' }, ruby(game.question)) : null,
       game.question ? h('p', { class: 'yc-question-en' }, game.question.en) : null,
-      w ? h('p', { class: 'yc-witness' }, '👁 ', seat(view, w), h('span', { class: 'yc-muted' }, ' · answering on their phone')) : h('p', { class: 'yc-muted' }, 'No witness this case.'),
+      w ? h('p', { class: 'yc-witness' }, icon('witness'), ' ', seat(view, w), h('span', { class: 'yc-muted' }, ' · answering on their phone')) : h('p', { class: 'yc-muted' }, 'No witness this case.'),
     ),
+    bar(ASK_MS, game.stepAt),
   );
 }
 
@@ -186,6 +207,7 @@ function testifyBeat(view: RoomView, game: CourtView): HTMLElement {
     // Only the curveball is a second suspect; "it was the fox" blames another yōkai.
     t?.suspect && c ? h('div', { class: 'yc-things' }, thing(c.accused, 'ACCUSED', 'yc-accused'), thing(t.suspect, t.kind === 'curve' ? 'NEW SUSPECT' : 'BLAMED', `yc-new${t.kind === 'curve' ? ' yc-pop' : ''}`)) : null,
     t?.kind === 'curve' ? h('p', { class: 'yc-big yc-pop' }, 'A second suspect! The court gasps.') : t ? h('p', { class: 'yc-caption' }, t.note) : null,
+    bar(TESTIFY_MS, game.stepAt),
   );
 }
 
@@ -212,7 +234,7 @@ function lawyerCard(view: RoomView, game: CourtView, side: Side): HTMLElement | 
     'div',
     { class: `yc-lawyer yc-side-${side}${(recording ? sent : ready) ? ' yc-in' : ''}${recording && !sent ? ' yc-rec-on' : ''}`, 'data-key': id },
     h('span', { class: 'yc-lawyer-mark' }, mark),
-    h('p', { class: 'yc-lawyer-tag' }, `${s.label} ${s.icon} · `, h('span', { lang: 'ja' }, ruby(s.verdict))),
+    h('p', { class: 'yc-lawyer-tag' }, icon(side), ` ${s.label} · `, h('span', { lang: 'ja' }, ruby(s.verdict))),
     seat(view, id),
     h('p', { class: 'yc-lawyer-level' }, levelLabel(level)),
     h('p', { class: 'yc-lawyer-state' }, state),
@@ -234,10 +256,11 @@ function planBeat(view: RoomView, game: CourtView): HTMLElement {
   return h(
     'div',
     { class: 'yc-center yc-planbeat' },
-    game.testimony ? h('p', { class: 'yc-witness-line', lang: 'ja' }, '👁 ', ruby(game.testimony.line), h('span', { class: 'yc-muted' }, ` “${game.testimony.line.en}”`)) : null,
+    game.testimony ? h('p', { class: 'yc-witness-line', lang: 'ja' }, icon('witness'), ' ', ruby(game.testimony.line), h('span', { class: 'yc-muted' }, ` “${game.testimony.line.en}”`)) : null,
     h('div', { class: 'yc-lawyers' }, lawyerCard(view, game, 'pros'), h('span', { class: 'yc-vs' }, 'VS'), lawyerCard(view, game, 'def')),
     h('p', { class: 'yc-caption' }, 'Both lawyers plan in private, on missions written for this testimony. Judges: make a private hunch on your phone.'),
     hunchChips(view, game),
+    bar(Math.max(1, (game.stepEndsAt ?? view.deadline ?? game.stepAt + PLAN_MS) - game.stepAt), game.stepAt),
   );
 }
 
@@ -307,7 +330,7 @@ function playBeat(view: RoomView, game: CourtView): HTMLElement | null {
         );
       }),
     ),
-    h('p', { class: 'yc-small' }, `${s.icon} ${name} is arguing · ${levelLabel(p.level)}`),
+    h('p', { class: 'yc-small' }, icon(p.side), ` ${name} is arguing · ${levelLabel(p.level)}`),
   );
 }
 
@@ -323,7 +346,7 @@ function checkBeat(view: RoomView, game: CourtView): HTMLElement {
       'div',
       { class: 'yc-lawyers two' },
       ...(['pros', 'def'] as Side[]).map((side) =>
-        h('div', { class: `yc-lawyer yc-side-${side}`, 'data-key': `check:${side}` }, h('p', { class: 'yc-lawyer-tag' }, `${SIDE[side].label} ${SIDE[side].icon}`), h('p', { class: 'yc-lawyer-verdict', lang: 'ja' }, ruby(SIDE[side].verdict)), seat(view, side === 'pros' ? game.cast?.pros : game.cast?.def), h('p', { class: 'yc-lawyer-state' }, 'Their words show after the check')),
+        h('div', { class: `yc-lawyer yc-side-${side}`, 'data-key': `check:${side}` }, h('p', { class: 'yc-lawyer-tag' }, icon(side), ` ${SIDE[side].label}`), h('p', { class: 'yc-lawyer-verdict', lang: 'ja' }, ruby(SIDE[side].verdict)), seat(view, side === 'pros' ? game.cast?.pros : game.cast?.def), h('p', { class: 'yc-lawyer-state' }, 'Their words show after the check')),
       ),
     ),
     h('p', { class: 'yc-voted' }, n ? h('span', { class: 'yc-lock', 'data-key': `ok:${n}` }, '✓') : null, ` ${n} of ${judges.length} checks in`),
@@ -342,7 +365,7 @@ function argCard(view: RoomView, a: ArgView): HTMLElement {
   return h(
     'div',
     { class: `yc-arg yc-side-${a.side}`, 'data-key': `arg:${a.side}` },
-    h('div', { class: 'yc-arg-head' }, h('p', { class: 'yc-lawyer-tag' }, `${s.icon} `, h('span', { lang: 'ja' }, ruby(s.verdict)), ` ${s.en}`), seat(view, a.playerId)),
+    h('div', { class: 'yc-arg-head' }, h('p', { class: 'yc-lawyer-tag' }, icon(a.side), ' ', h('span', { lang: 'ja' }, ruby(s.verdict)), ` ${s.en}`), seat(view, a.playerId)),
     h('div', { class: 'yc-arg-body' },
       h('div', { class: 'yc-arg-pics' }, ...a.pics.map((t) => pic(t, 'yc-pic-card'))),
       h('div', { class: 'yc-arg-text' },
@@ -371,6 +394,30 @@ function voteBeat(view: RoomView, game: CourtView): HTMLElement {
 
 /** All the tokens drop within this, both pans at once, before the hanko lands. */
 const TOKENS_MS = 1_600;
+/** Fude-san's brush writes the verdict one character at a time, finishing as the seal lands (STAMP_AT_MS). */
+const STROKE_MS = 320;
+const BRUSH_AT_MS = STAMP_AT_MS - 2 * STROKE_MS;
+
+/**
+ * Fude-san's brush writes 有罪 or 無罪 top to bottom, one character per stroke, then the square 筆 seal lands. The
+ * reading sits beside it, since furigana on vertical brush writing would crowd the strokes.
+ */
+function brushVerdict(verdict: { text: string; kana: string }, at: (ms: number) => string): HTMLElement {
+  const chars = [...verdict.text];
+  return h(
+    'div',
+    { class: 'yc-brush' },
+    h(
+      'div',
+      { class: 'yc-brush-col' },
+      h('p', { class: 'yc-brush-ja', lang: 'ja', 'aria-label': verdict.text }, ...chars.map((ch, i) => h('span', { class: 'yc-stroke', style: at(BRUSH_AT_MS + i * STROKE_MS) }, ch))),
+      missing.has('court/brush')
+        ? null
+        : h('img', { class: 'yc-brush-pen', src: ART('court/brush'), alt: '', draggable: 'false', style: at(BRUSH_AT_MS), onerror: (e: Event) => (missing.add('court/brush'), (e.target as HTMLElement).remove()) }),
+    ),
+    h('div', { class: 'yc-brush-side' }, h('p', { class: 'yc-brush-kana', lang: 'ja' }, verdict.kana), h('span', { class: 'yc-seal yc-stamp', lang: 'ja', style: at(STAMP_AT_MS) }, '筆')),
+  );
+}
 
 function verdictBeat(view: RoomView, game: CourtView): HTMLElement | null {
   const v = game.verdict;
@@ -387,7 +434,7 @@ function verdictBeat(view: RoomView, game: CourtView): HTMLElement | null {
     h(
       'div',
       { class: `yc-pan yc-side-${side}`, 'data-key': `pan:${side}` },
-      h('p', { class: 'yc-lawyer-tag' }, `${SIDE[side].icon} `, h('span', { lang: 'ja' }, ruby(SIDE[side].verdict))),
+      h('p', { class: 'yc-lawyer-tag' }, icon(side), ' ', h('span', { lang: 'ja' }, ruby(SIDE[side].verdict))),
       h('div', { class: 'yc-tokens', 'aria-label': `${n} vote${n === 1 ? '' : 's'}` }, ...Array.from({ length: n }, (_, i) => h('span', { class: 'yc-token yc-drop', style: at(i * step + (side === 'def' ? step / 2 : 0)) }))),
       h('p', { class: 'yc-pan-n yc-pop', style: at(Math.max(0, n - 1) * step + 400) }, String(n)),
     );
@@ -403,9 +450,9 @@ function verdictBeat(view: RoomView, game: CourtView): HTMLElement | null {
       h('div', { class: 'yc-scale' }, pan('pros', v.pros), h('p', { class: 'yc-score-n yc-pop', style: at(STAMP_AT_MS) }, `${v.pros} – ${v.def}`), pan('def', v.def)),
       h(
       'div',
-      { class: `yc-hanko yc-side-${v.winner} yc-stamp`, style: at(STAMP_AT_MS) },
+      { class: `yc-hanko yc-side-${v.winner} yc-unfurl`, style: at(BRUSH_AT_MS - 150) },
       h('p', { class: 'yc-label' }, h('span', { lang: 'ja' }, ruby({ text: '判決', kana: 'はんけつ' })), ' · VERDICT'),
-      h('p', { class: 'yc-hanko-ja', lang: 'ja' }, ruby(s.verdict)),
+      brushVerdict(s.verdict, at),
       h('p', { class: 'yc-hanko-en' }, v.tie ? `Not guilty · ${v.pros} to ${v.def}, and a tie is not guilty` : `${s.en[0]!.toUpperCase()}${s.en.slice(1)} · ${Math.max(v.pros, v.def)} to ${Math.min(v.pros, v.def)}`),
       v.tie ? h('p', { class: 'yc-tie', lang: 'ja' }, ruby({ text: '疑わしきは 罰せず。', kana: 'うたがわしきは ばっせず。' }), h('span', { class: 'yc-muted' }, ' When in doubt, no punishment.')) : null,
       ),
@@ -498,7 +545,7 @@ export const yokaiCourtStage: StageMode<CourtView> = {
     const c = game.cast;
     if (!c || !game.step) return '';
     // Roles sit in the score ribbon, so nothing is cut off at the bottom of the beat.
-    const role = c.pros === playerId ? '⛓ prosecution' : c.def === playerId ? '🕊 defence' : c.witness === playerId ? '👁 witness' : c.judges.includes(playerId) ? 'judge' : '';
+    const role = c.pros === playerId ? '📜 prosecution' : c.def === playerId ? '🌻 defence' : c.witness === playerId ? '👁 witness' : c.judges.includes(playerId) ? '⚖ judge' : '';
     const state = badgeState(game, playerId);
     return role && state ? `${role} · ${state}` : role || state;
   },

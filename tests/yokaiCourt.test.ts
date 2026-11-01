@@ -465,6 +465,69 @@ describe('Yōkai Court panel fixes', () => {
   });
 });
 
+// ---- the panels' later ideas ----
+
+describe('Yōkai Court later ideas', () => {
+  it('gives a Kana judge who took part a word to keep, logged as seen', () => {
+    const t = new Table(5, ['kana', 'kana', 'kana', 'kana', 'kana'], 51);
+    t.start();
+    toPlan(t);
+    const { pros, def } = t.c;
+    t.play(pros, { kind: 'pick', tiles: ['claim', 'evidence'] });
+    t.play(def, { kind: 'pick', tiles: ['evidence', 'claim'] });
+    argueAll(t, () => null);
+    const [first, ...rest] = t.c.judges;
+    checkAndVote(t, (id, right) => (id === first ? null : right), (id) => (id === first ? null : 'def'));
+    const cs = caseOf(t);
+    const word = t.c.checkSide === 'pros' ? cs.clue : cs.alibi;
+    for (const id of rest) {
+      const keep = t.view(id).me!.keep!;
+      expect(keep.word.romaji, id).toBeTruthy();
+      expect(keep.checked).toBe(true);
+      expect(t.s.phrasebook[id]!.find((x) => x.itemId === `court:word:${word}`), id).toMatchObject({ outcome: 'seen' });
+    }
+    // Sat out: no word, nothing logged.
+    expect(t.view(first!).me!.keep).toBeNull();
+    expect((t.s.phrasebook[first!] ?? []).some((x) => x.itemId.startsWith('court:word:'))).toBe(false);
+    // Lawyers get their tiles back instead.
+    expect(t.view(pros).me!.keep).toBeNull();
+    const note = t.view(pros).me!.kanaNote!;
+    expect(note.take).toBe('read');
+    expect(note.evidence).toBe(true);
+    expect(note.tiles.map((x) => x.evidence)).toEqual([false, true]);
+    expect(note.tiles[0]!.word.romaji).toBeTruthy();
+  });
+
+  it('a Kana lawyer’s recap says whether their own take had every tile', () => {
+    const t = new Table(4, ['kana', 'kana', 'kana', 'kana'], 52);
+    t.start();
+    toPlan(t);
+    const { pros, def } = t.c;
+    t.play(pros, { kind: 'pick', tiles: ['claim', 'evidence'] });
+    t.play(def, { kind: 'pick', tiles: ['evidence'] });
+    const full = t.view(pros).me!.tiles.filter((x) => x.id === 'claim' || x.id === 'evidence').map((x) => x.word.kana).join(' ');
+    argueAll(t, (id) => (id === pros ? clip(full) : clip('ちがう')));
+    checkAndVote(t, () => null, () => 'pros');
+    expect(t.view(pros).me!.kanaNote!.take).toBe('said');
+    expect(t.view(def).me!.kanaNote).toMatchObject({ take: 'partly', evidence: false });
+    // A speaking level gets the usual note, never the Kana recap.
+    expect(t.view(t.c.judges[0]!).me!.kanaNote).toBeNull();
+  });
+
+  it('tells the phones when each timed beat ends', () => {
+    const t = new Table(4, [], 53);
+    t.start();
+    expect(t.view('stage').stepEndsAt).toBe(t.c.stepAt + CASE_MS);
+    t.tick();
+    expect(t.view('stage').stepEndsAt).toBe(t.c.stepAt + ASK_MS);
+    t.tick();
+    expect(t.view('stage').stepEndsAt).toBe(t.c.stepAt + TESTIFY_MS);
+    t.tick();
+    expect(t.c.step).toBe('plan');
+    expect(t.view('stage').stepEndsAt).toBeNull();
+  });
+});
+
 // ---- the path ----
 
 describe('Yōkai Court and the path', () => {

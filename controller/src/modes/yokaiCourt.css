@@ -208,3 +208,28 @@ body[data-motion='calm'] .yc-rec-btn.live .yc-rec-ring { animation: yc-rec-run v
   .yc-args { grid-template-columns: minmax(0, 1fr); }
   .yc-arg { min-height: 64px; }
 }
+
+/* Role icons: pixel art at whole-pixel sizes (the emoji stands in if a picture is missing). */
+.yc-role-icon { display: inline-block; width: 24px; height: 24px; vertical-align: -5px; image-rendering: pixelated; object-fit: contain; font-size: 18px; line-height: 24px; text-align: center; }
+.yc-role-icon.big { width: 48px; height: 48px; vertical-align: -12px; font-size: 36px; line-height: 48px; }
+.yc-role-chip { display: inline-flex; align-items: center; gap: 4px; }
+.yc-role-chip .yc-role-icon { vertical-align: 0; }
+
+/* The beat's clock, under the band: it runs out with the TV's bar. */
+.yc-beat-bar { height: 6px; margin-top: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.yc-beat-bar span { display: block; height: 100%; background: var(--side, var(--yc-band, #e8553d)); transform-origin: left; animation: yc-beat-run linear both; }
+@keyframes yc-beat-run { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+body[data-motion='calm'] .yc-beat-bar span { animation-name: yc-beat-run !important; }
+
+/* A Kana judge's word to keep. */
+.yc-keep { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: #2b2440; border: 2px dashed #f2c14e; }
+.yc-keep-row { display: flex; align-items: center; gap: 14px; }
+.yc-keep-pic { width: 72px; height: 72px; image-rendering: pixelated; object-fit: contain; font-size: 52px; line-height: 72px; text-align: center; }
+.yc-keep-ja .jpv-main { font-size: 32px; font-weight: 900; }
+
+/* A Kana lawyer's tiles, in the order sent. */
+.yc-recap { display: grid; gap: 6px; margin: 0; padding-left: 22px; }
+.yc-recap li { padding: 6px 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); }
+.yc-recap li.evidence { outline: 2px solid #f2c14e; }
+.yc-recap-ja .jpv-main { font-size: 20px; font-weight: 800; }
+.yc-recap-tag { font-size: 13px; font-weight: 800; color: #f2c14e; }

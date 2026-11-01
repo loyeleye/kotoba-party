@@ -146,8 +146,6 @@
 @keyframes yc-drop { from { opacity: 0; transform: translateY(-60px); } }
 .yc-hanko { display: grid; justify-items: center; gap: 6px; padding: 18px 50px; background: var(--paper); color: var(--paper-ink); border: 5px solid var(--outline); border-left: 18px solid #8a5a2b; border-right: 18px solid #8a5a2b; border-radius: 10px; box-shadow: 0 8px 0 var(--outline); }
 .yc-hanko .yc-label { color: #c0283c; }
-.yc-hanko-ja { font-size: 96px; font-weight: 900; color: #c8213c; line-height: 1.3; padding: 0 24px; border: 8px solid #c8213c; border-radius: 16px; transform: rotate(-4deg); }
-.yc-hanko-ja rt { font-size: 0.3em; color: #c8213c; }
 .yc-hanko-en { font-size: 30px; color: var(--paper-muted); }
 .yc-tie { font-size: 34px; font-weight: 800; }
 .yc-tie rt { font-size: 0.42em; }
@@ -209,3 +207,27 @@ body[data-motion='calm'] .yc-stage :is(.yc-wave span, .yc-levels span, .yc-rec-d
 /* Side colours as text on paper need darker shades to read (4.5:1). */
 .yc-arg.yc-side-pros .yc-lawyer-tag { color: #b8321a; }
 .yc-arg.yc-side-def .yc-lawyer-tag { color: #1f6aa5; }
+
+/* Role icons: pixel art at whole-pixel multiples of 32 (the emoji stands in if a picture is missing). */
+.yc-stage .yc-role-icon { display: inline-block; width: 1.25em; height: 1.25em; vertical-align: -0.25em; image-rendering: pixelated; object-fit: contain; line-height: 1.25em; text-align: center; }
+.yc-steps .yc-step-icon .yc-role-icon { width: 64px; height: 64px; }
+
+/* The verdict: Fude-san's brush writes it top to bottom, then the 筆 seal. */
+.yc-unfurl { animation: yc-unroll 0.35s ease-out both; }
+.yc-brush { display: flex; align-items: center; gap: 28px; }
+.yc-brush-col { position: relative; }
+.yc-brush-ja { writing-mode: vertical-rl; font-size: 92px; font-weight: 900; line-height: 1.05; color: #1b1512; text-shadow: 0 0 2px rgba(27, 21, 18, 0.55), 2px 3px 0 rgba(27, 21, 18, 0.12); }
+.yc-stroke { display: inline-block; animation: yc-stroke 0.32s cubic-bezier(0.5, 0, 0.3, 1) both; }
+@keyframes yc-stroke { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+.yc-brush-pen { position: absolute; right: -54px; top: -20px; width: 128px; height: 128px; image-rendering: pixelated; pointer-events: none; animation: yc-pen 0.9s linear both; }
+@keyframes yc-pen {
+  0% { opacity: 0; transform: translate(0, -20px); }
+  8% { opacity: 1; transform: translate(0, 0); }
+  70% { opacity: 1; transform: translate(-6px, 120px); }
+  100% { opacity: 0; transform: translate(30px, 80px) rotate(12deg); }
+}
+.yc-brush-side { display: grid; justify-items: center; gap: 14px; }
+.yc-brush-kana { font-size: 30px; font-weight: 800; color: var(--paper-muted); letter-spacing: 0.1em; }
+.yc-seal { display: grid; place-items: center; width: 64px; height: 64px; background: #c8213c; color: #fff4e6; font-size: 42px; font-weight: 900; border-radius: 6px; box-shadow: inset 0 0 0 4px #c8213c, inset 0 0 0 7px #fff4e6; rotate: -6deg; }
+body[data-motion='calm'] .yc-stage :is(.yc-stroke, .yc-unfurl) { animation-name: calm-in !important; animation-duration: 300ms !important; }
+body[data-motion='calm'] .yc-brush-pen { display: none; }
