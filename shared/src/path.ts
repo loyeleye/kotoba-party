@@ -207,7 +207,7 @@ export const GOALS: readonly Goal[] = [
   g('4.4', 'express', 'Say what you can do', 'たべられます, はなせます: say what you can and can’t.', ['potential'], [], ['phrase-bingo', 'tourist']),
   g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond', 'noni'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri']),
   g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou'], ['kamo', 'sou-hear'], ['phrase-bingo', 'happyokai', 'tourist', 'last-train']),
-  g('4.7', 'express', 'Plans and advice', 'Say what you plan to do, and give advice.', ['you-to-omou'], ['tsumori', 'hou-ga-ii'], [], { gap: 'No game uses these yet.' }),
+  g('4.7', 'express', 'Plans and advice', 'Say what you plan to do, and give advice.', ['you-to-omou'], ['tsumori', 'hou-ga-ii'], ['ghost-hotline'], { gap: 'Ghost Advice Hotline gives advice (＿た ほうが いいです), but no game asks for plans yet.' }),
   g('4.8', 'express', 'Talk casually with friends', 'Plain form with よ, ね and の: how friends talk.', ['plain'], ['n-da', 'teru'], ['omiai', 'dub-club']),
   g('4.9', 'express', 'Speak politely to strangers', 'The extra-polite asks for shops, stations and offices.', ['te-itadakemasen', ['o-kudasai', 'o-suru']], [], ['omiai', 'happyokai', 'bento-haus', 'last-train']),
   g('4.10', 'express', 'Read N4 kanji', 'The next kanji up: verbs, places and time words.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
