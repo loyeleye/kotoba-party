@@ -35,6 +35,25 @@ placeholder content), `stage/src/modes/lastTrain.ts`, `controller/src/modes/last
     `speechSynthesis` (ja-JP) and hides the text until the retry; with no voice available it
     shows the text after 2.5 s.
   - `read-aloud`: the speech bonus is halved (reading, not from memory).
+  - Items with `signs` (Read the Signs): the phone draws each as a station board, only the kanji
+    and its arrow on it, with no reading (reading it is the task). Exits are yellow, toilets blue
+    and red, other signs dark.
+
+### Read the Signs (看板を読もう)
+
+Kanji as icons, the way a traveller first meets them: read like traffic signs long before anyone
+writes one (from the learning path's ideas, [progressive-learning.md](../progressive-learning.md)).
+17 items in `content/src/last-train/read-the-signs.ts`:
+
+- **Kana:** 駅, 出口, 入口, 男, 女 read out loud, then "Where's the exit?" with ←出口 and 入口→,
+  and "Where's the women's toilet?" with ←男 and 女→ (answer ひだりです / みぎです).
+- **N5:** the four station exits 北口, 南口, 東口, 西口, and 切符, then which way to the south exit
+  and to the ticket machines (↑: まっすぐです).
+- **N4:** 改札, 乗換, and which way to the east exit (みぎのほうです).
+
+Each hint is a picture to remember the kanji by (駅's horse, 男's rice field over strength, 北's two
+people back to back), never the reading; the retry still gives Kana players the first sound. The
+stop rides the Obake Line as 北口 (Kitaguchi), just before its last stop.
 
 ### Items and levels
 
@@ -135,4 +154,6 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
   `ModeInfo.phrasebookTitle`, so it says "Your travel survival kit".
 - Phone audio for Station Announcement uses the device voice; the host pipeline could pre-render
   item audio instead (content notes say audio must play before text).
+- Read the Signs: are the kanji pictures (in each hint) memorable and right? They need the fluent
+  check with the rest. A Kids line could use the kana-level signs too.
 - Overrule logs live in the mode state only; the false-reject metric needs them persisted.

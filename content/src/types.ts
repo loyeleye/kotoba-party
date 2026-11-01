@@ -273,6 +273,7 @@ export type MinigameId =
   | 'counter-chaos'
   | 'particle-panic'
   | 'calendar-crunch'
+  | 'read-the-signs'
   | (string & {});
 
 export type PromptType = 'spoken-question' | 'listen-and-answer' | 'read-aloud' | 'picture' | 'fill-particle';
@@ -289,6 +290,8 @@ export interface MinigameItem {
   prompt: JpText;
   /** Optional on-screen visual (prices, a clock face, a picture) described in words. */
   visual?: string;
+  /** Station signs drawn on the phone (Read the Signs): the kanji itself is the picture. */
+  signs?: StationSign[];
   /** Accepted answers, as kana readings. First is the model answer. */
   accepted: string[];
   /** The natural version shown after a miss, with English. */
@@ -297,6 +300,13 @@ export interface MinigameItem {
   hint: string;
   /** Seconds to answer. */
   timeLimit: number;
+}
+
+/** A station sign: its kanji, which way its arrow points, and its colours (exits are yellow, toilets blue and red). */
+export interface StationSign {
+  text: string;
+  arrow?: 'left' | 'right' | 'up';
+  kind?: 'exit' | 'men' | 'women';
 }
 
 export interface LastTrainMinigame {

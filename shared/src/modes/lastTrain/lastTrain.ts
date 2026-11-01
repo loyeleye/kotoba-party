@@ -10,7 +10,7 @@
 // deadline inside the answer phase. Modes have no timers, so expiry is lazy: any move first
 // sweeps what is overdue, and phones send { kind: 'tick' } when their own clock runs out.
 
-import type { HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, TrainStop } from '../../../../content/src/types.js';
+import type { HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, StationSign, TrainStop } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type MoveResult, type PhraseEntry } from '../mode.js';
@@ -236,6 +236,8 @@ export interface TaskView {
   promptType: PromptType;
   prompt: JpText;
   visual: string | null;
+  /** Station signs to draw (Read the Signs). */
+  signs: StationSign[] | null;
   limitMs: number;
   attempt: 1 | 2;
   hint: string | null;
@@ -1145,6 +1147,7 @@ function taskView(s: LastTrainState, task: Task, level: Level, lastHeard: string
     promptType: task.promptType,
     prompt: task.item.prompt,
     visual: task.item.visual ?? null,
+    signs: task.item.signs ?? null,
     limitMs: task.limitMs,
     attempt: task.attempt,
     hint: retry ? task.item.hint : null,

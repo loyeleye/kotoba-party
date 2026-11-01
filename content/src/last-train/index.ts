@@ -9,6 +9,7 @@ import { orderUp } from './order-up.js';
 import { counterChaos } from './counter-chaos.js';
 import { particlePanic } from './particle-panic.js';
 import { calendarCrunch } from './calendar-crunch.js';
+import { readTheSigns } from './read-the-signs.js';
 import { lastTrainScenarios as scenarios } from './scenarios.js';
 
 export const lastTrainMinigames: LastTrainMinigame[] = [
@@ -20,6 +21,7 @@ export const lastTrainMinigames: LastTrainMinigame[] = [
   counterChaos,
   particlePanic,
   calendarCrunch,
+  readTheSigns,
 ];
 
 export const lastTrainScenarios: LastTrainScenario[] = scenarios;

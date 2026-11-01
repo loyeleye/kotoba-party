@@ -149,6 +149,24 @@ describe('Last Train answer checking', () => {
   });
 });
 
+describe('Read the Signs', () => {
+  const signs = realContent.lastTrainMinigames.find((m) => m.id === 'read-the-signs')!;
+  it('draws a sign for every item, and its model answer is accepted', () => {
+    expect(signs.items.length).toBeGreaterThanOrEqual(12);
+    for (const it of signs.items) {
+      expect(it.signs?.length, it.id).toBeGreaterThan(0);
+      expect(checkUtterance({ via: 'typed', text: it.model.kana.replace(/。$/, '') }, it.accepted), it.id).toBe(true);
+      // The hint is a picture to remember the kanji by: it never gives the reading away.
+      if (it.prompt.kana.includes('よみますか')) expect(it.hint, it.id).not.toContain(it.accepted[0]!);
+    }
+    expect(['kana', 'n5', 'n4'].every((l) => signs.items.some((it) => it.level === l))).toBe(true);
+  });
+  it('rides the Obake Line, before its last stop', () => {
+    const line = lastTrainScenarios.find((sc) => sc.id === 'obake-line')!;
+    expect(line.stops.at(-2)!.minigameId).toBe('read-the-signs');
+  });
+});
+
 describe('Last Train rules', () => {
   it('trims or pads stops to the VIP’s pick and keeps the last stop last', () => {
     const minigames = Object.fromEntries(MINIGAMES.map((m) => [m.id, m]));

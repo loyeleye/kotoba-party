@@ -165,6 +165,12 @@ export const lastTrainScenarios: LastTrainScenario[] = [
         announcement: { text: '次は神社前。神社で、ジンジャーエール！', kana: 'つぎはじんじゃまえ。じんじゃで、ジンジャーエール！', en: 'Next: Jinja-mae. Shrine (jinja) time is ginger ale time!', furigana: [['次', 'つぎ'], ['は', ''], ['神社前', 'じんじゃまえ'], ['。', ''], ['神社', 'じんじゃ'], ['で、ジンジャーエール！', '']] },
       },
       {
+        id: 'obake-line.kitaguchi',
+        name: { text: '北口', kana: 'きたぐち', en: 'Kitaguchi', furigana: [['北口', 'きたぐち']] },
+        minigameId: 'read-the-signs',
+        announcement: { text: '次は北口。看板、きた？きた！', kana: 'つぎはきたぐち。かんばん、きた？きた！', en: 'Next: North Exit (kita-guchi). Did the sign come (kita)? It came (kita)!', furigana: [['次', 'つぎ'], ['は', ''], ['北口', 'きたぐち'], ['。', ''], ['看板', 'かんばん'], ['、きた？きた！', '']] },
+      },
+      {
         id: 'obake-line.tsukimidai',
         name: { text: '月見台', kana: 'つきみだい', en: 'Tsukimidai', furigana: [['月見台', 'つきみだい']] },
         minigameId: 'calendar-crunch',
