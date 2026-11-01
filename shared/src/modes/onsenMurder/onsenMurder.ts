@@ -67,6 +67,12 @@ export const TURNS = { min: 6, max: 14 } as const;
 export const THINK_MS = 1_800;
 /** The English subtitle follows the Japanese after this long. */
 export const SUBTITLE_MS = 2_500;
+/**
+ * Chōchin-san voices an accepted report on the TV as one short beat: no sooner than `after` into the
+ * answer (the suspect's own line has been said by then, and the report box only opens at think +
+ * subtitle), and the answer stays up `beat` longer so the line isn't cut off by the next turn.
+ */
+export const REPORT_VOICE = { after: THINK_MS + SUBTITLE_MS + 1_500, beat: 5_000 } as const;
 
 export const DURATIONS = {
   intro: 25_000,
@@ -122,6 +128,8 @@ export interface Deputy {
   heard: string;
   via: Via | null;
   points: number;
+  /** Once the report is in, when Chōchin-san finishes voicing it: the answer stays up until then. */
+  voicedUntil: number | null;
 }
 
 interface Turn {
@@ -356,6 +364,9 @@ export function caseFor(cases: readonly OnsenCase[], audience: Audience, random:
 /** How long an answer shows, before any deputy time. */
 const revealBase = (s: OnsenState) => (s.asks.at(-1)?.newClue ? DURATIONS.answerClue : DURATIONS.answer);
 
+/** When a deputy who is done lets the answer go: its usual time, or once Chōchin-san has voiced the report. */
+const revealEnd = (s: OnsenState, d: Deputy) => Math.max(s.revealAt + revealBase(s), d.voicedUntil ?? 0);
+
 /** Joins a lead-in to an answer. */
 const withLead = (lead: JpText | null, answer: JpText): JpText =>
   lead ? { text: `${lead.text} ${answer.text}`, kana: `${lead.kana} ${answer.kana}`, en: `${lead.en} ${answer.en}` } : answer;
@@ -453,7 +464,7 @@ function offerDeputy(s: OnsenState, ctx: ModeContext, askerId: string | null): v
   const last = s.deputyLog.at(-1);
   if (n4.length === 1 && ctx.connected().length >= SPOTLIGHT_ROOM && last?.turnNo === s.turnNo - 1 && last.playerId === p.id && last.outcome === 'accepted') return;
   s.deputySeat = p.seat;
-  s.deputy = { turnNo: s.turnNo, playerId: p.id, status: 'offered', askNo: null, tiles: [], tries: 0, heard: '', via: null, points: 0 };
+  s.deputy = { turnNo: s.turnNo, playerId: p.id, status: 'offered', askNo: null, tiles: [], tries: 0, heard: '', via: null, points: 0, voicedUntil: null };
 }
 
 /** A deputy with a report still to give (an unanswered offer can still report: a first try is a yes). */
@@ -501,6 +512,17 @@ export function deputyOffers(s: Pick<OnsenState, 'deputyLog'>): Record<string, D
   }
   for (const [id, o] of Object.entries(out)) o.rate = offerRate(answers[id]!);
   return out;
+}
+
+/**
+ * Chōchin-san says the accepted report on the TV (Ladi: the host says the line; the player's recording
+ * never plays there). Always the model line, which is fixed, fluent and safe for the voice, whatever the
+ * deputy said or built. Held back until the suspect's answer has been said, so the two never overlap.
+ */
+function voiceReport(s: OnsenState, ctx: ModeContext, d: Deputy, r: OnsenReport): void {
+  const atMs = Math.max(0, s.revealAt + REPORT_VOICE.after - ctx.now);
+  d.voicedUntil = ctx.now + atMs + REPORT_VOICE.beat;
+  ctx.cue({ host: 'chochin', event: 'onsen_report', slots: { line: r.jp.text, line_kana: r.jp.kana, line_en: r.jp.en }, ...(atMs ? { atMs } : {}) });
 }
 
 function reportEntry(s: OnsenState, ask: Ask, outcome: PhraseEntry['outcome']): PhraseEntry {
@@ -672,7 +694,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         const d = s.deputy;
         if (!d || d.askNo === null) return false;
         const gone = !ctx.player(d.playerId)?.connected;
-        return (gone || !deputyHolds(d)) && ctx.now >= s.revealAt + revealBase(s);
+        return (gone || !deputyHolds(d)) && ctx.now >= revealEnd(s, d);
       }
       case 'encore':
         return here.length > 0 && here.every((p) => !!s.accusations[p.id]);
@@ -684,7 +706,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
   wakeAt(s, phase, ctx) {
     const d = s.deputy;
     if (phase !== 'reveal' || !d || d.askNo === null || deputyHolds(d)) return null;
-    const at = s.revealAt + revealBase(s);
+    const at = revealEnd(s, d);
     return ctx.now < at ? at : null;
   },
 
@@ -784,6 +806,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         give(s, ctx, playerId, d.points, via === 'speech' ? POINTS.spokenReport : 0);
         // Only a spoken report counts as from memory, as for the questions.
         ctx.phrase(playerId, { ...reportEntry(s, ask, via === 'tap' ? 'seen' : d.tries > 1 ? 'retry' : 'said'), recall: via === 'speech' ? 'memory' : 'read' });
+        voiceReport(s, ctx, d, ask.report);
       } else if (d.tries >= TRIES) {
         d.status = 'missed';
         ctx.phrase(playerId, reportEntry(s, ask, 'missed'));
