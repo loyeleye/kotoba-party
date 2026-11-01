@@ -108,9 +108,10 @@ export const readTheSigns: LastTrainMinigame = {
     read('09-minamiguchi', 'n5', { text: '南口', kind: 'exit' }, { text: '南口', kana: 'みなみぐち', en: 'south exit' }, 'Memory picture: 南 as a tent with a cross on top. 口 here means exit.'),
     read('10-higashiguchi', 'n5', { text: '東口', kind: 'exit' }, { text: '東口', kana: 'ひがしぐち', en: 'east exit' }, 'Memory picture: 東 as the sun (日) rising behind a tree (木).'),
     read('11-nishiguchi', 'n5', { text: '西口', kind: 'exit' }, { text: '西口', kana: 'にしぐち', en: 'west exit' }, 'Memory picture: 西 as a bird settling into its nest at sunset.'),
-    read('18-chuuouguchi', 'n5', { text: '中央口', kind: 'exit' }, { text: '中央口', kana: 'ちゅうおうぐち', en: 'central exit' }, '中 is a line through the middle of a box. 央 is centre. 口 here means exit.'),
     where('13-minamiguchi-doko', 'n5', { kana: 'みなみぐちはどこですか。', en: 'Where is the south exit?' }, [{ text: '北口', kind: 'exit', arrow: 'left' }, { text: '南口', kind: 'exit', arrow: 'right', target: true }], 'right', SOUTH, 'North is two people back to back. South is the tent with a cross.'),
-    // ---- N4: inside the gates, and buying a ticket (符 is a late kanji, so 切符 waits until N4) ----
+    // ---- N4: inside the gates, and buying a ticket. 切符, 改札 and 乗換 aren't on the N4 kanji lists: they are
+    // station icons, read as whole signs (like 出口), and not counted as N4 kanji. 央 is N4. ----
+    read('18-chuuouguchi', 'n4', { text: '中央口', kind: 'exit' }, { text: '中央口', kana: 'ちゅうおうぐち', en: 'central exit' }, '中 is a line through the middle of a box. 央 is centre. 口 here means exit.'),
     read('12-kippu', 'n4', { text: '切符' }, { text: '切符', kana: 'きっぷ', en: 'ticket' }, '切 has a knife (刀) in it: the slip you tear off.'),
     where('14-kippu-doko', 'n4', { kana: 'きっぷうりばはどこですか。', en: 'Where do you buy tickets?' }, [{ text: '出口', kind: 'exit', arrow: 'left' }, { text: '切符', arrow: 'up', target: true }], 'up', TICKETS, '切 has a knife (刀) in it. An arrow pointing up means まっすぐ.'),
     read('15-kaisatsu', 'n4', { text: '改札' }, { text: '改札', kana: 'かいさつ', en: 'ticket gates' }, '札 is a wooden tag (木): your ticket. 改 is to check it.', ['かいさつぐち', 'かいさつぐちです']),

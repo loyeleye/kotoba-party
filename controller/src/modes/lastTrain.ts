@@ -12,7 +12,7 @@
 import { h, mount, ruby } from '../../../shared/src/dom.js';
 import type { JpText, Level, StationSign } from '../../../content/src/types.js';
 import { signBoard } from '../../../shared/src/signBoard.js';
-import type { Gist, LastTrainMe, LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
+import type { LastTrainMe, LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
@@ -141,13 +141,21 @@ function serverNow(ctx: PhoneContext<LastTrainView>): number {
   return ctx.view.deadline !== null && left !== null && left > 0 ? ctx.view.deadline - left : Date.now();
 }
 
+/** The offer card's kicker, in the scene's voice, per role. */
+const OFFER_KICKER: Record<string, string> = {
+  announcer: '📢 Chōchin-san holds out his megaphone.',
+  passenger: '🧳 Oh no, you’ve lost something!',
+  'lost-property-staff': '🔎 The lost property counter needs you.',
+  'front-desk-guest': '🛎️ The front desk is all yours.',
+};
+
 /** The offer card (components/roleOffer.ts): take the hard role, or "not this time" for the ordinary item. No answer is a no. */
 function offerScreen(offer: NonNullable<LastTrainMe['offer']>, ctx: PhoneContext<LastTrainView>, send: (move: unknown) => Promise<boolean>): HTMLElement {
   return h(
     'div',
     { class: 'screen lt-offer' },
     roleOffer({
-      kicker: '⭐ Hard role',
+      kicker: OFFER_KICKER[offer.roleId] ?? '⭐ Hard role',
       role: offer.role,
       pitch: offer.pitch,
       onTake: () => void send({ kind: 'role', key: offer.key, accept: true }),
@@ -155,18 +163,6 @@ function offerScreen(offer: NonNullable<LastTrainMe['offer']>, ctx: PhoneContext
       // Timed by the server's deadline, so a late or rebuilt screen doesn't restart the clock.
       deadline: { at: offer.deadline, now: () => serverNow(ctx), onExpire: () => setTimeout(() => void send({ kind: 'tick' }), 300), expired: 'Dealing your usual item…' },
     }),
-  );
-}
-
-/** The host stand-in's announcement on a Kana or N5 phone: what Chōchin-san is saying, at this level. */
-function standInGist(g: Gist): HTMLElement {
-  return h(
-    'div',
-    { class: 'booth-gist' },
-    h('p', { class: 'gallery-kicker' }, '📢 Chōchin-san’s announcement'),
-    h('p', { class: 'booth-gist-ja', lang: 'ja' }, g.kana),
-    g.romaji ? h('p', { class: 'booth-gist-romaji' }, g.romaji) : null,
-    h('p', { class: 'booth-gist-en' }, g.en),
   );
 }
 
@@ -392,6 +388,8 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
       me?.result?.outcome,
       me?.canEcho,
       me?.echo?.text,
+      // The booth's gist appears once this phone's curveball is answered.
+      !!me?.booth,
       me?.dash ? `${me.dash.pos}:${me.dash.aboard}` : '',
       view.phase === 'score' ? (game.dash?.results ? 'r' : '') : '',
     ].join('|');
@@ -423,7 +421,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
           game.stop ? jpBlock(game.stop.name, { big: true }) : null,
           game.stop ? jpBlock(game.stop.minigame.intro) : null,
           me?.ghost ? h('p', { class: 'lt-chip ghost' }, '👻 You’re a ghost: answer 2 in a row to come back') : null,
-          me?.standIn ? standInGist(me.standIn) : null,
+          boothGist(me?.standIn ?? null, '📢 Chōchin-san’s announcement'),
         );
         break;
       case 'answer':

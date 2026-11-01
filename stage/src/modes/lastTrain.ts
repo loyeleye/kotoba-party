@@ -142,7 +142,7 @@ function standIn(game: LastTrainView): HTMLElement | null {
 function booth(game: LastTrainView): HTMLElement | null {
   const b = game.booth;
   if (!b) return null;
-  return h('div', { class: 'lt-booth', style: `animation-delay:${b.atMs}ms` }, boothStrip(b, b.name));
+  return h('div', { class: 'lt-booth', style: `animation-delay:${b.atMs}ms` }, boothStrip(b, b.name, b.holdKey));
 }
 
 const OUTCOME: Record<string, string> = { first: '✓', retry: '✓ retry', overruled: '🙌 room overrule', missed: '✗', away: 'away' };

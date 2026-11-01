@@ -178,7 +178,7 @@ export const chochinLines: HostLine[] = [
   // train_announcer_react: the announcer's line landed; Chōchin-san reacts at the reveal (in place of reveal_react)
   { id: 'chochin.train_announcer_react.01', host: 'chochin', event: 'train_announcer_react', jp: { text: 'いい アナウンスでした！　ゆらゆら。', kana: 'いい アナウンスでした！　ゆらゆら。', en: 'Lovely announcement! Sway, sway.' }, status: 'draft' },
   { id: 'chochin.train_announcer_react.02', host: 'chochin', event: 'train_announcer_react', jp: { text: 'えきいんさんに なれますよ！', kana: 'えきいんさんに なれますよ！', en: 'You could work at the station!' }, status: 'draft' },
-  { id: 'chochin.train_announcer_react.03', host: 'chochin', event: 'train_announcer_react', jp: { text: 'じょうずな けいごです！', kana: 'じょうずな けいごです！', en: 'Beautiful keigo!' }, status: 'draft' },
+  { id: 'chochin.train_announcer_react.03', host: 'chochin', event: 'train_announcer_react', jp: { text: 'ホームランです！　…ホームだけに。ゆらゆら。', kana: 'ホームランです！　…ホームだけに。ゆらゆら。', en: 'A home run! …We\'re on the platform, after all. Sway, sway.' }, status: 'draft' },
   { id: 'chochin.train_announcer_react.04', host: 'chochin', event: 'train_announcer_react', jp: { text: 'ホームの みなさん、ちゃんと ききましたよ！', kana: 'ホームの みなさん、ちゃんと ききましたよ！', en: 'The whole platform heard that!' }, status: 'draft' },
   { id: 'chochin.train_announcer_react.05', host: 'chochin', event: 'train_announcer_react', jp: { text: 'わたしの メガホン、かえして くださいね。', kana: 'わたしの メガホン、かえして くださいね。', en: 'You will give my megaphone back, won\'t you?' }, status: 'draft' },
   // train_stand_in: a room of one or two with no N4 player; Chōchin-san makes one platform announcement himself (as is)
