@@ -169,19 +169,25 @@ export interface SoundCheck {
 /**
  * The closed-set kana sound check (design doc, "AI and speech"): lenient, listening for the
  * target and its known confusions only. じ/ぢ, ず/づ and お/を count as one sound; a stretched
- * vowel (かー) or a trailing っ still counts; romaji never does.
+ * vowel (かー) or a trailing っ still counts. Typed romaji never does; a lone vowel is the one
+ * exception for speech, because Whisper often writes a short い as "E" or 胃 (see VOWEL_HEARD).
  */
-export function checkSound(texts: readonly (string | undefined)[], target: Kana, deck: Deck): SoundCheck {
+export function checkSound(texts: readonly (string | undefined)[], target: Kana, deck: Deck, opts: { spoken?: boolean } = {}): SoundCheck {
   const accepted = [target.sound, ...(target.homophoneIds ?? []).map((id) => deck.byId.get(id)?.sound ?? '')].filter(Boolean);
   const keys = new Set(accepted.map((a) => soundKey(a)));
+  const vowel = VOWEL_HEARD[target.sound];
   let heard: string | undefined;
   let romaji = false;
-  for (const raw of texts) {
-    if (!raw) continue;
-    if (/[a-z]/i.test(raw) && !/[ぁ-ゖァ-ヺ]/.test(raw)) {
+  for (const raw0 of texts) {
+    if (!raw0) continue;
+    const latin = raw0.normalize('NFKC').toLowerCase().replace(/[^a-z]/g, '');
+    if (/[a-z]/i.test(raw0) && !/[ぁ-ゖァ-ヺ一-龯]/.test(raw0)) {
+      if (opts.spoken && vowel?.latin.test(latin)) return { ok: true };
       romaji = true;
       continue;
     }
+    // Without the reader service, a kanji transcript (胃, 絵) is compared by this short list.
+    const raw = (vowel && VOWEL_KANJI[stripMarks(raw0)]) || raw0;
     const r = normalizeReading(raw);
     if (!r) continue;
     for (const v of variants(r)) {
@@ -197,6 +203,31 @@ export function checkSound(texts: readonly (string | undefined)[], target: Kana,
   }
   return { ok: false, heard, romaji: romaji && !heard };
 }
+
+const stripMarks = (t: string): string => t.normalize('NFKC').replace(/[\s、。，．,.!?！？…ー〜~]/g, '');
+
+/**
+ * How Whisper writes a lone vowel said on its own. A short clip with one vowel in it gives it
+ * little to go on, so besides い or イ it often answers in romaji ("E", "Ee") or with a one-kanji
+ * word that reads the same (胃, 意). Each pattern only fits its own vowel: "e" is the English
+ * letter name, which sounds like い, so it never counts for え.
+ */
+const VOWEL_HEARD: Record<string, { latin: RegExp }> = {
+  あ: { latin: /^(a+|a+h+)$/ },
+  い: { latin: /^(i+|y?e{2,}|e|yi+)$/ },
+  う: { latin: /^(u+|w?o{2,}h?|wu+)$/ },
+  え: { latin: /^(e+h+|eh|ay+|ei)$/ },
+  お: { latin: /^(o|o+h+|ou)$/ },
+};
+
+/** One-word kanji transcripts of a lone vowel, read here so they count when the reader service is down. */
+const VOWEL_KANJI: Record<string, string> = {
+  亜: 'あ', 阿: 'あ',
+  胃: 'い', 意: 'い', 井: 'い', 位: 'い', 医: 'い', 異: 'い', 衣: 'い', 伊: 'い', 委: 'い', 以: 'い', 椅子: 'いす', 良い: 'いい', 好い: 'いい',
+  鵜: 'う', 宇: 'う', 羽: 'う', 有: 'う',
+  絵: 'え', 江: 'え', 柄: 'え',
+  尾: 'お', 緒: 'お', 雄: 'お', 御: 'お',
+};
 
 /** The reading, plus the reading with a stretched end or trailing っ trimmed. */
 function variants(r: string): string[] {
@@ -243,16 +274,37 @@ export function pairTip(pair: MinimalPair, played: 'a' | 'b'): string {
   return `${w.kana} is “${w.en}”, ${o.kana} is “${o.en}”: ${CONTRAST_TIP[pair.contrast]}.`;
 }
 
+/** How to say each vowel, for English speakers: the romaji letter alone misleads (i is not "eye"). */
+const VOWEL_SAY: Record<string, string> = {
+  あ: 'say “ah” as in “father”',
+  い: 'say “ee” as in “see”, short and clear, not “eye”',
+  う: 'say “oo” as in “food”, lips relaxed, not pushed forward',
+  え: 'say “eh” as in “get”, not “ee”',
+  お: 'say “oh”, short, without sliding into “oo”',
+};
+
+/** The romaji line under a chapter 1 kana when it is a vowel: the letter plus how to say it (i · “ee” as in see). */
+export function romajiHint(k: Kana): string {
+  const like = VOWEL_LIKE[k.sound];
+  return like ? `${k.romaji} · ${like}` : k.romaji;
+}
+
+const VOWEL_LIKE: Record<string, string> = { あ: '“ah”', い: '“ee” as in see', う: '“oo” as in food', え: '“eh” as in get', お: '“oh”' };
+
 /** One kind line after a missed kana. Never romaji, except chapter 1's training wheels. */
 export function kanaTip(deck: Deck, target: Kana, wrong?: Kana, check?: SoundCheck): string {
+  const twin = target.twinId ? deck.byId.get(target.twinId) : undefined;
+  const like = target.chapter === 1 ? VOWEL_SAY[target.sound] : undefined;
+  const withTwin = twin ? `, just like its twin ${twin.char}` : '';
+  // A missed vowel was a sound problem, not a shape one: say how to make it.
+  if (like && !wrong) return `${target.char} says “${target.romaji}”${withTwin}: ${like}.`;
   if (check?.romaji) return 'Fude only hears kana sounds: say it in Japanese!';
   const set =
     (wrong && deck.lookAlikes.find((s) => s.kanaIds.includes(target.id) && s.kanaIds.includes(wrong.id))) ??
     (wrong ? undefined : deck.lookAlikes.find((s) => s.kanaIds.includes(target.id) && s.kanaIds.length <= 3));
   if (set) return set.tip;
-  const twin = target.twinId ? deck.byId.get(target.twinId) : undefined;
   const sound = inOtherScript(target.sound, target.script);
-  if (target.chapter === 1) return `${target.char} says “${target.romaji}”${twin ? `, just like its twin ${twin.char}` : ''}.`;
+  if (target.chapter === 1) return `${target.char} says “${target.romaji}”${withTwin}.`;
   if (check?.heard && check.heard !== target.sound) return `That sounded like ${check.heard}. ${target.char} is ${sound}.`;
   if (twin) return sound === twin.char ? `${target.char} is ${twin.char}’s twin: same sound, other alphabet.` : `${target.char} is ${twin.char}’s twin: it sounds like ${sound}.`;
   return `${target.char} sounds like ${sound}.`;

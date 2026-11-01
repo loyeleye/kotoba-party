@@ -119,7 +119,9 @@ export class MicClip {
       at += c.length;
     }
     this.chunks = [];
-    if (loudness(all) < (this.raw ? 0.003 : 0.008)) return new Uint8Array(0); // only room noise: don't bother the server
+    // Only room noise: don't bother the server. Judged on the loudest stretch, not the whole hold, so a short い in a
+    // long hold (a close vowel, quieter than あ) still goes to Whisper.
+    if (peakLoudness(all, rate) < (this.raw ? 0.003 : 0.008)) return new Uint8Array(0);
     return wav(downsample(all, rate, RATE), RATE);
   }
 
@@ -198,6 +200,16 @@ export async function uploadClip(clip: Uint8Array<ArrayBuffer>, tv: boolean): Pr
   } catch {
     return { ok: false, why: 'failed' };
   }
+}
+
+/** The loudness of the loudest 0.1 s of a clip. */
+export function peakLoudness(x: Float32Array, rate: number): number {
+  const win = Math.max(1, Math.round(rate / 10));
+  if (x.length <= win) return loudness(x);
+  let best = 0;
+  const step = Math.round(win / 2);
+  for (let at = 0; at + win <= x.length; at += step) best = Math.max(best, loudness(x.subarray(at, at + win)));
+  return Math.max(best, loudness(x.subarray(x.length - win)));
 }
 
 function loudness(x: Float32Array): number {
