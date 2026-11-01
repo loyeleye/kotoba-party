@@ -2,7 +2,14 @@
 // specific one first, and the game's own look-alike lines get none (docs/progressive-learning.md).
 
 import { describe, expect, it } from 'vitest';
-import { FRAMES, frameOf, type FrameId } from '../shared/src/japanese/frames.js';
+import { createReader } from '../server/src/reading.js';
+import { ALL_FRAMES, FRAMES, frameOf, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
+import { cases as n4a } from './frame-cases/n4-a.js';
+import { cases as n4b } from './frame-cases/n4-b.js';
+import { cases as n4c } from './frame-cases/n4-c.js';
+import { cases as n5existing } from './frame-cases/n5-existing.js';
+import { cases as n5new } from './frame-cases/n5-new.js';
+import type { CaseLine, FrameCases } from './frame-cases/types.js';
 
 const of = (kana: string, text = kana) => frameOf({ text, kana });
 
@@ -60,6 +67,10 @@ describe('sentence frames', () => {
     expect(of('おなかが すきました！')).toBe('mashita'); // hungry (past), not "like"
     expect(of('ドアが しまります。ごじょうしゃ ください。')).not.toBe('kudasai');
     expect(of('{stop}です。おわすれもの ありませんか？')).not.toBe('masen-ka');
+    // N4 favours, not invitations (the tiered path's 5.9).
+    expect(of('ペンを かして くれませんか。')).not.toBe('masen-ka');
+    expect(of('もう いちど いって いただけませんか。')).not.toBe('masen-ka');
+    expect(of('しゃしんを とって もらえませんか。')).not.toBe('masen-ka');
   });
 
   // The Japanese review's misfires (docs/progressive-learning.md): real lines that got the wrong frame, or
@@ -95,5 +106,61 @@ describe('sentence frames', () => {
 
   it('gives each frame an example built on that frame', () => {
     for (const f of FRAMES) expect([f.id, of(f.example.ja)]).toEqual([f.id, f.id]);
+  });
+});
+
+// ---- framesOf: every frame in a line, with the precision bar (docs/n4-n3-frames.md) ----
+// Each matcher must find its frame in at least 10 positive lines and in none of 10 look-alikes. The lines
+// live in tests/frame-cases/ (real game lines where the game has them, marked probes otherwise). Lines
+// are read with kuromoji tokens, as the server reads them.
+
+const reader = (await createReader())!;
+const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c };
+const line = (l: CaseLine) => (typeof l === 'string' ? { text: l, kana: l } : l);
+
+describe('every frame in a line (framesOf)', () => {
+  const all = (l: CaseLine) => {
+    const p = line(l);
+    return framesOf(p, reader.tokens(p.text));
+  };
+
+  it('has 10 positives and 10 look-alikes for every frame', () => {
+    for (const f of ALL_FRAMES) {
+      const c = cases[f.id];
+      expect([f.id, c?.pos.length ?? 0, c?.neg.length ?? 0]).toEqual([f.id, expect.any(Number), expect.any(Number)]);
+      expect([f.id, (c?.pos.length ?? 0) >= 10, (c?.neg.length ?? 0) >= 10]).toEqual([f.id, true, true]);
+    }
+  });
+
+  for (const f of ALL_FRAMES) {
+    it(`${f.id}: finds it in every positive and in no look-alike`, () => {
+      const c = cases[f.id]!;
+      const missed = c.pos.filter((l) => !all(l).includes(f.id)).map((l) => line(l).text);
+      const wrong = c.neg.filter(([l]) => all(l).includes(f.id)).map(([l, why]) => `${line(l).text} (${why})`);
+      expect({ missed, wrong }).toEqual({ missed: [], wrong: [] });
+    });
+  }
+
+  it("finds each frame's own example", () => {
+    for (const f of ALL_FRAMES) expect([f.id, all(f.example.ja).includes(f.id)]).toEqual([f.id, true]);
+  });
+
+  it('names every frame in a line, the specific one over the general', () => {
+    expect(all({ text: '雨に降られたので、遅れました。', kana: 'あめに ふられたので、おくれました。' })).toEqual(expect.arrayContaining(['mashita', 'passive', 'node']));
+    expect(all('まどを あけて もらえますか。')).not.toContain('ka');
+    expect(all('しゃしんを とっても いいですか。')).toEqual(['te-mo-ii']);
+    expect(all('はじめまして。アキです。よろしく おねがいします。')).toEqual(['desu']);
+  });
+
+  it('leaves out the frames that need part of speech when there are no tokens', () => {
+    // Ichidan られる is the passive or "can": only the dictionary (and someone doing it, ねこに) tells them apart.
+    expect(framesOf({ text: 'ねこに たべられました。', kana: 'ねこに たべられました。' })).not.toContain('passive');
+    expect(all('猫に食べられました。')).toContain('passive');
+    // …but with a を object it can't be "can" (that takes が).
+    expect(framesOf({ text: 'ねこに さかなを たべられました。', kana: 'ねこに さかなを たべられました。' })).toContain('passive');
+    expect(all('ここに いられます。')).not.toContain('passive');
+    // A godan passive is spelled out, so it counts without tokens.
+    expect(framesOf({ text: 'ははに しかられました。', kana: 'ははに しかられました。' })).toContain('passive');
+    expect(framesOf({ text: 'まどを あけて もらえますか。', kana: 'まどを あけて もらえますか。' })).toContain('te-moraeru');
   });
 });

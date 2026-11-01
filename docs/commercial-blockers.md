@@ -60,6 +60,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 32 | Dub Club plays players' recorded voices back on the TV: each acted take is kept in the room's memory (Node, or the Cloudflare Durable Object) while the game needs it, then dropped; never written to disk | `server/src/room.ts` (`keepClip`), `server/src/server.ts`, `cloudflare/roomObject.ts`, `controller/src/modes/dubClub.ts` | ⚠️ ❓ | Privacy, not a licence: a voice played to the room is still personal data, and some players may be children. Before selling: say it in the privacy notice, decide on under-13/16 players (COPPA, GDPR-K: rules not read for this, ❓), keep the "play from my phone" option, and check Cloudflare's Durable Object terms for in-memory personal data (not read, ❓) |
 | 33 | Dub Club's Cheeky episodes and cards (office overtime, a first date, Girls' Night, a cheap idol off stage, and the drunk, sexy, host-club, gyaru and mother-in-law cards), behind the host's Audience setting (decision, 2026-10-28) | `shared/src/modes/dubClub/scenes.ts` (`audience: 'cheeky'`) | ⚠️ | Same as rows 29 and 30: no licence issue, but it adds to the age rating. Include it in the rating questionnaires or leave it out of rated builds; have the fluent reviewer check the Cheeky lines |
 | 34 | Optional sign-in: passkeys through SimpleWebAuthn (`@simplewebauthn/server` and `/browser`, MIT, plus MIT, Apache-2.0, 0BSD and BSD-3 dependencies), and each signed-in player's save (save name, game scores, kana practised) kept on one Cloudflare Durable Object (decision, 2026-10-28) | `server/src/accounts.ts`, `cloudflare/accountsObject.ts`, `controller/src/account.ts`, `shared/src/progress.ts` | 🟡 ⚠️ ❓ | Ship the MIT and Apache-2.0 notices (row 5). Privacy, not licence: a privacy notice for saves, a decision on under-13/16 players (COPPA, GDPR-K: not read, ❓), and Cloudflare's Durable Object storage named as a processor. Deleting a save is already in the game |
+| 35 | The JLPT name and the N5/N4/N3 tags on sentence frames now (`level` on each frame), and later in the level picker (N4/N3 learning paths doc, step 1) | `shared/src/japanese/frames.ts` | 🕓 ❓ | Read the JLPT's terms on using its name and level names; jlpt.jp couldn't be read from here (blocked, 2026-11-01). Until then the tags stay internal and the phone says "Express Line", not "N4" |
+| 36 | VOICEVOX speaking player-written text in the planned Word Gauntlet rumour round (Nobiko-san's voice reads each relay) | planned: `server/ai/hosts.ts`, rumour round | 🕓 ❓ | Row 1 covers fixed host lines; generated lines from players' own words need each character's terms read again for live, user-made text (not read, 2026-11-01). Check before the rumour round is built |
 
 ## Details
 
@@ -625,3 +627,21 @@ pictures if they still look right, and add the Steam/itch disclosure.
   under-13/16 players (parental consent, or no saves for them); name Cloudflare as a processor; ship the
   notices with the third-party list (row 5).
 
+### 35. The JLPT name and level tags
+
+- **What:** The N4/N3 learning paths (step 1, `shared/src/japanese/frames.ts`) tag each sentence frame with a
+  level, `n5`, `n4` or `n3`, the JLPT's level names. The tags are internal today; the planned level picker
+  would show them.
+- **Status:** 🕓 ❓. The JLPT (Japan Foundation and JEES) owns the test's name. Its terms on using the name
+  and level names in a product couldn't be read: jlpt.jp is blocked from here (tried 2026-11-01). Not guessed.
+- **To sell:** read the terms. Until then, show the lines' own names (Local, Express, Limited Express) to
+  players and say "about N4" only if the terms allow it.
+
+### 36. VOICEVOX reading players' words aloud (planned rumour round)
+
+- **What:** The planned Word Gauntlet rumour round replays each relay in Nobiko-san's VOICEVOX voice, so no
+  player's voice moves between phones. Unlike row 1's fixed host lines, the text is generated from what
+  players said.
+- **Status:** 🕓 ❓. Each character's terms need reading for live, user-made lines (not read, 2026-11-01).
+- **To sell:** read the terms of the character chosen for Nobiko-san before the round is built; if they
+  bar generated lines, use a character whose terms allow it, or browser speech (row 31).
