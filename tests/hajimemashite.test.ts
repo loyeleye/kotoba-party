@@ -279,6 +279,18 @@ describe('Nice to Meet You!: N4 verb cards (the player makes the た or て form
     expect(formOf('ゆびを きる', 'ukkari')).toBe('ゆびを きって');
   });
 
+  it('takes only the plain た or て form as the verb form, not the polite form or a particle で', () => {
+    expect(endsInForm('ふじさんに のぼりました', 'ta')).toBe(false);
+    expect(endsInForm('げんきでした', 'ta')).toBe(false);
+    expect(endsInForm('うみで', 'te')).toBe(false);
+    expect(endsInForm('たべます', 'te')).toBe(false);
+    expect(endsInForm('たべまして', 'te')).toBe(false);
+    expect(endsInForm('プールで およいだ', 'ta')).toBe(true);
+    expect(endsInForm('こうえんで あそんで', 'te')).toBe(true);
+    expect(endsInForm('来た。', 'ta')).toBe(true);
+    expect(endsInForm('ふじさんに のぼった ', 'ta')).toBe(true);
+  });
+
   it('reads a typed verb in either form, and asks for the form when a new verb comes in the dictionary form', () => {
     const tb = new Table(4, ['n4', 'n5', 'n5', 'n5']);
     tb.start('family');
@@ -343,6 +355,26 @@ describe('Nice to Meet You!: N4 verb cards (the player makes the た or て form
     expect(tb.view('p1').me!.truth!.said).toBe('tried');
     expect(tb.play('p1', { kind: 'truth', utterance: speech(`うっかり ${truth} しまいました`) }).error).toBeUndefined();
     expect(tb.view('p1').me!.truth!.done).toBe(true);
+    // Built from the dictionary form (memory), heard on the second try (retry).
+    expect(tb.s.phrasebook['p1']!.find((e) => e.itemId === 'hajime:ukkari:first')).toMatchObject({ outcome: 'retry', recall: 'memory' });
+  });
+
+  it('logs the guest’s truth as said when heard, read on a noun card; an N4 introducer’s line is from memory', () => {
+    const tb = new Table(4, ['n5', 'n4', 'n4', 'n4']);
+    tb.start('family');
+    tb.t.cardId = 'tabeta';
+    tb.greetAll();
+    const truth = tb.writeAll();
+    tb.readAll();
+    for (const p of ['p2', 'p3', 'p4']) tb.play(p, { kind: 'rank', order: tb.view(p).me!.rankable.map((x) => x.id) });
+    tb.play('p1', { kind: 'wish', factId: tb.view('p1').me!.wishable[0]!.id });
+    expect(tb.s.phase).toBe('score');
+    const first = () => tb.s.phrasebook['p1']!.find((e) => e.itemId === 'hajime:tabeta:first');
+    expect(first()).toMatchObject({ outcome: 'seen', recall: 'read' });
+    expect(tb.play('p1', { kind: 'truth', utterance: speech(fillFrame(introCardOf('tabeta')!.first, truth)) }).error).toBeUndefined();
+    expect(first()).toMatchObject({ outcome: 'said', recall: 'read' });
+    const intro = tb.t.introducerId!;
+    expect(tb.s.phrasebook[intro]!.find((e) => e.itemId === 'hajime:tabeta:third')!.recall).toBe('memory');
   });
 
   it('noun cards keep their plain view: no cue, no dictionary forms', () => {

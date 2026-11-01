@@ -292,8 +292,10 @@ describe('Happyōkai!: Then and now about a place', () => {
           expect(r.en, at).not.toMatch(/undefined|the the|a the |an the /i);
           expect(r.kana, at).not.toMatch(/undefined|\$\{|  /);
         }
-        // What's coming fits the slide: a bus to a place, a shop for a food, a festival for the rest.
-        if (s.kind === 'place') expect(coming, at).toContain('バスが はしる');
+        // A place you do something at says so (うみで およげる), not a bus there.
+        if (s.kind === 'place' && s.use && !s.event) expect(was, at).not.toContain('バスで');
+        // What's coming fits the slide: a bus to a place (not to the balcony), a shop for a food, a festival for the rest.
+        if (s.kind === 'place' && s.id !== 'balcony') expect(coming, at).toContain('バスが はしる');
         else if (s.kind === 'food') expect(coming, at).toContain('おみせが できる');
         else expect(coming, at).toContain('おまつりを する');
       }

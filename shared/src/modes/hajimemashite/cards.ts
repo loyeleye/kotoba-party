@@ -413,9 +413,9 @@ export const INTRO_CARDS: IntroCard[] = [
       ['えきを まちがえる', 'えきを まちがえて', 'got the wrong station', '🚉'], ['かさを わすれる', 'かさを わすれて', 'forgot an umbrella', '☂️'],
       ['じゅぎょうに おくれる', 'じゅぎょうに おくれて', 'was late for class', '⏰'], ['コーヒーを こぼす', 'コーヒーを こぼして', 'spilled coffee', '☕'],
       ['スマホを こわす', 'スマホを こわして', 'broke a phone', '📱'], ['しゅくだいを わすれる', 'しゅくだいを わすれて', 'forgot the homework', '📓'],
-      ['バスに のりおくれる', 'バスに のりおくれて', 'missed the bus', '🚌'], ['みちに まよう', 'みちに まよって', 'got lost', '🗺️'],
+      ['バスに おくれる', 'バスに おくれて', 'was late for the bus', '🚌'], ['みちに まよう', 'みちに まよって', 'got lost', '🗺️'],
       ['ゆびを きる', 'ゆびを きって', 'cut a finger', '🩹'], ['ねぼうする', 'ねぼうして', 'overslept', '😴'],
-      ['パンを こがす', 'パンを こがして', 'burnt the toast', '🍞'], ['ふくを よごす', 'ふくを よごして', 'got clothes dirty', '👕'],
+      ['パンを やきすぎる', 'パンを やきすぎて', 'burnt the toast', '🍞'], ['ふくを よごす', 'ふくを よごして', 'got clothes dirty', '👕'],
     ]),
     pon: verbPon('ukkari', 'しっぽを だす', 'しっぽを だして', 'let the tail show'),
   },
@@ -463,7 +463,7 @@ export const INTRO_CARDS: IntroCard[] = [
       ['ラッコ', 'a sea otter', '🦦'], ['フラミンゴ', 'a flamingo', '🦩'], ['カピバラ', 'a capybara', '🦫'], ['ゴリラ', 'a gorilla', '🦍'],
       ['シマウマ', 'a zebra', '🦓'], ['カンガルー', 'a kangaroo', '🦘'], ['シロクマ', 'a polar bear', '🐻‍❄️'], ['カバ', 'a hippo', '🦛'],
     ]),
-    pon: ponTile('mita', 'ユニコーン', 'a unicorn'),
+    pon: ponTile('mita', 'かっぱ', 'a kappa'),
   },
   {
     id: 'koboshita',
@@ -550,8 +550,8 @@ export const INTRO_CARDS: IntroCard[] = [
       ['ジュースを こぼす', 'ジュースを こぼして', 'spilled juice', '🧃'], ['ねこの しっぽを ふむ', 'ねこの しっぽを ふんで', "stepped on the cat's tail", '🐈'],
       ['ぬいぐるみを なくす', 'ぬいぐるみを なくして', 'lost a cuddly toy', '🧸'], ['おふろで ねる', 'おふろで ねて', 'fell asleep in the bath', '🛁'],
       ['テレビを こわす', 'テレビを こわして', 'broke the TV', '📺'], ['おとうとと けんかする', 'おとうとと けんかして', 'had a fight with a little brother', '😤'],
-      ['ゲームを ずっと する', 'ゲームを ずっと して', 'played games for hours', '🎮'], ['かみを じぶんで きる', 'かみを じぶんで きって', 'cut their own hair', '✂️'],
-      ['でんきを けしわすれる', 'でんきを けしわすれて', 'left the light on', '💡'], ['いぬを にがす', 'いぬを にがして', 'let the dog get out', '🐕'],
+      ['ゲームを ずっと する', 'ゲームを ずっと して', 'played games for hours', '🎮'], ['かみを じぶんで きる', 'かみを じぶんで きって', 'did a DIY haircut', '✂️'],
+      ['でんきを けすのを わすれる', 'でんきを けすのを わすれて', 'forgot to turn off the light', '💡'], ['いぬの さんぽを わすれる', 'いぬの さんぽを わすれて', 'forgot to walk the dog', '🐕'],
       ['あさ ねぼうする', 'あさ ねぼうして', 'overslept', '⏰'], ['ママの くつを はく', 'ママの くつを はいて', "put on Mum's shoes", '👠'],
     ]),
     pon: verbPon('ouchi-te', 'しっぽを だす', 'しっぽを だして', 'let the tail show'),
@@ -643,7 +643,7 @@ export const INTRO_CARDS: IntroCard[] = [
       ['ピザや', 'a pizza place', '🍕'], ['おすしや', 'a sushi place', '🍣'], ['ラジオきょく', 'a radio station', '📻'], ['はつこいの ひと', 'my first love', '💘'],
       ['いもうと', 'my little sister', '👧'], ['おとうと', 'my little brother', '👦'], ['ルームメイト', 'my flatmate', '🛋'], ['うらないし', 'a fortune-teller', '🔮'],
     ]),
-    pon: ponTile('denwashita', 'ポン', 'Pon'),
+    pon: ponTile('denwashita', 'ポンの おかあさん', "Pon's mum"),
   },
   {
     id: 'neta',
@@ -681,7 +681,7 @@ export const INTRO_CARDS: IntroCard[] = [
       ['おばけやしき', 'a haunted house', '👻'], ['どうぶつえん', 'the zoo', '🦒'], ['ホテルの バー', 'a hotel bar', '🍸'], ['ふじさん', 'Mount Fuji', '🗻'],
       ['ラーメンや', 'a ramen shop', '🍜'], ['ゲームセンター', 'an arcade', '🕹'], ['うみ', 'the seaside', '🏖'], ['パリ', 'Paris', '🗼'],
     ]),
-    pon: ponTile('detemitai', 'たぬきの むら', 'the tanuki village'),
+    pon: ponTile('detemitai', 'まんげつの やま', 'a mountain under the full moon'),
   },
   // Cheeky N4 verb cards.
   {
@@ -704,7 +704,7 @@ export const INTRO_CARDS: IntroCard[] = [
       ['さいふを わすれる', 'さいふを わすれた', 'forgotten a wallet', '👛'], ['ひとりで ぜんぶ はらう', 'ひとりで ぜんぶ はらった', 'paid for everyone', '💸'],
       ['しゅうでんを のがす', 'しゅうでんを のがした', 'missed the last train', '🚃'], ['テーブルで おどる', 'テーブルで おどった', 'danced on the table', '💃'],
       ['ビールを こぼす', 'ビールを こぼした', 'spilled beer', '🍺'], ['いきなり うたう', 'いきなり うたった', 'burst into song', '🎤'],
-      ['ネクタイを あたまに まく', 'ネクタイを あたまに まいた', 'tied a tie round their head', '👔'], ['ひみつを はなす', 'ひみつを はなした', 'told a secret', '🤫'],
+      ['ネクタイを あたまに まく', 'ネクタイを あたまに まいた', 'worn a tie as a headband', '👔'], ['ひみつを はなす', 'ひみつを はなした', 'told a secret', '🤫'],
       ['タクシーで ねる', 'タクシーで ねた', 'fallen asleep in a taxi', '🚕'], ['ウーロンちゃで よう', 'ウーロンちゃで よった', 'got drunk on oolong tea', '🍵'],
       ['プロポーズする', 'プロポーズした', 'proposed', '💍'], ['はだしで かえる', 'はだしで かえった', 'gone home barefoot', '🦶'],
     ]),
@@ -758,8 +758,15 @@ export function cardsFor(audience: Audience, level: 'kana' | 'n5' | 'n4'): Intro
 /** Cheeky cards (and every card in a Kids room) take tiles only from the tanuki: no typed lies about a real person there. */
 export const tilesOnly = (card: IntroCard, audience: Audience): boolean => audience === 'kids' || (card.audiences.length === 1 && card.audiences[0] === 'cheeky');
 
-/** Does a typed verb phrase end in the card's form (た/だ, て/で)? */
-export const endsInForm = (word: string, conj: Conj): boolean => (conj === 'ta' ? /[ただ]$/ : /[てで]$/).test(word.replace(/[\s　]+$/, ''));
+/**
+ * Does a typed verb phrase end in the card's plain form? た: た, or だ after ん/い (よんだ, およいだ), not
+ * the polite ました/でした. て: て, or で after ん/い (よんで, およいで), not まして/でして, and not a
+ * particle で (うみで). Trailing spaces and punctuation are ignored.
+ */
+export const endsInForm = (word: string, conj: Conj): boolean => {
+  const w = word.replace(/[\s　。！？!?]+$/, '');
+  return conj === 'ta' ? /(た|[んい]だ)$/.test(w) && !/(ました|でした)$/.test(w) : /(て|[んい]で)$/.test(w) && !/(まして|でして)$/.test(w);
+};
 
 /** Fills a frame: ＿ with the word, {name} with the guest's name, and a 。 at the end. */
 export function fillFrame(frame: string, word: string, name = ''): string {

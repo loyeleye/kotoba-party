@@ -145,6 +145,8 @@ export interface Turn {
   claims: Record<string, Read>;
   refutes: Record<string, Read>;
   truthSaid: Read | null;
+  /** The guest's true line was heard only after a first try that missed. */
+  truthRetried?: boolean;
   /** Speech bubbles for the TV, newest last. */
   bubbles: { playerId: string; text: string; at: number }[];
   result: Ranked | null;
@@ -545,15 +547,25 @@ function rankTurn(s: HajimeState, t: Turn, ctx: ModeContext): Ranked {
   return { order, found, ballots: ballots.length, topLie, points };
 }
 
+/**
+ * The guest's own true line. Logged as seen at the flip, then again when they say it in the truth step.
+ * On a verb card they built the form themselves (memory); on a noun card the phone printed the line
+ * (read). Heard only after a try that missed counts as a retry.
+ */
+function truthPhrase(t: Turn, ctx: ModeContext): void {
+  const card = cardOf(t);
+  const truth = truthOf(t);
+  if (!truth || !ctx.player(t.guestId)) return;
+  const line = fillFrame(card.first, truth.word);
+  ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? (t.truthRetried ? 'retry' : 'said') : 'seen', recall: card.conj ? 'memory' : 'read' });
+}
+
 function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
   const card = cardOf(t);
   const truth = truthOf(t);
   const name = nameFor(s, ctx.player(t.guestId));
-  if (truth && ctx.player(t.guestId)) {
-    const line = fillFrame(card.first, truth.word);
-    // The guest's own true word, spoken: counts as memory. The printed greeting and こちらこそ stay read.
-    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen', recall: 'memory' });
-  }
+  // The printed greeting and こちらこそ stay read.
+  truthPhrase(t, ctx);
   for (const p of ctx.players()) {
     const greet = `はじめまして。${nameFor(s, p)}です。よろしく おねがいします。`;
     if (p.id === t.guestId) ctx.phrase(p.id, { itemId: 'hajime:greet', text: greet, kana: greet, en: "Nice to meet you. I'm …. Please treat me kindly.", outcome: t.greet === 'said' ? 'said' : 'seen', recall: 'read' });
@@ -563,7 +575,7 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
     }
     if (p.id === t.introducerId && truth) {
       const line = fillFrame(card.third, truth.word, name);
-      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen', recall: 'read' });
+      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen', recall: p.level === 'n4' ? 'memory' : 'read' });
     }
   }
 }
@@ -947,7 +959,9 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
         const before = t.truthSaid ? SAY.truth[t.truthSaid === 'tried' ? 'tried' : 'tap'] : 0;
         const now = SAY.truth[read === 'said' ? 'said' : read === 'tried' ? 'tried' : 'tap'];
         if (now <= before) return MOVE_OK;
+        if (t.truthSaid === 'tried') t.truthRetried = true;
         t.truthSaid = read;
+        if (read === 'said') truthPhrase(t, ctx);
         ctx.award(playerId, now - before);
         spoken(u);
         bubble(t, playerId, `ほんとうです！ ${fillFrame(card.first, truth.word)}`, ctx.now);

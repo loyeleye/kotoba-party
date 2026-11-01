@@ -448,19 +448,21 @@ function deckSentences(s: Slide, t: JpText, deck: Deck, place?: PlaceTopic): JpT
 /**
  * Then and now about a place: what it was like and what you can do there now (「私の 町は 前は 静かでしたが、
  * 今では 温泉まで バスで 行けるように なりました」), the same 調べる ことに しました, then the news of what's
- * coming to it: a bus to a place, a shop for a food, a festival for anything else.
+ * coming to it: a bus to a place, a shop for a food, a festival for anything else. A place you do something
+ * at (泳げる, 登れる) says that instead of the bus there.
  */
 function placeSentences(s: Slide, w: string, en: string, T: string, t: JpText, p: PlaceTopic): JpText[] {
   const [now, nowEn] = s.event
     ? [`${w}が 楽[たの]しめる`, `you can enjoy ${en} there`]
     : {
         living: [`${w}が 見[み]られる`, `you can see ${a(en)} there`],
-        place: [`${w}まで バスで 行[い]ける`, `you can get to ${the(en)} by bus`],
+        place: s.use ? [`${w}${s.use.can}`, `you can ${s.use.en} ${the(en)} there`] : [`${w}まで バスで 行[い]ける`, `you can get to ${the(en)} by bus`],
         food: [`${w}が 食[た]べられる`, `you can eat ${en} there`],
         thing: s.use ? [`${w}${s.use.can}`, `you can ${s.use.en} ${a(en)} there`] : [`${w}が 買[か]える`, `you can buy ${a(en)} there`],
       }[s.kind];
+  // A bus to the place (never to a balcony: that one gets a festival).
   const news =
-    s.kind === 'place'
+    s.kind === 'place' && s.id !== 'balcony'
       ? jp(`実[じつ]は、来月[らいげつ] ${T}から ${w}まで 新[あたら]しい バスが 走[はし]る ことに なりました。`, `Actually, it's been decided: next month a new bus starts running from ${t.en} to ${the(en)}.`)
       : s.kind === 'food'
         ? jp(`実[じつ]は、来月[らいげつ] ${T}に ${w}の お店[みせ]が できる ことに なりました。`, `Actually, it's been decided: next month ${a(`${en} shop`)} is opening in ${t.en}.`)

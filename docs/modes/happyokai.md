@@ -159,11 +159,12 @@ its own (`placeSentences`). Each place title brings its own "before" (町: 静�
 少なかったです, 商店街: 誰も いませんでした), never the place's own noun:
 
 - 〔place〕は 前は 〔before〕が、今では 〔what you can do there〕ように なりました。 The verb by slide kind:
-  〔word〕が 見られる (living), 〔word〕まで バスで 行ける (place), 〔word〕が 食べられる (food), 〔word〕が 買える or
-  the thing's own verb (おみくじが 引ける), 〔word〕が 楽しめる (event).
+  〔word〕が 見られる (living), 〔word〕まで バスで 行ける (place), or the place's own verb (海で 泳げる, 富士山に
+  登れる), 〔word〕が 食べられる (food), 〔word〕が 買える or the thing's own verb (おみくじが 引ける), 〔word〕が
+  楽しめる (event).
 - 〔word〕に ついて もっと しらべる ことに しました。 (as for every topic)
-- The news: 来月 〔place〕から 〔word〕まで 新しい バスが 走る (a place), 〔place〕に 〔word〕の お店が できる (a
-  food), 〔place〕で 〔word〕の お祭りを する (anything else).
+- The news: 来月 〔place〕から 〔word〕まで 新しい バスが 走る (a place, except the balcony), 〔place〕に 〔word〕の
+  お店が できる (a food), 〔place〕で 〔word〕の お祭りを する (anything else, and the balcony).
 
 A place topic is never asked 「〔topic〕は 今 どこですか？」 (`notPlace`). Tests render every Then and now
 title through every slide.
@@ -196,7 +197,9 @@ is no offer to decline.
    nothing and changes no points. A swapped-in title plays as a usual talk.
 5. **Place titles are back in Then and now with their own sentences** (for Ladi to confirm): 私の 町,
    おばあちゃんの 村 (every room) and 商店街の 復活 (Family and Cheeky). The news for a place slide is a new
-   bus to it, so every place slide (even the balcony) reads as a sentence; the absurd pairs are the joke.
+   bus to it, so every place slide reads as a sentence; the absurd pairs are the joke. The balcony gets a
+   festival instead (no bus runs to a balcony), and a place with its own verb says what you can do there
+   now (海で 泳げる) rather than the bus.
 6. **The place slides name their own verb** in Then and now (入れる, 登れる, 泳げる, 出られる, 泊まれる)
    instead of 一人で 行ける for all of them.
 

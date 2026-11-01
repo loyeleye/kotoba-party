@@ -141,7 +141,12 @@ Each has 16 tiles and a Pon tile, with the forms worth practising (いく → �
 - **The N4 guest** at the truth sees 「ほんとうです！ ［ふじさんに のぼる］ ことが あります。」 and says it in the
   form; the dictionary form is a try (the model line shows, to try again), and tapping sends the model.
 - **Typing**: a tile in either form is that tile; any other verb phrase must end in the card's form
-  (た/だ, て/で), or the phone asks for it (`make-it-ta`, `make-it-te`). Bots use tiles on verb cards.
+  in the plain form (た, or だ after ん/い; て, or で after ん/い), not the polite ました/まして, and a particle
+  で (うみで) isn't a て form; otherwise the phone asks for it (`make-it-ta`, `make-it-te`). Bots use tiles
+  on verb cards.
+- **Phrasebook**: the guest's true line is from memory on a verb card (they built the form) and read on a
+  noun card (the phone prints it); heard only after a try that missed, it's a retry. The introducer's
+  line is from memory for an N4 introducer (they make the sentence from the word) and read otherwise.
 
 An N4 guest draws the N4 cards first, in every room: the room's own N4 cards (Kids, Cheeky) first, then
 the shared N4 deck, then the usual cards once they've had them all. Kana and N5 guests never get them. It isn't a separate seat: the tanuki and
