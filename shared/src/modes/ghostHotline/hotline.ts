@@ -19,12 +19,13 @@
 // Two players: a scripted yōkai calls and both advise; the game judges the advice by what it heard.
 // Every move echoes `round`; one for an earlier call is a harmless `wrong-phase` race.
 
-import type { JpText, Level } from '../../../../content/src/types.js';
+import { atLevel, type JpText, type Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsFor, ROMAJI, type AdviceChunk, type AdviceLine, type Problem } from './problems.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -36,10 +37,10 @@ export const RING_MS = 6_000;
  * (8 s on the phone) and its upload. It closes before the advisers record, so the caller's voice never
  * gets into their clips.
  */
-export const SAY_RING_MS: Record<Level, number> = { kana: 8_000, n5: 11_000, n4: 12_000 };
+export const SAY_RING_MS: Record<Level, number> = { kana: 8_000, n5: 11_000, n4: 12_000, n3: 12_000 };
 export const PLAN_MS = 8_000;
-/** How long a speaking adviser may record, by level (Kana advisers pick a tile). N3 gets 12 s when it joins. */
-export const RECORD_MS: Record<Level, number> = { kana: 0, n5: 9_000, n4: 9_000 };
+/** How long a speaking adviser may record, by level (Kana advisers pick a tile). N3 gets 12 s. */
+export const RECORD_MS: Record<Level, number> = { kana: 0, n5: 9_000, n4: 9_000, n3: 12_000 };
 /** After the record limit: time for the clips to upload. */
 export const UPLOAD_MS = 3_500;
 export const GRACE_MS = 1_500;
@@ -224,7 +225,7 @@ export interface HotlineView {
   secret: { text: JpText; cure: TileView; fair: boolean | null } | null;
   /** From the score beat. */
   tally: { votes: Record<string, number>; top: string | null; sweep: string | null; points: { playerId: string; points: number }[] } | null;
-  booth: { playerId: string; line: string; chunk: string; note: string; tag: string; level: 'n5' | 'n4' } | null;
+  booth: { playerId: string; line: string; chunk: string; note: string; tag: string; level: 'n5' | 'n4' | 'n3' } | null;
   ledger: LedgerEntry[];
   me: HotlineMe | null;
 }
@@ -316,7 +317,7 @@ export function tileView(id: string, level: Level): TileView {
 const withRomaji = (t: JpText, level: Level): JpText & { romaji?: string } => (level === 'kana' ? { ...t, romaji: ROMAJI[t.kana] ?? toRomaji(t.kana) } : t);
 
 /** The level line a speaking adviser works from (Kana and N5 use N5's). */
-export const lineOf = (p: Problem, level: Level): AdviceLine => (level === 'n4' ? p.advice.n4 : p.advice.n5);
+export const lineOf = (p: Problem, level: Level): AdviceLine => (n4Up(level) ? p.advice.n4 : p.advice.n5);
 
 /** What an advice said, as a reading, for matching keys: null when nobody can tell (no speech-to-text). */
 export function adviceReading(c: Call, a: Advice): string | null {
@@ -512,7 +513,7 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
   // The caller said the problem: a try counts.
   if (c.caller && c.callerSaid) pay(s, ctx, c.caller, POINTS.line, 'line');
   if (c.caller) {
-    const line = p.line[ctx.player(c.caller)?.level ?? 'n5'];
+    const line = atLevel(p.line, ctx.player(c.caller)?.level ?? 'n5');
     ctx.phrase(c.caller, { itemId: `hotline:${p.id}:call`, text: line.text, kana: line.kana, en: line.en, outcome: c.callerSaid ? 'said' : 'seen', recall: 'read' });
   }
   for (const id of c.order) {
@@ -802,7 +803,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       c.stepAt = ctx.now;
       const p = problemOfCall(c);
       // Nobody heard the caller (and no take is still uploading): Nobiko-san reads the problem for them.
-      if (c.caller && !c.callerSaid && !c.callerTaking) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: p.line[ctx.player(c.caller)?.level ?? 'n5'].kana, line_en: p.line[ctx.player(c.caller)?.level ?? 'n5'].en } });
+      if (c.caller && !c.callerSaid && !c.callerTaking) ctx.cue({ host: 'nobiko', event: 'hotline_read', slots: { line: atLevel(p.line, ctx.player(c.caller)?.level ?? 'n5').kana, line_en: atLevel(p.line, ctx.player(c.caller)?.level ?? 'n5').en } });
     } else if (phase === 'reveal' && c.step === 'play') {
       c.step = 'react';
       c.stepAt = ctx.now;
@@ -997,7 +998,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       step: inCall ? c!.step : null,
       stepAt: c?.stepAt ?? 0,
       scripted: s.scripted,
-      call: inCall && p ? { caller: c!.caller, who: p.caller, line: withRomaji(p.line[callerLevel], 'kana'), said: c!.callerSaid } : null,
+      call: inCall && p ? { caller: c!.caller, who: p.caller, line: withRomaji(atLevel(p.line, callerLevel), 'kana'), said: c!.callerSaid } : null,
       cast: inCall ? { caller: c!.caller, advisers: c!.advisers, gallery: c!.gallery } : null,
       locked: inCall
         ? { ready: c!.advisers.filter((id) => adviserIn(c!, id)), sent: c!.advisers.filter((id) => !!c!.advice[id]), bets: Object.keys(c!.bets), votes: Object.keys(c!.votes) }
@@ -1167,7 +1168,7 @@ function meView(s: HotlineState, c: Call, phase: Phase, player: ModePlayer, leve
     level,
     secret: isCaller ? withRomaji(p.secret, level) : null,
     cure: isCaller ? tileView(p.cure, level) : null,
-    callerLine: isCaller ? withRomaji(p.line[level], level) : null,
+    callerLine: isCaller ? withRomaji(atLevel(p.line, level), level) : null,
     canSay: isCaller && !c.callerSaid && phase === 'prompt' && c.step === 'ring',
     said: isCaller && c.callerSaid,
     gist: withRomaji(p.gist, level),

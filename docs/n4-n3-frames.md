@@ -14,9 +14,9 @@ Code: `shared/src/japanese/frames.ts`. Tests: `tests/frames.test.ts`, lines in `
 - **`framesOf(phrase, tokens?)`** names every frame in a line, N5 to N3, sentence by sentence:
   「あめに ふられたので、おくれました」 is the passive, ので and ＿ました. `frameOf` is unchanged: it still names
   the one N5 frame a phrase is built on, from the original sixteen, for the chips and the path.
-- **95 frames.** The sixteen N5 frames (`FRAMES`), 17 more N5 frames the tiered path's goals need
-  (`MORE_N5_FRAMES`), 59 N4 frames (`N4_FRAMES`), and three N3 frames that need part of speech
-  (`N3_FRAMES`: らしい, うちに, reason ため). The N4 frames are the 50 for goals 4.1 to 4.14 (including the
+- **138 frames.** The sixteen N5 frames (`FRAMES`), 17 more N5 frames the tiered path's goals need
+  (`MORE_N5_FRAMES`), 61 N4 frames (`N4_FRAMES`), and 44 N3 frames (`N3_FRAMES`): らしい, うちに and reason
+  ため from step 1, and the other 41 Limited Express frames from step 6 (see "The Limited Express" below). The N4 frames are the 50 for goals 4.1 to 4.14 (including the
   keigo-verb matcher), のに (moved from N3 on the Japanese expert's advice: Genki II and Minna II teach it in
   the N4 range), and eight the expert said an N4 student expects: みたい／ようです, polite ＿んです, the
   causative, ＿て ほしい, ＿ば よかった, ＿たり ＿たり, ＿ところです and casual ＿って. The first six are now
@@ -56,9 +56,90 @@ only the more specific one is named (`hides`). That suits showing a player what 
 progress, `framesOf(phrase, tokens, { keepHidden: true })` keeps the general one too, so an N5 step that
 counts ＿です doesn't lose おいしそうです when the switch to `framesOf` happens.
 
+## The Limited Express (N3), step 6
+
+Every frame in the plan doc's Limited Express table now has a matcher, under the ids the path and Yōkai Court
+use. All are `status: 'draft'`, with the same 10/10 bar (`tests/frame-cases/n3-a.ts` to `n3-c.ts`). There's
+little N3 content yet, so most lines are written for the test; the game's own lines are marked `[game]`.
+
+| Goal | Frames |
+| --- | --- |
+| 3.1 Rumour | `mitai-casual` (with `rashii`, `ni-yoru`, `n-datte`) |
+| 3.2 What happened to me | `suffering-passive`, `saserareru`, `tokoro-deshita`, `sasete-morau` |
+| 3.3 Reasons and blame | `sei-de`, `okage-de`, `wake-desu` (with `tame-reason`) |
+| 3.4 Contrast | `wari-ni`, `kuse-ni`, `ni-kurabete` (with `noni`) |
+| 3.5 What-ifs | `to-shitara`, `ba-hodo` (with `ba-yokatta`) |
+| 3.6 Intentions | `you-to-suru`, `zu-ni`, `koto-ni-shiteiru`, `ta-tsumori` |
+| 3.7 Explaining | `wake-dewa-nai`, `beki`, `to-iu-koto`, `to-shite`, `toori-ni` |
+| 3.8 Service Japanese | `sasete-itadaku`, `de-gozaimasu`, `te-orimasu`, `go-kudasai`, `kashikomarimashita` |
+| 3.9 Time and change | `tabi-ni`, `saichuu-ni`, `te-kita` (with `uchi-ni`) |
+| 3.10 Opinions | `you-na-ki`, `ni-chigainai`, `ni-taishite`, `shika-nai`, `sorenanoni`, `tsumari` |
+| 3.11 Casual nuance | `ppoi`, `nante`, `toka`, `jan`, `kke` |
+
+How the harder ones are told apart:
+
+| Frame | How |
+| --- | --- |
+| Suffering passive | An intransitive verb made passive after someone (こどもに なかれた, ともだちに こられた, あめに ふられた), or a passive with a を object (さいふを ぬすまれた). ふられる counts only after rain or snow: かのじょに ふられた is a direct passive. A plain passive with no object (ははに しかられた) stays the N4 frame |
+| ＿させられる | The long form, or the short godan form for a list of verbs (またされる, のまされる): はなされる and わたされる are plain passives |
+| ＿させて もらう／いただく | Tokens, as ＿させて ください: a causative suffix, or a verb kuromoji keeps whole (働かせる), minus 任せる, 知らせる, 見せる… |
+| ＿ところでした | After a non-past verb: after た it's "had just" (the N4 frame) |
+| ＿ずに | Not みず (water) or ちず (a map) before に, unless the word follows を or も (テレビを みずに) |
+| ＿て きました | A change or a run up to now. Going and coming back (かって きた), and coming somewhere (はしって きた, おくれて きた, にげて きた), are left out |
+| ＿として | Not おとして (dropped), ＿ようと して, ほっと して, だとしても |
+| ＿しか ない | Only after a verb (かえる しか ない, "no choice but to"). Nしか ない (ひゃくえんしか ない) is N5 and stays out |
+| ご＿ください | A list of the verb nouns staff use (ごちゅうい, ごえんりょ, ごりよう…), so ごはん, ごみ and ごまんえん stay out |
+| ＿て おります | Not おります after を, から, に or a place (さんかいで おります: getting off on the third floor) |
+| The suffering passive | An intransitive verb made passive after someone (あめに ふられて, こどもに なかれた, にげられた), only in a form that tells what happened (not にげられますか), or a を object in the same clause (かぎを わすれて、ははに おこられた is the N4 passive). Giving verbs (わたされた) and される are left out. With kanji and no spaces, the dictionary's tokens decide |
+
+N3 frames mostly don't hide the N4 frames they overlap (ご＿ください is still お＿ください, ＿て おります still the
+keigo verb, the suffering passive still the passive), so a line keeps its N4 chip. Two hide one for display
+only: ＿みたい (a guess) over ＿みたいです, and ＿ところでした over ＿ところです. They also hide N5 ＿です and ＿ます
+where they say more. Counting (`keepHidden`) keeps every one.
+
+**Not credited yet.** `creditable(id)` is false for N3 frames and for listening-only ones, and progress
+(`phraseFrames`) and the night's recap (`tonightFrames`) skip them. So an N4 player who says an N3 line
+gets no permanent N3 mark before N3 is on the path; the path's step-6 PR turns N3 on.
+
+**Listening only.** ＿じゃん and ＿っけ have `listening: true`: the plan counts them for a goal's listening half,
+never as a line the player says.
+
+**3.8 overlaps N4 textbooks.** ＿させて いただく, でございます, ＿て おります, ご＿ください and かしこまりました are
+taught in Genki II and Minna no Nihongo II, the N4 courses. They stay at 3.8 as the plan has them, since
+the JLPT lists them at N3; the open questions doc has the question.
+
+**On the phone.** With no tokens, ＿させて もらう／いただく fall back to the spelling (かかせて, たべさせて), minus
+任せる, 知らせる, 合わせる and the other verbs that end in せる on their own.
+
+**No spaces.** Speech comes back with kanji and no spaces. A test strips the spaces from every N3 line
+with kanji and reads its kana with the dictionary; all of them keep their frame. Kana-only lines with no
+spaces miss 13 of ~400 (the suffering passive, ＿とかいかない), and ともだちとかえった reads as ＿とか.
+
+## Fixes from the panel on #146
+
+The Japanese and JLPT seats found matcher gaps while checking the Express Line simulation:
+
+- **Potential**: a longer list of godan potentials (行けます, 使えます, 買えます, えらべます, おろせます…) and
+  ichidan られる after an ichidan verb that ends in れる (わすれられません). All 10 Tourist N4 lines tagged
+  `potential` now get it. Spellings that are also an ichidan verb in kana (かえる 買える／換える, 入れる) count
+  only in kanji; いけません／いけない count unless it's "mustn't" (〜ては, ないと). **Nが できます no longer counts**:
+  it's an N5 word (＿ことが できます still does).
+- **Plain**: a plain question with nothing after it (もう たべた？, いかない？, ひま？) and a て-form with ね／よ
+  (ちょっと まってね) now count. だ after a verb or an い-adjective (おいしいだよ, いくだよ) doesn't.
+- ＿ないと いけませんか and ＿ても かまいませんか are no longer invitations (`masen-ka`). ＿ても かまいませんか counts
+  as ＿ても いいですか. ＿なくても いいですか no longer counts as ＿ても いいですか, even with hidden frames kept.
+- と いったら どうですか is no longer ＿と いって いました.
+- ＿たら どうですか no longer counts as ＿たら for 4.5, even with hidden frames kept (the panel's point 5).
+
+A sweep over the game's ~9,800 Japanese strings found the N3 matchers' misfires (おばけみたいに as a guess,
+おみずに as ＿ずに, おくれて きた as ＿て きました) and fixed them; the new hits it finds are right (にげられました
+as the suffering passive, すんでおります as ＿て おります).
+
 ## The precision bar
 
-Every matcher finds its frame in at least 10 positive lines and in none of 10 look-alikes. The N5 lines
+Every matcher finds its frame in at least 10 positive lines and in none of 10 look-alikes. Positives are
+checked with hidden frames kept (an N3 frame may hide the N4 one for display); look-alikes are checked
+both with tokens and on the phone path. The N5 lines
 are real game lines where the game has them (probes are marked). The N4 and N3 lines are written for the
 test: there's little N4 content yet. A sweep over all ~10,000 Japanese strings in the game's content found
 and fixed more misfires (かんとく as 〜とく, なんと いいますか as a report, かしら as an embedded question).
@@ -80,6 +161,12 @@ picture: the 10/10 bar is a regression test, not a measure of precision (see "Fo
 - N4 grammar still without a frame (nice to have, per the Japanese expert): ＿ように する, ＿なさい, ＿と いい,
   ＿ばかり and the causative-passive. Lexical causatives (泣かせる, 笑わせる) are one dictionary verb, so the
   causative misses them.
+- N3 frames have no path goals yet: N3 joins the level picker and the path in its own step-6 PR.
+- Kana-only lines with no spaces: see "No spaces" above. The phone sends spaced kana.
+- ＿ところでした after a non-past verb is also "it was a place where" (ここは わたしが すむ ところでした). A line
+  that starts with ここは／そこは stays out; elsewhere a bare verb + ところでした counts as "nearly".
+- The N3 lines were written and checked by Claude with the panel's Japanese seat. A fluent speaker still
+  needs to check them before they ship (all N3 frames stay `status: 'draft'`).
 - `frameStats` and the path still use `frameOf`. Switching them to `framesOf` (with the server's tokens)
   is step 2's job, with the hard roles that produce N4 lines.
 - English and romaji: the labels are Japanese only, as in the sixteen. A hand-written romaji per frame

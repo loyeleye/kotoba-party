@@ -26,6 +26,7 @@ import { speakBox } from '../components/speak.js';
 import { kanaPad } from '../components/kanaPad.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
+import { n4Up } from '../../../shared/src/level.js';
 
 type Ctx = PhoneContext<HajimeView>;
 type Me = NonNullable<HajimeView['me']>;
@@ -156,7 +157,7 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
     h('p', { class: 'hint' }, copy.sub),
     card ? h('p', { class: 'hj-cardname' }, h('span', { lang: 'ja' }, card.title.text), ` · ${card.title.en}`) : null,
     h('p', { class: 'hj-frame-p', lang: 'ja' }, before ?? '', h('span', { class: `hj-blank-p${word ? ' on' : ''}` }, word ?? '＿＿'), after ?? ''),
-    me.level !== 'n4' && card ? h('p', { class: 'hint' }, role === 'guest' ? card.en : card.enThird) : null,
+    !n4Up(me.level) && card ? h('p', { class: 'hint' }, role === 'guest' ? card.en : card.enThird) : null,
     me.level === 'kana' && frame ? h('p', { class: 'hj-romaji' }, toRomaji(fillFrame(frame, word ?? '＿', game.guestName))) : null,
     form ? h('p', { class: 'hint' }, `Pick a verb. When it’s said out loud, it goes in the ${form.name} form (${form.example}).`) : null,
     h(
@@ -176,7 +177,7 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
     me.canType
       ? h(
           'details',
-          { class: 'hj-own', open: role === 'guest' && me.level === 'n4' ? true : undefined },
+          { class: 'hj-own', open: role === 'guest' && n4Up(me.level) ? true : undefined },
           h('summary', {}, role === 'guest' ? 'Not on the list? Type your own' : 'Or type your own'),
           typeBox(
             form ? `In the ${form.name} form: ${form.example.split(' → ')[1]}` : `${MAX_WORD} characters at most`,
@@ -220,7 +221,7 @@ function introducerScreen(ctx: Ctx, me: Me): HTMLElement {
   // After a verb card's line: the model, so the form can be checked.
   const prev = script[at - 1];
   const model =
-    prev?.dict && me.level === 'n4'
+    prev?.dict && n4Up(me.level)
       ? h('p', { class: `hj-model${prev.read === 'said' ? ' ok' : ''}` }, prev.read === 'said' ? '✓ ' : 'The line: ', h('span', { lang: 'ja' }, prev.text))
       : null;
   return h(
@@ -262,7 +263,7 @@ const ARGUE_N5 = ['たぶん ほんとう！', 'あやしい！', 'ぜったい 
 const ARGUE_N4 = ['ほんとうだと おもう', 'まさか！'];
 
 function argueBox(ctx: Ctx, me: Me): HTMLElement {
-  const phrases = me.level === 'n4' ? [...ARGUE_N5, ...ARGUE_N4, `${ctx.game.guestName}さんらしい！`] : ARGUE_N5;
+  const phrases = n4Up(me.level) ? [...ARGUE_N5, ...ARGUE_N4, `${ctx.game.guestName}さんらしい！`] : ARGUE_N5;
   return h(
     'details',
     { class: 'hj-argue', open: true },
@@ -337,7 +338,7 @@ function wishScreen(ctx: Ctx, me: Me): HTMLElement {
     'div',
     { class: 'screen' },
     h('p', { class: 'big' }, '💭 Which lie do you wish were true?'),
-    h('p', { class: 'hj-ja', lang: 'ja' }, me.level === 'n4' ? 'ほんとうだったら いいな！' : 'これが いい！'),
+    h('p', { class: 'hj-ja', lang: 'ja' }, n4Up(me.level) ? 'ほんとうだったら いいな！' : 'これが いい！'),
     me.wishable.map((w) => h('button', { type: 'button', class: `option hj-rank-opt${me.wish === w.id ? ' on' : ''}`, onclick: () => void send(ctx, { kind: 'wish', factId: w.id }) }, h('span', { class: 'hj-lab' }, w.label), h('span', { class: 'hj-tile-jp', lang: 'ja' }, w.word))),
     h('p', { class: 'hint' }, 'Its tanuki scores. Keep a straight face while the room argues!'),
   );

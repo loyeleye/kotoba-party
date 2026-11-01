@@ -11,6 +11,7 @@ import { speakBox } from '../components/speak.js';
 import { canVoice, isSoundOff, say } from '../components/voice.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
+import { n4Up } from '../../../shared/src/level.js';
 
 type Ctx = PhoneContext<WordGauntletView>;
 
@@ -415,7 +416,7 @@ function rumourRelay(ctx: Ctx, title: HTMLElement): HTMLElement {
   const picked = mine.fin ?? (mine.ownFin ? '' : null);
   const finCards = finCardsFor(ctx);
   const own =
-    level === 'n4'
+    n4Up(level)
       ? (() => {
           const input = h('input', { maxlength: 30, placeholder: mine.ownFin ?? 'My own fin: まいにち, ともだちと, パジャマで…', autocomplete: 'off', enterkeyhint: 'done', lang: 'ja' }) as HTMLInputElement;
           return h(
@@ -443,7 +444,7 @@ function rumourRelay(ctx: Ctx, title: HTMLElement): HTMLElement {
         : 'Pass it on as something you heard. Keep who, where and what, and make it juicier with one fin.';
   const model = picked !== null ? mine.models?.[picked] : undefined;
   const hints: (HTMLElement | null)[] = [];
-  if (level === 'n4') {
+  if (n4Up(level)) {
     if (mine.frame) hints.push(h('p', { class: 'wg-frame', lang: 'ja' }, `Try: ${mine.frame.ja}`, h('small', {}, ` ${mine.frame.en}`)));
     if (mine.hint < 2) hints.push(h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'hint' }) }, mine.hint === 0 ? 'Need a hint?' : 'Show Nobiko-san’s version'));
   } else if (level === 'n5' && mine.hint < 1 && picked !== null) {

@@ -23,7 +23,7 @@ export const TYPED_SHARE = 0.5;
 /** "I sang it" with no mic and no reading: the honour system, worth a little less than a perfect typed line. */
 export const SANG_IT_QUALITY = 30;
 /** Mora similarity that already counts as perfect pronunciation, by level (forgiving by design). */
-export const PRON_FULL_AT: Record<Level, number> = { kana: 0.8, n5: 0.9, n4: 0.95 };
+export const PRON_FULL_AT: Record<Level, number> = { kana: 0.8, n5: 0.9, n4: 0.95, n3: 0.95 };
 /** Below this pronunciation, pitch and timing credit shrink in proportion (no words, no tune). */
 export const WORDS_GATE = 0.4;
 /** Pitch frames are this long; the phone sends one value per frame from the line's first beat. */

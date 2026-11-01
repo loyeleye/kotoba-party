@@ -4,6 +4,7 @@
 // written the way a Japanese speaker would write it.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
+import { n4Up } from '../../level.js';
 
 type Segments = [base: string, reading: string][];
 
@@ -46,7 +47,7 @@ export const src = (j: JpText): string => (j.furigana?.length ? j.furigana.map((
 export function forLevel(j: JpText, level: Level): JpText {
   if (level === 'kana') return { text: j.kana, kana: j.kana, en: j.en };
   if (!j.furigana?.length) return j;
-  const ok = (base: string) => [...base].every((ch) => N5.has(ch) || (level === 'n4' && N4.has(ch)) || !/\p{Script=Han}/u.test(ch));
+  const ok = (base: string) => [...base].every((ch) => N5.has(ch) || (n4Up(level) && N4.has(ch)) || !/\p{Script=Han}/u.test(ch));
   return fromSegments(
     j.furigana.map(([b, r]) => (r && !ok(b) ? [r, ''] : [b, r])),
     j.en,

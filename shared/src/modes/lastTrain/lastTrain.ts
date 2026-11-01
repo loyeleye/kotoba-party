@@ -29,6 +29,7 @@ import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, KEY_WORDS, landGallery, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallback.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -398,7 +399,7 @@ export type LastTrainMove =
 
 // ---- helpers ----
 
-const LEVEL_ORDER: Record<Level, Level[]> = { kana: ['kana', 'n5'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'] };
+const LEVEL_ORDER: Record<Level, Level[]> = { kana: ['kana', 'n5'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'], n3: ['n3', 'n4', 'n5', 'kana'] };
 const itemKey = (mgId: string, itemId: string) => `${mgId}#${itemId}`;
 /** A Read the Signs direction item dealt mirrored: its id gets this, and bots look the variant up by it. */
 const MIRRORED = '~mirrored';
@@ -585,7 +586,7 @@ function offerRound(s: LastTrainState, stopIndex: number): number {
  * fewest, then longest ago; one who said no (or let it time out) last time sits this one out; in a room of 4+ connected, nobody twice running.
  */
 function hardRolePlayer(s: LastTrainState, ctx: ModeContext): string | null {
-  const n4 = ctx.connected().filter((p) => p.level === 'n4').map((p) => p.id);
+  const n4 = ctx.connected().filter((p) => n4Up(p.level)).map((p) => p.id);
   const log: PastOffer[] = s.roleLog.map((r) => ({ playerId: r.playerId, at: offerRound(s, r.stop), answer: r.answer }));
   return nextOfferee(n4, log, offerRound(s, s.stopIndex), ctx.connected().length);
 }
@@ -997,7 +998,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     const want = Math.min(6, Math.max(4, opts.rounds ?? 4));
     const { minigames, penaltyIds } = resolveLibrary(ctx);
     const scenario = chooseScenario(ctx, want, minigames);
-    const n4 = ctx.players().some((p) => p.level === 'n4');
+    const n4 = ctx.players().some((p) => n4Up(p.level));
     const stops = buildStops(scenario, want, minigames, penaltyIds, () => ctx.random(), n4);
     const dashPool = scenario.platformDash.length ? scenario.platformDash : FALLBACK_SCENARIO.platformDash;
     const s: LastTrainState = {

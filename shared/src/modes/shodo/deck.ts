@@ -3,10 +3,11 @@
 // from the content library, so tests can pass small fixtures. Every target carries its KanjiVG
 // stroke references (one list per character) and the word players say for it.
 
-import type { JpText, Level } from '../../../../content/src/types.js';
+import { atLevel, type ByLevel, type JpText, type Level } from '../../../../content/src/types.js';
 import type { InkStroke } from '../../japanese/strokes.js';
 import type { ContentLibrary } from '../mode.js';
 import { shuffled } from '../mode.js';
+import { n4Up } from '../../level.js';
 
 export type TargetKind = 'kana' | 'kanji' | 'word';
 
@@ -76,7 +77,7 @@ export const LOOKALIKE_KANA: Readonly<Record<string, string>> = {
 };
 
 /** The gallery's shared theme, "something I love", one glyph per level (the Japanese panel's picks). */
-export const GALLERY: Record<Level, JpText[]> = {
+export const GALLERY: ByLevel<JpText[]> = {
   kana: [
     { text: 'ねこ', kana: 'ねこ', en: 'a cat' },
     { text: 'はな', kana: 'はな', en: 'a flower' },
@@ -197,7 +198,7 @@ export function practicePool(deck: ShodoDeck, level: Level): Target[] {
 /** Dictation (書き取り) targets: anything at the level, plus two-kanji words at N4. */
 export function dictationPool(deck: ShodoDeck, level: Level, words: boolean): Target[] {
   if (level === 'kana') return kanaPool(deck, true);
-  if (level === 'n4' && words && deck.words.length) return deck.words;
+  if (n4Up(level) && words && deck.words.length) return deck.words;
   const max = level === 'n5' ? 7 : 10;
   const pool = deck.kanji.filter((t) => step(t) <= max);
   return pool.length ? pool : deck.kanji.length ? deck.kanji : deck.kana;
@@ -212,7 +213,7 @@ export function deal(pool: readonly Target[], n: number, used: ReadonlySet<strin
 
 /** The gallery target for a level and the room's brief: the theme glyph with strokes, or null without data. */
 export function galleryTarget(deck: ShodoDeck, level: Level, brief: JpText, random: () => number): Target | null {
-  const options = shuffled(GALLERY[level], random);
+  const options = shuffled(atLevel(GALLERY, level), random);
   for (const word of options) {
     const cells = [...word.text].map((c) => deck.strokesOf(c));
     if (cells.every((c): c is readonly InkStroke[] => !!c)) {

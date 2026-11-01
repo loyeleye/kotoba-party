@@ -404,6 +404,9 @@ export const cases: FrameCases = {
       ['そうかも しれません。', 'かも しれません (maybe)'],
       [{ text: 'この 電車は 新宿に 行きますか。', kana: 'この でんしゃは しんじゅくに いきますか。' }, 'ますか yes-no question, not ませんか'],
       ['ペンを かして くれませんか。', '〜て くれませんか is a request, not an invitation'], // (probe)
+      ['しゅくだいを しないと いけませんか。', '〜ないと いけませんか asks if you must (panel on #146)'],
+      ['ここに すわっても かまいませんか。', '〜ても かまいませんか asks permission'],
+      ['あした こなくても かまいませんか。', '〜なくても かまいませんか asks if you needn\'t'],
     ],
   },
 
@@ -419,6 +422,7 @@ export const cases: FrameCases = {
       'しょうらいの ゆめを うかがっても いいですか。',
       'ここで でんわ しても いいですか。', // (probe)
       'あした また きても いいですか？', // (probe)
+      'ここに すわっても かまいませんか。', // the same ask, more politely
     ],
     neg: [
       [{ text: '泣いても いいよ', kana: 'ないても いいよ' }, '〜ても いいよ gives permission; it doesn\'t ask'],
@@ -430,6 +434,7 @@ export const cases: FrameCases = {
       ['ようかいが きます！　じゅんびは いいですか？', 'いいですか with no 〜ても'],
       ['いいですね！', 'いいですね (nice)'],
       ['こう いうと、もっと いいですよ。', '〜と + いいです (it\'s better if)'],
+      ['くつを ぬがなくても いいですか。', '〜なくても いいですか asks if you needn\'t: nakutemo-ii (panel on #146)'],
       [{ text: 'あたらしい 家は とても 安いです。でも、おうさまが います。', kana: 'あたらしい いえは とても やすいです。でも、おうさまが います。' }, 'ても inside とても; でも is "but"'],
     ],
   },

@@ -128,7 +128,7 @@ export const DIRECTIONS: Direction[] = [
   card('toilet', 'トイレに いきたそうに', 'needing the toilet', jp('いきたい', 'want to go'), '🚽', 'body', ['といれ'], 'In a hurry. Wriggle!'),
 ];
 
-const lines = (kana: JpText, n5: JpText, n4: JpText): Record<Level, JpText> => ({ kana, n5, n4 });
+const lines = (kana: JpText, n5: JpText, n4: JpText): Record<Level, JpText> => ({ kana, n5, n4, n3: n4 });
 const ad = (mission: string, emoji: string, keys: string[], model: JpText, frames: string[]): AdLib => ({ mission, emoji, keys, model, frames, status: 'draft' });
 const CASUAL = 'plain';
 const NDA = 'n-da';

@@ -8,6 +8,7 @@ import type { OmiaiView, TileView } from '../../../shared/src/modes/omiai/omiai.
 import { SAY_FIRST_MS } from '../../../shared/src/modes/omiai/omiai.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
+import { n4Up } from '../../../shared/src/level.js';
 
 export interface OmiaiPolicyOptions {
   /** Chance a bot past the Kana level waits out the say-it-first window for tiles. */
@@ -85,7 +86,7 @@ export function omiaiPolicy(opts: OmiaiPolicyOptions = {}): ModePolicy {
         if (slot.sayFirst && me.level !== 'kana') {
           if (r('tiles') < tilesChance) return [{ key: `tiles:${round}`, move: { kind: 'tiles', round }, delayMs: slot.sayFirstMs ?? SAY_FIRST_MS }];
           const kind = game.roundKind === 'intro' ? 'intro' : /(すき|します|たべます|のみます|ですか|ますか)。?$/.test(slot.question.kana) && !/(なに|なん|どこ|どんな|どの|どちら|いくつ|どう)/.test(slot.question.kana) ? 'yesno' : 'wh';
-          const register = r('register') < politeChance ? (me.level === 'n4' && r('keigo') < 0.5 ? 'keigo' : 'polite') : 'casual';
+          const register = r('register') < politeChance ? (n4Up(me.level) && r('keigo') < 0.5 ? 'keigo' : 'polite') : 'casual';
           const text = pickOf(MEMORY[kind][register], r('memory'))!.split('{name}').join(name);
           return [{ key: `answer:${round}`, move: { kind: 'answer', utterance: { via, text }, round }, delayMs: delay('answer') }];
         }

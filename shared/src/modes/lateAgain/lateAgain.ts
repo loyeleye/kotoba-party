@@ -27,6 +27,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { callbackLine, CAUSES, causeOf, dealOptions, kanaLine, latenessFor, lineFor, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, type Cause, type Chunk } from './causes.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -34,7 +35,7 @@ export const MIN_ROUNDS = 6;
 export const SCENE_MS = 5_000;
 export const PLAN_MS = 8_000;
 /** How long the latecomer may record, by level (N4 lines run about 12 s at a learner's pace; N3 joins at 12 s too). */
-export const RECORD_MS: Record<Level, number> = { kana: 6_000, n5: 9_000, n4: 12_000 };
+export const RECORD_MS: Record<Level, number> = { kana: 6_000, n5: 9_000, n4: 12_000, n3: 12_000 };
 /** After the record limit: time for the clip to upload before Pon stands in. */
 export const UPLOAD_MS = 3_500;
 /** Late moves still count this long after a timer runs out. */
@@ -499,7 +500,7 @@ export function dealRoles(s: LateState, ctx: ModeContext): Pick<LateRound, 'late
   const witness = others[0]!;
   const rest = others.slice(1);
   const prev = current(s)?.chief ?? s.rounds.at(-1)?.chief ?? null;
-  const rank: Record<Level, number> = { kana: 0, n5: 1, n4: 2 };
+  const rank: Record<Level, number> = { kana: 0, n5: 1, n4: 2, n3: 3 };
   const candidates = rest.filter((id) => rest.length < 2 || id !== prev);
   const pool = candidates.length ? candidates : rest;
   const chief = [...pool].sort(
@@ -1013,7 +1014,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       }
       case 'check': {
         if (isLate) return moveError('not-yours');
-        if (ctx.player(playerId)?.level !== 'n4') return moveError('not-yours');
+        if (!n4Up(ctx.player(playerId)?.level)) return moveError('not-yours');
         if (phase !== 'reveal' || r.step !== 'play') return moveError('wrong-phase');
         if (playerId in r.checks) return moveError('already-sent');
         const opt = raw.option;
@@ -1263,7 +1264,7 @@ function meView(s: LateState, r: LateRound, phase: Phase, player: ModePlayer, le
   const line = isLate && r.level !== 'kana' && r.picked ? lineOf(r) : null;
   const myCheck = r.checks[player.id];
   const check =
-    !isLate && level === 'n4' && checkable(r) && (listening || pastPlay)
+    !isLate && n4Up(level) && checkable(r) && (listening || pastPlay)
       ? {
           q: c.check.q,
           options: r.checkOrder.map((i) => (i === 0 ? c.check.right : c.check.wrong[i - 1]!)),

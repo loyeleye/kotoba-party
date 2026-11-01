@@ -48,6 +48,7 @@ import {
   type Title,
 } from './content.js';
 import { forLevel } from './ruby.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -60,11 +61,11 @@ export function showPlan(players: number): { laps: number; pictures: number } {
 }
 
 /** How long each slide stays up. Picture slides go by the presenter's level, plus a beat for the laugh. */
-export const STEP_MS = { title: 15_000, picture: { kana: 20_000, n5: 25_000, n4: 30_000 }, laugh: 1_500, close: 12_000 } as const;
+export const STEP_MS = { title: 15_000, picture: { kana: 20_000, n5: 25_000, n4: 30_000, n3: 30_000 }, laugh: 1_500, close: 12_000 } as const;
 /** The presenter can move on once they've said something on a slide, or after this long. */
 export const MIN_NEXT_MS = 5_000;
 /** Sentences on one slide that light the れんぞく (non-stop) badge, by level. */
-export const RENZOKU = { kana: 2, n5: 3, n4: 4 } as const;
+export const RENZOKU = { kana: 2, n5: 3, n4: 4, n3: 4 } as const;
 
 /** The presenter's はなまる points: an average of 1 earns 0, 2 half, 3 all of it. */
 export const HANAMARU_POINTS = 700;
@@ -99,7 +100,7 @@ const CAPTION_KEEP = 4;
 export const DURATIONS = {
   intro: 16_000,
   /** Backstage: pick a title, rehearse. Kana players get longer. */
-  prompt: { kana: 30_000, n5: 25_000, n4: 25_000 },
+  prompt: { kana: 30_000, n5: 25_000, n4: 25_000, n3: 25_000 },
   encore: 30_000,
   reveal: 12_000,
   score: 9_000,
@@ -614,7 +615,7 @@ function startTalk(s: HappyokaiState, ctx: ModeContext): void {
     const unused = all.filter((x) => !s.usedTitles.includes(x.id));
     return shuffled(unused.length ? unused : all, () => ctx.random())[0];
   };
-  const n4 = ctx.player(presenterId)?.level === 'n4';
+  const n4 = n4Up(ctx.player(presenterId)?.level);
   let a: Title | undefined;
   let b: Title | undefined;
   if (n4 && n4Mix(s, index)) {
@@ -1013,7 +1014,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         // An N4 presenter trades one deck title for a usual one, once a turn, before they're ready.
         if (phase !== 'prompt') return moveError('wrong-phase');
         if (!presenter) return moveError('not-yours');
-        if (ctx.player(playerId)?.level !== 'n4') return moveError('not-yours');
+        if (!n4Up(ctx.player(playerId)?.level)) return moveError('not-yours');
         if (t.ready) return moveError('wrong-phase');
         if (t.swapped) return moveError('already-swapped');
         const key = typeof raw.key === 'number' ? raw.key : -1;
@@ -1203,7 +1204,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         level: me.level,
         titleChoices: t && role === 'presenter' && phase === 'prompt' ? t.titleChoices.map((id, key) => {
                 const x = titleOf(id)!;
-                const swap = !!x.deck && me.level === 'n4' && !t.swapped && !t.ready;
+                const swap = !!x.deck && n4Up(me.level) && !t.swapped && !t.ready;
                 return { key, jp: forLevel(x.jp, me.level), ...(romaji ? { romaji: toRomaji(x.jp.kana) } : {}), ...(x.deck ? { deck: forLevel(DECKS[x.deck].name, me.level) } : {}), ...(swap ? { swap: true as const } : {}) };
               }) : [],
         rehearse: t && title && role === 'presenter' && phase === 'prompt' ? { opening: withRomaji(openingFor(me.level, me.name, title.jp)), closing: withRomaji(closingFor(me.level)) } : null,

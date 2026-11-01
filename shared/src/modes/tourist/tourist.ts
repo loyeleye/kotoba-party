@@ -286,7 +286,7 @@ export interface TouristView {
 
 const LINES = new Map(ALL_LINES.map((l) => [l.id, l]));
 const PLACE_BY_ID = new Map(PLACES.map((p) => [p.id, p]));
-const BANDS: Record<Level, Level[]> = { kana: ['kana'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'] };
+const BANDS: Record<Level, Level[]> = { kana: ['kana'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'], n3: ['n3', 'n4', 'n5', 'kana'] };
 
 const blankStats = (): PlayerStats => ({ caught: 0, escaped: 0, sharpEyes: 0, spoken: 0, asked: 0 });
 const stats = (s: TouristState, id: string) => (s.stats[id] ??= blankStats());

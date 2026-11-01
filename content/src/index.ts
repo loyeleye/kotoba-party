@@ -38,7 +38,7 @@ export function getPack(id: string): TopicPack | undefined {
 
 /** Packs with at least one word at or below the given level. */
 export function listPacks(level: Level): TopicPack[] {
-  const rank: Record<Level, number> = { kana: 0, n5: 1, n4: 2 };
+  const rank: Record<Level, number> = { kana: 0, n5: 1, n4: 2, n3: 3 };
   return packs.filter((p) => p.words.some((w) => rank[w.level] <= rank[level]));
 }
 

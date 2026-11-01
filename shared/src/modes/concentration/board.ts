@@ -3,6 +3,7 @@
 // cards out with the special tiles. Pure: randomness comes in.
 
 import type { JpText, Level, PackWord, TopicPack } from '../../../../content/src/types.js';
+import { n4Up } from '../../level.js';
 import { hasKanji, normalizeReading } from '../../japanese/kana.js';
 import { shuffled } from '../mode.js';
 import { emojiFor } from './emoji.js';
@@ -78,7 +79,7 @@ export function usableWords(pack: TopicPack | undefined, levels: readonly Level[
   const kanaGame = levels.length > 0 && levels.every((l) => l === 'kana');
   return pack.words.filter((w) => {
     if (baseline.has(w.id) || w.swerve || w.stereotype) return false;
-    if (w.level === 'n4') return false;
+    if (n4Up(w.level)) return false;
     if (kanaGame && w.level !== 'kana' && !emojiFor(w.jp.kana)) return false;
     const reading = normalizeReading(w.jp.kana);
     if (!reading || [...reading].length > 7) return false;
