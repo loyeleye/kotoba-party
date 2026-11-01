@@ -173,6 +173,15 @@ the title card).
   いただけますか。」, `bento_standin`, bank only, with its subtitle); Kana and N5 phones get the gist. Nobody is
   asked to say anything; no points; once a game. The line is under 7 s; the strip stays on the TV to the end
   of the 8 s title card.
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 2.5 s in he first says
+    「ふくてんちょうが いない…　じゃあ、ポンが！　ドロン！」 (`bento_standin_setup`, bank only), and the line follows
+    2.5 s later (5 s in). The title card then runs until the line is said (`standInVoiceMs`, ~4.3 s): about 9.3 s,
+    1.3 s more than its 8 s.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile on the title card while he
+    says it (bubbles on the TV), and once he has said it the once-a-game curveball is dealt on いただけますか to a
+    player who hasn't reacted (+5, `CURVE_POOL` for the other options). The TV and the gist hold back the key word
+    until it's answered (`holdKey`). The card waits up to 5 s for the answer (`STAND_IN_CURVEBALL_MS`), so at most
+    11.8 s alone or 14.3 s with the setup line; it ends as soon as the curveball is answered (never before 8 s).
 
 ## Not built yet
 

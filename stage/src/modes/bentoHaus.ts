@@ -129,7 +129,9 @@ function standIn(game: BentoView): HTMLElement | null {
     { class: 'bh-standin', 'data-key': 'standin' },
     h('p', { class: 'bh-desk-tag', lang: 'ja' }, '📋 ふくてんちょう: ポン', h('small', {}, ' Pon disguises himself as the deputy manager. ドロン！')),
     h('p', { class: 'bh-bubble', lang: 'ja' }, si.ask.text, h('small', {}, si.ask.en)),
-    boothStrip(si, 'Pon'),
+    boothStrip(si, 'Pon', si.holdKey),
+    // Experiment standInCurveball: the Gallery's reactions to his line.
+    galleryBubbles(si.bubbles ?? []),
   );
 }
 

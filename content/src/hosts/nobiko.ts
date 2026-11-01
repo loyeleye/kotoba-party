@@ -118,6 +118,8 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.omiai_nakodo_cheer.05', host: 'nobiko', event: 'omiai_nakodo_cheer', jp: { text: 'あらまあ！　うれしくて くびが のびちゃうわ。', kana: 'あらまあ！　うれしくて くびが のびちゃうわ。', en: "Oh my! My neck's stretching with joy!" }, status: 'draft' },
   // omiai_standin: a 2-player room with nobody at N4 has no go-between: she gives the keigo opening herself, once a game, as is
   { id: 'nobiko.omiai_standin.01', host: 'nobiko', event: 'omiai_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // omiai_standin_setup: experiment standInSetup, just before her stand-in opening
+  { id: 'nobiko.omiai_standin_setup.01', host: 'nobiko', event: 'omiai_standin_setup', jp: { text: 'なこうどは もちろん、おばちゃんよ！', kana: 'なこうどは もちろん、おばちゃんよ！', en: 'The go-between? Auntie, of course!' }, status: 'draft' },
   { id: 'nobiko.omiai_tease.01', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらまあ… ずいぶん くだけてるわね！', kana: 'あらまあ… ずいぶん くだけてるわね！', en: "Oh my… aren't we casual!" }, audience: 'cheeky', status: 'draft' },
   { id: 'nobiko.omiai_tease.02', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらまあ。おみあいで その ことばづかい？', kana: 'あらまあ。おみあいで その ことばづかい？', en: "Oh my. Talking like that, at an omiai?" }, audience: 'cheeky', status: 'draft' },
   { id: 'nobiko.omiai_tease.03', host: 'nobiko', event: 'omiai_tease', jp: { text: 'ちょっと、これ だれ？　おかあさんに いいつけるわよ。', kana: 'ちょっと、これ だれ？　おかあさんに いいつけるわよ。', en: "Excuse me, whose is this? I'm telling your mother." }, audience: 'cheeky', status: 'draft' },
@@ -159,6 +161,8 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.narabete_hooray.03', host: 'nobiko', event: 'narabete_hooray', jp: { text: 'あらまあ！　おばちゃん、わかったわ！', kana: 'あらまあ！　おばちゃん、わかったわ！', en: 'Oh my! Auntie gets it now!' }, status: 'draft' },
   // narabete_standin: the host stand-in, a small room with no N4 player: she gives one model defence herself, as is
   { id: 'nobiko.narabete_standin.01', host: 'nobiko', event: 'narabete_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // narabete_standin_setup: experiment standInSetup, just before her stand-in defence
+  { id: 'nobiko.narabete_standin_setup.01', host: 'nobiko', event: 'narabete_standin_setup', jp: { text: 'じゃあ、おばちゃんが いいわけ するわね。', kana: 'じゃあ、おばちゃんが いいわけ するわね。', en: "Well then, Auntie will make the excuses." }, status: 'draft' },
   // narabete_perfect
   { id: 'nobiko.narabete_perfect.01', host: 'nobiko', event: 'narabete_perfect', jp: { text: 'あらまあ！　ぴったり ならんだわ！', kana: 'あらまあ！　ぴったり ならんだわ！', en: 'Oh my! Perfectly in line!' }, status: 'draft' },
   { id: 'nobiko.narabete_perfect.02', host: 'nobiko', event: 'narabete_perfect', jp: { text: 'くびが まっすぐ！　かんぺきよ！', kana: 'くびが まっすぐ！　かんぺきよ！', en: "My neck's dead straight! Perfect!" }, status: 'draft' },

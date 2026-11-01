@@ -95,6 +95,8 @@ function prompt(game: LastTrainView): HTMLElement {
     stop ? h('p', { class: 'lt-en' }, stop.announcement.en) : null,
     stop?.isLast && game.twist ? h('div', { class: 'lt-twist' }, h('p', { class: 'lt-intro-jp' }, ruby(game.twist)), h('p', { class: 'lt-en' }, game.twist.en)) : null,
     standIn(game),
+    // Experiment standInCurveball: the Gallery's reactions to his announcement.
+    galleryBubbles(game.gallery ?? []),
     situation(game, true),
   );
 }

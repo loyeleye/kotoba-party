@@ -1,13 +1,14 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
-import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
 import { normalizeReading, soundKey, type Utterance } from '../shared/src/japanese/kana.js';
 import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
 import { defenceScript } from '../shared/src/modes/narabete/defence.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { CURVEBALL_POINTS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
 import {
   BONUS_POOL_SHARE,
   DEFENCE_KEY,
@@ -367,6 +368,8 @@ describe('Narabete!: the Feelings Line and the Worst Day Ever', () => {
     t.sayAll();
     t.sortLine();
     t.lockAll();
+    // A 2-player stand-in line-up waits for Nobiko-san's line and its curveball (experiment standInCurveball).
+    if (t.s.phase === 'reveal') t.timeout();
     // A room with an N4 player gets the N4 defence, even in the Time Line.
     if (t.s.phase === 'encore') t.timeout();
     expect(t.s.phase).toBe('score');
@@ -1028,6 +1031,7 @@ describe('Narabete!: mixed rooms', () => {
   });
 
   it('the host stand-in: a 2-player room with no N4 player hears one model defence, once a game', () => {
+    onTestFinished(withExperiments({ standInSetup: false, standInCurveball: false }));
     const t = new Table(2, ['kana', 'n5']);
     t.start();
     t.sayAll();
@@ -1056,6 +1060,73 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.s.phase).toBe('reveal');
     expect(t.view().standIn).toBeNull();
     expect(t.s.cues.filter((c) => c.event === 'narabete_standin')).toHaveLength(1);
+  });
+
+  describe('the stand-in experiments', () => {
+    const wake = (t: Table) => {
+      const at = wakeAt(t.s, t.ctx());
+      expect(at).not.toBeNull();
+      t.now = at!;
+      t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    };
+
+    it('standInSetup: her setup line where the defence began, the defence 2.5 s later, inside the line-up', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: false }));
+      const t = new Table(2, ['kana', 'n5']);
+      t.start();
+      t.sayAll();
+      const ours = t.s.cues.filter((c) => c.event.startsWith('narabete_standin'));
+      expect(ours.map((c) => [c.event, c.atMs])).toEqual([
+        ['narabete_standin_setup', DURATIONS.standInAt],
+        ['narabete_standin', DURATIONS.standInAt + STAND_IN_SETUP_MS],
+      ]);
+      expect(t.view().standIn!.atMs).toBe(DURATIONS.standInAt + STAND_IN_SETUP_MS);
+      expect(t.s.deadline! - t.now).toBe(DURATIONS.reveal);
+      expect(t.view('p1').me!.gallery).toBeNull();
+      t.sortLine();
+      t.lockAll();
+      expect(t.s.phase).toBe('score');
+    });
+
+    it('standInCurveball: a tile for both while she says it, the curveball on ので after, +5 if right; the line-up waits for it', () => {
+      onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+      const t = new Table(2, ['kana', 'n5']);
+      t.start();
+      t.sayAll();
+      const start = t.now;
+      const ms = t.view().standIn!.ms;
+      expect(t.s.deadline! - start).toBe(DURATIONS.reveal);
+      expect(t.view('p1').me!.gallery).toMatchObject({ kind: 'react' });
+      expect(t.view().standIn!.holdKey).toBe(true);
+      expect(t.view('p2').me!.standIn).toBeNull();
+      expect(t.play('p2', { kind: 'gallery', pick: 'warai' }).error).toBeUndefined();
+      expect(t.view().gallery.map((b) => b.id)).toEqual(['warai']);
+      // Everyone locks early: the line-up waits until she has said it.
+      t.sortLine();
+      t.lockAll();
+      expect(t.s.phase).toBe('reveal');
+      wake(t);
+      expect(t.now).toBe(start + DURATIONS.standInAt + ms);
+      expect(t.view('p1').me!.gallery!.kind).toBe('curveball');
+      expect(t.view('p2').me!.standIn).toMatchObject({ romaji: null });
+      expect(t.view('p1').me!.standIn).toBeNull();
+      const before = t.score('p1');
+      expect(t.play('p1', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
+      expect(t.score('p1')).toBe(before + CURVEBALL_POINTS);
+      expect(t.s.phase).toBe('score');
+      expect(t.st.curveball).toBe(true);
+    });
+
+    it('stays out of rooms with an N4 player, and of 3+ rooms', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
+      for (const levels of [['n4', 'n5'], ['kana', 'n5', 'n5']] as Level[][]) {
+        const t = new Table(levels.length, levels);
+        t.start();
+        t.sayAll();
+        expect(t.s.cues.some((c) => c.event === 'narabete_standin_setup')).toBe(false);
+        expect(t.view('p2').me!.gallery).toBeNull();
+      }
+    });
   });
 
   it('no stand-in with an N4 player, or with 3+ players; an N5-only 3+ room sees nothing new', () => {

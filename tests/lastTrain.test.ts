@@ -1,16 +1,17 @@
 // Last Train: rules with small fixtures (driven through the real room machine), then a full
 // system run with bots playing over the network.
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import type { JpText, LastTrainMinigame, LastTrainScenario, MinigameItem } from '../content/src/types.js';
 import { lastTrainScenarios } from '../content/src/last-train/index.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
-import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { withExperiments } from '../shared/src/modes/experiments.js';
 import { checkUtterance, firstMora } from '../shared/src/modes/lastTrain/check.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
 import { buildStops, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { CURVEBALL_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
 import { framesOf } from '../shared/src/japanese/frames.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -1037,6 +1038,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
   });
 
   it('the host stand-in: once a game, at the first announcer stop, in a room of one or two with nobody at N4', () => {
+    onTestFinished(withExperiments({ standInSetup: false, standInCurveball: false }));
     for (const levels of [['n5'], ['n5', 'kana']] as MinigameItem['level'][][]) {
       const g = table(ROLES, levels);
       g.start(4);
@@ -1070,6 +1072,102 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
       expect(g.view('stage').standIn).toBeNull();
       expect(g.state.deadline! - g.now).toBe(7_000);
     }
+  });
+
+  describe('the stand-in experiments', () => {
+    const wake = (g: Table) => {
+      const at = wakeAt(g.state, g.ctx());
+      expect(at).not.toBeNull();
+      g.now = at!;
+      g.act({ type: 'wake', phaseSeq: g.state.phaseSeq });
+    };
+
+    it('standInSetup: his setup line where the announcement began, the announcement 2.5 s later, the stop that much longer', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: false }));
+      const g = table(ROLES, ['n5']);
+      g.start(4);
+      g.until('prompt');
+      expect(g.cues.filter((c) => c.event.startsWith('train_stand_in'))).toEqual([
+        { host: 'chochin', event: 'train_stand_in_setup', atMs: RULES.standInAtMs },
+        { host: 'chochin', event: 'train_stand_in', slots: { line: 'まもなくまいります', line_kana: 'まもなくまいります', line_en: 'model ann1' }, atMs: RULES.standInAtMs + STAND_IN_SETUP_MS },
+      ]);
+      expect(g.view('stage').standIn).toMatchObject({ atMs: RULES.standInAtMs + STAND_IN_SETUP_MS });
+      expect(g.view('stage').standIn!.holdKey).toBeUndefined();
+      expect(g.state.deadline! - g.now).toBe(RULES.standInAtMs + STAND_IN_SETUP_MS + g.s.standIn!.ms);
+      expect(g.view('stage').gallery).toBeNull();
+      expect(wakeAt(g.state, g.ctx())).toBeNull();
+      g.until('recap');
+      expect(g.cues.filter((c) => c.event === 'train_stand_in_setup')).toHaveLength(1);
+    });
+
+    it('standInCurveball: a tile for each player while he says it, then the curveball, +5 if right', () => {
+      onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+      const g = table(ROLES, ['n5', 'kana']);
+      g.start(4);
+      g.until('prompt');
+      const start = g.now;
+      // The stop runs on for the curveball's time after the line.
+      expect(g.state.deadline! - start).toBe(RULES.standInAtMs + g.s.standIn!.ms + STAND_IN_CURVEBALL_MS);
+      expect(g.view('p1').me!.gallery).toMatchObject({ kind: 'react' });
+      expect(g.view('p2').me!.gallery).toMatchObject({ kind: 'react' });
+      // The key word waits on the TV, and the gist on the phones, while a curveball may still come.
+      expect(g.view('stage').standIn!.holdKey).toBe(true);
+      expect(g.view('p1').me!.standIn).toBeNull();
+      expect(g.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+      expect(g.view('stage').gallery!.map((b) => b.id)).toEqual(['sugoi']);
+      // Once he has said it: p2 (who hasn't reacted) gets the curveball on まいります.
+      wake(g);
+      expect(g.now).toBe(start + RULES.standInAtMs + g.s.standIn!.ms);
+      const tile = g.view('p2').me!.gallery!;
+      expect(tile.kind).toBe('curveball');
+      expect(g.view('p1').me!.standIn).toMatchObject({ kana: 'まもなくまいります' });
+      expect(g.view('p2').me!.standIn).toBeNull();
+      const before = g.score('p2');
+      expect(g.play('p2', { kind: 'gallery', pick: 'まいります' }).error).toBeUndefined();
+      expect(g.score('p2')).toBe(before + CURVEBALL_POINTS);
+      expect(g.s.ledger.filter((e) => e.reason === 'curveball')).toHaveLength(1);
+      // Answered, and the line said: the stop's announcement is over.
+      expect(g.state.phase).toBe('answer');
+      expect(g.view('p2').me!.gallery).toBeNull();
+      g.until('recap');
+      expect(g.s.curveballUsed).toBe(true);
+    });
+
+    it('standInCurveball: a wrong pick earns nothing; nobody left to deal it to means no curveball and no wait', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
+      const g = table(ROLES, ['kana']);
+      g.start(4);
+      g.until('prompt');
+      wake(g);
+      const c = g.view('p1').me!.gallery!;
+      expect(c.kind).toBe('curveball');
+      if (c.kind === 'curveball') expect(c.options.every((o) => o.romaji)).toBe(true);
+      const wrong = g.s.gallery!.curveball!.options.find((o) => !o.correct)!.kana;
+      expect(g.play('p1', { kind: 'gallery', pick: wrong }).error).toBeUndefined();
+      expect(g.score('p1')).toBe(0);
+      expect(g.state.phase).toBe('answer');
+
+      const h = table(ROLES, ['n5']);
+      h.start(4);
+      h.until('prompt');
+      h.play('p1', { kind: 'gallery', pick: 'naruhodo' });
+      wake(h);
+      expect(h.s.standIn!.sg!.g.curveball).toBeNull();
+      expect(h.state.phase).toBe('answer');
+      expect(h.s.curveballUsed).toBe(false);
+    });
+
+    it('stays out of rooms with an N4 player, and of 3+ rooms', () => {
+      onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
+      for (const levels of [['n5', 'n4'], ['n5', 'n5', 'kana']] as MinigameItem['level'][][]) {
+        const g = table(ROLES, levels);
+        g.start(4);
+        g.until('prompt');
+        expect(g.cues.some((c) => c.event.startsWith('train_stand_in'))).toBe(false);
+        expect(g.view('p1').me!.gallery).toBeNull();
+        expect(g.state.deadline! - g.now).toBe(7_000);
+      }
+    });
   });
 
   it('no stand-in on a line without the announcer', () => {

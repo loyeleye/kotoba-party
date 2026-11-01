@@ -218,9 +218,11 @@ function standInPanel(game: OnsenView, elapsed: number): HTMLElement | null {
     'div',
     { class: 'om-deputy om-appear', style: appearAfter(st.atMs, elapsed) },
     h('span', { class: 'om-who' }, '🏮 Chōchin-san reports'),
-    h('p', { class: 'booth-line', lang: 'ja' }, '「', st.lit.before, st.lit.key ? h('mark', {}, st.lit.key) : null, st.lit.after, '」'),
+    // The frame word isn't lit while a curveball on it may still come (experiment standInCurveball).
+    h('p', { class: 'booth-line', lang: 'ja' }, '「', st.lit.before, st.lit.key ? (st.holdKey ? st.lit.key : h('mark', {}, st.lit.key)) : null, st.lit.after, '」'),
     h('span', { class: 'om-en' }, st.line.en),
     h('p', { class: 'booth-note' }, st.note),
+    galleryBubbles(game.bubbles),
   );
 }
 

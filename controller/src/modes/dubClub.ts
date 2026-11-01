@@ -407,6 +407,8 @@ function pickScreen(ctx: Ctx, me: Me): HTMLElement {
     { class: 'screen' },
     sceneCard(game),
     boothGist(me.gist),
+    // Experiment standInCurveball: a Gallery tile on Fude's stand-in ad-lib (or the once-a-game curveball).
+    ctx.view.phase === 'prompt' ? galleryTile(me.gallery, (pick) => void send({ kind: 'gallery', pick, round: game.round })) : null,
     h('p', { class: 'dc-label' }, adlibbing(me) ? '🎙 Ad-lib: your mission' : 'Your line'),
     lineBox(me),
     missionBox(me),

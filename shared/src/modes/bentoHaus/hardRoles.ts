@@ -672,7 +672,7 @@ export const lineOf = (s: LineStep): HardLine => s.credit ?? s.model;
 
 const BOOTH_KEYS = ['いただけますか', 'いただけませんか', 'おまちください'];
 /** Curveball distractors: other request endings the shop hears all night. */
-const CURVE_POOL = ['もらえますか', 'くれませんか', 'おねがいします', 'あります', 'ください'];
+export const CURVE_POOL = ['もらえますか', 'くれませんか', 'おねがいします', 'あります', 'ください'];
 
 /** The booth's colour line, one per kind of incident: about the play, never a slip. */
 function boothNote(inc: Incident, line: HardLine): string {

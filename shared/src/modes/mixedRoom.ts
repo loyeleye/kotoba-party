@@ -8,7 +8,9 @@
 //   Commentary booth  once the N4 line lands, a short instant replay on the TV: the line with its key word
 //                     lit, one line of English colour, and the gist on Kana and N5 phones (Narabete's replay).
 //   Host stand-in     in a 1–2-player room with no N4 player, the host plays the role once per game: the
-//                     model line, voiced, with the gist on the phones. Nobody is asked to say it.
+//                     model line, voiced, with the gist on the phones. Nobody is asked to say it. Two
+//                     experiments (experiments.ts): a short setup line first (standInSetup), and a Gallery with
+//                     the once-a-game curveball on the host's line (standInCurveball; the helpers at the end).
 //
 // None of it changes anyone's points, turns or tiles, except the curveball's small +5.
 
@@ -204,4 +206,94 @@ export function gistFor(c: Commentary | null | undefined, level: Level): (Commen
  */
 export function hostStandsIn(levels: readonly Level[]): boolean {
   return levels.length >= 1 && levels.length <= 2 && !levels.includes('n4');
+}
+
+// ---- experiments on the host stand-in (experiments.ts: standInSetup, standInCurveball) ----
+
+/**
+ * standInSetup: the host's short setup line (Pon's ドロン！) comes where the stand-in's model line used to, and the
+ * model line follows it this long after (the setup lines are about 20 kana, ~2–2.5 s said).
+ */
+export const STAND_IN_SETUP_MS = 2_500;
+
+/**
+ * About how long the host takes to say a stand-in line on the TV: the bank voice can land up to 1.5 s late, then
+ * roughly 0.11 s a kana; at most 7 s (the estimate Omiai and Murder at the Onsen use).
+ */
+export const standInVoiceMs = (kana: string): number => Math.min(7_000, 1_500 + 110 * kana.replace(/[\s　。、！？…]/g, '').length);
+
+/** standInCurveball: a curveball dealt on the stand-in's line stays up at least this long for its answer. */
+export const STAND_IN_CURVEBALL_MS = 5_000;
+
+/**
+ * standInCurveball: in a stand-in room (nobody holds a seat), every connected player gets a Gallery tile while
+ * the host says the line, and once it has been voiced (`dealAt`, server clock) the once-a-game curveball is dealt
+ * on it to a Kana or N5 player who hasn't reacted yet.
+ */
+export interface StandInGallery {
+  g: Gallery;
+  /** When the host has said the line (server clock): the curveball is dealt then. */
+  dealAt: number;
+  /** When the phase would end without the curveball (server clock). */
+  until: number;
+  /** A curveball may come of it: a Kana or N5 player is here and the game's curveball is unused. */
+  maybe: boolean;
+  /** The deal has been tried (whether or not a curveball came of it). */
+  dealt: boolean;
+}
+
+type Seat = { id: string; level: Level };
+const lowIds = (players: readonly Seat[]) => players.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id);
+
+/** Opens the stand-in's Gallery (null when nobody's there). The curveball comes later, from `dealStandIn`. */
+export function openStandInGallery(players: readonly Seat[], curveballUsed: boolean, seed: number, dealAt: number, until: number): StandInGallery | null {
+  if (!players.length) return null;
+  const g = openGallery(
+    players.map((p) => p.id),
+    lowIds(players),
+    null,
+    curveballUsed,
+    seed,
+  );
+  return { g, dealAt, until, maybe: !curveballUsed && lowIds(players).length > 0, dealt: false };
+}
+
+/** When the stand-in's phase ends at the latest: its own end, or the curveball's time after the line. */
+export const standInEnd = (sg: StandInGallery): number => Math.max(sg.until, sg.dealAt + (sg.maybe ? STAND_IN_CURVEBALL_MS : 0));
+
+/** The TV and the gist hold back the key word while a curveball on it may still come, or is unanswered. */
+export const standInHoldKey = (sg: StandInGallery | null | undefined): boolean => !!sg && sg.maybe && (!sg.dealt || keyHeld(sg.g));
+
+/**
+ * Once the line has been voiced: deals the curveball on its key word (`armCurveball`, heard = the line's kana).
+ * True when one was dealt, so the game can mark its curveball used. Tried once.
+ */
+export function dealStandIn(
+  sg: StandInGallery | null | undefined,
+  players: readonly Seat[],
+  key: { word: string; pool?: readonly string[]; heard?: string } | null,
+  used: boolean,
+  seed: number,
+  now: number,
+): boolean {
+  if (!sg || sg.dealt || now < sg.dealAt) return false;
+  sg.dealt = true;
+  return armCurveball(sg.g, lowIds(players), key, used, seed);
+}
+
+/**
+ * The stand-in's phase can end: the line has been said, any curveball has been answered or had its time, and
+ * the phase has had its own time (`until`).
+ */
+export function standInDone(sg: StandInGallery, now: number): boolean {
+  const holds = !sg.dealt || (keyHeld(sg.g) && now < sg.dealAt + STAND_IN_CURVEBALL_MS);
+  return !holds && now >= sg.until;
+}
+
+/** When the stand-in's Gallery next needs a wake: to deal the curveball, when its time is up, at the phase's own end. */
+export function standInWakeAt(sg: StandInGallery | null | undefined, now: number): number | null {
+  if (!sg) return null;
+  if (!sg.dealt) return sg.dealAt;
+  const times = [sg.until, ...(keyHeld(sg.g) ? [sg.dealAt + STAND_IN_CURVEBALL_MS] : [])].filter((t) => t > now);
+  return times.length ? Math.min(...times) : null;
 }

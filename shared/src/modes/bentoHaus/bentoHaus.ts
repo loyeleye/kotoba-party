@@ -29,7 +29,8 @@
 
 import type { Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
-import { gistFor, hostStandsIn, pickGallery, type Commentary } from '../mixedRoom.js';
+import { EXPERIMENTS } from '../experiments.js';
+import { dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInVoiceMs, standInWakeAt, type Commentary, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type ModePlayer, type MoveResult } from '../mode.js';
 import { COUNTS, countWord, KANJI_SPELLINGS, customerOf, customersFor, FOODS, foodOf, MAX_COUNT, RIDDLE_EN, RIDDLES, type Customer, type Food, type JpLine } from './menu.js';
 import {
@@ -37,6 +38,7 @@ import {
   answerOffer,
   blankHardRound,
   closeOffers,
+  CURVE_POOL,
   expireIncidents,
   galleryOpen,
   hardView,
@@ -186,8 +188,12 @@ export interface BentoState {
   hard?: HardState;
   /** The server's clock at the mode's last call (see stampClock). */
   clock?: number;
-  /** A 1–2-player room with nobody at N4: Pon plays the deputy manager once, on this shift's title card. */
-  standIn?: Booth & { round: number; ask: JpLine };
+  /**
+   * A 1–2-player room with nobody at N4: Pon plays the deputy manager once, on this shift's title card.
+   * Experiments: `atMs`, when the line comes after his setup line (standInSetup); `sg`, the Gallery on it with the
+   * once-a-game curveball (standInCurveball).
+   */
+  standIn?: Booth & { round: number; ask: JpLine; atMs?: number; sg?: StandInGallery | null };
 }
 
 // ---- view ----
@@ -305,7 +311,17 @@ export interface BentoView {
    * The host stand-in (1–2 players, nobody at N4), on the first shift's title card: Pon plays the deputy manager
    * for one line. `gist` is this phone's, at its level (Kana and N5 only).
    */
-  standIn?: { ask: JpLine; line: { text: string; kana: string; en: string }; lit: Commentary['lit']; note: string; gist: ReturnType<typeof gistFor> };
+  standIn?: {
+    ask: JpLine;
+    line: { text: string; kana: string; en: string };
+    lit: Commentary['lit'];
+    note: string;
+    gist: ReturnType<typeof gistFor>;
+    /** Experiment standInCurveball: this phone's Gallery tile, the TV's bubbles, and whether the key word waits. */
+    gallery?: GalleryTileView | null;
+    bubbles?: ReactionTile[];
+    holdKey?: boolean;
+  };
 }
 
 export type BentoMove =
@@ -1000,6 +1016,21 @@ function hardMove(s: BentoState, r: Round, hr: HardRound, playerId: string, raw:
   }
 }
 
+// ---- the host stand-in's experiments ----
+
+/** The stand-in's Gallery, on its title card (experiment standInCurveball). */
+function standInSg(s: BentoState, phase: string): StandInGallery | null {
+  return phase === 'prompt' && s.standIn?.round === s.round ? (s.standIn.sg ?? null) : null;
+}
+
+function standInView(st: NonNullable<BentoState['standIn']>, me: ModePlayer | undefined): NonNullable<BentoView['standIn']> {
+  const sg = st.sg;
+  // The gist waits while the curveball may still come to this phone, so it doesn't hand over the answer.
+  const hold = !!me && standInHoldKey(sg) && (!sg!.dealt || sg!.g.curveball?.playerId === me.id);
+  const base = { ask: st.ask, line: st.line, lit: st.lit, note: st.note, gist: me && !hold ? gistFor(st, me.level) : null };
+  return sg ? { ...base, gallery: me ? galleryTileFor(sg.g, me.id, me.level) : null, bubbles: galleryBubbles(sg.g), holdKey: standInHoldKey(sg) } : base;
+}
+
 // ---- the mode ----
 
 export const bentoHausMode: Mode<BentoState, BentoView> = {
@@ -1051,7 +1082,8 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       // N4 hard roles: offered to the room's N4 players in turn. A room with none never gets the fields.
       const offers = rolesFor(s.round, ctx.connected(), s.hard?.offers, ctx.connected().length);
       if (offers.length || s.hard) {
-        s.hard ??= { offers: [], specialTurn: 0, askTurn: 0 };
+        // A curveball the host stand-in dealt was the game's one (experiment standInCurveball).
+        s.hard ??= { offers: [], specialTurn: 0, askTurn: 0, ...(s.standIn?.sg?.g.curveball ? { curveballUsed: true } : {}) };
         s.current.hard = blankHardRound();
         for (const o of offers) s.hard.offers.push({ round: s.round, ...o, answer: null });
       }
@@ -1060,9 +1092,17 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       // The host stand-in: once a game, where the role would first be offered. Pon voices one model line.
       const levels = ctx.players().filter((p) => p.connected).map((p) => p.level);
       if (!s.standIn && !s.hard && hostStandsIn(levels)) {
-        s.standIn = { ...standInBooth(ctx.now + STAND_IN_AT_MS), round: s.round };
+        // Experiment standInSetup: his short setup line (ドロン！) where the line used to start; the line follows it.
+        const atMs = STAND_IN_AT_MS + (EXPERIMENTS.standInSetup ? STAND_IN_SETUP_MS : 0);
+        if (EXPERIMENTS.standInSetup) ctx.cue({ host: 'pon', event: 'bento_standin_setup', atMs: STAND_IN_AT_MS });
+        s.standIn = { ...standInBooth(ctx.now + atMs), round: s.round, ...(EXPERIMENTS.standInSetup ? { atMs } : {}) };
         const line = s.standIn.line;
-        ctx.cue({ host: 'pon', event: 'bento_standin', slots: { line: line.text, line_kana: line.kana, line_en: line.en }, atMs: STAND_IN_AT_MS });
+        // Experiment standInCurveball: a Gallery tile for everyone while he says it; the curveball once he has.
+        if (EXPERIMENTS.standInCurveball) {
+          const said = ctx.now + atMs + standInVoiceMs(line.kana);
+          s.standIn.sg = openStandInGallery(ctx.connected(), false, s.round, said, Math.max(ctx.now + DURATIONS.prompt, said));
+        }
+        ctx.cue({ host: 'pon', event: 'bento_standin', slots: { line: line.text, line_kana: line.kana, line_en: line.en }, atMs });
       }
       return;
     }
@@ -1093,10 +1133,17 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     if (s.hard) closeOffers(s.hard, r.index);
   },
 
-  duration(s, phase) {
+  duration(s, phase, ctx) {
     if (phase === 'answer') return s.current ? s.current.shiftEnd - s.current.shiftStart : SHIFT_MS[0];
     if (phase === 'intro') return DURATIONS.intro;
-    if (phase === 'prompt') return DURATIONS.prompt;
+    if (phase === 'prompt') {
+      // The stand-in's title card runs until its line is said (experiment standInSetup) and its curveball has had
+      // its time (standInCurveball).
+      const st = s.standIn?.round === s.round ? s.standIn : null;
+      if (st?.sg) return standInEnd(st.sg) - ctx.now;
+      if (st?.atMs !== undefined) return Math.max(DURATIONS.prompt, st.atMs + standInVoiceMs(st.line.kana));
+      return DURATIONS.prompt;
+    }
     if (phase === 'score') return DURATIONS.score;
     return 5_000;
   },
@@ -1104,6 +1151,8 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   done(s, phase, ctx) {
     const r = s.current;
     if (phase === 'answer' && r) return shiftDone(r, ctx.now);
+    const sg = standInSg(s, phase);
+    if (sg) return standInDone(sg, ctx.now);
     return false;
   },
 
@@ -1112,6 +1161,9 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     const now = ctx.now;
     // The host stand-in's card comes up on the title card a moment in, as Pon says the line.
     if (phase === 'prompt' && s.standIn?.round === s.round && s.standIn.at > now) return s.standIn.at;
+    // Then its Gallery's curveball, once he has said it (experiment standInCurveball).
+    const sg = standInSg(s, phase);
+    if (sg) return standInWakeAt(sg, now);
     if (phase !== 'answer' || !r?.started) return null;
     const times = [...waiting(r).map((v) => v.leaveAt), ...(r.nextArriveAt !== null ? [r.nextArriveAt] : [])];
     // Also wake when a served or walked-out customer has lingered long enough to leave the counter.
@@ -1123,6 +1175,9 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
 
   wake(s, phase, ctx) {
     stampClock(s, ctx.now);
+    const sg = standInSg(s, phase);
+    if (sg && s.standIn?.lit.key) dealStandIn(sg, ctx.connected(), { word: s.standIn.lit.key, pool: CURVE_POOL, heard: s.standIn.line.kana }, false, s.round, ctx.now);
+    else if (sg) sg.dealt = ctx.now >= sg.dealAt;
     const r = s.current;
     if (phase === 'answer' && r) {
       runClock(s, r, ctx.now, ctx);
@@ -1133,6 +1188,15 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   move(s, phase, playerId, raw, ctx) {
     stampClock(s, ctx.now);
     const r = s.current;
+    // Experiment standInCurveball: a tap on the stand-in's Gallery tile (or its curveball), on the title card.
+    const sg = standInSg(s, phase);
+    if (sg && isObject(raw) && raw.kind === 'gallery') {
+      if (typeof raw.pick !== 'string') return moveError('bad-move');
+      const points = pickGallery(sg.g, playerId, raw.pick);
+      if (points === null) return moveError('not-allowed');
+      if (points) ctx.award(playerId, points);
+      return MOVE_OK;
+    }
     // A hard-role offer can be answered from the shift's title card on.
     if (isObject(raw) && raw.kind === 'role' && r && (phase === 'prompt' || phase === 'answer')) {
       if (!s.hard || !r.hard || typeof raw.accept !== 'boolean') return moveError('bad-move');
@@ -1214,7 +1278,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       ajimi: ajimiView(r, ctx),
       me: mine && myHard ? { ...mine, hard: myHard } : mine,
       ...(r?.hard ? { hard: hardView(r.hard, r, scoring, ctx.now) } : {}),
-      ...(standIn ? { standIn: { ask: standIn.ask, line: standIn.line, lit: standIn.lit, note: standIn.note, gist: me ? gistFor(standIn, me.level) : null } } : {}),
+      ...(standIn ? { standIn: standInView(standIn, me) } : {}),
     };
   },
 

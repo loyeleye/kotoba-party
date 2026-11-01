@@ -116,6 +116,13 @@ offer time out, sits the next round out; in a room of 4 or more, whoever gave it
   e.g. 「これより おそい じかんは ないので、これが いちばん あとです。」. The TV shows it in the booth strip for 5–7 s (inside the 90 s
   line-up, so no time is added), and Kana and N5 phones show its gist on the line-up screen. Nobody is
   asked to say anything, and nothing is scored.
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 4 s in she first says
+    「じゃあ、おばちゃんが いいわけ するわね。」 (`narabete_standin_setup`, bank only); the defence follows 2.5 s later.
+    Still inside the line-up: no time added.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile on the line-up screen while
+    she says it, and once she has (its booth length) the once-a-game curveball on ので (against `DEFENCE_POOL`), +5.
+    The gist and the lit ので wait until then. A line-up everyone locks early waits until she has said it and the
+    curveball is answered (at most 5 s); otherwise no time is added. Narabete now has `wakeAt`/`wake` for this.
 - **Scoring**: said out loud in Japanese, it adds the same 30% defence share as the ordinary defence, to
   the N4 player only. The team points and everyone else's bonus don't change. The phrasebook
   (`narabete:defence:<spot>`) logs it `said` only for their own spoken reason with ので; a model line read

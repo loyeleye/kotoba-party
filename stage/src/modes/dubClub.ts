@@ -147,7 +147,7 @@ function sceneSide(view: RoomView, game: DubView, phase: 'prompt' | 'answer'): H
 function standIn(game: DubView): HTMLElement | null {
   const si = game.standIn;
   if (!si) return null;
-  return h('div', { class: 'dub-standin', style: `animation-duration: ${si.ms}ms; animation-delay: ${Math.round(si.at - serverNow())}ms` }, boothStrip(si, 'Fude-kantoku’s ad-lib'));
+  return h('div', { class: 'dub-standin', style: `animation-duration: ${si.ms}ms; animation-delay: ${Math.round(si.at - serverNow())}ms` }, boothStrip(si, 'Fude-kantoku’s ad-lib', si.holdKey), galleryBubbles(si.bubbles ?? []));
 }
 
 function sceneScreen(view: RoomView, game: DubView, phase: 'prompt' | 'answer'): HTMLElement {

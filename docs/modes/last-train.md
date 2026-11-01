@@ -152,6 +152,14 @@ stand-in.
   (`RULES.standInAtMs`) into the stop's announcement, subtitled on the TV and with its gist on the phones. That
   announcement phase runs on until the line is said (about 2.5 s longer, once a game). Nobody is asked to say
   anything and nobody scores. The line is fixed, not drawn, so the game deals exactly as it would without it.
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 3.5 s in he first says
+    「きょうは わたしが アナウンスします。ゆらゆら。」 (`train_stand_in_setup`, bank only); the announcement follows
+    2.5 s later, and the stop's announcement runs 2.5 s longer for it.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): every phone gets a Gallery tile while he says it (bubbles
+    on the TV), and once it's said (`standInAtMs` + its booth length) the once-a-game curveball is dealt on its key
+    word (まいります) to a player who hasn't reacted, +5 in the ledger. The gist waits on the phones until then (and
+    on the curveball phone until it's answered). The stop's announcement waits up to 5 s more for the answer and ends
+    once it's in. Last Train now has `wakeAt`/`wake` for this, null otherwise.
 
 The mode can't tell a bot from a player (`ModePlayer` has no bot flag), so a bot in the room gets a Gallery tile
 and counts for the stand-in like anyone else.

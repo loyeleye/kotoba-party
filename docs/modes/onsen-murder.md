@@ -124,6 +124,13 @@ the very last seconds can be cut short. A miss, a decline or no N4 player: nothi
   (`onsen_standin`, bank-only `{line}`) 5.8 s in, with its subtitle on the TV ("🏮 Chōchin-san reports",
   frame word lit) and the gist on the phones. Nobody is asked to say anything; no points. That one
   answer may run a little past its usual 10–12 s, to at most 12.8 s (5.8 s + at most 7 s of voice).
+  - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 5.8 s in he first says
+    「じょしゅさんが いません。わたしが ほうこくします！」 (`onsen_standin_setup`, bank only; the reviewer's draft with
+    さん added, as in his other lines); the report follows 2.5 s later, so that answer runs to at most 15.3 s.
+  - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile while he reports (bubbles in
+    his panel), and once he has said it (`reportVoiceMs`) the once-a-game curveball is dealt on its frame word
+    (いっていました or みられました, against `curveballPool`), +5. The frame word isn't lit and the gist waits until
+    then. The answer waits up to 5 s more for the curveball and moves on once it's answered.
 
 | | Points |
 | --- | --- |

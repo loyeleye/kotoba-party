@@ -212,6 +212,8 @@ function ordering(ctx: Ctx, me: Me): HTMLElement {
       : null,
     hardOffer(ctx, me),
     boothGist(me.standIn),
+    // Experiment standInCurveball: a Gallery tile on Nobiko-san's defence (or the once-a-game curveball).
+    gallery(ctx, me),
     ends(game),
     timeCard(me, true) ?? (me.secret !== null ? secret(me) : null),
     me.said && game.kind !== 'time' ? h('p', { class: 'hint' }, 'Your answer: ', h('span', { lang: 'ja' }, me.said.text)) : null,

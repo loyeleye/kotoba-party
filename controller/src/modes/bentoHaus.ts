@@ -826,6 +826,7 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
           ]
         : null,
       !!game.standIn?.gist,
+      game.standIn?.gallery ? [game.standIn.gallery.kind, game.standIn.gallery.picked] : null,
     ]);
   },
 
@@ -846,6 +847,8 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
           roleBadge(game.me.hard),
           // The host stand-in: Pon plays the deputy manager for one line; Kana and N5 phones get the gist.
           boothGist(game.standIn?.gist ?? null),
+          // Experiment standInCurveball: a Gallery tile on his line (or the once-a-game curveball).
+          galleryTile(game.standIn?.gallery ?? null, (pick) => void ctx.send({ kind: 'gallery', pick })),
           game.vs && game.vs.myTeam !== null ? h('p', { class: 'hint' }, 'Call your own team only: the other kitchen can’t hear your phone. Serve first to win the customer.') : null,
           game.me.shelf.length ? shelf(game.me, game.ownCounter) : null,
           h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, `「${example(game)}、おねがいします！」`)),

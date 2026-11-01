@@ -363,7 +363,7 @@ function foot(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement 
   // redraw picks the fade up where it was).
   const si = game.standIn;
   if (view.phase === 'reveal' && si)
-    return h('div', { class: 'nb-foot nb-replay nb-standin', style: `animation-duration: ${si.ms}ms; animation-delay: ${Math.round(si.atMs - elapsed)}ms` }, boothStrip(si, 'Nobiko-san'));
+    return h('div', { class: 'nb-foot nb-replay nb-standin', style: `animation-duration: ${si.ms}ms; animation-delay: ${Math.round(si.atMs - elapsed)}ms` }, boothStrip(si, 'Nobiko-san', si.holdKey), galleryBubbles(game.gallery));
   if (view.phase === 'encore' && d)
     return h(
       'div',

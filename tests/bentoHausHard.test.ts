@@ -1,4 +1,6 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, onTestFinished } from 'vitest';
+import { withExperiments } from '../shared/src/modes/experiments.js';
+import { STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS, standInVoiceMs } from '../shared/src/modes/mixedRoom.js';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
@@ -807,6 +809,7 @@ describe('Bento Haus mixed rooms: the booth and the Gallery', () => {
 
 describe('Bento Haus mixed rooms: the host stand-in', () => {
   it('in a 1–2-player room with nobody at N4, Pon plays the deputy manager once, on the first title card', () => {
+    onTestFinished(withExperiments({ standInSetup: false, standInCurveball: false }));
     const t = new Table(['n5', 'kana']);
     t.toPrompt();
     const si = t.st.standIn!;
@@ -838,6 +841,55 @@ describe('Bento Haus mixed rooms: the host stand-in', () => {
     expect('standIn' in t.view()).toBe(false);
     expect(cuesOf(t, 'bento_standin')).toHaveLength(1);
     expect(t.s.players.every((p) => p.score === 0)).toBe(true);
+  });
+
+  it('standInSetup: his ドロン！ line where the line began, the line 2.5 s later; the title card runs to its end', () => {
+    onTestFinished(withExperiments({ standInSetup: true, standInCurveball: false }));
+    const t = new Table(['n5']);
+    t.toPrompt();
+    const start = t.now;
+    const si = t.st.standIn!;
+    const at = STAND_IN_AT_MS + STAND_IN_SETUP_MS;
+    expect(cuesOf(t, 'bento_standin_setup')).toEqual([{ host: 'pon', event: 'bento_standin_setup', atMs: STAND_IN_AT_MS }]);
+    expect(cuesOf(t, 'bento_standin')).toEqual([
+      { host: 'pon', event: 'bento_standin', slots: { line: si.line.text, line_kana: si.line.kana, line_en: si.line.en }, atMs: at },
+    ]);
+    expect(si.at).toBe(start + at);
+    expect(t.s.deadline! - start).toBe(Math.max(8_000, at + standInVoiceMs(si.line.kana)));
+    t.wake();
+    expect(t.view('p1').standIn!.gallery).toBeUndefined();
+    expect(t.view('p1').standIn!.gist).toBeTruthy();
+    expect(REAL_CONTENT.hostLines.find((l) => l.event === 'bento_standin_setup')!.jp.text).toContain('ドロン');
+  });
+
+  it('standInCurveball: a tile for both while he says it, then the curveball on いただけますか, +5 if right', () => {
+    onTestFinished(withExperiments({ standInSetup: false, standInCurveball: true }));
+    const t = new Table(['n5', 'kana']);
+    t.toPrompt();
+    const start = t.now;
+    const si = t.st.standIn!;
+    const said = si.at + standInVoiceMs(si.line.kana);
+    expect(t.s.deadline!).toBe(Math.max(start + 8_000, said + STAND_IN_CURVEBALL_MS));
+    t.wake();
+    expect(t.now).toBe(si.at);
+    expect(t.view('p1').standIn!.gallery).toMatchObject({ kind: 'react' });
+    expect(t.view().standIn!.holdKey).toBe(true);
+    expect(t.view('p1').standIn!.gist).toBeNull();
+    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+    expect(t.view().standIn!.bubbles!.map((b) => b.id)).toEqual(['sugoi']);
+    t.wake();
+    expect(t.now).toBe(said);
+    const tile = t.view('p2').standIn!.gallery!;
+    expect(tile.kind).toBe('curveball');
+    if (tile.kind === 'curveball') expect(tile.options.every((o) => o.romaji)).toBe(true);
+    expect(t.view('p1').standIn!.gist).toBeTruthy();
+    expect(t.view('p2').standIn!.gist).toBeNull();
+    expect(t.play('p2', { kind: 'gallery', pick: 'いただけますか' }).error).toBeUndefined();
+    expect(t.s.players.find((p) => p.id === 'p2')!.score).toBe(CURVEBALL_POINTS);
+    // Answered and the line said: the title card ends now, or at its usual 8 s if that's later.
+    if (t.s.phase === 'prompt') t.wake();
+    expect(t.s.phase).toBe('answer');
+    expect(t.now - start).toBe(Math.max(8_000, said - start));
   });
 
   it('a room with an N4 player, or of 3 or more, never gets the stand-in', () => {

@@ -67,6 +67,17 @@ Every game with a hard role uses them the same way:
 - **Host stand-in.** In a room of one or two players with nobody at N4, the host plays the hard role once per
   game: one model line, voiced, with the gist on the phones. Nobody is asked to say it and it scores nothing.
   This is the one thing that reaches rooms without an N4 player (for Ladi to confirm).
+  Two experiments ride on it (`shared/src/modes/experiments.ts`, for the playtest sims; for Ladi to confirm):
+  - `standInSetup`: the host first says a short setup line in character (Pon's ドロン！), its own bank-only event per
+    game (`*_standin_setup`; Last Train's is `train_stand_in_setup`), where the model line used to start; the model
+    line follows `STAND_IN_SETUP_MS` (2.5 s) later. Added time: none in Narabete!, 1.3 s in Bento Haus, 2.5 s in the
+    others.
+  - `standInCurveball`: every player in the room gets a Gallery tile while the host says the line, and once it has
+    been said the once-a-game curveball is dealt on it (`openStandInGallery` with no key, then `dealStandIn`, i.e.
+    `armCurveball` with the line's kana as heard), +5 if right. Until it's answered the key word isn't lit and
+    the gist waits (`standInHoldKey`). The phase waits up to `STAND_IN_CURVEBALL_MS` (5 s) for the answer and
+    ends once it's in (`standInDone`); Omiai and Narabete! fit it in time they already had.
+  With both off, the stand-in is exactly as above.
 - **Host reactions.** Each game's host reacts in one short line when a role lands.
 - **The waiting check.** After a game in a mixed room (an N4 player and anyone below N4) where a hard role was offered, the recap asks each player below
   N4 one tap: "Was there a part of that game where you were just waiting?" (No / A bit / Yes). The server logs the answers

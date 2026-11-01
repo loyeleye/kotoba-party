@@ -32,7 +32,8 @@ import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, keigoPair, NAK
 import { analysisText, checkManners, type CasualHit, type MannersResult, type Register } from './manners.js';
 import { playerTextAllowed } from '../../moderation.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
-import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { EXPERIMENTS } from '../experiments.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 
 // ---- tuning ----
 
@@ -165,8 +166,11 @@ export interface Round {
   gallery?: Gallery | null;
   /** The commentary booth's replay of the go-between's landed opening. */
   booth?: Commentary | null;
-  /** Nobiko-san giving the opening herself, in a 2-player room with nobody at N4 (once a game). */
-  standIn?: Commentary | null;
+  /**
+   * Nobiko-san giving the opening herself, in a 2-player room with nobody at N4 (once a game). Experiments:
+   * `atMs`, when it follows her setup line (standInSetup); `sg`, the Gallery on it (standInCurveball).
+   */
+  standIn?: (Commentary & { atMs?: number; sg?: StandInGallery | null }) | null;
 }
 
 export type NakodoSlot = 'open' | 'close';
@@ -743,10 +747,34 @@ function standIn(s: OmiaiState, ctx: ModeContext): boolean {
   s.standInUsed = true;
   const line = nakodoLines(cardOf(s), s.round, s.totalRounds).open;
   r.standIn = boothFor(line, null, 'Nobiko-san');
-  ctx.cue({ host: 'nobiko', event: 'omiai_standin', slots: { line: line.jp.text, line_kana: line.jp.kana, line_en: line.jp.en } });
-  cueQuestion(s, ctx, voiceMs(line.jp.kana));
+  const slots = { line: line.jp.text, line_kana: line.jp.kana, line_en: line.jp.en };
+  // Experiment standInSetup: her short setup line opens the prompt; the opening follows it, then the question.
+  const atMs = EXPERIMENTS.standInSetup ? STAND_IN_SETUP_MS : 0;
+  if (EXPERIMENTS.standInSetup) {
+    r.standIn.atMs = atMs;
+    ctx.cue({ host: 'nobiko', event: 'omiai_standin_setup' });
+    ctx.cue({ host: 'nobiko', event: 'omiai_standin', slots, atMs });
+  } else ctx.cue({ host: 'nobiko', event: 'omiai_standin', slots });
+  // Experiment standInCurveball: a Gallery tile for both players while she says it; the curveball once she has.
+  if (EXPERIMENTS.standInCurveball) {
+    const said = ctx.now + atMs + voiceMs(line.jp.kana);
+    r.standIn.sg = openStandInGallery(ctx.connected(), !!s.curveballUsed, s.round, said, said + DURATIONS.prompt);
+    r.gallery = r.standIn.sg?.g ?? null;
+  }
+  cueQuestion(s, ctx, atMs + voiceMs(line.jp.kana));
   return true;
 }
+
+/** The stand-in's opening has been said: the once-a-game curveball on its keigo word. */
+function dealStandInCurveball(s: OmiaiState, ctx: ModeContext): void {
+  const sg = s.current?.standIn?.sg;
+  if (!sg) return;
+  const line = nakodoLines(cardOf(s), s.round, s.totalRounds).open;
+  if (dealStandIn(sg, ctx.connected(), { word: line.key, pool: NAKODO_KEYS, heard: line.jp.kana }, !!s.curveballUsed, s.round, ctx.now)) s.curveballUsed = true;
+}
+
+/** The stand-in's Gallery, during its prompt (experiment standInCurveball). */
+const standInSg = (s: OmiaiState, phase: Phase): StandInGallery | null => (phase === 'prompt' ? (s.current?.standIn?.sg ?? null) : null);
 
 /** Which line the phase is for. */
 const slotFor =(phase: Phase): NakodoSlot | null => (phase === 'prompt' ? 'open' : phase === 'score' ? 'close' : null);
@@ -935,7 +963,9 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       case 'prompt': {
         // The stand-in's opening (once a game, at most 7 s) comes before the question, so the prompt is that much longer.
         const stood = s.current?.standIn;
-        return DURATIONS.prompt + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo + DURATIONS.nakodoVoice : 0) + (stood ? voiceMs(stood.line.kana) : 0);
+        // With experiment standInCurveball, also until the curveball on it has had its time.
+        if (stood?.sg) return standInEnd(stood.sg) - s.phaseAt;
+        return DURATIONS.prompt + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo + DURATIONS.nakodoVoice : 0) + (stood ? (stood.atMs ?? 0) + voiceMs(stood.line.kana) : 0);
       }
       case 'answer':
         return DURATIONS.answer;
@@ -956,6 +986,8 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     const here = ctx.connected();
     const r = s.current;
     if (!here.length || !r) return false;
+    const sg = standInSg(s, phase);
+    if (sg) return standInDone(sg, ctx.now);
     // A go-between's prompt or score runs long: it ends once their line is done and the phase has had its usual
     // time (and, in the prompt, once Nobiko-san has had time to read the question).
     if (phase === 'prompt' && s.nakodo)
@@ -974,6 +1006,8 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
   },
 
   wakeAt(s, phase, ctx) {
+    const sg = standInSg(s, phase);
+    if (sg) return standInWakeAt(sg, ctx.now);
     if ((phase !== 'prompt' && phase !== 'score') || !s.nakodo) return null;
     const cuedAt = s.current?.cuedAt;
     if (phase === 'prompt' && cuedAt === undefined) return Math.max(ctx.now, questionDueAt(s, ctx));
@@ -985,6 +1019,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
   wake(s, phase, ctx) {
     // The go-between hasn't finished the opening in time: Nobiko-san reads the question anyway, and an
     // offer nobody answered times out. Otherwise the wake just lets done() end the phase.
+    if (standInSg(s, phase)) return dealStandInCurveball(s, ctx);
     const g = s.nakodo;
     if (phase !== 'prompt' || !g || !s.current || s.current.cuedAt !== undefined || ctx.now < questionDueAt(s, ctx)) return;
     if (g.status === 'offered') g.status = 'timeout';
@@ -1309,7 +1344,8 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
               }
             : null,
         gallery: phase === 'prompt' ? galleryTileFor(r?.gallery, me.id, me.level) : null,
-        gist: phase === 'prompt' && r && (r.booth?.playerId ?? null) !== me.id ? gistFor(r.booth ?? r.standIn, me.level) : null,
+        // The stand-in's gist waits while its curveball may still come to this phone (experiment standInCurveball).
+        gist: phase === 'prompt' && r && (r.booth?.playerId ?? null) !== me.id && !(standInHoldKey(r.standIn?.sg) && (!r.standIn!.sg!.dealt || r.gallery?.curveball?.playerId === me.id)) ? gistFor(r.booth ?? r.standIn, me.level) : null,
       };
     }
     const booth = phase === 'prompt' ? (r?.booth ?? r?.standIn ?? null) : null;
@@ -1343,7 +1379,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
               pending: nakodoOpen(s, phase, ctx),
             }
           : null,
-      booth: booth ? { playerId: booth.playerId, lit: booth.lit, note: booth.note, en: booth.line.en, ms: booth.ms, standIn: !booth.playerId, holdKey: keyHeld(r?.gallery) } : null,
+      booth: booth ? { playerId: booth.playerId, lit: booth.lit, note: booth.note, en: booth.line.en, ms: booth.ms, standIn: !booth.playerId, holdKey: !booth.playerId && r?.standIn?.sg ? standInHoldKey(r.standIn.sg) : keyHeld(r?.gallery) } : null,
       bubbles: phase === 'prompt' && r?.gallery ? galleryBubbles(r.gallery) : [],
       me: mine,
     };

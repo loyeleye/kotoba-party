@@ -25,7 +25,8 @@ import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type MoveResult, type PhraseEntry } from '../mode.js';
 import { checkUtterance, firstMora } from './check.js';
 import { nextOfferee, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
-import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, KEY_WORDS, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { EXPERIMENTS } from '../experiments.js';
+import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, KEY_WORDS, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallback.js';
 
@@ -227,8 +228,12 @@ export interface LastTrainState {
   curveballUsed: boolean;
   /** The commentary booth's replay of a taken role's landed line, during the reveal. */
   booth: Commentary | null;
-  /** The host stand-in's one announcement (1–2-player rooms with no N4 player), and the stop it was made at. */
-  standIn: (Commentary & { stop: number }) | null;
+  /**
+   * The host stand-in's one announcement (1–2-player rooms with no N4 player), and the stop it was made at.
+   * Experiments: `atMs`, when the line comes after his setup line (standInSetup); `sg`, the Gallery on it with
+   * the once-a-game curveball (standInCurveball).
+   */
+  standIn: (Commentary & { stop: number; atMs?: number; sg?: StandInGallery | null }) | null;
   seq: number;
 }
 
@@ -363,8 +368,8 @@ export interface LastTrainView {
   /** The commentary booth, during the reveal: it lights up `atMs` in, as Chōchin-san says the line. */
   /** `holdKey`: a curveball on the key word is still open, so it isn't lit yet (`keyHeld`). */
   booth: { playerId: string; name: string; line: JpText; lit: Commentary['lit']; note: string; atMs: number; ms: number; holdKey: boolean } | null;
-  /** The host stand-in's announcement, during its stop's announcement (subtitled). */
-  standIn: { line: JpText; lit: Commentary['lit']; atMs: number } | null;
+  /** The host stand-in's announcement, during its stop's announcement (subtitled). `holdKey`: as the booth's. */
+  standIn: { line: JpText; lit: Commentary['lit']; atMs: number; holdKey?: boolean } | null;
   me: LastTrainMe | null;
 }
 
@@ -639,6 +644,11 @@ function openRoleGallery(s: LastTrainState, ctx: ModeContext, playerId: string, 
  */
 function armRoleCurveball(s: LastTrainState, ctx: ModeContext, item: MinigameItem): void {
   if (!s.gallery || !item.role || !GALLERY_ROLES.has(item.role.id)) return;
+  if (armOn(s, ctx, s.gallery, item)) s.curveballUsed = true;
+}
+
+/** Deals the curveball on a role line's key word into `g`. True when dealt. */
+function armOn(s: LastTrainState, ctx: ModeContext, g: Gallery, item: MinigameItem): boolean {
   const key = roleKey(item);
   const pool = [...new Set([...ROLE_KEYS.map((k) => k.kana), ...KEY_WORDS])];
   const low = ctx.connected().filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id);
@@ -647,11 +657,9 @@ function armRoleCurveball(s: LastTrainState, ctx: ModeContext, item: MinigameIte
   // retry with a word or two fewer in the pool.
   for (let drop = 0; drop < 3; drop++) {
     const from = drop ? pool.slice(0, -drop) : pool;
-    if (armCurveball(s.gallery, low, key ? { word: key.kana, pool: from, heard: item.model.kana } : null, s.curveballUsed, s.seq)) {
-      s.curveballUsed = true;
-      return;
-    }
+    if (armCurveball(g, low, key ? { word: key.kana, pool: from, heard: item.model.kana } : null, s.curveballUsed, s.seq)) return true;
   }
+  return false;
 }
 
 /**
@@ -664,11 +672,35 @@ function maybeStandIn(s: LastTrainState, ctx: ModeContext, stop: Stop): void {
   const line = s.minigames[stop.minigameId]?.items.find((i) => i.role?.id === 'announcer');
   if (!line) return;
   s.standIn = { ...commentaryOf(line, null), stop: s.stopIndex };
+  // Experiment standInSetup: his short setup line first, where the announcement used to start; it follows.
+  if (EXPERIMENTS.standInSetup) {
+    ctx.cue({ host: 'chochin', event: 'train_stand_in_setup', atMs: RULES.standInAtMs });
+    s.standIn.atMs = RULES.standInAtMs + STAND_IN_SETUP_MS;
+  }
+  const atMs = standInAt(s);
+  // Experiment standInCurveball: a Gallery tile for everyone while he says it; the curveball once he has.
+  if (EXPERIMENTS.standInCurveball) {
+    const until = ctx.now + Math.max(DURATIONS.prompt!, atMs + s.standIn.ms);
+    s.standIn.sg = openStandInGallery(ctx.connected(), s.curveballUsed, s.seq, ctx.now + atMs + s.standIn.ms, until);
+    s.gallery = s.standIn.sg?.g ?? null;
+  }
   const { text, kana, en } = line.model;
-  ctx.cue({ host: 'chochin', event: 'train_stand_in', slots: { line: text, line_kana: kana, line_en: en }, atMs: RULES.standInAtMs });
+  ctx.cue({ host: 'chochin', event: 'train_stand_in', slots: { line: text, line_kana: kana, line_en: en }, atMs });
 }
 
 const standingIn = (s: LastTrainState, phase: Phase) => phase === 'prompt' && !!s.standIn && s.standIn.stop === s.stopIndex;
+/** When the stand-in's announcement starts, ms into the stop's announcement. */
+const standInAt = (s: LastTrainState): number => s.standIn?.atMs ?? RULES.standInAtMs;
+/** The stand-in's Gallery, during its stop's announcement (experiment standInCurveball). */
+const standInSg = (s: LastTrainState, phase: Phase): StandInGallery | null => (standingIn(s, phase) ? (s.standIn!.sg ?? null) : null);
+
+/** The stand-in's line has been said: deal the once-a-game curveball on its key word. */
+function dealStandInCurveball(s: LastTrainState, ctx: ModeContext, sg: StandInGallery): void {
+  if (sg.dealt || ctx.now < sg.dealAt) return;
+  sg.dealt = true;
+  const line = s.minigames[s.stops[s.stopIndex]?.minigameId ?? '']?.items.find((i) => i.role?.id === 'announcer');
+  if (line && !s.curveballUsed && armOn(s, ctx, sg.g, line)) s.curveballUsed = true;
+}
 
 function ordinaryItem(s: LastTrainState, ctx: ModeContext, pool: readonly MinigameItem[], mgId: string, level: Level): MinigameItem | undefined {
   const dealt = dealItem(s, pool, mgId, level, () => ctx.random());
@@ -1091,6 +1123,8 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
   },
 
   leave(s, phase, ctx) {
+    // The stand-in's Gallery closes with its stop's announcement.
+    if (phase === 'prompt' && s.standIn?.sg && s.gallery === s.standIn.sg.g) s.gallery = null;
     if (phase === 'answer') {
       sweep(s, phase, ctx, null, true);
       scoreStop(s, ctx);
@@ -1138,7 +1172,12 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
       return Math.min(45_000, Math.max(12_000, longest + RULES.overruleMs + 4_000));
     }
     // The host stand-in's one announcement runs to its end (once a game, only in a room of one or two).
-    if (phase === 'prompt' && s.standIn?.stop === s.stopIndex) return Math.max(DURATIONS.prompt!, RULES.standInAtMs + s.standIn.ms);
+    if (phase === 'prompt' && s.standIn?.stop === s.stopIndex) {
+      const sg = s.standIn.sg;
+      // With the experiments: the setup line first, and the curveball's time after the line.
+      if (sg) return standInEnd(sg) - (sg.until - Math.max(DURATIONS.prompt!, standInAt(s) + s.standIn.ms));
+      return Math.max(DURATIONS.prompt!, standInAt(s) + s.standIn.ms);
+    }
     return DURATIONS[phase] ?? 5_000;
   },
 
@@ -1158,7 +1197,19 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
       const here = ctx.connected().filter((p) => s.racers[p.id]);
       return here.length > 0 && here.every((p) => s.racers[p.id]!.aboard !== null);
     }
+    // The stand-in's announcement with its Gallery: over once the line is said and any curveball answered.
+    const sg = standInSg(s, phase);
+    if (sg) return standInDone(sg, ctx.now);
     return false;
+  },
+
+  wakeAt(s, phase, ctx) {
+    return standInWakeAt(standInSg(s, phase), ctx.now);
+  },
+
+  wake(s, phase, ctx) {
+    const sg = standInSg(s, phase);
+    if (sg) dealStandInCurveball(s, ctx, sg);
   },
 
   move(s, phase, playerId, raw, ctx): MoveResult {
@@ -1282,7 +1333,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
 
       case 'gallery': {
         if (typeof raw.pick !== 'string') return moveError('bad-move');
-        if (phase !== 'answer' && phase !== 'reveal') return moveError('wrong-phase');
+        if (phase !== 'answer' && phase !== 'reveal' && !standInSg(s, phase)) return moveError('wrong-phase');
         if (!s.gallery) return moveError('no-gallery');
         const points = pickGallery(s.gallery, playerId, raw.pick);
         if (points === null) return moveError('not-allowed');
@@ -1341,7 +1392,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     const isLast = s.stopIndex === s.stops.length - 1;
     const stopResolved = phase === 'reveal' || phase === 'penalty';
     const me = viewer.kind === 'player' ? viewer.playerId : null;
-    const galleryOpen = (phase === 'answer' || phase === 'reveal') && !!s.gallery;
+    const galleryOpen = (phase === 'answer' || phase === 'reveal' || !!standInSg(s, phase)) && !!s.gallery;
 
     const statusOf = (id: string): TravellerStatus => {
       if (phase === 'finale' || phase === 'score') return s.racers[id]?.aboard != null ? 'aboard' : 'racing';
@@ -1431,7 +1482,8 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         gallery: galleryOpen ? galleryTileFor(s.gallery, me, level) : null,
         // Not on the curveball player's phone until they've picked: the gist would hand them the answer.
         booth: phase === 'reveal' && s.booth && s.booth.playerId !== me && !(keyHeld(s.gallery) && s.gallery!.curveball!.playerId === me) ? gistFor(s.booth, level) : null,
-        standIn: standingIn(s, phase) ? gistFor(s.standIn, level) : null,
+        // Not on the curveball player's phone while its word is held back (experiment standInCurveball).
+        standIn: standingIn(s, phase) && !(standInHoldKey(s.standIn!.sg) && (!s.standIn!.sg!.dealt || s.gallery?.curveball?.playerId === me)) ? gistFor(s.standIn, level) : null,
       };
     }
 
@@ -1459,7 +1511,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         phase === 'reveal' && s.booth
           ? { playerId: s.booth.playerId!, name: nameOf(ctx, s.booth.playerId!), line: s.booth.line, lit: s.booth.lit, note: s.booth.note, atMs: RULES.roleReadAtMs, ms: s.booth.ms, holdKey: keyHeld(s.gallery) }
           : null,
-      standIn: standingIn(s, phase) ? { line: s.standIn!.line, lit: s.standIn!.lit, atMs: RULES.standInAtMs } : null,
+      standIn: standingIn(s, phase) ? { line: s.standIn!.line, lit: s.standIn!.lit, atMs: standInAt(s), ...(s.standIn!.sg ? { holdKey: standInHoldKey(s.standIn!.sg) } : {}) } : null,
       me: mine,
     };
   },

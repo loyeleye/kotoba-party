@@ -35,7 +35,8 @@ import { isKana, isUtterance, normalizeReading, soundKey, utteranceReading, type
 import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
-import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
+import { EXPERIMENTS } from '../experiments.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
@@ -180,9 +181,11 @@ export interface Replay extends Commentary {
 /** The host stand-in (1–2 players, nobody at N4): Nobiko-san's one model defence of the game. */
 export interface StandIn {
   round: number;
-  /** When she says it: this long after the line-up opens. */
+  /** When she says it: this long after the line-up opens (after her setup line, with experiment standInSetup). */
   atMs: number;
   c: Commentary;
+  /** Experiment standInCurveball: the Gallery on her line, with the once-a-game curveball once she has said it. */
+  sg?: StandInGallery | null;
 }
 
 export interface Round {
@@ -294,7 +297,7 @@ export interface NarabeteView {
   /** The Gallery's reactions to the N4 defence, in tap order (TV). */
   gallery: ReactionTile[];
   /** The host stand-in's model defence, in the line-up it opens: the TV shows it from `atMs` for `ms`. */
-  standIn: { line: JpText; lit: Commentary['lit']; note: string; atMs: number; ms: number } | null;
+  standIn: { line: JpText; lit: Commentary['lit']; note: string; atMs: number; ms: number; holdKey?: boolean } | null;
   story: { order: string[]; index: number; current: string | null } | null;
   me: {
     level: Level;
@@ -682,6 +685,11 @@ function standInFor(r: Round): Commentary | null {
   };
 }
 
+/** The stand-in's Gallery, in the line-up it opens (experiment standInCurveball). */
+function standInSg(s: NarabeteState, phase: Phase): StandInGallery | null {
+  return phase === 'reveal' && s.standIn?.round === s.round ? (s.standIn.sg ?? null) : null;
+}
+
 /** Kana and N5 players connected now, but the defender. */
 function lowOthers(hard: HardDefence, ctx: ModeContext): string[] {
   return ctx
@@ -810,8 +818,18 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         if (r && !s.standIn && hostStandsIn(ctx.connected().map((p) => p.level))) {
           const c = standInFor(r);
           if (c) {
-            s.standIn = { round: s.round, atMs: DURATIONS.standInAt, c };
-            ctx.cue({ host: 'nobiko', event: 'narabete_standin', slots: { line: c.line.text, line_kana: c.line.kana, line_en: c.line.en }, atMs: DURATIONS.standInAt });
+            // Experiment standInSetup: her short setup line where the defence used to start; it follows. Inside
+            // the line-up's time, so no time is added.
+            const atMs = DURATIONS.standInAt + (EXPERIMENTS.standInSetup ? STAND_IN_SETUP_MS : 0);
+            if (EXPERIMENTS.standInSetup) ctx.cue({ host: 'nobiko', event: 'narabete_standin_setup', atMs: DURATIONS.standInAt });
+            s.standIn = { round: s.round, atMs, c };
+            // Experiment standInCurveball: a Gallery tile for everyone while she says it; the curveball once she has.
+            // The line-up can't end before then (until: the line's end), but runs no longer than it would.
+            if (EXPERIMENTS.standInCurveball) {
+              const said = ctx.now + atMs + c.ms;
+              s.standIn.sg = openStandInGallery(ctx.connected(), !!s.curveball, s.round, said, said);
+            }
+            ctx.cue({ host: 'nobiko', event: 'narabete_standin', slots: { line: c.line.text, line_kana: c.line.kana, line_en: c.line.en }, atMs });
           }
         }
         break;
@@ -910,7 +928,10 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     const r = s.current;
     if (!here.length || !r) return false;
     if (phase === 'answer') return here.every((p) => !cardOfPlayer(r, p.id) || cardOfPlayer(r, p.id)!.said);
-    if (phase === 'reveal') return here.every((p) => !cardOfPlayer(r, p.id) || r.locks[p.id]);
+    if (phase === 'reveal') {
+      const sg = standInSg(s, phase);
+      return here.every((p) => !cardOfPlayer(r, p.id) || r.locks[p.id]) && (!sg || standInDone(sg, ctx.now));
+    }
     if (phase === 'encore') {
       // The replay runs its few seconds: nobody has anything to do.
       if (r.encore === 'replay') return !r.replay;
@@ -925,6 +946,16 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       return !c || !!st.done[id] || !here.some((p) => p.id === c.ownerId);
     }
     return false;
+  },
+
+  wakeAt(s, phase, ctx) {
+    return standInWakeAt(standInSg(s, phase), ctx.now);
+  },
+
+  wake(s, phase, ctx) {
+    // The stand-in's defence has been said: the once-a-game curveball on ので (experiment standInCurveball).
+    const sg = standInSg(s, phase);
+    if (sg && dealStandIn(sg, ctx.connected(), { word: DEFENCE_KEY, pool: DEFENCE_POOL, heard: s.standIn!.c.line.kana }, !!s.curveball, s.round, ctx.now)) s.curveball = true;
   },
 
   move(s, phase, playerId, raw, ctx) {
@@ -1029,10 +1060,13 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         return MOVE_OK;
       }
       case 'gallery': {
-        // A reaction to the N4 defence (or the curveball), from anyone but the defender, while it's on.
-        if (phase !== 'encore' || (r.encore !== 'hard' && r.encore !== 'replay') || !r.gallery) return moveError('wrong-phase');
+        // A reaction to the N4 defence (or the curveball), from anyone but the defender, while it's on; or to the
+        // stand-in's defence in its line-up (experiment standInCurveball).
+        const sg = standInSg(s, phase);
+        const g = sg ? sg.g : phase === 'encore' && (r.encore === 'hard' || r.encore === 'replay') ? r.gallery : null;
+        if (!g) return moveError('wrong-phase');
         if (typeof raw.pick !== 'string') return moveError('bad-move');
-        const pts = pickGallery(r.gallery, playerId, raw.pick);
+        const pts = pickGallery(g, playerId, raw.pick);
         if (pts === null) return moveError('bad-move');
         if (pts) ctx.award(playerId, pts);
         return MOVE_OK;
@@ -1181,8 +1215,8 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     }
 
     const replay = r && phase === 'encore' && r.encore === 'replay' ? (r.replay ?? null) : null;
-    const gallery = r && phase === 'encore' && (r.encore === 'hard' || r.encore === 'replay') ? (r.gallery ?? null) : null;
     const standIn = phase === 'reveal' && s.standIn && s.standIn.round === s.round ? s.standIn : null;
+    const gallery = r && phase === 'encore' && (r.encore === 'hard' || r.encore === 'replay') ? (r.gallery ?? null) : (standIn?.sg?.g ?? null);
 
     let mine: NarabeteView['me'] = null;
     if (me && r) {
@@ -1227,7 +1261,8 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
               }
             : null,
         gallery: galleryTileFor(gallery, me.id, me.level),
-        standIn: standIn ? gistFor(standIn.c, me.level) : null,
+        // The stand-in's gist waits while its curveball may still come to this phone (experiment standInCurveball).
+        standIn: standIn && !(standInHoldKey(standIn.sg) && (!standIn.sg!.dealt || standIn.sg!.g.curveball?.playerId === me.id)) ? gistFor(standIn.c, me.level) : null,
         performing: current && c && current === c.id && !s.story!.done[c.id] ? { text: c.said?.text ?? '' } : null,
         bonus: r.flip?.bonus[me.id] ?? 0,
       };
@@ -1251,7 +1286,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       defence,
       replay: replay ? { playerId: replay.playerId, line: replay.line, lit: replay.lit, note: replay.note, holdKey: keyHeld(gallery) } : null,
       gallery: gallery ? galleryBubbles(gallery) : [],
-      standIn: standIn ? { line: standIn.c.line, lit: standIn.c.lit, note: standIn.c.note, atMs: standIn.atMs, ms: standIn.c.ms } : null,
+      standIn: standIn ? { line: standIn.c.line, lit: standIn.c.lit, note: standIn.c.note, atMs: standIn.atMs, ms: standIn.c.ms, ...(standIn.sg ? { holdKey: standInHoldKey(standIn.sg) } : {}) } : null,
       story,
       me: mine,
     };

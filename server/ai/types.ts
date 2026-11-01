@@ -31,6 +31,7 @@ export const HOST_EVENTS = [
   'omiai_nakodo_read',
   'omiai_nakodo_cheer',
   'omiai_standin',
+  'omiai_standin_setup',
   // Narabete!
   'narabete_intro',
   'narabete_deal',
@@ -41,6 +42,7 @@ export const HOST_EVENTS = [
   'narabete_replay',
   'narabete_hooray',
   'narabete_standin',
+  'narabete_standin_setup',
   'narabete_perfect',
   'narabete_knot',
   'narabete_story',
@@ -77,6 +79,7 @@ export const HOST_EVENTS = [
   'bento_stars',
   'bento_replay',
   'bento_standin',
+  'bento_standin_setup',
   'bento_manager_win',
   'bento_omotenashi_win',
   'bento_vs_intro',
@@ -119,6 +122,7 @@ export const HOST_EVENTS = [
   'train_role_read',
   'train_announcer_react',
   'train_stand_in',
+  'train_stand_in_setup',
   // Murder at the Onsen
   'onsen_case',
   'onsen_turn',
@@ -128,6 +132,7 @@ export const HOST_EVENTS = [
   'onsen_report',
   'onsen_deputy_cheer',
   'onsen_standin',
+  'onsen_standin_setup',
   // Who's the Tourist?
   'tourist_intro',
   'tourist_deal',
