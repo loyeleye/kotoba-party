@@ -139,7 +139,7 @@ function tileBuilder(ctx: Ctx, scope: string, suspectId: string): HTMLElement {
       ),
     ),
   );
-  return h('div', { class: 'om-p-builder' }, preview, h('div', { class: 'om-p-row' }, sendBtn, undo), grid, h('p', { class: 'hint' }, 'Tip: build it, then hold the green button and say it for the 🎤 bonus.'));
+  return h('div', { class: 'om-p-builder' }, preview, h('div', { class: 'om-p-row' }, sendBtn, undo), grid, h('p', { class: 'hint' }, 'Tip: build it, then say it with the green button for the 🎤 bonus.'));
 }
 
 function tilesPanel(ctx: Ctx, scope: string, suspectId: string): HTMLElement {

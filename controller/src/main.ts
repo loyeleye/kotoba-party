@@ -12,7 +12,8 @@ import { playRoulette } from '../../shared/src/roulette.js';
 import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type PlayerView, type RoomView } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService, speechReady } from './components/mic.js';
-import { isTalking, onTalkEnd, setQuiet, setSpeakLevel, speakBox } from './components/speak.js';
+import { getTalkMode, isTalking, onTalkEnd, setQuiet, setSpeakLevel, setTalkMode, speakBox } from './components/speak.js';
+import { openMicSheet, refreshMicSheet, type MicSheetState } from './micSheet.js';
 import { quip, setQuipHost } from './components/ui.js';
 import { setSoundOff } from './components/voice.js';
 import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
@@ -314,7 +315,7 @@ function render(view: RoomView): void {
   const hold = view.game ? (mode!.hold?.(view, view.game, me.id) ?? null) : null;
   const modeKey = view.game ? mode!.key(view, view.game, me.id) : '';
   if (!view.game) endAsk = false;
-  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, me.soundOff, hold, endAsk].join('|') : [
+  const key = hold !== null ? ['hold', view.phase, isVip, me.level, me.mic, me.soundOff, getTalkMode(), hold, endAsk].join('|') : [
     view.phase,
     view.phaseSeq,
     isVip,
@@ -322,6 +323,7 @@ function render(view: RoomView): void {
     me.score,
     me.mic,
     me.soundOff,
+    getTalkMode(),
     view.phase === 'lobby' ? view.players.map((p) => `${p.name}:${p.level}:${p.mic === 'quiet' ? 'q' : ''}`).join() + view.modes.length + view.packs.length : '',
     modeKey,
     endAsk,
@@ -332,6 +334,7 @@ function render(view: RoomView): void {
   setSpeakLevel(me.level);
   setQuiet(me.mic === 'quiet');
   setSoundOff(me.soundOff);
+  refreshMicSheet(micSheetState(me));
 
   // In a game (and its recap) the phone wears the mode's colour and host.
   const info = view.phase !== 'lobby' && view.mode ? MODES[view.mode].info : null;
@@ -452,27 +455,44 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
   return h('div', { class: 'screen' }, parts);
 }
 
+/** Turns quiet mode on, or back off (the mic is checked again on the next lobby). */
+const setMicQuiet = (quiet: boolean): void => void command({ type: 'micCheck', utterance: quiet ? { via: 'tap', text: '' } : null });
+
+function micSheetState(me: PlayerView): MicSheetState {
+  return {
+    quiet: me.mic === 'quiet',
+    setQuiet: setMicQuiet,
+    talkModeChanged: () => {
+      screenKey = '';
+      redraw();
+    },
+  };
+}
+
 /**
- * The header's mic switch: turns quiet mode on or off at any time, in the lobby or mid-game. It sits at
- * the end of the header row, so it never covers a game's screen. Always shown beside the sound switch:
- * with no speech server tonight it still marks the player as mic off, for the games with speaking roles.
+ * The header's mic button: opens the Mic sheet (micSheet.ts) to turn quiet mode on or off and to pick hold or
+ * tap to talk, any time, in the lobby or mid-game. It sits at the end of the header row, so it never covers
+ * a game's screen. Always shown beside the sound switch: with no speech server tonight it still marks the
+ * player as mic off, for the games with speaking roles.
  */
 function micSwitch(me: PlayerView): HTMLElement {
   const quiet = me.mic === 'quiet';
-  const label = quiet ? 'Quiet mode is on: tap to use your mic' : 'Mic is on: tap for quiet mode';
-  return h(
+  const tap = getTalkMode() === 'tap';
+  const label = `Mic settings: ${quiet ? 'quiet mode' : `mic on, ${tap ? 'tap' : 'hold'} to talk`}`;
+  const b = h(
     'button',
     {
       type: 'button',
-      class: `mic-switch${quiet ? ' off' : ''}`,
+      class: `mic-switch${quiet ? ' off' : ''}${tap && !quiet ? ' tap' : ''}`,
       'aria-label': label,
-      'aria-pressed': String(!quiet),
+      'aria-haspopup': 'dialog',
       title: label,
-      onclick: () => void command({ type: 'micCheck', utterance: quiet ? null : { via: 'tap', text: '' } }),
+      onclick: () => openMicSheet(b, micSheetState(me)),
     },
-    // Quiet: the same mic, struck through (style.css .mic-switch.off::after).
+    // Quiet: the same mic, struck through (style.css .mic-switch.off::after). Tap to talk: a small dot badge.
     '🎤',
   );
+  return b;
 }
 
 /**
@@ -510,13 +530,14 @@ function micCheck(me: PlayerView): HTMLElement {
       'div',
       { class: 'mic-quiet' },
       h('p', { class: 'mic' }, '⌨️ Quiet mode: you’ll tap and type.'),
-      h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'micCheck', utterance: null }) }, '🎤 Use my mic after all'),
+      h('button', { type: 'button', class: 'linkish', onclick: () => setMicQuiet(false) }, '🎤 Use my mic after all'),
     );
   }
+  const tap = getTalkMode() === 'tap';
   return h(
     'div',
     { class: 'mic-check' },
-    h('p', { class: 'hint' }, 'Mic check: hold the button and say'),
+    h('p', { class: 'hint' }, `Mic check: ${tap ? 'tap the button, then' : 'hold the button and'} say`),
     h('p', { class: 'big', lang: 'ja' }, 'こんにちは！'),
     me.level === 'kana' ? h('p', { class: 'hint' }, '(konnichiwa: “hello”)') : null,
     speakBox({
@@ -526,7 +547,21 @@ function micCheck(me: PlayerView): HTMLElement {
       speechOnly: true,
       onSend: (utterance) => void command({ type: 'micCheck', utterance }),
     }),
-    h('button', { type: 'button', class: 'linkish', onclick: () => void command({ type: 'micCheck', utterance: { via: 'tap', text: '' } }) }, 'I can’t talk right now'),
+    // Where holding versus tapping is first felt, so the choice is offered here too (also under the header's 🎤).
+    h(
+      'button',
+      {
+        type: 'button',
+        class: 'linkish',
+        onclick: () => {
+          setTalkMode(tap ? 'hold' : 'tap');
+          screenKey = '';
+          redraw();
+        },
+      },
+      tap ? 'Rather hold the button while you talk?' : 'Rather tap to start and stop?',
+    ),
+    h('button', { type: 'button', class: 'linkish', onclick: () => setMicQuiet(true) }, 'I can’t talk right now'),
   );
 }
 
