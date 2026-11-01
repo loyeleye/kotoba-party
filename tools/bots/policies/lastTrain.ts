@@ -44,6 +44,12 @@ export function lastTrainPolicy(opts: LastTrainPolicyOptions): ModePolicy {
       const me = game.me;
       const out: { key: string; move: unknown; delayMs?: number }[] = [];
 
+      // An N4 bot takes most hard roles it is offered.
+      if (me.offer) {
+        const accept = roll(`${seed}:${playerId}:role:${me.offer.key}`) < 0.7;
+        out.push({ key: `role:${me.offer.key}`, move: { kind: 'role', key: me.offer.key, accept }, delayMs: think(me.offer.key) });
+      }
+
       const task = me.task;
       if (task) {
         const item = items.get(task.itemId);

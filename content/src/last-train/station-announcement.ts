@@ -1,7 +1,9 @@
 // Last Train · Station Announcement (Phase 4). Hear it, say the stop or platform.
+// N4 hard role: the announcer makes the announcement instead (speaking items, shown, not played).
 // Item ids are stable: never rename one once it ships.
 
 import type { LastTrainMinigame } from '../types.js';
+import { ANNOUNCER } from './roles.js';
 
 export const stationAnnouncement: LastTrainMinigame = {
   id: 'station-announcement',
@@ -162,6 +164,105 @@ export const stationAnnouncement: LastTrainMinigame = {
       model: { text: '東京です。', kana: 'とうきょうです。', en: 'It\'s Tokyo.', furigana: [['東京', 'とうきょう'], ['です。', '']] },
       hint: 'しゅうてん means "last stop"; the name comes after it. Both vowels are long.',
       timeLimit: 10,
+    },
+    // ---- N4 hard role: the announcer. Station keigo (まいります, お＿ください); the line is shown, not played. ----
+    // N3 (step 6): ＿で ございます (つぎは しゅうてん、とうきょうで ございます).
+    {
+      id: 'station-announcement.16-announce-sanbansen',
+      level: 'n4',
+      role: ANNOUNCER,
+      frames: ['keigo-verb'],
+      prompt: { text: 'あなたは駅員です。三番線に電車が来ます。アナウンスしてください。', kana: 'あなたはえきいんです。さんばんせんにでんしゃがきます。アナウンスしてください。', en: 'You\'re the station staff. A train is coming in at platform 3. Make the announcement.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。', ''], ['三番線', 'さんばんせん'], ['に', ''], ['電車', 'でんしゃ'], ['が', ''], ['来', 'き'], ['ます。アナウンスしてください。', '']] },
+      visual: '📣 Platform 3: a train is due in a moment.',
+      accepted: ['まもなくさんばんせんにでんしゃがまいります', 'さんばんせんにでんしゃがまいります', 'まもなくさんばんせんにでんしゃがまいりますきいろいせんのうちがわまでおさがりください'],
+      model: { text: 'まもなく、三番線に電車がまいります。', kana: 'まもなく、さんばんせんにでんしゃがまいります。', en: 'A train will soon arrive at platform 3.', furigana: [['まもなく、', ''], ['三番線', 'さんばんせん'], ['に', ''], ['電車', 'でんしゃ'], ['がまいります。', '']] },
+      hint: 'Start with まもなく (soon), then the platform with に, then でんしゃが and まいります, the humble "comes".',
+      timeLimit: 15,
+    },
+    {
+      id: 'station-announcement.17-announce-saishuu',
+      level: 'n4',
+      role: ANNOUNCER,
+      frames: ['keigo-verb'],
+      prompt: { text: 'あなたは駅員です。五番線に最終電車が来ます。アナウンスしてください。', kana: 'あなたはえきいんです。ごばんせんにさいしゅうでんしゃがきます。アナウンスしてください。', en: 'You\'re the station staff. The last train is coming in at platform 5. Make the announcement.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。', ''], ['五番線', 'ごばんせん'], ['に', ''], ['最終電車', 'さいしゅうでんしゃ'], ['が', ''], ['来', 'き'], ['ます。アナウンスしてください。', '']] },
+      visual: '📣 Platform 5: the last train is due in a moment.',
+      accepted: ['まもなくごばんせんにさいしゅうでんしゃがまいります', 'ごばんせんにさいしゅうでんしゃがまいります', 'まもなくごばんせんにでんしゃがまいります', 'ごばんせんにでんしゃがまいります'],
+      model: { text: 'まもなく、五番線に最終電車がまいります。', kana: 'まもなく、ごばんせんにさいしゅうでんしゃがまいります。', en: 'The last train will soon arrive at platform 5.', furigana: [['まもなく、', ''], ['五番線', 'ごばんせん'], ['に', ''], ['最終電車', 'さいしゅうでんしゃ'], ['がまいります。', '']] },
+      hint: 'Same shape as every arrival: まもなく, the platform with に, the train with が, then まいります.',
+      timeLimit: 15,
+    },
+    {
+      id: 'station-announcement.18-announce-kiiroi-sen',
+      level: 'n4',
+      role: ANNOUNCER,
+      frames: ['o-kudasai'],
+      prompt: { text: 'あなたは駅員です。お客さんがホームの端にいます。あぶないです！', kana: 'あなたはえきいんです。おきゃくさんがホームのはしにいます。あぶないです！', en: 'You\'re the station staff. Passengers are standing at the platform edge. Dangerous!', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。お', ''], ['客', 'きゃく'], ['さんがホームの', ''], ['端', 'はし'], ['にいます。あぶないです！', '']] },
+      visual: '📣 Ask them to step back behind the yellow line.',
+      accepted: [
+        'きいろいせんのうちがわまでおさがりください',
+        'きいろいせんのうちがわにおさがりください',
+        'きいろいせんのうちがわへおさがりください',
+        'あぶないですからきいろいせんのうちがわまでおさがりください',
+        'あぶないですのできいろいせんのうちがわまでおさがりください',
+      ],
+      model: { text: '黄色い線の内側までお下がりください。', kana: 'きいろいせんのうちがわまでおさがりください。', en: 'Please stand back behind the yellow line.', furigana: [['黄色', 'きいろ'], ['い', ''], ['線', 'せん'], ['の', ''], ['内側', 'うちがわ'], ['までお', ''], ['下', 'さ'], ['がりください。', '']] },
+      hint: 'The yellow line is きいろい せん, behind it is の うちがわ まで. Then ask politely: お + さがり + ください.',
+      timeLimit: 15,
+    },
+    {
+      id: 'station-announcement.19-announce-doa',
+      level: 'n4',
+      role: ANNOUNCER,
+      frames: ['o-kudasai'],
+      prompt: { text: 'あなたは駅員です。電車のドアが閉まります。お客さんに言ってください。', kana: 'あなたはえきいんです。でんしゃのドアがしまります。おきゃくさんにいってください。', en: 'You\'re the station staff. The train doors are closing. Warn the passengers.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。', ''], ['電車', 'でんしゃ'], ['のドアが', ''], ['閉', 'し'], ['まります。お', ''], ['客', 'きゃく'], ['さんに', ''], ['言', 'い'], ['ってください。', '']] },
+      visual: '📣 Doors closing: tell them to take care.',
+      accepted: ['ドアがしまりますごちゅういください', 'ドアがしまりますのでごちゅういください', 'ドアがしまりますおきをつけください', 'ドアがしまりますのでおきをつけください', 'ごちゅういくださいドアがしまります'],
+      model: { text: 'ドアが閉まります。ご注意ください。', kana: 'ドアがしまります。ごちゅういください。', en: 'The doors are closing. Please take care.', furigana: [['ドアが', ''], ['閉', 'し'], ['まります。ご', ''], ['注意', 'ちゅうい'], ['ください。', '']] },
+      hint: 'Say what is happening (ドアが しまります), then the polite warning: ご + ちゅうい + ください.',
+      timeLimit: 15,
+    },
+    {
+      id: 'station-announcement.20-announce-zenbu',
+      level: 'n4',
+      role: ANNOUNCER,
+      frames: ['keigo-verb', 'o-kudasai'],
+      prompt: { text: 'あなたは駅員です。二番線に電車が来ます。ホームの端にお客さんがいます。', kana: 'あなたはえきいんです。にばんせんにでんしゃがきます。ホームのはしにおきゃくさんがいます。', en: 'You\'re the station staff. A train is coming in at platform 2, and passengers are at the edge. Make the whole announcement.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。', ''], ['二番線', 'にばんせん'], ['に', ''], ['電車', 'でんしゃ'], ['が', ''], ['来', 'き'], ['ます。ホームの', ''], ['端', 'はし'], ['にお', ''], ['客', 'きゃく'], ['さんがいます。', '']] },
+      visual: '📣 Platform 2: the train is due, and people are too close to the edge. Both sentences!',
+      accepted: [
+        'まもなくにばんせんにでんしゃがまいりますきいろいせんのうちがわまでおさがりください',
+        'にばんせんにでんしゃがまいりますきいろいせんのうちがわまでおさがりください',
+        'まもなくにばんせんにでんしゃがまいりますきいろいせんのうちがわにおさがりください',
+        'まもなくにばんせんにでんしゃがまいりますあぶないですからきいろいせんのうちがわまでおさがりください',
+      ],
+      model: {
+        text: 'まもなく、二番線に電車がまいります。黄色い線の内側までお下がりください。',
+        kana: 'まもなく、にばんせんにでんしゃがまいります。きいろいせんのうちがわまでおさがりください。',
+        en: 'A train will soon arrive at platform 2. Please stand back behind the yellow line.',
+        furigana: [['まもなく、', ''], ['二番線', 'にばんせん'], ['に', ''], ['電車', 'でんしゃ'], ['がまいります。', ''], ['黄色', 'きいろ'], ['い', ''], ['線', 'せん'], ['の', ''], ['内側', 'うちがわ'], ['までお', ''], ['下', 'さ'], ['がりください。', '']],
+      },
+      hint: 'Two sentences: the arrival (まもなく … まいります), then the yellow line (… お さがり ください).',
+      timeLimit: 20,
+    },
+    {
+      id: 'station-announcement.21-announce-okurete',
+      level: 'n4',
+      role: ANNOUNCER,
+      frames: ['keigo-verb'],
+      prompt: { text: 'あなたは駅員です。電車が十分おくれています。お客さんにあやまってください。', kana: 'あなたはえきいんです。でんしゃがじゅっぷんおくれています。おきゃくさんにあやまってください。', en: 'You\'re the station staff. The train is ten minutes late. Apologise to the passengers.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。', ''], ['電車', 'でんしゃ'], ['が', ''], ['十分', 'じゅっぷん'], ['おくれています。お', ''], ['客', 'きゃく'], ['さんにあやまってください。', '']] },
+      visual: '📣 The board says: 10 minutes late.',
+      accepted: [
+        'でんしゃがおくれてもうしわけございません',
+        'でんしゃがじゅっぷんおくれてもうしわけございません',
+        'でんしゃがじっぷんおくれてもうしわけございません',
+        'でんしゃがおくれていますもうしわけございません',
+        'でんしゃがじゅっぷんおくれていますもうしわけございません',
+        'もうしわけございませんでんしゃがおくれています',
+        'もうしわけございませんでんしゃがじゅっぷんおくれています',
+        'でんしゃがおくれてもうしわけありません',
+      ],
+      model: { text: '電車がおくれて、もうしわけございません。', kana: 'でんしゃがおくれて、もうしわけございません。', en: 'We\'re very sorry the train is late.', furigana: [['電車', 'でんしゃ'], ['がおくれて、もうしわけございません。', '']] },
+      hint: 'Say what happened in the て form (でんしゃが おくれて), then the station\'s deepest sorry: もうしわけ ございません.',
+      timeLimit: 15,
     },
   ],
 };

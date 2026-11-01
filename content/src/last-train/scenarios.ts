@@ -163,6 +163,13 @@ export const lastTrainScenarios: LastTrainScenario[] = [
         name: { text: '神社前', kana: 'じんじゃまえ', en: 'Jinja-mae', furigana: [['神社前', 'じんじゃまえ']] },
         minigameId: 'counter-chaos',
         announcement: { text: '次は神社前。神社で、ジンジャーエール！', kana: 'つぎはじんじゃまえ。じんじゃで、ジンジャーエール！', en: 'Next: Jinja-mae. Shrine (jinja) time is ginger ale time!', furigana: [['次', 'つぎ'], ['は', ''], ['神社前', 'じんじゃまえ'], ['。', ''], ['神社', 'じんじゃ'], ['で、ジンジャーエール！', '']] },
+        // A room with an N4 player stops at the lost property office instead (hard roles).
+        withN4: {
+          id: 'obake-line.wasureno',
+          name: { text: '忘れ野', kana: 'わすれの', en: 'Wasureno', furigana: [['忘', 'わす'], ['れ', ''], ['野', 'の']] },
+          minigameId: 'lost-and-found',
+          announcement: { text: '次は忘れ野。何か忘れた……何を忘れたか、忘れました！', kana: 'つぎはわすれの。なにかわすれた……なにをわすれたか、わすれました！', en: 'Next: Wasureno. I forgot something... and I forgot what!', furigana: [['次', 'つぎ'], ['は', ''], ['忘', 'わす'], ['れ', ''], ['野', 'の'], ['。', ''], ['何', 'なに'], ['か', ''], ['忘', 'わす'], ['れた……', ''], ['何', 'なに'], ['を', ''], ['忘', 'わす'], ['れたか、', ''], ['忘', 'わす'], ['れました！', '']] },
+        },
       },
       {
         id: 'obake-line.kitaguchi',
@@ -307,6 +314,13 @@ export const lastTrainScenarios: LastTrainScenario[] = [
         name: { text: '大学前', kana: 'だいがくまえ', en: 'Daigaku-mae', furigana: [['大学前', 'だいがくまえ']] },
         minigameId: 'particle-panic',
         announcement: { text: '次は大学前。助詞が、じょじょに消えます……', kana: 'つぎはだいがくまえ。じょしが、じょじょにきえます……', en: 'Next: Daigaku-mae. The particles (joshi) are slowly (jojo ni) vanishing...', furigana: [['次', 'つぎ'], ['は', ''], ['大学前', 'だいがくまえ'], ['。', ''], ['助詞', 'じょし'], ['が、じょじょに', ''], ['消', 'き'], ['えます……', '']] },
+        // A room with an N4 player stops at the lost property office instead (hard roles).
+        withN4: {
+          id: 'hoshimidai-line.otonashi',
+          name: { text: '音無', kana: 'おとなし', en: 'Otonashi', furigana: [['音無', 'おとなし']] },
+          minigameId: 'lost-and-found',
+          announcement: { text: '次は音無。落とし物が、おとなしく待っています。', kana: 'つぎはおとなし。おとしものが、おとなしくまっています。', en: 'Next: Otonashi. Lost property (otoshimono) waits quietly (otonashiku) for you.', furigana: [['次', 'つぎ'], ['は', ''], ['音無', 'おとなし'], ['。', ''], ['落', 'お'], ['とし', ''], ['物', 'もの'], ['が、おとなしく', ''], ['待', 'ま'], ['っています。', '']] },
+        },
       },
       {
         id: 'hoshimidai-line.yatai-doori',
