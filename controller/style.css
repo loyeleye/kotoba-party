@@ -1,7 +1,7 @@
-/* Pixelify's 5 reads as S or 8 from the couch, so the 5 alone comes from a redrawn copy
-   (tools/fonts/build-kotoba-five.py); unicode-range keeps every other character on Pixelify. */
-@font-face { font-family: 'Kotoba Five'; src: url('/stage/assets/fonts/kotoba-five-500.woff2') format('woff2'); font-weight: 100 600; font-display: block; unicode-range: U+0035; }
-@font-face { font-family: 'Kotoba Five'; src: url('/stage/assets/fonts/kotoba-five-700.woff2') format('woff2'); font-weight: 700 900; font-display: block; unicode-range: U+0035; }
+/* From the couch Pixelify's 5 reads as S or 8, its C as O and its B as G, so those come from a redrawn copy
+   (tools/fonts/build-kotoba-pixel.py); unicode-range keeps every other character on Pixelify. */
+@font-face { font-family: 'Kotoba Pixel'; src: url('/stage/assets/fonts/kotoba-pixel-500.woff2') format('woff2'); font-weight: 100 600; font-display: block; unicode-range: U+0035, U+0042-0043; }
+@font-face { font-family: 'Kotoba Pixel'; src: url('/stage/assets/fonts/kotoba-pixel-700.woff2') format('woff2'); font-weight: 700 900; font-display: block; unicode-range: U+0035, U+0042-0043; }
 :root {
   /* "Matsuri Night", the same tokens as the stage (see stage/style.css for the ratios). */
   --bg: #1a1440;
@@ -26,7 +26,7 @@
   --seat-5: #bfe85e; --seat-6: #f98bcd; --seat-7: #f0c294; --seat-8: #a3ffd1;
   /* The current mode's colour (main.ts sets body[data-mode]). */
   --mode: var(--accent);
-  --font-pixel: 'Kotoba Five', 'Pixelify Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --font-pixel: 'Kotoba Pixel', 'Pixelify Sans', 'Noto Sans JP', system-ui, sans-serif;
   /* The room code: a blockier pixel face whose G, Z, S and B don't blur into 6, 2, 5 and 8. */
   --font-code: 'Press Start 2P', 'Noto Sans', system-ui, monospace;
   /* Noto Sans first for Latin: Noto Sans JP lacks some macron vowels (ō), so romaji mixed fonts. */
@@ -66,6 +66,8 @@ rt { font-size: 0.5em; color: var(--muted); }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); min-height: 100%; }
 body { padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); font-size: 18px; }
+/* Pixelify's fi ligature is broken ("Case file" showed as "Case Ale"), so no common ligatures anywhere. */
+body { font-variant-ligatures: no-common-ligatures; }
 main { max-width: 480px; margin: 0 auto; }
 h1 { color: var(--accent); font-family: var(--font-pixel); font-size: 40px; margin: 24px 0; text-align: center; text-shadow: 0 3px 0 var(--outline); }
 
