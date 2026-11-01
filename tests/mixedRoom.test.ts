@@ -45,6 +45,13 @@ describe('curveball distractors', () => {
   });
 });
 
+describe('curveball with a pool of seven', () => {
+  it('still deals two different distractors', () => {
+    const pool = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'ので'];
+    for (let seed = 0; seed < 14; seed++) expect(openGallery(['b'], ['b'], { word: 'ので', pool }, false, seed).curveball?.options).toHaveLength(3);
+  });
+});
+
 describe('armCurveball', () => {
   it('deals once the line lands, to a Kana or N5 player who has not reacted', () => {
     const g = openGallery(['a', 'b', 'c'], ['b', 'c'], null, false, 0);

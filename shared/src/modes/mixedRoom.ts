@@ -72,8 +72,10 @@ function distractors(word: string, pool: readonly string[], seed: number, heard 
   const near = other.filter((w) => Math.abs(flat(w).length - k.length) <= 2);
   const from = near.length >= 2 ? near : other;
   const out: string[] = [];
-  for (let i = 0; out.length < 2 && i < from.length; i++) out.push(from[(seed + i * 7) % from.length]!);
-  return [...new Set(out)];
+  // Start at a seed-picked word and walk on, so two different words always come out when there are two.
+  const start = Math.abs(seed * 7) % Math.max(1, from.length);
+  for (let i = 0; out.length < 2 && i < from.length; i++) out.push(from[(start + i) % from.length]!);
+  return out;
 }
 
 /** Common N4 key words to draw curveball distractors from when a game has none of its own. */
