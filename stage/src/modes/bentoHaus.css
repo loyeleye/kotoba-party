@@ -243,3 +243,19 @@ img.bh-piece { width: 48px; height: 48px; }
 @media (prefers-reduced-motion: reduce) {
   .bh-wakeari, .bh-vs-result .bh-result-big, .bh-vs-jar, .bh-vs-head, .bh-vs-steal, .bh-vs-box.won, .bh-meter-bar i, .bh-vs-boxhead .bh-tips { animation: none; transition: none; }
 }
+
+/* N4 hard roles: the manager's desk under the counter, an おもてなし guest's tag and the staff's last line. */
+.bh-manager { margin: 0; font-size: 26px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.bh-guest { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 2px 12px; border-radius: 999px; background: #f7c6da; color: var(--bh-ink); font-weight: 900; font-size: 22px; white-space: nowrap; }
+.bh-staff { margin: 0; font-size: 22px; font-weight: 800; color: var(--bh-gold); overflow-wrap: anywhere; }
+.bh-desks { display: grid; }
+.bh-desk { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px 16px; padding: 10px 16px; border-radius: 18px; border: 3px dashed var(--bh-gold); animation: bh-arrive 0.3s ease both; }
+.bh-desk .bh-yokai { width: 72px; height: 72px; }
+.bh-desk .bh-bubble { font-size: 26px; }
+.bh-desk-staff { grid-column: 1 / -1; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 22px; }
+.bh-desk-tag { font-weight: 900; }
+.bh-desk.resolved { border-style: solid; border-color: var(--good); }
+.bh-desk.missed { opacity: 0.6; }
+.bh-hard-result { margin: 0; display: flex; gap: 32px; font-size: 32px; font-weight: 900; }
+.bh-hard-result small { font-size: 22px; color: var(--muted); font-weight: 400; }
+.bh-calm .bh-desk { animation: none; }
