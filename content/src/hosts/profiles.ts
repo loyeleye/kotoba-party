@@ -44,7 +44,7 @@ export const hostProfiles: HostProfile[] = [
     name: { text: 'フデ', kana: 'フデ', en: 'Fude' },
     role:
       'A living calligraphy brush (tsukumogami) and the battle caller of the Kana Yōkai Raid. Calls every round like an excitable sports announcer.',
-    segments: ['Kana Yōkai Raid', 'Kotoba Concentration'],
+    segments: ['Kana Yōkai Raid', 'Kotoba Concentration', 'Yōkai Court'],
     voice:
       'High, fast, sporty voice with big energy and crisp consonants; shouts are short so the room can shout back. ' +
       'Sound effects "シュッ！" (swish) and "ズバッ！" (slash) are sharp and percussive. ' +

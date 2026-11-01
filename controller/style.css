@@ -53,6 +53,7 @@ body[data-mode='hajimemashite'] { --mode: #7fdc8c; }
 body[data-mode='bento-haus'], body[data-mode='bento-haus-vs'] { --mode: #ff9f6b; }
 body[data-mode='happyokai'] { --mode: #ffd27a; }
 body[data-mode='late-again'] { --mode: #ffb000; }
+body[data-mode='yokai-court'] { --mode: #e8553d; }
 body[data-mode] { background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--mode) 22%, var(--bg)), var(--bg) 70%) fixed; }
 
 /* Japanese: break between phrases, never inside a word (see stage/style.css). */
@@ -293,7 +294,7 @@ span.jpv .jpv-written { font-size: 11px; }
 
 /* Washi cards: inside them the text tokens flip to dark ink, so muted glosses, furigana and
    romaji stay readable (paper-muted 7.7:1, romaji amber 6.9:1). */
-.paper, .la-gist, .la-tile, .cc-cue, .cc-cuecard, .cc-m-up, .cc-up, .om-bubble, .om-p-answer, .om-notebook, .om-p-notebook, .omi-bubble, .omi-invite, .omi-natural, .omi-q, .omi-target, .pb-big-phrase, .pb-line, .tou-line, .tou-reveal, .tou-said.q, .host-bubble, .gh-secret, .gh-mission, .gh-gist, .gh-tile, .gh-card {
+.paper, .la-gist, .la-tile, .cc-cue, .cc-cuecard, .cc-m-up, .cc-up, .om-bubble, .om-p-answer, .om-notebook, .om-p-notebook, .omi-bubble, .omi-invite, .omi-natural, .omi-q, .omi-target, .pb-big-phrase, .pb-line, .tou-line, .tou-reveal, .tou-said.q, .host-bubble, .gh-secret, .gh-mission, .gh-gist, .gh-tile, .gh-card, .yc-case, .yc-testimony, .yc-question, .yc-mission, .yc-tile, .yc-card, .yc-arg {
   --ink: var(--paper-ink); --muted: var(--paper-muted); --romaji: #7a4a00;
 }
 

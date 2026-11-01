@@ -53,6 +53,11 @@ learning-science reviews). Four lines of can-do goals, worked back from the N5, 
   game has its own N3 script (`n4Up` in shared/src/level.ts), and N3 joins the level picker once the N3 decks
   are in (`N3_IN_PICKER` in shared/src/protocol.ts).
 
+Yōkai Court (docs/modes/yokai-court.md, step 6) plays on 4.2, 4.6 and 4.14: its N4 lawyers say ＿なければ
+なりません and ＿なくても いいです (with a new verb each case), quote the witness with ＿と いって いました, and
+its N3 lines use に よると and ＿そうです. On the Limited Express it plays on 3.1 (に よると, optional there),
+3.7 (＿わけでは ありません) and 3.10 (＿に ちがいありません). No court line uses the passive, so it isn't on 4.13.
+
 The N4 frames the plan's goals first left out (みたい／ようです, polite ＿んです, the causative, ＿て ほしい,
 ＿ば よかった, ＿たり ＿たり; Ladi, Nov 1) are optional frames, never required ones. The causative comes in two
 frames: a statement (こどもに たべさせました: made or let someone do it) and the "let me" request

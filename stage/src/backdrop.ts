@@ -42,6 +42,8 @@ const SETS: Partial<Record<ModeId, string>> = {
   oogiri: 'comedy-stage',
   'phrase-bingo': 'comedy-stage',
   omiai: 'tea-room',
+  // Yōkai Court: the tea room stands in for a courtroom until scenes/yokai-court.png is drawn.
+  'yokai-court': 'tea-room',
 };
 for (const name of ['studio', ...new Set(Object.values(SETS)), 'page-a', 'page-b', 'page-c', 'train-carriage', 'hotline-bulb-off']) {
   const img = new Image();
