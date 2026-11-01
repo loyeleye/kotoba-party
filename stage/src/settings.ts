@@ -7,7 +7,7 @@
 // from before the game kept. The main stage can also close the room, behind a second, explicit confirm.
 
 import { audienceContentList } from '../../shared/src/audience.js';
-import { h, mount } from '../../shared/src/dom.js';
+import { h, mount, ruby } from '../../shared/src/dom.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import { invite, inviteLinks } from '../../shared/src/share.js';
 import { SURPRISE, type Audience, type ModeId, type RoomView } from '../../shared/src/protocol.js';
@@ -39,6 +39,15 @@ let confirming = false;
 let ending = false;
 /** Cheeky has been pressed and the warning is showing. */
 let cheekyAsk = false;
+/** Make VIP has been pressed: the player it would go to, while it asks to be sure. */
+let vipAsk: string | null = null;
+/** Who was VIP when the panel last drew, so a hand-over can flash. */
+let lastVip: string | null = null;
+
+/** A section heading: English first, then a short Japanese label with its reading for learners. */
+function heading(en: string, jp?: string, kana?: string): HTMLElement {
+  return h('h3', {}, en, jp ? ruby({ text: jp, kana }, { class: 'jp-k' }) : null);
+}
 
 /** Puts the settings button on the stage; the panel opens over the canvas. */
 export function mountSettings(parent: HTMLElement, options: { watch: boolean; send: Send; site: () => string }): void {
@@ -50,41 +59,41 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
   panel = h(
     'div',
     { class: 'st-panel', role: 'dialog', 'aria-label': 'Settings', hidden: true },
-    h('div', { class: 'st-head' }, h('h2', {}, 'Settings'), close),
+    h('div', { class: 'st-head' }, h('h2', {}, 'Settings', ruby({ text: '設定', kana: 'せってい' }, { class: 'jp-k' })), close),
     game,
-    h('section', { class: 'st-sec' }, h('h3', {}, 'Sound on this screen'), VOLUMES.map(([id, label]) => slider(id, label))),
+    h('section', { class: 'st-sec' }, heading('Sound on this screen', '音', 'おと'), VOLUMES.map(([id, label]) => slider(id, label))),
     h(
       'section',
       { class: 'st-sec' },
+      heading('Look of this screen'),
       toggle('Streamer mode', "Plays only the game's own music, so a stream or video of this screen doesn't pick up copyright claims.", isStreamerMode(), (on) => setStreamerMode(on)),
-    ),
-    h(
-      'section',
-      { class: 'st-sec' },
       toggle('Background effects', 'Mist, spotlights and confetti behind the game. Off shows a still set. Calm motion on the VIP’s phone also holds them still.', isAmbientOn(), (on) => setAmbient(on)),
-    ),
-    h(
-      'section',
-      { class: 'st-sec' },
       toggle('Flying titles', 'Game titles drifting across the lobby. Off shows the still list of games. Calm motion on the VIP’s phone also stops them.', isDanmakuOn(), (on) => setDanmaku(on)),
     ),
     room,
+    h('div', { class: 'st-fade', 'aria-hidden': 'true' }),
   );
+  // The fade at the bottom edge shows only while the panel can still scroll down.
+  const atEnd = () => panel!.classList.toggle('at-end', panel!.scrollTop + panel!.clientHeight >= panel!.scrollHeight - 4);
+  panel.addEventListener('scroll', atEnd, { passive: true });
   show = (open: boolean) => {
     panel!.hidden = !open;
     button.setAttribute('aria-expanded', String(open));
     confirming = false;
     ending = false;
     cheekyAsk = false;
-    if (open) renderRoom(true);
+    vipAsk = null;
+    lastVip = null;
+    if (open) (renderRoom(true), requestAnimationFrame(atEnd));
   };
   button.addEventListener('click', () => (sfx('tap'), show(panel!.hidden)));
   close.addEventListener('click', () => show(false));
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || panel!.hidden) return;
     // Escape backs out of the close-room question first, then closes the panel.
-    if (confirming || cheekyAsk || ending) {
+    if (confirming || cheekyAsk || ending || vipAsk) {
       confirming = cheekyAsk = ending = false;
+      vipAsk = null;
       renderRoom(true);
     } else show(false);
   });
@@ -128,30 +137,20 @@ function renderRoom(force: boolean): void {
   const inGame = v.phase !== 'lobby' && v.phase !== 'recap';
   if (!inGame) ending = false;
   mount(game!, inGame && (!opts.watch || v.remoteControl) ? endGame(v) : null);
-  const share = h('section', { class: 'st-sec' }, h('h3', {}, 'Invite friends'), invite(inviteLinks(opts.site(), v.code), v.code, false));
+  const share = h('section', { class: 'st-sec' }, heading('Invite friends', '友だちを よぼう', 'ともだちを よぼう'), invite(inviteLinks(opts.site(), v.code), v.code, false));
   if (!opts.watch) {
     mount(
       room,
       controls(v),
       vip(v),
       share,
-      h(
-        'section',
-        { class: 'st-sec' },
-        toggle(
-          'Let other screens control the game',
-          `Friends watching on their own screen (${inviteLinks(opts.site(), v.code).stage.replace(/^https?:\/\//, '')}) get these game controls too: start a game, skip ahead, play again and end a game. Phones aren't affected: the VIP's phone can always run the game.`,
-          v.remoteControl,
-          (on) => void opts!.send({ type: 'settings', remoteControl: on }),
-        ),
-      ),
       audience(v),
       closeRoom(v),
     );
     return;
   }
   if (!v.remoteControl) {
-    mount(room, share, h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), h('p', { class: 'st-help' }, "The main screen runs this game. Ask them to turn on “Let other screens control the game” in their settings.")));
+    mount(room, share, h('section', { class: 'st-sec' }, heading('Game controls', 'ゲーム'), h('p', { class: 'st-help' }, "The main screen runs this game. Ask them to turn on “Let other screens control the game” in their settings.")));
     return;
   }
   mount(room, controls(v), share);
@@ -170,35 +169,76 @@ function controls(v: RoomView): HTMLElement {
       'select',
       { 'aria-label': 'Game' },
       h('option', { value: SURPRISE, disabled: !v.modes.some(fits) }, '🎲 Surprise Me!'),
-      v.modes.map((m) => h('option', { value: m.id, disabled: !fits(m) }, fits(m) ? m.title : `${m.title} (${needs(m)} players)`)),
+      // Ruby can't go in an <option>, so the Japanese title comes as its kana reading.
+      v.modes.map((m) => h('option', { value: m.id, disabled: !fits(m) }, `${m.title} · ${m.titleKana ?? m.titleJa}${fits(m) ? '' : ` (${needs(m)} players)`}`)),
     ) as HTMLSelectElement;
     pick.value = v.modes.find(fits)?.id ?? SURPRISE;
-    const start = button('Start', () => send({ type: 'start', mode: pick.value as ModeId | typeof SURPRISE })) as HTMLButtonElement;
+    // The intro plays straight away, so the panel gets out of its way.
+    const start = button('Start', () => (show(false), send({ type: 'start', mode: pick.value as ModeId | typeof SURPRISE }))) as HTMLButtonElement;
     start.disabled = !v.modes.some(fits);
     buttons.push(pick, start);
   }
   if (v.deadline !== null && v.phase !== 'lobby') buttons.push(button('Skip ahead', () => send({ type: 'skip', phaseSeq: v.phaseSeq })));
   if (v.phase === 'recap') buttons.push(button('Play again', () => send({ type: 'playAgain' })));
-  return h('section', { class: 'st-sec' }, h('h3', {}, 'Game controls'), buttons.length ? h('div', { class: 'st-row' }, buttons) : h('p', { class: 'st-help' }, 'Nothing to do right now.'));
+  // The main stage decides whether watching screens get these buttons too.
+  const remote = opts!.watch
+    ? null
+    : toggle(
+        'Let other screens control the game',
+        `Friends watching on their own screen (${inviteLinks(opts!.site(), v.code).stage.replace(/^https?:\/\//, '')}) get these controls too, and End game. Phones aren't affected: the VIP's phone can always run the game.`,
+        v.remoteControl,
+        (on) => void opts!.send({ type: 'settings', remoteControl: on }),
+      );
+  return h('section', { class: 'st-sec' }, heading('Game controls', 'ゲーム'), buttons.length ? h('div', { class: 'st-row' }, buttons) : h('p', { class: 'st-help' }, 'Nothing to do right now.'), remote);
 }
 
 /** Main stage only: who holds the VIP star, and a way to hand it to another phone. */
 function vip(v: RoomView): HTMLElement {
-  const sec = h('section', { class: 'st-sec' }, h('h3', {}, 'VIP'));
   const now = v.players.find((p) => p.isVip);
+  // A new VIP (from here or from the old VIP's phone): the section flashes once, with a chime.
+  const changed = lastVip !== null && now?.id !== lastVip;
+  lastVip = now?.id ?? null;
+  if (changed) sfx('right');
+  const sec = h('section', { class: `st-sec${changed ? ' st-flash' : ''}` }, heading('VIP', 'ビップ'));
   if (!now) return (sec.append(h('p', { class: 'st-help' }, 'The first phone to join becomes the VIP.')), sec);
   const others = v.players.filter((p) => !p.isVip);
   sec.append(h('p', { class: 'st-help' }, `${now.name} is the VIP: their phone picks the games, starts, skips and plays again.${others.length ? ' Hand it to someone else here, for example if their phone is going flat.' : ''}`));
   if (!others.length) return sec;
+  const to = vipAsk ? others.find((p) => p.id === vipAsk) : undefined;
+  if (to) {
+    // Handing over takes the game menu off someone's phone, so it asks first, like End game.
+    const keep = h('button', { type: 'button', class: 'st-btn st-btn-quiet' }, `Keep ${now.name}`) as HTMLButtonElement;
+    const yes = h('button', { type: 'button', class: 'st-btn' }, `Yes, make ${to.name} VIP`) as HTMLButtonElement;
+    keep.addEventListener('click', () => (sfx('tap'), (vipAsk = null), renderRoom(true)));
+    yes.addEventListener('click', () => {
+      yes.disabled = keep.disabled = true;
+      sfx('tap');
+      vipAsk = null;
+      void opts?.send({ type: 'passVip', playerId: to.id });
+    });
+    sec.append(
+      h(
+        'div',
+        { class: 'st-confirm st-confirm-calm', role: 'alertdialog', 'aria-label': `Make ${to.name} the VIP?` },
+        h('p', { class: 'st-label' }, `Make ${to.name} the VIP?`),
+        h('p', { class: 'st-help' }, `The game menu moves from ${now.name}’s phone to ${to.name}’s.`),
+        h('div', { class: 'st-row' }, keep, yes),
+      ),
+    );
+    return sec;
+  }
+  vipAsk = null;
   const pick = h('select', { 'aria-label': 'New VIP' }, others.map((p) => h('option', { value: p.id }, p.name))) as HTMLSelectElement;
-  sec.append(h('div', { class: 'st-row' }, pick, button('Make VIP', () => opts!.send({ type: 'passVip', playerId: pick.value }))));
+  const ask = h('button', { type: 'button', class: 'st-btn st-btn-quiet' }, 'Make VIP…') as HTMLButtonElement;
+  ask.addEventListener('click', () => (sfx('tap'), (vipAsk = pick.value), renderRoom(true)));
+  sec.append(h('div', { class: 'st-row' }, pick, ask));
   return sec;
 }
 
 const AUDIENCE_LABELS: [Audience, string, string][] = [
-  ['kids', '🧒 Kids', 'For children: simple words, silly stories, and stricter checks on what players type.'],
-  ['family', '🏠 Family', 'Grown-up jokes anyone can hear. The default.'],
-  ['cheeky', '🌶️ Cheeky', 'Adult party humour. Asks first.'],
+  ['kids', '🧒 Kids · こども', 'For children: simple words, silly stories, and stricter checks on what players type.'],
+  ['family', '🏠 Family · かぞく', 'Grown-up jokes anyone can hear. The default.'],
+  ['cheeky', '🌶️ Cheeky · おとな', 'Adult party humour. Asks first.'],
 ];
 
 /**
@@ -207,7 +247,7 @@ const AUDIENCE_LABELS: [Audience, string, string][] = [
  * and it is never the default; a game in progress picks up the change from its next round or song.
  */
 function audience(v: RoomView): HTMLElement {
-  const sec = h('section', { class: 'st-sec' }, h('h3', {}, 'Audience'));
+  const sec = h('section', { class: 'st-sec' }, heading('Audience', 'だれと あそぶ？'));
   const set = (to: Audience) => {
     sfx('tap');
     cheekyAsk = false;
@@ -306,7 +346,7 @@ function endGame(v: RoomView): HTMLElement {
  * than the game buttons until it is pressed, and asks once more with "Keep playing" focused.
  */
 function closeRoom(v: RoomView): HTMLElement {
-  const sec = h('section', { class: 'st-sec st-end' }, h('h3', {}, 'End the party'));
+  const sec = h('section', { class: 'st-sec st-end' }, heading('End the party', 'お開き', 'おひらき'));
   const players = v.players.length;
   if (!confirming) {
     const ask = h('button', { type: 'button', class: 'st-btn st-btn-danger-quiet' }, 'Close room…') as HTMLButtonElement;
@@ -340,6 +380,12 @@ function closeRoom(v: RoomView): HTMLElement {
 
 function button(label: string, onClick: () => Promise<void>): HTMLElement {
   const b = h('button', { type: 'button', class: 'st-btn' }, label) as HTMLButtonElement;
-  b.addEventListener('click', () => (sfx('tap'), void onClick()));
+  b.addEventListener('click', () => {
+    sfx('tap');
+    void onClick().then(() => {
+      b.classList.add('st-done');
+      setTimeout(() => b.classList.remove('st-done'), 600);
+    });
+  });
   return b;
 }

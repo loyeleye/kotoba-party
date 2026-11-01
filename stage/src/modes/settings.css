@@ -2,13 +2,25 @@
    Opens from a button beside the sound button, over the canvas's top-left corner. */
 .st-open { position: absolute; top: 10px; left: 316px; z-index: 5; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 14px; font: 600 18px var(--font-body); cursor: pointer; }
 .st-open[aria-expanded='true'] { background: var(--panel); color: var(--ink); }
-.st-panel { position: absolute; top: 52px; left: 96px; z-index: 20; width: 740px; max-height: 960px; overflow-y: auto; display: grid; gap: 18px; padding: 24px 28px; background: var(--panel); color: var(--ink); border: 2px solid var(--line); border-radius: 14px; box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5); font: 500 22px var(--font-body); text-align: left; }
+.st-panel { position: absolute; top: 52px; left: 96px; z-index: 20; width: 740px; max-height: 960px; overflow-y: auto; display: grid; gap: 18px; padding: 24px 28px; background: var(--panel); color: var(--ink); border: 2px solid var(--line); border-radius: 14px; box-shadow: 6px 6px 0 var(--outline); contain: layout paint; font: 500 22px var(--font-body); text-align: left; }
 .st-panel[hidden] { display: none; }
+.st-panel:not([hidden]) { animation: st-open 160ms steps(4) both; }
+@keyframes st-open { from { opacity: 0; transform: translateY(-12px); } }
+@media (prefers-reduced-motion: reduce) { .st-panel:not([hidden]) { animation: none; } }
+body[data-motion="calm"] .st-panel:not([hidden]) { animation: none; }
 .st-head { display: flex; align-items: center; justify-content: space-between; }
 .st-head h2 { margin: 0; font: 700 32px var(--font-pixel); }
 .st-close { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font-size: 22px; width: 44px; height: 44px; cursor: pointer; }
+/* The room and in-game wrappers keep the panel's 18px rhythm between their sections (a nested grid,
+   not display: contents, which older TV browsers handle badly for accessibility). */
+.st-room, .st-game { display: grid; gap: 18px; }
+.st-room:empty { display: none; }
 .st-sec { display: grid; gap: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
-.st-sec h3 { margin: 0; font-size: 20px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.st-sec h3 { margin: 0; font: 400 20px var(--font-pixel); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+/* Japanese labels beside the headings: never the h3's caps, tracking or pixel font (it has no kanji). */
+.st-panel .jp-k { font: 700 18px var(--font-ja); color: var(--gold); text-transform: none; letter-spacing: 0; margin-left: 0.6em; }
+.st-head h2 .jp-k { font-size: 22px; }
+.st-panel .jp-k rt { font-size: 0.55em; color: var(--muted); }
 .st-slider { display: grid; grid-template-columns: 330px 1fr 64px; align-items: center; gap: 14px; }
 .st-slider input { width: 100%; accent-color: var(--accent); height: 28px; }
 .st-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
@@ -18,8 +30,23 @@
 .st-label { font-weight: 700; }
 .st-help { color: var(--muted); font-size: 18px; line-height: 1.35; margin: 0; }
 .st-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.st-row select { font: 600 20px var(--font-body); padding: 6px 10px; border-radius: 8px; }
-.st-btn { background: var(--accent); color: var(--on-accent); border: 0; border-radius: 10px; padding: 8px 20px; font: 800 20px var(--font-body); cursor: pointer; }
+/* Themed pickers: dark, framed like the buttons and as tall, with a pixel chevron. */
+.st-row select { appearance: none; -webkit-appearance: none; min-height: 48px; max-width: 100%; font: 600 20px var(--font-body); color: var(--ink); background: var(--bg, #14101f) no-repeat right 14px center / 14px 9px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 9' shape-rendering='crispEdges'%3E%3Cpath fill='%23ffcc33' d='M0 0h14v3h-2v2h-2v2H8v2H6V7H4V5H2V3H0z'/%3E%3C/svg%3E"); border: 2px solid var(--line); border-radius: 10px; padding: 6px 42px 6px 14px; cursor: pointer; }
+.st-row select:focus-visible { outline: 3px solid var(--gold, var(--accent)); outline-offset: 2px; }
+.st-row select option { background: var(--panel); color: var(--ink); }
+.st-row select option:disabled { color: var(--muted); }
+.st-btn { min-height: 48px; background: var(--accent); color: var(--on-accent); border: 2px solid var(--outline); border-radius: 10px; padding: 8px 20px; font: 800 20px var(--font-body); cursor: pointer; box-shadow: 0 4px 0 var(--outline); transition: transform 60ms steps(2), box-shadow 60ms steps(2), filter 120ms; }
+.st-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.st-btn:not(:disabled):active { transform: translateY(4px); box-shadow: 0 0 0 var(--outline); }
+/* After a send lands: the button goes green for a moment, and a changed section flashes once. */
+.st-btn.st-done { background: var(--good); }
+.st-sec.st-flash { animation: st-flash 700ms steps(4, end); }
+@keyframes st-flash { 0% { background: color-mix(in srgb, var(--good) 22%, transparent); } }
+body[data-motion='calm'] .st-sec.st-flash { animation: none; }
+/* Scroll hint: a fade pinned to the panel's bottom edge while there is more below. */
+.st-fade { position: sticky; bottom: -24px; height: 48px; margin: -48px -28px -24px; background: linear-gradient(transparent, var(--panel)); pointer-events: none; }
+.st-panel.at-end .st-fade { visibility: hidden; }
+.st-toggle + .st-toggle { margin-top: 4px; }
 .st-open:focus-visible, .st-close:focus-visible, .st-btn:focus-visible { outline: 3px solid var(--gold, var(--accent)); outline-offset: 2px; }
 /* The invite card (invite.css), flattened into the panel: no card of its own, and the address
    on its own line under the name. */
@@ -34,8 +61,8 @@
 .st-panel .inv-pun-jp { font-size: 22px; }
 
 /* Closing the room: quiet outline until pressed, then a framed question with "Keep playing" first. */
-.st-end { margin-top: 6px; }
-.st-btn-quiet { background: transparent; color: var(--ink); border: 2px solid var(--line); }
+.st-btn-quiet { background: transparent; color: var(--ink); border: 2px solid var(--line); box-shadow: none; }
+.st-btn-quiet:not(:disabled):active { transform: translateY(1px); }
 .st-btn-danger-quiet { background: transparent; color: var(--bad); border: 2px solid var(--bad); }
 .st-btn-danger-quiet:hover { background: color-mix(in srgb, var(--bad) 14%, transparent); }
 .st-btn-danger { background: var(--bad); color: var(--on-accent); border: 2px solid var(--bad); }

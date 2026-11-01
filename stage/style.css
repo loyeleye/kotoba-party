@@ -91,7 +91,7 @@ body { margin: 0; overflow: hidden; background: #110b26; color: var(--ink); }
 }
 /* Festival bunting along the top edge: vermilion, gold, washi and the mode colour. */
 .canvas::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; background: repeating-linear-gradient(90deg, var(--accent) 0 48px, var(--gold) 48px 96px, var(--paper) 96px 144px, var(--mode) 144px 192px); mask: conic-gradient(from -45deg at 50% 100%, #000 90deg, transparent 0) 0 0 / 48px 14px repeat-x; pointer-events: none; }
-:lang(ja) { font-family: var(--font-ja); }
+:lang(ja) { font-family: var(--font-ja); line-break: strict; word-break: keep-all; overflow-wrap: anywhere; }
 
 /* Japanese line breaking: break between phrases, never inside a word. auto-phrase where the
    browser has it (Chrome and Edge 119+); elsewhere break only at spaces and punctuation and

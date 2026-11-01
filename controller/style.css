@@ -196,8 +196,11 @@ body[data-mode] .timer { color: var(--on-accent); }
 .fold { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 .fold > summary { list-style: none; cursor: pointer; padding: 10px 14px; gap: 10px; justify-content: space-between; }
 .fold > summary::-webkit-details-marker { display: none; }
-.fold > summary::after { content: '▸'; color: var(--muted); }
-.fold[open] > summary::after { content: '▾'; }
+.fold > summary::after { content: '▸'; color: var(--muted); transition: rotate 140ms steps(3, end); }
+.fold[open] > summary::after { rotate: 90deg; }
+/* Opening a fold: a short fade and drop (opacity and transform only, never height). */
+.fold[open] > .fold-body { animation: fold-in 180ms ease-out both; }
+@keyframes fold-in { from { opacity: 0; transform: translateY(-6px); } }
 .fold > summary:focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; border-radius: 12px; }
 .fold-title { display: grid; gap: 1px; font-weight: 700; }
 .fold-title small { font-weight: 400; color: var(--muted); font-size: 13px; }
@@ -213,8 +216,9 @@ body[data-mode] .timer { color: var(--on-accent); }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 8px 0; border: 0; background: none; color: var(--ink); font-size: 17px; font-weight: 700; }
 .switch-text { display: grid; gap: 2px; }
 .switch-text small { font-weight: 400; color: var(--muted); font-size: 13px; }
-.switch { flex: none; position: relative; width: 52px; height: 30px; border-radius: 999px; border: 2px solid var(--line); background: var(--bg); }
-.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 4px; background: var(--muted); transition: translate 120ms; }
+.switch { flex: none; position: relative; width: 52px; height: 30px; border-radius: 999px; border: 2px solid var(--line); background: var(--bg); transition: background-color 120ms, border-color 120ms; }
+/* Off: a dim knob, so the brightest thing in the row isn't the off state. */
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 4px; background: color-mix(in srgb, var(--muted) 45%, var(--bg)); transition: translate 120ms; }
 .switch-row[aria-checked='true'] .switch { background: var(--good); border-color: var(--outline); }
 .switch-row[aria-checked='true'] .switch::after { translate: 22px 0; background: var(--outline); }
 .switch-row:focus-visible { outline: 3px solid var(--warn); outline-offset: 2px; border-radius: 8px; }
@@ -609,7 +613,11 @@ input::placeholder { color: #a99ccf; }
 .me .mpb-switch.locked img:first-child { opacity: 0.7; filter: grayscale(1) brightness(1.6); }
 .me .mpb-switch .mpb-lock { position: absolute; right: -2px; bottom: -4px; width: 7px; height: 19px; image-rendering: pixelated; transform: rotate(-30deg); }
 
-.vip-pass { display: grid; gap: 8px; margin-top: 12px; }
+.vip-pass { display: grid; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); font-size: 17px; font-weight: 700; }
+.vip-pass-ask { margin: 0; font-weight: 400; }
 .vip-pass-row { display: flex; gap: 8px; }
 .vip-pass-row select { flex: 1; min-width: 0; font-size: 17px; padding: 10px 12px; }
-.vip-pass-row button { width: auto; flex: none; }
+.vip-pass-row button { width: auto; flex: none; font-size: 17px; }
+/* Japanese labels beside a fold's title, and beginners' rōmaji under a game's kana title. */
+.fold-title .jp-k { font-size: 14px; font-weight: 700; color: var(--gold, var(--warn)); margin-left: 0.5em; }
+.gp-romaji { display: block; font-size: 12px; font-style: italic; }
