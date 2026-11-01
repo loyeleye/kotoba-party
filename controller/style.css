@@ -759,3 +759,14 @@ input::placeholder { color: #a99ccf; }
 .role-offer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .role-offer-btns button { min-height: 64px; font-size: 19px; display: grid; place-content: center; gap: 2px; }
 .role-offer-gloss { font-size: 13px; font-weight: 400; opacity: 0.8; }
+
+/* Mixed rooms: the Gallery tile and the commentary booth's gist (components/gallery.ts). */
+.gallery, .booth-gist { margin-top: 14px; padding: 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.04); }
+.gallery-kicker { font-weight: 700; margin: 0 0 8px; }
+.gallery-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gallery-btns button { min-height: 56px; }
+.gallery-btns button small { display: block; opacity: 0.7; }
+.gallery-btns button.picked { outline: 3px solid currentColor; }
+.booth-gist-emoji { font-size: 2.4rem; margin: 0; }
+.booth-gist-ja { font-size: 1.4rem; margin: 4px 0; }
+.booth-gist-romaji, .booth-gist-en { margin: 2px 0; opacity: 0.8; }
