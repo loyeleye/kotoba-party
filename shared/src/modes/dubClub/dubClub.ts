@@ -601,7 +601,7 @@ function phrases(s: DubState, r: SceneRound, a: Actor, scene: Scene, ctx: ModeCo
   const itemId = isAdlib(a) ? `dub:${scene.id}:adlib` : `dub:${scene.id}:${a.level}`;
   const reh = a.rehearsal;
   const outcome = !reh ? 'seen' : reh.similarity >= WORDS_FULL_AT[a.level] ? 'said' : reh.similarity >= CLOSE_AT ? 'retry' : 'missed';
-  ctx.phrase(a.playerId, { itemId, text: line.text, kana: line.kana, en: line.en, outcome });
+  ctx.phrase(a.playerId, { itemId, text: line.text, kana: line.kana, en: line.en, outcome, recall: 'read' });
 }
 
 /** The episode's steps: the title, each scene, the end card, the credits. */

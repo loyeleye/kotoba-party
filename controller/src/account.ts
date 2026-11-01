@@ -307,7 +307,7 @@ function renderProgress(screens: { back: () => void; app: HTMLElement }, view: A
     h(
       'div',
       { id: 'acct-tabpanel', role: 'tabpanel', 'aria-labelledby': `acct-tab-${current}` },
-      current === 'path' ? pathTab(view, phoneLevel(), (on) => void setPath(screens, view, on), switching) : current === 'cards' ? cardsTab(screens, view) : current === 'phrases' ? phrasesTab(screens, view) : scoresTab(view),
+      current === 'path' ? pathTab(view, phoneLevel(), (on) => void setPath(screens, view, on), switching, () => renderProgress(screens, view)) : current === 'cards' ? cardsTab(screens, view) : current === 'phrases' ? phrasesTab(screens, view) : scoresTab(view),
     ),
     accountFooter(screens),
   );
@@ -526,7 +526,7 @@ function practise(screens: { back: () => void; app: HTMLElement }, phrases: Phra
     const answer = h('div', { class: 'acct-reveal', hidden: true, role: 'status', 'aria-live': 'polite' });
     const marks = h('div', { class: 'acct-row', hidden: true });
     const status = h('p', { class: 'acct-status bad', role: 'status' });
-    const show = h('button', { type: 'button', class: 'primary' }, 'Show the Japanese') as HTMLButtonElement;
+    const show = h('button', { type: 'button', class: 'primary' }, 'Say it first, then check') as HTMLButtonElement;
     const mark = async (yes: boolean) => {
       for (const b of marks.querySelectorAll('button')) (b as HTMLButtonElement).disabled = true;
       const res = await api('review', { kind: 'phrase', itemId: p.itemId, knew: yes }).catch(() => null);
@@ -549,7 +549,7 @@ function practise(screens: { back: () => void; app: HTMLElement }, phrases: Phra
       h('p', { class: 'acct-ph-romaji' }, toRomaji(p.kana)),
       hearButton(p.kana, 'Hear it', 'raid-hear acct-hear'),
     );
-    mount(marks, h('button', { type: 'button', class: 'secondary acct-wide', onclick: () => void mark(false) }, 'Not yet'), h('button', { type: 'button', class: 'primary', onclick: () => void mark(true) }, 'I said it'));
+    mount(marks, h('button', { type: 'button', class: 'secondary acct-wide', onclick: () => void mark(false) }, 'Not yet'), h('button', { type: 'button', class: 'primary', onclick: () => void mark(true) }, 'I knew it before looking'));
     show.onclick = () => {
       answer.hidden = false;
       marks.hidden = false;

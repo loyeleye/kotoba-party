@@ -115,8 +115,10 @@ export interface RoomView {
   /** The mode's own view, while a game runs. */
   game: GameView | null;
   recap: RecapView | null;
-  /** Only in a player's own view. */
-  me: { playerId: string; level: Level } | null;
+  /** Only in a player's own view. `wish`: the game this phone wished for in the lobby. */
+  me: { playerId: string; level: Level; wish?: ModeId | null } | null;
+  /** Lobby only: wishes per game, counts only (no names), for the VIP's game list. */
+  wishes: Partial<Record<ModeId, number>>;
   /** The main stage lets watching screens start, skip and replay too (its settings panel). */
   remoteControl: boolean;
   /** The host's Audience setting (main stage settings). */
@@ -151,6 +153,8 @@ export type Command =
   | { id: string; type: 'micCheck'; utterance: unknown }
   /** The phone's 🎧 switch: false turns its sound off (listening prompts show as text), true back on. */
   | { id: string; type: 'setSound'; on: boolean }
+  /** Lobby only: "♡ Wish for it", the learning path's nudge to the VIP. One wish per phone; null takes it back. */
+  | { id: string; type: 'wish'; mode: ModeId | null }
   | { id: string; type: 'skip'; phaseSeq: number }
   | { id: string; type: 'playAgain' }
   /** VIP or stage: abandons the game in progress and goes back to the lobby, scores as they were before it. */

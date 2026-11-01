@@ -31,7 +31,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 25 host and yōkai animation sheets (thinking and shocked added 2026-10-28), a smoke-puff effect, 56 Narabete! card pictures, 112 Narabete! answer pictures, 6 Bento Haus VS pieces, Dub Club's 13 anime sets, 14 characters and their 14 mouth sheets, 33 direction-card icons, 3 episode backdrops and 3 phone player icons, 83 Happyōkai! slide pictures, Happyōkai!'s 6 stamp icons, candle, flame and Chōchin-san bow sheet, Nice to Meet You!'s paw stamp and card-back medallion, and, for the phone's yōkai book and sign-in (2026-10-28), 10 yōkai book sprites and 4 icons: key, hanko, speaker and the stage Phrasebook's notebook, then 16 game icons and a stamp ring for the Phrasebook cards) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the six backdrop sets including the Last Train carriage, Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 25 host and yōkai animation sheets (thinking and shocked added 2026-10-28), a smoke-puff effect, 56 Narabete! card pictures, 112 Narabete! answer pictures, 6 Bento Haus VS pieces, Dub Club's 13 anime sets, 14 characters and their 14 mouth sheets, 33 direction-card icons, 3 episode backdrops and 3 phone player icons, 83 Happyōkai! slide pictures, Happyōkai!'s 6 stamp icons, candle, flame and Chōchin-san bow sheet, Nice to Meet You!'s paw stamp and card-back medallion, and, for the phone's yōkai book and sign-in (2026-10-28), 10 yōkai book sprites and 4 icons: key, hanko, speaker and the stage Phrasebook's notebook, then 16 game icons and a stamp ring for the Phrasebook cards; and Read the Signs' station-sign casing, arrow and hanger (2026-11-01)) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
 | 7 | AI art: Gemini (source image for Pon and the lie tanuki cut from him) | `tools/art/sources/` | ❓ ⚠️ | Read Gemini API terms, or redraw Pon without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
@@ -60,6 +60,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 32 | Dub Club plays players' recorded voices back on the TV: each acted take is kept in the room's memory (Node, or the Cloudflare Durable Object) while the game needs it, then dropped; never written to disk | `server/src/room.ts` (`keepClip`), `server/src/server.ts`, `cloudflare/roomObject.ts`, `controller/src/modes/dubClub.ts` | ⚠️ ❓ | Privacy, not a licence: a voice played to the room is still personal data, and some players may be children. Before selling: say it in the privacy notice, decide on under-13/16 players (COPPA, GDPR-K: rules not read for this, ❓), keep the "play from my phone" option, and check Cloudflare's Durable Object terms for in-memory personal data (not read, ❓) |
 | 33 | Dub Club's Cheeky episodes and cards (office overtime, a first date, Girls' Night, a cheap idol off stage, and the drunk, sexy, host-club, gyaru and mother-in-law cards), behind the host's Audience setting (decision, 2026-10-28) | `shared/src/modes/dubClub/scenes.ts` (`audience: 'cheeky'`) | ⚠️ | Same as rows 29 and 30: no licence issue, but it adds to the age rating. Include it in the rating questionnaires or leave it out of rated builds; have the fluent reviewer check the Cheeky lines |
 | 34 | Optional sign-in: passkeys through SimpleWebAuthn (`@simplewebauthn/server` and `/browser`, MIT, plus MIT, Apache-2.0, 0BSD and BSD-3 dependencies), and each signed-in player's save (save name, game scores, kana practised) kept on one Cloudflare Durable Object (decision, 2026-10-28) | `server/src/accounts.ts`, `cloudflare/accountsObject.ts`, `controller/src/account.ts`, `shared/src/progress.ts` | 🟡 ⚠️ ❓ | Ship the MIT and Apache-2.0 notices (row 5). Privacy, not licence: a privacy notice for saves, a decision on under-13/16 players (COPPA, GDPR-K: not read, ❓), and Cloudflare's Durable Object storage named as a processor. Deleting a save is already in the game |
+| 35 | The learning path names levels "N5" and "N4" (the JLPT's level names) and suggests a JLPT mock test; its lines use our own names (Kana Line, Local Line, Express Line) (decision, 2026-11-01) | `shared/src/path.ts`, `controller/src/path.ts`, the level picker in `controller/src/main.ts` | ❓ | Read the JLPT's terms (Japan Foundation and JEES) on using "JLPT", "N5" and "N4" in a product; jlpt.jp couldn't be reached from the build machine on 2026-11-01. Until then, keep the names to plain description ("roughly N5"), never a claim of JLPT endorsement or a result |
 
 ## Details
 
@@ -147,7 +148,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Nice to Meet You!'s lie tanuki (`stage/assets/fx/tanuki-doron.png`, 2026-10-28) is Pon's head cut from his
   idle sheet with a hand-drawn leaf by `tools/art/sources/tanuki-doron.py` (no new model), so it carries Pon's row 7 caveat.
   Its paw stamp and card-back medallion (`stage/assets/fx/paw-hanko.png`, `card-medallion.png`, 2026-10-28) are
-  text-only `pixflux` images.
+  text-only `pixflux` images. Read the Signs' station boards (`stage/assets/signs/`, 2026-11-01) come from three
+  text-only `pixflux` images (sign casing, arrow, hanger; raws in `tools/art/sources/signs/`), cropped, recoloured
+  and scaled by `tools/art/sources/signs.py` (no other model). Same endpoint; the terms were not re-read for this
+  pass, so they rest on the 2026-10-26 read.
   The four lip-sync
   mouth sheets are edited from our own host portraits by `tools/art/polish.ts`, and Nobiko-san's neck-stretch sheet (2026-10-28) is cut from her portrait by `tools/art/sources/nobiko-peek.py` with a hand-drawn neck, as are the body and head the stage draws her long reach from and her chorus sway sheet (no new model). Apart from those, text-to-image only, no reference images. Most come from PixelLab's `pixflux` endpoint; Pon
   comes from its `image-to-pixelart` endpoint (see row 7). Nobiko-san (2026-10-27) is `pixflux` with
@@ -625,3 +629,14 @@ pictures if they still look right, and add the Steam/itch disclosure.
   under-13/16 players (parental consent, or no saves for them); name Cloudflare as a processor; ship the
   notices with the third-party list (row 5).
 
+### 35. JLPT level names in the learning path
+
+- **What:** The level picker already says New, N5 and N4. The learning path (version 2,
+  [progressive-learning.md](progressive-learning.md)) builds its goals from the JLPT's public level summaries
+  and the Japan Foundation's JF Standard can-dos, taking their shape, not their text, and its cleared screen
+  suggests a JLPT mock test. Every goal, example and line is our own; the lines carry our own names.
+- **Terms:** not read. https://www.jlpt.jp/e/ refused the connection from the build machine on 2026-11-01
+  (proxy 403), so the JLPT's rules on its name and level names weren't checked: ❓.
+- **To sell:** read the JLPT's and the Japan Foundation's terms for naming the test and its levels; keep
+  "N5"/"N4" descriptive (never "JLPT certified" or a score); if the names aren't allowed, rename the picker
+  and the path to our own level names.

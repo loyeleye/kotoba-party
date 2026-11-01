@@ -423,7 +423,7 @@ function recordAsk(s: OnsenState, ctx: ModeContext, playerId: string, suspect: O
   // typed), on the retry, built from tiles (seen), or missed.
   const q = questionFor(s.case, intent);
   const itemId = intent === 'victim' || intent === 'item' ? `onsen.q.${intent}.${s.case.id}` : `onsen.q.${intent}`;
-  const entry = (outcome: PhraseEntry['outcome']): PhraseEntry => ({ itemId, text: q.text, kana: q.kana, en: q.en, outcome });
+  const entry = (outcome: PhraseEntry['outcome']): PhraseEntry => ({ itemId, text: q.text, kana: q.kana, en: q.en, outcome, recall: u.via === 'speech' ? 'memory' : 'read' });
   const outcome: PhraseEntry['outcome'] = guessed ? 'missed' : u.via === 'tap' ? 'seen' : turn.tries > 1 ? 'retry' : 'said';
   ctx.phrase(playerId, entry(outcome));
   for (const p of ctx.players()) if (p.id !== playerId) ctx.phrase(p.id, entry('seen'));
@@ -514,7 +514,7 @@ function lockAccusation(s: OnsenState, ctx: ModeContext, playerId: string, suspe
   if (said && via === 'speech') tallyFor(s, playerId).bonusEarned += POINTS.spokenAccuse;
   const line = accusationLine(suspect);
   const outcome: PhraseEntry['outcome'] = via === 'tap' ? 'seen' : !said ? 'missed' : tries > 1 ? 'retry' : 'said';
-  ctx.phrase(playerId, { itemId: `onsen.accuse.${s.case.id}.${suspect.id}`, text: line.text, kana: line.kana, en: line.en, outcome });
+  ctx.phrase(playerId, { itemId: `onsen.accuse.${s.case.id}.${suspect.id}`, text: line.text, kana: line.kana, en: line.en, outcome, recall: via === 'speech' ? 'memory' : 'read' });
 }
 
 // ---- the mode ----
@@ -782,7 +782,8 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         d.points = via === 'tap' ? POINTS.reportTiles : POINTS.report;
         tallyFor(s, playerId).reports += 1;
         give(s, ctx, playerId, d.points, via === 'speech' ? POINTS.spokenReport : 0);
-        ctx.phrase(playerId, reportEntry(s, ask, via === 'tap' ? 'seen' : d.tries > 1 ? 'retry' : 'said'));
+        // Only a spoken report counts as from memory, as for the questions.
+        ctx.phrase(playerId, { ...reportEntry(s, ask, via === 'tap' ? 'seen' : d.tries > 1 ? 'retry' : 'said'), recall: via === 'speech' ? 'memory' : 'read' });
       } else if (d.tries >= TRIES) {
         d.status = 'missed';
         ctx.phrase(playerId, reportEntry(s, ask, 'missed'));

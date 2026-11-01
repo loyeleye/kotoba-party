@@ -475,7 +475,7 @@ function sayStep(step: LineStep, u: Utterance | null, playerId: string, itemId: 
   step.hint = res.hint;
   if (!res.ok) return 0;
   if (res.frames) step.heardFrames = res.frames;
-  ctx.phrase(playerId, { itemId, text: step.model.text, kana: step.model.kana, en: step.model.en, outcome: outcome(u, step.tries, !!step.peeked) });
+  ctx.phrase(playerId, { itemId, text: step.model.text, kana: step.model.kana, en: step.model.en, outcome: outcome(u, step.tries, !!step.peeked), recall: step.peeked ? 'read' : 'memory' });
   return u.via === 'speech' ? HARD_BONUS.spoken : HARD_BONUS.typed;
 }
 

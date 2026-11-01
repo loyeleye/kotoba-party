@@ -8765,6 +8765,118 @@
       "post": {
         "trim": true
       }
+    },
+    {
+      "path": "tools/art/sources/signs/board-raw.png",
+      "what": "Raw PixelLab drawing (unseeded, picked from two tries) for Read the Signs; tools/art/sources/signs.py makes the shipped stage/assets/signs/ files from it. Read the Signs: blank station sign casing, nine-sliced in CSS behind the kanji (face cut out and recoloured per sign)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art UI panel for a cozy-spooky Japanese late-night TV party game. a blank rectangular Japanese train station sign board seen straight from the front, thick dark grey metal casing with small rivets in the corners, a plain flat empty navy blue face, no text, no letters, no arrows, no symbols",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 96,
+        "height": 48
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/signs/sign-board.png",
+      "what": "Read the Signs board casing, dark navy face (every other sign), nine-sliced in CSS (14 art px per side, x3)",
+      "generator": "polish",
+      "model": "signs.py",
+      "prompt": "Made by tools/art/sources/signs.py from tools/art/sources/signs/board-raw.png (PixelLab pixflux, prompt on that entry): cropped to the casing, the two middle rivets painted out so the edges stretch, the face recoloured with its own shading kept, 3x nearest-neighbour.",
+      "params": {},
+      "post": {}
+    },
+    {
+      "path": "stage/assets/signs/sign-board-exit.png",
+      "what": "Read the Signs board casing, exit yellow face, nine-sliced in CSS (14 art px per side, x3)",
+      "generator": "polish",
+      "model": "signs.py",
+      "prompt": "Made by tools/art/sources/signs.py from tools/art/sources/signs/board-raw.png (PixelLab pixflux, prompt on that entry): cropped to the casing, the two middle rivets painted out so the edges stretch, the face recoloured with its own shading kept, 3x nearest-neighbour.",
+      "params": {},
+      "post": {}
+    },
+    {
+      "path": "stage/assets/signs/sign-board-men.png",
+      "what": "Read the Signs board casing, men's toilet blue face, nine-sliced in CSS (14 art px per side, x3)",
+      "generator": "polish",
+      "model": "signs.py",
+      "prompt": "Made by tools/art/sources/signs.py from tools/art/sources/signs/board-raw.png (PixelLab pixflux, prompt on that entry): cropped to the casing, the two middle rivets painted out so the edges stretch, the face recoloured with its own shading kept, 3x nearest-neighbour.",
+      "params": {},
+      "post": {}
+    },
+    {
+      "path": "stage/assets/signs/sign-board-women.png",
+      "what": "Read the Signs board casing, women's toilet red face, nine-sliced in CSS (14 art px per side, x3)",
+      "generator": "polish",
+      "model": "signs.py",
+      "prompt": "Made by tools/art/sources/signs.py from tools/art/sources/signs/board-raw.png (PixelLab pixflux, prompt on that entry): cropped to the casing, the two middle rivets painted out so the edges stretch, the face recoloured with its own shading kept, 3x nearest-neighbour.",
+      "params": {},
+      "post": {}
+    },
+    {
+      "path": "tools/art/sources/signs/arrow-raw.png",
+      "what": "Raw PixelLab drawing (unseeded, picked from two tries) for Read the Signs; tools/art/sources/signs.py makes the shipped stage/assets/signs/ files from it. Read the Signs: the arrow on a sign, used as a CSS mask so it takes the sign's text colour (left; turned for right and up)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art icon, a single bold solid white arrow pointing to the left, chunky blocky shape like a train station direction sign arrow, flat, no shading, centred, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "flat shading",
+        "detail": "low detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 32,
+        "height": 32
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/signs/sign-arrow.png",
+      "what": "Read the Signs arrow, white fill only, pointing left, x4; a CSS mask so it takes the sign's text colour",
+      "generator": "polish",
+      "model": "signs.py",
+      "prompt": "Made by tools/art/sources/signs.py from tools/art/sources/signs/arrow-raw.png (PixelLab pixflux; it drew the arrow pointing up): outline dropped, turned to point left, 4x nearest-neighbour.",
+      "params": {},
+      "post": {}
+    },
+    {
+      "path": "tools/art/sources/signs/hanger-raw.png",
+      "what": "Raw PixelLab drawing (seed 7, picked from two tries) for Read the Signs; tools/art/sources/signs.py makes the shipped stage/assets/signs/ files from it. Read the Signs: the short ceiling hanger above each sign",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game asset, a short vertical dark metal ceiling hanger rod with a small bracket at the bottom, used to hang a train station sign from the ceiling, front view, nothing else",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "text_guidance_scale": 8,
+        "width": 32,
+        "height": 32
+      },
+      "post": {
+        "trim": true
+      }
+    },
+    {
+      "path": "stage/assets/signs/sign-hanger.png",
+      "what": "Read the Signs ceiling hanger rod above each board, x3",
+      "generator": "polish",
+      "model": "signs.py",
+      "prompt": "Made by tools/art/sources/signs.py from tools/art/sources/signs/hanger-raw.png (PixelLab pixflux): the rod and bottom bracket kept, 3x nearest-neighbour.",
+      "params": {},
+      "post": {}
     }
   ]
 }

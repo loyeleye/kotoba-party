@@ -158,12 +158,10 @@ describe('Read the Signs', () => {
       expect(it.signs?.length, it.id).toBeGreaterThan(0);
       expect(checkUtterance({ via: 'typed', text: it.model.kana.replace(/。$/, '') }, it.accepted), it.id).toBe(true);
       if (it.mirror) expect(checkUtterance({ via: 'typed', text: it.mirror.model.kana.replace(/。$/, '') }, it.mirror.accepted), it.id).toBe(true);
-      // N5 and N4 hints are pictures to remember a kanji by, never its reading. A Kana player's retry
-      // gives the reading, since a word never heard can't be recalled.
-      if (it.prompt.kana.includes('よみますか')) {
-        if (it.level === 'kana') expect(it.hint, it.id).toContain(it.accepted[0]!);
-        else expect(it.hint, it.id).not.toContain(it.accepted[0]!);
-      }
+      // Hints are pictures to remember a kanji by, never its reading. Kana signs carry the reading
+      // instead: show first, then test.
+      if (it.prompt.kana.includes('よみますか')) expect(it.hint, it.id).not.toContain(it.accepted[0]!);
+      if (it.level === 'kana') for (const sg of it.signs!) expect(sg.reading, it.id).toBeTruthy();
     }
     expect(['kana', 'n5', 'n4'].every((l) => signs.items.some((it) => it.level === l))).toBe(true);
   });
@@ -212,6 +210,24 @@ describe('Read the Signs', () => {
         if (task.signs!.length > 1) expect(sg).not.toHaveProperty('kind');
       }
     }
+  });
+  it('shows a Kana player a sign with its reading first, and tests a pair without it', () => {
+    const g = new Table(SIGNS_CONTENT, 1);
+    g.state.players[0]!.level = 'kana';
+    g.start();
+    g.until('answer');
+    const first = g.task('p1');
+    expect(first.signs).toHaveLength(1);
+    expect(first.signs![0]!.reading).toBeTruthy();
+    expect(first.hint).toBeTruthy();
+    // A pair hides the readings until the retry.
+    const pair = signs.items.find((i) => i.id === 'read-the-signs.06-deguchi-doko')!;
+    g.s.turns.p1!.task.item = pair;
+    expect(g.task('p1').signs!.every((sg) => !sg.reading && !sg.kind)).toBe(true);
+    expect(g.task('p1').hint).toBeNull();
+    g.say('p1', 'わからない');
+    expect(g.task('p1').attempt).toBe(2);
+    expect(g.task('p1').signs!.every((sg) => sg.reading)).toBe(true);
   });
   it('outlines the asked-about sign on the TV, and a miss never sends anyone to the penalty car', () => {
     const g = new Table(SIGNS_CONTENT, 6);

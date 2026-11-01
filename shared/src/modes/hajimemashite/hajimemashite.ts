@@ -538,18 +538,18 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
   const name = nameFor(s, ctx.player(t.guestId));
   if (truth && ctx.player(t.guestId)) {
     const line = fillFrame(card.first, truth.word);
-    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen' });
+    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen', recall: 'read' });
   }
   for (const p of ctx.players()) {
     const greet = `はじめまして。${nameFor(s, p)}です。よろしく おねがいします。`;
-    if (p.id === t.guestId) ctx.phrase(p.id, { itemId: 'hajime:greet', text: greet, kana: greet, en: "Nice to meet you. I'm …. Please treat me kindly.", outcome: t.greet === 'said' ? 'said' : 'seen' });
+    if (p.id === t.guestId) ctx.phrase(p.id, { itemId: 'hajime:greet', text: greet, kana: greet, en: "Nice to meet you. I'm …. Please treat me kindly.", outcome: t.greet === 'said' ? 'said' : 'seen', recall: 'read' });
     else {
       const k = 'こちらこそ、よろしく おねがいします。';
-      ctx.phrase(p.id, { itemId: 'hajime:kochira', text: k, kana: k, en: 'Likewise, nice to meet you (こちらこそ: "the same from me").', outcome: t.kochira[p.id] === 'said' ? 'said' : 'seen' });
+      ctx.phrase(p.id, { itemId: 'hajime:kochira', text: k, kana: k, en: 'Likewise, nice to meet you (こちらこそ: "the same from me").', outcome: t.kochira[p.id] === 'said' ? 'said' : 'seen', recall: 'read' });
     }
     if (p.id === t.introducerId && truth) {
       const line = fillFrame(card.third, truth.word, name);
-      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen' });
+      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen', recall: 'read' });
     }
   }
 }
