@@ -122,8 +122,8 @@ export const SAFE_ANSWERS: readonly Line[] = [
   { id: 'tourist.a.chigaimasu', level: 'n5', kind: 'yesno', jp: t('いいえ、ちがいます。', 'いいえ、ちがいます。', "No, it isn't.") },
   { id: 'tourist.a.kamo', level: 'n4', kind: 'yesno', jp: t('そうかも しれません。', 'そうかも しれません。', 'Maybe so.') },
   // n4 deck
-  n4('tourist.a.nakereba', 'yesno', k('はい、そう しなければ なりません。', 'Yes, you have to.'), ['nakereba']),
-  n4('tourist.a.nakute-mo-ii', 'yesno', k('いいえ、しなくても いいですよ。', "No, you don't have to."), ['nakutemo-ii']),
+  n4('tourist.a.nakereba', 'yesno', k('そう しなければ なりません。', 'You have to.'), ['nakereba']),
+  n4('tourist.a.nakute-mo-ii', 'yesno', k('しなくても いいですよ。', "You don't have to."), ['nakutemo-ii']),
   n4('tourist.a.koraremasu', 'yesno', t('はい、いつでも 来られますよ。', 'はい、いつでも こられますよ。', 'Yes, you can come any time.'), ['potential']),
   n4('tourist.a.dekiru', 'yesno', k('ええ、だれでも する ことが できます。', 'Sure, anyone can do it.'), ['koto-ga-dekiru']),
   n4('tourist.a.mirareru', 'what', t('いろいろな ものが 見られますよ。', 'いろいろな ものが みられますよ。', 'You can see all sorts of things.'), ['potential']),

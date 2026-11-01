@@ -214,6 +214,43 @@ describe('Happyōkai!: content', () => {
     const ifCat = TITLES.find((t) => t.id === 'if-cat')!.jp;
     expect(openingFor('n4', 'Ladi', ifCat).kana).toContain('きょうは 「もし わたしが ねこだったら」に ついて');
   });
+
+  it('fits the N4 deck sentences to the slide: news, the "if" wish, and verbs for things you don\'t 使う', () => {
+    const slide = (id: string) => SLIDES.find((s) => s.id === id)!;
+    const byKind = (kind: string) => SLIDES.find((s) => s.kind === kind && !s.event && !s.use)!;
+    const tn = TITLES.find((t) => t.id === 'tn-tanuki')!;
+    expect(tn.deck).toBe('then-now');
+    expect(TITLES.some((t) => t.id === 'tn-town')).toBe(false);
+    const news = (s: (typeof SLIDES)[number]) => readySentences(s, 'n4', tn.topic, 'then-now')[2]!.kana;
+    expect(news(byKind('place'))).toMatch(/^じつは、らいげつ たぬきと .+に ひっこす ことに なりました。$/);
+    expect(news(byKind('food'))).toMatch(/^じつは、らいげつから たぬきが .+の おみせを ひらく ことに なりました。$/);
+    expect(news(byKind('living'))).toMatch(/^じつは、らいげつ たぬきと .+が けっこんする ことに なりました。$/);
+    expect(news(byKind('thing'))).toMatch(/が けっこんする ことに なりました。$/);
+    const ifT = deckTitlesFor('family', 'if')[0]!.topic;
+    const wish = (s: (typeof SLIDES)[number]) => readySentences(s, 'n4', ifT, 'if')[0]!.kana;
+    expect(wish(byKind('living'))).toMatch(/いっしょに いたいです。$/);
+    expect(wish(byKind('place'))).toMatch(/に すみたいです。$/);
+    expect(wish(byKind('food'))).toMatch(/まいにち .+を たべたいです。$/);
+    expect(wish(byKind('thing'))).toMatch(/まいにち .+を つかいたいです。$/);
+    expect(wish(slide('sakura'))).toMatch(/まいにち さくらを たのしみたいです。$/);
+    // おみくじ is drawn, not used; trains are ridden.
+    expect(wish(slide('omikuji'))).toMatch(/まいにち おみくじを ひきたいです。$/);
+    expect(readySentences(slide('omikuji'), 'n4', tn.topic, 'then-now')[0]!.kana).toContain('おみくじが ひけるように なりました');
+    expect(readySentences(slide('shinkansen'), 'n4', tn.topic, 'then-now')[0]!.kana).toContain('しんかんせんに のれるように なりました');
+    expect(wish(slide('rush-hour'))).toMatch(/でんしゃに のりたいです。$/);
+  });
+
+  it('asks いなかったら about a living slide word, なかったら about anything else', () => {
+    const living = SLIDES.find((s) => s.kind === 'living')!;
+    const other = SLIDES.find((s) => s.kind === 'thing')!;
+    const all = (s: (typeof SLIDES)[number]) => Array.from({ length: 40 }, (_, k) => questionsFor('n4', s, TITLES[0]!.topic, 'family', mulberry(k))).flat().map((q) => q.kana);
+    const livingQs = all(living);
+    expect(livingQs.some((q) => q.includes('いなかったら'))).toBe(true);
+    expect(livingQs.some((q) => /が なかったら/.test(q))).toBe(false);
+    const otherQs = all(other);
+    expect(otherQs.some((q) => /が なかったら/.test(q))).toBe(true);
+    expect(otherQs.some((q) => q.includes('いなかったら'))).toBe(false);
+  });
 });
 
 // ---- rules ----

@@ -318,7 +318,7 @@ export const INTRO_CARDS: IntroCard[] = [
       ['つり', 'fishing', '🎣'], ['キャンプ', 'camping', '⛺'], ['ゴルフ', 'golf', '⛳'], ['けんどう', 'kendō', '🤺'],
       ['さどう', 'the tea ceremony', '🍵'], ['ボクシング', 'boxing', '🥊'], ['スカイダイビング', 'skydiving', '🪂'], ['ジャグリング', 'juggling', '🤹'],
     ]),
-    pon: ponTile('yattemita', 'へんしん', 'shapeshifting'),
+    pon: ponTile('yattemita', 'ダイエット', 'a diet'),
   },
   {
     id: 'mitai',
@@ -334,8 +334,8 @@ export const INTRO_CARDS: IntroCard[] = [
     tiles: tiles('mitai', [
       ['スカイダイビング', 'skydiving', '🪂'], ['バンジージャンプ', 'a bungee jump', '🪢'], ['ダイビング', 'scuba diving', '🤿'], ['うちゅうりょこう', 'a trip to space', '🚀'],
       ['すもう', 'sumo', '🤼'], ['にんじゃしゅぎょう', 'ninja training', '🥷'], ['ふじさんの とざん', 'climbing Mount Fuji', '🗻'], ['せかいいっしゅう', 'a trip round the world', '🌍'],
-      ['ききゅう', 'a hot-air balloon', '🎈'], ['マラソン', 'a marathon', '🏃'], ['サーカス', 'the circus', '🎪'], ['ひとりたび', 'travelling alone', '🎒'],
-      ['かぶき', 'kabuki', '🎭'], ['ボルダリング', 'bouldering', '🧗'], ['まんがを かくこと', 'drawing manga', '✏'], ['イルカと およぐこと', 'swimming with dolphins', '🐬'],
+      ['ききゅうに のる こと', 'riding in a hot-air balloon', '🎈'], ['マラソン', 'a marathon', '🏃'], ['サーカス', 'the circus', '🎪'], ['ひとりたび', 'travelling alone', '🎒'],
+      ['かぶき', 'kabuki', '🎭'], ['ボルダリング', 'bouldering', '🧗'], ['まんがを かく こと', 'drawing manga', '✏'], ['イルカと およぐ こと', 'swimming with dolphins', '🐬'],
     ]),
     pon: ponTile('mitai', 'にんげんの ふり', 'passing as a human'),
   },
