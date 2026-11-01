@@ -536,7 +536,8 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
   const name = nameFor(s, ctx.player(t.guestId));
   if (truth && ctx.player(t.guestId)) {
     const line = fillFrame(card.first, truth.word);
-    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen', recall: 'read' });
+    // The guest's own true word, spoken: counts as memory. The printed greeting and こちらこそ stay read.
+    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen', recall: 'memory' });
   }
   for (const p of ctx.players()) {
     const greet = `はじめまして。${nameFor(s, p)}です。よろしく おねがいします。`;

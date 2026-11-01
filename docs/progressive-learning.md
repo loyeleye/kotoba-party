@@ -58,11 +58,11 @@ hand-written rōmaji, so it lights up with no other change.
   an untagged entry is read. A game tags `memory` only for a line spoken (not typed or tapped) without it
   on the screen: Last Train's answers, Shodō's spoken readings, Kana Raid's spoken kana, Bento Haus calls,
   Concentration pairs, Narabete time cards, shiritori words, Onsen questions, Tourist's own lines, and
-  the memory answers in Oogiri, Phrase Bingo and Happyōkai. Read is a line on the screen (every line in
-  Nice to Meet You!), an echo, a tile answer or encore, a typed answer, a script line or a lyric.
+  the memory answers in Oogiri, Phrase Bingo and Happyōkai. Nice to Meet You!'s own true word, spoken, is memory too. Read is a line on the screen (Nice to Meet
+  You!'s greeting and こちらこそ), an echo, a tile answer or encore, a typed answer, a script line or a lyric.
   `tests/recall-tags.test.ts` fails if any phrase a game can log as said leaves `recall` out. Each saved
   phrase keeps `recall` and the days it was said from memory (`memory`).
-- **The 21-day re-check:** 21 days after a frame is met, one of its phrases (the one said least, then the
+- **The re-checks:** 21 days after a frame is met, and once more 60 days after that check passes, one of its phrases (the one said least, then the
   longest ago) comes first in the phone's phrase review. Only that phrase decides: known, it passes;
   missed, the frame **fades** (a dashed ring on its station) until it's said from memory again on a later
   day, in a game or a review. The 済 stamp stays.
