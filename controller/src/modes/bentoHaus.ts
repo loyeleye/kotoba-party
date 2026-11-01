@@ -821,12 +821,12 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
             me.hard.desk.map((d) => [d.id, d.step, d.steps.map((x) => x.hint)]),
             me.hard.requests.map((q) => q.incidentId),
             Object.entries(me.hard.guests).map(([id, g]) => [id, g.step, g.steps.map((x) => x.hint)]),
-            me.hard.gallery ? [me.hard.gallery.kind, me.hard.gallery.picked] : null,
+            me.hard.gallery ? [me.hard.gallery.kind, me.hard.gallery.picked, me.hard.gallery.kind === 'react' ? !!me.hard.gallery.say?.missed : null] : null,
             !!me.hard.booth,
           ]
         : null,
       !!game.standIn?.gist,
-      game.standIn?.gallery ? [game.standIn.gallery.kind, game.standIn.gallery.picked] : null,
+      game.standIn?.gallery ? [game.standIn.gallery.kind, game.standIn.gallery.picked, game.standIn.gallery.kind === 'react' ? !!game.standIn.gallery.say?.missed : null] : null,
     ]);
   },
 
@@ -848,7 +848,7 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
           // The host stand-in: Pon plays the deputy manager for one line; Kana and N5 phones get the gist.
           boothGist(game.standIn?.gist ?? null),
           // Experiment standInCurveball: a Gallery tile on his line (or the once-a-game curveball).
-          galleryTile(game.standIn?.gallery ?? null, (pick) => void ctx.send({ kind: 'gallery', pick })),
+          galleryTile(game.standIn?.gallery ?? null, (pick, utterance) => void ctx.send({ kind: 'gallery', pick, utterance })),
           game.vs && game.vs.myTeam !== null ? h('p', { class: 'hint' }, 'Call your own team only: the other kitchen can’t hear your phone. Serve first to win the customer.') : null,
           game.me.shelf.length ? shelf(game.me, game.ownCounter) : null,
           h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, `「${example(game)}、おねがいします！」`)),

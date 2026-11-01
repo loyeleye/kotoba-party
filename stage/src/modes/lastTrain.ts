@@ -135,9 +135,16 @@ function standIn(game: LastTrainView): HTMLElement | null {
     'div',
     { class: 'lt-stand-in', style: `animation-delay:${si.atMs}ms` },
     h('p', { class: 'booth-tag' }, '📢 Chōchin-san takes the megaphone'),
-    h('p', { class: 'booth-line', lang: 'ja' }, '「', ruby(si.line), '」'),
-    h('p', { class: 'booth-note' }, si.line.en),
+    // While a curveball on his key word may still come (experiment standInCurveball), the word is a gap and the
+    // English is hidden, so the answer can't be read off the TV.
+    h('p', { class: 'booth-line', lang: 'ja' }, '「', ...(si.holdKey && si.lit.key ? [si.lit.before, boothGap(si.lit.key), si.lit.after] : [ruby(si.line)]), '」'),
+    si.holdKey ? null : h('p', { class: 'booth-note' }, si.line.en),
   );
+}
+
+/** A held key word as a gap of ＿, one a kana (at least two). */
+function boothGap(key: string): HTMLElement {
+  return h('span', { class: 'booth-gap', 'aria-label': 'missing word' }, '＿'.repeat(Math.max(2, [...key].length)));
 }
 
 /** The commentary booth: it lights up as Chōchin-san says the taken role's line. */

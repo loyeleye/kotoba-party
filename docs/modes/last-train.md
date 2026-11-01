@@ -96,8 +96,9 @@ stops, the same items.
 - **The announcer** (Station Announcement, 4.9): seven items where the N4 player makes the announcement
   instead of hearing one, so the line is shown, not played. まもなく、三番線に電車がまいります。,
   黄色い線の内側までお下がりください。, ドアが閉まります。お気をつけください。, both sentences at once,
-  電車がおくれて、もうしわけございません。, and the yōkai platform's ghost train, まもなく、ゆうれい れっしゃが
-  まいります。 (`station-announcement.22-announce-yuurei`, `keigo`; ゆうれいでんしゃ is accepted too). Frames
+  電車がおくれて、もうしわけございません。, and a ghost train, まもなく、ゆうれい列車がまいります。
+  (`station-announcement.22-announce-yuurei`, `keigo`; ゆうれいでんしゃ, the other word order (ゆうれいれっしゃが
+  まもなく まいります) and a plain でんしゃ / れっしゃ are accepted too). Frames
   `keigo`, `o-kudasai`.
 - **Lost and Found** (忘れ物センター, 4.6), `content/src/last-train/lost-and-found.ts`: a new minigame
   that rides a line only in a room with an N4 player. The Obake Line's 神社前 becomes 忘れ野 (Wasureno)
@@ -113,8 +114,8 @@ stops, the same items.
 - **Yōkai lost property** (Lost and Found, 4.6), three more N4 items in the same two roles: Pon's leaf, with
   ポン written on it (staff: ポンと書いてあります, `te-aru`); a kappa's missing dish (passenger: 頭の上にあったはずです,
   `hazu`); Chōchin-san's candle, as heard on the phone (staff: ちょうちんさんのろうそくだそうです, `sou-hear`).
-  When the candle item lands, Chōchin-san sees it's his own, once a game: 「あっ、わたしの ろうそく！　ゆらゆら…」
-  ("Oh, my candle! Sway…", `train_candle`, bank only, `RULES.candleAtMs` = 8.5 s into the reveal, after he has
+  When the candle item lands, Chōchin-san sees it's his own, once a game: 「あっ、それ、わたしの！　だから くらかった…」
+  ("Oh, that's mine! No wonder it's been so dark…", `train_candle`, bank only, `RULES.candleAtMs` = 8.5 s into the reveal, after he has
   said the staff's line; no time added).
 
 **Chōchin-san says the line** (decided by Ladi, 2026-11-01: the host says the line, the player's recording
@@ -129,7 +130,7 @@ row (⭐ and the role) and the model answer stay as they were. A missed, decline
 ### Mixed rooms (shared/src/modes/mixedRoom.ts)
 
 What the players without the hard role get, the same way in every game. None of it changes anyone's points,
-turns or items except the curveball's +5, and none of it happens in a room without an N4 player, except the host
+turns or items except the curveball (+10 with `scaledCurveball`) and a said reaction's +2, and none of it happens in a room without an N4 player, except the host
 stand-in.
 
 - **Gallery** (the announcer and Lost and Found's two roles; not the guest at the inn, whose favours are quieter
@@ -158,12 +159,14 @@ stand-in.
   announcement phase runs on until the line is said (about 2.5 s longer, once a game). Nobody is asked to say
   anything and nobody scores. The line is fixed, not drawn, so the game deals exactly as it would without it.
   - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 3.5 s in he first says
-    「きょうは わたしが アナウンスします。ゆらゆら。」 (`train_stand_in_setup`, bank only); the announcement follows
+    「アナウンスは わたしが！　ゆらゆら。」 ("The announcement? Leave it to me! Sway, sway.", `train_stand_in_setup`,
+    bank only); the announcement follows
     2.5 s later, and the stop's announcement runs 2.5 s longer for it.
   - *Experiment `standInCurveball`* (for Ladi to confirm): every phone gets a Gallery tile while he says it (bubbles
     on the TV), and once it's said (`standInAtMs` + its booth length) the once-a-game curveball is dealt on its key
-    word (まいります) to a player who hasn't reacted, +5 in the ledger. The gist waits on the phones until then (and
-    on the curveball phone until it's answered). The stop's announcement waits up to 5 s more for the answer and ends
+    word (まいります) to a player who hasn't reacted, +10 in the ledger (+5 with `scaledCurveball` off). The gist waits
+    on the phones until then (and on the curveball phone until it's answered), and while it may still come the TV
+    shows the key word as a gap (＿＿＿＿＿) with no English subtitle. The stop's announcement waits up to 5 s more for the answer and ends
     once it's in. Last Train now has `wakeAt`/`wake` for this, null otherwise.
 
 The mode can't tell a bot from a player (`ModePlayer` has no bot flag), so a bot in the room gets a Gallery tile

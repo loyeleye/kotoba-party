@@ -29,7 +29,7 @@ import { soundMorae } from '../karaokeDuel/scoring.js';
 import { splitMorae } from '../karaokeDuel/songs.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
-import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
 
@@ -1319,7 +1319,8 @@ export const dubClubMode: Mode<DubState, DubView> = {
               lit: s.standIn.c.lit,
               note: s.standIn.c.note,
               at: s.phaseAt + s.standIn.atMs,
-              ms: s.standIn.c.ms,
+              // The strip stays up through a curveball that may come, so the word is seen lit once it's answered.
+              ms: s.standIn.c.ms + (s.standIn.sg?.maybe ? STAND_IN_CURVEBALL_MS : 0),
               ...(s.standIn.sg ? { bubbles: galleryBubbles(s.standIn.sg.g), holdKey: standInHoldKey(s.standIn.sg) } : {}),
             }
           : null,

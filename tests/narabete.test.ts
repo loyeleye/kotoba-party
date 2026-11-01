@@ -1172,7 +1172,8 @@ describe('Narabete!: mixed rooms', () => {
       t.start();
       t.sayAll();
       const start = t.now;
-      const ms = t.view().standIn!.ms;
+      // The strip stays up through the curveball's window, so its ms runs that much past the line.
+      const ms = t.view().standIn!.ms - STAND_IN_CURVEBALL_MS;
       expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_standin', atMs: DURATIONS.standInEarlyAt });
       expect(t.s.cues.filter((c) => c.event === 'narabete_order')).toHaveLength(0);
       expect(t.s.deadline! - start).toBe(DURATIONS.reveal);

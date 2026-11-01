@@ -153,10 +153,10 @@ export const SPECIALS: readonly SpecialScript[] = [
     status: 'draft',
     customers: ['kitsune'],
     foodId: 'inari',
-    ask: { text: 'おいなりさんは べつの はこに いれて ください。かれには ないしょなの。', en: "Put the inari in a separate box, please. It's a secret from him." },
+    ask: { text: 'いなりずしは べつの はこに いれて ください。かれには ないしょなの。', en: "Put the inari in a separate box, please. It's a secret from him." },
     steps: [
       SURE,
-      { to: 'kitchen', check: 'kitchen', keys: ['いなり'], model: L('おいなりさんを べつの はこに いれて もらえますか。', 'Could you put the inari in a separate box?', ['te-moraeru']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['いなり'], model: L('いなりずしを べつの はこに いれて もらえますか。', 'Could you put the inari sushi in a separate box?', ['te-moraeru']) },
     ],
   },
   {
@@ -165,10 +165,10 @@ export const SPECIALS: readonly SpecialScript[] = [
     status: 'draft',
     customers: ['hitotsume'],
     foodId: 'onigiri',
-    ask: { text: 'めが おおきいから、おにぎりも おおきく して ください！', en: 'My eye is big, so make the rice ball big too!' },
+    ask: { text: 'おにぎりは ひとつ！　でも めが おおきいから、おおきく して ください！', en: 'One rice ball! But my eye is big, so make it a big one!' },
     steps: [
       SURE,
-      { to: 'kitchen', check: 'kitchen', keys: ['おおきく', 'おおもり'], model: L('おにぎりを おおきく して もらえますか。', 'Could you make the rice ball big?', ['te-moraeru']) },
+      { to: 'kitchen', check: 'kitchen', keys: ['おおきく', 'おおきめ', 'おおきい', 'おおもり'], model: L('おにぎりを おおきく して もらえますか。', 'Could you make the rice ball big?', ['te-moraeru']) },
     ],
   },
   {
@@ -772,7 +772,7 @@ export function standInBooth(at: number): Booth & { ask: JpLine } {
     line: { text: line.text, kana: line.kana, en: line.en },
     voiced: true,
     lit: lightUp(line.text, BOOTH_KEYS),
-    note: 'Pon plays the deputy manager tonight (ドロン！): かしこまりました, then a polite いただけますか.',
+    note: 'The deputy manager is… Pon! Poof! かしこまりました means "certainly", then the polite ask いただけますか, "could you please…?"',
     gist: { kana: 'はい、わかりました。ここで ちょっと まって ください。', en: '“Certainly! Please wait here a moment.”', emoji: '📋' },
     ms: commentaryMs(line),
     at,

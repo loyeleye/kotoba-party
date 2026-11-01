@@ -110,13 +110,15 @@ as before. Everyone else keeps their scripted line, and a room with no N4 player
   with one gone), Fude ad-libs one scene himself, once a game: 5 s into its scene card, after his table
   read, he says the scene's model ad-lib line (`dub_standin`), the TV shows it in the booth strip and Kana
   and N5 phones show the gist. Inside the 12 s scene card, so no time is added; nobody is asked to say
-  anything, and nothing is scored.
+  anything, and the line scores nothing (with `standInCurveball`, the curveball and a said reaction do).
   - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 5 s in he first says
-    「アドリブは かんとくが やります！　シュッ！」 (`dub_standin_setup`, bank only); the ad-lib follows 2.5 s later, and
+    「アドリブは かんとくが！　シュッ！」 ("The ad-lib? The director's got it! Swish!", `dub_standin_setup`, bank
+    only); the ad-lib follows 2.5 s later, and
     the scene card runs to its end: up to 14.5 s, 2.5 s more.
   - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile on the scene card while he
     says it (bubbles in the booth strip), and once it's said the once-a-game curveball on the longest mission word in
-    it (against the other scenes' mission words), +5. The card waits up to 5 s more for the answer and goes on to
+    it (against the other scenes' mission words), +5 (its scaled amount is 5 too). The booth strip stays up through
+    the 5 s the curveball may take, so the word is seen lit once it's answered. The card waits up to 5 s more for the answer and goes on to
     recording once it's in.
 
 Content: `Scene.adlib` (and `cheekyAdlib` for Under the Cherry Tree's Cheeky twist) in `scenes.ts`, one per
