@@ -1,7 +1,8 @@
 // Ghost Advice Hotline (おばけの おなやみ相談室) on the TV: Nobiko-san's late-night advice line.
 //
-//   ring    ☎ RING RING: the caller card (the yōkai, who is playing it, "🎤 said it" once they say it)
-//           and the problem line in kanji with furigana, English under it.
+//   (all)   the host row: Nobiko-san at the left the whole game, the caller's card (the yōkai, who is playing
+//           it, what they're doing, "🎤 said it") at the right, on the line all call long.
+//   ring    ☎ RING RING on the caller's card, and the problem line in kanji with furigana, English under it.
 //   plan    the holding loop: an adviser card each with a plan ring that turns ✓, the gallery's bet chips.
 //           Never what anyone picked.
 //   record  ● REC with level bars on each adviser still recording, ✓ Sent on the rest. No words, no sound.
@@ -166,20 +167,44 @@ function intro(game: HotlineView): HTMLElement {
 
 // ---- ring ----
 
-function callerCard(view: RoomView, game: HotlineView, small = false): HTMLElement | null {
+/** What the caller is doing, beat by beat, under their card in the host row. */
+const LINE_STATE: Record<string, string> = {
+  ring: 'calling in',
+  plan: 'on hold',
+  record: 'on hold',
+  play: 'listening',
+  react: 'reacting',
+  secret: 'tells the secret',
+  vote: 'still on the line',
+  points: 'still on the line',
+  booth: 'still on the line',
+};
+
+/**
+ * The caller, on the line all call long: their card sits in the host row across from Nobiko-san, so the
+ * room always sees who is phoning in (Ladi, 1 Nov 2026). It rings and shakes in the ring beat, and holds
+ * still after that. Before the first call the line is open and empty.
+ */
+function onTheLine(view: RoomView, game: HotlineView): HTMLElement {
   const c = game.call;
-  if (!c) return null;
+  if (!c || !game.step)
+    return h(
+      'div',
+      { class: 'gh-line gh-line-open', 'data-key': 'line:open' },
+      h('span', { class: 'gh-line-phone', 'aria-hidden': 'true' }, '☎'),
+      h('div', { class: 'gh-line-text' }, h('p', { class: 'gh-line-tag' }, 'LINES OPEN'), h('p', { class: 'gh-line-state' }, 'Waiting for the first call')),
+    );
+  const ringing = game.step === 'ring';
   return h(
     'div',
-    { class: `gh-caller${small ? ' gh-caller-small' : ''}`, style: seatVar(view, c.caller) },
-    h('p', { class: 'gh-caller-tag' }, small ? '☎ CALLER' : '☎ RING RING · CALLER'),
-    pic(c.who, `gh-caller-pic${small ? '' : ' gh-ringing'}`),
+    { class: `gh-line${ringing ? ' gh-line-ring' : ''}`, style: seatVar(view, c.caller), 'data-key': `line:${game.round}` },
+    pic(c.who, `gh-line-pic${ringing ? ' gh-ringing' : ''}`),
     h(
-      'p',
-      { class: 'gh-caller-who' },
-      c.caller ? seat(view, c.caller) : null,
-      c.caller ? h('span', { class: 'gh-as' }, ' as ') : null,
-      h('span', { class: 'gh-yokai' }, ruby(c.who.name), h('small', {}, ` ${c.who.name.en}`)),
+      'div',
+      { class: 'gh-line-text' },
+      h('p', { class: 'gh-line-tag' }, ringing ? '☎ RING RING' : '☎ ON THE LINE'),
+      h('p', { class: 'gh-yokai' }, ruby(c.who.name), h('small', {}, ` ${c.who.name.en}`)),
+      h('p', { class: 'gh-line-who' }, c.caller ? seat(view, c.caller) : h('span', { class: 'gh-muted' }, 'played by the game'), h('span', { class: 'gh-line-state' }, ` · ${LINE_STATE[game.step] ?? 'on the line'}`)),
     ),
     c.said ? h('span', { class: 'gh-said gh-pop' }, '🎤 said it') : null,
   );
@@ -199,7 +224,8 @@ function problem(game: HotlineView, slim = false): HTMLElement | null {
 
 function ringBeat(view: RoomView, game: HotlineView): HTMLElement {
   onceFor(`ring:${game.round}`, () => sfx('ring'));
-  return h('div', { class: 'gh-center gh-ringbeat' }, callerCard(view, game), problem(game), bar(RING_MS, game.stepAt));
+  // The caller rings in the host row (onTheLine); the beat itself is the problem, big.
+  return h('div', { class: 'gh-center gh-ringbeat' }, problem(game), bar(RING_MS, game.stepAt));
 }
 
 // ---- plan and record ----
@@ -581,6 +607,11 @@ export const ghostHotlineStage: StageMode<HotlineView> = {
       default:
         return caller ? '📞 caller' : adviser ? 'adviser' : gallery ? 'gallery' : '';
     }
+  },
+  hostRow(view, game) {
+    // Nobiko-san and the caller stay on screen all game, whether or not she is talking.
+    if (view.phase === 'lobby' || view.phase === 'recap') return null;
+    return { host: 'nobiko', side: onTheLine(view, game) };
   },
   hostHoldMs(view) {
     if (view.phase !== 'reveal') return 0;

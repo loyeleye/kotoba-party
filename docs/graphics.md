@@ -225,6 +225,8 @@ Since 2026-10-27 the stage draws its set into one 320×180 `<canvas>` behind eve
 | Onsen inn | `scenes/onsen-inn.png` | Murder at the Onsen |
 | Tea room | `scenes/tea-room.png` | Omiai Matchmaker |
 | Train carriage | `scenes/train-carriage.png` | Last Train (windows cut out) |
+| Call-in booth | `scenes/hotline-booth.png` | Ghost Advice Hotline (Nobiko-san's late-night advice line, 2026-11-01) |
+| Call light, off | `scenes/hotline-bulb-off.png` | The booth's red bulb unlit, drawn over the set while a call rings |
 | Pages | `scenes/page-a.png` … `page-c.png` | The loose dictionary pages floating in the studio's side lanes |
 
 Every set is a text-only PixelLab `pixflux` image drawn as pixel art from the start, with its bright
@@ -244,6 +246,11 @@ Per mode:
 - **Last Train:** the carriage. A night town (far skyline and near poles, drawn in code) scrolls past
   the windows during the intro and the first 1.5 s of each "next stop", then the train pulls in and
   holds; rain (秋雨) runs on the glass, and the straps sway while it moves.
+- **Ghost Advice Hotline:** the call-in booth: a starry window, a microphone and teacup at the left, a
+  rotary phone and a hanging red call light at the right. When a call rings in, the call light flashes
+  once a second for 3 s, then stays lit while the caller is on the line. Like confetti it is a one-off
+  signal, so it runs even while the room holds. The set is cropped so the light hangs just below the
+  caller's card in the host row, where Nobiko-san and the caller stay all game.
 - **Who's the Tourist?** stays on the plain studio: a themed set would tell the tourist the place.
 - **Confetti (紙吹雪):** one burst in gold and washi colours in the side lanes when a round's scores
   or the recap appear.

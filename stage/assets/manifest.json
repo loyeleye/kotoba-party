@@ -215,6 +215,33 @@
       "post": {}
     },
     {
+      "path": "stage/assets/scenes/hotline-booth.png",
+      "what": "Backdrop set for Ghost Advice Hotline: Nobiko-san's late-night call-in booth, a starry window, a microphone and teacup at the left, a rotary phone and a hanging red call light at the right",
+      "generator": "polish",
+      "model": "pixflux",
+      "prompt": "PixelLab pixflux, 320×224, seed 21: \"pixel art background, a small Japanese late-night radio booth for a ghost advice phone-in show after midnight, front view, a big dark window with a starry night sky across the back, a wooden desk along the bottom, a vintage silver microphone and a steaming teacup at the left, a big old black rotary telephone with a curly cord on the desk in front of a switchboard panel of small round lamps at the right edge, a round red on-air lamp hanging at the top right, a warm paper lantern hanging at the top left, dark navy and purple night colours, low contrast, the middle of the picture is dark, plain and empty, cozy and slightly spooky, no people, no characters, no text, no letters, no signs, no writing, no paper notes\" (outline single color black outline, shading medium, detail medium, view side, text_guidance_scale 8). Picked from 12 drafts (seeds 3, 7, 13 of two earlier prompts and 2, 5, 9, 13, 17, 21 of this one); the raw draft is tools/art/sources/hotline/booth-draft.png. tools/art/sources/hotline/booth-set.py keeps rows 12–191 (pixflux letterboxes a 320×180 request; this keeps the call light below the caller’s card in the host row) and paints the small framed picture at the left edge plain, since its marks read as fake writing. Marked polish because tools/art/generate.ts doesn't crop; rerun the call by hand to regenerate.",
+      "params": {
+        "width": 320,
+        "height": 224,
+        "seed": 21,
+        "outline": "single color black outline",
+        "shading": "medium shading",
+        "detail": "medium detail",
+        "view": "side",
+        "text_guidance_scale": 8
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/scenes/hotline-bulb-off.png",
+      "what": "Backdrop overlay for Ghost Advice Hotline: the booth's red call light unlit, drawn over the lit one on the off beats while a call rings in",
+      "generator": "polish",
+      "model": "hand-drawn",
+      "prompt": "Made by tools/art/sources/hotline/booth-set.py from hotline-booth.png: the bulb's four glass colours remapped to unlit reds, everything else transparent. No generator.",
+      "params": {},
+      "post": {}
+    },
+    {
       "path": "stage/assets/yokai/yokai-blob.png",
       "what": "Generic kana yokai body: round ghost blob (overlay a kana glyph on the belly)",
       "generator": "pixellab",

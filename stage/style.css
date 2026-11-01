@@ -154,6 +154,11 @@ body[data-phase='lobby'] .phase-line, body[data-phase='lobby'] .timer { visibili
 /* Fixed rows, so a hidden host doesn't shift the play area into an auto row. */
 .bar { grid-row: 1; }
 .host { grid-row: 2; }
+/* A mode that keeps its host up (Ghost Hotline): the host, her bubble when she talks, and the mode's own
+   card at the right end, at one height whether she is talking or not. */
+.host.host-kept { grid-template-columns: auto minmax(0, 1fr) auto; min-height: 150px; }
+.host.host-kept > .host-bubble { grid-column: 2; }
+.host-side { grid-column: 3; display: flex; align-items: center; }
 /* Bento Haus shifts: Pon talks a lot, so his row keeps one height (shown or not) and the counter stays put. */
 body[data-mode^='bento-haus'][data-phase='answer'] .host { height: 150px; }
 body[data-mode^='bento-haus'][data-phase='answer'] .host[hidden] { display: grid; visibility: hidden; }

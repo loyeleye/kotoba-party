@@ -36,13 +36,13 @@ const art: Record<string, HTMLImageElement> = {};
 const SETS: Partial<Record<ModeId, string>> = {
   'onsen-murder': 'onsen-inn',
   'karaoke-duel': 'karaoke-box',
-  // Ghost Advice Hotline: the karaoke box stands in for a late-night call-in booth until its own set is drawn.
-  'ghost-hotline': 'studio',
+  // Ghost Advice Hotline: Nobiko-san's late-night call-in booth (a mic, a rotary phone and the call light).
+  'ghost-hotline': 'hotline-booth',
   oogiri: 'comedy-stage',
   'phrase-bingo': 'comedy-stage',
   omiai: 'tea-room',
 };
-for (const name of ['studio', ...new Set(Object.values(SETS)), 'page-a', 'page-b', 'page-c', 'train-carriage']) {
+for (const name of ['studio', ...new Set(Object.values(SETS)), 'page-a', 'page-b', 'page-c', 'train-carriage', 'hotline-bulb-off']) {
   const img = new Image();
   img.src = `${ASSET}${name}.png`;
   img.onload = () => draw();
@@ -89,6 +89,9 @@ let camAt = 0;
 let lastFrame = 0;
 let timer: ReturnType<typeof setTimeout> | null = null;
 const confetti: { x: number; y: number; vx: number; vy: number; c: string; w: number }[] = [];
+/** Ghost Hotline: when this call's phone started ringing, and which call that was. */
+let ringAt: number | null = null;
+let ringKey = '';
 let burstAt: number | null = null;
 let wasCalm = false;
 
@@ -113,6 +116,14 @@ export function updateBackdrop(next: RoomView): void {
   const changed = !view || next.phaseSeq !== view.phaseSeq;
   const prevPhase = view?.phase;
   view = next;
+  // A new call rings in Ghost Hotline: the booth's call light flashes with the phone (the ring is a step
+  // inside the prompt phase, so it doesn't count as a phase change).
+  const ring = hotlineRing(next);
+  if (ring && ring !== ringKey) {
+    ringKey = ring;
+    ringAt = performance.now();
+    if (!changed) return restart();
+  }
   // The VIP's Calm motion switch arrives with the view: start or stop the loop when it flips.
   if (calm() !== wasCalm) {
     wasCalm = calm();
@@ -243,6 +254,7 @@ function drawSet(g: CanvasRenderingContext2D, mode: ModeId, set: string, effects
   g.save();
   clipOutSafe(g);
   if (mode === 'karaoke-duel') mirrorBall(g);
+  if (mode === 'ghost-hotline') callLight(g);
   if (mode === 'onsen-murder') steam(g);
   if (mode === 'omiai') petals(g);
   g.restore();
@@ -291,6 +303,29 @@ function spotlights(g: CanvasRenderingContext2D, alpha: number): void {
   }
   g.restore();
   g.globalAlpha = 1;
+}
+
+/** Ghost Hotline's ringing call, keyed by its prompt phase (null outside the ring beat). */
+function hotlineRing(v: RoomView): string | null {
+  const game = v.game as { step?: string | null } | null;
+  return v.mode === 'ghost-hotline' && game?.step === 'ring' ? String(v.phaseSeq) : null;
+}
+
+/** How long the call light flashes when a call rings in: three flashes, one a second. */
+const RING_FLASH_MS = 3_000;
+/** The call light's bulb, unlit, over the set's lit one (hotline-booth.png). */
+const BULB = { x: 272, y: 54 };
+
+/**
+ * Ghost Hotline: the red call light over the phone flashes once a second for the first 3 s of a call, as
+ * the phone rings, then stays lit while the caller is on the line. Like confetti it is a one-off signal,
+ * so it runs on the clock even while the room holds; it sits at the right edge, outside the text area.
+ */
+function callLight(g: CanvasRenderingContext2D): void {
+  if (ringAt === null || !ready('hotline-bulb-off')) return;
+  const since = performance.now() - ringAt;
+  if (since >= RING_FLASH_MS) return;
+  if (Math.floor(since / 500) % 2 === 1) g.drawImage(art['hotline-bulb-off']!, BULB.x, BULB.y);
 }
 
 /** Karaoke: dots from a mirror ball, stepping across the side walls once a bar. */

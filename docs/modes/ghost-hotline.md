@@ -13,6 +13,15 @@ Code: `shared/src/modes/ghostHotline/` (rules and views in `hotline.ts`; calls, 
 Design: the v2 storyboard and its six reviews in the project's `learning-path/storyboards/` (v2/CHANGES.md).
 Every line is `draft` until a fluent check.
 
+## On the TV
+
+The set is Nobiko-san's call-in booth (`stage/assets/scenes/hotline-booth.png`): a starry window, her
+microphone and teacup, a rotary phone and a red call light that flashes while a call rings in. Nobiko-san
+and the caller stay on screen all game (Ladi, 2026-11-01): she sits at the left of the host row, idling
+when she has nothing to say, and the caller's card sits at its right end, with the yōkai, who is
+playing it and what they're doing now (calling in, on hold, listening, reacting…). Before the first
+call the card says the lines are open.
+
 ## Why it works for speaking
 
 Giving advice is everyday speech (〜て ください at N5, 〜たら どうですか and 〜ほうが いいです at N4), and
