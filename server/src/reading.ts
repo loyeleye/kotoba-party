@@ -33,6 +33,10 @@ export async function createReader(): Promise<Reader | null> {
         reading: READING_FIXES[t.surface_form] ?? toHiragana(t.reading && t.reading !== '*' ? t.reading : t.surface_form),
         pos: t.pos,
         known: t.word_type === 'KNOWN',
+        detail: `${t.pos_detail_1},${t.pos_detail_2}`,
+        base: t.basic_form,
+        ctype: t.conjugated_type,
+        cform: t.conjugated_form,
       }));
     // Numbers first (三百五十円 → さんびゃくごじゅうえん, with sound changes), then the dictionary.
     const reader = ((text: string) =>

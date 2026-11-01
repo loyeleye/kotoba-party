@@ -22,6 +22,13 @@ export interface UtteranceToken {
   pos: string;
   /** False when the dictionary doesn't know the word (made-up words, typos). */
   known: boolean;
+  /** The dictionary's finer part of speech, two levels joined by a comma (接尾,助動詞語幹). */
+  detail?: string;
+  /** The dictionary form (られ → られる). */
+  base?: string;
+  /** The conjugation type and form (一段, 未然形), for verbs, adjectives and auxiliaries. */
+  ctype?: string;
+  cform?: string;
 }
 
 const KATA_START = 0x30a1;
