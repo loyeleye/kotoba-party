@@ -14,8 +14,8 @@ Code: `shared/src/japanese/frames.ts`. Tests: `tests/frames.test.ts`, lines in `
 - **`framesOf(phrase, tokens?)`** names every frame in a line, N5 to N3, sentence by sentence:
   「あめに ふられたので、おくれました」 is the passive, ので and ＿ました. `frameOf` is unchanged: it still names
   the one N5 frame a phrase is built on, from the original sixteen, for the chips and the path.
-- **136 frames.** The sixteen N5 frames (`FRAMES`), 17 more N5 frames the tiered path's goals need
-  (`MORE_N5_FRAMES`), 59 N4 frames (`N4_FRAMES`), and 44 N3 frames (`N3_FRAMES`): らしい, うちに and reason
+- **138 frames.** The sixteen N5 frames (`FRAMES`), 17 more N5 frames the tiered path's goals need
+  (`MORE_N5_FRAMES`), 61 N4 frames (`N4_FRAMES`), and 44 N3 frames (`N3_FRAMES`): らしい, うちに and reason
   ため from step 1, and the other 41 Limited Express frames from step 6 (see "The Limited Express" below). The N4 frames are the 50 for goals 4.1 to 4.14 (including the
   keigo-verb matcher), のに (moved from N3 on the Japanese expert's advice: Genki II and Minna II teach it in
   the N4 range), and eight the expert said an N4 student expects: みたい／ようです, polite ＿んです, the
