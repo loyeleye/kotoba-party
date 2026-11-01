@@ -69,55 +69,105 @@ between lines so he doesn't talk over the calls.
 
 ## Hard roles (N4)
 
-From the N4/N3 doc's hard roles, step 2. Co-op only; they ride on the same shift, so nobody else's part
-changes. A room with no N4 player never sees them (no state, no view fields). All lines are draft, in
-kana, and tagged by name with the N4 frames they practise (`hardRoles.ts`).
+From the N4/N3 doc's hard roles, step 2. Co-op only; they ride on the same shift. A room with no N4
+player never sees them (no state, no view fields; the host stand-in below is the one exception). All lines
+are draft, in kana, and tagged by name with the N4 frames they practise (`hardRoles.ts`).
 
-- **Offers.** At each shift's title card, the room's N4 players are offered a role on their phone: two
-  equal buttons, やります (Take it) or こんかいは いいです (Not this time: the ordinary part). One deputy
-  manager seat a shift, rotating through the N4 players; every other N4 player is offered the おもてなし
-  shift. With one N4 player the two alternate (deputy manager in shifts 1 and 3). A declined deputy
-  manager seat passes for that shift to the next N4 player in turn (Ladi, 2026-11-01), as a new logged
-  offer, skipping anyone already offered the seat this shift or already on the おもてなし shift; that
-  player's still-open おもてなし offer is withdrawn (unanswered, so never counted), so the phone shows one
-  choice at a time. Once every N4 player has declined it, the seat stays empty. The offer stays open
-  into the shift, below the order and call box. Every offer and its answer is kept in mode state
-  (`hard.offers`) with the shared offer log's answers (`hardRoleLog.ts`): accepted, declined, timeout
-  (still open at closing time) or away (the player left with it open). Gate = accepted ÷ (accepted +
-  declined + timeout), per game; away is left out (`offerStats().rate`).
+- **Offers.** At each shift's title card, the room's N4 players are offered a role on their phone, on the
+  shared offer card (`controller/src/components/roleOffer.ts`): two equal buttons, Take it (やります) or Not
+  this time (こんかいは いいです: the ordinary part). One deputy manager seat a shift, for the N4 player the
+  shared `nextOfferee` picks (`hardRoleLog.ts`): fewest offers of the seat so far, then the one offered
+  longest ago; a player who declined the seat last shift sits this one out; in a room of 4 or more, nobody
+  holds it two shifts running. Every other N4 player is offered the おもてなし shift. So a lone N4 player in a
+  room of 1–3 is offered the seat every shift (おもてなし after a decline), and in a room of 4 or more every
+  other shift (for Ladi to confirm: before round 4 a lone N4 player alternated in every room). A declined
+  seat passes for that shift to the next N4 player (Ladi, 2026-11-01), now picked by `nextOfferee` among
+  those not yet offered the seat this shift and not already on the おもてなし shift, as a new logged offer;
+  that player's still-open おもてなし offer is withdrawn (unanswered, so never counted), so the phone shows
+  one choice at a time. Once nobody is left to ask, the seat stays empty. The offer stays open into the
+  shift, below the order and call box. Every offer and its answer is kept in mode state (`hard.offers`) with
+  the shared offer log's answers: accepted, declined, timeout (still open at closing time) or away (the
+  player left with it open). Gate = accepted ÷ (accepted + declined + timeout), per game; away is left out
+  (`offerStats().rate`).
 - **Deputy manager (📋 ふくてんちょう)**, goals 4.1 and 4.9. Pon is busy "tasting" (his words), so
-  complaints and special orders come to this player, who is still a normal member of the kitchen. They
-  come one at a time, for 30 s each:
+  complaints and special orders come to this player. While holding the seat they take no ordinary orders:
+  the customers they'd have taken go to the other players in turn (open question 10, decided for Ladi
+  2026-11-01, for Ladi to confirm). Alone in the room, they still take every order. They keep their shelf and
+  are still sent tickets. Incidents come one at a time, for 30 s each:
   - a **complaint**: a box served with something off (not Pon's disguise). The deputy manager says sorry and
-    asks the customer to wait (「もうしわけ ございません。すこし まって いただけますか。」), then asks the
-    station that holds the food (「からあげを もう ひとつ つくって もらえますか。」, or
-    「おべんとうを つくりなおして もらえますか。」 when there's too much of something).
+    asks the customer to wait (「もうしわけ ございません。すこし まって いただけますか。」, or
+    「もうしわけ ございません。しょうしょう おまちください。」), then asks the station that holds the food
+    (「からあげを もう ひとつ つくって もらえますか。」, or 「おべんとうを つくりなおして もらえますか。」 when
+    there's too much of something).
   - a **special order**: every third customer while the deputy manager is free (no wasabi, warm it up, a big
     helping of rice, chopsticks, sauce on the side; the influencer wants a cuter box; the baku wants a
     dream, which the shop can't do: もうしわけ ございません and 「おにぎりに して いただけますか。」).
-    The deputy manager answers the customer (かしこまりました。〜て いただけますか), then asks the
-    station (〜て もらえますか, or 〜て くれませんか, tagged te-kuremasen).
+    The deputy manager answers the customer (かしこまりました。〜て いただけますか, or かしこまりました。
+    しょうしょう おまちください), then asks the station (〜て もらえますか, or 〜て くれませんか).
   The station gets a 📋 card with the deputy manager's line and taps はい、できました！; a missing food goes
-  into the box on the TV and the customer thanks the shop. The box's tips don't change.
+  into the box on the TV and the customer thanks the shop (Pon cheers: `bento_manager_win`).
+  - **Winning back tips.** A complaint's fix that lands (the station taps できました！) wins back half the
+    tips the box lost against a perfect one, rounded up, for the whole team: a one-thing-off box (2 of 3)
+    gets its 1 back, a sloppy one (1 of 3) gets 1 of its 2, a rush order's 2 of 6 gets 2 of its 4 (Ladi's
+    later list, 2026-11-01: "say half"; rounding up is for Ladi to confirm). The TV's desk shows +N 💰. A
+    special order loses nothing, so it wins nothing back; a missed fix wins nothing.
+  - **Need the words?** opens by itself on the deputy manager's first incident of the game (both lines),
+    so a first-timer sees the model lines. Lines read off it before their first try are logged as seen, as
+    before (for Ladi to confirm: the first incident's lines then count as seen, not said).
 - **おもてなし shift** (was Ryokan Front Desk), goals 4.7 and 4.9. A variant of the order-taker's job:
   each guest this player takes has a strip on the order card. Seat them (おすわりください /
   おまちください), then answer their question: turn a house rule down with ＿は ごえんりょ ください
   (pets for anyone; smoking and calls from Cheeky customers only, photos of other guests from the
   influencer, sleeping in the shop from the baku and the tanuki cub), never ＿ては いけません, or
-  say it's ready with ＿は よういして あります (chopsticks, a hand towel, cold tea, a booked seat). The guest
-  gives a star for each line said right and one for being served (0–3); the TV shows a 🌸 tag, the
-  question once seated, and the stars as they go; closing time adds the shift's おもてなし stars.
+  say it's ready with ＿は よういして あります (chopsticks, a hand towel, cold tea, a booked seat). Once the
+  answer lands the guest replies with a short line on the TV (「あ、そうですか。わかりました。」,
+  「よかった！　ありがとう。」; draft). The guest gives a star for each line said right and one for being
+  served (0–3); the TV shows a 🌸 tag, the question once seated, the reply, and the stars as they go;
+  closing time adds the shift's おもてなし stars. Both lines right: Pon cheers (`bento_omotenashi_win`,
+  inside his usual 7 s gap, so he may stay quiet in a rush).
 - **Checking.** Each line is checked for its frame (and for the thing named, so the station knows what
   is needed), on the speech server's reading. The phone's input shows the frame (「〜て いただけますか」,
   「＿は ごえんりょ ください」), not the line; the line is under "Need the words?", and a line whose words
   were opened before its first try goes in the phrasebook as seen, not said. A miss gets a private hint on the speaker's phone
   (「〜て もらえますか is for your own kitchen」, 「never 〜ては いけません」) and they can try again or skip;
   only lines said right reach the TV.
+  - **Accepted forms.** To the customer: 〜て いただけますか / いただけませんか, or (at the ask step, and at a
+    complaint's sorry step, which asks them to wait) しょうしょう おまちください (お〜ください). To the kitchen:
+    〜て もらえますか, 〜て くれますか / くれませんか, or 〜て いただけますか (too polite for your own kitchen,
+    but not wrong).
+  - **Credit only the frames used.** A line accepted in another form goes in the phrasebook (and on the TV
+    and the station's card) as the model line in that form, with its own item id: a kitchen line said with
+    くれますか is logged 「〜て くれますか。」 (te-kuremasen, not te-moraeru); with いただけますか,
+    te-itadakemasen; an ask said with おまちください, 「かしこまりました。しょうしょう おまちください。」 (o-kudasai,
+    not te-itadakemasen). Always a fixed line, never the player's own words.
 - **Pay.** A line said right earns the speaker a speaking bonus (20 out loud, 8 typed) from the same
-  capped pool as Co-op's other bonuses, and goes in their phrasebook. Team tips and everyone else's pay
-  are as before.
-- **Not built:** the host playing the role when nobody is N4, the commentary booth, the gallery,
-  curveball tiles, N3 lines (step 6), bots taking the roles, and VS (left unchanged).
+  capped pool as Co-op's other bonuses, and goes in their phrasebook. Team tips are as before, except the
+  tips a deputy manager's fix wins back.
+- **Not built:** N3 lines (step 6), bots taking the roles, and VS (left unchanged).
+
+### Mixed rooms
+
+The shared pieces in `shared/src/modes/mixedRoom.ts`, Bento's way. Nothing changes for Kana or N5 players'
+points, turns or tiles except the curveball's +5, and nothing here adds time: it all runs inside the shift (or
+the title card).
+
+- **Commentary booth.** Once a shift, when the deputy manager's first line to a customer lands (the sorry
+  or ask step said right), the TV shows a 📺 REPLAY strip under the counter for 5–7 s (`commentaryMs`): the
+  line with its key word lit (いただけますか, or おまちください), and one line of English colour about the
+  play. Pon voices the fixed line it was credited as (`bento_replay`, bank only, `{line}`), never the
+  player's words. Kana and N5 phones get the gist (「ごめんなさい。ちょっと まって ください。」 and plain
+  English, romaji for Kana). A skipped or missed line gets no booth.
+- **Gallery.** At the same moment, every other connected phone gets one tile for the shift, for 12 s
+  (`GALLERY_MS`): four reactions (すごい！ なるほど えっ？ あはは), shown on the TV as bubbles, never scored.
+  Once a game, the first Kana or N5 player's tile is the curveball instead: "Which word did you hear?", the
+  line's key word and two other request endings (もらえますか, くれませんか, おねがいします…, never one in the
+  line), +5 to their score if right. Bots can't be told apart from players in the mode, so a bot gets a
+  tile too (it never taps it).
+- **Host stand-in.** In a room of 1–2 connected players with nobody at N4 (`hostStandsIn`), on the first
+  shift's title card, 1.5 s in: Pon plays the deputy manager for one line. The TV shows the customer's ask
+  (「おべんとうを あたためて ください。」) and Pon's answer lit (「かしこまりました。こちらで すこし まって
+  いただけますか。」, `bento_standin`, bank only, with its subtitle); Kana and N5 phones get the gist. Nobody is
+  asked to say anything; no points; once a game, under 7 s, inside the 8 s title card.
 
 ## Not built yet
 
@@ -204,13 +254,43 @@ Each team is a whole Co-op kitchen; the two share only the customers.
    meter now punishes a run of sloppy boxes; Ladi kept the わけあり tip for the slower box, 2026-10-28.)
 7. VS: are the meter steps (+10 / +25 / +40), the 5-tip sent-back order and the 8-tip lead limit
    right, once played?
-8. Hard roles: should a deputy manager's fix win back a tip, or the おもてなし stars pay the team? (For now
-   neither changes team pay, so other players notice no change; decided for Ladi, 2026-11-01.)
+8. ~~Hard roles: should a deputy manager's fix win back a tip?~~ Decided by Ladi, 2026-11-01: a fix that
+   lands wins back half the tips the box lost (rounded up, for Ladi to confirm). Should the おもてなし stars
+   pay the team too? (For now they don't.)
 9. ~~Hard roles: does a declined deputy manager seat stay empty for the shift?~~ Decided by Ladi,
    2026-11-01: it passes to the next N4 player in turn for that shift, each pass a new logged offer; it
    stays empty only once every N4 player has declined it (see Offers).
-10. Hard roles: is a special order every third customer (was every second until 2026-11-01), and 30 s
-    on the desk, too much on top of a deputy manager's own orders? Should they stop taking orders
-    instead?
+10. ~~Hard roles: is a special order every third customer, and 30 s on the desk, too much on top of a
+    deputy manager's own orders?~~ Decided 2026-11-01 (Ladi's later list): the deputy manager stops taking
+    ordinary orders while holding the seat, unless they're alone in the room. Is every third customer now
+    too few, with their hands free?
+12. Mixed rooms: is once a shift right for the booth and the Gallery, or should every landed line get its
+    replay? Do players at their stations have a hand free to tap a reaction mid-rush?
 11. Hard roles: should the kitchen line accept 〜て いただけますか too (it does now: too polite for your
     own kitchen, but not wrong)?
+
+## Decisions
+
+- 2026-11-01 (Ladi): a declined deputy manager seat passes to the next N4 player for the shift (open
+  question 9); since round 4, "next" is the shared `nextOfferee`.
+- 2026-11-01 (Ladi's later list): a complaint's fix that lands wins back half the tips the box lost,
+  rounded up (rounding up: for Ladi to confirm). Specials win nothing back.
+- 2026-11-01 (Ladi's later list): the deputy manager takes no ordinary orders while holding the seat;
+  alone in the room, they keep taking them (open question 10).
+- 2026-11-01 (Ladi's later list): "Need the words?" opens by itself on the deputy manager's first incident
+  of the game; those lines are then logged as seen (for Ladi to confirm).
+- 2026-11-01 (Ladi's later list): guests reply with a short line once a decline or よういして あります line
+  lands; the ask step (and a complaint's sorry step) accepts しょうしょう おまちください, tagged o-kudasai.
+- 2026-11-01 (Ladi's later list): only the frames actually used are credited: a line accepted in another
+  form is logged as the model line in that form (くれますか: te-kuremasen; いただけますか: te-itadakemasen;
+  おまちください: o-kudasai).
+- 2026-11-01 (decided for Ladi, for Ladi to confirm): the seat's offers follow the shared `nextOfferee`, so a
+  lone N4 player in a room of 1–3 is offered the seat every shift (おもてなし after a decline) instead of
+  alternating.
+- 2026-11-01 (decided for Ladi, for Ladi to confirm): the booth and the Gallery come once a shift, on the
+  deputy manager's first landed line to a customer; Gallery tiles stay 12 s; the curveball's key word is
+  the line's ending (いただけますか or おまちください).
+- 2026-11-01 (decided for Ladi, for Ladi to confirm): the host stand-in is the warm-up special's polite ask,
+  1.5 s into the first shift's title card.
+- 2026-11-01 (decided for Ladi, for Ladi to confirm): Pon cheers every request done (even inside his 7 s
+  gap); his おもてなし cheer keeps the gap.
