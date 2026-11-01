@@ -166,6 +166,11 @@ export interface PhraseEntry {
   en: string;
   /** How it went: said from memory, needed a retry, or missed. */
   outcome: 'said' | 'retry' | 'missed' | 'seen';
+  /**
+   * For 'said': from memory, or read (off the screen, echoed after the TV, built from tiles, typed). Left out, it's
+   * memory, except in Dub Club and Karaoke Duel (progress.ts's recallOf). Only memory counts toward the learning path.
+   */
+  recall?: 'memory' | 'read';
 }
 
 export interface Award {

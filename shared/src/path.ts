@@ -1,148 +1,460 @@
-// The learning path (docs/progressive-learning.md): an optional, signed-in-only order through the games,
-// so a player always knows what to play next. Each step is one game and the sentence frames it
-// practises; a step is done once the player's saved progress shows it. The phone suggests the first
-// step not yet done that tonight's room can play. Nothing here changes a game: it only suggests.
+// The learning path, version 2 (docs/progressive-learning.md): three lines, Kana → N5 → N4, made of 24
+// can-do goals worked back from the N5 and N4 syllabus. A goal is met when the player has said its core
+// sentence frames from memory, with their own words in the gaps, on more than one day. It's opt-in,
+// signed-in only, and shows on that player's phone only: the TV and the games don't change for anyone.
 //
-// Pure rules over what the account already saves (yōkai cards, scores, the phrasebook's frames), so the
-// phone can work it out from GET /api/account/me with no new storage.
+// Pure rules. The account service (server/src/accounts.ts) marks frames and goals as games and reviews are
+// saved (markPath), and sends the result with My progress (pathStatus). The phone only draws it.
 
-import { FRAME_BY_ID, type FrameId } from './japanese/frames.js';
+import { kana } from '../../content/src/kana/kana.js';
+import { writeKanji } from '../../content/src/kanji/kanji.js';
+import { readTheSigns } from '../../content/src/last-train/read-the-signs.js';
+import { FRAME_BY_ID } from './japanese/frames.js';
+import { toRomaji } from './japanese/romaji.js';
 import { MODES, noFit } from './modes/registry.js';
-import type { AccountView } from './progress.js';
+import { DAY_MS, FRAME_FILLERS, FRAME_GAP_DAYS, FRAME_SAYS, dayOf, frameRules, markFrames, ruleMet, ruleProgress, type FrameMark, type FrameRule, type Progress } from './progress.js';
 import type { Level, ModeId } from './protocol.js';
 
-/** What the path looks at, boiled down from an AccountView. */
-export interface PathFacts {
+// ---- lines ----
+
+export type LineId = 'kana' | 'local' | 'express';
+
+export interface Line {
+  id: LineId;
+  /** Our own names only (the level picker keeps New, N5 and N4). */
+  name: string;
+  ja: string;
+  /** The level this line belongs to, and the level clearing it offers. */
   level: Level;
-  /** Yōkai caught (kana recalled on 3 different days). */
-  caught: number;
-  /** Finished games, by mode. */
-  played: Partial<Record<ModeId, number>>;
-  /** Phrases said from memory, by frame. */
-  said: Partial<Record<FrameId, number>>;
-  /** Saved phrases due for review, by the game they were last met in. */
-  due: Partial<Record<ModeId, number>>;
+  up: Level | null;
 }
 
-export interface PathStep {
-  id: string;
-  /** The game to play, and other games that count as playing it (Bento Haus VS for Bento Haus). */
-  mode: ModeId;
-  also?: ModeId[];
-  title: string;
-  /** Why this game now, in one line. */
-  why: string;
-  frames: FrameId[];
-  /** Skipped for players above this level (Kana Raid's reading step for N5 and N4 players). */
-  onlyFor?: Level[];
-  /** What "done" means, said to the player. */
-  goal: string;
-  /** How far along the goal is, 0 to 1. */
-  progress(f: PathFacts): number;
-}
+export const LINES: readonly Line[] = [
+  { id: 'kana', name: 'Kana Line', ja: 'かな線', level: 'kana', up: 'n5' },
+  { id: 'local', name: 'Local Line', ja: '各駅停車', level: 'n5', up: 'n4' },
+  { id: 'express', name: 'Express Line', ja: '急行', level: 'n4', up: null },
+];
+export const LINE_BY_ID: Readonly<Record<LineId, Line>> = Object.fromEntries(LINES.map((l) => [l.id, l])) as Record<LineId, Line>;
+export const lineFor = (level: Level): Line => LINES.find((l) => l.level === level)!;
 
-const playedOf = (f: PathFacts, s: Pick<PathStep, 'mode' | 'also'>): number => [s.mode, ...(s.also ?? [])].reduce((n, m) => n + (f.played[m] ?? 0), 0);
-const part = (have: number, need: number): number => Math.min(1, have / need);
-const avg = (...xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
-
-/** Kana caught before the path moves on from Kana Raid. */
-export const KANA_GOAL = 20;
+// ---- frames the goals name ----
 
 /**
- * The path, in order. It follows the beginner's order the design doc already uses (kana first, then
- * fixed frames in real situations, then free sentences), with each game reusing the frames before it.
+ * Every frame a goal names, with its own label and hand-written rōmaji (the Kana level reads rōmaji on all
+ * three surfaces). Ids not yet in frames.ts show as "coming soon": a goal that needs one can't be met until
+ * its matcher lands. frames.ts's own text wins once it has the id.
  */
-export const PATH: readonly PathStep[] = [
-  {
-    id: 'kana',
-    mode: 'kana-raid',
-    title: 'Read and say the kana',
-    why: 'Every other game is easier once kana stop being squiggles.',
-    frames: [],
-    onlyFor: ['kana'],
-    goal: `Catch ${KANA_GOAL} yōkai`,
-    progress: (f) => part(f.caught, KANA_GOAL),
-  },
-  {
-    id: 'intro',
-    mode: 'hajimemashite',
-    title: 'Introduce yourself',
-    why: 'Your first frame: ＿は ＿です. Swap the words and it says almost anything.',
-    frames: ['wa-desu', 'desu'],
-    goal: 'Play once and say a ＿です sentence 3 times',
-    // ＿が すきです is a です sentence too: the game's 「{name}さんは ＿が だいすきです」 lines count.
-    progress: (f) => avg(part(f.played.hajimemashite ?? 0, 1), part((f.said['wa-desu'] ?? 0) + (f.said.desu ?? 0) + (f.said.suki ?? 0), 3)),
-  },
-  {
-    id: 'ask',
-    mode: 'last-train',
-    title: 'Ask for things and places',
-    why: '＿を ください and ＿は どこですか get you through a station, a shop and a café.',
-    frames: ['kudasai', 'doko'],
-    goal: 'Play once and ask for something 2 times',
-    progress: (f) => avg(part(f.played['last-train'] ?? 0, 1), part(f.said.kudasai ?? 0, 2)),
-  },
-  {
-    id: 'order',
-    mode: 'bento-haus',
-    also: ['bento-haus-vs'],
-    title: 'Order with numbers',
-    why: 'The same ＿を ください, now with how many: ふたつ, さんこ, いっぽん.',
-    frames: ['kudasai'],
-    goal: 'Play one shift',
-    progress: (f) => part(playedOf(f, { mode: 'bento-haus', also: ['bento-haus-vs'] }), 1),
-  },
-  {
-    id: 'own',
-    mode: 'oogiri',
-    title: 'Make your own sentences',
-    why: 'Fill the frames you know with your own funny words.',
-    frames: ['wa-desu', 'suki', 'tai'],
-    goal: 'Play 2 games',
-    progress: (f) => part(f.played.oogiri ?? 0, 2),
-  },
-  {
-    id: 'numbers',
-    mode: 'narabete',
-    title: 'Times, prices and opinions',
-    why: 'Say numbers out loud until they come without counting on your fingers.',
-    frames: ['desu'],
-    goal: 'Play once',
-    progress: (f) => part(f.played.narabete ?? 0, 1),
-  },
-  {
-    id: 'questions',
-    mode: 'tourist',
-    title: 'Ask and answer questions',
-    why: 'Ask yes-or-no questions with か, and answer with そうです or ちがいます.',
-    frames: ['ka', 'sou'],
-    goal: 'Play once',
-    progress: (f) => part(f.played.tourist ?? 0, 1),
-  },
-  {
-    id: 'polite',
-    mode: 'omiai',
-    title: 'Polite Japanese',
-    why: 'です and ます all the way through, and when to bow with your words.',
-    frames: ['nan', 'masen-ka', 'te-mo-ii'],
-    goal: 'Play once',
-    progress: (f) => part(f.played.omiai ?? 0, 1),
-  },
+export const FRAME_TEXT: Readonly<Record<string, { ja: string; en: string; romaji: string }>> = {
+  // In frames.ts today.
+  'wa-desu': { ja: '＿は ＿です', en: 'A is B', romaji: '___ wa ___ desu' },
+  desu: { ja: '＿です', en: "It's ___", romaji: '___ desu' },
+  ka: { ja: '＿ですか ／ ＿ますか', en: 'Is it ___? / Do you ___?', romaji: '___ desu ka / ___ masu ka' },
+  'ja-nai': { ja: '＿は ＿じゃないです', en: "A isn't B", romaji: '___ wa ___ ja nai desu' },
+  sou: { ja: 'そうです ／ ちがいます', en: "That's right / That's not it", romaji: 'sō desu / chigaimasu' },
+  kudasai: { ja: '＿を ください', en: '___, please', romaji: '___ o kudasai' },
+  doko: { ja: '＿は どこですか', en: 'Where is ___?', romaji: '___ wa doko desu ka' },
+  nan: { ja: '＿は なんですか', en: 'What is ___?', romaji: '___ wa nan desu ka' },
+  suki: { ja: '＿が すきです', en: 'I like ___', romaji: '___ ga suki desu' },
+  'ni-aru': { ja: '＿に ＿が あります', en: 'There is ___ (at ___)', romaji: '___ ni ___ ga arimasu' },
+  'o-masu': { ja: '＿を ＿ます', en: 'I do ___ (to something)', romaji: '___ o ___ masu' },
+  mashita: { ja: '＿ました', en: 'I did ___', romaji: '___ mashita' },
+  tai: { ja: '＿たいです', en: 'I want to ___', romaji: '___ tai desu' },
+  'te-kudasai': { ja: '＿て ください', en: 'Please ___', romaji: '___ te kudasai' },
+  'masen-ka': { ja: '＿ませんか', en: "Won't you ___?", romaji: '___ masen ka' },
+  'te-mo-ii': { ja: '＿ても いいですか', en: 'May I ___?', romaji: '___ te mo ii desu ka' },
+  // N5, coming in frames.ts.
+  ikura: { ja: '＿は いくらですか', en: 'How much is ___?', romaji: '___ wa ikura desu ka' },
+  'ji-fun': { ja: '＿じ ＿ふん／ぷんです', en: "It's ___:___", romaji: '___ ji ___ fun/pun desu' },
+  'ni-masu': { ja: '＿じに ＿ます', en: "I ___ at ___ o'clock", romaji: '___ ji ni ___ masu' },
+  youbi: { ja: '＿ようび', en: '___day', romaji: '___ yōbi' },
+  'gatsu-nichi': { ja: '＿がつ ＿にち', en: 'month ___, day ___', romaji: '___ gatsu ___ nichi' },
+  'wa-ni-aru': { ja: '＿は ＿に あります', en: '___ is at ___', romaji: '___ wa ___ ni arimasu' },
+  'migi-hidari': { ja: 'みぎ ／ ひだり', en: 'right / left', romaji: 'migi / hidari' },
+  hoshii: { ja: '＿が ほしいです', en: 'I want ___', romaji: '___ ga hoshii desu' },
+  'de-o': { ja: '＿で ＿を ＿ます', en: 'I do ___ at ___', romaji: '___ de ___ o ___ masu' },
+  'te-iru': { ja: '＿て います', en: "I'm ___ing", romaji: '___ te imasu' },
+  no: { ja: '＿の ＿', en: "A's B", romaji: '___ no ___' },
+  'adj-desu': { ja: '＿いです ／ ＿です（な-adj.）', en: "It's ___ (adjective)", romaji: '___i desu / ___ desu (na-adj.)' },
+  kunai: { ja: '＿くないです', en: "It isn't ___", romaji: '___ kunai desu' },
+  kara: { ja: '＿から', en: 'because ___', romaji: '___ kara' },
+  'hou-ga': { ja: '＿の ほうが ＿', en: 'A is more …', romaji: '___ no hō ga ___' },
+  mashou: { ja: '＿ましょう', en: "Let's ___", romaji: '___ mashō' },
+  'naide-kudasai': { ja: '＿ないで ください', en: "Please don't ___", romaji: '___ naide kudasai' },
+  // N4, coming in frames.ts.
+  'te-moraeru': { ja: '＿て もらえますか', en: 'Could you ___ for me?', romaji: '___ te moraemasu ka' },
+  'te-kuremasen': { ja: '＿て くれませんか', en: 'Would you ___ for me?', romaji: '___ te kuremasen ka' },
+  'ageru-kureru': { ja: 'あげます ／ くれます ／ もらいます', en: 'give / give me / get', romaji: 'agemasu / kuremasu / moraimasu' },
+  'te-wa-ikenai': { ja: '＿ては いけません', en: "You mustn't ___", romaji: '___ te wa ikemasen' },
+  nakereba: { ja: '＿なければ なりません', en: 'I must ___', romaji: '___ nakereba narimasen' },
+  'nakutemo-ii': { ja: '＿なくても いいです', en: "You don't have to ___", romaji: '___ nakute mo ii desu' },
+  'ta-koto': { ja: '＿た ことが あります', en: "I've ___ before", romaji: '___ ta koto ga arimasu' },
+  'te-miru': { ja: '＿て みたいです', en: 'I want to try ___', romaji: '___ te mitai desu' },
+  'te-shimau': { ja: '＿て しまいました', en: 'I ended up ___', romaji: '___ te shimaimashita' },
+  potential: { ja: '＿られます ／ ＿えます', en: 'I can ___', romaji: '___ raremasu / ___ emasu' },
+  tara: { ja: '＿たら', en: 'if / when ___', romaji: '___ tara' },
+  ba: { ja: '＿ば', en: 'if ___', romaji: '___ ba' },
+  toki: { ja: '＿とき', en: 'when ___', romaji: '___ toki' },
+  nara: { ja: '＿なら', en: 'if it’s ___', romaji: '___ nara' },
+  'to-cond': { ja: '＿と', en: 'whenever ___', romaji: '___ to' },
+  'sou-look': { ja: '＿そうです（おいしそう）', en: 'It looks ___', romaji: '___ sō desu (oishisō)' },
+  'sou-hear': { ja: '＿いそうです／＿るそうです（おいしいそう）', en: 'I hear ___', romaji: '___ i sō desu / ___ ru sō desu (oishii sō)' },
+  'to-omou': { ja: '＿と おもいます', en: 'I think ___', romaji: '___ to omoimasu' },
+  kamo: { ja: '＿かもしれません', en: 'It might be ___', romaji: '___ kamo shiremasen' },
+  'you-to-omou': { ja: '＿(よ)うと おもいます', en: "I'm thinking of ___ing", romaji: '___ (y)ō to omoimasu' },
+  tsumori: { ja: '＿つもりです', en: 'I plan to ___', romaji: '___ tsumori desu' },
+  'hou-ga-ii': { ja: '＿た ほうが いいです', en: 'You should ___', romaji: '___ ta hō ga ii desu' },
+  plain: { ja: '＿（だ）よ ／ ＿ね ／ ＿の？', en: 'Casual: plain form + よ, ね, の?', romaji: '___ (da) yo / ___ ne / ___ no?' },
+  'n-da': { ja: '＿んだ', en: "it's that ___", romaji: '___ n da' },
+  teru: { ja: '＿てる', en: "___ing (casual)", romaji: '___ teru' },
+  'o-kudasai': { ja: 'お／ご＿ください', en: 'Please ___ (polite)', romaji: 'o/go ___ kudasai' },
+  'te-itadakemasen': { ja: '＿て いただけませんか', en: 'Could you kindly ___?', romaji: '___ te itadakemasen ka' },
+  'o-suru': { ja: 'お／ご＿します', en: "I'll ___ for you (humble)", romaji: 'o/go ___ shimasu' },
+};
+
+/** A frame's text for the phone: frames.ts's own when it has the id, else ours. */
+export function frameText(id: string): { ja: string; en: string; romaji: string } {
+  const ours = FRAME_TEXT[id];
+  const theirs = (FRAME_BY_ID as Readonly<Record<string, { ja: string; en: string } | undefined>>)[id];
+  if (theirs) return { ja: theirs.ja, en: theirs.en, romaji: ours?.romaji ?? toRomaji(theirs.ja.replace(/＿/g, ' ___ ')) };
+  return ours ?? { ja: id, en: id, romaji: id };
+}
+
+/** frames.ts can find this frame in a phrase today. */
+export const frameReady = (id: string): boolean => id in FRAME_BY_ID;
+
+// ---- goals ----
+
+/** One required frame, or any one of a few (5.7's question: か, なんですか or どこですか). */
+export type FrameNeed = string | readonly string[];
+const needIds = (n: FrameNeed): readonly string[] => (typeof n === 'string' ? [n] : n);
+
+export type GoalKind = 'frames' | 'kana' | 'set' | 'kanji';
+
+export interface Goal {
+  id: string;
+  line: LineId;
+  title: string;
+  /** Why this goal, in one line. */
+  why: string;
+  kind: GoalKind;
+  /** Required frames (bold in the tiers doc): all must be met. */
+  need: readonly FrameNeed[];
+  /** Frames that count toward it but aren't required. */
+  also: readonly string[];
+  /** Games where players actually say this, best first. */
+  games: readonly ModeId[];
+  /** No content yet: hidden on the map and left out of clearing its line. */
+  gap?: string;
+  /** Thin content (one game only): shown, with this note. */
+  thin?: string;
+}
+
+/** Kana goals are met at 90% of the script, so nobody has to hunt the last ヂ. */
+export const KANA_SHARE = 0.9;
+/** Kanji goals: this many read on 2 days. */
+export const KANJI_GOAL = 30;
+/** Set phrases (K3): this many of the 8, each said on 2 days. */
+export const SET_GOAL = 6;
+/** Kana, kanji and set phrases count once said from memory on this many days. */
+export const ITEM_DAYS = 2;
+
+/**
+ * K3's set phrases, with the everyday variants that count too. A phrase matches at the start of a line or
+ * after a space or punctuation, with spaces inside ignored. Draft: needs a fluent check.
+ */
+export const SET_PHRASES: readonly { ja: string; romaji: string; en: string; also?: readonly string[] }[] = [
+  { ja: 'おはようございます', romaji: 'ohayō gozaimasu', en: 'Good morning', also: ['おはよう'] },
+  { ja: 'こんにちは', romaji: 'konnichiwa', en: 'Hello' },
+  { ja: 'こんばんは', romaji: 'konbanwa', en: 'Good evening' },
+  { ja: 'ありがとうございます', romaji: 'arigatō gozaimasu', en: 'Thank you', also: ['ありがとうございました', 'ありがとう'] },
+  { ja: 'すみません', romaji: 'sumimasen', en: 'Excuse me / sorry', also: ['すいません'] },
+  { ja: 'ごめんなさい', romaji: 'gomen nasai', en: "I'm sorry", also: ['ごめん'] },
+  { ja: 'はじめまして', romaji: 'hajimemashite', en: 'Nice to meet you' },
+  { ja: 'よろしく おねがいします', romaji: 'yoroshiku onegai shimasu', en: "Glad to know you (lit. 'please be good to me')", also: ['よろしくおねがいいたします'] },
 ];
 
-/** The steps this player walks: Kana Raid's step only at the Kana level. */
-export const stepsFor = (level: Level): PathStep[] => PATH.filter((s) => !s.onlyFor || s.onlyFor.includes(level));
+const g = (id: string, line: LineId, title: string, why: string, need: FrameNeed[], also: string[], games: ModeId[], more: Partial<Goal> = {}): Goal => ({
+  id,
+  line,
+  title,
+  why,
+  kind: 'frames',
+  need,
+  also,
+  games,
+  ...more,
+});
 
-/** The path's facts from what My progress already loads. */
-export function factsOf(view: Pick<AccountView, 'cards' | 'bests' | 'frames' | 'phrases' | 'duePhrases'>, level: Level): PathFacts {
-  const played: PathFacts['played'] = {};
-  for (const b of view.bests) played[b.mode] = b.played;
-  const said: PathFacts['said'] = {};
-  for (const fr of view.frames) said[fr.id] = fr.said;
-  const due: PathFacts['due'] = {};
-  for (const p of view.duePhrases) due[p.mode] = (due[p.mode] ?? 0) + 1;
-  return { level, caught: view.cards.filter((c) => c.caughtAt !== null).length, played, said, due };
+/** The 24 goals in order, from the tiers doc (v2). Frame first, not game: any game that uses a frame counts. */
+export const GOALS: readonly Goal[] = [
+  g('K1', 'kana', 'Read and say hiragana', 'Every other game is easier once kana stop being squiggles.', [], [], ['kana-raid', 'shodo', 'concentration'], { kind: 'kana' }),
+  g('K2', 'kana', 'Read and say katakana', 'Menus, names and loanwords: コーヒー, ティー, ファン.', [], [], ['kana-raid', 'shodo'], { kind: 'kana' }),
+  g('K3', 'kana', 'Greet, thank, apologise', 'Eight set phrases get you through any first meeting.', [], [], ['last-train', 'hajimemashite', 'happyokai'], { kind: 'set' }),
+  g('K4', 'kana', 'Say who you are', 'Your first frame: put your name or job in the gap.', ['desu'], ['wa-desu'], ['hajimemashite', 'omiai']),
+  g('5.1', 'local', 'Introduce yourself and others', '＿は ＿です and its opposite say almost anything about anyone.', ['wa-desu', 'ja-nai'], ['no'], ['hajimemashite', 'omiai', 'happyokai']),
+  g('5.2', 'local', 'Shop and order, with how many', 'Ask for things and ask the price: ふたつ, さんこ, いっぽん.', ['kudasai', 'ikura'], [], ['bento-haus', 'bento-haus-vs', 'last-train', 'phrase-bingo']),
+  g('5.3', 'local', 'Times, days and dates', 'Say when: the time, the day, the date.', ['ji-fun', 'ni-masu'], ['youbi', 'gatsu-nichi'], ['last-train', 'narabete']),
+  g('5.4', 'local', 'Find your way', 'Ask where something is and understand the answer.', ['doko', ['wa-ni-aru', 'ni-aru']], ['migi-hidari'], ['last-train', 'tourist', 'oogiri']),
+  g('5.5', 'local', 'Likes and wants', 'Say what you like and what you want to do.', ['suki', 'tai'], ['hoshii'], ['hajimemashite', 'omiai', 'oogiri', 'tourist']),
+  g('5.6', 'local', 'Talk about your day', 'Say what you do and what you did.', ['o-masu', 'mashita'], ['de-o', 'te-iru'], ['happyokai', 'narabete', 'oogiri']),
+  g('5.7', 'local', 'Ask and answer', 'Turn any sentence into a question, and answer one.', [['ka', 'nan', 'doko'], 'sou'], [], ['tourist', 'onsen-murder', 'omiai']),
+  g('5.8', 'local', 'Describe and give reasons', 'Say what something is like, and why.', ['adj-desu', ['kunai', 'ja-nai']], ['kara', 'hou-ga'], ['happyokai', 'tourist', 'narabete', 'omiai']),
+  g('5.9', 'local', 'Invite, offer, ask', 'Invite softly, and ask someone to do something.', ['masen-ka', 'te-kudasai'], ['mashou', 'naide-kudasai'], ['omiai', 'phrase-bingo', 'oogiri']),
+  g('5.10', 'local', 'Read N5 kanji', 'The kanji on signs, menus and calendars.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
+  g('4.1', 'express', 'Ask favours', 'Ask someone to do something for you.', ['te-moraeru'], ['ageru-kureru', 'te-kuremasen'], ['phrase-bingo'], { thin: 'Only one game uses it so far.' }),
+  g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii'], ['tourist'], { thin: 'Only one game uses it so far.' }),
+  g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau'], ['hajimemashite', 'happyokai', 'phrase-bingo']),
+  g('4.4', 'express', 'Say what you can do', 'たべられます, はなせます: say what you can and can’t.', ['potential'], [], ['phrase-bingo', 'tourist']),
+  g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri']),
+  g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou'], ['kamo', 'sou-hear'], ['phrase-bingo', 'happyokai', 'tourist']),
+  g('4.7', 'express', 'Plans and advice', 'Say what you plan to do, and give advice.', ['you-to-omou'], ['tsumori', 'hou-ga-ii'], [], { gap: 'No game uses these yet.' }),
+  g('4.8', 'express', 'Talk casually with friends', 'Plain form with よ, ね and の: how friends talk.', ['plain'], ['n-da', 'teru'], ['omiai']),
+  g('4.9', 'express', 'Speak politely to strangers', 'The extra-polite asks for shops, stations and offices.', ['te-itadakemasen', ['o-kudasai', 'o-suru']], [], ['omiai', 'happyokai']),
+  g('4.10', 'express', 'Read N4 kanji', 'The next kanji up: verbs, places and time words.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
+];
+export const GOAL_BY_ID: Readonly<Record<string, Goal>> = Object.fromEntries(GOALS.map((x) => [x.id, x]));
+
+/** A goal's frames that can't be found in phrases yet (no matcher in frames.ts). */
+export const missingFrames = (goal: Goal): string[] => goal.need.filter((n) => !needIds(n).some(frameReady)).flatMap((n) => [...needIds(n)]);
+
+// ---- counting kana, kanji and set phrases ----
+
+const SCRIPT_IDS = {
+  hiragana: new Set(kana.filter((k) => k.script === 'hiragana').map((k) => k.id)),
+  katakana: new Set(kana.filter((k) => k.script === 'katakana').map((k) => k.id)),
+};
+const KANJI = {
+  n5: new Set(writeKanji.filter((k) => k.level === 'n5').map((k) => k.char)),
+  n4: new Set(writeKanji.filter((k) => k.level === 'n4').map((k) => k.char)),
+};
+/** How many of each a goal asks for. */
+export const KANA_TARGET = { hiragana: Math.ceil(SCRIPT_IDS.hiragana.size * KANA_SHARE), katakana: Math.ceil(SCRIPT_IDS.katakana.size * KANA_SHARE) };
+
+const squash = (s: string): string => s.replace(/[\s　、。！？!?「」]/g, '');
+
+/** Items said on enough days: each item's days, capped, then summed into a count and a 0–1 share. */
+function itemCount(daysByItem: Map<string, Set<string>>, target: number): { have: number; need: number; progress: number } {
+  let have = 0;
+  let part = 0;
+  for (const days of daysByItem.values()) {
+    if (days.size >= ITEM_DAYS) have += 1;
+    part += Math.min(days.size, ITEM_DAYS) / ITEM_DAYS;
+  }
+  return { have, need: target, progress: Math.min(1, part / target) };
 }
+
+const addDays = (m: Map<string, Set<string>>, key: string, days: Iterable<string>): void => {
+  const s = m.get(key) ?? new Set<string>();
+  for (const d of days) s.add(d);
+  m.set(key, s);
+};
+
+/** Kana recalled (yōkai cards), by script. */
+function kanaDays(p: Progress, script: 'hiragana' | 'katakana'): Map<string, Set<string>> {
+  const m = new Map<string, Set<string>>();
+  for (const c of Object.values(p.cards)) if (SCRIPT_IDS[script].has(c.itemId) && c.days.length) addDays(m, c.itemId, c.days);
+  return m;
+}
+
+/** The kanji a Read the Signs item asks for: its one sign, or the target sign when there are several. */
+const SIGN_KANJI: Map<string, string[]> = new Map(
+  readTheSigns.items.map((it) => {
+    const signs = it.signs ?? [];
+    const sign = signs.length === 1 ? signs[0] : signs.find((g) => g.target);
+    return [it.id, [...(sign?.text ?? '')]];
+  }),
+);
+
+/**
+ * Kanji read from memory in a game: Shodō's kanji (kj-<char>) and the target sign of a Read the Signs
+ * item. Other characters in the model answer, and phone-review days, don't count.
+ */
+function kanjiDays(p: Progress, level: 'n5' | 'n4'): Map<string, Set<string>> {
+  const m = new Map<string, Set<string>>();
+  for (const c of Object.values(p.phrases ?? {})) {
+    if (!c.memory?.length) continue;
+    const chars = c.itemId.startsWith('kj-') ? [c.itemId.slice(3)] : SIGN_KANJI.get(c.itemId);
+    if (!chars) continue;
+    const days = c.memory.filter((d) => d.game).map((d) => d.day);
+    for (const ch of chars) if (KANJI[level].has(ch)) addDays(m, ch, days);
+  }
+  return m;
+}
+
+const BOUNDARY = '[\\s　、。！？!?「」]';
+/** One pattern per set phrase: any of its forms, at a boundary, spaces inside optional. */
+const SET_MATCH: readonly RegExp[] = SET_PHRASES.map((x) => {
+  const forms = [x.ja, ...(x.also ?? [])].map((f) => [...squash(f)].join('[\\s　]*'));
+  return new RegExp(`(?:^|${BOUNDARY})(?:${forms.join('|')})`);
+});
+
+/** Set phrases said from memory, inside any saved phrase. */
+function setDays(p: Progress): Map<string, Set<string>> {
+  const m = new Map<string, Set<string>>();
+  for (const c of Object.values(p.phrases ?? {})) {
+    if (!c.memory?.length) continue;
+    SET_PHRASES.forEach((x, i) => {
+      if (SET_MATCH[i]!.test(c.kana)) addDays(m, x.ja, c.memory!.map((d) => d.day));
+    });
+  }
+  return m;
+}
+
+// ---- status ----
+
+export type Recheck = 'waiting' | 'due' | 'passed' | 'fading';
+
+export interface FrameState {
+  id: string;
+  ready: boolean;
+  met: boolean;
+  progress: number;
+  rule: FrameRule | null;
+  /** Null until met. */
+  recheck: Recheck | null;
+  /**
+   * Only the 3-day gap is missing: the day (YYYY-MM-DD) a say starts counting again. Null otherwise.
+   * Saying it again before then adds nothing.
+   */
+  waitUntil: string | null;
+}
+
+export interface GoalState {
+  id: string;
+  /** Hidden: no content yet (a gap). */
+  hidden: boolean;
+  /** Every required frame has a matcher, so the goal can be met. */
+  ready: boolean;
+  met: boolean;
+  metAt: number | null;
+  progress: number;
+  /** For kana, kanji and set phrases: how many of how many. */
+  count: { have: number; need: number } | null;
+  /** Some frame is due for its re-check, or faded. */
+  recheck: 'due' | 'fading' | null;
+  /** Open, and every need left is only waiting on the 3-day gap: the day it can move again. */
+  waitUntil: string | null;
+}
+
+export interface LineState {
+  id: LineId;
+  cleared: boolean;
+  /** Goals met, out of the visible ones that can be met today. */
+  met: number;
+  of: number;
+  /** Visible goals still waiting on a frame matcher ("coming soon"): not counted until they're ready. */
+  soon: number;
+}
+
+/** What My progress gets (AccountView.pathStatus): every goal, frame and line, worked out on the server. */
+export interface PathStatus {
+  goals: GoalState[];
+  frames: FrameState[];
+  lines: LineState[];
+  /** For the cleared screen: frames met, words (phrases) said from memory, kanji read. */
+  stats: { frames: number; words: number; kanji: number };
+}
+
+const NO_RULE: FrameRule = { says: 0, fillers: 0, days: 0, spaced: false, inGame: false, firstDay: null, lastDay: null };
+
+function recheckOf(m: FrameMark | undefined, now: number): Recheck | null {
+  if (!m) return null;
+  if (m.recheck === 'waiting') return now >= m.recheckAt ? 'due' : 'waiting';
+  return m.recheck;
+}
+
+/** Every frame any goal names. */
+export const GOAL_FRAMES: readonly string[] = [...new Set(GOALS.flatMap((x) => [...x.need.flatMap((n) => [...needIds(n)]), ...x.also]))];
+
+const plusDays = (day: string, n: number): string => new Date(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);
+
+/** The day a frame can move again, when the 3-day gap is all it lacks. */
+function waitOf(rule: FrameRule | null, met: boolean, today: string): string | null {
+  if (met || !rule?.firstDay || rule.spaced) return null;
+  if (rule.says < FRAME_SAYS || rule.fillers < FRAME_FILLERS || !rule.inGame) return null;
+  const from = plusDays(rule.firstDay, FRAME_GAP_DAYS);
+  return today < from ? from : null;
+}
+
+/** The whole path, from a save. `tzOffsetMin` is the player's (Date#getTimezoneOffset), for "today". */
+export function pathStatus(p: Progress, now: number, tzOffsetMin = 0): PathStatus {
+  const today = dayOf(now, tzOffsetMin);
+  const rules = frameRules(p);
+  const marks = p.frameMarks ?? {};
+  const frames: FrameState[] = GOAL_FRAMES.map((id) => {
+    const rule = rules.get(id) ?? null;
+    const met = !!marks[id];
+    return { id, ready: frameReady(id), met, progress: met ? 1 : ruleProgress(rule ?? NO_RULE), rule, recheck: recheckOf(marks[id], now), waitUntil: waitOf(rule, met, today) };
+  });
+  const byId = new Map(frames.map((f) => [f.id, f]));
+  // A need with several frames takes the best of them.
+  const needState = (n: FrameNeed) => {
+    const fs = needIds(n).map((id) => byId.get(id)!);
+    return { met: fs.some((f) => f.met), progress: Math.max(...fs.map((f) => f.progress)) };
+  };
+  const goals: GoalState[] = GOALS.map((goal) => {
+    const metAt = p.goalsMet?.[goal.id] ?? null;
+    let progress = 0;
+    let count: GoalState['count'] = null;
+    let met = false;
+    let waitUntil: string | null = null;
+    if (goal.kind === 'frames') {
+      const ns = goal.need.map(needState);
+      met = ns.every((n) => n.met);
+      progress = ns.reduce((a, n) => a + n.progress, 0) / ns.length;
+      // Waiting only when every need left has a frame that's just waiting on the gap.
+      const left = goal.need.filter((_, i) => !ns[i]!.met);
+      const waits = left.map((n) => needIds(n).map((id) => byId.get(id)!.waitUntil).filter((d): d is string => !!d).sort()[0] ?? null);
+      if (!met && waits.length && waits.every((d) => d)) waitUntil = (waits as string[]).sort()[waits.length - 1]!;
+    } else {
+      const c =
+        goal.kind === 'kana'
+          ? itemCount(kanaDays(p, goal.id === 'K1' ? 'hiragana' : 'katakana'), goal.id === 'K1' ? KANA_TARGET.hiragana : KANA_TARGET.katakana)
+          : goal.kind === 'kanji'
+            ? itemCount(kanjiDays(p, goal.id === '5.10' ? 'n5' : 'n4'), KANJI_GOAL)
+            : itemCount(setDays(p), SET_GOAL);
+      count = { have: Math.min(c.have, c.need), need: c.need };
+      met = c.have >= c.need;
+      progress = met ? 1 : c.progress;
+    }
+    const mine = goal.need.flatMap((n) => [...needIds(n)]).map((id) => byId.get(id)!);
+    const recheck = mine.some((f) => f.recheck === 'fading') ? 'fading' : mine.some((f) => f.recheck === 'due') ? 'due' : null;
+    const stamped = metAt !== null;
+    // The ring is for met goals only: an open goal's bar already says how far along it is.
+    const done = stamped || met;
+    return { id: goal.id, hidden: !!goal.gap, ready: missingFrames(goal).length === 0, met: done, metAt, progress: done ? 1 : progress, count, recheck: done ? recheck : null, waitUntil: done ? null : waitUntil };
+  });
+  // A line clears on the goals that can be met today. Coming-soon goals don't block it.
+  const lines: LineState[] = LINES.map((l) => {
+    const visible = goals.filter((x) => GOAL_BY_ID[x.id]!.line === l.id && !x.hidden);
+    const ready = visible.filter((x) => x.ready);
+    const met = ready.filter((x) => x.met).length;
+    return { id: l.id, cleared: ready.length > 0 && met === ready.length, met, of: ready.length, soon: visible.length - ready.length };
+  });
+  const words = Object.values(p.phrases ?? {}).filter((c) => c.recall === 'memory').length;
+  const kanji = new Set([...kanjiDays(p, 'n5').keys(), ...kanjiDays(p, 'n4').keys()]).size;
+  return { goals, frames, lines, stats: { frames: Object.keys(marks).length, words, kanji } };
+}
+
+/**
+ * After a game or a review is saved: marks frames that now meet the rule, and stamps goals newly met.
+ * Returns the goals stamped now (for the recap's hanko).
+ */
+export function markPath(p: Progress, now: number, tzOffsetMin = 0): string[] {
+  markFrames(p, now);
+  const st = pathStatus(p, now, tzOffsetMin);
+  const met = (p.goalsMet ??= {});
+  const fresh: string[] = [];
+  for (const x of st.goals) {
+    if (x.met && met[x.id] === undefined && x.ready) {
+      met[x.id] = now;
+      fresh.push(x.id);
+    }
+  }
+  return fresh;
+}
+
+// ---- what to play next ----
 
 /** Tonight's room, as far as the suggestion cares. */
 export interface RoomFit {
@@ -150,39 +462,49 @@ export interface RoomFit {
   speakers: number;
 }
 
+const fitsRoom = (mode: ModeId, room: RoomFit | null): boolean => !room || !noFit(MODES[mode].info, room.players, room.speakers);
+
+/** A goal that can be worked on today: visible, ready, not met. */
+const openGoal = (st: PathStatus, goal: Goal): boolean => {
+  const s = st.goals.find((y) => y.id === goal.id)!;
+  return !goal.gap && goal.games.length > 0 && s.ready && !s.met;
+};
+
+/**
+ * The line a player is working on: their level's, or the next one up with something open (a line that's
+ * cleared, or has only coming-soon goals left, is passed over). Their level's line when nothing is open.
+ */
+export function currentLine(st: PathStatus, level: Level): Line {
+  const start = LINES.indexOf(lineFor(level));
+  for (let i = start; i < LINES.length; i++) if (GOALS.some((x) => x.line === LINES[i]!.id && openGoal(st, x))) return LINES[i]!;
+  return LINES[start]!;
+}
+
 export interface Suggestion {
-  /** The step, or null once the path is done (then it's a review pick). */
-  step: PathStep | null;
+  line: Line;
+  goal: Goal;
   mode: ModeId;
-  /** Steps done, out of the player's steps. */
-  done: number;
-  of: number;
-  /** One line under the game's name. */
-  why: string;
-  /** The path's next step doesn't fit tonight's room, so this is the next one that does. */
+  /** The goal's own games don't fit tonight's room, so this goal comes from further along. */
   instead: boolean;
 }
 
-const fitsRoom = (mode: ModeId, room: RoomFit | null): boolean => !room || !noFit(MODES[mode].info, room.players, room.speakers);
-
 /**
- * What to play next: the first step not yet done that the room can play. With every step done, the game
- * that has the most saved phrases due (practice where it's needed), else null.
+ * What to play next: the first goal not yet met on the player's line that a game today can move, and the
+ * first of its games that fits the room. Goals still waiting on a matcher are skipped. Null when nothing fits.
  */
-export function suggest(facts: PathFacts, room: RoomFit | null): Suggestion | null {
-  const steps = stepsFor(facts.level);
-  const open = steps.filter((s) => s.progress(facts) < 1);
-  const done = steps.length - open.length;
-  const first = open[0];
-  const fit = open.find((s) => fitsRoom(s.mode, room));
-  if (fit) return { step: fit, mode: fit.mode, done, of: steps.length, why: fit.why, instead: fit !== first };
-  const review = (Object.entries(facts.due) as [ModeId, number][])
-    .filter(([m, n]) => n > 0 && m in MODES && m !== 'debug' && fitsRoom(m, room))
-    .sort((a, b) => b[1] - a[1])[0];
-  if (review && open.length === 0) return { step: null, mode: review[0], done, of: steps.length, why: `${review[1]} of your saved phrases from this game are due. Play it and they come back.`, instead: false };
+export function suggest(st: PathStatus, level: Level, room: RoomFit | null): Suggestion | null {
+  const line = currentLine(st, level);
+  // A goal only waiting on the 3-day gap is skipped: saying it again today adds nothing.
+  const open = GOALS.filter((x) => x.line === line.id && openGoal(st, x) && !st.goals.find((y) => y.id === x.id)!.waitUntil);
+  // A faded frame's goal comes first: say it again and the ring goes.
+  const fading = GOALS.filter((x) => x.line === line.id && st.goals.find((y) => y.id === x.id)?.recheck === 'fading');
+  const order = [...fading, ...open.filter((x) => !fading.includes(x))];
+  for (const [i, goal] of order.entries()) {
+    const mode = goal.games.find((m) => fitsRoom(m, room));
+    if (mode) return { line, goal, mode, instead: i > 0 };
+  }
   return null;
 }
 
-/** The frames a step names, for the phone: 「＿を ください」 · "___, please". */
-export const stepFrames = (s: PathStep): { ja: string; en: string }[] => s.frames.map((id) => ({ ja: FRAME_BY_ID[id].ja, en: FRAME_BY_ID[id].en }));
-
+/** The goal's place in its line, for "5.4 Find your way". */
+export const goalLabel = (goal: Goal): string => `${goal.id} ${goal.title}`;

@@ -18,7 +18,7 @@ import { quip, setQuipHost } from './components/ui.js';
 import { setSoundOff } from './components/voice.js';
 import { reconnectQuips, vipIdleQuip } from '../../content/src/hosts/quips.js';
 import { account, accountPanel, fetchMe } from './account.js';
-import { frameChip, loadPathView, nextCard, pathView } from './path.js';
+import { clearedCard, loadPathView, pathKey as pathViewKey, pathStrip, pathView, tonightBox, wishBadge } from './path.js';
 import { phrasebookButton } from './phrasebook.js';
 import type { HostId } from '../../content/src/types.js';
 
@@ -336,7 +336,7 @@ function render(view: RoomView): void {
     modeKey,
     endAsk,
     passAsk,
-    pathKey(view.phase),
+    pathKey(view),
   ].join('|');
   if (key === screenKey) return;
   screenKey = key;
@@ -444,25 +444,45 @@ function levelPicker(current: Level, onPick: (level: Level) => void): HTMLElemen
   );
 }
 
-/** What the learning path's card shows, so a loaded save or a pick redraws the lobby and recap. */
-function pathKey(phase: RoomView['phase']): string {
-  const v = phase === 'lobby' || phase === 'recap' ? pathView() : null;
-  return v ? `${v.games[0]?.at ?? 0}:${v.frames.map((f) => f.said).join()}:${menu.mode}` : '';
+/** What the learning path draws, so a loaded save, a pick or a wish redraws the lobby and recap. */
+function pathKey(view: RoomView): string {
+  if (view.phase !== 'lobby' && view.phase !== 'recap') return '';
+  const wishes = view.phase === 'lobby' ? `${JSON.stringify(view.wishes ?? {})}:${view.me?.wish ?? ''}` : '';
+  return `${pathViewKey()}:${menu.mode}:${wishes}`;
 }
 
-/** "Next on your path", for a signed-in player who turned the path on (path.ts). */
+const forceRedraw = (): void => {
+  screenKey = '';
+  redraw();
+};
+
+/** The learning path's one-row strip, for a signed-in player who turned the path on (path.ts). */
 function pathCard(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement | null {
-  return nextCard(me.level, { players: view.players.length, speakers: speakersIn(view.players) }, {
+  return pathStrip(me.level, { players: view.players.length, speakers: speakersIn(view.players) }, {
     isVip,
+    recap: view.phase === 'recap',
     picked: view.phase === 'lobby' ? (menu.mode as ModeId) || null : null,
+    wish: view.me?.wish ?? null,
     pick: (mode) => {
       menu.mode = mode;
       menu.rounds = 0;
-      if (view.phase === 'recap') void command({ type: 'playAgain' });
-      screenKey = '';
-      redraw();
+      forceRedraw();
     },
+    setWish: (mode) => void command({ type: 'wish', mode }),
+    redraw: forceRedraw,
   });
+}
+
+/** "Local Line cleared", once, with the level move on offer. */
+function pathCleared(me: PlayerView): HTMLElement | null {
+  return clearedCard(
+    me.level,
+    (level) => {
+      store('kotoba:level', level);
+      void command({ type: 'setLevel', level });
+    },
+    forceRedraw,
+  );
 }
 
 function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
@@ -476,10 +496,10 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
       store('kotoba:level', level);
       void command({ type: 'setLevel', level });
     }),
-    pathCard(view, me, isVip),
   ];
-  if (isVip) parts.push(vipMenu(view));
-  else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), quip(vipIdleQuip));
+  // The path's cleared card and strip sit under Start (or under the VIP's waiting line).
+  if (isVip) parts.push(vipMenu(view, pathCard(view, me, isVip), pathCleared(me)));
+  else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), pathCleared(me), pathCard(view, me, isVip), quip(vipIdleQuip));
   // Links to bring more people in: the phone link for when the QR code won't scan, the stage
   // screen link for friends playing from somewhere else.
   parts.push(fold('invite', ['Invite friends', ruby({ text: '友だちを よぼう', kana: 'ともだちを よぼう' }, { class: 'jp-k' })], 'Links for friends who can’t scan the code', invite(inviteLinks(session?.site ?? location.origin, view.code), view.code, false)));
@@ -656,7 +676,7 @@ function jaTitle(m: ModeInfo, level: Level): HTMLElement {
   return ruby({ text: m.titleJa, kana: m.titleKana }, { class: 'gp-ja' });
 }
 
-function vipMenu(view: RoomView): HTMLElement {
+function vipMenu(view: RoomView, strip: HTMLElement | null = null, cleared: HTMLElement | null = null): HTMLElement {
   const n = view.players.length;
   speakers = speakersIn(view.players);
   const level = view.players.find((p) => p.isVip)?.level ?? 'n5';
@@ -699,7 +719,7 @@ function vipMenu(view: RoomView): HTMLElement {
       },
       hostIcon(m),
       h('span', { class: 'gp-text' }, h('strong', {}, m.title), jaTitle(m, level), h('small', {}, m.blurb)),
-      h('span', { class: 'gp-players' }, playersLabel(m, n)),
+      h('span', { class: 'gp-players' }, playersLabel(m, n), isSurprise(m) ? null : wishBadge(view.wishes?.[m.id as ModeId])),
     ),
   );
   const sheet = h(
@@ -732,7 +752,7 @@ function vipMenu(view: RoomView): HTMLElement {
     mount(
       current,
       hostIcon(m),
-      h('span', { class: 'gp-text' }, h('small', { class: 'gp-kicker' }, 'Tonight’s game'), h('strong', {}, m.title), jaTitle(m, level), h('small', {}, m.blurb)),
+      h('span', { class: 'gp-text' }, h('small', { class: 'gp-kicker' }, 'Tonight’s game'), h('strong', {}, m.title), jaTitle(m, level), h('small', {}, m.blurb), isSurprise(m) ? null : wishBadge(view.wishes?.[m.id as ModeId])),
       h('span', { class: 'gp-change' }, 'Change'),
     );
     current.setAttribute('aria-label', `Tonight’s game: ${m.title}. Change game`);
@@ -785,6 +805,8 @@ function vipMenu(view: RoomView): HTMLElement {
     extras,
     note,
     startBtn,
+    cleared,
+    strip,
     fold('settings', ['Room settings', ruby({ text: 'へやの 設定', kana: 'へやの せってい' }, { class: 'jp-k' })], 'Calm motion · Hand over VIP', motionToggle(view), vipHandoff(view)),
     sheet,
   );
@@ -894,6 +916,7 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
       standings.map((s, j) => h('li', { class: s.playerId === me.id ? 'me-row' : '' }, h('span', {}, r?.coop ? s.name : s.score > 0 ? `${places.filter((p) => p === places[j]).length > 1 ? '=' : ''}${places[j]}. ${s.name}` : `–  ${s.name}`), h('span', { class: 'pts' }, s.score))),
     ),
     r?.awards.filter((a) => a.playerId === me.id).map((a) => h('p', { class: 'award' }, '🏆 ', h('span', { lang: 'ja' }, awardTitle(a.title)), ` · ${a.en}`)),
+    r?.phrasebook.length && view.mode ? tonightBox(r.phrasebook, view.mode, me.level) : null,
     r?.phrasebook.length
       ? h(
           'details',
@@ -912,13 +935,13 @@ function recap(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
                 ro ? h('span', { class: 'pc-romaji' }, ro) : null,
                 // A kana's English is its romaji (ま · ma): once is enough.
                 e.en !== ro ? h('span', { class: 'pc-en' }, e.en) : null,
-                pathView() ? frameChip(e, me.level) : null,
               );
             }),
           ),
         )
       : null,
     savedNote(),
+    pathCleared(me),
     pathCard(view, me, isVip),
     isVip ? h('button', { class: 'primary', onclick: () => void command({ type: 'playAgain' }) }, 'Back to the menu') : h('p', { class: 'hint' }, 'The VIP can start another game.'),
   );

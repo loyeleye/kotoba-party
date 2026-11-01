@@ -202,6 +202,24 @@ describe('views', () => {
     expect(cmd(s, as('p1'), { type: 'setLevel', level: 'n4' }).error).toBe('wrong-phase');
   });
 
+  it('takes one wish per phone in the lobby, shows counts only, and clears them when a game starts', () => {
+    const s = lobby(3);
+    expect(cmd(s, as('p1'), { type: 'wish', mode: 'oogiri' }).changed).toBe(true);
+    expect(cmd(s, as('p2'), { type: 'wish', mode: 'oogiri' }).changed).toBe(true);
+    expect(cmd(s, as('p2'), { type: 'wish', mode: 'oogiri' }).changed).toBe(false);
+    expect(cmd(s, as('p3'), { type: 'wish', mode: 'nope' as never }).error).toBe('unknown-mode');
+    expect(cmd(s, stage, { type: 'wish', mode: 'oogiri' }).error).toBe('not-allowed');
+    const v = viewFor(s, as('p1'), EMPTY_CONTENT);
+    expect(v.wishes).toEqual({ oogiri: 2 });
+    expect(v.me!.wish).toBe('oogiri');
+    expect(JSON.stringify(viewFor(s, stage, EMPTY_CONTENT).players)).not.toContain('wish');
+    expect(cmd(s, as('p1'), { type: 'wish', mode: null }).changed).toBe(true);
+    expect(viewFor(s, stage, EMPTY_CONTENT).wishes).toEqual({ oogiri: 1 });
+    toAnswer(s);
+    expect(s.players.some((p) => p.wish)).toBe(false);
+    expect(cmd(s, as('p1'), { type: 'wish', mode: 'oogiri' }).error).toBe('wrong-phase');
+  });
+
   it('switches a phone’s sound off and on, in the lobby or mid-game, and shows it in the view', () => {
     const s = lobby(2);
     expect(cmd(s, as('p1'), { type: 'setSound', on: false }).changed).toBe(true);

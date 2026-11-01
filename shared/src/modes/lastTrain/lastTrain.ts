@@ -404,8 +404,9 @@ function readUtterance(raw: unknown): Utterance | null {
   return { via: raw.via, text, reading: typeof raw.reading === 'string' ? raw.reading : undefined };
 }
 
-function phraseOf(item: MinigameItem, outcome: PhraseEntry['outcome']): PhraseEntry {
-  return { itemId: baseItemId(item.id), text: item.model.text, kana: item.model.kana, en: item.model.en, outcome };
+/** Spoken from memory, unless the line was read off the screen (read-aloud) or typed. */
+function phraseOf(item: MinigameItem, outcome: PhraseEntry['outcome'], promptType: PromptType, via: Via | null | undefined): PhraseEntry {
+  return { itemId: baseItemId(item.id), text: item.model.text, kana: item.model.kana, en: item.model.en, outcome, recall: promptType !== 'read-aloud' && via === 'speech' ? 'memory' : 'read' };
 }
 
 const nameOf = (ctx: ModeContext, id: string) => ctx.player(id)?.name ?? '(left)';
@@ -651,7 +652,7 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
     if (turn.status !== 'away') {
       t.stopsPlayed += 1;
       if (turn.correctOn !== 1) t.misses += 1;
-      ctx.phrase(p.id, phraseOf(item, turn.correctOn === 1 ? 'said' : turn.correctOn === 2 ? 'retry' : 'missed'));
+      ctx.phrase(p.id, phraseOf(item, turn.correctOn === 1 ? 'said' : turn.correctOn === 2 ? 'retry' : 'missed', turn.task.promptType, turn.attempts[0]?.via));
     }
     if (turn.ghostAtStart && t.ghost && turn.status !== 'away') {
       if (turn.correctOn) {
@@ -840,7 +841,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
       sweep(s, phase, ctx, null, true);
       const ghosted: string[] = [];
       for (const pt of Object.values(s.penalties)) {
-        ctx.phrase(pt.playerId, phraseOf(pt.task.item, pt.status === 'passed' ? 'said' : 'missed'));
+        ctx.phrase(pt.playerId, phraseOf(pt.task.item, pt.status === 'passed' ? 'said' : 'missed', pt.task.promptType, pt.attempt?.via));
         if (pt.status !== 'passed') {
           const t = traveller(s, pt.playerId);
           t.ghost = true;
@@ -959,7 +960,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
           if (!r.task || r.task.key !== raw.key) return moveError('wrong-phase');
           const item = r.task.item;
           const ok = !!u && checkUtterance(u, item.accepted, false);
-          ctx.phrase(playerId, phraseOf(item, ok ? 'said' : 'missed'));
+          ctx.phrase(playerId, phraseOf(item, ok ? 'said' : 'missed', r.task.promptType, u?.via));
           if (ok) {
             r.pos += 1;
             if (r.pos >= RULES.dashTrack) {

@@ -509,7 +509,7 @@ function bonusFor(x: Said, table: typeof ASK_BONUS | typeof ANSWER_BONUS): numbe
 function logPhrase(ctx: ModeContext, playerId: string, x: Said): void {
   const l = x.lineId ? LINES.get(x.lineId) : undefined;
   if (!l) return;
-  ctx.phrase(playerId, { itemId: l.id, text: l.jp.text, kana: l.jp.kana, en: l.jp.en, outcome: x.tier === 'own' && !x.approx ? 'said' : 'seen' });
+  ctx.phrase(playerId, { itemId: l.id, text: l.jp.text, kana: l.jp.kana, en: l.jp.en, outcome: x.tier === 'own' && !x.approx ? 'said' : 'seen', recall: x.tier === 'own' && !x.approx && x.via === 'speech' ? 'memory' : 'read' });
 }
 
 function tallyOf(v: Vote): { playerId: string; votes: number }[] {
@@ -850,7 +850,7 @@ export const touristMode: Mode<TouristState, TouristView> = {
         if (u !== undefined && isUtterance(u) && u.via !== 'tap' && namesPlace(u, guessed.name.kana, guessed.accepted)) {
           if (u.via === 'speech') stats(s, playerId).spoken += 1;
           payBonus(s, ctx, playerId, GUESS_BONUS[u.via]);
-          if (right) ctx.phrase(playerId, { itemId: `tourist.place.${guessed.id}`, text: guessed.name.text, kana: guessed.name.kana, en: guessed.name.en, outcome: 'said' });
+          if (right) ctx.phrase(playerId, { itemId: `tourist.place.${guessed.id}`, text: guessed.name.text, kana: guessed.name.kana, en: guessed.name.en, outcome: 'said', recall: 'read' });
         }
         if (lastChance) s.outcome!.lastChance = { placeId: raw.placeId, right };
         else s.outcome = { how: right ? 'guessed' : 'wrong-guess', accusedId: null, vote: null, guess: { placeId: raw.placeId, right }, lastChance: null };

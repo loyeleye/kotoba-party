@@ -1,8 +1,15 @@
 import { activeMode, inGame, modeContext, type GameContext, type GameState } from './game.js';
 import type { ContentLibrary } from './modes/mode.js';
 import { MENU } from './modes/registry.js';
-import type { RoomView, Viewer } from './protocol.js';
+import type { ModeId, RoomView, Viewer } from './protocol.js';
 import type { GameView } from './modes/views.js';
+
+/** Wishes per game, counts only: nobody is put on the spot. */
+function wishCounts(state: GameState): Partial<Record<ModeId, number>> {
+  const out: Partial<Record<ModeId, number>> = {};
+  for (const p of state.players) if (p.wish) out[p.wish] = (out[p.wish] ?? 0) + 1;
+  return out;
+}
 
 /**
  * Renders the room for one viewer. The stage and every phone get the same public view;
@@ -51,8 +58,9 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
       : null,
     me:
       viewer.kind === 'player'
-        ? { playerId: viewer.playerId, level: state.players.find((p) => p.id === viewer.playerId)?.level ?? 'n5' }
+        ? { playerId: viewer.playerId, level: state.players.find((p) => p.id === viewer.playerId)?.level ?? 'n5', wish: state.players.find((p) => p.id === viewer.playerId)?.wish ?? null }
         : null,
+    wishes: inLobby ? wishCounts(state) : {},
     remoteControl: state.remoteControl,
     audience: state.audience,
     surprise: state.surprise,
