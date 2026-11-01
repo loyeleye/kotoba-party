@@ -1792,8 +1792,11 @@ export const N3_FRAMES: readonly Frame[] = [
  */
 export const creditable = (id: FrameId): boolean => {
   const f = FRAME_BY_ID[id];
-  return !!f && !f.listening && f.level !== 'n3';
+  return !!f && !f.listening && (f.level !== 'n3' || SIM.n3);
 };
+
+/** Only tools/sim/ sets this: it credits N3 frames, to measure the Limited Express before it opens (`npm run sim:limited`). */
+export const SIM = { n3: false };
 
 /** Every frame, N5 to N3. */
 export const ALL_FRAMES: readonly Frame[] = [...FRAMES, ...MORE_N5_FRAMES, ...N4_FRAMES, ...N3_FRAMES];

@@ -1,5 +1,7 @@
 // How many game nights does an N4 player take to clear the Express Line (急行)? Step 5 of the N4/N3 plan:
-// a simulation in place of the guessed "12–16 nights".
+// a simulation in place of the guessed "12–16 nights". With --line limited, the same for an N3 player on the
+// Limited Express (特急, docs/n3-coverage.md): `npm run sim:limited`. N3 frames aren't credited until the line opens,
+// so the simulation turns them on for itself (frames.ts SIM).
 //
 // It uses the real rules end to end. Bots play the real games in-process (tools/sim/play.ts, with the
 // speaking options that make a bot say Pon's version from memory), and each N4 seat's phrasebook goes
@@ -19,7 +21,8 @@
 //   --reviews       phone review sittings between one game night and the next (0). A sitting reviews the due
 //                   phrases (up to 12) and the player knows each with the --memory chance; a known review is a
 //                   say from memory, as on the phone, so it counts toward a frame's says, fillers and spacing.
-// A room is 4 players: 2 N4 and 2 N5, everyone speaking. Re-checks (21 and 60 days) don't affect a stamp,
+//   --line          express (default) or limited
+// A room is 4 players: 2 N4 and 2 N5 (Limited Express: 2 N3, an N4 and an N5), everyone speaking. Re-checks (21 and 60 days) don't affect a stamp,
 // so phone reviews aren't simulated.
 //
 //   npx tsx tools/sim/expressLine.ts [--rooms 500] [--memory 0.7] [--json out.json]
@@ -29,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import type { Level } from '../../content/src/types.js';
 import { loadContent } from '../../server/src/content.js';
+import { SIM } from '../../shared/src/japanese/frames.js';
 import { GOALS, markPath, pathStatus, suggest, type Goal } from '../../shared/src/path.js';
 import type { ModeId } from '../../shared/src/protocol.js';
 import { addGame, DAY_MS, duePhrases, emptyProgress, phraseFrames, reviewPhrase, type GameResult, type Progress } from '../../shared/src/progress.js';
@@ -47,6 +51,7 @@ const { values } = parseArgs({
     goals: { type: 'string' },
     seed: { type: 'string', default: '1' },
     json: { type: 'string' },
+    line: { type: 'string', default: 'express' },
   },
 });
 
@@ -65,9 +70,13 @@ export interface SimOptions {
   seed: number;
 }
 
-const LEVELS: Level[] = ['n4', 'n4', 'n5', 'n5'];
+const LINE = values.line === 'limited' ? 'limited' : 'express';
+if (LINE === 'limited') SIM.n3 = true;
+/** The seats the path follows: N4 on the Express Line, N3 on the Limited Express. */
+const SEAT: Level = LINE === 'limited' ? 'n3' : 'n4';
+const LEVELS: Level[] = LINE === 'limited' ? ['n3', 'n3', 'n4', 'n5'] : ['n4', 'n4', 'n5', 'n5'];
 const ROOM = { players: LEVELS.length, speakers: LEVELS.length };
-const EXPRESS: readonly Goal[] = GOALS.filter((g) => g.line === 'express');
+const EXPRESS: readonly Goal[] = GOALS.filter((g) => g.line === LINE);
 /** The games a room plays: every game on an Express goal (4.7's too, though it isn't counted yet), and Late
  *  Again!, which the plan puts on 4.2, 4.3, 4.11 and 4.13 but the path doesn't list yet. */
 const MODES_ON_LINE: ModeId[] = [...new Set([...EXPRESS.flatMap((g) => g.games), 'late-again' as ModeId])];
@@ -80,7 +89,7 @@ export function buildLibrary(n: number, seed: number): Map<ModeId, GameResult[]>
     const out: GameResult[] = [];
     for (let i = 0; i < n; i++) {
       const g = playGame(content, mode, LEVELS, seed * 1000 + i + 1);
-      for (const s of g.seats) if (s.level === 'n4') out.push(s.result);
+      for (const s of g.seats) if (s.level === SEAT) out.push(s.result);
     }
     lib.set(mode, out);
   }
@@ -118,7 +127,7 @@ export function runRoom(lib: Map<ModeId, GameResult[]>, o: SimOptions, roomSeed:
     const nightAt = start + (night - 1) * o.nightsEvery * DAY_MS;
     for (let g = 0; g < o.games; g++) {
       const at = nightAt + g * 20 * 60_000;
-      const tip = random() < o.follow ? suggest(pathStatus(p, at), 'n4', ROOM) : null;
+      const tip = random() < o.follow ? suggest(pathStatus(p, at), SEAT, ROOM) : null;
       const mode = tip && lib.has(tip.mode) ? tip.mode : modes[Math.floor(random() * modes.length)]!;
       const pool = lib.get(mode)!;
       played[mode] = (played[mode] ?? 0) + 1;
@@ -131,7 +140,7 @@ export function runRoom(lib: Map<ModeId, GameResult[]>, o: SimOptions, roomSeed:
       for (const c of duePhrases(p, at)) reviewPhrase(p, c.itemId, random() < o.memory, at);
       for (const id of markPath(p, at)) if (EXPRESS.some((x) => x.id === id)) stamped[id] ??= night;
     }
-    if (pathStatus(p, nightAt + DAY_MS / 2).lines.find((l) => l.id === 'express')!.cleared) cleared = night;
+    if (pathStatus(p, nightAt + DAY_MS / 2).lines.find((l) => l.id === LINE)!.cleared) cleared = night;
   }
   return { stamped, cleared, played };
 }
@@ -202,13 +211,13 @@ const q3 = (x: { share: number; p25: number | null; median: number | null; p75: 
 
 function print(r: SimReport): void {
   const o = r.options;
-  console.log(`Express Line: ${o.rooms} rooms, a game night every ${o.nightsEvery} days, ${o.games} games a night, follow ${o.follow}, memory ${o.memory}, ${o.reviews} review sittings between nights, cap ${o.max} nights.\n`);
+  console.log(`${LINE === 'limited' ? 'Limited Express' : 'Express Line'}: ${o.rooms} rooms, a game night every ${o.nightsEvery} days, ${o.games} games a night, follow ${o.follow}, memory ${o.memory}, ${o.reviews} review sittings between nights, cap ${o.max} nights.\n`);
   console.log('Goal                                   counted  stamped  nights p25 / median / p75 (over all rooms)');
   for (const g of r.goals) console.log(`${`${g.id} ${g.title}`.padEnd(40)}${(g.counted ? 'yes' : 'no').padEnd(9)}${`${Math.round(g.share * 100)}%`.padEnd(9)}${q3(g, o.max)}`);
   console.log(`\nLine cleared in ${Math.round(r.line.share * 100)}% of rooms${r.line.share === 0 ? '' : `: nights ${q3(r.line, o.max)}`}.\n`);
   const rc = r.reachable;
   console.log(`${o.goals?.length ? 'Goals' : 'Goals most rooms stamp'} (${rc.goals.join(', ')}): all of them in ${Math.round(rc.share * 100)}% of rooms${rc.share === 0 ? '' : `, nights ${q3(rc, o.max)}`}.\n`);
-  console.log('Express frames an N4 seat says from memory, per game:');
+  console.log(`${LINE === 'limited' ? 'Limited Express' : 'Express'} frames an ${SEAT.toUpperCase()} seat says from memory, per game:`);
   for (const y of r.yields) console.log(`  ${y.mode.padEnd(14)} ${y.perGame.toFixed(1).padStart(4)}  ${Object.entries(y.frames).map(([k, v]) => `${k} ${v}`).join(', ')}`);
 }
 

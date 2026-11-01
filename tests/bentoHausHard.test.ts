@@ -7,6 +7,7 @@ import { apply, createGame, wakeAt, type GameAction, type GameContext, type Game
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import { STAND_IN_AT_MS, TIPS, type BentoState, type BentoView, type Round, type Visit } from '../shared/src/modes/bentoHaus/bentoHaus.js';
 import {
+  atStepLevel,
   checkLine,
   complaintSteps,
   creditedLine,
@@ -161,6 +162,30 @@ describe('Bento Haus hard roles: the lines', () => {
     expect(no.ok).toBe(false);
     expect(no.hint).toContain('ごえんりょ');
     expect(checkLine(speech('ごえんりょ ください。'), step).ok).toBe(false);
+  });
+
+  // N3 (docs/n3-coverage.md): an N3 order-taker's おもてなし lines use ＿させて いただきます and ＿て おります. Anyone may
+  // say them and is credited with the N3 line; an N3 player who says the N4 line is credited with that one.
+  it('N3 おもてなし lines pass their check, carry their N3 frames, and credit the form that was said', () => {
+    const steps = [WELCOME, ...GUEST_ASKS.map((a): StepScript => ({ to: 'customer', check: a.kind, model: a.model, n3: a.n3, ...(a.keys ? { keys: a.keys } : {}) }))];
+    for (const st of steps) {
+      const n3 = atStepLevel(st, 'n3');
+      expect(n3.model, st.model.text).toBe(st.n3);
+      expect(n3.plain, st.model.text).toBe(st.model);
+      const said = framesOf({ text: st.n3!.text, kana: st.n3!.kana }, undefined, { keepHidden: true });
+      for (const f of st.n3!.frames ?? []) expect([st.n3!.text, f, said.includes(f as never)]).toEqual([st.n3!.text, f, true]);
+      // The N3 line, from an N3 or an N4 player, is credited as the N3 line.
+      for (const step of [n3, st]) {
+        const r = checkLine(speech(st.n3!.text), step);
+        expect([st.n3!.text, r.ok, r.form]).toEqual([st.n3!.text, true, 'n3']);
+        expect(creditedLine(step, r.form, r.frames)).toBe(st.n3);
+      }
+      // The N4 line from an N3 player is still fine, credited as itself.
+      const r = checkLine(speech(st.model.text), n3);
+      expect([st.model.text, r.ok, r.form]).toEqual([st.model.text, true, 'plain']);
+      expect(creditedLine(n3, r.form, r.frames)).toBe(st.model);
+      expect(atStepLevel(st, 'n4')).toBe(st);
+    }
   });
 
   it('keigo to customers, もらえますか to the kitchen, with private hints', () => {

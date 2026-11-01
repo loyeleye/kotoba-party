@@ -4,6 +4,7 @@ import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { callsFor, heardAny, lineOf, MAX_ADVISERS, POINTS, REACT_LOCK_MS, REACT_MS, RECORD_MS, type HotlineState, type HotlineView } from '../shared/src/modes/ghostHotline/hotline.js';
+import { FRAME_BY_ID, framesOf } from '../shared/src/japanese/frames.js';
 import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, PROBLEMS, problemOf } from '../shared/src/modes/ghostHotline/problems.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -154,7 +155,7 @@ describe('Ghost Advice Hotline: content', () => {
       for (const id of tiles) expect(adviceOf(id), `${p.id} ${id}`).toBeTruthy();
       expect(kanaTilesOf(p), p.id).toContain(p.cure);
       expect(betTilesOf(p), p.id).toContain(p.cure);
-      for (const level of ['n5', 'n4'] as const) {
+      for (const level of ['n5', 'n4', 'n3'] as const) {
         const line = lineOf(p, level);
         expect(heardAny(line.model.kana, adviceOf(p.cure)!.keys), `${p.id} ${level}: ${line.model.kana}`).toBe(true);
         expect(line.mission, `${p.id} ${level}`).not.toMatch(/〜|＿|te-form|grammar/i);
@@ -162,6 +163,11 @@ describe('Ghost Advice Hotline: content', () => {
       expect(p.advice.n5.frame?.kana, p.id).toContain('＿＿');
       // Every N4 model uses a chunk the booth can credit.
       expect(CHUNKS.some((k) => k.level === 'n4' && heardAny(p.advice.n4.model.kana, k.keys)), p.id).toBe(true);
+      // N3 (docs/n3-coverage.md): its own advice, with a chunk the booth credits and an N3 frame the path counts.
+      expect(p.advice.n3, p.id).toBeTruthy();
+      expect(CHUNKS.some((k) => k.level === 'n3' && heardAny(p.advice.n3!.model.kana, k.keys)), p.id).toBe(true);
+      const said = framesOf({ text: p.advice.n3!.model.kana, kana: p.advice.n3!.model.kana }, undefined, { keepHidden: true });
+      expect([p.id, said.some((f) => FRAME_BY_ID[f]?.level === 'n3')]).toEqual([p.id, true]);
       for (const level of ['kana', 'n5', 'n4'] as const) expect(p.line[level].kana, `${p.id} ${level}`).toBeTruthy();
     }
     // A cure's keys never fire on the call's other tiles.
@@ -440,8 +446,8 @@ describe('Ghost Advice Hotline: chunks', () => {
     expect(heardAny('ねたらどうなりますか', ta.keys)).toBe(false);
     expect(heardAny('ねたらどうですか', ta.keys)).toBe(true);
     // Every model at a level uses that level's chunk.
-    for (const p of PROBLEMS) for (const lv of ['n5', 'n4'] as const) {
-      const m = p.advice[lv].model.kana.replace(/[\s　、。！？「」]/g, '');
+    for (const p of PROBLEMS) for (const lv of ['n5', 'n4', 'n3'] as const) {
+      const m = p.advice[lv]!.model.kana.replace(/[\s　、。！？「」]/g, '');
       expect(CHUNKS.some((k) => k.level === lv && heardAny(m, k.keys)), `${p.id} ${lv}`).toBe(true);
     }
   });

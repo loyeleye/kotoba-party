@@ -186,6 +186,30 @@ Other changes:
 A sweep of 13,942 game strings finds real lines for ＿かわりに, ＿と いうのは, ＿ふりを する, ＿だらけ, ＿に よって and
 ＿くらい (Nobiko's おこす くらい), and no wrong ones.
 
+### Part 2: the last speak points
+
+20 more matchers (`tests/frame-cases/n3-f.ts`), so every speak point in the inventory has one:
+
+| Goal | New optional frames |
+| --- | --- |
+| 3.2 | ＿た まま |
+| 3.3 | だって ＿もん |
+| 3.4 | ＿と いっても, ＿は もちろん, ＿うえに |
+| 3.6 | ＿はずだった, ＿てからで ないと, ＿を こめて |
+| 3.7 | ＿ても かまわない, ＿た ように |
+| 3.9 | ＿て はじめて, ＿ぶり, ＿て いらい |
+| 3.10 | ＿んじゃ ない？, ＿ほど ＿は ない, ＿そうに ない |
+| 3.11 | ＿ますように, ＿むけ ／ ＿むき, ＿たて, ＿と いえば |
+
+Look-alikes worth knowing: そのまま and わがまま aren't ＿た まま; もんだい, もんく and かいもん aren't ＿もん; つくえの うえに
+(a place) and じゅっさい ぐらい うえに (older) aren't ＿うえに; ひさしぶり (N5) isn't ＿ぶり; いらいら isn't ＿て いらい; the
+scold たべるんじゃ ない！ and Nの じゃ ない aren't ＿んじゃ ない？; かわいそうに isn't ＿そうに ない; みなみむき (a direction) and むきに
+なる aren't ＿むき; たてもの isn't ＿たて; なんと いえば いいか and もって いったら aren't ＿と いえば. A quoted request (やめてと
+いっても) isn't ＿と いっても. ＿ほど ＿は ない is shown over nothing; ＿はずだった over ＿はずです; ＿んじゃ ない？ over ＿じゃ
+ない and ＿んです; ＿そうに ない over ＿そうです (looks); ＿ますように over ＿ように. A sweep of 15,554 game strings finds them
+only in their own examples, the new host lines and Late Again!'s excuses, plus right ones (Nobiko's じゅうねんぶりに, Fude's
+こころを こめて, におう もんね).
+
 ## Fixes from the panel on #146
 
 The Japanese and JLPT seats found matcher gaps while checking the Express Line simulation:

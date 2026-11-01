@@ -31,9 +31,9 @@ Every N3 grammar point we know of has one entry, with a **fit** and a **band**:
 
 | Fit | Meaning | Band N3 count |
 | --- | --- | --- |
-| speak | said in a party; counts on its goal once it has a matcher | 91 (69 with a matcher, 22 without yet) |
+| speak | said in a party; counts on its goal (every one has a matcher) | 89 |
 | listen | heard in the hosts' lines, shown with a HEAR tag, **never counted** | 13 |
-| unchecked | spoken, but the game can't tell it apart from a look-alike yet | 4 |
+| unchecked | spoken, but the game can't tell it apart from a look-alike yet | 6 |
 | written | mostly written N3; passed by | 11 |
 
 - **Band** is where the point sits: `n3`, or `n4` (N4 review, such as most of 3.8's keigo, the suffering passive,
@@ -58,7 +58,7 @@ Every N3 grammar point we know of has one entry, with a **fit** and a **band**:
 ## What the player sees
 
 - **Station sheet:** required frames, then the folded "Also counts", then "You'll hear these".
-- **The 通過 sign** below the last station: "通過 Passing through · 15 N3 points this train doesn't stop for ·
+- **The 通過 sign** below the last station: "通過 Passing through · 17 N3 points this train doesn't stop for ·
   What's here?". It opens a sheet where Chōchin-san says 「この とっきゅうは、ここには とまりません。」 and lists the
   points in two groups (spoken but not told apart yet, and mostly written), then the kanji, word list and timed
   test sections.
@@ -68,15 +68,50 @@ Every N3 grammar point we know of has one entry, with a **fit** and a **band**:
 
 ## New frames in this change
 
-26 matchers for speak points, each optional on its goal, with the 10 positive and 10 look-alike bar
-(`tests/frame-cases/n3-e.ts`). See docs/n4-n3-frames.md, "Spoken N3 frames".
+46 matchers for speak points, each optional on its goal, with the 10 positive and 10 look-alike bar
+(`tests/frame-cases/n3-e.ts` and `n3-f.ts`). See docs/n4-n3-frames.md, "Spoken N3 frames". ＿ぐらい (at least) and
+＿って (casual topic) moved to unchecked: they look just like ぐらい (about) and quoting って.
+
+## Hearing the listening points
+
+Each of the 13 listening points has two host lines that say it (`content/src/hosts/n3Listening.ts`), given to the
+host who already talks that way: Nobiko-san gossips (とか いってた, かしら, ものだ, ぎみ, て ごらん), Chōchin-san
+announces (おきに, ごとに, ようなら, から に かけて, おそれが ある), Pon is casual (じゃん, ようが ない), and Fude gives advice
+(ことだ). They're tagged `level: 'n3'` and play only in a room where someone plays at N3 (the director sets
+`HostCue.n3`; the written bank and the AI's fallback bank both filter). A test checks every point has its lines.
+
+## N3 lines in the games
+
+- **Late Again!:** every cause has an N3 excuse whose chunk is an N3 frame: ＿せいで, ＿た まま, ＿はずだった,
+  ＿うちに, ＿させられる, the suffering passive, ＿ずに, ＿ようと する, ＿っぱなし, だって ＿もん, ＿た とたん, ＿うえに,
+  ＿に しては, ＿て ばかり, ＿わけでは ない, ＿しか ない.
+- **Ghost Advice Hotline:** every problem has N3 advice (＿べき, ＿さえ ＿ば, ＿んじゃ ない？, ＿に ちがいない, ＿ことは
+  ない, ＿ずに すむ, ＿しか ない, ＿ても かまわない), and the commentary booth credits those 8 chunks, the higher level
+  first.
+- **Bento Haus:** an N3 おもてなし order-taker's lines are ＿させて いただきます (the welcome), ＿は ごえんりょ いただいて
+  おります and ＿は ごよういして おります. Anyone may say them and is credited with the N3 line; the N4 lines stay
+  accepted for an N3 player and are credited as themselves.
+- **Yōkai Court** already had N3 lawyers (＿に ちがいない, ＿わけでは ない).
+
+## The simulation (`npm run sim:limited`)
+
+The Express Line simulation, run for the Limited Express (2 N3, an N4 and an N5 in a room; N3 frames credited for
+the run). 200 rooms, weekly nights, games only, Nov 1:
+
+- **Only 3.7 stamps in most rooms** (53%, median 58 nights). Every other goal stamps in no room, so the line
+  doesn't clear.
+- An N3 seat says Limited Express frames from memory per game: Bento Haus 9.7 (mostly ＿て おります and
+  かしこまりました), Ghost Advice Hotline 6.0, Yōkai Court 2.0, Late Again! 1.9, every other game 0.
+- Why goals don't stamp: most required frames have no game yet (らしい, ＿させられる on 3.2 needs two fillers, ＿おかげで,
+  ＿わりに, ＿くせに, ＿と したら, ＿ような きが する, ＿っぽい, ＿なんて, ＿うちに and ＿たびに together). And a fixed line
+  gives one filler only: Bento Haus's ＿させて いただきます is always ごあんない, so 3.8 can't meet "2 different words in
+  the gap" from it.
 
 ## Not built yet
 
-- Matchers for the 22 speak points that have none.
-- N3 game lines (Late Again!, Ghost Advice Hotline, Yōkai Court, Bento Haus first), then a `sim:limited`
-  simulation, so the Limited Express can rank its suggestions by pace.
-- Host lines for each listening point, and any listening credit (a quick-response check), if Ladi wants one.
+- Game lines for the required frames no game carries (see the simulation), and a second filler for Bento Haus's
+  welcome.
+- Any listening credit (a quick-response check), if Ladi wants one.
 - Pixel icons to replace the HEAR and 通過 text tags.
 
 The open questions from this decision are in the open questions doc.

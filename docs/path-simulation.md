@@ -197,11 +197,24 @@ Each of these is a change to a game or the path, so they're logged as open quest
 
 Once every goal is carried, the line's median replaces the guess in the plan.
 
+## The Limited Express (`npm run sim:limited`, Nov 1, 200 rooms)
+
+The same simulation for the Limited Express (docs/n3-coverage.md): 2 N3 players, an N4 and an N5 in a room, weekly
+nights, games only. N3 frames are credited for the run only (`SIM.n3`), since they don't count for players until
+the line opens.
+
+- **3.7 stamps in 53% of rooms** (median 58 nights). No other goal stamps in any room, so the line doesn't clear.
+- Limited Express frames an N3 seat says from memory, per game: Bento Haus 9.7, Ghost Advice Hotline 6.0, Yōkai
+  Court 2.0, Late Again! 1.9, every other game 0.
+- Most required frames have no game line yet, and Bento Haus's N3 welcome has one filler (ごあんない), so 3.8 can't
+  get "2 different words in the gap" from it. Both are open questions.
+
 ## Running it
 
 ```
 npm run sim:express -- --rooms 500 --memory 0.7 --follow 0.6 --nights-every 7 --games 3 --reviews 0 --json out.json
 npm run sim:express -- --rooms 500 --reviews 1 --goals 4.1,4.4,4.5,4.9
+npm run sim:limited -- --rooms 200
 ```
 
 It takes about 10 minutes for 500 rooms. `tests/pathSim.test.ts` checks that every Express game reaches its
