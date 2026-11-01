@@ -588,7 +588,8 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         const spoken = a.style === 'spoken' || a.style === 'memory-spoken';
         for (const u of a.used) {
           const itemId = u.form ? `${u.tile.wordId}:${u.form}` : u.tile.wordId;
-          ctx.phrase(playerId, { itemId, text: u.jp.text, kana: u.jp.kana, en: u.jp.en, outcome: spoken ? 'said' : 'seen' });
+          // A tile is read off the phone: said, but not from memory.
+          ctx.phrase(playerId, { itemId, text: u.jp.text, kana: u.jp.kana, en: u.jp.en, outcome: spoken ? 'said' : 'seen', recall: 'read' });
           if (u.right === false && u.tile.ask) {
             const want = u.tile.options?.find((o) => o.form === u.tile.ask);
             if (want) ctx.phrase(playerId, { itemId: `${u.tile.wordId}:${u.tile.ask}`, text: want.jp.text, kana: want.jp.kana, en: want.jp.en, outcome: 'missed' });
@@ -596,7 +597,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         }
         if (!a.english && !a.used.length) {
           const memory = a.style === 'memory-spoken' || a.style === 'memory-typed';
-          ctx.phrase(playerId, { itemId: `oogiri:${answer.id}`, text: a.text, kana: a.kana, en: sentence.en, outcome: memory || spoken ? 'said' : 'seen' });
+          ctx.phrase(playerId, { itemId: `oogiri:${answer.id}`, text: a.text, kana: a.kana, en: sentence.en, outcome: memory || spoken ? 'said' : 'seen', recall: a.style === 'memory-spoken' ? 'memory' : 'read' });
         }
         if (a.style === 'memory-spoken' || a.style === 'memory-typed') stats(s, playerId).brave += 1;
         // The host's reaction takes longer to write than the reveal waits, so it starts as the matchup locks.
@@ -650,7 +651,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         m.encores[playerId] = kind;
         if (kind !== 'host') {
           stats(s, playerId).brave += 1;
-          ctx.phrase(playerId, { itemId: `oogiri:${mine.id}`, text: mine.text, kana: mine.kana, en: mine.sentence.en, outcome: kind === 'said' ? 'said' : 'seen' });
+          ctx.phrase(playerId, { itemId: `oogiri:${mine.id}`, text: mine.text, kana: mine.kana, en: mine.sentence.en, outcome: kind === 'said' ? 'said' : 'seen', recall: 'read' });
           if (kind === 'said') cue(ctx, { event: 'encore_cheer', slots: { name: ctx.player(playerId)?.name ?? '' }, prompt: promptCue(m.prompt), answer: mine.text, answerEn: mine.en });
         }
         return MOVE_OK;

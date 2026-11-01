@@ -641,43 +641,84 @@ input::placeholder { color: #a99ccf; }
 .ms-foot { padding: 10px 16px 16px; border-top: 1px solid var(--line); }
 .ms-foot .primary { width: 100%; }
 
-/* The learning path (controller/src/path.ts, docs/progressive-learning.md): the lobby and recap card, frame
-   chips on the recap phrasebook, and My progress's Path tab. Phone only. */
-.path-next { display: grid; gap: 6px; margin: 4px 0; padding: 14px; border-radius: 12px; border: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); text-align: left; }
-.path-next p { margin: 0; }
-.path-kicker { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); }
-.path-game strong { font-size: 20px; }
-.path-game span { color: var(--muted); }
-.path-step { font-weight: 700; }
-.path-why, .path-note, .path-goal { color: var(--muted); font-size: 15px; line-height: 1.4; }
-.path-pick { justify-self: start; margin-top: 4px; }
-.path-frames { list-style: none; margin: 2px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.path-frames li, .frame-chip { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--outline); border: 1px solid var(--line); }
-.path-frames li span, .frame-ja { font-family: var(--font-ja); font-weight: 700; color: var(--ink); }
-.path-frames li small, .frame-chip small { color: var(--muted); font-size: 13px; }
-.phrase-card .frame-chip { justify-self: start; margin-top: 4px; }
-.frame-romaji { font-style: italic; }
-
+/* The learning path (controller/src/path.ts, docs/progressive-learning.md): the lobby strip, the recap's
+   "Tonight on your path" box and hanko, the line-cleared card, and My progress's train map. Phone only. */
+.path-strip { --line-c: var(--good); margin: 6px 0 0; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); text-align: left; }
+.path-strip.loading { min-height: 48px; border-color: transparent; background: transparent; }
+.path-strip-row { display: flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 6px 0 0; }
+.path-strip-text { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
+.path-strip-text > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.path-strip.open .path-strip-text > span:last-child { white-space: normal; }
+.path-act { flex: none; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--gold); background: none; color: var(--gold); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.path-act.on { background: color-mix(in srgb, var(--gold) 18%, transparent); }
+.path-done { flex: none; padding: 0 8px; font-size: 13px; color: var(--good); font-weight: 700; }
+.path-strip-more { display: grid; gap: 6px; padding: 0 12px 12px; }
+.path-line-dot { flex: none; width: 12px; height: 12px; border-radius: 50%; border: 3px solid var(--line-c); background: var(--bg); }
+[data-line='kana'] { --line-c: var(--gold); }
+[data-line='local'] { --line-c: var(--good); }
+[data-line='express'] { --line-c: var(--bad); }
+.path-detail { display: grid; gap: 6px; }
+.path-detail p, .path-strip-more p, .path-tonight p, .path-cleared p { margin: 0; }
+.path-why, .path-note, .path-goal, .path-games { color: var(--muted); font-size: 14px; line-height: 1.4; }
+.path-label { display: block; width: 100%; color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.path-frames { display: flex; flex-wrap: wrap; gap: 6px; }
+.frame-chip { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; padding: 4px 10px; border-radius: 999px; background: var(--outline); border: 1px solid var(--line); }
+.frame-chip.soon { border-style: dashed; opacity: 0.75; }
+.frame-ja { font-family: var(--font-ja); font-weight: 700; color: var(--ink); }
+.frame-chip small { color: var(--muted); font-size: 13px; }
+.frame-chip .frame-romaji { color: var(--warn); }
+.frame-chip .frame-n { color: var(--good); font-weight: 700; }
+.frame-any { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.frame-any > small { color: var(--muted); font-size: 12px; }
+.path-set { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.path-set li { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.path-set li span { font-family: var(--font-ja); font-weight: 700; }
+.path-set small { color: var(--muted); font-size: 13px; }
+.path-set .frame-romaji { color: var(--warn); }
+/* 済, on the hanko art the yōkai cards use. */
+.path-hanko { display: inline-grid; place-items: center; width: 22px; height: 22px; color: #fff8ec; font-family: var(--font-ja); font-weight: 900; font-size: 13px; line-height: 1; background: url('/stage/assets/icons/hanko.png') center / 100% 100% no-repeat; image-rendering: pixelated; transform: rotate(-6deg); }
+.path-hanko.big { width: 44px; height: 44px; font-size: 24px; animation: acct-stamp-in 420ms cubic-bezier(.2, 1.6, .4, 1) both; }
+.path-tonight { display: grid; gap: 8px; margin: 8px 0; padding: 12px; border-radius: 12px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 8%, var(--panel)); text-align: left; }
+.path-tonight h3 { margin: 0; font-size: 15px; color: var(--gold); }
+.path-tonight-frames { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.path-stamped { display: flex; align-items: center; gap: 10px; }
+.path-stamped span, .path-cleared-title span { display: grid; }
+.path-stamped small, .path-cleared-title small { color: var(--muted); font-size: 13px; }
+.path-cleared { display: grid; gap: 8px; margin: 8px 0; padding: 14px; border-radius: 12px; border: 2px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); text-align: left; }
+.path-cleared-title { display: flex; align-items: center; gap: 12px; font-size: 18px; }
+.path-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.path-choice button { min-height: 48px; font-weight: 700; }
 .path-switch { display: grid; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); }
 .path-switch p { margin: 0; display: grid; gap: 4px; }
 .path-switch small { color: var(--muted); font-size: 14px; line-height: 1.4; }
 .path-switch button { min-height: 48px; font-weight: 700; }
-.path-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.path-steps.off { opacity: 0.6; }
-.path-row { display: grid; grid-template-columns: 28px 1fr; gap: 4px 8px; align-items: start; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
-.path-row.now { border: 2px solid var(--gold); }
-.path-row.done .path-mark { color: var(--good); }
-.path-row.now .path-mark { color: var(--gold); }
-.path-mark { font-weight: 800; font-size: 18px; text-align: center; }
-.path-text { display: grid; gap: 2px; }
-.path-text small { color: var(--muted); font-size: 14px; }
-.path-bar { grid-column: 2; height: 6px; border-radius: 3px; background: var(--outline); overflow: hidden; }
-.path-bar i { display: block; height: 100%; background: var(--good); }
-.path-frame-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.path-frame { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--good); }
-.path-frame.unmet { border-left-color: var(--line); }
-.path-frame .frame-ja { font-size: 19px; }
-.path-frame-en, .path-frame-n { color: var(--muted); font-size: 14px; }
-.path-frame-ex { font-size: 15px; }
-.path-more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--muted); font-weight: 700; }
-.path-more[open] summary { margin-bottom: 8px; }
+/* The train map: a coloured track per line, one station per goal. */
+.path-map { display: grid; gap: 14px; }
+.path-map.off { opacity: 0.6; }
+.path-line { display: grid; gap: 6px; }
+.path-line h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; }
+.path-line h3 small { color: var(--muted); font-weight: 400; font-size: 13px; }
+.path-line .path-line-n { margin-left: auto; }
+.path-track { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; }
+.path-station { position: relative; padding-left: 26px; }
+.path-station::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 4px; background: var(--line-c); }
+.path-station:first-child::before { top: 50%; }
+.path-station:last-child::before { bottom: 50%; }
+.path-station button { display: grid; grid-template-columns: 1fr; gap: 2px; width: 100%; min-height: 48px; padding: 6px 8px; border: 0; border-radius: 10px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.path-station.now button { background: var(--panel); outline: 2px solid var(--line-c); }
+.path-station.open button { background: var(--panel); }
+.path-stop { position: absolute; left: 0; top: 50%; translate: 0 -50%; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; border: 4px solid var(--line-c); background: var(--bg); }
+.path-station.met .path-stop { border-color: transparent; background: none; }
+.path-station.soon .path-stop-text { opacity: 0.6; }
+.path-station.ring-due .path-stop, .path-station.ring-fading .path-stop { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--warn); }
+.path-station.ring-fading .path-stop { opacity: 0.6; }
+.path-stop-text { display: flex; gap: 8px; align-items: baseline; }
+.path-stop-text small { color: var(--muted); font-size: 14px; }
+.path-bar { height: 6px; border-radius: 3px; background: var(--outline); overflow: hidden; }
+.path-bar i { display: block; height: 100%; background: var(--line-c); }
+.path-station-detail { display: grid; gap: 6px; margin: 4px 0 0 26px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
+.path-station-detail p { margin: 0; }
+.path-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; color: var(--muted); font-size: 13px; }
+.path-ring-key { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 2px var(--warn); }
+.gp-wish { display: block; margin-top: 4px; color: var(--gold); font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .path-hanko.big { animation: none; } }

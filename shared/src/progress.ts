@@ -7,6 +7,7 @@ import { soundKey, toHiragana } from './japanese/kana.js';
 import { toRomaji } from './japanese/romaji.js';
 import { isRomaji, romajiToHiragana } from './japanese/toKana.js';
 import type { PhraseEntry } from './modes/mode.js';
+import type { PathStatus } from './path.js';
 import type { ModeId } from './protocol.js';
 
 /** How one card went in one game, from the mode (Kana Raid's tally). */
@@ -73,6 +74,32 @@ export interface PhraseCard {
   /** How it went the last time, in a game or a review. */
   last: PhraseEntry['outcome'];
   lastAt: number;
+  /** 'memory' once it has been said from memory; 'read' while it has only been read, echoed or typed. Missing on old saves. */
+  recall?: Recall;
+  /** The days it was said from memory (newest last, capped at MEMORY_DAYS), for the learning path's goals. */
+  memory?: MemoryDay[];
+}
+
+/** One day a phrase was said from memory: how many times, and whether any of them was in a game (not a phone review). */
+export interface MemoryDay {
+  day: string;
+  n: number;
+  game: boolean;
+}
+
+/**
+ * True recall (docs/progressive-learning.md): a phrase said from memory counts toward the path; one read off
+ * the screen, echoed after the TV, sung from lyrics, built from tiles or typed doesn't.
+ */
+export type Recall = 'memory' | 'read';
+
+/** A met sentence frame, kept so it stays met when its phrases age out of the phrasebook. */
+export interface FrameMark {
+  metAt: number;
+  /** When it comes back once in the phone review (21 days after it was met). */
+  recheckAt: number;
+  /** waiting: not re-checked yet; passed: said again from memory; fading: missed in the re-check, until said again. */
+  recheck: 'waiting' | 'passed' | 'fading';
 }
 
 /** A finished game as the profile keeps it (without the per-card detail). */
@@ -86,6 +113,10 @@ export interface Progress {
   phrases?: Record<string, PhraseCard>;
   /** The learning path is on (docs/progressive-learning.md). Off, or missing, until the player turns it on. */
   path?: boolean;
+  /** Sentence frames met (shared/src/path.ts's rule), by frame id. */
+  frameMarks?: Record<string, FrameMark>;
+  /** Path goals met, by goal id: when. The 済 stamp stays even if a frame later fades. */
+  goalsMet?: Record<string, number>;
 }
 
 /** Days until the next review, by box (design doc: 1, 3, 7, 14, 30). Box 0 is due at once. */
@@ -99,6 +130,35 @@ export const MAX_PHRASES = 600;
 /** One review sitting: about the design doc's 3 minutes. */
 export const REVIEW_SIZE = 12;
 const DAY_MS = 86_400_000;
+/** Memory days kept per phrase: plenty for the path's rule (2 days at least 3 apart). */
+export const MEMORY_DAYS = 12;
+/** A frame said from memory counts at most this many times a day (so one night can't meet it). */
+export const SAYS_PER_DAY = 2;
+/** The frame rule: says, different fillers, and two days at least this far apart. */
+export const FRAME_SAYS = 3;
+export const FRAME_FILLERS = 2;
+export const FRAME_GAP_DAYS = 3;
+/** A met frame comes back once in the phone review this many days later. */
+export const RECHECK_DAYS = 21;
+
+/** Games whose "said" is never from memory: Dub Club reads its script, Karaoke Duel sings the lyrics on screen. */
+const READ_MODES: ReadonlySet<ModeId> = new Set(['dub-club', 'karaoke-duel']);
+
+/** How a phrasebook entry was said: the mode's own tag, else from memory, except in the read-aloud games. */
+export const recallOf = (e: Pick<PhraseEntry, 'recall'>, mode: ModeId): Recall => e.recall ?? (READ_MODES.has(mode) ? 'read' : 'memory');
+
+/** Today counts once more for a phrase said from memory. */
+function rememberDay(card: PhraseCard, day: string, game: boolean): void {
+  card.recall = 'memory';
+  const days = (card.memory ??= []);
+  const d = days.find((x) => x.day === day);
+  if (d) {
+    d.n += 1;
+    d.game ||= game;
+  } else days.push({ day, n: 1, game });
+  days.sort((a, b) => (a.day < b.day ? -1 : 1));
+  if (days.length > MEMORY_DAYS) days.splice(0, days.length - MEMORY_DAYS);
+}
 
 export const emptyProgress = (): Progress => ({ cards: {}, games: [], phrases: {} });
 
@@ -140,20 +200,22 @@ export function addGame(p: Progress, result: GameResult, tzOffsetMin: number): v
   }
   // Kana Raid puts its kana in the phrasebook too; those already are yōkai cards.
   const isCard = new Set(cards.map((c) => c.itemId));
-  for (const e of phrases ?? []) if (!isCard.has(e.itemId)) addPhrase(p, e, result.mode, result.at);
+  for (const e of phrases ?? []) if (!isCard.has(e.itemId)) addPhrase(p, e, result.mode, result.at, day);
 }
 
 /**
  * One phrasebook entry from a game. Said from memory moves it up a box; a retry or a miss brings it
  * back tomorrow; seen (tapped or read) only adds it.
  */
-function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number): void {
+function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number, day: string): void {
   const all = (p.phrases ??= {});
   const card = (all[e.itemId] ??= { itemId: e.itemId, text: e.text, kana: e.kana, en: e.en, mode, box: 0, due: at, seen: 0, said: 0, missed: 0, last: e.outcome, lastAt: at });
   Object.assign(card, { text: e.text, kana: e.kana, en: e.en, mode, last: e.outcome, lastAt: at });
   card.seen += 1;
   if (e.outcome === 'said') {
     card.said += 1;
+    if (recallOf(e, mode) === 'memory') rememberDay(card, day, true);
+    else card.recall ??= 'read';
     card.box = Math.min(TOP_BOX, card.box + 1);
     card.due = at + BOX_DAYS[card.box]! * DAY_MS;
   } else if (e.outcome === 'retry' || e.outcome === 'missed') {
@@ -168,26 +230,135 @@ function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number): void 
   }
 }
 
-/** The phrases up for review now, as for cards. */
+/** The phrases up for review now, as for cards, with any met frame's 21-day re-check first. */
 export function duePhrases(p: Progress, now: number, limit = REVIEW_SIZE): PhraseCard[] {
-  return Object.values(p.phrases ?? {})
-    .filter((c) => c.due <= now)
-    .sort((a, b) => a.box - b.box || a.due - b.due)
-    .slice(0, limit);
+  const checks = recheckPhrases(p, now);
+  const ids = new Set(checks.map((c) => c.itemId));
+  const due = Object.values(p.phrases ?? {})
+    .filter((c) => c.due <= now && !ids.has(c.itemId))
+    .sort((a, b) => a.box - b.box || a.due - b.due);
+  return [...checks, ...due].slice(0, limit);
+}
+
+/** The frames a phrase is built on (frames.ts gives one today; the path takes a list so more can count). */
+export const phraseFrames = (c: { text: string; kana: string }): FrameId[] => {
+  const id = frameOf(c);
+  return id ? [id] : [];
+};
+
+/** Each frame's saved phrases. */
+function byFrame(p: Progress): Map<string, PhraseCard[]> {
+  const by = new Map<string, PhraseCard[]>();
+  for (const c of Object.values(p.phrases ?? {})) for (const id of phraseFrames(c)) by.set(id, [...(by.get(id) ?? []), c]);
+  return by;
+}
+
+/** Frames whose re-check is due: one phrase each (the one said from memory most), shown once in the review. */
+export function recheckPhrases(p: Progress, now: number): PhraseCard[] {
+  const marks = p.frameMarks ?? {};
+  const due = Object.entries(marks).filter(([, m]) => m.recheck === 'waiting' && m.recheckAt <= now);
+  if (!due.length) return [];
+  const by = byFrame(p);
+  const out: PhraseCard[] = [];
+  for (const [id] of due) {
+    const best = (by.get(id) ?? []).filter((c) => c.recall === 'memory').sort((a, b) => memSays(b) - memSays(a) || b.lastAt - a.lastAt)[0];
+    if (best && !out.includes(best)) out.push(best);
+  }
+  return out;
+}
+
+const memSays = (c: PhraseCard): number => (c.memory ?? []).reduce((n, d) => n + d.n, 0);
+
+/** How far one frame is along the path's rule (docs/progressive-learning.md). */
+export interface FrameRule {
+  /** Says from memory, at most SAYS_PER_DAY a day. */
+  says: number;
+  /** Different phrases (fillers) said from memory. */
+  fillers: number;
+  /** Days said from memory, and whether two of them are FRAME_GAP_DAYS apart. */
+  days: number;
+  spaced: boolean;
+  /** Said from memory in a game on at least one day (not only in phone reviews). */
+  inGame: boolean;
+}
+
+const dayNum = (day: string): number => Date.parse(`${day}T00:00:00Z`) / DAY_MS;
+
+/** The rule's tally for one frame's phrases. */
+export function frameRule(cards: readonly PhraseCard[]): FrameRule {
+  const perDay = new Map<string, { n: number; game: boolean }>();
+  let fillers = 0;
+  for (const c of cards) {
+    if (!c.memory?.length) continue;
+    fillers += 1;
+    for (const d of c.memory) {
+      const t = perDay.get(d.day) ?? { n: 0, game: false };
+      t.n += d.n;
+      t.game ||= d.game;
+      perDay.set(d.day, t);
+    }
+  }
+  const days = [...perDay.keys()].map(dayNum).sort((a, b) => a - b);
+  const says = [...perDay.values()].reduce((n, d) => n + Math.min(SAYS_PER_DAY, d.n), 0);
+  return { says, fillers, days: days.length, spaced: days.length >= 2 && days[days.length - 1]! - days[0]! >= FRAME_GAP_DAYS, inGame: [...perDay.values()].some((d) => d.game) };
+}
+
+export const ruleMet = (r: FrameRule): boolean => r.says >= FRAME_SAYS && r.fillers >= FRAME_FILLERS && r.spaced && r.inGame;
+
+/** 0 to 1: a quarter for each part of the rule (the days part half-done after the first day). */
+export const ruleProgress = (r: FrameRule): number =>
+  ruleMet(r) ? 1 : (Math.min(r.says, FRAME_SAYS) / FRAME_SAYS + Math.min(r.fillers, FRAME_FILLERS) / FRAME_FILLERS + (r.spaced ? 1 : r.days ? 0.5 : 0) + (r.inGame ? 1 : 0)) / 4;
+
+/** Every frame's tally, from the saved phrasebook. */
+export function frameRules(p: Progress): Map<string, FrameRule> {
+  return new Map([...byFrame(p)].map(([id, cards]) => [id, frameRule(cards)]));
+}
+
+/**
+ * Marks frames that now meet the rule, and clears a fading re-check once the frame is said from memory again
+ * (in a game or a review) after its re-check date. Returns the frames newly met.
+ */
+export function markFrames(p: Progress, now: number): string[] {
+  const marks = (p.frameMarks ??= {});
+  const fresh: string[] = [];
+  for (const [id, cards] of byFrame(p)) {
+    const m = marks[id];
+    if (!m) {
+      if (ruleMet(frameRule(cards))) {
+        marks[id] = { metAt: now, recheckAt: now + RECHECK_DAYS * DAY_MS, recheck: 'waiting' };
+        fresh.push(id);
+      }
+      continue;
+    }
+    if (m.recheck !== 'passed' && now >= m.recheckAt && cards.some((c) => c.last === 'said' && c.recall === 'memory' && c.lastAt >= m.recheckAt)) m.recheck = 'passed';
+  }
+  return fresh;
+}
+
+/** The re-check in a phone review: a frame's phrase marked known passes it; missed, the frame fades until said again. */
+function recheckReview(p: Progress, card: PhraseCard, knew: boolean, now: number): void {
+  for (const id of phraseFrames(card)) {
+    const m = p.frameMarks?.[id];
+    if (!m || m.recheckAt > now || m.recheck === 'passed') continue;
+    if (knew) m.recheck = 'passed';
+    else if (m.recheck === 'waiting') m.recheck = 'fading';
+  }
 }
 
 /**
  * A phrase review: the phone shows the English, the player says it out loud, then checks the answer
  * and marks it themselves. Only they lose by being generous.
  */
-export function reviewPhrase(p: Progress, itemId: string, knew: boolean, now: number): PhraseCard | null {
+export function reviewPhrase(p: Progress, itemId: string, knew: boolean, now: number, tzOffsetMin = 0): PhraseCard | null {
   const card = p.phrases?.[itemId];
   if (!card) return null;
+  recheckReview(p, card, knew, now);
   card.seen += 1;
   card.last = knew ? 'said' : 'missed';
   card.lastAt = now;
   if (knew) {
     card.said += 1;
+    rememberDay(card, dayOf(now, tzOffsetMin), false);
     card.box = Math.min(TOP_BOX, card.box + 1);
     card.due = now + BOX_DAYS[card.box]! * DAY_MS;
   } else {
@@ -249,6 +420,8 @@ export interface AccountView {
   path: boolean;
   /** Every sentence frame met in the saved phrasebook, in the path's order. */
   frames: FrameStat[];
+  /** The learning path's goals, frames and lines (shared/src/path.ts), worked out from the whole save. */
+  pathStatus: PathStatus;
 }
 
 /** One sentence frame across the saved phrasebook (shared/src/japanese/frames.ts). */

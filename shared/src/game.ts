@@ -25,6 +25,8 @@ export interface PlayerState {
   mic: 'ok' | 'quiet' | null;
   /** Sound off: this phone plays no sound, and shows what it would have said as text instead. */
   soundOff?: boolean;
+  /** The game this player wished for in the lobby (the learning path's "♡ Wish for it"). Cleared when a game starts. */
+  wish?: ModeId;
   /** Mic lines the host has already said for this player, so spamming the mic switch gets each one once. */
   micCued?: { ok?: boolean; quiet?: boolean };
 }
@@ -171,7 +173,9 @@ export function modeContext(state: GameState, ctx: GameContext): ModeContext {
       // Keep the most telling outcome: a miss stays a miss even if seen again later.
       if (existing >= 0) {
         const rank = { missed: 3, retry: 2, said: 1, seen: 0 } as const;
-        if (rank[entry.outcome] >= rank[list[existing]!.outcome]) list[existing] = entry;
+        const was = list[existing]!;
+        // Said from memory once tonight stays from memory, even if read out again later.
+        if (rank[entry.outcome] >= rank[was.outcome]) list[existing] = entry.outcome === 'said' && was.outcome === 'said' && was.recall !== 'read' ? { ...entry, recall: was.recall } : entry;
       } else list.push(entry);
     },
   };
@@ -255,7 +259,10 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       state.surprise = surprise;
       state.packId = !surprise && typeof cmd.packId === 'string' ? cmd.packId : null;
       state.beforeGame = { scores: Object.fromEntries(state.players.map((p) => [p.id, p.score])), phrasebook: state.phrasebook };
-      for (const p of state.players) p.score = 0;
+      for (const p of state.players) {
+        p.score = 0;
+        delete p.wish;
+      }
       state.phrasebook = {};
       state.recap = null;
       const rounds = !surprise && Number.isInteger(cmd.rounds) ? cmd.rounds : undefined;
@@ -322,6 +329,16 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (!me.soundOff === cmd.on) return { changed: false };
       if (cmd.on) delete me.soundOff;
       else me.soundOff = true;
+      return OK;
+    }
+    case 'wish': {
+      if (!me) return fail('not-allowed');
+      if (state.phase !== 'lobby') return fail('wrong-phase');
+      const want = cmd.mode === null ? undefined : (MODE_IDS as readonly string[]).includes(cmd.mode) && cmd.mode !== 'debug' ? cmd.mode : null;
+      if (want === null) return fail('unknown-mode');
+      if (me.wish === want) return { changed: false };
+      if (want) me.wish = want;
+      else delete me.wish;
       return OK;
     }
     case 'skip': {

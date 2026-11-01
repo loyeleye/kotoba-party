@@ -458,7 +458,7 @@ function resolveScene(s: PhraseBingoState, ctx: ModeContext): void {
         st.memory += 1;
         payBonus(s, ctx, a.playerId, MEMORY_BONUS[secret.said.via === 'speech' ? 'speech' : 'typed'] * mult, mean);
       }
-      ctx.phrase(a.playerId, { ...entry, outcome: secret.said.memory ? 'said' : 'retry' });
+      ctx.phrase(a.playerId, { ...entry, outcome: secret.said.memory ? 'said' : 'retry', recall: secret.said.memory && secret.said.via === 'speech' ? 'memory' : 'read' });
     }
   }
 
@@ -719,7 +719,8 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
         const spoken = raw.utterance.via === 'speech';
         stats(s, playerId).echoes += 1;
         payBonus(s, ctx, playerId, ECHO_BONUS[spoken ? 'speech' : 'typed'] * multiplierFor(s), meanScore(ctx));
-        ctx.phrase(playerId, { itemId: p.id, text: p.jp.text, kana: p.jp.kana, en: p.jp.en, outcome: spoken ? 'said' : 'seen' });
+        // An echo repeats the line just heard: said, but not from memory.
+        ctx.phrase(playerId, { itemId: p.id, text: p.jp.text, kana: p.jp.kana, en: p.jp.en, outcome: spoken ? 'said' : 'seen', recall: 'read' });
         return MOVE_OK;
       }
       default:

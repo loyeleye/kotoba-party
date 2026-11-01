@@ -231,6 +231,11 @@ describe('account service', () => {
     ]);
     const on = await s.call('settings', { path: true }, token);
     expect(on.data.account).toMatchObject({ path: true, frames: [{ id: 'kudasai', phrases: 1, said: 1 }] });
+    // The path's goals come worked out from the whole save, and the phrase remembers the day it was said.
+    const st = on.data.account!.pathStatus;
+    expect(st.goals).toHaveLength(24);
+    expect(st.frames.find((f) => f.id === 'kudasai')).toMatchObject({ met: false, rule: { says: 1, fillers: 1, days: 1, inGame: true } });
+    expect(on.data.account!.phrases[0]).toMatchObject({ recall: 'memory', memory: [{ n: 1, game: true }] });
     expect((await s.call('me', undefined, token)).data.account!.path).toBe(true);
     expect((await s.call('settings', { path: 'yes' }, token)).data.error).toBe('bad-settings');
     expect((await s.call('settings', { path: false })).status).toBe(401);

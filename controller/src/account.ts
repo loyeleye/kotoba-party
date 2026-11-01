@@ -307,7 +307,7 @@ function renderProgress(screens: { back: () => void; app: HTMLElement }, view: A
     h(
       'div',
       { id: 'acct-tabpanel', role: 'tabpanel', 'aria-labelledby': `acct-tab-${current}` },
-      current === 'path' ? pathTab(view, phoneLevel(), (on) => void setPath(screens, view, on), switching) : current === 'cards' ? cardsTab(screens, view) : current === 'phrases' ? phrasesTab(screens, view) : scoresTab(view),
+      current === 'path' ? pathTab(view, phoneLevel(), (on) => void setPath(screens, view, on), switching, () => renderProgress(screens, view)) : current === 'cards' ? cardsTab(screens, view) : current === 'phrases' ? phrasesTab(screens, view) : scoresTab(view),
     ),
     accountFooter(screens),
   );
