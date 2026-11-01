@@ -317,6 +317,8 @@ export const cases: FrameCases = {
   // 3.5 What-ifs.
   'to-shitara': {
     pos: [
+      // Panel on #149: still found after a verb and after だ,
+      'もし あした あめだと したら、どう する？',
       'もし ゆうれいだと したら、どう しますか。',
       'あした あめだと したら、えんそくは ない。',
       'たからくじが あたったと したら、なにを かう？',
@@ -329,6 +331,12 @@ export const cases: FrameCases = {
       'それが ほんとうだと したら、たいへんです。',
     ],
     neg: [
+      // Panel on #149: Nと したら is "did it with N",
+      ['せんせいと したら、たのしかった。', 'と: with the teacher'],
+      ['ぼくと すれば いいよ。', 'と: with me'],
+      ['あいつと したら、けんかに なる。', 'と: with that guy'],
+      [{ text: '先生とすれば楽しい。', kana: 'せんせいと すれば たのしい。' }, 'と: with the teacher, kanji and no spaces'],
+      ['かのじょと したら、たのしかった。', 'と: with her'],
       ['でかけようと したら、あめが ふって きた。', '〜ようと したら: was about to (you-to-suru)'],
       ['ともだちと したら、たのしかった。', 'と = with'],
       ['いもうとと したら、まけた。', 'と = with'],

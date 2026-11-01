@@ -92,10 +92,14 @@ How the harder ones are told apart:
 | ＿て おります | Not おります after を, から, に or a place (さんかいで おります: getting off on the third floor) |
 | The suffering passive | An intransitive verb made passive after someone (あめに ふられて, こどもに なかれた, にげられた), only in a form that tells what happened (not にげられますか), or a を object in the same clause (かぎを わすれて、ははに おこられた is the N4 passive). Giving verbs (わたされた) and される are left out. With kanji and no spaces, the dictionary's tokens decide |
 
-N3 frames mostly don't hide the N4 frames they overlap (ご＿ください is still お＿ください, ＿て おります still the
-keigo verb, the suffering passive still the passive), so a line keeps its N4 chip. Two hide one for display
-only: ＿みたい (a guess) over ＿みたいです, and ＿ところでした over ＿ところです. They also hide N5 ＿です and ＿ます
-where they say more. Counting (`keepHidden`) keeps every one.
+N3 frames mostly don't hide the N4 frames they overlap (ご＿ください is still お＿ください), so a line keeps its N4
+chip. Some hide one for display only: ＿ところでした over ＿ところです, the suffering passive over the plain
+passive (あめに ふられました gets one chip, not two), and ＿て おります and ＿で ございます over the keigo-verb chip.
+They also hide N5 ＿です and ＿ます where they say more. Counting (`keepHidden`) keeps every one: the suffering
+passive is still a passive, and Genki II teaches 雨に降られる with it.
+
+＿みたい is split by register instead: ＿みたいです／でした is the N4 frame (4.6) and ＿みたい, ＿みたいだ, ＿みたいね
+with no です is the casual N3 one (3.1), so a line counts for one of them, never both.
 
 **Not credited yet.** `creditable(id)` is false for N3 frames and for listening-only ones, and progress
 (`phraseFrames`) and the night's recap (`tonightFrames`) skip them. So an N4 player who says an N3 line
@@ -134,6 +138,19 @@ The Japanese and JLPT seats found matcher gaps while checking the Express Line s
 A sweep over the game's ~9,800 Japanese strings found the N3 matchers' misfires (おばけみたいに as a guess,
 おみずに as ＿ずに, おくれて きた as ＿て きました) and fixed them; the new hits it finds are right (にげられました
 as the suffering passive, すんでおります as ＿て おります).
+
+## Fixes from the panel on #149
+
+- **Reason ため and purpose ために.** ＿ない ために (けがを しない ために) and a verb + ため、 with no に (うかる ため、)
+  are purpose. ＿ない／＿たい ため are never the reason frame now, spaced or not. ゆうれいの ために is "for the ghost"
+  as often as "because of it", so it's no longer a cause. ためる later in the line no longer hides a purpose
+  ために, and Nが ＿ない ため、 (かれが こない ため) stays out as a reason with its own subject.
+- **＿としたら.** Nと したら is "did it with N" (せんせいと したら, ぼくと すれば). The tokens rule out と "with" after a
+  noun; on the phone, a list of people words does.
+- **＿なんて.** The adverb なんて "how…!" (なんて きれいな けしき, この けしきは なんて きれいなんだ) no longer counts:
+  only なんて after the thing being waved off.
+- **Display hides.** The suffering passive, ＿て おります and ＿で ございます, above.
+- **＿みたい** split by register, above.
 
 ## The precision bar
 

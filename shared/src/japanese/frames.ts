@@ -866,9 +866,12 @@ const N4: Matcher[] = [
   // adjective), ためし, ためる.
   {
     id: 'tame-ni',
-    re: rx(`([うくぐすつぬぶむる]|(こども|子供|かぞく|家族|みんな|けんこう|健康|しょうらい|将来|ゆめ|夢|しけん|試験|ひと|人|わたし|あなた|ともだち|友達|しごと|仕事|おきゃく|お客|なん|何|きょう|今日|あした|明日|パーティー|たんじょうび|誕生日|ダイエット)の)[\\s\\u3000]*(ために|為に|ための)`),
-    // …nor a reason with its own subject: かれが くる ために (because he's coming).
-    not: rx(`ためし|ためる|ためいき|が[\\s\\u3000]+([^\\s\\u3000、。]+[\\s\\u3000]+)?(くる|来る|ある|いる|なる)[\\s\\u3000]*ために`),
+    // Also a verb + ない (けがを しない ために: so as not to), and a verb + ため、 with no に (うかる ため、
+    // べんきょうした), the written purpose.
+    re: rx(`([うくぐすつぬぶむる]|ない|(こども|子供|かぞく|家族|みんな|けんこう|健康|しょうらい|将来|ゆめ|夢|しけん|試験|ひと|人|わたし|あなた|ともだち|友達|しごと|仕事|おきゃく|お客|なん|何|きょう|今日|あした|明日|パーティー|たんじょうび|誕生日|ダイエット|ゆうれい)の)[\\s\\u3000]*(ために|為に|ための)|([うくぐすつぬぶむる]|ない)[\\s\\u3000]*(ため|為)[、,]`),
+    // …nor a reason with its own subject: かれが くる ために, かれが こない ため、 (because he's (not) coming).
+    // (ためる, ためし and ためいき can't be ために, so they don't rule the line out.)
+    not: rx(`が[\\s\\u3000]+([^\\s\\u3000、。]+[\\s\\u3000]+)?(くる|来る|ある|いる|なる|[^\\s\\u3000、。]*ない)[\\s\\u3000]*(ために|ため[、,])`),
   },
   {
     id: 'you-ni',
@@ -887,7 +890,8 @@ const N4: Matcher[] = [
   // じゅうよう (important), えいよう (nutrition), せいよう (the West), and げつよう／もくよう／すいよう said without び.
   {
     id: 'mitai-you',
-    re: rx(`[^\\s\\u3000、。てでがを][\\s\\u3000]*みたい[\\s\\u3000]*(です|でした|だ|だった|ね|よ|[。！!？?…]|$)|(${PLAIN}|の|な)[\\s\\u3000]*(よう|様)[\\s\\u3000]*(です|でした|だ|だった)`),
+    // みたい here only with です／でした: said without です it's the casual ＿みたい (3.1), so one line counts once.
+    re: rx(`[^\\s\\u3000、。てでがを][\\s\\u3000]*みたい[\\s\\u3000]*(です|でした)|(${PLAIN}|の|な)[\\s\\u3000]*(よう|様)[\\s\\u3000]*(です|でした|だ|だった)`),
     // A む verb + たい (のみたい, すみたい) is "want to", not みたい.
     not: rx(`${TE}[\\s\\u3000]*みたい|(が|を|も)[\\s\\u3000]*みたい|(^|[\\s\\u3000、をがもはにで])(の|飲|よ|読|す|住|やす|休|か|噛|たの|頼|ぬす|盗|すす|進|あ|編|う|生|しず|沈|ふ|踏|こ|込|つつ|包|つ|積|この|好)みたい|おはよう|ようこそ|ようび|(どう|こう|そう|ちゅう|ほう|しゅう|きょう|ひつ|だいじょう|しよう|たべよう|いこう)よう[\\s\\u3000]*です|[おこごそぞとどのぼもよろ]う[\\s\\u3000]*(よう|様)[\\s\\u3000]*です|(^|[\\s\\u3000、がはもをの])(たい|じゅう|えい|せい|かい|がい|げつ|もく|すい)よう[\\s\\u3000]*(です|でした|だ|だった)`),
     hides: [...DESU_FAMILY, 'tai'],
@@ -967,8 +971,10 @@ const N3: Matcher[] = [
   // ためる, so this goes by spelling too. A noun + の that could be a goal is left out (both readings).
   {
     id: 'tame-reason',
-    re: rx(`([ぁ-ん]た|だった|なかった|かった|[^\\s\\u3000、てで]い|な|(あめ|雨|ゆき|雪|じこ|事故|かぜ|風|風邪|たいふう|台風|じしん|地震|こうじ|工事|ちゅう|中|びょうき|病気|けが|ちこく|ていでん|停電|こしょう|故障|じゅうたい|渋滞|ねつ|熱|ゆうれい)の)[\\s\\u3000]*(ため|為)(に)?[、,\\s\\u3000]`),
-    not: rx(`ためし|ためる|ためいき|(ない|たい)[\\s\\u3000]+(ため|為)`),
+    re: rx(`([ぁ-ん]た|だった|なかった|かった|[^\\s\\u3000、てで]い|な|(あめ|雨|ゆき|雪|じこ|事故|かぜ|風|風邪|たいふう|台風|じしん|地震|こうじ|工事|ちゅう|中|びょうき|病気|けが|ちこく|ていでん|停電|こしょう|故障|じゅうたい|渋滞|ねつ|熱)の)[\\s\\u3000]*(ため|為)(に)?[、,\\s\\u3000]`),
+    // Not after ない or たい, spaced or not: しないために and あいたい ため are purpose as often as reason. Not
+    // ゆうれいの ために either: in this game it's "for the ghost" as often as "because of it".
+    not: rx(`ためし|ためる|ためいき|(ない|たい)[\\s\\u3000]*(ため|為)`),
   },
   // ---- The rest of the Limited Express (N3) frames, goals 3.1 to 3.11 (step 6) ----
   // 3.1 Casual みたい: ＿みたい／みたいだ, said to a friend (no です). The same look-alikes as mitai-you
@@ -984,7 +990,9 @@ const N3: Matcher[] = [
   },
   // 3.2 What happened to me. The suffering passive: someone did something and I bore it, said with Nに and an
   // intransitive verb (あめに ふられた, こどもに なかれた) or with my thing as the object (さいふを ぬすまれた).
-  { id: 'suffering-passive', tok: () => true },
+  // Shown instead of the plain passive chip, so あめに ふられました gets one chip. Counting keeps both: it is a
+  // passive, and Genki II (L21) teaches 雨に降られる with the passive.
+  { id: 'suffering-passive', tok: () => true, hides: ['passive'] },
   // Made to do it: ＿させられる, and the short godan form (またされる, のまされる). Not 知らせる／合わせる／任せる + られる.
   {
     id: 'saserareru',
@@ -1050,7 +1058,12 @@ const N3: Matcher[] = [
   {
     id: 'to-shitara',
     re: rx(`(${PLAIN}|だ)[\\s\\u3000]*と[\\s\\u3000]*(したら|すれば|すると|しても)`),
-    not: rx(`[おこごそぞとどのぼもよろ]う[\\s\\u3000]*と[\\s\\u3000]*し|(いもうと|おとうと|ほんとう|がっこう|ぎんこう|きのう|おはよう|ありがとう|さとう|いぬ|かぞく|みんな|ともだち)と`),
+    // Someone you do it with is a noun ending in a plain-form kana (せんせいと したら, ぼくと すれば, あいつと):
+    // the tokens rule those out (a quoting と after a verb, adjective or だ), and on the phone a list of people.
+    not: rx(`[おこごそぞとどのぼもよろ]う[\\s\\u3000]*と[\\s\\u3000]*し|(いもうと|おとうと|ほんとう|がっこう|ぎんこう|きのう|おはよう|ありがとう|さとう|いぬ|かぞく|みんな|ともだち|せんせい|先生|がくせい|学生|せんぱい|先輩|こうはい|後輩|ぼく|僕|おれ|俺|あいつ|こいつ|そいつ|どいつ|かれし|彼氏|しゃちょう|社長|ぶちょう|部長|ゆう|れい|あおい|けい|まい|ゆい|あい|だい|しゅんすけ|ひと|人|だれ|誰|だれか|誰か|ひとり|一人|ふたり|二人)(さん|くん|ちゃん|たち|達)?[\\s\\u3000]*と[\\s\\u3000]*(したら|すれば|すると|しても)`),
+    // The tokens say no only for と "with" (並立助詞, or 格助詞 一般) after a noun: kuromoji misreads kana verbs.
+    tok: (ts) => !some(ts, (t, i) => t.s === 'と' && (t.detail.startsWith('並立助詞') || t.detail.startsWith('格助詞,一般')) && tokAt(ts, i - 1)?.pos === '名詞' && (tokAt(ts, i + 1)?.base === 'する' || /^(したら|すれば|すると|しても)/.test(tokAt(ts, i + 1)?.s ?? ''))),
+    pos: 'veto',
   },
   // ＿ば ＿ほど: the more…, the more (たべれば たべるほど).
   {
@@ -1134,7 +1147,8 @@ const N3: Matcher[] = [
     id: 'te-orimasu',
     re: rx(`${TE}[\\s\\u3000]*(おり|居り)(ます|ました|ません|まして|ませんでした)|${TE}[\\s\\u3000]*(おる|おった)(?=[\\s\\u3000、。！？]|$|ので|から)`),
     not: rx(`(を|から|に)[\\s\\u3000]*(おり|降り)(ます|ました|ません)|(こうえん|かん|せん|ばん|ホーム|かい|階|てい|停|えき|駅)で[\\s\\u3000]*おり`),
-    hides: ['te-iru'],
+    // Shown instead of the keigo-verb chip (4.9), as ＿で ございます is; counting keeps both.
+    hides: ['te-iru', 'keigo'],
   },
   // ご＿ください: a verb noun with ご (ごちゅうい ください, ご予約 ください). Not ごはん, ごみ, ごめん, ごご.
   {
@@ -1191,7 +1205,9 @@ const N3: Matcher[] = [
   {
     id: 'nante',
     re: rx(`なんて(?![\\s\\u3000]*(いい|言い|いっ|言っ|いう|言う|いわ|言わ|かい|書い|よむ|よみ|読|きこえ|聞こえ|なまえ|ん))`),
-    not: rx(`なんてん|(^|[\\s\\u3000、])なんて[\\s\\u3000]*[？?]$`),
+    // Nor the adverb なんて "how…!" (なんて きれいな そら, この けしきは なんて きれいなんだ): at the start of a
+    // clause or right after は／が, where there's no ＿ for it to wave off.
+    not: rx(`なんてん|(^|[\\s\\u3000、])なんて[\\s\\u3000]*[？?]$|(^|[、。！!？?「])[\\s\\u3000]*なんて|(は|が)[\\s\\u3000]+なんて`),
   },
   // ＿とか: things like (すしとか ラーメンとか). Not なんとか (somehow), とかい (a city), とかげ, とかす.
   {
