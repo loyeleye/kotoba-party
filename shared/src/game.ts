@@ -529,6 +529,7 @@ export function gameResults(state: GameState, now: number): Map<string, GameResu
       awards: awards.filter((a) => a.playerId === s.playerId).map((a) => ({ title: a.title, en: a.en })),
       cards: mode.practice?.(state.modeState, s.playerId) ?? [],
       phrases: state.phrasebook[s.playerId] ?? [],
+      offers: mode.offers?.(state.modeState, s.playerId) ?? [],
     });
   }
   return out;

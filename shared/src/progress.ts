@@ -6,6 +6,7 @@ import { FRAMES, frameOf, type FrameId } from './japanese/frames.js';
 import { soundKey, toHiragana } from './japanese/kana.js';
 import { toRomaji } from './japanese/romaji.js';
 import { isRomaji, romajiToHiragana } from './japanese/toKana.js';
+import type { OfferAnswer } from './modes/hardRoleLog.js';
 import type { PhraseEntry } from './modes/mode.js';
 import type { PathStatus } from './path.js';
 import type { ModeId } from './protocol.js';
@@ -38,6 +39,22 @@ export interface GameResult {
   cards: PracticeItem[];
   /** This game's phrasebook for the player (every mode fills one): said, retried, missed or seen. */
   phrases: PhraseEntry[];
+  /** N4 hard-role offers in this game (modes with hard roles fill it). */
+  offers?: RoleOffer[];
+}
+
+/** One N4 hard-role offer and its answer (shared/src/modes/hardRoleLog.ts). Bots never save, so none are here. */
+export interface RoleOffer {
+  /** `<mode>:<role>`, e.g. `bento-haus:manager`. */
+  role: string;
+  answer: OfferAnswer;
+}
+
+/** Saved offer counts for one hard role. */
+export interface RoleOfferTally {
+  accepted: number;
+  declined: number;
+  timeout: number;
 }
 
 /** A yōkai card: one kana in the player's Leitner queue. */
@@ -107,7 +124,7 @@ export interface FrameMark {
 }
 
 /** A finished game as the profile keeps it (without the per-card detail). */
-export type GameRecord = Omit<GameResult, 'cards' | 'phrases'>;
+export type GameRecord = Omit<GameResult, 'cards' | 'phrases' | 'offers'>;
 
 export interface Progress {
   cards: Record<string, Card>;
@@ -121,6 +138,8 @@ export interface Progress {
   frameMarks?: Record<string, FrameMark>;
   /** Path goals met, by goal id: when. The 済 stamp stays even if a frame later fades. */
   goalsMet?: Record<string, number>;
+  /** N4 hard-role offers answered, by role (`<mode>:<role>`), for the step 2 gate. An away player's offer isn't counted. */
+  roleOffers?: Record<string, RoleOfferTally>;
 }
 
 /** Days until the next review, by box (design doc: 1, 3, 7, 14, 30). Box 0 is due at once. */
@@ -190,8 +209,13 @@ function miss(card: Card, now: number): void {
 
 /** Adds a finished game: its score to the history and each card's result to the queue. */
 export function addGame(p: Progress, result: GameResult, tzOffsetMin: number): void {
-  const { cards, phrases, ...record } = result;
+  const { cards, phrases, offers, ...record } = result;
   p.games.unshift(record);
+  for (const o of offers ?? []) {
+    if (o.answer === 'away') continue;
+    const t = ((p.roleOffers ??= {})[o.role] ??= { accepted: 0, declined: 0, timeout: 0 });
+    t[o.answer] += 1;
+  }
   // Rooms can finish out of order (two saves arriving together): newest first all the same.
   p.games.sort((a, b) => b.at - a.at);
   p.games.length = Math.min(p.games.length, MAX_GAMES);
@@ -502,4 +526,11 @@ export function bests(p: Progress): ModeBest[] {
     by.set(g.mode, b);
   }
   return [...by.values()].sort((a, b) => b.played - a.played);
+}
+
+/** The share of a player's N4 hard-role offers they took (all roles, or one), or null with none answered. */
+export function roleOfferRate(p: Progress, role?: string): number | null {
+  const tallies = Object.entries(p.roleOffers ?? {}).filter(([r]) => role === undefined || r === role).map(([, t]) => t);
+  const all = tallies.reduce((n, t) => n + t.accepted + t.declined + t.timeout, 0);
+  return all ? tallies.reduce((n, t) => n + t.accepted, 0) / all : null;
 }
