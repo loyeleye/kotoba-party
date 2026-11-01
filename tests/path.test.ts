@@ -231,7 +231,8 @@ describe('the Limited Express Line (N3)', () => {
     const st = status(p);
     expect(goal(p, '3.1').met).toBe(true);
     const line = st.lines.find((l) => l.id === 'limited')!;
-    expect(line.soon).toBeGreaterThan(0);
+    // Since #148 every N3 station has its frame matcher (soon is 0), so the line stays open on its other stops.
+    expect(line.met).toBeLessThan(line.of + line.soon);
     expect(line.cleared).toBe(false);
   });
 
