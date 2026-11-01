@@ -512,6 +512,8 @@ export function playMs(a: Argument | undefined): number {
 }
 
 function pay(s: CourtState, ctx: ModeContext, playerId: string, points: number, why: LedgerEntry['why']): void {
+  // Whole points only, as award() keeps them: a half (+12.5 from a mic pass) must not reach the ledger or the screens.
+  points = Math.round(points);
   if (!points || !ctx.player(playerId)) return;
   ctx.award(playerId, points);
   s.ledger.push({ round: s.round, playerId, points, why });

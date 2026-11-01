@@ -248,3 +248,8 @@ body[data-motion='calm'] .yc-beat-bar span { animation: yc-beat-run var(--ms, 80
 .yc-kept-pic { width: 32px; height: 32px; flex: none; image-rendering: pixelated; object-fit: contain; font-size: 24px; line-height: 32px; text-align: center; }
 .yc-kept-ja .jpv-main { font-size: 22px; font-weight: 800; }
 .yc-screen > .yc-kept { padding: 12px; border: 2px solid rgba(242, 193, 78, 0.6); border-radius: 12px; background: #2b2440; }
+/* Sat out: the word is shown, not saved, so the card's edge is dashed. */
+.yc-keep.sat { border-style: dashed; border-color: rgba(242, 193, 78, 0.7); }
+.yc-hear.on { background: #f2c14e; color: #1d1830; }
+/* Role icons on the phone's dark surfaces sit on a paper tile, as in the TV ribbon, so the dark scale still reads. */
+img.yc-role-icon { background: #f3e6c8; border-radius: 6px; box-shadow: inset 0 0 0 2px #1b1512; }

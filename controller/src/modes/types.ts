@@ -28,4 +28,9 @@ export interface PhoneMode<G extends GameView = GameView> {
    */
   hold?(view: RoomView, game: G, playerId: string): string | null;
   render(ctx: PhoneContext<G>): HTMLElement;
+  /**
+   * Points the header's total leaves out for now, because the mode's reveal hasn't landed them yet (Yōkai Court
+   * holds them until the verdict's seal and points), so the phone doesn't give the result away first.
+   */
+  heldPoints?(view: RoomView, game: G, remainingMs: () => number | null): number;
 }

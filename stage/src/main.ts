@@ -307,7 +307,10 @@ function render(view: RoomView, v: number): void {
   fillMenus(view);
   showHost(view);
   updateMusic(view);
-  watchSfx(view);
+  // The points chime waits for a mode's hold on the ribbon, like the totals do.
+  const holdMode = view.game ? STAGE_MODES[view.game.mode] : null;
+  const held = view.game && (holdMode?.holdScoresUntil?.(view, view.game) ?? 0) > serverNow();
+  watchSfx(held ? { ...view, players: view.players.map((p) => ({ ...p, score: p.score - (holdMode?.heldPoints?.(view.game!, p.id) ?? 0) })) } : view);
   updateSettings(view);
   updatePhrasebook(view);
   showCredits(view.phase === 'recap');

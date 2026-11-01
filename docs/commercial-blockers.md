@@ -181,10 +181,11 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   6 alibi places and 3 case objects (prompts and seeds in the manifest; the footprints have a 1px outline added by the post step),
   then 4 role icons (a sealed scroll, a sunflower badge, a balance scale, an eye) and Fude-san's calligraphy
   brush for the verdict, 5 more text-only `pixflux` images made the same day. The scroll, sunflower and scale
-  were redrawn later that day as 3 more text-only `pixflux` images (a scroll with rolled ends, a stemless
-  sunflower badge, a scale with shallow pans; seed 303, prompts in the manifest). Fude-san writing the verdict
-  (`court/fude-write.png`) is a frame of her own shipped think sheet turned 180° by
-  `tools/art/sources/court/fude-write.py`, with no generator; the old `court/brush.png` is no longer shown. Its yōkai, the inkstone, the leaf and the bento
+  were redrawn later that day as 3 more text-only `pixflux` images (a scroll with rolled ends, ink lines and red
+  ties, seed 311; a stemless sunflower badge with a tiny scale in the centre, seed 322; a scale with shallow pans,
+  seed 303; prompts in the manifest). Fude-san writing the verdict (`court/fude-write.png`) is a frame of her own
+  shipped think sheet turned 180° with a 1-pixel cream outline by `tools/art/sources/court/fude-write.py`, with no
+  generator; the old `court/brush.png` is no longer shown. Its yōkai, the inkstone, the leaf and the bento
   and tea cards reuse art already logged here. Same endpoint; the terms were not re-read for this pass, so
   they rest on the 2026-10-26 read.
   The four lip-sync

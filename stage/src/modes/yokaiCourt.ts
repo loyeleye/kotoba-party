@@ -397,10 +397,11 @@ function voteBeat(view: RoomView, game: CourtView): HTMLElement {
 /** All the tokens drop within this, both pans at once, and each pan's count pops before the scroll unrolls over them. */
 const TOKENS_MS = 1_000;
 /** Fude-san's brush writes the verdict one character at a time, finishing as the seal lands (STAMP_AT_MS). */
-const STROKE_MS = 320;
-const BRUSH_AT_MS = STAMP_AT_MS - 2 * STROKE_MS;
+const STROKE_MS = 280;
 /** The seal's fall: it touches the paper at STAMP_AT_MS, with Fude-san's line and the stamp sound. */
 const SEAL_MS = 180;
+/** She has written both characters and lifted away just before the seal starts to fall. */
+const BRUSH_AT_MS = STAMP_AT_MS - SEAL_MS - 2 * STROKE_MS;
 /** Fude-san upside down, her topknot the brush tip (tools/art/sources/court/fude-write.py). */
 const FUDE_WRITES = 'court/fude-write';
 
@@ -422,7 +423,7 @@ function brushVerdict(verdict: { text: string; kana: string }, at: (ms: number) 
       h('p', { class: 'yc-brush-ja', lang: 'ja', 'aria-label': verdict.text }, ...chars.map((ch, i) => h('span', { class: 'yc-stroke', style: at(BRUSH_AT_MS + i * STROKE_MS) }, ch))),
       missing.has(FUDE_WRITES)
         ? null
-        : h('img', { class: 'yc-brush-pen', src: ART(FUDE_WRITES), alt: '', draggable: 'false', style: `${at(BRUSH_AT_MS)}; animation-duration: ${chars.length * STROKE_MS + 250}ms`, onerror: (e: Event) => (missing.add(FUDE_WRITES), (e.target as HTMLElement).remove()) }),
+        : h('img', { class: 'yc-brush-pen', src: ART(FUDE_WRITES), alt: '', draggable: 'false', style: `${at(BRUSH_AT_MS)}; animation-duration: ${chars.length * STROKE_MS}ms; --strokes: ${chars.length}`, onerror: (e: Event) => (missing.add(FUDE_WRITES), (e.target as HTMLElement).remove()) }),
     ),
     h('p', { class: 'yc-brush-kana yc-pop', lang: 'ja', style: at(STAMP_AT_MS) }, verdict.kana),
   );
@@ -547,8 +548,22 @@ function center(view: RoomView, game: CourtView): HTMLElement | null {
   }
 }
 
+/** The verdict's brush face and Fude-san's writing sprite load when the mode starts, never during the climax. */
+let preloaded = false;
+function preload(): void {
+  if (preloaded) return;
+  preloaded = true;
+  try {
+    void document.fonts?.load("100px 'Kotoba Brush'", '有罪無筆');
+  } catch {
+    /* the fallback face is fine */
+  }
+  new Image().src = ART(FUDE_WRITES);
+}
+
 export const yokaiCourtStage: StageMode<CourtView> = {
   render(view, game) {
+    preload();
     if (view.phase === 'intro') return intro();
     if (!game.step) return h('div', { class: 'yc-stage' });
     return h('div', { class: `yc-stage yc-step-${game.step}` }, header(view, game), center(view, game));
