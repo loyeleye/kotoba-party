@@ -81,6 +81,18 @@ doesn't run.
   after a neighbour. The phone shows the frame and two whole model lines to read out, with reasons that
   fit the round (じかんが いちばん はやいので, Aさんのより たかいので, いちばん くさいので…); the TV shows
   the frame under the neck. All draft, tagged `node`.
+- **The commentary booth** (Ladi, 2026-11-01: the 15 s encore every round is fine "as long as the other
+  N5/Kana players are getting something out of it"). Once the ので line lands (said out loud, in Japanese,
+  with ので), one more short `encore` replays it. The TV keeps the defence and adds an instant replay: the
+  line with its ので chunk lit and one line of English colour ("ので = because: Aki gave the reason first,
+  then where the card goes."), while Nobiko-san says the line herself (`narabete_replay`, a bank line that
+  is the `{line}` slot as is, with `line_kana` and `line_en`; the player's recording never plays). The line
+  is the model line they read out, else their own accepted line, voiced from the server's kana reading
+  (without one, it's replayed unvoiced). Every Kana and N5 phone shows the gist at its level: the line in
+  kana (romaji too for Kana), plain English ("Aki: this one comes first, because it's the earliest
+  time."), and the card's picture. It calls the play, never the player's mistakes, and the defender's own
+  phone doesn't get it. The replay fills what's left of the 15 s encore, kept to 5–7 s, so it runs at most
+  5 s past the encore, and only when the line was said. Passed, typed, or said without ので: no replay.
 - **Scoring**: said out loud in Japanese, it adds the same 30% defence share as the ordinary defence, to
   the N4 player only. The team points and everyone else's bonus don't change. The phrasebook
   (`narabete:defence:<spot>`) logs it `said` only for their own spoken reason with ので; a model line read
@@ -133,5 +145,7 @@ the tonic, with a chord for a perfect line; a knot bends its note down a semiton
    replaces the ordinary defence for someone else; the bonus needs Japanese said out loud, not ので.
    Spotlight, for Ladi to confirm: in a room of 4 or more connected players, when only one N4 player could
    be offered it and they gave it (took it) last round, nobody is offered it this round.
-   Deferred: the host playing it in rooms without an N4 player, the commentary booth, and the N3 script
-   (＿ような きが します, step 6).
+   The 15 s encore every round: decided by Ladi, 2026-11-01, kept, as long as Kana and N5 players get
+   something from it, so the commentary booth's replay is built (see Rank and defend).
+   Deferred: the host playing it in rooms without an N4 player, and the N3 script (＿ような きが します,
+   step 6).

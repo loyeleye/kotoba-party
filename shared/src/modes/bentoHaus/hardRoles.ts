@@ -377,16 +377,54 @@ export function offerAway(h: HardState, round: number, playerId: string): void {
   for (const o of h.offers) if (o.round === round && o.playerId === playerId && o.answer === null) o.answer = 'away';
 }
 
-/** A player answers this shift's offer. Accepting seats them at once. */
-export function answerOffer(h: HardState, hr: HardRound, round: number, playerId: string, accept: boolean): boolean {
-  const o = h.offers.find((x) => x.round === round && x.playerId === playerId);
+/** A player's offer this shift: the open one if there is one, else the last one they answered. */
+function offerOf(h: HardState, round: number, playerId: string): RoleOffer | undefined {
+  const mine = h.offers.filter((x) => x.round === round && x.playerId === playerId);
+  return mine.find((x) => x.answer === null) ?? mine[mine.length - 1];
+}
+
+/**
+ * A player answers this shift's offer. Accepting seats them at once. A declined deputy manager seat passes
+ * to the next N4 player in turn (passSeat).
+ */
+export function answerOffer(
+  h: HardState,
+  hr: HardRound,
+  round: number,
+  playerId: string,
+  accept: boolean,
+  players: readonly Pick<ModePlayer, 'id' | 'level'>[] = [],
+): boolean {
+  const o = offerOf(h, round, playerId);
   if (!o || o.answer !== null) return false;
   o.answer = accept ? 'accepted' : 'declined';
   if (accept) {
     if (o.role === 'manager') hr.manager = playerId;
     else if (!hr.omotenashi.includes(playerId)) hr.omotenashi.push(playerId);
-  }
+  } else if (o.role === 'manager') passSeat(h, hr, round, playerId, players);
   return true;
+}
+
+/**
+ * A declined deputy manager seat passes on for the shift (Ladi, 2026-11-01): a new logged offer to the next
+ * N4 player in turn after the one who declined, skipping anyone already offered the seat this shift and
+ * anyone already on the おもてなし shift. Their still-open おもてなし offer is withdrawn (never answered, so
+ * never counted): one choice on the phone at a time. Once every N4 player has said no, the seat stays empty.
+ */
+export function passSeat(h: HardState, hr: HardRound, round: number, fromId: string, players: readonly Pick<ModePlayer, 'id' | 'level'>[]): RoleOffer | null {
+  if (hr.manager) return null;
+  const n4 = players.filter((p) => p.level === 'n4');
+  const at = Math.max(0, n4.findIndex((p) => p.id === fromId));
+  const hadSeat = (id: string) => h.offers.some((o) => o.round === round && o.playerId === id && o.role === 'manager');
+  for (let k = 1; k <= n4.length; k++) {
+    const next = n4[(at + k) % n4.length]!;
+    if (hadSeat(next.id) || hr.omotenashi.includes(next.id)) continue;
+    h.offers = h.offers.filter((o) => !(o.round === round && o.playerId === next.id && o.answer === null));
+    const offer: RoleOffer = { round, playerId: next.id, role: 'manager', answer: null };
+    h.offers.push(offer);
+    return offer;
+  }
+  return null;
 }
 
 const lineStep = (s: StepScript): LineStep => ({ ...s, said: null, ok: false, tries: 0, hint: null, skipped: false });
@@ -693,7 +731,7 @@ export function hardView(hr: HardRound, r: Round, scoring: boolean, now: number)
 }
 
 export function myHardView(h: HardState, hr: HardRound | null, round: number, meId: string, r: Round | null): MyHardView | null {
-  const offer = h.offers.find((o) => o.round === round && o.playerId === meId);
+  const offer = offerOf(h, round, meId);
   const role: HardRole | null = hr?.manager === meId ? 'manager' : hr?.omotenashi.includes(meId) ? 'omotenashi' : null;
   if (offer?.answer !== null && !role && !hr?.incidents.some((i) => i.state === 'asked' && i.stationId === meId)) return null;
   const guests: MyHardView['guests'] = {};

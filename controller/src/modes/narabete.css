@@ -101,3 +101,11 @@
 .nb-hard-line p { margin: 0; }
 .nb-hard-line .jpv-main { font-weight: 800; }
 .nb-hard-line .jpv-en, .nb-hard-line .jpv-kana { color: var(--paper-muted, #6b4a6f); font-size: 13px; }
+
+/* The N4 defence's instant replay, on Kana and N5 phones: the gist at their level. */
+.nb-gist { text-align: center; }
+.nb-gist-pic { width: 96px; height: 96px; margin: 0 auto; image-rendering: pixelated; object-fit: contain; }
+.nb-gist-emoji { margin: 0; font-size: 56px; }
+.nb-gist-ja { margin: 0; font-size: 22px; font-weight: 800; }
+.nb-gist-romaji { margin: 0; color: var(--muted); font-size: 14px; }
+.nb-gist-en { margin: 0; font-size: 16px; }

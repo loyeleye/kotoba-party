@@ -76,7 +76,11 @@ kana, and tagged by name with the N4 frames they practise (`hardRoles.ts`).
 - **Offers.** At each shift's title card, the room's N4 players are offered a role on their phone: two
   equal buttons, やります (Take it) or こんかいは いいです (Not this time: the ordinary part). One deputy
   manager seat a shift, rotating through the N4 players; every other N4 player is offered the おもてなし
-  shift. With one N4 player the two alternate (deputy manager in shifts 1 and 3). The offer stays open
+  shift. With one N4 player the two alternate (deputy manager in shifts 1 and 3). A declined deputy
+  manager seat passes for that shift to the next N4 player in turn (Ladi, 2026-11-01), as a new logged
+  offer, skipping anyone already offered the seat this shift or already on the おもてなし shift; that
+  player's still-open おもてなし offer is withdrawn (unanswered, so never counted), so the phone shows one
+  choice at a time. Once every N4 player has declined it, the seat stays empty. The offer stays open
   into the shift, below the order and call box. Every offer and its answer is kept in mode state
   (`hard.offers`) with the shared offer log's answers (`hardRoleLog.ts`): accepted, declined, timeout
   (still open at closing time) or away (the player left with it open). Gate = accepted ÷ (accepted +
@@ -202,8 +206,9 @@ Each team is a whole Co-op kitchen; the two share only the customers.
    right, once played?
 8. Hard roles: should a deputy manager's fix win back a tip, or the おもてなし stars pay the team? (For now
    neither changes team pay, so other players notice no change; decided for Ladi, 2026-11-01.)
-9. Hard roles: a declined deputy manager seat stays empty for the shift rather than passing to the next N4
-   player (decided for Ladi, 2026-11-01). Is that right in rooms with several N4 players?
+9. ~~Hard roles: does a declined deputy manager seat stay empty for the shift?~~ Decided by Ladi,
+   2026-11-01: it passes to the next N4 player in turn for that shift, each pass a new logged offer; it
+   stays empty only once every N4 player has declined it (see Offers).
 10. Hard roles: is a special order every third customer (was every second until 2026-11-01), and 30 s
     on the desk, too much on top of a deputy manager's own orders? Should they stop taking orders
     instead?

@@ -9,6 +9,7 @@
 //   N4         rank and defend: one N4 player a round is told during the line-up that they'll say why
 //              their card goes where it is (「＿ので、これが いちばん さきです。」), with "Not this time".
 //              Their turn shows the frame and two model lines to read out.
+//              Once it lands, Kana and N5 phones show the gist of it (kana, English, the card).
 
 import { h } from '../../../shared/src/dom.js';
 import { MAX_ANSWER_LENGTH } from '../../../shared/src/constants.js';
@@ -343,6 +344,19 @@ function hardOffer(ctx: Ctx, me: Me): HTMLElement | null {
   );
 }
 
+/** Kana and N5 phones, during the N4 defence's replay: what was said, at their level (never a correction). */
+function gistScreen(g: NonNullable<Me['gist']>): HTMLElement {
+  return h(
+    'div',
+    { class: 'screen nb-gist' },
+    h('p', { class: 'big' }, '📺 Replay'),
+    g.picture ? h('img', { class: 'nb-gist-pic', src: g.picture, alt: '' }) : g.emoji ? h('p', { class: 'nb-gist-emoji', 'aria-hidden': 'true' }, g.emoji) : null,
+    h('p', { class: 'nb-gist-ja', lang: 'ja' }, g.kana),
+    g.romaji ? h('p', { class: 'nb-gist-romaji' }, g.romaji) : null,
+    h('p', { class: 'nb-gist-en' }, g.en),
+  );
+}
+
 /** The N4 defence: the ので frame for where the card ended up, and two model lines to read out. */
 function hardDefence(ctx: Ctx, me: Me): HTMLElement {
   const { game, send } = ctx;
@@ -422,6 +436,7 @@ export const narabetePhone: PhoneMode<NarabeteView> = {
             speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'defend', utterance, round: game.round }) }),
             h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Pass'),
           );
+        if (me?.gist) return gistScreen(me.gist);
         return waiting('Look at the TV!', game.defence ? `${nameOf(ctx, game.defence.playerId)} is defending their card…` : '');
       case 'score':
         return me ? scoreScreen(ctx, me) : waiting('Look at the TV!');
