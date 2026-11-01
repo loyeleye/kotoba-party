@@ -189,6 +189,32 @@ edge (the `reach` mood, `stage/src/reach.ts`): praise, not mockery, and only onc
 first, then an N5, never a kana player, an English answer or anyone she has teased already, and at most twice a
 game (`pickTease` in `omiai.ts`). The answer is still anonymous then, so the room gets to guess whose it was.
 
+### The go-between (なこうど, N4 hard role)
+
+When the room has an N4 player, each round one of them (in seat rotation) is offered Nobiko-san's
+matchmaker lines for that round, in keigo (4.9):
+
+| When | Line (filled in from the guest's card, `nakodoLines` in `cards.ts`) |
+| --- | --- |
+| Round 1, as the guest asks | みなさま、かっぱの キュウリさんが おみえに なりました。ごしょうかい いたします。 |
+| Round 2 | こちらは きゅうり のうかの キュウリさんで いらっしゃいます。 |
+| Later rounds | キュウリさんが みなさまに おききに なります。 |
+| The last round | キュウリさんから さいごの しつもんが ございます。 |
+| Closing each round (score) | キュウリさん、ありがとう ございました。つぎの しつもんに まいります。 |
+| Closing the last round | キュウリさんは そろそろ おかえりに なります。 |
+
+The phone shows the line as a script; the go-between says it (+50) or types it (+25), checked with Phrase
+Bingo's lenient `saidPhrase`, two tries per line, and sees its manners meter. Nobiko-san doesn't read the
+question while a go-between has the opening; "Not this time" hands the round's lines back to her (and
+she reads the question). The prompt and score phases run 12 s longer while a line is waiting and end once
+it's said and the phase has had its usual 8 or 9 s. Everyone still answers, votes and scores as usual,
+the go-between too. Offers and outcomes are in `nakodoLog`; `nakodoOffers()` sums them per player.
+Phrasebook: `omiai:nakodo:<card>:<line>`. With no N4 player nothing changes.
+
+The manners meter reads every line as keigo (tested for every card and round). It now also counts
+ごしょうかい as an お/ご word, and お〜に なる in plain form (おみえに なった) as honorific when the
+stem is a verb's.
+
 ### Awards (draft titles)
 
 おちゃの しょうたい *Invited to Tea* (the guest's choice), おもてなし しょう *Best Manners*
@@ -243,6 +269,14 @@ canned memory answers (by question kind and register) or build a tile answer. Th
 19. **The guest is random** unless `extra.cardId` names one.
 20. **N4 players hear the keigo question** and get the keigo upgrade as their tip when they're
     already polite. N5 players see it as a bonus line only.
+21. **The go-between (N4) gets two lines a round, the opening and the closing**, from six keigo
+    templates filled in with the guest's name and job, rather than lines written per card. Kids guests get
+    the same formal lines, as part of the parody (2026-11-01).
+22. **With one N4 player, they're offered the go-between every round.** Each offer can be declined.
+23. **Go-between points: 50 a line said, 25 typed**, paid directly (not from the manners pool), so a
+    Kana or N5 player's scoring is unchanged. A guess to tune.
+24. **The meter's お〜に なる rule now takes plain forms** (なる, なった) when the stem ends in an i- or
+    e-row kana, so おとなに なる isn't read as keigo.
 
 ## Open questions
 
@@ -260,8 +294,14 @@ canned memory answers (by question kind and register) or build a tile answer. Th
 7. **Should a casual answer to a casual guest score well?** Every guest is formal for now; a
    relaxed guest (a festival tanuki) would flip the register as a twist.
 8. **Say-it-first length** (5 s) and the 0.45 tile share: playtest numbers.
+9. **The go-between**: should the guest's name in the lines be the short one (キュウリさん) everywhere
+   after round 1, and is 「こちらは きゅうり のうかの キュウリさんで いらっしゃいます」 natural with every
+   card's job? Should the TV play the go-between's recorded clip instead of showing the text?
 
 ## Known gaps
+
+- **The go-between**: not built yet are the host playing it in solo rooms, the commentary booth, Gallery
+  reactions and curveball tiles. The bots never take the part (an N4 bot's offer just times out).
 
 - **No LLM tips.** The rewrite is rule-based, so an answer it can't parse falls back to the
   stock answer. Free answers have no English subtitle on the stage.

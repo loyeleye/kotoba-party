@@ -131,3 +131,10 @@
   .omi-bubble::before { display: none; }
   .omi-answers { grid-template-columns: 1fr; }
 }
+
+.omi-nakodo-s { display: grid; gap: 4px; padding: 12px 18px; border-left: 6px solid var(--accent); background: var(--panel); border-radius: 10px; }
+.omi-nakodo-s p { margin: 0; }
+.omi-nakodo-who { font-size: 24px; font-weight: 800; color: var(--accent); }
+.omi-nakodo-jp { font-size: 36px; font-weight: 900; line-height: 1.3; }
+.omi-nakodo-en { font-size: 24px; color: var(--muted); }
+.omi-nakodo-wait { font-size: 24px; color: var(--muted); margin: 0; }

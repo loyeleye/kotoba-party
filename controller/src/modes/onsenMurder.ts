@@ -1,6 +1,10 @@
 // Murder at the Onsen on the phone: pick a suspect and ask your question in Japanese (say it,
 // type it, or build it from tiles), the notebook, and the accusation 「はんにんは ○○さんです！」.
 //
+// An N4 player may be the turn's deputy: offered the part while someone asks ("not this time"
+// keeps the ordinary part), then, after the answer, they report it from shuffled word tiles under
+// the frame (＿と いっていました / ＿に ＿られました), or say or type it.
+//
 // The screen key only covers what this player is doing, so another player's accusation never
 // rebuilds the talk button mid-sentence. The tile draft and the picked suspect live in module
 // state, so a redraw keeps them.
@@ -11,6 +15,7 @@ import type { JpText, Level, OnsenIntent } from '../../../content/src/types.js';
 import type { OnsenView } from '../../../shared/src/modes/views.js';
 import type { QuestionTile } from '../../../shared/src/modes/onsenMurder/questions.js';
 import { calledName, joinTiles } from '../../../shared/src/modes/onsenMurder/questions.js';
+import { joinReport, type ReportTile } from '../../../shared/src/modes/onsenMurder/deputy.js';
 import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
@@ -29,6 +34,12 @@ const SAY_FIRST_MS = 5_000;
 let picked: { scope: string; suspectId: string | null } = { scope: '', suspectId: null };
 let draft: { scope: string; tiles: QuestionTile[] } = { scope: '', tiles: [] };
 const sayFirstFrom = new Map<string, number>();
+let reportDraft: { scope: string; tiles: ReportTile[] } = { scope: '', tiles: [] };
+
+function reportDraftFor(scope: string): ReportTile[] {
+  if (reportDraft.scope !== scope) reportDraft = { scope, tiles: [] };
+  return reportDraft.tiles;
+}
 
 function pickedFor(scope: string): string | null {
   if (picked.scope !== scope) picked = { scope, suspectId: null };
@@ -217,6 +228,99 @@ function askScreen(ctx: Ctx): HTMLElement {
   return root;
 }
 
+// ---- the deputy (N4 hard role) ----
+
+/** While someone asks: the offer, or what the deputy chose. */
+function deputyOffer(ctx: Ctx): HTMLElement | null {
+  const d = ctx.game.mine?.deputy;
+  if (!d) return null;
+  if (d.status === 'declined') return h('p', { class: 'hint om-p-deputy' }, '🕵️ No deputy work this turn. Just watch!');
+  return h(
+    'div',
+    { class: 'om-p-deputy' },
+    h('p', {}, h('strong', {}, '🕵️ You’re the deputy this turn.'), ' After the answer, tell the room what the suspect said:'),
+    h('p', { class: 'om-p-frame', lang: 'ja' }, '＿は ＿と いっていました'),
+    d.status === 'ready'
+      ? h('p', { class: 'hint' }, 'Ready! Listen to the answer.')
+      : h(
+          'div',
+          { class: 'om-p-row' },
+          h('button', { type: 'button', onclick: () => void ctx.send({ kind: 'deputy', accept: true }) }, 'I’m ready'),
+          h('button', { type: 'button', class: 'secondary', onclick: () => void ctx.send({ kind: 'deputy', accept: false }) }, 'Not this time'),
+        ),
+  );
+}
+
+/** After the answer: build the report from the tiles, or say or type it. */
+function deputyReport(ctx: Ctx): HTMLElement | null {
+  const { view, game, send } = ctx;
+  const d = game.mine?.deputy;
+  if (!d || d.status === 'declined') return null;
+  if (d.status === 'reported')
+    return h('div', { class: 'om-p-deputy' }, h('p', {}, h('strong', {}, `🕵️ Reported! +${d.points}`)), d.line ? jpLine(d.line) : null);
+  if (d.status === 'missed')
+    return h('div', { class: 'om-p-deputy' }, h('p', {}, '🕵️ Nice try, deputy. The report:'), d.line ? jpLine(d.line) : null);
+  if (!d.canReport) return null;
+  const scope = `${view.phaseSeq}`;
+  const picked = reportDraftFor(scope);
+  const preview = h('p', { class: 'om-p-preview', lang: 'ja' });
+  const sendBtn = h('button', { type: 'button', class: 'secondary om-p-send' }, 'Report with tiles') as HTMLButtonElement;
+  const undo = h('button', { type: 'button', class: 'secondary' }, '⌫') as HTMLButtonElement;
+  const grid = h('div', { class: 'om-p-tiles' });
+  const draw = () => {
+    const text = joinReport(picked);
+    preview.textContent = text || 'Tap the words in order';
+    preview.classList.toggle('empty', !text);
+    sendBtn.disabled = picked.length !== d.tiles.length;
+    undo.disabled = !picked.length;
+    mount(
+      grid,
+      d.tiles
+        .filter((t) => !picked.some((x) => x.id === t.id))
+        .map((t) =>
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'om-p-tile word',
+              onclick: () => {
+                picked.push(t);
+                draw();
+              },
+            },
+            h('span', { lang: 'ja' }, t.text),
+          ),
+        ),
+    );
+  };
+  sendBtn.onclick = () => {
+    void send({ kind: 'report', tiles: picked.map((t) => t.id) });
+    picked.length = 0;
+  };
+  undo.onclick = () => {
+    picked.pop();
+    draw();
+  };
+  draw();
+  return h(
+    'div',
+    { class: 'om-p-deputy', style: `animation-delay: ${game.thinkMs}ms` },
+    h('p', {}, h('strong', {}, '🕵️ Deputy: tell the room what they said.')),
+    d.frame ? h('p', { class: 'om-p-frame', lang: 'ja' }, d.frame) : null,
+    d.heard ? h('p', { class: 'om-p-missline' }, `Heard “${d.heard}”. ${d.triesLeft} try left.`) : null,
+    d.line ? h('div', {}, h('p', { class: 'hint' }, 'Like this:'), jpLine(d.line)) : null,
+    speakBox({
+      label: 'Hold and report it',
+      placeholder: '…と いっていました',
+      kanaPadOpen: false,
+      onSend: (utterance) => void send({ kind: 'report', utterance }),
+    }),
+    h('div', { class: 'om-p-builder' }, preview, h('div', { class: 'om-p-row' }, sendBtn, undo), grid),
+    d.heard ? null : h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'deputy', accept: false }) }, 'Not this time'),
+    h('p', { class: 'hint' }, 'Saying it aloud earns the 🎤 bonus.'),
+  );
+}
+
 // ---- accusing ----
 
 function accuseScreen(ctx: Ctx): HTMLElement {
@@ -296,6 +400,7 @@ export const onsenMurderPhone: PhoneMode<OnsenView> = {
           'div',
           { class: 'screen om-p' },
           h('p', { class: 'big' }, `${nameOf(view, game.turn?.playerId)} is asking…`),
+          deputyOffer(ctx),
           h('p', { class: 'hint' }, 'Watch the TV. Who is lying?'),
           caseCard(game),
           notebook(game),
@@ -312,6 +417,7 @@ export const onsenMurderPhone: PhoneMode<OnsenView> = {
           h('div', { class: 'om-p-answer', style: `animation-delay: ${game.thinkMs}ms` }, jpLine(cur.answer)),
           mineAsk ? h('p', { class: 'hint' }, cur.guessed ? `Best guess: ${cur.natural.text} (${cur.natural.en})` : `Natural: ${cur.natural.text} (${cur.natural.en})`) : null,
           cur.newClue && cur.clue ? h('p', { class: 'om-p-clue', style: `animation-delay: ${game.thinkMs + game.subtitleMs}ms` }, `📝 New clue${mineAsk ? ` +${cur.points}` : ''}: `, h('span', { lang: 'ja' }, cur.clue.text)) : null,
+          deputyReport(ctx),
         );
       }
       case 'encore':

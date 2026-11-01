@@ -4,7 +4,7 @@ Host: Chōchin-san, off duty at the inn. 1–8 players. The VIP picks 2, 3 or 1 
 (`roundChoices`). Mode id `onsen-murder`.
 
 Code: `shared/src/modes/onsenMurder/` (rules; `questions.ts` question matching, tiles and the
-accusation line; `fallback.ts` placeholder case), `content/src/onsen/cases.ts` (8 draft N5
+accusation line; `deputy.ts` the N4 deputy's report tiles and check; `fallback.ts` placeholder case), `content/src/onsen/cases.ts` (8 draft N5
 cases: 3 for everyone, 1 Kids, 4 Cheeky), `stage/src/modes/onsenMurder.ts` (+ `.css`), `controller/src/modes/onsenMurder.ts`
 (+ `.css`), `tools/bots/policies/onsenMurder.ts`, `server/ai/suspect.ts` and
 `server/src/onsen.ts` (optional LLM lead-ins), `tests/onsenMurder.test.ts`.
@@ -54,6 +54,35 @@ bonus is never more than 30% of their score. The pool settles whenever base poin
 
 Awards: めいたんてい (most clues found), こえの たんてい (most questions asked aloud), みぬいた！
 (first to name the culprit).
+
+### The deputy (N4 hard role)
+
+When the room has an N4 player, each turn one of them (in seat rotation, never the asker) is offered
+the deputy's part on their phone while the question is asked: "I'm ready" or "Not this time" (which
+keeps the ordinary part: just watch). After the answer the deputy tells the room what the suspect said:
+
+- **Reported speech** (4.14 ＿と いっていました) for most answers: たなかさんは 12じに ねたと いっていました。
+- **The passive** (4.13 ＿に ＿られました) for a sighting: たなかさんは 10じ50ぷんに すずきさんに みられました。
+- A few also use ために, ＿そうでした and ので.
+
+Each answer of the three cases for everyone has its report written beside it (`report` in
+`content/src/onsen/cases.ts`, draft). The phone shows the frame (＿は ＿と いっていました) and the
+report's words as shuffled tiles, so the line is checkable; the deputy builds it, or says or types it
+(`deputy.ts`: the frame's last two words must be there, then the whole line within a few kana or 70% of
+its words). Two tries; after a miss the whole line is shown. The stage shows the report under the answer.
+
+| | Points |
+| --- | --- |
+| Report said or typed | 60 |
+| Report built from tiles | 30 |
+| Report said aloud | +40 speaking bonus (same pool and cap) |
+
+The answer runs 15 s longer while a deputy has a report to give, and ends once they're done and the
+answer has had its usual 10–12 s (a `wake`). An answer with nothing to report (a shrug, a Kids or Cheeky
+case, the placeholder) voids the offer. Every offer and its outcome (accepted, declined, ignored) is in
+`deputyLog`; `deputyOffers()` sums it per player for the "accept at least 60%" gate. Phrasebook:
+`onsen.report.<case>.<suspect>.<intent>`. Kana and N5 players' parts and scores don't change, and with no
+N4 player nothing changes.
 
 ### The optional LLM
 
@@ -106,6 +135,16 @@ on the LLM. At most 16 lead-ins per game.
     romaji.
 15. **Phrasebook entries**: each intent asked (`onsen.q.<intent>`) and the player's accusation
     (`onsen.accuse.<case>.<suspect>`).
+16. **The deputy (N4) is offered every turn to the next N4 player who isn't asking**, with reports
+    hand-written per answer rather than generated: turning a polite answer into a plain-form quote isn't
+    safe to do by rule. Sightings (だれを みましたか) are reported in the passive, everything else in
+    reported speech (2026-11-01).
+17. **A polite direct quote passes the deputy's check** (いましたと いっていました): it is still correct
+    Japanese, and the check leans towards accepting. Dropping a fact (both times) fails.
+18. **Deputy points: 60 said or typed, 30 from tiles, +40 spoken bonus under the shared cap.** A guess
+    to tune in playtests; a clue is worth 100, so the deputy never outscores the detective.
+19. **The deputy's answer time is +15 s**, ended early once they're done and the answer has had its
+    usual time.
 
 ## Open questions
 
@@ -119,7 +158,15 @@ on the LLM. At most 16 lead-ins per game.
 - 3 cases is about one evening. How many cases for launch, and at which levels (N4 cases with
   conditional clues)?
 
+- The deputy: should the TV play the deputy's recorded clip (the design doc's 9 s clip) rather than show
+  the text? Should a 2-player room with one N4 player get a deputy every other turn only?
+- Deputy reports for the Kids and Cheeky cases (only the three cases for everyone have them).
+
 ## Known gaps
+
+- The deputy: not built yet are the host playing the part in solo rooms, the commentary booth's replay
+  of the report, Gallery reactions and curveball tiles; the bots never take the deputy's part (an N4
+  bot's offer just times out). The 60 reports are draft and need the fluent check.
 
 - The ice cream, sake, smartphone, toupee and candle cases have no pixel art yet: their suspects, victim and item show
   emoji until portraits and icons are made.

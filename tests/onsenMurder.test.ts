@@ -9,6 +9,7 @@ import {
   BONUS_CAP,
   caseFor,
   cleanLead,
+  deputyOffers,
   onsenMurderMode,
   POINTS,
   suspectLineRequests,
@@ -17,7 +18,8 @@ import {
   type OnsenState,
   type OnsenView,
 } from '../shared/src/modes/onsenMurder/onsenMurder.js';
-import { accusationLine, checkAccusation, INTENTS, joinTiles, matchQuestion, questionFor, tilesFor } from '../shared/src/modes/onsenMurder/questions.js';
+import { checkReport, joinReport, reportFrame, reportWords, tilesInOrder } from '../shared/src/modes/onsenMurder/deputy.js';
+import { accusationLine, calledName, checkAccusation, INTENTS, joinTiles, matchQuestion, questionFor, tilesFor } from '../shared/src/modes/onsenMurder/questions.js';
 import { hasKanji, normalizeReading } from '../shared/src/japanese/kana.js';
 import type { Audience, Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -608,4 +610,178 @@ describe('Murder at the Onsen: bots play a game end to end', () => {
       director.client.close();
     });
   }
+});
+
+// ---- the deputy (N4 hard role) ----
+
+const FRAME_IDS = new Set(['to-itte-imashita', 'passive', 'tame-ni', 'sou-looks', 'node']);
+
+describe('Murder at the Onsen: the deputy’s reports', () => {
+  const shared = onsenCases.filter((c) => !c.audience);
+  for (const c of shared) {
+    it(`${c.id}: every answer has a report the tiles and the checker agree on`, () => {
+      const names = c.suspects.map((s) => calledName(s).kana);
+      for (const s of c.suspects) {
+        for (const intent of INTENTS) {
+          const r = s.answers[intent]!.report;
+          const at = `${c.id}/${s.id}/${intent}`;
+          expect(r, at).toBeTruthy();
+          expect(r!.jp.text && r!.jp.kana && r!.jp.en, at).toBeTruthy();
+          expect(hasKanji(r!.jp.kana) || /\d/.test(r!.jp.kana), `${at} kana`).toBe(false);
+          // Text and reading split into the same words, the tiles.
+          expect(r!.jp.text.split(' ').length, at).toBe(r!.jp.kana.split(' ').length);
+          expect(r!.frames?.every((f) => FRAME_IDS.has(f)), at).toBe(true);
+          const words = reportWords(r!);
+          if (r!.frames!.includes('passive')) {
+            // ＿は ＿に みられました: about a suspect, seen by this one.
+            expect(words.at(-1)!.kana, at).toBe('みられました');
+            expect(words.at(-2)!.kana, at).toBe(`${calledName(s).kana}に`);
+            expect(names.some((n) => words[0]!.kana === `${n}は`), at).toBe(true);
+          } else {
+            expect(r!.frames![0], at).toBe('to-itte-imashita');
+            expect(words[0]!.kana, at).toBe(`${calledName(s).kana}は`);
+            expect(words.at(-1)!.kana, at).toBe('いっていました');
+            expect(words.at(-2)!.kana.endsWith('と'), at).toBe(true);
+          }
+          // The line itself passes, typed or spoken, and so do its tiles in order.
+          expect(checkReport({ via: 'typed', text: r!.jp.text, reading: r!.jp.kana }, r!), at).toBe(true);
+          expect(checkReport({ via: 'speech', text: r!.jp.kana.replace(/ /g, '') }, r!), at).toBe(true);
+          expect(tilesInOrder(r!, words), at).toBe(true);
+          // The suspect's own polite answer is not a report.
+          expect(checkReport({ via: 'typed', text: s.answers[intent]!.jp.kana }, r!), at).toBe(false);
+        }
+      }
+    });
+  }
+
+  it('is lenient about a dropped word, but needs the facts and the frame', () => {
+    const r = snowman.suspects.find((s) => s.id === 'tanaka')!.answers.where!.report!;
+    expect(checkReport(speech('田中さんは10時から11時まで台所にいたと言っていました', 'たなかさんはじゅうじからじゅういちじまでだいどころにいたといっていました'), r)).toBe(true);
+    expect(checkReport(speech('田中さんは10時から台所にいたと言っていました', 'たなかさんはじゅうじからだいどころにいたといっていました'), r)).toBe(true);
+    // Dropping both times drops the fact.
+    expect(checkReport(speech('たなかさんは だいどころに いたと いっていました'), r)).toBe(false);
+    expect(checkReport(speech('たなかさんは じゅうじから じゅういちじまで だいどころに いました'), r)).toBe(false);
+    expect(checkReport(speech('ゆきだるまさんは じゅうじから じゅういちじまで だいどころに いたと いいました'), r)).toBe(false);
+    // A direct quote, still polite inside, is correct Japanese too.
+    expect(checkReport(speech('たなかさんは じゅうじから じゅういちじまで だいどころに いましたと いっていました'), r)).toBe(true);
+    expect(reportFrame(r)).toBe('＿は ＿と いっていました');
+    expect(joinReport(reportWords(r))).toBe(r.jp.text);
+  });
+});
+
+describe('Murder at the Onsen: the deputy in play', () => {
+  /** Tile ids in the report's order. */
+  const inOrder = (t: Table, deputy: string) => {
+    const me = t.view(deputy).mine!.deputy!;
+    const words = reportWords(t.st.asks.at(-1)!.report!);
+    const left = [...me.tiles];
+    return words.map((w) => {
+      const i = left.findIndex((x) => x.text === w.text);
+      return left.splice(i, 1)[0]!.id;
+    });
+  };
+
+  it('with nobody at N4 there is no deputy and nothing changes', () => {
+    const t = new Table(3);
+    t.start();
+    expect(t.st.deputy).toBeNull();
+    t.ask('tanaka', 'どこに いましたか');
+    expect(t.s.phase).toBe('reveal');
+    expect(t.view().deputy).toBeNull();
+    expect(t.s.deadline! - t.now).toBe(12_000);
+    t.timeout();
+    expect(t.st.deputyLog).toEqual([]);
+  });
+
+  it('offers the N4 player the deputy’s part; tiles in order report the answer and pay', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    expect(t.turnPlayer).toBe('p1');
+    expect(t.st.deputy?.playerId).toBe('p2');
+    expect(t.view('p2').mine!.deputy).toMatchObject({ status: 'offered', canReport: false });
+    expect(t.view('p1').mine!.deputy).toBeNull();
+    expect(t.play('p1', { kind: 'deputy', accept: true }).error).toBe('not-deputy');
+    expect(t.play('p2', { kind: 'deputy', accept: true }).error).toBeUndefined();
+    t.ask('tanaka', 'どこに いましたか');
+    // The answer runs 15 s longer for the deputy.
+    expect(t.s.deadline! - t.now).toBe(12_000 + 15_000);
+    const me = t.view('p2').mine!.deputy!;
+    expect(me.canReport).toBe(true);
+    expect(me.frame).toBe('＿は ＿と いっていました');
+    expect(me.line).toBeNull();
+    expect(t.view().deputy).toMatchObject({ playerId: 'p2', reporting: true, line: null });
+    const before = t.score('p2');
+    expect(t.play('p2', { kind: 'report', tiles: inOrder(t, 'p2') }).error).toBeUndefined();
+    expect(t.score('p2') - before).toBe(POINTS.reportTiles);
+    expect(t.view().deputy?.line?.text).toBe('たなかさんは 10じから 11じまで だいどころに いたと いっていました。');
+    expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'onsen.report.snowman.tanaka.where' && e.outcome === 'seen')).toBe(true);
+    // Done, but the answer still gets its usual 12 s: the room wakes the phase then.
+    expect(t.s.phase).toBe('reveal');
+    const wake = onsenMurderMode.wakeAt!(t.st, 'reveal', { now: t.now } as never);
+    expect(wake).toBe(t.st.revealAt + 12_000);
+    t.now = wake!;
+    t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    expect(t.s.phase).toBe('answer');
+    expect(t.st.deputyLog).toEqual([{ turnNo: 1, playerId: 'p2', outcome: 'accepted' }]);
+    // The N4 player's own turn: nobody else is N4, so no deputy.
+    expect(t.turnPlayer).toBe('p2');
+    expect(t.st.deputy).toBeNull();
+    expect(deputyOffers(t.st)).toEqual({ p2: { offered: 1, accepted: 1, declined: 0 } });
+  });
+
+  it('a spoken report pays more, with the speaking bonus in the pool; the passive for a sighting', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    t.ask('suzuki', 'だれを みましたか');
+    expect(t.view('p2').mine!.deputy!.frame).toBe('＿は ＿に ＿られました');
+    expect(t.play('p2', { kind: 'report', utterance: speech('田中さんは10時50分に鈴木さんに見られました', 'たなかさんはじゅうじごじゅっぷんにすずきさんにみられました') }).error).toBeUndefined();
+    expect(t.st.deputy?.status).toBe('reported');
+    expect(t.st.tally.p2).toMatchObject({ base: POINTS.report, bonusEarned: POINTS.spokenReport, reports: 1 });
+    expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'onsen.report.snowman.suzuki.who' && e.outcome === 'said')).toBe(true);
+  });
+
+  it('“not this time” keeps the ordinary part, and is logged as a decline', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    expect(t.play('p2', { kind: 'deputy', accept: false }).error).toBeUndefined();
+    t.ask('tanaka', 'どこに いましたか');
+    expect(t.s.deadline! - t.now).toBe(12_000);
+    expect(t.view('p2').mine!.deputy).toMatchObject({ status: 'declined', canReport: false, tiles: [] });
+    expect(t.play('p2', { kind: 'report', tiles: ['w0'] }).error).toBe('wrong-phase');
+    t.timeout();
+    expect(t.st.deputyLog).toEqual([{ turnNo: 1, playerId: 'p2', outcome: 'declined' }]);
+  });
+
+  it('two misses end the report; it goes to review, with the line shown', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    t.play('p2', { kind: 'report', utterance: speech('たなかさんは だいどころに いました') });
+    expect(t.view('p2').mine!.deputy).toMatchObject({ status: 'offered', triesLeft: 1, canReport: true });
+    expect(t.view('p2').mine!.deputy!.line?.kana).toContain('いたと いっていました');
+    const wrong = [...inOrder(t, 'p2')].reverse();
+    t.play('p2', { kind: 'report', tiles: wrong });
+    expect(t.st.deputy?.status).toBe('missed');
+    expect(t.score('p2')).toBe(0);
+    expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'onsen.report.snowman.tanaka.where' && e.outcome === 'missed')).toBe(true);
+    t.timeout();
+    expect(t.st.deputyLog[0]?.outcome).toBe('accepted');
+  });
+
+  it('rotates among the N4 players, never the asker; an answer with nothing to report voids the offer', () => {
+    const t = new Table(3, { ...EMPTY_CONTENT }, ['n4', 'n4', 'n4']);
+    t.start('fallback');
+    // The placeholder case has no reports.
+    expect(t.turnPlayer).toBe('p1');
+    expect(t.st.deputy?.playerId).toBe('p2');
+    t.ask('a', 'どこに いましたか');
+    expect(t.st.deputy).toBeNull();
+    t.timeout();
+    expect(t.turnPlayer).toBe('p2');
+    expect(t.st.deputy?.playerId).toBe('p3');
+    t.timeout(); // nobody asked
+    expect(t.turnPlayer).toBe('p3');
+    expect(t.st.deputy?.playerId).toBe('p1');
+    expect(t.st.deputyLog).toEqual([]);
+  });
 });
