@@ -150,7 +150,19 @@ export type FrameId =
   | 'nante'
   | 'toka'
   | 'jan'
-  | 'kke';
+  | 'kke'
+  | 'you-ni-iwareta'
+  | 'mono-de'
+  | 'kakeru'
+  | 'kiru'
+  | 'dasu'
+  | 'totan'
+  | 'wake-niwa-ikanai'
+  | 'hazu-ga-nai'
+  | 'ni-totte'
+  | 'sae'
+  | 'koso'
+  | 'bakari';
 
 export interface Frame {
   id: FrameId;
@@ -1238,6 +1250,85 @@ const N3: Matcher[] = [
   { id: 'jan', not: rx(`じゃんじゃん`), re: rx(`[^\\s\\u3000、。]じゃん(?!けん|じゃん|ぷ|ぱ)(?=[\\s\\u3000、。！!？?…〜ー]|ね|よ|か|$)`) },
   // ＿っけ: what was it again (listening only). っけ ends the clause: not せっけん, いっけん, コロッケ.
   { id: 'kke', re: rx(`[^\\s\\u3000、。]っけ(?=[\\s\\u3000]*[、,。！!？?…]|[\\s\\u3000]*$|ね)`), not: rx(`ころっけ|(^|[\\s\\u3000、])(あっけ|そっけ|いっけ|ずっけ)`) },
+  // ---- N3 points the #149 JLPT seat found missing (not on a goal yet: the open questions doc has the proposal) ----
+  // ＿ように いわれました: told to (いしゃに やすむ ように いわれた), and asked to (たのまれた). Not ように なる.
+  {
+    id: 'you-ni-iwareta',
+    re: rx(`([うくぐすつぬぶむる]|ない)[\\s\\u3000]*ように[\\s\\u3000]*(いわれ|言われ|たのまれ|頼まれ|ちゅうい[\\s\\u3000]*され|注意され|いって|言って|たのん|頼ん|いい|言い|つたえ|伝え)`),
+    not: rx(`(の|な)[\\s\\u3000]*ように`),
+    hides: ['you-ni', 'passive'],
+  },
+  // ＿もので: because (an excuse, apologising). After a plain form or な. Not もの + で as a thing (この もので,
+  // たべもので, のみもの), ものです (should), or ものでは ない.
+  {
+    id: 'mono-de',
+    re: rx(`(${PLAIN}|[ぁ-ん]た|な|だった)[\\s\\u3000]*(もので|ものですから|んもので)(?![\\s\\u3000]*(す|は|も|しょう|ござい))`),
+    not: rx(`(たべ|食べ|のみ|飲み|かい|買い|わすれ|忘れ|おくり|贈り|いれ|入れ|き|着|はき|やき|焼き|つけ|漬け|あげ|もち|持ち|にもの|煮物|くだ|すい|ほり|まき)(もの|物)で|(この|その|あの|どの|いい|わるい|ほんとうの|ほんものの)[\\s\\u3000]*(もの|物)で|ほんもの|にせもの|かいもの`),
+  },
+  // Compound verbs. ＿かける: half done, or about to (たべかけの ケーキ, いいかけて やめた). Not でかける (go out),
+  // はなしかける (speak to), おいかける (chase), みかける (catch sight of), こしかける (sit), or かける alone.
+  {
+    id: 'kakeru',
+    re: rx(`${STEM}(かけ|掛け)(の|た|て|ました|ます|る|ている|てる|だ)`),
+    not: rx(`(^|[\\s\\u3000、をがはもにで])(で|出|はなし|話し|おい|追い|み|見|こし|腰|よび|呼び|しか|仕|ひっ|ひき|とい|問い|なげ|投げ|さし|うち|よせ|もうし|申し|ねがい|おしえ|たて|立て|まち|待ち|つけ|ぬい|かい|書い|しめ|あ|とり|取り|ふり|振り|はたらき|働き|しかけ|よりかか|まえ)(かけ|掛け)|(^|[\\s\\u3000、])(かけ|掛け)`),
+  },
+  // ＿きる: to the end, completely (たべきる, つかれきって), and ＿きれない (can't finish). Not きる alone (wear, cut),
+  // できる, いきる (live), おもいきり／おもいきって, しめきり (deadline), ふみきり (crossing), かしきり, はりきる.
+  {
+    id: 'kiru',
+    re: rx(`${STEM}(きる|きった|きって|きれない|きれません|きれなかった|きれる|きります|きりました|きれず|切る|切った|切って|切れない|切れません|切れなかった|切ります|切りました)(?![ぁ-ん]*(ぶ|ふ))`),
+    not: rx(`(^|[\\s\\u3000、をがはもにで])(で|出来|い|生|お|起|あ|飽|おもい|思い|しめ|締め|ふみ|踏み|かし|貸し|はり|張り|うら|く|か|かみ|紙|た|はい|入|し|仕|ねぎ|まえ|よこ|おし|ちぎ|と|つめ)(きる|きった|きって|きれ|きり|切)|(^|[\\s\\u3000、をがは])(きる|きった|きって|きれ|きり)`),
+  },
+  // ＿だす: start suddenly (なきだす, あめが ふりだした). Not だす alone (put out), おもいだす (remember), とりだす
+  // (take out), よびだす (summon), ぬけだす (escape), さしだす (hold out), and words with だし inside (みだし).
+  {
+    id: 'dasu',
+    re: rx(`${STEM}(だす|だした|だして|だします|だしました|だしそう|ださない|出す|出した|出して|出しました)`),
+    not: rx(`(^|[\\s\\u3000、をがはもにで])(おもい|思い|とり|取り|よび|呼び|ぬけ|抜け|さし|差し|ひっぱり|引っ張り|つれ|連れ|ぬき|抜き|うみ|生み|かき|書き|み|見|おい|追い|き|切り|きり|つくり|作り|いい|せり|おし|押し|はき|吐き|かり|もち|持ち|ほり|掘り|はみ|ひき|引き|にげ|逃げ|しぼり|すくい|おくり|送り|つまみ|ひろい|えらび)(だす|だし|だせ|ださ|出す|出し)|(^|[\\s\\u3000、をが])(だす|だし|出す|出し)`),
+  },
+  // ＿た とたん(に): the moment (I) did. After た／だ only. Not とたん alone (galvanised iron).
+  { id: 'totan', re: rx(`[ぁ-ん][ただ][\\s\\u3000]*(とたん|途端)(に|、|[\\s\\u3000])`), not: rx(`(とたん|トタン)(の|やね|屋根|ばり|板)`) },
+  // ＿わけには いかない: can't very well. Not いいわけ (an excuse), もうしわけ.
+  {
+    id: 'wake-niwa-ikanai',
+    re: rx(`(${PLAIN}|[ぁ-ん]て|[ぁ-ん]で)[\\s\\u3000]*(わけ|訳)[\\s\\u3000]*に[\\s\\u3000]*は[\\s\\u3000]*(いかない|いきません|いかなかった|いきませんでした|行かない|行きません|いかん|いかねえ)`),
+    not: rx(`(いい|言い|もうし|申し)わけ`),
+    hides: ['wake-dewa-nai'],
+  },
+  // ＿はずが ない: there's no way. Shown over ＿はずです.
+  {
+    id: 'hazu-ga-nai',
+    re: rx(`(${PLAIN}|な|の)[\\s\\u3000]*(はず|筈)[\\s\\u3000]*(が|は)[\\s\\u3000]*(ない|ありません|なかった|ありませんでした|ないです|ねえ|ないでしょう|ないよ|ないじゃ)`),
+    not: rx(`はずかし|恥ずかし|はずれ|はずし`),
+    hides: ['hazu', ...DESU_FAMILY],
+  },
+  // Nに とって: for N, to N (わたしに とって、かぞくは たいせつです). Not とって as "take" (てに とって, わたしに
+  // とって ください: take it for me), or とって (a handle).
+  {
+    id: 'ni-totte',
+    re: rx(`[^\\s\\u3000、。]に[\\s\\u3000]*(とって|取って|とっては|とっても|とっての)(?![\\s\\u3000]*(ください|下さい|くれ|もらえ|もらい|あげ|おい|おき|きて|来て|いい|も[\\s\\u3000]*いい|ほしい|みて|いる|いた|います|しまっ|ある|あります))`),
+    not: rx(`(て|手|さら|皿|おさら|お皿|ゆび|指|ふくろ|袋|はし|箸)に[\\s\\u3000]*(とって|取って)|とっても[\\s\\u3000]*(おいし|たのし|かわい|すき|きれい|いい|よかった|うれし|たか|やす|おもしろ|さむ|あつ|おお|すご|たいへん|べんり|げんき|しずか)`),
+  },
+  // Nさえ: even N, and ＿さえ ＿ば: if only. Not ささえる (support), さえぎる, さえずる, さえる (be clear).
+  {
+    id: 'sae',
+    re: rx(`[^\\s\\u3000、。さ](さえ|でさえ)(?=[\\s\\u3000、]|も|すれば|あれば|いれば|[ぁ-ん]+ば)`),
+    not: rx(`ささえ|さえぎ|さえず|さえて|さえた|さえる|さえない`),
+  },
+  // Nこそ: this time for sure, it's N who… (こんどこそ, あなたこそ). Not the set phrases こちらこそ and ようこそ,
+  // こそこそ, こそだて (raising children).
+  {
+    id: 'koso',
+    re: rx(`[^\\s\\u3000、。](こそ)(?=[\\s\\u3000、一-龯]|は|が|の|です|だ)`),
+    not: rx(`(こちら|ようこそ|よう)こそ|こそこそ|こそだて|こそあど|こそく`),
+  },
+  // Nばかり／＿て ばかり: nothing but (ゲームばかり して いる, ないて ばかり いる). Not ＿た ばかり (just did: N4),
+  // ばか (silly), or ばかり after a number (about: いっかげつばかり).
+  {
+    id: 'bakari',
+    re: rx(`[^\\s\\u3000、。](ばかり|ばっかり|ばっか)|[ぁ-ん][てで][\\s\\u3000]+(ばかり|ばっかり|ばっか)`),
+    not: rx(`[ぁ-んァ-ヶ一-龯][ただ][\\s\\u3000]*(ばかり|ばっかり|ばっか)(?![\\s\\u3000]*(して|いる|います|で[\\s\\u3000、]))|([0-9０-９一二三四五六七八九十百千]|いっ|にっ|みっ|よっ|なん|すこし|少し|ふつか|みっか|じかん|時間|げつ|ねん|年|にち|日|ぷん|ふん|分|にん|人)(ばかり)|ばかばか|ばかに|ばかな|ばかだ`),
+  },
 ];
 
 const d = (id: FrameId, level: 'n5' | 'n4' | 'n3', goal: string, ja: string, en: string, use: string, exJa: string, exEn: string): Frame => ({
@@ -1388,6 +1479,19 @@ export const N3_FRAMES: readonly Frame[] = [
   d('toka', 'n3', '3.11', '＿とか ＿とか', '___ and things like that', 'Give a few examples, casually.', 'すしとか ラーメンとか、なんでも すき。', 'Sushi, ramen, I like everything.'),
   { ...d('jan', 'n3', '3.11', '＿じゃん', "___, isn't it?", 'Say something the listener should already see. Listening only.', 'これ、いいじゃん！', "Hey, this is good!"), listening: true },
   { ...d('kke', 'n3', '3.11', '＿っけ', 'what was ___ again?', 'Check something you have forgotten. Listening only.', 'あした、なんようびだっけ？', 'What day is it tomorrow again?'), listening: true },
+  // N3 points the #149 JLPT seat found missing. No goal yet: the open questions doc proposes where they go.
+  d('you-ni-iwareta', 'n3', '', '＿ように いわれました', 'I was told to ___', 'Pass on an instruction someone gave you.', 'いしゃに もっと ねる ように いわれました。', 'The doctor told me to sleep more.'),
+  d('mono-de', 'n3', '', '＿もので', 'because ___ (an excuse)', 'Give a reason when you apologise.', 'でんしゃが おくれた もので、ちこくしました。', 'The train was late, so I was late. Sorry.'),
+  d('kakeru', 'n3', '', '＿かけ ／ ＿かけました', 'half-___ / nearly ___', 'Say something was half done, or about to happen.', 'テーブルに たべかけの ケーキが ある。', "There's a half-eaten cake on the table."),
+  d('kiru', 'n3', '', '＿きる ／ ＿きれない', '___ completely / can\'t ___ it all', 'Say you did all of it, or couldn\'t.', 'こんなに たくさん、たべきれません。', "I can't eat all of this."),
+  d('dasu', 'n3', '', '＿だす', 'suddenly start ___ing', 'Say something started all at once.', 'こどもが きゅうに なきだした。', 'The child suddenly burst into tears.'),
+  d('totan', 'n3', '', '＿た とたん（に）', 'the moment ___', 'Say what happened right as something else did.', 'へやに はいった とたん、でんきが きえた。', 'The moment I walked in, the lights went out.'),
+  d('wake-niwa-ikanai', 'n3', '', '＿わけには いきません', "I can't very well ___", 'Say you can\'t do it, because it wouldn\'t be right.', 'やくそくしたから、いかない わけには いきません。', 'I promised, so I can\'t very well not go.'),
+  d('hazu-ga-nai', 'n3', '', '＿はずが ありません', "There's no way ___", 'Say something can\'t be true.', 'たぬきが ばすを うんてんする はずが ない。', "There's no way a tanuki drives the bus."),
+  d('ni-totte', 'n3', '', '＿に とって', 'for ___ / to ___', 'Say whose point of view it is.', 'わたしに とって、この うたは たいせつです。', 'This song matters to me.'),
+  d('sae', 'n3', '', '＿さえ', 'even ___ / if only ___', 'Say even this, or that this one thing is enough.', 'かっぱは みずさえ あれば げんきです。', 'A kappa is fine as long as it has water.'),
+  d('koso', 'n3', '', '＿こそ', '___ for sure / it\'s ___ who…', 'Stress this one, above the others.', 'こんどこそ、まけないよ。', "This time I won't lose."),
+  d('bakari', 'n3', '', '＿ばかり', 'nothing but ___', 'Say someone does only this, too much.', 'ポンは ゲームばかり して いる。', 'Pon does nothing but play games.'),
 ];
 
 /**
