@@ -665,6 +665,78 @@ export const CAUSES: readonly Cause[] = [
   },
 ];
 
+// The N4 "push your luck" excuses: on some rounds (ASK_CHANCE) an N4 latecomer's excuse carries a cheeky ask
+// or a question for the boss, so ＿ても いいですか (4.2) and ＿た ことが あります (4.3) are said from memory too.
+// Each is the apology plus the ask, and names the cause (the gallery's listening check still holds). Kept apart
+// from CAUSES, one entry per cause, so edits to the causes themselves rebase cleanly. Draft, like every line here.
+const askTag = { mayI: 'Express Line · 〜ても いいですか', ever: 'Express Line · 〜た ことが あります' };
+// Plain hiragana, matched on the plain reading (spaces stripped).
+const MAY_I = ['てもいい', 'でもいい'];
+const EVER = ['たことが', 'だことが', 'たことは', 'だことは'];
+
+/** Chance an N4 round uses its cause's ask line, when the cause has one. */
+export const ASK_CHANCE = 0.5;
+/** Extra record time on an ask round: the longest ask lines run about 38 mora, the usual N4 ones about 30. */
+export const ASK_RECORD_MS = 3_000;
+
+export const N4_ASKS: Readonly<Record<string, CauseLine>> = {
+  kotatsu: {
+    mission: 'Apologise, then ask if the kotatsu can come with you.',
+    model: n4('こたつと いっしょに 行っても いいですか？', 'こたつと いっしょに いっても いいですか？', 'May I bring the kotatsu with me?'),
+    chunk: { text: '行っても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission, politely. For a request nobody has ever made.', tag: askTag.mayI },
+  },
+  cat: {
+    mission: 'Apologise, then ask to rest until the cat wakes up.',
+    model: n4('猫が 寝て いるので、起きるまで 休んでも いいですか？', 'ねこが ねて いるので、おきるまで やすんでも いいですか？', 'The cat is asleep, so may I rest until it wakes up?'),
+    chunk: { text: '休んでも いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. You can’t say no to a sleeping cat either.', tag: askTag.mayI },
+  },
+  breakfast: {
+    mission: 'Apologise for still eating breakfast, and ask if you can finish it when you get there.',
+    model: n4('まだ 朝ごはんを 食べて います。そちらで 食べても いいですか？', 'まだ あさごはんを たべて います。そちらで たべても いいですか？', 'I’m still eating breakfast. May I finish it there?'),
+    chunk: { text: '食べても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission, with your mouth full.', tag: askTag.mayI },
+  },
+  granny: {
+    mission: 'Apologise, then say you’re up a mountain with an old lady and ask to join the meeting by phone.',
+    model: n4('おばあさんと 山の 上です。電話で 会議に 出ても いいですか？', 'おばあさんと やまの うえです。でんわで かいぎに でても いいですか？', 'I’m up a mountain with an old lady. May I join the meeting by phone?'),
+    chunk: { text: '出ても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. From a mountain top, the signal is great.', tag: askTag.mayI },
+  },
+  nobiko: {
+    mission: 'Apologise, then say how long Nobiko-san’s story is and ask if you can put her on.',
+    model: n4('話が 長すぎて… のびこさんに 代わっても いいですか？', 'はなしが ながすぎて… のびこさんに かわっても いいですか？', 'Her story is so long… May I put Nobiko-san on?'),
+    chunk: { text: '代わっても いいですか', keys: MAY_I, note: '〜ても いいですか: asking permission. Her neck is already in the lift.', tag: askTag.mayI },
+  },
+  oversleep: {
+    mission: 'Apologise, then ask the boss if their alarm clock has ever overslept too.',
+    model: n4('部長の 時計も 寝坊した ことが ありますか？', 'ぶちょうの とけいも ねぼうした ことが ありますか？', 'Boss, has your clock ever overslept too?'),
+    chunk: { text: '寝坊した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Say, boss, why are YOU late today?', tag: askTag.ever },
+  },
+  train: {
+    mission: 'Apologise for sleeping on the train, and ask if the boss has ever woken up at the sea.',
+    model: n4('電車で 寝て しまいました。海で 起きた ことが ありますか？', 'でんしゃで ねて しまいました。うみで おきた ことが ありますか？', 'I fell asleep on the train. Have you ever woken up at the sea?'),
+    chunk: { text: '起きた ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Everyone has. Haven’t they?', tag: askTag.ever },
+  },
+  station: {
+    mission: 'Apologise, then ask if the boss has ever seen a station this big.',
+    model: n4('部長は こんなに 広い 駅を 見た ことが ありますか？', 'ぶちょうは こんなに ひろい えきを みた ことが ありますか？', 'Boss, have you ever seen a station this big?'),
+    chunk: { text: '見た ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? Ninety-nine exits. Has anyone?', tag: askTag.ever },
+  },
+  game: {
+    mission: 'Apologise for gaming till morning, and ask if the boss ever has.',
+    model: n4('ゲームを 朝まで しました。部長も した ことが ありますか？', 'ゲームを あさまで しました。ぶちょうも した ことが ありますか？', 'I played a game till morning. Have you ever done that, boss?'),
+    chunk: { text: 'した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? The boss is late too today. Draw your own conclusions.', tag: askTag.ever },
+  },
+  kappa: {
+    mission: 'Apologise, say a kappa asked you the way, and ask if the boss has ever talked to one.',
+    model: n4('かっぱに 道を 聞かれました。かっぱと 話した ことが ありますか？', 'かっぱに みちを きかれました。かっぱと はなした ことが ありますか？', 'A kappa asked me the way. Have you ever talked to a kappa?'),
+    chunk: { text: '話した ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? They talk a lot, for a river monster.', tag: askTag.ever },
+  },
+  fox: {
+    mission: 'Apologise, then ask the boss, very fairly, if they’ve ever turned into a fox.',
+    model: n4('部長は きつねに なった ことが ありますか？', 'ぶちょうは きつねに なった ことが ありますか？', 'Boss, have you ever turned into a fox?'),
+    chunk: { text: 'なった ことが ありますか', keys: EVER, note: '〜た ことが ありますか: have you ever…? A very fair question, in the circumstances.', tag: askTag.ever },
+  },
+};
+
 const BY_ID = new Map(CAUSES.map((c) => [c.id, c]));
 export const causeOf = (id: string): Cause | undefined => BY_ID.get(id);
 export const sceneOf = (id: string): LateScene | undefined => SCENES.find((s) => s.id === id);
@@ -677,8 +749,9 @@ export const scenesFor = (audience: Audience): LateScene[] => SCENES.filter((s) 
  * The line a latecomer at `level` works from: N5 for Kana (shown on a mic pass), the highest written one at or
  * below the level. In the finale (a year late), the N4 model opens たいへん もうしわけ ありません instead.
  */
-export function lineFor(cause: Cause, level: Level, opts: { finale?: boolean } = {}): CauseLine {
-  const line = n4Up(level) && cause.lines.n4 ? cause.lines.n4 : (cause.lines.n5 ?? cause.lines.n4!);
+export function lineFor(cause: Cause, level: Level, opts: { finale?: boolean; ask?: boolean } = {}): CauseLine {
+  const ask = opts.ask && n4Up(level) ? N4_ASKS[cause.id] : undefined;
+  const line = ask ?? (n4Up(level) && cause.lines.n4 ? cause.lines.n4 : (cause.lines.n5 ?? cause.lines.n4!));
   if (!opts.finale || !line.model.text.startsWith(N4_SORRY.text)) return line;
   const m = line.model;
   return {

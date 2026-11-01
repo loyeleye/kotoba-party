@@ -24,7 +24,9 @@ and each is a flag.
    goal, 4.7's Ghost Advice Hotline too, plus Late Again!, which the plan puts on 4.2, 4.3, 4.11 and 4.13 but
    the path doesn't list yet. Three options make the bots play as a speaker would:
    - Ghost Advice Hotline and Late Again! advisers send a checked clip of the host's version, where live bots
-     type.
+     type. So their yields are upper bounds: a bot always says the whole model line, conditional or ask
+     included, and a player who gives the advice or names the cause without it isn't credited with that frame
+     (Hotline ＿たら, Late Again!'s ＿ても いいですか and ＿た ことが あります).
    - N4 Bento Haus bots take the hard roles and say each line.
    - Every bot says lines from memory where the game allows it.
 2. **Each N4 seat's phrasebook goes through the real save path**: `addGame`, then `markPath`. So the frame
@@ -217,6 +219,29 @@ night 4), 4.11 by night 14 (was 40), 4.12 by night 21 (was never). Still in no r
 ＿と おもいます from memory), 4.7 (no game asks for plans), 4.10 (N4 kanji in Shodō) and 4.14 (purpose
 ＿ために／＿ように).
 
+## Step 5c: Tourist cues, a "Have you ever…?" card, Late Again! and the Hotline on their goals (200 rooms, base settings)
+
+PR #161 built items 3, 5 and 6 below: Tourist cues with the Japanese behind a peek, Late Again! "ask" lines on 4.2
+and 4.3, real conditionals in the Hotline on 4.5, and Chōchin-san's "Have you ever…?" card in Happyōkai. After the
+panel's must-fixes each game logs the frame only when it was heard (a cause-only clip, a ほうが いい-only clip or a
+swapped tile with the Japanese on screen don't count).
+
+On top of step 5b-2 (#160):
+
+| Goal | Rooms that stamp it | Nights (p25 / median / p75) | Before (step 5b-2) |
+|---|---|---|---|
+| 4.2 May, must, mustn't | 100% | 8 / 9 / 12 | 95% of rooms |
+| 4.3 Experiences and tries | 100% | 13 / 15 / 19 | |
+| 4.4 Say what you can do | 100% | 7 / 8 / 9 | |
+| 4.5 If and when | 100% | 3 / 3 / 4 | |
+| 4.6 Guess, hearsay, opinion | 42% | 49 / >60 / >60 | no room |
+
+The ten goals most rooms stamp (4.1, 4.2, 4.3, 4.4, 4.5, 4.8, 4.9, 4.11, 4.12, 4.13) now come together in
+**28 nights (24 / 32)** in every room, against 40 nights in 95% of rooms after step 5b-2. The line still clears in
+no room: 4.6 stamps in 42% (Happyōkai now gives a little ＿と おもいます, 0.05 a game), and 4.7, 4.10 and 4.14 in none.
+These are upper bounds for Late Again! and the Hotline: their bots say the whole model line, conditional or ask
+included.
+
 ## What would let the line clear
 
 Each of these is a change to a game or the path, so they're logged as open questions and come in their own PR
@@ -237,8 +262,13 @@ Each of these is a change to a game or the path, so they're logged as open quest
 5. **Tourist: count the asker's own question from memory** (the ＿ても いいですか questions are in, step 5b-2; the rule isn't) when it isn't read off a tile showing the Japanese:
    cue it with the English intent and a frame chip, with the Japanese behind a peek, as Last Train does. Count a
    tile with one word changed as the asker's own words. Give 4.2 one ＿ても いいですか question per place.
+   (The cue and the swapped word are in; Tourist's N4 seat now yields ＿ても いいですか 0.17 a game from the two
+   lines that have it. The questions per place are still to come.)
 6. **More ＿た ことが あります:** a "Have you ever…?" question card in Happyōkai, one prompt a game cued by
    meaning (more than two a night add nothing under the 2-says-a-day cap), with the topics rotating.
+   *Built:* Chōchin-san's card opens the first N4 presenter's question time, in English with the frame
+   (docs/modes/happyokai.md). `sim:yields`: 0.39 a game for an N4 seat in Happyōkai, from 0. The 4.3 row
+   above predates it; re-run `sim:express` for the new pace.
 7. **Teach the Word Gauntlet bots to retell a rumour** (done in step 5b-2), then re-run. Until then the simulation can't say how
    fast 4.6 goes.
 8. **A game where players say ＿と おもいます from memory** (4.6, step 5b-2): Happyōkai's If I were… frame filled with the

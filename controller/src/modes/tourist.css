@@ -39,6 +39,11 @@
 .tou-tile:active { background: #3a2230; }
 .tou-tile-jp { font-size: 18px; font-weight: 800; overflow-wrap: anywhere; }
 .tou-tile-en { font-size: 13px; color: var(--muted); }
+/* N4 cues: the English to ask, and its frame as a chip; the Japanese stays behind a peek. */
+.tou-cue-tile { gap: 6px; justify-items: start; }
+.tou-cue { display: grid; gap: 6px; justify-items: start; background: var(--panel); border-radius: 14px; padding: 12px 14px; }
+.tou-cue.picked { outline: 3px solid var(--accent); }
+.tou-cue-en { margin: 0; font-size: 18px; font-weight: 800; overflow-wrap: anywhere; }
 
 .tou-guess { display: grid; gap: 10px; }
 .tou-gplaces { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

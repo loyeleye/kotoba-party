@@ -1,10 +1,11 @@
 // A bot that plays Who's the Tourist? like a decent human. On its turn it picks someone and asks,
 // mixing its own words (a tile's text said without the tile), a tile said aloud, and a plain tap.
-// Asked, it answers the same way. Locals watch the log: a player whose answers never fit the place
+// An N4 bot gets cues (English and frame) instead of tiles: it mostly asks from memory, sometimes peeks
+// at the Japanese first, now and then taps. Asked, it answers the same way as with tiles. Locals watch the log: a player whose answers never fit the place
 // is a suspect, and a local may call a vote on them. The tourist counts which place the answers
 // fit and guesses once one place is clearly ahead. Everyone votes; the tourist votes to blend in.
 
-import { PLACES } from '../../../shared/src/modes/tourist/places.js';
+import { ALL_LINES, PLACES } from '../../../shared/src/modes/tourist/places.js';
 import type { TouristView } from '../../../shared/src/modes/tourist/tourist.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
@@ -30,6 +31,9 @@ function chance(...parts: (string | number)[]): number {
   }
   return ((h >>> 0) % 10_000) / 10_000;
 }
+
+/** Every line by id: a bot knows the Japanese behind a cue (a player would recall it, or peek). */
+const LINES = new Map(ALL_LINES.map((l) => [l.id, l]));
 
 const PLACE_LINES = new Map(PLACES.map((p) => [p.id, new Set(p.answers.map((a) => a.jp.text))]));
 
@@ -104,7 +108,15 @@ export function touristPolicy(opts: TouristBotOptions = {}): ModePolicy {
           if (targetId) {
             const at = delay('ask');
             if (!t.targetId) out.push({ key: 'pick', move: { kind: 'pick', targetId, round, turn: t.seq }, delayMs: Math.round(at / 3) });
-            out.push({ key: 'ask', move: { kind: 'ask', targetId, ...say(mine.questions ?? [], 'q'), round, turn: t.seq }, delayMs: at });
+            const cue = mine.cues?.length ? mine.cues[Math.floor(chance(seed, me, seq, 'q', 'tile') * mine.cues.length)] : undefined;
+            const line = cue && LINES.get(cue.id);
+            if (line) {
+              // From a cue: 60% from memory, 25% after a peek at the Japanese, 15% a tap.
+              const r = chance(seed, me, seq, 'q', 'how');
+              if (r >= 0.6 && r < 0.85) out.push({ key: 'peek', move: { kind: 'peek', lineId: line.id, round, turn: t.seq }, delayMs: Math.round(at / 2) });
+              const utterance = r < 0.85 ? { via, text: line.jp.kana } : { via: 'tap' as const, text: line.jp.text };
+              out.push({ key: 'ask', move: { kind: 'ask', targetId, utterance, lineId: line.id, round, turn: t.seq }, delayMs: at });
+            } else out.push({ key: 'ask', move: { kind: 'ask', targetId, ...say(mine.questions ?? [], 'q'), round, turn: t.seq }, delayMs: at });
           }
         }
         if (t.targetId === me && t.question && !t.answer) {

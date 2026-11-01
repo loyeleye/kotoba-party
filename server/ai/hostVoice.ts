@@ -151,6 +151,13 @@ const TIER_HINT: Record<ReactionTier, string> = {
   ippon: 'IPPON: every other player voted for this answer. Go big.',
 };
 
+/** happyokai_have_you_react uses the tier for the presenter's answer, not for votes. */
+const HAVE_YOU_TIER_HINT: Record<ReactionTier, string> = {
+  ippon: 'They answered yes, they have. Be impressed (for something ordinary, like eating nattō, impressed rather than surprised).',
+  good: 'They answered no, never. You have not either: you are in it together.',
+  flop: 'They passed or ran out of time. Accept graciously that it is their secret.',
+};
+
 const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   reveal_react: 'React to this answer right after reading it aloud, before anyone votes.',
   mic_check_ok: 'The player just said こんにちは into their phone for the mic check. Greet them by name.',
@@ -181,6 +188,10 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   happyokai_mishap_upside: 'Happyōkai!: the slide came up upside down. Two or three words.',
   happyokai_mishap_message: 'Happyōkai!: a private message just popped up over the slide for everyone to see. Two or three words, pretend not to look.',
   happyokai_question: 'Happyōkai!: the talk is over; it is question time. Invite the audience to ask, formally.',
+  happyokai_have_you: 'Happyōkai!: before the audience asks, you have one question of your own for the presenter, on their phone in English ("Have you ever…?"). Announce it formally and with curiosity. Never say the question itself or any of its Japanese.',
+  happyokai_have_you_react:
+    "Happyōkai!: the presenter just answered your \"Have you ever…?\" question (the prompt). React in one short, formal line to WHAT they answered, in character. Never comment on their Japanese, how they said it, or whether it was right. The room's questions come next.",
+  happyokai_have_you_ghost: 'Happyōkai!: you asked the presenter if they have ever seen a ghost, and they said yes. You are a lantern ghost. One short, quiet, spooky-polite line: they are looking at one right now. Never comment on their Japanese.',
   happyokai_stall: 'Happyōkai!: the presenter answered a question with "good question…", the classic stall. Admire it as true professionalism. One short line.',
   happyokai_grade: 'Happyōkai!: the audience now grades the talk with hanamaru on their phones. One short line.',
   happyokai_card: "Happyōkai!: {name}'s report card is up. Kind, warm, about the talk, never their Japanese.",
@@ -230,7 +241,7 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
 
 export function hostUserPrompt(cue: HostCue, recent: readonly string[]): string {
   const parts = [`Event: ${cue.event}. ${EVENT_HINT[cue.event] ?? ''}`.trim()];
-  if (cue.tier) parts.push(TIER_HINT[cue.tier]);
+  if (cue.tier) parts.push((cue.event === 'happyokai_have_you_react' ? HAVE_YOU_TIER_HINT : TIER_HINT)[cue.tier]);
   if (cue.prompt) parts.push(`The round's prompt: ${cue.prompt.text} (${cue.prompt.en})`);
   if (cue.answer !== undefined) parts.push(`Player answer:\n<<<\n${cue.answer.slice(0, 200)}\n>>>`);
   if (cue.answerEn) parts.push(`It means roughly: ${cue.answerEn.slice(0, 200)}`);

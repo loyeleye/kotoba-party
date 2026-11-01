@@ -269,6 +269,7 @@ function booth(game: LateView): HTMLElement | null {
     h('p', { class: 'la-booth-tag' }, '🎙 Pon’s commentary booth: the play of the round'),
     h('p', { class: 'la-booth-line', lang: 'ja' }, ...shown),
     at < 0 ? h('p', { class: 'la-booth-line', lang: 'ja' }, h('mark', { class: 'la-chunk' }, b.chunk)) : null,
+    b.en ? h('p', { class: 'la-booth-en' }, 'Pon’s version: ', b.en) : null,
     h('p', { class: 'la-booth-note' }, b.note),
     h('p', { class: 'la-booth-map' }, '🚃 ', b.tag),
   );

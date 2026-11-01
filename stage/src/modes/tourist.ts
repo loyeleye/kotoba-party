@@ -33,7 +33,7 @@ function said(x: SaidView, cls: string): HTMLElement {
     { class: `tou-said ${cls}` },
     h('p', { class: 'tou-said-jp' }, ruby(x)),
     x.kana && x.kana !== x.text ? h('p', { class: 'tou-said-kana', lang: 'ja' }, x.kana) : null,
-    h('p', { class: `tou-said-en${x.en ? '' : ' none'}` }, x.en ? `${x.approx ? '≈ ' : ''}${x.en}` : x.text === '[hidden]' ? '' : '(in their own words)', x.spoken ? h('span', { class: 'tou-mic' }, ' 🎤') : null),
+    h('p', { class: `tou-said-en${x.en ? '' : ' none'}` }, x.en ? `${x.approx ? 'Something like: ' : ''}${x.en}` : x.text === '[hidden]' ? '' : '(in their own words)', x.spoken ? h('span', { class: 'tou-mic' }, ' 🎤') : null),
   );
 }
 

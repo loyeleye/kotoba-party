@@ -5,6 +5,7 @@ import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { callsFor, heardAny, lineOf, MAX_ADVISERS, POINTS, REACT_LOCK_MS, REACT_MS, RECORD_MS, type HotlineState, type HotlineView } from '../shared/src/modes/ghostHotline/hotline.js';
 import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, PROBLEMS, problemOf } from '../shared/src/modes/ghostHotline/problems.js';
+import { phraseFrames } from '../shared/src/progress.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { ghostHotlinePolicy } from '../tools/bots/policies/ghostHotline.js';
@@ -405,6 +406,42 @@ describe('Ghost Advice Hotline: the learning path', () => {
     expect(spoke(a3!)).toBe(1);
   });
 
+  it('logs a line’s conditional (＿たら, 4.5) only when the adviser said one: ほうが いい alone credits hou-ga-ii, not tara', () => {
+    const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 7);
+    t.start();
+    toPlan(t);
+    const c = t.c;
+    c.problemId = 'ittan';
+    const p = problem(t);
+    const n4 = lineOf(p, 'n4');
+    expect(n4.plain).toBeTruthy();
+    const [a1, a2, a3] = c.advisers;
+    // a1: the advice without the conditional; a2: Nobiko-san's version, conditional and all; a3: あたらしい is not a たら.
+    adviseAll(t, (id) => clip(id === a1 ? n4.plain!.kana : id === a2 ? n4.model.kana : 'あたらしい せんたくきで あらった ほうが いいですよ'));
+    while (t.s.phase !== 'score') t.tick();
+    const entry = (id: string) => t.s.phrasebook[id]!.find((e) => e.itemId === `hotline:${p.id}:n4`)!;
+    for (const id of [a1!, a3!]) {
+      expect(entry(id)).toMatchObject({ outcome: 'said', recall: 'memory', kana: n4.plain!.kana });
+      expect(phraseFrames(entry(id))).toContain('hou-ga-ii');
+      expect(phraseFrames(entry(id))).not.toContain('tara');
+    }
+    expect(entry(a2!)).toMatchObject({ outcome: 'said', recall: 'memory', kana: n4.model.kana });
+    expect(phraseFrames(entry(a2!))).toContain('tara');
+  });
+
+  it('every conditional line has a plain version with the same advice and no conditional', () => {
+    const withIf = PROBLEMS.filter((p) => p.advice.n4.plain);
+    expect(withIf.length).toBe(6);
+    for (const p of withIf) {
+      const { model, plain } = p.advice.n4;
+      expect(phraseFrames(model), p.id).toEqual(expect.arrayContaining(['tara', 'hou-ga-ii']));
+      expect(phraseFrames(plain!), p.id).toContain('hou-ga-ii');
+      expect(phraseFrames(plain!), p.id).not.toContain('tara');
+      const tail = (x: string) => x.split('、').pop();
+      expect(tail(plain!.kana), p.id).toBe(tail(model.kana));
+    }
+  });
+
   it('a VIP-hidden clip earns nothing and isn’t credited', () => {
     const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 13);
     t.start();
@@ -444,6 +481,16 @@ describe('Ghost Advice Hotline: chunks', () => {
       const m = p.advice[lv].model.kana.replace(/[\s　、。！？「」]/g, '');
       expect(CHUNKS.some((k) => k.level === lv && heardAny(m, k.keys)), `${p.id} ${lv}`).toBe(true);
     }
+  });
+});
+
+describe('Ghost Advice Hotline: if and when', () => {
+  it('some N4 advice says when to do it (＿たら, 4.5), and why-not advice (＿たら どうですか) never counts as an if', () => {
+    const n4 = PROBLEMS.map((p) => p.advice.n4.model);
+    const ifs = n4.filter((m) => phraseFrames(m).includes('tara'));
+    expect(ifs.length).toBeGreaterThanOrEqual(3);
+    for (const m of ifs) expect(phraseFrames(m), m.kana).toContain('hou-ga-ii');
+    for (const m of n4.filter((x) => phraseFrames(x).includes('tara-dou'))) expect(phraseFrames(m), m.kana).not.toContain('tara');
   });
 });
 
