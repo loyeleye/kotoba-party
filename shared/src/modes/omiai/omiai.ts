@@ -71,7 +71,17 @@ export const DURATIONS = {
   nakodo: 12_000,
   /** Time Nobiko-san gets to read the question once it's cued, before the answer phase opens. */
   questionRead: 5_000,
+  /** The most time Nobiko-san takes to say an accepted go-between line (see voiceMs); added to the go-between's prompt and score. */
+  nakodoVoice: 7_000,
+  /** The score's own line (the natural version) gets this long before she says the go-between's closing. */
+  naturalRead: 5_000,
 } as const;
+
+/**
+ * About how long Nobiko-san takes to say a line on the TV: her voice can land up to 1.5 s late (the bank voice
+ * waits that long for its audio), then roughly 0.11 s a kana. Capped at DURATIONS.nakodoVoice.
+ */
+export const voiceMs = (kana: string): number => Math.min(DURATIONS.nakodoVoice, 1_500 + 110 * kana.replace(/\s/g, '').length);
 
 // ---- state ----
 
@@ -144,8 +154,10 @@ export interface Round {
   result: ResultLine[] | null;
   /** The answer Nobiko-san teases as the answers are revealed (Cheeky rooms only; see pickTease). */
   tease?: string;
-  /** When Nobiko-san was cued to read the question (once a round, go-between or not). */
+  /** When Nobiko-san reads the question (once a round, go-between or not): later than the cue when she says the opening first. */
   cuedAt?: number;
+  /** When Nobiko-san has finished saying the go-between's accepted closing, so the score waits for it. */
+  voicedUntil?: number;
 }
 
 export type NakodoSlot = 'open' | 'close';
@@ -503,13 +515,26 @@ function pickTease(s: OmiaiState, shown: Answer[], ctx: ModeContext): Answer | u
     .sort((a, b) => rank[ctx.player(a.authorId)!.level]! - rank[ctx.player(b.authorId)!.level]! || a.manners.meter - b.manners.meter)[0];
 }
 
-/** Nobiko-san reads the question: once a round, whatever the go-between does. */
-function cueQuestion(s: OmiaiState, ctx: ModeContext): void {
+/**
+ * Nobiko-san reads the question: once a round, whatever the go-between does. `afterMs` holds it back while she
+ * says the go-between's opening first, so the two never overlap.
+ */
+function cueQuestion(s: OmiaiState, ctx: ModeContext, afterMs = 0): void {
   const r = s.current!;
   if (r.cuedAt !== undefined) return;
-  r.cuedAt = ctx.now;
+  r.cuedAt = ctx.now + afterMs;
   const q = r.question.ask.n5;
-  ctx.cue({ host: 'nobiko', event: 'prompt_read', prompt: { text: q.text, kana: q.kana, en: q.en } });
+  ctx.cue({ host: 'nobiko', event: 'prompt_read', prompt: { text: q.text, kana: q.kana, en: q.en }, ...(afterMs ? { atMs: afterMs } : {}) });
+}
+
+/**
+ * The go-between's line was accepted: Nobiko-san says it on the TV (the filled template, never their recording),
+ * `afterMs` from now. Returns how long until she has finished.
+ */
+function voiceNakodo(line: NakodoLine, ctx: ModeContext, afterMs = 0): number {
+  const { text, kana, en } = line.jp;
+  ctx.cue({ host: 'nobiko', event: 'omiai_nakodo_read', slots: { line: text, line_kana: kana, line_en: en }, ...(afterMs ? { atMs: afterMs } : {}) });
+  return afterMs + voiceMs(kana);
 }
 
 /** Votes and manners bonuses for the round. Paid as the encore starts. */
@@ -814,7 +839,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       case 'intro':
         return DURATIONS.intro;
       case 'prompt':
-        return DURATIONS.prompt + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo : 0);
+        return DURATIONS.prompt + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo + DURATIONS.nakodoVoice : 0);
       case 'answer':
         return DURATIONS.answer;
       case 'reveal':
@@ -822,7 +847,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       case 'encore':
         return DURATIONS.encore;
       case 'score':
-        return DURATIONS.score + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo : 0);
+        return DURATIONS.score + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo + DURATIONS.nakodoVoice : 0);
       case 'finale':
         return DURATIONS.finale;
       default:
@@ -838,7 +863,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     // time (and, in the prompt, once Nobiko-san has had time to read the question).
     if (phase === 'prompt' && s.nakodo)
       return r.cuedAt !== undefined && !nakodoOpen(s, phase, ctx) && ctx.now >= Math.max(s.phaseAt + DURATIONS.prompt, r.cuedAt + DURATIONS.questionRead);
-    if (phase === 'score' && s.nakodo) return !nakodoOpen(s, phase, ctx) && ctx.now >= s.phaseAt + phaseBase(phase);
+    if (phase === 'score' && s.nakodo) return !nakodoOpen(s, phase, ctx) && ctx.now >= Math.max(s.phaseAt + phaseBase(phase), r.voicedUntil ?? 0);
     if (phase === 'answer') return here.every((p) => r.answers.some((a) => a.authorId === p.id));
     if (phase === 'reveal') {
       const can = new Set(voters(r, ctx));
@@ -856,7 +881,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     const cuedAt = s.current?.cuedAt;
     if (phase === 'prompt' && cuedAt === undefined) return Math.max(ctx.now, questionDueAt(s, ctx));
     if (nakodoOpen(s, phase, ctx)) return null;
-    const at = phase === 'prompt' ? Math.max(s.phaseAt + DURATIONS.prompt, cuedAt! + DURATIONS.questionRead) : s.phaseAt + phaseBase(phase);
+    const at = phase === 'prompt' ? Math.max(s.phaseAt + DURATIONS.prompt, cuedAt! + DURATIONS.questionRead) : Math.max(s.phaseAt + phaseBase(phase), s.current?.voicedUntil ?? 0);
     return ctx.now < at ? at : null;
   },
 
@@ -1013,6 +1038,14 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
           pay(ctx, playerId, t.points);
           // Read off the phone's script, so it counts as seen, not said from memory.
           ctx.phrase(playerId, { ...entry, outcome: 'seen' });
+          // Nobiko-san says the line on the TV: the opening straight away (the question waits for it), the
+          // closing once the score's own line has had its time, and only if it still fits in the phase.
+          if (slot === 'open') cueQuestion(s, ctx, voiceNakodo(line, ctx));
+          else {
+            const after = Math.max(0, s.phaseAt + DURATIONS.naturalRead - ctx.now);
+            const end = s.phaseAt + DURATIONS.score + DURATIONS.nakodo + DURATIONS.nakodoVoice;
+            if (ctx.now + after + voiceMs(line.jp.kana) <= end) r.voicedUntil = ctx.now + voiceNakodo(line, ctx, after);
+          }
         } else if (t.tries >= NAKODO_TRIES) ctx.phrase(playerId, { ...entry, outcome: 'missed' });
         // The opening is done (said, or out of tries): Nobiko-san reads the question.
         if (slot === 'open' && (t.ok || t.tries >= NAKODO_TRIES)) cueQuestion(s, ctx);

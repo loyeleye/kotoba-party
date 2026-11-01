@@ -177,7 +177,8 @@ The score screen also shows the stock example and, for N4, the round's keigo pai
 
 `intro` (the guest card) · `prompt_read` (the question) · `say_it_first` · `reveal_react` (the answers) ·
 `encore_invite` (the vote winner) or `miss_kind` (no votes) · `encore_cheer` (a spoken encore,
-and the invitation) · `natural_version` (the stock answer).
+and the invitation) · `natural_version` (the stock answer) · `omiai_nakodo_read` (the go-between's accepted
+line, said as is; below).
 
 On `say_it_first` and `reveal_react` she stretches her neck out over the speech bubble to have a look
 (the `peek` mood, only hers; `server/src/host.ts`).
@@ -210,8 +211,20 @@ question, once a round: right after the opening is said or its tries run out, wh
 time" (which also hands the round's lines back to her), or, if the opening hasn't come, at the prompt's
 usual 8 s (an offer still unanswered then times out). A go-between who tapped "Take it" but hasn't
 spoken by then gets until 5 s before the longer prompt ends. She gets 5 s to read it before the answers
-open. The closing is theirs only if they tried the opening. The prompt and score phases run 12 s longer
-while a line is waiting and end once it's said and the phase has had its usual 8 or 9 s. The TV says the
+open. The closing is theirs only if they tried the opening. The prompt and score phases run 19 s longer
+(12 s for the line, 7 s for Nobiko-san to say it) while a line is waiting and end once it's said and the
+phase has had its usual 8 or 9 s.
+
+**Nobiko-san says the accepted line** (decided by Ladi, 2026-11-01: the host says the line, the player's
+recording never plays on the TV). When an opening or closing is accepted (said or typed), she voices the
+filled template, the same line the TV shows, with its subtitle, once (`omiai_nakodo_read`, a bank line that is
+just `{line}`, filled with `line`/`line_kana`/`line_en`; bank only, never rewritten by the LLM). The opening is
+said straight away and the question (`prompt_read`) waits for it: it's cued with `atMs` set to
+`voiceMs(kana)` (1.5 s for the audio to land, then 0.11 s a kana, at most 7 s), and `cuedAt` is when she
+actually reads it, so she still gets her 5 s for the question before the answers open. The closing comes
+5 s into the score at the earliest (`DURATIONS.naturalRead`, after the score's own `natural_version` line),
+and the score waits until she has finished; a closing said too late to fit before the phase's end still
+counts and pays but isn't voiced. A missed line, "Not this time" or a timeout voices nothing. The TV says the
 matchmaker is about to speak only while their line is still to come. Everyone still answers, votes and
 scores as usual, the go-between too. Offers and outcomes (accepted, declined, timeout, away; the shared
 `OfferAnswer` in `hardRoleLog.ts`) are in `nakodoLog`; `nakodoOffers()` sums them per player with the gate
@@ -292,6 +305,9 @@ canned memory answers (by question kind and register) or build a tile answer. Th
     in the text and the kana; the English name stays (2026-11-01).
 26. **The go-between's line counts as `seen` in the phrasebook**, not `said`: it's read off the phone's
     script (2026-11-01).
+27. **Nobiko-san says the go-between's accepted line on the TV**, never their recording (decided by Ladi,
+    2026-11-01). She says the template, not what the player said: it's fixed, fluent and safe for TTS. The
+    question waits for the opening; the closing waits for the score's own line (see the go-between above).
 
 ## Open questions
 
@@ -311,7 +327,8 @@ canned memory answers (by question kind and register) or build a tile answer. Th
 8. **Say-it-first length** (5 s) and the 0.45 tile share: playtest numbers.
 9. **The go-between**: should the guest's name in the lines be the short one (キュウリさん) everywhere
    after round 1, and is 「こちらは きゅうり のうかの キュウリさんで いらっしゃいます」 natural with every
-   card's job? Should the TV play the go-between's recorded clip instead of showing the text?
+   card's job? ~~Should the TV play the go-between's recorded clip instead of showing the text?~~ Decided
+   by Ladi (2026-11-01): no clip; Nobiko-san says the accepted line (decision 27).
 
 ## Known gaps
 

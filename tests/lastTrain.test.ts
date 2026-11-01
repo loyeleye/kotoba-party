@@ -68,7 +68,7 @@ const CONTENT: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: MINIGAME
 class Table {
   state: GameState = createGame('LAST');
   now = 1_000_000;
-  cues: { event: string; slots?: Record<string, string> }[] = [];
+  cues: { host?: string; event: string; slots?: Record<string, string>; atMs?: number }[] = [];
   private ids = 0;
   private cmdId = 0;
   constructor(
@@ -692,6 +692,76 @@ describe('Last Train hard roles (N4)', () => {
     g.timeout();
     expect(g.state.phase).toBe('prompt');
     expect(g.s.travellers.p1!.ghost).toBe(false);
+  });
+
+  describe('Chōchin-san says a taken role’s line at the reveal (decided by Ladi: the host says the line)', () => {
+    const reads = (g: Table) => g.cues.filter((c) => c.event === 'train_role_read');
+
+    it('once, after his reaction, with the model line and its subtitle, only when the role was answered right', () => {
+      const g = table(ROLE_CONTENT, ['n4', 'n5']);
+      g.start();
+      g.until('answer');
+      role(g, 'p1', true);
+      const model = g.s.turns.p1!.task.item.model;
+      g.sayRight('p1');
+      g.sayRight('p2');
+      expect(g.state.phase).toBe('reveal');
+      expect(reads(g)).toEqual([{ host: 'chochin', event: 'train_role_read', slots: { line: model.text, line_kana: model.kana, line_en: model.en }, atMs: RULES.roleReadAtMs }]);
+      // The reaction still opens the reveal; the line follows it, and the reveal row and model answer stay.
+      const at = g.cues.findIndex((c) => c.event === 'train_role_read');
+      expect(g.cues.slice(0, at).some((c) => c.event === 'reveal_react' && c.atMs === undefined)).toBe(true);
+      expect(g.view('stage').results!.find((r) => r.playerId === 'p1')).toMatchObject({ model, role: { en: 'The announcer' } });
+      g.timeout();
+      expect(reads(g)).toHaveLength(1);
+    });
+
+    it('on the retry too; never for a missed role, a declined one, or an ordinary item', () => {
+      const retry = table(ROLE_CONTENT, ['n4']);
+      retry.start();
+      retry.until('answer');
+      role(retry, 'p1', true);
+      retry.say('p1', 'だめ');
+      retry.sayRight('p1');
+      expect(retry.state.phase).toBe('reveal');
+      expect(reads(retry)).toHaveLength(1);
+
+      const missed = table(ROLE_CONTENT, ['n4']);
+      missed.start();
+      missed.until('answer');
+      role(missed, 'p1', true);
+      missed.say('p1', 'だめ');
+      missed.say('p1', 'だめ');
+      expect(missed.state.phase).toBe('reveal');
+      expect(reads(missed)).toHaveLength(0);
+
+      const declined = table(ROLE_CONTENT, ['n4', 'n5']);
+      declined.start();
+      declined.until('answer');
+      role(declined, 'p1', false);
+      declined.sayRight('p1');
+      declined.sayRight('p2');
+      expect(declined.state.phase).toBe('reveal');
+      expect(reads(declined)).toHaveLength(0);
+    });
+
+    it('for every role: the announcer, Lost and Found’s passenger and staff, and the guest at the inn', () => {
+      for (const mgId of ['station-announcement', 'lost-and-found', 'meet-the-innkeeper']) {
+        const real = realContent.lastTrainMinigames.find((m) => m.id === mgId)!;
+        const line: LastTrainScenario = { ...SCENARIO, id: `${mgId}-line`, stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: mgId })) };
+        const lib: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [real, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [line] };
+        const g = table(lib, ['n4']);
+        g.start();
+        g.until('answer');
+        role(g, 'p1', true);
+        const item = g.s.turns.p1!.task.item;
+        expect(item.role, mgId).toBeDefined();
+        g.sayRight('p1');
+        expect(g.state.phase, mgId).toBe('reveal');
+        expect(reads(g).map((c) => c.slots), mgId).toEqual([{ line: item.model.text, line_kana: item.model.kana, line_en: item.model.en }]);
+        // Every role's model reading is kana only, so the host's TTS can say it.
+        for (const i of real.items.filter((x) => x.role)) expect(i.model.kana, i.id).not.toMatch(/[\u3400-\u9fff]/);
+      }
+    });
   });
 
   it('rejects malformed role moves', () => {

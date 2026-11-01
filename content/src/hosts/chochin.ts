@@ -173,6 +173,8 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.platform_dash.03', host: 'chochin', event: 'platform_dash', jp: { text: 'いちばんのりは だれですか？', kana: 'いちばんのりは だれですか？', en: 'Who will be first aboard?' }, status: 'draft' },
   { id: 'chochin.platform_dash.04', host: 'chochin', event: 'platform_dash', jp: { text: 'ゆうれいさんも、まだ チャンスが あります！', kana: 'ゆうれいさんも、まだ チャンスが あります！', en: 'Ghosts, you still have a chance!' }, status: 'draft' },
   { id: 'chochin.platform_dash.05', host: 'chochin', event: 'platform_dash', jp: { text: 'ドアが しまります！　はしって ください！', kana: 'ドアが しまります！　はしって ください！', en: 'The doors are closing! Run!' }, status: 'draft' },
+  // train_role_read: a taken hard role answered right; Chōchin-san says its model line as is at the reveal
+  { id: 'chochin.train_role_read.01', host: 'chochin', event: 'train_role_read', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // Murder at the Onsen: Chōchin-san is off duty at the inn and plays detective's narrator.
   // onsen_case
   { id: 'chochin.onsen_case.01', host: 'chochin', event: 'onsen_case', jp: { text: 'じけんです！　ゆらゆら。', kana: 'じけんです！　ゆらゆら。', en: 'We have a case! Sway, sway.' }, status: 'draft' },

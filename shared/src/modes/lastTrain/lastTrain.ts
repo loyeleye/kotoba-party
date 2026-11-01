@@ -40,6 +40,11 @@ export const RULES = {
   pointsRetry: 60,
   /** Added to the base points of a correct answer on a hard-role item the player took. */
   roleBonus: 20,
+  /**
+   * When Chōchin-san says a taken hard role's model line at the reveal, after his reaction (an LLM line may wait
+   * 1.5 s, then takes about 2 s to say). The longest model line takes about 7 s, inside the 12 s reveal.
+   */
+  roleReadAtMs: 4_500,
   /** Ghosts earn this share of a living player's points. */
   ghostShare: 0.5,
   /** From-memory speech bonus, as a share of the answer's points. */
@@ -891,6 +896,13 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         const right = played.filter((r) => r.outcome !== 'missed').length;
         const tier = played.length && right === played.length ? 'ippon' : right * 2 >= played.length ? 'good' : 'flop';
         ctx.cue({ host: 'chochin', event: 'reveal_react', tier });
+        // A hard role taken and answered right: Chōchin-san says its model line on the TV (never the
+        // player's recording), after his reaction. One role a stop, so one line.
+        const star = Object.values(s.turns).find((t) => t.task.item.role && t.correctOn > 0 && t.status !== 'away');
+        if (star) {
+          const { text, kana, en } = star.task.item.model;
+          ctx.cue({ host: 'chochin', event: 'train_role_read', slots: { line: text, line_kana: kana, line_en: en }, atMs: RULES.roleReadAtMs });
+        }
         break;
       }
       case 'penalty': {
