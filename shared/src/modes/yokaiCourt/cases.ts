@@ -46,6 +46,8 @@ export interface Yokai {
 export interface Thing {
   id: string;
   word: JpText;
+  /** The dictionary meaning, when the English is written for sentences (a cucumber slice → cucumber). */
+  gloss?: string;
   /** A place with its preposition, for the English lines (on the roof). Clues leave it out. */
   at?: string;
   picture: string;
@@ -106,7 +108,7 @@ export const YOKAI: readonly Yokai[] = [
 
 // Keys carry a particle or a verb where the word is short or sits inside other words (いけに, not いけ: いけません).
 export const CLUES: readonly Thing[] = [
-  { id: 'cucumber', word: jp('きゅうり', 'a cucumber slice'), picture: 'court/clue-cucumber', emoji: '🥒', keys: ['きゅうり'] },
+  { id: 'cucumber', word: jp('きゅうり', 'a cucumber slice'), gloss: 'cucumber', picture: 'court/clue-cucumber', emoji: '🥒', keys: ['きゅうり'] },
   { id: 'leaf', word: jp('はっぱ', 'a leaf'), picture: 'late/leaf', emoji: '🍃', keys: ['はっぱ'] },
   { id: 'footprints', word: jk('足あと', 'あしあと', 'footprints'), picture: 'court/clue-footprints', emoji: '👣', keys: ['あしあと'] },
   { id: 'puddle', word: jk('水たまり', 'みずたまり', 'a puddle'), picture: 'court/clue-puddle', emoji: '💧', keys: ['みずたまり'] },

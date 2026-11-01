@@ -2,7 +2,7 @@
 // system run with bots playing over the network.
 
 import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
-import type { JpText, LastTrainMinigame, LastTrainScenario, MinigameItem } from '../content/src/types.js';
+import type { JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem } from '../content/src/types.js';
 import { lastTrainScenarios } from '../content/src/last-train/index.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
@@ -545,7 +545,7 @@ describe('Last Train hard roles (N4)', () => {
   const ROLE_CONTENT: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [ANNOUNCE, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [LINE] };
   const FRAMES = new Set(['te-itadakemasen', 'kamo', 'sou-look', 'sou-hear', 'hazu', 'te-aru', 'o-kudasai', 'keigo', 'sign-kanji']);
 
-  const table = (lib: ContentLibrary, levels: MinigameItem['level'][]) => {
+  const table = (lib: ContentLibrary, levels: Level[]) => {
     const g = new Table(lib, levels.length);
     levels.forEach((level, i) => g.act({ type: 'command', actor: { kind: 'player', playerId: `p${i + 1}` }, command: { id: `lv${i}`, type: 'setLevel', level } }));
     return g;
@@ -785,7 +785,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
   const lineOf = (mgId: string): LastTrainScenario => ({ ...SCENARIO, id: `${mgId}-line`, stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: mgId })) });
   const lib = (m: LastTrainMinigame): ContentLibrary => ({ ...EMPTY_CONTENT, lastTrainMinigames: [m, ...MINIGAMES.filter((x) => x.penalty)], lastTrainScenarios: [lineOf(m.id)] });
   const ROLES = lib(ANNOUNCE);
-  const table = (content: ContentLibrary, levels: MinigameItem['level'][]) => {
+  const table = (content: ContentLibrary, levels: Level[]) => {
     const g = new Table(content, levels.length);
     levels.forEach((level, i) => g.act({ type: 'command', actor: { kind: 'player', playerId: `p${i + 1}` }, command: { id: `lv${i}`, type: 'setLevel', level } }));
     return g;
@@ -1084,7 +1084,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
 
   it('the host stand-in: once a game, at the first announcer stop, in a room of one or two with nobody at N4', () => {
     onTestFinished(withExperiments({ standInSetup: false, standInCurveball: false }));
-    for (const levels of [['n5'], ['n5', 'kana']] as MinigameItem['level'][][]) {
+    for (const levels of [['n5'], ['n5', 'kana']] as Level[][]) {
       const g = table(ROLES, levels);
       g.start(4);
       g.until('prompt');
@@ -1109,7 +1109,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
       expect(g.cues.filter((c) => c.event === 'train_stand_in')).toHaveLength(1);
       expect(g.state.players.every((p) => p.score === g.s.ledger.filter((e) => e.playerId === p.id).reduce((n, e) => n + e.points, 0))).toBe(true);
     }
-    for (const levels of [['n5', 'n4'], ['n4'], ['n5', 'n5', 'kana']] as MinigameItem['level'][][]) {
+    for (const levels of [['n5', 'n4'], ['n4'], ['n5', 'n5', 'kana']] as Level[][]) {
       const g = table(ROLES, levels);
       g.start(4);
       g.until('prompt');
@@ -1209,7 +1209,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
 
     it('stays out of rooms with an N4 player, and of 3+ rooms', () => {
       onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
-      for (const levels of [['n5', 'n4'], ['n5', 'n5', 'kana']] as MinigameItem['level'][][]) {
+      for (const levels of [['n5', 'n4'], ['n5', 'n5', 'kana']] as Level[][]) {
         const g = table(ROLES, levels);
         g.start(4);
         g.until('prompt');

@@ -28,15 +28,15 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | --- | --- | --- | --- | --- |
 | 1 | VOICEVOX voices (白上虎太郎, ちび式じい, 春日部つむぎ, No.7, fallbacks) | `server/ai/hosts.ts` | 🟡 ❓ | Show `VOICEVOX:<name>` credits; read each character's full terms. **No.7 (Nobiko-san) read 2026-11-01: free only while the game is non-commercial; a sold game is "ゲームでの利用" and needs a paid VOICEVOX licence from No.7's team (from ¥15,000 with credit, ¥250,000 without)** |
 | 2 | VOICEVOX engine | Docker image, separate service | 🟡 | Run unmodified as a service; LGPL/core terms if ever bundled into a download |
-| 3 | KanjiVG stroke data | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
+| 3 | KanjiVG stroke data (kana, and 161 kanji: 46 more added 2026-11-01 for N4 and the 30 sign kanji) | `content/src/kana/strokes.ts`, `content/src/kanji/strokes.ts` (Shodō Taikai) | 🟡 | Credited in the stage's recap credits strip; add it to a notices file; keep the derived data CC BY-SA 3.0 |
 | 4 | kuromoji + IPADIC dictionary | `server/src/reading.ts`, reader service | 🟡 | Ship the Apache-2.0 and NAIST notices |
 | 5 | npm dependencies | `package-lock.json` | ✅ | Ship a third-party notices file |
-| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the eight backdrop sets including the Last Train carriage, Ghost Advice Hotline's call-in booth (2026-11-01) with its hitodama and phone icon, and Yōkai Court's courtroom (2026-11-01), Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 25 host and yōkai animation sheets (thinking and shocked added 2026-10-28), a smoke-puff effect, 56 Narabete! card pictures, 112 Narabete! answer pictures, 6 Bento Haus VS pieces, Dub Club's 13 anime sets, 14 characters and their 14 mouth sheets, 33 direction-card icons, 3 episode backdrops and 3 phone player icons, 83 Happyōkai! slide pictures, Happyōkai!'s 6 stamp icons, candle, flame and Chōchin-san bow sheet, Nice to Meet You!'s paw stamp and card-back medallion, and, for the phone's yōkai book and sign-in (2026-10-28), 10 yōkai book sprites and 4 icons: key, hanko, speaker and the stage Phrasebook's notebook, then 16 game icons and a stamp ring for the Phrasebook cards; Read the Signs' station-sign casing, arrow and hanger (2026-11-01), Late Again!'s 16 cause pictures, curveball, leaf, sash and certificate (2026-11-01), Ghost Advice Hotline's 26 advice tiles and 16 caller portraits (2026-11-01), and Yōkai Court's 7 clue, 6 place and 3 case-object pictures (2026-11-01)) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
+| 6 | AI art: PixelLab (all stage art: hosts, yōkai, the eight backdrop sets including the Last Train carriage, Ghost Advice Hotline's call-in booth (2026-11-01) with its hitodama and phone icon, and Yōkai Court's courtroom (2026-11-01), Photo Caption pictures, 31 game icons, 54 Onsen and Omiai character portraits, 25 host and yōkai animation sheets (thinking and shocked added 2026-10-28), a smoke-puff effect, 56 Narabete! card pictures, 112 Narabete! answer pictures, 6 Bento Haus VS pieces, Dub Club's 13 anime sets, 14 characters and their 14 mouth sheets, 33 direction-card icons, 3 episode backdrops and 3 phone player icons, 83 Happyōkai! slide pictures, Happyōkai!'s 6 stamp icons, candle, flame and Chōchin-san bow sheet, Nice to Meet You!'s paw stamp and card-back medallion, and, for the phone's yōkai book and sign-in (2026-10-28), 10 yōkai book sprites and 4 icons: key, hanko, speaker and the stage Phrasebook's notebook, then 16 game icons and a stamp ring for the Phrasebook cards; Read the Signs' station-sign casing, arrow and hanger (2026-11-01), Late Again!'s 16 cause pictures, curveball, leaf, sash and certificate (2026-11-01), Ghost Advice Hotline's 26 advice tiles and 16 caller portraits (2026-11-01), and Yōkai Court's 7 clue, 6 place and 3 case-object pictures, 4 role icons and Fude-san's brush (2026-11-01)) | `stage/assets/`, `content/media/photo-caption/` | ⚠️ | Decided: placeholder until commercial, then commission the art |
 | 7 | AI art: Gemini (source images for Pon, the lie tanuki cut from him, and one Ghost Advice Hotline picture: `caller-kodama`) | `tools/art/sources/`, `tools/art/sources/hotline/` | ❓ ⚠️ | Read Gemini API terms, or redraw these without a Gemini source |
 | 8 | Claude API (host lines, answer judge, ink coach) | `server/ai/` | 🟡 ⚠️ | Commercial Terms on a business account; tell players AI can be wrong; per-game cost |
 | 9 | Folklore yōkai and Japanese cultural content | `content/src/kana/`, host personas | ✅ ⚠️ | Folklore is public domain; don't copy modern designs; check the game and mode names |
 | 10 | Kana course order and links (ToKini Andy) | `content/src/kana/raid.ts` | ✅ | Links only; ask before any paid tie-in or using his name in marketing |
-| 11 | Fonts: Noto Sans JP, Noto Sans, Pixelify Sans, Press Start 2P (Google Fonts CDN); Kotoba Pixel, our modified Pixelify 5, B and C (self-hosted) | `stage/index.html`, `controller/index.html`, `stage/assets/fonts/` | 🟡 ❓ | OFL 1.1 allows selling; ship the OFL notices. Self-host the fonts before an EU launch (the Google Fonts CDN's privacy terms weren't readable) |
+| 11 | Fonts: Noto Sans JP, Noto Sans, Press Start 2P (Google Fonts CDN); Kotoba Pixel, our modified Pixelify Sans with 2, 3, 5, 6, 9, B, C and G redrawn (self-hosted) | `stage/index.html`, `controller/index.html`, `stage/assets/fonts/` | 🟡 ❓ | OFL 1.1 allows selling; ship the OFL notices. Self-host the fonts before an EU launch (the Google Fonts CDN's privacy terms weren't readable) |
 | 12 | Game formats and names (Jackbox, Talking Points, oogiri, Shōten, ito, Overcooked, Rank5) | Docs, personas, borrowed mechanics | ⚠️ ❓ | Don't use "Jackbox" or TV show names in the product or marketing |
 | 13 | Karaoke Duel songs | `shared/src/modes/karaokeDuel/songs.ts` | ✅ | Keep songs original; no covers without a music licence |
 | 14 | Cloudflare Workers + Durable Objects | `wrangler.jsonc`, `cloudflare/` | ⚠️ | Paid plan once traffic grows; not a licence bar |
@@ -114,9 +114,10 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 ### 3. KanjiVG
 
 - **Terms:** CC BY-SA 3.0, © Ulrich Apel and contributors. Commercial use is allowed.
-- **Read:** https://github.com/KanjiVG/kanjivg/blob/master/COPYING, 2026-10-27.
+- **Read:** https://github.com/KanjiVG/kanjivg/blob/master/COPYING, 2026-10-27; read again 2026-11-01 when
+  46 kanji were added (still CC BY-SA 3.0, nothing changed).
 - **Conditions:** Attribution, and anything derived from it stays CC BY-SA. Both `strokes.ts` files
-  (kana, and the 111 kanji Shodō Taikai uses) are derived, and their headers say so. The share-alike applies to that data, not to the rest of the game, as long
+  (kana, and the 161 kanji Shodō Taikai uses) are derived, and their headers say so. The share-alike applies to that data, not to the rest of the game, as long
   as it stays a separate data file.
 - **Credited:** since 2026-10-27 the stage's recap credits strip includes "Stroke order data:
   KanjiVG, © Ulrich Apel and contributors, CC BY-SA 3.0" (`creditLines` in `stage/src/main.ts`).
@@ -176,7 +177,9 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   26 advice tiles and 16 caller portraits (prompts and seeds in the manifest). Same endpoint; the terms
   rest on the 2026-10-26 read and are unchanged.
   Yōkai Court's pictures (`stage/assets/court/`, 2026-11-01) are 16 text-only `pixflux` images: 7 clues,
-  6 alibi places and 3 case objects (prompts and seeds in the manifest; the footprints have a 1px outline added by the post step). Its yōkai, the inkstone, the leaf and the bento
+  6 alibi places and 3 case objects (prompts and seeds in the manifest; the footprints have a 1px outline added by the post step),
+  then 4 role icons (a sealed scroll, a sunflower badge, a balance scale, an eye) and Fude-san's calligraphy
+  brush for the verdict, 5 more text-only `pixflux` images made the same day. Its yōkai, the inkstone, the leaf and the bento
   and tea cards reuse art already logged here. Same endpoint; the terms were not re-read for this pass, so
   they rest on the 2026-10-26 read.
   The four lip-sync
@@ -261,10 +264,13 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   titles and numbers (timer, scores). Since 2026-10-27, Press Start 2P, a blockier pixel face, for
   the room code only, because Pixelify's G, Z, S and B read as 6, 2, 5 and 8. Both pages load them from the Google
   Fonts CDN (`fonts.googleapis.com`, `fonts.gstatic.com`), with system fonts as the fallback.
-- **Kotoba Pixel (since 2026-10-28 as Kotoba Five; B and C added and renamed 2026-11-01):** Pixelify's 5
-  read as S or 8 from the couch, its C as O ("Yōkai Oourt") and its bold B as G ("Gento Haus"), so
-  `tools/fonts/build-kotoba-pixel.py` takes Pixelify Sans, redraws only the 5, B and C, keeps only
-  those three characters and renames the result Kotoba Pixel (`stage/assets/fonts/kotoba-pixel-{500,700}.woff2`, self-hosted). That is a
+- **Kotoba Pixel (since 2026-10-28 as Kotoba Five; renamed and extended 2026-11-01):** from the couch
+  Pixelify's 5 read as S or 8, its 2, 3, 6 and 9 as 8, its C as O ("Yōkai Oourt"), its G as a boxed 6
+  and its bold B as G ("Gento Haus"), and its fi ligature drew "file" as "Ale". So
+  `tools/fonts/build-kotoba-pixel.py` takes Pixelify Sans v3 (Latin and Latin Extended, as Google
+  serves it, pinned by hash), redraws those glyphs, drops the ligatures and renames the result Kotoba
+  Pixel (`stage/assets/fonts/kotoba-pixel{,-ext}-{500,700}.woff2`). Since 2026-11-01 it is the whole
+  face, self-hosted, and the pages no longer load Pixelify from Google Fonts. That is a
   Modified Version under the OFL: allowed, it must stay under OFL 1.1, and it can't use a Reserved
   Font Name (Pixelify Sans reserves none; renamed anyway). The licence text ships beside it as
   `stage/assets/fonts/OFL.txt` (copied from the Pixelify OFL.txt URL below, read 2026-10-28 and
@@ -281,8 +287,8 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   German court (LG München, 2022) found that a GDPR breach without consent. Google's Fonts privacy
   FAQ (<https://developers.google.com/fonts/faq/privacy>) was blocked from this session, so its
   terms are unread.
-- **To sell:** Self-host WOFF2 subsets of the four fonts (no third-party request at all), and add the
-  OFL notices to the third-party notices file. Any new font gets a row here.
+- **To sell:** Self-host WOFF2 subsets of the other three fonts too (Kotoba Pixel already is, since
+  2026-11-01), so there is no third-party request at all, and add the OFL notices to the third-party notices file. Any new font gets a row here.
 
 ### 12. Game formats and names
 

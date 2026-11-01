@@ -13,7 +13,7 @@ import { h } from './dom.js';
 export function signBoard(signs: readonly StationSign[], opts: { small?: boolean; outline?: boolean } = {}): HTMLElement {
   return h(
     'div',
-    { class: `lt-signs${signs.length > 1 ? ' pair' : ''}${opts.small ? ' small' : ''}`, role: 'img', 'aria-label': signs.length > 1 ? 'Station signs' : 'Station sign' },
+    { class: `lt-signs${signs.length > 1 ? ' pair' : ''}${signs.length > 1 && signs.some((s) => [...s.text].length >= 3) ? ' long' : ''}${opts.small ? ' small' : ''}`, role: 'img', 'aria-label': signs.length > 1 ? 'Station signs' : 'Station sign' },
     signs.map((s) =>
       h(
         'div',

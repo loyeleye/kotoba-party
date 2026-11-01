@@ -10497,6 +10497,101 @@
         "seed": 233
       },
       "post": {}
+    },
+    {
+      "path": "stage/assets/court/role-pros.png",
+      "what": "Yōkai Court role icon: prosecution (a rolled scroll tied with a vermilion cord and a red seal)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a rolled paper scroll tied with a bright vermilion red cord and a round red wax seal",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 32,
+        "height": 32,
+        "text_guidance_scale": 8,
+        "seed": 241
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/role-def.png",
+      "what": "Yōkai Court role icon: defence (a sunflower, as on a Japanese lawyer's badge)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single bright yellow sunflower head seen from the front, big yellow petals, brown centre, short green stem",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 32,
+        "height": 32,
+        "text_guidance_scale": 8,
+        "seed": 252
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/role-judge.png",
+      "what": "Yōkai Court role icon: judge (a wooden balance scale)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small brass balance scale seen from the front, a central post with a crossbar and two round pans hanging on chains, perfectly level, on a wooden base",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 32,
+        "height": 32,
+        "text_guidance_scale": 8,
+        "seed": 253
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/role-witness.png",
+      "what": "Yōkai Court role icon: witness (one big wide-open eye)",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. one single big wide-open cartoon eye seen from the front, white eyeball, round dark red iris, black pupil with a white shine, a few lashes",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 32,
+        "height": 32,
+        "text_guidance_scale": 8,
+        "seed": 254
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/court/brush.png",
+      "what": "Yōkai Court: Fude-san's calligraphy brush writing the verdict",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a Japanese calligraphy brush held diagonally, bamboo handle, wet black ink tip pointing down-left, a drop of ink",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 245
+      },
+      "post": {}
     }
   ]
 }
