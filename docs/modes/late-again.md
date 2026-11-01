@@ -30,19 +30,19 @@ while the clip plays, Kana and N5 phones tap the words they catch.
 
 | Phase | Beat | Length | What happens |
 |---|---|---|---|
-| prompt | scene | 5 s | The departure board: who is late, how late (ごふん climbing to いちねん over the game), for what. Pon's opener. |
-| prompt | plan | 8 s | The latecomer sees the witness's three causes and taps one; the witness picks blind; the gallery bets. Ready ends it. |
-| answer | record | 6 s Kana, 9 s N5/N4 | One button: tap, talk, tap. The mic pass lets Pon say it, once a game. Silence: Pon stands in. |
+| prompt | scene | 5 s | The departure board: who is late, how late (ごふん climbing to いちねん over the game), for what. Pon's opener. The latecomer may already pick. |
+| prompt | plan | 8 s | The latecomer taps one of the witness's three causes (each phone has its own order); the witness picks blind; the gallery bets. Ready ends it once the witness is in. Everything locks here, before the room hears a word. |
+| answer | record | 6 s Kana, 9 s N5, 12 s N4, then 3.5 s to upload | One button: tap, talk, tap. Typing works from the plan beat (quiet mode, no mic). The mic pass lets Pon say it, once a game. Silence: Pon stands in. |
 | reveal | play | the clip | The TV shows only who is talking. Checks and word catch on the phones. |
-| reveal | gist | 4 s (5 s on a miss) | The subtitle, the picture gist, the alibi card flip. The chief's phone gets the gist. |
-| encore | vote | 6 s | Voters give a leaf (Safe) or keep it; the chief calls Safe or Out. Hidden until the ruling. |
-| score | ruling | 5 s | The stamp, the leaves, Pon's reaction to this cause, points. |
-| score | booth | 7 s | Only when the excuse used its chunk: the line with the chunk lit, a line of colour, the train-line tag. |
-| score | truth | 2.5 s | "What really happened…": a cause nobody was dealt (or, 1 in 12, Pon himself). Every round ends on a laugh. |
+| reveal | gist | 4 s (5 s on a miss) | The subtitle, the picture gist, the alibi card (face down, flipping at 1.3 s as Pon reacts). The chief's phone gets the gist. |
+| encore | vote | 6 s | Voters holding a leaf give it (Safe) or keep it; the chief calls Safe or Out. The TV shows how many can say Safe, never how anyone voted. |
+| score | ruling | 5 s | The stamp, the leaves (Safe turns them into Pon's late pass, Out puffs them back), "Overruled by the room" when the chief misread it, Pon's reaction to this cause, points. |
+| score | booth | 7 s | Only when the latecomer's own excuse used its chunk: 「でました！」, the line with the chunk lit, a line of colour, the train-line tag. |
+| score | truth | 4 s | "What really happened…", a pause, then a cause nobody was dealt and nobody has used this game (Pon himself, 1 in 12 or after a tanuki curveball; "the boss was Pon" in the last round). Every round ends on a laugh. |
 
 Rounds: the smallest multiple of the player count that is 6 or more (everyone is late equally often), or
-one lap with the "One turn each" setting. An 8-player game with every excuse at full length takes under
-8.5 minutes (tested).
+one lap with the "One turn each" setting. With every excuse at full length and the booth open every N4
+round, an 8-player game takes under 9 minutes and the longest (5 players, two laps) under 11 (tested).
 
 ## Roles
 
@@ -51,7 +51,8 @@ one lap with the "One turn each" setting. An 8-player game with every excuse at 
   The latecomer keeps the +50 alibi points when it lands, so it wrecks the story, not the friend's score.
 - **Acting chief:** whoever has judged least, ties to Kana players, never twice in a row with 4+ players.
 - **Gallery:** everyone else. Bets on the cause.
-- **Two players:** co-op against Pon's record, Pon is the witness; the chief names the cause, then rules.
+- **Two players:** co-op against Pon's record (both scores together), Pon is the witness and backs a cause
+  at random. The cause stays hidden until the chief names it; there is no Safe or Out.
 
 ## The deck
 
@@ -68,22 +69,28 @@ controlling partner. The train is never stopped or delayed: the passenger is the
 
 | Who | Points |
 |---|---|
-| Latecomer | 100 per leaf given; 50 when the alibi matched (or the curveball landed) |
-| Witness | 50 when the alibi matched |
+| Latecomer | 100 per leaf given (50 on a mic pass, none when Pon stood in: he keeps them); 50 when the alibi matched (or the curveball landed); 50 when speech-to-text heard the excuse name its cause or use its chunk |
+| Witness | 50 when the alibi matched; 100 when the tanuki curveball didn't stop the room saying Safe |
 | Acting chief | 100 for a call that matches the room (50 on an exact split) |
+| Voters | 20 each for a leaf given when the room ruled Safe |
 | Gallery | 20 for the right bet |
 | Listeners | N4: 30 for the check. Kana and N5: 10 per word caught, at most 30 (a wrong tap cancels a right one) |
-| Co-op | 100 each for naming the cause, 50 more for Safe on it; 50 each for Pon's alibi matching |
+| Co-op | 100 each for naming the cause; 50 each for Pon's alibi matching. Pon's record is 110 a round per player |
 
-Leaves: everyone starts with one, gets one more at the start of rounds 3, 5, 7 …, and holds two at most
-(the "Votes are free" setting turns them off). Tiers follow the leaves: fewer than half is a flop; IPPON
-needs every voter, and at least three of them. Every point is in the ledger, which adds up to the scores
+Leaves: everyone starts with two, gets one more at the start of rounds 3, 5, 7 …, and holds two at most
+(the "Votes are free" setting turns them off). The room is the voters holding a leaf when the vote opens; a
+voter with none counts as voted. Tiers follow the leaves: fewer than half is a flop; IPPON is every holder
+giving, with at least three of them or the chief backing them with Safe. In co-op, naming the cause is good,
+and with Pon's alibi matching too, IPPON. Every point is in the ledger, which adds up to the scores
 (tested).
 
 ## Learning path
 
-The latecomer's line goes in the phrasebook. It counts as said (from memory) when the clip used the
-chunk (N4) or named the cause (Kana tiles count as read), and as read when the hint was opened.
+The latecomer's line goes in the phrasebook. It counts as said when it was their own clip and
+speech-to-text heard it name the cause or use the chunk (or there was no speech-to-text to tell); tiles,
+typing and Pon's reading are seen. It is from memory unless the hint was opened or Pon read it. When
+speech-to-text heard a different one of the three causes than the one tapped, the excuse blamed that one.
+The private note at the ruling shows "From memory ✓" or "With a hint", and what they said beside Pon's way.
 
 ## Open, for playtests
 

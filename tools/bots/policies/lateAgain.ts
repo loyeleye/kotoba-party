@@ -46,6 +46,8 @@ export function lateAgainPolicy(opts: LateAgainPolicyOptions = {}): ModePolicy {
 
       if (view.phase === 'prompt' || view.phase === 'answer') {
         if (game.step === 'scene') return out;
+        // The witness and the gallery lock in before the call starts.
+        const planning = view.phase === 'prompt';
         if (me.role === 'latecomer' && !me.sent) {
           if (me.level === 'kana') {
             const cause = me.tiles.find((t) => t.id !== 'sorry' && t.id !== 'tanuki' && (!me.cause || t.id === me.cause)) ?? me.tiles[1];
@@ -62,12 +64,12 @@ export function lateAgainPolicy(opts: LateAgainPolicyOptions = {}): ModePolicy {
           }
           return out;
         }
-        if (me.role === 'witness' && !me.alibi && me.alibiTiles.length) {
+        if (planning && me.role === 'witness' && !me.alibi && me.alibiTiles.length) {
           const tanuki = me.alibiTiles.find((t) => t.id === 'tanuki');
           const pick = tanuki && r('curve?') < curveball ? tanuki : pickOf(me.alibiTiles.filter((t) => t.id !== 'tanuki'), r('alibi'));
           if (pick) push('alibi', { kind: 'alibi', tileId: pick.id });
         }
-        if (me.role === 'gallery' && !me.bet && game.options.length) push('bet', { kind: 'bet', causeId: pickOf(game.options, r('bet'))!.id });
+        if (planning && me.role === 'gallery' && !me.bet && game.options.length) push('bet', { kind: 'bet', causeId: pickOf(game.options, r('bet'))!.id });
         return out;
       }
 
@@ -79,10 +81,12 @@ export function lateAgainPolicy(opts: LateAgainPolicyOptions = {}): ModePolicy {
 
       if (view.phase === 'encore') {
         if (me.role === 'chief') {
-          if (game.coop && !me.coopPick && game.options.length) push('pick', { kind: 'pick', causeId: pickOf(game.options, r('pick'))!.id });
-          else if (!me.call) {
+          // Co-op: naming the cause is the whole call.
+          if (game.coop) {
+            if (!me.coopPick && game.options.length) push('pick', { kind: 'pick', causeId: pickOf(game.options, r('pick'))!.id });
+          } else if (!me.call) {
             // Read the room: leaves held say who can still vote Safe.
-            const spendable = game.voters.filter((v) => v.leaves > 0).length;
+            const spendable = game.holders;
             const safe = game.voters.length === 0 ? r('call') < 0.5 : spendable / game.voters.length >= 0.5 ? r('call') < 0.75 : r('call') < 0.3;
             push('rule', { kind: 'rule', call: safe ? 'safe' : 'out' }, think);
           }

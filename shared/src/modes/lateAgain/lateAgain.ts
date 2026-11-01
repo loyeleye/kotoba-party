@@ -4,35 +4,39 @@
 // and scores by reading the room. See docs/modes/late-again.md.
 //
 // A round, by phase (each stepped by `wake` where it has beats):
-//   prompt  scene (5 s: what they're late for, the cast, everyone's leaves) → plan (8 s: the latecomer
-//           sees the witness's three causes and taps one to blame; the witness picks blind; the gallery
-//           bets; Ready ends it early).
-//   answer  record: the latecomer's excuse (Kana 6 s of tiles, N5 and N4 9 s of voice). Picks and bets lock
-//           when it ends.
+//   prompt  scene (5 s: what they're late for, the cast, everyone's leaves; the latecomer may already pick)
+//           → plan (8 s: the latecomer taps one of the witness's three causes to blame; the witness picks
+//           blind; the gallery bets; Ready ends it early once the witness is in). Picks, the alibi and the
+//           bets lock here, before the room hears a word.
+//   answer  record: the latecomer's excuse (Kana 6 s of tiles, N5 9 s and N4 12 s of voice, then time for the
+//           clip to upload).
 //   reveal  play (the clip, the tiles, or Pon on a mic pass; the TV shows only who is talking, the N4 gallery
 //           answers a listening check, Kana and N5 players catch words) → gist (4 s: the subtitle, the picture
 //           gist and the alibi card; the chief's phone gets the gist now).
 //   encore  vote (6 s): voters give a leaf or keep it, the chief calls Safe or Out. Hidden until the ruling.
 //   score   ruling (5 s: the call, the leaves, Pon's reaction to this cause, points) → booth (7 s, only when the
 //           excuse used its grammar chunk: the chunk, a line of colour commentary and its train-line tag) →
-//           truth (2.5 s: "the real story", a cause nobody was dealt, so every round ends on a laugh).
+//           truth (4 s: "the real story", a cause nobody was dealt this game, so every round ends on a laugh;
+//           Pon himself after a tanuki curveball, and "the boss was Pon" in the last round).
 //
 // Every move echoes `round`; one for an earlier round is a harmless `wrong-phase` race.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
-import { isUtterance, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { callbackLine, CAUSES, causeOf, dealOptions, kanaLine, latenessFor, lineFor, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, type Cause, type Chunk } from './causes.js';
+import { callbackLine, CAUSES, causeOf, dealOptions, kanaLine, latenessFor, lineFor, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, type Cause, type Chunk } from './causes.js';
 
 // ---- tuning ----
 
 export const MIN_ROUNDS = 6;
 export const SCENE_MS = 5_000;
 export const PLAN_MS = 8_000;
-/** How long the latecomer may record, by level (N3 gets 12 s when it joins). */
-export const RECORD_MS: Record<Level, number> = { kana: 6_000, n5: 9_000, n4: 9_000 };
+/** How long the latecomer may record, by level (N4 lines run about 12 s at a learner's pace; N3 joins at 12 s too). */
+export const RECORD_MS: Record<Level, number> = { kana: 6_000, n5: 9_000, n4: 12_000 };
+/** After the record limit: time for the clip to upload before Pon stands in. */
+export const UPLOAD_MS = 3_500;
 /** Late moves still count this long after a timer runs out. */
 export const GRACE_MS = 1_500;
 export const MIN_CLIP_MS = 300;
@@ -49,8 +53,15 @@ export const GIST_MISS_MS = 5_000;
 export const VOTE_MS = 6_000;
 export const RULING_MS = 5_000;
 export const BOOTH_MS = 7_000;
-/** The real story: the round's last beat. */
-export const TRUTH_MS = 2_500;
+/** The real story: the round's last beat ("What really happened…", a pause, then the reveal). */
+export const TRUTH_MS = 4_000;
+export const TRUTH_PAUSE_MS = 800;
+/** The gist beat: the alibi card flips over this long in (the TV's animation matches). */
+export const ALIBI_FLIP_MS = 1_300;
+/** Pon's reaction lands just after the stamp. */
+export const RULING_LINE_AT_MS = 700;
+/** "Can't read the room!": after Pon's reaction, when the chief's call went against the room. */
+export const MISREAD_AT_MS = 3_200;
 export const DURATIONS = { intro: 12_000 } as const;
 
 export const POINTS = {
@@ -65,17 +76,26 @@ export const POINTS = {
   check: 30,
   catchWord: 10,
   catchMax: 30,
-  /** Two players, co-op: the chief named the cause, and said Safe to a right one. */
+  /** Per leaf when Pon read the excuse on a mic pass (a stand-in earns none: Pon keeps those leaves). */
+  leafPass: 50,
+  /** To the latecomer, when speech-to-text heard the excuse name its cause or use its chunk. */
+  spoke: 50,
+  /** To each voter who gave a leaf, when the room ruled Safe. */
+  stake: 20,
+  /** To the witness, when their tanuki curveball didn't stop the room saying Safe. */
+  curve: 100,
+  /** Two players, co-op: the chief named the cause. */
   coopPick: 100,
-  coopSafe: 50,
 } as const;
 
-/** Leaves: everyone starts with one, gets one more at the start of rounds 3, 5, 7 …, and holds at most two. */
-export const START_LEAVES = 1;
+/** Leaves: everyone starts with two, gets one more at the start of rounds 3, 5, 7 …, and holds at most two. */
+export const START_LEAVES = 2;
 export const MAX_LEAVES = 2;
 
-/** Two players: Pon's score to beat, for the team. */
-export const PON_RECORD_PER_ROUND = 160;
+/** Two players: Pon's score to beat, per player, per round (a good team names the cause four times in five). */
+export const PON_RECORD_PER_ROUND = 110;
+/** The team's target: both players' scores together. */
+export const ponRecord = (s: Pick<LateState, 'totalRounds'>): number => PON_RECORD_PER_ROUND * 2 * s.totalRounds;
 
 // ---- state ----
 
@@ -108,15 +128,19 @@ export interface LedgerEntry {
   round: number;
   playerId: string;
   points: number;
-  why: 'leaf' | 'alibi' | 'chief' | 'bet' | 'check' | 'catch' | 'coop';
+  why: 'leaf' | 'alibi' | 'chief' | 'bet' | 'check' | 'catch' | 'coop' | 'spoke' | 'stake' | 'curve';
 }
 
 export interface Ruling {
   call: 'safe' | 'out' | null;
   voters: number;
+  /** Voters who held a leaf when the vote opened: the room is them (every voter with free votes). */
+  holders: number;
   gave: number;
-  /** The room's verdict: more than half the voters gave a leaf. Null on an exact split (the chief's call stands). */
+  /** The room's verdict: more than half the leaf holders gave a leaf. Null on an exact split (the chief's call stands). */
   roomSafe: boolean | null;
+  /** The chief's call went against the room: the room's verdict stands on the stamp. */
+  overruled: boolean;
   tier: 'flop' | 'good' | 'ippon';
   /** Co-op: the cause the chief named. */
   coopPick: string | null;
@@ -133,6 +157,8 @@ export interface LateRound {
   gallery: string[];
   level: Level;
   cause: string;
+  /** The latecomer chose the cause (or it was dealt: the blind variant, or the plan beat ran out). */
+  picked: boolean;
   ready: boolean;
   /** Kana tiles tapped so far; they go in by themselves if the timer runs out. */
   draft: string[];
@@ -145,6 +171,8 @@ export interface LateRound {
   catchTiles: string[];
   catches: Record<string, string[]>;
   leaves: Record<string, boolean>;
+  /** Voters holding a leaf when the vote opened. */
+  held: string[];
   call: 'safe' | 'out' | null;
   coopPick: string | null;
   hidden: boolean;
@@ -155,10 +183,12 @@ export interface LateRound {
   ruling: Ruling | null;
   /** The chunk heard in the excuse, for the booth; null skips it. */
   chunk: Chunk | null;
-  /** The real story: a cause nobody was dealt this round, or null for Pon himself. */
+  /** The real story: a cause nobody was dealt this game, or null for Pon himself. */
   truth: string | null;
   /** The latecomer opened "Need a hint?": the excuse counts as read, not said from memory. */
   hinted: boolean;
+  /** The game's last round. */
+  finale: boolean;
 }
 
 export interface PlayerStats {
@@ -183,6 +213,8 @@ export interface LateState {
   curveUsed: Record<string, boolean>;
   chiefTurns: Record<string, number>;
   lastChief: Record<string, number>;
+  /** Causes already used as a round's real story: never twice in a game. */
+  truths: string[];
   ledger: LedgerEntry[];
   stats: Record<string, PlayerStats>;
   settings: { leafBudget: boolean; witnessSeesOptions: boolean };
@@ -208,14 +240,18 @@ export interface LateView {
   step: Step | null;
   stepAt: number;
   coop: boolean;
+  /** Two players: Pon's record for the team (both scores together), and the team's score so far. */
   ponRecord: number | null;
+  teamScore: number | null;
   /** late: how late, climbing from ごふん to いちねん over the game. */
   scene: { id: string; place: JpText; emoji: string; late: JpText } | null;
   cast: { latecomer: string; witness: string | null; chief: string | null; gallery: string[] } | null;
-  /** The witness's three causes: everyone sees them (they are the bet tiles too). */
+  /** The witness's three causes: everyone sees them (they are the bet tiles too). Each phone gets its own order. */
   options: TileView[];
   /** Each voter's leaves held (the chief reads the room from these), and whether they've voted (never how). */
   voters: { playerId: string; leaves: number; voted: boolean }[];
+  /** Voters holding a leaf: how many can say Safe this round. */
+  holders: number;
   /** Lock-ins for the TV's seat chips: what's in, never what was chosen. */
   locked: { ready: boolean; excuse: boolean; alibi: boolean; bets: string[]; called: boolean };
   /** From the play beat. */
@@ -231,8 +267,8 @@ export interface LateView {
   /** From the ruling beat. */
   ruling: (Ruling & { points: { playerId: string; points: number }[] }) | null;
   booth: { line: string; chunk: string; note: string; tag: string } | null;
-  /** The real story, at the round's last beat: the cause's picture (none for Pon) and Pon's line. */
-  truth: { picture: string | null; emoji: string; line: JpText } | null;
+  /** The real story, at the round's last beat: the cause's picture (none for Pon) and Pon's line, after a pause. */
+  truth: { picture: string | null; emoji: string; line: JpText; pauseMs: number } | null;
   ledger: LedgerEntry[];
   me: LateMe | null;
 }
@@ -244,6 +280,10 @@ export interface LateMe {
   cause: string | null;
   /** The latecomer may choose which of the witness's causes to blame (off in the blind variant). */
   canPick: boolean;
+  /** This round's pick, alibi and bets are locked: the call has started. */
+  lockedIn: boolean;
+  /** A typed excuse is accepted now (quiet mode, or the mic won't open). */
+  canType: boolean;
   /** frame: N5's fill-in sentence frame, the first step behind "Need a hint?" (Pon's version is the second). */
   mission: { text: string; model: JpText & { romaji?: string }; frame?: JpText & { romaji?: string } } | null;
   /** Kana latecomer: the tiles to build the excuse from, and what's been tapped. */
@@ -261,6 +301,8 @@ export interface LateMe {
   catchTiles: (TileView & { tapped: boolean })[];
   leaves: number;
   canVote: boolean;
+  /** A voter with no leaf to give this round: they count as voted. */
+  noLeaf: boolean;
   gave: boolean | null;
   call: 'safe' | 'out' | null;
   coopPick: string | null;
@@ -268,8 +310,15 @@ export interface LateMe {
   gist: (JpText & { romaji?: string }) | null;
   /** This round's points so far (after the ruling). */
   points: number | null;
-  /** The latecomer's private note at the ruling: Pon's version, and whether the excuse used it. */
-  note: { model: JpText; used: boolean } | null;
+  /** This round's points by reason (after the ruling). */
+  breakdown: { why: LedgerEntry['why']; points: number }[];
+  /** The chief: their call matched the room (null on a split, in co-op, or before the ruling). */
+  readRoom: boolean | null;
+  /**
+   * The latecomer's private note at the ruling: Pon's version, whether their own excuse used it, whether it
+   * came from memory or with the hint open, and what was heard (untrusted player text).
+   */
+  note: { model: JpText; used: boolean; hinted: boolean; fromMemory: boolean; said: string | null } | null;
 }
 
 export type LateMove =
@@ -294,6 +343,8 @@ const blankStats = (): PlayerStats => ({ leaves: 0, alibis: 0, chiefRight: 0, li
 const statsOf = (s: LateState, id: string) => (s.stats[id] ??= blankStats());
 export const current = (s: LateState): LateRound | null => s.rounds[s.round - 1] ?? null;
 const causeOfRound = (r: LateRound): Cause => causeOf(r.cause) ?? CAUSES[0]!;
+/** The latecomer's line: the last round (a year late) opens with the deepest apology. */
+const lineOf = (r: LateRound) => lineFor(causeOfRound(r), r.level, { finale: r.finale });
 
 /** Rounds for `n` players: the smallest multiple of n that is 6 or more (one lap with `oneLap`). */
 export function roundsFor(n: number, oneLap = false): number {
@@ -302,11 +353,14 @@ export function roundsFor(n: number, oneLap = false): number {
   return Math.ceil(MIN_ROUNDS / p) * p;
 }
 
-/** Does the reading of what was heard contain any of these kana? */
+/**
+ * Does the reading of what was heard contain any of these kana? Plain normalised readings: the lenient
+ * sound key would merge sounds across word boundaries (もって いきました would "say" えき).
+ */
 export function heardAny(reading: string, keys: readonly string[]): boolean {
-  const said = soundKey(reading);
+  const said = normalizeReading(reading);
   return keys.some((k) => {
-    const key = soundKey(k);
+    const key = normalizeReading(k);
     return key.length > 0 && said.includes(key);
   });
 }
@@ -317,7 +371,7 @@ export function excuseReading(r: LateRound): string | null {
   if (!x) return null;
   if (x.kind === 'pon') {
     const c = causeOfRound(r);
-    return (r.level === 'kana' ? kanaLine(c) : lineFor(c, r.level).model).kana;
+    return (r.level === 'kana' ? kanaLine(c) : lineOf(r).model).kana;
   }
   if (x.kind === 'tiles') return x.tiles.map((t) => tileWord(t, r)?.kana ?? '').join(' ');
   if (x.kind === 'typed') return x.text;
@@ -392,15 +446,32 @@ export function wordsInExcuse(r: LateRound): Set<string> {
   return out;
 }
 
-/** The chunk the booth can call out: the latecomer's line has one and the excuse used it. */
+/** The chunk the booth can call out: the latecomer's line has one and their own excuse used it (never Pon's reading). */
 export function chunkHeard(r: LateRound): Chunk | null {
-  if (r.level === 'kana' || r.hidden || !r.excuse) return null;
-  const chunk = lineFor(causeOfRound(r), r.level).chunk;
+  if (r.level === 'kana' || r.hidden || !r.excuse || r.excuse.kind === 'pon') return null;
+  const chunk = lineOf(r).chunk;
   if (!chunk) return null;
-  if (r.excuse.kind === 'pon') return chunk;
   const reading = excuseReading(r);
   return reading && heardAny(reading, chunk.keys) ? chunk : null;
 }
+
+/** The latecomer's own clip named its cause, as speech-to-text heard it. */
+export function causeNamed(r: LateRound): boolean {
+  if (r.excuse?.kind !== 'clip' || !r.excuse.checked) return false;
+  const reading = excuseReading(r);
+  return !!reading && heardAny(reading, causeOfRound(r).keys);
+}
+
+/** The excuse counts as said out loud: the latecomer's own clip, and (where speech-to-text could tell) it named the cause or used the chunk. */
+export function saidAloud(r: LateRound): boolean {
+  const x = r.excuse;
+  if (!x || x.kind !== 'clip') return false;
+  if (!x.checked || r.level === 'kana') return true;
+  return causeNamed(r) || !!chunkHeard(r);
+}
+
+/** Voters who can say Safe this round: everyone with free votes, else those holding a leaf when the vote opened. */
+const holdersOf = (s: LateState, r: LateRound): string[] => (s.settings.leafBudget ? r.held : votersOf(r));
 
 function pay(s: LateState, ctx: ModeContext, playerId: string, points: number, why: LedgerEntry['why']): void {
   if (!points || !ctx.player(playerId)) return;
@@ -445,9 +516,7 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
   // Pon's leaves: one more for everyone at the start of rounds 3, 5, 7 …
   if (s.round >= 3 && s.round % 2 === 1) for (const p of ctx.players()) s.leaves[p.id] = Math.min(MAX_LEAVES, (s.leaves[p.id] ?? START_LEAVES) + 1);
   const roles = dealRoles(s, ctx);
-  const recent = new Set(s.rounds.slice(-2).flatMap((r) => r.options));
-  const options = dealOptions(() => ctx.random(), recent, s.audience);
-  // The finale scene (your own wedding) is saved for the last round, where the room has one.
+  // The finale scene is saved for the last round, where the room has one.
   const usedScenes = new Set(s.rounds.map((r) => r.sceneId));
   const last = s.round === s.totalRounds;
   const all = scenesFor(s.audience);
@@ -456,7 +525,12 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
   const fresh = pool.filter((x) => !usedScenes.has(x.id));
   const scenes = fresh.length ? fresh : pool;
   const scene = scenes[Math.floor(ctx.random() * scenes.length)]!;
+  const recent = new Set(s.rounds.slice(-2).flatMap((r) => r.options));
+  const options = dealOptions(() => ctx.random(), recent, s.audience, scene.id);
   const level = ctx.player(roles.latecomer)?.level ?? 'n5';
+  const blind = !s.settings.witnessSeesOptions && !!roles.witness;
+  const truth = truthFor(() => ctx.random(), options, s.audience, new Set([...s.truths, ...s.rounds.map((x) => x.cause)]));
+  if (truth) s.truths.push(truth);
   const r: LateRound = {
     index: s.round,
     sceneId: scene.id,
@@ -464,6 +538,7 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
     ...roles,
     level,
     cause: options[Math.floor(ctx.random() * 3)]!,
+    picked: blind,
     ready: false,
     draft: [],
     excuse: null,
@@ -474,17 +549,21 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
     catchTiles: shuffled([...options, SORRY_TILE.id], () => ctx.random()),
     catches: {},
     leaves: {},
+    held: [],
     call: null,
     coopPick: null,
     hidden: false,
-    blind: !s.settings.witnessSeesOptions && !!roles.witness,
+    blind,
     step: 'scene',
     stepAt: ctx.now,
     ruling: null,
     chunk: null,
-    truth: truthFor(() => ctx.random(), options, s.audience),
+    truth,
     hinted: false,
+    finale: last,
   };
+  // Two players: Pon is the witness, and he "probably saw it".
+  if (s.coop && !r.witness) r.alibi = options[Math.floor(ctx.random() * 3)]!;
   s.rounds.push(r);
   statsOf(s, r.latecomer).late += 1;
   if (r.chief) {
@@ -512,35 +591,46 @@ function causeFromTiles(r: LateRound, tiles: readonly string[]): void {
 function settle(s: LateState, r: LateRound, ctx: ModeContext): void {
   if (r.ruling) return;
   const voters = votersOf(r).filter((id) => ctx.player(id));
-  const giving = voters.filter((id) => r.leaves[id] === true && (!s.settings.leafBudget || (s.leaves[id] ?? 0) > 0));
+  // The room is the voters who could say Safe: a voter with no leaf left has no say this round.
+  const holders = holdersOf(s, r).filter((id) => ctx.player(id));
+  const giving = holders.filter((id) => r.leaves[id] === true && (!s.settings.leafBudget || (s.leaves[id] ?? 0) > 0));
   const gave = giving.length;
-  const roomSafe = voters.length === 0 ? null : gave * 2 > voters.length ? true : gave * 2 === voters.length ? null : false;
-  // Tiers follow the leaves: fewer than half is a flop, IPPON needs every voter and at least three of them.
-  const tier: Ruling['tier'] = voters.length >= 3 && gave === voters.length ? 'ippon' : gave * 2 < voters.length || (voters.length === 0 && !s.coop) ? 'flop' : 'good';
-  r.ruling = { call: r.call, voters: voters.length, gave, roomSafe, tier, coopPick: r.coopPick };
+  const n = holders.length;
+  const roomSafe = n === 0 ? null : gave * 2 > n ? true : gave * 2 === n ? null : false;
+  const right = s.coop && !!r.coopPick && r.coopPick === r.cause;
+  // Tiers follow the leaves: fewer than half is a flop; IPPON is every holder giving, with at least three of
+  // them, or (a small room) the chief backing them with Safe. In co-op the chief's pick decides it.
+  const tier: Ruling['tier'] = s.coop
+    ? right ? (alibiMatch(r) ? 'ippon' : 'good') : 'flop'
+    : n > 0 && gave === n && (n >= 3 || r.call === 'safe') ? 'ippon' : n === 0 || gave * 2 < n ? 'flop' : 'good';
+  const overruled = !s.coop && !!r.call && roomSafe !== null && (r.call === 'safe') !== roomSafe;
+  r.ruling = { call: s.coop ? null : r.call, voters: voters.length, holders: n, gave, roomSafe, overruled, tier, coopPick: r.coopPick };
   if (s.settings.leafBudget) for (const id of giving) s.leaves[id] = Math.max(0, (s.leaves[id] ?? 0) - 1);
   r.chunk = chunkHeard(r);
   const c = causeOfRound(r);
-  const line = r.level === 'kana' ? kanaLine(c) : lineFor(c, r.level).model;
-  const said = r.excuse?.kind === 'clip' && (r.level === 'kana' || !!r.chunk);
-  // Said from memory unless the hint was opened. Tiles, typing and Pon's mic pass are seen, not said.
-  ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: r.hinted ? 'read' : 'memory' });
+  const line = r.level === 'kana' ? kanaLine(c) : lineOf(r).model;
+  const said = saidAloud(r);
+  // Said from memory unless the hint was opened. Tiles, typing and Pon's reading are seen, not said; Pon's is read.
+  const read = r.hinted || r.excuse?.kind === 'pon';
+  ctx.phrase(r.latecomer, { itemId: `late:${c.id}:${r.level}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: read ? 'read' : 'memory' });
   if (r.hidden) return;
 
   if (s.coop) {
     const team = ctx.players().map((p) => p.id);
-    if (r.coopPick && r.coopPick === r.cause) {
-      for (const id of team) pay(s, ctx, id, POINTS.coopPick, 'coop');
-      if (r.call === 'safe') for (const id of team) pay(s, ctx, id, POINTS.coopSafe, 'coop');
-    }
+    if (right) for (const id of team) pay(s, ctx, id, POINTS.coopPick, 'coop');
     if (alibiMatch(r)) for (const id of team) pay(s, ctx, id, POINTS.alibi, 'alibi');
   } else {
-    pay(s, ctx, r.latecomer, gave * POINTS.leaf, 'leaf');
+    // A mic pass earns half a leaf's worth; a stand-in nothing (Pon pockets those leaves).
+    const x = r.excuse;
+    const perLeaf = x?.standIn ? 0 : x?.micPass ? POINTS.leafPass : POINTS.leaf;
+    pay(s, ctx, r.latecomer, gave * perLeaf, 'leaf');
     statsOf(s, r.latecomer).leaves += gave;
-    // The curveball takes the blame: the latecomer still gets the alibi points, the witness plays it for the laugh.
+    if (causeNamed(r) || (x?.kind === 'clip' && x.checked && !!r.chunk)) pay(s, ctx, r.latecomer, POINTS.spoke, 'spoke');
+    // The curveball takes the blame: the latecomer still gets the alibi points, and the witness wins big if the room says Safe anyway.
     if (r.witness && r.alibi === TANUKI_TILE.id) {
       s.curveUsed[r.witness] = true;
       pay(s, ctx, r.latecomer, POINTS.alibi, 'alibi');
+      if (roomSafe === true) pay(s, ctx, r.witness, POINTS.curve, 'curve');
     }
     if (r.witness && alibiMatch(r)) {
       pay(s, ctx, r.latecomer, POINTS.alibi, 'alibi');
@@ -548,7 +638,8 @@ function settle(s: LateState, r: LateRound, ctx: ModeContext): void {
       statsOf(s, r.latecomer).alibis += 1;
       statsOf(s, r.witness).alibis += 1;
     }
-    if (r.chief && r.call && voters.length) {
+    if (roomSafe === true) for (const id of giving) pay(s, ctx, id, POINTS.stake, 'stake');
+    if (r.chief && r.call && n) {
       const pts = roomSafe === null ? POINTS.chiefHalf : (r.call === 'safe') === roomSafe ? POINTS.chief : 0;
       pay(s, ctx, r.chief, pts, 'chief');
       if (pts === POINTS.chief) statsOf(s, r.chief).chiefRight += 1;
@@ -566,12 +657,24 @@ function settle(s: LateState, r: LateRound, ctx: ModeContext): void {
   }
   const inExcuse = wordsInExcuse(r);
   for (const [id, words] of Object.entries(r.catches)) {
-    const right = words.filter((w) => inExcuse.has(w)).length;
-    const wrong = words.length - right;
-    const pts = Math.min(POINTS.catchMax, Math.max(0, right - wrong) * POINTS.catchWord);
+    const hit = words.filter((w) => inExcuse.has(w)).length;
+    const wrong = words.length - hit;
+    const pts = Math.min(POINTS.catchMax, Math.max(0, hit - wrong) * POINTS.catchWord);
     pay(s, ctx, id, pts, 'catch');
     statsOf(s, id).listen += pts;
   }
+}
+
+/**
+ * The cause is what was said: when speech-to-text heard exactly one of the other options and not the one
+ * tapped, the excuse blamed that one.
+ */
+function causeFromHeard(r: LateRound): void {
+  if (r.excuse?.kind !== 'clip' || !r.excuse.checked || r.blind) return;
+  const reading = excuseReading(r);
+  if (!reading) return;
+  const heard = r.options.filter((id) => heardAny(reading, causeOf(id)?.keys ?? []));
+  if (heard.length === 1 && heard[0] !== r.cause) r.cause = heard[0]!;
 }
 
 function parseHeard(raw: unknown): Utterance | null {
@@ -579,8 +682,10 @@ function parseHeard(raw: unknown): Utterance | null {
   return { via: 'speech', text: raw.text.slice(0, 160), ...(raw.reading !== undefined ? { reading: String(raw.reading).slice(0, 320) } : {}) };
 }
 
-/** A latecomer, witness or bettor may still choose until the record beat locks. */
+/** The latecomer may still build or send the excuse until the record beat ends. */
 const choosing = (phase: Phase, r: LateRound): boolean => (phase === 'prompt' && r.step === 'plan') || phase === 'answer';
+/** Picks, the alibi and the bets lock when the call starts: before the room hears a word. */
+const planning = (phase: Phase): boolean => phase === 'prompt';
 
 // ---- the mode ----
 
@@ -627,6 +732,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       curveUsed: {},
       chiefTurns: {},
       lastChief: {},
+      truths: [],
       ledger: [],
       stats,
       settings: { leafBudget: extra.freeVotes !== true, witnessSeesOptions: extra.blindLatecomer !== true },
@@ -662,7 +768,9 @@ export const lateAgainMode: Mode<LateState, LateView> = {
     };
     switch (phase) {
       case 'intro':
-        ctx.cue({ host: 'pon', event: s.coop ? 'late_coop' : 'late_intro' });
+        // The premise is told the same way every game; the co-op welcome is Pon's to vary.
+        if (s.coop) ctx.cue({ host: 'pon', event: 'late_coop' });
+        else ctx.cue({ host: 'pon', event: 'late_line', slots: quip(PREMISE) });
         break;
       case 'prompt': {
         const r = startRound(s, ctx);
@@ -670,12 +778,16 @@ export const lateAgainMode: Mode<LateState, LateView> = {
         const scene = sceneOf(r.sceneId)!;
         const late = latenessFor(r.index, s.totalRounds);
         const name = ctx.player(r.latecomer)?.name ?? '';
-        ctx.cue({ host: 'pon', event: 'late_line', slots: quip({ text: `${name}さん、${late.text}！？ ${scene.opener.text}`, kana: `${name}さん、${late.kana}！？ ${scene.opener.kana}`, en: `${name}, ${late.en} late?! ${scene.opener.en}` }) });
+        // The first rung has its own gag; the rest read the scene's opener.
+        const tail = late.quip ?? scene.opener;
+        ctx.cue({ host: 'pon', event: 'late_line', slots: quip({ text: `${name}さん、${late.text}の ちこく！？ ${tail.text}`, kana: `${name}さん、${late.kana}の ちこく！？ ${tail.kana}`, en: `${name}, ${late.en} late?! ${tail.en}` }) });
         break;
       }
       case 'answer': {
         const r = current(s)!;
         step(r, 'record');
+        // Nothing tapped in time: the dealt cause stands.
+        r.picked = true;
         break;
       }
       case 'reveal': {
@@ -684,7 +796,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
         const x = r.excuse!;
         if (x.kind === 'pon') {
           const c = causeOfRound(r);
-          const line = r.level === 'kana' ? kanaLine(c) : lineFor(c, r.level).model;
+          const line = r.level === 'kana' ? kanaLine(c) : lineOf(r).model;
           ctx.cue({ host: 'pon', event: x.micPass ? 'late_mic_pass' : 'late_stand_in', slots: { name: ctx.player(r.latecomer)?.name ?? '', line: line.kana } });
         }
         break;
@@ -692,6 +804,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       case 'encore': {
         const r = current(s)!;
         step(r, 'vote');
+        r.held = votersOf(r).filter((id) => (s.leaves[id] ?? 0) > 0);
         if (!r.hidden) ctx.cue({ host: 'pon', event: 'late_vote', slots: { name: r.chief ? (ctx.player(r.chief)?.name ?? '') : '' } });
         break;
       }
@@ -700,7 +813,13 @@ export const lateAgainMode: Mode<LateState, LateView> = {
         step(r, 'ruling');
         settle(s, r, ctx);
         if (r.hidden) ctx.cue({ host: 'pon', event: 'late_hidden' });
-        else ctx.cue({ host: 'pon', event: 'late_line', slots: quip(reactionOf(s, r)) });
+        else {
+          const tier = r.ruling?.tier;
+          ctx.cue({ host: 'pon', event: 'late_line', ...(tier ? { tier } : {}), slots: quip(reactionOf(s, r)), atMs: RULING_LINE_AT_MS });
+          if (r.ruling?.overruled && r.chief) ctx.cue({ host: 'pon', event: 'late_misread', slots: { name: ctx.player(r.chief)?.name ?? '' }, atMs: MISREAD_AT_MS });
+        }
+        // The real story is the round's last line: start writing it now.
+        ctx.cue({ host: 'pon', event: 'late_truth', slots: quip(truthOf(s, r).line), ahead: true });
         break;
       }
     }
@@ -709,7 +828,10 @@ export const lateAgainMode: Mode<LateState, LateView> = {
   leave(s, phase) {
     const r = current(s);
     if (!r) return;
-    if (phase === 'answer') lockExcuse(r);
+    if (phase === 'answer') {
+      lockExcuse(r);
+      causeFromHeard(r);
+    }
     if (phase === 'prompt' && r.step === 'scene') r.step = 'plan';
   },
 
@@ -721,7 +843,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       case 'prompt':
         return SCENE_MS + PLAN_MS;
       case 'answer':
-        return (r ? RECORD_MS[r.level] : RECORD_MS.n5) + GRACE_MS;
+        return (r ? RECORD_MS[r.level] : RECORD_MS.n5) + UPLOAD_MS + GRACE_MS;
       case 'reveal':
         return r ? playMs(r.excuse) + gistMs(r) : PON_PLAY_MS + GIST_MS;
       case 'encore':
@@ -737,12 +859,18 @@ export const lateAgainMode: Mode<LateState, LateView> = {
     const r = current(s);
     if (!r) return false;
     const here = (id: string | null) => !!id && ctx.connected().some((p) => p.id === id);
-    if (phase === 'prompt') return r.step === 'plan' && (r.ready || !!r.excuse || !here(r.latecomer));
+    if (phase === 'prompt') {
+      // Ready (or an early excuse) ends the plan beat, once the witness has backed a cause.
+      const witnessIn = !r.witness || !here(r.witness) || !!r.alibi;
+      return r.step === 'plan' && witnessIn && (r.ready || !!r.excuse || !here(r.latecomer));
+    }
     if (phase === 'answer') return !!r.excuse || !here(r.latecomer);
     if (phase === 'encore') {
       if (r.hidden) return true;
-      const voted = votersOf(r).every((id) => !here(id) || id in r.leaves);
-      const called = !r.chief || !here(r.chief) || (!!r.call && (!s.coop || !!r.coopPick));
+      const holders = new Set(holdersOf(s, r));
+      // A voter with no leaf has nothing to decide.
+      const voted = votersOf(r).every((id) => !here(id) || !holders.has(id) || id in r.leaves);
+      const called = !r.chief || !here(r.chief) || (s.coop ? !!r.coopPick : !!r.call);
       return voted && called;
     }
     return false;
@@ -768,13 +896,15 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       r.step = 'gist';
       r.stepAt = ctx.now;
       if (r.hidden) return;
-      if (r.witness && r.alibi === TANUKI_TILE.id) ctx.cue({ host: 'pon', event: 'late_curveball', slots: { name: ctx.player(r.witness)?.name ?? '' } });
-      else if (r.witness && !alibiMatch(r)) ctx.cue({ host: 'pon', event: 'late_alibi_miss' });
-      else if (r.witness) ctx.cue({ host: 'pon', event: 'late_alibi_match' });
+      // Pon reacts as the alibi card flips over on the TV.
+      if (r.witness && r.alibi === TANUKI_TILE.id) ctx.cue({ host: 'pon', event: 'late_curveball', slots: { name: ctx.player(r.witness)?.name ?? '' }, atMs: ALIBI_FLIP_MS });
+      else if (r.witness && !alibiMatch(r)) ctx.cue({ host: 'pon', event: 'late_alibi_miss', atMs: ALIBI_FLIP_MS });
+      else if (r.witness) ctx.cue({ host: 'pon', event: 'late_alibi_match', atMs: ALIBI_FLIP_MS });
     } else if (phase === 'score' && (r.step === 'ruling' || r.step === 'booth')) {
       r.step = r.step === 'ruling' && r.chunk ? 'booth' : 'truth';
       r.stepAt = ctx.now;
-      if (r.step === 'truth') ctx.cue({ host: 'pon', event: 'late_line', slots: quip(truthLine(r.truth ? (causeOf(r.truth) ?? null) : null)) });
+      if (r.step === 'booth') ctx.cue({ host: 'pon', event: 'late_booth' });
+      else ctx.cue({ host: 'pon', event: 'late_truth', slots: quip(truthOf(s, r).line), atMs: TRUTH_PAUSE_MS });
     }
   },
 
@@ -793,10 +923,11 @@ export const lateAgainMode: Mode<LateState, LateView> = {
     switch (raw.kind) {
       case 'cause': {
         if (!isLate) return moveError('not-yours');
-        if (!choosing(phase, r) || r.excuse) return moveError('wrong-phase');
+        if (!planning(phase) || r.excuse) return moveError('wrong-phase');
         if (r.blind) return moveError('blind');
         if (typeof raw.causeId !== 'string' || !r.options.includes(raw.causeId)) return moveError('bad-move');
         r.cause = raw.causeId;
+        r.picked = true;
         return MOVE_OK;
       }
       case 'ready': {
@@ -812,6 +943,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
         if (!tiles) return moveError('bad-move');
         r.draft = tiles;
         causeFromTiles(r, tiles);
+        if (tiles.some((t) => r.options.includes(t))) r.picked = true;
         return MOVE_OK;
       }
       case 'excuse': {
@@ -822,16 +954,20 @@ export const lateAgainMode: Mode<LateState, LateView> = {
           const tiles = parseTiles(r, raw.tiles);
           if (!tiles || !tiles.length) return moveError('bad-move');
           causeFromTiles(r, tiles);
+          r.picked = true;
           r.excuse = blankExcuse('tiles', { tiles });
           return MOVE_OK;
         }
-        if (phase !== 'answer') return moveError('wrong-phase');
+        // Typing (quiet mode, or no mic) is open from the plan beat; a clip only once the call starts.
         if (raw.type === 'typed') {
+          if (r.level === 'kana') return moveError('bad-move');
           const text = cleanText(raw.text, 80);
           if (!text) return moveError('empty');
+          r.picked = true;
           r.excuse = blankExcuse('typed', { text });
           return MOVE_OK;
         }
+        if (phase !== 'answer') return moveError('wrong-phase');
         if (raw.type !== 'clip') return moveError('bad-move');
         const clipId = typeof raw.clipId === 'string' && raw.clipId.length <= 64 ? raw.clipId : null;
         const local = raw.local === true;
@@ -862,7 +998,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       }
       case 'alibi': {
         if (playerId !== r.witness) return moveError('not-yours');
-        if (!choosing(phase, r)) return moveError('wrong-phase');
+        if (!planning(phase)) return moveError('wrong-phase');
         if (typeof raw.tileId !== 'string' || (!r.options.includes(raw.tileId) && raw.tileId !== TANUKI_TILE.id)) return moveError('bad-move');
         if (raw.tileId === TANUKI_TILE.id && s.curveUsed[playerId]) return moveError('no-curveball-left');
         r.alibi = raw.tileId;
@@ -870,7 +1006,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       }
       case 'bet': {
         if (!r.gallery.includes(playerId)) return moveError('not-yours');
-        if (!choosing(phase, r)) return moveError('wrong-phase');
+        if (!planning(phase)) return moveError('wrong-phase');
         if (typeof raw.causeId !== 'string' || !r.options.includes(raw.causeId)) return moveError('bad-move');
         r.bets[playerId] = raw.causeId;
         return MOVE_OK;
@@ -899,21 +1035,23 @@ export const lateAgainMode: Mode<LateState, LateView> = {
         if (!votersOf(r).includes(playerId)) return moveError('not-yours');
         if (phase !== 'encore') return moveError('wrong-phase');
         if (typeof raw.give !== 'boolean') return moveError('bad-move');
-        if (raw.give && s.settings.leafBudget && (s.leaves[playerId] ?? 0) <= 0) return moveError('no-leaf');
+        if (raw.give && s.settings.leafBudget && ((s.leaves[playerId] ?? 0) <= 0 || !r.held.includes(playerId))) return moveError('no-leaf');
         r.leaves[playerId] = raw.give;
         return MOVE_OK;
       }
       case 'rule': {
         if (playerId !== r.chief) return moveError('not-yours');
+        // Co-op has no Safe or Out: naming the cause is the chief's whole call.
+        if (s.coop) return moveError('coop');
         if (phase !== 'encore') return moveError('wrong-phase');
         if (raw.call !== 'safe' && raw.call !== 'out') return moveError('bad-move');
-        if (s.coop && !r.coopPick) return moveError('pick-first');
         r.call = raw.call;
         return MOVE_OK;
       }
       case 'pick': {
         if (playerId !== r.chief || !s.coop) return moveError('not-yours');
-        if (phase !== 'encore') return moveError('wrong-phase');
+        if (phase !== 'encore' && !(phase === 'reveal' && r.step === 'gist')) return moveError('wrong-phase');
+        if (r.coopPick) return moveError('already-sent');
         if (typeof raw.causeId !== 'string' || !r.options.includes(raw.causeId)) return moveError('bad-move');
         r.coopPick = raw.causeId;
         return MOVE_OK;
@@ -950,6 +1088,8 @@ export const lateAgainMode: Mode<LateState, LateView> = {
     return { round: s.round, totalRounds: s.totalRounds };
   },
 
+  isCoop: (s) => s.coop,
+
   view(s, phase, viewer, ctx) {
     const r = current(s);
     const player = viewer.kind === 'player' ? ctx.player(viewer.playerId) : undefined;
@@ -960,6 +1100,10 @@ export const lateAgainMode: Mode<LateState, LateView> = {
     const c = r ? causeOfRound(r) : null;
     const scene = r ? sceneOf(r.sceneId) : null;
     const x = r?.excuse ?? null;
+    // Each phone gets its own order of the three causes, so "tap the leftmost" can't fake an alibi.
+    const order = r ? (player ? phoneOrder(r, player.id) : r.options) : [];
+    // Co-op: the cause stays hidden until the chief has named it.
+    const coopHidden = !!r && s.coop && !r.coopPick && phase !== 'score';
 
     const view: LateView = {
       mode: 'late-again',
@@ -969,11 +1113,13 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       step: inRound ? r!.step : null,
       stepAt: r?.stepAt ?? 0,
       coop: s.coop,
-      ponRecord: s.coop ? PON_RECORD_PER_ROUND * s.totalRounds : null,
+      ponRecord: s.coop ? ponRecord(s) : null,
+      teamScore: s.coop ? s.ledger.reduce((a, e) => a + e.points, 0) : null,
       scene: inRound && scene ? { id: scene.id, place: scene.place, emoji: scene.emoji, late: latenessFor(r!.index, s.totalRounds) } : null,
       cast: inRound ? { latecomer: r!.latecomer, witness: r!.witness, chief: r!.chief, gallery: r!.gallery } : null,
-      options: inRound ? r!.options.map((id) => tileView(id, level)) : [],
-      voters: inRound ? votersOf(r!).map((id) => ({ playerId: id, leaves: s.settings.leafBudget ? (s.leaves[id] ?? 0) : MAX_LEAVES, voted: id in r!.leaves })) : [],
+      options: inRound ? order.map((id) => tileView(id, level)) : [],
+      voters: inRound ? votersOf(r!).map((id) => ({ playerId: id, leaves: s.settings.leafBudget ? (s.leaves[id] ?? 0) : MAX_LEAVES, voted: id in r!.leaves || (phase === 'encore' && !holdersOf(s, r!).includes(id)) })) : [],
+      holders: inRound ? (phase === 'encore' || phase === 'score' ? holdersOf(s, r!).length : votersOf(r!).filter((id) => !s.settings.leafBudget || (s.leaves[id] ?? 0) > 0).length) : 0,
       locked: inRound ? { ready: r!.ready, excuse: !!x, alibi: !!r!.alibi, bets: Object.keys(r!.bets), called: !!r!.call } : { ready: false, excuse: false, alibi: false, bets: [], called: false },
       play:
         playing && x
@@ -990,7 +1136,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
             }
           : null,
       gist:
-        pastPlay && c
+        pastPlay && c && !coopHidden
           ? {
               cause: tileView(c.id, level),
               gist: withRomaji(c.gist, level),
@@ -1000,7 +1146,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
           : null,
       ruling: inRound && phase === 'score' && r!.ruling ? { ...r!.ruling, points: pointsOfRound(s, r!.index) } : null,
       booth: inRound && phase === 'score' && r!.step === 'booth' ? boothOf(r!) : null,
-      truth: inRound && phase === 'score' && r!.step === 'truth' ? truthOf(r!) : null,
+      truth: inRound && phase === 'score' && r!.step === 'truth' ? truthOf(s, r!) : null,
       ledger: phase === 'score' || phase === 'recap' ? s.ledger : [],
       me: null,
     };
@@ -1022,9 +1168,10 @@ export const lateAgainMode: Mode<LateState, LateView> = {
     };
     const add = (p: ModePlayer | undefined, title: string, en: string) => p && out.push({ playerId: p.id, name: p.name, title, en });
     add(best((st) => st.leaves), 'いいわけ王', 'Excuse King: most leaves won');
-    add(best((st) => st.chiefRight), 'ぶちょうの め', 'The Boss’s Eye: read the room best');
+    add(best((st) => st.chiefRight), '見る目 大賞', 'The Boss’s Eye: read the room best');
     add(best((st) => st.alibis), 'アリバイ名人', 'Alibi Master: most alibis that matched');
     add(best((st) => st.listen), 'じごくみみ', 'Big Ears: best listener');
+    if (s.coop && s.ledger.reduce((a, e) => a + e.points, 0) >= ponRecord(s)) for (const p of players) add(p, 'ポンに かった！', 'Beat Pon’s record together');
     return out;
   },
 };
@@ -1051,19 +1198,34 @@ function subtitleOf(r: LateRound): string | null {
   if (x.kind === 'clip') return x.heard?.text ?? null;
   if (x.kind === 'tiles') return x.tiles.map((t) => tileWord(t, r)?.text ?? '').join(' ');
   const c = causeOfRound(r);
-  return (r.level === 'kana' ? kanaLine(c) : lineFor(c, r.level).model).text;
+  return (r.level === 'kana' ? kanaLine(c) : lineOf(r).model).text;
 }
 
 function boothOf(r: LateRound): LateView['booth'] {
   if (r.hidden || !r.chunk) return null;
   const said = r.excuse?.kind === 'clip' ? (r.excuse.heard?.text ?? null) : null;
-  const model = lineFor(causeOfRound(r), r.level).model.text;
+  const model = lineOf(r).model.text;
   return { line: said ?? model, chunk: r.chunk.text, note: r.chunk.note, tag: r.chunk.tag };
 }
 
-function truthOf(r: LateRound): LateView['truth'] {
-  const c = r.truth ? (causeOf(r.truth) ?? null) : null;
-  return { picture: c?.picture ?? null, emoji: c?.emoji ?? '🦝', line: truthLine(c) };
+/** The real story: the last round's is always "the boss was Pon"; after a tanuki curveball it was Pon; else the dealt truth. */
+function truthOf(s: LateState, r: LateRound): NonNullable<LateView['truth']> {
+  if (r.index === s.totalRounds && s.totalRounds > 1) return { picture: null, emoji: '🦝', line: truthLine(null, { finale: true }), pauseMs: TRUTH_PAUSE_MS };
+  const c = r.alibi === TANUKI_TILE.id || !r.truth ? null : (causeOf(r.truth) ?? null);
+  return { picture: c?.picture ?? null, emoji: c?.emoji ?? '🦝', line: truthLine(c), pauseMs: TRUTH_PAUSE_MS };
+}
+
+/** A stable per-phone order of the round's three causes. */
+function phoneOrder(r: LateRound, playerId: string): string[] {
+  let h = 2166136261;
+  for (const ch of `${playerId}|${r.index}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const out = [...r.options];
+  for (let i = out.length - 1; i > 0; i--) {
+    h = Math.imul(h ^ (h >>> 13), 2654435761);
+    const j = (h >>> 0) % (i + 1);
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
 }
 
 /** A scripted line for Pon to say as is (the bank's late_line is just its slot). */
@@ -1097,7 +1259,8 @@ function meView(s: LateState, r: LateRound, phase: Phase, player: ModePlayer, le
   const isLate = role === 'latecomer';
   const pastPlay = phase === 'encore' || phase === 'score' || (phase === 'reveal' && r.step !== 'play');
   const listening = phase === 'reveal' && r.step === 'play';
-  const line = isLate && r.level !== 'kana' ? lineFor(c, r.level) : null;
+  // The mission shows once a cause is chosen: no pre-ticked random cause.
+  const line = isLate && r.level !== 'kana' && r.picked ? lineOf(r) : null;
   const myCheck = r.checks[player.id];
   const check =
     !isLate && level === 'n4' && checkable(r) && (listening || pastPlay)
@@ -1110,33 +1273,59 @@ function meView(s: LateState, r: LateRound, phase: Phase, player: ModePlayer, le
         }
       : null;
   const myCatches = r.catches[player.id] ?? [];
-  const points = phase === 'score' ? (pointsOfRound(s, r.index).find((p) => p.playerId === player.id)?.points ?? 0) : null;
+  const mine = phase === 'score' ? s.ledger.filter((e) => e.round === r.index && e.playerId === player.id) : [];
+  const breakdown: LateMe['breakdown'] = [];
+  for (const e of mine) {
+    const b = breakdown.find((x) => x.why === e.why);
+    if (b) b.points += e.points;
+    else breakdown.push({ why: e.why, points: e.points });
+  }
+  const order = phoneOrder(r, player.id);
+  const isVoter = votersOf(r).includes(player.id);
+  const holds = holdersOf(s, r).includes(player.id);
+  const ruling = r.ruling;
+  const coopHidden = s.coop && !r.coopPick && phase !== 'score';
+  const own = !!r.excuse && r.excuse.kind !== 'pon';
   return {
     role,
     level,
-    cause: isLate ? r.cause : null,
-    canPick: isLate && !r.blind && !r.excuse && choosing(phase, r),
-    mission: line ? { text: line.mission, model: withRomaji(line.model, level), ...(line.frame ? { frame: withRomaji(line.frame, level) } : {}) } : isLate ? { text: 'Say sorry, blame something, then add its sound! Tap up to three tiles.', model: withRomaji(kanaLine(c), level) } : null,
+    cause: isLate && r.picked ? r.cause : null,
+    canPick: isLate && !r.blind && !r.excuse && planning(phase),
+    lockedIn: !planning(phase),
+    canType: isLate && r.level !== 'kana' && !r.excuse && choosing(phase, r),
+    mission: line ? { text: line.mission, model: withRomaji(line.model, level), ...(line.frame ? { frame: withRomaji(line.frame, level) } : {}) } : isLate && r.level === 'kana' ? { text: 'Say sorry, blame something, then add its sound! Tap up to three tiles.', model: withRomaji(kanaLine(c), level) } : null,
     // The sound tile joins once a cause is tapped, and sounds like that cause.
-    tiles: isLate && r.level === 'kana' ? [SORRY_TILE.id, ...(r.blind ? [r.cause] : r.options), TANUKI_TILE.id, ...(r.draft.some((t) => r.options.includes(t)) ? [SOUND_TILE_ID] : [])].map((id) => tileView(id, level, r)) : [],
+    tiles: isLate && r.level === 'kana' ? [SORRY_TILE.id, ...(r.blind ? [r.cause] : order), TANUKI_TILE.id, ...(r.draft.some((t) => r.options.includes(t)) ? [SOUND_TILE_ID] : [])].map((id) => tileView(id, level, r)) : [],
     draft: isLate ? r.draft : [],
     ready: isLate && r.ready,
     sent: isLate && !!r.excuse,
     limitMs: isLate ? RECORD_MS[r.level] : 0,
     micPassLeft: isLate && !s.micPassUsed[player.id],
-    alibiTiles: role === 'witness' ? [...r.options, ...(s.curveUsed[player.id] ? [] : [TANUKI_TILE.id])].map((id) => tileView(id, level)) : [],
+    alibiTiles: role === 'witness' ? [...order, ...(s.curveUsed[player.id] ? [] : [TANUKI_TILE.id])].map((id) => tileView(id, level)) : [],
     alibi: role === 'witness' ? r.alibi : null,
     bet: role === 'gallery' ? (r.bets[player.id] ?? null) : null,
     check,
     catchTiles: !isLate && (level === 'kana' || level === 'n5') && (listening || pastPlay) && !r.hidden && r.excuse?.kind !== 'typed' ? r.catchTiles.map((id) => ({ ...tileView(id, level), tapped: myCatches.includes(id) })) : [],
     leaves: s.settings.leafBudget ? (s.leaves[player.id] ?? 0) : MAX_LEAVES,
-    canVote: phase === 'encore' && !r.hidden && votersOf(r).includes(player.id),
+    canVote: phase === 'encore' && !r.hidden && isVoter && holds,
+    noLeaf: phase === 'encore' && !r.hidden && isVoter && !holds,
     gave: player.id in r.leaves ? r.leaves[player.id]! : null,
     call: role === 'chief' ? r.call : null,
     coopPick: role === 'chief' ? r.coopPick : null,
-    gist: pastPlay || isLate ? withRomaji(c.gist, level) : null,
-    points,
-    note: isLate && phase === 'score' ? { model: r.level === 'kana' ? kanaLine(c) : lineFor(c, r.level).model, used: r.level === 'kana' ? !!r.excuse && r.excuse.kind !== 'pon' : !!r.chunk } : null,
+    gist: isLate || (pastPlay && !coopHidden) ? withRomaji(c.gist, level) : null,
+    points: phase === 'score' ? mine.reduce((a, e) => a + e.points, 0) : null,
+    breakdown,
+    readRoom: role === 'chief' && phase === 'score' && ruling && !s.coop && ruling.call && ruling.roomSafe !== null ? !ruling.overruled : null,
+    note:
+      isLate && phase === 'score'
+        ? {
+            model: r.level === 'kana' ? kanaLine(c) : lineOf(r).model,
+            used: r.level === 'kana' ? own : !!r.chunk,
+            hinted: r.hinted,
+            fromMemory: own && !r.hinted,
+            said: own && !r.hidden ? subtitleOf(r) : null,
+          }
+        : null,
   };
 }
 

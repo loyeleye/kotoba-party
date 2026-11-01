@@ -8994,29 +8994,10 @@
     },
     {
       "path": "stage/assets/late/cause-umbrella.png",
-      "what": "Late Again! cause tile: kasa-obake (umbrella yokai chasing)",
+      "what": "Late Again! cause tile: kasa-obake, a closed red umbrella with one big eye as the creature (pixflux gave it two legs and no tongue)",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. kasa-obake, a Japanese umbrella yokai: a half-open red paper umbrella with one big eye, a long red tongue sticking out and a single leg, leaping forward in a running chase, speed lines behind it",
-      "params": {
-        "outline": "single color black outline",
-        "shading": "basic shading",
-        "detail": "medium detail",
-        "view": "side",
-        "no_background": true,
-        "width": 64,
-        "height": 64,
-        "text_guidance_scale": 8,
-        "seed": 101
-      },
-      "post": {}
-    },
-    {
-      "path": "stage/assets/late/cause-kappa.png",
-      "what": "Late Again! cause tile: a kappa asking for directions",
-      "generator": "pixellab",
-      "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a kappa, a Japanese river yokai: a green creature with a turtle shell on its back, a short yellow beak and a round water dish on top of its bald head, standing upright on two legs, one arm stretched out pointing to the side as if asking for directions, puzzled face",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. kasa-obake: a closed red Japanese paper umbrella standing upright, the umbrella itself is the creature: one big eye on the folded canopy, a long red tongue hanging out, a single wooden leg hopping, no arms, no body, no person",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -9027,6 +9008,25 @@
         "height": 64,
         "text_guidance_scale": 8,
         "seed": 22
+      },
+      "post": {}
+    },
+    {
+      "path": "stage/assets/late/cause-kappa.png",
+      "what": "Late Again! cause tile: a kappa (water dish ringed by hair, beak, shell) hugging a cucumber",
+      "generator": "pixellab",
+      "model": "pixflux",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a kappa, a Japanese river yokai: a small green humanoid creature standing on two legs, hugging a big cucumber, on top of its head a bald round plate of water surrounded by a ring of shaggy black hair, a short yellow beak, a brown turtle shell on its back",
+      "params": {
+        "outline": "single color black outline",
+        "shading": "basic shading",
+        "detail": "medium detail",
+        "view": "side",
+        "no_background": true,
+        "width": 64,
+        "height": 64,
+        "text_guidance_scale": 8,
+        "seed": 31676
       },
       "post": {}
     },
@@ -9070,10 +9070,10 @@
     },
     {
       "path": "stage/assets/late/curve-tanuki.png",
-      "what": "Late Again! curveball tile: a tanuki's shape-shifting leaf with a puff of smoke",
+      "what": "Late Again! curveball tile: a tanuki with a leaf on its head, mid-poof (smoke puff)",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single green leaf with a puff of white smoke bursting around it, magic shape-shifting leaf",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round chubby brown Japanese tanuki raccoon dog with a dark eye mask, a round belly and a bushy tail, a green leaf on top of its head, bursting into a big puff of white smoke as it shape-shifts",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -9083,7 +9083,7 @@
         "width": 64,
         "height": 64,
         "text_guidance_scale": 8,
-        "seed": 7919
+        "seed": 15838
       },
       "post": {}
     },
@@ -9222,10 +9222,10 @@
     },
     {
       "path": "stage/assets/late/cause-date.png",
-      "what": "Late Again! cause tile (Cheeky): the date ran long (a dreamy young person with a heart balloon; innuendo only)",
+      "what": "Late Again! cause tile (Cheeky): the date ran long (no person: a heart balloon tied to a park bench with two coffee cups at sunrise)",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. isolated character, no background scenery: a dreamy smiling young person in rumpled going-out clothes holding a red heart-shaped balloon, a small orange rising sun behind their shoulder",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a red heart-shaped balloon tied to a small wooden park bench, two takeaway coffee cups on the bench, a small orange rising sun behind, no people",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -9235,7 +9235,7 @@
         "width": 64,
         "height": 64,
         "text_guidance_scale": 8,
-        "seed": 101
+        "seed": 22
       },
       "post": {}
     },

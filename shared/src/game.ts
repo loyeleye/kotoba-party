@@ -466,7 +466,7 @@ function finish(state: GameState, ctx: GameContext): void {
   state.deadline = null;
   state.host = null;
   const ranked = [...state.players].sort((a, b) => b.score - a.score || a.seat - b.seat);
-  const coop = !!mode?.info.coop;
+  const coop = !!mode && (mode.isCoop?.(state.modeState) ?? !!mode.info.coop);
   state.recap = {
     standings: ranked.map((p) => {
       const earned = partyPoints(p.score, ranked.filter((o) => o.score > p.score).length + 1, coop);
@@ -474,7 +474,7 @@ function finish(state: GameState, ctx: GameContext): void {
       return { playerId: p.id, name: p.name, score: p.score, earned, total: p.total };
     }),
     awards: mode?.awards?.(state.modeState, modeContext(state, ctx)) ?? [],
-    ...(mode?.info.coop ? { coop: true } : {}),
+    ...(coop ? { coop: true } : {}),
     ...(mode?.recapTeams ? { teams: mode.recapTeams(state.modeState, modeContext(state, ctx)) } : {}),
   };
   if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award', slots: awardSlots(state.recap.awards[0]) });
@@ -516,7 +516,7 @@ export function gameResults(state: GameState, now: number): Map<string, GameResu
   const mode = activeMode(state);
   if (state.phase !== 'recap' || !state.recap || !mode || !state.mode) return out;
   const { standings, awards } = state.recap;
-  const coop = !!mode.info.coop;
+  const coop = mode.isCoop?.(state.modeState) ?? !!mode.info.coop;
   for (const s of standings) {
     out.set(s.playerId, {
       mode: state.mode,

@@ -609,6 +609,9 @@ export type HostEvent =
   | 'late_stand_in' // nothing came from {name} in time: Pon makes their excuse ({line})
   | 'late_hidden' // the VIP hid an excuse
   | 'late_line' // Pon says a line the game wrote ({quip}): a scene opener, his reaction to this cause, the real story
+  | 'late_truth' // the round's last beat, the real story: Pon says the line the game wrote ({quip})
+  | 'late_misread' // the acting chief ({name}) called it against the room: くうきが よめない
+  | 'late_booth' // the commentary booth opens because the excuse used its grammar chunk ({chunk}): でました！
   | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin
   | 'surprise_pick'; // Surprise Me!: the wheel stops on tonight's game ({game})

@@ -293,7 +293,7 @@ span.jpv .jpv-written { font-size: 11px; }
 
 /* Washi cards: inside them the text tokens flip to dark ink, so muted glosses, furigana and
    romaji stay readable (paper-muted 7.7:1, romaji amber 6.9:1). */
-.paper, .cc-cue, .cc-cuecard, .cc-m-up, .cc-up, .om-bubble, .om-p-answer, .om-notebook, .om-p-notebook, .omi-bubble, .omi-invite, .omi-natural, .omi-q, .omi-target, .pb-big-phrase, .pb-line, .tou-line, .tou-reveal, .tou-said.q, .host-bubble {
+.paper, .la-gist, .la-tile, .cc-cue, .cc-cuecard, .cc-m-up, .cc-up, .om-bubble, .om-p-answer, .om-notebook, .om-p-notebook, .omi-bubble, .omi-invite, .omi-natural, .omi-q, .omi-target, .pb-big-phrase, .pb-line, .tou-line, .tou-reveal, .tou-said.q, .host-bubble {
   --ink: var(--paper-ink); --muted: var(--paper-muted); --romaji: #7a4a00;
 }
 

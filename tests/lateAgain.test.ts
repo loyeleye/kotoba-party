@@ -5,7 +5,7 @@ import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { CAUSES, causeOf, dealOptions, latenessFor, lineFor, SCENES, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthLine } from '../shared/src/modes/lateAgain/causes.js';
-import { MAX_LEAVES, POINTS, RECORD_MS, roundsFor, type LateState, type LateView } from '../shared/src/modes/lateAgain/lateAgain.js';
+import { heardAny, MAX_LEAVES, POINTS, RECORD_MS, roundsFor, START_LEAVES, type LateState, type LateView } from '../shared/src/modes/lateAgain/lateAgain.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { lateAgainPolicy } from '../tools/bots/policies/lateAgain.js';
@@ -119,7 +119,7 @@ describe('Late Again!: content', () => {
         expect(line.mission, `${c.id} ${level}`).toBeTruthy();
         expect(line.model.kana, `${c.id} ${level}`).toMatch(/すみません|ごめん|もうしわけ/);
         // An N5 or N4 excuse names its cause, so the gallery can catch it.
-        expect(c.keys.some((k) => line.model.kana.includes(k)) || c.keys.some((k) => line.model.kana.includes(k.replace(/^げーむ$/, 'ゲーム').replace(/^からす$/, 'カラス').replace(/^でーと$/, 'デート'))), `${c.id} ${level}`).toBe(true);
+        expect(heardAny(line.model.kana, c.keys), `${c.id} ${level}`).toBe(true);
         // The mission never names the grammar.
         expect(line.mission, `${c.id} ${level}`).not.toMatch(/〜|passive|te-form|すぎ|ので/i);
       }
@@ -153,12 +153,14 @@ describe('Late Again!: content', () => {
     for (const c of CAUSES) {
       for (const tier of ['flop', 'good', 'ippon'] as const) expect(c.pon[tier].kana, `${c.id} ${tier}`).toBeTruthy();
       expect(c.sound.kana, c.id).toBeTruthy();
-      expect(truthLine(c).kana, c.id).toMatch(/^ほんとうは… .+だったポン！$/);
+      expect(truthLine(c).kana, c.id).toMatch(/^ほんとうは… /);
       expect(truthLine(c).kana).not.toContain('！だった');
     }
-    expect(truthLine(null).kana).toContain('ポンだった');
+    expect(truthLine(null).kana).toContain('ポン');
+    expect(truthLine(null, { finale: true }).kana).toContain('ぶちょうは ポン');
     // Kids rooms never get a Cheeky scene or cause.
-    expect(scenesFor('kids').every((s) => !s.audiences)).toBe(true);
+    expect(scenesFor('kids').every((s) => !s.audiences || s.audiences.includes('kids'))).toBe(true);
+    expect(scenesFor('kids').some((s) => s.finale)).toBe(true);
     expect(latenessFor(6, 6).kana).toBe('いちねん');
     expect(latenessFor(1, 6).kana).toBe('ごふん');
   });
@@ -238,21 +240,27 @@ describe('Late Again!: scoring', () => {
     }
   });
 
-  it('a leaf is refused at zero, and nobody ever holds more than two', () => {
-    const t = new Table(5, [], 9);
+  it('a leaf is refused at zero, a voter with none counts as voted, and nobody ever holds more than two', () => {
+    // Eight players: six voters a round, so giving every time runs the leaves out.
+    const t = new Table(8, [], 9);
     t.start();
+    expect(Object.values(t.st.leaves).every((n) => n === START_LEAVES)).toBe(true);
     let refused = 0;
     for (let guard = 0; guard < 400 && t.s.phase !== 'recap'; guard++) {
       for (const id of Object.keys(t.st.leaves)) expect(t.st.leaves[id]!).toBeLessThanOrEqual(MAX_LEAVES);
       if (t.s.phase === 'encore') {
+        const stage = t.view('stage');
         for (const p of t.s.players) {
           const me = t.view(p.id).me!;
-          if (!me.canVote) continue;
-          const res = t.play(p.id, { kind: 'leaf', give: true });
-          if (me.leaves <= 0) {
-            expect(res.error).toBe('no-leaf');
+          if (me.noLeaf) {
+            expect(me.canVote).toBe(false);
+            expect(stage.voters.find((v) => v.playerId === p.id)!.voted).toBe(true);
+            expect(t.play(p.id, { kind: 'leaf', give: true }).error).toBe('no-leaf');
             refused++;
-          } else expect(res.error).toBeUndefined();
+            continue;
+          }
+          if (!me.canVote) continue;
+          expect(t.play(p.id, { kind: 'leaf', give: true }).error).toBeUndefined();
         }
       }
       if (t.phase !== 'recap') t.tick();
@@ -284,11 +292,89 @@ describe('Late Again!: scoring', () => {
     expect(t.s.phase).toBe('score');
     const gained = (id: string) => t.score(id) - before.get(id)!;
     expect(gained(r.latecomer)).toBe(2 * POINTS.leaf + POINTS.alibi);
-    expect(gained(r.witness!)).toBe(POINTS.alibi);
+    // Voters who gave a leaf to a Safe room get a little back.
+    expect(gained(r.witness!)).toBe(POINTS.alibi + POINTS.stake);
     expect(gained(r.chief!)).toBe(POINTS.chief);
-    expect(gained(r.gallery[0]!)).toBe(POINTS.bet);
-    // Two voters: every leaf, but IPPON needs three.
-    expect(t.r.ruling!.tier).toBe('good');
+    expect(gained(r.gallery[0]!)).toBe(POINTS.bet + POINTS.stake);
+    // A small room: every leaf and the chief backing it with Safe is IPPON.
+    expect(t.r.ruling!.tier).toBe('ippon');
+    expect(t.view(r.chief!).me!.readRoom).toBe(true);
+    expect(t.view(r.chief!).me!.breakdown).toEqual([{ why: 'chief', points: POINTS.chief }]);
+  });
+
+  /** Plays one round to its ruling: who gives a leaf, the chief's call, and how the excuse goes in. */
+  function oneRound(t: Table, opts: { give: (id: string) => boolean; call: 'safe' | 'out'; excuse?: (late: string) => void }) {
+    if (t.r.step === 'scene') t.tick();
+    const r = t.r;
+    t.play(r.latecomer, { kind: 'cause', causeId: r.options[0] });
+    if (r.witness) t.play(r.witness, { kind: 'alibi', tileId: r.options[2] });
+    t.play(r.latecomer, { kind: 'ready' });
+    expect(t.s.phase).toBe('answer');
+    if (opts.excuse) opts.excuse(r.latecomer);
+    while (t.s.phase !== 'encore') t.tick();
+    for (const id of [r.witness!, ...r.gallery]) if (t.view(id).me!.canVote) t.play(id, { kind: 'leaf', give: opts.give(id) });
+    t.play(r.chief!, { kind: 'rule', call: opts.call });
+    expect(t.s.phase).toBe('score');
+    return r;
+  }
+
+  it('a stand-in earns nothing per leaf, a mic pass half', () => {
+    const t = new Table(4, [], 2);
+    t.start();
+    const stand = oneRound(t, { give: () => true, call: 'safe' });
+    expect(stand.excuse!.standIn).toBe(true);
+    expect(t.st.ledger.filter((e) => e.round === stand.index && e.playerId === stand.latecomer && e.why === 'leaf')).toEqual([]);
+    while (t.s.phase !== 'prompt') t.tick();
+    const pass = oneRound(t, { give: () => true, call: 'safe', excuse: (id) => expect(t.play(id, { kind: 'micPass' }).error).toBeUndefined() });
+    expect(pass.excuse!.micPass).toBe(true);
+    const leafPts = t.st.ledger.filter((e) => e.round === pass.index && e.playerId === pass.latecomer && e.why === 'leaf').reduce((a, e) => a + e.points, 0);
+    expect(leafPts).toBe(pass.ruling!.gave * POINTS.leafPass);
+    // Pon's reading never opens the booth, and counts as read.
+    expect(pass.chunk).toBeNull();
+  });
+
+  it('a clip that names its cause counts as said from memory and earns the speaking bonus; the hint makes it read', () => {
+    const t = new Table(3, ['n5', 'n5', 'n5'], 4);
+    t.start();
+    const clip = (heardText: string) => (id: string) =>
+      expect(t.play(id, { kind: 'excuse', type: 'clip', clipId: 'c1', durMs: 4000, checked: true, heard: { via: 'speech', text: heardText, reading: heardText } }).error).toBeUndefined();
+    let line = '';
+    const r1 = oneRound(t, {
+      give: () => true,
+      call: 'safe',
+      excuse: (id) => {
+        line = lineFor(causeOf(t.r.cause)!, 'n5').model.kana;
+        clip(line)(id);
+      },
+    });
+    const entry = (r: typeof r1) => t.s.phrasebook[r.latecomer]!.find((e) => e.itemId === `late:${r.cause}:n5`)!;
+    expect(entry(r1).outcome).toBe('said');
+    expect(entry(r1).recall).toBe('memory');
+    expect(t.st.ledger.some((e) => e.round === r1.index && e.playerId === r1.latecomer && e.why === 'spoke')).toBe(true);
+    expect(t.view(r1.latecomer).me!.note).toMatchObject({ used: false, hinted: false, fromMemory: true, said: line });
+    // A clip that never names the cause is only seen.
+    while (t.s.phase !== 'prompt') t.tick();
+    const r2 = oneRound(t, {
+      give: () => false,
+      call: 'out',
+      excuse: (id) => {
+        t.play(id, { kind: 'hint' });
+        clip('えっと… すみません')(id);
+      },
+    });
+    expect(entry(r2).outcome).toBe('seen');
+    expect(entry(r2).recall).toBe('read');
+    expect(t.st.ledger.some((e) => e.round === r2.index && e.why === 'spoke')).toBe(false);
+  });
+
+  it('the chief’s call against the room is overruled on the stamp', () => {
+    const t = new Table(5, [], 11);
+    t.start();
+    const r = oneRound(t, { give: () => true, call: 'out' });
+    expect(r.ruling!.roomSafe).toBe(true);
+    expect(r.ruling!.overruled).toBe(true);
+    expect(t.view('stage').ruling!.overruled).toBe(true);
+    expect(t.view(r.chief!).me!.readRoom).toBe(false);
   });
 });
 
@@ -320,6 +406,39 @@ describe('Late Again!: secrets', () => {
     expect(t.phase).toBe('recap');
   });
 
+  it('the pick, the alibi and the bets lock when the call starts', () => {
+    const t = new Table(5, [], 3);
+    t.start();
+    t.tick();
+    const r = t.r;
+    t.play(r.latecomer, { kind: 'cause', causeId: r.options[0] });
+    t.play(r.latecomer, { kind: 'ready' });
+    // Ready waits for the witness.
+    expect(t.s.phase).toBe('prompt');
+    t.play(r.witness!, { kind: 'alibi', tileId: r.options[1] });
+    expect(t.s.phase).toBe('answer');
+    expect(t.play(r.witness!, { kind: 'alibi', tileId: r.options[0] }).error).toBe('wrong-phase');
+    expect(t.play(r.gallery[0]!, { kind: 'bet', causeId: r.options[0] }).error).toBe('wrong-phase');
+    expect(t.play(r.latecomer, { kind: 'cause', causeId: r.options[2] }).error).toBe('wrong-phase');
+    expect(t.view(r.witness!).me!.lockedIn).toBe(true);
+  });
+
+  it('each phone gets its own order of the three causes, and the mission waits for a pick', () => {
+    const t = new Table(8, [], 12);
+    t.start();
+    const r = t.r;
+    const orders = new Set(t.s.players.map((p) => t.view(p.id).options.map((o) => o.id).join()));
+    expect(orders.size).toBeGreaterThan(1);
+    for (const p of t.s.players) expect(new Set(t.view(p.id).options.map((o) => o.id))).toEqual(new Set(r.options));
+    const me = t.view(r.latecomer).me!;
+    // The latecomer can pick already in the scene beat, and nothing is pre-ticked.
+    expect(me.canPick).toBe(true);
+    expect(me.cause).toBeNull();
+    expect(me.mission).toBeNull();
+    expect(t.play(r.latecomer, { kind: 'cause', causeId: r.options[1] }).error).toBeUndefined();
+    expect(t.view(r.latecomer).me!.mission).not.toBeNull();
+  });
+
   it('only the latecomer may blame a cause, and only from the witness’s three', () => {
     const t = new Table(4);
     t.start();
@@ -349,7 +468,9 @@ describe('Late Again!: the excuse', () => {
     t.tick();
     const r = t.r;
     const me = t.view(r.latecomer).me!;
-    expect(me.tiles.map((x) => x.id)).toEqual([SORRY_TILE.id, ...r.options, TANUKI_TILE.id]);
+    expect(me.tiles[0]!.id).toBe(SORRY_TILE.id);
+    expect(me.tiles.at(-1)!.id).toBe(TANUKI_TILE.id);
+    expect(new Set(me.tiles.slice(1, -1).map((x) => x.id))).toEqual(new Set(r.options));
     expect(t.play(r.latecomer, { kind: 'tiles', tiles: [SOUND_TILE_ID] }).error).toBe('bad-move');
     expect(t.play(r.latecomer, { kind: 'tiles', tiles: [SORRY_TILE.id, r.options[2], SOUND_TILE_ID] }).error).toBeUndefined();
     const tiles = t.view(r.latecomer).me!.tiles;
@@ -387,22 +508,87 @@ describe('Late Again!: the excuse', () => {
   });
 });
 
+describe('Late Again!: co-op', () => {
+  it('Pon backs a cause, the cause stays hidden until the chief names it, and there is no Safe or Out', () => {
+    const t = new Table(2, [], 5);
+    t.start();
+    expect(t.r.alibi).not.toBeNull();
+    expect(t.r.options).toContain(t.r.alibi);
+    while (!(t.s.phase === 'reveal' && t.r.step === 'gist')) t.tick();
+    const chief = t.r.chief!;
+    expect(t.view('stage').gist).toBeNull();
+    expect(t.view(chief).me!.gist).toBeNull();
+    expect(t.play(chief, { kind: 'rule', call: 'safe' }).error).toBe('coop');
+    expect(t.play(chief, { kind: 'pick', causeId: t.r.cause }).error).toBeUndefined();
+    expect(t.view('stage').gist).not.toBeNull();
+    t.tick();
+    expect(t.s.phase).toBe('score');
+    expect(t.r.ruling!.call).toBeNull();
+    expect(t.st.ledger.filter((e) => e.round === t.r.index && e.why === 'coop').length).toBe(2);
+    t.playOut();
+    expect(t.s.recap!.coop).toBe(true);
+  });
+});
+
+describe('Late Again!: the real story', () => {
+  it('never repeats a cause in a game, is Pon after a tanuki, and the boss was Pon in the last round', () => {
+    const t = new Table(6, [], 14);
+    t.start();
+    const policy = lateAgainPolicy({ thinkMs: 0, curveball: 1 });
+    const lines: string[] = [];
+    for (let guard = 0; guard < 600 && t.s.phase !== 'recap'; guard++) {
+      for (const p of t.s.players) for (const a of policy.act(t.room(p.id), p.id)) t.cmd(p.id, { type: 'play', move: a.move });
+      const truth = t.view('stage').truth;
+      if (truth && lines.at(-1) !== `${t.r.index}:${truth.line.kana}`) {
+        lines.push(`${t.r.index}:${truth.line.kana}`);
+        if (t.r.index === t.st.totalRounds) expect(truth.line.kana).toContain('ぶちょうは ポン');
+        else if (t.r.alibi === TANUKI_TILE.id) expect(truth.picture).toBeNull();
+      }
+      if (t.phase !== 'recap') t.tick();
+    }
+    expect(lines.length).toBe(t.st.totalRounds);
+    const truths = t.st.rounds.map((r) => r.truth).filter(Boolean);
+    expect(new Set(truths).size).toBe(truths.length);
+  });
+});
+
+describe('Late Again!: hearing the excuse', () => {
+  it('matches keys within words, not across them', () => {
+    expect(heardAny('うみまで いきました', ['えき'])).toBe(false);
+    expect(heardAny('もって いきました', ['えき'])).toBe(false);
+    expect(heardAny('えきが ひろくて', ['えき'])).toBe(true);
+    expect(heardAny('デートが たのしすぎて', ['でーと'])).toBe(true);
+  });
+});
+
 describe('Late Again!: pacing', () => {
-  it('an 8-player game takes 8.5 minutes or less, even when every excuse uses its full time', () => {
-    const t = new Table(8, ['n5', 'n4', 'kana', 'n5', 'n4', 'n5', 'n4', 'n5'], 8);
+  /** Every excuse runs to its limit and (N4) uses its chunk, so the commentary booth opens every N4 round. */
+  function worstCase(n: number, levels: Level[], seed: number): number {
+    const t = new Table(n, levels, seed);
     t.start();
     const t0 = t.now - 12_000;
-    for (let guard = 0; guard < 600 && t.s.phase !== 'recap'; guard++) {
+    let booths = 0;
+    for (let guard = 0; guard < 800 && t.s.phase !== 'recap'; guard++) {
       if (t.s.phase === 'answer' && !t.r.excuse && t.r.level !== 'kana') {
-        // The take runs to the limit.
         t.now += RECORD_MS[t.r.level];
-        t.play(t.r.latecomer, { kind: 'excuse', type: 'clip', clipId: 'clip1', durMs: RECORD_MS[t.r.level] + 500 });
+        const said = lineFor(causeOf(t.r.cause)!, t.r.level).model.kana;
+        t.play(t.r.latecomer, { kind: 'excuse', type: 'clip', clipId: 'clip1', durMs: RECORD_MS[t.r.level] + 500, checked: true, heard: { via: 'speech', text: said, reading: said } });
         continue;
       }
+      if (t.s.phase === 'score' && t.r.step === 'booth') booths++;
       t.tick();
     }
     expect(t.phase).toBe('recap');
-    expect(t.now - t0).toBeLessThanOrEqual(8.5 * 60_000);
+    expect(booths).toBeGreaterThan(0);
+    return t.now - t0;
+  }
+
+  it('an 8-player game takes 9 minutes or less, even when every excuse uses its full time', () => {
+    expect(worstCase(8, ['n5', 'n4', 'kana', 'n5', 'n4', 'n5', 'n4', 'n5'], 8)).toBeLessThanOrEqual(9 * 60_000);
+  });
+
+  it('the longest game (5 players, two laps) takes 11 minutes or less at worst', () => {
+    expect(worstCase(5, ['n4', 'n4', 'n5', 'n4', 'kana'], 8)).toBeLessThanOrEqual(11 * 60_000);
   });
 
   it('bots finish a game quicker than the timers alone', () => {

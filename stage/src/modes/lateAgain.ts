@@ -10,8 +10,10 @@
 //   gist    the subtitle, the picture gist with a kana line, then the alibi card flips: a thread to the
 //           cause when it matches, a puff of smoke for the tanuki.
 //   vote    "The chief is deciding…": a leaf rises over each voter who has voted (never which way).
-//   ruling  the chief's stamp (セーフ in sky blue ⭕, アウト in vermilion ❌), then the leaves, then points.
+//   ruling  the chief's stamp (セーフ in sky blue ⭕, アウト in vermilion ❌), then the leaves (Safe turns them
+//           into Pon's late pass, Out puffs them back), "Overruled by the room" when the call missed, points.
 //   booth   the commentary booth: the line, its chunk lit, one line of colour, the train-line tag.
+//   truth   "What really happened…", a pause, then the real story.
 //
 // The stage redraws on every update; the clip runs outside the render (dubAudio.ts), keyed per round.
 
@@ -31,6 +33,8 @@ const seatVar = (view: RoomView, id: string | null | undefined): string | null =
 
 const ART = (picture: string): string => `/stage/assets/late/${picture}.png`;
 const LEAF = '/stage/assets/late/leaf.png';
+const SASH = '/stage/assets/late/sash.png';
+const sash = (cls = 'la-sash'): HTMLElement => h('img', { class: cls, src: SASH, alt: '' });
 
 function pic(t: TileView, cls = 'la-pic'): HTMLElement {
   if (t.picture === 'sorry' || t.picture === 'sound') return h('span', { class: `${cls} la-emoji`, 'aria-hidden': 'true' }, t.emoji);
@@ -41,7 +45,7 @@ function tile(t: TileView, cls = ''): HTMLElement {
   return h('div', { class: `la-tile ${cls}`, 'data-key': t.id }, pic(t), h('span', { class: 'la-tile-ja', lang: 'ja' }, t.word.text), h('span', { class: 'la-tile-en' }, t.word.en));
 }
 
-function who(view: RoomView, id: string | null, role: string, icon: string, extra: HTMLElement | null = null): HTMLElement {
+function who(view: RoomView, id: string | null, role: string, icon: string | HTMLElement, extra: HTMLElement | null = null): HTMLElement {
   const seat = playerOf(view, id)?.seat ?? 0;
   return h(
     'div',
@@ -73,7 +77,7 @@ function cast(view: RoomView, game: LateView): HTMLElement | null {
     { class: 'la-cast' },
     who(view, c.latecomer, 'late', '📞', game.locked.excuse && game.step === 'record' ? h('span', { class: 'la-lock' }, '✓') : null),
     who(view, c.witness, 'witness', '👀', c.witness ? voteMark(c.witness) : null),
-    c.chief ? who(view, c.chief, 'chief', '🎀', game.step === 'vote' && game.locked.called ? h('span', { class: 'la-lock' }, '✓') : null) : null,
+    c.chief ? who(view, c.chief, 'chief', sash(), game.step === 'vote' && game.locked.called ? h('span', { class: 'la-lock' }, '✓') : null) : null,
     ...c.gallery.map((id) => who(view, id, 'gallery', '🍿', voteMark(id))),
   );
 }
@@ -85,7 +89,7 @@ function board(view: RoomView, game: LateView): HTMLElement | null {
   return h(
     'div',
     { class: 'la-board' },
-    h('span', { class: 'la-board-tag', lang: 'ja' }, '遅延'),
+    h('span', { class: 'la-board-tag', lang: 'ja' }, ruby({ text: '遅刻', kana: 'ちこく' })),
     h('span', { class: 'la-board-name', style: seatVar(view, game.cast.latecomer) }, nameOf(view, game.cast.latecomer)),
     h('span', { class: 'la-board-min', lang: 'ja' }, `+${sc.late.text}`, h('small', {}, ` ${sc.late.en}`)),
     h('span', { class: 'la-board-place' }, sc.emoji, ' ', ruby(sc.place), h('small', {}, ` ${sc.place.en}`)),
@@ -119,7 +123,7 @@ function intro(game: LateView): HTMLElement {
       h('li', {}, '📞 One of you is late (again). Phone the boss and blame something.'),
       h('li', {}, '👀 The witness backs the story up without hearing it.'),
       h('li', {}, h('img', { class: 'la-leaf', src: LEAF, alt: '' }), ' Everyone else spends Pon’s leaves on “Safe”. Leaves are scarce!'),
-      h('li', {}, '🎀 The acting chief calls セーフ or アウト, and scores by reading the room.'),
+      game.coop ? h('li', {}, sash(), ' The acting chief names what they blamed.') : h('li', {}, sash(), ' The acting chief calls セーフ or アウト, and scores by reading the room.'),
     ),
   );
 }
@@ -130,7 +134,7 @@ function center(view: RoomView, game: LateView): HTMLElement | null {
   switch (game.step) {
     case 'scene':
       onceFor(`scene:${game.round}`, () => sfx('ring'));
-      return h('div', { class: 'la-center la-scene' }, h('img', { class: 'la-cert', src: ART('certificate'), alt: '' }), h('p', { class: 'la-big' }, `${name} is late. Again.`), h('p', { class: 'la-small' }, 'Pon’s delay certificate is already turning back into a leaf…'));
+      return h('div', { class: 'la-center la-scene' }, h('p', { class: 'la-big' }, `${name} is late. Again.`), h('p', { class: 'la-small' }, game.coop ? 'Pon is the witness. He probably saw it.' : 'Everyone else: here are your leaves. Spend them on “Safe”.'));
     case 'plan':
       return h(
         'div',
@@ -183,9 +187,10 @@ function play(view: RoomView, game: LateView, name: string): HTMLElement | null 
 
 function gist(view: RoomView, game: LateView, name: string): HTMLElement | null {
   const g = game.gist;
-  if (!g) return null;
+  // Co-op: the cause stays hidden until the chief names it.
+  if (!g) return game.coop ? h('div', { class: 'la-center' }, h('p', { class: 'la-big la-deciding' }, sash(), ` What did ${name} blame? ${nameOf(view, game.cast?.chief)} names it on their phone.`)) : null;
   const a = g.alibi;
-  if (game.step === 'gist') onceFor(`gist:${game.round}`, () => sfx(a.match ? 'right' : a.curveball ? 'poof' : 'ticket', 1.2));
+  if (game.step === 'gist') onceFor(`gist:${game.round}`, () => sfx(a.match ? 'right' : a.curveball ? 'poof' : 'ticket', 1.3));
   const witness = game.cast?.witness ?? null;
   return h(
     'div',
@@ -205,7 +210,8 @@ function gist(view: RoomView, game: LateView, name: string): HTMLElement | null 
             h('p', { class: 'la-alibi-verdict' }, a.match ? '✓ The story matches' : a.curveball ? '🍃 ドロン! A tanuki?!' : '✗ That’s not what they said'),
           ),
     ),
-    game.step === 'vote' ? h('p', { class: 'la-big la-deciding' }, '🎀 ', game.coop ? 'What did they blame? Then: Safe or Out?' : `${nameOf(view, game.cast?.chief)} is deciding… everyone else: give a leaf, or keep it.`) : null,
+    game.step === 'vote' && !game.coop ? h('p', { class: 'la-big la-deciding' }, sash(), ` ${nameOf(view, game.cast?.chief)} is deciding… everyone else: give a leaf, or keep it.`) : null,
+    game.step === 'vote' && !game.coop ? h('p', { class: 'la-holders' }, h('img', { class: 'la-leaf', src: LEAF, alt: '' }), ` ${game.holders} of ${game.voters.length} can say Safe`) : null,
     game.step === 'vote' ? bar(6_000, game.stepAt) : null,
   );
 }
@@ -213,23 +219,41 @@ function gist(view: RoomView, game: LateView, name: string): HTMLElement | null 
 function ruling(view: RoomView, game: LateView): HTMLElement | null {
   const r = game.ruling;
   if (!r) return null;
-  onceFor(`ruling:${game.round}`, () => sfx(r.tier === 'flop' ? 'wrong' : 'right'));
-  const call = r.call;
-  const verdict = r.voters ? `${r.gave} of ${r.voters} gave a leaf` : '';
-  const room = r.roomSafe === true ? 'The room says: Safe' : r.roomSafe === false ? 'The room says: Out' : r.voters ? 'The room is split: the chief’s call stands' : '';
-  return h(
-    'div',
-    { class: 'la-center la-ruling' },
-    call ? h('div', { class: `la-stamp la-${call}`, lang: 'ja' }, call === 'safe' ? '⭕ セーフ！' : '❌ アウト！') : h('p', { class: 'la-big' }, 'No call from the chief.'),
-    verdict ? h('p', { class: 'la-leafcount' }, ...Array.from({ length: r.gave }, (_, i) => h('img', { class: 'la-leaf la-rise', src: LEAF, alt: '', style: `animation-delay: ${600 + i * 250}ms` })), ` ${verdict}`) : null,
-    room ? h('p', { class: 'la-small' }, room) : null,
+  // The sound follows the stamp down.
+  onceFor(`ruling:${game.round}`, () => sfx(r.tier === 'flop' ? 'wrong' : 'right', 0.35));
+  const points =
     r.points.length
       ? h(
           'ul',
           { class: 'la-points' },
           ...r.points.map((p) => h('li', { style: seatVar(view, p.playerId), 'data-key': p.playerId }, h('span', { class: 'la-name' }, nameOf(view, p.playerId)), h('span', { class: 'la-pts' }, `+${p.points}`))),
         )
-      : null,
+      : null;
+  if (game.coop) {
+    const right = !!r.coopPick && r.tier !== 'flop';
+    return h(
+      'div',
+      { class: 'la-center la-ruling' },
+      h('div', { class: `la-stamp la-${right ? 'safe' : 'out'}`, lang: 'ja' }, right ? 'せいかい！' : 'ざんねん！'),
+      h('p', { class: 'la-small' }, right ? 'The chief named it.' : 'Not what they blamed.'),
+      game.teamScore !== null && game.ponRecord !== null ? h('p', { class: 'la-holders' }, `Team ${game.teamScore} · Pon’s record ${game.ponRecord}`) : null,
+      points,
+    );
+  }
+  const call = r.call;
+  const verdict = r.holders ? `${r.gave} of ${r.holders} gave a leaf` : r.voters ? 'Nobody had a leaf to give' : '';
+  const room = r.roomSafe === true ? 'The room says: Safe' : r.roomSafe === false ? 'The room says: Out' : r.holders ? 'The room is split: the chief’s call stands' : '';
+  const safe = r.roomSafe ?? call === 'safe';
+  return h(
+    'div',
+    { class: 'la-center la-ruling' },
+    call ? h('div', { class: `la-stamp la-${call}`, lang: 'ja' }, h('span', { class: `la-mark la-mark-${call}`, 'aria-hidden': 'true' }), call === 'safe' ? 'セーフ！' : 'アウト！') : h('p', { class: 'la-big' }, 'No call from the chief.'),
+    r.overruled ? h('p', { class: 'la-overruled', lang: 'ja' }, `Overruled by the room · くうきが よめない！`) : null,
+    verdict ? h('p', { class: 'la-leafcount' }, ...Array.from({ length: r.gave }, (_, i) => h('img', { class: 'la-leaf la-rise', src: LEAF, alt: '', style: `animation-delay: ${600 + i * 250}ms` })), ` ${verdict}`) : null,
+    // Safe turns the leaves into Pon's late pass; Out puffs them back into leaves.
+    r.gave && safe ? h('div', { class: 'la-pass la-pop', style: 'animation-delay: 1400ms' }, h('img', { class: 'la-cert', src: ART('certificate'), alt: '' }), h('span', { lang: 'ja' }, ruby({ text: 'ちこく しょうめいしょ' })), h('small', {}, 'Pon’s late pass')) : r.gave ? h('p', { class: 'la-small la-pop', style: 'animation-delay: 1400ms' }, '💨 ドロン! The leaves are just leaves again.') : null,
+    room ? h('p', { class: 'la-small' }, room) : null,
+    points,
   );
 }
 
@@ -274,13 +298,15 @@ export const lateAgainStage: StageMode<LateView> = {
 function truth(game: LateView): HTMLElement | null {
   const t = game.truth;
   if (!t) return null;
-  onceFor(`truth:${game.round}`, () => sfx('poof', 1));
+  // "What really happened…", a beat of silence, then the reveal.
+  onceFor(`truth:${game.round}`, () => sfx('poof', t.pauseMs / 1000));
+  const late = `animation-delay: ${t.pauseMs}ms`;
   return h(
     'div',
     { class: 'la-center la-truth' },
     h('p', { class: 'la-booth-tag' }, '🤫 What really happened…'),
-    t.picture ? h('img', { class: 'la-pic la-pic-big la-pop', src: `/stage/assets/late/${t.picture}.png`, alt: '' }) : h('span', { class: 'la-emoji la-pic-big la-pop', 'aria-hidden': 'true' }, t.emoji),
-    h('p', { class: 'la-gag la-pop', lang: 'ja' }, ruby(t.line)),
-    h('p', { class: 'la-small' }, t.line.en),
+    t.picture ? h('img', { class: 'la-pic la-pic-big la-pop', src: ART(t.picture), alt: '', style: late }) : h('span', { class: 'la-emoji la-pic-big la-pop', 'aria-hidden': 'true', style: late }, t.emoji),
+    h('p', { class: 'la-gag la-pop', lang: 'ja', style: late }, ruby(t.line)),
+    h('p', { class: 'la-small la-pop', style: late }, t.line.en),
   );
 }
