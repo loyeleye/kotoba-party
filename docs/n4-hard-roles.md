@@ -120,6 +120,7 @@ npm run sim:mixed                                         # every game × setup,
 npm run sim:mixed -- --seeds 5 --modes omiai,narabete --setups a,c
 npm run sim:mixed -- --on standInSetup --off scaledCurveball
 npm run sim:mixed -- --ab spokenReaction --out ab.json    # both ways, same seeds, then the difference
+npm run sim:mixed -- --ab all --rounds last-train=6 --out ab.json   # every switch in turn (~2 min)
 npm run sim:mixed -- --rounds last-train=6                # a mode's length, where the host can choose it
 SIM_TRACE=1 npm run sim:mixed -- --seeds 1 --modes omiai --setups a   # every move and the game's answer
 ```
@@ -127,12 +128,14 @@ SIM_TRACE=1 npm run sim:mixed -- --seeds 1 --modes omiai --setups a   # every mo
 **Rooms.** a: 3 players, N4 + N5 + Kana. b: 5 players, one N4 and four below (2 N5, 2 Kana). c: 2 players,
 N5 + Kana (the host stand-in's rooms). d: 3 players, all N5 (the control: nothing mixed-room should show). Dub
 Club needs 3 players, so it has no row for c. Each seed plays one *night* per room: the chosen games back to back
-in one room, the order rotated by the seed.
+in one room, the order rotated by the seed. Each game gets its own random stream, ids, clock and phase count, so
+a switch that changes one game doesn't reshuffle the games after it (an A/B stays like for like).
 
 **Simulated people.** The bot policies play each game's ordinary part. On top: an N4 player takes 70% of hard-role
 offers and says a hard line right 60% of the time on the first try, 85% on later tries (a wrong try is
-「えっと… あの…」; Narabete's one-try defence leaves out ので). A player with a Gallery tile taps a reaction 80% of
-the time and gets the curveball right 60% of the time. A station sees to the deputy manager's 📋 request 90% of
+「えっと… あの…」; Narabete's one-try defence leaves out ので). A player with a Gallery tile (the round's, or the stand-in's with `standInCurveball`) taps a reaction 80% of
+the time; with `spokenReaction` and a mic, half of them say it instead (matched 75% of the time; a miss taps after).
+The curveball is right 60% of the time, answered in 2–5 s. A station sees to the deputy manager's 📋 request 90% of
 the time. Think times are 1–6 s. The numbers are in `PERSONA` at the top of the file.
 
 **What each column means** (mean ± spread over the seeds; "per player" is over players below N4):
@@ -143,20 +146,23 @@ the time. Think times are 1–6 s. The numbers are in `PERSONA` at the top of th
 | idle s/p, idle% | Time a player below N4 had **nothing to do**: their phone's view offered no move. A move is an input, tile or button not yet used: an open answer, an untapped Gallery tile, an unanswered offer, a vote, a line to say (`hasInput()` lists them per game). Watching the TV, someone else's turn and phases with nothing for them count as idle. |
 | max idle s | The longest such stretch in the game, per player: what is most likely to *feel* like waiting. |
 | taps | Gallery reaction taps in the game (everyone). |
-| curve dealt/right | Curveballs dealt in the game, and answered right. |
-| stand-in | Host stand-in lines voiced (its host cue). |
+| curve games/hit | Share of games that dealt a curveball; right ÷ dealt over them. |
+| stand-in cues | Host stand-in cues in the game (the line, and its setup line with `standInSetup`). |
+| sg held/s/5s | Stand-in rooms with `standInCurveball`: per game, stand-in phases the curveball kept open past their own end, the seconds that added, and curveballs that ran the full 5 s unanswered. |
+| say/match <N4 | `spokenReaction`: reactions said out loud per player below N4, and those that matched a tile. |
 | spoken/p<N4 | Moves said out loud (speech) that the game took, per player below N4. |
 | said/seen | Phrasebook rows per player at the end of the game: said (from memory or after a retry) and seen. |
 | pts <N4 (seats) | Share of the game's points that went to players below N4, beside their share of the seats. |
 | N4 accept | Hard-role offers taken ÷ offers answered or timed out (away left out), and offers per game. |
 | wait? | The recap's waiting-check prompts this game (one per player below N4 asked). |
+| By level | A second table: each level's share of the game's points and of its wins (ties split), beside its share of the seats. |
 
 Under the table, **waiting-check prompts per night** adds them up over each room's night. With `--ab` the sim
 plays both sides on the same seeds and prints on minus off. `--out` writes every number as JSON.
 
 What it can't tell you: whether a stretch *feels* like waiting (the booth and the TV are worth watching), whether
-a line is fun to say, or how real people take offers. A switch whose move the personas don't make yet (a spoken
-Gallery reaction, say) needs a line in `galleryMoves()` or `hardMoves()` before the sim can weigh it. On the
+a line is fun to say, or how real people take offers. A new switch that adds a move needs a line in `galleryMoves()`
+or `hardMoves()` before the sim can weigh it. On the
 default 4-stop line, Last Train never deals a Gallery role (only the innkeeper's guest is on it); use
 `--rounds last-train=6` for the announcer.
 

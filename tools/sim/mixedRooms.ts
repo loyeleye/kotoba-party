@@ -7,6 +7,7 @@
 //   npm run sim:mixed -- --seeds 5 --modes omiai,narabete --setups a,c
 //   npm run sim:mixed -- --on standInSetup --off scaledCurveball
 //   npm run sim:mixed -- --ab spokenReaction --out /tmp/ab.json
+//   npm run sim:mixed -- --ab all --out /tmp/ab-all.json            (every switch in turn)
 //   npm run sim:mixed -- --modes last-train --rounds last-train=6     (a 6-stop line has the announcer)
 //
 // Each seed plays one night per setup: the chosen modes back to back in one room (playAgain between), the order
@@ -19,7 +20,7 @@ import type { CommandBody } from '../../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameContext, type GameState } from '../../shared/src/game.js';
 import { EXPERIMENTS, withExperiments, type MixedExperiments } from '../../shared/src/modes/experiments.js';
 import type { ContentLibrary } from '../../shared/src/modes/mode.js';
-import { REACTIONS } from '../../shared/src/modes/mixedRoom.js';
+import { REACTIONS, SAY_PICK } from '../../shared/src/modes/mixedRoom.js';
 import { adlibOf, type DubState } from '../../shared/src/modes/dubClub/dubClub.js';
 import { itemIndex } from '../../shared/src/modes/lastTrain/lastTrain.js';
 import { MODES, noFit } from '../../shared/src/modes/registry.js';
@@ -59,6 +60,9 @@ export const PERSONA = {
   curveRight: 0.6,
   /** A station sees to the deputy manager's 📋 request this often. */
   request: 0.9,
+  /** spokenReaction: a Gallery player with a mic says the reaction instead of tapping this often, matched this often. */
+  sayReaction: 0.5,
+  sayMatched: 0.75,
 };
 
 // ---------------------------------------------------------------- randomness
@@ -84,7 +88,7 @@ const between = (lo: number, hi: number, r: number) => Math.round(lo + (hi - lo)
 
 // ---------------------------------------------------------------- views
 
-type Move = { key: string; move: unknown; delayMs?: number; tag?: 'tap' | 'curve'; /** Called once the game takes the move. */ onSent?: () => void };
+type Move = { key: string; move: unknown; delayMs?: number; tag?: 'tap' | 'curve' | 'say'; /** Called once the game takes the move. */ onSent?: () => void; /** A curveball pick: was it the right word. */ right?: boolean };
 
 /** The player's own part of a mode's view (`me` in most modes, `mine` in Onsen). */
 const meOf = (view: RoomView): Any => {
@@ -95,7 +99,32 @@ const meOf = (view: RoomView): Any => {
 /** The player's Gallery tile, wherever the mode keeps it on the view. */
 export function galleryTile(view: RoomView): Any {
   const me = meOf(view);
-  return me?.gallery ?? me?.hard?.gallery ?? null;
+  // The round's Gallery is on the player's own part of the view; the stand-in's (standInCurveball) may sit
+  // elsewhere in the game's view (Bento puts it on `standIn`), so look for a tile's shape.
+  return me?.gallery ?? me?.hard?.gallery ?? findTile(view.game, 0);
+}
+
+const isTile = (n: Any): boolean => !!n && typeof n === 'object' && ((n.kind === 'react' && Array.isArray(n.tiles)) || (n.kind === 'curveball' && Array.isArray(n.options) && 'right' in n));
+
+function findTile(node: Any, depth: number): Any {
+  if (!node || typeof node !== 'object' || depth > 4) return null;
+  if (isTile(node)) return node;
+  for (const v of Array.isArray(node) ? node : Object.values(node)) {
+    const hit = findTile(v, depth + 1);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/** The host stand-in's Gallery in the game state (standInCurveball), if one is open. */
+function findStandIn(node: Any, depth = 0): Any {
+  if (!node || typeof node !== 'object' || depth > 4) return null;
+  if (typeof node.dealAt === 'number' && typeof node.until === 'number' && node.g && typeof node.maybe === 'boolean') return node;
+  for (const v of Array.isArray(node) ? node : Object.values(node)) {
+    const hit = findStandIn(v, depth + 1);
+    if (hit) return hit;
+  }
+  return null;
 }
 
 /** The open curveball for a player, from the game state (the sim plays a person who heard the line). */
@@ -194,11 +223,21 @@ function galleryMoves(p: Persona, view: RoomView, pid: string, state: GameState)
     const right = roll(p.seed, pid, k, 'curve') < PERSONA.curveRight;
     const wrong = options.filter((o) => o !== c?.word);
     const pick = right && c ? c.word : wrong[Math.floor(roll(p.seed, pid, k, 'curve-pick') * wrong.length)] ?? options[0];
-    return [{ key: `curve:${options.join(',')}`, move: { kind: 'gallery', pick }, delayMs: between(2_000, 5_000, roll(p.seed, pid, k, 'cd')), tag: 'curve' }];
+    return [{ key: `curve:${options.join(',')}`, move: { kind: 'gallery', pick }, delayMs: between(2_000, 5_000, roll(p.seed, pid, k, 'cd')), tag: 'curve', right: !!c && pick === c.word }];
   }
   if (roll(p.seed, pid, k, 'tap?') >= PERSONA.tap) return [];
   const r = REACTIONS[Math.floor(roll(p.seed, pid, k, 'tap') * REACTIONS.length)]!;
-  return [{ key: 'tap', move: { kind: 'gallery', pick: r.id }, delayMs: between(1_000, 4_000, roll(p.seed, pid, k, 'td')), tag: 'tap' }];
+  const tap: Move = { key: 'tap', move: { kind: 'gallery', pick: r.id }, delayMs: between(1_000, 4_000, roll(p.seed, pid, k, 'td')), tag: 'tap' };
+  // spokenReaction: the tile offers a 🎤 (`say`). Say it instead of tapping about half the time; a miss taps after.
+  const mic = view.players.find((x) => x.id === pid)?.mic !== 'quiet';
+  if (tile.say && mic) {
+    if (tile.say.missed) return [{ ...tap, key: 'tap-after-miss', delayMs: between(800, 2_000, roll(p.seed, pid, k, 'tm')) }];
+    if (!tile.say.said && roll(p.seed, pid, k, 'say?') < PERSONA.sayReaction) {
+      const text = roll(p.seed, pid, k, 'say-ok') < PERSONA.sayMatched ? r.kana : 'あー… えっと';
+      return [{ key: 'say', move: { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } }, delayMs: between(1_500, 4_000, roll(p.seed, pid, k, 'sd')), tag: 'say' }];
+    }
+  }
+  return [tap];
 }
 
 const offerDelay = (p: Persona, pid: string, k: string) => between(1_500, 4_000, roll(p.seed, pid, k, 'od'));
@@ -359,6 +398,9 @@ export interface PlayerResult {
   said: number;
   seen: number;
   taps: number;
+  /** spokenReaction: reactions said out loud, and those that matched a tile. */
+  sayTried: number;
+  sayMatched: number;
 }
 
 export interface GameResult {
@@ -372,6 +414,13 @@ export interface GameResult {
   /** Host stand-in lines voiced (its cue events), and every host line cued. */
   standIns: number;
   hostLines: number;
+  /**
+   * standInCurveball: stand-in phases that ran past their own end waiting on the curveball, the seconds they
+   * added, and how many hit the full STAND_IN_CURVEBALL_MS wait unanswered.
+   */
+  sgHeld: number;
+  sgHeldMs: number;
+  sgTimedOut: number;
   offers: { accepted: number; declined: number; timeout: number };
   waitPrompts: number;
   /** Something went wrong (a stuck game): the sim stopped it. */
@@ -418,14 +467,13 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
   const base = basePolicy(mode, content, seed);
   const personas = new Map(state.players.map((p) => [p.id, { seed, tries: new Map() } as Persona]));
   const level = new Map(state.players.map((p) => [p.id, p.level]));
-  const res = new Map<string, PlayerResult>(state.players.map((p) => [p.id, { id: p.id, level: p.level, score: 0, idleMs: 0, longestIdleMs: 0, spoken: 0, said: 0, seen: 0, taps: 0 }]));
+  const res = new Map<string, PlayerResult>(state.players.map((p) => [p.id, { id: p.id, level: p.level, score: 0, idleMs: 0, longestIdleMs: 0, spoken: 0, said: 0, seen: 0, taps: 0, sayTried: 0, sayMatched: 0 }]));
   const idleSince = new Map<string, number | null>(state.players.map((p) => [p.id, null]));
   const sent = new Set<string>();
   const curveSeen = new Set<string>();
-  const curveAnswered = new Set<string>();
   let curveDealt = 0;
   let curveRight = 0;
-  let planned: { at: number; seq: number; pid: string; key: string; move: unknown; tag?: Move['tag']; onSent?: () => void }[] = [];
+  let planned: { at: number; seq: number; pid: string; key: string; move: unknown; tag?: Move['tag']; onSent?: () => void; right?: boolean }[] = [];
   let standIns = 0;
   let hostLines = 0;
   /** The server drains host cues after each change; the sim counts them (stand-in lines by their event name). */
@@ -439,12 +487,40 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
   drain();
   let lastWake = -1;
   let wakeRepeats = 0;
+  // The stand-in's Gallery seen in the current phase, and those already weighed.
+  let sgSeq = -1;
+  let sgNow: Any = null;
+  const sgDone = new Set<Any>();
+  let sgHeld = 0;
+  let sgHeldMs = 0;
+  let sgTimedOut = 0;
+  const weighStandIn = () => {
+    if (!sgNow || sgDone.has(sgNow) || !sgNow.dealt) return;
+    sgDone.add(sgNow);
+    const c = sgNow.g?.curveball;
+    if (!c) return;
+    const over = clock.now - sgNow.until;
+    if (over > 0) {
+      sgHeld += 1;
+      sgHeldMs += over;
+    }
+    if (c.pick == null) sgTimedOut += 1;
+  };
+  const standInRoom = state.players.length <= 2;
   let stuck: string | undefined;
 
   for (let step = 0; state.phase !== 'recap' && state.phase !== 'lobby'; step++) {
     if (step > MAX_STEPS || clock.now - startAt > MAX_GAME_MS) {
       stuck = `stopped at ${state.phase} after ${Math.round((clock.now - startAt) / 1000)} s`;
       break;
+    }
+    if (standInRoom) {
+      if (state.phaseSeq !== sgSeq) {
+        weighStandIn();
+        sgSeq = state.phaseSeq;
+        sgNow = null;
+      }
+      sgNow = findStandIn(state.modeState) ?? sgNow;
     }
     // 1. Every phone looks at its view: what it may do, what the persona will do.
     const busy = new Map<string, boolean>();
@@ -458,10 +534,6 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
           curveSeen.add(id);
           curveDealt += 1;
         }
-        if (tile.right != null && !curveAnswered.has(id)) {
-          curveAnswered.add(id);
-          if (tile.right) curveRight += 1;
-        }
       }
       const persona = personas.get(p.id)!;
       let moves: Move[] = base.act(view, p.id);
@@ -471,7 +543,7 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
         const full = `${view.phaseSeq}:${p.id}:${m.key}`;
         if (sent.has(full)) continue;
         sent.add(full);
-        planned.push({ at: clock.now + Math.max(1, m.delayMs ?? 0), seq: view.phaseSeq, pid: p.id, key: m.key, move: m.move, tag: m.tag, onSent: m.onSent });
+        planned.push({ at: clock.now + Math.max(1, m.delayMs ?? 0), seq: view.phaseSeq, pid: p.id, key: m.key, move: m.move, tag: m.tag, onSent: m.onSent, right: m.right });
       }
     }
     // A move planned in a phase that has ended is dropped (the phone re-renders).
@@ -515,6 +587,13 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
         const u = (m.move as Any).utterance;
         if (u?.via === 'speech') r.spoken += 1;
         if (m.tag === 'tap') r.taps += 1;
+        // Counted when the game takes the pick: a stand-in phase may end at once, before the tile shows it.
+        if (m.tag === 'curve' && m.right) curveRight += 1;
+        if (m.tag === 'say') {
+          r.sayTried += 1;
+          const after = galleryTile(viewFor(state, { kind: 'player', playerId: m.pid }, content));
+          if (after?.say?.said || (after?.picked != null && !after?.say?.missed)) r.sayMatched += 1;
+        }
       }
     } else if (wake !== null && wake <= deadline) {
       if (wake === lastWake) wakeRepeats += 1;
@@ -527,6 +606,7 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
     drain();
   }
 
+  if (standInRoom) weighStandIn();
   for (const p of state.players) {
     const r = res.get(p.id)!;
     const since = idleSince.get(p.id);
@@ -550,6 +630,9 @@ function playGame(state: GameState, mode: SimMode, setup: string, seed: number, 
     curveRight,
     standIns,
     hostLines,
+    sgHeld,
+    sgHeldMs,
+    sgTimedOut,
     offers,
     waitPrompts: state.recap?.mixed?.ask.length ?? 0,
     ...(stuck ? { stuck } : {}),
@@ -562,10 +645,13 @@ export function playNight(setup: string, seed: number, modes: readonly SimMode[]
   const levels = SETUPS[setup]!.levels;
   const state = createGame('SIMR');
   const clock = { now: 1_000_000 };
-  const rnd = mulberry(seed * 7919 + setup.charCodeAt(0));
+  // Joining draws nothing; each game gets its own random stream (seed, room, game), so a switch that changes how
+  // many draws one game makes doesn't reshuffle the games after it in the night (A/B stays like for like).
+  let rnd = mulberry(seed * 7919 + setup.charCodeAt(0));
   let ids = 0;
-  const newId = () => `x${++ids}`;
-  const ctx = (): GameContext => ({ now: clock.now, content, newId, random: rnd });
+  let gameNo = 0;
+  const newId = () => `g${gameNo}x${++ids}`;
+  const ctx = (): GameContext => ({ now: clock.now, content, newId, random: () => rnd() });
   levels.forEach((level, i) => {
     // Player ids carry the seed, so the bot policies (which hash the player's id) differ seed to seed.
     const playerId = `s${seed}p${i + 1}`;
@@ -576,7 +662,14 @@ export function playNight(setup: string, seed: number, modes: readonly SimMode[]
   const games: GameResult[] = [];
   let cmdNo = 0;
   for (const mode of order) {
-    const g = playGame(state, mode, setup, seed, clock, content, rnd, newId, rounds[mode]);
+    // Ids, the clock and the phase count restart per game too (the clock on a fresh hour), for the same reason.
+    gameNo += 1;
+    ids = 0;
+    clock.now = gameNo * 10_000_000;
+    // The bot policies hash the phase number: start each game on a round one, so earlier games don't shift it.
+    state.phaseSeq = gameNo * 100_000;
+    rnd = mulberry(seed * 7919 + setup.charCodeAt(0) * 131 + SIM_MODES.indexOf(mode) * 1_000_003);
+    const g = playGame(state, mode, setup, seed, clock, content, (() => rnd()), newId, rounds[mode]);
     if (!g) continue;
     games.push(g);
     if (state.phase === 'recap') {
@@ -640,6 +733,18 @@ export interface CellMetrics {
   offersPerGame: Stat;
   /** The recap's waiting-check prompts this game. */
   waitPrompts: Stat;
+  /** spokenReaction, per player below N4: reactions said, and matched. */
+  sayTried: Stat;
+  sayMatched: Stat;
+  /** Share of games that dealt a curveball; right ÷ dealt, pooled. */
+  curveRate: number;
+  curveHit: number | null;
+  /** standInCurveball: per game, stand-in phases held past their end by the curveball, seconds added, full 5 s waits. */
+  sgHeld: Stat;
+  sgHeldS: Stat;
+  sgTimedOut: Stat;
+  /** By level: mean share of the game's points, and share of games won (ties split), for levels in the room. */
+  byLevel: Partial<Record<Level, { seats: number; scoreShare: number; winShare: number }>>;
 }
 
 export function cellMetrics(games: GameResult[], mode: SimMode, setup: string): CellMetrics {
@@ -677,7 +782,35 @@ export function cellMetrics(games: GameResult[], mode: SimMode, setup: string): 
     n4AcceptRate: offers.all ? offers.a / offers.all : null,
     offersPerGame: stat(games.map((g) => g.offers.accepted + g.offers.declined + g.offers.timeout)),
     waitPrompts: stat(games.map((g) => g.waitPrompts)),
+    sayTried: per((p) => p.sayTried),
+    sayMatched: per((p) => p.sayMatched),
+    curveRate: games.length ? games.filter((g) => g.curveDealt > 0).length / games.length : 0,
+    curveHit: (() => {
+      const dealt = games.reduce((n, g) => n + g.curveDealt, 0);
+      return dealt ? games.reduce((n, g) => n + g.curveRight, 0) / dealt : null;
+    })(),
+    sgHeld: stat(games.map((g) => g.sgHeld)),
+    sgHeldS: stat(games.map((g) => g.sgHeldMs / 1000)),
+    sgTimedOut: stat(games.map((g) => g.sgTimedOut)),
+    byLevel: byLevel(games, levels),
   };
+}
+
+function byLevel(games: GameResult[], levels: readonly Level[]): CellMetrics['byLevel'] {
+  const out: CellMetrics['byLevel'] = {};
+  for (const lv of [...new Set(levels)]) {
+    const shares: number[] = [];
+    let wins = 0;
+    for (const g of games) {
+      const all = g.players.reduce((n, p) => n + p.score, 0);
+      if (all > 0) shares.push(g.players.filter((p) => p.level === lv).reduce((n, p) => n + p.score, 0) / all);
+      const top = Math.max(...g.players.map((p) => p.score));
+      const winners = g.players.filter((p) => p.score === top);
+      wins += winners.filter((p) => p.level === lv).length / winners.length;
+    }
+    out[lv] = { seats: levels.filter((l) => l === lv).length / levels.length, scoreShare: stat(shares).mean, winShare: games.length ? wins / games.length : NaN };
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- running
@@ -746,9 +879,11 @@ const COLUMNS: { head: string; cell: (c: CellMetrics) => string }[] = [
   { head: 'idle%', cell: (c) => pct(c.idleShare.mean) },
   { head: 'max idle s', cell: (c) => ms(c.longestIdleS) },
   { head: 'taps', cell: (c) => ms(c.taps, f1) },
-  { head: 'curve dealt/right', cell: (c) => `${f1(c.curveDealt.mean)}/${f1(c.curveRight.mean)}` },
-  { head: 'stand-in', cell: (c) => f1(c.standIns.mean) },
+  { head: 'curve games/hit', cell: (c) => `${pct(c.curveRate)}/${pct(c.curveHit)}` },
+  { head: 'stand-in cues', cell: (c) => f1(c.standIns.mean) },
+  { head: 'sg held/s/5s', cell: (c) => (c.setup === 'c' ? `${f1(c.sgHeld.mean)}/${f1(c.sgHeldS.mean)}/${f1(c.sgTimedOut.mean)}` : '–') },
   { head: 'spoken/p<N4', cell: (c) => ms(c.spokenLow, f1) },
+  { head: 'say/match <N4', cell: (c) => `${f1(c.sayTried.mean)}/${f1(c.sayMatched.mean)}` },
   { head: 'said/seen <N4', cell: (c) => `${f1(c.saidLow.mean)}/${f1(c.seenLow.mean)}` },
   { head: 'said/seen N4', cell: (c) => (c.saidN4.n ? `${f1(c.saidN4.mean)}/${f1(c.seenN4.mean)}` : '–') },
   { head: 'pts <N4 (seats)', cell: (c) => (c.lowScoreShare.n ? `${pct(c.lowScoreShare.mean)} (${pct(c.lowSeatShare)})` : '–') },
@@ -768,6 +903,12 @@ export function formatRun(run: SimRun): string {
   const rounds = Object.entries(run.options.rounds).map(([m, n]) => `${m}=${n}`).join(', ');
   const lines = [`Experiments: ${on}`, `Seeds: ${run.options.seeds}${rounds ? `  Rounds: ${rounds}` : ''}  (${(run.ms / 1000).toFixed(1)} s)`, ''];
   lines.push(table([COLUMNS.map((c) => c.head), ...run.cells.map((c) => COLUMNS.map((col) => col.cell(c)))]));
+  lines.push('', 'By level: share of points / share of wins (share of seats)');
+  const lv = (c: CellMetrics, l: Level) => {
+    const x = c.byLevel[l];
+    return x ? `${pct(x.scoreShare)}/${pct(x.winShare)} (${pct(x.seats)})` : '–';
+  };
+  lines.push(table([['mode', 'set', 'kana', 'n5', 'n4'], ...run.cells.map((c) => [SHORT[c.mode], c.setup, lv(c, 'kana'), lv(c, 'n5'), lv(c, 'n4')])]));
   lines.push('', 'Waiting-check prompts per night:');
   for (const n of run.nights) lines.push(`  ${n.setup} ${SETUPS[n.setup]!.label}: ${ms(n.waitPrompts, f1)} over ${n.games} games`);
   lines.push('', 'Setups: ' + Object.entries(SETUPS).map(([k, s]) => `${k} = ${s.label}`).join('; '));
@@ -777,12 +918,14 @@ export function formatRun(run: SimRun): string {
 /** The A/B difference: on minus off, per cell, for the metrics a switch is likely to move. */
 export function formatAb(name: string, off: SimRun, on: SimRun): string {
   const d = (a: Stat, b: Stat, f = f1) => (a.n && b.n ? `${b.mean - a.mean >= 0 ? '+' : ''}${f(b.mean - a.mean)}` : '–');
-  const rows = [['mode', 'set', 'Δlen s', 'Δidle s/p', 'Δmax idle', 'Δtaps', 'Δcurve', 'Δcurve right', 'Δstand-in', 'Δhost lines', 'Δspoken/p', 'Δsaid <N4', 'Δseen <N4', 'Δpts <N4', 'Δwait?']];
+  const rows = [['mode', 'set', 'Δlen s', 'Δidle s/p', 'Δmax idle', 'Δtaps', 'Δcurve', 'Δcurve right', 'Δstand-in', 'Δsg held s', 'Δspoken/p', 'Δsay/p', 'Δsaid <N4', 'Δseen <N4', 'Δpts <N4', 'Δwin <N4', 'Δwait?']];
   for (const b of on.cells) {
     const a = off.cells.find((c) => c.mode === b.mode && c.setup === b.setup);
     if (!a) continue;
     const share = a.lowScoreShare.n && b.lowScoreShare.n ? `${Math.round((b.lowScoreShare.mean - a.lowScoreShare.mean) * 100)}pt` : '–';
-    rows.push([SHORT[b.mode], b.setup, d(a.lengthS, b.lengthS), d(a.idleS, b.idleS), d(a.longestIdleS, b.longestIdleS), d(a.taps, b.taps), d(a.curveDealt, b.curveDealt), d(a.curveRight, b.curveRight), d(a.standIns, b.standIns), d(a.hostLines, b.hostLines), d(a.spokenLow, b.spokenLow), d(a.saidLow, b.saidLow), d(a.seenLow, b.seenLow), share, d(a.waitPrompts, b.waitPrompts)]);
+    const win = (c: CellMetrics) => (c.byLevel.n4 ? 1 - c.byLevel.n4.winShare : NaN);
+    const dw = Number.isFinite(win(a)) && Number.isFinite(win(b)) ? `${Math.round((win(b) - win(a)) * 100)}pt` : '–';
+    rows.push([SHORT[b.mode], b.setup, d(a.lengthS, b.lengthS), d(a.idleS, b.idleS), d(a.longestIdleS, b.longestIdleS), d(a.taps, b.taps), d(a.curveDealt, b.curveDealt), d(a.curveRight, b.curveRight), d(a.standIns, b.standIns), d(a.sgHeldS, b.sgHeldS), d(a.spokenLow, b.spokenLow), d(a.sayTried, b.sayTried), d(a.saidLow, b.saidLow), d(a.seenLow, b.seenLow), share, dw, d(a.waitPrompts, b.waitPrompts)]);
   }
   const lines = [`A/B ${name}: on minus off (${on.options.seeds} seeds each)`, '', table(rows), '', 'Waiting-check prompts per night:'];
   for (const n of on.nights) {
@@ -813,7 +956,7 @@ function parseArgs(argv: string[]): { seeds: number; modes: SimMode[]; setups: s
   const on = list('on');
   const off = list('off');
   const ab = get('ab') ?? null;
-  for (const k of [...on, ...off, ...(ab ? [ab] : [])]) if (!(k in EXPERIMENTS)) throw new Error(`unknown switch ${k} (one of ${Object.keys(EXPERIMENTS).join(', ')})`);
+  for (const k of [...on, ...off, ...(ab && ab !== 'all' ? [ab] : [])]) if (!(k in EXPERIMENTS)) throw new Error(`unknown switch ${k} (one of ${Object.keys(EXPERIMENTS).join(', ')})`);
   return {
     seeds: Number(get('seeds') ?? 20),
     modes: modes.length ? (modes as SimMode[]) : [...SIM_MODES],
@@ -834,7 +977,17 @@ async function main(): Promise<void> {
   for (const k of args.on) experiments[k as keyof MixedExperiments] = true;
   for (const k of args.off) experiments[k as keyof MixedExperiments] = false;
   const base = { seeds: args.seeds, modes: args.modes, setups: args.setups, rounds: args.rounds, content };
-  if (args.ab) {
+  if (args.ab === 'all') {
+    // Every switch, each played off and on with the others as set.
+    const out: Record<string, { off: SimRun; on: SimRun }> = {};
+    for (const sw of Object.keys(EXPERIMENTS) as (keyof MixedExperiments)[]) {
+      const off = runSim({ ...base, experiments: { ...experiments, [sw]: false } });
+      const on = runSim({ ...base, experiments: { ...experiments, [sw]: true } });
+      out[sw] = { off, on };
+      console.log(formatAb(sw, off, on), '\n');
+    }
+    if (args.out) writeFileSync(args.out, JSON.stringify({ ab: 'all', switches: out }, null, 2));
+  } else if (args.ab) {
     const sw = args.ab as keyof MixedExperiments;
     const off = runSim({ ...base, experiments: { ...experiments, [sw]: false } });
     const on = runSim({ ...base, experiments: { ...experiments, [sw]: true } });
