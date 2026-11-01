@@ -1250,7 +1250,7 @@ const N3: Matcher[] = [
   { id: 'jan', not: rx(`じゃんじゃん`), re: rx(`[^\\s\\u3000、。]じゃん(?!けん|じゃん|ぷ|ぱ)(?=[\\s\\u3000、。！!？?…〜ー]|ね|よ|か|$)`) },
   // ＿っけ: what was it again (listening only). っけ ends the clause: not せっけん, いっけん, コロッケ.
   { id: 'kke', re: rx(`[^\\s\\u3000、。]っけ(?=[\\s\\u3000]*[、,。！!？?…]|[\\s\\u3000]*$|ね)`), not: rx(`ころっけ|(^|[\\s\\u3000、])(あっけ|そっけ|いっけ|ずっけ)`) },
-  // ---- N3 points the #149 JLPT seat found missing (not on a goal yet: the open questions doc has the proposal) ----
+  // ---- N3 points the #149 JLPT seat found missing: optional on their goals (Ladi, Nov 1) ----
   // ＿ように いわれました: told to (いしゃに やすむ ように いわれた), and asked to (たのまれた). Passive only: ははに
   // そうじする ように いいました (I told mum to) is not this. Not ように なる.
   {
@@ -1272,7 +1272,7 @@ const N3: Matcher[] = [
     id: 'kakeru',
     // Only stems with the half-done sense (game design, learning science and Japanese seats on #157): not
     // わらいかける, しんぱいを かける, めがねを かける, しかける, おしかける, みせかけ.
-    re: rx(`((^|[\\s\\u3000、をがはもにでの]|[一-龯])(たべ|食べ|のみ|飲み|よみ|読み|いい|言い|きえ|消え|しに|死に|寝|つくり|作り|わすれ|忘れ|やり|おぼれ|溺れ|こわれ|壊れ|くさり|腐り|おち|落ち|ねむり|眠り|おわり|終わり|とけ|溶け|かれ|枯れ|さき|咲き)|(^|[\\s\\u3000])ね)(かけ|掛け)(の|た|て|ました|ます|る|ている|てる|だ)`),
+    re: rx(`((^|[\\s\\u3000、をがはもにでの]|[一-龯])(たべ|食べ|のみ|飲み|よみ|読み|いい|言い|きえ|消え|しに|死に|寝|つくり|作り|わすれ|忘れ|やり|おぼれ|溺れ|こわれ|壊れ|くさり|腐り|おち|落ち|ねむり|眠り|おわり|終わり|とけ|溶け|かれ|枯れ|さき|咲き|ころび|転び)|(^|[\\s\\u3000])ね)(かけ|掛け)(の|た|て|ました|ます|る|ている|てる|だ)`),
   },
   // ＿きる: to the end, completely (たべきる, つかれきって), and ＿きれない (can't finish). Not きる alone (wear, cut),
   // できる, いきる (live), おもいきり／おもいきって, しめきり (deadline), ふみきり (crossing), かしきり, はりきる.
@@ -1483,19 +1483,19 @@ export const N3_FRAMES: readonly Frame[] = [
   d('toka', 'n3', '3.11', '＿とか ＿とか', '___ and things like that', 'Give a few examples, casually.', 'すしとか ラーメンとか、なんでも すき。', 'Sushi, ramen, I like everything.'),
   { ...d('jan', 'n3', '3.11', '＿じゃん', "___, isn't it?", 'Say something the listener should already see. Listening only.', 'これ、いいじゃん！', "Hey, this is good!"), listening: true },
   { ...d('kke', 'n3', '3.11', '＿っけ', 'what was ___ again?', 'Check something you have forgotten. Listening only.', 'あした、なんようびだっけ？', 'What day is it tomorrow again?'), listening: true },
-  // N3 points the #149 JLPT seat found missing. No goal yet: the open questions doc proposes where they go.
-  d('you-ni-iwareta', 'n3', '', '＿ように いわれました', 'I was told / asked to ___', 'Pass on an instruction someone gave you.', 'いしゃに もっと ねる ように いわれました。', 'The doctor told me to sleep more.'),
-  d('mono-de', 'n3', '', '＿もので', 'because ___ (an excuse)', 'Give a reason when you apologise.', 'でんしゃが おくれた もので、ちこくしました。', 'The train was late, so I was late. Sorry.'),
-  d('kakeru', 'n3', '', '＿かけの ／ ＿かけました', 'half-___ / nearly ___', 'Say something was half done, or about to happen.', 'テーブルに たべかけの ケーキが ある。', "There's a half-eaten cake on the table."),
-  d('kiru', 'n3', '', '＿きる ／ ＿きれない', '___ it all / can\'t ___ it all', 'Say you did all of it, or couldn\'t.', 'こんなに たくさん、たべきれません。', "I can't eat all of this."),
-  d('dasu', 'n3', '', '＿だす', 'suddenly start ___ing', 'Say something started all at once.', 'こどもが きゅうに なきだした。', 'The child suddenly burst into tears.'),
-  d('totan', 'n3', '', '＿た とたん（に）', 'the moment ___', 'Say what happened right as something else did.', 'へやに はいった とたん、でんきが きえた。', 'The moment I walked in, the lights went out.'),
-  d('wake-niwa-ikanai', 'n3', '', '＿わけには いきません', "I can't very well ___", 'Say you can\'t do it, because it wouldn\'t be right.', 'やくそくしたから、いかない わけには いきません。', 'I promised, so I can\'t very well not go.'),
-  d('hazu-ga-nai', 'n3', '', '＿はずが ありません', "There's no way ___", 'Say something can\'t be true.', 'たぬきが バスを うんてんする はずが ありません。', "There's no way a tanuki drives the bus."),
-  d('ni-totte', 'n3', '', '＿に とって', 'for ___ / in ___\'s eyes', 'Say whose point of view it is.', 'わたしに とって、この うたは たいせつです。', 'This song matters to me.'),
-  d('sae', 'n3', '', '＿さえ', 'even ___ / if only ___', 'Say even this, or that this one thing is enough.', 'かっぱは みずさえ あれば げんきです。', 'A kappa is fine as long as it has water.'),
-  d('koso', 'n3', '', '＿こそ', '___ is the one / ___, and no other', 'Stress this one, above the others.', 'こんどこそ、まけないよ。', "This time I won't lose."),
-  d('bakari', 'n3', '', '＿ばかり ／ ＿て ばかり', 'nothing but ___', 'Say someone does only this, too much.', 'ポンは ゲームばかり して いる。', 'Pon does nothing but play games.'),
+  // N3 points the #149 JLPT seat found missing, optional on their goals (Ladi, Nov 1).
+  d('you-ni-iwareta', 'n3', '3.1', '＿ように いわれました', 'I was told / asked to ___', 'Pass on an instruction someone gave you.', 'いしゃに もっと ねる ように いわれました。', 'The doctor told me to sleep more.'),
+  d('mono-de', 'n3', '3.3', '＿もので', 'because ___ (an excuse)', 'Give a reason when you apologise.', 'でんしゃが おくれた もので、ちこくしました。', 'The train was late, so I was late. Sorry.'),
+  d('kakeru', 'n3', '3.2', '＿かけの ／ ＿かけました', 'half-___ / nearly ___', 'Say something was half done, or about to happen.', 'かいだんで ころびかけました。', 'I nearly fell down the stairs.'),
+  d('kiru', 'n3', '3.2', '＿きる ／ ＿きれない', '___ it all / can\'t ___ it all', 'Say you did all of it, or couldn\'t.', 'こんなに たくさん、たべきれません。', "I can't eat all of this."),
+  d('dasu', 'n3', '3.9', '＿だす', 'suddenly start ___ing', 'Say something started all at once.', 'こどもが きゅうに なきだした。', 'The child suddenly burst into tears.'),
+  d('totan', 'n3', '3.9', '＿た とたん（に）', 'the moment ___', 'Say what happened right as something else did.', 'へやに はいった とたん、でんきが きえた。', 'The moment I walked in, the lights went out.'),
+  d('wake-niwa-ikanai', 'n3', '3.7', '＿わけには いきません', "I can't very well ___", 'Say you can\'t do it, because it wouldn\'t be right.', 'やくそくしたから、いかない わけには いきません。', 'I promised, so I can\'t very well not go.'),
+  d('hazu-ga-nai', 'n3', '3.10', '＿はずが ありません', "There's no way ___", 'Say something can\'t be true.', 'たぬきが バスを うんてんする はずが ありません。', "There's no way a tanuki drives the bus."),
+  d('ni-totte', 'n3', '3.10', '＿に とって', 'for ___ / in ___\'s eyes', 'Say whose point of view it is.', 'わたしに とって、この うたは たいせつです。', 'This song matters to me.'),
+  d('sae', 'n3', '3.5', '＿さえ ＿ば', 'as long as ___ / even ___', 'Say even this, or that this one thing is enough.', 'かっぱは みずさえ あれば げんきです。', 'A kappa is fine as long as it has water.'),
+  d('koso', 'n3', '3.7', '＿こそ', '___, and no other / this time for sure (こんどこそ)', 'Stress this one, above the others.', 'こんどこそ、まけないよ。', "This time I won't lose."),
+  d('bakari', 'n3', '3.2', '＿ばかり ／ ＿て ばかり', 'nothing but ___', 'Say someone does only this, too much.', 'まいにち あめばかりで、いやに なる。', "Nothing but rain every day. I'm fed up."),
 ];
 
 /**
@@ -1531,7 +1531,7 @@ function passiveIn(s: Sentence): boolean {
   // kuromoji misreads kana passives both ways (ねられない as ねら + れ), so the tokens count only with kanji.
   if (s.toks && HAS_KANJI.test(s.t) && PASSIVE_TOK(s.toks)) return true;
   return [s.k, s.t].some((x) => {
-    const agent = x.search(/[^\s\u3000、。]に[\s\u3000]/);
+    const agent = x.search(/[^\s\u3000、。]に[\s\u3000「『]/);
     if (agent < 0) return false;
     for (const m of x.slice(agent).matchAll(/([^\s\u3000、。をがにはもで]*?[わかがさたなばまら])れ(る|た|ます|ました|て|ない|なかった|まし)/g)) {
       const w = m[1]!;

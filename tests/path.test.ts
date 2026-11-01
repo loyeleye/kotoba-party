@@ -7,7 +7,7 @@ import { kana } from '../content/src/kana/kana.js';
 import type { PhraseEntry } from '../shared/src/modes/mode.js';
 import { MODES } from '../shared/src/modes/registry.js';
 import { FRAME_BY_ID } from '../shared/src/japanese/frames.js';
-import { currentLine, frameReady, frameText, frameYield, GOAL_FRAMES, goalCarried, goalPace, GOALS, goalYield, KANA_TARGET, KANJI_GOAL_BAND, LINES, markPath, missingFrames, pathStatus, SLOW_YIELD, suggest } from '../shared/src/path.js';
+import { currentLine, FRAME_TEXT, frameReady, frameText, frameYield, GOAL_FRAMES, goalCarried, goalPace, GOALS, goalYield, KANA_TARGET, KANJI_GOAL_BAND, LINES, markPath, missingFrames, pathStatus, SLOW_YIELD, suggest } from '../shared/src/path.js';
 import { writeKanji } from '../content/src/kanji/kanji.js';
 import { meetTheInnkeeper } from '../content/src/last-train/meet-the-innkeeper.js';
 import { readTheSigns } from '../content/src/last-train/read-the-signs.js';
@@ -54,6 +54,17 @@ describe('the goals', () => {
       expect(t.ja, id).not.toBe(id);
       expect(t.romaji, id).not.toMatch(/[ぁ-んァ-ン一-鿿]/);
       expect(t.ja, id).toMatch(/[ぁ-んァ-ン＿]/);
+    }
+  });
+
+  it('show the same label on the chip as in FRAME_TEXT for the twelve N3 frames of #157 (#158 panel)', () => {
+    const ids = ['you-ni-iwareta', 'mono-de', 'kakeru', 'kiru', 'dasu', 'totan', 'wake-niwa-ikanai', 'hazu-ga-nai', 'ni-totte', 'sae', 'koso', 'bakari'];
+    for (const id of ids) {
+      expect(GOAL_FRAMES, id).toContain(id);
+      const { ja, en } = FRAME_TEXT[id]!;
+      expect({ ja, en }, id).toEqual({ ja: frameText(id).ja, en: frameText(id).en });
+      // The rōmaji reads the label: one part per ／.
+      expect(FRAME_TEXT[id]!.romaji.split(' / ').length, id).toBe(ja.split('／').length);
     }
   });
 
