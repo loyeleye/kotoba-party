@@ -42,6 +42,7 @@ import {
   teacherComment,
   titleOf,
   titlesFor,
+  type Deck,
   type MishapId,
   type Slide,
   type Title,
@@ -565,6 +566,12 @@ function computeResult(t: Talk, level: Level): TalkResult {
   };
 }
 
+/** Whether talk `index` is a mix for an N4 presenter: their 2nd, 4th… talk (their 1st, 3rd… is a deck pair). */
+export function n4Mix(s: Pick<HappyokaiState, 'order'>, index: number): boolean {
+  const id = s.order[index];
+  return s.order.slice(0, index).filter((x) => x === id).length % 2 === 1;
+}
+
 function startTalk(s: HappyokaiState, ctx: ModeContext): void {
   const index = s.talk ? s.talk.index + 1 : 0;
   const presenterId = s.order[index]!;
@@ -573,15 +580,24 @@ function startTalk(s: HappyokaiState, ctx: ModeContext): void {
   const fresh = titlesFor(audience).filter((x) => !s.usedTitles.includes(x.id));
   const pool = fresh.length >= 2 ? fresh : titlesFor(audience);
   const people = (x: Title) => x.tags.includes('person') || x.tags.includes('work') || x.tags.includes('love') || x.tags.includes('travel');
-  // An N4 presenter picks between the N4 decks instead: one Then and now title, one If I were… title.
-  const deckPick = (deck: 'then-now' | 'if') => {
+  // An N4 presenter's talks alternate (Ladi's call): the first is a deck pair (one Then and now title,
+  // one If I were… title), the next a mix (one deck title, from the deck they didn't pick last time, and
+  // one usual title, in random order), and so on.
+  const deckPick = (deck: Deck) => {
     const all = deckTitlesFor(audience, deck);
     const unused = all.filter((x) => !s.usedTitles.includes(x.id));
     return shuffled(unused.length ? unused : all, () => ctx.random())[0];
   };
   const n4 = ctx.player(presenterId)?.level === 'n4';
-  const a = n4 ? deckPick('then-now') : shuffled(pool.filter((x) => !people(x)), () => ctx.random())[0];
-  const b = n4 ? deckPick('if') : shuffled(pool.filter((x) => people(x)), () => ctx.random())[0];
+  let a: Title | undefined;
+  let b: Title | undefined;
+  if (n4 && n4Mix(s, index)) {
+    const lastId = s.done.filter((r) => r.presenterId === presenterId).at(-1)?.titleId;
+    const lastDeck = lastId ? titleOf(lastId)?.deck : undefined;
+    const deck: Deck = lastDeck === 'then-now' ? 'if' : lastDeck === 'if' ? 'then-now' : ctx.random() < 0.5 ? 'then-now' : 'if';
+    [a, b] = shuffled([deckPick(deck), shuffled(pool, () => ctx.random())[0]], () => ctx.random());
+  } else if (n4) [a, b] = [deckPick('then-now'), deckPick('if')];
+  else [a, b] = [shuffled(pool.filter((x) => !people(x)), () => ctx.random())[0], shuffled(pool.filter((x) => people(x)), () => ctx.random())[0]];
   const titleChoices = (a && b ? [a, b] : shuffled(pool, () => ctx.random()).slice(0, 2)).map((x) => x.id);
   s.talk = {
     index,

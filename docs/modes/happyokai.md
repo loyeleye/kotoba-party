@@ -126,9 +126,13 @@ the hanko.
 
 ## The N4 decks (goals 4.12, 4.3, 4.7, 4.11)
 
-An N4 presenter picks between two N4 deck titles instead of the usual pair: one **Then and now**
-(昔と 今) and one **If I were…** (もしも…), each labelled with its deck on the phone. Everyone else keeps
-the usual titles. The slides, mishaps and scoring are the same; what changes is the N4 presenter's
+An N4 presenter's talks alternate between two kinds of pair (Ladi's call): their first talk offers a
+**deck pair**, one **Then and now** (昔と 今) title and one **If I were…** (もしも…) title; their next talk
+offers a **mix**, one deck title (from the deck they didn't pick last time) and one usual title, in random
+order; and so on (`n4Mix`). Deck titles are labelled with their deck on the phone. With 3 or 4 players
+(two talks each) every N4 presenter gets one of each; with 5 or more (one talk each) they get the deck
+pair. Everyone else keeps the usual titles. A usual title picked from a mix plays as a usual talk: usual
+frames, ready sentences and question cards (no deck cards). The slides, mishaps and scoring are the same; what changes is the N4 presenter's
 language:
 
 | | Then and now | If I were… |
@@ -159,16 +163,23 @@ is no offer to decline.
 
 ## Decisions made on Ladi's behalf
 
-1. **N4 presenters get only the N4 decks' titles** (one from each deck), not the usual pair: the decks
-   are what makes their talk N4. Their opening, closing, mishap recoveries and points are unchanged.
+1. ~~N4 presenters get only the N4 decks' titles.~~ Superseded by Ladi's decision below. Their opening,
+   closing, mishap recoveries and points are unchanged.
 2. **The decks reuse the usual slides**; only the frames, ready sentences, deck question cards and answer
    frames change. A slide's word joins the topic in each deck sentence, so the joke still lands (「来月
    猫と パンツが 結婚する ことに なりました」).
 3. **An N4 asker in a deck talk always gets one of the deck's own question cards** first.
 
+## Decided by Ladi
+
+1. **N4 presenters sometimes get a usual title too** (was open question 1): their pairs alternate, a deck
+   pair on their 1st, 3rd… talk and a mix (one deck title, from the other deck than last time, plus one
+   usual title) on their 2nd, 4th… talk. Alternating per presenter is simple and even: everyone who
+   presents twice sees both kinds, and nobody's deck practice depends on the dice. The question cards
+   follow the chosen title's deck.
+
 ## Open questions
 
-1. Should an N4 presenter sometimes get a usual title (a mix), so the Cheeky and Kids sets reach them too?
-2. Fluent check of the deck lines, especially the `use` verbs (引ける, 乗れる), 毎日 〜と いっしょに
+1. Fluent check of the deck lines, especially the `use` verbs (引ける, 乗れる), 毎日 〜と いっしょに
    いたいです, and the moving and shop news lines.
 
