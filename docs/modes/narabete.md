@@ -87,8 +87,8 @@ doesn't run.
   line with its ので chunk lit and one line of English colour ("ので = because: Aki gave the reason first,
   then where the card goes."), while Nobiko-san says the line herself (`narabete_replay`, a bank line that
   is the `{line}` slot as is, with `line_kana` and `line_en`; the player's recording never plays). The line
-  is the model line they read out, else their own accepted line, voiced from the server's kana reading
-  (without one, it's replayed unvoiced). Every Kana and N5 phone shows the gist at its level: the line in
+  is the model line they read out; a line in their own words is shown but not voiced, because the host
+  only ever speaks fixed, checked lines, never what speech recognition heard. Every Kana and N5 phone shows the gist at its level: the line in
   kana (romaji too for Kana), plain English ("Aki: this one comes first, because it's the earliest
   time."), and the card's picture. It calls the play, never the player's mistakes, and the defender's own
   phone doesn't get it. The replay fills what's left of the 15 s encore, kept to 5–7 s, so it runs at most

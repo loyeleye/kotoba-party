@@ -779,18 +779,14 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
     expect(t.s.deadline! - t.now).toBe(5_000);
   });
 
-  it('their own ので line is replayed and voiced from its kana reading', async () => {
+  it('their own ので line is replayed on the TV but never voiced', () => {
     const t = toDefence();
     t.play('p2', { kind: 'defend', utterance: speech('ぼくの すきな じかん なので、ここです') });
     expect(t.r.encore).toBe('replay');
-    expect(replays(t)).toHaveLength(1);
-    expect(replays(t)[0]!.slots).toMatchObject({ line: 'ぼくの すきな じかん なので、ここです。', line_kana: normalizeReading('ぼくの すきな じかん なので、ここです') });
+    // The host speaks only fixed, checked lines, never what speech recognition heard.
+    expect(replays(t)).toHaveLength(0);
     expect(t.view().replay!.lit).toEqual({ before: 'ぼくの すきな じかん な', node: 'ので', after: '、ここです。' });
     expect(t.view('p3').me!.gist!.en).toMatch(/^P2: this one .*, and said why \(ので = because\)\.$/);
-    // The bank's replay line is the slot as is: text, voiced kana and subtitle.
-    const said = await bankVoice(REAL_CONTENT, () => 0).speak('ROOM', replays(t)[0]!);
-    expect(said).toMatchObject({ text: 'ぼくの すきな じかん なので、ここです。', kana: normalizeReading('ぼくの すきな じかん なので、ここです') });
-    expect(said!.en).toBe('P2 gives the reason first, with ので (because).');
   });
 
   it('no replay and no cue unless it landed: passed, typed, or said without ので', () => {

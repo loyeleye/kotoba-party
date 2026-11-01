@@ -16,7 +16,12 @@ Rules every role follows:
   offers). The decks (Tourist, Nice to Meet You!, Happyōkai) aren't seats, so they have no offer.
 - **One offer log.** Every game logs each offer as `accepted`, `declined`, `timeout` or `away`
   (`shared/src/modes/hardRoleLog.ts`). Gate = accepted ÷ (accepted + declined + timeout), per game;
-  away is left out.
+  away is left out. Each mode's `offers()` hands a signed-in player's offers to their account progress at
+  the end of the game (`Progress.roleOffers`, counts by role; `roleOfferRate()`), as Ladi asked.
+- **The host says the line.** No player's recording plays on the TV. When an N4 line is accepted, the
+  game's host voices the fixed model line (Last Train's announcer, lost and found and innkeeper items,
+  the Onsen deputy's report, the Omiai go-between's keigo, the Narabete defence replay), with its subtitle.
+  Lines in a player's own words are shown, never voiced.
 - **What others do see in a mixed room.** Bento stations get 📋 requests to tap; Last Train swaps
   神社前 and 大学前 for Lost and Found; Narabete gains a 15 s encore when the N4 defence is taken;
   Omiai and Onsen phases wait a little for a role that was taken; Dub Club ad-libs are captioned in
@@ -44,8 +49,8 @@ Rules every role follows:
 | Nice to Meet You! | N4 experience cards | 4.3 | `shared/src/modes/hajimemashite/cards.ts` |
 
 Not built in this step (from the plan's "How mixed rooms work"): the host playing a hard role when
-nobody in the room is N4, the commentary booth, the Gallery, Kana curveball tiles, and saving the
-offer log beyond the game (the gate needs it stored somewhere).
+nobody in the room is N4, the Gallery, Kana curveball tiles, and the commentary booth everywhere but
+Narabete.
 
 ## Proposed N4 frame ids
 

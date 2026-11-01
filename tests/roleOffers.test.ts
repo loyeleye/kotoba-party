@@ -2,6 +2,12 @@
 import { describe, expect, it } from 'vitest';
 import { offerRate } from '../shared/src/modes/hardRoleLog.js';
 import { addGame, emptyProgress, roleOfferRate, type GameResult } from '../shared/src/progress.js';
+import { bentoHausMode } from '../shared/src/modes/bentoHaus/bentoHaus.js';
+import { dubClubMode } from '../shared/src/modes/dubClub/dubClub.js';
+import { lastTrainMode } from '../shared/src/modes/lastTrain/lastTrain.js';
+import { narabeteMode } from '../shared/src/modes/narabete/narabete.js';
+import { omiaiMode } from '../shared/src/modes/omiai/omiai.js';
+import { onsenMurderMode } from '../shared/src/modes/onsenMurder/onsenMurder.js';
 
 const game = (offers: GameResult['offers']): GameResult => ({
   mode: 'bento-haus', at: Date.UTC(2026, 10, 1), score: 0, place: 0, players: 3, coop: true, awards: [], cards: [], phrases: [], offers,
@@ -35,4 +41,26 @@ describe('hard-role offers', () => {
     expect(p.roleOffers).toBeUndefined();
     expect(roleOfferRate(p)).toBeNull();
   });
+});
+
+describe('each mode reports its own offers, for one player', () => {
+  // Only the logs the offers come from; the rest of each state isn't read.
+  const cases: [string, { offers?: (s: never, id: string) => unknown }, unknown, unknown[]][] = [
+    ['bento', bentoHausMode, { hard: { offers: [
+      { round: 1, playerId: 'a', role: 'manager', answer: 'accepted' },
+      { round: 1, playerId: 'a', role: 'omotenashi', answer: null },
+      { round: 2, playerId: 'b', role: 'manager', answer: 'declined' },
+    ] } }, [{ role: 'bento-haus:manager', answer: 'accepted' }]],
+    ['last train', lastTrainMode, { roleLog: [
+      { stop: 0, playerId: 'a', roleId: 'announcer', itemId: 'x', answer: 'declined' },
+      { stop: 1, playerId: 'a', roleId: 'announcer', itemId: 'y', answer: 'accepted', bot: true },
+    ] }, [{ role: 'last-train:announcer', answer: 'declined' }]],
+    ['onsen', onsenMurderMode, { deputyLog: [{ turnNo: 1, playerId: 'a', outcome: 'timeout' }, { turnNo: 2, playerId: 'b', outcome: 'accepted' }] }, [{ role: 'onsen-murder:deputy', answer: 'timeout' }]],
+    ['omiai', omiaiMode, { nakodoLog: [{ round: 1, playerId: 'a', outcome: 'accepted' }] }, [{ role: 'omiai:nakodo', answer: 'accepted' }]],
+    ['narabete', narabeteMode, { hardLog: [{ round: 1, playerId: 'a', answer: 'declined' }] }, [{ role: 'narabete:defence', answer: 'declined' }]],
+    ['dub club', dubClubMode, { rounds: [{ actors: [{ playerId: 'a', adlib: 'accepted' }, { playerId: 'a', adlib: 'offered' }, { playerId: 'b', adlib: 'declined' }] }] }, [{ role: 'dub-club:adlib', answer: 'accepted' }]],
+  ];
+  for (const [name, mode, state, want] of cases) {
+    it(name, () => expect(mode.offers!(state as never, 'a')).toEqual(want));
+  }
 });

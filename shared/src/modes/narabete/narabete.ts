@@ -616,12 +616,13 @@ function buildReplay(s: NarabeteState, r: Round, hard: HardDefence, ctx: ModeCon
   const k = readLine(script, hard.kana ?? '');
   const note = `ので = because: ${name} gave the reason first, then where the card goes.`;
   // A model line is always voiced; its kana is left to the host pipeline when it holds a name in Latin letters
-  // (it reads the line as it reads any {name}). Their own line is voiced only from a kana reading.
+  // (it reads the line as it reads any {name}). Their own words are shown, never voiced: the host speaks only
+  // fixed, checked lines, never what speech recognition heard.
   const model = k >= 0 ? script.lines[k]! : null;
   const line: JpText = model
     ? { ...model, kana: isKana(model.kana) ? model.kana : '' }
     : { text: hard.text, kana: hard.kana && isKana(hard.kana) ? hard.kana : '', en: `${name} gives the reason first, with ので (because).` };
-  const voiced = !!model || !!line.kana;
+  const voiced = !!model;
   const c = cardOf(r, hard.cardId);
   const tc = c ? timeCardOf(c) : undefined;
   const theme = r.kind !== 'time' ? themeOf(r.setId) : undefined;
@@ -1022,6 +1023,10 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
     for (const [voter, id] of Object.entries(r.votes)) if (id === c.id) delete r.votes[voter];
     if (r.defence?.playerId === playerId) r.defence = null;
     if (r.hard?.playerId === playerId) r.hard = null;
+  },
+
+  offers(s, playerId) {
+    return s.hardLog.filter((o) => o.playerId === playerId).map((o) => ({ role: 'narabete:defence', answer: o.answer }));
   },
 
   progress(s) {

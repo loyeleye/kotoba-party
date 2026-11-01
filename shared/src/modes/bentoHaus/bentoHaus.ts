@@ -1125,6 +1125,10 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     if (s.hard) offerAway(s.hard, r.index, playerId);
   },
 
+  offers(s, playerId) {
+    return (s.hard?.offers ?? []).flatMap((o) => (o.playerId === playerId && o.answer ? [{ role: `bento-haus:${o.role}`, answer: o.answer }] : []));
+  },
+
   progress(s) {
     return { round: Math.max(1, s.round), totalRounds: s.totalRounds };
   },
