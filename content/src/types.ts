@@ -314,6 +314,8 @@ export interface StationSign {
   kind?: 'exit' | 'men' | 'women';
   /** The sign the question asks about. Never sent to a phone; the TV outlines it in the reveal. */
   target?: boolean;
+  /** Kana level: the sign's reading, shown on the first try of a read item (show first, then test) and on a direction item's retry. */
+  reading?: string;
 }
 
 export interface LastTrainMinigame {

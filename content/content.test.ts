@@ -216,10 +216,12 @@ describe('Last Train', () => {
     expect(bad).toEqual([]);
   });
 
-  it('only stops at minigames that exist, and scenario 1 uses Phase 1 minigames only', () => {
+  it('only stops at minigames that exist, and scenario 1 uses Phase 1 minigames (plus Read the Signs)', () => {
     const ids = new Set(lastTrainMinigames.map((m) => m.id));
     for (const s of lastTrainScenarios) for (const stop of s.stops) expect(ids.has(stop.minigameId), stop.id).toBe(true);
-    const phase1 = new Set(lastTrainMinigames.filter((m) => m.phase === 1).map((m) => m.id));
+    // Read the Signs rides the Chōchin Line too (Ladi, 1 Nov 2026): 4-stop games always pick this line,
+    // so it was the only way most rooms would ever reach it.
+    const phase1 = new Set([...lastTrainMinigames.filter((m) => m.phase === 1).map((m) => m.id), 'read-the-signs']);
     for (const stop of lastTrainScenarios[0]!.stops) expect(phase1.has(stop.minigameId), stop.id).toBe(true);
   });
 });
