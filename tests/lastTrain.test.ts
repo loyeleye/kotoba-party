@@ -9,14 +9,9 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { checkUtterance, firstMora } from '../shared/src/modes/lastTrain/check.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
-<<<<<<< HEAD
 import { buildStops, CANDLE_ITEM, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
-import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
-=======
-import { buildStops, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
 import { withExperiments } from '../shared/src/modes/experiments.js';
 import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS } from '../shared/src/modes/mixedRoom.js';
->>>>>>> r5-gallery
 import { framesOf } from '../shared/src/japanese/frames.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
