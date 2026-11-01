@@ -53,12 +53,12 @@ export function galleryTile(view: GalleryTileView | null, onPick: (pick: string)
 }
 
 /** The commentary booth's gist on a Kana or N5 phone: what was said, at their level (never a correction). */
-export function boothGist(g: { kana: string; en: string; emoji: string | null; romaji: string | null } | null): HTMLElement | null {
+export function boothGist(g: { kana: string; en: string; emoji: string | null; romaji: string | null } | null, kicker = '📺 Replay'): HTMLElement | null {
   if (!g) return null;
   return h(
     'div',
     { class: 'booth-gist' },
-    h('p', { class: 'gallery-kicker' }, '📺 Replay'),
+    h('p', { class: 'gallery-kicker' }, kicker),
     g.emoji ? h('p', { class: 'booth-gist-emoji', 'aria-hidden': 'true' }, g.emoji) : null,
     h('p', { class: 'booth-gist-ja', lang: 'ja' }, g.kana),
     g.romaji ? h('p', { class: 'booth-gist-romaji' }, g.romaji) : null,
