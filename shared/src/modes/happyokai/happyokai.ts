@@ -627,19 +627,21 @@ function phrases(t: Talk, ctx: ModeContext): void {
   const title = titleFor(t);
   if (p && title) {
     const spoke = (step: number) => linesOn(t, step).some((l) => l.kind === 'own' || l.kind === 'read');
+    // Read off the card unless they said a line of their own at that step.
+    const recall = (step: number): 'memory' | 'read' => (linesOn(t, step).some((l) => l.kind === 'own') ? 'memory' : 'read');
     const open = openingFor(p.level, '〜', title.jp);
     const close = closingFor(p.level);
-    ctx.phrase(p.id, { itemId: `happyokai:open:${p.level}`, text: open.text, kana: open.kana, en: open.en, outcome: spoke(0) ? 'said' : 'seen' });
-    ctx.phrase(p.id, { itemId: `happyokai:close:${p.level}`, text: close.text, kana: close.kana, en: close.en, outcome: spoke(closeStep(t)) ? 'said' : 'seen' });
+    ctx.phrase(p.id, { itemId: `happyokai:open:${p.level}`, text: open.text, kana: open.kana, en: open.en, outcome: spoke(0) ? 'said' : 'seen', recall: recall(0) });
+    ctx.phrase(p.id, { itemId: `happyokai:close:${p.level}`, text: close.text, kana: close.kana, en: close.en, outcome: spoke(closeStep(t)) ? 'said' : 'seen', recall: recall(closeStep(t)) });
     t.steps.forEach((st, i) => {
       if (st.kind !== 'mishap' || !st.mishapId) return;
       const r = recoveryFor(st.mishapId, p.level, talkWord(t)?.word ?? null, graphUp(t), audienceOf(ctx));
-      ctx.phrase(p.id, { itemId: `happyokai:mishap:${st.mishapId}:${p.level}`, text: r.text, kana: r.kana, en: r.en, outcome: spoke(i) ? 'said' : 'seen' });
+      ctx.phrase(p.id, { itemId: `happyokai:mishap:${st.mishapId}:${p.level}`, text: r.text, kana: r.kana, en: r.en, outcome: spoke(i) ? 'said' : 'seen', recall: recall(i) });
     });
   }
   for (const a of t.asked) {
     if (!ctx.player(a.playerId)) continue;
-    ctx.phrase(a.playerId, { itemId: `happyokai:q:${a.text}`, text: a.text, kana: a.kana, en: a.en, outcome: a.via === 'speech' ? 'said' : 'seen' });
+    ctx.phrase(a.playerId, { itemId: `happyokai:q:${a.text}`, text: a.text, kana: a.kana, en: a.en, outcome: a.via === 'speech' ? 'said' : 'seen', recall: 'memory' });
   }
 }
 

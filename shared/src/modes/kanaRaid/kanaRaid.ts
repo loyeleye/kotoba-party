@@ -582,7 +582,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
       }
       if (b) {
         for (const id of seatedIds(s, ctx)) {
-          ctx.phrase(id, { itemId: `boss:${b.id}`, text: b.word.text, kana: b.word.kana, en: b.word.en, outcome: b.reads[id] === 'spoken' ? 'said' : b.reads[id] === 'missed' ? 'missed' : 'seen' });
+          ctx.phrase(id, { itemId: `boss:${b.id}`, text: b.word.text, kana: b.word.kana, en: b.word.en, outcome: b.reads[id] === 'spoken' ? 'said' : b.reads[id] === 'missed' ? 'missed' : 'seen', recall: 'memory' });
         }
       }
     }
@@ -1420,7 +1420,7 @@ function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok:
   const t = (p.tally[a.itemId] ??= { char: info.char, hear: info.hear, seen: 0, correct: 0, missed: 0, tip: null, recalled: 0, card: info.card ? { id: info.card, en: info.en } : null });
   t.seen += 1;
   const phraseOf = (outcome: 'said' | 'retry' | 'missed' | 'seen') =>
-    ctx.phrase(playerId, info.phrase ? { itemId: info.phraseId ?? a.itemId, text: info.phrase.text, kana: info.phrase.kana, en: info.phrase.en, outcome } : { itemId: a.itemId, text: info.char, kana: info.hear, en: info.en, outcome });
+    ctx.phrase(playerId, info.phrase ? { itemId: info.phraseId ?? a.itemId, text: info.phrase.text, kana: info.phrase.kana, en: info.phrase.en, outcome, recall: how === 'spoken' ? 'memory' : 'read' } : { itemId: a.itemId, text: info.char, kana: info.hear, en: info.en, outcome, recall: how === 'spoken' ? 'memory' : 'read' });
 
   if (!ok) {
     t.missed += 1;
@@ -1543,7 +1543,7 @@ function pieceAttack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, a
     t.correct += 1;
     if ('say' in ans) t.recalled += 1;
     const bonus = how === 'spoken' ? payBonus(p, ctx, playerId, Math.round(base * SPEAK_BONUS)) : 0;
-    if (k) ctx.phrase(playerId, { itemId: k.id, text: k.char, kana: k.sound, en: kanaEn(deck, k), outcome: how === 'spoken' ? 'said' : 'seen' });
+    if (k) ctx.phrase(playerId, { itemId: k.id, text: k.char, kana: k.sound, en: kanaEn(deck, k), outcome: how === 'spoken' ? 'said' : 'seen', recall: 'memory' });
     p.last = { attackId: a.id, ok: true, kind: 'piece', char: piece.char, hear: piece.sound, points: base + bonus, damage: base, tip: null, combo: 0, splash, retryNext: false };
     if (!splash) cue(s, ctx, 'raid_hit');
   }
@@ -1607,7 +1607,7 @@ function spellSay(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: K
   const bonus = ok && spoken ? payBonus(p, ctx, playerId, Math.round(base * SPEAK_BONUS)) : 0;
   if (ok && spoken) {
     p.wave.spoken += 1;
-    ctx.phrase(playerId, { itemId: k.id, text: k.char, kana: k.sound, en: kanaEn(deck, k), outcome: 'said' });
+    ctx.phrase(playerId, { itemId: k.id, text: k.char, kana: k.sound, en: kanaEn(deck, k), outcome: 'said', recall: 'memory' });
   }
   return {
     attackId: a.id,
@@ -1638,7 +1638,7 @@ function sayPair(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, pair:
   const bonus = ok && spoken ? payBonus(p, ctx, playerId, Math.round(BASE_POINTS * SPEAK_BONUS)) : 0;
   if (ok) {
     p.wave.spoken += spoken ? 1 : 0;
-    if (spoken) ctx.phrase(playerId, { itemId: `pair:${pair.id}:${played}`, text: word.text, kana: word.kana, en: word.en, outcome: 'said' });
+    if (spoken) ctx.phrase(playerId, { itemId: `pair:${pair.id}:${played}`, text: word.text, kana: word.kana, en: word.en, outcome: 'said', recall: 'read' });
   }
   return {
     attackId: a.id,

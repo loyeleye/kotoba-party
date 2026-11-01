@@ -220,7 +220,7 @@ export class Accounts {
         if (body.kind === 'phrase') {
           // Said out loud, then marked by the player (see reviewPhrase).
           const phrase = reviewPhrase(user.progress, itemId, body.knew === true, this.now(), user.tz);
-          if (phrase) markPath(user.progress, this.now());
+          if (phrase) markPath(user.progress, this.now(), user.tz);
           if (!phrase) return json(404, { error: 'no-card' });
           await this.storage.put(`user:${user.id}`, user);
           return json(200, { phrase });
@@ -230,7 +230,7 @@ export class Accounts {
         const right = typeof body.answer === 'string' && rightSound(card, body.answer);
         const caughtBefore = card.caughtAt !== null;
         reviewCard(user.progress, itemId, right, this.now(), user.tz);
-        markPath(user.progress, this.now());
+        markPath(user.progress, this.now(), user.tz);
         await this.storage.put(`user:${user.id}`, user);
         return json(200, { right, expected: toRomaji(card.hear), card, caught: !caughtBefore && card.caughtAt !== null });
       }
@@ -274,7 +274,7 @@ export class Accounts {
       const user = await this.userForToken(account);
       if (!user) continue;
       addGame(user.progress, result, user.tz);
-      markPath(user.progress, this.now());
+      markPath(user.progress, this.now(), user.tz);
       await this.storage.put(`user:${user.id}`, user);
     }
   }
@@ -306,7 +306,7 @@ export class Accounts {
       duePhrases: duePhrases(user.progress, now),
       path: user.progress.path === true,
       frames: frameStats(user.progress),
-      pathStatus: pathStatus(user.progress, now),
+      pathStatus: pathStatus(user.progress, now, user.tz),
     };
   }
 

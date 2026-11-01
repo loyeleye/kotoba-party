@@ -574,7 +574,7 @@ function moveSay(s: OekakiState, phase: Phase, playerId: string, u: unknown, ctx
   if (!matchesAccepted(utteranceReading(u), [real.kana])) return moveError('not-the-word');
   t.said[playerId] = u.via;
   giveBonus(s, ctx, playerId, u.via === 'speech' ? SAY_SPOKEN_BONUS : SAY_TYPED_BONUS);
-  ctx.phrase(playerId, { itemId: real.id, text: real.text, kana: real.kana, en: real.en, outcome: 'said' });
+  ctx.phrase(playerId, { itemId: real.id, text: real.text, kana: real.kana, en: real.en, outcome: 'said', recall: 'read' });
   return MOVE_OK;
 }
 

@@ -703,7 +703,7 @@ export function kitchenMove(s: Shop, r: Round, playerId: string, raw: Record<str
           if (u.via === 'speech') stats(s, playerId).calls += 1;
           const f = foodOf(a.foodId)!;
           const say = `${f.kana} ${countWord(f, a.n, ownCounter(r.index))}、おねがいします`;
-          ctx.phrase(playerId, { itemId: `bento:${a.foodId}:${a.n}`, text: say, kana: say, en: `${a.n} ${f.en}, please`, outcome: u.via === 'speech' ? 'said' : 'seen' });
+          ctx.phrase(playerId, { itemId: `bento:${a.foodId}:${a.n}`, text: say, kana: say, en: `${a.n} ${f.en}, please`, outcome: u.via === 'speech' ? 'said' : 'seen', recall: 'memory' });
         } else cue(s, ctx, 'bento_static');
       }
       return MOVE_OK;

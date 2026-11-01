@@ -416,13 +416,14 @@ function phrases(s: NarabeteState, r: Round, ctx: ModeContext): void {
       const tc = timeCardOf(c);
       if (!tc) continue;
       const outcome = c.said?.ok && c.said.via === 'speech' ? (c.hinted ? 'retry' : 'said') : c.said?.ok ? 'seen' : 'missed';
-      ctx.phrase(c.ownerId, { itemId: `narabete:${tc.id}`, text: tc.jp.text, kana: tc.jp.kana, en: tc.jp.en, outcome });
+      ctx.phrase(c.ownerId, { itemId: `narabete:${tc.id}`, text: tc.jp.text, kana: tc.jp.kana, en: tc.jp.en, outcome, recall: 'memory' });
     } else {
       const theme = themeOf(r.setId);
       const ready = c.said?.ready;
       if (theme && ready !== null && ready !== undefined) {
         const a = theme.ready[ready]!;
-        ctx.phrase(c.ownerId, { itemId: `narabete:${theme.id}:${ready}`, text: a.jp.text, kana: a.jp.kana, en: a.jp.en, outcome: c.said?.via === 'speech' ? 'said' : 'seen' });
+        // A ready-made answer picked off the phone: said, but read.
+        ctx.phrase(c.ownerId, { itemId: `narabete:${theme.id}:${ready}`, text: a.jp.text, kana: a.jp.kana, en: a.jp.en, outcome: c.said?.via === 'speech' ? 'said' : 'seen', recall: 'read' });
       }
     }
   }

@@ -78,6 +78,8 @@ export interface PhraseCard {
   recall?: Recall;
   /** The days it was said from memory (newest last, capped at MEMORY_DAYS), for the learning path's goals. */
   memory?: MemoryDay[];
+  /** Epoch ms it was last said from memory. */
+  memAt?: number;
 }
 
 /** One day a phrase was said from memory: how many times, and whether any of them was in a game (not a phone review). */
@@ -100,6 +102,8 @@ export interface FrameMark {
   recheckAt: number;
   /** waiting: not re-checked yet; passed: said again from memory; fading: missed in the re-check, until said again. */
   recheck: 'waiting' | 'passed' | 'fading';
+  /** The day (the player's own) it faded: only a say from memory on a later day brings it back. */
+  fadedDay?: string;
 }
 
 /** A finished game as the profile keeps it (without the per-card detail). */
@@ -129,7 +133,7 @@ export const MAX_GAMES = 100;
 export const MAX_PHRASES = 600;
 /** One review sitting: about the design doc's 3 minutes. */
 export const REVIEW_SIZE = 12;
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 /** Memory days kept per phrase: plenty for the path's rule (2 days at least 3 apart). */
 export const MEMORY_DAYS = 12;
 /** A frame said from memory counts at most this many times a day (so one night can't meet it). */
@@ -141,15 +145,17 @@ export const FRAME_GAP_DAYS = 3;
 /** A met frame comes back once in the phone review this many days later. */
 export const RECHECK_DAYS = 21;
 
-/** Games whose "said" is never from memory: Dub Club reads its script, Karaoke Duel sings the lyrics on screen. */
-const READ_MODES: ReadonlySet<ModeId> = new Set(['dub-club', 'karaoke-duel']);
-
-/** How a phrasebook entry was said: the mode's own tag, else from memory, except in the read-aloud games. */
-export const recallOf = (e: Pick<PhraseEntry, 'recall'>, mode: ModeId): Recall => e.recall ?? (READ_MODES.has(mode) ? 'read' : 'memory');
+/**
+ * How a phrasebook entry was said. Opt-in: only a line its game tags `recall: 'memory'` counts as said from
+ * memory; anything untagged (Dub Club's script, Karaoke Duel's lyrics, a new mode) is read.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const recallOf = (e: Pick<PhraseEntry, 'recall'>, _mode?: ModeId): Recall => e.recall ?? 'read';
 
 /** Today counts once more for a phrase said from memory. */
-function rememberDay(card: PhraseCard, day: string, game: boolean): void {
+function rememberDay(card: PhraseCard, day: string, game: boolean, at: number): void {
   card.recall = 'memory';
+  card.memAt = Math.max(card.memAt ?? 0, at);
   const days = (card.memory ??= []);
   const d = days.find((x) => x.day === day);
   if (d) {
@@ -214,7 +220,7 @@ function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number, day: s
   card.seen += 1;
   if (e.outcome === 'said') {
     card.said += 1;
-    if (recallOf(e, mode) === 'memory') rememberDay(card, day, true);
+    if (recallOf(e, mode) === 'memory') rememberDay(card, day, true, at);
     else card.recall ??= 'read';
     card.box = Math.min(TOP_BOX, card.box + 1);
     card.due = at + BOX_DAYS[card.box]! * DAY_MS;
@@ -261,7 +267,8 @@ export function recheckPhrases(p: Progress, now: number): PhraseCard[] {
   const by = byFrame(p);
   const out: PhraseCard[] = [];
   for (const [id] of due) {
-    const best = (by.get(id) ?? []).filter((c) => c.recall === 'memory').sort((a, b) => memSays(b) - memSays(a) || b.lastAt - a.lastAt)[0];
+    // The probe is the phrase practised least, and longest ago: the hardest fair test of the frame.
+    const best = (by.get(id) ?? []).filter((c) => c.recall === 'memory').sort((a, b) => memSays(a) - memSays(b) || (a.memAt ?? 0) - (b.memAt ?? 0))[0];
     if (best && !out.includes(best)) out.push(best);
   }
   return out;
@@ -280,6 +287,9 @@ export interface FrameRule {
   spaced: boolean;
   /** Said from memory in a game on at least one day (not only in phone reviews). */
   inGame: boolean;
+  /** The first and last days said from memory (YYYY-MM-DD), or null. */
+  firstDay: string | null;
+  lastDay: string | null;
 }
 
 const dayNum = (day: string): number => Date.parse(`${day}T00:00:00Z`) / DAY_MS;
@@ -298,9 +308,18 @@ export function frameRule(cards: readonly PhraseCard[]): FrameRule {
       perDay.set(d.day, t);
     }
   }
-  const days = [...perDay.keys()].map(dayNum).sort((a, b) => a - b);
+  const keys = [...perDay.keys()].sort();
+  const days = keys.map(dayNum);
   const says = [...perDay.values()].reduce((n, d) => n + Math.min(SAYS_PER_DAY, d.n), 0);
-  return { says, fillers, days: days.length, spaced: days.length >= 2 && days[days.length - 1]! - days[0]! >= FRAME_GAP_DAYS, inGame: [...perDay.values()].some((d) => d.game) };
+  return {
+    says,
+    fillers,
+    days: days.length,
+    spaced: days.length >= 2 && days[days.length - 1]! - days[0]! >= FRAME_GAP_DAYS,
+    inGame: [...perDay.values()].some((d) => d.game),
+    firstDay: keys[0] ?? null,
+    lastDay: keys[keys.length - 1] ?? null,
+  };
 }
 
 export const ruleMet = (r: FrameRule): boolean => r.says >= FRAME_SAYS && r.fillers >= FRAME_FILLERS && r.spaced && r.inGame;
@@ -330,18 +349,31 @@ export function markFrames(p: Progress, now: number): string[] {
       }
       continue;
     }
-    if (m.recheck !== 'passed' && now >= m.recheckAt && cards.some((c) => c.last === 'said' && c.recall === 'memory' && c.lastAt >= m.recheckAt)) m.recheck = 'passed';
+    if (m.recheck === 'passed' || now < m.recheckAt) continue;
+    // Said from memory again since the check came due (and, once faded, on a later day than the miss).
+    const again = cards.some((c) => (c.memAt ?? 0) >= m.recheckAt && (!m.fadedDay || (c.memory ?? []).some((d) => d.day > m.fadedDay!)));
+    if (again) {
+      m.recheck = 'passed';
+      delete m.fadedDay;
+    }
   }
   return fresh;
 }
 
-/** The re-check in a phone review: a frame's phrase marked known passes it; missed, the frame fades until said again. */
-function recheckReview(p: Progress, card: PhraseCard, knew: boolean, now: number): void {
+/**
+ * The re-check in a phone review: only the probe phrase decides it. Known, the frame passes; missed, it fades
+ * until said from memory again on a later day.
+ */
+function recheckReview(p: Progress, card: PhraseCard, knew: boolean, now: number, day: string): void {
+  if (!recheckPhrases(p, now).includes(card)) return;
   for (const id of phraseFrames(card)) {
     const m = p.frameMarks?.[id];
-    if (!m || m.recheckAt > now || m.recheck === 'passed') continue;
+    if (!m || m.recheckAt > now || m.recheck !== 'waiting') continue;
     if (knew) m.recheck = 'passed';
-    else if (m.recheck === 'waiting') m.recheck = 'fading';
+    else {
+      m.recheck = 'fading';
+      m.fadedDay = day;
+    }
   }
 }
 
@@ -352,13 +384,13 @@ function recheckReview(p: Progress, card: PhraseCard, knew: boolean, now: number
 export function reviewPhrase(p: Progress, itemId: string, knew: boolean, now: number, tzOffsetMin = 0): PhraseCard | null {
   const card = p.phrases?.[itemId];
   if (!card) return null;
-  recheckReview(p, card, knew, now);
+  recheckReview(p, card, knew, now, dayOf(now, tzOffsetMin));
   card.seen += 1;
   card.last = knew ? 'said' : 'missed';
   card.lastAt = now;
   if (knew) {
     card.said += 1;
-    rememberDay(card, dayOf(now, tzOffsetMin), false);
+    rememberDay(card, dayOf(now, tzOffsetMin), false, now);
     card.box = Math.min(TOP_BOX, card.box + 1);
     card.due = now + BOX_DAYS[card.box]! * DAY_MS;
   } else {

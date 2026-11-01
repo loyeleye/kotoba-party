@@ -536,7 +536,7 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
   const name = nameFor(s, ctx.player(t.guestId));
   if (truth && ctx.player(t.guestId)) {
     const line = fillFrame(card.first, truth.word);
-    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen' });
+    ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? 'said' : 'seen', recall: 'read' });
   }
   for (const p of ctx.players()) {
     const greet = `はじめまして。${nameFor(s, p)}です。よろしく おねがいします。`;
@@ -547,7 +547,7 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
     }
     if (p.id === t.introducerId && truth) {
       const line = fillFrame(card.third, truth.word, name);
-      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen' });
+      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen', recall: 'read' });
     }
   }
 }

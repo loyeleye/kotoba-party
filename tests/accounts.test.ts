@@ -227,7 +227,7 @@ describe('account service', () => {
     const token = (await s.register()).data.token!;
     expect((await s.call('me', undefined, token)).data.account).toMatchObject({ path: false, frames: [] });
     await s.accounts.recordResults([
-      { account: token, result: game(T0, [], { mode: 'last-train', phrases: [{ itemId: 'k', text: 'コーヒーを ください', kana: 'コーヒーを ください', en: 'A coffee, please', outcome: 'said' }] }) },
+      { account: token, result: game(T0, [], { mode: 'last-train', phrases: [{ itemId: 'k', text: 'コーヒーを ください', kana: 'コーヒーを ください', en: 'A coffee, please', outcome: 'said', recall: 'memory' }] }) },
     ]);
     const on = await s.call('settings', { path: true }, token);
     expect(on.data.account).toMatchObject({ path: true, frames: [{ id: 'kudasai', phrases: 1, said: 1 }] });

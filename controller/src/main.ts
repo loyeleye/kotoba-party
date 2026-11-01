@@ -496,11 +496,10 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
       store('kotoba:level', level);
       void command({ type: 'setLevel', level });
     }),
-    pathCleared(me),
   ];
-  // The path's strip sits under Start (or under the VIP's waiting line).
-  if (isVip) parts.push(vipMenu(view, pathCard(view, me, isVip)));
-  else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), pathCard(view, me, isVip), quip(vipIdleQuip));
+  // The path's cleared card and strip sit under Start (or under the VIP's waiting line).
+  if (isVip) parts.push(vipMenu(view, pathCard(view, me, isVip), pathCleared(me)));
+  else parts.push(h('p', { class: 'hint' }, 'Waiting for the VIP to pick a game.'), pathCleared(me), pathCard(view, me, isVip), quip(vipIdleQuip));
   // Links to bring more people in: the phone link for when the QR code won't scan, the stage
   // screen link for friends playing from somewhere else.
   parts.push(fold('invite', ['Invite friends', ruby({ text: '友だちを よぼう', kana: 'ともだちを よぼう' }, { class: 'jp-k' })], 'Links for friends who can’t scan the code', invite(inviteLinks(session?.site ?? location.origin, view.code), view.code, false)));
@@ -677,7 +676,7 @@ function jaTitle(m: ModeInfo, level: Level): HTMLElement {
   return ruby({ text: m.titleJa, kana: m.titleKana }, { class: 'gp-ja' });
 }
 
-function vipMenu(view: RoomView, strip: HTMLElement | null = null): HTMLElement {
+function vipMenu(view: RoomView, strip: HTMLElement | null = null, cleared: HTMLElement | null = null): HTMLElement {
   const n = view.players.length;
   speakers = speakersIn(view.players);
   const level = view.players.find((p) => p.isVip)?.level ?? 'n5';
@@ -753,7 +752,7 @@ function vipMenu(view: RoomView, strip: HTMLElement | null = null): HTMLElement 
     mount(
       current,
       hostIcon(m),
-      h('span', { class: 'gp-text' }, h('small', { class: 'gp-kicker' }, 'Tonight’s game'), h('strong', {}, m.title), jaTitle(m, level), h('small', {}, m.blurb)),
+      h('span', { class: 'gp-text' }, h('small', { class: 'gp-kicker' }, 'Tonight’s game'), h('strong', {}, m.title), jaTitle(m, level), h('small', {}, m.blurb), isSurprise(m) ? null : wishBadge(view.wishes?.[m.id as ModeId])),
       h('span', { class: 'gp-change' }, 'Change'),
     );
     current.setAttribute('aria-label', `Tonight’s game: ${m.title}. Change game`);
@@ -806,6 +805,7 @@ function vipMenu(view: RoomView, strip: HTMLElement | null = null): HTMLElement 
     extras,
     note,
     startBtn,
+    cleared,
     strip,
     fold('settings', ['Room settings', ruby({ text: 'へやの 設定', kana: 'へやの せってい' }, { class: 'jp-k' })], 'Calm motion · Hand over VIP', motionToggle(view), vipHandoff(view)),
     sheet,

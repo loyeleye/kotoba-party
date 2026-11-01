@@ -15,7 +15,8 @@ const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 10, 1, 12);
 const room = (players: number, speakers = players) => ({ players, speakers });
 
-const said = (itemId: string, text: string, over: Partial<PhraseEntry> = {}): PhraseEntry => ({ itemId, text, kana: text, en: '', outcome: 'said', ...over });
+/** Said from memory (games tag that explicitly; an untagged phrase counts as read). */
+const said = (itemId: string, text: string, over: Partial<PhraseEntry> = {}): PhraseEntry => ({ itemId, text, kana: text, en: '', outcome: 'said', recall: 'memory', ...over });
 const game = (at: number, phrases: PhraseEntry[], over: Partial<GameResult> = {}): GameResult => ({ mode: 'last-train', at, score: 100, place: 1, players: 3, coop: false, awards: [], cards: [], phrases, ...over });
 
 /** Plays a game and saves it the way the account service does. */
@@ -101,11 +102,13 @@ describe('when a frame is met', () => {
   it('counts only true recall: read, echoed, tile and script lines don’t', () => {
     const p = emptyProgress();
     play(p, T0, [said('a', 'アキです。', { recall: 'read' }), said('b', 'がくせいです。', { recall: 'read' })]);
-    play(p, T0 + 3 * DAY, [said('c', 'ねこです。')], { mode: 'dub-club' });
+    play(p, T0 + 3 * DAY, [said('c', 'ねこです。', { recall: undefined })], { mode: 'dub-club' });
     expect(frame(p, 'desu')).toMatchObject({ met: false, rule: { says: 0, fillers: 0 } });
     expect(p.phrases!['a']).toMatchObject({ recall: 'read', said: 1 });
+    // Opt-in: untagged is read, whatever the game.
     expect(recallOf({}, 'karaoke-duel')).toBe('read');
-    expect(recallOf({}, 'oogiri')).toBe('memory');
+    expect(recallOf({}, 'oogiri')).toBe('read');
+    expect(recallOf({ recall: 'memory' }, 'oogiri')).toBe('memory');
   });
 });
 
@@ -148,6 +151,19 @@ describe('goals and stamps', () => {
     expect(KANA_TARGET.hiragana).toBeLessThan(hira.length);
   });
 
+  it('counts the everyday forms of a set phrase, only at the start or after a space', () => {
+    const p = emptyProgress();
+    const lines = ['ありがとう！', 'すいません、えきは どこですか。', 'よろしく おねがい いたします。', 'まいにち こんにちは'];
+    play(p, T0, lines.map((s, i) => said(`v${i}`, s)));
+    play(p, T0 + DAY, lines.map((s, i) => said(`v${i}`, s)));
+    expect(goal(p, 'K3', T0 + DAY).count).toEqual({ have: 4, need: 6 });
+    const q = emptyProgress();
+    // Inside a word doesn't count: こんにちは glued onto まいにち.
+    play(q, T0, [said('w', 'まいにちこんにちは')]);
+    play(q, T0 + DAY, [said('w', 'まいにちこんにちは')]);
+    expect(goal(q, 'K3', T0 + DAY).count!.have).toBe(0);
+  });
+
   it('meets the set-phrase goal at 6 of 8, each on 2 days', () => {
     const p = emptyProgress();
     const set = ['おはようございます', 'こんにちは', 'こんばんは', 'ありがとうございます', 'すみません', 'ごめんなさい'];
@@ -157,13 +173,19 @@ describe('goals and stamps', () => {
     expect(goal(p, 'K3', T0 + DAY)).toMatchObject({ met: true, count: { have: 6, need: 6 } });
   });
 
-  it('counts kanji read from memory in Shodō and Read the Signs', () => {
+  it('counts kanji read from memory in Shodō and Read the Signs: the asked-about sign only, on game days', () => {
     const p = emptyProgress();
-    play(p, T0, [said('kj-山', '山'), said('read-the-signs.exit', '「出口」です。')], { mode: 'shodo' });
-    play(p, T0 + DAY, [said('kj-山', '山'), said('read-the-signs.exit', '「出口」です。')], { mode: 'shodo' });
+    // 07-onna-toire shows 男 and 女; only 女 (the target) was read. 02-deguchi is one sign, 出口.
+    const night = [said('kj-山', '山'), said('read-the-signs.07-onna-toire', 'おんなの ひとの トイレは みぎです。'), said('read-the-signs.02-deguchi', '「出口」です。')];
+    play(p, T0, night);
+    play(p, T0 + DAY, night);
     const s = status(p, T0 + DAY);
-    expect(s.goals.find((g) => g.id === '5.10')!.count!.have).toBeGreaterThanOrEqual(2);
-    expect(s.stats.kanji).toBeGreaterThanOrEqual(2);
+    expect(s.goals.find((g) => g.id === '5.10')!.count!.have).toBe(4);
+    const q = emptyProgress();
+    play(q, T0, [said('kj-山', '山')]);
+    // A phone review is not a game day.
+    reviewPhrase(q, 'kj-山', true, T0 + 3 * DAY, 0);
+    expect(goal(q, '5.10', T0 + 3 * DAY).count!.have).toBe(0);
   });
 });
 
@@ -183,8 +205,23 @@ describe('the 21-day re-check', () => {
     expect(goal(p, 'K4', check)).toMatchObject({ met: true, recheck: 'fading' });
     // Not in the review again just for the check.
     expect(duePhrases(p, check).filter((c) => c.itemId === first.itemId && c.due > check)).toEqual([]);
+    // Said again the same day as the miss: still fading. A later day clears it.
+    play(p, check + 60_000, [said('a', 'アキです。')]);
+    expect(frame(p, 'desu', check + 60_000).recheck).toBe('fading');
     play(p, check + DAY, [said('a', 'アキです。')]);
     expect(frame(p, 'desu', check + DAY).recheck).toBe('passed');
+  });
+
+  it('only the chosen phrase decides the check', () => {
+    const p = emptyProgress();
+    meetDesu(p);
+    const check = T0 + 24 * DAY;
+    const probe = duePhrases(p, check)[0]!.itemId;
+    const other = probe === 'a' ? 'b' : 'a';
+    reviewPhrase(p, other, false, check, 0);
+    expect(frame(p, 'desu', check).recheck).toBe('due');
+    reviewPhrase(p, probe, true, check, 0);
+    expect(frame(p, 'desu', check).recheck).toBe('passed');
   });
 
   it('passes when known in the review', () => {
@@ -218,10 +255,27 @@ describe('what to play next', () => {
     expect(missingFrames(s.goal)).toEqual([]);
   });
 
-  it('moves to the next line up once a line is cleared', () => {
+  it('moves to the next line up once its own line has nothing open', () => {
     const st = status(emptyProgress());
-    st.lines[0]!.cleared = true;
+    for (const g of st.goals) if (g.id.startsWith('K')) g.met = true;
     expect(currentLine(st, 'kana').id).toBe('local');
+  });
+
+  it('rests a goal that only lacks the 3-day gap, and says when', () => {
+    const p = emptyProgress();
+    play(p, T0, [said('a', 'アキです。'), said('b', 'がくせいです。'), said('c', 'ねこです。')]);
+    play(p, T0 + DAY, [said('a', 'アキです。')]);
+    expect(frame(p, 'desu', T0 + DAY).waitUntil).toBe('2026-11-04');
+    expect(goal(p, 'K4', T0 + DAY).waitUntil).toBe('2026-11-04');
+    expect(suggest(status(p, T0 + DAY), 'kana', room(4))!.goal.id).not.toBe('K4');
+    expect(goal(p, 'K4', T0 + 3 * DAY).waitUntil).toBeNull();
+  });
+
+  it('clears a line on the goals that can be met today; coming-soon goals don’t block it', () => {
+    const st = status(emptyProgress());
+    const local = st.lines.find((l) => l.id === 'local')!;
+    const ready = GOALS.filter((g) => g.line === 'local' && !g.gap && missingFrames(g).length === 0).length;
+    expect(local).toMatchObject({ met: 0, of: ready, soon: 10 - ready, cleared: false });
   });
 });
 
@@ -229,6 +283,6 @@ describe('the recap box', () => {
   it('lists each frame said from memory once, with how many different phrases', () => {
     const book: PhraseEntry[] = [said('a', 'すしが すきです。'), said('b', 'ねこが すきです。'), said('c', 'いぬが すきです。', { recall: 'read' }), said('d', 'コーヒーを ください。', { outcome: 'seen' })];
     expect(tonightFrames(book, 'oogiri' as ModeId)).toEqual([{ id: 'suki', phrases: 2 }]);
-    expect(tonightFrames(book, 'dub-club')).toEqual([]);
+    expect(tonightFrames([said('e', 'ねこが すきです。', { recall: undefined })], 'dub-club')).toEqual([]);
   });
 });
