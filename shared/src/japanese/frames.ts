@@ -170,7 +170,7 @@ const MATCHERS: readonly { id: FrameId; re: RegExp; not?: RegExp }[] = [
   { id: 'ja-nai', re: new RegExp(`(じゃ|では)${S}(ない|ありません)`), not: new RegExp(`(?<!に)んじゃ${S}(ない|ありません)`) },
   // Not the adjectives that end in たい: いたい (it hurts), つめたい (cold), かたい (hard)…, nor みたい (looks like),
   // けいたい (a mobile) or ネクタイ, nor their negatives (つめたくない: isn't cold).
-  { id: 'tai', re: new RegExp(`\\S(たい|たく(ない|ありません))${S}です(${END}|${S}と${S}(いい|言い|いっ|言っ|おも|思))|\\S\\Sたい[！!。]*$`), not: new RegExp(`(^|[\\s\\u3000、が])(い|痛)たい|(?<!(を|も)[\\s\\u3000]*)みたい|くたい|けいたい|携帯|つめたい|冷たい|かたい|固い|硬い|ひらたい|おもたい|重たい|けむたい|めでたい|(^|[\\s\\u3000、が])(い|痛)たく|(つめ|冷|かた|固|硬|ひら|おも|重|けむ)たく`) },
+  { id: 'tai', re: new RegExp(`\\S(たい|たく(ない|ありません))${S}です(${END}|${S}と${S}(いい|言い|いっ|言っ|おも|思))|\\S\\Sたい${S}(な|なあ|ね|よ|の)?${S}[！!。？?…]*$`), not: new RegExp(`(^|[\\s\\u3000、が])(い|痛)たい|(?<!(を|も)[\\s\\u3000]*)みたい|くたい|けいたい|携帯|つめたい|冷たい|かたい|固い|硬い|ひらたい|おもたい|重たい|けむたい|めでたい|(^|[\\s\\u3000、が])(い|痛)たく|(つめ|冷|かた|固|硬|ひら|おも|重|けむ)たく`) },
   // A yes-or-no question: 「すきですか」, 「よく きますか」, 「ありませんか」. After the question frames above (where, what, may I,
   // shall we). Not 「そうですか」 (I see).
   { id: 'ka', re: new RegExp(`(です|ます|ません)${S}か${END}`), not: new RegExp(`(^|[\\s\\u3000、])そう${S}です${S}か|[てで]${S}(くれ|呉れ|もらえ|貰え|いただけ|頂け|ください|くださいま)(ます|ません)${S}か`) },
@@ -427,7 +427,9 @@ const MORE_N5: Matcher[] = [
   // ＿ましょう／ましょうか. Not でしょう or しょうゆ.
   { id: 'mashou', re: rx(`ましょう`), hides: [...QUESTION] },
   // ＿ないで ください.
-  { id: 'naide-kudasai', re: rx(`ないで[\\s\\u3000]*(ください|下さい)`), hides: ['kudasai'] },
+  // Plain ＿ないで at the end counts too (Ladi, Nov 1: casual forms count toward the polite frames). Mid-sentence
+  // ないで is "without doing" (たべないで いく).
+  { id: 'naide-kudasai', re: rx(`ないで[\\s\\u3000]*(ください|下さい)|ないで[\\s\\u3000]*(ね|よ|な)?[\\s\\u3000]*[！!。…]*[\\s\\u3000]*$`), hides: ['kudasai'] },
 ];
 
 // ---- N4 matchers (goals 4.1 to 4.14) ----

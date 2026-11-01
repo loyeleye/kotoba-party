@@ -65,7 +65,9 @@ picture: the 10/10 bar is a regression test, not a measure of precision (see "Fo
 
 ## Known gaps (on purpose)
 
-- Plain requests (もらえる？) and casual forms beyond 〜てる／〜とく, ＿んだ and ＿よ／ね／の are thin.
+- Plain forms count toward the polite frames (Ladi, Nov 1): もらえる？ and くれない？ as favours, ＿たい(な) at
+  the end as ＿たいです, ＿ないで at the end as ＿ないで ください. Other casual forms beyond 〜てる／〜とく, ＿んだ and
+  ＿よ／ね／の are thin.
 - ご＿ください is left out of お＿ください (it's the N3 service frame).
 - Agentless passives (この寺は建てられた) are left out: without someone who did it (Nに) or a を object,
   godan れる is as likely honorific (社長は帰られました) and ichidan られる "can".

@@ -64,6 +64,15 @@ export const probes: Probe[] = [
   { line: 'かれが くる ために、へやを そうじしました。', not: ['tame-ni'] },
   { line: 'せまいながらも たのしい わがやです。', not: ['nagara'] },
   { line: 'せんせいに ほめられました。', not: ['ni-masu'] },
+  // Plain forms count toward the polite frames (Ladi, Nov 1).
+  { line: 'まどを あけて もらえる？', not: [], want: ['te-moraeru'] },
+  { line: 'ちょっと てつだって くれない？', not: [], want: ['te-kuremasen'] },
+  { line: 'すしが たべたいな。', not: [], want: ['tai'] },
+  { line: 'にほんに いきたい！', not: [], want: ['tai'] },
+  { line: 'わすれないで ね。', not: [], want: ['naide-kudasai'] },
+  { line: 'なかないで！', not: [], want: ['naide-kudasai'] },
+  { line: 'あさごはんを たべないで、がっこうに いきました。', not: ['naide-kudasai'] },
+  { line: 'ねこみたいな いぬ。', not: ['tai'] },
   // Lines the fixes above must not break.
   { line: 'わたしは かいしゃいんです。', not: [], want: ['wa-desu'] },
   { line: 'あらまあ、くびが からまっちゃった！', not: [], want: ['te-shimau'] },
