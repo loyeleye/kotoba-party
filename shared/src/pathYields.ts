@@ -107,24 +107,24 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "you-ni-naru": 0.09
     },
     "late-again": {
-      "ka": 0.66,
-      "mashita": 1.09,
-      "migi-hidari": 0.08,
+      "ka": 0.75,
+      "mashita": 1,
+      "migi-hidari": 0.05,
       "no": 0.17,
       "node": 0.2,
-      "passive": 0.28,
-      "potential": 0.14,
-      "sugiru": 0.52,
-      "ta-koto": 0.39,
-      "tara": 0.08,
+      "passive": 0.41,
+      "potential": 0.05,
+      "sugiru": 0.38,
+      "ta-koto": 0.41,
       "te-iru": 0.31,
       "te-mo-ii": 0.34,
-      "te-shimau": 0.41
+      "te-shimau": 0.38
     },
     "ghost-hotline": {
       "de-o": 0.28,
       "hou-ga-ii": 3.25,
       "ka": 2.75,
+      "sou-look": 0.58,
       "tara": 2.53,
       "tara-dou": 2.75
     },
@@ -189,14 +189,14 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
     "hajimemashite": {},
     "happyokai": {
       "desu": 1.22,
-      "ikura": 0.2,
-      "ka": 2.33,
+      "ikura": 0.17,
+      "ka": 2.02,
       "mashita": 0.3,
       "migi-hidari": 0.14,
       "ni-masu": 1.3,
       "no": 0.14,
-      "suki": 0.39,
-      "te-iru": 0.28,
+      "suki": 0.33,
+      "te-iru": 0.25,
       "te-kudasai": 0.3
     },
     "late-again": {
@@ -239,9 +239,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "desu": 0.5,
       "wa-desu": 0.5
     },
-    "tourist": {
-      "desu": 0.05
-    },
+    "tourist": {},
     "oekaki": {},
     "omiai": {
       "desu": 0.33,
