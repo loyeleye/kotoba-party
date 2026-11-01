@@ -49,8 +49,8 @@ function heading(en: string, jp?: string, kana?: string): HTMLElement {
   return h('h3', {}, en, jp ? ruby({ text: jp, kana }, { class: 'jp-k' }) : null);
 }
 
-/** Puts the settings button on the stage; the panel opens over the canvas. */
-export function mountSettings(parent: HTMLElement, options: { watch: boolean; send: Send; site: () => string }): void {
+/** Puts the settings button in the stage's toolbar (`bar`, else `parent`); the panel opens over the canvas. */
+export function mountSettings(parent: HTMLElement, options: { watch: boolean; send: Send; site: () => string; bar?: HTMLElement }): void {
   opts = options;
   const button = h('button', { type: 'button', class: 'st-open', 'aria-haspopup': 'dialog', 'aria-expanded': 'false' }, '⚙ Settings') as HTMLButtonElement;
   room = h('div', { class: 'st-room' });
@@ -97,7 +97,8 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
       renderRoom(true);
     } else show(false);
   });
-  parent.append(button, panel);
+  (options.bar ?? parent).append(button);
+  parent.append(panel);
 }
 
 /** Call on every render: keeps the room section in step with the game. */

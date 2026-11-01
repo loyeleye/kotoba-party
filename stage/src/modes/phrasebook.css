@@ -1,16 +1,15 @@
 /* The stage's Phrasebook (stage/src/phrasebook.ts): a gold button beside Settings in the lobby and
    the recap, and a panel of washi phrase cards readable from the sofa. One status scale with the
    phone: green said, amber practise; told apart by shape too (solid and dashed chips, ✓ and ↻). */
-.spb-open { position: absolute; top: 6px; left: 470px; z-index: 5; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; background: transparent; color: var(--muted); border: 2px solid var(--line); border-radius: 10px; padding: 2px 14px 2px 8px; font: 700 19px var(--font-body); cursor: pointer; }
+/* Shape and size come from the toolbar (style.css .stage-tools); the icon sits closer to the edge. */
+.stage-tools > .spb-open { padding-left: 6px; font-weight: 700; }
 .spb-open.has { background: var(--gold); color: var(--outline); border-color: var(--outline); box-shadow: 0 3px 0 var(--outline); }
 .spb-open[hidden], .spb-panel[hidden], .spb-scrim[hidden], .spb-count[hidden] { display: none; }
 .spb-open[aria-expanded='true'] { box-shadow: none; translate: 0 2px; }
 .spb-book { width: 28px; height: 28px; object-fit: contain; image-rendering: pixelated; }
-.spb-count { min-width: 28px; padding: 0 6px; border-radius: 999px; background: var(--outline); color: var(--gold); font-size: 16px; text-align: center; }
-/* The now-playing line (music.css) starts where this button sits: it moves along while the button shows. */
-body:has(.spb-open:not([hidden])) .mu-now { left: 660px; max-width: 710px; }
+.spb-count { min-width: 28px; padding: 2px 6px; border-radius: 999px; background: var(--outline); color: var(--gold); font-size: 16px; text-align: center; }
 .spb-scrim { position: absolute; inset: 0; z-index: 19; background: rgba(8, 4, 24, 0.7); }
-.spb-panel { position: absolute; top: 56px; left: 96px; right: 96px; bottom: 36px; z-index: 20; display: grid; grid-template-rows: auto auto 1fr; gap: 14px; padding: 20px 32px 24px; background: var(--panel); color: var(--ink); border: 3px solid var(--outline); border-radius: 16px; box-shadow: 0 8px 0 var(--outline), 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 1px var(--line); text-align: left; animation: spb-in 220ms ease-out both; }
+.spb-panel { position: absolute; top: 60px; left: 96px; right: 96px; bottom: 36px; z-index: 20; display: grid; grid-template-rows: auto auto 1fr; gap: 14px; padding: 20px 32px 24px; background: var(--panel); color: var(--ink); border: 3px solid var(--outline); border-radius: 16px; box-shadow: 0 8px 0 var(--outline), 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 0 0 1px var(--line); text-align: left; animation: spb-in 220ms ease-out both; }
 @keyframes spb-in { from { opacity: 0; translate: 0 12px; } }
 .spb-head { display: flex; align-items: center; gap: 14px; }
 .spb-fude { width: 64px; height: 64px; image-rendering: pixelated; }

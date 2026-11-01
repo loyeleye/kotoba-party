@@ -106,6 +106,15 @@ rt { font-size: 0.5em; font-weight: 700; color: var(--ink); letter-spacing: 0; }
 /* A line that carries ruby keeps the same height as one that doesn't. */
 p:has(ruby), li:has(ruby) { line-height: 2; }
 
+/* ---- the toolbar: Sound, Settings, Phrasebook, then the now-playing credit ---- */
+/* One row in the top margin, under the bunting's points and clear of the header at 54px. The buttons
+   share one shape (36px tall, 2px edge, solid fill, hard 3px shadow, like the pixel set) so they line
+   up whichever are showing; 12px between buttons, 24px before the credit; the credit shrinks first. */
+.stage-tools { position: absolute; top: 12px; left: 96px; right: 96px; z-index: 5; display: flex; align-items: center; gap: 12px; height: 39px; padding-bottom: 3px; box-sizing: border-box; pointer-events: none; }
+.stage-tools > * { flex: none; pointer-events: auto; }
+.stage-tools > button { box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; background: var(--bg); color: var(--muted); border: 2px solid var(--line); border-radius: 8px; box-shadow: 0 3px 0 var(--outline); font: 600 18px/1 var(--font-body); white-space: nowrap; cursor: pointer; }
+.stage-tools > button[hidden] { display: none; }
+
 /* ---- header: big join card in the lobby, one slim line in a game ---- */
 .bar { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 32px; }
 .brand { font-family: var(--font-pixel); font-size: 56px; font-weight: 700; color: var(--accent); line-height: 1; text-shadow: 0 4px 0 var(--outline); }

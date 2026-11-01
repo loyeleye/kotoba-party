@@ -1,13 +1,14 @@
 /* The stage's sound button (stage/src/music/index.ts). Not a mode: it lives here so the shell's
-   style.css stays as it is. Sits in the canvas's top margin, out of the title-safe area. */
-.mu-sound { position: absolute; top: 10px; left: 96px; z-index: 5; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 14px; font: 600 18px var(--font-body); cursor: pointer; }
-.mu-sound.mu-ask { background: var(--accent); color: var(--on-accent); border-color: transparent; font-weight: 800; animation: mu-nudge 2.4s ease-in-out infinite; }
+   style.css stays as it is. Sits in the stage's toolbar (style.css .stage-tools). */
+.mu-sound.mu-ask { background: var(--accent); color: var(--on-accent); border-color: var(--outline); font-weight: 800; animation: mu-nudge 2.4s ease-in-out infinite; }
 @keyframes mu-nudge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 /* Karaoke Duel has its own music button while a duel runs. */
 body[data-mode='karaoke-duel']:not([data-phase='lobby']):not([data-phase='recap']) .mu-sound { display: none; }
 @media (prefers-reduced-motion: reduce) { .mu-sound.mu-ask { animation: none; } }
 /* The now-playing credit beside the sound button, and the credits at the foot of the recap. */
-.mu-now { position: absolute; top: 14px; left: 470px; z-index: 5; max-width: 900px; color: var(--muted); font: 500 16px var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
+/* Last in the toolbar (style.css .stage-tools) whatever order it was mounted in, set apart from the
+   buttons by a wider gap, and cut with an ellipsis before it reaches the right margin. */
+.mu-now { order: 1; flex: 0 1 auto; min-width: 0; margin-left: 12px; color: var(--muted); font: 500 16px/1.4 var(--font-body); text-shadow: 0 2px 0 var(--outline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.9; }
 .credits { position: absolute; left: 96px; right: 96px; bottom: 4px; height: 46px; z-index: 5; margin: 0; display: grid; place-items: center; text-align: center; color: var(--muted); font: 500 18px/1.25 var(--font-body); text-wrap: balance; overflow: hidden; }
 .credits span { display: inline-block; animation: credit-in 400ms ease-out both; }
 @keyframes credit-in { from { opacity: 0; transform: translateY(6px); } }
