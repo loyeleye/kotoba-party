@@ -28,10 +28,11 @@ import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { saidPhrase } from '../phraseBingo/check.js';
-import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, keigoPair, nakodoLines, OPENERS, withName, type CharacterCard, type KeigoPair, type NakodoLine, type OmiaiQuestion } from './cards.js';
+import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, keigoPair, NAKODO_KEYS, nakodoLines, OPENERS, withName, type CharacterCard, type KeigoPair, type NakodoLine, type OmiaiQuestion } from './cards.js';
 import { analysisText, checkManners, type CasualHit, type MannersResult, type Register } from './manners.js';
 import { playerTextAllowed } from '../../moderation.js';
-import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
+import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
+import { commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
 
 // ---- tuning ----
 
@@ -75,6 +76,8 @@ export const DURATIONS = {
   nakodoVoice: 7_000,
   /** The score's own line (the natural version) gets this long before she says the go-between's closing. */
   naturalRead: 5_000,
+  /** Her あらまあ once she has said the go-between's opening, before she reads the question. */
+  cheer: 2_500,
 } as const;
 
 /**
@@ -158,6 +161,12 @@ export interface Round {
   cuedAt?: number;
   /** When Nobiko-san has finished saying the go-between's accepted closing, so the score waits for it. */
   voicedUntil?: number;
+  /** The Gallery while the go-between gives the opening (players without the seat; mixedRoom.ts). */
+  gallery?: Gallery | null;
+  /** The commentary booth's replay of the go-between's landed opening. */
+  booth?: Commentary | null;
+  /** Nobiko-san giving the opening herself, in a 2-player room with nobody at N4 (once a game). */
+  standIn?: Commentary | null;
 }
 
 export type NakodoSlot = 'open' | 'close';
@@ -205,6 +214,10 @@ export interface OmiaiState {
   nakodoSeat?: number;
   /** Every go-between offer and what came of it. */
   nakodoLog?: { round: number; playerId: string; outcome: OfferAnswer }[];
+  /** The once-a-game Gallery curveball has been dealt. */
+  curveballUsed?: boolean;
+  /** The once-a-game host stand-in has been played. */
+  standInUsed?: boolean;
 }
 
 // ---- view ----
@@ -306,6 +319,10 @@ export interface OmiaiView {
   /** The round's go-between (prompt and score): their line once said. */
   /** pending: their line for this phase is still to come. */
   nakodo: { playerId: string; slot: NakodoSlot; declined: boolean; line: JpText | null; via: Utterance['via'] | null; points: number; pending: boolean } | null;
+  /** Prompt: the commentary booth's replay of the go-between's opening, or Nobiko-san's own (the stand-in). */
+  booth: { playerId: string | null; lit: Commentary['lit']; note: string; en: string; ms: number; standIn: boolean } | null;
+  /** Prompt: the Gallery's reaction bubbles. */
+  bubbles: ReactionTile[];
   me: {
     level: Level;
     slot: { question: QuestionView; sayFirst: boolean; sayFirstMs: number; tiles: TileView[] } | null;
@@ -317,6 +334,10 @@ export interface OmiaiView {
     accepted: boolean;
     /** When you are this round's go-between. */
     nakodo: NakodoMe | null;
+    /** Prompt: your Gallery tile while the go-between speaks (players without the seat). */
+    gallery: GalleryTileView | null;
+    /** Prompt, Kana and N5 phones: the gist of the keigo opening, in plain Japanese. */
+    gist: ReturnType<typeof gistFor>;
   } | null;
 }
 
@@ -346,7 +367,8 @@ export type OmiaiMove =
   | { kind: 'encore'; utterance: Utterance }
   | { kind: 'encore'; pass: true }
   | { kind: 'nakodo'; accept: boolean }
-  | { kind: 'nakodo'; utterance: Utterance };
+  | { kind: 'nakodo'; utterance: Utterance }
+  | { kind: 'gallery'; pick: string };
 
 // ---- helpers ----
 
@@ -629,8 +651,9 @@ const blankTry = (): NakodoTry => ({ tries: 0, ok: false, via: null, heard: '', 
 export const SPOTLIGHT_ROOM = 4;
 
 /**
- * Offers the round's go-between lines to the next N4 player by seat. Nobody at N4: Nobiko-san keeps them.
- * In a room of SPOTLIGHT_ROOM or more, a lone N4 player who was go-between last round sits this one out.
+ * Offers the round's go-between lines to an N4 player by the shared rotation (hardRoleLog.ts nextOfferee):
+ * fewest offers first, then longest ago; a "not this time" sits the next round out; in a room of SPOTLIGHT_ROOM
+ * or more nobody is go-between two rounds running. Nobody at N4: Nobiko-san keeps them.
  */
 function offerNakodo(s: OmiaiState, ctx: ModeContext): void {
   s.nakodo = null;
@@ -638,10 +661,15 @@ function offerNakodo(s: OmiaiState, ctx: ModeContext): void {
     .players()
     .filter((p) => p.level === 'n4' && p.connected)
     .sort((a, b) => a.seat - b.seat);
-  const p = n4.find((x) => x.seat > (s.nakodoSeat ?? 0)) ?? n4[0];
+  const past = (s.nakodoLog ?? []).map((o) => ({ playerId: o.playerId, at: o.round, answer: o.outcome }));
+  const id = nextOfferee(
+    n4.map((p) => p.id),
+    past,
+    s.round,
+    ctx.connected().length,
+  );
+  const p = n4.find((x) => x.id === id);
   if (!p) return;
-  const last = s.nakodoLog?.at(-1);
-  if (n4.length === 1 && ctx.connected().length >= SPOTLIGHT_ROOM && last?.round === s.round - 1 && last.playerId === p.id && last.outcome === 'accepted') return;
   s.nakodoSeat = p.seat;
   s.nakodo = { round: s.round, playerId: p.id, status: 'offered', lines: { open: blankTry(), close: blankTry() } };
 }
@@ -656,8 +684,64 @@ function closeNakodo(s: OmiaiState, ctx: ModeContext): void {
   (s.nakodoLog ??= []).push({ round: g.round, playerId: g.playerId, outcome });
 }
 
+// ---- mixed rooms: the Gallery, the commentary booth, the host stand-in (mixedRoom.ts) ----
+
+/**
+ * The booth's replay of the opening (the go-between's, or Nobiko-san's own): the line with its keigo word lit,
+ * one line of colour about the play, and for Kana and N5 phones the same news in plain N5 Japanese.
+ */
+function boothFor(line: NakodoLine, playerId: string | null, who: string): Commentary {
+  return {
+    playerId,
+    line: line.jp,
+    voiced: true,
+    lit: lightUp(line.jp.text, [line.key]),
+    note: `${line.key}: ${who} said it the keigo way, lifting the guest up, as a matchmaker does.`,
+    gist: { kana: line.gist.kana, en: line.gist.en, emoji: '🎎' },
+    ms: commentaryMs(line.jp),
+  };
+}
+
+/**
+ * Opens the round's Gallery once the go-between has taken the opening (Take it, or a first try): one reaction
+ * tile for every other connected player, and once a game a curveball for a Kana or N5 player ("Which word did
+ * you hear?": the opening's keigo word).
+ */
+function openNakodoGallery(s: OmiaiState, ctx: ModeContext): void {
+  const g = s.nakodo;
+  const r = s.current;
+  if (!g || !r || r.gallery || g.status !== 'accepted') return;
+  const others = ctx.connected().filter((p) => p.id !== g.playerId);
+  if (!others.length) return;
+  const line = nakodoLines(cardOf(s), s.round, s.totalRounds).open;
+  r.gallery = openGallery(
+    others.map((p) => p.id),
+    others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id),
+    { word: line.key, pool: NAKODO_KEYS },
+    !!s.curveballUsed,
+    s.round,
+  );
+  if (r.gallery.curveball) s.curveballUsed = true;
+}
+
+/**
+ * The host stand-in: a 2-player room with nobody at N4 never has a go-between, so once a game, in the first
+ * round, Nobiko-san gives the keigo opening herself (voiced, with its subtitle; the gist on the phones), then
+ * reads the question. Nobody is asked to say anything; no points. Returns true when she does.
+ */
+function standIn(s: OmiaiState, ctx: ModeContext): boolean {
+  const r = s.current;
+  if (!r || s.standInUsed || s.nakodo || !hostStandsIn(ctx.connected().map((p) => p.level))) return false;
+  s.standInUsed = true;
+  const line = nakodoLines(cardOf(s), s.round, s.totalRounds).open;
+  r.standIn = boothFor(line, null, 'Nobiko-san');
+  ctx.cue({ host: 'nobiko', event: 'omiai_standin', slots: { line: line.jp.text, line_kana: line.jp.kana, line_en: line.jp.en } });
+  cueQuestion(s, ctx, voiceMs(line.jp.kana));
+  return true;
+}
+
 /** Which line the phase is for. */
-const slotFor = (phase: Phase): NakodoSlot | null => (phase === 'prompt' ? 'open' : phase === 'score' ? 'close' : null);
+const slotFor =(phase: Phase): NakodoSlot | null => (phase === 'prompt' ? 'open' : phase === 'score' ? 'close' : null);
 
 /**
  * The go-between still has this phase's line to say. The opening ends once Nobiko-san has read the
@@ -783,7 +867,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         offerNakodo(s, ctx);
         // With a go-between, the opening is theirs; Nobiko-san reads the question once they've said it,
         // run out of tries, passed, or let it go by (see wake).
-        if (!s.nakodo) cueQuestion(s, ctx);
+        if (!s.nakodo && !standIn(s, ctx)) cueQuestion(s, ctx);
         break;
       }
       case 'answer':
@@ -840,8 +924,11 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
     switch (phase) {
       case 'intro':
         return DURATIONS.intro;
-      case 'prompt':
-        return DURATIONS.prompt + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo + DURATIONS.nakodoVoice : 0);
+      case 'prompt': {
+        // The stand-in's opening (once a game, at most 7 s) comes before the question, so the prompt is that much longer.
+        const stood = s.current?.standIn;
+        return DURATIONS.prompt + (nakodoOpen(s, phase, ctx) ? DURATIONS.nakodo + DURATIONS.nakodoVoice : 0) + (stood ? voiceMs(stood.line.kana) : 0);
+      }
       case 'answer':
         return DURATIONS.answer;
       case 'reveal':
@@ -1013,6 +1100,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         if (raw.accept === true) {
           // "Take it": the lines are theirs (the speak box is open either way).
           g.status = 'accepted';
+          if (phase === 'prompt') openNakodoGallery(s, ctx);
           return MOVE_OK;
         }
         const slot = slotFor(phase);
@@ -1029,6 +1117,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         const line = nakodoLines(cardOf(s), s.round, s.totalRounds)[slot];
         // A first try is a yes.
         g.status = 'accepted';
+        if (slot === 'open') openNakodoGallery(s, ctx);
         t.tries += 1;
         t.heard = heard;
         t.meter = checkManners(u, 'n4', { name: player.name }).meter;
@@ -1042,8 +1131,16 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
           ctx.phrase(playerId, { ...entry, outcome: 'seen' });
           // Nobiko-san says the line on the TV: the opening straight away (the question waits for it), the
           // closing once the score's own line has had its time, and only if it still fits in the phase.
-          if (slot === 'open') cueQuestion(s, ctx, voiceNakodo(line, ctx));
-          else {
+          if (slot === 'open') {
+            // The commentary booth replays it on the TV while she says it, then her あらまあ, then the question.
+            r.booth = boothFor(line, playerId, player.name);
+            const said = voiceNakodo(line, ctx);
+            // Only when it still leaves her time to read the question inside the go-between's longer prompt.
+            const end = s.phaseAt + DURATIONS.prompt + DURATIONS.nakodo + DURATIONS.nakodoVoice;
+            const cheer = ctx.now + said + DURATIONS.cheer + DURATIONS.questionRead <= end;
+            if (cheer) ctx.cue({ host: 'nobiko', event: 'omiai_nakodo_cheer', slots: { name: player.name }, atMs: said });
+            cueQuestion(s, ctx, said + (cheer ? DURATIONS.cheer : 0));
+          } else {
             const after = Math.max(0, s.phaseAt + DURATIONS.naturalRead - ctx.now);
             const end = s.phaseAt + DURATIONS.score + DURATIONS.nakodo + DURATIONS.nakodoVoice;
             if (ctx.now + after + voiceMs(line.jp.kana) <= end) r.voicedUntil = ctx.now + voiceNakodo(line, ctx, after);
@@ -1051,6 +1148,14 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         } else if (t.tries >= NAKODO_TRIES) ctx.phrase(playerId, { ...entry, outcome: 'missed' });
         // The opening is done (said, or out of tries): Nobiko-san reads the question.
         if (slot === 'open' && (t.ok || t.tries >= NAKODO_TRIES)) cueQuestion(s, ctx);
+        return MOVE_OK;
+      }
+      case 'gallery': {
+        // A reaction tile (or the curveball) from a player without the go-between's seat.
+        if (phase !== 'prompt' || !r?.gallery || typeof raw.pick !== 'string') return moveError('wrong-phase');
+        const points = pickGallery(r.gallery, playerId, raw.pick);
+        if (points === null) return moveError('bad-move');
+        pay(ctx, playerId, points);
         return MOVE_OK;
       }
       default:
@@ -1194,8 +1299,11 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
                 close: gLines.close.jp,
               }
             : null,
+        gallery: phase === 'prompt' ? galleryTileFor(r?.gallery, me.id, me.level) : null,
+        gist: phase === 'prompt' && r && (r.booth?.playerId ?? null) !== me.id ? gistFor(r.booth ?? r.standIn, me.level) : null,
       };
     }
+    const booth = phase === 'prompt' ? (r?.booth ?? r?.standIn ?? null) : null;
 
     return {
       mode: 'omiai',
@@ -1226,6 +1334,8 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
               pending: nakodoOpen(s, phase, ctx),
             }
           : null,
+      booth: booth ? { playerId: booth.playerId, lit: booth.lit, note: booth.note, en: booth.line.en, ms: booth.ms, standIn: !booth.playerId } : null,
+      bubbles: phase === 'prompt' && r?.gallery ? galleryBubbles(r.gallery) : [],
       me: mine,
     };
   },

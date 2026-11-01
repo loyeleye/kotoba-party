@@ -779,6 +779,10 @@ export interface NakodoLine {
   jp: JpText;
   /** The N4 frames this line practises, by id (shared/src/japanese/frames.ts). */
   frames: readonly string[];
+  /** The line's keigo word, lit by the commentary booth and the curveball's right answer. */
+  key: string;
+  /** The same news in plain N5 Japanese, for the gist on Kana and N5 phones. */
+  gist: JpText;
 }
 
 interface NakodoTemplate {
@@ -787,21 +791,27 @@ interface NakodoTemplate {
   kana: string;
   en: string;
   frames: readonly string[];
+  key: string;
+  /** The gist in N5 Japanese (draft), with the same slots. */
+  gist: string;
 }
 
 export const NAKODO: { status: ReviewStatus; open: Record<'intro' | 'profile' | 'ask' | 'appeal', NakodoTemplate>; close: Record<'next' | 'leave', NakodoTemplate> } = {
   status: 'draft',
   open: {
-    intro: { id: 'intro', kana: 'みなさま、{full}が おみえに なりました。ごしょうかい いたします。', en: 'Everyone, {full} has arrived. Allow me to introduce them.', frames: ['o-ni-naru', 'keigo'] },
-    profile: { id: 'profile', kana: 'こちらは {job}の {short}で いらっしゃいます。', en: 'This is {short}, {job}.', frames: ['keigo'] },
-    ask: { id: 'ask', kana: '{short}が みなさまに おききに なります。', en: '{short} has a question for you all.', frames: ['o-ni-naru'] },
-    appeal: { id: 'appeal', kana: '{short}から さいごの しつもんが ございます。', en: '{short} has one last question.', frames: ['keigo'] },
+    intro: { id: 'intro', kana: 'みなさま、{full}が おみえに なりました。ごしょうかい いたします。', en: 'Everyone, {full} has arrived. Allow me to introduce them.', frames: ['o-ni-naru', 'keigo'], key: 'おみえに なりました', gist: '{full}が きました。しょうかいします。' },
+    profile: { id: 'profile', kana: 'こちらは {job}の {short}で いらっしゃいます。', en: 'This is {short}, {job}.', frames: ['keigo'], key: 'いらっしゃいます', gist: 'この ひとは {job}の {short}です。' },
+    ask: { id: 'ask', kana: '{short}が みなさまに おききに なります。', en: '{short} has a question for you all.', frames: ['o-ni-naru'], key: 'おききに なります', gist: '{short}が みんなに しつもんします。' },
+    appeal: { id: 'appeal', kana: '{short}から さいごの しつもんが ございます。', en: '{short} has one last question.', frames: ['keigo'], key: 'ございます', gist: '{short}の さいごの しつもんです。' },
   },
   close: {
-    next: { id: 'next', kana: '{short}、ありがとう ございました。つぎの しつもんに まいります。', en: 'Thank you, {short}. On to the next question.', frames: ['keigo'] },
-    leave: { id: 'leave', kana: '{short}は そろそろ おかえりに なります。', en: '{short} will be leaving soon.', frames: ['o-ni-naru'] },
+    next: { id: 'next', kana: '{short}、ありがとう ございました。つぎの しつもんに まいります。', en: 'Thank you, {short}. On to the next question.', frames: ['keigo'], key: 'まいります', gist: 'ありがとう ございました。つぎの しつもんです。' },
+    leave: { id: 'leave', kana: '{short}は そろそろ おかえりに なります。', en: '{short} will be leaving soon.', frames: ['o-ni-naru'], key: 'おかえりに なります', gist: '{short}は もうすぐ かえります。' },
   },
 };
+
+/** Every go-between line's keigo word: the curveball's right answer is one, the other two come from here. */
+export const NAKODO_KEYS: readonly string[] = [...Object.values(NAKODO.open), ...Object.values(NAKODO.close)].map((t) => t.key);
 
 /** The name on its own: かっぱの キュウリさん → キュウリさん (and the English before " the "). */
 export function shortName(card: Pick<CharacterCard, 'name'>): JpText {
@@ -826,7 +836,8 @@ function fill(t: NakodoTemplate, card: CharacterCard): NakodoLine {
       .split('{job}')
       .join(en ? `the ${jobEn}` : job);
   const kana = f(t.kana, false);
-  return { id: t.id, jp: { text: kana, kana, en: f(t.en, true) }, frames: t.frames };
+  const gist = f(t.gist, false);
+  return { id: t.id, jp: { text: kana, kana, en: f(t.en, true) }, frames: t.frames, key: t.key, gist: { text: gist, kana: gist, en: f(t.en, true) } };
 }
 
 /**

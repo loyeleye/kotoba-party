@@ -12,6 +12,7 @@ import { calledName } from '../../../shared/src/modes/onsenMurder/questions.js';
 import type { JpText, OnsenIntent } from '../../../content/src/types.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
+import { boothStrip, galleryBubbles } from '../components/mixedRoom.js';
 
 export const INTENT_ICON: Record<OnsenIntent, string> = { where: '📍', what: '❓', who: '👀', when: '🕙', victim: '💬', item: '🔎' };
 
@@ -209,11 +210,27 @@ function answerScreen(view: RoomView, game: OnsenView): HTMLElement {
   );
 }
 
+/** The host stand-in: in a small room with nobody at N4, Chōchin-san reports one answer himself, once a game. */
+function standInPanel(game: OnsenView, elapsed: number): HTMLElement | null {
+  const st = game.standIn;
+  if (!st) return null;
+  return h(
+    'div',
+    { class: 'om-deputy om-appear', style: appearAfter(st.atMs, elapsed) },
+    h('span', { class: 'om-who' }, '🏮 Chōchin-san reports'),
+    h('p', { class: 'booth-line', lang: 'ja' }, '「', st.lit.before, st.lit.key ? h('mark', {}, st.lit.key) : null, st.lit.after, '」'),
+    h('span', { class: 'om-en' }, st.line.en),
+    h('p', { class: 'booth-note' }, st.note),
+  );
+}
+
 /** The N4 deputy relaying the answer to the room (reported speech or the passive), once they've said it. */
 function deputyPanel(view: RoomView, game: OnsenView): HTMLElement | null {
+  if (game.standIn) return standInPanel(game, sinceBeat(`ask:${game.current?.no ?? 0}`));
   const d = game.deputy;
   if (!d || !d.reporting || d.status === 'declined') return null;
   const who = nameOf(view, d.playerId);
+  const bubbles = galleryBubbles(game.bubbles);
   if (d.status === 'reported' && d.line)
     return h(
       'div',
@@ -221,7 +238,11 @@ function deputyPanel(view: RoomView, game: OnsenView): HTMLElement | null {
       h('span', { class: 'om-who' }, `🕵️ Deputy ${who}${d.via === 'speech' ? ' 🎤' : d.via === 'tap' ? ' 🧩' : ''} +${d.points}`),
       ruby(d.line, { class: 'om-ja' }),
       h('span', { class: 'om-en' }, d.line.en),
+      // The commentary booth: the replay with its frame word lit, as Chōchin-san says the line.
+      game.booth ? h('div', { class: 'om-booth om-appear', style: appearAfter(game.booth.atMs, sinceBeat(`ask:${game.current?.no ?? 0}`)) }, boothStrip(game.booth, who)) : null,
+      bubbles,
     );
+  if (d.status !== 'missed' && bubbles) return h('div', {}, h('p', { class: 'om-line muted om-appear', style: appearAfter(game.thinkMs, 0) }, `🕵️ Deputy ${who} is reporting what they said…`), bubbles);
   if (d.status === 'missed') return null;
   return h('p', { class: 'om-line muted om-appear', style: appearAfter(game.thinkMs, 0) }, `🕵️ Deputy ${who} is reporting what they said…`);
 }

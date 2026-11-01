@@ -9,6 +9,7 @@ import { invitation, type AnswerCard, type CardView } from '../../../shared/src/
 import type { Register } from '../../../shared/src/modes/omiai/manners.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
+import { boothStrip, galleryBubbles } from '../components/mixedRoom.js';
 
 const nameOf = (view: RoomView, id: string | null | undefined): string => view.players.find((p) => p.id === id)?.name ?? '(left)';
 
@@ -62,6 +63,28 @@ function nakodoLine(view: RoomView, game: OmiaiView): HTMLElement | null {
     h('p', { class: 'omi-nakodo-who' }, `🎎 Matchmaker ${who}${g.via === 'speech' ? ' 🎤' : ''} +${g.points}`),
     h('p', { class: 'omi-nakodo-jp' }, ruby(g.line)),
     h('p', { class: 'omi-nakodo-en' }, g.line.en),
+  );
+}
+
+/** When each booth replay first showed, so it fades after its few seconds even across re-renders. */
+const boothShown = new Map<string, number>();
+
+/**
+ * The commentary booth: the go-between's landed opening replayed with its keigo word lit and one line of
+ * colour (or, in the host stand-in, Nobiko-san's own opening). It fades once its 5–7 s are up.
+ */
+function boothPanel(view: RoomView, game: OmiaiView): HTMLElement | null {
+  const b = game.booth!;
+  const key = `${game.round}:${b.playerId ?? 'nobiko'}`;
+  if (!boothShown.has(key)) boothShown.set(key, Date.now());
+  const left = b.ms - (Date.now() - boothShown.get(key)!);
+  const g = game.nakodo;
+  return h(
+    'div',
+    { class: 'omi-nakodo-s omi-booth', style: `animation-delay: ${Math.max(0, left)}ms` },
+    g?.line && !b.standIn ? h('p', { class: 'omi-nakodo-who' }, `🎎 Matchmaker ${nameOf(view, g.playerId)}${g.via === 'speech' ? ' 🎤' : ''} +${g.points}`) : null,
+    boothStrip(b, b.standIn ? 'Nobiko-san' : nameOf(view, b.playerId)),
+    h('p', { class: 'omi-nakodo-en' }, b.en),
   );
 }
 
@@ -170,7 +193,8 @@ export const omiaiStage: StageMode<OmiaiView> = {
           'div',
           { class: 'omi-stage' },
           roundTag(game),
-          view.phase === 'prompt' ? nakodoLine(view, game) : null,
+          view.phase === 'prompt' ? (game.booth ? boothPanel(view, game) : nakodoLine(view, game)) : null,
+          view.phase === 'prompt' ? galleryBubbles(game.bubbles) : null,
           h('div', { class: 'omi-ask' }, card ? guest(card) : null, bubble(game)),
           view.phase === 'answer'
             ? h(

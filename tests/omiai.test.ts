@@ -1044,9 +1044,18 @@ describe('Omiai: the go-between in play', () => {
     expect(cues(t)).toContain('prompt_read');
     for (let i = 0; i < 8 && t.st.round < 3; i++) t.timeout();
     expect(t.st.nakodo?.playerId).toBe('p2');
-    // A declined (or timed-out) offer doesn't count as holding the role.
+    // A "not this time" sits the next round out (the shared rotation: no nagging) …
     t.play('p2', { kind: 'nakodo', accept: false });
     for (let i = 0; i < 8 && t.st.round < 4; i++) t.timeout();
+    expect(t.st.nakodo).toBeNull();
+  });
+
+  it('a timed-out offer is not holding the role: offered again the next round', () => {
+    const t = new Table(4, ['n5', 'n4', 'n5', 'n5']);
+    begin(t, 4);
+    expect(t.st.nakodo?.playerId).toBe('p2');
+    for (let i = 0; i < 8 && t.st.round < 2; i++) t.timeout();
+    expect(t.st.nakodoLog?.at(-1)?.outcome).toBe('timeout');
     expect(t.st.nakodo?.playerId).toBe('p2');
   });
 
@@ -1083,12 +1092,13 @@ describe('Omiai: the go-between in play', () => {
       const from = t.s.cues.length;
       t.play('p2', { kind: 'nakodo', utterance: speech(said) });
       const raised = t.s.cues.slice(from);
-      expect(raised.map((c) => c.event)).toEqual(['omiai_nakodo_read', 'prompt_read']);
-      const [voiced, question] = raised as [HostCue, HostCue];
+      expect(raised.map((c) => c.event)).toEqual(['omiai_nakodo_read', 'omiai_nakodo_cheer', 'prompt_read']);
+      const [voiced, cheer, question] = raised as [HostCue, HostCue, HostCue];
       expect(voiced).toMatchObject({ host: 'nobiko', slots: { line: line.text, line_kana: line.kana, line_en: line.en } });
       expect(voiced.atMs).toBeUndefined();
-      // The question follows once she has said the opening, and gets its full read after that.
-      expect(question.atMs).toBe(voiceMs(line.kana));
+      // Her あらまあ once she has said it, then the question, which gets its full read after that.
+      expect(cheer).toMatchObject({ host: 'nobiko', event: 'omiai_nakodo_cheer', slots: { name: 'P2' }, atMs: voiceMs(line.kana) });
+      expect(question.atMs).toBe(voiceMs(line.kana) + DURATIONS.cheer);
       expect(question.atMs).toBeGreaterThan(2_000);
       expect(t.st.current!.cuedAt).toBe(t.now + question.atMs!);
       expect(wakeAt(t)).toBe(t.now + question.atMs! + DURATIONS.questionRead);
@@ -1167,5 +1177,119 @@ describe('Omiai: the go-between in play', () => {
       expect(t.s.phase).toBe('prompt');
       expect(t.st.round).toBe(2);
     });
+  });
+});
+
+describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
+  const begin = (t: Table, rounds?: number) => {
+    expect(t.cmd('stage', { type: 'start', mode: 'omiai', extra: { cardId: 'kappa' }, ...(rounds ? { rounds } : {}) }).changed).toBe(true);
+    t.timeout();
+    expect(t.s.phase).toBe('prompt');
+  };
+  const said = 'みなさまかっぱのきゅうりさんがおみえになりましたごしょうかいいたします';
+
+  it('the Gallery opens once the go-between takes the opening; one curveball a game, +5 when right', () => {
+    const t = new Table(3, ['n5', 'n4', 'kana']);
+    begin(t);
+    expect(t.st.current!.gallery).toBeUndefined();
+    expect(t.view('p1').me!.gallery).toBeNull();
+    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBe('wrong-phase');
+    t.play('p2', { kind: 'nakodo', accept: true });
+    expect(t.st.current!.gallery!.players).toEqual(['p1', 'p3']);
+    const cb = t.view('p1').me!.gallery!;
+    expect(cb.kind).toBe('curveball');
+    expect(cb.kind === 'curveball' && cb.options.map((o) => o.kana)).toContain('おみえに なりました');
+    expect(t.view('p2').me!.gallery).toBeNull();
+    const before = t.score('p1');
+    expect(t.play('p1', { kind: 'gallery', pick: 'おみえに なりました' }).error).toBeUndefined();
+    expect(t.score('p1') - before).toBe(5);
+    expect(t.play('p3', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();
+    expect(t.score('p3')).toBe(0);
+    expect(t.view().bubbles.map((b) => b.id)).toEqual(['naruhodo']);
+    // Only during the prompt.
+    for (let i = 0; i < 8 && t.s.phase === 'prompt'; i++) t.timeout();
+    expect(t.view().bubbles).toEqual([]);
+    expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBe('wrong-phase');
+    // The next round's Gallery has reactions only.
+    for (let i = 0; i < 12 && t.st.round < 2; i++) t.timeout();
+    expect(t.s.phase).toBe('prompt');
+    t.play('p2', { kind: 'nakodo', accept: true });
+    expect(t.st.current!.gallery!.curveball).toBeNull();
+  });
+
+  it('no Gallery for an untouched or declined offer', () => {
+    const t = new Table(3, ['n5', 'n4', 'n5']);
+    begin(t);
+    t.play('p2', { kind: 'nakodo', accept: false });
+    expect(t.st.current!.gallery ?? null).toBeNull();
+    expect(t.view('p1').me!.gallery).toBeNull();
+  });
+
+  it('the booth replays only a landed opening: keigo word lit, a note, the plain gist on Kana and N5 phones', () => {
+    const t = new Table(3, ['n5', 'n4', 'kana']);
+    begin(t);
+    t.play('p2', { kind: 'nakodo', utterance: speech('こんにちは') });
+    expect(t.view().booth).toBeNull();
+    t.play('p2', { kind: 'nakodo', utterance: speech(said) });
+    const b = t.view().booth!;
+    expect(b).toMatchObject({ playerId: 'p2', standIn: false });
+    expect(b.lit.key).toBe('おみえに なりました');
+    expect(b.ms).toBeGreaterThanOrEqual(5_000);
+    expect(b.ms).toBeLessThanOrEqual(7_000);
+    const line = nakodoLines(CARDS.find((c) => c.id === 'kappa')!, 1, t.st.totalRounds).open;
+    expect(t.view('p1').me!.gist).toMatchObject({ kana: line.gist.kana, romaji: null });
+    expect(t.view('p3').me!.gist!.romaji).toBeTruthy();
+    expect(t.view('p2').me!.gist).toBeNull();
+    // Nobiko-san voices only the model line.
+    expect(t.s.cues.filter((c) => c.event === 'omiai_nakodo_read').map((c) => c.slots?.line)).toEqual([line.jp.text]);
+    // Gone once the prompt is over.
+    for (let i = 0; i < 8 && t.s.phase === 'prompt'; i++) t.timeout();
+    expect(t.view().booth).toBeNull();
+  });
+
+  it('every go-between line has its keigo word in it, and a plain gist', () => {
+    for (const card of CARDS)
+      for (let round = 1; round <= 5; round++) {
+        const { open, close } = nakodoLines(card, round, 5);
+        for (const l of [open, close]) {
+          expect(l.jp.kana, `${card.id} ${l.id}`).toContain(l.key);
+          expect(l.gist.kana.length).toBeGreaterThan(4);
+        }
+      }
+  });
+
+  it('the host stand-in: in a 2-player room with nobody at N4, Nobiko-san gives the opening once a game, then the question', () => {
+    const t = new Table(2, ['kana', 'n5']);
+    begin(t);
+    const line = nakodoLines(CARDS.find((c) => c.id === 'kappa')!, 1, t.st.totalRounds).open;
+    const events = t.s.cues.map((c) => c.event);
+    expect(events.filter((e) => e === 'omiai_standin')).toHaveLength(1);
+    const cue = t.s.cues.find((c) => c.event === 'omiai_standin')!;
+    expect(cue).toMatchObject({ host: 'nobiko', slots: { line: line.jp.text, line_kana: line.jp.kana, line_en: line.jp.en } });
+    expect(t.s.cues.find((c) => c.event === 'prompt_read')!.atMs).toBe(voiceMs(line.jp.kana));
+    expect(voiceMs(line.jp.kana)).toBeLessThanOrEqual(7_000);
+    expect(t.s.deadline! - t.now).toBe(8_000 + voiceMs(line.jp.kana));
+    expect(t.view().booth).toMatchObject({ playerId: null, standIn: true });
+    expect(t.view('p1').me!.gist).toMatchObject({ kana: line.gist.kana });
+    expect(t.view('p1').me!.gallery).toBeNull();
+    // Nobody scores for it; the next rounds are as before.
+    expect(t.score('p1') + t.score('p2')).toBe(0);
+    for (let i = 0; i < 12 && t.st.round < 2; i++) t.timeout();
+    expect(t.s.phase).toBe('prompt');
+    expect(t.s.cues.filter((c) => c.event === 'omiai_standin')).toHaveLength(1);
+    expect(t.s.deadline! - t.now).toBe(8_000);
+  });
+
+  it('no stand-in with an N4 player or in a room of three; an N5-only room of three is unchanged', () => {
+    const n4 = new Table(2, ['n5', 'n4']);
+    begin(n4);
+    n4.play('p2', { kind: 'nakodo', accept: false });
+    expect(n4.s.cues.map((c) => c.event)).not.toContain('omiai_standin');
+    const three = new Table(3, ['n5', 'n5', 'kana']);
+    begin(three);
+    expect(three.s.cues.map((c) => c.event)).not.toContain('omiai_standin');
+    expect(three.s.deadline! - three.now).toBe(8_000);
+    expect(three.view()).toMatchObject({ booth: null, bubbles: [], nakodo: null });
+    expect(three.view('p1').me).toMatchObject({ gallery: null, gist: null, nakodo: null });
   });
 });

@@ -208,6 +208,14 @@ export const chochinLines: HostLine[] = [
   { id: 'chochin.onsen_reveal.05', host: 'chochin', event: 'onsen_reveal', jp: { text: 'さあ、こたえあわせです！', kana: 'さあ、こたえあわせです！', en: "Now, let's check the answer!" }, status: 'draft' },
   // onsen_report: the deputy's accepted report, said as it is (the line is the slot; its kana and subtitle come with it)
   { id: 'chochin.onsen_report.01', host: 'chochin', event: 'onsen_report', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
+  // onsen_deputy_cheer: his short reaction once he has said the deputy's report (about the play, never mistakes)
+  { id: 'chochin.onsen_deputy_cheer.01', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: '{name}さま、おみごとです！', kana: '{name}さま、おみごとです！', en: 'Splendid, {name}!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.onsen_deputy_cheer.02', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: 'ありがとう ございます、{name}さま。メモしました！', kana: 'ありがとう ございます、{name}さま。メモしました！', en: 'Thank you, {name}. Noted!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.onsen_deputy_cheer.03', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: 'いい ほうこくでした。ゆらゆら。', kana: 'いい ほうこくでした。ゆらゆら。', en: 'A fine report. Sway, sway.' }, status: 'draft' },
+  { id: 'chochin.onsen_deputy_cheer.04', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: '{name}さま、よく ききましたね！', kana: '{name}さま、よく ききましたね！', en: '{name}, you listened well!' }, slots: ['{name}'], status: 'draft' },
+  { id: 'chochin.onsen_deputy_cheer.05', host: 'chochin', event: 'onsen_deputy_cheer', jp: { text: 'たすかります！　いい じょしゅさんです。', kana: 'たすかります！　いい じょしゅさんです。', en: 'That helps! What a good assistant.' }, status: 'draft' },
+  // onsen_standin: a 1–2-player room with nobody at N4 has no deputy: he gives one report himself, once a game, as is
+  { id: 'chochin.onsen_standin.01', host: 'chochin', event: 'onsen_standin', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   // Who's the Tourist?: Chōchin-san guides the tour, and admires a good disguise.
   // tourist_intro
   { id: 'chochin.tourist_intro.01', host: 'chochin', event: 'tourist_intro', jp: { text: 'かんこうきゃくは だれでしょう？　ゆらゆら。', kana: 'かんこうきゃくは だれでしょう？　ゆらゆら。', en: 'Who could the tourist be? Sway, sway.' }, status: 'draft' },

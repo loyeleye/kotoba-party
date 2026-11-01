@@ -138,3 +138,7 @@
 .omi-nakodo-jp { font-size: 36px; font-weight: 900; line-height: 1.3; }
 .omi-nakodo-en { font-size: 24px; color: var(--muted); }
 .omi-nakodo-wait { font-size: 24px; color: var(--muted); margin: 0; }
+/* The commentary booth's replay: up for its 5–7 s (the delay is set inline), then it fades to a quiet strip. */
+.omi-booth { animation: omi-booth-out 0.6s ease-in both; }
+@keyframes omi-booth-out { from { opacity: 1; } to { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .omi-booth { animation: none; } }

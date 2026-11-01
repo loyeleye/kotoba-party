@@ -25,8 +25,9 @@ import type { JpText, OnsenCase, OnsenIntent, OnsenReport, OnsenSuspect } from '
 import { hasKanji, isKana, isUtterance, soundKey, type Utterance } from '../../japanese/kana.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, type Award, type Mode, type ModeContext, type ModePlayer, type PhraseEntry } from '../mode.js';
-import { checkReport, joinReport, reportFrame, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
-import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
+import { answerTiles, checkReport, joinReport, reportFrame, reportNotes, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
+import { nextOfferee, offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
+import { commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, lightUp, openGallery, pickGallery, type Commentary, type Gallery, type GalleryTileView, type ReactionTile } from '../mixedRoom.js';
 import { FALLBACK_CASE } from './fallback.js';
 import { accusationLine, bareName, checkAccusation, INTENTS, matchQuestion, questionFor, tilesFor, type QuestionTile } from './questions.js';
 
@@ -68,11 +69,19 @@ export const THINK_MS = 1_800;
 /** The English subtitle follows the Japanese after this long. */
 export const SUBTITLE_MS = 2_500;
 /**
- * Chōchin-san voices an accepted report on the TV as one short beat: no sooner than `after` into the
- * answer (the suspect's own line has been said by then, and the report box only opens at think +
- * subtitle), and the answer stays up `beat` longer so the line isn't cut off by the next turn.
+ * Chōchin-san voices an accepted report on the TV: no sooner than `after` into the answer (the suspect's own
+ * line has been said by then, and the report box only opens at think + subtitle). The answer stays up while he
+ * says it (reportVoiceMs), then `cheer` more for his short reaction, and at least as long as the commentary
+ * booth's replay (commentaryMs), so nothing is cut off by the next turn.
  */
-export const REPORT_VOICE = { after: THINK_MS + SUBTITLE_MS + 1_500, beat: 5_000 } as const;
+export const REPORT_VOICE = { after: THINK_MS + SUBTITLE_MS + 1_500, cheer: 2_500 } as const;
+
+/** About how long Chōchin-san takes to say a report: his bank voice may land 1.5 s late, then ~0.11 s a kana; at most 7 s. */
+export const reportVoiceMs = (kana: string): number => Math.min(7_000, 1_500 + 110 * kana.replace(/[\s。、]/g, '').length);
+
+/** The curveball's key words: the report's frame word, and the others it is mixed with. */
+export const KEY_WORDS: readonly string[] = ['いっていました', 'みられました', 'みました', 'ねました', 'でした', 'ので'];
+const keyWord = (r: OnsenReport) => (r.frames?.includes('passive') ? 'みられました' : 'いっていました');
 
 export const DURATIONS = {
   intro: 25_000,
@@ -132,6 +141,9 @@ export interface Deputy {
   voicedUntil: number | null;
 }
 
+/** The commentary booth's replay (or the host stand-in's report), with when it starts, ms into the answer. */
+export type OnsenBooth = Commentary & { atMs: number };
+
 interface Turn {
   no: number;
   playerId: string | null;
@@ -186,6 +198,17 @@ export interface OnsenState {
   deputySeat: number;
   /** Every deputy offer and what came of it (an offer whose answer had nothing to report isn't counted). */
   deputyLog: { turnNo: number; playerId: string; outcome: OfferAnswer }[];
+  /** Every offer made, voided ones too, for the shared rotation (hardRoleLog.ts nextOfferee). */
+  deputyOffered?: PastOffer[];
+  /** This answer's Gallery: reactions from the players without the deputy's seat (mixedRoom.ts). */
+  gallery?: Gallery | null;
+  /** The once-a-game curveball has been dealt. */
+  curveballUsed?: boolean;
+  /** The commentary booth's replay of the deputy's landed report, this answer. */
+  booth?: OnsenBooth | null;
+  /** Chōchin-san reporting this answer himself, in a small room with nobody at N4 (once a game). */
+  standIn?: OnsenBooth | null;
+  standInUsed?: boolean;
 }
 
 export type OnsenMove =
@@ -194,7 +217,8 @@ export type OnsenMove =
   | { kind: 'suspect-line'; key: string; lead: JpText }
   | { kind: 'deputy'; accept: boolean }
   | { kind: 'report'; utterance: Utterance }
-  | { kind: 'report'; tiles: string[] };
+  | { kind: 'report'; tiles: string[] }
+  | { kind: 'gallery'; pick: string };
 
 // ---- view ----
 
@@ -263,6 +287,12 @@ export interface OnsenView {
   subtitleMs: number;
   /** This turn's deputy; their line once they have reported. */
   deputy: { playerId: string; status: DeputyStatus; reporting: boolean; line: JpText | null; via: Via | null; points: number } | null;
+  /** The commentary booth's replay of the deputy's report (TV), once it has landed: atMs into the answer, for ms. */
+  booth: { playerId: string | null; lit: Commentary['lit']; note: string; en: string; atMs: number; ms: number } | null;
+  /** Chōchin-san reports this answer himself (small rooms with nobody at N4, once a game), atMs into the answer. */
+  standIn: { line: JpText; lit: Commentary['lit']; note: string; atMs: number } | null;
+  /** The Gallery's reaction bubbles. */
+  bubbles: ReactionTile[];
   mine: OnsenMe | null;
 }
 
@@ -280,6 +310,10 @@ export interface OnsenMe {
   lines: { suspectId: string; line: JpText }[];
   /** When you are this turn's deputy. */
   deputy: DeputyMe | null;
+  /** Your Gallery tile while the deputy reports (players without the seat). */
+  gallery: GalleryTileView | null;
+  /** Kana and N5 phones: the gist of the booth's replay, or of Chōchin-san's own report. */
+  gist: ReturnType<typeof gistFor>;
 }
 
 export interface DeputyMe {
@@ -288,7 +322,11 @@ export interface DeputyMe {
   canReport: boolean;
   /** The frame over the tiles (＿は ＿と いっていました). */
   frame: string | null;
+  /** Notes under the frame: the plain form before と, or みられました (passive, not potential). */
+  notes: string[];
   tiles: ReportTile[];
+  /** Tiles the report takes (one of the tiles is a decoy). */
+  need: number;
   triesLeft: number;
   heard: string;
   /** The whole line, once you've had a try (or are done). */
@@ -450,8 +488,9 @@ function recordAsk(s: OnsenState, ctx: ModeContext, playerId: string, suspect: O
 export const SPOTLIGHT_ROOM = 4;
 
 /**
- * Offers the deputy's part to the next N4 player by seat, never the asker. Nobody at N4: no deputy.
- * In a room of SPOTLIGHT_ROOM or more, a lone eligible N4 player who was deputy last turn sits this one out.
+ * Offers the deputy's part to an N4 player, never the asker, by the shared rotation (hardRoleLog.ts
+ * nextOfferee): fewest offers first, then longest ago; a "not this time" sits the next turn out; in a room of
+ * SPOTLIGHT_ROOM or more nobody is deputy two turns running. Nobody at N4: no deputy.
  */
 function offerDeputy(s: OnsenState, ctx: ModeContext, askerId: string | null): void {
   s.deputy = null;
@@ -459,11 +498,16 @@ function offerDeputy(s: OnsenState, ctx: ModeContext, askerId: string | null): v
     .players()
     .filter((p) => p.level === 'n4' && p.connected && p.id !== askerId)
     .sort((a, b) => a.seat - b.seat);
-  const p = n4.find((x) => x.seat > s.deputySeat) ?? n4[0];
+  const id = nextOfferee(
+    n4.map((p) => p.id),
+    s.deputyOffered ?? [],
+    s.turnNo,
+    ctx.connected().length,
+  );
+  const p = n4.find((x) => x.id === id);
   if (!p) return;
-  const last = s.deputyLog.at(-1);
-  if (n4.length === 1 && ctx.connected().length >= SPOTLIGHT_ROOM && last?.turnNo === s.turnNo - 1 && last.playerId === p.id && last.outcome === 'accepted') return;
   s.deputySeat = p.seat;
+  (s.deputyOffered ??= []).push({ playerId: p.id, at: s.turnNo, answer: 'offered' });
   s.deputy = { turnNo: s.turnNo, playerId: p.id, status: 'offered', askNo: null, tiles: [], tries: 0, heard: '', via: null, points: 0, voicedUntil: null };
 }
 
@@ -477,7 +521,11 @@ const deputyHolds = (d: Deputy | null): d is Deputy => deputyOpen(d) && (d.statu
 function closeDeputy(s: OnsenState, ctx: ModeContext): void {
   const d = s.deputy;
   s.deputy = null;
-  if (!d || (d.askNo === null && d.status !== 'declined')) return;
+  const offered = d ? s.deputyOffered?.find((o) => o.playerId === d.playerId && o.at === d.turnNo) : undefined;
+  if (!d || (d.askNo === null && d.status !== 'declined')) {
+    if (offered) offered.answer = null;
+    return;
+  }
   const outcome: OfferAnswer =
     d.status === 'declined'
       ? 'declined'
@@ -487,6 +535,7 @@ function closeDeputy(s: OnsenState, ctx: ModeContext): void {
           ? 'away'
           : 'timeout';
   s.deputyLog.push({ turnNo: d.turnNo, playerId: d.playerId, outcome });
+  if (offered) offered.answer = outcome;
 }
 
 export interface DeputyTally {
@@ -519,10 +568,76 @@ export function deputyOffers(s: Pick<OnsenState, 'deputyLog'>): Record<string, D
  * never plays there). Always the model line, which is fixed, fluent and safe for the voice, whatever the
  * deputy said or built. Held back until the suspect's answer has been said, so the two never overlap.
  */
-function voiceReport(s: OnsenState, ctx: ModeContext, d: Deputy, r: OnsenReport): void {
+function voiceReport(s: OnsenState, ctx: ModeContext, d: Deputy, ask: Ask): void {
+  const r = ask.report!;
   const atMs = Math.max(0, s.revealAt + REPORT_VOICE.after - ctx.now);
-  d.voicedUntil = ctx.now + atMs + REPORT_VOICE.beat;
+  const said = reportVoiceMs(r.jp.kana);
+  const booth = boothFor(ask, d.playerId, ctx.now + atMs - s.revealAt);
+  d.voicedUntil = ctx.now + atMs + Math.max(booth.ms, said + REPORT_VOICE.cheer);
   ctx.cue({ host: 'chochin', event: 'onsen_report', slots: { line: r.jp.text, line_kana: r.jp.kana, line_en: r.jp.en }, ...(atMs ? { atMs } : {}) });
+  // His short reaction once he has said it: a bank line, about the play, never about mistakes.
+  ctx.cue({ host: 'chochin', event: 'onsen_deputy_cheer', slots: { name: ctx.player(d.playerId)?.name ?? '' }, atMs: atMs + said });
+  s.booth = booth;
+}
+
+// ---- mixed rooms: the Gallery, the commentary booth, the host stand-in (mixedRoom.ts) ----
+
+/**
+ * The booth's replay of a report (the deputy's, or Chōchin-san's own): the model line with its frame word lit,
+ * one line of colour about the play, and for Kana and N5 phones the suspect's own N5 answer with the English.
+ */
+function boothFor(ask: Ask, playerId: string | null, atMs: number): OnsenBooth {
+  const r = ask.report!;
+  const passive = !!r.frames?.includes('passive');
+  const who = playerId ? 'The deputy' : 'Chōchin-san';
+  const note = passive
+    ? `みられました = “was seen”: ${who} turned “I saw them” round, with に for who did the seeing.`
+    : `と いっていました = “said that…”: ${who} passed it on, the suspect’s ます form made plain before と.`;
+  return {
+    playerId,
+    line: r.jp,
+    voiced: true,
+    lit: lightUp(r.jp.text, [keyWord(r)]),
+    note,
+    gist: { kana: ask.answer.kana, en: r.jp.en, emoji: '🕵️' },
+    ms: commentaryMs(r.jp),
+    atMs,
+  };
+}
+
+/**
+ * Opens the answer's Gallery once the deputy has taken the part (Take it, or a first try) and has a report to
+ * give: one reaction tile for every other connected player, and once a game a curveball for a Kana or N5 player
+ * ("Which word did you hear?": いっていました or みられました).
+ */
+function openDeputyGallery(s: OnsenState, ctx: ModeContext): void {
+  const d = s.deputy;
+  if (s.gallery || !d || d.askNo === null || d.status === 'declined' || (d.status !== 'ready' && d.tries === 0)) return;
+  const ask = s.asks.find((a) => a.no === d.askNo);
+  if (!ask?.report) return;
+  const others = ctx.connected().filter((p) => p.id !== d.playerId);
+  if (!others.length) return;
+  s.gallery = openGallery(
+    others.map((p) => p.id),
+    others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id),
+    { word: keyWord(ask.report), pool: KEY_WORDS },
+    !!s.curveballUsed,
+    s.turnNo,
+  );
+  if (s.gallery.curveball) s.curveballUsed = true;
+}
+
+/**
+ * The host stand-in: a room of one or two with nobody at N4 never has a deputy, so once a game, on the first
+ * answer with a report, Chōchin-san gives the report himself (voiced, with its subtitle; the gist on Kana and N5
+ * phones). Nobody is asked to say anything; no points.
+ */
+function standIn(s: OnsenState, ctx: ModeContext, ask: Ask | undefined): void {
+  if (s.standInUsed || s.deputy || !ask?.report || !hostStandsIn(ctx.connected().map((p) => p.level))) return;
+  s.standInUsed = true;
+  s.standIn = boothFor(ask, null, REPORT_VOICE.after);
+  const r = ask.report;
+  ctx.cue({ host: 'chochin', event: 'onsen_standin', slots: { line: r.jp.text, line_kana: r.jp.kana, line_en: r.jp.en }, atMs: REPORT_VOICE.after });
 }
 
 function reportEntry(s: OnsenState, ask: Ask, outcome: PhraseEntry['outcome']): PhraseEntry {
@@ -580,6 +695,12 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
       deputy: null,
       deputySeat: 0,
       deputyLog: [],
+      deputyOffered: [],
+      gallery: null,
+      curveballUsed: false,
+      booth: null,
+      standIn: null,
+      standInUsed: false,
     };
   },
 
@@ -623,7 +744,9 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         if (d && ask?.report && d.status !== 'declined') {
           d.askNo = ask.no;
           d.tiles = reportTiles(ask.report, () => ctx.random());
+          openDeputyGallery(s, ctx);
         } else if (d && d.status !== 'declined') s.deputy = null;
+        standIn(s, ctx, ask);
         if (ask?.newClue) ctx.cue({ host: 'chochin', event: 'onsen_clue', answer: ask.answer.text, answerEn: ask.answer.en });
         break;
       }
@@ -641,6 +764,9 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
   leave(s, phase, ctx) {
     if (phase === 'reveal') {
       s.line = null;
+      s.gallery = null;
+      s.booth = null;
+      s.standIn = null;
       closeDeputy(s, ctx);
     }
     // No question landed this turn, so there is nothing to report.
@@ -671,7 +797,8 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
       case 'answer':
         return ctx.player(s.turn?.playerId ?? '')?.level === 'kana' ? DURATIONS.turnKana : DURATIONS.turn;
       case 'reveal':
-        return revealBase(s) + (deputyHolds(s.deputy) ? DURATIONS.deputy : 0);
+        // The stand-in's report may run a little past the answer's usual time (once a game, at most 7 s of voice).
+        return Math.max(revealBase(s), s.standIn ? s.standIn.atMs + reportVoiceMs(s.standIn.line.kana) : 0) + (deputyHolds(s.deputy) ? DURATIONS.deputy : 0);
       case 'encore':
         return DURATIONS.accuse;
       case 'finale':
@@ -771,6 +898,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
       if (raw.accept === true) d.status = 'ready';
       else if (raw.accept === false && d.tries === 0) d.status = 'declined';
       else return moveError('bad-move');
+      if (phase === 'reveal') openDeputyGallery(s, ctx);
       return MOVE_OK;
     }
 
@@ -798,6 +926,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         d.heard = u.text;
       }
       d.tries += 1;
+      openDeputyGallery(s, ctx);
       if (ok) {
         d.status = 'reported';
         d.via = via;
@@ -806,11 +935,20 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         give(s, ctx, playerId, d.points, via === 'speech' ? POINTS.spokenReport : 0);
         // Only a spoken report counts as from memory, as for the questions.
         ctx.phrase(playerId, { ...reportEntry(s, ask, via === 'tap' ? 'seen' : d.tries > 1 ? 'retry' : 'said'), recall: via === 'speech' ? 'memory' : 'read' });
-        voiceReport(s, ctx, d, ask.report);
+        voiceReport(s, ctx, d, ask);
       } else if (d.tries >= TRIES) {
         d.status = 'missed';
         ctx.phrase(playerId, reportEntry(s, ask, 'missed'));
       }
+      return MOVE_OK;
+    }
+
+    if (raw.kind === 'gallery') {
+      // A reaction tile (or the curveball) from a player without the deputy's seat.
+      if (phase !== 'reveal' || !s.gallery || typeof raw.pick !== 'string') return moveError('wrong-phase');
+      const points = pickGallery(s.gallery, playerId, raw.pick);
+      if (points === null) return moveError('bad-move');
+      if (points > 0) give(s, ctx, playerId, points);
       return MOVE_OK;
     }
 
@@ -906,15 +1044,21 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
                 status: d.status,
                 canReport: phase === 'reveal' && deputyOpen(d),
                 frame: dAsk?.report ? reportFrame(dAsk.report) : null,
+                notes: dAsk?.report ? reportNotes(dAsk.report) : [],
                 tiles: phase === 'reveal' && deputyOpen(d) ? d.tiles : [],
+                need: dAsk?.report ? answerTiles(dAsk.report).length : 0,
                 triesLeft: TRIES - d.tries,
                 heard: d.heard,
                 line: dAsk?.report && (d.tries > 0 || !deputyOpen(d)) ? dAsk.report.jp : null,
                 points: d.points,
               }
             : null,
+        gallery: phase === 'reveal' && me ? galleryTileFor(s.gallery, id, me.level) : null,
+        gist: phase === 'reveal' && me && (s.booth?.playerId ?? null) !== id ? gistFor(s.booth ?? s.standIn, me.level) : null,
       };
     }
+    const booth = phase === 'reveal' ? (s.booth ?? null) : null;
+    const stood = phase === 'reveal' ? (s.standIn ?? null) : null;
 
     return {
       mode: 'onsen-murder',
@@ -946,6 +1090,9 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
             points: d.points,
           }
         : null,
+      booth: booth ? { playerId: booth.playerId, lit: booth.lit, note: booth.note, en: booth.line.en, atMs: booth.atMs, ms: booth.ms } : null,
+      standIn: stood ? { line: stood.line, lit: stood.lit, note: stood.note, atMs: stood.atMs } : null,
+      bubbles: phase === 'reveal' && s.gallery ? galleryBubbles(s.gallery) : [],
       mine,
     };
   },

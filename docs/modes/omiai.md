@@ -178,7 +178,8 @@ The score screen also shows the stock example and, for N4, the round's keigo pai
 `intro` (the guest card) · `prompt_read` (the question) · `say_it_first` · `reveal_react` (the answers) ·
 `encore_invite` (the vote winner) or `miss_kind` (no votes) · `encore_cheer` (a spoken encore,
 and the invitation) · `natural_version` (the stock answer) · `omiai_nakodo_read` (the go-between's accepted
-line, said as is; below).
+line, said as is; below) · `omiai_nakodo_cheer` (あらまあ, once she has said the go-between's opening) ·
+`omiai_standin` (the host stand-in's opening, as is).
 
 On `say_it_first` and `reveal_react` she stretches her neck out over the speech bubble to have a look
 (the `peek` mood, only hers; `server/src/host.ts`).
@@ -192,8 +193,10 @@ game (`pickTease` in `omiai.ts`). The answer is still anonymous then, so the roo
 
 ### The go-between (なこうど, N4 hard role)
 
-When the room has an N4 player, each round one of them (in seat rotation) is offered Nobiko-san's
-matchmaker lines for that round, in keigo (4.9):
+When the room has an N4 player, each round one of them is offered Nobiko-san's matchmaker lines for that
+round, in keigo (4.9). Who is offered follows the shared rotation (`nextOfferee` in `hardRoleLog.ts`): the
+N4 player offered fewest times, then longest ago; a "not this time" sits the next round out; in a room of
+four or more nobody holds it two rounds running.
 
 | When | Line (filled in from the guest's card, `nakodoLines` in `cards.ts`) |
 | --- | --- |
@@ -204,8 +207,9 @@ matchmaker lines for that round, in keigo (4.9):
 | Closing each round (score) | キュウリさん、ありがとう ございました。つぎの しつもんに まいります。 |
 | Closing the last round | キュウリさんは そろそろ おかえりに なります。 |
 
-The phone shows the line as a script with two equal buttons, "Take it" and "Not this time"; saying the
-line straight away counts as taking it. The go-between says it (+25) or types it (+10), checked with Phrase
+The phone shows the shared offer card (`roleOffer`: "🎎 Nobiko-san hands you her fan.", なこうど /
+Matchmaker) with the line as a script and its speak box, and two equal buttons, "Take it" and "Not this
+time"; saying the line straight away counts as taking it. The go-between says it (+25) or types it (+10), checked with Phrase
 Bingo's lenient `saidPhrase`, two tries per line, and sees its manners meter. Nobiko-san always reads the
 question, once a round: right after the opening is said or its tries run out, when they tap "Not this
 time" (which also hands the round's lines back to her), or, if the opening hasn't come, at the prompt's
@@ -229,7 +233,34 @@ matchmaker is about to speak only while their line is still to come. Everyone st
 scores as usual, the go-between too. Offers and outcomes (accepted, declined, timeout, away; the shared
 `OfferAnswer` in `hardRoleLog.ts`) are in `nakodoLog`; `nakodoOffers()` sums them per player with the gate
 rate (`offerRate`). Phrasebook: `omiai:nakodo:<card>:<line>`, as `seen` when said (it's read off the
-script) or `missed`. With no N4 player nothing changes.
+script) or `missed`. With no N4 player nothing changes, except the host stand-in below.
+
+**Her reaction.** Once she has said an accepted opening she adds one short あらまあ (`omiai_nakodo_cheer`,
+bank only: あらまあ、りっぱな けいご！ …), and the question follows 2.5 s later (`DURATIONS.cheer`). It is left
+out when it wouldn't leave her the question's 5 s inside the go-between's longer prompt.
+
+**Mixed rooms** (the shared pieces in `mixedRoom.ts`, docs/n4-hard-roles.md):
+
+- **Gallery.** Once the go-between has taken the opening (Take it, or a first try), every other connected
+  player gets one reaction tile for the prompt (👏 すごい！ 💡 なるほど 😮 えっ？ 😂 あはは), shown as bubbles on
+  the TV, never scored. Once a game, the first Kana or N5 player's tile is the curveball instead: "Which word
+  did you hear?", with the opening's keigo word (おみえに なりました, いらっしゃいます, おききに なります,
+  ございます; `key` on each template) and two of the others; **+5 if right**, paid directly. Not for an
+  untouched or declined offer.
+- **Commentary booth.** Once the opening lands, the TV replays it (`boothStrip`) in place of the
+  matchmaker panel: the line with its keigo word lit and one English note on the play, for `commentaryMs`
+  (5–7 s), then it fades. It runs while Nobiko-san says the line, so it adds no time. Kana and N5 phones get
+  the gist: the same news in plain N5 Japanese (`gist` on each template: キュウリさんが きました。しょうかいします。,
+  romaji for Kana) with the English. Only the opening, not the closing.
+- **Host stand-in.** In a 2-player room with nobody at N4 (`hostStandsIn`; Omiai needs two players), once a
+  game, in round 1, Nobiko-san gives the opening herself (`omiai_standin`, bank-only `{line}`) before she
+  reads the question; the TV shows it as the booth strip, the phones get the gist. Nobody is asked to say
+  anything; no points. The round-1 prompt is that much longer (`voiceMs`, at most 7 s).
+
+| | Points |
+| --- | --- |
+| Go-between line said / typed | 25 / 10 |
+| Gallery curveball right (once a game, a Kana or N5 player) | 5 |
 
 The manners meter reads every line as keigo (tested for every card and round). It now also counts
 ごしょうかい as an お/ご word, and お〜に なる in plain form (おみえに なった) as honorific when the
@@ -293,9 +324,9 @@ canned memory answers (by question kind and register) or build a tile answer. Th
     templates filled in with the guest's name and job, rather than lines written per card. Kids guests get
     the same formal lines, as part of the parody (2026-11-01).
 22. **With one N4 player, they're offered the go-between every round** in rooms of up to three. In a
-    room of four or more, a lone N4 player who was go-between last round (took it or tried a line) sits
-    the next round out, so the spotlight moves around (2026-11-01, for Ladi to confirm). Each offer can
-    be declined.
+    room of four or more, nobody is go-between two rounds running (took it or tried a line), so the
+    spotlight moves around (2026-11-01, for Ladi to confirm; now the shared rule in `nextOfferee`). Each
+    offer can be declined, and a decline sits the next round out (see 28).
 23. **Go-between points: 25 a line said, 10 typed**, paid directly (not from the manners pool), so a
     Kana or N5 player's scoring is unchanged. Lowered from 50 / 25 so the role doesn't outweigh a vote
     (100) for reading a script (2026-11-01). A guess to tune.
@@ -308,6 +339,17 @@ canned memory answers (by question kind and register) or build a tile answer. Th
 27. **Nobiko-san says the go-between's accepted line on the TV**, never their recording (decided by Ladi,
     2026-11-01). She says the template, not what the player said: it's fixed, fluent and safe for TTS. The
     question waits for the opening; the closing waits for the score's own line (see the go-between above).
+28. **Who is offered the go-between follows the shared rotation** (`nextOfferee`, round 4, 2026-11-01):
+    fewest offers, then longest ago, instead of seat order; a "not this time" sits the next round out
+    (before, a decline didn't). A timed-out offer doesn't.
+29. **Mixed rooms in the prompt only** (round 4): the Gallery, the booth and the stand-in are about the
+    opening; the closing at the score keeps just Nobiko-san's voicing. The curveball's word is the opening's
+    keigo word; the gist is a plain N5 version of the same news, written per template (draft) (for Ladi to
+    confirm).
+30. **Nobiko-san's あらまあ after a landed opening** (`omiai_nakodo_cheer`) delays the question by 2.5 s, only
+    when the go-between took the role and said it (round 4, for Ladi to confirm).
+31. **The host stand-in gives round 1's opening**, once a game, in a 2-player room with nobody at N4
+    (round 4, for Ladi to confirm).
 
 ## Open questions
 
@@ -332,8 +374,9 @@ canned memory answers (by question kind and register) or build a tile answer. Th
 
 ## Known gaps
 
-- **The go-between**: not built yet are the host playing it in solo rooms, the commentary booth, Gallery
-  reactions and curveball tiles. The bots never take the part (an N4 bot's offer just times out).
+- **The go-between**: the bots never take the part (an N4 bot's offer just times out) nor tap Gallery tiles;
+  the mode can't tell a bot from a player, so a bot gets a Gallery tile and counts towards the stand-in's
+  "two players". The six gists are draft.
 
 - **No LLM tips.** The rewrite is rule-based, so an answer it can't parse falls back to the
   stock answer. Free answers have no English subtitle on the stage.
