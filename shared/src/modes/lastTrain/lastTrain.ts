@@ -109,6 +109,7 @@ interface Overrule {
   attemptIndex: number;
   heard: string;
   prompt: JpText;
+  signs: StationSign[] | null;
   closesAt: number;
   eligible: string[];
   votes: Record<string, boolean>;
@@ -202,6 +203,8 @@ export interface RevealRow {
   playerId: string;
   name: string;
   prompt: JpText;
+  /** Read the Signs: the signs as dealt, the asked-about one marked, so the TV shows what was read. */
+  signs: StationSign[] | null;
   said: string | null;
   via: Via | null;
   outcome: 'first' | 'retry' | 'overruled' | 'missed' | 'away';
@@ -222,6 +225,8 @@ export interface OverruleView {
   /** Only for players who may vote (never on the stage, never to the answerer). */
   heard?: string;
   prompt?: JpText;
+  /** The signs the answerer saw (Read the Signs), without the target marked. */
+  signs?: StationSign[] | null;
   canVote?: boolean;
   myVote?: boolean | null;
   mine?: boolean;
@@ -309,6 +314,36 @@ export type LastTrainMove =
 
 const LEVEL_ORDER: Record<Level, Level[]> = { kana: ['kana', 'n5'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'] };
 const itemKey = (mgId: string, itemId: string) => `${mgId}#${itemId}`;
+/** A Read the Signs direction item dealt mirrored: its id gets this, and bots look the variant up by it. */
+const MIRRORED = '~mirrored';
+const baseItemId = (id: string) => (id.endsWith(MIRRORED) ? id.slice(0, -MIRRORED.length) : id);
+
+/** The item with its signs swapped left to right, and the answer that then fits. */
+export function mirrored(item: MinigameItem): MinigameItem {
+  if (!item.mirror || !item.signs) return item;
+  const flip = { left: 'right', right: 'left', up: 'up' } as const;
+  return {
+    ...item,
+    id: `${item.id}${MIRRORED}`,
+    signs: [...item.signs].reverse().map((sg) => (sg.arrow ? { ...sg, arrow: flip[sg.arrow] } : sg)),
+    accepted: item.mirror.accepted,
+    model: item.mirror.model,
+  };
+}
+
+/** Signs as a phone may see them: the target never marked, and on a first try no colours on a pair of boards. */
+function signsForPhone(signs: readonly StationSign[] | undefined, attempt: 1 | 2): StationSign[] | null {
+  if (!signs?.length) return null;
+  const plain = signs.length > 1 && attempt === 1;
+  return signs.map(({ text, arrow, kind }) => ({ text, ...(arrow ? { arrow } : {}), ...(kind && !plain ? { kind } : {}) }));
+}
+
+/** A one-sign item reads a word the stop's name or announcement already spells out (北口 at Kitaguchi). */
+function givenAway(item: MinigameItem, stop: Stop): boolean {
+  const sign = item.signs?.length === 1 ? item.signs[0]!.text : null;
+  return !!sign && (stop.name.text.includes(sign) || stop.announcement.text.includes(sign));
+}
+
 const isParticle = (task: Task) => task.promptType === 'fill-particle' || task.minigameId === 'particle-panic';
 
 /** Items from a pool at a player's level (nearest level first), unused ones preferred. */
@@ -361,7 +396,7 @@ function readUtterance(raw: unknown): Utterance | null {
 }
 
 function phraseOf(item: MinigameItem, outcome: PhraseEntry['outcome']): PhraseEntry {
-  return { itemId: item.id, text: item.model.text, kana: item.model.kana, en: item.model.en, outcome };
+  return { itemId: baseItemId(item.id), text: item.model.text, kana: item.model.kana, en: item.model.en, outcome };
 }
 
 const nameOf = (ctx: ModeContext, id: string) => ctx.player(id)?.name ?? '(left)';
@@ -435,11 +470,13 @@ export function buildStops(scenario: LastTrainScenario, want: number, minigames:
 function startTurns(s: LastTrainState, ctx: ModeContext): void {
   const stop = s.stops[s.stopIndex]!;
   const mg = s.minigames[stop.minigameId]!;
+  const fair = mg.items.filter((i) => !givenAway(i, stop));
   s.turns = {};
   for (const p of ctx.players()) {
     const t = traveller(s, p.id);
-    const item = dealItem(s, mg.items, mg.id, p.level, () => ctx.random());
-    if (!item) continue;
+    const dealt = dealItem(s, fair.length ? fair : mg.items, mg.id, p.level, () => ctx.random());
+    if (!dealt) continue;
+    const item = dealt.mirror && ctx.random() < 0.5 ? mirrored(dealt) : dealt;
     s.turns[p.id] = {
       playerId: p.id,
       task: makeTask(s, 'stop', mg, item, 1, t, ctx.now),
@@ -452,19 +489,19 @@ function startTurns(s: LastTrainState, ctx: ModeContext): void {
   }
 }
 
-function openWindow(s: LastTrainState, ctx: ModeContext, playerId: string, scope: Overrule['scope'], attemptIndex: number, heard: string, prompt: JpText): void {
+function openWindow(s: LastTrainState, ctx: ModeContext, playerId: string, scope: Overrule['scope'], attemptIndex: number, heard: string, prompt: JpText, signs?: StationSign[]): void {
   const eligible = ctx
     .connected()
     .map((p) => p.id)
     .filter((id) => id !== playerId);
   if (!eligible.length) return;
-  s.windows.push({ id: `ov${++s.seq}`, playerId, scope, attemptIndex, heard, prompt, closesAt: ctx.now + RULES.overruleMs, eligible, votes: {}, state: 'open' });
+  s.windows.push({ id: `ov${++s.seq}`, playerId, scope, attemptIndex, heard, prompt, signs: signsForPhone(signs, 2), closesAt: ctx.now + RULES.overruleMs, eligible, votes: {}, state: 'open' });
 }
 
 function recordStopMiss(s: LastTrainState, ctx: ModeContext, turn: Turn, rec: AttemptRec): void {
   turn.attempts.push(rec);
   s.rejects += 1;
-  if (rec.text) openWindow(s, ctx, turn.playerId, 'stop', turn.attempts.length - 1, rec.text, turn.task.item.prompt);
+  if (rec.text) openWindow(s, ctx, turn.playerId, 'stop', turn.attempts.length - 1, rec.text, turn.task.item.prompt, turn.task.item.signs);
   if (turn.task.attempt === 1) {
     const mg = s.minigames[turn.task.minigameId]!;
     turn.status = 'retry';
@@ -476,7 +513,7 @@ function recordPenaltyMiss(s: LastTrainState, ctx: ModeContext, pt: PenaltyTurn,
   pt.attempt = rec;
   pt.status = 'failed';
   s.rejects += 1;
-  if (rec.text) openWindow(s, ctx, pt.playerId, 'penalty', 0, rec.text, pt.task.item.prompt);
+  if (rec.text) openWindow(s, ctx, pt.playerId, 'penalty', 0, rec.text, pt.task.item.prompt, pt.task.item.signs);
 }
 
 function nextDashTask(s: LastTrainState, ctx: ModeContext, r: Racer): void {
@@ -622,6 +659,7 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
       playerId: p.id,
       name: p.name,
       prompt: item.prompt,
+      signs: item.signs ?? null,
       said: final?.text ?? null,
       via: final?.via ?? null,
       outcome: turn.status === 'away' ? 'away' : turn.correctOn === 0 ? 'missed' : final?.overruled ? 'overruled' : turn.correctOn === 1 ? 'first' : 'retry',
@@ -635,7 +673,7 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
 
 function penaltyCandidates(s: LastTrainState): string[] {
   return Object.values(s.turns)
-    .filter((t) => t.status === 'missed' && !traveller(s, t.playerId).ghost && !t.ghostAtStart)
+    .filter((t) => t.status === 'missed' && !traveller(s, t.playerId).ghost && !t.ghostAtStart && !s.minigames[t.task.minigameId]?.forgiving)
     .map((t) => t.playerId);
 }
 
@@ -1026,7 +1064,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
             const { up, down } = tally(w);
             const base: OverruleView = { id: w.id, playerId: w.playerId, name: nameOf(ctx, w.playerId), scope: w.scope, up, down, eligible: w.eligible.length, state: w.state };
             if (me && me === w.playerId) return { ...base, mine: true };
-            if (me && w.eligible.includes(me)) return { ...base, heard: w.heard, prompt: w.prompt, canVote: w.state === 'open' && w.votes[me] === undefined, myVote: w.votes[me] ?? null };
+            if (me && w.eligible.includes(me)) return { ...base, heard: w.heard, prompt: w.prompt, signs: w.signs, canVote: w.state === 'open' && w.votes[me] === undefined, myVote: w.votes[me] ?? null };
             return base;
           })
         : [];
@@ -1147,7 +1185,7 @@ function taskView(s: LastTrainState, task: Task, level: Level, lastHeard: string
     promptType: task.promptType,
     prompt: task.item.prompt,
     visual: task.item.visual ?? null,
-    signs: task.item.signs ?? null,
+    signs: signsForPhone(task.item.signs, task.attempt),
     limitMs: task.limitMs,
     attempt: task.attempt,
     hint: retry ? task.item.hint : null,
@@ -1161,7 +1199,10 @@ function taskView(s: LastTrainState, task: Task, level: Level, lastHeard: string
 /** Every item the mode could deal, by id, so a bot can look up its own answers (tests and bots only). */
 export function itemIndex(content: { lastTrainMinigames: readonly LastTrainMinigame[]; lastTrainScenarios: readonly LastTrainScenario[] }): Map<string, MinigameItem> {
   const map = new Map<string, MinigameItem>();
-  const add = (i: MinigameItem) => map.set(i.id, i);
+  const add = (i: MinigameItem) => {
+    map.set(i.id, i);
+    if (i.mirror) map.set(mirrored(i).id, mirrored(i));
+  };
   for (const m of [...FALLBACK_MINIGAMES, ...content.lastTrainMinigames]) m.items.forEach(add);
   for (const sc of [FALLBACK_SCENARIO, ...content.lastTrainScenarios]) sc.platformDash.forEach(add);
   return map;

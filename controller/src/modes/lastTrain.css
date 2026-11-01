@@ -54,11 +54,20 @@
 .lt-en-tap p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
 
 /* Read the Signs: station boards with only the kanji (and an arrow) on them. Japanese stations colour exits
-   yellow and toilets blue and red; everything else is the dark board with white type. */
-.lt-signs { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 4px 0; }
-.lt-sign { display: inline-flex; align-items: center; gap: 12px; min-width: 120px; justify-content: center; padding: 14px 20px; border-radius: 8px; background: #1d2a44; color: #fff; border: 3px solid #0b1222; box-shadow: 0 4px 0 #0b1222; }
-.lt-sign-text { font-family: var(--font-ja); font-weight: 700; font-size: 44px; line-height: 1.1; letter-spacing: 0.06em; }
-.lt-sign-arrow { font-size: 34px; font-weight: 800; line-height: 1; }
+   yellow and toilets blue and red; everything else is the dark board with white type. A pair always shares one
+   row, so the left sign stays on the left even at 360 px. */
+.lt-signs { display: flex; justify-content: center; gap: 10px; margin: 4px 0; }
+.lt-signs.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lt-sign { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; padding: 12px 8px; border-radius: 8px; background: #1d2a44; color: #fff; border: 3px solid #0b1222; box-shadow: 0 4px 0 #0b1222; }
+.lt-signs:not(.pair) .lt-sign { min-width: 120px; padding: 14px 20px; }
+.lt-sign-text { font-family: var(--font-ja); font-weight: 700; font-size: clamp(30px, 10vw, 44px); line-height: 1.1; white-space: nowrap; }
+/* A solid drawn arrow (no text glyph), pointing left; right and up are the same shape turned. */
+.lt-sign-arrow { flex: none; width: 0.9em; height: 0.9em; font-size: clamp(26px, 8vw, 34px); background: currentColor; clip-path: polygon(0 50%, 50% 0, 50% 32%, 100% 32%, 100% 68%, 50% 68%, 50% 100%); }
+.lt-sign-arrow.right { transform: scaleX(-1); }
+.lt-sign-arrow.up { transform: rotate(90deg); }
 .lt-sign.exit { background: #ffd23f; color: #1a1205; }
 .lt-sign.men { background: #2f6fd6; }
 .lt-sign.women { background: #d63a4f; }
+.lt-signs.small .lt-sign-text { font-size: 28px; }
+.lt-signs.small .lt-sign-arrow { font-size: 22px; }
+.lt-dir-strip { text-align: center; color: var(--muted); font-size: 14px; margin: 2px 0 0; text-wrap: balance; }

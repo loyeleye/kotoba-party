@@ -168,7 +168,7 @@ export const lastTrainScenarios: LastTrainScenario[] = [
         id: 'obake-line.kitaguchi',
         name: { text: '北口', kana: 'きたぐち', en: 'Kitaguchi', furigana: [['北口', 'きたぐち']] },
         minigameId: 'read-the-signs',
-        announcement: { text: '次は北口。看板、きた？きた！', kana: 'つぎはきたぐち。かんばん、きた？きた！', en: 'Next: North Exit (kita-guchi). Did the sign come (kita)? It came (kita)!', furigana: [['次', 'つぎ'], ['は', ''], ['北口', 'きたぐち'], ['。', ''], ['看板', 'かんばん'], ['、きた？きた！', '']] },
+        announcement: { text: '次は北口。看板クイズ、きた、きた！', kana: 'つぎはきたぐち。かんばんクイズ、きた、きた！', en: 'Next: Kitaguchi. Here comes (kita, kita) the sign quiz!', furigana: [['次', 'つぎ'], ['は', ''], ['北口', 'きたぐち'], ['。', ''], ['看板', 'かんばん'], ['クイズ、きた、きた！', '']] },
       },
       {
         id: 'obake-line.tsukimidai',

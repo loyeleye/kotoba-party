@@ -1,28 +1,84 @@
 // Last Train · Read the Signs (看板を読もう). Station signs in kanji: say what one says, or which way to go.
 // Kanji as icons, before anyone has to write them (docs/progressive-learning.md): 駅, 出口, 男 and 女 are
-// read like traffic signs. Each sign item's hint is a picture to remember it by, never the reading.
+// read like traffic signs. N5 and N4 hints are pictures to remember a kanji by, never its reading; a Kana
+// player's retry gives the reading to say, since a word never heard can't be recalled.
 // Item ids are stable: never rename one once it ships.
 
 import type { LastTrainMinigame, MinigameItem, StationSign } from '../types.js';
 
 const READ = { text: 'これは何と読みますか。', kana: 'これはなんとよみますか。', en: 'What does this sign say?', furigana: [['これは', ''], ['何', 'なん'], ['と', ''], ['読', 'よ'], ['みますか。', '']] as [string, string][] };
 
-/** One sign to read out loud. */
-const read = (id: string, level: MinigameItem['level'], sign: StationSign, accepted: string[], model: MinigameItem['model'], hint: string): MinigameItem => ({
+type Furigana = [string, string][];
+
+/**
+ * One sign to read out loud. The model quotes the sign (「男」です。), since 男です。 can mean "I'm a man".
+ * Readings are accepted bare, with です, or as 〜とよみます.
+ */
+const read = (id: string, level: MinigameItem['level'], sign: StationSign, name: { text: string; kana: string; en: string }, hint: string, extra: string[] = []): MinigameItem => ({
   id: `read-the-signs.${id}`,
   level,
   prompt: READ,
   signs: [sign],
-  accepted,
-  model,
+  accepted: [name.kana, `${name.kana}です`, `${name.kana}とよみます`, ...extra],
+  model: { text: `「${name.text}」です。`, kana: `${name.kana}です。`, en: `It says “${name.en}”.`, furigana: [['「', ''], [name.text, name.kana], ['」です。', '']] },
   hint,
   timeLimit: 10,
 });
 
-const LEFT = ['ひだりです', 'ひだり', 'ひだりがわです', 'ひだりがわ', 'ひだりのほうです'];
-const RIGHT = ['みぎです', 'みぎ', 'みぎがわです', 'みぎがわ', 'みぎのほうです'];
-const LEFT_MODEL = { text: '左です。', kana: 'ひだりです。', en: "It's on the left.", furigana: [['左', 'ひだり'], ['です。', '']] as [string, string][] };
-const RIGHT_MODEL = { text: '右です。', kana: 'みぎです。', en: "It's on the right.", furigana: [['右', 'みぎ'], ['です。', '']] as [string, string][] };
+type Side = 'left' | 'right' | 'up';
+const SIDE = {
+  left: { text: '左', kana: 'ひだり', en: 'on the left' },
+  right: { text: '右', kana: 'みぎ', en: 'on the right' },
+  up: { text: '', kana: 'まっすぐ', en: 'straight ahead' },
+} as const;
+const FLIP: Record<Side, Side> = { left: 'right', right: 'left', up: 'up' };
+
+/** Every way to say where it is, bare or naming the sign (でぐちはひだりです). */
+function answers(side: Side, name: string): string[] {
+  if (side === 'up') return ['まっすぐです', 'まっすぐ', 'まえです', 'まえ', 'まっすぐいってください', `${name}はまっすぐです`];
+  const k = SIDE[side].kana;
+  return [`${k}です`, k, `${k}がわです`, `${k}がわ`, `${k}のほうです`, `${k}のほう`, `${k}にあります`, `${k}がわにあります`, `${name}は${k}です`, `${name}は${k}のほうです`, `${name}は${k}にあります`];
+}
+
+interface Place { text: string; kana: string; en: string; furigana: Furigana }
+
+/** The model names the sign: 出口は左です。 */
+function placeModel(side: Side, place: Place, hou: boolean): MinigameItem['model'] {
+  const s = SIDE[side];
+  const word = side === 'up' ? 'まっすぐ' : s.text;
+  const tail = `${hou && side !== 'up' ? 'のほう' : ''}です。`;
+  return {
+    text: `${place.text}は${word}${tail}`,
+    kana: `${place.kana}は${s.kana}${tail}`,
+    en: `The ${place.en} is ${hou && side !== 'up' ? s.en.replace('on the', 'to the') : s.en}.`,
+    furigana: [...place.furigana, ['は', ''], [word, side === 'up' ? '' : s.kana], [tail, '']],
+  };
+}
+
+/**
+ * Which way to go. The question is in kana only, so the sign it asks about never appears in it. The
+ * boards are drawn plain on the first try (exit yellow and toilet red would give it away) and half the
+ * deals come mirrored, so neither the colour nor the side can stand in for reading.
+ */
+function where(id: string, level: MinigameItem['level'], question: { kana: string; en: string }, signs: StationSign[], side: Side, place: Place, hint: string, hou = false): MinigameItem {
+  return {
+    id: `read-the-signs.${id}`,
+    level,
+    prompt: { text: question.kana, kana: question.kana, en: question.en, furigana: [[question.kana, '']] },
+    signs,
+    accepted: answers(side, place.kana),
+    model: placeModel(side, place, hou),
+    mirror: { accepted: answers(FLIP[side], place.kana), model: placeModel(FLIP[side], place, hou) },
+    hint,
+    timeLimit: 10,
+  };
+}
+
+const EXIT: Place = { text: '出口', kana: 'でぐち', en: 'exit', furigana: [['出口', 'でぐち']] };
+const WOMENS: Place = { text: '女の人のトイレ', kana: 'おんなのひとのトイレ', en: "women's toilet", furigana: [['女', 'おんな'], ['の', ''], ['人', 'ひと'], ['のトイレ', '']] };
+const SOUTH: Place = { text: '南口', kana: 'みなみぐち', en: 'south exit', furigana: [['南口', 'みなみぐち']] };
+const TICKETS: Place = { text: '切符売り場', kana: 'きっぷうりば', en: 'ticket office', furigana: [['切符', 'きっぷ'], ['売', 'う'], ['り', ''], ['場', 'ば']] };
+const EAST: Place = { text: '東口', kana: 'ひがしぐち', en: 'east exit', furigana: [['東口', 'ひがしぐち']] };
 
 export const readTheSigns: LastTrainMinigame = {
   id: 'read-the-signs',
@@ -30,74 +86,32 @@ export const readTheSigns: LastTrainMinigame = {
   topic: 'reading signs (kanji as icons)',
   promptType: 'picture',
   penalty: false,
+  // Most players meet these kanji here for the first time: a miss never sends anyone to the penalty car.
+  forgiving: true,
   phase: 5,
   status: 'draft',
   intro: { text: '駅の看板、読めますか？', kana: 'えきのかんばん、よめますか？', en: 'Can you read the station signs?', furigana: [['駅', 'えき'], ['の', ''], ['看板', 'かんばん'], ['、', ''], ['読', 'よ'], ['めますか？', '']] },
   items: [
-    // ---- Kana level: the signs every traveller needs, read like icons ----
-    read('01-eki', 'kana', { text: '駅' }, ['えき', 'えきです'], { text: '駅です。', kana: 'えきです。', en: "It's “station”.", furigana: [['駅', 'えき'], ['です。', '']] }, 'The left half is a horse (馬): stations began as stops to change horses. It means "station".'),
-    read('02-deguchi', 'kana', { text: '出口', kind: 'exit' }, ['でぐち', 'でぐちです'], { text: '出口です。', kana: 'でぐちです。', en: "It's “exit”.", furigana: [['出口', 'でぐち'], ['です。', '']] }, '出 is two hills stacked up: going out and over. 口 is a mouth, an opening. Together: the way out. Exits are yellow.'),
-    read('03-iriguchi', 'kana', { text: '入口' }, ['いりぐち', 'いりぐちです'], { text: '入口です。', kana: 'いりぐちです。', en: "It's “entrance”.", furigana: [['入口', 'いりぐち'], ['です。', '']] }, '入 looks like someone stepping in through a door. 口 is an opening. Together: the way in.'),
-    read('04-otoko', 'kana', { text: '男', kind: 'men' }, ['おとこ', 'おとこです', 'おとこのひと', 'おとこのひとです', 'だんせい', 'だんせいです'], { text: '男です。', kana: 'おとこです。', en: "It's “man” (the men's room).", furigana: [['男', 'おとこ'], ['です。', '']] }, 'A rice field (田) on top of strength (力): the one who works the field. On a toilet door it means the men’s.'),
-    read('05-onna', 'kana', { text: '女', kind: 'women' }, ['おんな', 'おんなです', 'おんなのひと', 'おんなのひとです', 'じょせい', 'じょせいです'], { text: '女です。', kana: 'おんなです。', en: "It's “woman” (the women's room).", furigana: [['女', 'おんな'], ['です。', '']] }, 'A figure kneeling with crossed arms. On a toilet door it means the women’s, usually in red.'),
-    {
-      id: 'read-the-signs.06-deguchi-doko',
-      level: 'kana',
-      prompt: { text: '出口はどこですか。', kana: 'でぐちはどこですか。', en: 'Where is the exit?', furigana: [['出口', 'でぐち'], ['はどこですか。', '']] },
-      signs: [{ text: '出口', kind: 'exit', arrow: 'left' }, { text: '入口', arrow: 'right' }],
-      accepted: LEFT,
-      model: LEFT_MODEL,
-      hint: '出 (out) is the one with two hills. ひだり is left, みぎ is right.',
-      timeLimit: 10,
-    },
-    {
-      id: 'read-the-signs.07-onna-toire',
-      level: 'kana',
-      prompt: { text: '女の人のトイレはどこですか。', kana: 'おんなのひとのトイレはどこですか。', en: "Where's the women's toilet?", furigana: [['女', 'おんな'], ['の', ''], ['人', 'ひと'], ['のトイレはどこですか。', '']] },
-      signs: [{ text: '男', kind: 'men', arrow: 'left' }, { text: '女', kind: 'women', arrow: 'right' }],
-      accepted: RIGHT,
-      model: RIGHT_MODEL,
-      hint: '女 is the kneeling figure; 男 has a rice field on top. ひだり is left, みぎ is right.',
-      timeLimit: 10,
-    },
+    // ---- Kana level: the signs every traveller needs. A Kana player may never have heard the word, so
+    //      the retry gives the reading to say, with a memory picture for next time. ----
+    read('01-eki', 'kana', { text: '駅' }, { text: '駅', kana: 'えき', en: 'station' }, 'It reads えき (eki). Say it! Memory picture: a horse (馬) on the left.'),
+    read('02-deguchi', 'kana', { text: '出口', kind: 'exit' }, { text: '出口', kana: 'でぐち', en: 'exit' }, 'It reads でぐち (deguchi). Memory picture: 出 as two hills, 口 a doorway.'),
+    read('03-iriguchi', 'kana', { text: '入口' }, { text: '入口', kana: 'いりぐち', en: 'entrance' }, 'It reads いりぐち (iriguchi). 入 is someone stepping in. Careful: 入 is not 人.', ['いりくち', 'いりくちです']),
+    read('04-otoko', 'kana', { text: '男', kind: 'men' }, { text: '男', kana: 'おとこ', en: 'man' }, 'It reads おとこ (otoko). Memory picture: a rice field (田) over strength (力).', ['おとこのひと', 'おとこのひとです']),
+    read('05-onna', 'kana', { text: '女', kind: 'women' }, { text: '女', kana: 'おんな', en: 'woman' }, 'It reads おんな (onna). Memory picture: a kneeling figure. Often in red.', ['おんなのひと', 'おんなのひとです']),
+    where('06-deguchi-doko', 'kana', { kana: 'でぐちはどこですか。', en: 'Where is the exit?' }, [{ text: '出口', kind: 'exit', arrow: 'left', target: true }, { text: '入口', arrow: 'right' }], 'left', EXIT, '出 (out) has the two hills. 入 (in) is someone stepping in.'),
+    where('07-onna-toire', 'kana', { kana: 'おんなのひとのトイレはどこですか。', en: "Where's the women's toilet?" }, [{ text: '男', kind: 'men', arrow: 'left' }, { text: '女', kind: 'women', arrow: 'right', target: true }], 'right', WOMENS, '女 is the kneeling figure. 男 has a rice field (田) on top.'),
     // ---- N5: the exits round a big station, and buying a ticket ----
-    read('08-kitaguchi', 'n5', { text: '北口' }, ['きたぐち', 'きたぐちです'], { text: '北口です。', kana: 'きたぐちです。', en: "It's “north exit”.", furigana: [['北口', 'きたぐち'], ['です。', '']] }, '北 is two people sitting back to back, turned away from the sun: north. 口 on a station sign is an exit.'),
-    read('09-minamiguchi', 'n5', { text: '南口' }, ['みなみぐち', 'みなみぐちです'], { text: '南口です。', kana: 'みなみぐちです。', en: "It's “south exit”.", furigana: [['南口', 'みなみぐち'], ['です。', '']] }, '南 is south: a warm tent with a cross on top. 口 on a station sign is an exit.'),
-    read('10-higashiguchi', 'n5', { text: '東口' }, ['ひがしぐち', 'ひがしぐちです'], { text: '東口です。', kana: 'ひがしぐちです。', en: "It's “east exit”.", furigana: [['東口', 'ひがしぐち'], ['です。', '']] }, '東 is the sun (日) rising behind a tree (木): east. 口 on a station sign is an exit.'),
-    read('11-nishiguchi', 'n5', { text: '西口' }, ['にしぐち', 'にしぐちです'], { text: '西口です。', kana: 'にしぐちです。', en: "It's “west exit”.", furigana: [['西口', 'にしぐち'], ['です。', '']] }, '西 is a bird settling into its nest at sunset: west. 口 on a station sign is an exit.'),
-    read('12-kippu', 'n5', { text: '切符' }, ['きっぷ', 'きっぷです'], { text: '切符です。', kana: 'きっぷです。', en: "It's “ticket”.", furigana: [['切符', 'きっぷ'], ['です。', '']] }, '切 is a knife (刀) cutting: a ticket is the slip you tear off. The ticket machines are under this sign.'),
-    {
-      id: 'read-the-signs.13-minamiguchi-doko',
-      level: 'n5',
-      prompt: { text: '南口はどこですか。', kana: 'みなみぐちはどこですか。', en: 'Where is the south exit?', furigana: [['南口', 'みなみぐち'], ['はどこですか。', '']] },
-      signs: [{ text: '北口', arrow: 'left' }, { text: '南口', arrow: 'right' }],
-      accepted: RIGHT,
-      model: RIGHT_MODEL,
-      hint: '北 is two people back to back; 南 is a tent with a cross on top.',
-      timeLimit: 10,
-    },
-    {
-      id: 'read-the-signs.14-kippu-doko',
-      level: 'n5',
-      prompt: { text: '切符売り場はどこですか。', kana: 'きっぷうりばはどこですか。', en: 'Where do you buy tickets?', furigana: [['切符売', 'きっぷう'], ['り', ''], ['場', 'ば'], ['はどこですか。', '']] },
-      signs: [{ text: '出口', kind: 'exit', arrow: 'left' }, { text: '切符', arrow: 'up' }],
-      accepted: ['まっすぐです', 'まっすぐ', 'まえです', 'まえ', 'まっすぐいってください'],
-      model: { text: 'まっすぐです。', kana: 'まっすぐです。', en: "It's straight ahead.", furigana: [['まっすぐです。', '']] },
-      hint: '切 has a knife in it: the slip you tear off. An arrow pointing up means straight ahead: まっすぐ.',
-      timeLimit: 10,
-    },
+    read('08-kitaguchi', 'n5', { text: '北口', kind: 'exit' }, { text: '北口', kana: 'きたぐち', en: 'north exit' }, 'Memory picture: 北 as two people sitting back to back. 口 here means exit.'),
+    read('09-minamiguchi', 'n5', { text: '南口', kind: 'exit' }, { text: '南口', kana: 'みなみぐち', en: 'south exit' }, 'Memory picture: 南 as a tent with a cross on top. 口 here means exit.'),
+    read('10-higashiguchi', 'n5', { text: '東口', kind: 'exit' }, { text: '東口', kana: 'ひがしぐち', en: 'east exit' }, 'Memory picture: 東 as the sun (日) rising behind a tree (木).'),
+    read('11-nishiguchi', 'n5', { text: '西口', kind: 'exit' }, { text: '西口', kana: 'にしぐち', en: 'west exit' }, 'Memory picture: 西 as a bird settling into its nest at sunset.'),
+    read('12-kippu', 'n5', { text: '切符' }, { text: '切符', kana: 'きっぷ', en: 'ticket' }, '切 has a knife (刀) in it: the slip you tear off.'),
+    where('13-minamiguchi-doko', 'n5', { kana: 'みなみぐちはどこですか。', en: 'Where is the south exit?' }, [{ text: '北口', kind: 'exit', arrow: 'left' }, { text: '南口', kind: 'exit', arrow: 'right', target: true }], 'right', SOUTH, 'North is two people back to back. South is the tent with a cross.'),
+    where('14-kippu-doko', 'n5', { kana: 'きっぷうりばはどこですか。', en: 'Where do you buy tickets?' }, [{ text: '出口', kind: 'exit', arrow: 'left' }, { text: '切符', arrow: 'up', target: true }], 'up', TICKETS, '切 has a knife (刀) in it. An arrow pointing up means まっすぐ.'),
     // ---- N4: inside the gates ----
-    read('15-kaisatsu', 'n4', { text: '改札' }, ['かいさつ', 'かいさつです', 'かいさつぐち', 'かいさつぐちです'], { text: '改札です。', kana: 'かいさつです。', en: "It's “ticket gates”.", furigana: [['改札', 'かいさつ'], ['です。', '']] }, '札 is a wooden tag (木 + a hook): your ticket. 改 is to check it. Where tickets are checked: the gates.'),
-    read('16-norikae', 'n4', { text: '乗換' }, ['のりかえ', 'のりかえです'], { text: '乗換です。', kana: 'のりかえです。', en: "It's “transfer”.", furigana: [['乗換', 'のりかえ'], ['です。', '']] }, '乗 is a person up in a tree: riding. 換 is a hand swapping one thing for another. Ride, then swap: change trains here.'),
-    {
-      id: 'read-the-signs.17-higashiguchi-doko',
-      level: 'n4',
-      prompt: { text: '東口はどちらですか。', kana: 'ひがしぐちはどちらですか。', en: 'Which way is the east exit?', furigana: [['東口', 'ひがしぐち'], ['はどちらですか。', '']] },
-      signs: [{ text: '西口', arrow: 'left' }, { text: '東口', arrow: 'right' }],
-      accepted: RIGHT,
-      model: { text: '右のほうです。', kana: 'みぎのほうです。', en: "It's to the right.", furigana: [['右', 'みぎ'], ['のほうです。', '']] },
-      hint: '東 is the sun behind a tree; 西 is a bird in its nest. のほう means "that way".',
-      timeLimit: 10,
-    },
+    read('15-kaisatsu', 'n4', { text: '改札' }, { text: '改札', kana: 'かいさつ', en: 'ticket gates' }, '札 is a wooden tag (木): your ticket. 改 is to check it.', ['かいさつぐち', 'かいさつぐちです']),
+    read('16-norikae', 'n4', { text: '乗換' }, { text: '乗換', kana: 'のりかえ', en: 'transfer' }, 'Memory picture: 乗 a person up a tree (riding), 換 a hand swapping.'),
+    where('17-higashiguchi-doko', 'n4', { kana: 'ひがしぐちはどちらですか。', en: 'Which way is the east exit?' }, [{ text: '西口', kind: 'exit', arrow: 'left' }, { text: '東口', kind: 'exit', arrow: 'right', target: true }], 'right', EAST, 'East is the sun behind a tree. West is the bird in its nest.', true),
   ],
 };

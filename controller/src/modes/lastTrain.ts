@@ -8,7 +8,8 @@
 //    place, so a vote elsewhere never rebuilds the talk button mid-sentence.
 
 import { h, mount, ruby } from '../../../shared/src/dom.js';
-import type { JpText, Level, StationSign } from '../../../content/src/types.js';
+import type { JpText, Level } from '../../../content/src/types.js';
+import { signBoard } from '../../../shared/src/signBoard.js';
 import type { LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
@@ -130,27 +131,9 @@ function listenBox(task: TaskView): HTMLElement {
 
 // ---- answering ----
 
-const ARROW = { left: '←', right: '→', up: '↑' } as const;
-const ARROW_WORD = { left: 'left', right: 'right', up: 'straight ahead' } as const;
-
-/**
- * Read the Signs: each sign as a station board, the kanji big and nothing else on it (no reading: reading
- * it is the task). Exits are yellow, toilets blue and red, the rest the usual dark board.
- */
-function signBoard(signs: StationSign[]): HTMLElement {
-  return h(
-    'div',
-    { class: 'lt-signs', role: 'img', 'aria-label': `Station sign${signs.length > 1 ? 's' : ''}: ${signs.map((s) => `${s.text}${s.arrow ? `, arrow ${ARROW_WORD[s.arrow]}` : ''}`).join('; ')}` },
-    signs.map((s) =>
-      h(
-        'div',
-        { class: `lt-sign${s.kind ? ` ${s.kind}` : ''}${s.arrow ? ` to-${s.arrow}` : ''}`, 'aria-hidden': 'true' },
-        s.arrow === 'left' || s.arrow === 'up' ? h('span', { class: 'lt-sign-arrow' }, ARROW[s.arrow]) : null,
-        h('span', { class: 'lt-sign-text', lang: 'ja' }, s.text),
-        s.arrow === 'right' ? h('span', { class: 'lt-sign-arrow' }, ARROW.right) : null,
-      ),
-    ),
-  );
+/** Kana players get the direction words with every pair of boards. */
+function directionStrip(): HTMLElement {
+  return h('p', { class: 'lt-dir-strip' }, '← ひだり hidari · ↑ まっすぐ massugu · みぎ migi →');
 }
 
 let draft: { key: string; input: HTMLInputElement } | null = null;
@@ -184,6 +167,7 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
     countdown(task, send),
     task.listen && task.attempt === 1 ? listenBox(task) : null,
     task.signs?.length ? signBoard(task.signs) : null,
+    task.signs && task.signs.length > 1 && level === 'kana' ? directionStrip() : null,
     // かな players get the romaji under the prompt too, unless the task carries its own.
     showText ? jpBlock(task.prompt, { en: level === 'kana' || task.attempt === 2, big: true, romaji: level === 'kana' && !task.romaji }) : null,
     // N5 and up read the Japanese first; the English is one tap away.
@@ -219,6 +203,7 @@ function overruleCard(w: OverruleView, send: (m: unknown) => Promise<boolean>): 
     'div',
     { class: 'lt-vote' },
     h('p', {}, h('strong', {}, w.name), '’s answer was rejected. Was it right?'),
+    w.signs?.length ? signBoard(w.signs, { small: true }) : null,
     w.prompt ? jpBlock(w.prompt, { en: true }) : null,
     h('p', { class: 'lt-heard' }, 'They said: ', h('span', { lang: 'ja' }, w.heard)),
     level === 'kana' && w.heard ? h('p', { class: 'lt-romaji' }, toRomaji(w.heard)) : null,

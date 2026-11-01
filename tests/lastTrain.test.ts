@@ -9,13 +9,14 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { checkUtterance, firstMora } from '../shared/src/modes/lastTrain/check.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
-import { buildStops, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
+import { buildStops, itemIndex, mirrored, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { Bot, Director } from '../tools/bots/bot.js';
 import { lastTrainPolicy } from '../tools/bots/policies/lastTrain.js';
 import { content as realContent, hashView, startServer, until } from './helpers.js';
+import { createReader } from '../server/src/reading.js';
 
 const t = (text: string, kana = text, en = text): JpText => ({ text, kana, en });
 const item = (id: string, accepted: string[], level: MinigameItem['level'] = 'n5', timeLimit = 10): MinigameItem => ({
@@ -156,14 +157,84 @@ describe('Read the Signs', () => {
     for (const it of signs.items) {
       expect(it.signs?.length, it.id).toBeGreaterThan(0);
       expect(checkUtterance({ via: 'typed', text: it.model.kana.replace(/。$/, '') }, it.accepted), it.id).toBe(true);
-      // The hint is a picture to remember the kanji by: it never gives the reading away.
-      if (it.prompt.kana.includes('よみますか')) expect(it.hint, it.id).not.toContain(it.accepted[0]!);
+      if (it.mirror) expect(checkUtterance({ via: 'typed', text: it.mirror.model.kana.replace(/。$/, '') }, it.mirror.accepted), it.id).toBe(true);
+      // N5 and N4 hints are pictures to remember a kanji by, never its reading. A Kana player's retry
+      // gives the reading, since a word never heard can't be recalled.
+      if (it.prompt.kana.includes('よみますか')) {
+        if (it.level === 'kana') expect(it.hint, it.id).toContain(it.accepted[0]!);
+        else expect(it.hint, it.id).not.toContain(it.accepted[0]!);
+      }
     }
     expect(['kana', 'n5', 'n4'].every((l) => signs.items.some((it) => it.level === l))).toBe(true);
+  });
+  it('never writes a direction question with the signs it asks about', () => {
+    for (const it of signs.items.filter((i) => (i.signs?.length ?? 0) > 1)) {
+      for (const sg of it.signs!) expect(it.prompt.text, it.id).not.toContain(sg.text);
+      expect(it.signs!.filter((sg) => sg.target).length, it.id).toBe(1);
+      expect(it.mirror, it.id).toBeDefined();
+    }
+  });
+  it('mirrors a pair of boards with the answer that then fits', () => {
+    const exit = signs.items.find((i) => i.id === 'read-the-signs.06-deguchi-doko')!;
+    const m = mirrored(exit);
+    expect(m.id).toBe('read-the-signs.06-deguchi-doko~mirrored');
+    expect(m.signs!.map((sg) => [sg.text, sg.arrow])).toEqual([['入口', 'left'], ['出口', 'right']]);
+    expect(checkUtterance({ via: 'typed', text: 'みぎです' }, m.accepted)).toBe(true);
+    expect(checkUtterance({ via: 'typed', text: 'ひだりです' }, m.accepted)).toBe(false);
+    expect(itemIndex(realContent).get(m.id)?.accepted).toEqual(m.accepted);
   });
   it('rides the Obake Line, before its last stop', () => {
     const line = lastTrainScenarios.find((sc) => sc.id === 'obake-line')!;
     expect(line.stops.at(-2)!.minigameId).toBe('read-the-signs');
+  });
+
+  // A line of four 北口 stops, with the real Read the Signs and two penalty minigames.
+  const KITA: LastTrainScenario = {
+    ...SCENARIO,
+    id: 'kita-line',
+    stops: [1, 2, 3, 4].map((n) => ({ id: `k${n}`, name: { text: '北口', kana: 'きたぐち', en: 'Kitaguchi' }, minigameId: 'read-the-signs', announcement: t('つぎはきたぐち') })),
+  };
+  const SIGNS_CONTENT: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [signs, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [KITA] };
+
+  it('skips signs the stop name gives away, and never shows a phone the answer', () => {
+    const g = new Table(SIGNS_CONTENT, 6);
+    g.start();
+    g.until('answer');
+    const dealt = Object.values(g.s.turns).map((tn) => tn.task.item.id);
+    expect(dealt).toHaveLength(6);
+    expect(dealt).not.toContain('read-the-signs.08-kitaguchi');
+    for (const id of ['p1', 'p2', 'p3', 'p4', 'p5', 'p6']) {
+      const task = g.task(id);
+      expect(task.signs?.length).toBeGreaterThan(0);
+      for (const sg of task.signs!) {
+        expect(sg).not.toHaveProperty('target');
+        // A pair is drawn plain on the first try: exit yellow or toilet red would give it away.
+        if (task.signs!.length > 1) expect(sg).not.toHaveProperty('kind');
+      }
+    }
+  });
+  it('outlines the asked-about sign on the TV, and a miss never sends anyone to the penalty car', () => {
+    const g = new Table(SIGNS_CONTENT, 6);
+    g.start();
+    g.until('reveal');
+    const rows = g.view('stage').results!;
+    expect(rows.every((r) => r.outcome === 'missed' && r.signs?.length)).toBe(true);
+    for (const r of rows.filter((x) => x.signs!.length > 1)) expect(r.signs!.filter((sg) => sg.target)).toHaveLength(1);
+    g.timeout();
+    expect(g.state.phase).toBe('prompt');
+    expect(Object.values(g.s.travellers).some((tr) => tr.ghost)).toBe(false);
+  });
+});
+
+describe('Read the Signs readings', () => {
+  it('the server reads every sign the way the game accepts it', async () => {
+    const reader = (await createReader())!;
+    const signs = realContent.lastTrainMinigames.find((m) => m.id === 'read-the-signs')!;
+    // 北口 is きたぐち, not きたくち; 出口 alone is でぐち, not the dictionary's いでぐち.
+    for (const it of signs.items.filter((i) => i.signs?.length === 1)) {
+      expect(checkUtterance({ via: 'speech', text: it.signs![0]!.text, reading: reader(it.signs![0]!.text) }, it.accepted), it.id).toBe(true);
+    }
+    expect(reader('出口は左です')).toBe('でぐちはひだりです');
   });
 });
 

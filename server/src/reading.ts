@@ -11,6 +11,9 @@ import { setReading, utterancesIn } from './utterances.js';
 
 import type { UtteranceToken } from '../../shared/src/japanese/kana.js';
 
+/** Words the dictionary reads wrong for us (IPADIC reads 出口 alone as いでぐち). */
+const READING_FIXES: Record<string, string> = { 出口: 'でぐち' };
+
 export interface Reader {
   (text: string): string;
   tokens(text: string): UtteranceToken[];
@@ -27,7 +30,7 @@ export async function createReader(): Promise<Reader | null> {
     const tokens = (text: string): UtteranceToken[] =>
       tokenizer.tokenize(text).map((t) => ({
         surface: t.surface_form,
-        reading: toHiragana(t.reading && t.reading !== '*' ? t.reading : t.surface_form),
+        reading: READING_FIXES[t.surface_form] ?? toHiragana(t.reading && t.reading !== '*' ? t.reading : t.surface_form),
         pos: t.pos,
         known: t.word_type === 'KNOWN',
       }));
