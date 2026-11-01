@@ -7,7 +7,10 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import {
+  answerFrames,
   closingFor,
+  DECKS,
+  deckTitlesFor,
   framesFor,
   MISHAPS,
   openingFor,
@@ -178,6 +181,39 @@ describe('Happyōkai!: content', () => {
     expect(openingFor('n5', 'Ladi', cat).text).toContain('今日は ねこの しごとに ついて 話します');
     expect(openingFor('n4', 'Ladi', cat).kana).toContain('きょうは ねこの しごとに ついて はなしたいと おもいます');
   });
+
+  it('has two N4 decks, Then and now and If I were…, with their own frames, cue cards, questions and answers', () => {
+    const HAN = /\p{Script=Han}/u;
+    const bare = (j: { text: string; furigana?: [string, string][] }) => (j.furigana ?? [[j.text, '']]).filter(([b, r]) => !r && HAN.test(b)).map(([b]) => b);
+    for (const deck of ['then-now', 'if'] as const) {
+      expect(DECKS[deck].status).toBe('draft');
+      for (const a of ['kids', 'family', 'cheeky'] as const) expect(deckTitlesFor(a, deck).length, `${deck} ${a}`).toBeGreaterThanOrEqual(5);
+      for (const a of ['kids', 'family', 'cheeky'] as const) expect(titlesFor(a).some((t) => t.deck)).toBe(false);
+      const pattern = deck === 'then-now' ? /ように なりました|ことに しました|ことに なりました/ : /^もし |、もし /;
+      for (const s of SLIDES) {
+        const ready = readySentences(s, 'n4', deckTitlesFor('family', deck)[0]!.topic, deck);
+        expect(ready.length, s.id).toBe(3);
+        for (const r of ready) {
+          expect(r.kana, `${s.id} ${deck}`).toMatch(pattern);
+          expect(r.kana, s.id).not.toMatch(/undefined|null/);
+          expect(bare(r), s.id).toEqual([]);
+        }
+        expect(framesFor('n4', s, deck).join(' '), s.id).toMatch(pattern);
+        // Other levels keep their usual lines, even in a deck talk.
+        expect(readySentences(s, 'n5', TITLES[0]!.topic, deck)).toEqual(readySentences(s, 'n5', TITLES[0]!.topic));
+        expect(framesFor('n5', s, deck)).toEqual(framesFor('n5', s));
+      }
+      const cards = questionsFor('n4', SLIDES[0]!, deckTitlesFor('family', deck)[0]!.topic, 'family', () => 0, deck);
+      expect(cards[0]!.kana).toMatch(deck === 'then-now' ? /まえは|ことに しました|ように なりました/ : /^もし/);
+      expect(answerFrames('n4', deck).join(' ')).toMatch(pattern.source.startsWith('^') ? /もし/ : pattern);
+      expect(answerFrames('n5', deck)).toEqual(answerFrames('n5'));
+    }
+    // Deck questions stay out of every other talk.
+    for (let k = 0; k < 20; k++) for (const q of questionsFor('n4', SLIDES[k]!, TITLES[0]!.topic, 'family', mulberry(k))) expect(q.kana).not.toMatch(/ことに しました|できるように|もし あなたが|なれたら/);
+    // An If I were… title is a clause, so the opening quotes it.
+    const ifCat = TITLES.find((t) => t.id === 'if-cat')!.jp;
+    expect(openingFor('n4', 'Ladi', ifCat).kana).toContain('きょうは 「もし わたしが ねこだったら」に ついて');
+  });
 });
 
 // ---- rules ----
@@ -263,6 +299,31 @@ describe('Happyōkai!: a talk', () => {
     const n5 = new Table(4);
     n5.start();
     expect(n5.t.pictures).toBe(showPlan(4).pictures);
+  });
+
+  it('gives an N4 presenter the N4 decks (one title from each), with deck frames and cue cards; N5 presenters never see them', () => {
+    const table = new Table(3, ['n4', 'n4', 'n4']);
+    table.start();
+    const presenter = table.t.presenterId;
+    const choices = table.t.titleChoices.map((id) => TITLES.find((t) => t.id === id)!);
+    expect(choices.map((t) => t.deck)).toEqual(['then-now', 'if']);
+    expect(table.view(presenter).me!.titleChoices.map((c) => c.deck?.en)).toEqual(['Then and now', 'If I were…']);
+    expect(table.play(presenter, { kind: 'title', key: 1 }).error).toBeUndefined();
+    expect(table.play(presenter, { kind: 'go' }).error).toBeUndefined();
+    const opening = table.view(presenter).me!.script!;
+    expect(opening.kana).toContain('「もし わたしが');
+    expect(table.say(opening.kana).error).toBeUndefined();
+    expect(table.next().error).toBeUndefined();
+    const me = table.view(presenter).me!;
+    expect(me.frames.join(' ')).toContain('もし ＿だったら');
+    expect(me.ready.length).toBe(3);
+    for (const r of me.ready) expect(r.kana).toMatch(/もし/);
+    // The assistant's cue cards are the deck's sentences too.
+    expect(table.view(table.t.assistantId!).me!.cueCards.map((c) => c.kana)).toEqual(me.ready.map((r) => r.kana));
+
+    const n5 = new Table(3, ['n5', 'n5', 'kana']);
+    n5.start();
+    expect(n5.t.titleChoices.every((id) => !TITLES.find((t) => t.id === id)!.deck)).toBe(true);
   });
 
   it('runs backstage → slides → questions → grades → report card, and pays everyone', () => {

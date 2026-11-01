@@ -7,8 +7,13 @@
 // with a topic noun, and the ready sentences bridge any slide back to it: 「これが ドラゴンです！」 over a
 // picture of a single sock. Every slide is a picture with one word; its kind (living, place, food,
 // thing) picks frames and verbs that fit it, so nobody is offered 「かっぱで 〜を しました」.
+//
+// Two N4 decks, for N4 presenters only: "Then and now" (goal 4.12: ＿ように なりました, ＿ことに
+// しました, ＿ことに なりました) and "If I were…" (もし ＿だったら). A deck is a set of titles plus its own
+// slide frames, ready sentences (the cue cards), question cards and answer frames; the slides are the
+// usual ones. Everyone else keeps the usual titles and lines.
 
-import type { JpText, Level } from '../../../../content/src/types.js';
+import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 import { forLevel, rb, src } from './ruby.js';
 
@@ -22,7 +27,17 @@ export interface Title {
   topic: JpText;
   tags: readonly Tag[];
   audiences: readonly Audience[];
+  /** An N4 deck's title: offered only to N4 presenters. */
+  deck?: Deck;
 }
+
+/** The N4 decks. */
+export type Deck = 'then-now' | 'if';
+
+export const DECKS: Record<Deck, { name: JpText; frames: readonly string[]; status: ReviewStatus }> = {
+  'then-now': { name: rb('昔[むかし]と 今[いま]', 'Then and now'), frames: ['you-ni-naru', 'koto-ni-suru', 'koto-ni-naru', 'potential'], status: 'draft' },
+  if: { name: rb('もしも…', 'If I were…'), frames: ['tara', 'to-omoimasu'], status: 'draft' },
+};
 
 export type WordKind = 'living' | 'place' | 'food' | 'thing';
 
@@ -66,7 +81,9 @@ const KF: readonly Audience[] = ['kids', 'family'];
 const FC: readonly Audience[] = ['family', 'cheeky'];
 const C: readonly Audience[] = ['cheeky'];
 
-const title = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[]): Title => ({ id, jp: jp(text, en), topic: jp(topic, topicEn), tags, audiences });
+const title = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[], deck?: Deck): Title => ({ id, jp: jp(text, en), topic: jp(topic, topicEn), tags, audiences, ...(deck ? { deck } : {}) });
+const thenNow = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[] = ALL) => title(id, text, en, topic, topicEn, tags, audiences, 'then-now');
+const ifWere = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[] = ALL) => title(id, text, en, topic, topicEn, tags, audiences, 'if');
 
 // ---- titles (Kids titles also play in Family rooms; Family titles also play in Cheeky rooms) ----
 
@@ -126,6 +143,24 @@ export const TITLES: Title[] = [
   title('granny-gang', 'おばあちゃん組[ぐみ]', 'The Granny Gang', 'おばあちゃん組[ぐみ]', 'the Granny Gang', ['person', 'fun'], C),
   title('shiba-oyabun', '柴犬[しばいぬ]の 親分[おやぶん]', 'The shiba-inu godfather', '親分[おやぶん]', 'the godfather', ['animal', 'work'], C),
   title('konbini-3am', '夜中[よなか]の コンビニ', 'The konbini at 3 a.m.', 'コンビニ', 'the konbini', ['food', 'place', 'fun'], C),
+  // N4 deck: Then and now (〜ように なりました, 〜ことに しました, 〜ことに なりました)
+  thenNow('tn-grandpa', 'おじいちゃんの 昔[むかし]と 今[いま]', 'Grandpa, then and now', 'おじいちゃん', 'Grandpa', ['person', 'home']),
+  thenNow('tn-cat', 'うちの 猫[ねこ]の 成長[せいちょう]', 'How our cat grew up', '猫[ねこ]', 'the cat', ['animal', 'home']),
+  thenNow('tn-robot', 'ロボットの 進化[しんか]', "The robot's evolution", 'ロボット', 'the robot', ['thing', 'space']),
+  thenNow('tn-kappa', 'かっぱの 新[あたら]しい 生活[せいかつ]', "The kappa's new life", 'かっぱ', 'the kappa', ['yokai', 'home']),
+  thenNow('tn-town', '私[わたし]の 町[まち]の 昔[むかし]と 今[いま]', 'My town, then and now', '町[まち]', 'my town', ['place', 'travel']),
+  thenNow('tn-dad', 'パパの ダイエット', "Dad's diet", 'パパ', 'Dad', ['person', 'food']),
+  thenNow('tn-ghost', '幽霊[ゆうれい]の 転職[てんしょく]', "The ghost's career change", '幽霊[ゆうれい]', 'the ghost', ['yokai', 'work']),
+  thenNow('tn-boss', '部長[ぶちょう]の イメチェン', "The boss's makeover", '部長[ぶちょう]', 'the boss', ['work', 'person'], C),
+  // N4 deck: If I were… (もし 〜だったら)
+  ifWere('if-cat', 'もし 私[わたし]が 猫[ねこ]だったら', 'If I were a cat', '猫[ねこ]', 'a cat', ['animal']),
+  ifWere('if-dragon', 'もし 私[わたし]が ドラゴンだったら', 'If I were a dragon', 'ドラゴン', 'a dragon', ['animal', 'yokai']),
+  ifWere('if-pm', 'もし 私[わたし]が 総理大臣[そうりだいじん]だったら', 'If I were prime minister', '総理大臣[そうりだいじん]', 'prime minister', ['person', 'work']),
+  ifWere('if-teacher', 'もし 私[わたし]が 先生[せんせい]だったら', 'If I were the teacher', '先生[せんせい]', 'the teacher', ['school', 'person']),
+  ifWere('if-ghost', 'もし 私[わたし]が 幽霊[ゆうれい]だったら', 'If I were a ghost', '幽霊[ゆうれい]', 'a ghost', ['yokai']),
+  ifWere('if-alien', 'もし 私[わたし]が 宇宙人[うちゅうじん]だったら', 'If I were an alien', '宇宙人[うちゅうじん]', 'an alien', ['space', 'person']),
+  ifWere('if-rich', 'もし 私[わたし]が お金持[かねも]ちだったら', 'If I were rich', 'お金持[かねも]ち', 'a rich person', ['person', 'fun']),
+  ifWere('if-boss', 'もし 私[わたし]が 社長[しゃちょう]だったら', 'If I ran the company', '社長[しゃちょう]', 'the company boss', ['work', 'person'], C),
 ];
 
 // ---- slides ----
@@ -260,11 +295,14 @@ export const messageFor = (audience: Audience): { from: JpText; text: JpText } =
 /** "The mystery of…" mid-sentence: "the mystery of…". */
 const lower = (en: string): string => en.replace(/^(The|A|An) /, (m) => m.toLowerCase());
 
+/** A title as the opening names it: an If I were… title is a clause, so it goes in quotes (「もし…」に ついて). */
+const named = (t: JpText): string => (t.kana.startsWith('もし') ? `「${src(t)}」` : src(t));
+
 /** The opening line, by level: the ritual of every Japanese presentation. */
 export function openingFor(level: Level, name: string, t: JpText): JpText {
   if (level === 'kana') return forLevel(jp(`みなさん、こんにちは。${name}です。タイトルは 「${src(t)}」です。`, `Hello everyone. I'm ${name}. The title is "${t.en}".`), level);
-  if (level === 'n5') return forLevel(jp(`みなさん、こんばんは。${name}です。今日[きょう]は ${src(t)}に ついて 話[はな]します。よろしく お願[ねが]いします。`, `Good evening, everyone. I'm ${name}. Today I'll talk about ${lower(t.en)}. Thank you in advance.`), level);
-  return forLevel(jp(`みなさん、こんばんは。${name}と 申[もう]します。今日[きょう]は ${src(t)}に ついて 話[はな]したいと 思[おも]います。よろしく お願[ねが]いします。`, `Good evening, everyone. My name is ${name}. Today I'd like to talk about ${lower(t.en)}. Thank you in advance.`), level);
+  if (level === 'n5') return forLevel(jp(`みなさん、こんばんは。${name}です。今日[きょう]は ${named(t)}に ついて 話[はな]します。よろしく お願[ねが]いします。`, `Good evening, everyone. I'm ${name}. Today I'll talk about ${lower(t.en)}. Thank you in advance.`), level);
+  return forLevel(jp(`みなさん、こんばんは。${name}と 申[もう]します。今日[きょう]は ${named(t)}に ついて 話[はな]したいと 思[おも]います。よろしく お願[ねが]いします。`, `Good evening, everyone. My name is ${name}. Today I'd like to talk about ${lower(t.en)}. Thank you in advance.`), level);
 }
 
 export function closingFor(level: Level): JpText {
@@ -274,7 +312,9 @@ export function closingFor(level: Level): JpText {
 }
 
 /** Sentence patterns for a picture slide (＿ is the slide's word, 〜 a gap to fill), fitted to its kind. In kana: they're patterns. */
-export function framesFor(level: Level, s: Slide): string[] {
+export function framesFor(level: Level, s: Slide, deck?: Deck): string[] {
+  if (level === 'n4' && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '＿が 〜られるように なりました。', '〜ことに しました。', '〜ことに なりました。', '＿は 〜そうですね。'];
+  if (level === 'n4' && deck === 'if') return ['もし ＿だったら、〜たいです。', 'もし ＿が なかったら、〜。', 'もし わたしが 〜だったら、〜と おもいます。', '＿は 〜そうですね。'];
   if (level === 'kana') return ['これは ＿です。', '＿が すきです。', 'すごいですね！'];
   if (level === 'n5') {
     const kind = { living: '＿と あそびました。', place: '＿に いきました。', food: '＿を たべました。', thing: '＿を かいました。' }[s.kind];
@@ -301,12 +341,13 @@ const didOf = (s: Slide): JpText => {
  * Sentences for a picture slide, to read out or tap. Each level gets two; the second bridges the picture
  * back to the talk's topic, which is where the joke is (「これが ドラゴンです！」 over a sock).
  */
-export function readySentences(s: Slide, level: Level, topic: JpText | null): JpText[] {
+export function readySentences(s: Slide, level: Level, topic: JpText | null, deck?: Deck): JpText[] {
   const w = src(s.word);
   const en = s.word.en;
   const t = topic ?? jp('友[とも]だち', 'my friend');
   const did = didOf(s);
   const at = (x: JpText[]) => x.map((j) => forLevel(j, level));
+  if (level === 'n4' && deck) return at(deckSentences(s, t, deck));
   if (level === 'kana') return at([jp(`これは ${w}です。`, `This is ${a(en)}.`), jp(`これが ${src(t)}です！`, `THIS is ${t.en}!`)]);
   if (level === 'n5')
     return at([
@@ -320,6 +361,35 @@ export function readySentences(s: Slide, level: Level, topic: JpText | null): Jp
 }
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** An N4 deck's ready sentences for a slide: three, each in one of the deck's frames, tied to the topic. */
+function deckSentences(s: Slide, t: JpText, deck: Deck): JpText[] {
+  const w = src(s.word);
+  const en = s.word.en;
+  const T = src(t);
+  if (deck === 'then-now') {
+    const can = s.event
+      ? jp(`今[いま]では ${T}も ${w}が 楽[たの]しめるように なりました。`, `These days even ${t.en} can enjoy ${en}.`)
+      : {
+          living: jp(`今[いま]では ${T}も ${w}と 遊[あそ]べるように なりました。`, `These days even ${t.en} can play with ${a(en)}.`),
+          place: jp(`今[いま]では ${T}も 一人[ひとり]で ${w}に 行[い]けるように なりました。`, `These days even ${t.en} can go to the ${en} alone.`),
+          food: jp(`今[いま]では ${T}も ${w}が 食[た]べられるように なりました。`, `These days even ${t.en} can eat ${en}.`),
+          thing: jp(`今[いま]では ${T}も ${w}が 使[つか]えるように なりました。`, `These days even ${t.en} can use ${a(en)}.`),
+        }[s.kind];
+    return [
+      can,
+      jp(`それで、${w}に ついて もっと 調[しら]べる ことに しました。`, `So I decided to find out more about the ${en}.`),
+      jp(`実[じつ]は、来月[らいげつ] ${T}と ${w}の 結婚式[けっこんしき]を する ことに なりました。`, `Actually, it's been decided: next month ${t.en} and the ${en} are getting married.`),
+    ];
+  }
+  return [
+    s.kind === 'place'
+      ? jp(`もし 私[わたし]が ${T}だったら、${w}に 住[す]みたいです。`, `If I were ${t.en}, I'd want to live at the ${en}.`)
+      : jp(`もし 私[わたし]が ${T}だったら、毎日[まいにち] ${w}と 一緒[いっしょ]に いたいです。`, `If I were ${t.en}, I'd want to be with ${a(en)} every day.`),
+    jp(`もし ${w}が ${s.kind === 'living' ? 'いなかったら' : 'なかったら'}、${T}は 困[こま]ると 思[おも]います。`, `If there were no ${en}, I think ${t.en} would be in trouble.`),
+    jp(`もし この ${w}が ${T}だったら、みんな びっくりするでしょうね。`, `If this ${en} were ${t.en}, everyone would be amazed.`),
+  ];
+}
 
 /** What the presenter can say to recover from a mishap, by level. `word` is the talk's first slide word. */
 export function recoveryFor(id: MishapId, level: Level, word: JpText | null, up: boolean, audience: Audience = 'family'): JpText {
@@ -360,6 +430,8 @@ export interface Question {
   /** Only for these kinds of slide word (when it uses {word}). */
   kinds?: readonly WordKind[];
   audiences?: readonly Audience[];
+  /** An N4 deck's card: only in that deck's talks. */
+  deck?: Deck;
 }
 
 export const QUESTIONS: Question[] = [
@@ -374,6 +446,12 @@ export const QUESTIONS: Question[] = [
   { id: 'work', text: '会社[かいしゃ]の 人[ひと]は 知[し]っていますか？', en: 'Does anyone at work know?', level: 'n5', audiences: ['cheeky'] },
   { id: 'hardest', text: '一番[いちばん] 大変[たいへん]だった ことは 何[なん]ですか？', en: 'What was the hardest part?', level: 'n4' },
   { id: 'without', text: 'もし {word}が なかったら、どう しますか？', en: 'What would you do without the {word_en}?', level: 'n4' },
+  // N4 decks
+  { id: 'tn-before', text: '{topic}は 前[まえ]は どうでしたか？', en: 'What was {topic_en} like before?', level: 'n4', deck: 'then-now' },
+  { id: 'tn-why', text: 'どうして そう する ことに しましたか？', en: 'Why did you decide to do that?', level: 'n4', deck: 'then-now' },
+  { id: 'tn-now', text: '今[いま]は 何[なに]が できるように なりましたか？', en: 'What can they do now?', level: 'n4', deck: 'then-now' },
+  { id: 'if-you', text: 'もし あなたが {word}だったら、どう しますか？', en: 'If you were the {word_en}, what would you do?', level: 'n4', deck: 'if' },
+  { id: 'if-could', text: 'もし {topic}に なれたら、何[なに]が したいですか？', en: 'If you could become {topic_en}, what would you want to do?', level: 'n4', deck: 'if' },
 ];
 
 const LEVELS: Level[] = ['kana', 'n5', 'n4'];
@@ -382,14 +460,15 @@ const LEVELS: Level[] = ['kana', 'n5', 'n4'];
  * Three question cards for one asker, at the lower of their level and the presenter's (so both can manage
  * the exchange), fitted to the talk's slide word and the room.
  */
-export function questionsFor(level: Level, word: Slide | null, topic: JpText | null, audience: Audience, random: () => number): JpText[] {
+export function questionsFor(level: Level, word: Slide | null, topic: JpText | null, audience: Audience, random: () => number, deck?: Deck): JpText[] {
   const w = word?.word ?? jp('それ', 'it');
   const t = topic ?? jp('それ', 'it');
   const pool = QUESTIONS.filter(
-    (q) => LEVELS.indexOf(q.level) <= LEVELS.indexOf(level) && (!q.kinds || (word && q.kinds.includes(word.kind) && !(q.id === 'price' && word.event))) && (!q.audiences || q.audiences.includes(audience)) && (word || !q.text.includes('{word}')),
+    (q) => LEVELS.indexOf(q.level) <= LEVELS.indexOf(level) && (!q.kinds || (word && q.kinds.includes(word.kind) && !(q.id === 'price' && word.event))) && (!q.audiences || q.audiences.includes(audience)) && (word || !q.text.includes('{word}')) && (!q.deck || q.deck === deck),
   );
-  // Each player's three: one at their level if there is one, the rest at random.
-  const top = pool.filter((q) => q.level === level);
+  // Each player's three: one at their level if there is one (the deck's own, in a deck talk), the rest at random.
+  const own = pool.filter((q) => q.level === level && q.deck !== undefined);
+  const top = own.length ? own : pool.filter((q) => q.level === level);
   const first = top.length ? top[Math.floor(random() * top.length)]! : pool[Math.floor(random() * pool.length)]!;
   const rest = pool.filter((q) => q !== first);
   for (let k = rest.length - 1; k > 0; k--) {
@@ -402,7 +481,9 @@ export function questionsFor(level: Level, word: Slide | null, topic: JpText | n
 const fill = (s: string, w: JpText, t: JpText): string => s.replace('{word}', src(w)).replace('{topic}', src(t));
 
 /** Answer patterns for question time. */
-export function answerFrames(level: Level): string[] {
+export function answerFrames(level: Level, deck?: Deck): string[] {
+  if (level === 'n4' && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '〜から、〜ことに しました。', '〜ことに なりました。', 'それは ひみつです。'];
+  if (level === 'n4' && deck === 'if') return ['もし 〜だったら、〜たいです。', '〜と おもいます。', 'いい しつもんですね。じつは、〜んです。', 'それは ひみつです。'];
   if (level === 'kana') return ['はい、ほんとうです！', 'はい、すきです。', 'いいえ…', 'それは ひみつです！'];
   if (level === 'n5') return ['はい、〜です。', '〜からです。', 'いい しつもんですね。…', 'ノーコメントです。'];
   return ['いい しつもんですね。じつは、〜んです。', '〜と おもいます。', 'いちばん たいへんだったのは 〜ことです。', 'それは ひみつです。'];
@@ -425,7 +506,10 @@ export function teacherComment(best: Slide | null, mishap: boolean, topic: JpTex
   return forLevel(jp('また 聞[き]きたいです。', "I'd like to hear it again."), level);
 }
 
-export const titlesFor = (a: Audience): Title[] => TITLES.filter((t) => t.audiences.includes(a));
+/** The usual titles for a room (not the N4 decks'). */
+export const titlesFor = (a: Audience): Title[] => TITLES.filter((t) => t.audiences.includes(a) && !t.deck);
+/** One N4 deck's titles for a room. */
+export const deckTitlesFor = (a: Audience, deck: Deck): Title[] => TITLES.filter((t) => t.audiences.includes(a) && t.deck === deck);
 export const slidesFor = (a: Audience): Slide[] => SLIDES.filter((s) => s.audiences.includes(a));
 export const slideOf = (id: string): Slide | undefined => SLIDES.find((s) => s.id === id);
 export const titleOf = (id: string): Title | undefined => TITLES.find((t) => t.id === id);

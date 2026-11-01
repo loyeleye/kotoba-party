@@ -337,8 +337,10 @@ function cutFront(text: string, n: number): string {
 /** Picks the turn's card: one the room hasn't had, that suits the guest's level and the room. */
 function pickCard(s: HajimeState, audience: Audience, level: Level, random: () => number): IntroCard {
   const pool = cardsFor(audience, level);
-  // Cheeky rooms play the cheeky cards first, then the rest.
-  const ordered = audience === 'cheeky' ? [pool.filter((c) => c.audiences.length === 1), pool.filter((c) => c.audiences.length > 1)] : [pool];
+  // N4 guests play the N4 deck first (in every room); Cheeky rooms play the cheeky cards next, then the rest.
+  const n4 = level === 'n4' ? [pool.filter((c) => c.level === 'n4')] : [];
+  const rest = pool.filter((c) => !(level === 'n4' && c.level === 'n4'));
+  const ordered = [...n4, ...(audience === 'cheeky' ? [rest.filter((c) => c.audiences.length === 1), rest.filter((c) => c.audiences.length > 1)] : [rest])];
   for (const group of ordered) {
     const fresh = group.filter((c) => !s.usedCards.includes(c.id));
     if (fresh.length) return fresh[Math.floor(random() * fresh.length)]!;
