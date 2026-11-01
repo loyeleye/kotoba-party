@@ -223,7 +223,7 @@ function rumour(view: RoomView, game: WordGauntletView): HTMLElement {
       h(
         'ol',
         { class: 'wg-relay' },
-        h('li', { class: 'wg-hop start' }, h('span', { class: 'wg-hop-name' }, 'のびこ'), h('span', { class: 'wg-flag' }, '🤫')),
+        h('li', { class: 'wg-hop start' }, h('span', { class: 'wg-hop-name' }, 'のびこ'), h('span', { class: 'wg-flag' }, h('img', { class: 'wg-nobiko', src: '/stage/assets/hosts/nobiko.png', alt: 'Nobiko-san', width: 40, height: 40, onerror: (e: Event) => (e.target as HTMLElement).replaceWith('🤫') }))),
         r.order.map((o, i) =>
           h(
             'li',
@@ -242,13 +242,13 @@ function rumour(view: RoomView, game: WordGauntletView): HTMLElement {
   const steps = h(
     'ol',
     { class: 'wg-drift wg-rumour-steps' },
-    h('li', { class: 'wg-drift-step start' }, h('span', { class: 'wg-flag' }, '🤫'), h('div', {}, h('p', { class: 'wg-drift-text', lang: 'ja' }, reveal.opener.text), h('p', { class: 'hint' }, `Nobiko-san · ${reveal.opener.en}`))),
+    h('li', { class: 'wg-drift-step start', style: view.phase === 'reveal' ? delay(view, r.readAt[0] ?? 0) : null }, h('span', { class: 'wg-flag' }, h('img', { class: 'wg-nobiko', src: '/stage/assets/hosts/nobiko.png', alt: 'Nobiko-san', width: 40, height: 40, onerror: (e: Event) => (e.target as HTMLElement).replaceWith('🤫') })), h('div', {}, h('p', { class: 'wg-drift-text', lang: 'ja' }, reveal.opener.text), h('p', { class: 'hint' }, `Nobiko-san · ${reveal.opener.en}`))),
     reveal.steps.map((st, i) =>
       h(
         'li',
         {
           class: `wg-drift-step ${st.skipped ? 'skipped' : ''} ${scored && r.votes![i]! > 0 && r.votes![i] === best ? 'winner' : ''}`,
-          style: view.phase === 'reveal' ? delay(view, (i + 1) * r.revealStepMs) : null,
+          style: view.phase === 'reveal' ? delay(view, r.readAt[i + 1] ?? 0) : null,
         },
         h('span', { class: 'wg-flag' }, st.skipped ? '–' : '👂'),
         h(
@@ -260,7 +260,7 @@ function rumour(view: RoomView, game: WordGauntletView): HTMLElement {
             { class: 'hint' },
             nameOf(view, st.playerId),
             st.standIn ? ' · Nobiko-san passed it on' : '',
-            st.fin ? h('span', { class: 'wg-fin-tag', lang: 'ja' }, ` + ${st.fin.kana} (${st.fin.en})`) : '',
+            st.fin && st.finSaid ? h('span', { class: 'wg-fin-tag', lang: 'ja' }, ` + ${st.fin.kana} (${st.fin.en})`) : st.fin && !st.skipped ? h('span', { class: 'wg-fin-lost', lang: 'ja' }, ' · おひれ、おちた！') : '',
             st.frame ? h('span', { class: 'wg-frame-tag', lang: 'ja' }, ` · ${st.frame.ja}`) : '',
             scored ? ` · ${r.votes![i]} vote${r.votes![i] === 1 ? '' : 's'}` : '',
           ),
@@ -277,7 +277,7 @@ function rumour(view: RoomView, game: WordGauntletView): HTMLElement {
     label,
     h('div', { class: 'wg-final' }, h('p', { class: 'wg-golden-tag' }, 'The rumour now'), h('p', { class: 'wg-drift-text', lang: 'ja' }, reveal.final.text), h('p', { class: 'hint' }, reveal.final.en)),
     r.truth
-      ? h('div', { class: 'wg-truth' }, subjectPic(game), h('div', {}, h('p', { class: 'wg-golden-tag' }, 'What really happened…'), h('p', { class: 'wg-drift-text', lang: 'ja' }, r.truth.text), h('p', { class: 'hint' }, r.truth.en)))
+      ? h('div', { class: 'wg-truth', style: delay(view, r.truthAtMs) }, subjectPic(game), h('div', {}, h('p', { class: 'wg-golden-tag' }, 'What really happened…'), h('p', { class: 'wg-drift-text', lang: 'ja' }, r.truth.text), h('p', { class: 'hint' }, r.truth.en)))
       : null,
     steps,
   );

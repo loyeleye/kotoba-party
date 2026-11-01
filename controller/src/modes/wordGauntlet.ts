@@ -302,12 +302,14 @@ function rumourScreen(ctx: Ctx): HTMLElement {
       if (mine?.heard && !mine.sent) return rumourRelay(ctx, title);
       if (mine?.sent) return h('div', { class: 'screen' }, title, waiting('Passed on!', 'Now watch it grow fins…'));
       const current = r.order[r.current];
+      const upNext = mine && myStep !== null && myStep > r.current;
       return h(
         'div',
         { class: 'screen' },
         title,
         about,
-        waiting(`${nameOf(view, current?.playerId)} is passing it on…`, myStep !== null && myStep > r.current ? `You’re relay ${myStep + 1}. Get ready to listen!` : ''),
+        waiting(`${nameOf(view, current?.playerId)} is passing it on…`, upNext ? `You’re relay ${myStep + 1}. Pick your fin now, then hold the phone to your ear 🤫` : ''),
+        upNext && mine.fins.length ? finCardsFor(ctx) : null,
       );
     }
     case 'reveal': {
@@ -320,18 +322,19 @@ function rumourScreen(ctx: Ctx): HTMLElement {
         { class: 'screen' },
         title,
         h('p', { class: 'prompt' }, 'Vote for the juiciest relay'),
+        h('p', { class: 'hint' }, 'Listen as Nobiko-san reads each one on the TV…'),
         steps.map((st) => {
           const own = st.playerId === ctx.me.id;
           return h(
             'button',
             {
               class: `option wg-step ${own ? 'wg-own' : ''}`,
-              style: delay(view, (st.index + 1) * r.revealStepMs),
-              disabled: own,
+              style: delay(view, r.readAt[st.index + 1] ?? 0),
+              disabled: own || st.standIn,
               lang: 'ja',
               onclick: () => void send({ kind: 'vote', step: st.index }),
             },
-            h('small', {}, `${st.index + 1}. ${nameOf(view, st.playerId)}${st.fin ? ` · added “${st.fin.en}”` : ''}${own ? ' (yours)' : ''}`),
+            h('small', {}, `${st.index + 1}. ${nameOf(view, st.playerId)}${st.standIn ? ' · Nobiko-san passed it on' : st.fin && st.finSaid ? ` · added “${st.fin.en}”` : ''}${own ? ' (yours)' : ''}`),
             h('span', {}, st.text ?? ''),
           );
         }),
@@ -352,10 +355,40 @@ function rumourScreen(ctx: Ctx): HTMLElement {
         kept && mine?.level !== 'kana' && !res?.standIn
           ? h('p', { class: 'wg-kept' }, `Who ${kept.who ? '✓' : '✗'} · Where ${kept.where ? '✓' : '✗'} · What ${kept.what ? '✓' : '✗'}`)
           : null,
-        res?.frame ? h('p', { class: 'wg-good', lang: 'ja' }, `You passed it on with ${res.frame.ja} (${res.frame.en}).`) : null,
+        res?.missed.length ? h('p', { class: 'hint', lang: 'ja' }, `Lost on the way: ${res.missed.join('、')}`) : null,
+        res?.fin && !res.standIn
+          ? res.finSaid
+            ? h('p', { class: 'wg-good', lang: 'ja' }, `Your fin: ${res.fin.kana} (${res.fin.en}) 🐟`)
+            : h('p', { class: 'hint', lang: 'ja' }, `おひれ、おちた！ Your fin (${res.fin.kana}) didn’t make it into what you said.`)
+          : null,
+        res?.frame && !res.echoed ? h('p', { class: 'wg-good', lang: 'ja' }, `You passed it on with ${res.frame.ja} (${res.frame.en}).`) : null,
+        res?.echoed ? h('p', { class: 'hint', lang: 'ja' }, 'You kept the way it was said to you. Next time, pass it on your own way!') : null,
+        res?.tryNext
+          ? h('div', { class: 'wg-model' }, h('p', { class: 'hint' }, `Try ${res.tryNext.ja} (${res.tryNext.en}) next time:`), h('p', { lang: 'ja' }, res.tryNext.line.text), h('p', { class: 'hint' }, res.tryNext.line.en))
+          : null,
+        res?.counted ? h('p', { class: 'wg-good' }, '📗 Said from memory: it counts in your phrasebook.') : null,
       );
     }
   }
+}
+
+/** The fin cards: on your relay, and on the waiting screen so you can pick before your turn. */
+function finCardsFor(ctx: Ctx): HTMLElement {
+  const mine = ctx.game.rumour!.mine!;
+  const level = mine.level;
+  return h(
+    'div',
+    { class: 'wg-fins' },
+    mine.fins.map((f) =>
+      h(
+        'button',
+        { type: 'button', class: `option wg-fin ${mine.fin === f.id ? 'picked' : ''}`, lang: 'ja', onclick: () => void ctx.send({ kind: 'fin', fin: f.id }) },
+        h('strong', {}, level === 'kana' ? f.tile : f.kana),
+        level === 'kana' ? h('small', {}, ` ${toRomaji(f.tile)}`) : null,
+        h('small', { class: 'wg-fin-en' }, f.en),
+      ),
+    ),
+  );
 }
 
 function rumourRelay(ctx: Ctx, title: HTMLElement): HTMLElement {
@@ -373,30 +406,18 @@ function rumourRelay(ctx: Ctx, title: HTMLElement): HTMLElement {
   const listen = h(
     'div',
     { class: 'wg-heard' },
-    h('p', { class: 'hint' }, heard.opener ? 'Nobiko-san leans in and whispers…' : 'Nobiko-san passes on what she heard…'),
+    h('p', { class: 'hint' }, heard.opener ? 'Hold the phone to your ear 🤫 Nobiko-san leans in and whispers…' : 'Hold the phone to your ear 🤫 Nobiko-san passes on what she heard…'),
     voiced ? h('button', { type: 'button', class: 'primary wg-listen', onclick: () => say(heard.kana) }, '🔊 Listen') : null,
     showWords
       ? word(heard.text, heard.kana !== heard.text ? heard.kana : '', heard.romaji)
       : h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'peek' }) }, 'Show the words'),
   );
   const picked = mine.fin ?? (mine.ownFin ? '' : null);
-  const finCards = h(
-    'div',
-    { class: 'wg-fins' },
-    mine.fins.map((f) =>
-      h(
-        'button',
-        { type: 'button', class: `option wg-fin ${mine.fin === f.id ? 'picked' : ''}`, lang: 'ja', onclick: () => void send({ kind: 'fin', fin: f.id }) },
-        h('strong', {}, level === 'kana' ? f.tile : f.kana),
-        level === 'kana' ? h('small', {}, ` ${toRomaji(f.tile)}`) : null,
-        h('small', { class: 'wg-fin-en' }, f.en),
-      ),
-    ),
-  );
+  const finCards = finCardsFor(ctx);
   const own =
     level === 'n4'
       ? (() => {
-          const input = h('input', { maxlength: 30, placeholder: mine.ownFin ?? 'My own fin, in Japanese (e.g. まいにち)', autocomplete: 'off', enterkeyhint: 'done', lang: 'ja' }) as HTMLInputElement;
+          const input = h('input', { maxlength: 30, placeholder: mine.ownFin ?? 'My own fin: まいにち, ともだちと, パジャマで…', autocomplete: 'off', enterkeyhint: 'done', lang: 'ja' }) as HTMLInputElement;
           return h(
             'form',
             {
@@ -419,12 +440,12 @@ function rumourRelay(ctx: Ctx, title: HTMLElement): HTMLElement {
       ? 'Add a fin! Tap one, then say it out loud.'
       : level === 'n5'
         ? 'Pass it on: keep who, where and what, and add one fin.'
-        : 'Pass it on as something you heard. Keep who, where and what, and add one fin.';
+        : 'Pass it on as something you heard. Keep who, where and what, and make it juicier with one fin.';
   const model = picked !== null ? mine.models?.[picked] : undefined;
   const hints: (HTMLElement | null)[] = [];
   if (level === 'n4') {
     if (mine.frame) hints.push(h('p', { class: 'wg-frame', lang: 'ja' }, `Try: ${mine.frame.ja}`, h('small', {}, ` ${mine.frame.en}`)));
-    if (mine.hint < 2) hints.push(h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'hint' }) }, mine.hint === 0 ? 'Need a hint?' : 'Hear Nobiko-san’s version'));
+    if (mine.hint < 2) hints.push(h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'hint' }) }, mine.hint === 0 ? 'Need a hint?' : 'Show Nobiko-san’s version'));
   } else if (level === 'n5' && mine.hint < 1 && picked !== null) {
     hints.push(h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'hint' }) }, 'Need a hint? Nobiko-san’s version'));
   }

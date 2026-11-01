@@ -652,6 +652,8 @@ export type HostEvent =
   | 'rumour_intro' // Nobiko-san opens the rumour round: she has heard something, and it's a secret
   | 'rumour_line' // Nobiko-san says a line the game wrote ({quip}): the rumour's truth. Never player text
   | 'rumour_relay' // Nobiko-san reads one relay aloud at the reveal ({quip}): a player's words, already through the moderation filter
+  | 'rumour_react' // after the last relay: Nobiko-san is shocked at what her rumour turned into
+  | 'rumour_tease' // the score opens: Nobiko-san asks the room what really happened, before the truth
   | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
   | 'omiai_nakodo_read' // the go-between's keigo line was said: Nobiko-san voices it ({line}, as is)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin

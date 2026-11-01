@@ -36,42 +36,50 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
 - **When:** round 2 is the rumour round if anyone in the room plays at N4 when round 2 starts; otherwise it stays
   Lost in Translation. Players at every level take part.
 - **The rumour:** who (a studio yōkai or a host), where, and what they're up to, plus who saw it (the source
-  for ＿に よると and ＿と いって いました). 9 rumours for every room and 2 more for Cheeky rooms. Rumours are about
+  for ＿に よると and ＿と いって いました). 9 rumours for every room and 3 more for Cheeky rooms. Rumours are about
   the studio's yōkai, **never about players**: a relay or a fin that contains a player's name is refused
   (`names-player`).
 - **A relay:** one `answer` phase per player in seat order from a random seat (35 s Kana, 50 s N5, 60 s N4). The
   relayer's phone plays what they heard in Nobiko-san's voice (🔊 Listen) and hides the words until they tap
   "Show the words" (shown at once when the phone has no voice or sound is off). Each relayer is dealt 3 fin cards
-  and must add one:
-  - **Kana:** tap a fin tile and say it (or pass it on without saying it). The rumour travels on as Nobiko-san's
-    line with that fin added.
+  and must add one (at least one card is a big, visual fin; they can pick before their turn):
+  - **Kana:** tap a fin tile and say it (or pass it on without saying it). The rumour travels on as what they
+    heard, with 「しかも、＿！」 and their fin tacked on.
   - **N5:** pick a fin card and say the whole rumour (typed works). "Need a hint?" shows Nobiko-san's polite
     version (＿て います), with their fin.
   - **N4:** pick a fin card or write their own (Japanese, 30 characters), and pass the rumour on as something they
-    heard. The mission never names the grammar. Hint 1 shows a frame to try (each N4 relayer gets the next of
-    ＿そうです, ＿と いって いました, ＿んだって, ＿に よると ＿そうです, ＿らしいです, plain form + よ／ね／の); hint 2 shows
-    Nobiko-san's line in that frame.
-  - The rumour keeps its newest three fins; older ones fall off, as in real gossip.
+    heard, and make it juicier. The mission never names the grammar. Hint 1 shows a frame to try (from a random
+    start, each N4 relayer gets the next of ＿そうです, ＿と いって いました, ＿んだって, ＿に よると ＿そうです, ＿らしいです,
+    plain form + よ／ね／の, skipping the frame they just heard); hint 2 shows Nobiko-san's line in that frame.
+  - **Fins come from what was said.** A fin stays on the rumour only if the relay said it (its key kana are in the
+    reading); one the relayer picked but didn't say falls off (「おひれ、おちた！」). The rumour keeps its newest three
+    fins and one time fin at a time (まいばん replaces まいあさ ごじに). Model lines put time → place → how → action.
+  - **Echoes:** a relay that uses the same frame as the line it heard gets no frame points and doesn't count
+    toward the path; the score suggests a different frame with Nobiko-san's line in it.
 - **No player's voice moves between phones.** The next phone gets the relay's words (the transcript or the typed
   text) and reads them with the phone's own Japanese voice (on-device first). At the reveal the TV has Nobiko-san
   read each relay as a host line (`rumour_relay`): her VOICEVOX voice (No.7) when the server has VOICEVOX, else
   the TV's own voice. No.7's terms allow this while the game is free (commercial-blockers rows 1 and 36); every
   relay has passed the room's word filter first.
-- **Ran out of time:** with a fin picked, Nobiko-san passes it on for them (her line, no points); with nothing
-  picked, the phone is skipped and the next relayer hears the relay before.
-- **Reveal:** the TV shows Nobiko-san's opener and each relay in turn, each read in her voice, with the fin it
-  added and the frame it used. Everyone votes for the juiciest relay (not their own).
-- **Score:** "The rumour now" (Nobiko-san's version with the last three fins), then "What really happened…", the
-  rumour's truth in her voice (mundane, or now and then stranger than the rumour).
+- **Ran out of time:** with a fin picked, Nobiko-san passes it on for them (what they heard plus 「しかも、＿！」, no
+  points, no votes); with nothing picked, the phone is skipped and the next relayer hears the relay before.
+- **Reveal:** the TV shows Nobiko-san's opener and each relay in turn, each read in her voice and timed by the
+  line's length (`readAt`), with the fin it added (only if said) and the frame it used (not for an echo). After the
+  last one she reacts (`rumour_react`: 「ちょっと！ わたし、そこまで いって ないわよ！」). Everyone votes for the juiciest
+  relay (not their own, not a stand-in); the reveal waits until the lines are read.
+- **Score:** "The rumour now" (the last relay passed on), then she asks the room (`rumour_tease`), and a few seconds
+  later "What really happened…", the rumour's truth in her voice (mundane, or now and then stranger than the
+  rumour). Each phone shows what its relay lost, whether its fin survived, its frame, and a frame to try next.
 
 #### Rumour Relay scoring (all doubled, like the telephone)
-- Passing it on: 50. Kept who, where and what (N5 and N4, checked by key words in the reading): +50. Used a rumour
-  frame (N4): +50. Each vote: 100. Speaking bonus +50 (typed +20) from the round's 30% pool. A stand-in earns no
+- Passing it on: 50. Kept who, where and what and said the fin (N5 and N4, checked by key words in the reading):
+  +50. Used a rumour frame other than the one heard (N4): +50, halved after the second hint. Each vote: 100. Speaking bonus +50 (typed +20) from the round's 30% pool. A stand-in earns no
   relay points.
 
 #### Rumour Relay and the learning path
 - Each N5 and N4 relay goes in the relayer's phrasebook as what they said (`said` when spoken, `seen` when
-  typed), from memory unless they opened the words or Nobiko-san's line. So frames in it count toward the goals
+  typed), from memory only if they didn't open the words or Nobiko-san's line, kept who, where and what, and
+  didn't echo the frame they heard. So frames in it count toward the goals
   through the path's own matchers: ＿そうです (4.6), ＿と いって いました and ＿って いって いました (4.14), ＿らしいです
   (3.1), plain form (4.8). The round also recognises ＿に よると and ＿んだって, which the path has no frames for yet
   (open question below).
@@ -130,6 +138,9 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
 20. The rumour round replaces Lost in Translation when anyone in the room plays at N4, rather than adding a fourth round: the game stays near 15 minutes and Lost in Translation is an N5 round.
 21. The rumour structure (who, where, what, fins) drives Nobiko-san's model lines and the "kept it" check, so Kana and N5 players can relay without parsing free speech.
 22. With No.7's terms read (2026-11-01: free while the game is non-commercial, no clause against live user text), the TV reads relays in Nobiko-san's VOICEVOX voice; phones use their own voice so a relay costs no server audio (commercial-blockers row 36).
+23. After the panel (all five seats plus humor): the rumour is rebuilt from what each relay said (fins only stay when spoken, the final rumour is the last relay passed on), the TV and the tags tell the truth about what happened, Nobiko-san reacts before the truth, and the truth lands a few seconds into the score.
+24. Kana relays and stand-ins tack 「しかも、＿！」 onto what they heard instead of replacing it with Nobiko-san's clean line, so earlier drift survives and the next N4 player isn't handed a frame for free.
+25. A frame that echoes the line you heard earns nothing: the round is about passing it on in your own words.
 
 ## Open questions
 1. A fluent check of the 18 obscure words and the 8 Cheeky words (plus Ladi's taste check on the Cheeky ones), the placeholder starters and the shiritori noun list (all `draft`).
@@ -138,5 +149,7 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
 4. Mode-specific host events (e.g. `gauntlet_golden_word`, `shiritori_out`) would let Pon react more precisely than the shared events used now.
 5. Should a challenged word that is accepted be added to a room-wide "house words" list for later games?
 6. Comeback boosts to speaking bonuses (design doc) are not applied.
-7. The learning path has no frames for ＿に よると ＿そうです or ＿んだって, so the rumour round scores them but the path doesn't count them. Add them as N3 (3.1) matchers at step 6, with the usual 10 real lines and 10 look-alikes.
+7. The learning path has no frames for ＿に よると ＿そうです or ＿んだって, so the rumour round scores them but the path doesn't count them. The Japanese seat says both are N4 material (Minna no Nihongo lesson 47, Genki II lesson 17), so add them under goal 4.6 rather than N3, with the usual 10 real lines and 10 look-alikes.
+9. The rumour round needs about 20 Family rumours before launch so a regular group doesn't hear repeats (12 now, 3 of them Cheeky).
+10. The word filter isn't a moderation service: a relay read aloud on the TV has passed the filter only.
 8. Every rumour, fin, truth and Nobiko-san line in `rumours.ts` and her `rumour_*` lines is `draft` until a fluent check.

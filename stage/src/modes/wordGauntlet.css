@@ -69,6 +69,8 @@
 .wg-subject { width: 112px; height: 112px; image-rendering: pixelated; flex: none; }
 .wg-rumour .wg-hop-name { font-size: 26px; }
 .wg-fin-tag { color: var(--accent); font-weight: 700; }
+.wg-fin-lost { color: var(--muted); font-style: italic; }
+.wg-nobiko { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; vertical-align: middle; }
 .wg-frame-tag { color: var(--good); font-weight: 700; }
 .wg-final, .wg-truth { background: var(--panel); border: 2px solid var(--accent); border-radius: 16px; padding: 12px 24px; width: min(1400px, 100%); text-align: left; }
 .wg-final p, .wg-truth p { margin: 0; }

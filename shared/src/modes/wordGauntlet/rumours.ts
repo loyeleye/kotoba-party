@@ -11,7 +11,8 @@
 //   and a polite form (the N5 line).
 // - The truth is mundane (or, now and then, stranger than the rumour). Nobiko-san says it, so it is in
 //   her voice. It is the round's punchline.
-// - A fin is something you could add to any rumour: when, how, with whom. It sits before the place.
+// - A fin is something you could add to any rumour: when, how, with whom. Time fins go before the place,
+//   the rest after it (time → place → how), and a rumour holds one time fin at a time.
 
 import type { JpText, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
@@ -43,6 +44,8 @@ export interface RumourSeed {
   source: { kana: string; en: string };
   /** What really happened, in Nobiko-san's voice: the round's last line. */
   truth: JpText;
+  /** Nobiko-san's own opener, when the default one wouldn't fit (a rumour about herself). */
+  opener?: JpText;
 }
 
 export interface RumourFin {
@@ -54,6 +57,8 @@ export interface RumourFin {
   keys: string[];
   /** Time fins go first in the sentence. */
   kind: 'time' | 'how';
+  /** A big, visual fin: every hand of cards has at least one. */
+  big?: boolean;
   audience?: 'cheeky';
 }
 
@@ -62,11 +67,11 @@ const S = (path: string) => `/stage/assets/${path}.png`;
 export const RUMOUR_SEEDS: readonly RumourSeed[] = [
   {
     id: 'chochin-dance',
-    who: { kana: 'ちょうちんさん', en: 'Chōchin-san', keys: ['ちょうちん'], sprite: S('hosts/chochin') },
+    who: { kana: 'ちょうちんさん', en: 'Chōchin-san', keys: ['ちょうちん', 'ちょちん'], sprite: S('hosts/chochin') },
     where: { kana: 'こうえんで', en: 'in the park', keys: ['こうえん'] },
-    what: { kana: 'ダンスを ならって いる', masu: 'ダンスを ならって います', en: 'is taking dance lessons', keys: ['だんす'] },
+    what: { kana: 'ダンスを ならって いる', masu: 'ダンスを ならって います', en: 'is taking dance lessons', keys: ['だんす', 'おどっ', 'おどり'] },
     source: { kana: 'カッパ', en: 'the kappa' },
-    truth: { text: 'ほんとうは、こうえんで ラジオたいそうを して いた だけなのよ。まいあさ。', kana: 'ほんとうは、こうえんで ラジオたいそうを して いた だけなのよ。まいあさ。', en: 'Really, he was just doing the radio exercises in the park. Every morning.' },
+    truth: { text: 'ほんとうは、こうえんで ラジオたいそうを して いた だけなのよ。スタンプカード、もう いっぱいですって。', kana: 'ほんとうは、こうえんで ラジオたいそうを して いた だけなのよ。スタンプカード、もう いっぱいですって。', en: 'Really, he was just doing the morning radio exercises in the park. His stamp card is already full, apparently.' },
   },
   {
     id: 'fude-letter',
@@ -74,13 +79,13 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
     where: { kana: 'コンビニで', en: 'at the konbini', keys: ['こんびに'] },
     what: { kana: 'ラブレターを かいて いる', masu: 'ラブレターを かいて います', en: 'is writing a love letter', keys: ['らぶれた', 'れたあ', 'てがみ'] },
     source: { kana: 'ポン', en: 'Pon' },
-    truth: { text: 'ほんとうは、かいものの メモだったのよ。たまご、ぎゅうにゅう、パン。', kana: 'ほんとうは、かいものの メモだったのよ。たまご、ぎゅうにゅう、パン。', en: 'Really, it was a shopping list. Eggs, milk, bread.' },
+    truth: { text: 'ほんとうは、かいものの メモだったのよ。ハートに みえたのは、トマトの え。', kana: 'ほんとうは、かいものの メモだったのよ。ハートに みえたのは、トマトの え。', en: 'Really, it was a shopping list. The heart everyone saw was a drawing of a tomato.' },
   },
   {
     id: 'pon-omamori',
     who: { kana: 'ポン', en: 'Pon', keys: ['ぽん'], sprite: S('hosts/pon') },
     where: { kana: 'じんじゃで', en: 'at the shrine', keys: ['じんじゃ'] },
-    what: { kana: 'おまもりを ひゃっこも かった', masu: 'おまもりを ひゃっこも かいました', en: 'bought a hundred good-luck charms', keys: ['おまもり'] },
+    what: { kana: 'おまもりを あつめて いる', masu: 'おまもりを あつめて います', en: 'is collecting good-luck charms', keys: ['おまもり'] },
     source: { kana: 'フデさん', en: 'Fude-san' },
     truth: { text: 'ほんとうは、ひとつ かった だけ。ちこく しない おまもりよ。きかないけど。', kana: 'ほんとうは、ひとつ かった だけ。ちこく しない おまもりよ。きかないけど。', en: "Really, he bought just one. A charm against being late. It doesn't work." },
   },
@@ -88,9 +93,9 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
     id: 'kappa-swim',
     who: { kana: 'カッパ', en: 'the kappa', keys: ['かっぱ'], sprite: S('yokai/book/yokai-kappa') },
     where: { kana: 'プールで', en: 'at the pool', keys: ['ぷうる'] },
-    what: { kana: 'およぎかたを ならって いる', masu: 'およぎかたを ならって います', en: 'is taking swimming lessons', keys: ['およぎ', 'すいえい'] },
+    what: { kana: 'およぎを ならって いる', masu: 'およぎを ならって います', en: 'is taking swimming lessons', keys: ['およぎ', 'およい', 'およぐ', 'すいえい'] },
     source: { kana: 'ちょうちんさん', en: 'Chōchin-san' },
-    truth: { text: 'ほんとうは、カッパが せんせいなの。せいとは まだ ゼロにんよ。', kana: 'ほんとうは、カッパが せんせいなの。せいとは まだ ゼロにんよ。', en: 'Really, the kappa is the teacher. So far he has zero students.' },
+    truth: { text: 'ほんとうは、カッパが せんせいなの。せいとは まだ ひとりも いないのよ。', kana: 'ほんとうは、カッパが せんせいなの。せいとは まだ ひとりも いないのよ。', en: "Really, the kappa is the teacher. He hasn't got a single student yet." },
   },
   {
     id: 'yukionna-oden',
@@ -98,7 +103,7 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
     where: { kana: 'やたいで', en: 'at a food stall', keys: ['やたい'] },
     what: { kana: 'あつい おでんを たべて いる', masu: 'あつい おでんを たべて います', en: 'is eating piping-hot oden', keys: ['おでん'] },
     source: { kana: 'フデさん', en: 'Fude-san' },
-    truth: { text: 'ほんとうは、おでんを ぜんぶ こおらせて しまったのよ。やたいの ひとも。', kana: 'ほんとうは、おでんを ぜんぶ こおらせて しまったのよ。やたいの ひとも。', en: 'Really, she froze all the oden by accident. And the stall owner.' },
+    truth: { text: 'ほんとうは、おでんを ふうふう したら、ぜんぶ こおっちゃったのよ。おでんアイス、よく うれたわ。', kana: 'ほんとうは、おでんを ふうふう したら、ぜんぶ こおっちゃったのよ。おでんアイス、よく うれたわ。', en: 'Really, she blew on the oden to cool it and froze the lot. Oden ice lollies sold very well.' },
   },
   {
     id: 'nobiko-date',
@@ -106,15 +111,16 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
     where: { kana: 'スタジオで', en: 'at the studio', keys: ['すたじお'] },
     what: { kana: 'ひみつの デートを して いる', masu: 'ひみつの デートを して います', en: 'is going on a secret date', keys: ['でえと'] },
     source: { kana: 'ちょうちんさん', en: 'Chōchin-san' },
-    truth: { text: 'ちょっと！ あいては うちの だんなよ。こたつごと きたの。', kana: 'ちょっと！ あいては うちの だんなよ。こたつごと きたの。', en: 'Excuse me! That was my husband. He came kotatsu and all.' },
+    opener: { text: 'ちょっと きいて！ のびこさんが スタジオで ひみつの デートを して いるって うわさが あるの。…わたしの ことよ！ ないしょね。', kana: 'ちょっと きいて！ のびこさんが スタジオで ひみつの デートを して いるって うわさが あるの。…わたしの ことよ！ ないしょね。', en: "Listen! There's a rumour that Nobiko-san is going on a secret date at the studio. …That's me! Keep it quiet." },
+    truth: { text: 'ちょっと！ あいては うちの だんなよ。こたつごと でて きたの。じゅうねんぶりに！', kana: 'ちょっと！ あいては うちの だんなよ。こたつごと でて きたの。じゅうねんぶりに！', en: 'Excuse me! That was my husband. He came out, kotatsu and all. First time in ten years!' },
   },
   {
     id: 'umbrella-haircut',
-    who: { kana: 'からかさおばけ', en: 'the umbrella ghost', keys: ['からかさ', 'かさおばけ'], sprite: S('yokai/yokai-umbrella') },
-    where: { kana: 'びよういんで', en: 'at the hair salon', keys: ['びよういん'] },
-    what: { kana: 'かみを きって もらって いる', masu: 'かみを きって もらって います', en: 'is getting a haircut', keys: ['かみ'] },
+    who: { kana: 'からかさおばけ', en: 'the umbrella ghost', keys: ['からかさ', 'かさおばけ', 'かさのおばけ'], sprite: S('yokai/yokai-umbrella') },
+    where: { kana: 'びよういんで', en: 'at the hair salon', keys: ['びよういん', 'とこや'] },
+    what: { kana: 'かみを きって もらって いる', masu: 'かみを きって もらって います', en: 'is getting a haircut', keys: ['かみを', 'かみき', 'さんぱつ'] },
     source: { kana: 'カッパ', en: 'the kappa' },
-    truth: { text: 'ほんとうは、あまやどりを して いた だけなのよ。かさなのに。', kana: 'ほんとうは、あまやどりを して いた だけなのよ。かさなのに。', en: 'Really, he was just sheltering from the rain. Even though he is an umbrella.' },
+    truth: { text: 'ほんとうは、かみは かみでも、かさの かみよ。やぶれたから、はりかえて もらって いたの。', kana: 'ほんとうは、かみは かみでも、かさの かみよ。やぶれたから、はりかえて もらって いたの。', en: 'Really, it was paper, not hair (both are かみ): his umbrella paper. It tore, so he was having it replaced.' },
   },
   {
     id: 'nekomata-sushi',
@@ -122,34 +128,43 @@ export const RUMOUR_SEEDS: readonly RumourSeed[] = [
     where: { kana: 'すしやで', en: 'at the sushi bar', keys: ['すしや', 'すし'] },
     what: { kana: 'アルバイトを して いる', masu: 'アルバイトを して います', en: 'has a part-time job', keys: ['あるばいと', 'ばいと'] },
     source: { kana: 'ポン', en: 'Pon' },
-    truth: { text: 'ほんとうは、カウンターで マグロを じっと みて いる だけなの。まいにち。', kana: 'ほんとうは、カウンターで マグロを じっと みて いる だけなの。まいにち。', en: 'Really, she just sits at the counter staring at the tuna. Every day.' },
+    truth: { text: 'ほんとうは、おみせの マスコットなの。きゅうりょうは マグロで もらって いるわ。', kana: 'ほんとうは、おみせの マスコットなの。きゅうりょうは マグロで もらって いるわ。', en: "Really, she's the shop's mascot. She gets paid in tuna." },
   },
   {
     id: 'daruma-marathon',
     who: { kana: 'だるま', en: 'the daruma', keys: ['だるま'], sprite: S('yokai/book/yokai-daruma') },
-    where: { kana: 'スポーツクラブで', en: 'at the gym', keys: ['すぽおつくらぶ', 'くらぶ', 'じむ'] },
+    where: { kana: 'ジムで', en: 'at the gym', keys: ['じむで', 'じむに', 'すぽおつくらぶ'] },
     what: { kana: 'マラソンの れんしゅうを して いる', masu: 'マラソンの れんしゅうを して います', en: 'is training for a marathon', keys: ['まらそん'] },
     source: { kana: 'ちょうちんさん', en: 'Chōchin-san' },
-    truth: { text: 'ほんとうは、ころがって いた だけ。でも いちばん はやかったのよ。', kana: 'ほんとうは、ころがって いた だけ。でも いちばん はやかったのよ。', en: 'Really, he was just rolling about. But he was the fastest there.' },
+    truth: { text: 'ほんとうは、ころがって いた だけ。あしが ないもの。いちばん はやかったけど、とまれなかったわ。', kana: 'ほんとうは、ころがって いた だけ。あしが ないもの。いちばん はやかったけど、とまれなかったわ。', en: "Really, he was just rolling about. He has no legs. He was the fastest there, but he couldn't stop." },
   },
   // ---- Cheeky (the room's Audience is Cheeky) ----
   {
     id: 'chochin-izakaya',
     audience: 'cheeky',
-    who: { kana: 'ちょうちんさん', en: 'Chōchin-san', keys: ['ちょうちん'], sprite: S('hosts/chochin') },
+    who: { kana: 'ちょうちんさん', en: 'Chōchin-san', keys: ['ちょうちん', 'ちょちん'], sprite: S('hosts/chochin') },
     where: { kana: 'いざかやで', en: 'at an izakaya', keys: ['いざかや'] },
     what: { kana: 'えんかを うたって いる', masu: 'えんかを うたって います', en: 'is singing enka', keys: ['えんか', 'うたって'] },
     source: { kana: 'カッパ', en: 'the kappa' },
-    truth: { text: 'ほんとうは、いざかやの ちょうちんの ふりを して いたのよ。いちばん あかるい ちょうちん。', kana: 'ほんとうは、いざかやの ちょうちんの ふりを して いたのよ。いちばん あかるい ちょうちん。', en: "Really, he was pretending to be the izakaya's lantern. The brightest one there." },
+    truth: { text: 'ほんとうは、おみせの まえの あかちょうちんの ふりを して いたのよ。よっぱらいに 「ただいま」って いわれて いたわ。', kana: 'ほんとうは、おみせの まえの あかちょうちんの ふりを して いたのよ。よっぱらいに 「ただいま」って いわれて いたわ。', en: "Really, he was posing as the red lantern outside. Drunks kept telling him 'I'm home'." },
   },
   {
     id: 'fude-bar',
     audience: 'cheeky',
     who: { kana: 'フデさん', en: 'Fude-san', keys: ['ふで'], sprite: S('hosts/fude') },
-    where: { kana: 'バーで', en: 'at a bar', keys: ['ばあ'] },
-    what: { kana: 'おきゃくさんに ポエムを よんで いる', masu: 'おきゃくさんに ポエムを よんで います', en: 'is reading her poems to the customers', keys: ['ぽえむ'] },
+    where: { kana: 'バーで', en: 'at a bar', keys: ['ばあで', 'ばあに'] },
+    what: { kana: 'おきゃくさんに ポエムを よんで いる', masu: 'おきゃくさんに ポエムを よんで います', en: 'is reading his poems to the customers', keys: ['ぽえむ'] },
     source: { kana: 'ポン', en: 'Pon' },
-    truth: { text: 'ほんとうは、メニューを かいて いた だけなのよ。とても きれいな じで。', kana: 'ほんとうは、メニューを かいて いた だけなのよ。とても きれいな じで。', en: 'Really, she was only writing out the menu. In very nice handwriting.' },
+    truth: { text: 'ほんとうは、メニューを かいて いた だけなのよ。「ハイボール ごひゃくえん」。もじが きれいすぎて、おきゃくさんが ないちゃったの。', kana: 'ほんとうは、メニューを かいて いた だけなのよ。「ハイボール ごひゃくえん」。もじが きれいすぎて、おきゃくさんが ないちゃったの。', en: "Really, he was only writing the menu. 'Highball, 500 yen.' The handwriting was so beautiful the customers cried." },
+  },
+  {
+    id: 'pon-snack',
+    audience: 'cheeky',
+    who: { kana: 'ポン', en: 'Pon', keys: ['ぽん'], sprite: S('hosts/pon') },
+    where: { kana: 'スナックで', en: 'at a snack bar', keys: ['すなっく'] },
+    what: { kana: 'ママと デュエットを して いる', masu: 'ママと デュエットを して います', en: 'is singing duets with the mama-san', keys: ['でゅえっと'] },
+    source: { kana: 'フデさん', en: 'Fude-san' },
+    truth: { text: 'ほんとうは、ママは ポンの おかあさんなのよ。まいばん むかえに きて いるの。', kana: 'ほんとうは、ママは ポンの おかあさんなのよ。まいばん むかえに きて いるの。', en: "Really, the mama-san is Pon's mum. She comes to fetch him every night." },
   },
 ];
 
@@ -157,26 +172,33 @@ export const RUMOUR_FINS: readonly RumourFin[] = [
   { id: 'every-night', kana: 'まいばん', en: 'every night', tile: 'まいばん', keys: ['まいばん'], kind: 'time' },
   { id: 'midnight', kana: 'よなかに', en: 'in the middle of the night', tile: 'よなか', keys: ['よなか'], kind: 'time' },
   { id: 'five-am', kana: 'まいあさ ごじに', en: 'at five every morning', tile: 'ごじ', keys: ['ごじ'], kind: 'time' },
-  { id: 'three-hours', kana: 'さんじかんも', en: 'for three whole hours', tile: 'さんじかん', keys: ['さんじかん'], kind: 'time' },
+  { id: 'three-hours', kana: 'さんじかんも かけて', en: 'for three whole hours', tile: 'さんじかん', keys: ['さんじかん'], kind: 'time' },
   { id: 'alone', kana: 'ひとりで', en: 'all alone', tile: 'ひとり', keys: ['ひとり'], kind: 'how' },
   { id: 'secretly', kana: 'ないしょで', en: 'in secret', tile: 'ないしょ', keys: ['ないしょ'], kind: 'how' },
-  { id: 'sunglasses', kana: 'サングラスを かけて', en: 'wearing sunglasses', tile: 'サングラス', keys: ['さんぐらす'], kind: 'how' },
+  { id: 'sunglasses', kana: 'サングラスを かけて', en: 'wearing sunglasses', tile: 'サングラス', keys: ['さんぐらす'], kind: 'how' , big: true },
   { id: 'singing', kana: 'うたいながら', en: 'while singing', tile: 'うたいながら', keys: ['うたいながら'], kind: 'how' },
   { id: 'crying', kana: 'なきながら', en: 'while crying', tile: 'なきながら', keys: ['なきながら'], kind: 'how' },
   { id: 'barefoot', kana: 'はだしで', en: 'barefoot', tile: 'はだし', keys: ['はだし'], kind: 'how' },
-  { id: 'pink-kimono', kana: 'ピンクの きものを きて', en: 'in a pink kimono', tile: 'ピンク', keys: ['ぴんく'], kind: 'how' },
+  { id: 'pink-kimono', kana: 'ピンクの きものを きて', en: 'in a pink kimono', tile: 'ピンク', keys: ['ぴんく'], kind: 'how' , big: true },
   { id: 'with-cat', kana: 'ねこと いっしょに', en: 'with a cat', tile: 'ねこ', keys: ['ねこと'], kind: 'how' },
-  { id: 'wig', kana: 'かつらを かぶって', en: 'wearing a wig', tile: 'かつら', keys: ['かつら'], kind: 'how' },
+  { id: 'wig', kana: 'かつらを かぶって', en: 'wearing a wig', tile: 'かつら', keys: ['かつら'], kind: 'how' , big: true },
   { id: 'tiny-hat', kana: 'ちいさい ぼうしを かぶって', en: 'in a tiny hat', tile: 'ぼうし', keys: ['ぼうし'], kind: 'how' },
   { id: 'skipping', kana: 'スキップしながら', en: 'skipping along', tile: 'スキップ', keys: ['すきっぷ'], kind: 'how' },
-  { id: 'robot', kana: 'ロボットの まねを しながら', en: 'doing a robot impression', tile: 'ロボット', keys: ['ろぼっと'], kind: 'how' },
-  { id: 'tv-camera', kana: 'テレビカメラの まえで', en: 'in front of TV cameras', tile: 'カメラ', keys: ['かめら'], kind: 'how' },
+  { id: 'robot', kana: 'ロボットの まねを しながら', en: 'doing a robot impression', tile: 'ロボット', keys: ['ろぼっと'], kind: 'how' , big: true },
+  { id: 'tv-camera', kana: 'テレビカメラに かこまれて', en: 'surrounded by TV cameras', tile: 'カメラ', keys: ['かめら'], kind: 'how', big: true },
   { id: 'loudly', kana: 'おおごえで', en: 'very loudly', tile: 'おおごえ', keys: ['おおごえ'], kind: 'how' },
+  { id: 'panda', kana: 'パンダの きぐるみで', en: 'in a panda costume', tile: 'パンダ', keys: ['ぱんだ'], kind: 'how', big: true },
+  { id: 'pon-pyjamas', kana: 'ポンの パジャマを きて', en: "in Pon's pyjamas", tile: 'パジャマ', keys: ['ぱじゃま'], kind: 'how', big: true },
+  { id: 'handstand', kana: 'さかだちで', en: 'doing a handstand', tile: 'さかだち', keys: ['さかだち'], kind: 'how', big: true },
+  { id: 'banana', kana: 'バナナを もって', en: 'holding a banana', tile: 'バナナ', keys: ['ばなな'], kind: 'how', big: true },
+  { id: 'hundred-friends', kana: 'ともだち ひゃくにんと', en: 'with a hundred friends', tile: 'ひゃくにん', keys: ['ひゃくにん'], kind: 'how', big: true },
   // ---- Cheeky ----
   { id: 'drunk', kana: 'よっぱらって', en: 'drunk', tile: 'よっぱらって', keys: ['よっぱら'], kind: 'how', audience: 'cheeky' },
   { id: 'hungover', kana: 'ふつかよいで', en: 'hungover', tile: 'ふつかよい', keys: ['ふつかよい'], kind: 'how', audience: 'cheeky' },
   { id: 'skiving', kana: 'かいしゃを サボって', en: 'skipping work', tile: 'サボって', keys: ['さぼ'], kind: 'how', audience: 'cheeky' },
-  { id: 'after-date', kana: 'デートの あとで', en: 'after a date', tile: 'デート', keys: ['でえとのあと'], kind: 'time', audience: 'cheeky' },
+  { id: 'after-date', kana: 'デートの あとで', en: 'after a date', tile: 'デート', keys: ['でえと'], kind: 'time', audience: 'cheeky' },
+  { id: 'with-ex', kana: 'もとカレと', en: 'with an ex', tile: 'もとカレ', keys: ['もとかれ'], kind: 'how', audience: 'cheeky', big: true },
+  { id: 'missed-last-train', kana: 'しゅうでんを のがして', en: 'after missing the last train', tile: 'しゅうでん', keys: ['しゅうでん'], kind: 'time', audience: 'cheeky' },
 ];
 
 /** A rumour keeps its newest three fins: older ones fall off, as they do in real gossip. */
@@ -209,10 +231,26 @@ function orderFins(fins: readonly RumourFin[]): RumourFin[] {
   return [...fins.filter((f) => f.kind === 'time'), ...fins.filter((f) => f.kind !== 'time')];
 }
 
+/** Adds a fin to a rumour: one time fin at a time (まいばん and まいあさ ごじに can't both be true), newest three kept. */
+export function addFin(fins: readonly RumourFin[], fin: RumourFin): RumourFin[] {
+  const rest = fins.filter((f) => f.id !== fin.id && (fin.kind !== 'time' || f.kind !== 'time'));
+  return [...rest, fin].slice(-MAX_FINS);
+}
+
+/** Time → place → how, then the action: 「まいばん こうえんで ひとりで ダンスを ならって いる」. */
+function middle(seed: RumourSeed, fins: readonly RumourFin[], what: string): string {
+  const time = fins.filter((f) => f.kind === 'time').map((f) => f.kana).join(' ');
+  const how = fins.filter((f) => f.kind !== 'time').map((f) => f.kana).join(' ');
+  return sp(`${time} ${seed.where.kana} ${how} ${what}`);
+}
+
 /** The rumour's body in plain form: 「ちょうちんさんは まいばん こうえんで ダンスを ならって いる」. */
 function body(seed: RumourSeed, fins: readonly RumourFin[], particle: 'は' | 'が'): string {
-  return sp(`${seed.who.kana}${particle} ${orderFins(fins).map((f) => f.kana).join(' ')} ${seed.where.kana} ${seed.what.kana}`);
+  return sp(`${seed.who.kana}${particle} ${middle(seed, fins, seed.what.kana)}`);
 }
+
+/** Casual speech: ならって いる → ならってる. */
+const casual = (what: string) => what.replace(/て いる$/, 'てる').replace(/で いる$/, 'でる');
 
 function bodyEn(seed: RumourSeed, fins: readonly RumourFin[]): string {
   const extra = orderFins(fins).map((f) => f.en).join(', ');
@@ -227,7 +265,7 @@ export function rumourLine(seed: RumourSeed, fins: readonly RumourFin[], frame: 
   let en: string;
   switch (frame) {
     case 'n5':
-      kana = sp(`${seed.who.kana}は ${orderFins(fins).map((f) => f.kana).join(' ')} ${seed.where.kana} ${seed.what.masu}。`);
+      kana = sp(`${seed.who.kana}は ${middle(seed, fins, seed.what.masu)}。`);
       en = `${cap(bodyEn(seed, fins))}.`;
       break;
     case 'sou-hear':
@@ -243,16 +281,16 @@ export function rumourLine(seed: RumourSeed, fins: readonly RumourFin[], frame: 
       en = `According to ${seed.source.en}, ${bodyEn(seed, fins)}.`;
       break;
     case 'rashii':
-      kana = `${body(seed, fins, 'は')} らしいです。`;
+      kana = `${body(seed, fins, 'は')}らしいです。`;
       en = `Apparently ${bodyEn(seed, fins)}.`;
       break;
     case 'n-datte':
-      kana = `${body(seed, fins, 'は')}んだって！`;
+      kana = `${seed.who.kana}、${middle(seed, fins, casual(seed.what.kana))}んだって！`;
       en = `They say ${bodyEn(seed, fins)}!`;
       break;
     case 'plain':
-      kana = `ねえねえ、${body(seed, fins, 'は')}よ！`;
-      en = `Psst, ${bodyEn(seed, fins)}!`;
+      kana = `ねえねえ、しってる？ ${seed.who.kana}、${middle(seed, fins, casual(seed.what.kana))}んだよ！`;
+      en = `Hey, guess what? ${cap(bodyEn(seed, fins))}!`;
       break;
   }
   return { text: kana, kana, en };
@@ -260,6 +298,7 @@ export function rumourLine(seed: RumourSeed, fins: readonly RumourFin[], frame: 
 
 /** Nobiko-san's opener, whispered to the first relayer only. */
 export function rumourOpener(seed: RumourSeed): JpText {
+  if (seed.opener) return seed.opener;
   const kana = `ねえ、きいた？ ${body(seed, [], 'は')}そうよ。ないしょね。`;
   return { text: kana, kana, en: `Psst, have you heard? ${cap(bodyEn(seed, []))}. Don't tell anyone.` };
 }
@@ -276,23 +315,39 @@ export function finKept(fin: RumourFin, reading: string): boolean {
   return fin.keys.some((k) => r.includes(normalizeReading(k)));
 }
 
-// Adjectives that end in らしい (あたらしい, めずらしい …) aren't hearsay.
-const NOT_RASHII = /(あた|めず|すば|かわい|いや|ばか|きたな|おとこ|おんな|こども|おとな)らし/;
+// Adjectives (and Nらしい "typical of N") that end in らしい aren't hearsay. Judged per らしい, so
+// 「あたらしい みせで … する らしい」 still counts.
+const NOT_RASHII = /(あた|めず|すば|かわい|いや|ばか|きたな|おとこ|おんな|こども|おとな|さん|くん|ちゃん)$/;
+// A polite ending with よ／ね／の on it is still polite (いました よ), not the casual frame.
+const POLITE_END = /(です|ます|でした|ました|ません|でしょう)(よ|ね|よね|の|わ)?[！!？?。…〜ー]*$/;
+
+/** True when one らしい in the sentence is hearsay: after a plain form or ない, and not part of an adjective. */
+function hasRashii(k: string): boolean {
+  for (const m of k.matchAll(/らし(い|く|かった)/g)) {
+    const before = k.slice(0, m.index);
+    if (NOT_RASHII.test(before)) continue;
+    if (/([うくぐすつぬぶむるいただ]|ない)$/.test(before)) return true;
+  }
+  return false;
+}
 
 /**
  * The rumour frame a relay used, or null. Uses the learning path's own matchers where they exist (so the
- * round and the path agree), plus two the path doesn't have yet: ＿に よると and ＿んだって.
+ * round and the path agree), plus forms the path doesn't have yet: ＿に よると, ＿んだって, ＿って！,
+ * ＿んですって and ＿と ききました.
  */
 export function rumourFrameOf(u: { text: string; reading?: string; tokens?: readonly UtteranceToken[] }): RumourFrameId | null {
   const kana = u.reading ?? u.text;
   const k = normalizeReading(kana).replace(/[\s　]/g, '');
   const found = new Set(framesOf({ text: u.text, kana }, u.tokens, { keepHidden: true }));
-  if (/によると/.test(k) && /そう(です|だ|よ|な)/.test(k)) return 'ni-yoru';
-  if (found.has('to-itte-ita') || found.has('tte-quote') || /(と|って)(いって|ゆって)(い)?(ました|た|る|ます)/.test(k)) return 'to-itte-ita';
-  if (/んだって|なんだって/.test(k)) return 'n-datte';
-  if (found.has('rashii') || (/[るたいだ]らしい/.test(k) && !NOT_RASHII.test(k))) return 'rashii';
-  if (found.has('sou-hear') || /[るたいだ]そう(です|だ|よ)/.test(k)) return 'sou-hear';
-  if (found.has('plain') || /[るたいだ](よ|ね|の)[！!？?。…]*$/.test(k)) return 'plain';
+  const rashii = found.has('rashii') || hasRashii(k);
+  if (/によると/.test(k) && (/そう(です|だ|よ|な)/.test(k) || rashii)) return 'ni-yoru';
+  // と in a quote follows a plain form (くると いって いました); ともだちと いって いました is "went with a friend".
+  if (found.has('to-itte-ita') || found.has('tte-quote') || /([うくぐすつぬぶむるいただよね]と|って)(いって|ゆって)(い)?(ました|た|る|ます)/.test(k) || /[うくぐすつぬぶむるいただ]と(きき|きい)(ました|た)/.test(k)) return 'to-itte-ita';
+  if (/(ん|の)(だ|です)って|なんだって/.test(k) || /([うくぐすつぬぶむるいただ]|ない)って[！!。…〜ー]*$/.test(k)) return 'n-datte';
+  if (rashii) return 'rashii';
+  if (found.has('sou-hear')) return 'sou-hear';
+  if (!POLITE_END.test(k) && (found.has('plain') || /([うくぐすつぬぶむるいただ]|ない)(よ|ね|の)[！!？?。…]*$/.test(k))) return 'plain';
   return null;
 }
 
