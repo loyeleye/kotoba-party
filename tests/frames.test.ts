@@ -7,6 +7,7 @@ import { ALL_FRAMES, FRAME_BY_ID, FRAMES, frameOf, framesOf, type FrameId } from
 import { cases as n4a } from './frame-cases/n4-a.js';
 import { cases as n4b } from './frame-cases/n4-b.js';
 import { cases as n4c } from './frame-cases/n4-c.js';
+import { cases as n4d } from './frame-cases/n4-d.js';
 import { cases as n5existing } from './frame-cases/n5-existing.js';
 import { cases as n5new } from './frame-cases/n5-new.js';
 import { probes } from './frame-cases/panel-probes.js';
@@ -125,7 +126,7 @@ describe('sentence frames', () => {
 // are read with kuromoji tokens, as the server reads them.
 
 const reader = (await createReader())!;
-const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c };
+const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c, ...n4d };
 const line = (l: CaseLine) => (typeof l === 'string' ? { text: l, kana: l } : l);
 
 describe('every frame in a line (framesOf)', () => {

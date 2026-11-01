@@ -14,9 +14,12 @@ Code: `shared/src/japanese/frames.ts`. Tests: `tests/frames.test.ts`, lines in `
 - **`framesOf(phrase, tokens?)`** names every frame in a line, N5 to N3, sentence by sentence:
   「あめに ふられたので、おくれました」 is the passive, ので and ＿ました. `frameOf` is unchanged: it still names
   the one N5 frame a phrase is built on, from the original sixteen, for the chips and the path.
-- **87 frames.** The sixteen N5 frames (`FRAMES`), 17 more N5 frames the tiered path's goals need
-  (`MORE_N5_FRAMES`), 50 N4 frames for goals 4.1 to 4.14 (`N4_FRAMES`, including the keigo-verb matcher),
-  and the four N3 frames that need part of speech (`N3_FRAMES`: らしい, のに, うちに, reason ため).
+- **95 frames.** The sixteen N5 frames (`FRAMES`), 17 more N5 frames the tiered path's goals need
+  (`MORE_N5_FRAMES`), 59 N4 frames (`N4_FRAMES`), and three N3 frames that need part of speech
+  (`N3_FRAMES`: らしい, うちに, reason ため). The N4 frames are the 50 for goals 4.1 to 4.14 (including the
+  keigo-verb matcher), のに (moved from N3 on the Japanese expert's advice: Genki II and Minna II teach it in
+  the N4 range), and eight the expert said an N4 student expects, with no path goal yet: みたい／ようです,
+  polite ＿んです, the causative, ＿て ほしい, ＿ば よかった, ＿たり ＿たり, ＿ところです and casual ＿って.
   `FRAME_BY_ID` and `ALL_FRAMES` cover them all. Ids match the tiered path's goal list.
 - **Part of speech.** The server's kuromoji tokens now carry the finer part of speech, the dictionary form
   and the conjugation (`detail`, `base`, `ctype`, `cform` on `UtteranceToken`).
@@ -68,12 +71,13 @@ picture: the 10/10 bar is a regression test, not a measure of precision (see "Fo
 - Plain forms count toward the polite frames (Ladi, Nov 1): もらえる？ and くれない？ as favours, ＿たい(な) at
   the end as ＿たいです, ＿ないで at the end as ＿ないで ください. Other casual forms beyond 〜てる／〜とく, ＿んだ and
   ＿よ／ね／の are thin.
-- ご＿ください is left out of お＿ください (it's the N3 service frame).
+- ご＿ください counts as お＿ください, for a list of verb nouns (ごちゅうい, ごえんりょ, ごじょうしゃ…), so ごはんを
+  ください stays out.
 - Agentless passives (この寺は建てられた) are left out: without someone who did it (Nに) or a を object,
   godan れる is as likely honorific (社長は帰られました) and ichidan られる "can".
-- N4 grammar with no frame yet: みたい／ようです, polite ＿んです, the causative and causative-passive,
-  ＿て ほしい, ＿ば よかった, ＿なさい, ＿たり ＿たり, ＿ところ／ばかり, ＿ように する. のに is banded N3 here
-  but Genki II and Minna II teach it in the N4 range.
+- N4 grammar still without a frame (nice to have, per the Japanese expert): ＿ように する, ＿なさい, ＿と いい,
+  ＿ばかり and the causative-passive. Lexical causatives (泣かせる, 笑わせる) are one dictionary verb, so the
+  causative misses them.
 - `frameStats` and the path still use `frameOf`. Switching them to `framesOf` (with the server's tokens)
   is step 2's job, with the hard roles that produce N4 lines.
 - English and romaji: the labels are Japanese only, as in the sixteen. A hand-written romaji per frame
@@ -85,7 +89,7 @@ picture: the 10/10 bar is a regression test, not a measure of precision (see "Fo
 - **Not every frame can be a goal.** `no`, `plain`, `youbi`, `gatsu-nichi`, `ji-fun` and `migi-hidari`
   fire on lines players didn't choose to build; `keigo` mostly fires on announcements players repeat.
   Count those only where the player chose the line.
-- **Filter by tier.** My progress should list the frames of the player's tier, not all 87.
+- **Filter by tier.** My progress should list the frames of the player's tier, not all 95.
 - **Store frames on the phrase card**, computed on the server with tokens when a phrase is saved, with a
   matcher version, so the phone shows what the server credits and never a different frame.
 - **A targeted check** for hard roles that know their frame: hit, miss or can't tell. Show hits, say nothing
