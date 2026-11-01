@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import { withExperiments } from '../shared/src/modes/experiments.js';
-import { STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS, standInVoiceMs } from '../shared/src/modes/mixedRoom.js';
+import { STAND_IN_CURVEBALL_MS, standInSetupFor, standInVoiceMs } from '../shared/src/modes/mixedRoom.js';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
@@ -33,6 +33,9 @@ import type { Command } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { addReadings, createReader, type Reader } from '../server/src/reading.js';
 import { content as REAL_CONTENT } from './helpers.js';
+
+// standInSetup's gap after the setup line, from its bank line (at least STAND_IN_SETUP_MS).
+const SETUP_MS = standInSetupFor(REAL_CONTENT.hostLines, 'bento_standin_setup');
 
 function mulberry(seed: number): () => number {
   let a = seed >>> 0;
@@ -902,7 +905,7 @@ describe('Bento Haus mixed rooms: the host stand-in', () => {
     t.toPrompt();
     const start = t.now;
     const si = t.st.standIn!;
-    const at = STAND_IN_AT_MS + STAND_IN_SETUP_MS;
+    const at = STAND_IN_AT_MS + SETUP_MS;
     expect(cuesOf(t, 'bento_standin_setup')).toEqual([{ host: 'pon', event: 'bento_standin_setup', atMs: STAND_IN_AT_MS }]);
     expect(cuesOf(t, 'bento_standin')).toEqual([
       { host: 'pon', event: 'bento_standin', slots: { line: si.line.text, line_kana: si.line.kana, line_en: si.line.en }, atMs: at },

@@ -58,40 +58,60 @@ Every game with a hard role uses them the same way:
   fewest offers so far, then longest ago; a player who said no, or didn't answer, last time sits the next one out; in rooms of 4 or
   more, nobody holds the spotlight two rounds running.
 - **Gallery.** While the N4 line is being said, each player without the seat gets one tile a round: four
-  reactions (👏 すごい！, 💡 なるほど, 😮 へえ！, 📣 がんばれ！) that pop up on the TV as bubbles, unscored. Once per game, after the line has
+  reactions (👏 すごい！, 💡 なるほど, 😮 へえ！, 📣 がんばれ！) that pop up on the TV as bubbles, unscored. Each tile shows its
+  English under the kana, with romaji first at Kana level ("Sugoi! · Amazing!"). Once per game, after the line has
   landed, a Kana or N5 player who hasn't reacted yet gets a curveball instead, "Which word did you hear?", with the line's key word and two
-  others; +5 if right.
+  others; +5 if right. Once answered, right or wrong, the phone says the word in romaji and what it means
+  ("Yes! +10. ので (node) means “so, because”." / "It was ので (node): “so, because”. Listen for it next time!"), from
+  `KEY_GLOSS` in `mixedRoom.ts` (every key word the six games light has one), and the word goes into the phrasebook
+  as `seen` (for Ladi to confirm). While it's open, the TV's booth shows a gap ＿＿ where the word goes, in the line
+  and in its note.
   - *Experiment `scaledCurveball` (round 5, on by default):* the curveball pays about a tenth of the game's basic right
     answer, rounded to 5 (`curveballPoints(game)`, table `BASIC_POINTS` in `mixedRoom.ts`): Bento Haus 15 (a perfect
-    box, 3 × 50), Last Train 10 (an item first try, 100), Onsen 30 (the culprit, 300), Omiai 10 (a vote, 100),
+    box, 3 × 50), Last Train 10 (an item first try, 100), Onsen 10 (a clue, 100), Omiai 10 (a vote, 100),
     Dub Club 5 (a right guess, 50), Narabete 10 (a pair, 100). The phone's "Yes! +N" shows what was paid. Off:
-    a flat +5 everywhere (for Ladi to confirm: Onsen's base is the culprit, its one big answer, so its curveball is the
-    richest; a question's 20 would make it 5).
-  - *Experiment `spokenReaction` (round 5, on by default):* a Gallery player may say their reaction instead of tapping.
-    Phones with a mic on show a small "🎤 or say it" button under the four tiles (`speakBox` with `mini`, never
-    docked; quiet or mic-less phones just see the tiles). The phone sends `{ kind: 'gallery', pick: 'say', utterance }`;
-    `reactionSaid` checks the reading against each tile's kana (lenient, small kana and ー folded, one doubling or a
-    little ending like ね/よ/ー allowed: すごいね, へー, がんばれー). A match picks that tile, pays
-    `SPOKEN_REACTION_POINTS` (+2) into the game's ordinary score, shows the TV bubble with a 🎤, and logs the
-    reaction to the phrasebook as `said` with recall `read` (the tile shows the kana while they say it, so it isn't
-    from memory; for Ladi to confirm). A miss pays nothing, picks nothing, and the phone says "Didn't catch a reaction:
-    say one of them, or tap." Tries aren't limited. Typed text can't be sent this way (tap instead). Off: the pick
-    is refused and tiles show no mic. +2 is small on purpose so tappers aren't behind (for Ladi to confirm).
+    a flat +5 everywhere (Onsen's base is a clue, so the tap never out-pays an understood question; for Ladi to
+    confirm).
+  - *Experiment `spokenReaction` (round 5, on by default):* a Gallery player may say their reaction instead of tapping,
+    once the line has landed (`Gallery.landed`, set when the game deals the curveball or, where it never would,
+    `landGallery`), so nobody talks over it; tapping works all along. Phones with a mic on then show a small
+    "Hold and say it 🎤 (+2)" button under the four tiles ("Tap and say it" on a tap-to-talk phone; `speakBox` with
+    `mini`, never docked; quiet or mic-less phones just see the tiles), and the kicker reads "React: tap one or say
+    it. It pops up on the TV". The phone sends `{ kind: 'gallery', pick: 'say', utterance }`;
+    `reactionSaid` checks the reading against each tile's kana (lenient, small kana folded, 〜 read as ー; one doubling,
+    a stretched vowel or small っ (すごーい, すご〜い, すっごい, なーるほど, へ〜), or a little ending like ね/よ/ー,
+    です or ください allowed: すごいね, すごいですね, がんばれー; がんばって(ください) also counts for がんばれ, the N5
+    form). A match picks that tile, pays
+    `SPOKEN_REACTION_POINTS` (+2) into the game's ordinary score, shows the TV bubble with a 🎤, says "Said it! +2.
+    On the TV now.", and logs the tile's kana to the phrasebook as `said` with recall `read` (the tile shows the kana
+    while they say it, so it isn't from memory; for Ladi to confirm). A miss pays nothing, picks nothing, and the
+    phone says "Didn't catch that. Say it again, or just tap." Tries aren't limited. Typed text can't be sent this
+    way (tap instead). Off: the pick is refused and tiles show no mic. +2 is small on purpose so tappers aren't behind
+    (for Ladi to confirm). Quiet and mic-less phones can't earn it, at most +2 a round. The sim's room b has one quiet
+    Kana phone to measure this. What it's for: a low-stakes first spoken chunk for Kana and N5 players (willingness to
+    speak), not recall; the four reactions are read off the tile.
 - **Commentary booth.** Once the N4 line lands, a 5–7 s instant replay on the TV: the line with its key word lit
   and one line of English colour, voiced by the host (the fixed model line, never the player's own words). Kana
   and N5 phones show the gist at their level (romaji for Kana). While a curveball on that word is open, the word
   isn't lit yet (`keyHeld`).
 - **Host stand-in.** In a room of one or two players with nobody at N4, the host plays the hard role once per
-  game: one model line, voiced, with the gist on the phones. Nobody is asked to say it and it scores nothing.
+  game: one model line, voiced, with the gist on the phones. Nobody is asked to say it and the line scores nothing
+  (with `standInCurveball`, the curveball and a said reaction do).
   This is the one thing that reaches rooms without an N4 player (for Ladi to confirm).
   Two experiments ride on it (`shared/src/modes/experiments.ts`, for the playtest sims; for Ladi to confirm):
   - `standInSetup`: the host first says a short setup line in character (Pon's ドロン！), its own bank-only event per
     game (`*_standin_setup`; Last Train's is `train_stand_in_setup`), where the model line used to start; the model
-    line follows `STAND_IN_SETUP_MS` (2.5 s) later. Added time: none in Narabete!, 1.3 s in Bento Haus, 2.5 s in the
-    others.
+    line follows once the setup line has been said: `standInSetupMs` of its kana (`standInVoiceMs`, so about 2.5–3.3 s
+    for a setup line of at most 16 kana), never under `STAND_IN_SETUP_MS` (2.5 s), taken from the event's bank line
+    (`standInSetupFor`). Added time: about 1.3–1.8 s in Bento Haus and 2.5 s or a little more in the others. In
+    Narabete! it is inside the 90 s line-up, but with `standInCurveball` on the line-up waits for her line, so a room
+    that locks early waits 2.5 s more (for Ladi to confirm).
   - `standInCurveball`: every player in the room gets a Gallery tile while the host says the line, and once it has
     been said the once-a-game curveball is dealt on it (`openStandInGallery` with no key, then `dealStandIn`, i.e.
-    `armCurveball` with the line's kana as heard), +5 if right. Until it's answered the key word isn't lit and
+    `armCurveball` with the line's kana as heard), `curveballPoints(game)` if right (+5 with `scaledCurveball` off).
+    Players react while the host is still talking, so a quick tap doesn't cost the curveball: it goes to a Kana or N5
+    player who hasn't reacted, else to one who has (`armCurveball`'s `evenIfReacted`; their reaction stays on the TV;
+    mixed rooms keep the first rule only). Until it's answered the key word isn't lit and
     the gist waits (`standInHoldKey`). The phase waits up to `STAND_IN_CURVEBALL_MS` (5 s) for the answer and
     ends once it's in (`standInDone`); Omiai fits it in time it already had. Narabete! never waits: she starts
     0.5 s into the line-up, and a line-up locked once she has started carries the tile and curveball into the
@@ -102,11 +122,14 @@ Every game with a hard role uses them the same way:
   N4 one tap: "Was there a part of that game where you were just waiting?" (No / A bit / Yes). The server logs the answers
   with how long each phase ran (`[mixed-room]` in the server log) when the recap ends, for playtests. The
   answers aren't shown on any screen or kept in accounts. With the `waitCheckFirstTwo` experiment on (the
-  default), only the first two qualifying recaps of a night ask it (`WAIT_CHECKS_A_NIGHT`); later ones still
-  log their phases, with nobody asked. The count (`GameState.mixedChecks`, and `nth` on each check) runs across
-  the night's games and starts again in a new room; a recap that doesn't qualify doesn't count. Off, every
-  qualifying recap asks. Why: the same tap after every game nags, and two answers a night already say whether
-  the roles made people wait (for Ladi to confirm).
+  default; the name is kept), only the 1st and 3rd qualifying recaps of a night ask it (`WAIT_CHECK_RECAPS`), so
+  the answers aren't all from the opening games; the others still log their phases, with nobody asked. The count
+  (`GameState.mixedChecks`, and `nth` on each check) runs across the night's games and starts again in a new
+  room; a recap that doesn't qualify doesn't count. Off, every qualifying recap asks. Why: the same tap after
+  every game nags, and two answers a night already say whether the roles made people wait (for Ladi to confirm).
+  The 1st and 3rd recaps are still whichever games a night plays in those places, so playtests should change the
+  game order between nights (the sim does). The sim's drop from 12 prompts to 4 restates this rule; it isn't
+  evidence for it.
 
 Still to come: N3 lines (step 6), and bots taking hard roles.
 

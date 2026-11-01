@@ -8,7 +8,7 @@ import { normalizeReading, soundKey, type Utterance } from '../shared/src/japane
 import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
 import { defenceScript } from '../shared/src/modes/narabete/defence.js';
-import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
+import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
 import {
   BONUS_POOL_SHARE,
   DEFENCE_KEY,
@@ -37,6 +37,9 @@ import { bankVoice } from '../server/src/host.js';
 import { Bot, Director } from '../tools/bots/bot.js';
 import { labelValue, narabetePolicy } from '../tools/bots/policies/narabete.js';
 import { content as REAL_CONTENT, hashView, startServer, until } from './helpers.js';
+
+// standInSetup's gap after the setup line, from its bank line (at least STAND_IN_SETUP_MS).
+const SETUP_MS = standInSetupFor(REAL_CONTENT.hostLines, 'narabete_standin_setup');
 
 // ---- fixtures ----
 
@@ -1006,6 +1009,12 @@ describe('Narabete!: mixed rooms', () => {
       expect(t.score(P)).toBe(before);
       return;
     }
+    // Not while the defence is still being said: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(t.view(P).me!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！').error).toBe('bad-move');
+    // The defence lands (the curveball goes to p3): now it may be said.
+    t.play('p2', { kind: 'defend', utterance: { via: 'speech', text: t.view('p2').me!.hard!.script!.lines[0]!.kana } });
+    expect(t.r.encore).toBe('replay');
     expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
     // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
     expect(say('ありがとう').error).toBeUndefined();
@@ -1156,9 +1165,9 @@ describe('Narabete!: mixed rooms', () => {
       const ours = t.s.cues.filter((c) => c.event.startsWith('narabete_standin'));
       expect(ours.map((c) => [c.event, c.atMs])).toEqual([
         ['narabete_standin_setup', DURATIONS.standInAt],
-        ['narabete_standin', DURATIONS.standInAt + STAND_IN_SETUP_MS],
+        ['narabete_standin', DURATIONS.standInAt + SETUP_MS],
       ]);
-      expect(t.view().standIn!.atMs).toBe(DURATIONS.standInAt + STAND_IN_SETUP_MS);
+      expect(t.view().standIn!.atMs).toBe(DURATIONS.standInAt + SETUP_MS);
       expect(t.s.deadline! - t.now).toBe(DURATIONS.reveal);
       expect(t.view('p1').me!.gallery).toBeNull();
       t.sortLine();
@@ -1201,7 +1210,7 @@ describe('Narabete!: mixed rooms', () => {
       t.sayAll();
       const start = t.now;
       const st = t.st.standIn!;
-      expect(st.atMs).toBe(DURATIONS.standInEarlyAt + STAND_IN_SETUP_MS);
+      expect(st.atMs).toBe(DURATIONS.standInEarlyAt + SETUP_MS);
       // She has started her line; everyone locks: the line-up ends at once.
       t.now = start + st.atMs + 1_000;
       t.sortLine();

@@ -28,7 +28,7 @@ import { cleanText, isObject, moveError, MOVE_OK, pick, type Award, type Mode, t
 import { answerTiles, checkReport, joinReport, reportFrame, reportNotes, reportRule, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
 import { nextOfferee, offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
-import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { FALLBACK_CASE } from './fallback.js';
 import { accusationLine, bareName, checkAccusation, INTENTS, matchQuestion, questionFor, tilesFor, type QuestionTile } from './questions.js';
 
@@ -662,7 +662,7 @@ function standIn(s: OnsenState, ctx: ModeContext, ask: Ask | undefined): void {
   if (s.standInUsed || s.deputy || !ask?.report || !hostStandsIn(ctx.connected().map((p) => p.level))) return;
   s.standInUsed = true;
   // Experiment standInSetup: his short setup line where the report used to start; the report follows it.
-  const atMs = REPORT_VOICE.after + (EXPERIMENTS.standInSetup ? STAND_IN_SETUP_MS : 0);
+  const atMs = REPORT_VOICE.after + (EXPERIMENTS.standInSetup ? standInSetupFor(ctx.content.hostLines, 'onsen_standin_setup') : 0);
   if (EXPERIMENTS.standInSetup) ctx.cue({ host: 'chochin', event: 'onsen_standin_setup', atMs: REPORT_VOICE.after });
   s.standIn = boothFor(ask, null, atMs);
   const r = ask.report;

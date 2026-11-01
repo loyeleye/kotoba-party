@@ -36,7 +36,7 @@ import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
-import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_CURVEBALL_MS, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
@@ -834,7 +834,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
           // Experiment standInSetup: her short setup line where the defence used to start; it follows. Inside
           // the line-up's time, so no time is added.
           const from = early ? DURATIONS.standInEarlyAt : DURATIONS.standInAt;
-          const atMs = from + (EXPERIMENTS.standInSetup ? STAND_IN_SETUP_MS : 0);
+          const atMs = from + (EXPERIMENTS.standInSetup ? standInSetupFor(ctx.content.hostLines, 'narabete_standin_setup') : 0);
           if (EXPERIMENTS.standInSetup) ctx.cue({ host: 'nobiko', event: 'narabete_standin_setup', atMs: from });
           s.standIn = { round: s.round, atMs, c };
           // Experiment standInCurveball: a Gallery tile for everyone while she says it; the curveball once she has.

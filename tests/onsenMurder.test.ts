@@ -1177,9 +1177,9 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
     t.start();
     t.play('p2', { kind: 'deputy', accept: true });
     t.ask('tanaka', 'どこに いましたか');
-    const P = 'p1';
+    let P = 'p1';
     const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
-    const before = t.score(P);
+    let before = t.score(P);
     if (!on) {
       // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
       expect(say('すごい！').error).toBe('bad-move');
@@ -1188,6 +1188,13 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
       expect(t.score(P)).toBe(before);
       return;
     }
+    // Not before the report: no 🎤, and a said reaction is refused (nobody talks over it).
+    expect(t.view(P).mine!.gallery).not.toHaveProperty('say');
+    expect(say('すごい！').error).toBe('bad-move');
+    // The report lands: now it may be said, by whichever of them didn't get the curveball.
+    t.play('p2', { kind: 'report', tiles: inOrder(t, 'p2') });
+    if (t.st.gallery!.curveball?.playerId === P) P = 'p3';
+    before = t.score(P);
     expect(t.view(P).mine!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
     // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
     expect(say('ありがとう').error).toBeUndefined();
@@ -1231,7 +1238,8 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
     expect(t.view().booth!.holdKey).toBe(true);
     const before = t.score(target);
     expect(t.play(target, { kind: 'gallery', pick: 'いっていました' }).error).toBeUndefined();
-    expect(t.score(target) - before).toBe(scaled ? 30 : 5);
+    // Scaled, a tenth of a clue's 100 (not the culprit's 300).
+    expect(t.score(target) - before).toBe(scaled ? 10 : 5);
     expect(t.view().booth!.holdKey).toBe(false);
     expect(t.play(target, { kind: 'gallery', pick: 'いっていました' }).error).toBe('bad-move');
     const was = t.score(other);
@@ -1397,7 +1405,7 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
       expect(t.s.phase).toBe('answer');
     });
 
-    it('standInCurveball: nobody left to deal it to (both reacted) means no curveball, and no extra wait', () => {
+    it('standInCurveball: both reacted while he spoke, and the curveball still comes to one of them; answered at once, no extra wait', () => {
       onTestFinished(withExperiments({ standInSetup: true, standInCurveball: true }));
       const t = new Table(2, CONTENT, ['kana', 'n5']);
       t.start();
@@ -1405,9 +1413,12 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
       t.play('p1', { kind: 'gallery', pick: 'sugoi' });
       t.play('p2', { kind: 'gallery', pick: 'sugoi' });
       wake(t);
+      const cb = t.st.standIn!.sg!.g.curveball!;
+      expect(['p1', 'p2']).toContain(cb.playerId);
+      expect(t.st.curveballUsed).toBe(true);
+      t.play(cb.playerId, { kind: 'gallery', pick: cb.word });
       if (t.s.phase === 'reveal') wake(t);
       expect(t.s.phase).toBe('answer');
-      expect(t.st.curveballUsed).toBe(false);
       expect(t.now - t.st.revealAt).toBe(Math.max(12_000, REPORT_VOICE.after + STAND_IN_SETUP_MS + reportVoiceMs(r.jp.kana)));
     });
   });

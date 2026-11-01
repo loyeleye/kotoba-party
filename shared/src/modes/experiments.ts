@@ -10,7 +10,7 @@ export interface MixedExperiments {
   standInCurveball: boolean;
   /** 3. A Gallery player may say their reaction out loud for a small bonus. */
   spokenReaction: boolean;
-  /** 4. The recap's waiting check is asked only on the first two mixed recaps of a night. */
+  /** 4. The recap's waiting check is asked only on the 1st and 3rd mixed recaps of a night (WAIT_CHECK_RECAPS). */
   waitCheckFirstTwo: boolean;
   /** 5. Narabete: when the N4 defender's card also moved most, one defence, not two. */
   narabeteFold: boolean;

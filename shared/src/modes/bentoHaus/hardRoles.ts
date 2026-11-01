@@ -706,7 +706,7 @@ export function requestDone(inc: Incident, r: Round, ctx: ModeContext): number {
 /** The line a step was credited as (the model, or the form it was accepted in). */
 export const lineOf = (s: LineStep): HardLine => s.credit ?? s.model;
 
-const BOOTH_KEYS = ['いただけますか', 'いただけませんか', 'おまちください'];
+export const BOOTH_KEYS = ['いただけますか', 'いただけませんか', 'おまちください'];
 /** Curveball distractors: other request endings the shop hears all night. */
 export const CURVE_POOL = ['もらえますか', 'くれませんか', 'おねがいします', 'あります', 'ください'];
 

@@ -26,7 +26,7 @@ import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, ty
 import { checkUtterance, firstMora } from './check.js';
 import { nextOfferee, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
-import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, KEY_WORDS, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, KEY_WORDS, landGallery, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallback.js';
 
@@ -658,7 +658,7 @@ function armRoleCurveball(s: LastTrainState, ctx: ModeContext, item: MinigameIte
 }
 
 /** Deals the curveball on a role line's key word into `g`. True when dealt. */
-function armOn(s: LastTrainState, ctx: ModeContext, g: Gallery, item: MinigameItem): boolean {
+function armOn(s: LastTrainState, ctx: ModeContext, g: Gallery, item: MinigameItem, evenIfReacted = false): boolean {
   const key = roleKey(item);
   const pool = [...new Set([...ROLE_KEYS.map((k) => k.kana), ...KEY_WORDS])];
   const low = ctx.connected().filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id);
@@ -667,7 +667,7 @@ function armOn(s: LastTrainState, ctx: ModeContext, g: Gallery, item: MinigameIt
   // retry with a word or two fewer in the pool.
   for (let drop = 0; drop < 3; drop++) {
     const from = drop ? pool.slice(0, -drop) : pool;
-    if (armCurveball(g, low, key ? { word: key.kana, pool: from, heard: item.model.kana } : null, s.curveballUsed, s.seq)) return true;
+    if (armCurveball(g, low, key ? { word: key.kana, pool: from, heard: item.model.kana } : null, s.curveballUsed, s.seq, { evenIfReacted })) return true;
   }
   return false;
 }
@@ -685,7 +685,7 @@ function maybeStandIn(s: LastTrainState, ctx: ModeContext, stop: Stop): void {
   // Experiment standInSetup: his short setup line first, where the announcement used to start; it follows.
   if (EXPERIMENTS.standInSetup) {
     ctx.cue({ host: 'chochin', event: 'train_stand_in_setup', atMs: RULES.standInAtMs });
-    s.standIn.atMs = RULES.standInAtMs + STAND_IN_SETUP_MS;
+    s.standIn.atMs = RULES.standInAtMs + standInSetupFor(ctx.content.hostLines, 'train_stand_in_setup');
   }
   const atMs = standInAt(s);
   // Experiment standInCurveball: a Gallery tile for everyone while he says it; the curveball once he has.
@@ -708,8 +708,11 @@ const standInSg = (s: LastTrainState, phase: Phase): StandInGallery | null => (s
 function dealStandInCurveball(s: LastTrainState, ctx: ModeContext, sg: StandInGallery): void {
   if (sg.dealt || ctx.now < sg.dealAt) return;
   sg.dealt = true;
+  // He has said it: a reaction may be said now, curveball or not.
+  landGallery(sg.g);
   const line = s.minigames[s.stops[s.stopIndex]?.minigameId ?? '']?.items.find((i) => i.role?.id === 'announcer');
-  if (line && !s.curveballUsed && armOn(s, ctx, sg.g, line)) s.curveballUsed = true;
+  // Someone who hasn't reacted first, then anyone at Kana or N5 (as dealStandIn does).
+  if (line && !s.curveballUsed && (armOn(s, ctx, sg.g, line) || armOn(s, ctx, sg.g, line, true))) s.curveballUsed = true;
 }
 
 function ordinaryItem(s: LastTrainState, ctx: ModeContext, pool: readonly MinigameItem[], mgId: string, level: Level): MinigameItem | undefined {

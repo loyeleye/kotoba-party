@@ -30,7 +30,7 @@
 import type { Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { EXPERIMENTS } from '../experiments.js';
-import { dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, openStandInGallery, pickGallery, STAND_IN_SETUP_MS, standInDone, standInEnd, standInHoldKey, standInVoiceMs, standInWakeAt, type Commentary, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, landGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInVoiceMs, standInWakeAt, type Commentary, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type ModePlayer, type MoveResult } from '../mode.js';
 import { COUNTS, countWord, KANJI_SPELLINGS, customerOf, customersFor, FOODS, foodOf, MAX_COUNT, RIDDLE_EN, RIDDLES, type Customer, type Food, type JpLine } from './menu.js';
 import {
@@ -1093,7 +1093,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       const levels = ctx.players().filter((p) => p.connected).map((p) => p.level);
       if (!s.standIn && !s.hard && hostStandsIn(levels)) {
         // Experiment standInSetup: his short setup line (ドロン！) where the line used to start; the line follows it.
-        const atMs = STAND_IN_AT_MS + (EXPERIMENTS.standInSetup ? STAND_IN_SETUP_MS : 0);
+        const atMs = STAND_IN_AT_MS + (EXPERIMENTS.standInSetup ? standInSetupFor(ctx.content.hostLines, 'bento_standin_setup') : 0);
         if (EXPERIMENTS.standInSetup) ctx.cue({ host: 'pon', event: 'bento_standin_setup', atMs: STAND_IN_AT_MS });
         s.standIn = { ...standInBooth(ctx.now + atMs), round: s.round, ...(EXPERIMENTS.standInSetup ? { atMs } : {}) };
         const line = s.standIn.line;
@@ -1177,7 +1177,11 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     stampClock(s, ctx.now);
     const sg = standInSg(s, phase);
     if (sg && s.standIn?.lit.key) dealStandIn(sg, ctx.connected(), { word: s.standIn.lit.key, pool: CURVE_POOL, heard: s.standIn.line.kana }, false, s.round, ctx.now);
-    else if (sg) sg.dealt = ctx.now >= sg.dealAt;
+    else if (sg) {
+      sg.dealt = ctx.now >= sg.dealAt;
+      // No key word, so no curveball, but the line has landed: a reaction may be said now.
+      if (sg.dealt) landGallery(sg.g);
+    }
     const r = s.current;
     if (phase === 'answer' && r) {
       runClock(s, r, ctx.now, ctx);
