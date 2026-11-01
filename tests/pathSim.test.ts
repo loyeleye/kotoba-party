@@ -69,11 +69,14 @@ describe('path simulation: bots play the real games in-process', () => {
   });
 
   it("following the path's suggestion is no slower than picking games at random", () => {
-    const modes = ['bento-haus', 'phrase-bingo', 'ghost-hotline', 'late-again', 'tourist', 'omiai', 'hajimemashite'] as const;
+    const modes = ['bento-haus', 'phrase-bingo', 'ghost-hotline', 'late-again', 'tourist', 'omiai', 'hajimemashite', 'happyokai', 'dub-club'] as const;
     const lib = new Map(modes.map((m) => [m as (typeof modes)[number], [1, 2].flatMap((seed) => playGame(content, m, ['n4', 'n4', 'n5', 'n5'], seed).seats.filter((s) => s.level === 'n4').map((s) => s.result))]));
     const base = { rooms: 1, library: 2, nightsEvery: 7, games: 3, follow: 0, memory: 0.7, max: 10, reviews: 0, seed: 1 };
     // Stamps by night 10, summed over 24 rooms, and the nights they took (a goal never stamped counts as 11).
     // 24, not 12: in this small library 12 rooms is noise (new Tourist questions in step 5b-2 flipped it).
+    // The library holds every game the suggestion sends a room to early: without Dub Club (4.8, the fastest goal
+    // since 5b-2) the suggestion kept naming a game the room couldn't play, and "following" became random play
+    // with extra Bento Haus and Hotline games (step 5c).
     const run = (follow: number) => {
       const rooms = Array.from({ length: 24 }, (_, i) => runRoom(lib, { ...base, follow }, 100 + i));
       const ids = GOALS.filter((g) => g.line === 'express').map((g) => g.id);
