@@ -5,6 +5,7 @@
 
 import { creditable, framesOf } from '../../shared/src/japanese/frames.js';
 import { h } from '../../shared/src/dom.js';
+import { N3_BAND_FRAMES, N3_COUNTS, N3_KANJI_PASSED, listenPointsOf, passedPoints, type N3Point } from '../../shared/src/japanese/n3Points.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { PhraseEntry } from '../../shared/src/modes/mode.js';
 import {
@@ -173,6 +174,41 @@ function passNote(goal: Goal): HTMLElement {
   );
 }
 
+/** How many "count too" frames show before the rest fold away (the station sheet stays a glance: UX seats). */
+const ALSO_OPEN = 4;
+
+/**
+ * The frames that count too. They never gate the goal. A long list folds behind "Also counts (N)" (spoken N3
+ * adds up to 12 on 3.10), and a met one shows its tick.
+ */
+function alsoChips(goal: Goal, level: Level, st: PathStatus, tallies: boolean): HTMLElement | null {
+  if (!goal.also.length) return null;
+  const chip = (id: string) => frameChip(id, level, tallies && frameState(st, id)?.met ? 'met' : undefined);
+  if (goal.also.length <= ALSO_OPEN) return h('div', { class: 'path-frames also' }, h('small', { class: 'path-label' }, 'These count too'), goal.also.map(chip));
+  return h(
+    'details',
+    { class: 'path-frames-more' },
+    h('summary', {}, h('span', { class: 'path-label' }, `Also counts (${goal.also.length})`), h('small', {}, 'Optional: never needed for the stamp')),
+    h('div', { class: 'path-frames also' }, goal.also.map(chip)),
+  );
+}
+
+/**
+ * The goal's listening points: what you'll hear the hosts say, marked "hear" and never counted (no game has a
+ * listening check on them yet). Only Limited Express goals have any (shared/src/japanese/n3Points.ts).
+ */
+function listenChips(goal: Goal): HTMLElement | null {
+  const pts = listenPointsOf(goal.id);
+  if (!pts.length) return null;
+  return h(
+    'div',
+    { class: 'path-frames hear' },
+    h('small', { class: 'path-label' }, 'You’ll hear these'),
+    pts.map((p) => h('span', { class: 'frame-chip hear' }, h('span', { class: 'chip-tag', 'aria-label': 'Listening only' }, 'HEAR'), h('span', { class: 'frame-ja', lang: 'ja' }, p.ja), h('small', {}, p.en))),
+    h('p', { class: 'path-note' }, 'Listen for them in the hosts’ lines. They don’t count toward the stamp.'),
+  );
+}
+
 /** The goal's detail: why, its frames, how far along, and where to practise. `short` is the lobby's. */
 function goalDetail(goal: Goal, st: PathStatus, level: Level, short = false): HTMLElement {
   const s = goalState(st, goal.id);
@@ -184,7 +220,8 @@ function goalDetail(goal: Goal, st: PathStatus, level: Level, short = false): HT
     h('p', { class: 'path-why' }, goal.why),
     s.ready && !s.carried && !s.met ? passNote(goal) : null,
     goal.need.length ? h('div', { class: 'path-frames' }, h('small', { class: 'path-label' }, 'Say from memory'), goal.need.map((n) => needChips(n, level, tallies ? st : undefined))) : null,
-    goal.also.length ? h('div', { class: 'path-frames also' }, h('small', { class: 'path-label' }, 'These count too'), goal.also.map((id) => frameChip(id, level))) : null,
+    alsoChips(goal, level, st, tallies),
+    listenChips(goal),
     goal.kind === 'set'
       ? h(
           'ul',
@@ -371,13 +408,34 @@ const CLEARED: Record<LineId, { jlpt: string | null; move: string | null; stay: 
     end: null,
   },
   limited: {
-    jlpt: 'That’s the speaking side of some everyday N3, not a JLPT result: the test also checks reading, listening and far more words and kanji. A JLPT mock test will show where you stand there.',
+    jlpt: 'That’s spoken N3 grammar, by our list: not a JLPT result. The test also times reading and listening, and asks for far more words and kanji. A JLPT mock test will show where you stand there.',
     move: null,
     stay: null,
     end: '「しゅうてん、 しゅうてんです。 ごじょうしゃ ありがとう ございました。」',
     endEn: 'Last stop. Thanks for riding.',
   },
 };
+
+/**
+ * The Limited Express's claim (Plan B, docs/n3-coverage.md): its 12 goals, said from memory over days; then plain
+ * counts, never bars. Only band-N3 frames met and not fading count; the N4 review ones don't. The points the line
+ * passes by are named as a number, not drawn as an empty bar.
+ */
+function limitedClaim(st: PathStatus): HTMLElement {
+  const said = st.frames.filter((f) => f.met && f.recheck !== 'fading' && N3_BAND_FRAMES.has(f.id)).length;
+  const goals = GOALS.filter((x) => x.line === 'limited').length;
+  return h(
+    'div',
+    { class: 'path-claim' },
+    h('p', {}, h('strong', {}, `All ${goals} N3 speaking goals, said from memory, spaced over days.`)),
+    h(
+      'ul',
+      { class: 'path-counts' },
+      h('li', {}, `You’ve said ${said} of the ${N3_COUNTS.said} spoken N3 patterns the game can hear.`),
+      h('li', {}, h('span', { lang: 'ja' }, '通過'), ` Passed by: ${N3_COUNTS.passed} mostly written points and about ${N3_KANJI_PASSED} kanji (see the end of the map).`),
+    ),
+  );
+}
 
 /**
  * "Local Line cleared": the celebration first, then what was said, a JLPT note for the N5, N4 and N3 lines,
@@ -407,7 +465,7 @@ export function clearedCard(level: Level, moveUp: (to: Level) => void, redraw: (
     line.up && !canMove ? h('p', { class: 'path-note' }, 'The Limited Express platform is still being built. Its first station is already on your map.') : null,
     c.end ? h('p', { class: 'path-chochin', lang: 'ja' }, c.end) : null,
     c.endEn ? h('p', { class: 'path-note' }, c.endEn) : null,
-    h('p', {}, `You’ve said this line’s sentence patterns out loud, from memory, on more than one day. So far: ${st.stats.frames} frames, ${st.stats.words} phrases from memory, ${st.stats.kanji} kanji${st.stats.signKanji ? ` (${st.stats.signKanji} of them ${SIGN_KANJI_LABEL})` : ''}.`),
+    line.id === 'limited' ? limitedClaim(st) : h('p', {}, `You’ve said this line’s sentence patterns out loud, from memory, on more than one day. So far: ${st.stats.frames} frames, ${st.stats.words} phrases from memory, ${st.stats.kanji} kanji${st.stats.signKanji ? ` (${st.stats.signKanji} of them ${SIGN_KANJI_LABEL})` : ''}.`),
     c.jlpt ? h('p', { class: 'path-note' }, c.jlpt) : null,
     canMove
       ? h(
@@ -527,6 +585,52 @@ function stationSheet(): { sheet: HTMLDialogElement; show: (goal: Goal, st: Path
   return { sheet, show };
 }
 
+/**
+ * Past the last stop: a still sign below the track, not a 13th station (UX and art seats). 通過 is what a
+ * timetable prints for a station the train runs through. It opens the passing-through sheet.
+ */
+function passSign(open: (btn: HTMLElement) => void): HTMLElement {
+  return h(
+    'button',
+    { type: 'button', class: 'path-tsuuka', 'aria-haspopup': 'dialog', onclick: (e: Event) => open(e.currentTarget as HTMLElement) },
+    h('span', { class: 'path-tsuuka-mark', lang: 'ja', 'aria-hidden': 'true' }, h('ruby', {}, '通過', h('rt', {}, 'つうか'))),
+    h('span', { class: 'path-stop-text' }, h('strong', {}, 'Passing through'), h('small', {}, `${N3_COUNTS.passed} N3 points this train doesn’t stop for`)),
+    h('span', { class: 'path-pill', 'aria-hidden': 'true' }, 'What’s here?'),
+  );
+}
+
+const passChip = (p: N3Point): HTMLElement => h('span', { class: 'frame-chip pass' }, h('span', { class: 'frame-ja', lang: 'ja' }, p.ja), h('small', {}, p.en));
+
+/** The passing-through sheet: Chōchin-san's announcement, then what the line passes by and why, in two groups. */
+function passingSheet(): { sheet: HTMLDialogElement; show: (from: HTMLElement) => void } {
+  const { unchecked, written } = passedPoints();
+  let back: HTMLElement | null = null;
+  const sheet = h(
+    'dialog',
+    { class: 'gp-sheet path-sheet', 'aria-labelledby': 'path-pass-title', 'data-line': 'limited' },
+    h('div', { class: 'gp-head' }, h('h2', { id: 'path-pass-title' }, h('span', { lang: 'ja' }, '通過'), ' Passing through'), h('button', { type: 'button', class: 'gp-close', 'aria-label': 'Close', onclick: () => sheet.close() }, '✕')),
+    h(
+      'div',
+      { class: 'path-sheet-body' },
+      h('p', { class: 'path-chochin', lang: 'ja' }, '「この とっきゅうは、ここには とまりません。」'),
+      h('p', { class: 'path-note' }, 'This limited express doesn’t stop here.'),
+      h('p', { class: 'path-why' }, 'Kotoba Party is for the N3 you say. These points are real N3 too, but a textbook or a graded reader covers them better.'),
+      h('div', { class: 'path-frames' }, h('small', { class: 'path-label' }, `Spoken, but the game can’t tell them apart yet (${unchecked.length})`), unchecked.map(passChip)),
+      h('div', { class: 'path-frames' }, h('small', { class: 'path-label' }, `Mostly written (${written.length})`), written.map(passChip)),
+      h('p', { class: 'path-note' }, `Also passed by: about ${N3_KANJI_PASSED} more N3 kanji (you read 30 ${SIGN_KANJI_LABEL} on 3.12), the N3 word list, and the test’s timed reading and listening.`),
+    ),
+  ) as HTMLDialogElement;
+  sheet.addEventListener('click', (e) => e.target === sheet && sheet.close());
+  sheet.addEventListener('close', () => back?.isConnected && back.focus());
+  return {
+    sheet,
+    show: (from) => {
+      back = from;
+      if (!sheet.open) sheet.showModal();
+    },
+  };
+}
+
 /** The switch, the line picker and one line's track. */
 export function pathTab(view: AccountView, level: Level, toggle: (on: boolean) => void, busy: boolean, redraw: () => void): HTMLElement {
   const on = view.path;
@@ -534,6 +638,7 @@ export function pathTab(view: AccountView, level: Level, toggle: (on: boolean) =
   const s = suggest(st, level, null);
   const line = LINE_BY_ID[shownLine ?? s?.line.id ?? currentLine(st, level).id];
   const { sheet, show } = stationSheet();
+  const { sheet: passSheet, show: showPass } = passingSheet();
   const pick = (id: LineId) => {
     shownLine = id;
     redraw();
@@ -576,8 +681,10 @@ export function pathTab(view: AccountView, level: Level, toggle: (on: boolean) =
           : null,
         lineTrack(line, st, s?.goal ?? null, (goal, btn) => show(goal, st, level, btn)),
         next ? h('button', { type: 'button', class: 'path-transfer', 'data-line': next.id, onclick: () => pick(next.id) }, h('span', { lang: 'ja' }, 'のりかえ'), ` Change to the ${next.name} →`) : null,
+        line.id === 'limited' ? passSign((btn) => showPass(btn)) : null,
       ),
     ),
     sheet,
+    passSheet,
   );
 }

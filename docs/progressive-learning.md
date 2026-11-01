@@ -52,6 +52,12 @@ learning-science reviews). Four lines of can-do goals, worked back from the N5, 
   stations is still coming soon. An N3 player gets the N4 hard roles, decks and hints in every game until a
   game has its own N3 script (`n4Up` in shared/src/level.ts), and N3 joins the level picker once the N3 decks
   are in (`N3_IN_PICKER` in shared/src/protocol.ts).
+  **Spoken N3** (docs/n3-coverage.md, Nov 1): the line stops only at the N3 a player says. Its required frames
+  are frozen; new frames are optional and fold under "Also counts" past four. Listening points show under
+  "You'll hear these" and never count. A 通過 (passing through) sign below the last station opens a sheet of
+  what the line passes by: 15 N3 points (4 the game can't tell apart yet, 11 mostly written) and about 340 kanji.
+  The cleared screen says "All 12 N3 speaking goals, said from memory, spaced over days.", then how many of the
+  69 spoken N3 patterns the game can hear you've said, and what it passed by; no bars, no JLPT claim.
 
 Yōkai Court (docs/modes/yokai-court.md, step 6) plays on 4.2, 4.6 and 4.14: its N4 lawyers say ＿なければ
 なりません and ＿なくても いいです (with a new verb each case), quote the witness with ＿と いって いました, and
