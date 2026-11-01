@@ -279,7 +279,7 @@ function resolve(p: ScenePhrase, packs: readonly TopicPack[]): Phrase {
 }
 
 /** Level bands an actor's phrases are drawn from, best first (N4 uses N5 where N4 runs out). */
-const BANDS: Record<Level, Level[]> = { kana: ['kana'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'] };
+const BANDS: Record<Level, Level[]> = { kana: ['kana'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'], n3: ['n3', 'n4', 'n5', 'kana'] };
 
 function pay(s: PhraseBingoState, ctx: ModeContext, playerId: string, points: number): void {
   const p = Math.round(points);

@@ -17,7 +17,7 @@ import type { Level, ModeId } from './protocol.js';
 
 // ---- lines ----
 
-export type LineId = 'kana' | 'local' | 'express';
+export type LineId = 'kana' | 'local' | 'express' | 'limited';
 
 export interface Line {
   id: LineId;
@@ -32,7 +32,8 @@ export interface Line {
 export const LINES: readonly Line[] = [
   { id: 'kana', name: 'Kana Line', ja: 'かな線', level: 'kana', up: 'n5' },
   { id: 'local', name: 'Local Line', ja: '各駅停車', level: 'n5', up: 'n4' },
-  { id: 'express', name: 'Express Line', ja: '急行', level: 'n4', up: null },
+  { id: 'express', name: 'Express Line', ja: '急行', level: 'n4', up: 'n3' },
+  { id: 'limited', name: 'Limited Express Line', ja: '特急', level: 'n3', up: null },
 ];
 export const LINE_BY_ID: Readonly<Record<LineId, Line>> = Object.fromEntries(LINES.map((l) => [l.id, l])) as Record<LineId, Line>;
 export const lineFor = (level: Level): Line => LINES.find((l) => l.level === level)!;
@@ -119,6 +120,46 @@ export const FRAME_TEXT: Readonly<Record<string, { ja: string; en: string; romaj
   'tari-tari': { ja: '＿たり ＿たり します', en: 'do things like ___ and ___', romaji: '___ tari ___ tari shimasu' },
   'mitai-you': { ja: '＿みたいです ／ ＿ようです', en: "It seems ___ / It's like ___", romaji: '___ mitai desu / ___ yō desu' },
   'n-desu': { ja: '＿んです', en: "It's that ___ (explaining)", romaji: '___ n desu' },
+  // N3, the Limited Express Line: coming in frames.ts. Draft, for a fluent check.
+  'mitai-casual': { ja: '＿みたい（だよ）', en: 'Seems ___ (casual)', romaji: '___ mitai (da yo)' },
+  'suffering-passive': { ja: '＿に ＿(ら)れて', en: '___ did it to me (and I suffered)', romaji: '___ ni ___ (ra)rete' },
+  saserareru: { ja: '＿させられました', en: 'I was made to ___', romaji: '___ saseraremashita' },
+  'tokoro-deshita': { ja: '＿ところでした', en: 'I nearly ___', romaji: '___ tokoro deshita' },
+  'sasete-morau': { ja: '＿させて もらいました', en: 'I was allowed to ___', romaji: '___ sasete moraimashita' },
+  'sei-de': { ja: '＿せいで', en: 'because of ___ (blame)', romaji: '___ sei de' },
+  'okage-de': { ja: '＿おかげで', en: 'thanks to ___', romaji: '___ okage de' },
+  'wake-desu': { ja: '＿わけです', en: "That's why ___", romaji: '___ wake desu' },
+  'wari-ni': { ja: '＿わりに', en: 'for ___, considering ___', romaji: '___ wari ni' },
+  'kuse-ni': { ja: '＿くせに', en: 'even though ___ (and I resent it)', romaji: '___ kuse ni' },
+  'ni-kurabete': { ja: '＿に くらべて', en: 'compared with ___', romaji: '___ ni kurabete' },
+  'to-shitara': { ja: '＿としたら', en: 'supposing ___', romaji: '___ to shitara' },
+  'ba-hodo': { ja: '＿ば ＿ほど', en: 'the more ___, the more ___', romaji: '___ ba ___ hodo' },
+  'you-to-suru': { ja: '＿(よ)うと しました', en: 'I tried to ___', romaji: '___ (y)ō to shimashita' },
+  'zu-ni': { ja: '＿ずに', en: 'without ___ing', romaji: '___ zu ni' },
+  'koto-ni-shiteiru': { ja: '＿ことに して います', en: 'I make a point of ___', romaji: '___ koto ni shite imasu' },
+  'ta-tsumori': { ja: '＿た つもりでした', en: 'I thought I had ___', romaji: '___ ta tsumori deshita' },
+  'wake-dewa-nai': { ja: '＿わけでは ありません', en: "It's not that ___", romaji: '___ wake de wa arimasen' },
+  beki: { ja: '＿べきです', en: 'You ought to ___', romaji: '___ beki desu' },
+  'to-iu-koto': { ja: '＿と いう ことです', en: 'That means ___ / I hear ___', romaji: '___ to iu koto desu' },
+  'to-shite': { ja: '＿として', en: 'as ___ (in the role of)', romaji: '___ to shite' },
+  'toori-ni': { ja: '＿とおりに', en: 'just as ___', romaji: '___ tōri ni' },
+  'sasete-itadaku': { ja: '＿させて いただきます', en: "I'll ___ (humbly)", romaji: '___ sasete itadakimasu' },
+  'de-gozaimasu': { ja: '＿で ございます', en: 'It is ___ (formal)', romaji: '___ de gozaimasu' },
+  'te-orimasu': { ja: '＿て おります', en: "We're ___ing (humble)", romaji: '___ te orimasu' },
+  'go-kudasai': { ja: 'ご＿ください', en: 'Please ___ (formal)', romaji: 'go ___ kudasai' },
+  kashikomarimashita: { ja: 'かしこまりました', en: 'Certainly', romaji: 'kashikomarimashita' },
+  'tabi-ni': { ja: '＿たびに', en: 'every time ___', romaji: '___ tabi ni' },
+  'saichuu-ni': { ja: '＿さいちゅうに', en: 'in the middle of ___', romaji: '___ saichū ni' },
+  'te-kita': { ja: '＿て きました', en: "___ has been growing / I've come to ___", romaji: '___ te kimashita' },
+  'you-na-ki': { ja: '＿ような きが します', en: 'I have a feeling ___', romaji: '___ yō na ki ga shimasu' },
+  'ni-chigainai': { ja: '＿に ちがいありません', en: '___ must be it', romaji: '___ ni chigai arimasen' },
+  'ni-taishite': { ja: '＿に たいして', en: 'towards ___ / against ___', romaji: '___ ni taishite' },
+  'shika-nai': { ja: '＿しか ありません', en: 'There is only ___', romaji: '___ shika arimasen' },
+  sorenanoni: { ja: 'それなのに', en: 'and yet', romaji: 'sore na noni' },
+  tsumari: { ja: 'つまり', en: 'in other words', romaji: 'tsumari' },
+  ppoi: { ja: '＿っぽい', en: '___-ish', romaji: '___ ppoi' },
+  nante: { ja: '＿なんて', en: 'something like ___ (!)', romaji: '___ nante' },
+  toka: { ja: '＿とか', en: '___ and stuff', romaji: '___ toka' },
 };
 
 /** A frame's text for the phone: frames.ts's own when it has the id, else ours. */
@@ -221,6 +262,24 @@ export const GOALS: readonly Goal[] = [
   g('4.8', 'express', 'Talk casually with friends', 'Plain form with よ, ね and の: how friends talk.', ['plain'], ['n-da', 'teru'], ['omiai', 'dub-club']),
   g('4.9', 'express', 'Speak politely to strangers', 'The extra-polite asks for shops, stations and offices.', ['te-itadakemasen', ['o-kudasai', 'o-suru']], ['n-desu'], ['omiai', 'happyokai', 'bento-haus', 'last-train']),
   g('4.10', 'express', 'Read N4 kanji', 'The next kanji up: verbs, places and time words.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
+  g('4.11', 'express', 'Reasons and order', 'Give reasons politely, say what was too much, and do two things at once.', ['node', 'sugiru'], ['nagara', 'shi'], ['late-again', 'happyokai', 'narabete']),
+  g('4.12', 'express', 'Change and decisions', 'Say what changed, and what you or others decided.', ['you-ni-naru', 'koto-ni-suru'], ['koto-ni-naru'], ['happyokai', 'ghost-hotline', 'oogiri']),
+  g('4.13', 'express', 'Passive, causative, easy and hard', 'Say what was done to you, and how easy or hard something is to do.', ['passive'], ['yasui-nikui'], ['late-again', 'onsen-murder']),
+  g('4.14', 'express', 'Quote, purpose, embedded questions', 'Pass on what someone said, say what it’s for, and fold a question into a sentence.', ['to-itte-ita', ['tame-ni', 'you-ni']], ['ka-dou-ka', 'nani-ka', 'tte-quote'], ['word-gauntlet', 'onsen-murder']),
+  // The Limited Express Line (特急, N3): the plan's 12 goals. Their frames come in frames.ts as their matchers land;
+  // until then a goal shows as coming soon (missingFrames) and doesn't count toward clearing the line.
+  g('3.1', 'limited', 'Rumours and reported speech', 'Pass on what you heard, and say where you heard it.', ['rashii', 'ni-yoru'], ['n-datte', 'mitai-casual'], ['word-gauntlet', 'onsen-murder']),
+  g('3.2', 'limited', 'What happened to me', 'Say what was done to you, what you were made to do, and what nearly happened.', ['suffering-passive', 'saserareru'], ['tokoro-deshita', 'sasete-morau'], ['late-again', 'dub-club']),
+  g('3.3', 'limited', 'Reasons, results and blame', 'Blame it, thank it, and say why.', ['sei-de', 'okage-de'], ['wake-desu', 'tame-reason'], ['late-again', 'ghost-hotline']),
+  g('3.4', 'limited', 'Contrast and concession', 'Say it turned out otherwise, or better than expected.', ['noni', 'wari-ni'], ['kuse-ni', 'ni-kurabete'], ['late-again', 'oogiri']),
+  g('3.5', 'limited', 'What-ifs and regrets', 'Imagine what if, and say what you should have done.', ['to-shitara'], ['ba-hodo'], ['ghost-hotline', 'oogiri', 'happyokai']),
+  g('3.6', 'limited', 'Intentions and attempts', 'Say what you tried to do, what you did without, and what you make a habit of.', ['you-to-suru', 'zu-ni'], ['koto-ni-shiteiru', 'ta-tsumori'], ['ghost-hotline', 'happyokai', 'hajimemashite']),
+  g('3.7', 'limited', 'Explaining and clarifying', 'Say what you don’t mean, what should be done, and what it comes down to.', ['wake-dewa-nai', 'beki'], ['to-iu-koto', 'to-shite', 'toori-ni'], ['ghost-hotline', 'tourist']),
+  g('3.8', 'limited', 'Service Japanese', 'How staff speak to guests: humble, formal, and at your service.', ['sasete-itadaku', ['de-gozaimasu', 'te-orimasu']], ['go-kudasai', 'kashikomarimashita'], ['bento-haus', 'omiai', 'last-train']),
+  g('3.9', 'limited', 'Time and change', 'Do it while you can, say what happens every time, and how things have changed.', ['uchi-ni', 'tabi-ni'], ['saichuu-ni', 'te-kita'], ['happyokai', 'late-again', 'word-gauntlet']),
+  g('3.10', 'limited', 'Opinions and debate', 'Say what you feel, what must be true, and argue it.', ['you-na-ki', 'ni-chigainai'], ['ni-taishite', 'shika-nai', 'sorenanoni', 'tsumari'], ['narabete', 'ghost-hotline']),
+  g('3.11', 'limited', 'Casual nuance', 'How friends really talk: ＿っぽい, ＿なんて, ＿とか.', ['ppoi', 'nante'], ['toka'], ['dub-club', 'word-gauntlet', 'phrase-bingo']),
+  g('3.12', 'limited', 'Read 30 sign kanji', 'The kanji on everyday signs: 受付, 予約, 非常口, 禁煙.', [], [], ['shodo', 'last-train'], { kind: 'kanji', gap: 'The N3 sign kanji are coming to Shodō and Read the Signs.' }),
 ];
 export const GOAL_BY_ID: Readonly<Record<string, Goal>> = Object.fromEntries(GOALS.map((x) => [x.id, x]));
 
@@ -236,7 +295,10 @@ const SCRIPT_IDS = {
 const KANJI = {
   n5: new Set(writeKanji.filter((k) => k.level === 'n5').map((k) => k.char)),
   n4: new Set(writeKanji.filter((k) => k.level === 'n4').map((k) => k.char)),
+  n3: new Set(writeKanji.filter((k) => (k.level as string) === 'n3').map((k) => k.char)),
 };
+/** The kanji level a kanji goal counts. */
+const KANJI_LEVEL: Readonly<Record<string, 'n5' | 'n4' | 'n3'>> = { '5.10': 'n5', '4.10': 'n4', '3.12': 'n3' };
 /** How many of each a goal asks for. */
 export const KANA_TARGET = { hiragana: Math.ceil(SCRIPT_IDS.hiragana.size * KANA_SHARE), katakana: Math.ceil(SCRIPT_IDS.katakana.size * KANA_SHARE) };
 
@@ -279,7 +341,7 @@ const SIGN_KANJI: Map<string, string[]> = new Map(
  * Kanji read from memory in a game: Shodō's kanji (kj-<char>) and the target sign of a Read the Signs
  * item. Other characters in the model answer, and phone-review days, don't count.
  */
-function kanjiDays(p: Progress, level: 'n5' | 'n4'): Map<string, Set<string>> {
+function kanjiDays(p: Progress, level: 'n5' | 'n4' | 'n3'): Map<string, Set<string>> {
   const m = new Map<string, Set<string>>();
   for (const c of Object.values(p.phrases ?? {})) {
     if (!c.memory?.length) continue;
@@ -421,7 +483,7 @@ export function pathStatus(p: Progress, now: number, tzOffsetMin = 0): PathStatu
         goal.kind === 'kana'
           ? itemCount(kanaDays(p, goal.id === 'K1' ? 'hiragana' : 'katakana'), goal.id === 'K1' ? KANA_TARGET.hiragana : KANA_TARGET.katakana)
           : goal.kind === 'kanji'
-            ? itemCount(kanjiDays(p, goal.id === '5.10' ? 'n5' : 'n4'), KANJI_GOAL)
+            ? itemCount(kanjiDays(p, KANJI_LEVEL[goal.id] ?? 'n4'), KANJI_GOAL)
             : itemCount(setDays(p), SET_GOAL);
       count = { have: Math.min(c.have, c.need), need: c.need };
       met = c.have >= c.need;
@@ -442,7 +504,7 @@ export function pathStatus(p: Progress, now: number, tzOffsetMin = 0): PathStatu
     return { id: l.id, cleared: ready.length > 0 && met === ready.length, met, of: ready.length, soon: visible.length - ready.length };
   });
   const words = Object.values(p.phrases ?? {}).filter((c) => c.recall === 'memory').length;
-  const kanji = new Set([...kanjiDays(p, 'n5').keys(), ...kanjiDays(p, 'n4').keys()]).size;
+  const kanji = new Set([...kanjiDays(p, 'n5').keys(), ...kanjiDays(p, 'n4').keys(), ...kanjiDays(p, 'n3').keys()]).size;
   return { goals, frames, lines, stats: { frames: Object.keys(marks).length, words, kanji } };
 }
 

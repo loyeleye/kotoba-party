@@ -16,6 +16,7 @@
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
+import { n4Up } from '../../level.js';
 
 const jp = (text: string, en: string, kana = text): JpText => ({ text, kana, en });
 
@@ -677,7 +678,7 @@ export const scenesFor = (audience: Audience): LateScene[] => SCENES.filter((s) 
  * below the level. In the finale (a year late), the N4 model opens たいへん もうしわけ ありません instead.
  */
 export function lineFor(cause: Cause, level: Level, opts: { finale?: boolean } = {}): CauseLine {
-  const line = level === 'n4' && cause.lines.n4 ? cause.lines.n4 : (cause.lines.n5 ?? cause.lines.n4!);
+  const line = n4Up(level) && cause.lines.n4 ? cause.lines.n4 : (cause.lines.n5 ?? cause.lines.n4!);
   if (!opts.finale || !line.model.text.startsWith(N4_SORRY.text)) return line;
   const m = line.model;
   return {

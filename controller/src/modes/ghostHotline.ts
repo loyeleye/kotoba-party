@@ -1145,8 +1145,8 @@ function noteCard(me: HotlineMe): HTMLElement | null {
 }
 
 /** Where the booth's chunk sits on this player's map: their own line, one they've passed, or one coming up. */
-function boothTag(mine: string, chunk: 'n5' | 'n4', tag: string): string {
-  const rank = (l: string) => (l === 'n4' ? 2 : l === 'n5' ? 1 : 0);
+function boothTag(mine: string, chunk: 'n5' | 'n4' | 'n3', tag: string): string {
+  const rank = (l: string) => (l === 'n3' ? 3 : l === 'n4' ? 2 : l === 'n5' ? 1 : 0);
   if (rank(mine) === rank(chunk)) return `You’re on this line: ${tag}`;
   return rank(mine) > rank(chunk) ? `Already on your map: ${tag}` : `Coming up on your map: ${tag}`;
 }

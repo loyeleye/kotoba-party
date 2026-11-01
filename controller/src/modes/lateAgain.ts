@@ -29,6 +29,7 @@ import { isQuiet } from '../components/speak.js';
 import { jpView } from '../components/jp.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
+import { n4Up } from '../../../shared/src/level.js';
 
 type Ctx = PhoneContext<LateView>;
 type Send = (move: Record<string, unknown>) => void;
@@ -617,7 +618,7 @@ function noteCard(me: LateMe): HTMLElement | null {
 function scoreScreen(ctx: Ctx, me: LateMe): HTMLElement {
   const { game } = ctx;
   const b = game.booth;
-  const tag = b?.tag ? h('p', { class: 'la-tag' }, '🚃 ', me.level === 'n4' ? `You’re on this line: ${b.tag}` : `Coming up: ${b.tag}`) : null;
+  const tag = b?.tag ? h('p', { class: 'la-tag' }, '🚃 ', n4Up(me.level) ? `You’re on this line: ${b.tag}` : `Coming up: ${b.tag}`) : null;
   const room = me.readRoom === null ? null : h('p', { class: `la-readroom ${me.readRoom ? 'yes' : 'no'}` }, me.readRoom ? 'Read the room ✓' : 'Read the room ✗');
   const lines = me.breakdown.filter((x) => x.points !== 0);
   const breakdown = lines.length

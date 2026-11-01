@@ -66,7 +66,7 @@ export const FALLBACK_WORDS: readonly PackWord[] = [
 /** Tags for nouns that don't draw: directions, times, and family words that need context. */
 const NOT_DRAWABLE = new Set(['directions', 'position', 'time', 'own-family', 'others-family']);
 
-const RANK: Record<Level, number> = { kana: 0, n5: 1, n4: 2 };
+const RANK: Record<Level, number> = { kana: 0, n5: 1, n4: 2, n3: 3 };
 
 /** A pack word's English as a short title: first sense, no notes in brackets. */
 export function shortEn(en: string): string {

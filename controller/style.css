@@ -661,6 +661,7 @@ input::placeholder { color: #a99ccf; }
 [data-line='kana'] { --line-c: #6ecef7; }
 [data-line='local'] { --line-c: var(--good); }
 [data-line='express'] { --line-c: #ff8a3d; }
+[data-line='limited'] { --line-c: #c39bff; }
 .path-detail { display: grid; gap: 6px; }
 .path-detail p, .path-strip-more p, .path-tonight p, .path-cleared p { margin: 0; }
 .path-why, .path-note, .path-goal, .path-games { color: var(--muted); font-size: 14px; line-height: 1.4; }

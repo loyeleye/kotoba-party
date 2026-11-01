@@ -33,7 +33,20 @@ learning-science reviews). Three lines of can-do goals, worked back from the N5 
   and when (のに counts too), 4.6 guess/hearsay/opinion (＿みたいです／＿ようです counts too), 4.7 plans and advice
   (shown as 工事中, under construction, and not counted: Ghost Advice Hotline gives advice with ＿た ほうが いいです
   and ＿たら どうですか, but no game asks for plans yet), 4.8 casual speech, 4.9 polite requests
-  (polite ＿んです counts too), 4.10 N4 kanji.
+  (polite ＿んです counts too), 4.10 N4 kanji, 4.11 reasons and order (＿ので, ＿すぎる), 4.12 change and
+  decisions (＿ように なりました, ＿ことに しました), 4.13 the passive (＿やすい／＿にくい count too) and 4.14 quoting,
+  purpose and embedded questions (＿と いって いました, ＿ために／＿ように). 4.11 to 4.14 joined at step 6 of the N4/N3
+  plan: their frames have been in frames.ts since step 1, and Late Again! (4.11, 4.13), Happyōkai (4.11, 4.12),
+  Murder at the Onsen's deputy (4.13, 4.14) and the Word Gauntlet rumour round (4.14) already ask for them.
+- **Limited Express Line** (特急, N3): 3.1 rumours and reported speech, 3.2 what happened to me, 3.3 reasons and
+  blame, 3.4 contrast, 3.5 what-ifs, 3.6 intentions and attempts, 3.7 explaining, 3.8 service Japanese, 3.9 time
+  and change, 3.10 opinions and debate, 3.11 casual nuance, 3.12 30 sign kanji. It's the last line. Most of its
+  frames are still coming to frames.ts, so its goals show as coming soon and count once their matchers land;
+  3.12 is hidden until the N3 sign kanji are in Shodō and Read the Signs. The N4 frames the plan marks as
+  boundary points stay on their N4 goals only (Ladi, Nov 1: optional, never required), so 3.5 asks for ＿としたら
+  and 4.13 for the passive alone. An N3 player gets the N4 hard roles, decks and hints in every game until a
+  game has its own N3 script (`n4Up` in shared/src/level.ts), and N3 joins the level picker once the N3 decks
+  are in (`N3_IN_PICKER` in shared/src/protocol.ts).
 
 The N4 frames the plan's goals first left out (みたい／ようです, polite ＿んです, the causative, ＿て ほしい,
 ＿ば よかった, ＿たり ＿たり; Ladi, Nov 1) are optional frames, never required ones. The causative comes in two

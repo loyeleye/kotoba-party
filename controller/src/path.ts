@@ -91,6 +91,7 @@ const LINE_RUBY: Record<LineId, [string, string][]> = {
   kana: [['かな', ''], ['線', 'せん']],
   local: [['各駅停車', 'かくえきていしゃ']],
   express: [['急行', 'きゅうこう']],
+  limited: [['特急', 'とっきゅう']],
 };
 function lineJa(id: LineId): HTMLElement {
   return h('small', { lang: 'ja' }, LINE_RUBY[id].map(([t, r]) => (r ? h('ruby', {}, t, h('rt', {}, r)) : t)));
@@ -335,6 +336,12 @@ const CLEARED: Record<LineId, { jlpt: string | null; move: string | null; stay: 
   },
   express: {
     jlpt: 'That’s the speaking side of N4, not a JLPT result: the test also checks reading, listening and many more words. A JLPT mock test will show where you stand there.',
+    move: 'Change to the Limited Express Line',
+    stay: 'Stay on the Express Line',
+    end: null,
+  },
+  limited: {
+    jlpt: 'That’s the speaking side of some everyday N3, not a JLPT result: the test also checks reading, listening and far more words and kanji. A JLPT mock test will show where you stand there.',
     move: null,
     stay: null,
     end: 'しゅうてん。 Thanks for riding.',

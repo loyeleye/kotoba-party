@@ -9,7 +9,7 @@ import { MAX_NAME_LENGTH } from '../../shared/src/constants.js';
 import type { ModeInfo } from '../../shared/src/modes/mode.js';
 import { MODES, noFit, speakersIn, surprisePool } from '../../shared/src/modes/registry.js';
 import { playRoulette } from '../../shared/src/roulette.js';
-import { LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type ModeId, type PlayerView, type RoomView, type WaitAnswer } from '../../shared/src/protocol.js';
+import { PICKER_LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type ModeId, type PlayerView, type RoomView, type WaitAnswer } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService, speechReady } from './components/mic.js';
 import { getTalkMode, isTalking, onTalkEnd, setQuiet, setSpeakLevel, setTalkMode, speakBox } from './components/speak.js';
@@ -26,6 +26,7 @@ const LEVEL_HINTS: Record<Level, string> = {
   kana: 'New to Japanese: you’ll see rōmaji too',
   n5: 'I can read ひらがな and カタカナ',
   n4: 'I can read some 漢字 and make simple sentences',
+  n3: 'I can chat about everyday things and read everyday 漢字',
 };
 
 const ERRORS: Record<string, string> = {
@@ -438,7 +439,7 @@ function levelPicker(current: Level, onPick: (level: Level) => void): HTMLElemen
     h(
       'div',
       { class: 'seg', role: 'radiogroup', 'aria-label': 'Your level' },
-      LEVELS.map((l) =>
+      PICKER_LEVELS.map((l) =>
         h(
           'button',
           { type: 'button', role: 'radio', 'aria-checked': String(l === current), class: `seg-btn ${l === current ? 'on' : ''}`, title: LEVEL_HINTS[l], onclick: () => onPick(l) },

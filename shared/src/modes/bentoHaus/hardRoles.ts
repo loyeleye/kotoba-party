@@ -24,6 +24,7 @@ import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, ke
 import type { ModeContext, ModePlayer } from '../mode.js';
 import type { Round, Visit } from './bentoHaus.js';
 import { countWord, customerOf, foodOf, KANJI_SPELLINGS, type JpLine } from './menu.js';
+import { n4Up } from '../../level.js';
 
 // ---- the scripts ----
 
@@ -468,7 +469,7 @@ export function rolesFor(
   offers: readonly RoleOffer[] = [],
   roomSize = players.length,
 ): { playerId: string; role: HardRole }[] {
-  const n4 = players.filter((p) => p.level === 'n4').map((p) => p.id);
+  const n4 = players.filter((p) => n4Up(p.level)).map((p) => p.id);
   if (!n4.length) return [];
   const seat = nextOfferee(n4, seatLog(offers), round, roomSize);
   return n4.map((id) => ({ playerId: id, role: id === seat ? 'manager' : 'omotenashi' }));
@@ -537,7 +538,7 @@ export function answerOffer(
 export function passSeat(h: HardState, hr: HardRound, round: number, players: readonly Pick<ModePlayer, 'id' | 'level'>[], roomSize = players.length): RoleOffer | null {
   if (hr.manager) return null;
   const hadSeat = (id: string) => h.offers.some((o) => o.round === round && o.playerId === id && o.role === 'manager');
-  const free = players.filter((p) => p.level === 'n4' && !hadSeat(p.id) && !hr.omotenashi.includes(p.id)).map((p) => p.id);
+  const free = players.filter((p) => n4Up(p.level) && !hadSeat(p.id) && !hr.omotenashi.includes(p.id)).map((p) => p.id);
   const next = nextOfferee(free, seatLog(h.offers), round, roomSize);
   if (!next) return null;
   h.offers = h.offers.filter((o) => !(o.round === round && o.playerId === next && o.answer === null));

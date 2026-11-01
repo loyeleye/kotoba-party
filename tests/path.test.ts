@@ -36,23 +36,25 @@ function meetDesu(p: Progress): void {
 }
 
 describe('the goals', () => {
-  it('are the tiers doc’s 24: 4 on the Kana Line, 10 on the Local Line, 10 on the Express Line', () => {
-    expect(GOALS).toHaveLength(24);
-    expect(LINES.map((l) => GOALS.filter((g) => g.line === l.id).length)).toEqual([4, 10, 10]);
-    expect(new Set(GOALS.map((g) => g.id)).size).toBe(24);
+  it('are the plan’s 40: 4 on the Kana Line, 10 on the Local Line, 14 on the Express Line, 12 on the Limited Express Line', () => {
+    expect(GOALS).toHaveLength(40);
+    expect(LINES.map((l) => GOALS.filter((g) => g.line === l.id).length)).toEqual([4, 10, 14, 12]);
+    expect(new Set(GOALS.map((g) => g.id)).size).toBe(40);
     for (const g of GOALS) for (const m of g.games) expect(MODES[m], `${g.id} ${m}`).toBeDefined();
   });
 
   it('give every frame they name a label and hand-written rōmaji', () => {
     for (const id of GOAL_FRAMES) {
       const t = frameText(id);
-      expect(t.romaji, id).not.toBe(id);
+      // An unknown id falls back to the id itself; a set phrase's rōmaji can match its id (tsumari).
+      expect(t.ja, id).not.toBe(id);
+      expect(t.romaji, id).not.toMatch(/[ぁ-んァ-ン一-鿿]/);
       expect(t.ja, id).toMatch(/[ぁ-んァ-ン＿]/);
     }
   });
 
   it('hide only the gap (4.7) and wait for frames.ts on the frames it doesn’t have yet', () => {
-    expect(GOALS.filter((g) => g.gap).map((g) => g.id)).toEqual(['4.7']);
+    expect(GOALS.filter((g) => g.gap).map((g) => g.id)).toEqual(['4.7', '3.12']);
     // Today's frames cover K4, 5.1, 5.4 (with ＿に ＿が あります standing in), 5.5, 5.6, 5.7, 5.9 and 4.2.
     for (const id of ['K4', '5.1', '5.4', '5.5', '5.6', '5.7', '5.9', '4.2']) expect(missingFrames(GOALS.find((g) => g.id === id)!), id).toEqual([]);
     for (const g of GOALS) for (const id of missingFrames(g)) expect(frameReady(id)).toBe(false);

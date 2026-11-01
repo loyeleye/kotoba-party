@@ -17,8 +17,9 @@
 // said with the た or て form (ふじさんに のぼった ことが あります). A tile's kana is the conjugated phrase,
 // so the TV, twins, the truth and every check use the form the line needs; `dict` is only the prompt.
 
-import type { JpText, ReviewStatus } from '../../../../content/src/types.js';
+import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
+import { n4Up } from '../../level.js';
 
 export interface Tile {
   id: string;
@@ -751,8 +752,8 @@ export function tileOf(id: string): Tile | undefined {
 }
 
 /** The cards a turn can draw for this guest: the room's audience, and N4 cards only for N4 guests. */
-export function cardsFor(audience: Audience, level: 'kana' | 'n5' | 'n4'): IntroCard[] {
-  return INTRO_CARDS.filter((c) => c.audiences.includes(audience) && (c.level === 'n5' || level === 'n4'));
+export function cardsFor(audience: Audience, level: Level): IntroCard[] {
+  return INTRO_CARDS.filter((c) => c.audiences.includes(audience) && (c.level === 'n5' || n4Up(level)));
 }
 
 /** Cheeky cards (and every card in a Kids room) take tiles only from the tanuki: no typed lies about a real person there. */
