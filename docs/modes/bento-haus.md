@@ -183,8 +183,8 @@ adds time but the stand-in experiments': it all runs inside the shift (or the ti
   - *Experiment `standInSetup`* (experiments.ts, for Ladi to confirm): 2.5 s in he first says
     「ふくてんちょうは… ポンです！　ドロン！」 ("The deputy manager is… Pon! Poof!", `bento_standin_setup`, bank
     only), and the line follows
-    2.5 s later (5 s in). The title card then runs until the line is said (`standInVoiceMs`, ~4.3 s): about 9.3 s,
-    1.3 s more than its 8 s.
+    once the setup line has been said (`standInSetupFor`, at least 2.5 s). The title card then runs until the line is
+    said (`standInVoiceMs`): the sim measures about 3 s more a game than without the setup line.
   - *Experiment `standInCurveball`* (for Ladi to confirm): both phones get a Gallery tile on the title card while he
     says it (bubbles on the TV), and once he has said it the once-a-game curveball is dealt on いただけますか to a
     player who hasn't reacted (+15, or +5 with `scaledCurveball` off; `CURVE_POOL` for the other options). The TV and the gist hold back the key word

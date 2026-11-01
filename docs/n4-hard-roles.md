@@ -103,9 +103,9 @@ Every game with a hard role uses them the same way:
     game (`*_standin_setup`; Last Train's is `train_stand_in_setup`), where the model line used to start; the model
     line follows once the setup line has been said: `standInSetupMs` of its kana (`standInVoiceMs`, so about 2.5–3.3 s
     for a setup line of at most 16 kana), never under `STAND_IN_SETUP_MS` (2.5 s), taken from the event's bank line
-    (`standInSetupFor`). Added time: about 1.3–1.8 s in Bento Haus and 2.5 s or a little more in the others. In
-    Narabete! it is inside the 90 s line-up, but with `standInCurveball` on the line-up waits for her line, so a room
-    that locks early waits 2.5 s more (for Ladi to confirm).
+    (`standInSetupFor`). Added time (sim, 20 seeds, 2-player room): about 3.1–3.3 s a game in Bento Haus, Onsen and Omiai. In
+    Narabete! none, since it is inside the line-up and the line-up never waits for her line (a tile still up moves
+    to the next phase). (for Ladi to confirm)
   - `standInCurveball`: every player in the room gets a Gallery tile while the host says the line, and once it has
     been said the once-a-game curveball is dealt on it (`openStandInGallery` with no key, then `dealStandIn`, i.e.
     `armCurveball` with the line's kana as heard), `curveballPoints(game)` if right (+5 with `scaledCurveball` off).
