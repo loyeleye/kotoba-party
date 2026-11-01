@@ -1531,7 +1531,7 @@ function passiveIn(s: Sentence): boolean {
   // kuromoji misreads kana passives both ways (ねられない as ねら + れ), so the tokens count only with kanji.
   if (s.toks && HAS_KANJI.test(s.t) && PASSIVE_TOK(s.toks)) return true;
   return [s.k, s.t].some((x) => {
-    const agent = x.search(/[^\s\u3000、。]に[\s\u3000]/);
+    const agent = x.search(/[^\s\u3000、。]に[\s\u3000「『]/);
     if (agent < 0) return false;
     for (const m of x.slice(agent).matchAll(/([^\s\u3000、。をがにはもで]*?[わかがさたなばまら])れ(る|た|ます|ました|て|ない|なかった|まし)/g)) {
       const w = m[1]!;

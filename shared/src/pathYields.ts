@@ -103,7 +103,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
       "nakereba": 0.05,
       "no": 0.11,
       "node": 0.22,
-      "passive": 0.31,
+      "passive": 0.45,
       "potential": 0.28,
       "sugiru": 0.7,
       "tara": 0.11,
