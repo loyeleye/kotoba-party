@@ -21,6 +21,7 @@ import {
   buildDeck,
   chapterDifficulty,
   checkSound,
+  romajiHint,
   checkWord,
   inOtherScript,
   inkPoolFor,
@@ -1107,7 +1108,7 @@ function distinct<T>(preferred: readonly T[], rest: readonly T[], n: number, key
 
 function kanaAttack(base: AttackBase, kind: AttackKind, k: Kana, pool: Kana[], deck: Deck, wave: number, ctx: ModeContext): Attack {
   const sameScript = (script: Kana['script']) => pool.filter((x) => x.script === script);
-  const romaji = wave === 1 && k.chapter === 1 ? { romaji: k.romaji } : {};
+  const romaji = wave === 1 && k.chapter === 1 ? { romaji: romajiHint(k) } : {};
   const hear = k.sound;
   const hearText = inOtherScript(k.sound, k.script);
 
@@ -1280,7 +1281,7 @@ function attack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ans: A
       if (!k) return moveError('bad-attack');
       if ('pick' in ans) return settle(s, playerId, p, a, ans.pick === a.answer, 'quiet', ctx, deck, { kana: k, wrongLabel: a.options.find((o) => o.id === ans.pick)?.label });
       if ('say' in ans) {
-        const check = checkSound(texts(ans.say), k, deck);
+        const check = checkSound(texts(ans.say), k, deck, { spoken: ans.say.via === 'speech' });
         return settle(s, playerId, p, a, check.ok, ans.say.via === 'speech' ? 'spoken' : 'quiet', ctx, deck, { kana: k, check, spoke: ans.say.via === 'speech', recalled: true });
       }
       return moveError('bad-answer');
@@ -1512,7 +1513,7 @@ function pieceAttack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, a
     how = MARK_OPTIONS[piece.char] ? 'tap' : 'quiet';
   } else if ('say' in ans) {
     if (MARK_OPTIONS[piece.char]) return moveError('bad-answer');
-    check = k ? checkSound(texts(ans.say), k, deck) : { ok: texts(ans.say).some((t) => sameSound(t, piece.sound)) };
+    check = k ? checkSound(texts(ans.say), k, deck, { spoken: ans.say.via === 'speech' }) : { ok: texts(ans.say).some((t) => sameSound(t, piece.sound)) };
     ok = check.ok;
     how = ans.say.via === 'speech' ? 'spoken' : 'quiet';
   } else return moveError('bad-answer');
@@ -1598,7 +1599,7 @@ function spellSay(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, k: K
   let check: SoundCheck | undefined;
   let spoken = false;
   if ('say' in ans) {
-    check = checkSound(texts(ans.say), k, deck);
+    check = checkSound(texts(ans.say), k, deck, { spoken: ans.say.via === 'speech' });
     spoken = ans.say.via === 'speech';
   } else if (!('pass' in ans)) return null;
   const ok = !!check?.ok;

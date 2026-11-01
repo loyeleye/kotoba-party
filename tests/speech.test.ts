@@ -2,7 +2,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import { joinRoom } from '../shared/src/client.js';
-import { downsample, wav } from '../controller/src/components/mic.js';
+import { downsample, peakLoudness, wav } from '../controller/src/components/mic.js';
 import { cleanTranscript, isClip, sttFromEnv, transcribe } from '../server/src/stt.js';
 import { startServer } from './helpers.js';
 
@@ -39,6 +39,13 @@ describe('the phone clip', () => {
     expect(v.getUint32(24, true)).toBe(16_000);
     expect(v.getUint16(22, true)).toBe(1);
     expect(b.length).toBe(44 + 32_000);
+  });
+
+  it('judges a clip by its loudest stretch, so a short vowel in a long hold still counts', () => {
+    const clip = new Float32Array(48_000 * 2);
+    for (let i = 0; i < 48_000 * 0.2; i++) clip[48_000 + i] = 0.03 * Math.sin(i / 10);
+    expect(peakLoudness(clip, 48_000)).toBeGreaterThan(0.015);
+    expect(peakLoudness(new Float32Array(48_000), 48_000)).toBe(0);
   });
 
   it('downsamples 48 kHz to a third of the samples', () => {
