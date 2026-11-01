@@ -551,13 +551,15 @@ export const QUESTIONS: Question[] = [
   { id: 'if-could', text: 'もし {topic}に なれたら、何[なに]が したいですか？', en: 'If you could become {topic_en}, what would you want to do?', level: 'n4', deck: 'if' },
 ];
 
-const LEVELS: Level[] = ['kana', 'n5', 'n4'];
+const LEVELS: Level[] = ['kana', 'n5', 'n4', 'n3'];
 
 /**
  * Three question cards for one asker, at the lower of their level and the presenter's (so both can manage
  * the exchange), fitted to the talk's slide word and the room.
  */
-export function questionsFor(level: Level, word: Slide | null, topic: JpText | null, audience: Audience, random: () => number, deck?: Deck, place?: PlaceTopic): JpText[] {
+export function questionsFor(asker: Level, word: Slide | null, topic: JpText | null, audience: Audience, random: () => number, deck?: Deck, place?: PlaceTopic): JpText[] {
+  // N3 has no cards of its own yet: an N3 asker gets the N4 ones (an unknown level found no cards at all).
+  const level: Level = asker === 'n3' ? 'n4' : asker;
   const w = word?.word ?? jp('それ', 'it');
   const t = topic ?? jp('それ', 'it');
   const pool = QUESTIONS.filter(

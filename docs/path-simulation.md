@@ -115,17 +115,69 @@ draw (Late Again!, Narabete, Murder at the Onsen), most of which give nothing fr
 yield, skip goals no game carries) is meant to undo this, and the line went from 5 of 9 goals no game carries
 to 8 of 13 (4.13 stamps in 9% of rooms).
 
+## Step 5b: the suggestion ranked by what games yield (300 rooms, same base settings)
+
+On the Express Line, `suggest` now ranks the open goals by **pace**: what tonight's games give each goal's
+scarcest required frame not met yet, from a measured table (`npm run sim:yields -- --games 32` writes
+shared/src/pathYields.ts: frames an N4, N5 or Kana seat says from memory per game, from 32 bot games per
+room, leaving out anything under 0.05). The scarcest frame decides because a goal stamps only when every
+required frame is met; summing let 4.11's plentiful ＿すぎます hide its rare ＿ので. Each frame takes its own best
+game (4.6's three frames come from three games), and the room is sent to the game for the scarcest one.
+Optional frames only break ties, and never make a goal suggestible on their own.
+
+- **Slow stops take turns.** A stop under 0.15 says a game comes only after every faster one, and the slow ones
+  rotate by day, so no slow stop holds a room. Frames that only a known bot gap says (Word Gauntlet's retold
+  rumour) count as slow: guessed at 1 a game, 4.6 outranked every measured goal and held every room.
+- **Kanji goals are scaled** to frame units: 30 kanji on 2 days each, against 3 says for a frame.
+- **A goal no game on it carries** (4.8 and 4.14 today) is never suggested, and the map shows "Not stopping
+  yet". It still counts toward clearing, and saying its frame anywhere, or in the phrase review, still moves it.
+- **A faded frame's goal comes first** only at a game that gives the faded frame.
+- **The Kana and Local Lines keep list order** (a new N5 player starts on 5.1 again). The Local yields say 7 of
+  its 10 goals have no game an N5 player says from memory in: most N5 lines are logged as read, with the frame
+  on screen. That needs its own simulation, and probably cues that fade from the full line to the English, before
+  the phone acts on it. The Limited Express keeps list order too: N3 frames earn no credit until N3 opens.
+- A test checks that every game giving a required Express frame (0.05 or more a game) is on that goal's list.
+  It put Phrase Bingo on 4.2 and Late Again! on 4.4 and 4.5.
+
+| Setting | Seven goals (4.1, 4.3, 4.4, 4.5, 4.9, 4.11, 4.13), median nights (p25 / p75) | Rooms that get all seven |
+|---|---|---|
+| Ignores the suggestion (follow 0) | – | 1% |
+| Base: follows it 60% of the time | **40 (31 / 52)** | 85% |
+| Follows it 90% of the time | **29 (22 / 36)** | 97% |
+| Base, plus one phone review sitting a week | 49 (34 / >60) | 57% |
+
+- **Following the suggestion is now the fastest way to meet the frame rule.** Before, it was slower than random.
+  The four goals that were already carried stamp by nights 2 (4.1, 4.9), 5 (4.4) and 7 (4.5) at the median,
+  against 8 to 21 nights when the room ignores it.
+- **Three more goals come within reach:** 4.3 in every room (median 19 nights), 4.13 in 99% (27) and 4.11 in 86%
+  (40). Ignoring the suggestion, they stamp in 18%, 36% and 8% of rooms. 4.2 now stamps in 16% (26% when
+  followed closely) through Phrase Bingo.
+- **A weekly review sitting** lifts 4.2 to 65% of rooms but slows the seven: missed re-checks fade frames, and a
+  faded goal comes first. Recall here is a flat 0.7 with no forgetting or learning, so this measures how the
+  rules respond, not how fast people learn, and it can't show any cost of blocked practice. The longest run of
+  one goal is about 10 nights in the median room; interleaving evidence for L2 grammar is modest, so variety
+  within a night is a should-fix, not a rule.
+- `tests/pathSim.test.ts` checks that following the suggestion stamps at least as many goals, no later, than
+  random picks over 12 short rooms (the old list-order suggestion fails it, 24 stamps against 42).
+  `tests/path.test.ts` checks that slow stops rotate, that every carried Express goal has a pace, and the list
+  rule above.
+
+Still not cleared in any room: 4.6 (bot gap), 4.8, 4.10, 4.12 and 4.14 need games or bots (fixes 3 to 8
+below). The next most useful game fixes, by the game design seat: more ＿ので excuses in Late Again! (2 of its
+16 N4 excuses), and a "what changed / what I decided" card in Happyōkai for 4.12.
+
 ## What would let the line clear
 
 Each of these is a change to a game or the path, so they're logged as open questions and come in their own PR
 (step 5b), in the order the panel gave. Re-run the simulation after each.
 
-1. **Fix the suggestion.** Rank goals by how much tonight's games can move them, using the per-game yields
+1. **Fix the suggestion** (done in step 5b, above). Rank goals by how much tonight's games can move them, using the per-game yields
    above (a table `sim:express --json` can regenerate and CI can check), and order each goal's games by yield.
    Keep a "this goal hasn't moved in recent nights" check only as a guard: on its own it made things worse
    (the UX seat measured 42 nights at follow 0.9). Add a test that following the suggestion isn't slower than
    ignoring it.
-2. **Show the stops no game carries yet** as their own state on the phone: left out of the count, never
+2. **Show the stops no game carries yet** (done in step 5b for the Express Line; they still count toward clearing
+   the line, so "cleared" keeps meaning every stop was met) as their own state on the phone: never
    suggested, with one line saying why.
 3. **Put Late Again! and Ghost Advice Hotline on the goals they carry** (Late Again! on 4.2, 4.3, 4.11, 4.13;
    the Hotline on 4.5 only for real conditionals such as ゆうれいが 来たら、にげた ほうが いいですよ).
@@ -153,4 +205,6 @@ npm run sim:express -- --rooms 500 --reviews 1 --goals 4.1,4.4,4.5,4.9
 ```
 
 It takes about 10 minutes for 500 rooms. `tests/pathSim.test.ts` checks that every Express game reaches its
-recap with bots, that a room run is repeatable, and that review sittings count toward a stamp.
+recap with bots, that a room run is repeatable, that review sittings count toward a stamp, and that following the
+suggestion is no slower than ignoring it. After a change to a game, run `npm run sim:yields` and commit the new
+shared/src/pathYields.ts.

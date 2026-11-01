@@ -34,7 +34,7 @@ import { playerTextAllowed } from '../../moderation.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
-import { n4Up } from '../../level.js';
+import { LEVEL_RANK, n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -402,7 +402,7 @@ function questionView(q: OmiaiQuestion, level: Level | 'stage'): QuestionView {
   return { text: jp.text, kana: jp.kana, en: jp.en, ...(level === 'kana' ? { romaji: toRomaji(jp.kana) } : {}) };
 }
 
-const atLeast = (level: Level, min: Level | undefined) => !min || ['kana', 'n5', 'n4'].indexOf(level) >= ['kana', 'n5', 'n4'].indexOf(min);
+const atLeast = (level: Level, min: Level | undefined) => !min || LEVEL_RANK[level] >= LEVEL_RANK[min];
 
 /** Deals one player's answer tiles: polite and casual choices mixed together, shuffled within each part. */
 export function dealTiles(q: OmiaiQuestion, kind: 'intro' | 'question' | 'appeal', player: ModePlayer, random: () => number): Tile[] {
