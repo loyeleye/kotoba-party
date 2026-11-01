@@ -634,6 +634,20 @@ export type HostEvent =
   | 'hajime_pon_win' // one of Pon's own lies was the room's favourite
   | 'hajime_truth' // the truth was hidden well: it wasn't the room's first pick
   | 'hajime_recall' // おぼえてる？ say everyone's truth
+  // Late Again! (Pon, late himself, with a train-delay certificate that keeps turning back into a leaf)
+  | 'late_intro' // Pon opens his office of latecomers: phone the boss, the room decides Safe or Out
+  | 'late_coop' // two players: the team against Pon's record
+  | 'late_alibi_match' // the witness backed the right cause
+  | 'late_alibi_miss' // the witness backed a different cause
+  | 'late_curveball' // the witness ({name}) swears it was a tanuki
+  | 'late_vote' // the room decides; {name} is the acting chief
+  | 'late_mic_pass' // Pon reads {name}'s excuse for them: {line} is the line, as is
+  | 'late_stand_in' // nothing came from {name} in time: Pon makes their excuse ({line})
+  | 'late_hidden' // the VIP hid an excuse
+  | 'late_line' // Pon says a line the game wrote ({quip}): a scene opener, his reaction to this cause, the real story
+  | 'late_truth' // the round's last beat, the real story: Pon says the line the game wrote ({quip})
+  | 'late_misread' // the acting chief ({name}) called it against the room: くうきが よめない
+  | 'late_booth' // the commentary booth opens because the excuse used its grammar chunk ({chunk}): でました！
   | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
   | 'omiai_nakodo_read' // the go-between's keigo line was said: Nobiko-san voices it ({line}, as is)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin

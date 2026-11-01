@@ -35,6 +35,7 @@ import { dubClubPolicy } from './policies/dubClub.js';
 import { happyokaiPolicy } from './policies/happyokai.js';
 import { bentoHausPolicy } from './policies/bentoHaus.js';
 import { hajimemashitePolicy } from './policies/hajimemashite.js';
+import { lateAgainPolicy } from './policies/lateAgain.js';
 
 const { values } = parseArgs({
   options: {
@@ -110,6 +111,8 @@ function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
       return hajimemashitePolicy();
     case 'happyokai':
       return happyokaiPolicy();
+    case 'late-again':
+      return lateAgainPolicy();
     default:
       return undefined;
   }

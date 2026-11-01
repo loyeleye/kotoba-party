@@ -53,6 +53,8 @@ export const MODE_THEMES: Record<ModeId, MusicId | null> = {
   hajimemashite: 'local-forecast',
   // Happyōkai!: the conference-hall lounge Talking Points parodies, quiet enough to talk over.
   happyokai: 'lobby-time',
+  // Late Again!: Pon's office, a sneaky-cheerful tune under the scene and the vote; silence for the call itself (lateCue).
+  'late-again': 'kool-kats',
 };
 
 /** Each mode's second theme: games alternate between the two, so a long night doesn't loop one tune. */
@@ -141,6 +143,7 @@ export function cueFor(mode: ModeId | null, phase: Phase, game = 0, listen = fal
   // Dub Club's two Mureka opening takes alternate game by game (Ladi, 2026-10-28).
   if (mode === 'dub-club') return dubCue(phase, game % 2 === 1 ? 'dub-opening-b' : 'dub-opening', step);
   if (mode === 'karaoke-duel') return karaokeCue(phase);
+  if (mode === 'late-again') return lateCue(phase, themeFor(mode, game) ?? 'kool-kats');
   if (mode === 'shodo') return shodoCue(phase, listen, say);
   const theme = mode ? themeFor(mode, game) : 'bouncing';
   if (theme === null) return { song: null, mix: 'full' };
@@ -196,6 +199,19 @@ function shodoCue(phase: Phase, listen: boolean, say: boolean): Cue {
  * the tally for cast notes. The episode: the opening under its title card, nothing under each dub,
  * the ending song over the credits. The stage plays the eyecatch jingle itself, on the end card.
  */
+/**
+ * Late Again!: the theme under the scene and the plan, silence while the latecomer records and while the excuse
+ * plays (a voice over music is mush on a TV speaker), under for the vote, the score tune for the ruling.
+ */
+function lateCue(phase: Phase, theme: MusicId): Cue {
+  if (phase === 'intro') return { song: theme, mix: 'full', leadIn: 'ident' };
+  if (phase === 'prompt') return { song: theme, mix: 'under' };
+  if (phase === 'answer' || phase === 'reveal') return { song: null, mix: 'full' };
+  if (phase === 'encore') return { song: theme, mix: 'under' };
+  if (phase === 'score') return { song: 'score', mix: 'full' };
+  return { song: theme, mix: 'under' };
+}
+
 function dubCue(phase: Phase, opening: MusicId, step?: string): Cue {
   if (phase === 'intro') return { song: opening, mix: 'full', leadIn: 'ident' };
   if (phase === 'prompt') return { song: 'gentle', mix: 'listen' };

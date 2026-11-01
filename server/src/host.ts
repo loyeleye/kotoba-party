@@ -68,13 +68,13 @@ export function bankVoice(content: ContentLibrary, random: () => number = Math.r
   };
 }
 
-const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect', 'bento_perfect', 'bento_bake', 'hajime_known', 'hajime_pon_win', 'happyokai_great', 'happyokai_stall', 'happyokai_vote']);
-const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'narabete_knot', 'bento_leave', 'bento_static', 'hajime_truth', 'happyokai_mishap_blackout', 'happyokai_mishap_wrong', 'happyokai_mishap_graph', 'happyokai_mishap_upside', 'happyokai_mishap_message']);
+const CHEER = new Set(['ippon', 'encore_cheer', 'raid_combo', 'raid_catch', 'train_revive', 'vote_landslide', 'kakegoe_call', 'recap_award', 'mic_check_ok', 'concentration_keep', 'concentration_bonus', 'concentration_picture', 'concentration_clear', 'narabete_perfect', 'bento_perfect', 'bento_bake', 'hajime_known', 'hajime_pon_win', 'happyokai_great', 'happyokai_stall', 'happyokai_vote', 'late_alibi_match', 'late_booth']);
+const OOPS = new Set(['miss_kind', 'raid_escape', 'train_ghost', 'fooled', 'vote_zero', 'room_overrule', 'answer_hurry', 'concentration_mismatch', 'concentration_missed', 'narabete_knot', 'bento_leave', 'bento_static', 'hajime_truth', 'happyokai_mishap_blackout', 'happyokai_mishap_wrong', 'happyokai_mishap_graph', 'happyokai_mishap_upside', 'happyokai_mishap_message', 'late_alibi_miss', 'late_stand_in', 'late_misread']);
 
 /** Twists: a steal, an upset, a reveal nobody saw coming. Bigger than a flinch. */
-const SHOCK = new Set(['cushion_steal', 'concentration_stolen', 'concentration_yokai', 'train_last_stop_twist', 'tourist_escaped', 'onsen_reveal', 'hajime_top_lie', 'shodo_synchro_break']);
+const SHOCK = new Set(['cushion_steal', 'concentration_stolen', 'concentration_yokai', 'train_last_stop_twist', 'tourist_escaped', 'onsen_reveal', 'hajime_top_lie', 'shodo_synchro_break', 'late_curveball', 'late_truth']);
 /** The host mulls it over with the players as they start to answer or vote. */
-const THINK = new Set(['hajime_write', 'hajime_rank', 'tourist_vote', 'shodo_vote', 'onsen_accuse', 'happyokai_question', 'concentration_steal_open']);
+const THINK = new Set(['hajime_write', 'hajime_rank', 'tourist_vote', 'shodo_vote', 'onsen_accuse', 'happyokai_question', 'concentration_steal_open', 'late_vote']);
 
 /** Nobiko-san cranes her neck out to look as players answer and as their answers are revealed. */
 const PEEK = new Set(['say_it_first', 'reveal_react']);
@@ -84,6 +84,8 @@ const PEEK = new Set(['say_it_first', 'reveal_react']);
  * think as players answer, Nobiko-san's nosy peek, otherwise just the idle loop.
  */
 export function moodFor(cue: Pick<HostCue, 'host' | 'event' | 'tier'>): HostMood | undefined {
+  // Late Again!'s scripted reaction follows the leaves: a cheer for IPPON, a flinch for a flop.
+  if (cue.event === 'late_line' && cue.tier) return cue.tier === 'ippon' ? 'cheer' : cue.tier === 'flop' ? 'oops' : undefined;
   if (CHEER.has(cue.event)) return 'cheer';
   if (OOPS.has(cue.event)) return 'oops';
   if (SHOCK.has(cue.event)) return 'shock';
