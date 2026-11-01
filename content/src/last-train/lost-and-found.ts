@@ -1,7 +1,8 @@
 // Last Train · Lost and Found (忘れ物センター). Say what you lost, where, and what it looks like.
 // The stop rides a line only in a room with an N4 player (TrainStop.withN4); Kana and N5 players get
 // ordinary items there. N4 hard roles: the forgetful passenger (＿に わすれた かもしれません) and the
-// lost property staff (おもそうな かばんですね).
+// lost property staff (おもそうな かばんですね). The yōkai lost property (Pon's leaf, a kappa's dish, Chōchin-san's
+// candle) practises ＿て あります, ＿はずです and ＿だそうです in the same two roles.
 // Item ids are stable: never rename one once it ships.
 
 import type { LastTrainMinigame } from '../types.js';
@@ -221,6 +222,43 @@ export const lostAndFound: LastTrainMinigame = {
       accepted: ['げんきそうなかさですね', 'げんきそうですね', 'これですかげんきそうなかさですね', 'げんきそうなかさですねこれですか'],
       model: { text: '元気そうなかさですね。', kana: 'げんきそうなかさですね。', en: 'That umbrella looks lively.', furigana: [['元気', 'げんき'], ['そうなかさですね。', '']] },
       hint: 'Looks lively: げんき is a な-word, so just add そう (そうな before a noun).',
+      timeLimit: 14,
+    },
+    // ---- N4: yōkai lost property (Pon's leaf, a kappa's dish, Chōchin-san's candle) ----
+    {
+      id: 'lost-and-found.19-happa-kaite-aru',
+      level: 'n4',
+      role: STAFF,
+      frames: ['te-aru'],
+      prompt: { text: 'あなたは駅員です。たぬき：「はっぱを忘れました！」はっぱが一枚あります。', kana: 'あなたはえきいんです。たぬき：「はっぱをわすれました！」はっぱがいちまいあります。', en: 'You\'re the station staff. A tanuki: "I left my leaf!" There\'s one leaf on the shelf.', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。たぬき：「はっぱを', ''], ['忘', 'わす'], ['れました！」はっぱが', ''], ['一枚', 'いちまい'], ['あります。', '']] },
+      visual: '🍃✍️ Someone wrote ポン on the leaf. Tell the tanuki what it says.',
+      accepted: ['ポンとかいてあります', 'ポンってかいてあります', 'ポンさんとかいてあります', 'はっぱにポンとかいてあります', 'ポンとかいてありますね', 'ポンとかいてありますよ', 'なまえがかいてあります', 'ポンとなまえがかいてあります'],
+      model: { text: 'ポンと書いてあります。', kana: 'ポンとかいてあります。', en: 'It says "Pon" on it.', furigana: [['ポンと', ''], ['書', 'か'], ['いてあります。', '']] },
+      hint: 'Something written on a thing: the て-form of かく (かいて) and あります. The words go first, with と.',
+      timeLimit: 14,
+    },
+    {
+      id: 'lost-and-found.20-osara-hazu',
+      level: 'n4',
+      role: PASSENGER,
+      frames: ['hazu'],
+      prompt: { text: '駅員：「おさらは、どこにありましたか。」', kana: 'えきいん：「おさらは、どこにありましたか。」', en: 'Station staff: "Where was your dish?"', furigana: [['駅員', 'えきいん'], ['：「おさらは、どこにありましたか。」', '']] },
+      visual: '🥏💧 You\'re a kappa, and your dish is gone! It was on your head, surely. Say it should be there.',
+      accepted: ['あたまのうえにあるはずです', 'あたまにあるはずです', 'あたまのうえにあったはずです', 'あたまのうえのはずです', 'あたまのうえにのせたはずです', 'たしかにあたまのうえにあるはずです'],
+      model: { text: '頭の上にあるはずです。', kana: 'あたまのうえにあるはずです。', en: 'It should be on top of my head.', furigana: [['頭', 'あたま'], ['の', ''], ['上', 'うえ'], ['にあるはずです。', '']] },
+      hint: 'Sure it should be so: the plain form (ある) and はずです. On top of my head is あたまの うえ.',
+      timeLimit: 14,
+    },
+    {
+      id: 'lost-and-found.21-rousoku-souda',
+      level: 'n4',
+      role: STAFF,
+      frames: ['sou-hear'],
+      prompt: { text: 'あなたは駅員です。お客さん：「このろうそく、だれのですか。」電話で「ちょうちんさんのです」と聞きました。', kana: 'あなたはえきいんです。おきゃくさん：「このろうそく、だれのですか。」でんわで「ちょうちんさんのです」とききました。', en: 'You\'re the station staff. A passenger: "Whose candle is this?" On the phone, you heard: "It\'s Chōchin-san\'s."', furigana: [['あなたは', ''], ['駅員', 'えきいん'], ['です。お', ''], ['客', 'きゃく'], ['さん：「このろうそく、だれのですか。」', ''], ['電話', 'でんわ'], ['で「ちょうちんさんのです」と', ''], ['聞', 'き'], ['きました。', '']] },
+      visual: '🕯️📞 Pass on what you heard.',
+      accepted: ['ちょうちんさんのろうそくだそうです', 'ちょうちんさんのだそうです', 'ちょうちんさんのものだそうです', 'これはちょうちんさんのろうそくだそうです', 'ちょうちんさんのろうそくだそうですよ', 'それはちょうちんさんのだそうです'],
+      model: { text: 'ちょうちんさんのろうそくだそうです。', kana: 'ちょうちんさんのろうそくだそうです。', en: 'I hear it\'s Chōchin-san\'s candle.' },
+      hint: 'Passing on what you heard: そうです after the plain form. After a noun, that is だそうです.',
       timeLimit: 14,
     },
   ],

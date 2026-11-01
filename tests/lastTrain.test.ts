@@ -9,7 +9,9 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { checkUtterance, firstMora } from '../shared/src/modes/lastTrain/check.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
-import { buildStops, itemIndex, mirrored, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
+import { buildStops, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
+import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
+import { framesOf } from '../shared/src/japanese/frames.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -540,7 +542,7 @@ describe('Last Train hard roles (N4)', () => {
   const ANNOUNCE = mg('station-announcement', [item('sa1', ['しぶやです']), item('sa2', ['うえのです']), roleItem('ann1', ['まもなくまいります']), roleItem('ann2', ['おさがりください'])], { promptType: 'listen-and-answer' });
   const LINE: LastTrainScenario = { ...SCENARIO, id: 'role-line', stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: 'station-announcement' })) };
   const ROLE_CONTENT: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [ANNOUNCE, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [LINE] };
-  const FRAMES = new Set(['te-itadakemasen', 'kamo', 'sou-look', 'o-kudasai', 'keigo', 'sign-kanji']);
+  const FRAMES = new Set(['te-itadakemasen', 'kamo', 'sou-look', 'sou-hear', 'hazu', 'te-aru', 'o-kudasai', 'keigo', 'sign-kanji']);
 
   const table = (lib: ContentLibrary, levels: MinigameItem['level'][]) => {
     const g = new Table(lib, levels.length);
@@ -770,6 +772,294 @@ describe('Last Train hard roles (N4)', () => {
     g.until('answer');
     expect(g.play('p1', { kind: 'role', key: 'x' }).error).toBe('bad-move');
     expect(g.play('p1', { kind: 'role', key: 'nope', accept: true }).error).toBe('wrong-phase');
+  });
+});
+
+describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', () => {
+  const ANN = { id: 'announcer', name: t('アナウンスがかり', 'アナウンスがかり', 'The announcer'), pitch: 'pitch' };
+  const GUEST = { id: 'front-desk-guest', name: t('フロントのおきゃくさま', 'フロントのおきゃくさま', 'The guest'), pitch: 'pitch' };
+  const roleItem = (id: string, accepted: string[], role = ANN): MinigameItem => ({ ...item(id, accepted, 'n4', 12), role, frames: ['keigo'] });
+  const ANNOUNCE = mg('station-announcement', [item('sa1', ['しぶやです']), item('sa2', ['うえのです']), roleItem('ann1', ['まもなくまいります']), roleItem('ann2', ['おさがりください'])], { promptType: 'listen-and-answer' });
+  const INN = mg('meet-the-innkeeper', [item('mi1', ['こんばんは']), roleItem('g1', ['よんでいただけますか'], GUEST)]);
+  const lineOf = (mgId: string): LastTrainScenario => ({ ...SCENARIO, id: `${mgId}-line`, stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: mgId })) });
+  const lib = (m: LastTrainMinigame): ContentLibrary => ({ ...EMPTY_CONTENT, lastTrainMinigames: [m, ...MINIGAMES.filter((x) => x.penalty)], lastTrainScenarios: [lineOf(m.id)] });
+  const ROLES = lib(ANNOUNCE);
+  const table = (content: ContentLibrary, levels: MinigameItem['level'][]) => {
+    const g = new Table(content, levels.length);
+    levels.forEach((level, i) => g.act({ type: 'command', actor: { kind: 'player', playerId: `p${i + 1}` }, command: { id: `lv${i}`, type: 'setLevel', level } }));
+    return g;
+  };
+  const role = (g: Table, id: string, accept: boolean) => g.play(id, { kind: 'role', key: g.view(id).me!.offer!.key, accept });
+  const offered = (g: Table) => Object.values(g.s.turns).filter((tn) => tn.status === 'offer').map((tn) => tn.playerId);
+  /** Plays a stop to its reveal: every phone answers its item right. */
+  const answerAll = (g: Table) => {
+    for (const p of g.state.players) if (g.s.turns[p.id]?.status === 'answering') g.sayRight(p.id);
+    expect(g.state.phase).toBe('reveal');
+  };
+
+  it('offers rotate by nextOfferee: a "no" sits the next offer out, and in a room of 4+ nobody holds it twice running', () => {
+    const g = table(ROLES, ['n4', 'n5']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', false);
+    g.until('prompt');
+    g.until('answer');
+    // The lone N4 player said no last time: no nagging, the ordinary item straight away.
+    expect(offered(g)).toEqual([]);
+    expect(g.s.turns.p1!.task.item.role).toBeUndefined();
+    g.until('prompt');
+    g.until('answer');
+    expect(offered(g)).toEqual(['p1']);
+
+    const big = table(ROLES, ['n4', 'n5', 'n5', 'kana']);
+    big.start(4);
+    big.until('answer');
+    role(big, 'p1', true);
+    big.until('prompt');
+    big.until('answer');
+    expect(offered(big)).toEqual([]);
+    big.until('prompt');
+    big.until('answer');
+    expect(offered(big)).toEqual(['p1']);
+  });
+
+  it('the Gallery: a tile for each player without the seat while the line is said, bubbles on the TV, one curveball a game worth +5', () => {
+    const g = table(ROLES, ['n4', 'n5', 'kana']);
+    g.start(4);
+    g.until('answer');
+    // Nothing before the role is taken.
+    expect(g.view('p2').me!.gallery).toBeNull();
+    expect(g.view('stage').gallery).toBeNull();
+    role(g, 'p1', true);
+    expect(g.view('p1').me!.gallery).toBeNull();
+    // The first Kana or N5 player gets the curveball: the line's frame word and two others.
+    const cb = g.view('p2').me!.gallery!;
+    expect(cb.kind).toBe('curveball');
+    const word = g.s.gallery!.curveball!.word;
+    expect(['まいります', 'おさがりください']).toContain(word);
+    expect(g.s.turns.p1!.task.item.model.kana).toContain(word);
+    if (cb.kind === 'curveball') {
+      expect(cb.options).toHaveLength(3);
+      expect(cb.options.filter((o) => o.kana === word)).toHaveLength(1);
+      expect(cb.options.every((o) => o.romaji === null)).toBe(true);
+    }
+    // The stage never carries the curveball's answer.
+    expect(JSON.stringify(g.view('stage'))).not.toContain(word);
+    const react = g.view('p3').me!.gallery!;
+    expect(react.kind).toBe('react');
+    expect(g.play('p3', { kind: 'gallery', pick: 'sugoi' }).changed).toBe(true);
+    expect(g.play('p3', { kind: 'gallery', pick: 'warai' }).error).toBe('not-allowed');
+    expect(g.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBe('not-allowed');
+    expect(g.play('p3', { kind: 'gallery' }).error).toBe('bad-move');
+    expect(g.view('stage').gallery!.map((b) => b.id)).toEqual(['sugoi']);
+    const before = g.score('p2');
+    expect(g.play('p2', { kind: 'gallery', pick: word }).changed).toBe(true);
+    expect(g.score('p2') - before).toBe(CURVEBALL_POINTS);
+    expect(g.s.ledger.filter((e) => e.reason === 'curveball')).toEqual([{ playerId: 'p2', points: 5, reason: 'curveball', stop: 0 }]);
+    // Reactions are never scored.
+    expect(g.score('p3')).toBe(0);
+    answerAll(g);
+    // Still up through the reveal.
+    expect(g.view('stage').gallery).toHaveLength(1);
+    g.until('prompt');
+    expect(g.view('stage').gallery).toBeNull();
+    g.until('answer');
+    role(g, 'p1', true);
+    // Once a game: the curveball doesn't come back.
+    expect(g.view('p2').me!.gallery!.kind).toBe('react');
+    expect(g.s.gallery!.curveball).toBeNull();
+  });
+
+  it('a wrong curveball pick earns nothing; a Kana player sees romaji on it', () => {
+    const g = table(ROLES, ['n4', 'kana']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', true);
+    const cb = g.view('p2').me!.gallery!;
+    expect(cb.kind).toBe('curveball');
+    if (cb.kind !== 'curveball') return;
+    expect(cb.options.every((o) => !!o.romaji)).toBe(true);
+    const wrong = cb.options.find((o) => o.kana !== g.s.gallery!.curveball!.word)!;
+    expect(g.play('p2', { kind: 'gallery', pick: wrong.kana }).changed).toBe(true);
+    expect(g.score('p2')).toBe(0);
+    expect(g.view('p2').me!.gallery).toMatchObject({ kind: 'curveball', right: false });
+  });
+
+  it('no Gallery for a declined role, or for the guest at the inn', () => {
+    const g = table(ROLES, ['n4', 'n5']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', false);
+    expect(g.s.gallery).toBeNull();
+    expect(g.play('p2', { kind: 'gallery', pick: 'sugoi' }).error).toBe('no-gallery');
+    const inn = table(lib(INN), ['n4', 'n5']);
+    inn.start(4);
+    inn.until('answer');
+    role(inn, 'p1', true);
+    expect(inn.s.gallery).toBeNull();
+  });
+
+  it('the booth: only after a taken role lands, at the reveal, with the key word lit and the gist on Kana and N5 phones', () => {
+    const g = table(ROLES, ['n4', 'n5', 'kana', 'n4']);
+    g.start(4);
+    g.until('answer');
+    role(g, 'p1', true);
+    const model = g.s.turns.p1!.task.item.model;
+    answerAll(g);
+    const b = g.view('stage').booth!;
+    expect(b).toMatchObject({ playerId: 'p1', name: 'P1', line: model, atMs: RULES.roleReadAtMs });
+    expect(['まいります', 'おさがりください']).toContain(b.lit.key);
+    expect(b.lit.before + b.lit.key + b.lit.after).toBe(model.text);
+    expect(b.note).toMatch(/\S/);
+    // It fits inside the reveal: no time added.
+    expect(b.atMs + b.ms).toBeLessThanOrEqual(12_000);
+    expect(g.state.deadline! - g.now).toBe(12_000);
+    expect(g.view('p2').me!.booth).toEqual({ kana: model.kana, en: model.en, emoji: '📢', romaji: null });
+    expect(g.view('p3').me!.booth!.romaji).toBe(toRomaji(model.kana));
+    // Not on the speaker's phone, nor an N4 one.
+    expect(g.view('p1').me!.booth).toBeNull();
+    expect(g.view('p4').me!.booth).toBeNull();
+    // The host voices the fixed model line only (train_role_read), and a landed announcement gets his own reaction.
+    const reveal = g.cues.slice(g.cues.findIndex((c) => c.event === 'reveal_react'));
+    expect(reveal.map((c) => c.event)).toEqual(['reveal_react', 'train_announcer_react', 'train_role_read']);
+    expect(reveal[1]!.atMs).toBeUndefined();
+    g.until('prompt');
+    expect(g.view('stage').booth).toBeNull();
+  });
+
+  it('no booth or announcer reaction for a missed or declined role, or an ordinary item; the guest gets the booth but no reaction', () => {
+    const missed = table(ROLES, ['n4', 'n5']);
+    missed.start(4);
+    missed.until('answer');
+    role(missed, 'p1', true);
+    missed.sayRight('p2');
+    // Both tries rejected, and the room (p2) upholds both.
+    for (let i = 0; i < 2; i++) {
+      missed.say('p1', 'だめ');
+      const w = missed.view('p2').overrules.find((x) => x.canVote)!;
+      missed.play('p2', { kind: 'overrule', windowId: w.id, up: false });
+    }
+    expect(missed.state.phase).toBe('reveal');
+    expect(missed.view('stage').booth).toBeNull();
+    expect(missed.cues.some((c) => c.event === 'train_announcer_react')).toBe(false);
+
+    const declined = table(ROLES, ['n4', 'n5']);
+    declined.start(4);
+    declined.until('answer');
+    role(declined, 'p1', false);
+    answerAll(declined);
+    expect(declined.view('stage').booth).toBeNull();
+    expect(declined.view('p2').me!.booth).toBeNull();
+
+    const inn = table(lib(INN), ['n4', 'n5']);
+    inn.start(4);
+    inn.until('answer');
+    role(inn, 'p1', true);
+    answerAll(inn);
+    expect(inn.view('stage').booth!.lit.key).toBe('いただけますか');
+    expect(inn.view('p2').me!.booth!.emoji).toBe('🛎️');
+    expect(inn.cues.some((c) => c.event === 'train_announcer_react')).toBe(false);
+  });
+
+  it('the host stand-in: once a game, at the first announcer stop, in a room of one or two with nobody at N4', () => {
+    for (const levels of [['n5'], ['n5', 'kana']] as MinigameItem['level'][][]) {
+      const g = table(ROLES, levels);
+      g.start(4);
+      g.until('prompt');
+      const stand = g.cues.filter((c) => c.event === 'train_stand_in');
+      // Always the first announcer line: nothing random is drawn, so the rest of the game deals as before.
+      expect(stand).toEqual([{ host: 'chochin', event: 'train_stand_in', slots: { line: 'まもなくまいります', line_kana: 'まもなくまいります', line_en: 'model ann1' }, atMs: RULES.standInAtMs }]);
+      expect(g.view('stage').standIn).toMatchObject({ line: { text: 'まもなくまいります' }, atMs: RULES.standInAtMs });
+      expect(g.view('p1').me!.standIn).toMatchObject({ kana: 'まもなくまいります', en: 'model ann1' });
+      if (levels[1]) expect(g.view('p2').me!.standIn!.romaji).toBe(toRomaji('まもなくまいります'));
+      // One moment of at most 7 s: the announcement runs on until the line is said.
+      const ms = g.state.deadline! - g.now;
+      expect(ms).toBeGreaterThan(7_000);
+      expect(ms - RULES.standInAtMs).toBeLessThanOrEqual(7_000);
+      // Nobody is asked to say anything, and nobody scores for it.
+      g.until('answer');
+      expect(g.view('stage').standIn).toBeNull();
+      expect(Object.values(g.s.turns).every((tn) => tn.status === 'answering' && !tn.task.item.role)).toBe(true);
+      expect(g.s.roleLog).toEqual([]);
+      g.until('prompt');
+      expect(g.state.deadline! - g.now).toBe(7_000);
+      g.until('recap');
+      expect(g.cues.filter((c) => c.event === 'train_stand_in')).toHaveLength(1);
+      expect(g.state.players.every((p) => p.score === g.s.ledger.filter((e) => e.playerId === p.id).reduce((n, e) => n + e.points, 0))).toBe(true);
+    }
+    for (const levels of [['n5', 'n4'], ['n4'], ['n5', 'n5', 'kana']] as MinigameItem['level'][][]) {
+      const g = table(ROLES, levels);
+      g.start(4);
+      g.until('prompt');
+      expect(g.cues.some((c) => c.event === 'train_stand_in'), levels.join()).toBe(false);
+      expect(g.view('stage').standIn).toBeNull();
+      expect(g.state.deadline! - g.now).toBe(7_000);
+    }
+  });
+
+  it('no stand-in on a line without the announcer', () => {
+    const g = table(lib(INN), ['n5']);
+    g.start(4);
+    g.until('recap');
+    expect(g.cues.some((c) => c.event === 'train_stand_in')).toBe(false);
+  });
+
+  it('changes nothing in an N5-only room of 3+: no Gallery, booth, stand-in or new cues, same timings', () => {
+    const g = table(ROLES, ['n5', 'n5', 'kana']);
+    g.start(4);
+    const durations: number[] = [];
+    for (let i = 0; i < 40 && g.state.phase !== 'recap'; i++) {
+      if (g.state.deadline) durations.push(g.state.deadline - g.now);
+      for (const id of ['stage', 'p1', 'p3'] as const) {
+        const v = g.view(id);
+        expect(v.gallery).toBeNull();
+        expect(v.booth).toBeNull();
+        expect(v.standIn).toBeNull();
+        if (v.me) expect([v.me.gallery, v.me.booth, v.me.standIn]).toEqual([null, null, null]);
+      }
+      if (g.state.phase === 'answer') answerAll(g);
+      else g.timeout();
+    }
+    expect(g.cues.some((c) => ['train_stand_in', 'train_announcer_react'].includes(c.event))).toBe(false);
+    expect(g.s.ledger.every((e) => e.reason !== 'curveball')).toBe(true);
+    expect(durations.filter((d) => d === 7_000).length).toBe(4);
+    expect(g.s.gallery).toBeNull();
+    expect(g.s.curveballUsed).toBe(false);
+  });
+
+  it('lights the key word of every real role line', () => {
+    for (const m of realContent.lastTrainMinigames) {
+      for (const i of m.items.filter((x) => x.role && !x.signs)) expect(roleKey(i), i.id).not.toBeNull();
+    }
+  });
+});
+
+describe('Lost and Found: yōkai lost property', () => {
+  const lost = realContent.lastTrainMinigames.find((m) => m.id === 'lost-and-found')!;
+  it('has Pon’s leaf, a kappa’s dish and Chōchin-san’s candle as N4 role items, in the same shape as the rest', () => {
+    const ids = ['lost-and-found.19-happa-kaite-aru', 'lost-and-found.20-osara-hazu', 'lost-and-found.21-rousoku-souda'];
+    const items = ids.map((id) => lost.items.find((i) => i.id === id)!);
+    expect(items.every(Boolean)).toBe(true);
+    expect(items.map((i) => i.frames)).toEqual([['te-aru'], ['hazu'], ['sou-hear']]);
+    expect(items.map((i) => i.role!.id)).toEqual(['lost-property-staff', 'passenger', 'lost-property-staff']);
+    expect(items[0]!.prompt.kana).toContain('たぬき');
+    expect(items[0]!.visual).toContain('ポン');
+    expect(items[1]!.visual).toContain('kappa');
+    expect(items[2]!.prompt.kana).toContain('ろうそく');
+    for (const i of items) {
+      expect(i.level).toBe('n4');
+      expect(i.visual && i.hint && i.model.en).toBeTruthy();
+      expect(checkUtterance({ via: 'typed', text: i.model.kana.replace(/。$/, '') }, i.accepted), i.id).toBe(true);
+    }
+    // The regex frames find themselves in the model line.
+    expect(framesOf(items[0]!.model)).toContain('te-aru');
+    expect(framesOf(items[1]!.model)).toContain('hazu');
+  });
+
+  it('writes furigana that spell out every kanji line', () => {
+    const lines = lost.items.flatMap((i) => [i.prompt, i.model]);
+    for (const l of lines) if (l.furigana) expect(l.furigana.map(([a]) => a).join(''), l.text).toBe(l.text);
+    for (const l of lines) if (/[㐀-鿿]/.test(l.text)) expect(l.furigana, l.text).toBeDefined();
   });
 });
 

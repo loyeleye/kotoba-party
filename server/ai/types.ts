@@ -109,6 +109,8 @@ export const HOST_EVENTS = [
   'platform_dash',
   'room_overrule',
   'train_role_read',
+  'train_announcer_react',
+  'train_stand_in',
   // Murder at the Onsen
   'onsen_case',
   'onsen_turn',

@@ -207,6 +207,8 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   hajime_read: 'Nice to Meet You!: read this line of the introduction exactly as given: {line}',
   omiai_nakodo_read: 'Omiai: the go-between said their keigo line; read it exactly as given: {line}',
   train_role_read: 'Last Train: a player took a harder role and got it right; read its model line exactly as given: {line}',
+  train_announcer_react: 'Last Train: a player borrowed your megaphone and made the platform announcement in station keigo, and got it right. React in one short, delighted line.',
+  train_stand_in: 'Last Train: nobody here plays the announcer, so you make the platform announcement yourself; read it exactly as given: {line}',
   hajime_rank: 'Nice to Meet You!: the room now ranks the cards from surely true to surely a lie. You are sure every card is a lie.',
   hajime_known: 'Nice to Meet You!: the room picked the guest\'s truth first. "That is so {name}!"',
   hajime_top_lie: 'Nice to Meet You!: a lie by {author} was the room\'s favourite card. Admire the disguise, a little jealous.',
