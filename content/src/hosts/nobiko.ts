@@ -108,6 +108,8 @@ export const nobikoLines: HostLine[] = [
   { id: 'nobiko.natural_version.04', host: 'nobiko', event: 'natural_version', jp: { text: 'おばちゃんの おてほん、きいてね。', kana: 'おばちゃんの おてほん、きいてね。', en: "Listen to auntie's example." }, status: 'draft' },
   { id: 'nobiko.natural_version.05', host: 'nobiko', event: 'natural_version', jp: { text: 'ひみつを おしえて あげる。こうよ。', kana: 'ひみつを おしえて あげる。こうよ。', en: "I'll tell you a secret. Like this." }, status: 'draft' },
   // omiai_tease (Cheeky rooms only): scandalised by the most casual answer, which is still anonymous
+  // omiai_nakodo_read: the N4 go-between's keigo line was accepted; Nobiko-san says it as is (the filled template)
+  { id: 'nobiko.omiai_nakodo_read.01', host: 'nobiko', event: 'omiai_nakodo_read', jp: { text: '{line}', kana: '{line}', en: '{line}' }, slots: ['{line}'], status: 'draft' },
   { id: 'nobiko.omiai_tease.01', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらまあ… ずいぶん くだけてるわね！', kana: 'あらまあ… ずいぶん くだけてるわね！', en: "Oh my… aren't we casual!" }, audience: 'cheeky', status: 'draft' },
   { id: 'nobiko.omiai_tease.02', host: 'nobiko', event: 'omiai_tease', jp: { text: 'あらまあ。おみあいで その ことばづかい？', kana: 'あらまあ。おみあいで その ことばづかい？', en: "Oh my. Talking like that, at an omiai?" }, audience: 'cheeky', status: 'draft' },
   { id: 'nobiko.omiai_tease.03', host: 'nobiko', event: 'omiai_tease', jp: { text: 'ちょっと、これ だれ？　おかあさんに いいつけるわよ。', kana: 'ちょっと、これ だれ？　おかあさんに いいつけるわよ。', en: "Excuse me, whose is this? I'm telling your mother." }, audience: 'cheeky', status: 'draft' },

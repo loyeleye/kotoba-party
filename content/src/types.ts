@@ -516,6 +516,7 @@ export type HostEvent =
   | 'train_last_stop_twist'
   | 'platform_dash'
   | 'room_overrule'
+  | 'train_role_read' // a taken hard role answered right: Chōchin-san says its model line at the reveal ({line}, as is)
   // Murder at the Onsen
   | 'onsen_case' // the case file opens
   | 'onsen_turn' // a player's turn to question a suspect
@@ -632,6 +633,7 @@ export type HostEvent =
   | 'hajime_truth' // the truth was hidden well: it wasn't the room's first pick
   | 'hajime_recall' // おぼえてる？ say everyone's truth
   | 'omiai_tease' // Nobiko-san, Cheeky rooms: scandalised by the most casual answer (Omiai)
+  | 'omiai_nakodo_read' // the go-between's keigo line was said: Nobiko-san voices it ({line}, as is)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin
   | 'surprise_pick'; // Surprise Me!: the wheel stops on tonight's game ({game})
 

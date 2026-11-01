@@ -204,6 +204,8 @@ const EVENT_HINT: Partial<Record<HostEvent, string>> = {
   hajime_write: 'Nice to Meet You!: everyone writes in silence: the guest one truth, the tanuki one lie each.',
   hajime_introduce: 'Nice to Meet You!: call {name} up to introduce the guest by reading the cards aloud.',
   hajime_read: 'Nice to Meet You!: read this line of the introduction exactly as given: {line}',
+  omiai_nakodo_read: 'Omiai: the go-between said their keigo line; read it exactly as given: {line}',
+  train_role_read: 'Last Train: a player took a harder role and got it right; read its model line exactly as given: {line}',
   hajime_rank: 'Nice to Meet You!: the room now ranks the cards from surely true to surely a lie. You are sure every card is a lie.',
   hajime_known: 'Nice to Meet You!: the room picked the guest\'s truth first. "That is so {name}!"',
   hajime_top_lie: 'Nice to Meet You!: a lie by {author} was the room\'s favourite card. Admire the disguise, a little jealous.',

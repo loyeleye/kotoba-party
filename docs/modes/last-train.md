@@ -103,6 +103,15 @@ stops, the same items.
   `te-itadakemasu-ka`, with いただけませんか accepted too) and three inn signs drawn as boards, 受付,
   予約 and 食堂 (`sign-kanji`, hints are pictures, never the reading).
 
+**Chōchin-san says the line** (decided by Ladi, 2026-11-01: the host says the line, the player's recording
+never plays on the TV). When a taken hard role is answered right (first try, retry or overruled), Chōchin-san
+says that item's model line on the TV at the reveal, with its subtitle, once (`train_role_read`, a bank line
+that is just `{line}`, filled with `line`/`line_kana`/`line_en`; bank only, never rewritten by the LLM). It's
+cued `RULES.roleReadAtMs` (4.5 s) into the reveal, after his `reveal_react` reaction, and the longest model
+line fits in the 12 s reveal. All three roles get it, not only the announcer: the same one cue, and a
+passenger's or a guest's line said back by the conductor is the same "here's how it sounds" beat. The reveal
+row (⭐ and the role) and the model answer stay as they were. A missed, declined or timed-out role says nothing.
+
 ### Items and levels
 
 Each player gets their own item at their level (Kana → kana then n5; N5 → n5 then kana; N4 →
@@ -204,6 +213,9 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
 19. The announcer's lines are separate items (arrival, yellow line, doors, apology) plus one with both
     sentences, rather than one long announcement. Why: shorter lines survive speech recognition.
 20. 女湯 was left out of the inn signs: the reader reads it じょゆ, so a right answer would be rejected.
+21. Chōchin-san saying a taken role's line (decided by Ladi, above) covers Lost and Found's two roles and the
+    guest at the inn too, not just the announcer. Why: it's the same cue at no extra cost, and every role gets
+    the same payoff. He says the model line, not the player's words: it's fixed, fluent and safe for TTS.
 
 ## Open questions
 
@@ -222,5 +234,6 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
 - Hard roles not built yet: the host playing the role when nobody is N4, the commentary booth's replay
   of a Star line, and the Gallery. N3 lines (＿で ございます, ＿させて いただけますか, 非常口, 禁煙) wait
   for step 6. Every hard-role line is a draft for the fluent check.
-- Should the announcer's clip play on the TV (the doc's "records a clip … the TV plays it"), or is the
-  reveal row enough?
+- ~~Should the announcer's clip play on the TV (the doc's "records a clip … the TV plays it"), or is the
+  reveal row enough?~~ Decided by Ladi (2026-11-01): no clip; Chōchin-san says the model line at the reveal
+  (see Hard roles).
