@@ -62,6 +62,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 34 | Optional sign-in: passkeys through SimpleWebAuthn (`@simplewebauthn/server` and `/browser`, MIT, plus MIT, Apache-2.0, 0BSD and BSD-3 dependencies), and each signed-in player's save (save name, game scores, kana practised) kept on one Cloudflare Durable Object (decision, 2026-10-28) | `server/src/accounts.ts`, `cloudflare/accountsObject.ts`, `controller/src/account.ts`, `shared/src/progress.ts` | 🟡 ⚠️ ❓ | Ship the MIT and Apache-2.0 notices (row 5). Privacy, not licence: a privacy notice for saves, a decision on under-13/16 players (COPPA, GDPR-K: not read, ❓), and Cloudflare's Durable Object storage named as a processor. Deleting a save is already in the game |
 | 35 | The learning path names levels "N5", "N4" and "N3" (the JLPT's level names) and suggests a JLPT mock test; its lines use our own names (Kana Line, Local Line, Express Line, Limited Express Line) (decision, 2026-11-01; N3 added in step 6a) | `shared/src/path.ts`, `controller/src/path.ts`, the level picker in `controller/src/main.ts` | ⚠️ | JLPT site policy read 2026-11-01: it covers copying the site's works (questions, text), not naming the test or its levels, and carries no trademark notice. We copy none of its content. Keep "N5"/"N4"/"N3" descriptive, never claim endorsement or a result, and have a lawyer check whether "JLPT" or 日本語能力試験 is a registered mark before launch |
 | 36 | VOICEVOX speaking player-written text in Word Gauntlet's rumour round (Nobiko-san = No.7) | the TV's reveal reads each relay as a Nobiko-san host line (`rumour_relay`, `shared/src/modes/wordGauntlet/wordGauntlet.ts`), voiced by VOICEVOX when the server has it, else browser speech; the relayer's phone always uses browser speech (`controller/src/modes/wordGauntlet.ts`) | 🟡 ⚠️ | No.7's terms read 2026-11-01 (https://voiceseven.com/): fine while the game is free; selling needs row 1's paid No.7 licence. No clause bans live user text, but the image clause applies: relays pass the Kids/Family word filter first. Before selling, also decide whether a word-list filter is enough for player text in a licensed voice |
+| 37 | Brush font: Kotoba Brush, our 4-character subset of Yuji Syuku (Yuji Project, OFL 1.1, no reserved name), self-hosted | `stage/assets/fonts/kotoba-brush.woff2`, Yōkai Court's verdict column and 筆 seal (`stage/src/modes/yokaiCourt.css`) | 🟡 | OFL allows selling and modifying; ship `stage/assets/fonts/OFL-yuji-syuku.txt` in the third-party notices |
 
 ## Details
 
@@ -179,7 +180,11 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
   Yōkai Court's pictures (`stage/assets/court/`, 2026-11-01) are 16 text-only `pixflux` images: 7 clues,
   6 alibi places and 3 case objects (prompts and seeds in the manifest; the footprints have a 1px outline added by the post step),
   then 4 role icons (a sealed scroll, a sunflower badge, a balance scale, an eye) and Fude-san's calligraphy
-  brush for the verdict, 5 more text-only `pixflux` images made the same day. Its yōkai, the inkstone, the leaf and the bento
+  brush for the verdict, 5 more text-only `pixflux` images made the same day. The scroll, sunflower and scale
+  were redrawn later that day as 3 more text-only `pixflux` images (a scroll with rolled ends, a stemless
+  sunflower badge, a scale with shallow pans; seed 303, prompts in the manifest). Fude-san writing the verdict
+  (`court/fude-write.png`) is a frame of her own shipped think sheet turned 180° by
+  `tools/art/sources/court/fude-write.py`, with no generator; the old `court/brush.png` is no longer shown. Its yōkai, the inkstone, the leaf and the bento
   and tea cards reuse art already logged here. Same endpoint; the terms were not re-read for this pass, so
   they rest on the 2026-10-26 read.
   The four lip-sync
@@ -706,3 +711,18 @@ pictures if they still look right, and add the Steam/itch disclosure.
   own voice (on-device first, row 31), so no extra server traffic per relay.
 - **Status:** 🟡 ⚠️: allowed while the game is free; selling needs row 1's No.7 licence, and a sharper moderation
   plan for player text in a licensed voice (a word list isn't a moderation service).
+
+### 37. Brush font (Kotoba Brush, from Yuji Syuku)
+
+- **What (2026-11-01):** Yōkai Court's TV verdict, 有罪 or 無罪 written top to bottom by Fude-san, and her 筆 seal use
+  a brush face instead of Noto Sans JP. `tools/fonts/build-kotoba-brush.py` downloads Yuji Syuku Regular from the
+  Google Fonts repository (<https://github.com/google/fonts/tree/main/ofl/yujisyuku>), keeps only 有, 罪, 無 and 筆,
+  renames it "Kotoba Brush" and writes `stage/assets/fonts/kotoba-brush.woff2` (3 KB, self-hosted, so no
+  third-party request). The CSS loads it with `unicode-range` for those four characters only.
+- **Terms:** SIL Open Font License 1.1, copyright 2021 The Yuji Project Authors
+  (<https://github.com/Kinutafontfactory/Yuji>). The licence text was read on 2026-11-01 at
+  <https://raw.githubusercontent.com/google/fonts/main/ofl/yujisyuku/OFL.txt> and is copied to
+  `stage/assets/fonts/OFL-yuji-syuku.txt`. It names no Reserved Font Name, so a subset may keep or change the
+  name; we renamed it anyway, like Kotoba Pixel. OFL allows commercial use, modification and bundling, but the
+  font can't be sold on its own.
+- **To sell:** Ship the OFL notice with the game's third-party notices. Nothing else.

@@ -237,3 +237,14 @@ body[data-motion='calm'] .yc-beat-bar span { animation: yc-beat-run var(--ms, 80
 .yc-recap li.evidence { outline: 2px solid #f2c14e; }
 .yc-recap-ja .jpv-main { font-size: 20px; font-weight: 800; }
 .yc-recap-tag { font-size: 13px; font-weight: 800; color: #f2c14e; }
+
+/* The word to keep: a 🔊 to hear it (44 px tap target), and the words kept earlier tonight. */
+.yc-hear { flex: none; margin-left: auto; min-width: 48px; min-height: 48px; font: inherit; font-size: 22px; border-radius: 999px; border: 2px solid #f2c14e; background: #1d1830; color: #fff4e6; }
+.yc-hear.small { min-width: 44px; min-height: 44px; font-size: 18px; border-width: 1px; }
+.yc-hear:active { transform: scale(0.94); }
+.yc-kept { display: grid; gap: 6px; padding-top: 8px; border-top: 1px dashed rgba(242, 193, 78, 0.45); }
+.yc-kept ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.yc-kept li { display: flex; align-items: center; gap: 10px; }
+.yc-kept-pic { width: 32px; height: 32px; flex: none; image-rendering: pixelated; object-fit: contain; font-size: 24px; line-height: 32px; text-align: center; }
+.yc-kept-ja .jpv-main { font-size: 22px; font-weight: 800; }
+.yc-screen > .yc-kept { padding: 12px; border: 2px solid rgba(242, 193, 78, 0.6); border-radius: 12px; background: #2b2440; }

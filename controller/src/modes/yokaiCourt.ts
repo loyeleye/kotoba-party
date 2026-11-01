@@ -26,6 +26,7 @@ import type { Level } from '../../../content/src/types.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { MicClip, recordReady, uploadClip } from '../components/mic.js';
 import { isQuiet } from '../components/speak.js';
+import { hearButton } from '../components/voice.js';
 import { jpView, type JpLike } from '../components/jp.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
@@ -717,7 +718,7 @@ function judgePromptScreen(ctx: Ctx, me: CourtMe): HTMLElement {
   const { game } = ctx;
   if (game.step === 'case') return screen(band(ctx, me, 'the witness, then two lawyers. Then you vote.'), roleCard(ctx, me), caseCard(ctx));
   if (game.step === 'ask') return screen(band(ctx, me, 'the witness answers.'), caseCard(ctx, true), h('div', { class: 'yc-question' }, h('p', { class: 'yc-label' }, `Fude-san asks ${nameOf(ctx.view, game.cast?.witness) || 'the witness'}:`), game.question ? jpv(game.question, me.level) : null));
-  return screen(band(ctx, me, 'two lawyers argue. Then one question and your vote.'), testimonyCard(ctx, me), hunchBox(ctx, me), ctx.view.phase === 'answer' ? h('p', { class: 'yc-hint center' }, '● Both lawyers are recording.') : null);
+  return screen(band(ctx, me, 'two lawyers argue. Then one question and your vote.'), testimonyCard(ctx, me), hunchBox(ctx, me), ctx.view.phase === 'answer' ? h('p', { class: 'yc-hint center' }, '● Both lawyers are recording.') : null, ctx.view.phase === 'answer' ? keptList(me, '🔖 Your words so far') : null);
 }
 
 function kanaLawyerScreen(ctx: Ctx, me: CourtMe, send: Send): HTMLElement {
@@ -875,16 +876,39 @@ function resultCard(me: CourtMe): HTMLElement | null {
   );
 }
 
-/** A Kana judge's one word from the case, logged on their path as seen. */
+/**
+ * A Kana judge's one word from the case, with a 🔊 to hear it (the phone's own voice). Logged on their path as
+ * seen when they took part; a judge who sat out still gets the word, unlogged, since they need it most.
+ */
 function keepCard(me: CourtMe): HTMLElement | null {
   const k = me.keep;
   if (!k) return null;
   return h(
     'div',
     { class: 'yc-keep' },
-    h('p', { class: 'yc-label' }, h('span', { 'aria-hidden': 'true' }, '🔖 '), 'Word to keep'),
-    h('div', { class: 'yc-keep-row' }, pic(k, 'yc-pic yc-keep-pic'), jpv(k.word, me.level, 'yc-keep-ja')),
-    h('p', { class: 'yc-hint' }, k.checked ? 'The answer to your check. Saved to your path as a word you’ve seen.' : 'The evidence in this case. Saved to your path as a word you’ve seen.'),
+    h('p', { class: 'yc-label' }, h('span', { 'aria-hidden': 'true' }, '🔖 '), k.sat ? 'This case’s word' : 'Word to keep'),
+    h('div', { class: 'yc-keep-row' }, pic(k, 'yc-pic yc-keep-pic'), jpv(k.word, me.level, 'yc-keep-ja'), hearButton(k.word.kana, '🔊', 'yc-hear')),
+    h(
+      'p',
+      { class: 'yc-hint' },
+      k.sat
+        ? 'You sat this case out, so it isn’t saved. Check or vote next case to keep your word.'
+        : k.checked
+          ? 'The answer to your check. Saved to your path as a word you’ve seen.'
+          : 'The evidence in this case. Saved to your path as a word you’ve seen.',
+    ),
+    keptList(me),
+  );
+}
+
+/** A Kana player's words to keep from earlier cases tonight, each with its 🔊: seen again, never logged again. */
+function keptList(me: CourtMe, title = 'Earlier tonight'): HTMLElement | null {
+  if (!me.kept.length) return null;
+  return h(
+    'div',
+    { class: 'yc-kept' },
+    h('p', { class: 'yc-label' }, title),
+    h('ul', {}, ...me.kept.map((k) => h('li', {}, pic(k, 'yc-pic yc-kept-pic'), jpv(k.word, me.level, 'yc-kept-ja'), hearButton(k.word.kana, '🔊', 'yc-hear small')))),
   );
 }
 
@@ -993,9 +1017,10 @@ function scoreScreen(ctx: Ctx, me: CourtMe): HTMLElement {
     h('p', { class: 'yc-label center' }, 'This case'),
     h('p', { class: `yc-points${me.points ? '' : ' zero'}` }, `+${me.points ?? 0}`),
     me.scoreWhy ? h('p', { class: 'yc-hint center' }, me.scoreWhy) : null,
+    // A Kana judge's word sits right under their points, above the fold on a small phone.
+    keepCard(me),
     lines.length ? h('ul', { class: 'yc-breakdown' }, ...lines.map((x) => h('li', {}, h('span', {}, WHY[x.why] ?? x.why), h('b', {}, `+${x.points}`)))) : null,
     resultCard(me),
-    keepCard(me),
     kanaNoteCard(me),
     noteCard(me),
     boothCard(ctx, me),

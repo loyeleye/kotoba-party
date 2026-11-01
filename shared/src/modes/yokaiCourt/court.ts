@@ -310,8 +310,13 @@ export interface CourtMe {
   scoreWhy: string | null;
   /** A judge's result: the check and the vote. */
   result: { checkRight: boolean | null; checkValid: boolean; voted: Side | null; majority: boolean; hunch: ThingView | null } | null;
-  /** A Kana judge's word to keep at the verdict (logged on their path as seen). */
-  keep: { word: JpR; picture: string; emoji: string; checked: boolean } | null;
+  /**
+   * A Kana judge's word to keep at the verdict: logged on their path as seen when they took part (a check or a
+   * vote); shown but not logged when they sat out (`sat`), since the players who sit out need the word most.
+   */
+  keep: { word: JpR; picture: string; emoji: string; checked: boolean; sat: boolean } | null;
+  /** A Kana player's words to keep from earlier cases tonight, shown again (never logged again). */
+  kept: { word: JpR; picture: string; emoji: string }[];
   /** A Kana lawyer's private recap at the verdict: their tiles in order, how they went out, and the evidence. */
   kanaNote: { tiles: { word: JpR; evidence: boolean }[]; take: KanaTake; evidence: boolean | null } | null;
   /** A lawyer's private note at the verdict. */
@@ -1340,6 +1345,12 @@ function roleOf(c: CaseState, id: string): Role | null {
   return null;
 }
 
+/** A case's word to keep, as a Kana phone shows it: the word with romaji and its plain meaning, and its picture. */
+function keepView(c: CaseState, level: Level): { word: JpR; picture: string; emoji: string } {
+  const k = keepWordOf(c);
+  return { word: withRomaji({ ...k.word, en: glossOf(k) }, level), picture: k.picture, emoji: k.emoji };
+}
+
 function meView(s: CourtState, c: CaseState, cs: Case, t: Testimony, phase: Phase, player: ModePlayer, level: Level, ctx: ModeContext): CourtMe {
   const id = player.id;
   const role = roleOf(c, id);
@@ -1430,13 +1441,8 @@ function meView(s: CourtState, c: CaseState, cs: Case, t: Testimony, phase: Phas
             hunch: c.hunches[id] ? thingView(hunchThing(c.hunches[id]!), level) : null,
           }
         : null,
-    keep:
-      phase === 'score' && judge && level === 'kana' && (id in c.checks || !!c.votes[id])
-        ? (() => {
-            const k = keepWordOf(c);
-            return { word: withRomaji({ ...k.word, en: glossOf(k) }, level), picture: k.picture, emoji: k.emoji, checked: id in c.checks };
-          })()
-        : null,
+    keep: phase === 'score' && judge && level === 'kana' ? { ...keepView(c, level), checked: id in c.checks, sat: !(id in c.checks) && !c.votes[id] } : null,
+    kept: level === 'kana' ? s.cases.filter((x) => x.index < c.index && x.settled && x.judges.includes(id)).map((x) => keepView(x, level)) : [],
     kanaNote:
       phase === 'score' && side && !speaker && mine
         ? {

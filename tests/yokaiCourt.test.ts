@@ -7,7 +7,7 @@ import { apply, createGame, wakeAt, type GameAction, type GameContext, type Game
 import { ALL_FRAMES, framesOf } from '../shared/src/japanese/frames.js';
 import { hasKanji } from '../shared/src/japanese/kana.js';
 import { CASES, CHUNKS, CLUES, fill, kanaTilesOf, LINES, PLACES, slotsOf, TESTIMONIES, WITNESS, YOKAI, type Side } from '../shared/src/modes/yokaiCourt/cases.js';
-import { glossOf, withRomaji, CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, saidEvidence, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
+import { glossOf, keepWordOf, withRomaji, CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, saidEvidence, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { yokaiCourtPolicy } from '../tools/bots/policies/yokaiCourt.js';
@@ -486,8 +486,9 @@ describe('Yōkai Court later ideas', () => {
       expect(keep.checked).toBe(true);
       expect(t.s.phrasebook[id]!.find((x) => x.itemId === `court:word:${word}`), id).toMatchObject({ outcome: 'seen' });
     }
-    // Sat out: no word, nothing logged.
-    expect(t.view(first!).me!.keep).toBeNull();
+    expect(t.view(rest[0]!).me!.keep!.sat).toBe(false);
+    // Sat out: the word is still shown (they need it most), but nothing is logged.
+    expect(t.view(first!).me!.keep).toMatchObject({ sat: true, checked: false });
     expect((t.s.phrasebook[first!] ?? []).some((x) => x.itemId.startsWith('court:word:'))).toBe(false);
     // Lawyers get their tiles back instead.
     expect(t.view(pros).me!.keep).toBeNull();
@@ -496,6 +497,28 @@ describe('Yōkai Court later ideas', () => {
     expect(note.evidence).toBe(true);
     expect(note.tiles.map((x) => x.evidence)).toEqual([false, true]);
     expect(note.tiles[0]!.word.romaji).toBeTruthy();
+  });
+
+  it('shows a Kana judge their earlier words to keep in later cases, without logging them again', () => {
+    const t = new Table(5, ['kana', 'kana', 'kana', 'kana', 'kana'], 51);
+    t.start();
+    toPlan(t);
+    argueAll(t, () => null);
+    checkAndVote(t, (_, right) => right, () => 'def');
+    const judges = [...t.c.judges];
+    const word = keepWordOf(t.c);
+    const logged = (id: string) => (t.s.phrasebook[id] ?? []).filter((x) => x.itemId === `court:word:${word.id}`).length;
+    const before = judges.map(logged);
+    expect(t.view(judges[0]!).me!.kept).toEqual([]);
+    while (t.st.round === 1) t.tick();
+    for (const id of judges) {
+      const kept = t.view(id).me!.kept;
+      expect(kept.map((k) => k.word.kana), id).toEqual([word.word.kana]);
+      expect(kept[0]!.word.romaji).toBeTruthy();
+    }
+    // Lawyers and the witness last case weren't judges: nothing to show again.
+    for (const id of [t.st.cases[0]!.pros, t.st.cases[0]!.def]) expect(t.view(id).me!.kept).toEqual([]);
+    expect(judges.map(logged)).toEqual(before);
   });
 
   it('a Kana lawyer’s recap says whether their own take had every tile', () => {

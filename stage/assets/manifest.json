@@ -10500,10 +10500,10 @@
     },
     {
       "path": "stage/assets/court/role-pros.png",
-      "what": "Yōkai Court role icon: prosecution (a rolled scroll tied with a vermilion cord and a red seal)",
+      "what": "Yōkai Court role icon: prosecution (an open-front scroll with two rolled wooden ends and a vermilion cord)",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a rolled paper scroll tied with a bright vermilion red cord and a round red wax seal",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a horizontal Japanese hand scroll seen straight from the front, cream paper unrolled in the middle, two thick rolled wooden ends at left and right, a vermilion red cord tied around the middle, symmetrical",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -10513,16 +10513,16 @@
         "width": 32,
         "height": 32,
         "text_guidance_scale": 8,
-        "seed": 241
+        "seed": 303
       },
       "post": {}
     },
     {
       "path": "stage/assets/court/role-def.png",
-      "what": "Yōkai Court role icon: defence (a sunflower, as on a Japanese lawyer's badge)",
+      "what": "Yōkai Court role icon: defence (a stemless sunflower badge, as Japanese lawyers wear)",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a single bright yellow sunflower head seen from the front, big yellow petals, brown centre, short green stem",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a round gold lapel badge shaped like a sunflower head seen from the front, sixteen bright yellow petals around a brown centre, no stem, no leaves, symmetrical, fills the frame",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -10532,16 +10532,16 @@
         "width": 32,
         "height": 32,
         "text_guidance_scale": 8,
-        "seed": 252
+        "seed": 303
       },
       "post": {}
     },
     {
       "path": "stage/assets/court/role-judge.png",
-      "what": "Yōkai Court role icon: judge (a wooden balance scale)",
+      "what": "Yōkai Court role icon: judge (a brass balance scale with shallow dish pans)",
       "generator": "pixellab",
       "model": "pixflux",
-      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front three-quarter view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a small brass balance scale seen from the front, a central post with a crossbar and two round pans hanging on chains, perfectly level, on a wooden base",
+      "prompt": "Pixel art game icon for a cozy-spooky Japanese late-night TV party game, single object, centred, front view, bold readable silhouette at small size, warm colours, thick dark outline, no text, no letters, no numbers. a brass balance scale seen from the front, a central post on a small round foot, a straight crossbar, two wide shallow flat dish pans hanging level on thin lines at each end, symmetrical, no base box",
       "params": {
         "outline": "single color black outline",
         "shading": "basic shading",
@@ -10551,7 +10551,7 @@
         "width": 32,
         "height": 32,
         "text_guidance_scale": 8,
-        "seed": 253
+        "seed": 303
       },
       "post": {}
     },
