@@ -2,8 +2,9 @@
 // has an N4 player, and each shift offers them to the room's N4 players in turn (phone: やります, or
 // こんかいは いいです for the ordinary part). Nobody else's part or pay changes.
 //
-//   manager (てんちょう)  one seat a shift. A customer who complains about a box, or makes a special
-//              request, comes to the manager's phone: say sorry and ask the customer politely
+//   manager (ふくてんちょう, deputy manager: Pon is busy "tasting")  one seat a shift. A customer who
+//              complains about a box, or makes a special request, comes to the deputy manager's
+//              phone: say sorry and ask the customer politely
 //              (もうしわけ ございません。すこし まって いただけますか。), then ask a station
 //              (からあげを もう ひとつ つくって もらえますか。). The request lands on that station's phone
 //              and they tap できました！. Goals 4.1 and 4.9.
@@ -17,6 +18,7 @@
 // N3 (step 6): ＿で ございます, ＿て おります, ＿させて いただきます for the おもてなし shift.
 
 import type { ReviewStatus } from '../../../../content/src/types.js';
+import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import type { ModeContext, ModePlayer } from '../mode.js';
 import type { Round, Visit } from './bentoHaus.js';
@@ -46,7 +48,7 @@ export interface StepScript {
 const L = (text: string, en: string, frames: readonly string[]): HardLine => ({ text, kana: text, en, frames });
 
 const SORRY_WAIT = L('もうしわけ ございません。すこし まって いただけますか。', "I'm terribly sorry. Could you wait a moment?", ['keigo-verb', 'te-itadakemasu-ka']);
-const SURE_WAIT = L('かしこまりました。すこし まって いただけますか。', 'Certainly. Could you wait a moment?', ['keigo-verb', 'te-itadakemasu-ka']);
+const SURE_WAIT = L('かしこまりました。すこし まって いただけますか。', 'Certainly. Could you wait a moment?', ['te-itadakemasu-ka']);
 
 export interface SpecialScript {
   id: string;
@@ -75,7 +77,7 @@ export const SPECIALS: readonly SpecialScript[] = [
     status: 'draft',
     ask: { text: 'おべんとうを あたためて ください。', en: 'Please warm the bento up.' },
     steps: [
-      { to: 'customer', check: 'ask', model: L('はい。こちらで まって いただけますか。', 'Of course. Could you wait here?', ['te-itadakemasu-ka']) },
+      { to: 'customer', check: 'ask', model: L('かしこまりました。こちらで すこし まって いただけますか。', 'Certainly. Could you wait here a moment?', ['te-itadakemasu-ka']) },
       { to: 'kitchen', check: 'kitchen', keys: ['あたため'], model: L('おべんとうを あたためて もらえますか。', 'Could you warm the bento up?', ['te-moraeru']) },
     ],
   },
@@ -146,7 +148,7 @@ export function complaintSteps(off: { foodId: string; how: 'missing' | 'few' | '
 }
 
 /** What a customer says once the manager has sorted it out. */
-export const THANKS: JpLine = { text: 'ありがとう。たすかりました。', en: 'Thank you. That helps.' };
+export const THANKS: JpLine = { text: 'ありがとう。たすかりました。', en: 'Thanks. You saved me.' };
 
 export interface GuestAsk {
   id: string;
@@ -180,14 +182,14 @@ const READY = (text: string, en: string, ask: JpLine, id: string, customers?: re
 
 /** What a guest asks the おもてなし order-taker, after they've been seated. */
 export const GUEST_ASKS: readonly GuestAsk[] = [
-  NO('おたばこ', 'smoking', { text: 'ここで たばこを すっても いいですか。', en: 'May I smoke here?' }, 'smoking', ['たばこ']),
+  NO('おたばこ', 'smoking', { text: 'ここで たばこを すっても いいですか。', en: 'May I smoke here?' }, 'smoking', ['たばこ'], ['buchou']),
   READY('はい、おはしは よういして あります。', "Yes, chopsticks are ready for you.", { text: 'おはしは ありますか。', en: 'Are there chopsticks?' }, 'chopsticks'),
-  NO('おでんわ', 'phone calls', { text: 'みせの なかで でんわを しても いいですか。', en: 'May I make a phone call in the shop?' }, 'phone', ['でんわ']),
+  NO('おでんわ', 'phone calls', { text: 'みせの なかで でんわを しても いいですか。', en: 'May I make a phone call in the shop?' }, 'phone', ['でんわ'], ['zangyou']),
   READY('はい、おしぼりも よういして あります。', 'Yes, a hand towel is ready too.', { text: 'おしぼりは ありますか。', en: 'Is there a hand towel?' }, 'oshibori'),
-  NO('ペット', 'pets', { text: 'ペットを いれても いいですか。', en: 'May I bring my pet in?' }, 'pet', ['ペット']),
-  READY('はい、おせきを よういして あります。', 'Yes, your seat is ready.', { text: 'よやくした ものですが…', en: 'I have a reservation…' }, 'booking'),
+  NO('ペット', 'pets', { text: 'ペットと いっしょに はいっても いいですか。', en: 'May I come in with my pet?' }, 'pet', ['ペット']),
+  READY('はい、おせきは よういして あります。', 'Yes, your seat is ready.', { text: 'よやくした ものですが…', en: 'I have a reservation…' }, 'booking'),
   NO('しゃしん', 'photos', { text: 'ほかの おきゃくさんの しゃしんを とっても いいですか。', en: 'May I take photos of the other customers?' }, 'photos', ['しゃしん'], ['influencer']),
-  READY('はい、つめたい おちゃを よういして あります。', 'Yes, cold tea is ready for you.', { text: 'つめたい おちゃは ありますか。', en: 'Is there cold tea?' }, 'cold-tea', ['yukionna']),
+  READY('はい、つめたい おちゃも よういして あります。', 'Yes, cold tea is ready for you too.', { text: 'つめたい おちゃは ありますか。', en: 'Is there cold tea?' }, 'cold-tea', ['yukionna']),
   NO('おみせで ねるの', 'sleeping in the shop', { text: 'ここで ねても いいですか。', en: 'May I sleep here?' }, 'sleep', ['ねる'], ['baku', 'kodanuki']),
 ];
 
@@ -201,10 +203,11 @@ export const WELCOME: StepScript = {
 // ---- checking a line ----
 
 const APOLOGY = ['もうしわけございません', 'もうしわけありません'];
-const ITADAKU = ['ていただけますか', 'でいただけますか', 'ていただけませんか', 'でいただけませんか'];
+const ITADAKU = ['ていただけますか', 'でいただけますか', 'ていただけませんか', 'でいただけませんか', 'おまちいただけますか', 'おまちいただけませんか'];
 const MORAU = ['てもらえますか', 'でもらえますか', 'てもらえませんか', 'でもらえませんか'];
 const O_KUDASAI = ['おすわりください', 'おまちください', 'おかけください', 'おはいりください'];
-const GOENRYO = ['ごえんりょください'];
+const KURERU = ['てくれますか', 'でくれますか', 'てくれませんか', 'でくれませんか'];
+const GOENRYO = ['ごえんりょください', 'ごえんりょいただけますか', 'ごえんりょいただけませんか', 'ごえんりょねがいます', 'ごえんりょおねがいします'];
 const TE_ARU = ['よういしてあります'];
 const IKEMASEN = ['てはいけません', 'ではいけません', 'てはだめ', 'ちゃだめ', 'だめです'];
 
@@ -216,8 +219,11 @@ function readingsOf(u: Utterance): string[] {
 }
 const has = (rs: readonly string[], chunks: readonly string[]) => rs.some((r) => chunks.some((c) => r.includes(soundKey(c))));
 
-/** Does a hard-role line use its frame (and name what it must)? If not, a private hint for the phone. */
-export function checkLine(u: Utterance, step: Pick<StepScript, 'check' | 'keys'>): { ok: boolean; hint: string | null } {
+/**
+ * Does a hard-role line use its frame (and name what it must)? If not, a private hint for the phone. A
+ * kitchen line asked with 〜て くれませんか instead of 〜て もらえますか is fine too, tagged te-kuremasen.
+ */
+export function checkLine(u: Utterance, step: Pick<StepScript, 'check' | 'keys'>): { ok: boolean; hint: string | null; frames?: readonly string[] } {
   const rs = readingsOf(u);
   const keyed = !step.keys?.length || has(rs, step.keys);
   const miss = (hint: string) => ({ ok: false, hint });
@@ -232,6 +238,7 @@ export function checkLine(u: Utterance, step: Pick<StepScript, 'check' | 'keys'>
     }
     case 'kitchen':
       if (has(rs, MORAU) && keyed) return { ok: true, hint: null };
+      if (has(rs, KURERU) && keyed) return { ok: true, hint: null, frames: ['te-kuremasen'] };
       if (has(rs, ITADAKU)) return keyed ? { ok: true, hint: null } : miss(`Say what you need: ${step.keys!.join(' / ')}.`);
       if (!keyed) return miss(`Say what you need: ${step.keys!.join(' / ')}, then 〜て もらえますか.`);
       return miss('Ask the kitchen with 〜て もらえますか (〜を つくって もらえますか).');
@@ -257,8 +264,8 @@ export interface RoleOffer {
   round: number;
   playerId: string;
   role: HardRole;
-  /** null: never answered (the ordinary part). */
-  answer: 'accepted' | 'declined' | null;
+  /** null: still open. At shift end an open offer is 'timeout'; a player who left with it open, 'away'. */
+  answer: OfferAnswer | null;
 }
 
 export interface LineStep extends StepScript {
@@ -268,6 +275,10 @@ export interface LineStep extends StepScript {
   tries: number;
   hint: string | null;
   skipped: boolean;
+  /** The frames the accepted line used, when not the model's own (〜て くれませんか to the kitchen). */
+  heardFrames?: readonly string[];
+  /** The model line was opened on the phone before the first try: the phrasebook logs it as seen. */
+  peeked?: boolean;
 }
 
 export interface Incident {
@@ -322,7 +333,7 @@ export interface HardState {
 /** How long a complaint or special order stays on the manager's desk. */
 export const INCIDENT_MS = 30_000;
 /** A special order every this many customers while the manager is free. */
-export const SPECIAL_EVERY = 2;
+export const SPECIAL_EVERY = 3;
 export const HARD_BONUS = { spoken: 20, typed: 8 } as const;
 /** A finished incident stays on the TV's desk this long. */
 export const DESK_LINGER_MS = 3_000;
@@ -343,14 +354,27 @@ export function rolesFor(round: number, players: readonly Pick<ModePlayer, 'id' 
 
 export const blankHardRound = (): HardRound => ({ manager: null, omotenashi: [], incidents: [], guests: [], arrivals: 0 });
 
-/** How the offers went: the gate counts answered offers accepted. */
-export function offerStats(offers: readonly RoleOffer[]): { offered: number; accepted: number; declined: number; unanswered: number } {
+/** How the offers went. The gate is rate: accepted ÷ (accepted + declined + timeout); away and open offers are left out. */
+export function offerStats(offers: readonly RoleOffer[]): { offered: number; accepted: number; declined: number; timeout: number; away: number; rate: number | null } {
+  const count = (a: OfferAnswer) => offers.filter((o) => o.answer === a).length;
   return {
     offered: offers.length,
-    accepted: offers.filter((o) => o.answer === 'accepted').length,
-    declined: offers.filter((o) => o.answer === 'declined').length,
-    unanswered: offers.filter((o) => o.answer === null).length,
+    accepted: count('accepted'),
+    declined: count('declined'),
+    timeout: count('timeout'),
+    away: count('away'),
+    rate: offerRate(offers.flatMap((o) => (o.answer ? [o.answer] : []))),
   };
+}
+
+/** The shift is over: an offer nobody answered timed out. */
+export function closeOffers(h: HardState, round: number): void {
+  for (const o of h.offers) if (o.round === round && o.answer === null) o.answer = 'timeout';
+}
+
+/** A player left with this shift's offer still open: it's left out of the rate. */
+export function offerAway(h: HardState, round: number, playerId: string): void {
+  for (const o of h.offers) if (o.round === round && o.playerId === playerId && o.answer === null) o.answer = 'away';
 }
 
 /** A player answers this shift's offer. Accepting seats them at once. */
@@ -431,31 +455,35 @@ export function maybeSpecial(h: HardState, hr: HardRound, r: Round, v: Visit, ct
   return inc;
 }
 
-const outcome = (u: Utterance | null, tries: number): 'said' | 'retry' | 'seen' => (u?.via === 'speech' ? (tries <= 1 ? 'said' : 'retry') : 'seen');
+// A line read off the phone's "Need the words?" before the first try counts as seen, not said.
+const outcome = (u: Utterance | null, tries: number, peeked: boolean): 'said' | 'retry' | 'seen' =>
+  u?.via === 'speech' && !peeked ? (tries <= 1 ? 'said' : 'retry') : 'seen';
 
 /** Says (or skips) one line of a hard-role script. Returns the points earned, if any. */
-function sayStep(step: LineStep, u: Utterance | null, playerId: string, itemId: string, ctx: ModeContext): number {
+function sayStep(step: LineStep, u: Utterance | null, playerId: string, itemId: string, ctx: ModeContext, peeked = false): number {
   if (!u) {
     step.skipped = true;
     step.hint = null;
     ctx.phrase(playerId, { itemId, text: step.model.text, kana: step.model.kana, en: step.model.en, outcome: 'missed' });
     return 0;
   }
+  if (peeked && step.tries === 0) step.peeked = true;
   step.tries += 1;
   step.said = u.text.slice(0, 80);
   const res = checkLine(u, step);
   step.ok = res.ok;
   step.hint = res.hint;
   if (!res.ok) return 0;
-  ctx.phrase(playerId, { itemId, text: step.model.text, kana: step.model.kana, en: step.model.en, outcome: outcome(u, step.tries) });
+  if (res.frames) step.heardFrames = res.frames;
+  ctx.phrase(playerId, { itemId, text: step.model.text, kana: step.model.kana, en: step.model.en, outcome: outcome(u, step.tries, !!step.peeked) });
   return u.via === 'speech' ? HARD_BONUS.spoken : HARD_BONUS.typed;
 }
 
 /** The manager says the current line of an incident (or skips it). */
-export function managerSays(hr: HardRound, inc: Incident, playerId: string, u: Utterance | null, players: readonly ModePlayer[], ctx: ModeContext): number {
+export function managerSays(hr: HardRound, inc: Incident, playerId: string, u: Utterance | null, players: readonly ModePlayer[], ctx: ModeContext, peeked = false): number {
   const step = inc.steps[inc.step];
   if (!step) return 0;
-  const points = sayStep(step, u, playerId, `bento:hard:${inc.scriptId}:${inc.step}`, ctx);
+  const points = sayStep(step, u, playerId, `bento:hard:${inc.scriptId}:${inc.step}`, ctx, peeked);
   if (!step.ok && !step.skipped) return points;
   inc.step += 1;
   if (inc.step < inc.steps.length) return points;
@@ -501,10 +529,10 @@ export function addGuest(h: HardState, hr: HardRound, v: Visit): Guest | null {
 export const guestAsk = (g: Guest): GuestAsk => GUEST_ASKS.find((a) => a.id === g.askId)!;
 
 /** The order-taker says (or skips) the guest's next line. */
-export function hostSays(g: Guest, playerId: string, u: Utterance | null, ctx: ModeContext): number {
+export function hostSays(g: Guest, playerId: string, u: Utterance | null, ctx: ModeContext, peeked = false): number {
   const step = g.steps[g.step];
   if (!step) return 0;
-  const points = sayStep(step, u, playerId, `bento:hard:${g.step === 0 ? 'welcome' : g.askId}`, ctx);
+  const points = sayStep(step, u, playerId, `bento:hard:${g.step === 0 ? 'welcome' : g.askId}`, ctx, peeked);
   if (step.ok || step.skipped) g.step += 1;
   return points;
 }
@@ -571,6 +599,8 @@ export interface DeskView {
 
 export interface StepView {
   to: 'customer' | 'kitchen';
+  /** Which frame the line needs: the phone's input shows its cue. */
+  check: CheckKind;
   model: HardLine;
   said: string | null;
   ok: boolean;
@@ -610,7 +640,7 @@ export interface MyHardView {
   guests: Record<string, GuestView & { steps: StepView[]; step: number }>;
 }
 
-const stepView = (s: LineStep): StepView => ({ to: s.to, model: s.model, said: s.said, ok: s.ok, skipped: s.skipped, hint: s.hint });
+const stepView = (s: LineStep): StepView => ({ to: s.to, check: s.check, model: s.model, said: s.said, ok: s.ok, skipped: s.skipped, hint: s.hint });
 
 function deskView(inc: Incident): DeskView {
   const c = customerOf(inc.customerId)!;

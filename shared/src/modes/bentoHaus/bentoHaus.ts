@@ -19,7 +19,7 @@
 // ちゅうもん customers describe food and change their minds, ③ ラッシュアワー two at once, some in a hurry.
 // Co-op: every tip pays the whole team, and the round ends with 1–3 ★.
 //
-// With an N4 player in the room, each shift also offers the N4 hard roles (hardRoles.ts): the manager, who
+// With an N4 player in the room, each shift also offers the N4 hard roles (hardRoles.ts): the deputy manager, who
 // handles complaints and special orders in keigo, and the おもてなし shift, an order-taker who looks after
 // each guest. They ride on the same shift; nobody else's part or pay changes.
 
@@ -31,6 +31,7 @@ import {
   addGuest,
   answerOffer,
   blankHardRound,
+  closeOffers,
   expireIncidents,
   hardView,
   hardWakeTimes,
@@ -39,6 +40,7 @@ import {
   maybeComplaint,
   maybeSpecial,
   myHardView,
+  offerAway,
   releaseHard,
   requestDone,
   rolesFor,
@@ -171,6 +173,8 @@ export interface BentoState {
   lastCueAt: number;
   /** Co-op: the hard-role offers, once an N4 player has been in the room. */
   hard?: HardState;
+  /** The server's clock at the mode's last call (see stampClock). */
+  clock?: number;
 }
 
 // ---- view ----
@@ -295,13 +299,24 @@ export type BentoMove =
   | { kind: 'toss'; visitId: string; foodId: string }
   | { kind: 'serve'; visitId: string; utterance?: Utterance }
   // N4 hard roles (Co-op): answer this shift's offer, say the manager's or the host's next line (or skip
-  // it), and a station sees to the manager's request.
+  // it), and a station sees to the manager's request. peeked: the phone's "Need the words?" was opened
+  // before the line's first try, so it's logged as seen.
   | { kind: 'role'; accept: boolean }
-  | { kind: 'manager'; incidentId: string; utterance?: Utterance; skip?: boolean }
+  | { kind: 'manager'; incidentId: string; utterance?: Utterance; skip?: boolean; peeked?: boolean }
   | { kind: 'request-done'; incidentId: string }
-  | { kind: 'omotenashi'; visitId: string; utterance?: Utterance; skip?: boolean };
+  | { kind: 'omotenashi'; visitId: string; utterance?: Utterance; skip?: boolean; peeked?: boolean };
 
 // ---- helpers ----
+
+/**
+ * Views are built without the server's clock (viewFor passes now 0), but the phones and the TV time
+ * every bar and linger from the view's `at`, and the view drops lingering customers and desks by it.
+ * So each call that runs with the real clock stamps it, and the view uses the latest stamp.
+ */
+export function stampClock(s: { clock?: number }, now: number): void {
+  if (now > (s.clock ?? 0)) s.clock = now;
+}
+export const viewContext = (s: { clock?: number }, ctx: ModeContext): ModeContext => (ctx.now ? ctx : { ...ctx, now: s.clock ?? 0 });
 
 /** What a shop keeps across its kitchens: who did what, and when Pon last spoke. */
 export type Shop = Pick<BentoState, 'stats' | 'lastCueAt'>;
@@ -914,12 +929,13 @@ export function shopAwards(s: Shop, ctx: ModeContext): Award[] {
 /** The N4 hard roles' moves: the manager's lines, a station seeing to a request, the おもてなし host's lines. */
 function hardMove(r: Round, hr: HardRound, playerId: string, raw: Record<string, unknown>, ctx: ModeContext): MoveResult {
   const u = raw.skip === true ? null : utteranceOk(raw.utterance) ? raw.utterance : undefined;
+  const peeked = raw.peeked === true;
   switch (raw.kind) {
     case 'manager': {
       const inc = hr.incidents.find((i) => i.id === raw.incidentId);
       if (inc && inc.state !== 'open') return moveError('too-late');
       if (!inc || inc.managerId !== playerId || u === undefined) return moveError('bad-move');
-      addBonus(r, playerId, managerSays(hr, inc, playerId, u, ctx.players(), ctx));
+      addBonus(r, playerId, managerSays(hr, inc, playerId, u, ctx.players(), ctx, peeked));
       return MOVE_OK;
     }
     case 'request-done': {
@@ -934,7 +950,7 @@ function hardMove(r: Round, hr: HardRound, playerId: string, raw: Record<string,
       const v = r.visits.find((x) => x.id === raw.visitId);
       if (g && (v?.state !== 'waiting' || g.step >= g.steps.length)) return moveError('too-late');
       if (!g || g.takerId !== playerId || u === undefined) return moveError('bad-move');
-      addBonus(r, playerId, hostSays(g, playerId, u, ctx));
+      addBonus(r, playerId, hostSays(g, playerId, u, ctx, peeked));
       return MOVE_OK;
     }
     default:
@@ -982,6 +998,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   },
 
   enter(s, phase, ctx) {
+    stampClock(s, ctx.now);
     if (phase === 'intro') {
       ctx.cue({ host: 'pon', event: 'bento_intro', waitMs: 4_000 });
       return;
@@ -1015,6 +1032,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   },
 
   leave(s, phase, ctx) {
+    stampClock(s, ctx.now);
     const r = s.current;
     if (!r || phase !== 'answer') return;
     runClock(s, r, ctx.now, ctx);
@@ -1022,6 +1040,8 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     for (const v of waiting(r)) giveUp(s, r, v, ctx.now, ctx);
     r.nextArriveAt = null;
     if (r.hard) expireIncidents(r.hard, Infinity);
+    // An offer still open at closing time timed out.
+    if (s.hard) closeOffers(s.hard, r.index);
   },
 
   duration(s, phase) {
@@ -1051,6 +1071,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   },
 
   wake(s, phase, ctx) {
+    stampClock(s, ctx.now);
     const r = s.current;
     if (phase === 'answer' && r) {
       runClock(s, r, ctx.now, ctx);
@@ -1059,6 +1080,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   },
 
   move(s, phase, playerId, raw, ctx) {
+    stampClock(s, ctx.now);
     const r = s.current;
     // A hard-role offer can be answered from the shift's title card on.
     if (isObject(raw) && raw.kind === 'role' && r && (phase === 'prompt' || phase === 'answer')) {
@@ -1089,6 +1111,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
   },
 
   release(s, playerId, ctx) {
+    stampClock(s, ctx.now);
     const r = s.current;
     if (!r) return;
     const left = ctx.players().filter((p) => p.id !== playerId);
@@ -1099,13 +1122,15 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     for (const t of r.tickets) if (t.stationId === playerId && t.foodId) t.stationId = r.holders[t.foodId] ?? null;
     for (const v of waiting(r)) if (v.takerId === playerId) v.takerId = left[i++ % left.length]!.id;
     if (r.hard) releaseHard(r.hard, playerId, left, ctx.now);
+    if (s.hard) offerAway(s.hard, r.index, playerId);
   },
 
   progress(s) {
     return { round: Math.max(1, s.round), totalRounds: s.totalRounds };
   },
 
-  view(s, phase, viewer, ctx) {
+  view(s, phase, viewer, rawCtx) {
+    const ctx = viewContext(s, rawCtx);
     const r = s.current;
     const info = s.round ? ROUND_INFO[s.round - 1]! : null;
     const own = ownCounter(s.round);
