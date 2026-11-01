@@ -60,7 +60,7 @@ read. Re-read everything marked ⚠️ or ❓ before launch, and get a lawyer to
 | 32 | Dub Club plays players' recorded voices back on the TV: each acted take is kept in the room's memory (Node, or the Cloudflare Durable Object) while the game needs it, then dropped; never written to disk | `server/src/room.ts` (`keepClip`), `server/src/server.ts`, `cloudflare/roomObject.ts`, `controller/src/modes/dubClub.ts` | ⚠️ ❓ | Privacy, not a licence: a voice played to the room is still personal data, and some players may be children. Before selling: say it in the privacy notice, decide on under-13/16 players (COPPA, GDPR-K: rules not read for this, ❓), keep the "play from my phone" option, and check Cloudflare's Durable Object terms for in-memory personal data (not read, ❓) |
 | 33 | Dub Club's Cheeky episodes and cards (office overtime, a first date, Girls' Night, a cheap idol off stage, and the drunk, sexy, host-club, gyaru and mother-in-law cards), behind the host's Audience setting (decision, 2026-10-28) | `shared/src/modes/dubClub/scenes.ts` (`audience: 'cheeky'`) | ⚠️ | Same as rows 29 and 30: no licence issue, but it adds to the age rating. Include it in the rating questionnaires or leave it out of rated builds; have the fluent reviewer check the Cheeky lines |
 | 34 | Optional sign-in: passkeys through SimpleWebAuthn (`@simplewebauthn/server` and `/browser`, MIT, plus MIT, Apache-2.0, 0BSD and BSD-3 dependencies), and each signed-in player's save (save name, game scores, kana practised) kept on one Cloudflare Durable Object (decision, 2026-10-28) | `server/src/accounts.ts`, `cloudflare/accountsObject.ts`, `controller/src/account.ts`, `shared/src/progress.ts` | 🟡 ⚠️ ❓ | Ship the MIT and Apache-2.0 notices (row 5). Privacy, not licence: a privacy notice for saves, a decision on under-13/16 players (COPPA, GDPR-K: not read, ❓), and Cloudflare's Durable Object storage named as a processor. Deleting a save is already in the game |
-| 35 | The learning path names levels "N5" and "N4" (the JLPT's level names) and suggests a JLPT mock test; its lines use our own names (Kana Line, Local Line, Express Line) (decision, 2026-11-01) | `shared/src/path.ts`, `controller/src/path.ts`, the level picker in `controller/src/main.ts` | ❓ | Read the JLPT's terms (Japan Foundation and JEES) on using "JLPT", "N5" and "N4" in a product; jlpt.jp couldn't be reached from the build machine on 2026-11-01. Until then, keep the names to plain description ("roughly N5"), never a claim of JLPT endorsement or a result |
+| 35 | The learning path names levels "N5" and "N4" (the JLPT's level names) and suggests a JLPT mock test; its lines use our own names (Kana Line, Local Line, Express Line) (decision, 2026-11-01) | `shared/src/path.ts`, `controller/src/path.ts`, the level picker in `controller/src/main.ts` | ⚠️ | JLPT site policy read 2026-11-01: it covers copying the site's works (questions, text), not naming the test or its levels, and carries no trademark notice. We copy none of its content. Keep "N5"/"N4" descriptive, never claim endorsement or a result, and have a lawyer check whether "JLPT" or 日本語能力試験 is a registered mark before launch |
 
 ## Details
 
@@ -635,8 +635,14 @@ pictures if they still look right, and add the Steam/itch disclosure.
   [progressive-learning.md](progressive-learning.md)) builds its goals from the JLPT's public level summaries
   and the Japan Foundation's JF Standard can-dos, taking their shape, not their text, and its cleared screen
   suggests a JLPT mock test. Every goal, example and line is our own; the lines carry our own names.
-- **Terms:** not read. https://www.jlpt.jp/e/ refused the connection from the build machine on 2026-11-01
-  (proxy 403), so the JLPT's rules on its name and level names weren't checked: ❓.
-- **To sell:** read the JLPT's and the Japan Foundation's terms for naming the test and its levels; keep
+- **Terms:** read 2026-11-01: the JLPT site policy, https://www.jlpt.jp/e/policy.html (Japan Foundation
+  and JEES). It governs the site's copyrighted works: personal study use and cited excerpts (with the source
+  line "Source: Official Worldwide Japanese-Language Proficiency Test Website (https://www.jlpt.jp/)") are
+  free; other uses, including a paid product reproducing its works or sample questions, need permission via
+  Inquiries. It says nothing about naming the test or its levels, and has no trademark notice. We reproduce
+  none of its works: the goals are our own, shaped by the level summary
+  (https://www.jlpt.jp/e/about/levelsummary.html). Trademark registration wasn't checked: ⚠️.
+- **To sell:** check (J-PlatPat or a lawyer) whether "JLPT" or 日本語能力試験 is a registered mark; never
+  copy the site's text or sample questions without permission; keep
   "N5"/"N4" descriptive (never "JLPT certified" or a score); if the names aren't allowed, rename the picker
   and the path to our own level names.
