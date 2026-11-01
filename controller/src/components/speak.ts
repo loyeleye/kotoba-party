@@ -34,6 +34,19 @@ export const setQuiet = (q: boolean): void => {
 };
 export const isQuiet = (): boolean => quiet;
 
+// While a talk button is held the phone must not redraw (a new button would drop the take), so
+// main.ts holds redraws until the take ends.
+let talking = 0;
+const talkEnded: (() => void)[] = [];
+export const isTalking = (): boolean => talking > 0;
+export function onTalkEnd(fn: () => void): void {
+  talkEnded.push(fn);
+}
+function setTalking(on: boolean): void {
+  talking = Math.max(0, talking + (on ? 1 : -1));
+  if (!on && talking === 0) for (const fn of talkEnded) fn();
+}
+
 export const canSpeak = (): boolean => speechReady() && !quiet && !micBlocked;
 
 type MicState = 'ready' | 'quiet' | 'blocked' | 'no-service';
@@ -71,6 +84,11 @@ export interface SpeakOptions {
   maxLength?: number;
   /** Send what was heard straight away, without a Send step (fast calls, like a kitchen's). */
   autoSend?: boolean;
+  /**
+   * Called as soon as a take is recorded, before the (sometimes slow) speech check: a game can
+   * move the player on and take the answer when `onSend` fires later (Kana Raid's say steps).
+   */
+  onRecorded?: () => void;
   /** Keep the half-typed text (and the keyboard) across redraws, for screens that redraw mid-typing. */
   draftKey?: string;
   /**
@@ -105,19 +123,22 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
     const stop = async () => {
       if (timer) clearTimeout(timer);
       timer = null;
+      const wasLive = talk.classList.contains('live');
       talk.classList.remove('live');
       talk.style.setProperty('--level', '0');
       if (opts.toggle) talk.replaceChildren(...idle);
       const c = clip;
       clip = null;
-      if (!c) return;
-      const wav = c.stop();
+      const wav = c?.stop();
+      if (wasLive) setTalking(false);
+      if (!c || wav === undefined) return;
       if (c.blocked) {
         micBlocked = true;
         return void (heard.textContent = missed('blocked'));
       }
+      opts.onRecorded?.();
       heard.textContent = '…';
-      const r = await hear(wav);
+      const r = await hear(wav, !!opts.onRecorded);
       if (clip) return; // pressed again while this one was being checked
       if (!r.ok) return void (heard.textContent = missed(r.why));
       const romaji = level === 'kana' ? heardRomaji(r) : undefined;
@@ -140,6 +161,7 @@ export function speakBox(opts: SpeakOptions): HTMLElement {
       const c = new MicClip();
       clip = c;
       talk.classList.add('live');
+      setTalking(true);
       heard.classList.remove('got');
       void c.ready.then((ok) => {
         if (clip === c) heard.textContent = ok ? '🎤 …' : missed(c.blocked ? 'blocked' : 'failed');

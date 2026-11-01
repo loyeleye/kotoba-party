@@ -161,6 +161,23 @@ function inkReplay(ink: NonNullable<LastResult['ink']>): HTMLElement {
   );
 }
 
+// A say scored after you moved on shows for a few seconds (the phone redraws often, so time it here).
+const saidSeen = new Map<string, number>();
+function saidLine(said: LastResult | null): HTMLElement | null {
+  if (!said) return null;
+  const first = saidSeen.get(said.attackId) ?? Date.now();
+  if (saidSeen.size > 20) saidSeen.clear();
+  saidSeen.set(said.attackId, first);
+  if (Date.now() - first > 5_000) return null;
+  return h(
+    'p',
+    { class: `raid-said ${said.ok ? 'ok' : 'miss'}` },
+    '🎤 ',
+    h('span', { lang: 'ja' }, said.char),
+    said.ok ? (said.points ? ` said it! +${said.points}` : ' ✓') : ` ${said.tip ?? 'not quite.'}`,
+  );
+}
+
 function lastStrip(last: LastResult | null): HTMLElement | null {
   if (!last) return null;
   if (last.kind === 'draw' && last.ink) {
@@ -226,9 +243,12 @@ function glyph(a: AttackView): HTMLElement {
   return h('div', { class: 'raid-glyph-wrap' }, h('p', { class: `raid-glyph${[...(a.show ?? '')].length > 1 ? ' wide' : ''}`, lang: 'ja' }, a.show ?? ''), a.romaji ? h('p', { class: 'raid-romaji' }, a.romaji) : null);
 }
 
-function speak(a: AttackView, send: (move: unknown) => Promise<boolean>, label: string): HTMLElement {
+function speak(a: AttackView, send: (move: unknown) => Promise<boolean>, label: string, later = false): HTMLElement {
   // Mic on: just the talk button (no "Can't talk right now?"). Mic off: speakBox shows the typed box.
-  return speakBox({ label, placeholder: 'Type it in kana', kanaPadOpen: false, maxLength: 20, speechOnly: true, onSend: (u: Utterance) => void send({ kind: 'attack', attackId: a.id, say: u }) });
+  // `later` (the say steps): once you've spoken you move on to the next yōkai while the phone
+  // checks the recording; the result comes back as its own line.
+  const extra = later ? { autoSend: true, onRecorded: () => void send({ kind: 'attack', attackId: a.id, pending: true }) } : {};
+  return speakBox({ label, placeholder: 'Type it in kana', kanaPadOpen: false, maxLength: 20, speechOnly: true, ...extra, onSend: (u: Utterance) => void send({ kind: 'attack', attackId: a.id, say: u }) });
 }
 
 // ---------- picking a yōkai (waves 1–2) ----------
@@ -340,7 +360,7 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
   const ask = a.clue ? 'Which spelling is right?' : PROMPTS[a.kind];
   const prompt = (a.kind === 'pair' || a.kind === 'draw') && a.step === 'say' ? null : h('p', { class: 'raid-prompt' }, a.retry ? (a.kind === 'draw' ? 'Try again: draw its true form' : `Try again! ${ask}`) : ask);
   const coach = me.coach ? h('p', { class: 'raid-coach' }, '🖌 Your ', h('span', { lang: 'ja' }, me.coach.char), ': ', me.coach.tip) : null;
-  const parts: (HTMLElement | null)[] = [head, coach, me.canAim ? aimStrip(game, a.yokaiId, send) : null, prompt];
+  const parts: (HTMLElement | null)[] = [head, saidLine(me.said), coach, me.canAim ? aimStrip(game, a.yokaiId, send) : null, prompt];
   switch (a.kind) {
     case 'shout':
       // Mic on: shout it. Mic off: tap its sound (hits a little softer).
@@ -364,7 +384,7 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
           h('p', { class: 'raid-say' }, 'Now say it!'),
           a.word ? h('div', { class: 'raid-word', lang: 'ja' }, h('span', {}, a.word.kana), h('small', {}, a.word.en)) : null,
           a.hear ? hearButton(a.hear) : null,
-          speak(a, send, 'Hold and say it'),
+          speak(a, send, 'Hold and say it', true),
           h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'attack', attackId: a.id, pass: true }) }, 'Skip saying it'),
         );
       break;
@@ -373,7 +393,7 @@ function battle(ctx: PhoneContext<KanaRaidView>): HTMLElement {
         parts.push(
           h('p', { class: 'raid-say' }, 'Now say what you drew!'),
           a.word ? h('div', { class: 'raid-word', lang: 'ja' }, h('span', {}, a.word.text)) : null,
-          speak(a, send, 'Hold and say its sound'),
+          speak(a, send, 'Hold and say its sound', true),
           h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'attack', attackId: a.id, pass: true }) }, 'Skip: next yōkai'),
         );
       else
