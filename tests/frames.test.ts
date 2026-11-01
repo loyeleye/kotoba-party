@@ -8,6 +8,9 @@ import { cases as n4a } from './frame-cases/n4-a.js';
 import { cases as n4b } from './frame-cases/n4-b.js';
 import { cases as n4c } from './frame-cases/n4-c.js';
 import { cases as n4d } from './frame-cases/n4-d.js';
+import { cases as n3a } from './frame-cases/n3-a.js';
+import { cases as n3b } from './frame-cases/n3-b.js';
+import { cases as n3c } from './frame-cases/n3-c.js';
 import { cases as n5existing } from './frame-cases/n5-existing.js';
 import { cases as n5new } from './frame-cases/n5-new.js';
 import { probes } from './frame-cases/panel-probes.js';
@@ -126,7 +129,7 @@ describe('sentence frames', () => {
 // are read with kuromoji tokens, as the server reads them.
 
 const reader = (await createReader())!;
-const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c, ...n4d };
+const cases: FrameCases = { ...n5existing, ...n5new, ...n4a, ...n4b, ...n4c, ...n4d, ...n3a, ...n3b, ...n3c };
 const line = (l: CaseLine) => (typeof l === 'string' ? { text: l, kana: l } : l);
 
 describe('every frame in a line (framesOf)', () => {
@@ -185,15 +188,33 @@ describe('every frame in a line (framesOf)', () => {
     expect(new Set(ALL_FRAMES.map((f) => f.id)).size).toBe(ALL_FRAMES.length);
     for (const f of ALL_FRAMES) expect(FRAME_BY_ID[f.id]).toBe(f);
     // The ids the tiered path's goals count (agreed with that work); a rename there must land here too.
-    const path: Record<'n5' | 'n4', FrameId[]> = {
+    const path: Record<'n5' | 'n4' | 'n3', FrameId[]> = {
       n5: ['ikura', 'ji-fun', 'ni-masu', 'youbi', 'gatsu-nichi', 'wa-ni-aru', 'migi-hidari', 'hoshii', 'de-o', 'te-iru', 'no', 'adj-desu', 'kunai', 'kara', 'hou-ga', 'mashou', 'naide-kudasai'],
       n4: ['te-moraeru', 'ageru-kureru', 'te-wa-ikenai', 'nakereba', 'ta-koto', 'te-miru', 'te-shimau', 'potential', 'tara', 'ba', 'toki', 'sou-look', 'to-omou', 'kamo', 'you-to-omou', 'tsumori', 'hou-ga-ii', 'plain', 'n-da', 'o-kudasai', 'te-itadakemasen',
         // The N4 frames the goals left out at first, optional on 4.1, 4.2, 4.3, 4.6 and 4.9 (Ladi, Nov 1).
         'te-hoshii', 'causative', 'sasete-kudasai', 'ba-yokatta', 'tari-tari', 'mitai-you', 'n-desu'],
+      // The Limited Express's goals 3.1 to 3.11 (the plan doc's table; the path and Yōkai Court name them). のに,
+      // the reason ため and ＿ば よかった count on N3 goals too but are N4 or step-1 frames.
+      n3: ['rashii', 'uchi-ni', 'tame-reason', 'mitai-casual', 'suffering-passive', 'saserareru', 'tokoro-deshita', 'sasete-morau', 'sei-de', 'okage-de', 'wake-desu',
+        'wari-ni', 'kuse-ni', 'ni-kurabete', 'to-shitara', 'ba-hodo', 'you-to-suru', 'zu-ni', 'koto-ni-shiteiru', 'ta-tsumori', 'wake-dewa-nai', 'beki', 'to-iu-koto',
+        'to-shite', 'toori-ni', 'sasete-itadaku', 'de-gozaimasu', 'te-orimasu', 'go-kudasai', 'kashikomarimashita', 'tabi-ni', 'saichuu-ni', 'te-kita', 'you-na-ki',
+        'ni-chigainai', 'ni-taishite', 'shika-nai', 'sorenanoni', 'tsumari', 'ppoi', 'nante', 'toka', 'jan', 'kke'],
     };
+    // ＿じゃん and ＿っけ count for listening only (the plan's 3.11); every other frame can be said.
+    expect(ALL_FRAMES.filter((f) => f.listening).map((f) => f.id)).toEqual(['jan', 'kke']);
     for (const [level, ids] of Object.entries(path)) {
       for (const id of ids) expect([id, FRAME_BY_ID[id]?.level]).toEqual([id, level]);
     }
+  });
+
+  // The Japanese and JLPT seats on #146: frames that counted when hidden frames are kept for progress.
+  it('counts no hidden frame the line does not have', () => {
+    const counted = (k: string) => framesOf({ text: k, kana: k }, reader.tokens(k), { keepHidden: true });
+    expect(counted('くつを ぬがなくても いいですか。')).not.toContain('te-mo-ii');
+    expect(counted('すこし やすんだら どうですか。')).not.toContain('tara');
+    expect(counted('しゅくだいを しないと いけませんか。')).not.toContain('masen-ka');
+    expect(counted('ごめんなさいと いったら どうですか。')).not.toContain('to-itte-ita');
+    expect(counted('にほんごが できます。')).not.toContain('potential');
   });
 
   it('leaves out the frames that need part of speech when there are no tokens', () => {
