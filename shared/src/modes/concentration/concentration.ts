@@ -309,7 +309,7 @@ function sayAttempt(s: ConcentrationState, ctx: ModeContext, phase: Phase, playe
   if (stealing) t.steals += 1;
   clearPair(s, pair, playerId);
   s.result = { kind: stealing ? 'stolen' : 'claimed', playerId, word: pair.word.jp, points, spoken };
-  ctx.phrase(playerId, { itemId: pair.word.id, text: pair.word.jp.text, kana: pair.word.jp.kana, en: pair.word.jp.en, outcome: used === 0 ? 'said' : 'retry' });
+  ctx.phrase(playerId, { itemId: pair.word.id, text: pair.word.jp.text, kana: pair.word.jp.kana, en: pair.word.jp.en, outcome: used === 0 ? 'said' : 'retry', recall: spoken ? 'memory' : 'read' });
   flash(s, stealing ? 'stolen' : 'claimed', playerId);
   const slots = { name: player?.name ?? '' };
   ctx.cue({ host: 'fude', event: stealing ? 'concentration_stolen' : 'concentration_keep', slots, answer: heard, answerEn: pair.word.jp.en });

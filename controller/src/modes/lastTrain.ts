@@ -8,7 +8,7 @@
 //    place, so a vote elsewhere never rebuilds the talk button mid-sentence.
 
 import { h, mount, ruby } from '../../../shared/src/dom.js';
-import type { JpText, Level } from '../../../content/src/types.js';
+import type { JpText, Level, StationSign } from '../../../content/src/types.js';
 import { signBoard } from '../../../shared/src/signBoard.js';
 import type { LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -131,6 +131,19 @@ function listenBox(task: TaskView): HTMLElement {
 
 // ---- answering ----
 
+/**
+ * Kana level: what the signs say, under the boards (a first meeting shows it from the start; a pair only on
+ * the retry). The reading goes under the board, not on it: the board is the sign as it hangs in a station.
+ */
+function signReadings(signs: StationSign[], attempt: 1 | 2): HTMLElement {
+  const read = signs.filter((sg) => sg.reading);
+  if (read.length === 1 && signs.length === 1 && attempt === 1) {
+    const r = read[0]!.reading!;
+    return h('p', { class: 'lt-sign-reading' }, 'It reads ', h('strong', { lang: 'ja' }, r), ` (${toRomaji(r)}). Say it!`);
+  }
+  return h('p', { class: 'lt-sign-reading' }, read.flatMap((sg, i) => [i ? ' · ' : '', h('span', { lang: 'ja' }, `${sg.text} = ${sg.reading}`), ` (${toRomaji(sg.reading!)})`]));
+}
+
 /** Kana players get the direction words with every pair of boards. */
 function directionStrip(): HTMLElement {
   return h('p', { class: 'lt-dir-strip' }, '← ひだり hidari · ↑ まっすぐ massugu · みぎ migi →');
@@ -168,6 +181,8 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
     task.listen && task.attempt === 1 ? listenBox(task) : null,
     task.signs?.length ? signBoard(task.signs) : null,
     task.signs && task.signs.length > 1 && level === 'kana' ? directionStrip() : null,
+    task.signs?.some((sg) => sg.reading) ? signReadings(task.signs, task.attempt) : null,
+    task.attempt === 1 && task.hint ? h('p', { class: 'lt-hint-first' }, `💡 ${task.hint}`) : null,
     // かな players get the romaji under the prompt too, unless the task carries its own.
     showText ? jpBlock(task.prompt, { en: level === 'kana' || task.attempt === 2, big: true, romaji: level === 'kana' && !task.romaji }) : null,
     // N5 and up read the Japanese first; the English is one tap away.

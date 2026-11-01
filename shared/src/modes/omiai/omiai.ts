@@ -484,7 +484,8 @@ function scoreEncores(s: OmiaiState, ctx: ModeContext): void {
       const share = (line.winner ? ENCORE_SHARE.winner : ENCORE_SHARE.other)[e.via === 'speech' ? 'speech' : 'typed'];
       line.encoreBonus = Math.max(0, Math.min(line.cap - line.bonus, round5(line.cap * share)));
       pay(ctx, line.authorId, line.encoreBonus);
-      ctx.phrase(line.authorId, { ...entry, outcome: e.via === 'speech' ? 'said' : 'seen' });
+      // The encore says back the polite version shown on the phone: said, but read.
+      ctx.phrase(line.authorId, { ...entry, outcome: e.via === 'speech' ? 'said' : 'seen', recall: 'read' });
     } else {
       // A correction that wasn't said back goes to review; a polite answer is just kept.
       ctx.phrase(line.authorId, { ...entry, outcome: a.tip.kind === 'rewrite' || a.tip.kind === 'stock' ? 'missed' : 'seen' });

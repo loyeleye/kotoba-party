@@ -30,6 +30,7 @@ Commands:
   utterance (`{ via: 'speech' | 'typed' | 'tap', text }`) inside the move gets a server-side
   `reading` (kana) and `tokens` (word split) before the mode sees it.
 - `setLevel { level }`: `kana`, `n5` or `n4`, lobby only.
+- `wish { mode | null }`: the learning path's "♡ Wish for it", lobby only, one per phone, cleared when a game starts. The view shows counts only (`wishes`), plus the phone's own in `me.wish`.
 - `micCheck { utterance }`: the lobby's "say こんにちは" check.
 - `skip { phaseSeq }`: VIP or stage, timed phases.
 - `playAgain`: VIP or stage, recap.

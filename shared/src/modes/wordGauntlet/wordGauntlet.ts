@@ -798,7 +798,7 @@ function moveSay(s: WordGauntletState, phase: Phase, playerId: string, u: unknow
   f.said[playerId] = u.via;
   const spoken = u.via === 'speech';
   giveBonus(s, ctx, playerId, spoken ? GOLDEN_SAID_BONUS : GOLDEN_TYPED_BONUS, f.points);
-  ctx.phrase(playerId, { itemId: `wg.golden.${f.word.id}`, text: f.word.jp.text, kana: f.word.jp.kana, en: f.word.jp.en, outcome: 'said' });
+  ctx.phrase(playerId, { itemId: `wg.golden.${f.word.id}`, text: f.word.jp.text, kana: f.word.jp.kana, en: f.word.jp.en, outcome: 'said', recall: 'read' });
   return MOVE_OK;
 }
 
@@ -967,7 +967,7 @@ function acceptWord(s: WordGauntletState, ctx: ModeContext, word: ChainWord, ite
   if (word.via === 'speech') giveBonus(s, ctx, id, SHIRITORI_SPOKEN_BONUS, sh.points);
   if (item) {
     const hinted = sh.hint?.playerId === id && sh.hint.words.some((w) => repeatKey(w.kana) === repeatKey(word.reading));
-    ctx.phrase(id, { itemId: item.itemId, text: item.text, kana: item.kana, en: item.en, outcome: hinted ? 'seen' : 'said' });
+    ctx.phrase(id, { itemId: item.itemId, text: item.text, kana: item.kana, en: item.en, outcome: hinted ? 'seen' : 'said', recall: word.via === 'speech' ? 'memory' : 'read' });
   }
 }
 

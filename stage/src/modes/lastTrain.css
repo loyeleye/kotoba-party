@@ -71,24 +71,29 @@
 }
 
 /* Read the Signs: station boards with only the kanji (and an arrow) on them. Japanese stations colour exits
-   yellow and toilets blue and red; everything else is the dark board with white type. A pair always shares one
-   row, so the left sign stays on the left even at 360 px. */
+   yellow and toilets blue and red; everything else is the dark board with white type. The boards are
+   PixelLab pixel art (stage/assets/signs/, made by tools/art/sources/signs.py), nine-sliced so they fit any
+   width. A pair always shares one row, so the left sign stays on the left even at 360 px. */
 .lt-signs { display: flex; justify-content: center; gap: 10px; margin: 4px 0; }
 .lt-signs.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.lt-sign { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; padding: 12px 8px; border-radius: 8px; background: #1d2a44; color: #fff; border: 3px solid #0b1222; box-shadow: 0 4px 0 #0b1222; }
+.lt-sign { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; padding: 16px 14px 18px; color: #fff; border: 0 solid transparent; border-image: url('/stage/assets/signs/sign-board.png') 42 fill / 28px / 0 round; image-rendering: pixelated; filter: drop-shadow(0 4px 0 var(--outline)); }
+/* Each board hangs from two short rods (not on the small TV reveal copies). */
+.lt-signs:not(.small) { margin-top: 20px; }
+.lt-signs:not(.small) .lt-sign::before, .lt-signs:not(.small) .lt-sign::after { content: ''; position: absolute; top: -20px; left: 22%; width: 12px; height: 28px; background: url('/stage/assets/signs/sign-hanger.png') center / 100% 100% no-repeat; image-rendering: pixelated; z-index: -1; }
+.lt-signs:not(.small) .lt-sign::after { left: auto; right: 22%; }
 .lt-signs:not(.pair) .lt-sign { min-width: 120px; padding: 14px 20px; }
 .lt-sign-text { font-family: var(--font-ja); font-weight: 700; font-size: 44px; line-height: 1.1; white-space: nowrap; }
-/* A solid drawn arrow (no text glyph), pointing left; right and up are the same shape turned. */
-.lt-sign-arrow { flex: none; width: 0.9em; height: 0.9em; font-size: 34px; background: currentColor; clip-path: polygon(0 50%, 50% 0, 50% 32%, 100% 32%, 100% 68%, 50% 68%, 50% 100%); }
+/* The PixelLab arrow, used as a mask so it takes the sign's text colour. It points left; right and up are turned. */
+.lt-sign-arrow { flex: none; width: 1.05em; height: 0.9em; font-size: 34px; background: currentColor; -webkit-mask: url('/stage/assets/signs/sign-arrow.png') center / contain no-repeat; mask: url('/stage/assets/signs/sign-arrow.png') center / contain no-repeat; }
 .lt-sign-arrow.right { transform: scaleX(-1); }
 .lt-sign-arrow.up { transform: rotate(90deg); }
-.lt-sign.exit { background: #ffd23f; color: #1a1205; }
-.lt-sign.men { background: #2f6fd6; }
-.lt-sign.women { background: #d63a4f; }
+.lt-sign.exit { border-image-source: url('/stage/assets/signs/sign-board-exit.png'); color: #1a1205; }
+.lt-sign.men { border-image-source: url('/stage/assets/signs/sign-board-men.png'); }
+.lt-sign.women { border-image-source: url('/stage/assets/signs/sign-board-women.png'); }
 /* On the TV the reveal row shows the signs small, the asked-about one outlined, the other faded. */
 .lt-signs.small { display: inline-flex; vertical-align: middle; margin: 0 8px 6px 0; }
 .lt-signs.small.pair { display: inline-grid; grid-template-columns: auto auto; }
-.lt-signs.small .lt-sign { padding: 6px 12px; border-width: 2px; box-shadow: 0 2px 0 #0b1222; }
+.lt-signs.small .lt-sign { padding: 8px 12px; border-image-width: 14px; filter: drop-shadow(0 2px 0 var(--outline)); }
 .lt-signs.small .lt-sign-text { font-size: 30px; }
 .lt-signs.small .lt-sign-arrow { font-size: 24px; }
 .lt-sign.target { outline: 4px solid var(--good); outline-offset: 2px; }

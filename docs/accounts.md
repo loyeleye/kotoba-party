@@ -97,7 +97,7 @@ All under `/api/account/`, JSON. See also [protocol.md](protocol.md).
 | `POST register/verify` | — | `{ response, tz }` | `{ token, account }`; 400 `expired`, `not-verified` |
 | `POST login/options` | — | `{}` | `{ options }` for `navigator.credentials.get` |
 | `POST login/verify` | — | `{ response, tz }` | `{ token, account }`; 400 `expired`, `not-verified`; 404 `unknown-passkey` (its save was deleted) |
-| `GET me?tz=` | Bearer | — | `{ account: { name, cards, due, games, bests, phrases, duePhrases, path, frames } }`; 401 `signed-out` |
+| `GET me?tz=` | Bearer | — | `{ account: { name, cards, due, games, bests, phrases, duePhrases, path, frames, pathStatus } }` (`pathStatus`: the learning path's goals, frames and lines, see [progressive-learning.md](progressive-learning.md)); 401 `signed-out` |
 | `POST review` | Bearer | `{ itemId, answer }` | `{ right, expected, card, caught }`; 404 `no-card` |
 | `POST review` | Bearer | `{ kind: 'phrase', itemId, knew }` | `{ phrase }`; 404 `no-card` |
 | `POST settings` | Bearer | `{ path: boolean }` | `{ account }`: the learning path's switch ([progressive-learning.md](progressive-learning.md)); 400 `bad-settings` |

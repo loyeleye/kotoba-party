@@ -481,7 +481,7 @@ function phraseFor(s: KaraokeState, ctx: ModeContext, playerId: string, line: nu
   const song = songOf(s);
   const l = song?.lines[line];
   if (!song || !l) return;
-  ctx.phrase(playerId, { itemId: `karaoke.${s.lyricsId ?? song.id}.${line}`, text: l.text, kana: l.kana, en: l.en, outcome });
+  ctx.phrase(playerId, { itemId: `karaoke.${s.lyricsId ?? song.id}.${line}`, text: l.text, kana: l.kana, en: l.en, outcome, recall: 'read' });
 }
 
 /** Every turn of a continuous song that has no take by the song's end counts as missed. */

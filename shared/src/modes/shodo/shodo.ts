@@ -703,7 +703,7 @@ function enterReplay(s: ShodoState, ctx: ModeContext): void {
   else if (sheets.some((x) => x.clean)) ctx.cue({ host: 'fude', event: 'shodo_clean' });
   for (const sheet of sheets) {
     const t = sheet.target;
-    ctx.phrase(sheet.playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: item.said[sheet.playerId] === 'speech' ? 'said' : sheet.pass ? 'seen' : 'missed' });
+    ctx.phrase(sheet.playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: item.said[sheet.playerId] === 'speech' ? 'said' : sheet.pass ? 'seen' : 'missed', recall: 'read' });
   }
 }
 
@@ -776,7 +776,7 @@ function moveSay(s: ShodoState, phase: Phase, playerId: string, u: unknown, ctx:
     if (!matchesAccepted(heard, [t.say.kana])) return moveError('not-the-word');
     p.said[rep.target] = u.via;
     owe(s, playerId, u.via === 'speech' ? SAY_BONUS.speech : u.via === 'typed' ? SAY_BONUS.typed : 0);
-    ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: u.via === 'speech' ? 'said' : 'seen' });
+    ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: u.via === 'speech' ? 'said' : 'seen', recall: 'memory' });
     return MOVE_OK;
   }
   if (phase === 'answer') {
@@ -862,7 +862,7 @@ function moveRep(s: ShodoState, phase: Phase, playerId: string, raw: Record<stri
   if (rep.kind === 'memory' && clean) s.stats.clean[playerId] = (s.stats.clean[playerId] ?? 0) + 1;
   p.results.push({ ...rep, ok, clean, strokes });
   p.next += 1;
-  if (rep.kind === 'memory') ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: p.said[rep.target] === 'speech' ? 'said' : ok ? 'seen' : 'retry' });
+  if (rep.kind === 'memory') ctx.phrase(playerId, { itemId: t.id, text: t.say.text, kana: t.say.kana, en: t.say.en, outcome: p.said[rep.target] === 'speech' ? 'said' : ok ? 'seen' : 'retry', recall: 'memory' });
   return MOVE_OK;
 }
 
