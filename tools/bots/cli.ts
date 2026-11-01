@@ -18,25 +18,7 @@ import type { DebugView } from '../../shared/src/modes/debug/debug.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import { MODE_IDS, type ModeId } from '../../shared/src/protocol.js';
 import { Bot, Director, politeScript, type BotScript, type ModePolicy } from './bot.js';
-import { concentrationPolicy } from './policies/concentration.js';
-import { karaokeDuelPolicy } from './policies/karaokeDuel.js';
-import { onsenMurderPolicy } from './policies/onsenMurder.js';
-import { kanaRaidPolicy } from './policies/kanaRaid.js';
-import { lastTrainPolicy } from './policies/lastTrain.js';
-import { oogiriPolicy } from './policies/oogiri.js';
-import { omiaiPolicy } from './policies/omiai.js';
-import { phraseBingoPolicy } from './policies/phraseBingo.js';
-import { wordGauntletPolicy } from './policies/wordGauntlet.js';
-import { touristPolicy } from './policies/tourist.js';
-import { oekakiPolicy } from './policies/oekaki.js';
-import { shodoPolicy } from './policies/shodo.js';
-import { narabetePolicy } from './policies/narabete.js';
-import { dubClubPolicy } from './policies/dubClub.js';
-import { happyokaiPolicy } from './policies/happyokai.js';
-import { bentoHausPolicy } from './policies/bentoHaus.js';
-import { hajimemashitePolicy } from './policies/hajimemashite.js';
-import { lateAgainPolicy } from './policies/lateAgain.js';
-import { ghostHotlinePolicy } from './policies/ghostHotline.js';
+import { policyMaker } from './policies/index.js';
 
 const { values } = parseArgs({
   options: {
@@ -66,59 +48,11 @@ const url = values.url!.replace(/\/$/, '');
 const count = Number(values.bots ?? (values.code ? 7 : 8));
 const dropSeconds = Number(values.drop);
 
-let sharedNarabete: ModePolicy | undefined;
-let sharedDubClub: ModePolicy | undefined;
-let sharedPhraseBingo: ModePolicy | undefined;
+const makePolicy = policyMaker(() => loadContent(fileURLToPath(new URL('../../', import.meta.url))));
 
 /** A fresh policy per bot, so each keeps its own memory (Concentration remembers cards). */
 function policyFor(seat: number, id: ModeId = mode): ModePolicy | undefined {
-  const content = () => loadContent(fileURLToPath(new URL('../../', import.meta.url)));
-  switch (id) {
-    case 'oogiri':
-      return oogiriPolicy();
-    case 'last-train':
-      return lastTrainPolicy({ content: content(), seed: seat });
-    case 'kana-raid':
-      return kanaRaidPolicy();
-    case 'word-gauntlet':
-      return wordGauntletPolicy(content());
-    case 'onsen-murder':
-      return onsenMurderPolicy();
-    case 'concentration':
-      return concentrationPolicy();
-    case 'phrase-bingo':
-      // One shared policy: audience bots "hear" what the actor bots say.
-      return (sharedPhraseBingo ??= phraseBingoPolicy());
-    case 'karaoke-duel':
-      return karaokeDuelPolicy({ seed: seat });
-    case 'tourist':
-      return touristPolicy({ seed: seat });
-    case 'oekaki':
-      return oekakiPolicy({ seed: seat });
-    case 'omiai':
-      return omiaiPolicy();
-    case 'shodo':
-      return shodoPolicy({ content: content(), seed: seat });
-    case 'narabete':
-      // One shared policy: the bots "hear" each other's cards.
-      return (sharedNarabete ??= narabetePolicy());
-    case 'bento-haus':
-    case 'bento-haus-vs':
-      return bentoHausPolicy();
-    case 'dub-club':
-      // One shared policy: guessers "hear" the card each actor is playing.
-      return (sharedDubClub ??= dubClubPolicy());
-    case 'hajimemashite':
-      return hajimemashitePolicy();
-    case 'happyokai':
-      return happyokaiPolicy();
-    case 'late-again':
-      return lateAgainPolicy();
-    case 'ghost-hotline':
-      return ghostHotlinePolicy();
-    default:
-      return undefined;
-  }
+  return makePolicy(seat, id);
 }
 
 /** Plays whichever mode the room is in, with one policy per mode made on first use. */

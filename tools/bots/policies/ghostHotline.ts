@@ -13,6 +13,9 @@ export interface GhostHotlinePolicyOptions {
   /** Chance the caller says the problem. */
   say?: number;
   thinkMs?: number;
+  /** Speak the advice as a checked clip of Nobiko-san's version, as a speaker who knows it would (the path
+   *  simulation, tools/sim). Off by default: live bots can't record. */
+  speak?: boolean;
 }
 
 function hash(...parts: (string | number)[]): number {
@@ -47,7 +50,10 @@ export function ghostHotlinePolicy(opts: GhostHotlinePolicyOptions = {}): ModePo
           if (view.phase === 'prompt' && !me.ready) push('ready', { kind: 'ready' }, think);
           if (view.phase === 'answer') {
             if (me.micPassLeft && r('pass?') < pass) push('pass', { kind: 'pass' });
-            else push('advice', { kind: 'advice', type: 'typed', text: me.mission.model.kana }, think);
+            else if (opts.speak) {
+              const said = me.mission.model.kana;
+              push('advice', { kind: 'advice', type: 'clip', clipId: `sim-${playerId}-${game.round}`, durMs: 4000, checked: true, heard: { via: 'speech', text: said, reading: said } }, think);
+            } else push('advice', { kind: 'advice', type: 'typed', text: me.mission.model.kana }, think);
           }
         }
         if (me.role === 'gallery' && !me.bet && me.betTiles.length && view.phase === 'prompt') push('bet', { kind: 'bet', tileId: pickOf(me.betTiles, r('bet'))!.id });
