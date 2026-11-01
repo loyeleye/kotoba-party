@@ -230,7 +230,7 @@ let tab: Tab | null = null;
 function phoneLevel(): Level {
   try {
     const l = JSON.parse(localStorage.getItem('kotoba:level') ?? 'null') as unknown;
-    return l === 'kana' || l === 'n5' || l === 'n4' ? l : 'n5';
+    return l === 'kana' || l === 'n5' || l === 'n4' || l === 'n3' ? l : 'n5';
   } catch {
     return 'n5';
   }

@@ -26,6 +26,7 @@ import { playerTextAllowed } from '../../moderation.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { cardsFor, endsInForm, fillFrame, introCardOf, tileOf, tilesOnly, type Conj, type IntroCard, type Tile } from './cards.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -353,8 +354,8 @@ function pickCard(s: HajimeState, audience: Audience, level: Level, random: () =
   // shared ones. Cheeky rooms play the cheeky cards next, then the rest.
   const own = (c: IntroCard) => c.audiences.length === 1;
   const n4deck = pool.filter((c) => c.level === 'n4');
-  const n4 = level === 'n4' ? [n4deck.filter(own), n4deck.filter((c) => !own(c))] : [];
-  const rest = pool.filter((c) => !(level === 'n4' && c.level === 'n4'));
+  const n4 = n4Up(level) ? [n4deck.filter(own), n4deck.filter((c) => !own(c))] : [];
+  const rest = pool.filter((c) => !(n4Up(level) && c.level === 'n4'));
   const ordered = [...n4, ...(audience === 'cheeky' ? [rest.filter(own), rest.filter((c) => !own(c))] : [rest])];
   for (const group of ordered) {
     const fresh = group.filter((c) => !s.usedCards.includes(c.id));
@@ -575,7 +576,7 @@ function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
     }
     if (p.id === t.introducerId && truth) {
       const line = fillFrame(card.third, truth.word, name);
-      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen', recall: p.level === 'n4' ? 'memory' : 'read' });
+      ctx.phrase(p.id, { itemId: `hajime:${card.id}:third`, text: line, kana: line, en: card.enThird.replace('{name}', ctx.player(t.guestId)?.name ?? 'They').replace('___', truth.en ?? '…'), outcome: t.lines.some((l) => l.read === 'said') ? 'said' : 'seen', recall: n4Up(p.level) ? 'memory' : 'read' });
     }
   }
 }
@@ -1064,7 +1065,7 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
     if (me) {
       const role = t?.roles[me.id] ?? null;
       const romaji = me.level === 'kana';
-      const tile = (x: Tile): TileView => ({ id: x.id, kana: x.kana, en: me.level === 'n4' ? null : x.en, emoji: x.emoji, ...(romaji ? { romaji: true } : {}), ...(x.dict ? { dict: x.dict } : {}) });
+      const tile = (x: Tile): TileView => ({ id: x.id, kana: x.kana, en: n4Up(me.level) ? null : x.en, emoji: x.emoji, ...(romaji ? { romaji: true } : {}), ...(x.dict ? { dict: x.dict } : {}) });
       const dictOf = (tileId: string | null | undefined): string | undefined => (card?.conj && tileId ? tileOf(tileId)?.dict : undefined);
       const written = t?.writes[me.id];
       const myDict = dictOf(written?.tileId);

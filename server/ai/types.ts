@@ -3,7 +3,7 @@
 // This package imports nothing from server/src or shared/src, so it can be wired in from either side.
 
 export type HostId = 'pon' | 'chochin' | 'fude' | 'nobiko';
-export type Level = 'kana' | 'n5' | 'n4';
+export type Level = 'kana' | 'n5' | 'n4' | 'n3';
 export type ReactionTier = 'flop' | 'good' | 'ippon';
 
 /** Every event a host speaks on: the content thread's HostEvent (content/src/types.ts), kept in step by hand. */

@@ -16,6 +16,7 @@
 import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 import { forLevel, rb, src } from './ruby.js';
+import { n4Up } from '../../level.js';
 
 /** What a title or slide is about, for the assistant's "fits the title" choice. */
 export type Tag = 'animal' | 'yokai' | 'food' | 'place' | 'person' | 'thing' | 'home' | 'school' | 'work' | 'love' | 'travel' | 'space' | 'fun';
@@ -346,8 +347,8 @@ export function closingFor(level: Level): JpText {
 
 /** Sentence patterns for a picture slide (＿ is the slide's word, 〜 a gap to fill), fitted to its kind. In kana: they're patterns. */
 export function framesFor(level: Level, s: Slide, deck?: Deck): string[] {
-  if (level === 'n4' && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '＿が 〜られるように なりました。', '〜ことに しました。', '〜ことに なりました。', '＿は 〜そうですね。'];
-  if (level === 'n4' && deck === 'if') return ['もし ＿だったら、〜たいです。', `もし ＿が ${s.kind === 'living' ? 'いなかったら' : 'なかったら'}、〜。`, 'もし わたしが 〜だったら、〜と おもいます。', '＿は 〜そうですね。'];
+  if (n4Up(level) && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '＿が 〜られるように なりました。', '〜ことに しました。', '〜ことに なりました。', '＿は 〜そうですね。'];
+  if (n4Up(level) && deck === 'if') return ['もし ＿だったら、〜たいです。', `もし ＿が ${s.kind === 'living' ? 'いなかったら' : 'なかったら'}、〜。`, 'もし わたしが 〜だったら、〜と おもいます。', '＿は 〜そうですね。'];
   if (level === 'kana') return ['これは ＿です。', '＿が すきです。', 'すごいですね！'];
   if (level === 'n5') {
     const kind = { living: '＿と あそびました。', place: '＿に いきました。', food: '＿を たべました。', thing: '＿を かいました。' }[s.kind];
@@ -380,7 +381,7 @@ export function readySentences(s: Slide, level: Level, topic: JpText | null, dec
   const t = topic ?? jp('友[とも]だち', 'my friend');
   const did = didOf(s);
   const at = (x: JpText[]) => x.map((j) => forLevel(j, level));
-  if (level === 'n4' && deck) return at(deckSentences(s, t, deck, place));
+  if (n4Up(level) && deck) return at(deckSentences(s, t, deck, place));
   if (level === 'kana') return at([jp(`これは ${w}です。`, `This is ${a(en)}.`), jp(`これが ${src(t)}です！`, `THIS is ${t.en}!`)]);
   if (level === 'n5')
     return at([
@@ -578,8 +579,8 @@ const fill = (s: string, w: JpText, t: JpText): string => s.replace('{word}', sr
 
 /** Answer patterns for question time. */
 export function answerFrames(level: Level, deck?: Deck): string[] {
-  if (level === 'n4' && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '〜から、〜ことに しました。', '〜ことに なりました。', 'それは ひみつです。'];
-  if (level === 'n4' && deck === 'if') return ['もし 〜だったら、〜たいです。', '〜と おもいます。', 'いい しつもんですね。じつは、〜んです。', 'それは ひみつです。'];
+  if (n4Up(level) && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '〜から、〜ことに しました。', '〜ことに なりました。', 'それは ひみつです。'];
+  if (n4Up(level) && deck === 'if') return ['もし 〜だったら、〜たいです。', '〜と おもいます。', 'いい しつもんですね。じつは、〜んです。', 'それは ひみつです。'];
   if (level === 'kana') return ['はい、ほんとうです！', 'はい、すきです。', 'いいえ…', 'それは ひみつです！'];
   if (level === 'n5') return ['はい、〜です。', '〜からです。', 'いい しつもんですね。…', 'ノーコメントです。'];
   return ['いい しつもんですね。じつは、〜んです。', '〜と おもいます。', 'いちばん たいへんだったのは 〜ことです。', 'それは ひみつです。'];

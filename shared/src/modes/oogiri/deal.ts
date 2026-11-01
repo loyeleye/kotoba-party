@@ -10,7 +10,7 @@ import { FALLBACK_PACK, FALLBACK_PROMPTS, FALLBACK_SET_PHRASES } from './fallbac
 
 export const ROUNDS: readonly OogiriRound[] = ['head-to-head', 'photo-caption', 'ippon'];
 
-const LEVEL_RANK: Record<Level, number> = { kana: 0, n5: 1, n4: 2 };
+const LEVEL_RANK: Record<Level, number> = { kana: 0, n5: 1, n4: 2, n3: 3 };
 
 /** Forms a tile can ask for. Verbs: the four N5 polite forms; adjectives: plain, past, negative. */
 export type AskForm = TileForm;
@@ -121,7 +121,7 @@ export function libraryFor(content: ContentLibrary, packId: string, audience: Au
 /** The prompt version a player sees: their level, N4 falling back to N5, anything as a last resort. */
 export function versionFor(prompt: OogiriPrompt, level: Level): JpText {
   const v = prompt.versions;
-  const order: Level[] = level === 'n4' ? ['n4', 'n5', 'kana'] : level === 'n5' ? ['n5', 'kana', 'n4'] : ['kana', 'n5', 'n4'];
+  const order: Level[] = level === 'n3' ? ['n3', 'n4', 'n5', 'kana'] : level === 'n4' ? ['n4', 'n5', 'kana'] : level === 'n5' ? ['n5', 'kana', 'n4'] : ['kana', 'n5', 'n4'];
   for (const l of order) if (v[l]) return v[l]!;
   return { text: '＿＿＿', kana: '＿＿＿', en: '___' };
 }

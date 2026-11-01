@@ -5,13 +5,12 @@
 // these types can be re-exported from there without changes.
 
 /** A player's level band (see the design doc, "Level bands"). */
-export type Level = 'kana' | 'n5' | 'n4';
+export type Level = 'kana' | 'n5' | 'n4' | 'n3';
 
-/**
- * A content item's level. N3 joins Level in its own PR (step 6); until then N3 items are keyed here
- * and dealt to nobody.
- */
-export type ItemLevel = Level | 'n3';
+/** Text written for each level up to N4, with an optional N3 version (N3 falls back to the N4 one). */
+export type ByLevel<T> = Record<'kana' | 'n5' | 'n4', T> & { n3?: T };
+/** The version for this level: an N3 player gets the N4 version where no N3 one is written. */
+export const atLevel = <T>(rec: ByLevel<T>, level: Level): T => (level === 'n3' ? (rec.n3 ?? rec.n4) : rec[level]);
 
 /**
  * A piece of Japanese with everything the game needs to show, voice and check it.
@@ -292,7 +291,7 @@ export type PromptType = 'spoken-question' | 'listen-and-answer' | 'read-aloud' 
  */
 export interface MinigameItem {
   id: string;
-  level: ItemLevel;
+  level: Level;
   /** What the conductor or character says or shows. */
   prompt: JpText;
   /** Optional on-screen visual (prices, a clock face, a picture) described in words. */

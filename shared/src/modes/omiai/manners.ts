@@ -495,7 +495,7 @@ function upgradeFor(text: string, name: string | undefined, hits: MannerHit[]): 
 
 // ---- the meter ----
 
-const LEVEL_SCALE: Record<Level, number> = { kana: 1.3, n5: 1.1, n4: 1 };
+const LEVEL_SCALE: Record<Level, number> = { kana: 1.3, n5: 1.1, n4: 1, n3: 1 };
 
 export const METER = {
   ending: 45,
