@@ -115,17 +115,51 @@ draw (Late Again!, Narabete, Murder at the Onsen), most of which give nothing fr
 yield, skip goals no game carries) is meant to undo this, and the line went from 5 of 9 goals no game carries
 to 8 of 13 (4.13 stamps in 9% of rooms).
 
+## Step 5b: the suggestion ranked by what games yield (300 rooms, same base settings)
+
+`suggest` now ranks the open goals by what the best game for tonight's room gives toward each one, from a
+measured table (`npm run sim:yields` writes shared/src/pathYields.ts: frames an N4, N5 or Kana seat says from
+memory per game, from 8 bot games per room). A goal's score is its **scarcest** required frame not met yet, so
+4.11's plentiful ＿すぎる can't hide its rare ＿ので; optional frames only break ties. A kanji goal is scaled to the
+same units (30 kanji on 2 days, against 3 says for a frame), or Shodō's 0.4 N4 kanji a game would keep a room on
+4.10. A goal no game on it carries (4.2, 4.8, 4.14 and every Limited Express goal today) is never suggested and
+shows "No game yet" on the map. Each goal's games are listed best first.
+
+| Setting | Seven goals (4.1, 4.3, 4.4, 4.5, 4.9, 4.11, 4.13), median nights (p25 / p75) | Rooms that get all seven |
+|---|---|---|
+| Ignores the suggestion (follow 0) | – | 1% |
+| Base: follows it 60% of the time | **41 (31 / 53)** | 87% |
+| Follows it 90% of the time | **28 (23 / 36)** | 96% |
+
+- **Following the suggestion is now the fastest way, and the more the better.** Before, it was slower than
+  random (31 nights against 19 for the four carried goals, and under 40% at follow 0.9). Now the four carried
+  goals stamp by nights 2 (4.1, 4.9), 5 (4.4) and 6 (4.5) at the median, against 26 nights together when the
+  room ignores it.
+- **Three more goals come within reach:** 4.3 in every room (median 26 nights), 4.13 in every room (15) and 4.11
+  in 87% (39). Ignoring the suggestion, they stamp in 21%, 40% and 5% of rooms.
+- **One review sitting a week** adds 4.2 in 59% of rooms (median 41 nights), since a read Tourist phrase becomes
+  a say from memory on the phone. It slows 4.3 and 4.11 a little, because the room finishes 4.2's sayings first.
+- `tests/pathSim.test.ts` checks that following the suggestion stamps at least as many goals, no later, than
+  picking games at random over 12 short rooms. The old list-order suggestion fails it (24 stamps against 42).
+- **The Local Line keeps counting every goal as carried for now.** Its yields say 7 of its 10 goals have no game
+  an N5 player says them in from memory (most N5 lines are logged as read, Hajimemashite's first-person cards
+  included). That needs its own simulation before the phone tells every beginner "No game yet", so Local goals
+  rank by yield but are never marked uncarried.
+
+Still not cleared in any room: 4.6, 4.8, 4.10, 4.12 and 4.14 need games (fixes 3 to 8 below).
+
 ## What would let the line clear
 
 Each of these is a change to a game or the path, so they're logged as open questions and come in their own PR
 (step 5b), in the order the panel gave. Re-run the simulation after each.
 
-1. **Fix the suggestion.** Rank goals by how much tonight's games can move them, using the per-game yields
+1. **Fix the suggestion** (done in step 5b, above). Rank goals by how much tonight's games can move them, using the per-game yields
    above (a table `sim:express --json` can regenerate and CI can check), and order each goal's games by yield.
    Keep a "this goal hasn't moved in recent nights" check only as a guard: on its own it made things worse
    (the UX seat measured 42 nights at follow 0.9). Add a test that following the suggestion isn't slower than
    ignoring it.
-2. **Show the stops no game carries yet** as their own state on the phone: left out of the count, never
+2. **Show the stops no game carries yet** (done in step 5b for the Express and Limited Express Lines; they still count toward clearing
+   the line, so "cleared" keeps meaning every stop was met) as their own state on the phone: never
    suggested, with one line saying why.
 3. **Put Late Again! and Ghost Advice Hotline on the goals they carry** (Late Again! on 4.2, 4.3, 4.11, 4.13;
    the Hotline on 4.5 only for real conditionals such as ゆうれいが 来たら、にげた ほうが いいですよ).
@@ -153,4 +187,6 @@ npm run sim:express -- --rooms 500 --reviews 1 --goals 4.1,4.4,4.5,4.9
 ```
 
 It takes about 10 minutes for 500 rooms. `tests/pathSim.test.ts` checks that every Express game reaches its
-recap with bots, that a room run is repeatable, and that review sittings count toward a stamp.
+recap with bots, that a room run is repeatable, that review sittings count toward a stamp, and that following the
+suggestion is no slower than ignoring it. After a change to a game, run `npm run sim:yields` and commit the new
+shared/src/pathYields.ts.

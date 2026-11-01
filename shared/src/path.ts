@@ -12,6 +12,7 @@ import { readTheSigns } from '../../content/src/last-train/read-the-signs.js';
 import { FRAME_BY_ID } from './japanese/frames.js';
 import { toRomaji } from './japanese/romaji.js';
 import { MODES, noFit } from './modes/registry.js';
+import { YIELDS } from './pathYields.js';
 import { DAY_MS, FRAME_FILLERS, FRAME_GAP_DAYS, FRAME_SAYS, dayOf, frameRules, markFrames, ruleMet, ruleProgress, type FrameMark, type FrameRule, type Progress } from './progress.js';
 import type { Level, ModeId } from './protocol.js';
 
@@ -406,6 +407,11 @@ export interface GoalState {
   recheck: 'due' | 'fading' | null;
   /** Open, and every need left is only waiting on the 3-day gap: the day it can move again. */
   waitUntil: string | null;
+  /**
+   * Some game on the goal gives its line's players every required frame from memory (measured, see
+   * goalCarried). False: no game counts this yet, so it's never suggested and the phone says why.
+   */
+  carried: boolean;
 }
 
 export interface LineState {
@@ -494,7 +500,7 @@ export function pathStatus(p: Progress, now: number, tzOffsetMin = 0): PathStatu
     const stamped = metAt !== null;
     // The ring is for met goals only: an open goal's bar already says how far along it is.
     const done = stamped || met;
-    return { id: goal.id, hidden: !!goal.gap, ready: missingFrames(goal).length === 0, met: done, metAt, progress: done ? 1 : progress, count, recheck: done ? recheck : null, waitUntil: done ? null : waitUntil };
+    return { id: goal.id, hidden: !!goal.gap, ready: missingFrames(goal).length === 0, met: done, metAt, progress: done ? 1 : progress, count, recheck: done ? recheck : null, waitUntil: done ? null : waitUntil, carried: goalCarried(goal) };
   });
   // A line clears when every goal it shows is open and met: one with coming-soon stations is still being
   // built, so it can't end (the Limited Express would otherwise "clear" on its one open station).
@@ -525,6 +531,69 @@ export function markPath(p: Progress, now: number, tzOffsetMin = 0): string[] {
     }
   }
   return fresh;
+}
+
+// ---- what each game gives ----
+
+/**
+ * Frames real players say from memory in a game that its bots can't (so the measured yield is 0): Word
+ * Gauntlet's rumour round counts a retelling from memory, but the bots only echo what they heard.
+ */
+export const BOT_GAPS: Readonly<Partial<Record<ModeId, readonly string[]>>> = {
+  'word-gauntlet': ['sou-hear', 'ni-yoru', 'n-datte', 'to-itte-ita'],
+};
+/** The level whose yields a goal is measured at: its line's (N3 plays the N4 scripts until it has its own). */
+const yieldLevel = (level: Level): Level => (level === 'n3' ? 'n4' : level);
+/** Says from memory per game of one frame (or kanji:<level>) in a game, at a level; a bot gap counts as 1. */
+export function frameYield(mode: ModeId, key: string, level: Level): number {
+  const y = YIELDS[yieldLevel(level)]?.[mode]?.[key] ?? 0;
+  return y > 0 ? y : BOT_GAPS[mode]?.includes(key) ? 1 : 0;
+}
+const KANJI_KEY: Readonly<Record<string, string>> = { '5.10': 'kanji:n5', '4.10': 'kanji:n4' };
+/** Whether yields say anything about this goal (frames and kanji goals); kana and set phrases aren't measured. */
+const measured = (goal: Goal): boolean => goal.kind === 'frames' || goal.kind === 'kanji';
+
+/**
+ * Some game on the goal gives every required frame (each need, from any of its games) from memory to its
+ * line's players. Kana and set-phrase goals are always carried; a goal not ready yet counts as carried, since
+ * its frames can't be counted at all.
+ */
+/**
+ * Lines whose "no game carries this yet" state is shown. The Express Line's was checked against the step 5
+ * simulation. The Local Line's yields say 7 of its 10 goals have no game an N5 player says them in from
+ * memory (most N5 lines are logged as read), which needs its own simulation before the phone says so to
+ * every beginner; until then its goals rank by yield but always count as carried.
+ */
+const CARRIED_SHOWN: readonly LineId[] = ['express', 'limited'];
+
+export function goalCarried(goal: Goal): boolean {
+  if (!measured(goal) || missingFrames(goal).length || !CARRIED_SHOWN.includes(goal.line)) return true;
+  const level = LINE_BY_ID[goal.line].level;
+  if (goal.kind === 'kanji') return goal.games.some((m) => frameYield(m, KANJI_KEY[goal.id] ?? 'kanji:n4', level) > 0);
+  return goal.need.every((n) => needIds(n).some((id) => goal.games.some((m) => frameYield(m, id, level) > 0)));
+}
+
+/**
+ * What one game tonight gives toward a goal for this player: says from memory per game of its scarcest
+ * required frame not met yet (a goal stamps only when every required frame is met, so the bottleneck sets the
+ * pace; summing let 4.11's plentiful ＿すぎる hide its rare ＿ので and kept rooms on it). Optional frames don't
+ * move the goal's bar, so they only break ties (a tenth each). For a kanji goal, kanji of its level. Null for
+ * goals the yields don't measure (kana, set phrases).
+ */
+export function goalYield(st: PathStatus, goal: Goal, mode: ModeId, level: Level): number | null {
+  if (!measured(goal)) return null;
+  // A kanji goal needs 30 kanji on 2 days each where a frame needs 3 says: scale it to the same units, or a
+  // game giving 0.4 N4 kanji a night outranks one giving 0.3 of a frame and the room sits in Shodō for 4.10.
+  if (goal.kind === 'kanji') return (frameYield(mode, KANJI_KEY[goal.id] ?? 'kanji:n4', level) * 3) / (2 * KANJI_GOAL);
+  const open = (id: string) => !st.frames.find((f) => f.id === id)?.met;
+  const needs = goal.need.filter((n) => needIds(n).every(open)).map((n) => Math.max(...needIds(n).map((id) => frameYield(mode, id, level))));
+  const extra = goal.also.filter(open).reduce((sum, id) => sum + frameYield(mode, id, level), 0) / 10;
+  return (needs.length ? Math.min(...needs) : 0) + extra;
+}
+
+/** A goal's games, best first for this level: by measured yield, then in the goal's own order. */
+export function gamesByYield(st: PathStatus, goal: Goal, level: Level): ModeId[] {
+  return [...goal.games].map((m, i) => ({ m, i, y: goalYield(st, goal, m, level) ?? 0 })).sort((a, b) => b.y - a.y || a.i - b.i).map((x) => x.m);
 }
 
 // ---- what to play next ----
@@ -562,8 +631,10 @@ export interface Suggestion {
 }
 
 /**
- * What to play next: the first goal not yet met on the player's line that a game today can move, and the
- * first of its games that fits the room. Goals still waiting on a matcher are skipped. Null when nothing fits.
+ * What to play next on the player's line: a goal with a faded frame first; otherwise the open goal tonight's
+ * best-fitting game moves most, by the measured yields (shared/src/pathYields.ts), and that game. Goals still
+ * waiting on a matcher, waiting only on the 3-day gap, or carried by no game are skipped. Kana and set-phrase
+ * goals aren't measured and keep the list order. Null when nothing fits.
  */
 export function suggest(st: PathStatus, level: Level, room: RoomFit | null): Suggestion | null {
   const line = currentLine(st, level);
@@ -572,11 +643,22 @@ export function suggest(st: PathStatus, level: Level, room: RoomFit | null): Sug
   // A faded frame's goal comes first: say it again and the ring goes.
   const fading = GOALS.filter((x) => x.line === line.id && st.goals.find((y) => y.id === x.id)?.recheck === 'fading');
   const order = [...fading, ...open.filter((x) => !fading.includes(x))];
-  for (const [i, goal] of order.entries()) {
-    const mode = goal.games.find((m) => fitsRoom(m, room));
-    if (mode) return { line, goal, mode, instead: i > 0 };
-  }
-  return null;
+  // Each goal's best game that fits tonight, with what it gives. A goal no game carries is never offered.
+  const picks = order
+    .filter((goal) => fading.includes(goal) || st.goals.find((y) => y.id === goal.id)!.carried)
+    .map((goal, i) => {
+      const mode = gamesByYield(st, goal, level).find((m) => fitsRoom(m, room));
+      return mode ? { goal, mode, i, y: goalYield(st, goal, mode, level) } : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x);
+  // A faded frame's goal comes first; then the goal tonight's game moves most (unmeasured goals keep list order).
+  const first = picks.find((x) => fading.includes(x.goal));
+  const ranked = picks.filter((x) => x.y === null || x.y > 0).sort((a, b) => (b.y ?? 0) - (a.y ?? 0) || a.i - b.i);
+  // An unmeasured goal (kana, set phrases) that comes first in the line keeps its place.
+  const best = first ?? (picks[0]?.y === null ? picks[0] : ranked[0]);
+  if (!best) return null;
+  const head = order[0];
+  return { line, goal: best.goal, mode: best.mode, instead: !!head && head !== best.goal && !head.games.some((m) => fitsRoom(m, room)) };
 }
 
 /** The goal's place in its line, for "5.4 Find your way". */

@@ -10,6 +10,7 @@ import type { PhraseEntry } from '../../shared/src/modes/mode.js';
 import {
   frameReady,
   frameText,
+  gamesByYield,
   goalLabel,
   GOAL_BY_ID,
   GOALS,
@@ -172,8 +173,11 @@ function goalDetail(goal: Goal, st: PathStatus, level: Level, short = false): HT
     missing.length ? h('p', { class: 'path-note' }, 'Coming soon: the game can’t spot ', h('span', { lang: 'ja' }, missing.map((id) => frameText(id).ja).join('、')), ' in what you say yet.') : null,
     s.recheck === 'fading' ? h('p', { class: 'path-note' }, 'This stamp’s ink is fading. Say it from memory once more and it’s fresh again.') : null,
     s.recheck === 'due' ? h('p', { class: 'path-note' }, 'Time for a return trip: one of these is waiting in your phrase review.') : null,
+    s.ready && !s.carried && !s.met
+      ? h('p', { class: 'path-note' }, 'No game counts this from memory yet, so it won’t move tonight and the next-stop sign skips it. It opens when a game asks for it. You can still practise it in the games below.')
+      : null,
     goal.thin ? h('p', { class: 'path-note' }, goal.thin) : null,
-    goal.games.length ? h('p', { class: 'path-games' }, 'Practise in: ', goal.games.filter((m, i, a) => a.indexOf(m) === i && m !== 'bento-haus-vs').map((m) => MODES[m].info.title).join(', ')) : null,
+    goal.games.length ? h('p', { class: 'path-games' }, 'Practise in: ', gamesByYield(st, goal, level).filter((m, i, a) => a.indexOf(m) === i && m !== 'bento-haus-vs').map((m) => MODES[m].info.title).join(', ')) : null,
   );
 }
 
@@ -406,6 +410,7 @@ function stationState(s: GoalState, isNow: boolean): string {
   if (s.recheck === 'due') parts.push('return trip due');
   if (s.recheck === 'fading') parts.push('ink fading');
   if (!s.ready) parts.push('coming soon');
+  if (s.ready && !s.carried && !s.met) parts.push('no game counts it yet');
   if (isNow) parts.push('next stop');
   if (!s.met && s.ready) parts.push(`${pct(s.progress)}% there`);
   return parts.join(', ');
@@ -417,6 +422,7 @@ function stationPill(s: GoalState, isNow: boolean): HTMLElement | null {
   if (s.recheck === 'fading') return h('span', { class: 'path-pill fading', 'aria-hidden': 'true' }, 'Ink fading');
   if (isNow && !s.met) return h('span', { class: 'path-pill now', 'aria-hidden': 'true' }, '▶ Next stop');
   if (!s.ready) return h('span', { class: 'path-pill soon', 'aria-hidden': 'true' }, 'Coming soon');
+  if (!s.carried && !s.met) return h('span', { class: 'path-pill soon', 'aria-hidden': 'true' }, 'No game yet');
   if (!s.met && s.progress > 0) return h('span', { class: 'path-pill', 'aria-hidden': 'true' }, `${pct(s.progress)}%`);
   return null;
 }
@@ -458,7 +464,7 @@ function lineTrack(line: Line, st: PathStatus, current: Goal | null, open: (goal
         );
       }
       const isNow = goal === current;
-      const cls = ['path-station', s.met ? 'met' : s.progress > 0 && s.ready ? 'started' : '', isNow ? 'now' : '', s.recheck ? `ring-${s.recheck}` : '', s.ready ? '' : 'soon'].filter(Boolean).join(' ');
+      const cls = ['path-station', s.met ? 'met' : s.progress > 0 && s.ready ? 'started' : '', isNow ? 'now' : '', s.recheck ? `ring-${s.recheck}` : '', s.ready && (s.carried || s.met) ? '' : 'soon'].filter(Boolean).join(' ');
       return h(
         'li',
         { class: cls, 'aria-current': isNow ? 'step' : null, style: `--p:${pct(s.met ? 1 : s.progress)}%` },
