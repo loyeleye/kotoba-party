@@ -29,6 +29,19 @@ export interface Title {
   audiences: readonly Audience[];
   /** An N4 deck's title: offered only to N4 presenters. */
   deck?: Deck;
+  /**
+   * A Then and now title about a place (私の 町): the topic can't go places or marry anything, so its
+   * sentences say what the place used to be like (`before`, a clause ending in です/でした, in its own
+   * words so a town is never said to have become a town) and what you can do there now.
+   */
+  place?: PlaceTopic;
+}
+
+/** What a place topic was like before: 「静[しず]かでした」 → 「私の 町は 前は 静かでしたが、今では …」. */
+export interface PlaceTopic {
+  before: string;
+  /** "used to be quiet", after the topic's English. */
+  beforeEn: string;
 }
 
 /** The N4 decks. */
@@ -88,6 +101,10 @@ const C: readonly Audience[] = ['cheeky'];
 
 const title = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[], deck?: Deck): Title => ({ id, jp: jp(text, en), topic: jp(topic, topicEn), tags, audiences, ...(deck ? { deck } : {}) });
 const thenNow = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[] = ALL) => title(id, text, en, topic, topicEn, tags, audiences, 'then-now');
+const thenNowPlace = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], before: [string, string], audiences: readonly Audience[] = ALL): Title => ({
+  ...title(id, text, en, topic, topicEn, tags, audiences, 'then-now'),
+  place: { before: before[0], beforeEn: before[1] },
+});
 const ifWere = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[] = ALL) => title(id, text, en, topic, topicEn, tags, audiences, 'if');
 
 // ---- titles (Kids titles also play in Family rooms; Family titles also play in Cheeky rooms) ----
@@ -157,6 +174,10 @@ export const TITLES: Title[] = [
   thenNow('tn-dad', 'パパの ダイエット', "Dad's diet", 'パパ', 'Dad', ['person', 'food']),
   thenNow('tn-ghost', '幽霊[ゆうれい]の 転職[てんしょく]', "The ghost's career change", '幽霊[ゆうれい]', 'the ghost', ['yokai', 'work']),
   thenNow('tn-boss', '部長[ぶちょう]の イメチェン', "The boss's makeover", '部長[ぶちょう]', 'the boss', ['work', 'person'], C),
+  // Places, each with its own "before" (never 「町は 町に なりました」 about a place that was already a town).
+  thenNowPlace('tn-town', '私[わたし]の 町[まち]の 昔[むかし]と 今[いま]', 'My town, then and now', '私[わたし]の 町[まち]', 'my town', ['place', 'travel', 'home'], ['静[しず]かでした', 'used to be quiet']),
+  thenNowPlace('tn-village', 'おばあちゃんの 村[むら]の 今[いま]', "Grandma's village today", 'おばあちゃんの 村[むら]', "Grandma's village", ['place', 'travel', 'person'], ['人[ひと]が 少[すく]なかったです', 'used to have hardly anyone in it']),
+  thenNowPlace('tn-shotengai', '商店街[しょうてんがい]の 復活[ふっかつ]', "The shopping street's comeback", '商店街[しょうてんがい]', 'the shopping street', ['place', 'food', 'work'], ['誰[だれ]も いませんでした', 'used to be empty'], FC),
   // N4 deck: If I were… (もし 〜だったら)
   ifWere('if-cat', 'もし 私[わたし]が 猫[ねこ]だったら', 'If I were a cat', '猫[ねこ]', 'a cat', ['animal']),
   ifWere('if-dragon', 'もし 私[わたし]が ドラゴンだったら', 'If I were a dragon', 'ドラゴン', 'a dragon', ['animal', 'yokai']),
@@ -195,6 +216,8 @@ const slide = (id: string, word: string, en: string, emoji: string, kind: WordKi
 
 const DRAW: Slide['use'] = { can: 'が 引[ひ]ける', want: 'を 引[ひ]きたい', en: 'draw' };
 const RIDE: Slide['use'] = { can: 'に 乗[の]れる', want: 'に 乗[の]りたい', en: 'ride' };
+// A place you don't just 行く to, for Then and now's 「一人で ＿に 〜ように なりました」.
+const BATHE: Slide['use'] = { can: 'に 入[はい]れる', want: 'に 入[はい]りたい', en: 'get into' };
 
 export const SLIDES: Slide[] = [
   // Everyday Japan, played straight: real things a visitor sees, so the talk teaches real words.
@@ -206,16 +229,16 @@ export const SLIDES: Slide[] = [
   slide('ekiben', '駅弁[えきべん]', 'station bento', '🍱', 'food', i('おいしい', 'tasty'), ['food', 'travel']),
   slide('sakura', '桜[さくら]', 'cherry blossoms', '🌸', 'thing', na('きれい', 'beautiful'), ['travel', 'fun', 'love'], { did: ['桜[さくら]を 見[み]ました', 'I saw the cherry blossoms'], event: true }),
   slide('oden', 'おでん', 'oden', '🍢', 'food', i('熱[あつ]い', 'hot'), ['food', 'work']),
-  slide('sento', '銭湯[せんとう]', 'public bath', '🛁', 'place', i('広[ひろ]い', 'big'), ['travel', 'home', 'place']),
+  slide('sento', '銭湯[せんとう]', 'public bath', '🛁', 'place', i('広[ひろ]い', 'big'), ['travel', 'home', 'place'], { use: BATHE }),
   slide('ramen', 'ラーメン', 'ramen', '🍜', 'food', i('おいしい', 'tasty'), ['food', 'travel']),
   slide('sushi', 'すし', 'sushi', '🍣', 'food', i('高[たか]い', 'expensive'), ['food', 'love']),
   slide('curry', 'カレー', 'curry', '🍛', 'food', i('辛[から]い', 'spicy'), ['food', 'home']),
   slide('natto', '納豆[なっとう]', 'natto', '🫘', 'food', i('くさい', 'smelly'), ['food', 'home']),
   slide('school', '学校[がっこう]', 'school', '🏫', 'place', i('古[ふる]い', 'old'), ['school', 'place']),
   slide('konbini', 'コンビニ', 'konbini', '🏪', 'place', i('明[あか]るい', 'bright'), ['food', 'work', 'place']),
-  slide('onsen', '温泉[おんせん]', 'hot spring', '♨️', 'place', i('熱[あつ]い', 'hot'), ['travel', 'place']),
-  slide('fuji', '富士山[ふじさん]', 'Mount Fuji', '🗻', 'place', i('高[たか]い', 'tall'), ['travel', 'place'], { did: ['富士山[ふじさん]に 登[のぼ]りました', 'I climbed Mount Fuji'] }),
-  slide('sea', '海[うみ]', 'the sea', '🌊', 'place', na('きれい', 'beautiful'), ['travel', 'place', 'love']),
+  slide('onsen', '温泉[おんせん]', 'hot spring', '♨️', 'place', i('熱[あつ]い', 'hot'), ['travel', 'place'], { use: BATHE }),
+  slide('fuji', '富士山[ふじさん]', 'Mount Fuji', '🗻', 'place', i('高[たか]い', 'tall'), ['travel', 'place'], { did: ['富士山[ふじさん]に 登[のぼ]りました', 'I climbed Mount Fuji'], use: { can: 'に 登[のぼ]れる', want: 'に 登[のぼ]りたい', en: 'climb' } }),
+  slide('sea', '海[うみ]', 'the sea', '🌊', 'place', na('きれい', 'beautiful'), ['travel', 'place', 'love'], { use: { can: 'で 泳[およ]げる', want: 'で 泳[およ]ぎたい', en: 'swim in' } }),
   slide('shiba', '犬[いぬ]', 'dog', '🐕', 'living', i('賢[かしこ]い', 'clever'), ['animal', 'home']),
   slide('cat', '猫[ねこ]', 'cat', '🐱', 'living', i('かわいい', 'cute'), ['animal', 'home']),
   slide('teacher', '先生[せんせい]', 'teacher', '🧑‍🏫', 'living', i('厳[きび]しい', 'strict'), ['person', 'school']),
@@ -252,7 +275,7 @@ export const SLIDES: Slide[] = [
   slide('karaoke', 'カラオケ', 'karaoke', '🎤', 'place', i('うるさい', 'loud'), ['fun', 'place', 'work'], { audiences: FC, wild: true }),
   slide('ring', '指輪[ゆびわ]', 'ring', '💍', 'thing', i('高[たか]い', 'expensive'), ['love', 'thing', 'food'], { audiences: FC, wild: true }),
   // Cheeky: awkward grown-up moments, never explicit.
-  slide('balcony', 'ベランダ', 'balcony', '🩳', 'place', i('寒[さむ]い', 'cold'), ['home', 'love'], { audiences: C, did: ['ベランダに 出[で]ました', 'I went out on the balcony'], wild: true }),
+  slide('balcony', 'ベランダ', 'balcony', '🩳', 'place', i('寒[さむ]い', 'cold'), ['home', 'love'], { audiences: C, did: ['ベランダに 出[で]ました', 'I went out on the balcony'], use: { can: 'に 出[で]られる', want: 'に 出[で]たい', en: 'go out on' }, wild: true }),
   slide('drunk', '酔[よ]っ払[ぱら]い', 'drunk salaryman', '🍶', 'living', i('うるさい', 'loud'), ['work', 'person', 'fun'], { audiences: C, wild: true }),
   slide('meeting', '会議[かいぎ]', 'meeting', '😴', 'thing', i('長[なが]い', 'long'), ['work'], { audiences: C, did: ['会議[かいぎ]に 出[で]ました', 'I went to a meeting'], wild: true, event: true }),
   slide('groom', '新郎[しんろう]', 'groom', '🤵', 'living', na('真面目[まじめ]', 'earnest'), ['love', 'person'], { audiences: C, wild: true }),
@@ -262,7 +285,7 @@ export const SLIDES: Slide[] = [
   slide('love-letter', 'ラブレター', 'love letter', '💌', 'thing', i('恥[は]ずかしい', 'embarrassing'), ['love', 'school', 'work'], { audiences: C, did: ['ラブレターを 書[か]きました', 'I wrote a love letter'], wild: true }),
   slide('heel', 'ハイヒール', 'high heel', '👠', 'thing', i('高[たか]い', 'high'), ['love', 'travel'], { audiences: C, wild: true }),
   slide('fish-photo', '魚[さかな]', 'fish', '🐟', 'food', i('大[おお]きい', 'big'), ['love', 'food', 'fun'], { audiences: C, wild: true }),
-  slide('capsule', 'カプセルホテル', 'capsule hotel', '🛌', 'place', i('狭[せま]い', 'cramped'), ['travel', 'work', 'place'], { audiences: C, did: ['カプセルホテルに 泊[と]まりました', 'I stayed in a capsule hotel'], wild: true }),
+  slide('capsule', 'カプセルホテル', 'capsule hotel', '🛌', 'place', i('狭[せま]い', 'cramped'), ['travel', 'work', 'place'], { audiences: C, did: ['カプセルホテルに 泊[と]まりました', 'I stayed in a capsule hotel'], use: { can: 'に 泊[と]まれる', want: 'に 泊[と]まりたい', en: 'stay at' }, wild: true }),
   // Cheeky from women's side.
   slide('bouquet', 'ブーケ', 'bouquet', '💐', 'thing', na('きれい', 'pretty'), ['love', 'fun'], { audiences: C, did: ['ブーケを 取[と]りました', 'I caught the bouquet'], wild: true }),
   slide('joshikai', '女子会[じょしかい]', "girls' night", '🥂', 'thing', i('楽[たの]しい', 'fun'), ['fun', 'love', 'person'], { audiences: C, did: ['女子会[じょしかい]に 行[い]きました', "I went to a girls' night"] }),
@@ -324,7 +347,7 @@ export function closingFor(level: Level): JpText {
 /** Sentence patterns for a picture slide (＿ is the slide's word, 〜 a gap to fill), fitted to its kind. In kana: they're patterns. */
 export function framesFor(level: Level, s: Slide, deck?: Deck): string[] {
   if (level === 'n4' && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '＿が 〜られるように なりました。', '〜ことに しました。', '〜ことに なりました。', '＿は 〜そうですね。'];
-  if (level === 'n4' && deck === 'if') return ['もし ＿だったら、〜たいです。', 'もし ＿が なかったら、〜。', 'もし わたしが 〜だったら、〜と おもいます。', '＿は 〜そうですね。'];
+  if (level === 'n4' && deck === 'if') return ['もし ＿だったら、〜たいです。', `もし ＿が ${s.kind === 'living' ? 'いなかったら' : 'なかったら'}、〜。`, 'もし わたしが 〜だったら、〜と おもいます。', '＿は 〜そうですね。'];
   if (level === 'kana') return ['これは ＿です。', '＿が すきです。', 'すごいですね！'];
   if (level === 'n5') {
     const kind = { living: '＿と あそびました。', place: '＿に いきました。', food: '＿を たべました。', thing: '＿を かいました。' }[s.kind];
@@ -351,13 +374,13 @@ const didOf = (s: Slide): JpText => {
  * Sentences for a picture slide, to read out or tap. Each level gets two; the second bridges the picture
  * back to the talk's topic, which is where the joke is (「これが ドラゴンです！」 over a sock).
  */
-export function readySentences(s: Slide, level: Level, topic: JpText | null, deck?: Deck): JpText[] {
+export function readySentences(s: Slide, level: Level, topic: JpText | null, deck?: Deck, place?: PlaceTopic): JpText[] {
   const w = src(s.word);
   const en = s.word.en;
   const t = topic ?? jp('友[とも]だち', 'my friend');
   const did = didOf(s);
   const at = (x: JpText[]) => x.map((j) => forLevel(j, level));
-  if (level === 'n4' && deck) return at(deckSentences(s, t, deck));
+  if (level === 'n4' && deck) return at(deckSentences(s, t, deck, place));
   if (level === 'kana') return at([jp(`これは ${w}です。`, `This is ${a(en)}.`), jp(`これが ${src(t)}です！`, `THIS is ${t.en}!`)]);
   if (level === 'n5')
     return at([
@@ -372,17 +395,27 @@ export function readySentences(s: Slide, level: Level, topic: JpText | null, dec
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** An N4 deck's ready sentences for a slide: three, each in one of the deck's frames, tied to the topic. */
-function deckSentences(s: Slide, t: JpText, deck: Deck): JpText[] {
+/** "the sea", "Mount Fuji", "the konbini": English with "the" once. */
+const the = (en: string): string => (/^(the |[A-Z])/.test(en) ? en : `the ${en}`);
+
+/**
+ * An N4 deck's ready sentences for a slide: three, each in one of the deck's frames, tied to the topic.
+ * A Then and now place topic (私の 町) gets its own (placeSentences), never 「町も 一人で 公園に
+ * 行けるように」 or 「町と 引っ越す」.
+ */
+function deckSentences(s: Slide, t: JpText, deck: Deck, place?: PlaceTopic): JpText[] {
   const w = src(s.word);
   const en = s.word.en;
   const T = src(t);
   if (deck === 'then-now') {
+    if (place) return placeSentences(s, w, en, T, t, place);
     const can = s.event
       ? jp(`今[いま]では ${T}も ${w}が 楽[たの]しめるように なりました。`, `These days even ${t.en} can enjoy ${en}.`)
       : {
           living: jp(`今[いま]では ${T}も ${w}と 遊[あそ]べるように なりました。`, `These days even ${t.en} can play with ${a(en)}.`),
-          place: jp(`今[いま]では ${T}も 一人[ひとり]で ${w}に 行[い]けるように なりました。`, `These days even ${t.en} can go to the ${en} alone.`),
+          place: s.use
+            ? jp(`今[いま]では ${T}も 一人[ひとり]で ${w}${s.use.can}ように なりました。`, `These days even ${t.en} can ${s.use.en} ${the(en)} alone.`)
+            : jp(`今[いま]では ${T}も 一人[ひとり]で ${w}に 行[い]けるように なりました。`, `These days even ${t.en} can go to ${the(en)} alone.`),
           food: jp(`今[いま]では ${T}も ${w}が 食[た]べられるように なりました。`, `These days even ${t.en} can eat ${en}.`),
           thing: s.use
             ? jp(`今[いま]では ${T}も ${w}${s.use.can}ように なりました。`, `These days even ${t.en} can ${s.use.en} ${a(en)}.`)
@@ -390,7 +423,7 @@ function deckSentences(s: Slide, t: JpText, deck: Deck): JpText[] {
         }[s.kind];
     return [
       can,
-      jp(`それで、${w}に ついて もっと 調[しら]べる ことに しました。`, `So I decided to find out more about the ${en}.`),
+      jp(`それで、${w}に ついて もっと 調[しら]べる ことに しました。`, `So I decided to find out more about ${the(en)}.`),
       news(s, w, en, T, t),
     ];
   }
@@ -401,7 +434,7 @@ function deckSentences(s: Slide, t: JpText, deck: Deck): JpText[] {
       ? jp(`${If}毎日[まいにち] ${w}を 楽[たの]しみたいです。`, `${IfEn} I'd want to enjoy ${en} every day.`)
       : {
           living: jp(`${If}毎日[まいにち] ${w}と 一緒[いっしょ]に いたいです。`, `${IfEn} I'd want to be with ${a(en)} every day.`),
-          place: jp(`${If}${w}に 住[す]みたいです。`, `${IfEn} I'd want to live at the ${en}.`),
+          place: jp(`${If}${w}に 住[す]みたいです。`, `${IfEn} I'd want to live at ${the(en)}.`),
           food: jp(`${If}毎日[まいにち] ${w}を 食[た]べたいです。`, `${IfEn} I'd want to eat ${en} every day.`),
           thing: s.use
             ? jp(`${If}毎日[まいにち] ${w}${s.use.want}です。`, `${IfEn} I'd want to ${s.use.en} ${a(en)} every day.`)
@@ -413,12 +446,39 @@ function deckSentences(s: Slide, t: JpText, deck: Deck): JpText[] {
 }
 
 /**
+ * Then and now about a place: what it was like and what you can do there now (「私の 町は 前は 静かでしたが、
+ * 今では 温泉まで バスで 行けるように なりました」), the same 調べる ことに しました, then the news of what's
+ * coming to it: a bus to a place, a shop for a food, a festival for anything else.
+ */
+function placeSentences(s: Slide, w: string, en: string, T: string, t: JpText, p: PlaceTopic): JpText[] {
+  const [now, nowEn] = s.event
+    ? [`${w}が 楽[たの]しめる`, `you can enjoy ${en} there`]
+    : {
+        living: [`${w}が 見[み]られる`, `you can see ${a(en)} there`],
+        place: [`${w}まで バスで 行[い]ける`, `you can get to ${the(en)} by bus`],
+        food: [`${w}が 食[た]べられる`, `you can eat ${en} there`],
+        thing: s.use ? [`${w}${s.use.can}`, `you can ${s.use.en} ${a(en)} there`] : [`${w}が 買[か]える`, `you can buy ${a(en)} there`],
+      }[s.kind];
+  const news =
+    s.kind === 'place'
+      ? jp(`実[じつ]は、来月[らいげつ] ${T}から ${w}まで 新[あたら]しい バスが 走[はし]る ことに なりました。`, `Actually, it's been decided: next month a new bus starts running from ${t.en} to ${the(en)}.`)
+      : s.kind === 'food'
+        ? jp(`実[じつ]は、来月[らいげつ] ${T}に ${w}の お店[みせ]が できる ことに なりました。`, `Actually, it's been decided: next month ${a(`${en} shop`)} is opening in ${t.en}.`)
+        : jp(`実[じつ]は、来月[らいげつ] ${T}で ${w}の お祭[まつ]りを する ことに なりました。`, `Actually, it's been decided: next month ${t.en} is holding ${a(`${en} festival`)}.`);
+  return [
+    jp(`${T}は 前[まえ]は ${p.before}が、今[いま]では ${now}ように なりました。`, `${cap(t.en)} ${p.beforeEn}, but these days ${nowEn}.`),
+    jp(`それで、${w}に ついて もっと 調[しら]べる ことに しました。`, `So I decided to find out more about ${the(en)}.`),
+    news,
+  ];
+}
+
+/**
  * Then and now's big news (〜ことに なりました), fitted to the slide: the topic moves to a place, opens a
  * shop for a food, and marries anything else (「来月 猫と パンツが 結婚する ことに なりました」).
  */
 function news(s: Slide, w: string, en: string, T: string, t: JpText): JpText {
-  if (s.kind === 'place') return jp(`実[じつ]は、来月[らいげつ] ${T}と ${w}に 引[ひ]っ越[こ]す ことに なりました。`, `Actually, it's been decided: next month ${t.en} and I are moving to the ${en}.`);
-  if (s.kind === 'food') return jp(`実[じつ]は、来月[らいげつ]から ${T}が ${w}の お店[みせ]を 開[ひら]く ことに なりました。`, `Actually, it's been decided: from next month ${t.en} is opening a ${en} shop.`);
+  if (s.kind === 'place') return jp(`実[じつ]は、来月[らいげつ] ${T}と ${w}に 引[ひ]っ越[こ]す ことに なりました。`, `Actually, it's been decided: next month ${t.en} and I are moving to ${the(en)}.`);
+  if (s.kind === 'food') return jp(`実[じつ]は、来月[らいげつ]から ${T}が ${w}の お店[みせ]を 開[ひら]く ことに なりました。`, `Actually, it's been decided: from next month ${t.en} is opening ${a(`${en} shop`)}.`);
   return jp(`実[じつ]は、来月[らいげつ] ${T}と ${w}が 結婚[けっこん]する ことに なりました。`, `Actually, it's been decided: next month ${t.en} and the ${en} are getting married.`);
 }
 
@@ -463,6 +523,8 @@ export interface Question {
   audiences?: readonly Audience[];
   /** An N4 deck's card: only in that deck's talks. */
   deck?: Deck;
+  /** Only about a topic that can be somewhere or do something, not a place (「私の 町は 今 どこですか」). */
+  notPlace?: true;
 }
 
 export const QUESTIONS: Question[] = [
@@ -472,7 +534,7 @@ export const QUESTIONS: Question[] = [
   { id: 'photo', text: '写真[しゃしん]は ありますか？', en: 'Do you have a photo?', level: 'kana' },
   { id: 'mum', text: 'お母[かあ]さんは 知[し]っていますか？', en: 'Does your mum know?', level: 'kana' },
   { id: 'price', text: '{word}は いくらですか？', en: 'How much was the {word_en}?', level: 'n5', kinds: ['food', 'thing'] },
-  { id: 'where', text: '{topic}は 今[いま] どこですか？', en: 'Where is {topic_en} now?', level: 'n5' },
+  { id: 'where', text: '{topic}は 今[いま] どこですか？', en: 'Where is {topic_en} now?', level: 'n5', notPlace: true },
   { id: 'how-was', text: 'どうでしたか？', en: 'How was it?', level: 'n5' },
   { id: 'work', text: '会社[かいしゃ]の 人[ひと]は 知[し]っていますか？', en: 'Does anyone at work know?', level: 'n5', audiences: ['cheeky'] },
   { id: 'hardest', text: '一番[いちばん] 大変[たいへん]だった ことは 何[なん]ですか？', en: 'What was the hardest part?', level: 'n4' },
@@ -481,7 +543,7 @@ export const QUESTIONS: Question[] = [
   // N4 decks
   { id: 'tn-before', text: '{topic}は 前[まえ]は どうでしたか？', en: 'What was {topic_en} like before?', level: 'n4', deck: 'then-now' },
   { id: 'tn-why', text: 'どうして そう する ことに しましたか？', en: 'Why did you decide to do that?', level: 'n4', deck: 'then-now' },
-  { id: 'tn-now', text: '今[いま]は 何[なに]が できるように なりましたか？', en: 'What can they do now?', level: 'n4', deck: 'then-now' },
+  { id: 'tn-now', text: '今[いま]は 何[なに]が できるように なりましたか？', en: 'What can be done now that couldn’t before?', level: 'n4', deck: 'then-now' },
   { id: 'if-you', text: 'もし あなたが {word}だったら、どう しますか？', en: 'If you were the {word_en}, what would you do?', level: 'n4', deck: 'if' },
   { id: 'if-could', text: 'もし {topic}に なれたら、何[なに]が したいですか？', en: 'If you could become {topic_en}, what would you want to do?', level: 'n4', deck: 'if' },
 ];
@@ -492,11 +554,11 @@ const LEVELS: Level[] = ['kana', 'n5', 'n4'];
  * Three question cards for one asker, at the lower of their level and the presenter's (so both can manage
  * the exchange), fitted to the talk's slide word and the room.
  */
-export function questionsFor(level: Level, word: Slide | null, topic: JpText | null, audience: Audience, random: () => number, deck?: Deck): JpText[] {
+export function questionsFor(level: Level, word: Slide | null, topic: JpText | null, audience: Audience, random: () => number, deck?: Deck, place?: PlaceTopic): JpText[] {
   const w = word?.word ?? jp('それ', 'it');
   const t = topic ?? jp('それ', 'it');
   const pool = QUESTIONS.filter(
-    (q) => LEVELS.indexOf(q.level) <= LEVELS.indexOf(level) && (!q.kinds || (word && q.kinds.includes(word.kind) && !(q.id === 'price' && word.event))) && (!q.audiences || q.audiences.includes(audience)) && (word || !q.text.includes('{word}')) && (!q.deck || q.deck === deck),
+    (q) => LEVELS.indexOf(q.level) <= LEVELS.indexOf(level) && (!q.kinds || (word && q.kinds.includes(word.kind) && !(q.id === 'price' && word.event))) && (!q.audiences || q.audiences.includes(audience)) && (word || !q.text.includes('{word}')) && (!q.deck || q.deck === deck) && !(place && q.notPlace),
   );
   // Each player's three: one at their level if there is one (the deck's own, in a deck talk), the rest at random.
   const own = pool.filter((q) => q.level === level && q.deck !== undefined);

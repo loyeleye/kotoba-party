@@ -5,7 +5,8 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import { nameToKatakana, romajiToHiragana } from '../shared/src/japanese/toKana.js';
-import { cardsFor, INTRO_CARDS, introCardOf, tilesOnly } from '../shared/src/modes/hajimemashite/cards.js';
+import { cardsFor, endsInForm, fillFrame, INTRO_CARDS, introCardOf, tilesOnly } from '../shared/src/modes/hajimemashite/cards.js';
+import { framesOf } from '../shared/src/japanese/frames.js';
 import { LINE_MS, POINTS, typedWord, type HajimeState, type HajimeView, type Turn } from '../shared/src/modes/hajimemashite/hajimemashite.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -175,9 +176,10 @@ describe('Nice to Meet You!: the cards', () => {
       expect(c.frames?.length, c.id).toBeGreaterThan(0);
     }
     const tagged = (f: string) => n4.filter((c) => c.frames?.includes(f));
-    expect(tagged('ta-koto').every((c) => c.first.includes('た ことが あります'))).toBe(true);
-    expect(tagged('te-shimau').every((c) => c.first.includes('て しまいました'))).toBe(true);
-    expect(tagged('te-miru').every((c) => /て みま|て みたい/.test(c.first))).toBe(true);
+    // A verb card's frame is its cue (＿た ことが あります); its tiles bring the verb.
+    expect(tagged('ta-koto').every((c) => (c.cue ?? c.first).includes('た ことが あります'))).toBe(true);
+    expect(tagged('te-shimau').every((c) => (c.cue ?? c.first).includes('て しまいました'))).toBe(true);
+    expect(tagged('te-miru').every((c) => /て みま|て みたい/.test(c.cue ?? c.first))).toBe(true);
     for (const f of ['ta-koto', 'te-shimau', 'te-miru']) expect(tagged(f).length, f).toBeGreaterThanOrEqual(2);
     expect(INTRO_CARDS.filter((c) => c.level === 'n5').some((c) => c.frames)).toBe(false);
   });
@@ -195,10 +197,10 @@ describe('Nice to Meet You!: the cards', () => {
 });
 
 describe('Nice to Meet You!: N4 guests draw the N4 deck', () => {
-  it('has Kids and Cheeky N4 cards (one per frame) that only their rooms get', () => {
+  it('has Kids and Cheeky N4 cards (one noun card per frame, plus verb cards) that only their rooms get', () => {
     for (const a of ['kids', 'cheeky'] as const) {
       const own = INTRO_CARDS.filter((c) => c.level === 'n4' && c.audiences.length === 1 && c.audiences[0] === a);
-      expect(own.map((c) => c.frames![0]).sort(), a).toEqual(['ta-koto', 'te-miru', 'te-shimau']);
+      expect(own.filter((c) => !c.conj).map((c) => c.frames![0]).sort(), a).toEqual(['ta-koto', 'te-miru', 'te-shimau']);
       for (const c of own) {
         expect(c.status, c.id).toBe('draft');
         expect(cardsFor('family', 'n4'), c.id).not.toContain(c);
@@ -227,6 +229,138 @@ describe('Nice to Meet You!: N4 guests draw the N4 deck', () => {
     });
   }
 });
+
+describe('Nice to Meet You!: N4 verb cards (the player makes the た or て form)', () => {
+  const verbCards = INTRO_CARDS.filter((c) => c.conj);
+
+  it('has at least six, in た and て, for every audience the N4 deck plays in, each tagged and draft', () => {
+    expect(verbCards.length).toBeGreaterThanOrEqual(6);
+    for (const c of verbCards) {
+      expect(c.level, c.id).toBe('n4');
+      expect(c.status, c.id).toBe('draft');
+      expect(c.frames!.length, c.id).toBeGreaterThan(0);
+    }
+    // The shared set, and the Kids and Cheeky sets, each have a た card and a て card.
+    for (const set of [['kids', 'family', 'cheeky'], ['kids'], ['cheeky']]) {
+      const own = verbCards.filter((c) => c.audiences.join() === set.join());
+      expect(own.map((c) => c.conj).sort(), set.join()).toEqual(expect.arrayContaining(['ta', 'te']));
+    }
+    for (const a of ['kids', 'family', 'cheeky'] as const) {
+      expect(cardsFor(a, 'n4').filter((c) => c.conj).length, a).toBeGreaterThanOrEqual(3);
+      expect(cardsFor(a, 'n5').some((c) => c.conj), a).toBe(false);
+      expect(cardsFor(a, 'kana').some((c) => c.conj), a).toBe(false);
+    }
+    expect(cardsFor('family', 'n4').some((c) => c.conj && c.audiences.length === 1)).toBe(false);
+  });
+
+  it('shows each verb in the dictionary form under a cue with ＿た or ＿て, and fills the line with the conjugated form', () => {
+    for (const c of verbCards) {
+      const suffix = c.conj === 'ta' ? '＿た' : '＿て';
+      expect(c.cue, c.id).toBe(c.first.replace('＿', suffix));
+      expect(c.cueThird, c.id).toBe(c.third.replace('＿', suffix));
+      for (const t of [...c.tiles, c.pon]) {
+        expect(t.dict, t.id).toMatch(/[うくぐすつぬぶむる]$/);
+        expect(t.kana, t.id).not.toBe(t.dict);
+        expect(endsInForm(t.kana, c.conj!), t.id).toBe(true);
+        // Only the verb changes: everything before it is the same.
+        expect(t.kana.split(' ').slice(0, -1).join(' '), t.id).toBe(t.dict!.split(' ').slice(0, -1).join(' '));
+        // The model line is in the card's frame.
+        const line = fillFrame(c.first, t.kana);
+        expect(framesOf({ text: line, kana: line }, undefined, { keepHidden: true }), `${t.id}: ${line}`).toContain(c.frames![0]);
+      }
+      expect(new Set(c.tiles.map((t) => t.dict)).size, c.id).toBe(16);
+    }
+    // The irregular and the easy-to-miss ones are there to practise.
+    const all = verbCards.flatMap((c) => c.tiles);
+    const formOf = (dict: string, card: string) => all.find((t) => t.dict === dict && t.id.startsWith(card))!.kana;
+    expect(formOf('にほんに いく', 'shita-koto')).toBe('にほんに いった');
+    expect(formOf('マラソンを はしる', 'shita-koto')).toBe('マラソンを はしった');
+    expect(formOf('おんせんに はいる', 'nihon-temitai')).toBe('おんせんに はいって');
+    expect(formOf('ゆびを きる', 'ukkari')).toBe('ゆびを きって');
+  });
+
+  it('reads a typed verb in either form, and asks for the form when a new verb comes in the dictionary form', () => {
+    const tb = new Table(4, ['n4', 'n5', 'n5', 'n5']);
+    tb.start('family');
+    verbTurn(tb, 'shita-koto');
+    tb.greetAll();
+    const card = introCardOf('shita-koto')!;
+    expect(tb.play('p1', { kind: 'write', utterance: { via: 'typed', text: 'ふじさんに のぼる' } }).error).toBeUndefined();
+    expect(tb.t.writes['p1']!.tileId).toBe(card.tiles[0]!.id);
+    expect(tb.play('p1', { kind: 'write', utterance: { via: 'typed', text: 'ふじさんに のぼった ことが あります' } }).error).toBeUndefined();
+    expect(tb.t.writes['p1']!.tileId).toBe(card.tiles[0]!.id);
+    expect(tb.play('p1', { kind: 'write', utterance: { via: 'typed', text: 'ピザを たべる' } }).error).toBe('make-it-ta');
+    expect(tb.play('p1', { kind: 'write', utterance: { via: 'typed', text: 'ピザを たべた' } }).error).toBeUndefined();
+    expect(tb.t.writes['p1']).toEqual({ tileId: null, word: 'ピザを たべた', en: null });
+    // The guest's phone shows the cue and the tiles in the dictionary form.
+    const me = tb.view('p1').me!;
+    expect(tb.view('p1').card!.cue).toBe('＿た ことが あります');
+    expect(me.hand[0]!.dict).toBe('ふじさんに のぼる');
+    expect(me.hand[0]!.kana).toBe('ふじさんに のぼった');
+  });
+
+  it('an N4 introducer gets the dictionary form, is heard only in the た form, and sees the model line', () => {
+    const tb = new Table(4, ['n4', 'n4', 'n4', 'n4']);
+    tb.start('family');
+    verbTurn(tb, 'shita-koto');
+    tb.greetAll();
+    const truth = tb.writeAll();
+    expect(truth).toMatch(/[ただ]$/);
+    const intro = tb.t.introducerId!;
+    expect(tb.play(intro, { kind: 'read', utterance: speech('こちらは アキさんです') }).error).toBeUndefined();
+    const line = tb.view(intro).me!.script![1]!;
+    expect(line.dict).toMatch(/[うくぐすつぬぶむる]$/);
+    expect(line.cue).toBe('アキさんは ＿た ことが あります');
+    expect(line.text).toBe(`アキさんは ${line.word} ことが あります。`);
+    // The dictionary form isn't the line: tried. The た form is.
+    expect(tb.play(intro, { kind: 'read', utterance: speech(`アキさんは ${line.dict} ことが あります`) }).error).toBeUndefined();
+    expect(tb.t.lines[1]!.read).toBe('tried');
+    const next = tb.view(intro).me!.script![2]!;
+    expect(tb.play(intro, { kind: 'read', utterance: speech(next.text) }).error).toBeUndefined();
+    expect(tb.t.lines[2]!.read).toBe('said');
+    // The TV shows the conjugated form.
+    expect(tb.view().facts.filter((f) => f.word).map((f) => f.word)).toEqual([line.word, next.word]);
+  });
+
+  it('the N4 guest says the truth in the form themselves; the dictionary form is a try, tapping sends the model', () => {
+    const tb = new Table(4, ['n4', 'n5', 'kana', 'n5']);
+    tb.start('family');
+    verbTurn(tb, 'ukkari');
+    tb.greetAll();
+    const truth = tb.writeAll();
+    // An N5 introducer reads the whole line, as on every card.
+    const intro = tb.t.introducerId!;
+    expect(tb.view(intro).me!.script![1]!.dict).toBeDefined();
+    tb.readAll();
+    for (const p of ['p2', 'p3', 'p4']) tb.play(p, { kind: 'rank', order: tb.view(p).me!.rankable.map((x) => x.id) });
+    tb.play('p1', { kind: 'wish', factId: tb.view('p1').me!.wishable[0]!.id });
+    expect(tb.s.phase).toBe('score');
+    const t = tb.view('p1').me!.truth!;
+    const dict = introCardOf('ukkari')!.tiles.find((x) => x.kana === truth)!.dict!;
+    expect(t.cue).toBe(`ほんとうです！ うっかり ［${dict}］ しまいました。`);
+    expect(t.line).toBe(`ほんとうです！ うっかり ${truth} しまいました。`);
+    expect(tb.play('p1', { kind: 'truth', utterance: speech(`うっかり ${dict} しまいました`) }).error).toBeUndefined();
+    expect(tb.view('p1').me!.truth!.said).toBe('tried');
+    expect(tb.play('p1', { kind: 'truth', utterance: speech(`うっかり ${truth} しまいました`) }).error).toBeUndefined();
+    expect(tb.view('p1').me!.truth!.done).toBe(true);
+  });
+
+  it('noun cards keep their plain view: no cue, no dictionary forms', () => {
+    const tb = new Table(4, ['n4', 'n4', 'n4', 'n4']);
+    tb.start('family');
+    tb.t.cardId = 'tabeta';
+    expect(tb.view('p1').card!.cue).toBeUndefined();
+    tb.greetAll();
+    expect(tb.view('p1').me!.hand.some((x) => x.dict)).toBe(false);
+  });
+});
+
+/** Turns the current turn's card into a verb card, with fresh hands from its tiles. */
+function verbTurn(tb: Table, cardId: string) {
+  const card = introCardOf(cardId)!;
+  tb.t.cardId = cardId;
+  Object.keys(tb.t.hands).forEach((pid, i) => (tb.t.hands[pid] = card.tiles.slice(i * 4, i * 4 + 4).map((x) => x.id)));
+}
 
 // ---- a turn ----
 
