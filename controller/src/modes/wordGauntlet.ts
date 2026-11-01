@@ -8,6 +8,7 @@ import { toRomaji } from '../../../shared/src/japanese/romaji.js';
 import { follows, repeatKey, wordReading } from '../../../shared/src/modes/wordGauntlet/shiritori.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
+import { canVoice, isSoundOff, say } from '../components/voice.js';
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 
@@ -25,11 +26,13 @@ export const wordGauntletPhone: PhoneMode<WordGauntletView> = {
     const f = game.fake;
     const t = game.telephone;
     const sh = game.shiritori;
+    const r = game.rumour;
     return [
       view.phaseSeq,
       game.segment,
       f ? [f.mine?.fake, f.mine?.pick, f.mine?.said, f.options?.length, f.results ? 1 : 0].join(',') : '',
       t ? [t.mine?.sent, t.mine?.vote, t.mine?.prev ? 1 : 0, t.current, t.reveal ? 1 : 0, t.points ? 1 : 0].join(',') : '',
+      r ? [r.current, r.mine?.heard ? 1 : 0, r.mine?.fin, r.mine?.ownFin, r.mine?.hint, r.mine?.peeked ? 1 : 0, r.mine?.sent ? 1 : 0, r.mine?.vote, r.reveal ? 1 : 0, r.points ? 1 : 0].join(',') : '',
       sh
         ? [sh.turn === playerId, sh.turn, sh.mine?.hint?.length ?? -1, sh.mine?.tokens, sh.mine?.vote, sh.alive.includes(playerId), sh.challenge?.voted.length ?? -1, sh.winnerId].join(',')
         : '',
@@ -39,10 +42,16 @@ export const wordGauntletPhone: PhoneMode<WordGauntletView> = {
   render(ctx) {
     const { view, game } = ctx;
     if (view.phase === 'intro' || !game.segment) {
-      return waiting('ことばの関門 · Word Gauntlet', 'Three rounds: fake meanings, a translation telephone, then a spoken shiritori showdown. Watch the screen!');
+      return waiting(
+        'ことばの関門 · Word Gauntlet',
+        game.round2 === 'rumour'
+          ? 'Three rounds: fake meanings, Nobiko-san’s rumour relay, then a spoken shiritori showdown. Watch the screen!'
+          : 'Three rounds: fake meanings, a translation telephone, then a spoken shiritori showdown. Watch the screen!',
+      );
     }
     if (game.segment === 'fake') return fakeScreen(ctx);
     if (game.segment === 'telephone') return telephoneScreen(ctx);
+    if (game.segment === 'rumour') return rumourScreen(ctx);
     return shiritoriScreen(ctx);
   },
 };
@@ -263,6 +272,191 @@ function telephoneStep(ctx: Ctx, title: HTMLElement): HTMLElement {
       },
     }),
   );
+}
+
+// ---- Round 2b: the rumour round (うわさの でんごん) ----
+
+// The words are shown once per relay without a tap when the phone can't play them (sound off, no voice).
+let autoPeeked = -1;
+
+function rumourScreen(ctx: Ctx): HTMLElement {
+  const { view, game, send } = ctx;
+  const r = game.rumour!;
+  const title = h('p', { class: 'wg-tag' }, 'Round 2 · うわさの でんごん · Rumour relay · double points');
+  const mine = r.mine;
+  const myStep = mine?.step ?? null;
+  const about = h('p', { class: 'hint', lang: 'ja' }, `Nobiko-san’s rumour is about ${r.subject.en} (${r.subject.kana}).`);
+  switch (view.phase) {
+    case 'prompt':
+      return h(
+        'div',
+        { class: 'screen' },
+        title,
+        about,
+        waiting(
+          myStep === null ? 'Watch the rumour travel!' : `You’re relay ${myStep + 1} of ${r.order.length}`,
+          myStep === null ? '' : 'You’ll hear it in Nobiko-san’s voice. Pass it on: keep who, where and what, and add one juicy detail (a fin: うわさに おひれが つく).',
+        ),
+      );
+    case 'answer': {
+      if (mine?.heard && !mine.sent) return rumourRelay(ctx, title);
+      if (mine?.sent) return h('div', { class: 'screen' }, title, waiting('Passed on!', 'Now watch it grow fins…'));
+      const current = r.order[r.current];
+      return h(
+        'div',
+        { class: 'screen' },
+        title,
+        about,
+        waiting(`${nameOf(view, current?.playerId)} is passing it on…`, myStep !== null && myStep > r.current ? `You’re relay ${myStep + 1}. Get ready to listen!` : ''),
+      );
+    }
+    case 'reveal': {
+      const reveal = r.reveal;
+      if (!reveal) return waiting('Watch the screen!');
+      if (mine?.vote !== null && mine?.vote !== undefined) return h('div', { class: 'screen' }, title, waiting('Vote in!', 'Waiting for the others…'));
+      const steps = reveal.steps.filter((st) => st.text !== null);
+      return h(
+        'div',
+        { class: 'screen' },
+        title,
+        h('p', { class: 'prompt' }, 'Vote for the juiciest relay'),
+        steps.map((st) => {
+          const own = st.playerId === ctx.me.id;
+          return h(
+            'button',
+            {
+              class: `option wg-step ${own ? 'wg-own' : ''}`,
+              style: delay(view, (st.index + 1) * r.revealStepMs),
+              disabled: own,
+              lang: 'ja',
+              onclick: () => void send({ kind: 'vote', step: st.index }),
+            },
+            h('small', {}, `${st.index + 1}. ${nameOf(view, st.playerId)}${st.fin ? ` · added “${st.fin.en}”` : ''}${own ? ' (yours)' : ''}`),
+            h('span', {}, st.text ?? ''),
+          );
+        }),
+      );
+    }
+    default: {
+      const points = r.points?.[ctx.me.id] ?? 0;
+      const res = mine?.result;
+      const votes = myStep !== null ? (r.votes?.[myStep] ?? 0) : 0;
+      const kept = res?.kept;
+      return h(
+        'div',
+        { class: 'screen' },
+        title,
+        h('p', { class: 'big' }, `+${points}`),
+        myStep !== null ? h('p', { class: 'hint' }, `${votes} vote${votes === 1 ? '' : 's'} for your relay.`) : null,
+        res?.standIn ? h('p', { class: 'hint' }, 'Nobiko-san passed it on for you this time.') : null,
+        kept && mine?.level !== 'kana' && !res?.standIn
+          ? h('p', { class: 'wg-kept' }, `Who ${kept.who ? '✓' : '✗'} · Where ${kept.where ? '✓' : '✗'} · What ${kept.what ? '✓' : '✗'}`)
+          : null,
+        res?.frame ? h('p', { class: 'wg-good', lang: 'ja' }, `You passed it on with ${res.frame.ja} (${res.frame.en}).`) : null,
+      );
+    }
+  }
+}
+
+function rumourRelay(ctx: Ctx, title: HTMLElement): HTMLElement {
+  const { view, game, send, flash } = ctx;
+  const r = game.rumour!;
+  const mine = r.mine!;
+  const heard = mine.heard!;
+  const level = mine.level;
+  const voiced = canVoice() && !isSoundOff();
+  if (!voiced && !mine.peeked && autoPeeked !== view.phaseSeq) {
+    autoPeeked = view.phaseSeq;
+    queueMicrotask(() => void send({ kind: 'peek' }));
+  }
+  const showWords = mine.peeked || !voiced;
+  const listen = h(
+    'div',
+    { class: 'wg-heard' },
+    h('p', { class: 'hint' }, heard.opener ? 'Nobiko-san leans in and whispers…' : 'Nobiko-san passes on what she heard…'),
+    voiced ? h('button', { type: 'button', class: 'primary wg-listen', onclick: () => say(heard.kana) }, '🔊 Listen') : null,
+    showWords
+      ? word(heard.text, heard.kana !== heard.text ? heard.kana : '', heard.romaji)
+      : h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'peek' }) }, 'Show the words'),
+  );
+  const picked = mine.fin ?? (mine.ownFin ? '' : null);
+  const finCards = h(
+    'div',
+    { class: 'wg-fins' },
+    mine.fins.map((f) =>
+      h(
+        'button',
+        { type: 'button', class: `option wg-fin ${mine.fin === f.id ? 'picked' : ''}`, lang: 'ja', onclick: () => void send({ kind: 'fin', fin: f.id }) },
+        h('strong', {}, level === 'kana' ? f.tile : f.kana),
+        level === 'kana' ? h('small', {}, ` ${toRomaji(f.tile)}`) : null,
+        h('small', { class: 'wg-fin-en' }, f.en),
+      ),
+    ),
+  );
+  const own =
+    level === 'n4'
+      ? (() => {
+          const input = h('input', { maxlength: 30, placeholder: mine.ownFin ?? 'My own fin, in Japanese (e.g. まいにち)', autocomplete: 'off', enterkeyhint: 'done', lang: 'ja' }) as HTMLInputElement;
+          return h(
+            'form',
+            {
+              class: 'wg-own-fin',
+              onsubmit: (e: Event) => {
+                e.preventDefault();
+                const text = input.value.trim();
+                if (!text) return;
+                if (!/[ぁ-ゖァ-ヺー㐀-鿿]/.test(text)) return flash('Write your fin in Japanese.');
+                void send({ kind: 'fin', own: text });
+              },
+            },
+            input,
+            h('button', { class: 'secondary', type: 'submit' }, mine.ownFin ? 'Change' : 'Use mine'),
+          );
+        })()
+      : null;
+  const mission =
+    level === 'kana'
+      ? 'Add a fin! Tap one, then say it out loud.'
+      : level === 'n5'
+        ? 'Pass it on: keep who, where and what, and add one fin.'
+        : 'Pass it on as something you heard. Keep who, where and what, and add one fin.';
+  const model = picked !== null ? mine.models?.[picked] : undefined;
+  const hints: (HTMLElement | null)[] = [];
+  if (level === 'n4') {
+    if (mine.frame) hints.push(h('p', { class: 'wg-frame', lang: 'ja' }, `Try: ${mine.frame.ja}`, h('small', {}, ` ${mine.frame.en}`)));
+    if (mine.hint < 2) hints.push(h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'hint' }) }, mine.hint === 0 ? 'Need a hint?' : 'Hear Nobiko-san’s version'));
+  } else if (level === 'n5' && mine.hint < 1 && picked !== null) {
+    hints.push(h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'hint' }) }, 'Need a hint? Nobiko-san’s version'));
+  }
+  if (model && level !== 'kana') hints.push(h('div', { class: 'wg-model' }, h('p', { lang: 'ja' }, model.text), h('p', { class: 'hint' }, model.en)));
+  const tile = level === 'kana' ? mine.fins.find((f) => f.id === mine.fin)?.tile : undefined;
+  const speak =
+    picked === null
+      ? h('p', { class: 'hint' }, 'Pick a fin to add first.')
+      : level === 'kana'
+        ? h(
+            'div',
+            {},
+            speakBox({
+              label: `Hold and say ${tile ?? ''}`,
+              placeholder: tile ?? '',
+              kanaPadOpen: true,
+              maxLength: 40,
+              onSend: (u) => void send({ kind: 'relay', utterance: u }),
+            }),
+            h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'relay' }) }, 'Pass it on without saying it'),
+          )
+        : speakBox({
+            label: 'Hold and pass on the rumour',
+            placeholder: 'うわさを 日本語で…',
+            kanaPadOpen: false,
+            maxLength: MAX_ANSWER_LENGTH,
+            onSend: (u) => {
+              if (!/[ぁ-ゖァ-ヺー㐀-鿿]/.test(u.text)) return flash('Pass the rumour on in Japanese.');
+              void send({ kind: 'relay', utterance: u });
+            },
+          });
+  return h('div', { class: 'screen wg-rumour' }, title, listen, h('p', { class: 'prompt' }, mission), finCards, own, ...hints, speak);
 }
 
 // ---- Round 3: Shiritori Showdown ----

@@ -64,6 +64,18 @@
 .wg.compact .wg-drift-step { padding: 6px 16px; }
 .wg.compact .wg-drift-text { font-size: 26px; }
 .wg.compact .wg-drift-step .hint { font-size: 24px; }
+/* Round 2b: the rumour relay */
+.wg-subject-row { display: flex; align-items: center; gap: 24px; text-align: left; width: min(1200px, 100%); }
+.wg-subject { width: 112px; height: 112px; image-rendering: pixelated; flex: none; }
+.wg-rumour .wg-hop-name { font-size: 26px; }
+.wg-fin-tag { color: var(--accent); font-weight: 700; }
+.wg-frame-tag { color: var(--good); font-weight: 700; }
+.wg-final, .wg-truth { background: var(--panel); border: 2px solid var(--accent); border-radius: 16px; padding: 12px 24px; width: min(1400px, 100%); text-align: left; }
+.wg-final p, .wg-truth p { margin: 0; }
+.wg-truth { display: flex; gap: 20px; align-items: center; border-color: var(--good); animation: wg-in 0.6s 1.2s ease both; }
+.wg-truth .wg-subject { width: 88px; height: 88px; }
+.wg-rumour.compact .wg-rumour-steps .wg-drift-text { font-size: 22px; }
+.wg-rumour.compact .wg-rumour-steps .hint { font-size: 20px; }
 @keyframes wg-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
 @media (max-width: 700px) {

@@ -64,6 +64,28 @@ export function wordGauntletPolicy(content: ContentLibrary, opts: WordGauntletPo
         }
       }
 
+      const r = game.rumour;
+      if (r?.mine) {
+        const m = r.mine;
+        if (view.phase === 'answer' && m.heard && !m.sent) {
+          const fin = m.fins[seat % Math.max(1, m.fins.length)];
+          if (!m.fin && !m.ownFin && fin) out.push({ key: `fin${r.current}`, move: { kind: 'fin', fin: fin.id }, delayMs: later() });
+          else if (m.fin || m.ownFin) {
+            const chosen = m.fins.find((f) => f.id === m.fin);
+            const move =
+              m.level === 'kana'
+                ? { kind: 'relay', utterance: { via: 'speech', text: chosen?.tile ?? 'うわさ' } }
+                : { kind: 'relay', utterance: { via: seat % 2 ? 'typed' : 'speech', text: `${chosen?.kana ?? ''} ${m.heard.text}` } };
+            out.push({ key: `relay${r.current}`, move, delayMs: later() });
+          }
+        }
+        if (view.phase === 'reveal' && r.reveal && m.vote === null) {
+          const options = r.reveal.steps.filter((st) => st.text !== null && st.playerId !== playerId);
+          const pick = options[(seat * 5) % Math.max(1, options.length)];
+          if (pick) out.push({ key: 'rvote', move: { kind: 'vote', step: pick.index }, delayMs: later() });
+        }
+      }
+
       const sh = game.shiritori;
       if (sh?.mine) {
         if (view.phase === 'answer' && sh.turn === playerId) {
