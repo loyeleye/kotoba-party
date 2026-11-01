@@ -442,11 +442,11 @@ function lobby(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement {
 
 /**
  * The header's mic switch: turns quiet mode on or off at any time, in the lobby or mid-game. It sits at
- * the end of the header row, so it never covers a game's screen. Hidden when there's no mic to switch to.
+ * the end of the header row, so it never covers a game's screen. Always shown beside the sound switch:
+ * with no speech server tonight it still marks the player as mic off, for the games with speaking roles.
  */
-function micSwitch(me: PlayerView): HTMLElement | null {
+function micSwitch(me: PlayerView): HTMLElement {
   const quiet = me.mic === 'quiet';
-  if (!quiet && !speechReady()) return null;
   const label = quiet ? 'Quiet mode is on: tap to use your mic' : 'Mic is on: tap for quiet mode';
   return h(
     'button',
