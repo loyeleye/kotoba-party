@@ -69,10 +69,42 @@ The stop rides the Obake Line as 北口 (Kitaguchi), just before its last stop.
 The reader fixes one dictionary slip for it: IPADIC reads 出口 alone as いでぐち, so
 `server/src/reading.ts` reads it でぐち.
 
+### Hard roles (N4)
+
+A hard role is a harder script inside a stop the whole room already plays (the N4/N3 doc's "Hard roles
+in existing games", Express Line goals 4.1, 4.6, 4.9, 4.10). Items with a `role` (all N4, each tagged
+with the `frames` it practises) are never dealt as ordinary items. At a stop whose minigame has some,
+one connected N4 player is offered one: whoever has been offered fewest so far, then longest ago, so it
+rotates. The phone shows the role and its pitch with two equal buttons, **Take it** and **Not this
+time**, for 8 s (`RULES.offerMs`). Taking it starts the item's clock; "not this time", or no answer,
+deals the ordinary item (an N4 player's usual N5 one). The offer is private: the TV shows the player as
+answering, and only the reveal names the role (⭐ under their name). Every offer goes in `roleLog`
+(`accepted`, `declined`, `timeout`, or `away` if the stop ended first), for the step's gate of N4
+players taking at least 60% of offers. A hard role scores like any item, and missing it twice never
+sends anyone to the penalty car. With no N4 player in the room nothing changes: no offers, the same
+stops, the same items.
+
+- **The announcer** (Station Announcement, 4.9): six items where the N4 player makes the announcement
+  instead of hearing one, so the line is shown, not played. まもなく、三番線に電車がまいります。,
+  黄色い線の内側までお下がりください。, ドアが閉まります。ご注意ください。, both sentences at once, and
+  電車がおくれて、もうしわけございません。 Frames `keigo-verb`, `o-kudasai`.
+- **Lost and Found** (忘れ物センター, 4.6), `content/src/last-train/lost-and-found.ts`: a new minigame
+  that rides a line only in a room with an N4 player. The Obake Line's 神社前 becomes 忘れ野 (Wasureno)
+  and the Hoshimidai line's 大学前 becomes 音無 (Otonashi) through the stop's `withN4`; both swapped-out
+  minigames are penalty ones, so they still ride in the penalty car. It is never a padding stop
+  (`n4Stop`). Kana players say what is in the picture (かさです), N5 players say where, when and what
+  colour (電車に忘れました, 黒いかばんです). Two N4 roles: the forgetful passenger (電車に忘れたかもしれません,
+  `kamo-shiremasen`) and the lost property staff (重そうなかばんですね, `sou-looks`).
+- **The guest at the front desk** (Meet the Innkeeper, 4.1, 4.10): favours with ＿て いただけますか
+  (call a taxi, keep the luggage, a wake-up call, speak more slowly, check the booking again;
+  `te-itadakemasu-ka`, with いただけませんか accepted too) and three inn signs drawn as boards, 受付,
+  予約 and 食堂 (`sign-kanji`, hints are pictures, never the reading).
+
 ### Items and levels
 
 Each player gets their own item at their level (Kana → kana then n5; N5 → n5 then kana; N4 →
-n4, n5, kana), never one already dealt this game while unused ones remain. Kana-level phones
+n4, n5, kana), never one already dealt this game while unused ones remain. Hard-role items are
+the exception: they are only ever offered (above). Kana-level phones
 show the kana reading and romaji of the prompt and, on the retry, the first sound of the answer.
 N5+ phones show the Japanese with furigana and put the English one tap away.
 
@@ -157,6 +189,16 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
     host's TTS) and hides the text until the retry.
 15. Scenario choice prefers an exact stop count; trimming keeps the final stop so the twist
     stays last; padding uses placeholder station names.
+16. Hard roles: one offer per stop, to the N4 player offered fewest (then longest ago); 8 s to
+    choose, and no answer is "not this time". Why: one spotlight a stop, and nobody is pushed into it.
+17. A hard role scores like any other item (no bonus) and a double miss never sends anyone to the
+    penalty car. Why: taking the harder line should never be the risky choice, or the 60% gate fails.
+18. Lost and Found is swapped in for a penalty-minigame stop (Obake 神社前, Hoshimidai 大学前) rather
+    than added, so the line's length and the scenario choice stay the same; Kids and Cheeky lines
+    keep their stops (their Station Announcement and Meet the Innkeeper stops still offer roles).
+19. The announcer's lines are separate items (arrival, yellow line, doors, apology) plus one with both
+    sentences, rather than one long announcement. Why: shorter lines survive speech recognition.
+20. 女湯 was left out of the inn signs: the reader reads it じょゆ, so a right answer would be rejected.
 
 ## Open questions
 
@@ -171,3 +213,9 @@ judge an overrule). Accepted answers are never sent to any client; bots look ite
 - Read the Signs: are the kanji pictures (in each hint) memorable and right? They need the fluent
   check with the rest. A Kids line could use the kana-level signs too.
 - Overrule logs live in the mode state only; the false-reject metric needs them persisted.
+- Hard roles: `roleLog` is mode state only too; the 60% acceptance gate needs it persisted.
+- Hard roles not built yet: the host playing the role when nobody is N4, the commentary booth's replay
+  of a Star line, and the Gallery. N3 lines (＿で ございます, ＿させて いただけますか, 非常口, 禁煙) wait
+  for step 6. Every hard-role line is a draft for the fluent check.
+- Should the announcer's clip play on the TV (the doc's "records a clip … the TV plays it"), or is the
+  reveal row enough?

@@ -1,6 +1,6 @@
 // Last Train on the phone: your own item at each stop, said out loud (typed works, earns
 // less), a private retry with a hint, the penalty car, room overrule votes, ghost haunts and
-// the Platform Dash.
+// the Platform Dash. N4 players are sometimes offered a hard role first, which they may turn down.
 //
 // Two things keep a spoken answer from being wiped by someone else's update:
 //  - the screen key only covers what this player is doing (their task, status, result);
@@ -10,7 +10,7 @@
 import { h, mount, ruby } from '../../../shared/src/dom.js';
 import type { JpText, Level } from '../../../content/src/types.js';
 import { signBoard } from '../../../shared/src/signBoard.js';
-import type { LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
+import type { LastTrainMe, LastTrainView, OverruleView, TaskView } from '../../../shared/src/modes/lastTrain/lastTrain.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import { speakBox } from '../components/speak.js';
 import { waiting } from '../components/ui.js';
@@ -129,6 +129,44 @@ function listenBox(task: TaskView): HTMLElement {
   );
 }
 
+// ---- hard role offer (N4) ----
+
+/** The offer card: take the hard role, or "not this time" for the ordinary item. No answer is a no. */
+function offerScreen(offer: NonNullable<LastTrainMe['offer']>, send: (move: unknown) => Promise<boolean>): HTMLElement {
+  const seenKey = `offer:${offer.key}`;
+  if (!seenAt.has(seenKey)) seenAt.set(seenKey, Date.now());
+  const start = seenAt.get(seenKey)!;
+  const label = h('p', { class: 'hint' });
+  let ticked = false;
+  const draw = () => {
+    const left = Math.max(0, offer.limitMs - (Date.now() - start));
+    label.textContent = left > 0 ? `${Math.ceil(left / 1000)}s to choose. No answer means not this time.` : 'Dealing your usual item…';
+    if (left === 0 && !ticked) {
+      ticked = true;
+      setTimeout(() => void send({ kind: 'tick' }), 300);
+    }
+  };
+  draw();
+  const timer = setInterval(() => {
+    if (!label.isConnected && Date.now() - start > 1000) return clearInterval(timer);
+    draw();
+  }, 250);
+  return h(
+    'div',
+    { class: 'screen lt-offer' },
+    h('p', { class: 'lt-kicker' }, '⭐ Hard role'),
+    jpBlock(offer.role, { en: true, big: true }),
+    h('p', {}, offer.pitch),
+    h(
+      'div',
+      { class: 'lt-offer-btns' },
+      h('button', { type: 'button', onclick: () => void send({ kind: 'role', key: offer.key, accept: true }) }, 'Take it'),
+      h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'role', key: offer.key, accept: false }) }, 'Not this time'),
+    ),
+    label,
+  );
+}
+
 // ---- answering ----
 
 /** Kana players get the direction words with every pair of boards. */
@@ -161,6 +199,7 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
       'div',
       { class: 'lt-task-head' },
       task.minigame ? h('span', { class: 'lt-chip' }, ruby(task.minigame)) : h('span', { class: 'lt-chip' }, 'ダッシュ！'),
+      task.role ? h('span', { class: 'lt-chip star' }, '⭐ ', ruby(task.role)) : null,
       task.attempt === 2 ? h('span', { class: 'lt-chip warn' }, 'Retry') : null,
       me.ghost ? h('span', { class: 'lt-chip ghost' }, '👻 Ghost') : null,
     ),
@@ -317,6 +356,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
     return [
       view.phaseSeq,
       me?.task?.key,
+      me?.offer?.key,
       me?.status,
       me?.ghost,
       me?.streak,
@@ -358,7 +398,7 @@ export const lastTrainPhone: PhoneMode<LastTrainView> = {
         );
         break;
       case 'answer':
-        main = me?.task ? taskScreen(me.task, game, send) : statusScreen(game);
+        main = me?.offer ? offerScreen(me.offer, send) : me?.task ? taskScreen(me.task, game, send) : statusScreen(game);
         break;
       case 'reveal':
         main = revealScreen(game, send);

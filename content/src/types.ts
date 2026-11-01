@@ -274,6 +274,7 @@ export type MinigameId =
   | 'particle-panic'
   | 'calendar-crunch'
   | 'read-the-signs'
+  | 'lost-and-found'
   | (string & {});
 
 export type PromptType = 'spoken-question' | 'listen-and-answer' | 'read-aloud' | 'picture' | 'fill-particle';
@@ -305,6 +306,20 @@ export interface MinigameItem {
   hint: string;
   /** Seconds to answer. */
   timeLimit: number;
+  /**
+   * A hard role (N4 and up): never dealt as an ordinary item. At each stop one N4 player in turn is
+   * offered it and may say "not this time" (docs/modes/last-train.md, Hard roles).
+   */
+  role?: HardRole;
+  /** The sentence frames the line practises, by id (shared/src/japanese/frames.ts). */
+  frames?: readonly string[];
+}
+
+/** A hard role's name and its one-line pitch on the offer card. */
+export interface HardRole {
+  id: string;
+  name: JpText;
+  pitch: string;
 }
 
 /** A station sign: its kanji, which way its arrow points, and its colours (exits are yellow, toilets blue and red). */
@@ -328,6 +343,8 @@ export interface LastTrainMinigame {
   forgiving?: boolean;
   /** Build phase the minigame ships in (Phase 1 has Konbini Math and Meet the Innkeeper). */
   phase: 1 | 4 | 5;
+  /** Rides a line only as a stop swapped in for a room with an N4 player (TrainStop.withN4), never as padding. */
+  n4Stop?: boolean;
   status: ReviewStatus;
   /** Chōchin-san's one-line setup for the stop. */
   intro: JpText;
@@ -341,6 +358,8 @@ export interface TrainStop {
   minigameId: MinigameId;
   /** Chōchin-san's announcement as the train pulls in. */
   announcement: JpText;
+  /** In a room with an N4 player, this stop is swapped for the given one (a hard-role stop such as Lost and Found). */
+  withN4?: Omit<TrainStop, 'withN4'>;
 }
 
 export interface LastTrainScenario {
