@@ -62,7 +62,7 @@ const thing = (t: ThingView, label: string, cls = ''): HTMLElement =>
   h('div', { class: `yc-thing ${cls}`, 'data-key': `${label}:${t.id}` }, h('p', { class: 'yc-label' }, label), pic(t), h('p', { class: 'yc-thing-ja', lang: 'ja' }, ruby(t.word)), h('p', { class: 'yc-thing-en' }, t.word.en));
 
 type Role = Side | 'witness' | 'judge';
-const ROLE_EMOJI: Record<Role, string> = { pros: '📜', def: '🌻', witness: '👁', judge: '⚖' };
+const ROLE_EMOJI: Record<Role, string> = { pros: '📜', def: '🌻', witness: '👁️', judge: '⚖️' };
 
 /** A role's pixel icon (the emoji if the picture is missing): a sealed scroll, a sunflower badge, a scale, an eye. */
 function icon(role: Role, cls = 'yc-role-icon'): HTMLElement {
@@ -134,10 +134,10 @@ function intro(): HTMLElement {
     h(
       'ol',
       { class: 'yc-steps' },
-      step('📜', 'A studio mystery goes to trial. Fude-san reads the case.'),
+      step('🔍', 'A studio mystery goes to trial. Fude-san reads the case.'),
       step(icon('witness'), 'Fude-san asks the witness one question. A curveball can add a second suspect.'),
-      step(icon('judge'), 'Two lawyers, paired by level, plan in private and argue at the same time: ', icon('pros'), ' prosecution, then ', icon('def'), ' defence.'),
-      step('🗳', 'Everyone else answers one question about the arguments, then votes: who won you over? A tie is not guilty.'),
+      step('🗣', 'Two lawyers, paired by level, plan in private and argue at the same time: ', icon('pros'), ' prosecution, then ', icon('def'), ' defence.'),
+      step(icon('judge'), 'Everyone else answers one question about the arguments, then votes: who won you over? A tie is not guilty.'),
     ),
   );
 }
@@ -392,11 +392,13 @@ function voteBeat(view: RoomView, game: CourtView): HTMLElement {
 
 // ---- the verdict ----
 
-/** All the tokens drop within this, both pans at once, before the hanko lands. */
-const TOKENS_MS = 1_600;
+/** All the tokens drop within this, both pans at once, and each pan's count pops before the scroll unrolls over them. */
+const TOKENS_MS = 1_000;
 /** Fude-san's brush writes the verdict one character at a time, finishing as the seal lands (STAMP_AT_MS). */
 const STROKE_MS = 320;
 const BRUSH_AT_MS = STAMP_AT_MS - 2 * STROKE_MS;
+/** The seal's fall: it touches the paper at STAMP_AT_MS, with Fude-san's line and the stamp sound. */
+const SEAL_MS = 180;
 
 /**
  * Fude-san's brush writes 有罪 or 無罪 top to bottom, one character per stroke, then the square 筆 seal lands. The
@@ -413,9 +415,9 @@ function brushVerdict(verdict: { text: string; kana: string }, at: (ms: number) 
       h('p', { class: 'yc-brush-ja', lang: 'ja', 'aria-label': verdict.text }, ...chars.map((ch, i) => h('span', { class: 'yc-stroke', style: at(BRUSH_AT_MS + i * STROKE_MS) }, ch))),
       missing.has('court/brush')
         ? null
-        : h('img', { class: 'yc-brush-pen', src: ART('court/brush'), alt: '', draggable: 'false', style: at(BRUSH_AT_MS), onerror: (e: Event) => (missing.add('court/brush'), (e.target as HTMLElement).remove()) }),
+        : h('img', { class: 'yc-brush-pen', src: ART('court/brush'), alt: '', draggable: 'false', style: `${at(BRUSH_AT_MS)}; animation-duration: ${chars.length * STROKE_MS + 250}ms`, onerror: (e: Event) => (missing.add('court/brush'), (e.target as HTMLElement).remove()) }),
     ),
-    h('div', { class: 'yc-brush-side' }, h('p', { class: 'yc-brush-kana', lang: 'ja' }, verdict.kana), h('span', { class: 'yc-seal yc-stamp', lang: 'ja', style: at(STAMP_AT_MS) }, '筆')),
+    h('div', { class: 'yc-brush-side' }, h('p', { class: 'yc-brush-kana yc-pop', lang: 'ja', style: at(STAMP_AT_MS) }, verdict.kana), h('span', { class: 'yc-seal', lang: 'ja', style: at(STAMP_AT_MS - SEAL_MS) }, '筆')),
   );
 }
 
@@ -423,10 +425,13 @@ function verdictBeat(view: RoomView, game: CourtView): HTMLElement | null {
   const v = game.verdict;
   if (!v) return null;
   const s = SIDE[v.winner];
-  onceFor(`verdict:${game.round}`, () => sfx('right', STAMP_AT_MS / 1000));
+
   // Tokens alternate pans (a 3–3 tie never fills one side first), all in before the stamp. A TV that joins late
   // doesn't replay from zero: every delay counts from when the beat began.
   const since = Math.max(0, serverNow() - game.stepAt);
+  // The stamp's sound at the seal's contact, counted from when the beat began (a TV that joins late skips it).
+  const left = STAMP_AT_MS - since;
+  if (left > -150) onceFor(`verdict:${game.round}`, () => sfx('right', Math.max(0, left) / 1000));
   const most = Math.max(v.pros, v.def, 1);
   const step = Math.min(500, TOKENS_MS / most);
   const at = (ms: number) => `animation-delay: ${ms - since}ms`;
@@ -436,7 +441,7 @@ function verdictBeat(view: RoomView, game: CourtView): HTMLElement | null {
       { class: `yc-pan yc-side-${side}`, 'data-key': `pan:${side}` },
       h('p', { class: 'yc-lawyer-tag' }, icon(side), ' ', h('span', { lang: 'ja' }, ruby(SIDE[side].verdict))),
       h('div', { class: 'yc-tokens', 'aria-label': `${n} vote${n === 1 ? '' : 's'}` }, ...Array.from({ length: n }, (_, i) => h('span', { class: 'yc-token yc-drop', style: at(i * step + (side === 'def' ? step / 2 : 0)) }))),
-      h('p', { class: 'yc-pan-n yc-pop', style: at(Math.max(0, n - 1) * step + 400) }, String(n)),
+      h('p', { class: 'yc-pan-n yc-pop', style: at(Math.min(Math.max(0, n - 1) * step + 300, BRUSH_AT_MS - 400)) }, String(n)),
     );
   const pts = (id: string) => v.points.find((p) => p.playerId === id)?.points ?? 0;
   const lawyers = game.cast ? [game.cast.pros, game.cast.def] : [];
@@ -450,11 +455,11 @@ function verdictBeat(view: RoomView, game: CourtView): HTMLElement | null {
       h('div', { class: 'yc-scale' }, pan('pros', v.pros), h('p', { class: 'yc-score-n yc-pop', style: at(STAMP_AT_MS) }, `${v.pros} – ${v.def}`), pan('def', v.def)),
       h(
       'div',
-      { class: `yc-hanko yc-side-${v.winner} yc-unfurl`, style: at(BRUSH_AT_MS - 150) },
+      { class: `yc-hanko yc-unfurl`, style: at(BRUSH_AT_MS - 120) },
       h('p', { class: 'yc-label' }, h('span', { lang: 'ja' }, ruby({ text: '判決', kana: 'はんけつ' })), ' · VERDICT'),
       brushVerdict(s.verdict, at),
-      h('p', { class: 'yc-hanko-en' }, v.tie ? `Not guilty · ${v.pros} to ${v.def}, and a tie is not guilty` : `${s.en[0]!.toUpperCase()}${s.en.slice(1)} · ${Math.max(v.pros, v.def)} to ${Math.min(v.pros, v.def)}`),
-      v.tie ? h('p', { class: 'yc-tie', lang: 'ja' }, ruby({ text: '疑わしきは 罰せず。', kana: 'うたがわしきは ばっせず。' }), h('span', { class: 'yc-muted' }, ' When in doubt, no punishment.')) : null,
+      h('p', { class: 'yc-hanko-en yc-pop', style: at(STAMP_AT_MS) }, v.tie ? `Not guilty · ${v.pros} to ${v.def}, and a tie is not guilty` : `${s.en[0]!.toUpperCase()}${s.en.slice(1)} · ${Math.max(v.pros, v.def)} to ${Math.min(v.pros, v.def)}`),
+      v.tie ? h('p', { class: 'yc-tie yc-pop', lang: 'ja', style: at(STAMP_AT_MS) }, ruby({ text: '疑わしきは 罰せず。', kana: 'うたがわしきは ばっせず。' }), h('span', { class: 'yc-muted' }, ' When in doubt, no punishment.')) : null,
       ),
     ),
     h(
@@ -545,9 +550,13 @@ export const yokaiCourtStage: StageMode<CourtView> = {
     const c = game.cast;
     if (!c || !game.step) return '';
     // Roles sit in the score ribbon, so nothing is cut off at the bottom of the beat.
-    const role = c.pros === playerId ? '📜 prosecution' : c.def === playerId ? '🌻 defence' : c.witness === playerId ? '👁 witness' : c.judges.includes(playerId) ? '⚖ judge' : '';
+    const role = c.pros === playerId ? '📜 prosecution' : c.def === playerId ? '🌻 defence' : c.witness === playerId ? '👁️ witness' : c.judges.includes(playerId) ? '⚖️ judge' : '';
     const state = badgeState(game, playerId);
     return role && state ? `${role} · ${state}` : role || state;
+  },
+  hostRow(view, game) {
+    // The verdict keeps Fude-san's row up from the start, so her line at the seal doesn't push the court down.
+    return view.phase === 'score' && game.step === 'verdict' ? { host: 'fude', side: null } : null;
   },
   hostHoldMs(view) {
     if (view.phase !== 'reveal') return 0;

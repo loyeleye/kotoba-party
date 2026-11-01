@@ -45,6 +45,7 @@ import {
   thingOf,
   WITNESS,
   yokaiOf,
+  YOKAI,
   type Case,
   type CourtChunk,
   type Side,
@@ -312,7 +313,7 @@ export interface CourtMe {
   /** A Kana judge's word to keep at the verdict (logged on their path as seen). */
   keep: { word: JpR; picture: string; emoji: string; checked: boolean } | null;
   /** A Kana lawyer's private recap at the verdict: their tiles in order, how they went out, and the evidence. */
-  kanaNote: { tiles: { word: JpR; evidence: boolean }[]; take: KanaTake; evidence: boolean } | null;
+  kanaNote: { tiles: { word: JpR; evidence: boolean }[]; take: KanaTake; evidence: boolean | null } | null;
   /** A lawyer's private note at the verdict. */
   note: { model: JpText; said: string | null; hinted: boolean; chunk: string | null; credit: Credit } | null;
 }
@@ -349,7 +350,9 @@ export function roundsFor(n: number): number {
   return n >= 7 || n === 4 ? 4 : 3;
 }
 
-export const withRomaji = (t: JpText, level: Level): JpR => (level === 'kana' ? { ...t, romaji: ROMAJI[t.kana] ?? toRomaji(t.kana) } : t);
+/** Romaji with the particles に and じゃ as their own words (Yane ni ita, Kappa ja nai), as Hepburn writes them. */
+export const courtRomaji = (kana: string): string => toRomaji(kana.replace(/(\S)(に|じゃ)(?=\s)/gu, '$1 $2'));
+export const withRomaji = (t: JpText, level: Level): JpR => (level === 'kana' ? { ...t, romaji: ROMAJI[t.kana] ?? courtRomaji(t.kana) } : t);
 
 /** Does the reading contain any of these kana? Normalised readings, so keys never match across sounds merged at word boundaries. */
 export function heardAny(reading: string, keys: readonly string[]): boolean {
@@ -402,7 +405,8 @@ export function argReading(c: CaseState, a: Argument): string | null {
   const t = c.testimony ?? 'unseen';
   switch (a.kind) {
     case 'tiles':
-      if (a.clipId || a.local) return a.checked && a.heard ? utteranceReading(a.heard) : tilesLine(cs, t, a.side, a.tiles).kana;
+      // A take with speech-to-text is only what was heard (nothing heard: nothing said); without it, the tiles.
+      if (a.clipId || a.local) return a.checked ? (a.heard ? utteranceReading(a.heard) : '') : tilesLine(cs, t, a.side, a.tiles).kana;
       return tilesLine(cs, t, a.side, a.tiles).kana;
     case 'typed':
       // The server fills in a reading for typed kanji (池に いました matches いけに).
@@ -456,29 +460,36 @@ const kanaOf = (u: Utterance): string => (hasKanji(u.text) ? utteranceReading(u)
 
 /**
  * How a Kana lawyer's tiles went out: said (their own take had every picked tile in it), unchecked (a take with no
- * speech-to-text: counted as said), partly (a take that missed a tile), read (Fude-san read the tiles).
+ * speech-to-text: counted as said), partly (a take with some tiles but not all), silent (speech-to-text heard
+ * none of the tiles), read (Fude-san read the tiles).
  */
-export type KanaTake = 'said' | 'unchecked' | 'partly' | 'read';
+export type KanaTake = 'said' | 'unchecked' | 'partly' | 'silent' | 'read';
 export function kanaTakeOf(c: CaseState, a: Argument): KanaTake {
   if (!(a.clipId || a.local)) return 'read';
   if (!a.checked) return 'unchecked';
-  if (!a.heard) return 'partly';
+  if (!a.heard || !normalizeReading(utteranceReading(a.heard))) return 'silent';
   const cs = caseOfState(c);
   const t = c.testimony ?? 'unseen';
   const tiles = a.tiles.length ? a.tiles : defaultTiles(a.side);
   const reading = utteranceReading(a.heard);
-  // Each tile's first few kana: more than the yōkai's name, so saying only the name doesn't count.
+  // Each tile's first few kana after the yōkai's name, so saying only the name (ざしきわらし) doesn't count.
   const tileSaid = (id: string) => {
-    const k = normalizeReading(tilesLine(cs, t, a.side, [id]).kana);
+    let k = normalizeReading(tilesLine(cs, t, a.side, [id]).kana);
+    for (const y of YOKAI) k = k.split(normalizeReading(y.name.kana)).join('');
+    if (!k) return true;
     return heardAny(reading, [k.slice(0, Math.min(6, Math.max(1, k.length - 1)))]);
   };
-  return tiles.every(tileSaid) ? 'said' : 'partly';
+  const n = tiles.filter(tileSaid).length;
+  return n === tiles.length ? 'said' : n > 0 ? 'partly' : 'silent';
 }
 
 /** The word a Kana judge keeps from the case: the answer to the check (the evidence the check asked about). */
 export function keepWordOf(c: CaseState): Thing {
   return thingOf(checkOptions(caseOfState(c), c.checkSide)[0]!)!;
 }
+
+/** A word's dictionary meaning for the keep card and the path: its gloss, else its English with no article. */
+export const glossOf = (t: Thing): string => t.gloss ?? t.word.en.replace(/^(a|an|the|some)\s+/i, '');
 
 /** Play time for one argument. */
 export function playMs(a: Argument | undefined): number {
@@ -723,7 +734,7 @@ function settle(s: CourtState, c: CaseState, ctx: ModeContext): void {
   const keep = keepWordOf(c);
   for (const id of c.judges)
     if (levelOf(ctx, id) === 'kana' && (id in c.checks || c.votes[id]) && ctx.player(id))
-      ctx.phrase(id, { itemId: `court:word:${keep.id}`, text: keep.word.text, kana: keep.word.kana, en: keep.word.en, outcome: 'seen', recall: 'read' });
+      ctx.phrase(id, { itemId: `court:word:${keep.id}`, text: keep.word.text, kana: keep.word.kana, en: glossOf(keep), outcome: 'seen', recall: 'read' });
   // The booth: the higher level first, then the prosecution.
   let best: { id: string; chunk: CourtChunk; line: string } | null = null;
   for (const side of ORDER) {
@@ -1423,7 +1434,7 @@ function meView(s: CourtState, c: CaseState, cs: Case, t: Testimony, phase: Phas
       phase === 'score' && judge && level === 'kana' && (id in c.checks || !!c.votes[id])
         ? (() => {
             const k = keepWordOf(c);
-            return { word: withRomaji(k.word, level), picture: k.picture, emoji: k.emoji, checked: id in c.checks };
+            return { word: withRomaji({ ...k.word, en: glossOf(k) }, level), picture: k.picture, emoji: k.emoji, checked: id in c.checks };
           })()
         : null,
     kanaNote:
@@ -1431,7 +1442,7 @@ function meView(s: CourtState, c: CaseState, cs: Case, t: Testimony, phase: Phas
         ? {
             tiles: (mine.tiles.length ? mine.tiles : defaultTiles(side)).map((tid) => ({ word: withRomaji(tilesLine(cs, t, side, [tid]), level), evidence: tid === 'evidence' })),
             take: kanaTakeOf(c, mine),
-            evidence: saidEvidence(c, mine) === true,
+            evidence: saidEvidence(c, mine),
           }
         : null,
     note:

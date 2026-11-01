@@ -7,7 +7,7 @@ import { apply, createGame, wakeAt, type GameAction, type GameContext, type Game
 import { ALL_FRAMES, framesOf } from '../shared/src/japanese/frames.js';
 import { hasKanji } from '../shared/src/japanese/kana.js';
 import { CASES, CHUNKS, CLUES, fill, kanaTilesOf, LINES, PLACES, slotsOf, TESTIMONIES, WITNESS, YOKAI, type Side } from '../shared/src/modes/yokaiCourt/cases.js';
-import { CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, saidEvidence, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
+import { glossOf, withRomaji, CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, saidEvidence, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { yokaiCourtPolicy } from '../tools/bots/policies/yokaiCourt.js';
@@ -509,9 +509,39 @@ describe('Yōkai Court later ideas', () => {
     argueAll(t, (id) => (id === pros ? clip(full) : clip('ちがう')));
     checkAndVote(t, () => null, () => 'pros');
     expect(t.view(pros).me!.kanaNote!.take).toBe('said');
-    expect(t.view(def).me!.kanaNote).toMatchObject({ take: 'partly', evidence: false });
+    expect(t.view(def).me!.kanaNote).toMatchObject({ take: 'silent', evidence: false });
+    // Picked the evidence tile, but it wasn't heard: the card can tell (evidence false, an evidence tile marked).
+    expect(t.view(def).me!.kanaNote!.tiles.some((x) => x.evidence)).toBe(true);
     // A speaking level gets the usual note, never the Kana recap.
     expect(t.view(t.c.judges[0]!).me!.kanaNote).toBeNull();
+  });
+
+  it('a Kana take with no words heard is silent, not partly said, and logs as seen', () => {
+    const t = new Table(4, ['kana', 'kana', 'kana', 'kana'], 54);
+    t.start();
+    toPlan(t);
+    const { pros } = t.c;
+    t.play(pros, { kind: 'pick', tiles: ['claim'] });
+    argueAll(t, (id) => (id === pros ? { ...clip('x'), heard: { via: 'speech', text: '', reading: '' } } : null));
+    checkAndVote(t, () => null, () => 'pros');
+    expect(t.view(pros).me!.kanaNote!.take).toBe('silent');
+    expect(t.s.phrasebook[pros]!.find((x) => x.itemId.endsWith(':pros:kana'))).toMatchObject({ outcome: 'seen' });
+  });
+
+  it('needs more than the yōkai’s name for a tile, spaces particles in romaji, and keeps a plain gloss', () => {
+    const t = new Table(4, ['kana', 'kana', 'kana', 'kana'], 55);
+    t.start();
+    toPlan(t);
+    const { pros } = t.c;
+    t.play(pros, { kind: 'pick', tiles: ['claim'] });
+    const name = YOKAI.find((y) => y.id === caseOf(t).accused)!.name.kana;
+    argueAll(t, (id) => (id === pros ? clip(name) : null));
+    checkAndVote(t, () => null, () => 'pros');
+    expect(t.view(pros).me!.kanaNote!.take).toBe('silent');
+    const cs = CASES.find((x) => x.id === 'bento')!;
+    expect(withRomaji(fill({ ja: '{A}じゃ ない！', en: '' }, slotsOf(cs, 'saw'), true), 'kana').romaji).toBe('Kappa ja nai!');
+    expect(glossOf(CLUES.find((x) => x.id === 'cucumber')!)).toBe('cucumber');
+    expect(glossOf(PLACES.find((x) => x.id === 'pond')!)).toBe('pond');
   });
 
   it('tells the phones when each timed beat ends', () => {

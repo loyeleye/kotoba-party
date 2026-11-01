@@ -350,8 +350,8 @@ const SIDE: Record<Side, { icon: string; label: string; verdict: { text: string;
 const ROLE: Record<Role, { icon: string; label: string }> = {
   pros: { icon: '📜', label: 'You prosecute' },
   def: { icon: '🌻', label: 'You defend' },
-  witness: { icon: '👁', label: 'You’re the witness' },
-  judge: { icon: '⚖', label: 'You judge' },
+  witness: { icon: '👁️', label: 'You’re the witness' },
+  judge: { icon: '⚖️', label: 'You judge' },
 };
 
 /** A role's pixel icon (the emoji if the picture is missing): a sealed scroll, a sunflower badge, a scale, an eye. */
@@ -384,8 +384,8 @@ const judgePoints = (ctx: Ctx): HTMLElement =>
   h(
     'ul',
     { class: 'yc-breakdown' },
-    h('li', {}, h('span', {}, 'Check right'), h('b', {}, '+100')),
-    ctx.view.players.length - 2 >= 3 ? h('li', {}, h('span', {}, 'Vote with the majority (3+ voters)'), h('b', {}, '+50')) : null,
+    h('li', {}, h('span', {}, 'Check right'), h('b', {}, `+${POINTS.check}`)),
+    ctx.view.players.length - 2 >= 3 ? h('li', {}, h('span', {}, 'Vote with the majority (3+ voters)'), h('b', {}, `+${POINTS.majority}`)) : null,
   );
 
 function band(ctx: Ctx, me: CourtMe, next: string): HTMLElement {
@@ -408,7 +408,7 @@ function beatBar(ctx: Ctx): HTMLElement | null {
   if (!game.step || !TIMED.has(game.step) || !end || end <= game.stepAt) return null;
   const ms = end - game.stepAt;
   const gone = Math.min(ms, Math.max(0, serverNow(ctx) - game.stepAt));
-  return h('div', { class: 'yc-beat-bar', 'aria-hidden': 'true' }, h('span', { style: `animation-duration: ${ms}ms; animation-delay: -${gone}ms` }));
+  return h('div', { class: 'yc-beat-bar', 'aria-hidden': 'true' }, h('span', { style: `--ms: ${ms}ms; --yc-beat-delay: -${gone}ms` }));
 }
 
 const dock = (...children: (HTMLElement | null)[]): HTMLElement => h('div', { class: 'yc-dock' }, ...children);
@@ -655,7 +655,7 @@ function roleCard(ctx: Ctx, me: CourtMe): HTMLElement {
       { class: `yc-rolecard yc-side-${r}` },
       h('p', { class: 'yc-role-big' }, icon(r, 'yc-role-icon big'), ` ${r === 'pros' ? 'You prosecute' : 'You defend'}`),
       h('p', {}, `Against ${nameOf(ctx.view, other)}${otherLevel ? ` (${levelLabel(otherLevel)})` : ''}. Lawyers are paired by the closest level, so the better idea wins, not the bigger vocabulary.`),
-      h('ul', { class: 'yc-breakdown' }, h('li', {}, h('span', {}, 'Win the vote (a tie splits it)'), h('b', {}, '+200')), h('li', {}, h('span', {}, 'Each judge’s vote'), h('b', {}, '+50')), h('li', {}, h('span', {}, 'Each judge who hears your evidence'), h('b', {}, '+25'))),
+      h('ul', { class: 'yc-breakdown' }, h('li', {}, h('span', {}, 'Win the vote (a tie splits it)'), h('b', {}, `+${POINTS.win}`)), h('li', {}, h('span', {}, 'Each judge’s vote'), h('b', {}, `+${POINTS.vote}`)), h('li', {}, h('span', {}, 'Each judge who hears your evidence'), h('b', {}, `+${POINTS.heard}`))),
     );
   }
   if (r === 'witness')
@@ -793,7 +793,7 @@ function listenCard(ctx: Ctx, me: CourtMe): HTMLElement | null {
     h('p', { class: 'yc-listen-head' }, seatChip(ctx.view, l.playerId), h('b', {}, nameOf(ctx.view, l.playerId)), ' · ', icon(l.side), ` ${SIDE[l.side].label.toLowerCase()} is arguing`, liveBar()),
     h('p', { class: 'yc-label' }, 'The main claim'),
     jpv(l.gist, me.level),
-    h('p', { class: 'yc-hint' }, 'Listen for the detail: one question comes next (+50).'),
+    h('p', { class: 'yc-hint' }, `Listen for the detail: one question comes next (+${POINTS.check}).`),
   );
 }
 
@@ -812,7 +812,7 @@ function revealScreen(ctx: Ctx, me: CourtMe): HTMLElement {
         mine && p?.local && playBlocked ? h('button', { type: 'button', class: 'primary', onclick: () => playMine(game.round, true) }, '▶ Play it') : null,
       );
     }
-    return screen(band(ctx, me, 'one question about the arguments (+50), then your vote.'), listenCard(ctx, me) ?? watchCard('Listen'));
+    return screen(band(ctx, me, `one question about the arguments (+${POINTS.check}), then your vote.`), listenCard(ctx, me) ?? watchCard('Listen'));
   }
   // The check.
   if (side) return screen(band(ctx, me, 'the judges vote. You don’t vote in your own case.'), watchCard('The judges answer one question'));
@@ -882,7 +882,7 @@ function keepCard(me: CourtMe): HTMLElement | null {
   return h(
     'div',
     { class: 'yc-keep' },
-    h('p', { class: 'yc-label' }, '🔖 Word to keep'),
+    h('p', { class: 'yc-label' }, h('span', { 'aria-hidden': 'true' }, '🔖 '), 'Word to keep'),
     h('div', { class: 'yc-keep-row' }, pic(k, 'yc-pic yc-keep-pic'), jpv(k.word, me.level, 'yc-keep-ja')),
     h('p', { class: 'yc-hint' }, k.checked ? 'The answer to your check. Saved to your path as a word you’ve seen.' : 'The evidence in this case. Saved to your path as a word you’ve seen.'),
   );
@@ -891,8 +891,9 @@ function keepCard(me: CourtMe): HTMLElement | null {
 const TAKE: Record<NonNullable<CourtMe['kanaNote']>['take'], string> = {
   said: 'You said every tile ✓',
   unchecked: 'You said it (the game couldn’t check the words)',
-  partly: 'You said some of it: say every tile to log it as said',
-  read: 'Fude-san read the tiles: say them yourself next time to log them as said',
+  partly: 'The game heard some of your tiles, not all: say every tile next time',
+  silent: 'The game didn’t hear your tiles: hold the phone closer and say every tile next time',
+  read: 'Fude-san read them for you. Next time, say them yourself',
 };
 
 /** A Kana lawyer's recap: the tiles they sent, with romaji and English, and whether the evidence went out. */
@@ -902,14 +903,24 @@ function kanaNoteCard(me: CourtMe): HTMLElement | null {
   return h(
     'div',
     { class: 'yc-note' },
-    h('p', { class: 'yc-label' }, '🔒 Your tiles'),
-    h('span', { class: `yc-mark-chip${n.take === 'said' ? ' memory' : ''}` }, TAKE[n.take]),
+    h('p', { class: 'yc-label' }, h('span', { 'aria-hidden': 'true' }, '🔒 '), 'Your tiles'),
+    h('p', { class: `yc-take${n.take === 'said' ? ' good' : ''}` }, TAKE[n.take]),
     h(
       'ol',
       { class: 'yc-recap' },
       ...n.tiles.map((x) => h('li', { class: x.evidence ? 'evidence' : '' }, jpv(x.word, me.level, 'yc-recap-ja'), x.evidence ? h('p', { class: 'yc-recap-tag' }, '🔎 evidence') : null)),
     ),
-    h('p', { class: 'yc-hint' }, n.evidence ? '✓ Your evidence was in it, so judges could hear it.' : 'No evidence tile this time: judges had nothing to check you on.'),
+    h(
+      'p',
+      { class: 'yc-hint' },
+      n.evidence
+        ? '✓ Your evidence went out: judges could hear it.'
+        : n.evidence === null
+          ? 'The game couldn’t check your words, so the judges’ check counted.'
+          : n.tiles.some((x) => x.evidence)
+          ? 'You picked your evidence, but it wasn’t heard in your take, so judges couldn’t be checked on it.'
+          : 'No evidence tile this time: judges had nothing to check you on.',
+    ),
   );
 }
 
