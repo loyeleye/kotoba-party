@@ -11,6 +11,7 @@ import { CURVEBALL_POINTS } from '../shared/src/modes/mixedRoom.js';
 import {
   BONUS_POOL_SHARE,
   DEFENCE_KEY,
+  DEFENCE_POOL,
   DURATIONS,
   computeFlip,
   dealTime,
@@ -810,6 +811,8 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
 /** Through the Time Line (and its N4 defence, left to run out) to the first Feelings round. */
 function toFeelingsN4(t: Table) {
   t.sayAll();
+  // An N4 offer takes the yes: an offer left to time out sits that player out of the next round.
+  if (t.r.hard?.answer === 'offered') t.play(t.r.hard.playerId, { kind: 'hard', accept: true });
   t.sortLine();
   t.lockAll();
   if (t.s.phase === 'encore') t.timeout();
@@ -939,33 +942,59 @@ describe('Narabete!: mixed rooms', () => {
     expect(t.r.hard?.playerId).toBe('p2');
   });
 
-  it('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game', () => {
+  it('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands', () => {
     const t = toDefence();
-    // The Kana player gets the curveball, the N5 player the reactions; the defender gets nothing.
-    const cb = t.view('p1').me!.gallery!;
+    // While the defence is on, reactions only: nobody is asked which word they heard before it's been said.
+    expect(t.view('p1').me!.gallery!.kind).toBe('react');
+    expect(t.view('p3').me!.gallery!.kind).toBe('react');
+    expect(t.view('p2').me!.gallery).toBeNull();
+    expect(t.st.curveball).toBe(false);
+    expect(t.play('p2', { kind: 'gallery', pick: 'sugoi' }).error).toBe('bad-move');
+    // The defence lands: the replay starts, and a Kana or N5 player who hasn't reacted gets the curveball. Who
+    // rotates with the seed (the round): round 1 picks the second of them, the N5 player.
+    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[0]!.kana) });
+    expect(t.r.encore).toBe('replay');
+    const cb = t.view('p3').me!.gallery!;
     expect(cb.kind).toBe('curveball');
     if (cb.kind !== 'curveball') return;
     expect(cb.options.map((o) => o.kana)).toContain(DEFENCE_KEY);
-    expect(cb.options.every((o) => o.romaji)).toBe(true);
-    expect(t.view('p3').me!.gallery!.kind).toBe('react');
-    expect(t.view('p2').me!.gallery).toBeNull();
-    expect(t.play('p2', { kind: 'gallery', pick: 'sugoi' }).error).toBe('bad-move');
-    expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
-    expect(t.play('p3', { kind: 'gallery', pick: 'warai' }).error).toBe('bad-move');
+    expect(cb.options.filter((o) => o.kana !== DEFENCE_KEY).every((o) => DEFENCE_POOL.includes(o.kana))).toBe(true);
+    expect(cb.options.every((o) => o.romaji === null)).toBe(true);
+    // The TV holds ので back while the curveball is open, and lights it once it's answered.
+    expect(t.view().replay!.lit.key).toBe(DEFENCE_KEY);
+    expect(t.view().replay!.holdKey).toBe(true);
+    expect(t.view('p1').me!.gallery!.kind).toBe('react');
+    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+    expect(t.play('p1', { kind: 'gallery', pick: 'warai' }).error).toBe('bad-move');
     expect(t.view().gallery.map((b) => b.id)).toEqual(['sugoi']);
-    const before = t.score('p1');
-    expect(t.play('p1', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
-    expect(t.score('p1') - before).toBe(CURVEBALL_POINTS);
-    expect(t.view('p1').me!.gallery).toMatchObject({ kind: 'curveball', right: true });
-    // Still on through the replay; gone by the flip.
-    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[0]!.kana) });
-    expect(t.r.encore).toBe('replay');
-    expect(t.view().gallery).toHaveLength(1);
+    const before = t.score('p3');
+    expect(t.play('p3', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
+    expect(t.score('p3') - before).toBe(CURVEBALL_POINTS);
+    expect(t.view('p3').me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: DEFENCE_KEY });
+    expect(t.view().replay!.holdKey).toBe(false);
+    expect(t.st.curveball).toBe(true);
+    // Gone by the flip.
     t.timeout();
     expect(t.s.phase).toBe('score');
     expect(t.view().gallery).toEqual([]);
-    expect(t.play('p3', { kind: 'gallery', pick: 'e' }).error).toBe('wrong-phase');
-    expect(t.st.curveball).toBe(true);
+    expect(t.play('p1', { kind: 'gallery', pick: 'e' }).error).toBe('wrong-phase');
+  });
+
+  it('a defence that never lands deals no curveball; nor does one whose Kana and N5 players all reacted already', () => {
+    const missed = toDefence();
+    missed.play('p2', { kind: 'defend', pass: true });
+    expect(missed.s.phase).toBe('score');
+    expect(missed.st.curveball).toBe(false);
+
+    const early = toDefence();
+    expect(early.play('p1', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();
+    expect(early.play('p3', { kind: 'gallery', pick: 'e' }).error).toBeUndefined();
+    early.play('p2', { kind: 'defend', utterance: speech(early.view('p2').me!.hard!.script!.lines[0]!.kana) });
+    expect(early.r.encore).toBe('replay');
+    expect(early.view('p1').me!.gallery).toMatchObject({ kind: 'react', picked: 'naruhodo' });
+    expect(early.view('p3').me!.gallery).toMatchObject({ kind: 'react', picked: 'e' });
+    expect(early.view().replay!.holdKey).toBe(false);
+    expect(early.st.curveball).toBe(false);
   });
 
   it('no Gallery during the ordinary defence, nor in a room where nobody took the N4 defence', () => {

@@ -341,7 +341,7 @@ function hardOffer(ctx: Ctx, me: Me): HTMLElement | null {
   const send = (accept: boolean) => void ctx.send({ kind: 'hard', accept, round: ctx.game.round });
   if (hard.answer === 'accepted') return h('div', { class: 'nb-hard' }, h('p', {}, '🎙 After the line-up, say why your card goes where it is, with ', h('span', { lang: 'ja' }, '〜ので'), '.'), h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Not this time after all'));
   return roleOffer({
-    kicker: '🎙 N4 · rank and defend',
+    kicker: '🎙 Nobiko-san wants to hear your reason.',
     pitch: 'After the line-up, say why your card goes where it is, with 〜ので.',
     onTake: () => send(true),
     onDecline: () => send(false),
@@ -387,7 +387,7 @@ function hardDefence(ctx: Ctx, me: Me): HTMLElement {
     ),
     speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'defend', utterance, round: game.round }) }),
     h('p', { class: 'hint' }, 'Say it out loud for the bonus: a typed defence doesn’t score.'),
-    h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Not this time'),
+    h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Not this time after all'),
   );
 }
 

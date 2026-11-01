@@ -66,17 +66,17 @@ after that, on top of that), and 「さいごに…」 (finally) for the last.
 In a room with N4 players, one of them each round (skipping a card not said or hidden) also defends
 their own card's place, with ので. Any round, the Time Line too, where the ordinary defence doesn't run.
 Who is offered it comes from the shared `nextOfferee` (shared/src/modes/hardRoleLog.ts): the N4 player
-offered fewest times, then the one offered longest ago; a player who said Not this time sits the next
-round out; in a room of 4 or more, whoever gave it last round gets this round off.
+offered fewest times, then the one offered longest ago; a player who said Not this time, or let the
+offer time out, sits the next round out; in a room of 4 or more, whoever gave it last round gets this round off.
 
-- **The offer** comes during the line-up, on the shared offer card (`roleOffer`): "🎙 N4 · rank and defend:
-  after the line-up, say why your card goes where it is, with 〜ので", with two equal buttons, **Take it**
-  and **Not this time**. It's opt-in: the encore runs only when
+- **The offer** comes during the line-up, on the shared offer card (`roleOffer`): "🎙 Nobiko-san wants to
+  hear your reason. After the line-up, say why your card goes where it is, with 〜ので", with two equal
+  buttons, **Take it** and **Not this time**. At the mic, the pass button reads **Not this time after all**. It's opt-in: the encore runs only when
   they tap Take it before the line-up ends. An offer still open then is logged `timeout` (`away` if they'd
   left) and skipped; Not this time is `declined`. The answer (the shared `OfferAnswer`) is kept per round
   in `hardLog`, counted by `hardTally` with `offerRate` (the gate: 60% or more taken; away is left out).
 - **Its own encore** (`encore`, 15 s), after the ordinary defence when there is one, so two people never
-  talk at once. Nobiko-san invites them with her own cue (`narabete_hard`: "{name}さん、どうして そこなの？",
+  talk at once. Nobiko-san invites them with her own cue (`narabete_hard`: "{name}さん、どうして そこなの？　おばちゃんに おしえて！",
   never "your card moved a lot"). When the N4 player is also the most-moved card's author they defend
   once, with the N4 script. The phone says a typed defence doesn't score.
 - **The script** (`defence.ts`) fits where the card ended up: 「＿ので、これが いちばん さきです。」 at
@@ -100,18 +100,20 @@ round out; in a room of 4 or more, whoever gave it last round gets this round of
   5 s past the encore, and only when the line was said. Passed, typed, or said without ので: no replay.
   It uses the shared booth (`Commentary`, `lightUp`, `gistFor`; the TV's `boothStrip`, the phones'
   `boothGist`, with the card's picture above it). Nobiko-san reacts first (`narabete_hooray`: 「あらまあ！
-  じょうずねえ！」), and says the model line 1.2 s into the replay; a line in their own words gets only
+  じょうずねえ！」, 「あらまあ！　おばちゃん、わかったわ！」…), and says the model line 1.2 s into the replay; a line in their own words gets only
   the reaction.
 - **The Gallery** (shared, mixedRoom.ts): while the N4 defence is on (its encore and its replay),
   every other connected player gets one tile: four reactions (👏 すごい！, 💡 なるほど, 😮 へえ！,
-  📣 がんばれ！) that pop up as bubbles under the neck, never scored. Once a game, the first Kana or N5 player's
-  tile is the curveball instead: "Which word did you hear?", ので and two other N4 words, +5 if right
-  (paid at once, on top of the round's points). No Gallery in the ordinary defence, or without an N4
-  defence taken.
+  📣 がんばれ！) that pop up as bubbles under the neck, never scored. Once a game, once the defence has
+  landed (as the replay starts, `armCurveball`), a Kana or N5 player who hasn't reacted yet gets the
+  curveball in place of their tile: "Which word did you hear?", ので and two of のに, から, けど, まで
+  (never a word the line itself contained), +5 if right (paid at once, on top of the round's points). Who
+  gets it rotates with the round. A defence that is passed, typed or said without ので deals none. No
+  Gallery in the ordinary defence, or without an N4 defence taken.
 - **The host stand-in** (shared `hostStandsIn`): in a room of one or two players with nobody at N4,
   Nobiko-san gives one model defence herself, once a game, 4 s into the first line-up
-  (`narabete_standin`, a `{line}` bank line): the round's card at the high end, e.g. 「じかんが いちばん
-  おそいので、これが いちばん あとです。」. The TV shows it in the booth strip for 5–7 s (inside the 90 s
+  (`narabete_standin`, a `{line}` bank line): the round's card at the high end, the second model line,
+  e.g. 「これより おそい じかんは ないので、これが いちばん あとです。」. The TV shows it in the booth strip for 5–7 s (inside the 90 s
   line-up, so no time is added), and Kana and N5 phones show its gist on the line-up screen. Nobody is
   asked to say anything, and nothing is scored.
 - **Scoring**: said out loud in Japanese, it adds the same 30% defence share as the ordinary defence, to
@@ -128,7 +130,7 @@ round out; in a room of 4 or more, whoever gave it last round gets this round of
   answer tapped 15%, a Time card said with the time missing 20%. A spoken defence adds 30%.
 - Points are paid at the end of the flip, not when it starts.
 - **Votes**: 50 per vote. **The story**: 50 for reading your line out loud.
-- **The Gallery's curveball**: 5, once a game, for one Kana or N5 player, only when an N4 defence was taken.
+- **The Gallery's curveball**: 5, once a game, for one Kana or N5 player, only when an N4 defence landed.
 - **Awards**: ポーカーフェイス賞 (the card that fooled the room the most, Feelings rounds),
   おもしろ賞 (most votes), いいこえ賞 (most cards said out loud), ききじょうず賞 (good listener: asked
   to hear a card again the most).
@@ -172,6 +174,6 @@ the tonic, with a chord for a perfect line; a knot bends its note down a semiton
    something from it, so the commentary booth's replay is built (see Rank and defend).
    Deferred: the N3 script (＿ような きが します, step 6).
 7. **Mixed rooms, decided for now (for Ladi to confirm)**: the Gallery runs through the N4 defence and its
-   replay, and the curveball can still be answered during the replay, when the TV lights ので (so it's an
-   easy +5 there); the stand-in comes in the first line-up of the game (the Time Line) and defends the card
+   replay; the curveball is dealt only once the defence has landed, and ので lights up once the curveball is
+   answered (the TV holds it back while it is open, `keyHeld`, so the replay doesn't give the answer away); the stand-in comes in the first line-up of the game (the Time Line) and defends the card
    at the high end; Nobiko-san's あらまあ comes before every landed defence, voiced or not.

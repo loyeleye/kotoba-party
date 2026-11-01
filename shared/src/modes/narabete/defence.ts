@@ -74,9 +74,9 @@ function reasons(round: { unit: TimeSet['unit'] } | { theme: Pick<FeelTheme, 'mo
       if (spot === 'last') return [jp('いちばん たかいので', "it's the most expensive"), jp('これより たかい ものは ないので', 'nothing costs more than this')];
       return [jp(`${n}さんのより たかいので`, `it costs more than ${n}'s`), jp(`${n}さんのより すこし たかいので`, `it costs a little more than ${n}'s`)];
     case 'date':
-      if (spot === 'first') return [jp('ひづけが いちばん はやいので', "it's the earliest date"), jp('これより まえの ひは ないので', 'no day comes before this')];
-      if (spot === 'last') return [jp('ひづけが いちばん おそいので', "it's the latest date"), jp('これより あとの ひは ないので', 'no day comes after this')];
-      return [jp(`${n}さんの ひより あとなので`, `it comes after ${n}'s day`), jp(`${n}さんのより ひづけが おそいので`, `the date is later than ${n}'s`)];
+      if (spot === 'first') return [jp('いちばん はやい ひなので', "it's the earliest day"), jp('これより まえの ひは ないので', 'no day comes before this')];
+      if (spot === 'last') return [jp('いちばん おそい ひなので', "it's the latest day"), jp('これより あとの ひは ないので', 'no day comes after this')];
+      return [jp(`${n}さんの ひより あとなので`, `it comes after ${n}'s day`), jp(`${n}さんのより あとの ひなので`, `it's a later day than ${n}'s`)];
   }
 }
 
