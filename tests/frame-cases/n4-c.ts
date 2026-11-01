@@ -297,6 +297,7 @@ export const cases: FrameCases = {
       ['きょうとに いって いました。', 'と inside きょうと, いって from いく'],
       ['おばけを みたと かいて ありました。', 'quotative と + かく (was written)'],
       ['ドアを あけると、ねこが いました。', 'conditional と, no いう'],
+      ['ごめんなさいと いったら どうですか。', 'と いったら どうですか: advice to say it (panel on #146)'],
     ],
   },
 

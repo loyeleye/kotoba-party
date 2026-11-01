@@ -3,7 +3,7 @@
 // a train map on My progress, and a "line cleared" card that offers to move their level up. It's all on
 // their own phone: the TV and the other players see nothing new (only a wish count on the VIP's list).
 
-import { framesOf } from '../../shared/src/japanese/frames.js';
+import { creditable, framesOf } from '../../shared/src/japanese/frames.js';
 import { h } from '../../shared/src/dom.js';
 import { MODES } from '../../shared/src/modes/registry.js';
 import type { PhraseEntry } from '../../shared/src/modes/mode.js';
@@ -272,7 +272,8 @@ export function tonightFrames(phrasebook: readonly PhraseEntry[], mode: ModeId):
   const by = new Map<string, Set<string>>();
   for (const e of phrasebook) {
     if (e.outcome !== 'said' || recallOf(e, mode) !== 'memory') continue;
-    for (const id of framesOf(e)) by.set(id, (by.get(id) ?? new Set()).add(e.text));
+    // Only frames that count (`creditable`): no listening-only ＿じゃん chip, and no N3 chips before N3 is on the path.
+    for (const id of framesOf(e).filter(creditable)) by.set(id, (by.get(id) ?? new Set()).add(e.text));
   }
   return [...by].map(([id, set]) => ({ id, phrases: set.size }));
 }
