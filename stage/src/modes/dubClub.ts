@@ -127,7 +127,13 @@ function sceneSide(view: RoomView, game: DubView, phase: 'prompt' | 'answer'): H
           'ul',
           { class: 'dub-cast' },
           game.cast.map((c) =>
-            h('li', { class: c.sent ? 'sent' : c.passed ? 'passed' : '' }, badge(view, c.playerId), h('span', { class: 'dub-cast-state' }, c.sent ? '🎬 take in' : c.passed ? '🎧 guessing' : c.rehearsed ? '🗣 rehearsed' : '…')),
+            h(
+              'li',
+              { class: c.sent ? 'sent' : c.passed ? 'passed' : '' },
+              badge(view, c.playerId),
+              c.adlib ? h('span', { class: 'dub-adlib', lang: 'ja' }, 'アドリブ') : null,
+              h('span', { class: 'dub-cast-state' }, c.sent ? '🎬 take in' : c.passed ? '🎧 guessing' : c.rehearsed ? '🗣 rehearsed' : '…'),
+            ),
           ),
         ),
     phase === 'answer' ? h('p', { class: 'dub-quiet' }, '🔇 Recording! Quiet on set, please.') : null,
@@ -159,19 +165,20 @@ function screening(view: RoomView, game: DubView): HTMLElement {
     overlay = h('div', { class: 'dub-over dub-curtain' }, h('p', { lang: 'ja' }, 'じょうえい'), h('small', {}, 'The screening'));
   } else {
     const key = `${game.round}:${now.index}`;
-    nameCard = h('p', { class: 'dub-namecard' }, h('span', { lang: 'ja' }, sc.who.text), h('small', {}, ' CV: '), badge(view, now.playerId));
+    nameCard = h('p', { class: 'dub-namecard' }, h('span', { lang: 'ja' }, sc.who.text), h('small', {}, ' CV: '), badge(view, now.playerId), now.adlib ? h('span', { class: 'dub-adlib', lang: 'ja' }, 'アドリブ') : null);
     if (now.skipped) overlay = h('div', { class: 'dub-over dub-cut' }, h('p', { lang: 'ja' }, 'カット！'), h('small', {}, 'Skipped'));
     else if (now.step === 'lead') {
       onceFor(`clap:${key}`, () => sfx('clap', 0.5));
       overlay = h('div', { class: 'dub-over dub-clapper' }, h('p', {}, `🎬 ${now.index + 1} / ${now.count}`), badge(view, now.playerId));
     } else if (now.step === 'play' || now.step === 'replay') {
       live = true;
-      caption = now.line;
+      // An ad-lib has no script: its caption waits for the reveal, where it's the model line.
+      caption = now.adlib ? null : now.line;
       if (now.clipId && now.playAt !== null) playClip(now.clipId, `${key}:${now.step}`, serverNow() - now.playAt);
       if (now.local) overlay = h('p', { class: 'dub-phone' }, `📱 Playing from ${nameOf(view, now.playerId)}’s phone`);
       if (now.step === 'replay') overlay = h('p', { class: 'dub-phone' }, h('span', { lang: 'ja' }, 'もう いっかい！'), now.local ? ` 📱 ${nameOf(view, now.playerId)}’s phone` : '');
     } else if (now.step === 'guess' || now.step === 'regroup') {
-      caption = now.line;
+      caption = now.adlib ? null : now.line;
       const left = Math.max(0, now.at + (now.step === 'guess' ? 4_500 : 3_000) - serverNow());
       panel = h(
         'div',
@@ -271,7 +278,7 @@ function episode(view: RoomView, game: DubView): HTMLElement {
         bg: s.bg,
         char: s.char,
         live: !!s.playerId,
-        caption: s.line,
+        caption: s.adlib ? null : s.line,
         cls: 'big',
         nameCard: h('p', { class: 'dub-namecard' }, h('span', { lang: 'ja' }, s.who.text), s.playerId ? h('small', {}, ' CV: ') : null, s.playerId ? badge(view, s.playerId) : null),
         overlay: s.local && s.playerId ? h('p', { class: 'dub-phone' }, `📱 ${nameOf(view, s.playerId)}’s phone`) : null,

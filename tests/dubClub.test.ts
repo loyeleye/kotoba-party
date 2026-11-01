@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { ManualClock } from '../server/src/clock.js';
 import { Room, wavDurationMs } from '../server/src/room.js';
 import { soundMorae } from '../shared/src/modes/karaokeDuel/scoring.js';
-import { ACT_POINTS, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, saidDirection, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
-import { DIRECTIONS, EPISODES, directionOf, directionsFor, episodesFor, takeLimitMs } from '../shared/src/modes/dubClub/scenes.js';
+import { ACT_POINTS, adlibCheck, adlibSimilarity, adlibTally, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, saidDirection, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
+import { DIRECTIONS, EPISODES, directionOf, directionsFor, episodesFor, sceneAdlib, takeLimitMs } from '../shared/src/modes/dubClub/scenes.js';
 import type { JoinResponse } from '../shared/src/protocol.js';
 import { content } from './helpers.js';
 
@@ -245,5 +245,111 @@ describe('Dub Club: kept clips', () => {
     expect(t.room.state.phase).toBe('recap');
     expect(t.room.keptClips).toBe(0);
     expect(t.room.state.recap!.standings.length).toBe(4);
+  });
+});
+
+// ---- the N4 ad-lib role (hard role, goal 4.8) ----
+
+const N4_FRAMES = ['casual-plain', 'n-da', 'casual-contraction', 'potential'];
+
+describe('Dub Club: the ad-lib content', () => {
+  it('every scene has a mission, a picture, key words and a casual model line that passes its own check', () => {
+    for (const ep of EPISODES)
+      for (const sc of ep.scenes)
+        for (const ad of [sc.adlib, sc.cheekyAdlib].filter(Boolean)) {
+          expect(ad!.mission.length, sc.id).toBeGreaterThan(10);
+          expect(ad!.emoji, sc.id).toBeTruthy();
+          expect(ad!.keys.length, sc.id).toBeGreaterThan(0);
+          expect(ad!.status, sc.id).toBe('draft');
+          expect(ad!.frames.length, sc.id).toBeGreaterThan(0);
+          for (const f of ad!.frames) expect(N4_FRAMES, `${sc.id} ${f}`).toContain(f);
+          const check = adlibCheck(ad!.model.kana, ad!);
+          expect(check.casual, `${sc.id} casual`).toBe(true);
+          expect(check.key, `${sc.id} key`).toBe(true);
+          // No polite endings in a casual model line.
+          expect(ad!.model.kana, sc.id).not.toMatch(/(です|ます)[。！？]?$/);
+        }
+    // The Cheeky twist has its own mission.
+    expect(sceneAdlib(EPISODES.find((e) => e.id === 'sakura')!.scenes[2], 'cheeky').model.kana).toContain('けっこん');
+  });
+
+  it('checks casual speech leniently: plain endings, 〜んだ and contractions count; です/ます does not', () => {
+    const keys = { keys: ['おにぎり'] };
+    expect(adlibCheck('だれが おにぎり たべたの？', keys)).toMatchObject({ casual: true, key: true });
+    expect(adlibCheck({ via: 'speech', text: '食べちゃった', reading: 'たべちゃった' }, keys)).toMatchObject({ casual: true, key: false, frames: ['casual-contraction'] });
+    expect(adlibCheck('おばけ なんだ', keys).frames).toContain('n-da');
+    expect(adlibCheck('おにぎりを たべましたよ。', keys)).toMatchObject({ casual: false, key: true });
+    expect(adlibCheck('おにぎりは どこですか', keys).casual).toBe(false);
+    expect(adlibSimilarity({ casual: true, key: true, frames: [] })).toBe(1);
+    expect(adlibSimilarity({ casual: true, key: false, frames: [] })).toBeGreaterThanOrEqual(0.5);
+    expect(adlibSimilarity({ casual: false, key: false, frames: [] })).toBeLessThan(0.5);
+  });
+});
+
+function setupLevels(levels: ('kana' | 'n5' | 'n4')[]) {
+  const t = setup(0);
+  const seats = levels.map((level, i) => t.room.join({ name: `P${i + 1}`, level }) as JoinResponse);
+  for (const s of seats) t.room.attach(s.token, { send: () => {}, close: () => {} });
+  return { ...t, seats };
+}
+
+describe('Dub Club: the ad-lib role', () => {
+  it('offers the N4 player a mission instead of a script; everyone else keeps their line', () => {
+    const t = setupLevels(['kana', 'n5', 'n4']);
+    const [k, n5, n4] = t.seats as [JoinResponse, JoinResponse, JoinResponse];
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    t.skipPhase();
+    expect(t.room.state.phase).toBe('prompt');
+    const mine = t.view(n4).me!;
+    expect(mine.line).toBeNull();
+    expect(mine.adlib).toMatchObject({ state: 'offered', model: null });
+    expect(mine.adlib!.mission.length).toBeGreaterThan(0);
+    for (const s of [k, n5]) {
+      expect(t.view(s).me!.adlib).toBeNull();
+      expect(t.view(s).me!.line).not.toBeNull();
+    }
+    expect(t.view().cast.filter((c) => c.adlib).map((c) => c.playerId)).toEqual([n4.playerId]);
+    // Others can't take it.
+    expect(t.play(n5, { kind: 'adlib', accept: true })).toMatchObject({ ok: false });
+    t.skipPhase();
+
+    // A casual plain read on the mission scores full; the model shows only after the take.
+    const ad = sceneAdlib(EPISODES.find((e) => e.id === t.st().episodeId)!.scenes[0], t.st().audience);
+    t.play(n4, { kind: 'rehearse', utterance: { via: 'speech', text: ad.model.kana, reading: ad.model.kana } });
+    expect(t.view(n4).me!.adlib).toMatchObject({ state: 'accepted', check: { casual: true, key: true }, model: null });
+    expect(t.view(n4).me!.rehearsal!.similarity).toBe(1);
+    expect(t.view(n4).me!.limitMs).toBeGreaterThanOrEqual(9_000);
+    t.play(n4, { kind: 'take', clipId: null, local: true, durMs: 3000, heard: null, checked: true });
+    expect(t.view(n4).me!.adlib!.model).toEqual(ad.model);
+    expect(t.play(n4, { kind: 'adlib', accept: false })).toMatchObject({ ok: false }); // sent: too late
+  });
+
+  it('“not this time” gives the scripted N4 line, and offers rotate among N4 players', () => {
+    const t = setupLevels(['n5', 'n4', 'n4']);
+    const [, a, b] = t.seats as [JoinResponse, JoinResponse, JoinResponse];
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    t.skipPhase();
+    expect(t.view(a).me!.adlib?.state).toBe('offered');
+    expect(t.view(b).me!.adlib).toBeNull();
+    expect(t.play(a, { kind: 'adlib', accept: false })).toMatchObject({ ok: true });
+    expect(t.view(a).me!.adlib).toBeNull();
+    expect(t.view(a).me!.line!.kana).toBe(EPISODES.find((e) => e.id === t.st().episodeId)!.scenes[0].lines.n4.kana);
+    expect(adlibTally(t.st())).toEqual({ offered: 1, accepted: 0 });
+    // Scene 2 goes to the other N4 player.
+    for (let i = 0; i < 400 && t.st().round < 2; i++) {
+      if (t.room.state.phase === 'answer') for (const s of t.seats) if (!t.view(s).me!.sent && !t.view(s).me!.passed) t.play(s, { kind: 'pass' });
+      t.clock.advance(1_000);
+    }
+    expect(t.st().round).toBe(2);
+    expect(t.view(b).me!.adlib?.state).toBe('offered');
+    expect(t.view(a).me!.adlib).toBeNull();
+  });
+
+  it('a room with no N4 player never sees it', () => {
+    const t = setupLevels(['kana', 'n5', 'n5']);
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    t.skipPhase();
+    expect(t.st().rounds[0]!.actors.every((a) => a.adlib === undefined)).toBe(true);
+    expect(t.view().cast.some((c) => c.adlib)).toBe(false);
   });
 });

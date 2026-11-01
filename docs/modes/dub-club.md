@@ -51,6 +51,30 @@ Words are capped low on purpose: careful reading should never beat bold acting.
 Awards: しゅえんしょう (most hearts), めいえんぎしょう (card read most), ききじょうずしょう (best guesser),
 かつぜつしょう (clearest plain reads).
 
+## The ad-lib (N4 hard role, goal 4.8)
+
+In a room with an N4 player, each scene offers one of them (in turn) the **ad-lib**: no script showing.
+Their phone shows the scene, a mission in English and a picture ("Your lunch box is empty. Ask, casually,
+who ate your onigiri." 🍙) instead of the line, and they say it their own way in casual speech: plain form
++ よ/ね/の？, 〜んだ, 〜てる/〜ちゃった. They still get two direction cards and act it, so the screening works
+as before. Everyone else keeps their scripted line, and a room with no N4 player sees no change.
+
+- **The offer**: 🎙 Ad-lib it! or **Not this time** (the scripted N4 line instead), until the take is
+  sent. Saying the plain read or sending a take counts as yes. Each actor keeps the answer in
+  `Actor.adlib`, and `adlibTally` counts offers and yeses (the step's gate: 60% or more taken).
+- **The check** is lenient, since there is nothing to match against: casual if a clause ends in a casual
+  particle or the copula (よ, ね, の, だ, かな, じゃん…) and not in です/ます, or a contraction or 〜んだ
+  turns up anywhere; on the mission if one of the scene's key words comes through. Both score as a full
+  plain read (50), one as close (30), neither as tried (20): the same word points as everyone else.
+- **The model line** (one casual N4 way to say it) shows on the phone once the take is sent, in the cast
+  notes and in the phrasebook (`dub:<scene>:adlib`). The TV tags the cast list and the name card
+  アドリブ and shows no caption over an ad-lib's voice; the reveal captions it with the model line.
+- An ad-lib take may run 9 s (13.5 s capped at 12 s for slow cards).
+
+Content: `Scene.adlib` (and `cheekyAdlib` for Under the Cherry Tree's Cheeky twist) in `scenes.ts`, one per
+scene, all draft, each tagged with its frames (`casual-plain`, `n-da`, `casual-contraction`, and
+`potential` for two).
+
 ## Content
 
 `shared/src/modes/dubClub/scenes.ts`: nine episodes of three scenes (setup, build, twist), each line at
@@ -86,6 +110,12 @@ stays quieter than a shout), high-passed at 100 Hz, and played on their own voic
 master limiter. Fude never talks over a dub (`hostHoldMs`).
 
 ## Open questions
+
+- Ad-lib, decided for now (Ladi to confirm): it's offered every scene to one N4 player in turn, so a lone
+  N4 player gets it every scene; the check is casual-or-key-word lenient, not a grammar check; the model
+  line is shown after the take, never before; the TV captions an ad-lib only at the reveal.
+- Ad-lib, deferred: the host playing it in rooms without an N4 player, the commentary booth's replay of
+  the casual chunk, and the N3 ad-lib (step 6).
 
 - Players with no mic: a VOICEVOX dub of their line in their chosen style (deferred).
 - The learning-science "stress scene", where the card is a word to stress, not a mood (deferred).

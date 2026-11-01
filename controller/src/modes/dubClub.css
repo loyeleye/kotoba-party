@@ -114,3 +114,14 @@ body[data-motion='calm'] .dc-rec-bar { animation: dc-rec-run var(--len, 10s) lin
 .dc-meter i.on:nth-of-type(n + 6) { background: var(--warn); }
 .dc-meter i.on:nth-of-type(n + 8) { background: #ff5a5a; }
 .dc-rec.on { min-height: 120px; display: grid; place-content: center; }
+
+/* The N4 ad-lib: a mission instead of a script, the offer, and the model line after the take. */
+.dc-mission { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--panel); border: 3px dashed var(--mode); }
+.dc-mission p { margin: 0; }
+.dc-mission-emoji { grid-row: span 2; font-size: 40px; line-height: 1; }
+.dc-mission-what { font-size: 18px; font-weight: 800; color: var(--ink); }
+.dc-mission-how { font-size: 14px; color: var(--muted); }
+.dc-mission.small .dc-mission-emoji { font-size: 28px; }
+.dc-mission.small .dc-mission-what { font-size: 16px; }
+.dc-offer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dc-model { display: grid; gap: 6px; }

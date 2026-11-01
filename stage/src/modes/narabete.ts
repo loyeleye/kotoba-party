@@ -6,7 +6,8 @@
 //   order    the cards on the neck in the room's order, each in its owner's seat colour: Time Line
 //            cards show their picture, Feelings cards their answer; きめた when locked, 🙋 when someone
 //            asked to hear it again. A card that moves slides to its new place.
-//   defence  the most-moved card lifts off the neck, and its author says why it belongs there.
+//   defence  the most-moved card lifts off the neck, and its author says why it belongs there. An N4
+//            player's rank-and-defend turn shows its ので frame instead (「＿ので、これが いちばん さきです。」).
 //   flip     Nobiko-san turns the cards over from the low end, one per step, a bell a step up the
 //            theme's scale as each face shows; a knot ties in her neck between two cards out of order;
 //            the biggest surprise wobbles and turns last, on the scale's home note.
@@ -355,7 +356,9 @@ function foot(view: RoomView, game: NarabeteView, elapsed: number): HTMLElement 
     return h(
       'div',
       { class: 'nb-foot' },
-      h('p', { class: 'nb-defence-call' }, `🎤 ${nameOf(view, d.playerId)}, your card moved the most. Why is it there?`, h('small', { lang: 'ja' }, ' 「〜からです。」')),
+      d.n4
+        ? h('p', { class: 'nb-defence-call' }, `🎤 ${nameOf(view, d.playerId)}, why does your card go there?`, d.frame ? h('small', { lang: 'ja' }, ` 「${d.frame.text}」`) : null)
+        : h('p', { class: 'nb-defence-call' }, `🎤 ${nameOf(view, d.playerId)}, your card moved the most. Why is it there?`, h('small', { lang: 'ja' }, ' 「〜からです。」')),
       d.text ? h('p', { class: 'nb-defence', lang: 'ja' }, `「${d.text}」`) : null,
     );
   const f = game.flip;

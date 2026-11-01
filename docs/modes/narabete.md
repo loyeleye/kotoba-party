@@ -61,6 +61,27 @@ it?". After its flip, one `finale` turn per card, lowest first: the TV shows the
 the reader says their line, starting with a joiner: 「そして…」, 「それから…」, 「しかも…」 (and then,
 after that, on top of that), and 「さいごに…」 (finally) for the last.
 
+## Rank and defend (N4 hard role, goal 4.11)
+
+In a room with N4 players, one of them each round (in turn, skipping a card not said or hidden) also
+defends their own card's place, with ので. Any round, the Time Line too, where the ordinary defence
+doesn't run.
+
+- **The offer** comes during the line-up: "🎙 N4: after the line-up, say why your card goes where it
+  is", with **I'm in** and **Not this time**. Declining (or passing, or letting it run out unsaid) skips
+  it; the answer is kept per round in `hardLog`, counted by `hardTally` (the gate: 60% or more taken).
+- **Its own encore** (`encore`, 15 s), after the ordinary defence when there is one, so two people never
+  talk at once. When the N4 player is also the most-moved card's author they defend once, with the N4
+  script.
+- **The script** (`defence.ts`) fits where the card ended up: 「＿ので、これが いちばん さきです。」 at
+  the low end, 「＿ので、これが いちばん あとです。」 at the high end, 「＿ので、これは Aさんの あとです。」
+  after a neighbour. The phone shows the frame and two whole model lines to read out, with reasons that
+  fit the round (じかんが いちばん はやいので, Aさんのより たかいので, いちばん くさいので…); the TV shows
+  the frame under the neck. All draft, tagged `node`.
+- **Scoring**: said out loud in Japanese, it adds the same 30% defence share as the ordinary defence, to
+  the N4 player only. The team points and everyone else's bonus don't change. Whether ので was used goes
+  to the phrasebook (`narabete:defence:<spot>`), not the score.
+
 ## Scoring (co-op)
 
 - **The team**: 100 per neighbouring pair in order, +300 when the whole line is in order. Everyone
@@ -101,4 +122,10 @@ the tonic, with a chord for a perfect line; a knot bends its note down a semiton
    (a 🍦 at a konbini is likely late at night)?
 4. **Moving only your own card** keeps the TV calm and makes people talk, but a shy player can stall
    the line. Should the VIP be able to nudge any card in the last 15 s?
-5. **Fluent check** of every card sentence, theme, ready answer, frame and Nobiko-san's lines.
+5. **Fluent check** of every card sentence, theme, ready answer, frame and Nobiko-san's lines, and the
+   N4 defence script's frames and reasons.
+6. **Rank and defend, decided for now (Ladi to confirm)**: one N4 defence a round, in turn, in every
+   round including the Time Line (so a room with an N4 player gets a 15 s encore there); it never
+   replaces the ordinary defence for someone else; the bonus needs Japanese said out loud, not ので.
+   Deferred: the host playing it in rooms without an N4 player, the commentary booth, and the N3 script
+   (＿ような きが します, step 6).
