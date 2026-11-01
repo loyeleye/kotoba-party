@@ -26,13 +26,13 @@ what the account already saves (caught yōkai, games played, phrases said from m
 | # | Step | Game | Frames | Done when |
 | --- | --- | --- | --- | --- |
 | 1 | Read and say the kana (Kana level only) | Kana Yōkai Raid | — | 20 yōkai caught |
-| 2 | Introduce yourself | Nice to Meet You! | ＿は ＿です, ＿です | played once, and a ＿です sentence said 3 times |
+| 2 | Introduce yourself | Nice to Meet You! | ＿は ＿です, ＿です | played once, and a ＿です sentence (＿が すきです counts) said 3 times |
 | 3 | Ask for things and places | Last Train | ＿を ください, ＿は どこですか | played once, and 〜を ください said twice |
 | 4 | Order with numbers | Bento Haus (or VS) | ＿を ください | one shift |
 | 5 | Make your own sentences | Oogiri Night | ＿は ＿です, ＿が すきです, ＿たいです | 2 games |
 | 6 | Times, prices and opinions | Narabete! | ＿です | 1 game |
-| 7 | Ask and answer questions | Who's the Tourist? | ＿は なんですか, ＿は どこですか, そうです／ちがいます | 1 game |
-| 8 | Polite Japanese | Omiai Matchmaker | ＿ませんか, ＿ても いいですか | 1 game |
+| 7 | Ask and answer questions | Who's the Tourist? | ＿ですか／＿ますか, そうです／ちがいます | 1 game |
+| 8 | Polite Japanese | Omiai Matchmaker | ＿は なんですか, ＿ませんか, ＿ても いいですか | 1 game |
 
 N5 and N4 players skip step 1. The order follows the design doc's own (kana, then fixed frames in
 real situations, then free sentences) and the video's (kana, then A は B です, then survival phrases,
@@ -46,17 +46,24 @@ anything: it's one card, and anyone can ignore it.
 
 ## Sentence frames
 
-`shared/src/japanese/frames.ts`. Fifteen frames, in the order a beginner meets them: ＿は ＿です,
-＿です, ＿は ＿じゃないです, そうです／ちがいます, ＿を ください, ＿は どこですか, ＿は なんですか,
+`shared/src/japanese/frames.ts`. Sixteen frames, in the order a beginner meets them: ＿は ＿です,
+＿です, ＿ですか／＿ますか, ＿は ＿じゃないです, そうです／ちがいます, ＿を ください, ＿は どこですか, ＿は なんですか,
 ＿が すきです, ＿に ＿が あります, ＿を ＿ます, ＿ました, ＿たいです, ＿て ください, ＿ませんか,
 ＿ても いいですか. Each has its English, one line on what it's for, and an example.
 
 A phrase's frame is found from its own words (`frameOf`), so every game's phrasebook is covered
-without tagging any content by hand. Each phrase gets at most one frame, the most specific that
-matches. The matchers ask for clear signs (a spaced topic は, a fixed ending) and rule out the
-look-alikes found in the game's own lines: いたい (it hurts) isn't 〜たい, おなかが すきました isn't
-〜が すき, そうですね isn't a yes, よろしく おねがいします isn't an order. Missing a frame is fine;
-naming the wrong one isn't. `tests/frames.test.ts` keeps both lists.
+without tagging any content by hand. Each phrase gets at most one frame. A line is split into
+sentences (on 。！？, dropping quotes and a speaker's name), and each is matched on its own: the
+sentence with the player's ＿ blank wins if it has a frame, otherwise the most specific frame in any
+sentence. So はじめまして。アキです。よろしく おねがいします。 is a ＿です line. The matchers ask for clear
+signs (a spaced topic は, or an unspaced one after a pronoun or kanji noun as in わたしは学生です; a
+fixed ending) and rule out the look-alikes found in the game's own lines: いたい (it hurts) and
+つめたくない (isn't cold) aren't 〜たい, おなかが すきました isn't 〜が すき, そうですね isn't a yes,
+よろしく おねがいします and はい、おねがいします aren't orders, 〜ないで ください (please don't) isn't
+〜て ください, hearsay 〜るそうです isn't ＿は ＿です, 〜て います isn't ＿を ＿ます, a plain ある in a
+relative clause isn't ＿に ＿が あります, and past or negative adjectives (〜かったです, 〜くないです) aren't
+"It's ___". Missing a frame is fine; naming the wrong one isn't. `tests/frames.test.ts` keeps both
+lists, including every misfire the Japanese review found.
 
 ## On the phone
 

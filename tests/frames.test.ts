@@ -52,7 +52,6 @@ describe('sentence frames', () => {
       'こんにちは',
       'ありがとうございます。',
       'おはようございます。',
-      'わたしの スプーン？　ちがいます！',
     ];
     for (const kana of none) expect([kana, of(kana)]).toEqual([kana, null]);
     expect(of('あたまが いたいです。')).toBe('desu'); // it hurts, not "want to"
@@ -61,6 +60,37 @@ describe('sentence frames', () => {
     expect(of('おなかが すきました！')).toBe('mashita'); // hungry (past), not "like"
     expect(of('ドアが しまります。ごじょうしゃ ください。')).not.toBe('kudasai');
     expect(of('{stop}です。おわすれもの ありませんか？')).not.toBe('masen-ka');
+  });
+
+  // The Japanese review's misfires (docs/progressive-learning.md): real lines that got the wrong frame, or
+  // none when they should have had one. Lines marked (probe) were written to show the same pattern.
+  it('fixes the lines the Japanese review found', () => {
+    const cases: [string, FrameId | null][] = [
+      ['つめたくないです', null], // isn't cold, not "want to"
+      ['いたくないです', null], // (probe) doesn't hurt
+      ['はい、おねがいします。', null], // yes please: taking an offer, not asking for a thing
+      ['わたしの ＿を たべないで ください', null], // please don't: the opposite of 〜て ください
+      ['はいらないで ください', null],
+      ['ゆうれいは よる、ひとりで ＿を たべて いるそうです。', null], // hearsay, not "A is B"
+      ['あめが ふるそうです', null], // (probe) hearsay, not "It's ___"
+      ['いぬを かっています。', null], // a state (〜て います), not "I do ___"
+      ['ゆうきが ある ひと、だいすき！', null], // ある in a relative clause, not "there is"
+      ['わたしは学生です。', 'wa-desu'], // unspaced, as Last Train writes it
+      ['これはわたしのかばんです。', 'wa-desu'],
+      ['はじめまして。アキです。よろしく おねがいします。', 'desu'], // Nice to Meet You!'s greeting
+      ['それは ちがいます', 'sou'], // (probe)
+      ['つめたかったです。', null], // past adjective: "It's ___" would gloss it wrongly
+      ['すきですか。', 'ka'], // Who's the Tourist?'s questions
+      ['たのしいですか。', 'ka'],
+      ['よく きますか。', 'ka'],
+      ['ここは すきですか。', 'ka'],
+    ];
+    for (const [kana, frame] of cases) expect([kana, of(kana)]).toEqual([kana, frame]);
+    expect(of('わたしは がくせいです。', 'わたしは学生です。')).toBe('wa-desu');
+    expect(of('いぬを かっています。', '犬を 飼っています。')).toBe(null);
+    expect(of('{name}さんは ねこが だいすきです。')).toBe('suki');
+    // Each sentence on its own: the second one here is a real "no, it isn't".
+    expect(of('わたしの スプーン？　ちがいます！')).toBe('sou');
   });
 
   it('gives each frame an example built on that frame', () => {
