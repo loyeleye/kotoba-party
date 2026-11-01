@@ -17,7 +17,8 @@ Every line is `draft` until a fluent check.
 
 The set is Nobiko-san's call-in booth (`stage/assets/scenes/hotline-booth.png`): a starry window, her
 microphone and teacup, a rotary phone and a red call light: dark between calls, flashing as a call rings
-in, lit while the caller is on the line. Nobiko-san and the caller stay on screen all game (Ladi,
+in, lit while the caller is on the line (with a warm glow drawn above the scrim), and a hitodama outside the
+window. The desk sits high enough that the mic and phone show above the scoreboard. Nobiko-san and the caller stay on screen all game (Ladi,
 2026-11-01): she sits at the left of the host row, idling when she has nothing to say, and the caller's
 card sits at its right end, with a matching lamp, the yōkai, who is playing it and what they're doing
 now, Japanese first (もしもし…, まって います, きいて います, こたえて います…) with English small. It rings

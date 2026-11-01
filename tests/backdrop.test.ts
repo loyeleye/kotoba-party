@@ -8,10 +8,10 @@ const png = (path: string) => {
   return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
 };
 
-const SETS = ['studio', 'onsen-inn', 'karaoke-box', 'comedy-stage', 'tea-room', 'train-carriage', 'hotline-booth'];
+const SETS = ['studio', 'onsen-inn', 'karaoke-box', 'comedy-stage', 'tea-room', 'train-carriage', 'hotline-booth', 'yokai-court'];
 const PAGES = ['page-a', 'page-b', 'page-c'];
-/** Small overlays drawn over a set at a fixed spot (Ghost Hotline's unlit call light). */
-const OVERLAYS = ['hotline-bulb-off'];
+/** Small overlays drawn over a set at a fixed spot (Ghost Hotline's call light, unlit and lit, and its hitodama). */
+const OVERLAYS = ['hotline-bulb-off', 'hotline-bulb-on', 'hotline-wisp'];
 
 describe('backdrop art', () => {
   it('ships the full scenes at 320×180', () => {
@@ -27,6 +27,14 @@ describe('backdrop art', () => {
     const { w, h } = png('stage/assets/scenes/hotline-bulb-off.png');
     expect(272 + w).toBeLessThanOrEqual(320);
     expect(54 + h).toBeLessThanOrEqual(180);
+    expect(png('stage/assets/scenes/hotline-bulb-on.png')).toEqual({ w, h });
+  });
+
+  it('hangs the hitodama in the left window pane, outside the text area', () => {
+    // backdrop.ts draws it at x 36, y 66 (below Nobiko-san) (up to 2 px higher as it bobs); the text area starts at x 56.
+    const { w, h } = png('stage/assets/scenes/hotline-wisp.png');
+    expect(36 + w).toBeLessThanOrEqual(56);
+    expect(66 + h).toBeLessThanOrEqual(180);
   });
 
   it('lists every scene file in the art manifest', () => {

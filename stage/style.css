@@ -90,6 +90,15 @@ body { margin: 0; overflow: hidden; background: #110b26; color: var(--ink); }
     radial-gradient(60% 50% at 80% 0%, color-mix(in srgb, var(--mode) 16%, transparent), transparent 70%),
     radial-gradient(72% 64% at 50% 56%, rgba(26, 20, 64, 0.76) 0 52%, rgba(26, 20, 64, 0.42) 100%);
 }
+/* Ghost Hotline's booth is the darkest set, and its props live at the edges: a lighter rim there (art panel,
+   1 Nov 2026). The centre, behind the text, keeps the same scrim. The call light's glow is drawn above the
+   scrim on a second canvas (.backdrop-glow), right of the text area. */
+[data-mode='ghost-hotline'] .scrim {
+  background:
+    radial-gradient(38% 42% at 78% 30%, rgba(255, 150, 60, 0.16), transparent 70%),
+    radial-gradient(60% 50% at 80% 0%, color-mix(in srgb, var(--mode) 16%, transparent), transparent 70%),
+    radial-gradient(72% 64% at 50% 56%, rgba(26, 20, 64, 0.76) 0 52%, rgba(26, 20, 64, 0.28) 100%);
+}
 /* Festival bunting along the top edge: vermilion, gold, washi and the mode colour. */
 .canvas::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; background: repeating-linear-gradient(90deg, var(--accent) 0 48px, var(--gold) 48px 96px, var(--paper) 96px 144px, var(--mode) 144px 192px); mask: conic-gradient(from -45deg at 50% 100%, #000 90deg, transparent 0) 0 0 / 48px 14px repeat-x; pointer-events: none; }
 :lang(ja) { font-family: var(--font-ja); line-break: strict; word-break: keep-all; overflow-wrap: anywhere; }

@@ -224,9 +224,11 @@ Since 2026-10-27 the stage draws its set into one 320×180 `<canvas>` behind eve
 | Karaoke box | `scenes/karaoke-box.png` | Karaoke Duel |
 | Onsen inn | `scenes/onsen-inn.png` | Murder at the Onsen |
 | Tea room | `scenes/tea-room.png` | Omiai Matchmaker |
+| Courtroom | `scenes/yokai-court.png` | Yōkai Court (Fude-san's court, 2026-11-01) |
 | Train carriage | `scenes/train-carriage.png` | Last Train (windows cut out) |
 | Call-in booth | `scenes/hotline-booth.png` | Ghost Advice Hotline (Nobiko-san's late-night advice line, 2026-11-01) |
-| Call light, off | `scenes/hotline-bulb-off.png` | The booth's red bulb unlit, drawn over the set while a call rings |
+| Call light, off and on | `scenes/hotline-bulb-off.png`, `hotline-bulb-on.png` | The booth's red bulb: unlit over the set, or lit above the scrim with its glow |
+| Hitodama | `scenes/hotline-wisp.png` | The ghost fire outside the booth window |
 | Pages | `scenes/page-a.png` … `page-c.png` | The loose dictionary pages floating in the studio's side lanes |
 
 Every set is a text-only PixelLab `pixflux` image drawn as pixel art from the start, with its bright
@@ -252,7 +254,17 @@ Per mode:
   caller's card), then stays lit while the caller is on the line. Like confetti the flash is a one-off
   signal, so it runs even while the room holds. The set is cropped so the light hangs just below the
   caller's card in the host row, where Nobiko-san and the caller stay all game; that row has one fixed
-  height in this mode, so the card never covers it.
+  height in this mode, so the card never covers it. Follow-ups from the art panel (2026-11-01): the
+  desk and its props sit 14 art px higher (14 rows of empty window cut out above the desk), so the mic
+  head, teacup and phone dial clear the scoreboard; the scrim's rim is lighter in this mode (0.28, not
+  0.42), centre unchanged; a hitodama hangs in the window's left pane, below Nobiko-san, bobbing a pixel
+  or two (still with calm motion); and while lit the call light is drawn again above the scrim on a
+  second canvas (`.backdrop-glow`) with a flat two-ring warm halo, right of the text area, so it reads
+  from the sofa.
+- **Yōkai Court:** Fude-san's courtroom: an old wooden hall, the judges' bench with seven empty chairs
+  at the back, the two counsel desks facing each other at the sides (as in a Japanese court, prosecution
+  and defence face each other across the floor), two blue ghost fires near the ceiling and lanterns on
+  the walls. No effects yet.
 - **Who's the Tourist?** stays on the plain studio: a themed set would tell the tourist the place.
 - **Confetti (紙吹雪):** one burst in gold and washi colours in the side lanes when a round's scores
   or the recap appear.

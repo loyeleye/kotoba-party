@@ -1,9 +1,12 @@
 """Ghost Advice Hotline's set: crops the PixelLab draft to the stage and makes the call light's "off" frame.
 
-    python3 tools/art/sources/hotline/booth-set.py <pixflux 320x224 draft>
+    python3 tools/art/sources/hotline/booth-set.py tools/art/sources/hotline/booth-draft.png \
+        tools/art/sources/hotline/wisp-draft.png tools/art/sources/hotline/phone-draft.png
 
 The draft is PixelLab pixflux, seed 21 (prompt in stage/assets/manifest.json, "hotline-booth"). pixflux
-letterboxes a 320x180 request, so it is drawn at 320x224 and rows 12-191 are kept (so the call light hangs below the caller's card). Then:
+letterboxes a 320x180 request, so it is drawn at 320x224 and rows 12-191 are kept (so the call light hangs below the caller's card),
+less 14 rows of empty window just above the desk (draft rows 98-111), so the desk and its props sit 14 art px
+higher, clear of the scoreboard (art panel, 1 Nov 2026), and the dark under the desk fills the bottom. Then:
 - the framed picture at the left edge had squiggles that read as fake writing: its paper is painted plain;
 - hotline-bulb-off.png is the hanging red bulb with its glass remapped to unlit reds, drawn over the
   set by stage/src/backdrop.ts on the "off" beat while the line rings.
@@ -12,16 +15,23 @@ import sys
 from PIL import Image
 
 TOP = 12
+# Set rows from SEAM down come from 14 draft rows further down: the desk is raised by cutting window.
+SEAM = 86
+RAISE = 14
 src = Image.open(sys.argv[1]).convert('RGB')
-set_ = src.crop((0, TOP, 320, TOP + 180))
-px = set_.load()
+spx = src.load()
 
 # The framed picture (x 0-10, draft rows 68-108): plain grey paper, no marks.
 PAPER = (0x4E, 0x43, 0x4D)
-for y in range(68 - TOP, 109 - TOP):
+for y in range(68, 109):
     for x in range(0, 11):
-        if sum(px[x, y]) < 90:
-            px[x, y] = PAPER
+        if sum(spx[x, y]) < 90:
+            spx[x, y] = PAPER
+
+set_ = Image.new('RGB', (320, 180))
+set_.paste(src.crop((0, TOP, 320, TOP + SEAM)), (0, 0))
+set_.paste(src.crop((0, TOP + SEAM + RAISE, 320, TOP + 180 + RAISE)), (0, SEAM))
+px = set_.load()
 
 set_.save('stage/assets/scenes/hotline-booth.png', optimize=True)
 
@@ -41,3 +51,20 @@ for y in range(BOX[1], BOX[3]):
             bulb.putpixel((x - BOX[0], y - BOX[1]), UNLIT[c] + (255,))
 bulb.save('stage/assets/scenes/hotline-bulb-off.png', optimize=True)
 print('bulb box', BOX)
+
+# The call light, lit: the same glass pixels at full colour, drawn above the scrim (with its glow) while lit.
+lit = Image.new('RGBA', bulb.size, (0, 0, 0, 0))
+for y in range(BOX[1], BOX[3]):
+    for x in range(BOX[0], BOX[2]):
+        c = px[x, y]
+        if c in UNLIT:
+            lit.putpixel((x - BOX[0], y - BOX[1]), c + (255,))
+lit.save('stage/assets/scenes/hotline-bulb-on.png', optimize=True)
+
+# The haunted prop: a hitodama (PixelLab pixflux 32x32, seed 21, tools/art/sources/hotline/wisp-draft.png),
+# trimmed; backdrop.ts hangs it in the window's left pane, outside the text area.
+if len(sys.argv) > 2:
+    wisp = Image.open(sys.argv[2]).convert('RGBA')
+    wisp.crop(wisp.getbbox()).save('stage/assets/scenes/hotline-wisp.png', optimize=True)
+    phone = Image.open(sys.argv[3]).convert('RGBA')
+    phone.crop(phone.getbbox()).save('stage/assets/icons/hl-phone.png', optimize=True)

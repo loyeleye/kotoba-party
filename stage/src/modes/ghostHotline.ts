@@ -1,7 +1,7 @@
 // Ghost Advice Hotline (おばけの おなやみ相談室) on the TV: Nobiko-san's late-night advice line.
 //
 //   (all)   the host row: Nobiko-san at the left the whole game, the caller's card (the yōkai, who is playing
-//           it, what they're doing, "🎤 said it") at the right, on the line all call long.
+//           it, what they're doing, "said it" with the pixel mic) at the right, on the line all call long.
 //   ring    ☎ RING RING on the caller's card, and the problem line in kanji with furigana, English under it.
 //   plan    the holding loop: an adviser card each with a plan ring that turns ✓, the gallery's bet chips.
 //           Never what anyone picked.
@@ -18,6 +18,7 @@
 //
 // The stage redraws on every update; clips run outside the render (dubAudio.ts), keyed per call and index.
 
+import { icon } from '../../../shared/src/art.js';
 import { h, LEVEL_LABELS, ruby, seatShape } from '../../../shared/src/dom.js';
 import { NOBIKO_PLAY_MS, PLAN_MS, POINTS, REACT_LOCK_MS, RING_MS, TYPED_PLAY_MS, VOTE_MS, type AdviceRow, type HotlineView, type LedgerEntry, type Reaction, type TileView } from '../../../shared/src/modes/ghostHotline/hotline.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -182,7 +183,7 @@ function onTheLine(view: RoomView, game: HotlineView): HTMLElement {
     return h(
       'div',
       { class: 'gh-line gh-line-open', 'data-key': 'line:open' },
-      h('span', { class: 'gh-line-picwrap' }, h('span', { class: 'gh-pic gh-line-pic gh-line-phone', 'aria-hidden': 'true' }, '☎')),
+      h('span', { class: 'gh-line-picwrap' }, icon('hl-phone', '☎', 'gh-line-phone')),
       h(
         'div',
         { class: 'gh-line-text' },
@@ -208,13 +209,13 @@ function onTheLine(view: RoomView, game: HotlineView): HTMLElement {
         lamp(ringing ? 'ring' : 'on'),
         game.step === 'ring' ? h('span', { class: 'gh-ring-pill', style: `--ring-delay: -${Math.min(gone, RING_FLASH_MS)}ms` }, 'ジリリリン！') : ruby({ text: '電話ちゅう', kana: 'でんわちゅう' }),
         h('small', { lang: 'en' }, game.step === 'ring' ? ' ringing' : ' on the line'),
-        c.said ? h('span', { class: 'gh-said gh-pop', lang: 'en' }, '🎤 said it') : null,
+        c.said ? h('span', { class: 'gh-said gh-pop', lang: 'en' }, icon('lt-mic', '🎤', 'gh-said-mic'), 'said it') : null,
       ),
       h('p', { class: 'gh-yokai' }, h('span', { lang: 'ja' }, ruby(c.who.name)), h('small', {}, ` ${c.who.name.en}`)),
       h(
         'p',
         { class: 'gh-line-who' },
-        c.caller ? seat(view, c.caller) : h('span', { class: 'gh-chip' }, h('span', { class: 'gh-seat' }, '☎'), h('span', { class: 'gh-name' }, 'the house')),
+        c.caller ? seat(view, c.caller) : h('span', { class: 'gh-chip' }, h('span', { class: 'gh-seat' }, icon('hl-phone', '☎', 'gh-seat-phone')), h('span', { class: 'gh-name' }, 'the house')),
         h('span', { class: 'gh-state' }, h('span', { lang: 'ja' }, state.ja), h('small', {}, state.en)),
       ),
     ),

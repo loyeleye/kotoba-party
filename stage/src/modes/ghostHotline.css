@@ -106,6 +106,11 @@
 @keyframes gh-ring-pill { 50% { background: transparent; color: var(--gh-yes); } }
 .gh-line .gh-said { padding: 0 10px; font-size: 20px; font-weight: 800; color: var(--good); background: transparent; background: color-mix(in srgb, var(--good) 14%, transparent); border: 2px solid var(--good); border-radius: 999px; }
 .gh-line-open .gh-line-phone { display: grid; place-items: center; font-size: 72px; line-height: 1; color: var(--muted); }
+/* The pixel phone and mic (stage/assets/icons/hl-phone.png, lt-mic.png) at whole-pixel scales, in place of emoji. */
+.gh-line-open img.gh-line-phone { width: 86px; height: 70px; }
+.gh-line .gh-said { display: inline-flex; align-items: center; gap: 4px; }
+img.pix.gh-said-mic { width: 32px; height: 32px; margin: -4px 0 -4px -6px; }
+img.pix.gh-seat-phone { width: 43px; height: 35px; }
 /* The call lamp: dark before a call, flashing once a second for 3 s as it rings, then lit (like the set's call light). */
 .gh-lamp { width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid var(--outline); background: #4a1626; }
 .gh-lamp-on { background: var(--gh-lamp); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gh-lamp) 35%, transparent); }

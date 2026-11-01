@@ -42,10 +42,10 @@ const SETS: Partial<Record<ModeId, string>> = {
   oogiri: 'comedy-stage',
   'phrase-bingo': 'comedy-stage',
   omiai: 'tea-room',
-  // Yōkai Court: the tea room stands in for a courtroom until scenes/yokai-court.png is drawn.
-  'yokai-court': 'tea-room',
+  // Yōkai Court: Fude-san's courtroom (the judges' bench at the back, the two counsel desks facing each other).
+  'yokai-court': 'yokai-court',
 };
-for (const name of ['studio', ...new Set(Object.values(SETS)), 'page-a', 'page-b', 'page-c', 'train-carriage', 'hotline-bulb-off']) {
+for (const name of ['studio', ...new Set(Object.values(SETS)), 'page-a', 'page-b', 'page-c', 'train-carriage', 'hotline-bulb-off', 'hotline-bulb-on', 'hotline-wisp']) {
   const img = new Image();
   img.src = `${ASSET}${name}.png`;
   img.onload = () => draw();
@@ -78,6 +78,8 @@ export function setAmbient(on: boolean): void {
 
 type Level = 'full' | 'low' | 'hold';
 let ctx: CanvasRenderingContext2D | null = null;
+/** A second, clear canvas above the scrim, for the one light that should glow through it (the Hotline's call light). */
+let glow: CanvasRenderingContext2D | null = null;
 let left: () => number | null = () => null;
 let view: Pick<RoomView, 'mode' | 'phase' | 'phaseSeq' | 'game'> | null = null;
 let phaseAt = 0;
@@ -108,8 +110,14 @@ export function mountBackdrop(stage: HTMLElement, remaining: () => number | null
   canvas.setAttribute('aria-hidden', 'true');
   const scrim = document.createElement('div');
   scrim.className = 'scrim';
-  stage.prepend(canvas, scrim);
+  const over = document.createElement('canvas');
+  over.className = 'backdrop backdrop-glow';
+  over.width = W;
+  over.height = H;
+  over.setAttribute('aria-hidden', 'true');
+  stage.prepend(canvas, scrim, over);
   ctx = canvas.getContext('2d');
+  glow = over.getContext('2d');
   document.addEventListener('visibilitychange', restart);
   restart();
 }
@@ -204,6 +212,7 @@ function draw(): void {
   g.globalAlpha = 1;
   g.fillStyle = '#0c0720';
   g.fillRect(0, 0, W, H);
+  glow?.clearRect(0, 0, W, H);
   const mode = view?.mode ?? null;
   const effects = ambientOn;
   if (mode === 'last-train') drawTrain(g, effects);
@@ -253,8 +262,11 @@ function drawStudio(g: CanvasRenderingContext2D, mode: ModeId | null, effects: b
 /** A game with a place of its own: its set, and the one effect that belongs there. */
 function drawSet(g: CanvasRenderingContext2D, mode: ModeId, set: string, effects: boolean): void {
   if (ready(set)) g.drawImage(art[set]!, 0, 0);
-  // The call light is state, not an effect: dark between calls, lit while a caller is on the line.
-  if (mode === 'ghost-hotline') callLight(g, effects);
+  if (mode === 'ghost-hotline') {
+    // The call light is state, not an effect: dark between calls, lit while a caller is on the line.
+    callLight(g, effects);
+    wisp(g, effects);
+  }
   if (!effects) return;
   if (set === 'comedy-stage') spotlights(g, 0.16);
   g.save();
@@ -338,7 +350,45 @@ function callLight(g: CanvasRenderingContext2D, effects: boolean): void {
     const since = performance.now() - ringAt;
     if (since < RING_FLASH_MS) lit = Math.floor(since / 500) % 2 === 0;
   }
-  if (!lit) g.drawImage(art['hotline-bulb-off']!, BULB.x, BULB.y);
+  if (!lit) return g.drawImage(art['hotline-bulb-off']!, BULB.x, BULB.y);
+  if (!glow || !ready('hotline-bulb-on')) return;
+  // Lit, it glows through the scrim: a warm halo in two flat rings (at 6× a dithered halo reads as a grid),
+  // then the bulb at full colour. It stays right of the text area (x 266 on), so no card's contrast changes.
+  const cx = BULB.x + 17;
+  const cy = BULB.y + 16;
+  glow.save();
+  glow.beginPath();
+  glow.rect(SAFE.x + SAFE.w + 2, 0, W, H);
+  glow.clip();
+  for (const [r, a] of [
+    [21, 0.14],
+    [15, 0.2],
+  ] as const) {
+    glow.globalAlpha = a;
+    glow.fillStyle = '#ff9a52';
+    // Whole art pixels, so the halo's edge steps like the art's.
+    for (let y = -r; y <= r; y++) {
+      const half = Math.floor(Math.sqrt(r * r - y * y));
+      glow.fillRect(cx - half, cy + y, half * 2 + 1, 1);
+    }
+  }
+  glow.restore();
+  glow.globalAlpha = 1;
+  glow.imageSmoothingEnabled = false;
+  glow.drawImage(art['hotline-bulb-on']!, BULB.x, BULB.y);
+}
+
+/** Where the hitodama hangs in the booth window's left pane (hotline-wisp.png, 18×27), outside the text area. */
+const WISP = { x: 36, y: 66 };
+
+/**
+ * The booth is haunted (art panel, 1 Nov 2026): a hitodama hangs outside the window, bobbing a pixel or two
+ * like the studio's loose pages. It's part of the set, so it stays (still) with calm motion or "Background effects" off.
+ */
+function wisp(g: CanvasRenderingContext2D, effects: boolean): void {
+  if (!ready('hotline-wisp')) return;
+  const bob = effects ? [0, 1, 2, 1][Math.floor(t * 1.2) % 4]! : 0;
+  g.drawImage(art['hotline-wisp']!, WISP.x, WISP.y - bob);
 }
 
 /** Karaoke: dots from a mirror ball, stepping across the side walls once a bar. */
