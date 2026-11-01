@@ -13,6 +13,7 @@ import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase
 import { isAudience, LEVELS, MODE_IDS, SURPRISE, WAIT_ANSWERS } from './protocol.js';
 import { awardKana, hasKanji, isUtterance, matchesAccepted, utteranceReading, type Utterance } from './japanese/kana.js';
 import { isRomaji, romajiToHiragana } from './japanese/toKana.js';
+import { n4Up } from './level.js';
 
 export interface PlayerState {
   id: string;
@@ -105,7 +106,7 @@ function mixedCheck(state: GameState, mode: Mode<unknown, { mode: ModeId }> | nu
   return {
     mixed: {
       phases: state.phaseLog ?? [],
-      ask: asking ? state.players.filter((p) => p.level !== 'n4' && p.connected).map((p) => p.id) : [],
+      ask: asking ? state.players.filter((p) => !n4Up(p.level) && p.connected).map((p) => p.id) : [],
       answers: {},
       levels: Object.fromEntries(state.players.map((p) => [p.id, p.level])),
       offers,
@@ -114,9 +115,9 @@ function mixedCheck(state: GameState, mode: Mode<unknown, { mode: ModeId }> | nu
   };
 }
 
-/** A mixed room: at least one N4 player and at least one below N4. */
+/** A mixed room: at least one N4 (or N3) player and at least one below N4. */
 export function isMixedRoom(levels: readonly Level[]): boolean {
-  return levels.includes('n4') && levels.some((l) => l !== 'n4');
+  return levels.some(n4Up) && levels.some((l) => !n4Up(l));
 }
 
 /** One phrase from tonight's games, with who said it and who missed it. */

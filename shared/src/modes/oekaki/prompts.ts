@@ -5,6 +5,7 @@
 // the game running (non-AI fallback, like every mode's).
 
 import type { Level, PackWord, TopicPack } from '../../../../content/src/types.js';
+import { n4Up } from '../../level.js';
 import { normalizeReading } from '../../japanese/kana.js';
 import type { ContentLibrary } from '../mode.js';
 
@@ -66,7 +67,7 @@ export const FALLBACK_WORDS: readonly PackWord[] = [
 /** Tags for nouns that don't draw: directions, times, and family words that need context. */
 const NOT_DRAWABLE = new Set(['directions', 'position', 'time', 'own-family', 'others-family']);
 
-const RANK: Record<Level, number> = { kana: 0, n5: 1, n4: 2 };
+const RANK: Record<Level, number> = { kana: 0, n5: 1, n4: 2, n3: 3 };
 
 /** A pack word's English as a short title: first sense, no notes in brackets. */
 export function shortEn(en: string): string {
@@ -140,7 +141,7 @@ export function dealPrompt(content: ContentLibrary, packId: string | null, level
     }
   }
   // A pack with no kana-level words (family) gives Kana players N5 words, read in kana.
-  const easy = words.length ? words : pool.words.filter((w) => w.level !== 'n4').map(fromWord).filter(fresh);
+  const easy = words.length ? words : pool.words.filter((w) => !n4Up(w.level)).map(fromWord).filter(fresh);
   const pick = easy[Math.floor(random() * easy.length)];
   if (pick) return pick;
   // Everything has been drawn: allow repeats rather than stop the game.
@@ -169,7 +170,7 @@ const overlaps = (reading: string, parts: readonly string[], real: string) =>
 export function dealTiles(content: ContentLibrary, packId: string | null, real: Prompt, random: () => number): Tile[] {
   const pool = poolFor(content, packId);
   const realKey = normalizeReading(real.kana);
-  const nouns = pool.plain.filter((w) => w.level !== 'n4' && !overlaps(normalizeReading(w.jp.kana), real.parts, realKey));
+  const nouns = pool.plain.filter((w) => !n4Up(w.level) && !overlaps(normalizeReading(w.jp.kana), real.parts, realKey));
   const adjs = ADJECTIVES.filter((a) => !overlaps(normalizeReading(a.kana), real.parts, realKey));
   const take = <T>(items: readonly T[], n: number): T[] => {
     const left = [...items];
@@ -186,7 +187,7 @@ export function dealTiles(content: ContentLibrary, packId: string | null, real: 
 
 /** House decoys when too few fakes come in: other drawable words from the pack. */
 export function decoyCandidates(content: ContentLibrary, packId: string | null, random: () => number): Prompt[] {
-  const words = poolFor(content, packId).words.filter((w) => w.level !== 'n4').map(fromWord);
+  const words = poolFor(content, packId).words.filter((w) => !n4Up(w.level)).map(fromWord);
   const out: Prompt[] = [];
   while (words.length) out.push(words.splice(Math.floor(random() * words.length), 1)[0]!);
   return out;

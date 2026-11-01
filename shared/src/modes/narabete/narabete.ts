@@ -41,6 +41,7 @@ import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
 import { defenceScript, type DefenceScript } from './defence.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -601,7 +602,7 @@ function pickHard(s: NarabeteState, r: Round, ctx: ModeContext): HardDefence | n
   const here = new Set(ctx.connected().map((p) => p.id));
   const eligible = ctx.players().filter((p) => {
     const c = cardOfPlayer(r, p.id);
-    return p.level === 'n4' && c && c.said && !c.hidden && here.has(p.id);
+    return n4Up(p.level) && c && c.said && !c.hidden && here.has(p.id);
   });
   const past = s.hardLog.map((x) => ({ playerId: x.playerId, at: x.round, answer: x.answer }));
   const id = nextOfferee(

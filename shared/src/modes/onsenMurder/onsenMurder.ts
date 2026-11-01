@@ -31,6 +31,7 @@ import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { FALLBACK_CASE } from './fallback.js';
 import { accusationLine, bareName, checkAccusation, INTENTS, matchQuestion, questionFor, tilesFor, type QuestionTile } from './questions.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -512,7 +513,7 @@ function offerDeputy(s: OnsenState, ctx: ModeContext, askerId: string | null): v
   s.deputy = null;
   const n4 = ctx
     .players()
-    .filter((p) => p.level === 'n4' && p.connected && p.id !== askerId)
+    .filter((p) => n4Up(p.level) && p.connected && p.id !== askerId)
     .sort((a, b) => a.seat - b.seat);
   const id = nextOfferee(
     n4.map((p) => p.id),

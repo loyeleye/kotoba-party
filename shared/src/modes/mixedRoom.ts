@@ -24,6 +24,7 @@ import { isUtterance, normalizeReading, soundKey, VOWEL_OF, type Utterance } fro
 import { toRomaji } from '../japanese/romaji.js';
 import { EXPERIMENTS } from './experiments.js';
 import type { PhraseEntry } from './mode.js';
+import { n4Up } from '../level.js';
 
 export interface ReactionTile {
   id: string;
@@ -516,7 +517,7 @@ export function commentaryMs(line: JpText): number {
 
 /** The gist on a phone, at its level: romaji under the kana for Kana players. */
 export function gistFor(c: Commentary | null | undefined, level: Level): (Commentary['gist'] & { romaji: string | null }) | null {
-  if (!c || level === 'n4') return null;
+  if (!c || n4Up(level)) return null;
   return { ...c.gist, romaji: level === 'kana' ? toRomaji(c.gist.kana) : null };
 }
 

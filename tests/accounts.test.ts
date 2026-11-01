@@ -8,6 +8,7 @@ import { Room, type AccountResult } from '../server/src/room.js';
 import { addGame, CATCH_DAYS, dayOf, dueCards, duePhrases, emptyProgress, reviewPhrase, rightSound, type AccountView, type GameResult, type PracticeItem } from '../shared/src/progress.js';
 import type { PhraseEntry } from '../shared/src/modes/mode.js';
 import { content } from './helpers.js';
+import { GOALS } from '../shared/src/path.js';
 
 const DAY = 86_400_000;
 const T0 = Date.UTC(2026, 9, 28, 12);
@@ -233,7 +234,7 @@ describe('account service', () => {
     expect(on.data.account).toMatchObject({ path: true, frames: [{ id: 'kudasai', phrases: 1, said: 1 }] });
     // The path's goals come worked out from the whole save, and the phrase remembers the day it was said.
     const st = on.data.account!.pathStatus;
-    expect(st.goals).toHaveLength(24);
+    expect(st.goals).toHaveLength(GOALS.length);
     expect(st.frames.find((f) => f.id === 'kudasai')).toMatchObject({ met: false, rule: { says: 1, fillers: 1, days: 1, inGame: true } });
     expect(on.data.account!.phrases[0]).toMatchObject({ recall: 'memory', memory: [{ n: 1, game: true }] });
     expect((await s.call('me', undefined, token)).data.account!.path).toBe(true);

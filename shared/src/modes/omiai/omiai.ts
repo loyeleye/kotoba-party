@@ -21,7 +21,7 @@
 // (つぎの しつもんに まいります, おかえりに なります). Said or typed from the phone's script; "not this
 // time" leaves the lines to Nobiko-san. Everyone's answers, votes and points are unchanged.
 
-import type { JpText, Level } from '../../../../content/src/types.js';
+import { atLevel, type JpText, type Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH, POINTS_PER_VOTE } from '../../constants.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
@@ -34,6 +34,7 @@ import { playerTextAllowed } from '../../moderation.js';
 import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
+import { n4Up } from '../../level.js';
 
 // ---- tuning ----
 
@@ -397,7 +398,7 @@ export function roundKind(round: number, total: number): 'intro' | 'question' | 
 
 /** The guest's question at a player's level (Kana players see the N5 one with romaji). */
 function questionView(q: OmiaiQuestion, level: Level | 'stage'): QuestionView {
-  const jp = level === 'n4' ? q.ask.n4 : q.ask.n5;
+  const jp = level !== 'stage' && n4Up(level) ? q.ask.n4 : q.ask.n5;
   return { text: jp.text, kana: jp.kana, en: jp.en, ...(level === 'kana' ? { romaji: toRomaji(jp.kana) } : {}) };
 }
 
@@ -466,7 +467,7 @@ const GOOD_LABELS: Record<string, string> = {
 
 /** Works out the private tip: the rule-made polite version, a keigo step up, or the stock answer. */
 export function tipFor(m: MannersResult, u: Utterance | string, q: OmiaiQuestion, level: Level, name: string, english: boolean): Tip {
-  const example = withName(q.example[level], name);
+  const example = withName(atLevel(q.example, level), name);
   const stock: Tip = { kind: 'stock', target: { text: example.text, kana: example.kana }, note: english ? 'Try it in Japanese: here is a polite answer.' : 'Here is one polite way to answer.', example, next: null };
   if (english) return stock;
   if (m.rewrite) {
@@ -476,7 +477,7 @@ export function tipFor(m: MannersResult, u: Utterance | string, q: OmiaiQuestion
   }
   const polite = m.register === 'polite' || m.register === 'keigo';
   if (!polite) return stock;
-  if (m.upgrade && level === 'n4') return { kind: 'upgrade', target: { text: m.upgrade.text, kana: m.upgrade.kana }, note: m.upgrade.note, example, next: null };
+  if (m.upgrade && n4Up(level)) return { kind: 'upgrade', target: { text: m.upgrade.text, kana: m.upgrade.kana }, note: m.upgrade.note, example, next: null };
   const own = analysisText(u);
   const said = typeof u === 'string' ? u : u.text;
   // When the answer is its own reading, keep its word spaces and katakana, so romaji splits into words.
@@ -663,7 +664,7 @@ function offerNakodo(s: OmiaiState, ctx: ModeContext): void {
   s.nakodo = null;
   const n4 = ctx
     .players()
-    .filter((p) => p.level === 'n4' && p.connected)
+    .filter((p) => n4Up(p.level) && p.connected)
     .sort((a, b) => a.seat - b.seat);
   const past = (s.nakodoLog ?? []).map((o) => ({ playerId: o.playerId, at: o.round, answer: o.outcome }));
   const id = nextOfferee(
@@ -937,10 +938,10 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         if (r) {
           const ex = r.question.example.n5;
           for (const p of ctx.players()) {
-            const e = withName(r.question.example[p.level], p.name);
+            const e = withName(atLevel(r.question.example, p.level), p.name);
             ctx.phrase(p.id, { itemId: `${r.question.id}:example`, text: e.text, kana: e.kana, en: e.en, outcome: 'seen' });
             const pair = keigoPair(r.question.keigo);
-            if (pair && p.level === 'n4') ctx.phrase(p.id, { itemId: `keigo:${pair.id}`, text: `${pair.polite} → ${pair.honorific} / ${pair.humble}`, kana: `${pair.polite} ${pair.honorific} ${pair.humble}`, en: `${pair.en}: polite → honorific (them) / humble (you)`, outcome: 'seen' });
+            if (pair && n4Up(p.level)) ctx.phrase(p.id, { itemId: `keigo:${pair.id}`, text: `${pair.polite} → ${pair.honorific} / ${pair.humble}`, kana: `${pair.polite} ${pair.honorific} ${pair.humble}`, en: `${pair.en}: polite → honorific (them) / humble (you)`, outcome: 'seen' });
           }
           ctx.cue({ host: 'nobiko', event: 'natural_version', answer: ex.text, answerEn: ex.en });
         }

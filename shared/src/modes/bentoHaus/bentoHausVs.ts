@@ -108,7 +108,7 @@ export const STEAL_MS = 35_000;
 /** A sent-back order isn't offered to a kitchen this many tips (or more) ahead. */
 export const STEAL_MAX_LEAD = 8;
 
-const LEVEL_RANK = { kana: 0, n5: 1, n4: 2 } as const;
+const LEVEL_RANK = { kana: 0, n5: 1, n4: 2, n3: 3 } as const;
 
 /** Deals players into two teams with a similar mix of levels: strongest first, snaking A B B A A B B A. */
 export function dealTeams(players: readonly ModePlayer[], random: () => number): string[][] {

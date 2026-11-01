@@ -15,7 +15,7 @@
 // Round 1 is always the self-introduction and the last round is always the closing appeal
 // (both built from the card below); the rounds between ask the card's own questions in order.
 
-import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
+import type { ByLevel, JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 
 export interface KeigoPair {
@@ -48,7 +48,7 @@ export interface OmiaiQuestion {
   /** Endings that attach straight to the fill (です, だよ, すんでいます …). */
   endings: { polite: TileSpec[]; casual: TileSpec[] };
   /** Stock polite answers: the fallback tip and the natural version on the stage. */
-  example: Record<Level, JpText>;
+  example: ByLevel<JpText>;
   /** The keigo pair this question shows off (the N4 ask uses it). */
   keigo: string;
 }
