@@ -119,24 +119,6 @@ let lastPlay: { round: number; index: number; total: number; playerId: string } 
 const callerName = (view: RoomView, game: HotlineView): string => (game.call?.caller ? nameOf(view, game.call.caller) : (game.call?.who.name.en ?? 'the yōkai'));
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
-function header(view: RoomView, game: HotlineView): HTMLElement {
-  const cast = game.cast;
-  return h(
-    'div',
-    { class: 'gh-head' },
-    h('span', { class: 'gh-band' }, h('span', { class: 'gh-band-ja', lang: 'ja' }, 'おばけの おなやみ', ruby({ text: '相談室', kana: 'そうだんしつ' })), h('span', { class: 'gh-band-en' }, 'GHOST ADVICE HOTLINE')),
-    h('span', { class: 'gh-callno' }, `CALL ${game.round} / ${game.totalRounds}`),
-    cast
-      ? h(
-          'div',
-          { class: 'gh-thiscall' },
-          h('p', { class: 'gh-thiscall-row' }, h('span', { class: 'gh-label' }, 'Advisers'), ...cast.advisers.map((id) => seat(view, id))),
-          cast.gallery.length ? h('p', { class: 'gh-thiscall-row' }, h('span', { class: 'gh-label' }, 'Gallery bets'), ...cast.gallery.map((id) => seat(view, id))) : null,
-        )
-      : null,
-  );
-}
-
 const step = (icon: string | HTMLElement, ...text: (string | HTMLElement)[]): HTMLElement => h('li', {}, h('span', { class: 'gh-step-icon', 'aria-hidden': 'true' }, icon), h('span', {}, ...text));
 
 function intro(game: HotlineView): HTMLElement {
@@ -167,23 +149,32 @@ function intro(game: HotlineView): HTMLElement {
 
 // ---- ring ----
 
-/** What the caller is doing, beat by beat, under their card in the host row. */
-const LINE_STATE: Record<string, string> = {
-  ring: 'calling in',
-  plan: 'on hold',
-  record: 'on hold',
-  play: 'listening',
-  react: 'reacting',
-  secret: 'tells the secret',
-  vote: 'still on the line',
-  points: 'still on the line',
-  booth: 'still on the line',
+/**
+ * What the caller is doing, beat by beat: Japanese first (kana a beginner can read), English small under
+ * it (art panel, 1 Nov 2026). From the vote on, the English says what the caller is staying for.
+ */
+const LINE_STATE: Record<string, { ja: string; en: string }> = {
+  ring: { ja: 'もしもし…', en: 'calling in' },
+  plan: { ja: 'まって います', en: 'on hold' },
+  record: { ja: 'まって います', en: 'on hold' },
+  play: { ja: 'きいて います', en: 'listening' },
+  react: { ja: 'こたえて います', en: 'answering' },
+  secret: { ja: 'ひみつを おしえます', en: 'tells the secret' },
+  vote: { ja: 'まだ きいて います', en: 'stays for the laugh vote' },
+  points: { ja: 'まだ きいて います', en: 'stays for the scores' },
+  booth: { ja: 'まだ きいて います', en: 'stays for the replay' },
 };
+
+/** How long a call rings (the card's buzz and the set's call light): three rings, one a second. */
+const RING_FLASH_MS = 3_000;
+
+/** The card's call lamp, matching the set's red call light: dark before a call, flashing as it rings, then lit. */
+const lamp = (state: 'off' | 'ring' | 'on'): HTMLElement => h('span', { class: `gh-lamp gh-lamp-${state}`, 'aria-hidden': 'true' });
 
 /**
  * The caller, on the line all call long: their card sits in the host row across from Nobiko-san, so the
- * room always sees who is phoning in (Ladi, 1 Nov 2026). It rings and shakes in the ring beat, and holds
- * still after that. Before the first call the line is open and empty.
+ * room always sees who is phoning in (Ladi, 1 Nov 2026). It rings for 3 s (ジリリリン！, the lamp and a
+ * buzz, in step with the set's call light), then holds still. Before the first call the lines are open.
  */
 function onTheLine(view: RoomView, game: HotlineView): HTMLElement {
   const c = game.call;
@@ -191,31 +182,52 @@ function onTheLine(view: RoomView, game: HotlineView): HTMLElement {
     return h(
       'div',
       { class: 'gh-line gh-line-open', 'data-key': 'line:open' },
-      h('span', { class: 'gh-line-phone', 'aria-hidden': 'true' }, '☎'),
-      h('div', { class: 'gh-line-text' }, h('p', { class: 'gh-line-tag' }, 'LINES OPEN'), h('p', { class: 'gh-line-state' }, 'Waiting for the first call')),
+      h('span', { class: 'gh-line-picwrap' }, h('span', { class: 'gh-pic gh-line-pic gh-line-phone', 'aria-hidden': 'true' }, '☎')),
+      h(
+        'div',
+        { class: 'gh-line-text' },
+        h('p', { class: 'gh-line-tag', lang: 'ja' }, lamp('off'), ruby({ text: 'お電話 まってます', kana: 'おでんわ まってます' })),
+        h('p', { class: 'gh-line-en' }, 'Lines open'),
+        h('p', { class: 'gh-line-en' }, 'Waiting for the first call'),
+      ),
     );
-  const ringing = game.step === 'ring';
+  const ringing = game.step === 'ring' && serverNow() - game.stepAt < RING_FLASH_MS;
+  const gone = Math.max(0, serverNow() - game.stepAt);
+  const state = LINE_STATE[game.step] ?? { ja: 'でんわちゅう', en: 'on the line' };
   return h(
     'div',
-    { class: `gh-line${ringing ? ' gh-line-ring' : ''}`, style: seatVar(view, c.caller), 'data-key': `line:${game.round}` },
-    pic(c.who, `gh-line-pic${ringing ? ' gh-ringing' : ''}`),
+    { class: `gh-line${game.step === 'ring' ? ' gh-line-ring' : ''}`, style: seatVar(view, c.caller), 'data-key': `line:${game.round}` },
+    // Keyed by the call, so the ring runs once; started part-way in when the TV joins mid-ring.
+    h('span', { class: 'gh-line-picwrap', 'data-key': `pic:${game.round}` }, pic(c.who, `gh-line-pic${ringing ? ' gh-ringing' : ''}`)),
     h(
       'div',
       { class: 'gh-line-text' },
-      h('p', { class: 'gh-line-tag' }, ringing ? '☎ RING RING' : '☎ ON THE LINE'),
-      h('p', { class: 'gh-yokai' }, ruby(c.who.name), h('small', {}, ` ${c.who.name.en}`)),
-      h('p', { class: 'gh-line-who' }, c.caller ? seat(view, c.caller) : h('span', { class: 'gh-muted' }, 'played by the game'), h('span', { class: 'gh-line-state' }, ` · ${LINE_STATE[game.step] ?? 'on the line'}`)),
+      h(
+        'p',
+        { class: 'gh-line-tag', lang: 'ja' },
+        lamp(ringing ? 'ring' : 'on'),
+        game.step === 'ring' ? h('span', { class: 'gh-ring-pill', style: `--ring-delay: -${Math.min(gone, RING_FLASH_MS)}ms` }, 'ジリリリン！') : ruby({ text: '電話ちゅう', kana: 'でんわちゅう' }),
+        h('small', { lang: 'en' }, game.step === 'ring' ? ' ringing' : ' on the line'),
+        c.said ? h('span', { class: 'gh-said gh-pop', lang: 'en' }, '🎤 said it') : null,
+      ),
+      h('p', { class: 'gh-yokai' }, h('span', { lang: 'ja' }, ruby(c.who.name)), h('small', {}, ` ${c.who.name.en}`)),
+      h(
+        'p',
+        { class: 'gh-line-who' },
+        c.caller ? seat(view, c.caller) : h('span', { class: 'gh-chip' }, h('span', { class: 'gh-seat' }, '☎'), h('span', { class: 'gh-name' }, 'the house')),
+        h('span', { class: 'gh-state' }, h('span', { lang: 'ja' }, state.ja), h('small', {}, state.en)),
+      ),
     ),
-    c.said ? h('span', { class: 'gh-said gh-pop' }, '🎤 said it') : null,
   );
 }
 
-function problem(game: HotlineView, slim = false): HTMLElement | null {
+function problem(game: HotlineView, slim = false, face = false): HTMLElement | null {
   const c = game.call;
   if (!c) return null;
   return h(
     'div',
-    { class: `gh-problem${slim ? ' gh-problem-slim' : ''}` },
+    { class: `gh-problem${slim ? ' gh-problem-slim' : ''}${face ? ' gh-problem-face' : ''}` },
+    face ? pic(c.who, 'gh-problem-pic') : null,
     h('p', { class: 'gh-problem-tag' }, 'THE PROBLEM'),
     h('p', { class: 'gh-problem-ja' }, ruby(c.line)),
     h('p', { class: 'gh-problem-en' }, `“${c.line.en}”`),
@@ -224,8 +236,8 @@ function problem(game: HotlineView, slim = false): HTMLElement | null {
 
 function ringBeat(view: RoomView, game: HotlineView): HTMLElement {
   onceFor(`ring:${game.round}`, () => sfx('ring'));
-  // The caller rings in the host row (onTheLine); the beat itself is the problem, big.
-  return h('div', { class: 'gh-center gh-ringbeat' }, problem(game), bar(RING_MS, game.stepAt));
+  // The caller rings in the host row (onTheLine); the beat itself is the problem, big, with the caller's face.
+  return h('div', { class: 'gh-center gh-ringbeat' }, problem(game, false, true), bar(RING_MS, game.stepAt));
 }
 
 // ---- plan and record ----
@@ -350,6 +362,7 @@ function playBeat(view: RoomView, game: HotlineView): HTMLElement | null {
   return h(
     'div',
     { class: 'gh-center gh-playbeat' },
+    problem(game, true),
     rows(view, game, false),
     h(
       'div',
@@ -374,11 +387,12 @@ function reactBeat(view: RoomView, game: HotlineView): HTMLElement {
   if (reacted) {
     const last = game.rows[game.rows.length - 1];
     if (last?.reaction) onceFor(`react:${game.round}:${game.rows.length}`, () => sfx(last.reaction === 'chigau' ? 'wrong' : 'right'));
-    return h('div', { class: 'gh-center gh-reactbeat' }, rows(view, game, true));
+    return h('div', { class: 'gh-center gh-reactbeat' }, problem(game, true), rows(view, game, true));
   }
   return h(
     'div',
     { class: 'gh-center gh-reactbeat' },
+    problem(game, true),
     rows(view, game, false),
     h(
       'div',
@@ -570,7 +584,9 @@ export const ghostHotlineStage: StageMode<HotlineView> = {
   render(view, game) {
     if (view.phase === 'intro') return intro(game);
     if (!game.step) return h('div', { class: 'gh-stage' });
-    return h('div', { class: `gh-stage gh-step-${game.step}` }, header(view, game), center(view, game));
+    // No band or call counter of its own: the top bar has the title and the round, the host row the caller,
+    // and the player tiles each role (art panel, 1 Nov 2026), so the beat gets the room.
+    return h('div', { class: `gh-stage gh-step-${game.step}` }, center(view, game));
   },
   badge(game, playerId) {
     const c = game.cast;
@@ -580,22 +596,21 @@ export const ghostHotlineStage: StageMode<HotlineView> = {
     const gallery = c.gallery.includes(playerId);
     switch (game.step) {
       case 'ring':
-        return caller ? (game.call?.said ? '📞 caller · 🎤 said it' : '📞 caller') : adviser ? 'adviser' : gallery ? 'gallery' : '';
+        return caller ? '📞 caller' : adviser ? 'adviser' : gallery ? 'gallery' : '';
       case 'plan':
         if (adviser) return game.locked.ready.includes(playerId) ? '✓ ready' : 'planning…';
         if (gallery) return game.locked.bets.includes(playerId) ? '✓ bet' : 'betting…';
-        return caller ? '📞 waiting' : '';
+        return caller ? '📞 caller' : '';
       case 'record':
         if (adviser) return game.locked.sent.includes(playerId) ? '✓ sent' : '● REC';
         if (gallery) return game.locked.bets.includes(playerId) ? '✓ bet' : 'gallery';
-        return caller ? '📞 waiting' : '';
+        return caller ? '📞 caller' : '';
       case 'play':
         if (game.play?.playerId === playerId) return '▶ playing';
-        return caller ? '📞 listening' : adviser ? 'adviser' : gallery ? 'gallery' : '';
+        return caller ? '📞 caller' : adviser ? 'adviser' : gallery ? 'gallery' : '';
       case 'react': {
-        if (!caller) return adviser ? 'adviser' : gallery ? 'gallery' : '';
-        const lp = lastPlay?.round === game.round ? lastPlay : null;
-        return lp && game.rows.some((r) => r.playerId === lp.playerId) ? '✓ reacted' : '📞 reacting…';
+        // The caller's card in the host row says what they're doing; the tile just names the role.
+        return caller ? '📞 caller' : adviser ? 'adviser' : gallery ? 'gallery' : '';
       }
       case 'vote':
         if (game.scripted) return '';

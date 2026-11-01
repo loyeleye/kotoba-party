@@ -247,10 +247,12 @@ Per mode:
   the windows during the intro and the first 1.5 s of each "next stop", then the train pulls in and
   holds; rain (秋雨) runs on the glass, and the straps sway while it moves.
 - **Ghost Advice Hotline:** the call-in booth: a starry window, a microphone and teacup at the left, a
-  rotary phone and a hanging red call light at the right. When a call rings in, the call light flashes
-  once a second for 3 s, then stays lit while the caller is on the line. Like confetti it is a one-off
+  rotary phone and a hanging red call light at the right. The call light is dark before the first call,
+  flashes once a second for 3 s when a call rings in (in step with the lamp and ジリリリン！ on the
+  caller's card), then stays lit while the caller is on the line. Like confetti the flash is a one-off
   signal, so it runs even while the room holds. The set is cropped so the light hangs just below the
-  caller's card in the host row, where Nobiko-san and the caller stay all game.
+  caller's card in the host row, where Nobiko-san and the caller stay all game; that row has one fixed
+  height in this mode, so the card never covers it.
 - **Who's the Tourist?** stays on the plain studio: a themed set would tell the tourist the place.
 - **Confetti (紙吹雪):** one burst in gold and washi colours in the side lanes when a round's scores
   or the recap appear.
