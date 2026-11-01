@@ -22,6 +22,7 @@ import { phraseBingoPolicy } from './phraseBingo.js';
 import { shodoPolicy } from './shodo.js';
 import { touristPolicy } from './tourist.js';
 import { wordGauntletPolicy } from './wordGauntlet.js';
+import { yokaiCourtPolicy } from './yokaiCourt.js';
 
 /**
  * A policy maker for one room: a fresh policy per bot (each keeps its own memory, as Concentration's cards),
@@ -73,6 +74,8 @@ export function policyMaker(content: () => ContentLibrary, opts: { thinkMs?: num
         return lateAgainPolicy({ ...(fast ? { thinkMs: opts.thinkMs } : {}), ...(opts.speak ? { speak: true } : {}) });
       case 'ghost-hotline':
         return ghostHotlinePolicy({ ...(fast ? { thinkMs: opts.thinkMs } : {}), ...(opts.speak ? { speak: true } : {}) });
+      case 'yokai-court':
+        return yokaiCourtPolicy({ ...(fast ? { thinkMs: opts.thinkMs } : {}), ...(opts.speak ? { speak: true } : {}) });
       default:
         return undefined;
     }

@@ -212,7 +212,8 @@ export const GOALS: readonly Goal[] = [
   g('5.9', 'local', 'Invite, offer, ask', 'Invite softly, and ask someone to do something.', ['masen-ka', 'te-kudasai'], ['mashou', 'naide-kudasai'], ['omiai', 'phrase-bingo', 'oogiri']),
   g('5.10', 'local', 'Read N5 kanji', 'The kanji on signs, menus and calendars.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
   g('4.1', 'express', 'Ask favours', 'Ask someone to do something for you.', ['te-moraeru'], ['ageru-kureru', 'te-kuremasen', 'te-hoshii'], ['phrase-bingo', 'bento-haus', 'last-train']),
-  g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii', 'sasete-kudasai', 'causative'], ['tourist'], { thin: 'Only one game uses it so far.' }),
+  g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii', 'sasete-kudasai', 'causative'], ['tourist', 'yokai-court']),
+  // TODO(n3): Yōkai Court also goes on 4.13, 4.14 and Limited Express 3.1, 3.2, 3.3, 3.4, 3.7 and 3.10 once those goals land.
   g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau', 'ba-yokatta', 'tari-tari'], ['hajimemashite', 'happyokai', 'phrase-bingo']),
   g('4.4', 'express', 'Say what you can do', 'たべられます, はなせます: say what you can and can’t.', ['potential'], [], ['phrase-bingo', 'tourist']),
   g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond', 'noni'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri']),

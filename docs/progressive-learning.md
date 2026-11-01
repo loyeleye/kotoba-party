@@ -35,6 +35,11 @@ learning-science reviews). Three lines of can-do goals, worked back from the N5 
   and ＿たら どうですか, but no game asks for plans yet), 4.8 casual speech, 4.9 polite requests
   (polite ＿んです counts too), 4.10 N4 kanji.
 
+Yōkai Court (docs/modes/yokai-court.md, step 6) plays on 4.2: its N4 lawyers say ＿なければ なりません and
+＿なくても いいです. Its N3 lines (に よると, に ちがいありません, わけでは ありません) are keyed by a local
+`Level | 'n3'` until the N3 level lands, then it joins 4.13, 4.14 and Limited Express 3.1, 3.2, 3.3, 3.4,
+3.7 and 3.10.
+
 The N4 frames the plan's goals first left out (みたい／ようです, polite ＿んです, the causative, ＿て ほしい,
 ＿ば よかった, ＿たり ＿たり; Ladi, Nov 1) are optional frames, never required ones. The causative comes in two
 frames: a statement (こどもに たべさせました: made or let someone do it) and the "let me" request

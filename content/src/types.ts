@@ -695,6 +695,22 @@ export type HostEvent =
   | 'omiai_nakodo_cheer' // あらまあ: Nobiko-san delighted by the go-between's keigo opening, once she has said it ({name})
   | 'omiai_standin' // a 2-player room with nobody at N4: Nobiko-san says the go-between's opening herself, once a game ({line}, as is)
   | 'omiai_standin_setup' // experiment standInSetup: Nobiko-san's short line just before her stand-in opening
+  // Yōkai Court (Fude-san, presiding judge: a studio mystery goes to trial)
+  | 'court_intro' // Fude-san opens the court: a witness, two lawyers, and everyone else judges
+  | 'court_case' // the case is read: {line} is the case title, {accused} the accused yōkai
+  | 'court_ask' // Fude-san asks the witness ({name}) one question: なにか 見ましたか？
+  | 'court_testimony' // Fude-san says the witness's tile for them ({line}: the line, as is)
+  | 'court_curveball' // the witness adds a second suspect ({suspect}): the court gasps
+  | 'court_plan' // both lawyers plan in private, then record at the same time
+  | 'court_read' // Fude-san reads a Kana lawyer's tiles for them ({line}: the line, as is)
+  | 'court_mic_pass' // Fude-san says {name}'s argument for them ({line}: the line, as is)
+  | 'court_stand_in' // nothing came from {name} in time: Fude-san stands in ({line}, as is); it scores nothing
+  | 'court_check' // one question about the arguments, on every judge's phone
+  | 'court_vote' // who won you over? one vote from everyone who isn't a lawyer
+  | 'court_guilty' // the verdict: 有罪 ({accused})
+  | 'court_not_guilty' // the verdict: 無罪 ({accused})
+  | 'court_tie' // a tie is not guilty: うたがわしきは ばっせず
+  | 'court_booth' // the replay booth opens on the argument that used its chunk ({chunk}, when given)
   | 'surprise_spin' // Surprise Me!: the wheel starts to spin
   | 'surprise_pick'; // Surprise Me!: the wheel stops on tonight's game ({game})
 

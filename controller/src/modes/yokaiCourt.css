@@ -1,0 +1,194 @@
+/* Yōkai Court on the phone. One column, big targets, fine at 360px. Prosecution is vermilion with ⛓ and a
+   solid edge; defence is sky blue with 🕊 and a dashed edge, so the sides never rely on colour alone. */
+body[data-mode='yokai-court'] { --mode: #e8553d; }
+.yc-screen p { margin: 0; }
+.yc-screen [lang='ja'] { word-break: keep-all; overflow-wrap: anywhere; line-break: strict; }
+.yc-screen .center { text-align: center; }
+
+/* ---- the band: role, what's next ---- */
+.yc-next { font-size: 15px; color: var(--muted); }
+.yc-next b { color: var(--ink); }
+
+.yc-label { font-size: 15px; color: var(--muted); font-weight: 700; }
+.yc-hint { font-size: 15px; color: var(--muted); }
+.yc-strong { font-size: 18px; font-weight: 800; }
+.yc-box { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 2px solid var(--line); }
+.yc-problem { padding: 10px 12px; border-radius: 12px; background: #4a1f2a; color: #ffd6d6; font-weight: 800; }
+.yc-locked { font-weight: 800; color: var(--good); }
+
+/* ---- the dock: the one main action, pinned under the thumb while the screen above it scrolls ---- */
+.yc-dock { position: sticky; bottom: 0; z-index: 3; display: grid; gap: 10px; margin: 0 -16px; padding: 14px 16px max(12px, env(safe-area-inset-bottom)); background: linear-gradient(to bottom, transparent, var(--bg) 14px); }
+.yc-dock > .primary { width: 100%; min-height: 64px; font-size: 22px; }
+.yc-ready-done { text-align: center; padding: 12px 0; }
+
+/* ---- paper cards: the secret, the gist, the mission ---- */
+.yc-mission-text { font-size: 20px; font-weight: 800; line-height: 1.35; text-wrap: balance; }
+.yc-said { font-size: 20px; font-weight: 800; line-height: 1.4; }
+
+/* ---- pictures (the emoji stands in until the art exists) ---- */
+.yc-pic { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; flex: none; }
+.yc-emoji { display: grid; place-items: center; font-size: 44px; line-height: 1; }
+
+/* ---- the Listening card ---- */
+.yc-listen { display: grid; gap: 10px; padding: 10px; border-radius: 14px; background: #221a4a; border: 2px solid var(--line); }
+.yc-listen-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 17px; }
+.yc-count { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
+.yc-seat { display: inline-block; font-family: var(--font-pixel); font-weight: 700; font-size: 14px; line-height: 1.3; padding: 0 6px; color: var(--on-accent); background: var(--seat, var(--muted)); border: 2px solid var(--outline); border-radius: 4px; }
+/* The live bar: six bars that bob while someone speaks. Calm mode stills them (style.css). */
+.yc-live { display: inline-flex; align-items: flex-end; gap: 3px; height: 20px; }
+.yc-live span { width: 4px; height: 100%; border-radius: 2px; background: var(--good); transform-origin: bottom; animation: yc-bob 900ms ease-in-out calc(var(--i, 0) * -150ms) infinite alternate; }
+@keyframes yc-bob { from { transform: scaleY(0.25); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .yc-live span { animation: none; transform: scaleY(0.6); } }
+
+/* ---- a Kana adviser's tiles: one per row, one line each, never broken inside a word ---- */
+.yc-tiles { display: grid; gap: 10px; }
+.yc-tile { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 84px; padding: 8px 12px; text-align: left; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--yc-ink); border-radius: 14px; box-shadow: 0 5px 0 var(--yc-ink); touch-action: manipulation; transition: transform 80ms, box-shadow 80ms; }
+.yc-tile:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--yc-ink); }
+.yc-tile:disabled { opacity: 1; cursor: default; }
+.yc-tile.on { outline: 4px solid var(--warn); outline-offset: 2px; }
+.yc-tile.yc-curve { background: #fff0c2; }
+.yc-tile-words { display: grid; gap: 2px; min-width: 0; }
+.yc-screen .yc-tile-ja { font-size: 22px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow-wrap: normal; }
+.yc-tile-en { font-size: 14px; color: var(--paper-muted); }
+.yc-leaf { position: absolute; top: -10px; right: -6px; width: 30px; height: 30px; image-rendering: pixelated; }
+/* The caller's own line as a tile (Kana): it records while lit. */
+
+/* ---- picture buttons: bets and laugh votes ---- */
+.yc-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.yc-cards.one { grid-template-columns: minmax(0, 180px); justify-content: center; }
+.yc-card { position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; min-height: 136px; padding: 10px 6px; text-align: center; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--yc-ink); border-radius: 14px; box-shadow: 0 5px 0 var(--yc-ink); touch-action: manipulation; transition: transform 80ms, box-shadow 80ms; }
+.yc-card:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--yc-ink); }
+.yc-card:disabled { opacity: 1; cursor: default; }
+.yc-card.on { outline: 4px solid var(--warn); outline-offset: 2px; }
+.yc-card.mine { opacity: 0.55; border-style: dashed; box-shadow: none; }
+.yc-card-ja { font-size: 18px; font-weight: 900; line-height: 1.25; }
+.yc-card-en { font-size: 13px; color: var(--paper-muted); line-height: 1.25; }
+.yc-card-who { font-size: 13px; font-weight: 800; color: var(--paper-ink); }
+.yc-card > .yc-seat { position: absolute; top: -10px; right: -6px; }
+/* A long lauyc-vote line takes the whole row. */
+
+/* ---- the three reactions: fixed places, a drawn shape and a colour each ---- */
+/* Locked in: the others step back (a flat colour, then the mix where it works). */
+
+/* The marks, drawn in ink: ✗ two bars, ≈ two waves, ◎ two rings. */
+
+/* ---- hints, the mic pass, typing ---- */
+.yc-hintbox { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #2b2440; border-left: 4px solid var(--warn); }
+.yc-hintbox .ghost, .yc-pass { width: 100%; min-height: 48px; padding: 10px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); font-size: 17px; font-weight: 700; }
+.yc-pass b { color: var(--warn); }
+.yc-pass:disabled { opacity: 0.6; }
+.yc-pass.ask { border-color: var(--warn); background: #3a2e10; color: var(--warn); }
+.yc-pass.free { border-color: var(--good); }
+.yc-pass-wrap { display: grid; gap: 6px; }
+.yc-model .jpv-main { font-size: 22px; }
+.yc-typed { display: grid; gap: 8px; }
+.yc-typed input { flex: 1; min-width: 0; font: inherit; font-size: 20px; padding: 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); }
+.yc-typed-row { display: flex; gap: 8px; align-items: stretch; }
+.yc-dock .yc-typed-send { width: auto; min-height: 56px; font-size: 20px; padding: 0 18px; white-space: nowrap; }
+/* Keyboard up: the mic pass steps aside so the mission, the box and Send all stay in view. */
+.yc-dock:has(.yc-typed input:focus) .yc-pass-wrap { display: none; }
+
+/* ---- the record control: Plan → Recording → Sent. A fill runs while the take does, from the real start
+   time (--yc-rec-delay is minus the time already recorded), with the seconds left beside the label. ---- */
+.yc-rec-btn { position: relative; overflow: hidden; isolation: isolate; display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 92px; padding: 10px 18px; border-radius: 999px; border: 4px solid var(--yc-ink); background: #c8213c; color: #fff; font-size: 22px; font-weight: 900; box-shadow: 0 6px 0 var(--yc-ink); touch-action: manipulation; }
+.yc-rec-btn:disabled { opacity: 0.6; }
+.yc-rec-btn.opening { background: var(--panel); color: var(--ink); opacity: 1; }
+.yc-rec-btn.live { background: #2a0b12; }
+.yc-rec-ring { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.yc-rec-btn.live .yc-rec-ring { background: #b0263b; transform-origin: left; animation: yc-rec-run var(--ms, 9000ms) linear var(--yc-rec-delay, 0ms) forwards; }
+.yc-rec-label, .yc-rec-secs { position: relative; z-index: 1; }
+.yc-rec-label { display: grid; gap: 2px; text-align: left; }
+.yc-rec-label small { font-size: 14px; font-weight: 700; }
+.yc-rec-secs { display: grid; justify-items: center; font-family: var(--font-pixel); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+.yc-rec-secs small { font-family: inherit; font-size: 11px; letter-spacing: 0.1em; }
+@keyframes yc-rec-run { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* The fill is time left to record, so calm motion keeps it. */
+body[data-motion='calm'] .yc-rec-btn.live .yc-rec-ring { animation: yc-rec-run var(--ms, 9000ms) linear var(--yc-rec-delay, 0ms) forwards !important; }
+
+/* ---- Sent, Watch the TV, and the states for when things go wrong ---- */
+.yc-sent { display: grid; justify-items: center; gap: 8px; padding: 16px 8px; text-align: center; }
+.yc-stamp { padding: 4px 18px; border: 4px solid var(--good); border-radius: 12px; color: var(--good); font-size: 32px; font-weight: 900; rotate: -3deg; }
+.yc-watch { font-size: 22px; font-weight: 900; }
+.yc-micoff { display: grid; justify-items: center; gap: 8px; padding: 14px 12px; text-align: center; border-radius: 14px; background: var(--panel); border: 2px solid var(--line); }
+.yc-micoff-icon { font-size: 40px; line-height: 1; }
+.yc-micoff-title { font-size: 22px; font-weight: 900; }
+.yc-micoff .yc-box { text-align: left; }
+.yc-mic-on { width: 100%; min-height: 52px; font-size: 18px; font-weight: 800; border-radius: 10px; border: 3px solid var(--outline); background: var(--accent); color: var(--on-accent, #fff); }
+
+/* ---- the secret beat: the gallery's own bet ---- */
+@keyframes yc-in { from { opacity: 0; transform: translateY(6px); } }
+.yc-verdict { text-align: center; font-size: 26px; font-weight: 900; }
+.yc-verdict.yes { color: var(--good); }
+.yc-verdict.no { color: var(--muted); }
+
+/* ---- score ---- */
+.yc-points { font-family: var(--font-pixel); color: var(--good); font-size: 56px; line-height: 1.1; text-align: center; }
+.yc-breakdown { display: grid; gap: 4px; margin: 0; padding: 10px 12px; list-style: none; border-radius: 12px; background: var(--panel); border: 2px solid var(--line); }
+.yc-breakdown li { display: flex; justify-content: space-between; gap: 12px; font-size: 17px; font-weight: 700; }
+.yc-breakdown b { font-variant-numeric: tabular-nums; color: var(--warn); }
+.yc-note { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: #2b2440; }
+.yc-note-side { display: grid; gap: 4px; }
+.yc-used { font-weight: 800; color: var(--good); }
+.yc-chunk { font-size: 22px; font-weight: 900; }
+.yc-lit { background: var(--warn); color: var(--yc-ink); border-radius: 4px; padding: 0 2px; white-space: nowrap; }
+.yc-tag { font-size: 15px; font-weight: 700; color: var(--warn); }
+.yc-vip { margin-top: 8px; }
+
+@media (max-width: 370px) {
+  .yc-screen .yc-tile-ja { font-size: 19px; }
+  .yc-pic { width: 52px; height: 52px; }
+  .yc-cards { gap: 8px; }
+}
+
+/* The caller's secret: the cure they're listening for, as its tile. */
+
+/* ---- court: the band, sides, the case, the role card ---- */
+.yc-screen { --yc-pros: #ff5f3c; --yc-def: #4fb6ff; --yc-secret: #c8213c; }
+.yc-band { background: #2e1410; border-color: var(--yc-band); }
+.yc-band-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.yc-role-chip { background: var(--side, var(--yc-band)); }
+.yc-caseno { margin-left: auto; font-size: 14px; color: var(--muted); font-weight: 700; }
+.yc-side-pros { --side: var(--yc-pros); }
+.yc-side-def { --side: var(--yc-def); }
+.yc-case, .yc-testimony, .yc-question, .yc-rolecard { display: grid; gap: 6px; padding: 10px 12px; border-radius: 12px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--yc-ink); }
+.yc-rolecard { background: var(--panel); color: var(--ink); border: 3px solid var(--side, var(--line)); }
+.yc-rolecard.yc-side-def, .yc-mission.yc-side-def, .yc-arg.yc-side-def, .yc-listen.yc-side-def { border-style: dashed; }
+.yc-role-big { font-size: 24px; font-weight: 900; color: var(--side, var(--ink)); }
+.yc-case .yc-label, .yc-testimony .yc-label, .yc-question .yc-label { color: var(--paper-muted); text-transform: uppercase; font-size: 13px; letter-spacing: 0.05em; }
+.yc-case-title { font-size: 22px; font-weight: 900; line-height: 1.6; }
+.yc-case-en { font-size: 15px; color: var(--paper-muted); }
+.yc-case-row { display: flex; align-items: center; gap: 10px; }
+.yc-case .yc-hint, .yc-testimony .yc-hint, .yc-question .yc-hint { color: var(--paper-muted); }
+.yc-line .jpv-main { font-size: 22px; font-weight: 900; }
+.yc-suspect { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.yc-pic-small { width: 40px; height: 40px; }
+.yc-pic-small.yc-emoji { font-size: 30px; }
+.yc-mission { border-color: var(--side, var(--yc-secret)); }
+.yc-mission-label { color: var(--side, var(--yc-secret)); filter: brightness(0.75); }
+.yc-evidence { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; padding-top: 6px; border-top: 2px dashed var(--side, var(--yc-secret)); }
+.yc-ev-word .jpv-main { font-size: 20px; font-weight: 900; }
+.yc-tile { min-height: 72px; }
+.yc-tile-n { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; background: var(--warn); color: var(--yc-ink); font-weight: 900; }
+.yc-tile-words .jpv-main { font-size: 22px; font-weight: 900; white-space: nowrap; }
+.yc-tile-ev { margin-left: auto; font-size: 13px; font-weight: 800; color: var(--paper-muted); white-space: nowrap; }
+.yc-tile.yc-curve { background: #fff0c2; }
+.yc-leaf { position: absolute; top: -10px; right: -6px; width: 30px; height: 30px; image-rendering: pixelated; }
+.yc-cards.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.yc-card-ro { font-size: 13px; color: #7a4a00; }
+.yc-listen { border: 3px solid var(--side, var(--line)); }
+.yc-listen .yc-line .jpv-main { font-size: 24px; }
+.yc-args { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.yc-arg { position: relative; display: grid; justify-items: center; align-content: start; gap: 6px; padding: 10px 6px 12px; text-align: center; background: var(--paper); color: var(--paper-ink); border: 4px solid var(--side); border-radius: 14px; box-shadow: 0 5px 0 var(--yc-ink); touch-action: manipulation; transition: transform 80ms, box-shadow 80ms; }
+.yc-arg:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--yc-ink); }
+.yc-arg:disabled { opacity: 1; cursor: default; }
+.yc-arg.on { outline: 4px solid var(--warn); outline-offset: 2px; }
+.yc-arg-who { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
+.yc-arg-pics { display: flex; gap: 4px; }
+.yc-arg-gist .jpv-main { font-size: 18px; font-weight: 900; line-height: 1.3; }
+.yc-arg-said { font-size: 14px; }
+.yc-arg-verdict { font-size: 15px; font-weight: 900; color: var(--paper-ink); }
+.yc-arg-verdict rt { font-size: 0.5em; }
+.yc-arg .yc-hint { color: var(--paper-muted); font-size: 13px; }
+.yc-verdict { text-align: center; font-size: 22px; font-weight: 900; color: var(--side); }
+.yc-verdict rt { font-size: 0.45em; }
+@media (max-width: 370px) { .yc-arg-gist .jpv-main { font-size: 16px; } .yc-cards.three { gap: 6px; } }
