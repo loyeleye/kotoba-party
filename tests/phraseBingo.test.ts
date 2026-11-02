@@ -11,6 +11,7 @@ import {
   CARD_CELLS,
   castSize,
   CATCH_POINTS,
+  dealGreenCar,
   ECHO_BONUS,
   GRACE_MS,
   MEMORY_BONUS,
@@ -20,7 +21,8 @@ import {
   type PhraseBingoState,
   type PhraseBingoView,
 } from '../shared/src/modes/phraseBingo/phraseBingo.js';
-import { SCENES } from '../shared/src/modes/phraseBingo/scenes.js';
+import { GREEN_CAR_SCENES, SCENES, scenesFor } from '../shared/src/modes/phraseBingo/scenes.js';
+import { FRAME_BY_ID, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { Bot, Director } from '../tools/bots/bot.js';
@@ -614,4 +616,177 @@ describe('Phrase Bingo: bots play a game end to end', () => {
       director.client.close();
     });
   }
+});
+
+// ---- the Green Car (design: project files n3-coverage/green-car/design.md) ----
+
+describe('Phrase Bingo: the Green Car', () => {
+  const FRAMES_TAUGHT = ['te-moraeru', 'te-mo-ii', 'tara', 'te-wa-ikenai', 'ba', 'wari-ni', 'kuse-ni', 'ni-shite-wa', 'ppoi', 'nante'];
+  /** ＿くせに, ＿わりに, ＿に しては are aimed at props, animals, yōkai or Pon, never at a person a player plays. */
+  const TONE = ['kuse-ni', 'wari-ni', 'ni-shite-wa'];
+
+  function gcTable(levels: Level[], audience?: 'kids' | 'family' | 'cheeky', seed = 7) {
+    const t = new Table(levels.length, REAL_CONTENT, seed, levels);
+    if (audience) expect(t.cmd('stage', { type: 'settings', audience }).changed).toBe(true);
+    t.start(undefined, 'family');
+    return t;
+  }
+
+  it('every Green Car line is a draft with one N4 or N3 frame the matchers find, one line per frame per scene', () => {
+    expect(GREEN_CAR_SCENES.length).toBeGreaterThanOrEqual(6);
+    const ids = new Set<string>();
+    for (const sc of GREEN_CAR_SCENES) {
+      expect(sc.greenCar, sc.id).toBe(true);
+      expect(sc.status, sc.id).toBe('draft');
+      expect(SCENES.some((x) => x.id === sc.id), sc.id).toBe(false);
+      expect([...sc.phrases.map((p) => p.frames![0])].sort(), sc.id).toEqual([...FRAMES_TAUGHT].sort());
+      for (const p of sc.phrases) {
+        expect(ids.has(p.id), p.id).toBe(false);
+        ids.add(p.id);
+        const f = p.frames![0]! as FrameId;
+        expect(p.level, p.id).toBe(f === 'te-mo-ii' ? 'n4' : FRAME_BY_ID[f].level);
+        expect(framesOf(p.jp, undefined, { keepHidden: true }), p.id).toContain(f);
+        expect(p.jp.kana, p.id).toBe(p.jp.text);
+        expect(saidPhrase(speech(p.jp.kana), p.jp.kana, p.accepted, p.level), p.id).toBe(true);
+      }
+      // Two lines in one scene never clash by sound, so either can be told apart.
+      const keys = sc.phrases.map((p) => phraseKey(p.jp.kana));
+      for (const k of keys) expect(keys.filter((x) => x.includes(k)).length, `${sc.id} ${k}`).toBe(1);
+    }
+  });
+
+  it('every audience reaches all ten frames; Kids lines stay kid-friendly; tone frames never target the cast', () => {
+    for (const a of ['kids', 'family', 'cheeky'] as const) {
+      const { own, fill } = scenesFor(a, true);
+      expect(own.length, a).toBeGreaterThanOrEqual(2);
+      expect([...own, ...fill].every((x) => x.greenCar), a).toBe(true);
+      expect(scenesFor(a).own.some((x) => x.greenCar), a).toBe(false);
+      const frames = new Set(own.flatMap((x) => x.phrases.map((p) => p.frames![0])));
+      for (const f of FRAMES_TAUGHT) expect(frames.has(f), `${a} ${f}`).toBe(true);
+    }
+    const kids = [...scenesFor('kids', true).own, ...scenesFor('kids', true).fill];
+    for (const p of kids.flatMap((x) => x.phrases)) expect(p.jp.kana, p.id).not.toMatch(/でーと|のみかい|おさけ|びーる|おかね|ぶちょう|けっこん|かいしゃ/);
+    for (const sc of GREEN_CAR_SCENES) {
+      for (const p of sc.phrases.filter((x) => TONE.includes(x.frames![0]!))) {
+        // Never "you" or a role name as the one being judged.
+        expect(p.jp.kana, p.id).not.toMatch(/あなた|きみ|おまえ/);
+        for (const r of sc.roles) expect(p.jp.kana.includes(`${r.kana}の くせに`) || p.jp.kana.includes(`${r.kana}に しては`), `${p.id} ${r.kana}`).toBe(false);
+      }
+    }
+  });
+
+  it('rides in the Green Car when everyone is N4+: Green Car scenes only, frame cards, no mixed-room lines', () => {
+    const t = gcTable(['n3', 'n4', 'n4', 'n4']);
+    expect(t.st.greenCar).toBe(true);
+    expect(t.st.order.every((id) => GREEN_CAR_SCENES.some((x) => x.id === id))).toBe(true);
+    expect(t.st.scene!.greenCar).toBe(true);
+    expect(Object.keys(t.st.pool).every((id) => id.startsWith('pb.gc.'))).toBe(true);
+    // No two lines in play share a frame: the card shows the frame.
+    const frames = Object.values(t.st.pool).map((p) => p.frames![0]);
+    expect(new Set(frames).size).toBe(frames.length);
+    const [watcher] = t.audience as [string];
+    const cells = t.view(watcher).me!.card!.cells;
+    expect(cells.length).toBe(CARD_CELLS);
+    for (const c of cells) {
+      const p = t.st.pool[c.id]!;
+      expect(c.text).toBe(FRAME_BY_ID[p.frames![0] as FrameId].ja);
+      expect(c.text).not.toBe(p.jp.text);
+      expect(c.frame?.id).toBe(p.frames![0]);
+    }
+    // An actor studies the sentence, with its frame alongside.
+    const [actor] = t.actors as [string];
+    const secret = t.view(actor).me!.actor!.secrets[0]!;
+    expect(secret.jp?.text).toBe(t.st.pool[secret.id]!.jp.text);
+    expect(secret.jp?.frame?.ja).toBeTruthy();
+    // A mixed room keeps the old scenes.
+    const mixed = new Table(4, REAL_CONTENT, 7, ['n5', 'n4', 'n4', 'n4']);
+    mixed.start();
+    expect(mixed.st.greenCar).toBeFalsy();
+    expect(Object.keys(mixed.st.pool).some((id) => id.startsWith('pb.gc.'))).toBe(false);
+  });
+
+  it('an N3 actor gets N3 and N4 lines in turn; an N4 actor gets N4 lines plus an optional N3 stretch', () => {
+    let n3Mix = 0;
+    let stretches = 0;
+    for (let seed = 1; seed <= 12; seed++) {
+      const t = gcTable(['n3', 'n4', 'n3', 'n4'], undefined, seed);
+      for (const a of t.st.cast) {
+        const level = t.s.players.find((p) => p.id === a.playerId)!.level;
+        const lines = a.secrets.map((x) => ({ level: t.st.pool[x.phraseId]!.level, stretch: !!x.stretch }));
+        const required = lines.filter((x) => !x.stretch);
+        // A scene has five N4 frames: two N4 actors with three slots each share them, and the sixth slot becomes
+        // an N3 stretch. Otherwise every slot is filled at its own level.
+        expect(lines.length).toBeGreaterThanOrEqual(secretsFor(level, t.st.cast.length));
+        if (level === 'n3') expect(required.length).toBe(secretsFor(level, t.st.cast.length));
+        if (level === 'n3') {
+          expect(lines.some((x) => x.stretch)).toBe(false);
+          const n3 = required.filter((x) => x.level === 'n3').length;
+          expect(Math.abs(n3 - (required.length - n3))).toBeLessThanOrEqual(1);
+          if (n3 && n3 < required.length) n3Mix += 1;
+        } else {
+          expect(required.every((x) => x.level === 'n4')).toBe(true);
+          for (const x of lines.filter((y) => y.stretch)) expect(x.level).toBe('n3');
+          stretches += lines.filter((x) => x.stretch).length;
+        }
+      }
+    }
+    expect(n3Mix).toBeGreaterThan(0);
+    expect(stretches).toBeGreaterThan(0);
+  });
+
+  it('a line said from memory counts for the frames heard; an unsaid stretch is seen, not missed, and never holds the scene', () => {
+    let t = gcTable(['n4', 'n4', 'n4']);
+    for (let seed = 2; !t.st.cast.some((a) => a.secrets.some((x) => x.stretch)) && seed < 30; seed++) t = gcTable(['n4', 'n4', 'n4'], undefined, seed);
+    const actor = t.st.cast.find((a) => a.secrets.some((x) => x.stretch))!;
+    const view = t.view(actor.playerId).me!.actor!.secrets;
+    expect(view.find((x) => x.stretch)?.jp?.tag).toBe('N3');
+    t.action();
+    for (const a of t.st.cast) {
+      for (const x of a.secrets.filter((y) => !y.stretch)) t.play(a.playerId, { kind: 'say', utterance: speech(t.st.pool[x.phraseId]!.jp.kana) });
+    }
+    for (const id of t.audience) for (let i = 0; i < BUZZES; i++) t.play(id, { kind: 'buzz', phraseId: t.st.cards[id]!.cells[i]!, actorId: t.actors[0]! });
+    // Every required line said and every buzz used: the scene ends without the stretch.
+    expect(t.s.phase).toBe('reveal');
+    const book = t.s.phrasebook[actor.playerId]!;
+    const stretch = actor.secrets.find((x) => x.stretch)!;
+    expect(book.find((e) => e.itemId === stretch.phraseId)?.outcome).toBe('seen');
+    for (const x of actor.secrets.filter((y) => !y.stretch)) {
+      const e = book.find((y) => y.itemId === x.phraseId)!;
+      expect(e).toMatchObject({ outcome: 'said', recall: 'memory' });
+      expect(e.frames).toContain(t.st.pool[x.phraseId]!.frames![0]);
+    }
+    expect(Object.values(t.st.saidFrames![actor.playerId]!).reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
+  });
+
+  it('a peeked line counts as read, for no frames', () => {
+    const t = gcTable(['n3', 'n4', 'n4']);
+    t.action();
+    const [a] = t.actors as [string];
+    const x = t.st.cast[0]!.secrets[0]!;
+    t.play(a, { kind: 'peek', phraseId: x.phraseId });
+    t.play(a, { kind: 'say', utterance: speech(t.st.pool[x.phraseId]!.jp.kana) });
+    t.timeout();
+    expect(t.s.phrasebook[a]!.find((e) => e.itemId === x.phraseId)).toMatchObject({ outcome: 'retry', recall: 'read', frames: [] });
+  });
+
+  it('aims the deal at the frames a player needs: a required frame beats an optional one', () => {
+    // The stub room needs only ＿わりに among the N3 frames; an N3 actor's N3 slot takes it.
+    const t = gcTable(['n3', 'n4', 'n4']);
+    const scene = t.st.scene!;
+    const here = scene.phrases.map((p) => ({ id: p.id, jp: p.jp, level: p.level, frames: p.frames! }));
+    const st = { ...t.st, cast: [], pool: {}, cards: {}, acted: {}, lastCast: [], saidFrames: {} } as PhraseBingoState;
+    const ctx = {
+      random: mulberry(5),
+      players: () => [{ id: 'p1', seat: 0, level: 'n3', connected: true, mic: 'on', score: 0, name: 'P1' }, { id: 'p2', seat: 1, level: 'n4', connected: true, mic: 'on', score: 0, name: 'P2' }, { id: 'p3', seat: 2, level: 'n4', connected: true, mic: 'on', score: 0, name: 'P3' }],
+      frameNeed: (_id: string, frames: readonly string[]) => (frames.includes('wari-ni') ? 5 : 1),
+    };
+    for (let i = 0; i < 6; i++) {
+      const s = structuredClone(st);
+      dealGreenCar(s, ctx as never, scene, here, []);
+      const p1 = s.cast.find((a) => a.playerId === 'p1');
+      if (!p1) continue;
+      const n3 = p1.secrets.map((x) => s.pool[x.phraseId]!).filter((p) => p.level === 'n3');
+      expect(n3.map((p) => p.frames![0])).toContain('wari-ni');
+    }
+  });
 });

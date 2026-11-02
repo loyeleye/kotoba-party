@@ -143,6 +143,35 @@ at a random time in the scene, peeking first with `peekRate` (0.3), wrapping it 
 with `buzzRate` (0.7). Bots that share one policy object "hear" what the actor bots said and pick
 the right line with `hearRate` (0.6), otherwise a random cell. Everyone shouts the line back.
 `npm run bots -- --mode phrase-bingo --bots 5` shares one policy across the bots for this mode.
+In the Green Car an N4 bot tries its optional N3 stretch line only with `stretchRate` (0.5).
+
+## Green Car
+
+When every player is N4 or N3 the room may ride in the Green Car (`ctx.greenCar`, `shared/src/greenCar.ts`; design:
+the project's `n3-coverage/green-car/design.md`). Mixed rooms play exactly as above. In the Green Car:
+
+- **Green Car scenes only** (`GREEN_CAR_SCENES`, never dealt in a mixed room; decoys come only from this room's
+  own Green Car scenes). Every scene has the same ten lines, one per frame, written for the scene and draft:
+  N4 ＿て もらえますか (4.1), ＿ても いいですか and ＿ては いけません (4.2), ＿たら and ＿ば (4.5), polite; N3 ＿わりに, ＿くせに,
+  ＿に しては (3.4), ＿っぽい and ＿なんて (3.11), casual. Each line names its frame (`ScenePhrase.frames`).
+- **The card shows the frame, not the sentence** (🎯 ＿っぽい), so the audience listens for the grammar. No two lines in
+  play share a frame. The actor studies the whole sentence, with its frame under it; the reveal and the encore
+  show the sentence.
+- **Levels.** Slots per actor as in a mixed room (`secretsFor`). An N3 actor's slots alternate N3 and N4, which first
+  drawn per actor, so about half each. An N4 actor's slots are N4, plus one optional **N3 stretch** line (tagged
+  N3) while the card keeps a decoy cell (two or three actors; none with four). A scene has five N4 frames, so when
+  two N4 actors hold three slots each, the sixth becomes a stretch too. An unsaid stretch is logged *seen*, not
+  *missed*, and never holds the scene open.
+- **From memory.** A line said by voice without peeking counts (`recall: 'memory'`) for the frames heard in the
+  actor's own words (`framesHeard`); a peeked or typed one is read, for no frames.
+- **Aim the deal.** Within a slot's level, the line whose frame the actor needs most (`aimWeight`: tonight's
+  `ctx.frameNeed`, where a path goal's required frame weighs 2 and an optional one 1, divided by this game's says,
+  `saidFrames`), ties broken by the shuffled order. So ＿わりに, ＿くせに, ＿っぽい and ＿なんて come up before ＿に しては
+  until they have been said.
+- **Kids, Family and Cheeky.** Kids: the school play rehearsal and the pet shop. Family (kid-safe, and a Kids room's
+  fill): the late-night konbini, family dinner, the ryokan check-in. Cheeky: the izakaya after work and an awkward
+  first date. ＿くせに, ＿わりに and ＿に しては are aimed at props, animals, yōkai, food or Pon, never at a role a player
+  plays.
 
 ## Decisions made on Ladi's behalf
 

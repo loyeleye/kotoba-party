@@ -19,7 +19,9 @@ import { firstMora } from '../lastTrain/check.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { phraseKey, phraseScore, saidPhrase } from './check.js';
-import { SCENES, scenesFor, type Scene, type ScenePhrase } from './scenes.js';
+import { ALL_SCENES, GREEN_CAR_SCENES, SCENES, scenesFor, type Scene, type ScenePhrase } from './scenes.js';
+import { FRAME_BY_ID, framesHeard, type FrameId } from '../../japanese/frames.js';
+import { aimPick, aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -76,14 +78,18 @@ export interface Phrase {
   jp: JpText;
   level: Level;
   accepted?: string[];
+  /** Green Car lines: the frames the line carries; the first is the card's label. */
+  frames?: readonly string[];
 }
 
 export interface Secret {
   phraseId: string;
   /** Looked at the Japanese during the scene (no memory bonus). */
   peeked: boolean;
-  said: { at: number; via: Utterance['via']; memory: boolean; heard: string } | null;
+  said: { at: number; via: Utterance['via']; memory: boolean; heard: string; frames?: FrameId[] } | null;
   caughtBy: string[];
+  /** Green Car: an N3 line dealt to an N4 actor as an optional stretch (tagged N3; unsaid costs nothing). */
+  stretch?: true;
 }
 
 export interface Actor {
@@ -148,6 +154,10 @@ export interface PhraseBingoState {
   lastCast: string[];
   stats: Record<string, PlayerStats>;
   phaseAt: number;
+  /** In the Green Car (shared/src/greenCar.ts): Green Car scenes, frame lines, frame cards. */
+  greenCar?: true;
+  /** Green Car: each player's frames said this game, for aiming the next deal (shared/src/modes/aim.ts). */
+  saidFrames?: Record<string, Record<string, number>>;
 }
 
 export type PhraseBingoMove =
@@ -167,6 +177,9 @@ export interface PhraseCard {
   furigana?: JpText['furigana'];
   /** Kana level only. */
   romaji?: string;
+  /** Green Car: the frame the card shows instead of the sentence (＿て もらえますか), and the line's level tag. */
+  frame?: { id: string; ja: string; en: string };
+  tag?: 'N4' | 'N3';
 }
 
 export interface ResultPhrase extends PhraseCard {
@@ -213,6 +226,8 @@ export interface SecretView {
   jp: PhraseCard | null;
   smooth?: boolean;
   caughtBy?: string[];
+  /** Green Car: an optional N3 stretch line for an N4 actor. */
+  stretch?: true;
 }
 
 export interface CellView extends PhraseCard {
@@ -275,7 +290,7 @@ export function secretsFor(level: Level, cast: number): number {
 function resolve(p: ScenePhrase, packs: readonly TopicPack[]): Phrase {
   const fromPack = p.from ? packs.flatMap((x) => x.phrases).find((x) => x.id === p.from) : undefined;
   const jp = fromPack ? fromPack.jp : p.jp;
-  return { id: p.id, jp, level: p.level, ...(p.accepted ? { accepted: p.accepted } : {}) };
+  return { id: p.id, jp, level: p.level, ...(p.accepted ? { accepted: p.accepted } : {}), ...(p.frames ? { frames: p.frames } : {}) };
 }
 
 /** Level bands an actor's phrases are drawn from, best first (N4 uses N5 where N4 runs out). */
@@ -307,7 +322,24 @@ const meanScore = (ctx: ModeContext) => {
 };
 
 function phraseCard(p: Phrase, romaji: boolean): PhraseCard {
-  return { id: p.id, text: p.jp.text, kana: p.jp.kana, en: p.jp.en, ...(p.jp.furigana ? { furigana: p.jp.furigana } : {}), ...(romaji ? { romaji: toRomaji(p.jp.kana) } : {}) };
+  const f = p.frames?.[0] ? FRAME_BY_ID[p.frames[0] as FrameId] : undefined;
+  return {
+    id: p.id,
+    text: p.jp.text,
+    kana: p.jp.kana,
+    en: p.jp.en,
+    ...(p.jp.furigana ? { furigana: p.jp.furigana } : {}),
+    ...(romaji ? { romaji: toRomaji(p.jp.kana) } : {}),
+    ...(f ? { frame: { id: f.id, ja: f.ja, en: f.en }, tag: p.level === 'n3' ? ('N3' as const) : ('N4' as const) } : {}),
+  };
+}
+
+/** Green Car bingo cell: the frame, not the sentence, so the audience listens for the grammar. */
+function frameCell(p: Phrase, romaji: boolean): PhraseCard {
+  const c = phraseCard(p, romaji);
+  if (!c.frame) return c;
+  const { furigana: _furigana, romaji: _romaji, ...rest } = c;
+  return { ...rest, text: c.frame.ja, kana: c.frame.ja, en: c.frame.en };
 }
 
 function tickerPhrase(p: Phrase): TickerPhrase {
@@ -349,7 +381,8 @@ function clashes(key: string, taken: readonly string[]): boolean {
 
 function startScene(s: PhraseBingoState, ctx: ModeContext): void {
   s.round += 1;
-  const scene = SCENES.find((x) => x.id === s.order[(s.round - 1) % s.order.length]) ?? SCENES[0]!;
+  const scenes = s.greenCar ? GREEN_CAR_SCENES : SCENES;
+  const scene = ALL_SCENES.find((x) => x.id === s.order[(s.round - 1) % s.order.length]) ?? scenes[0]!;
   s.scene = scene;
   s.cast = [];
   s.cards = {};
@@ -365,10 +398,12 @@ function startScene(s: PhraseBingoState, ctx: ModeContext): void {
   const random = () => ctx.random();
   const packs = ctx.content.packs;
   const here = shuffled(scene.phrases, random).map((p) => resolve(p, packs));
+  // In the Green Car the rest come only from this room's own Green Car scenes (a Kids room never sees a Cheeky line).
   const elsewhere = shuffled(
-    SCENES.filter((x) => x.id !== scene.id).flatMap((x) => x.phrases),
+    (s.greenCar ? scenes.filter((x) => s.order.includes(x.id)) : scenes).filter((x) => x.id !== scene.id).flatMap((x) => x.phrases),
     random,
   ).map((p) => resolve(p, packs));
+  if (s.greenCar) return dealGreenCar(s, ctx, scene, here, elsewhere);
   const takenKeys: string[] = [];
   const takenIds = new Set<string>();
   const take = (p: Phrase) => {
@@ -408,15 +443,93 @@ function startScene(s: PhraseBingoState, ctx: ModeContext): void {
       cells.push(p.id);
     }
   }
-  const castIds = new Set(cast.map((p) => p.id));
+  dealCards(s, ctx, cells);
+}
+
+/** Every audience member gets the cells in their own order; everyone's bonus pool is set for the scene. */
+function dealCards(s: PhraseBingoState, ctx: ModeContext, cells: string[]): void {
+  const castIds = new Set(s.cast.map((a) => a.playerId));
   const mult = multiplierFor(s);
   for (const p of ctx.players()) {
     if (!castIds.has(p.id)) {
-      s.cards[p.id] = { cells: shuffled(cells, random), line: null };
+      s.cards[p.id] = { cells: shuffled(cells, () => ctx.random()), line: null };
       s.bonusCap[p.id] = BONUS_POOL_SHARE * CATCH_POINTS * BUZZES * mult;
     }
   }
-  for (const a of s.cast) s.bonusCap[a.playerId] = BONUS_POOL_SHARE * (SLIP_POINTS + SMOOTH_POINTS) * a.secrets.length * mult;
+  for (const a of s.cast) s.bonusCap[a.playerId] = BONUS_POOL_SHARE * (SLIP_POINTS + SMOOTH_POINTS) * a.secrets.filter((x) => !x.stretch).length * mult;
+}
+
+/**
+ * The Green Car deal (docs/modes/phrase-bingo.md, "Green Car"). Every line carries one frame and no two lines in play
+ * share a frame, since the card shows the frame. Slots per actor as in a mixed room (secretsFor):
+ *  - an N3 actor's slots alternate N3 and N4 (which comes first is drawn per actor), so about half are N3;
+ *  - an N4 actor's slots are N4, plus one optional N3 stretch line (tag N3) while the card still has a decoy cell
+ *    (two actors, or three: up to eight secrets; four actors: none);
+ *  - when this scene has no unused line of the wanted level, another Green Car scene of this room's; then the other
+ *    level (an N3 line in an N4 actor's slot is a stretch).
+ * Within a level, the line whose frame the actor needs most (aimWeight: path goals' required frames, said least
+ * tonight and this game), ties broken by the shuffled order. Then decoys fill the card to nine cells.
+ */
+export function dealGreenCar(s: PhraseBingoState, ctx: ModeContext, scene: Scene, here: Phrase[], elsewhere: Phrase[]): void {
+  const random = () => ctx.random();
+  const takenFrames = new Set<string>();
+  const takenKeys: string[] = [];
+  const frameOf = (p: Phrase) => p.frames?.[0] ?? p.id;
+  const free = (p: Phrase) => !s.pool[p.id] && !takenFrames.has(frameOf(p)) && !clashes(phraseKey(p.jp.kana), takenKeys);
+  const take = (p: Phrase) => {
+    takenFrames.add(frameOf(p));
+    takenKeys.push(phraseKey(p.jp.kana));
+    s.pool[p.id] = p;
+  };
+  const cast = pickCast(s, ctx);
+  const roles = shuffled(scene.roles, random);
+  const base = cast.reduce((n, p) => n + secretsFor(p.level, cast.length), 0);
+  let stretches = Math.max(0, CARD_CELLS - 1 - base);
+  const saidFrames = (s.saidFrames ??= {});
+  cast.forEach((player, i) => {
+    const want = secretsFor(player.level, cast.length);
+    const n3 = player.level === 'n3';
+    const first = random() < 0.5;
+    const slots: { level: 'n4' | 'n3'; stretch: boolean }[] = [];
+    for (let k = 0; k < want; k++) slots.push({ level: n3 && (k % 2 === 0) === first ? 'n3' : 'n4', stretch: false });
+    if (!n3 && stretches > 0) {
+      slots.push({ level: 'n3', stretch: true });
+      stretches -= 1;
+    }
+    const secrets: Secret[] = [];
+    for (const slot of slots) {
+      const other = slot.level === 'n3' ? 'n4' : 'n3';
+      const tries: [Phrase[], string][] = [
+        [here, slot.level],
+        [elsewhere, slot.level],
+        [here, other],
+        [elsewhere, other],
+      ];
+      let pick: Phrase | undefined;
+      for (const [source, level] of tries) {
+        pick = aimPick(
+          source.filter((p) => p.level === level && free(p)),
+          (p) => aimWeight(ctx, player.id, p.frames ?? [], saidFrames[player.id]),
+        );
+        if (pick) break;
+      }
+      if (!pick) continue;
+      take(pick);
+      const stretch = slot.stretch || (!n3 && pick.level === 'n3');
+      secrets.push({ phraseId: pick.id, peeked: false, said: null, caughtBy: [], ...(stretch ? { stretch: true as const } : {}) });
+    }
+    s.cast.push({ playerId: player.id, role: roles[i % roles.length]!, ready: false, secrets, last: null });
+    s.acted[player.id] = (s.acted[player.id] ?? 0) + 1;
+  });
+  s.lastCast = cast.map((p) => p.id);
+  const cells = Object.keys(s.pool);
+  for (const p of [...here, ...elsewhere]) {
+    if (cells.length >= CARD_CELLS) break;
+    if (!free(p)) continue;
+    take(p);
+    cells.push(p.id);
+  }
+  dealCards(s, ctx, cells);
 }
 
 /** Scores the scene: catches, slips, smooth bonuses, bingo lines and the phrasebook. */
@@ -444,7 +557,8 @@ function resolveScene(s: PhraseBingoState, ctx: ModeContext): void {
       const p = s.pool[secret.phraseId]!;
       const entry = { itemId: p.id, text: p.jp.text, kana: p.jp.kana, en: p.jp.en };
       if (!secret.said) {
-        ctx.phrase(a.playerId, { ...entry, outcome: 'missed' });
+        // An unsaid Green Car stretch line was only a dare: seen, not missed.
+        ctx.phrase(a.playerId, { ...entry, outcome: secret.stretch ? 'seen' : 'missed' });
         continue;
       }
       const st = stats(s, a.playerId);
@@ -458,7 +572,16 @@ function resolveScene(s: PhraseBingoState, ctx: ModeContext): void {
         st.memory += 1;
         payBonus(s, ctx, a.playerId, MEMORY_BONUS[secret.said.via === 'speech' ? 'speech' : 'typed'] * mult, mean);
       }
-      ctx.phrase(a.playerId, { ...entry, outcome: secret.said.memory ? 'said' : 'retry', recall: secret.said.memory && secret.said.via === 'speech' ? 'memory' : 'read' });
+      const fromMemory = secret.said.memory && secret.said.via === 'speech';
+      if (s.greenCar) {
+        // Green Car: a line counts for the frames heard in the actor's own words (not a peeked one's).
+        const heard = fromMemory ? (secret.said.frames ?? []) : [];
+        const said = (s.saidFrames ??= {})[a.playerId] ??= {};
+        for (const f of heard) said[f] = (said[f] ?? 0) + 1;
+        ctx.phrase(a.playerId, { ...entry, outcome: secret.said.memory ? 'said' : 'retry', recall: fromMemory ? 'memory' : 'read', frames: heard });
+        continue;
+      }
+      ctx.phrase(a.playerId, { ...entry, outcome: secret.said.memory ? 'said' : 'retry', recall: fromMemory ? 'memory' : 'read' });
     }
   }
 
@@ -517,7 +640,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
 
   setup(ctx, opts) {
     const random = () => ctx.random();
-    const packIds = [...new Set(SCENES.map((x) => x.packId))] as string[];
+    const packIds = [...new Set((ctx.greenCar ? GREEN_CAR_SCENES : SCENES).map((x) => x.packId))] as string[];
     const packId = opts.packId && packIds.includes(opts.packId) ? opts.packId : packIds[Math.floor(random() * packIds.length)]!;
     // The pack's scenes first, then the rest; a Kids or Cheeky room plays its own scenes before the family ones.
     const order = (scenes: Scene[]) => [
@@ -530,7 +653,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
         random,
       ),
     ];
-    const { own, fill } = scenesFor(ctx.audience ?? 'family');
+    const { own, fill } = scenesFor(ctx.audience ?? 'family', !!ctx.greenCar);
     const statsAll: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) statsAll[p.id] = blankStats();
     return {
@@ -555,6 +678,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
       lastCast: [],
       stats: statsAll,
       phaseAt: ctx.now,
+      ...(ctx.greenCar ? { greenCar: true as const, saidFrames: {} } : {}),
     };
   },
 
@@ -640,7 +764,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
     const hereActors = s.cast.filter((a) => ctx.player(a.playerId)?.connected);
     if (phase === 'prompt') return hereActors.length > 0 && hereActors.every((a) => a.ready);
     if (phase === 'answer') {
-      const allSaid = hereActors.every((a) => a.secrets.every((x) => x.said));
+      const allSaid = hereActors.every((a) => a.secrets.every((x) => x.said || x.stretch));
       const audience = here.filter((p) => !actors.has(p.id) && s.cards[p.id]);
       const allBuzzed = audience.every((p) => s.buzzes.filter((b) => b.playerId === p.id).length >= BUZZES);
       return allSaid && allBuzzed;
@@ -685,7 +809,9 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
         }
         actor.last = { heard, matched: best?.secret.phraseId ?? null };
         if (best) {
-          best.secret.said = { at: ctx.now, via: u.via, memory: !best.secret.peeked, heard };
+          const p = s.pool[best.secret.phraseId]!;
+          const frames = s.greenCar ? framesHeard(p.jp, { text: heard, kana: u.reading ?? heard }, u.tokens) : undefined;
+          best.secret.said = { at: ctx.now, via: u.via, memory: !best.secret.peeked, heard, ...(frames ? { frames } : {}) };
           s.slips.push({ actorId: playerId, phraseId: best.secret.phraseId, at: ctx.now });
         }
         return MOVE_OK;
@@ -808,6 +934,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
                   peeked: x.peeked,
                   jp: show ? phraseCard(p, romaji) : null,
                   ...(over ? { smooth: !!x.said && !x.caughtBy.length, caughtBy: [...x.caughtBy] } : {}),
+                  ...(x.stretch ? { stretch: true as const } : {}),
                 };
               }),
             }
@@ -816,7 +943,7 @@ export const phraseBingoMode: Mode<PhraseBingoState, PhraseBingoView> = {
           ? {
               cells: card.cells.map((id): CellView => {
                 const b = myBuzzes.find((x) => x.phraseId === id);
-                return { ...phraseCard(s.pool[id]!, romaji), daubed: daubed.has(id), buzz: b ? { actorId: b.actorId, result: over ? b.result : null } : null };
+                return { ...(s.greenCar ? frameCell : phraseCard)(s.pool[id]!, romaji), daubed: daubed.has(id), buzz: b ? { actorId: b.actorId, result: over ? b.result : null } : null };
               }),
               buzzesLeft: Math.max(0, BUZZES - myBuzzes.length),
               line: phase === 'score' ? card.line : null,

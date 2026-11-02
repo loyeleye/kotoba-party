@@ -116,6 +116,10 @@ export interface OogiriState {
   steal: { playerId: string; round: number } | null;
   /** Server time the current phase began (stage animations sync to it). */
   phaseAt: number;
+  /** In the Green Car (shared/src/greenCar.ts): frame prompts, aimed; the encore is the whole line. */
+  greenCar?: true;
+  /** Green Car: each player's frames said this game (encores), for aiming the next prompts. */
+  saidFrames?: Record<string, Record<string, number>>;
 }
 
 // ---- view ----
@@ -129,6 +133,11 @@ export interface PromptCard {
   photo?: string;
   /** Kana level only: training-wheel romaji. */
   romaji?: string;
+  /**
+   * Green Car: the frame the line carries (＿に しては), its level, and whether it is an N3 stretch for this N4
+   * viewer. In the encore the card's Japanese is just the frame, so the whole line is said from memory.
+   */
+  greenCar?: { frame: string; frameEn: string; level: 'N4' | 'N3'; stretch: boolean };
 }
 
 export interface AnswerCard {

@@ -318,12 +318,18 @@ function lineBox(me: Me, cls = ''): HTMLElement | null {
 function missionBox(me: Me, cls = ''): HTMLElement | null {
   const ad = me.adlib;
   if (!ad || ad.state !== 'accepted') return null;
+  // Green Car: the frame to aim for on an N3 turn, and on an N4 turn the scene's N3 ad-lib as optional stretch.
+  const gc = ad.greenCar;
   return h(
     'div',
     { class: `dc-mission ${cls}` },
     h('span', { class: 'dc-mission-emoji', 'aria-hidden': 'true' }, ad.emoji),
     h('p', { class: 'dc-mission-what' }, ad.mission),
+    gc?.frame ? h('p', { class: 'dc-mission-how' }, '🎯 Use ', h('span', { lang: 'ja' }, gc.frame.ja), ` (${gc.frame.en}).`) : null,
     h('p', { class: 'dc-mission-how' }, 'No script: say it like you would to a friend. Plain form + ', h('span', { lang: 'ja' }, 'よ／ね／の？'), ', ', h('span', { lang: 'ja' }, '〜んだ'), ', ', h('span', { lang: 'ja' }, '〜ちゃった'), '.'),
+    gc?.stretch
+      ? h('p', { class: 'dc-mission-how' }, h('strong', {}, `${gc.stretch.tag} stretch: `), gc.stretch.mission, gc.stretch.frame ? [' Use ', h('span', { lang: 'ja' }, gc.stretch.frame.ja), '.'] : null)
+      : null,
   );
 }
 
@@ -339,6 +345,8 @@ function adlibOffer(ctx: Ctx, me: Me): HTMLElement | null {
   const ad = me.adlib;
   if (!ad || me.sent) return null;
   const send = (accept: boolean) => void ctx.send({ kind: 'adlib', accept, round: ctx.game.round });
+  // The Green Car has no script to fall back on.
+  if (ad.state === 'accepted' && ad.greenCar) return null;
   if (ad.state === 'accepted') return h('button', { type: 'button', class: 'linkish', onclick: () => send(false) }, 'Give me the script after all');
   return roleOffer({
     kicker: '🎬 Fude-kantoku: “No script this time. Make it yours!”',
@@ -359,6 +367,14 @@ function aimFor(me: Me): HTMLElement | null {
 function adlibVerdict(me: Me): string | null {
   const c = me.adlib?.check;
   if (!c) return null;
+  // Green Car: an N3 turn aims for its frame; an N4 turn's N3 stretch counts once its frame is heard.
+  const frame = me.adlib?.greenCar?.frame;
+  if (c.stretch) return c.key ? 'N3 stretch landed, and on the mission!' : 'N3 stretch landed! Now get the mission in too.';
+  if (frame) {
+    if (c.target && c.key) return `${frame.ja} came through, and on the mission!`;
+    if (c.target) return `${frame.ja} came through! Now get the mission in too.`;
+    return c.key ? `On the mission. Now work in ${frame.ja}.` : `Say it casually, with ${frame.ja}.`;
+  }
   if (c.casual && c.key) return 'Nice and casual, and on the mission!';
   if (c.casual) return 'Casual! Now get the mission in too.';
   if (c.key) return 'On the mission. Make it casual: end with よ, ね or の？';
