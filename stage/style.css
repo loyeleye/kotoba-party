@@ -526,3 +526,8 @@ body.flying[data-phase='lobby'] .main { place-items: end center; }
 .gallery-bubble { font-size: 26px; padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); animation: gallery-bubble-in 0.4s ease-out both; }
 @keyframes gallery-bubble-in { from { opacity: 0; transform: translateY(12px) scale(0.8); } }
 @media (prefers-reduced-motion: reduce) { .booth-line mark, .gallery-bubble { animation: none; } }
+
+/* Green Car (グリーン車): the clover badge while the room rides in it, and the "back to the regular train" toast. */
+.gc-badge { position: absolute; top: 24px; right: 32px; z-index: 30; padding: 6px 16px; border-radius: 999px; background: #1f6b3a; color: #f2fff5; font-size: 26px; font-weight: 700; box-shadow: 0 0 0 3px #8fe3a8; }
+.gc-badge[hidden], .gc-toast[hidden] { display: none; }
+.gc-toast { position: absolute; left: 50%; bottom: 180px; transform: translateX(-50%); z-index: 40; padding: 14px 28px; border-radius: 16px; background: var(--panel); color: var(--ink); font-size: 30px; box-shadow: 0 0 0 3px #8fe3a8; }

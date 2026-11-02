@@ -21,6 +21,7 @@ import { canSpeakHost, speakHost, stopHostSpeech } from './hostSpeech.js';
 import { joinAudioTabs } from '../../shared/src/audioTabs.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
+import { mountGreenCar, updateGreenCar } from './greenCar.js';
 import { mountPhrasebook, setPhrasebookSource, updatePhrasebook } from './phrasebook.js';
 import { serverNow, setClipSource } from './modes/dubAudio.js';
 import { sfx, tickSfx, watchSfx } from './music/sfx.js';
@@ -95,6 +96,7 @@ mountBackdrop(els.canvas, () => client?.remainingMs() ?? null);
 // credit, laid out by flex so a longer label or a hidden button never makes them collide.
 const tools = h('div', { class: 'stage-tools' });
 els.canvas.append(tools);
+mountGreenCar(els.canvas);
 mountSoundButton(tools);
 mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteOrigin, bar: tools });
 mountPhrasebook(els.canvas, tools);
@@ -312,6 +314,7 @@ function render(view: RoomView, v: number): void {
   const held = view.game && (holdMode?.holdScoresUntil?.(view, view.game) ?? 0) > serverNow();
   watchSfx(held ? { ...view, players: view.players.map((p) => ({ ...p, score: p.score - (holdMode?.heldPoints?.(view.game!, p.id) ?? 0) })) } : view);
   updateSettings(view);
+  updateGreenCar(view);
   updatePhrasebook(view);
   showCredits(view.phase === 'recap');
 

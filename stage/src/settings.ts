@@ -17,7 +17,7 @@ import { isStreamerMode, setStreamerMode } from './music/index.js';
 import { sfx } from './music/sfx.js';
 import { getVolumes, setVolume, type VolumeId } from './sound.js';
 
-type Send = (body: { type: 'start'; mode: ModeId | typeof SURPRISE; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'endGame' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience } | { type: 'passVip'; playerId: string } | { type: 'closeRoom' }) => Promise<void>;
+type Send = (body: { type: 'start'; mode: ModeId | typeof SURPRISE; rounds?: number } | { type: 'skip'; phaseSeq: number } | { type: 'playAgain' } | { type: 'endGame' } | { type: 'settings'; remoteControl?: boolean; audience?: Audience; greenCar?: boolean } | { type: 'passVip'; playerId: string } | { type: 'closeRoom' }) => Promise<void>;
 
 const VOLUMES: [VolumeId, string][] = [
   ['master', 'Master volume'],
@@ -104,7 +104,35 @@ export function mountSettings(parent: HTMLElement, options: { watch: boolean; se
 /** Call on every render: keeps the room section in step with the game. */
 export function updateSettings(next: RoomView): void {
   view = next;
+  syncGreenCar(next);
   renderRoom(false);
+}
+
+/** This screen's last Green Car choice, so a group that turned it off isn't switched back on in a new room. */
+const GREEN_CAR_KEY = 'kotoba.greenCar';
+function savedGreenCar(): boolean | null {
+  try {
+    const v = localStorage.getItem(GREEN_CAR_KEY);
+    return v === 'on' ? true : v === 'off' ? false : null;
+  } catch {
+    return null;
+  }
+}
+function saveGreenCar(on: boolean): void {
+  try {
+    localStorage.setItem(GREEN_CAR_KEY, on ? 'on' : 'off');
+  } catch {
+    /* private mode: the room still has it */
+  }
+}
+let greenCarSynced = '';
+/** Main stage only: a new room takes this screen's last choice before the switch's first-time default does. */
+function syncGreenCar(v: RoomView): void {
+  if (!opts || opts.watch || v.greenCar.setting !== null || greenCarSynced === v.code) return;
+  const saved = savedGreenCar();
+  if (saved === null) return;
+  greenCarSynced = v.code;
+  void opts.send({ type: 'settings', greenCar: saved });
 }
 
 function slider(id: VolumeId, label: string): HTMLElement {
@@ -131,7 +159,7 @@ function toggle(label: string, help: string, on: boolean, change: (on: boolean) 
 function renderRoom(force: boolean): void {
   if (!room || !opts || !panel || panel.hidden) return;
   const v = view;
-  const key = v ? `${opts.watch}:${v.remoteControl}:${v.audience}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.map((p) => `${p.id}${p.isVip ? '*' : ''}${p.mic === 'quiet' ? 'q' : ''}`).join()}` : 'none';
+  const key = v ? `${opts.watch}:${v.remoteControl}:${v.audience}:${v.greenCar.setting}:${v.greenCar.eligible}:${v.phase}:${v.phaseSeq}:${v.deadline !== null}:${v.modes.map((m) => m.id).join()}:${v.players.map((p) => `${p.id}${p.isVip ? '*' : ''}${p.mic === 'quiet' ? 'q' : ''}`).join()}` : 'none';
   if (!force && key === roomKey) return;
   roomKey = key;
   if (!v) return void (mount(room), mount(game!));
@@ -146,6 +174,7 @@ function renderRoom(force: boolean): void {
       vip(v),
       share,
       audience(v),
+      greenCar(v),
       closeRoom(v),
     );
     return;
@@ -155,6 +184,31 @@ function renderRoom(force: boolean): void {
     return;
   }
   mount(room, controls(v), share);
+}
+
+/**
+ * Green Car (グリーン車), the N4+ room mode (shared/src/greenCar.ts). Usable only when everyone is N4 or N3; on by
+ * default the first time they are. Lobby only: a game in progress keeps what it started with.
+ */
+function greenCar(v: RoomView): HTMLElement {
+  const sec = h('section', { class: 'st-sec' }, heading('Green Car', 'グリーン車', 'グリーンしゃ'));
+  const on = v.greenCar.setting !== false;
+  const box = toggle(
+    '🍀 Ride in the Green Car',
+    v.greenCar.eligible
+      ? 'Everyone here plays at N4 or N3, so the games can drop the beginner parts and run about half N4 and half N3 lines. N3 stamps come fastest here. Starts with the next game.'
+      : 'Everyone aboard needs N4 or N3. With a Kana or N5 player here, the games play the regular train.',
+    on && v.greenCar.eligible,
+    (to) => {
+      sfx('tap');
+      saveGreenCar(to);
+      void opts?.send({ type: 'settings', greenCar: to });
+    },
+  );
+  const input = box.querySelector('input');
+  if (input) input.disabled = !v.greenCar.eligible || v.phase !== 'lobby';
+  sec.append(box);
+  return sec;
 }
 
 /** Start, Skip ahead and Play again: on the main stage always, on a watching screen once it has control. */

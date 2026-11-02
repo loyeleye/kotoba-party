@@ -472,6 +472,8 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
         (greenCar !== undefined && typeof greenCar !== 'boolean')
       )
         return fail('bad-command');
+      // Green Car is decided at game start, so it changes only between games.
+      if (greenCar !== undefined && inGame(state)) return fail('wrong-phase');
       if ((remoteControl ?? state.remoteControl) === state.remoteControl && (audience ?? state.audience) === state.audience && (greenCar ?? state.greenCar ?? null) === (state.greenCar ?? null)) return { changed: false };
       state.remoteControl = remoteControl ?? state.remoteControl;
       state.audience = audience ?? state.audience;

@@ -679,6 +679,8 @@ export function pathTab(view: AccountView, level: Level, toggle: (on: boolean) =
               h('p', { class: 'path-note' }, 'The stations are built. Trains start stopping as the games learn their N3 lines.'),
             )
           : null,
+        // Green Car (shared/src/greenCar.ts): the N3 lines come round most in a room where everyone is N4 or N3.
+        line.id === 'limited' ? h('p', { class: 'path-note path-greencar' }, h('span', { 'aria-hidden': 'true' }, '🍀 '), h('strong', {}, 'N3 stamps come fastest in the Green Car'), ' (グリーン車): a room where everyone plays at N4 or N3.') : null,
         lineTrack(line, st, s?.goal ?? null, (goal, btn) => show(goal, st, level, btn)),
         next ? h('button', { type: 'button', class: 'path-transfer', 'data-line': next.id, onclick: () => pick(next.id) }, h('span', { lang: 'ja' }, 'のりかえ'), ` Change to the ${next.name} →`) : null,
         line.id === 'limited' ? passSign((btn) => showPass(btn)) : null,
