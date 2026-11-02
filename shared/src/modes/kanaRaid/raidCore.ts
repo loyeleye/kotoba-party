@@ -240,7 +240,7 @@ export function greenCarSwitch<A, B extends GreenTagged, V extends { mode: ModeI
   type S = A | B;
   const pick = (s: S): Mode<S, V | W> => (isGreen(s) ? green : local) as unknown as Mode<S, V | W>;
   return {
-    info: local.info,
+    info: { ...local.info, greenCar: { title: green.info.title, titleJa: green.info.titleJa, titleKana: green.info.titleKana, blurb: green.info.blurb } },
     setup: (ctx, opts) => (ctx.greenCar ? green.setup(ctx, opts) : local.setup(ctx, opts)),
     next: (s, from, ctx) => pick(s).next(s, from, ctx),
     enter: (s, phase, ctx) => pick(s).enter(s, phase, ctx),

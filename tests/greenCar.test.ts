@@ -88,3 +88,18 @@ describe('aim the deal', () => {
     expect(modeContext(r.s, { now: 0, content, newId: () => 'x', random: () => 0 }).frameNeed!('p0', ['rashii'])).toBeCloseTo(2 / 3);
   });
 });
+
+describe('Green Car names on the menu', () => {
+  it('shows Katsuyō Raid and Frame Concentration only in a Green Car lobby', () => {
+    const ctx: GameContext = { now: 0, content, newId: () => 'x', random: () => 0 };
+    const mk = (levels: Level[]) => {
+      const s = createGame('MENU');
+      levels.forEach((level, i) => apply(s, { type: 'join', playerId: `p${i}`, name: `P${i}`, level }, ctx));
+      return viewFor(s, { kind: 'stage' }, content).modes;
+    };
+    const title = (modes: { id: string; title: string }[], id: string) => modes.find((m) => m.id === id)?.title;
+    expect(title(mk(['n4', 'n3']), 'kana-raid')).toBe('Katsuyō Raid');
+    expect(title(mk(['n4', 'n3']), 'concentration')).toBe('Frame Concentration');
+    expect(title(mk(['n4', 'n5']), 'kana-raid')).toBe('Kana Yōkai Raid');
+  });
+});

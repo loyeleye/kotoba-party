@@ -499,6 +499,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
     titleJa: 'ことば神経衰弱',
     titleKana: 'ことばしんけいすいじゃく',
     blurb: 'Flip pairs, then say the word to keep them. Anyone can steal.',
+    greenCar: { title: 'Frame Concentration', titleJa: 'フレーム神経衰弱', titleKana: 'フレームしんけいすいじゃく', blurb: 'Match a picture to its sentence pattern, then say the whole sentence in your own words.' },
     host: 'fude',
     minPlayers: 2,
     maxPlayers: 8,

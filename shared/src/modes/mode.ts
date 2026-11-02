@@ -216,6 +216,8 @@ export interface ModeInfo {
   /** The Japanese title's reading, in kana, where it has kanji (for the host to say it). */
   titleKana?: string;
   blurb: string;
+  /** The game's Green Car name, where it plays as a different game there (shared/src/greenCar.ts): the menu shows it. */
+  greenCar?: { title: string; titleJa: string; titleKana?: string; blurb: string };
   host: HostId;
   minPlayers: number;
   maxPlayers: number;
