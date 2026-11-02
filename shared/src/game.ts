@@ -3,6 +3,7 @@
 // passing the current time in. The room runs the shared loop (lobby → game → recap) and
 // hands everything inside the game to the chosen mode (shared/src/modes).
 
+import { allN4Up, greenCarFor } from './greenCar.js';
 import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS, SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } from './constants.js';
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam, ModeInfo } from './modes/mode.js';
@@ -58,6 +59,13 @@ export interface GameState {
   remoteControl: boolean;
   /** The host's Audience setting: kids, family (default) or cheeky. Kept across games. */
   audience: Audience;
+  /**
+   * The Green Car switch (shared/src/greenCar.ts), main stage only. null until the room is first all N4+,
+   * when it turns on by itself; after that whatever the stage last set. Kept across games.
+   */
+  greenCar?: boolean | null;
+  /** This game (or the last one, in the lobby and recap) rides in the Green Car. Fixed at game start. */
+  greenCarOn?: boolean;
   /** Scores and phrasebooks as they were just before this game started, so ending it early can put them back. */
   beforeGame: { scores: Record<string, number>; phrasebook: Record<string, PhraseEntry[]> } | null;
   /** This game came from Surprise Me!: the games it rolled between, so the screens can show the roll. */
@@ -177,6 +185,8 @@ export function createGame(code: string): GameState {
     recap: null,
     remoteControl: false,
     audience: 'family',
+    greenCar: null,
+    greenCarOn: false,
     beforeGame: null,
     surprise: null,
     tonight: [],
@@ -215,6 +225,7 @@ export function modeContext(state: GameState, ctx: GameContext): ModeContext {
     content: ctx.content,
     vipId: state.vipId,
     audience: state.audience,
+    greenCar: state.greenCarOn === true,
     random: ctx.random,
     newId: ctx.newId,
     players: () => state.players.map(asModePlayer),
@@ -317,6 +328,9 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
       if (why) return fail(why);
       state.mode = id as ModeId;
       state.surprise = surprise;
+      // Green Car: on by default the first time the room is all N4+; decided now for the whole game.
+      if ((state.greenCar ?? null) === null && allN4Up(state.players)) state.greenCar = true;
+      state.greenCarOn = greenCarFor(state.greenCar ?? null, state.players);
       state.packId = !surprise && typeof cmd.packId === 'string' ? cmd.packId : null;
       state.beforeGame = { scores: Object.fromEntries(state.players.map((p) => [p.id, p.score])), phrasebook: state.phrasebook };
       for (const p of state.players) {
@@ -450,11 +464,18 @@ function applyCommand(state: GameState, actor: Viewer, cmd: Command, ctx: GameCo
     }
     case 'settings': {
       if (!isStage || actor.watch) return fail('not-allowed');
-      const { remoteControl, audience } = cmd;
-      if ((remoteControl === undefined && audience === undefined) || (remoteControl !== undefined && typeof remoteControl !== 'boolean') || (audience !== undefined && !isAudience(audience))) return fail('bad-command');
-      if ((remoteControl ?? state.remoteControl) === state.remoteControl && (audience ?? state.audience) === state.audience) return { changed: false };
+      const { remoteControl, audience, greenCar } = cmd;
+      if (
+        (remoteControl === undefined && audience === undefined && greenCar === undefined) ||
+        (remoteControl !== undefined && typeof remoteControl !== 'boolean') ||
+        (audience !== undefined && !isAudience(audience)) ||
+        (greenCar !== undefined && typeof greenCar !== 'boolean')
+      )
+        return fail('bad-command');
+      if ((remoteControl ?? state.remoteControl) === state.remoteControl && (audience ?? state.audience) === state.audience && (greenCar ?? state.greenCar ?? null) === (state.greenCar ?? null)) return { changed: false };
       state.remoteControl = remoteControl ?? state.remoteControl;
       state.audience = audience ?? state.audience;
+      if (greenCar !== undefined) state.greenCar = greenCar;
       return OK;
     }
     default:

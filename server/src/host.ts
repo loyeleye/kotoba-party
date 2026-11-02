@@ -100,11 +100,12 @@ export function moodFor(cue: Pick<HostCue, 'host' | 'event' | 'tier'>): HostMood
 
 /**
  * Wires a voice to a room: each cue is spoken and lands only if its phase is still current. Cues pick up the
- * room's Audience setting here, so the host follows it in every mode, and whether anyone plays at N3.
+ * room's Audience setting here, so the host follows it in every mode, and whether anyone plays at N3. The N3
+ * listening lines play only in the Green Car (shared/src/greenCar.ts): a room with Kana or N5 players doesn't hear them.
  */
 export function hostDirector(voice: HostVoice) {
   return (room: Room, raised: HostCue[], phaseSeq: number): void => {
-    const n3 = room.state.players?.some((p) => p.level === 'n3') ?? false;
+    const n3 = (room.state.greenCarOn === true && room.state.players?.some((p) => p.level === 'n3')) ?? false;
     const cues = raised.map((c) => ({ ...c, audience: room.state.audience, n3 }));
     for (const c of cues) if (c.ahead) voice.ahead?.(room.code, c);
     const start = Date.now();

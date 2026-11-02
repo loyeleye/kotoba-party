@@ -106,6 +106,11 @@ export interface ModeContext {
   readonly vipId?: string | null;
   /** The host's Audience setting (family when left out). */
   readonly audience?: Audience;
+  /**
+   * This game rides in the Green Car (shared/src/greenCar.ts): everyone is N4+, Kana/N5 content is off, and
+   * the N4/N3 pieces that would change a beginner's turn are on. False when left out.
+   */
+  readonly greenCar?: boolean;
   readonly content: ContentLibrary;
   random(): number;
   newId(): string;

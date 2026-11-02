@@ -135,6 +135,12 @@ export interface RoomView {
   remoteControl: boolean;
   /** The host's Audience setting (main stage settings). */
   audience: Audience;
+  /**
+   * Green Car (shared/src/greenCar.ts). `setting`: the main stage's switch (null until first offered).
+   * `eligible`: everyone seated is N4 or N3, so the switch can be used. `on`: this game (or, in the lobby,
+   * the next one) rides in the Green Car.
+   */
+  greenCar: { setting: boolean | null; eligible: boolean; on: boolean };
   /** This game was a Surprise Me! roll: the games it rolled between, for the reveal. Null otherwise. */
   surprise: ModeId[] | null;
 }
@@ -176,7 +182,7 @@ export type Command =
   /** VIP or main stage: makes another player the VIP (the phone that picks and runs the games). */
   | { id: string; type: 'passVip'; playerId: string }
   /** Main stage only: room settings (either or both). */
-  | { id: string; type: 'settings'; remoteControl?: boolean; audience?: Audience }
+  | { id: string; type: 'settings'; remoteControl?: boolean; audience?: Audience; greenCar?: boolean }
   /** Main stage only: ends the room for every screen and phone. */
   | { id: string; type: 'closeRoom' }
   /** Recap, mixed rooms only: the one-tap playtest question for players below N4, "Did anything feel like waiting?" */
