@@ -22,8 +22,9 @@ import {
   type OnsenState,
   type OnsenView,
 } from '../shared/src/modes/onsenMurder/onsenMurder.js';
-import { answerTiles, checkReport, decoyTile, joinReport, politeForm, reportFrame, reportNotes, reportTiles, reportWords, tilesInOrder } from '../shared/src/modes/onsenMurder/deputy.js';
-import { accusationLine, calledName, checkAccusation, INTENTS, joinTiles, matchQuestion, questionFor, tilesFor } from '../shared/src/modes/onsenMurder/questions.js';
+import { answerTiles, checkReport, decoyTile, isN3Report, joinReport, n3Report, N3_RULE, politeForm, reportFrame, reportNotes, reportTiles, reportWords, tilesInOrder } from '../shared/src/modes/onsenMurder/deputy.js';
+import { ALL_FRAMES, framesOf } from '../shared/src/japanese/frames.js';
+import { accusationLine, calledName, checkAccusation, GC_ACCUSE, gcAccusationFrames, gcAccusationLine, INTENTS, joinTiles, matchQuestion, questionFor, tilesFor, type GcAccuseId } from '../shared/src/modes/onsenMurder/questions.js';
 import { hasKanji, normalizeReading } from '../shared/src/japanese/kana.js';
 import type { Audience, Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -1361,5 +1362,161 @@ describe('Murder at the Onsen: mixed rooms (Gallery, booth, host stand-in)', () 
     expect(v).toMatchObject({ booth: null, standIn: null, bubbles: [], deputy: null });
     expect(v.mine).toMatchObject({ gallery: null, gist: null, deputy: null });
     expect(three.s.cues.map((c) => c.event)).not.toContain('onsen_standin');
+  });
+});
+
+// ---- the Green Car: N3 testimony, the N3 report, the N3 accusation ----
+
+describe('Murder at the Onsen: the Green Car N3 deal', () => {
+  const kana = (s: string) => ({ via: 'speech' as const, text: s, reading: s });
+
+  it('the N3 retelling: ＿に よると … ＿らしいです by rule, ＿そうです after a noun’s だ, the passive kept; every report has one', () => {
+    const tanaka = snowman.suspects.find((x) => x.id === 'tanaka')!;
+    const r = n3Report(tanaka.answers.where!.report!)!;
+    expect(r.jp.kana).toBe('たなかさんに よると、 じゅうじから じゅういちじまで だいどころに いた らしいです。');
+    expect(r.jp.text.split(' ').length).toBe(r.jp.kana.split(' ').length);
+    expect(r).toMatchObject({ level: 'n3', frames: expect.arrayContaining(['ni-yoru', 'rashii']) });
+    expect(isN3Report(r)).toBe(true);
+    expect(reportFrame(r)).toBe('＿に よると、 ＿らしいです');
+    expect(decoyTile(r)?.kana).toBe('いました');
+    expect(checkReport(kana(r.jp.kana.replace(/ /g, '')), r)).toBe(true);
+    // じぶん becomes the speaker: the speaker is no longer the subject.
+    expect(n3Report(tanaka.answers.victim!.report!)!.jp.kana).toBe('たなかさんに よると、 ゆきだるまさんが たなかさんの ラーメンが きらいだった らしいです。');
+    // A noun's だ can't stand before らしい: ＿そうです.
+    const suzuki = snowman.suspects.find((x) => x.id === 'suzuki')!;
+    expect(n3Report(suzuki.answers.item!.report!)!.jp.kana).toBe('すずきさんに よると、 あかい マフラーが やまださんのだ そうです。');
+    const yamada = snowman.suspects.find((x) => x.id === 'yamada')!;
+    expect(n3Report(yamada.answers.who!.report!)!.jp.kana).toBe('すずきさんは おんせんで やまださんに みられた らしいです。');
+    for (const c of onsenCases)
+      for (const s of c.suspects)
+        for (const i of INTENTS) {
+          const base = s.answers[i]?.report;
+          if (!base) continue;
+          const n3 = n3Report(base);
+          expect(n3, `${c.id}.${s.id}.${i}`).not.toBeNull();
+          expect(n3!.jp.text.split(/\s+/).length, `${c.id}.${s.id}.${i}`).toBe(n3!.jp.kana.split(/\s+/).length);
+          // Never a noun's だ before らしい (a past verb's ～んだ is fine).
+          expect(/[^ん]だ らしい/u.test(n3!.jp.kana), n3!.jp.kana).toBe(false);
+        }
+  });
+
+  it('the suspects answer in N3 in the Green Car (the same facts, an N3 frame); a mixed room hears the N5 line', () => {
+    const lines = onsenCases.flatMap((c) => c.suspects.flatMap((s) => INTENTS.map((i) => s.answers[i]?.n3).filter((x) => !!x)));
+    expect(lines.length).toBeGreaterThanOrEqual(60);
+    for (const l of lines) {
+      const n3 = framesOf({ text: l!.kana, kana: l!.kana }, undefined, { keepHidden: true }).filter((f) => ALL_FRAMES.find((x) => x.id === f)?.level === 'n3');
+      expect(n3.length, l!.kana).toBeGreaterThan(0);
+      expect(l!.text.split(/\s+/).length, l!.text).toBe(l!.kana.split(/\s+/).length);
+    }
+    // Every case has some, the Kids and the Cheeky ones too.
+    for (const c of onsenCases) expect(c.suspects.some((s) => INTENTS.some((i) => s.answers[i]?.n3)), c.id).toBe(true);
+    const t = new Table(2, CONTENT, ['n3', 'n4']);
+    t.start();
+    t.ask('tanaka', 'どこに いましたか');
+    expect(t.st.asks.at(-1)!.answer).toEqual(snowman.suspects[0]!.answers.where!.n3);
+    const mixed = new Table(2, CONTENT, ['n5', 'n4']);
+    mixed.start();
+    mixed.ask('tanaka', 'どこに いましたか');
+    expect(mixed.st.asks.at(-1)!.answer).toEqual(snowman.suspects[0]!.answers.where!.jp);
+  });
+
+  it('an N3 deputy alternates the N3 retelling (first) and the N4 report; it logs with its frames', () => {
+    const t = new Table(2, CONTENT, ['n4', 'n3']);
+    t.start();
+    expect(t.st.deputy?.playerId).toBe('p2');
+    t.ask('tanaka', 'どこに いましたか');
+    const r = t.st.asks.at(-1)!.report!;
+    expect(isN3Report(r)).toBe(true);
+    const me = t.view('p2').mine!.deputy!;
+    expect(me).toMatchObject({ n3: true, frame: '＿に よると、 ＿らしいです', notes: [N3_RULE], stretch: null });
+    expect(t.play('p2', { kind: 'report', utterance: kana(r.jp.kana.replace(/ /g, '')) }).error).toBeUndefined();
+    expect(t.st.deputy?.status).toBe('reported');
+    expect(t.s.phrasebook.p2?.find((e) => e.itemId === 'onsen.report.snowman.tanaka.where.n3')).toMatchObject({ outcome: 'said', kana: r.jp.kana });
+    // The next report p2 gives is the N4 one.
+    for (let guard = 0; guard < 20 && !(t.s.phase === 'answer' && t.st.deputy?.playerId === 'p2'); guard++) t.timeout();
+    t.ask('suzuki', 'どこに いましたか');
+    expect(isN3Report(t.st.asks.at(-1)!.report!)).toBe(false);
+    expect(t.view('p2').mine!.deputy!.frame).toBe('＿は ＿と いっていました');
+  });
+
+  it('an N4 deputy gets the N4 report with the N3 retelling as a stretch: either counts, the stretch pays a little more', () => {
+    const t = new Table(2, CONTENT, ['n3', 'n4']);
+    t.start();
+    t.ask('tanaka', 'なんじに ねましたか');
+    const ask = t.st.asks.at(-1)!;
+    expect(isN3Report(ask.report!)).toBe(false);
+    const me = t.view('p2').mine!.deputy!;
+    expect(me.n3).toBe(false);
+    expect(me.stretch).toMatchObject({ frame: '＿に よると、 ＿らしいです', note: N3_RULE, line: null });
+    const stretch = ask.stretch!;
+    expect(t.play('p2', { kind: 'report', utterance: kana(stretch.jp.kana.replace(/ /g, '')) }).error).toBeUndefined();
+    expect(t.st.deputy).toMatchObject({ status: 'reported', stretched: true });
+    expect(isN3Report(t.st.asks.at(-1)!.report!)).toBe(true);
+    expect(t.st.tally.p2!.base).toBe(POINTS.report + POINTS.reportStretch);
+    expect(t.view().deputy?.line?.kana).toBe(stretch.jp.kana);
+    expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'onsen.report.snowman.tanaka.when.n3' && e.outcome === 'said')).toBe(true);
+  });
+
+  it('the N3 accusation lines: ＿に ちがいない, ＿せいに ちがいない with the victim’s fate, ＿はずが ない, ＿おかげで; the matcher finds each', () => {
+    for (const c of onsenCases) {
+      expect(c.victim.fate, c.id).toBeDefined();
+      for (const s of c.suspects)
+        for (const id of Object.keys(GC_ACCUSE) as GcAccuseId[]) {
+          const l = gcAccusationLine(c, s, id)!;
+          const heard = gcAccusationFrames(kana(l.kana), s);
+          expect(heard, l.kana).not.toBeNull();
+          for (const f of GC_ACCUSE[id]) expect(heard, l.kana).toContain(f);
+        }
+    }
+    const tanaka = snowman.suspects[0]!;
+    expect(gcAccusationLine(snowman, tanaka, 'sei')!.kana).toBe('ゆきだるまさんが とけたのは、 たなかさんの せいに ちがいない！');
+    // The name is needed, and a frame: the N4 line alone isn't an N3 accusation.
+    expect(gcAccusationFrames(kana('はんにんは すずきさんに ちがいない'), tanaka)).toBeNull();
+    expect(gcAccusationFrames(kana('はんにんは たなかさんです'), tanaka)).toBeNull();
+    expect(gcAccusationLine({ victim: { ...snowman.victim, fate: undefined } }, tanaka, 'sei')).toBeNull();
+  });
+
+  it('in the Green Car an N3 player must accuse with the N3 line; an N4 player may, for a stretch bonus', () => {
+    const t = new Table(2, CONTENT, ['n3', 'n4']);
+    t.start();
+    t.toAccuse();
+    const p1 = t.view('p1').mine!;
+    expect(p1.accuseN3).toBe(true);
+    expect(p1.stretchLines).toBeUndefined();
+    const dealt = t.st.gc!.accuse.p1!;
+    expect(p1.lines[0]!.line).toEqual(gcAccusationLine(snowman, snowman.suspects[0]!, dealt));
+    const p2 = t.view('p2').mine!;
+    expect(p2.accuseN3).toBeUndefined();
+    expect(p2.lines[0]!.line).toEqual(accusationLine(snowman.suspects[0]!));
+    expect(p2.stretchLines?.[0]?.line).toEqual(gcAccusationLine(snowman, snowman.suspects[0]!, t.st.gc!.accuse.p2!));
+    // The N4 line isn't enough for p1: a retry.
+    t.play('p1', { kind: 'accuse', suspectId: 'tanaka', utterance: kana('はんにんは たなかさんです') });
+    expect(t.st.accusations.p1).toBeUndefined();
+    expect(t.view('p1').mine!.accuseTry).toMatchObject({ suspectId: 'tanaka', triesLeft: 1 });
+    t.play('p1', { kind: 'accuse', suspectId: 'tanaka', utterance: kana('ゆきだるまさんが とけたのは たなかさんの せいに ちがいない') });
+    expect(t.st.accusations.p1).toMatchObject({ suspectId: 'tanaka', said: true, n3: true });
+    const e = t.s.phrasebook.p1?.find((x) => x.itemId === 'onsen.accuse.snowman.tanaka.sei');
+    expect(e).toMatchObject({ outcome: 'retry', kana: 'ゆきだるまさんが とけたのは、 たなかさんの せいに ちがいない！' });
+    // p2 (N4) says the stretch: the bonus.
+    const before = t.st.tally.p2!.bonusEarned;
+    t.play('p2', { kind: 'accuse', suspectId: 'tanaka', utterance: kana('はんにんは たなかさんに ちがいない') });
+    expect(t.st.accusations.p2).toMatchObject({ said: true, n3: true });
+    expect(t.st.tally.p2!.bonusEarned - before).toBe(POINTS.spokenAccuse + POINTS.accuseStretch);
+    // An N4 player's N4 line still counts.
+    const u = new Table(2, CONTENT, ['n3', 'n4']);
+    u.start();
+    u.toAccuse();
+    u.play('p2', { kind: 'accuse', suspectId: 'tanaka', utterance: kana('はんにんは たなかさんです') });
+    expect(u.st.accusations.p2).toMatchObject({ said: true });
+    expect(u.st.accusations.p2?.n3).toBeUndefined();
+  });
+
+  it('a mixed room keeps the N4 accusation and no N3 deal', () => {
+    const t = new Table(2, CONTENT, ['n5', 'n4']);
+    t.start();
+    t.toAccuse();
+    expect(t.st.gc).toBeUndefined();
+    expect(t.view('p1').mine!).toMatchObject({ lines: snowman.suspects.map((x) => ({ suspectId: x.id, line: accusationLine(x) })) });
+    expect(t.view('p1').mine!.stretchLines).toBeUndefined();
   });
 });

@@ -36,6 +36,13 @@ export const wordGauntletStage: StageMode<WordGauntletView> = {
       if (i === r.current) return '▶';
       return r.order[i]?.done ? '✓' : '';
     }
+    const st = game.sentences;
+    if (st) {
+      if (st.votes) return '';
+      if (st.voted.length || st.current >= st.order.length) return st.voted.includes(id) ? '✓' : '';
+      if (st.turn === id) return '▶';
+      return '';
+    }
     const sh = game.shiritori;
     if (sh) {
       if (sh.winnerId === id) return '★';
@@ -51,6 +58,7 @@ export const wordGauntletStage: StageMode<WordGauntletView> = {
     if (game.segment === 'fake') return fake(view, game);
     if (game.segment === 'telephone') return telephone(view, game);
     if (game.segment === 'rumour') return rumour(view, game);
+    if (game.segment === 'sentences') return sentences(view, game);
     return shiritori(view, game);
   },
 };
@@ -70,7 +78,9 @@ function intro(view: RoomView, game: WordGauntletView): HTMLElement {
       game.round2 === 'rumour'
         ? step(2, 'Rumour Relay', 'うわさの でんごん', 'Nobiko-san’s secret about a studio yōkai. Pass it on and give it a fin. Double points.')
         : step(2, 'Lost in Translation', 'でんごん', 'One sentence, passed around in Japanese and English. Double points.'),
-      step(3, 'Shiritori Showdown', 'しりとり', 'Say a word from the last kana. ん and you’re out. Last one standing wins.'),
+      view.greenCar?.on
+        ? step(3, 'Sentence Shiritori', 'ぶんしょう しりとり', 'Start from the last word of the sentence before, and use the grammar on your card.')
+        : step(3, 'Shiritori Showdown', 'しりとり', 'Say a word from the last kana. ん and you’re out. Last one standing wins.'),
     ),
   );
 }
@@ -355,6 +365,53 @@ function shiritori(view: RoomView, game: WordGauntletView): HTMLElement {
     h('p', { class: 'wg-need-line' }, sh.turn ? `${nameOf(view, sh.turn)}, a word starting with ` : 'Next: ', h('span', { class: 'wg-need', lang: 'ja' }, sh.needOptions.join(' / '))),
     lastEvent(view, sh),
     players,
+  );
+}
+
+/** Green Car round 3: the chain of sentences, the link to start from, and whose turn it is. */
+function sentences(view: RoomView, game: WordGauntletView): HTMLElement {
+  const st = game.sentences!;
+  const label = tag('Round 3 · Sentence Shiritori');
+  if (view.phase === 'prompt') {
+    return h(
+      'div',
+      { class: 'card wg' },
+      label,
+      h('p', { class: 'big', lang: 'ja' }, 'ぶんしょう しりとり'),
+      h(
+        'ul',
+        { class: 'wg-rules' },
+        h('li', { lang: 'ja' }, 'Start with the last word (or kana) of the sentence before: …わらって しまう → うさぎは …'),
+        h('li', { lang: 'ja' }, 'Each phone has a grammar card: ＿たびに, ＿うちに, ＿っぽい, ＿ために… Your sentence must use it.'),
+        h('li', {}, 'Then everyone votes for the best sentence.'),
+      ),
+    );
+  }
+  const recent = st.chain.slice(-5);
+  const chainEl = h(
+    'ol',
+    { class: 'wg-chain wg-sentences' },
+    recent.map((c, i) => {
+      const index = st.chain.length - recent.length + i;
+      const votes = st.votes?.[index] ?? 0;
+      return h(
+        'li',
+        i === recent.length - 1 ? { class: 'latest', style: delay(view, 0) } : {},
+        h('span', { lang: 'ja' }, c.text),
+        h('small', {}, `${c.playerId ? nameOf(view, c.playerId) : 'ポン'}${c.frame ? ` · ${c.frame.ja}` : ''}${st.votes && votes ? ` · ${votes} vote${votes === 1 ? '' : 's'}` : ''}`),
+      );
+    }),
+  );
+  if (view.phase === 'reveal' || view.phase === 'score') {
+    return h('div', { class: 'card wg' }, label, h('p', { class: 'prompt' }, view.phase === 'reveal' ? 'Vote for the best sentence!' : 'The room’s favourites'), chainEl);
+  }
+  return h(
+    'div',
+    { class: 'card wg' },
+    label,
+    chainEl,
+    h('p', { class: 'wg-need-line' }, st.turn ? `${nameOf(view, st.turn)}, start with ` : 'Next: ', h('span', { class: 'wg-need', lang: 'ja' }, st.link.word ? `${st.link.word} / ${st.link.options.join(' / ')}` : st.link.options.join(' / '))),
+    st.last?.kind === 'miss' && st.last.playerId === st.turn ? h('p', { class: 'hint wg-event' }, 'Not quite: try again!') : null,
   );
 }
 

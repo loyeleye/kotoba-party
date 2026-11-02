@@ -409,6 +409,11 @@ export interface OnsenAnswer {
   clueId?: string;
   /** The N4 deputy's relay of this answer (Murder at the Onsen's hard role). Left out, nobody deputises that turn. */
   report?: OnsenReport;
+  /**
+   * The same answer in N3 (the same facts, an N3 frame in it), which the suspect says in the Green Car. Left out,
+   * the Green Car hears `jp`. Draft.
+   */
+  n3?: JpText;
 }
 
 /**
@@ -453,7 +458,11 @@ export interface OnsenCase {
   title: JpText;
   /** One line that sets the scene. */
   setting: JpText;
-  victim: { name: JpText; emoji: string; found: JpText };
+  /**
+   * `fate`: what happened to the victim, as a plain past clause (ゆきだるまさんが とけた), for the Green Car's N3
+   * accusation 「ゆきだるまさんが とけたのは、 ○○さんの せいに ちがいない！」 (＿せいで / ＿に ちがいない). Draft.
+   */
+  victim: { name: JpText; emoji: string; found: JpText; fate?: JpText };
   /** The piece of evidence players can ask about ("Whose is this …?"). `keys` are kana the question matcher looks for. */
   item: { name: JpText; emoji: string; keys: string[] };
   suspects: OnsenSuspect[];

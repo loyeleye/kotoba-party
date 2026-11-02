@@ -19,6 +19,10 @@ export interface DefenceScript {
   tail: JpText;
   /** The N4 frames it practises (by name: see shared/src/japanese/frames.ts). */
   frames: readonly string[];
+  /** Green Car: the N3 script (n3DefenceScript); left out for the N4 ので script. */
+  level?: 'n4' | 'n3';
+  /** Green Car N3 script: the frames of each model line, in `lines` order. */
+  lineFrames?: readonly (readonly string[])[];
   status: ReviewStatus;
 }
 
@@ -101,3 +105,75 @@ export function defenceScript(round: { unit: TimeSet['unit'] } | { theme: Pick<F
 }
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+// ---- the Green Car's N3 defence (design: project files n3-coverage/green-car/design.md, "Narabete!") ----
+//
+// The same spots and tails, with an N3 frame on top of ので: ＿に きまって いる, ＿と いうより, ＿ような きが する
+// (the low end); ＿に ちがいない, ＿ような きが する, ＿ほど ＿は ない (the high end); ＿に くらべて, ＿ような きが する
+// (after a neighbour). Lines that need a theme's own words (`n3` in cards.ts) are left out for themes without them.
+// ＿ほど ＿は ない can't take ので (it ends the thought), so that line says だから instead. All draft.
+
+/** One N3 defence line with the frames it carries (by id: shared/src/japanese/frames.ts). */
+export interface N3Line {
+  jp: JpText;
+  reason: JpText;
+  frames: readonly string[];
+  /** The frame as shown on the phone: ＿に ちがいない. */
+  label: string;
+}
+
+/** Every N3 line that fits this spot and theme, before aiming. `n` is the neighbour before, for 'after'. */
+export function n3Lines(theme: Pick<FeelTheme, 'more' | 'na' | 'n3'>, spot: DefenceSpot, n: string): N3Line[] {
+  const t = tail(spot, n);
+  const { node, noun } = moreForms(theme);
+  const more = theme.more;
+  const line = (reason: JpText, frames: string[], label: string, joiner = '、'): N3Line => ({
+    jp: { text: `${reason.text}${joiner}${t.text}`, kana: `${reason.kana}${joiner}${t.kana}`, en: `${cap(reason.en)}, so ${t.en}.` },
+    reason,
+    frames: ['node', ...frames].filter((f) => joiner === '、' || f !== 'node'),
+    label,
+  });
+  const seems = (before: string, en: string): N3Line =>
+    line({ text: `${before}${noun.text} ような きが するので`, kana: `${before}${noun.kana} ような きが するので`, en }, ['you-na-ki'], '＿ような きが する');
+  const out: N3Line[] = [];
+  if (spot === 'first') {
+    if (!theme.na) out.push(line({ text: `ほかの カードの ほうが ${more.text}に きまって いるので`, kana: `ほかの カードの ほうが ${more.kana}に きまって いるので`, en: `the other cards are bound to be ${more.en}` }, ['ni-kimatteiru'], '＿に きまって いる'));
+    if (theme.n3) out.push(line({ text: `${more.text}と いうより ${theme.n3.rather.text}`, kana: `${more.kana}と いうより ${theme.n3.rather.kana}`, en: `it's ${theme.n3.rather.en} rather than ${more.en}` }, ['to-iu-yori'], '＿と いうより'));
+    out.push(seems('ほかの カードの ほうが ', `I have a feeling the other cards are ${more.en}`));
+  } else if (spot === 'last') {
+    out.push(line({ text: `いちばん ${more.text}に ちがいないので`, kana: `いちばん ${more.kana}に ちがいないので`, en: `it must be the most of all` }, ['ni-chigainai'], '＿に ちがいない'));
+    out.push(seems('いちばん ', `I have a feeling it's the most of all`));
+    out.push(line({ text: `これほど ${noun.text} ものは ありません`, kana: `これほど ${noun.kana} ものは ありません`, en: `nothing beats this one` }, ['hodo-wa-nai'], '＿ほど ＿は ない', '。だから、'));
+  } else {
+    out.push(line({ text: `${n}さんのに くらべて ${node.text}`, kana: `${n}さんのに くらべて ${node.kana}`, en: `compared with ${n}'s, it's ${more.en}` }, ['ni-kurabete'], '＿に くらべて'));
+    out.push(seems(`${n}さんのより `, `I have a feeling it's ${more.en} than ${n}'s`));
+  }
+  return out;
+}
+
+/**
+ * The N3 defence script for a card: the frame line and two N3 model lines, chosen by `weight` (aim the deal: the
+ * frames the defender needs most first; ties keep the order above).
+ */
+export function n3DefenceScript(theme: Pick<FeelTheme, 'more' | 'na' | 'n3'>, position: number, length: number, before: string, weight: (frames: readonly string[]) => number = () => 0): DefenceScript {
+  const spot = spotOf(position, length);
+  const t = tail(spot, before);
+  const all = n3Lines(theme, spot, before);
+  const picked = all
+    .map((l, i) => ({ l, i, w: weight(l.frames.filter((f) => f !== 'node')) }))
+    .sort((a, b) => b.w - a.w || a.i - b.i)
+    .slice(0, 2)
+    .map((x) => x.l);
+  const labels = picked.map((l) => l.label).join(' ／ ');
+  return {
+    spot,
+    frame: { text: `${labels}（＋ので）、${t.text}`, kana: `${labels}（＋ので）、${t.kana}`, en: `An N3 reason, then: ${t.en}.` },
+    lines: picked.map((l) => l.jp),
+    reasons: picked.map((l) => l.reason),
+    tail: t,
+    frames: [...new Set(picked.flatMap((l) => l.frames))],
+    lineFrames: picked.map((l) => l.frames),
+    level: 'n3',
+    status: 'draft',
+  };
+}

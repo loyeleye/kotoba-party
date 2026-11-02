@@ -377,6 +377,9 @@ function gallery(ctx: Ctx, me: Me): HTMLElement | null {
 function hardDefence(ctx: Ctx, me: Me): HTMLElement {
   const { game, send } = ctx;
   const script = me.hard!.script!;
+  const stretch = me.hard!.stretch;
+  // Green Car: an N3 script (or an N4 defender's N3 stretch) carries the N3 tag.
+  const n3Tag = (label: string) => h('span', { class: 'nb-n3-tag' }, label);
   return h(
     'div',
     { class: 'screen' },
@@ -385,13 +388,21 @@ function hardDefence(ctx: Ctx, me: Me): HTMLElement {
     me.said ? h('p', { class: 'hint' }, 'Your card: ', h('span', { lang: 'ja' }, me.said.text)) : null,
     timeCard(me, true) ?? secret(me),
     h('p', { class: 'nb-pos' }, defenceSpot(ctx, me)),
-    h('p', { class: 'nb-frame', lang: 'ja' }, script.frame.text, h('small', {}, ` ${script.frame.en}`)),
+    h('p', { class: 'nb-frame', lang: 'ja' }, script.level === 'n3' ? n3Tag('N3 ') : null, script.frame.text, h('small', {}, ` ${script.frame.en}`)),
     h('p', { class: 'nb-hard-label' }, 'Read one out, or say your own:'),
     h(
       'div',
       { class: 'nb-hard-lines' },
       script.lines.map((l) => jpView(l, me.level, { cls: 'nb-hard-line' })),
     ),
+    stretch
+      ? h(
+          'div',
+          { class: 'nb-hard-lines nb-stretch' },
+          h('p', { class: 'nb-hard-label' }, n3Tag('N3 stretch '), 'Optional: try an N3 reason instead.'),
+          stretch.lines.map((l) => jpView(l, me.level, { cls: 'nb-hard-line' })),
+        )
+      : null,
     speakBox({ label: 'Hold and say it', placeholder: 'Type it', maxLength: MAX_ANSWER_LENGTH, onSend: (utterance) => void send({ kind: 'defend', utterance, round: game.round }) }),
     h('p', { class: 'hint' }, 'Say it out loud for the bonus: a typed defence doesn’t score.'),
     h('button', { type: 'button', class: 'linkish', onclick: () => void send({ kind: 'defend', pass: true, round: game.round }) }, 'Not this time after all'),

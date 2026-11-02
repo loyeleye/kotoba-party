@@ -8,6 +8,7 @@
 
 import type { NarabeteView } from '../../../shared/src/modes/narabete/narabete.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
+import { framesOf } from '../../../shared/src/japanese/frames.js';
 import type { ModePolicy } from '../bot.js';
 
 export interface NarabetePolicyOptions {
@@ -50,6 +51,21 @@ export function labelValue(label: string): number {
   if (t[3] === 'pm' || t[3] === 'noon') hour += 12;
   if (t[3] === 'midnight' || (t[3] === 'am' && hour < 5)) hour += 24;
   return hour * 60 + min;
+}
+
+/**
+ * A defence line in the bot's own words: ほんとうに added inside the reason (after its first word, or a later one),
+ * so it isn't the model read out, while every frame the line carried still comes through. Null if none keeps them.
+ */
+export function ownWords(kana: string): string | null {
+  const want = framesOf({ text: kana, kana }, undefined, { keepHidden: true });
+  const words = kana.split(' ');
+  for (let i = 1; i < Math.min(words.length, 5); i++) {
+    const text = [...words.slice(0, i), 'ほんとうに', ...words.slice(i)].join(' ');
+    const got = new Set(framesOf({ text, kana: text }, undefined, { keepHidden: true }));
+    if (want.every((f) => got.has(f))) return text;
+  }
+  return null;
 }
 
 /** Answers a bot makes up for a Feelings theme, by how high its number is. */
@@ -130,6 +146,15 @@ export function narabetePolicy(opts: NarabetePolicyOptions = {}): ModePolicy {
       }
 
       if (view.phase === 'encore' && me.defending) {
+        // Green Car: the scripted defence in the bot's own words (a model line with a word added, so it isn't read
+        // off the phone), N3 when its script is N3, and for an N4 bot the N3 stretch about half the time.
+        const hard = me.hard;
+        if (hard?.script && view.greenCar?.on) {
+          const script = hard.stretch && r('stretch') < 0.5 ? hard.stretch : hard.script;
+          const line = pickOf(script.lines, r('line'));
+          const own = line ? ownWords(line.kana) : null;
+          if (own) return [{ key: 'defend', move: { kind: 'defend', utterance: { via: 'speech', text: own }, round }, delayMs: delay('defend') }];
+        }
         if (r('pass') < 0.2) return [{ key: 'defend', move: { kind: 'defend', pass: true, round }, delayMs: delay('defend') }];
         return [{ key: 'defend', move: { kind: 'defend', utterance: { via, text: 'ほんとうに そう おもうから です。' }, round }, delayMs: delay('defend') }];
       }

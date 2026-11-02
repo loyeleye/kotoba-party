@@ -39,7 +39,12 @@ import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { answerPicture, cardPicture, feelThemesFor, FEEL_THEMES, timeSetsFor, TIME_SETS, type FeelTheme, type TimeCard, type TimeSet } from './cards.js';
-import { defenceScript, type DefenceScript } from './defence.js';
+import { defenceScript, n3DefenceScript, type DefenceScript } from './defence.js';
+import { framesOf } from '../../japanese/frames.js';
+import { aimWeight } from '../aim.js';
+
+/** The N3 frames the Green Car's defence lines carry (defence.ts n3Lines). */
+const N3_DEFENCE_FRAMES: ReadonlySet<string> = new Set(['ni-kimatteiru', 'to-iu-yori', 'you-na-ki', 'ni-chigainai', 'hodo-wa-nai', 'ni-kurabete']);
 import { n4Up } from '../../level.js';
 
 // ---- tuning ----
@@ -170,6 +175,13 @@ export interface HardDefence {
   /** The server's kana reading of what they said, and when, for the replay. */
   kana?: string;
   saidAt?: number;
+  /**
+   * Green Car: the script's level. An N3 seat takes the N3 script (n3DefenceScript) and the N4 ので one in turn, N3
+   * first; an N4 seat the N4 one, with the N3 script as stretch.
+   */
+  level?: 'n4' | 'n3';
+  /** Green Car: the frames heard in what they said (framesOf), for the credit and the aim. */
+  heard?: string[];
 }
 
 /**
@@ -247,6 +259,10 @@ export interface NarabeteState {
   gcDefences?: { round: number; playerId: string }[];
   /** The Gallery's curveball has been asked this game (once a game). */
   curveball?: boolean;
+  /** Green Car: per player, the N4 and N3 scripts given this game (an N3 seat alternates). */
+  gcDealt?: Record<string, { n4: number; n3: number }>;
+  /** Green Car, aim the deal: per player, the frames said in defences this game. */
+  gcSaid?: Record<string, Record<string, number>>;
   /** The host stand-in, once it has happened (once a game). */
   standIn?: StandIn | null;
 }
@@ -328,7 +344,12 @@ export interface NarabeteView {
     votedFor: string | null;
     defending: boolean;
     /** The N4 defence, while it's mine: offered or taken (from the line-up), and the script while I defend. */
-    hard: { answer: 'offered' | 'accepted'; script: DefenceScript | null } | null;
+    hard: {
+      answer: 'offered' | 'accepted';
+      script: DefenceScript | null;
+      /** Green Car, an N4 defender: the N3 script as optional stretch (shown with the N3 tag; either counts). */
+      stretch?: DefenceScript | null;
+    } | null;
     /** Kana and N5 phones, during the replay: what the N4 defender said, at my level (romaji for Kana). */
     gist: { name: string; kana: string; romaji: string | null; en: string; emoji: string | null; picture?: string } | null;
     /** My Gallery tile while someone else gives the N4 defence (a reaction, or the curveball). */
@@ -439,7 +460,8 @@ function pickSet<T extends { id: string }>(pool: T[], used: string[], random: ()
 
 function startRound(s: NarabeteState, ctx: ModeContext): void {
   s.round += 1;
-  const kind = roundKind(s.round);
+  // Green Car: no Time Line (an N5 deck); round 1 is a Feelings round too.
+  const kind = ctx.greenCar && roundKind(s.round) === 'time' ? 'feel' : roundKind(s.round);
   const audience = ctx.audience ?? 'family';
   const players = ctx.players();
   const random = () => ctx.random();
@@ -454,7 +476,7 @@ function startRound(s: NarabeteState, ctx: ModeContext): void {
       if (tc) cards.push({ id: ctx.newId(), ownerId: p.id, value: tc.value, timeId: tc.id, offers: [], hinted: false, said: null, hidden: false, moves: 0, again: [] });
     });
   } else {
-    const theme = pickSet(feelThemesFor(audience, kind === 'story'), s.usedSets, random);
+    const theme = pickSet(feelThemesFor(audience, kind === 'story', !!ctx.greenCar), s.usedSets, random);
     setId = theme.id;
     const numbers = dealNumbers(players.length, random);
     players.forEach((p, i) => {
@@ -550,8 +572,17 @@ function phrases(s: NarabeteState, r: Round, ctx: ModeContext): void {
     }
   }
   const hard = r.hard;
-  if (hard && hard.answer === 'accepted' && hard.text && ctx.player(hard.playerId)) {
-    const script = scriptFor(s, r, hard.cardId, ctx);
+  const n3 = hard && hard.answer === 'accepted' && hard.text && ctx.player(hard.playerId) ? n3Credit(s, r, ctx) : null;
+  if (hard && n3) {
+    // Green Car: an N3 line, credited for the frames heard in it.
+    const said = hard.ok && hard.framed && !hard.read;
+    ctx.phrase(hard.playerId, { itemId: `narabete:defence:n3:${n3.spot}:${n3.frames.join('+')}`, text: n3.line.text, kana: n3.line.kana, en: n3.line.en, outcome: said ? 'said' : 'seen', recall: hard.read ? 'read' : 'memory', frames: n3.frames });
+    if (said) {
+      const mine = ((s.gcSaid ??= {})[hard.playerId] ??= {});
+      for (const f of n3.frames) mine[f] = (mine[f] ?? 0) + 1;
+    }
+  } else if (hard && hard.answer === 'accepted' && hard.text && ctx.player(hard.playerId)) {
+    const script = scriptFor(s, r, hard.cardId, ctx, 'n4');
     const model = script?.lines[0];
     if (script && model)
       // Said only for their own spoken ので reason; a model line read off the phone (or typed) was seen.
@@ -588,7 +619,9 @@ function payVotes(s: NarabeteState, r: Round, ctx: ModeContext): void {
 
 /** Who defends in a Feelings round: the author of the card that moved the most (and moved at all). */
 function pickDefence(r: Round, ctx: ModeContext): Round['defence'] {
-  if (r.kind === 'time') return null;
+  // Green Car: the scripted defence (N4 ので or N3) is the round's one defence; the free 〜からです one would only
+  // add a second wait, and every round is a Feelings round there.
+  if (r.kind === 'time' || ctx.greenCar) return null;
   const here = new Set(ctx.connected().map((p) => p.id));
   const best = r.cards.filter((c) => c.moves > 0 && c.said && !c.hidden && here.has(c.ownerId)).sort((a, b) => b.moves - a.moves)[0];
   return best ? { playerId: best.ownerId, cardId: best.id, done: false, ok: false, text: null } : null;
@@ -613,7 +646,12 @@ function pickHard(s: NarabeteState, r: Round, ctx: ModeContext): HardDefence | n
   const last = (id: string) => given.reduce((at, g) => (g.playerId === id ? Math.max(at, g.round) : at), -1);
   const p = [...eligible].sort((a, b) => times(a.id) - times(b.id) || last(a.id) - last(b.id) || a.seat - b.seat)[0];
   const card = p ? cardOfPlayer(r, p.id) : undefined;
-  return p && card ? { playerId: p.id, cardId: card.id, answer: 'accepted', done: false, ok: false, framed: false, text: null } : null;
+  if (!p || !card) return null;
+  // The script's level: an N3 seat alternates N3 and N4 (N3 first), so about half each; an N4 seat gets N4 (+ stretch).
+  const d = ((s.gcDealt ??= {})[p.id] ??= { n4: 0, n3: 0 });
+  const level = p.level === 'n3' && d.n3 <= d.n4 ? 'n3' : 'n4';
+  d[level] += 1;
+  return { playerId: p.id, cardId: card.id, answer: 'accepted', done: false, ok: false, framed: false, text: null, level };
 }
 
 /** The N4 defence, if it is still to be said: only once they've taken it. */
@@ -721,16 +759,47 @@ function galleryFor(s: NarabeteState, r: Round, hard: HardDefence, ctx: ModeCont
   return openGallery(others.map((p) => p.id), lowOthers(hard, ctx), null, !!s.curveball, s.round);
 }
 
-/** The N4 script for a card where it sits now. */
-export function scriptFor(s: NarabeteState, r: Round, cardId: string, ctx: ModeContext): DefenceScript | null {
+/**
+ * The defence script for a card where it sits now: the N4 ので script, or in the Green Car the N3 one when the
+ * defender's turn is N3 (`level`), its two lines aimed at the frames they need most (aimWeight).
+ */
+export function scriptFor(s: NarabeteState, r: Round, cardId: string, ctx: ModeContext, level: 'n4' | 'n3' = r.hard?.cardId === cardId ? (r.hard.level ?? 'n4') : 'n4'): DefenceScript | null {
   const pos = r.line.indexOf(cardId);
   if (pos < 0) return null;
   const before = r.line[pos - 1];
   const name = before ? (ctx.player(cardOf(r, before)?.ownerId ?? '')?.name ?? '') : '';
   const set = r.kind === 'time' ? timeSetOf(r.setId) : undefined;
   const theme = r.kind !== 'time' ? themeOf(r.setId) : undefined;
+  if (theme && level === 'n3') {
+    const owner = cardOf(r, cardId)?.ownerId ?? '';
+    const mine = s.gcSaid?.[owner] ?? {};
+    return n3DefenceScript(theme, pos, r.line.length, name, (frames) => aimWeight(ctx, owner, frames, mine));
+  }
   if (set) return defenceScript({ unit: set.unit }, pos, r.line.length, name);
   if (theme) return defenceScript({ theme }, pos, r.line.length, name);
+  return null;
+}
+
+/** Green Car, an N4 defender: the N3 script as optional stretch. */
+export function stretchFor(s: NarabeteState, r: Round, ctx: ModeContext): DefenceScript | null {
+  const hard = r.hard;
+  if (!ctx.greenCar || !hard || hard.level !== 'n4' || ctx.player(hard.playerId)?.level !== 'n4') return null;
+  return scriptFor(s, r, hard.cardId, ctx, 'n3');
+}
+
+/**
+ * Green Car: the N3 line a defence earned, if any: the script's (or the stretch's) line whose N3 frame was heard, and
+ * the frames to credit (its frames that were heard, ので included when said).
+ */
+export function n3Credit(s: NarabeteState, r: Round, ctx: ModeContext): { line: JpText; frames: string[]; spot: string } | null {
+  const hard = r.hard;
+  if (!hard?.heard?.length) return null;
+  const heard = new Set(hard.heard);
+  for (const script of [hard.level === 'n3' ? scriptFor(s, r, hard.cardId, ctx) : null, stretchFor(s, r, ctx)]) {
+    if (!script?.lineFrames) continue;
+    const i = script.lineFrames.findIndex((fs) => fs.some((f) => f !== 'node' && heard.has(f)));
+    if (i >= 0) return { line: script.lines[i]!, frames: script.lineFrames[i]!.filter((f) => heard.has(f)), spot: script.spot };
+  }
   return null;
 }
 
@@ -1118,7 +1187,13 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
           hard.text = tidyJa(text);
           hard.ok = raw.utterance.via === 'speech' && hasJapanese(text);
           hard.framed = /ので/.test(utteranceReading(raw.utterance)) || /ので/.test(text);
-          hard.read = readScript(scriptFor(s, r, hard.cardId, ctx), utteranceReading(raw.utterance));
+          hard.read = readScript(scriptFor(s, r, hard.cardId, ctx), utteranceReading(raw.utterance)) || readScript(stretchFor(s, r, ctx), utteranceReading(raw.utterance));
+          if (ctx.greenCar) {
+            // The N3 frames come through the path's own matchers; an N3 line counts as framed too (＿ほど ＿は ない
+            // ends the thought, so it says だから, not ので).
+            hard.heard = framesOf({ text, kana: utteranceReading(raw.utterance) || text }, raw.utterance.tokens, { keepHidden: true }).filter((f) => f === 'node' || N3_DEFENCE_FRAMES.has(f));
+            if (hard.heard.some((f) => f !== 'node')) hard.framed = true;
+          }
           hard.kana = utteranceReading(raw.utterance);
           hard.saidAt = ctx.now;
           return MOVE_OK;
@@ -1279,7 +1354,7 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
         defending: !!stand && stand.playerId === me.id && !stand.done,
         hard:
           r.hard && r.hard.playerId === me.id && (r.hard.answer === 'offered' || r.hard.answer === 'accepted') && !r.hard.done && (phase === 'reveal' || phase === 'encore')
-            ? { answer: r.hard.answer, script: stand?.hard ? scriptFor(s, r, r.hard.cardId, ctx) : null }
+            ? { answer: r.hard.answer, script: stand?.hard ? scriptFor(s, r, r.hard.cardId, ctx) : null, stretch: stand?.hard ? stretchFor(s, r, ctx) : null }
             : null,
         gist:
           replay && replay.playerId !== me.id && gistFor(replay, me.level)
