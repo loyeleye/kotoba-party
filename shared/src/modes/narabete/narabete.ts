@@ -13,16 +13,15 @@
 // gets one defence) → score (Nobiko-san flips the cards; neighbouring pairs in order score for everyone).
 // After round 3, one `finale` phase per performer for the story.
 //
-// The N4 hard role, rank and defend (goal 4.11): in a room with N4 players, one of them each round (in
-// turn) also defends their own card's place with ので (「＿ので、これが いちばん さきです。」), in any round,
-// Time Line too. It's offered during the line-up, opt-in: it runs only when they tap Take it before the
-// line-up ends (an offer still open then is 'timeout'). It runs as its own `encore` after the ordinary
-// defence (or instead of it, when the same player would give both). Team points don't change.
+// The N4 hard role, rank and defend (goal 4.11), only in the Green Car (shared/src/greenCar.ts; it moved out
+// of mixed rooms, where its 15 s encore kept beginners waiting): each round one N4+ player (in turn: fewest
+// given, then longest ago) also defends their own card's place with ので (「＿ので、これが いちばん さきです。」),
+// in any round, Time Line too. It isn't offered: it's theirs from the line-up (they can still pass), and it
+// isn't written to the offer log. It runs as its own `encore` after the ordinary defence (or instead of it,
+// when the same player would give both). Team points don't change.
 // The commentary booth: once it lands (said out loud, with ので), one more short `encore` replays it: the TV
 // shows the line with its ので lit and a line of English colour while Nobiko-san says it, and Kana and N5
 // phones show its gist. It fills what's left of the 15 s encore, kept to 5–7 s.
-// Who is offered it: the shared `nextOfferee` (fewest offers, then longest ago; a "not this time" sits the next
-// round out; in a room of 4 or more, nobody gives it two rounds running).
 // Mixed rooms (shared/src/modes/mixedRoom.ts): while the N4 defence is on, everyone else gets a Gallery tile
 // (a reaction; once a game, once the defence has landed, a Kana/N5 player who hasn't reacted gets the curveball
 // instead: "which word did you hear?", ので, +5, and the TV holds ので back until it's answered). The replay is
@@ -34,7 +33,7 @@ import { MAX_ANSWER_LENGTH } from '../../constants.js';
 import { isKana, isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { playerTextAllowed } from '../../moderation.js';
-import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
+import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_CURVEBALL_MS, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import type { Phase, Viewer } from '../../protocol.js';
@@ -244,6 +243,8 @@ export interface NarabeteState {
   phaseAt: number;
   /** Every N4 defence offered so far, and the answer (the step's gate: N4 players accept 60% or more). */
   hardLog: { round: number; playerId: string; answer: OfferAnswer }[];
+  /** The Green Car's N4 defences, given (not offered) every round: who and when, for the rotation. Not offers. */
+  gcDefences?: { round: number; playerId: string }[];
   /** The Gallery's curveball has been asked this game (once a game). */
   curveball?: boolean;
   /** The host stand-in, once it has happened (once a game). */
@@ -594,25 +595,25 @@ function pickDefence(r: Round, ctx: ModeContext): Round['defence'] {
 }
 
 /**
- * The N4 defender this round, by the shared `nextOfferee`: among the room's N4 players with a card said out loud
- * (and not hidden), the one offered fewest times, then longest ago. A "not this time" sits the next round out;
- * in a room of 4 or more, whoever gave it last round gets this one off. None in the room, none offered.
+ * The N4 defender this round. Only in the Green Car (a move-out, design n3-coverage/green-car: its 15 s encore
+ * kept beginners waiting), where it isn't offered: it's given every round, already taken (no offer card), to the
+ * player with a card said out loud (and not hidden) who has given it fewest times this game, then longest ago, then
+ * by seat. Green Car turns stay out of the offer log (`hardLog`), so a mixed room's offer path (the shared
+ * `nextOfferee`) no longer runs; `hardLog`, `hardTally` and `offers` stay for old states and the role-offer report.
  */
 function pickHard(s: NarabeteState, r: Round, ctx: ModeContext): HardDefence | null {
+  if (!ctx.greenCar) return null;
   const here = new Set(ctx.connected().map((p) => p.id));
   const eligible = ctx.players().filter((p) => {
     const c = cardOfPlayer(r, p.id);
     return n4Up(p.level) && c && c.said && !c.hidden && here.has(p.id);
   });
-  const past = s.hardLog.map((x) => ({ playerId: x.playerId, at: x.round, answer: x.answer }));
-  const id = nextOfferee(
-    eligible.map((p) => p.id),
-    past,
-    s.round,
-    here.size,
-  );
-  const c = id ? cardOfPlayer(r, id) : undefined;
-  return id && c ? { playerId: id, cardId: c.id, answer: 'offered', done: false, ok: false, framed: false, text: null } : null;
+  const given = s.gcDefences ?? [];
+  const times = (id: string) => given.filter((g) => g.playerId === id).length;
+  const last = (id: string) => given.reduce((at, g) => (g.playerId === id ? Math.max(at, g.round) : at), -1);
+  const p = [...eligible].sort((a, b) => times(a.id) - times(b.id) || last(a.id) - last(b.id) || a.seat - b.seat)[0];
+  const card = p ? cardOfPlayer(r, p.id) : undefined;
+  return p && card ? { playerId: p.id, cardId: card.id, answer: 'accepted', done: false, ok: false, framed: false, text: null } : null;
 }
 
 /** The N4 defence, if it is still to be said: only once they've taken it. */
@@ -914,7 +915,9 @@ export const narabeteMode: Mode<NarabeteState, NarabeteView> = {
       if (EXPERIMENTS.narabeteFold && r.hard && liveHard(r) && r.defence?.playerId === r.hard.playerId) r.defence = null;
     }
     if (phase === 'score') {
-      if (r.hard) s.hardLog.push({ round: r.index, playerId: r.hard.playerId, answer: r.hard.answer === 'offered' ? 'timeout' : r.hard.answer });
+      // Green Car defences are given, not offered: they rotate by their own list and stay out of the offer log.
+      if (r.hard && ctx.greenCar) (s.gcDefences ??= []).push({ round: r.index, playerId: r.hard.playerId });
+      else if (r.hard) s.hardLog.push({ round: r.index, playerId: r.hard.playerId, answer: r.hard.answer === 'offered' ? 'timeout' : r.hard.answer });
       payFlip(r, ctx);
       payVotes(s, r, ctx);
       if (r.kind === 'story') {
