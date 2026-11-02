@@ -12,11 +12,16 @@
 // しました, ＿ことに なりました) and "If I were…" (もし ＿だったら). A deck is a set of titles plus its own
 // slide frames, ready sentences (the cue cards), question cards and answer frames; the slides are the
 // usual ones. Everyone else keeps the usual titles and lines.
+//
+// Three Green Car decks (N3), only when the room rides in the Green Car: "What happened to me" (goal 3.2, with
+// 3.6's ＿ずに 〜ようと した), "How it's changed" (3.9, with 3.6's ＿ことに して いる) and "If…" (3.5, ＿と したら).
+// There every talk is a deck talk: one N4 deck title and one N3 deck title, aimed (happyokai.ts, greenPair).
 
 import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 import { forLevel, rb, src } from './ruby.js';
 import { n4Up } from '../../level.js';
+import { aimPick } from '../aim.js';
 
 /** What a title or slide is about, for the assistant's "fits the title" choice. */
 export type Tag = 'animal' | 'yokai' | 'food' | 'place' | 'person' | 'thing' | 'home' | 'school' | 'work' | 'love' | 'travel' | 'space' | 'fun';
@@ -36,6 +41,12 @@ export interface Title {
    * words so a town is never said to have become a town) and what you can do there now.
    */
   place?: PlaceTopic;
+  /**
+   * A Green Car deck title's own pieces: for What happened to me, `made` (what the topic made me do, a
+   * させられ clause with 〔word〕 where the slide's word goes) in place of the usual 「〔word〕の 前で 歌を
+   * 歌わされました」; for If… (と したら), `cond`, the title's own clause without もし and と したら.
+   */
+  gc?: { made?: [string, string]; cond?: string };
 }
 
 /** What a place topic was like before: 「静[しず]かでした」 → 「私の 町は 前は 静かでしたが、今では …」. */
@@ -45,13 +56,27 @@ export interface PlaceTopic {
   beforeEn: string;
 }
 
-/** The N4 decks. */
-export type Deck = 'then-now' | 'if';
+/** The N4 decks (Then and now, If I were…) and the Green Car's N3 decks (What happened to me, How it's changed, If…). */
+export type Deck = 'then-now' | 'if' | 'happened' | 'changed' | 'suppose';
 
-export const DECKS: Record<Deck, { name: JpText; frames: readonly string[]; status: ReviewStatus }> = {
-  'then-now': { name: rb('昔[むかし]と 今[いま]', 'Then and now'), frames: ['you-ni-naru', 'koto-ni-suru', 'koto-ni-naru', 'potential'], status: 'draft' },
-  if: { name: rb('もしも…', 'If I were…'), frames: ['tara', 'to-omou'], status: 'draft' },
+/**
+ * Each deck's frames: `frames`, every frame a presenter's own line in the deck can be credited for (the ready
+ * sentence's frames heard in it); `aim`, the ones path goals require, which the Green Car's deal weighs (aim the
+ * deal). `level`: an N3 deck plays only in the Green Car (`greenCar`), where an N4 presenter sees it tagged N3.
+ */
+export const DECKS: Record<Deck, { name: JpText; frames: readonly string[]; aim: readonly string[]; level: 'n4' | 'n3'; greenCar?: true; status: ReviewStatus }> = {
+  'then-now': { name: rb('昔[むかし]と 今[いま]', 'Then and now'), frames: ['you-ni-naru', 'koto-ni-suru', 'koto-ni-naru', 'potential'], aim: ['you-ni-naru', 'koto-ni-suru', 'potential'], level: 'n4', status: 'draft' },
+  if: { name: rb('もしも…', 'If I were…'), frames: ['tara', 'to-omou'], aim: ['tara', 'to-omou'], level: 'n4', status: 'draft' },
+  // Green Car, goal 3.2 (and 3.6's ＿ようと した, ＿ずに): what someone did to me, and what they made me do.
+  happened: { name: rb('ひどい 目[め]に あった 話[はなし]', 'What happened to me'), frames: ['suffering-passive', 'saserareru', 'passive', 'you-to-suru', 'zu-ni'], aim: ['suffering-passive', 'saserareru', 'you-to-suru', 'zu-ni'], level: 'n3', greenCar: true, status: 'draft' },
+  // Green Car, goal 3.9 (and 3.6's ＿ことに して いる): every time, while I can, ever since.
+  changed: { name: rb('あれから', "How it's changed"), frames: ['tabi-ni', 'uchi-ni', 'te-irai', 'buri', 'ni-tsurete', 'koto-ni-shiteiru', 'koto-ni-suru'], aim: ['tabi-ni', 'uchi-ni'], level: 'n3', greenCar: true, status: 'draft' },
+  // Green Car, goal 3.5: supposing (＿と したら).
+  suppose: { name: rb('もしも…と したら', 'If…'), frames: ['to-shitara', 'to-omou'], aim: ['to-shitara'], level: 'n3', greenCar: true, status: 'draft' },
 };
+
+/** The decks a Green Car talk deals from, by level. */
+export const GREEN_DECKS: Readonly<Record<'n4' | 'n3', readonly Deck[]>> = { n4: ['then-now', 'if'], n3: ['happened', 'changed', 'suppose'] };
 
 export type WordKind = 'living' | 'place' | 'food' | 'thing';
 
@@ -107,6 +132,16 @@ const thenNowPlace = (id: string, text: string, en: string, topic: string, topic
   place: { before: before[0], beforeEn: before[1] },
 });
 const ifWere = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[] = ALL) => title(id, text, en, topic, topicEn, tags, audiences, 'if');
+// Green Car decks (N3). What happened to me: the topic is who did it (弟に 泣かれて). If…: the title's own clause.
+const happened = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[] = ALL, made?: [string, string]): Title => ({
+  ...title(id, text, en, topic, topicEn, tags, audiences, 'happened'),
+  ...(made ? { gc: { made } } : {}),
+});
+const changed = (id: string, text: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[] = ALL) => title(id, text, en, topic, topicEn, tags, audiences, 'changed');
+const suppose = (id: string, cond: string, en: string, topic: string, topicEn: string, tags: Tag[], audiences: readonly Audience[] = ALL): Title => ({
+  ...title(id, `もし ${cond}と したら`, en, topic, topicEn, tags, audiences, 'suppose'),
+  gc: { cond },
+});
 
 // ---- titles (Kids titles also play in Family rooms; Family titles also play in Cheeky rooms) ----
 
@@ -188,6 +223,33 @@ export const TITLES: Title[] = [
   ifWere('if-alien', 'もし 私[わたし]が 宇宙人[うちゅうじん]だったら', 'If I were an alien', '宇宙人[うちゅうじん]', 'an alien', ['space', 'person']),
   ifWere('if-rich', 'もし 私[わたし]が お金持[かねも]ちだったら', 'If I were rich', 'お金持[かねも]ち', 'a rich person', ['person', 'fun']),
   ifWere('if-boss', 'もし 私[わたし]が 社長[しゃちょう]だったら', 'If I ran the company', '社長[しゃちょう]', 'the company boss', ['work', 'person'], C),
+  // Green Car deck: What happened to me (＿に 〜られて, ＿させられた, ＿ずに 〜ようと した). The topic is who did it.
+  happened('hp-brother', '弟[おとうと]の いたずら', "My little brother's pranks", '弟[おとうと]', 'my little brother', ['person', 'home']),
+  happened('hp-cat', 'うちの 猫[ねこ]の いたずら', "Our cat's mischief", '猫[ねこ]', 'the cat', ['animal', 'home']),
+  happened('hp-kappa', 'かっぱと 行[い]った 遠足[えんそく]', 'The school outing with the kappa', 'かっぱ', 'the kappa', ['yokai', 'school']),
+  happened('hp-coach', '鬼[おに]コーチの 特訓[とっくん]', "The demon coach's training", 'コーチ', 'the coach', ['school', 'person'], KF, ['〔word〕の 前[まえ]で 腕立[うでた]て伏[ふ]せを 百回[ひゃっかい] させられました', 'made me do a hundred push-ups in front of 〔the〕']),
+  happened('hp-guide', 'ツアーガイドの 田中[たなか]さん', 'Tanaka the tour guide', 'ガイドさん', 'the tour guide', ['travel', 'person'], FC, ['〔word〕の 前[まえ]で 一時間[いちじかん]も 待[ま]たされました', 'kept me waiting an hour in front of 〔the〕']),
+  happened('hp-neighbour', 'となりの おばさん', 'The lady next door', 'となりの おばさん', 'the lady next door', ['person', 'home'], FC, ['〔word〕の 話[はなし]を 二時間[にじかん]も 聞[き]かされました', 'made me listen to two hours about 〔the〕']),
+  happened('hp-bonenkai', '忘年会[ぼうねんかい]の 部長[ぶちょう]', 'The boss at the year-end party', '部長[ぶちょう]', 'the boss', ['work', 'person', 'fun'], C, ['〔word〕の 前[まえ]で ビールを 一気[いっき]に 飲[の]まされました', 'made me down a beer in one in front of 〔the〕']),
+  happened('hp-goukon', '合[ごう]コンの 幹事[かんじ]', 'The group-date organiser', '幹事[かんじ]', 'the organiser', ['love', 'fun'], C, ['〔word〕の 前[まえ]で 自己紹介[じこしょうかい]を 三回[さんかい]も させられました', 'made me introduce myself three times in front of 〔the〕']),
+  // Green Car deck: How it's changed (＿たびに, ＿うちに, ＿て いらい, ＿ぶり, ＿に つれて). The topic is something you see.
+  changed('ch-village', '何年[なんねん]ぶりの おばあちゃんの 村[むら]', "Grandma's village, years later", 'おばあちゃんの 村[むら]', "Grandma's village", ['place', 'travel', 'person']),
+  changed('ch-cat', 'うちの 猫[ねこ]が 大[おお]きく なるまで', 'Until our cat grew up', '猫[ねこ]', 'the cat', ['animal', 'home']),
+  changed('ch-tanuki', 'たぬきが 町[まち]に 来[き]て から', 'Since the tanuki came to town', 'たぬき', 'the tanuki', ['animal', 'yokai']),
+  changed('ch-school', '新[あたら]しい 学校[がっこう]の 一年[いちねん]', 'A year at my new school', '学校[がっこう]', 'the school', ['school', 'place'], KF),
+  changed('ch-hometown', '十年[じゅうねん]ぶりの ふるさと', 'My hometown, ten years on', 'ふるさと', 'my hometown', ['place', 'travel', 'home'], FC),
+  changed('ch-dad', 'パパが ジムに 通[かよ]い始[はじ]めて から', 'Since Dad started at the gym', 'パパ', 'Dad', ['person', 'fun'], FC),
+  changed('ch-ex', '元[もと]カレと 別[わか]れて から', 'Since I broke up with my ex', '元[もと]カレ', 'my ex', ['love', 'person'], C),
+  changed('ch-newhire', '新入社員[しんにゅうしゃいん]の 一年[いちねん]', "A new hire's first year", '新入社員[しんにゅうしゃいん]', 'the new hire', ['work', 'person'], C),
+  // Green Car deck: If… (もし ＿と したら). The title is the clause.
+  suppose('sp-invisible', '透明人間[とうめいにんげん]に なれる', 'If I could turn invisible', '透明人間[とうめいにんげん]', 'an invisible person', ['person', 'fun']),
+  suppose('sp-animals', '動物[どうぶつ]と 話[はな]せる', 'If I could talk to animals', '動物[どうぶつ]', 'animals', ['animal']),
+  suppose('sp-yokai', '妖怪[ようかい]の 友[とも]だちが いる', 'If I had a yōkai friend', '妖怪[ようかい]', 'a yōkai', ['yokai']),
+  suppose('sp-fly', '空[そら]を 飛[と]べる', 'If I could fly', '空[そら]', 'the sky', ['space', 'fun'], KF),
+  suppose('sp-redo', '人生[じんせい]を やり直[なお]せる', 'If I could live my life again', '人生[じんせい]', 'my life', ['person'], FC),
+  suppose('sp-island', '無人島[むじんとう]に 住[す]む', 'If I lived on a desert island', '無人島[むじんとう]', 'a desert island', ['place', 'travel'], FC),
+  suppose('sp-lottery', '宝[たから]くじが 当[あ]たった', 'If I won the lottery', '宝[たから]くじ', 'the lottery', ['fun', 'work'], C),
+  suppose('sp-ex', '元[もと]カノから 電話[でんわ]が 来[き]た', 'If my ex called', '元[もと]カノ', 'my ex', ['love', 'person'], C),
 ];
 
 // ---- slides ----
@@ -349,6 +411,10 @@ export function closingFor(level: Level): JpText {
 export function framesFor(level: Level, s: Slide, deck?: Deck): string[] {
   if (n4Up(level) && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '＿が 〜られるように なりました。', '〜ことに しました。', '〜ことに なりました。', '＿は 〜そうですね。'];
   if (n4Up(level) && deck === 'if') return ['もし ＿だったら、〜たいです。', `もし ＿が ${s.kind === 'living' ? 'いなかったら' : 'なかったら'}、〜。`, 'もし わたしが 〜だったら、〜と おもいます。', '＿は 〜そうですね。'];
+  // The Green Car's N3 decks.
+  if (n4Up(level) && deck === 'happened') return ['〜に 〜られて しまいました。', '〜に 〜させられました。', '〜ずに 〜ようと しました。', '＿は 〜そうですね。'];
+  if (n4Up(level) && deck === 'changed') return ['〜を みる たびに、〜。', 'いまの うちに、〜ことに しました。', '〜て いらい、〜ことに して います。', '〜に つれて、〜ように なりました。', '〜ねんぶりに 〜。'];
+  if (n4Up(level) && deck === 'suppose') return ['もし 〜と したら、〜たいです。', `もし ＿が ${s.kind === 'living' ? 'いなかった' : 'なかった'}と したら、〜。`, 'もし 〜と したら、〜と おもいます。'];
   if (level === 'kana') return ['これは ＿です。', '＿が すきです。', 'すごいですね！'];
   if (level === 'n5') {
     const kind = { living: '＿と あそびました。', place: '＿に いきました。', food: '＿を たべました。', thing: '＿を かいました。' }[s.kind];
@@ -375,13 +441,13 @@ const didOf = (s: Slide): JpText => {
  * Sentences for a picture slide, to read out or tap. Each level gets two; the second bridges the picture
  * back to the talk's topic, which is where the joke is (「これが ドラゴンです！」 over a sock).
  */
-export function readySentences(s: Slide, level: Level, topic: JpText | null, deck?: Deck, place?: PlaceTopic): JpText[] {
+export function readySentences(s: Slide, level: Level, topic: JpText | null, deck?: Deck, place?: PlaceTopic, title?: Title): JpText[] {
   const w = src(s.word);
   const en = s.word.en;
   const t = topic ?? jp('友[とも]だち', 'my friend');
   const did = didOf(s);
   const at = (x: JpText[]) => x.map((j) => forLevel(j, level));
-  if (n4Up(level) && deck) return at(deckSentences(s, t, deck, place));
+  if (n4Up(level) && deck) return at(deckSentences(s, t, deck, place, title));
   if (level === 'kana') return at([jp(`これは ${w}です。`, `This is ${a(en)}.`), jp(`これが ${src(t)}です！`, `THIS is ${t.en}!`)]);
   if (level === 'n5')
     return at([
@@ -404,10 +470,11 @@ const the = (en: string): string => (/^(the |[A-Z])/.test(en) ? en : `the ${en}`
  * A Then and now place topic (私の 町) gets its own (placeSentences), never 「町も 一人で 公園に
  * 行けるように」 or 「町と 引っ越す」.
  */
-function deckSentences(s: Slide, t: JpText, deck: Deck, place?: PlaceTopic): JpText[] {
+function deckSentences(s: Slide, t: JpText, deck: Deck, place?: PlaceTopic, title?: Title): JpText[] {
   const w = src(s.word);
   const en = s.word.en;
   const T = src(t);
+  if (deck === 'happened' || deck === 'changed' || deck === 'suppose') return greenSentences(s, w, en, T, t, deck, title);
   if (deck === 'then-now') {
     if (place) return placeSentences(s, w, en, T, t, place);
     const can = s.event
@@ -443,6 +510,55 @@ function deckSentences(s: Slide, t: JpText, deck: Deck, place?: PlaceTopic): JpT
         }[s.kind],
     jp(`もし ${w}が ${s.kind === 'living' ? 'いなかったら' : 'なかったら'}、${T}は 困[こま]ると 思[おも]います。`, `If there were no ${en}, I think ${t.en} would be in trouble.`),
     jp(`もし この ${w}が ${T}だったら、みんな びっくりするでしょうね。`, `If this ${en} were ${t.en}, everyone would be amazed.`),
+  ];
+}
+
+/**
+ * The Green Car decks' ready sentences, three a slide, each in the deck's N3 frames.
+ * - What happened to me: the topic did it. 〔topic〕に 泣かれて (鳴かれて, all night, for an animal) in front of the
+ *   slide, then what they made me do (the title's own `made`, else 歌を 歌わされました), then trying to get away
+ *   without looking (＿ずに 〜ようと しました).
+ * - How it's changed: every time I see 〔topic〕 I think of the slide (＿たびに), while I still can I've decided to
+ *   photograph it (今の うちに), and ever since I saw it I make a point of getting up early (＿て 以来, ＿ことに
+ *   して います).
+ * - If…: the title's clause with と したら and what I'd want first (verbs by kind, as If I were…), a world without
+ *   the slide (なかったと したら), and the slide talking (話せると したら).
+ */
+function greenSentences(s: Slide, w: string, en: string, T: string, t: JpText, deck: 'happened' | 'changed' | 'suppose', title?: Title): JpText[] {
+  if (deck === 'happened') {
+    const animal = title?.tags.includes('animal');
+    const made = title?.gc?.made;
+    return [
+      animal
+        ? jp(`あの 夜[よる]、${w}の 前[まえ]で ${T}に 一晩中[ひとばんじゅう] 鳴[な]かれて、眠[ねむ]れませんでした。`, `That night ${t.en} cried in front of ${the(en)} all night long, and I couldn't sleep.`)
+        : jp(`あの 日[ひ]、${w}の 前[まえ]で ${T}に 泣[な]かれて、困[こま]りました。`, `That day ${t.en} burst into tears on me in front of ${the(en)}, and I didn't know what to do.`),
+      made
+        ? jp(`それから、${T}に ${made[0].replace('〔word〕', w)}。`, `Then ${t.en} ${made[1].replace('〔the〕', the(en))}.`)
+        : jp(`それから、${T}に ${w}の 前[まえ]で 歌[うた]を 歌[うた]わされました。`, `Then ${t.en} made me sing a song in front of ${the(en)}.`),
+      jp(`それで、${w}を 見[み]ずに 逃[に]げようと しました。`, `So I tried to run off without looking at ${the(en)}.`),
+    ];
+  }
+  if (deck === 'changed') {
+    return [
+      jp(`${T}を 見[み]る たびに、${w}を 思[おも]い出[だ]します。`, `Every time I see ${t.en}, I think of ${the(en)}.`),
+      jp(`今[いま]の うちに、${w}の 写真[しゃしん]を たくさん 撮[と]って おく ことに しました。`, `While I still can, I've decided to take lots of photos of ${the(en)}.`),
+      jp(`${w}を 見[み]て 以来[いらい]、毎朝[まいあさ] 早[はや]く 起[お]きる ことに して います。`, `Ever since I saw ${the(en)}, I've made a point of getting up early every morning.`),
+    ];
+  }
+  const If = `もし ${title?.gc?.cond ?? `${T}に なれる`}と したら、`;
+  const IfEn = title?.jp.en ?? `If I could become ${t.en}`;
+  const first = s.event
+    ? jp(`${If}まず ${w}を 楽[たの]しみたいです。`, `${IfEn}, the first thing I'd want is to enjoy ${en}.`)
+    : {
+        living: jp(`${If}まず ${w}と 遊[あそ]びたいです。`, `${IfEn}, the first thing I'd want is to play with ${a(en)}.`),
+        place: jp(`${If}まず ${w}に 行[い]きたいです。`, `${IfEn}, the first thing I'd want is to go to ${the(en)}.`),
+        food: jp(`${If}まず ${w}を お腹[なか]いっぱい 食[た]べたいです。`, `${IfEn}, the first thing I'd want is to eat my fill of ${en}.`),
+        thing: s.use ? jp(`${If}まず ${w}${s.use.want}です。`, `${IfEn}, the first thing I'd want is to ${s.use.en} ${a(en)}.`) : jp(`${If}まず ${w}を 使[つか]って みたいです。`, `${IfEn}, the first thing I'd want is to try ${a(en)}.`),
+      }[s.kind];
+  return [
+    first,
+    jp(`もし ${w}が ${s.kind === 'living' ? 'いなかった' : 'なかった'}と したら、みんな 困[こま]ると 思[おも]います。`, `Supposing there were no ${en}, I think everyone would be in trouble.`),
+    jp(`もし この ${w}が 話[はな]せると したら、何[なに]を 言[い]うでしょうね。`, `Supposing this ${en} could talk, I wonder what it would say.`),
   ];
 }
 
@@ -528,6 +644,8 @@ export interface Question {
   deck?: Deck;
   /** Only about a topic that can be somewhere or do something, not a place (「私の 町は 今 どこですか」). */
   notPlace?: true;
+  /** A Green Car N3 card's frames (by id), for aiming the deal. */
+  frames?: readonly string[];
 }
 
 export const QUESTIONS: Question[] = [
@@ -549,6 +667,19 @@ export const QUESTIONS: Question[] = [
   { id: 'tn-now', text: '今[いま]は 何[なに]が できるように なりましたか？', en: 'What can be done now that couldn’t before?', level: 'n4', deck: 'then-now' },
   { id: 'if-you', text: 'もし あなたが {word}だったら、どう しますか？', en: 'If you were the {word_en}, what would you do?', level: 'n4', deck: 'if' },
   { id: 'if-could', text: 'もし {topic}に なれたら、何[なに]が したいですか？', en: 'If you could become {topic_en}, what would you want to do?', level: 'n4', deck: 'if' },
+  // Green Car: N3 cards, the question from the floor (an N3 asker's first card, an N4 asker's stretch). The talk's
+  // deck's own first, else one any Green Car talk can take.
+  { id: 'hp-made', text: 'その とき、何[なに]を させられたんですか？', en: 'So what did they make you do?', level: 'n3', deck: 'happened', frames: ['saserareru'] },
+  { id: 'hp-run', text: '逃[に]げようと しなかったんですか？', en: "Didn't you try to get away?", level: 'n3', deck: 'happened', frames: ['you-to-suru'] },
+  { id: 'hp-silent', text: '何[なに]も 言[い]わずに 帰[かえ]ったんですか？', en: 'Did you just go home without saying anything?', level: 'n3', deck: 'happened', frames: ['zu-ni'] },
+  { id: 'ch-while', text: '元気[げんき]な うちに、何[なに]を したいですか？', en: 'While you still have the energy, what do you want to do?', level: 'n3', deck: 'changed', frames: ['uchi-ni'] },
+  { id: 'ch-since', text: 'それ以来[いらい]、何[なに]が 変[か]わりましたか？', en: 'What has changed since then?', level: 'n3', deck: 'changed', frames: ['te-irai'] },
+  { id: 'sp-day', text: 'もし 一日[いちにち]だけ {word}に なれると したら、何[なに]を しますか？', en: 'Supposing you could be the {word_en} for one day, what would you do?', level: 'n3', deck: 'suppose', frames: ['to-shitara'] },
+  { id: 'sp-without', text: 'もし {word}が なかったと したら、どう しますか？', en: 'Supposing there were no {word_en}, what would you do?', level: 'n3', deck: 'suppose', kinds: ['place', 'food', 'thing'], frames: ['to-shitara'] },
+  { id: 'sp-without-living', text: 'もし {word}が いなかったと したら、どう しますか？', en: 'Supposing there were no {word_en}, what would you do?', level: 'n3', deck: 'suppose', kinds: ['living'], frames: ['to-shitara'] },
+  { id: 'gc-every', text: '{word}を 見[み]る たびに、何[なに]を 思[おも]い出[だ]しますか？', en: 'Every time you see the {word_en}, what do you think of?', level: 'n3', frames: ['tabi-ni'] },
+  { id: 'gc-anything', text: 'もし 明日[あした] 何[なん]でも できると したら、何[なに]を しますか？', en: 'Supposing you could do anything tomorrow, what would you do?', level: 'n3', frames: ['to-shitara'] },
+  { id: 'gc-talk', text: 'もし {word}が 話[はな]せると したら、何[なに]を 聞[き]きたいですか？', en: 'Supposing the {word_en} could talk, what would you ask it?', level: 'n3', frames: ['to-shitara'] },
 ];
 
 const LEVELS: Level[] = ['kana', 'n5', 'n4', 'n3'];
@@ -557,14 +688,27 @@ const LEVELS: Level[] = ['kana', 'n5', 'n4', 'n3'];
  * Three question cards for one asker, at the lower of their level and the presenter's (so both can manage
  * the exchange), fitted to the talk's slide word and the room.
  */
-export function questionsFor(asker: Level, word: Slide | null, topic: JpText | null, audience: Audience, random: () => number, deck?: Deck, place?: PlaceTopic): JpText[] {
-  // N3 has no cards of its own yet: an N3 asker gets the N4 ones (an unknown level found no cards at all).
+export function questionsFor(asker: Level, word: Slide | null, topic: JpText | null, audience: Audience, random: () => number, deck?: Deck, place?: PlaceTopic, green?: GreenAsk): QuestionCard[] {
+  // Outside the Green Car an N3 asker gets the N4 cards (an unknown level found no cards at all).
   const level: Level = asker === 'n3' ? 'n4' : asker;
   const w = word?.word ?? jp('それ', 'it');
   const t = topic ?? jp('それ', 'it');
-  const pool = QUESTIONS.filter(
-    (q) => LEVELS.indexOf(q.level) <= LEVELS.indexOf(level) && (!q.kinds || (word && q.kinds.includes(word.kind) && !(q.id === 'price' && word.event))) && (!q.audiences || q.audiences.includes(audience)) && (word || !q.text.includes('{word}')) && (!q.deck || q.deck === deck) && !(place && q.notPlace),
-  );
+  const fits = (q: Question) => (!q.kinds || (word && q.kinds.includes(word.kind) && !(q.id === 'price' && word.event))) && (!q.audiences || q.audiences.includes(audience)) && (word || !q.text.includes('{word}')) && (!q.deck || q.deck === deck) && !(place && q.notPlace);
+  const pool = QUESTIONS.filter((q) => LEVELS.indexOf(q.level) <= LEVELS.indexOf(level) && fits(q));
+  // A Green Car N3 card says so (n3), for the phone's N3 tag.
+  const render = (q: Question): QuestionCard => ({ ...forLevel(jp(fill(q.text, w, t), q.en.replace('{word_en}', w.en).replace('{topic_en}', t.en)), level), ...(q.level === 'n3' ? { n3: true as const } : {}) });
+  if (green && n4Up(asker)) {
+    // The Green Car: one N3 card, the deck's own if it has one, the one whose frames the asker needs most (ties: a
+    // random one). An N3 asker gets it first; an N4 asker gets it as the stretch, after an N4 card.
+    const n3 = QUESTIONS.filter((q) => q.level === 'n3' && fits(q));
+    const own = n3.filter((q) => q.deck && q.deck === deck);
+    const stretch = aimPick(shuffle(own.length ? own : n3.filter((q) => !q.deck), random), (q) => green.aim(q.frames ?? []));
+    const n4 = shuffle(pool.filter((q) => q.level === 'n4' && q.deck === deck && deck !== undefined), random);
+    const rest = shuffle(pool.filter((q) => !n4.includes(q)), random);
+    const others = [...n4, ...rest];
+    const cards = stretch ? (asker === 'n3' ? [stretch, ...others.slice(0, 2)] : [others[0]!, stretch, others[1]!]) : others.slice(0, 3);
+    return cards.filter(Boolean).map(render);
+  }
   // Each player's three: one at their level if there is one (the deck's own, in a deck talk), the rest at random.
   const own = pool.filter((q) => q.level === level && q.deck !== undefined);
   const top = own.length ? own : pool.filter((q) => q.level === level);
@@ -574,7 +718,25 @@ export function questionsFor(asker: Level, word: Slide | null, topic: JpText | n
     const j = Math.floor(random() * (k + 1));
     [rest[k], rest[j]] = [rest[j]!, rest[k]!];
   }
-  return [first, ...rest.slice(0, 2)].map((q) => forLevel(jp(fill(q.text, w, t), q.en.replace('{word_en}', w.en).replace('{topic_en}', t.en)), level));
+  return [first, ...rest.slice(0, 2)].map(render);
+}
+
+/** The Green Car's question deal: how much the asker needs a card's frames (aim the deal, modes/aim.ts). */
+export interface GreenAsk {
+  aim: (frames: readonly string[]) => number;
+}
+
+/** A dealt question card; a Green Car N3 card carries `n3`, so the phone can tag it. */
+export type QuestionCard = JpText & { n3?: true };
+
+/** A Fisher–Yates shuffle (a copy). */
+function shuffle<T>(items: readonly T[], random: () => number): T[] {
+  const out = [...items];
+  for (let k = out.length - 1; k > 0; k--) {
+    const j = Math.floor(random() * (k + 1));
+    [out[k], out[j]] = [out[j]!, out[k]!];
+  }
+  return out;
 }
 
 const fill = (s: string, w: JpText, t: JpText): string => s.replace('{word}', src(w)).replace('{topic}', src(t));
@@ -583,6 +745,9 @@ const fill = (s: string, w: JpText, t: JpText): string => s.replace('{word}', sr
 export function answerFrames(level: Level, deck?: Deck): string[] {
   if (n4Up(level) && deck === 'then-now') return ['まえは 〜でしたが、いまは 〜ように なりました。', '〜から、〜ことに しました。', '〜ことに なりました。', 'それは ひみつです。'];
   if (n4Up(level) && deck === 'if') return ['もし 〜だったら、〜たいです。', '〜と おもいます。', 'いい しつもんですね。じつは、〜んです。', 'それは ひみつです。'];
+  if (n4Up(level) && deck === 'happened') return ['〜に 〜られて、たいへんでした。', 'じつは、〜させられたんです。', '〜ようと しましたが、〜。', 'それは ひみつです。'];
+  if (n4Up(level) && deck === 'changed') return ['〜たびに、〜。', '〜うちに、〜たいです。', '〜て いらい、〜ことに して います。', 'それは ひみつです。'];
+  if (n4Up(level) && deck === 'suppose') return ['もし 〜と したら、〜たいです。', '〜と おもいます。', 'いい しつもんですね。じつは、〜んです。', 'それは ひみつです。'];
   if (level === 'kana') return ['はい、ほんとうです！', 'はい、すきです。', 'いいえ…', 'それは ひみつです！'];
   if (level === 'n5') return ['はい、〜です。', '〜からです。', 'いい しつもんですね。…', 'ノーコメントです。'];
   return ['いい しつもんですね。じつは、〜んです。', '〜と おもいます。', 'いちばん たいへんだったのは 〜ことです。', 'それは ひみつです。'];
