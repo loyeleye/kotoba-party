@@ -123,6 +123,8 @@ export interface Customer {
   leave: JpLine;
   /** Ways this customer bends their order. */
   rule?: 'all-one' | 'kyuuri' | 'cold' | 'inari-three' | 'onigiri-two';
+  /** Comes in only when the game rides in the Green Car (shared/src/greenCar.ts), never to a mixed room. */
+  greenCar?: true;
 }
 
 export const CUSTOMERS: readonly Customer[] = [
@@ -232,7 +234,42 @@ export const CUSTOMERS: readonly Customer[] = [
     perfect: { text: 'たすかった… ありがとう。', en: "You've saved me… thank you." },
     leave: { text: 'おこられる…', en: "I'm going to get told off…" },
   },
+  // ---- Green Car only (design: Kids and Cheeky): each has its own おもてなし question (hardRoles.ts GUEST_ASKS). ----
+  {
+    id: 'tengu',
+    name: 'たんじょうびの てんぐ',
+    nameEn: 'Birthday tengu',
+    emoji: '👺',
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    hello: { text: 'きょうは ぼくの たんじょうび！　とくべつな おべんとう、おねがいします！', en: "It's my birthday today! A special bento, please!" },
+    perfect: { text: 'さいこうの プレゼントだ！', en: 'Best present ever!' },
+    leave: { text: 'もう いいよ… やまに かえる…', en: "Forget it… I'm going back to the mountain…" },
+  },
+  {
+    id: 'shuugaku',
+    name: 'しゅうがくりょこうの こだぬきたち',
+    nameEn: 'Tanuki cubs on a school trip',
+    emoji: '🎒',
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    hello: { text: 'しゅうがくりょこうで きました！　みんなの ぶん、おねがいします！', en: "We're on a school trip! Bentos for everyone, please!" },
+    perfect: { text: 'やったー！　みんなの ぶん、ちゃんと ある！', en: "Yay! There's enough for everyone!" },
+    leave: { text: 'バスが でちゃう！　いかなきゃ！', en: "The bus is leaving! We've got to go!" },
+  },
+  {
+    id: 'yopparai',
+    name: 'のみかいがえりの あかおに',
+    nameEn: 'Red oni after the bar',
+    emoji: '🍶',
+    audiences: ['cheeky'],
+    greenCar: true,
+    hello: { text: 'ひっく… しめの おべんとう、ください…', en: '*hic*… An end-of-the-night bento, please…' },
+    perfect: { text: 'これこれ！　のんだ あとは これだよ〜', en: "That's the one! Nothing beats this after a few drinks~" },
+    leave: { text: 'しゅうでん… のらなきゃ…', en: 'The last train… gotta catch it…' },
+  },
 ];
 
-export const customersFor = (audience: Audience): Customer[] => CUSTOMERS.filter((c) => c.audiences.includes(audience));
+/** The customers a room may see: its Audience's, and the Green Car's own only in the Green Car. */
+export const customersFor = (audience: Audience, greenCar = false): Customer[] => CUSTOMERS.filter((c) => c.audiences.includes(audience) && (greenCar || !c.greenCar));
 export const customerOf = (id: string): Customer | undefined => CUSTOMERS.find((c) => c.id === id);
