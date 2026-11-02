@@ -1,6 +1,7 @@
 // The union of every mode's view, so RoomView.game is typed. Each mode exports its own.
 import type { DebugView } from './debug/debug.js';
 import type { KanaRaidView } from './kanaRaid/kanaRaid.js';
+import type { KatsuyoRaidView } from './kanaRaid/katsuyoRaid.js';
 import type { LastTrainView } from './lastTrain/lastTrain.js';
 import type { OogiriView } from './oogiri/oogiri.js';
 import type { WordGauntletView } from './wordGauntlet/wordGauntlet.js';
@@ -21,5 +22,5 @@ import type { LateView } from './lateAgain/lateAgain.js';
 import type { HotlineView } from './ghostHotline/hotline.js';
 import type { CourtView } from './yokaiCourt/court.js';
 
-export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView, ShodoView, NarabeteView, BentoView, DubView, HajimeView, HappyokaiView, LateView, HotlineView, CourtView };
-export type GameView = OogiriView | LastTrainView | KanaRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | ShodoView | NarabeteView | BentoView | DubView | HajimeView | HappyokaiView | LateView | HotlineView | CourtView | DebugView;
+export type { ConcentrationView, DebugView, KaraokeDuelView, KanaRaidView, KatsuyoRaidView, LastTrainView, OogiriView, PhraseBingoView, WordGauntletView, OnsenView, TouristView, OekakiView, OmiaiView, ShodoView, NarabeteView, BentoView, DubView, HajimeView, HappyokaiView, LateView, HotlineView, CourtView };
+export type GameView = OogiriView | LastTrainView | KanaRaidView | KatsuyoRaidView | WordGauntletView | ConcentrationView | PhraseBingoView | KaraokeDuelView | OnsenView | TouristView | OekakiView | OmiaiView | ShodoView | NarabeteView | BentoView | DubView | HajimeView | HappyokaiView | LateView | HotlineView | CourtView | DebugView;

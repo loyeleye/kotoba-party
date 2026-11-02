@@ -17,6 +17,26 @@ import { gradeInk, inkTipText, readInk, thin, type InkGrade, type InkPoint } fro
 import type { PracticeItem } from '../../progress.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type ContentLibrary, type Mode, type ModeContext, type MoveResult } from '../mode.js';
+import { katsuyoRaidMode } from './katsuyoRaid.js';
+import {
+  along,
+  BASE_POINTS,
+  BOSS_BONUS,
+  bringOn,
+  cueRaid,
+  dealOptions,
+  distinct,
+  escapeRest,
+  greenCarSwitch,
+  isAlive,
+  payBonus,
+  QUIET_DAMAGE,
+  SAY_LATER_MS,
+  SPEAK_BONUS,
+  strike,
+  sweep,
+  type RaidOption,
+} from './raidCore.js';
 import {
   buildDeck,
   chapterDifficulty,
@@ -38,11 +58,9 @@ import {
 
 // ---------- tuning ----------
 
-export const BASE_POINTS = 100;
-/** A quiet (tapped or typed) Shout lands at this share of a spoken one. */
-export const QUIET_DAMAGE = 0.7;
-/** The speaking bonus on top of a hit's points, from the capped pool. */
-export const SPEAK_BONUS = 0.3;
+// The battle engine's numbers live in raidCore.ts, shared with the Green Car raid.
+export { BASE_POINTS, BONUS_CAP, BOSS_BONUS, COMBO_WINDOW_MS, QUIET_DAMAGE, SPEAK_BONUS } from './raidCore.js';
+export type { RaidOption } from './raidCore.js';
 /**
  * Points off for a wrong guess, by the furthest chapter the player has studied: nothing while
  * you're learning the first rows, then a little more as you go (a hit is worth 60–100).
@@ -64,14 +82,9 @@ function dock(p: PlayerRaid, ctx: ModeContext, playerId: string): number {
   return lost;
 }
 
-/** Speaking bonuses are at most this share of a player's points in a wave (design doc). */
-export const BONUS_CAP = 0.3;
-export const COMBO_WINDOW_MS = 4_000;
-export const BOSS_BONUS = 100;
 /** The three spoken waves; Ink Storm, when on, is wave 4 and the boss comes after it. */
 export const WAVES = 3;
 export const INK_WAVE = WAVES + 1;
-const CUE_GAP_MS = 2_500;
 /** Drawings the stage keeps for its ink replay. */
 const STAGE_INKS = 4;
 /** Points per stroke in the stage replay and the phone's "how it's written" replay. */
@@ -130,14 +143,6 @@ const MARK_OPTIONS: Record<string, { right: string; wrong: string[] }> = {
 // ---------- state ----------
 
 export type AttackKind = 'shout' | 'twin' | 'lookalike' | 'echo' | 'pair' | 'draw' | 'piece' | 'blow';
-
-export interface RaidOption {
-  id: string;
-  label: string;
-  sub?: string;
-  /** Echo: the sound this choice plays (its label is just a number). */
-  hear?: string;
-}
 
 export interface Attack {
   id: string;
@@ -427,7 +432,8 @@ function deckOf(ctx: ModeContext): Deck {
 
 // ---------- the mode ----------
 
-export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
+/** Kana Yōkai Raid as it plays outside the Green Car. */
+export const kanaYokaiRaidMode: Mode<RaidState, KanaRaidView> = {
   info: {
     id: 'kana-raid',
     title: 'Kana Yōkai Raid',
@@ -544,12 +550,7 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
     if (phase === 'answer') {
       sweep(s, ctx);
       // Whoever is still on the stage when the wave ends slips away.
-      for (const y of s.horde) {
-        if (y.state !== 'alive') continue;
-        y.state = 'escaped';
-        y.endedAt = Math.min(ctx.now, y.escapeAt);
-        s.escaped.push({ itemId: y.itemId, char: y.char });
-      }
+      escapeRest(s, ctx.now);
       for (const p of Object.values(s.players)) {
         p.attack = null;
         p.coach = null;
@@ -811,6 +812,12 @@ export const kanaRaidMode: Mode<RaidState, KanaRaidView> = {
   },
 };
 
+/**
+ * The menu's Kana Yōkai Raid: the kana raid above, or, when the game starts in a Green Car room, Katsuyō Raid
+ * (katsuyoRaid.ts), its N4/N3 version on the same battle engine (raidCore.ts).
+ */
+export const kanaRaidMode = greenCarSwitch(kanaYokaiRaidMode, katsuyoRaidMode);
+
 // ---------- helpers ----------
 
 function newPlayer(chapters: number[]): PlayerRaid {
@@ -837,11 +844,7 @@ function seatedIds(s: RaidState, ctx: ModeContext): string[] {
   return ctx.players().filter((p) => s.players[p.id]).map((p) => p.id);
 }
 
-function cue(s: RaidState, ctx: ModeContext, event: Parameters<ModeContext['cue']>[0]['event'], force = false, slots?: Record<string, string>): void {
-  if (!force && ctx.now - s.lastCueAt < CUE_GAP_MS) return;
-  s.lastCueAt = ctx.now;
-  ctx.cue({ host: 'fude', event, ...(slots ? { slots } : {}) });
-}
+const cue = cueRaid;
 
 function yokaiView(y: Yokai, aimedBy: Map<string, string[]>): YokaiView {
   const aimers = aimedBy.get(y.id);
@@ -990,41 +993,6 @@ function lookAlikeFor(deck: Deck, k: Kana, pool: readonly Kana[]) {
   });
 }
 
-/**
- * Walks `y` on now, and everything due after it that much sooner, keeping their spacing.
- * The stage keys each yōkai by its spawn time, so a moved one starts its march afresh.
- */
-function bringOn(s: RaidState, y: Yokai, now: number): void {
-  const shift = y.spawnAt - now;
-  if (shift <= 0) return;
-  const from = y.spawnAt;
-  for (const x of s.horde) {
-    if (x.state !== 'alive' || x.spawnAt < from) continue;
-    x.spawnAt -= shift;
-    x.escapeAt -= shift;
-  }
-  s.waveEndsAt = Math.max(...s.horde.map((x) => x.escapeAt)) + 1_000;
-}
-
-/** Escapes whatever reached the gate by now. */
-function sweep(s: RaidState, ctx: ModeContext): void {
-  let fled = 0;
-  for (const y of s.horde) {
-    if (y.state === 'alive' && y.escapeAt <= ctx.now) {
-      y.state = 'escaped';
-      y.endedAt = y.escapeAt;
-      s.escaped.push({ itemId: y.itemId, char: y.char });
-      fled++;
-    }
-  }
-  if (fled) cue(s, ctx, 'raid_escape');
-}
-
-/** How far along its march a yōkai is (0 at the right edge, 1 at the gate): the TV's left-to-right order. */
-const along = (y: Yokai, now: number) => (now - y.spawnAt) / Math.max(1, y.escapeAt - y.spawnAt);
-
-const isAlive = (y: Yokai, now: number) => y.state === 'alive' && y.escapeAt > now;
-
 // ---------- attacks ----------
 
 function assignAttack(s: RaidState, playerId: string, ctx: ModeContext, deck: Deck): void {
@@ -1081,30 +1049,7 @@ function waveAttack(s: RaidState, playerId: string, p: PlayerRaid, ctx: ModeCont
 
 type AttackBase = Pick<Attack, 'id' | 'yokaiId' | 'itemId' | 'retry'>;
 
-/** Shuffles options and gives them opaque ids; returns the id of the right one. */
 const ECHO_LABELS = ['①', '②', '③', '④'];
-
-function dealOptions(right: Omit<RaidOption, 'id'>, wrong: Omit<RaidOption, 'id'>[], ctx: ModeContext): { options: RaidOption[]; answer: string } {
-  const all = shuffled([{ ...right, right: true }, ...wrong.map((w) => ({ ...w, right: false }))], ctx.random);
-  const options = all.map((o, i) => ({ id: String(i), label: o.label, ...(o.sub ? { sub: o.sub } : {}), ...(o.hear ? { hear: o.hear } : {}) }));
-  return { options, answer: String(all.findIndex((o) => o.right)) };
-}
-
-/** Up to `n` distinct picks, preferred ones first. */
-function distinct<T>(preferred: readonly T[], rest: readonly T[], n: number, key: (t: T) => string, exclude: Set<string>, ctx: ModeContext): T[] {
-  const out: T[] = [];
-  const seen = new Set(exclude);
-  for (const list of [shuffled(preferred, ctx.random), shuffled(rest, ctx.random)]) {
-    for (const t of list) {
-      if (out.length >= n) return out;
-      const k = key(t);
-      if (seen.has(k)) continue;
-      seen.add(k);
-      out.push(t);
-    }
-  }
-  return out;
-}
 
 function kanaAttack(base: AttackBase, kind: AttackKind, k: Kana, pool: Kana[], deck: Deck, wave: number, ctx: ModeContext): Attack {
   const sameScript = (script: Kana['script']) => pool.filter((x) => x.script === script);
@@ -1391,17 +1336,6 @@ export function levelScale(difficulty: number, playerTop: number): number {
   return 0.6 + 0.4 * Math.min(1, difficulty / top);
 }
 
-/** Pays a speaking bonus from the capped pool (≤ 30% of the player's points this wave). */
-function payBonus(p: PlayerRaid, ctx: ModeContext, playerId: string, want: number): number {
-  const room = Math.floor((BONUS_CAP * p.wave.base - (1 - BONUS_CAP) * p.wave.bonus) / (1 - BONUS_CAP));
-  const bonus = Math.max(0, Math.min(want, room));
-  if (bonus > 0) {
-    ctx.award(playerId, bonus);
-    p.wave.bonus += bonus;
-  }
-  return bonus;
-}
-
 interface HitInfo {
   char: string;
   hear: string;
@@ -1439,48 +1373,11 @@ function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok:
   const now = ctx.now;
   const scale = levelScale(info.difficulty, p.top);
   const base = Math.round(BASE_POINTS * scale);
-  let damage = how === 'quiet' ? base * QUIET_DAMAGE : base;
-
-  // Team combo: hits from two or more players inside the window.
-  const c = s.combo;
-  if (now - c.lastAt <= COMBO_WINDOW_MS) {
-    c.count += 1;
-    if (!c.players.includes(playerId)) c.players.push(playerId);
-  } else {
-    c.count = 1;
-    c.players = [playerId];
-  }
-  c.lastAt = now;
-  const teamCombo = c.players.length >= 2;
-  if (teamCombo) {
-    damage *= 1 + 0.1 * Math.min(5, c.count - 1);
-    c.best = Math.max(c.best, c.count);
-    p.stats.comboHits += 1;
-    if ([3, 6, 10, 15, 20].includes(c.count)) cue(s, ctx, 'raid_combo', true);
-  }
-  damage = Math.round(damage);
-
-  // Land it: on the target, or splash onto the yōkai closest to the gate.
-  let target = a.yokaiId ? s.horde.find((y) => y.id === a.yokaiId && isAlive(y, now)) : undefined;
-  let splash = false;
-  if (!target) {
-    // Only onto a yōkai on stage: never one that hasn't walked on yet.
-    target = s.horde.filter((y) => isAlive(y, now) && y.spawnAt <= now).sort((x, y) => along(y, now) - along(x, now))[0];
-    splash = !!target;
-  }
-  if (target) {
-    target.hp = Math.max(0, target.hp - damage);
-    target.hitAt = now;
-    if (target.hp === 0) {
-      target.state = 'defeated';
-      target.endedAt = now;
-      target.caughtBy = playerId;
-      p.stats.defeats += 1;
-      s.defeatedTotal += 1;
-      cue(s, ctx, 'raid_hit');
-    }
-  }
-  s.bestCombo = Math.max(s.bestCombo, c.best);
+  // Team combo, then land it: on the target, or splash onto the yōkai closest to the gate (raidCore.ts).
+  const hit = strike(s, playerId, a.yokaiId, how === 'quiet' ? base * QUIET_DAMAGE : base, ctx);
+  const { damage, teamCombo, target, splash } = hit;
+  if (teamCombo) p.stats.comboHits += 1;
+  if (hit.defeated) p.stats.defeats += 1;
 
   ctx.award(playerId, base);
   p.wave.base += base;
@@ -1496,7 +1393,7 @@ function hitOrMiss(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ok:
   }
   phraseOf(how === 'spoken' ? 'said' : a.retry ? 'retry' : 'seen');
   if (target?.caughtBy === playerId && target.endedAt === now) target.caughtPoints = base + bonus;
-  return { attackId: a.id, ok: true, kind: a.kind, char: info.char, hear: info.hear, points: base + bonus, damage, tip: null, combo: teamCombo ? c.count : 0, splash, retryNext: false };
+  return { attackId: a.id, ok: true, kind: a.kind, char: info.char, hear: info.hear, points: base + bonus, damage, tip: null, combo: teamCombo ? hit.combo : 0, splash, retryNext: false };
 }
 
 function pieceAttack(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, ans: Answer, ctx: ModeContext, deck: Deck): MoveResult {
@@ -1654,9 +1551,6 @@ function sayPair(s: RaidState, playerId: string, p: PlayerRaid, a: Attack, pair:
     retryNext: false,
   };
 }
-
-/** How long a recording the phone is still checking can come back for its bonus. */
-const SAY_LATER_MS = 20_000;
 
 /**
  * The player has spoken and the phone is checking the recording: move them on to the next

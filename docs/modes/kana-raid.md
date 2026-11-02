@@ -3,6 +3,7 @@
 The co-op on-ramp, hosted by Fude, the living brush. 1–8 players. Kana-shaped yōkai march
 across the stage towards the gate (⛩) and the team knocks them out from their phones. It
 follows the design doc's "Kana Yōkai Raid (on-ramp)" section.
+In a Green Car room it plays as Katsuyō Raid instead: see [Green Car](#green-car-katsuyō-raid-活用レイド) at the end.
 
 Code:
 
@@ -283,3 +284,133 @@ older than 15 s are not asked for, a look gets up to 12 s (from Cloudflare the v
 - The 60-second placement check in the chapter pick.
 - Catching all 46 basic hiragana should switch a player's Oogiri tiles from romaji to kana; that needs persistence too.
 - Kana mnemonics (`content/src/kana/mnemonics.ts`) aren't in the `ContentLibrary` yet; memory cards could show them once they are.
+
+## Green Car: Katsuyō Raid (活用レイド)
+
+In a Green Car room (`ctx.greenCar`, every seat N4 or N3) the raid plays as **Katsuyō Raid**, from the design in
+the project files (`n3-coverage/green-car/katsuyo-raid.md`, v0.1). Outside the Green Car nothing changes: the
+kana raid above plays exactly as before. Nothing moved out of mixed rooms: the raid has no N4/N3 pieces outside
+the Green Car.
+
+Same raid, same Fude, same march to the gate; the yōkai are **verbs wearing a form badge** (a しかる yōkai with a
+受身 badge). Say the form and it goes down.
+
+Code:
+
+- Engine: `shared/src/modes/kanaRaid/raidCore.ts`, shared by both raids (spawn and escape times, the lazy sweep,
+  team combos, the capped speaking bonus, option dealing) and `greenCarSwitch`, which makes `kanaRaidMode` play
+  `kanaYokaiRaidMode` (kanaRaid.ts) or `katsuyoRaidMode` (katsuyoRaid.ts), decided at setup from
+  `ctx.greenCar`. One mode id (`kana-raid`), two thin modes on one engine (the design's open question 2).
+- Rules: `shared/src/modes/kanaRaid/katsuyoRaid.ts`; checks: `katsuyoCheck.ts`.
+- Content: `content/src/katsuyo/verbs.ts` (12 badges, 57 verbs, every badge form spelled out, no conjugator at
+  runtime) and `content/src/katsuyo/lines.ts` (63 chunks, 24 boss lines). All `draft`.
+- Stage: `stage/src/modes/katsuyoRaid.ts` + `.css`; phone: `controller/src/modes/katsuyoRaid.ts` + `.css`. The
+  kana raid's stage and phone hand a Katsuyō view (`variant: 'katsuyo'`) to these.
+- Bot: `tools/bots/policies/katsuyoRaid.ts` (`katsuyoRaidPolicy()`, and `raidPolicy()`, which the policy index
+  uses for `kana-raid`). Tests: `tests/katsuyoRaid.test.ts`.
+
+### How a game runs
+
+| Phase | Beat | Phone |
+|---|---|---|
+| `intro` | **Badge check** (40 s): the TV shows the 12 badges, N4 left, N3 right, each with an example. | Your badges tonight, ticked from your level: an N3 seat has all 12, an N4 seat its 4 N4 badges with the N3 ones as optional stretch. A seat keeps at least one badge on its own side (N3: one each side). |
+| Wave 1 | **百鬼活用 Form Parade**: the dictionary form on the talisman tag, the badge on a sash. | The verb and badge, big. Say the form (any tense or politeness: のまされる, のまされた, のまされました). Typing works; with the mic off, or on an N3 stretch badge, tap among four sibling forms. Pick a yōkai, as in the kana raid. |
+| Wave 2 | **化け物 Which badge?**: the yōkai wear a conjugated form, the badge hidden behind ？. | 🔊 the form (shown as text with sound off). Tap its badge among four, then say the plain verb back for the bonus. |
+| Wave 3 | **一言 Chunk Strike**: each yōkai carries a picture; a caught one shows Fude's model chunk. | Picture + English gist + badge (+ the verb). Say a short chunk with your own word in the gap. Pass shows Fude's version. |
+| Wave 4 | **墨の嵐 Ink Storm** (on by default; the VIP can switch it off): 2 + players yōkai wearing the English of a word, 50 s walks. | The word's English and 🔊 reading, with the kanji as □ (非□口). Write it from memory, then say the word. N4 seats write N4 kanji; N3 seats alternate N4 and sign kanji. |
+| `finale` | **文妖怪 Sentence Yōkai**: a scroll with the gist and its N3 badge; its pieces are ink blots. The line is never shown whole until it falls. | Break your piece (say the form on that piece's verb), then the **finishing blow**: say the whole line from the gist. The boss falls to the first right line; the scroll glows until everyone has said theirs or passed (one retry each). |
+| `encore` | Caught, escaped, best combo, the haunted list, the model boss line. | Your forms tonight, which badges counted toward the path, the boss line. |
+
+Answers that wait on the speech check (Wave 2's plain verb, Wave 3's chunks, Ink Storm's word) use the kana
+raid's `sayLater`/`settleLater` flow: you move on while the recording is checked.
+
+### Checking
+
+- **Forms** (Waves 1–2, boss pieces): a closed set, `checkForm`: the badge's form of the yōkai's verb in any tense
+  or politeness. A sibling form of the same verb is refused with a named tip ("That's the make / let (使役),
+  のませる. The badge wants made to: のまされる.").
+- **Chunks and the boss line**: `checkLine`: `framesOf` on what was heard, with the server's tokens, must find the
+  badge's frame; the verb must be heard in its badge form; and there must be words beyond the form (two kana for a
+  chunk, four for the boss line). Without tokens (no reader), the passive, causative and suffering-passive frames,
+  whose matchers need the dictionary, are taken from the verb's badge form being heard instead.
+
+### What counts toward stamps
+
+The path's rule is a frame said from memory with the player's own words, so:
+
+- **Waves 1–2 and boss pieces** log a phrasebook card with `frames: []` (`katsuyo:<verb>:<badge>`, and
+  `katsuyo-verb:<verb>` for Wave 2's plain verb): said and from memory for the phrasebook, but it moves no goal.
+- **Wave 3 chunks** count when spoken: the card is what the player said (`katsuyo-chunk:<their kana>`, so a new
+  noun is a new filler), `recall: 'memory'`, no `frames` filter. A miss logs Fude's chunk with `frames: []`.
+- **The boss line** counts for the frames heard in the player's own line (`framesHeard`), as Late Again! credits
+  Pon's line (`katsuyo-boss:<id>`).
+- **Typed or tapped** answers log `read`. **Ink Storm** logs Shodō's ids (`kj-<char>`) from memory when the
+  kanji was written right and the word said, so `kanjiDays` counts 4.10 and 3.12 with no path change.
+
+### Badges and the deal
+
+| Badge | Frame | Goal | Side |
+|---|---|---|---|
+| 受身 passive | `passive` | 4.13 | N4 |
+| 可能 potential | `potential` | 4.4 | N4 |
+| 使役 causative | `causative` | 4.2 | N4 |
+| ＿やすい／にくい | `yasui-nikui` | 4.13 | N4 |
+| 使役受身 made to | `saserareru` | 3.2 | N3 line |
+| 迷惑の受身 suffering passive | `suffering-passive` | 3.2 | N3 line (Wave 3 and boss lines only) |
+| ＿ずに | `zu-ni` | 3.6 | N3 |
+| ＿ようと する | `you-to-suru` | 3.6 | N3 |
+| ＿っぱなし | `ppanashi` | 3.2 | N3 |
+| ＿かける | `kakeru` | 3.2 | N3 |
+| ＿きる | `kiru` | 3.2 | N3 |
+| ＿たて | `tate` | 3.11 | N3 |
+
+**Aim the deal** (mode state only, no account data): each seat keeps counts of its counted says and its deals by
+badge tonight. The horde is built from each seat's deal: an N3 seat alternates N4 and N3 badges (50/50); an N4 seat
+gets N4 badges, with an N3 stretch one deal in four if it ticked any. Within a side, the badge the seat has said
+least tonight comes first (counted says, then deals), so with `SAYS_PER_DAY` at 2 no frame soaks up says while
+another gets none. When a seat picks its next yōkai, the one fewest others are on comes first, then the badge it
+needs most. The boss line's badge is the N3 badge the room has said least.
+
+### Scoring
+
+The raid's numbers (`raidCore.ts`): a form hit is 100, a chunk 150, boss pieces double; the finishing blow 200
+spoken, 100 typed; +100 `BOSS_BONUS` to everyone who broke a piece or said the line. Typed and tapped hits deal 70%
+damage; spoken hits add the 30% speaking bonus from the capped pool; team combos add 10% a step. **Badge scale**
+replaces the level scale: own side 1.0, an N3 stretch for an N4 seat 1.2, an N4 badge for an N3 seat 0.8.
+**Misses:** a spoken (or typed) miss costs nothing; a wrong tap costs 5. One retry. **Badge chains:** three
+different badges inside one team combo flash together on the TV (with a placeholder sting). Wave 3 and the boss
+walk 30% slower when no seat is N3.
+
+### Kids, Family and Cheeky
+
+Verbs are the same for every audience except Kids, which leaves out のむ, ぬすむ, はらう and かう (verbs with
+`audiences`); chunks follow their verb and their own `audiences`. Cheeky changes only the boss lines (a Cheeky room
+gets a Cheeky line where one fits). Every badge is reachable in every audience (a test checks). What a Kids room's
+players type goes through `playerTextAllowed`. The TV never shows a transcript: a caught chunk shows Fude's model
+chunk, the boss shows its model line. Nothing stinging is aimed at a player: whoever did it is a cat, a sister, the
+rain or a boss.
+
+### Decisions made on Ladi's behalf (Katsuyō Raid)
+
+1. The design's open-question recommendations, all taken: chunks count; a shared `raidCore.ts` with two thin modes
+   (one mode id, switched at setup by `ctx.greenCar`, so no new id); wrong taps cost 5; Ink Storm on by default,
+   shortened.
+2. ＿やすい and ＿にくい are one badge; either word passes.
+3. Pieces beyond the line's own (so every player has one) are other drill forms of the line's verbs.
+4. A chunk pass is free and shows Fude's version; it doesn't retry.
+5. The finishing blow gets one retry per player.
+6. Fude's existing raid cues are reused; the named wrong-badge tips are text on the phone, not new host lines yet.
+7. The menu still names the game Kana Yōkai Raid, and the stage header's phase labels are the kana raid's
+   ("Choose your kana" for the badge check): `ModeInfo` is static per mode id. Showing "Katsuyō Raid" there needs a
+   shared change (a Green Car title in `ModeInfo`, or the room asking the mode for it).
+
+### Known gaps
+
+- **Art still needed** (placeholders now: emoji, text sashes and the existing sprites): 12 badge icons (sash style,
+  readable at 3 m), the scroll boss and its piece-break sheet, about 40 small chunk pictures (wallet, rain, a TV
+  left on, fresh bread…), a green clover for the wave banner, and the badge-chain sting (synth).
+- The deck is smaller than the design's target (63 chunks and 24 boss lines in all, not 40 and 24 per audience).
+- `sim:limited` and `sim:yields` don't play the raid yet; the bot policy is ready for them.
+- No vision second look on Ink Storm's kanji (the kana raid's `inkCoachRequests` sees no asks here).
+- Saved phrases are checked for frames without tokens (`phraseFrames`), so a causative chunk (4.2) only counts
+  where the frame matcher finds it from kana alone.

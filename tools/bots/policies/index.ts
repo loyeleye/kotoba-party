@@ -10,6 +10,7 @@ import { ghostHotlinePolicy } from './ghostHotline.js';
 import { hajimemashitePolicy } from './hajimemashite.js';
 import { happyokaiPolicy } from './happyokai.js';
 import { kanaRaidPolicy } from './kanaRaid.js';
+import { raidPolicy } from './katsuyoRaid.js';
 import { karaokeDuelPolicy } from './karaokeDuel.js';
 import { lastTrainPolicy } from './lastTrain.js';
 import { lateAgainPolicy } from './lateAgain.js';
@@ -40,7 +41,8 @@ export function policyMaker(content: () => ContentLibrary, opts: { thinkMs?: num
       case 'last-train':
         return lastTrainPolicy({ content: content(), seed: seat, ...(fast ? { thinkMs: [0, 0] as [number, number] } : {}) });
       case 'kana-raid':
-        return kanaRaidPolicy();
+        // In a Green Car room the raid plays as Katsuyō Raid.
+        return raidPolicy(kanaRaidPolicy());
       case 'word-gauntlet':
         return wordGauntletPolicy(content());
       case 'onsen-murder':
