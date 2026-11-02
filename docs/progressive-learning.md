@@ -50,8 +50,8 @@ learning-science reviews). Four lines of can-do goals, worked back from the N5, 
   (Nov 1) stay off the N3 goals' requirements: 3.5 asks for ＿としたら and 4.13 for the passive alone. Frames that
   exist only as N3 ids, such as らしい and させられる, stay required. The line can't clear while any of its
   stations is still coming soon. An N3 player gets the N4 hard roles, decks and hints in every game until a
-  game has its own N3 script (`n4Up` in shared/src/level.ts), and N3 joins the level picker once the N3 decks
-  are in (`N3_IN_PICKER` in shared/src/protocol.ts).
+  game has its own N3 script (`n4Up` in shared/src/level.ts), and N3 joined the level picker after the Green Car
+  decks (`N3_IN_PICKER` in shared/src/protocol.ts).
   **Spoken N3** (docs/n3-coverage.md, Nov 1): the line stops only at the N3 a player says. Its required frames
   are frozen; new frames are optional and fold under "Also counts" past four. Listening points show under
   "You'll hear these" and never count. A 通過 (passing through) sign below the last station opens a sheet of
@@ -79,8 +79,8 @@ path counts with the server's tokens (docs/n4-n3-frames.md, "For step 2").
 
 Each goal lists its **required frames** (all must be met; one may be "any of", as 5.7's question frame),
 frames that **count too**, and the games where players actually say them. The frame, not the game, is
-what counts: ＿が すきです said in Oogiri counts for 5.5 as much as in Omiai. The level picker keeps New, N5
-and N4; cleared screens use only the line names.
+what counts: ＿が すきです said in Oogiri counts for 5.5 as much as in Omiai. The level picker offers New, N5,
+N4 and N3; cleared screens use only the line names.
 
 A goal whose required frame frames.ts can't find yet shows its frame as *coming soon* (dashed) and can't
 be met or suggested until the matcher lands; `FRAME_TEXT` in path.ts names each with its own label and
@@ -180,8 +180,9 @@ lists, including every misfire the Japanese review found.
 - **Line cleared:** "Local Line cleared!" with the hanko first, the chōchin's 「のりかえです！ つぎの せんへ
   どうぞ。」, the frames, phrases and kanji used, and for the Local, Express and Limited Express Lines a note that
   the JLPT also tests reading and listening (a mock test shows where you stand). Then *Change to the Express
-  Line* / *Stay on the Local Line* at the same weight. Until N3 is in the level picker, the Express card offers
-  no move: the chōchin says 「とっきゅうの ホームは ただいま こうじちゅうです。」 and there's a single OK. The
+  Line* / *Stay on the Local Line* at the same weight. The Express card offers *Change to the Limited
+  Express Line* / *Stay on the Express Line* (if N3 is ever taken out of the picker, it falls back to the chōchin's
+  「とっきゅうの ホームは ただいま こうじちゅうです。」 and a single OK). The
   Limited Express Line is the end of the line: 「しゅうてん、 しゅうてんです。 ごじょうしゃ ありがとう ございました。」
   ("Last stop. Thanks for riding.").
   Shown once per line on that phone, below Start or on the recap; it never changes the level by itself.

@@ -158,7 +158,7 @@ body[data-mode] .timer { color: var(--on-accent); }
 
 /* Your level: one segmented row, the chosen level's hint under it. */
 .levels { display: grid; gap: 6px; }
-.seg { display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; gap: 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; gap: 4px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
 .seg-btn { font-size: 18px; font-weight: 800; border: 0; border-radius: 8px; background: transparent; color: var(--muted); }
 .seg-btn.on { background: var(--accent); color: var(--on-accent); box-shadow: inset 0 -3px 0 var(--outline); }
 .seg-btn:focus-visible { outline: 3px solid var(--warn); outline-offset: 1px; }
