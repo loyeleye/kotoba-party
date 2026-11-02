@@ -15,6 +15,8 @@ import { canVoice, hearButton as voiceButton, say } from '../components/voice.js
 import { waiting } from '../components/ui.js';
 import type { PhoneContext, PhoneMode } from './types.js';
 import { account } from '../account.js';
+import type { KatsuyoRaidView } from '../../../shared/src/modes/kanaRaid/katsuyoRaid.js';
+import { katsuyoRaidPhone } from './katsuyoRaid.js';
 
 // ---------- speech synthesis ----------
 
@@ -44,7 +46,7 @@ const PROMPTS: Record<AttackView['kind'], string> = {
   blow: 'Finishing blow: read the whole word together!',
 };
 
-export const kanaRaidPhone: PhoneMode<KanaRaidView> = {
+const kanaOnlyPhone: PhoneMode<KanaRaidView> = {
   key: (view, game) => {
     const me = game.me;
     return [
@@ -94,6 +96,13 @@ export const kanaRaidPhone: PhoneMode<KanaRaidView> = {
         return waiting('Look at the stage!');
     }
   },
+};
+
+/** The raid's phone: the kana raid, or Katsuyō Raid when the game rides in the Green Car. */
+const isKatsuyo = (game: KanaRaidView | KatsuyoRaidView): game is KatsuyoRaidView => 'variant' in game && game.variant === 'katsuyo';
+export const kanaRaidPhone: PhoneMode<KanaRaidView | KatsuyoRaidView> = {
+  key: (view, game, playerId) => (isKatsuyo(game) ? katsuyoRaidPhone.key(view, game, playerId) : kanaOnlyPhone.key(view, game, playerId)),
+  render: (ctx) => (isKatsuyo(ctx.game) ? katsuyoRaidPhone.render(ctx as PhoneContext<KatsuyoRaidView>) : kanaOnlyPhone.render(ctx as PhoneContext<KanaRaidView>)),
 };
 
 function chapterPick({ game, send, isVip }: PhoneContext<KanaRaidView>): HTMLElement {
