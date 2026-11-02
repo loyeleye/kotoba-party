@@ -385,6 +385,8 @@ function finCardsFor(ctx: Ctx): HTMLElement {
         'button',
         { type: 'button', class: `option wg-fin ${mine.fin === f.id ? 'picked' : ''}`, lang: 'ja', onclick: () => void ctx.send({ kind: 'fin', fin: f.id }) },
         h('strong', {}, level === 'kana' ? f.tile : f.kana),
+        // A Green Car frame fin: N3, a stretch for an N4 player.
+        f.n3 ? h('small', { class: 'wg-fin-n3', lang: 'en' }, ' N3') : null,
         level === 'kana' ? h('small', {}, ` ${toRomaji(f.tile)}`) : null,
         h('small', { class: 'wg-fin-en' }, f.en),
       ),

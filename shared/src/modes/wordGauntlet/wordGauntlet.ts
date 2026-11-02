@@ -5,8 +5,8 @@
 //  2. Lost in Translation (telephone, double points): an N5 sentence passes around the room,
 //     Japanese → English → Japanese …, each player seeing only the step before theirs.
 //     The drift is revealed and everyone votes for their favourite step.
-//  2b. The rumour round (うわさの でんごんゲーム, N4 and up): in a room with an N4 player, Nobiko-san takes
-//     round 2. She whispers a rumour about a studio yōkai to one phone; it goes round the room, each
+//  2b. The rumour round (うわさの でんごんゲーム, N4 and up): in the Green Car (everyone N4+), Nobiko-san takes
+//     round 2, and every hand of fins has an N3 frame fin (＿らしい, ＿とか いってた). She whispers a rumour about a studio yōkai to one phone; it goes round the room, each
 //     relay keeping who, where and what and adding one fin (うわさに おひれが つく), said in a reported-speech
 //     frame. No player's voice leaves their phone: the next phone hears the words in Nobiko-san's voice.
 //  3. Shiritori Showdown: a spoken word chain with a shrinking timer. ん knocks you out;
@@ -44,7 +44,9 @@ import {
   finKept,
   keptParts,
   MAX_FINS,
+  RUMOUR_FRAME_FINS,
   RUMOUR_FRAMES,
+  rumourFrames,
   rumourFin,
   rumourFins,
   rumourFrameOf,
@@ -221,6 +223,8 @@ export interface Rumour {
   frameStart: number;
   votes: Record<string, number>;
   points: Record<string, number> | null;
+  /** Told in the Green Car: N3 frame fins in every hand, and ＿とか いってた in the hint rotation. */
+  greenCar?: boolean;
 }
 
 export interface TelPrev {
@@ -327,7 +331,7 @@ export interface WordGauntletView {
   round: number;
   /** Points per player from this mode so far (public, like the scoreboard). */
   earned: Record<string, number>;
-  /** What round 2 will be with the room as it is: the rumour round needs an N4 player. */
+  /** What round 2 will be with the room as it is: the rumour round plays only in the Green Car. */
   round2: 'telephone' | 'rumour';
   fake: {
     index: number;
@@ -388,7 +392,8 @@ export interface WordGauntletView {
       level: Level;
       /** Only while it's this player's relay: what they heard. */
       heard: RumourHeard | null;
-      fins: { id: string; kana: string; en: string; tile: string }[];
+      /** `n3`: a Green Car frame fin, shown with the N3 tag (optional stretch for an N4 player). */
+      fins: { id: string; kana: string; en: string; tile: string; n3?: boolean }[];
       fin: string | null;
       ownFin: string | null;
       hint: number;
@@ -1079,15 +1084,23 @@ function scoreTelephone(s: WordGauntletState, ctx: ModeContext): void {
 
 // ---- The rumour round (うわさの でんごんゲーム) ----
 
-/** The rumour round takes round 2 when anyone in the room plays at N4 (it's built on N4 frames). */
+/**
+ * The rumour round takes round 2 only in the Green Car (shared/src/greenCar.ts), where it always does. It used to
+ * take it whenever anyone was N4, which changed the whole room's round for one player: a mixed room plays Lost in
+ * Translation (a Green Car move-out, design: n3-coverage/green-car/design.md).
+ */
 export function rumourRoom(ctx: ModeContext): boolean {
-  return ctx.players().some((p) => n4Up(p.level));
+  return ctx.greenCar === true;
 }
 
-/** A hand of fin cards with at least one big, visual fin in it. */
-function dealFins(deck: RumourFin[], at: { next: number }): string[] {
+/**
+ * A hand of fin cards with at least one big, visual fin in it. In the Green Car the last card is an N3 frame fin
+ * (＿らしい or ＿とか いってた), taking turns round the table from a random start so the round hears both. That is the
+ * round's "aim the deal": each player relays once a game, so there is no count of their own to aim at.
+ */
+function dealFins(deck: RumourFin[], at: { next: number }, frameFin?: RumourFin): string[] {
   const hand: string[] = [];
-  const want = Math.min(RUMOUR_FINS_OFFERED, deck.length);
+  const want = Math.min(RUMOUR_FINS_OFFERED - (frameFin ? 1 : 0), deck.length);
   let guard = 0;
   while (hand.length < want && guard++ < deck.length * 3) {
     const f = deck[at.next++ % deck.length]!;
@@ -1096,6 +1109,7 @@ function dealFins(deck: RumourFin[], at: { next: number }): string[] {
     if (hand.length === want - 1 && !f.big && !hand.some((id) => rumourFin(id)?.big) && deck.some((x) => x.big && !hand.includes(x.id))) continue;
     hand.push(f.id);
   }
+  if (frameFin) hand.push(frameFin.id);
   return hand;
 }
 
@@ -1116,12 +1130,14 @@ function startRumour(s: WordGauntletState, ctx: ModeContext): void {
   const order = [...seated.slice(startAt), ...seated.slice(0, startAt)];
   const deck = shuffled(rumourFins(audience), () => ctx.random());
   const at = { next: 0 };
-  const steps: RumourStep[] = order.map((p) => ({
+  const greenCar = ctx.greenCar === true;
+  const frameAt = greenCar ? Math.floor(ctx.random() * RUMOUR_FRAME_FINS.length) : 0;
+  const steps: RumourStep[] = order.map((p, i) => ({
     playerId: p.id,
     level: p.level,
     hintFrame: null,
     heardFrame: null,
-    offered: dealFins(deck, at),
+    offered: dealFins(deck, at, greenCar ? RUMOUR_FRAME_FINS[(frameAt + i) % RUMOUR_FRAME_FINS.length] : undefined),
     fin: null,
     ownFin: null,
     text: null,
@@ -1136,7 +1152,7 @@ function startRumour(s: WordGauntletState, ctx: ModeContext): void {
     standIn: false,
     skipped: false,
   }));
-  s.rumour = { seed, fins: [], steps, current: -1, revealAt: 0, readAt: [], frameStart: Math.floor(ctx.random() * RUMOUR_FRAMES.length), votes: {}, points: null };
+  s.rumour = { seed, fins: [], steps, current: -1, revealAt: 0, readAt: [], frameStart: Math.floor(ctx.random() * rumourFrames(greenCar).length), votes: {}, points: null, greenCar };
   ctx.cue({ host: 'nobiko', event: 'rumour_intro' });
 }
 
@@ -1189,9 +1205,11 @@ function tackOn(r: Rumour, step: RumourStep, index: number): { text: string; kan
   const heard = rumourHeard(r, index);
   const fin = stepFin(step, index);
   const strip = (x: string) => x.replace(/[。！？!?\s]+$/u, '');
-  const tail = fin ? ` しかも、${fin.kana}！` : '';
-  step.finSaid = !!fin;
-  if (fin) r.fins = addFin(r.fins, fin);
+  // A frame fin (Green Car) is a way of saying it, not a word to tack on: the stand-in passes on what was heard.
+  const words = fin && fin.kind !== 'frame' ? fin : null;
+  const tail = words ? ` しかも、${words.kana}！` : '';
+  step.finSaid = !!words;
+  if (words) r.fins = addFin(r.fins, words);
   return { text: `${strip(heard.text)}。${tail}`.trim(), kana: `${strip(heard.kana)}。${tail}`.trim() };
 }
 
@@ -1324,9 +1342,12 @@ function moveRumourHint(s: WordGauntletState, phase: Phase, playerId: string): M
     const heard = rumourHeard(r, r.current);
     const heardFrame = rumourFrameOf({ text: heard.text, reading: heard.kana });
     const n4Before = r.steps.slice(0, r.current).filter((st) => n4Up(st.level)).length;
-    for (let k = 0; k < RUMOUR_FRAMES.length; k++) {
-      const f = RUMOUR_FRAMES[(r.frameStart + n4Before + k) % RUMOUR_FRAMES.length]!.id;
-      if (f !== heardFrame) {
+    const frames = rumourFrames(r.greenCar === true);
+    // A frame fin (Green Car) is the frame to try.
+    const picked = step.fin ? rumourFin(step.fin) : undefined;
+    for (let k = 0; k < frames.length; k++) {
+      const f = picked?.frame ?? frames[(r.frameStart + n4Before + k) % frames.length]!.id;
+      if (f !== heardFrame || picked?.frame) {
         step.hintFrame = f;
         break;
       }
@@ -1464,8 +1485,9 @@ function rumourResult(r: Rumour, step: RumourStep, index: number): NonNullable<N
   const missed = k && step.level !== 'kana' && !step.standIn ? [!k.who ? r.seed.who.kana : null, !k.where ? r.seed.where.kana : null, !k.what ? r.seed.what.kana : null].filter((x): x is string => !!x) : [];
   let tryNext: { ja: string; en: string; line: JpText } | null = null;
   if (n4Up(step.level) && !step.standIn && step.text !== null && (!step.frame || step.echoed)) {
-    const f = RUMOUR_FRAMES.find((x) => x.id !== step.heardFrame && x.id !== step.frame) ?? RUMOUR_FRAMES[0]!;
-    tryNext = { ja: f.ja, en: f.en, line: rumourLine(r.seed, fin ? [fin] : [], f.id) };
+    const frames = rumourFrames(r.greenCar === true);
+    const f = frames.find((x) => x.id !== step.heardFrame && x.id !== step.frame) ?? frames[0]!;
+    tryNext = { ja: f.ja, en: f.en, line: rumourLine(r.seed, fin && fin.kind !== 'frame' ? [fin] : [], f.id) };
   }
   const counted = step.level !== 'kana' && !step.standIn && step.via === 'speech' && !step.peeked && step.hint < (n4Up(step.level) ? 2 : 1) && allKept(step.kept) && !step.echoed;
   return { kept: k, missed, frame: frameLabel(step.frame), echoed: step.echoed, fin: fin ? { kana: fin.kana, en: fin.en } : null, finSaid: step.finSaid, standIn: step.standIn, counted, tryNext };
@@ -1489,7 +1511,7 @@ function rumourView(s: WordGauntletState, phase: Phase, me: string | null, ctx: 
       step: myIndex,
       level: step.level,
       heard: heard ? { ...heard, romaji: step.level === 'kana' ? toRomaji(heard.kana) : null } : null,
-      fins: step.offered.map((id) => rumourFin(id)).filter((f): f is RumourFin => !!f).map((f) => ({ id: f.id, kana: f.kana, en: f.en, tile: f.tile })),
+      fins: step.offered.map((id) => rumourFin(id)).filter((f): f is RumourFin => !!f).map((f) => ({ id: f.id, kana: f.kana, en: f.en, tile: f.tile, ...(f.level === 'n3' ? { n3: true } : {}) })),
       fin: step.fin,
       ownFin: step.ownFin,
       hint: step.hint,
