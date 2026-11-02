@@ -20,6 +20,15 @@
 // asks (prompt: ごしょうかい いたします, おききに なります …) and the closing as the score comes up
 // (つぎの しつもんに まいります, おかえりに なります). Said or typed from the phone's script; "not this
 // time" leaves the lines to Nobiko-san. Everyone's answers, votes and points are unchanged.
+//
+// The Green Car (ctx.greenCar: everyone N4 or N3; shared/src/greenCar.ts) has the go-between: it is a move-out, so a
+// mixed room has no go-between and no wait for one (Nobiko-san keeps her lines). In the Green Car it is always on:
+// every round the seat goes to whoever has held it least (then seat order), with no offer card and nothing in the
+// offer log (seatNakodo). The lines come in N4 and N3 forms (cards.ts NAKODO_N3: ＿させて いただきます, ＿で
+// ございます); an N3 go-between says N3 lines about half the rounds, an N4 one gets N4 lines with the N3 form as an
+// optional stretch, and either form is accepted (goLines). Aim the deal: the opening takes the N3 form whose frame
+// the player has said least tonight (gc.said), the closing the other. Every question is asked in keigo (the TV and
+// Nobiko-san read the N4 ask), the tiles add で ございます, and a polite です answer's tip steps up to でございます.
 
 import { atLevel, type JpText, type Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH, POINTS_PER_VOTE } from '../../constants.js';
@@ -28,10 +37,10 @@ import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { saidPhrase } from '../phraseBingo/check.js';
-import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, keigoPair, NAKODO_KEYS, nakodoLines, OPENERS, withName, type CharacterCard, type KeigoPair, type NakodoLine, type OmiaiQuestion } from './cards.js';
+import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, keigoPair, NAKODO_KEYS, nakodoLines, nakodoN3Lines, OPENERS, withName, type CharacterCard, type KeigoPair, type NakodoLine, type OmiaiQuestion } from './cards.js';
 import { analysisText, checkManners, type CasualHit, type MannersResult, type Register } from './manners.js';
 import { playerTextAllowed } from '../../moderation.js';
-import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
+import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { LEVEL_RANK, n4Up } from '../../level.js';
@@ -184,6 +193,8 @@ export interface NakodoTry {
   /** The manners meter of what they said (rule-based, manners.ts). */
   meter: number | null;
   points: number;
+  /** Green Car: the other form (`goLines` alt) was the one said. */
+  alt?: true;
 }
 
 /** This round's go-between (N4 hard role). */
@@ -193,6 +204,8 @@ export interface GoBetween {
   /** offered: not answered yet; accepted: tapped Take it or tried a line; timeout: the opening passed unanswered. */
   status: 'offered' | 'accepted' | 'declined' | 'timeout';
   lines: Record<NakodoSlot, NakodoTry>;
+  /** Green Car: whether this round's lines are the N3 forms, and which N3 form each slot takes (0 させて いただきます, 1 で ございます). */
+  gc?: { n3: boolean; variant: Record<NakodoSlot, 0 | 1> };
 }
 
 export interface PlayerStats {
@@ -223,6 +236,13 @@ export interface OmiaiState {
   curveballUsed?: boolean;
   /** The once-a-game host stand-in has been played. */
   standInUsed?: boolean;
+  /** The Green Car (ctx.greenCar at setup): the go-between every round, keigo questions, N3 forms. */
+  greenCar?: true;
+  /**
+   * Green Car bookkeeping, per player: `held`, rounds as go-between (the seat goes to the fewest); `mix`, rounds
+   * with N3 and N4 lines (an N3 go-between alternates); `said`, go-between frames said right tonight (the aim).
+   */
+  gc?: { held: Record<string, number>; mix: Record<string, { n3: number; n4: number }>; said: Record<string, Record<string, number>> };
 }
 
 // ---- view ----
@@ -361,6 +381,10 @@ export interface NakodoMe {
   /** Both lines, so the offer can show what's coming. */
   open: JpText;
   close: JpText;
+  /** Green Car: this phase's line is an N3 form (shown with an N3 tag). */
+  n3?: true;
+  /** Green Car: the N3 form of this phase's line, an optional stretch that is accepted too (N4 lines only). */
+  stretch?: JpText | null;
 }
 
 export type OmiaiMove =
@@ -396,16 +420,16 @@ export function roundKind(round: number, total: number): 'intro' | 'question' | 
   return round <= 1 ? 'intro' : round >= total ? 'appeal' : 'question';
 }
 
-/** The guest's question at a player's level (Kana players see the N5 one with romaji). */
-function questionView(q: OmiaiQuestion, level: Level | 'stage'): QuestionView {
-  const jp = level !== 'stage' && n4Up(level) ? q.ask.n4 : q.ask.n5;
+/** The guest's question at a player's level (Kana players see the N5 one with romaji). The Green Car asks in keigo on the TV too. */
+function questionView(q: OmiaiQuestion, level: Level | 'stage', greenCar = false): QuestionView {
+  const jp = greenCar || (level !== 'stage' && n4Up(level)) ? q.ask.n4 : q.ask.n5;
   return { text: jp.text, kana: jp.kana, en: jp.en, ...(level === 'kana' ? { romaji: toRomaji(jp.kana) } : {}) };
 }
 
 const atLeast = (level: Level, min: Level | undefined) => !min || LEVEL_RANK[level] >= LEVEL_RANK[min];
 
 /** Deals one player's answer tiles: polite and casual choices mixed together, shuffled within each part. */
-export function dealTiles(q: OmiaiQuestion, kind: 'intro' | 'question' | 'appeal', player: ModePlayer, random: () => number): Tile[] {
+export function dealTiles(q: OmiaiQuestion, kind: 'intro' | 'question' | 'appeal', player: ModePlayer, random: () => number, greenCar = false): Tile[] {
   const kana = player.level === 'kana';
   const out: Tile[] = [];
   const add = (role: Tile['role'], items: { jp: JpText; casual: boolean }[]) => {
@@ -418,11 +442,16 @@ export function dealTiles(q: OmiaiQuestion, kind: 'intro' | 'question' | 'appeal
   add('fill', fills.slice(0, kana ? 3 : 4).map((jp) => ({ jp, casual: false })));
   add('ending', [
     ...q.endings.polite.filter((e) => atLeast(player.level, e.minLevel)).map((e) => ({ jp: e.jp, casual: false })),
+    // The Green Car: です's N3 service form beside it.
+    ...(greenCar && q.endings.polite.some((e) => e.jp.kana === 'です。') ? [{ jp: GOZAIMASU_TILE, casual: false }] : []),
     ...q.endings.casual.slice(0, kana ? 1 : 2).map((e) => ({ jp: e.jp, casual: true })),
   ]);
   if (kind !== 'question') add('closer', [...CLOSERS.polite.map((jp) => ({ jp, casual: false })), ...CLOSERS.casual.map((jp) => ({ jp, casual: true }))]);
   return out;
 }
+
+/** The Green Car's extra ending tile (N3 service form). */
+export const GOZAIMASU_TILE: JpText = { text: 'で ございます。', kana: 'で ございます。', en: '(extra-polite “is”, N3)' };
 
 /** Joins tiles into an answer: a lead is followed by a space, everything else attaches. */
 export function joinTiles(tiles: readonly Tile[]): string {
@@ -466,7 +495,7 @@ const GOOD_LABELS: Record<string, string> = {
 };
 
 /** Works out the private tip: the rule-made polite version, a keigo step up, or the stock answer. */
-export function tipFor(m: MannersResult, u: Utterance | string, q: OmiaiQuestion, level: Level, name: string, english: boolean): Tip {
+export function tipFor(m: MannersResult, u: Utterance | string, q: OmiaiQuestion, level: Level, name: string, english: boolean, greenCar = false): Tip {
   const example = withName(atLevel(q.example, level), name);
   const stock: Tip = { kind: 'stock', target: { text: example.text, kana: example.kana }, note: english ? 'Try it in Japanese: here is a polite answer.' : 'Here is one polite way to answer.', example, next: null };
   if (english) return stock;
@@ -477,6 +506,15 @@ export function tipFor(m: MannersResult, u: Utterance | string, q: OmiaiQuestion
   }
   const polite = m.register === 'polite' || m.register === 'keigo';
   if (!polite) return stock;
+  // The Green Car: a polite answer ending in です steps up to its N3 service form, でございます.
+  if (greenCar && !m.upgrade && m.register === 'polite') {
+    // Kana answers only, kept as said (word spaces and all), so the encore can check it by sound.
+    const said = (typeof u === 'string' ? u : u.text).normalize('NFKC').trim();
+    if (isKanaOnly(said) && /です[。！!]?$/.test(said) && !said.includes('ございま')) {
+      const up = said.replace(/です([。！!]?)$/, 'でございます$1');
+      return { kind: 'upgrade', target: { text: up, kana: up }, note: 'でございます is です at its most polite (N3): how a matchmaker says it.', example, next: null };
+    }
+  }
   if (m.upgrade && n4Up(level)) return { kind: 'upgrade', target: { text: m.upgrade.text, kana: m.upgrade.kana }, note: m.upgrade.note, example, next: null };
   const own = analysisText(u);
   const said = typeof u === 'string' ? u : u.text;
@@ -498,7 +536,7 @@ function startRound(s: OmiaiState, ctx: ModeContext): void {
   const question = questionFor(card, s.round, s.totalRounds);
   const kind = roundKind(s.round, s.totalRounds);
   const slots: Record<string, Slot> = {};
-  for (const p of ctx.players()) slots[p.id] = { openedAt: ctx.now, tilesShown: p.level === 'kana', tiles: dealTiles(question, kind, p, () => ctx.random()) };
+  for (const p of ctx.players()) slots[p.id] = { openedAt: ctx.now, tilesShown: p.level === 'kana', tiles: dealTiles(question, kind, p, () => ctx.random(), !!s.greenCar) };
   s.current = { index: s.round, question, slots, answers: [], order: [], votes: {}, encores: {}, result: null };
 }
 
@@ -550,7 +588,7 @@ function cueQuestion(s: OmiaiState, ctx: ModeContext, afterMs = 0): void {
   const r = s.current!;
   if (r.cuedAt !== undefined) return;
   r.cuedAt = ctx.now + afterMs;
-  const q = r.question.ask.n5;
+  const q = askOf(s, r.question);
   ctx.cue({ host: 'nobiko', event: 'prompt_read', prompt: { text: q.text, kana: q.kana, en: q.en }, ...(afterMs ? { atMs: afterMs } : {}) });
 }
 
@@ -652,37 +690,61 @@ function rankHearts(s: OmiaiState, ctx: ModeContext): { playerId: string; hearts
 
 const blankTry = (): NakodoTry => ({ tries: 0, ok: false, via: null, heard: '', meter: null, points: 0 });
 
-/** Rooms this big or bigger rest a lone N4 player after a round as go-between (see offerNakodo). */
-export const SPOTLIGHT_ROOM = 4;
+/** The question as the room hears it: in keigo in the Green Car, else the N5 ask. */
+const askOf = (s: OmiaiState, q: OmiaiQuestion): JpText => (s.greenCar ? q.ask.n4 : q.ask.n5);
 
 /**
- * Offers the round's go-between lines to an N4 player by the shared rotation (hardRoleLog.ts nextOfferee):
- * fewest offers first, then longest ago; a "not this time" sits the next round out; in a room of SPOTLIGHT_ROOM
- * or more nobody is go-between two rounds running. Nobody at N4: Nobiko-san keeps them.
+ * The Green Car's go-between, every round, with no offer: the connected player who has held the seat fewest rounds
+ * (then seat order) takes it, already accepted. An N3 player's lines are the N3 forms when they have had fewer N3
+ * rounds than N4 (N3 first), so about half; anyone else's are N4 with the N3 form as stretch. The opening takes the
+ * N3 form whose frame they have said least tonight (ties: させて いただきます), the closing the other.
+ * (Mixed rooms have no go-between: a move-out.)
  */
-function offerNakodo(s: OmiaiState, ctx: ModeContext): void {
+function seatNakodo(s: OmiaiState, ctx: ModeContext): void {
   s.nakodo = null;
-  const n4 = ctx
+  const gc = (s.gc ??= { held: {}, mix: {}, said: {} });
+  const p = ctx
     .players()
-    .filter((p) => n4Up(p.level) && p.connected)
-    .sort((a, b) => a.seat - b.seat);
-  const past = (s.nakodoLog ?? []).map((o) => ({ playerId: o.playerId, at: o.round, answer: o.outcome }));
-  const id = nextOfferee(
-    n4.map((p) => p.id),
-    past,
-    s.round,
-    ctx.connected().length,
-  );
-  const p = n4.find((x) => x.id === id);
+    .filter((x) => x.connected)
+    .sort((a, b) => (gc.held[a.id] ?? 0) - (gc.held[b.id] ?? 0) || a.seat - b.seat)[0];
   if (!p) return;
+  gc.held[p.id] = (gc.held[p.id] ?? 0) + 1;
+  const mix = (gc.mix[p.id] ??= { n3: 0, n4: 0 });
+  const n3 = p.level === 'n3' && mix.n3 <= mix.n4;
+  mix[n3 ? 'n3' : 'n4'] += 1;
+  const said = gc.said[p.id] ?? {};
+  const first: 0 | 1 = (said['de-gozaimasu'] ?? 0) < (said['sasete-itadaku'] ?? 0) ? 1 : 0;
   s.nakodoSeat = p.seat;
-  s.nakodo = { round: s.round, playerId: p.id, status: 'offered', lines: { open: blankTry(), close: blankTry() } };
+  s.nakodo = { round: s.round, playerId: p.id, status: 'accepted', lines: { open: blankTry(), close: blankTry() }, gc: { n3, variant: { open: first, close: first === 0 ? 1 : 0 } } };
+  openNakodoGallery(s, ctx);
 }
+
+/**
+ * The go-between's line for each slot, and the other form they may say instead (Green Car only): an N3 round says
+ * the N3 form (the N4 line accepted too), an N4 round the N4 line (the N3 form is the stretch).
+ */
+function goLines(s: OmiaiState, g: GoBetween | null | undefined): Record<NakodoSlot, { line: NakodoLine; alt: NakodoLine | null }> {
+  const card = cardOf(s);
+  const n4 = nakodoLines(card, s.round, s.totalRounds);
+  if (!g?.gc) return { open: { line: n4.open, alt: null }, close: { line: n4.close, alt: null } };
+  const n3 = nakodoN3Lines(card, s.round, s.totalRounds);
+  const v = g.gc.variant;
+  const slot = (k: NakodoSlot) => (g.gc!.n3 ? { line: n3[k][v[k]], alt: n4[k] } : { line: n4[k], alt: n3[k][v[k]] });
+  return { open: slot('open'), close: slot('close') };
+}
+
+/** The line the go-between actually said in a slot (the alt form, if that is what they said). */
+const saidLine = (s: OmiaiState, g: GoBetween, slot: NakodoSlot): NakodoLine => {
+  const l = goLines(s, g)[slot];
+  return g.lines[slot].alt && l.alt ? l.alt : l.line;
+};
 
 function closeNakodo(s: OmiaiState, ctx: ModeContext): void {
   const g = s.nakodo;
   s.nakodo = null;
   if (!g) return;
+  // The Green Car's go-between is never offered, so nothing goes in the offer log.
+  if (g.gc) return;
   const tried = g.lines.open.tries + g.lines.close.tries > 0;
   const outcome: OfferAnswer =
     tried || g.status === 'accepted' ? 'accepted' : g.status === 'declined' ? 'declined' : ctx.player(g.playerId)?.connected === false ? 'away' : 'timeout';
@@ -701,7 +763,7 @@ function boothFor(line: NakodoLine, playerId: string | null, who: string): Comme
     line: line.jp,
     voiced: true,
     lit: lightUp(line.jp.text, [line.key]),
-    note: `${line.key}: ${who} said it the keigo way, ${line.key === 'ございます' ? 'with the extra-polite ございます for あります' : 'lifting the guest up'}, as a matchmaker does.`,
+    note: `${line.key}: ${who} said it the keigo way, ${line.key === 'ございます' ? 'with the extra-polite ございます for あります' : line.key === 'で ございます' ? 'with で ございます, です at its most polite' : line.key === 'させて いただきます' ? 'humbly, with させて いただきます' : 'lifting the guest up'}, as a matchmaker does.`,
     gist: { kana: line.gist.kana, en: line.gist.en, emoji: '🎎' },
     ms: commentaryMs(line.jp),
   };
@@ -718,7 +780,6 @@ function openNakodoGallery(s: OmiaiState, ctx: ModeContext): void {
   if (!g || !r || r.gallery || g.status !== 'accepted') return;
   const others = ctx.connected().filter((p) => p.id !== g.playerId);
   if (!others.length) return;
-  const line = nakodoLines(cardOf(s), s.round, s.totalRounds).open;
   r.gallery = openGallery(
     others.map((p) => p.id),
     others.filter((p) => p.level === 'kana' || p.level === 'n5').map((p) => p.id),
@@ -871,6 +932,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       nakodo: null,
       nakodoSeat: 0,
       nakodoLog: [],
+      ...(ctx.greenCar === true ? { greenCar: true as const, gc: { held: {}, mix: {}, said: {} } } : {}),
     };
   },
 
@@ -901,7 +963,9 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         break;
       case 'prompt': {
         startRound(s, ctx);
-        offerNakodo(s, ctx);
+        // The go-between plays only in the Green Car (a move-out); there it is on every round.
+        if (s.greenCar) seatNakodo(s, ctx);
+        else s.nakodo = null;
         // With a go-between, the opening is theirs; Nobiko-san reads the question once they've said it,
         // run out of tries, passed, or let it go by (see wake).
         if (!s.nakodo && !standIn(s, ctx)) cueQuestion(s, ctx);
@@ -918,7 +982,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
           () => ctx.random(),
         );
         const shown = visible(r).sort(byOrder(r));
-        const q = r.question.ask.n5;
+        const q = askOf(s, r.question);
         ctx.cue({ host: 'nobiko', event: 'reveal_react', tier: 'good', prompt: { text: q.text, kana: q.kana, en: q.en }, answer: shown.map((a) => a.text).join(' / ') });
         const tease = pickTease(s, shown, ctx);
         if (tease) {
@@ -1077,7 +1141,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
           style,
           english,
           manners,
-          tip: tipFor(manners, u, r.question, player.level, player.name, english),
+          tip: tipFor(manners, u, r.question, player.level, player.name, english, !!s.greenCar),
           hidden: false,
         };
         r.answers.push(answer);
@@ -1158,7 +1222,10 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         if (!heard) return moveError('empty-answer');
         if (raw.utterance.via === 'tap') return moveError('bad-utterance');
         const u: Utterance = { ...raw.utterance, text: heard };
-        const line = nakodoLines(cardOf(s), s.round, s.totalRounds)[slot];
+        const forms = goLines(s, g)[slot];
+        // Green Car: either form counts (the N3 stretch, or the N4 line in an N3 round).
+        const altSaid = !saidPhrase(u, forms.line.jp.kana, undefined, 'n4') && !!forms.alt && saidPhrase(u, forms.alt.jp.kana, undefined, 'n4');
+        const line = altSaid ? forms.alt! : forms.line;
         // A first try is a yes.
         g.status = 'accepted';
         if (slot === 'open') openNakodoGallery(s, ctx);
@@ -1166,9 +1233,15 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         t.heard = heard;
         t.meter = checkManners(u, 'n4', { name: player.name }).meter;
         const entry = { itemId: `omiai:nakodo:${cardOf(s).id}:${line.id}`, text: line.jp.text, kana: line.jp.kana, en: line.jp.en };
-        if (saidPhrase(u, line.jp.kana, undefined, 'n4')) {
+        if (altSaid || saidPhrase(u, line.jp.kana, undefined, 'n4')) {
           t.ok = true;
           t.via = u.via;
+          if (altSaid) t.alt = true;
+          // Green Car: the frames said count towards aiming the next round's lines.
+          if (g.gc && s.gc) {
+            const tally = (s.gc.said[playerId] ??= {});
+            for (const f of line.frames) tally[f] = (tally[f] ?? 0) + 1;
+          }
           t.points = u.via === 'speech' ? NAKODO_POINTS.speech : NAKODO_POINTS.typed;
           pay(ctx, playerId, t.points);
           // Read off the phone's script, so it counts as seen, not said from memory.
@@ -1276,7 +1349,8 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
 
     const g = s.nakodo;
     const gSlot = slotFor(phase);
-    const gLines = g ? nakodoLines(card, s.round, s.totalRounds) : null;
+    const gForms = g ? goLines(s, g) : null;
+    const gLines = gForms ? { open: gForms.open.line, close: gForms.close.line } : null;
 
     let mine: OmiaiView['me'] = null;
     if (me) {
@@ -1305,7 +1379,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
         slot:
           phase === 'answer' && r && slot && !myAnswer
             ? {
-                question: questionView(r.question, me.level),
+                question: questionView(r.question, me.level, !!s.greenCar),
                 sayFirst: !slot.tilesShown,
                 sayFirstMs: SAY_FIRST_MS,
                 tiles: slot.tilesShown ? slot.tiles.map((t) => ({ key: t.key, text: t.jp.text, en: t.jp.en, role: t.role, ...(romaji ? { romaji: toRomaji(t.jp.kana) } : {}) })) : [],
@@ -1342,6 +1416,9 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
                 points: gSlot ? g.lines[gSlot].points : 0,
                 open: gLines.open.jp,
                 close: gLines.close.jp,
+                ...(g.gc && gSlot && g.gc.n3 ? { n3: true as const } : {}),
+                // The N3 stretch is for N4 go-betweens; an N3 one's N4 rounds stay N4 (either form still counts).
+                ...(g.gc && gSlot ? { stretch: g.gc.n3 || me.level === 'n3' ? null : (gForms![gSlot].alt?.jp ?? null) } : {}),
               }
             : null,
         gallery: phase === 'prompt' ? galleryTileFor(r?.gallery, me.id, me.level) : null,
@@ -1359,7 +1436,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
       phaseAt: s.phaseAt,
       card: { id: card.id, emoji: card.emoji, name: card.name, job: card.job, hobbies: card.hobbies, quirk: card.quirk, audience: card.audience },
       greeting: phase === 'intro' || s.round <= 1 ? card.greeting : null,
-      question: r && phase !== 'intro' && phase !== 'finale' ? questionView(r.question, 'stage') : null,
+      question: r && phase !== 'intro' && phase !== 'finale' ? questionView(r.question, 'stage', !!s.greenCar) : null,
       roundKind: kind,
       answered: phase === 'answer' && r ? r.answers.map((a) => a.authorId) : [],
       answers,
@@ -1374,7 +1451,7 @@ export const omiaiMode: Mode<OmiaiState, OmiaiView> = {
               playerId: g.playerId,
               slot: gSlot,
               declined: g.status === 'declined' || g.status === 'timeout',
-              line: g.lines[gSlot].ok ? gLines[gSlot].jp : null,
+              line: g.lines[gSlot].ok ? saidLine(s, g, gSlot).jp : null,
               via: g.lines[gSlot].via,
               points: g.lines[gSlot].points,
               pending: nakodoOpen(s, phase, ctx),

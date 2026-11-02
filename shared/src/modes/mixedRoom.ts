@@ -209,6 +209,9 @@ export const KEY_GLOSS: Readonly<Record<string, string>> = {
   いらっしゃいます: 'is (polite, about a person)',
   'おききに なります': 'will ask (polite)',
   'おかえりに なります': 'will go home (polite)',
+  // The Green Car's go-between (Omiai, N3).
+  'させて いただきます': 'I humbly will…',
+  'で ございます': 'is (extra polite)',
   // Dub Club's ad-lib words (a stem like たすけ is glossed as the word it starts).
   おにぎり: 'rice ball',
   しらない: 'don’t know',
