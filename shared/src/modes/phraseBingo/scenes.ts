@@ -22,6 +22,11 @@ export interface ScenePhrase {
   from?: string;
   /** Other readings that count (casual or shortened forms), as kana. */
   accepted?: string[];
+  /**
+   * Green Car lines: the frames the line carries (frames.ts ids). The first is the one the bingo card shows instead of
+   * the sentence (＿て もらえますか), so the audience listens for the grammar.
+   */
+  frames?: readonly string[];
 }
 
 export interface Scene {
@@ -37,6 +42,8 @@ export interface Scene {
   roles: JpText[];
   phrases: ScenePhrase[];
   status: ReviewStatus;
+  /** Green Car only (shared/src/greenCar.ts): N4 and N3 frame lines, never dealt in a mixed room. */
+  greenCar?: true;
 }
 
 const t = (text: string, kana: string, en: string): JpText => ({ text, kana, en });
@@ -390,8 +397,220 @@ const AUDIENCE_SCENES: readonly Scene[] = [
 
 export const SCENES: readonly Scene[] = [...FAMILY_SCENES, ...AUDIENCE_SCENES];
 
-/** The scenes for an audience: Kids and Cheeky rooms get their own scenes first, then the family ones. */
-export function scenesFor(audience: Audience): { own: Scene[]; fill: Scene[] } {
-  const own = SCENES.filter((x) => (x.audience ?? 'family') === audience);
-  return { own, fill: audience === 'family' ? [] : SCENES.filter((x) => !x.audience) };
+// ---- the Green Car (shared/src/greenCar.ts; design: project files n3-coverage/green-car/design.md) ----
+//
+// Green Car scenes: every secret line is an N4 or N3 frame, written for the scene, and the bingo card shows the frame
+// (＿て もらえますか), not the sentence. Each scene has the same ten frames, one line each: N4 ＿て もらえますか (4.1),
+// ＿ても いいですか and ＿ては いけません (4.2), ＿たら and ＿ば (4.5); N3 ＿わりに, ＿くせに and ＿に しては (3.4), ＿っぽい and
+// ＿なんて (3.11). Polite N4, casual N3. ＿くせに, ＿わりに and ＿に しては are aimed at props, animals, yōkai or Pon, never at
+// a role a player plays. Kids get the school play and the pet shop; Family scenes are kid-safe (a Kids room fills
+// with them); Cheeky gets the izakaya and the first date. All draft until the fluent and taste checks.
+
+const gcLine = (scene: string, key: string, level: 'n4' | 'n3', frame: string, text: string, en: string): ScenePhrase => ({ id: `pb.gc.${scene}.${key}`, level, jp: t(text, text, en), frames: [frame] });
+const four = (scene: string, lines: [string, string, string, string][]) => lines.map(([key, frame, text, en]) => gcLine(scene, key, 'n4', frame, text, en));
+const three = (scene: string, lines: [string, string, string, string][]) => lines.map(([key, frame, text, en]) => gcLine(scene, key, 'n3', frame, text, en));
+
+export const GREEN_CAR_SCENES: readonly Scene[] = [
+  // ---- kids ----
+  {
+    id: 'gc-gakugeikai',
+    packId: 'family',
+    audience: 'kids',
+    greenCar: true,
+    emoji: '🎭',
+    setting: t('がくげいかいの リハーサル', 'がくげいかいの リハーサル', 'The school play rehearsal'),
+    twist: 'The ogre costume is too small, the cardboard tree keeps falling over, and the narrator has forgotten the story.',
+    roles: [role('かんとくの こ', 'the kid directing'), role('ももたろう', 'Momotarō'), role('おに', 'the ogre'), role('ナレーター', 'the narrator')],
+    status: 'draft',
+    phrases: [
+      ...four('gakugeikai', [
+        ['moraeru', 'te-moraeru', 'せりふを もう いちど いって もらえますか。', 'Could you say your line once more?'],
+        ['kabuttemo', 'te-mo-ii', 'おにの おめんを かぶっても いいですか。', 'May I put on the ogre mask?'],
+        ['aitara', 'tara', 'まくが あいたら、はしって ください。', 'When the curtain opens, run.'],
+        ['warattewa', 'te-wa-ikenai', 'ぶたいで わらっては いけません。', "You mustn't laugh on stage."],
+        ['ieba', 'ba', 'もっと おおきい こえで いえば、きこえます。', "If you say it louder, they'll hear you."],
+      ]),
+      ...three('gakugeikai', [
+        ['warini', 'wari-ni', 'この おめん、かみの わりに じょうぶだね。', "This mask is tough, for paper."],
+        ['kuseni', 'kuse-ni', 'この きの セット、きの くせに すぐ たおれる。', 'This cardboard tree is meant to be a tree, and it keeps falling over.'],
+        ['nishitewa', 'ni-shite-wa', 'はじめての リハーサルに しては、いいね。', 'Not bad, for a first rehearsal.'],
+        ['ppoi', 'ppoi', 'その こえ、ほんとうの おにっぽい！', 'That voice sounds just like a real ogre!'],
+        ['nante', 'nante', 'おになんて こわく ないよ。', 'Ogres? Not scary at all.'],
+      ]),
+    ],
+  },
+  {
+    id: 'gc-petshop',
+    packId: 'food',
+    audience: 'kids',
+    greenCar: true,
+    emoji: '🐹',
+    setting: t('ペットショップ', 'ペットショップ', 'The pet shop'),
+    twist: 'The parrot repeats everything anyone says, and a hamster has escaped into the till.',
+    roles: [role('てんいんさん', 'the shop assistant'), role('おきゃくさんの こ', 'a kid choosing a pet'), role('おかあさん', 'the mum paying'), role('じゅういさん', 'the vet')],
+    status: 'draft',
+    phrases: [
+      ...four('petshop', [
+        ['moraeru', 'te-moraeru', 'この ハムスターを みせて もらえますか。', 'Could you show me this hamster?'],
+        ['sawattemo', 'te-mo-ii', 'ちょっと さわっても いいですか。', 'May I touch it a little?'],
+        ['kaettara', 'tara', 'いえに かえったら、なまえを つけます。', "When we get home, I'll give it a name."],
+        ['iretewa', 'te-wa-ikenai', 'ゆびを いれては いけません。', "You mustn't put your finger in."],
+        ['asobeba', 'ba', 'まいにち あそべば、なかよく なります。', "If you play every day, you'll become friends."],
+      ]),
+      ...three('petshop', [
+        ['warini', 'wari-ni', 'この インコ、ちいさい わりに こえが おおきいね。', 'This parrot is loud, for something so small.'],
+        ['kuseni', 'kuse-ni', 'ハムスターの くせに、レジに かくれてる！', "It's only a hamster, and it's hiding in the till!"],
+        ['nishitewa', 'ni-shite-wa', 'インコに しては、にほんごが じょうずだね。', 'Its Japanese is good, for a parrot.'],
+        ['ppoi', 'ppoi', 'この こ、ちょっと ねこっぽい。', 'This one is a bit like a cat.'],
+        ['nante', 'nante', 'ハムスターが レジに いるなんて！', "A hamster in the till? Unbelievable!"],
+      ]),
+    ],
+  },
+  // ---- family (kid-safe: Kids rooms fill with these) ----
+  {
+    id: 'gc-konbini',
+    packId: 'food',
+    greenCar: true,
+    emoji: '🏪',
+    setting: t('よるの コンビニ', 'よるの コンビニ', 'A konbini, late at night'),
+    twist: 'The new robot till is very slow, and a ghost who loves pudding has hidden the last one.',
+    roles: [role('てんいん', 'the clerk'), role('おきゃくさん', 'a customer'), role('ねむい アルバイト', 'the sleepy part-timer'), role('ポンの ファン', "Pon's biggest fan")],
+    status: 'draft',
+    phrases: [
+      ...four('konbini', [
+        ['moraeru', 'te-moraeru', 'おべんとうを あたためて もらえますか。', 'Could you heat up my bento?'],
+        ['tabetemo', 'te-mo-ii', 'この プリン、たべても いいですか。', 'May I eat this pudding?'],
+        ['attara', 'tara', 'プリンが あったら、ぜんぶ ください。', "If there's any pudding, I'll take it all."],
+        ['netewa', 'te-wa-ikenai', 'みせの なかで ねては いけません。', "You mustn't sleep in the shop."],
+        ['oseba', 'ba', 'ボタンを おせば、ドアが あきます。', 'If you press the button, the door opens.'],
+      ]),
+      ...three('konbini', [
+        ['warini', 'wari-ni', 'この プリン、やすい わりに おいしいね。', "This pudding is good, for the price."],
+        ['kuseni', 'kuse-ni', 'この レジ、ロボットの くせに けいさんが おそい。', "This till is a robot, and yet it's slow at sums."],
+        ['nishitewa', 'ni-shite-wa', 'コンビニの プリンに しては、すごく おいしい。', 'Really good, for konbini pudding.'],
+        ['ppoi', 'ppoi', 'この おにぎり、なんか おもちゃっぽい。', 'This onigiri looks kind of like a toy.'],
+        ['nante', 'nante', 'プリンが ないなんて、しんじられない！', "No pudding? I can't believe it!"],
+      ]),
+    ],
+  },
+  {
+    id: 'gc-dinner',
+    packId: 'family',
+    greenCar: true,
+    emoji: '🍲',
+    setting: t('かぞくの ばんごはん', 'かぞくの ばんごはん', 'Family dinner'),
+    twist: "The grilled fish has vanished from the plate, and the house's ghost looks very full.",
+    roles: [role('おとうさん', 'Dad'), role('おかあさん', 'Mum'), role('おばあちゃん', 'Grandma'), role('いもうと', 'the little sister')],
+    status: 'draft',
+    phrases: [
+      ...four('dinner', [
+        ['moraeru', 'te-moraeru', 'しょうゆを とって もらえますか。', 'Could you pass the soy sauce?'],
+        ['tsuketemo', 'te-mo-ii', 'テレビを つけても いいですか。', 'May I turn on the TV?'],
+        ['tabetara', 'tara', 'ごはんを たべたら、しゅくだいを します。', "Once I've eaten, I'll do my homework."],
+        ['mitewa', 'te-wa-ikenai', 'たべながら スマホを みては いけません。', "You mustn't look at your phone while you eat."],
+        ['tabereba', 'ba', 'はやく たべれば、デザートが もらえます。', 'If you eat quickly, you get dessert.'],
+      ]),
+      ...three('dinner', [
+        ['warini', 'wari-ni', 'この さかな、ちいさい わりに ほねが おおいね。', 'This fish has a lot of bones, for a small one.'],
+        ['kuseni', 'kuse-ni', 'この いえの おばけ、おばけの くせに おなかが すくの？', "This house's ghost gets hungry? It's a ghost!"],
+        ['nishitewa', 'ni-shite-wa', 'レンジの ごはんに しては、おいしいね。', 'Tasty, for microwave rice.'],
+        ['ppoi', 'ppoi', 'この スープ、ちょっと カレーっぽい。', 'This soup is a bit curry-ish.'],
+        ['nante', 'nante', 'さかなが きえるなんて、へんだね。', 'A fish vanishing? That’s weird.'],
+      ]),
+    ],
+  },
+  {
+    id: 'gc-ryokan',
+    packId: 'travel',
+    greenCar: true,
+    emoji: '🏯',
+    setting: t('りょかんの チェックイン', 'りょかんの チェックイン', 'Checking in at a ryokan'),
+    twist: 'There is a tanuki asleep in the futon, and the onsen closes in five minutes.',
+    roles: [role('おかみさん', 'the innkeeper'), role('おきゃくさん', 'a guest'), role('にもつを もつ ひと', 'the porter'), role('おんせんが すきな ひと', 'an onsen fanatic')],
+    status: 'draft',
+    phrases: [
+      ...four('ryokan', [
+        ['moraeru', 'te-moraeru', 'にもつを へやまで はこんで もらえますか。', 'Could you carry my bags to the room?'],
+        ['haittemo', 'te-mo-ii', 'いま おんせんに はいっても いいですか。', 'May I go in the onsen now?'],
+        ['detara', 'tara', 'おんせんから でたら、ごはんに しましょう。', "When we're out of the onsen, let's eat."],
+        ['oyoidewa', 'te-wa-ikenai', 'おんせんで およいでは いけません。', "You mustn't swim in the onsen."],
+        ['isogeba', 'ba', 'いそげば、まだ まにあいます。', "If we hurry, we'll still make it."],
+      ]),
+      ...three('ryokan', [
+        ['warini', 'wari-ni', 'この へや、たかい わりに せまいね。', 'This room is small, for the price.'],
+        ['kuseni', 'kuse-ni', 'この たぬき、たぬきの くせに ふとんで ねてる！', "This tanuki is sleeping in the futon, and it's a tanuki!"],
+        ['nishitewa', 'ni-shite-wa', 'やすい りょかんに しては、きれいだね。', "It's clean, for a cheap ryokan."],
+        ['ppoi', 'ppoi', 'この ゆかた、なんか パジャマっぽい。', 'This yukata looks kind of like pyjamas.'],
+        ['nante', 'nante', 'ふとんに たぬきが いるなんて！', 'A tanuki in the futon? No way!'],
+      ]),
+    ],
+  },
+  // ---- cheeky ----
+  {
+    id: 'gc-izakaya',
+    packId: 'food',
+    audience: 'cheeky',
+    greenCar: true,
+    emoji: '🍺',
+    setting: t('しごとの あとの いざかや', 'しごとの あとの いざかや', 'The izakaya after work'),
+    twist: 'The boss said "tonight is on me", went to the toilet, and has not come back. The bill is here.',
+    roles: [role('かかりちょう', 'the section chief'), role('しんにゅうしゃいん', 'the new hire'), role('てんいん', 'the server'), role('よっぱらい', 'the one who has had a few too many')],
+    status: 'draft',
+    phrases: [
+      ...four('izakaya', [
+        ['moraeru', 'te-moraeru', 'おかいけいを わけて もらえますか。', 'Could you split the bill?'],
+        ['kaettemo', 'te-mo-ii', 'もう かえっても いいですか。', 'May I go home now?'],
+        ['modottara', 'tara', 'ぶちょうが もどったら、かんぱいしましょう。', "When the boss gets back, let's do a toast."],
+        ['netewa', 'te-wa-ikenai', 'ここで ねては いけません。', "You mustn't sleep here."],
+        ['nomeba', 'ba', 'みずを のめば、だいじょうぶです。', "If you drink some water, you'll be fine."],
+      ]),
+      ...three('izakaya', [
+        ['warini', 'wari-ni', 'この ビール、たかい わりに ぬるいね。', 'This beer is warm, for the price.'],
+        ['kuseni', 'kuse-ni', 'ポンの くせに、いい みせ しってるね。', "Pon, of all people, knows a good place."],
+        ['nishitewa', 'ni-shite-wa', 'のみほうだいに しては、いい おさけだね。', 'Good sake, for all-you-can-drink.'],
+        ['ppoi', 'ppoi', 'この カクテル、ジュースっぽい。', 'This cocktail tastes like juice.'],
+        ['nante', 'nante', 'ぶちょうが にげるなんて、さいあく！', 'The boss running off? The worst!'],
+      ]),
+    ],
+  },
+  {
+    id: 'gc-date',
+    packId: 'family',
+    audience: 'cheeky',
+    greenCar: true,
+    emoji: '💘',
+    setting: t('はじめての デート', 'はじめての デート', 'An awkward first date'),
+    twist: 'The date brought their mum along. Mum has a lot of questions, and Pon is the waiter.',
+    roles: [role('デートの あいて', 'the date'), role('おくれて きた ひと', 'the one who showed up late'), role('ついて きた おかあさん', 'the mum who came along'), role('となりの せきの ひと', 'the nosy diner at the next table')],
+    status: 'draft',
+    phrases: [
+      ...four('date', [
+        ['moraeru', 'te-moraeru', 'しゃしんを とって もらえますか。', 'Could you take our photo?'],
+        ['suwattemo', 'te-mo-ii', 'となりに すわっても いいですか。', 'May I sit next to you?'],
+        ['owattara', 'tara', 'たべおわったら、カラオケに いきませんか。', 'Once we finish eating, shall we go to karaoke?'],
+        ['mitewa', 'te-wa-ikenai', 'デートで スマホを みては いけません。', "You mustn't look at your phone on a date."],
+        ['yameba', 'ba', 'あめが やめば、さんぽしましょう。', "If the rain stops, let's go for a walk."],
+      ]),
+      ...three('date', [
+        ['warini', 'wari-ni', 'この みせ、おしゃれな わりに やすいね。', "This place is cheap, for somewhere so stylish."],
+        ['kuseni', 'kuse-ni', 'ポンの くせに、ワインに くわしいね。', 'Pon, of all people, knows his wine.'],
+        ['nishitewa', 'ni-shite-wa', 'はじめての デートに しては、もりあがってるね。', "It's going well, for a first date."],
+        ['ppoi', 'ppoi', 'この ふんいき、ちょっと おみあいっぽい。', 'This feels a bit like an arranged-marriage meeting.'],
+        ['nante', 'nante', 'デートに おかあさんが くるなんて！', 'Bringing your mum on a date? Unbelievable!'],
+      ]),
+    ],
+  },
+];
+
+/** Every scene, mixed-room and Green Car, for looking one up by id. */
+export const ALL_SCENES: readonly Scene[] = [...SCENES, ...GREEN_CAR_SCENES];
+
+/**
+ * The scenes for an audience: Kids and Cheeky rooms get their own scenes first, then the family ones. In the Green Car,
+ * only Green Car scenes, the same way.
+ */
+export function scenesFor(audience: Audience, greenCar = false): { own: Scene[]; fill: Scene[] } {
+  const all = greenCar ? GREEN_CAR_SCENES : SCENES;
+  const own = all.filter((x) => (x.audience ?? 'family') === audience);
+  return { own, fill: audience === 'family' ? [] : all.filter((x) => !x.audience) };
 }
