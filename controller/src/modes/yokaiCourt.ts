@@ -42,6 +42,8 @@ const REC_GUARD_MS = 600;
 const TYPED_EARLY_MS = 800;
 /** The witness's own take of their answer (path credit only). */
 const SAY_MS = 5_000;
+/** Green Car: the witness passes it on as hearsay, a longer line. */
+const SAY_GC_MS = 7_000;
 /** A failed upload tries again this often while the record beat lasts. */
 const RETRY_MS = 2_000;
 
@@ -483,7 +485,15 @@ function hintBox(me: CourtMe, send: Send): HTMLElement | null {
       ),
       h('p', { class: 'yc-hint' }, 'Peeking counts it as read, not said from memory.'),
     );
-  return h('div', { class: 'yc-hintbox' }, h('p', { class: 'yc-label' }, 'Fude-san’s way:'), jpv(m.model, me.level, 'yc-model'));
+  return h(
+    'div',
+    { class: 'yc-hintbox' },
+    h('p', { class: 'yc-label' }, 'Fude-san’s way:'),
+    jpv(m.model, me.level, 'yc-model'),
+    // Green Car, an N4 lawyer: an N3 way to say it, if they want a stretch.
+    me.stretch ? h('p', { class: 'yc-label' }, h('span', { class: 'yc-n3' }, me.stretch.tag), ' Stretch, if you like:') : null,
+    me.stretch ? jpv(me.stretch.model, me.level, 'yc-model') : null,
+  );
 }
 
 function passBlock(me: CourtMe, send: Send): HTMLElement | null {
@@ -710,7 +720,7 @@ function witnessScreen(ctx: Ctx, me: CourtMe): HTMLElement {
     testimonyCard(ctx, me),
     problemLine(),
     hunchBox(ctx, me),
-    sayOpen || rec?.purpose === 'say' ? dock(recordButton(ctx, 'say', SAY_MS, { idle: '🎤 Say it out loud too', stop: 'Tap to stop' })) : saidIt ? h('p', { class: 'yc-locked center' }, '🎤 Said it ✓') : null,
+    sayOpen || rec?.purpose === 'say' ? dock(recordButton(ctx, 'say', ctx.game.greenCar ? SAY_GC_MS : SAY_MS, { idle: ctx.game.greenCar ? '🎤 Pass it on out loud' : '🎤 Say it out loud too', stop: 'Tap to stop' })) : saidIt ? h('p', { class: 'yc-locked center' }, '🎤 Said it ✓') : null,
   );
 }
 
