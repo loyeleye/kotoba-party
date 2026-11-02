@@ -132,7 +132,7 @@ function fly(m: ModeInfo, lane: Lane, ahead = 0): void {
   const item = h(
     'div',
     { class: `dm-item${lane.size === SMALL ? ' dm-small' : ''}`, 'data-mode': m.id, 'aria-hidden': 'true' },
-    ruby({ text: m.titleJa, kana: TITLE_KANA[m.id] ?? null }, { class: 'dm-ja' }),
+    ruby({ text: m.titleJa, kana: (m.greenCar && m.title === m.greenCar.title ? m.greenCar.titleKana : TITLE_KANA[m.id]) ?? null }, { class: 'dm-ja' }),
     h('span', { class: 'dm-en' }, m.title),
   );
   item.style.top = `${lane.top}px`;
