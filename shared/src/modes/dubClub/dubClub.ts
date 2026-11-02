@@ -22,7 +22,7 @@
 // which clips are still needed; the server drops the rest at once.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
-import { framesHeard } from '../../japanese/frames.js';
+import { FRAME_BY_ID, framesHeard, framesOf, type FrameId } from '../../japanese/frames.js';
 import { isUtterance, normalizeReading, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
@@ -32,7 +32,8 @@ import { nextOfferee, offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, STAND_IN_CURVEBALL_MS, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
+import { directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneGc, sceneLines, takeLimitMs, type AdLib, type Direction, type Episode, type Scene } from './scenes.js';
+import { aimPick, aimWeight } from '../aim.js';
 import { n4Up } from '../../level.js';
 
 // ---- tuning ----
@@ -105,6 +106,10 @@ export interface AdlibCheck {
   casual: boolean;
   key: boolean;
   frames: string[];
+  /** Green Car: the ad-lib's own frame came through (N3: its N3 frame; N4: casual speech). */
+  target?: boolean;
+  /** Green Car, an N4 turn: the scene's N3 stretch frame came through, so the N3 line counts. */
+  stretch?: boolean;
 }
 
 export interface Take {
@@ -141,6 +146,11 @@ export interface Actor {
    * still open when the take is sent, or when recording ends, is 'timeout' ('away' if they'd dropped out).
    */
   adlib?: 'offered' | OfferAnswer;
+  /**
+   * Green Car: the level of the ad-lib this actor plays this scene (every actor ad-libs, with no offer). An N3 seat
+   * takes N3 and N4 turns in turn (N3 first); an N4 seat takes N4, with the scene's N3 ad-lib as optional stretch.
+   */
+  gcLevel?: 'n4' | 'n3';
 }
 
 /** `booth`: after a good ad-lib's reveal only, the commentary booth's replay of the model line. */
@@ -220,6 +230,10 @@ export interface DubState {
   curveball?: boolean;
   /** The host stand-in, once it has happened (once a game). */
   standIn?: StandIn | null;
+  /** This game rides in the Green Car (ctx.greenCar at setup): Green Car episodes, every actor ad-libs, no offers. */
+  greenCar?: boolean;
+  /** Green Car: per player, the N4 and N3 ad-libs dealt so far, and which level an N3 seat started on (it takes them in turn). */
+  dealt?: Record<string, { n4: number; n3: number; first?: 'n4' | 'n3' }>;
 }
 
 // ---- view ----
@@ -313,7 +327,19 @@ export interface DubView {
      * The ad-lib role, while it's mine (offered or accepted): the mission instead of a script (`line` is
      * null), the check of my plain read, and the model line once my take is sent.
      */
-    adlib: { state: 'offered' | 'accepted'; mission: string; emoji: string; check: AdlibCheck | null; model: JpText | null; hint: string | null } | null;
+    adlib: {
+      state: 'offered' | 'accepted';
+      mission: string;
+      emoji: string;
+      check: AdlibCheck | null;
+      model: JpText | null;
+      hint: string | null;
+      /**
+       * Green Car: no offer and no script to fall back on. `frame` is the frame to aim for (the N3 ad-lib's, shown as
+       * ＿っぽい; null on an N4 turn, where casual speech is the aim), and `stretch` the scene's N3 ad-lib for an N4 turn.
+       */
+      greenCar?: { level: 'n4' | 'n3'; frame: { ja: string; en: string } | null; stretch: { mission: string; frame: { ja: string; en: string } | null; tag: 'N3' } | null };
+    } | null;
     /** My Gallery tile while someone else's ad-lib dub is on (a reaction, or the curveball). */
     gallery: GalleryTileView | null;
     /** Kana and N5 phones: the gist of the booth's model line (`booth` step), or of Fude's stand-in ad-lib. */
@@ -349,8 +375,21 @@ export const adlibOf = (s: DubState, r: SceneRound): AdLib => sceneAdlib(sceneOf
 export const isAdlib = (a: Actor | undefined | null): boolean => a?.adlib === 'accepted';
 /** Is the ad-lib offer still open for this actor (no answer yet)? */
 export const adlibOpen = (a: Actor | undefined | null): boolean => a?.adlib === 'offered';
+/** Green Car: the ad-lib this actor plays this scene (at their turn's level); otherwise the scene's ad-lib. */
+export function actorAdlib(s: DubState, r: SceneRound, a: Actor): AdLib {
+  const g = s.greenCar && a.gcLevel ? sceneGc(sceneOf(s, r), s.audience) : null;
+  return g ? g[a.gcLevel!] : adlibOf(s, r);
+}
+/** Green Car, an N4 turn: the scene's N3 ad-lib, as optional stretch (shown with an N3 tag). */
+export function stretchAdlib(s: DubState, r: SceneRound, a: Actor): AdLib | null {
+  return s.greenCar && a.gcLevel === 'n4' ? (sceneGc(sceneOf(s, r), s.audience)?.n3 ?? null) : null;
+}
+/** The ad-lib whose model line stands for the take: the N3 stretch once its frame came through, else the actor's own. */
+export function usedAdlib(s: DubState, r: SceneRound, a: Actor): AdLib {
+  return (a.rehearsal?.adlib?.stretch && stretchAdlib(s, r, a)) || actorAdlib(s, r, a);
+}
 /** An actor's line: the script at their level, or the ad-lib's model line. */
-const lineFor = (s: DubState, r: SceneRound, a: Actor): JpText => (isAdlib(a) ? adlibOf(s, r).model : lineOf(s, r, a.level));
+const lineFor = (s: DubState, r: SceneRound, a: Actor): JpText => (isAdlib(a) ? usedAdlib(s, r, a).model : lineOf(s, r, a.level));
 const current = (s: DubState): SceneRound | null => s.rounds[s.round - 1] ?? null;
 const actorOf = (r: SceneRound, id: string) => r.actors.find((a) => a.playerId === id);
 
@@ -480,6 +519,26 @@ export function adlibCheck(heard: Utterance | string, adlib: Pick<AdLib, 'keys'>
   return { casual: frames.length > 0, key, frames };
 }
 
+/**
+ * The Green Car's ad-lib check: the lenient casual check, plus whether the ad-lib's own frame came through (an N3 turn:
+ * one of its N3 frames, by the path's matchers; an N4 turn: casual speech) and, on an N4 turn, the N3 stretch's frame.
+ */
+export function gcCheck(heard: Utterance, adlib: AdLib, level: 'n4' | 'n3', stretch: AdLib | null): AdlibCheck {
+  const c = adlibCheck(heard, adlib);
+  const said = framesOf({ text: heard.text, kana: heard.reading ?? heard.text }, undefined, { keepHidden: true });
+  const hit = (x: AdLib) => x.frames.some((f) => said.includes(f as FrameId));
+  const up = !!stretch && hit(stretch);
+  // Going for the stretch, its mission words count too.
+  const key = c.key || (up && adlibCheck(heard, stretch!).key);
+  return { ...c, key, target: level === 'n3' ? hit(adlib) : c.casual, stretch: up };
+}
+
+/** The Green Car check as a similarity: the frame (or the stretch's) and the mission / one of them / neither. */
+export const gcSimilarity = (c: AdlibCheck): number => {
+  const frame = !!c.target || !!c.stretch;
+  return frame && c.key ? ADLIB_SIM.both : frame || c.key ? ADLIB_SIM.one : ADLIB_SIM.neither;
+};
+
 /** The ad-lib check as a similarity, so the word points work the same as a scripted read. */
 export const adlibSimilarity = (c: AdlibCheck): number => (c.casual && c.key ? ADLIB_SIM.both : c.casual || c.key ? ADLIB_SIM.one : ADLIB_SIM.neither);
 
@@ -593,9 +652,67 @@ function limitFor(kana: string, slow: boolean, adlib: boolean): number {
  * waits until it's answered or times out.
  */
 export function adlibTally(s: DubState): { offered: number; accepted: number; rate: number | null } {
+  // The Green Car makes no offers (every actor ad-libs), so its turns aren't offers.
+  if (s.greenCar) return { offered: 0, accepted: 0, rate: offerRate([]) };
   const answers = s.rounds.flatMap((r) => r.actors.flatMap((a) => (a.adlib && a.adlib !== 'offered' ? [a.adlib] : [])));
   const counted = answers.filter((a) => a !== 'away');
   return { offered: counted.length, accepted: counted.filter((a) => a === 'accepted').length, rate: offerRate(answers) };
+}
+
+// ---- the Green Car (shared/src/greenCar.ts; design: project files n3-coverage/green-car/design.md) ----
+
+/**
+ * The level of a seat's next Green Car ad-lib, counted in `dealt`: an N3 seat takes N3 and N4 in turn, an N4 seat N4.
+ * Which comes first is drawn per seat, so the middle scene's N3 line reaches N3 seats too (three scenes: N3, N4, N3 or
+ * N4, N3, N4).
+ */
+function nextGcLevel(s: DubState, id: string, level: Level, random: () => number): 'n4' | 'n3' {
+  const d = ((s.dealt ??= {})[id] ??= { n4: 0, n3: 0, first: random() < 0.5 ? 'n3' : 'n4' });
+  const lv = level !== 'n3' ? 'n4' : d.n3 === d.n4 ? (d.first ?? 'n3') : d.n3 < d.n4 ? 'n3' : 'n4';
+  d[lv] += 1;
+  return lv;
+}
+
+/** The frames an episode would give a seat at this level: an N3 seat both ad-libs of every scene, an N4 seat the N4 ones. */
+export function episodeFrames(e: Episode, audience: Audience, level: Level): string[] {
+  return e.scenes.flatMap((sc) => {
+    const g = sceneGc(sc, audience);
+    return g ? [...g.n4.frames, ...(level === 'n3' ? g.n3.frames : [])] : [];
+  });
+}
+
+/** How hard the episode pick leans to need: an episode's chance goes with its need to this power. */
+export const AIM_POWER = 4;
+
+/**
+ * Aim the deal: the Green Car episode the room needs most tonight, from each seat's need per frame for the frames it
+ * would get (aimWeight over ctx.frameNeed, divided by the count so an episode that names more frames doesn't win on
+ * the count alone). The episode is the room's one pick, made at setup, so this game has no counts of its own yet.
+ * ctx.frameNeed only knows tonight, and on a fresh night the neediest episode would win every week, so the pick is a
+ * draw with each episode's chance going with need^AIM_POWER: the needy ones mostly, the rest now and then.
+ */
+export function aimEpisode(pool: readonly Episode[], audience: Audience, ctx: ModeContext): Episode | undefined {
+  const players = ctx.players();
+  const need = (e: Episode) =>
+    players.reduce((n, p) => {
+      const fs = episodeFrames(e, audience, p.level);
+      return n + (fs.length ? aimWeight(ctx, p.id, fs) / fs.length : 0);
+    }, 0);
+  const w = pool.map((e) => need(e) ** AIM_POWER);
+  const total = w.reduce((a, b) => a + b, 0);
+  if (!total) return aimPick(pool, () => 0);
+  let x = ctx.random() * total;
+  for (let i = 0; i < pool.length; i++) if ((x -= w[i]!) < 0) return pool[i];
+  return pool[pool.length - 1];
+}
+
+/** What a Green Car actor's phone shows beside the mission: the frame to aim for, and an N4 turn's N3 stretch. */
+function gcView(adlib: AdLib, level: 'n4' | 'n3', stretch: AdLib | null): NonNullable<NonNullable<NonNullable<DubView['me']>['adlib']>['greenCar']> {
+  const frameOf = (x: AdLib) => {
+    const f = FRAME_BY_ID[x.frames[0] as FrameId];
+    return f ? { ja: f.ja, en: f.en } : null;
+  };
+  return { level, frame: level === 'n3' ? frameOf(adlib) : null, stretch: stretch ? { mission: stretch.mission, frame: frameOf(stretch), tag: 'N3' } : null };
 }
 
 function startScene(s: DubState, ctx: ModeContext): void {
@@ -607,6 +724,15 @@ function startScene(s: DubState, ctx: ModeContext): void {
     const offered = dealt[i]!;
     return { playerId: p.id, level: p.level, offered, direction: offered[0], rehearsal: null, take: null, passed: false, skipped: false, grid: [] };
   });
+  if (s.greenCar) {
+    // The Green Car: every actor ad-libs every scene, with no offer card (hard roles stop rotating), at their turn's level.
+    for (const a of actors) {
+      a.adlib = 'accepted';
+      a.gcLevel = nextGcLevel(s, a.playerId, a.level, () => ctx.random());
+    }
+    s.rounds.push({ index: s.round, sceneId: scene.id, actors, order: [], screening: null, guesses: {}, hearts: {}, results: null, best: null });
+    return;
+  }
   // The ad-lib hard role: offered to one N4 player a scene, by the shared `nextOfferee` (fewest offers, then
   // longest ago; a "not this time" sits the next scene out; in a room of 4 or more, whoever played it last
   // scene gets this one off). No N4 player, no change.
@@ -697,7 +823,7 @@ function advance(s: DubState, r: SceneRound, ctx: ModeContext): void {
     }
     case 'reveal': {
       // A good ad-lib: カット！, then the booth replays the scene's model line in Fude's voice.
-      const adlib = adlibOf(s, r);
+      const adlib = isAdlib(a) ? usedAdlib(s, r, a) : adlibOf(s, r);
       if (adlibLanded(a, adlib) && !r.booth) {
         const name = ctx.player(a.playerId)?.name ?? '';
         r.booth = boothFor(adlib, name, a.playerId);
@@ -770,6 +896,15 @@ function phrases(s: DubState, r: SceneRound, a: Actor, scene: Scene, ctx: ModeCo
   const line = lineFor(s, r, a);
   const reh = a.rehearsal;
   const outcome = !reh ? 'seen' : reh.similarity >= WORDS_FULL_AT[a.level] ? 'said' : reh.similarity >= CLOSE_AT ? 'retry' : 'missed';
+  if (isAdlib(a) && s.greenCar && a.gcLevel) {
+    // The Green Car: the ad-lib at this turn's level (or the N3 stretch, once its frame came through), said from memory,
+    // logged as its model line and counted only for the model's frames heard in the take.
+    const used = usedAdlib(s, r, a);
+    const lv = used === actorAdlib(s, r, a) ? a.gcLevel : 'n3';
+    const heard = reh?.heard ? framesHeard(used.model, { text: reh.heard, kana: reh.spoken ?? reh.heard }) : [];
+    ctx.phrase(a.playerId, { itemId: `dub:${scene.id}:gc:${lv}:${heard.join('+')}`, text: used.model.text, kana: used.model.kana, en: used.model.en, outcome, recall: 'memory', frames: heard });
+    return;
+  }
   if (isAdlib(a)) {
     // An ad-lib has no script: it's said from memory, logged as the scene's model line (the take has no
     // English), and it counts only for the model's frames that were heard in the take.
@@ -825,11 +960,25 @@ export const dubClubMode: Mode<DubState, DubView> = {
 
   setup(ctx) {
     const audience = ctx.audience ?? 'family';
-    const pool = episodesFor(audience);
-    const episode = pool[Math.floor(ctx.random() * pool.length)] ?? pool[0]!;
+    const greenCar = !!ctx.greenCar;
+    const pool = episodesFor(audience, greenCar);
+    // The Green Car aims its one pick at the frames the room needs most tonight.
+    const episode = (greenCar ? aimEpisode(pool, audience, ctx) : pool[Math.floor(ctx.random() * pool.length)]) ?? pool[0]!;
     const all: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) all[p.id] = blankStats();
-    return { round: 0, totalRounds: TOTAL_SCENES, episodeId: episode.id, audience, rounds: [], stats: all, phaseAt: ctx.now, episode: null, curveball: false, standIn: null };
+    return {
+      round: 0,
+      totalRounds: TOTAL_SCENES,
+      episodeId: episode.id,
+      audience,
+      rounds: [],
+      stats: all,
+      phaseAt: ctx.now,
+      episode: null,
+      curveball: false,
+      standIn: null,
+      ...(greenCar ? { greenCar: true, dealt: {} } : {}),
+    };
   },
 
   next(s, from) {
@@ -1024,8 +1173,9 @@ export const dubClubMode: Mode<DubState, DubView> = {
         const reading = utteranceReading(raw.utterance).slice(0, 320);
         // An ad-lib has no script to match: the lenient casual check stands in for the similarity. While
         // the offer is open, the plain read is of the scripted line (rehearsing isn't a yes).
-        const check = isAdlib(me) ? adlibCheck(raw.utterance, adlibOf(s, r)) : undefined;
-        const sim = check ? adlibSimilarity(check) : wordsSimilarity(lineOf(s, r, me.level).kana, reading);
+        const gcl = isAdlib(me) && s.greenCar ? me.gcLevel : undefined;
+        const check = gcl ? gcCheck(raw.utterance, actorAdlib(s, r, me), gcl, stretchAdlib(s, r, me)) : isAdlib(me) ? adlibCheck(raw.utterance, adlibOf(s, r)) : undefined;
+        const sim = check ? (gcl ? gcSimilarity(check) : adlibSimilarity(check)) : wordsSimilarity(lineOf(s, r, me.level).kana, reading);
         // The best try counts.
         if (reh.heard === null || sim > reh.similarity) {
           reh.similarity = sim;
@@ -1065,6 +1215,8 @@ export const dubClubMode: Mode<DubState, DubView> = {
         // Yes to the ad-lib, or "not this time": the scripted N4 line instead. Until the take is sent.
         if (phase !== 'prompt' && phase !== 'answer') return moveError('wrong-phase');
         if (!me) return moveError('not-playing');
+        // The Green Car has no offer and no script to fall back on.
+        if (s.greenCar) return moveError('not-offered');
         if (me.adlib !== 'offered' && me.adlib !== 'accepted' && me.adlib !== 'declined') return moveError('not-offered');
         if (me.take) return moveError('already-sent');
         const next = raw.accept === true ? 'accepted' : 'declined';
@@ -1173,6 +1325,8 @@ export const dubClubMode: Mode<DubState, DubView> = {
   },
 
   offers(s, playerId) {
+    // Green Car turns aren't offers, so they stay out of the offer log.
+    if (s.greenCar) return [];
     return s.rounds.flatMap((r) => r.actors.flatMap((a) => (a.playerId === playerId && a.adlib && a.adlib !== 'offered' ? [{ role: 'dub-club:adlib', answer: a.adlib }] : [])));
   },
 
@@ -1263,7 +1417,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
     let me: DubView['me'] = null;
     if (player && r && scene) {
       const mine = actorOf(r, player.id);
-      const adlib = isAdlib(mine) ? adlibOf(s, r) : null;
+      const adlib = isAdlib(mine) ? actorAdlib(s, r, mine!) : null;
       // The offer shows (beside the scripted line) until it's answered, while there's still a take to make.
       const offer = adlibOpen(mine) && !mine!.take && (phase === 'prompt' || phase === 'answer') ? adlibOf(s, r) : null;
       const line = mine ? lineFor(s, r, mine) : lineOf(s, r, level);
@@ -1271,7 +1425,7 @@ export const dubClubMode: Mode<DubState, DubView> = {
       const d = mine ? directionOf(mine.direction) : undefined;
       const reh = mine?.rehearsal;
       const canGuess = !!a && a.playerId !== player.id && !!sc && ['play', 'guess', 'replay', 'regroup'].includes(sc.step);
-      const ownAdlib = adlib ?? (isAdlib(mine) ? adlibOf(s, r) : null);
+      const ownAdlib = adlib;
       const missed = reh?.adlib && !reh.adlib.key && ownAdlib ? missionWord(ownAdlib) : null;
       const booth = a && sc?.step === 'booth' && a.playerId !== player.id ? r.booth : null;
       const standIn = phase === 'prompt' && s.standIn?.round === r.index ? s.standIn.c : null;
@@ -1295,7 +1449,15 @@ export const dubClubMode: Mode<DubState, DubView> = {
         myTurn: (!!a && a.playerId === player.id) || (step?.kind === 'scene' && step.scene?.playerId === player.id),
         adlib:
           mine && adlib
-            ? { state: 'accepted', mission: adlib.mission, emoji: adlib.emoji, check: reh?.adlib ?? null, model: mine.take || phase === 'reveal' || phase === 'score' ? adlib.model : null, hint: missed }
+            ? {
+                state: 'accepted',
+                mission: adlib.mission,
+                emoji: adlib.emoji,
+                check: reh?.adlib ?? null,
+                model: mine.take || phase === 'reveal' || phase === 'score' ? usedAdlib(s, r, mine).model : null,
+                hint: missed,
+                ...(s.greenCar && mine.gcLevel ? { greenCar: gcView(adlib, mine.gcLevel, stretchAdlib(s, r, mine)) } : {}),
+              }
             : mine && offer
               ? { state: 'offered', mission: offer.mission, emoji: offer.emoji, check: null, model: null, hint: null }
               : null,
