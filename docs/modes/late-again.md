@@ -109,6 +109,34 @@ Pon's line is the card, but when speech-to-text heard the clip, the card counts 
 heard in it (`late:<cause>:<level>:<frames>`, its own card): naming the crow doesn't earn Pon's ので (panel on
 #160).
 
+## Green Car
+
+When every player is N4 or N3 the room may ride in the Green Car (`ctx.greenCar`, `shared/src/greenCar.ts`;
+design: the project's `n3-coverage/green-car/design.md`). Nothing moved out of mixed rooms for this game: N4 and
+N3 excuses already only change the latecomer's own phone. In the Green Car:
+
+- **N4 and N3 lines only.** An N3 latecomer takes an N3 line and an N4 line in turn (N3 first; `LateRound.lineLevel`),
+  so about half each; an N3 line is never an ask round. An N4 latecomer works from the N4 line, and the hint also
+  shows the cause's N3 line with an N3 tag as optional stretch: when their own clip uses its chunk, the N3 line is
+  logged (`late:<cause>:n3`) and the booth calls it out.
+- **Eight causes a game** (`greenCarDeck`): three believable, three self-owns and two yōkai, drawn from the room's
+  audience, with up to two of the audience's own causes first. Every deal comes from them, so a cause and its frame
+  come round again; only the last round's options are kept back.
+- **Aim the deal.** The mode has no account data, so it counts, per player, the frames each said this game
+  (`LateState.said`, from what speech-to-text heard, else the line's own frames). In each bucket the deal keeps the
+  causes whose line (at the level this latecomer is dealt) has the frames they've said least, then draws at random
+  among those; the cause dealt to them (they may tap another) is the neediest of the three.
+- **The witness backs the story up** out loud at the gist and the vote, as hearsay about the cause they backed: N4
+  「ねこだった そうです。」, N3 「ねこだった らしいです。」 (the same 50/50 turn as the latecomer's lines; an N4 witness sees the
+  らしい version as stretch). The line is behind a hint. A checked take counts only when it passes it on as hearsay;
+  without speech-to-text a try counts. It's logged as `late:backup:<level>:<cause>`, path credit only, no points.
+- **Kids and Cheeky.** New Green Car causes, N4 and N3 lines only, never dealt in a mixed room, art still to come
+  (the screens show the emoji): Kids and Family get late-for-school causes (the dog ate the homework, a little brother
+  hid my shoes, a flat tyre) and a Kids school scene (学校の 朝の 会); Cheeky gets the drinking party and the dull
+  date (its two Cheeky causes already had N3 excuses). The new Kids/Family N3 lines carry ＿わけでは ない, ＿うえに and
+  ＿しか ない, which were Cheeky only, so every frame can come up in every audience (tested). The design's ＿せいで and
+  ＿させられた for Kids come from the all-ages causes (the alarm clock, the old lady, the kappa).
+
 ## Open, for playtests
 
 - The curveball has one tile (たぬき). The humor seat's ぶちょう and ちょうちんさん tiles need art.

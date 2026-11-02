@@ -20,6 +20,8 @@
 //            chief only names the cause.
 //   Ruling   your points, by reason; the chief's read of the room; the latecomer's private note (what you
 //            said, Pon's way, from memory or with a hint). The booth's tag at your level.
+//   Green Car  an N4 latecomer's hint also shows the cause's N3 line as optional stretch (N3 tag). The witness
+//            backs the story up out loud at the gist and the vote: a short take, checked for そうです / らしい.
 
 import { h } from '../../../shared/src/dom.js';
 import { UPLOAD_MS, type LateMe, type LateView, type TileView } from '../../../shared/src/modes/lateAgain/lateAgain.js';
@@ -153,6 +155,80 @@ async function stopAndSend(ctx: Ctx): Promise<void> {
   bump(ctx);
 }
 
+// ---- Green Car: the witness backs the story up out loud ----
+
+/** How long the witness's backup take may run. */
+const BACKUP_MS = 5_000;
+let backupRec: { round: number; clip: MicClip; started: number | null; timer: ReturnType<typeof setTimeout> | null } | null = null;
+let backupSending = false;
+/** The backup hint was opened this round. */
+let backupHint = 0;
+
+function startBackup(ctx: Ctx): void {
+  if (backupRec || backupSending) return;
+  const round = ctx.game.round;
+  const clip = new MicClip({ raw: true });
+  backupRec = { round, clip, started: null, timer: null };
+  bump(ctx);
+  void clip.ready.then((ok) => {
+    if (backupRec?.clip !== clip) return;
+    if (!ok) {
+      // No mic: a try counts. Say it to the room and tap that you did.
+      backupRec = null;
+      void ctx.send({ kind: 'backup', round, heard: null, checked: false }).then((sent) => sent && buzz(80));
+      return bump(ctx);
+    }
+    buzz(40);
+    backupRec.started = Date.now();
+    backupRec.timer = setTimeout(() => void stopBackup(ctx), BACKUP_MS);
+    bump(ctx);
+  });
+}
+
+async function stopBackup(ctx: Ctx): Promise<void> {
+  const r = backupRec;
+  if (!r) return;
+  backupRec = null;
+  if (r.timer) clearTimeout(r.timer);
+  const wav = r.clip.stop();
+  if (!wav || wav.length <= 44 || r.started === null) return bump(ctx);
+  backupSending = true;
+  bump(ctx);
+  // Only the speech check hears the take: the room hears the witness in person.
+  const res = await uploadClip(wav, false);
+  backupSending = false;
+  void ctx.send({ kind: 'backup', round: r.round, heard: res.ok ? res.heard : null, checked: res.ok ? res.checked : false }).then((ok) => ok && buzz(80));
+  bump(ctx);
+}
+
+/** The witness's backup card: the mission, the line behind a hint (with the N3 stretch for an N4 witness), and the say button. */
+function backupCard(ctx: Ctx, me: LateMe): HTMLElement | null {
+  const b = me.backup;
+  if (!b || (!b.open && !b.said)) return null;
+  const round = ctx.game.round;
+  const shown = backupHint === round;
+  const on = backupRec?.round === round;
+  const live = on && backupRec!.started !== null;
+  const label = backupSending ? 'Sending…' : live ? '■ Done' : on ? 'Opening the mic…' : isQuiet() || !recordReady() ? '🗣 I said it out loud' : '● Say it out loud';
+  const tap = () => {
+    if (on) return void stopBackup(ctx);
+    if (isQuiet() || !recordReady()) return void ctx.send({ kind: 'backup', round, heard: null, checked: false }).then((ok) => ok && buzz(80));
+    startBackup(ctx);
+  };
+  return h(
+    'div',
+    { class: 'la-hint la-backup' },
+    h('p', { class: 'la-mission' }, b.mission),
+    b.said ? h('p', { class: 'hint la-ready-done' }, 'Backed it up ✓') : null,
+    !shown && !b.said
+      ? h('button', { type: 'button', class: 'ghost', onclick: () => ((backupHint = round), void ctx.send({ kind: 'hint', round }), bump(ctx)) }, 'Need a hint?')
+      : null,
+    shown || b.said ? jpView(b.model, me.level, { cls: 'la-model' }) : null,
+    (shown || b.said) && b.stretch ? h('div', {}, h('p', { class: 'la-label' }, h('span', { class: 'la-n3' }, 'N3'), ' Stretch, if you like:'), jpView(b.stretch, me.level, { cls: 'la-model' })) : null,
+    b.open && !b.said ? h('button', { type: 'button', class: `primary${live ? ' live' : ''}`, disabled: backupSending || (on && !live), onclick: tap }, label) : null,
+  );
+}
+
 /** While a take runs, redraw on each second so the countdown moves. */
 function tickWhileLive(ctx: Ctx): void {
   if (ticker || !rec || rec.started === null) return;
@@ -246,7 +322,8 @@ function band(me: LateMe, next: string): HTMLElement {
 const dock = (...children: (HTMLElement | null)[]): HTMLElement => h('div', { class: 'la-dock' }, ...children);
 
 function pic(t: TileView): HTMLElement {
-  if (t.picture === 'sorry' || t.picture === 'sound') return h('span', { class: 'la-pic la-emoji', 'aria-hidden': 'true' }, t.emoji);
+  // No picture yet (Green Car causes whose art is still to come): the emoji.
+  if (!t.picture || t.picture === 'sorry' || t.picture === 'sound') return h('span', { class: 'la-pic la-emoji', 'aria-hidden': 'true' }, t.emoji);
   return h('img', { class: 'la-pic', src: ART(t.picture), alt: '', draggable: 'false' });
 }
 
@@ -414,6 +491,7 @@ function lateScreen(ctx: Ctx, me: LateMe): HTMLElement {
         step >= 1 && frame ? h('div', { class: 'la-frame' }, h('p', { class: 'la-label' }, 'Fill the gap:'), jpView(frame, me.level, { cls: 'la-model' })) : null,
         step === 1 ? h('button', { type: 'button', class: 'ghost', onclick: open(2) }, 'Still stuck? See Pon’s version') : null,
         step >= 2 ? h('div', {}, h('p', { class: 'la-label' }, 'Pon’s version:'), jpView(me.mission.model, me.level, { cls: 'la-model' })) : null,
+        step >= 2 && me.stretch ? h('div', {}, h('p', { class: 'la-label' }, h('span', { class: 'la-n3' }, me.stretch.tag), ' Stretch, if you like: ', me.stretch.mission), jpView(me.stretch.model, me.level, { cls: 'la-model' })) : null,
       )
     : null;
 
@@ -438,6 +516,7 @@ function lateScreen(ctx: Ctx, me: LateMe): HTMLElement {
     label,
     options,
     me.mission ? h('p', { class: 'la-mission' }, me.mission.text) : null,
+    me.stretch && step < 2 ? h('p', { class: 'la-sub' }, h('span', { class: 'la-n3' }, me.stretch.tag), ' Stretch, if you like: ', me.stretch.mission) : null,
     hintBox,
     typingNow ? typedBox(ctx) : null,
     problemLine(),
@@ -527,7 +606,7 @@ function listenScreen(ctx: Ctx, me: LateMe): HTMLElement {
       h('div', { class: 'la-tiles la-tiles-4' }, ...me.catchTiles.map((t) => tileButton(t, t.tapped, gisting || t.tapped ? null : () => send({ kind: 'catch', wordId: t.id })))),
     );
   }
-  if (gisting) parts.push(gistCard(me, late));
+  if (gisting) parts.push(gistCard(me, late), backupCard(ctx, me));
   if (!me.check && !me.catchTiles.length && !gisting) parts.push(h('p', { class: 'hint' }, 'Listen!'));
   return h('div', { class: 'screen la-screen' }, ...parts);
 }
@@ -579,6 +658,7 @@ function voteScreen(ctx: Ctx, me: LateMe): HTMLElement {
       band(me, 'the ruling'),
       gistCard(me, late),
       h('p', { class: 'la-mission' }, 'No leaf to give this round'),
+      backupCard(ctx, me),
       h('p', { class: 'hint' }, 'A new leaf comes every other round. Watch the TV!'),
     );
   if (me.canVote) {
@@ -589,6 +669,7 @@ function voteScreen(ctx: Ctx, me: LateMe): HTMLElement {
       gistCard(me, late),
       h('p', { class: 'la-mission' }, `Forgive ${late}? A leaf is a Safe vote (+100 to them).`),
       h('p', { class: 'hint' }, 'Leaves are scarce: one more comes every other round, and you can hold two.'),
+      backupCard(ctx, me),
       dock(
         h('button', { type: 'button', class: `la-call la-give${me.gave === true ? ' on' : ''}`, onclick: () => send({ kind: 'leaf', give: true }) }, h('img', { class: 'la-leaf big', src: LEAF, alt: '' }), 'Give a leaf'),
         h('button', { type: 'button', class: `la-call la-keep${me.gave === false ? ' on' : ''}`, onclick: () => send({ kind: 'leaf', give: false }) }, '✋ Keep it'),
@@ -642,6 +723,8 @@ export const lateAgainPhone: PhoneMode<LateView> = {
       game.holders,
       game.voters.map((v) => v.leaves).join(),
       game.coop ? 'c' : '',
+      backupRec ? (backupRec.started ? 'B' : 'b') : '',
+      backupSending ? 's' : '',
     ].join('|'),
 
   render(ctx) {
@@ -650,6 +733,7 @@ export const lateAgainPhone: PhoneMode<LateView> = {
     newRound(game.round);
     // A recording left running when the phase moves on is sent as it is.
     if (rec && (view.phase !== 'answer' || rec.round !== game.round)) void stopAndSend(ctx);
+    if (backupRec && (backupRec.round !== game.round || !game.me?.backup?.open)) void stopBackup(ctx);
     armTypedSend(ctx);
     switch (view.phase) {
       case 'intro':

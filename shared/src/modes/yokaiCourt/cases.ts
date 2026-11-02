@@ -50,6 +50,7 @@ export interface Thing {
   gloss?: string;
   /** A place with its preposition, for the English lines (on the roof). Clues leave it out. */
   at?: string;
+  /** Path under stage/assets, without .png. Empty: the art is still to come, and the screens show the emoji. */
   picture: string;
   emoji: string;
   keys: string[];
@@ -82,6 +83,8 @@ export interface Case {
   /** Fude-san's last word on the case once the verdict is in, either way (the real story). */
   coda: JpText;
   audiences?: readonly Audience[];
+  /** Green Car only (shared/src/greenCar.ts): never dealt in a mixed room. */
+  greenCar?: boolean;
   status: 'draft' | 'fluent-checked';
 }
 
@@ -239,6 +242,87 @@ export const CASES: readonly Case[] = [
     coda: jp('ほんとうは… すずりは フデさんの ポケットに ありました。あしあとも フデさんの でした。', 'The real story… the inkstone was in Fude-san’s own pocket. The footprints were Fude-san’s too.'),
     status: 'draft',
   },
+  // ---- Green Car only: N4 and N3 rooms (shared/src/greenCar.ts). Kids and Family: school; Cheeky: a night out. ----
+  {
+    id: 'class-pudding',
+    title: jk('きゅうしょくの プリン、誰が 食べた？', 'きゅうしょくの プリン、だれが たべた？', 'Who ate the class pudding at lunch?'),
+    scene: jk('教室', 'きょうしつ', 'the classroom'),
+    accused: 'tanuki',
+    deed: { plain: jk('食べた', 'たべた', 'ate the pudding'), masu: jk('食べました', 'たべました', 'ate the pudding'), neg: jk('食べませんでした', 'たべませんでした', 'didn’t eat the pudding') },
+    object: { id: 'pudding', word: jp('プリン', 'the pudding'), picture: 'court/object-pudding', emoji: '🍮', keys: ['ぷりん'] },
+    evidence: 'Thirty puddings for thirty pupils. Twenty-nine left.',
+    remedy: jk('買わ', 'かわ', 'buy a new pudding'),
+    clue: 'spoon',
+    clueDecoys: ['leaf', 'feather'],
+    alibi: 'garden',
+    alibiDecoys: ['roof', 'closet'],
+    other: 'kitsune',
+    curve: 'neko',
+    coda: jp('ほんとうは… ポンが たべました。きゅうしょくまで まてませんでした。', 'The real story… Pon ate it. He couldn’t wait for lunch.'),
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    status: 'draft',
+  },
+  {
+    id: 'blackboard',
+    title: jk('教室の 黒板、誰が らくがきした？', 'きょうしつの こくばん、だれが らくがきした？', 'Who drew on the classroom blackboard?'),
+    scene: jk('教室', 'きょうしつ', 'the classroom'),
+    accused: 'zashiki',
+    deed: { plain: jp('らくがきした', 'drew on the blackboard'), masu: jp('らくがきしました', 'drew on the blackboard'), neg: jp('らくがきしませんでした', 'didn’t draw on the blackboard') },
+    object: { id: 'blackboard', word: jk('黒板', 'こくばん', 'the blackboard'), picture: '', emoji: '🖍️', keys: ['こくばん'] },
+    evidence: 'A big drawing of a tanuki, right before the test.',
+    remedy: jk('消さ', 'けさ', 'wipe the blackboard'),
+    clue: 'footprints',
+    clueDecoys: ['puddle', 'ice'],
+    alibi: 'mountain',
+    alibiDecoys: ['pond', 'bath'],
+    other: 'tengu',
+    curve: 'kappa',
+    coda: jp('ほんとうは… ポンが じぶんの かおを かきました。よく にて います。', 'The real story… Pon drew his own face. It’s a good likeness.'),
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    status: 'draft',
+  },
+  {
+    id: 'sake',
+    title: jk('お店の お酒、誰が 飲んだ？', 'おみせの おさけ、だれが のんだ？', 'Who drank the shop’s sake?'),
+    scene: jk('居酒屋', 'いざかや', 'the izakaya'),
+    accused: 'tengu',
+    deed: { plain: jk('飲んだ', 'のんだ', 'drank the sake'), masu: jk('飲みました', 'のみました', 'drank the sake'), neg: jk('飲みませんでした', 'のみませんでした', 'didn’t drink the sake') },
+    object: { id: 'sake', word: jk('お酒', 'おさけ', 'the sake'), picture: '', emoji: '🍶', keys: ['おさけ'] },
+    evidence: 'The shop’s best bottle, empty. The owner is not smiling.',
+    remedy: jk('払わ', 'はらわ', 'pay for the sake'),
+    clue: 'feather',
+    clueDecoys: ['bell', 'ice'],
+    alibi: 'mountain',
+    alibiDecoys: ['bath', 'roof'],
+    other: 'kappa',
+    curve: 'oni',
+    coda: jp('ほんとうは… てんちょうが のみました。かおが まっかです。', 'The real story… the owner drank it. His face is bright red.'),
+    audiences: ['cheeky'],
+    greenCar: true,
+    status: 'draft',
+  },
+  {
+    id: 'drunk-text',
+    title: jk('夜中の メッセージ、誰が 送った？', 'よなかの メッセージ、だれが おくった？', 'Who sent the drunk text from Pon’s phone?'),
+    scene: jk('ポンの スマホ', 'ポンの スマホ', 'Pon’s phone'),
+    accused: 'kitsune',
+    deed: { plain: jk('送った', 'おくった', 'sent the text'), masu: jk('送りました', 'おくりました', 'sent the text'), neg: jk('送りませんでした', 'おくりませんでした', 'didn’t send the text') },
+    object: { id: 'text', word: jp('メッセージ', 'the text'), picture: 'icons/hl-phone', emoji: '📱', keys: ['めっせえじ', 'めっせーじ'] },
+    evidence: 'Sent at 3 a.m. to Pon’s ex: “I miss you.” Pon wants to disappear.',
+    remedy: jk('謝ら', 'あやまら', 'apologise to Pon'),
+    clue: 'bell',
+    clueDecoys: ['leaf', 'spoon'],
+    alibi: 'kotatsu',
+    alibiDecoys: ['garden', 'pond'],
+    other: 'neko',
+    curve: 'nekomata',
+    coda: jp('ほんとうは… ポンが じぶんで おくりました。なにも おぼえて いません。', 'The real story… Pon sent it himself. He doesn’t remember a thing.'),
+    audiences: ['cheeky'],
+    greenCar: true,
+    status: 'draft',
+  },
 ];
 
 // ---- lookups ----
@@ -249,8 +333,10 @@ const THING_BY_ID = byId([...CLUES, ...PLACES]);
 export const yokaiOf = (id: string): Yokai => YOKAI_BY_ID.get(id)!;
 export const thingOf = (id: string): Thing | undefined => THING_BY_ID.get(id);
 export const caseOf = (id: string): Case | undefined => CASES.find((c) => c.id === id);
-const fits = (x: { audiences?: readonly Audience[] }, audience: Audience): boolean => !x.audiences || x.audiences.includes(audience);
-export const casesFor = (audience: Audience): Case[] => CASES.filter((c) => fits(c, audience));
+const fits = (x: { audiences?: readonly Audience[]; greenCar?: boolean }, audience: Audience, greenCar: boolean): boolean =>
+  (!x.audiences || x.audiences.includes(audience)) && (!x.greenCar || greenCar);
+/** The cases a room can be dealt: its audience's, and the Green Car's own only in the Green Car. */
+export const casesFor = (audience: Audience, greenCar = false): Case[] => CASES.filter((c) => fits(c, audience, greenCar));
 
 /** The yōkai the testimony points at, besides the accused: the blamed one (other) or the second suspect (curve). */
 export function suspectOf(c: Case, t: Testimony): Yokai | null {
@@ -326,6 +412,19 @@ export const WITNESS: Record<Testimony, Template> = {
   other: { ja: '{O}です！', en: 'It was the {O}!' },
   curve: { ja: '{C}も いました！', en: 'A {C} was there too!' },
 };
+/**
+ * Green Car: the witness passes it on as hearsay (＿そうです, ＿に よると: both N4), shown with kanji and said out loud.
+ * Pon is the studio's gossip, so he's the one the witness heard it from.
+ */
+export const WITNESS_GC: Record<Testimony, Template> = {
+  saw: { ja: 'はい！ {A}が {D}のを [見ました|みました]。ほかの [人|ひと]も [見た|みた] そうです。', en: 'Yes! I saw it: the {A} {deed}. I hear someone else saw it too.', frames: ['sou-hear'] },
+  unseen: { ja: 'なにも [見て|みて] いません。でも、[音|おと]が した そうです。', en: 'I didn’t see anything. But I hear there was a noise.', frames: ['sou-hear'] },
+  other: { ja: 'ポンに よると、{O}が {D} そうです！', en: 'According to Pon, the {O} {deed}!', frames: ['ni-yoru', 'sou-hear'] },
+  curve: { ja: 'ポンに よると、{C}も いた そうです！', en: 'According to Pon, a {C} was there too!', frames: ['ni-yoru', 'sou-hear'] },
+};
+/** Kana that show a Green Car witness passed it on as hearsay (a checked take must have one). */
+export const WITNESS_GC_KEYS: readonly string[] = ['そうです', 'そうだ', 'によると', 'によれば'];
+
 /** What the testimony means, for the TV and the lawyers' evidence card. */
 export const TESTIMONY_NOTE: Record<Testimony, string> = {
   saw: 'The witness saw it happen.',
@@ -408,6 +507,25 @@ export const LINES: Record<Side, Record<Testimony, Record<SpeakLevel, Template>>
   },
 };
 
+/**
+ * Green Car: each side and testimony has two N3 lines (the first is LINES' own), so a game can aim each N3 lawyer at
+ * the N3 frames they've said least. An N4 lawyer's stretch is one of these too.
+ */
+export const N3_VARIANTS: Record<Side, Record<Testimony, readonly Template[]>> = {
+  pros: {
+    saw: [LINES.pros.saw.n3, { ja: `${W}は {A}が {D}のを [見た|みた]と [言って|いって] います。{K}も ありました。{A}が {D}に きまって います！`, en: 'The witness says they saw the {A} do it. We found {K} too. Of course it was the {A}!', frames: ['ni-kimatteiru'] }],
+    unseen: [LINES.pros.unseen.n3, { ja: 'だれも [見て|みて] いないからと いって、{A}じゃ ないとは かぎりません。{K}が ありました！', en: 'Just because nobody saw it doesn’t mean it wasn’t the {A}. We found {K}!', frames: ['to-wa-kagiranai'] }],
+    other: [LINES.pros.other.n3, { ja: '{O}が {D} はずが ありません。{K}が ありました。{A}が やったに きまって います！', en: 'There’s no way the {O} {deed}. We found {K}. It was the {A}, of course!', frames: ['hazu-ga-nai', 'ni-kimatteiru'] }],
+    curve: [LINES.pros.curve.n3, { ja: '{C}も いた そうですが、{K}が ありました。つまり、{A}が {D}と いう ことです！', en: 'I hear a {C} was there too, but we found {K}. Which means the {A} {deed}!', frames: ['sou-hear', 'to-iu-koto'] }],
+  },
+  def: {
+    saw: [LINES.def.saw.n3, { ja: `${W}は [見た|みた]と [言いますが|いいますが]、{A}は {P}に いました。{A}が {D} はずが ありません！`, en: 'The witness says they saw it, but the {A} was {Pat}. There’s no way the {A} {deed}!', frames: ['hazu-ga-nai'] }],
+    unseen: [LINES.def.unseen.n3, { ja: 'だれも [見て|みて] いないのに、{A}が {D}なんて おかしいです！ {A}は {P}に いました。', en: 'Nobody saw a thing, and they say the {A} {deed}? Ridiculous! The {A} was {Pat}.', frames: ['nante'] }],
+    other: [LINES.def.other.n3, { ja: `${W}に よると、{O}だ そうです。{A}は {P}に いました。{O}に ちがいありません！`, en: 'According to the witness, it was the {O}. The {A} was {Pat}. It must have been the {O}!', frames: ['ni-yoru', 'ni-chigainai'] }],
+    curve: [LINES.def.curve.n3, { ja: '{C}が いた らしいです。{A}は {P}に いました。いかにも {C}っぽい やり方です！', en: 'Apparently a {C} was there. The {A} was {Pat}. That’s just the sort of thing a {C} does!', frames: ['rashii', 'ppoi'] }],
+  },
+};
+
 // ---- Kana lawyers: three tiles a side, to build an argument from (one or two, in order) ----
 
 export interface ArgTile {
@@ -485,6 +603,10 @@ const tag = {
   ppoi: 'Limited Express · 〜っぽい',
   nante: 'Limited Express · 〜なんて',
   wake: 'Limited Express · 〜わけでは ありません',
+  hazu: 'Limited Express · 〜はずが ありません',
+  kimatte: 'Limited Express · 〜に きまって います',
+  kagiranai: 'Limited Express · 〜とは かぎりません',
+  iukoto: 'Limited Express · 〜と いう ことです',
   yoru: 'Express Line · 〜に よると',
   itte: 'Express Line · 〜と いって いました',
   nakereba: 'Express Line · 〜なければ なりません',
@@ -500,6 +622,10 @@ export const CHUNKS: readonly CourtChunk[] = [
   { id: 'nante', level: 'n3', text: 'なんて', keys: ['なんておかし', 'なんてひど', 'なんてうそ', 'なんてありえ'], note: '〜なんて: “to say that…!”. The court is outraged.', tag: tag.nante },
   { id: 'ppoi', level: 'n3', text: 'っぽい', keys: ['っぽいやり', 'っぽいです'], note: '〜っぽい: “so very like a…”. The court nods.', tag: tag.ppoi },
   { id: 'chigai', level: 'n3', text: 'に ちがいありません', keys: ['にちがいありません', 'にちがいない'], note: '〜に ちがいありません: “it must have been…”. Said like a closing argument. The court leans in.', tag: tag.chigai },
+  { id: 'hazu', level: 'n3', text: 'はずが ありません', keys: ['はずがありません', 'はずがない', 'はずはありません', 'はずはない'], note: '〜はずが ありません: “there’s no way…”. The court can’t argue with that.', tag: tag.hazu },
+  { id: 'kimatte', level: 'n3', text: 'に きまって います', keys: ['にきまっています', 'にきまってる', 'にきまっている'], note: '〜に きまって います: “of course it was…”. Not a flicker of doubt.', tag: tag.kimatte },
+  { id: 'kagiranai', level: 'n3', text: 'とは かぎりません', keys: ['とはかぎりません', 'とはかぎらない'], note: '〜とは かぎりません: “that doesn’t mean it wasn’t…”. The door stays open.', tag: tag.kagiranai },
+  { id: 'iukoto', level: 'n3', text: 'と いう ことです', keys: ['ということです', 'ということだ', 'ってことです', 'ってことだ'], note: '〜と いう ことです: “which means…”. The case, summed up.', tag: tag.iukoto },
   { id: 'wake', level: 'n3', text: 'わけでは ありません', keys: ['わけではありません', 'わけじゃありません', 'わけではない', 'わけじゃない'], note: '〜わけでは ありません: “that doesn’t mean…”. One line, and the case has a hole in it.', tag: tag.wake },
   { id: 'itte', level: 'n4', text: 'と いって いました', keys: ['といっていました', 'っていっていました', 'といってました', 'っていってました', 'といっていた', 'っていっていた', 'っていってた', 'といいました'], note: '〜と いって いました: “they said…”. The testimony, quoted back at the court.', tag: tag.itte },
   { id: 'nakereba', level: 'n4', text: 'なければ なりません', keys: ['なければなりません', 'なければならない', 'なければいけ', 'なくてはいけ', 'なくてはなりません', 'なきゃいけ', 'なくちゃいけ', 'ないといけ'], note: '〜なければ なりません: “must”. The sentence, before the judges have even voted.', tag: tag.nakereba },

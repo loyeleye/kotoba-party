@@ -25,7 +25,7 @@ import { framesOf } from '../../japanese/frames.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsFor, ROMAJI, type AdviceChunk, type AdviceLine, type Problem } from './problems.js';
+import { ADVICE, adviceFrames, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsFor, ROMAJI, type AdviceChunk, type AdviceLine, type Problem } from './problems.js';
 import { LEVEL_RANK, n4Up } from '../../level.js';
 
 // ---- tuning ----
@@ -149,6 +149,11 @@ export interface Call {
   stepAt: number;
   booth: { playerId: string; chunk: string; line: string } | null;
   settled: boolean;
+  /**
+   * Green Car: the level of the line each speaking adviser works from. An N3 seat takes N3 and N4 lines in turn (about
+   * half each); an N4 seat works from the N4 line, with the problem's N3 line as optional stretch.
+   */
+  lines?: Record<string, 'n4' | 'n3'>;
 }
 
 export interface PlayerStats {
@@ -171,6 +176,12 @@ export interface HotlineState {
   /** Two players: a scripted yōkai calls, both advise, and there's no laugh vote. */
   scripted: boolean;
   phaseAt: number;
+  /** This game rides in the Green Car (ctx.greenCar at setup). */
+  greenCar?: boolean;
+  /** Green Car, aim the deal: per player, how many times each frame was said this game. */
+  said?: Record<string, Record<string, number>>;
+  /** Green Car: per player, the N4 and N3 lines dealt to them this game (an N3 seat takes them in turn). */
+  dealt?: Record<string, { n4: number; n3: number }>;
 }
 
 // ---- view ----
@@ -228,6 +239,8 @@ export interface HotlineView {
   tally: { votes: Record<string, number>; top: string | null; sweep: string | null; points: { playerId: string; points: number }[] } | null;
   booth: { playerId: string; line: string; chunk: string; note: string; tag: string; level: 'n5' | 'n4' | 'n3' } | null;
   ledger: LedgerEntry[];
+  /** This game rides in the Green Car: the TV shows the clover badge. */
+  greenCar: boolean;
   me: HotlineMe | null;
 }
 
@@ -270,6 +283,8 @@ export interface HotlineMe {
   /** A speaking adviser's private note at the score: Nobiko-san's way, what was said, the chunk if used. */
   /** credit: what the phrasebook logged for their line (see creditOf). */
   note: { model: JpText; said: string | null; hinted: boolean; chunk: string | null; credit: Credit } | null;
+  /** Green Car, an N4 adviser: the problem's N3 advice as optional stretch (shown with an N3 tag). Saying its chunk counts as the N3 line. */
+  stretch: { mission: string; model: JpText; tag: 'N3' } | null;
 }
 
 export type HotlineMove =
@@ -317,8 +332,22 @@ export function tileView(id: string, level: Level): TileView {
 
 const withRomaji = (t: JpText, level: Level): JpText & { romaji?: string } => (level === 'kana' ? { ...t, romaji: ROMAJI[t.kana] ?? toRomaji(t.kana) } : t);
 
-/** The level line a speaking adviser works from (Kana and N5 use N5's). */
-export const lineOf = (p: Problem, level: Level): AdviceLine => (level === 'n3' && p.advice.n3 ? p.advice.n3 : n4Up(level) ? p.advice.n4 : p.advice.n5);
+/** The level line a speaking adviser works from (Kana and N5 use N5's; a Green Car problem has none, so N4's). */
+export const lineOf = (p: Problem, level: Level): AdviceLine => (level === 'n3' && p.advice.n3 ? p.advice.n3 : n4Up(level) ? p.advice.n4 : (p.advice.n5 ?? p.advice.n4));
+
+/** The level of the line an adviser works from: their own, or in the Green Car the one dealt to them. */
+const dealtLevel = (c: Call, id: string, level: Level): Level => c.lines?.[id] ?? level;
+const adviceLevel = (c: Call, a: Advice): Level => dealtLevel(c, a.playerId, a.level);
+
+/**
+ * The level of the line an advice is credited with: the line dealt, or in the Green Car the problem's N3 line when the
+ * adviser's own words used an N3 chunk (an N4 seat's stretch, or an N3 seat going for N3 on an N4 turn).
+ */
+export function usedLevel(c: Call, a: Advice): Level {
+  const p = problemOfCall(c);
+  if (c.lines && p.advice.n3 && chunkOf(c, a)?.level === 'n3') return 'n3';
+  return adviceLevel(c, a);
+}
 
 /** What an advice said, as a reading, for matching keys: null when nobody can tell (no speech-to-text). */
 export function adviceReading(c: Call, a: Advice): string | null {
@@ -329,7 +358,7 @@ export function adviceReading(c: Call, a: Advice): string | null {
     case 'typed':
       return a.text;
     case 'nobiko':
-      return lineOf(p, a.level).model.kana;
+      return lineOf(p, adviceLevel(c, a)).model.kana;
     case 'clip':
       return a.heard ? utteranceReading(a.heard) : null;
   }
@@ -376,7 +405,7 @@ export function creditOf(c: Call, a: Advice): Credit {
   if (a.kind !== 'clip' || c.hidden.includes(a.playerId)) return 'seen';
   if (!a.checked) return 'unchecked';
   const k = chunkOf(c, a);
-  if (!k || k.level !== a.level) return 'seen';
+  if (!k || k.level !== usedLevel(c, a)) return 'seen';
   return c.hinted.includes(a.playerId) ? 'hint' : 'memory';
 }
 
@@ -387,14 +416,14 @@ export function creditOf(c: Call, a: Advice): Credit {
 export function saidTara(c: Call, a: Advice): boolean {
   const kana = adviceReading(c, a);
   if (!kana) return false;
-  const text = a.kind === 'clip' ? (a.heard?.text ?? kana) : a.kind === 'nobiko' ? lineOf(problemOfCall(c), a.level).model.text : kana;
+  const text = a.kind === 'clip' ? (a.heard?.text ?? kana) : a.kind === 'nobiko' ? lineOf(problemOfCall(c), adviceLevel(c, a)).model.text : kana;
   const tokens = a.kind === 'clip' ? a.heard?.tokens : undefined;
   return framesOf({ text, kana }, tokens, { keepHidden: true }).includes('tara');
 }
 
 /** The line the phrasebook logs for a speaking adviser: a line's conditional only when the advice used one (see AdviceLine.plain). */
 export function loggedLine(c: Call, a: Advice): JpText {
-  const l = lineOf(problemOfCall(c), a.level);
+  const l = lineOf(problemOfCall(c), usedLevel(c, a));
   return l.plain && !saidTara(c, a) ? l.plain : l.model;
 }
 
@@ -452,13 +481,43 @@ export function dealRoles(s: HotlineState, ctx: ModeContext): Pick<Call, 'caller
   return { caller, advisers, gallery: after.filter((id) => !advisers.includes(id)) };
 }
 
+// ---- the Green Car (shared/src/greenCar.ts; design: project files n3-coverage/green-car/design.md) ----
+
+/** The level of the next line a seat is dealt in the Green Car: an N3 seat takes N3 and N4 lines in turn (N3 first). */
+function nextLineLevel(s: HotlineState, id: string, level: Level): 'n4' | 'n3' {
+  const d = ((s.dealt ??= {})[id] ??= { n4: 0, n3: 0 });
+  const lv = level === 'n3' && d.n3 <= d.n4 ? 'n3' : 'n4';
+  d[lv] += 1;
+  return lv;
+}
+
+/** Aim the deal: how many times the advisers have said the frames of the lines this problem would give them. */
+function needOf(s: HotlineState, p: Problem, lines: Record<string, 'n4' | 'n3'>): number {
+  let n = 0;
+  for (const [id, lv] of Object.entries(lines)) {
+    const mine = s.said?.[id] ?? {};
+    for (const f of adviceFrames(lineOf(p, lv), lv)) n += mine[f] ?? 0;
+  }
+  return n;
+}
+
 function startCall(s: HotlineState, ctx: ModeContext): Call {
   s.round += 1;
   const roles = dealRoles(s, ctx);
   const used = new Set(s.calls.map((c) => c.problemId));
-  const all = problemsFor(s.audience);
+  const all = problemsFor(s.audience, !!s.greenCar);
   const fresh = all.filter((p) => !used.has(p.id));
-  const pool = fresh.length ? fresh : all;
+  let pool = fresh.length ? fresh : all;
+  // Green Car: each speaking adviser's line level, then aim the deal: of the problems left, only those whose lines
+  // have the frames these advisers have said least.
+  let lines: Record<string, 'n4' | 'n3'> | undefined;
+  if (s.greenCar) {
+    const dealt: Record<string, 'n4' | 'n3'> = {};
+    for (const id of roles.advisers) if (isSpeaker(ctx, id)) dealt[id] = nextLineLevel(s, id, ctx.player(id)?.level ?? 'n4');
+    const least = Math.min(...pool.map((p) => needOf(s, p, dealt)));
+    pool = pool.filter((p) => needOf(s, p, dealt) === least);
+    lines = dealt;
+  }
   const p = pool[Math.floor(ctx.random() * pool.length)]!;
   const shuffle: Record<string, number[]> = {};
   for (const id of [...roles.advisers, ...roles.gallery]) shuffle[id] = shuffled([0, 1, 2, 3], () => ctx.random());
@@ -486,6 +545,7 @@ function startCall(s: HotlineState, ctx: ModeContext): Call {
     stepAt: ctx.now,
     booth: null,
     settled: false,
+    ...(lines ? { lines } : {}),
   };
   s.calls.push(c);
   if (c.caller) statsOf(s, c.caller).calls += 1;
@@ -553,7 +613,14 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
     }
     const line = loggedLine(c, a);
     const credit = creditOf(c, a);
-    ctx.phrase(id, { itemId: `hotline:${p.id}:${a.level}`, text: line.text, kana: line.kana, en: line.en, outcome: credit === 'memory' || credit === 'hint' || credit === 'unchecked' ? 'said' : 'seen', recall: credit === 'memory' ? 'memory' : 'read' });
+    const lv = usedLevel(c, a);
+    const said = credit === 'memory' || credit === 'hint' || credit === 'unchecked';
+    ctx.phrase(id, { itemId: `hotline:${p.id}:${lv}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: credit === 'memory' ? 'memory' : 'read' });
+    // Green Car, aim the deal: count the frames said.
+    if (s.greenCar && said && (lv === 'n4' || lv === 'n3')) {
+      const mine = ((s.said ??= {})[id] ??= {});
+      for (const f of adviceFrames(lineOf(p, lv), lv)) mine[f] = (mine[f] ?? 0) + 1;
+    }
     if (spokeOf(c, a)) pay(s, ctx, id, POINTS.spoke, 'spoke');
   }
   // Laughs: +50 a vote, and a sweep with three voters or more.
@@ -576,7 +643,7 @@ function settle(s: HotlineState, c: Call, ctx: ModeContext): void {
     const a = c.advice[id]!;
     const k = chunkOf(c, a);
     if (!k) continue;
-    if (!best || LEVEL_RANK[k.level] > LEVEL_RANK[best.chunk.level]) best = { id, chunk: k, line: subtitleOf(a) ?? lineOf(p, a.level).model.text };
+    if (!best || LEVEL_RANK[k.level] > LEVEL_RANK[best.chunk.level]) best = { id, chunk: k, line: subtitleOf(a) ?? lineOf(p, adviceLevel(c, a)).model.text };
   }
   // Never two booths in a row: it's a treat, not a beat every call (and it keeps 8 players under 11.5 minutes).
   const prev = s.calls[s.calls.indexOf(c) - 1];
@@ -682,6 +749,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       stats,
       scripted: players.length <= 2,
       phaseAt: ctx.now,
+      ...(ctx.greenCar ? { greenCar: true, said: {}, dealt: {} } : {}),
     };
   },
 
@@ -1029,6 +1097,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
       tally: inCall && phase === 'score' ? { votes: tallyOf(c!), top: topOf(c!), sweep: sweepOf(c!) && sweepVoters(c!, sweepOf(c!)!) >= 3 ? sweepOf(c!) : null, points: pointsOfCall(s, c!.index) } : null,
       booth: inCall && phase === 'score' && c!.step === 'booth' && c!.booth ? boothView(c!) : null,
       ledger: phase === 'score' || phase === 'recap' ? s.ledger : [],
+      greenCar: !!s.greenCar,
       me: null,
     };
     if (player && c && inCall) view.me = meView(s, c, phase, player, level, view);
@@ -1060,7 +1129,7 @@ export const ghostHotlineMode: Mode<HotlineState, HotlineView> = {
 function cuePlay(s: HotlineState, c: Call, ctx: ModeContext): void {
   const id = c.order[c.at]!;
   const a = c.advice[id]!;
-  if (a.kind === 'nobiko') ctx.cue({ host: 'nobiko', event: 'hotline_mic_pass', slots: { name: ctx.player(id)?.name ?? '', line: lineOf(problemOfCall(c), a.level).model.kana, line_en: lineOf(problemOfCall(c), a.level).model.en } });
+  if (a.kind === 'nobiko') ctx.cue({ host: 'nobiko', event: 'hotline_mic_pass', slots: { name: ctx.player(id)?.name ?? '', line: lineOf(problemOfCall(c), adviceLevel(c, a)).model.kana, line_en: lineOf(problemOfCall(c), adviceLevel(c, a)).model.en } });
   void s;
 }
 
@@ -1110,7 +1179,7 @@ function rowOf(c: Call, id: string, level: Level): AdviceRow {
     pass: a.pass,
     reaction: r,
     auto: c.auto.includes(id),
-    subtitle: r && !hidden ? (a.kind === 'nobiko' ? lineOf(problemOfCall(c), a.level).model.text : subtitleOf(a)) : null,
+    subtitle: r && !hidden ? (a.kind === 'nobiko' ? lineOf(problemOfCall(c), adviceLevel(c, a)).model.text : subtitleOf(a)) : null,
     tile: tile ? tileView(tile, level) : null,
     hidden,
   };
@@ -1172,7 +1241,7 @@ function meView(s: HotlineState, c: Call, phase: Phase, player: ModePlayer, leve
   const planning = phase === 'prompt';
   const mine = c.advice[id];
   const order = c.shuffle[id] ?? [0, 1, 2, 3];
-  const line = isAdviser && speaker ? lineOf(p, level) : null;
+  const line = isAdviser && speaker ? lineOf(p, dealtLevel(c, id, level)) : null;
   const ledger = phase === 'score' ? s.ledger.filter((e) => e.round === c.index && e.playerId === id) : [];
   const breakdown: HotlineMe['breakdown'] = [];
   for (const e of ledger) {
@@ -1214,7 +1283,8 @@ function meView(s: HotlineState, c: Call, phase: Phase, player: ModePlayer, leve
     breakdown,
     note:
       phase === 'score' && isAdviser && speaker && mine
-        ? { model: lineOf(p, level).model, said: mine.kind === 'nobiko' || c.hidden.includes(id) ? null : subtitleOf(mine), hinted: c.hinted.includes(id), chunk: chunk?.text ?? null, credit: creditOf(c, mine) }
+        ? { model: lineOf(p, mine.kind === 'nobiko' ? adviceLevel(c, mine) : usedLevel(c, mine)).model, said: mine.kind === 'nobiko' || c.hidden.includes(id) ? null : subtitleOf(mine), hinted: c.hinted.includes(id), chunk: chunk?.text ?? null, credit: creditOf(c, mine) }
         : null,
+    stretch: line && c.lines?.[id] === 'n4' && level === 'n4' && p.advice.n3 ? { mission: p.advice.n3.mission, model: p.advice.n3.model, tag: 'N3' } : null,
   };
 }

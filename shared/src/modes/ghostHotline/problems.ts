@@ -13,6 +13,7 @@
 
 import type { ByLevel, JpText, Level } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
+import { FRAME_BY_ID, framesOf, type FrameId } from '../../japanese/frames.js';
 
 /** One piece of advice: a Kana adviser's tile, a gallery bet picture, and what the recogniser listens for. */
 export interface AdviceTile {
@@ -40,6 +41,11 @@ export interface AdviceLine {
   plain?: JpText;
   /** N5 only: a fill-in frame (＿＿ marks the gap), the first step behind "Need a hint?". */
   frame?: JpText;
+  /**
+   * The N4/N3 frames the model line says (ids from shared/src/japanese/frames.ts). Written on the Green Car lines;
+   * the older lines leave it out and adviceFrames() finds them with the path's own matchers.
+   */
+  frames?: readonly FrameId[];
 }
 
 export interface Problem {
@@ -57,12 +63,17 @@ export interface Problem {
   near: string;
   decoys: [string, string];
   curve: string;
-  /** Speaking advisers' lines, by level. N3 advice uses the Limited Express grammar (docs/n3-coverage.md). */
-  advice: { n5: AdviceLine; n4: AdviceLine; n3?: AdviceLine };
+  /**
+   * Speaking advisers' lines, by level. N3 advice uses the Limited Express grammar (docs/n3-coverage.md). A Green
+   * Car problem has no N5 line: it never rings in a room with Kana or N5 players.
+   */
+  advice: { n5?: AdviceLine; n4: AdviceLine; n3?: AdviceLine };
   /** Nobiko-san's line at the secret beat. */
   reveal: JpText;
   /** Left out: every room. */
   audiences?: readonly Audience[];
+  /** Green Car only (shared/src/greenCar.ts): N4 and N3 advice, never in a mixed room. */
+  greenCar?: boolean;
   status: 'draft' | 'fluent-checked';
 }
 
@@ -646,6 +657,136 @@ export const PROBLEMS: readonly Problem[] = [
     audiences: ['cheeky'],
     status: 'draft',
   },
+  // ---- Green Car only (design: project files n3-coverage/green-car/design.md, "Kids, Family and Cheeky") ----
+  // N4 and N3 advice only, each line naming its frames: these never ring in a mixed room. Kids (and Family): a kappa
+  // who's scared of the school pool, a zashiki-warashi who can't make friends. Cheeky: yōkai dating trouble (a
+  // rokurokubi whose ex keeps calling, an oni whose dates run away). Their N3 lines add ＿んだから (3.3) to every
+  // audience, and bring ＿ても かまわない, Cheeky only until now, to Kids and Family.
+  {
+    id: 'kappa-pool',
+    caller: { name: jp('かっぱ', 'the kappa'), picture: 'caller-kappa', emoji: '🥒' },
+    line: {
+      kana: jp('プール、こわい…', 'The pool is scary…'),
+      n5: jp('がっこうの プールが こわいです。はいれません…', 'The school pool is scary. I can’t get in…'),
+      n4: jk('かっぱなのに、学校の プールが こわくて 入れないんです…', 'かっぱなのに、がっこうの プールが こわくて はいれないんです…', 'I’m a kappa, but the school pool scares me so much I can’t get in…'),
+    },
+    gist: jp('かっぱなのに プールが こわい！ あったかい おゆは だいすき！', 'A kappa, scared of the school pool. It loves warm water, though.'),
+    secret: jp('おおきな おふろだと おもう', 'Think of it as a big bath'),
+    cure: 'bath',
+    near: 'swim',
+    decoys: ['hide', 'eat'],
+    curve: 'kotatsu',
+    advice: {
+      n4: {
+        mission: 'Gently suggest how the kappa could think about the pool.',
+        model: jk('大きい おふろだと 思って、入ったら どうですか。', 'おおきい おふろだと おもって、はいったら どうですか。', 'Why not think of it as a big bath, and get in?'),
+        frames: ['tara-dou'],
+      },
+      n3: {
+        mission: 'Tell the kappa it’s fine to start small, like at bath time.',
+        model: jk('さいしょは おふろみたいに、足だけ 入れても かまいませんよ。', 'さいしょは おふろみたいに、あしだけ いれても かまいませんよ。', 'At first it’s fine to just put your feet in, like a bath.'),
+        frames: ['temo-kamawanai'],
+      },
+    },
+    reveal: jp('プールは おおきな おふろ！ かっぱの きほんよ〜。', 'A pool is just a big bath! Kappa basics, dear~'),
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    status: 'draft',
+  },
+  {
+    id: 'zashiki-friends',
+    caller: { name: jp('ざしきわらし', 'the house spirit'), picture: 'caller-zashiki', emoji: '👘' },
+    line: {
+      kana: jp('ともだち、いない…', 'No friends…'),
+      n5: jp('あたらしい がっこうに ともだちが いません…', 'I have no friends at my new school…'),
+      n4: jk('新しい 学校で、まだ 友だちが できないんです…', 'あたらしい がっこうで、まだ ともだちが できないんです…', 'I still haven’t made any friends at my new school…'),
+    },
+    gist: jp('あたらしい がっこう！ ともだちが いない！', 'The house spirit is at a new school and hasn’t made a friend yet.'),
+    secret: jp('おおきな こえで あいさつ', 'Say hello, nice and loud'),
+    cure: 'shout',
+    near: 'sing',
+    decoys: ['hide', 'sleep'],
+    curve: 'dance',
+    advice: {
+      n4: {
+        mission: 'Tell the house spirit what it’d better do at school tomorrow.',
+        model: jk('明日、大きな 声で あいさつした ほうが いいですよ。', 'あした、おおきな こえで あいさつした ほうが いいですよ。', 'Tomorrow, you’d better say hello nice and loud.'),
+        frames: ['hou-ga-ii'],
+      },
+      n3: {
+        mission: 'Remind the house spirit why it’ll be fine, then say what to do.',
+        model: jk('明るい 子なんだから、大きな 声で あいさつすれば、すぐ 友だちが できますよ。', 'あかるい こなんだから、おおきな こえで あいさつすれば、すぐ ともだちが できますよ。', 'You’re a cheerful kid, so say hello nice and loud, and you’ll make friends in no time.'),
+        frames: ['n-dakara'],
+      },
+    },
+    reveal: jp('おおきな こえで おはよう！ それだけで いいのよ〜。', 'A big, loud good morning! That’s all it takes~'),
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    status: 'draft',
+  },
+  {
+    id: 'rokurokubi',
+    // Art to come: the screens show the emoji until caller-rokurokubi.png is drawn.
+    caller: { name: jp('ろくろくび', 'the long-necked lady'), picture: 'caller-rokurokubi', emoji: '🧣' },
+    line: {
+      kana: jp('もとカレの でんわ…', 'My ex keeps calling…'),
+      n5: jp('まえの かれしが まいばん でんわします。ねむれません…', 'My ex-boyfriend phones every night. I can’t sleep…'),
+      n4: jk('元カレが 毎晩 電話して くるので、ねむれないんです…', 'もとカレが まいばん でんわして くるので、ねむれないんです…', 'My ex calls every night, so I can’t sleep…'),
+    },
+    gist: jp('もとカレが まいばん よなかに でんわ！', 'Her ex phones in the middle of the night, every night.'),
+    secret: jp('でんわを きって ねる', 'Hang up and go to sleep'),
+    cure: 'sleep',
+    near: 'hide',
+    decoys: ['sing', 'run'],
+    curve: 'dance',
+    advice: {
+      n4: {
+        mission: 'Gently suggest what she could do when the phone rings tonight.',
+        model: jk('電話を 切って、早く ねたら どうですか。', 'でんわを きって、はやく ねたら どうですか。', 'Why not hang up and go to bed early?'),
+        frames: ['tara-dou'],
+      },
+      n3: {
+        mission: 'Remind her of the obvious, then say what to do.',
+        model: jk('もう 別れたんだから、電話は 切って ねましょう。', 'もう わかれたんだから、でんわは きって ねましょう。', 'You’ve broken up, after all: hang up and go to sleep.'),
+        frames: ['n-dakara'],
+      },
+    },
+    reveal: jp('ろくろくびどうし、わかるわ〜。でんわは きって、ねるのよ。', 'One long neck to another: hang up and sleep, dear~'),
+    audiences: ['cheeky'],
+    greenCar: true,
+    status: 'draft',
+  },
+  {
+    id: 'oni-date',
+    caller: { name: jp('おに', 'the oni'), picture: 'caller-oni', emoji: '👹' },
+    line: {
+      kana: jp('デートの あいてが にげる…', 'My dates run away…'),
+      n5: jp('デートの あいてが ぼくを こわがります。すぐ かえります…', 'My dates are scared of me. They go home straight away…'),
+      n4: jk('デートの 相手が ぼくを こわがって、すぐ 帰って しまうんです…', 'デートの あいてが ぼくを こわがって、すぐ かえって しまうんです…', 'My dates get scared of me and go home straight away…'),
+    },
+    gist: jp('デートの あいてが おにを こわがる！', 'The oni’s dates are scared of him and leave early.'),
+    secret: jp('はなを あげる', 'Bring flowers'),
+    cure: 'flowers',
+    near: 'sorry',
+    decoys: ['shout', 'run'],
+    curve: 'dance',
+    advice: {
+      n4: {
+        mission: 'Gently suggest something the oni could bring on the next date.',
+        model: jk('次の デートで、花を あげたら どうですか。', 'つぎの デートで、はなを あげたら どうですか。', 'Why not give them flowers on your next date?'),
+        frames: ['tara-dou'],
+      },
+      n3: {
+        mission: 'Tell the oni what will surely make the date smile.',
+        model: jk('花を あげれば、相手も きっと 笑うに ちがいありません。', 'はなを あげれば、あいても きっと わらうに ちがいありません。', 'Give flowers, and your date is sure to smile.'),
+        frames: ['ni-chigainai'],
+      },
+    },
+    reveal: jp('おにが はなを もって きたら、だれでも わらうわよ〜。', 'An oni holding flowers? Anyone would smile~'),
+    audiences: ['cheeky'],
+    greenCar: true,
+    status: 'draft',
+  },
 ];
 
 const tag = {
@@ -658,6 +799,7 @@ const tag = {
   shika: 'Limited Express · 〜しか ない',
   kamawanai: 'Limited Express · 〜ても かまわない',
   toShitara: 'Limited Express · 〜と したら',
+  nDakara: 'Limited Express · 〜んだから',
   youNaKi: 'Limited Express · 〜ような 気が する',
   tara: 'Express Line · 〜たら どうですか',
   hou: 'Express Line · 〜た ほうが いいです',
@@ -679,6 +821,7 @@ export const CHUNKS: readonly AdviceChunk[] = [
   { id: 'chigainai', level: 'n3', text: 'に ちがいありません', keys: ['にちがいない', 'にちがいありません'], note: '〜に ちがいない: sure of it. The caller can relax.', tag: tag.chigainai },
   { id: 'koto-wa-nai', level: 'n3', text: 'ことは ない', keys: ['ことはない', 'ことはありません'], note: '〜ことは ない: no need to. One worry fewer.', tag: tag.kotoWaNai },
   { id: 'zu-ni-sumu', level: 'n3', text: 'ずに すみます', keys: ['ずにすみ', 'ずにすむ', 'なくてすみ', 'なくてすむ'], note: '〜ずに すむ: spared from it. Dry, for once.', tag: tag.zuNiSumu },
+  { id: 'n-dakara', level: 'n3', text: 'んだから', keys: ['んだから', 'なんだから'], note: '〜んだから: you know why already. Said like a big sister would.', tag: tag.nDakara },
   { id: 'shika', level: 'n3', text: 'しか ない', keys: ['しかない', 'しかありません'], note: '〜しか ない: nothing else for it. Into the machine.', tag: tag.shika },
   { id: 'kamawanai', level: 'n3', text: 'ても かまいません', keys: ['てもかまわ', 'でもかまわ', 'てもかまいません', 'でもかまいません'], note: '〜ても かまわない: it’s fine if you don’t. Permission granted.', tag: tag.kamawanai },
   { id: 'nai-hou', level: 'n4', text: 'ない ほうが いいです', keys: ['ないほうがいい'], note: '〜ない ほうが いいです: friendly advice with a stop sign on it. Fair warning, given.', tag: tag.naiHou },
@@ -696,8 +839,19 @@ export const adviceOf = (id: string): AdviceTile | undefined => {
   return BY_ID.get(id);
 };
 export const problemOf = (id: string): Problem | undefined => PROBLEMS.find((p) => p.id === id);
-const fits = (x: { audiences?: readonly Audience[] }, audience: Audience): boolean => !x.audiences || x.audiences.includes(audience);
-export const problemsFor = (audience: Audience): Problem[] => PROBLEMS.filter((p) => fits(p, audience));
+const fits = (x: { audiences?: readonly Audience[]; greenCar?: boolean }, audience: Audience, greenCar: boolean): boolean =>
+  (!x.audiences || x.audiences.includes(audience)) && (!x.greenCar || greenCar);
+/** The problems a room can get: its audience's, and the Green Car's own only in the Green Car. */
+export const problemsFor = (audience: Audience, greenCar = false): Problem[] => PROBLEMS.filter((p) => fits(p, audience, greenCar));
+
+/**
+ * The N4/N3 frames an advice line says: its own `frames` when written, else the frames the path's matchers find in the
+ * model at the line's level. Aim the deal counts these.
+ */
+export function adviceFrames(line: AdviceLine, level: 'n4' | 'n3'): FrameId[] {
+  if (line.frames) return [...line.frames];
+  return framesOf(line.model).filter((f) => FRAME_BY_ID[f]?.level === level);
+}
 
 /** A Kana adviser's four tiles: the cure, the near miss, the first decoy and the curveball. */
 export const kanaTilesOf = (p: Problem): string[] => [p.cure, p.near, p.decoys[0], p.curve];

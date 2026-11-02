@@ -16,6 +16,8 @@
 .la-label { font-size: 15px; color: var(--muted); font-weight: 700; }
 .la-mission { font-size: 20px; font-weight: 800; line-height: 1.35; text-wrap: balance; }
 .la-sub { display: block; font-size: 15px; font-weight: 700; color: var(--muted); }
+/* Green Car: the N3 stretch tag. */
+.la-n3 { display: inline-block; padding: 0 6px; border-radius: 6px; background: #2f7d4f; color: #fff; font-size: 13px; font-weight: 800; }
 .la-problem { padding: 10px 12px; border-radius: 12px; background: #4a1f2a; color: #ffd6d6; font-weight: 800; }
 
 /* ---- the dock: the one main action, pinned under the thumb while the screen above it scrolls ---- */

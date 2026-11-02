@@ -37,7 +37,8 @@ const SASH = '/stage/assets/late/sash.png';
 const sash = (cls = 'la-sash'): HTMLElement => h('img', { class: cls, src: SASH, alt: '' });
 
 function pic(t: TileView, cls = 'la-pic'): HTMLElement {
-  if (t.picture === 'sorry' || t.picture === 'sound') return h('span', { class: `${cls} la-emoji`, 'aria-hidden': 'true' }, t.emoji);
+  // No picture yet (Green Car causes whose art is still to come): the emoji.
+  if (!t.picture || t.picture === 'sorry' || t.picture === 'sound') return h('span', { class: `${cls} la-emoji`, 'aria-hidden': 'true' }, t.emoji);
   return h('img', { class: cls, src: ART(t.picture), alt: '', draggable: 'false' });
 }
 

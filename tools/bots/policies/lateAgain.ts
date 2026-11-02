@@ -85,6 +85,12 @@ export function lateAgainPolicy(opts: LateAgainPolicyOptions = {}): ModePolicy {
         return out;
       }
 
+      // Green Car: the witness backs the story up out loud (a checked take of the line, with `speak`; else a try).
+      if (me.backup?.open && !me.backup.said) {
+        const said = me.backup.model.kana;
+        push('backup', opts.speak ? { kind: 'backup', checked: true, heard: { via: 'speech', text: said, reading: said } } : { kind: 'backup', checked: false }, think);
+      }
+
       if (view.phase === 'encore') {
         if (me.role === 'chief') {
           // Co-op: naming the cause is the whole call.

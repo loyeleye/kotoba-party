@@ -17,6 +17,7 @@
 import type { JpText, Level } from '../../../../content/src/types.js';
 import type { Audience } from '../../protocol.js';
 import { n4Up } from '../../level.js';
+import { FRAME_BY_ID, framesOf, type FrameId } from '../../japanese/frames.js';
 
 const jp = (text: string, en: string, kana = text): JpText => ({ text, kana, en });
 
@@ -31,6 +32,8 @@ export interface LateScene {
   audiences?: readonly Audience[];
   /** Saved for the last round. */
   finale?: boolean;
+  /** Green Car only (shared/src/greenCar.ts): never shown in a room with Kana or N5 players. */
+  greenCar?: boolean;
 }
 
 /** The grammar chunk the commentary booth calls out, when the excuse used it. */
@@ -57,6 +60,11 @@ export interface CauseLine {
    */
   frame?: JpText;
   chunk?: Chunk;
+  /**
+   * The N4/N3 frames the model line says (ids from shared/src/japanese/frames.ts). Written on the Green Car lines;
+   * the older lines leave it out and lineFrames() finds them with the path's own matchers.
+   */
+  frames?: readonly FrameId[];
 }
 
 export type Bucket = 'believable' | 'selfown' | 'yokai';
@@ -68,9 +76,11 @@ export interface Cause {
   sleep?: boolean;
   /** Left out: every room. */
   audiences?: readonly Audience[];
+  /** Green Car only (shared/src/greenCar.ts): N4 and N3 lines, no Kana or N5 ones, never dealt in a mixed room. */
+  greenCar?: boolean;
   /** Scenes this cause is never dealt in (the date stays out of the omiai and your own wedding). */
   avoidScenes?: readonly string[];
-  /** stage/assets/late/<picture>.png */
+  /** stage/assets/late/<picture>.png; empty while the art is still to be drawn (the screens show the emoji). */
   picture: string;
   /** The picture, as an emoji, for places that can't show art (bots, logs, alt text). */
   emoji: string;
@@ -116,6 +126,8 @@ export const SCENES: readonly LateScene[] = [
   { id: 'wedding', place: { text: '自分の 結婚式', kana: 'じぶんの けっこんしき', en: 'your own wedding (the boss is giving the speech)' }, emoji: '💒', opener: jp('じぶんの けっこんしきだポン！？', 'Your OWN wedding?!'), audiences: ['family', 'cheeky'], finale: true },
   // The Kids finale: the cake round again, a year on.
   { id: 'birthday2', place: { text: '部長の 次の 誕生日', kana: 'ぶちょうの つぎの たんじょうび', en: 'the boss’s NEXT birthday (you’ve still got the cake)' }, emoji: '🎂', opener: jp('もう つぎの たんじょうび！ ケーキ ふたつだポン！', 'It’s the NEXT birthday already! Two cakes!'), audiences: ['kids'], finale: true },
+  // Green Car, Kids: late for school (the design's Kids plan). Pon is the head teacher today.
+  { id: 'school', place: { text: '学校の 朝の 会', kana: 'がっこうの あさの かい', en: 'morning register at school' }, emoji: '🏫', opener: jp('チャイムが なったポン！ しゅっせき とるポン！', 'The bell’s gone! Taking the register!'), audiences: ['kids'], greenCar: true },
 ];
 
 /**
@@ -765,6 +777,185 @@ export const CAUSES: readonly Cause[] = [
     truth: jp('ほんとうは… おこづかいで ガチャを したポン！', 'What really happened… they blew it all on gacha!'),
     status: 'draft',
   },
+  // ---- Green Car only (design: project files n3-coverage/green-car/design.md, "Kids, Family and Cheeky") ----
+  // N4 and N3 lines only: these are never dealt in a mixed room. Each line names its frames. The art is still to be
+  // drawn (picture ''), so the screens show the emoji. Kids (and Family): late for school (the dog, a little brother,
+  // a flat tyre), whose N3 lines carry the three frames that were Cheeky only (＿わけでは ない, ＿うえに, ＿しか ない),
+  // so every frame can come up in every audience. Cheeky: after the drinking party, and a dull date. Drinking stays
+  // Cheeky only and never turns into a hangover or illness.
+  {
+    id: 'dog',
+    bucket: 'believable',
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    picture: '',
+    emoji: '🐕',
+    word: jp('いぬ！', 'The dog!'),
+    sound: jp('ワン！', 'Woof!'),
+    keys: ['いぬが', 'いぬの', 'いぬに', 'いぬは', 'しゅくだい'],
+    gist: jp('いぬが しゅくだいを たべた！', 'The dog ate the homework!'),
+    lines: {
+      n4: {
+        mission: 'Apologise, then blame the dog for your homework. Say what you had to do about it.',
+        model: n4('犬が 宿題を 食べたので、もう 一回 やらなければ なりませんでした。', 'いぬが しゅくだいを たべたので、もう いっかい やらなければ なりませんでした。', 'The dog ate my homework, so I had to do it all again.'),
+        chunk: { text: 'やらなければ なりませんでした', keys: MUST, note: '〜なければ なりませんでした: you HAD to. Every single sum, twice.', tag: tag.must },
+        frames: ['node', 'nakereba'],
+      },
+      n3: {
+        mission: 'Apologise, then say what it’s NOT, and blame the dog.',
+        model: n3('宿題を 忘れた わけでは ありません。犬が 食べたんです。', 'しゅくだいを わすれた わけでは ありません。いぬが たべたんです。', 'It’s not that I forgot my homework. The dog ate it.'),
+        chunk: { text: 'わけでは ありません', keys: ['わけではありません', 'わけではない', 'わけじゃない', 'わけじゃありません'], note: '〜わけでは ありません: it’s not THAT. It’s the dog.', tag: tag.wakedewa },
+        frames: ['wake-dewa-nai'],
+      },
+    },
+    pon: {
+      flop: jp('いぬ… ポンの いぬも しゅくだいが だいすきだポン。', 'The dog… my dog loves homework too.'),
+      good: jp('いぬが しゅくだいを！？ メモ、メモ…', 'The dog ate it?! Taking notes…'),
+      ippon: jp('あした ポンも いぬに しょるいを あげるポン！', 'Tomorrow my dog gets my paperwork too!'),
+    },
+    check: { q: 'What happened to the homework?', right: 'The dog got it', wrong: ['The cat sat on it', 'It blew away'] },
+    truth: jp('ほんとうは… いぬは なにも たべて ないポン。', 'What really happened… the dog didn’t eat a thing.'),
+    status: 'draft',
+  },
+  {
+    id: 'sibling',
+    bucket: 'believable',
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    picture: '',
+    emoji: '👟',
+    word: jp('おとうと！', 'My little brother!'),
+    sound: jp('くすくす', 'Hee hee'),
+    keys: ['おとうと', 'くつを', 'くつが', 'くつは'],
+    gist: jp('おとうとが くつを かくした！', 'Their little brother hid their shoes!'),
+    lines: {
+      n4: {
+        mission: 'Apologise, then blame your little brother for your shoes. Say how you came instead.',
+        model: n4('弟が くつを かくしたので、はだしで 来ました。', 'おとうとが くつを かくしたので、はだしで きました。', 'My little brother hid my shoes, so I came barefoot.'),
+        chunk: { text: 'かくしたので', keys: NODE, note: '〜ので: the polite “so”. Barefoot, but polite.', tag: tag.node },
+        frames: ['node'],
+      },
+      n3: {
+        mission: 'Apologise, then blame your little brother for your shoes, and pile one more thing on top.',
+        model: n3('弟が くつを かくした うえに、ランドセルに カエルを 入れました。', 'おとうとが くつを かくした うえに、ランドセルに カエルを いれました。', 'My little brother hid my shoes, and on top of that he put a frog in my school bag.'),
+        chunk: { text: 'かくした うえに', keys: ['たうえに'], note: '〜うえに: and on top of that… The frog is fine.', tag: tag.ueni },
+        frames: ['ue-ni'],
+      },
+    },
+    pon: {
+      flop: jp('くつ… ポンは いつも はだしだポン。', 'Shoes… I’m always barefoot anyway.'),
+      good: jp('おとうとさん、てんさいだポン！', 'Your little brother is a genius!'),
+      ippon: jp('あした ポンの くつも かくして もらうポン！', 'Tomorrow I’m getting my shoes hidden too!'),
+    },
+    check: { q: 'What went missing?', right: 'Their shoes', wrong: ['Their bag', 'Their homework'] },
+    truth: jp('ほんとうは… くつは じぶんの せなかに あったポン！', 'What really happened… the shoes were on their own back!'),
+    status: 'draft',
+  },
+  {
+    id: 'bike',
+    bucket: 'believable',
+    audiences: ['kids', 'family'],
+    greenCar: true,
+    picture: '',
+    emoji: '🚲',
+    word: jp('じてんしゃ！', 'My bike!'),
+    sound: jp('パン！', 'Pop!'),
+    keys: ['じてんしゃ', 'ぱんく'],
+    gist: jp('じてんしゃが パンク！', 'A flat tyre!'),
+    lines: {
+      n4: {
+        mission: 'Apologise, then blame your bike’s flat tyre. Say what you had to do.',
+        model: n4('自転車が パンクしたので、歩いて 来なければ なりませんでした。', 'じてんしゃが パンクしたので、あるいて こなければ なりませんでした。', 'My bike got a flat tyre, so I had to walk here.'),
+        chunk: { text: '来なければ なりませんでした', keys: MUST, note: '〜なければ なりませんでした: you HAD to. Pushing the bike, too.', tag: tag.must },
+        frames: ['node', 'nakereba'],
+      },
+      n3: {
+        mission: 'Apologise, then blame your bike’s flat tyre. Say you had no other choice.',
+        model: n3('自転車が パンクしたので、歩く しか ありませんでした。', 'じてんしゃが パンクしたので、あるく しか ありませんでした。', 'My bike got a flat tyre, so I had no choice but to walk.'),
+        chunk: { text: '歩く しか ありませんでした', keys: ['しかありません', 'しかない', 'しかなかった'], note: '〜しか ない: no other way. Just you, the bike and a long road.', tag: tag.shika },
+        frames: ['shika-nai'],
+      },
+    },
+    pon: {
+      flop: jp('パンク… ポンの じてんしゃは まいにちだポン。', 'A flat… mine gets one every day.'),
+      good: jp('あるいて きた！？ えらいポン！', 'You walked?! Good for you!'),
+      ippon: jp('あした ポンも タイヤの くうきを ぬくポン！', 'Tomorrow I’m letting my tyres down too!'),
+    },
+    check: { q: 'What happened to the bike?', right: 'A flat tyre', wrong: ['It was stolen', 'It was too small'] },
+    truth: jp('ほんとうは… じてんしゃに のれないポン。', 'What really happened… they can’t ride a bike.'),
+    status: 'draft',
+  },
+  {
+    id: 'nomikai',
+    bucket: 'selfown',
+    sleep: true,
+    audiences: ['cheeky'],
+    greenCar: true,
+    picture: '',
+    emoji: '🍻',
+    word: jp('のみかい！', 'The drinking party!'),
+    sound: jp('かんぱーい', 'Cheers!'),
+    keys: ['のみかい'],
+    gist: jp('のみかいの あと…！', 'After the drinking party…!'),
+    lines: {
+      n4: {
+        mission: 'Apologise, then say what happened after last night’s drinking party. Who woke you up?',
+        model: n4('飲み会の あと、公園で 寝て いて、ハトに 起こされました。', 'のみかいの あと、こうえんで ねて いて、ハトに おこされました。', 'After the drinking party I was asleep in the park, and the pigeons woke me up.'),
+        chunk: { text: '起こされました', keys: ['おこされ'], note: 'The passive: it was done to you. By pigeons. At dawn.', tag: tag.passive },
+        frames: ['passive'],
+      },
+      n3: {
+        mission: 'Apologise, then say what you were made to do at last night’s drinking party.',
+        model: n3('飲み会で 朝まで カラオケを 歌わされました。', 'のみかいで あさまで カラオケを うたわされました。', 'At the drinking party they made me sing karaoke till morning.'),
+        chunk: { text: '歌わされました', keys: ['わされ', 'させられ'], note: '〜させられました: made to do it. Twelve encores of made to.', tag: tag.saserareru },
+        frames: ['saserareru'],
+      },
+    },
+    pon: {
+      flop: jp('のみかい… ポンは まいばんだポン。', 'A drinking party… I have one every night.'),
+      good: jp('のみかいの あと！？ メモ、メモ…', 'After the drinking party?! Taking notes…'),
+      ippon: jp('あした ポンも のみかいの あとで ちこくするポン！', 'Tomorrow I’m late after a drinking party too!'),
+    },
+    check: { q: 'Where were they last night?', right: 'At a drinking party', wrong: ['At the gym', 'At the dentist'] },
+    truth: jp('ほんとうは… まだ カラオケで うたって いるポン！', 'What really happened… they’re still singing karaoke!'),
+    status: 'draft',
+  },
+  {
+    id: 'baddate',
+    bucket: 'selfown',
+    sleep: true,
+    audiences: ['cheeky'],
+    greenCar: true,
+    avoidScenes: ['wedding', 'omiai'],
+    picture: '',
+    emoji: '🥱',
+    word: jp('たいくつ！', 'Bored stiff!'),
+    sound: jp('ふあ〜', 'Yawn'),
+    keys: ['つまらな', 'たいくつ'],
+    gist: jp('デートが つまらなすぎた！', 'The date was far too dull!'),
+    lines: {
+      n4: {
+        mission: 'Apologise, then blame last night’s date for being so dull. Say what happened to you.',
+        model: n4('デートが つまらなすぎて、とちゅうで 寝て しまいました。', 'デートが つまらなすぎて、とちゅうで ねて しまいました。', 'The date was so dull I fell asleep halfway through.'),
+        chunk: { text: 'つまらなすぎて', keys: SUGI, note: '〜すぎて: too much, so… Too dull to stay awake.', tag: tag.sugite },
+        frames: ['sugiru'],
+      },
+      n3: {
+        mission: 'Apologise, then say the date was dull, and pile one more thing on top.',
+        model: n3('デートが つまらなかった うえに、終電も なくなりました。', 'デートが つまらなかった うえに、しゅうでんも なくなりました。', 'The date was dull, and on top of that I missed the last train.'),
+        chunk: { text: 'つまらなかった うえに', keys: ['たうえに', 'いうえに'], note: '〜うえに: and on top of that… The night just kept giving.', tag: tag.ueni },
+        frames: ['ue-ni'],
+      },
+    },
+    pon: {
+      flop: jp('つまらない デート… ポンの デートは ぜんぶ そうだポン。', 'A dull date… all of mine are.'),
+      good: jp('ねちゃった！？ あいては どうしたポン？', 'You fell asleep?! What did your date do?'),
+      ippon: jp('あした ポンも デートで ねるポン！', 'Tomorrow I’m sleeping through a date too!'),
+    },
+    check: { q: 'How was the date?', right: 'Dull', wrong: ['Too short', 'Called off'] },
+    truth: jp('ほんとうは… あいても ねて いたポン。', 'What really happened… the date fell asleep too.'),
+    status: 'draft',
+  },
 ];
 
 // The N4 "push your luck" excuses: on some rounds (ASK_CHANCE) an N4 latecomer's excuse carries a cheeky ask
@@ -843,9 +1034,70 @@ const BY_ID = new Map(CAUSES.map((c) => [c.id, c]));
 export const causeOf = (id: string): Cause | undefined => BY_ID.get(id);
 export const sceneOf = (id: string): LateScene | undefined => SCENES.find((s) => s.id === id);
 
-const fits = (x: { audiences?: readonly Audience[] }, audience: Audience): boolean => !x.audiences || x.audiences.includes(audience);
-export const causesFor = (audience: Audience): Cause[] => CAUSES.filter((c) => fits(c, audience));
-export const scenesFor = (audience: Audience): LateScene[] => SCENES.filter((s) => fits(s, audience));
+const fits = (x: { audiences?: readonly Audience[]; greenCar?: boolean }, audience: Audience, greenCar: boolean): boolean =>
+  (!x.audiences || x.audiences.includes(audience)) && (!x.greenCar || greenCar);
+/** The causes a room can be dealt: its audience's, and the Green Car's own only in the Green Car. */
+export const causesFor = (audience: Audience, greenCar = false): Cause[] => CAUSES.filter((c) => fits(c, audience, greenCar));
+export const scenesFor = (audience: Audience, greenCar = false): LateScene[] => SCENES.filter((s) => fits(s, audience, greenCar));
+
+/**
+ * The N4/N3 frames a line says: its own `frames` when written, else the frames the path's matchers find in the model
+ * at the line's level (an N3 line's N4 ので doesn't count as its frame). Aim the deal counts these.
+ */
+export function lineFrames(line: CauseLine, level: 'n4' | 'n3'): FrameId[] {
+  if (line.frames) return [...line.frames];
+  return framesOf(line.model).filter((f) => FRAME_BY_ID[f]?.level === level);
+}
+
+// ---- the Green Car (shared/src/greenCar.ts; design: project files n3-coverage/green-car/design.md) ----
+
+/** A Green Car game deals from this many causes, so a cause (and its frame) comes round again. */
+export const GREEN_CAR_DECK = 8;
+/** Of those, how many from each bucket: every deal is one of each. */
+const DECK_SHAPE: Readonly<Record<Bucket, number>> = { believable: 3, selfown: 3, yokai: 2 };
+
+/**
+ * The Green Car game's eight causes, three believable, three self-owns and two yōkai, drawn at random from the
+ * room's audience. The audience's own causes (Kids: the dog, a little brother; Cheeky: the date, pocket money, the
+ * drinking party, the dull date) go in first, up to two, so a Kids or Cheeky room plays its own situations.
+ */
+export function greenCarDeck(random: () => number, audience: Audience): string[] {
+  const pool = causesFor(audience, true);
+  const out: string[] = [];
+  const own = shuffledBy(pool.filter((c) => c.audiences && c.audiences.length < 3), random).slice(0, 2);
+  for (const bucket of ['believable', 'selfown', 'yokai'] as const) {
+    const mine = own.filter((c) => c.bucket === bucket);
+    const rest = shuffledBy(pool.filter((c) => c.bucket === bucket && !mine.includes(c)), random);
+    out.push(...[...mine, ...rest].slice(0, DECK_SHAPE[bucket]).map((c) => c.id));
+  }
+  return out;
+}
+
+function shuffledBy<T>(xs: readonly T[], random: () => number): T[] {
+  const out = [...xs];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
+/**
+ * The witness's backup line in the Green Car: they didn't see it, so they pass it on as hearsay. N4 ＿だった そうです,
+ * N3 ＿だった らしいです, about whatever they backed (the curveball too: たぬきだった らしいです).
+ */
+export function backupLine(tileId: string, level: 'n4' | 'n3'): JpText & { frames: FrameId[] } {
+  const c = causeOf(tileId);
+  const w = c ? bareWord(c) : { text: TANUKI_TILE.word.text.replace(/！$/, ''), kana: TANUKI_TILE.word.kana.replace(/！$/, ''), en: 'a tanuki' };
+  return level === 'n3'
+    ? { text: `${w.text}だった らしいです。`, kana: `${w.kana}だった らしいです。`, en: `Apparently it was ${w.en.toLowerCase()}.`, frames: ['rashii'] }
+    : { text: `${w.text}だった そうです。`, kana: `${w.kana}だった そうです。`, en: `I hear it was ${w.en.toLowerCase()}.`, frames: ['sou-hear'] };
+}
+
+/** What the witness is asked to do: never names the grammar. */
+export const BACKUP_MISSION = 'Back the story up, out loud: you didn’t see it, so pass it on as something you heard.';
+/** Kana that show the backup was said as hearsay, by level. */
+export const BACKUP_KEYS: Readonly<Record<'n4' | 'n3', readonly string[]>> = { n4: ['そうです', 'そうだ', 'そうよ'], n3: ['らしい'] };
 
 /**
  * The line a latecomer at `level` works from: N5 for Kana (shown on a mic pass), the highest written one at or
@@ -900,9 +1152,9 @@ export const PON_TRUTH_CHANCE = 1 / 12;
  * Picks the real story from the causes not dealt this round, two to one towards a self-own; null is Pon.
  * Never one in `used` (this game's earlier truths, say), so a stinger doesn't repeat: Pon when none is left.
  */
-export function truthFor(random: () => number, dealt: readonly string[], audience: Audience, used: ReadonlySet<string> = new Set()): string | null {
+export function truthFor(random: () => number, dealt: readonly string[], audience: Audience, used: ReadonlySet<string> = new Set(), greenCar = false): string | null {
   if (random() < PON_TRUTH_CHANCE) return null;
-  const pool = causesFor(audience).filter((c) => !dealt.includes(c.id) && !used.has(c.id));
+  const pool = causesFor(audience, greenCar).filter((c) => !dealt.includes(c.id) && !used.has(c.id));
   const weighted = pool.flatMap((c) => (c.bucket === 'selfown' ? [c, c] : [c]));
   return weighted.length ? weighted[Math.floor(random() * weighted.length)]!.id : null;
 }
@@ -912,16 +1164,31 @@ export function truthFor(random: () => number, dealt: readonly string[], audienc
  * joke in a deal. `avoid` (the last rounds' causes) is skipped while its bucket has others left. A cause that
  * avoids the round's scene (`sceneId`) is never dealt in it.
  */
-export function dealOptions(random: () => number, avoid: ReadonlySet<string> = new Set(), audience: Audience = 'family', sceneId?: string): [string, string, string] {
+export function dealOptions(
+  random: () => number,
+  avoid: ReadonlySet<string> = new Set(),
+  audience: Audience = 'family',
+  sceneId?: string,
+  aim?: { deck: readonly string[]; need: (c: Cause) => number },
+): [string, string, string] {
   const pick = (pool: Cause[]): Cause => pool[Math.floor(random() * pool.length)]!;
+  // Aim the deal (Green Car): of the causes left to pick from, only those the latecomer needs most.
+  const neediest = (pool: Cause[]): Cause[] => {
+    if (!aim || pool.length < 2) return pool;
+    const least = Math.min(...pool.map(aim.need));
+    return pool.filter((c) => aim.need(c) === least);
+  };
   const out: Cause[] = [];
-  const allowed = causesFor(audience).filter((c) => !(sceneId && c.avoidScenes?.includes(sceneId)));
+  const fitsScene = (c: Cause) => !(sceneId && c.avoidScenes?.includes(sceneId));
+  const allowed = (aim ? aim.deck.map((id) => BY_ID.get(id)).filter((c): c is Cause => !!c) : causesFor(audience)).filter(fitsScene);
   for (const bucket of ['believable', 'selfown', 'yokai'] as const) {
-    const all = allowed.filter((c) => c.bucket === bucket);
+    let all = allowed.filter((c) => c.bucket === bucket);
+    // A deck whose whole bucket stays out of this scene borrows from the room's other causes.
+    if (!all.length && aim) all = causesFor(audience, true).filter((c) => c.bucket === bucket && fitsScene(c));
     const sleepy = out.some((c) => c.sleep);
     const ok = all.filter((c) => !(sleepy && c.sleep));
     const fresh = ok.filter((c) => !avoid.has(c.id));
-    out.push(pick(fresh.length ? fresh : ok.length ? ok : all));
+    out.push(pick(neediest(fresh.length ? fresh : ok.length ? ok : all)));
   }
   const ids = out.map((c) => c.id);
   for (let i = ids.length - 1; i > 0; i--) {
