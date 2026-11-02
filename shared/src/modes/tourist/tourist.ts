@@ -15,16 +15,25 @@
 //   reveal  the vote: called by a player (needs a majority) or at the end of the round (most votes)
 //   encore  last chance: a caught tourist may still guess the place
 //   score   who the tourist was, where we were, and the round's points
+//
+// In the Green Car (ctx.greenCar: everyone N4 or N3) the questions and answers are the rules deck (rules.ts): what
+// each place's rules and habits are, in N3 (＿ことに なって いる, ＿べき, ＿ても かまわない, ＿わけでは ない) and N4
+// (＿ても いい, ＿ては いけない, the potential, purpose ＿ために / ＿ように). No Kana or N5 tiles; an N3 player's cues
+// and tiles are about half N4 and half N3, an N4 player's are N4 with one N3 line tagged as stretch; cues are aimed
+// at the frames the player needs most. Four places of its own: the aquarium, and in Cheeky rooms the izakaya, the
+// karaoke box and the office year-end party.
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { creditable, FRAME_BY_ID, framesOf, type FrameId } from '../../japanese/frames.js';
 import { hasKanji, isUtterance, utteranceReading, type Utterance } from '../../japanese/kana.js';
-import type { Phase, Viewer } from '../../protocol.js';
+import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { LEVEL_RANK, n4Up } from '../../level.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { findLine, hasJapanese, matchLine, namesPlace, oneWordChanged, saysLine } from './check.js';
 import { ALL_LINES, BLUFFS, PLACES, QUESTIONS, SAFE_ANSWERS, TOURIST_ROLE, type Kind, type Line, type Place } from './places.js';
+import { GREEN_ANSWERS, GREEN_BLUFFS, GREEN_LINES, GREEN_PLACE_LINES, GREEN_PLACES, GREEN_QUESTIONS } from './rules.js';
+import { aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -185,6 +194,8 @@ export interface TouristState {
   lastTourist: string | null;
   stats: Record<string, PlayerStats>;
   phaseAt: number;
+  /** The Green Car's aim: how often each player has said each frame from memory this game. */
+  gcSaid?: Record<string, Record<string, number>>;
 }
 
 export type TouristMove =
@@ -218,6 +229,8 @@ export interface LineCard {
   en: string;
   furigana?: JpText['furigana'];
   romaji?: string;
+  /** A Green Car N3 line (an N4 player's stretch). */
+  n3?: true;
 }
 
 /** An N4+ asker's question cue: what to ask in English and the frame to build it on; the Japanese once peeked. */
@@ -227,6 +240,8 @@ export interface CueCard {
   frame: { id: string; ja: string; en: string } | null;
   /** The Japanese, after a peek (asked off it, the question counts as read). */
   jp: LineCard | null;
+  /** A Green Car N3 cue (an N4 player's stretch). */
+  n3?: true;
 }
 
 export interface SaidView {
@@ -312,8 +327,10 @@ export interface TouristView {
 
 // ---- helpers ----
 
-const LINES = new Map(ALL_LINES.map((l) => [l.id, l]));
-const PLACE_BY_ID = new Map(PLACES.map((p) => [p.id, p]));
+const LINES = new Map([...ALL_LINES, ...GREEN_LINES].map((l) => [l.id, l]));
+const PLACE_BY_ID = new Map([...PLACES, ...GREEN_PLACES].map((p) => [p.id, p]));
+/** Every line a Green Car room's speech is matched against. */
+const GREEN_MATCH: readonly Line[] = [...ALL_LINES, ...GREEN_LINES];
 const BANDS: Record<Level, Level[]> = { kana: ['kana'], n5: ['n5', 'kana'], n4: ['n4', 'n5', 'kana'], n3: ['n3', 'n4', 'n5', 'kana'] };
 
 const blankStats = (): PlayerStats => ({ caught: 0, escaped: 0, sharpEyes: 0, spoken: 0, asked: 0 });
@@ -326,7 +343,7 @@ export function placeCard(p: Place, romaji: boolean): PlaceCard {
 }
 
 function lineCard(l: Line, romaji: boolean): LineCard {
-  return { id: l.id, text: l.jp.text, kana: l.jp.kana, en: l.jp.en, ...(l.jp.furigana ? { furigana: l.jp.furigana } : {}), ...(romaji ? { romaji: toRomaji(l.jp.kana) } : {}) };
+  return { id: l.id, text: l.jp.text, kana: l.jp.kana, en: l.jp.en, ...(l.jp.furigana ? { furigana: l.jp.furigana } : {}), ...(romaji ? { romaji: toRomaji(l.jp.kana) } : {}), ...(l.level === 'n3' ? { n3: true as const } : {}) };
 }
 
 /** The frame a question cue shows: the line's own N4 frame, else the most advanced one found in it. */
@@ -353,10 +370,20 @@ export const CUE_CHIPS: Readonly<Partial<Record<FrameId, { ja: string; en: strin
   tara: { ja: '＿たら、＿か', en: 'If ___, …?' },
 };
 
+/** The Green Car rules deck's chips (its lines only, so mixed rooms' cues are unchanged). Draft Japanese. */
+export const GREEN_CUE_CHIPS: Readonly<Partial<Record<FrameId, { ja: string; en: string }>>> = {
+  'koto-ni-natteiru': { ja: '＿ことに なって いますか', en: 'Are you supposed to ___?' },
+  beki: { ja: '＿べきですか', en: 'Should you ___?' },
+  'temo-kamawanai': { ja: '＿ても かまいませんか', en: 'Is it all right to ___?' },
+  'te-wa-ikenai': { ja: '＿ては いけませんか', en: "Aren't you allowed to ___?" },
+  'tame-ni': { ja: 'なんの ために ＿んですか', en: 'What do you ___ for?' },
+  'you-ni': { ja: '＿ように、＿か', en: 'So that ___, …?' },
+};
+
 /** The chip for a cue line: its frame's question form, with the line's own shape where the table's would mislead. */
 export function cueChip(l: Line): CueCard['frame'] {
   const f = cueFrame(l);
-  const chip = f ? CUE_CHIPS[f] : undefined;
+  const chip = f ? ((l.greenCar ? GREEN_CUE_CHIPS[f] : undefined) ?? CUE_CHIPS[f]) : undefined;
   if (!f || !chip) return null;
   // 何を 持って 行ったら いいですか asks what to do, not "if…".
   if (f === 'tara' && /[ただ]ら[\s\u3000]*いいですか/.test(l.jp.kana)) return { id: f, ja: '＿たら いいですか', en: 'What / when should I ___?' };
@@ -366,7 +393,7 @@ export function cueChip(l: Line): CueCard['frame'] {
 }
 
 function cueCard(l: Line, peeked: boolean): CueCard {
-  return { id: l.id, en: l.jp.en, frame: cueChip(l), jp: peeked ? lineCard(l, false) : null };
+  return { id: l.id, en: l.jp.en, frame: cueChip(l), jp: peeked ? lineCard(l, false) : null, ...(l.level === 'n3' ? { n3: true as const } : {}) };
 }
 
 function saidView(x: Said, romaji: boolean, hidden: boolean): SaidView {
@@ -427,6 +454,101 @@ function answerTiles(s: TouristState, playerId: string, level: Level, kind: Kind
   return [...new Set(picks)].slice(0, 4).map((l) => l.id);
 }
 
+// ---- the Green Car (rules.ts) ----
+
+/** Green Car rules families: a rule question is answered from the rules first, a why question with a purpose. */
+const GREEN_FAMILIES: readonly (readonly string[])[] = [
+  ['koto-ni-natteiru', 'beki', 'temo-kamawanai', 'wake-dewa-nai', 'te-wa-ikenai', 'te-mo-ii', 'to-itte-ita'],
+  ['tame-ni', 'you-ni'],
+  ['potential'],
+];
+
+/** The place's Green Car questions and answers: its N4 deck lines and its rules (or a Green Car place's own). */
+function greenLocal(p: Place): { questions: Line[]; answers: Line[] } {
+  const rules = GREEN_PLACE_LINES[p.id];
+  const n4 = (l: Line) => l.level === 'n4' || l.level === 'n3';
+  return { questions: [...p.questions.filter(n4), ...(rules?.questions ?? [])], answers: [...p.answers.filter(n4), ...(rules?.answers ?? [])] };
+}
+
+/** How many times this player has said frames of this level this game (the Green Car's aim). */
+const saidAtLevel = (s: TouristState, playerId: string, level: 'n4' | 'n3'): number =>
+  Object.entries(s.gcSaid?.[playerId] ?? {}).reduce((a, [f, n]) => a + (FRAME_BY_ID[f as FrameId]?.level === level ? n : 0), 0);
+
+/**
+ * The Green Car's question cues (aim the deal): N4 and N3 lines only, the place's own first (not for the tourist),
+ * each list ordered by how much the asker needs its frames (aimWeight: tonight's earlier games over this game's own
+ * says, averaged over the line's frames; ties random). An N3 asker gets the two levels in turn, starting with the
+ * one they've said less this game (five cues: three of one, two of the other); an N4 asker gets four N4 cues and one
+ * N3 cue, last, tagged as stretch.
+ */
+function greenQuestionTiles(s: TouristState, ctx: ModeContext, playerId: string, level: Level, random: () => number): string[] {
+  const said = s.gcSaid?.[playerId] ?? {};
+  const weight = (l: Line) => (l.frames?.length ? aimWeight(ctx, playerId, l.frames, said) / l.frames.length : 0);
+  const ranked = (lines: readonly Line[]) => shuffled(lines, random).sort((a, b) => weight(b) - weight(a));
+  const generic = [...QUESTIONS.filter((l) => l.level === 'n4'), ...GREEN_QUESTIONS];
+  const local = playerId === s.touristId ? [] : greenLocal(placeOf(s)).questions;
+  const list = (lv: 'n4' | 'n3') => {
+    const own = ranked(local.filter((l) => l.level === lv)).slice(0, 1);
+    return [...own, ...ranked(generic.filter((l) => l.level === lv))];
+  };
+  const n4 = list('n4');
+  const n3 = list('n3');
+  if (level !== 'n3') return [...n4.slice(0, 4), ...n3.slice(0, 1)].map((l) => l.id);
+  const [first, second] = saidAtLevel(s, playerId, 'n3') > saidAtLevel(s, playerId, 'n4') ? [n4, n3] : [n3, n4];
+  const out: Line[] = [];
+  for (let i = 0; out.length < 5 && (i < first.length || i < second.length); i++) {
+    if (first[i]) out.push(first[i]!);
+    if (second[i] && out.length < 5) out.push(second[i]!);
+  }
+  return out.map((l) => l.id);
+}
+
+/** Lines in the question's Green Car family first (stable); unchanged when the question has no frames. */
+function greenFamilyFirst(lines: Line[], frames: readonly string[] | undefined): Line[] {
+  const fam = new Set(GREEN_FAMILIES.filter((f) => frames?.some((x) => f.includes(x))).flat());
+  if (!fam.size) return lines;
+  const inFam = (l: Line) => !!l.frames?.some((x) => fam.has(x));
+  return [...lines.filter(inFam), ...lines.filter((l) => !inFam(l))];
+}
+
+/**
+ * The Green Car's answer tiles: N4 and N3 only. A local gets the place's own rules first, then the safe ones; the
+ * tourist the safe ones and the bluffs. An N3 answerer sees both levels shuffled together; an N4 answerer sees N4
+ * first, and always one N3 tile among the four, as stretch.
+ */
+function greenAnswerTiles(s: TouristState, playerId: string, level: Level, kind: Kind | null, random: () => number, frames?: readonly string[]): string[] {
+  const order = (lines: readonly Line[]) => {
+    const both = lines.filter((l) => l.level === 'n4' || l.level === 'n3');
+    return level === 'n3' ? shuffled(both, random) : [...shuffled(both.filter((l) => l.level === 'n4'), random), ...shuffled(both.filter((l) => l.level === 'n3'), random)];
+  };
+  const fits = (l: Line) => kind === null || l.kind === kind || l.kind === 'any';
+  const safe = greenFamilyFirst(order([...SAFE_ANSWERS, ...GREEN_ANSWERS]), frames);
+  let picks: Line[];
+  if (playerId === s.touristId) {
+    picks = [...safe.filter(fits).slice(0, 2), ...safe.filter((l) => l.kind === 'yesno').slice(0, 1), ...order([...BLUFFS, ...GREEN_BLUFFS])];
+  } else {
+    const here = greenFamilyFirst(order(greenLocal(placeOf(s)).answers), frames);
+    picks = [...here.filter(fits).slice(0, 2), ...safe.filter(fits), ...here, ...safe.filter((l) => l.kind === 'yesno')];
+  }
+  let out = [...new Set(picks)].slice(0, 4);
+  if (level !== 'n3' && !out.some((l) => l.level === 'n3')) {
+    const stretch = [...new Set(picks)].find((l) => l.level === 'n3' && fits(l)) ?? [...new Set(picks)].find((l) => l.level === 'n3');
+    if (stretch) out = [...out.slice(0, 3), stretch];
+  }
+  return out.map((l) => l.id);
+}
+
+/** The Green Car's aim: one more say of each of the line's frames for this player, this game. */
+function countGreen(s: TouristState, playerId: string, l: Line): void {
+  const mine = ((s.gcSaid ??= {})[playerId] ??= {});
+  for (const f of l.frames ?? []) mine[f] = (mine[f] ?? 0) + 1;
+}
+
+/** The places a game deals from: in the Green Car, its own places too (Cheeky ones only in Cheeky rooms). */
+export function placesFor(greenCar: boolean, audience: Audience): Place[] {
+  return greenCar ? [...PLACES, ...GREEN_PLACES].filter((p) => !p.audiences || p.audiences.includes(audience)) : [...PLACES];
+}
+
 function pay(s: TouristState, ctx: ModeContext, playerId: string, points: number): void {
   const p = Math.round(points);
   if (!p || !ctx.player(playerId)) return;
@@ -483,8 +605,9 @@ function startRound(s: TouristState, ctx: ModeContext): void {
   const random = () => ctx.random();
   s.placeId = s.order[(s.round - 1) % s.order.length]!;
   const place = placeOf(s);
-  const samePack = shuffled(PLACES.filter((p) => p.id !== place.id && p.packId === place.packId), random);
-  const others = shuffled(PLACES.filter((p) => p.packId !== place.packId), random);
+  const pool = placesFor(ctx.greenCar === true, ctx.audience ?? 'family');
+  const samePack = shuffled(pool.filter((p) => p.id !== place.id && p.packId === place.packId), random);
+  const others = shuffled(pool.filter((p) => p.packId !== place.packId), random);
   s.choices = shuffled([place, ...[...samePack.slice(0, 3), ...others].slice(0, CHOICES - 1)], random).map((p) => p.id);
 
   const tourist = pickTourist(s, ctx);
@@ -532,7 +655,8 @@ function startTurn(s: TouristState, ctx: ModeContext): void {
   const level = ctx.player(next.askerId)?.level ?? 'n5';
   s.turnSeq += 1;
   const cue = CUE_LEVELS.includes(level);
-  s.turn = { seq: s.turnSeq, askerId: next.askerId, targetId: null, noAskBack: next.noAskBack, question: null, answer: null, qSuggest: questionTiles(s, next.askerId, level, () => ctx.random()), aSuggest: [], ...(cue ? { cue, peeked: [] } : {}), hidden: false };
+  const qSuggest = ctx.greenCar ? greenQuestionTiles(s, ctx, next.askerId, level, () => ctx.random()) : questionTiles(s, next.askerId, level, () => ctx.random());
+  s.turn = { seq: s.turnSeq, askerId: next.askerId, targetId: null, noAskBack: next.noAskBack, question: null, answer: null, qSuggest, aSuggest: [], ...(cue ? { cue, peeked: [] } : {}), hidden: false };
 }
 
 /** Closes the current turn: logs it and decides who asks next. */
@@ -571,7 +695,7 @@ function targetsFor(s: TouristState, ctx: ModeContext, turn: Turn): ModePlayer[]
  * for cues). A line said that was on screen counts as read (`frame`); one that wasn't, as own words. With
  * `swaps` (questions), a suggested line said with one word swapped is own words too, logged as heard.
  */
-function toSaid(u: Utterance, lineId: string | undefined, suggested: readonly string[], shown: readonly string[], level: Level, swaps = false): Said | null {
+function toSaid(u: Utterance, lineId: string | undefined, suggested: readonly string[], shown: readonly string[], level: Level, swaps = false, pool: readonly Line[] = ALL_LINES): Said | null {
   const tile = lineId && suggested.includes(lineId) ? LINES.get(lineId) : undefined;
   if (lineId !== undefined && !tile) return null;
   const fromLine = (l: Line, tier: Tier): Said => ({ text: l.jp.text, kana: l.jp.kana, en: l.jp.en, ...(l.jp.furigana ? { furigana: l.jp.furigana } : {}), lineId: l.id, via: u.via, tier });
@@ -587,10 +711,10 @@ function toSaid(u: Utterance, lineId: string | undefined, suggested: readonly st
   // Exact: show the tidy frame (read off the screen if it was on it, else from memory). The written line
   // itself counts too, whatever the reader made of it, so a line said as written is never a swap.
   const mine = tile ? [tile] : suggested.map((id) => LINES.get(id)!);
-  const asWritten = mine.find((l) => saysLine(u, l)) ?? ALL_LINES.find((l) => saysLine(u, l));
+  const asWritten = mine.find((l) => saysLine(u, l)) ?? pool.find((l) => saysLine(u, l));
   if (asWritten) return fromLine(asWritten, tierOf(asWritten));
   if (tile && findLine(u, [tile], level)?.exact) return fromLine(tile, tierOf(tile));
-  const found = findLine(u, ALL_LINES, level);
+  const found = findLine(u, pool, level);
   if (found?.exact) return fromLine(found.line, tierOf(found.line));
   if (swaps) {
     const swapped = mine.find((l) => oneWordChanged(u, l));
@@ -612,9 +736,11 @@ function bonusFor(x: Said, table: typeof ASK_BONUS | typeof ANSWER_BONUS): numbe
   return table[x.tier === 'own' ? 'own' : 'frame'][x.via];
 }
 
-function logPhrase(ctx: ModeContext, playerId: string, x: Said): void {
+function logPhrase(s: TouristState, ctx: ModeContext, playerId: string, x: Said): void {
   const l = x.lineId ? LINES.get(x.lineId) : undefined;
   if (!l) return;
+  // The Green Car's aim counts what was said from memory (own words, or a cue asked without a peek).
+  if (ctx.greenCar && x.tier === 'own' && !x.approx && x.via === 'speech') countGreen(s, playerId, l);
   if (x.swapped && x.reading) {
     // The asker's own words: logged as they said them, not as the tile. From memory only when spoken and the
     // line's Japanese wasn't on their screen (a Kana/N5 tile, or a peeked cue, was read).
@@ -725,8 +851,16 @@ export const touristMode: Mode<TouristState, TouristView> = {
     const random = () => ctx.random();
     const packIds = [...new Set(PLACES.map((p) => p.packId))] as string[];
     const packId = opts.packId && packIds.includes(opts.packId) ? opts.packId : null;
-    const mine = shuffled(PLACES.filter((p) => p.packId === packId), random);
-    const rest = shuffled(PLACES.filter((p) => p.packId !== packId), random);
+    // In the Green Car the room's own rules places come first (Kids: the aquarium and school;
+    // Cheeky: the izakaya, karaoke box, year-end party and aquarium; others: the aquarium).
+    const green = ctx.greenCar === true;
+    const audience = ctx.audience ?? 'family';
+    const pool = placesFor(green, audience);
+    const featured = new Set(green ? (audience === 'kids' ? ['suizokukan', 'gakkou'] : pool.filter((p) => p.greenCar).map((p) => p.id)) : []);
+    const lead = shuffled(pool.filter((p) => featured.has(p.id)), random);
+    const mine = shuffled(pool.filter((p) => !featured.has(p.id) && p.packId === packId), random);
+    const rest = shuffled(pool.filter((p) => !featured.has(p.id) && p.packId !== packId), random);
+    mine.unshift(...lead);
     const statsAll: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) statsAll[p.id] = blankStats();
     return {
@@ -918,16 +1052,17 @@ export const touristMode: Mode<TouristState, TouristView> = {
         if (!turn.targetId) return moveError('pick-someone');
         if (!isUtterance(raw.utterance)) return moveError('bad-utterance');
         if (raw.lineId !== undefined && typeof raw.lineId !== 'string') return moveError('bad-move');
-        const said = toSaid(raw.utterance, raw.lineId as string | undefined, turn.qSuggest, turn.cue ? (turn.peeked ?? []) : turn.qSuggest, player.level, true);
+        const said = toSaid(raw.utterance, raw.lineId as string | undefined, turn.qSuggest, turn.cue ? (turn.peeked ?? []) : turn.qSuggest, player.level, true, ctx.greenCar ? GREEN_MATCH : ALL_LINES);
         if (!said) return moveError(raw.utterance.via === 'tap' || raw.lineId !== undefined ? 'bad-move' : 'empty-answer');
         turn.question = said;
         const q = said.lineId ? LINES.get(said.lineId) : undefined;
         const target = ctx.player(turn.targetId);
-        turn.aSuggest = answerTiles(s, turn.targetId, target?.level ?? 'n5', q && q.kind !== 'any' ? q.kind : null, () => ctx.random(), q?.frames);
+        const answers = ctx.greenCar ? greenAnswerTiles : answerTiles;
+        turn.aSuggest = answers(s, turn.targetId, target?.level ?? 'n5', q && q.kind !== 'any' ? q.kind : null, () => ctx.random(), q?.frames);
         stats(s, playerId).asked += 1;
         if (said.via === 'speech') stats(s, playerId).spoken += 1;
         payBonus(s, ctx, playerId, bonusFor(said, ASK_BONUS));
-        logPhrase(ctx, playerId, said);
+        logPhrase(s, ctx, playerId, said);
         return MOVE_OK;
       }
       case 'reply': {
@@ -936,12 +1071,12 @@ export const touristMode: Mode<TouristState, TouristView> = {
         if (turn.answer) return moveError('already-answered');
         if (!isUtterance(raw.utterance)) return moveError('bad-utterance');
         if (raw.lineId !== undefined && typeof raw.lineId !== 'string') return moveError('bad-move');
-        const said = toSaid(raw.utterance, raw.lineId as string | undefined, turn.aSuggest, turn.aSuggest, player.level);
+        const said = toSaid(raw.utterance, raw.lineId as string | undefined, turn.aSuggest, turn.aSuggest, player.level, false, ctx.greenCar ? GREEN_MATCH : ALL_LINES);
         if (!said) return moveError(raw.utterance.via === 'tap' || raw.lineId !== undefined ? 'bad-move' : 'empty-answer');
         turn.answer = said;
         if (said.via === 'speech') stats(s, playerId).spoken += 1;
         payBonus(s, ctx, playerId, bonusFor(said, ANSWER_BONUS));
-        logPhrase(ctx, playerId, said);
+        logPhrase(s, ctx, playerId, said);
         return MOVE_OK;
       }
       case 'call': {
@@ -1062,7 +1197,8 @@ export const touristMode: Mode<TouristState, TouristView> = {
         questions: myTurnToAsk && !live!.cue ? tiles(live!.qSuggest) : null,
         cues: myTurnToAsk && live!.cue ? live!.qSuggest.map((id) => cueCard(LINES.get(id)!, !!live!.peeked?.includes(id))) : null,
         answers: myTurnToAnswer ? tiles(live!.aSuggest) : null,
-        bluffs: isTourist && phase !== 'score' ? BLUFFS.filter((l) => BANDS[me.level].includes(l.level)).map((l) => lineCard(l, romaji)) : null,
+        // The Green Car: its N4 bluff and N3 ones only.
+        bluffs: isTourist && phase !== 'score' ? (ctx.greenCar ? [...BLUFFS.filter((l) => l.level === 'n4'), ...GREEN_BLUFFS] : BLUFFS.filter((l) => BANDS[me.level].includes(l.level))).map((l) => lineCard(l, romaji)) : null,
         points: phase === 'score' ? (s.roundPoints[me.id] ?? 0) : null,
       };
     }

@@ -17,6 +17,7 @@
 // may too, which keeps them from being a giveaway).
 
 import type { JpText, Level, ReviewStatus } from '../../../../content/src/types.js';
+import type { Audience } from '../../protocol.js';
 
 export const KINDS = ['what', 'when', 'who', 'like', 'how', 'where', 'yesno'] as const;
 export type Kind = (typeof KINDS)[number];
@@ -34,6 +35,8 @@ export interface Line {
   frames?: readonly string[];
   /** Set on the N4 deck's generic lines; place lines take their place's status. */
   status?: ReviewStatus;
+  /** The Green Car's rules deck (rules.ts): dealt only when the room rides in the Green Car. */
+  greenCar?: true;
 }
 
 export interface Place {
@@ -50,6 +53,10 @@ export interface Place {
   /** Answers a local might give here. */
   answers: Line[];
   status: ReviewStatus;
+  /** Rooms it plays in (every room when unset); the Green Car's Cheeky places are Cheeky only. */
+  audiences?: readonly Audience[];
+  /** One of the Green Car's own places (rules.ts): only in the Green Car. */
+  greenCar?: true;
 }
 
 const t = (text: string, kana: string, en: string): JpText => ({ text, kana, en });
@@ -151,13 +158,13 @@ export const BLUFFS: readonly Line[] = [
 // ---- the places ----
 
 /** A place's line: level, kind, Japanese, and (N4 deck lines) the frames it practises. */
-type Row = [Level, Kind, JpText, string[]?];
+export type Row = [Level, Kind, JpText, string[]?];
 type Draft = Omit<Place, 'questions' | 'answers' | 'status'> & {
   questions: Row[];
   answers: Row[];
 };
 
-function place(d: Draft): Place {
+export function place(d: Draft): Place {
   const count = new Map<string, number>();
   const id = (part: string, level: Level, kind: Kind) => {
     const base = `tourist.${d.id}.${part}.${kind}.${level}`;

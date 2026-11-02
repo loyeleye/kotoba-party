@@ -10,6 +10,8 @@ import { createReader } from '../server/src/reading.js';
 import { toRomaji as toRomajiOf } from '../shared/src/japanese/romaji.js';
 import { setReading } from '../server/src/utterances.js';
 import { ALL_LINES, BLUFFS, KINDS, PLACES, QUESTIONS, SAFE_ANSWERS } from '../shared/src/modes/tourist/places.js';
+import { GREEN_LINES, GREEN_PLACE_LINES, GREEN_PLACES } from '../shared/src/modes/tourist/rules.js';
+import { framesOf } from '../shared/src/japanese/frames.js';
 import { phraseFrames } from '../shared/src/progress.js';
 import {
   ANSWER_BONUS,
@@ -28,6 +30,7 @@ import {
   SHARP_EYE_POINTS,
   turnCap,
   WIN_POINTS,
+  placesFor,
   type TouristState,
   type TouristView,
 } from '../shared/src/modes/tourist/tourist.js';
@@ -98,7 +101,10 @@ class Table {
   score(id: string): number {
     return this.s.players.find((p) => p.id === id)!.score;
   }
-  start(rounds?: number, packId = 'travel') {
+  /** `greenCar: false` keeps an all-N4+ table out of the Green Car (the mixed-room rules). */
+  start(rounds?: number, packId = 'travel', opts: { greenCar?: boolean; audience?: 'kids' | 'family' | 'cheeky' } = {}) {
+    if (opts.audience) this.cmd('stage', { type: 'settings', audience: opts.audience });
+    if (opts.greenCar === false) expect(this.cmd('stage', { type: 'settings', greenCar: false }).changed).toBe(true);
     expect(this.cmd('stage', { type: 'start', mode: 'tourist', packId, ...(rounds ? { rounds } : {}) }).changed).toBe(true);
     this.timeout(); // intro → card
     expect(this.s.phase).toBe('prompt');
@@ -528,7 +534,7 @@ describe("Who's the Tourist?: a round", () => {
 
   it('N4 players get N4 deck tiles, and a must question gets must/needn\'t answers first; N5 players see none of it', () => {
     const t = new Table(4, REAL_CONTENT, 9, ['n4', 'n4', 'n4', 'n4']);
-    t.start();
+    t.start(undefined, undefined, { greenCar: false });
     t.cards();
     const asker = t.asker;
     const qs = t.view(asker).me!.cues!.map((q) => ALL_LINES.find((l) => l.id === q.id)!);
@@ -549,7 +555,7 @@ describe("Who's the Tourist?: a round", () => {
 
   it('an N4 asker gets cues: the English and the frame, with the Japanese only after a peek; N5 askers keep tiles', () => {
     const t = new Table(4, REAL_CONTENT, 9, ['n4', 'n4', 'n4', 'n4']);
-    t.start();
+    t.start(undefined, undefined, { greenCar: false });
     t.cards();
     const me = t.view(t.asker).me!;
     expect(me.questions).toBeNull();
@@ -584,7 +590,7 @@ describe("Who's the Tourist?: a round", () => {
 
   it('a question asked off a cue counts as said from memory; after a peek, as read', () => {
     const t = new Table(4, REAL_CONTENT, 9, ['n4', 'n4', 'n4', 'n4']);
-    t.start();
+    t.start(undefined, undefined, { greenCar: false });
     t.cards();
     const q = QUESTIONS.find((x) => x.id === 'tourist.q.hitori')!;
     const asker = t.asker;
@@ -689,7 +695,7 @@ describe("Who's the Tourist?: a round", () => {
     expect(oneWordChanged(said('友達と 行っても いいですか'), q)).toBe(true);
 
     const t = new Table(4, REAL_CONTENT, 9, ['n4', 'n4', 'n4', 'n4']);
-    t.start();
+    t.start(undefined, undefined, { greenCar: false });
     t.cards();
     const a = t.asker;
     t.st.turn!.qSuggest = [q.id];
@@ -807,4 +813,135 @@ describe("Who's the Tourist?: bots play a game end to end", () => {
       director.client.close();
     });
   }
+});
+
+describe("Who's the Tourist?: the Green Car", () => {
+  const EVERY = new Map([...ALL_LINES, ...GREEN_LINES].map((l) => [l.id, l]));
+  const N3_RULES = ['koto-ni-natteiru', 'beki', 'temo-kamawanai', 'wake-dewa-nai'];
+  const N4_RULES = ['te-mo-ii', 'te-wa-ikenai', 'potential'];
+  const CHEEKY = GREEN_PLACES.filter((p) => p.audiences && !p.audiences.includes('kids')).map((p) => p.id);
+  const framesIn = (j: { text: string; kana: string | null }) => [
+    ...new Set([...framesOf({ text: j.text, kana: j.kana ?? j.text }, undefined, { keepHidden: true }), ...framesOf({ text: j.kana ?? j.text, kana: j.kana ?? j.text }, undefined, { keepHidden: true })]),
+  ];
+
+  it('every rules line is N4 or N3, a draft, and says the frames it carries', () => {
+    expect(GREEN_LINES.length).toBeGreaterThan(60);
+    for (const l of GREEN_LINES) {
+      expect(['n4', 'n3'], l.id).toContain(l.level);
+      expect(l.status, l.id).toBe('draft');
+      expect(l.greenCar, l.id).toBe(true);
+      expect(l.frames?.length, l.id).toBeGreaterThan(0);
+      for (const f of l.frames!) expect(framesIn(l.jp), `${l.id}: ${l.jp.kana}`).toContain(f);
+      // The tone frames are never aimed at a player.
+      expect(l.frames!.some((f) => ['kuse-ni', 'wari-ni', 'ni-shite-wa', 'wake-ga-nai'].includes(f)), l.id).toBe(false);
+    }
+    const frames = new Set(GREEN_LINES.flatMap((l) => l.frames ?? []));
+    for (const f of [...N3_RULES, ...N4_RULES, 'tame-ni', 'you-ni']) expect(frames, f).toContain(f);
+    // Every existing place has its own rules lines.
+    for (const p of PLACES) expect(GREEN_PLACE_LINES[p.id]?.answers.length ?? 0, p.id).toBeGreaterThanOrEqual(2);
+  });
+
+  it('every rules frame is reachable in every audience: Kids rooms never get the Cheeky places, Cheeky rooms can', () => {
+    const all = new Set(GREEN_LINES.flatMap((l) => l.frames ?? []));
+    for (const audience of ['kids', 'family', 'cheeky'] as const) {
+      const places = placesFor(true, audience);
+      const lines = places.flatMap((p) => [...p.questions, ...p.answers, ...(GREEN_PLACE_LINES[p.id]?.questions ?? []), ...(GREEN_PLACE_LINES[p.id]?.answers ?? [])]);
+      const generic = GREEN_LINES.filter((l) => l.id.startsWith('tourist.gc.q.') || l.id.startsWith('tourist.gc.a.') || l.id.startsWith('tourist.gc.bluff.'));
+      const reach = new Set([...lines, ...generic].flatMap((l) => l.frames ?? []));
+      for (const f of all) expect(reach.has(f), `${audience}: ${f}`).toBe(true);
+      if (audience === 'kids') for (const id of CHEEKY) expect(places.map((p) => p.id), id).not.toContain(id);
+      if (audience === 'cheeky') for (const id of CHEEKY) expect(places.map((p) => p.id), id).toContain(id);
+    }
+    expect(placesFor(false, 'cheeky').map((p) => p.id)).toEqual(PLACES.map((p) => p.id));
+
+    const kids = new Table(4, REAL_CONTENT, 3, ['n3', 'n4', 'n4', 'n3']);
+    kids.start(undefined, undefined, { audience: 'kids' });
+    expect(kids.st.order.some((id) => CHEEKY.includes(id))).toBe(false);
+    expect(kids.st.order.slice(0, 2).sort()).toEqual(['gakkou', 'suizokukan']);
+    const cheeky = new Table(4, REAL_CONTENT, 3, ['n3', 'n4', 'n4', 'n3']);
+    cheeky.start(undefined, undefined, { audience: 'cheeky' });
+    expect(cheeky.st.order.slice(0, 4).sort()).toEqual([...CHEEKY, 'suizokukan'].sort());
+  });
+
+  it('a mixed room is unchanged: no Green Car places or lines', () => {
+    const t = new Table(4, REAL_CONTENT, 9, ['n4', 'n4', 'n5', 'n5']);
+    t.start(undefined, undefined, { audience: 'cheeky' });
+    expect(t.st.order.every((id) => PLACES.some((p) => p.id === id))).toBe(true);
+    t.cards();
+    for (const p of t.s.players) {
+      const me = t.view(p.id).me!;
+      for (const x of [...(me.questions ?? []), ...(me.cues ?? []), ...(me.answers ?? [])]) expect(EVERY.get(x.id)!.greenCar, x.id).toBeUndefined();
+    }
+  });
+
+  it('an N3 asker gets half N4, half N3 cues; an N4 asker gets N4 cues and one N3 stretch, tagged; no Kana or N5', () => {
+    let n3Asks = 0;
+    let n4Asks = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const t = new Table(4, REAL_CONTENT, seed, ['n3', 'n4', 'n3', 'n4']);
+      t.start();
+      t.cards();
+      for (let k = 0; k < 4 && t.s.phase === 'answer'; k++) {
+        const asker = t.asker;
+        const level = t.s.players.find((p) => p.id === asker)!.level;
+        const cues = t.view(asker).me!.cues!;
+        expect(cues.length).toBe(5);
+        const lines = cues.map((c) => EVERY.get(c.id)!);
+        for (const l of lines) expect(['n4', 'n3'], l.id).toContain(l.level);
+        for (const c of cues) expect(!!c.n3, c.id).toBe(EVERY.get(c.id)!.level === 'n3');
+        const n3 = lines.filter((l) => l.level === 'n3').length;
+        if (level === 'n3') {
+          expect([2, 3]).toContain(n3);
+          n3Asks++;
+        } else {
+          expect(n3).toBe(1);
+          expect(lines.at(-1)!.level).toBe('n3');
+          n4Asks++;
+        }
+        // Asked off a cue, from memory: the answerer's tiles are N4/N3 only, and an N4 answerer gets an N3 stretch.
+        const line = lines[0]!;
+        const target = t.targetFor();
+        expect(t.play(asker, { kind: 'ask', targetId: target, utterance: speech(line.jp.kana!), lineId: line.id }).error).toBeUndefined();
+        for (const f of line.frames ?? []) expect(t.st.gcSaid?.[asker]?.[f], `${line.id} ${f}`).toBeGreaterThan(0);
+        const answers = t.view(target).me!.answers!;
+        for (const a of answers) expect(['n4', 'n3'], a.id).toContain(EVERY.get(a.id)!.level);
+        if (t.s.players.find((p) => p.id === target)!.level === 'n4') expect(answers.filter((a) => a.n3).length).toBeGreaterThanOrEqual(1);
+        expect(t.play(target, { kind: 'reply', utterance: speech(answers[0]!.kana!), lineId: answers[0]!.id }).error).toBeUndefined();
+      }
+    }
+    expect(n3Asks).toBeGreaterThan(0);
+    expect(n4Asks).toBeGreaterThan(0);
+  });
+
+  it('bots in the Green Car say the rules lines from memory, N3 frames included', () => {
+    const N3 = new Set(N3_RULES);
+    let n3Frames = 0;
+    let rules = 0;
+    for (const seed of [1, 2, 3]) {
+      const t = new Table(4, REAL_CONTENT, seed, ['n3', 'n4', 'n3', 'n4']);
+      t.start(2);
+      const policy = touristPolicy({ seed, delayMs: [0, 0] });
+      const done = new Set<string>();
+      for (let guard = 0; guard < 3000 && t.s.phase !== 'recap'; guard++) {
+        let moved = false;
+        for (const p of t.s.players) {
+          const view = t.roomView(p.id);
+          for (const m of policy.act(view, p.id)) {
+            const key = `${p.id}:${view.phaseSeq}:${m.key}`;
+            if (done.has(key)) continue;
+            done.add(key);
+            t.play(p.id, m.move);
+            moved = true;
+          }
+        }
+        if (!moved) t.timeout();
+      }
+      const all = Object.values(t.s.phrasebook).flat();
+      const memory = all.filter((e) => e.recall === 'memory' && e.outcome === 'said');
+      n3Frames += memory.flatMap((e) => (e.frames ?? framesIn(e)).filter((f) => N3.has(f))).length;
+      rules += all.filter((e) => GREEN_LINES.some((l) => l.jp.text === e.text || l.jp.kana === e.text)).length;
+    }
+    expect(rules).toBeGreaterThan(5);
+    expect(n3Frames).toBeGreaterThan(3);
+  });
 });
