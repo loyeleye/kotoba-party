@@ -61,9 +61,28 @@ it?". After its flip, one `finale` turn per card, lowest first: the TV shows the
 the reader says their line, starting with a joiner: 「そして…」, 「それから…」, 「しかも…」 (and then,
 after that, on top of that), and 「さいごに…」 (finally) for the last.
 
+## Green Car
+
+In the Green Car (everyone N4 or N3; `shared/src/greenCar.ts`, design: `n3-coverage/green-car/design.md` in the
+project files):
+
+- **Moved out of mixed rooms:** rank and defend (below) and its 15 s encore, which kept beginners waiting. A mixed
+  room, or an all-N4+ room with the Green Car switched off, never has it: no offer, no encore, no Gallery, no
+  curveball. The host stand-in for 1–2 Kana/N5 players stays.
+- **Given, not offered:** in the Green Car one player defends every round, already taken in the line-up (no
+  offer card; they can still pass with "Not this time after all", or at the mic). Who: the player with a card said
+  out loud who has given it fewest times this game, then longest ago, then by seat (`gcDefences`), with no
+  spotlight rest. Green Car turns aren't written to the offer log (`hardLog` stays empty, so `hardTally` and
+  `offers` report nothing).
+- The Gallery still runs (reaction tiles for everyone else); the curveball and the Kana/N5 gist never come up,
+  since nobody aboard is Kana or N5.
+- Not yet: the design's N3 defences (＿と いうより, ＿ほど ＿は ない, ＿に きまって いる) and new themes ranked by
+  degree; this change is the move-out only.
+
 ## Rank and defend (N4 hard role, goal 4.11)
 
-In a room with N4 players, one of them each round (skipping a card not said or hidden) also defends
+**Green Car only** (see above): the offer, rotation and log below describe how it ran in mixed rooms until Nov
+2026; in the Green Car it is given every round instead. In a room with N4 players, one of them each round (skipping a card not said or hidden) also defends
 their own card's place, with ので. Any round, the Time Line too, where the ordinary defence doesn't run.
 Who is offered it comes from the shared `nextOfferee` (shared/src/modes/hardRoleLog.ts): the N4 player
 offered fewest times, then the one offered longest ago; a player who said Not this time, or let the

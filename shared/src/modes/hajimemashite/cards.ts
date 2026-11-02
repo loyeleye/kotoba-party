@@ -45,8 +45,11 @@ export interface IntroCard {
   en: string;
   /** The same about someone else, with {name} (what the tanuki and the introducer see). */
   enThird: string;
-  /** N4 cards go only to N4 guests. A chunk card is N4 grammar used as a fixed phrase. */
-  level: 'n5' | 'n4';
+  /**
+   * N4 cards go only to N4 guests. A chunk card is N4 grammar used as a fixed phrase. N3 cards (the Green Car's
+   * experience deck) play only in the Green Car.
+   */
+  level: 'n5' | 'n4' | 'n3';
   /**
    * A verb card: the blank takes the た or て form of its tile's dictionary-form phrase. `first` and
    * `third` take the conjugated phrase; `cue` and `cueThird` are the same frames as the player sees them,
@@ -55,7 +58,7 @@ export interface IntroCard {
   conj?: Conj;
   cue?: string;
   cueThird?: string;
-  /** The N4 frames the card's lines practise, by frame id (N4 cards). */
+  /** The N4 or N3 frames the card's lines practise, by frame id (N4 and N3 cards). */
   frames?: readonly string[];
   /** Set on the N4 deck's cards (all cards are draft until the fluent check). */
   status?: ReviewStatus;
@@ -737,7 +740,158 @@ export const INTRO_CARDS: IntroCard[] = [
     ]),
     pon: verbPon('ichido-temitai', 'たぬきの おうさまに なる', 'たぬきの おうさまに なって', 'becoming the tanuki king'),
   },
+
+  // ---- The Green Car's N3 experience cards (design: n3-coverage/green-car/design.md) ----
+  // Only in the Green Car (cardsFor's greenCar), with the N4 ＿た ことが ある and ＿て みる/みたい cards. The blank is a
+  // verb phrase already in the form the frame takes (the dictionary form before ことに して いる and はずでした, a
+  // plain form, の or な before ふり), so nothing is conjugated. One shared card per frame, so every frame plays in
+  // every audience; Kids add pets and snacks (＿ことに して いる) and homework (＿ふりを した), Cheeky the date that
+  // was supposed to… (＿はずだった). Draft until the fluent and taste checks.
+  {
+    id: 'kotonishiteiru',
+    title: { text: 'じぶんの ルール', kana: 'じぶんの ルール', en: 'A rule you keep' },
+    first: '＿ ことに して います',
+    third: '{name}さんは ＿ ことに して います',
+    en: 'I make a point of ___',
+    enThird: '{name} makes a point of ___',
+    level: 'n3',
+    frames: ['koto-ni-shiteiru'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: tiles('kotonishiteiru', [
+      ['まいあさ さんぽする', 'walking every morning', '🚶'], ['よる じゅうじに ねる', 'going to bed at ten', '🛏️'],
+      ['みずを たくさん のむ', 'drinking lots of water', '💧'], ['しゅうに いちど そうじする', 'cleaning once a week', '🧹'],
+      ['あさごはんは かならず たべる', 'always eating breakfast', '🍳'], ['エレベーターを つかわない', 'not using lifts', '🛗'],
+      ['ねる まえに ほんを よむ', 'reading before bed', '📖'], ['まいにち にっきを かく', 'writing a diary every day', '📔'],
+      ['よる おそく たべない', 'not eating late at night', '🌙'], ['まいにち にほんごを べんきょうする', 'studying Japanese every day', '📚'],
+      ['かいだんを はしって のぼる', 'running up the stairs', '🏃'], ['でんしゃでは スマホを みない', 'not looking at my phone on the train', '📵'],
+      ['まいあさ ラジオたいそうを する', 'doing the radio exercises every morning', '📻'], ['ともだちの たんじょうびを わすれない', "never forgetting friends' birthdays", '🎂'],
+      ['まいばん おふろで うたう', 'singing in the bath every night', '🛁'], ['しゅうまつは ゆっくり ねる', 'sleeping in at weekends', '😴'],
+    ]),
+    pon: ponTile('kotonishiteiru', 'まいにち はっぱを あたまに のせる', 'wearing a leaf on my head every day'),
+  },
+  {
+    id: 'furi',
+    title: { text: 'した ふり', kana: 'した ふり', en: 'Something you pretended' },
+    first: 'このまえ ＿ ふりを しました',
+    third: '{name}さんは このまえ ＿ ふりを しました',
+    en: 'The other day I pretended ___',
+    enThird: 'The other day {name} pretended ___',
+    level: 'n3',
+    frames: ['furi'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: tiles('furi', [
+      ['ねて いる', 'to be asleep', '😴'], ['きこえない', 'not to hear', '🙉'],
+      ['びょうきの', 'to be ill', '🤒'], ['しらない', 'not to know', '🤷'],
+      ['いない', 'not to be home', '🚪'], ['でんわして いる', 'to be on the phone', '📱'],
+      ['いそがしい', 'to be busy', '⏰'], ['おこって いる', 'to be angry', '😠'],
+      ['ないて いる', 'to be crying', '😢'], ['ほんを よんで いる', 'to be reading', '📖'],
+      ['わかった', 'to understand', '💡'], ['もう たべた', 'to have eaten already', '🍽️'],
+      ['ねむくない', 'not to be sleepy', '🥱'], ['おぼえて いる', 'to remember', '🧠'],
+      ['へいきな', 'to be fine', '💪'], ['あしが いたい', 'to have a sore leg', '🦵'],
+    ]),
+    pon: ponTile('furi', 'ただの たぬきの', 'to be an ordinary tanuki'),
+  },
+  {
+    id: 'hazudatta',
+    title: { text: 'する はずだった こと', kana: 'する はずだった こと', en: 'What was supposed to happen' },
+    first: 'きのうは ＿ はずでした',
+    third: '{name}さんは きのう ＿ はずでした',
+    en: 'Yesterday I was supposed to ___',
+    enThird: 'Yesterday {name} was supposed to ___',
+    level: 'n3',
+    frames: ['hazu-datta'],
+    status: 'draft',
+    audiences: ALL,
+    tiles: tiles('hazudatta', [
+      ['うみに いく', 'go to the beach', '🏖️'], ['ともだちと あそぶ', 'hang out with friends', '🧑‍🤝‍🧑'],
+      ['へやを かたづける', 'tidy up', '🧹'], ['はやく ねる', 'go to bed early', '🛏️'],
+      ['ケーキを やく', 'bake a cake', '🎂'], ['えいがを みる', 'see a film', '🎬'],
+      ['しゅくだいを おわらせる', 'finish some homework', '📝'], ['ピクニックに いく', 'go on a picnic', '🧺'],
+      ['やまに のぼる', 'climb a mountain', '⛰️'], ['プールで およぐ', 'swim at the pool', '🏊'],
+      ['にわの くさを とる', 'weed the garden', '🌱'], ['おばあちゃんの いえに いく', "visit grandma's", '👵'],
+      ['じてんしゃを なおす', 'fix the bike', '🚲'], ['あさ ろくじに おきる', 'get up at six', '🌅'],
+      ['カレーを つくる', 'make curry', '🍛'], ['かいものに いく', 'go shopping', '🛍️'],
+    ]),
+    pon: ponTile('hazudatta', 'ひとに ばける', 'turn into a person'),
+  },
+  {
+    id: 'kids-rule',
+    title: { text: 'ペットと おやつの ルール', kana: 'ペットと おやつの ルール', en: 'Your pet and snack rules' },
+    first: 'おうちでは ＿ ことに して います',
+    third: '{name}さんは おうちでは ＿ ことに して います',
+    en: 'At home I always ___',
+    enThird: 'At home {name} always ___',
+    level: 'n3',
+    frames: ['koto-ni-shiteiru'],
+    status: 'draft',
+    audiences: KIDS,
+    tiles: tiles('kids-rule', [
+      ['まいあさ いぬと さんぽする', 'walk the dog every morning', '🐕'], ['ねこに ごはんを あげる', 'feed the cat', '🐈'],
+      ['きんぎょに えさを あげる', 'feed the goldfish', '🐠'], ['おやつは ひとつだけ たべる', 'have just one snack', '🍪'],
+      ['おやつの まえに てを あらう', 'wash my hands before snacks', '🧼'], ['ハムスターの へやを そうじする', "clean the hamster's cage", '🐹'],
+      ['いぬの みずを かえる', "change the dog's water", '💧'], ['チョコは しゅうに いちど たべる', 'have chocolate once a week', '🍫'],
+      ['おやつを いもうとと わける', 'share snacks with my little sister', '👧'], ['うさぎに にんじんを あげる', 'give the rabbit carrots', '🐰'],
+      ['ねこと いっしょに ねる', 'sleep next to the cat', '🛌'], ['よるは あまい ものを たべない', 'not eat sweets at night', '🌙'],
+      ['インコに あいさつする', 'say hello to the budgie', '🦜'], ['ばんごはんの あとで アイスを たべる', 'have ice cream after dinner', '🍨'],
+      ['かめの こうらを みがく', "polish the tortoise's shell", '🐢'], ['くだものを おやつに する', 'have fruit as a snack', '🍎'],
+    ]),
+    pon: ponTile('kids-rule', 'はっぱを おやつに する', 'have leaves as a snack'),
+  },
+  {
+    id: 'kids-homework-furi',
+    title: { text: 'しゅくだいの とき', kana: 'しゅくだいの とき', en: 'Homework time' },
+    first: 'しゅくだいの とき、＿ ふりを しました',
+    third: '{name}さんは しゅくだいの とき、＿ ふりを しました',
+    en: 'At homework time, I pretended ___',
+    enThird: 'At homework time, {name} pretended ___',
+    level: 'n3',
+    frames: ['furi'],
+    status: 'draft',
+    audiences: KIDS,
+    tiles: tiles('kids-homework-furi', [
+      ['べんきょうして いる', 'to be studying', '📚'], ['ねて いる', 'to be asleep', '😴'],
+      ['おなかが いたい', 'to have a tummy ache', '🤢'], ['きこえない', 'not to hear', '🙉'],
+      ['えんぴつを さがして いる', 'to be looking for a pencil', '✏️'], ['もう おわった', 'to have finished already', '✅'],
+      ['ノートを わすれた', 'to have forgotten my notebook', '📓'], ['わからない', 'not to understand', '❓'],
+      ['トイレに いって いる', 'to be in the toilet', '🚽'], ['かんがえて いる', 'to be thinking', '🤔'],
+      ['てが いたい', 'to have a sore hand', '✋'], ['ねむくて うごけない', 'to be too sleepy to move', '🥱'],
+      ['ほんを よんで いる', 'to be reading', '📖'], ['ねこの せわを して いる', 'to be looking after the cat', '🐈'],
+      ['かぜを ひいた', 'to have a cold', '🤧'], ['おとうとに おしえて いる', 'to be helping my little brother', '👦'],
+    ]),
+    pon: ponTile('kids-homework-furi', 'たぬきの おきものの', 'to be a tanuki statue'),
+  },
+  {
+    id: 'date-hazu',
+    title: { text: 'はつデートの よてい', kana: 'はつデートの よてい', en: 'The first-date plan' },
+    first: 'はつデートで ＿ はずでした',
+    third: '{name}さんは はつデートで ＿ はずでした',
+    en: 'On my first date I was supposed to ___',
+    enThird: 'On a first date {name} was supposed to ___',
+    level: 'n3',
+    frames: ['hazu-datta'],
+    status: 'draft',
+    audiences: CHEEKY,
+    tiles: tiles('date-hazu', [
+      ['よるけいを みる', 'see the night view', '🌃'], ['フレンチを たべる', 'have French food', '🍷'],
+      ['かんらんしゃに のる', 'ride the Ferris wheel', '🎡'], ['えいがかんに いく', 'go to the cinema', '🎬'],
+      ['カラオケで うたう', 'sing karaoke', '🎤'], ['しゅうでんで かえる', 'go home on the last train', '🚃'],
+      ['てを つなぐ', 'hold hands', '🤝'], ['おしゃれな バーに いく', 'go to a fancy bar', '🍸'],
+      ['すいぞくかんに いく', 'go to the aquarium', '🐠'], ['ワリカンに する', 'split the bill', '💴'],
+      ['プレゼントを わたす', 'give a present', '🎁'], ['はなびを みる', 'watch fireworks', '🎆'],
+      ['こくはくする', 'confess my feelings', '💌'], ['いざかやで のむ', 'drink at an izakaya', '🍶'],
+      ['こうえんを さんぽする', 'walk in the park', '🌳'], ['ドライブに いく', 'go for a drive', '🚗'],
+    ]),
+    pon: ponTile('date-hazu', 'たぬきの すがたで あう', 'meet in my tanuki form'),
+  },
 ];
+
+/** The Green Car's N4 experience frames (design: ＿た ことが ある, ＿て みる／みたい). Its deck is these plus the N3 cards. */
+export const GREEN_CAR_N4_FRAMES: readonly string[] = ['ta-koto', 'te-miru'];
+
+/** A card in the Green Car's experience deck. */
+export const greenCarCard = (c: IntroCard): boolean => c.level === 'n3' || (c.level === 'n4' && !!c.frames?.some((f) => GREEN_CAR_N4_FRAMES.includes(f)));
 
 export const introCardOf = (id: string): IntroCard | undefined => INTRO_CARDS.find((c) => c.id === id);
 
@@ -751,9 +905,13 @@ export function tileOf(id: string): Tile | undefined {
   return undefined;
 }
 
-/** The cards a turn can draw for this guest: the room's audience, and N4 cards only for N4 guests. */
-export function cardsFor(audience: Audience, level: Level): IntroCard[] {
-  return INTRO_CARDS.filter((c) => c.audiences.includes(audience) && (c.level === 'n5' || n4Up(level)));
+/**
+ * The cards a turn can draw for this guest: the room's audience, and N4 cards only for N4 guests. In the Green
+ * Car (everyone N4 or up) the deck is the experience deck only (greenCarCard); N3 cards never play outside it.
+ */
+export function cardsFor(audience: Audience, level: Level, greenCar = false): IntroCard[] {
+  if (greenCar) return INTRO_CARDS.filter((c) => c.audiences.includes(audience) && greenCarCard(c));
+  return INTRO_CARDS.filter((c) => c.audiences.includes(audience) && c.level !== 'n3' && (c.level === 'n5' || n4Up(level)));
 }
 
 /** Cheeky cards (and every card in a Kids room) take tiles only from the tanuki: no typed lies about a real person there. */

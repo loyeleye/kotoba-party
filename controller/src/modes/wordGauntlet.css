@@ -31,6 +31,7 @@
 .wg-fin { display: grid; gap: 2px; text-align: left; }
 .wg-fin strong { font-size: 18px; }
 .wg-fin-en { color: var(--muted); font-size: 13px; }
+.wg-fin-n3 { font-size: 11px; font-weight: 700; color: var(--muted); }
 .wg-fin.picked { outline: 3px solid var(--accent); }
 .wg-own-fin { display: flex; gap: 6px; }
 .wg-own-fin input { flex: 1; min-width: 0; }

@@ -55,7 +55,27 @@ bonus is never more than 30% of their score. The pool settles whenever base poin
 Awards: めいたんてい (most clues found), こえの たんてい (most questions asked aloud), みぬいた！
 (first to name the culprit).
 
+### Green Car
+
+In the Green Car (everyone N4 or N3; `shared/src/greenCar.ts`, design: `n3-coverage/green-car/design.md` in the
+project files):
+
+- **Moved out of mixed rooms:** the deputy (below). Its turns waited for a taken role, and the voiced N4 report is
+  above beginners. A mixed room, or an all-N4+ room with the Green Car switched off, never has a deputy: no offer,
+  no extra 15 s, no Gallery, no curveball. The host stand-in for 1–2 Kana/N5 players stays.
+- **Everyone is deputy in turn, with no offer card:** each turn the next N4+ player by seat after the last deputy
+  (never the asker) is given the part, already taken (`given`, status `ready`), so the answer always has the
+  deputy's 15 s. They can still say "not this time". Green Car turns aren't written to the offer log (`deputyLog`
+  stays empty, so `deputyOffers` and `offers` report nothing).
+- The Gallery still opens for everyone else (reaction tiles); the curveball and the Kana/N5 gist never come up,
+  since nobody aboard is Kana or N5.
+- Not yet: the design's N3 testimony, ＿に ちがいない / ＿はずが ない accusations and the ＿らしい alibi report; this
+  change is the move-out only.
+
 ### The deputy (N4 hard role)
+
+**Green Car only** (see above); the offer described below is how it ran in mixed rooms until Nov 2026.
+
 
 When the room has an N4 player, each turn one of them (never the asker) is offered the deputy's part on
 their phone while the question is asked, on the shared offer card (`roleOffer`: "🕵️ Chōchin-san needs a

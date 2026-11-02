@@ -394,7 +394,7 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     await ctx.server.close();
   });
 
-  const playBots = async (levels: ('kana' | 'n5' | 'n4')[], expected: string[]) => {
+  const playBots = async (levels: ('kana' | 'n5' | 'n4' | 'n3')[], expected: string[]) => {
     const { baseUrl, truth, server } = ctx;
     const created = await createRoom(baseUrl);
     const room = server.rooms.get(created.code)!;
@@ -458,7 +458,11 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     await playBots(['n5', 'n5', 'n5', 'n5', 'kana'], ['fake', 'telephone', 'shiritori']);
   });
 
-  it('plays the rumour round instead when an N4 player is in the room', async () => {
-    await playBots(['n4', 'n5', 'n4', 'n5', 'kana'], ['fake', 'rumour', 'shiritori']);
+  it('plays the rumour round instead in the Green Car (everyone N4+, on by default)', async () => {
+    await playBots(['n4', 'n3', 'n4', 'n3', 'n4'], ['fake', 'rumour', 'shiritori']);
+  });
+
+  it('keeps Lost in Translation in a mixed room with N4 players (a Green Car move-out)', async () => {
+    await playBots(['n4', 'n5', 'n4', 'n5', 'kana'], ['fake', 'telephone', 'shiritori']);
   });
 });
