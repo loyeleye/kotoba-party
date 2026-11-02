@@ -69,8 +69,36 @@ project files):
   stays empty, so `deputyOffers` and `offers` report nothing).
 - The Gallery still opens for everyone else (reaction tiles); the curveball and the Kana/N5 gist never come up,
   since nobody aboard is Kana or N5.
-- Not yet: the design's N3 testimony, ＿に ちがいない / ＿はずが ない accusations and the ＿らしい alibi report; this
-  change is the move-out only.
+- **N3 testimony:** a suspect's answer has an optional `n3` line (`OnsenAnswer.n3`, draft), the same facts with
+  an N3 frame in it (＿ばかり, ＿ところでした, ＿せいで, ＿おかげで, ＿たびに, ＿に ちがいない, ＿わけが ない, ＿らしい,
+  ＿ような きが する, ＿わりに, ＿くせに (about the victim or a suspect, never a player), ＿はずでした …). In the Green
+  Car the suspect says it instead of `jp`. All eight cases have them on their clue answers (65 lines, the Kids
+  ice-cream case and the four Cheeky ones too); the other answers stay N5 for now. A mixed room never hears them.
+- **The deputy's N3 report** (3.1 ＿らしい, with 4.6 ＿に よると / ＿そうです): every report has an N3 retelling
+  made by rule (`n3Report` in `deputy.ts`): 「たなかさんは 12じに ねたと いっていました。」 becomes 「たなかさんに よると、
+  じゅうにじに ねた らしいです。」; a sighting 「…やまださんに みられた らしいです。」; after a noun's だ (やまださんのだ),
+  where らしい can't follow and a bare noun + らしい isn't matched, 「…やまださんのだ そうです。」. じぶん becomes the
+  speaker's name. Only a line whose frames `framesOf` finds is kept (all 150 reports have one: 125 ＿に よると ＿らしい,
+  9 passive ＿らしい, 16 ＿に よると ＿そうです). An **N3 deputy** gets the retelling every other report (first one
+  first), the N4 report otherwise, so about half each; the phone tags it N3, its frame is 「＿に よると、 ＿らしいです」,
+  the decoy tile is the suspect's ます form of the verb before らしい, and the notes say the plain form goes before
+  ＿らしい / ＿そうです. An **N4 deputy** gets the N4 report, with the retelling under it as an **N3 stretch** (frame
+  and rule; the line after a try): saying either counts, and the stretch becomes the report (voiced, logged as
+  `onsen.report.<case>.<suspect>.<intent>.n3`) and pays `reportStretch` (+20) on top. The tiles are always the dealt
+  line's.
+- **The N3 accusation** (3.10, with 3.3 where it fits): as the accusation opens each player is dealt one of four
+  lines, aimed at the frames they need tonight (`aimWeight` per frame, `aimPick`): 「はんにんは ○○さんに ちがいない！」,
+  「ゆきだるまさんが とけたのは、 ○○さんの せいに ちがいない！」 (＿せいで + ＿に ちがいない, from the case's
+  `victim.fate`, draft), 「○○さんの はなしが ほんとうの はずが ない。 はんにんは ○○さんだ！」 (＿はずが ない) or
+  「みんなの おかげで わかった。 はんにんは ○○さんに ちがいない！」 (＿おかげで). An **N3 player** must say the suspect's
+  name with ＿に ちがいない or ＿はずが ない (`gcAccusationFrames`; the N4 「はんにんは ○○さんです」 gets a retry); an
+  **N4 player** sees the N4 line with the N3 one as a stretch: either counts, the N3 one adds `accuseStretch` (+50)
+  to the speaking pool. The phrasebook gets the N3 line whose frames were all heard (the most frames first), as
+  `onsen.accuse.<case>.<suspect>.<line>`.
+- Sim (`tools/sim/play.ts`-style, 20 family games, n3,n4,n3,n4): the N3 seat per game ＿らしい 1.0, ＿に ちがいない 1.0,
+  ＿に よると 0.8, ＿せいで 0.35, ＿おかげで 0.35, ＿と いって いた 0.85; the N4 seat ＿に よると 1.2, ＿らしい 0.8 (the
+  stretch), ＿と いって いた 0.5. ＿はずが ない (optional in 3.10) is rarely dealt while ＿に ちがいない (required) is
+  still needed tonight. The passive reports are still not credited (`framesOf` doesn't name kana みられました).
 
 ### The deputy (N4 hard role)
 
@@ -290,6 +318,12 @@ on the LLM. At most 16 lead-ins per game.
 35. **Two answers reworded** (round 5, from the panel, draft): Tanaka's report says スープを つくる ために
     (ために after a verb, not スープの ために), and Nishimura's necktie answer is ぼくのか どうか わかりません
     (with ＿か どうか, `ka-dou-ka`) in place of ぼくのじゃ ありません。…たぶん.
+36. **Green Car: the N3 accusation is required of N3 players only** (Nov 2026). The design says the accusation
+    must use ＿に ちがいない or ＿はずが ない; the brief's rule is that an N4 player gets N4 lines with N3 as an
+    optional stretch, so an N4 player may still say 「はんにんは ○○さんです！」 and gets a bonus for the N3 line.
+37. **Green Car: the N3 report is made by rule, not hand-written** (Nov 2026). Every report already restates
+    the answer's facts, so ＿と いっていました → ＿に よると … ＿らしいです keeps them exactly; only the 16 noun-だ
+    reports take ＿そうです. The suspect's N3 testimony is hand-written, on the 65 clue answers only.
 
 ## Open questions
 

@@ -7,6 +7,7 @@
 
 import type { JpText, OnsenCase, OnsenIntent, OnsenSuspect } from '../../../../content/src/types.js';
 import { normalizeReading, soundKey, type Utterance } from '../../japanese/kana.js';
+import { framesOf, type FrameId } from '../../japanese/frames.js';
 
 export const INTENTS: readonly OnsenIntent[] = ['where', 'what', 'who', 'when', 'victim', 'item'];
 
@@ -179,4 +180,59 @@ export function checkAccusation(u: Pick<Utterance, 'text' | 'reading'>, s: Pick<
   const name = soundKey(bareName(s.name.kana));
   const culprit = soundKey('はんにん');
   return readingsOf(u).some((r) => r.includes(name) && r.includes(culprit));
+}
+
+// ---- the Green Car's N3 accusation ----
+
+/** The Green Car's N3 accusation lines (goal 3.10, with 3.3's ＿せいで / ＿おかげで where they fit). */
+export type GcAccuseId = 'chigainai' | 'sei' | 'hazu' | 'okage';
+
+/** Each line's frames, by id (shared/src/japanese/frames.ts): the aim deals by these. */
+export const GC_ACCUSE: Record<GcAccuseId, readonly FrameId[]> = {
+  chigainai: ['ni-chigainai'],
+  sei: ['sei-de', 'ni-chigainai'],
+  hazu: ['hazu-ga-nai'],
+  okage: ['okage-de', 'ni-chigainai'],
+};
+
+/** The frames a Green Car accusation must carry, one of them: ＿に ちがいない or ＿はずが ない. */
+export const GC_ACCUSE_NEEDS: readonly FrameId[] = ['ni-chigainai', 'hazu-ga-nai'];
+
+/**
+ * A Green Car accusation line (draft): 「はんにんは ○○さんに ちがいない！」, 「ゆきだるまさんが とけたのは、 ○○さんの
+ * せいに ちがいない！」 (needs the case's `victim.fate`), 「○○さんの はなしが ほんとうの はずが ない。 はんにんは ○○さんだ！」
+ * or 「みんなの おかげで わかった。 はんにんは ○○さんに ちがいない！」. Null for ＿せいで on a case with no fate.
+ */
+export function gcAccusationLine(c: Pick<OnsenCase, 'victim'>, s: Pick<OnsenSuspect, 'name' | 'suffix'>, id: GcAccuseId): JpText | null {
+  const n = calledName(s);
+  const both = (f: (name: string) => string, en: string): JpText => ({ text: f(n.text), kana: f(n.kana), en });
+  switch (id) {
+    case 'chigainai':
+      return both((x) => `はんにんは ${x}に ちがいない！`, `The culprit must be ${s.name.en}!`);
+    case 'sei': {
+      const fate = c.victim.fate;
+      if (!fate) return null;
+      return {
+        text: `${fate.text}のは、 ${n.text}の せいに ちがいない！`,
+        kana: `${fate.kana}のは、 ${n.kana}の せいに ちがいない！`,
+        en: `${fate.en}: it must be ${s.name.en}'s fault!`,
+      };
+    }
+    case 'hazu':
+      return both((x) => `${x}の はなしが ほんとうの はずが ない。 はんにんは ${x}だ！`, `There's no way ${s.name.en}'s story is true. ${s.name.en} did it!`);
+    case 'okage':
+      return both((x) => `みんなの おかげで わかった。 はんにんは ${x}に ちがいない！`, `Thanks to everyone, I've got it: the culprit must be ${s.name.en}!`);
+  }
+}
+
+/**
+ * The frames heard in a Green Car accusation of this suspect, or null when it doesn't count: the suspect's name
+ * and one of ＿に ちがいない / ＿はずが ない must be there (framesOf, over the reading and the text).
+ */
+export function gcAccusationFrames(u: Pick<Utterance, 'text' | 'reading' | 'tokens'>, s: Pick<OnsenSuspect, 'name'>): FrameId[] | null {
+  const name = soundKey(bareName(s.name.kana));
+  if (!readingsOf(u).some((r) => r.includes(name))) return null;
+  const heard = new Set<FrameId>();
+  for (const kana of [u.reading, u.text]) if (kana) for (const f of framesOf({ text: u.text, kana }, u.tokens, { keepHidden: true })) heard.add(f);
+  return GC_ACCUSE_NEEDS.some((f) => heard.has(f)) ? [...heard] : null;
 }

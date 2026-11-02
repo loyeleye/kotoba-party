@@ -1,9 +1,14 @@
 // How a bot plays Murder at the Onsen: on its turn it questions the suspect it knows least
 // about, asking something not yet asked (built from the phone's own tiles, so it never needs
 // the case), sometimes mumbling first to use the retry; at the accusation it names the suspect
-// the notebook mentions most (sometimes a hunch instead) and says the sentence aloud.
+// the notebook mentions most (sometimes a hunch instead) and says the sentence aloud. In the Green Car the deputy
+// (every N4+ player but the asker, in turn) says the report: the N3 retelling when it's dealt, and an N4 deputy
+// every other time tries the N3 stretch; the accusation is the phone's line, the N3 one (＿に ちがいない …) for an
+// N3 player and every other N4 player's stretch.
 
 import type { OnsenIntent } from '../../../content/src/types.js';
+import type { ContentLibrary } from '../../../shared/src/modes/mode.js';
+import { n3Report } from '../../../shared/src/modes/onsenMurder/deputy.js';
 import type { OnsenView } from '../../../shared/src/modes/onsenMurder/onsenMurder.js';
 import { bareName, joinTiles, type QuestionTile } from '../../../shared/src/modes/onsenMurder/questions.js';
 import { normalizeReading } from '../../../shared/src/japanese/kana.js';
@@ -21,6 +26,8 @@ export interface OnsenBotOptions {
   tiles?: boolean | ((playerId: string) => boolean);
   /** Think time range in ms. */
   delayMs?: [number, number];
+  /** The cases, so a deputy can say the report (the phone shows the line only after a try). Left out, no reports. */
+  content?: ContentLibrary;
 }
 
 /** Which tiles make each question. */
@@ -81,6 +88,19 @@ export function onsenMurderPolicy(opts: OnsenBotOptions = {}): ModePolicy {
         ];
       }
 
+      // The deputy (Green Car): say the report, from the case's scripted line for this answer.
+      const d = mine.deputy;
+      if (view.phase === 'reveal' && d?.canReport && d.triesLeft > 0 && game.current && opts.content) {
+        const c = opts.content.onsenCases.find((x) => x.id === game.caseFile.id);
+        const base = c?.suspects.find((x) => x.id === game.current!.suspectId)?.answers[game.current.intent]?.report;
+        if (base) {
+          const n3 = n3Report(base);
+          const stretch = !!d.stretch && chance(me, seq, 'stretch') < 0.5;
+          const line = (d.n3 || stretch) && n3 ? n3.jp : base.jp;
+          return [{ key: `report-${seq}-${d.triesLeft}`, move: { kind: 'report', utterance: { via, text: line.kana } }, delayMs: delay('report') }];
+        }
+      }
+
       if (view.phase === 'encore' && !mine.accusation) {
         // Count how often the notebook names each suspect; the culprit is usually the busiest.
         const counts = game.suspects.map((s) => ({
@@ -92,7 +112,9 @@ export function onsenMurderPolicy(opts: OnsenBotOptions = {}): ModePolicy {
         const target = chance(me, seq, 'sleuth') < sleuth ? counts[0]!.s : hunch;
         const tryNo = mine.accuseTry ? 1 : 0;
         const garble = tryNo === 0 && chance(me, seq, 'mumble-acc') < mumble;
-        const line = mine.lines.find((l) => l.suspectId === target.id)!.line;
+        // Green Car, an N4 player: every other one tries the N3 line (the stretch).
+        const stretch = mine.stretchLines && chance(me, seq, 'stretch-acc') < 0.5 ? mine.stretchLines : null;
+        const line = (stretch ?? mine.lines).find((l) => l.suspectId === target.id)!.line;
         return [
           {
             key: `accuse-${tryNo}`,

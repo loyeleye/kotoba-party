@@ -46,7 +46,7 @@ export function policyMaker(content: () => ContentLibrary, opts: { thinkMs?: num
       case 'word-gauntlet':
         return wordGauntletPolicy(content());
       case 'onsen-murder':
-        return onsenMurderPolicy();
+        return onsenMurderPolicy({ content: content() });
       case 'concentration':
         return concentrationPolicy();
       case 'phrase-bingo':

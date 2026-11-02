@@ -67,3 +67,6 @@
 .om-p-note { font-size: 14px; }
 /* The Gallery tile and the booth's gist wait for the answer to be up, like the deputy's tiles. */
 .om-p-mixed { animation: om-p-appear 0.5s ease-out both; display: grid; gap: 10px; }
+/* Green Car: the N3 tag, and the N3 stretch under an N4 line. */
+.om-p-n3-tag { font-size: 11px; font-weight: 700; color: var(--muted); }
+.om-p-stretch { border-top: 1px dashed var(--muted); padding-top: 6px; }
