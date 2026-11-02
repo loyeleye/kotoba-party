@@ -107,7 +107,8 @@ stops, the same items.
   まもなく まいります) and a plain でんしゃ / れっしゃ are accepted too). Frames
   `keigo`, `o-kudasai`.
 - **Lost and Found** (忘れ物センター, 4.6), `content/src/last-train/lost-and-found.ts`: a new minigame
-  that rides a line only in a room with an N4 player. The Obake Line's 神社前 becomes 忘れ野 (Wasureno)
+  that rides a line only in the Green Car (a move-out, see "Green Car" below; it used to ride in any room with an
+  N4 player). The Obake Line's 神社前 becomes 忘れ野 (Wasureno)
   and the Hoshimidai line's 大学前 becomes 音無 (Otonashi) through the stop's `withN4`; both swapped-out
   minigames are penalty ones, so they still ride in the penalty car. It is never a padding stop
   (`n4Stop`). Kana players say what is in the picture (かさです), N5 players say where, when and what
@@ -238,6 +239,44 @@ The stage view never carries anyone's words or hints before `reveal`. A phone se
 task, hint and last heard text, plus the words of rejected answers it may vote on (needed to
 judge an overrule). Accepted answers are never sent to any client; bots look items up by
 `itemId` in the content. A sign's `target` mark is stripped from every phone's view too.
+
+## Green Car
+
+When the game rides in the Green Car (`ctx.greenCar`, shared/src/greenCar.ts: everyone aboard is N4 or N3; design:
+project files n3-coverage/green-car/design.md). All new lines are draft and tagged by frame id.
+
+**Moved out of mixed rooms.** Lost and Found's swap for 神社前 (Obake Line) and 大学前 (Hoshimidai line) happens
+only in the Green Car (`buildStops(…, greenCar)`); a mixed room with an N4 player keeps its line as written. The
+announcer and the guest at the inn stay in mixed rooms, offered as before (one N4 player a stop, `nextOfferee`). An
+all-N4+ room that switched the Green Car off plays as a mixed room.
+
+**In the Green Car:**
+
+- **Its own lines** (`content/src/last-train/green-car.ts`, `greenCar: true`): グリーン車の最終電車 (Family),
+  修学旅行のグリーン車 (Kids: a school trip, a lost lunchbox) and 二次会のあとの終電 (Cheeky: the last train after
+  the after-party, never explicit). Six stops each, in the same order: announcement, Read the Signs, Lost and
+  Found, the inn, Read the Signs, announcement; so every frame is reachable in every audience. `chooseScenario`
+  picks among them by audience, and no other room ever rides them. The Kids line has no dating, alcohol, money or
+  work in its own text.
+- **Roles always on, no rotation.** Every player is dealt an N4 or N3 item at every stop, a role item (announcer,
+  Lost and Found, the front desk) or not (`greenCarTurns`): no offer card, nothing in `roleLog` (so nothing in the
+  hard-role gate), and every correct role item pays `RULES.roleBonus`. No Kana or N5 items, no penalty car (its
+  minigames are N5), and padding stops are only minigames with N4 or N3 items.
+- **N3 lines.** Eight new N3 announcer items (goal 3.8: ＿で ございます, ＿て おります, ＿させて いただきます,
+  ご＿ください), each with its key word for the booth; the sign boards' N3 sign kanji (goal 3.12: 非常口, 禁煙, 案内所,
+  窓口…) were already there; two new N4 Lost and Found items (a lunchbox left on the platform, `kamo`; a ticket
+  and phone that should be in the bag, `hazu`). The Platform Dash is six N4/N3 service lines shared by the three
+  lines.
+- **The mix.** An N3 player's items alternate N3 and N4, whichever they have had fewer of, N3 first (`gc.mix`);
+  a stop with no N3 items (Lost and Found) deals N4. The Dash alternates too. N3 items show an N3 tag. An N4
+  player gets N4 items, plus an N3 item from the same stop as an optional stretch (a tap-to-open "N3 Stretch" on
+  the phone): saying it counts, makes it the item (reveal, phrasebook) and adds `RULES.stretchBonus` (20).
+- **Aim the deal.** Of the stop's items at the wanted level, unused first, the one whose frames this player has
+  said least tonight; ties at random. `gc.said[player][frame]` counts frames said right (at scoring, so an
+  overrule counts). Read the Signs items carry no frames, so they tie and are dealt at random.
+
+Not changed: the Gallery and curveball never open (nobody is Kana or N5, and nothing is taken from an offer); the
+commentary booth still replays one role line a stop. Ghosts, haunts, overrules and timers are as everywhere.
 
 ## Decisions made on Ladi's behalf
 

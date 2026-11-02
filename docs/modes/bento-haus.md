@@ -73,7 +73,9 @@ From the N4/N3 doc's hard roles, step 2. Co-op only; they ride on the same shift
 player never sees them (no state, no view fields; the host stand-in below is the one exception). All lines
 are draft, in kana, and tagged by name with the N4 frames they practise (`hardRoles.ts`).
 
-- **Offers.** At each shift's title card, the room's connected N4 players are offered a role on their phone
+- **Offers.** *(Since the Green Car: the deputy manager seat is Green Car only and never offered; outside it, each
+  N4 player is offered the おもてなし shift. See "Green Car" below. The seat rotation described here is how mixed
+  rooms worked before.)* At each shift's title card, the room's connected N4 players are offered a role on their phone
   (a disconnected player is skipped, and doesn't count toward the room's size), on the shared offer card (`controller/src/components/roleOffer.ts`): two equal buttons, Take it (やります) or Not
   this time (こんかいは いいです: the ordinary part). One deputy manager seat a shift, for the N4 player the
   shared `nextOfferee` picks (`hardRoleLog.ts`): fewest offers of the seat so far, then the one offered
@@ -190,6 +192,43 @@ adds time but the stand-in experiments': it all runs inside the shift (or the ti
     player who hasn't reacted (+15, or +5 with `scaledCurveball` off; `CURVE_POOL` for the other options). The TV and the gist hold back the key word
     until it's answered (`holdKey`). The card waits up to 5 s for the answer (`STAND_IN_CURVEBALL_MS`), so at most
     11.8 s alone or 14.3 s with the setup line; it ends as soon as the curveball is answered (never before 8 s).
+
+## Green Car
+
+When the game rides in the Green Car (`ctx.greenCar`, shared/src/greenCar.ts: everyone aboard is N4 or N3; design:
+project files n3-coverage/green-car/design.md). All new lines are draft and tagged by frame id.
+
+**Moved out of mixed rooms.** The deputy manager and its 📋 requests to the stations play only in the Green Car
+(Ladi, Nov 1: a beginner's station got extra taps from the N4 player's role). Outside the Green Car, every N4
+player is offered the おもてなし shift as before, and nobody is offered the seat (`rolesFor`). So the deputy
+manager's commentary booth, Gallery and curveball no longer reach a mixed room; the host stand-in (1–2 players,
+nobody at N4) still plays the deputy manager once, as before. An all-N4+ room that switched the Green Car off plays
+as a mixed room.
+
+**In the Green Car** (Co-op):
+
+- **No offer card, nothing in the offer log.** At each shift's title card the deputy manager seat is filled by
+  whoever has held it fewest shifts (then seat order), and every other player runs the おもてなし shift
+  (`greenCarSeats`, `hard.managerShifts`). Alone, the deputy manager also takes the orders and the guests. The
+  seat moving round each shift is our reading of "always on, no rotation" (no offer rotation, nobody sits out;
+  everyone gets both scripts in a 3-shift game of up to 3): for Ladi to confirm.
+- **N3 service lines.** Every order-taker runs the おもてなし shift. An N3 player's lines alternate N3 and N4, so
+  about half each (`hard.mix`; ＿させて いただきます, ＿で ございます, ＿て おります against お〜ください, ごえんりょ
+  ください, ＿て あります, ございます, お〜します). An N4 player gets the N4 line with the N3 one as optional stretch
+  ("Need the words?" shows it with an N3 tag); either form is accepted and credited as what was said.
+- **Two Green Car questions** join the general ones: the toilet (`point`: あちらに ございます; N3 あちらで
+  ございます) and heavy bags (`take`: おあずかり します; N3 おあずかり させて いただきます).
+- **Aim the deal.** A guest with no question of their own asks the general one whose line (N3 or N4, whichever
+  this player is due) carries the frames they have said least tonight (`aimAsk`; counts of lines said right in
+  this game, `hard.said`; ties go round in turn). The mode has no account data, so "least" means tonight.
+- **Kitchen call-outs** with ＿て もらえますか (「からあげを ふたつ つくって もらえますか」) go in the phrasebook as that
+  line, credited te-moraeru (goal 4.1). A plain 〜、おねがいします call still works and logs as before. The phone's
+  call box and the title card cue the もらえますか form (`view.greenCar`). VS too.
+- **Green Car customers** (Co-op and VS), each with their own おもてなし question: a tengu's birthday (Kids,
+  Family: the candles are ready), tanuki cubs on a school trip (Kids, Family: the teacher's bento is ready), and a
+  red oni after the bar (Cheeky: no more drinking in the shop). They never come to a mixed room
+  (`customersFor(audience, greenCar)`). The existing Cheeky customers get the N3 おもてなし lines like everyone.
+- No Kana/N5 content changes are needed: Bento orders are already built by the order-taker's level.
 
 ## Not built yet
 

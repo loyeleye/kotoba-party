@@ -380,6 +380,8 @@ export interface LastTrainScenario {
   platformDash: MinigameItem[];
   /** Rooms with this Audience setting ride this line (family when left out); see chooseScenario. */
   audience?: 'kids' | 'cheeky';
+  /** A Green Car line (content/src/last-train/green-car.ts): ridden only in the Green Car, and there before any other. */
+  greenCar?: true;
   status: ReviewStatus;
 }
 

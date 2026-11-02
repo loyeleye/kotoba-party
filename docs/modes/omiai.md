@@ -193,6 +193,9 @@ game (`pickTease` in `omiai.ts`). The answer is still anonymous then, so the roo
 
 ### The go-between (なこうど, N4 hard role)
 
+*Now a Green Car piece: see "Green Car" below. A mixed room has no go-between. The offer rules here describe the
+seat as it was in mixed rooms; the lines, timing, voicing, Gallery and booth still hold in the Green Car.*
+
 When the room has an N4 player, each round one of them is offered Nobiko-san's matchmaker lines for that
 round, in keigo (4.9). Who is offered follows the shared rotation (`nextOfferee` in `hardRoleLog.ts`): the
 N4 player offered fewest times, then longest ago; a "not this time" sits the next round out; in a room of
@@ -292,6 +295,42 @@ stem is a verb's.
 said right (`echoRight`), how often to skip (`skipChance`), and quiet mode. Bots answer from
 canned memory answers (by question kind and register) or build a tile answer. They vote for a random answer that isn't their own, and they say their tip target back in the encore. Run them with
 `npm run bots -- --mode omiai --bots 4`.
+
+## Green Car
+
+When the game rides in the Green Car (`ctx.greenCar`, shared/src/greenCar.ts: everyone aboard is N4 or N3; design:
+project files n3-coverage/green-car/design.md). All new lines are draft and tagged by frame id.
+
+**Moved out of mixed rooms.** The go-between (なこうど) and the prompt's longer wait for it play only in the Green
+Car. A mixed room, N4 players or not, has no go-between: Nobiko-san keeps her lines and reads the question at the
+prompt's usual 8 s. The host stand-in (2 players, nobody at N4) is unchanged. An all-N4+ room that switched the Green
+Car off plays as a mixed room.
+
+**In the Green Car:**
+
+- **The go-between every round, no rotation.** At each prompt the seat goes to the connected player who has held
+  it fewest rounds (then seat order), already accepted (`seatNakodo`, `gc.held`): no offer card, nothing in
+  `nakodoLog`, so nothing in the hard-role gate. The seat moving round is our reading of "no rotation" (no offer
+  rotation, nobody sits out): for Ladi to confirm. The longer prompt and score for the go-between's lines stay.
+- **N3 lines.** Every N4 line has two N3 forms (`NAKODO_N3` in cards.ts, goal 3.8): ＿させて いただきます
+  (ごしょうかい させて いただきます, おひらきと させて いただきます) and ＿で ございます (ごとうちゃくで ございます,
+  ごしつもんで ございます). An N3 go-between's rounds alternate N3 and N4 (`gc.mix`, N3 first), so about half each,
+  with an N3 tag on the phone. An N4 go-between says the N4 line, with the N3 form under it as an optional
+  stretch. Either form is accepted in any round, and the TV, Nobiko-san's voice and the phrasebook use the form
+  that was said.
+- **Aim the deal.** The opening takes the N3 form whose frame the go-between has said least tonight
+  (`gc.said`, counted when a line is said right; ties go to させて いただきます), and the closing takes the other,
+  so each round practises both.
+- **Every question asks for keigo.** The TV and Nobiko-san's `prompt_read` (and the reveal cue) use the guest's N4
+  (keigo) ask; phones already did from N4.
+- **Answers score on the N3 service forms.** The manners meter already counts ＿で ございます (`teinei`),
+  ＿させて いただきます (`humble`, いただ…) and N4 お〜します (`humble`) as keigo; no new matchers. The tiles add
+  で ございます。 beside です。 (`GOZAIMASU_TILE`), and a polite kana answer ending in です gets the tip
+  "でございます" as its step up (`tipFor`, when no other upgrade applies).
+
+Not changed: answers, votes, encores and points work as everywhere. The Gallery opens for the other players as the
+go-between takes the seat (reactions only: nobody is Kana or N5, so no curveball), and the booth replays a landed
+opening.
 
 ## Decisions made on Ladi's behalf
 

@@ -18,8 +18,9 @@ describe('path simulation: bots play the real games in-process', () => {
     expect(g.seats.find((s) => s.level === 'n3')!.result.mode).toBe('happyokai');
   });
 
-  it('a speaking N4 bot takes the Bento Haus hard roles and says their frames from memory', () => {
-    const g = playGame(content, 'bento-haus', ['n4', 'n4', 'n5', 'n5'], 2);
+  // The deputy manager (its ＿て いただけませんか requests) is a Green Car move-out, so this room is all N4.
+  it('a speaking N4 bot takes the Bento Haus hard roles in the Green Car and says their frames from memory', () => {
+    const g = playGame(content, 'bento-haus', ['n4', 'n4', 'n4'], 2);
     const said = g.seats.filter((s) => s.level === 'n4').flatMap((s) => s.result.phrases.filter((e) => e.outcome === 'said' && e.recall === 'memory'));
     expect(said.some((e) => phraseFrames(e).includes('te-itadakemasen'))).toBe(true);
   });

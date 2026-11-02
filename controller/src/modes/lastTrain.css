@@ -13,6 +13,9 @@
 .lt-chip.warn { border-color: var(--warn); color: var(--warn); }
 .lt-chip.ghost { border-color: #9fb7ff; color: #c9d6ff; }
 .lt-chip.star { border-color: var(--accent); color: var(--accent); }
+.lt-chip.n3 { border-color: #7fd1a8; color: #7fd1a8; }
+.lt-stretch { margin: 8px 0; padding: 8px 12px; border: 1px dashed #7fd1a8; border-radius: 12px; }
+.lt-stretch summary { cursor: pointer; font-weight: 700; }
 /* Hard role offer: two equal, full-width buttons, so turning it down is as easy as taking it. */
 .lt-offer { display: grid; gap: 12px; }
 .lt-offer p { margin: 0; }

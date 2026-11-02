@@ -7,13 +7,14 @@ import { content } from './helpers.js';
 describe('mixed-room sim', () => {
   it('plays a game to the recap and measures it', () => {
     const before = { ...EXPERIMENTS };
-    const run = runSim({ seeds: 1, modes: ['omiai'], setups: ['a'], content, experiments: { spokenReaction: !before.spokenReaction } });
+    // Omiai's go-between is a Green Car move-out, so a mixed room's offers are measured on Bento Haus's おもてなし shift.
+    const run = runSim({ seeds: 1, modes: ['bento-haus'], setups: ['a'], content, experiments: { spokenReaction: !before.spokenReaction } });
     // The switches are put back after the run.
     expect(EXPERIMENTS).toEqual(before);
     expect(run.experiments.spokenReaction).toBe(!before.spokenReaction);
     expect(run.cells).toHaveLength(1);
     const c = run.cells[0]!;
-    expect(c).toMatchObject({ mode: 'omiai', setup: 'a', games: 1, stuck: 0 });
+    expect(c).toMatchObject({ mode: 'bento-haus', setup: 'a', games: 1, stuck: 0 });
     expect(c.lengthS.mean).toBeGreaterThan(30);
     expect(c.idleS.mean).toBeGreaterThan(0);
     expect(c.idleS.mean).toBeLessThan(c.lengthS.mean);
@@ -27,7 +28,7 @@ describe('mixed-room sim', () => {
     // Mixed room with an N4 offer: the recap asks the two players below N4.
     expect(c.waitPrompts.mean).toBe(2);
     expect(run.nights[0]!.waitPrompts.mean).toBe(2);
-    expect(formatRun(run)).toContain('omiai');
+    expect(formatRun(run)).toContain('bento');
     expect(formatAb('spokenReaction', run, run)).toContain('+0.0');
   });
 

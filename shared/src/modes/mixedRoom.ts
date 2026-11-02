@@ -199,11 +199,19 @@ export const KEY_GLOSS: Readonly<Record<string, string>> = {
   だそうです: 'I hear that…',
   はずです: 'should be',
   てあります: 'has been done',
+  // The Green Car's announcer (Last Train, N3).
+  でございます: 'is (extra polite, staff speech)',
+  ております: 'is …ing (humble, staff speech)',
+  させていただきます: 'I humbly will…',
+  ごちゅういください: 'please take care',
   // The go-between (Omiai).
   'おつきに なりました': 'has arrived (polite)',
   いらっしゃいます: 'is (polite, about a person)',
   'おききに なります': 'will ask (polite)',
   'おかえりに なります': 'will go home (polite)',
+  // The Green Car's go-between (Omiai, N3).
+  'させて いただきます': 'I humbly will…',
+  'で ございます': 'is (extra polite)',
   // Dub Club's ad-lib words (a stem like たすけ is glossed as the word it starts).
   おにぎり: 'rice ball',
   しらない: 'don’t know',

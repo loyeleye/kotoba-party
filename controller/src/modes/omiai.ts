@@ -80,8 +80,12 @@ function nakodoCard(ctx: Ctx): HTMLElement | null {
   return h(
     'div',
     { class: 'omi-nakodo' },
-    h('p', {}, h('strong', {}, `🎎 You’re the matchmaker (なこうど) this round. ${what}, in keigo:`)),
+    h('p', {}, h('strong', {}, `🎎 You’re the matchmaker (なこうど) this round. ${what}, in keigo:`), g.n3 ? h('span', { class: 'omi-n3' }, ' N3') : null),
     g.line ? jpView(g.line, 'n4', { cls: 'omi-nakodo-line' }) : null,
+    // Green Car: the N3 form, an optional stretch (either is accepted).
+    g.stretch
+      ? h('details', { class: 'omi-stretch' }, h('summary', {}, h('span', { class: 'omi-n3' }, 'N3'), ' Stretch: or say it this way'), jpView(g.stretch, 'n4', { cls: 'omi-nakodo-line' }))
+      : null,
     g.heard
       ? h(
           'p',
