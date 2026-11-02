@@ -467,7 +467,7 @@ const forceRedraw = (): void => {
 
 /** The learning path's one-row strip, for a signed-in player who turned the path on (path.ts). */
 function pathCard(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement | null {
-  return pathStrip(me.level, { players: view.players.length, speakers: speakersIn(view.players) }, {
+  return pathStrip(me.level, { players: view.players.length, speakers: speakersIn(view.players), greenCar: view.greenCar.on }, {
     isVip,
     recap: view.phase === 'recap',
     picked: view.phase === 'lobby' ? (menu.mode as ModeId) || null : null,

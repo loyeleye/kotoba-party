@@ -13,7 +13,7 @@ import { readTheSigns } from '../../content/src/last-train/read-the-signs.js';
 import { FRAME_BY_ID } from './japanese/frames.js';
 import { toRomaji } from './japanese/romaji.js';
 import { MODES, noFit } from './modes/registry.js';
-import { YIELDS } from './pathYields.js';
+import { YIELDS, YIELDS_GREEN } from './pathYields.js';
 import { DAY_MS, FRAME_FILLERS, FRAME_GAP_DAYS, FRAME_SAYS, dayOf, frameRules, markFrames, ruleMet, ruleProgress, type FrameMark, type FrameRule, type Progress } from './progress.js';
 import type { Level, ModeId } from './protocol.js';
 
@@ -569,11 +569,14 @@ export function markPath(p: Progress, now: number, tzOffsetMin = 0): string[] {
 export const BOT_GAPS: Readonly<Partial<Record<ModeId, readonly string[]>>> = {};
 /** What a bot gap counts as: carried, but slow (half of SLOW_YIELD). */
 export const BOT_GAP_YIELD = 0.075;
-/** The level whose yields a goal is measured at (N3 frames earn no credit until N3 opens, so N3 reads N4). */
+/** The level whose yields a goal is measured at in a mixed room (N3 seats aren't measured there, so N3 reads N4). */
 const yieldLevel = (level: Level): Level => (level === 'n3' ? 'n4' : level);
-/** Says from memory per game of one frame (or kanji:<level>) in a game, at a level; a bot gap counts as BOT_GAP_YIELD. */
-export function frameYield(mode: ModeId, key: string, level: Level): number {
-  const y = YIELDS[yieldLevel(level)]?.[mode]?.[key] ?? 0;
+/**
+ * Says from memory per game of one frame (or kanji:<level>) in a game, at a level; a bot gap counts as BOT_GAP_YIELD.
+ * `green`: in a Green Car room (shared/src/greenCar.ts), measured in a 2 N3 + 2 N4 room with the switch on.
+ */
+export function frameYield(mode: ModeId, key: string, level: Level, green = false): number {
+  const y = (green ? YIELDS_GREEN[level]?.[mode]?.[key] : YIELDS[yieldLevel(level)]?.[mode]?.[key]) ?? 0;
   return y > 0 ? y : BOT_GAPS[mode]?.includes(key) ? BOT_GAP_YIELD : 0;
 }
 const KANJI_KEY: Readonly<Record<string, string>> = { '5.10': 'kanji:n5', '4.10': 'kanji:n4', '3.12': 'kanji:n3' };
@@ -585,9 +588,16 @@ const measured = (goal: Goal): boolean => goal.kind === 'frames' || goal.kind ==
  * against the step 5 simulation. The Local Line's say 7 of its 10 goals have no game an N5 player says them in
  * from memory (most N5 lines are logged as read, with the frame on screen), which needs its own simulation
  * before the phone acts on it, so the Local and Kana Lines keep list order. The Limited Express waits for N3:
- * its frames earn no credit until N3 opens.
+ * it is ranked by its Green Car yields (YIELDS_GREEN), since that's where its N3 lines come round.
  */
+// The Limited Express stays in list order for now: ranked by its Green Car yields, the Nov 2 simulation sent rooms
+// to Bento Haus's 3.8 lines, which come round with too few fillers to stamp, and 3.1 stamped slower (93% of rooms
+// by night 28, against 100% by night 11 in list order). Revisit once every Green Car game has its N3 lines.
 export const RANKED_LINES: readonly LineId[] = ['express'];
+/** Lines ranked by their Green Car yields wherever the room is (the Limited Express is played in the Green Car). */
+const GREEN_LINES: readonly LineId[] = ['limited'];
+/** Whether a line's yields are read from the Green Car table, here: always for the Limited Express, else the room's car. */
+const greenFor = (line: LineId, room: RoomFit | null): boolean => GREEN_LINES.includes(line) || room?.greenCar === true;
 /** Below this many says a game, a stop is slow: it's offered only after the faster ones, taking turns by day. */
 export const SLOW_YIELD = 0.15;
 
@@ -596,10 +606,10 @@ export const SLOW_YIELD = 0.15;
  * (an either-or need takes its best frame). For a kanji goal, kanji of its level, scaled to frame units: the
  * goal needs KANJI_GOAL kanji on FRAME_GAP_DAYS-spaced days, where a frame needs FRAME_SAYS says.
  */
-function needYields(st: PathStatus, goal: Goal, mode: ModeId, level: Level): number[] {
-  if (goal.kind === 'kanji') return [(frameYield(mode, KANJI_KEY[goal.id] ?? 'kanji:n4', level) * FRAME_SAYS) / (2 * KANJI_GOAL)];
+function needYields(st: PathStatus, goal: Goal, mode: ModeId, level: Level, green = false): number[] {
+  if (goal.kind === 'kanji') return [(frameYield(mode, KANJI_KEY[goal.id] ?? 'kanji:n4', level, green) * FRAME_SAYS) / (2 * KANJI_GOAL)];
   const open = (id: string) => !st.frames.find((f) => f.id === id)?.met;
-  return goal.need.filter((n) => needIds(n).every(open)).map((n) => Math.max(...needIds(n).map((id) => frameYield(mode, id, level))));
+  return goal.need.filter((n) => needIds(n).every(open)).map((n) => Math.max(...needIds(n).map((id) => frameYield(mode, id, level, green))));
 }
 
 /**
@@ -610,8 +620,10 @@ function needYields(st: PathStatus, goal: Goal, mode: ModeId, level: Level): num
 export function goalCarried(goal: Goal): boolean {
   if (!measured(goal) || missingFrames(goal).length || !RANKED_LINES.includes(goal.line)) return true;
   const level = LINE_BY_ID[goal.line].level;
-  if (goal.kind === 'kanji') return goal.games.some((m) => frameYield(m, KANJI_KEY[goal.id] ?? 'kanji:n4', level) > 0);
-  return goal.need.every((n) => needIds(n).some((id) => goal.games.some((m) => frameYield(m, id, level) > 0)));
+  // Carried in either car: a mixed room's table, or the Green Car's (where the Limited Express is played).
+  const y = (m: ModeId, key: string) => Math.max(frameYield(m, key, level), frameYield(m, key, level, true));
+  if (goal.kind === 'kanji') return goal.games.some((m) => y(m, KANJI_KEY[goal.id] ?? 'kanji:n4') > 0);
+  return goal.need.every((n) => needIds(n).some((id) => goal.games.some((m) => y(m, id) > 0)));
 }
 
 /**
@@ -626,7 +638,8 @@ export function goalPace(st: PathStatus, goal: Goal, level: Level, room: RoomFit
   if (!measured(goal)) return null;
   const games = goal.games.filter((m) => fitsRoom(m, room));
   if (!games.length) return { y: 0, mode: null };
-  const per = games.map((m) => needYields(st, goal, m, level));
+  const green = greenFor(goal.line, room);
+  const per = games.map((m) => needYields(st, goal, m, level, green));
   const needs = per[0]!.length;
   if (!needs) return { y: 0, mode: games[0]! };
   // Each need's best game; the slowest need decides.
@@ -635,22 +648,22 @@ export function goalPace(st: PathStatus, goal: Goal, level: Level, room: RoomFit
     let best = { y: -1, mode: games[0]! };
     games.forEach((m, i) => {
       const y = per[i]![k]!;
-      if (y > best.y || (y === best.y && y > 0 && alsoYield(st, goal, m, level) > alsoYield(st, goal, best.mode, level))) best = { y, mode: m };
+      if (y > best.y || (y === best.y && y > 0 && alsoYield(st, goal, m, level, green) > alsoYield(st, goal, best.mode, level, green))) best = { y, mode: m };
     });
     if (best.y < slow.y) slow = best;
   }
-  return slow.y > 0 ? { y: slow.y + alsoYield(st, goal, slow.mode, level) / 10, mode: slow.mode } : { y: 0, mode: slow.mode };
+  return slow.y > 0 ? { y: slow.y + alsoYield(st, goal, slow.mode, level, green) / 10, mode: slow.mode } : { y: 0, mode: slow.mode };
 }
 
-const alsoYield = (st: PathStatus, goal: Goal, mode: ModeId, level: Level): number => {
+const alsoYield = (st: PathStatus, goal: Goal, mode: ModeId, level: Level, green = false): number => {
   const open = (id: string) => !st.frames.find((f) => f.id === id)?.met;
-  return goal.also.filter(open).reduce((sum, id) => sum + frameYield(mode, id, level), 0);
+  return goal.also.filter(open).reduce((sum, id) => sum + frameYield(mode, id, level, green), 0);
 };
 
 /** What one game gives a goal's open required frames together, for ordering "Practise in". Null if unmeasured. */
 export function goalYield(st: PathStatus, goal: Goal, mode: ModeId, level: Level): number | null {
   if (!measured(goal)) return null;
-  return needYields(st, goal, mode, level).reduce((a, b) => a + b, 0);
+  return needYields(st, goal, mode, level, greenFor(goal.line, null)).reduce((a, b) => a + b, 0);
 }
 
 /**
@@ -672,6 +685,8 @@ export function gamesByYield(st: PathStatus, goal: Goal, level: Level): ModeId[]
 export interface RoomFit {
   players: number;
   speakers: number;
+  /** Tonight's games ride in the Green Car (shared/src/greenCar.ts): its yields rank the suggestion. */
+  greenCar?: boolean;
 }
 
 const fitsRoom = (mode: ModeId, room: RoomFit | null): boolean => !room || !noFit(MODES[mode].info, room.players, room.speakers);
@@ -735,7 +750,8 @@ export function suggest(st: PathStatus, level: Level, room: RoomFit | null): Sug
     // Score it by its faded frames (they still count as met), and go first only at a game that gives one.
     const faded = goal.need.flatMap((n) => needIds(n)).filter((id) => st.frames.find((f) => f.id === id)?.recheck === 'fading');
     const games = goal.games.filter((m) => fitsRoom(m, room));
-    const best = games.map((m) => ({ m, y: Math.max(0, ...faded.map((id) => frameYield(m, id, level))) })).sort((x, y) => y.y - x.y)[0];
+    const green = greenFor(goal.line, room);
+    const best = games.map((m) => ({ m, y: Math.max(0, ...faded.map((id) => frameYield(m, id, level, green))) })).sort((x, y) => y.y - x.y)[0];
     if (best && best.y > 0) return done(goal, best.m);
   }
   if (!RANKED_LINES.includes(line.id)) {

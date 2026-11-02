@@ -104,7 +104,7 @@ const LEVELS: Level[] = values.room
 if (LEVELS.some((l) => !LEVEL_IDS.includes(l))) throw new Error(`--room: levels are ${LEVEL_IDS.join(', ')} (got ${values.room})`);
 if (!LEVELS.includes(SEAT)) throw new Error(`--room: the ${LINE === 'limited' ? 'Limited Express' : 'Express Line'} needs an ${SEAT.toUpperCase()} seat`);
 if (GREEN && !LEVELS.every(n4Up)) throw new Error('--green-car: every seat must be N4 or N3');
-const ROOM = { players: LEVELS.length, speakers: LEVELS.length };
+const ROOM = { players: LEVELS.length, speakers: LEVELS.length, greenCar: GREEN };
 const EXPRESS: readonly Goal[] = GOALS.filter((g) => g.line === LINE);
 /** The games a room plays: every game on an Express goal (4.7's too, though it isn't counted yet), and Late
  *  Again!, which the plan puts on 4.2, 4.3, 4.11 and 4.13 but the path doesn't list yet. */
