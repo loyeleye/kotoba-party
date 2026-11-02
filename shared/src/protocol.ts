@@ -23,11 +23,11 @@ export const SURPRISE = 'surprise';
 
 export const LEVELS: readonly Level[] = ['kana', 'n5', 'n4', 'n3'];
 /**
- * N3 joins the level picker once its decks are in (step 6 of the N4/N3 plan): a level with nothing of its own
- * is a promise not yet kept. Until then the server accepts N3 (a saved account keeps it) and an N3 player
- * gets the N4 scripts everywhere.
+ * N3 is in the level picker (step 6 of the N4/N3 plan, after the Green Car decks). Where a game has no N3
+ * script of its own yet, an N3 player gets the N4 one (`n4Up` in shared/src/level.ts). Set this to false to
+ * take N3 back out: the server still accepts it and a saved account keeps it.
  */
-export const N3_IN_PICKER = false;
+export const N3_IN_PICKER = true;
 export const PICKER_LEVELS: readonly Level[] = LEVELS.filter((l) => l !== 'n3' || N3_IN_PICKER);
 
 /**

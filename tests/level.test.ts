@@ -16,10 +16,11 @@ describe('the N3 level (step 6 of the N4/N3 plan)', () => {
     expect(isMixedRoom(['n3', 'n4'])).toBe(false);
   });
 
-  it('is accepted from a saved account but stays out of the picker until the N3 decks are in', () => {
+  it('is accepted from a saved account and offered in the picker', () => {
     expect(LEVELS).toContain('n3');
     expect(isLevel('n3')).toBe(true);
-    expect(PICKER_LEVELS.includes('n3')).toBe(N3_IN_PICKER);
+    expect(N3_IN_PICKER).toBe(true);
+    expect(PICKER_LEVELS).toEqual(['kana', 'n5', 'n4', 'n3']);
   });
 
   it('gets the N4 version where no N3 one is written', () => {
