@@ -180,6 +180,34 @@ in their moves. The server treats a move that names an earlier round or matchup 
 a harmless race. This covers cases like a delayed "show me the tiles" request that lands in the
 next round's answer phase.
 
+## Green Car
+
+When every player is N4 or N3 the room may ride in the Green Car (`ctx.greenCar`, `shared/src/greenCar.ts`; design:
+the project's `n3-coverage/green-car/design.md`). Mixed rooms play exactly as above. In the Green Car:
+
+- **Frame prompts, every round** (`content/src/oogiri/greenCar.ts`, never dealt in a mixed room and kept out of
+  `oogiriPrompts`; `libraryFor(…, greenCar)`). The blank sits inside an N4 or N3 frame, so the finished line carries
+  it: N4 ＿たら, ＿ば (4.5), ＿ように なる, ＿ことに する (4.12); N3 ＿に しては, ＿くせに, ＿わりに (3.4), ＿と したら (3.5),
+  ＿っぽい, ＿なんて (3.11). The blank takes a noun, so tiles fit. Each prompt names its frame and level and is draft.
+  The Photo Caption round draws from the same deck, with no photo and no set-phrase tiles (they are N5).
+- **Levels.** Matchups alternate N3 and N4 prompts (which first drawn per round, `greenCarLevel`), so in the Head to
+  Head ring, where each player answers two neighbouring matchups, an N3 player gets one of each. A matchup whose
+  authors are all N4 stays N4, except the IPPON round's, which may be N3. An N4 player facing an N3 prompt sees it
+  tagged **N3 stretch**; the phone shows the frame under every prompt (🎯 ＿に しては).
+- **The winner says the whole line.** In the encore the stage and phones show only the frame and the English, and
+  the phone asks for the whole line. A spoken encore is logged as the author's whole sentence
+  (`oogiri:<prompt>:line`, `recall: 'memory'`) and counts only for the frames heard in it (`framesHeard`); just the
+  blank, or a typed encore, counts for none. Anyone with an answer may still encore; the winner is invited.
+- **Aim the deal** (`drawGreenCar`). At the matchup's level, the prompt whose frames its authors need most:
+  `aimWeight` summed over them (tonight's `ctx.frameNeed`, a path goal's required frame 2 and an optional one 1,
+  divided by this game's encores of it, `saidFrames`). The room's own Kids or Cheeky prompts first, ties to the
+  shuffled deck.
+- **Kids, Family and Cheeky.** Kids: school lunch, pets, siblings, Pon as a ghost (ねこに しては、＿＿＿が すきすぎる).
+  Every audience (kid-safe): a tanuki konbini clerk, the ryokan, clouds, a spell. Cheeky: the bonus, the drunk boss,
+  デートの わりに、＿＿＿の はなししか しなかった, こんやが のみかいだと したら、かんぱいは ＿＿＿で しよう. ＿くせに is aimed only
+  at yōkai or Pon (the host); ＿わりに and ＿に しては at animals, props, places or events, never at a player.
+- **Bots** remember the prompt from the vote and say the whole line in the encore.
+
 ## Engine change outside the mode
 
 - `shared/src/modes/mode.ts`: `ModeContext` gained an optional `vipId?: string | null`.

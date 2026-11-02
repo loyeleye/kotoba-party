@@ -13,12 +13,14 @@
 import type { HostAward, JpText, OogiriPrompt, OogiriRound } from '../../../../content/src/types.js';
 import { POINTS_PER_VOTE } from '../../constants.js';
 import type { Phase, Viewer } from '../../protocol.js';
-import { isUtterance } from '../../japanese/kana.js';
+import { isUtterance, type Utterance } from '../../japanese/kana.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type HostCue, type Mode, type ModeContext } from '../mode.js';
 import { buildAnswer, parseAnswerMove, sentenceFor, type AnswerStyle } from './answer.js';
 import { dealFrames, dealTiles, FORM_LABELS, library, libraryFor, ownPrompt, ROUNDS, stageVersion, versionFor, wordsIn, type Library, type Tile } from './deal.js';
 import { naturalSentence } from './natural.js';
 import { toRomaji } from '../../japanese/romaji.js';
+import { FRAME_BY_ID, framesHeard, type FrameId } from '../../japanese/frames.js';
+import { aimPick, aimWeight } from '../aim.js';
 import type {
   Answer,
   AnswerCard,
@@ -95,7 +97,39 @@ function pay(s: OogiriState, ctx: ModeContext, playerId: string, points: number,
   s.ledger.push({ playerId, round: s.round, points: p, why });
 }
 
-const lib = (s: OogiriState, ctx: ModeContext): Library => libraryFor(ctx.content, s.packId, s.audience ?? 'family');
+const lib = (s: OogiriState, ctx: ModeContext): Library => libraryFor(ctx.content, s.packId, s.audience ?? 'family', !!s.greenCar);
+
+/**
+ * Green Car: the level a matchup's prompt is drawn at. Matchups alternate N3 and N4 (which comes first drawn per
+ * round), so in the Head to Head ring, where each player answers two neighbouring matchups, an N3 player gets one of
+ * each. A matchup whose authors are all N4 stays N4, except the IPPON round's, which may be an N3 stretch.
+ */
+export function greenCarLevel(index: number, authorLevels: readonly string[], ippon: boolean, flip: boolean): 'n4' | 'n3' {
+  if (!ippon && !authorLevels.includes('n3')) return 'n4';
+  return (index % 2 === 0) === flip ? 'n3' : 'n4';
+}
+
+/**
+ * Green Car: the prompt at that level whose frames the matchup's authors need most (aimWeight summed over them:
+ * a path goal's required frame weighs 2, an optional one 1, scaled down by tonight's and this game's says). The
+ * room's own (Kids or Cheeky) prompts first, then the shared ones; ties go to the shuffled deck order.
+ */
+export function drawGreenCar(s: OogiriState, ctx: ModeContext, l: Library, authors: readonly string[], level: 'n4' | 'n3', avoid: Set<string>): OogiriPrompt {
+  const all = l.prompts['head-to-head'];
+  let deck = s.decks['head-to-head'];
+  if (!deck.some((id) => !avoid.has(id))) deck = s.decks['head-to-head'] = shuffled(all.map((p) => p.id), () => ctx.random());
+  const open = deck.map((id) => all.find((p) => p.id === id)!).filter((p) => p && !avoid.has(p.id));
+  const said = s.saidFrames ?? {};
+  const need = (p: OogiriPrompt) => authors.reduce((sum, id) => sum + aimWeight(ctx, id, p.frames ?? [], said[id]), 0);
+  const tiers = [
+    open.filter((p) => p.level === level && ownPrompt(p, l.audience)),
+    open.filter((p) => p.level === level),
+    open,
+  ];
+  const pick = tiers.map((t) => aimPick(t, need)).find((p) => p) ?? all[0]!;
+  deck.splice(deck.indexOf(pick.id), 1);
+  return pick;
+}
 
 function drawPrompt(s: OogiriState, ctx: ModeContext, l: Library, round: OogiriRound, avoid: Set<string>): OogiriPrompt {
   const all = l.prompts[round];
@@ -139,8 +173,13 @@ function startRound(s: OogiriState, ctx: ModeContext): void {
     () => ctx.random(),
   );
   const avoid = new Set<string>();
+  const flip = !!s.greenCar && ctx.random() < 0.5;
+  const levelOf = (id: string) => ctx.player(id)?.level ?? 'n4';
+  if (s.greenCar) for (const m of s.matchups) avoid.add(m.prompt.id);
   s.matchups = pairings(kind, order).map((authors, index) => {
-    const prompt = drawPrompt(s, ctx, l, kind, avoid);
+    const prompt = s.greenCar
+      ? drawGreenCar(s, ctx, l, authors, greenCarLevel(index, authors.map(levelOf), kind === 'ippon', flip), avoid)
+      : drawPrompt(s, ctx, l, kind, avoid);
     avoid.add(prompt.id);
     return { index, prompt, authors, votes: {}, encores: {}, result: null };
   });
@@ -352,6 +391,21 @@ function card(jp: JpText, photo?: string, romaji = false): PromptCard {
   return { text: jp.text, kana: jp.kana, en: jp.en, furigana: jp.furigana, photo, romaji: romaji ? toRomaji(jp.kana) : undefined };
 }
 
+/**
+ * Green Car: tags a prompt card with its frame and level (an N3 prompt is a stretch for an N4 viewer). In the encore
+ * the Japanese is only the frame, with the English kept, so the whole line is said from memory.
+ */
+function gcCard(s: OogiriState, prompt: OogiriPrompt, c: PromptCard, level: string | undefined, encore: boolean): PromptCard {
+  const id = prompt.frames?.[0] as FrameId | undefined;
+  const f = s.greenCar && id ? FRAME_BY_ID[id] : undefined;
+  if (!f) return c;
+  const lv = prompt.level === 'n3' ? 'N3' : 'N4';
+  const tagged: PromptCard = { ...c, greenCar: { frame: f.ja, frameEn: f.en, level: lv, stretch: lv === 'N3' && level === 'n4' } };
+  if (!encore) return tagged;
+  const { furigana: _furigana, romaji: _romaji, ...rest } = tagged;
+  return { ...rest, text: f.ja, kana: f.ja };
+}
+
 function tileView(t: Tile, romaji: boolean): TileView {
   return {
     key: t.key,
@@ -391,7 +445,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
   },
 
   setup(ctx, opts) {
-    const l = library(ctx.content, opts.packId, () => ctx.random(), ctx.audience ?? 'family');
+    const l = library(ctx.content, opts.packId, () => ctx.random(), ctx.audience ?? 'family', !!ctx.greenCar);
     const stats: Record<string, PlayerStats> = {};
     for (const p of ctx.players()) stats[p.id] = blankStats();
     return {
@@ -409,6 +463,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
       ledger: [],
       steal: null,
       phaseAt: ctx.now,
+      ...(ctx.greenCar ? { greenCar: true as const, saidFrames: {} } : {}),
     };
   },
 
@@ -649,7 +704,17 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         else if (isUtterance(raw.said) && cleanText(raw.said.text, 200)) kind = raw.said.via === 'speech' ? 'said' : 'typed';
         else return moveError('bad-move');
         m.encores[playerId] = kind;
-        if (kind !== 'host') {
+        if (kind !== 'host' && s.greenCar) {
+          // Green Car: the whole line, said with only the frame on screen, counts for the frames heard in it.
+          stats(s, playerId).brave += 1;
+          const u = raw.said as Utterance;
+          const line = mine.sentence;
+          const heard = kind === 'said' ? framesHeard(line, { text: u.text, kana: u.reading ?? u.text }, u.tokens) : [];
+          const said = ((s.saidFrames ??= {})[playerId] ??= {});
+          for (const f of heard) said[f] = (said[f] ?? 0) + 1;
+          ctx.phrase(playerId, { itemId: `oogiri:${m.prompt.id}:line`, text: line.text, kana: line.kana, en: line.en, outcome: kind === 'said' ? 'said' : 'seen', recall: kind === 'said' ? 'memory' : 'read', frames: heard });
+          if (kind === 'said') cue(ctx, { event: 'encore_cheer', slots: { name: ctx.player(playerId)?.name ?? '' }, prompt: promptCue(m.prompt), answer: mine.text, answerEn: mine.en });
+        } else if (kind !== 'host') {
           stats(s, playerId).brave += 1;
           ctx.phrase(playerId, { itemId: `oogiri:${mine.id}`, text: mine.text, kana: mine.kana, en: mine.sentence.en, outcome: kind === 'said' ? 'said' : 'seen', recall: 'read' });
           if (kind === 'said') cue(ctx, { event: 'encore_cheer', slots: { name: ctx.player(playerId)?.name ?? '' }, prompt: promptCue(m.prompt), answer: mine.text, answerEn: mine.en });
@@ -715,7 +780,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         id: m.index,
         index: s.matchups.filter((x) => x.index < m.index && matchupAnswers(s, x.index).length).length,
         count: s.matchups.filter((x) => matchupAnswers(s, x.index).length).length,
-        prompt: card(stageVersion(m.prompt), m.prompt.photo, romaji),
+        prompt: gcCard(s, m.prompt, card(stageVersion(m.prompt), m.prompt.photo, romaji), me?.level, phase === 'encore'),
         answers,
         voters: voters(s, m, ctx),
         voted: Object.keys(m.votes),
@@ -735,7 +800,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
         slot = {
           index: slots.indexOf(open),
           count: slots.length,
-          prompt: card(open.version, pm.prompt.photo, romaji),
+          prompt: gcCard(s, pm.prompt, card(open.version, pm.prompt.photo, romaji), me.level, false),
           sayFirst: !open.tilesShown,
           sayFirstMs: SAY_FIRST_MS,
           tiles: open.tilesShown ? open.tiles.map((t) => tileView(t, romaji)) : [],
@@ -785,7 +850,7 @@ export const oogiriMode: Mode<OogiriState, OogiriView> = {
       placeholder: s.placeholder,
       cushions,
       answered,
-      prompt: ipponPrompt ? card(stageVersion(ipponPrompt), ipponPrompt.photo) : null,
+      prompt: ipponPrompt ? gcCard(s, ipponPrompt, card(stageVersion(ipponPrompt), ipponPrompt.photo), me?.level, false) : null,
       matchup,
       matchupCount: s.matchups.length,
       steal: phase === 'penalty' && s.steal ? { playerId: s.steal.playerId, name: ctx.player(s.steal.playerId)?.name ?? '' } : null,

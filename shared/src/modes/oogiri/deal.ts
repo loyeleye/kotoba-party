@@ -7,6 +7,7 @@ import type { Audience } from '../../protocol.js';
 import { normalizeReading } from '../../japanese/kana.js';
 import { shuffled, type ContentLibrary } from '../mode.js';
 import { FALLBACK_PACK, FALLBACK_PROMPTS, FALLBACK_SET_PHRASES } from './fallback.js';
+import { greenCarPrompts } from '../../../../content/src/oogiri/greenCar.js';
 
 export const ROUNDS: readonly OogiriRound[] = ['head-to-head', 'photo-caption', 'ippon'];
 
@@ -71,6 +72,8 @@ export interface Library {
   frames: SetPhraseTile[];
   /** True when any part came from the placeholder set. */
   placeholder: boolean;
+  /** Green Car: every round draws on the Green Car prompts (content/src/oogiri/greenCar.ts), with no set phrases. */
+  greenCar?: true;
 }
 
 /** Whether a prompt may be dealt to an audience (an untagged prompt suits everyone). */
@@ -82,15 +85,15 @@ export const ownPrompt = (p: Pick<OogiriPrompt, 'audiences'>, audience: Audience
 /** Pack words kept out of a Kids hand (beer). */
 const grownUp = (w: PackWord) => w.tags?.includes('grown-up') === true;
 
-export function library(content: ContentLibrary, wantedPackId: string | undefined, random: () => number, audience: Audience = 'family'): Library {
+export function library(content: ContentLibrary, wantedPackId: string | undefined, random: () => number, audience: Audience = 'family', greenCar = false): Library {
   const promptPacks = new Set(content.oogiriPrompts.map((p) => p.packId));
   const usable = content.packs.filter((p) => promptPacks.has(p.id));
   const pack = usable.find((p) => p.id === wantedPackId) ?? (usable.length ? usable[Math.floor(random() * usable.length)]! : undefined);
-  return libraryFor(content, pack?.id ?? FALLBACK_PACK.id, audience);
+  return libraryFor(content, pack?.id ?? FALLBACK_PACK.id, audience, greenCar);
 }
 
 /** The library for a pack id that was picked earlier (deterministic: no randomness). */
-export function libraryFor(content: ContentLibrary, packId: string, audience: Audience = 'family'): Library {
+export function libraryFor(content: ContentLibrary, packId: string, audience: Audience = 'family', greenCar = false): Library {
   const words = new Map<string, PackWord>();
   for (const p of content.packs) for (const w of p.words) words.set(w.id, w);
   for (const w of FALLBACK_PACK.words) if (!words.has(w.id)) words.set(w.id, w);
@@ -100,6 +103,13 @@ export function libraryFor(content: ContentLibrary, packId: string, audience: Au
   const pool = (pack ?? FALLBACK_PACK).words.filter((w) => !baseline.has(w.id) && !(audience === 'kids' && grownUp(w)));
 
   const prompts = {} as Record<OogiriRound, OogiriPrompt[]>;
+  if (greenCar) {
+    // The Green Car: one deck of frame prompts for every round (the room's own first, deal is aimed in oogiri.ts),
+    // no photos and no N5 set-phrase tiles.
+    const deck = greenCarPrompts.filter((p) => suits(p, audience));
+    for (const round of ROUNDS) prompts[round] = deck;
+    return { packId, words, pool: pool.length ? pool : FALLBACK_PACK.words, audience, prompts, frames: [], placeholder, greenCar: true };
+  }
   for (const round of ROUNDS) {
     const usable = content.oogiriPrompts.filter((p) => p.round === round && suits(p, audience));
     let list = usable.filter((p) => p.packId === packId);
