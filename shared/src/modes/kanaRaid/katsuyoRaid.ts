@@ -25,6 +25,7 @@ import { playerTextAllowed } from '../../moderation.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { isObject, moveError, MOVE_OK, pick, shuffled, type Award, type ModeContext, type MoveResult, type Mode } from '../mode.js';
 import { checkForm, checkLine, formTip, formVariants, heard } from './katsuyoCheck.js';
+import { aimWeight } from '../aim.js';
 import {
   along,
   BASE_POINTS,
@@ -302,6 +303,11 @@ export interface KatsuyoYokaiView {
 export interface KatsuyoRaidView {
   mode: 'kana-raid';
   variant: 'katsuyo';
+  /**
+   * The game's own title and phase names. The menu's ModeInfo (one mode id, two raids) still reads Kana Yōkai
+   * Raid, so the stage header, the TV's title card and the phone's band read this instead while the game is on.
+   */
+  modeTitle: typeof KATSUYO_TITLE;
   /** 0 badge check, 1…waves waves, waves + 1 boss, waves + 2 recap. */
   wave: number;
   waves: number;
@@ -392,15 +398,20 @@ function inkDeck(ctx: ModeContext): InkItem[] {
 
 // ---------- the mode ----------
 
+/** Katsuyō Raid's own title and phase names, on its info and in its view (`modeTitle`). */
+export const KATSUYO_TITLE = {
+  title: 'Katsuyō Raid',
+  titleJa: '活用レイド',
+  titleKana: 'かつようレイド',
+  phaseLabels: { intro: 'Badge check', prompt: 'Next wave', answer: 'Raid!', reveal: 'Wave over', score: 'Points', finale: 'Boss', encore: 'Tonight’s haul' } as Partial<Record<Phase, string>>,
+};
+
 export const katsuyoRaidMode: Mode<KatsuyoState, KatsuyoRaidView> = {
   info: {
     id: 'kana-raid',
-    title: 'Katsuyō Raid',
-    titleJa: '活用レイド',
-    titleKana: 'かつようレイド',
+    ...KATSUYO_TITLE,
     blurb: 'Verb yōkai wearing form badges invade the Green Car. Say the form to catch them.',
     host: 'fude',
-    phaseLabels: { intro: 'Badge check', prompt: 'Next wave', answer: 'Raid!', reveal: 'Wave over', score: 'Points', finale: 'Boss', encore: 'Tonight’s haul' },
     minPlayers: 1,
     maxPlayers: 8,
     roundChoices: [],
@@ -638,6 +649,7 @@ export const katsuyoRaidMode: Mode<KatsuyoState, KatsuyoRaidView> = {
     const view: KatsuyoRaidView = {
       mode: 'kana-raid',
       variant: 'katsuyo',
+      modeTitle: KATSUYO_TITLE,
       wave: s.wave,
       waves: s.waves,
       ink: s.ink,
@@ -780,20 +792,35 @@ export function badgeScale(badge: BadgeId, level: 'n4' | 'n3'): number {
 }
 
 /**
- * Aim the deal: the side first (an N3 seat alternates N4 and N3; an N4 seat gets N4, with an N3 stretch one deal
- * in four if it ticked any), then, within the side, the badge this seat has said least tonight (counted says
- * first, then deals), so no frame gets more than its two spaced says while another gets none.
+ * This game's turn order for a seat's badges: counted says first, then deals (`extra`: dealt in the horde being
+ * built), so every badge comes round before one comes twice. Lower goes first.
  */
-function dealBadge(p: KatsuyoPlayer, ctx: ModeContext, allowed: ReadonlySet<BadgeId>, nth: number, extra: Partial<Record<BadgeId, number>> = {}): BadgeId | null {
+const badgeTurn = (p: KatsuyoPlayer, b: BadgeId, extra = 0): number => (p.counted[b] ?? 0) * 100 + (p.dealtBadges[b] ?? 0) + extra;
+
+/**
+ * How much this seat needs a badge's frame tonight (aim.ts aimWeight): the room's ctx.frameNeed (frames a path goal
+ * requires weigh double, said least in tonight's earlier games) over this game's counted says. It breaks the ties
+ * in badgeTurn, so at a game's start the required, least-said frames come first.
+ */
+const badgeNeed = (p: KatsuyoPlayer, playerId: string, ctx: ModeContext, b: BadgeId): number => aimWeight(ctx, playerId, [b], p.counted);
+
+/**
+ * Aim the deal: the side first (an N3 seat alternates N4 and N3; an N4 seat gets N4, with an N3 stretch one deal
+ * in four if it ticked any), then, within the side, the badge this seat has said and been dealt least this game
+ * (badgeTurn), so no frame gets more than its two spaced says while another gets none; of those, the one it needs
+ * most tonight (badgeNeed).
+ */
+function dealBadge(p: KatsuyoPlayer, playerId: string, ctx: ModeContext, allowed: ReadonlySet<BadgeId>, nth: number, extra: Partial<Record<BadgeId, number>> = {}): BadgeId | null {
   const mine = p.badges.filter((b) => allowed.has(b));
   if (!mine.length) return null;
   const n3 = p.level === 'n3' ? nth % 2 === 1 : nth % STRETCH_EVERY === STRETCH_EVERY - 1;
   const side = n3 ? 'n3' : 'n4';
   const onSide = mine.filter((b) => BADGE_BY_ID[b].side === side);
   const from = onSide.length ? onSide : mine;
-  const score = (b: BadgeId) => (p.counted[b] ?? 0) * 100 + (p.dealtBadges[b] ?? 0) + (extra[b] ?? 0);
-  const least = Math.min(...from.map(score));
-  return pick(from.filter((b) => score(b) === least), ctx.random)!;
+  const least = Math.min(...from.map((b) => badgeTurn(p, b, extra[b] ?? 0)));
+  const due = from.filter((b) => badgeTurn(p, b, extra[b] ?? 0) === least);
+  const top = Math.max(...due.map((b) => badgeNeed(p, playerId, ctx, b)));
+  return pick(due.filter((b) => badgeNeed(p, playerId, ctx, b) === top), ctx.random)!;
 }
 
 /** A verb that takes the badge in this room, avoiding the ones just used. */
@@ -834,16 +861,17 @@ function buildHorde(s: KatsuyoState, ctx: ModeContext): void {
   const kanji = inkDeck(ctx);
   // Badges for the horde come from each owner's deal (aim the deal); the player's own attacks count as dealt.
   const local = new Map<KatsuyoPlayer, { nth: number; extra: Partial<Record<BadgeId, number>> }>();
-  const peek = (p: KatsuyoPlayer): BadgeId | null => {
+  const peek = (p: KatsuyoPlayer, playerId: string): BadgeId | null => {
     const l = local.get(p) ?? { nth: p.deals, extra: {} };
     local.set(p, l);
-    const b = dealBadge(p, ctx, allowed, l.nth, l.extra);
+    const b = dealBadge(p, playerId, ctx, allowed, l.nth, l.extra);
     l.nth += 1;
     if (b) l.extra[b] = (l.extra[b] ?? 0) + 1;
     return b;
   };
   for (let i = 0; i < count; i++) {
-    const owner = s.players[ids[i % n] ?? ''] ?? newPlayer('n4');
+    const ownerId = ids[i % n] ?? '';
+    const owner = s.players[ownerId] ?? newPlayer('n4');
     let y: Omit<KatsuyoYokai, 'id' | 'hp' | 'maxHp' | 'spawnAt' | 'escapeAt' | 'state' | 'endedAt' | 'hitAt'> | null = null;
     if (ink) {
       const level = owner.level === 'n3' && i % 2 === 1 ? 'n3' : 'n4';
@@ -852,14 +880,14 @@ function buildHorde(s: KatsuyoState, ctx: ModeContext): void {
       const k = pick(from.length ? from : kanji, ctx.random);
       if (k) y = { itemId: k.id, char: k.char, tag: k.say.en, badge: null };
     } else if (wave3) {
-      const badge = peek(owner);
+      const badge = peek(owner, ownerId);
       const pool = chunks.filter((c) => c.badge === badge);
       const fresh = (pool.length ? pool : chunks).filter((c) => !recent.includes(c.id));
       const c = pick(fresh.length ? fresh : pool.length ? pool : chunks, ctx.random);
       const v = c ? VERB_BY_ID.get(c.verbId) : undefined;
       if (c && v) y = { itemId: c.id, char: c.model.kana, tag: v.verb.kana, badge: c.badge, picture: c.picture, model: c.model.kana };
     } else {
-      const badge = peek(owner);
+      const badge = peek(owner, ownerId);
       const v = badge ? verbFor(s, badge, recent, ctx, s.wave === 2) : undefined;
       const f = badge && v ? v.forms[badge] : undefined;
       if (badge && v && f) {
@@ -904,9 +932,10 @@ function waveAttack(s: KatsuyoState, playerId: string, p: KatsuyoPlayer, ctx: Mo
     const onStage = mine.filter((y) => y.spawnAt <= now).sort((a, b) => along(b, now) - along(a, now));
     const next = mine.filter((y) => y.spawnAt > now).sort((a, b) => a.spawnAt - b.spawnAt)[0];
     const front = onStage.length ? onStage.slice(0, 3) : next ? [next] : [];
-    // Fewest others on it, then the badge this seat has said least tonight (aim the deal).
-    const need = (y: KatsuyoYokai) => (y.badge ? (p.counted[y.badge] ?? 0) * 10 + (p.dealtBadges[y.badge] ?? 0) : 0);
-    front.sort((a, b) => (targeted.get(a.id) ?? 0) - (targeted.get(b.id) ?? 0) || need(a) - need(b));
+    // Fewest others on it, then the badge this seat has said least this game, then needs most tonight (aim the deal).
+    const turn = (y: KatsuyoYokai) => (y.badge ? (p.counted[y.badge] ?? 0) * 10 + (p.dealtBadges[y.badge] ?? 0) : 0);
+    const need = (y: KatsuyoYokai) => (y.badge ? badgeNeed(p, playerId, ctx, y.badge) : 0);
+    front.sort((a, b) => (targeted.get(a.id) ?? 0) - (targeted.get(b.id) ?? 0) || turn(a) - turn(b) || need(b) - need(a));
     yokai = front[0];
   }
   if (!yokai) return null;
@@ -1033,12 +1062,12 @@ function drawAttack(base: AttackBase, kanjiId: string, ctx: ModeContext): Katsuy
 function buildBoss(s: KatsuyoState, ctx: ModeContext): void {
   const ids = seatedIds(s, ctx);
   const lines = KATSUYO_BOSS_LINES.filter((l) => inAudience(l, s.audience));
-  // The N3 badge the room has said least tonight, among the badges someone here ticked.
+  // The N3 badge the room needs most tonight (each seat's aimWeight, summed), among the badges someone here ticked.
   const ticked = new Set(ids.flatMap((id) => s.players[id]!.badges));
-  const said = (b: BadgeId) => ids.reduce((n, id) => n + (s.players[id]!.counted[b] ?? 0), 0);
+  const need = (b: BadgeId) => ids.reduce((n, id) => n + aimWeight(ctx, id, [b], s.players[id]!.counted), 0);
   const badges = [...new Set(lines.map((l) => l.badge))].filter((b) => ticked.has(b));
-  const least = Math.min(...badges.map(said));
-  const want = shuffled(badges.filter((b) => said(b) === least), ctx.random)[0];
+  const top = Math.max(...badges.map(need));
+  const want = shuffled(badges.filter((b) => need(b) === top), ctx.random)[0];
   let pool = lines.filter((l) => !want || l.badge === want);
   // Cheeky changes only the boss lines: a Cheeky room gets a Cheeky one where there is one.
   const cheeky = pool.filter((l) => l.audiences?.length === 1 && l.audiences[0] === 'cheeky');

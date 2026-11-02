@@ -27,6 +27,7 @@ import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { ADVICE, adviceFrames, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, problemOf, problemsFor, ROMAJI, type AdviceChunk, type AdviceLine, type Problem } from './problems.js';
 import { LEVEL_RANK, n4Up } from '../../level.js';
+import { aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -491,13 +492,13 @@ function nextLineLevel(s: HotlineState, id: string, level: Level): 'n4' | 'n3' {
   return lv;
 }
 
-/** Aim the deal: how many times the advisers have said the frames of the lines this problem would give them. */
-function needOf(s: HotlineState, p: Problem, lines: Record<string, 'n4' | 'n3'>): number {
+/**
+ * Aim the deal: how much the advisers need the frames of the lines this problem would give them (higher: more),
+ * summed: each adviser's aimWeight, tonight's need (frames a path goal requires weigh double) over this game's says.
+ */
+function needOf(s: HotlineState, ctx: ModeContext, p: Problem, lines: Record<string, 'n4' | 'n3'>): number {
   let n = 0;
-  for (const [id, lv] of Object.entries(lines)) {
-    const mine = s.said?.[id] ?? {};
-    for (const f of adviceFrames(lineOf(p, lv), lv)) n += mine[f] ?? 0;
-  }
+  for (const [id, lv] of Object.entries(lines)) n += aimWeight(ctx, id, adviceFrames(lineOf(p, lv), lv), s.said?.[id]);
   return n;
 }
 
@@ -509,13 +510,14 @@ function startCall(s: HotlineState, ctx: ModeContext): Call {
   const fresh = all.filter((p) => !used.has(p.id));
   let pool = fresh.length ? fresh : all;
   // Green Car: each speaking adviser's line level, then aim the deal: of the problems left, only those whose lines
-  // have the frames these advisers have said least.
+  // have the frames these advisers need most tonight (aimWeight).
   let lines: Record<string, 'n4' | 'n3'> | undefined;
   if (s.greenCar) {
     const dealt: Record<string, 'n4' | 'n3'> = {};
     for (const id of roles.advisers) if (isSpeaker(ctx, id)) dealt[id] = nextLineLevel(s, id, ctx.player(id)?.level ?? 'n4');
-    const least = Math.min(...pool.map((p) => needOf(s, p, dealt)));
-    pool = pool.filter((p) => needOf(s, p, dealt) === least);
+    const weight = new Map(pool.map((p) => [p, needOf(s, ctx, p, dealt)]));
+    const top = Math.max(...weight.values());
+    pool = pool.filter((p) => weight.get(p) === top);
     lines = dealt;
   }
   const p = pool[Math.floor(ctx.random() * pool.length)]!;

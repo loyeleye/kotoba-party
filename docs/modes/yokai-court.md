@@ -107,9 +107,9 @@ already on their own phone, and lawyers are paired by the closest level. In the 
   ＿はずが ない, ＿とは かぎらない, ＿と いう ことだ, ＿わけでは ない, ＿っぽい and ＿なんて. An N4 lawyer argues from the
   N4 line, and the hint also shows one of the N3 lines with an N3 tag as optional stretch (`me.stretch`): when
   their own clip uses an N3 chunk it's logged as the N3 line (`court:<case>:<testimony>:<side>:n3`).
-- **Aim the deal.** The mode has no account data, so it counts, per player, the frames each said this game
-  (`CourtState.said`). When the testimony is in, each side gets the N3 line (`CaseState.variant`) whose frames
-  its lawyer has said least, ties at random; an N4 lawyer's stretch is aimed the same way.
+- **Aim the deal.** When the testimony is in, each side gets the N3 line (`CaseState.variant`) whose frames its
+  lawyer needs most tonight (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says), ties at random; an N4 lawyer's stretch is aimed the same way. This
+  game's counts are `CourtState.said`.
 - **The witness passes it on as hearsay**, shown with kanji and said out loud (`WITNESS_GC`): 「ポンに よると、
   きつねが 食べた そうです！」. The record button reads "Pass it on out loud" (7 s). A checked take counts only when
   it has ＿そうです or ＿に よると; without speech-to-text a try counts. It's logged as

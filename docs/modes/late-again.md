@@ -122,12 +122,13 @@ N3 excuses already only change the latecomer's own phone. In the Green Car:
 - **Eight causes a game** (`greenCarDeck`): three believable, three self-owns and two yōkai, drawn from the room's
   audience, with up to two of the audience's own causes first. Every deal comes from them, so a cause and its frame
   come round again; only the last round's options are kept back.
-- **Aim the deal.** The mode has no account data, so it counts, per player, the frames each said this game
-  (`LateState.said`, from what speech-to-text heard, else the line's own frames). In each bucket the deal keeps the
-  causes whose line (at the level this latecomer is dealt) has the frames they've said least, then draws at random
-  among those; the cause dealt to them (they may tap another) is the neediest of the three.
+- **Aim the deal.** In each bucket the deal keeps the causes whose line (at the level this latecomer is dealt)
+  has the frames they need most (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says), then draws at random among those; the cause dealt to them
+  (they may tap another) is the neediest of the three. This game's counts are `LateState.said` (from what
+  speech-to-text heard, else the line's own frames).
 - **The witness backs the story up** out loud at the gist and the vote, as hearsay about the cause they backed: N4
-  「ねこだった そうです。」, N3 「ねこだった らしいです。」 (the same 50/50 turn as the latecomer's lines; an N4 witness sees the
+  each cause in its own words (`BACKUPS` in causes.ts): 「ねこが どいて くれなかった そうです。」, N3 「でんしゃで ねすごした
+  らしいです。」, the curveball 「たぬきの しわざだった らしいです。」 (the same 50/50 turn as the latecomer's lines; an N4 witness sees the
   らしい version as stretch). The line is behind a hint. A checked take counts only when it passes it on as hearsay;
   without speech-to-text a try counts. It's logged as `late:backup:<level>:<cause>`, path credit only, no points.
 - **Kids and Cheeky.** New Green Car causes, N4 and N3 lines only, never dealt in a mixed room, art still to come

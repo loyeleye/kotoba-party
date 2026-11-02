@@ -33,14 +33,14 @@ export function gistPool(audience: Audience | undefined): Gist[] {
 }
 
 /**
- * Picks `count` frames from one side, least-said first ("aim the deal"): `need` is how often the seated players
- * have said each frame (mode state; at the start of a game every count is 0, so the pick is random). Ties break at
- * random.
+ * Picks `count` frames from one side, most needed first ("aim the deal"): `need` is how much the seated players
+ * need each frame tonight (aim.ts aimWeight summed over them: frames a path goal requires weigh double, said least
+ * in tonight's earlier games). Ties break at random.
  */
 export function pickFrames(frames: readonly FrameId[], count: number, need: (frame: FrameId) => number, random: () => number): FrameId[] {
   return shuffled(frames, random)
     .map((f, i) => ({ f, i, n: need(f) }))
-    .sort((a, b) => a.n - b.n || a.i - b.i)
+    .sort((a, b) => b.n - a.n || a.i - b.i)
     .slice(0, count)
     .map((x) => x.f);
 }

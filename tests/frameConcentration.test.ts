@@ -256,9 +256,9 @@ describe('Frame Concentration: the deal', () => {
     expect(cheekySeen).toBeGreaterThan(60);
   });
 
-  it('aims the deal at frames least said', () => {
+  it('aims the deal at the frames most needed (said least)', () => {
     const said = new Set<string>(['ta-koto', 'te-shimau', 'potential', 'sou-look', 'furi', 'hazu-datta', 'zu-ni', 'you-to-suru']);
-    const b = buildGreenBoard(planForSize(4, mulberry(3)), 'family', (f) => (said.has(f) ? 5 : 0), mulberry(3), newId());
+    const b = buildGreenBoard(planForSize(4, mulberry(3)), 'family', (f) => (said.has(f) ? 1 / 6 : 1), mulberry(3), newId());
     expect(b.pairs.filter((p) => said.has(p.gist!.frame))).toEqual([]);
   });
 });

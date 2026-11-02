@@ -177,11 +177,13 @@ line, first and third person with every tile, against `framesOf`. One shared car
 plays in every audience. The card shows an **N3** tag on the phones (`card.level`).
 
 **Aim the deal** (`pickGreenCard`). `gcSaid` counts, per player, how many times they've said each experience
-frame tonight: the guest's true line heard in the score step, and the introducer's card line heard in the reveal.
+frame this game: the guest's true line heard in the score step, and the introducer's card line heard in the reveal.
+The frame's weight is (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says).
 
 - An **N4 guest** gets the N4 experience cards; an N3 card only once those are used up (a stretch, tagged N3).
-- An **N3 guest** gets about half and half: the level (N3 or N4) they have said less tonight, ties to N3.
-- Within the level: the frame the guest has said least, then the room's own card (Kids, Cheeky), then any;
+- An **N3 guest** gets about half and half: the level (N3 or N4) they have said less this game, ties to N3.
+- Within the level: the frame the guest needs most (so ＿た ことが ある, which a goal requires, comes before
+  ＿て みる until it's said), then the room's own card (Kids, Cheeky), then any;
   never a card the room has had while a fresh one is left; ties at random.
 
 None of these frames is aimed at a player (＿くせに, ＿わりに, ＿に しては and ＿わけが ない aren't in the deck).

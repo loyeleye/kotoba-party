@@ -23,6 +23,7 @@ import { hasKanji, isUtterance, normalizeReading, utteranceReading, type Utteran
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
+import { aimWeight } from '../aim.js';
 import {
   CASES,
   caseOf,
@@ -430,15 +431,18 @@ function lineFrames(c: CaseState, t: Testimony, side: Side, level: Level): strin
   return [...(tpl?.frames ?? [])];
 }
 
-/** Aim the deal: of a side's N3 lines, one with the frames this lawyer has said least (ties at random). */
+/**
+ * Aim the deal: of a side's N3 lines, one with the frames this lawyer needs most tonight (aimWeight: frames a path
+ * goal requires weigh double, over tonight's and this game's says; ties at random).
+ */
 function aimVariants(s: CourtState, c: CaseState, ctx: ModeContext): void {
   const t = c.testimony ?? 'unseen';
   c.variant = {};
   for (const side of ORDER) {
-    const mine = s.said?.[lawyerOf(c, side)] ?? {};
-    const need = N3_VARIANTS[side][t].map((tpl) => (tpl.frames ?? []).reduce((n, f) => n + (mine[f] ?? 0), 0));
-    const least = Math.min(...need);
-    const best = need.flatMap((n, i) => (n === least ? [i] : []));
+    const id = lawyerOf(c, side);
+    const need = N3_VARIANTS[side][t].map((tpl) => aimWeight(ctx, id, tpl.frames ?? [], s.said?.[id]));
+    const top = Math.max(...need);
+    const best = need.flatMap((n, i) => (n === top ? [i] : []));
     c.variant[side] = best[Math.floor(ctx.random() * best.length)]!;
   }
 }

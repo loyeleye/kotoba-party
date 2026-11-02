@@ -178,10 +178,10 @@ the `s.green` branches in `concentration.ts`, `greenBanner` on the stage, `green
 - **The deal** (`buildGreenBoard`). Board one step smaller: 2–4 players 4×4 (7 pairs + 2 specials),
   5–8 players 5×5 (11 + 3). Half N4 and half N3 frames (the odd pair goes either way), no frame twice,
   no two gists with the same key word or picture. Kids rooms deal Kids gists only; Family adds Family;
-  Cheeky adds at most 2 (4×4) or 3 (5×5) Cheeky gists. **Aim the deal**: frames are picked least-said
-  first from per-player frame counts kept in mode state (`green.said`). The mode can't see earlier games,
-  so at a game's start every count is 0 and the pick is random; the counts are there for the deal to use
-  once the room can hand a mode tonight's counts.
+  Cheeky adds at most 2 (4×4) or 3 (5×5) Cheeky gists. **Aim the deal**: frames are picked most-needed
+  first, each seat's weight summed (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says). This game's counts are
+  `green.said` (all 0 when the board is dealt at setup), so the board leans to the required frames the room has
+  said least in tonight's earlier games; ties at random.
 - **Phases and timings** are the regular ones, with `GREEN_DURATIONS`: intro 12 s (Fude plus a worked
   pair on the TV), turn 20 s, mismatch 3 s, peek 1.8 s, say it 10 s, steal 8 s, result 4 s.
 - **No say during the peek**: the chunk is still up, so saying it then would be reading it.

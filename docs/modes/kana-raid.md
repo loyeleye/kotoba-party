@@ -364,12 +364,14 @@ The path's rule is a frame said from memory with the player's own words, so:
 | ＿きる | `kiru` | 3.2 | N3 |
 | ＿たて | `tate` | 3.11 | N3 |
 
-**Aim the deal** (mode state only, no account data): each seat keeps counts of its counted says and its deals by
-badge tonight. The horde is built from each seat's deal: an N3 seat alternates N4 and N3 badges (50/50); an N4 seat
-gets N4 badges, with an N3 stretch one deal in four if it ticked any. Within a side, the badge the seat has said
-least tonight comes first (counted says, then deals), so with `SAYS_PER_DAY` at 2 no frame soaks up says while
-another gets none. When a seat picks its next yōkai, the one fewest others are on comes first, then the badge it
-needs most. The boss line's badge is the N3 badge the room has said least.
+**Aim the deal**: each seat keeps counts of its counted says and its deals by badge this game. The horde is built
+from each seat's deal: an N3 seat alternates N4 and N3 badges (50/50); an N4 seat gets N4 badges, with an N3
+stretch one deal in four if it ticked any. Within a side, the badge the seat has said and been dealt least this
+game comes first (counted says, then deals, `badgeTurn`), so with `SAYS_PER_DAY` at 2 no frame soaks up says while
+another gets none; ties go to the badge it needs most tonight (`badgeNeed`) (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says), so a game opens on
+the required frames least said tonight. When a seat picks its next yōkai, the one fewest others are on comes
+first, then the badge it has said least this game, then the one it needs most tonight. The boss line's badge is
+the N3 badge the room needs most tonight (each seat's weight, summed).
 
 ### Scoring
 
@@ -400,9 +402,10 @@ rain or a boss.
 4. A chunk pass is free and shows Fude's version; it doesn't retry.
 5. The finishing blow gets one retry per player.
 6. Fude's existing raid cues are reused; the named wrong-badge tips are text on the phone, not new host lines yet.
-7. The menu still names the game Kana Yōkai Raid, and the stage header's phase labels are the kana raid's
-   ("Choose your kana" for the badge check): `ModeInfo` is static per mode id. Showing "Katsuyō Raid" there needs a
-   shared change (a Green Car title in `ModeInfo`, or the room asking the mode for it).
+7. The menu still names the game Kana Yōkai Raid before it starts: `ModeInfo` is static per mode id, and showing
+   "Katsuyō Raid" in the menu of a Green Car room needs a shared change (a Green Car title in `ModeInfo`, read when
+   `view.greenCar.on`). Once the game is on, its view carries its own title and phase names (`modeTitle`), and the
+   stage header, the TV's title card and the phone's band read those, so they say Katsuyō Raid · Badge check.
 
 ### Known gaps
 

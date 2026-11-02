@@ -318,9 +318,9 @@ Car off plays as a mixed room.
   with an N3 tag on the phone. An N4 go-between says the N4 line, with the N3 form under it as an optional
   stretch. Either form is accepted in any round, and the TV, Nobiko-san's voice and the phrasebook use the form
   that was said.
-- **Aim the deal.** The opening takes the N3 form whose frame the go-between has said least tonight
-  (`gc.said`, counted when a line is said right; ties go to させて いただきます), and the closing takes the other,
-  so each round practises both.
+- **Aim the deal.** The opening takes the N3 form whose frame the go-between needs most tonight
+  (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says) (this game's counts are `gc.said`, counted when a line is said right; ties go to させて
+  いただきます), and the closing takes the other, so each round practises both.
 - **Every question asks for keigo.** The TV and Nobiko-san's `prompt_read` (and the reveal cue) use the guest's N4
   (keigo) ask; phones already did from N4.
 - **Answers score on the N3 service forms.** The manners meter already counts ＿で ございます (`teinei`),

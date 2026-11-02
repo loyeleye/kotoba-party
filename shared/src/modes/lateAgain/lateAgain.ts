@@ -29,6 +29,7 @@ import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
 import { ASK_CHANCE, ASK_RECORD_MS, BACKUP_KEYS, BACKUP_MISSION, backupLine, callbackLine, CAUSES, causeOf, dealOptions, greenCarDeck, kanaLine, latenessFor, lineFor, lineFrames, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, N4_ASKS, type Cause, type Chunk } from './causes.js';
 import { n4Up } from '../../level.js';
+import { aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -573,10 +574,12 @@ function nextLineLevel(s: LateState, id: string, level: Level): 'n4' | 'n3' {
   return lv;
 }
 
-/** Aim the deal: how many times this player has said a line's frames this game (lower: they need it more). */
-function needOf(s: LateState, id: string, frames: readonly string[]): number {
-  const mine = s.said?.[id] ?? {};
-  return frames.reduce((a, f) => a + (mine[f] ?? 0), 0);
+/**
+ * Aim the deal: how much this player needs a line's frames (higher: more), tonight's need (ctx.frameNeed: frames a
+ * path goal requires weigh double) scaled down by their says this game (s.said).
+ */
+function needOf(s: LateState, ctx: ModeContext, id: string, frames: readonly string[]): number {
+  return aimWeight(ctx, id, frames, s.said?.[id]);
 }
 
 /** Counts the frames a player said, for aiming the next deal. */
@@ -602,12 +605,12 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
   const scene = scenes[Math.floor(ctx.random() * scenes.length)]!;
   const level = ctx.player(roles.latecomer)?.level ?? 'n5';
   // Green Car: the line's level first (an N3 seat alternates), then the deal from the game's eight causes, aimed at
-  // the frames this latecomer has said least.
+  // the frames this latecomer needs most tonight (aimWeight).
   const lineLevel = gc ? nextLineLevel(s, roles.latecomer, level) : undefined;
-  const need = (c: Cause): number => needOf(s, roles.latecomer, lineFrames(lineFor(c, lineLevel ?? level), lineLevel ?? 'n4'));
+  const need = (c: Cause): number => needOf(s, ctx, roles.latecomer, lineFrames(lineFor(c, lineLevel ?? level), lineLevel ?? 'n4'));
   // With eight causes, only the last round's options are kept back (the last two would leave too few).
   const recent = new Set(s.rounds.slice(gc ? -1 : -2).flatMap((r) => r.options));
-  const options = dealOptions(() => ctx.random(), recent, s.audience, scene.id, gc && s.deck ? { deck: s.deck, need } : undefined);
+  const options = dealOptions(() => ctx.random(), recent, s.audience, scene.id, gc && s.deck ? { deck: s.deck, weight: need } : undefined);
   const blind = !s.settings.witnessSeesOptions && !!roles.witness;
   const truth = truthFor(() => ctx.random(), options, s.audience, new Set([...s.truths, ...s.rounds.map((x) => x.cause)]), gc);
   if (truth) s.truths.push(truth);
@@ -661,8 +664,8 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
 function dealtCause(options: readonly string[], drawn: number, need: ((c: Cause) => number) | null): string {
   if (!need) return options[drawn]!;
   const scores = options.map((id) => need(causeOf(id)!));
-  const least = Math.min(...scores);
-  return scores[drawn] === least ? options[drawn]! : options[scores.indexOf(least)]!;
+  const top = Math.max(...scores);
+  return scores[drawn] === top ? options[drawn]! : options[scores.indexOf(top)]!;
 }
 
 /** Locks the excuse in when the record beat ends: Kana tiles tapped so far, else Pon stands in. */

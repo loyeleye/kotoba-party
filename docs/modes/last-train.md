@@ -271,9 +271,10 @@ all-N4+ room that switched the Green Car off plays as a mixed room.
   a stop with no N3 items (Lost and Found) deals N4. The Dash alternates too. N3 items show an N3 tag. An N4
   player gets N4 items, plus an N3 item from the same stop as an optional stretch (a tap-to-open "N3 Stretch" on
   the phone): saying it counts, makes it the item (reveal, phrasebook) and adds `RULES.stretchBonus` (20).
-- **Aim the deal.** Of the stop's items at the wanted level, unused first, the one whose frames this player has
-  said least tonight; ties at random. `gc.said[player][frame]` counts frames said right (at scoring, so an
-  overrule counts). Read the Signs items carry no frames, so they tie and are dealt at random.
+- **Aim the deal.** Of the stop's items at the wanted level, unused first, the one whose frames this player needs
+  most tonight (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says); ties at random. This game's counts are `gc.said[player][frame]`, frames said
+  right (at scoring, so an overrule counts). An item with no frames (Read the Signs) weighs 0, so it comes after
+  any item that carries one.
 
 Not changed: the Gallery and curveball never open (nobody is Kana or N5, and nothing is taken from an offer); the
 commentary booth still replays one role line a stop. Ghosts, haunts, overrules and timers are as everywhere.

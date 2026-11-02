@@ -14,6 +14,7 @@ import type { RaidState } from '../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import type { Audience } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
+import { normalizeReading } from '../shared/src/japanese/kana.js';
 import { Bot, Director } from '../tools/bots/bot.js';
 import { katsuyoRaidPolicy, raidPolicy } from '../tools/bots/policies/katsuyoRaid.js';
 import { kanaRaidPolicy } from '../tools/bots/policies/kanaRaid.js';
@@ -168,6 +169,8 @@ describe('Katsuyō Raid rules', () => {
     start(g);
     expect(g.ks().variant).toBe('katsuyo');
     expect(g.view('p1').variant).toBe('katsuyo');
+    // The menu entry reads Kana Yōkai Raid; the game's view carries its own title for the stage and phone headers.
+    expect(g.view('p1').modeTitle).toMatchObject({ title: 'Katsuyō Raid', titleJa: '活用レイド', titleKana: 'かつようレイド', phaseLabels: { intro: 'Badge check' } });
     expect(g.view('p1').chart).toHaveLength(12);
     // N4 seats tick the N4 badges (N3 are optional stretch); N3 seats tick all twelve.
     expect(g.view('p1').me!.badges.every((b) => BADGE_BY_ID[b].side === 'n4')).toBe(true);
@@ -250,7 +253,7 @@ describe('Katsuyō Raid rules', () => {
     const last = r.ks().players.p1!.last!;
     expect(last).toMatchObject({ ok: true, counted: true });
     const card = r.phrases('p1').at(-1)!;
-    expect(card.itemId).toBe(`katsuyo-chunk:${chunk.model.kana.replace(/\s/g, '')}`);
+    expect(card.itemId).toBe(`katsuyo-chunk:${normalizeReading(chunk.model.kana)}`);
     expect(card).toMatchObject({ outcome: 'said', recall: 'memory', text: chunk.model.kana });
     expect(card.frames).toBeUndefined();
     expect(r.ks().players.p1!.counted[chunk.badge]).toBe(1);

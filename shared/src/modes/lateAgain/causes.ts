@@ -1083,15 +1083,45 @@ function shuffledBy<T>(xs: readonly T[], random: () => number): T[] {
 }
 
 /**
- * The witness's backup line in the Green Car: they didn't see it, so they pass it on as hearsay. N4 ＿だった そうです,
- * N3 ＿だった らしいです, about whatever they backed (the curveball too: たぬきだった らしいです).
+ * What the witness passes on, per cause: a plain-form clause that takes ＿そうです (N4) or ＿らしいです (N3) after it,
+ * so each backup says what happened (でんしゃで ねすごした そうです), not just the tile's word. Kana-first, draft.
+ */
+const BACKUPS: Readonly<Record<string, JpText>> = {
+  oversleep: jp('めざましが ならなかった', 'their alarm didn’t go off'),
+  train: jp('でんしゃで ねすごした', 'they slept past their stop on the train'),
+  rain: jp('あめが すごかった', 'the rain was terrible'),
+  station: jp('えきで みちに まよった', 'they got lost in the station'),
+  granny: jp('おばあさんを たすけて いた', 'they were helping an old lady'),
+  crow: jp('カラスに かぎを とられた', 'a crow took their keys'),
+  cat: jp('ねこが どいて くれなかった', 'the cat wouldn’t get off them'),
+  breakfast: jp('あさごはんを たべすぎた', 'they ate too much breakfast'),
+  game: jp('あさまで ゲームを して いた', 'they were gaming till morning'),
+  kotatsu: jp('こたつから でられなかった', 'they couldn’t get out of the kotatsu'),
+  umbrella: jp('かさが おばけに なった', 'their umbrella turned into a ghost'),
+  kappa: jp('かっぱに みちを きかれた', 'a kappa asked them the way'),
+  fox: jp('きつねに だまされた', 'a fox tricked them'),
+  nobiko: jp('のびこさんの はなしが ながかった', 'Nobiko-san talked and talked'),
+  date: jp('デートが ながく なった', 'their date ran long'),
+  okozukai: jp('おかねが なくて、あるいて きた', 'they had no money, so they walked in'),
+  dog: jp('いぬが しゅくだいを たべた', 'the dog ate their homework'),
+  sibling: jp('おとうとが くつを かくした', 'their little brother hid their shoes'),
+  bike: jp('じてんしゃが パンクした', 'their bike got a flat'),
+  nomikai: jp('のみかいが あさまで つづいた', 'the drinking party went on till morning'),
+  baddate: jp('デートで ねて しまった', 'they fell asleep on their date'),
+  tanuki: jp('たぬきの しわざだった', 'it was a tanuki’s doing'),
+};
+
+/**
+ * The witness's backup line in the Green Car: they didn't see it, so they pass it on as hearsay. N4 ＿そうです,
+ * N3 ＿らしいです, after the cause's own clause (BACKUPS; the curveball too: たぬきの しわざだった らしいです).
  */
 export function backupLine(tileId: string, level: 'n4' | 'n3'): JpText & { frames: FrameId[] } {
   const c = causeOf(tileId);
-  const w = c ? bareWord(c) : { text: TANUKI_TILE.word.text.replace(/！$/, ''), kana: TANUKI_TILE.word.kana.replace(/！$/, ''), en: 'a tanuki' };
+  const word = c ? bareWord(c) : null;
+  const w = BACKUPS[tileId] ?? (word ? { text: `${word.text}だった`, kana: `${word.kana}だった`, en: `it was ${word.en.toLowerCase()}` } : BACKUPS.tanuki!);
   return level === 'n3'
-    ? { text: `${w.text}だった らしいです。`, kana: `${w.kana}だった らしいです。`, en: `Apparently it was ${w.en.toLowerCase()}.`, frames: ['rashii'] }
-    : { text: `${w.text}だった そうです。`, kana: `${w.kana}だった そうです。`, en: `I hear it was ${w.en.toLowerCase()}.`, frames: ['sou-hear'] };
+    ? { text: `${w.text} らしいです。`, kana: `${w.kana} らしいです。`, en: `Apparently ${w.en}.`, frames: ['rashii'] }
+    : { text: `${w.text} そうです。`, kana: `${w.kana} そうです。`, en: `I hear ${w.en}.`, frames: ['sou-hear'] };
 }
 
 /** What the witness is asked to do: never names the grammar. */
@@ -1169,14 +1199,15 @@ export function dealOptions(
   avoid: ReadonlySet<string> = new Set(),
   audience: Audience = 'family',
   sceneId?: string,
-  aim?: { deck: readonly string[]; need: (c: Cause) => number },
+  aim?: { deck: readonly string[]; weight: (c: Cause) => number },
 ): [string, string, string] {
   const pick = (pool: Cause[]): Cause => pool[Math.floor(random() * pool.length)]!;
-  // Aim the deal (Green Car): of the causes left to pick from, only those the latecomer needs most.
+  // Aim the deal (Green Car): of the causes left to pick from, only those the latecomer needs most (the highest
+  // aimWeight: frames a path goal requires, said least tonight).
   const neediest = (pool: Cause[]): Cause[] => {
     if (!aim || pool.length < 2) return pool;
-    const least = Math.min(...pool.map(aim.need));
-    return pool.filter((c) => aim.need(c) === least);
+    const top = Math.max(...pool.map(aim.weight));
+    return pool.filter((c) => aim.weight(c) === top);
   };
   const out: Cause[] = [];
   const fitsScene = (c: Cause) => !(sceneId && c.avoidScenes?.includes(sceneId));

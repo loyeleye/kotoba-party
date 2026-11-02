@@ -96,10 +96,9 @@ already on their own phone. In the Green Car:
   line, and the hint also shows the caller's N3 line with an N3 tag as optional stretch (`me.stretch`). When an
   adviser's own clip uses an N3 chunk, the advice is credited to the N3 line (`usedLevel`, `hotline:<problem>:n3`) and
   the booth can call it out.
-- **Aim the deal.** The mode has no account data, so it counts, per player, the frames each said this game
-  (`HotlineState.said`, the line's frames when it was logged as said). Of the callers not yet used, the deal keeps
-  those whose lines (at the levels just dealt to this call's advisers) have the frames they've said least, then
-  draws at random among those.
+- **Aim the deal.** Of the callers not yet used, the deal keeps those whose lines (at the levels just dealt to
+  this call's advisers) the advisers need most, summed over them (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says), then draws at random among
+  those. This game's counts are `HotlineState.said` (the line's frames when it was logged as said).
 - **Kids and Cheeky.** New Green Car callers, N4 and N3 advice only, never in a mixed room: Kids and Family get a
   kappa scared of the pool (＿たら どうですか, ＿ても かまわない) and a lonely zashiki-warashi (＿た ほうが いい,
   ＿んだから); Cheeky gets a rokurokubi whose ex keeps calling at night (＿たら どうですか, ＿んだから) and an oni whose

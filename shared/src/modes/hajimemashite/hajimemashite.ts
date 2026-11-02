@@ -19,8 +19,8 @@
 // After the last turn, one `finale`: おぼえてる？ say (or tap) the true thing about everyone else.
 //
 // In the Green Car (ctx.greenCar) the deck is the experience deck only (N4 ＿た ことが ある, ＿て みる; N3 ＿ことに
-// して いる, ＿ふりを した, ＿はずだった), dealt by pickGreenCard to the frame each guest has said least tonight
-// (gcSaid), and a Kids room may say its lines, which count only as the player's tiles (tileHeard).
+// して いる, ＿ふりを した, ＿はずだった), dealt by pickGreenCard to the frame each guest needs most tonight
+// (aimWeight over gcSaid), and a Kids room may say its lines, which count only as the player's tiles (tileHeard).
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
@@ -29,6 +29,7 @@ import { isRomaji, nameToKatakana, romajiToHiragana } from '../../japanese/toKan
 import { playerTextAllowed } from '../../moderation.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
+import { aimWeight } from '../aim.js';
 import { cardsFor, endsInForm, fillFrame, GREEN_CAR_N4_FRAMES, introCardOf, tileOf, tilesOnly, type Conj, type IntroCard, type Tile } from './cards.js';
 import { FRAME_BY_ID, type FrameId } from '../../japanese/frames.js';
 import { n4Up } from '../../level.js';
@@ -395,19 +396,22 @@ const saidAtLevel = (s: HajimeState, playerId: string, level: 'n4' | 'n3'): numb
 /**
  * The Green Car's deal (aim the deal). An N4 guest gets the N4 experience cards (an N3 card only once those are
  * used up, as a stretch the card tags N3). An N3 guest gets about half and half: the level they have said less
- * tonight (ties go to N3). Within that level: the frame the guest has said least tonight, then the room's own
- * cards (Kids, Cheeky), then any; never a card the room has had while a fresh one is left. Ties are random.
+ * this game (ties go to N3). Within that level: the card whose frame the guest needs most tonight (aimWeight: the
+ * room's ctx.frameNeed, where frames a path goal requires weigh double, over this game's says in gcSaid), then the
+ * room's own cards (Kids, Cheeky), then any; never a card the room has had while a fresh one is left. Ties are random.
  */
-export function pickGreenCard(s: HajimeState, audience: Audience, guestId: string, level: Level, random: () => number): IntroCard {
+export function pickGreenCard(s: HajimeState, audience: Audience, guestId: string, level: Level, random: () => number, ctx: Pick<ModeContext, 'frameNeed'> = {}): IntroCard {
   const pool = cardsFor(audience, level, true);
   const fresh = pool.filter((c) => !s.usedCards.includes(c.id));
   const first: 'n4' | 'n3' = level === 'n3' && saidAtLevel(s, guestId, 'n3') > saidAtLevel(s, guestId, 'n4') ? 'n4' : level === 'n3' ? 'n3' : 'n4';
   const other = first === 'n3' ? 'n4' : 'n3';
   const group = [fresh.filter((c) => c.level === first), fresh.filter((c) => c.level === other), pool].find((g) => g.length)!;
   const said = s.gcSaid?.[guestId] ?? {};
-  const score = (c: IntroCard) => (said[greenFrameOf(c) ?? ''] ?? 0) * 2 + (c.audiences.length === 1 ? 0 : 1);
-  const best = Math.min(...group.map(score));
-  const top = group.filter((c) => score(c) === best);
+  const weight = (c: IntroCard) => { const f = greenFrameOf(c); return f ? aimWeight(ctx, guestId, [f], said) : 0; };
+  const most = Math.max(...group.map(weight));
+  const needed = group.filter((c) => weight(c) === most);
+  const own = needed.filter((c) => c.audiences.length === 1);
+  const top = own.length ? own : needed;
   return top[Math.floor(random() * top.length)]!;
 }
 
@@ -434,7 +438,7 @@ function startTurn(s: HajimeState, ctx: ModeContext): void {
   const players = ctx.players();
   const guestId = s.guests[s.turnIndex - 1]!;
   const guest = ctx.player(guestId);
-  const card = ctx.greenCar ? pickGreenCard(s, ctx.audience ?? 'family', guestId, guest?.level ?? 'n4', random) : pickCard(s, ctx.audience ?? 'family', guest?.level ?? 'n5', random);
+  const card = ctx.greenCar ? pickGreenCard(s, ctx.audience ?? 'family', guestId, guest?.level ?? 'n4', random, ctx) : pickCard(s, ctx.audience ?? 'family', guest?.level ?? 'n5', random);
   s.usedCards.push(card.id);
   // The previous guest introduces this one, so the introductions run round the room.
   const prev = s.guests[(s.turnIndex - 2 + s.guests.length) % s.guests.length];

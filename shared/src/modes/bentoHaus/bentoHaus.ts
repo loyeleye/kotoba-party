@@ -655,7 +655,7 @@ function arrive(s: BentoState, r: Round, at: number, ctx: ModeContext): void {
   if (s.hard && r.hard) {
     const v = r.visits.at(-1)!;
     maybeSpecial(s.hard, r.hard, r, v, ctx);
-    addGuest(s.hard, r.hard, v, taker.level);
+    addGuest(s.hard, r.hard, v, taker.level, ctx);
   }
   cue(s, ctx, 'bento_customer', { name: taker.name });
 }

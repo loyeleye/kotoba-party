@@ -219,8 +219,9 @@ as a mixed room.
 - **Two Green Car questions** join the general ones: the toilet (`point`: あちらに ございます; N3 あちらで
   ございます) and heavy bags (`take`: おあずかり します; N3 おあずかり させて いただきます).
 - **Aim the deal.** A guest with no question of their own asks the general one whose line (N3 or N4, whichever
-  this player is due) carries the frames they have said least tonight (`aimAsk`; counts of lines said right in
-  this game, `hard.said`; ties go round in turn). The mode has no account data, so "least" means tonight.
+  this player is due) carries the frames they need most tonight (`aimAsk`) (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says). This game's
+  counts are `hard.said` (lines said right); ties go round in turn. So a line with a required frame (the bags'
+  おあずかり します) comes before one with only optional frames, until it has been said.
 - **Kitchen call-outs** with ＿て もらえますか (「からあげを ふたつ つくって もらえますか」) go in the phrasebook as that
   line, credited te-moraeru (goal 4.1). A plain 〜、おねがいします call still works and logs as before. The phone's
   call box and the title card cue the もらえますか form (`view.greenCar`). VS too.

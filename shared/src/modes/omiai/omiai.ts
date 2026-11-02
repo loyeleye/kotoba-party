@@ -27,7 +27,7 @@
 // offer log (seatNakodo). The lines come in N4 and N3 forms (cards.ts NAKODO_N3: ＿させて いただきます, ＿で
 // ございます); an N3 go-between says N3 lines about half the rounds, an N4 one gets N4 lines with the N3 form as an
 // optional stretch, and either form is accepted (goLines). Aim the deal: the opening takes the N3 form whose frame
-// the player has said least tonight (gc.said), the closing the other. Every question is asked in keigo (the TV and
+// the player needs most tonight (aimWeight over gc.said), the closing the other. Every question is asked in keigo (the TV and
 // Nobiko-san read the N4 ask), the tiles add で ございます, and a polite です answer's tip steps up to でございます.
 
 import { atLevel, type JpText, type Level } from '../../../../content/src/types.js';
@@ -44,6 +44,7 @@ import { offerRate, type OfferAnswer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { LEVEL_RANK, n4Up } from '../../level.js';
+import { aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -697,7 +698,8 @@ const askOf = (s: OmiaiState, q: OmiaiQuestion): JpText => (s.greenCar ? q.ask.n
  * The Green Car's go-between, every round, with no offer: the connected player who has held the seat fewest rounds
  * (then seat order) takes it, already accepted. An N3 player's lines are the N3 forms when they have had fewer N3
  * rounds than N4 (N3 first), so about half; anyone else's are N4 with the N3 form as stretch. The opening takes the
- * N3 form whose frame they have said least tonight (ties: させて いただきます), the closing the other.
+ * N3 form whose frame they need most tonight (aim.ts aimWeight: the room's ctx.frameNeed over this game's says in
+ * gc.said; ties: させて いただきます), the closing the other.
  * (Mixed rooms have no go-between: a move-out.)
  */
 function seatNakodo(s: OmiaiState, ctx: ModeContext): void {
@@ -712,8 +714,10 @@ function seatNakodo(s: OmiaiState, ctx: ModeContext): void {
   const mix = (gc.mix[p.id] ??= { n3: 0, n4: 0 });
   const n3 = p.level === 'n3' && mix.n3 <= mix.n4;
   mix[n3 ? 'n3' : 'n4'] += 1;
-  const said = gc.said[p.id] ?? {};
-  const first: 0 | 1 = (said['de-gozaimasu'] ?? 0) < (said['sasete-itadaku'] ?? 0) ? 1 : 0;
+  // Aim the deal: the opening's form whose frame this player needs most tonight (aimWeight), the closing the other.
+  const open = nakodoN3Lines(cardOf(s), s.round, s.totalRounds).open;
+  const need = open.map((l) => aimWeight(ctx, p.id, l.frames, gc.said[p.id]));
+  const first: 0 | 1 = need[1]! > need[0]! ? 1 : 0;
   s.nakodoSeat = p.seat;
   s.nakodo = { round: s.round, playerId: p.id, status: 'accepted', lines: { open: blankTry(), close: blankTry() }, gc: { n3, variant: { open: first, close: first === 0 ? 1 : 0 } } };
   openNakodoGallery(s, ctx);

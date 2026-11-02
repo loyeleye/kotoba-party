@@ -363,7 +363,8 @@ function render(view: RoomView): void {
         'div',
         { class: 'me-band' },
         h('img', { class: 'me-host', src: `/stage/assets/hosts/${info.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }),
-        h('span', { class: 'me-title' }, info.title, h('small', { lang: 'ja' }, info.titleJa)),
+        // A game's own title, when its view carries one (Katsuyō Raid plays under Kana Yōkai Raid's menu entry).
+        ((t) => h('span', { class: 'me-title' }, t.title, h('small', { lang: 'ja' }, t.titleJa)))(view.game && 'modeTitle' in view.game ? view.game.modeTitle : info),
       )
     : null;
   const header = h(

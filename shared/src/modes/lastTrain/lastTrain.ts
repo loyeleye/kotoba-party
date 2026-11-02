@@ -25,7 +25,8 @@
 // the role items (announcer, Lost and Found, the front desk) among them, with no offer card and nothing written to
 // the offer log (greenCarTurns). An N3 player's items alternate N3 and N4; an N4 player gets N4 items, plus an N3
 // item from the same stop as an optional stretch (say either). "Aim the deal": of the items at the wanted level, the
-// one whose frames this player has said least tonight (`gc.said`, counted when an answer is right), unused first.
+// one whose frames this player needs most tonight (aim.ts aimWeight over `gc.said`, counted when an answer is
+// right), unused first.
 // No penalty car (its minigames are N5), and the Platform Dash deals at the same levels.
 
 import type { HardRole, HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, StationSign, TrainStop } from '../../../../content/src/types.js';
@@ -39,6 +40,7 @@ import { armCurveball, commentaryMs, galleryBubbles, galleryTileFor, gistFor, ho
 import { toRomaji } from '../../japanese/romaji.js';
 import { FALLBACK_MINIGAMES, FALLBACK_SCENARIO, SPARE_STOP_NAMES } from './fallback.js';
 import { n4Up } from '../../level.js';
+import { aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -264,7 +266,7 @@ export interface LastTrainState {
   greenCar?: boolean;
   /**
    * Green Car bookkeeping, per player: `mix`, how many N3 and N4 items they've been dealt (an N3 player alternates);
-   * `said`, how often they've said each frame right tonight (the deal aims at the least said).
+   * `said`, how often they've said each frame right this game (the deal aims at the most needed, aimWeight).
    */
   gc?: { mix: Record<string, { n3: number; n4: number }>; said: Record<string, Record<string, number>> };
   seq: number;
@@ -759,7 +761,7 @@ function ordinaryItem(s: LastTrainState, ctx: ModeContext, pool: readonly Miniga
   return dealt?.mirror && ctx.random() < 0.5 ? mirrored(dealt) : dealt;
 }
 
-// ---- the Green Car: every role always on, N4 and N3 items, aimed at the frames least said ----
+// ---- the Green Car: every role always on, N4 and N3 items, aimed at the frames most needed ----
 
 /**
  * The level of a player's next Green Car item: an N3 player alternates N3 and N4 (whichever they've had fewer of,
@@ -771,15 +773,18 @@ function gcLevel(s: LastTrainState, ctx: ModeContext, playerId: string): 'n3' | 
   return mix.n3 <= mix.n4 ? 'n3' : 'n4';
 }
 
-/** How often this player has said an item's frames right tonight (an item with no frames scores 0). */
-function frameScore(s: LastTrainState, playerId: string, item: MinigameItem): number {
-  const said = s.gc?.said[playerId] ?? {};
-  return (item.frames ?? []).reduce((n, f) => n + (said[f] ?? 0), 0);
+/**
+ * How much this player needs an item's frames (aim.ts aimWeight): the room's ctx.frameNeed (frames a path goal
+ * requires weigh double, over tonight's earlier says) scaled down by this game's right answers (`gc.said`). An item
+ * with no frames weighs 0, so it comes last.
+ */
+function frameScore(s: LastTrainState, ctx: ModeContext, playerId: string, item: MinigameItem): number {
+  return aimWeight(ctx, playerId, item.frames ?? [], s.gc?.said[playerId]);
 }
 
 /**
  * "Aim the deal": from the pool's items at `level` (the other Green Car level if it has none), unused ones first,
- * the one whose frames this player has said least; ties at random. `take` marks it used.
+ * the one whose frames this player needs most tonight (frameScore); ties at random. `take` marks it used.
  */
 function aimItem(s: LastTrainState, ctx: ModeContext, pool: readonly MinigameItem[], ns: string, playerId: string, level: 'n3' | 'n4', take = true): MinigameItem | undefined {
   const other = level === 'n3' ? 'n4' : 'n3';
@@ -788,8 +793,8 @@ function aimItem(s: LastTrainState, ctx: ModeContext, pool: readonly MinigameIte
   const fresh = from.filter((i) => !s.used.includes(itemKey(ns, i.id)));
   const cands = fresh.length ? fresh : from;
   if (!cands.length) return undefined;
-  const least = Math.min(...cands.map((i) => frameScore(s, playerId, i)));
-  const chosen = pick(cands.filter((i) => frameScore(s, playerId, i) === least), () => ctx.random())!;
+  const top = Math.max(...cands.map((i) => frameScore(s, ctx, playerId, i)));
+  const chosen = pick(cands.filter((i) => frameScore(s, ctx, playerId, i) === top), () => ctx.random())!;
   if (take && !s.used.includes(itemKey(ns, chosen.id))) s.used.push(itemKey(ns, chosen.id));
   return chosen;
 }

@@ -26,6 +26,7 @@ import { SCENES } from './scenes.js';
 import { buildGreenBoard, checkFrameSay, compact, GIST_BY_ID, planGreenBoard, tilesFor } from './greenBoard.js';
 import { FRAME_BY_ID, type FrameId } from '../../japanese/frames.js';
 import { playerTextAllowed } from '../../moderation.js';
+import { aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -514,8 +515,9 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
     const pack = packs.find((p) => p.id === opts.packId) ?? (packs.length ? packs[Math.floor(random() * packs.length)] : undefined);
     const green = !!ctx.greenCar;
     const said: GreenState['said'] = Object.fromEntries(players.map((p) => [p.id, {}]));
-    // Aim the deal: frames the seated players have said least go first (all 0 at a game's start).
-    const need = (f: FrameId) => players.reduce((n, p) => n + (said[p.id]?.[f] ?? 0), 0);
+    // Aim the deal: frames the seated players need most tonight go first (aimWeight, summed over the seats: frames a
+    // path goal requires weigh double, over tonight's earlier says; this game's own counts are 0 at its start).
+    const need = (f: FrameId) => players.reduce((n, p) => n + aimWeight(ctx, p.id, [f], said[p.id]), 0);
     const board = green
       ? buildGreenBoard(planGreenBoard(players.length, random), ctx.audience, need, random, () => ctx.newId())
       : buildBoard(pack, planBoard(players.length, levels, random), levels, random, () => ctx.newId());

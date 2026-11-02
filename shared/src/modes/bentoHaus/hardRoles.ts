@@ -7,7 +7,7 @@
 // are offered the おもてなし shift alone. In the Green Car nobody is offered anything: the deputy manager seat is
 // always filled (`greenCarSeats`), every other player runs the おもてなし shift, and nothing goes in the offer log.
 // An N3 player's おもてなし lines alternate N3 and N4 (about half each); an N4 player sees the N3 line as stretch.
-// The guest's question is aimed: the one whose frames this player has said least tonight (`aimAsk`).
+// The guest's question is aimed: the one whose frames this player needs most tonight (`aimAsk`, aim.ts aimWeight).
 //
 //   manager (ふくてんちょう, deputy manager: Pon is busy "tasting")  one seat a shift. A customer who
 //              complains about a box, or makes a special request, comes to the deputy manager's
@@ -33,6 +33,7 @@ import type { ModeContext, ModePlayer } from '../mode.js';
 import type { Round, Visit } from './bentoHaus.js';
 import { countWord, customerOf, foodOf, KANJI_SPELLINGS, type JpLine } from './menu.js';
 import { n4Up } from '../../level.js';
+import { aimPick, aimWeight } from '../aim.js';
 
 // ---- the scripts ----
 
@@ -918,16 +919,16 @@ const asksFor = (greenCar: boolean) => GUEST_ASKS.filter((a) => greenCar || !a.g
 
 /**
  * Aim the deal (Green Car): of the general questions, the one whose line (the N3 or the N4 one, whichever this
- * player will be given) carries the frames they have said least tonight; ties go round in turn. Kept simple: the
- * mode has no account data, so "least" is tonight's count of lines said right in this game.
+ * player will be given) carries the frames they need most tonight: aimWeight, the room's ctx.frameNeed (frames a
+ * path goal requires weigh double, over tonight's earlier says) scaled down by this game's says (h.said). Ties go
+ * round in turn. Without ctx.frameNeed (tests) every frame weighs 1.
  */
-export function aimAsk(h: HardState, playerId: string, n3Turn: boolean, level: Level | undefined): GuestAsk {
+export function aimAsk(h: HardState, playerId: string, n3Turn: boolean, level: Level | undefined, ctx: Pick<ModeContext, 'frameNeed'> = {}): GuestAsk {
   const general = asksFor(true).filter((a) => !a.customers);
-  const said = h.said?.[playerId] ?? {};
-  const score = (a: GuestAsk) => ((level === 'n3' && n3Turn ? a.n3 : a.model).frames ?? []).reduce((n, f) => n + (said[f] ?? 0), 0);
+  const weight = (a: GuestAsk) => aimWeight(ctx, playerId, (level === 'n3' && n3Turn ? a.n3 : a.model).frames ?? [], h.said?.[playerId]);
   const start = h.askTurn++ % general.length;
   const turn = [...general.slice(start), ...general.slice(0, start)];
-  return turn.reduce((best, a) => (score(a) < score(best) ? a : best));
+  return aimPick(turn, weight)!;
 }
 
 /** Green Car: whether an N3 player's next おもてなし line is the N3 one (they get about as many of each). */
@@ -940,7 +941,7 @@ function n3TurnFor(h: HardState, playerId: string, level: Level | undefined): bo
 }
 
 /** An おもてなし order-taker's guest: a welcome, then the guest's question. */
-export function addGuest(h: HardState, hr: HardRound, v: Visit, level?: Level): Guest | null {
+export function addGuest(h: HardState, hr: HardRound, v: Visit, level?: Level, ctx: Pick<ModeContext, 'frameNeed'> = {}): Guest | null {
   if (!hr.omotenashi.includes(v.takerId)) return null;
   const gc = !!h.greenCar;
   const own = asksFor(gc).find((a) => a.customers?.includes(v.customerId));
@@ -950,7 +951,7 @@ export function addGuest(h: HardState, hr: HardRound, v: Visit, level?: Level): 
   if (gc) {
     const first = n3TurnFor(h, v.takerId, level);
     const second = n3TurnFor(h, v.takerId, level);
-    ask = own ?? aimAsk(h, v.takerId, second, level);
+    ask = own ?? aimAsk(h, v.takerId, second, level, ctx);
     steps = [atGreenCarLevel(welcome, level, first), atGreenCarLevel(askStep(ask), level, second)];
   } else {
     const general = asksFor(false).filter((a) => !a.customers);

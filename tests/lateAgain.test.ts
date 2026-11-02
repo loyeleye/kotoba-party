@@ -824,14 +824,18 @@ describe('Late Again!: the Green Car', () => {
     const deck = ['train', 'rain', 'station', 'oversleep', 'breakfast', 'game', 'kappa', 'fox'];
     const said: Record<string, number> = { train: 3, rain: 0, station: 2, oversleep: 1, breakfast: 0, game: 4, kappa: 0, fox: 5 };
     for (let seed = 1; seed <= 10; seed++) {
-      const deal = dealOptions(mulberry(seed), new Set(), 'family', 'meeting', { deck, need: (c) => said[c.id] ?? 9 });
+      const deal = dealOptions(mulberry(seed), new Set(), 'family', 'meeting', { deck, weight: (c) => 1 / (1 + (said[c.id] ?? 9)) });
       expect([...deal].sort()).toEqual(['breakfast', 'kappa', 'rain']);
     }
     // In a game, saying the line counts its frames for the next deal.
     const t = new Table(3, ['n4', 'n4', 'n4'], 8);
     t.start();
     const r1 = gcRound(t, (x) => lineFor(causeOf(x.cause)!, 'n4').model.kana);
-    for (const f of lineFrames(causeOf(r1.cause)!.lines.n4!, 'n4')) expect(t.st.said![r1.latecomer]![f], f).toBeGreaterThan(0);
+    // (Only the frames heard count, so a heard take may credit fewer than the line's own.)
+    const frames = lineFrames(causeOf(r1.cause)!.lines.n4!, 'n4');
+    const counted = Object.keys(t.st.said![r1.latecomer]!);
+    expect(counted.length).toBeGreaterThan(0);
+    for (const f of counted) expect(frames, f).toContain(f);
   });
 
   it('the witness backs the story up out loud as hearsay: N4 そうです, N3 らしい, said only when heard', () => {
