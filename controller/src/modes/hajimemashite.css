@@ -10,6 +10,7 @@
 .hj-model.ok { border-style: solid; border-color: var(--good); }
 .hj-cardname { margin: 0; color: var(--muted); font-size: 15px; }
 .hj-cardname span { color: var(--mode); font-weight: 800; }
+.hj-n3 { font-size: 11px; font-weight: 700; color: var(--muted); }
 .hj-frame-p { margin: 0; font-size: 22px; font-weight: 800; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
 .hj-blank-p { display: inline-block; min-width: 3em; padding: 0 6px; margin: 0 4px; border-bottom: 3px solid var(--mode); color: var(--muted); text-align: center; }
 .hj-blank-p.on { color: var(--mode); }

@@ -5,9 +5,9 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import { nameToKatakana, romajiToHiragana } from '../shared/src/japanese/toKana.js';
-import { cardsFor, endsInForm, fillFrame, INTRO_CARDS, introCardOf, tilesOnly } from '../shared/src/modes/hajimemashite/cards.js';
-import { framesOf } from '../shared/src/japanese/frames.js';
-import { LINE_MS, POINTS, typedWord, type HajimeState, type HajimeView, type Turn } from '../shared/src/modes/hajimemashite/hajimemashite.js';
+import { cardsFor, endsInForm, fillFrame, GREEN_CAR_N4_FRAMES, greenCarCard, INTRO_CARDS, introCardOf, tileOf, tilesOnly } from '../shared/src/modes/hajimemashite/cards.js';
+import { FRAME_BY_ID, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
+import { greenFrameOf, LINE_MS, pickGreenCard, POINTS, typedWord, type HajimeState, type HajimeView, type Turn } from '../shared/src/modes/hajimemashite/hajimemashite.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { createReader, type Reader } from '../server/src/reading.js';
@@ -581,8 +581,8 @@ describe('Nice to Meet You!: bots play a game end to end', () => {
     await ctx.server.close();
   });
 
-  for (const players of [3, 5]) {
-    it(`${players} bots play every turn with every client in sync`, async () => {
+  for (const [players, green] of [[3, false], [5, false], [4, true]] as const) {
+    it(`${players} bots play every turn with every client in sync${green ? ' (Green Car)' : ''}`, async () => {
       const { baseUrl, truth, server } = ctx;
       const created = await createRoom(baseUrl);
       const room = server.rooms.get(created.code)!;
@@ -618,7 +618,7 @@ describe('Nice to Meet You!: bots play a game end to end', () => {
             code: created.code,
             name: `bot${i}`,
             policy,
-            level: i === 1 ? 'kana' : i === 3 ? 'n4' : 'n5',
+            level: green ? (i % 2 ? 'n3' : 'n4') : i === 1 ? 'kana' : i === 3 ? 'n4' : 'n5',
             onState: (bot, view, v) => record(bot.playerId, view, v),
           }),
         );
@@ -639,4 +639,174 @@ describe('Nice to Meet You!: bots play a game end to end', () => {
       director.client.close();
     }, 120_000);
   }
+});
+
+// ---- the Green Car ----
+
+const GREEN_FRAMES = ['ta-koto', 'te-miru', 'koto-ni-shiteiru', 'furi', 'hazu-datta'];
+const greenState = (gcSaid: Record<string, Record<string, number>> = {}, usedCards: string[] = []) => ({ usedCards, gcSaid }) as unknown as HajimeState;
+
+describe('Nice to Meet You!: the Green Car experience deck', () => {
+  it('the N3 cards are draft, carry an N3 frame id, and every line (first, third, each tile, Pon) says that frame', () => {
+    const n3 = INTRO_CARDS.filter((c) => c.level === 'n3');
+    expect(n3.length).toBeGreaterThanOrEqual(6);
+    for (const c of n3) {
+      expect(c.status, c.id).toBe('draft');
+      expect(c.frames!.length, c.id).toBe(1);
+      expect(FRAME_BY_ID[c.frames![0] as FrameId]?.level, c.id).toBe('n3');
+      for (const x of [...c.tiles, c.pon]) {
+        for (const line of [fillFrame(c.first, x.kana), fillFrame(c.third, x.kana, 'アキ')]) {
+          expect(framesOf({ text: line, kana: line }, undefined, { keepHidden: true }), `${c.id}: ${line}`).toContain(c.frames![0]);
+        }
+      }
+    }
+  });
+
+  it('in the Green Car the deck is only experience cards, and every experience frame plays in every audience', () => {
+    for (const a of ['kids', 'family', 'cheeky'] as const) {
+      for (const l of ['n4', 'n3'] as const) {
+        const deck = cardsFor(a, l, true);
+        expect(deck.every(greenCarCard), `${a} ${l}`).toBe(true);
+        expect(deck.some((c) => c.level === 'n5'), `${a} ${l}`).toBe(false);
+        expect(deck.every((c) => c.audiences.includes(a)), `${a} ${l}`).toBe(true);
+        expect(new Set(deck.map((c) => greenFrameOf(c))), `${a} ${l}`).toEqual(new Set(GREEN_FRAMES));
+      }
+    }
+    // Cheeky's own card stays out of Kids rooms, and Kids' out of Cheeky.
+    expect(cardsFor('kids', 'n3', true).map((c) => c.id)).not.toContain('date-hazu');
+    expect(cardsFor('cheeky', 'n3', true).map((c) => c.id)).not.toContain('kids-rule');
+  });
+
+  it('N3 cards never play outside the Green Car, at any level', () => {
+    for (const a of ['kids', 'family', 'cheeky'] as const) for (const l of ['kana', 'n5', 'n4', 'n3'] as const) expect(cardsFor(a, l).some((c) => c.level === 'n3'), `${a} ${l}`).toBe(false);
+  });
+
+  it('aims the deal: an N4 guest gets N4 experience cards; an N3 guest the level, then the frame, said least tonight', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const r = mulberry(seed);
+      // N4: the N4 experience cards, never N3 while one is fresh.
+      const n4 = pickGreenCard(greenState(), 'family', 'p1', 'n4', r);
+      expect(n4.level, `seed ${seed}`).toBe('n4');
+      expect(GREEN_CAR_N4_FRAMES, `seed ${seed}`).toContain(greenFrameOf(n4));
+      // N3 with nothing said: N3 first (ties go to N3).
+      expect(pickGreenCard(greenState(), 'family', 'p1', 'n3', r).level, `seed ${seed}`).toBe('n3');
+      // N3 having said more N3 than N4: an N4 card.
+      expect(pickGreenCard(greenState({ p1: { furi: 2, 'ta-koto': 1 } }), 'family', 'p1', 'n3', r).level, `seed ${seed}`).toBe('n4');
+      // Within N3: the frame said least (furi and hazu-datta said, so ことに して いる).
+      expect(greenFrameOf(pickGreenCard(greenState({ p1: { furi: 1, 'hazu-datta': 1, 'ta-koto': 1, 'te-miru': 1 } }), 'family', 'p1', 'n3', r)), `seed ${seed}`).toBe('koto-ni-shiteiru');
+      // Within N4: ＿て みる said, so ＿た ことが ある.
+      expect(greenFrameOf(pickGreenCard(greenState({ p1: { 'te-miru': 1 } }), 'family', 'p1', 'n4', r)), `seed ${seed}`).toBe('ta-koto');
+      // The room's own card first: a Kids N3 guest with nothing said gets a Kids-only N3 card.
+      expect(pickGreenCard(greenState(), 'kids', 'p1', 'n3', r).audiences, `seed ${seed}`).toEqual(['kids']);
+    }
+    // An N4 guest once the N4 experience cards are used up: an N3 card, as a stretch.
+    const usedN4 = cardsFor('family', 'n4', true).filter((c) => c.level === 'n4').map((c) => c.id);
+    expect(pickGreenCard(greenState({}, usedN4), 'family', 'p1', 'n4', mulberry(3)).level).toBe('n3');
+  });
+
+  it('an all-N4+ room plays the experience deck; a mixed room, or the Green Car switched off, never gets an N3 card', () => {
+    for (let seed = 1; seed <= 12; seed++) {
+      const green = new Table(4, ['n3', 'n4', 'n3', 'n4'], seed);
+      green.start('family');
+      expect(green.s.greenCarOn, `seed ${seed}`).toBe(true);
+      expect(greenCarCard(introCardOf(green.t.cardId)!), `seed ${seed}`).toBe(true);
+      expect(introCardOf(green.t.cardId)!.level, `seed ${seed}`).toBe('n3');
+      expect(green.view('p1').card!.level).toBe('n3');
+
+      const mixed = new Table(4, ['n4', 'n5', 'n3', 'kana'], seed);
+      mixed.start('family');
+      expect(mixed.s.greenCarOn).toBe(false);
+      expect(introCardOf(mixed.t.cardId)!.level, `seed ${seed}`).not.toBe('n3');
+
+      const off = new Table(4, ['n3', 'n4', 'n3', 'n4'], seed);
+      off.cmd('stage', { type: 'settings', greenCar: false });
+      off.start('family');
+      expect(off.s.greenCarOn).toBe(false);
+      expect(introCardOf(off.t.cardId)!.level, `seed ${seed}`).toBe('n4');
+    }
+  });
+
+  it('counts the experience frame said by the guest and by the introducer, for the next deal', () => {
+    const tb = new Table(4, ['n3', 'n4', 'n4', 'n4']);
+    tb.start('family');
+    const card = introCardOf(tb.t.cardId)!;
+    const frame = greenFrameOf(card)!;
+    const intro = tb.t.introducerId!;
+    const g = tb.t.guestId;
+    tb.greetAll();
+    const truth = tb.writeAll();
+    tb.readAll();
+    for (const p of tb.s.players) if (p.id !== g) tb.play(p.id, { kind: 'rank', order: tb.view(p.id).me!.rankable.map((x) => x.id) });
+    tb.play(g, { kind: 'wish', factId: tb.view(g).me!.wishable[0]!.id });
+    expect(tb.s.phase).toBe('score');
+    expect(tb.play(g, { kind: 'truth', utterance: speech(fillFrame(card.first, truth)) }).error).toBeUndefined();
+    while (tb.st.turnIndex === 1 && tb.s.phase !== 'finale') tb.timeout();
+    expect(tb.st.gcSaid?.[g]?.[frame]).toBe(1);
+    expect(tb.st.gcSaid?.[intro]?.[frame]).toBe(1);
+  });
+
+  it('a mixed room keeps no Green Car count', () => {
+    const tb = new Table(4, ['n4', 'n5', 'n5', 'n5']);
+    tb.start('family');
+    tb.greetAll();
+    tb.writeAll();
+    tb.readAll();
+    while (tb.st.turnIndex === 1 && tb.s.phase !== 'finale') tb.timeout();
+    expect(tb.st.gcSaid).toBeUndefined();
+  });
+});
+
+describe('Nice to Meet You!: a Kids room in the Green Car says its lines, as tiles only', () => {
+  function kidsGreen(): Table {
+    const tb = new Table(4, ['n3', 'n4', 'n4', 'n3']);
+    tb.start('kids');
+    expect(tb.s.greenCarOn).toBe(true);
+    tb.greetAll();
+    return tb;
+  }
+
+  it('every role may say (or type) its line, and only a tile it may use reaches the TV, never free text', () => {
+    const tb = kidsGreen();
+    const card = introCardOf(tb.t.cardId)!;
+    const g = tb.t.guestId;
+    expect(tb.view(g).me!.sayTiles).toBe(true);
+    expect(tb.view(g).me!.canType).toBe(false);
+    const [tanuki, hand] = Object.entries(tb.t.hands)[0]!;
+    const held = new Set(Object.values(tb.t.hands).flat());
+    const truth = card.tiles.find((x) => !held.has(x.id))!;
+    // The guest says the whole line: the tile, as the card prints it.
+    expect(tb.play(g, { kind: 'write', utterance: speech(fillFrame(card.first, truth.kana)) }).error).toBeUndefined();
+    expect(tb.t.writes[g]).toEqual({ tileId: truth.id, word: truth.kana, en: truth.en });
+    // Said with the frame: logged as the frame filled with the tile, from memory.
+    expect(tb.s.phrasebook[g]!.find((e) => e.itemId === `hajime:${card.id}:said`)).toMatchObject({ text: fillFrame(card.first, truth.kana), outcome: 'said', recall: 'memory' });
+    // Free text: refused, and the card stays as it was.
+    expect(tb.play(g, { kind: 'write', utterance: speech('うちゅうじんと ともだちに なりました') }).error).toBe('tiles-only');
+    expect(tb.play(g, { kind: 'write', utterance: { via: 'typed', text: 'うんこ' } }).error).toBe('tiles-only');
+    expect(tb.t.writes[g]!.tileId).toBe(truth.id);
+    // A tanuki: only their hand. A tile they don't hold is refused; one they hold (typed, too) counts.
+    const notMine = card.tiles.find((x) => !hand!.includes(x.id))!;
+    expect(tb.play(tanuki, { kind: 'write', utterance: speech(fillFrame(card.first, notMine.kana)) }).error).toBe('tiles-only');
+    const mine = tileOf(hand![0]!)!;
+    expect(tb.play(tanuki, { kind: 'write', utterance: { via: 'typed', text: mine.kana } }).error).toBeUndefined();
+    expect(tb.t.writes[tanuki]).toEqual({ tileId: mine.id, word: mine.kana, en: mine.en });
+    // Tapping still works.
+    expect(tb.play(tanuki, { kind: 'write', tileId: hand![1] }).error).toBeUndefined();
+  });
+
+  it('a Kids room outside the Green Car keeps its tiles-only tanuki and no saying', () => {
+    const tb = new Table(4, ['n4', 'n5', 'n5', 'n5']);
+    tb.start('kids');
+    tb.greetAll();
+    const [tanuki] = Object.entries(tb.t.hands)[0]!;
+    expect(tb.view(tanuki).me!.sayTiles).toBeUndefined();
+    expect(tb.play(tanuki, { kind: 'write', utterance: speech('すし') }).error).toBe('tiles-only');
+  });
+
+  it('a Family room in the Green Car still types its own words', () => {
+    const tb = new Table(4, ['n3', 'n4', 'n4', 'n3']);
+    tb.start('family');
+    tb.greetAll();
+    expect(tb.view('p1').me!.sayTiles).toBeUndefined();
+    expect(tb.view('p1').me!.canType).toBe(true);
+  });
 });

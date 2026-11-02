@@ -155,7 +155,7 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
     { class: 'screen' },
     h('p', { class: 'big' }, copy.title),
     h('p', { class: 'hint' }, copy.sub),
-    card ? h('p', { class: 'hj-cardname' }, h('span', { lang: 'ja' }, card.title.text), ` · ${card.title.en}`) : null,
+    card ? h('p', { class: 'hj-cardname' }, h('span', { lang: 'ja' }, card.title.text), ` · ${card.title.en}`, card.level === 'n3' ? h('small', { class: 'hj-n3' }, ' N3') : null) : null,
     h('p', { class: 'hj-frame-p', lang: 'ja' }, before ?? '', h('span', { class: `hj-blank-p${word ? ' on' : ''}` }, word ?? '＿＿'), after ?? ''),
     !n4Up(me.level) && card ? h('p', { class: 'hint' }, role === 'guest' ? card.en : card.enThird) : null,
     me.level === 'kana' && frame ? h('p', { class: 'hj-romaji' }, toRomaji(fillFrame(frame, word ?? '＿', game.guestName))) : null,
@@ -189,8 +189,23 @@ function writeScreen(ctx: Ctx, me: Me): HTMLElement {
           ),
         )
       : null,
+    // A Kids room in the Green Car: say the line instead of tapping (only a line that names a tile counts).
+    me.sayTiles
+      ? h(
+          'div',
+          { class: 'hj-say-tiles' },
+          speakBox({
+            label: 'Hold and whisper your line',
+            placeholder: 'Or type it',
+            autoSend: true,
+            draftKey: `hj-say-${game.turn}`,
+            onSend: (utterance) => write({ kind: 'write', utterance }),
+          }),
+          h('p', { class: 'hint' }, 'Say the whole line with one of your tiles. Only a tile counts.'),
+        )
+      : null,
     word ? h('p', { class: 'hj-ok' }, `✓ Your card: `, h('strong', { lang: 'ja' }, word), '. You can still change it.') : null,
-    h('p', { class: 'hint' }, '🤫 Don’t say it out loud!'),
+    h('p', { class: 'hint' }, me.sayTiles ? '🤫 Whisper it to your phone: don’t let the room hear!' : '🤫 Don’t say it out loud!'),
   );
 }
 
