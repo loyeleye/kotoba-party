@@ -748,6 +748,8 @@ function hintBox(ctx: Ctx, me: HotlineMe, send: Send): HTMLElement | null {
     hintStep >= 1 && m.frame ? h('div', { class: 'gh-frame' }, h('p', { class: 'gh-label' }, 'Fill the gap:'), jpView(m.frame, me.level, { cls: 'gh-model' })) : null,
     hintStep === 1 ? h('button', { type: 'button', class: 'ghost', onclick: open(2) }, 'Still stuck? See Nobiko-san’s way') : null,
     hintStep >= 2 ? h('div', {}, h('p', { class: 'gh-label' }, 'Nobiko-san’s way:'), jpView(m.model, me.level, { cls: 'gh-model' })) : null,
+    // Green Car, an N4 adviser: the N3 advice as optional stretch.
+    hintStep >= 2 && me.stretch ? h('div', {}, h('p', { class: 'gh-label' }, h('span', { class: 'gh-n3' }, me.stretch.tag), ' Stretch, if you like:'), jpView(me.stretch.model, me.level, { cls: 'gh-model' })) : null,
   );
 }
 
@@ -940,6 +942,7 @@ function speakerPlanScreen(ctx: Ctx, me: HotlineMe, send: Send): HTMLElement {
     reconnectCard(),
     record ? null : gistCard(ctx, me, true),
     me.mission && !typingNow ? h('div', { class: 'gh-mission' }, h('p', { class: 'gh-mission-label' }, 'Your mission'), h('p', { class: 'gh-mission-text' }, me.mission.text)) : null,
+    me.stretch && !typingNow ? h('p', { class: 'gh-hint' }, h('span', { class: 'gh-n3' }, me.stretch.tag), ' Stretch, if you like: ', me.stretch.mission) : null,
     live || pending ? null : hintBox(ctx, me, send),
     micOff() && record && !typingNow ? micOffCard() : null,
     // The typed box and any problem live in the dock, so the sticky dock never covers them.

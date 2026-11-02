@@ -6,11 +6,12 @@ import { describe, expect, it, onTestFinished } from 'vitest';
 import { ManualClock } from '../server/src/clock.js';
 import { Room, wavDurationMs } from '../server/src/room.js';
 import { soundMorae } from '../shared/src/modes/karaokeDuel/scoring.js';
-import { ACT_POINTS, adlibCheck, adlibSimilarity, adlibTally, BOOTH_LINE_AT_MS, casualChunk, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, missionWord, saidDirection, STANDIN_AT_MS, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
+import { ACT_POINTS, adlibCheck, adlibSimilarity, adlibTally, aimEpisode, gcCheck, BOOTH_LINE_AT_MS, casualChunk, EPISODE_POINTS, GUESS_POINTS, HEART_POINTS, missionWord, saidDirection, STANDIN_AT_MS, wordMarks, wordsSimilarity, type DubState, type DubView } from '../shared/src/modes/dubClub/dubClub.js';
 import { withExperiments } from '../shared/src/modes/experiments.js';
 import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
 import type { HostCue } from '../shared/src/modes/mode.js';
-import { DIRECTIONS, EPISODES, directionOf, directionsFor, episodesFor, sceneAdlib, takeLimitMs } from '../shared/src/modes/dubClub/scenes.js';
+import { DIRECTIONS, EPISODES, GREEN_CAR_EPISODES, directionOf, directionsFor, episodeOf, episodesFor, sceneAdlib, sceneGc, takeLimitMs } from '../shared/src/modes/dubClub/scenes.js';
+import { FRAME_BY_ID, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
 import type { JoinResponse } from '../shared/src/protocol.js';
 import { content } from './helpers.js';
 
@@ -814,5 +815,131 @@ describe('Dub Club: mixed rooms', () => {
     expect(t.play(t.seats[0]!, { kind: 'gallery', pick: 'sugoi' })).toMatchObject({ ok: false });
     t.until(() => t.room.state.phase === 'score');
     expect(t.cues.some((c) => ['dub_standin', 'dub_cut', 'dub_booth'].includes(c.event))).toBe(false);
+  });
+});
+
+// ---- the Green Car (design: project files n3-coverage/green-car/design.md) ----
+
+describe('Dub Club: the Green Car', () => {
+  const N3_SPEAK = ['ppoi', 'nante', 'te-shouganai', 'suffering-passive', 'saserareru', 'ppanashi', 'darake'];
+  const gcAds = (e: (typeof GREEN_CAR_EPISODES)[number]) => e.scenes.flatMap((sc) => [sc.gc, sc.cheekyGc].filter((x) => !!x).flatMap((g) => [g!.n4, g!.n3]));
+
+  function gcRoom(levels: ('n4' | 'n3')[], audience?: 'kids' | 'family' | 'cheeky') {
+    const t = setup(0);
+    if (audience) t.room.state.audience = audience;
+    const seats = levels.map((level, i) => t.room.join({ name: `P${i + 1}`, level }) as JoinResponse);
+    for (const s of seats) t.room.attach(s.token, { send: () => {}, close: () => {} });
+    t.cmd(t.stage, { type: 'start', mode: 'dub-club' });
+    return { ...t, seats };
+  }
+
+  it('Green Car episodes have art, three scenes, and an N4 and an N3 ad-lib per scene whose frames the matchers find', () => {
+    expect(GREEN_CAR_EPISODES.length).toBeGreaterThanOrEqual(6);
+    for (const ep of GREEN_CAR_EPISODES) {
+      expect(ep.greenCar, ep.id).toBe(true);
+      expect(ep.scenes.length, ep.id).toBe(3);
+      for (const sc of ep.scenes) {
+        expect(sc.gc, sc.id).toBeTruthy();
+        expect(existsSync(`stage/assets/dub/bg-${sc.bg}.png`), sc.bg).toBe(true);
+        if (sc.char !== 'pon') expect(existsSync(`stage/assets/dub/char-${sc.char}-talk.png`), sc.char).toBe(true);
+        for (const g of [sc.gc!, sc.cheekyGc].filter((x) => !!x)) {
+          for (const lv of ['n4', 'n3'] as const) {
+            const a = g![lv];
+            expect(a.status, sc.id).toBe('draft');
+            expect(a.frames.length, `${sc.id} ${lv}`).toBeGreaterThan(0);
+            for (const f of a.frames) {
+              expect(FRAME_BY_ID[f as FrameId]?.level, `${sc.id} ${lv} ${f}`).toBe(lv);
+              expect(framesOf(a.model, undefined, { keepHidden: true }), `${sc.id} ${lv} ${f}`).toContain(f);
+            }
+            // The model line passes its own check: its frame (or casual speech) and a mission word.
+            const c = gcCheck({ via: 'speech', text: a.model.kana, reading: a.model.kana }, a, lv, null);
+            expect(c, `${sc.id} ${lv}`).toMatchObject({ target: true, key: true });
+          }
+        }
+      }
+    }
+  });
+
+  it('every audience’s Green Car pool reaches every N3 frame the game teaches, and Kids stay kid-friendly', () => {
+    for (const a of ['kids', 'family', 'cheeky'] as const) {
+      const pool = episodesFor(a, true);
+      expect(pool.length, a).toBeGreaterThanOrEqual(3);
+      expect(pool.every((e) => e.greenCar), a).toBe(true);
+      expect(episodesFor(a).some((e) => e.greenCar), a).toBe(false);
+      const frames = new Set(pool.flatMap((e) => e.scenes.map((sc) => (a === 'cheeky' && sc.cheekyGc) || sc.gc!).flatMap((g) => g.n3.frames)));
+      for (const f of N3_SPEAK) expect(frames.has(f), `${a} ${f}`).toBe(true);
+    }
+    for (const e of episodesFor('kids', true)) for (const x of gcAds(e)) expect(x.model.kana, e.id).not.toMatch(/でーと|のみかい|おさけ|びーる|おかね|ぶちょう|けっこん/);
+  });
+
+  it('rides in the Green Car when everyone is N4+: every actor ad-libs, with no offer, and nothing goes in the offer log', () => {
+    const t = gcRoom(['n3', 'n4', 'n4']);
+    expect(t.st().greenCar).toBe(true);
+    expect(episodeOf(t.st().episodeId)?.greenCar).toBe(true);
+    t.skipPhase();
+    for (const s of t.seats) {
+      const me = t.view(s).me!;
+      expect(me.line).toBeNull();
+      expect(me.adlib).toMatchObject({ state: 'accepted', model: null });
+      expect(t.play(s, { kind: 'adlib', accept: false })).toMatchObject({ ok: false });
+    }
+    expect(t.view().cast.every((c) => c.adlib)).toBe(true);
+    expect(adlibTally(t.st())).toMatchObject({ offered: 0, accepted: 0 });
+    // A mixed room keeps its own episodes.
+    const mixed = setupLevels(['n5', 'n4', 'kana']);
+    mixed.cmd(mixed.stage, { type: 'start', mode: 'dub-club' });
+    expect(mixed.st().greenCar).toBeFalsy();
+    expect(episodeOf(mixed.st().episodeId)?.greenCar).toBeFalsy();
+  });
+
+  it('an N3 seat takes N3 and N4 ad-libs in turn; an N4 seat gets N4 with the N3 ad-lib as stretch; both count from memory', () => {
+    const t = gcRoom(['n3', 'n4', 'n4']);
+    const [n3, n4] = t.seats as [JoinResponse, JoinResponse, JoinResponse];
+    const levels: string[] = [];
+    for (let i = 0; i < 600 && t.room.state.phase !== 'finale' && t.room.state.phase !== 'recap'; i++) {
+      if (t.room.state.phase === 'answer') {
+        const r = t.st().rounds[t.st().round - 1]!;
+        const sc = episodeOf(t.st().episodeId)!.scenes[r.index - 1]!;
+        const g = sceneGc(sc, t.st().audience)!;
+        for (const s of t.seats) {
+          const me = t.view(s).me!;
+          if (me.sent) continue;
+          const a = r.actors.find((x) => x.playerId === s.playerId)!;
+          if (s === n3) levels[r.index - 1] = a.gcLevel!;
+          if (s === n4) {
+            expect(a.gcLevel).toBe('n4');
+            expect(me.adlib!.greenCar).toMatchObject({ level: 'n4', frame: null, stretch: { tag: 'N3' } });
+          }
+          // The N3 seat says its turn's model; the N4 seat goes for the stretch.
+          const say = s === n4 ? g.n3.model.kana : g[a.gcLevel!].model.kana;
+          t.play(s, { kind: 'rehearse', utterance: { via: 'speech', text: say, reading: say } });
+          expect(t.view(s).me!.rehearsal!.similarity).toBe(1);
+          t.play(s, { kind: 'take', clipId: null, local: true, durMs: 2000, heard: null, checked: true });
+        }
+      }
+      t.clock.advance(1_000);
+    }
+    // In turn, starting on either level (drawn per seat), so the middle scene's N3 line reaches N3 seats too.
+    expect([['n3', 'n4', 'n3'], ['n4', 'n3', 'n4']]).toContainEqual(levels);
+    const gc = (s: JoinResponse) => (t.room.state.phrasebook[s.playerId] ?? []).filter((e) => e.itemId.includes(':gc:'));
+    expect(gc(n3).length).toBe(3);
+    expect(gc(n3).every((e) => e.recall === 'memory' && e.outcome === 'said')).toBe(true);
+    expect(gc(n3).filter((e) => e.itemId.includes(':gc:n3:')).length).toBe(levels.filter((l) => l === 'n3').length);
+    // The N4 seat's stretch is logged as the N3 line, counted for its N3 frame.
+    expect(gc(n4).length).toBe(3);
+    expect(gc(n4).every((e) => e.itemId.includes(':gc:n3:') && e.recall === 'memory')).toBe(true);
+    expect(gc(n4).every((e) => e.frames!.some((f) => N3_SPEAK.includes(f)))).toBe(true);
+  });
+
+  it('aims the episode at the frames the room needs most tonight', () => {
+    const pool = episodesFor('cheeky', true);
+    const players = [{ id: "p1", level: "n3" as const }];
+    const ctx = {
+      random: () => 0.5,
+      players: () => players,
+      // Only ＿だらけ is needed: every other frame was said a lot tonight. The year-end party is the Cheeky pool's ＿だらけ.
+      frameNeed: (_id: string, frames: readonly string[]) => frames.filter((f) => f === 'darake').length * 10 + frames.length * 0.01,
+    } as unknown as Parameters<typeof aimEpisode>[2];
+    expect(aimEpisode(pool, 'cheeky', ctx)?.id).toBe('gc-bounenkai');
   });
 });

@@ -129,6 +129,43 @@ scene, all draft, each tagged with its frames (`plain`, `n-da`, `teru`, `te-shim
 〜ちゃった lines, since ちゃう is 〜て しまう said casually, and `potential` for two). The check reports
 〜ちゃう／〜ちゃった as `te-shimau` and the other contractions as `teru`.
 
+## Green Car
+
+When every player is N4 or N3 the room may ride in the Green Car (`ctx.greenCar`, `shared/src/greenCar.ts`; design:
+the project's `n3-coverage/green-car/design.md`). Nothing moved out of mixed rooms: the ad-lib only changes the N4
+player's own phone, so mixed rooms play exactly as above. In the Green Car:
+
+- **Green Car episodes only** (`GREEN_CAR_EPISODES`, never dealt in a mixed room). Every scene has two ad-libs
+  (`Scene.gc`): an N4 one in casual speech (plain form + よ/ね/の, 〜んだ, 〜てる/〜ちゃった, with ＿じゃん heard here and
+  there) and an N3 one in casual nuance or "what happened to me" (＿っぽい, ＿なんて, ＿て しょうがない, the suffering
+  passive, ＿させられる, ＿っぱなし, ＿だらけ). Each is draft and names its frames.
+- **Every actor ad-libs every scene, with no offer card**: hard roles stop rotating, the `adlib` move is refused,
+  `offers()` is empty and `adlibTally` counts nothing, so Green Car turns stay out of the offer log. Direction cards,
+  the screening, hearts and the episode are unchanged. The table read is a short cue line (`lines`), never the answer.
+- **Levels.** An N3 seat takes an N3 ad-lib and an N4 one in turn (`Actor.gcLevel`), starting on a level drawn per
+  seat (N3, N4, N3 or N4, N3, N4), so about half each and the middle scene's N3 line reaches N3 seats too;
+  its phone shows the frame to aim for (🎯 Use ＿っぽい). An N4 seat gets the N4 ad-lib, with the scene's N3 ad-lib
+  shown as **N3 stretch**: if its frame comes through in their plain read, the N3 line is what counts.
+- **The check** (`gcCheck`): the usual lenient casual check, plus whether the turn's own frame came through (an N3
+  turn: one of its N3 frames, by the path's matchers on the plain read; an N4 turn: casual speech), and the
+  stretch's. Frame and mission word score as a full read (50), one of them as close, neither as tried.
+- **From memory.** Nobody reads a script in the Green Car, so every take is said from memory. It is logged as the
+  model line of the level used (`dub:<scene>:gc:<level>:<frames>`) and counts only for the model's frames heard in
+  the plain read (`framesHeard`), as the mixed-room ad-lib does.
+- **Aim the deal.** The game's one pick is the episode, at setup (`aimEpisode`): each seat's need per frame for the
+  frames the episode would give it (`aimWeight` over `ctx.frameNeed`, divided by the count; an N3 seat counts both
+  levels, an N4 seat the N4 ad-libs), summed over the seats. Since `ctx.frameNeed` only knows tonight, the neediest
+  episode would win every fresh night, so the pick is a draw with each episode's chance going with need⁴
+  (`AIM_POWER`): mostly the needy ones, the rest now and then. The game deals nothing else, so it keeps no counts.
+- **Kids, Family and Cheeky.** Seven episodes: all ages, the school's seven mysteries (Pon in a sheet); Kids, the pet
+  detective and sports day (siblings, a muddy cat, a relay); Family, the share house mystery (the house ghost won't
+  wash up), the first camping trip and Under the Cherry Tree's Green Car cut, whose Cheeky twist (`cheekyGc`) is the
+  arranged marriage told with ＿させられる; Cheeky, the year-end party. Each audience's pool reaches all seven N3
+  frames (tested); Kids lines have no dating, drinking, money or work.
+- **Bots** (`tools/bots/policies/dubClub.ts`) say their turn's model line in the Green Car, an N4 bot going for the
+  N3 stretch 30% of the time (`stretchChance`), so the sims can measure the lines.
+- The phone shows the frame and the stretch in the mission box; the TV tags every dub アドリブ.
+
 ## Content
 
 `shared/src/modes/dubClub/scenes.ts`: nine episodes of three scenes (setup, build, twist), each line at

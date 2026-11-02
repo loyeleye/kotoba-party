@@ -810,6 +810,43 @@ export const NAKODO: { status: ReviewStatus; open: Record<'intro' | 'profile' | 
   },
 };
 
+/**
+ * The Green Car's N3 go-between lines (goal 3.8), two forms for each of the N4 lines' places: ＿させて いただきます
+ * ([0]) and ＿で ございます ([1]). Dealt only in the Green Car (omiai.ts goLines): an N3 go-between says them about
+ * half the rounds, an N4 one sees them as an optional stretch. Draft.
+ */
+export const NAKODO_N3: { status: ReviewStatus; open: Record<'intro' | 'profile' | 'ask' | 'appeal', [NakodoTemplate, NakodoTemplate]>; close: Record<'next' | 'leave', [NakodoTemplate, NakodoTemplate]> } = {
+  status: 'draft',
+  open: {
+    intro: [
+      { id: 'intro-sasete', kana: 'みなさま、{full}を ごしょうかい させて いただきます。', en: 'Everyone, allow me to introduce {full}.', frames: ['sasete-itadaku'], key: 'させて いただきます', gist: '{full}を しょうかいします。' },
+      { id: 'intro-gozaimasu', kana: 'みなさま、{full}の ごとうちゃくで ございます。', en: 'Everyone, {full} has arrived.', frames: ['de-gozaimasu'], key: 'で ございます', gist: '{full}が きました。' },
+    ],
+    profile: [
+      { id: 'profile-sasete', kana: '{job}の {short}を ごしょうかい させて いただきます。', en: 'Allow me to introduce {short}, {job}.', frames: ['sasete-itadaku'], key: 'させて いただきます', gist: 'この ひとは {job}の {short}です。' },
+      { id: 'profile-gozaimasu', kana: '{short}の おしごとは、{job}で ございます。', en: '{short} is {job} by trade.', frames: ['de-gozaimasu'], key: 'で ございます', gist: '{short}の しごとは {job}です。' },
+    ],
+    ask: [
+      { id: 'ask-sasete', kana: 'ここで、{short}からの しつもんと させて いただきます。', en: 'Now, if I may, a question from {short}.', frames: ['sasete-itadaku'], key: 'させて いただきます', gist: '{short}が しつもんします。' },
+      { id: 'ask-gozaimasu', kana: 'つづいては、{short}からの ごしつもんで ございます。', en: 'Next, a question from {short}.', frames: ['de-gozaimasu'], key: 'で ございます', gist: '{short}が しつもんします。' },
+    ],
+    appeal: [
+      { id: 'appeal-sasete', kana: 'これで、{short}からの さいごの しつもんと させて いただきます。', en: 'This will be {short}’s last question.', frames: ['sasete-itadaku'], key: 'させて いただきます', gist: '{short}の さいごの しつもんです。' },
+      { id: 'appeal-gozaimasu', kana: 'つぎが、{short}からの さいごの ごしつもんで ございます。', en: 'Next is {short}’s last question.', frames: ['de-gozaimasu'], key: 'で ございます', gist: '{short}の さいごの しつもんです。' },
+    ],
+  },
+  close: {
+    next: [
+      { id: 'next-sasete', kana: '{short}、ありがとう ございました。つぎの しつもんを ごしょうかい させて いただきます。', en: 'Thank you, {short}. Allow me to introduce the next question.', frames: ['sasete-itadaku'], key: 'させて いただきます', gist: 'ありがとう ございました。つぎの しつもんです。' },
+      { id: 'next-gozaimasu', kana: '{short}、ありがとう ございました。つづいての しつもんで ございます。', en: 'Thank you, {short}. Here is the next question.', frames: ['de-gozaimasu'], key: 'で ございます', gist: 'ありがとう ございました。つぎの しつもんです。' },
+    ],
+    leave: [
+      { id: 'leave-sasete', kana: 'ほんじつは、これで おひらきと させて いただきます。', en: 'We’ll bring today’s meeting to a close here.', frames: ['sasete-itadaku'], key: 'させて いただきます', gist: 'きょうは これで おわりです。' },
+      { id: 'leave-gozaimasu', kana: '{short}の おかえりの おじかんで ございます。', en: 'It’s time for {short} to leave.', frames: ['de-gozaimasu'], key: 'で ございます', gist: '{short}は もうすぐ かえります。' },
+    ],
+  },
+};
+
 /** Every go-between line's keigo word: the curveball's right answer is one, the other two come from here. */
 export const NAKODO_KEYS: readonly string[] = [...Object.values(NAKODO.open), ...Object.values(NAKODO.close)].map((t) => t.key);
 
@@ -849,4 +886,12 @@ export function nakodoLines(card: CharacterCard, round: number, total: number): 
   const o = NAKODO.open;
   const open = round <= 1 ? o.intro : round >= total ? o.appeal : round === 2 ? o.profile : o.ask;
   return { open: fill(open, card), close: fill(round >= total ? NAKODO.close.leave : NAKODO.close.next, card) };
+}
+
+/** The Green Car's N3 lines for the same places as nakodoLines: [させて いただきます, で ございます] for each. */
+export function nakodoN3Lines(card: CharacterCard, round: number, total: number): { open: [NakodoLine, NakodoLine]; close: [NakodoLine, NakodoLine] } {
+  const o = NAKODO_N3.open;
+  const open = round <= 1 ? o.intro : round >= total ? o.appeal : round === 2 ? o.profile : o.ask;
+  const close = round >= total ? NAKODO_N3.close.leave : NAKODO_N3.close.next;
+  return { open: [fill(open[0], card), fill(open[1], card)], close: [fill(close[0], card), fill(close[1], card)] };
 }

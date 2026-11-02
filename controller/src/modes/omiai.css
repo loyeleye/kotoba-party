@@ -71,3 +71,5 @@
 .omi-nakodo { background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
 .omi-nakodo p { margin: 0; }
 .omi-nakodo-line { font-size: 20px; font-weight: 800; }
+.omi-n3 { display: inline-block; padding: 1px 8px; border-radius: 999px; border: 1px solid #7fd1a8; color: #7fd1a8; font-size: 13px; font-weight: 700; }
+.omi-stretch summary { cursor: pointer; font-weight: 700; }

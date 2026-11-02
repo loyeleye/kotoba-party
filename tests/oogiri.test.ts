@@ -11,7 +11,9 @@ import { buildAnswer, fillBlank } from '../shared/src/modes/oogiri/answer.js';
 import { dealTiles, libraryFor, ownPrompt, suits } from '../shared/src/modes/oogiri/deal.js';
 import { FALLBACK_PACK, FALLBACK_PROMPTS } from '../shared/src/modes/oogiri/fallback.js';
 import { exampleFill, naturalSentence, wantsAdjective } from '../shared/src/modes/oogiri/natural.js';
-import { pairings, revealWaitMs, SAY_FIRST_MS, tileSlots, type OogiriState, type OogiriView } from '../shared/src/modes/oogiri/oogiri.js';
+import { drawGreenCar, greenCarLevel, pairings, revealWaitMs, SAY_FIRST_MS, tileSlots, type OogiriState, type OogiriView } from '../shared/src/modes/oogiri/oogiri.js';
+import { greenCarPrompts } from '../content/src/oogiri/greenCar.js';
+import { FRAME_BY_ID, framesOf, type FrameId } from '../shared/src/japanese/frames.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -624,5 +626,153 @@ describe('the natural version', () => {
     }
     // A bridge must always give a sentence (it is only there for nouns).
     for (const p of realContent.oogiriPrompts.filter((x) => x.nounBridge)) expect(naturalSentence(p, octopus), p.id).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The Green Car (design: project files n3-coverage/green-car/design.md)
+
+describe('the Green Car', () => {
+  const FRAMES = ['tara', 'ba', 'you-ni-naru', 'koto-ni-suru', 'ni-shite-wa', 'kuse-ni', 'wari-ni', 'to-shitara', 'ppoi', 'nante'];
+  const words = new Map(realContent.packs.flatMap((p) => p.words).map((w) => [w.id, w]));
+
+  it('every Green Car prompt is a draft whose blank sits in its frame: filled with any fit tile, the matchers find it', () => {
+    expect(new Set(greenCarPrompts.map((p) => p.id)).size).toBe(greenCarPrompts.length);
+    for (const p of greenCarPrompts) {
+      expect(p, p.id).toMatchObject({ greenCar: true, status: 'draft' });
+      expect(realContent.oogiriPrompts.some((x) => x.id === p.id), p.id).toBe(false);
+      expect(p.versions.kana ?? p.versions.n5, p.id).toBeUndefined();
+      const f = p.frames![0]! as FrameId;
+      expect(FRAME_BY_ID[f].level, p.id).toBe(p.level);
+      const v = p.versions.n4!;
+      expect(v.kana, p.id).toContain('＿＿＿');
+      for (const id of [...p.fitTileIds, ...p.swerveTileIds]) expect(words.has(id), `${p.id} ${id}`).toBe(true);
+      expect(framesOf(p.exampleAnswer, undefined, { keepHidden: true }), p.id).toContain(f);
+      for (const id of p.fitTileIds) {
+        const filled = fillBlank(v.kana, words.get(id)!.jp.kana);
+        expect(framesOf({ text: filled, kana: filled }, undefined, { keepHidden: true }), `${p.id} ${id}`).toContain(f);
+      }
+    }
+  });
+
+  it('every audience reaches every frame; Kids stay kid-friendly; ＿くせに only targets yōkai or Pon', () => {
+    for (const a of ['kids', 'family', 'cheeky'] as const) {
+      const pool = libraryFor(realContent, 'food', a, true).prompts['head-to-head'];
+      expect(pool.every((p) => p.greenCar), a).toBe(true);
+      const frames = new Set(pool.flatMap((p) => p.frames!));
+      for (const f of FRAMES) expect(frames.has(f), `${a} ${f}`).toBe(true);
+      // Never in a mixed room.
+      expect(libraryFor(realContent, 'food', a).prompts['head-to-head'].some((p) => p.greenCar), a).toBe(false);
+    }
+    for (const p of libraryFor(realContent, 'food', 'kids', true).prompts['head-to-head']) {
+      expect(p.audiences ?? ['kids'], p.id).toContain('kids');
+      expect(p.versions.n4!.kana, p.id).not.toMatch(/でーと|のみかい|おさけ|びーる|ぼーなす|おかね|ぶちょう|しごと|かいしゃ/);
+    }
+    for (const p of greenCarPrompts.filter((x) => x.frames!.includes('kuse-ni'))) expect(p.versions.n4!.kana, p.id).toMatch(/(おばけ|ポン|かっぱ|たぬき)/);
+    // The Kids and Cheeky prompts the design names.
+    expect(greenCarPrompts.some((p) => p.audiences?.[0] === 'kids' && p.versions.n4!.kana.startsWith('ねこに しては'))).toBe(true);
+    expect(greenCarPrompts.some((p) => p.audiences?.[0] === 'cheeky' && p.versions.n4!.kana.startsWith('デートの わりに'))).toBe(true);
+    expect(greenCarPrompts.some((p) => p.audiences?.[0] === 'cheeky' && /のみかいだ?と したら/.test(p.versions.n4!.kana))).toBe(true);
+  });
+
+  it('rides in the Green Car when everyone is N4+: frame prompts every round, N3 and N4 in turn, an N4 sees N3 as a stretch', () => {
+    const h = harness(['n3', 'n4', 'n3', 'n4'], realContent);
+    h.start();
+    h.until('answer');
+    expect(h.os().greenCar).toBe(true);
+    const levelOf = (id: string) => h.s.players.find((p) => p.id === id)!.level;
+    for (let round = 1; round <= 3; round++) {
+      if (round > 1) {
+        for (let i = 0; i < 400 && h.os().round < round; i++) {
+          if (h.s.phase === 'answer') answerAll(h);
+          else h.timeout();
+        }
+        h.until('answer');
+      }
+      for (const m of h.os().matchups) {
+        expect(m.prompt.greenCar, m.prompt.id).toBe(true);
+        if (round < 3 && !m.authors.some((a) => levelOf(a) === 'n3')) expect(m.prompt.level).toBe('n4');
+      }
+      for (const id of h.players()) {
+        const slot = h.game(id).me!.slot!;
+        const pm = h.os().matchups[h.os().slots[id]![slot.index]!.matchup]!;
+        expect(slot.prompt.greenCar, id).toMatchObject({ level: pm.prompt.level === 'n3' ? 'N3' : 'N4', stretch: pm.prompt.level === 'n3' && levelOf(id) === 'n4' });
+        expect(slot.frames).toEqual([]);
+      }
+      // Head to Head: each N3 player answers one N3 and one N4 prompt.
+      if (round === 1) {
+        for (const id of h.players().filter((x) => levelOf(x) === 'n3')) {
+          const lv = h.os().slots[id]!.map((sl) => h.os().matchups[sl.matchup]!.prompt.level).sort();
+          expect(lv, id).toEqual(['n3', 'n4']);
+        }
+      }
+    }
+    // A mixed room keeps the usual prompts.
+    const mixed = harness(['n5', 'n4', 'n4'], realContent);
+    mixed.start();
+    mixed.until('answer');
+    expect(mixed.os().greenCar).toBeFalsy();
+    expect(mixed.os().matchups.some((m) => m.prompt.greenCar)).toBe(false);
+  });
+
+  it('the encore is the whole line, said with only the frame on screen; it counts from memory for the frames heard', () => {
+    const h = harness(['n3', 'n3', 'n3', 'n4', 'n4'], realContent);
+    h.start();
+    h.until('answer');
+    answerAll(h, 'ねこ');
+    expect(h.s.phase).toBe('reveal');
+    const m = h.os().matchups[h.os().current]!;
+    const fullCard = h.game().matchup!.prompt;
+    expect(fullCard.text).toContain('＿＿＿');
+    const target = h.game().matchup!.answers[0]!;
+    const author = h.os().answers.find((a) => a.id === target.id)!.authorId;
+    for (const v of h.players().filter((p) => !m.authors.includes(p))) h.play(v, { kind: 'vote', answerId: target.id });
+    expect(h.s.phase).toBe('encore');
+    const encoreCard = h.game().matchup!.prompt;
+    const frame = FRAME_BY_ID[m.prompt.frames![0] as FrameId];
+    expect(encoreCard.text).toBe(frame.ja);
+    expect(encoreCard.en).toBe(fullCard.en);
+    expect(JSON.stringify(h.game(author).matchup!.prompt)).not.toContain(m.prompt.versions.n4!.kana);
+    const mine = h.os().answers.find((a) => a.id === target.id)!;
+    expect(h.play(author, { kind: 'encore', said: { via: 'speech', text: mine.sentence.kana } }).changed).toBe(true);
+    const e = h.s.phrasebook[author]!.find((x) => x.itemId === `oogiri:${m.prompt.id}:line`)!;
+    expect(e).toMatchObject({ outcome: 'said', recall: 'memory', text: mine.sentence.text });
+    expect(e.frames).toContain(frame.id);
+    expect(h.os().saidFrames![author]![frame.id]).toBe(1);
+    // Just the blank, or typed, counts for no frame.
+    const other = m.authors.find((a) => a !== author)!;
+    const theirs = h.os().answers.find((a) => a.matchup === m.index && a.authorId === other)!;
+    h.play(other, { kind: 'encore', said: { via: 'speech', text: theirs.text } });
+    expect(h.s.phrasebook[other]!.find((x) => x.itemId === `oogiri:${m.prompt.id}:line`)!.frames).toEqual([]);
+  });
+
+  it('aims the next prompt at the frames its authors need, at the matchup level', () => {
+    // A stub room that needs ＿と したら most: N3 draws take the ＿と したら prompts first, then the rest.
+    const l = libraryFor(realContent, 'family', 'family', true);
+    const toShitara = l.prompts['head-to-head'].filter((p) => p.frames!.includes('to-shitara')).length;
+    expect(toShitara).toBeGreaterThanOrEqual(2);
+    const s = { decks: { 'head-to-head': [], 'photo-caption': [], ippon: [] }, saidFrames: {} } as unknown as OogiriState;
+    let r = 1;
+    const ctx = { random: () => ((r = (r * 16807) % 2147483647) / 2147483647), frameNeed: (_id: string, f: readonly string[]) => (f.includes('to-shitara') ? 4 : 1) };
+    const avoid = new Set<string>();
+    const drawn = Array.from({ length: toShitara + 1 }, () => {
+      const p = drawGreenCar(s, ctx as never, l, ['p1', 'p2'], 'n3', avoid);
+      avoid.add(p.id);
+      return p;
+    });
+    for (const p of drawn) expect(p.level).toBe('n3');
+    expect(drawn.slice(0, toShitara).every((p) => p.frames!.includes('to-shitara'))).toBe(true);
+    expect(drawn[toShitara]!.frames).not.toContain('to-shitara');
+    expect(greenCarLevel(0, ['n4', 'n4'], false, true)).toBe('n4');
+    expect(greenCarLevel(0, ['n4', 'n4'], true, true)).toBe('n3');
+    expect([greenCarLevel(0, ['n3'], false, true), greenCarLevel(1, ['n3'], false, true)].sort()).toEqual(['n3', 'n4']);
+  });
+
+  it('the natural version stands for every Green Car prompt', () => {
+    for (const p of greenCarPrompts) {
+      const fill = exampleFill(p);
+      if (fill === null || wantsAdjective(p.pattern)) continue;
+      expect(naturalSentence(p, { text: fill, kana: fill, en: 'x', shape: 'free' }), p.id).not.toBeNull();
+    }
   });
 });

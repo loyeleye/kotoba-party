@@ -14,7 +14,7 @@ Code: `shared/src/modes/wordGauntlet/` (rules, kana rules, romaji, word lists),
 | --- | --- | --- |
 | 1. Fake Kanji (×2 words) | prompt → answer → reveal → score | A real, obscure word (kanji + reading) is shown. Everyone writes a fake English meaning in private. At the reveal, the fakes and the real meaning are listed anonymously and everyone picks the one they think is real (not their own). Score: who wrote what, who picked what, then the real word becomes the **golden word**: the room says it together, and each phone can say it for a small bonus. It goes in everyone's phrasebook. |
 | 2. Lost in Translation | prompt → answer × N → reveal → score | An N5 phrase from the night's topic pack passes around in a seat rotation starting at a random player: step 1 turns it into English, step 2 back into Japanese (spoken, typed fallback), and so on. Each step is its own `answer` phase and the phone shows only the step before. The reveal shows the drift one step at a time; everyone votes for a favourite step (not their own). Double points. |
-| 2b. Rumour Relay (うわさの でんごん), in place of round 2 when anyone in the room plays at N4 | prompt → answer × N → reveal → score | Nobiko-san whispers a rumour about a studio yōkai to the first phone. Each relayer hears the previous relay in Nobiko-san's voice, passes it on, and adds one fin (うわさに おひれが つく). The reveal reads the whole relay in her voice; everyone votes for the juiciest relay; then she tells what really happened. Double points. See below. |
+| 2b. Rumour Relay (うわさの でんごん), in place of round 2 in the Green Car | prompt → answer × N → reveal → score | Nobiko-san whispers a rumour about a studio yōkai to the first phone. Each relayer hears the previous relay in Nobiko-san's voice, passes it on, and adds one fin (うわさに おひれが つく). The reveal reads the whole relay in her voice; everyone votes for the juiciest relay; then she tells what really happened. Double points. See below. |
 | 3. Shiritori Showdown | prompt → (answer ↔ reveal)… → score | A spoken word chain that starts with Pon's しりとり. Each turn is its own `answer` phase, so the room's phase clock is the turn clock. A word nobody can vouch for opens a short `reveal` phase where judges vote. The last player standing takes the crown. |
 
 ### Fake Kanji scoring
@@ -33,8 +33,9 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
 (rumours, fins, frames, model lines), the rumour section of `wordGauntlet.ts`, the phone's `rumourScreen`, the TV's
 `rumour`. Tests: `tests/wordGauntletRumour.test.ts`, plus a bot game with N4 bots in `tests/wordGauntlet.test.ts`.
 
-- **When:** round 2 is the rumour round if anyone in the room plays at N4 when round 2 starts; otherwise it stays
-  Lost in Translation. Players at every level take part.
+- **When:** round 2 is the rumour round only when the game rides in the Green Car (see "Green Car" below);
+  otherwise it stays Lost in Translation. (Until Nov 2026 it took round 2 whenever anyone was N4, so the Kana and
+  N5 relays below are only reachable again if that changes.)
 - **The rumour:** who (a studio yōkai or a host), where, and what they're up to, plus who saw it (the source
   for ＿に よると and ＿と いって いました). 20 rumours for every room and 3 more for Cheeky rooms. Rumours are about
   the studio's yōkai, **never about players**: a relay or a fin that contains a player's name is refused
@@ -86,6 +87,53 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
   source (カッパに よると、＿そうです).
 - Kana relayers' fins go in as tiles (`read`). Everyone gets the opener as `seen`.
 
+### Green Car
+
+In the Green Car (everyone N4 or N3; `shared/src/greenCar.ts`, design: `n3-coverage/green-car/design.md` in the
+project files):
+
+- **Moved out of mixed rooms:** Rumour Relay. It used to replace round 2 whenever anyone was N4, which changed the
+  whole room's round for one player; mixed rooms now always play Lost in Translation. In the Green Car it is always
+  round 2 (it still needs 4 players, like the telephone).
+- **N3 fin cards:** every hand of 3 fins has one N3 frame fin, shown with an N3 tag (optional stretch for an N4
+  player): ＿らしい (`rashii`, goal 3.1) or ＿とか いってた (`toka-itteta`; the path's `toka`, 3.11). A frame fin is a
+  way of passing the rumour on, not a detail: Nobiko-san's model line uses its frame, it stays on the rumour only
+  while relays say it (＿らしい checked as hearsay, so あたらしい doesn't count), one at a time, and a stand-in for a
+  relayer who picked one passes on what was heard (no frame for free). Hint 1 with a frame fin picked is that
+  frame; otherwise the Green Car's hint rotation adds ＿とか いってた. The design's third, casual ＿って, has no N3
+  frame (the path counts sentence-final って as ＿んだって, N4), so it isn't a card.
+- **Aim the deal:** the frame fins take turns round the table from a random start, so a round hears both. A player
+  relays once a game, so there's no per-player count to aim at.
+- **Round 1, Fake Kanji, is short:** one word, not two, from `GREEN_CAR_WORDS` in `words.ts` (everyday words
+  written with N3 kanji: 独り言, 寝言, 迷子, 口癖, 居眠り, 八つ当たり, 腹時計…; Kids rooms get the 10 marked `kids`, Cheeky
+  rooms deal 飲み放題, 二次会, 酔っ払い first). Not counted toward the path: the golden word is logged `recall: 'read'`
+  as before, and 3.12 counts only Shodō and sign items.
+- **Round 3 is Sentence Shiritori (ぶんしょう しりとり)** instead of the showdown (`sentences.ts`, the
+  `sentences` segment). Pon opens with 「さあ、 ぶんしょうで しりとり！」. Each turn (45 s, its own `answer` phase) one
+  player says a sentence that **starts with the last word of the sentence before** (its last spaced chunk) **or its
+  last kana** (か = が, a final ん falls back to the kana before it), and **carries the frame on their card**, checked
+  by the path's own matchers (`framesOf`). A miss (`wrong-start`, `no-frame`) is a free retry until the time runs
+  out; a turn that runs out is skipped and the link stays. Turns go round from the trailing player: two laps for
+  four players, one lap for five or more (at most `SENTENCE_MAX_TURNS` = 8), to keep the game short.
+  - **Cards** (every one a frame some goal requires): N3 ＿たびに, ＿うちに (3.9), ＿っぽい, ＿なんて (3.11), ＿らしい
+    (3.1); N4 ＿ために, ＿ように, ＿と いって いた (4.14), ＿に ＿られた (4.13), ＿そう, ＿と おもう (4.6). Each card
+    has model lines for Kids (school, pets, yōkai, snacks), Family and Cheeky (the boss, drinks, a date), with {x}
+    where the link word goes. All draft.
+  - **Who gets what:** an N3 player alternates N3 and N4 cards (N3 first), so about half each; an N4 player gets
+    an N4 card plus an N3 **stretch** card with the N3 tag (either counts; using the N3 one credits it).
+  - **Aim the deal:** each card is the one of its level with the highest `aimWeight` (shared/src/modes/aim.ts:
+    tonight's need from `ctx.frameNeed`, divided by this game's says, kept per player in `sentences.said`),
+    pre-shuffled so ties vary.
+  - **Hint:** "Need a hint?" shows one of the card's model lines filled with a noun that can follow the chain
+    (the link word if it's a known noun). A hinted sentence is logged `recall: 'read'`.
+  - **Score:** 100 a sentence, +50 for an N3 frame, +30 spoken (the round's 30% bonus pool); then everyone votes for
+    the best sentence (not their own), 100 a vote. No crown: round 3 no longer decides the winner by itself. Award
+    ぶんしょう王 (most sentence votes).
+  - **Phrasebook:** each sentence as said (`wg.sentence.<frame>`, the player's own words, `said` when spoken), so
+    every frame in it counts through the path's matchers.
+  - **Bots** (`tools/bots/policies/wordGauntlet.ts`) say a model line of their card starting with the link word or
+    a noun on the link kana; an N4 bot takes the stretch card every other turn.
+
 ### Shiritori rules (house rules from the design doc)
 - The next word starts with the last kana of the one before. ー continues from the kana before it (コーヒー → ひ). Small kana count as full size (きしゃ → や). Dakuten and handakuten may be added or dropped (か ↔ が, は ↔ ば ↔ ぱ).
 - A word ending in ん knocks you out (it never joins the chain, so the next player carries on from the word before). No repeats (compared by sound, so こうひい and コーヒー are the same).
@@ -136,7 +184,7 @@ Host: Nobiko-san, the studio's gossip (her neck reaches everywhere). Code: `shar
 18. A 60-turn cap ends a showdown that never ends (most words, then points, wins).
 19. Fake Kanji follows the room's Audience setting: Kids deals only the 15 gentle words (no lying about your age, pockmarks or going broke), Family deals the 18-word base list, and Cheeky deals its own 8 words first (topped up from the base list). Shiritori and Telephone stay the same in every audience.
 
-20. The rumour round replaces Lost in Translation when anyone in the room plays at N4, rather than adding a fourth round: the game stays near 15 minutes and Lost in Translation is an N5 round.
+20. The rumour round replaces Lost in Translation (now only in the Green Car), rather than adding a fourth round: the game stays near 15 minutes and Lost in Translation is an N5 round.
 21. The rumour structure (who, where, what, fins) drives Nobiko-san's model lines and the "kept it" check, so Kana and N5 players can relay without parsing free speech.
 22. With No.7's terms read (2026-11-01: free while the game is non-commercial, no clause against live user text), the TV reads relays in Nobiko-san's VOICEVOX voice; phones use their own voice so a relay costs no server audio (commercial-blockers row 36).
 23. After the panel (all five seats plus humor): the rumour is rebuilt from what each relay said (fins only stay when spoken, the final rumour is the last relay passed on), the TV and the tags tell the truth about what happened, Nobiko-san reacts before the truth, and the truth lands a few seconds into the score.

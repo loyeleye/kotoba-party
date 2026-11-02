@@ -5,8 +5,8 @@
 //  2. Lost in Translation (telephone, double points): an N5 sentence passes around the room,
 //     Japanese → English → Japanese …, each player seeing only the step before theirs.
 //     The drift is revealed and everyone votes for their favourite step.
-//  2b. The rumour round (うわさの でんごんゲーム, N4 and up): in a room with an N4 player, Nobiko-san takes
-//     round 2. She whispers a rumour about a studio yōkai to one phone; it goes round the room, each
+//  2b. The rumour round (うわさの でんごんゲーム, N4 and up): in the Green Car (everyone N4+), Nobiko-san takes
+//     round 2, and every hand of fins has an N3 frame fin (＿らしい, ＿とか いってた). She whispers a rumour about a studio yōkai to one phone; it goes round the room, each
 //     relay keeping who, where and what and adding one fin (うわさに おひれが つく), said in a reported-speech
 //     frame. No player's voice leaves their phone: the next phone hears the words in Nobiko-san's voice.
 //  3. Shiritori Showdown: a spoken word chain with a shrinking timer. ん knocks you out;
@@ -44,7 +44,9 @@ import {
   finKept,
   keptParts,
   MAX_FINS,
+  RUMOUR_FRAME_FINS,
   RUMOUR_FRAMES,
+  rumourFrames,
   rumourFin,
   rumourFins,
   rumourFrameOf,
@@ -56,6 +58,10 @@ import {
   type RumourSeed,
 } from './rumours.js';
 import { n4Up } from '../../level.js';
+import { framesOf, type FrameId } from '../../japanese/frames.js';
+import { aimPick, aimWeight } from '../aim.js';
+import { fillModel, linkOf, modelsFor, SENTENCE_CARD_BY_FRAME, SENTENCE_CARDS, startsWithLink, type SentenceCard } from './sentences.js';
+import { GREEN_CAR_FAKE_WORDS } from './words.js';
 
 // ---- tuning ----
 
@@ -87,6 +93,16 @@ export const RUMOUR_TRUTH_AT_MS = 3_500;
 /** Nobiko-san starts reading a relay this long after it appears on the TV. */
 export const RUMOUR_READ_LEAD_MS = 400;
 
+/** Sentence Shiritori (Green Car round 3): a linked sentence that carries its frame; an N3 frame earns a bit more. */
+export const SENTENCE_POINTS = 100;
+export const SENTENCE_N3_BONUS = 50;
+export const SENTENCE_SPOKEN_BONUS = 30;
+export const SENTENCE_VOTE_POINTS = 100;
+export const SENTENCE_TURN_MS = 45_000;
+/** At most this many sentences a game (two laps for four players, one lap for five or more). */
+export const SENTENCE_MAX_TURNS = 8;
+/** Pon's opener: the first sentence starts with しりとり (or り). */
+export const SENTENCE_OPENER = { text: 'さあ、 ぶんしょうで しりとり！', reading: 'さあぶんしょうでしりとり', en: 'Now: shiritori, in sentences!' };
 export const SHIRITORI_WORD_POINTS = 50;
 export const SHIRITORI_SPOKEN_BONUS = 20;
 export const SHOWDOWN_BONUS = 500;
@@ -123,11 +139,14 @@ export const DURATIONS = {
   rumourStep: { kana: 35_000, n5: 50_000, n4: 60_000 } as Record<Level, number>,
   rumourScore: 15_000,
   shiriScore: 14_000,
+  sentencePrompt: 10_000,
+  sentenceReveal: 25_000,
+  sentenceScore: 14_000,
 };
 
 // ---- state ----
 
-export type Segment = 'fake' | 'telephone' | 'rumour' | 'shiritori';
+export type Segment = 'fake' | 'telephone' | 'rumour' | 'shiritori' | 'sentences';
 export type Via = Utterance['via'];
 
 export interface FakeOption {
@@ -221,6 +240,8 @@ export interface Rumour {
   frameStart: number;
   votes: Record<string, number>;
   points: Record<string, number> | null;
+  /** Told in the Green Car: N3 frame fins in every hand, and ＿とか いってた in the hint rotation. */
+  greenCar?: boolean;
 }
 
 export interface TelPrev {
@@ -276,8 +297,44 @@ export interface Shiritori {
   points: Record<string, number>;
 }
 
+/** Sentence Shiritori (Green Car round 3): one player's turn. */
+export interface SentenceTurn {
+  playerId: string;
+  /** Dealt when the turn starts (aimed): the frame on their card, and for an N4 player an N3 stretch card. */
+  card: FrameId | null;
+  stretch: FrameId | null;
+  text: string | null;
+  reading: string | null;
+  via: Via | null;
+  /** The card frame the sentence carried. */
+  frame: FrameId | null;
+  hinted: boolean;
+  skipped: boolean;
+}
+
+export interface Sentences {
+  /** Pon's opener, then every sentence that linked and carried its frame. */
+  chain: { playerId: string | null; text: string; reading: string; frame: FrameId | null; turn: number }[];
+  turns: SentenceTurn[];
+  current: number;
+  turnStart: number;
+  /** Green Car, aim the deal: per player, frames said this game; and the N4/N3 cards dealt (an N3 seat alternates). */
+  said: Record<string, Record<string, number>>;
+  dealt: Record<string, { n4: number; n3: number }>;
+  /** The hint shown this turn: the card's model line, filled with a noun that can follow. */
+  hint: { playerId: string; text: string; en: string } | null;
+  /** The last thing that happened, for the TV's caption. */
+  last: { kind: 'sentence' | 'miss'; playerId: string; text: string } | null;
+  /** voter → chain index. */
+  votes: Record<string, number>;
+  points: Record<string, number> | null;
+}
+
 export interface WordGauntletState {
   packId: string | null;
+  /** This game rides in the Green Car (ctx.greenCar at setup): round 3 is Sentence Shiritori. */
+  greenCar?: boolean;
+  sentences?: Sentences | null;
   round: number;
   segment: Segment | null;
   fakeDeck: ObscureWord[];
@@ -292,7 +349,7 @@ export interface WordGauntletState {
   pool: { base: number; bonus: number };
   /** Every point this mode gave, per player (the room's scores should match). */
   earned: Record<string, number>;
-  stats: { fooled: Record<string, number>; telVotes: Record<string, number>; rumourVotes: Record<string, number> };
+  stats: { fooled: Record<string, number>; telVotes: Record<string, number>; rumourVotes: Record<string, number>; sentenceVotes?: Record<string, number> };
 }
 
 // ---- moves ----
@@ -308,7 +365,8 @@ export type WordGauntletMove =
   | { kind: 'judge'; accept: boolean }
   | { kind: 'fin'; fin?: string; own?: string }
   | { kind: 'peek' }
-  | { kind: 'relay'; utterance?: Utterance };
+  | { kind: 'relay'; utterance?: Utterance }
+  | { kind: 'sentence'; utterance: Utterance };
 
 export interface RumourHeard {
   text: string;
@@ -327,7 +385,7 @@ export interface WordGauntletView {
   round: number;
   /** Points per player from this mode so far (public, like the scoreboard). */
   earned: Record<string, number>;
-  /** What round 2 will be with the room as it is: the rumour round needs an N4 player. */
+  /** What round 2 will be with the room as it is: the rumour round plays only in the Green Car. */
   round2: 'telephone' | 'rumour';
   fake: {
     index: number;
@@ -388,7 +446,8 @@ export interface WordGauntletView {
       level: Level;
       /** Only while it's this player's relay: what they heard. */
       heard: RumourHeard | null;
-      fins: { id: string; kana: string; en: string; tile: string }[];
+      /** `n3`: a Green Car frame fin, shown with the N3 tag (optional stretch for an N4 player). */
+      fins: { id: string; kana: string; en: string; tile: string; n3?: boolean }[];
       fin: string | null;
       ownFin: string | null;
       hint: number;
@@ -434,6 +493,37 @@ export interface WordGauntletView {
     points: Record<string, number> | null;
     mine: { hint: { kana: string; en: string }[] | null; tokens: number; vote: boolean | null } | null;
   } | null;
+  /** Green Car round 3, Sentence Shiritori. */
+  sentences: {
+    chain: { playerId: string | null; text: string; frame: { ja: string; en: string } | null }[];
+    /** What the next sentence starts with: the last word, or the last kana (any of `options`). */
+    link: { word: string | null; kana: string; options: string[] };
+    order: { playerId: string; done: boolean; skipped: boolean }[];
+    current: number;
+    turn: string | null;
+    turnMs: number;
+    last: Sentences['last'];
+    voted: string[];
+    /** Votes per chain index, at the score. */
+    votes: number[] | null;
+    points: Record<string, number> | null;
+    mine: {
+      /** Only on their turn. `n3`: shown with the N3 tag (for an N4 player, the stretch card: optional). */
+      card: SentenceCardView | null;
+      stretch: SentenceCardView | null;
+      hint: { text: string; en: string } | null;
+      sent: string | null;
+      vote: number | null;
+    } | null;
+  } | null;
+}
+
+export interface SentenceCardView {
+  frame: string;
+  ja: string;
+  en: string;
+  level: 'n4' | 'n3';
+  n3?: boolean;
 }
 
 // ---- content ----
@@ -551,7 +641,9 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       packId,
       round: 0,
       segment: null,
-      fakeDeck: fakeWordPool(ctx.audience ?? 'family', () => ctx.random(), FAKE_WORDS_PER_GAME),
+      // Green Car: one word with N3 kanji (a short round), not counted toward the path.
+      fakeDeck: ctx.greenCar ? fakeWordPool(ctx.audience ?? 'family', () => ctx.random(), GREEN_CAR_FAKE_WORDS, true) : fakeWordPool(ctx.audience ?? 'family', () => ctx.random(), FAKE_WORDS_PER_GAME),
+      ...(ctx.greenCar ? { greenCar: true, sentences: null } : {}),
       fakeIndex: 0,
       fake: null,
       telephone: null,
@@ -575,12 +667,13 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
         if (s.segment === 'telephone') return nextTelStep(s, ctx) >= 0 ? 'answer' : 'reveal';
         if (s.segment === 'rumour') return nextRumourStep(s) >= 0 ? 'answer' : 'reveal';
         if (s.segment === 'shiritori') return s.shiritori?.challenge ? 'reveal' : showdownOver(s) ? 'score' : 'answer';
+        if (s.segment === 'sentences') return nextSentenceTurn(s, ctx) >= 0 ? 'answer' : 'reveal';
         return 'recap';
       case 'reveal':
         if (s.segment === 'shiritori') return showdownOver(s) ? 'score' : 'answer';
         return 'score';
       case 'score':
-        return s.segment === 'shiritori' ? 'recap' : 'prompt';
+        return s.segment === 'shiritori' || s.segment === 'sentences' ? 'recap' : 'prompt';
       default:
         return 'recap';
     }
@@ -596,6 +689,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
     if (s.segment === 'telephone') return enterTelephone(s, phase, ctx);
     if (s.segment === 'rumour') return enterRumour(s, phase, ctx);
     if (s.segment === 'shiritori') return enterShiritori(s, phase, ctx);
+    if (s.segment === 'sentences') return enterSentences(s, phase, ctx);
   },
 
   leave(s, phase, ctx) {
@@ -604,6 +698,10 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       if (step && step.text === null) step.skipped = true;
     }
     if (s.segment === 'rumour' && phase === 'answer') closeRumourStep(s);
+    if (s.segment === 'sentences' && phase === 'answer') {
+      const turn = s.sentences?.turns[s.sentences.current];
+      if (turn && turn.text === null) turn.skipped = true;
+    }
     if (s.segment === 'shiritori') {
       const sh = s.shiritori!;
       if (phase === 'answer' && sh.turn && !sh.acted) {
@@ -643,6 +741,12 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       if (phase === 'answer') return sh.turnBaseMs + (sh.turn ? (sh.bankMs[sh.turn] ?? 0) : 0);
       if (phase === 'reveal') return CHALLENGE_MS;
       if (phase === 'score') return DURATIONS.shiriScore;
+    }
+    if (s.segment === 'sentences') {
+      if (phase === 'prompt') return DURATIONS.sentencePrompt;
+      if (phase === 'answer') return SENTENCE_TURN_MS;
+      if (phase === 'reveal') return DURATIONS.sentenceReveal;
+      if (phase === 'score') return DURATIONS.sentenceScore;
     }
     return 0;
   },
@@ -684,6 +788,19 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       }
       return false;
     }
+    if (s.segment === 'sentences' && s.sentences) {
+      const st = s.sentences;
+      if (phase === 'answer') {
+        const turn = st.turns[st.current];
+        return !turn || turn.text !== null || !ctx.player(turn.playerId)?.connected;
+      }
+      if (phase === 'reveal') {
+        if (here.length === 0) return false;
+        const voters = here.filter((p) => st.chain.some((c) => c.playerId && c.playerId !== p.id));
+        return voters.every((p) => st.votes[p.id] !== undefined);
+      }
+      return false;
+    }
     if (s.segment === 'shiritori' && s.shiritori) {
       const sh = s.shiritori;
       if (phase === 'answer') return sh.acted || !sh.turn || !ctx.player(sh.turn);
@@ -709,10 +826,12 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       case 'step':
         return moveStep(s, phase, playerId, raw.utterance);
       case 'vote':
+        if (s.segment === 'sentences') return moveSentenceVote(s, phase, playerId, raw.step);
         return s.segment === 'rumour' ? moveRumourVote(s, phase, playerId, raw.step) : moveVote(s, phase, playerId, raw.step);
       case 'word':
         return moveWord(s, phase, playerId, raw.utterance, ctx);
       case 'hint':
+        if (s.segment === 'sentences') return moveSentenceHint(s, phase, playerId, ctx);
         return s.segment === 'rumour' ? moveRumourHint(s, phase, playerId) : moveHint(s, phase, playerId, ctx);
       case 'fin':
         return moveFin(s, phase, playerId, raw, ctx);
@@ -720,6 +839,8 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
         return moveRumourPeek(s, phase, playerId);
       case 'relay':
         return moveRelay(s, phase, playerId, raw.utterance, ctx);
+      case 'sentence':
+        return moveSentence(s, phase, playerId, raw.utterance, ctx);
       case 'judge':
         return moveJudge(s, phase, playerId, raw.accept);
       default:
@@ -734,6 +855,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
     }
     if (s.telephone) delete s.telephone.votes[playerId];
     if (s.rumour) delete s.rumour.votes[playerId];
+    if (s.sentences) delete s.sentences.votes[playerId];
     const sh = s.shiritori;
     if (sh) {
       if (sh.alive.includes(playerId) && sh.turn !== playerId) knockOut(s, ctx, playerId, 'left', null);
@@ -760,6 +882,7 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
       telephone: s.segment === 'telephone' ? telephoneView(s, phase, me) : null,
       rumour: s.segment === 'rumour' ? rumourView(s, phase, me, ctx) : null,
       shiritori: s.segment === 'shiritori' ? shiritoriView(s, phase, me, ctx) : null,
+      sentences: s.segment === 'sentences' ? sentencesView(s, phase, me) : null,
     };
   },
 
@@ -777,6 +900,8 @@ export const wordGauntletMode: Mode<WordGauntletState, WordGauntletView> = {
     if (fibber) out.push({ playerId: fibber, name: name(ctx, fibber), title: 'うそつき名人', en: 'Master Fibber (fooled the most players)' });
     const finner = top(s.stats.rumourVotes);
     if (finner) out.push({ playerId: finner, name: name(ctx, finner), title: 'おひれ大賞', en: 'Biggest Fin (the room’s favourite rumour relay)' });
+    const sentencer = top(s.stats.sentenceVotes ?? {});
+    if (sentencer) out.push({ playerId: sentencer, name: name(ctx, sentencer), title: 'ぶんしょう王', en: 'Sentence Champion (the room’s favourite sentence)' });
     const translator = top(s.stats.telVotes);
     if (translator) out.push({ playerId: translator, name: name(ctx, translator), title: 'ほんやく大賞', en: 'Translation Grand Prize (favourite step)' });
     return out;
@@ -820,7 +945,8 @@ function enterPrompt(s: WordGauntletState, ctx: ModeContext): void {
     ctx.cue({ host: 'pon', event: 'prompt_read' });
     return;
   }
-  startShiritori(s, ctx);
+  if (s.greenCar) startSentences(s, ctx);
+  else startShiritori(s, ctx);
 }
 
 function startShiritori(s: WordGauntletState, ctx: ModeContext): void {
@@ -1079,15 +1205,23 @@ function scoreTelephone(s: WordGauntletState, ctx: ModeContext): void {
 
 // ---- The rumour round (うわさの でんごんゲーム) ----
 
-/** The rumour round takes round 2 when anyone in the room plays at N4 (it's built on N4 frames). */
+/**
+ * The rumour round takes round 2 only in the Green Car (shared/src/greenCar.ts), where it always does. It used to
+ * take it whenever anyone was N4, which changed the whole room's round for one player: a mixed room plays Lost in
+ * Translation (a Green Car move-out, design: n3-coverage/green-car/design.md).
+ */
 export function rumourRoom(ctx: ModeContext): boolean {
-  return ctx.players().some((p) => n4Up(p.level));
+  return ctx.greenCar === true;
 }
 
-/** A hand of fin cards with at least one big, visual fin in it. */
-function dealFins(deck: RumourFin[], at: { next: number }): string[] {
+/**
+ * A hand of fin cards with at least one big, visual fin in it. In the Green Car the last card is an N3 frame fin
+ * (＿らしい or ＿とか いってた), taking turns round the table from a random start so the round hears both. That is the
+ * round's "aim the deal": each player relays once a game, so there is no count of their own to aim at.
+ */
+function dealFins(deck: RumourFin[], at: { next: number }, frameFin?: RumourFin): string[] {
   const hand: string[] = [];
-  const want = Math.min(RUMOUR_FINS_OFFERED, deck.length);
+  const want = Math.min(RUMOUR_FINS_OFFERED - (frameFin ? 1 : 0), deck.length);
   let guard = 0;
   while (hand.length < want && guard++ < deck.length * 3) {
     const f = deck[at.next++ % deck.length]!;
@@ -1096,6 +1230,7 @@ function dealFins(deck: RumourFin[], at: { next: number }): string[] {
     if (hand.length === want - 1 && !f.big && !hand.some((id) => rumourFin(id)?.big) && deck.some((x) => x.big && !hand.includes(x.id))) continue;
     hand.push(f.id);
   }
+  if (frameFin) hand.push(frameFin.id);
   return hand;
 }
 
@@ -1116,12 +1251,14 @@ function startRumour(s: WordGauntletState, ctx: ModeContext): void {
   const order = [...seated.slice(startAt), ...seated.slice(0, startAt)];
   const deck = shuffled(rumourFins(audience), () => ctx.random());
   const at = { next: 0 };
-  const steps: RumourStep[] = order.map((p) => ({
+  const greenCar = ctx.greenCar === true;
+  const frameAt = greenCar ? Math.floor(ctx.random() * RUMOUR_FRAME_FINS.length) : 0;
+  const steps: RumourStep[] = order.map((p, i) => ({
     playerId: p.id,
     level: p.level,
     hintFrame: null,
     heardFrame: null,
-    offered: dealFins(deck, at),
+    offered: dealFins(deck, at, greenCar ? RUMOUR_FRAME_FINS[(frameAt + i) % RUMOUR_FRAME_FINS.length] : undefined),
     fin: null,
     ownFin: null,
     text: null,
@@ -1136,7 +1273,7 @@ function startRumour(s: WordGauntletState, ctx: ModeContext): void {
     standIn: false,
     skipped: false,
   }));
-  s.rumour = { seed, fins: [], steps, current: -1, revealAt: 0, readAt: [], frameStart: Math.floor(ctx.random() * RUMOUR_FRAMES.length), votes: {}, points: null };
+  s.rumour = { seed, fins: [], steps, current: -1, revealAt: 0, readAt: [], frameStart: Math.floor(ctx.random() * rumourFrames(greenCar).length), votes: {}, points: null, greenCar };
   ctx.cue({ host: 'nobiko', event: 'rumour_intro' });
 }
 
@@ -1189,9 +1326,11 @@ function tackOn(r: Rumour, step: RumourStep, index: number): { text: string; kan
   const heard = rumourHeard(r, index);
   const fin = stepFin(step, index);
   const strip = (x: string) => x.replace(/[。！？!?\s]+$/u, '');
-  const tail = fin ? ` しかも、${fin.kana}！` : '';
-  step.finSaid = !!fin;
-  if (fin) r.fins = addFin(r.fins, fin);
+  // A frame fin (Green Car) is a way of saying it, not a word to tack on: the stand-in passes on what was heard.
+  const words = fin && fin.kind !== 'frame' ? fin : null;
+  const tail = words ? ` しかも、${words.kana}！` : '';
+  step.finSaid = !!words;
+  if (words) r.fins = addFin(r.fins, words);
   return { text: `${strip(heard.text)}。${tail}`.trim(), kana: `${strip(heard.kana)}。${tail}`.trim() };
 }
 
@@ -1324,9 +1463,12 @@ function moveRumourHint(s: WordGauntletState, phase: Phase, playerId: string): M
     const heard = rumourHeard(r, r.current);
     const heardFrame = rumourFrameOf({ text: heard.text, reading: heard.kana });
     const n4Before = r.steps.slice(0, r.current).filter((st) => n4Up(st.level)).length;
-    for (let k = 0; k < RUMOUR_FRAMES.length; k++) {
-      const f = RUMOUR_FRAMES[(r.frameStart + n4Before + k) % RUMOUR_FRAMES.length]!.id;
-      if (f !== heardFrame) {
+    const frames = rumourFrames(r.greenCar === true);
+    // A frame fin (Green Car) is the frame to try.
+    const picked = step.fin ? rumourFin(step.fin) : undefined;
+    for (let k = 0; k < frames.length; k++) {
+      const f = picked?.frame ?? frames[(r.frameStart + n4Before + k) % frames.length]!.id;
+      if (f !== heardFrame || picked?.frame) {
         step.hintFrame = f;
         break;
       }
@@ -1464,8 +1606,9 @@ function rumourResult(r: Rumour, step: RumourStep, index: number): NonNullable<N
   const missed = k && step.level !== 'kana' && !step.standIn ? [!k.who ? r.seed.who.kana : null, !k.where ? r.seed.where.kana : null, !k.what ? r.seed.what.kana : null].filter((x): x is string => !!x) : [];
   let tryNext: { ja: string; en: string; line: JpText } | null = null;
   if (n4Up(step.level) && !step.standIn && step.text !== null && (!step.frame || step.echoed)) {
-    const f = RUMOUR_FRAMES.find((x) => x.id !== step.heardFrame && x.id !== step.frame) ?? RUMOUR_FRAMES[0]!;
-    tryNext = { ja: f.ja, en: f.en, line: rumourLine(r.seed, fin ? [fin] : [], f.id) };
+    const frames = rumourFrames(r.greenCar === true);
+    const f = frames.find((x) => x.id !== step.heardFrame && x.id !== step.frame) ?? frames[0]!;
+    tryNext = { ja: f.ja, en: f.en, line: rumourLine(r.seed, fin && fin.kind !== 'frame' ? [fin] : [], f.id) };
   }
   const counted = step.level !== 'kana' && !step.standIn && step.via === 'speech' && !step.peeked && step.hint < (n4Up(step.level) ? 2 : 1) && allKept(step.kept) && !step.echoed;
   return { kept: k, missed, frame: frameLabel(step.frame), echoed: step.echoed, fin: fin ? { kana: fin.kana, en: fin.en } : null, finSaid: step.finSaid, standIn: step.standIn, counted, tryNext };
@@ -1489,7 +1632,7 @@ function rumourView(s: WordGauntletState, phase: Phase, me: string | null, ctx: 
       step: myIndex,
       level: step.level,
       heard: heard ? { ...heard, romaji: step.level === 'kana' ? toRomaji(heard.kana) : null } : null,
-      fins: step.offered.map((id) => rumourFin(id)).filter((f): f is RumourFin => !!f).map((f) => ({ id: f.id, kana: f.kana, en: f.en, tile: f.tile })),
+      fins: step.offered.map((id) => rumourFin(id)).filter((f): f is RumourFin => !!f).map((f) => ({ id: f.id, kana: f.kana, en: f.en, tile: f.tile, ...(f.level === 'n3' ? { n3: true } : {}) })),
       fin: step.fin,
       ownFin: step.ownFin,
       hint: step.hint,
@@ -1689,6 +1832,252 @@ function crownWinner(s: WordGauntletState, ctx: ModeContext): void {
   sh.crown = Math.max(SHOWDOWN_BONUS, best - mine + SHOWDOWN_LEAD);
   giveBase(s, ctx, winner, sh.crown, sh.points);
   ctx.cue({ host: 'pon', event: 'ippon', slots: { name: name(ctx, winner) } });
+}
+
+// ---- Sentence Shiritori (Green Car round 3) ----
+//
+// Each turn one player says a sentence that starts with the last word (or the last kana) of the one before and
+// carries the frame on their card. The card is dealt when the turn starts, aimed (aimWeight: frames a path goal
+// requires, said least tonight and this game). An N3 player alternates N3 and N4 cards (N3 first), so about half
+// each; an N4 player gets an N4 card plus an N3 stretch card (the N3 tag; either one counts). A miss (wrong start,
+// no frame) is a free retry until the timer runs out; a turn that runs out is skipped and the link stays.
+
+function startSentences(s: WordGauntletState, ctx: ModeContext): void {
+  s.segment = 'sentences';
+  s.round = 3;
+  s.pool = { base: 0, bonus: 0 };
+  // Trailing players go first (as in the showdown), then by seat; two laps for four players, one for five or more.
+  const seated = [...ctx.players()].sort((a, b) => a.seat - b.seat);
+  const first = [...seated].sort((a, b) => a.score - b.score || a.seat - b.seat)[0];
+  const idx = first ? seated.indexOf(first) : 0;
+  const rotation = [...seated.slice(idx), ...seated.slice(0, idx)].map((p) => p.id);
+  const laps = Math.max(1, Math.floor(SENTENCE_MAX_TURNS / Math.max(1, rotation.length)));
+  const turns: SentenceTurn[] = [];
+  for (let lap = 0; lap < laps; lap++)
+    for (const id of rotation) turns.push({ playerId: id, card: null, stretch: null, text: null, reading: null, via: null, frame: null, hinted: false, skipped: false });
+  s.sentences = {
+    chain: [{ playerId: null, text: SENTENCE_OPENER.text, reading: SENTENCE_OPENER.reading, frame: null, turn: -1 }],
+    turns,
+    current: -1,
+    turnStart: ctx.now,
+    said: {},
+    dealt: {},
+    hint: null,
+    last: null,
+    votes: {},
+    points: null,
+  };
+  ctx.cue({ host: 'pon', event: 'prompt_read', prompt: { text: SENTENCE_OPENER.text, kana: SENTENCE_OPENER.text, en: 'Sentence shiritori: start with the last word, and use the frame on your card' } });
+}
+
+/** The next turn whose player is still here, or -1. */
+function nextSentenceTurn(s: WordGauntletState, ctx: ModeContext): number {
+  const st = s.sentences;
+  if (!st) return -1;
+  for (let i = st.current + 1; i < st.turns.length; i++) if (ctx.player(st.turns[i]!.playerId)) return i;
+  return -1;
+}
+
+/** What the next sentence must start with: from the last sentence in the chain (its spaced kana when it has it). */
+export function sentenceLink(st: Sentences): ReturnType<typeof linkOf> {
+  const last = st.chain.at(-1)!;
+  return linkOf(isKana(last.text.replace(/[\s、。！？!?「」]/g, '')) ? last.text : last.reading);
+}
+
+const cardLevelOf = (frame: FrameId): 'n4' | 'n3' => SENTENCE_CARD_BY_FRAME[frame]?.level ?? 'n4';
+
+/** Aim the deal: the card of this level the player needs most (pre-shuffled, so a tie varies). */
+function aimCard(s: WordGauntletState, ctx: ModeContext, playerId: string, level: 'n4' | 'n3'): FrameId {
+  const st = s.sentences!;
+  const pool = shuffled(SENTENCE_CARDS.filter((c) => c.level === level), () => ctx.random());
+  const mine = st.said[playerId] ?? {};
+  const pick = aimPick(pool, (c: SentenceCard) => aimWeight(ctx, playerId, [c.frame], mine));
+  return (pick ?? pool[0]!).frame;
+}
+
+/** Deals a turn's card(s): an N3 seat alternates N3 and N4 (N3 first); an N4 seat gets N4 plus N3 stretch. */
+function dealSentence(s: WordGauntletState, ctx: ModeContext, turn: SentenceTurn): void {
+  const st = s.sentences!;
+  const level = ctx.player(turn.playerId)?.level ?? 'n4';
+  const d = (st.dealt[turn.playerId] ??= { n4: 0, n3: 0 });
+  if (level === 'n3') {
+    const lv = d.n3 <= d.n4 ? 'n3' : 'n4';
+    d[lv] += 1;
+    turn.card = aimCard(s, ctx, turn.playerId, lv);
+    turn.stretch = null;
+  } else {
+    d.n4 += 1;
+    turn.card = aimCard(s, ctx, turn.playerId, 'n4');
+    turn.stretch = aimCard(s, ctx, turn.playerId, 'n3');
+  }
+}
+
+function enterSentences(s: WordGauntletState, phase: Phase, ctx: ModeContext): void {
+  const st = s.sentences!;
+  if (phase === 'answer') {
+    st.current = nextSentenceTurn(s, ctx);
+    if (st.current < 0) st.current = st.turns.length;
+    st.hint = null;
+    st.turnStart = ctx.now;
+    const turn = st.turns[st.current];
+    if (turn) dealSentence(s, ctx, turn);
+  }
+  if (phase === 'reveal') {
+    st.current = st.turns.length;
+    ctx.cue({ host: 'pon', event: 'reveal_react', tier: 'good' });
+  }
+  if (phase === 'score') scoreSentences(s, ctx);
+}
+
+function mySentenceTurn(s: WordGauntletState, phase: Phase, playerId: string): SentenceTurn | MoveResult {
+  if (s.segment !== 'sentences' || phase !== 'answer' || !s.sentences) return moveError('wrong-phase');
+  const turn = s.sentences.turns[s.sentences.current];
+  if (!turn || turn.playerId !== playerId) return moveError('not-your-turn');
+  if (turn.text !== null) return moveError('already-answered');
+  return turn;
+}
+const isTurn = (x: SentenceTurn | MoveResult): x is SentenceTurn => 'playerId' in x;
+
+/** The card frames a sentence carried (the card first, then the stretch), checked by the path's own matchers. */
+export function sentenceFrames(turn: Pick<SentenceTurn, 'card' | 'stretch'>, said: { text: string; kana: string }, tokens?: Utterance['tokens']): FrameId[] {
+  const found = new Set(framesOf(said, tokens, { keepHidden: true }));
+  return [turn.card, turn.stretch].filter((f): f is FrameId => !!f && found.has(f));
+}
+
+function moveSentence(s: WordGauntletState, phase: Phase, playerId: string, u: unknown, ctx: ModeContext): MoveResult {
+  const turn = mySentenceTurn(s, phase, playerId);
+  if (!isTurn(turn)) return turn;
+  const st = s.sentences!;
+  if (!isUtterance(u)) return moveError('bad-move');
+  const text = cleanText(u.text, MAX_ANSWER_LENGTH);
+  if (!text) return moveError('empty-answer');
+  if (!hasJapanese(text)) return moveError('not-japanese');
+  if (!playerTextAllowed(text, ctx.audience)) return moveError('kids-words');
+  const reading = u.reading ?? (isKana(text.replace(/[\s、。！？!?「」]/g, '')) ? text : null);
+  if (!reading) return moveError('not-kana');
+  if (!startsWithLink(reading, sentenceLink(st))) {
+    st.last = { kind: 'miss', playerId, text };
+    return moveError('wrong-start');
+  }
+  const hit = sentenceFrames(turn, { text, kana: reading }, u.tokens);
+  if (!hit.length) {
+    st.last = { kind: 'miss', playerId, text };
+    return moveError('no-frame');
+  }
+  // An N4 player who used the N3 stretch card is credited with it.
+  const frame = hit.find((f) => cardLevelOf(f) === 'n3') ?? hit[0]!;
+  turn.text = text;
+  turn.reading = reading;
+  turn.via = u.via;
+  turn.frame = frame;
+  st.chain.push({ playerId, text, reading, frame, turn: st.current });
+  st.last = { kind: 'sentence', playerId, text };
+  const points = (st.points ??= {});
+  giveBase(s, ctx, playerId, SENTENCE_POINTS + (cardLevelOf(frame) === 'n3' ? SENTENCE_N3_BONUS : 0), points);
+  if (u.via === 'speech') giveBonus(s, ctx, playerId, SENTENCE_SPOKEN_BONUS, points);
+  // Their own sentence goes in the phrasebook: from memory unless they opened the hint.
+  const card = SENTENCE_CARD_BY_FRAME[frame]!;
+  ctx.phrase(playerId, { itemId: `wg.sentence.${frame}`, text, kana: reading, en: `Sentence shiritori: ${card.ja} (${card.en})`, outcome: u.via === 'speech' ? 'said' : 'seen', recall: turn.hinted ? 'read' : 'memory' });
+  if (u.via === 'speech') {
+    const mine = (st.said[playerId] ??= {});
+    for (const f of hit) mine[f] = (mine[f] ?? 0) + 1;
+  }
+  return MOVE_OK;
+}
+
+/** A noun that can start the next sentence: the link word if it's a known noun, else one starting with the link kana. */
+export function linkNoun(st: Sentences, ctx: Pick<ModeContext, 'content'>, pick = 0): { kana: string; en: string } | null {
+  const link = sentenceLink(st);
+  const nouns = lexiconFor(ctx.content).nouns;
+  const exact = link.word ? nouns.find((n) => n.kana === link.word) : undefined;
+  if (exact) return exact;
+  const said = st.chain.map((c) => c.reading).join(' ');
+  const fits = nouns.filter((n) => follows(link.kana, n.kana) && !said.includes(n.kana));
+  return fits.length ? fits[pick % fits.length]! : null;
+}
+
+function moveSentenceHint(s: WordGauntletState, phase: Phase, playerId: string, ctx: ModeContext): MoveResult {
+  const turn = mySentenceTurn(s, phase, playerId);
+  if (!isTurn(turn)) return turn;
+  const st = s.sentences!;
+  if (st.hint?.playerId === playerId) return moveError('already-hinted');
+  const card = turn.card ? SENTENCE_CARD_BY_FRAME[turn.card] : undefined;
+  const models = card ? modelsFor(card, ctx.audience ?? 'family') : [];
+  const model = models[Math.floor(ctx.random() * models.length)];
+  const noun = linkNoun(st, ctx, Math.floor(ctx.random() * 1000));
+  if (!model || !noun) return moveError('no-hint');
+  turn.hinted = true;
+  st.hint = { playerId, ...fillModel(model, noun) };
+  return MOVE_OK;
+}
+
+function moveSentenceVote(s: WordGauntletState, phase: Phase, playerId: string, raw: unknown): MoveResult {
+  const st = s.sentences;
+  if (!st || phase !== 'reveal') return moveError('wrong-phase');
+  if (st.votes[playerId] !== undefined) return moveError('already-voted');
+  if (typeof raw !== 'number' || !Number.isInteger(raw)) return moveError('bad-move');
+  const c = st.chain[raw];
+  if (!c || !c.playerId) return moveError('unknown-answer');
+  if (c.playerId === playerId) return moveError('own-answer');
+  st.votes[playerId] = raw;
+  return MOVE_OK;
+}
+
+function scoreSentences(s: WordGauntletState, ctx: ModeContext): void {
+  const st = s.sentences!;
+  const points = (st.points ??= {});
+  for (const [voter, index] of Object.entries(st.votes)) {
+    const c = st.chain[index];
+    if (!c?.playerId || !ctx.player(voter) || !ctx.player(c.playerId)) continue;
+    giveBase(s, ctx, c.playerId, SENTENCE_VOTE_POINTS, points);
+    const votes = (s.stats.sentenceVotes ??= {});
+    votes[c.playerId] = (votes[c.playerId] ?? 0) + 1;
+  }
+  const best = Object.entries(s.stats.sentenceVotes ?? {}).sort((a, b) => b[1] - a[1])[0];
+  if (best && ctx.player(best[0])) ctx.cue({ host: 'pon', event: 'ippon', slots: { name: name(ctx, best[0]) } });
+}
+
+const cardView = (frame: FrameId | null, n3Tag: boolean): SentenceCardView | null => {
+  const c = frame ? SENTENCE_CARD_BY_FRAME[frame] : undefined;
+  return c ? { frame: c.frame, ja: c.ja, en: c.en, level: c.level, ...(n3Tag && c.level === 'n3' ? { n3: true } : {}) } : null;
+};
+
+function sentencesView(s: WordGauntletState, phase: Phase, me: string | null): WordGauntletView['sentences'] {
+  const st = s.sentences;
+  if (!st) return null;
+  const turn = phase === 'answer' ? st.turns[st.current] : undefined;
+  const mineTurn = turn && turn.playerId === me ? turn : undefined;
+  const revealed = phase === 'reveal' || phase === 'score';
+  let votes: number[] | null = null;
+  if (phase === 'score') {
+    votes = st.chain.map(() => 0);
+    for (const i of Object.values(st.votes)) votes[i] = (votes[i] ?? 0) + 1;
+  }
+  const link = sentenceLink(st);
+  return {
+    chain: st.chain.map((c) => {
+      const card = c.frame ? SENTENCE_CARD_BY_FRAME[c.frame] : undefined;
+      return { playerId: c.playerId, text: c.text, frame: card ? { ja: card.ja, en: card.en } : null };
+    }),
+    link: { word: link.word, kana: link.kana, options: link.options },
+    order: st.turns.map((t, i) => ({ playerId: t.playerId, done: t.text !== null, skipped: t.skipped || (i < st.current && t.text === null) })),
+    current: st.current,
+    turn: turn?.playerId ?? null,
+    turnMs: SENTENCE_TURN_MS,
+    last: st.last,
+    voted: revealed ? Object.keys(st.votes) : [],
+    votes,
+    points: phase === 'score' ? st.points : null,
+    mine: me
+      ? {
+          card: mineTurn ? cardView(mineTurn.card, true) : null,
+          stretch: mineTurn ? cardView(mineTurn.stretch, true) : null,
+          hint: mineTurn && st.hint?.playerId === me ? { text: st.hint.text, en: st.hint.en } : null,
+          sent: st.turns.filter((t) => t.playerId === me && t.text !== null).at(-1)?.text ?? null,
+          vote: revealed ? (st.votes[me] ?? null) : null,
+        }
+      : null,
+  };
 }
 
 // ---- views ----

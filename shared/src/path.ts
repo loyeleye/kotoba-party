@@ -13,7 +13,7 @@ import { readTheSigns } from '../../content/src/last-train/read-the-signs.js';
 import { FRAME_BY_ID } from './japanese/frames.js';
 import { toRomaji } from './japanese/romaji.js';
 import { MODES, noFit } from './modes/registry.js';
-import { YIELDS } from './pathYields.js';
+import { YIELDS, YIELDS_GREEN } from './pathYields.js';
 import { DAY_MS, FRAME_FILLERS, FRAME_GAP_DAYS, FRAME_SAYS, dayOf, frameRules, markFrames, ruleMet, ruleProgress, type FrameMark, type FrameRule, type Progress } from './progress.js';
 import type { Level, ModeId } from './protocol.js';
 
@@ -269,7 +269,7 @@ export const GOALS: readonly Goal[] = [
   g('5.10', 'local', 'Read N5 kanji', 'The kanji on signs, menus and calendars.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
   g('4.1', 'express', 'Ask favours', 'Ask someone to do something for you.', ['te-moraeru'], ['ageru-kureru', 'te-kuremasen', 'te-hoshii'], ['phrase-bingo', 'bento-haus', 'last-train']),
   g('4.2', 'express', "May, must, mustn't", 'Ask permission, and say what you must or mustn’t do.', ['te-mo-ii'], ['te-wa-ikenai', 'nakereba', 'nakutemo-ii', 'sasete-kudasai', 'causative'], ['tourist', 'yokai-court', 'phrase-bingo', 'late-again']),
-  g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau', 'ba-yokatta', 'tari-tari'], ['hajimemashite', 'happyokai', 'phrase-bingo', 'late-again']),
+  g('4.3', 'express', 'Experiences and tries', "Say what you've done, and what you'd like to try.", ['ta-koto'], ['te-miru', 'te-shimau', 'ba-yokatta', 'tari-tari'], ['hajimemashite', 'happyokai', 'phrase-bingo', 'late-again', 'oekaki']),
   g('4.4', 'express', 'Say what you can do', 'たべられます, はなせます: say what you can and can’t.', ['potential'], [], ['phrase-bingo', 'tourist', 'late-again']),
   g('4.5', 'express', 'If and when', 'Say what happens if, and when.', ['tara'], ['ba', 'toki', 'nara', 'to-cond', 'noni'], ['phrase-bingo', 'tourist', 'happyokai', 'oogiri', 'late-again', 'ghost-hotline']),
   g('4.6', 'express', 'Guess, hearsay, opinion', 'Say how it looks, what you heard and what you think.', ['sou-look', 'to-omou', ['sou-hear', 'ni-yoru', 'n-datte']], ['kamo', 'mitai-you'], ['phrase-bingo', 'happyokai', 'tourist', 'last-train', 'word-gauntlet', 'yokai-court', 'hajimemashite']),
@@ -279,21 +279,21 @@ export const GOALS: readonly Goal[] = [
   g('4.10', 'express', 'Read 30 N4 kanji', 'The next kanji up: verbs, places and time words.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
   g('4.11', 'express', 'Reasons and too much', 'Give reasons politely, say what was too much, and do two things at once.', ['node', 'sugiru'], ['nagara', 'shi'], ['late-again', 'happyokai', 'narabete']),
   g('4.12', 'express', 'Change and decisions', 'Say what changed, and what you or others decided.', ['you-ni-naru', 'koto-ni-suru'], ['koto-ni-naru'], ['happyokai', 'ghost-hotline', 'oogiri']),
-  g('4.13', 'express', 'Passive, easy and hard', 'Say what was done to you, and how easy or hard something is to do.', ['passive'], ['yasui-nikui'], ['late-again', 'onsen-murder', 'word-gauntlet']),
-  g('4.14', 'express', 'Quote, purpose, embedded questions', 'Pass on what someone said, say what it’s for, and fold a question into a sentence.', ['to-itte-ita', ['tame-ni', 'you-ni']], ['ka-dou-ka', 'nani-ka', 'tte-quote'], ['ghost-hotline', 'word-gauntlet', 'onsen-murder', 'yokai-court']),
+  g('4.13', 'express', 'Passive, easy and hard', 'Say what was done to you, and how easy or hard something is to do.', ['passive'], ['yasui-nikui'], ['late-again', 'onsen-murder', 'word-gauntlet', 'oekaki']),
+  g('4.14', 'express', 'Quote, purpose, embedded questions', 'Pass on what someone said, say what it’s for, and fold a question into a sentence.', ['to-itte-ita', ['tame-ni', 'you-ni']], ['ka-dou-ka', 'nani-ka', 'tte-quote'], ['ghost-hotline', 'word-gauntlet', 'onsen-murder', 'yokai-court', 'tourist']),
   // The Limited Express Line (特急, N3): the plan's 12 goals. Their frames come in frames.ts as their matchers land;
   // until then a goal shows as coming soon (missingFrames) and doesn't count toward clearing the line.
   g('3.1', 'limited', 'Rumours and reported speech', 'Pass on what you heard, and say where you heard it.', ['rashii'], ['ni-yoru', 'n-datte', 'mitai-casual', 'you-ni-iwareta'], ['word-gauntlet', 'onsen-murder', 'yokai-court']),
-  g('3.2', 'limited', 'What happened to me', 'Complain about what was done to you, what you were made to do, and what nearly happened.', ['suffering-passive', 'saserareru'], ['tokoro-deshita', 'sasete-morau', 'kakeru', 'kiru', 'bakari', 'ppanashi', 'darake', 'mama'], ['late-again', 'dub-club']),
-  g('3.3', 'limited', 'Reasons, results and blame', 'Say who or what to blame or thank, and why.', ['sei-de', 'okage-de'], ['wake-desu', 'tame-reason', 'mono-de', 'n-dakara', 'gachi', 'datte-mon'], ['late-again', 'ghost-hotline']),
-  g('3.4', 'limited', 'Contrast and concession', 'Say it turned out otherwise, or better than expected.', ['wari-ni', 'kuse-ni'], ['noni', 'ni-kurabete', 'ni-shite-wa', 'kawari-ni', 'dake-de-naku', 'to-itte-mo', 'wa-mochiron', 'ue-ni'], ['late-again', 'oogiri']),
+  g('3.2', 'limited', 'What happened to me', 'Complain about what was done to you, what you were made to do, and what nearly happened.', ['suffering-passive', 'saserareru'], ['tokoro-deshita', 'sasete-morau', 'kakeru', 'kiru', 'bakari', 'ppanashi', 'darake', 'mama'], ['late-again', 'dub-club', 'happyokai', 'oekaki']),
+  g('3.3', 'limited', 'Reasons, results and blame', 'Say who or what to blame or thank, and why.', ['sei-de', 'okage-de'], ['wake-desu', 'tame-reason', 'mono-de', 'n-dakara', 'gachi', 'datte-mon'], ['late-again', 'ghost-hotline', 'onsen-murder']),
+  g('3.4', 'limited', 'Contrast and concession', 'Say it turned out otherwise, or better than expected.', ['wari-ni', 'kuse-ni'], ['noni', 'ni-kurabete', 'ni-shite-wa', 'kawari-ni', 'dake-de-naku', 'to-itte-mo', 'wa-mochiron', 'ue-ni'], ['late-again', 'oogiri', 'phrase-bingo']),
   g('3.5', 'limited', 'What-ifs', 'Suppose something were true, and say “the more…, the more…”.', ['to-shitara'], ['ba-hodo', 'sae', 'to-shitemo', 'tatoe-temo'], ['ghost-hotline', 'oogiri', 'happyokai']),
-  g('3.6', 'limited', 'Intentions and attempts', 'Say what you tried to do, what you did without doing, and what you make a habit of.', ['you-to-suru', 'zu-ni'], ['koto-ni-shiteiru', 'ta-tsumori', 'zu-ni-sumu', 'furi', 'hazu-datta', 'te-kara-de-nai-to', 'wo-komete'], ['ghost-hotline', 'happyokai', 'hajimemashite']),
+  g('3.6', 'limited', 'Intentions and attempts', 'Say what you tried to do, what you did without doing, and what you make a habit of.', ['you-to-suru', 'zu-ni'], ['koto-ni-shiteiru', 'ta-tsumori', 'zu-ni-sumu', 'furi', 'hazu-datta', 'te-kara-de-nai-to', 'wo-komete'], ['ghost-hotline', 'happyokai', 'hajimemashite', 'oekaki']),
   g('3.7', 'limited', 'Explaining and clarifying', 'Say what you don’t mean, what should be done, and what it comes down to.', ['wake-dewa-nai', 'beki'], ['to-iu-koto', 'to-shite', 'toori-ni', 'wake-niwa-ikanai', 'koso', 'to-iu-no-wa', 'koto-wa-nai', 'koto-ni-natteiru', 'temo-kamawanai', 'ta-you-ni'], ['ghost-hotline', 'tourist', 'yokai-court']),
   g('3.8', 'limited', 'Service Japanese', 'How staff speak to guests: humble, formal, and at your service.', ['sasete-itadaku', ['de-gozaimasu', 'te-orimasu']], ['go-kudasai', 'kashikomarimashita', 'te-itadakitai'], ['bento-haus', 'omiai', 'last-train']),
   g('3.9', 'limited', 'Time and change', 'Do it while you can, say what happens every time, and how things have changed.', ['uchi-ni', 'tabi-ni'], ['saichuu-ni', 'te-kita', 'totan', 'dasu', 'te-iku', 'ni-tsurete', 'tsuide-ni', 'te-hajimete', 'buri', 'te-irai', 'tokoro-ni', 'kiri'], ['happyokai', 'late-again', 'word-gauntlet']),
-  g('3.10', 'limited', 'Opinions and debate', 'Say what you feel, what must be true, and argue it.', ['you-na-ki', 'ni-chigainai'], ['ni-taishite', 'shika-nai', 'sorenanoni', 'tsumari', 'hazu-ga-nai', 'ni-totte', 'ni-kimatteiru', 'to-wa-kagiranai', 'ni-yotte', 'to-iu-yori', 'nai-koto-wa-nai', 'wake-ga-nai', 'n-janai', 'hodo-wa-nai', 'sou-ni-nai'], ['ghost-hotline', 'narabete', 'yokai-court']),
-  g('3.11', 'limited', 'Casual nuance', 'How friends really talk: ＿っぽい, ＿なんて, ＿とか.', ['ppoi', 'nante'], ['toka', 'kke', 'te-shouganai', 'hodo-degree', 'you-ni-wish', 'muke-muki', 'tate', 'to-ieba', 'rashii-typical', 'gurai-at-least', 'tte-topic', 'noun-sa-mi'], ['phrase-bingo', 'dub-club', 'word-gauntlet', 'yokai-court']),
+  g('3.10', 'limited', 'Opinions and debate', 'Say what you feel, what must be true, and argue it.', ['you-na-ki', 'ni-chigainai'], ['ni-taishite', 'shika-nai', 'sorenanoni', 'tsumari', 'hazu-ga-nai', 'ni-totte', 'ni-kimatteiru', 'to-wa-kagiranai', 'ni-yotte', 'to-iu-yori', 'nai-koto-wa-nai', 'wake-ga-nai', 'n-janai', 'hodo-wa-nai', 'sou-ni-nai'], ['ghost-hotline', 'narabete', 'yokai-court', 'onsen-murder']),
+  g('3.11', 'limited', 'Casual nuance', 'How friends really talk: ＿っぽい, ＿なんて, ＿とか.', ['ppoi', 'nante'], ['toka', 'kke', 'te-shouganai', 'hodo-degree', 'you-ni-wish', 'muke-muki', 'tate', 'to-ieba', 'rashii-typical', 'gurai-at-least', 'tte-topic', 'noun-sa-mi'], ['phrase-bingo', 'dub-club', 'word-gauntlet', 'yokai-court', 'oogiri']),
   g('3.12', 'limited', 'Read 30 sign kanji', 'The kanji on everyday signs: 受付, 予約, 非常口, 禁煙.', [], [], ['shodo', 'last-train'], { kind: 'kanji' }),
 ];
 export const GOAL_BY_ID: Readonly<Record<string, Goal>> = Object.fromEntries(GOALS.map((x) => [x.id, x]));
@@ -466,6 +466,8 @@ function recheckOf(m: FrameMark | undefined, now: number): Recheck | null {
 }
 
 /** Every frame any goal names. */
+/** Frames some goal requires (not only "also counts"): what aiming a Green Car deal favours. */
+export const REQUIRED_FRAMES: ReadonlySet<string> = new Set(GOALS.flatMap((x) => x.need.flatMap((n) => [...needIds(n)])));
 export const GOAL_FRAMES: readonly string[] = [...new Set(GOALS.flatMap((x) => [...x.need.flatMap((n) => [...needIds(n)]), ...x.also]))];
 
 const plusDays = (day: string, n: number): string => new Date(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);
@@ -569,11 +571,14 @@ export function markPath(p: Progress, now: number, tzOffsetMin = 0): string[] {
 export const BOT_GAPS: Readonly<Partial<Record<ModeId, readonly string[]>>> = {};
 /** What a bot gap counts as: carried, but slow (half of SLOW_YIELD). */
 export const BOT_GAP_YIELD = 0.075;
-/** The level whose yields a goal is measured at (N3 frames earn no credit until N3 opens, so N3 reads N4). */
+/** The level whose yields a goal is measured at in a mixed room (N3 seats aren't measured there, so N3 reads N4). */
 const yieldLevel = (level: Level): Level => (level === 'n3' ? 'n4' : level);
-/** Says from memory per game of one frame (or kanji:<level>) in a game, at a level; a bot gap counts as BOT_GAP_YIELD. */
-export function frameYield(mode: ModeId, key: string, level: Level): number {
-  const y = YIELDS[yieldLevel(level)]?.[mode]?.[key] ?? 0;
+/**
+ * Says from memory per game of one frame (or kanji:<level>) in a game, at a level; a bot gap counts as BOT_GAP_YIELD.
+ * `green`: in a Green Car room (shared/src/greenCar.ts), measured in a 2 N3 + 2 N4 room with the switch on.
+ */
+export function frameYield(mode: ModeId, key: string, level: Level, green = false): number {
+  const y = (green ? YIELDS_GREEN[level]?.[mode]?.[key] : YIELDS[yieldLevel(level)]?.[mode]?.[key]) ?? 0;
   return y > 0 ? y : BOT_GAPS[mode]?.includes(key) ? BOT_GAP_YIELD : 0;
 }
 const KANJI_KEY: Readonly<Record<string, string>> = { '5.10': 'kanji:n5', '4.10': 'kanji:n4', '3.12': 'kanji:n3' };
@@ -585,9 +590,16 @@ const measured = (goal: Goal): boolean => goal.kind === 'frames' || goal.kind ==
  * against the step 5 simulation. The Local Line's say 7 of its 10 goals have no game an N5 player says them in
  * from memory (most N5 lines are logged as read, with the frame on screen), which needs its own simulation
  * before the phone acts on it, so the Local and Kana Lines keep list order. The Limited Express waits for N3:
- * its frames earn no credit until N3 opens.
+ * it is ranked by its Green Car yields (YIELDS_GREEN), since that's where its N3 lines come round.
  */
+// The Limited Express stays in list order for now: ranked by its Green Car yields, the Nov 2 simulation sent rooms
+// to Bento Haus's 3.8 lines, which come round with too few fillers to stamp, and 3.1 stamped slower (93% of rooms
+// by night 28, against 100% by night 11 in list order). Revisit once every Green Car game has its N3 lines.
 export const RANKED_LINES: readonly LineId[] = ['express'];
+/** Lines ranked by their Green Car yields wherever the room is (the Limited Express is played in the Green Car). */
+const GREEN_LINES: readonly LineId[] = ['limited'];
+/** Whether a line's yields are read from the Green Car table, here: always for the Limited Express, else the room's car. */
+const greenFor = (line: LineId, room: RoomFit | null): boolean => GREEN_LINES.includes(line) || room?.greenCar === true;
 /** Below this many says a game, a stop is slow: it's offered only after the faster ones, taking turns by day. */
 export const SLOW_YIELD = 0.15;
 
@@ -596,10 +608,10 @@ export const SLOW_YIELD = 0.15;
  * (an either-or need takes its best frame). For a kanji goal, kanji of its level, scaled to frame units: the
  * goal needs KANJI_GOAL kanji on FRAME_GAP_DAYS-spaced days, where a frame needs FRAME_SAYS says.
  */
-function needYields(st: PathStatus, goal: Goal, mode: ModeId, level: Level): number[] {
-  if (goal.kind === 'kanji') return [(frameYield(mode, KANJI_KEY[goal.id] ?? 'kanji:n4', level) * FRAME_SAYS) / (2 * KANJI_GOAL)];
+function needYields(st: PathStatus, goal: Goal, mode: ModeId, level: Level, green = false): number[] {
+  if (goal.kind === 'kanji') return [(frameYield(mode, KANJI_KEY[goal.id] ?? 'kanji:n4', level, green) * FRAME_SAYS) / (2 * KANJI_GOAL)];
   const open = (id: string) => !st.frames.find((f) => f.id === id)?.met;
-  return goal.need.filter((n) => needIds(n).every(open)).map((n) => Math.max(...needIds(n).map((id) => frameYield(mode, id, level))));
+  return goal.need.filter((n) => needIds(n).every(open)).map((n) => Math.max(...needIds(n).map((id) => frameYield(mode, id, level, green))));
 }
 
 /**
@@ -610,8 +622,10 @@ function needYields(st: PathStatus, goal: Goal, mode: ModeId, level: Level): num
 export function goalCarried(goal: Goal): boolean {
   if (!measured(goal) || missingFrames(goal).length || !RANKED_LINES.includes(goal.line)) return true;
   const level = LINE_BY_ID[goal.line].level;
-  if (goal.kind === 'kanji') return goal.games.some((m) => frameYield(m, KANJI_KEY[goal.id] ?? 'kanji:n4', level) > 0);
-  return goal.need.every((n) => needIds(n).some((id) => goal.games.some((m) => frameYield(m, id, level) > 0)));
+  // Carried in either car: a mixed room's table, or the Green Car's (where the Limited Express is played).
+  const y = (m: ModeId, key: string) => Math.max(frameYield(m, key, level), frameYield(m, key, level, true));
+  if (goal.kind === 'kanji') return goal.games.some((m) => y(m, KANJI_KEY[goal.id] ?? 'kanji:n4') > 0);
+  return goal.need.every((n) => needIds(n).some((id) => goal.games.some((m) => y(m, id) > 0)));
 }
 
 /**
@@ -624,9 +638,20 @@ export function goalCarried(goal: Goal): boolean {
  */
 export function goalPace(st: PathStatus, goal: Goal, level: Level, room: RoomFit | null): { y: number; mode: ModeId | null } | null {
   if (!measured(goal)) return null;
+  // No room (the map): the better of the two cars, so a stop only the Green Car carries (4.9 since its roles
+  // moved there) still shows a pace. A mixed room's suggestion reads only its own car and passes such a stop by.
+  if (!room && !GREEN_LINES.includes(goal.line)) {
+    const mixed = carPace(st, goal, level, null, false);
+    const green = carPace(st, goal, level, null, true);
+    return green.y > mixed.y ? green : mixed;
+  }
+  return carPace(st, goal, level, room, greenFor(goal.line, room));
+}
+
+function carPace(st: PathStatus, goal: Goal, level: Level, room: RoomFit | null, green: boolean): { y: number; mode: ModeId | null } {
   const games = goal.games.filter((m) => fitsRoom(m, room));
   if (!games.length) return { y: 0, mode: null };
-  const per = games.map((m) => needYields(st, goal, m, level));
+  const per = games.map((m) => needYields(st, goal, m, level, green));
   const needs = per[0]!.length;
   if (!needs) return { y: 0, mode: games[0]! };
   // Each need's best game; the slowest need decides.
@@ -635,22 +660,22 @@ export function goalPace(st: PathStatus, goal: Goal, level: Level, room: RoomFit
     let best = { y: -1, mode: games[0]! };
     games.forEach((m, i) => {
       const y = per[i]![k]!;
-      if (y > best.y || (y === best.y && y > 0 && alsoYield(st, goal, m, level) > alsoYield(st, goal, best.mode, level))) best = { y, mode: m };
+      if (y > best.y || (y === best.y && y > 0 && alsoYield(st, goal, m, level, green) > alsoYield(st, goal, best.mode, level, green))) best = { y, mode: m };
     });
     if (best.y < slow.y) slow = best;
   }
-  return slow.y > 0 ? { y: slow.y + alsoYield(st, goal, slow.mode, level) / 10, mode: slow.mode } : { y: 0, mode: slow.mode };
+  return slow.y > 0 ? { y: slow.y + alsoYield(st, goal, slow.mode, level, green) / 10, mode: slow.mode } : { y: 0, mode: slow.mode };
 }
 
-const alsoYield = (st: PathStatus, goal: Goal, mode: ModeId, level: Level): number => {
+const alsoYield = (st: PathStatus, goal: Goal, mode: ModeId, level: Level, green = false): number => {
   const open = (id: string) => !st.frames.find((f) => f.id === id)?.met;
-  return goal.also.filter(open).reduce((sum, id) => sum + frameYield(mode, id, level), 0);
+  return goal.also.filter(open).reduce((sum, id) => sum + frameYield(mode, id, level, green), 0);
 };
 
 /** What one game gives a goal's open required frames together, for ordering "Practise in". Null if unmeasured. */
 export function goalYield(st: PathStatus, goal: Goal, mode: ModeId, level: Level): number | null {
   if (!measured(goal)) return null;
-  return needYields(st, goal, mode, level).reduce((a, b) => a + b, 0);
+  return needYields(st, goal, mode, level, greenFor(goal.line, null)).reduce((a, b) => a + b, 0);
 }
 
 /**
@@ -672,6 +697,8 @@ export function gamesByYield(st: PathStatus, goal: Goal, level: Level): ModeId[]
 export interface RoomFit {
   players: number;
   speakers: number;
+  /** Tonight's games ride in the Green Car (shared/src/greenCar.ts): its yields rank the suggestion. */
+  greenCar?: boolean;
 }
 
 const fitsRoom = (mode: ModeId, room: RoomFit | null): boolean => !room || !noFit(MODES[mode].info, room.players, room.speakers);
@@ -735,7 +762,8 @@ export function suggest(st: PathStatus, level: Level, room: RoomFit | null): Sug
     // Score it by its faded frames (they still count as met), and go first only at a game that gives one.
     const faded = goal.need.flatMap((n) => needIds(n)).filter((id) => st.frames.find((f) => f.id === id)?.recheck === 'fading');
     const games = goal.games.filter((m) => fitsRoom(m, room));
-    const best = games.map((m) => ({ m, y: Math.max(0, ...faded.map((id) => frameYield(m, id, level))) })).sort((x, y) => y.y - x.y)[0];
+    const green = greenFor(goal.line, room);
+    const best = games.map((m) => ({ m, y: Math.max(0, ...faded.map((id) => frameYield(m, id, level, green))) })).sort((x, y) => y.y - x.y)[0];
     if (best && best.y > 0) return done(goal, best.m);
   }
   if (!RANKED_LINES.includes(line.id)) {

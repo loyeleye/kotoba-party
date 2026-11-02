@@ -157,3 +157,70 @@ picture is showing. A yōkai shuffle wipes its position memory.
 5. Big-kanji hidden pictures (a kanji drawn across the board) would suit N5 tables; it needs
    a way to send only the uncovered slices (pre-rendered tiles) to avoid leaking.
 6. Fluent check needed: scene names, award titles, emoji choices.
+
+## Green Car: Frame Concentration (フレーム神経衰弱)
+
+When the game rides in the Green Car (`ctx.greenCar`, every seat N4 or N3) it plays as **Frame
+Concentration** (design: project files `n3-coverage/green-car/frame-concentration.md`). Outside the
+Green Car nothing above changes. Code: `greenBoard.ts` (deal, check, tiles), `frameDeck.ts` (the deck),
+the `s.green` branches in `concentration.ts`, `greenBanner` on the stage, `greenRender` on the phone,
+`tests/frameConcentration.test.ts`.
+
+- **Pairs.** One card is a picture (emoji for now) with an English gist ("I pretended to be asleep");
+  its partner is the frame chunk (＿ふりを する, tagged N4 or N3). Neither card alone gives the sentence.
+  About a quarter of the pairs (`hardCount`: 2 on 4×4, 3 on 5×5) are **hard**: N3 frames, picture only.
+  The English comes back when the flipper plays at N4 (stretch).
+- **The deck.** 162 gists, 27 frames (12 N4: ＿た ことが ある, ＿て しまう, potential, ＿そう, ＿(よ)うと
+  おもう, ＿た ほうが いい, ＿ので, ＿すぎる, ＿ながら, passive, ＿やすい/にくい, ＿ために; 15 N3: ＿ふり,
+  ＿はずだった, ＿ずに, ＿ようと する, ＿させられる, suffering passive, ＿っぱなし, ＿ところだった, ＿せいで,
+  ＿おかげで, ＿たびに, ＿とたん, ＿ぶり, ＿に ちがいない, ＿て しょうがない), six gists each: two Kids, three
+  Family, one Cheeky (33/50/17%). Every frame is reachable in every audience. All lines are `draft`.
+- **The deal** (`buildGreenBoard`). Board one step smaller: 2–4 players 4×4 (7 pairs + 2 specials),
+  5–8 players 5×5 (11 + 3). Half N4 and half N3 frames (the odd pair goes either way), no frame twice,
+  no two gists with the same key word or picture. Kids rooms deal Kids gists only; Family adds Family;
+  Cheeky adds at most 2 (4×4) or 3 (5×5) Cheeky gists. **Aim the deal**: frames are picked most-needed
+  first, each seat's weight summed (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says). This game's counts are
+  `green.said` (all 0 when the board is dealt at setup), so the board leans to the required frames the room has
+  said least in tonight's earlier games; ties at random.
+- **Phases and timings** are the regular ones, with `GREEN_DURATIONS`: intro 12 s (Fude plus a worked
+  pair on the TV), turn 20 s, mismatch 3 s, peek 1.8 s, say it 10 s, steal 8 s, result 4 s.
+- **No say during the peek**: the chunk is still up, so saying it then would be reading it.
+- **The chorus** (open question 1, built as recommended). In the say-it window the flipper says their
+  sentence, and everyone else may say their own at the same time (two tries each): a right one is +30,
+  logged as their own line, and never takes the pair. The window ends when everyone is done or at 10 s;
+  the chunk stays turned away until then, even if the flipper has already kept the pair. If the flipper
+  missed, the steal window opens as before (fresh tries for the stealers; first right wins).
+- **The check** (`checkFrameSay`, lenient): right when `framesOf`, on what was heard with the server's
+  tokens, finds the pair's frame **and** one of the gist's key-word stems is in the reading (ねた, ねて, ねる
+  for "asleep"). The rest is the player's own. A miss shows a tip on that phone only ("I heard ＿ふりを
+  する, but not 'asleep'").
+- **Logging.** A right say goes in the sayer's phrasebook as **their own sentence** (heard text, server
+  reading), item id `concentration.gc.<gist id>` (each gist is its own filler). `recall: 'memory'` only
+  when spoken and not a copy: a steal or chorus line whose words match someone else's earlier try on this
+  pair logs `read`. Typed and tile answers log `read`. A flipper who misses both tries gets a `missed`
+  entry with the model line.
+- **The TV and Fude get only the model line.** The result banner shows "One way to say it: <model>"; the
+  `concentration_keep` and `concentration_stolen` cues pass the model, not the transcript (regular rooms
+  still pass the heard word, which must match the word card anyway). Heard text appears only on the
+  sayer's phone (their tip, their result, their finale list).
+- **Kids words.** In a Kids room any say whose text fails `playerTextAllowed` is turned away
+  (`kids-words`) before it costs a try.
+- **Tiles.** In every say window the phone has a tray: the model's words plus two words from other lines.
+  It opens by default for an N4 seat on an N3 pair, and behind "Use word tiles" for everyone else. A tile
+  answer is sent as `via: 'tap'`, scores a flat 100 and logs `read`.
+- **Scoring.** Kept or stolen 100 (hard pair 130), +40 said aloud, +20 for an N3 frame said by an N4 seat
+  (not from tiles), chorus +30, tiles 100 flat, picture 60–240. Nothing is taken away.
+- **Awards**: the four above plus **じぶんの ことば賞** (most different sentences that counted).
+- **Phones**: the gist big and the chunk during the peek; the say screen with the gist, the tip, the
+  speak box and the tray; the result with your own sentence and the model; at the finale, your sentences
+  this game and which counted.
+- **Bots** (`concentrationPolicy`): look the gist's model line up by its picture (`GIST_BY_PIC`), say it
+  with chance `sayRight` behind a varying opener (`BOT_OPENERS`: じつは, ええと, あのう, そうそう) so sims see
+  different sentences, join the chorus with chance `chorusRate` (0.6) and steal with `stealRate`.
+
+**Moved out of mixed rooms:** nothing (regular Kotoba Concentration is Kana–N5 and keeps every pair kind).
+Stage TTS isn't used in the Green Car (no audio cards).
+
+**Art still needed**: one picture per gist (162, replacing the emoji; PixelLab placeholders under
+commercial-blockers row 6, commissioned before sale), a chunk-card frame (paper with an N4/N3 tag), and the
+green clover card back. Fude's Green Car intro and keep lines: the bank lines are the regular ones.

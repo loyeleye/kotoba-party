@@ -37,6 +37,7 @@ function promptCard(p: PromptCard, small = false): HTMLElement {
     { class: `oo-prompt ${small ? 'small' : ''}` },
     p.photo ? h('p', { class: 'oo-photo' }, '📷 ', p.photo) : null,
     jpView(p, level, { cls: 'oo-jpv' }),
+    p.greenCar ? h('p', { class: 'hint oo-frame' }, h('span', { lang: 'ja' }, `🎯 ${p.greenCar.frame}`), p.greenCar.stretch ? ' · N3 stretch' : ` · ${p.greenCar.level}`) : null,
   );
 }
 
@@ -303,7 +304,7 @@ function encore(ctx: PhoneContext<OogiriView>): HTMLElement {
         class: `primary oo-encore-go ${winner ? '' : 'small'}`,
         onclick: () =>
           box.replaceChildren(
-            h('p', { class: 'hint' }, 'From memory, say your answer for the room!'),
+            h('p', { class: 'hint' }, m.prompt.greenCar ? `From memory, say the whole line, ${m.prompt.greenCar.frame} and all!` : 'From memory, say your answer for the room!'),
             speakBox({ label: 'Hold and say it 🎤', placeholder: 'Or type it', onSend: (u) => void send({ kind: 'encore', said: u, matchup: m.id }) }),
           ),
       },

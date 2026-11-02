@@ -31,6 +31,7 @@
 .wg-fin { display: grid; gap: 2px; text-align: left; }
 .wg-fin strong { font-size: 18px; }
 .wg-fin-en { color: var(--muted); font-size: 13px; }
+.wg-fin-n3 { font-size: 11px; font-weight: 700; color: var(--muted); }
 .wg-fin.picked { outline: 3px solid var(--accent); }
 .wg-own-fin { display: flex; gap: 6px; }
 .wg-own-fin input { flex: 1; min-width: 0; }
@@ -39,3 +40,8 @@
 .wg-model { border: 1px dashed var(--muted); border-radius: 12px; padding: 8px 10px; }
 .wg-model p { margin: 0; }
 .wg-kept { font-size: 18px; text-align: center; }
+/* Sentence Shiritori (Green Car round 3): the grammar cards on your turn. */
+.wg-sent-cards { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.wg-sent-card { flex: 1 1 140px; border: 2px solid var(--accent, #c33); border-radius: 12px; padding: 8px; text-align: center; }
+.wg-sent-card.stretch { border-style: dashed; }
+.wg-heard-line { text-align: center; font-size: 18px; }

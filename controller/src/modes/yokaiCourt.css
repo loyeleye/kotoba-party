@@ -81,6 +81,7 @@ body[data-mode='yokai-court'] { --mode: #e8553d; }
 .yc-pass.free { border-color: var(--good); }
 .yc-pass-wrap { display: grid; gap: 6px; }
 .yc-model .jpv-main { font-size: 22px; }
+.yc-n3 { display: inline-block; padding: 1px 6px; border-radius: 6px; background: #2f7d4f; color: #fff; font-size: 12px; font-weight: 800; }
 .yc-typed { display: grid; gap: 8px; }
 .yc-typed input { flex: 1; min-width: 0; font: inherit; font-size: 20px; padding: 12px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel); color: var(--ink); }
 .yc-typed-row { display: flex; gap: 8px; align-items: stretch; }

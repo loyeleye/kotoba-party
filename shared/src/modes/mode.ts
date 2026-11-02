@@ -106,6 +106,18 @@ export interface ModeContext {
   readonly vipId?: string | null;
   /** The host's Audience setting (family when left out). */
   readonly audience?: Audience;
+  /**
+   * This game rides in the Green Car (shared/src/greenCar.ts): everyone is N4+, Kana/N5 content is off, and
+   * the N4/N3 pieces that would change a beginner's turn are on. False when left out.
+   */
+  readonly greenCar?: boolean;
+  /**
+   * Green Car, aim the deal (shared/src/greenCar.ts): how much this player needs these frames tonight, higher is
+   * more. A frame some path goal requires weighs twice an optional one, and each time the player said it from
+   * memory in an earlier game tonight divides its weight. Games add their own this-game counts on top. Left out
+   * in test contexts: then every frame weighs the same (aimWeight's fallback).
+   */
+  frameNeed?(playerId: string, frames: readonly string[]): number;
   readonly content: ContentLibrary;
   random(): number;
   newId(): string;
@@ -204,6 +216,8 @@ export interface ModeInfo {
   /** The Japanese title's reading, in kana, where it has kanji (for the host to say it). */
   titleKana?: string;
   blurb: string;
+  /** The game's Green Car name, where it plays as a different game there (shared/src/greenCar.ts): the menu shows it. */
+  greenCar?: { title: string; titleJa: string; titleKana?: string; blurb: string };
   host: HostId;
   minPlayers: number;
   maxPlayers: number;

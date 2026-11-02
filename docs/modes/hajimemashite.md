@@ -76,9 +76,10 @@ VIP extras: みじかめ (4 guests only) and 5まい (five cards a turn).
 
 ## Content
 
-33 draft cards (`cards.ts`): すきな たべもの, きらいな たべもの, しゅみ, いきたい ところ, できること, こわい もの,
+39 draft cards (`cards.ts`): すきな たべもの, きらいな たべもの, しゅみ, いきたい ところ, できること, こわい もの,
 まいあさ, かいたい ペット, こどもの ころの ゆめ, ねる まえに, six N4 cards for N4 guests (the N4 deck, below),
-three Kids N4 cards and three Cheeky N4 cards, seven N4 verb cards (below), and four Cheeky cards (はつデート, よっぱらうと, スマホの しゃしん, じつは すき) written
+three Kids N4 cards and three Cheeky N4 cards, seven N4 verb cards (below), six N3 cards that play only in the
+Green Car (below), and four Cheeky cards (はつデート, よっぱらうと, スマホの しゃしん, じつは すき) written
 for women and men alike (もとカレ and もとカノ, かれの いえ and かのじょの いえ). 28 draft Pon lines
 (`content/src/hosts/pon.ts`, `hajime_*`). All `draft` until the fluent check.
 
@@ -151,6 +152,49 @@ Each has 16 tiles and a Pon tile, with the forms worth practising (いく → �
 An N4 guest draws the N4 cards first, in every room: the room's own N4 cards (Kids, Cheeky) first, then
 the shared N4 deck, then the usual cards once they've had them all. Kana and N5 guests never get them. It isn't a separate seat: the tanuki and
 detectives play the guest's card as always, so there's no offer to decline.
+
+## Green Car
+
+In the Green Car (everyone N4 or N3; `shared/src/greenCar.ts`, design: `n3-coverage/green-car/design.md` in the
+project files) the deck is the **experience deck** only (`cardsFor(audience, level, true)`, `greenCarCard`): the
+N4 cards in ＿た ことが ある and ＿て みる／みたい (noun and verb cards, the room's own included), and six N3 cards.
+No N5 card, and no ＿て しまう card (not an experience frame). N3 cards never play outside the Green Car: a mixed
+room, or an all-N4+ room with the Green Car switched off, deals as above.
+
+| Room | Card | First person | Frame |
+| --- | --- | --- | --- |
+| All | じぶんの ルール | ＿ ことに して います | koto-ni-shiteiru |
+| All | した ふり | このまえ ＿ ふりを しました | furi |
+| All | する はずだった こと | きのうは ＿ はずでした | hazu-datta |
+| Kids | ペットと おやつの ルール | おうちでは ＿ ことに して います | koto-ni-shiteiru |
+| Kids | しゅくだいの とき | しゅくだいの とき、＿ ふりを しました | furi |
+| Cheeky | はつデートの よてい | はつデートで ＿ はずでした | hazu-datta |
+
+The blank is a verb phrase already in the form the frame takes (dictionary form before ことに して いる and
+はずでした; a plain form, or の／な, before ふり), so nothing is conjugated and typing works as on a noun card.
+Each has 16 tiles and a Pon tile, `frames` (an existing N3 frame id) and `status: 'draft'`; a test checks every
+line, first and third person with every tile, against `framesOf`. One shared card per frame means every frame
+plays in every audience. The card shows an **N3** tag on the phones (`card.level`).
+
+**Aim the deal** (`pickGreenCard`). `gcSaid` counts, per player, how many times they've said each experience
+frame this game: the guest's true line heard in the score step, and the introducer's card line heard in the reveal.
+The frame's weight is (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says).
+
+- An **N4 guest** gets the N4 experience cards; an N3 card only once those are used up (a stretch, tagged N3).
+- An **N3 guest** gets about half and half: the level (N3 or N4) they have said less this game, ties to N3.
+- Within the level: the frame the guest needs most (so ＿た ことが ある, which a goal requires, comes before
+  ＿て みる until it's said), then the room's own card (Kids, Cheeky), then any;
+  never a card the room has had while a fresh one is left; ties at random.
+
+None of these frames is aimed at a player (＿くせに, ＿わりに, ＿に しては and ＿わけが ない aren't in the deck).
+
+**Kids rooms say their line (Ladi's decision).** In a Kids room in the Green Car every role may hold the mic
+and whisper the whole line (or type it), not only tap: the phone shows `sayTiles` and no free-text box. The
+line counts only if it names one of the player's tiles (the tanuki's hand; the card's tiles for the guest and
+detectives): the blank typed exactly, else the tile's sounds heard in the line, longest tile first
+(`tileHeard`). Anything else is refused (`tiles-only`). What reaches the TV is the tile, so the room only ever
+sees the frame filled with tile words, never free text. A line said with the card's frame is logged
+(`hajime:<card>:said`) as that model line, said, from memory. Kids rooms outside the Green Car stay tiles only.
 
 ## Music and sound
 

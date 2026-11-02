@@ -212,6 +212,7 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
       { class: 'lt-task-head' },
       task.minigame ? h('span', { class: 'lt-chip' }, ruby(task.minigame)) : h('span', { class: 'lt-chip' }, 'ダッシュ！'),
       task.role ? h('span', { class: 'lt-chip star' }, '⭐ ', ruby(task.role)) : null,
+      task.n3 ? h('span', { class: 'lt-chip n3' }, 'N3') : null,
       task.attempt === 2 ? h('span', { class: 'lt-chip warn' }, 'Retry') : null,
       me.ghost ? h('span', { class: 'lt-chip ghost' }, '👻 Ghost') : null,
     ),
@@ -235,6 +236,19 @@ function taskScreen(task: TaskView, game: LastTrainView, send: (move: unknown) =
           task.hint ? h('p', {}, `💡 ${task.hint}`) : null,
           // The server already adds the romaji: "お (o)".
           task.firstKana ? h('p', {}, `It starts with ${task.firstKana}`) : null,
+        )
+      : null,
+    // Green Car, an N4 player: an optional N3 line to say instead, one tap away.
+    task.stretch
+      ? h(
+          'details',
+          { class: 'lt-stretch' },
+          h('summary', {}, h('span', { class: 'lt-chip n3' }, 'N3'), ' Stretch: say this instead (+bonus)'),
+          task.stretch.role ? h('p', {}, '⭐ ', ruby(task.stretch.role)) : null,
+          task.stretch.signs?.length ? signBoard(task.stretch.signs) : null,
+          jpBlock(task.stretch.prompt, { en: task.attempt === 2 }),
+          task.stretch.visual ? h('p', { class: 'lt-visual' }, `👀 ${task.stretch.visual}`) : null,
+          task.stretch.hint ? h('p', {}, `💡 ${task.stretch.hint}`) : null,
         )
       : null,
     box,

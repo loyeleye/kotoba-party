@@ -12,6 +12,8 @@ import type { InkShow, KanaRaidView, YokaiView } from '../../../shared/src/modes
 import { COMBO_WINDOW_MS, INK_WAVE } from '../../../shared/src/modes/kanaRaid/kanaRaid.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { StageMode } from './types.js';
+import type { KatsuyoRaidView } from '../../../shared/src/modes/kanaRaid/katsuyoRaid.js';
+import { katsuyoRaidStage } from './katsuyoRaid.js';
 import { BOSS_DEFEAT, hitSheet, isReady, spriteEl } from '../sprites.js';
 
 // ---------- server clock ----------
@@ -179,7 +181,7 @@ const range = (chapters: number[]) => {
   return out.join(', ');
 };
 
-export const kanaRaidStage: StageMode<KanaRaidView> = {
+const kanaOnlyStage: StageMode<KanaRaidView> = {
   badge: (game, id) => {
     const pick = game.picks.find((p) => p.playerId === id);
     if (!pick) return '';
@@ -260,6 +262,13 @@ export const kanaRaidStage: StageMode<KanaRaidView> = {
         return h('div', { class: 'card' }, h('p', { class: 'big' }, 'Look at your phone!'));
     }
   },
+};
+
+/** The raid's stage: the kana raid, or Katsuyō Raid when the game rides in the Green Car. */
+const isKatsuyo = (game: KanaRaidView | KatsuyoRaidView): game is KatsuyoRaidView => 'variant' in game && game.variant === 'katsuyo';
+export const kanaRaidStage: StageMode<KanaRaidView | KatsuyoRaidView> = {
+  badge: (game, id) => (isKatsuyo(game) ? katsuyoRaidStage.badge!(game, id) : kanaOnlyStage.badge!(game, id)),
+  render: (view, game) => (isKatsuyo(game) ? katsuyoRaidStage.render(view, game) : kanaOnlyStage.render(view, game)),
 };
 
 function boss(game: KanaRaidView): HTMLElement {

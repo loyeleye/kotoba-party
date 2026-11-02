@@ -2,8 +2,29 @@
 // N4 hard role: the announcer makes the announcement instead (speaking items, shown, not played).
 // Item ids are stable: never rename one once it ships.
 
-import type { LastTrainMinigame } from '../types.js';
+import type { LastTrainMinigame, MinigameItem } from '../types.js';
 import { ANNOUNCER } from './roles.js';
+import { ruby } from './ruby.js';
+
+const STAFF_SAYS = 'あなたは{駅員|えきいん}です。';
+
+/**
+ * An N3 announcer line (goal 3.8, service Japanese: ＿で ございます, ＿て おります, ＿させて いただきます, ご＿ください).
+ * Dealt only in the Green Car (shared/src/greenCar.ts), where the announcer is always on; a mixed room's announcer
+ * offer deals N4 lines only. Draft until the fluent check.
+ */
+const n3 = (id: string, frames: string[], prompt: [string, string], visual: string, model: [string, string], accepted: string[], hint: string): MinigameItem => ({
+  id: `station-announcement.${id}`,
+  level: 'n3',
+  role: ANNOUNCER,
+  frames,
+  prompt: ruby(STAFF_SAYS + prompt[0], `You're the station staff. ${prompt[1]}`),
+  visual,
+  accepted,
+  model: ruby(model[0], model[1]),
+  hint,
+  timeLimit: 15,
+});
 
 export const stationAnnouncement: LastTrainMinigame = {
   id: 'station-announcement',
@@ -289,5 +310,78 @@ export const stationAnnouncement: LastTrainMinigame = {
       hint: 'Same shape as every arrival: まもなく (soon), the train with が (ゆうれい れっしゃ, ghost train), then まいります, the polite "comes" stations use.',
       timeLimit: 15,
     },
+    // ---- N3 announcer (Green Car only): the station's service Japanese. ----
+    n3(
+      '23-shuuten-gozaimasu',
+      ['de-gozaimasu'],
+      ['{次|つぎ}は{終点|しゅうてん}の{温泉口|おんせんぐち}です。アナウンスしてください。', 'Next is the last stop, Onsen-guchi. Make the announcement.'],
+      '📣 Last stop: Onsen-guchi. Say it the formal way: not です.',
+      ['{次|つぎ}は{終点|しゅうてん}、{温泉口|おんせんぐち}でございます。', 'The next stop is the last stop, Onsen-guchi.'],
+      ['つぎはしゅうてんおんせんぐちでございます', 'しゅうてんおんせんぐちでございます', 'つぎはおんせんぐちでございます', 'つぎはしゅうてんのおんせんぐちでございます', 'まもなくしゅうてんおんせんぐちでございます', 'つぎはしゅうてんでございます'],
+      'The station says です as でございます. Start with つぎは しゅうてん, then the name.',
+    ),
+    n3(
+      '24-okurete-orimasu',
+      ['te-orimasu'],
+      ['{電車|でんしゃ}が{今|いま}おくれています。お{客|きゃく}さんに{言|い}ってください。', 'The train is running late right now. Tell the passengers.'],
+      '📣 Running late. Say it humbly: not います.',
+      ['ただいま、{電車|でんしゃ}がおくれております。', 'The train is currently running late.'],
+      ['ただいまでんしゃがおくれております', 'でんしゃがおくれております', 'ただいまでんしゃがおくれておりますもうしわけございません', 'でんしゃがおくれておりますもうしわけございません', 'もうしわけございませんただいまでんしゃがおくれております', 'もうしわけございませんでんしゃがおくれております'],
+      'Right now is ただいま. Staff say 〜て います as 〜て おります: でんしゃが おくれて おります.',
+    ),
+    n3(
+      '25-kippu-haiken',
+      ['sasete-itadaku'],
+      ['{車掌|しゃしょう}さんのかわりに、きっぷを{見|み}ます。お{客|きゃく}さんに{言|い}ってください。', "Standing in for the conductor, you're checking tickets. Tell the passenger."],
+      '🎫 Checking tickets. Say it the humblest way: let me look.',
+      ['きっぷを{拝見|はいけん}させていただきます。', 'May I see your ticket, please?'],
+      ['きっぷをはいけんさせていただきます', 'しつれいしますきっぷをはいけんさせていただきます', 'じょうしゃけんをはいけんさせていただきます', 'しつれいいたしますきっぷをはいけんさせていただきます'],
+      'To look at a guest’s things is はいけんする. Then the humblest ending: させて いただきます.',
+    ),
+    n3(
+      '26-unten-shuuryou',
+      ['sasete-itadaku'],
+      ['{今日|きょう}の{電車|でんしゃ}は、もうおわりです。アナウンスしてください。', "Today's trains are finished. Make the announcement."],
+      '📣 That was the last train. Close the line for the night, humbly.',
+      ['{本日|ほんじつ}の{運転|うんてん}は、これで{終了|しゅうりょう}させていただきます。', "That concludes today's service."],
+      ['ほんじつのうんてんはこれでしゅうりょうさせていただきます', 'ほんじつのうんてんはしゅうりょうさせていただきます', 'きょうのうんてんはこれでしゅうりょうさせていただきます', 'ほんじつのでんしゃはこれでしゅうりょうさせていただきます', 'これでしゅうりょうさせていただきます'],
+      'Today, formally, is ほんじつ. To end it is しゅうりょうする; humbly, しゅうりょう させて いただきます.',
+    ),
+    n3(
+      '27-kinen-natte-orimasu',
+      ['te-orimasu'],
+      ['ホームでたばこをすっているお{客|きゃく}さんがいます。アナウンスしてください。', 'Someone is smoking on the platform. Make the announcement.'],
+      '🚭 The whole station is no smoking (禁煙, きんえん). Say how things are, humbly.',
+      ['{駅|えき}の{中|なか}は、{禁煙|きんえん}となっております。', 'Smoking is not permitted anywhere in the station.'],
+      ['えきのなかはきんえんとなっております', 'えきのなかはきんえんになっております', 'ホームはきんえんとなっております', 'ホームはきんえんになっております', 'えきのなかはぜんぶきんえんとなっております', 'えきはきんえんとなっております'],
+      'Staff say how things are with 〜と なって おります: えきの なかは きんえんと なって おります.',
+    ),
+    n3(
+      '28-wasuremono-gochuui',
+      ['go-kudasai'],
+      ['{終点|しゅうてん}です。お{客|きゃく}さんが{電車|でんしゃ}をおります。{忘|わす}れ{物|もの}が{心配|しんぱい}です。', "It's the last stop and passengers are getting off. You're worried about things left behind."],
+      '📣 Remind everyone to take their things: ご〜ください.',
+      ['お{忘|わす}れ{物|もの}のないよう、ご{注意|ちゅうい}ください。', 'Please take care not to leave anything behind.'],
+      ['おわすれもののないようごちゅういください', 'おわすれもののないようにごちゅういください', 'わすれもののないようごちゅういください', 'わすれもののないようにごちゅういください', 'おわすれものにごちゅういください', 'わすれものにごちゅういください'],
+      'Be careful, to a guest, is ごちゅうい ください. So nothing is left: おわすれものの ない よう.',
+    ),
+    n3(
+      '29-saishuu-gozaimasu',
+      ['de-gozaimasu'],
+      ['{今|いま}{来|き}た{電車|でんしゃ}は、{今日|きょう}{最後|さいご}の{電車|でんしゃ}です。アナウンスしてください。', "The train that just came in is today's last. Make the announcement."],
+      '📣 The last train is here. Say what it is, formally.',
+      ['こちらは、{最終電車|さいしゅうでんしゃ}でございます。', 'This is the last train.'],
+      ['こちらはさいしゅうでんしゃでございます', 'このでんしゃはさいしゅうでんしゃでございます', 'さいしゅうでんしゃでございます', 'こちらはしゅうでんでございます', 'このでんしゃはしゅうでんでございます'],
+      'The last train is さいしゅう でんしゃ. Formally, です is でございます.',
+    ),
+    n3(
+      '30-tomatte-orimasu',
+      ['te-orimasu'],
+      ['せんろにたぬきがいて、{電車|でんしゃ}が{止|と}まっています。アナウンスしてください。', "There's a tanuki on the tracks and the train has stopped. Make the announcement."],
+      '🦝 A tanuki is sitting on the tracks. Say the train has stopped, humbly.',
+      ['ただいま、{電車|でんしゃ}が{止|と}まっております。', 'The train is currently stopped.'],
+      ['ただいまでんしゃがとまっております', 'でんしゃがとまっております', 'ただいまでんしゃがとまっておりますもうしわけございません', 'たぬきのためでんしゃがとまっております', 'もうしわけございませんただいまでんしゃがとまっております'],
+      'Right now is ただいま. Staff say 〜て います as 〜て おります: でんしゃが とまって おります.',
+    ),
   ],
 };

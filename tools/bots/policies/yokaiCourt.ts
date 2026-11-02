@@ -46,6 +46,11 @@ export function yokaiCourtPolicy(opts: YokaiCourtPolicyOptions = {}): ModePolicy
 
       if (view.phase === 'prompt' || view.phase === 'answer') {
         if (me.canTestify) push('testify', { kind: 'testify', testimony: r('curve?') < curve ? 'curve' : pickOf(PLAIN, r('testimony'))! });
+        // Green Car, with `speak`: the witness passes their answer on out loud (a checked take of the line).
+        if (game.greenCar && opts.speak && me.role === 'witness' && me.testified && game.testimony && !game.testimony.said && !game.testimony.auto && view.phase === 'prompt') {
+          const said = game.testimony.line.kana;
+          push('said', { kind: 'said', checked: true, heard: { via: 'speech', text: said, reading: said } });
+        }
         if (me.hunchOptions.length && !me.hunch) push('hunch', { kind: 'hunch', yokaiId: pickOf(me.hunchOptions, r('hunch'))!.id });
         if (!lawyer || me.sent) return out;
         if (me.level === 'kana') {

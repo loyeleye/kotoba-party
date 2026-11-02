@@ -1,0 +1,16 @@
+/* Katsuyō Raid on the phone: badges as words (and an icon), never colour alone. Placeholder art. */
+.ky-badge { display: inline-flex; align-items: baseline; gap: 4px; padding: 4px 12px; border-radius: 8px; font-size: 22px; font-weight: 900; background: #2b5d3a; color: #f4fff0; border: 2px solid var(--line); }
+.ky-badge.n3 { background: #6a2f6e; }
+.ky-badge small { font-size: 14px; font-weight: 600; opacity: 0.9; }
+.ky-n3tag { font-style: normal; font-size: 12px; font-weight: 900; background: var(--warn); color: #1a1426; border-radius: 6px; padding: 0 5px; }
+.ky-badge-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.ky-badge-pick { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); opacity: 0.6; }
+.ky-badge-pick.on { opacity: 1; border-color: var(--good); box-shadow: 0 0 0 2px var(--good); }
+.ky-badge-ex { font-size: 16px; color: var(--muted); }
+.ky-verb { display: grid; justify-items: center; gap: 6px; }
+.ky-chunk { display: grid; justify-items: center; gap: 8px; padding: 10px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.ky-chunk.boss { border-color: var(--accent); }
+.ky-chunk-pic { font-size: 64px; line-height: 1; }
+.ky-gist { margin: 0; font-size: 22px; font-weight: 800; }
+.ky-counted { display: grid; gap: 4px; justify-items: center; }
+.ky-counted p { margin: 0; font-size: 18px; font-weight: 800; }

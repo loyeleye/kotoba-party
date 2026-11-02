@@ -12,6 +12,7 @@ import { calendarCrunch } from './calendar-crunch.js';
 import { readTheSigns } from './read-the-signs.js';
 import { lostAndFound } from './lost-and-found.js';
 import { lastTrainScenarios as scenarios } from './scenarios.js';
+import { greenCarScenarios } from './green-car.js';
 
 export const lastTrainMinigames: LastTrainMinigame[] = [
   konbiniMath,
@@ -26,4 +27,4 @@ export const lastTrainMinigames: LastTrainMinigame[] = [
   lostAndFound,
 ];
 
-export const lastTrainScenarios: LastTrainScenario[] = scenarios;
+export const lastTrainScenarios: LastTrainScenario[] = [...scenarios, ...greenCarScenarios];

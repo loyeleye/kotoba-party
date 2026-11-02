@@ -7,13 +7,14 @@ import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import { EMPTY_CONTENT, type ContentLibrary, type HostCue } from '../shared/src/modes/mode.js';
-import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, KEIGO_PAIRS, keigoPair, NAKODO, nakodoLines, OPENERS, withName } from '../shared/src/modes/omiai/cards.js';
+import { appealQuestion, CARDS, cardsFor, CLOSERS, introQuestion, KEIGO_PAIRS, keigoPair, NAKODO, NAKODO_N3, nakodoLines, nakodoN3Lines, OPENERS, withName } from '../shared/src/modes/omiai/cards.js';
 import { checkManners, METER, restoreScript, verbForms } from '../shared/src/modes/omiai/manners.js';
 import {
   ACCEPT_POINTS,
   BONUS_POOL_SHARE,
   dealTiles,
   DURATIONS,
+  GOZAIMASU_TILE,
   ENCORE_SHARE,
   invitation,
   joinTiles,
@@ -876,6 +877,73 @@ describe('Omiai: the go-between’s keigo lines', () => {
     expect(checkManners(typed('おばけに なった'), 'n4').hits.some((h) => h.kind === 'honorific')).toBe(false);
     expect(checkManners(typed('おきに なる'), 'n4').hits.some((h) => h.kind === 'honorific')).toBe(false);
   });
+
+  it('the Green Car’s N3 lines: both forms for every place, keigo to the meter, with their frame and key word', () => {
+    expect(NAKODO_N3.status).toBe('draft');
+    for (const card of CARDS)
+      for (const total of [3, 4, 5])
+        for (let round = 1; round <= total; round++) {
+          const { open, close } = nakodoN3Lines(card, round, total);
+          for (const pair of [open, close]) {
+            expect(pair.map((l) => l.frames)).toEqual([['sasete-itadaku'], ['de-gozaimasu']]);
+            for (const line of pair) {
+              const at = `${card.id} ${round}/${total}: ${line.jp.kana}`;
+              expect(line.jp.text, at).toBe(line.jp.kana);
+              expect(line.jp.kana, at).not.toMatch(/[{}（）]|ちゃん|くん/);
+              expect(line.jp.en, at).not.toMatch(/[{}]/);
+              expect(line.jp.kana, at).toContain(line.key);
+              expect(line.gist.kana.length, at).toBeGreaterThan(4);
+              const m = checkManners(typed(line.jp.kana), 'n3', { name: 'アキ' });
+              expect(m.register, at).toBe('keigo');
+              expect(checkManners(speech(line.jp.kana.replace(/[ 、。]/g, '')), 'n3').register, at).toBe('keigo');
+            }
+          }
+        }
+  });
+
+  it('the meter scores the N3 service forms as keigo, as well as N4 お〜します', () => {
+    const kinds = (text: string) => checkManners(typed(text), 'n3').hits.map((h) => h.kind);
+    expect(kinds('しゅみは つりで ございます。')).toContain('teinei');
+    expect(kinds('まちを あんない させて いただきます。')).toContain('humble');
+    expect(kinds('おてつだい します。')).toContain('humble');
+    for (const text of ['しゅみは つりで ございます。', 'まちを あんない させて いただきます。', 'おてつだい します。']) expect(checkManners(typed(text), 'n3').register, text).toBe('keigo');
+  });
+});
+
+describe('Omiai in the Green Car: keigo questions, N3 tiles and tips', () => {
+  it('asks every question in keigo, on the TV and in Nobiko-san’s voice too; a mixed room’s TV keeps the N5 ask', () => {
+    const t = new Table(2, ['n4', 'n3']);
+    expect(t.cmd('stage', { type: 'start', mode: 'omiai', extra: { cardId: 'kappa' } }).changed).toBe(true);
+    t.timeout();
+    const q = t.st.current!.question;
+    expect(t.view().question!.text).toBe(q.ask.n4.text);
+    t.play('p1', { kind: 'nakodo', accept: false });
+    expect(t.s.cues.find((c) => c.event === 'prompt_read')!.prompt).toMatchObject({ kana: q.ask.n4.kana });
+    const mixed = new Table(2, ['n4', 'n5']);
+    expect(mixed.cmd('stage', { type: 'start', mode: 'omiai', extra: { cardId: 'kappa' } }).changed).toBe(true);
+    mixed.timeout();
+    expect(mixed.view().question!.text).toBe(mixed.st.current!.question.ask.n5.text);
+  });
+
+  it('deals で ございます beside です, only in the Green Car', () => {
+    const kappa = CARDS.find((c) => c.id === 'kappa')!;
+    const p = { id: 'x', name: 'アキ', seat: 1, level: 'n4' as Level, connected: true, score: 0 };
+    const q = introQuestion(kappa);
+    const has = (gc: boolean) => dealTiles(q, 'intro', p, mulberry(1), gc).some((tl) => tl.jp.kana === GOZAIMASU_TILE.kana && !tl.casual && tl.role === 'ending');
+    expect(has(true)).toBe(true);
+    expect(has(false)).toBe(false);
+    // Joined, the tile reads as keigo.
+    expect(checkManners(typed(joinTiles([{ key: 'f', jp: { text: 'つり', kana: 'つり', en: '' }, role: 'fill', casual: false }, { key: 'e', jp: GOZAIMASU_TILE, role: 'ending', casual: false }])), 'n4').register).toBe('keigo');
+  });
+
+  it('steps a polite です answer up to でございます in the tip, only in the Green Car', () => {
+    const q = questionFor(CARDS.find((c) => c.id === 'kappa')!, 2, 4);
+    const u = typed('わたしの しゅみは つりです。');
+    const m = checkManners(u, 'n3', { name: 'アキ' });
+    expect(m.register).toBe('polite');
+    expect(tipFor(m, u, q, 'n3', 'アキ', false, true)).toMatchObject({ kind: 'upgrade', target: { kana: 'わたしの しゅみは つりでございます。' } });
+    expect(tipFor(m, u, q, 'n3', 'アキ', false).kind).toBe('perfect');
+  });
 });
 
 describe('Omiai: the go-between in play', () => {
@@ -904,126 +972,96 @@ describe('Omiai: the go-between in play', () => {
     expect(t.s.deadline! - t.now).toBe(8_000);
   });
 
-  it('offers the N4 player the opening; saying it pays, and Nobiko-san lets them speak', () => {
-    const t = new Table(3, ['kana', 'n4', 'n5']);
+  it('a mixed room has no go-between and no wait for one, even with N4 players (a Green Car move-out)', () => {
+    for (const levels of [['kana', 'n4', 'n5'], ['n5', 'n4']] as Level[][]) {
+      const t = new Table(levels.length, levels);
+      begin(t);
+      expect(t.s.greenCarOn).toBe(false);
+      expect(t.st.nakodo).toBeNull();
+      expect(t.view().nakodo).toBeNull();
+      expect(t.view('p2').me!.nakodo).toBeNull();
+      expect(cues(t)).toContain('prompt_read');
+      expect(t.s.deadline! - t.now).toBe(8_000);
+      expect(t.play('p2', { kind: 'nakodo', accept: true }).error).toBe('not-go-between');
+    }
+    // An all-N4 room that switched the Green Car off plays as a mixed room.
+    const off = new Table(2, ['n4', 'n4']);
+    expect(off.cmd('stage', { type: 'settings', greenCar: false }).error).toBeUndefined();
+    begin(off);
+    expect(off.st.greenCar).toBeUndefined();
+    expect(off.st.nakodo).toBeNull();
+    expect(cues(off)).toContain('prompt_read');
+  });
+
+  it('the Green Car seats a go-between every round with no offer; saying the line pays, and Nobiko-san lets them speak', () => {
+    const t = new Table(3, ['n4', 'n4', 'n4']);
     begin(t);
-    expect(t.st.nakodo?.playerId).toBe('p2');
+    expect(t.s.greenCarOn).toBe(true);
+    expect(t.st.nakodo).toMatchObject({ playerId: 'p1', status: 'accepted' });
     expect(cues(t)).not.toContain('prompt_read');
     expect(t.s.deadline! - t.now).toBe(8_000 + 12_000 + 7_000);
-    const me = t.view('p2').me!.nakodo!;
-    expect(me).toMatchObject({ status: 'offered', slot: 'open', canSay: true, triesLeft: 2 });
+    const me = t.view('p1').me!.nakodo!;
+    expect(me).toMatchObject({ status: 'accepted', slot: 'open', canSay: true, triesLeft: 2 });
     expect(me.line!.kana).toContain('おつきに なりました');
-    expect(t.view('p1').me!.nakodo).toBeNull();
-    expect(t.play('p1', { kind: 'nakodo', utterance: speech(me.line!.kana) }).error).toBe('not-go-between');
+    // An N4 go-between: the N4 line, with the N3 form as an optional stretch.
+    expect(me.n3).toBeUndefined();
+    expect(me.stretch!.kana).toContain('させて いただきます');
+    expect(t.view('p2').me!.nakodo).toBeNull();
+    expect(t.play('p2', { kind: 'nakodo', utterance: speech(me.line!.kana) }).error).toBe('not-go-between');
     // A miss, then the line.
-    t.play('p2', { kind: 'nakodo', utterance: speech('こんにちは') });
-    expect(t.view('p2').me!.nakodo).toMatchObject({ status: 'accepted', triesLeft: 1, heard: 'こんにちは', ok: false });
+    t.play('p1', { kind: 'nakodo', utterance: speech('こんにちは') });
+    expect(t.view('p1').me!.nakodo).toMatchObject({ status: 'accepted', triesLeft: 1, heard: 'こんにちは', ok: false });
     expect(reads(t)).toBe(0);
-    t.play('p2', { kind: 'nakodo', utterance: speech('みなさまかっぱのきゅうりさんがおつきになりましたごしょうかいいたします') });
-    // The opening said, Nobiko-san reads the question.
+    t.play('p1', { kind: 'nakodo', utterance: speech('みなさまかっぱのきゅうりさんがおつきになりましたごしょうかいいたします') });
     expect(reads(t)).toBe(1);
-    expect(t.view('p2').me!.nakodo).toMatchObject({ ok: true, points: NAKODO_POINTS.speech });
-    expect(t.view('p2').me!.nakodo!.meter).toBeGreaterThanOrEqual(70);
-    expect(t.score('p2')).toBe(NAKODO_POINTS.speech);
-    expect(t.view().nakodo).toMatchObject({ playerId: 'p2', slot: 'open', line: { kana: me.line!.kana } });
-    // Read off the script: seen, not said from memory.
-    expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'omiai:nakodo:kappa:intro' && e.outcome === 'seen')).toBe(true);
-    // Done, but the question still gets its time on the stage, after Nobiko-san has said the opening: the room
-    // wakes the phase then.
-    expect(t.s.phase).toBe('prompt');
-    const at = omiaiMode.wakeAt!(t.st, 'prompt', { now: t.now, player: (id: string) => t.s.players.find((p) => p.id === id) } as never);
-    expect(at).toBe(Math.max(t.st.phaseAt + 8_000, t.st.current!.cuedAt! + 5_000));
-    t.now = at!;
-    t.act({ type: 'wake', phaseSeq: t.s.phaseSeq });
+    expect(t.view('p1').me!.nakodo).toMatchObject({ ok: true, points: NAKODO_POINTS.speech });
+    expect(t.score('p1')).toBe(NAKODO_POINTS.speech);
+    expect(t.view().nakodo).toMatchObject({ playerId: 'p1', slot: 'open', line: { kana: me.line!.kana } });
+    expect(t.s.phrasebook.p1?.some((e) => e.itemId === 'omiai:nakodo:kappa:intro' && e.outcome === 'seen')).toBe(true);
+    expect(t.st.gc!.said.p1).toEqual({ 'o-ni-naru': 1, keigo: 1 });
+    wake(t);
     expect(t.s.phase).toBe('answer');
-    // Everyone answers as usual, the go-between too.
     t.answer({ p1: 'はじめまして。P1です。', p2: 'はじめまして。P2ともうします。', p3: 'はじめまして。P3です。' });
     expect(t.s.phase).toBe('reveal');
     t.timeout();
     t.timeout();
     expect(t.s.phase).toBe('score');
     // The closing, typed this time.
-    const close = t.view('p2').me!.nakodo!;
+    const close = t.view('p1').me!.nakodo!;
     expect(close).toMatchObject({ slot: 'close', canSay: true });
-    expect(t.s.deadline! - t.now).toBe(9_000 + 12_000 + 7_000);
-    const before = t.score('p2');
-    t.play('p2', { kind: 'nakodo', utterance: typed(close.line!.kana) });
-    expect(t.score('p2') - before).toBe(NAKODO_POINTS.typed);
+    const before = t.score('p1');
+    t.play('p1', { kind: 'nakodo', utterance: typed(close.line!.kana) });
+    expect(t.score('p1') - before).toBe(NAKODO_POINTS.typed);
     t.timeout();
-    expect(t.st.nakodoLog).toEqual([{ round: 1, playerId: 'p2', outcome: 'accepted' }]);
-    // Next round: the only N4 player is offered again.
+    // Never offered, so nothing in the offer log, nor in the hard-role gate.
+    expect(t.st.nakodoLog).toEqual([]);
+    expect(omiaiMode.offers!(t.st, 'p1')).toEqual([]);
+    // Next round: the seat goes to whoever has held it least.
     expect(t.s.phase).toBe('prompt');
-    expect(t.st.nakodo?.playerId).toBe('p2');
-  });
-
-  it('“not this time” hands the lines back to Nobiko-san, and is logged as a decline', () => {
-    const t = new Table(2, ['n5', 'n4']);
-    begin(t);
-    expect(cues(t)).not.toContain('prompt_read');
-    expect(t.play('p2', { kind: 'nakodo', accept: false }).error).toBeUndefined();
-    expect(cues(t)).toContain('prompt_read');
-    expect(t.view('p2').me!.nakodo).toMatchObject({ status: 'declined', canSay: false });
-    expect(t.view().nakodo).toMatchObject({ declined: true, line: null });
-    expect(t.play('p2', { kind: 'nakodo', utterance: speech('ごしょうかい いたします') }).error).toBeUndefined();
-    expect(t.score('p2')).toBe(0);
-    t.timeout();
-    for (let i = 0; i < 6 && t.s.phase !== 'prompt'; i++) t.timeout();
-    expect(t.st.round).toBe(2);
-    expect(t.st.nakodoLog).toEqual([{ round: 1, playerId: 'p2', outcome: 'declined' }]);
-    expect(nakodoOffers(t.st)).toEqual({ p2: { offered: 1, accepted: 0, declined: 1, timeout: 0, rate: 0 } });
-  });
-
-  it('“Take it” accepts; Nobiko-san still reads the question if the opening never comes', () => {
-    const t = new Table(2, ['n5', 'n4']);
-    begin(t);
-    const offer = t.view('p2').me!.nakodo!;
-    expect(offer).toMatchObject({ status: 'offered', canSay: true });
-    expect(t.play('p2', { kind: 'nakodo', accept: true }).error).toBeUndefined();
-    expect(t.view('p2').me!.nakodo).toMatchObject({ status: 'accepted', canSay: true });
-    expect(reads(t)).toBe(0);
-    // Having taken it, they get the longer prompt; the question comes late enough for her to read it.
-    expect(wakeAt(t)).toBe(t.st.phaseAt + 8_000 + 12_000 - 5_000);
-    wake(t);
-    expect(reads(t)).toBe(1);
-    expect(t.view('p2').me!.nakodo).toMatchObject({ canSay: false });
-    expect(t.play('p2', { kind: 'nakodo', utterance: speech(offer.line!.kana) }).error).toBe('wrong-phase');
-    expect(t.s.phase).toBe('prompt');
-    wake(t);
-    expect(t.s.phase).toBe('answer');
-    t.answer({ p1: 'はじめまして。P1です。', p2: 'はじめまして。P2です。' });
-    t.timeout();
-    t.timeout();
-    expect(t.s.phase).toBe('score');
-    // The opening was never tried, so the closing isn't theirs either.
-    expect(t.view('p2').me!.nakodo).toMatchObject({ slot: 'close', canSay: false });
-    expect(t.view().nakodo).toMatchObject({ pending: false, line: null });
-    t.timeout();
-    expect(t.st.nakodoLog).toEqual([{ round: 1, playerId: 'p2', outcome: 'accepted' }]);
+    expect(t.st.nakodo).toMatchObject({ playerId: 'p2', status: 'accepted' });
   });
 
   it('a failed opening: once the tries run out, Nobiko-san reads the question', () => {
-    const t = new Table(2, ['n5', 'n4']);
+    const t = new Table(2, ['n4', 'n4']);
     begin(t);
-    t.play('p2', { kind: 'nakodo', utterance: speech('こんにちは') });
+    t.play('p1', { kind: 'nakodo', utterance: speech('こんにちは') });
     expect(reads(t)).toBe(0);
-    t.play('p2', { kind: 'nakodo', utterance: speech('こんばんは') });
+    t.play('p1', { kind: 'nakodo', utterance: speech('こんばんは') });
     expect(reads(t)).toBe(1);
     expect(t.view().nakodo).toMatchObject({ pending: false, line: null });
-    expect(t.s.phrasebook.p2?.some((e) => e.itemId === 'omiai:nakodo:kappa:intro' && e.outcome === 'missed')).toBe(true);
+    expect(t.s.phrasebook.p1?.some((e) => e.itemId === 'omiai:nakodo:kappa:intro' && e.outcome === 'missed')).toBe(true);
     wake(t);
     expect(t.s.phase).toBe('answer');
   });
 
-  it('an ignored opening: at the prompt’s usual time she reads the question, the offer times out and the closing stays hers', () => {
-    const t = new Table(2, ['n5', 'n4']);
+  it('an untried opening: the question still comes in time for her to read it, and the closing stays hers', () => {
+    const t = new Table(2, ['n4', 'n4']);
     begin(t);
-    expect(t.view().nakodo).toMatchObject({ pending: true });
-    expect(wakeAt(t)).toBe(t.st.phaseAt + 8_000);
+    expect(reads(t)).toBe(0);
+    expect(wakeAt(t)).toBe(t.st.phaseAt + 8_000 + 12_000 - 5_000);
     wake(t);
     expect(reads(t)).toBe(1);
-    expect(t.view('p2').me!.nakodo).toMatchObject({ status: 'timeout', canSay: false });
-    expect(t.view().nakodo).toMatchObject({ declined: true, pending: false });
-    // She gets time to read it before the answers open.
+    expect(t.view('p1').me!.nakodo).toMatchObject({ status: 'accepted', canSay: false });
     expect(t.s.phase).toBe('prompt');
     wake(t);
     expect(t.s.phase).toBe('answer');
@@ -1031,82 +1069,92 @@ describe('Omiai: the go-between in play', () => {
     t.timeout();
     t.timeout();
     expect(t.s.phase).toBe('score');
-    expect(t.view('p2').me!.nakodo).toMatchObject({ canSay: false });
-    expect(t.s.deadline! - t.now).toBe(9_000);
+    expect(t.view('p1').me!.nakodo).toMatchObject({ slot: 'close', canSay: false });
+    expect(t.view().nakodo).toMatchObject({ pending: false, line: null });
     t.timeout();
-    expect(t.st.nakodoLog).toEqual([{ round: 1, playerId: 'p2', outcome: 'timeout' }]);
-    expect(nakodoOffers(t.st).p2).toMatchObject({ offered: 1, accepted: 0, timeout: 1, rate: 0 });
+    expect(t.st.nakodoLog).toEqual([]);
   });
 
-  it('in a room of four or more, a lone N4 player rests the round after being go-between (for Ladi to confirm)', () => {
-    const t = new Table(4, ['n5', 'n4', 'n5', 'n5']);
-    begin(t, 4);
-    expect(t.st.nakodo?.playerId).toBe('p2');
-    t.play('p2', { kind: 'nakodo', accept: true });
-    for (let i = 0; i < 8 && t.st.round < 2; i++) t.timeout();
-    expect(t.s.phase).toBe('prompt');
-    expect(t.st.nakodo).toBeNull();
-    expect(cues(t)).toContain('prompt_read');
-    for (let i = 0; i < 8 && t.st.round < 3; i++) t.timeout();
-    expect(t.st.nakodo?.playerId).toBe('p2');
-    // A "not this time" sits the next round out (the shared rotation: no nagging) …
-    t.play('p2', { kind: 'nakodo', accept: false });
-    for (let i = 0; i < 8 && t.st.round < 4; i++) t.timeout();
-    expect(t.st.nakodo).toBeNull();
-  });
-
-  it('a timed-out offer rests the player one round, like a no: offered again the round after', () => {
-    const t = new Table(4, ['n5', 'n4', 'n5', 'n5']);
-    begin(t, 4);
-    expect(t.st.nakodo?.playerId).toBe('p2');
-    for (let i = 0; i < 8 && t.st.round < 2; i++) t.timeout();
-    expect(t.st.nakodoLog?.at(-1)?.outcome).toBe('timeout');
-    expect(t.st.round).toBe(2);
-    expect(t.st.nakodo ?? null).toBeNull();
-    for (let i = 0; i < 8 && t.st.round < 3; i++) t.timeout();
-    expect(t.st.round).toBe(3);
-    expect(t.st.nakodo?.playerId).toBe('p2');
-  });
-
-  it('in a smaller room the lone N4 player is offered every round', () => {
-    const t = new Table(3, ['n5', 'n4', 'n5']);
-    begin(t, 3);
-    t.play('p2', { kind: 'nakodo', accept: true });
-    for (let i = 0; i < 8 && t.st.round < 2; i++) t.timeout();
-    expect(t.st.nakodo?.playerId).toBe('p2');
-  });
-
-  it('rotates among the N4 players, round by round', () => {
-    const t = new Table(4, ['n4', 'n5', 'n4', 'n4']);
+  it('the seat goes round every round with nobody sitting out: fewest rounds held, then seat order', () => {
+    const t = new Table(3, ['n4', 'n3', 'n4']);
     begin(t, 4);
     const seen: string[] = [];
     for (let i = 0; i < 40 && seen.length < 4; i++) {
       if (t.s.phase === 'prompt' && t.st.nakodo && seen.length < t.st.round) seen.push(t.st.nakodo.playerId);
       t.timeout();
     }
-    expect(seen).toEqual(['p1', 'p3', 'p4', 'p1']);
-    // Nobody spoke: every offer timed out, not declined.
-    expect(t.st.nakodoLog!.every((e) => e.outcome === 'timeout')).toBe(true);
+    expect(seen).toEqual(['p1', 'p2', 'p3', 'p1']);
+    expect(t.st.nakodoLog).toEqual([]);
   });
+
+  it('an N3 go-between says the N3 forms about half their rounds (N3 tag), and either form is accepted', () => {
+    const t = new Table(2, ['n3', 'n3']);
+    begin(t, 4);
+    const rounds: [string, boolean][] = [];
+    for (let i = 0; i < 60 && t.s.phase !== 'finale'; i++) {
+      if (t.s.phase === 'prompt' && t.st.nakodo && rounds.length < t.st.round) {
+        const me = t.view(t.st.nakodo.playerId).me!.nakodo!;
+        rounds.push([t.st.nakodo.playerId, !!me.n3]);
+        expect(me.stretch ?? null).toBeNull();
+      }
+      t.timeout();
+    }
+    expect(rounds).toEqual([
+      ['p1', true],
+      ['p2', true],
+      ['p1', false],
+      ['p2', false],
+    ]);
+
+    // Round 1, N3: the opening is the させて いただきます form; the N4 line counts too.
+    const u = new Table(2, ['n3', 'n4']);
+    begin(u);
+    const me = u.view('p1').me!.nakodo!;
+    expect(me.n3).toBe(true);
+    expect(me.line!.kana).toBe('みなさま、かっぱの キュウリさんを ごしょうかい させて いただきます。');
+    expect(me.frames).toEqual(['sasete-itadaku']);
+    u.play('p1', { kind: 'nakodo', utterance: speech('みなさまかっぱのきゅうりさんがおつきになりましたごしょうかいいたします') });
+    expect(u.view('p1').me!.nakodo).toMatchObject({ ok: true, points: NAKODO_POINTS.speech });
+    // The TV shows (and Nobiko-san says) the form they said.
+    expect(u.view().nakodo!.line!.kana).toContain('おつきに なりました');
+    expect(u.s.cues.filter((c) => c.event === 'omiai_nakodo_read').map((c) => c.slots?.line_kana)).toEqual([expect.stringContaining('おつきに なりました')]);
+  });
+
+  it('an N4 go-between may say the N3 stretch instead; the deal then aims the next opening at the other N3 form', () => {
+    const t = new Table(2, ['n4', 'n4']);
+    begin(t, 4);
+    const stretch = t.view('p1').me!.nakodo!.stretch!;
+    expect(t.st.nakodo!.gc).toEqual({ n3: false, variant: { open: 0, close: 1 } });
+    t.play('p1', { kind: 'nakodo', utterance: speech(stretch.kana.replace(/[ 、。]/g, '')) });
+    expect(t.view('p1').me!.nakodo).toMatchObject({ ok: true });
+    expect(t.view().nakodo!.line).toEqual(stretch);
+    expect(t.view().booth!.lit.key).toBe('させて いただきます');
+    expect(t.st.gc!.said.p1).toEqual({ 'sasete-itadaku': 1 });
+    // p1's next round (round 3): で ございます has been said less, so it opens.
+    for (let i = 0; i < 40 && t.st.round < 3; i++) t.timeout();
+    expect(t.st.nakodo).toMatchObject({ playerId: 'p1', gc: { n3: false, variant: { open: 1, close: 0 } } });
+    expect(t.view('p1').me!.nakodo!.stretch!.kana).toContain('で ございます');
+  });
+
   describe('Nobiko-san says the accepted line (decided by Ladi: the host says the line, never the recording)', () => {
     const reads = (t: Table) => t.s.cues.filter((c) => c.event === 'omiai_nakodo_read');
     const said = 'みなさまかっぱのきゅうりさんがおつきになりましたごしょうかいいたします';
 
     it('the opening: she says it once, with its subtitle, and the question waits until she has', () => {
-      const t = new Table(2, ['n5', 'n4']);
+      const t = new Table(2, ['n4', 'n4']);
       begin(t);
-      const line = t.view('p2').me!.nakodo!.line!;
-      t.play('p2', { kind: 'nakodo', utterance: speech('こんにちは') });
+      const line = t.view('p1').me!.nakodo!.line!;
+      t.play('p1', { kind: 'nakodo', utterance: speech('こんにちは') });
       expect(reads(t)).toHaveLength(0);
       const from = t.s.cues.length;
-      t.play('p2', { kind: 'nakodo', utterance: speech(said) });
+      t.play('p1', { kind: 'nakodo', utterance: speech(said) });
       const raised = t.s.cues.slice(from);
       expect(raised.map((c) => c.event)).toEqual(['omiai_nakodo_read', 'omiai_nakodo_cheer', 'prompt_read']);
       const [voiced, cheer, question] = raised as [HostCue, HostCue, HostCue];
       expect(voiced).toMatchObject({ host: 'nobiko', slots: { line: line.text, line_kana: line.kana, line_en: line.en } });
       expect(voiced.atMs).toBeUndefined();
       // Her あらまあ once she has said it, then the question, which gets its full read after that.
-      expect(cheer).toMatchObject({ host: 'nobiko', event: 'omiai_nakodo_cheer', slots: { name: 'P2' }, atMs: voiceMs(line.kana) });
+      expect(cheer).toMatchObject({ host: 'nobiko', event: 'omiai_nakodo_cheer', slots: { name: 'P1' }, atMs: voiceMs(line.kana) });
       expect(question.atMs).toBe(voiceMs(line.kana) + DURATIONS.cheer);
       expect(question.atMs).toBeGreaterThan(2_000);
       expect(t.st.current!.cuedAt).toBe(t.now + question.atMs!);
@@ -1115,48 +1163,48 @@ describe('Omiai: the go-between in play', () => {
       const bank = REAL_CONTENT.hostLines.find((l) => l.event === 'omiai_nakodo_read' && l.host === 'nobiko')!;
       expect(bank.jp).toEqual({ text: '{line}', kana: '{line}', en: '{line}' });
       // Saying it again does nothing more.
-      t.play('p2', { kind: 'nakodo', utterance: speech(said) });
+      t.play('p1', { kind: 'nakodo', utterance: speech(said) });
       expect(reads(t)).toHaveLength(1);
     });
 
-    it('a typed opening is voiced too; a missed one, a decline or a timeout never is', () => {
-      const typedRoom = new Table(2, ['n5', 'n4']);
+    it('a typed opening is voiced too; a missed one, a pass or an untried one never is', () => {
+      const typedRoom = new Table(2, ['n4', 'n4']);
       begin(typedRoom);
-      typedRoom.play('p2', { kind: 'nakodo', utterance: typed(typedRoom.view('p2').me!.nakodo!.line!.kana) });
+      typedRoom.play('p1', { kind: 'nakodo', utterance: typed(typedRoom.view('p1').me!.nakodo!.line!.kana) });
       expect(reads(typedRoom)).toHaveLength(1);
 
-      const missed = new Table(2, ['n5', 'n4']);
+      const missed = new Table(2, ['n4', 'n4']);
       begin(missed);
-      missed.play('p2', { kind: 'nakodo', utterance: speech('こんにちは') });
-      missed.play('p2', { kind: 'nakodo', utterance: speech('こんばんは') });
+      missed.play('p1', { kind: 'nakodo', utterance: speech('こんにちは') });
+      missed.play('p1', { kind: 'nakodo', utterance: speech('こんばんは') });
       expect(reads(missed)).toHaveLength(0);
       // The question is read straight away, as before.
       expect(missed.s.cues.find((c) => c.event === 'prompt_read')!.atMs).toBeUndefined();
 
-      const declined = new Table(2, ['n5', 'n4']);
+      const declined = new Table(2, ['n4', 'n4']);
       begin(declined);
-      declined.play('p2', { kind: 'nakodo', accept: false });
+      declined.play('p1', { kind: 'nakodo', accept: false });
       expect(reads(declined)).toHaveLength(0);
 
-      const ignored = new Table(2, ['n5', 'n4']);
+      const ignored = new Table(2, ['n4', 'n4']);
       begin(ignored);
       wake(ignored);
       expect(reads(ignored)).toHaveLength(0);
     });
 
     it('the closing: she says it after the score’s own line, and the score waits for her', () => {
-      const t = new Table(2, ['n5', 'n4']);
+      const t = new Table(2, ['n4', 'n4']);
       begin(t);
-      t.play('p2', { kind: 'nakodo', utterance: speech(said) });
+      t.play('p1', { kind: 'nakodo', utterance: speech(said) });
       wake(t);
       expect(t.s.phase).toBe('answer');
       t.answer({ p1: 'はじめまして。P1です。', p2: 'はじめまして。P2です。' });
       t.timeout();
       t.timeout();
       expect(t.s.phase).toBe('score');
-      const close = t.view('p2').me!.nakodo!.line!;
+      const close = t.view('p1').me!.nakodo!.line!;
       const from = t.s.cues.length;
-      t.play('p2', { kind: 'nakodo', utterance: speech(close.kana) });
+      t.play('p1', { kind: 'nakodo', utterance: speech(close.kana) });
       const raised = t.s.cues.slice(from);
       expect(raised).toHaveLength(1);
       expect(raised[0]).toMatchObject({ host: 'nobiko', event: 'omiai_nakodo_read', slots: { line: close.text, line_kana: close.kana, line_en: close.en }, atMs: DURATIONS.naturalRead });
@@ -1169,20 +1217,20 @@ describe('Omiai: the go-between in play', () => {
     });
 
     it('a closing said too late to fit in the score is not voiced', () => {
-      const t = new Table(2, ['n5', 'n4']);
+      const t = new Table(2, ['n4', 'n4']);
       begin(t);
-      t.play('p2', { kind: 'nakodo', utterance: speech(said) });
+      t.play('p1', { kind: 'nakodo', utterance: speech(said) });
       wake(t);
       t.answer({ p1: 'はじめまして。P1です。', p2: 'はじめまして。P2です。' });
       t.timeout();
       t.timeout();
       expect(t.s.phase).toBe('score');
       t.now = t.s.deadline! - 1_000;
-      const before = t.score('p2');
-      t.play('p2', { kind: 'nakodo', utterance: speech(t.view('p2').me!.nakodo!.line!.kana) });
+      const before = t.score('p1');
+      t.play('p1', { kind: 'nakodo', utterance: speech(t.view('p1').me!.nakodo!.line!.kana) });
       expect(reads(t)).toHaveLength(1);
       // It still counts and pays, and with nothing to wait for the score ends.
-      expect(t.score('p2') - before).toBe(NAKODO_POINTS.speech);
+      expect(t.score('p1') - before).toBe(NAKODO_POINTS.speech);
       expect(t.s.phase).toBe('prompt');
       expect(t.st.round).toBe(2);
     });
@@ -1197,130 +1245,69 @@ describe('Omiai: mixed rooms (Gallery, booth, host stand-in)', () => {
   };
   const said = 'みなさまかっぱのきゅうりさんがおつきになりましたごしょうかいいたします';
 
-  it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
+  it.each([true, false])('in the Green Car a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
     onTestFinished(withExperiments({ spokenReaction: on }));
-    const t = new Table(3, ['n5', 'n4', 'kana']);
+    const t = new Table(3, ['n4', 'n4', 'n3']);
     begin(t);
-    t.play('p2', { kind: 'nakodo', accept: true });
-    const P = 'p1';
+    const P = 'p2';
     const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
     const before = t.score(P);
     if (!on) {
-      // Switch off: a said reaction is refused, the tile offers no mic, and tapping works as before.
       expect(say('すごい！').error).toBe('bad-move');
       expect(t.view(P).me!.gallery).not.toHaveProperty('say');
       expect(t.play(P, { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
       expect(t.score(P)).toBe(before);
       return;
     }
-    // Not before the opening has landed: no 🎤, and a said reaction is refused (nobody talks over it).
+    // Not before the opening has landed.
     expect(t.view(P).me!.gallery).not.toHaveProperty('say');
     expect(say('すごい！').error).toBe('bad-move');
-    // The opening lands (the curveball goes to p3): now it may be said.
-    t.play('p2', { kind: 'nakodo', utterance: speech(said) });
-    expect(t.st.current!.gallery!.curveball?.playerId).toBe('p3');
+    t.play('p1', { kind: 'nakodo', utterance: speech(said) });
+    // Nobody is at Kana or N5, so no curveball.
+    expect(t.st.current!.gallery!.curveball).toBeNull();
     expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
-    // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
     expect(say('ありがとう').error).toBeUndefined();
     expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: true } });
     expect(t.score(P)).toBe(before);
-    // A match (a little ending is fine): picks that tile, pays the bonus, shows a said bubble on the TV.
     expect(say('すごいね！').error).toBeUndefined();
     expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: 'sugoi', say: { said: true, missed: false } });
     expect(t.score(P) - before).toBe(SPOKEN_REACTION_POINTS);
     expect(t.view().bubbles).toEqual([expect.objectContaining({ id: 'sugoi', said: true })]);
-    // In the phrasebook as said, but read: the tile shows the kana.
-    expect(t.s.phrasebook[P]?.find((e) => e.itemId === 'gallery-sugoi')).toMatchObject({ outcome: 'said', recall: 'read', kana: 'すごい！' });
-    // One reaction a round, said or tapped.
     expect(say('なるほど').error).toBe('bad-move');
   });
 
-  it.each([true, false])('the Gallery opens once the go-between takes the opening; one curveball a game, after the line lands, +5 when right (scaled curveball: %s)', (scaled) => {
-    onTestFinished(withExperiments({ scaledCurveball: scaled }));
-    const t = new Table(3, ['n5', 'n4', 'kana']);
+  it('in the Green Car the Gallery opens for the others as the go-between takes the seat: reactions only, never a curveball', () => {
+    const t = new Table(3, ['n4', 'n4', 'n3']);
     begin(t);
-    expect(t.st.current!.gallery).toBeUndefined();
+    expect(t.st.current!.gallery!.players).toEqual(['p2', 'p3']);
     expect(t.view('p1').me!.gallery).toBeNull();
-    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBe('wrong-phase');
-    t.play('p2', { kind: 'nakodo', accept: true });
-    expect(t.st.current!.gallery!.players).toEqual(['p1', 'p3']);
-    // Nothing has been said yet: reaction tiles only, no curveball.
-    expect(t.view('p1').me!.gallery!.kind).toBe('react');
-    expect(t.view('p3').me!.gallery!.kind).toBe('react');
+    expect(t.view('p2').me!.gallery!.kind).toBe('react');
+    t.play('p1', { kind: 'nakodo', utterance: speech(said) });
     expect(t.st.current!.gallery!.curveball).toBeNull();
-    expect(t.view('p2').me!.gallery).toBeNull();
-    // The opening lands: the curveball goes to a Kana or N5 player who hasn't reacted, picked by the round.
-    t.play('p2', { kind: 'nakodo', utterance: speech(said) });
-    expect(t.st.curveballUsed).toBe(true);
-    const cb = t.view('p3').me!.gallery!;
-    expect(cb.kind).toBe('curveball');
-    expect(cb.kind === 'curveball' && cb.options.map((o) => o.kana)).toContain('おつきに なりました');
-    // While it's unanswered, the TV's booth holds back lighting the word.
-    expect(t.view().booth!.holdKey).toBe(true);
-    expect(t.view('p1').me!.gallery!.kind).toBe('react');
-    const before = t.score('p3');
-    expect(t.play('p3', { kind: 'gallery', pick: 'おつきに なりました' }).error).toBeUndefined();
-    expect(t.score('p3') - before).toBe(scaled ? 10 : 5);
-    expect(t.view().booth!.holdKey).toBe(false);
-    const p1 = t.score('p1');
-    expect(t.play('p1', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();
-    expect(t.score('p1')).toBe(p1);
+    expect(t.st.curveballUsed).toBeFalsy();
+    expect(t.view('p3').me!.gallery!.kind).toBe('react');
+    const p3 = t.score('p3');
+    expect(t.play('p3', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();
+    expect(t.score('p3')).toBe(p3);
     expect(t.view().bubbles.map((b) => b.id)).toEqual(['naruhodo']);
-    // Only during the prompt.
     for (let i = 0; i < 8 && t.s.phase === 'prompt'; i++) t.timeout();
     expect(t.view().bubbles).toEqual([]);
-    expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBe('wrong-phase');
-    // The next round's Gallery has reactions only.
-    for (let i = 0; i < 12 && t.st.round < 2; i++) t.timeout();
-    expect(t.s.phase).toBe('prompt');
-    t.play('p2', { kind: 'nakodo', accept: true });
-    expect(t.st.current!.gallery!.curveball).toBeNull();
   });
 
-  it('a player who reacted before the line landed is passed over; a missed opening deals no curveball', () => {
-    const t = new Table(3, ['n5', 'n4', 'kana']);
+  it('the booth replays only a landed opening: keigo word lit and a note', () => {
+    const t = new Table(3, ['n4', 'n4', 'n3']);
     begin(t);
-    t.play('p2', { kind: 'nakodo', accept: true });
-    expect(t.play('p3', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
-    t.play('p2', { kind: 'nakodo', utterance: speech(said) });
-    expect(t.st.current!.gallery!.curveball!.playerId).toBe('p1');
-
-    const m = new Table(3, ['n5', 'n4', 'kana']);
-    begin(m);
-    m.play('p2', { kind: 'nakodo', utterance: speech('こんにちは') });
-    m.play('p2', { kind: 'nakodo', utterance: speech('さようなら') });
-    expect(m.st.current!.gallery!.curveball).toBeNull();
-    expect(m.st.curveballUsed).toBeFalsy();
-    expect(m.view('p1').me!.gallery!.kind).toBe('react');
-    expect(m.view('p3').me!.gallery!.kind).toBe('react');
-  });
-
-  it('no Gallery for an untouched or declined offer', () => {
-    const t = new Table(3, ['n5', 'n4', 'n5']);
-    begin(t);
-    t.play('p2', { kind: 'nakodo', accept: false });
-    expect(t.st.current!.gallery ?? null).toBeNull();
-    expect(t.view('p1').me!.gallery).toBeNull();
-  });
-
-  it('the booth replays only a landed opening: keigo word lit, a note, the plain gist on Kana and N5 phones', () => {
-    const t = new Table(3, ['n5', 'n4', 'kana']);
-    begin(t);
-    t.play('p2', { kind: 'nakodo', utterance: speech('こんにちは') });
+    t.play('p1', { kind: 'nakodo', utterance: speech('こんにちは') });
     expect(t.view().booth).toBeNull();
-    t.play('p2', { kind: 'nakodo', utterance: speech(said) });
+    t.play('p1', { kind: 'nakodo', utterance: speech(said) });
     const b = t.view().booth!;
-    expect(b).toMatchObject({ playerId: 'p2', standIn: false });
+    expect(b).toMatchObject({ playerId: 'p1', standIn: false });
     expect(b.lit.key).toBe('おつきに なりました');
     expect(b.ms).toBeGreaterThanOrEqual(5_000);
     expect(b.ms).toBeLessThanOrEqual(7_000);
     const line = nakodoLines(CARDS.find((c) => c.id === 'kappa')!, 1, t.st.totalRounds).open;
-    expect(t.view('p1').me!.gist).toMatchObject({ kana: line.gist.kana, romaji: null });
-    expect(t.view('p3').me!.gist!.romaji).toBeTruthy();
-    expect(t.view('p2').me!.gist).toBeNull();
-    // Nobiko-san voices only the model line.
+    expect(t.view('p1').me!.gist).toBeNull();
     expect(t.s.cues.filter((c) => c.event === 'omiai_nakodo_read').map((c) => c.slots?.line)).toEqual([line.jp.text]);
-    // Gone once the prompt is over.
     for (let i = 0; i < 8 && t.s.phase === 'prompt'; i++) t.timeout();
     expect(t.view().booth).toBeNull();
   });

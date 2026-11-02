@@ -43,3 +43,6 @@
 .oek .oek-hide-opt { font-size: 15px; text-align: left; }
 .oek .oek-say { display: grid; gap: 8px; }
 .oek .oek-say .prompt { font-size: 20px; }
+
+/* The Green Car: an N3 frame (an N4 writer's stretch) on the hint and the chunk tiles. */
+.oek-n3 { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; background: var(--paper); color: var(--mode); font-size: 11px; font-weight: 900; vertical-align: middle; }

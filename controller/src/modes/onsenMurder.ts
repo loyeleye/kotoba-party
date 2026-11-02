@@ -316,11 +316,22 @@ function deputyReport(ctx: Ctx): HTMLElement | null {
     'div',
     // Fades in once the answer and its subtitle are up, so the tiles don't give the answer away first.
     { class: 'om-p-deputy report', style: revealDelay(`${view.phaseSeq}`, game.thinkMs + game.subtitleMs) },
-    h('p', {}, h('strong', {}, '🕵️ Deputy: tell the room what they said.')),
+    h('p', {}, h('strong', {}, '🕵️ Deputy: tell the room what they said.'), d.n3 ? h('span', { class: 'om-p-n3-tag' }, ' N3') : null),
     d.frame ? h('p', { class: 'om-p-frame', lang: 'ja' }, d.frame) : null,
     d.notes.map((n) => h('p', { class: 'hint om-p-note' }, n)),
     d.heard ? h('p', { class: 'om-p-missline' }, `Heard “${d.heard}”. ${d.triesLeft} try left.`) : null,
     d.line ? h('div', {}, h('p', { class: 'hint' }, 'Like this:'), jpLine(d.line)) : null,
+    // Green Car, an N4 deputy: the N3 retelling as a stretch; either line counts.
+    d.stretch
+      ? h(
+          'div',
+          { class: 'om-p-stretch' },
+          h('p', { class: 'hint' }, h('span', { class: 'om-p-n3-tag' }, 'N3 stretch '), 'or pass it on like this:'),
+          h('p', { class: 'om-p-frame', lang: 'ja' }, d.stretch.frame),
+          h('p', { class: 'hint om-p-note' }, d.stretch.note),
+          d.stretch.line ? jpLine(d.stretch.line) : null,
+        )
+      : null,
     speakBox({
       label: 'Hold and report it',
       placeholder: d.frame ?? '…と いっていました',
@@ -372,6 +383,7 @@ function accuseScreen(ctx: Ctx): HTMLElement {
       draw();
     };
     const line = suspect ? mine.lines.find((l) => l.suspectId === suspect.id)?.line : undefined;
+    const stretch = suspect ? mine.stretchLines?.find((l) => l.suspectId === suspect.id)?.line : undefined;
     mount(
       root,
       h('p', { class: 'big' }, '🔦 Who did it?'),
@@ -380,17 +392,20 @@ function accuseScreen(ctx: Ctx): HTMLElement {
         ? h(
             'div',
             { class: 'om-p-accuse' },
-            h('p', { class: 'hint' }, 'Say it out loud:'),
+            h('p', { class: 'hint' }, 'Say it out loud:', mine.accuseN3 ? h('span', { class: 'om-p-n3-tag' }, ' N3') : null),
             jpLine(line),
-            mine.accuseTry && mine.accuseTry.suspectId === suspect.id ? h('p', { class: 'om-p-missline' }, `Heard “${mine.accuseTry.heard}”. Say はんにん and the name. ${mine.accuseTry.triesLeft} try left.`) : null,
+            stretch ? h('div', { class: 'om-p-stretch' }, h('p', { class: 'hint' }, h('span', { class: 'om-p-n3-tag' }, 'N3 stretch '), 'or say it like this:'), jpLine(stretch)) : null,
+            mine.accuseTry && mine.accuseTry.suspectId === suspect.id
+              ? h('p', { class: 'om-p-missline' }, `Heard “${mine.accuseTry.heard}”. ${mine.accuseN3 ? 'Say the name with ＿に ちがいない or ＿はずが ない.' : 'Say はんにん and the name.'} ${mine.accuseTry.triesLeft} try left.`)
+              : null,
             speakBox({
               label: 'Hold and accuse!',
-              placeholder: 'はんにんは …さんです',
+              placeholder: mine.accuseN3 ? 'はんにんは …さんに ちがいない' : 'はんにんは …さんです',
               onSend: (utterance) => void send({ kind: 'accuse', suspectId: suspect.id, utterance }),
             }),
             h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'accuse', suspectId: suspect.id }) }, 'Vote without saying it'),
           )
-        : h('p', { class: 'hint' }, 'Pick a suspect, then say 「はんにんは（name）さんです！」 for the 🎤 bonus.'),
+        : h('p', { class: 'hint' }, mine.accuseN3 ? 'Pick a suspect, then say 「はんにんは（name）さんに ちがいない！」 or your line for the 🎤 bonus.' : 'Pick a suspect, then say 「はんにんは（name）さんです！」 for the 🎤 bonus.'),
       notebook(game, true),
     );
   };

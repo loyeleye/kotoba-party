@@ -55,8 +55,15 @@ export interface RumourFin {
   /** The short tile a Kana player taps and says. */
   tile: string;
   keys: string[];
-  /** Time fins go first in the sentence. */
-  kind: 'time' | 'how';
+  /**
+   * Time fins go first in the sentence. A `frame` fin (Green Car only) is not a detail but a way of passing it
+   * on: the relay must carry its frame (＿らしい, ＿とか いってた), and it stays on the rumour only while the relays do.
+   */
+  kind: 'time' | 'how' | 'frame';
+  /** A frame fin's frame. */
+  frame?: RumourFrameId;
+  /** A frame fin is N3 (shown with the N3 tag) and only dealt in the Green Car. */
+  level?: 'n3';
   /** A big, visual fin: every hand of cards has at least one. */
   big?: boolean;
   audience?: 'cheeky';
@@ -290,17 +297,30 @@ export const RUMOUR_FINS: readonly RumourFin[] = [
   { id: 'missed-last-train', kana: 'しゅうでんを のがして', en: 'after missing the last train', tile: 'しゅうでん', keys: ['しゅうでん'], kind: 'time', audience: 'cheeky' },
 ];
 
+/**
+ * The Green Car's N3 fin cards (design: n3-coverage/green-car/design.md): a way of passing the rumour on, not a
+ * detail. Each Green Car hand has one (aimed: see wordGauntlet.ts dealFins). Draft. Every audience gets both.
+ * The design also lists casual ＿って (「…ならってるって！」); there is no N3 frame for it (the path counts it as
+ * ＿んだって, N4 4.6, and ＿って（すしって） is a topic, not hearsay), so it isn't a card.
+ */
+export const RUMOUR_FRAME_FINS: readonly RumourFin[] = [
+  { id: 'gc-rashii', kana: '＿らしい', en: 'Apparently… (pass it on with らしい)', tile: 'らしい', keys: ['らしい'], kind: 'frame', frame: 'rashii', level: 'n3' },
+  { id: 'gc-toka', kana: '＿とか いってた', en: '(Someone) said something like…', tile: 'とか いってた', keys: ['とかいって'], kind: 'frame', frame: 'toka-itteta', level: 'n3' },
+];
+
 /** A rumour keeps its newest three fins: older ones fall off, as they do in real gossip. */
 export const MAX_FINS = 3;
 
 // ---- the frames the round practises ----
 
-export type RumourFrameId = 'sou-hear' | 'to-itte-ita' | 'ni-yoru' | 'rashii' | 'n-datte' | 'plain';
+export type RumourFrameId = 'sou-hear' | 'to-itte-ita' | 'ni-yoru' | 'rashii' | 'n-datte' | 'plain' | 'toka-itteta';
 
 export interface RumourFrame {
   id: RumourFrameId;
   ja: string;
   en: string;
+  /** Only in the Green Car's hint rotation (an N3 frame the mixed-room round never suggests). */
+  greenCar?: true;
 }
 
 /** In the order N4 relayers are offered them (each N4 relayer's hint is the next one along). */
@@ -311,25 +331,35 @@ export const RUMOUR_FRAMES: readonly RumourFrame[] = [
   { id: 'ni-yoru', ja: '＿に よると ＿そうです', en: 'According to ___, ___' },
   { id: 'rashii', ja: '＿らしいです', en: 'Apparently ___' },
   { id: 'plain', ja: '＿よ ／ ＿ね ／ ＿の？', en: 'Casual: plain form + よ, ね or の' },
+  { id: 'toka-itteta', ja: '＿とか いってた', en: '(Someone) said something like ___ (casual)', greenCar: true },
 ];
+
+/** The hint rotation: the Green Car's adds ＿とか いってた (N3), so N3 relayers get more N3 hints. */
+export const rumourFrames = (greenCar: boolean): RumourFrame[] => RUMOUR_FRAMES.filter((f) => greenCar || !f.greenCar);
 
 const sp = (s: string) => s.replace(/\s+/g, ' ').trim();
 
-/** Time fins first, then the rest in the order they were added. */
+/** Time fins first, then the rest in the order they were added (frame fins aren't words in the story). */
 function orderFins(fins: readonly RumourFin[]): RumourFin[] {
-  return [...fins.filter((f) => f.kind === 'time'), ...fins.filter((f) => f.kind !== 'time')];
+  return [...fins.filter((f) => f.kind === 'time'), ...fins.filter((f) => f.kind === 'how')];
 }
 
-/** Adds a fin to a rumour: one time fin at a time (まいばん and まいあさ ごじに can't both be true), newest three kept. */
+/**
+ * Adds a fin to a rumour: one time fin at a time (まいばん and まいあさ ごじに can't both be true), one frame fin at
+ * a time, newest three kept.
+ */
 export function addFin(fins: readonly RumourFin[], fin: RumourFin): RumourFin[] {
-  const rest = fins.filter((f) => f.id !== fin.id && (fin.kind !== 'time' || f.kind !== 'time'));
+  const rest = fins.filter((f) => f.id !== fin.id && !((fin.kind === 'time' || fin.kind === 'frame') && f.kind === fin.kind));
   return [...rest, fin].slice(-MAX_FINS);
 }
+
+/** The frame fin a rumour carries, if any. */
+export const frameFinOf = (fins: readonly RumourFin[]): RumourFin | undefined => fins.find((f) => f.kind === 'frame' && f.frame);
 
 /** Time → place → how, then the action: 「まいばん こうえんで ひとりで ダンスを ならって いる」. */
 function middle(seed: RumourSeed, fins: readonly RumourFin[], what: string): string {
   const time = fins.filter((f) => f.kind === 'time').map((f) => f.kana).join(' ');
-  const how = fins.filter((f) => f.kind !== 'time').map((f) => f.kana).join(' ');
+  const how = fins.filter((f) => f.kind === 'how').map((f) => f.kana).join(' ');
   return sp(`${time} ${seed.where.kana} ${how} ${what}`);
 }
 
@@ -348,10 +378,15 @@ function bodyEn(seed: RumourSeed, fins: readonly RumourFin[]): string {
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** Nobiko-san's model line for a rumour in a frame: the "Need a hint?" line, and the relay a stand-in passes on. */
+/**
+ * Nobiko-san's model line for a rumour in a frame: the "Need a hint?" line, and the relay a stand-in passes on.
+ * A frame fin on the rumour (Green Car) picks the frame.
+ */
 export function rumourLine(seed: RumourSeed, fins: readonly RumourFin[], frame: RumourFrameId | 'n5'): JpText {
   let kana: string;
   let en: string;
+  const framed = frame === 'n5' ? undefined : frameFinOf(fins)?.frame;
+  if (framed) frame = framed;
   switch (frame) {
     case 'n5':
       kana = sp(`${seed.who.kana}は ${middle(seed, fins, seed.what.masu)}。`);
@@ -381,6 +416,10 @@ export function rumourLine(seed: RumourSeed, fins: readonly RumourFin[], frame: 
       kana = `ねえねえ、しってる？ ${seed.who.kana}、${middle(seed, fins, casual(seed.what.kana))}んだよ！`;
       en = `Hey, guess what? ${cap(bodyEn(seed, fins))}!`;
       break;
+    case 'toka-itteta':
+      kana = `${seed.source.kana}が、${seed.who.kana}は ${middle(seed, fins, casual(seed.what.kana))}とか いってたよ。`;
+      en = `${cap(seed.source.en)} said something like ${bodyEn(seed, fins)}.`;
+      break;
   }
   return { text: kana, kana, en };
 }
@@ -401,8 +440,14 @@ export function keptParts(seed: RumourSeed, reading: string): { who: boolean; wh
 
 export function finKept(fin: RumourFin, reading: string): boolean {
   const r = normalizeReading(reading).replace(/[\s　、。！？!?,.]/g, '');
+  // A frame fin stays while the relay carries its frame (so あたらしい isn't ＿らしい).
+  if (fin.frame === 'rashii') return hasRashii(r) || framesOf({ text: reading, kana: reading }, undefined, { keepHidden: true }).includes('rashii');
+  if (fin.frame === 'toka-itteta') return TOKA_ITTETA.test(r);
   return fin.keys.some((k) => r.includes(normalizeReading(k)));
 }
+
+/** ＿とか いってた (and いう, いった, ゆってた): a vague quote. Checked with the spaces taken out. */
+const TOKA_ITTETA = /[^\s　、。]とか(いって|ゆって|いった|いう|いわれ)/;
 
 // Adjectives (and Nらしい "typical of N") that end in らしい aren't hearsay. Judged per らしい, so
 // 「あたらしい みせで … する らしい」 still counts.
@@ -431,6 +476,7 @@ export function rumourFrameOf(u: { text: string; reading?: string; tokens?: read
   const found = new Set(framesOf({ text: u.text, kana }, u.tokens, { keepHidden: true }));
   const rashii = found.has('rashii') || hasRashii(k);
   if (found.has('ni-yoru')) return 'ni-yoru';
+  if (TOKA_ITTETA.test(k)) return 'toka-itteta';
   // と in a quote follows a plain form (くると いって いました); ともだちと いって いました is "went with a friend".
   if (found.has('to-itte-ita') || found.has('tte-quote') || /([うくぐすつぬぶむるいただよね]と|って)(いって|ゆって)(い)?(ました|た|る|ます)/.test(k) || /[うくぐすつぬぶむるいただ]と(きき|きい)(ました|た)/.test(k)) return 'to-itte-ita';
   if (found.has('n-datte') || /([うくぐすつぬぶむるいただ]|ない)って[！!。…〜ー]*$/.test(k)) return 'n-datte';
@@ -451,4 +497,4 @@ export function rumourFins(audience: Audience): RumourFin[] {
   return RUMOUR_FINS.filter((f) => !f.audience);
 }
 
-export const rumourFin = (id: string): RumourFin | undefined => RUMOUR_FINS.find((f) => f.id === id);
+export const rumourFin = (id: string): RumourFin | undefined => RUMOUR_FINS.find((f) => f.id === id) ?? RUMOUR_FRAME_FINS.find((f) => f.id === id);

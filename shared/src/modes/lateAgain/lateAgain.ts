@@ -27,8 +27,9 @@ import { framesHeard } from '../../japanese/frames.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { ASK_CHANCE, ASK_RECORD_MS, callbackLine, CAUSES, causeOf, dealOptions, kanaLine, latenessFor, lineFor, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, N4_ASKS, type Cause, type Chunk } from './causes.js';
+import { ASK_CHANCE, ASK_RECORD_MS, BACKUP_KEYS, BACKUP_MISSION, backupLine, callbackLine, CAUSES, causeOf, dealOptions, greenCarDeck, kanaLine, latenessFor, lineFor, lineFrames, PREMISE, sceneOf, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthFor, truthLine, N4_ASKS, type Cause, type Chunk } from './causes.js';
 import { n4Up } from '../../level.js';
+import { aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -193,6 +194,13 @@ export interface LateRound {
   finale: boolean;
   /** N4 and up: the excuse is the cause's ask line (N4_ASKS), when it has one. */
   ask?: boolean;
+  /**
+   * Green Car: the level of the line the latecomer works from. An N3 seat takes N4 and N3 lines in turn (about half
+   * each); an N4 seat works from the N4 line, with the cause's N3 line as optional stretch.
+   */
+  lineLevel?: 'n4' | 'n3';
+  /** Green Car: the witness backs the story up out loud, as hearsay (backupLine), once their alibi is in. */
+  backup?: { level: 'n4' | 'n3'; said: boolean; hinted: boolean };
 }
 
 export interface PlayerStats {
@@ -224,6 +232,14 @@ export interface LateState {
   settings: { leafBudget: boolean; witnessSeesOptions: boolean };
   coop: boolean;
   phaseAt: number;
+  /** This game rides in the Green Car (ctx.greenCar at setup). */
+  greenCar?: boolean;
+  /** Green Car: the game's eight causes (greenCarDeck): every deal comes from these. */
+  deck?: string[];
+  /** Green Car, aim the deal: per player, how many times each frame was said this game. */
+  said?: Record<string, Record<string, number>>;
+  /** Green Car: per player, the N4 and N3 lines dealt to them this game (an N3 seat takes them in turn). */
+  dealt?: Record<string, { n4: number; n3: number }>;
 }
 
 // ---- view ----
@@ -275,6 +291,8 @@ export interface LateView {
   /** The real story, at the round's last beat: the cause's picture (none for Pon) and Pon's line, after a pause. */
   truth: { picture: string | null; emoji: string; line: JpText; pauseMs: number } | null;
   ledger: LedgerEntry[];
+  /** This game rides in the Green Car: the TV shows the clover badge. */
+  greenCar: boolean;
   me: LateMe | null;
 }
 
@@ -324,6 +342,13 @@ export interface LateMe {
    * came from memory or with the hint open, and what was heard (untrusted player text).
    */
   note: { model: JpText; used: boolean; hinted: boolean; fromMemory: boolean; said: string | null } | null;
+  /** Green Car, an N4 latecomer: the cause's N3 line as optional stretch (shown with an N3 tag). Saying it counts as the N3 line. */
+  stretch: { mission: string; model: JpText; tag: 'N3' } | null;
+  /**
+   * Green Car, the witness: back the story up out loud as hearsay once the alibi is in. `stretch` is the N3 version for
+   * an N4 witness. `open`: the say window (the gist and the vote).
+   */
+  backup: { mission: string; model: JpText; level: 'n4' | 'n3'; stretch: JpText | null; open: boolean; said: boolean } | null;
 }
 
 export type LateMove =
@@ -340,7 +365,8 @@ export type LateMove =
   | { kind: 'leaf'; round: number; give: boolean }
   | { kind: 'rule'; round: number; call: 'safe' | 'out' }
   | { kind: 'pick'; round: number; causeId: string }
-  | { kind: 'hide'; round: number };
+  | { kind: 'hide'; round: number }
+  | { kind: 'backup'; round: number; heard?: Utterance | null; checked?: boolean };
 
 // ---- helpers ----
 
@@ -349,11 +375,15 @@ const statsOf = (s: LateState, id: string) => (s.stats[id] ??= blankStats());
 export const current = (s: LateState): LateRound | null => s.rounds[s.round - 1] ?? null;
 const causeOfRound = (r: LateRound): Cause => causeOf(r.cause) ?? CAUSES[0]!;
 /** The latecomer's line: the last round (a year late) opens with the deepest apology. */
-const lineOf = (r: LateRound) => lineFor(causeOfRound(r), r.level, { finale: r.finale, ask: r.ask });
+/** The level of the line the latecomer works from: their own, or in the Green Car the one dealt (lineLevel). */
+const lineLevelOf = (r: LateRound): Level => r.lineLevel ?? r.level;
+const lineOf = (r: LateRound) => lineFor(causeOfRound(r), lineLevelOf(r), { finale: r.finale, ask: r.ask && r.lineLevel !== 'n3' });
+/** Green Car, an N4 seat: the cause's N3 line, as optional stretch. */
+export const stretchOf = (r: LateRound) => (r.lineLevel && r.level === 'n4' ? (causeOfRound(r).lines.n3 ?? null) : null);
 /** The line the round's latecomer works from (their mission and Pon's version), for the cause they blame. */
 export const roundLine = (r: LateRound) => lineOf(r);
 /** An ask round: an N4+ latecomer, the round drew the ask, and the cause they blame has an ask line (N4_ASKS). */
-export const askRound = (r: LateRound): boolean => !!r.ask && n4Up(r.level) && !!N4_ASKS[r.cause];
+export const askRound = (r: LateRound): boolean => !!r.ask && n4Up(r.level) && r.lineLevel !== 'n3' && !!N4_ASKS[r.cause];
 /** The record limit: an ask line is longer than the cause's usual one, so it gets a little more time. */
 export const recordMs = (r: LateRound): number => RECORD_MS[r.level] + (askRound(r) ? ASK_RECORD_MS : 0);
 
@@ -457,9 +487,18 @@ export function wordsInExcuse(r: LateRound): Set<string> {
   return out;
 }
 
+/** Green Car: an N4 latecomer's own excuse used the stretch line's N3 chunk. */
+export function stretchHeard(r: LateRound): boolean {
+  const chunk = stretchOf(r)?.chunk;
+  if (!chunk || r.hidden || !r.excuse || r.excuse.kind === 'pon') return false;
+  const reading = excuseReading(r);
+  return !!reading && heardAny(reading, chunk.keys);
+}
+
 /** The chunk the booth can call out: the latecomer's line has one and their own excuse used it (never Pon's reading). */
 export function chunkHeard(r: LateRound): Chunk | null {
   if (r.level === 'kana' || r.hidden || !r.excuse || r.excuse.kind === 'pon') return null;
+  if (stretchHeard(r)) return stretchOf(r)!.chunk!;
   const chunk = lineOf(r).chunk;
   if (!chunk) return null;
   const reading = excuseReading(r);
@@ -522,6 +561,33 @@ export function dealRoles(s: LateState, ctx: ModeContext): Pick<LateRound, 'late
   return { latecomer, witness, chief, gallery: rest.filter((id) => id !== chief) };
 }
 
+// ---- the Green Car (shared/src/greenCar.ts; design: project files n3-coverage/green-car/design.md) ----
+
+/**
+ * The level of the next line a seat is dealt in the Green Car, counted in `dealt`: an N3 seat takes N3 and N4 lines
+ * in turn (N3 first), so about half each; an N4 seat takes N4 lines (N3 is offered as stretch).
+ */
+function nextLineLevel(s: LateState, id: string, level: Level): 'n4' | 'n3' {
+  const d = ((s.dealt ??= {})[id] ??= { n4: 0, n3: 0 });
+  const lv = level === 'n3' && d.n3 <= d.n4 ? 'n3' : 'n4';
+  d[lv] += 1;
+  return lv;
+}
+
+/**
+ * Aim the deal: how much this player needs a line's frames (higher: more), tonight's need (ctx.frameNeed: frames a
+ * path goal requires weigh double) scaled down by their says this game (s.said).
+ */
+function needOf(s: LateState, ctx: ModeContext, id: string, frames: readonly string[]): number {
+  return aimWeight(ctx, id, frames, s.said?.[id]);
+}
+
+/** Counts the frames a player said, for aiming the next deal. */
+function countSaid(s: LateState, id: string, frames: readonly string[]): void {
+  const mine = ((s.said ??= {})[id] ??= {});
+  for (const f of frames) mine[f] = (mine[f] ?? 0) + 1;
+}
+
 function startRound(s: LateState, ctx: ModeContext): LateRound {
   s.round += 1;
   // Pon's leaves: one more for everyone at the start of rounds 3, 5, 7 …
@@ -530,17 +596,23 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
   // The finale scene is saved for the last round, where the room has one.
   const usedScenes = new Set(s.rounds.map((r) => r.sceneId));
   const last = s.round === s.totalRounds;
-  const all = scenesFor(s.audience);
+  const gc = !!s.greenCar;
+  const all = scenesFor(s.audience, gc);
   const finale = all.filter((x) => x.finale);
   const pool = last && finale.length ? finale : all.filter((x) => !x.finale);
   const fresh = pool.filter((x) => !usedScenes.has(x.id));
   const scenes = fresh.length ? fresh : pool;
   const scene = scenes[Math.floor(ctx.random() * scenes.length)]!;
-  const recent = new Set(s.rounds.slice(-2).flatMap((r) => r.options));
-  const options = dealOptions(() => ctx.random(), recent, s.audience, scene.id);
   const level = ctx.player(roles.latecomer)?.level ?? 'n5';
+  // Green Car: the line's level first (an N3 seat alternates), then the deal from the game's eight causes, aimed at
+  // the frames this latecomer needs most tonight (aimWeight).
+  const lineLevel = gc ? nextLineLevel(s, roles.latecomer, level) : undefined;
+  const need = (c: Cause): number => needOf(s, ctx, roles.latecomer, lineFrames(lineFor(c, lineLevel ?? level), lineLevel ?? 'n4'));
+  // With eight causes, only the last round's options are kept back (the last two would leave too few).
+  const recent = new Set(s.rounds.slice(gc ? -1 : -2).flatMap((r) => r.options));
+  const options = dealOptions(() => ctx.random(), recent, s.audience, scene.id, gc && s.deck ? { deck: s.deck, weight: need } : undefined);
   const blind = !s.settings.witnessSeesOptions && !!roles.witness;
-  const truth = truthFor(() => ctx.random(), options, s.audience, new Set([...s.truths, ...s.rounds.map((x) => x.cause)]));
+  const truth = truthFor(() => ctx.random(), options, s.audience, new Set([...s.truths, ...s.rounds.map((x) => x.cause)]), gc);
   if (truth) s.truths.push(truth);
   const r: LateRound = {
     index: s.round,
@@ -548,7 +620,7 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
     options,
     ...roles,
     level,
-    cause: options[Math.floor(ctx.random() * 3)]!,
+    cause: dealtCause(options, Math.floor(ctx.random() * 3), gc ? need : null),
     picked: blind,
     ready: false,
     draft: [],
@@ -575,8 +647,10 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
   };
   // Two players: Pon is the witness, and he "probably saw it".
   if (s.coop && !r.witness) r.alibi = options[Math.floor(ctx.random() * 3)]!;
-  // Drawn last, so the deal above stays as it was.
-  if (n4Up(level)) r.ask = ctx.random() < ASK_CHANCE;
+  // Drawn last, so the deal above stays as it was. In the Green Car an N3 line is never an ask round.
+  if (n4Up(level)) r.ask = ctx.random() < ASK_CHANCE && lineLevel !== 'n3';
+  if (lineLevel) r.lineLevel = lineLevel;
+  if (gc && r.witness) r.backup = { level: nextLineLevel(s, r.witness, ctx.player(r.witness)?.level ?? 'n4'), said: false, hinted: false };
   s.rounds.push(r);
   statsOf(s, r.latecomer).late += 1;
   if (r.chief) {
@@ -584,6 +658,14 @@ function startRound(s: LateState, ctx: ModeContext): LateRound {
     s.lastChief[r.chief] = s.round;
   }
   return r;
+}
+
+/** The cause dealt to the latecomer (they may tap another): the drawn one, or in the Green Car the one they need most. */
+function dealtCause(options: readonly string[], drawn: number, need: ((c: Cause) => number) | null): string {
+  if (!need) return options[drawn]!;
+  const scores = options.map((id) => need(causeOf(id)!));
+  const top = Math.max(...scores);
+  return scores[drawn] === top ? options[drawn]! : options[scores.indexOf(top)]!;
 }
 
 /** Locks the excuse in when the record beat ends: Kana tiles tapped so far, else Pon stands in. */
@@ -630,14 +712,28 @@ function settle(s: LateState, r: LateRound, ctx: ModeContext): void {
   const asking = askRound(r);
   const askHeard = x?.kind === 'clip' && !!x.checked && !!r.chunk;
   const usualInstead = asking && !askHeard && !read;
-  const line = r.level === 'kana' ? kanaLine(c) : usualInstead ? lineFor(c, r.level, { finale: r.finale }).model : lineOf(r).model;
+  // Green Car: an N4 latecomer whose own excuse used the N3 stretch line's chunk is credited with the N3 line.
+  const stretch = stretchHeard(r);
+  const line = r.level === 'kana' ? kanaLine(c) : stretch ? lineFor(c, 'n3', { finale: r.finale }).model : usualInstead ? lineFor(c, lineLevelOf(r), { finale: r.finale }).model : lineOf(r).model;
   const said = asking && !askHeard && read ? false : saidAloud(r);
-  const base = `late:${c.id}:${r.level}${asking && !usualInstead ? ':ask' : ''}`;
+  const base = `late:${c.id}:${stretch ? 'n3' : lineLevelOf(r)}${asking && !usualInstead && !stretch ? ':ask' : ''}`;
   // Pon's line is the card; when speech-to-text heard the excuse, it counts only for the frames heard in it (so
   // naming the cause doesn't earn Pon's ので), and a card with other frames is its own card.
   const heardAll = r.level !== 'kana' && said && x?.kind === 'clip' && x.checked && x.heard ? framesHeard(line, { text: x.heard.text, kana: x.heard.reading ?? x.heard.text }, x.heard.tokens) : null;
   const heard = heardAll && heardAll.length < framesHeard(line, line).length ? heardAll : null;
   ctx.phrase(r.latecomer, { itemId: `${base}${heard ? `:${heard.join('+')}` : ''}`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: read ? 'read' : 'memory', ...(heard ? { frames: heard } : {}) });
+  if (s.greenCar) {
+    // Aim the deal: count the frames said (those heard, else the line's own).
+    const lv = stretch ? 'n3' : lineLevelOf(r) === 'n3' ? 'n3' : 'n4';
+    const usual = stretch ? lineFor(c, 'n3') : usualInstead ? lineFor(c, lineLevelOf(r)) : lineOf(r);
+    if (said) countSaid(s, r.latecomer, heard ?? lineFrames(usual, asking && !usualInstead ? 'n4' : lv));
+    // The witness's backup, said out loud (or only seen on their phone).
+    if (r.witness && r.alibi && r.backup && ctx.player(r.witness)) {
+      const b = backupLine(r.alibi, r.backup.level);
+      ctx.phrase(r.witness, { itemId: `late:backup:${r.backup.level}:${r.alibi}`, text: b.text, kana: b.kana, en: b.en, outcome: r.backup.said ? 'said' : 'seen', recall: r.backup.hinted ? 'read' : 'memory' });
+      if (r.backup.said) countSaid(s, r.witness, b.frames);
+    }
+  }
   if (r.hidden) return;
 
   if (s.coop) {
@@ -711,6 +807,8 @@ function parseHeard(raw: unknown): Utterance | null {
 const choosing = (phase: Phase, r: LateRound): boolean => (phase === 'prompt' && r.step === 'plan') || phase === 'answer';
 /** Picks, the alibi and the bets lock when the call starts: before the room hears a word. */
 const planning = (phase: Phase): boolean => phase === 'prompt';
+/** Green Car: the witness's say window, while the alibi card is up (the gist beat and the vote). */
+const backupOpen = (phase: Phase, r: LateRound): boolean => !!r.backup && !!r.alibi && !r.hidden && ((phase === 'reveal' && r.step === 'gist') || phase === 'encore');
 
 // ---- the mode ----
 
@@ -763,6 +861,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       settings: { leafBudget: extra.freeVotes !== true, witnessSeesOptions: extra.blindLatecomer !== true },
       coop: players.length <= 2,
       phaseAt: ctx.now,
+      ...(ctx.greenCar ? { greenCar: true, deck: greenCarDeck(() => ctx.random(), ctx.audience ?? 'family'), said: {}, dealt: {} } : {}),
     };
   },
 
@@ -1017,8 +1116,29 @@ export const lateAgainMode: Mode<LateState, LateView> = {
         return MOVE_OK;
       }
       case 'hint': {
+        // Green Car: the witness may open the backup line's hint too.
+        if (!isLate && playerId === r.witness && r.backup) {
+          r.backup.hinted = true;
+          return MOVE_OK;
+        }
         if (!isLate) return moveError('not-yours');
         r.hinted = true;
+        return MOVE_OK;
+      }
+      case 'backup': {
+        // Green Car: the witness backs the story up out loud, as hearsay, while the alibi card is up (gist and vote).
+        if (playerId !== r.witness || !r.backup) return moveError('not-yours');
+        if (!backupOpen(phase, r)) return moveError('wrong-phase');
+        if (r.backup.said) return moveError('already-sent');
+        // With speech-to-text the take must pass it on as hearsay (an N4 witness who used the N3 らしい gets the N3
+        // line); without it, a try counts.
+        const heard = parseHeard(raw.heard);
+        if (raw.checked === true) {
+          const reading = heard ? utteranceReading(heard) : '';
+          if (heardAny(reading, BACKUP_KEYS.n3)) r.backup.level = 'n3';
+          else if (!heardAny(reading, BACKUP_KEYS[r.backup.level])) return MOVE_OK;
+        }
+        r.backup.said = true;
         return MOVE_OK;
       }
       case 'alibi': {
@@ -1173,6 +1293,7 @@ export const lateAgainMode: Mode<LateState, LateView> = {
       booth: inRound && phase === 'score' && r!.step === 'booth' ? boothOf(r!) : null,
       truth: inRound && phase === 'score' && r!.step === 'truth' ? truthOf(s, r!) : null,
       ledger: phase === 'score' || phase === 'recap' ? s.ledger : [],
+      greenCar: !!s.greenCar,
       me: null,
     };
     if (player && r && inRound) view.me = meView(s, r, phase, player, level);
@@ -1351,8 +1472,22 @@ function meView(s: LateState, r: LateRound, phase: Phase, player: ModePlayer, le
             said: own && !r.hidden ? subtitleOf(r) : null,
           }
         : null,
+    stretch: line && stretchOf(r) ? { mission: stretchOf(r)!.mission, model: stretchOf(r)!.model, tag: 'N3' } : null,
+    backup:
+      role === 'witness' && r.backup && r.alibi && !r.hidden
+        ? {
+            mission: BACKUP_MISSION,
+            model: plainJp(backupLine(r.alibi, r.backup.level)),
+            level: r.backup.level,
+            stretch: r.backup.level === 'n4' && level === 'n4' ? plainJp(backupLine(r.alibi, 'n3')) : null,
+            open: backupOpen(phase, r),
+            said: r.backup.said,
+          }
+        : null,
   };
 }
+
+const plainJp = (t: JpText): JpText => ({ text: t.text, kana: t.kana, en: t.en });
 
 /** For bots and tests: the cause a dealt option id names. */
 export const causeById = causeOf;

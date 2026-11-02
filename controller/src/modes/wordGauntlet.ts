@@ -28,12 +28,14 @@ export const wordGauntletPhone: PhoneMode<WordGauntletView> = {
     const t = game.telephone;
     const sh = game.shiritori;
     const r = game.rumour;
+    const st = game.sentences;
     return [
       view.phaseSeq,
       game.segment,
       f ? [f.mine?.fake, f.mine?.pick, f.mine?.said, f.options?.length, f.results ? 1 : 0].join(',') : '',
       t ? [t.mine?.sent, t.mine?.vote, t.mine?.prev ? 1 : 0, t.current, t.reveal ? 1 : 0, t.points ? 1 : 0].join(',') : '',
       r ? [r.current, r.mine?.heard ? 1 : 0, r.mine?.fin, r.mine?.ownFin, r.mine?.hint, r.mine?.peeked ? 1 : 0, r.mine?.sent ? 1 : 0, r.mine?.vote, r.reveal ? 1 : 0, r.points ? 1 : 0].join(',') : '',
+      st ? [st.current, st.turn === playerId, st.mine?.card?.frame, st.mine?.hint ? 1 : 0, st.mine?.vote, st.chain.length, st.last?.text, st.points ? 1 : 0].join(',') : '',
       sh
         ? [sh.turn === playerId, sh.turn, sh.mine?.hint?.length ?? -1, sh.mine?.tokens, sh.mine?.vote, sh.alive.includes(playerId), sh.challenge?.voted.length ?? -1, sh.winnerId].join(',')
         : '',
@@ -46,13 +48,14 @@ export const wordGauntletPhone: PhoneMode<WordGauntletView> = {
       return waiting(
         'ことばの関門 · Word Gauntlet',
         game.round2 === 'rumour'
-          ? 'Three rounds: fake meanings, Nobiko-san’s rumour relay, then a spoken shiritori showdown. Watch the screen!'
+          ? 'Three rounds: a fake meaning, Nobiko-san’s rumour relay, then shiritori in whole sentences. Watch the screen!'
           : 'Three rounds: fake meanings, a translation telephone, then a spoken shiritori showdown. Watch the screen!',
       );
     }
     if (game.segment === 'fake') return fakeScreen(ctx);
     if (game.segment === 'telephone') return telephoneScreen(ctx);
     if (game.segment === 'rumour') return rumourScreen(ctx);
+    if (game.segment === 'sentences') return sentencesScreen(ctx);
     return shiritoriScreen(ctx);
   },
 };
@@ -385,6 +388,8 @@ function finCardsFor(ctx: Ctx): HTMLElement {
         'button',
         { type: 'button', class: `option wg-fin ${mine.fin === f.id ? 'picked' : ''}`, lang: 'ja', onclick: () => void ctx.send({ kind: 'fin', fin: f.id }) },
         h('strong', {}, level === 'kana' ? f.tile : f.kana),
+        // A Green Car frame fin: N3, a stretch for an N4 player.
+        f.n3 ? h('small', { class: 'wg-fin-n3', lang: 'en' }, ' N3') : null,
         level === 'kana' ? h('small', {}, ` ${toRomaji(f.tile)}`) : null,
         h('small', { class: 'wg-fin-en' }, f.en),
       ),
@@ -479,6 +484,111 @@ function rumourRelay(ctx: Ctx, title: HTMLElement): HTMLElement {
             },
           });
   return h('div', { class: 'screen wg-rumour' }, title, listen, h('p', { class: 'prompt' }, mission), finCards, own, ...hints, speak);
+}
+
+// ---- Round 3 in the Green Car: Sentence Shiritori ----
+
+function frameCard(card: NonNullable<NonNullable<WordGauntletView['sentences']>['mine']>['card'], stretch: boolean): HTMLElement | null {
+  if (!card) return null;
+  return h(
+    'div',
+    { class: `wg-sent-card ${stretch ? 'stretch' : ''}` },
+    card.n3 ? h('span', { class: 'wg-fin-n3' }, stretch ? 'N3 · optional stretch' : 'N3') : null,
+    h('p', { class: 'wg-frame', lang: 'ja' }, card.ja),
+    h('p', { class: 'hint' }, card.en),
+  );
+}
+
+function sentencesScreen(ctx: Ctx): HTMLElement {
+  const { view, game, send, flash } = ctx;
+  const st = game.sentences!;
+  const me = ctx.me.id;
+  const title = h('p', { class: 'wg-tag' }, 'Round 3 · ぶんしょう しりとり · Sentence shiritori');
+  const last = st.chain.at(-1);
+  const start = h('p', { class: 'wg-need', lang: 'ja' }, st.link.word ? `${st.link.word} / ${st.link.options.join(' / ')}…` : `${st.link.options.join(' / ')}…`);
+  if (view.phase === 'prompt') {
+    return h(
+      'div',
+      { class: 'screen' },
+      title,
+      h(
+        'ul',
+        { class: 'wg-rules' },
+        h('li', {}, 'Start your sentence with the last word of the sentence before, or with its last kana.'),
+        h('li', {}, 'Use the grammar on your card (＿たびに, ＿うちに, ＿っぽい…). Pon checks it.'),
+        h('li', {}, 'Missed? Try again until your time runs out. The room votes for the best sentence.'),
+      ),
+    );
+  }
+  if (view.phase === 'answer') {
+    const m = st.mine;
+    if (st.turn === me && m && (m.card || m.stretch)) {
+      return h(
+        'div',
+        { class: 'screen' },
+        title,
+        h('p', { class: 'big wg-yourturn' }, 'Your sentence!'),
+        last ? h('p', { class: 'hint', lang: 'ja' }, `After: ${last.text}`) : null,
+        h('p', { class: 'hint' }, 'Start with:'),
+        start,
+        h('div', { class: 'wg-sent-cards' }, frameCard(m.card, false), frameCard(m.stretch, true)),
+        m.stretch ? h('p', { class: 'hint' }, 'Either card counts.') : null,
+        m.hint
+          ? h('div', { class: 'wg-model' }, h('p', { lang: 'ja' }, m.hint.text), h('p', { class: 'hint' }, `${m.hint.en} · with the hint, it won’t count as from memory`))
+          : h('button', { type: 'button', class: 'secondary', onclick: () => void send({ kind: 'hint' }) }, 'Need a hint? Pon’s sentence'),
+        speakBox({
+          label: 'Hold and say your sentence',
+          placeholder: `${st.link.word ?? st.link.options[0] ?? ''}…`,
+          kanaPadOpen: false,
+          maxLength: MAX_ANSWER_LENGTH,
+          onSend: (u) => {
+            if (!/[ぁ-ゖァ-ヺー㐀-鿿]/.test(u.text)) return flash('Say it in Japanese.');
+            void send({ kind: 'sentence', utterance: u }).then((ok) => {
+              if (!ok) flash(`Start with ${st.link.word ?? st.link.options.join(' or ')} and use ${[m.card?.ja, m.stretch?.ja].filter(Boolean).join(' or ')}. Try again!`);
+            });
+          },
+        }),
+      );
+    }
+    const upNext = st.order.findIndex((o, i) => i > st.current && o.playerId === me);
+    return h(
+      'div',
+      { class: 'screen' },
+      title,
+      last ? h('p', { class: 'wg-heard-line', lang: 'ja' }, last.text) : null,
+      waiting(`${nameOf(view, st.turn)}’s sentence`, upNext === st.current + 1 ? 'You’re next! Think of a sentence that starts with the last word.' : ''),
+    );
+  }
+  if (view.phase === 'reveal') {
+    if (st.mine?.vote !== null && st.mine?.vote !== undefined) return h('div', { class: 'screen' }, title, waiting('Vote in!', 'Waiting for the others…'));
+    return h(
+      'div',
+      { class: 'screen' },
+      title,
+      h('p', { class: 'prompt' }, 'Vote for the best sentence'),
+      st.chain.map((c, i) => {
+        if (!c.playerId) return null;
+        const own = c.playerId === me;
+        return h(
+          'button',
+          { class: `option wg-step ${own ? 'wg-own' : ''}`, disabled: own, lang: 'ja', onclick: () => void send({ kind: 'vote', step: i }) },
+          h('small', {}, `${nameOf(view, c.playerId)}${c.frame ? ` · ${c.frame.ja}` : ''}${own ? ' (yours)' : ''}`),
+          h('span', {}, c.text),
+        );
+      }),
+    );
+  }
+  const points = st.points?.[me] ?? 0;
+  const mineSaid = st.chain.filter((c) => c.playerId === me);
+  return h(
+    'div',
+    { class: 'screen' },
+    title,
+    h('p', { class: 'big' }, `+${points}`),
+    mineSaid.length
+      ? mineSaid.map((c) => h('p', { class: 'wg-good', lang: 'ja' }, `${c.text}${c.frame ? ` (${c.frame.ja})` : ''}`))
+      : h('p', { class: 'hint' }, 'No sentence this round. Next time!'),
+  );
 }
 
 // ---- Round 3: Shiritori Showdown ----

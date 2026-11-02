@@ -1,6 +1,8 @@
 // Kotoba Concentration on the TV: the board (with the hidden picture showing through the
 // cleared cells), whose turn it is, the say-it and steal windows, and the picture guesses.
 // Audio cards speak their word with the browser's Japanese voice when they turn over.
+// In the Green Car it's Frame Concentration: gist cards (picture + English) and frame chunk cards, and the TV
+// shows only our model sentence, never what anyone said.
 
 import { h, ruby } from '../../../shared/src/dom.js';
 import { duckForSpeech } from '../music/index.js';
@@ -77,6 +79,8 @@ const seatOf = (view: RoomView, id: string | null | undefined): number => view.p
 function fit(text: string, kind: Face['kind']): string {
   const len = [...text].length || 1;
   if (kind === 'en') return `font-size: ${len <= 6 ? 20 : len <= 12 ? 15 : 12}cqw`;
+  if (kind === 'gist') return `font-size: ${len <= 20 ? 13 : len <= 32 ? 11.5 : 10}cqw`;
+  if (kind === 'chunk') return len <= 7 ? `font-size: ${len <= 5 ? 16 : 13}cqw; white-space: nowrap` : `font-size: ${len <= 11 ? 11 : 9.5}cqw`;
   return `font-size: ${Math.min(kind === 'kanji' ? 46 : 40, Math.floor(86 / len))}cqw`;
 }
 
@@ -97,6 +101,20 @@ function faceEl(face: Face, opts: { audioKey?: string; inCell?: boolean } = {}):
     }
     case 'en':
       return h('div', { class: 'cc-face cc-en' }, h('span', { style: size(face.text) }, face.text));
+    case 'gist':
+      return h(
+        'div',
+        { class: `cc-face cc-gist${face.hard ? ' cc-hard' : ''}` },
+        h('span', { class: 'cc-emoji' }, face.pic ?? ''),
+        face.text ? h('span', { class: 'cc-gist-en', style: size(face.text) }, face.text) : null,
+      );
+    case 'chunk':
+      return h(
+        'div',
+        { class: 'cc-face cc-chunk' },
+        h('span', { class: `cc-tag cc-tag-${(face.tag ?? 'N4').toLowerCase()}` }, face.tag ?? ''),
+        h('span', { class: 'cc-jp', lang: 'ja', style: size(face.text) }, face.text),
+      );
     case 'word':
       return h(
         'div',
@@ -135,9 +153,78 @@ function board(view: RoomView, game: ConcentrationView): HTMLElement {
   return h('div', { class: `cc-board cc-size-${game.cols}`, style: `grid-template-columns: repeat(${game.cols}, 1fr); grid-template-rows: repeat(${game.rows}, 1fr)` }, cells);
 }
 
+/** Frame Concentration's banner (Green Car): the same beats, with sentences instead of words. */
+function greenBanner(view: RoomView, game: ConcentrationView): HTMLElement | null {
+  const claim = game.claim;
+  switch (view.phase) {
+    case 'intro':
+      return h(
+        'div',
+        { class: 'cc-banner' },
+        h('p', { class: 'cc-title' }, h('span', { lang: 'ja' }, 'フレーム神経衰弱'), h('span', { class: 'cc-chip cc-green' }, '🍀 Green Car')),
+        h('p', { class: 'cc-line' }, 'Each pair is a situation and the frame that says it. Flip two cards on your phone.'),
+        h(
+          'div',
+          { class: 'cc-worked' },
+          h('div', { class: 'cc-cue' }, faceEl({ kind: 'gist', pic: '😴🍽️', text: 'I pretended to be asleep' })),
+          h('span', { class: 'cc-plus' }, '+'),
+          h('div', { class: 'cc-cue' }, faceEl({ kind: 'chunk', text: '＿ふりを する', tag: 'N3' })),
+          h('span', { class: 'cc-plus' }, '→'),
+          h('span', { class: 'cc-word-line', lang: 'ja' }, 'ねた ふりを しました。'),
+        ),
+        h('p', { class: 'cc-line' }, 'Match? The frame card turns away: say the whole sentence in your own words to keep it. Everyone else, say yours too (+30)!'),
+        h('p', { class: 'cc-line muted' }, 'Miss, and anyone can steal it. Cleared cards uncover a hidden picture.'),
+      );
+    case 'prompt':
+      return h('div', { class: 'cc-banner cc-match' }, h('p', { class: 'cc-title' }, `Match! ${nameOf(view, claim?.claimerId)}, make the sentence…`));
+    case 'reveal':
+    case 'encore': {
+      if (!claim) return h('div', { class: 'cc-banner' });
+      const stealing = claim.stage === 'steal';
+      const kept = !!claim.winnerId;
+      const title = stealing
+        ? 'Steal it! Anyone can say the sentence'
+        : kept
+          ? `${nameOf(view, claim.winnerId)} keeps it! Everyone, say yours`
+          : `${nameOf(view, claim.claimerId)}, say the whole sentence! Everyone, say yours too`;
+      return h(
+        'div',
+        { class: `cc-banner ${stealing ? 'cc-steal' : 'cc-claim'}` },
+        h('p', { class: 'cc-title' }, title),
+        h('div', { class: 'cc-cue' }, faceEl(claim.cue)),
+        h('div', { class: 'cc-cue cc-cue-q' }, h('span', { class: 'cc-q' }, '？')),
+        claim.chorus?.length ? h('p', { class: 'cc-line good' }, `🎶 Said it: ${claim.chorus.map((id) => nameOf(view, id)).join(', ')}`) : null,
+        claim.tried.length ? h('p', { class: 'cc-line muted' }, `Tried: ${claim.tried.map((id) => nameOf(view, id)).join(', ')}`) : null,
+      );
+    }
+    case 'score': {
+      const r = game.result;
+      if (!r || r.kind === 'mismatch') return null;
+      const lines: Record<typeof r.kind, string> = {
+        claimed: `${nameOf(view, r.playerId)} keeps it! +${r.points}${r.spoken ? ' 🎤' : ''}`,
+        stolen: `${nameOf(view, r.playerId)} stole it! +${r.points}${r.spoken ? ' 🎤' : ''}`,
+        missed: 'Nobody said it: back it goes',
+        cleared: 'Nobody said it: off the board',
+      };
+      // Our model sentence only: what anyone said stays on their own phone.
+      return h(
+        'div',
+        { class: `cc-banner cc-result cc-${r.kind}` },
+        h('p', { class: 'cc-title' }, lines[r.kind]),
+        r.word ? h('p', { class: 'cc-line' }, h('span', { class: 'muted' }, 'One way to say it: '), h('span', { class: 'cc-word-line', lang: 'ja' }, ruby(r.word)), h('span', { class: 'muted' }, ` · ${r.word.en}`)) : null,
+        claim?.chorus?.length ? h('p', { class: 'cc-line good' }, `🎶 Said it too: ${claim.chorus.map((id) => nameOf(view, id)).join(', ')} (+30)`) : null,
+      );
+    }
+    default:
+      return null;
+  }
+}
+
 function banner(view: RoomView, game: ConcentrationView): HTMLElement {
   const turnName = nameOf(view, game.turn?.playerId);
   const claim = game.claim;
+  const green = game.green ? greenBanner(view, game) : null;
+  if (green) return green;
   switch (view.phase) {
     case 'intro':
       return h(

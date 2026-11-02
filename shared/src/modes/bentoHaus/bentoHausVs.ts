@@ -544,6 +544,8 @@ export const bentoHausVsMode: Mode<VsState, BentoView> = {
       ajimi: ajimiView(k, ctx),
       me: meView(k, me, own, ctx),
       vs: { myTeam, teams: s.teams.map((t) => teamView(s, t, scoring, ctx)), winner: s.winner },
+      // Green Car: call-outs with ＿て もらえますか (kitchenMove credits them), and the Green Car's customers come in.
+      ...(ctx.greenCar ? { greenCar: true as const } : {}),
     };
   },
 

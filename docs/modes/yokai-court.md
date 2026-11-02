@@ -94,6 +94,32 @@ Frames are found from the kana (`framesOf`). Path goals: 4.2 (なければ, な�
 4.14 (と いって いました), and on the Limited Express 3.1 (に よると, optional there), 3.7 (わけでは ありません)
 and 3.10 (に ちがいありません).
 
+## Green Car
+
+When every player is N4 or N3 the room may ride in the Green Car (`ctx.greenCar`, `shared/src/greenCar.ts`; design:
+the project's `n3-coverage/green-car/design.md`). Nothing moved out of mixed rooms: each lawyer's level line was
+already on their own phone, and lawyers are paired by the closest level. In the Green Car:
+
+- **Both lawyers argue at N3 or N4.** An N3 lawyer always argues from an N3 line (the brief: both lawyers argue in
+  N3), so unlike the other games there's no N3/N4 turn here: an N3 player argues only every other case or so, and
+  their N4 practice is the witness and the judging. Each side and testimony has two N3 lines (`N3_VARIANTS`; the
+  first is the mixed room's own), between them ＿に よると, ＿そうです, ＿らしい, ＿に ちがいない, ＿に きまって いる,
+  ＿はずが ない, ＿とは かぎらない, ＿と いう ことだ, ＿わけでは ない, ＿っぽい and ＿なんて. An N4 lawyer argues from the
+  N4 line, and the hint also shows one of the N3 lines with an N3 tag as optional stretch (`me.stretch`): when
+  their own clip uses an N3 chunk it's logged as the N3 line (`court:<case>:<testimony>:<side>:n3`).
+- **Aim the deal.** When the testimony is in, each side gets the N3 line (`CaseState.variant`) whose frames its
+  lawyer needs most tonight (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says), ties at random; an N4 lawyer's stretch is aimed the same way. This
+  game's counts are `CourtState.said`.
+- **The witness passes it on as hearsay**, shown with kanji and said out loud (`WITNESS_GC`): 「ポンに よると、
+  きつねが 食べた そうです！」. The record button reads "Pass it on out loud" (7 s). A checked take counts only when
+  it has ＿そうです or ＿に よると; without speech-to-text a try counts. It's logged as
+  `court:witness:<case>:<testimony>:n4`, path credit only, no points.
+- **Kids and Cheeky.** Four new Green Car cases, never dealt in a mixed room: Kids and Family get the class pudding
+  (who ate it before lunch?) and the blackboard (who drew on it before the test?); Cheeky gets the shop's sake and
+  the drunk text sent from Pon's phone. The lines are the same templates for every case, so every frame comes up
+  in every audience. The blackboard and the sake have no art yet (the screens show the emoji).
+- Four new N3 chunks for the booth: ＿はずが ありません, ＿に きまって います, ＿とは かぎりません, ＿と いう ことです.
+
 ## Open, for playtests
 
 - The reconnect hold (the TV waits up to 10 s for a lawyer whose clip is still uploading) isn't built: a

@@ -21,6 +21,7 @@ import { canSpeakHost, speakHost, stopHostSpeech } from './hostSpeech.js';
 import { joinAudioTabs } from '../../shared/src/audioTabs.js';
 import { BOSS_DEFEAT, HostSprite, calm, hitSheet, preload } from './sprites.js';
 import { mountSettings, updateSettings } from './settings.js';
+import { mountGreenCar, updateGreenCar } from './greenCar.js';
 import { mountPhrasebook, setPhrasebookSource, updatePhrasebook } from './phrasebook.js';
 import { serverNow, setClipSource } from './modes/dubAudio.js';
 import { sfx, tickSfx, watchSfx } from './music/sfx.js';
@@ -95,6 +96,7 @@ mountBackdrop(els.canvas, () => client?.remainingMs() ?? null);
 // credit, laid out by flex so a longer label or a hidden button never makes them collide.
 const tools = h('div', { class: 'stage-tools' });
 els.canvas.append(tools);
+mountGreenCar(els.canvas);
 mountSoundButton(tools);
 mountSettings(els.canvas, { watch: !!WATCH, send: (body) => command(body), site: () => siteOrigin, bar: tools });
 mountPhrasebook(els.canvas, tools);
@@ -266,6 +268,9 @@ async function openRoom(fresh: boolean): Promise<void> {
 
 let lastView: RoomView | null = null;
 
+/** A game's own title, when its view carries one (Katsuyō Raid plays under Kana Yōkai Raid's menu entry). */
+const ownTitle = (view: RoomView): Pick<ModeInfo, 'title' | 'titleJa' | 'phaseLabels'> | null => (view.game && 'modeTitle' in view.game ? view.game.modeTitle : null);
+
 function render(view: RoomView, v: number): void {
   lastView = view;
   document.body.dataset.motion = view.calmMotion ? 'calm' : '';
@@ -276,8 +281,9 @@ function render(view: RoomView, v: number): void {
     // A Surprise Me! game spins for its pick first, then changes channel to it.
     if (lastPhase === 'lobby' && view.phase !== 'lobby' && view.phase !== 'recap' && view.mode) {
       const mode = view.mode;
-      if (view.surprise?.length) surpriseRoll(view.surprise, mode, () => channelChange(mode));
-      else channelChange(mode);
+      const own = ownTitle(view);
+      if (view.surprise?.length) surpriseRoll(view.surprise, mode, () => channelChange(mode, own));
+      else channelChange(mode, own);
     }
     // A phase change in a game: curtain wipe (restarted by reflow), and the ring timer starts full.
     // Not between Karaoke Duel's sing turns: each line is a phase, and the curtain would hide the
@@ -297,7 +303,7 @@ function render(view: RoomView, v: number): void {
   document.body.dataset.phase = view.phase;
   document.body.dataset.mode = view.mode ?? '';
   const modeInfo = view.mode ? MENU_ALL.find((m) => m.id === view.mode) : undefined;
-  els.phase.textContent = view.phase === 'lobby' ? 'Lobby' : view.phase === 'recap' ? 'Recap' : `${modeInfo?.title ?? ''} · ${modeInfo?.phaseLabels?.[view.phase] ?? PHASE_LABELS[view.phase] ?? view.phase}`;
+  els.phase.textContent = view.phase === 'lobby' ? 'Lobby' : view.phase === 'recap' ? 'Recap' : `${ownTitle(view)?.title ?? modeInfo?.title ?? ''} · ${(ownTitle(view)?.phaseLabels ?? modeInfo?.phaseLabels)?.[view.phase] ?? PHASE_LABELS[view.phase] ?? view.phase}`;
   els.round.textContent = view.round ? `Round ${view.round} / ${view.totalRounds}` : '';
   els.version.textContent = `v${v} · phase #${view.phaseSeq} · stale dropped ${client?.staleDropped ?? 0}`;
   els.start.disabled = view.phase !== 'lobby' || view.players.length === 0;
@@ -312,6 +318,7 @@ function render(view: RoomView, v: number): void {
   const held = view.game && (holdMode?.holdScoresUntil?.(view, view.game) ?? 0) > serverNow();
   watchSfx(held ? { ...view, players: view.players.map((p) => ({ ...p, score: p.score - (holdMode?.heldPoints?.(view.game!, p.id) ?? 0) })) } : view);
   updateSettings(view);
+  updateGreenCar(view);
   updatePhrasebook(view);
   showCredits(view.phase === 'recap');
 
@@ -608,9 +615,10 @@ function rollScore(el: HTMLElement): void {
  * Lobby → game: a burst of TV static, the mode's title card, then a cut to the show (1.6 s).
  * The title card doesn't move: it cuts in and out. A click skips it; Calm motion has no static.
  */
-function channelChange(mode: ModeId): void {
-  const info = MENU_ALL.find((m) => m.id === mode);
-  if (!info) return;
+function channelChange(mode: ModeId, own: { title: string; titleJa: string } | null = null): void {
+  const menu = MENU_ALL.find((m) => m.id === mode);
+  if (!menu) return;
+  const info = own ?? menu;
   els.canvas.querySelector('.channel')?.remove();
   const quiet = calm();
   const card = h(

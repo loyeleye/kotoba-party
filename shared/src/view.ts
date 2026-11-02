@@ -1,5 +1,6 @@
+import { allN4Up, greenCarFor } from './greenCar.js';
 import { activeMode, inGame, modeContext, type GameContext, type GameState } from './game.js';
-import type { ContentLibrary } from './modes/mode.js';
+import type { ContentLibrary, ModeInfo } from './modes/mode.js';
 import { MENU } from './modes/registry.js';
 import type { ModeId, RoomView, Viewer } from './protocol.js';
 import type { GameView } from './modes/views.js';
@@ -31,7 +32,7 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
     round: progress.round,
     totalRounds: progress.totalRounds,
     mode: state.mode,
-    modes: inLobby ? MENU : [],
+    modes: inLobby ? (greenCarFor(state.greenCar ?? null, state.players) ? MENU.map(greenCarInfo) : MENU) : [],
     packs: inLobby
       ? content.packs.map((p) => ({ id: p.id, title: p.title.en, titleJa: p.title.text, blurb: p.blurb }))
       : [],
@@ -64,6 +65,7 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
     wishes: inLobby ? wishCounts(state) : {},
     remoteControl: state.remoteControl,
     audience: state.audience,
+    greenCar: greenCarView(state, inLobby),
     surprise: state.surprise,
   };
 }
@@ -72,4 +74,17 @@ export function viewFor(state: GameState, viewer: Viewer, content: ContentLibrar
 function recapWithoutCheck(r: NonNullable<GameState['recap']>): Omit<NonNullable<GameState['recap']>, 'mixed'> {
   const { mixed: _mixed, ...rest } = r;
   return rest;
+}
+
+/** Green Car for the screens: in the lobby, whether the next game would ride in it; in a game, whether this one does. */
+function greenCarView(state: GameState, inLobby: boolean): RoomView['greenCar'] {
+  const setting = state.greenCar ?? null;
+  const eligible = allN4Up(state.players);
+  const on = inLobby ? greenCarFor(setting, state.players) : state.greenCarOn === true;
+  return { setting, eligible, on };
+}
+
+/** A game's menu entry in the Green Car: its Green Car name, where it has one (Katsuyō Raid, Frame Concentration). */
+function greenCarInfo(m: ModeInfo): ModeInfo {
+  return m.greenCar ? { ...m, ...m.greenCar } : m;
 }

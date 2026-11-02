@@ -1,7 +1,9 @@
 // How a bot plays Oogiri Night: answers each prompt (from memory in the say-it-first window,
 // or with tiles and a picked form, sometimes saying it to send it, sometimes in English where
 // allowed), votes, and sometimes takes the encore. Repeatable: every choice hashes the bot's
-// id with the phase, so the same run makes the same moves.
+// id with the phase, so the same run makes the same moves. In the Green Car the encore is the whole
+// line: the bot remembers the prompt from the vote (the encore shows only its frame) and says it
+// with its answer in the blank.
 
 import type { OogiriView, SlotView } from '../../../shared/src/modes/oogiri/oogiri.js';
 import { SAY_FIRST_MS } from '../../../shared/src/modes/oogiri/oogiri.js';
@@ -53,6 +55,8 @@ export function oogiriPolicy(opts: OogiriPolicyOptions = {}): ModePolicy {
   const englishChance = opts.englishChance ?? 0.15;
   const encoreChance = opts.encoreChance ?? 0.7;
   const think = opts.thinkMs ?? 300;
+  /** Green Car: per bot, "round:matchup" → the prompt's kana, remembered from the vote. */
+  const prompts = new Map<string, Map<string, string>>();
 
   return {
     act(view: RoomView, playerId: string) {
@@ -75,6 +79,12 @@ export function oogiriPolicy(opts: OogiriPolicyOptions = {}): ModePolicy {
         return [{ key: `answer:${tag}`, move, delayMs: delay(tag) }];
       }
 
+      if (view.phase === 'reveal' && game.matchup?.prompt.greenCar) {
+        let mem = prompts.get(playerId);
+        if (!mem) prompts.set(playerId, (mem = new Map()));
+        mem.set(`${game.round}:${game.matchup.id}`, game.matchup.prompt.kana);
+      }
+
       if (view.phase === 'reveal' && me.canVote && game.matchup) {
         const options = game.matchup.answers.filter((a) => !a.mine && !a.hidden);
         const pick = options[Math.floor(r('vote') * options.length)];
@@ -84,7 +94,9 @@ export function oogiriPolicy(opts: OogiriPolicyOptions = {}): ModePolicy {
       if (view.phase === 'encore' && (me.encore === 'winner' || me.encore === 'author') && game.matchup) {
         const mine = game.matchup.answers.find((a) => a.mine);
         const chance = me.encore === 'winner' ? encoreChance : encoreChance / 2;
-        const move = mine && r('encore') < chance ? { kind: 'encore', said: { via: r('encore:via') < 0.8 ? 'speech' : 'typed', text: mine.text } } : { kind: 'encore', pass: true };
+        const prompt = game.matchup.prompt.greenCar ? prompts.get(playerId)?.get(`${game.round}:${game.matchup.id}`) : undefined;
+        const text = mine && prompt ? prompt.replace('＿＿＿', mine.kana ?? mine.text) : mine?.text;
+        const move = mine && r('encore') < chance ? { kind: 'encore', said: { via: r('encore:via') < 0.8 ? 'speech' : 'typed', text } } : { kind: 'encore', pass: true };
         return [{ key: 'encore', move: { ...move, matchup: game.matchup.id }, delayMs: delay('encore') }];
       }
       return [];

@@ -253,6 +253,17 @@ export interface OogiriPrompt {
    * Without one, a noun winner's natural version is the example answer.
    */
   nounBridge?: JpText;
+  /**
+   * Green Car prompts only (oogiri/greenCar.ts): dealt only in the Green Car, and every Green Car round
+   * draws on them. The blank sits inside the frame, so the finished line carries it.
+   */
+  greenCar?: true;
+  /** Green Car: the frame's level (an N4 player sees an N3 prompt as a stretch). */
+  level?: 'n4' | 'n3';
+  /** Green Car: the frames (frames.ts ids) the finished line carries. */
+  frames?: string[];
+  /** Green Car prompts are 'draft' until a fluent speaker checks them. */
+  status?: ReviewStatus;
 }
 
 /** Set phrases offered as tiles in the Photo Caption round. */
@@ -380,6 +391,8 @@ export interface LastTrainScenario {
   platformDash: MinigameItem[];
   /** Rooms with this Audience setting ride this line (family when left out); see chooseScenario. */
   audience?: 'kids' | 'cheeky';
+  /** A Green Car line (content/src/last-train/green-car.ts): ridden only in the Green Car, and there before any other. */
+  greenCar?: true;
   status: ReviewStatus;
 }
 
@@ -396,6 +409,11 @@ export interface OnsenAnswer {
   clueId?: string;
   /** The N4 deputy's relay of this answer (Murder at the Onsen's hard role). Left out, nobody deputises that turn. */
   report?: OnsenReport;
+  /**
+   * The same answer in N3 (the same facts, an N3 frame in it), which the suspect says in the Green Car. Left out,
+   * the Green Car hears `jp`. Draft.
+   */
+  n3?: JpText;
 }
 
 /**
@@ -440,7 +458,11 @@ export interface OnsenCase {
   title: JpText;
   /** One line that sets the scene. */
   setting: JpText;
-  victim: { name: JpText; emoji: string; found: JpText };
+  /**
+   * `fate`: what happened to the victim, as a plain past clause (ゆきだるまさんが とけた), for the Green Car's N3
+   * accusation 「ゆきだるまさんが とけたのは、 ○○さんの せいに ちがいない！」 (＿せいで / ＿に ちがいない). Draft.
+   */
+  victim: { name: JpText; emoji: string; found: JpText; fate?: JpText };
   /** The piece of evidence players can ask about ("Whose is this …?"). `keys` are kana the question matcher looks for. */
   item: { name: JpText; emoji: string; keys: string[] };
   suspects: OnsenSuspect[];

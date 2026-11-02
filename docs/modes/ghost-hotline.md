@@ -85,6 +85,27 @@ frame and not 4.5's. The caller's line is read (it's on their
 phone), and said when they recorded it. A Kana adviser's tile is seen. Goal 4.7 names this game, but stays
 under construction until a game asks for plans.
 
+## Green Car
+
+When every player is N4 or N3 the room may ride in the Green Car (`ctx.greenCar`, `shared/src/greenCar.ts`; design:
+the project's `n3-coverage/green-car/design.md`). Nothing moved out of mixed rooms: each adviser's level line was
+already on their own phone. In the Green Car:
+
+- **N4 and N3 advice only.** Each call deals every speaking adviser a line level (`Call.lines`): an N3 seat takes the
+  N3 line and the N4 line in turn (N3 first; `HotlineState.dealt`), so about half each; an N4 seat works from the N4
+  line, and the hint also shows the caller's N3 line with an N3 tag as optional stretch (`me.stretch`). When an
+  adviser's own clip uses an N3 chunk, the advice is credited to the N3 line (`usedLevel`, `hotline:<problem>:n3`) and
+  the booth can call it out.
+- **Aim the deal.** Of the callers not yet used, the deal keeps those whose lines (at the levels just dealt to
+  this call's advisers) the advisers need most, summed over them (`shared/src/modes/aim.ts` `aimWeight`: the room's `ctx.frameNeed`, where a frame a path goal requires weighs 2 and an optional one 1, each divided by one plus tonight's earlier says, then divided by one plus this game's says), then draws at random among
+  those. This game's counts are `HotlineState.said` (the line's frames when it was logged as said).
+- **Kids and Cheeky.** New Green Car callers, N4 and N3 advice only, never in a mixed room: Kids and Family get a
+  kappa scared of the pool (＿たら どうですか, ＿ても かまわない) and a lonely zashiki-warashi (＿た ほうが いい,
+  ＿んだから); Cheeky gets a rokurokubi whose ex keeps calling at night (＿たら どうですか, ＿んだから) and an oni whose
+  date went badly (＿たら どうですか, ＿に ちがいない). Every frame reaches every audience (tested). The rokurokubi's
+  picture is still to come (the screens show the emoji).
+- One new chunk, ＿んだから (`n-dakara`, N3), so the booth hears the new N3 lines.
+
 ## Open, for playtests
 
 - N3 lines (＿べきです, ＿ば よかったのに, ＿ように したら どうですか) join at step 6.

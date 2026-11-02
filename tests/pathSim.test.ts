@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GOALS } from '../shared/src/path.js';
 import { phraseFrames } from '../shared/src/progress.js';
 import { playGame } from '../tools/sim/play.js';
-import { runRoom } from '../tools/sim/expressLine.js';
+import { monthItems, runRoom } from '../tools/sim/expressLine.js';
 import { content } from './helpers.js';
 
 const EXPRESS_MODES = [...new Set(GOALS.filter((g) => g.line === 'express').flatMap((g) => g.games))];
@@ -18,8 +18,9 @@ describe('path simulation: bots play the real games in-process', () => {
     expect(g.seats.find((s) => s.level === 'n3')!.result.mode).toBe('happyokai');
   });
 
-  it('a speaking N4 bot takes the Bento Haus hard roles and says their frames from memory', () => {
-    const g = playGame(content, 'bento-haus', ['n4', 'n4', 'n5', 'n5'], 2);
+  // The deputy manager (its ＿て いただけませんか requests) is a Green Car move-out, so this room is all N4.
+  it('a speaking N4 bot takes the Bento Haus hard roles in the Green Car and says their frames from memory', () => {
+    const g = playGame(content, 'bento-haus', ['n4', 'n4', 'n4'], 2);
     const said = g.seats.filter((s) => s.level === 'n4').flatMap((s) => s.result.phrases.filter((e) => e.outcome === 'said' && e.recall === 'memory'));
     expect(said.some((e) => phraseFrames(e).includes('te-itadakemasen'))).toBe(true);
   });
@@ -86,5 +87,27 @@ describe('path simulation: bots play the real games in-process', () => {
     const followed = run(0.9);
     expect(followed.stamps).toBeGreaterThanOrEqual(random.stamps);
     expect(followed.nights).toBeLessThanOrEqual(random.nights);
+  });
+  it('plays a Green Car room when asked, and refuses one with a Kana or N5 seat aboard', () => {
+    const g = playGame(content, 'bento-haus', ['n3', 'n3', 'n4', 'n4'], 1, undefined, { greenCar: true, audience: 'kids' });
+    expect(g.seats.map((s) => s.level)).toEqual(['n3', 'n3', 'n4', 'n4']);
+    expect(() => playGame(content, 'bento-haus', ['n3', 'n4', 'n4', 'n5'], 1, undefined, { greenCar: true })).toThrow(/Green Car is off/);
+    // Held off, an all-N4+ room plays the regular train.
+    expect(() => playGame(content, 'bento-haus', ['n3', 'n4', 'n4', 'n4'], 1, undefined, { greenCar: false })).not.toThrow();
+  });
+
+  it("keeps a room's game order on request without changing its nights, and counts a month's repeats from fresh games", () => {
+    const lib = new Map([['bento-haus' as const, playGame(content, 'bento-haus', ['n4', 'n4', 'n5', 'n5'], 5).seats.filter((s) => s.level === 'n4').map((s) => s.result)]]);
+    const o = { rooms: 1, library: 1, nightsEvery: 7, games: 2, follow: 0, memory: 1, max: 4, reviews: 0, seed: 1 };
+    const plain = runRoom(lib, o, 9);
+    const kept = runRoom(lib, o, 9, true);
+    expect(kept.stamped).toEqual(plain.stamped);
+    expect(kept.order).toHaveLength(8);
+    const month = monthItems(content, kept.order!.slice(0, 2), 77, 'family');
+    for (const m of Object.values(month)) {
+      expect(m!.distinct).toBeLessThanOrEqual(m!.entries);
+      for (const n of Object.values(m!.again)) expect(n).toBe(2);
+    }
+    expect(month.n4!.entries).toBeGreaterThan(0);
   });
 });

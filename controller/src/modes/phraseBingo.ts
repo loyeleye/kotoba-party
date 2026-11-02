@@ -112,6 +112,13 @@ function card(ctx: Ctx, mode: 'show' | 'play' | 'result'): HTMLElement {
   return holder;
 }
 
+/** Green Car: the frame the audience's card shows for this line, and the N3 tag on an optional stretch line. */
+function frameTag(x: SecretView): HTMLElement | null {
+  const f = x.jp?.frame;
+  if (!f && !x.stretch) return null;
+  return h('p', { class: 'hint pb-frame-tag' }, f ? h('span', { lang: 'ja' }, `🎯 ${f.ja}`) : null, x.stretch ? ' · N3 stretch (optional)' : x.jp?.tag ? ` · ${x.jp.tag}` : null);
+}
+
 function secretRow(ctx: Ctx, x: SecretView, live: boolean): HTMLElement {
   const { send, game } = ctx;
   const status = x.said ? (x.smooth === false ? `🎯 caught by ${x.caughtBy!.map((id) => nameOf(ctx.view, id)).join(', ')}` : x.smooth ? '⭐ smooth' : '✓ said') : live ? '' : 'not said';
@@ -119,6 +126,7 @@ function secretRow(ctx: Ctx, x: SecretView, live: boolean): HTMLElement {
     'div',
     { class: `pb-secret-p${x.said ? ' said' : ''}` },
     x.jp ? phraseBlock(x.jp, !live) : h('div', { class: 'pb-line hidden' }, h('p', { class: 'pb-line-en' }, x.en), h('p', { class: 'pb-line-hint', lang: 'ja' }, x.hint)),
+    frameTag(x),
     status ? h('p', { class: 'pb-status' }, status) : null,
     live && !x.said && !x.jp
       ? h('button', { type: 'button', class: 'secondary pb-peek', onclick: () => void send({ kind: 'peek', phraseId: x.id, round: game.round }) }, '👀 Peek (no memory bonus)')
@@ -138,7 +146,7 @@ function actorScreen(ctx: Ctx): HTMLElement {
         sceneHeader(game),
         roleLine(game),
         h('p', { class: 'hint' }, `Your secret lines (${a.secrets.length}). Slip each one into the scene. Learn them now: they hide when the scene starts.`),
-        a.secrets.map((x) => (x.jp ? phraseBlock(x.jp) : null)),
+        a.secrets.map((x) => (x.jp ? h('div', {}, phraseBlock(x.jp), frameTag(x)) : null)),
         a.ready
           ? h('p', { class: 'hint pb-ready-p' }, '✓ Ready. Waiting for the other actors…')
           : h('button', { type: 'button', class: 'primary', onclick: () => void send({ kind: 'ready', round: game.round }) }, 'I’m ready'),

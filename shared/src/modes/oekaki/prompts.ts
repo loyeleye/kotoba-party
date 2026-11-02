@@ -25,6 +25,10 @@ export interface Tile {
   en: string;
   /** The の particle joins the tiles either side ("X's Y"). */
   particle?: boolean;
+  /** Green Car chunk tiles (sentences.ts): who it happened to, or what happened (the frame-bearing chunk). */
+  chunk?: 'who' | 'did';
+  /** A what-happened chunk in an N3 frame: an N4 writer's stretch, tagged N3. */
+  n3?: true;
 }
 
 /**

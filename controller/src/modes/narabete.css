@@ -103,3 +103,6 @@
 /* The N4 defence's instant replay, on Kana and N5 phones: the gist at their level. */
 .nb-gist { text-align: center; }
 .nb-gist-pic { width: 96px; height: 96px; margin: 0 auto; image-rendering: pixelated; object-fit: contain; }
+/* Green Car: N3 defence scripts and the N4 defender's N3 stretch. */
+.nb-n3-tag { font-size: 11px; font-weight: 700; color: var(--muted); }
+.nb-stretch { border-top: 1px dashed var(--muted); padding-top: 6px; }

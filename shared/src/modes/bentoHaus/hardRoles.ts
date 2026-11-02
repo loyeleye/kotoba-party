@@ -2,6 +2,13 @@
 // has an N4 player, and each shift offers them to the room's N4 players in turn (phone: やります, or
 // こんかいは いいです for the ordinary part). Nobody else's part or pay changes.
 //
+// Green Car (shared/src/greenCar.ts): the deputy manager and its 📋 requests to the stations play only in the
+// Green Car (a move-out: in a mixed room a beginner's station got extra taps from them). A mixed room's N4 players
+// are offered the おもてなし shift alone. In the Green Car nobody is offered anything: the deputy manager seat is
+// always filled (`greenCarSeats`), every other player runs the おもてなし shift, and nothing goes in the offer log.
+// An N3 player's おもてなし lines alternate N3 and N4 (about half each); an N4 player sees the N3 line as stretch.
+// The guest's question is aimed: the one whose frames this player needs most tonight (`aimAsk`, aim.ts aimWeight).
+//
 //   manager (ふくてんちょう, deputy manager: Pon is busy "tasting")  one seat a shift. A customer who
 //              complains about a box, or makes a special request, comes to the deputy manager's
 //              phone: say sorry and ask the customer politely
@@ -26,6 +33,7 @@ import type { ModeContext, ModePlayer } from '../mode.js';
 import type { Round, Visit } from './bentoHaus.js';
 import { countWord, customerOf, foodOf, KANJI_SPELLINGS, type JpLine } from './menu.js';
 import { n4Up } from '../../level.js';
+import { aimPick, aimWeight } from '../aim.js';
 
 // ---- the scripts ----
 
@@ -38,7 +46,7 @@ export interface HardLine extends JpLine {
 }
 
 /** How a line is checked: which frame it must use (and what the phone says when it doesn't). */
-export type CheckKind = 'sorry-ask' | 'ask' | 'kitchen' | 'welcome' | 'decline' | 'ready';
+export type CheckKind = 'sorry-ask' | 'ask' | 'kitchen' | 'welcome' | 'decline' | 'ready' | 'point' | 'take';
 
 export interface StepScript {
   to: 'customer' | 'kitchen';
@@ -52,6 +60,8 @@ export interface StepScript {
   n3?: HardLine;
   /** For an N3 player, whose model is the N3 line: the N4 line, still accepted and credited as itself. */
   plain?: HardLine;
+  /** Green Car, an N4 player: the N3 line shown as optional stretch (with an N3 tag); saying it is credited as N3. */
+  stretch?: HardLine;
 }
 
 const L =(text: string, en: string, frames: readonly string[]): HardLine => ({ text, kana: text, en, frames });
@@ -213,8 +223,14 @@ export interface GuestAsk {
   id: string;
   status: ReviewStatus;
   customers?: readonly string[];
-  /** decline: a house rule, turned down with ＿は ごえんりょ ください. ready: it's been made ready (てある). */
-  kind: 'decline' | 'ready';
+  /**
+   * decline: a house rule, turned down with ＿は ごえんりょ ください. ready: it's been made ready (てある). Green Car
+   * only: point, where something is (あちらに ございます; N3 あちらで ございます); take, looking after something for
+   * the guest (おあずかり します; N3 おあずかり させて いただきます).
+   */
+  kind: 'decline' | 'ready' | 'point' | 'take';
+  /** Asked only in the Green Car (its N3 line is the point of it), never in a mixed room. */
+  greenCar?: true;
   ask: JpLine;
   model: HardLine;
   /** The N3 line: ＿は ごえんりょ いただいて おります, or ＿は ごよういして おります. */
@@ -236,11 +252,12 @@ const NO = (thing: string, en: string, ask: JpLine, id: string, keys: readonly s
   n3: L(`${SORRY}${thing}は ごえんりょ いただいて おります。`, `I'm terribly sorry. We ask guests to refrain from ${en}.`, ['keigo', 'te-orimasu']),
   reply,
 });
-const READY = (text: string, en: string, ask: JpLine, id: string, reply: JpLine, customers?: readonly string[]): GuestAsk => ({
+const READY = (text: string, en: string, ask: JpLine, id: string, reply: JpLine, customers?: readonly string[], greenCar?: true): GuestAsk => ({
   id,
   status: 'draft',
   kind: 'ready',
   ...(customers ? { customers } : {}),
+  ...(greenCar ? { greenCar } : {}),
   ask,
   model: L(text, en, ['te-aru']),
   n3: L(text.replace('よういして あります', 'ごよういして おります'), en, ['te-orimasu']),
@@ -258,6 +275,36 @@ export const GUEST_ASKS: readonly GuestAsk[] = [
   NO('しゃしん', 'photos', { text: 'ほかの おきゃくさんの しゃしんを とっても いいですか。', en: 'May I take photos of the other customers?' }, 'photos', ['しゃしん'], { text: 'えー… じゃあ、じぶんの しゃしんを とります！', en: 'Aww… selfies, then!' }, ['influencer']),
   READY('はい、つめたい おちゃも よういして あります。', 'Yes, cold tea is ready for you too.', { text: 'つめたい おちゃは ありますか。', en: 'Is there cold tea?' }, 'cold-tea', { text: 'わあ、つめたい！　だいすき！', en: 'Ooh, ice cold! I love it!' }, ['yukionna']),
   NO('おみせで ねるの', 'sleeping in the shop', { text: 'ここで ねても いいですか。', en: 'May I sleep here?' }, 'sleep', ['ねる'], { text: 'はーい… ねむいなあ。', en: 'Oka-ay… so sleepy.' }, ['baku', 'kodanuki']),
+  // ---- Green Car only: two more general asks, so ＿で ございます and ＿させて いただきます come up at the guest's
+  //      question too, and the Green Car customers' own (menu.ts). ----
+  {
+    id: 'toilet',
+    status: 'draft',
+    kind: 'point',
+    greenCar: true,
+    ask: { text: 'すみません、おてあらいは どこですか。', en: 'Excuse me, where is the toilet?' },
+    keys: ['おてあらい', 'トイレ'],
+    model: L('おてあらいは あちらに ございます。', 'The toilet is over there.', ['keigo']),
+    n3: L('おてあらいは あちらで ございます。', 'The toilet is just over there.', ['de-gozaimasu']),
+    reply: { text: 'どうも！　いそがなきゃ！', en: 'Thanks! Gotta hurry!' },
+  },
+  {
+    id: 'bags',
+    status: 'draft',
+    kind: 'take',
+    greenCar: true,
+    ask: { text: 'にもつが おもくて… どこかに おいても いいですか。', en: 'My bags are heavy… may I put them somewhere?' },
+    keys: ['にもつ'],
+    model: L('おにもつは わたしが おあずかり します。', "I'll look after your bags.", ['o-suru']),
+    n3: L('おにもつは わたしが おあずかり させて いただきます。', 'Allow me to look after your bags.', ['sasete-itadaku']),
+    reply: { text: 'わあ、たすかります！', en: "Oh, that's a big help!" },
+  },
+  // The tengu's birthday (Kids, Family): the candles are ready.
+  READY('はい、ろうそくも よういして あります。', 'Yes, the candles are ready too.', { text: 'きょうは たんじょうびなんです！　ろうそくは ありますか。', en: "It's my birthday today! Are there candles?" }, 'candles', { text: 'やった！　はなが もっと たかく なりそう！', en: 'Yay! My nose is going to get even longer!' }, ['tengu'], true),
+  // The school trip (Kids, Family): the teacher's bento is ready too.
+  READY('はい、せんせいの おべんとうも よういして あります。', "Yes, your teacher's bento is ready too.", { text: 'せんせいの おべんとうも ありますか。', en: 'Is there a bento for our teacher too?' }, 'teacher-bento', { text: 'せんせい、よかったですね！', en: 'Lucky you, sensei!' }, ['shuugaku'], true),
+  // After the bar (Cheeky): no more drinking in the shop.
+  { ...NO('おさけ', 'drinking', { text: 'ここで もう いっぱい のんでも いいですか。', en: 'Can I have one more drink here?' }, 'one-more', ['おさけ'], { text: 'じゃあ… おちゃで かんぱい！', en: 'Fine… cheers with tea, then!' }, ['yopparai']), greenCar: true },
 ];
 
 /** The first thing an おもてなし order-taker says: seat the guest, or ask them to wait. */
@@ -271,9 +318,20 @@ export const WELCOME: StepScript = {
 /** The N3 welcome's other line, so ＿させて いただきます gets a second word in the gap (3.8 asks for two). */
 export const WELCOME_N3_ALT = L('いらっしゃいませ。おにもつを おあずかり させて いただきます。', 'Welcome. Allow me to take your bags.', ['sasete-itadaku']);
 
-/** A step at the order-taker's level: an N3 player's model is the N3 line, with the N4 one kept as `plain`. */
+/** A step at the order-taker's level: an N3 player's model is the N3 line, with the N4 line kept as `plain`. */
 export const atStepLevel = (st: StepScript, level: Level | undefined): StepScript =>
   level === 'n3' && st.n3 ? { ...st, model: st.n3, plain: st.model } : st;
+
+/**
+ * A step in the Green Car. An N3 player gets the N3 line (`n3Turn` true) or the N4 one, so their lines run about
+ * half and half; either form is still accepted and credited as itself. An N4 player gets the N4 line, with the N3
+ * line as optional stretch.
+ */
+export function atGreenCarLevel(st: StepScript, level: Level | undefined, n3Turn: boolean): StepScript {
+  if (!st.n3) return st;
+  if (level === 'n3') return n3Turn ? atStepLevel(st, 'n3') : st;
+  return { ...st, stretch: st.n3 };
+}
 
 // ---- checking a line ----
 
@@ -291,6 +349,9 @@ const SASETE = ['させていただきます', 'させていただけ'];
 const GOENRYO_N3 = ['ごえんりょいただいております', 'ごえんりょねがっております'];
 const ORIMASU_READY = ['よういしております', 'よういいたしております'];
 const IKEMASEN = ['てはいけません', 'ではいけません', 'てはだめ', 'ちゃだめ', 'だめです'];
+const DE_GOZAIMASU = ['でございます'];
+const GOZAIMASU = ['ございます'];
+const O_SURU = ['おあずかりします', 'おあずかりいたします', 'おもちします', 'おもちいたします'];
 
 // Food written in kanji is spelled out first, as the kitchen's calls are (唐揚げ can come back as とうあげ).
 function readingsOf(u: Utterance): string[] {
@@ -299,6 +360,9 @@ function readingsOf(u: Utterance): string[] {
   return [...new Set([utteranceReading(u), normalizeReading(u.text), normalizeReading(spelled)])].map(soundKey);
 }
 const has = (rs: readonly string[], chunks: readonly string[]) => rs.some((r) => chunks.some((c) => r.includes(soundKey(c))));
+
+/** A kitchen call asked with ＿て もらえますか (the Green Car's call-out: からあげを ふたつ つくって もらえますか). */
+export const saysMoraeru = (u: Utterance): boolean => has(readingsOf(u), MORAU);
 
 /**
  * The form a line was accepted in, when it isn't the model's, so only the frames actually used are credited:
@@ -363,6 +427,16 @@ export function checkLine(u: Utterance, step: Pick<StepScript, 'check' | 'keys' 
       if (has(rs, ORIMASU_READY)) return n3Form(step, ['te-orimasu']);
       if (has(rs, TE_ARU)) return plainForm(step);
       return miss('It’s already done for them: ＿は よういして あります.');
+    case 'point':
+      if (!keyed) return miss(`Say what they’re looking for (${step.keys!.join(' / ')}), then where: あちらに ございます.`);
+      if (has(rs, DE_GOZAIMASU)) return n3Form(step, ['de-gozaimasu']);
+      if (has(rs, GOZAIMASU)) return plainForm(step);
+      return miss('To a guest, あります is ございます: ＿は あちらに ございます.');
+    case 'take':
+      if (!keyed) return miss(`Say what you’ll look after (${step.keys!.join(' / ')}), then お〜します: おあずかり します.`);
+      if (has(rs, SASETE)) return n3Form(step, ['sasete-itadaku']);
+      if (has(rs, O_SURU)) return plainForm(step);
+      return miss('Offer it humbly with お〜します: おにもつは おあずかり します.');
   }
 }
 
@@ -466,6 +540,14 @@ export interface HardState {
   offers: RoleOffer[];
   specialTurn: number;
   askTurn: number;
+  /** This game rides in the Green Car: seats are filled, never offered (greenCarSeats). */
+  greenCar?: true;
+  /** Green Car: shifts each player has held the deputy manager seat. */
+  managerShifts?: Record<string, number>;
+  /** Green Car: N3 and N4 おもてなし lines dealt to each N3 player, to keep them about half and half. */
+  mix?: Record<string, { n3: number; n4: number }>;
+  /** Green Car: the frames each player has said tonight (lines accepted), for aiming the guest's question. */
+  said?: Record<string, Record<string, number>>;
   /** The Gallery's curveball, once a game. */
   curveballUsed?: boolean;
   /** Deputy managers who have had their first incident ("Need the words?" opens by itself on that one). */
@@ -490,20 +572,27 @@ export const GALLERY_MS = 12_000;
 const seatLog = (offers: readonly RoleOffer[]): PastOffer[] => offers.filter((o) => o.role === 'manager').map((o) => ({ playerId: o.playerId, at: o.round, answer: o.answer }));
 
 /**
- * This shift's offers: one deputy manager seat, for the N4 player nextOfferee picks (fewest offers of the seat,
- * then longest ago; a player who declined it last shift sits this one out; in a room of 4 or more, not the same
- * player two shifts running). Every other N4 player is offered the おもてなし shift.
+ * This shift's offers outside the Green Car: the おもてなし shift for every N4 player. The deputy manager seat is a
+ * Green Car move-out (Ladi, Nov 1: its 📋 requests gave a beginner's station extra taps); in the Green Car it is
+ * filled without an offer (greenCarSeats). Until then it went to the N4 player nextOfferee picked.
  */
-export function rolesFor(
-  round: number,
-  players: readonly Pick<ModePlayer, 'id' | 'level'>[],
-  offers: readonly RoleOffer[] = [],
-  roomSize = players.length,
-): { playerId: string; role: HardRole }[] {
-  const n4 = players.filter((p) => n4Up(p.level)).map((p) => p.id);
-  if (!n4.length) return [];
-  const seat = nextOfferee(n4, seatLog(offers), round, roomSize);
-  return n4.map((id) => ({ playerId: id, role: id === seat ? 'manager' : 'omotenashi' }));
+export function rolesFor(players: readonly Pick<ModePlayer, 'id' | 'level'>[]): { playerId: string; role: HardRole }[] {
+  return players.filter((p) => n4Up(p.level)).map((p) => ({ playerId: p.id, role: 'omotenashi' as const }));
+}
+
+/**
+ * Green Car seats for a shift, with no offer card: the deputy manager seat always filled, by whoever has held it
+ * fewest shifts (then seat order), and everyone else on the おもてなし shift. Alone in the room, the deputy manager
+ * takes the orders too, so they run the おもてなし shift as well. Nothing is logged as an offer.
+ */
+export function greenCarSeats(h: HardState, hr: HardRound, players: readonly Pick<ModePlayer, 'id' | 'level'>[]): void {
+  const up = players.filter((p) => n4Up(p.level));
+  if (!up.length) return;
+  const held = (h.managerShifts ??= {});
+  const seat = [...up].sort((a, b) => (held[a.id] ?? 0) - (held[b.id] ?? 0))[0]!.id;
+  held[seat] = (held[seat] ?? 0) + 1;
+  hr.manager = seat;
+  hr.omotenashi = up.filter((p) => p.id !== seat || up.length === 1).map((p) => p.id);
 }
 
 export const blankHardRound = (): HardRound => ({ manager: null, omotenashi: [], incidents: [], guests: [], arrivals: 0 });
@@ -670,8 +759,15 @@ export function maybeSpecial(h: HardState, hr: HardRound, r: Round, v: Visit, ct
 const outcome = (u: Utterance | null, tries: number, peeked: boolean): 'said' | 'retry' | 'seen' =>
   u?.via === 'speech' && !peeked ? (tries <= 1 ? 'said' : 'retry') : 'seen';
 
+/** Green Car: a line said right adds its frames to the player's count for tonight (aimAsk reads it). */
+function tally(h: HardState | undefined, playerId: string, line: HardLine): void {
+  if (!h?.greenCar) return;
+  const mine = ((h.said ??= {})[playerId] ??= {});
+  for (const f of line.frames ?? []) mine[f] = (mine[f] ?? 0) + 1;
+}
+
 /** Says (or skips) one line of a hard-role script. Returns the points earned, if any. */
-function sayStep(step: LineStep, u: Utterance | null, playerId: string, itemId: string, ctx: ModeContext, peeked = false): number {
+function sayStep(step: LineStep, u: Utterance | null, playerId: string, itemId: string, ctx: ModeContext, peeked = false, h?: HardState): number {
   if (!u) {
     step.skipped = true;
     step.hint = null;
@@ -689,16 +785,17 @@ function sayStep(step: LineStep, u: Utterance | null, playerId: string, itemId: 
   // Credit only the frames used: a line accepted in another form goes in the phrasebook in that form.
   const line = creditedLine(step, res.form, res.frames);
   if (res.form) step.credit = line;
+  tally(h, playerId, line);
   const id = res.form ? `${itemId}:${res.form}` : itemId;
   ctx.phrase(playerId, { itemId: id, text: line.text, kana: line.kana, en: line.en, outcome: outcome(u, step.tries, !!step.peeked), recall: step.peeked ? 'read' : 'memory' });
   return u.via === 'speech' ? HARD_BONUS.spoken : HARD_BONUS.typed;
 }
 
 /** The manager says the current line of an incident (or skips it). */
-export function managerSays(hr: HardRound, inc: Incident, playerId: string, u: Utterance | null, players: readonly ModePlayer[], ctx: ModeContext, peeked = false): number {
+export function managerSays(hr: HardRound, inc: Incident, playerId: string, u: Utterance | null, players: readonly ModePlayer[], ctx: ModeContext, peeked = false, h?: HardState): number {
   const step = inc.steps[inc.step];
   if (!step) return 0;
-  const points = sayStep(step, u, playerId, `bento:hard:${inc.scriptId}:${inc.step}`, ctx, peeked);
+  const points = sayStep(step, u, playerId, `bento:hard:${inc.scriptId}:${inc.step}`, ctx, peeked, h);
   if (!step.ok && !step.skipped) return points;
   inc.step += 1;
   if (inc.step < inc.steps.length) return points;
@@ -817,30 +914,64 @@ export const galleryOpen = (hr: HardRound, now: number): Gallery | null => (hr.g
 
 // ---- おもてなし ----
 
+/** The guest's questions a room may hear: the Green Car's own only in the Green Car. */
+const asksFor = (greenCar: boolean) => GUEST_ASKS.filter((a) => greenCar || !a.greenCar);
+
+/**
+ * Aim the deal (Green Car): of the general questions, the one whose line (the N3 or the N4 one, whichever this
+ * player will be given) carries the frames they need most tonight: aimWeight, the room's ctx.frameNeed (frames a
+ * path goal requires weigh double, over tonight's earlier says) scaled down by this game's says (h.said). Ties go
+ * round in turn. Without ctx.frameNeed (tests) every frame weighs 1.
+ */
+export function aimAsk(h: HardState, playerId: string, n3Turn: boolean, level: Level | undefined, ctx: Pick<ModeContext, 'frameNeed'> = {}): GuestAsk {
+  const general = asksFor(true).filter((a) => !a.customers);
+  const weight = (a: GuestAsk) => aimWeight(ctx, playerId, (level === 'n3' && n3Turn ? a.n3 : a.model).frames ?? [], h.said?.[playerId]);
+  const start = h.askTurn++ % general.length;
+  const turn = [...general.slice(start), ...general.slice(0, start)];
+  return aimPick(turn, weight)!;
+}
+
+/** Green Car: whether an N3 player's next おもてなし line is the N3 one (they get about as many of each). */
+function n3TurnFor(h: HardState, playerId: string, level: Level | undefined): boolean {
+  if (level !== 'n3') return false;
+  const m = ((h.mix ??= {})[playerId] ??= { n3: 0, n4: 0 });
+  const n3 = m.n3 <= m.n4;
+  m[n3 ? 'n3' : 'n4'] += 1;
+  return n3;
+}
+
 /** An おもてなし order-taker's guest: a welcome, then the guest's question. */
-export function addGuest(h: HardState, hr: HardRound, v: Visit, level?: Level): Guest | null {
+export function addGuest(h: HardState, hr: HardRound, v: Visit, level?: Level, ctx: Pick<ModeContext, 'frameNeed'> = {}): Guest | null {
   if (!hr.omotenashi.includes(v.takerId)) return null;
-  const own = GUEST_ASKS.find((a) => a.customers?.includes(v.customerId));
-  const general = GUEST_ASKS.filter((a) => !a.customers);
-  const ask = own ?? general[h.askTurn++ % general.length]!;
-  const g: Guest = {
-    visitId: v.id,
-    takerId: v.takerId,
-    askId: ask.id,
-    steps: [hr.guests.length % 2 ? { ...WELCOME, n3: WELCOME_N3_ALT } : WELCOME, { to: 'customer' as const, check: ask.kind, model: ask.model, n3: ask.n3, ...(ask.keys ? { keys: ask.keys } : {}) }].map((st) => lineStep(atStepLevel(st, level))),
-    step: 0,
-  };
+  const gc = !!h.greenCar;
+  const own = asksFor(gc).find((a) => a.customers?.includes(v.customerId));
+  const welcome = hr.guests.length % 2 ? { ...WELCOME, n3: WELCOME_N3_ALT } : WELCOME;
+  let steps: StepScript[];
+  let ask: GuestAsk;
+  if (gc) {
+    const first = n3TurnFor(h, v.takerId, level);
+    const second = n3TurnFor(h, v.takerId, level);
+    ask = own ?? aimAsk(h, v.takerId, second, level, ctx);
+    steps = [atGreenCarLevel(welcome, level, first), atGreenCarLevel(askStep(ask), level, second)];
+  } else {
+    const general = asksFor(false).filter((a) => !a.customers);
+    ask = own ?? general[h.askTurn++ % general.length]!;
+    steps = [welcome, askStep(ask)].map((st) => atStepLevel(st, level));
+  }
+  const g: Guest = { visitId: v.id, takerId: v.takerId, askId: ask.id, steps: steps.map(lineStep), step: 0 };
   hr.guests.push(g);
   return g;
 }
 
+const askStep = (ask: GuestAsk): StepScript => ({ to: 'customer', check: ask.kind, model: ask.model, n3: ask.n3, ...(ask.keys ? { keys: ask.keys } : {}) });
+
 export const guestAsk = (g: Guest): GuestAsk => GUEST_ASKS.find((a) => a.id === g.askId)!;
 
 /** The order-taker says (or skips) the guest's next line. */
-export function hostSays(g: Guest, playerId: string, u: Utterance | null, ctx: ModeContext, peeked = false): number {
+export function hostSays(g: Guest, playerId: string, u: Utterance | null, ctx: ModeContext, peeked = false, h?: HardState): number {
   const step = g.steps[g.step];
   if (!step) return 0;
-  const points = sayStep(step, u, playerId, `bento:hard:${g.step === 0 ? 'welcome' : g.askId}`, ctx, peeked);
+  const points = sayStep(step, u, playerId, `bento:hard:${g.step === 0 ? 'welcome' : g.askId}`, ctx, peeked, h);
   if (step.ok || step.skipped) g.step += 1;
   return points;
 }
@@ -915,6 +1046,10 @@ export interface StepView {
   /** Which frame the line needs: the phone's input shows its cue. */
   check: CheckKind;
   model: HardLine;
+  /** The model is an N3 line (the phone shows the N3 tag). */
+  n3: boolean;
+  /** Green Car, an N4 player: the N3 line as optional stretch, shown with the N3 tag. */
+  stretch: HardLine | null;
   said: string | null;
   ok: boolean;
   skipped: boolean;
@@ -963,7 +1098,7 @@ export interface MyHardView {
   booth: (Commentary['gist'] & { romaji: string | null }) | null;
 }
 
-const stepView = (s: LineStep): StepView => ({ to: s.to, check: s.check, model: s.model, said: s.said, ok: s.ok, skipped: s.skipped, hint: s.hint });
+const stepView = (s: LineStep): StepView => ({ to: s.to, check: s.check, model: s.model, n3: !!s.n3 && s.model === s.n3, stretch: s.stretch ?? null, said: s.said, ok: s.ok, skipped: s.skipped, hint: s.hint });
 
 function deskView(inc: Incident): DeskView {
   const c = customerOf(inc.customerId)!;

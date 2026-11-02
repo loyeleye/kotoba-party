@@ -47,6 +47,7 @@ const ERRORS: Record<string, string> = {
   'not-english': 'Write this step in English.',
   'not-kana': 'Use kana for this one.',
   'too-close': 'Too close to the real meaning. Make it a fake!',
+  'no-frame': 'Green Car: make your fake a sentence with an N4 or N3 frame (＿た ことが ある, ＿ふりを した…).',
   'kids-words': 'This room is set to Kids. Try other words!',
   'names-player': 'Rumours are about the yōkai, never about players. For a source, use who saw it in the story (カッパに よると…).',
   'pick-fin': 'Add a fin first: pick one of the cards.',
@@ -363,7 +364,8 @@ function render(view: RoomView): void {
         'div',
         { class: 'me-band' },
         h('img', { class: 'me-host', src: `/stage/assets/hosts/${info.host}.png`, alt: '', onerror: (e: Event) => (e.target as HTMLElement).remove() }),
-        h('span', { class: 'me-title' }, info.title, h('small', { lang: 'ja' }, info.titleJa)),
+        // A game's own title, when its view carries one (Katsuyō Raid plays under Kana Yōkai Raid's menu entry).
+        ((t) => h('span', { class: 'me-title' }, t.title, h('small', { lang: 'ja' }, t.titleJa)))(view.game && 'modeTitle' in view.game ? view.game.modeTitle : info),
       )
     : null;
   const header = h(
@@ -467,7 +469,7 @@ const forceRedraw = (): void => {
 
 /** The learning path's one-row strip, for a signed-in player who turned the path on (path.ts). */
 function pathCard(view: RoomView, me: PlayerView, isVip: boolean): HTMLElement | null {
-  return pathStrip(me.level, { players: view.players.length, speakers: speakersIn(view.players) }, {
+  return pathStrip(me.level, { players: view.players.length, speakers: speakersIn(view.players), greenCar: view.greenCar.on }, {
     isVip,
     recap: view.phase === 'recap',
     picked: view.phase === 'lobby' ? (menu.mode as ModeId) || null : null,

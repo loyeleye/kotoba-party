@@ -56,12 +56,14 @@ describe('host lines for the N3 listening points', () => {
     expect(bank.pick(line.host, line.event as BankLine['event'], undefined, {}, 'family', true)?.id).toBe(line.id);
   });
 
-  it('the director marks a room with an N3 player', () => {
+  it('the director marks a Green Car room with an N3 player (never a room with Kana or N5 players)', () => {
     const heard: HostCue[] = [];
     const direct = hostDirector({ speak: async (_code, c) => (heard.push(c), null) });
-    const room = (levels: string[]) => ({ code: 'R', state: { audience: 'family', players: levels.map((level) => ({ level })) }, say: () => {} }) as unknown as Room;
+    const room = (levels: string[], greenCarOn = false) => ({ code: 'R', state: { audience: 'family', greenCarOn, players: levels.map((level) => ({ level })) }, say: () => {} }) as unknown as Room;
     direct(room(['kana', 'n5']), [{ host: 'pon', event: 'intro' }], 1);
     direct(room(['n5', 'n3']), [{ host: 'pon', event: 'intro' }], 1);
-    expect(heard.map((c) => c.n3)).toEqual([false, true]);
+    direct(room(['n4', 'n3'], true), [{ host: 'pon', event: 'intro' }], 1);
+    direct(room(['n4', 'n4'], true), [{ host: 'pon', event: 'intro' }], 1);
+    expect(heard.map((c) => c.n3)).toEqual([false, false, true, false]);
   });
 });

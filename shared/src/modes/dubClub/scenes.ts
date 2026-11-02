@@ -22,6 +22,20 @@ export interface Scene {
   adlib: AdLib;
   /** Cheeky rooms' ad-lib, where the twist differs. */
   cheekyAdlib?: AdLib;
+  /**
+   * Green Car scenes only (shared/src/greenCar.ts): the same moment as an N4 ad-lib (casual speech, goal 4.8) and an
+   * N3 one (casual nuance and what happened to me: ＿っぽい, ＿なんて, ＿て しょうがない, ＿させられる…). Every actor
+   * ad-libs every scene; `lines` is then only the short cue Fude reads at the table read, never the answer.
+   */
+  gc?: GreenAdlibs;
+  /** Cheeky rooms' Green Car ad-libs, where the twist differs. */
+  cheekyGc?: GreenAdlibs;
+}
+
+/** A Green Car scene's two ad-libs, one per level. */
+export interface GreenAdlibs {
+  n4: AdLib;
+  n3: AdLib;
 }
 
 /**
@@ -37,7 +51,7 @@ export interface AdLib {
   keys: string[];
   /** One casual N4 way to say it, shown after the take. */
   model: JpText;
-  /** The N4 frames the model practises (by name: see shared/src/japanese/frames.ts). */
+  /** The frames the model practises (by name: see shared/src/japanese/frames.ts): N4 ones, or N3 in the Green Car's N3 ad-libs. */
   frames: readonly string[];
   status: ReviewStatus;
 }
@@ -47,6 +61,8 @@ export interface Episode {
   title: JpText;
   /** Left out: plays in every room. */
   audience?: 'kids' | 'family' | 'cheeky';
+  /** Green Car only: every scene has `gc` ad-libs, and the episode is never dealt in a mixed room. */
+  greenCar?: true;
   scenes: [Scene, Scene, Scene];
 }
 
@@ -77,6 +93,8 @@ const jp = (text: string, en: string, kana = text): JpText => ({ text, kana, en 
 export const sceneLines = (scene: Scene, audience: Audience): Record<Level, JpText> => (audience === 'cheeky' && scene.cheeky) || scene.lines;
 /** A scene's ad-lib for the room, the same way. */
 export const sceneAdlib = (scene: Scene, audience: Audience): AdLib => (audience === 'cheeky' && scene.cheekyAdlib) || scene.adlib;
+/** A Green Car scene's ad-libs for the room (Cheeky rooms get their own twist where a scene has one). */
+export const sceneGc = (scene: Scene, audience: Audience): GreenAdlibs | null => (audience === 'cheeky' && scene.cheekyGc) || scene.gc || null;
 
 const card = (id: string, text: string, en: string, root: JpText | null, emoji: string, family: string, spoil: string[], tip: string, extra: Partial<Direction> = {}): Direction => ({
   id,
@@ -446,11 +464,353 @@ export const EPISODES: Episode[] = [
   },
 ];
 
+// ---- the Green Car (shared/src/greenCar.ts; design: project files n3-coverage/green-car/design.md) ----
+//
+// Green Car episodes: every scene is ad-libbed by every actor, from a mission, with no script showing. Each scene has
+// an N4 ad-lib (casual speech: plain form + よ/ね/の, 〜んだ, 〜てる/〜ちゃった, with ＿じゃん heard here and there) and an
+// N3 one (casual nuance ＿っぽい, ＿なんて, ＿て しょうがない; what happened to me: the suffering passive, ＿させられる,
+// ＿っぱなし, ＿だらけ). `lines` is a short cue for the table read. Kids get school, pets, siblings and yōkai; Cheeky the
+// share house, the year-end party and Under the Cherry Tree's grown-up twist. Each audience's pool reaches every N3
+// frame (tested). All draft until the fluent check.
+
+const cue = (line: JpText): Record<Level, JpText> => ({ kana: line, n5: line, n4: line, n3: line });
+const gc = (n4: AdLib, n3: AdLib): GreenAdlibs => ({ n4, n3 });
+const gcScene = (id: string, bg: string, char: string, who: JpText, setup: string, line: JpText, ads: GreenAdlibs, extra: Partial<Scene> = {}): Scene => ({
+  id,
+  bg,
+  char,
+  who,
+  setup,
+  lines: cue(line),
+  adlib: ads.n4,
+  gc: ads,
+  ...extra,
+});
+
+export const GREEN_CAR_EPISODES: Episode[] = [
+  {
+    // All ages: the school's ghost turns out to be Pon in a sheet.
+    id: 'gc-nanafushigi',
+    title: jp('がっこうの ななふしぎ', 'The School’s Seven Mysteries'),
+    greenCar: true,
+    scenes: [
+      gcScene(
+        'gc-nanafushigi.1',
+        'classroom',
+        'hero',
+        jp('ヒロイン', 'the heroine', 'ひろいん'),
+        'After school. The classroom is empty, and thick with dust and cobwebs.',
+        jp('あれ？', 'Huh?'),
+        gc(
+          ad('The classroom is empty. Say, casually, that something’s off: nobody’s here.', '🏫', ['だれも', 'いない', 'へん'], jp('あれ、だれも いないじゃん。なんか へんだよ。', 'Huh, nobody’s here. Something’s weird.'), [CASUAL]),
+          ad('The classroom is covered in dust and cobwebs. Complain about it.', '🕸️', ['ほこり', 'くも', 'きたない'], jp('なに これ。へやじゅう ほこりだらけじゃん。', 'What is this? The whole room is covered in dust.'), ['darake']),
+        ),
+      ),
+      gcScene(
+        'gc-nanafushigi.2',
+        'classroom',
+        'ghost',
+        jp('おばけ', 'the ghost'),
+        'A ghost floats out of the cleaning cupboard. Everyone went home and forgot it.',
+        jp('まって…', 'Wait…'),
+        gc(
+          ad('You’re the ghost. Tell them, casually, you’ve been waiting here the whole time.', '👻', ['まって', 'ずっと', 'さびし'], jp('ずっと ここで まってたんだよ。さびしかった！', 'I’ve been waiting here the whole time. I was lonely!'), [CASUAL, NDA, CONTRACT]),
+          ad('You’re the ghost. Everyone went home without you. Complain about what they did to you.', '😢', ['かえられ', 'ひとり', 'みんな'], jp('みんなに さきに かえられて、ずっと ひとりだったんだよ。', 'Everyone went home on me, and I was alone the whole time.'), ['suffering-passive']),
+        ),
+      ),
+      gcScene(
+        'gc-nanafushigi.3',
+        'roof',
+        'pon',
+        jp('ポン', 'Pon', 'ぽん'),
+        'On the roof, the sheet slips off. The ghost was Pon all along.',
+        jp('ばれた？', 'Busted?'),
+        gc(
+          ad('You’re Pon, caught under the sheet. Own up, casually: it was you.', '🦝', ['ぼく', 'ごめん', 'おばけ'], jp('ごめん、おばけは ぼくだったんだ。', 'Sorry, the ghost was me.'), [CASUAL, NDA]),
+          ad('You’re Pon. Wave it off: ghosts? There’s no such thing. It was you.', '🙄', ['おばけ', 'いない', 'ぼく'], jp('おばけなんて いないよ。ぜんぶ ぼくだよ！', 'There’s no such thing as ghosts. It was all me!'), ['nante']),
+        ),
+      ),
+    ],
+  },
+  {
+    id: 'gc-pet-detective',
+    title: jp('ペット たんてい', 'Pet Detective', 'ぺっと たんてい'),
+    audience: 'kids',
+    greenCar: true,
+    scenes: [
+      gcScene(
+        'gc-pet-detective.1',
+        'street',
+        'hero',
+        jp('かいぬし', 'the owner'),
+        'Her cat Mike has gone missing. There are muddy paw prints everywhere.',
+        jp('ミケ！', 'Mike!', 'みけ！'),
+        gc(
+          ad('Your cat is missing. Ask, worried: where did she go?', '🐈', ['どこ', 'しんぱい', 'みけ'], jp('ミケ、どこに いったの？ しんぱいだよ。', 'Mike, where did you go? I’m worried.', 'みけ、どこに いったの？ しんぱいだよ。'), [CASUAL]),
+          ad('Your cat is missing, and you’re so worried you can’t stand it. Say so.', '😰', ['しんぱい', 'みけ', 'いない'], jp('ミケが いなくて、しんぱいで しょうがないよ。', 'Mike’s gone, and I’m worried sick.', 'みけが いなくて、しんぱいで しょうがないよ。'), ['te-shouganai']),
+        ),
+      ),
+      gcScene(
+        'gc-pet-detective.2',
+        'street',
+        'rival',
+        jp('じしょう たんてい', 'the self-made detective'),
+        'The boy next door has a magnifying glass. He thinks he is a detective.',
+        jp('みて！', 'Look!'),
+        gc(
+          ad('You’re the “detective”. Point at the fish bones: the cat came this way.', '🔍', ['さかな', 'ほね', 'こっち'], jp('ほら、さかなの ほねが ある。ミケは こっちに きたんだよ。', 'Look, fish bones. Mike came this way.', 'ほら、さかなの ほねが ある。みけは こっちに きたんだよ。'), [CASUAL, NDA]),
+          ad('You’re the “detective”. Say the paw prints look sort of like a cat’s. This way!', '🐾', ['あしあと', 'ねこ', 'こっち'], jp('この あしあと、ねこっぽいね。こっちだ！', 'These paw prints look kind of cat-like. This way!'), ['ppoi']),
+        ),
+      ),
+      gcScene(
+        'gc-pet-detective.3',
+        'roof',
+        'cat',
+        jp('ミケ', 'Mike the cat', 'みけ'),
+        'Mike is on the school roof, eating somebody’s lunch.',
+        jp('にゃー', 'Meow'),
+        gc(
+          ad('You’re the cat. Tell them you’re fine: you were just having lunch.', '🍱', ['だいじょうぶ', 'たべ', 'おべんとう'], jp('だいじょうぶだよ。おべんとう たべてただけ。', 'I’m fine. I was just eating a lunch box.'), [CASUAL]),
+          ad('You’re the cat. Someone left the window wide open, so you went out. Say so.', '🪟', ['まど', 'あけ', 'でかけ'], jp('まどが あけっぱなしだったから、でかけたにゃ。', 'The window was left open, so I went out. Meow.'), ['ppanashi']),
+        ),
+      ),
+    ],
+  },
+  {
+    id: 'gc-undoukai',
+    title: jp('うんどうかい', 'Sports Day'),
+    audience: 'kids',
+    greenCar: true,
+    scenes: [
+      gcScene(
+        'gc-undoukai.1',
+        'street',
+        'hero',
+        jp('おねえちゃん', 'the big sister'),
+        'Sports day. Her little brother handed her every bag the family owns.',
+        jp('おもい…', 'So heavy…'),
+        gc(
+          ad('Your bags are far too heavy. Complain to your little brother.', '🎒', ['おもい', 'かばん', 'もてない'], jp('この かばん、おもすぎるよ。もう もてない！', 'This bag is way too heavy. I can’t carry it any more!'), [CASUAL]),
+          ad('Your little brother made you carry all the bags. Complain.', '😤', ['にもつ', 'おとうと', 'もた'], jp('おとうとに にもつを ぜんぶ もたされたんだよ。', 'My little brother made me carry all the bags.'), ['saserareru']),
+        ),
+      ),
+      gcScene(
+        'gc-undoukai.2',
+        'street',
+        'rival',
+        jp('ライバル', 'the rival', 'らいばる'),
+        'The relay. The rival trips and lands in a puddle.',
+        jp('あっ！', 'Ah!'),
+        gc(
+          ad('You tripped in the relay. Say, casually, that someone pushed you. Not fair!', '🏃', ['おした', 'ずるい', 'だれか'], jp('いま だれか おしたでしょ？ ずるいよ！', 'Someone just pushed me, right? Not fair!'), [CASUAL]),
+          ad('Someone stepped on your foot and you fell. Complain about what happened to you.', '🦶', ['あし', 'ふまれ', 'ころ'], jp('だれかに あしを ふまれて、ころんじゃったんだよ。', 'Someone stepped on my foot, and I fell over.'), ['suffering-passive']),
+        ),
+      ),
+      gcScene(
+        'gc-undoukai.3',
+        'city',
+        'mum',
+        jp('おかあさん', 'Mum'),
+        'The parents’ race. Mum is in the lead, in her slippers.',
+        jp('いくわよ！', 'Here I go!'),
+        gc(
+          ad('You’re Mum, out in front. Tell the kids to cheer for you.', '📣', ['おうえん', 'かつ', 'まま'], jp('みんな、おうえん してね！ ママ、かつよ！', 'Cheer for me, everyone! Mum’s going to win!', 'みんな、おうえん してね！ まま、かつよ！'), [CASUAL]),
+          ad('You’re Mum, out in front. Brush it off: a race like this? Easy.', '😎', ['れーす', 'かんたん'], jp('こんな レースなんて かんたんよ！', 'A race like this? Easy!', 'こんな れーすなんて かんたんよ！'), ['nante']),
+        ),
+      ),
+    ],
+  },
+  {
+    id: 'gc-sharehouse',
+    title: jp('シェアハウスの なぞ', 'The Share House Mystery', 'しぇあはうすの なぞ'),
+    audience: 'family',
+    greenCar: true,
+    scenes: [
+      gcScene(
+        'gc-sharehouse.1',
+        'studio',
+        'hero',
+        jp('すんでる ひと', 'the tenant'),
+        'Monday morning. The sink is full of someone else’s dishes, and the tap is still running.',
+        jp('また？', 'Again?'),
+        gc(
+          ad('Someone left their dishes in the sink. Again. Grumble about it.', '🍽️', ['おさら', 'あらって', 'だれ'], jp('また おさら、あらって ないじゃん。だれなの？', 'The dishes aren’t washed again. Who is it?'), [CASUAL]),
+          ad('The tap was left running all night. Say so.', '🚰', ['みず', 'だしっぱなし', 'ひとばん'], jp('みず、ひとばんじゅう だしっぱなしだったよ。', 'The water was left running all night.'), ['ppanashi']),
+        ),
+      ),
+      gcScene(
+        'gc-sharehouse.2',
+        'studio',
+        'salaryman',
+        jp('ルームメイト', 'the flatmate', 'るーむめいと'),
+        'The flatmate shuffles in, yawning, in yesterday’s clothes.',
+        jp('ふぁ〜…', 'Yaaawn…'),
+        gc(
+          ad('You’re the flatmate. Say sorry: you were so tired you fell asleep.', '😴', ['ごめん', 'つかれ', 'ねちゃ'], jp('ごめん、つかれてて すぐ ねちゃったんだ。', 'Sorry, I was tired and fell straight asleep.'), [CONTRACT, 'te-shimau', NDA]),
+          ad('You’re the flatmate. You’re so sleepy you can’t stand it. Say so.', '🥱', ['ねむ', 'ごめん'], jp('ごめん、きのうから ねむくて しょうがないんだ。', 'Sorry, I’ve been dead sleepy since yesterday.'), ['te-shouganai']),
+        ),
+      ),
+      gcScene(
+        'gc-sharehouse.3',
+        'studio',
+        'ghost',
+        jp('いえの おばけ', 'the house ghost'),
+        'The twist: the one who never washes up is the house ghost.',
+        jp('じつは…', 'Actually…'),
+        gc(
+          ad('You’re the house ghost. Confess it was you: you can’t wash dishes, you have no hands.', '👻', ['ぼく', 'あらえ', 'て'], jp('じつは ぼくなんだ。てが ないから、あらえないんだよ。', 'Actually, it’s me. I have no hands, so I can’t wash up.'), [NDA, 'potential', CASUAL]),
+          ad('You’re the house ghost. Wave it off: washing dishes is no job for a ghost.', '🙅', ['おさら', 'しごと', 'おばけ'], jp('おさらあらいなんて、おばけの しごとじゃ ないよ。', 'Washing dishes? That’s no job for a ghost.'), ['nante']),
+        ),
+      ),
+    ],
+  },
+  {
+    id: 'gc-camp',
+    title: jp('はじめての キャンプ', 'Our First Camping Trip', 'はじめての きゃんぷ'),
+    audience: 'family',
+    greenCar: true,
+    scenes: [
+      gcScene(
+        'gc-camp.1',
+        'sakura',
+        'salaryman',
+        jp('おとうさん', 'Dad'),
+        'Dad puts up the tent. It falls down at once, and then it starts to rain.',
+        jp('できた！', 'Done!'),
+        gc(
+          ad('You’re Dad. The tent fell down. Laugh it off: it’s fine, you can fix it.', '⛺', ['だいじょうぶ', 'なおせ'], jp('だいじょうぶ、だいじょうぶ。すぐ なおせるよ。', 'It’s fine, it’s fine. I can fix it in no time.'), [CASUAL, 'potential']),
+          ad('You’re Dad, and the rain got you. Complain: you’re soaked.', '🌧️', ['あめ', 'びしょびしょ', 'さいあく'], jp('さいあく。あめに ふられて、びしょびしょだよ。', 'The worst. I got caught in the rain, and I’m soaked.'), ['suffering-passive']),
+        ),
+      ),
+      gcScene(
+        'gc-camp.2',
+        'sakura',
+        'hero',
+        jp('むすめ', 'the daughter'),
+        'Dad’s campfire curry is ready. It is grey.',
+        jp('これ、なに？', 'What’s this?'),
+        gc(
+          ad('Dad’s curry is grey. Ask, casually, whether it’s really curry.', '🍛', ['かれー', 'いろ', 'ほんとう'], jp('これ、ほんとうに カレーなの？ いろが へんだよ。', 'Is this really curry? The colour’s weird.', 'これ、ほんとうに かれーなの？ いろが へんだよ。'), [CASUAL]),
+          ad('Say Dad’s curry smells sort of like… socks.', '🧦', ['かれー', 'におい', 'くつした'], jp('この カレー、なんか くつしたっぽい においが する。', 'This curry smells kind of like socks.', 'この かれー、なんか くつしたっぽい においが する。'), ['ppoi']),
+        ),
+      ),
+      gcScene(
+        'gc-camp.3',
+        'sakura',
+        'mum',
+        jp('おかあさん', 'Mum'),
+        'The twist: Mum opens a picnic hamper she packed the whole time.',
+        jp('じゃーん！', 'Ta-da!'),
+        gc(
+          ad('You’re Mum. Reveal you brought real food all along.', '🧺', ['おべんとう', 'もって', 'じつは'], jp('じつは ちゃんと おべんとう もって きてたんだ。', 'Actually, I brought proper lunch boxes all along.'), [CONTRACT, NDA]),
+          ad('You’re Mum. You were made to get everything ready. Again. Say so, proudly.', '💪', ['じゅんび', 'ぜんぶ', 'わたし'], jp('また ぜんぶ わたしに じゅんびさせられたのよ。', 'Once again, I was the one made to get everything ready.'), ['saserareru']),
+        ),
+      ),
+    ],
+  },
+  {
+    // Under the Cherry Tree, Green Car cut: the Cheeky twist rewritten with N3 nuance (design: Kids, Family and Cheeky).
+    id: 'gc-sakura',
+    title: jp('さくらの したで（グリーンしゃばん）', 'Under the Cherry Tree: Green Car Cut'),
+    audience: 'family',
+    greenCar: true,
+    scenes: [
+      gcScene(
+        'gc-sakura.1',
+        'sakura',
+        'hero',
+        jp('こうはい', 'the junior student'),
+        'Graduation day. She has rehearsed this all year.',
+        jp('せんぱい…', 'Senpai…'),
+        gc(
+          ad('Tell senpai, casually, you’ve liked him all along.', '🌸', ['すき', 'ずっと'], jp('せんぱい、ずっと すきだったんだ。', 'Senpai, I’ve always liked you.'), [CASUAL, NDA]),
+          ad('Your heart is pounding so hard you can’t stand it. Say so, then tell senpai you like him.', '💓', ['すき', 'どきどき'], jp('どきどきして しょうがない…。せんぱいが すきです。', 'My heart won’t stop pounding… I like you, senpai.'), ['te-shouganai']),
+        ),
+      ),
+      gcScene(
+        'gc-sakura.2',
+        'sakura',
+        'senpai',
+        jp('せんぱい', 'the senior student'),
+        'Senpai stays very calm. Too calm.',
+        jp('えっ…', 'Huh…'),
+        gc(
+          ad('You’re senpai. Act cool: you knew already, everyone was saying so.', '😎', ['しって', 'みんな'], jp('しってたよ。みんな いってたし。', 'I knew. Everyone was saying so.'), [CASUAL, CONTRACT]),
+          ad('You’re senpai, flustered. Say she’s suddenly talking like a grown-up.', '😳', ['おとな', 'きゅうに'], jp('きゅうに おとなっぽい こと いうね。', 'You’re suddenly saying such grown-up things.'), ['ppoi']),
+        ),
+      ),
+      gcScene(
+        'gc-sakura.3',
+        'sakura',
+        'senpai',
+        jp('せんぱい', 'the senior student'),
+        'She runs off. He shouts after her, with a confession of his own.',
+        jp('まって！', 'Wait!'),
+        gc(
+          ad('Shout after her: you have a secret. You’re a ghost.', '👻', ['おばけ', 'じつは', 'まって'], jp('まって！ じつは ぼく、おばけなんだよ！', 'Wait! The truth is, I’m a ghost!'), [NDA, CASUAL]),
+          ad('Shout after her: you’re a ghost, and you were kept waiting under this tree for a hundred years.', '⏳', ['ひゃくねん', 'おばけ', 'また'], jp('まって！ ひゃくねんも ここで またされて いたんだよ！', 'Wait! I was kept waiting here for a hundred years!'), ['saserareru']),
+        ),
+        {
+          cheekyGc: gc(
+            ad('Shout after her: you have a secret. You’re getting married next month.', '💍', ['けっこん', 'じつは', 'らいげつ'], jp('まって！ じつは ぼく、らいげつ けっこん するんだ。', 'Wait! Actually, I’m getting married next month.'), [NDA, CASUAL]),
+            ad('Shout after her: your mum made you do an arranged meeting, and you’re getting married next month.', '💍', ['けっこん', 'おみあい', 'らいげつ'], jp('まって！ ははに おみあいを させられて、らいげつ けっこん するんだ！', 'Wait! My mum made me do an arranged meeting, and I’m getting married next month!'), ['saserareru']),
+          ),
+        },
+      ),
+    ],
+  },
+  {
+    id: 'gc-bounenkai',
+    title: jp('ぼうねんかいの よる', 'The Year-End Party'),
+    audience: 'cheeky',
+    greenCar: true,
+    scenes: [
+      gcScene(
+        'gc-bounenkai.1',
+        'izakaya',
+        'salaryman',
+        jp('かいしゃいん', 'the office worker'),
+        'The year-end party. The boss has ordered a second round of karaoke.',
+        jp('また？', 'Again?'),
+        gc(
+          ad('The boss wants more karaoke. Grumble to the colleague next to you: you want to go home.', '🎤', ['からおけ', 'かえりたい'], jp('また カラオケ？ もう かえりたいよ。', 'Karaoke again? I want to go home already.', 'また からおけ？ もう かえりたいよ。'), [CASUAL]),
+          ad('The boss made you sing five songs. Complain.', '🎶', ['うたわ', 'ぶちょう', 'ごきょく'], jp('ぶちょうに ごきょくも うたわされたよ。', 'The boss made me sing five songs.'), ['saserareru']),
+        ),
+      ),
+      gcScene(
+        'gc-bounenkai.2',
+        'izakaya',
+        'ol',
+        jp('どうりょう', 'the colleague'),
+        'Her colleague is asleep on the table, shirt covered in beer.',
+        jp('ちょっと…', 'Hey…'),
+        gc(
+          ad('Your colleague’s asleep on the table. Say, casually, he drank too much.', '🍺', ['のみすぎ', 'ねて'], jp('この ひと、のみすぎだよ。もう ねてるじゃん。', 'He drank too much. He’s already asleep.'), [CASUAL, 'sugiru']),
+          ad('His shirt is covered in beer stains. Say so.', '👔', ['しゃつ', 'しみ', 'びーる'], jp('シャツが ビールの しみだらけだよ。', 'His shirt is covered in beer stains.', 'しゃつが びーるの しみだらけだよ。'), ['darake']),
+        ),
+      ),
+      gcScene(
+        'gc-bounenkai.3',
+        'street',
+        'salaryman',
+        jp('かいしゃいん', 'the office worker'),
+        'Next morning. Last night’s photos are on the group chat: a tie round his head.',
+        jp('うそでしょ…', 'No way…'),
+        gc(
+          ad('You see last night’s photos. Say, casually, you don’t remember any of it.', '📸', ['おぼえて', 'ぼく', 'しゃしん'], jp('えっ、これ ぼく？ ぜんぜん おぼえてないんだけど。', 'Wait, is this me? I don’t remember any of it.'), [CONTRACT, NDA]),
+          ad('Act like it’s nothing: a photo like this? Nobody will look at it… right?', '🙈', ['しゃしん', 'だれも'], jp('こんな しゃしんなんて、だれも みないよね…？', 'A photo like this? Nobody’s going to look at it… right?'), ['nante']),
+        ),
+      ),
+    ],
+  },
+];
+
 /** The episodes a room can play: Kids gets the all-ages and kids ones, Family adds family, Cheeky prefers its own. */
-export function episodesFor(audience: Audience): Episode[] {
-  if (audience === 'kids') return EPISODES.filter((e) => !e.audience || e.audience === 'kids');
-  if (audience === 'cheeky') return EPISODES.filter((e) => e.audience === 'cheeky' || e.audience === 'family');
-  return EPISODES.filter((e) => !e.audience || e.audience === 'family');
+export function episodesFor(audience: Audience, greenCar = false): Episode[] {
+  const all = greenCar ? GREEN_CAR_EPISODES : EPISODES;
+  if (audience === 'kids') return all.filter((e) => !e.audience || e.audience === 'kids');
+  if (audience === 'cheeky') return all.filter((e) => e.audience === 'cheeky' || e.audience === 'family');
+  return all.filter((e) => !e.audience || e.audience === 'family');
 }
 
 export function directionsFor(audience: Audience): Direction[] {
@@ -464,4 +824,4 @@ export function takeLimitMs(kana: string, slow: boolean): number {
 }
 
 export const directionOf = (id: string): Direction | undefined => DIRECTIONS.find((d) => d.id === id);
-export const episodeOf = (id: string): Episode | undefined => EPISODES.find((e) => e.id === id);
+export const episodeOf = (id: string): Episode | undefined => EPISODES.find((e) => e.id === id) ?? GREEN_CAR_EPISODES.find((e) => e.id === id);

@@ -7,12 +7,12 @@ import { withExperiments } from '../shared/src/modes/experiments.js';
 import { normalizeReading, soundKey, type Utterance } from '../shared/src/japanese/kana.js';
 import type { ContentLibrary } from '../shared/src/modes/mode.js';
 import { FEEL_THEMES, feelThemesFor, TIME_SETS, timeSetsFor } from '../shared/src/modes/narabete/cards.js';
-import { defenceScript } from '../shared/src/modes/narabete/defence.js';
-import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
+import { defenceScript, n3Lines } from '../shared/src/modes/narabete/defence.js';
+import { framesOf } from '../shared/src/japanese/frames.js';
+import { curveballPoints, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, standInSetupFor } from '../shared/src/modes/mixedRoom.js';
 import {
   BONUS_POOL_SHARE,
   DEFENCE_KEY,
-  DEFENCE_POOL,
   DURATIONS,
   computeFlip,
   dealTime,
@@ -35,7 +35,7 @@ import { viewFor } from '../shared/src/view.js';
 import { addReadings, createReader, type Reader } from '../server/src/reading.js';
 import { bankVoice } from '../server/src/host.js';
 import { Bot, Director } from '../tools/bots/bot.js';
-import { labelValue, narabetePolicy } from '../tools/bots/policies/narabete.js';
+import { labelValue, narabetePolicy, ownWords } from '../tools/bots/policies/narabete.js';
 import { content as REAL_CONTENT, hashView, startServer, until } from './helpers.js';
 
 // standInSetup's gap after the setup line, from its bank line (at least STAND_IN_SETUP_MS).
@@ -105,8 +105,9 @@ class Table {
   ids_(): string[] {
     return this.s.players.map((p) => p.id);
   }
-  start(audience?: 'kids' | 'family' | 'cheeky') {
+  start(audience?: 'kids' | 'family' | 'cheeky', greenCar?: boolean) {
     if (audience) this.cmd('stage', { type: 'settings', audience });
+    if (greenCar !== undefined) this.cmd('stage', { type: 'settings', greenCar });
     expect(this.cmd('stage', { type: 'start', mode: 'narabete' }).changed).toBe(true);
     expect(this.s.phase).toBe('intro');
     this.timeout();
@@ -535,203 +536,203 @@ describe('Narabete!: the N4 defence script', () => {
   });
 });
 
-describe('Narabete!: the N4 defence in a game', () => {
-  it('the N4 player is offered it in the line-up, defends in its own encore, and only they get the bonus for it', () => {
-    const t = new Table(3, ['n5', 'n4', 'n5']);
+describe('Narabete!: the N4 defence in a game (Green Car only)', () => {
+  it('in the Green Car it is given in the line-up with no offer, defended in its own encore, and only they get the bonus for it', () => {
+    const t = new Table(3, ['n4', 'n3', 'n4']);
     t.start();
+    expect(t.s.greenCarOn).toBe(true);
     t.sayAll();
     expect(t.s.phase).toBe('reveal');
-    expect(t.view('p2').me!.hard).toMatchObject({ answer: 'offered', script: null });
-    expect(t.view('p1').me!.hard).toBeNull();
-    expect(t.play('p1', { kind: 'hard', accept: true }).error).toBe('not-offered');
-    expect(t.play('p2', { kind: 'hard', accept: true }).error).toBeUndefined();
+    // Already theirs: no offer card.
+    expect(t.r.hard).toMatchObject({ playerId: 'p1', answer: 'accepted' });
+    expect(t.view('p1').me!.hard).toMatchObject({ answer: 'accepted', script: null });
+    expect(t.view('p2').me!.hard).toBeNull();
+    expect(t.play('p2', { kind: 'hard', accept: true }).error).toBe('not-offered');
     t.sortLine();
     t.lockAll();
     // A Time Line has no ordinary defence, so the N4 one is the encore.
     expect(t.s.phase).toBe('encore');
     expect(t.r.encore).toBe('hard');
+    expect(t.s.deadline! - t.now).toBe(DURATIONS.encoreN4);
     // Its own cue: an invitation by name, not "your card moved a lot".
-    expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_hard', slots: { name: 'P2' } });
-    expect(t.view().defence).toMatchObject({ playerId: 'p2', n4: true });
+    expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_hard', slots: { name: 'P1' } });
+    expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
     expect(t.view().defence!.frame!.kana).toMatch(/^＿ので、/);
-    const me = t.view('p2').me!;
+    const me = t.view('p1').me!;
     expect(me.defending).toBe(true);
     expect(me.hard!.script!.lines.length).toBeGreaterThanOrEqual(2);
-    expect(t.view('p1').me!.defending).toBe(false);
-    expect(t.play('p1', { kind: 'defend', pass: true }).error).toBe('not-yours');
-    expect(t.play('p2', { kind: 'defend', utterance: speech(me.hard!.script!.lines[0]!.kana) }).error).toBeUndefined();
+    expect(t.view('p2').me!.defending).toBe(false);
+    expect(t.play('p2', { kind: 'defend', pass: true }).error).toBe('not-yours');
+    expect(t.play('p1', { kind: 'defend', utterance: speech(me.hard!.script!.lines[0]!.kana) }).error).toBeUndefined();
     // It landed: the commentary booth's replay, then the flip.
     expect(t.r.encore).toBe('replay');
     t.timeout();
     expect(t.s.phase).toBe('score');
     expect(t.r.hard).toMatchObject({ ok: true, framed: true, answer: 'accepted' });
     // Everyone said their card from memory: the N4 defender gets the defence share on top, nobody else changes.
-    expect(t.r.flip!.bonus.p2!).toBeGreaterThan(t.r.flip!.bonus.p1!);
-    expect(t.r.flip!.bonus.p1).toBe(t.r.flip!.bonus.p3);
+    expect(t.r.flip!.bonus.p1!).toBeGreaterThan(t.r.flip!.bonus.p2!);
+    expect(t.r.flip!.bonus.p2).toBe(t.r.flip!.bonus.p3);
     t.timeout();
-    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 1, rate: 1 });
+    // Given, not offered: nothing in the offer log, and the Green Car's own rotation has it.
+    expect(t.st.hardLog).toEqual([]);
+    expect(hardTally(t.st)).toEqual({ offered: 0, accepted: 0, rate: null });
+    expect(t.st.gcDefences).toEqual([{ round: 1, playerId: 'p1' }]);
     // A model line read off the phone goes in the phrasebook as seen, not said.
-    expect(t.s.phrasebook.p2!.find((e) => e.itemId.startsWith('narabete:defence:'))!.outcome).toBe('seen');
+    expect(t.s.phrasebook.p1!.find((e) => e.itemId.startsWith('narabete:defence:'))!.outcome).toBe('seen');
   });
 
-  it('an offer still open when the line-up ends times out: no encore', () => {
-    const t = new Table(3, ['n5', 'n4', 'n5']);
-    t.start();
+  it('is a Green Car move-out: a mixed room with N4 players never has it (no offer, no 15 s encore)', () => {
+    for (const levels of [['n5', 'n4', 'n5'], ['n4', 'kana', 'n3', 'n5']] as Level[][]) {
+      const t = new Table(levels.length, levels);
+      t.start();
+      expect(t.s.greenCarOn).toBe(false);
+      t.sayAll();
+      expect(t.r.hard ?? null).toBeNull();
+      for (const id of t.ids_()) expect(t.view(id).me!.hard).toBeNull();
+      expect(t.play('p2', { kind: 'hard', accept: true }).error).toBe('not-offered');
+      t.sortLine();
+      t.lockAll();
+      expect(t.s.phase).toBe('score');
+      t.timeout();
+      expect(t.st.hardLog).toEqual([]);
+    }
+  });
+
+  it('an all-N4+ room with the Green Car switched off never has it', () => {
+    const t = new Table(3, ['n4', 'n3', 'n4']);
+    t.start(undefined, false);
+    expect(t.s.greenCarOn).toBe(false);
     t.sayAll();
-    expect(t.view('p2').me!.hard).toMatchObject({ answer: 'offered' });
-    t.sortLine();
-    t.lockAll();
-    expect(t.s.phase).toBe('score');
-    expect(t.r.hard?.answer).toBe('timeout');
-    expect(t.view('p2').me!.hard).toBeNull();
-    t.timeout();
-    expect(t.st.hardLog).toEqual([{ round: 1, playerId: 'p2', answer: 'timeout' }]);
-    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 0, rate: 0 });
+    expect(t.r.hard ?? null).toBeNull();
   });
 
   it('their own spoken ので reason is logged as said', () => {
-    const t = new Table(3, ['n5', 'n4', 'n5']);
+    const t = new Table(3, ['n4', 'n3', 'n4']);
     t.start();
     t.sayAll();
-    t.play('p2', { kind: 'hard', accept: true });
     t.sortLine();
     t.lockAll();
     expect(t.r.encore).toBe('hard');
-    t.play('p2', { kind: 'defend', utterance: speech('ぼくの すきな じかん なので、ここです') });
+    t.play('p1', { kind: 'defend', utterance: speech('ぼくの すきな じかん なので、ここです') });
     expect(t.r.hard).toMatchObject({ ok: true, framed: true, read: false });
     t.timeout();
-    expect(t.s.phrasebook.p2!.find((e) => e.itemId.startsWith('narabete:defence:'))!.outcome).toBe('said');
+    expect(t.s.phrasebook.p1!.find((e) => e.itemId.startsWith('narabete:defence:'))!.outcome).toBe('said');
   });
 
-  it('spotlight: in a room of 4+, a lone N4 player who defended last round gets the next one off', () => {
-    const t = new Table(4, ['n5', 'n4', 'n5', 'kana']);
+  it('is given every round, in turn: fewest given first, then longest ago (a pass still counts as given)', () => {
+    const t = new Table(3, ['n4', 'n3', 'n4']);
+    t.start();
+    const order: string[] = [];
+    for (let round = 1; round <= 3; round++) {
+      if (round > 1) {
+        while (t.s.phase !== 'answer') t.timeout();
+      }
+      t.sayAll();
+      order.push(t.r.hard!.playerId);
+      expect(t.r.hard!.answer).toBe('accepted');
+      t.sortLine();
+      t.lockAll();
+      while (t.s.phase === 'encore') {
+        const on = t.r.encore === 'hard' ? t.r.hard!.playerId : t.r.defence?.playerId;
+        if (on) t.play(on, { kind: 'defend', pass: true });
+        else t.timeout();
+      }
+      expect(t.s.phase).toBe('score');
+      t.timeout();
+    }
+    expect(order).toEqual(['p1', 'p2', 'p3']);
+    expect(t.st.hardLog).toEqual([]);
+    // A lone N4+ player with a card said gets it every round, with no spotlight rest.
+    const lone = new Table(4, ['n4', 'n3', 'n3', 'n4']);
+    lone.start();
+    for (let round = 1; round <= 2; round++) {
+      if (round > 1) {
+        while (lone.s.phase !== 'answer') lone.timeout();
+      }
+      const card = lone.cardOf('p1');
+      const tc = TIME_SETS.flatMap((x) => x.cards).find((x) => x.id === card.timeId);
+      lone.play('p1', { kind: 'say', utterance: speech(tc ? tc.jp.kana : 'ちょっと ひどい です') });
+      lone.timeout();
+      expect(lone.s.phase).toBe('reveal');
+      expect(lone.r.hard?.playerId, `round ${round}`).toBe('p1');
+      lone.lockAll();
+      while (lone.s.phase === 'encore') lone.timeout();
+      lone.timeout();
+    }
+  });
+
+  it('“not this time after all” in the line-up skips it, and stays out of the offer log', () => {
+    const t = new Table(3, ['n4', 'n3', 'n4']);
     t.start();
     t.sayAll();
-    t.play('p2', { kind: 'hard', accept: true });
-    t.sortLine();
-    t.lockAll();
-    expect(t.r.encore).toBe('hard');
-    t.play('p2', { kind: 'defend', pass: true });
-    expect(t.s.phase).toBe('score');
-    t.timeout();
-    t.timeout();
-    expect(t.s.phase).toBe('answer');
-    t.sayAll();
-    expect(t.r.hard).toBeNull();
-    // A small room keeps offering it every round.
-    const small = new Table(3, ['n5', 'n4', 'n5']);
-    small.start();
-    small.sayAll();
-    small.play('p2', { kind: 'hard', accept: true });
-    small.sortLine();
-    small.lockAll();
-    small.play('p2', { kind: 'defend', pass: true });
-    small.timeout();
-    small.timeout();
-    small.sayAll();
-    expect(small.r.hard?.playerId).toBe('p2');
-  });
-
-  it('“not this time” in the line-up skips it; a room with no N4 player never has it', () => {
-    const t = new Table(3, ['n5', 'n4', 'n5']);
-    t.start();
-    t.sayAll();
-    expect(t.play('p2', { kind: 'hard', accept: false }).error).toBeUndefined();
-    expect(t.view('p2').me!.hard).toBeNull();
+    expect(t.play('p1', { kind: 'hard', accept: false }).error).toBeUndefined();
+    expect(t.view('p1').me!.hard).toBeNull();
     t.sortLine();
     t.lockAll();
     expect(t.s.phase).toBe('score');
     t.timeout();
-    expect(hardTally(t.st)).toEqual({ offered: 1, accepted: 0, rate: 0 });
-
-    const plain = new Table(3, ['kana', 'n5', 'n5']);
-    plain.start();
-    plain.sayAll();
-    expect(plain.r.hard).toBeNull();
-    plain.sortLine();
-    plain.lockAll();
-    expect(plain.s.phase).toBe('score');
+    expect(hardTally(t.st)).toEqual({ offered: 0, accepted: 0, rate: null });
   });
 
-  it('rotates among N4 players; in a Feelings round the ordinary defence goes first, then the N4 one', () => {
-    const t = new Table(3, ['n5', 'n4', 'n4']);
-    t.start();
-    t.sayAll();
-    expect(t.r.hard?.playerId).toBe('p2');
-    t.sortLine();
-    t.lockAll(); // p2 doesn't answer the offer: it times out, no encore
-    expect(t.s.phase).toBe('score');
-    t.timeout();
-    t.timeout();
-    expect(t.r.kind).toBe('feel');
-    t.sayAll();
-    expect(t.r.hard?.playerId).toBe('p3');
-    // p1 (N5) walks its card the furthest: the ordinary defence is theirs.
-    const p1 = t.cardOf('p1');
-    while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
-    t.play('p1', { kind: 'move', dir: 1 });
-    t.play('p1', { kind: 'move', dir: -1 });
-    t.play('p3', { kind: 'hard', accept: true });
-    t.lockAll();
-    expect(t.s.phase).toBe('encore');
-    expect(t.r.encore).toBe('defence');
-    expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_defence' });
-    expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
-    expect(t.play('p1', { kind: 'defend', utterance: speech('ぜんぜん くさくない から です') }).error).toBeUndefined();
-    expect(t.s.phase).toBe('encore');
-    expect(t.r.encore).toBe('hard');
-    expect(t.view('p3').me!.defending).toBe(true);
-    expect(t.play('p3', { kind: 'defend', utterance: speech('ちょっとだけ くさいので、これが いちばん さきです') }).error).toBeUndefined();
-    expect(t.r.encore).toBe('replay');
-    t.timeout();
-    expect(t.s.phase).toBe('score');
-    expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
-    expect(t.r.flip!.bonus.p1!).toBe(t.r.flip!.bonus.p3!);
-    expect(t.r.flip!.bonus.p1!).toBeGreaterThan(t.r.flip!.bonus.p2!);
-  });
-
-  it('an N4 player who also moved the most defends once, with the N4 script', () => {
-    const t = new Table(3, ['n4', 'n5', 'n5']);
+  it('in the Green Car the scripted defence is the round’s only defence: no ordinary 〜からです one', () => {
+    const t = new Table(3, ['n4', 'n3', 'n4']);
     t.start();
     toFeelingsN4(t);
     t.sayAll();
-    expect(t.r.hard?.playerId).toBe('p1');
+    expect(t.r.hard?.playerId).toBe('p2');
+    // p1 walks its card the furthest; in a mixed room that would be the ordinary defence.
     const p1 = t.cardOf('p1');
     while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
     t.play('p1', { kind: 'move', dir: 1 });
     t.play('p1', { kind: 'move', dir: -1 });
-    t.play('p1', { kind: 'hard', accept: true });
     t.lockAll();
     expect(t.s.phase).toBe('encore');
     expect(t.r.defence).toBeNull();
     expect(t.r.encore).toBe('hard');
-    t.play('p1', { kind: 'defend', pass: true });
+    expect(t.view('p2').me!.defending).toBe(true);
+    // p2 is N3: its first defence this game is the N3 script.
+    expect(t.view('p2').me!.hard!.script!.level).toBe('n3');
+  });
+
+  /** The Feelings round's N4 defender moves their card the furthest. */
+  function defenderMovesMost(t: Table): string {
+    const d = t.r.hard!.playerId;
+    const c = t.cardOf(d);
+    while (t.r.line.indexOf(c.id) > 0) t.play(d, { kind: 'move', dir: -1 });
+    t.play(d, { kind: 'move', dir: 1 });
+    t.play(d, { kind: 'move', dir: -1 });
+    return d;
+  }
+
+  it('an N4 defender who also moved the most defends once, with the N4 script', () => {
+    const t = new Table(3, ['n4', 'n3', 'n3']);
+    t.start();
+    toFeelingsN4(t);
+    t.sayAll();
+    const d = defenderMovesMost(t);
+    t.lockAll();
+    expect(t.s.phase).toBe('encore');
+    expect(t.r.defence).toBeNull();
+    expect(t.r.encore).toBe('hard');
+    t.play(d, { kind: 'defend', pass: true });
     expect(t.s.phase).toBe('score');
-    // They took it, then passed at the mic: still a yes to the offer, with no bonus.
     expect(t.r.hard).toMatchObject({ answer: 'accepted', ok: false });
   });
 
   // The `narabeteFold` experiment: on (above), one defence; off, the ordinary defence and then the N4 encore.
-  it('narabeteFold off: an N4 player who also moved the most gives the ordinary defence, then the N4 one', () => {
+  // The `narabeteFold` experiment only matters where an ordinary defence runs beside the N4 one; in the Green Car
+  // (the only room with the N4 defence now) there is no ordinary defence, so on or off it's one defence.
+  it('narabeteFold off: still one defence in the Green Car', () => {
     const restore = withExperiments({ narabeteFold: false });
     try {
-      const t = new Table(3, ['n4', 'n5', 'n5']);
+      const t = new Table(3, ['n4', 'n3', 'n3']);
       t.start();
       toFeelingsN4(t);
       t.sayAll();
-      const p1 = t.cardOf('p1');
-      while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
-      t.play('p1', { kind: 'move', dir: 1 });
-      t.play('p1', { kind: 'move', dir: -1 });
-      t.play('p1', { kind: 'hard', accept: true });
+      const d = defenderMovesMost(t);
       t.lockAll();
-      expect(t.r.encore).toBe('defence');
-      expect(t.s.deadline! - t.now).toBe(DURATIONS.encore);
-      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: false });
-      t.play('p1', { kind: 'defend', pass: true });
-      expect(t.s.phase).toBe('encore');
       expect(t.r.encore).toBe('hard');
-      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
+      expect(t.view().defence).toMatchObject({ playerId: d, n4: true });
     } finally {
       restore();
     }
@@ -740,19 +741,15 @@ describe('Narabete!: the N4 defence in a game', () => {
   it('narabeteFold on: the folded defence goes straight to the N4 encore, with its frame', () => {
     const restore = withExperiments({ narabeteFold: true });
     try {
-      const t = new Table(3, ['n4', 'n5', 'n5']);
+      const t = new Table(3, ['n4', 'n3', 'n3']);
       t.start();
       toFeelingsN4(t);
       t.sayAll();
-      const p1 = t.cardOf('p1');
-      while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
-      t.play('p1', { kind: 'move', dir: 1 });
-      t.play('p1', { kind: 'move', dir: -1 });
-      t.play('p1', { kind: 'hard', accept: true });
+      const d = defenderMovesMost(t);
       t.lockAll();
       expect(t.r.encore).toBe('hard');
       expect(t.s.deadline! - t.now).toBe(DURATIONS.encoreN4);
-      expect(t.view().defence).toMatchObject({ playerId: 'p1', n4: true });
+      expect(t.view().defence).toMatchObject({ playerId: d, n4: true });
       expect(t.view().defence!.frame?.text).toContain('ので');
       expect(t.s.cues.at(-1)).toMatchObject({ event: 'narabete_hard' });
     } finally {
@@ -760,41 +757,39 @@ describe('Narabete!: the N4 defence in a game', () => {
     }
   });
 
-  it('an N4 player who moved the most but left the offer open gives the ordinary defence', () => {
-    const t = new Table(3, ['n4', 'n5', 'n5']);
+  it('an N4 defender who moved the most but passed in the line-up: no defence that round', () => {
+    const t = new Table(3, ['n4', 'n3', 'n3']);
     t.start();
     toFeelingsN4(t);
     t.sayAll();
-    const p1 = t.cardOf('p1');
-    while (t.r.line.indexOf(p1.id) > 0) t.play('p1', { kind: 'move', dir: -1 });
-    t.play('p1', { kind: 'move', dir: 1 });
-    t.play('p1', { kind: 'move', dir: -1 });
+    const d = defenderMovesMost(t);
+    t.play(d, { kind: 'hard', accept: false });
     t.lockAll();
-    expect(t.s.phase).toBe('encore');
-    expect(t.r.encore).toBe('defence');
-    expect(t.r.hard?.answer).toBe('timeout');
+    expect(t.s.phase).toBe('score');
+    expect(t.r.defence).toBeNull();
+    expect(t.r.hard?.answer).toBe('declined');
   });
 });
 
 describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
-  /** A Time Line with a Kana, an N4 and an N5 player, to the N4 defence's encore. */
+  /** A Green Car Time Line, to the N4 defence's encore (p1 defends). */
   function toDefence(): Table {
-    const t = new Table(3, ['kana', 'n4', 'n5']);
+    const t = new Table(3, ['n4', 'n3', 'n4']);
     t.start();
     t.sayAll();
-    t.play('p2', { kind: 'hard', accept: true });
     t.sortLine();
     t.lockAll();
     expect(t.r.encore).toBe('hard');
+    expect(t.r.hard!.playerId).toBe('p1');
     return t;
   }
   const replays = (t: Table) => t.s.cues.filter((c) => c.event === 'narabete_replay');
 
-  it('once the ので line lands: the host says it on the TV with the ので lit, and Kana/N5 phones get the gist', () => {
+  it('once the ので line lands: the host says it on the TV with the ので lit (no gist: every phone is N4+)', () => {
     const t = toDefence();
-    const model = t.view('p2').me!.hard!.script!.lines[0]!;
+    const model = t.view('p1').me!.hard!.script!.lines[0]!;
     t.now += 3_000;
-    t.play('p2', { kind: 'defend', utterance: speech(model.kana) });
+    t.play('p1', { kind: 'defend', utterance: speech(model.kana) });
     expect(t.s.phase).toBe('encore');
     expect(t.r.encore).toBe('replay');
     // Within the 15 s encore: said 3 s in, the replay gets its 7 s.
@@ -803,47 +798,36 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
     expect(replays(t)).toHaveLength(1);
     expect(replays(t)[0]).toMatchObject({ host: 'nobiko', slots: { line: model.text, line_en: model.en } });
     const tv = t.view();
-    expect(tv.defence).toMatchObject({ playerId: 'p2', n4: true, done: true });
-    expect(tv.replay).toMatchObject({ playerId: 'p2', line: { text: model.text } });
+    expect(tv.defence).toMatchObject({ playerId: 'p1', n4: true, done: true });
+    expect(tv.replay).toMatchObject({ playerId: 'p1', line: { text: model.text } });
     expect(tv.replay!.lit.key).toBe('ので');
     expect(tv.replay!.lit.before + 'ので' + tv.replay!.lit.after).toBe(model.text);
-    expect(tv.replay!.note).toBe('ので = because: P2 gave the reason first, then where the card goes.');
-    // Kana: the line in kana with romaji and English, and the card's picture. N5: the same without romaji.
-    const kana = t.view('p1').me!.gist!;
-    expect(kana).toMatchObject({ name: 'P2', kana: model.kana });
-    expect(kana.romaji).toBeTruthy();
-    expect(kana.en).toMatch(/^P2: this one (comes first|goes last|goes after P\d’?'?s), because /);
-    expect(kana.picture ?? kana.emoji).toBeTruthy();
-    const n5 = t.view('p3').me!.gist!;
-    expect(n5).toMatchObject({ name: 'P2', kana: model.kana, en: kana.en });
-    expect(n5.romaji).toBeNull();
-    // Not for the defender, and never a correction.
-    expect(t.view('p2').me!.gist).toBeNull();
-    expect(JSON.stringify([tv.replay, kana, n5])).not.toMatch(/wrong|mistake|should|correct/i);
+    expect(tv.replay!.note).toBe('ので = because: P1 gave the reason first, then where the card goes.');
+    expect(JSON.stringify(tv.replay)).not.toMatch(/wrong|mistake|should|correct/i);
+    // The gist is for Kana and N5 phones, and there are none in the Green Car.
+    for (const id of t.ids_()) expect(t.view(id).me!.gist).toBeNull();
     // Then the flip, with no second replay.
     t.timeout();
     expect(t.s.phase).toBe('score');
     expect(t.view().replay).toBeNull();
-    expect(t.view('p1').me!.gist).toBeNull();
     expect(replays(t)).toHaveLength(1);
   });
 
   it('said late, the replay runs at most 5 s past the encore', () => {
     const t = toDefence();
     t.now += 13_000;
-    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[1]!.kana) });
+    t.play('p1', { kind: 'defend', utterance: speech(t.view('p1').me!.hard!.script!.lines[1]!.kana) });
     expect(t.r.encore).toBe('replay');
     expect(t.s.deadline! - t.now).toBe(5_000);
   });
 
   it('their own ので line is replayed on the TV but never voiced', () => {
     const t = toDefence();
-    t.play('p2', { kind: 'defend', utterance: speech('ぼくの すきな じかん なので、ここです') });
+    t.play('p1', { kind: 'defend', utterance: speech('ぼくの すきな じかん なので、ここです') });
     expect(t.r.encore).toBe('replay');
     // The host speaks only fixed, checked lines, never what speech recognition heard.
     expect(replays(t)).toHaveLength(0);
     expect(t.view().replay!.lit).toEqual({ before: 'ぼくの すきな じかん な', key: 'ので', after: '、ここです。' });
-    expect(t.view('p3').me!.gist!.en).toMatch(/^P2: this one .*, and said why \(ので = because\)\.$/);
   });
 
   it('no replay and no cue unless it landed: passed, typed, or said without ので', () => {
@@ -853,7 +837,7 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
       { kind: 'defend', utterance: speech('ここが いいと おもいます') },
     ]) {
       const t = toDefence();
-      t.play('p2', move);
+      t.play('p1', move);
       expect(t.s.phase).toBe('score');
       expect(replays(t)).toHaveLength(0);
       expect(t.r.replay ?? null).toBeNull();
@@ -861,11 +845,9 @@ describe('Narabete!: the commentary booth (the N4 defence replayed)', () => {
   });
 });
 
-/** Through the Time Line (and its N4 defence, left to run out) to the first Feelings round. */
+/** Through the Time Line (and its N4 defence in the Green Car, left to run out) to the first Feelings round. */
 function toFeelingsN4(t: Table) {
   t.sayAll();
-  // An N4 offer takes the yes: an offer left to time out sits that player out of the next round.
-  if (t.r.hard?.answer === 'offered') t.play(t.r.hard.playerId, { kind: 'hard', accept: true });
   t.sortLine();
   t.lockAll();
   if (t.s.phase === 'encore') t.timeout();
@@ -888,8 +870,8 @@ describe('Narabete!: bots play a game end to end', () => {
     await ctx.server.close();
   });
 
-  for (const players of [3, 6]) {
-    it(`${players} bots play every round with every client in sync`, async () => {
+  for (const [players, green] of [[3, false], [6, false], [4, true]] as const) {
+    it(`${players} bots play every round with every client in sync${green ? ' (Green Car)' : ''}`, async () => {
       const { baseUrl, truth, server } = ctx;
       const created = await createRoom(baseUrl);
       const room = server.rooms.get(created.code)!;
@@ -930,7 +912,7 @@ describe('Narabete!: bots play a game end to end', () => {
             code: created.code,
             name: `bot${i}`,
             policy,
-            level: i === 1 ? 'kana' : i === 3 ? 'n4' : 'n5',
+            level: green ? (i % 2 ? 'n4' : 'n3') : i === 1 ? 'kana' : i === 3 ? 'n4' : 'n5',
             onState: (bot, view, v) => record(bot.playerId, view, v),
           }),
         );
@@ -939,7 +921,8 @@ describe('Narabete!: bots play a game end to end', () => {
       await until(() => [director.client, ...bots.map((b) => b.client)].every((c) => c.version === room.version), 5_000, 'quiescence');
 
       for (const p of ['intro', 'prompt', 'answer', 'reveal', 'score', 'finale', 'recap']) expect(phases, p).toContain(p);
-      expect([...kinds].sort()).toEqual(['feel', 'story', 'time']);
+      // The Green Car has no Time Line (an N5 deck): round 1 is a Feelings round too.
+      expect([...kinds].sort()).toEqual(green ? ['feel', 'story'] : ['feel', 'story', 'time']);
       expect(pairs).toBeGreaterThan(0);
 
       for (const [id, list] of seen) {
@@ -963,42 +946,35 @@ describe('Narabete!: bots play a game end to end', () => {
 // ---- mixed rooms: offer rotation, the Gallery, the booth's reaction, the host stand-in ----
 
 describe('Narabete!: mixed rooms', () => {
-  function toDefence(levels: Level[] = ['kana', 'n4', 'n5']): Table {
-    const t = new Table(levels.length, levels);
+  /** The N4 defence lives in the Green Car now: a Green Car Time Line, to its encore (p1 defends round 1). */
+  function toDefence(): Table {
+    const t = new Table(3, ['n4', 'n3', 'n4']);
     t.start();
     t.sayAll();
-    t.play('p2', { kind: 'hard', accept: true });
+    expect(t.r.hard!.playerId).toBe('p1');
     t.sortLine();
     t.lockAll();
     expect(t.r.encore).toBe('hard');
     return t;
   }
 
-  it('offers go by nextOfferee: a “not this time” sits the next round out, then it comes back', () => {
-    const t = new Table(3, ['n5', 'n4', 'n5']);
+  it('a mixed room has no N4 defence, so no Gallery and no curveball', () => {
+    const t = new Table(3, ['kana', 'n4', 'n5']);
     t.start();
-    t.sayAll();
-    expect(t.r.hard?.playerId).toBe('p2');
-    t.play('p2', { kind: 'hard', accept: false });
-    t.sortLine();
-    t.lockAll();
-    t.timeout();
-    t.timeout();
     t.sayAll();
     expect(t.r.hard ?? null).toBeNull();
     t.sortLine();
     t.lockAll();
-    if (t.s.phase === 'encore') t.timeout();
-    t.timeout();
-    t.timeout();
-    t.sayAll();
-    expect(t.r.hard?.playerId).toBe('p2');
+    expect(t.s.phase).toBe('score');
+    expect(t.view().gallery).toEqual([]);
+    for (const id of t.ids_()) expect(t.view(id).me!.gallery).toBeNull();
+    expect(t.st.curveball).toBe(false);
   });
 
   it.each([true, false])('a Gallery player may say their reaction for a small bonus; a miss leaves the tiles to tap (spoken reaction: %s)', (on) => {
     onTestFinished(withExperiments({ spokenReaction: on }));
     const t = toDefence();
-    const P = 'p1';
+    const P = 'p2';
     const say = (text: string) => t.play(P, { kind: 'gallery', pick: SAY_PICK, utterance: { via: 'speech', text } });
     const before = t.score(P);
     if (!on) {
@@ -1012,8 +988,8 @@ describe('Narabete!: mixed rooms', () => {
     // Not while the defence is still being said: no 🎤, and a said reaction is refused (nobody talks over it).
     expect(t.view(P).me!.gallery).not.toHaveProperty('say');
     expect(say('すごい！').error).toBe('bad-move');
-    // The defence lands (the curveball goes to p3): now it may be said.
-    t.play('p2', { kind: 'defend', utterance: { via: 'speech', text: t.view('p2').me!.hard!.script!.lines[0]!.kana } });
+    // The defence lands: now it may be said.
+    t.play('p1', { kind: 'defend', utterance: { via: 'speech', text: t.view('p1').me!.hard!.script!.lines[0]!.kana } });
     expect(t.r.encore).toBe('replay');
     expect(t.view(P).me!.gallery).toMatchObject({ kind: 'react', picked: null, say: { said: false, missed: false } });
     // A miss: no tile, no points, nothing on the TV; the phone says to tap instead.
@@ -1031,60 +1007,26 @@ describe('Narabete!: mixed rooms', () => {
     expect(say('なるほど').error).toBe('bad-move');
   });
 
-  it.each([true, false])('the Gallery: everyone but the defender gets a tile; the curveball is ので, +5 once a game, after the defence lands (scaled curveball: %s)', (scaled) => {
-    onTestFinished(withExperiments({ scaledCurveball: scaled }));
+  it('the Gallery in the Green Car: everyone but the defender gets a reaction tile, and no curveball (nobody is Kana or N5)', () => {
     const t = toDefence();
-    // While the defence is on, reactions only: nobody is asked which word they heard before it's been said.
-    expect(t.view('p1').me!.gallery!.kind).toBe('react');
+    expect(t.view('p2').me!.gallery!.kind).toBe('react');
     expect(t.view('p3').me!.gallery!.kind).toBe('react');
-    expect(t.view('p2').me!.gallery).toBeNull();
-    expect(t.st.curveball).toBe(false);
-    expect(t.play('p2', { kind: 'gallery', pick: 'sugoi' }).error).toBe('bad-move');
-    // The defence lands: the replay starts, and a Kana or N5 player who hasn't reacted gets the curveball. Who
-    // rotates with the seed (the round): round 1 picks the second of them, the N5 player.
-    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[0]!.kana) });
+    expect(t.view('p1').me!.gallery).toBeNull();
+    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBe('bad-move');
+    t.play('p1', { kind: 'defend', utterance: speech(t.view('p1').me!.hard!.script!.lines[0]!.kana) });
     expect(t.r.encore).toBe('replay');
-    const cb = t.view('p3').me!.gallery!;
-    expect(cb.kind).toBe('curveball');
-    if (cb.kind !== 'curveball') return;
-    expect(cb.options.map((o) => o.kana)).toContain(DEFENCE_KEY);
-    expect(cb.options.filter((o) => o.kana !== DEFENCE_KEY).every((o) => DEFENCE_POOL.includes(o.kana))).toBe(true);
-    expect(cb.options.every((o) => o.romaji === null)).toBe(true);
-    // The TV holds ので back while the curveball is open, and lights it once it's answered.
-    expect(t.view().replay!.lit.key).toBe(DEFENCE_KEY);
-    expect(t.view().replay!.holdKey).toBe(true);
-    expect(t.view('p1').me!.gallery!.kind).toBe('react');
-    expect(t.play('p1', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
-    expect(t.play('p1', { kind: 'gallery', pick: 'warai' }).error).toBe('bad-move');
-    expect(t.view().gallery.map((b) => b.id)).toEqual(['sugoi']);
-    const before = t.score('p3');
-    expect(t.play('p3', { kind: 'gallery', pick: DEFENCE_KEY }).error).toBeUndefined();
-    expect(t.score('p3') - before).toBe(scaled ? 10 : CURVEBALL_POINTS);
-    expect(t.view('p3').me!.gallery).toMatchObject({ kind: 'curveball', right: true, answer: DEFENCE_KEY });
+    expect(t.view('p2').me!.gallery!.kind).toBe('react');
+    expect(t.view('p3').me!.gallery!.kind).toBe('react');
     expect(t.view().replay!.holdKey).toBe(false);
-    expect(t.st.curveball).toBe(true);
+    expect(t.st.curveball).toBe(false);
+    expect(t.play('p2', { kind: 'gallery', pick: 'sugoi' }).error).toBeUndefined();
+    expect(t.play('p2', { kind: 'gallery', pick: 'warai' }).error).toBe('bad-move');
+    expect(t.view().gallery.map((b) => b.id)).toEqual(['sugoi']);
     // Gone by the flip.
     t.timeout();
     expect(t.s.phase).toBe('score');
     expect(t.view().gallery).toEqual([]);
-    expect(t.play('p1', { kind: 'gallery', pick: 'e' }).error).toBe('wrong-phase');
-  });
-
-  it('a defence that never lands deals no curveball; nor does one whose Kana and N5 players all reacted already', () => {
-    const missed = toDefence();
-    missed.play('p2', { kind: 'defend', pass: true });
-    expect(missed.s.phase).toBe('score');
-    expect(missed.st.curveball).toBe(false);
-
-    const early = toDefence();
-    expect(early.play('p1', { kind: 'gallery', pick: 'naruhodo' }).error).toBeUndefined();
-    expect(early.play('p3', { kind: 'gallery', pick: 'e' }).error).toBeUndefined();
-    early.play('p2', { kind: 'defend', utterance: speech(early.view('p2').me!.hard!.script!.lines[0]!.kana) });
-    expect(early.r.encore).toBe('replay');
-    expect(early.view('p1').me!.gallery).toMatchObject({ kind: 'react', picked: 'naruhodo' });
-    expect(early.view('p3').me!.gallery).toMatchObject({ kind: 'react', picked: 'e' });
-    expect(early.view().replay!.holdKey).toBe(false);
-    expect(early.st.curveball).toBe(false);
+    expect(t.play('p3', { kind: 'gallery', pick: 'e' }).error).toBe('wrong-phase');
   });
 
   it('no Gallery during the ordinary defence, nor in a room where nobody took the N4 defence', () => {
@@ -1105,16 +1047,13 @@ describe('Narabete!: mixed rooms', () => {
 
   it('the booth: Nobiko-san reacts (あらまあ) first, then says the model line a beat later', () => {
     const t = toDefence();
-    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[0]!.kana) });
+    t.play('p1', { kind: 'defend', utterance: speech(t.view('p1').me!.hard!.script!.lines[0]!.kana) });
     const events = t.s.cues.map((c) => c.event);
     const hooray = events.lastIndexOf('narabete_hooray');
     expect(hooray).toBeGreaterThanOrEqual(0);
     expect(events.lastIndexOf('narabete_replay')).toBeGreaterThan(hooray);
     expect(t.s.cues.find((c) => c.event === 'narabete_replay')!.atMs).toBe(DURATIONS.replayLineAt);
     expect(REAL_CONTENT.hostLines.some((l) => l.event === 'narabete_hooray' && l.jp.text.startsWith('あらまあ'))).toBe(true);
-    // The gist on Kana and N5 phones is the shared booth gist.
-    expect(t.view('p1').me!.gist).toMatchObject({ name: 'P2', romaji: expect.any(String) });
-    expect(t.view('p3').me!.gist!.romaji).toBeNull();
   });
 
   it('the host stand-in: a 2-player room with no N4 player hears one model defence, once a game', () => {
@@ -1266,12 +1205,96 @@ describe('Narabete!: mixed rooms', () => {
 
   it('every Feelings theme says whether its word is a な-adjective, and たいへん is', () => {
     for (const theme of FEEL_THEMES) expect(typeof theme.na).toBe('boolean');
-    expect(FEEL_THEMES.filter((x) => x.na).every((x) => x.more.kana === 'たいへん')).toBe(true);
+    expect(FEEL_THEMES.filter((x) => x.na).every((x) => x.more.kana === 'たいへん' || x.more.kana === 'いや')).toBe(true);
     expect(FEEL_THEMES.filter((x) => x.more.kana === 'たいへん').every((x) => x.na)).toBe(true);
     // The flag decides, not the word's last kana: しずか ends in か, which looked like a verb ending.
     const quiet = { more: { text: 'しずか', kana: 'しずか', en: 'quieter' }, na: true };
     expect(defenceScript({ theme: quiet }, 3, 4, 'Aki').lines[0]!.kana).toContain('しずかなので');
     const smelly = { more: { text: 'くさい', kana: 'くさい', en: 'smellier' }, na: false };
     expect(defenceScript({ theme: smelly }, 3, 4, 'Aki').lines[0]!.kana).toContain('くさいので');
+  });
+});
+
+// ---- the Green Car's N3 defence and themes ranked by degree (design n3-coverage/green-car) ----
+
+describe('Narabete!: the Green Car N3 defence', () => {
+  it('every N3 line carries its frames, for every theme the Green Car deals, at every spot', () => {
+    const themes = new Set([...(['kids', 'family', 'cheeky'] as const).flatMap((a) => [...feelThemesFor(a, false, true), ...feelThemesFor(a, true, true)])]);
+    for (const theme of themes)
+      for (const spot of ['first', 'last', 'after'] as const) {
+        const lines = n3Lines(theme, spot, 'アキ');
+        expect(lines.length, `${theme.id} ${spot}`).toBeGreaterThanOrEqual(2);
+        for (const l of lines) {
+          const found = framesOf({ text: l.jp.text, kana: l.jp.kana }, undefined, { keepHidden: true });
+          for (const f of l.frames) expect(found, l.jp.kana).toContain(f);
+          expect(l.frames.some((f) => f !== 'node')).toBe(true);
+        }
+      }
+  });
+
+  it('deals no Time Line in the Green Car, its own themes only there, and two or more per audience', () => {
+    for (const a of ['kids', 'family', 'cheeky'] as const) {
+      const gc = feelThemesFor(a, false, true);
+      expect(gc.length, a).toBeGreaterThanOrEqual(2);
+      expect(gc.every((x) => x.greenCar || x.n3)).toBe(true);
+      expect(feelThemesFor(a, false).some((x) => x.greenCar)).toBe(false);
+    }
+    const t = new Table(3, ['n4', 'n3', 'n4']);
+    t.start('kids');
+    expect(t.r.kind).toBe('feel');
+    expect(FEEL_THEMES.find((x) => x.id === t.r.setId)!.audiences).toContain('kids');
+  });
+
+  /** A Green Car room where p2 (N3) defends round 2 (p1 had round 1). */
+  function toN3Defence(levels: Level[] = ['n4', 'n3', 'n4']): Table {
+    const t = new Table(3, levels);
+    t.start();
+    toFeelingsN4(t);
+    t.sayAll();
+    t.sortLine();
+    t.lockAll();
+    expect(t.r.encore).toBe('hard');
+    return t;
+  }
+
+  it('an N3 seat gets the N3 script; its own N3 line is credited for the frames heard', () => {
+    const t = toN3Defence();
+    expect(t.r.hard).toMatchObject({ playerId: 'p2', level: 'n3' });
+    const script = t.view('p2').me!.hard!.script!;
+    expect(script.level).toBe('n3');
+    expect(t.view('p2').me!.hard!.stretch ?? null).toBeNull();
+    const own = ownWords(script.lines[0]!.kana)!;
+    expect(t.play('p2', { kind: 'defend', utterance: speech(own) }).error).toBeUndefined();
+    expect(t.r.hard).toMatchObject({ ok: true, framed: true });
+    t.timeout();
+    t.timeout();
+    const entry = t.s.phrasebook.p2!.find((e) => e.itemId.startsWith('narabete:defence:n3:'))!;
+    expect(entry).toMatchObject({ outcome: 'said', recall: 'memory' });
+    expect(entry.frames!.some((f) => f !== 'node')).toBe(true);
+    expect(t.st.gcSaid!.p2).toBeTruthy();
+  });
+
+  it('an N4 seat gets the ので script with the N3 one as stretch, and the stretch counts', () => {
+    const t = new Table(3, ['n4', 'n4', 'n4']);
+    t.start();
+    t.sayAll();
+    t.sortLine();
+    t.lockAll();
+    const d = t.r.hard!.playerId;
+    const me = t.view(d).me!.hard!;
+    expect(me.script!.level ?? 'n4').toBe('n4');
+    expect(me.stretch!.level).toBe('n3');
+    t.play(d, { kind: 'defend', utterance: speech(ownWords(me.stretch!.lines[0]!.kana)!) });
+    t.timeout();
+    t.timeout();
+    expect(t.s.phrasebook[d]!.some((e) => e.itemId.startsWith('narabete:defence:n3:') && e.outcome === 'said')).toBe(true);
+  });
+
+  it('a model line read out is logged as read, not from memory', () => {
+    const t = toN3Defence();
+    t.play('p2', { kind: 'defend', utterance: speech(t.view('p2').me!.hard!.script!.lines[1]!.kana) });
+    t.timeout();
+    t.timeout();
+    expect(t.s.phrasebook.p2!.find((e) => e.itemId.startsWith('narabete:defence:'))).toMatchObject({ outcome: 'seen', recall: 'read' });
   });
 });

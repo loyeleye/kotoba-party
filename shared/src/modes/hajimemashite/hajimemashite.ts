@@ -17,6 +17,10 @@
 //   score   the cards flip from the least believed up; each tanuki claims theirs (ドロン！), the guest
 //           refutes each lie and says the truth.
 // After the last turn, one `finale`: おぼえてる？ say (or tap) the true thing about everyone else.
+//
+// In the Green Car (ctx.greenCar) the deck is the experience deck only (N4 ＿た ことが ある, ＿て みる; N3 ＿ことに
+// して いる, ＿ふりを した, ＿はずだった), dealt by pickGreenCard to the frame each guest needs most tonight
+// (aimWeight over gcSaid), and a Kids room may say its lines, which count only as the player's tiles (tileHeard).
 
 import type { JpText, Level } from '../../../../content/src/types.js';
 import { MAX_ANSWER_LENGTH } from '../../constants.js';
@@ -25,7 +29,9 @@ import { isRomaji, nameToKatakana, romajiToHiragana } from '../../japanese/toKan
 import { playerTextAllowed } from '../../moderation.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import { cardsFor, endsInForm, fillFrame, introCardOf, tileOf, tilesOnly, type Conj, type IntroCard, type Tile } from './cards.js';
+import { aimWeight } from '../aim.js';
+import { cardsFor, endsInForm, fillFrame, GREEN_CAR_N4_FRAMES, introCardOf, tileOf, tilesOnly, type Conj, type IntroCard, type Tile } from './cards.js';
+import { FRAME_BY_ID, type FrameId } from '../../japanese/frames.js';
 import { n4Up } from '../../level.js';
 
 // ---- tuning ----
@@ -182,6 +188,12 @@ export interface HajimeState {
   recall: Record<string, Record<number, Read>>;
   stats: Record<string, Stats>;
   phaseAt: number;
+  /**
+   * The Green Car's aim: how many times each player has said each experience frame tonight (their own true line
+   * as the guest, and the line they read as the introducer), by frame id. pickCard deals a guest the frame they
+   * have said least. Only kept in the Green Car.
+   */
+  gcSaid?: Record<string, Record<string, number>>;
 }
 
 // ---- view ----
@@ -226,7 +238,7 @@ export interface HajimeView {
   /** The guest's name in katakana (or as typed, before they've written it). */
   guestName: string;
   /** `conj`, `cue`, `cueThird`: a verb card (the frames with ＿た or ＿て, for the dictionary-form tiles). */
-  card: { title: JpText; first: string; third: string; en: string; enThird: string; level: 'n5' | 'n4'; conj?: Conj; cue?: string; cueThird?: string } | null;
+  card: { title: JpText; first: string; third: string; en: string; enThird: string; level: 'n5' | 'n4' | 'n3'; conj?: Conj; cue?: string; cueThird?: string } | null;
   facts: FactView[];
   /** The introduction's line now being read. */
   line: { index: number; total: number; kind: Line['kind']; factId: string | null; at: number; ms: number } | null;
@@ -247,6 +259,11 @@ export interface HajimeView {
     kochira: boolean;
     hand: TileView[];
     canType: boolean;
+    /**
+     * A Kids room in the Green Car: the player may say their line (or type it) instead of tapping, but only a
+     * line that matches one of their tiles counts, and the TV shows that tile. Never free text.
+     */
+    sayTiles?: boolean;
     written: (Written & { dict?: string }) | null;
     /**
      * The introducer's script, from the reveal on. `text` is the model line. On a verb card `dict` is the
@@ -347,6 +364,57 @@ function cutFront(text: string, n: number): string {
   return chars.slice(i).join('');
 }
 
+/** A Kids room in the Green Car: lines may be said, but only as the player's tiles (Ladi's decision). */
+const sayTilesRoom = (ctx: ModeContext): boolean => ctx.greenCar === true && ctx.audience === 'kids';
+
+/**
+ * The tile a said (or typed) line names, from the tiles the player may use: the blank typed exactly (typedWord),
+ * else the tile's sounds heard anywhere in the line (on a verb card, its dictionary form too). The longest tile
+ * heard wins, so ねて いる doesn't take ねて いる ふり's longer neighbour.
+ */
+export function tileHeard(u: Utterance, card: IntroCard, allowed: readonly Tile[]): Tile | undefined {
+  const typed = typedWord(u, card);
+  const exact = typed ? allowed.find((x) => normalizeReading(x.kana) === normalizeReading(typed) || (!!x.dict && normalizeReading(x.dict) === normalizeReading(typed))) : undefined;
+  if (exact) return exact;
+  const heard = allowed.filter((x) => heardHas(u, x.kana) || (!!x.dict && heardHas(u, x.dict)));
+  return heard.sort((a, b) => soundKey(b.kana).length - soundKey(a.kana).length)[0];
+}
+
+/** Did the line carry the card's frame (the words after the blank: ことに して います, ふりを しました…)? */
+const frameHeard = (u: Utterance, card: IntroCard): boolean => {
+  const after = (card.first.split('＿')[1] ?? '').trim();
+  return !!after && heardHas(u, after);
+};
+
+/** A Green Car card's experience frame: its N3 frame, or ＿た ことが ある / ＿て みる on an N4 card. */
+export const greenFrameOf = (c: IntroCard): string | undefined => c.frames?.find((f) => c.level === 'n3' || GREEN_CAR_N4_FRAMES.includes(f));
+
+/** How many times this player has said frames of this level tonight (the Green Car's aim). */
+const saidAtLevel = (s: HajimeState, playerId: string, level: 'n4' | 'n3'): number =>
+  Object.entries(s.gcSaid?.[playerId] ?? {}).reduce((a, [f, n]) => a + (FRAME_BY_ID[f as FrameId]?.level === level ? n : 0), 0);
+
+/**
+ * The Green Car's deal (aim the deal). An N4 guest gets the N4 experience cards (an N3 card only once those are
+ * used up, as a stretch the card tags N3). An N3 guest gets about half and half: the level they have said less
+ * this game (ties go to N3). Within that level: the card whose frame the guest needs most tonight (aimWeight: the
+ * room's ctx.frameNeed, where frames a path goal requires weigh double, over this game's says in gcSaid), then the
+ * room's own cards (Kids, Cheeky), then any; never a card the room has had while a fresh one is left. Ties are random.
+ */
+export function pickGreenCard(s: HajimeState, audience: Audience, guestId: string, level: Level, random: () => number, ctx: Pick<ModeContext, 'frameNeed'> = {}): IntroCard {
+  const pool = cardsFor(audience, level, true);
+  const fresh = pool.filter((c) => !s.usedCards.includes(c.id));
+  const first: 'n4' | 'n3' = level === 'n3' && saidAtLevel(s, guestId, 'n3') > saidAtLevel(s, guestId, 'n4') ? 'n4' : level === 'n3' ? 'n3' : 'n4';
+  const other = first === 'n3' ? 'n4' : 'n3';
+  const group = [fresh.filter((c) => c.level === first), fresh.filter((c) => c.level === other), pool].find((g) => g.length)!;
+  const said = s.gcSaid?.[guestId] ?? {};
+  const weight = (c: IntroCard) => { const f = greenFrameOf(c); return f ? aimWeight(ctx, guestId, [f], said) : 0; };
+  const most = Math.max(...group.map(weight));
+  const needed = group.filter((c) => weight(c) === most);
+  const own = needed.filter((c) => c.audiences.length === 1);
+  const top = own.length ? own : needed;
+  return top[Math.floor(random() * top.length)]!;
+}
+
 /** Picks the turn's card: one the room hasn't had, that suits the guest's level and the room. */
 function pickCard(s: HajimeState, audience: Audience, level: Level, random: () => number): IntroCard {
   const pool = cardsFor(audience, level);
@@ -370,7 +438,7 @@ function startTurn(s: HajimeState, ctx: ModeContext): void {
   const players = ctx.players();
   const guestId = s.guests[s.turnIndex - 1]!;
   const guest = ctx.player(guestId);
-  const card = pickCard(s, ctx.audience ?? 'family', guest?.level ?? 'n5', random);
+  const card = ctx.greenCar ? pickGreenCard(s, ctx.audience ?? 'family', guestId, guest?.level ?? 'n4', random, ctx) : pickCard(s, ctx.audience ?? 'family', guest?.level ?? 'n5', random);
   s.usedCards.push(card.id);
   // The previous guest introduces this one, so the introductions run round the room.
   const prev = s.guests[(s.turnIndex - 2 + s.guests.length) % s.guests.length];
@@ -561,12 +629,23 @@ function truthPhrase(t: Turn, ctx: ModeContext): void {
   ctx.phrase(t.guestId, { itemId: `hajime:${card.id}:first`, text: line, kana: line, en: card.en.replace('___', truth.en ?? '…'), outcome: t.truthSaid === 'said' ? (t.truthRetried ? 'retry' : 'said') : 'seen', recall: card.conj ? 'memory' : 'read' });
 }
 
+/** The Green Car's aim: one more time this player said the card's experience frame tonight. */
+function countGreen(s: HajimeState, ctx: ModeContext, card: IntroCard, playerId: string): void {
+  const frame = ctx.greenCar ? greenFrameOf(card) : undefined;
+  if (!frame) return;
+  const mine = ((s.gcSaid ??= {})[playerId] ??= {});
+  mine[frame] = (mine[frame] ?? 0) + 1;
+}
+
 function phrases(s: HajimeState, t: Turn, ctx: ModeContext): void {
   const card = cardOf(t);
   const truth = truthOf(t);
   const name = nameFor(s, ctx.player(t.guestId));
   // The printed greeting and こちらこそ stay read.
   truthPhrase(t, ctx);
+  // The Green Car's aim: the introducer said the card's frame if they said one of its lines (the guest's count is
+  // kept when they say the truth, in the score step).
+  if (t.introducerId && t.introducerId !== t.guestId && t.lines.some((l) => l.kind === 'card' && l.read === 'said')) countGreen(s, ctx, card, t.introducerId);
   for (const p of ctx.players()) {
     const greet = `はじめまして。${nameFor(s, p)}です。よろしく おねがいします。`;
     if (p.id === t.guestId) ctx.phrase(p.id, { itemId: 'hajime:greet', text: greet, kana: greet, en: "Nice to meet you. I'm …. Please treat me kindly.", outcome: t.greet === 'said' ? 'said' : 'seen', recall: 'read' });
@@ -837,6 +916,22 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
           t.writes[playerId] = { tileId: tile.id, word: tile.kana, en: tile.en };
           return MOVE_OK;
         }
+        if (sayTilesRoom(ctx)) {
+          // A Kids room in the Green Car: say (or type) the line, and it counts only as one of your tiles.
+          const u = utter();
+          if (!u) return moveError('bad-utterance');
+          const allowed = role === 'tanuki' ? (t.hands[playerId] ?? []).map((id) => tileOf(id)!).filter(Boolean) : card.tiles;
+          const tile = tileHeard(u, card, allowed);
+          if (!tile) return moveError('tiles-only');
+          t.writes[playerId] = { tileId: tile.id, word: tile.kana, en: tile.en };
+          spoken(u);
+          // Said with the card's frame: the line the TV would show (the frame and the tile), never what was heard.
+          if (u.via === 'speech' && frameHeard(u, card)) {
+            const line = fillFrame(card.first, tile.kana);
+            ctx.phrase(playerId, { itemId: `hajime:${card.id}:said`, text: line, kana: line, en: card.en.replace('___', tile.en), outcome: 'said', recall: 'memory' });
+          }
+          return MOVE_OK;
+        }
         if (role === 'tanuki' && tilesOnly(card, ctx.audience ?? 'family')) return moveError('tiles-only');
         const u = utter();
         if (!u) return moveError('bad-utterance');
@@ -962,7 +1057,10 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
         if (now <= before) return MOVE_OK;
         if (t.truthSaid === 'tried') t.truthRetried = true;
         t.truthSaid = read;
-        if (read === 'said') truthPhrase(t, ctx);
+        if (read === 'said') {
+          truthPhrase(t, ctx);
+          countGreen(s, ctx, card, playerId);
+        }
         ctx.award(playerId, now - before);
         spoken(u);
         bubble(t, playerId, `ほんとうです！ ${fillFrame(card.first, truth.word)}`, ctx.now);
@@ -1082,7 +1180,8 @@ export const hajimemashiteMode: Mode<HajimeState, HajimeView> = {
         greeted: !!t?.greet,
         kochira: !!t?.kochira[me.id],
         hand: t && phase === 'answer' ? handIds.map((id) => tile(tileOf(id)!)) : [],
-        canType: !!t && !!card && phase === 'answer' && !(role === 'tanuki' && tilesOnly(card, ctx.audience ?? 'family')),
+        canType: !!t && !!card && phase === 'answer' && !sayTilesRoom(ctx) && !(role === 'tanuki' && tilesOnly(card, ctx.audience ?? 'family')),
+        ...(t && card && phase === 'answer' && role && sayTilesRoom(ctx) ? { sayTiles: true } : {}),
         written: written ? { ...written, ...(myDict ? { dict: myDict } : {}) } : null,
         script:
           isIntroducer && t && card

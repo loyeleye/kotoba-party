@@ -103,7 +103,7 @@ function tiles(ctx: Ctx, list: LineCard[], label: string, send: (move: { utteran
           h(
             'button',
             { type: 'button', class: 'tou-tile', onclick: () => ((tile = { seq: view.phaseSeq, id: x.id }), draw()) },
-            h('span', { class: 'tou-tile-jp', lang: 'ja' }, x.text),
+            h('span', { class: 'tou-tile-jp', lang: 'ja' }, x.text, x.n3 ? n3Tag() : null),
             h('span', { class: 'tou-tile-en' }, x.romaji ?? x.en),
             x.romaji ? h('span', { class: 'tou-tile-en' }, x.en) : null,
           ),
@@ -114,6 +114,9 @@ function tiles(ctx: Ctx, list: LineCard[], label: string, send: (move: { utteran
   draw();
   return holder;
 }
+
+/** The Green Car's stretch tag: an N3 line on an N4 player's tiles or cues. */
+const n3Tag = () => h('span', { class: 'tou-n3', title: 'N3 stretch' }, 'N3');
 
 const frameChip = (f: NonNullable<CueCard['frame']>) => h('span', { class: 'frame-chip' }, h('span', { class: 'frame-ja', lang: 'ja' }, f.ja), h('small', {}, f.en));
 
@@ -130,7 +133,7 @@ function cues(ctx: Ctx, list: CueCard[], send: (move: { utterance: { via: 'speec
       const peekErr = h('p', { class: 'hint', hidden: true }, 'Couldn’t open the Japanese. Ask it from memory, or try again.');
       holder.replaceChildren(
         h('p', { class: 'tou-step' }, sel.jp ? 'Now say it out loud:' : 'Ask it in Japanese, from memory:'),
-        h('div', { class: 'tou-cue picked' }, h('p', { class: 'tou-cue-en' }, sel.en), sel.frame ? frameChip(sel.frame) : null),
+        h('div', { class: 'tou-cue picked' }, h('p', { class: 'tou-cue-en' }, sel.en, sel.n3 ? n3Tag() : null), sel.frame ? frameChip(sel.frame) : null),
         sel.jp
           ? line(sel.jp, 'picked')
           : h(
@@ -173,7 +176,7 @@ function cues(ctx: Ctx, list: CueCard[], send: (move: { utterance: { via: 'speec
           h(
             'button',
             { type: 'button', class: 'tou-tile tou-cue-tile', onclick: () => ((tile = { seq: view.phaseSeq, id: x.id }), draw()) },
-            h('span', { class: 'tou-cue-en' }, x.en),
+            h('span', { class: 'tou-cue-en' }, x.en, x.n3 ? n3Tag() : null),
             x.frame ? frameChip(x.frame) : null,
           ),
         ),

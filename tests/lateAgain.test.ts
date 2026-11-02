@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
-import { ASK_RECORD_MS, CAUSES, causeOf, dealOptions, latenessFor, lineFor, N4_ASKS, SCENES, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthLine } from '../shared/src/modes/lateAgain/causes.js';
+import { ASK_RECORD_MS, backupLine, CAUSES, causeOf, causesFor, dealOptions, GREEN_CAR_DECK, greenCarDeck, latenessFor, lineFor, lineFrames, N4_ASKS, SCENES, scenesFor, SORRY_TILE, SOUND_TILE_ID, TANUKI_TILE, truthLine } from '../shared/src/modes/lateAgain/causes.js';
 import { heardAny, MAX_LEAVES, POINTS, RECORD_MS, roundLine, roundsFor, START_LEAVES, type LateState, type LateView } from '../shared/src/modes/lateAgain/lateAgain.js';
 import { phraseFrames } from '../shared/src/progress.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
@@ -125,6 +125,11 @@ describe('Late Again!: content', () => {
         // The mission never names the grammar.
         expect(line.mission, `${c.id} ${level}`).not.toMatch(/〜|passive|te-form|すぎ|ので/i);
       }
+      // The Green Car's own causes have N4 and N3 lines only: they're never dealt to a Kana or N5 player.
+      if (c.greenCar) {
+        expect(c.lines.n5, c.id).toBeUndefined();
+        continue;
+      }
       const frame = c.lines.n5!.frame;
       expect(frame, c.id).toBeTruthy();
       expect(frame!.text, c.id).toContain('＿＿');
@@ -176,7 +181,8 @@ describe('Late Again!: content', () => {
   it('has a picture for every cause, the curveball and the leaf', () => {
     const dir = fileURLToPath(new URL('../stage/assets/late/', import.meta.url));
     if (!existsSync(dir)) return; // the art lands with its own commit
-    for (const c of CAUSES) expect(existsSync(`${dir}${c.picture}.png`), c.picture).toBe(true);
+    // An empty picture is art still to come (the Green Car causes): the screens show the emoji meanwhile.
+    for (const c of CAUSES) if (c.picture || !c.greenCar) expect(existsSync(`${dir}${c.picture}.png`), c.picture).toBe(true);
     expect(existsSync(`${dir}${TANUKI_TILE.picture}.png`)).toBe(true);
     expect(existsSync(`${dir}leaf.png`)).toBe(true);
   });
@@ -678,5 +684,193 @@ describe('Late Again!: pacing', () => {
     busy.start();
     const fast = busy.playOut(true);
     expect(fast).toBeLessThan(slow);
+  });
+});
+
+// ---- the Green Car (design: project files n3-coverage/green-car/design.md) ----
+
+describe('Late Again!: the Green Car', () => {
+  /** Plays one round with a checked clip saying `said(round)`, the witness backing the first option. */
+  function gcRound(t: Table, said: (r: Table['r']) => string) {
+    if (t.r.step === 'scene') t.tick();
+    const r = t.r;
+    t.play(r.latecomer, { kind: 'cause', causeId: r.cause });
+    if (r.witness) t.play(r.witness, { kind: 'alibi', tileId: r.options[0] });
+    t.play(r.latecomer, { kind: 'ready' });
+    const text = said(r);
+    t.play(r.latecomer, { kind: 'excuse', type: 'clip', clipId: 'c1', durMs: 4000, checked: true, heard: { via: 'speech', text, reading: text } });
+    while (t.s.phase !== 'encore') t.tick();
+    for (const id of [...(r.witness ? [r.witness] : []), ...r.gallery]) if (t.view(id).me!.canVote) t.play(id, { kind: 'leaf', give: true });
+    if (r.chief) t.play(r.chief, { kind: r.witness ? 'rule' : 'pick', call: 'safe', causeId: r.cause });
+    while (t.phase !== 'prompt' && t.phase !== 'recap') t.tick();
+    return r;
+  }
+
+  it('rides in the Green Car only when everyone is N4 or N3, and its own causes and scene never reach a mixed room', () => {
+    const gc = new Table(4, ['n4', 'n3', 'n4', 'n3'], 5);
+    gc.start();
+    expect(gc.st.greenCar).toBe(true);
+    expect(gc.view().greenCar).toBe(true);
+    const mixed = new Table(4, ['n4', 'n5', 'n3', 'kana'], 5);
+    mixed.start();
+    expect(mixed.st.greenCar).toBeFalsy();
+    expect(mixed.st.deck).toBeUndefined();
+    mixed.playOut();
+    const own = new Set(CAUSES.filter((c) => c.greenCar).map((c) => c.id));
+    expect(mixed.st.rounds.flatMap((r) => r.options).some((id) => own.has(id))).toBe(false);
+    expect(mixed.st.rounds.some((r) => r.sceneId === 'school' || r.backup || r.lineLevel)).toBe(false);
+    for (const a of ['kids', 'family', 'cheeky'] as const) {
+      expect(causesFor(a).some((c) => c.greenCar)).toBe(false);
+      expect(scenesFor(a).some((x) => x.greenCar)).toBe(false);
+    }
+  });
+
+  it('deals every round from the game’s eight causes: three believable, three self-owns and two yōkai', () => {
+    for (const audience of ['kids', 'family', 'cheeky'] as const) {
+      for (let seed = 1; seed <= 20; seed++) {
+        const deck = greenCarDeck(mulberry(seed), audience);
+        expect(deck).toHaveLength(GREEN_CAR_DECK);
+        expect(new Set(deck).size).toBe(GREEN_CAR_DECK);
+        const buckets = deck.map((id) => causeOf(id)!.bucket);
+        expect(buckets.filter((b) => b === 'believable')).toHaveLength(3);
+        expect(buckets.filter((b) => b === 'selfown')).toHaveLength(3);
+        expect(buckets.filter((b) => b === 'yokai')).toHaveLength(2);
+        for (const id of deck) expect(causesFor(audience, true).map((c) => c.id)).toContain(id);
+      }
+    }
+    const t = new Table(5, ['n4', 'n3', 'n4', 'n3', 'n4'], 9);
+    t.start();
+    t.playOut();
+    const deck = new Set(t.st.deck);
+    for (const r of t.st.rounds) for (const id of r.options) expect(deck.has(id), id).toBe(true);
+    // Ten rounds from eight causes: causes come round again.
+    const counts = new Map<string, number>();
+    for (const r of t.st.rounds) for (const id of r.options) counts.set(id, (counts.get(id) ?? 0) + 1);
+    expect([...counts.values()].some((n) => n > 1)).toBe(true);
+  });
+
+  it('a Kids room plays its own school causes, a Cheeky room its grown-up ones, and every frame reaches every audience', () => {
+    const own = (a: 'kids' | 'cheeky') => {
+      const t = new Table(4, ['n4', 'n3', 'n4', 'n3'], 3);
+      expect(t.cmd('stage', { type: 'settings', audience: a }).changed).toBe(true);
+      t.start();
+      return t.st.deck!.map((id) => causeOf(id)!);
+    };
+    expect(own('kids').some((c) => c.id === 'dog' || c.id === 'sibling' || c.id === 'bike')).toBe(true);
+    expect(own('kids').some((c) => c.audiences?.includes('cheeky'))).toBe(false);
+    expect(own('cheeky').some((c) => c.audiences?.length === 1 && c.audiences[0] === 'cheeky')).toBe(true);
+    const framesIn = (a: 'kids' | 'family' | 'cheeky') =>
+      new Set(causesFor(a, true).flatMap((c) => (['n4', 'n3'] as const).flatMap((lv) => (c.lines[lv] ? lineFrames(c.lines[lv]!, lv) : []))));
+    const all = new Set([...framesIn('kids'), ...framesIn('family'), ...framesIn('cheeky')]);
+    for (const a of ['kids', 'family', 'cheeky'] as const) for (const f of all) expect(framesIn(a).has(f), `${a} ${f}`).toBe(true);
+    // Kids: school, pets, siblings, yōkai. No dating, drinking or money in the causes a Kids room gets.
+    for (const c of causesFor('kids', true)) for (const lv of ['n4', 'n3'] as const) expect(c.lines[lv]!.model.kana, c.id).not.toMatch(/デート|のみかい|おさけ|おかね|おこづかい/);
+  });
+
+  it('every Green Car line names its frames, and the path’s matchers find them in the line', () => {
+    for (const c of CAUSES.filter((x) => x.greenCar)) {
+      expect(c.lines.n5, c.id).toBeUndefined();
+      expect(c.status).toBe('draft');
+      for (const lv of ['n4', 'n3'] as const) {
+        const line = c.lines[lv]!;
+        expect(line.frames?.length, `${c.id} ${lv}`).toBeGreaterThan(0);
+        for (const f of line.frames!) {
+          expect(FRAME_BY_ID[f].level, `${c.id} ${lv} ${f}`).toBe(lv);
+          expect(framesOf(line.model, undefined, { keepHidden: true }), `${c.id} ${lv} ${f}`).toContain(f);
+        }
+        expect(heardAny(line.model.kana, c.keys), `${c.id} ${lv}`).toBe(true);
+        expect(heardAny(line.model.kana, line.chunk!.keys), `${c.id} ${lv}`).toBe(true);
+      }
+    }
+    for (const id of [...CAUSES.map((c) => c.id), TANUKI_TILE.id]) {
+      expect(framesOf(backupLine(id, 'n4'), undefined, { keepHidden: true }), id).toContain('sou-hear');
+      expect(framesOf(backupLine(id, 'n3'), undefined, { keepHidden: true }), id).toContain('rashii');
+    }
+  });
+
+  it('an N3 latecomer takes N3 and N4 lines in turn; an N4 latecomer gets N4 lines with the N3 line as stretch', () => {
+    const t = new Table(2, ['n3', 'n4'], 4);
+    t.start();
+    t.playOut();
+    const n3 = t.st.rounds.filter((r) => r.level === 'n3').map((r) => r.lineLevel);
+    expect(n3[0]).toBe('n3');
+    const diff = n3.filter((l) => l === 'n3').length - n3.filter((l) => l === 'n4').length;
+    expect(diff === 0 || diff === 1).toBe(true);
+    expect(t.st.rounds.filter((r) => r.level === 'n4').every((r) => r.lineLevel === 'n4')).toBe(true);
+    // An N3 line is never an ask round.
+    expect(t.st.rounds.some((r) => r.lineLevel === 'n3' && r.ask)).toBe(false);
+
+    const u = new Table(3, ['n4', 'n4', 'n4'], 2);
+    u.start();
+    u.tick();
+    const r = u.r;
+    u.play(r.latecomer, { kind: 'cause', causeId: r.cause });
+    const me = u.view(r.latecomer).me!;
+    expect(me.mission!.model.kana).toBe(lineFor(causeOf(r.cause)!, 'n4', { ask: r.ask }).model.kana);
+    expect(me.stretch).toMatchObject({ tag: 'N3', model: causeOf(r.cause)!.lines.n3!.model });
+  });
+
+  it('an N4 latecomer who says the N3 stretch line is credited with the N3 line', () => {
+    const t = new Table(3, ['n4', 'n4', 'n4'], 6);
+    t.start();
+    const r = gcRound(t, (x) => lineFor(causeOf(x.cause)!, 'n3').model.kana);
+    const entry = t.s.phrasebook[r.latecomer]!.find((e) => e.itemId.startsWith(`late:${r.cause}:`))!;
+    expect(entry.itemId.startsWith(`late:${r.cause}:n3`)).toBe(true);
+    expect(entry.outcome).toBe('said');
+    expect(r.chunk).toEqual(causeOf(r.cause)!.lines.n3!.chunk);
+  });
+
+  it('aims the deal: of each bucket’s causes, the one whose frame the latecomer has said least', () => {
+    const deck = ['train', 'rain', 'station', 'oversleep', 'breakfast', 'game', 'kappa', 'fox'];
+    const said: Record<string, number> = { train: 3, rain: 0, station: 2, oversleep: 1, breakfast: 0, game: 4, kappa: 0, fox: 5 };
+    for (let seed = 1; seed <= 10; seed++) {
+      const deal = dealOptions(mulberry(seed), new Set(), 'family', 'meeting', { deck, weight: (c) => 1 / (1 + (said[c.id] ?? 9)) });
+      expect([...deal].sort()).toEqual(['breakfast', 'kappa', 'rain']);
+    }
+    // In a game, saying the line counts its frames for the next deal.
+    const t = new Table(3, ['n4', 'n4', 'n4'], 8);
+    t.start();
+    const r1 = gcRound(t, (x) => lineFor(causeOf(x.cause)!, 'n4').model.kana);
+    // (Only the frames heard count, so a heard take may credit fewer than the line's own.)
+    const frames = lineFrames(causeOf(r1.cause)!.lines.n4!, 'n4');
+    const counted = Object.keys(t.st.said![r1.latecomer]!);
+    expect(counted.length).toBeGreaterThan(0);
+    for (const f of counted) expect(frames, f).toContain(f);
+  });
+
+  it('the witness backs the story up out loud as hearsay: N4 そうです, N3 らしい, said only when heard', () => {
+    const t = new Table(3, ['n4', 'n3', 'n4'], 4);
+    t.start();
+    t.tick();
+    const r = t.r;
+    t.play(r.latecomer, { kind: 'cause', causeId: r.cause });
+    t.play(r.witness!, { kind: 'alibi', tileId: r.options[1] });
+    t.play(r.latecomer, { kind: 'ready' });
+    // Not before the alibi card is up.
+    expect(t.play(r.witness!, { kind: 'backup', checked: false }).error).toBe('wrong-phase');
+    while (!(t.s.phase === 'reveal' && t.r.step === 'gist')) t.tick();
+    const me = t.view(r.witness!).me!;
+    expect(me.backup).toMatchObject({ open: true, said: false, level: r.backup!.level });
+    expect(me.backup!.model.kana).toBe(backupLine(r.options[1], r.backup!.level).kana);
+    // Only the witness, and a checked take must pass it on as hearsay.
+    expect(t.play(r.latecomer, { kind: 'backup', checked: false }).error).toBe('not-yours');
+    expect(t.play(r.witness!, { kind: 'backup', checked: true, heard: { via: 'speech', text: 'ねこ', reading: 'ねこ' } }).error).toBeUndefined();
+    expect(r.backup!.said).toBe(false);
+    const line = backupLine(r.options[1], r.backup!.level).kana;
+    expect(t.play(r.witness!, { kind: 'backup', checked: true, heard: { via: 'speech', text: line, reading: line } }).error).toBeUndefined();
+    expect(r.backup!.said).toBe(true);
+    while (t.phase !== 'score') t.tick();
+    const e = t.s.phrasebook[r.witness!]!.find((x) => x.itemId.startsWith('late:backup:'))!;
+    expect(e).toMatchObject({ outcome: 'said', recall: 'memory', kana: line });
+    expect(phraseFrames(e)).toContain(r.backup!.level === 'n3' ? 'rashii' : 'sou-hear');
+  });
+
+  it('there is no backup in a mixed room', () => {
+    const t = new Table(3, ['n4', 'n5', 'n4'], 4);
+    t.start();
+    t.tick();
+    const r = t.r;
+    expect(r.backup).toBeUndefined();
+    expect(t.play(r.witness!, { kind: 'backup', checked: false }).error).toBe('not-yours');
   });
 });

@@ -1,10 +1,24 @@
 // A bot that plays Kotoba Concentration like a decent human: it remembers the cards it has
 // seen turn over (forgetting some), flips a known pair when it has one, says the word right
 // most of the time, sometimes tries to steal, and buzzes in on the picture now and then.
+// In the Green Car (Frame Concentration) it says a whole sentence: the gist's model line, looked up by the
+// picture on the gist card, with an opener that varies ("じつは …") so the sims see different sentences, and it
+// joins the chorus some of the time.
 
 import type { CellView, ConcentrationView } from '../../../shared/src/modes/concentration/concentration.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
+import { GIST_BY_PIC } from '../../../shared/src/modes/concentration/greenBoard.js';
+
+/** Openers a bot puts before the model line, so its sentences vary. */
+export const BOT_OPENERS = ['', 'じつは ', 'ええと、', 'あのう、', 'そうそう、'] as const;
+
+/** A bot's sentence for a gist card: the model line with a varying opener. */
+export function botSentence(pic: string | undefined, roll: number): string | null {
+  const g = pic ? GIST_BY_PIC.get(pic) : undefined;
+  if (!g) return null;
+  return `${BOT_OPENERS[Math.floor(roll * BOT_OPENERS.length)] ?? ''}${g.model.kana}`;
+}
 
 export interface ConcentrationBotOptions {
   /** Chance a remembered card is recalled when it matters (0–1). */
@@ -13,6 +27,8 @@ export interface ConcentrationBotOptions {
   sayRight?: number;
   /** Chance the bot tries to steal a pair. */
   stealRate?: number;
+  /** Green Car: chance the bot says its own sentence in the chorus. */
+  chorusRate?: number;
   /** Type instead of speak (quiet mode). */
   quiet?: boolean | ((playerId: string) => boolean);
   /** Buzz in on the picture once this share of it is uncovered. */
@@ -45,6 +61,7 @@ export function concentrationPolicy(opts: ConcentrationBotOptions = {}): ModePol
   const recall = opts.recall ?? 0.8;
   const sayRight = opts.sayRight ?? 0.85;
   const stealRate = opts.stealRate ?? 0.5;
+  const chorusRate = opts.chorusRate ?? 0.6;
   const guessAt = opts.guessAt ?? 0.55;
   const [minDelay, maxDelay] = opts.delayMs ?? [500, 1800];
   const memories = new Map<string, Memory>();
@@ -80,7 +97,18 @@ export function concentrationPolicy(opts: ConcentrationBotOptions = {}): ModePol
         if (cell !== null) out.push({ key: `flip-${game.turn.flips}-${game.turn.specials}`, move: { kind: 'flip', cell }, delayMs: delay(`flip${game.turn.flips}`) });
       }
 
-      if ((view.phase === 'reveal' || view.phase === 'encore') && mine.canSay) {
+      if (game.green && (view.phase === 'reveal' || view.phase === 'encore') && mine.canSay && game.claim) {
+        const stealing = view.phase === 'encore';
+        const chorus = !!mine.green?.chorus;
+        const tryNo = 2 - mine.attemptsLeft;
+        const wants = stealing ? chance(me, seq, 'steal', tryNo) < stealRate : chorus ? chance(me, seq, 'chorus', tryNo) < chorusRate : true;
+        if (wants) {
+          const line = botSentence(game.claim.cue.pic, chance(me, seq, 'opener', tryNo));
+          const right = line !== null && chance(me, seq, 'say', tryNo) < sayRight;
+          const quiet = typeof opts.quiet === 'function' ? opts.quiet(me) : !!opts.quiet;
+          out.push({ key: `say-${chorus ? 'c' : ''}${tryNo}`, move: { kind: 'say', utterance: { via: quiet ? 'typed' : 'speech', text: right ? line : 'えっと' } }, delayMs: delay(`say${tryNo}`) });
+        }
+      } else if ((view.phase === 'reveal' || view.phase === 'encore') && mine.canSay) {
         const stealing = view.phase === 'encore';
         const tryNo = 2 - mine.attemptsLeft;
         const wants = !stealing || chance(me, seq, 'steal', tryNo) < stealRate;

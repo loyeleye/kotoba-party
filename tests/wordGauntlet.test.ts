@@ -394,7 +394,7 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     await ctx.server.close();
   });
 
-  const playBots = async (levels: ('kana' | 'n5' | 'n4')[], expected: string[]) => {
+  const playBots = async (levels: ('kana' | 'n5' | 'n4' | 'n3')[], expected: string[]) => {
     const { baseUrl, truth, server } = ctx;
     const created = await createRoom(baseUrl);
     const room = server.rooms.get(created.code)!;
@@ -407,6 +407,7 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     let last: WordGauntletView | null = null;
     const segments = new Set<string>();
     let challenged = false;
+    let sentences = 0;
     let recap: RoomView['recap'] = null;
     let finished = false;
     const director = new Director(baseUrl, created.code, created.stageToken, {
@@ -424,6 +425,7 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
           last = game;
           if (game.segment) segments.add(game.segment);
           if (game.shiritori?.challenge) challenged = true;
+          if (game.sentences) sentences = Math.max(sentences, game.sentences.chain.length - 1);
         }
         if (view.phase === 'recap') recap = view.recap;
       },
@@ -438,13 +440,18 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     await until(() => [director.client, ...bots.map((b) => b.client)].every((c) => c.version === room.version), 5_000, 'quiescence');
 
     expect([...segments]).toEqual(expected);
-    expect(challenged).toBe(true);
+    const green = expected.includes('sentences');
+    // The showdown's bluff gets judged; in the Green Car the bots' sentences link and carry their frames.
+    if (green) expect(sentences).toBeGreaterThan(0);
+    else expect(challenged).toBe(true);
     // Every point the mode handed out shows up on the scoreboard.
     const standings = (recap as RoomView['recap'])!.standings;
     for (const s of standings) expect(s.score, s.name).toBe((last as WordGauntletView | null)?.earned[s.playerId] ?? 0);
-    // The showdown decided the winner.
-    const winner = (last as WordGauntletView | null)!.shiritori!.winnerId;
-    expect(standings[0]!.playerId).toBe(winner);
+    // The showdown decided the winner (Sentence Shiritori has no crown).
+    if (!green) {
+      const winner = (last as WordGauntletView | null)!.shiritori!.winnerId;
+      expect(standings[0]!.playerId).toBe(winner);
+    }
     // No desyncs.
     for (const [id, list] of seen) for (const { v, hash } of list) expect(truth.byVersion.get(v)?.get(id), `${id} at v${v}`).toBe(hash);
     // Only harmless races with the phase clock.
@@ -458,7 +465,11 @@ describe('Word Gauntlet: bots play a whole game over the real server', () => {
     await playBots(['n5', 'n5', 'n5', 'n5', 'kana'], ['fake', 'telephone', 'shiritori']);
   });
 
-  it('plays the rumour round instead when an N4 player is in the room', async () => {
-    await playBots(['n4', 'n5', 'n4', 'n5', 'kana'], ['fake', 'rumour', 'shiritori']);
+  it('plays the rumour round instead in the Green Car (everyone N4+, on by default)', async () => {
+    await playBots(['n4', 'n3', 'n4', 'n3', 'n4'], ['fake', 'rumour', 'sentences']);
+  });
+
+  it('keeps Lost in Translation in a mixed room with N4 players (a Green Car move-out)', async () => {
+    await playBots(['n4', 'n5', 'n4', 'n5', 'kana'], ['fake', 'telephone', 'shiritori']);
   });
 });

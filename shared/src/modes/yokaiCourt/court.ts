@@ -23,6 +23,7 @@ import { hasKanji, isUtterance, normalizeReading, utteranceReading, type Utteran
 import { toRomaji } from '../../japanese/romaji.js';
 import type { Audience, Phase } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
+import { aimWeight } from '../aim.js';
 import {
   CASES,
   caseOf,
@@ -36,6 +37,7 @@ import {
   LINES,
   MISSIONS,
   KANA_MISSIONS,
+  N3_VARIANTS,
   QUESTION,
   ROMAJI,
   slotsOf,
@@ -44,6 +46,8 @@ import {
   TESTIMONY_NOTE,
   thingOf,
   WITNESS,
+  WITNESS_GC,
+  WITNESS_GC_KEYS,
   yokaiOf,
   YOKAI,
   type Case,
@@ -165,6 +169,10 @@ export interface CaseState {
   stepAt: number;
   booth: { playerId: string; chunk: string; line: string } | null;
   settled: boolean;
+  /** This case rides in the Green Car: the witness passes it on as hearsay, N3 lawyers argue from N3_VARIANTS. */
+  greenCar?: boolean;
+  /** Green Car: per side, which of N3_VARIANTS[side][testimony] the lawyer works from (or has as stretch, at N4). */
+  variant?: Partial<Record<Side, number>>;
 }
 
 export interface PlayerStats {
@@ -186,6 +194,10 @@ export interface CourtState {
   ledger: LedgerEntry[];
   stats: Record<string, PlayerStats>;
   phaseAt: number;
+  /** This game rides in the Green Car (ctx.greenCar at setup). */
+  greenCar?: boolean;
+  /** Green Car, aim the deal: per player, how many times each frame was said this game. */
+  said?: Record<string, Record<string, number>>;
 }
 
 // ---- view ----
@@ -274,6 +286,8 @@ export interface CourtView {
   } | null;
   booth: { playerId: string; line: string; chunk: string; note: string; tag: string; level: SpeakLevel } | null;
   ledger: LedgerEntry[];
+  /** This game rides in the Green Car: the TV shows the clover badge. */
+  greenCar: boolean;
   me: CourtMe | null;
 }
 
@@ -321,6 +335,8 @@ export interface CourtMe {
   kanaNote: { tiles: { word: JpR; evidence: boolean }[]; take: KanaTake; evidence: boolean | null } | null;
   /** A lawyer's private note at the verdict. */
   note: { model: JpText; said: string | null; hinted: boolean; chunk: string | null; credit: Credit } | null;
+  /** Green Car, an N4 lawyer: an N3 way to argue it, as optional stretch (shown with an N3 tag). Its chunk counts as N3. */
+  stretch: { model: JpText; tag: 'N3' } | null;
 }
 
 export type CourtMove =
@@ -384,6 +400,58 @@ export function modelOf(cs: Case, t: Testimony, side: Side, level: Level): JpTex
   return lineFor(cs, t, LINES[side][t][level], level);
 }
 
+// ---- the Green Car (shared/src/greenCar.ts; design: project files n3-coverage/green-car/design.md) ----
+
+/** The N3 line a side works from in the Green Car (N3_VARIANTS, aimed at the case's testify beat). */
+function n3Tpl(c: CaseState, t: Testimony, side: Side): Template {
+  const all = N3_VARIANTS[side][t];
+  return all[c.variant?.[side] ?? 0] ?? all[0]!;
+}
+
+/** The level line for a side in this case: in the Green Car an N3 lawyer's line is the aimed N3 variant. */
+export function caseModel(c: CaseState, cs: Case, t: Testimony, side: Side, level: Level): JpText {
+  if (c.greenCar && level === 'n3') return lineFor(cs, t, n3Tpl(c, t, side), 'n3');
+  return modelOf(cs, t, side, level);
+}
+
+/** The witness's answer: in the Green Car passed on as hearsay with kanji (it's said out loud), else the kana tile. */
+export function witnessLine(c: CaseState, cs: Case, t: Testimony): JpText {
+  return c.greenCar ? lineFor(cs, t, WITNESS_GC[t], 'n4') : lineFor(cs, t, WITNESS[t], 'kana');
+}
+
+/** The level a lawyer's line is logged at: in the Green Car an N4 lawyer whose own words used an N3 chunk said the N3 line. */
+export function usedLevel(c: CaseState, a: Argument): Level {
+  if (c.greenCar && a.level === 'n4' && creditOf(c, a) !== 'seen' && chunkOf(c, a)?.level === 'n3') return 'n3';
+  return a.level;
+}
+
+/** The frames a lawyer's line says, at the level it's logged at. */
+function lineFrames(c: CaseState, t: Testimony, side: Side, level: Level): string[] {
+  const tpl = c.greenCar && level === 'n3' ? n3Tpl(c, t, side) : level === 'kana' ? null : LINES[side][t][level];
+  return [...(tpl?.frames ?? [])];
+}
+
+/**
+ * Aim the deal: of a side's N3 lines, one with the frames this lawyer needs most tonight (aimWeight: frames a path
+ * goal requires weigh double, over tonight's and this game's says; ties at random).
+ */
+function aimVariants(s: CourtState, c: CaseState, ctx: ModeContext): void {
+  const t = c.testimony ?? 'unseen';
+  c.variant = {};
+  for (const side of ORDER) {
+    const id = lawyerOf(c, side);
+    const need = N3_VARIANTS[side][t].map((tpl) => aimWeight(ctx, id, tpl.frames ?? [], s.said?.[id]));
+    const top = Math.max(...need);
+    const best = need.flatMap((n, i) => (n === top ? [i] : []));
+    c.variant[side] = best[Math.floor(ctx.random() * best.length)]!;
+  }
+}
+
+function countSaid(s: CourtState, id: string, frames: readonly string[]): void {
+  const mine = ((s.said ??= {})[id] ??= {});
+  for (const f of frames) mine[f] = (mine[f] ?? 0) + 1;
+}
+
 /** A Kana lawyer's default argument: the claim and the evidence, the evidence first for the defence. */
 export const defaultTiles = (side: Side): string[] => (side === 'pros' ? ['claim', 'evidence'] : ['evidence', 'claim']);
 
@@ -417,7 +485,7 @@ export function argReading(c: CaseState, a: Argument): string | null {
       // The server fills in a reading for typed kanji (池に いました matches いけに).
       return a.heard ? utteranceReading(a.heard) : a.text;
     case 'fude':
-      return modelOf(cs, t, a.side, a.level).kana;
+      return caseModel(c, cs, t, a.side, a.level).kana;
     case 'clip':
       return a.checked && a.heard ? utteranceReading(a.heard) : null;
   }
@@ -587,7 +655,7 @@ function startCase(s: CourtState, ctx: ModeContext): CaseState {
   s.round += 1;
   const roles = dealRoles(s, ctx);
   const used = new Set(s.cases.map((c) => c.caseId));
-  const all = casesForAudience(s.audience);
+  const all = casesForAudience(s.audience, !!s.greenCar);
   const fresh = all.filter((c) => !used.has(c.id));
   const pool = fresh.length ? fresh : all.length ? all : [...CASES];
   const cs = pool[Math.floor(ctx.random() * pool.length)]!;
@@ -617,6 +685,7 @@ function startCase(s: CourtState, ctx: ModeContext): CaseState {
     stepAt: ctx.now,
     booth: null,
     settled: false,
+    ...(s.greenCar ? { greenCar: true } : {}),
   };
   s.cases.push(c);
   statsOf(s, c.pros).argued += 1;
@@ -714,8 +783,9 @@ function settle(s: CourtState, c: CaseState, ctx: ModeContext): void {
   }
   // The path. The witness's answer: said (read: it's on their tile) when they said it too, else seen.
   if (c.witness && c.testimony && !c.testimonyAuto) {
-    const line = lineFor(cs, t, WITNESS[t], 'kana');
-    ctx.phrase(c.witness, { itemId: `court:witness:${cs.id}:${t}`, text: line.text, kana: line.kana, en: line.en, outcome: c.witnessSaid ? 'said' : 'seen', recall: 'read' });
+    const line = witnessLine(c, cs, t);
+    ctx.phrase(c.witness, { itemId: `court:witness:${cs.id}:${t}${c.greenCar ? ':n4' : ''}`, text: line.text, kana: line.kana, en: line.en, outcome: c.witnessSaid ? 'said' : 'seen', recall: 'read' });
+    if (c.greenCar && c.witnessSaid) countSaid(s, c.witness, WITNESS_GC[t].frames ?? []);
   }
   for (const side of ORDER) {
     const id = lawyerOf(c, side);
@@ -731,11 +801,14 @@ function settle(s: CourtState, c: CaseState, ctx: ModeContext): void {
       ctx.phrase(id, { itemId: `court:${cs.id}:${t}:${side}:kana`, text: line.text, kana: line.kana, en: line.en, outcome: said ? 'said' : 'seen', recall: 'read' });
       continue;
     }
-    const line = modelOf(cs, t, side, a.level);
+    const lv = usedLevel(c, a);
+    const line = caseModel(c, cs, t, side, lv);
     const credit = creditOf(c, a);
     // Said: their own words, so the path credits only the frames they used. Seen: Fude-san's line.
     const own = credit !== 'seen' && credit !== 'unchecked' && a.heard ? { text: a.heard.text, kana: kanaOf(a.heard) } : { text: line.text, kana: line.kana };
-    ctx.phrase(id, { itemId: `court:${cs.id}:${t}:${side}:${a.level}`, text: own.text, kana: own.kana, en: line.en, outcome: credit === 'seen' ? 'seen' : 'said', recall: credit === 'memory' ? 'memory' : 'read' });
+    ctx.phrase(id, { itemId: `court:${cs.id}:${t}:${side}:${lv}`, text: own.text, kana: own.kana, en: line.en, outcome: credit === 'seen' ? 'seen' : 'said', recall: credit === 'memory' ? 'memory' : 'read' });
+    // Green Car, aim the deal: count the frames said.
+    if (c.greenCar && credit !== 'seen') countSaid(s, id, lineFrames(c, t, side, lv));
   }
   // A Kana judge who took part keeps one word: the check's answer, seen on their phone and in the evidence.
   const keep = keepWordOf(c);
@@ -774,7 +847,7 @@ function cueRead(c: CaseState, ctx: ModeContext): void {
   const t = c.testimony ?? 'unseen';
   const name = ctx.player(id)?.name ?? '';
   if (a.kind === 'fude') {
-    const line = modelOf(cs, t, a.side, a.level);
+    const line = caseModel(c, cs, t, a.side, a.level);
     // The English stays off the TV while judges listen: it would answer the check. It shows at the gist.
     ctx.cue({ host: 'fude', event: a.free ? 'court_stand_in' : 'court_mic_pass', slots: { name, line: line.kana, line_en: '🔊' } });
   } else if (a.kind === 'tiles' && !(a.clipId || a.local)) {
@@ -819,6 +892,7 @@ export const yokaiCourtMode: Mode<CourtState, CourtView> = {
       ledger: [],
       stats,
       phaseAt: ctx.now,
+      ...(ctx.greenCar ? { greenCar: true, said: {} } : {}),
     };
   },
 
@@ -959,8 +1033,9 @@ export const yokaiCourtMode: Mode<CourtState, CourtView> = {
         c.testimony = 'unseen';
         c.testimonyAuto = true;
       }
+      if (c.greenCar) aimVariants(s, c, ctx);
       go('testify');
-      const line = lineFor(cs, c.testimony, WITNESS[c.testimony], 'kana');
+      const line = witnessLine(c, cs, c.testimony);
       if (c.testimony === 'curve') ctx.cue({ host: 'fude', event: 'court_curveball', slots: { suspect: yokaiOf(cs.curve).name.kana, suspect_en: yokaiOf(cs.curve).name.en } });
       else if (!c.witnessSaid) ctx.cue({ host: 'fude', event: 'court_testimony', slots: { line: line.kana, line_en: line.en } });
     } else if (phase === 'prompt' && c.step === 'testify') {
@@ -1016,8 +1091,10 @@ export const yokaiCourtMode: Mode<CourtState, CourtView> = {
         // With speech-to-text, the take must have the answer in it; without, a try counts.
         const heard = parseHeard(raw.heard);
         if (raw.checked === true) {
-          const want = normalizeReading(lineFor(cs, c.testimony, WITNESS[c.testimony], 'kana').kana);
-          if (!heard || !heardAny(utteranceReading(heard), [want.slice(0, Math.min(5, Math.max(1, want.length - 1)))])) return MOVE_OK;
+          // Green Car: the take must pass it on as hearsay (＿そうです, ＿に よると).
+          const want = normalizeReading(witnessLine(c, cs, c.testimony).kana);
+          const keys = c.greenCar ? WITNESS_GC_KEYS : [want.slice(0, Math.min(5, Math.max(1, want.length - 1)))];
+          if (!heard || !heardAny(utteranceReading(heard), keys)) return MOVE_OK;
         }
         c.witnessSaid = true;
         return MOVE_OK;
@@ -1191,6 +1268,7 @@ export const yokaiCourtMode: Mode<CourtState, CourtView> = {
       verdict: inCase && phase === 'score' && cs ? verdictView(s, c!, cs) : null,
       booth: inCase && phase === 'score' && c!.step === 'booth' && c!.booth ? boothView(c!) : null,
       ledger: phase === 'score' || phase === 'recap' ? s.ledger : [],
+      greenCar: !!s.greenCar,
       me: null,
     };
     if (player && c && inCase && cs) view.me = meView(s, c, cs, t, phase, player, level, ctx);
@@ -1234,7 +1312,7 @@ function testimonyView(c: CaseState, cs: Case, level: Level): NonNullable<CourtV
   const s = suspectOf(cs, t);
   return {
     kind: t,
-    line: withRomaji(lineFor(cs, t, WITNESS[t], 'kana'), level),
+    line: withRomaji(witnessLine(c, cs, t), level),
     note: TESTIMONY_NOTE[t].replace(/\{(\w+)\}/g, (all, k: string) => slots[k]?.en ?? all),
     suspect: s ? thingView(s, level) : null,
     auto: c.testimonyAuto,
@@ -1282,7 +1360,7 @@ function argView(c: CaseState, cs: Case, side: Side, level: Level, ctx: ModeCont
   const hidden = c.hidden.includes(id);
   const own = a && (a.kind === 'clip' || a.kind === 'typed' || (a.kind === 'tiles' && (a.clipId || a.local)));
   const subtitle = hidden || !a ? null : a.kind === 'typed' ? a.text : own ? (a.heard?.text ?? null) : null;
-  const line = !a || hidden ? null : a.kind === 'fude' ? modelOf(cs, t, side, a.level) : a.kind === 'tiles' ? tilesLine(cs, t, side, a.tiles) : null;
+  const line = !a || hidden ? null : a.kind === 'fude' ? caseModel(c, cs, t, side, a.level) : a.kind === 'tiles' ? tilesLine(cs, t, side, a.tiles) : null;
   return {
     side,
     playerId: id,
@@ -1381,14 +1459,14 @@ function meView(s: CourtState, c: CaseState, cs: Case, t: Testimony, phase: Phas
   return {
     role,
     level,
-    witnessTiles: role === 'witness' && phase === 'prompt' && (c.step === 'case' || c.step === 'ask') ? TESTIMONIES.map((x) => ({ id: x, word: withRomaji(lineFor(cs, x, WITNESS[x], 'kana'), level), curve: x === 'curve' })) : [],
+    witnessTiles: role === 'witness' && phase === 'prompt' && (c.step === 'case' || c.step === 'ask') ? TESTIMONIES.map((x) => ({ id: x, word: withRomaji(witnessLine(c, cs, x), level), curve: x === 'curve' })) : [],
     canTestify: role === 'witness' && phase === 'prompt' && c.step === 'ask' && !c.testimony,
     testified: role === 'witness' ? c.testimony : null,
     mission:
       side && testified && evidence
         ? {
             text: ((level === 'kana' ? KANA_MISSIONS[side]?.[t] : undefined) ?? MISSIONS[side][t]).replace(/\{(\w+)\}/g, (all, k: string) => slotsOf(cs, t)[k]?.en ?? all),
-            model: withRomaji(modelOf(cs, t, side, level), level),
+            model: withRomaji(caseModel(c, cs, t, side, level), level),
             evidence: thingView(evidence, level),
             side,
           }
@@ -1453,9 +1531,10 @@ function meView(s: CourtState, c: CaseState, cs: Case, t: Testimony, phase: Phas
             evidence: saidEvidence(c, mine),
           }
         : null,
+    stretch: c.greenCar && side && testified && level === 'n4' ? { model: lineFor(cs, t, n3Tpl(c, t, side), 'n3'), tag: 'N3' } : null,
     note:
       phase === 'score' && side && speaker && mine
-        ? { model: modelOf(cs, t, side, level), said: mine.kind === 'fude' || c.hidden.includes(id) ? null : mine.kind === 'typed' ? mine.text : (mine.heard?.text ?? null), hinted: c.hinted.includes(id), chunk: chunk?.text ?? null, credit: creditOf(c, mine) }
+        ? { model: caseModel(c, cs, t, side, usedLevel(c, mine)), said: mine.kind === 'fude' || c.hidden.includes(id) ? null : mine.kind === 'typed' ? mine.text : (mine.heard?.text ?? null), hinted: c.hinted.includes(id), chunk: chunk?.text ?? null, credit: creditOf(c, mine) }
         : null,
   };
 }

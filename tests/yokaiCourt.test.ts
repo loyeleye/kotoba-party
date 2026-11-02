@@ -6,7 +6,7 @@ import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { ALL_FRAMES, framesOf } from '../shared/src/japanese/frames.js';
 import { hasKanji } from '../shared/src/japanese/kana.js';
-import { CASES, CHUNKS, CLUES, fill, kanaTilesOf, LINES, PLACES, slotsOf, TESTIMONIES, WITNESS, YOKAI, type Side } from '../shared/src/modes/yokaiCourt/cases.js';
+import { CASES, caseOf as caseOfId, casesFor, CHUNKS, CLUES, fill, kanaTilesOf, LINES, N3_VARIANTS, PLACES, slotsOf, TESTIMONIES, WITNESS, WITNESS_GC, WITNESS_GC_KEYS, YOKAI, yokaiOf, type Side } from '../shared/src/modes/yokaiCourt/cases.js';
 import { glossOf, keepWordOf, withRomaji, CASE_MS, ASK_MS, TESTIFY_MS, PLAN_MS, POINTS, RECORD_MS, UPLOAD_MS, GRACE_MS, CHECK_MS, GIST_MS, VOTE_MS, VERDICT_MS, FUDE_PLAY_MS, roundsFor, saidEvidence, type CourtState, type CourtView } from '../shared/src/modes/yokaiCourt/court.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -168,7 +168,8 @@ const TOKEN_ONLY = new Set(['sou-hear']);
 
 describe('Yōkai Court content', () => {
   it('has a picture for every yōkai, clue, place and case object', () => {
-    const pics = [...YOKAI.map((y) => y.picture), ...CLUES.map((c) => c.picture), ...PLACES.map((p) => p.picture), ...CASES.map((c) => c.object.picture)];
+    // A Green Car case's object may wait for its art (empty: the screens show the emoji).
+    const pics = [...YOKAI.map((y) => y.picture), ...CLUES.map((c) => c.picture), ...PLACES.map((p) => p.picture), ...CASES.filter((c) => c.object.picture || !c.greenCar).map((c) => c.object.picture)];
     for (const p of pics) expect(existsSync(`stage/assets/${p}.png`), p).toBe(true);
   });
 
@@ -637,6 +638,154 @@ describe('Yōkai Court pacing', () => {
         expect(t.st.cases).toHaveLength(roundsFor(n));
         expect(t.st.cases.every((c) => c.settled)).toBe(true);
       }
+    }
+  });
+});
+
+// ---- the Green Car ----
+
+describe('Yōkai Court: the Green Car', () => {
+  const GC = CASES.filter((c) => c.greenCar);
+  const SIDES: Side[] = ['pros', 'def'];
+
+  it('rides in the Green Car only when everyone is N4 or N3, and its own cases never reach a mixed room', () => {
+    const gc = new Table(4, ['n4', 'n3', 'n4', 'n3'], 5);
+    gc.start();
+    expect(gc.st.greenCar).toBe(true);
+    expect(gc.view().greenCar).toBe(true);
+    expect(gc.c.greenCar).toBe(true);
+    const mixed = new Table(4, ['n4', 'n5', 'n3', 'kana'], 5);
+    mixed.start();
+    expect(mixed.st.greenCar).toBeFalsy();
+    expect(mixed.view().greenCar).toBe(false);
+    mixed.playOut();
+    const own = new Set(GC.map((c) => c.id));
+    expect(mixed.st.cases.some((c) => own.has(c.caseId) || c.greenCar || c.variant)).toBe(false);
+    for (const a of ['kids', 'family', 'cheeky'] as const) expect(casesFor(a).some((c) => c.greenCar)).toBe(false);
+  });
+
+  it('a Kids room gets the school cases, a Cheeky room the night out, never the other way round', () => {
+    const ids = (a: 'kids' | 'family' | 'cheeky') => casesFor(a, true).filter((c) => c.greenCar).map((c) => c.id);
+    expect(ids('kids')).toEqual(['class-pudding', 'blackboard']);
+    expect(ids('family')).toEqual(['class-pudding', 'blackboard']);
+    expect(ids('cheeky')).toEqual(['sake', 'drunk-text']);
+    for (const c of GC) expect(c.status).toBe('draft');
+    // The lines are the same templates for every case, so every frame comes up in every audience.
+    const t = new Table(4, ['n4', 'n3', 'n4', 'n3'], 2);
+    expect(t.cmd('stage', { type: 'settings', audience: 'kids' }).changed).toBe(true);
+    t.start();
+    t.playOut();
+    for (const c of t.st.cases) expect(caseOfId(c.caseId)!.audiences ?? ['kids'], c.caseId).toContain('kids');
+  });
+
+  it('fills every Green Car line with no slot left over; each names frames the path finds, and a chunk the booth hears', () => {
+    const known = new Set(ALL_FRAMES.map((f) => f.id as string));
+    for (const cs of CASES)
+      for (const t of TESTIMONIES) {
+        const slots = slotsOf(cs, t);
+        const w = fill(WITNESS_GC[t], slots, false);
+        expect(w.text + w.kana + w.en, `${cs.id} ${t}`).not.toMatch(/[{}[\]|]/);
+        expect(WITNESS_GC_KEYS.some((k) => w.kana.replace(/[\s、。！？]/g, '').includes(k)), `${cs.id} ${t}`).toBe(true);
+        for (const f of WITNESS_GC[t].frames ?? []) {
+          expect(known.has(f), f).toBe(true);
+          if (!TOKEN_ONLY.has(f)) expect(framesOf(w, undefined, { keepHidden: true }) as string[], `${cs.id} ${t} witness`).toContain(f);
+        }
+        for (const side of SIDES) {
+          expect(N3_VARIANTS[side][t].length).toBeGreaterThanOrEqual(2);
+          expect(N3_VARIANTS[side][t][0]).toBe(LINES[side][t].n3);
+          for (const tpl of N3_VARIANTS[side][t]) {
+            const line = fill(tpl, slots, false);
+            expect(line.text + line.kana + line.en, `${cs.id} ${t} ${side}`).not.toMatch(/[{}[\]|]/);
+            const got = framesOf(line, undefined, { keepHidden: true }) as string[];
+            for (const f of tpl.frames ?? []) {
+              expect(known.has(f), f).toBe(true);
+              if (!TOKEN_ONLY.has(f)) expect(got, `${cs.id} ${t} ${side}: ${line.kana}`).toContain(f);
+            }
+            const said = line.kana.replace(/[\s、。！？]/g, '');
+            expect(CHUNKS.find((x) => x.keys.some((key) => said.includes(key)))?.level, `${cs.id} ${t} ${side}: ${line.kana}`).toBe('n3');
+          }
+        }
+      }
+  });
+
+  it('an N3 lawyer argues from an N3 line; an N4 lawyer gets the N4 line with an N3 way as stretch', () => {
+    const t = new Table(4, ['n3', 'n3', 'n3', 'n3'], 6);
+    t.start();
+    toPlan(t, 'other');
+    const cs = caseOf(t);
+    for (const side of SIDES) {
+      const id = side === 'pros' ? t.c.pros : t.c.def;
+      const me = t.view(id).me!;
+      const tpl = N3_VARIANTS[side].other[t.c.variant![side]!]!;
+      expect(me.mission!.model.kana).toBe(fill(tpl, slotsOf(cs, 'other'), false).kana);
+      expect(me.stretch).toBeNull();
+    }
+    const u = new Table(4, ['n4', 'n4', 'n4', 'n4'], 6);
+    u.start();
+    toPlan(u, 'saw');
+    const ucs = caseOf(u);
+    const me = u.view(u.c.pros).me!;
+    expect(me.mission!.model.kana).toBe(fill(LINES.pros.saw.n4, slotsOf(ucs, 'saw'), false).kana);
+    expect(me.stretch).toMatchObject({ tag: 'N3', model: fill(N3_VARIANTS.pros.saw[u.c.variant!.pros!]!, slotsOf(ucs, 'saw'), false) });
+    // A judge has no stretch.
+    expect(u.view(u.c.judges[0]!).me!.stretch).toBeNull();
+  });
+
+  it('an N4 lawyer who argues with the stretch is logged for the N3 line, and the frames said are counted', () => {
+    const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 7);
+    t.start();
+    toPlan(t, 'saw');
+    const cs = caseOf(t);
+    const { pros, def } = t.c;
+    argueAll(t, (id) => clip(id === pros ? t.view(id).me!.stretch!.model.kana : t.view(id).me!.mission!.model.kana));
+    checkAndVote(t, () => null, () => 'pros');
+    expect(t.s.phrasebook[pros]!.find((e) => e.itemId === `court:${cs.id}:saw:pros:n3`)).toMatchObject({ outcome: 'said', recall: 'memory' });
+    expect(t.s.phrasebook[def]!.find((e) => e.itemId === `court:${cs.id}:saw:def:n4`)).toMatchObject({ outcome: 'said' });
+    for (const f of N3_VARIANTS.pros.saw[t.c.variant!.pros!]!.frames ?? []) expect(t.st.said![pros]![f]).toBe(1);
+    for (const f of LINES.def.saw.n4.frames ?? []) expect(t.st.said![def]![f]).toBe(1);
+    expect(t.view(pros).me!.note!.credit).toBe('memory');
+  });
+
+  it('aims each lawyer at the N3 line whose frames they have said least', () => {
+    for (let seed = 1; seed <= 6; seed++) {
+      const t = new Table(4, ['n3', 'n3', 'n3', 'n3'], seed);
+      t.start();
+      // Everyone has said the first line's frames many times over: the second one comes up.
+      for (const id of ['p1', 'p2', 'p3', 'p4']) t.st.said![id] = Object.fromEntries(SIDES.flatMap((side) => (N3_VARIANTS[side].saw[0]!.frames ?? []).map((f) => [f, 9])));
+      toPlan(t, 'saw');
+      expect(t.c.variant).toEqual({ pros: 1, def: 1 });
+    }
+  });
+
+  it('the witness passes it on as hearsay, with kanji, and a checked take counts only when it does', () => {
+    const t = new Table(4, ['n4', 'n3', 'n4', 'n3'], 42);
+    t.start();
+    t.tick();
+    const w = t.c.witness!;
+    const cs = caseOf(t);
+    const tiles = t.view(w).me!.witnessTiles;
+    expect(tiles.find((x) => x.id === 'other')!.word.kana).toBe(fill(WITNESS_GC.other, slotsOf(cs, 'other'), false).kana);
+    t.play(w, { kind: 'testify', testimony: 'other' });
+    const bare = `${yokaiOf(cs.other).name.kana}です`;
+    expect(t.play(w, { kind: 'said', checked: true, heard: { via: 'speech', text: bare, reading: bare } }).error).toBeUndefined();
+    expect(t.c.witnessSaid).toBe(false);
+    const said = fill(WITNESS_GC.other, slotsOf(cs, 'other'), false).kana;
+    t.play(w, { kind: 'said', checked: true, heard: { via: 'speech', text: said, reading: said } });
+    expect(t.c.witnessSaid).toBe(true);
+    t.tick();
+    expect(t.view().testimony!.line.kana).toBe(said);
+    while (t.s.phase !== 'score') t.tick();
+    expect(t.s.phrasebook[w]!.find((e) => e.itemId === `court:witness:${cs.id}:other:n4`)).toMatchObject({ outcome: 'said' });
+    for (const f of WITNESS_GC.other.frames!) expect(t.st.said![w]![f]).toBe(1);
+  });
+
+  it('bots play a whole Green Car game, speaking or typing', () => {
+    for (const speak of [false, true]) {
+      const t = new Table(5, ['n4', 'n3', 'n4', 'n3', 'n4'], 70);
+      t.start();
+      t.playOut({ speak });
+      expect(t.st.cases.every((c) => c.settled && c.greenCar && c.variant)).toBe(true);
+      if (speak) expect(t.st.cases.some((c) => c.witnessSaid)).toBe(true);
     }
   });
 });

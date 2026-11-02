@@ -232,6 +232,8 @@ const FRAME_CUE: Record<CheckKind, string> = {
   welcome: 'お〜ください',
   decline: '＿は ごえんりょ ください',
   ready: '＿は よういして あります',
+  point: '＿は あちらに ございます',
+  take: '＿は おあずかり します',
 };
 
 // Lines whose "Need the words?" was opened before their first try: sent as peeked, logged as seen.
@@ -264,7 +266,9 @@ function lineBox(key: string, steps: StepView[], at: number, say: (u: Utterance 
               },
             },
             h('summary', {}, 'Need the words?'),
-            h('p', { lang: 'ja' }, step.model.text, h('small', {}, ` ${step.model.en}`)),
+            h('p', { lang: 'ja' }, step.n3 ? h('span', { class: 'bh-n3-tag' }, 'N3 ') : null, step.model.text, h('small', {}, ` ${step.model.en}`)),
+            // Green Car, an N4 player: the N3 line as optional stretch.
+            step.stretch ? h('p', { lang: 'ja', class: 'bh-stretch' }, h('span', { class: 'bh-n3-tag' }, 'N3 stretch '), step.stretch.text, h('small', {}, ` ${step.stretch.en}`)) : null,
           ),
           speakBox({ label: 'Hold and say it', placeholder: FRAME_CUE[step.check], maxLength: MAX_ANSWER_LENGTH, autoSend: true, draftKey: lineKey, onSend: (u) => send(u) }),
           h('button', { type: 'button', class: 'secondary bh-skip', onclick: () => send(null) }, 'Skip this line'),
@@ -605,7 +609,7 @@ function callBox(ctx: Ctx, me: Me): HTMLElement {
   const body = [
     speakBox({
       label: 'Hold and call it',
-      placeholder: '〜 ふたつ、おねがいします',
+      placeholder: game.greenCar ? '〜を ふたつ つくって もらえますか' : '〜 ふたつ、おねがいします',
       maxLength: MAX_ANSWER_LENGTH,
       kanaPadOpen: me.level === 'kana',
       autoSend: true,
@@ -795,6 +799,12 @@ function example(game: BentoView): string {
   return `${f.kana} ${countWord(f, 3, game.ownCounter)}`;
 }
 
+/** Green Car: the call-out asks the station with ＿て もらえますか. */
+function exampleAsk(game: BentoView): string {
+  const f = foodOf(game.menu[0] ?? 'karaage') ?? foodOf('karaage')!;
+  return `${f.kana}を ${countWord(f, 3, game.ownCounter)} つくって もらえますか`;
+}
+
 export const bentoHausPhone: PhoneMode<BentoView> = {
   key(view, game, playerId) {
     const me = game.me;
@@ -851,7 +861,7 @@ export const bentoHausPhone: PhoneMode<BentoView> = {
           galleryTile(game.standIn?.gallery ?? null, (pick, utterance) => void ctx.send({ kind: 'gallery', pick, utterance })),
           game.vs && game.vs.myTeam !== null ? h('p', { class: 'hint' }, 'Call your own team only: the other kitchen can’t hear your phone. Serve first to win the customer.') : null,
           game.me.shelf.length ? shelf(game.me, game.ownCounter) : null,
-          h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, `「${example(game)}、おねがいします！」`)),
+          h('p', { class: 'hint' }, '📞 Phone rings? Call each food: ', h('span', { lang: 'ja' }, game.greenCar ? `「${exampleAsk(game)}」` : `「${example(game)}、おねがいします！」`)),
           h('p', { class: 'hint' }, '🎫 Ticket? Read it back ', h('span', { lang: 'ja' }, `「はい、${example(game)}ですね！」`), ' and send it.'),
         );
       case 'answer':

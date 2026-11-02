@@ -26,6 +26,11 @@
 // line of the shift the deputy manager lands to a customer gets the commentary booth's replay on the TV and a
 // Gallery tile on every other phone; in a 1–2-player room with nobody at N4, Pon plays the deputy manager once,
 // on the first shift's title card.
+//
+// Green Car (shared/src/greenCar.ts, docs/modes/bento-haus.md): the deputy manager is a move-out, so outside the
+// Green Car the N4 players are offered the おもてなし shift only. In the Green Car the deputy manager seat is always
+// filled and every other order-taker runs the おもてなし shift, with N3 service lines, all with no offer card; kitchen
+// call-outs asked with ＿て もらえますか are credited as that frame; and the Green Car's own customers come in.
 
 import type { Level } from '../../../../content/src/types.js';
 import { isUtterance, normalizeReading, utteranceReading, type Utterance } from '../../japanese/kana.js';
@@ -41,6 +46,7 @@ import {
   CURVE_POOL,
   expireIncidents,
   galleryOpen,
+  greenCarSeats,
   hardView,
   hardWakeTimes,
   hostSays,
@@ -53,6 +59,7 @@ import {
   releaseHard,
   requestDone,
   rolesFor,
+  saysMoraeru,
   standInBooth,
   type Booth,
   type HardRound,
@@ -307,6 +314,8 @@ export interface BentoView {
   vs?: { myTeam: number | null; teams: VsTeamView[]; winner: number | null };
   /** Co-op, once the room has had an N4 player: the manager's desk and the おもてなし guests. */
   hard?: HardView;
+  /** The game rides in the Green Car: phones cue kitchen call-outs with ＿て もらえますか. */
+  greenCar?: true;
   /**
    * The host stand-in (1–2 players, nobody at N4), on the first shift's title card: Pon plays the deputy manager
    * for one line. `gist` is this phone's, at its level (Kana and N5 only).
@@ -597,7 +606,7 @@ export function nextTaker(s: { takerTurn: number }, r: Round, players: readonly 
 export function pickCustomer(s: Pick<BentoState, 'usedCustomers'>, r: Round, ctx: ModeContext): Customer {
   const audience = ctx.audience ?? 'family';
   // A customer whose rule needs food that isn't on tonight's menu stays home.
-  const fits = customersFor(audience).filter((c) =>
+  const fits = customersFor(audience, ctx.greenCar === true).filter((c) =>
     c.rule === 'kyuuri'
       ? r.menu.includes('kyuuri')
       : c.rule === 'inari-three'
@@ -646,7 +655,7 @@ function arrive(s: BentoState, r: Round, at: number, ctx: ModeContext): void {
   if (s.hard && r.hard) {
     const v = r.visits.at(-1)!;
     maybeSpecial(s.hard, r.hard, r, v, ctx);
-    addGuest(s.hard, r.hard, v, taker.level);
+    addGuest(s.hard, r.hard, v, taker.level, ctx);
   }
   cue(s, ctx, 'bento_customer', { name: taker.name });
 }
@@ -797,8 +806,16 @@ export function kitchenMove(s: Shop, r: Round, playerId: string, raw: Record<str
           addBonus(r, playerId, u.via === 'speech' ? BONUS.callSpoken : BONUS.callTyped);
           if (u.via === 'speech') stats(s, playerId).calls += 1;
           const f = foodOf(a.foodId)!;
-          const say = `${f.kana} ${countWord(f, a.n, ownCounter(r.index))}、おねがいします`;
-          ctx.phrase(playerId, { itemId: `bento:${a.foodId}:${a.n}`, text: say, kana: say, en: `${a.n} ${f.en}, please`, outcome: u.via === 'speech' ? 'said' : 'seen', recall: 'memory' });
+          const count = countWord(f, a.n, ownCounter(r.index));
+          const outcome = u.via === 'speech' ? 'said' : 'seen';
+          // Green Car: a call-out asked with ＿て もらえますか goes in the phrasebook as that line, for that frame.
+          if (ctx.greenCar && saysMoraeru(u)) {
+            const ask = `${f.kana}を ${count} つくって もらえますか`;
+            ctx.phrase(playerId, { itemId: `bento:${a.foodId}:${a.n}:moraeru`, text: ask, kana: ask, en: `Could you make ${a.n} ${f.en}?`, outcome, recall: 'memory', frames: ['te-moraeru'] });
+          } else {
+            const say = `${f.kana} ${count}、おねがいします`;
+            ctx.phrase(playerId, { itemId: `bento:${a.foodId}:${a.n}`, text: say, kana: say, en: `${a.n} ${f.en}, please`, outcome, recall: 'memory' });
+          }
         } else cue(s, ctx, 'bento_static');
       }
       return MOVE_OK;
@@ -978,7 +995,7 @@ function hardMove(s: BentoState, r: Round, hr: HardRound, playerId: string, raw:
       if (inc && inc.state !== 'open') return moveError('too-late');
       if (!inc || inc.managerId !== playerId || u === undefined) return moveError('bad-move');
       const first = inc.step === 0;
-      addBonus(r, playerId, managerSays(hr, inc, playerId, u, ctx.players(), ctx, peeked));
+      addBonus(r, playerId, managerSays(hr, inc, playerId, u, ctx.players(), ctx, peeked, s.hard));
       // The shift's first line to a customer that lands: the booth's replay (Pon voices the fixed line) and the Gallery.
       const booth = first && inc.step === 1 && s.hard ? landed(s.hard, hr, inc, ctx.players(), ctx) : null;
       if (booth) cue(s, ctx, 'bento_replay', { line: booth.line.text, line_kana: booth.line.kana, line_en: booth.line.en }, true);
@@ -997,7 +1014,7 @@ function hardMove(s: BentoState, r: Round, hr: HardRound, playerId: string, raw:
       const v = r.visits.find((x) => x.id === raw.visitId);
       if (g && (v?.state !== 'waiting' || g.step >= g.steps.length)) return moveError('too-late');
       if (!g || g.takerId !== playerId || u === undefined) return moveError('bad-move');
-      addBonus(r, playerId, hostSays(g, playerId, u, ctx, peeked));
+      addBonus(r, playerId, hostSays(g, playerId, u, ctx, peeked, s.hard));
       if (g.step >= g.steps.length && g.steps.every((x) => x.ok)) cue(s, ctx, 'bento_omotenashi_win');
       return MOVE_OK;
     }
@@ -1079,9 +1096,15 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
     if (phase === 'prompt') {
       s.round += 1;
       s.current = setupRound(s, ctx);
-      // N4 hard roles: offered to the room's N4 players in turn. A room with none never gets the fields.
-      const offers = rolesFor(s.round, ctx.connected(), s.hard?.offers, ctx.connected().length);
-      if (offers.length || s.hard) {
+      if (ctx.greenCar) {
+        // Green Car: no offer card. The deputy manager seat is filled, everyone else runs the おもてなし shift.
+        s.hard ??= { offers: [], specialTurn: 0, askTurn: 0, greenCar: true };
+        s.current.hard = blankHardRound();
+        greenCarSeats(s.hard, s.current.hard, ctx.connected());
+      }
+      // N4 hard roles: the おもてなし shift offered to the room's N4 players. A room with none never gets the fields.
+      const offers = ctx.greenCar ? [] : rolesFor(ctx.connected());
+      if (!ctx.greenCar && (offers.length || s.hard)) {
         // A curveball the host stand-in dealt was the game's one (experiment standInCurveball).
         s.hard ??= { offers: [], specialTurn: 0, askTurn: 0, ...(s.standIn?.sg?.g.curveball ? { curveballUsed: true } : {}) };
         s.current.hard = blankHardRound();
@@ -1281,6 +1304,7 @@ export const bentoHausMode: Mode<BentoState, BentoView> = {
       feed: feedView(r),
       ajimi: ajimiView(r, ctx),
       me: mine && myHard ? { ...mine, hard: myHard } : mine,
+      ...(ctx.greenCar ? { greenCar: true as const } : {}),
       ...(r?.hard ? { hard: hardView(r.hard, r, scoring, ctx.now) } : {}),
       ...(standIn ? { standIn: standInView(standIn, me) } : {}),
     };

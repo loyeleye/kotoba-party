@@ -16,21 +16,23 @@
 // as a { kind: 'suspect-line' } move during the answer's opening beat or not at all, and it is
 // checked here so it can never add a fact (no names, no numbers, no はんにん).
 //
-// The deputy (N4 hard role): when the room has an N4 player, each turn one of them (not the
-// asker, in seat rotation) is offered the deputy's part. After the answer they tell the room
-// what the suspect said, in reported speech or the passive, from the answer's scripted `report`
-// (deputy.ts). They can say no ("not this time") and just watch, as everyone else does.
+// The deputy (N4 hard role), only in the Green Car (shared/src/greenCar.ts; it moved out of mixed
+// rooms, where the turn waited for it): each turn one N4+ player (not the asker, in seat rotation)
+// is the deputy, given the part with no offer card and kept out of the offer log. After the answer
+// they tell the room what the suspect said, in reported speech or the passive, from the answer's
+// scripted `report` (deputy.ts). They can still say "not this time" and just watch.
 
 import type { JpText, OnsenCase, OnsenIntent, OnsenReport, OnsenSuspect } from '../../../../content/src/types.js';
 import { hasKanji, isKana, isUtterance, soundKey, type Utterance } from '../../japanese/kana.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
-import { cleanText, isObject, moveError, MOVE_OK, pick, type Award, type Mode, type ModeContext, type ModePlayer, type PhraseEntry } from '../mode.js';
-import { answerTiles, checkReport, joinReport, reportFrame, reportNotes, reportRule, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
-import { nextOfferee, offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
+import { cleanText, isObject, moveError, MOVE_OK, pick, shuffled, type Award, type Mode, type ModeContext, type ModePlayer, type PhraseEntry } from '../mode.js';
+import { answerTiles, checkReport, isN3Report, joinReport, n3Report, N3_RULE, reportFrame, reportNotes, reportRule, reportTiles, tilesInOrder, type DeputyReport, type ReportTile } from './deputy.js';
+import { aimPick, aimWeight } from '../aim.js';
+import { offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { FALLBACK_CASE } from './fallback.js';
-import { accusationLine, bareName, checkAccusation, INTENTS, matchQuestion, questionFor, tilesFor, type QuestionTile } from './questions.js';
+import { accusationLine, bareName, checkAccusation, GC_ACCUSE, gcAccusationFrames, gcAccusationLine, INTENTS, matchQuestion, questionFor, tilesFor, type GcAccuseId, type QuestionTile } from './questions.js';
 import { n4Up } from '../../level.js';
 
 // ---- tuning ----
@@ -54,6 +56,10 @@ export const POINTS = {
   spokenReport: 40,
   /** Reports a game that score: after a player's fourth, the deputy's report is for the room, not points. */
   reportsPaid: 4,
+  /** Green Car: an N4 deputy who gave the N3 retelling (the stretch) instead of the N4 report. */
+  reportStretch: 20,
+  /** Green Car: an N4 player who accused with the N3 line (＿に ちがいない / ＿はずが ない), the stretch. */
+  accuseStretch: 50,
 } as const;
 
 /**
@@ -84,7 +90,7 @@ export const REPORT_VOICE = { after: THINK_MS + SUBTITLE_MS + 1_500, cheer: 2_50
 export const reportVoiceMs = (kana: string): number => Math.min(7_000, 1_500 + 110 * kana.replace(/[\s。、]/g, '').length);
 
 /** The curveball's key word: the report's frame word. */
-const keyWord = (r: OnsenReport) => (r.frames?.includes('passive') ? 'みられました' : 'いっていました');
+const keyWord = (r: OnsenReport) => (isN3Report(r) ? (r.frames?.includes('rashii') ? 'らしいです' : 'そうです') : r.frames?.includes('passive') ? 'みられました' : 'いっていました');
 /**
  * Near misses for each key word, so the curveball tests the ear: the passive beside the active and its
  * look-alikes, the reported いっていました beside other forms of いう and a look-alike (the panel's J7).
@@ -128,8 +134,14 @@ export interface Ask {
   clueId: string | null;
   newClue: boolean;
   points: number;
-  /** The scripted report the deputy can give of this answer (null for a shrug or a case without reports). */
+  /**
+   * The scripted report the deputy can give of this answer (null for a shrug or a case without reports). In the
+   * Green Car an N3 deputy's report is every other time the N3 retelling (deputy.ts n3Report), and an N4 deputy's
+   * becomes the retelling when they give that (the stretch) instead.
+   */
   report: OnsenReport | null;
+  /** Green Car, an N4 deputy: the N3 retelling they may give instead (the stretch, accepted either way). */
+  stretch?: DeputyReport | null;
 }
 
 export type DeputyStatus = 'offered' | 'ready' | 'declined' | 'reported' | 'missed';
@@ -139,6 +151,8 @@ export interface Deputy {
   turnNo: number;
   playerId: string;
   status: DeputyStatus;
+  /** Green Car: given the part (no offer card), and kept out of the offer log. */
+  given?: boolean;
   /** The answer being reported, set when it comes in with a report. */
   askNo: number | null;
   tiles: ReportTile[];
@@ -150,6 +164,8 @@ export interface Deputy {
   voicedUntil: number | null;
   /** Opened the tiles before a first try: the report is then from the tiles' words, not from memory. */
   peeked?: boolean;
+  /** Green Car: an N4 deputy gave the N3 retelling (the stretch). */
+  stretched?: boolean;
 }
 
 /** The commentary booth's replay (or the host stand-in's report), with when it starts, ms into the answer. */
@@ -168,6 +184,8 @@ interface Accusation {
   suspectId: string;
   /** Said the whole sentence (spoken or typed). */
   said: boolean;
+  /** Green Car: said it with an N3 frame (＿に ちがいない / ＿はずが ない). */
+  n3?: boolean;
   via: Via;
   order: number;
 }
@@ -223,6 +241,18 @@ export interface OnsenState {
    */
   standIn?: (OnsenBooth & { sg?: StandInGallery | null }) | null;
   standInUsed?: boolean;
+  /** Green Car only: the N3 deal (reports dealt per deputy, frames dealt this game, each player's accusation line). */
+  gc?: GcDeal;
+}
+
+/** The Green Car's N3 deal, kept for the aim. */
+export interface GcDeal {
+  /** Reports dealt to each deputy this game: an N3 deputy's alternate N3 (first) and N4. */
+  reports: Record<string, number>;
+  /** Frames dealt to each player this game, for aimWeight's per-game count. */
+  frames: Record<string, Record<string, number>>;
+  /** Each player's N3 accusation line (dealt as the accusation opens). */
+  accuse: Record<string, GcAccuseId>;
 }
 
 export type OnsenMove =
@@ -321,8 +351,12 @@ export interface OnsenMe {
   tiles: QuestionTile[];
   accusation: { suspectId: string; said: boolean } | null;
   accuseTry: { suspectId: string; heard: string; triesLeft: number } | null;
-  /** The sentence to say, per suspect. */
+  /** The sentence to say, per suspect (Green Car, an N3 player: the N3 line dealt them, with ＿に ちがいない or ＿はずが ない). */
   lines: { suspectId: string; line: JpText }[];
+  /** Green Car, an N4 player: the N3 line, per suspect, as an optional stretch (either line counts). */
+  stretchLines?: { suspectId: string; line: JpText }[];
+  /** Green Car, an N3 player: the lines are N3 (tagged on the phone). */
+  accuseN3?: boolean;
   /** When you are this turn's deputy. */
   deputy: DeputyMe | null;
   /** Your Gallery tile while the deputy reports (players without the seat). */
@@ -349,6 +383,10 @@ export interface DeputyMe {
   points: number;
   /** Opened the tiles before a first try (they stay open on a redraw). */
   peeked: boolean;
+  /** This report is the N3 retelling (Green Car): the phone tags it N3. */
+  n3?: boolean;
+  /** Green Car, an N4 deputy: the N3 retelling's frame and rule, as an optional stretch (its line after a try). */
+  stretch?: { frame: string; note: string; line: JpText | null } | null;
 }
 
 // ---- helpers ----
@@ -453,6 +491,8 @@ function recordAsk(s: OnsenState, ctx: ModeContext, playerId: string, suspect: O
   const turn = s.turn!;
   const repeat = s.asks.some((a) => a.suspectId === suspect.id && a.intent === intent);
   const scripted = suspect.answers[intent] ?? { jp: s.case.shrug };
+  // Green Car: the suspect answers in N3 where the case has the line (same facts, `n3`).
+  const answer = ctx.greenCar && scripted.n3 ? scripted.n3 : scripted.jp;
   const clueId = scripted.clueId && clueOf(s, scripted.clueId) ? scripted.clueId : null;
   const newClue = !!clueId && !s.found[clueId];
   const understood = !guessed && !repeat;
@@ -469,7 +509,7 @@ function recordAsk(s: OnsenState, ctx: ModeContext, playerId: string, suspect: O
     tries: turn.tries,
     guessed,
     repeat,
-    answer: scripted.jp,
+    answer,
     lead: null,
     clueId,
     newClue,
@@ -501,31 +541,25 @@ function recordAsk(s: OnsenState, ctx: ModeContext, playerId: string, suspect: O
 
 // ---- the deputy (N4 hard role) ----
 
-/** Rooms this big or bigger rest a lone N4 deputy after a turn in the part (see offerDeputy). */
-export const SPOTLIGHT_ROOM = 4;
-
 /**
- * Offers the deputy's part to an N4 player, never the asker, by the shared rotation (hardRoleLog.ts
- * nextOfferee): fewest offers first, then longest ago; a "not this time" sits the next turn out; in a room of
- * SPOTLIGHT_ROOM or more nobody is deputy two turns running. Nobody at N4: no deputy.
+ * The turn's deputy. Only in the Green Car (a move-out, design n3-coverage/green-car: the turn waited for a taken
+ * role, and the voiced N4 line is above beginners), where it isn't offered: every N4+ player but the asker is
+ * deputy in turn, by seat after the last one, already taken (`given`, no offer card; they can still say "not
+ * this time"), and the Green Car's turns stay out of the offer log. A mixed room has no deputy, so the offer
+ * rotation it used (hardRoleLog.ts nextOfferee) no longer runs here; `deputyLog`, `deputyOffered` and
+ * `deputyOffers` stay for old states and the role-offer report.
  */
 function offerDeputy(s: OnsenState, ctx: ModeContext, askerId: string | null): void {
   s.deputy = null;
+  if (!ctx.greenCar) return;
   const n4 = ctx
     .players()
     .filter((p) => n4Up(p.level) && p.connected && p.id !== askerId)
     .sort((a, b) => a.seat - b.seat);
-  const id = nextOfferee(
-    n4.map((p) => p.id),
-    s.deputyOffered ?? [],
-    s.turnNo,
-    ctx.connected().length,
-  );
-  const p = n4.find((x) => x.id === id);
+  const p = n4.find((x) => x.seat > s.deputySeat) ?? n4[0];
   if (!p) return;
   s.deputySeat = p.seat;
-  (s.deputyOffered ??= []).push({ playerId: p.id, at: s.turnNo, answer: 'offered' });
-  s.deputy = { turnNo: s.turnNo, playerId: p.id, status: 'offered', askNo: null, tiles: [], tries: 0, heard: '', via: null, points: 0, voicedUntil: null };
+  s.deputy = { turnNo: s.turnNo, playerId: p.id, status: 'ready', given: true, askNo: null, tiles: [], tries: 0, heard: '', via: null, points: 0, voicedUntil: null };
 }
 
 /** A deputy with a report still to give (an unanswered offer can still report: a first try is a yes). */
@@ -538,6 +572,8 @@ const deputyHolds = (d: Deputy | null): d is Deputy => deputyOpen(d) && (d.statu
 function closeDeputy(s: OnsenState, ctx: ModeContext): void {
   const d = s.deputy;
   s.deputy = null;
+  // A Green Car deputy was given the part, not offered it: nothing for the offer log.
+  if (d?.given) return;
   const offered = d ? s.deputyOffered?.find((o) => o.playerId === d.playerId && o.at === d.turnNo) : undefined;
   if (!d || (d.askNo === null && d.status !== 'declined')) {
     if (offered) offered.answer = null;
@@ -607,7 +643,11 @@ function boothFor(ask: Ask, playerId: string | null, atMs: number): OnsenBooth {
   const r = ask.report!;
   const passive = !!r.frames?.includes('passive');
   const who = playerId ? 'The deputy' : 'Chōchin-san';
-  const note = passive
+  const note = isN3Report(r)
+    ? r.frames?.includes('rashii')
+      ? `らしいです = “apparently”: ${who} passed it on in N3, the plain form before らしい${r.frames.includes('ni-yoru') ? ', with ＿に よると for who said it' : ''}.`
+      : `そうです = “I hear”: ${who} passed it on with ＿に よると for who said it, the plain form before そうです.`
+    : passive
     ? `みられました = “was seen”: ${who} turned “I saw them” round, with に for who did the seeing.`
     : `と いっていました = “said that…”: ${who} passed it on, the suspect’s ます form made plain before と.`;
   return {
@@ -687,16 +727,89 @@ function dealStandInCurveball(s: OnsenState, ctx: ModeContext): void {
 
 function reportEntry(s: OnsenState, ask: Ask, outcome: PhraseEntry['outcome']): PhraseEntry {
   const r = ask.report!;
-  return { itemId: `onsen.report.${s.case.id}.${ask.suspectId}.${ask.intent}`, text: r.jp.text, kana: r.jp.kana, en: r.jp.en, outcome };
+  return { itemId: `onsen.report.${s.case.id}.${ask.suspectId}.${ask.intent}${isN3Report(r) ? '.n3' : ''}`, text: r.jp.text, kana: r.jp.kana, en: r.jp.en, outcome };
 }
 
-function lockAccusation(s: OnsenState, ctx: ModeContext, playerId: string, suspect: OnsenSuspect, said: boolean, via: Via, tries: number): void {
-  s.accusations[playerId] = { suspectId: suspect.id, said, via, order: Object.keys(s.accusations).length + 1 };
+/**
+ * Locks a player's accusation. `heard`: the frames of a Green Car N3 accusation (gcAccusationFrames); the phrasebook
+ * then gets the N3 line those frames make (the one dealt, when it was said).
+ */
+function lockAccusation(s: OnsenState, ctx: ModeContext, playerId: string, suspect: OnsenSuspect, said: boolean, via: Via, tries: number, heard?: readonly string[]): void {
+  s.accusations[playerId] = { suspectId: suspect.id, said, via, order: Object.keys(s.accusations).length + 1, ...(heard ? { n3: true } : {}) };
   delete s.accuseTries[playerId];
   if (said && via === 'speech') tallyFor(s, playerId).bonusEarned += POINTS.spokenAccuse;
-  const line = accusationLine(suspect);
+  const n4 = ctx.player(playerId)?.level !== 'n3';
+  if (heard && n4) tallyFor(s, playerId).bonusEarned += POINTS.accuseStretch;
+  const { id, line } = heard ? heardLine(s, playerId, suspect, heard) : accuseLineFor(s, ctx, playerId, suspect);
   const outcome: PhraseEntry['outcome'] = via === 'tap' ? 'seen' : !said ? 'missed' : tries > 1 ? 'retry' : 'said';
-  ctx.phrase(playerId, { itemId: `onsen.accuse.${s.case.id}.${suspect.id}`, text: line.text, kana: line.kana, en: line.en, outcome, recall: via === 'speech' ? 'memory' : 'read' });
+  ctx.phrase(playerId, { itemId: `onsen.accuse.${s.case.id}.${suspect.id}${id ? `.${id}` : ''}`, text: line.text, kana: line.kana, en: line.en, outcome, recall: via === 'speech' ? 'memory' : 'read' });
+}
+
+// ---- the Green Car's N3 deal: the deputy's report and the accusation ----
+
+const gcDeal = (s: OnsenState): GcDeal => (s.gc ??= { reports: {}, frames: {}, accuse: {} });
+
+function countFrames(s: OnsenState, playerId: string, frames: readonly string[]): void {
+  const mine = (gcDeal(s).frames[playerId] ??= {});
+  for (const f of frames) mine[f] = (mine[f] ?? 0) + 1;
+}
+
+/**
+ * Green Car: deals the deputy's report. An N3 deputy alternates the N3 retelling (first) and the N4 report, about
+ * half each; an N4 deputy gets the N4 report with the retelling as a stretch. An answer the rule can't retell
+ * (deputy.ts n3Report) stays N4.
+ */
+function dealGcReport(s: OnsenState, ctx: ModeContext, playerId: string, ask: Ask): void {
+  if (!ctx.greenCar || !ask.report) return;
+  const n3 = n3Report(ask.report);
+  if (!n3) return;
+  const g = gcDeal(s);
+  if (ctx.player(playerId)?.level === 'n3') {
+    const n = g.reports[playerId] ?? 0;
+    g.reports[playerId] = n + 1;
+    if (n % 2 === 0) ask.report = n3;
+  } else ask.stretch = n3;
+  countFrames(s, playerId, ask.report.frames ?? []);
+}
+
+/** The accusation lines a case can deal (＿せいで only with the victim's fate). */
+const gcLineIds = (s: OnsenState): GcAccuseId[] => (Object.keys(GC_ACCUSE) as GcAccuseId[]).filter((id) => id !== 'sei' || !!s.case.victim.fate);
+
+/** Green Car: each player's N3 accusation line, aimed at the frames they need most (aimWeight), as the accusation opens. */
+function dealGcAccusations(s: OnsenState, ctx: ModeContext): void {
+  if (!ctx.greenCar) return;
+  const g = gcDeal(s);
+  for (const p of ctx.players()) {
+    const ids = shuffled(gcLineIds(s), () => ctx.random());
+    // By need per frame, so the one-frame ＿はずが ない line isn't always outweighed by the two-frame ones.
+    const id = aimPick(ids, (x) => aimWeight(ctx, p.id, GC_ACCUSE[x], g.frames[p.id] ?? {}) / GC_ACCUSE[x].length) ?? 'chigainai';
+    g.accuse[p.id] = id;
+    countFrames(s, p.id, GC_ACCUSE[id]);
+  }
+}
+
+/** A player's Green Car N3 line for this suspect. */
+function gcLineOf(s: OnsenState, playerId: string, suspect: OnsenSuspect): JpText {
+  const id = s.gc?.accuse[playerId] ?? 'chigainai';
+  return gcAccusationLine(s.case, suspect, id) ?? gcAccusationLine(s.case, suspect, 'chigainai')!;
+}
+
+/** The accusation line a player is shown: the N3 one for an N3 player in the Green Car, else 「はんにんは ○○さんです！」. */
+function accuseLineFor(s: OnsenState, ctx: ModeContext, playerId: string, suspect: OnsenSuspect): { id: GcAccuseId | null; line: JpText } {
+  if (ctx.greenCar && s.gc?.accuse[playerId] && ctx.player(playerId)?.level === 'n3') return { id: s.gc.accuse[playerId]!, line: gcLineOf(s, playerId, suspect) };
+  return { id: null, line: accusationLine(suspect) };
+}
+
+/**
+ * The N3 line a Green Car accusation made: of the lines whose frames were all heard, the one with the most frames
+ * (the dealt one on a tie), else ＿に ちがいない's.
+ */
+function heardLine(s: OnsenState, playerId: string, suspect: OnsenSuspect, heard: readonly string[]): { id: GcAccuseId; line: JpText } {
+  const dealt = s.gc?.accuse[playerId] ?? 'chigainai';
+  const fits = (id: GcAccuseId) => GC_ACCUSE[id].every((f) => heard.includes(f));
+  const rank = (id: GcAccuseId) => GC_ACCUSE[id].length * 2 + (id === dealt ? 1 : 0);
+  const id = gcLineIds(s).filter(fits).sort((a, b) => rank(b) - rank(a))[0] ?? 'chigainai';
+  return { id, line: gcAccusationLine(s.case, suspect, id) ?? gcAccusationLine(s.case, suspect, 'chigainai')! };
 }
 
 // ---- the mode ----
@@ -788,6 +901,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         const d = s.deputy;
         if (d && ask?.report && d.status !== 'declined') {
           d.askNo = ask.no;
+          dealGcReport(s, ctx, d.playerId, ask);
           d.tiles = reportTiles(ask.report, () => ctx.random());
           openDeputyGallery(s, ctx);
         } else if (d && d.status !== 'declined') s.deputy = null;
@@ -797,6 +911,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
       }
       case 'encore':
         s.turn = null;
+        dealGcAccusations(s, ctx);
         ctx.cue({ host: 'chochin', event: 'onsen_accuse' });
         break;
       case 'finale':
@@ -934,7 +1049,14 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         lockAccusation(s, ctx, playerId, suspect, false, 'tap', tries);
         return MOVE_OK;
       }
-      if (checkAccusation(u, suspect)) lockAccusation(s, ctx, playerId, suspect, true, u.via, tries);
+      // Green Car: the N3 line (＿に ちがいない / ＿はずが ない) counts for everyone; an N3 player needs it, and an N4
+      // player may still say the N4 line.
+      const heard = ctx.greenCar ? gcAccusationFrames(u, suspect) : null;
+      if (heard) lockAccusation(s, ctx, playerId, suspect, true, u.via, tries, heard);
+      else if (ctx.greenCar && ctx.player(playerId)?.level === 'n3') {
+        if (tries >= TRIES) lockAccusation(s, ctx, playerId, suspect, false, u.via, tries);
+        else s.accuseTries[playerId] = { tries, heard: u.text, suspectId: suspect.id };
+      } else if (checkAccusation(u, suspect)) lockAccusation(s, ctx, playerId, suspect, true, u.via, tries);
       else if (tries >= TRIES) lockAccusation(s, ctx, playerId, suspect, false, u.via, tries);
       else s.accuseTries[playerId] = { tries, heard: u.text, suspectId: suspect.id };
       return MOVE_OK;
@@ -973,6 +1095,13 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         const u = readUtterance(raw.utterance);
         if (!u) return moveError('empty-answer');
         ok = checkReport(u, ask.report);
+        // Green Car, an N4 deputy: the N3 retelling counts too, and becomes the report (voiced, logged).
+        if (!ok && ask.stretch && checkReport(u, ask.stretch)) {
+          ask.report = ask.stretch;
+          ask.stretch = null;
+          d.stretched = true;
+          ok = true;
+        }
         via = u.via;
         d.heard = u.text;
       }
@@ -985,6 +1114,7 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         const paid = tallyFor(s, playerId).reports < POINTS.reportsPaid;
         d.points = !paid ? 0 : via === 'tap' ? POINTS.reportTiles : POINTS.report;
         tallyFor(s, playerId).reports += 1;
+        if (d.stretched && paid) d.points += POINTS.reportStretch;
         give(s, ctx, playerId, d.points, paid && via === 'speech' ? POINTS.spokenReport : 0);
         // Only a spoken report counts as from memory, as for the questions; one after a look at the tiles is seen.
         const outcome: PhraseEntry['outcome'] = via === 'tap' || d.peeked ? 'seen' : d.tries > 1 ? 'retry' : 'said';
@@ -1101,7 +1231,9 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
         tiles: tilesFor(c),
         accusation: acc ? { suspectId: acc.suspectId, said: acc.said } : null,
         accuseTry: tr && !acc ? { suspectId: tr.suspectId, heard: tr.heard, triesLeft: TRIES - tr.tries } : null,
-        lines: c.suspects.map((x) => ({ suspectId: x.id, line: accusationLine(x) })),
+        lines: c.suspects.map((x) => ({ suspectId: x.id, line: accuseLineFor(s, ctx, id, x).line })),
+        stretchLines: ctx.greenCar && s.gc?.accuse[id] && me?.level !== 'n3' ? c.suspects.map((x) => ({ suspectId: x.id, line: gcLineOf(s, id, x) })) : undefined,
+        accuseN3: ctx.greenCar && me?.level === 'n3' ? true : undefined,
         deputy:
           d && d.playerId === id
             ? {
@@ -1117,6 +1249,8 @@ export const onsenMurderMode: Mode<OnsenState, OnsenView> = {
                 line: dAsk?.report && (d.tries > 0 || !deputyOpen(d)) ? dAsk.report.jp : null,
                 points: d.points,
                 peeked: !!d.peeked,
+                n3: dAsk?.report ? isN3Report(dAsk.report) : false,
+                stretch: dAsk?.stretch && dAsk.report && !isN3Report(dAsk.report) ? { frame: reportFrame(dAsk.stretch), note: N3_RULE, line: d.tries > 0 || !deputyOpen(d) ? dAsk.stretch.jp : null } : null,
               }
             : null,
         gallery: phase === 'reveal' && me ? galleryTileFor(s.gallery, id, me.level) : null,

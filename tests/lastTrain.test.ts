@@ -10,9 +10,9 @@ import { apply, createGame, wakeAt, type GameAction, type GameContext, type Game
 import { withExperiments } from '../shared/src/modes/experiments.js';
 import { checkUtterance, firstMora } from '../shared/src/modes/lastTrain/check.js';
 import { toRomaji } from '../shared/src/japanese/romaji.js';
-import { buildStops, CANDLE_ITEM, itemIndex, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
-import { curveballPoints, CURVEBALL_POINTS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
-import { framesOf } from '../shared/src/japanese/frames.js';
+import { buildStops, CANDLE_ITEM, itemIndex, lastTrainMode, mirrored, roleKey, RULES, type LastTrainState, type LastTrainView } from '../shared/src/modes/lastTrain/lastTrain.js';
+import { curveballPoints, CURVEBALL_POINTS, KEY_GLOSS, SAY_PICK, SPOKEN_REACTION_POINTS, STAND_IN_CURVEBALL_MS, STAND_IN_SETUP_MS } from '../shared/src/modes/mixedRoom.js';
+import { ALL_FRAMES, framesOf } from '../shared/src/japanese/frames.js';
 import { EMPTY_CONTENT, type ContentLibrary } from '../shared/src/modes/mode.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -543,35 +543,38 @@ describe('Last Train hard roles (N4)', () => {
   const ANNOUNCE = mg('station-announcement', [item('sa1', ['しぶやです']), item('sa2', ['うえのです']), roleItem('ann1', ['まもなくまいります']), roleItem('ann2', ['おさがりください'])], { promptType: 'listen-and-answer' });
   const LINE: LastTrainScenario = { ...SCENARIO, id: 'role-line', stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: 'station-announcement' })) };
   const ROLE_CONTENT: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [ANNOUNCE, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [LINE] };
-  const FRAMES = new Set(['te-itadakemasen', 'kamo', 'sou-look', 'sou-hear', 'hazu', 'te-aru', 'o-kudasai', 'keigo', 'sign-kanji']);
+  const FRAMES = new Set(['te-itadakemasen', 'kamo', 'sou-look', 'sou-hear', 'hazu', 'te-aru', 'o-kudasai', 'keigo', 'sign-kanji', 'de-gozaimasu', 'te-orimasu', 'sasete-itadaku', 'go-kudasai']);
 
+  // Offers are a mixed-room thing: an all-N4 table would ride the Green Car, so these tables switch it off.
   const table = (lib: ContentLibrary, levels: Level[]) => {
     const g = new Table(lib, levels.length);
     levels.forEach((level, i) => g.act({ type: 'command', actor: { kind: 'player', playerId: `p${i + 1}` }, command: { id: `lv${i}`, type: 'setLevel', level } }));
+    expect(g.cmd('stage', { type: 'settings', greenCar: false }).error).toBeUndefined();
     return g;
   };
   const role = (g: Table, id: string, accept: boolean) => g.play(id, { kind: 'role', key: g.view(id).me!.offer!.key, accept });
 
-  it('writes every role line at N4, tagged with its frames, in all three minigames', () => {
+  it('writes every role line at N4 (the Green Car announcer at N3), tagged with its frames, in all three minigames', () => {
     const real = realContent.lastTrainMinigames;
     const roles = real.flatMap((m) => m.items.filter((i) => i.role).map((i) => ({ m: m.id, i })));
     expect(new Set(roles.map((r) => r.m))).toEqual(new Set(['station-announcement', 'lost-and-found', 'meet-the-innkeeper']));
-    for (const { i } of roles) {
-      expect(i.level, i.id).toBe('n4');
+    for (const { m, i } of roles) {
+      expect(i.level === 'n4' || (m === 'station-announcement' && i.level === 'n3'), i.id).toBe(true);
       expect(i.frames?.length, i.id).toBeGreaterThan(0);
       for (const f of i.frames!) expect(FRAMES.has(f), `${i.id}: ${f}`).toBe(true);
       expect(checkUtterance({ via: 'typed', text: i.model.kana.replace(/。$/, '') }, i.accepted), i.id).toBe(true);
       // Sign hints are pictures, never the reading.
       if (i.signs) expect(i.hint, i.id).not.toContain(i.accepted[0]!);
     }
-    // Lost and Found has ordinary items for everyone else, and comes only as an N4 swap.
+    // Lost and Found has ordinary items for everyone else, and comes only as a swap (now in the Green Car) or on a
+    // Green Car line.
     const lost = real.find((m) => m.id === 'lost-and-found')!;
     expect(['kana', 'n5'].every((l) => lost.items.some((i) => i.level === l && !i.role))).toBe(true);
     expect(lost.n4Stop).toBe(true);
     const swaps = lastTrainScenarios.flatMap((sc) => sc.stops.filter((st) => st.withN4).map((st) => ({ sc, st })));
     expect(swaps.map(({ st }) => st.withN4!.minigameId)).toEqual(['lost-and-found', 'lost-and-found']);
     for (const { sc } of swaps) expect(sc.audience, sc.id).toBeUndefined();
-    expect(lastTrainScenarios.flatMap((sc) => sc.stops).some((st) => st.minigameId === 'lost-and-found')).toBe(false);
+    expect(lastTrainScenarios.filter((sc) => !sc.greenCar).flatMap((sc) => sc.stops).some((st) => st.minigameId === 'lost-and-found')).toBe(false);
   });
 
   it('changes nothing in a room with no N4 player: same stops, no offers, no role items', () => {
@@ -583,7 +586,7 @@ describe('Last Train hard roles (N4)', () => {
       let x = 7;
       return () => ((x = (x * 9301 + 49297) % 233280) / 233280);
     };
-    for (const sc of lastTrainScenarios) {
+    for (const sc of lastTrainScenarios.filter((x) => !x.greenCar)) {
       const plain = { ...sc, stops: sc.stops.map(({ withN4: _, ...st }) => st) };
       for (const want of [4, 6]) expect(buildStops(sc, want, all, penalties, seeded()), sc.id).toEqual(buildStops(plain, want, before, penalties, seeded()));
     }
@@ -595,7 +598,7 @@ describe('Last Train hard roles (N4)', () => {
     expect(g.s.roleLog).toEqual([]);
   });
 
-  it('swaps in the lost property stop when the room has an N4 player', () => {
+  it('swaps in the lost property stop in the Green Car only (a move-out: a mixed room keeps its line)', () => {
     const lib = { lastTrainMinigames: realContent.lastTrainMinigames, lastTrainScenarios };
     const minigames = Object.fromEntries(lib.lastTrainMinigames.map((m) => [m.id, m]));
     const obake = lastTrainScenarios.find((sc) => sc.id === 'obake-line')!;
@@ -788,6 +791,7 @@ describe('Last Train mixed rooms (Gallery, commentary booth, host stand-in)', ()
   const table = (content: ContentLibrary, levels: Level[]) => {
     const g = new Table(content, levels.length);
     levels.forEach((level, i) => g.act({ type: 'command', actor: { kind: 'player', playerId: `p${i + 1}` }, command: { id: `lv${i}`, type: 'setLevel', level } }));
+    expect(g.cmd('stage', { type: 'settings', greenCar: false }).error).toBeUndefined();
     return g;
   };
   const role = (g: Table, id: string, accept: boolean) => g.play(id, { kind: 'role', key: g.view(id).me!.offer!.key, accept });
@@ -1324,6 +1328,193 @@ describe('Lost and Found: yōkai lost property', () => {
   });
 });
 
+describe('Last Train in the Green Car', () => {
+  const real: ContentLibrary = realContent;
+  const table = (lib: ContentLibrary, levels: Level[], audience?: 'kids' | 'cheeky') => {
+    const g = new Table(lib, levels.length);
+    levels.forEach((level, i) => g.act({ type: 'command', actor: { kind: 'player', playerId: `p${i + 1}` }, command: { id: `lv${i}`, type: 'setLevel', level } }));
+    if (audience) expect(g.cmd('stage', { type: 'settings', audience }).error).toBeUndefined();
+    return g;
+  };
+  /** Plays every stop: each phone answers its item right (typed, so no speech bonus), then on to the dash. */
+  const playAll = (g: Table, onStop?: () => void) => {
+    while (g.state.phase !== 'finale') {
+      g.until('answer');
+      onStop?.();
+      for (const p of g.state.players) if (g.s.turns[p.id]?.status === 'answering') g.say(p.id, g.s.turns[p.id]!.task.item.accepted[0]!, 'typed');
+      expect(g.state.phase).toBe('reveal');
+      g.timeout();
+    }
+  };
+  const ALL_IDS = new Set(ALL_FRAMES.map((f) => f.id as string));
+
+  it('rides a Green Car line only in the Green Car: one for each audience, never in a mixed room', () => {
+    for (const [audience, id] of [[undefined, 'green-car-line'], ['kids', 'green-car-school-trip'], ['cheeky', 'green-car-afterparty']] as const) {
+      const g = table(real, ['n4', 'n3'], audience);
+      g.start(6);
+      expect(g.state.greenCarOn, id).toBe(true);
+      expect(g.s.scenario.id).toBe(id);
+      expect(g.s.greenCar).toBe(true);
+    }
+    const mixed = table(real, ['n4', 'n5']);
+    mixed.start(6);
+    expect(mixed.s.greenCar).toBeUndefined();
+    expect(lastTrainScenarios.find((sc) => sc.id === mixed.s.scenario.id)!.greenCar).toBeUndefined();
+    const off = table(real, ['n4', 'n3']);
+    expect(off.cmd('stage', { type: 'settings', greenCar: false }).error).toBeUndefined();
+    off.start(6);
+    expect(off.s.greenCar).toBeUndefined();
+    expect(lastTrainScenarios.find((sc) => sc.id === off.s.scenario.id)!.greenCar).toBeUndefined();
+  });
+
+  it('deals every player an N4 or N3 line at every stop, roles always on: no offer card, no offer log, no penalty car', () => {
+    const g = table(real, ['n4', 'n3', 'n4']);
+    g.start(6);
+    const minigames = new Set<string>();
+    let roles = 0;
+    playAll(g, () => {
+      minigames.add(g.s.stops[g.s.stopIndex]!.minigameId);
+      for (const p of g.state.players) {
+        const turn = g.s.turns[p.id]!;
+        expect(turn.status).toBe('answering');
+        expect(turn.offer).toBeNull();
+        expect(['n4', 'n3']).toContain(turn.task.item.level);
+        expect(g.view(p.id).me!.offer).toBeNull();
+        if (turn.task.item.role) roles++;
+      }
+    });
+    expect(minigames).toEqual(new Set(['station-announcement', 'read-the-signs', 'lost-and-found', 'meet-the-innkeeper']));
+    expect(roles).toBeGreaterThan(6);
+    expect(g.s.roleLog).toEqual([]);
+    // Nothing offered, so nothing for the hard-role gate either.
+    expect(lastTrainMode.offers!(g.s, 'p1')).toEqual([]);
+    // A double miss at a non-forgiving stop never leads to the penalty car (its minigames are N5).
+    const h = table(real, ['n4']);
+    h.start(4);
+    h.until('answer');
+    h.say('p1', 'だめ');
+    h.say('p1', 'だめ');
+    expect(h.state.phase).toBe('reveal');
+    h.timeout();
+    expect(h.state.phase).toBe('prompt');
+  });
+
+  it('gives an N3 player about half N3 lines and half N4, the N3 ones tagged N3', () => {
+    const g = table(real, ['n3', 'n4']);
+    g.start(6);
+    let tagged = 0;
+    playAll(g, () => {
+      const task = g.view('p1').me!.task!;
+      expect(task.stretch ?? null).toBeNull();
+      if (g.s.turns.p1!.task.item.level === 'n3') {
+        expect(task.n3).toBe(true);
+        tagged++;
+      } else expect(task.n3).toBeUndefined();
+    });
+    const mix = g.s.gc!.mix.p1!;
+    expect(mix.n3 + mix.n4).toBe(6);
+    // Lost and Found has no N3 lines, so that stop is N4 whatever the turn: still within one of half.
+    expect(Math.abs(mix.n3 - mix.n4)).toBeLessThanOrEqual(2);
+    expect(mix.n3).toBeGreaterThanOrEqual(2);
+    expect(tagged).toBe(mix.n3);
+  });
+
+  it('gives an N4 player N4 lines, with an N3 stretch they may say instead for a bonus', () => {
+    const g = table(real, ['n4', 'n3']);
+    g.start(6);
+    g.until('answer');
+    expect(g.s.stops[0]!.minigameId).toBe('station-announcement');
+    const turn = g.s.turns.p1!;
+    expect(turn.task.item.level).toBe('n4');
+    const stretch = turn.stretch!;
+    expect(stretch.level).toBe('n3');
+    const task = g.view('p1').me!.task!;
+    expect(task.n3).toBeUndefined();
+    expect(task.stretch).toMatchObject({ itemId: stretch.id, prompt: stretch.prompt, hint: null, role: { en: 'The announcer' } });
+    // Saying the stretch line counts, and the stretch becomes the item (the reveal and the phrasebook show it).
+    g.say('p1', stretch.accepted[0]!, 'typed');
+    expect(g.s.turns.p1!.status).toBe('correct');
+    expect(g.s.turns.p1!.task.item.id).toBe(stretch.id);
+    g.say('p2', g.s.turns.p2!.task.item.accepted[0]!, 'typed');
+    expect(g.state.phase).toBe('reveal');
+    expect(g.score('p1')).toBe(RULES.pointsFirstTry + RULES.roleBonus + RULES.stretchBonus);
+    expect(g.view('stage').results!.find((r) => r.playerId === 'p1')!.model).toEqual(stretch.model);
+  });
+
+  describe('aims the deal at the frame the player has said least tonight', () => {
+    const framed = (id: string, frames: string[]): MinigameItem => ({ ...item(id, [`${id}です`], 'n4', 12), frames });
+    const ANN = mg('station-announcement', [framed('k1', ['kamo']), framed('h1', ['hazu']), framed('k2', ['kamo'])]);
+    const lib: ContentLibrary = { ...EMPTY_CONTENT, lastTrainMinigames: [ANN, ...MINIGAMES.filter((m) => m.penalty)], lastTrainScenarios: [{ ...SCENARIO, stops: SCENARIO.stops.map((st) => ({ ...st, minigameId: 'station-announcement' })) }] };
+
+    it('prefers the item whose frames are said least, and counts a frame when it is said right', () => {
+      const g = table(lib, ['n4']);
+      g.start();
+      g.s.gc!.said.p1 = { kamo: 3 };
+      g.until('answer');
+      expect(g.s.turns.p1!.task.item.id).toBe('h1');
+      g.sayRight('p1');
+      expect(g.s.gc!.said.p1).toEqual({ kamo: 3, hazu: 1 });
+      g.timeout();
+      g.s.gc!.said.p1 = { hazu: 5 };
+      g.until('answer');
+      expect(g.s.turns.p1!.task.item.frames).toEqual(['kamo']);
+      // A miss counts nothing.
+      g.say('p1', 'だめ');
+      g.say('p1', 'だめ');
+      expect(g.s.gc!.said.p1).toEqual({ hazu: 5 });
+    });
+  });
+
+  it('deals the Platform Dash at Green Car levels: an N3 player alternates, an N4 player gets N4', () => {
+    const g = table(real, ['n3', 'n4']);
+    g.start(4);
+    g.until('finale');
+    const levels = (id: string) => {
+      const out: string[] = [];
+      for (let i = 0; i < 4; i++) {
+        out.push(g.s.racers[id]!.task!.item.level);
+        g.sayRight(id);
+      }
+      return out;
+    };
+    expect(levels('p1')).toEqual(['n3', 'n4', 'n3', 'n4']);
+    expect(levels('p2')).toEqual(['n4', 'n4', 'n4', 'n3']);
+  });
+
+  it('writes its new lines as drafts, with furigana that spell the text, frames that exist, and answers that fit', () => {
+    const green = lastTrainScenarios.filter((sc) => sc.greenCar);
+    const texts: JpText[] = green.flatMap((sc) => [sc.title, sc.departure, sc.twist, ...sc.stops.flatMap((st) => [st.name, st.announcement])]);
+    const newItems = [
+      ...green[0]!.platformDash,
+      ...realContent.lastTrainMinigames.flatMap((m) => m.items).filter((i) => i.level === 'n3' && i.role),
+      ...realContent.lastTrainMinigames.find((m) => m.id === 'lost-and-found')!.items.filter((i) => /\.(22|23)-/.test(i.id)),
+    ];
+    expect(newItems.length).toBe(6 + 8 + 2);
+    for (const sc of green) {
+      expect(sc.status).toBe('draft');
+      expect(sc.stops.length, sc.id).toBe(6);
+      expect(sc.platformDash.every((i) => i.level === 'n4' || i.level === 'n3'), sc.id).toBe(true);
+    }
+    for (const i of newItems) {
+      texts.push(i.prompt, i.model);
+      for (const f of i.frames ?? []) expect(ALL_IDS.has(f), `${i.id}: ${f}`).toBe(true);
+      expect(i.frames?.length, i.id).toBeGreaterThan(0);
+      expect(checkUtterance({ via: 'typed', text: i.model.kana.replace(/。$/, '') }, i.accepted), i.id).toBe(true);
+    }
+    for (const x of texts) {
+      if (!x.furigana) continue;
+      expect(x.furigana.map(([b]) => b).join(''), x.text).toBe(x.text);
+      expect(x.furigana.map(([b, r]) => r || b).join(''), x.text).toBe(x.kana);
+    }
+    // Each new announcer line has a key word for the booth, with a gloss.
+    for (const i of newItems.filter((x) => x.role)) {
+      const key = roleKey(i);
+      if (i.level === 'n3') expect(key, i.id).not.toBeNull();
+      if (key) expect(KEY_GLOSS[key.kana], i.id).toBeTruthy();
+    }
+  });
+});
+
 // ---- full system: bots over the network ----
 
 describe('Last Train and the room\'s Audience', () => {
@@ -1355,9 +1546,16 @@ describe('Last Train and the room\'s Audience', () => {
     expect(rideWith(lib, 'cheeky')).toBe('cheeky-b');
   });
 
-  it('gives the real content one Kids line and two Cheeky lines', () => {
-    expect(lastTrainScenarios.filter((sc) => sc.audience === 'kids').map((sc) => sc.id)).toEqual(['school-trip-line']);
-    expect(lastTrainScenarios.filter((sc) => sc.audience === 'cheeky').map((sc) => sc.id)).toEqual(['horoyoi-line', 'kisaragi-line']);
+  it('gives the real content one Kids line and two Cheeky lines (and the Green Car one of each)', () => {
+    const mixed = lastTrainScenarios.filter((sc) => !sc.greenCar);
+    expect(mixed.filter((sc) => sc.audience === 'kids').map((sc) => sc.id)).toEqual(['school-trip-line']);
+    expect(mixed.filter((sc) => sc.audience === 'cheeky').map((sc) => sc.id)).toEqual(['horoyoi-line', 'kisaragi-line']);
+    const green = lastTrainScenarios.filter((sc) => sc.greenCar);
+    expect(green.map((sc) => [sc.id, sc.audience ?? 'family'])).toEqual([
+      ['green-car-line', 'family'],
+      ['green-car-school-trip', 'kids'],
+      ['green-car-afterparty', 'cheeky'],
+    ]);
     for (const sc of lastTrainScenarios.filter((x) => x.audience)) expect(sc.stops.length, sc.id).toBe(6);
   });
 });
@@ -1426,8 +1624,11 @@ describe('Last Train with bots', () => {
     expect(bots.reduce((n, b) => n + b.moves.filter((m) => m.ok).length, 0)).toBeGreaterThan(20);
     // The room overrule path ran over the network.
     expect(bots.some((b) => b.moves.some((m) => m.ok && m.key.includes(':overrule:')))).toBe(true);
-    // Every family line has a hard-role stop, so the N4 bot was offered one and answered it.
-    expect(bots[3]!.moves.some((m) => m.ok && m.key.includes(':role:'))).toBe(true);
+    // A line with a hard-role stop offered the N4 bot one, and it answered. (Lost and Found is a Green Car move-out,
+    // so a mixed room's line may now trim its role stops away.)
+    const roleTitles = new Set(realContent.lastTrainMinigames.filter((m) => m.items.some((i) => i.role)).map((m) => m.title.text));
+    const rode = (lastGame as LastTrainView | null)?.stops ?? [];
+    expect(bots[3]!.moves.some((m) => m.ok && m.key.includes(':role:'))).toBe(rode.some((st) => roleTitles.has(st.minigame.text)));
 
     // Scores: the recap equals the sum of the ledger the stage saw.
     const game = lastGame as LastTrainView | null;

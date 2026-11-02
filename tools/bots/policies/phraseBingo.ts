@@ -2,7 +2,9 @@
 // while studying, says each one during the scene (sometimes peeking first, sometimes fluffing a
 // try), and wraps some in filler the way a real line would be. In the audience it buzzes after
 // the TV rings: bots sharing one policy "hear" what the actor bots said, so they catch some
-// lines and guess the rest. Everyone shouts the encore phrase back.
+// lines and guess the rest. Everyone shouts the encore phrase back. In the Green Car the lines are
+// N4/N3 frame lines and the card shows frames; an N4 bot takes an optional N3 stretch line only
+// some of the time (stretchRate), the way a player might skip a dare.
 
 import type { PhraseBingoView } from '../../../shared/src/modes/phraseBingo/phraseBingo.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
@@ -17,6 +19,8 @@ export interface PhraseBingoBotOptions {
   buzzRate?: number;
   /** Chance an audience bot "heard" the line right (knows which one it was). */
   hearRate?: number;
+  /** Green Car: chance an actor tries an optional N3 stretch line at all. */
+  stretchRate?: number;
   /** Type instead of speak (quiet mode). */
   quiet?: boolean | ((playerId: string) => boolean);
   /** Think time range in ms; lines are spread over the scene within it. */
@@ -40,6 +44,7 @@ export function phraseBingoPolicy(opts: PhraseBingoBotOptions = {}): ModePolicy 
   const sayRight = opts.sayRight ?? 0.85;
   const buzzRate = opts.buzzRate ?? 0.7;
   const hearRate = opts.hearRate ?? 0.6;
+  const stretchRate = opts.stretchRate ?? 0.5;
   const [minDelay, maxDelay] = opts.delayMs ?? [3_000, 40_000];
   /** bot → phrase id → kana, learnt while studying. */
   const lines = new Map<string, Map<string, string>>();
@@ -73,6 +78,7 @@ export function phraseBingoPolicy(opts: PhraseBingoBotOptions = {}): ModePolicy 
         if (view.phase === 'answer') {
           mine.actor.secrets.forEach((x, i) => {
             if (x.said) return;
+            if (x.stretch && chance(me, round, x.id, 'stretch') >= stretchRate) return;
             const at = delay(`line${i}`);
             const known = memory.get(x.id);
             const peek = !known || chance(me, round, x.id, 'peek') < peekRate;

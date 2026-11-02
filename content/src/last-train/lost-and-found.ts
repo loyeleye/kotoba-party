@@ -261,5 +261,31 @@ export const lostAndFound: LastTrainMinigame = {
       hint: 'Passing on what you heard: そうです after the plain form. After a noun, that is だそうです.',
       timeLimit: 14,
     },
+    // ---- Green Car lines' own lost property (design: Kids, a lost lunchbox; Cheeky, a ticket and phone gone after a
+    //      party, written for all ages). All ages, so any room may be dealt them; the Green Car deals Lost and Found every game. ----
+    {
+      id: 'lost-and-found.22-obentou-kamo',
+      level: 'n4',
+      role: PASSENGER,
+      frames: ['kamo'],
+      prompt: WHERE,
+      visual: '🍱❓ Your school-trip lunchbox is gone! On the platform, maybe… you\'re not sure.',
+      accepted: ['ホームにわすれたかもしれません', 'ホームのベンチにわすれたかもしれません', 'たぶんホームにわすれたかもしれません', 'すみませんホームにわすれたかもしれません', 'えきのホームにわすれたかもしれません'],
+      model: { text: 'ホームに忘れたかもしれません。', kana: 'ホームにわすれたかもしれません。', en: 'I may have left it on the platform.', furigana: [['ホームに', ''], ['忘', 'わす'], ['れたかもしれません。', '']] },
+      hint: 'The platform is ホーム. Not sure? わすれた, then かもしれません.',
+      timeLimit: 14,
+    },
+    {
+      id: 'lost-and-found.23-kippu-hazu',
+      level: 'n4',
+      role: PASSENGER,
+      frames: ['hazu'],
+      prompt: { text: '駅員：「きっぷとスマホは、どこに入れましたか。」', kana: 'えきいん：「きっぷとスマホは、どこにいれましたか。」', en: 'Station staff: "Where did you put your ticket and phone?"', furigana: [['駅員', 'えきいん'], ['：「きっぷとスマホは、どこに', ''], ['入', 'い'], ['れましたか。」', '']] },
+      visual: '🎫📱 Your ticket and phone are gone. You’re sure you put them in your bag.',
+      accepted: ['かばんにいれたはずです', 'かばんのなかにいれたはずです', 'たしかにかばんにいれたはずです', 'ぜんぶかばんにいれたはずです', 'かばんにいれたはずですけど', 'かばんにあるはずです', 'かばんのなかにあるはずです'],
+      model: { text: 'かばんに入れたはずです。', kana: 'かばんにいれたはずです。', en: 'I’m sure I put them in my bag.', furigana: [['かばんに', ''], ['入', 'い'], ['れたはずです。', '']] },
+      hint: 'Sure it should be so: the plain past (いれた) and はずです.',
+      timeLimit: 14,
+    },
   ],
 };

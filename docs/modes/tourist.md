@@ -172,6 +172,36 @@ whose answers fit their place least and may call a vote after turn 4 (`callRate`
 for them; the tourist counts which place the logged answers fit and guesses once one place has 2+
 clues and leads; on its last chance it picks its best clue. `npm run bots -- --mode tourist --bots 5`.
 
+## Green Car (goals 3.7; 4.2, 4.4, 4.14)
+
+When the room rides in the Green Car (`ctx.greenCar`: everyone N4 or N3), every place has its rules and habits,
+and the questions and answers are about them (`shared/src/modes/tourist/rules.ts`, every line `draft` and
+`greenCar`, each tagged with frames the matcher already knows). Mixed rooms are unchanged: no Green Car places,
+cues or tiles.
+
+- **Frames.** N3 (3.7): ＿ことに なって いる, ＿べき, ＿ても かまわない, ＿わけでは ない. N4: ＿ても いいですか /
+  ＿ては いけない (4.2), the ＿られる potential (4.4), purpose ＿ために / ＿ように and ＿と 言って いました (4.14).
+  No Kana or N5 cues or tiles. The stinging frames (＿くせに, ＿わりに, ＿に しては, ＿わけが ない) are not in the deck.
+- **Lines.** Eight generic questions (5 N3, 3 N4) and twelve generic answers any place can take (the tourist's safe
+  ones), two N3 bluffs (そう いう わけでは ないんですけど…, ここでは そう いう ことに なって いるんです。), and each of
+  the twelve places' own rules (one question, three or four answers: ゴミは 分けて すてる ことに なって います at the konbini,
+  走っては いけません at the restaurant…). The N4 deck's lines still play.
+- **Places.** The aquarium (水族館) plays in every Green Car room; Kids rooms deal it and the school first. Cheeky
+  rooms add the izakaya, the karaoke box and the office year-end party (`audiences: ['cheeky']`, never in a Kids or
+  Family room) and deal them and the aquarium first. Kids lines keep to school, animals and manners: no alcohol,
+  money, dating or work (the restaurant's tip and smoking rules were swapped for finishing your food and running).
+- **Aim the deal** (`greenQuestionTiles`): cues are ranked by `aimWeight` (tonight's need, `ctx.frameNeed`, over
+  this game's says in `gcSaid`), averaged over the line's frames, the place's own question first (not for the
+  tourist). An N3 asker gets the two levels in turn (3 + 2), starting with the level they've said less this game;
+  an N4 asker gets four N4 cues and one N3 cue, last, tagged **N3**.
+- **Answers** (`greenAnswerTiles`): a local gets the place's rules first, in the question's family (a rule question
+  gets rule answers, a why question purpose answers); the tourist gets safe answers and bluffs. An N3 answerer's
+  tiles mix both levels; an N4 answerer always has one N3 tile among the four, tagged **N3** (tiles allowed).
+- **Counting.** A question or answer said aloud (not tapped) adds its frames to `gcSaid`; the phrasebook and path
+  credit work as before.
+- **Bots** know the Green Car lines (cue → Japanese) and the Green Car places' answers (clues and suspects).
+- No offer cards here, so nothing goes to the offer log.
+
 ## Decisions made on Ladi's behalf
 
 1. **Phases**: card = `prompt`, each question turn = one `answer` phase (repeated, like

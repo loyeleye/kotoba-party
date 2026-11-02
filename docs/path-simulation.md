@@ -297,12 +297,66 @@ the line opens.
   Court 2.0, Late Again! 1.1, every other game 0. Late Again!'s frames are spread over 16 causes, so each comes round
   too rarely; the open questions doc asks which games get N3 lines next.
 
+## Green Car (`--green-car`, `--room`, `--audience`)
+
+`--green-car` runs every room in the Green Car (shared/src/greenCar.ts): the game state's `greenCarOn` is true, so
+modes see `ctx.greenCar`, and N3 frames are credited for the run on either line. Without it the sim is unchanged: the
+room's switch is held off, so even an all-N4+ `--room` plays the regular train.
+
+- `--room n3,n3,n4,n4` sets the seats (Green Car default: 2 N3 + 2 N4; also `n3,n4,n4,n4`). Every seat must be N4+
+  in the Green Car. It works without the flag too, e.g. the design's mixed room `--room n4,n5,kana,kana`.
+- `--audience kids|family|cheeky|all` sets the room's Audience (default family). `all` runs the whole sim once per
+  audience and ends with a side-by-side table: rooms that stamp each goal and the median night, the line, and each
+  seat's split and repeats.
+- With `--green-car` the output adds, per seat level:
+  - **The N4/N3 split**: lines said from memory per game (before the memory chance), how many carry an N4 frame
+    and how many an N3 frame (a line with both counts for both), and the N4 share of the two. The Green Car aims at
+    50% for an N3 seat. It's per game, weighted by how often the rooms played each game, then broken down by game.
+  - **Repeats per month**: the first month of nights (4 weekly nights, 12 games) of the first `--repeat-rooms`
+    rooms (50), replayed with fresh games in the order the room played them, one seat per level as one player. It
+    reports phrasebook entries, different items, and items that came up in two or more games, plus the five items
+    most often back. Fresh games, because the room runs draw from a 12-game library, which would repeat its own deals.
+- `--json` writes `{ audiences: { kids, family, cheeky } }` for `--audience all`, and the report's `green` field.
+
+### Baseline (Nov 2, before the Green Car content, 200 rooms, base settings)
+
+`npm run sim:limited -- --green-car --rooms 200` (2 N3 + 2 N4, family). The games don't change in the Green Car yet,
+so this is the regular content in an all-N4+ room:
+
+| Goal | Rooms that stamp it | Median night |
+|---|---|---|
+| 3.1 Rumours and reported speech | 10% | >60 |
+| 3.5 What-ifs | 60% | 51 |
+| 3.7 Explaining and clarifying | 40% | >60 |
+| 3.10 Opinions and debate | 27% | >60 |
+| Every other goal, and the line | 0% | – |
+
+- **N4/N3 split:** an N3 seat says 2.4 lines a game from memory, 1.0 with an N4 frame and 0.5 with an N3 frame:
+  **67% N4**, against the 50% aim, and most lines carry no N3 frame. An N4 seat: 3.0 lines, 90% N4. The N3 lines come
+  from Bento Haus (59% N4), the Hotline (30%), Yōkai Court (37%) and Late Again! (56%); every other game gives an N3
+  seat no N3 frame.
+- **Repeats:** in a month an N3 player meets about 64 different items (83 entries), 9.7 of them in two or more
+  games; an N4 player 67 (98 entries), 13.3. Word Gauntlet's shiritori words and Phrase Bingo squares top the list.
+- **Word Gauntlet takes 61% of the games.** The Limited Express keeps list order, so the suggestion sends rooms to
+  3.1's first game every time it's followed, and Word Gauntlet gives an N3 seat almost nothing (0.3 frames a game).
+  Ranking the Limited Express by yield, as the Express Line does, is likely the biggest cheap win.
+- **1 N3 + 3 N4** (`--room n3,n4,n4,n4`): 3.5 in 62% (51 nights), 3.10 in 39%, 3.7 in 27%, 3.1 in 4%. The N3 seat
+  is 61% N4.
+- **By audience** (`--audience all`): 3.5 stamps in 54% of Kids rooms, 60% Family, 26% Cheeky; 3.7, 3.10 and 3.1
+  within a few points of each other. The N3 seat's split is 67–69% N4 in all three; Cheeky repeats more (13.9 items
+  in two or more games a month for N3, against 9.7).
+
+The mixed room as today (`npm run sim:express -- --rooms 200`, 2 N4 + 2 N5) is the step 5c result: eleven goals in 95%
+of rooms by a median of 40 nights (35 / 46), 4.7, 4.10 and 4.14 in none.
+
 ## Running it
 
 ```
 npm run sim:express -- --rooms 500 --memory 0.7 --follow 0.6 --nights-every 7 --games 3 --reviews 0 --json out.json
 npm run sim:express -- --rooms 500 --reviews 1 --goals 4.1,4.4,4.5,4.9
 npm run sim:limited -- --rooms 200
+npm run sim:limited -- --green-car --rooms 200 [--room n3,n4,n4,n4] [--audience all]
+npm run sim:express -- --rooms 200 --room n4,n5,kana,kana
 ```
 
 It takes about 10 minutes for 500 rooms. `tests/pathSim.test.ts` checks that every Express game reaches its

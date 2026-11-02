@@ -148,6 +148,41 @@ Only `kakegoe_call` at each score beat, with the real title as the prompt (bank:
 the most players), めいたんてい "Great Detective" (found the most real titles). Each needs at
 least one.
 
+## Green Car (goals 4.3, 4.13; 3.2, 3.6)
+
+When the room rides in the Green Car (`ctx.greenCar`: everyone N4 or N3), everyone draws a sentence instead of a
+word (`sentences.ts`, 50 sentences, all `draft`). Mixed rooms are unchanged: pack words, word tiles, any fake.
+
+- **Sentences** are two chunks: who (おとうとが, パパは, えんそくの 日に) and what happened, the chunk that carries
+  the frame. N4: ＿た ことが ある, ＿て しまった (4.3), the passive (4.13). N3: the suffering passive and
+  ＿させられる (3.2), ＿ようと した and ＿ずに (3.6), and the optional ＿ふりを した, ＿っぱなし, ＿まま.
+  Examples: ぼくは ねて いる ふりを した, パパが でんきを つけっぱなしで ねた, おとうとは おばけを 見た ことが ある.
+- **Pools.** Kids (20: school, pets, siblings, yōkai: ねる ふり, しゅくだいを わすれた まま, かっぱ, ペンギン),
+  Family (20: Dad, Mum, Grandpa and Grandma), Cheeky (10: the boss, the new hire, the drunk, a date: よっぱらいが
+  くつを はいた まま ねた; never explicit). Kids rooms deal Kids sentences only, Family rooms Kids and Family,
+  Cheeky rooms Family, Cheeky and the all-ages Kids ones. Every frame is in every pool.
+- **The deal.** An N4 artist draws an N4 sentence; an N3 artist an N3 or N4 one, half and half. Within the level,
+  Fude aims at the writers, since they are the ones who say the frames: the sentence whose frames the other players
+  need most (`aimWeight`: tonight's need over this game's says, `gcSaid`, plus frames already dealt this round),
+  averaged over its frames; ties random.
+- **Tiles** are chunks: three who chunks and three what-happened chunks from other sentences in the room's pool,
+  never a chunk of the real title. Two what-happened chunks share the real sentence's frame; the third is the
+  other level (an N3 stretch for an N4 writer, tagged **N3**; for an N3 writer, the level the drawing isn't).
+  Writers see the real sentence's frame as a hint chip (tagged N3 when it is one).
+- **Fake titles must carry a frame**: a fake with no N4 or N3 frame is refused (`no-frame`). The usual checks
+  still apply (Japanese, not too close to the real title, Kids words).
+- **Credit.** A fake said aloud goes in the speaker's phrasebook as their own sentence, with its N4/N3 frames:
+  from memory (counts toward the path, and toward `gcSaid`) unless it says one of the what-happened tiles in their
+  hand, which is reading. Typed and tile fakes earn their usual points but no path credit. The room still says the
+  real title together at the score beat (read, as before).
+- **House decoys** are other sentences from the room's pool.
+- **Bots** in the Green Car say a who tile plus a what-happened chunk from memory (about 70%): another sentence's
+  chunk in the real one's frame (an N3 bot, when the drawing is N4, two times in five an N3 chunk, so its fakes run about half N3); otherwise they send
+  the two tiles.
+- No offer cards here, so nothing goes to the offer log.
+- Matcher note: ＿て しまった isn't heard in a sentence that contains ちゃん (the te-shimau `not` list), so the
+  sentences use おじいさん / おばあさん, not おじいちゃん / おばあちゃん.
+
 ## Decisions made on Ladi's behalf
 
 1. **Host: Fude.** A living brush hosting the drawing show is the obvious fit. Fude's written

@@ -125,7 +125,15 @@ function fakeScreen(ctx: Ctx): HTMLElement {
     { class: 'screen oek' },
     tag(ctx, 'fake titles'),
     h('p', { class: 'prompt' }, 'Look at the TV. What could it be?'),
-    h('p', { class: 'hint' }, 'Write a fake title in Japanese that sounds real. Say it, type it, or build it from tiles.'),
+    m.frame
+      ? h(
+          'p',
+          { class: 'hint' },
+          'Green Car: your fake is a sentence too, in an N4 or N3 frame. The real one uses ',
+          h('span', { class: 'frame-chip' }, h('span', { class: 'frame-ja', lang: 'ja' }, m.frame.ja), h('small', {}, m.frame.en)),
+          m.frame.n3 ? h('span', { class: 'oek-n3' }, 'N3') : null,
+        )
+      : h('p', { class: 'hint' }, 'Write a fake title in Japanese that sounds real. Say it, type it, or build it from tiles.'),
     speakBox({
       label: 'Hold and say a fake title',
       placeholder: 'にほんごで…',
@@ -156,7 +164,7 @@ function tilePanel(ctx: Ctx, tiles: NonNullable<NonNullable<OekakiView['mine']>[
     const b = h(
       'button',
       { type: 'button', class: `tile oek-tile ${t.particle ? 'particle' : ''}` },
-      h('span', { lang: 'ja' }, kana ? t.kana : t.text),
+      h('span', { lang: 'ja' }, kana ? t.kana : t.text, t.n3 ? h('span', { class: 'oek-n3' }, 'N3') : null),
       t.romaji ? h('small', { class: 'oek-romaji' }, t.romaji) : null,
       h('small', {}, t.en),
     ) as HTMLButtonElement;

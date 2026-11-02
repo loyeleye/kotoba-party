@@ -15,6 +15,8 @@ body[data-mode='ghost-hotline'] { --mode: #e87ce8; }
 
 .gh-label { font-size: 15px; color: var(--muted); font-weight: 700; }
 .gh-hint { font-size: 15px; color: var(--muted); }
+/* Green Car: the N3 stretch tag. */
+.gh-n3 { display: inline-block; padding: 0 6px; border-radius: 6px; background: #2f7d4f; color: #fff; font-size: 13px; font-weight: 800; }
 .gh-strong { font-size: 18px; font-weight: 800; }
 .gh-box { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--panel); border: 2px solid var(--line); }
 .gh-problem { padding: 10px 12px; border-radius: 12px; background: #4a1f2a; color: #ffd6d6; font-weight: 800; }

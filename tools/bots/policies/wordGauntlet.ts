@@ -7,6 +7,7 @@ import { lexiconFor, type WordGauntletView } from '../../../shared/src/modes/wor
 import { follows, repeatKey } from '../../../shared/src/modes/wordGauntlet/shiritori.js';
 import { RUMOUR_FINS, RUMOUR_SEEDS, addFin, finKept, keptParts, rumourFin, rumourFrameOf, rumourLine, type RumourFrameId } from '../../../shared/src/modes/wordGauntlet/rumours.js';
 import { n4Up } from '../../../shared/src/level.js';
+import { fillModel, modelsFor, SENTENCE_CARD_BY_FRAME, startsWithLink } from '../../../shared/src/modes/wordGauntlet/sentences.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
 
@@ -112,6 +113,31 @@ export function wordGauntletPolicy(content: ContentLibrary, opts: WordGauntletPo
           const options = r.reveal.steps.filter((st) => st.text !== null && st.playerId !== playerId);
           const pick = options[(seat * 5) % Math.max(1, options.length)];
           if (pick) out.push({ key: 'rvote', move: { kind: 'vote', step: pick.index }, delayMs: later() });
+        }
+      }
+
+      // Sentence Shiritori (Green Car round 3): a model line of the card's frame, starting with the link word when it's
+      // a noun the bot knows, else a noun on the link kana. An N4 bot takes the N3 stretch card every other turn.
+      const st = game.sentences;
+      if (st?.mine) {
+        const m = st.mine;
+        if (view.phase === 'answer' && st.turn === playerId && (m.card || m.stretch)) {
+          const useStretch = !!m.stretch && (seat + st.current) % 2 === 0;
+          const card = SENTENCE_CARD_BY_FRAME[(useStretch ? m.stretch : m.card)!.frame];
+          const models = card ? modelsFor(card, view.audience) : [];
+          const model = models[(seat + st.current) % Math.max(1, models.length)];
+          const said = st.chain.map((c) => c.text).join(' ');
+          const link = st.link;
+          const noun = (link.word && nouns.find((n) => n.kana === link.word)) || nouns.filter((n) => follows(link.kana, n.kana) && !said.includes(n.kana))[(seat + st.current) % 7];
+          if (model && noun) {
+            const line = fillModel(model, noun).text;
+            if (startsWithLink(line, link)) out.push({ key: `sentence${st.current}`, move: { kind: 'sentence', utterance: { via: 'speech', text: line } }, delayMs: later() });
+          }
+        }
+        if (view.phase === 'reveal' && m.vote === null) {
+          const options = st.chain.map((c, i) => ({ c, i })).filter(({ c }) => c.playerId && c.playerId !== playerId);
+          const pick = options[(seat * 5) % Math.max(1, options.length)];
+          if (pick) out.push({ key: 'svote', move: { kind: 'vote', step: pick.i }, delayMs: later() });
         }
       }
 

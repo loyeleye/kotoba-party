@@ -1,0 +1,44 @@
+/* Katsuyō Raid on the stage: the kana raid's arena (kanaRaid.css) plus badge sashes, chunk pictures and the
+   scroll boss. Placeholder art: text badges and emoji until the badge icons and scroll sheet are drawn. */
+.ky-sash { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; padding: 2px 12px; border-radius: 8px; font-size: 26px; font-weight: 900; white-space: nowrap; background: #2b5d3a; color: #f4fff0; border: 3px solid #1a1426; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35); transform: rotate(-3deg); }
+.ky-sash.n3 { background: #6a2f6e; }
+.ky-sash.hidden { background: #3a3350; color: var(--warn); font-size: 34px; min-width: 52px; justify-content: center; }
+.ky-sash.small { font-size: 20px; margin-top: 6px; }
+.ky-sash-icon { font-size: 0.9em; }
+.ky-n3 { font-size: 14px; font-weight: 900; background: var(--warn); color: #1a1426; border-radius: 6px; padding: 0 5px; }
+.ky-picture { font-size: 44px; line-height: 1; margin-bottom: -6px; }
+.ky-tag .raid-kana { font-size: 44px; }
+.ky-stage .raid-yokai.wide .ky-tag .raid-kana { font-size: 30px; }
+.ky-model { position: absolute; left: 50%; top: 62%; translate: -50% 0; font-size: 28px; font-weight: 800; white-space: nowrap; background: #fff7e6; color: #1a1426; border: 3px solid var(--good); border-radius: 12px; padding: 2px 12px; animation: ky-rise 1800ms ease-out forwards; }
+@keyframes ky-rise { 0% { opacity: 0; transform: translateY(16px); } 15% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-30px); } }
+.ky-chain { display: flex; gap: 12px; align-items: center; justify-content: center; font-size: 32px; color: var(--warn); animation: ky-chain 2500ms ease-out forwards; }
+.ky-chain .ky-sash { margin-top: 0; }
+@keyframes ky-chain { 0% { opacity: 0; transform: scale(0.6); } 12% { opacity: 1; transform: scale(1.08); } 20% { transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* The badge check's chart: N4 on the left, N3 on the right. */
+.ky-chart { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: min(1500px, 100%); }
+.ky-chart-side { display: grid; gap: 8px; align-content: start; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 14px 18px; }
+.ky-chart-head { margin: 0; font-size: 26px; font-weight: 900; color: var(--muted); }
+.ky-chart-row { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; font-size: 24px; }
+.ky-chart-row .ky-sash { margin-top: 0; transform: none; font-size: 22px; }
+.ky-chart-en { color: var(--muted); text-align: left; }
+.ky-chart-ex { font-weight: 800; }
+
+/* The Sentence Yōkai: a scroll with the gist; its pieces are ink blots that break off. */
+.ky-scroll { position: relative; display: grid; gap: 16px; justify-items: center; background: #f3ead6; color: #1b1712; border-radius: 18px; padding: 18px 28px; border: 6px double #8a6a3a; max-width: 1200px; }
+.ky-gist { margin: 0; font-size: 40px; font-weight: 800; }
+.ky-blots { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.ky-blot { display: grid; justify-items: center; gap: 4px; padding: 10px 16px; border-radius: 40% 55% 45% 60%; background: #1b1712; color: #f3ead6; min-width: 140px; }
+.ky-blot-verb { font-size: 40px; font-weight: 900; }
+.ky-blot.broken { background: transparent; color: var(--good); border: 3px dashed var(--good); transform: rotate(-5deg) translateY(8px); }
+.ky-boss.blow .ky-scroll { box-shadow: 0 0 40px var(--warn); }
+.ky-line { font-size: 40px; font-weight: 900; margin: 0; }
+.ky-line small { font-size: 24px; color: var(--muted); font-weight: 600; }
+.ky-chips .raid-chip { font-size: 28px; }
+body[data-motion='calm'] :is(.ky-model, .ky-chain) { animation: none !important; }
+
+@media (max-width: 700px) {
+  .ky-chart { grid-template-columns: 1fr; }
+  .ky-gist { font-size: 26px; }
+  .ky-blot-verb { font-size: 28px; }
+}

@@ -229,6 +229,41 @@ Bots answer it yes or no with the frame, peeking first a quarter of the time. `n
 (32 games): ＿た ことが あります went from 0 to 0.39 a game for an N4 seat in Happyōkai (the most it can be
 is 0.5 in the four-seat room with two N4 seats, one card a game).
 
+## Green Car (goals 3.2, 3.5, 3.6, 3.9; 4.3, 4.12)
+
+When the room rides in the Green Car (`ctx.greenCar`: everyone N4 or N3), every talk is a deck talk. Nothing moved
+out of mixed rooms: the N4 decks, the swap and Chōchin-san's card play there as before, and the three new decks
+play only here.
+
+- **Three N3 decks** (`DECKS`, `level: 'n3'`, `greenCar`, all `draft`), on the usual slides:
+
+  | | What happened to me (ひどい 目に あった 話) | How it's changed (あれから) | If… (もしも…と したら) |
+  | --- | --- | --- | --- |
+  | Frames | suffering passive, ＿させられる; ＿ずに 〜ようと した (3.6) | ＿たびに, ＿うちに, ＿て いらい + ＿ことに して いる (3.6), ＿ぶり, ＿に つれて | ＿と したら |
+  | Ready sentences | あの 日、〔word〕の 前で 〔topic〕に 泣かれて… (鳴かれて, all night, for an animal) / それから、〔topic〕に 〔word〕の 前で 歌を 歌わされました (or the title's own: 待たされ, 聞かされ, 飲まされ) / それで、〔word〕を 見ずに 逃げようと しました | 〔topic〕を 見る たびに、〔word〕を 思い出します / 今の うちに、〔word〕の 写真を… とって おく ことに しました / 〔word〕を 見て 以来、毎朝 早く 起きる ことに して います | もし 〔title's clause〕と したら、まず 〔word〕… / もし 〔word〕が なかったと したら… / もし この 〔word〕が 話せると したら… |
+  | Kids | 弟の いたずら, うちの 猫の いたずら, かっぱと 行った 遠足 (+ 鬼コーチ in Kids and Family) | 何年ぶりの おばあちゃんの 村, うちの 猫が 大きく なるまで, たぬきが 町に 来て から (+ 新しい 学校) | 透明人間に なれる, 動物と 話せる, 妖怪の 友だちが いる (+ 空を 飛べる) |
+  | Family adds | ツアーガイドの 田中さん, となりの おばさん | 十年ぶりの ふるさと, パパが ジムに 通い始めて から | 人生を やり直せる, 無人島に 住む |
+  | Cheeky adds | 忘年会の 部長 (飲まされ), 合コンの 幹事 | 元カレと 別れて から, 新入社員の 一年 | 宝くじが 当たった, 元カノから 電話が 来た |
+
+  The topic of a What happened to me title is who did it, so no line aims ＿くせに-style blame at anyone; the
+  stinging frames aren't in these decks at all.
+- **The pair.** Each presenter gets one N4 deck title (Then and now, If I were…) and one N3 deck title, no usual
+  titles and no swap (`not-in-green-car`). An N3 presenter gets them in random order (their picks come out about
+  half and half); an N4 presenter sees the N4 title first and the N3 one tagged **N3**, as stretch.
+- **Aim the deal** (`greenPair`): within each level, the deck whose required frames (`DECKS[deck].aim`) the presenter
+  needs most: `aimWeight` (tonight's earlier games, `ctx.frameNeed`) over this game's own says (`gcSaid`, counted
+  from the deck credit, Chōchin-san's card said from memory, and questions asked aloud), averaged over the deck's
+  frames; ties go to a random deck.
+- **The question from the floor uses an N3 frame.** An N3 asker's first card is an N3 one (`level: 'n3'` in
+  `QUESTIONS`: その とき、何を させられたんですか？, 逃げようと しなかったんですか？, 元気な うちに…, それ以来…,
+  もし 一日だけ 〔word〕に なれると したら…), the talk's deck's own first, else one any talk can take (〔word〕を 見る
+  たびに…, もし 〔word〕が 話せると したら…, もし 明日 何でも できると したら…), the one whose frames the asker needs
+  most. An N4 asker gets it as their second card, tagged N3. Askers keep their own level here (not the lower of
+  theirs and the presenter's).
+- **Credit** is the deck rule above: a line of the presenter's own in a deck frame logs the deck's closest ready
+  sentence, from memory, for the frames heard in it.
+- **Bots** speak the N3 decks' frames on their own lines and answers (`tools/bots/policies/happyokai.ts`).
+
 ## Not built yet
 
 - A private correction after each talk (an AI teacher's one-line note on one sentence).

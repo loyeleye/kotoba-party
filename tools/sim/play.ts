@@ -6,7 +6,7 @@ import type { Level } from '../../content/src/types.js';
 import type { CommandBody } from '../../shared/src/client.js';
 import { apply, createGame, gameResults, wakeAt, type GameAction, type GameContext, type GameState } from '../../shared/src/game.js';
 import type { ContentLibrary } from '../../shared/src/modes/mode.js';
-import type { Command, ModeId } from '../../shared/src/protocol.js';
+import type { Audience, Command, ModeId } from '../../shared/src/protocol.js';
 import type { GameResult } from '../../shared/src/progress.js';
 import { viewFor } from '../../shared/src/view.js';
 import { policyMaker } from '../bots/policies/index.js';
@@ -30,10 +30,19 @@ export interface PlayedGame {
   ms: number;
 }
 
+/** The room's settings for a game: the Audience (default family) and the Green Car switch (default: the game's
+ *  own rule, on by itself when every seat is N4+). Asking for the Green Car in a room with a Kana or N5 seat throws. */
+export interface PlayOptions {
+  audience?: Audience;
+  greenCar?: boolean;
+}
+
 /** Plays `mode` once with these seat levels. Throws if the game doesn't reach its recap. */
-export function playGame(content: ContentLibrary, mode: ModeId, levels: readonly Level[], seed: number, at = 1_000_000): PlayedGame {
+export function playGame(content: ContentLibrary, mode: ModeId, levels: readonly Level[], seed: number, at = 1_000_000, opts: PlayOptions = {}): PlayedGame {
   const random = mulberry(seed);
   const s: GameState = createGame('SIMS');
+  if (opts.audience) s.audience = opts.audience;
+  if (opts.greenCar !== undefined) s.greenCar = opts.greenCar;
   let now = at;
   let ids = 0;
   let cmdId = 0;
@@ -49,6 +58,7 @@ export function playGame(content: ContentLibrary, mode: ModeId, levels: readonly
   const policies = new Map(s.players.map((p, i) => [p.id, make(i + 1, mode)]));
   const started = cmd('stage', { type: 'start', mode });
   if (!started.changed) throw new Error(`${mode}: could not start (${JSON.stringify(started)})`);
+  if (opts.greenCar !== undefined && s.greenCarOn !== opts.greenCar) throw new Error(`${mode}: the Green Car is ${s.greenCarOn ? 'on' : 'off'} in a ${levels.join(',')} room`);
   const t0 = now;
   for (let i = 0; i < 20_000 && (s.phase as string) !== 'recap'; i++) {
     // Bots move until nothing changes; a new phase gets its own turn at the bots before any timer fires.
