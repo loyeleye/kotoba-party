@@ -5,7 +5,7 @@ import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, wakeAt, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { callsFor, heardAny, lineOf, MAX_ADVISERS, POINTS, REACT_LOCK_MS, REACT_MS, RECORD_MS, type HotlineState, type HotlineView } from '../shared/src/modes/ghostHotline/hotline.js';
 import { FRAME_BY_ID, framesOf } from '../shared/src/japanese/frames.js';
-import { ADVICE, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, PROBLEMS, problemOf } from '../shared/src/modes/ghostHotline/problems.js';
+import { ADVICE, adviceFrames, adviceOf, betTilesOf, CHUNKS, kanaTilesOf, PROBLEMS, problemOf, problemsFor } from '../shared/src/modes/ghostHotline/problems.js';
 import { phraseFrames } from '../shared/src/progress.js';
 import type { Command, RoomView } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
@@ -161,7 +161,9 @@ describe('Ghost Advice Hotline: content', () => {
         expect(heardAny(line.model.kana, adviceOf(p.cure)!.keys), `${p.id} ${level}: ${line.model.kana}`).toBe(true);
         expect(line.mission, `${p.id} ${level}`).not.toMatch(/〜|＿|te-form|grammar/i);
       }
-      expect(p.advice.n5.frame?.kana, p.id).toContain('＿＿');
+      // A Green Car problem has no N5 line: it never rings in a room with Kana or N5 players.
+      if (p.greenCar) expect(p.advice.n5, p.id).toBeUndefined();
+      else expect(p.advice.n5!.frame?.kana, p.id).toContain('＿＿');
       // Every N4 model uses a chunk the booth can credit.
       expect(CHUNKS.some((k) => k.level === 'n4' && heardAny(p.advice.n4.model.kana, k.keys)), p.id).toBe(true);
       // N3 (docs/n3-coverage.md): its own advice, with a chunk the booth credits and an N3 frame the path counts.
@@ -179,7 +181,9 @@ describe('Ghost Advice Hotline: content', () => {
     const dir = new URL('../stage/assets/hotline/', import.meta.url);
     if (!existsSync(dir)) return;
     for (const a of ADVICE) expect(existsSync(new URL(`${a.picture}.png`, dir)), a.picture).toBe(true);
-    for (const p of PROBLEMS) expect(existsSync(new URL(`${p.caller.picture}.png`, dir)), p.caller.picture).toBe(true);
+    // The rokurokubi (a Green Car caller) is art still to come: the screens show its emoji meanwhile.
+    const pending = new Set(['caller-rokurokubi']);
+    for (const p of PROBLEMS) if (!pending.has(p.caller.picture)) expect(existsSync(new URL(`${p.caller.picture}.png`, dir)), p.caller.picture).toBe(true);
   });
 });
 
@@ -484,6 +488,7 @@ describe('Ghost Advice Hotline: chunks', () => {
     expect(heardAny('ねたらどうですか', ta.keys)).toBe(true);
     // Every model at a level uses that level's chunk.
     for (const p of PROBLEMS) for (const lv of ['n5', 'n4', 'n3'] as const) {
+      if (!p.advice[lv] && p.greenCar && lv === 'n5') continue;
       const m = p.advice[lv]!.model.kana.replace(/[\s　、。！？「」]/g, '');
       expect(CHUNKS.some((k) => k.level === lv && heardAny(m, k.keys)), `${p.id} ${lv}`).toBe(true);
     }
@@ -530,5 +535,113 @@ describe('Ghost Advice Hotline: pacing', () => {
     busy.start();
     const fast = busy.playOut(true);
     expect(fast).toBeLessThan(slow);
+  });
+});
+
+// ---- the Green Car ----
+
+describe('Ghost Advice Hotline: the Green Car', () => {
+  const GC = PROBLEMS.filter((p) => p.greenCar);
+  const audiences = ['kids', 'family', 'cheeky'] as const;
+  const framesIn = (a: (typeof audiences)[number]) =>
+    new Set(problemsFor(a, true).flatMap((p) => (['n4', 'n3'] as const).flatMap((lv) => (p.advice[lv] ? adviceFrames(p.advice[lv]!, lv) : []))));
+
+  it('rides in the Green Car only when everyone is N4 or N3, and its own callers never reach a mixed room', () => {
+    const gc = new Table(4, ['n4', 'n3', 'n4', 'n3'], 5);
+    gc.start();
+    expect(gc.st.greenCar).toBe(true);
+    expect(gc.view().greenCar).toBe(true);
+    expect(gc.c.lines).toBeDefined();
+    const mixed = new Table(4, ['n4', 'n5', 'n3', 'kana'], 5);
+    mixed.start();
+    expect(mixed.st.greenCar).toBeFalsy();
+    expect(mixed.view().greenCar).toBe(false);
+    mixed.playOut();
+    const own = new Set(GC.map((p) => p.id));
+    expect(mixed.st.calls.some((c) => own.has(c.problemId) || c.lines)).toBe(false);
+    for (const a of audiences) expect(problemsFor(a).some((p) => p.greenCar)).toBe(false);
+    // The setting can keep an all-N4+ room out of it.
+    const off = new Table(4, ['n4', 'n3', 'n4', 'n3'], 5);
+    expect(off.cmd('stage', { type: 'settings', greenCar: false }).changed).toBe(true);
+    off.start();
+    expect(off.st.greenCar).toBeFalsy();
+    expect(off.c.lines).toBeUndefined();
+  });
+
+  it('its callers have N4 and N3 advice only, with named frames the path finds, and chunks the booth hears', () => {
+    expect(GC.length).toBeGreaterThanOrEqual(4);
+    for (const p of GC) {
+      expect(p.advice.n5, p.id).toBeUndefined();
+      expect(p.status).toBe('draft');
+      for (const lv of ['n4', 'n3'] as const) {
+        const line = p.advice[lv]!;
+        expect(line.frames?.length, `${p.id} ${lv}`).toBeGreaterThan(0);
+        for (const f of line.frames!) {
+          expect(FRAME_BY_ID[f].level, `${p.id} ${lv} ${f}`).toBe(lv);
+          expect(framesOf(line.model, undefined, { keepHidden: true }), `${p.id} ${lv} ${f}`).toContain(f);
+        }
+        const k = CHUNKS.find((x) => heardAny(line.model.kana, x.keys));
+        expect(k?.level, `${p.id} ${lv}`).toBe(lv);
+      }
+    }
+  });
+
+  it('Kids and Cheeky rooms get their own callers, and every frame reaches every audience', () => {
+    const ids = (a: (typeof audiences)[number]) => problemsFor(a, true).filter((p) => p.greenCar).map((p) => p.id);
+    expect(ids('kids')).toEqual(expect.arrayContaining(['kappa-pool', 'zashiki-friends']));
+    expect(ids('kids')).not.toContain('rokurokubi');
+    expect(ids('kids')).not.toContain('oni-date');
+    expect(ids('cheeky')).toEqual(expect.arrayContaining(['rokurokubi', 'oni-date']));
+    const all = new Set(audiences.flatMap((a) => [...framesIn(a)]));
+    for (const a of audiences) for (const f of all) expect(framesIn(a).has(f), `${a} ${f}`).toBe(true);
+  });
+
+  it('an N3 adviser takes N3 and N4 lines in turn; an N4 adviser gets the N4 line with the N3 line as stretch', () => {
+    const t = new Table(4, ['n3', 'n4', 'n3', 'n4'], 8);
+    t.start();
+    t.playOut();
+    for (const id of ['p1', 'p3']) {
+      const got = t.st.calls.filter((c) => c.lines?.[id]).map((c) => c.lines![id]);
+      expect(got[0], id).toBe('n3');
+      const diff = got.filter((l) => l === 'n3').length - got.filter((l) => l === 'n4').length;
+      expect(diff === 0 || diff === 1, id).toBe(true);
+    }
+    for (const id of ['p2', 'p4']) expect(t.st.calls.every((c) => !c.lines?.[id] || c.lines[id] === 'n4')).toBe(true);
+    // The stretch is on the N4 seat's phone, with the N3 tag; an N3 seat has none.
+    const u = new Table(4, ['n4', 'n4', 'n3', 'n4'], 8);
+    u.start();
+    toPlan(u);
+    const p = problem(u);
+    const n4 = u.c.advisers.find((id) => id !== 'p3')!;
+    expect(u.view(n4).me!.stretch).toMatchObject({ tag: 'N3', model: p.advice.n3!.model });
+    if (u.c.advisers.includes('p3')) expect(u.view('p3').me!.stretch).toBeNull();
+  });
+
+  it('an N4 adviser who says the N3 stretch is logged for the N3 line, and the frames said are counted', () => {
+    const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 7);
+    t.start();
+    toPlan(t);
+    const p = problem(t);
+    const [a1, a2] = t.c.advisers;
+    adviseAll(t, (id) => clip(id === a1 ? p.advice.n3!.model.kana : lineOf(p, 'n4').model.kana));
+    while (t.s.phase !== 'score') t.tick();
+    expect(t.s.phrasebook[a1!]!.find((e) => e.itemId === `hotline:${p.id}:n3`)).toMatchObject({ outcome: 'said', recall: 'memory' });
+    expect(t.s.phrasebook[a2!]!.find((e) => e.itemId === `hotline:${p.id}:n4`)).toMatchObject({ outcome: 'said' });
+    for (const f of adviceFrames(p.advice.n3!, 'n3')) expect(t.st.said![a1!]![f]).toBe(1);
+    for (const f of adviceFrames(lineOf(p, 'n4'), 'n4')) expect(t.st.said![a2!]![f]).toBe(1);
+    expect(t.view(a1!).me!.note!.credit).toBe('memory');
+  });
+
+  it('aims the deal: the next caller is one whose lines have the frames the advisers have said least', () => {
+    const t = new Table(4, ['n4', 'n4', 'n4', 'n4'], 3);
+    t.start();
+    // Every adviser has said every frame but one, many times over.
+    const rare = 'hou-ga-ii';
+    const all = framesIn('family');
+    expect(all.has(rare)).toBe(true);
+    for (const id of ['p1', 'p2', 'p3', 'p4']) t.st.said![id] = Object.fromEntries([...all].filter((f) => f !== rare).map((f) => [f, 9]));
+    t.playOut();
+    const p = problemOf(t.st.calls[1]!.problemId)!;
+    expect(adviceFrames(lineOf(p, 'n4'), 'n4')).toContain(rare);
   });
 });
