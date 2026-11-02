@@ -8,7 +8,8 @@
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import { CLOSE } from '../shared/src/protocol.js';
 import { isRoomCode, normalizeRoomCode, randomRoomCode } from '../shared/src/roomCode.js';
-import { MAX_CLIP_BYTES } from '../server/src/stt.js';
+import { MAX_CLIP_BYTES, isClip, sttFromEnv, transcribe } from '../server/src/stt.js';
+import { utterancesIn } from '../server/src/utterances.js';
 import { addReadingsRemote } from './reading.js';
 import { ACCOUNTS_NAME } from './accountsObject.js';
 import type { Env } from './env.js';
@@ -46,6 +47,24 @@ export default {
 
     // Optional sign-in (docs/accounts.md). The passkey belongs to the host the phone opened, so the
     // object is told the request's own origin, not PUBLIC_URL (a short link that redirects here).
+    const accounts = () => env.ACCOUNTS.get(env.ACCOUNTS.idFromName(ACCOUNTS_NAME));
+    if (path === '/api/account/speech' && req.method === 'POST') {
+      // A solo mission outside a room (shared/src/missions.ts): the sign-in, not a seat, says who may talk.
+      const token = bearerOf(req);
+      const live = token ? await accounts().fetch(new Request('https://accounts/signedin', { method: 'POST', body: JSON.stringify({ token }) })) : null;
+      if (!live?.ok) return json(401, { error: 'signed-out' });
+      const stt = sttFromEnv(env);
+      if (!stt) return json(503, { error: 'no-speech' });
+      if (Number(req.headers.get('content-length') ?? 0) > MAX_CLIP_BYTES) return json(400, { error: 'bad-clip' });
+      const clip = new Uint8Array(await req.arrayBuffer());
+      if (!isClip(clip)) return json(400, { error: 'bad-clip' });
+      const result = await transcribe(clip, stt);
+      if (!result.ok) return json(502, { error: result.error });
+      const heard: Utterance = { via: 'speech', text: result.text };
+      await addReadingsRemote({ heard }, env.READER_URL ? { url: env.READER_URL, token: env.READER_TOKEN } : null);
+      return json(200, heard);
+    }
+
     const account = /^\/api\/account\/([a-z]+(?:\/[a-z]+)?)$/.exec(path);
     if (account) {
       if (Number(req.headers.get('content-length') ?? 0) > MAX_BODY) return json(400, { error: 'bad-request' });
@@ -53,7 +72,20 @@ export default {
       target.searchParams.set('origin', url.origin);
       const tz = url.searchParams.get('tz');
       if (tz) target.searchParams.set('tz', tz);
-      return env.ACCOUNTS.get(env.ACCOUNTS.idFromName(ACCOUNTS_NAME)).fetch(new Request(target, req));
+      if (account[1] === 'mission/answer' && req.method === 'POST') {
+        // A mission's answer is checked by its reading, as a play command's is: added here, never by the phone.
+        const text = await req.text();
+        let body: unknown = null;
+        try {
+          body = text.length <= MAX_BODY ? JSON.parse(text) : null;
+        } catch {
+          // The accounts object answers bad-request.
+        }
+        utterancesIn(body);
+        await addReadingsRemote(body, env.READER_URL ? { url: env.READER_URL, token: env.READER_TOKEN } : null);
+        return accounts().fetch(new Request(target, { method: 'POST', headers: req.headers, body: JSON.stringify(body) }));
+      }
+      return accounts().fetch(new Request(target, req));
     }
 
     if (path === '/api/rooms' && req.method === 'POST') {

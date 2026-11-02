@@ -106,6 +106,8 @@ export interface MemoryDay {
   day: string;
   n: number;
   game: boolean;
+  /** Read in a solo mission (shared/src/missions.ts): the server checked the reading. Only the goals with a mission read these. */
+  solo?: boolean;
 }
 
 /**
@@ -187,7 +189,7 @@ function passRecheck(m: FrameMark, now: number): void {
 export const recallOf = (e: Pick<PhraseEntry, 'recall'>, _mode?: ModeId): Recall => e.recall ?? 'read';
 
 /** Today counts once more for a phrase said from memory. */
-function rememberDay(card: PhraseCard, day: string, game: boolean, at: number): void {
+function rememberDay(card: PhraseCard, day: string, game: boolean, at: number, solo = false): void {
   card.recall = 'memory';
   card.memAt = Math.max(card.memAt ?? 0, at);
   const days = (card.memory ??= []);
@@ -195,7 +197,8 @@ function rememberDay(card: PhraseCard, day: string, game: boolean, at: number): 
   if (d) {
     d.n += 1;
     d.game ||= game;
-  } else days.push({ day, n: 1, game });
+    if (solo) d.solo = true;
+  } else days.push({ day, n: 1, game, ...(solo ? { solo: true } : {}) });
   days.sort((a, b) => (a.day < b.day ? -1 : 1));
   if (days.length > MEMORY_DAYS) days.splice(0, days.length - MEMORY_DAYS);
 }
@@ -252,7 +255,7 @@ export function addGame(p: Progress, result: GameResult, tzOffsetMin: number): v
  * One phrasebook entry from a game. Said from memory moves it up a box; a retry or a miss brings it
  * back tomorrow; seen (tapped or read) only adds it.
  */
-function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number, day: string): void {
+function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number, day: string, solo = false): void {
   const all = (p.phrases ??= {});
   const card = (all[e.itemId] ??= { itemId: e.itemId, text: e.text, kana: e.kana, en: e.en, mode, box: 0, due: at, seen: 0, said: 0, missed: 0, last: e.outcome, lastAt: at });
   Object.assign(card, { text: e.text, kana: e.kana, en: e.en, mode, last: e.outcome, lastAt: at });
@@ -261,7 +264,7 @@ function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number, day: s
   card.seen += 1;
   if (e.outcome === 'said') {
     card.said += 1;
-    if (recallOf(e, mode) === 'memory') rememberDay(card, day, true, at);
+    if (recallOf(e, mode) === 'memory') rememberDay(card, day, !solo, at, solo);
     else card.recall ??= 'read';
     card.box = Math.min(TOP_BOX, card.box + 1);
     card.due = at + BOX_DAYS[card.box]! * DAY_MS;
@@ -275,6 +278,16 @@ function addPhrase(p: Progress, e: PhraseEntry, mode: ModeId, at: number, day: s
     const oldest = ids.sort((a, b) => all[a]!.lastAt - all[b]!.lastAt).slice(0, ids.length - MAX_PHRASES);
     for (const id of oldest) delete all[id];
   }
+}
+
+/**
+ * One sign from a solo mission (shared/src/missions.ts), already checked by the server: read from memory,
+ * read after peeking, or missed. It lands in the phrasebook like a game's line, with a solo memory day instead
+ * of a game one. A new card is filed under Shodō, whose say words these are.
+ */
+export function addSoloSay(p: Progress, e: PhraseEntry, at: number, tzOffsetMin: number): PhraseCard {
+  addPhrase(p, e, p.phrases?.[e.itemId]?.mode ?? 'shodo', at, dayOf(at, tzOffsetMin), true);
+  return p.phrases![e.itemId]!;
 }
 
 /** The phrases up for review now, as for cards, with any met frame's 21-day re-check first. */

@@ -12,6 +12,7 @@ import { playRoulette } from '../../shared/src/roulette.js';
 import { PICKER_LEVELS, SURPRISE, type ByeReason, type JoinError, type Level, type ModeId, type PlayerView, type RoomView, type WaitAnswer } from '../../shared/src/protocol.js';
 import { PHONE_MODES } from './modes/index.js';
 import { setSpeechService, speechReady } from './components/mic.js';
+import { closeMission } from './mission.js';
 import { getTalkMode, isTalking, onTalkEnd, setQuiet, setSpeakLevel, setTalkMode, speakBox } from './components/speak.js';
 import { openMicSheet, refreshMicSheet, type MicSheetState } from './micSheet.js';
 import { quip, setQuipHost } from './components/ui.js';
@@ -317,6 +318,8 @@ function render(view: RoomView): void {
   }
   const prevPhase = lastView?.phase;
   lastView = view;
+  // A solo mission opened in the lobby gives way to the game.
+  if (view.phase !== 'lobby') closeMission();
   const me = view.players.find((p) => p.id === session?.playerId);
   if (!me) return;
   // The learning path's card reads the save: fresh in each lobby, and again once a finished game is in it.

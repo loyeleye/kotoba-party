@@ -56,6 +56,25 @@ The optional learning path and sentence frames ([progressive-learning.md](progre
 the path's order and goals are a first guess; a VIP badge for players' next games, and frame chips
 during play, are left for later.
 
+## Solo missions (2026-11-02)
+
+The fallback in the Green Car design, built first for 3.12 ([progressive-learning.md](progressive-learning.md#solo-missions-fallback)).
+Ladi decided that missions may fill both of a sign kanji's 2 days. Calls made without asking:
+
+- **3.12 and 4.10 have missions** (Sign Walk; Kanji Walk, asked for by the game-tuning thread since no game
+  gives enough N4 kanji reading). 4.10 uses the same both-days rule Ladi chose for sign kanji. Frames goals
+  have no mission yet: the tuning thread passes along any that still stamp in under ~70% of rooms, and the
+  design's earlier idea was that a solo say fills at most one of a frame's spaced days.
+- **Typed answers count** (kana or romaji, checked by the server), as Shodō's recall step does, so quiet
+  mode and phones without a speech server can play. Typing the kanji itself never counts. Should a mission
+  be speech-only when the server has speech?
+- **5 signs a sitting, no daily cap.** More sittings in a day add nothing to a kanji already read that day.
+- **The lobby button shows only when the goal is open on the player's current line**: N4 players see Kanji
+  Walk there, and reach Sign Walk (N3 stretch) from the map.
+- **Names and copy:** "Sign Walk" (かんばん さんぽ), "Kanji Walk" (かんじ さんぽ) and their lines need the fluent check.
+- **New phrase cards** from a mission are filed under Shodō in the phrasebook, since the signs are Shodō's
+  say words.
+
 ## N4 hard roles (2026-11-01)
 
 Harder scripts for N4 players inside eight existing games, plus N4 decks for three more

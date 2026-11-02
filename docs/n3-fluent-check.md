@@ -119,3 +119,15 @@ Each pattern's example, shown on the player's phone.
 | ＿むけ ／ ＿むき | これは こどもむけの ゲームです。 | This is a game for kids. |  |  |
 | ＿たて | やきたての パンは おいしいです。 | Fresh-baked bread is delicious. |  |  |
 | ＿と いえば | なつと いえば、すいかですね。 | Speaking of summer: watermelon. |  |  |
+
+## 5. Sign Walk (solo mission for 3.12)
+
+A player reads one sign at a time on their own phone and says its reading. The signs are the 3.12 say words
+(自由席, 改札, 指定席, 両替, 中央口, 席, 窓口, 番線, 優先席, 危険, 非常口, 押す, 階段, 禁煙, 予約, 案内, 受付,
+割引, 無料, 落とし物), already in Shodō.
+
+| Item | Japanese | Natural? | Notes |
+| --- | --- | --- | --- |
+| The mission's name | かんばん さんぽ (Sign Walk) |  |  |
+| Is 押す fine on a sign (it's usually 押 or 押してください)? | 押す |  |  |
+| The N4 mission's name | かんじ さんぽ (Kanji Walk) |  |  |

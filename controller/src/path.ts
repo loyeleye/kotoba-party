@@ -34,6 +34,8 @@ import {
 } from '../../shared/src/path.js';
 import { FRAME_FILLERS, FRAME_GAP_DAYS, FRAME_SAYS, recallOf, type AccountView } from '../../shared/src/progress.js';
 import { PICKER_LEVELS, type Level, type ModeId } from '../../shared/src/protocol.js';
+import { missionFor } from '../../shared/src/missions.js';
+import { missionButton } from './mission.js';
 
 // ---- the phone's copy of the save, for the lobby and the recap ----
 
@@ -326,7 +328,17 @@ export function pathStrip(level: Level, room: RoomFit, opts: StripOpts): HTMLEle
           h('p', { class: 'path-note' }, 'Your path shows on your phone only. The whole map is on My progress.'),
         )
       : null,
+    opts.recap ? null : lobbyMission(view, level, opts.redraw),
   );
+}
+
+/** While waiting in the lobby: the solo mission for an open goal on the player's own line, if it has one. */
+function lobbyMission(view: AccountView, level: Level, redraw: () => void): HTMLElement | null {
+  const st = view.pathStatus;
+  const line = currentLine(st, level);
+  const goal = GOALS.find((x) => x.line === line.id && missionFor(x.id) && !goalState(st, x.id).met && !goalState(st, x.id).hidden);
+  const m = goal && missionFor(goal.id);
+  return m ? h('div', { class: 'mis-lobby' }, missionButton(m, redraw, 'secondary mis-lobby-btn')) : null;
 }
 
 /** The wish count on a game in the VIP's list: ♡ 2, no names. */
@@ -563,8 +575,20 @@ function lineTrack(line: Line, st: PathStatus, current: Goal | null, open: (goal
   );
 }
 
+/**
+ * A goal's solo mission (shared/src/missions.ts), for a goal the games carry too slowly: the entry button, which
+ * closes the sheet it's on first. Null for every other goal.
+ */
+function soloMission(goal: Goal, closeFirst: () => void, refresh: () => void): HTMLElement | null {
+  const m = missionFor(goal.id);
+  if (!m) return null;
+  const btn = missionButton(m, refresh);
+  btn.addEventListener('click', closeFirst, { capture: true });
+  return h('div', { class: 'mis-offer' }, btn, h('p', { class: 'path-note' }, 'On your own phone, any time: in the lobby, or before you join a room.'));
+}
+
 /** A station's sheet: the stamp when met, then the detail. */
-function stationSheet(): { sheet: HTMLDialogElement; show: (goal: Goal, st: PathStatus, level: Level, from: HTMLElement) => void } {
+function stationSheet(refresh: () => void): { sheet: HTMLDialogElement; show: (goal: Goal, st: PathStatus, level: Level, from: HTMLElement) => void } {
   const body = h('div', { class: 'path-sheet-body' });
   const title = h('h2', { id: 'path-sheet-title' });
   const sheet = h('dialog', { class: 'gp-sheet path-sheet', 'aria-labelledby': 'path-sheet-title' }, h('div', { class: 'gp-head' }, title, h('button', { type: 'button', class: 'gp-close', 'aria-label': 'Close', onclick: () => sheet.close() }, '✕')), body) as HTMLDialogElement;
@@ -578,6 +602,7 @@ function stationSheet(): { sheet: HTMLDialogElement; show: (goal: Goal, st: Path
     body.replaceChildren(
       s.met ? h('p', { class: 'path-stamped' }, sumiStamp('big'), h('span', {}, h('strong', {}, 'Station stamped'), h('small', {}, `${LINE_BY_ID[goal.line].name}${s.metAt ? ` · ${new Date(s.metAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}`))) : '',
       goalDetail(goal, st, level),
+      soloMission(goal, () => sheet.close(), refresh) ?? '',
     );
     sheet.dataset.line = goal.line;
     if (!sheet.open) sheet.showModal();
@@ -632,12 +657,12 @@ function passingSheet(): { sheet: HTMLDialogElement; show: (from: HTMLElement) =
 }
 
 /** The switch, the line picker and one line's track. */
-export function pathTab(view: AccountView, level: Level, toggle: (on: boolean) => void, busy: boolean, redraw: () => void): HTMLElement {
+export function pathTab(view: AccountView, level: Level, toggle: (on: boolean) => void, busy: boolean, redraw: () => void, refresh: () => void = redraw): HTMLElement {
   const on = view.path;
   const st = view.pathStatus;
   const s = suggest(st, level, null);
   const line = LINE_BY_ID[shownLine ?? s?.line.id ?? currentLine(st, level).id];
-  const { sheet, show } = stationSheet();
+  const { sheet, show } = stationSheet(refresh);
   const { sheet: passSheet, show: showPass } = passingSheet();
   const pick = (id: LineId) => {
     shownLine = id;
