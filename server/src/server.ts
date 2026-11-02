@@ -122,14 +122,39 @@ export function createKotobaServer(config: ServerConfig): KotobaServer {
       return;
     }
 
+    if (path === '/api/account/speech' && req.method === 'POST') {
+      // A solo mission outside a room (shared/src/missions.ts): the sign-in, not a seat, says who may talk.
+      const token = bearer(req);
+      if (!accounts || !token || !(await accounts.signedIn(token))) return send(res, 401, { error: 'signed-out' });
+      if (!config.stt) return send(res, 503, { error: 'no-speech' });
+      const clip = await readBytes(req, MAX_CLIP_BYTES);
+      if (!clip || !isClip(clip)) return send(res, 400, { error: 'bad-clip' });
+      const result = await sttGate.run(`account:${token}`, () => transcribe(clip, config.stt!));
+      if (result === 'busy') return send(res, 429, { error: 'busy' });
+      if (!result.ok) return send(res, 502, { error: result.error });
+      const heard: Utterance = { via: 'speech', text: result.text };
+      addReadings({ heard }, config.reader ?? null);
+      return send(res, 200, heard);
+    }
+
     const accountMatch = /^\/api\/account\/([a-z]+(?:\/[a-z]+)?)$/.exec(path);
     if (accountMatch) {
       if (!accounts) return send(res, 404, { error: 'no-accounts' });
-      const body = req.method === 'POST' ? await readBytes(req, MAX_BODY) : null;
+      let body = req.method === 'POST' ? await readBytes(req, MAX_BODY) : null;
       if (req.method === 'POST' && !body) return send(res, 400, { error: 'bad-request' });
+      if (body && accountMatch[1] === 'mission/answer') {
+        // A mission's answer is checked by its reading, as a play command's is: added here, never by the phone.
+        try {
+          const parsed = JSON.parse(Buffer.from(body).toString('utf8')) as unknown;
+          addReadings(parsed, config.reader ?? null);
+          body = new Uint8Array(Buffer.from(JSON.stringify(parsed)));
+        } catch {
+          // The accounts service answers bad-request.
+        }
+      }
       const headers = new Headers();
       if (req.headers.authorization) headers.set('authorization', req.headers.authorization);
-      const out = await accounts.handle(new Request(`http://local${req.url}`, { method: req.method, headers, body: body ? Buffer.from(body) : undefined }), accountMatch[1]!, pageOrigin(req));
+      const out = await accounts.handle(new Request(`http://local${req.url}`, { method: req.method, headers, body: body ? Buffer.from(body) : undefined }), accountMatch[1]!, pageOrigin(req), { speech: !!config.stt });
       res.writeHead(out.status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       res.end(await out.text());
       return;

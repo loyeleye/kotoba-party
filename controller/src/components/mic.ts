@@ -17,6 +17,8 @@ interface SpeechService {
 let service: SpeechService | null = null;
 /** The room, whether or not it has speech: Dub Club sends its recorded takes here for the TV to play. */
 let room: SpeechService | null = null;
+/** A solo mission outside a room (mission.ts): the sign-in's own speech check, used only while no room has a seat. */
+let solo: { base: string; token: string } | null = null;
 
 /** Set by main.ts after joining: the room's address and the seat token, and whether the server has speech. */
 export function setSpeechService(s: SpeechService | null, roomService: SpeechService | null = s): void {
@@ -24,10 +26,19 @@ export function setSpeechService(s: SpeechService | null, roomService: SpeechSer
   room = roomService;
 }
 
+/** Set by a solo mission when the server has speech and the player is signed in; null when it closes. */
+export function setSoloSpeech(s: { base: string; token: string } | null): void {
+  solo = s;
+}
+
+/** Where a take goes: the room's seat, or the sign-in's check for a solo mission. */
+const speechUrl = (): { url: string; token: string } | null =>
+  service ? { url: `${service.base}/api/rooms/${service.code}/speech`, token: service.token } : solo ? { url: `${solo.base}/api/account/speech`, token: solo.token } : null;
+
 const hasMic = (): boolean => typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && typeof AudioContext !== 'undefined';
 
 /** Hold-to-talk works on this phone in this room. */
-export const speechReady = (): boolean => !!service && hasMic();
+export const speechReady = (): boolean => !!speechUrl() && hasMic();
 
 /** This phone can record a clip for the room (Dub Club), with or without a speech check. */
 export const recordReady = (): boolean => !!room && hasMic();
@@ -148,11 +159,12 @@ export async function hear(clip: Uint8Array<ArrayBuffer> | null, waitIfBusy = fa
 
 async function hearOnce(clip: Uint8Array<ArrayBuffer> | null): Promise<Heard> {
   if (!clip || clip.length === 0) return { ok: false, why: 'quiet' };
-  if (!service) return { ok: false, why: 'failed' };
+  const to = speechUrl();
+  if (!to) return { ok: false, why: 'failed' };
   try {
-    const res = await fetch(`${service.base}/api/rooms/${service.code}/speech`, {
+    const res = await fetch(to.url, {
       method: 'POST',
-      headers: { 'content-type': 'audio/wav', authorization: `Bearer ${service.token}` },
+      headers: { 'content-type': 'audio/wav', authorization: `Bearer ${to.token}` },
       body: clip,
     });
     if (res.status === 429) return { ok: false, why: 'busy' };

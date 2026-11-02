@@ -11,6 +11,7 @@ import { writeKanji, type KanjiLevel } from '../../content/src/kanji/kanji.js';
 import { meetTheInnkeeper } from '../../content/src/last-train/meet-the-innkeeper.js';
 import { readTheSigns } from '../../content/src/last-train/read-the-signs.js';
 import { FRAME_BY_ID } from './japanese/frames.js';
+import { MISSIONS, SOLO_GOALS, SOLO_KANJI_DAYS } from './missions.js';
 import { toRomaji } from './japanese/romaji.js';
 import { MODES, noFit } from './modes/registry.js';
 import { YIELDS, YIELDS_GREEN } from './pathYields.js';
@@ -366,12 +367,24 @@ const SIGN_KANJI: Map<string, string[]> = new Map(
  */
 function kanjiDays(p: Progress, level: KanjiLevel): Map<string, Set<string>> {
   const m = new Map<string, Set<string>>();
+  // A band with a solo mission (3.12's Sign Walk) also counts mission days, up to SOLO_KANJI_DAYS of each kanji's.
+  const soloCap = MISSIONS.some((x) => x.band === level && SOLO_GOALS.has(x.goal)) ? SOLO_KANJI_DAYS : 0;
+  const solo = new Map<string, Set<string>>();
   for (const c of Object.values(p.phrases ?? {})) {
     if (!c.memory?.length) continue;
     const chars = c.itemId.startsWith('kj-') ? [c.itemId.slice(3)] : c.itemId.startsWith('kw-') ? [...c.itemId.slice(3)] : SIGN_KANJI.get(c.itemId);
     if (!chars) continue;
     const days = c.memory.filter((d) => d.game).map((d) => d.day);
-    for (const ch of chars) if (KANJI[level].has(ch)) addDays(m, ch, days);
+    const soloDays = soloCap ? c.memory.filter((d) => d.solo && !d.game).map((d) => d.day) : [];
+    for (const ch of chars) {
+      if (!KANJI[level].has(ch)) continue;
+      if (days.length) addDays(m, ch, days);
+      if (soloDays.length) addDays(solo, ch, soloDays);
+    }
+  }
+  for (const [ch, ds] of solo) {
+    const fresh = [...ds].filter((d) => !m.get(ch)?.has(d)).sort().slice(0, soloCap);
+    if (fresh.length) addDays(m, ch, fresh);
   }
   return m;
 }

@@ -814,3 +814,28 @@ input::placeholder { color: #a99ccf; }
 .path-tsuuka .path-stop-text small { color: var(--muted); font-size: 13px; }
 .path-claim ul.path-counts { margin: 6px 0 0; padding-left: 18px; color: var(--ink); font-size: 14px; line-height: 1.5; }
 .path-chochin { word-break: keep-all; overflow-wrap: anywhere; }
+
+/* Solo missions (controller/src/mission.ts): Sign Walk's sheet, its entry buttons and the reveal. */
+.mis-sheet .mis-body { display: grid; align-content: start; gap: 12px; padding: 12px 16px 20px; overflow-y: auto; }
+.mis-count { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.mis-board { padding: 8px 0 4px; }
+.mis-board .lt-sign-text { font-size: 40px; }
+.mis-ask { margin: 0; text-align: center; }
+.mis-status { margin: 0; min-height: 1.3em; text-align: center; color: var(--muted); }
+.mis-reveal { display: grid; gap: 6px; justify-items: center; padding: 12px; border-radius: 14px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--outline); }
+.mis-reveal.good { box-shadow: 0 0 0 3px var(--gold); }
+.mis-reveal .path-note { color: var(--paper-ink); margin: 0; text-align: center; }
+.mis-word { margin: 0; display: grid; justify-items: center; font-size: 30px; font-weight: 900; }
+.mis-word rt { font-size: 14px; font-weight: 700; }
+.mis-en { margin: 0; }
+.mis-kanji { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.mis-kanji-chip { padding: 2px 8px; border-radius: 999px; border: 2px solid var(--outline); font-size: 14px; }
+.mis-after { display: grid; gap: 10px; }
+.mis-entry { display: grid; gap: 2px; text-align: left; }
+.mis-entry small { font-weight: 400; opacity: 0.85; }
+.mis-offer { display: grid; gap: 6px; margin-top: 12px; }
+.mis-lobby { padding: 0 10px 10px; }
+.mis-lobby-btn { width: 100%; }
+.mis-progress { margin: 0; text-align: center; font-weight: 700; }
+.mis-score { margin: 0; text-align: center; }
+.mis-card { margin: 0 auto; width: fit-content; min-width: 60%; padding: 18px 24px; border-radius: 14px; background: var(--paper); color: var(--paper-ink); border: 3px solid var(--outline); box-shadow: 0 5px 0 var(--outline); text-align: center; font-size: 44px; font-weight: 900; }

@@ -6,6 +6,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { Accounts, type AccountStorage } from '../server/src/accounts.js';
 import type { AccountResult } from '../server/src/room.js';
+import { sttFromEnv } from '../server/src/stt.js';
 import type { Env } from './env.js';
 
 /** The one object's name. */
@@ -35,8 +36,12 @@ export class AccountsObject extends DurableObject<Env> {
       if (url.pathname === '/phrasebooks' && req.method === 'POST') {
         return Response.json(await this.accounts.phrasebooks((await req.json()) as { playerId: string; account: string }[]));
       }
+      if (url.pathname === '/signedin' && req.method === 'POST') {
+        const { token } = (await req.json().catch(() => ({}))) as { token?: unknown };
+        return new Response(null, { status: typeof token === 'string' && (await this.accounts.signedIn(token)) ? 204 : 401 });
+      }
       const action = url.pathname.replace(/^\/api\//, '');
-      return this.accounts.handle(req, action, url.searchParams.get('origin') ?? '');
+      return this.accounts.handle(req, action, url.searchParams.get('origin') ?? '', { speech: !!sttFromEnv(this.env) });
     });
   }
 }

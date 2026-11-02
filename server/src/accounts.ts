@@ -15,7 +15,9 @@ import {
   type RegistrationResponseJSON,
 } from '@simplewebauthn/server';
 import { cleanName } from '../../shared/src/game.js';
-import { addGame, bests, dueCards, duePhrases, emptyProgress, frameStats, reviewCard, reviewPhrase, rightSound, type AccountView, type PhraseCard, type Progress } from '../../shared/src/progress.js';
+import { isUtterance, utteranceReading } from '../../shared/src/japanese/kana.js';
+import { MISSION_BY_ID, checkReading, pickMission, type MissionWord } from '../../shared/src/missions.js';
+import { addGame, addSoloSay, bests, dueCards, duePhrases, emptyProgress, frameStats, reviewCard, reviewPhrase, rightSound, type AccountView, type PhraseCard, type Progress } from '../../shared/src/progress.js';
 import { toRomaji } from '../../shared/src/japanese/romaji.js';
 import { markPath, pathStatus } from '../../shared/src/path.js';
 import type { AccountResult } from './room.js';
@@ -156,7 +158,7 @@ export class Accounts {
    * `/api/account/<action>`. `origin` is the page's own origin as the server sees it (the passkey's
    * site); the passkey is tied to its host name.
    */
-  async handle(req: Request, action: string, origin: string): Promise<Response> {
+  async handle(req: Request, action: string, origin: string, opts: { speech?: boolean } = {}): Promise<Response> {
     const rpId = new URL(origin).hostname;
     const body = req.method === 'POST' ? await readBody(req) : {};
     if (!body) return json(400, { error: 'bad-request' });
@@ -233,6 +235,41 @@ export class Accounts {
         markPath(user.progress, this.now(), user.tz);
         await this.storage.put(`user:${user.id}`, user);
         return json(200, { right, expected: toRomaji(card.hear), card, caught: !caughtBefore && card.caughtAt !== null });
+      }
+      case 'mission': {
+        // A solo mission (shared/src/missions.ts): tonight's signs, without their readings (reading them is the task).
+        if (req.method !== 'POST') break;
+        const user = await this.userFor(req);
+        if (!user) return json(401, { error: 'signed-out' });
+        const mission = MISSION_BY_ID[typeof body.mission === 'string' ? body.mission : ''];
+        if (!mission) return json(404, { error: 'no-mission' });
+        const words = pickMission(user.progress, mission, this.now(), user.tz);
+        return json(200, { mission: { id: mission.id, goal: mission.goal, words: words.map((w) => ({ itemId: w.itemId, sign: w.sign })) }, speech: opts.speech === true });
+      }
+      case 'mission/answer': {
+        // One sign: an answer the server checks (said or typed), or "show me the reading". Only a right reading
+        // before the reading showed counts from memory; a wrong one isn't saved, so the phone can let them try again.
+        if (req.method !== 'POST') break;
+        const user = await this.userFor(req);
+        if (!user) return json(401, { error: 'signed-out' });
+        const mission = MISSION_BY_ID[typeof body.mission === 'string' ? body.mission : ''];
+        const word = mission?.words.find((w) => w.itemId === body.itemId);
+        if (!mission || !word) return json(404, { error: 'no-sign' });
+        const at = this.now();
+        const entry = (outcome: 'said' | 'missed', memory: boolean) => ({ itemId: word.itemId, text: word.text, kana: word.kana, en: word.en, outcome, recall: memory ? ('memory' as const) : ('read' as const) });
+        if (body.giveUp === true) {
+          addSoloSay(user.progress, entry('missed', false), at, user.tz);
+          await this.storage.put(`user:${user.id}`, user);
+          return json(200, { right: false, counted: false, reveal: reveal(word) });
+        }
+        if (!isUtterance(body.answer)) return json(400, { error: 'bad-answer' });
+        const check = checkReading(word, body.answer);
+        if (!check.right) return json(200, { right: false, why: check.why, heard: utteranceReading(body.answer) });
+        const counted = body.peeked !== true;
+        addSoloSay(user.progress, entry('said', counted), at, user.tz);
+        markPath(user.progress, at, user.tz);
+        await this.storage.put(`user:${user.id}`, user);
+        return json(200, { right: true, counted, reveal: reveal(word) });
       }
       case 'settings': {
         // The learning path's switch (docs/progressive-learning.md). Only what's sent changes.
@@ -321,6 +358,11 @@ export class Accounts {
     return token;
   }
 
+  /** Whether a sign-in token is live (the account speech check, for a solo mission outside a room). */
+  async signedIn(token: string): Promise<boolean> {
+    return !!(await this.userForToken(token));
+  }
+
   private userFor(req: Request): Promise<User | undefined> {
     return this.userForToken(bearer(req) ?? '');
   }
@@ -361,6 +403,11 @@ export class Accounts {
     for (const [k, c] of Object.entries(all)) if (c.exp < now) delete all[k];
     return all;
   }
+}
+
+/** A sign's answer, shown once it's read or given up. */
+function reveal(w: MissionWord): { text: string; kana: string; romaji: string; en: string; kanji: MissionWord['kanji'] } {
+  return { text: w.text, kana: w.kana, romaji: toRomaji(w.kana), en: w.en, kanji: w.kanji };
 }
 
 /** The challenge inside a passkey response's clientDataJSON. */

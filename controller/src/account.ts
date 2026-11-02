@@ -10,6 +10,7 @@ import { MODES } from '../../shared/src/modes/registry.js';
 import { CATCH_DAYS, type AccountView, type Card, type PhraseCard } from '../../shared/src/progress.js';
 import { hearButton } from './components/voice.js';
 import { pathTab, setPathView } from './path.js';
+import { bindMissionAccount } from './mission.js';
 import type { Level } from '../../shared/src/protocol.js';
 
 /** What this phone keeps after signing in. The token is the only key to the account. */
@@ -244,6 +245,8 @@ export async function fetchMe(): Promise<AccountView | null> {
   return res.data.account;
 }
 
+bindMissionAccount({ account, fetchMe });
+
 async function showProgress(screens: { back: () => void; app: HTMLElement }): Promise<void> {
   mount(screens.app, h('div', { class: 'acct-page' }, backBar(screens.back), h('p', { class: 'center', role: 'status' }, 'Loading your progress…')));
   let res;
@@ -307,7 +310,7 @@ function renderProgress(screens: { back: () => void; app: HTMLElement }, view: A
     h(
       'div',
       { id: 'acct-tabpanel', role: 'tabpanel', 'aria-labelledby': `acct-tab-${current}` },
-      current === 'path' ? pathTab(view, phoneLevel(), (on) => void setPath(screens, view, on), switching, () => renderProgress(screens, view)) : current === 'cards' ? cardsTab(screens, view) : current === 'phrases' ? phrasesTab(screens, view) : scoresTab(view),
+      current === 'path' ? pathTab(view, phoneLevel(), (on) => void setPath(screens, view, on), switching, () => renderProgress(screens, view), () => void showProgress(screens)) : current === 'cards' ? cardsTab(screens, view) : current === 'phrases' ? phrasesTab(screens, view) : scoresTab(view),
     ),
     accountFooter(screens),
   );

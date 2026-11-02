@@ -200,6 +200,29 @@ lists, including every misfire the Japanese review found.
   line goes to the next. Lines below the player's level say "Optional · filled in by what you've said".
   Nothing appears on the TV, and there are no streaks.
 
+## Solo missions (fallback)
+
+For a goal the party games can't carry on their own, a signed-in player on the path can do a short **solo
+mission** on their own phone, in the lobby or before joining a room. Nothing shows on the TV or other phones.
+Rules in `shared/src/missions.ts`, served by the account service, drawn by `controller/src/mission.ts`.
+
+- **Sign Walk** (かんばん さんぽ) is the first, for **3.12 Read 30 sign kanji**: Shodō gives about 0.56 sign
+  kanji a game, so 30 kanji on 2 days each would take over a hundred games. It deals 5 station and shop signs
+  (half-read kanji first, nothing already read today), one at a time, with no reading. The player says the
+  whole sign (or types it in kana or romaji) and the server checks the reading. One wrong try gets one more;
+  then the reading shows. After "Show me the reading" it's practice only. Typing the kanji never counts.
+- **Kanji Walk** (かんじ さんぽ) does the same for **4.10 Read 30 N4 kanji**, over the 61 N4 say words on a plain
+  word card (they're words, not signs): no game gives enough N4 kanji reading, and the sims don't model it.
+- A right reading from memory saves the sign's `kw-<word>` phrase card with a **solo** memory day. Only the
+  goals with a mission read solo days, and only for kanji (`kanjiDays`): frames never do, and a solo day is
+  never a game day for a frame's rule. Phone reviews (self-marked) still don't count for kanji.
+- **Both days can come from missions** (Ladi, Nov 2): a sign kanji read from memory in missions on two days
+  counts in full (`SOLO_KANJI_DAYS` = 2), so 3.12 can clear without enough Shodō nights. 4.10 follows the same rule.
+- Entry: a button on the goal's station sheet (My progress), and under the lobby strip when the goal is open
+  on the player's current line (so N4 players see Kanji Walk in the lobby). A game starting closes the mission.
+- Speech: in a room the seat's speech check is used; outside one, `POST /api/account/speech` checks the
+  sign-in instead of a seat. Without a speech server, phones type or tap, as everywhere.
+
 ## How it works
 
 - `GET /api/account/me` returns `pathStatus` (every goal, frame and line, from the whole save) beside
