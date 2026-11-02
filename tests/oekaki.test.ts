@@ -1,5 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { TopicPack } from '../content/src/types.js';
+import type { Level, TopicPack } from '../content/src/types.js';
+import { FRAME_BY_ID, framesOf } from '../shared/src/japanese/frames.js';
+import { normalizeReading } from '../shared/src/japanese/kana.js';
+import { SENTENCE_BY_ID, SENTENCES, sentenceText, sentencesFor } from '../shared/src/modes/oekaki/sentences.js';
 import { createRoom, type CommandBody } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
 import { INK_LIMITS, readInk, thinToLimits, type InkPoint } from '../shared/src/japanese/strokes.js';
@@ -49,16 +52,16 @@ const fixture: ContentLibrary = { ...EMPTY_CONTENT, packs: [pack] };
 
 let ids = 0;
 const now = 1_000_000;
-const gctx = (content: ContentLibrary = fixture): GameContext => ({ now, content, newId: () => `id${String(++ids).padStart(5, '0')}`, random: () => 0 });
+const gctx = (content: ContentLibrary = fixture, random: () => number = () => 0): GameContext => ({ now, content, newId: () => `id${String(++ids).padStart(5, '0')}`, random });
 let cmdId = 0;
 const as = (playerId: string) => ({ kind: 'player', playerId }) as const;
 const stage = { kind: 'stage' } as const;
 
-function room(n: number, content = fixture, levels: Record<number, 'kana' | 'n5' | 'n4'> = { 4: 'kana' }) {
+function room(n: number, content = fixture, levels: Record<number, Level> = { 4: 'kana' }, random: () => number = () => 0) {
   const s = createGame('BCDF');
-  const act = (a: GameAction) => apply(s, a, gctx(content));
+  const act = (a: GameAction) => apply(s, a, gctx(content, random));
   const cmd = (actor: ReturnType<typeof as> | typeof stage, command: CommandBody) =>
-    apply(s, { type: 'command', actor, command: { ...command, id: `c${++cmdId}` } as Command }, gctx(content));
+    apply(s, { type: 'command', actor, command: { ...command, id: `c${++cmdId}` } as Command }, gctx(content, random));
   const play = (pid: string, move: unknown) => cmd(as(pid), { type: 'play', move });
   const tick = () => act({ type: 'timeout', phaseSeq: s.phaseSeq });
   const ms = () => s.modeState as OekakiState;
@@ -513,5 +516,166 @@ describe('Oekaki: bots play a whole game over the real server', () => {
     expect(failures).toEqual([]);
     for (const b of bots) b.stop();
     director.client.close();
+  });
+});
+
+describe('Oekaki: the Green Car', () => {
+  const N4 = new Set(['ta-koto', 'passive', 'te-shimau']);
+  const N3 = new Set(['suffering-passive', 'saserareru', 'you-to-suru', 'zu-ni', 'furi', 'ppanashi', 'mama']);
+  const both = (j: { text: string; kana: string }) => [...new Set([...framesOf(j), ...framesOf({ text: j.kana, kana: j.kana })])];
+  const seeded = (seed: number) => {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+  const green = (seed = 1, audience?: 'kids' | 'family' | 'cheeky') => {
+    const r = room(4, fixture, { 1: 'n3', 2: 'n4', 3: 'n3', 4: 'n4' }, seeded(seed));
+    if (audience) r.cmd(stage, { type: 'settings', audience });
+    startAndDraw(r, 4);
+    return r;
+  };
+
+  it('every sentence is N4 or N3, a draft, and its what-happened chunk says its frames', () => {
+    for (const x of SENTENCES) {
+      expect(x.status, x.id).toBe('draft');
+      for (const f of x.frames) {
+        expect(FRAME_BY_ID[f].level, `${x.id} ${f}`).toBe(x.level);
+        expect(both(sentenceText(x)), x.id).toContain(f);
+        expect(both(x.did), x.id).toContain(f);
+      }
+    }
+    // Every frame in every audience; Kids and Cheeky pools of their own.
+    for (const audience of ['kids', 'family', 'cheeky'] as const) {
+      const frames = new Set(sentencesFor(audience).flatMap((x) => x.frames));
+      for (const f of [...N4, ...N3]) expect(frames.has(f as never), `${audience}: ${f}`).toBe(true);
+    }
+    const kidsOnly = SENTENCES.filter((x) => x.audiences.includes('kids')).length;
+    const cheekyOnly = SENTENCES.filter((x) => x.audiences.length === 1 && x.audiences[0] === 'cheeky').length;
+    expect(kidsOnly / SENTENCES.length).toBeGreaterThan(0.25);
+    expect(cheekyOnly / SENTENCES.length).toBeGreaterThan(0.15);
+  });
+
+  it('everyone draws a sentence: N4 artists N4, N3 artists N4 or N3; writers get chunk tiles and the frame hint', () => {
+    const levels = { n3: 0, n4: 0 };
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      const r = green(seed);
+      for (const p of r.s.players) {
+        const x = SENTENCE_BY_ID.get(r.ms().prompts[p.id]!.id)!;
+        expect(x, p.id).toBeDefined();
+        expect(x.audiences).toContain('family');
+        if (p.level === 'n4') expect(x.level).toBe('n4');
+        else levels[x.level]++;
+      }
+      const t = r.ms().turn!;
+      const real = SENTENCE_BY_ID.get(t.sketch.prompt.id)!;
+      for (const p of r.s.players) {
+        const me = r.view(as(p.id)).mine!;
+        if (p.id === t.sketch.artistId) {
+          expect(me.frame).toBeNull();
+          continue;
+        }
+        expect(me.frame!.id).toBe(real.frames[0]);
+        expect(!!me.frame!.n3).toBe(real.level === 'n3');
+        const tiles = me.tiles!;
+        expect(tiles.filter((x) => x.chunk === 'who')).toHaveLength(3);
+        const dids = tiles.filter((x) => x.chunk === 'did');
+        expect(dids).toHaveLength(3);
+        for (const x of tiles) expect([normalizeReading(real.who.kana), normalizeReading(real.did.kana)]).not.toContain(normalizeReading(x.kana));
+        // An N4 writer always has an N3 stretch chunk, tagged; an N3 writer both levels.
+        if (p.level === 'n4') expect(dids.some((d) => d.n3)).toBe(true);
+        else expect(dids.some((d) => d.n3) && dids.some((d) => !d.n3)).toBe(true);
+        // At least one chunk in the real sentence's frame.
+        expect(dids.some((d) => both(d).some((f) => real.frames.includes(f as never)))).toBe(true);
+      }
+    }
+    expect(levels.n3).toBeGreaterThan(2);
+    expect(levels.n4).toBeGreaterThan(2);
+  });
+
+  it('a fake must carry an N4 or N3 frame; one said from memory counts, one read off a tile does not', () => {
+    const r = green(3);
+    const t = r.ms().turn!;
+    const [a, b, c] = r.s.players.map((p) => p.id).filter((id) => id !== t.sketch.artistId);
+    expect(r.play(a!, { kind: 'fake', utterance: { via: 'speech', text: 'ねこが ねた' } }).error).toBe('no-frame');
+    // From memory: a chunk that isn't in the hand.
+    const hand = new Set(t.tiles[a!]!.map((x) => normalizeReading(x.kana)));
+    const mem = SENTENCES.find((x) => x.frames.includes('furi') && !hand.has(normalizeReading(x.did.kana)) && x.id !== t.sketch.prompt.id)!;
+    expect(r.play(a!, { kind: 'fake', utterance: { via: 'speech', text: `ゆうれいが ${mem.did.kana}` } }).error).toBeUndefined();
+    const entry = r.s.phrasebook[a!]!.find((e) => e.itemId.startsWith('oekaki:fake:'))!;
+    expect(entry).toMatchObject({ outcome: 'said', recall: 'memory' });
+    expect(entry.frames).toContain('furi');
+    expect(r.ms().gcSaid![a!]!.furi).toBe(1);
+    // Read off a tile: logged, not from memory, not counted.
+    const did = t.tiles[b!]!.find((x) => x.chunk === 'did')!;
+    expect(r.play(b!, { kind: 'fake', utterance: { via: 'speech', text: `ゆうれいが ${did.kana}` } }).error).toBeUndefined();
+    expect(r.s.phrasebook[b!]!.find((e) => e.itemId.startsWith('oekaki:fake:'))!.recall).toBe('read');
+    expect(r.ms().gcSaid?.[b!]).toBeUndefined();
+    // Tiles: a who tile and a chunk tile make a sentence (no phrase logged).
+    const hc = t.tiles[c!]!;
+    expect(r.play(c!, { kind: 'fake', tiles: [hc.findIndex((x) => x.chunk === 'who'), hc.findIndex((x) => x.chunk === 'did')] }).error).toBeUndefined();
+    expect((r.s.phrasebook[c!] ?? []).some((e) => e.itemId.startsWith('oekaki:fake:'))).toBe(false);
+    expect(r.s.phase).toBe('reveal');
+  });
+
+  it('house decoys are other sentences; Kids rooms never see Cheeky sentences', () => {
+    for (const seed of [1, 2, 3, 4]) {
+      const r = green(seed, 'kids');
+      for (const p of r.s.players) expect(SENTENCE_BY_ID.get(r.ms().prompts[p.id]!.id)!.audiences).toContain('kids');
+      for (const tiles of Object.values(r.ms().turn!.tiles)) {
+        for (const x of tiles) expect(SENTENCES.some((y) => y.audiences.includes('kids') && (y.who.kana === x.kana || y.did.kana === x.kana)), x.kana).toBe(true);
+      }
+      r.tick(); // nobody wrote a fake
+      const house = r.ms().turn!.options.filter((o) => o.house);
+      expect(house).toHaveLength(2);
+      for (const o of house) expect(SENTENCES.some((y) => y.audiences.includes('kids') && sentenceText(y).text === o.text), o.text).toBe(true);
+    }
+  });
+
+  it('a mixed room is unchanged: words, word tiles and frameless fakes', () => {
+    const r = room(4, fixture, { 1: 'n3', 2: 'n4', 3: 'n5', 4: 'n4' });
+    startAndDraw(r, 4);
+    for (const p of r.s.players) expect(SENTENCE_BY_ID.has(r.ms().prompts[p.id]!.id)).toBe(false);
+    const t = r.ms().turn!;
+    const writer = r.s.players.find((p) => p.id !== t.sketch.artistId)!.id;
+    expect(r.view(as(writer)).mine!.frame).toBeNull();
+    expect(t.tiles[writer]!.some((x) => x.chunk)).toBe(false);
+    expect(r.play(writer, { kind: 'fake', utterance: { via: 'speech', text: 'あおい ねこ' } }).error).toBeUndefined();
+  });
+
+  it('bots in the Green Car say fakes from memory, N3 frames about half', () => {
+    let n3 = 0;
+    let n4 = 0;
+    for (const seed of [1, 2, 3]) {
+      const r = room(4, fixture, { 1: 'n3', 2: 'n4', 3: 'n3', 4: 'n4' }, seeded(seed));
+      r.cmd(stage, { type: 'start', mode: 'oekaki', packId: 'food', rounds: 2 } as CommandBody);
+      const policy = oekakiPolicy({ seed });
+      const done = new Set<string>();
+      for (let guard = 0; guard < 500 && r.s.phase !== 'recap'; guard++) {
+        let moved = false;
+        for (const p of r.s.players) {
+          const view = viewFor(r.s, as(p.id), fixture);
+          for (const m of policy.act(view, p.id)) {
+            const key = `${p.id}:${view.phaseSeq}:${m.key}`;
+            if (done.has(key)) continue;
+            done.add(key);
+            r.play(p.id, m.move);
+            moved = true;
+          }
+        }
+        if (!moved) r.tick();
+      }
+      expect(r.s.phase).toBe('recap');
+      for (const p of r.s.players.filter((x) => x.level === 'n3')) {
+        const memory = (r.s.phrasebook[p.id] ?? []).filter((e) => e.recall === 'memory' && e.outcome === 'said');
+        for (const e of memory) for (const f of e.frames ?? []) N3.has(f) ? n3++ : N4.has(f) ? n4++ : null;
+      }
+    }
+    expect(n3).toBeGreaterThan(2);
+    expect(n4).toBeGreaterThan(2);
   });
 });
