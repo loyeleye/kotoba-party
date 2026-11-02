@@ -27,3 +27,20 @@
 .cc-guessed.ok { color: var(--good); font-weight: 800; }
 .cc-chip-p { margin: 0; color: var(--paper-ink); background: var(--warn); border-radius: 999px; padding: 4px 12px; justify-self: start; font-weight: 800; }
 .cc-foot { text-align: center; }
+
+/* Frame Concentration (Green Car) */
+.cc-gist-p { font-size: 20px; font-weight: 700; color: #2b4f9a; }
+.cc-chunk-p { background: #fbf6e6; }
+.cc-tag-p { font-size: 13px; font-weight: 900; border-radius: 999px; padding: 0 8px; background: #2b4f9a; color: #fff; }
+.cc-tag-p.n3, .cc-chip-p.cc-n3 { background: #1f7a4d; color: #fff; }
+.cc-tray { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.cc-built { margin: 0; min-height: 32px; font-size: 20px; font-weight: 800; text-align: center; }
+.cc-tiles { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.cc-tile-btn { margin: 0; padding: 8px 10px; font-size: 18px; min-height: 44px; }
+.cc-tile-btn.used { opacity: 0.35; }
+.cc-tray-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cc-own { margin: 0; color: var(--warn); }
+.cc-own.ok { color: var(--good); }
+.cc-lines { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+.cc-lines li small { display: block; color: var(--muted); }
+.cc-lines li.ok { color: var(--good); }

@@ -17,15 +17,23 @@ export interface Face {
   /**
    * kana: the word in kana · en: its English meaning · kanji: the written word, no furigana ·
    * emoji: a picture · audio: a speaker that plays `say` · word: the written word with its
-   * reading under it · special: a special tile.
+   * reading under it · special: a special tile. Green Car only: gist: a picture (`pic`) with an English gist
+   * (`text`, empty on a hard card for an N3 flipper) · chunk: a frame chunk (`text`, ＿ふりを する) with its tag.
    */
-  kind: 'kana' | 'en' | 'kanji' | 'emoji' | 'audio' | 'word' | 'special';
+  kind: 'kana' | 'en' | 'kanji' | 'emoji' | 'audio' | 'word' | 'special' | 'gist' | 'chunk';
   text: string;
   /** The reading shown under the text (word cards with kanji). */
   sub?: string;
   /** What text-to-speech says when the card turns over (audio cards). */
   say?: string;
   special?: SpecialKind;
+  /** gist: the picture (emoji for now). */
+  pic?: string;
+  /** gist: a hard pair (picture only for N3 flippers; the English comes back for an N4 flipper). */
+  hard?: boolean;
+  /** chunk: the frame's level tag and id. */
+  tag?: 'N4' | 'N3';
+  frame?: string;
 }
 
 export interface Card {
@@ -39,7 +47,8 @@ export interface Card {
 
 export interface Pair {
   id: string;
-  kind: PairKind;
+  /** 'frame': Frame Concentration's gist ↔ frame chunk pair (Green Car only, greenBoard.ts). */
+  kind: PairKind | 'frame';
   word: { id: string; jp: JpText };
   /** Readings that count as saying the word. */
   accepted: string[];
@@ -47,6 +56,8 @@ export interface Pair {
   misses: number;
   ownerId: string | null;
   cleared: boolean;
+  /** Frame pairs only (Green Car): the gist's deck id, frame, level and whether it is a hard pair. */
+  gist?: { id: string; frame: string; level: 'n4' | 'n3'; hard: boolean };
 }
 
 export interface BoardPlan {
