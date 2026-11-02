@@ -66,6 +66,13 @@ export interface FeelTheme {
   /** One that fits, one absurd. */
   swerve: JpText[];
   ready: ReadyAnswer[];
+  /** Green Car only (a theme ranked by degree, with N4/N3 frames on the phone): never dealt in other rooms. */
+  greenCar?: true;
+  /**
+   * Green Car: the theme's words for the N3 defence's ＿と いうより line (defence.ts n3Lines): what the card is
+   * rather than `more`, already ending in ので (かわいいので, ざんねんなので). Themes without it skip that line.
+   */
+  n3?: { rather: JpText };
 }
 
 const jp = (text: string, en: string): JpText => ({ text, kana: text, en });
@@ -214,7 +221,105 @@ const FRAMES = {
   day: ['きょう、〜ました。', '〜て、〜ました。', 'あさ、〜。'],
 };
 
+/** Green Car phones: N3/N4 frames to try (the answer is free; the defence is where frames count). */
+const GC_FRAMES = ['〜と いうより 〜。', '〜ほど 〜は ない。', '〜に きまって いる！'];
+
 export const FEEL_THEMES: FeelTheme[] = [
+  // ---- Green Car only (design n3-coverage/green-car: new themes ranked by degree, N4/N3 frames on the phone) ----
+  // Kids
+  {
+    id: 'gc-yokai-scary',
+    greenCar: true,
+    ask: jp('この ようかい、どのくらい こわい？', 'How scary is this yōkai?'),
+    more: jp('こわい', 'scarier'),
+    na: false,
+    low: jp('ぜんぜん こわくない', 'not scary at all'),
+    high: jp('ぎゃー！ にげて！', 'AAAH! Run!'),
+    audiences: ['kids', 'family'],
+    frames: GC_FRAMES,
+    swerve: [jp('ざしきわらし', 'a house spirit'), jp('ポン', 'Pon')],
+    n3: { rather: jp('かわいいので', "it's cute") },
+    ready: [
+      r('ねこまた', 'a two-tailed cat yōkai', '🐈', 8),
+      r('からかさおばけ', 'a one-eyed umbrella ghost', '☂️', 18),
+      r('ざしきわらし', 'a house spirit child', '👧', 30),
+      r('カッパ', 'a kappa', '🥒', 45),
+      r('てんぐ', 'a tengu', '👺', 60),
+      r('ろくろくび', 'a long-necked yōkai', '🦒', 72),
+      r('のっぺらぼう', 'a faceless ghost', '😶', 85),
+      r('おおきな がしゃどくろ', 'a giant skeleton', '💀', 97),
+    ],
+  },
+  {
+    id: 'gc-school-lunch',
+    greenCar: true,
+    ask: jp('きゅうしょくに でたら、どのくらい いや？', 'If it came for school lunch, how bad would it be?'),
+    more: jp('いや', 'worse'),
+    na: true,
+    low: jp('やったー！', 'Yay!'),
+    high: jp('もう がっこうに いかない！', "I'm never going to school again!"),
+    audiences: ['kids', 'family'],
+    frames: GC_FRAMES,
+    swerve: [jp('ピーマン', 'green peppers'), jp('せんせいの くつ', "the teacher's shoes")],
+    n3: { rather: jp('ざんねんなので', "it's a let-down") },
+    ready: [
+      r('カレー', 'curry', '🍛', 3),
+      r('あげパン', 'sugared fried bread', '🥖', 8),
+      r('やさいスープ', 'vegetable soup', '🥣', 30),
+      r('ピーマン', 'green peppers', '🫑', 50),
+      r('レバー', 'liver', '🥩', 70),
+      r('なまの たまねぎ', 'raw onion', '🧅', 80),
+      r('きのうの のこり', "yesterday's leftovers", '🍲', 88),
+      r('なっとうケーキ', 'natto cake', '🎂', 97),
+    ],
+  },
+  // Family (and Cheeky)
+  {
+    id: 'gc-packed-train',
+    greenCar: true,
+    ask: jp('まんいん でんしゃで したら、どのくらい はずかしい？', 'How embarrassing would it be on a packed train?'),
+    more: jp('はずかしい', 'more embarrassing'),
+    na: false,
+    low: jp('へいき', 'no problem'),
+    high: jp('もう そとに でられない', "I can't go out ever again"),
+    audiences: ['family', 'cheeky'],
+    frames: GC_FRAMES,
+    swerve: [jp('おなかが なる', 'your stomach rumbles'), jp('パジャマで のる', 'riding in pyjamas')],
+    n3: { rather: jp('おもしろいので', "it's funny") },
+    ready: [
+      r('スマホを みる', 'looking at your phone', '📱', 3),
+      r('あくび', 'a yawn', '🥱', 15),
+      r('ひとりごと', 'talking to yourself', '💬', 35),
+      r('おなかが なる', 'your stomach rumbling', '🫃', 50),
+      r('ねごと', 'talking in your sleep', '😴', 65),
+      r('うたを うたう', 'singing a song', '🎤', 80),
+      r('ころぶ', 'falling over', '🤸', 88),
+      r('パジャマで のる', 'riding in pyjamas', '🛌', 95),
+    ],
+  },
+  {
+    id: 'gc-chore',
+    greenCar: true,
+    ask: jp('この かじ、どのくらい めんどうくさい？', 'How much of a pain is this chore?'),
+    more: jp('めんどうくさい', 'more of a pain'),
+    na: false,
+    low: jp('たのしい！', 'fun!'),
+    high: jp('いっしょう したくない', 'never, as long as I live'),
+    audiences: ['family', 'cheeky'],
+    frames: GC_FRAMES,
+    swerve: [jp('おふろそうじ', 'cleaning the bath'), jp('ねこの けを ひろう', 'picking up cat hair')],
+    n3: { rather: jp('たいへんなので', "it's hard work") },
+    ready: [
+      r('おゆを わかす', 'boiling water', '♨️', 5),
+      r('せんたくものを たたむ', 'folding the laundry', '👕', 30),
+      r('さらあらい', 'doing the dishes', '🍽️', 45),
+      r('ゴミだし', 'taking out the rubbish', '🗑️', 55),
+      r('トイレそうじ', 'cleaning the toilet', '🚽', 70),
+      r('おふろそうじ', 'cleaning the bath', '🛁', 75),
+      r('おおそうじ', 'the big year-end clean', '🧹', 90),
+      r('ねこの けを ぜんぶ ひろう', 'picking up every cat hair', '🐈', 98),
+    ],
+  },
   // Kids
   {
     id: 'smelly',
@@ -346,6 +451,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   // Cheeky
   {
     id: 'late-excuse',
+    n3: { rather: jp('おもしろいので', "it's funny") },
     ask: jp('ちこくの いいわけ、どのくらい ひどい？', 'How bad is this excuse for being late?'),
     more: jp('ひどい', 'worse'),
     na: false,
@@ -367,6 +473,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'dating-profile',
+    n3: { rather: jp('あやしいので', "it's fishy") },
     ask: jp('マッチングアプリに かいたら、どのくらい モテる？', 'How popular would this make your dating profile?'),
     more: jp('モテる', 'more popular'),
     na: false,
@@ -388,6 +495,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'midnight-message',
+    n3: { rather: jp('かわいいので', "it's cute") },
     ask: jp('よなかの メッセージ、どのくらい あやしい？', 'How suspicious is this midnight message?'),
     more: jp('あやしい', 'more suspicious'),
     na: false,
@@ -409,6 +517,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'parents-saw',
+    n3: { rather: jp('はずかしいので', "it's embarrassing") },
     ask: jp('おやに みられたら、どのくらい まずい？', 'How bad if your parents saw it?'),
     more: jp('まずい', 'worse'),
     na: false,
@@ -430,6 +539,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'morning-regret',
+    n3: { rather: jp('おもしろいので', "it's funny") },
     ask: jp('のみかいの つぎの あさ、どのくらい こうかいする？', 'How much would you regret it the next morning?'),
     more: jp('はずかしい', 'more embarrassing'),
     na: false,
@@ -452,6 +562,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   // Round 3: the Worst Day Ever
   {
     id: 'worst-day-kids',
+    n3: { rather: jp('おもしろいので', "it's funny") },
     ask: jp('きょう あった こと、どのくらい たいへん？', 'What happened today, and how bad was it?'),
     more: jp('たいへん', 'worse'),
     na: true,
@@ -474,6 +585,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'worst-day',
+    n3: { rather: jp('ざんねんなので', "it's a shame") },
     ask: jp('きょう あった こと、どのくらい ひどい？', 'What happened today, and how bad was it?'),
     more: jp('ひどい', 'worse'),
     na: false,
@@ -496,6 +608,7 @@ export const FEEL_THEMES: FeelTheme[] = [
   },
   {
     id: 'worst-day-cheeky',
+    n3: { rather: jp('おもしろいので', "it's funny") },
     ask: jp('きょう あった こと、どのくらい ひどい？', 'What happened today, and how bad was it?'),
     more: jp('ひどい', 'worse'),
     na: false,
@@ -526,5 +639,10 @@ export const answerPicture = (themeId: string, i: number): string => `/stage/ass
 
 export const timeSetsFor = (a: Audience): TimeSet[] => TIME_SETS.filter((s) => s.audiences.includes(a));
 
-/** Feelings Line themes for an audience: the round 2 ones, or the Worst Day Ever for round 3. */
-export const feelThemesFor = (a: Audience, story: boolean): FeelTheme[] => FEEL_THEMES.filter((f) => f.audiences.includes(a) && !!f.story === story);
+/**
+ * Feelings Line themes for an audience: the round 2 ones, or the Worst Day Ever for round 3. Green Car-only themes are
+ * left out unless `greenCar`; in the Green Car the round 1–2 pool is the themes ranked by degree with N3 defence words
+ * (`greenCar` or `n3`: the new ones and the five Cheeky ones), so the ＿と いうより line can come up.
+ */
+export const feelThemesFor = (a: Audience, story: boolean, greenCar = false): FeelTheme[] =>
+  FEEL_THEMES.filter((f) => f.audiences.includes(a) && !!f.story === story && (story || (greenCar ? !!(f.greenCar || f.n3) : !f.greenCar)));

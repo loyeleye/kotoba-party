@@ -76,8 +76,27 @@ project files):
   `offers` report nothing).
 - The Gallery still runs (reaction tiles for everyone else); the curveball and the Kana/N5 gist never come up,
   since nobody aboard is Kana or N5.
-- Not yet: the design's N3 defences (＿と いうより, ＿ほど ＿は ない, ＿に きまって いる) and new themes ranked by
-  degree; this change is the move-out only.
+- **No Time Line** (an N5 deck): rounds 1 and 2 are both Feelings rounds, then the Worst Day Ever.
+- **Themes ranked by degree** (`feelThemesFor(audience, story, greenCar)`): the Green Car deals only themes with N3
+  defence words. New, Green Car only (`greenCar` in cards.ts): Kids/Family *how scary is this yōkai?* and *how bad
+  for school lunch?*; Family/Cheeky *how embarrassing on a packed train?* and *how much of a pain is this chore?*.
+  The five Cheeky feelings themes (and the three Worst Day Ever ones) gained their ＿と いうより words (`n3.rather`).
+  The phone's frames to try are 〜と いうより 〜, 〜ほど 〜は ない, 〜に きまって いる. Mixed rooms never see the new
+  themes. All draft (no answer pictures yet: the emoji stands in).
+- **One defence a round, the scripted one:** the ordinary 〜からです defence doesn't run in the Green Car (it would be
+  a second wait, and everyone aboard has the scripted one), so the `narabeteFold` experiment no longer matters there.
+- **The N3 defence** (`n3DefenceScript`, `n3Lines` in defence.ts): ので plus an N3 frame, by spot. Low end:
+  ＿に きまって いる (not after a な-adjective, which the matcher can't read), ＿と いうより, ＿ような きが する. High end:
+  ＿に ちがいない, ＿ような きが する, and 「これほど ＿ ものは ありません。だから、…」 (＿ほど ＿は ない can't take ので).
+  After a neighbour: ＿に くらべて, ＿ような きが する. The phone shows two lines, chosen by aim (`aimWeight`, the
+  defender's says this game in `gcSaid`), so required frames (3.10's ＿ような きが する, ＿に ちがいない) come first.
+- **Who gets what:** an N3 defender alternates the N3 script and the N4 ので one (N3 first, `gcDealt`); an N4
+  defender gets the ので script with the N3 one as **stretch** (N3 tag; either counts).
+- **Credit:** what they said is run through `framesOf`; a spoken N3 frame from either script logs that N3 line
+  (`narabete:defence:n3:<spot>:<frames>`) with only the frames heard (ので among them when said). A model line read
+  out is `seen`/`read`, as before. An N3 line counts as framed (for the bonus and the replay) even without ので.
+- **Bots** in the Green Car say a model line with ほんとうに added (so it isn't read off the phone), the stretch half
+  the time for an N4 bot.
 
 ## Rank and defend (N4 hard role, goal 4.11)
 
