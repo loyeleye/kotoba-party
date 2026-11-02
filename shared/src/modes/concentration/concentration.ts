@@ -10,14 +10,22 @@
 //   encore  steal window: anyone else may say it, first correct wins
 //   score   the result of the turn (or a mismatch, shown before the cards flip back)
 //   finale  the board is clear (or time is up): the whole picture and the winners
+//
+// In a Green Car room (ctx.greenCar) it plays as Frame Concentration: each pair is a situation (picture +
+// English gist) and the frame chunk that says it, and you keep it by saying the whole sentence in your own
+// words. Everyone else may say their own sentence at the same time (the chorus). Outside the Green Car nothing
+// here changes. See greenBoard.ts, frameDeck.ts and docs/modes/concentration.md, "Green Car".
 
 import type { JpText } from '../../../../content/src/types.js';
 import { cleanText, isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type ModePlayer } from '../mode.js';
-import type { Phase, Viewer } from '../../protocol.js';
+import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
 import { buildBoard, planBoard, type Card, type Face, type Pair, type SpecialKind } from './board.js';
 import { toRomaji } from '../../japanese/romaji.js';
 import { SCENES } from './scenes.js';
+import { buildGreenBoard, checkFrameSay, compact, GIST_BY_ID, planGreenBoard, tilesFor } from './greenBoard.js';
+import { FRAME_BY_ID, type FrameId } from '../../japanese/frames.js';
+import { playerTextAllowed } from '../../moderation.js';
 
 // ---- tuning ----
 
@@ -51,6 +59,29 @@ export const DURATIONS = {
   finale: 10_000,
 } as const;
 
+/** Frame Concentration (Green Car) timings: two cards to read on a miss, and a sentence takes longer than a word. */
+export const GREEN_DURATIONS = {
+  ...DURATIONS,
+  intro: 12_000,
+  mismatch: 3_000,
+  /** n3Points.ts: a speakable N3 point is a short line said in a 9–12 s turn. */
+  claim: 10_000,
+  steal: 8_000,
+  result: 4_000,
+} as const;
+
+/** Frame Concentration scoring (on top of PAIR_POINTS and SPOKEN_BONUS). */
+export const GREEN_POINTS = {
+  /** A hard pair (picture only) kept or stolen. */
+  hard: 130,
+  /** An N3 frame said by an N4 seat (stretch), unless it was built from tiles. */
+  stretch: 20,
+  /** Saying your own right sentence in the chorus while the flipper says theirs. */
+  chorus: 30,
+  /** A pair kept with the tile tray: flat, no spoken bonus. */
+  tiles: 100,
+} as const;
+
 // ---- state ----
 
 export interface Turn {
@@ -71,9 +102,40 @@ export interface Claim {
   /** playerId → tries used */
   attempts: Record<string, number>;
   /** playerId → their last try */
-  last: Record<string, { ok: boolean; heard: string }>;
+  last: Record<string, LastTry>;
   winnerId: string | null;
   winnerVia: Utterance['via'] | null;
+  /** Green Car only: the chorus (everyone else's own sentence in the say-it window). */
+  chorus?: { attempts: Record<string, number>; last: Record<string, LastTry>; right: string[] };
+  /** Green Car only: every try so far, by whom (a steal that copies someone else's words logs `read`). */
+  heardBy?: { by: string; key: string }[];
+  /** Green Car only: the tile tray for this pair. */
+  tiles?: string[];
+}
+
+export interface LastTry {
+  ok: boolean;
+  heard: string;
+  /** Green Car, a miss: what the check found (the frame, the key word). */
+  tip?: { frame: boolean; anchor: boolean };
+}
+
+/** Green Car: one sentence a player said this game. */
+export interface GreenLine {
+  gistId: string;
+  heard: string;
+  ok: boolean;
+  /** Counted from memory (spoken, own words); false for typed, tiles or a copied steal. */
+  memory: boolean;
+  how: 'claim' | 'steal' | 'chorus';
+  model: JpText;
+}
+
+export interface GreenState {
+  audience: Audience;
+  /** playerId → frame → right says this game ("aim the deal" reads these; mode state can't see earlier games). */
+  said: Record<string, Record<string, number>>;
+  lines: Record<string, GreenLine[]>;
 }
 
 export interface TurnResult {
@@ -132,6 +194,8 @@ export interface ConcentrationState {
   shuffleSeq: number;
   flash: Flash | null;
   finished: boolean;
+  /** Set when the game rides in the Green Car (Frame Concentration). */
+  green?: GreenState;
 }
 
 export type ConcentrationMove =
@@ -171,8 +235,10 @@ export interface ConcentrationView {
     winnerId: string | null;
     /** Who has used tries (ids only). */
     tried: string[];
-    /** The word, once it may be shown (peek and after). */
+    /** The word, once it may be shown (peek and after; Green Car: the model, only once the result is up). */
     word: JpText | null;
+    /** Green Car: who said a right sentence in the chorus (ids only). */
+    chorus?: string[];
   } | null;
   result: TurnResult | null;
   picture: {
@@ -195,15 +261,31 @@ export interface ConcentrationView {
   shuffleSeq: number;
   flash: Flash | null;
   fallback: boolean;
+  /** Green Car only: this is Frame Concentration. */
+  green?: true;
   mine: {
     isTurn: boolean;
     canFlip: boolean;
     canSay: boolean;
     attemptsLeft: number;
-    last: { ok: boolean; heard: string } | null;
+    last: LastTry | null;
     /** Kana-level training wheels in your own say-it window. */
     hint: { kana: string; romaji: string } | null;
     guess: { optionId: string; ok: boolean } | null;
+    /** Green Car only. */
+    green?: {
+      /** Your say now is the chorus (your own sentence while the flipper says theirs). */
+      chorus: boolean;
+      /** An N3 frame and you play at N4: the tiles open by default, +20 if you say it. */
+      stretch: boolean;
+      /** The tile tray while you can say it (model words plus two others). */
+      tiles: string[] | null;
+      /** For the miss tip: the frame chunk and the key word. */
+      frameJa: string | null;
+      anchorEn: string | null;
+      /** At the finale: your sentences this game, and which counted. */
+      lines: GreenLine[] | null;
+    };
   } | null;
 }
 
@@ -316,6 +398,97 @@ function sayAttempt(s: ConcentrationState, ctx: ModeContext, phase: Phase, playe
   return MOVE_OK;
 }
 
+// ---- Frame Concentration (Green Car) ----
+
+const durations = (s: ConcentrationState) => (s.green ? GREEN_DURATIONS : DURATIONS);
+
+/**
+ * A say in Frame Concentration. In the say-it window (`reveal`) the flipper says their sentence and everyone
+ * else may say their own at the same time (the chorus: +30, logged, never takes the pair). In the steal window
+ * (`encore`) anyone but the flipper may say it to steal. Right = framesOf finds the pair's frame and the gist's key
+ * word is there (greenBoard.ts, checkFrameSay). The heard text goes in the sayer's own phrasebook and on their
+ * own phone only; the TV and Fude get the model line.
+ */
+function greenSay(s: ConcentrationState, ctx: ModeContext, phase: Phase, playerId: string, raw: unknown) {
+  const claim = s.claim;
+  const g = s.green!;
+  if (!claim) return moveError('wrong-phase');
+  // During the peek the chunk card is still up: saying it then would be reading it.
+  if (phase === 'prompt') return moveError('wrong-phase');
+  const isClaimer = playerId === claim.claimerId;
+  const how: GreenLine['how'] = phase === 'reveal' ? (isClaimer ? 'claim' : 'chorus') : 'steal';
+  if (how === 'steal' && (isClaimer || claim.winnerId)) return moveError('wrong-phase');
+  if (how === 'claim' && claim.winnerId) return moveError('wrong-phase');
+  const chorus = (claim.chorus ??= { attempts: {}, last: {}, right: [] });
+  if (how === 'chorus' && chorus.right.includes(playerId)) return moveError('already-said');
+  if (!isUtterance(raw)) return moveError('bad-utterance');
+  const heard = cleanText(raw.text, 80);
+  if (!heard) return moveError('empty-answer');
+  if (!playerTextAllowed(heard, s.green!.audience)) return moveError('kids-words');
+  const attempts = how === 'chorus' ? chorus.attempts : claim.attempts;
+  const used = attempts[playerId] ?? 0;
+  if (used >= SAY_ATTEMPTS) return moveError('no-tries-left');
+  const pair = pairOf(s, claim.pairId)!;
+  const gist = GIST_BY_ID.get(pair.gist!.id)!;
+  attempts[playerId] = used + 1;
+  const check = checkFrameSay(raw, gist);
+  const last: LastTry = check.ok ? { ok: true, heard } : { ok: false, heard, tip: { frame: check.frame, anchor: check.anchor } };
+  (how === 'chorus' ? chorus.last : claim.last)[playerId] = last;
+  const key = compact(raw.reading ?? heard);
+  const heardBy = (claim.heardBy ??= []);
+  // Others in the room may have heard an earlier try: saying the same words back is not from memory.
+  const copied = how !== 'claim' && heardBy.some((h) => h.by !== playerId && h.key === key);
+  heardBy.push({ by: playerId, key });
+  const spoken = raw.via === 'speech';
+  const tiles = raw.via === 'tap';
+  const memory = spoken && !copied;
+  const lines = (g.lines[playerId] ??= []);
+  if (!check.ok) {
+    if (used + 1 >= SAY_ATTEMPTS) {
+      lines.push({ gistId: gist.id, heard, ok: false, memory: false, how, model: gist.model });
+      if (how === 'claim') ctx.phrase(playerId, { itemId: pair.word.id, text: gist.model.text, kana: gist.model.kana, en: gist.model.en, outcome: 'missed' });
+    }
+    return MOVE_OK;
+  }
+  lines.push({ gistId: gist.id, heard, ok: true, memory, how, model: gist.model });
+  const mine = (g.said[playerId] ??= {});
+  mine[gist.frame] = (mine[gist.frame] ?? 0) + 1;
+  // The player's own sentence, not the model (Late Again!'s Pon line is the model; this is what was said).
+  ctx.phrase(playerId, { itemId: pair.word.id, text: heard, kana: raw.reading ?? heard, en: gist.en, outcome: used === 0 ? 'said' : 'retry', recall: memory ? 'memory' : 'read' });
+  if (how === 'chorus') {
+    chorus.right.push(playerId);
+    give(s, ctx, playerId, GREEN_POINTS.chorus);
+    return MOVE_OK;
+  }
+  const player = ctx.player(playerId);
+  const stretch = player?.level === 'n4' && pair.gist!.level === 'n3';
+  const points = tiles ? GREEN_POINTS.tiles : (pair.gist!.hard ? GREEN_POINTS.hard : PAIR_POINTS) + (spoken ? SPOKEN_BONUS : 0) + (stretch ? GREEN_POINTS.stretch : 0);
+  const stealing = how === 'steal';
+  claim.winnerId = playerId;
+  claim.winnerVia = raw.via;
+  give(s, ctx, playerId, points);
+  const t = tallyFor(s, playerId);
+  t.pairs += 1;
+  if (spoken) t.spoken += 1;
+  if (stealing) t.steals += 1;
+  clearPair(s, pair, playerId);
+  s.result = { kind: stealing ? 'stolen' : 'claimed', playerId, word: gist.model, points, spoken };
+  flash(s, stealing ? 'stolen' : 'claimed', playerId);
+  // Fude reacts to our model line, never to the transcript (no free speech reaches the room's speakers).
+  ctx.cue({ host: 'fude', event: stealing ? 'concentration_stolen' : 'concentration_keep', slots: { name: player?.name ?? '' }, answer: gist.model.text, answerEn: gist.model.en });
+  return MOVE_OK;
+}
+
+/** Green Car: whether the English goes back on hard gist cards (the flipper plays at N4: stretch). */
+function hardEnglish(s: ConcentrationState, ctx: ModeContext): boolean {
+  const flipper = s.claim?.claimerId ?? s.turn?.playerId ?? null;
+  return !!flipper && ctx.player(flipper)?.level === 'n4';
+}
+
+function viewFace(face: Face, english: boolean): Face {
+  return face.kind === 'gist' && face.hard && !english ? { ...face, text: '' } : face;
+}
+
 // ---- the mode ----
 
 export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
@@ -339,8 +512,13 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
     const levels = players.map((p) => p.level);
     const packs = ctx.content.packs;
     const pack = packs.find((p) => p.id === opts.packId) ?? (packs.length ? packs[Math.floor(random() * packs.length)] : undefined);
-    const plan = planBoard(players.length, levels, random);
-    const board = buildBoard(pack, plan, levels, random, () => ctx.newId());
+    const green = !!ctx.greenCar;
+    const said: GreenState['said'] = Object.fromEntries(players.map((p) => [p.id, {}]));
+    // Aim the deal: frames the seated players have said least go first (all 0 at a game's start).
+    const need = (f: FrameId) => players.reduce((n, p) => n + (said[p.id]?.[f] ?? 0), 0);
+    const board = green
+      ? buildGreenBoard(planGreenBoard(players.length, random), ctx.audience, need, random, () => ctx.newId())
+      : buildBoard(pack, planBoard(players.length, levels, random), levels, random, () => ctx.newId());
     const scene = SCENES[Math.floor(random() * SCENES.length)]!;
     const tiles = Array.from({ length: board.cards.length }, (_, i) => scene.clues[i % scene.clues.length]!);
     const others = shuffled(
@@ -377,6 +555,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
       shuffleSeq: 0,
       flash: null,
       finished: false,
+      ...(green ? { green: { audience: ctx.audience ?? 'family', said, lines: {} } } : {}),
     };
   },
 
@@ -475,19 +654,19 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
   duration(s, phase, ctx) {
     switch (phase) {
       case 'intro':
-        return DURATIONS.intro;
+        return durations(s).intro;
       case 'answer':
-        return ctx.player(s.turn?.playerId ?? '')?.level === 'kana' ? DURATIONS.turnKana : DURATIONS.turn;
+        return ctx.player(s.turn?.playerId ?? '')?.level === 'kana' ? durations(s).turnKana : durations(s).turn;
       case 'prompt':
-        return DURATIONS.peek;
+        return durations(s).peek;
       case 'reveal':
-        return DURATIONS.claim;
+        return durations(s).claim;
       case 'encore':
-        return DURATIONS.steal;
+        return durations(s).steal;
       case 'score':
-        return s.result?.kind === 'mismatch' ? DURATIONS.mismatch : DURATIONS.result;
+        return s.result?.kind === 'mismatch' ? durations(s).mismatch : durations(s).result;
       case 'finale':
-        return DURATIONS.finale;
+        return durations(s).finale;
       default:
         return 5_000;
     }
@@ -508,6 +687,14 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
         return !!s.claim?.winnerId;
       case 'reveal': {
         const claim = s.claim;
+        if (claim && s.green) {
+          // The chorus: the window stays open until the flipper and everyone else are done.
+          const p = ctx.player(claim.claimerId);
+          const flipperDone = !!claim.winnerId || (claim.attempts[claim.claimerId] ?? 0) >= SAY_ATTEMPTS || ((!p || !p.connected) && anyoneHere);
+          const others = ctx.connected().filter((x) => x.id !== claim.claimerId);
+          const ch = claim.chorus;
+          return flipperDone && others.every((x) => !!ch?.right.includes(x.id) || (ch?.attempts[x.id] ?? 0) >= SAY_ATTEMPTS);
+        }
         if (!claim || claim.winnerId) return true;
         if ((claim.attempts[claim.claimerId] ?? 0) >= SAY_ATTEMPTS) return true;
         const p = ctx.player(claim.claimerId);
@@ -569,6 +756,10 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
         if (s.cards[a]!.pairId === s.cards[b]!.pairId) {
           turn.outcome = 'match';
           s.claim = { pairId: card.pairId!, cells: [a, b], claimerId: playerId, attempts: {}, last: {}, winnerId: null, winnerVia: null };
+          if (s.green) {
+            const gist = GIST_BY_ID.get(pairOf(s, card.pairId)!.gist!.id)!;
+            Object.assign(s.claim, { chorus: { attempts: {}, last: {}, right: [] }, heardBy: [], tiles: tilesFor(gist, () => ctx.random()) });
+          }
         } else turn.outcome = 'mismatch';
       } else if (pickable(s).length === 0) {
         // Only fogged cards are left to pair with: lift the fog.
@@ -579,7 +770,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
 
     if (raw.kind === 'say') {
       if (phase !== 'prompt' && phase !== 'reveal' && phase !== 'encore') return moveError('wrong-phase');
-      return sayAttempt(s, ctx, phase, playerId, raw.utterance);
+      return s.green ? greenSay(s, ctx, phase, playerId, raw.utterance) : sayAttempt(s, ctx, phase, playerId, raw.utterance);
     }
 
     if (raw.kind === 'guess') {
@@ -614,7 +805,10 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
 
   view(s, phase, viewer, ctx) {
     const claim = s.claim;
-    const sayWindow = (phase === 'reveal' || phase === 'encore') && !!claim && !claim.winnerId;
+    const green = s.green;
+    // Green Car: the chunk stays turned away for the whole say-it window, while the chorus is still talking.
+    const sayWindow = (phase === 'reveal' || phase === 'encore') && !!claim && (!claim.winnerId || !!green);
+    const english = !!green && hardEnglish(s, ctx);
     const showAll = s.finished || !!s.solvedBy;
     const cells: CellView[] = s.cards.map((c, i) => {
       if (c.state === 'down') return { state: 'down' };
@@ -623,7 +817,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
         return { state: 'cleared', owner: pairOf(s, c.pairId)?.ownerId ?? null };
       }
       const masked = sayWindow && claim!.cells.includes(i) && c.role === 'word';
-      return masked ? { state: 'up', masked: true } : { state: 'up', face: c.face, pair: c.pairId ?? undefined };
+      return masked ? { state: 'up', masked: true } : { state: 'up', face: green ? viewFace(c.face, english) : c.face, pair: c.pairId ?? undefined };
     });
     const pair = pairOf(s, claim?.pairId ?? null);
     const cueCard = claim ? s.cards[claim.cells.find((i) => s.cards[i]!.role === 'cue') ?? claim.cells[0]] : undefined;
@@ -643,21 +837,38 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
       const me = ctx.player(id);
       const isTurn = phase === 'answer' && s.turn?.playerId === id;
       const used = claim?.attempts[id] ?? 0;
-      const canSay =
-        !!claim &&
-        !claim.winnerId &&
-        used < SAY_ATTEMPTS &&
-        (((phase === 'prompt' || phase === 'reveal') && claim.claimerId === id) || (phase === 'encore' && claim.claimerId !== id));
-      const hint = canSay && claim!.claimerId === id && me?.level === 'kana' && pair ? { kana: pair.word.jp.kana, romaji: toRomaji(pair.word.jp.kana) } : null;
+      const chorus = !!green && !!claim && phase === 'reveal' && claim.claimerId !== id;
+      const chorusUsed = claim?.chorus?.attempts[id] ?? 0;
+      const canSay = green
+        ? !!claim &&
+          (chorus
+            ? chorusUsed < SAY_ATTEMPTS && !claim.chorus?.right.includes(id)
+            : !claim.winnerId && used < SAY_ATTEMPTS && ((phase === 'reveal' && claim.claimerId === id) || (phase === 'encore' && claim.claimerId !== id)))
+        : !!claim &&
+          !claim.winnerId &&
+          used < SAY_ATTEMPTS &&
+          (((phase === 'prompt' || phase === 'reveal') && claim.claimerId === id) || (phase === 'encore' && claim.claimerId !== id));
+      const hint = !green && canSay && claim!.claimerId === id && me?.level === 'kana' && pair ? { kana: pair.word.jp.kana, romaji: toRomaji(pair.word.jp.kana) } : null;
       mine = {
         isTurn,
         canFlip: isTurn && !s.turn?.outcome && (s.turn?.flips.length ?? 0) < 2,
         canSay,
-        attemptsLeft: claim ? SAY_ATTEMPTS - used : 0,
-        last: claim?.last[id] ?? null,
+        attemptsLeft: claim ? SAY_ATTEMPTS - (chorus ? chorusUsed : used) : 0,
+        last: (chorus ? claim?.chorus?.last[id] : claim?.last[id]) ?? null,
         hint,
         guess: s.guesses[id] ?? null,
       };
+      if (green) {
+        const gist = pair?.gist ? GIST_BY_ID.get(pair.gist.id) : undefined;
+        mine.green = {
+          chorus,
+          stretch: me?.level === 'n4' && pair?.gist?.level === 'n3',
+          tiles: canSay ? (claim?.tiles ?? null) : null,
+          frameJa: gist ? (FRAME_BY_ID[gist.frame]?.ja ?? null) : null,
+          anchorEn: gist?.anchorEn ?? null,
+          lines: s.finished ? (green.lines[id] ?? []) : null,
+        };
+      }
     }
 
     return {
@@ -671,11 +882,12 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
         claim && cueCard && pair && phase !== 'answer'
           ? {
               claimerId: claim.claimerId,
-              cue: cueCard.face,
+              cue: green ? viewFace(cueCard.face, english) : cueCard.face,
               stage,
               winnerId: claim.winnerId,
               tried: Object.keys(claim.attempts),
-              word: sayWindow ? null : pair.word.jp,
+              word: green ? (phase === 'score' ? pair.word.jp : null) : sayWindow ? null : pair.word.jp,
+              ...(green ? { chorus: [...(claim.chorus?.right ?? [])] } : {}),
             }
           : null,
       result: phase === 'score' ? s.result : null,
@@ -696,6 +908,7 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
       shuffleSeq: s.shuffleSeq,
       flash: s.flash,
       fallback: s.fallback,
+      ...(green ? { green: true as const } : {}),
       mine,
     };
   },
@@ -716,6 +929,13 @@ export const concentrationMode: Mode<ConcentrationState, ConcentrationView> = {
     if (voice) out.push({ playerId: voice.id, name: voice.name, title: 'おおごえ賞', en: 'Big Voice: most pairs said aloud' });
     const sleuth = s.solvedBy ? ctx.player(s.solvedBy) : undefined;
     if (sleuth) out.push({ playerId: sleuth.id, name: sleuth.name, title: 'えの たんてい', en: 'Picture Detective: guessed the hidden picture' });
+    if (s.green) {
+      // じぶんの ことば賞: the most different sentences that counted.
+      const own = (id: string) => new Set((s.green!.lines[id] ?? []).filter((l) => l.ok).map((l) => compact(l.heard))).size;
+      let top: ModePlayer | undefined;
+      for (const p of players) if (own(p.id) > (top ? own(top.id) : 0)) top = p;
+      if (top) out.push({ playerId: top.id, name: top.name, title: 'じぶんの ことば賞', en: 'Own Words: the most different sentences that counted' });
+    }
     return out;
   },
 };

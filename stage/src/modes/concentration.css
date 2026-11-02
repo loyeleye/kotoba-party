@@ -65,9 +65,26 @@
   .cc-board { width: 100%; }
 }
 
+/* Frame Concentration (Green Car): gist and chunk cards */
+.cc-gist { gap: 2px; }
+.cc-gist-en { font-size: clamp(11px, 1.7vh, 22px); font-weight: 700; color: #2b4f9a; line-height: 1.1; overflow-wrap: anywhere; }
+.cc-chunk { gap: 2px; background: #fbf6e6; }
+.cc-tag { font-size: clamp(10px, 1.4vh, 16px); font-weight: 900; border-radius: 999px; padding: 0 8px; background: #2b4f9a; color: #fff; }
+.cc-tag-n3 { background: #1f7a4d; }
+.cc-chip.cc-green { background: #1f7a4d; color: #fff; }
+.cc-worked { display: flex; gap: 14px; align-items: center; justify-content: center; flex-basis: 100%; flex-wrap: wrap; }
+.cc-plus { font-size: 36px; font-weight: 900; color: var(--muted); }
+.cc-cue .cc-gist .cc-emoji { font-size: 52px; }
+.cc-cue .cc-gist-en { font-size: 26px; }
+.cc-cue .cc-chunk .cc-jp { font-size: 36px; }
+.cc-cue-q { min-width: 96px; background: #2d1f4a; color: var(--warn); border: 3px dashed var(--warn); }
+
 /* Inside a card, size by the card (container query units; the px sizes above are the fallback). */
 .cc-cell .cc-tile { font-size: 56cqmin; }
 .cc-cell .cc-emoji { font-size: 52cqmin; }
 .cc-cell .cc-back { font-size: 30cqmin; }
 .cc-cell .cc-q { font-size: 50cqmin; }
 .cc-cell .cc-sub, .cc-cell .cc-kana, .cc-cell .cc-small { font-size: 14cqw; }
+.cc-cell .cc-gist .cc-emoji { font-size: 34cqmin; }
+.cc-cell .cc-gist.cc-hard .cc-emoji { font-size: 48cqmin; }
+.cc-cell .cc-tag { font-size: 10cqw; }
