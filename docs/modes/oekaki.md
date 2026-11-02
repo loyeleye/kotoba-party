@@ -177,7 +177,7 @@ word (`sentences.ts`, 50 sentences, all `draft`). Mixed rooms are unchanged: pac
   real title together at the score beat (read, as before).
 - **House decoys** are other sentences from the room's pool.
 - **Bots** in the Green Car say a who tile plus a what-happened chunk from memory (about 70%): another sentence's
-  chunk in the real one's frame (an N3 bot, when the drawing is N4, half the time an N3 chunk); otherwise they send
+  chunk in the real one's frame (an N3 bot, when the drawing is N4, two times in five an N3 chunk, so its fakes run about half N3); otherwise they send
   the two tiles.
 - No offer cards here, so nothing goes to the offer log.
 - Matcher note: ＿て しまった isn't heard in a sentence that contains ちゃん (the te-shimau `not` list), so the

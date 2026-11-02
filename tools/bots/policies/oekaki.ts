@@ -3,7 +3,7 @@
 // tapped, by seat), picks a title, and says the real one with the room.
 // In the Green Car its fake is a sentence: a who tile plus a what-happened chunk. Mostly (about 70%) it says one
 // from memory, a chunk of another Green Car sentence that isn't in its hand, in the real sentence's frame (an N3
-// bot, when the drawing is N4, half the time in an N3 frame); otherwise it sends a who tile and a chunk tile.
+// bot, when the drawing is N4, two times in five in an N3 frame, so its fakes run about half and half); otherwise it sends a who tile and a chunk tile.
 
 import type { InkPoint } from '../../../shared/src/japanese/strokes.js';
 import { PALETTE } from '../../../shared/src/modes/oekaki/drawing.js';
@@ -76,20 +76,39 @@ export function botScribble(random: () => number): { strokes: InkPoint[][]; colo
 }
 
 /** A Green Car fake: a who tile and a what-happened chunk, said from memory or sent as tiles. */
-function greenFake(view: RoomView, m: NonNullable<OekakiView['mine']>, salt: number, random: () => number): unknown {
+/** A repeatable 0–1 number for one decision (the same on every call in a phase, however often the bot is asked). */
+function chance(...parts: (string | number)[]): number {
+  let h = 2166136261;
+  for (const ch of parts.join('|')) {
+    h ^= ch.codePointAt(0)!;
+    h = Math.imul(h, 16777619);
+  }
+  // Mix the bits, so decisions that differ only in their last word don't move together.
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return ((h >>> 0) % 10_000) / 10_000;
+}
+
+function greenFake(view: RoomView, m: NonNullable<OekakiView['mine']>, salt: number, seed: number): unknown {
+  // Keyed on the hand too, so a bot doesn't make the same choices every game.
+  const hand = (m.tiles ?? []).map((t) => t.kana).join('');
+  const random = (what: string) => chance(seed, view.me?.playerId ?? '', view.phaseSeq, hand, what);
   const tiles = m.tiles!;
   const whos = tiles.flatMap((t, i) => (t.chunk === 'who' ? [i] : []));
   const dids = tiles.flatMap((t, i) => (t.chunk === 'did' ? [i] : []));
   const who = whos[salt % Math.max(1, whos.length)] ?? 0;
-  if (random() < 0.7) {
+  if (random('memory') < 0.7) {
     const level = view.me?.level;
     const real = m.frame?.id;
-    const n3 = level === 'n3' && !m.frame?.n3 && random() < 0.5;
+    const n3 = level === 'n3' && !m.frame?.n3 && random('n3') < 0.4;
     const inHand = new Set(dids.map((i) => normalizeReading(tiles[i]!.kana)));
     const pool = sentencesFor(view.audience).filter((x) => !inHand.has(normalizeReading(x.did.kana)));
     const fit = pool.filter((x) => (n3 ? x.frames.some((f) => FRAME_BY_ID[f]?.level === 'n3') : real ? x.frames.includes(real as never) : true));
     const list = fit.length ? fit : pool;
-    const x = list[Math.floor(random() * list.length)];
+    const x = list[Math.floor(random('which') * list.length)];
     if (x) return { kind: 'fake', utterance: { via: 'speech', text: `${tiles[who]!.kana} ${x.did.kana}` } };
   }
   const did = dids[salt % Math.max(1, dids.length)] ?? 0;
@@ -112,7 +131,7 @@ export function oekakiPolicy(opts: OekakiPolicyOptions = {}): ModePolicy {
         out.push({ key: 'draw', move: { kind: 'draw', ...botScribble(random) }, delayMs: later(2) });
       }
       if (view.phase === 'answer' && !m.isArtist && !m.fake && m.tiles && !game.hiddenDrawing && m.tiles.some((t) => t.chunk)) {
-        out.push({ key: 'fake', move: greenFake(view, m, seat + game.index * 7 + game.round * 3, random), delayMs: later() });
+        out.push({ key: 'fake', move: greenFake(view, m, seat + game.index * 7 + game.round * 3, opts.seed ?? 1), delayMs: later() });
       } else if (view.phase === 'answer' && !m.isArtist && !m.fake && m.tiles && !game.hiddenDrawing) {
         // A plausible fake: [adjective] noun, or noun の noun, from the tiles (never the answer).
         const nouns = m.tiles.flatMap((t, i) => (!t.particle && !/い$/.test(t.kana) ? [i] : []));
