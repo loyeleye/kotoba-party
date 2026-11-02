@@ -638,9 +638,19 @@ export function goalCarried(goal: Goal): boolean {
  */
 export function goalPace(st: PathStatus, goal: Goal, level: Level, room: RoomFit | null): { y: number; mode: ModeId | null } | null {
   if (!measured(goal)) return null;
+  // No room (the map): the better of the two cars, so a stop only the Green Car carries (4.9 since its roles
+  // moved there) still shows a pace. A mixed room's suggestion reads only its own car and passes such a stop by.
+  if (!room && !GREEN_LINES.includes(goal.line)) {
+    const mixed = carPace(st, goal, level, null, false);
+    const green = carPace(st, goal, level, null, true);
+    return green.y > mixed.y ? green : mixed;
+  }
+  return carPace(st, goal, level, room, greenFor(goal.line, room));
+}
+
+function carPace(st: PathStatus, goal: Goal, level: Level, room: RoomFit | null, green: boolean): { y: number; mode: ModeId | null } {
   const games = goal.games.filter((m) => fitsRoom(m, room));
   if (!games.length) return { y: 0, mode: null };
-  const green = greenFor(goal.line, room);
   const per = games.map((m) => needYields(st, goal, m, level, green));
   const needs = per[0]!.length;
   if (!needs) return { y: 0, mode: games[0]! };
