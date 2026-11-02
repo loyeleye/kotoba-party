@@ -466,6 +466,8 @@ function recheckOf(m: FrameMark | undefined, now: number): Recheck | null {
 }
 
 /** Every frame any goal names. */
+/** Frames some goal requires (not only "also counts"): what aiming a Green Car deal favours. */
+export const REQUIRED_FRAMES: ReadonlySet<string> = new Set(GOALS.flatMap((x) => x.need.flatMap((n) => [...needIds(n)])));
 export const GOAL_FRAMES: readonly string[] = [...new Set(GOALS.flatMap((x) => [...x.need.flatMap((n) => [...needIds(n)]), ...x.also]))];
 
 const plusDays = (day: string, n: number): string => new Date(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);

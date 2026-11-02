@@ -5,6 +5,7 @@
 // first time the room is all N4+. It's decided at game start and never changes mid-game.
 import type { Level } from '../../content/src/types.js';
 import { n4Up } from './level.js';
+import { REQUIRED_FRAMES } from './path.js';
 
 /** Every seated player is N4 or N3 (and there is at least one). */
 export function allN4Up(players: readonly { level: Level }[]): boolean {
@@ -21,3 +22,12 @@ export function greenCarFor(setting: boolean | null, players: readonly { level: 
 
 /** The TV's toast when the switch is on but a local passenger has boarded. */
 export const GREEN_CAR_OFF_TOAST = 'A local passenger boarded: back to the regular train';
+
+/**
+ * How much a player needs these frames tonight (ModeContext.frameNeed): each frame weighs 2 if a path goal
+ * requires it, else 1, divided by one plus the times they've said it from memory tonight (`said`). Summed.
+ */
+export function frameNeed(said: Readonly<Record<string, number>>, frames: readonly string[]): number {
+  return frames.reduce((sum, f) => sum + (REQUIRED_FRAMES.has(f) ? 2 : 1) / (1 + (said[f] ?? 0)), 0);
+}
+

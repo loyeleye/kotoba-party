@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { apply, createGame, modeContext, type GameAction, type GameContext } from '../shared/src/game.js';
-import { allN4Up, greenCarFor } from '../shared/src/greenCar.js';
+import { allN4Up, frameNeed, greenCarFor } from '../shared/src/greenCar.js';
+import { aimPick, aimWeight } from '../shared/src/modes/aim.js';
 import type { Command } from '../shared/src/protocol.js';
 import { viewFor } from '../shared/src/view.js';
 import { content } from './helpers.js';
@@ -68,5 +69,22 @@ describe('Green Car in a room', () => {
     expect(r.cmd({ type: 'settings', greenCar: false }).error).toBe('wrong-phase');
     const vip = apply(r.s, { type: 'command', actor: { kind: 'player', playerId: 'p0' }, command: { id: 'x1', type: 'settings', greenCar: false } as Command }, gctx());
     expect(vip.error).toBe('not-allowed');
+  });
+});
+
+describe('aim the deal', () => {
+  it('favours required frames, and frames said least tonight', () => {
+    // rashii is required on 3.1; mitai-casual is only "also counts" there.
+    expect(frameNeed({}, ['rashii'])).toBeGreaterThan(frameNeed({}, ['mitai-casual']));
+    expect(frameNeed({ rashii: 3 }, ['rashii'])).toBeLessThan(frameNeed({}, ['rashii']));
+    const ctx = { frameNeed: (_p: string, f: readonly string[]) => frameNeed({ 'sei-de': 2 }, f) };
+    expect(aimPick(['sei-de', 'okage-de'], (f) => aimWeight(ctx, 'p', [f]))).toBe('okage-de');
+    expect(aimPick(['sei-de', 'okage-de'], (f) => aimWeight(ctx, 'p', [f], { 'okage-de': 3 }))).toBe('sei-de');
+  });
+
+  it('counts a finished game toward tonight, so the next game sees it', () => {
+    const r = { s: createGame('AIMS') };
+    r.s.saidTonight = { p0: { rashii: 2 } };
+    expect(modeContext(r.s, { now: 0, content, newId: () => 'x', random: () => 0 }).frameNeed!('p0', ['rashii'])).toBeCloseTo(2 / 3);
   });
 });

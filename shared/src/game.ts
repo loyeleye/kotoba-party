@@ -3,13 +3,13 @@
 // passing the current time in. The room runs the shared loop (lobby → game → recap) and
 // hands everything inside the game to the chosen mode (shared/src/modes).
 
-import { allN4Up, greenCarFor } from './greenCar.js';
+import { allN4Up, frameNeed, greenCarFor } from './greenCar.js';
 import type { Level } from '../../content/src/types.js';
 import { MAX_NAME_LENGTH, MAX_PLAYERS, SURPRISE_REVEAL_MS, SURPRISE_SPIN_MS } from './constants.js';
 import type { Award, ContentLibrary, HostCue, Mode, ModeContext, ModePlayer, PhraseEntry, RecapTeam, ModeInfo } from './modes/mode.js';
 import { EXPERIMENTS } from './modes/experiments.js';
 import { MODES, noFit, speakersIn, surprisePool } from './modes/registry.js';
-import type { GameResult } from './progress.js';
+import { phraseFrames, type GameResult } from './progress.js';
 import type { Audience, Command, CommandError, HostSay, JoinError, ModeId, Phase, Viewer, WaitAnswer } from './protocol.js';
 import { isAudience, LEVELS, MODE_IDS, SURPRISE, WAIT_ANSWERS } from './protocol.js';
 import { awardKana, hasKanji, isUtterance, matchesAccepted, utteranceReading, type Utterance } from './japanese/kana.js';
@@ -66,6 +66,8 @@ export interface GameState {
   greenCar?: boolean | null;
   /** This game (or the last one, in the lobby and recap) rides in the Green Car. Fixed at game start. */
   greenCarOn?: boolean;
+  /** Per player, how many times each frame was said from memory in tonight's finished games (aim the deal). */
+  saidTonight?: Record<string, Record<string, number>>;
   /** Scores and phrasebooks as they were just before this game started, so ending it early can put them back. */
   beforeGame: { scores: Record<string, number>; phrasebook: Record<string, PhraseEntry[]> } | null;
   /** This game came from Surprise Me!: the games it rolled between, so the screens can show the roll. */
@@ -226,6 +228,7 @@ export function modeContext(state: GameState, ctx: GameContext): ModeContext {
     vipId: state.vipId,
     audience: state.audience,
     greenCar: state.greenCarOn === true,
+    frameNeed: (playerId, frames) => frameNeed(state.saidTonight?.[playerId] ?? {}, frames),
     random: ctx.random,
     newId: ctx.newId,
     players: () => state.players.map(asModePlayer),
@@ -581,6 +584,19 @@ function finish(state: GameState, ctx: GameContext): void {
   };
   if (mode) state.cues.push({ host: mode.info.host, event: 'recap_award', slots: awardSlots(state.recap.awards[0]) });
   if (state.mode) addTonight(state, state.mode);
+  addSaidTonight(state);
+}
+
+/** Adds the finished game's from-memory says to each player's frame counts for tonight (aim the deal). */
+function addSaidTonight(state: GameState): void {
+  const all = (state.saidTonight ??= {});
+  for (const p of state.players) {
+    const mine = (all[p.id] ??= {});
+    for (const e of state.phrasebook[p.id] ?? []) {
+      if (e.outcome !== 'said' || e.recall !== 'memory') continue;
+      for (const f of phraseFrames(e)) mine[f] = (mine[f] ?? 0) + 1;
+    }
+  }
 }
 
 /** Adds the finished game's phrasebooks to tonight's: one row per phrase, with who said and who missed it. */

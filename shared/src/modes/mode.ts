@@ -111,6 +111,13 @@ export interface ModeContext {
    * the N4/N3 pieces that would change a beginner's turn are on. False when left out.
    */
   readonly greenCar?: boolean;
+  /**
+   * Green Car, aim the deal (shared/src/greenCar.ts): how much this player needs these frames tonight, higher is
+   * more. A frame some path goal requires weighs twice an optional one, and each time the player said it from
+   * memory in an earlier game tonight divides its weight. Games add their own this-game counts on top. Left out
+   * in test contexts: then every frame weighs the same (aimWeight's fallback).
+   */
+  frameNeed?(playerId: string, frames: readonly string[]): number;
   readonly content: ContentLibrary;
   random(): number;
   newId(): string;
