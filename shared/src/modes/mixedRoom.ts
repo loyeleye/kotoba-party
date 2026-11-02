@@ -199,6 +199,11 @@ export const KEY_GLOSS: Readonly<Record<string, string>> = {
   だそうです: 'I hear that…',
   はずです: 'should be',
   てあります: 'has been done',
+  // The Green Car's announcer (Last Train, N3).
+  でございます: 'is (extra polite, staff speech)',
+  ております: 'is …ing (humble, staff speech)',
+  させていただきます: 'I humbly will…',
+  ごちゅういください: 'please take care',
   // The go-between (Omiai).
   'おつきに なりました': 'has arrived (polite)',
   いらっしゃいます: 'is (polite, about a person)',

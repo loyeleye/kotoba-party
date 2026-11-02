@@ -18,6 +18,15 @@
 // model line (Chōchin-san voices it, train_role_read) and, once a game, a Kana or N5 player who hasn't reacted gets
 // the curveball ("Which word did you hear?") in place of their tile. In a
 // room of one or two with nobody at N4, Chōchin-san makes one platform announcement himself (host stand-in).
+//
+// The Green Car (ctx.greenCar: every player N4 or N3; shared/src/greenCar.ts) rides its own lines
+// (content/src/last-train/green-car.ts) and moves Lost and Found there: a mixed room no longer swaps it in
+// (buildStops). In the Green Car the roles stop rotating: every player is dealt an N4 or N3 item at every stop,
+// the role items (announcer, Lost and Found, the front desk) among them, with no offer card and nothing written to
+// the offer log (greenCarTurns). An N3 player's items alternate N3 and N4; an N4 player gets N4 items, plus an N3
+// item from the same stop as an optional stretch (say either). "Aim the deal": of the items at the wanted level, the
+// one whose frames this player has said least tonight (`gc.said`, counted when an answer is right), unused first.
+// No penalty car (its minigames are N5), and the Platform Dash deals at the same levels.
 
 import type { HardRole, HostAward, JpText, LastTrainMinigame, LastTrainScenario, Level, MinigameItem, PromptType, StationSign, TrainStop } from '../../../../content/src/types.js';
 import { isUtterance, type Utterance } from '../../japanese/kana.js';
@@ -50,8 +59,10 @@ export const RULES = {
   minLimitMs: 4_000,
   pointsFirstTry: 100,
   pointsRetry: 60,
-  /** Added to the base points of a correct answer on a hard-role item the player took. */
+  /** Added to the base points of a correct answer on a hard-role item the player took (any role item, in the Green Car). */
   roleBonus: 20,
+  /** Green Car: added when an N4 player says their optional N3 stretch line instead. */
+  stretchBonus: 20,
   /**
    * When Chōchin-san says a taken hard role's model line at the reveal, after his reaction (an LLM line may wait
    * 1.5 s, then takes about 2 s to say). The longest model line takes about 7 s, inside the 12 s reveal.
@@ -130,6 +141,10 @@ interface Turn {
   points: number;
   /** A hard role on offer (status 'offer'): the task holds the role's item, its clock not started yet. */
   offer: { role: HardRole; deadline: number } | null;
+  /** Green Car, an N4 player: an N3 item from the same stop they may say instead (it then becomes the task's item). */
+  stretch?: MinigameItem | null;
+  /** The stretch line was said: the task's item is now the stretch item. */
+  stretched?: true;
 }
 
 /** One hard-role offer and what the player did with it (the step's gate: N4 players accept at least 60%). */
@@ -245,6 +260,13 @@ export interface LastTrainState {
   standIn: (Commentary & { stop: number; atMs?: number; sg?: StandInGallery | null }) | null;
   /** Chōchin-san has reacted to his own candle turning up in lost and found (once a game). */
   candleSeen?: boolean;
+  /** The Green Car (ctx.greenCar at setup): roles always on, no offers, N4 and N3 items only. */
+  greenCar?: boolean;
+  /**
+   * Green Car bookkeeping, per player: `mix`, how many N3 and N4 items they've been dealt (an N3 player alternates);
+   * `said`, how often they've said each frame right tonight (the deal aims at the least said).
+   */
+  gc?: { mix: Record<string, { n3: number; n4: number }>; said: Record<string, Record<string, number>> };
   seq: number;
 }
 
@@ -321,6 +343,10 @@ export interface TaskView {
   lastHeard: string | null;
   /** The hard role this item belongs to, if any. */
   role: JpText | null;
+  /** Green Car: the item is an N3 line (shown with an N3 tag). */
+  n3?: true;
+  /** Green Car, an N4 player: an optional N3 line from the same stop, said in place of the task for a bonus. */
+  stretch?: { itemId: string; prompt: JpText; visual: string | null; signs: StationSign[] | null; hint: string | null; role: JpText | null } | null;
 }
 
 export interface LastTrainMe {
@@ -442,6 +468,9 @@ function givenAway(item: MinigameItem, stop: Stop): boolean {
 
 const isParticle = (task: Task) => task.promptType === 'fill-particle' || task.minigameId === 'particle-panic';
 
+/** An item the Green Car may deal: N4 or N3 (no Kana or N5 lines there). */
+const atGreenCar = (i: MinigameItem) => i.level === 'n4' || i.level === 'n3';
+
 /** Items from a pool at a player's level (nearest level first), unused ones preferred. */
 function dealItem(s: LastTrainState, pool: readonly MinigameItem[], ns: string, level: Level, random: () => number): MinigameItem | undefined {
   for (const lv of LEVEL_ORDER[level]) {
@@ -519,7 +548,10 @@ function resolveLibrary(ctx: ModeContext): { minigames: Record<string, LastTrain
 }
 
 function chooseScenario(ctx: ModeContext, want: number, minigames: Record<string, LastTrainMinigame>): LastTrainScenario {
-  const ready = ctx.content.lastTrainScenarios.filter((sc) => sc.stops.length > 0 && sc.stops.every((st) => minigames[st.minigameId]));
+  const built = ctx.content.lastTrainScenarios.filter((sc) => sc.stops.length > 0 && sc.stops.every((st) => minigames[st.minigameId]));
+  // The Green Car rides its own lines when it has one ready; no other room ever rides them.
+  const green = built.filter((sc) => sc.greenCar);
+  const ready = ctx.greenCar === true && green.length ? green : built.filter((sc) => !sc.greenCar);
   // Kids and Cheeky rooms ride their own lines; family lines are the fallback when none is ready.
   const audience = ctx.audience ?? 'family';
   const own = ready.filter((sc) => (sc.audience ?? 'family') === audience);
@@ -535,15 +567,16 @@ function chooseScenario(ctx: ModeContext, want: number, minigames: Record<string
 }
 
 /** Trims or pads a scenario's stops to `want`, always keeping its last stop last (the twist). */
-export function buildStops(scenario: LastTrainScenario, want: number, minigames: Record<string, LastTrainMinigame>, penaltyIds: readonly string[], random: () => number, n4 = false): Stop[] {
-  // A room with an N4 player swaps in the line's hard-role stops (Lost and Found).
-  const swapped = scenario.stops.map((st) => (n4 && st.withN4 && minigames[st.withN4.minigameId] ? st.withN4 : st));
+export function buildStops(scenario: LastTrainScenario, want: number, minigames: Record<string, LastTrainMinigame>, penaltyIds: readonly string[], random: () => number, greenCar = false): Stop[] {
+  // The Green Car swaps in the line's hard-role stops (Lost and Found). A mixed room no longer does (a move-out).
+  const swapped = scenario.stops.map((st) => (greenCar && st.withN4 && minigames[st.withN4.minigameId] ? st.withN4 : st));
   const valid: TrainStop[] = swapped.filter((st) => minigames[st.minigameId]);
   let stops: Stop[] = valid.map((st) => ({ id: st.id, name: st.name, announcement: st.announcement, minigameId: st.minigameId }));
   if (stops.length > want) stops = [...stops.slice(0, want - 1), stops.at(-1)!];
   // Borrowed placeholder penalty minigames never become stops.
   // Neither do hard-role stops (they come only as a line's N4 swap).
-  const regular = Object.values(minigames).filter((m) => !(penaltyIds.includes(m.id) && m.id.startsWith('fallback-')) && !m.n4Stop);
+  // In the Green Car, only minigames with N4 or N3 items pad the line (hard-role stops included).
+  const regular = Object.values(minigames).filter((m) => !(penaltyIds.includes(m.id) && m.id.startsWith('fallback-')) && (greenCar ? m.items.some(atGreenCar) : !m.n4Stop));
   const nonPenalty = regular.filter((m) => !m.penalty);
   const choices = shuffled(nonPenalty.length ? nonPenalty : regular, random);
   const names = shuffled(SPARE_STOP_NAMES, random);
@@ -608,6 +641,11 @@ const ROLE_KEYS: readonly { kana: string; forms: readonly string[]; note: string
   { kana: 'はずです', forms: ['はずです'], note: 'はずです: sure it should be there. (It wasn’t.)' },
   { kana: 'てあります', forms: ['てあります'], note: 'てあります: read straight off the thing itself.' },
   { kana: 'いただけますか', forms: ['いただけますか'], note: 'いただけますか: a very polite way to ask a favour at a front desk (いただけませんか is softer still).' },
+  // The Green Car's N3 announcer (goal 3.8).
+  { kana: 'でございます', forms: ['でございます'], note: 'でございます: です in its best uniform. Only staff talk like this.' },
+  { kana: 'ております', forms: ['ております'], note: 'ております: 〜ています, humbled for the passengers.' },
+  { kana: 'させていただきます', forms: ['させていただきます'], note: 'させていただきます: “I humbly allow myself to…”. The railway’s politest verb ending.' },
+  { kana: 'ごちゅういください', forms: ['ご注意ください', 'ごちゅういください'], note: 'ご＿ください: the polite “please” for words like ちゅうい (care).' },
 ];
 const ROLE_EMOJI: Record<string, string> = { announcer: '📢', passenger: '🧳', 'lost-property-staff': '🔎', 'front-desk-guest': '🛎️' };
 
@@ -721,7 +759,79 @@ function ordinaryItem(s: LastTrainState, ctx: ModeContext, pool: readonly Miniga
   return dealt?.mirror && ctx.random() < 0.5 ? mirrored(dealt) : dealt;
 }
 
+// ---- the Green Car: every role always on, N4 and N3 items, aimed at the frames least said ----
+
+/**
+ * The level of a player's next Green Car item: an N3 player alternates N3 and N4 (whichever they've had fewer of,
+ * N3 first), so about half their lines are each; anyone else gets N4.
+ */
+function gcLevel(s: LastTrainState, ctx: ModeContext, playerId: string): 'n3' | 'n4' {
+  if (ctx.player(playerId)?.level !== 'n3') return 'n4';
+  const mix = s.gc?.mix[playerId] ?? { n3: 0, n4: 0 };
+  return mix.n3 <= mix.n4 ? 'n3' : 'n4';
+}
+
+/** How often this player has said an item's frames right tonight (an item with no frames scores 0). */
+function frameScore(s: LastTrainState, playerId: string, item: MinigameItem): number {
+  const said = s.gc?.said[playerId] ?? {};
+  return (item.frames ?? []).reduce((n, f) => n + (said[f] ?? 0), 0);
+}
+
+/**
+ * "Aim the deal": from the pool's items at `level` (the other Green Car level if it has none), unused ones first,
+ * the one whose frames this player has said least; ties at random. `take` marks it used.
+ */
+function aimItem(s: LastTrainState, ctx: ModeContext, pool: readonly MinigameItem[], ns: string, playerId: string, level: 'n3' | 'n4', take = true): MinigameItem | undefined {
+  const other = level === 'n3' ? 'n4' : 'n3';
+  const atLevel = pool.filter((i) => i.level === level);
+  const from = atLevel.length ? atLevel : pool.filter((i) => i.level === other);
+  const fresh = from.filter((i) => !s.used.includes(itemKey(ns, i.id)));
+  const cands = fresh.length ? fresh : from;
+  if (!cands.length) return undefined;
+  const least = Math.min(...cands.map((i) => frameScore(s, playerId, i)));
+  const chosen = pick(cands.filter((i) => frameScore(s, playerId, i) === least), () => ctx.random())!;
+  if (take && !s.used.includes(itemKey(ns, chosen.id))) s.used.push(itemKey(ns, chosen.id));
+  return chosen;
+}
+
+/**
+ * Green Car turns: every player is dealt an N4 or N3 item at every stop, a role item or not, with no offer card and
+ * no entry in the offer log. An N4 player also gets an N3 item from the stop as an optional stretch.
+ */
+function greenCarTurns(s: LastTrainState, ctx: ModeContext): void {
+  const stop = s.stops[s.stopIndex]!;
+  const mg = s.minigames[stop.minigameId]!;
+  const fair = mg.items.filter((i) => !givenAway(i, stop));
+  const pool = (fair.length ? fair : mg.items).filter(atGreenCar);
+  const gc = (s.gc ??= { mix: {}, said: {} });
+  s.turns = {};
+  for (const p of ctx.players()) {
+    const t = traveller(s, p.id);
+    // A stop with no N4 or N3 items (placeholder content only) deals as anywhere else.
+    let item = pool.length ? aimItem(s, ctx, pool, mg.id, p.id, gcLevel(s, ctx, p.id)) : ordinaryItem(s, ctx, mg.items, mg.id, p.level);
+    if (!item) continue;
+    if (item.level === 'n3' || item.level === 'n4') {
+      const mix = (gc.mix[p.id] ??= { n3: 0, n4: 0 });
+      mix[item.level] += 1;
+    }
+    const stretch = p.level !== 'n3' && item.level === 'n4' ? (aimItem(s, ctx, pool.filter((i) => i.level === 'n3'), mg.id, p.id, 'n3', false) ?? null) : null;
+    if (item.mirror && ctx.random() < 0.5) item = mirrored(item);
+    s.turns[p.id] = {
+      playerId: p.id,
+      task: makeTask(s, 'stop', mg, item, 1, t, ctx.now),
+      status: 'answering',
+      attempts: [],
+      correctOn: 0,
+      ghostAtStart: t.ghost,
+      points: 0,
+      offer: null,
+      ...(stretch ? { stretch } : {}),
+    };
+  }
+}
+
 function startTurns(s: LastTrainState, ctx: ModeContext): void {
+  if (s.greenCar) return greenCarTurns(s, ctx);
   const stop = s.stops[s.stopIndex]!;
   const mg = s.minigames[stop.minigameId]!;
   const { ordinary, roles } = stopPools(s, stop);
@@ -809,8 +919,9 @@ function nextDashTask(s: LastTrainState, ctx: ModeContext, r: Racer): void {
   }
   if (!r.queue.length) r.queue = shuffled(s.dashPool, () => ctx.random()).map((i) => i.id);
   const level = ctx.player(r.playerId)?.level ?? 'n5';
-  // Prefer the next queued item at the player's level; any item if none is.
-  const order = LEVEL_ORDER[level];
+  // Prefer the next queued item at the player's level; any item if none is. In the Green Car an N3 player
+  // alternates N3 and N4 (N3 first) and everyone else gets N4, N3 if none is left.
+  const order: Level[] = !s.greenCar ? LEVEL_ORDER[level] : level === 'n3' && r.n % 2 === 0 ? ['n3', 'n4'] : ['n4', 'n3'];
   let idx = -1;
   for (const lv of order) {
     idx = r.queue.findIndex((id) => s.dashPool.find((i) => i.id === id)?.level === lv);
@@ -916,7 +1027,8 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
     if (turn.correctOn) {
       const rec = turn.attempts[turn.correctOn - 1];
       let base: number = turn.correctOn === 1 ? RULES.pointsFirstTry : RULES.pointsRetry;
-      if (item.role && tookRole(s, p.id)) base += RULES.roleBonus;
+      if (item.role && (s.greenCar || tookRole(s, p.id))) base += RULES.roleBonus;
+      if (turn.stretched) base += RULES.stretchBonus;
       if (turn.ghostAtStart) base = Math.round(base * RULES.ghostShare);
       let bonus = 0;
       if (rec?.via === 'speech') {
@@ -927,6 +1039,11 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
       points = (base + bonus) * mult;
       ctx.award(p.id, points);
       s.ledger.push({ playerId: p.id, points, reason: 'stop', stop: s.stopIndex });
+      // Green Car: a frame said right counts towards aiming the next deal elsewhere.
+      if (s.gc) {
+        const said = (s.gc.said[p.id] ??= {});
+        for (const f of item.frames ?? []) said[f] = (said[f] ?? 0) + 1;
+      }
     }
     turn.points = points;
     if (turn.status !== 'away') {
@@ -966,6 +1083,8 @@ function scoreStop(s: LastTrainState, ctx: ModeContext): void {
 }
 
 function penaltyCandidates(s: LastTrainState): string[] {
+  // The Green Car has no penalty car: its minigames are N5 lines.
+  if (s.greenCar) return [];
   return Object.values(s.turns)
     // A missed hard role never does either: taking one should never be the risky choice.
     .filter((t) => t.status === 'missed' && !traveller(s, t.playerId).ghost && !t.ghostAtStart && !s.minigames[t.task.minigameId]?.forgiving && !t.task.item.role)
@@ -998,8 +1117,8 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
     const want = Math.min(6, Math.max(4, opts.rounds ?? 4));
     const { minigames, penaltyIds } = resolveLibrary(ctx);
     const scenario = chooseScenario(ctx, want, minigames);
-    const n4 = ctx.players().some((p) => n4Up(p.level));
-    const stops = buildStops(scenario, want, minigames, penaltyIds, () => ctx.random(), n4);
+    const greenCar = ctx.greenCar === true;
+    const stops = buildStops(scenario, want, minigames, penaltyIds, () => ctx.random(), greenCar);
     const dashPool = scenario.platformDash.length ? scenario.platformDash : FALLBACK_SCENARIO.platformDash;
     const s: LastTrainState = {
       scenario: { id: scenario.id, title: scenario.title, departure: scenario.departure, twist: scenario.twist },
@@ -1027,6 +1146,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
       curveballUsed: false,
       booth: null,
       standIn: null,
+      ...(greenCar ? { greenCar: true, gc: { mix: {}, said: {} } } : {}),
       seq: 0,
     };
     for (const p of ctx.players()) traveller(s, p.id);
@@ -1262,7 +1382,14 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
             return moveError(tried ? 'already-answered' : 'wrong-phase');
           }
           if (turn.task.key !== raw.key) return moveError('wrong-phase');
-          const ok = !!u && checkUtterance(u, turn.task.item.accepted, isParticle(turn.task));
+          let ok = !!u && checkUtterance(u, turn.task.item.accepted, isParticle(turn.task));
+          // Green Car: an N4 player may say the stop's N3 stretch line instead; it becomes their item.
+          if (!ok && u && turn.stretch && checkUtterance(u, turn.stretch.accepted, isParticle(turn.task))) {
+            ok = true;
+            turn.task = { ...turn.task, item: turn.stretch };
+            turn.stretched = true;
+            if (!s.used.includes(itemKey(turn.task.minigameId, turn.stretch.id))) s.used.push(itemKey(turn.task.minigameId, turn.stretch.id));
+          }
           const rec: AttemptRec = { via: u?.via ?? null, text: u?.text ?? null, ok, overruled: false, timedOut: false };
           if (ok) {
             turn.attempts.push(rec);
@@ -1488,7 +1615,7 @@ export const lastTrainMode: Mode<LastTrainState, LastTrainView> = {
         ghost,
         streak: t?.streak ?? 0,
         status: statusOf(me),
-        task: task ? taskView(s, task, level, lastHeard) : null,
+        task: task ? taskView(s, task, level, lastHeard, phase === 'answer' ? s.turns[me]?.stretch : null) : null,
         canHaunt: inStopPhase(phase) && ghost && !(t?.hauntedThisStop ?? true),
         hauntTargets: inStopPhase(phase) && ghost ? players.filter((p) => p.id !== me && s.travellers[p.id] && !s.travellers[p.id]!.ghost).map((p) => ({ playerId: p.id, name: p.name })) : [],
         shaveS: Math.round((t?.pendingShaveMs ?? 0) / 1000),
@@ -1561,8 +1688,11 @@ function inStopPhase(phase: Phase): boolean {
   return phase === 'prompt' || phase === 'answer' || phase === 'reveal' || phase === 'penalty';
 }
 
-function taskView(s: LastTrainState, task: Task, level: Level, lastHeard: string | null): TaskView {
+function taskView(s: LastTrainState, task: Task, level: Level, lastHeard: string | null, stretch?: MinigameItem | null): TaskView {
   const retry = task.attempt === 2;
+  const extra: Pick<TaskView, 'n3' | 'stretch'> = {};
+  if (s.greenCar && task.item.level === 'n3') extra.n3 = true;
+  if (stretch) extra.stretch = { itemId: stretch.id, prompt: stretch.prompt, visual: stretch.visual ?? null, signs: signsForPhone(stretch.signs, task.attempt), hint: retry ? stretch.hint : null, role: stretch.role?.name ?? null };
   const kanaHelp = level === 'kana';
   return {
     key: task.key,
@@ -1582,6 +1712,7 @@ function taskView(s: LastTrainState, task: Task, level: Level, lastHeard: string
     listen: task.promptType === 'listen-and-answer' && !task.item.role,
     lastHeard: retry ? lastHeard : null,
     role: task.item.role?.name ?? null,
+    ...extra,
   };
 }
 
