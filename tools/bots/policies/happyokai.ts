@@ -36,6 +36,18 @@ const STAMPS = ['omoshiroi', 'hee', 'sugoi', 'naruhodo', 'ee'] as const;
 
 /** A sentence of the bot's own about the slide: in a deck talk, one in the deck's frames, as a player would make from the cue frames. */
 function ownLine(frames: readonly string[], word: string, r: number): string {
+  // The Green Car's N3 decks (checked first: How it's changed also has a ように なりました chip).
+  if (frames.some((f) => f.includes('させられました'))) {
+    if (r < 1 / 3) return `あめの ひ、${word}に にげられて しまいました。`;
+    if (r < 2 / 3) return `きのうも ${word}の まえで ダンスを させられました。`;
+    return `${word}を もたずに かえろうと しました。`;
+  }
+  if (frames.some((f) => f.includes('たびに'))) {
+    if (r < 1 / 3) return `${word}を みる たびに、わらって しまいます。`;
+    if (r < 2 / 3) return `わかい うちに、${word}を みに いきたいです。`;
+    return `${word}を みて いらい、まいにち はしる ことに して います。`;
+  }
+  if (frames.some((f) => f.includes('と したら'))) return r < 0.5 ? `もし ${word}に なれると したら、そらを とびたいです。` : `もし ${word}が しゃべれると したら、たのしいと おもいます。`;
   if (frames.some((f) => f.includes('ように なりました'))) return r < 0.5 ? `いまは まいにち ${word}を みるように なりました。` : `それで、${word}を さがす ことに しました。`;
   if (frames.some((f) => f.startsWith('もし'))) return `もし ${word}が ${frames.some((f) => f.includes('いなかったら')) ? 'いなかったら' : 'なかったら'}、こまると おもいます。`;
   return `これは ${word} です。`;
@@ -43,6 +55,18 @@ function ownLine(frames: readonly string[], word: string, r: number): string {
 
 /** The bot's question-time answer: in a deck talk, one of the deck's answer frames a third of the time each, else the stall. */
 function answerLine(frames: readonly string[], r: number): string {
+  if (frames.some((f) => f.includes('させられたんです'))) {
+    if (r < 1 / 3) return 'じつは、みんなの まえで うたわされたんです。';
+    if (r < 2 / 3) return 'にげようと しましたが、だめでした。';
+  }
+  if (frames.some((f) => f.includes('たびに'))) {
+    if (r < 1 / 3) return 'あの ひ いらい、まいにち あるく ことに して います。';
+    if (r < 2 / 3) return 'わすれない うちに、もう いちど いきたいです。';
+  }
+  if (frames.some((f) => f.includes('と したら'))) {
+    if (r < 1 / 3) return 'もし そう だと したら、ずっと あそびたいです。';
+    if (r < 2 / 3) return 'たぶん、みんな びっくりすると おもいます。';
+  }
   if (frames.some((f) => f.includes('ことに'))) {
     if (r < 1 / 3) return 'いい しつもんですね。それで、もっと しらべる ことに しました。';
     if (r < 2 / 3) return 'まえは できませんでしたが、いまは できるように なりました。';

@@ -6,6 +6,7 @@
 // fit and guesses once one place is clearly ahead. Everyone votes; the tourist votes to blend in.
 
 import { ALL_LINES, PLACES } from '../../../shared/src/modes/tourist/places.js';
+import { GREEN_LINES, GREEN_PLACE_LINES, GREEN_PLACES } from '../../../shared/src/modes/tourist/rules.js';
 import type { TouristView } from '../../../shared/src/modes/tourist/tourist.js';
 import type { RoomView } from '../../../shared/src/protocol.js';
 import type { ModePolicy } from '../bot.js';
@@ -33,9 +34,12 @@ function chance(...parts: (string | number)[]): number {
 }
 
 /** Every line by id: a bot knows the Japanese behind a cue (a player would recall it, or peek). */
-const LINES = new Map(ALL_LINES.map((l) => [l.id, l]));
+// The Green Car's rules lines are in it too, so a Green Car bot says them from their cues.
+const LINES = new Map([...ALL_LINES, ...GREEN_LINES].map((l) => [l.id, l]));
 
-const PLACE_LINES = new Map(PLACES.map((p) => [p.id, new Set(p.answers.map((a) => a.jp.text))]));
+const PLACE_LINES = new Map(
+  [...PLACES, ...GREEN_PLACES].map((p) => [p.id, new Set([...p.answers, ...(GREEN_PLACE_LINES[p.id]?.answers ?? [])].map((a) => a.jp.text))]),
+);
 
 /** For each place in play, how many logged answers only someone there would give. */
 function clues(game: TouristView): Map<string, number> {

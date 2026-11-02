@@ -47,6 +47,7 @@ const ERRORS: Record<string, string> = {
   'not-english': 'Write this step in English.',
   'not-kana': 'Use kana for this one.',
   'too-close': 'Too close to the real meaning. Make it a fake!',
+  'no-frame': 'Green Car: make your fake a sentence with an N4 or N3 frame (＿た ことが ある, ＿ふりを した…).',
   'kids-words': 'This room is set to Kids. Try other words!',
   'names-player': 'Rumours are about the yōkai, never about players. For a source, use who saw it in the story (カッパに よると…).',
   'pick-fin': 'Add a fin first: pick one of the cards.',

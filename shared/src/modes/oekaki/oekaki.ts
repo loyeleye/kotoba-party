@@ -11,10 +11,17 @@
 //
 // Phases per round: prompt (draw) → per drawing: answer (fake titles) → reveal (vote) → score
 // (results and say it together). A drawing the VIP hides skips straight to its score.
+//
+// In the Green Car (ctx.greenCar, sentences.ts) everyone draws an N4/N3 sentence instead of a word, the tiles are
+// sentence chunks, a fake title must carry an N4 or N3 frame, and a fake said aloud from memory counts toward the
+// path. Outside the Green Car nothing changes.
 
 import type { Level } from '../../../../content/src/types.js';
 import type { InkPoint } from '../../japanese/strokes.js';
-import { isUtterance, matchesAccepted, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { isUtterance, matchesAccepted, soundKey, utteranceReading, type Utterance } from '../../japanese/kana.js';
+import { FRAME_BY_ID, framesOf, type FrameId } from '../../japanese/frames.js';
+import { aimPick, aimWeight } from '../aim.js';
+import { dealChunkTiles, isGreenFrame, SENTENCE_BY_ID, sentenceDecoys, sentencePrompt, sentencesFor } from './sentences.js';
 import type { Phase, Viewer } from '../../protocol.js';
 import { isObject, moveError, MOVE_OK, shuffled, type Award, type Mode, type ModeContext, type MoveResult } from '../mode.js';
 import { toRomaji } from '../../japanese/romaji.js';
@@ -104,6 +111,8 @@ export interface OekakiState {
   turn: Turn | null;
   earned: Record<string, number>;
   stats: { fooled: Record<string, number>; found: Record<string, number>; finders: Record<string, number> };
+  /** Green Car: frames each player has said from memory this game (fakes said aloud), for aiming the deal. */
+  gcSaid?: Record<string, Record<string, number>>;
 }
 
 // ---- moves ----
@@ -141,6 +150,14 @@ export interface ResultView extends OptionView {
   house: boolean;
   authors: { id: string; name: string }[];
   pickedBy: { id: string; name: string }[];
+}
+
+/** A Green Car writer's hint: the real sentence's frame. */
+export interface FrameHint {
+  id: string;
+  ja: string;
+  en: string;
+  n3?: true;
 }
 
 export interface OekakiView {
@@ -181,6 +198,8 @@ export interface OekakiView {
     fake: string | null;
     optionId: string | null;
     tiles: (Tile & { romaji: string | null })[] | null;
+    /** Green Car writers: the frame the real sentence uses (a hint for a fake that sounds real). */
+    frame: FrameHint | null;
     pick: string | null;
     said: Via | null;
   } | null;
@@ -402,6 +421,7 @@ export const oekakiMode: Mode<OekakiState, OekakiView> = {
             fake: myOption?.text ?? null,
             optionId: myOption?.id ?? null,
             tiles: t && phase === 'answer' && t.tiles[me] ? t.tiles[me]!.map((tile) => ({ ...tile, romaji: level === 'kana' ? toRomaji(tile.kana) : null })) : null,
+            frame: t && phase === 'answer' && !isArtist ? frameHint(t) : null,
             pick: t ? (t.picks[me] ?? null) : null,
             said: t && phase === 'score' ? (t.said[me] ?? null) : null,
           }
@@ -434,20 +454,60 @@ function enterDraw(s: OekakiState, ctx: ModeContext): void {
   s.turn = null;
   s.prompts = {};
   const used = new Set(s.used);
+  const dealt: Record<string, number> = {};
   for (const p of ctx.players()) {
-    const prompt = dealPrompt(ctx.content, s.packId, p.level, used, () => ctx.random());
+    const prompt = (ctx.greenCar && dealSentence(s, ctx, p.id, p.level, used, dealt)) || dealPrompt(ctx.content, s.packId, p.level, used, () => ctx.random());
     markUsed(used, prompt);
     s.prompts[p.id] = prompt;
   }
   s.used = [...used];
 }
 
+// ---- the Green Car (sentences.ts) ----
+
+/**
+ * The Green Car's deal: an N4 artist draws an N4 sentence; an N3 artist an N3 or N4 one, half and half. Within the
+ * level, aim the deal at the writers (they say the frames, in their fakes): the sentence whose frames the other
+ * players need most (aimWeight: tonight's need over this game's says, plus frames already dealt this round),
+ * averaged over its frames; ties random.
+ */
+function dealSentence(s: OekakiState, ctx: ModeContext, artistId: string, level: Level, used: ReadonlySet<string>, dealt: Record<string, number>): Prompt | null {
+  const random = () => ctx.random();
+  const want = level === 'n3' && random() < 0.5 ? 'n3' : 'n4';
+  const pool = sentencesFor(ctx.audience ?? 'family').filter((x) => !used.has(x.id));
+  const atLevel = pool.filter((x) => x.level === want);
+  const writers = ctx.players().filter((p) => p.id !== artistId);
+  const counts = (id: string) => {
+    const mine = { ...(s.gcSaid?.[id] ?? {}) };
+    for (const [f, n] of Object.entries(dealt)) mine[f] = (mine[f] ?? 0) + n;
+    return mine;
+  };
+  const weight = (x: (typeof pool)[number]) => writers.reduce((sum, w) => sum + aimWeight(ctx, w.id, x.frames, counts(w.id)), 0) / x.frames.length;
+  const best = aimPick(shuffled(atLevel.length ? atLevel : pool, random), weight);
+  if (!best) return null;
+  for (const f of best.frames) dealt[f] = (dealt[f] ?? 0) + 1;
+  return sentencePrompt(best);
+}
+
+/** A Green Car writer's hint: the real sentence's frame (tagged N3 when it's an N3 one). */
+function frameHint(t: Turn): FrameHint | null {
+  const real = SENTENCE_BY_ID.get(t.sketch.prompt.id);
+  const f = real && FRAME_BY_ID[real.frames[0]!];
+  if (!f) return null;
+  return { id: f.id, ja: f.ja, en: f.en, ...(f.level === 'n3' ? { n3: true as const } : {}) };
+}
+
+/** The N4 and N3 frames in a fake title. */
+const greenFramesOf = (fake: { text: string; kana: string }): FrameId[] => framesOf({ text: fake.text, kana: fake.kana }).filter(isGreenFrame);
+
 function enterFakes(s: OekakiState, ctx: ModeContext): void {
   s.current += 1;
   const sketch = s.sketches[s.current]!;
   const tiles: Record<string, Tile[]> = {};
   for (const p of ctx.players()) {
-    if (p.id !== sketch.artistId) tiles[p.id] = dealTiles(ctx.content, s.packId, sketch.prompt, () => ctx.random());
+    if (p.id === sketch.artistId) continue;
+    const real = SENTENCE_BY_ID.get(sketch.prompt.id);
+    tiles[p.id] = real ? dealChunkTiles(real, p.level, ctx.audience ?? 'family', () => ctx.random()) : dealTiles(ctx.content, s.packId, sketch.prompt, () => ctx.random());
   }
   s.turn = { sketch, options: [], via: {}, tiles, picks: {}, said: {}, scored: false, points: {}, pool: { base: 0, bonus: 0 } };
 }
@@ -457,7 +517,9 @@ function enterVote(s: OekakiState, ctx: ModeContext): void {
   const real = t.sketch.prompt;
   // Too few fakes (a quiet table, or phones away): Fude slips in decoys from the pack.
   let fakes = t.options.length;
-  for (const d of decoyCandidates(ctx.content, s.packId, () => ctx.random())) {
+  const green = SENTENCE_BY_ID.has(real.id);
+  for (const d of green ? sentenceDecoys(ctx.audience ?? 'family', () => ctx.random()) : decoyCandidates(ctx.content, s.packId, () => ctx.random())) {
+    if (d.id === real.id) continue;
     if (fakes >= MIN_FAKES) break;
     if (tooClose(d, real) || tooClose(real, d) || t.options.some((o) => sameFake(o, d))) continue;
     t.options.push({ id: ctx.newId(), text: d.text, kana: d.kana, en: d.en, authorIds: [], real: false, house: true, hidden: false });
@@ -539,11 +601,30 @@ function moveFake(s: OekakiState, phase: Phase, playerId: string, raw: Record<st
   const fake: Fake = read.fake;
   if (!playerTextAllowed(fake.text, ctx.audience)) return moveError('kids-words');
   if (tooClose(fake, t.sketch.prompt)) return moveError('too-close');
+  // Green Car: a fake title is a sentence too, in an N4 or N3 frame.
+  const green = SENTENCE_BY_ID.has(t.sketch.prompt.id);
+  const frames = green ? greenFramesOf(fake) : [];
+  if (green && !frames.length) return moveError('no-frame');
+  if (green && fake.via === 'speech') creditFake(s, ctx, playerId, fake, frames);
   const same = t.options.find((o) => sameFake(o, fake));
   if (same) same.authorIds.push(playerId);
   else t.options.push({ id: ctx.newId(), text: fake.text, kana: fake.kana, en: fake.en, authorIds: [playerId], real: false, house: false, hidden: false });
   t.via[playerId] = fake.via;
   return MOVE_OK;
+}
+
+/**
+ * A Green Car fake said aloud: the player's own sentence, in the phrasebook with its N4/N3 frames. From memory
+ * unless it says one of the what-happened tiles in their hand (then it was read off the tile).
+ */
+function creditFake(s: OekakiState, ctx: ModeContext, playerId: string, fake: Fake, frames: FrameId[]): void {
+  const key = soundKey(fake.kana);
+  const read = (s.turn!.tiles[playerId] ?? []).some((tile) => tile.chunk === 'did' && key.includes(soundKey(tile.kana)));
+  const real = s.turn!.sketch.prompt;
+  ctx.phrase(playerId, { itemId: `oekaki:fake:${key}`, text: fake.text, kana: fake.kana, en: `Your fake title for “${real.en}”`, outcome: 'said', recall: read ? 'read' : 'memory', frames });
+  if (read) return;
+  const mine = ((s.gcSaid ??= {})[playerId] ??= {});
+  for (const f of frames) mine[f] = (mine[f] ?? 0) + 1;
 }
 
 /** Can this player vote on anything (not their own fake, not hidden)? */

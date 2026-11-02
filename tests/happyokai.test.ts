@@ -5,6 +5,7 @@ import type { Level } from '../content/src/types.js';
 import type { CommandBody } from '../shared/src/client.js';
 import { createRoom } from '../shared/src/client.js';
 import { apply, createGame, type GameAction, type GameContext, type GameState } from '../shared/src/game.js';
+import { framesOf } from '../shared/src/japanese/frames.js';
 import type { Utterance } from '../shared/src/japanese/kana.js';
 import {
   answerFrames,
@@ -12,10 +13,12 @@ import {
   DECKS,
   deckTitlesFor,
   framesFor,
+  GREEN_DECKS,
   HAVE_YOU,
   haveYouCard,
   MISHAPS,
   openingFor,
+  QUESTIONS,
   questionsFor,
   readySentences,
   recoveryFor,
@@ -108,8 +111,10 @@ class Table {
   score(id: string): number {
     return this.s.players.find((p) => p.id === id)!.score;
   }
-  start(audience?: 'kids' | 'family' | 'cheeky') {
+  /** `greenCar: false` keeps an all-N4+ table out of the Green Car (the mixed-room rules). */
+  start(audience?: 'kids' | 'family' | 'cheeky', opts: { greenCar?: boolean } = {}) {
     if (audience) this.cmd('stage', { type: 'settings', audience });
+    if (opts.greenCar === false) expect(this.cmd('stage', { type: 'settings', greenCar: false }).changed).toBe(true);
     expect(this.cmd('stage', { type: 'start', mode: 'happyokai' }).changed).toBe(true);
     expect(this.s.phase).toBe('intro');
     this.timeout();
@@ -366,7 +371,7 @@ describe('Happyōkai!: an N4 presenter swaps a deck title', () => {
 
   it('swaps one deck title for a usual one, once a turn, before they are ready', () => {
     const table = new Table(3, ['n4', 'n4', 'n4']);
-    table.start();
+    table.start(undefined, { greenCar: false });
     const p = table.t.presenterId;
     expect(table.t.titleChoices.every(isDeck)).toBe(true);
     expect(table.view(p).me!.titleChoices.map((c) => c.swap)).toEqual([true, true]);
@@ -396,7 +401,7 @@ describe('Happyōkai!: an N4 presenter swaps a deck title', () => {
   it('a usual title cannot be swapped, nor after ready, and Kana and N5 presenters have no swap', () => {
     // A mix (their 2nd talk): only the deck title can go.
     const table = new Table(3, ['n4', 'n4', 'n4'], 3);
-    table.start();
+    table.start(undefined, { greenCar: false });
     table.t.titleChoices = ['tn-cat', titlesFor('family')[0]!.id];
     expect(table.view(table.t.presenterId).me!.titleChoices.map((c) => !!c.swap)).toEqual([true, false]);
     expect(table.play(table.t.presenterId, { kind: 'swap', key: 1 }).error).toBe('bad-move');
@@ -406,7 +411,7 @@ describe('Happyōkai!: an N4 presenter swaps a deck title', () => {
     expect(table.play(table.t.presenterId, { kind: 'swap', key: 0 }).error).toBe('wrong-phase');
 
     const ready = new Table(3, ['n4', 'n4', 'n4']);
-    ready.start();
+    ready.start(undefined, { greenCar: false });
     ready.t.ready = true; // ready, but the phase hasn't moved on yet
     expect(ready.play(ready.t.presenterId, { kind: 'swap', key: 0 }).error).toBe('wrong-phase');
 
@@ -421,7 +426,7 @@ describe('Happyōkai!: an N4 presenter swaps a deck title', () => {
 
   it('keeps the mix: N4 presenters still get usual titles on their own', () => {
     const table = new Table(3, ['n4', 'n4', 'n4']);
-    table.start();
+    table.start(undefined, { greenCar: false });
     expect(n4Mix(table.st, 3)).toBe(true);
   });
 });
@@ -511,7 +516,7 @@ describe('Happyōkai!: a talk', () => {
 
   it('gives an N4 presenter the N4 decks (one title from each), with deck frames and cue cards; N5 presenters never see them', () => {
     const table = new Table(3, ['n4', 'n4', 'n4']);
-    table.start();
+    table.start(undefined, { greenCar: false });
     const presenter = table.t.presenterId;
     const choices = table.t.titleChoices.map((id) => TITLES.find((t) => t.id === id)!);
     expect(choices.map((t) => t.deck)).toEqual(['then-now', 'if']);
@@ -537,7 +542,7 @@ describe('Happyōkai!: a talk', () => {
   it("alternates an N4 presenter's pairs: a deck pair, then one deck title and one usual title", () => {
     for (const seed of [3, 7, 11]) {
       const table = new Table(3, ['n4', 'n4', 'n4'], seed);
-      table.start('cheeky');
+      table.start('cheeky', { greenCar: false });
       const picked: Record<string, string> = {};
       let mixes = 0;
       let usualTalks = 0;
@@ -983,4 +988,194 @@ describe('Happyōkai!: bots play a game end to end', () => {
       director.client.close();
     }, 120_000);
   }
+});
+
+// ---- the Green Car ----
+
+describe('Happyōkai!: the Green Car', () => {
+  const GREEN = GREEN_DECKS.n3;
+  const AUDIENCES = ['kids', 'family', 'cheeky'] as const;
+  const framesIn = (j: { text: string; kana: string }) => framesOf(j, undefined, { keepHidden: true });
+  /** Each ready sentence's required frames, in order, by deck. */
+  const NEED: Record<string, string[][]> = {
+    happened: [['suffering-passive'], ['saserareru'], ['you-to-suru', 'zu-ni']],
+    changed: [['tabi-ni'], ['uchi-ni'], ['te-irai', 'koto-ni-shiteiru']],
+    suppose: [['to-shitara'], ['to-shitara'], ['to-shitara']],
+  };
+
+  it('has three draft N3 decks, each with Kids, Family and Cheeky titles, and none of them outside the Green Car', () => {
+    expect(GREEN).toEqual(['happened', 'changed', 'suppose']);
+    for (const deck of GREEN) {
+      expect(DECKS[deck]).toMatchObject({ level: 'n3', greenCar: true, status: 'draft' });
+      for (const a of AUDIENCES) {
+        const titles = deckTitlesFor(a, deck);
+        expect(titles.length, `${deck} ${a}`).toBeGreaterThanOrEqual(3);
+        for (const t of titles) expect(t.audiences, t.id).toContain(a);
+      }
+      // Cheeky has titles of its own; Kids never sees them.
+      expect(deckTitlesFor('cheeky', deck).some((t) => t.audiences.length === 1)).toBe(true);
+      expect(deckTitlesFor('kids', deck).some((t) => !t.audiences.includes('kids'))).toBe(false);
+    }
+    for (const a of AUDIENCES) expect(titlesFor(a).some((t) => t.deck && DECKS[t.deck].greenCar)).toBe(false);
+  });
+
+  it('writes every ready sentence of every title and slide in its deck’s N3 frames, with every kanji read', () => {
+    const HAN = /\p{Script=Han}/u;
+    const bare = (j: { text: string; furigana?: [string, string][] }) => (j.furigana ?? [[j.text, '']]).filter(([b, r]) => !r && HAN.test(b)).map(([b]) => b);
+    for (const deck of GREEN) {
+      for (const t of TITLES.filter((x) => x.deck === deck)) {
+        expect([...bare(t.jp), ...bare(t.topic)], t.id).toEqual([]);
+        for (const sl of SLIDES) {
+          const ready = readySentences(sl, 'n3', t.topic, deck, undefined, t);
+          expect(ready.length).toBe(3);
+          ready.forEach((r, i) => {
+            expect(r.kana, `${t.id} ${sl.id}`).not.toMatch(/〔|undefined|null/);
+            const f = framesIn(r);
+            for (const want of NEED[deck]![i]!) expect(f, `${t.id} ${sl.id} ${i}: ${r.text}`).toContain(want);
+          });
+          // An N4 presenter (the stretch) reads the same sentences.
+          expect(readySentences(sl, 'n4', t.topic, deck, undefined, t).map((r) => r.kana)).toEqual(ready.map((r) => r.kana));
+          expect(framesFor('n3', sl, deck).length).toBeGreaterThanOrEqual(3);
+        }
+      }
+      expect(answerFrames('n3', deck).length).toBe(4);
+    }
+  });
+
+  it('has N3 question cards that carry their frames: an N3 asker’s first card, an N4 asker’s second', () => {
+    for (const q of QUESTIONS.filter((x) => x.level === 'n3')) {
+      const j = rb(q.text.replace('{word}', 'たこ').replace('{topic}', 'ねこ'), q.en);
+      expect(q.frames?.length, q.id).toBeGreaterThan(0);
+      for (const f of q.frames ?? []) expect(framesIn(j), q.id).toContain(f);
+    }
+    const slide = SLIDES.find((s) => s.kind === 'food')!;
+    const aim = { aim: () => 1 };
+    for (const deck of [...GREEN, 'then-now', 'if'] as const) {
+      const mine = questionsFor('n3', slide, TITLES[0]!.topic, 'family', mulberry(2), deck, undefined, aim);
+      expect(mine.map((q) => !!q.n3), deck).toEqual([true, false, false]);
+      expect(new Set(mine.map((q) => q.text)).size).toBe(3);
+      const stretch = questionsFor('n4', slide, TITLES[0]!.topic, 'family', mulberry(2), deck, undefined, aim);
+      expect(stretch.map((q) => !!q.n3), deck).toEqual([false, true, false]);
+    }
+    // Outside the Green Car nobody gets one.
+    for (const level of ['kana', 'n5', 'n4', 'n3'] as const) expect(questionsFor(level, slide, TITLES[0]!.topic, 'family', mulberry(2), 'if').some((q) => q.n3)).toBe(false);
+  });
+
+  it('deals every presenter one N4 deck title and one N3 deck title (the N3 one tagged), with no usual titles and no swap', () => {
+    const table = new Table(3, ['n3', 'n4', 'n3'], 5);
+    table.start();
+    expect(table.s.greenCarOn).toBe(true);
+    let talks = 0;
+    for (let guard = 0; guard < 600 && table.s.phase !== 'finale' && table.s.phase !== 'recap'; guard++) {
+      const t = table.st.talk;
+      if (table.s.phase === 'prompt' && t && !t.titleId) {
+        talks++;
+        const decks = t.titleChoices.map((id) => TITLES.find((x) => x.id === id)!.deck!);
+        expect(decks.filter((d) => GREEN_DECKS.n4.includes(d)).length).toBe(1);
+        expect(decks.filter((d) => GREEN_DECKS.n3.includes(d)).length).toBe(1);
+        // An N4 presenter sees the N4 title first and the N3 one as stretch.
+        if (table.s.players.find((p) => p.id === t.presenterId)!.level === 'n4') expect(DECKS[decks[0]!].level).toBe('n4');
+        const view = table.view(t.presenterId).me!.titleChoices;
+        expect(view.map((c) => !!c.n3)).toEqual(decks.map((d) => DECKS[d].level === 'n3'));
+        expect(view.some((c) => c.swap)).toBe(false);
+        expect(table.play(t.presenterId, { kind: 'swap', key: 0 }).error).toBe('not-in-green-car');
+        expect(table.play(t.presenterId, { kind: 'title', key: decks.findIndex((d) => DECKS[d].level === 'n3') }).error).toBeUndefined();
+        continue;
+      }
+      table.timeout();
+    }
+    expect(talks).toBe(6);
+  });
+
+  it('aims the deal: the decks whose frames the presenter has said least this game', () => {
+    for (const seed of [1, 2, 3, 4]) {
+      const table = new Table(3, ['n3', 'n3', 'n3'], seed);
+      expect(table.cmd('stage', { type: 'start', mode: 'happyokai' }).changed).toBe(true);
+      const said = { 'suffering-passive': 3, saserareru: 3, 'you-to-suru': 3, 'zu-ni': 3, 'tabi-ni': 3, 'uchi-ni': 3, tara: 3, 'to-omou': 3 };
+      table.st.gcSaid = Object.fromEntries(table.s.players.map((p) => [p.id, { ...said }]));
+      table.timeout();
+      const decks = table.t.titleChoices.map((id) => TITLES.find((x) => x.id === id)!.deck);
+      expect(decks.sort(), `seed ${seed}`).toEqual(['suppose', 'then-now']);
+    }
+  });
+
+  it('credits an own line in an N3 deck’s frame with the deck’s sentence, from memory, and counts it for the aim', () => {
+    const table = new Table(3, ['n3', 'n3', 'n3'], 5);
+    table.start();
+    const p = table.t.presenterId;
+    table.t.titleChoices = ['hp-brother', 'tn-cat'];
+    expect(table.play(p, { kind: 'title', key: 0 }).error).toBeUndefined();
+    expect(table.play(p, { kind: 'go' }).error).toBeUndefined();
+    expect(table.say(table.view(p).me!.script!.kana).error).toBeUndefined();
+    expect(table.next().error).toBeUndefined();
+    const me = table.view(p).me!;
+    expect(me.frames.join(' ')).toContain('させられました');
+    expect(table.say(`きのうも ${me.word!.kana}の まえで ダンスを させられました。`).error).toBeUndefined();
+    for (let guard = 0; guard < 30 && table.st.talk?.index === 0; guard++) table.timeout();
+    const card = (table.s.phrasebook[p] ?? []).find((e) => e.itemId.startsWith('happyokai:happened:'));
+    expect(card).toMatchObject({ outcome: 'said', recall: 'memory' });
+    expect(card!.frames).toContain('saserareru');
+    expect(card!.text).toMatch(/歌わされました/);
+    expect(table.st.gcSaid?.[p]?.saserareru).toBe(1);
+  });
+
+  it('gives an N3 asker an N3 question first and an N4 asker one as stretch', () => {
+    const table = new Table(4, ['n3', 'n4', 'n3', 'n4'], 9);
+    table.start();
+    for (let guard = 0; guard < 40 && !(table.s.phase === 'encore' && Object.keys(table.t.cards).length && (!table.t.haveYou || table.t.haveYou.done)); guard++) {
+      if (table.s.phase === 'encore' && table.t.haveYou && !table.t.haveYou.done) table.play(table.t.presenterId, { kind: 'next' });
+      else table.timeout();
+    }
+    expect(table.s.phase).toBe('encore');
+    // Chōchin-san's card, if any, leaves the TV before the room's cards show.
+    if (table.t.haveYou?.endedAt) {
+      table.now = table.t.haveYou.endedAt + HAVE_YOU_HOLD_MS;
+      table.act({ type: 'wake', phaseSeq: table.s.phaseSeq });
+    }
+    for (const [id, cards] of Object.entries(table.t.cards)) {
+      const level = table.s.players.find((p) => p.id === id)!.level;
+      expect(cards.map((c) => !!c.n3), `${id} ${level}`).toEqual(level === 'n3' ? [true, false, false] : [false, true, false]);
+      expect(table.view(id).me!.questions.filter((q) => q.n3).length).toBe(1);
+    }
+  });
+
+  it('keeps Cheeky deck titles out of a Kids Green Car room', () => {
+    for (const seed of [1, 2]) {
+      const table = new Table(4, ['n3', 'n4', 'n3', 'n4'], seed);
+      table.start('kids');
+      expect(table.s.greenCarOn).toBe(true);
+      for (let guard = 0; guard < 600 && table.s.phase !== 'finale' && table.s.phase !== 'recap'; guard++) {
+        if (table.s.phase === 'prompt' && table.st.talk) for (const id of table.t.titleChoices) expect(TITLES.find((x) => x.id === id)!.audiences, id).toContain('kids');
+        table.timeout();
+      }
+    }
+  });
+
+  it('bots in the Green Car present in the N3 decks’ frames, said from memory', () => {
+    const N3 = new Set(['suffering-passive', 'saserareru', 'you-to-suru', 'zu-ni', 'tabi-ni', 'uchi-ni', 'te-irai', 'koto-ni-shiteiru', 'to-shitara']);
+    let n3Frames = 0;
+    for (const seed of [1, 2, 3]) {
+      const table = new Table(4, ['n3', 'n4', 'n3', 'n4'], seed);
+      table.start();
+      const policy = happyokaiPolicy({ thinkMs: 0, readChance: 0.2 });
+      const done = new Set<string>();
+      for (let guard = 0; guard < 3000 && table.s.phase !== 'recap'; guard++) {
+        let moved = false;
+        for (const p of table.s.players) {
+          const view = viewFor(table.s, { kind: 'player', playerId: p.id }, REAL_CONTENT);
+          for (const m of policy.act(view, p.id)) {
+            const key = `${p.id}:${view.phaseSeq}:${m.key}`;
+            if (done.has(key)) continue;
+            done.add(key);
+            table.play(p.id, m.move);
+            moved = true;
+          }
+        }
+        if (!moved) table.timeout();
+      }
+      const memory = Object.values(table.s.phrasebook).flat().filter((e) => e.recall === 'memory' && e.outcome === 'said');
+      n3Frames += memory.flatMap((e) => (e.frames ?? framesIn(e)).filter((f) => N3.has(f))).length;
+    }
+    expect(n3Frames).toBeGreaterThan(5);
+  });
 });

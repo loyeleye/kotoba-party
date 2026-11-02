@@ -32,6 +32,7 @@ import {
   DECKS,
   framesFor,
   GRADE_STAMPS,
+  GREEN_DECKS,
   HAVE_YOU,
   HAVE_YOU_FRAME,
   HAVE_YOU_GLOSS,
@@ -53,11 +54,13 @@ import {
   titlesFor,
   type Deck,
   type MishapId,
+  type QuestionCard,
   type Slide,
   type Title,
 } from './content.js';
 import { forLevel } from './ruby.js';
 import { LEVEL_RANK, n4Up } from '../../level.js';
+import { aimPick, aimWeight } from '../aim.js';
 
 // ---- tuning ----
 
@@ -220,7 +223,7 @@ export interface Talk {
     released: boolean;
   } | null;
   /** Question time: each audience player's three cards, what they asked, and the one the presenter chose. */
-  cards: Record<string, JpText[]>;
+  cards: Record<string, QuestionCard[]>;
   asked: Asked[];
   chosen: string | null;
   grades: Record<string, number>;
@@ -270,6 +273,11 @@ export interface HappyokaiState {
   usedSlides: string[];
   /** The talk that had Chōchin-san's "Have you ever…?" card (once a game), or null. */
   haveYouTalk: number | null;
+  /**
+   * The Green Car's aim (aim the deal): how often each player has said each frame this game, from memory (their
+   * deck lines, Chōchin-san's card, a question asked aloud). Added to the room's figure for tonight's earlier games.
+   */
+  gcSaid?: Record<string, Record<string, number>>;
   stats: Record<string, PlayerStats>;
   phaseAt: number;
   stampSeq: number;
@@ -352,9 +360,10 @@ export interface HappyokaiView {
     level: Level;
     /**
      * `deck`: the N4 deck the title is from (Then and now, If I were…), for its label. `swap`: an N4
-     * presenter can still swap this deck title for a usual one (once a turn, before 🙋 ready).
+     * presenter can still swap this deck title for a usual one (once a turn, before 🙋 ready; not in the Green
+     * Car). `n3`: a Green Car N3 deck's title (What happened to me, How it's changed, If…), tagged N3.
      */
-    titleChoices: { key: number; jp: JpText; romaji?: string; deck?: JpText; swap?: true }[];
+    titleChoices: { key: number; jp: JpText; romaji?: string; deck?: JpText; swap?: true; n3?: true }[];
     /** Backstage: the opening and closing to rehearse. */
     rehearse: { opening: JpText & { romaji?: string }; closing: JpText & { romaji?: string } } | null;
     /** The presenter's script for this slide: the opening, the closing or a mishap's recovery line. */
@@ -371,8 +380,8 @@ export interface HappyokaiView {
     picked: string | null;
     /** The presenter's ready sentences, for the assistant's cue card. */
     cueCards: (JpText & { key: number })[];
-    /** Question time: my cards (audience), or the questions to choose from (presenter). */
-    questions: (JpText & { key: number; romaji?: string })[];
+    /** Question time: my cards (audience; a Green Car N3 card has `n3`), or the questions to choose from (presenter). */
+    questions: (JpText & { key: number; romaji?: string; n3?: true })[];
     asked: string | null;
     pickQuestion: (JpText & { playerId: string })[];
     /**
@@ -752,6 +761,34 @@ function swapTitle(s: HappyokaiState, t: Talk, key: number, ctx: ModeContext): s
   return pick.id;
 }
 
+/**
+ * The Green Car's title pair (aim the deal): one N4 deck title (Then and now, If I were…) and one N3 deck title
+ * (What happened to me, How it's changed, If…), each from the deck whose required frames (DECKS `aim`) this presenter
+ * needs most: the room's figure for tonight over this game's own says (s.gcSaid), averaged over the deck's frames so
+ * a deck with more of them doesn't always win; ties go to a random deck. An N4 presenter sees the N4 title first and
+ * the N3 one tagged as stretch; an N3 presenter gets the two in random order, so their talks come out about half and
+ * half. No usual titles: the Green Car drops the Kana and N5 lines.
+ */
+function greenPair(s: HappyokaiState, ctx: ModeContext, presenterId: string, audience: Audience): [Title | undefined, Title | undefined] {
+  const said = s.gcSaid?.[presenterId] ?? {};
+  const best = (level: 'n4' | 'n3'): Deck => aimPick(shuffled([...GREEN_DECKS[level]], () => ctx.random()), (d) => aimWeight(ctx, presenterId, DECKS[d].aim, said) / DECKS[d].aim.length)!;
+  const pick = (deck: Deck) => {
+    const all = deckTitlesFor(audience, deck);
+    const unused = all.filter((x) => !s.usedTitles.includes(x.id));
+    return shuffled(unused.length ? unused : all, () => ctx.random())[0];
+  };
+  const n4 = pick(best('n4'));
+  const n3 = pick(best('n3'));
+  return ctx.player(presenterId)?.level === 'n3' && ctx.random() < 0.5 ? [n3, n4] : [n4, n3];
+}
+
+/** The Green Car's aim: one more say of each of these frames for this player, this game. */
+function countGreen(s: HappyokaiState, ctx: ModeContext, playerId: string, frames: readonly string[]): void {
+  if (!ctx.greenCar || !frames.length) return;
+  const mine = ((s.gcSaid ??= {})[playerId] ??= {});
+  for (const f of frames) mine[f] = (mine[f] ?? 0) + 1;
+}
+
 function startTalk(s: HappyokaiState, ctx: ModeContext): void {
   const index = s.talk ? s.talk.index + 1 : 0;
   const presenterId = s.order[index]!;
@@ -770,7 +807,8 @@ function startTalk(s: HappyokaiState, ctx: ModeContext): void {
   const n4 = n4Up(ctx.player(presenterId)?.level);
   let a: Title | undefined;
   let b: Title | undefined;
-  if (n4 && n4Mix(s, index)) {
+  if (ctx.greenCar) [a, b] = greenPair(s, ctx, presenterId, audience);
+  else if (n4 && n4Mix(s, index)) {
     const lastId = s.done.filter((r) => r.presenterId === presenterId).at(-1)?.titleId;
     const lastDeck = lastId ? titleOf(lastId)?.deck : undefined;
     const deck: Deck = lastDeck === 'then-now' ? 'if' : lastDeck === 'if' ? 'then-now' : ctx.random() < 0.5 ? 'then-now' : 'if';
@@ -818,7 +856,7 @@ function scriptsFor(t: Talk, ctx: ModeContext): JpText[] {
   if (st.kind === 'close') return [closingFor(p.level)];
   if (st.kind === 'mishap') return st.mishapId ? [recoveryFor(st.mishapId, p.level, talkWord(t)?.word ?? null, graphUp(t), audienceOf(ctx))] : [];
   const slide = st.slideId ? slideOf(st.slideId) : undefined;
-  return slide ? readySentences(slide, p.level, title.topic, title.deck, title.place) : [];
+  return slide ? readySentences(slide, p.level, title.topic, title.deck, title.place, title) : [];
 }
 
 /** Which of Chōchin-san's three holiday photos the backstage curtain shows: talk 1, the middle, the last. */
@@ -832,7 +870,7 @@ export function photoBeat(index: number, total: number): 1 | 2 | 3 | null {
 /** A line of the presenter's this close to a ready sentence on screen was read off it (a word changed, a particle misheard). */
 const NEAR_READ = 0.75;
 
-function phrases(t: Talk, ctx: ModeContext): void {
+function phrases(s: HappyokaiState, t: Talk, ctx: ModeContext): void {
   const p = ctx.player(t.presenterId);
   const title = titleFor(t);
   if (p && title) {
@@ -863,7 +901,7 @@ function phrases(t: Talk, ctx: ModeContext): void {
         const heard = { text: l.text, kana: l.kana ?? l.text };
         const readyOf = (x: Step) => {
           const slide = x.slideId ? slideOf(x.slideId) : undefined;
-          return slide ? readySentences(slide, p.level, title.topic, title.deck, title.place).map((r) => ({ r, slideId: x.slideId! })) : [];
+          return slide ? readySentences(slide, p.level, title.topic, title.deck, title.place, title).map((r) => ({ r, slideId: x.slideId! })) : [];
         };
         const candidates = (own ? [own] : t.steps.filter((x) => x.kind === 'picture')).flatMap(readyOf);
         if (own && candidates.some(({ r }) => wordsSimilarity(r.kana, heard.kana) >= NEAR_READ)) continue;
@@ -877,6 +915,7 @@ function phrases(t: Talk, ctx: ModeContext): void {
         if (!best) continue;
         for (const f of best.frames) if (want.includes(f)) credited.add(f);
         ctx.phrase(p.id, { itemId: `happyokai:${title.deck}:${best.slideId}:${best.frames.join('+')}:${p.level}`, text: best.r.text, kana: best.r.kana, en: best.r.en, outcome: 'said', recall: 'memory', frames: best.frames });
+        countGreen(s, ctx, p.id, best.frames);
       }
     }
   }
@@ -888,11 +927,13 @@ function phrases(t: Talk, ctx: ModeContext): void {
     const said = t.haveYou.said;
     const no = !!said && saysNo(said.kana);
     if (said) ctx.phrase(p.id, { itemId: `happyokai:have:${hy.id}`, text: said.text, kana: said.kana, en: (no ? card.no : card.yes).en, outcome: 'said', recall: said.kind === 'own' ? 'memory' : 'read' });
+    if (said?.kind === 'own') countGreen(s, ctx, p.id, framesOf(said));
     else ctx.phrase(p.id, { itemId: `happyokai:have:${hy.id}`, text: card.yes.text, kana: card.yes.kana, en: card.yes.en, outcome: 'seen', recall: 'read' });
   }
   for (const a of t.asked) {
     if (!ctx.player(a.playerId)) continue;
     ctx.phrase(a.playerId, { itemId: `happyokai:q:${a.text}`, text: a.text, kana: a.kana, en: a.en, outcome: a.via === 'speech' ? 'said' : 'seen', recall: 'memory' });
+    if (a.via === 'speech') countGreen(s, ctx, a.playerId, framesOf(a));
   }
 }
 
@@ -1046,8 +1087,12 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         const title = titleFor(t);
         for (const p of ctx.players()) {
           if (p.id === t.presenterId || !p.connected) continue;
-          const level = presenter ? lower(p.level, presenter.level) : p.level;
-          t.cards[p.id] = questionsFor(level, talkWord(t) ?? null, title?.topic ?? null, audienceOf(ctx), () => ctx.random(), title?.deck, title?.place);
+          // In the Green Car the question from the floor is N3 (an N3 asker's first card, an N4 asker's stretch), aimed
+          // at the frame the asker needs most; the N4 cards stay at the lower of the two levels, as ever.
+          const level = presenter && !ctx.greenCar ? lower(p.level, presenter.level) : p.level;
+          const said = s.gcSaid?.[p.id] ?? {};
+          const green = ctx.greenCar ? { aim: (frames: readonly string[]) => aimWeight(ctx, p.id, frames, said) } : undefined;
+          t.cards[p.id] = questionsFor(level, talkWord(t) ?? null, title?.topic ?? null, audienceOf(ctx), () => ctx.random(), title?.deck, title?.place, green);
         }
         dealHaveYou(s, t, ctx);
         ctx.cue({ host: 'chochin', event: t.haveYou ? 'happyokai_have_you' : 'happyokai_question' });
@@ -1112,7 +1157,7 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         ctx.award(a.playerId, (a.via === 'speech' ? ASK.said : ASK.other) + (t.chosen === a.playerId ? ASK.picked : 0));
         if (a.via === 'speech') statsOf(s, a.playerId).askedAloud += 1;
       }
-      phrases(t, ctx);
+      phrases(s, t, ctx);
       s.done.push({ index: t.index, presenterId: t.presenterId, assistantId: t.assistantId, titleId: t.titleId, quote: quoteOf(t) });
     }
   },
@@ -1224,6 +1269,8 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         if (phase !== 'prompt') return moveError('wrong-phase');
         if (!presenter) return moveError('not-yours');
         if (!n4Up(ctx.player(playerId)?.level)) return moveError('not-yours');
+        // The Green Car has no usual titles to swap to.
+        if (ctx.greenCar) return moveError('not-in-green-car');
         if (t.ready) return moveError('wrong-phase');
         if (t.swapped) return moveError('already-swapped');
         const key = typeof raw.key === 'number' ? raw.key : -1;
@@ -1440,8 +1487,8 @@ export const happyokaiMode: Mode<HappyokaiState, HappyokaiView> = {
         level: me.level,
         titleChoices: t && role === 'presenter' && phase === 'prompt' ? t.titleChoices.map((id, key) => {
                 const x = titleOf(id)!;
-                const swap = !!x.deck && n4Up(me.level) && !t.swapped && !t.ready;
-                return { key, jp: forLevel(x.jp, me.level), ...(romaji ? { romaji: toRomaji(x.jp.kana) } : {}), ...(x.deck ? { deck: forLevel(DECKS[x.deck].name, me.level) } : {}), ...(swap ? { swap: true as const } : {}) };
+                const swap = !!x.deck && n4Up(me.level) && !t.swapped && !t.ready && !ctx.greenCar;
+                return { key, jp: forLevel(x.jp, me.level), ...(romaji ? { romaji: toRomaji(x.jp.kana) } : {}), ...(x.deck ? { deck: forLevel(DECKS[x.deck].name, me.level) } : {}), ...(swap ? { swap: true as const } : {}), ...(x.deck && DECKS[x.deck].level === 'n3' ? { n3: true as const } : {}) };
               }) : [],
         rehearse: t && title && role === 'presenter' && phase === 'prompt' ? { opening: withRomaji(openingFor(me.level, me.name, title.jp)), closing: withRomaji(closingFor(me.level)) } : null,
         script: role === 'presenter' && !picture && scripts[0] ? withRomaji(scripts[0]) : null,

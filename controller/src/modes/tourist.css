@@ -56,3 +56,6 @@
 .tou-call { width: 100%; }
 .tou-note { margin: 0; color: var(--warn); font-weight: 700; }
 .tou-ok { color: var(--good); text-align: center; }
+
+/* The Green Car: an N3 stretch line on an N4 player's tiles or cues. */
+.tou-n3 { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px; background: var(--paper); color: var(--mode); font-size: 11px; font-weight: 900; vertical-align: middle; }
