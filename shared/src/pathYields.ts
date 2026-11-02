@@ -73,14 +73,10 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
     },
     "narabete": {},
     "bento-haus": {
-      "keigo": 3.39,
-      "kudasai": 11.77,
-      "mashita": 4.63,
-      "ni-masu": 1.47,
-      "o-kudasai": 2.7,
-      "te-aru": 3.06,
-      "te-itadakemasen": 5.31,
-      "te-moraeru": 5.31
+      "keigo": 2.75,
+      "kudasai": 17.23,
+      "o-kudasai": 2.75,
+      "te-aru": 3.55
     },
     "bento-haus-vs": {
       "kudasai": 30.19
@@ -191,7 +187,7 @@ export const YIELDS: Readonly<Partial<Record<Level, Partial<Record<ModeId, Reado
     "shodo": {},
     "narabete": {},
     "bento-haus": {
-      "kudasai": 20.33
+      "kudasai": 16.67
     },
     "bento-haus-vs": {
       "kudasai": 29.72
