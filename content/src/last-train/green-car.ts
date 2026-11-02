@@ -16,8 +16,8 @@ const stop = (line: string, id: string, name: [string, string], minigameId: stri
   announcement: ruby(announcement[0], announcement[1]),
 });
 
-const dash = (id: string, level: 'n4' | 'n3', frames: string[], prompt: [string, string], model: [string, string], accepted: string[], hint: string): MinigameItem => ({
-  id: `green-car.dash.${id}`,
+const dash = (line: string, id: string, level: 'n4' | 'n3', frames: string[], prompt: [string, string], model: [string, string], accepted: string[], hint: string): MinigameItem => ({
+  id: `${line}.dash.${id}`,
   level,
   frames,
   prompt: ruby(prompt[0], prompt[1]),
@@ -27,14 +27,14 @@ const dash = (id: string, level: 'n4' | 'n3', frames: string[], prompt: [string,
   timeLimit: 8,
 });
 
-/** The Platform Dash on every Green Car line: N4 and N3 service Japanese, all ages. */
-const GREEN_DASH: MinigameItem[] = [
-  dash('01-shoushou', 'n4', ['o-kudasai'], ['お{客|きゃく}さんに、「ちょっと{待|ま}って」をていねいに。', 'Ask a passenger to wait a moment, politely.'], ['{少々|しょうしょう}お{待|ま}ちください。', 'Please wait a moment.'], ['しょうしょうおまちください', 'おまちください', 'すこしおまちください', 'しょうしょうおまちくださいませ'], 'お, the verb stem, then ください: おまち ください.'),
-  dash('02-shuuden-gozaimasu', 'n3', ['de-gozaimasu'], ['「これは{終電|しゅうでん}です」を、{駅員|えきいん}のことばで。', '"This is the last train", as the station staff say it.'], ['これは{終電|しゅうでん}でございます。', 'This is the last train.'], ['これはしゅうでんでございます', 'こちらはしゅうでんでございます', 'しゅうでんでございます'], 'The staff say です as でございます.'),
-  dash('03-michi', 'n4', ['te-itadakemasen'], ['{駅員|えきいん}さんに{道|みち}を{聞|き}きます。とてもていねいに。', 'Ask the station staff the way, very politely.'], ['{道|みち}を{教|おし}えていただけますか。', 'Could you tell me the way?'], ['みちをおしえていただけますか', 'みちをおしえていただけませんか', 'すみませんみちをおしえていただけますか', 'すみませんみちをおしえていただけませんか'], 'The て form of おしえる, then いただけますか.'),
-  dash('04-okurete', 'n3', ['te-orimasu'], ['「{電車|でんしゃ}がおくれています」を、{駅員|えきいん}のことばで。', '"The train is running late", as the station staff say it.'], ['{電車|でんしゃ}がおくれております。', 'The train is running late.'], ['でんしゃがおくれております', 'ただいまでんしゃがおくれております'], 'Staff say 〜て います as 〜て おります.'),
-  dash('05-haiken', 'n3', ['sasete-itadaku'], ['きっぷを{見|み}ます。{車掌|しゃしょう}のことばで。', 'You check a ticket. Say it as the conductor does.'], ['きっぷを{拝見|はいけん}させていただきます。', 'May I see your ticket?'], ['きっぷをはいけんさせていただきます', 'はいけんさせていただきます', 'しつれいしますきっぷをはいけんさせていただきます'], 'Look, humbly: はいけんする, then させて いただきます.'),
-  dash('06-mairimasu', 'n4', ['keigo'], ['「{電車|でんしゃ}が{来|き}ます」を、{駅|えき}のことばで。', '"The train is coming", as the platform says it.'], ['{電車|でんしゃ}がまいります。', 'The train is coming.'], ['でんしゃがまいります', 'まもなくでんしゃがまいります', 'でんしゃがまいりますおさがりください'], 'Stations say くる as まいります.'),
+/** The Platform Dash on every Green Car line (each with its own ids): N4 and N3 service Japanese, all ages. */
+const greenDash = (line: string): MinigameItem[] => [
+  dash(line, '01-shoushou', 'n4', ['o-kudasai'], ['お{客|きゃく}さんに、「ちょっと{待|ま}って」をていねいに。', 'Ask a passenger to wait a moment, politely.'], ['{少々|しょうしょう}お{待|ま}ちください。', 'Please wait a moment.'], ['しょうしょうおまちください', 'おまちください', 'すこしおまちください', 'しょうしょうおまちくださいませ'], 'お, the verb stem, then ください: おまち ください.'),
+  dash(line, '02-shuuden-gozaimasu', 'n3', ['de-gozaimasu'], ['「これは{終電|しゅうでん}です」を、{駅員|えきいん}のことばで。', '"This is the last train", as the station staff say it.'], ['これは{終電|しゅうでん}でございます。', 'This is the last train.'], ['これはしゅうでんでございます', 'こちらはしゅうでんでございます', 'しゅうでんでございます'], 'The staff say です as でございます.'),
+  dash(line, '03-michi', 'n4', ['te-itadakemasen'], ['{駅員|えきいん}さんに{道|みち}を{聞|き}きます。とてもていねいに。', 'Ask the station staff the way, very politely.'], ['{道|みち}を{教|おし}えていただけますか。', 'Could you tell me the way?'], ['みちをおしえていただけますか', 'みちをおしえていただけませんか', 'すみませんみちをおしえていただけますか', 'すみませんみちをおしえていただけませんか'], 'The て form of おしえる, then いただけますか.'),
+  dash(line, '04-okurete', 'n3', ['te-orimasu'], ['「{電車|でんしゃ}がおくれています」を、{駅員|えきいん}のことばで。', '"The train is running late", as the station staff say it.'], ['{電車|でんしゃ}がおくれております。', 'The train is running late.'], ['でんしゃがおくれております', 'ただいまでんしゃがおくれております'], 'Staff say 〜て います as 〜て おります.'),
+  dash(line, '05-haiken', 'n3', ['sasete-itadaku'], ['きっぷを{見|み}ます。{車掌|しゃしょう}のことばで。', 'You check a ticket. Say it as the conductor does.'], ['きっぷを{拝見|はいけん}させていただきます。', 'May I see your ticket?'], ['きっぷをはいけんさせていただきます', 'はいけんさせていただきます', 'しつれいしますきっぷをはいけんさせていただきます'], 'Look, humbly: はいけんする, then させて いただきます.'),
+  dash(line, '06-mairimasu', 'n4', ['keigo'], ['「{電車|でんしゃ}が{来|き}ます」を、{駅|えき}のことばで。', '"The train is coming", as the platform says it.'], ['{電車|でんしゃ}がまいります。', 'The train is coming.'], ['でんしゃがまいります', 'まもなくでんしゃがまいります', 'でんしゃがまいりますおさがりください'], 'Stations say くる as まいります.'),
 ];
 
 const GREEN = 'green-car-line';
@@ -56,7 +56,7 @@ export const greenCarScenarios: LastTrainScenario[] = [
       stop(GREEN, 'yoake', ['{夜明|よあ}け{駅|えき}', 'Yoake Station'], 'station-announcement', ['{終点|しゅうてん}、{夜明|よあ}け{駅|えき}でございます。', 'Last stop: Yoake (Daybreak) Station.']),
     ],
     twist: ruby('{実|じつ}は……この{電車|でんしゃ}の{車掌|しゃしょう}は、ずっと{皆|みな}さんでした！', 'The truth is... the conductors of this train were you, all along!'),
-    platformDash: GREEN_DASH,
+    platformDash: greenDash(GREEN),
     status: 'draft',
   },
   {
@@ -74,7 +74,7 @@ export const greenCarScenarios: LastTrainScenario[] = [
       stop(TRIP, 'gakkou-mae', ['{学校前|がっこうまえ}', 'Gakkō-mae'], 'station-announcement', ['{終点|しゅうてん}、{学校前|がっこうまえ}です。おうちに{帰|かえ}るまでが、{修学旅行|しゅうがくりょこう}ですよ。', 'Last stop: Gakkō-mae (the school). The trip isn’t over until you’re home!']),
     ],
     twist: ruby('{実|じつ}は……{先生|せんせい}も、お{弁当|べんとう}を{忘|わす}れていました！', 'The truth is... the teacher forgot their lunchbox too!'),
-    platformDash: GREEN_DASH,
+    platformDash: greenDash(TRIP),
     status: 'draft',
   },
   {
@@ -92,7 +92,7 @@ export const greenCarScenarios: LastTrainScenario[] = [
       stop(PARTY, 'shihatsu-eki', ['{始発駅|しはつえき}', 'Shihatsu Station'], 'station-announcement', ['{終点|しゅうてん}、{始発駅|しはつえき}でございます。……あれ？もう{朝|あさ}ですか。', 'Last stop: Shihatsu (First Train) Station. ...Huh? Is it morning already?']),
     ],
     twist: ruby('{実|じつ}は……{皆|みな}さん、{終電|しゅうでん}じゃなくて、{始発|しはつ}に{乗|の}っていました！', 'The truth is... you didn’t catch the last train. You caught the first one!'),
-    platformDash: GREEN_DASH,
+    platformDash: greenDash(PARTY),
     status: 'draft',
   },
 ];
