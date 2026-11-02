@@ -212,13 +212,137 @@ export const CHEEKY_WORDS: readonly ObscureWord[] = [
   },
 ];
 
+export const GREEN_CAR_WORDS_STATUS: ReviewStatus = 'draft';
+
+/**
+ * Green Car (everyone N4 or N3): Fake Kanji deals everyday words written with N3 kanji (独, 寝, 迷, 癖, 眠, 忘,
+ * 腹 …), the kind an N3 learner meets on a page before they know them. Only one a game (the round is short) and
+ * not counted toward the path: the golden word is read, not said from memory. Kids rooms deal those marked
+ * `kids`; Cheeky rooms deal GREEN_CAR_CHEEKY_WORDS first. Meanings from standard dictionary senses; draft until
+ * the fluent check.
+ */
+export const GREEN_CAR_WORDS: readonly ObscureWord[] = [
+  {
+    id: 'gc-hitorigoto',
+    jp: { text: '独り言', kana: 'ひとりごと', en: 'Talking to yourself', furigana: [['独', 'ひと'], ['り', ''], ['言', 'ごと']] },
+    literal: 'alone-words',
+    close: ['to yourself', 'to oneself', 'to himself', 'to herself', 'self talk', 'self-talk'],
+    kids: true,
+  },
+  {
+    id: 'gc-negoto',
+    jp: { text: '寝言', kana: 'ねごと', en: 'Talking in your sleep', furigana: [['寝', 'ね'], ['言', 'ごと']] },
+    literal: 'sleep-words',
+    close: ['in your sleep', 'sleep talk', 'sleep-talk', 'sleeptalk', 'while asleep', 'talking asleep'],
+    kids: true,
+  },
+  {
+    id: 'gc-maigo',
+    jp: { text: '迷子', kana: 'まいご', en: 'A child who has got lost', furigana: [['迷', 'まい'], ['子', 'ご']] },
+    literal: 'lost child',
+    close: ['lost child', 'lost kid', 'got lost', 'gets lost', 'lost'],
+    kids: true,
+  },
+  {
+    id: 'gc-hayakuchi',
+    jp: { text: '早口', kana: 'はやくち', en: 'Talking very fast', furigana: [['早', 'はや'], ['口', 'くち']] },
+    literal: 'fast mouth',
+    close: ['talk fast', 'talking fast', 'talks fast', 'speak fast', 'speaking fast', 'fast talk', 'quickly'],
+    kids: true,
+  },
+  {
+    id: 'gc-kuchiguse',
+    jp: { text: '口癖', kana: 'くちぐせ', en: 'A phrase someone always says (a verbal habit)', furigana: [['口', 'くち'], ['癖', 'ぐせ']] },
+    literal: 'mouth habit',
+    close: ['always say', 'catchphrase', 'catch phrase', 'pet phrase', 'verbal habit', 'habit of saying'],
+    kids: true,
+  },
+  {
+    id: 'gc-hitomishiri',
+    jp: { text: '人見知り', kana: 'ひとみしり', en: 'Being shy around people you don’t know', furigana: [['人', 'ひと'], ['見', 'み'], ['知', 'し'], ['り', '']] },
+    literal: 'people-see-know',
+    close: ['shy', 'strangers', 'timid'],
+    kids: true,
+  },
+  {
+    id: 'gc-makezugirai',
+    jp: { text: '負けず嫌い', kana: 'まけずぎらい', en: 'Hating to lose, whatever the game', furigana: [['負', 'ま'], ['け', ''], ['ず', ''], ['嫌', 'ぎら'], ['い', '']] },
+    literal: 'hates not-losing',
+    close: ['hate losing', 'hates losing', 'hating to lose', 'to lose', 'sore loser', 'competitive'],
+    kids: true,
+  },
+  {
+    id: 'gc-inemuri',
+    jp: { text: '居眠り', kana: 'いねむり', en: 'Dozing off where you sit (in class, on a train)', furigana: [['居', 'い'], ['眠', 'ねむ'], ['り', '']] },
+    literal: 'staying-sleep',
+    close: ['doze', 'dozing', 'nodding off', 'nod off', 'falling asleep', 'fall asleep', 'nap'],
+    kids: true,
+  },
+  {
+    id: 'gc-yatsuatari',
+    jp: { text: '八つ当たり', kana: 'やつあたり', en: 'Taking your bad mood out on someone who didn’t cause it', furigana: [['八', 'や'], ['つ', ''], ['当', 'あ'], ['た', ''], ['り', '']] },
+    literal: 'hitting all eight',
+    close: ['take it out', 'taking it out', 'takes it out', 'lash out', 'lashing out', 'bad mood'],
+    kids: true,
+  },
+  {
+    id: 'gc-haradokei',
+    jp: { text: '腹時計', kana: 'はらどけい', en: 'Your stomach telling you it’s mealtime (a “belly clock”)', furigana: [['腹', 'はら'], ['時計', 'どけい']] },
+    literal: 'belly clock',
+    close: ['belly clock', 'stomach clock', 'tummy clock', 'mealtime', 'meal time', 'hungry'],
+    kids: true,
+  },
+  {
+    id: 'gc-yofukashi',
+    jp: { text: '夜更かし', kana: 'よふかし', en: 'Staying up late at night', furigana: [['夜', 'よ'], ['更', 'ふ'], ['か', ''], ['し', '']] },
+    literal: 'night-deepening',
+    close: ['stay up', 'staying up', 'stays up', 'up late', 'late at night', 'night owl'],
+  },
+  {
+    id: 'gc-monowasure',
+    jp: { text: '物忘れ', kana: 'ものわすれ', en: 'Forgetting things (being forgetful)', furigana: [['物', 'もの'], ['忘', 'わす'], ['れ', '']] },
+    literal: 'thing-forgetting',
+    close: ['forget', 'forgetful', 'forgetting'],
+  },
+];
+
+/** Green Car, Cheeky rooms: grown-up words with N3 kanji (nights out), dealt first. Draft. */
+export const GREEN_CAR_CHEEKY_WORDS: readonly ObscureWord[] = [
+  {
+    id: 'gc-nomihoudai',
+    jp: { text: '飲み放題', kana: 'のみほうだい', en: 'All you can drink (for a fixed price)', furigana: [['飲', 'の'], ['み', ''], ['放題', 'ほうだい']] },
+    literal: 'drink as you please',
+    close: ['all you can drink', 'all-you-can-drink', 'unlimited drink', 'drink as much', 'free-flow', 'free flow', 'bottomless'],
+  },
+  {
+    id: 'gc-nijikai',
+    jp: { text: '二次会', kana: 'にじかい', en: 'The after-party (the second party of the night)', furigana: [['二', 'に'], ['次', 'じ'], ['会', 'かい']] },
+    literal: 'second meeting',
+    close: ['after party', 'afterparty', 'after-party', 'second party', 'next bar'],
+  },
+  {
+    id: 'gc-yopparai',
+    jp: { text: '酔っ払い', kana: 'よっぱらい', en: 'A drunk (someone who has had too much)', furigana: [['酔', 'よ'], ['っ', ''], ['払', 'ぱら'], ['い', '']] },
+    literal: 'drunk-swept',
+    close: ['drunk', 'drunkard', 'too much to drink', 'tipsy'],
+  },
+];
+
+/** Green Car: Fake Kanji plays this many words (a short round). */
+export const GREEN_CAR_FAKE_WORDS = 1;
+
 /**
  * The words a game can deal for this Audience. Kids get the gentle subset; Cheeky gets its own
  * words first, topped up with the rest so a short list never leaves a round empty. Family is the
- * whole base list.
+ * whole base list. In the Green Car the lists are the N3 kanji ones.
  */
-export function fakeWordPool(audience: Audience, random: () => number, count: number): ObscureWord[] {
+export function fakeWordPool(audience: Audience, random: () => number, count: number, greenCar = false): ObscureWord[] {
   const shuffle = (xs: readonly ObscureWord[]) => shuffled(xs, random);
+  if (greenCar) {
+    if (audience === 'kids') return shuffle(GREEN_CAR_WORDS.filter((w) => w.kids)).slice(0, count);
+    if (audience === 'cheeky') return [...shuffle(GREEN_CAR_CHEEKY_WORDS), ...shuffle(GREEN_CAR_WORDS)].slice(0, count);
+    return shuffle(GREEN_CAR_WORDS).slice(0, count);
+  }
   if (audience === 'kids') return shuffle(OBSCURE_WORDS.filter((w) => w.kids)).slice(0, count);
   if (audience === 'cheeky') return [...shuffle(CHEEKY_WORDS), ...shuffle(OBSCURE_WORDS)].slice(0, count);
   return shuffle(OBSCURE_WORDS).slice(0, count);

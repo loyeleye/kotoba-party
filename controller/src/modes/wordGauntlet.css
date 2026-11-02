@@ -40,3 +40,8 @@
 .wg-model { border: 1px dashed var(--muted); border-radius: 12px; padding: 8px 10px; }
 .wg-model p { margin: 0; }
 .wg-kept { font-size: 18px; text-align: center; }
+/* Sentence Shiritori (Green Car round 3): the grammar cards on your turn. */
+.wg-sent-cards { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.wg-sent-card { flex: 1 1 140px; border: 2px solid var(--accent, #c33); border-radius: 12px; padding: 8px; text-align: center; }
+.wg-sent-card.stretch { border-style: dashed; }
+.wg-heard-line { text-align: center; font-size: 18px; }

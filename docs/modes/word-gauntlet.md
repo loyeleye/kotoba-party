@@ -104,7 +104,35 @@ project files):
   frame (the path counts sentence-final って as ＿んだって, N4), so it isn't a card.
 - **Aim the deal:** the frame fins take turns round the table from a random start, so a round hears both. A player
   relays once a game, so there's no per-player count to aim at.
-- Round 1 and 3 are unchanged for now (the N3 kanji and Sentence Shiritori redesign comes later).
+- **Round 1, Fake Kanji, is short:** one word, not two, from `GREEN_CAR_WORDS` in `words.ts` (everyday words
+  written with N3 kanji: 独り言, 寝言, 迷子, 口癖, 居眠り, 八つ当たり, 腹時計…; Kids rooms get the 10 marked `kids`, Cheeky
+  rooms deal 飲み放題, 二次会, 酔っ払い first). Not counted toward the path: the golden word is logged `recall: 'read'`
+  as before, and 3.12 counts only Shodō and sign items.
+- **Round 3 is Sentence Shiritori (ぶんしょう しりとり)** instead of the showdown (`sentences.ts`, the
+  `sentences` segment). Pon opens with 「さあ、 ぶんしょうで しりとり！」. Each turn (45 s, its own `answer` phase) one
+  player says a sentence that **starts with the last word of the sentence before** (its last spaced chunk) **or its
+  last kana** (か = が, a final ん falls back to the kana before it), and **carries the frame on their card**, checked
+  by the path's own matchers (`framesOf`). A miss (`wrong-start`, `no-frame`) is a free retry until the time runs
+  out; a turn that runs out is skipped and the link stays. Turns go round from the trailing player: two laps for
+  four players, one lap for five or more (at most `SENTENCE_MAX_TURNS` = 8), to keep the game short.
+  - **Cards** (every one a frame some goal requires): N3 ＿たびに, ＿うちに (3.9), ＿っぽい, ＿なんて (3.11), ＿らしい
+    (3.1); N4 ＿ために, ＿ように, ＿と いって いた (4.14), ＿に ＿られた (4.13), ＿そう, ＿と おもう (4.6). Each card
+    has model lines for Kids (school, pets, yōkai, snacks), Family and Cheeky (the boss, drinks, a date), with {x}
+    where the link word goes. All draft.
+  - **Who gets what:** an N3 player alternates N3 and N4 cards (N3 first), so about half each; an N4 player gets
+    an N4 card plus an N3 **stretch** card with the N3 tag (either counts; using the N3 one credits it).
+  - **Aim the deal:** each card is the one of its level with the highest `aimWeight` (shared/src/modes/aim.ts:
+    tonight's need from `ctx.frameNeed`, divided by this game's says, kept per player in `sentences.said`),
+    pre-shuffled so ties vary.
+  - **Hint:** "Need a hint?" shows one of the card's model lines filled with a noun that can follow the chain
+    (the link word if it's a known noun). A hinted sentence is logged `recall: 'read'`.
+  - **Score:** 100 a sentence, +50 for an N3 frame, +30 spoken (the round's 30% bonus pool); then everyone votes for
+    the best sentence (not their own), 100 a vote. No crown: round 3 no longer decides the winner by itself. Award
+    ぶんしょう王 (most sentence votes).
+  - **Phrasebook:** each sentence as said (`wg.sentence.<frame>`, the player's own words, `said` when spoken), so
+    every frame in it counts through the path's matchers.
+  - **Bots** (`tools/bots/policies/wordGauntlet.ts`) say a model line of their card starting with the link word or
+    a noun on the link kana; an N4 bot takes the stretch card every other turn.
 
 ### Shiritori rules (house rules from the design doc)
 - The next word starts with the last kana of the one before. ー continues from the kana before it (コーヒー → ひ). Small kana count as full size (きしゃ → や). Dakuten and handakuten may be added or dropped (か ↔ が, は ↔ ば ↔ ぱ).
