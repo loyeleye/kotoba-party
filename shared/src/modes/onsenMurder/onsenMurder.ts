@@ -16,17 +16,18 @@
 // as a { kind: 'suspect-line' } move during the answer's opening beat or not at all, and it is
 // checked here so it can never add a fact (no names, no numbers, no はんにん).
 //
-// The deputy (N4 hard role): when the room has an N4 player, each turn one of them (not the
-// asker, in seat rotation) is offered the deputy's part. After the answer they tell the room
-// what the suspect said, in reported speech or the passive, from the answer's scripted `report`
-// (deputy.ts). They can say no ("not this time") and just watch, as everyone else does.
+// The deputy (N4 hard role), only in the Green Car (shared/src/greenCar.ts; it moved out of mixed
+// rooms, where the turn waited for it): each turn one N4+ player (not the asker, in seat rotation)
+// is the deputy, given the part with no offer card and kept out of the offer log. After the answer
+// they tell the room what the suspect said, in reported speech or the passive, from the answer's
+// scripted `report` (deputy.ts). They can still say "not this time" and just watch.
 
 import type { JpText, OnsenCase, OnsenIntent, OnsenReport, OnsenSuspect } from '../../../../content/src/types.js';
 import { hasKanji, isKana, isUtterance, soundKey, type Utterance } from '../../japanese/kana.js';
 import type { Audience, Phase, Viewer } from '../../protocol.js';
 import { cleanText, isObject, moveError, MOVE_OK, pick, type Award, type Mode, type ModeContext, type ModePlayer, type PhraseEntry } from '../mode.js';
 import { answerTiles, checkReport, joinReport, reportFrame, reportNotes, reportRule, reportTiles, tilesInOrder, type ReportTile } from './deputy.js';
-import { nextOfferee, offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
+import { offerRate, type OfferAnswer, type PastOffer } from '../hardRoleLog.js';
 import { EXPERIMENTS } from '../experiments.js';
 import { armCurveball, commentaryMs, dealStandIn, galleryBubbles, galleryTileFor, gistFor, hostStandsIn, keyHeld, lightUp, openGallery, openStandInGallery, pickGallery, standInDone, standInEnd, standInHoldKey, standInSetupFor, standInWakeAt, type Commentary, type Gallery, type GalleryTileView, type ReactionTile, type StandInGallery } from '../mixedRoom.js';
 import { FALLBACK_CASE } from './fallback.js';
@@ -139,6 +140,8 @@ export interface Deputy {
   turnNo: number;
   playerId: string;
   status: DeputyStatus;
+  /** Green Car: given the part (no offer card), and kept out of the offer log. */
+  given?: boolean;
   /** The answer being reported, set when it comes in with a report. */
   askNo: number | null;
   tiles: ReportTile[];
@@ -501,31 +504,25 @@ function recordAsk(s: OnsenState, ctx: ModeContext, playerId: string, suspect: O
 
 // ---- the deputy (N4 hard role) ----
 
-/** Rooms this big or bigger rest a lone N4 deputy after a turn in the part (see offerDeputy). */
-export const SPOTLIGHT_ROOM = 4;
-
 /**
- * Offers the deputy's part to an N4 player, never the asker, by the shared rotation (hardRoleLog.ts
- * nextOfferee): fewest offers first, then longest ago; a "not this time" sits the next turn out; in a room of
- * SPOTLIGHT_ROOM or more nobody is deputy two turns running. Nobody at N4: no deputy.
+ * The turn's deputy. Only in the Green Car (a move-out, design n3-coverage/green-car: the turn waited for a taken
+ * role, and the voiced N4 line is above beginners), where it isn't offered: every N4+ player but the asker is
+ * deputy in turn, by seat after the last one, already taken (`given`, no offer card; they can still say "not
+ * this time"), and the Green Car's turns stay out of the offer log. A mixed room has no deputy, so the offer
+ * rotation it used (hardRoleLog.ts nextOfferee) no longer runs here; `deputyLog`, `deputyOffered` and
+ * `deputyOffers` stay for old states and the role-offer report.
  */
 function offerDeputy(s: OnsenState, ctx: ModeContext, askerId: string | null): void {
   s.deputy = null;
+  if (!ctx.greenCar) return;
   const n4 = ctx
     .players()
     .filter((p) => n4Up(p.level) && p.connected && p.id !== askerId)
     .sort((a, b) => a.seat - b.seat);
-  const id = nextOfferee(
-    n4.map((p) => p.id),
-    s.deputyOffered ?? [],
-    s.turnNo,
-    ctx.connected().length,
-  );
-  const p = n4.find((x) => x.id === id);
+  const p = n4.find((x) => x.seat > s.deputySeat) ?? n4[0];
   if (!p) return;
   s.deputySeat = p.seat;
-  (s.deputyOffered ??= []).push({ playerId: p.id, at: s.turnNo, answer: 'offered' });
-  s.deputy = { turnNo: s.turnNo, playerId: p.id, status: 'offered', askNo: null, tiles: [], tries: 0, heard: '', via: null, points: 0, voicedUntil: null };
+  s.deputy = { turnNo: s.turnNo, playerId: p.id, status: 'ready', given: true, askNo: null, tiles: [], tries: 0, heard: '', via: null, points: 0, voicedUntil: null };
 }
 
 /** A deputy with a report still to give (an unanswered offer can still report: a first try is a yes). */
@@ -538,6 +535,8 @@ const deputyHolds = (d: Deputy | null): d is Deputy => deputyOpen(d) && (d.statu
 function closeDeputy(s: OnsenState, ctx: ModeContext): void {
   const d = s.deputy;
   s.deputy = null;
+  // A Green Car deputy was given the part, not offered it: nothing for the offer log.
+  if (d?.given) return;
   const offered = d ? s.deputyOffered?.find((o) => o.playerId === d.playerId && o.at === d.turnNo) : undefined;
   if (!d || (d.askNo === null && d.status !== 'declined')) {
     if (offered) offered.answer = null;
